@@ -12,16 +12,9 @@ public class Main {
 	}
 
 	public static void main(String[] args) {
-		System.out.println(String.format("%.1f", 10f));
-		//System.out.println(map);
 		Logger.log("loading...");
-		//System.out.println(XDMUtils.getJarFile());
-		//System.out.println("Folder: "+NativeMethods.getInstance().getDownloadsFolder());
 		Logger.log(System.getProperty("java.version")+" "+System.getProperty("os.version"));
-		
 		XDMApp.start(args);
-		//new MediaFormatWnd().setVisible(true);
-		
 	}
 
 }
