@@ -97,14 +97,15 @@ public class NetUtils {
 		try {
 			if (header == null)
 				return null;
-			header = header.toLowerCase();
-			if (header.startsWith("attachment") || header.startsWith("inline")) {
+			//header = header.toLowerCase();
+			if (header.toLowerCase().startsWith("attachment") || header.toLowerCase().startsWith("inline")) {
 				String arr[] = header.split(";");
 				for (int i = 0; i < arr.length; i++) {
 					String str = arr[i].trim();
 					if (str.toLowerCase().startsWith("filename")) {
 						int index = str.indexOf('=');
-						return str.substring(index + 1).replace("\"", "").trim();
+						String encode=str.substring(index + 1).replace("\"", "").trim();
+						return XDMUtils.decodeFileName(encode);
 					}
 				}
 			}
