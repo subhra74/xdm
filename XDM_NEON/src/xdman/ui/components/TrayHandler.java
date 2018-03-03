@@ -96,7 +96,7 @@ public class TrayHandler {
 		addUrlItem.setFont(FontResource.getBigFont());
 		addUrlItem.addActionListener(act);
 		addUrlItem.setName("ADD_URL");
-		MenuItem addVidItem = new MenuItem(StringResource.get("TITLE_DOWN_VID"));
+		MenuItem addVidItem = new MenuItem(StringResource.get("MENU_VIDEO_DWN"));
 		addVidItem.setFont(FontResource.getBigFont());
 		addVidItem.addActionListener(act);
 		addVidItem.setName("ADD_VID");

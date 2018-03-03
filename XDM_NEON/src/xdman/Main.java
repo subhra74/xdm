@@ -9,6 +9,9 @@ public class Main {
 		System.setProperty("sun.net.http.errorstream.enableBuffering", "false");
 		System.setProperty("awt.useSystemAAFontSettings", "lcd");
 		System.setProperty("swing.aatext", "true");
+		System.setProperty("sun.java2d.d3d", "false");
+		System.setProperty("sun.java2d.opengl", "false");
+		System.setProperty("sun.java2d.xrender", "false");
 	}
 
 	public static void main(String[] args) {

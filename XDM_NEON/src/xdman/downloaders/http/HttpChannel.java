@@ -9,7 +9,6 @@ import java.util.Iterator;
 import xdman.XDMConstants;
 import xdman.downloaders.AbstractChannel;
 import xdman.downloaders.Segment;
-import xdman.downloaders.metadata.HttpMetadata;
 import xdman.network.ProxyResolver;
 import xdman.network.http.HeaderCollection;
 import xdman.network.http.HttpClient;
@@ -166,7 +165,7 @@ public class HttpChannel extends AbstractChannel {
 					if (javaClientRequired) {
 						Logger.log("asking for password");
 						boolean proxy = code == 407;
-						if (!chunk.promptCredential(hc.getHost(), proxy)) {
+						if (!chunk.promptCredential(getHostName(hc.getHost()), proxy)) {
 							errorCode = XDMConstants.ERR_INVALID_RESP;
 							closeImpl();
 							return false;
@@ -174,6 +173,7 @@ public class HttpChannel extends AbstractChannel {
 					}
 					throw new JavaClientRequiredException();
 				}
+
 
 				if ("T1".equals(chunk.getTag()) || "T2".equals(chunk.getTag())) {
 					if ("text/plain".equals(hc.getResponseHeader("content-type"))) {
@@ -315,5 +315,10 @@ public class HttpChannel extends AbstractChannel {
 	public String getHeader(String name) {
 		return hc.getResponseHeader(name);
 	}
+	
+	private String getHostName(String hostPort) {
+		return hostPort.split(":")[0];
+	}
+
 
 }
