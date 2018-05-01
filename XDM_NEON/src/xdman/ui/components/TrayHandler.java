@@ -80,9 +80,9 @@ public class TrayHandler {
 				} else if ("ADD_BAT".equals(name)) {
 					new BatchPatternDialog().setVisible(true);
 				} else if ("ADD_CLIP".equals(name)) {
-					List<String> urlList = BatchClipboardWnd.getUrls();
+					List<String> urlList = BatchDownloadWnd.getUrls();
 					if (urlList.size() > 0) {
-						new BatchClipboardWnd(urlList).setVisible(true);
+						new BatchDownloadWnd(urlList).setVisible(true);
 					} else {
 						JOptionPane.showMessageDialog(null, StringResource.get("LBL_BATCH_EMPTY_CLIPBOARD"));
 					}

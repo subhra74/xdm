@@ -44,11 +44,11 @@ import xdman.util.XDMUtils;
 
 import static xdman.util.XDMUtils.getScaledInt;
 
-public class BatchClipboardWnd extends JFrame implements ActionListener {
+public class BatchDownloadWnd extends JFrame implements ActionListener {
 
 	private static final long serialVersionUID = -8209791156319603983L;
-	JList<ClipboardBatchItem> list;
-	DefaultListModel<ClipboardBatchItem> model;
+	JList<BatchItem> list;
+	DefaultListModel<BatchItem> model;
 	JTextField txtFile;
 	DefaultComboBoxModel<DownloadQueue> queueModel;
 	JComboBox<DownloadQueue> cmbQueues;
@@ -73,7 +73,7 @@ public class BatchClipboardWnd extends JFrame implements ActionListener {
 		return urls;
 	}
 
-	public BatchClipboardWnd(List<String> urls) {
+	public BatchDownloadWnd(List<String> urls) {
 		model = new DefaultListModel<>();
 		list = new JList<>(model);
 		initUI();
@@ -81,7 +81,7 @@ public class BatchClipboardWnd extends JFrame implements ActionListener {
 			String url = urls.get(i);
 			try {
 				String file = XDMUtils.getFileName(url);
-				ClipboardBatchItem item = new ClipboardBatchItem();
+				BatchItem item = new BatchItem();
 				item.file = file;
 				item.selected = true;
 				item.url = url;
@@ -121,7 +121,7 @@ public class BatchClipboardWnd extends JFrame implements ActionListener {
 	private void createDownload(DownloadQueue q) {
 		String folder = txtFile.getText();
 		for (int i = 0; i < model.size(); i++) {
-			ClipboardBatchItem item = model.getElementAt(i);
+			BatchItem item = model.getElementAt(i);
 			if (item.selected) {
 				String file = item.file;
 				String url = item.url;
@@ -287,7 +287,7 @@ public class BatchClipboardWnd extends JFrame implements ActionListener {
 			public void mouseClicked(MouseEvent event) {
 				int index = list.locationToIndex(event.getPoint());// Get index of item
 																	// clicked
-				ClipboardBatchItem cItem = model.getElementAt(index);
+				BatchItem cItem = model.getElementAt(index);
 				cItem.selected = !cItem.selected; // Toggle selected state
 				list.repaint(list.getCellBounds(index, index));// Repaint cell
 			}
@@ -308,7 +308,7 @@ public class BatchClipboardWnd extends JFrame implements ActionListener {
 
 }
 
-class ClipboardBatchItem {
+class BatchItem {
 	String url;
 	String file;
 	boolean selected;

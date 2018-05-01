@@ -1228,9 +1228,9 @@ public class MainWindow extends XDMFrame implements ActionListener {
 	}
 
 	private void showBatchDialog() {
-		List<String> urlList = BatchClipboardWnd.getUrls();
+		List<String> urlList = BatchDownloadWnd.getUrls();
 		if (urlList.size() > 0) {
-			new BatchClipboardWnd(urlList).setVisible(true);
+			new BatchDownloadWnd(urlList).setVisible(true);
 		} else {
 			MessageBox.show(this, StringResource.get("MENU_BATCH_DOWNLOAD"),
 					StringResource.get("LBL_BATCH_EMPTY_CLIPBOARD"), MessageBox.OK_OPTION, MessageBox.OK);

@@ -399,7 +399,7 @@ public class BatchPatternDialog extends JFrame implements ActionListener, Docume
 				}
 				if (urls.size() > 0) {
 					dispose();
-					new BatchClipboardWnd(urls).setVisible(true);
+					new BatchDownloadWnd(urls).setVisible(true);
 				}
 			} catch (Exception e2) {
 				Logger.log(e2);
