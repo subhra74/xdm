@@ -1,12 +1,31 @@
 package xdman.monitoring;
 
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.List;
 
 import xdman.network.http.HeaderCollection;
 import xdman.util.NetUtils;
 import xdman.util.XDMUtils;
 
 public class ParsedHookData {
+
+	@Override
+	public String toString() {
+		return "ParsedHookData [url=" + url + ", file=" + file + ", contentLength=" + contentLength + ", contentType="
+				+ contentType + ", ext=" + ext + "]";
+	}
+
+	public static List<ParsedHookData> parseLinks(byte[] b) throws UnsupportedEncodingException {
+		List<ParsedHookData> list = new ArrayList<>();
+		String strBuf = new String(b, "utf-8");
+		String[] arr = strBuf.split("\r\n\r\n");
+		for (int i = 0; i < arr.length; i++) {
+			String str = arr[i];
+			list.add(ParsedHookData.parse(str.getBytes()));
+		}
+		return list;
+	}
 
 	public static ParsedHookData parse(byte[] b) throws UnsupportedEncodingException {
 		ParsedHookData data = new ParsedHookData();

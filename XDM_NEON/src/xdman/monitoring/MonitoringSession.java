@@ -14,6 +14,7 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.UUID;
 
 import xdman.Config;
@@ -82,6 +83,28 @@ public class MonitoringSession implements Runnable {
 				String file = data.getFile();
 				XDMApp.getInstance().addDownload(metadata, file);
 			}
+		} finally {
+			setResponseOk(res);
+		}
+	}
+
+	private void onLinksReceived(Request request, Response res) throws UnsupportedEncodingException {
+		try {
+			Logger.log(new String(request.getBody()));
+			byte[] b = request.getBody();
+			List<ParsedHookData> list = ParsedHookData.parseLinks(b);
+			for (ParsedHookData d : list) {
+				System.out.println(d);
+			}
+			// ParsedHookData data = ParsedHookData.parse(b);
+			// if (data.getUrl() != null && data.getUrl().length() > 0) {
+			// HttpMetadata metadata = new HttpMetadata();
+			// metadata.setUrl(data.getUrl());
+			// metadata.setHeaders(data.getRequestHeaders());
+			// metadata.setSize(data.getContentLength());
+			// String file = data.getFile();
+			// XDMApp.getInstance().addDownload(metadata, file);
+			// }
 		} finally {
 			setResponseOk(res);
 		}
@@ -238,6 +261,9 @@ public class MonitoringSession implements Runnable {
 		} else if (verb.startsWith("/204")) {
 			Logger.log("sending 204...");
 			on204(request, response);
+		} else if (verb.startsWith("/links")) {
+			Logger.log("sending 204...");
+			onLinksReceived(request, response);
 		} else {
 			throw new IOException("invalid verb " + verb);
 		}
