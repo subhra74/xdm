@@ -38,11 +38,13 @@ import javax.swing.event.DocumentListener;
 
 import xdman.Config;
 import xdman.CredentialManager;
+import xdman.downloaders.metadata.HttpMetadata;
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 import xdman.util.Logger;
+import xdman.util.XDMUtils;
 
 public class BatchPatternDialog extends JFrame implements ActionListener, DocumentListener, ChangeListener {
 	/**
@@ -399,7 +401,7 @@ public class BatchPatternDialog extends JFrame implements ActionListener, Docume
 				}
 				if (urls.size() > 0) {
 					dispose();
-					new BatchDownloadWnd(urls).setVisible(true);
+					new BatchDownloadWnd(XDMUtils.toMetadata(urls)).setVisible(true);
 				}
 			} catch (Exception e2) {
 				Logger.log(e2);

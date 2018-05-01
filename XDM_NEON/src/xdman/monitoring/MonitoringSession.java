@@ -1,14 +1,11 @@
 package xdman.monitoring;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
 import java.net.Socket;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -21,19 +18,13 @@ import xdman.Config;
 import xdman.XDMApp;
 import xdman.XDMConstants;
 import xdman.downloaders.metadata.DashMetadata;
-import xdman.downloaders.metadata.HdsMetadata;
 import xdman.downloaders.metadata.HlsMetadata;
 import xdman.downloaders.metadata.HttpMetadata;
-import xdman.downloaders.metadata.manifests.M3U8Manifest;
-import xdman.downloaders.metadata.manifests.M3U8Manifest.M3U8MediaInfo;
-import xdman.network.ProxyResolver;
 import xdman.network.http.HeaderCollection;
 import xdman.network.http.HttpHeader;
 import xdman.network.http.JavaHttpClient;
-import xdman.network.http.WebProxy;
 import xdman.preview.FFmpegStream;
 import xdman.preview.PreviewStream;
-import xdman.ui.res.StringResource;
 import xdman.util.FormatUtilities;
 import xdman.util.Logger;
 import xdman.util.StringUtils;
@@ -93,9 +84,16 @@ public class MonitoringSession implements Runnable {
 			Logger.log(new String(request.getBody()));
 			byte[] b = request.getBody();
 			List<ParsedHookData> list = ParsedHookData.parseLinks(b);
+			List<HttpMetadata> metadatas = new ArrayList<>();
 			for (ParsedHookData d : list) {
 				System.out.println(d);
+				HttpMetadata md = new HttpMetadata();
+				md.setUrl(d.getUrl());
+				md.setHeaders(d.getRequestHeaders());
+				metadatas.add(md);
 			}
+			XDMApp.getInstance().addLinks(metadatas);
+
 			// ParsedHookData data = ParsedHookData.parse(b);
 			// if (data.getUrl() != null && data.getUrl().length() > 0) {
 			// HttpMetadata metadata = new HttpMetadata();

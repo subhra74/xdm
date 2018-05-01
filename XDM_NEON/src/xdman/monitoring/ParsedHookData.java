@@ -72,7 +72,7 @@ public class ParsedHookData {
 				if (index > 0) {
 					String cookieName = val.substring(0, index).trim();
 					String cookieValue = val.substring(index + 1).trim();
-					System.out.println("********Adding cookie " + val);
+					//System.out.println("********Adding cookie " + val);
 					data.requestHeaders.addHeader("cookie", cookieName + "=" + cookieValue);
 				}
 			}

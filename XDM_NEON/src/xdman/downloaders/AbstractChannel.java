@@ -65,11 +65,13 @@ public abstract class AbstractChannel implements Runnable {
 					close();
 					break;
 				}
-				chunk.transferInitiated();
+				
 				// do not proceed if chunk is stoppped
 				if (chunk == null) {
 					continue;
 				}
+				
+				chunk.transferInitiated();
 				if (((chunk.getLength() > 0) ? copyStream1() : copyStream2())) {
 					Logger.log("Copy Stream finished");
 					break;

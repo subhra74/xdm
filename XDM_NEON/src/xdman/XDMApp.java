@@ -37,6 +37,7 @@ import xdman.downloaders.metadata.HlsMetadata;
 import xdman.downloaders.metadata.HttpMetadata;
 import xdman.monitoring.BrowserMonitor;
 import xdman.network.http.HttpContext;
+import xdman.ui.components.BatchDownloadWnd;
 import xdman.ui.components.ComponentInstaller;
 import xdman.ui.components.DownloadCompleteWnd;
 import xdman.ui.components.DownloadWindow;
@@ -320,32 +321,46 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 	}
 
 	public void downloadUpdated(String id) {
-		DownloadEntry ent = downloads.get(id);
-		Downloader d = downloaders.get(id);
-		if (d == null) {
-			Logger.log("################# sync error ##############");
-		}
-		ent.setSize(d.getSize());
-		ent.setDownloaded(d.getDownloaded());
-		ent.setProgress(d.getProgress());
-		ent.setState(d.isAssembling() ? XDMConstants.ASSEMBLING : XDMConstants.DOWNLOADING);
-		DownloadWindow wnd = downloadWindows.get(id);
-		if (wnd != null) {
-			wnd.update(d, ent.getFile());
-		}
-		notifyListeners(id);
-		long now = System.currentTimeMillis();
-		if (now - lastSaved > 5000) {
-			saveDownloadList();
-			lastSaved = now;
+		try {
+			DownloadEntry ent = downloads.get(id);
+			Downloader d = downloaders.get(id);
+			if (d == null) {
+				Logger.log("################# sync error ##############");
+				return;
+			}
+			ent.setSize(d.getSize());
+			ent.setDownloaded(d.getDownloaded());
+			ent.setProgress(d.getProgress());
+			ent.setState(d.isAssembling() ? XDMConstants.ASSEMBLING : XDMConstants.DOWNLOADING);
+			DownloadWindow wnd = downloadWindows.get(id);
+			if (wnd != null) {
+				wnd.update(d, ent.getFile());
+			}
+		} finally {
+			notifyListeners(id);
+			long now = System.currentTimeMillis();
+			if (now - lastSaved > 5000) {
+				saveDownloadList();
+				lastSaved = now;
+			}
 		}
 	}
 
-	public static XDMApp getInstance() {
+	public synchronized static XDMApp getInstance() {
 		if (_this == null) {
 			_this = new XDMApp();
 		}
 		return _this;
+	}
+
+	public void addLinks(final List<HttpMetadata> list) {
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				BatchDownloadWnd wnd = new BatchDownloadWnd(list);
+				wnd.setVisible(true);
+			}
+		});
 	}
 
 	public void addDownload(final HttpMetadata metadata, final String file) {
@@ -708,6 +723,9 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 				DownloadEntry ent = new DownloadEntry();
 				for (int j = 0; j < fieldCount; j++) {
 					String ln = reader.readLine();
+					if (ln == null) {
+						return;
+					}
 					int index = ln.indexOf(":");
 					if (index > 0) {
 						String key = ln.substring(0, index).trim();
@@ -758,7 +776,8 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 			Logger.log(e);
 		}
 		try {
-			reader.close();
+			if (reader != null)
+				reader.close();
 		} catch (Exception e1) {
 		}
 	}
@@ -821,7 +840,8 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 		} catch (Exception e) {
 			Logger.log(e);
 			try {
-				writer.close();
+				if (writer != null)
+					writer.close();
 			} catch (Exception e1) {
 			}
 		}

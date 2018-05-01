@@ -82,7 +82,7 @@ public class TrayHandler {
 				} else if ("ADD_CLIP".equals(name)) {
 					List<String> urlList = BatchDownloadWnd.getUrls();
 					if (urlList.size() > 0) {
-						new BatchDownloadWnd(urlList).setVisible(true);
+						new BatchDownloadWnd(XDMUtils.toMetadata(urlList)).setVisible(true);
 					} else {
 						JOptionPane.showMessageDialog(null, StringResource.get("LBL_BATCH_EMPTY_CLIPBOARD"));
 					}

@@ -395,7 +395,7 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 	}
 
 	private void saveState() {
-		if (chunks.size() < 0)
+		if (chunks.size() < 1)
 			return;
 		StringBuffer sb = new StringBuffer();
 		sb.append(this.length + "\n");

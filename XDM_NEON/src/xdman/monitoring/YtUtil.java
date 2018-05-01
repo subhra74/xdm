@@ -84,17 +84,9 @@ public class YtUtil {
 		}
 	}
 
-	static HashMap<Integer, String> itags;
-
-	public static String getInfoFromITAG(int itag) {
-		loadITAGs();
-		return (String) itags.get(itag);
-	}
-
-	static void loadITAGs() {
-		if (itags != null) {
-			return;
-		}
+	private static HashMap<Integer, String> itags;
+	
+	static {
 		itags = new HashMap<Integer, String>();
 		itags.put(5, "240p");
 		itags.put(6, "270p");
@@ -156,6 +148,11 @@ public class YtUtil {
 		itags.put(313, "2160p");
 		itags.put(315, "2160p");
 		itags.put(299, "2160p");
+
+	}
+
+	public static String getInfoFromITAG(int itag) {
+		return (String) itags.get(itag);
 	}
 
 }

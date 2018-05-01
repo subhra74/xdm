@@ -14,7 +14,7 @@ public class StringResource {
 
 	// each file must have name like de.deutsch.german.txt
 
-	public static String get(String id) {
+	public synchronized static String get(String id) {
 		if (strings == null) {
 			try {
 				strings = new Properties();

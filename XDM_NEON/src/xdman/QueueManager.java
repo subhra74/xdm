@@ -11,9 +11,7 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.UUID;
 
 import xdman.ui.res.StringResource;
@@ -61,8 +59,7 @@ public class QueueManager {
 	private void loadQueues() {
 		File file = new File(Config.getInstance().getDataFolder(), "queues.txt");
 
-		DownloadQueue defaultQ = new DownloadQueue("",
-				StringResource.get("DEF_QUEUE"));
+		DownloadQueue defaultQ = new DownloadQueue("", StringResource.get("DEF_QUEUE"));
 		queueList.add(defaultQ);
 		if (!file.exists()) {
 			return;
@@ -72,9 +69,9 @@ public class QueueManager {
 
 		BufferedReader reader = null;
 		try {
-			reader = new BufferedReader(new InputStreamReader(
-					new FileInputStream(file), Charset.forName("UTF-8")));
-			int count = Integer.parseInt(reader.readLine().trim());
+			reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), Charset.forName("UTF-8")));
+			String str = reader.readLine();
+			int count = Integer.parseInt((str == null ? "0" : str).trim());
 			for (int i = 0; i < count; i++) {
 				String id = reader.readLine().trim();
 				String name = reader.readLine().trim();
@@ -102,7 +99,8 @@ public class QueueManager {
 					} else {
 						if (Integer.parseInt(reader.readLine()) == 1) {
 							String ln = reader.readLine();
-							queue.setExecDate(dateFormatter.parse(ln));
+							if (ln != null)
+								queue.setExecDate(dateFormatter.parse(ln));
 						}
 					}
 				}
@@ -114,7 +112,8 @@ public class QueueManager {
 			Logger.log(e);
 		}
 		try {
-			reader.close();
+			if (reader != null)
+				reader.close();
 		} catch (Exception e1) {
 		}
 	}
@@ -126,8 +125,7 @@ public class QueueManager {
 		String newLine = System.getProperty("line.separator");
 		SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
 		try {
-			writer = new BufferedWriter(new OutputStreamWriter(
-					new FileOutputStream(file), Charset.forName("UTF-8")));
+			writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), Charset.forName("UTF-8")));
 			writer.write(count + newLine);
 			for (int i = 0; i < count; i++) {
 				DownloadQueue queue = queueList.get(i);
@@ -153,8 +151,7 @@ public class QueueManager {
 					} else {
 						if (queue.getExecDate() != null) {
 							writer.write("1" + newLine);
-							writer.write(dateFormatter.format(queue
-									.getExecDate()) + newLine);
+							writer.write(dateFormatter.format(queue.getExecDate()) + newLine);
 						} else {
 							writer.write("0" + newLine);
 						}

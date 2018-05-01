@@ -17,7 +17,7 @@ public class Response {
 		buf.append("HTTP/1.1 " + code + " " + message + "\r\n");
 		if (body != null) {
 			if (code != 204) {
-				headers.addHeader("Content-Length", (body == null || body.length < 0) ? "0" : body.length + "");
+				headers.addHeader("Content-Length", (body == null || body.length < 1) ? "0" : body.length + "");
 			}
 			headers.appendToBuffer(buf);
 		}

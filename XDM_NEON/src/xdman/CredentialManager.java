@@ -36,7 +36,7 @@ public class CredentialManager {
 	}
 
 	public PasswordAuthentication getCredentialForHost(String host) {
-		System.out.println("Getting cred for "+host);
+		System.out.println("Getting cred for " + host);
 		PasswordAuthentication pauth = savedCredentials.get(host);
 		if (pauth == null) {
 			return cachedCredentials.get(host);
@@ -47,7 +47,7 @@ public class CredentialManager {
 	public PasswordAuthentication getCredentialForProxy() {
 		if (!StringUtils.isNullOrEmptyOrBlank(Config.getInstance().getProxyUser())) {
 			return new PasswordAuthentication(Config.getInstance().getProxyUser(),
-					Config.getInstance().getProxyPass() == null ? null
+					Config.getInstance().getProxyPass() == null ? new char[0]
 							: Config.getInstance().getProxyPass().toCharArray());
 		} else {
 			return null;

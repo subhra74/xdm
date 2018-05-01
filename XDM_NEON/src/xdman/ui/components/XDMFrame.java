@@ -43,7 +43,7 @@ public class XDMFrame extends JFrame implements ComponentListener {
 
 	private boolean maximizeBox = true, minimizeBox = true;
 
-	private JButton menuBtn;
+	//private JButton menuBtn;
 
 	private JPanel contentPane, modalPane, dialogPane;
 
@@ -355,11 +355,11 @@ public class XDMFrame extends JFrame implements ComponentListener {
 		return btn;
 	}
 
-	protected void setMenuActionListener(ActionListener a) {
-		if (menuBtn != null) {
-			menuBtn.addActionListener(a);
-		}
-	}
+//	protected void setMenuActionListener(ActionListener a) {
+//		if (menuBtn != null) {
+//			menuBtn.addActionListener(a);
+//		}
+//	}
 
 	@Override
 	public void componentHidden(ComponentEvent c) {

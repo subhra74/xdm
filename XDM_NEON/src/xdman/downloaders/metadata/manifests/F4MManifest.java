@@ -512,7 +512,7 @@ public class F4MManifest {
 			Segment segEntry = new Segment();
 			segEntry.firstSegment = firstSegment;
 			segEntry.fragmentsPerSegment = (int) readInt32(asrt, pos + 4);
-			if ((segEntry.fragmentsPerSegment & 0x80000000) > 0)
+			if ((segEntry.fragmentsPerSegment & 0x80000000L) > 0)
 				segEntry.fragmentsPerSegment = 0;
 			pos += 8;
 			segTable.add(segEntry);

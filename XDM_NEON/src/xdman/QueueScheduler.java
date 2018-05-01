@@ -37,7 +37,7 @@ public class QueueScheduler implements Runnable {
 		try {
 			Calendar cal = Calendar.getInstance();
 
-			while (!stop) {
+			while (true) {
 				try {
 					long currentTime = System.currentTimeMillis();
 					if (currentTime - lastKeepAwakePing > 3000) {

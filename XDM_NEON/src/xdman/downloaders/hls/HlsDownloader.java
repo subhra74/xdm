@@ -335,8 +335,8 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 					long diff = downloaded - lastDownloaded;
 					long timeSpend = now - prevTime;
 					if (timeSpend > 0) {
-						//float rate = ((float) diff / timeSpend) * 1000;
-						//downloadSpeed = rate;
+						// float rate = ((float) diff / timeSpend) * 1000;
+						// downloadSpeed = rate;
 
 						int prgDiff = progress - lastProgress;
 						if (prgDiff > 0) {
@@ -421,7 +421,7 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 	}
 
 	private void saveState() {
-		if (chunks.size() < 0)
+		if (chunks.size() < 1)
 			return;
 		StringBuffer sb = new StringBuffer();
 		sb.append(this.length + "\n");

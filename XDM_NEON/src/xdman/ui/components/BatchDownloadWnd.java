@@ -11,7 +11,9 @@ import java.awt.event.MouseEvent;
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListModel;
@@ -53,6 +55,10 @@ public class BatchDownloadWnd extends JFrame implements ActionListener {
 	DefaultComboBoxModel<DownloadQueue> queueModel;
 	JComboBox<DownloadQueue> cmbQueues;
 	JCheckBox chkStartQueue;
+	Set<String> fileExts;
+	DefaultComboBoxModel<String> filterModel;
+	JComboBox<String> cmbFilter;
+	BatchItem[] items;
 
 	public static List<String> getUrls() {
 		List<String> urls = new ArrayList<>();
@@ -73,23 +79,35 @@ public class BatchDownloadWnd extends JFrame implements ActionListener {
 		return urls;
 	}
 
-	public BatchDownloadWnd(List<String> urls) {
-		model = new DefaultListModel<>();
-		list = new JList<>(model);
+	public BatchDownloadWnd(List<HttpMetadata> mdList) {
+		fileExts = new HashSet<>();
+		items = new BatchItem[mdList.size()];
 		initUI();
-		for (int i = 0; i < urls.size(); i++) {
-			String url = urls.get(i);
+		for (int i = 0; i < mdList.size(); i++) {
+			HttpMetadata md = mdList.get(i);
 			try {
-				String file = XDMUtils.getFileName(url);
+				String file = XDMUtils.getFileName(md.getUrl());
 				BatchItem item = new BatchItem();
 				item.file = file;
 				item.selected = true;
-				item.url = url;
+				item.metadata = md;
+				items[i] = item;
 				model.addElement(item);
+				String ext = XDMUtils.getExtension(file);
+				if (!StringUtils.isNullOrEmptyOrBlank(ext)) {
+					fileExts.add(ext);
+					System.out.println("adding ext: " + ext);
+				}
 			} catch (Exception e) {
 
 			}
 		}
+
+		for (String ext : fileExts) {
+			filterModel.addElement(ext);
+		}
+		filterModel.insertElementAt("All files", 0);
+		cmbFilter.setSelectedIndex(0);
 	}
 
 	@Override
@@ -124,9 +142,7 @@ public class BatchDownloadWnd extends JFrame implements ActionListener {
 			BatchItem item = model.getElementAt(i);
 			if (item.selected) {
 				String file = item.file;
-				String url = item.url;
-				HttpMetadata metadata = new HttpMetadata();
-				metadata.setUrl(url);
+				HttpMetadata metadata = item.metadata;
 				folder = txtFile.getText();
 				XDMApp.getInstance().createDownload(file, folder, metadata, false, q == null ? "" : q.getQueueId(), 0,
 						0);
@@ -135,6 +151,10 @@ public class BatchDownloadWnd extends JFrame implements ActionListener {
 	}
 
 	private void initUI() {
+
+		model = new DefaultListModel<>();
+		list = new JList<>(model);
+
 		setUndecorated(true);
 
 		try {
@@ -184,7 +204,8 @@ public class BatchDownloadWnd extends JFrame implements ActionListener {
 		add(titlePanel);
 
 		int y = getScaledInt(55);
-		int h = getScaledInt(420) - getScaledInt(100) - getScaledInt(70);
+		int h = getScaledInt(420) - getScaledInt(100) - getScaledInt(70) - getScaledInt(20);
+		// y += getScaledInt(40);
 
 		list.setBorder(null);
 		list.setOpaque(false);
@@ -207,7 +228,46 @@ public class BatchDownloadWnd extends JFrame implements ActionListener {
 		lineLbl2.setOpaque(true);
 		add(lineLbl2);
 
-		y += getScaledInt(10);
+		y += getScaledInt(5);
+		// y += getScaledInt(15);
+
+		// LBL_FILE_TYPE
+
+		JLabel lblFileTypes = new JLabel(StringResource.get("LBL_FILE_TYPE"), JLabel.RIGHT);
+		lblFileTypes.setFont(FontResource.getNormalFont());
+		lblFileTypes.setForeground(Color.WHITE);
+		lblFileTypes.setBounds(0, y, getScaledInt(80), getScaledInt(30));
+		add(lblFileTypes);
+
+		filterModel = new DefaultComboBoxModel<>();
+
+		cmbFilter = new JComboBox<>(filterModel);
+		cmbFilter.setRenderer(new SimpleListRenderer());
+		cmbFilter.setBounds(getScaledInt(90), y + getScaledInt(5),
+				getScaledInt(305) - getScaledInt(15) + getScaledInt(50), getScaledInt(20));
+		add(cmbFilter);
+		cmbFilter.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+
+				model.removeAllElements();
+				for (BatchItem item : items) {
+					boolean add = true;
+					if (cmbFilter.getSelectedIndex() > 0) {
+						String ext = (String) cmbFilter.getSelectedItem();
+						add = item.file.endsWith(ext);
+					}
+					if (add) {
+						model.addElement(item);
+					}
+				}
+			}
+		});
+
+		y += getScaledInt(25);
+
+		// y += getScaledInt(40);
 
 		JLabel lblFile = new JLabel(StringResource.get("LBL_SAVE_IN"), JLabel.RIGHT);
 		lblFile.setFont(FontResource.getNormalFont());
@@ -309,9 +369,9 @@ public class BatchDownloadWnd extends JFrame implements ActionListener {
 }
 
 class BatchItem {
-	String url;
 	String file;
 	boolean selected;
+	HttpMetadata metadata;
 
 	@Override
 	public String toString() {

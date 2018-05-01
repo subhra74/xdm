@@ -9,7 +9,7 @@ import java.util.TimeZone;
 public class HttpDateParser {
 	private static SimpleDateFormat fmt;
 
-	public static Date parseHttpDate(String lastModified) {
+	public synchronized static Date parseHttpDate(String lastModified) {
 		if (StringUtils.isNullOrEmptyOrBlank(lastModified)) {
 			return null;
 		}

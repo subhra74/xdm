@@ -35,8 +35,10 @@ public class SimpleCheckboxRender extends JCheckBox implements ListCellRenderer<
 		} else {
 			setBackground(ColorResource.getDarkerBgColor());
 		}
-		setSelected(((BatchItem) value).selected);
-		setText(value == null ? "" : value.toString());
+		if (value != null) {
+			setSelected(((BatchItem) value).selected);
+			setText(value == null ? "" : value.toString());
+		}
 		return this;
 	}
 

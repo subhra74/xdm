@@ -588,7 +588,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 
 		y += getScaledInt(10);
 
-		h = getScaledInt(30);
+		
 		panel.setPreferredSize(new Dimension(getScaledInt(300), y + getScaledInt(50)));
 		// panel.setMinimumSize(new Dimension(300, 700));
 		return panel;

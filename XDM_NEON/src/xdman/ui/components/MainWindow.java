@@ -82,7 +82,6 @@ public class MainWindow extends XDMFrame implements ActionListener {
 	DownloadListView lv;
 	JPopupMenu popupCtx;
 	JMenu startQMenu, stopQMenu, convertMenu;
-	Container warningPanel;
 
 	JPanel toolbar;
 	UpdateNotifyPanel updateNotifyPanel;
@@ -126,9 +125,6 @@ public class MainWindow extends XDMFrame implements ActionListener {
 			if (name.startsWith("STOP")) {
 				stopQueue(name);
 			} else if (name.equals("OPT_UPDATE_FFMPEG")) {
-				if (warningPanel != null) {
-					warningPanel.setVisible(false);
-				}
 				updateFFmpeg();
 			} else if (name.startsWith("OPT_CONVERT")) {
 				convert();
@@ -792,7 +788,7 @@ public class MainWindow extends XDMFrame implements ActionListener {
 		sortStatusText[3][1] = StringResource.get("SORT_TYPE_ASC");
 		// test ui
 
-		setMenuActionListener(this);
+		//setMenuActionListener(this);
 
 		lv = new DownloadListView(panCenter);
 		filter();
@@ -1230,7 +1226,7 @@ public class MainWindow extends XDMFrame implements ActionListener {
 	private void showBatchDialog() {
 		List<String> urlList = BatchDownloadWnd.getUrls();
 		if (urlList.size() > 0) {
-			new BatchDownloadWnd(urlList).setVisible(true);
+			new BatchDownloadWnd(XDMUtils.toMetadata(urlList)).setVisible(true);
 		} else {
 			MessageBox.show(this, StringResource.get("MENU_BATCH_DOWNLOAD"),
 					StringResource.get("LBL_BATCH_EMPTY_CLIPBOARD"), MessageBox.OK_OPTION, MessageBox.OK);

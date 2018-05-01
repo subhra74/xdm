@@ -97,6 +97,7 @@ public class DashDownloader extends Downloader implements SegmentListener, Media
 		Segment c = getById(id);
 		if (c == null) {
 			Logger.log(id + " is no longer valid chunk");
+			return;
 		}
 		// int code = dc.getCode();
 		// Logger.log(id + " code: " + code + " len: " + c.getLength());
@@ -119,10 +120,10 @@ public class DashDownloader extends Downloader implements SegmentListener, Media
 			System.out.println("this.len1: " + this.len1 + " this.len2: " + this.len2);
 		}
 
-		if (c.getTag().equals("T1") && this.len1 > 0) {
+		if ("T1".equals(c.getTag()) && this.len1 > 0) {
 			createChunk();
 		}
-		if (c.getTag().equals("T2") && this.len2 > 0) {
+		if ("T2".equals(c.getTag()) && this.len2 > 0) {
 			createChunk();
 		}
 	}
@@ -329,7 +330,7 @@ public class DashDownloader extends Downloader implements SegmentListener, Media
 					long timeSpend = now - prevTime;
 					if (timeSpend > 0) {
 						float rate = ((float) diff / timeSpend) * 1000;
-						//downloadSpeed = rate;
+						// downloadSpeed = rate;
 						this.eta = FormatUtilities.getETA(length - downloaded, rate);
 						if (this.eta == null) {
 							this.eta = "---";
@@ -543,7 +544,7 @@ public class DashDownloader extends Downloader implements SegmentListener, Media
 	}
 
 	private void saveState() {
-		if (chunks.size() < 0)
+		if (chunks.size() < 1)
 			return;
 		StringBuffer sb = new StringBuffer();
 		sb.append(this.length + "\n");

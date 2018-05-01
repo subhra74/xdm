@@ -193,9 +193,12 @@ public abstract class Downloader implements SegmentListener {
 	public void cleanup() {
 		File dir = new File(folder);
 		File[] files = dir.listFiles();
-		for (int i = 0; i < files.length; i++) {
-			Logger.log("Delete: " + files[i] + " [" + files[i].length() + "] " + files[i].delete());
+		if (files != null) {
+			for (int i = 0; i < files.length; i++) {
+				Logger.log("Delete: " + files[i] + " [" + files[i].length() + "] " + files[i].delete());
+			}
 		}
+
 		new File(folder).delete();
 	}
 
@@ -276,9 +279,9 @@ public abstract class Downloader implements SegmentListener {
 				System.out.println("setting date");
 				Date lastModified = HttpDateParser.parseHttpDate(this.lastModified);
 				if (lastModified != null) {
-					System.out.println("setting date file "+lastModified);
-					boolean val=outFile.setLastModified(lastModified.getTime());
-					System.out.println("rename: "+val+new Date(outFile.lastModified()));
+					System.out.println("setting date file " + lastModified);
+					boolean val = outFile.setLastModified(lastModified.getTime());
+					System.out.println("rename: " + val + new Date(outFile.lastModified()));
 				}
 			} catch (Exception e) {
 				Logger.log(e);

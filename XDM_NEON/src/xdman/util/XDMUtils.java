@@ -28,6 +28,7 @@ import xdman.Config;
 import xdman.Main;
 import xdman.XDMApp;
 import xdman.XDMConstants;
+import xdman.downloaders.metadata.HttpMetadata;
 
 public class XDMUtils {
 //	private static Map<Integer, String> categoryFolderMap;
@@ -230,7 +231,7 @@ public class XDMUtils {
 
 	public static final int detectOS() {
 		String os = System.getProperty("os.name").toLowerCase(Locale.ENGLISH);
-		if (os.contains("mac") || os.contains("darwin") || os.contains("os x") || os.contains("os x")) {
+		if (os.contains("mac") || os.contains("darwin") || os.contains("os x") ) {
 			return MAC;
 		} else if (os.contains("linux")) {
 			return LINUX;
@@ -498,6 +499,16 @@ public class XDMUtils {
 			}
 		}
 		return screenType;
+	}
+	
+	public static List<HttpMetadata> toMetadata(List<String> urls) {
+		List<HttpMetadata> list = new ArrayList<>();
+		for (String url : urls) {
+			HttpMetadata md = new HttpMetadata();
+			md.setUrl(url);
+			list.add(md);
+		}
+		return list;
 	}
 
 	private static int screenType = -1;

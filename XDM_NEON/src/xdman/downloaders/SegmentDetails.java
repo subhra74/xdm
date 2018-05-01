@@ -14,7 +14,7 @@ public class SegmentDetails {
 		return segInfoList;
 	}
 
-	public final long getChunkCount() {
+	public synchronized final long getChunkCount() {
 		return chunkCount;
 	}
 
