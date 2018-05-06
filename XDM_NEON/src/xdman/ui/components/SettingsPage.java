@@ -588,7 +588,6 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 
 		y += getScaledInt(10);
 
-		
 		panel.setPreferredSize(new Dimension(getScaledInt(300), y + getScaledInt(50)));
 		// panel.setMinimumSize(new Dimension(300, 700));
 		return panel;
@@ -949,7 +948,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		// cmbDupAction.setSelectedIndex(config.getDuplicateAction());
 		txtTempFolder.setText(config.getTemporaryFolder());
 		cmbCategory.setSelectedIndex(0);
-		txtDefFolder.setText(config.getCategoryOther());
+		txtDefFolder.setText(config.isForceSingleFolder() ? config.getDownloadFolder() : config.getCategoryOther());
 		chkNoTransparency.setSelected(config.isNoTransparency());
 		chkForceFolder.setSelected(config.isForceSingleFolder());
 		cmbCategory.setEnabled(!config.isForceSingleFolder());
