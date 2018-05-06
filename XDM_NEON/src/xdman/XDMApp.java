@@ -46,6 +46,7 @@ import xdman.ui.components.NewDownloadWindow;
 import xdman.ui.components.TrayHandler;
 import xdman.ui.components.VideoDownloadWindow;
 import xdman.ui.components.VideoPopup;
+import xdman.ui.components.VideoPopupItem;
 import xdman.ui.laf.XDMLookAndFeel;
 import xdman.ui.res.StringResource;
 import xdman.util.FFmpegDownloader;
@@ -84,6 +85,8 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 	private int pendingNotification = -1; // if main window in not created
 											// notification is stored in this
 											// variable
+
+	private ArrayList<VideoPopupItem> itemList = new ArrayList<>();
 
 	public static void instanceStarted() {
 		Logger.log("instance starting...");
@@ -1304,6 +1307,10 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 
 	public void fileNameChanged(String id) {
 		notifyListeners(id);
+	}
+
+	public ArrayList<VideoPopupItem> getVideoItemsList() {
+		return itemList;
 	}
 
 }

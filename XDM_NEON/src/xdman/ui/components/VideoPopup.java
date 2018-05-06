@@ -42,6 +42,7 @@ import xdman.ui.res.StringResource;
 import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
+
 public class VideoPopup extends JDialog implements ActionListener, Comparator<VideoPopupItem> {
 
 	/**
@@ -94,7 +95,7 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 	private void arrangeList() {
 		videoItems.clear();
 		ArrayList<VideoPopupItem> itemsCopy = new ArrayList<VideoPopupItem>();
-		itemsCopy.addAll(itemList);
+		itemsCopy.addAll(XDMApp.getInstance().getVideoItemsList());
 		Collections.sort(itemsCopy, this);
 		for (VideoPopupItem item : itemsCopy) {
 			videoItems.addElement(item);
@@ -102,13 +103,13 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 	}
 
 	private VideoPopup() {
-		itemList = new ArrayList<VideoPopupItem>();
 		videoItems = new DefaultListModel<VideoPopupItem>();
 		init();
 		Dimension d = Toolkit.getDefaultToolkit().getScreenSize();
 
 		Insets scnMax = Toolkit.getDefaultToolkit().getScreenInsets(this.getGraphicsConfiguration());
-		this.setLocation(d.width - getWidth() - getScaledInt(50), d.height - scnMax.bottom - getHeight() - getScaledInt(30));
+		this.setLocation(d.width - getWidth() - getScaledInt(50),
+				d.height - scnMax.bottom - getHeight() - getScaledInt(30));
 	}
 
 	private int initialY;
@@ -119,7 +120,7 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 	private JPanel itemPanel;
 	private boolean upward = false;
 	private DefaultListModel<VideoPopupItem> videoItems;
-	private ArrayList<VideoPopupItem> itemList;
+
 	private JList<VideoPopupItem> itemListBox;
 	private int mHoveredJListIndex = -1;
 	private Box menuBox;
@@ -264,7 +265,7 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		String name = ((JComponent) e.getSource()).getName();
-		for (VideoPopupItem item : itemList) {
+		for (VideoPopupItem item : XDMApp.getInstance().getVideoItemsList()) {
 			if (name.equals(item.getMetadata().getId())) {
 				collapse();
 				HttpMetadata md = item.getMetadata().derive();
@@ -275,7 +276,7 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 		if (name.equals("CLOSE")) {
 			collapse();
 			menuBox.removeAll();
-			itemList.clear();
+			XDMApp.getInstance().getVideoItemsList().clear();
 			dispose();
 			_this = null;
 		} else if (name.equals("COLAPSE")) {
@@ -363,8 +364,8 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 		if (item.getMetadata() == null) {
 			return false;
 		}
-		for (int i = 0; i < itemList.size(); i++) {
-			VideoPopupItem p = itemList.get(i);
+		for (int i = 0; i < XDMApp.getInstance().getVideoItemsList().size(); i++) {
+			VideoPopupItem p = XDMApp.getInstance().getVideoItemsList().get(i);
 			HttpMetadata m1 = item.getMetadata();
 			HttpMetadata m2 = p.getMetadata();
 			if (m1.getType() == m2.getType()) {
@@ -382,7 +383,7 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 			}
 		}
 
-		itemList.add(item);
+		XDMApp.getInstance().getVideoItemsList().add(item);
 		return true;
 	}
 
@@ -392,8 +393,8 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 		String[] arr = getIdAndLen(url);
 		String id = arr[0];
 		String len = arr[1];
-		for (int i = 0; i < itemList.size(); i++) {
-			VideoPopupItem p = itemList.get(i);
+		for (int i = 0; i < XDMApp.getInstance().getVideoItemsList().size(); i++) {
+			VideoPopupItem p = XDMApp.getInstance().getVideoItemsList().get(i);
 			HttpMetadata m2 = p.getMetadata();
 			if (m2 instanceof DashMetadata) {
 				DashMetadata dm1 = (DashMetadata) m2;

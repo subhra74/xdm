@@ -9,6 +9,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -25,6 +26,8 @@ import xdman.network.http.HttpHeader;
 import xdman.network.http.JavaHttpClient;
 import xdman.preview.FFmpegStream;
 import xdman.preview.PreviewStream;
+import xdman.ui.components.VideoPopupItem;
+import xdman.util.Base64;
 import xdman.util.FormatUtilities;
 import xdman.util.Logger;
 import xdman.util.StringUtils;
@@ -73,6 +76,21 @@ public class MonitoringSession implements Runnable {
 				metadata.setSize(data.getContentLength());
 				String file = data.getFile();
 				XDMApp.getInstance().addDownload(metadata, file);
+			}
+		} finally {
+			setResponseOk(res);
+		}
+	}
+
+	private void onVideoRetrieve(Request request, Response res) throws UnsupportedEncodingException {
+		try {
+			String id = new String(request.getBody(), "utf-8");
+			for (VideoPopupItem item : XDMApp.getInstance().getVideoItemsList()) {
+				if (id.equals(item.getMetadata().getId())) {
+					HttpMetadata md = item.getMetadata().derive();
+					Logger.log("dash metdata ? " + (md instanceof DashMetadata));
+					XDMApp.getInstance().addVideo(md, item.getFile());
+				}
 			}
 		} finally {
 			setResponseOk(res);
@@ -170,7 +188,19 @@ public class MonitoringSession implements Runnable {
 		setResponseOk(res);
 	}
 
-	private void onSync(Request request, Response res) {
+	private String encode(String str) {
+		StringBuilder sb = new StringBuilder();
+		int count = 0;
+		for (char ch : str.toCharArray()) {
+			if (count > 0)
+				sb.append(",");
+			sb.append((int) ch);
+			count++;
+		}
+		return sb.toString();
+	}
+
+	private void onSync(Request request, Response res) throws UnsupportedEncodingException {
 		StringBuffer json = new StringBuffer();
 		json.append("{\n\"enabled\": ");
 		json.append(Config.getInstance().isBrowserMonitoringEnabled());
@@ -185,8 +215,25 @@ public class MonitoringSession implements Runnable {
 		json.append("],");
 		json.append("\n\"vidExts\": [");
 		appendArray(Config.getInstance().getVidExts(), json);
+		json.append("],");
+		StringBuilder sb = new StringBuilder();
+		int count = 0;
+		for (VideoPopupItem item : XDMApp.getInstance().getVideoItemsList()) {
+			String id = item.getMetadata().getId();
+			String text = encode(item.getFile());
+			String info = item.getInfo();
+			if (count > 0)
+				sb.append(",");
+			sb.append(String.format("{\"id\": \"%s\", \"text\": \"%s\",\"info\":\"%s\"}", id, text,
+					info));
+			count++;
+		}
+		json.append("\n\"vidList\": [");
+		json.append(sb.toString());
 		json.append("]");
 		json.append("\n}");
+
+		//System.out.println(json);
 
 		byte[] b = json.toString().getBytes();
 
@@ -262,8 +309,22 @@ public class MonitoringSession implements Runnable {
 		} else if (verb.startsWith("/links")) {
 			Logger.log("sending 204...");
 			onLinksReceived(request, response);
+		} else if (verb.startsWith("/item")) {
+			Logger.log("sending 204...");
+			onVideoRetrieve(request, response);
+		} else if (verb.startsWith("/clear")) {
+			Logger.log("sending 204...");
+			onVideoClear(request, response);
 		} else {
 			throw new IOException("invalid verb " + verb);
+		}
+	}
+
+	private void onVideoClear(Request request, Response response) {
+		try {
+			XDMApp.getInstance().getVideoItemsList().clear();
+		} finally {
+			setResponseOk(response);
 		}
 	}
 
