@@ -154,6 +154,7 @@ public class RefreshUrlPage extends Page implements LinkRefreshCallback {
 						new URL(txtUrl.getText());
 						if (md != null) {
 							md.setUrl(txtUrl.getText());
+							md.save();
 						}
 					} catch (Exception ex) {
 						MessageBox.show(getParentFrame(), StringResource.get("MSG_REF_LINK_CONFIRM"),
