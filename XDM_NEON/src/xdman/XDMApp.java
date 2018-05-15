@@ -629,7 +629,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 		return downloads.get(id);
 	}
 
-	public ArrayList<String> getDownloadList(int category, int state, String searchText) {
+	public ArrayList<String> getDownloadList(int category, int state, String searchText, String queueId) {
 		ArrayList<String> idList = new ArrayList<String>();
 		Iterator<String> keyIterator = downloads.keySet().iterator();
 		while (keyIterator.hasNext()) {
@@ -638,11 +638,23 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 			if (state == XDMConstants.ALL || state == (ent.getState() == XDMConstants.FINISHED ? XDMConstants.FINISHED
 					: XDMConstants.UNFINISHED)) {
 				if (category == XDMConstants.ALL || category == ent.getCategory()) {
+					boolean matched = false;
+					if (!"ALL".equals(queueId)) {
+						if (queueId != null) {
+							if (!queueId.equals(ent.getQueueId())) {
+								continue;
+							}
+						}
+					}
+
 					if (searchText != null && searchText.length() > 0) {
 						if (ent.getFile().contains(searchText)) {
-							idList.add(ent.getId());
+							matched = true;
 						}
 					} else {
+						matched = true;
+					}
+					if (matched) {
 						idList.add(ent.getId());
 					}
 				}

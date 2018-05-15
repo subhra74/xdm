@@ -45,7 +45,8 @@ public class DownloadTableModel extends AbstractTableModel implements ListChange
 	public void listChanged() {
 		Logger.log("List changed");
 		idList = XDMApp.getInstance().getDownloadList(Config.getInstance().getCategoryFilter(),
-				Config.getInstance().getStateFilter(), Config.getInstance().getSearchText());
+				Config.getInstance().getStateFilter(), Config.getInstance().getSearchText(),
+				Config.getInstance().getQueueIdFilter());
 		sort();
 		refreshIdMap();
 		fireTableDataChanged();

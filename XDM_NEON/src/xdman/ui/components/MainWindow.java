@@ -3,7 +3,6 @@ package xdman.ui.components;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.Insets;
@@ -27,6 +26,7 @@ import java.util.Set;
 import java.util.Vector;
 
 import javax.swing.Box;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -40,6 +40,7 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.ToolTipManager;
 import javax.swing.border.EmptyBorder;
@@ -51,6 +52,7 @@ import xdman.Config;
 import xdman.DownloadEntry;
 import xdman.DownloadQueue;
 import xdman.MonitoringListener;
+import xdman.QueueManager;
 import xdman.XDMApp;
 import xdman.XDMConstants;
 import xdman.downloaders.metadata.DashMetadata;
@@ -65,6 +67,7 @@ import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 import xdman.util.FFmpegDownloader;
 import xdman.util.Logger;
+import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
 
 import static xdman.util.XDMUtils.getScaledInt;
@@ -74,6 +77,7 @@ public class MainWindow extends XDMFrame implements ActionListener {
 
 	CustomButton btnTabArr[];
 	CustomButton btnSort;
+	CustomButton btnQueue;
 	JTextField txtSearch;
 	JMenuItem[] sortItems;
 	String[][] sortStatusText;
@@ -114,6 +118,34 @@ public class MainWindow extends XDMFrame implements ActionListener {
 		super.registerTitlePanel(panel);
 	}
 
+	private String getQueueName(String str) {
+		if (str == null) {
+			return "ALL";
+		}
+		int index = str.indexOf(":");
+		if (index > 0) {
+			return str.substring(index + 1);
+		}
+		return "ALL";
+	}
+
+	private void filterQueue(String name, Config config) {
+		String qName = getQueueName(name);
+		config.setQueueIdFilter(qName);
+		System.out.println("filter queue name: " + qName);
+
+		filter();
+		String text = StringResource.get("LBL_ALL_QUEUE");
+		if (!qName.equals("ALL")) {
+			if (StringUtils.isNullOrEmptyOrBlank(qName)) {
+				text = QueueManager.getInstance().getDefaultQueue().getName();
+			} else {
+				text = QueueManager.getInstance().getQueueById(qName).getName();
+			}
+		}
+		btnQueue.setText(text);
+	}
+
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		Config config = Config.getInstance();
@@ -121,6 +153,9 @@ public class MainWindow extends XDMFrame implements ActionListener {
 			String name = ((JComponent) e.getSource()).getName();
 			if (name == null) {
 				return;
+			}
+			if (name.startsWith("Q_VIEW:")) {
+				filterQueue(name, config);
 			}
 			if (name.startsWith("STOP")) {
 				stopQueue(name);
@@ -574,14 +609,30 @@ public class MainWindow extends XDMFrame implements ActionListener {
 		return lblCat;
 	}
 
-	private Component createSearchPane() {
+	private CustomButton createDropdownBtn(String textKey) {
+		CustomButton btn = new CustomButton(StringResource.get(textKey));
+		btn.setBackground(ColorResource.getActiveTabColor());
+		btn.setBorderPainted(false);
+		btn.setFocusPainted(false);
+		btn.setContentAreaFilled(false);
+		btn.setIcon(ImageResource.get("down.png"));
+		btn.setVerticalTextPosition(SwingConstants.CENTER);
+		btn.setHorizontalTextPosition(SwingConstants.LEFT);
+		btn.setFont(FontResource.getNormalFont());
+		return btn;
+	}
 
-		btnSort = new CustomButton("Newest on top");
-		btnSort.setBackground(ColorResource.getActiveTabColor());
-		btnSort.setBorderPainted(false);
-		btnSort.setFocusPainted(false);
-		btnSort.setContentAreaFilled(false);
-		btnSort.setFont(FontResource.getNormalFont());
+	private Component createSearchPane() {
+		btnSort = createDropdownBtn("SORT_DATE_DESC");
+
+		// btnSort = new CustomButton(StringResource.get("SORT_DATE_DESC"));
+		// btnSort.setBackground(ColorResource.getActiveTabColor());
+		// btnSort.setBorderPainted(false);
+		// btnSort.setFocusPainted(false);
+		// btnSort.setContentAreaFilled(false);
+		// btnSort.setFont(FontResource.getNormalFont());
+
+		btnQueue = createDropdownBtn("LBL_ALL_QUEUE");
 
 		txtSearch = new JTextField();
 		txtSearch.setBackground(Color.WHITE);
@@ -617,6 +668,8 @@ public class MainWindow extends XDMFrame implements ActionListener {
 		Box bp = Box.createHorizontalBox();
 		bp.setOpaque(false);
 		bp.setBorder(new EmptyBorder(scale(3), scale(3), scale(3), scale(10)));
+		bp.add(Box.createHorizontalStrut(10));
+		bp.add(btnQueue);
 		bp.add(Box.createHorizontalGlue());
 		bp.add(btnSort);
 		bp.add(Box.createHorizontalStrut(10));
@@ -659,7 +712,34 @@ public class MainWindow extends XDMFrame implements ActionListener {
 			}
 		});
 
+		btnQueue.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				prepeareQueuePopupButton();
+			}
+		});
+
 		return bp;
+	}
+
+	private void prepeareQueuePopupButton() {
+		final JPopupMenu popQ = new JPopupMenu();
+		ArrayList<DownloadQueue> qlist = QueueManager.getInstance().getQueueList();
+		JMenuItem[] qItems = new JMenuItem[qlist.size() + 1];
+		qItems[0] = new JMenuItem(StringResource.get("LBL_ALL_QUEUE"));
+		qItems[0].setName("Q_VIEW:ALL");
+		popQ.add(qItems[0]);
+		qItems[0].addActionListener(this);
+		for (int i = 0; i < qlist.size(); i++) {
+			qItems[i + 1] = new JMenuItem(qlist.get(i).getName());
+			qItems[i + 1].setName("Q_VIEW:" + qlist.get(i).getQueueId());
+			qItems[i + 1].addActionListener(this);
+			popQ.add(qItems[i + 1]);
+
+		}
+
+		popQ.setInvoker(btnQueue);
+		popQ.show(btnQueue, 0, btnQueue.getHeight());
 	}
 
 	private void updateSortMenu() {
@@ -788,7 +868,7 @@ public class MainWindow extends XDMFrame implements ActionListener {
 		sortStatusText[3][1] = StringResource.get("SORT_TYPE_ASC");
 		// test ui
 
-		//setMenuActionListener(this);
+		// setMenuActionListener(this);
 
 		lv = new DownloadListView(panCenter);
 		filter();

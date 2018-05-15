@@ -341,3 +341,4 @@ LBL_BATCH_FILE2=Second file
 LBL_BATCH_FILEN=Last file
 LBL_SHOW_PROGRESS=Show progress
 LBL_FILE_TYPE=File type
+LBL_ALL_QUEUE=All queues

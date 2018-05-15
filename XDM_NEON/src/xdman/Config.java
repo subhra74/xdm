@@ -54,6 +54,7 @@ public class Config {
 	private boolean hideTray;
 	private String lastFolder;
 	private List<MonitoringListener> listeners;
+	private String queueIdFilter;
 
 	public void addConfigListener(MonitoringListener listener) {
 		listeners.add(listener);
@@ -855,5 +856,13 @@ public class Config {
 
 	public void setLastFolder(String lastFolder) {
 		this.lastFolder = lastFolder;
+	}
+
+	public String getQueueIdFilter() {
+		return queueIdFilter;
+	}
+
+	public void setQueueIdFilter(String queueIdFilter) {
+		this.queueIdFilter = queueIdFilter;
 	}
 }
