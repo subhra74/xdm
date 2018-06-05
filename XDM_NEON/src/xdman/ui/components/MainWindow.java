@@ -730,13 +730,28 @@ public class MainWindow extends XDMFrame implements ActionListener {
 		qItems[0].setName("Q_VIEW:ALL");
 		popQ.add(qItems[0]);
 		qItems[0].addActionListener(this);
+		int index = -1;
 		for (int i = 0; i < qlist.size(); i++) {
+			String qId = qlist.get(i).getQueueId();
 			qItems[i + 1] = new JMenuItem(qlist.get(i).getName());
-			qItems[i + 1].setName("Q_VIEW:" + qlist.get(i).getQueueId());
+			qItems[i + 1].setName("Q_VIEW:" + qId);
 			qItems[i + 1].addActionListener(this);
 			popQ.add(qItems[i + 1]);
-
+			System.out.println(qId + " = " + Config.getInstance().getQueueIdFilter());
+			String selectedQ = Config.getInstance().getQueueIdFilter();
+			if (index == -1) {
+				if (selectedQ != null && selectedQ.equals(qId)) {
+					index = i + 1;
+				}
+			}
 		}
+		
+		if(index==-1) {
+			index=0;
+		}
+		
+		qItems[index].setFont(FontResource.getBoldFont());
+		qItems[index].setForeground(ColorResource.getLightFontColor());
 
 		popQ.setInvoker(btnQueue);
 		popQ.show(btnQueue, 0, btnQueue.getHeight());

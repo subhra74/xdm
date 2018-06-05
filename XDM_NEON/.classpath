@@ -2,8 +2,8 @@
 <classpath>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry exported="true" kind="lib" path="/home/subhro/Documents/lib/xz-1.6.jar"/>
-	<classpathentry exported="true" kind="lib" path="/home/subhro/Documents/lib/json-simple-1.1.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="/home/subhro/Documents/lib/commons-net-3.6.jar"/>
+	<classpathentry kind="lib" path="C:/Users/subhro/lib/commons-net-3.6.jar"/>
+	<classpathentry kind="lib" path="C:/Users/subhro/lib/json-simple-1.1.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/subhro/lib/xz-1.8.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
