@@ -725,6 +725,7 @@ public class MainWindow extends XDMFrame implements ActionListener {
 	private void prepeareQueuePopupButton() {
 		final JPopupMenu popQ = new JPopupMenu();
 		ArrayList<DownloadQueue> qlist = QueueManager.getInstance().getQueueList();
+
 		JMenuItem[] qItems = new JMenuItem[qlist.size() + 1];
 		qItems[0] = new JMenuItem(StringResource.get("LBL_ALL_QUEUE"));
 		qItems[0].setName("Q_VIEW:ALL");
@@ -733,11 +734,12 @@ public class MainWindow extends XDMFrame implements ActionListener {
 		int index = -1;
 		for (int i = 0; i < qlist.size(); i++) {
 			String qId = qlist.get(i).getQueueId();
-			qItems[i + 1] = new JMenuItem(qlist.get(i).getName());
+			DownloadQueue q = qlist.get(i);
+
+			qItems[i + 1] = new JMenuItem(q.getName() + (q.isRunning() ? "*" : ""));
 			qItems[i + 1].setName("Q_VIEW:" + qId);
 			qItems[i + 1].addActionListener(this);
 			popQ.add(qItems[i + 1]);
-			System.out.println(qId + " = " + Config.getInstance().getQueueIdFilter());
 			String selectedQ = Config.getInstance().getQueueIdFilter();
 			if (index == -1) {
 				if (selectedQ != null && selectedQ.equals(qId)) {
@@ -745,11 +747,11 @@ public class MainWindow extends XDMFrame implements ActionListener {
 				}
 			}
 		}
-		
-		if(index==-1) {
-			index=0;
+
+		if (index == -1) {
+			index = 0;
 		}
-		
+
 		qItems[index].setFont(FontResource.getBoldFont());
 		qItems[index].setForeground(ColorResource.getLightFontColor());
 
