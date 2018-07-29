@@ -2,10 +2,14 @@ package xdman.monitoring;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import xdman.network.http.HeaderCollection;
+import xdman.util.Logger;
 import xdman.util.NetUtils;
+import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
 
 public class ParsedHookData {
@@ -29,6 +33,7 @@ public class ParsedHookData {
 
 	public static ParsedHookData parse(byte[] b) throws UnsupportedEncodingException {
 		ParsedHookData data = new ParsedHookData();
+		Map<String, String> cookies = new HashMap<>();
 		data.requestHeaders = new HeaderCollection();
 		data.responseHeaders = new HeaderCollection();
 		String strBuf = new String(b, "utf-8");
@@ -58,6 +63,9 @@ public class ParsedHookData {
 					if (!isBlockedHeader(headerName)) {
 						data.requestHeaders.addHeader(headerName, headerValue);
 					}
+					if (headerName.equals("cookie")) {
+						parseCookies(headerValue, cookies);
+					}
 					System.out.println(ln);
 				}
 			} else if (key.equals("res")) {
@@ -72,8 +80,9 @@ public class ParsedHookData {
 				if (index > 0) {
 					String cookieName = val.substring(0, index).trim();
 					String cookieValue = val.substring(index + 1).trim();
-					//System.out.println("********Adding cookie " + val);
-					data.requestHeaders.addHeader("cookie", cookieName + "=" + cookieValue);
+					cookies.put(cookieName, cookieValue);
+					// System.out.println("********Adding cookie " + val);
+
 				}
 			}
 		}
@@ -90,11 +99,30 @@ public class ParsedHookData {
 			}
 		}
 
+		for (String cookieKeys : cookies.keySet()) {
+			data.requestHeaders.addHeader("Cookie", cookieKeys + "=" + cookies.get(cookieKeys));
+		}
+
 		try {
 			data.setExt(XDMUtils.getExtension(XDMUtils.getFileName(data.getUrl())));
 		} catch (Exception e) {
 		}
 		return data;
+	}
+
+	private static void parseCookies(String value, Map<String, String> cookieMap) {
+		if (StringUtils.isNullOrEmptyOrBlank(value)) {
+			return;
+		}
+		String arr[] = value.split(";");
+		for (String str : arr) {
+			try {
+				String[] s = str.trim().split("=");
+				cookieMap.put(s[0].trim(), s[1].trim());
+			} catch (Exception e) {
+				Logger.log(e);
+			}
+		}
 	}
 
 	private static boolean isBlockedHeader(String name) {
@@ -107,7 +135,7 @@ public class ParsedHookData {
 	}
 
 	private static String blockedHeaders[] = { "accept", "if", "authorization", "proxy", "connection", "expect", "TE",
-			"upgrade", "range" };
+			"upgrade", "range", "cookie" };
 
 	private String url, file;
 	private HeaderCollection requestHeaders;
