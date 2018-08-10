@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>xdman.sourceforge.net</groupId>
     <artifactId>xdm</artifactId>
-    <packaging>bundle</packaging>
+    <packaging>jar</packaging>
     <name>Xtreme Download Manager</name>
     <version>2018.08.10</version>
     <description>Powerful download accelerator and video downloader</description>
@@ -66,12 +66,6 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <version>2.3.6</version>
-                <extensions>true</extensions>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.1</version>
@@ -93,11 +87,23 @@
                     </archive>
                     <finalName>xdman</finalName>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>jar</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
                 <version>2.1.2</version>
+                <configuration>
+                    <finalName>xdman</finalName>
+                </configuration>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -110,36 +116,5 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>release-sign-artifacts</id>
-            <activation>
-                <property>
-                    <name>performRelease</name>
-                    <value>true</value>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <version>1.6</version>
-                        <executions>
-                            <execution>
-                                <id>sign-artifacts</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
-
 </project>
 
