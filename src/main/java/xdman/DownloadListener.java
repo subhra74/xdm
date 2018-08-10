@@ -1,17 +1,17 @@
 package xdman;
 
 public interface DownloadListener {
-	public void downloadFinished(String id);
+	void downloadFinished(String id);
 
-	public void downloadFailed(String id);
+	void downloadFailed(String id);
 
-	public void downloadStopped(String id);
+	void downloadStopped(String id);
 
-	public void downloadConfirmed(String id);
+	void downloadConfirmed(String id);
 
-	public void downloadUpdated(String id);
+	void downloadUpdated(String id);
 
-	public String getOutputFolder(String id);
+	String getOutputFolder(String id);
 
-	public String getOutputFile(String id, boolean update);
+	String getOutputFile(String id, boolean update);
 }

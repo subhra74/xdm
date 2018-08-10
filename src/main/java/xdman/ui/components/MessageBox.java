@@ -311,7 +311,7 @@ public class MessageBox extends JPanel implements ActionListener {
 	}
 
 	public static boolean isChecked() {
-		return msgBox != null ? msgBox.chkOption.isSelected() : false;
+		return msgBox != null && msgBox.chkOption.isSelected();
 	}
 
 }

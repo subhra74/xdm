@@ -58,15 +58,13 @@ public class HttpContext {
 				TrustManager[] trustAllCerts = new TrustManager[] { new X509ExtendedTrustManager() {
 
 					@Override
-					public void checkClientTrusted(X509Certificate[] chain, String authType)
-							throws CertificateException {
+					public void checkClientTrusted(X509Certificate[] chain, String authType) {
 						// TODO Auto-generated method stub
 
 					}
 
 					@Override
-					public void checkServerTrusted(X509Certificate[] chain, String authType)
-							throws CertificateException {
+					public void checkServerTrusted(X509Certificate[] chain, String authType) {
 						// TODO Auto-generated method stub
 
 					}
@@ -78,29 +76,25 @@ public class HttpContext {
 					}
 
 					@Override
-					public void checkClientTrusted(X509Certificate[] chain, String authType, Socket socket)
-							throws CertificateException {
+					public void checkClientTrusted(X509Certificate[] chain, String authType, Socket socket) {
 						// TODO Auto-generated method stub
 
 					}
 
 					@Override
-					public void checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine engine)
-							throws CertificateException {
+					public void checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine engine) {
 						// TODO Auto-generated method stub
 
 					}
 
 					@Override
-					public void checkServerTrusted(X509Certificate[] chain, String authType, Socket socket)
-							throws CertificateException {
+					public void checkServerTrusted(X509Certificate[] chain, String authType, Socket socket) {
 						// TODO Auto-generated method stub
 
 					}
 
 					@Override
-					public void checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine engine)
-							throws CertificateException {
+					public void checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine engine) {
 						// TODO Auto-generated method stub
 
 					}

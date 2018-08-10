@@ -26,7 +26,7 @@ public class WinUtils {
 		}
 	}
 
-	public static void openFolder(String folder, String file) throws FileNotFoundException {
+	public static void openFolder(String folder, String file) {
 		if (file == null) {
 			openFolder2(folder);
 			return;

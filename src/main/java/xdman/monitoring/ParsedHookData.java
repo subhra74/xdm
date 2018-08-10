@@ -1,6 +1,7 @@
 package xdman.monitoring;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,7 +23,7 @@ public class ParsedHookData {
 
 	public static List<ParsedHookData> parseLinks(byte[] b) throws UnsupportedEncodingException {
 		List<ParsedHookData> list = new ArrayList<>();
-		String strBuf = new String(b, "utf-8");
+		String strBuf = new String(b, StandardCharsets.UTF_8);
 		String[] arr = strBuf.split("\r\n\r\n");
 		for (int i = 0; i < arr.length; i++) {
 			String str = arr[i];
@@ -36,7 +37,7 @@ public class ParsedHookData {
 		Map<String, String> cookies = new HashMap<>();
 		data.requestHeaders = new HeaderCollection();
 		data.responseHeaders = new HeaderCollection();
-		String strBuf = new String(b, "utf-8");
+		String strBuf = new String(b, StandardCharsets.UTF_8);
 		String[] arr = strBuf.split("\r\n");
 		for (int i = 0; i < arr.length; i++) {
 			String str = arr[i];

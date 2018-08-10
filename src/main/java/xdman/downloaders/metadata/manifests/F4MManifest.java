@@ -492,7 +492,7 @@ public class F4MManifest {
 
 	private void parseAsrtBox(byte[] asrt, int pos) {
 		System.out.println("parsing asrt");
-		int version = readByte(asrt, (int) pos);
+		int version = readByte(asrt, pos);
 		int flags = (int) readInt24(asrt, pos + 1);
 		int qualityEntryCount = readByte(asrt, pos + 4);
 		segTable.clear();

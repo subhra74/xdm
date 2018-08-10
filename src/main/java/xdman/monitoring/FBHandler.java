@@ -167,7 +167,7 @@ public class FBHandler {
 				}
 				break;
 			}
-			buf.append(json.substring(pos, index));
+			buf.append(json, pos, index);
 			pos = index;
 			String code = json.substring(pos + 2, pos + 2 + 4);
 			int char_code = Integer.parseInt(code, 16);

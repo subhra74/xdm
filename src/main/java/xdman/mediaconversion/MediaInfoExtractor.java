@@ -3,6 +3,7 @@ package xdman.mediaconversion;
 import java.awt.Image;
 import java.io.File;
 import java.io.RandomAccessFile;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
@@ -91,7 +92,7 @@ public class MediaInfoExtractor {
 			MediaFormatInfo info = new MediaFormatInfo();
 			info.thumbnail = new ImageIcon(tmpImgFile.getAbsolutePath());
 			byte[] array = Files.readAllBytes(tmpOutput.toPath());
-			String str = new String(array, "utf-8");
+			String str = new String(array, StandardCharsets.UTF_8);
 			System.out.println(str);
 			Matcher matcher1 = pattern1.matcher(str);
 			Matcher matcher2 = pattern2.matcher(str);

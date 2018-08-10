@@ -1,7 +1,7 @@
 package xdman;
 
 public interface ListChangeListener {
-	public void listChanged();
+	void listChanged();
 
-	public void listItemUpdated(String id);
+	void listItemUpdated(String id);
 }

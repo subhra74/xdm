@@ -55,7 +55,7 @@ public class XDMHttpClient extends HttpClient {
 	}
 
 	@Override
-	public InputStream getInputStream() throws IOException {
+	public InputStream getInputStream() {
 		return in;
 	}
 
@@ -141,7 +141,7 @@ public class XDMHttpClient extends HttpClient {
 	}
 
 	@Override
-	public long getContentLength() throws IOException {
+	public long getContentLength() {
 		return length;
 	}
 

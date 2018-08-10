@@ -3,25 +3,25 @@ package xdman.downloaders;
 import java.io.IOException;
 
 public interface SegmentListener {
-	public void chunkInitiated(String id) throws IOException;
+	void chunkInitiated(String id) throws IOException;
 
-	public void chunkFailed(String id, String reason);
+	void chunkFailed(String id, String reason);
 
-	public boolean chunkComplete(String id) throws IOException;
+	boolean chunkComplete(String id) throws IOException;
 
-	public void chunkUpdated(String id);
+	void chunkUpdated(String id);
 
-	public void synchronize();
+	void synchronize();
 
-	public AbstractChannel createChannel(Segment segment);
+	AbstractChannel createChannel(Segment segment);
 
-	public void cleanup();
+	void cleanup();
 
-	public long getSize();
+	long getSize();
 
-	public boolean shouldCleanup();
+	boolean shouldCleanup();
 
-	public int getActiveChunkCount();
+	int getActiveChunkCount();
 
-	public boolean promptCredential(String msg, boolean proxy);
+	boolean promptCredential(String msg, boolean proxy);
 }

@@ -217,7 +217,7 @@ public class Format {
 		return format;
 	}
 
-	public void write(PrintStream out) throws Exception {
+	public void write(PrintStream out) {
 		out.println("name: " + this.desc);
 		out.println("group: " + this.group);
 		out.println("resolutions: " + getList(this.resolutions));

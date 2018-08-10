@@ -577,7 +577,7 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 														// + 1];
 				System.out.println("format: " + fmt.getFormat());
 
-				this.ffmpeg = new FFmpeg(Arrays.asList(new String[] { file }), outFile.getAbsolutePath(), this, fmt,
+				this.ffmpeg = new FFmpeg(Arrays.asList(file), outFile.getAbsolutePath(), this, fmt,
 						false);
 				if (item.volume != null) {
 					this.ffmpeg.setVolume(item.volume);

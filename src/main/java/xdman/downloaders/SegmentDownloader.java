@@ -366,7 +366,7 @@ public abstract class SegmentDownloader extends Downloader implements SegmentLis
 				this.converting = true;
 				ffOutFile = new File(getOutputFolder(), UUID.randomUUID().toString() + "_" + getOutputFileName(true));
 
-				this.ffmpeg = new FFmpeg(Arrays.asList(new String[] { outFile.getAbsolutePath() }),
+				this.ffmpeg = new FFmpeg(Arrays.asList(outFile.getAbsolutePath()),
 						ffOutFile.getAbsolutePath(), this, MediaFormats.getSupportedFormats()[outputFormat],
 						outputFormat == 0);
 				int ret = ffmpeg.convert();

@@ -1038,9 +1038,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 				if (ent.getState() == XDMConstants.FINISHED || ent.getState() == XDMConstants.PAUSED
 						|| ent.getState() == XDMConstants.FAILED) {
 					this.downloads.remove(id);
-					if (pendingDownloads.contains(id)) {
-						pendingDownloads.remove(id);
-					}
+					pendingDownloads.remove(id);
 					String qId = ent.getQueueId();
 					if (qId != null) {
 						DownloadQueue q = getQueueById(qId);

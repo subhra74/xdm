@@ -10,6 +10,7 @@ import java.net.Socket;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -84,7 +85,7 @@ public class MonitoringSession implements Runnable {
 
 	private void onVideoRetrieve(Request request, Response res) throws UnsupportedEncodingException {
 		try {
-			String id = new String(request.getBody(), "utf-8");
+			String id = new String(request.getBody(), StandardCharsets.UTF_8);
 			for (VideoPopupItem item : XDMApp.getInstance().getVideoItemsList()) {
 				if (id.equals(item.getMetadata().getId())) {
 					HttpMetadata md = item.getMetadata().derive();
@@ -200,7 +201,7 @@ public class MonitoringSession implements Runnable {
 		return sb.toString();
 	}
 
-	private void onSync(Request request, Response res) throws UnsupportedEncodingException {
+	private void onSync(Request request, Response res) {
 		StringBuffer json = new StringBuffer();
 		json.append("{\n\"enabled\": ");
 		json.append(Config.getInstance().isBrowserMonitoringEnabled());

@@ -319,7 +319,7 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 				}
 				this.downloaded = downloaded2;
 				if (chunks.size() > 0) {
-					progress = (int) ((processedSegments * 100) / chunks.size());
+					progress = (processedSegments * 100) / chunks.size();
 					progress += (partPrg / chunks.size());
 					if (segDet == null) {
 						segDet = new SegmentDetails();

@@ -4,59 +4,59 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 public interface Segment {
-	public long getLength();
+	long getLength();
 
-	public long getStartOffset();
+	long getStartOffset();
 
-	public long getDownloaded();
+	long getDownloaded();
 
-	public RandomAccessFile getOutStream();
+	RandomAccessFile getOutStream();
 
-	public boolean transferComplete() throws IOException;
+	boolean transferComplete() throws IOException;
 
-	public void transferInitiated() throws IOException;
+	void transferInitiated() throws IOException;
 
-	public void transferring();
+	void transferring();
 
-	public void transferFailed(String reason);
+	void transferFailed(String reason);
 
-	public boolean isFinished();
+	boolean isFinished();
 
-	public boolean isActive();
+	boolean isActive();
 
-	public String getId();
+	String getId();
 
-	public void setId(String id);
+	void setId(String id);
 
-	public void download(SegmentListener listenre) throws IOException;
+	void download(SegmentListener listenre) throws IOException;
 
-	public void setLength(long length);
+	void setLength(long length);
 
-	public void setDownloaded(long downloaded);
+	void setDownloaded(long downloaded);
 
-	public void setStartOffset(long offset);
+	void setStartOffset(long offset);
 
-	public void stop();
+	void stop();
 
-	public SegmentListener getChunkListener();
+	SegmentListener getChunkListener();
 
-	public void dispose();
+	void dispose();
 
-	public AbstractChannel getChannel();
+	AbstractChannel getChannel();
 
-	public float getTransferRate();
+	float getTransferRate();
 
-	public int getErrorCode();
+	int getErrorCode();
 
-	public Object getTag();
+	Object getTag();
 
-	public void setTag(Object obj);
+	void setTag(Object obj);
 
-	public void resetStream() throws IOException;
+	void resetStream() throws IOException;
 
-	public void reopenStream() throws IOException;
+	void reopenStream() throws IOException;
 
-	public boolean promptCredential(String msg, boolean proxy);
+	boolean promptCredential(String msg, boolean proxy);
 
-	public void clearChannel();
+	void clearChannel();
 }

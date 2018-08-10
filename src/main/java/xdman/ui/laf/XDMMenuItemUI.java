@@ -87,7 +87,7 @@ public class XDMMenuItemUI extends BasicMenuItemUI {
 		}
 
 		if (menuItem instanceof JCheckBoxMenuItem) {
-			if (((JCheckBoxMenuItem) menuItem).isSelected()) {
+			if (menuItem.isSelected()) {
 				// chkIcon.paintIcon(menuItem, g, 5, 5);
 			}
 		}

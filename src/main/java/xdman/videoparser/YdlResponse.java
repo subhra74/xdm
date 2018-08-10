@@ -3,6 +3,7 @@ package xdman.videoparser;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -26,7 +27,7 @@ public class YdlResponse {
 
 	public static ArrayList<YdlVideo> parse(InputStream in) throws Exception {
 		JSONParser parser = new JSONParser();
-		JSONObject obj = (JSONObject) parser.parse(new InputStreamReader(in, "utf-8"));
+		JSONObject obj = (JSONObject) parser.parse(new InputStreamReader(in, StandardCharsets.UTF_8));
 		JSONArray entries = (JSONArray) obj.get("entries");
 		if (entries == null) {
 			// its a playlist
@@ -102,7 +103,7 @@ public class YdlResponse {
 						if (url != null) {
 							fragments[j] = url;
 						} else {
-							fragments[j] = baseUrl + (String) frag.get("path");
+							fragments[j] = baseUrl + frag.get("path");
 						}
 					}
 					format.fragments = fragments;

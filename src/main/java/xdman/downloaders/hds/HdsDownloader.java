@@ -293,7 +293,7 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 				}
 				this.downloaded = downloaded2;
 				if (chunks.size() > 0) {
-					progress = (int) ((processedSegments * 100) / chunks.size());
+					progress = (processedSegments * 100) / chunks.size();
 					progress += (partPrg / chunks.size());
 					if (segDet == null) {
 						segDet = new SegmentDetails();
@@ -607,7 +607,7 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 				this.converting = true;
 				ffOutFile = new File(getOutputFolder(), UUID.randomUUID() + "_" + getOutputFileName(true));
 
-				this.ffmpeg = new FFmpeg(Arrays.asList(new String[] { outFile.getAbsolutePath() }),
+				this.ffmpeg = new FFmpeg(Arrays.asList(outFile.getAbsolutePath()),
 						ffOutFile.getAbsolutePath(), this, MediaFormats.getSupportedFormats()[outputFormat],
 						outputFormat == 0);
 				int ret = ffmpeg.convert();
@@ -675,8 +675,8 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 		if (s.read(bytesData, 0, bytesData.length) != bytesData.length) {
 			throw new IOException("Invalid F4F box");
 		}
-		long iValLo = (long) ((bytesData[3] & 0xff) + ((long) (bytesData[2] & 0xff) * 256));
-		long iValHi = (long) ((bytesData[1] & 0xff) + ((long) (bytesData[0] & 0xff) * 256));
+		long iValLo = ((bytesData[3] & 0xff) + ((long) (bytesData[2] & 0xff) * 256));
+		long iValHi = ((bytesData[1] & 0xff) + ((long) (bytesData[0] & 0xff) * 256));
 		long iVal = iValLo + (iValHi * 65536);
 		return iVal;
 	}

@@ -315,11 +315,7 @@ public class ChunkedInputStream extends InputStream {
 					return buf.length();
 				}
 			}
-			if (x == '\r') {
-				gotCR = true;
-			} else {
-				gotCR = false;
-			}
+			gotCR = x == '\r';
 			if (x != '\r')
 				buf.append((char) x);
 		}

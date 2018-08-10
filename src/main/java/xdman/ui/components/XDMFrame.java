@@ -275,8 +275,8 @@ public class XDMFrame extends JFrame implements ComponentListener {
 	ActionListener actClose = new ActionListener() {
 		public void actionPerformed(ActionEvent action) {
 			XDMFrame.this.dispatchEvent(new WindowEvent(XDMFrame.this, WindowEvent.WINDOW_CLOSING));
-		};
-	};
+		}
+    };
 
 	ActionListener actMax = new ActionListener() {
 		public void actionPerformed(ActionEvent action) {
@@ -285,14 +285,14 @@ public class XDMFrame extends JFrame implements ComponentListener {
 			XDMFrame.this.setExtendedState(
 					(XDMFrame.this.getExtendedState() & JFrame.MAXIMIZED_BOTH) == JFrame.MAXIMIZED_BOTH ? JFrame.NORMAL
 							: JFrame.MAXIMIZED_BOTH);
-		};
-	};
+		}
+    };
 
 	ActionListener actMin = new ActionListener() {
 		public void actionPerformed(ActionEvent action) {
 			XDMFrame.this.setExtendedState(XDMFrame.this.getExtendedState() | JFrame.ICONIFIED);
-		};
-	};
+		}
+    };
 
 	ActionListener actTwitter = new ActionListener() {
 

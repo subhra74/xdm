@@ -3,7 +3,7 @@ package xdman;
 import xdman.downloaders.metadata.HttpMetadata;
 
 public interface LinkRefreshCallback {
-	public String getId();
+	String getId();
 
-	public boolean isValidLink(HttpMetadata metadata);
+	boolean isValidLink(HttpMetadata metadata);
 }

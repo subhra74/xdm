@@ -1,6 +1,6 @@
 <project>
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.googlecode.json-simple</groupId>
+    <groupId>xdman.sourceforge.net</groupId>
     <artifactId>xdm</artifactId>
     <packaging>bundle</packaging>
     <name>Xtreme Download Manager</name>

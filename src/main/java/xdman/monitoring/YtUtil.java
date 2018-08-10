@@ -152,7 +152,7 @@ public class YtUtil {
 	}
 
 	public static String getInfoFromITAG(int itag) {
-		return (String) itags.get(itag);
+		return itags.get(itag);
 	}
 
 }
