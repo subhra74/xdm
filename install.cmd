@@ -1,1 +1,1 @@
-mvn clean compile jar
+mvn clean install
