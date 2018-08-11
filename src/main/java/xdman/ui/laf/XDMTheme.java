@@ -1,16 +1,15 @@
 package xdman.ui.laf;
 
-import java.awt.Color;
+import xdman.ui.res.ColorResource;
+import xdman.ui.res.FontResource;
+import xdman.util.XDMUtils;
 
-import javax.swing.UIDefaults;
+import javax.swing.*;
 import javax.swing.border.LineBorder;
 import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.FontUIResource;
 import javax.swing.plaf.metal.OceanTheme;
-
-import xdman.ui.res.ColorResource;
-import xdman.ui.res.FontResource;
-import xdman.util.XDMUtils;
+import java.awt.*;
 
 public class XDMTheme extends OceanTheme {
 	FontUIResource fontResource;

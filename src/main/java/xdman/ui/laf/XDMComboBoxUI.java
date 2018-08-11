@@ -1,18 +1,15 @@
 package xdman.ui.laf;
 
-import javax.swing.JButton;
-import javax.swing.JComponent;
-import javax.swing.JScrollBar;
-import javax.swing.JScrollPane;
-import javax.swing.plaf.ComponentUI;
-import javax.swing.plaf.basic.BasicComboBoxUI;
-import javax.swing.plaf.basic.BasicComboPopup;
-import javax.swing.plaf.basic.ComboPopup;
-
 import xdman.ui.components.CustomButton;
 import xdman.ui.components.DarkScrollBar;
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.ImageResource;
+
+import javax.swing.*;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.basic.BasicComboBoxUI;
+import javax.swing.plaf.basic.BasicComboPopup;
+import javax.swing.plaf.basic.ComboPopup;
 
 public class XDMComboBoxUI extends BasicComboBoxUI {
 

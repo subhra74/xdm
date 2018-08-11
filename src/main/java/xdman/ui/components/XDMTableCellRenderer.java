@@ -1,15 +1,17 @@
 package xdman.ui.components;
 
-import java.awt.*;
-
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.table.*;
-
-import xdman.ui.res.*;
+import xdman.DownloadEntry;
+import xdman.XDMConstants;
+import xdman.ui.res.ColorResource;
+import xdman.ui.res.FontResource;
+import xdman.ui.res.ImageResource;
 import xdman.util.FormatUtilities;
 import xdman.util.XDMUtils;
-import xdman.*;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.table.TableCellRenderer;
+import java.awt.*;
 
 public class XDMTableCellRenderer implements TableCellRenderer {
 

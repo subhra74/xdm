@@ -1,11 +1,9 @@
 package xdman.ui.components;
 
-import java.awt.Color;
-
-import javax.swing.Icon;
-import javax.swing.JButton;
-
 import xdman.ui.res.ColorResource;
+
+import javax.swing.*;
+import java.awt.*;
 
 public class CustomButton extends JButton {
 	private static final long serialVersionUID = 6378409011977437191L;

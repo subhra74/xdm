@@ -1,14 +1,13 @@
 package xdman.mediaconversion;
 
+import xdman.util.StringUtils;
+
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-
-import xdman.ui.res.StringResource;
-import xdman.util.StringUtils;
 
 public class MediaFormats {
 	private static MediaFormat[] supportedFormats;

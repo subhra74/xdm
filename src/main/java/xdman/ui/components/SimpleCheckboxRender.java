@@ -1,13 +1,13 @@
 package xdman.ui.components;
 
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
 
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
+
 import static xdman.util.XDMUtils.getScaledInt;
 
 public class SimpleCheckboxRender extends JCheckBox implements ListCellRenderer<Object> {

@@ -1,12 +1,12 @@
 package xdman.preview;
 
+import xdman.XDMApp;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-
-import xdman.XDMApp;
 
 public class PreviewStream extends InputStream {
 	List<Chunk> chunks;

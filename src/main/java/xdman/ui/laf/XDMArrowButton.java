@@ -1,8 +1,7 @@
 package xdman.ui.laf;
 
-import java.awt.Color;
-
 import javax.swing.plaf.basic.BasicArrowButton;
+import java.awt.*;
 
 public class XDMArrowButton extends BasicArrowButton {
 

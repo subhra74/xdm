@@ -1,11 +1,9 @@
 package xdman.ui.components;
 
-import java.awt.Graphics;
-import java.awt.Image;
-
-import javax.swing.JPanel;
-
 import xdman.ui.res.ImageResource;
+
+import javax.swing.*;
+import java.awt.*;
 
 public class SidePanel extends JPanel {
 	/**

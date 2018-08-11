@@ -1,27 +1,8 @@
 package xdman.downloaders.hls;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 import xdman.Config;
 import xdman.XDMConstants;
-import xdman.downloaders.AbstractChannel;
-import xdman.downloaders.Downloader;
-import xdman.downloaders.Segment;
-import xdman.downloaders.SegmentDetails;
-import xdman.downloaders.SegmentImpl;
-import xdman.downloaders.SegmentInfo;
-import xdman.downloaders.SegmentListener;
+import xdman.downloaders.*;
 import xdman.downloaders.http.HttpChannel;
 import xdman.downloaders.metadata.HlsMetadata;
 import xdman.downloaders.metadata.HttpMetadata;
@@ -32,6 +13,9 @@ import xdman.util.FormatUtilities;
 import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
+
+import java.io.*;
+import java.util.*;
 
 public class HlsDownloader extends Downloader implements SegmentListener, MediaConversionListener, HlsEncryptedSouce {
 	private HlsMetadata metadata;

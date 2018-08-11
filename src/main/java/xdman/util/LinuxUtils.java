@@ -1,20 +1,6 @@
 package xdman.util;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.PasswordAuthentication;
-
-import javax.swing.JComboBox;
-import javax.swing.JOptionPane;
-import javax.swing.JPasswordField;
-import javax.swing.JTextField;
-
-import xdman.ui.res.StringResource;
+import java.io.*;
 
 public class LinuxUtils {
 	static String shutdownCmds[] = {

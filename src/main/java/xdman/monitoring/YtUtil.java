@@ -1,9 +1,10 @@
 package xdman.monitoring;
 
-import java.util.*;
-
 import xdman.network.http.HeaderCollection;
 import xdman.util.Logger;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class YtUtil {
 	static DASH_INFO lastVid;

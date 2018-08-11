@@ -1,28 +1,19 @@
 package xdman.ui.components;
 
-import static xdman.util.XDMUtils.getScaledInt;
-
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.File;
-
-import javax.swing.Box;
-import javax.swing.JButton;
-import javax.swing.JFileChooser;
-import javax.swing.JMenuItem;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import javax.swing.JTextField;
-import javax.swing.border.LineBorder;
-
 import xdman.Config;
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.ImageResource;
 import xdman.util.Logger;
 import xdman.util.StringUtils;
+
+import javax.swing.*;
+import javax.swing.border.LineBorder;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+
+import static xdman.util.XDMUtils.getScaledInt;
 
 public class XDMFileSelectionPanel extends JPanel implements ActionListener {
 	private static final long serialVersionUID = 2333430406492555559L;
@@ -97,11 +88,11 @@ public class XDMFileSelectionPanel extends JPanel implements ActionListener {
 		}
 		pop.add(createMenuItem(Config.getInstance().getDownloadFolder()));
 		if (!Config.getInstance().isForceSingleFolder()) {
-			pop.add(createMenuItem(Config.getInstance().getCategoryDocuments()));
-			pop.add(createMenuItem(Config.getInstance().getCategoryMusic()));
-			pop.add(createMenuItem(Config.getInstance().getCategoryPrograms()));
-			pop.add(createMenuItem(Config.getInstance().getCategoryCompressed()));
-			pop.add(createMenuItem(Config.getInstance().getCategoryVideos()));
+			pop.add(createMenuItem(Config.getInstance().getDocumentsFolder()));
+			pop.add(createMenuItem(Config.getInstance().getMusicFolder()));
+			pop.add(createMenuItem(Config.getInstance().getProgramsFolder()));
+			pop.add(createMenuItem(Config.getInstance().getCompressedFolder()));
+			pop.add(createMenuItem(Config.getInstance().getVideosFolder()));
 		}
 		pop.setInvoker(btnDropdown);
 	}

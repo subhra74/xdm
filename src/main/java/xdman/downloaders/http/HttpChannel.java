@@ -1,24 +1,18 @@
 package xdman.downloaders.http;
 
+import xdman.XDMConstants;
+import xdman.downloaders.AbstractChannel;
+import xdman.downloaders.Segment;
+import xdman.network.ProxyResolver;
+import xdman.network.http.*;
+import xdman.util.Logger;
+import xdman.util.XDMUtils;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Iterator;
-
-import xdman.XDMConstants;
-import xdman.downloaders.AbstractChannel;
-import xdman.downloaders.Segment;
-import xdman.network.ProxyResolver;
-import xdman.network.http.HeaderCollection;
-import xdman.network.http.HttpClient;
-import xdman.network.http.HttpHeader;
-import xdman.network.http.JavaClientRequiredException;
-import xdman.network.http.JavaHttpClient;
-import xdman.network.http.WebProxy;
-import xdman.network.http.XDMHttpClient;
-import xdman.util.Logger;
-import xdman.util.XDMUtils;
 
 public class HttpChannel extends AbstractChannel {
 	protected String url;

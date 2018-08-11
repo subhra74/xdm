@@ -1,22 +1,5 @@
 package xdman.ui.components;
 
-import java.awt.Color;
-import java.awt.GraphicsDevice.WindowTranslucency;
-import java.awt.GraphicsEnvironment;
-import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.File;
-import java.util.ArrayList;
-
-import javax.swing.JButton;
-import javax.swing.JComponent;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JProgressBar;
-import javax.swing.SwingUtilities;
-
 import xdman.Config;
 import xdman.mediaconversion.FFmpeg;
 import xdman.mediaconversion.MediaConversionListener;
@@ -27,6 +10,15 @@ import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 import xdman.util.FormatUtilities;
 import xdman.util.Logger;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.GraphicsDevice.WindowTranslucency;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+import java.util.ArrayList;
+
 import static xdman.util.XDMUtils.getScaledInt;
 
 public class MediaConversionWnd extends JFrame implements ActionListener, MediaConversionListener, Runnable {

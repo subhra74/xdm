@@ -1,14 +1,14 @@
 package xdman.downloaders.metadata.manifests;
 
-import java.io.*;
-import java.util.*;
-import java.net.*;
-
-import javax.print.attribute.standard.Media;
-import javax.print.attribute.standard.MediaPrintableArea;
-
 import xdman.util.Logger;
 import xdman.util.StringUtils;
+
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.util.ArrayList;
 
 public class M3U8Manifest {
 	private String playlistUrl;

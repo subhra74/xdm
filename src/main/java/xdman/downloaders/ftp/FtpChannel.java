@@ -1,10 +1,5 @@
 package xdman.downloaders.ftp;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.Authenticator;
-import java.net.PasswordAuthentication;
-
 import xdman.XDMConstants;
 import xdman.downloaders.AbstractChannel;
 import xdman.downloaders.Segment;
@@ -12,6 +7,11 @@ import xdman.network.ftp.FtpClient;
 import xdman.network.http.JavaClientRequiredException;
 import xdman.util.Logger;
 import xdman.util.XDMUtils;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.Authenticator;
+import java.net.PasswordAuthentication;
 
 public class FtpChannel extends AbstractChannel {
 	private String url;

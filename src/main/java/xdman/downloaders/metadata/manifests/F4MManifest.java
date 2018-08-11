@@ -1,23 +1,25 @@
 package xdman.downloaders.metadata.manifests;
 
-import java.io.FileReader;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Iterator;
-
-import javax.xml.namespace.NamespaceContext;
-import javax.xml.parsers.*;
-import javax.xml.xpath.*;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
-
 import xdman.util.Base64;
 import xdman.util.Logger;
 import xdman.util.StringUtils;
+
+import javax.xml.namespace.NamespaceContext;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
+import java.io.FileReader;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 public class F4MManifest {
 	private static XPath xpath;

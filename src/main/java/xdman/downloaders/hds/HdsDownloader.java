@@ -1,28 +1,8 @@
 package xdman.downloaders.hds;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
-
 import xdman.Config;
-import xdman.DownloadListener;
 import xdman.XDMConstants;
-import xdman.downloaders.AbstractChannel;
-import xdman.downloaders.Downloader;
-import xdman.downloaders.Segment;
-import xdman.downloaders.SegmentDetails;
-import xdman.downloaders.SegmentImpl;
-import xdman.downloaders.SegmentInfo;
-import xdman.downloaders.SegmentListener;
+import xdman.downloaders.*;
 import xdman.downloaders.http.HttpChannel;
 import xdman.downloaders.metadata.HdsMetadata;
 import xdman.downloaders.metadata.HttpMetadata;
@@ -34,6 +14,11 @@ import xdman.util.FormatUtilities;
 import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.UUID;
 
 public class HdsDownloader extends Downloader implements SegmentListener, MediaConversionListener {
 	private HdsMetadata metadata;

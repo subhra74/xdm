@@ -1,24 +1,14 @@
 package xdman.ui.laf;
 
-import static xdman.util.XDMUtils.getScaledInt;
+import xdman.ui.res.ColorResource;
 
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-
-import javax.swing.AbstractButton;
-import javax.swing.ButtonModel;
-import javax.swing.Icon;
-import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JComponent;
-import javax.swing.JMenu;
-import javax.swing.JMenuItem;
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicMenuItemUI;
+import java.awt.*;
 
-import xdman.ui.res.ColorResource;
+import static xdman.util.XDMUtils.getScaledInt;
 public class XDMMenuItemUI extends BasicMenuItemUI {
 	Color colorSelect, colorBg;
 

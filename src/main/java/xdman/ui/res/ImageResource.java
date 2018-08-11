@@ -1,11 +1,11 @@
 package xdman.ui.res;
 
-import java.util.*;
-
-import javax.swing.*;
-
 import xdman.XDMConstants;
 import xdman.util.XDMUtils;
+
+import javax.swing.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ImageResource {
 	private final static String ICON_FOLDER = "icons";

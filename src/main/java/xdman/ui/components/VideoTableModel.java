@@ -1,9 +1,9 @@
 package xdman.ui.components;
 
-import java.util.*;
-import javax.swing.table.*;
-
 import xdman.videoparser.YdlResponse.YdlVideo;
+
+import javax.swing.table.AbstractTableModel;
+import java.util.ArrayList;
 
 public class VideoTableModel extends AbstractTableModel {
 

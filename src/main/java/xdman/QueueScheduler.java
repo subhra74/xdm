@@ -1,13 +1,13 @@
 package xdman;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-
 import xdman.util.DateTimeUtils;
 import xdman.util.Logger;
 import xdman.util.UpdateChecker;
 import xdman.util.XDMUtils;
+
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
 
 public class QueueScheduler implements Runnable {
 	private boolean stop;
@@ -47,10 +47,9 @@ public class QueueScheduler implements Runnable {
 						}
 					}
 
-					ArrayList<DownloadQueue> queues = QueueManager.getInstance().getQueueList();
-					for (int i = 0; i < queues.size(); i++) {
-						DownloadQueue queue = queues.get(i);
-						if (queue.isRunning() || queue.getStartTime() == -1) {
+					Collection<DownloadQueue> downloadQueues = QueueManager.getInstance().getDownloadQueues();
+					for (DownloadQueue downloadQueue: downloadQueues) {
+						if (downloadQueue.isRunning() || downloadQueue.getStartTime() == -1) {
 							continue;
 						}
 						Date now = new Date();
@@ -58,9 +57,9 @@ public class QueueScheduler implements Runnable {
 						Date onlyDate = DateTimeUtils.getDatePart(cal);
 						long seconds = DateTimeUtils.getTimePart(now);
 
-						if (seconds > queue.getStartTime()) {
-							if (queue.getEndTime() > 0) {
-								if (queue.getEndTime() < seconds) {
+						if (seconds > downloadQueue.getStartTime()) {
+							if (downloadQueue.getEndTime() > 0) {
+								if (downloadQueue.getEndTime() < seconds) {
 									continue;
 								}
 							}
@@ -68,15 +67,15 @@ public class QueueScheduler implements Runnable {
 							continue;
 						}
 
-						if (queue.isPeriodic()) {
+						if (downloadQueue.isPeriodic()) {
 							int day = cal.get(Calendar.DAY_OF_WEEK);
 							int mask = 0x01 << (day - 1);
 
-							if ((queue.getDayMask() & mask) != mask) {
+							if ((downloadQueue.getDayMask() & mask) != mask) {
 								continue;
 							}
 						} else {
-							Date execDate = queue.getExecDate();
+							Date execDate = downloadQueue.getExecDate();
 							if (execDate == null) {
 								continue;
 							}
@@ -86,21 +85,20 @@ public class QueueScheduler implements Runnable {
 								continue;
 							}
 						}
-						queue.start();
+						downloadQueue.start();
 					}
 
-					for (int i = 0; i < queues.size(); i++) {
-						DownloadQueue queue = queues.get(i);
-						if (!queue.isRunning()) {
+					for (DownloadQueue downloadQueue: downloadQueues) {
+						if (!downloadQueue.isRunning()) {
 							continue;
 						}
-						if (queue.getEndTime() < 1) {
+						if (downloadQueue.getEndTime() < 1) {
 							continue;
 						}
 						Date now = new Date();
 						long seconds = DateTimeUtils.getTimePart(now);
-						if (queue.getEndTime() < seconds) {
-							queue.stop();
+						if (downloadQueue.getEndTime() < seconds) {
+							downloadQueue.stop();
 						}
 					}
 					Thread.sleep(1000);

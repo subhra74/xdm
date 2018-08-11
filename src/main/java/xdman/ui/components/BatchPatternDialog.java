@@ -1,12 +1,22 @@
 package xdman.ui.components;
 
-import static xdman.util.XDMUtils.getScaledInt;
+import xdman.Config;
+import xdman.CredentialManager;
+import xdman.ui.res.ColorResource;
+import xdman.ui.res.FontResource;
+import xdman.ui.res.ImageResource;
+import xdman.ui.res.StringResource;
+import xdman.util.Logger;
+import xdman.util.XDMUtils;
 
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Font;
+import javax.swing.*;
+import javax.swing.border.LineBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import java.awt.*;
 import java.awt.GraphicsDevice.WindowTranslucency;
-import java.awt.GraphicsEnvironment;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
@@ -16,35 +26,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.ButtonGroup;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComponent;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JPasswordField;
-import javax.swing.JRadioButton;
-import javax.swing.JSpinner;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.SpinnerListModel;
-import javax.swing.SpinnerNumberModel;
-import javax.swing.border.LineBorder;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-
-import xdman.Config;
-import xdman.CredentialManager;
-import xdman.downloaders.metadata.HttpMetadata;
-import xdman.ui.res.ColorResource;
-import xdman.ui.res.FontResource;
-import xdman.ui.res.ImageResource;
-import xdman.ui.res.StringResource;
-import xdman.util.Logger;
-import xdman.util.XDMUtils;
+import static xdman.util.XDMUtils.getScaledInt;
 
 public class BatchPatternDialog extends JFrame implements ActionListener, DocumentListener, ChangeListener {
 	/**

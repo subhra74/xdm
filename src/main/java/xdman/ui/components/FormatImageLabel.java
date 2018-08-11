@@ -1,11 +1,9 @@
 package xdman.ui.components;
 
-import java.awt.Graphics;
-
-import javax.swing.ImageIcon;
-import javax.swing.JLabel;
-
 import xdman.util.StringUtils;
+
+import javax.swing.*;
+import java.awt.*;
 
 import static xdman.util.XDMUtils.getScaledInt;
 

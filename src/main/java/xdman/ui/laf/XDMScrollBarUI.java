@@ -1,23 +1,14 @@
 package xdman.ui.laf;
 
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Insets;
-import java.awt.Rectangle;
-
-import javax.swing.JButton;
-import javax.swing.JComponent;
-import javax.swing.JScrollBar;
-import javax.swing.SwingConstants;
-import javax.swing.plaf.ComponentUI;
-import javax.swing.plaf.basic.BasicScrollBarUI;
-
 import xdman.ui.components.CustomButton;
 import xdman.ui.components.DarkScrollBar;
 import xdman.ui.res.ImageResource;
 import xdman.util.XDMUtils;
+
+import javax.swing.*;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.basic.BasicScrollBarUI;
+import java.awt.*;
 
 public class XDMScrollBarUI extends BasicScrollBarUI {
 

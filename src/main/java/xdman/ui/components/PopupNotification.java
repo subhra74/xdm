@@ -1,7 +1,7 @@
 package xdman.ui.components;
 
-import javax.swing.JButton;
-import javax.swing.JFrame;
+import javax.swing.*;
+
 import static xdman.util.XDMUtils.getScaledInt;
 public class PopupNotification extends JFrame {
 	/**

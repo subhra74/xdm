@@ -1,71 +1,26 @@
 package xdman.ui.components;
 
-import static xdman.util.XDMUtils.getScaledInt;
-
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Cursor;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionAdapter;
-import java.awt.font.TextAttribute;
-import java.io.File;
-import java.net.PasswordAuthentication;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import javax.swing.ButtonGroup;
-import javax.swing.DefaultListModel;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JFileChooser;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JMenuItem;
-import javax.swing.JPanel;
-import javax.swing.JPasswordField;
-import javax.swing.JPopupMenu;
-import javax.swing.JRadioButton;
-import javax.swing.JScrollBar;
-import javax.swing.JScrollPane;
-import javax.swing.JSpinner;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.SpinnerDateModel;
-import javax.swing.SwingUtilities;
-import javax.swing.border.LineBorder;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.event.MouseInputAdapter;
-
-import xdman.ClipboardMonitor;
-import xdman.Config;
-import xdman.CredentialManager;
-import xdman.DownloadEntry;
-import xdman.DownloadQueue;
-import xdman.QueueManager;
-import xdman.XDMApp;
-import xdman.XDMConstants;
+import xdman.*;
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
-import xdman.util.BrowserLauncher;
-import xdman.util.DateTimeUtils;
-import xdman.util.Logger;
-import xdman.util.StringUtils;
-import xdman.util.XDMUtils;
+import xdman.util.*;
+
+import javax.swing.*;
+import javax.swing.border.LineBorder;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.MouseInputAdapter;
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.font.TextAttribute;
+import java.io.File;
+import java.net.PasswordAuthentication;
+import java.util.*;
+import java.util.Map.Entry;
+
+import static xdman.util.XDMUtils.getScaledInt;
 
 public class SettingsPage extends JPanel implements ActionListener, ListSelectionListener {
 
@@ -74,71 +29,71 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 	 */
 	private static final long serialVersionUID = 2125547008738968050L;
 	private static SettingsPage page;
-	Color bgColor;
+	private Color bgColor;
 	JScrollPane jsp;
-	XDMFrame parent;
-	int diffx, diffy;
-	int level;
+	private XDMFrame parent;
+	private int diffx, diffy;
+	private int level;
 
-	JPanel overviewPanel;
-	JPanel browserIntPanel;
-	JPanel networkPanel;
-	JPanel passwordPanel;
-	JPanel queuePanel;
-	JPanel advPanel;
+	private JPanel overviewPanel;
+	private JPanel browserIntPanel;
+	private JPanel networkPanel;
+	private JPanel passwordPanel;
+	private JPanel queuePanel;
+	private JPanel advPanel;
 
 	JLabel titleLbl;
-	JLabel btnNav;
+	private JLabel btnNav;
 
-	JList<PasswordItem> passList;
-	DefaultListModel<PasswordItem> passListModel;
-	JTextField txtCredHostName;
+	private JList<PasswordItem> passList;
+	private DefaultListModel<PasswordItem> passListModel;
+	private JTextField txtCredHostName;
 
-	ArrayList<JPanel> pageStack;
+	private ArrayList<JPanel> pageStack;
 
-	JList<DownloadQueue> qList;
-	JList<String> qItemsList;
-	JTextField txtQueueName;
-	JCheckBox chkQStart, chkQStop;
-	JRadioButton radOnetime, radPeriodic;
-	JCheckBox[] chkDays;
-	JSpinner spExecDate, spEndTime, spStartTime;
-	JButton btnQMoveTo;
+	private JList<DownloadQueue> qList;
+	private JList<String> qItemsList;
+	private JTextField txtQueueName;
+	private JCheckBox chkQStart, chkQStop;
+	private JRadioButton radOnetime, radPeriodic;
+	private JCheckBox[] chkDays;
+	private JSpinner spExecDate, spEndTime, spStartTime;
+	private JButton btnQMoveTo;
 
-	int[] sizeArr = { 0, 512 * 1024, 1024 * 1024, 5 * 1024 * 1024, 10 * 1024 * 1024 };
+	private int[] sizeArr = { 0, 512 * 1024, 1024 * 1024, 5 * 1024 * 1024, 10 * 1024 * 1024 };
 
-	SpinnerDateModel spinnerDateModel1, spinnerDateModel2, spinnerDateModel3;
+	private SpinnerDateModel spinnerDateModel1, spinnerDateModel2, spinnerDateModel3;
 
-	DefaultListModel<DownloadQueue> queueModel;
+	private DefaultListModel<DownloadQueue> queueModel;
 
-	DefaultListModel<String> queuedItemsModel;
+	private DefaultListModel<String> queuedItemsModel;
 
-	JTextField txtUserName, txtPassword;
+	private JTextField txtUserName, txtPassword;
 
-	JPanel currentPage;
+	private JPanel currentPage;
 
-	JCheckBox chkPrgWnd;
-	JCheckBox chkEndWnd;
-	JCheckBox chkVidPan;
-	JCheckBox chkOverwriteExisting;
-	JComboBox<String> cmbMax;
-	JComboBox<String> cmbMinVidSize;
+	private JCheckBox chkPrgWnd;
+	private JCheckBox chkEndWnd;
+	private JCheckBox chkVidPan;
+	private JCheckBox chkOverwriteExisting;
+	private JComboBox<String> cmbMax;
+	private JComboBox<String> cmbMinVidSize;
 	// JComboBox<String> cmbDupAction;
-	JTextField txtDefFolder, txtTempFolder;
+	private JTextField txtDefFolder, txtTempFolder;
 
-	JTextArea txtFileTyp, txtVidType, txtBlockedHosts;
+	private JTextArea txtFileTyp, txtVidType, txtBlockedHosts;
 
-	JComboBox<String> cmbTimeout, cmbSeg, cmbTcp;
+	private JComboBox<String> cmbTimeout, cmbSeg, cmbTcp;
 	// JTextField txtSpeedLimit;
-	JCheckBox chkUsePac, chkUseProxy, chkUseSocks;
-	JTextField txtPACUrl, txtProxyHostnPort, txtProxyPass, txtProxyUser, txtSocksHostnPort;
+	private JCheckBox chkUsePac, chkUseProxy, chkUseSocks;
+	private JTextField txtPACUrl, txtProxyHostnPort, txtProxyPass, txtProxyUser, txtSocksHostnPort;
 
-	JCheckBox chkHaltAfterFinish, chkKeepAwake, chkExecCmd, chkExecAntivir, chkAutoStart, chkMonitorClipboard,
+	private JCheckBox chkHaltAfterFinish, chkKeepAwake, chkExecCmd, chkExecAntivirus, chkAutoStart, chkMonitorClipboard,
 			chkDwnAuto, chkGetTs, chkNoTransparency, chkForceFolder, chkShowTray;
 
-	JTextField txtCustomCmd, txtAntivirCmd, txtAntivirArgs;
+	private JTextField txtCustomCmd, txtAntivirusCmd, txtAntivirusArgs;
 
-	JComboBox<String> cmbCategory;
+	private JComboBox<String> cmbCategory;
 
 	private static final String chromeWebStoreURL = "https://chrome.google.com/webstore/detail/xdm-browser-monitor/bgpkelneombgembocnickiddlbebmica",
 			ffAMOURL = "https://subhra74.github.io/xdm-firefox/firefox.html", // "http://xdman.sourceforge.net/addons/xdm_ff_webext.xpi",
@@ -153,7 +108,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		return page;
 	}
 
-	public SettingsPage() {
+	private SettingsPage() {
 		setOpaque(false);
 		setLayout(null);
 		bgColor = new Color(0, 0, 0, Config.getInstance().isNoTransparency() ? 255 : 200);
@@ -180,7 +135,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 
 		init();
 
-		pageStack = new ArrayList<JPanel>();
+		pageStack = new ArrayList<>();
 	}
 
 	@Override
@@ -190,7 +145,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		g.fillRect(0, 0, getWidth(), getHeight());
 	}
 
-	public void showPanel(XDMFrame xframe, String pageName) {
+	void showPanel(XDMFrame xframe, String pageName) {
 		this.parent = xframe;
 		int x = xframe.getWidth() - getScaledInt(350);
 		jsp.setBounds(0, y, getScaledInt(350), xframe.getHeight() - y);
@@ -199,14 +154,10 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		vertical.setValue(vertical.getMinimum());
 		setPage(pageName);
 		xframe.showDialog(this);
-		SwingUtilities.invokeLater(new Runnable() {
-			public void run() {
-				jsp.getVerticalScrollBar().setValue(0);
-			}
-		});
+		SwingUtilities.invokeLater(() -> jsp.getVerticalScrollBar().setValue(0));
 	}
 
-	public void registerMouseListener() {
+	private void registerMouseListener() {
 		addMouseListener(new MouseAdapter() {
 			@Override
 			public void mousePressed(MouseEvent me) {
@@ -360,7 +311,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		y += getScaledInt(3);
 
 		h = getScaledInt(25);
-		cmbMax = new JComboBox<String>(new String[] { "1", "2", "5", "10", "50", "100", "N/A" });
+		cmbMax = new JComboBox<>(new String[]{"1", "2", "5", "10", "50", "100", "N/A"});
 		cmbMax.setBackground(ColorResource.getDarkerBgColor());
 		cmbMax.setBounds(getScaledInt(250), y, getScaledInt(75), h);
 		cmbMax.setRenderer(new SimpleListRenderer());
@@ -692,22 +643,22 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 			Logger.log("Category changed");
 			switch (index) {
 			case 0:
-				txtDefFolder.setText(Config.getInstance().getCategoryOther());
+				txtDefFolder.setText(Config.getInstance().getOtherFolder());
 				break;
 			case 1:
-				txtDefFolder.setText(Config.getInstance().getCategoryDocuments());
+				txtDefFolder.setText(Config.getInstance().getDocumentsFolder());
 				break;
 			case 2:
-				txtDefFolder.setText(Config.getInstance().getCategoryCompressed());
+				txtDefFolder.setText(Config.getInstance().getCompressedFolder());
 				break;
 			case 3:
-				txtDefFolder.setText(Config.getInstance().getCategoryMusic());
+				txtDefFolder.setText(Config.getInstance().getMusicFolder());
 				break;
 			case 4:
-				txtDefFolder.setText(Config.getInstance().getCategoryVideos());
+				txtDefFolder.setText(Config.getInstance().getVideosFolder());
 				break;
 			case 5:
-				txtDefFolder.setText(Config.getInstance().getCategoryPrograms());
+				txtDefFolder.setText(Config.getInstance().getProgramsFolder());
 				break;
 			}
 		}
@@ -787,14 +738,14 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 			if ("BROWSE_ANTIVIR".equals(name)) {
 				JFileChooser jfc = new JFileChooser();
 				if (jfc.showOpenDialog(parent) == JFileChooser.APPROVE_OPTION) {
-					txtAntivirCmd.setText(jfc.getSelectedFile().getAbsolutePath());
+					txtAntivirusCmd.setText(jfc.getSelectedFile().getAbsolutePath());
 				}
 			}
 			if ("SETTINGS_FOLDER_CHANGE".equals(name)) {
 				JFileChooser jfc = new JFileChooser();
 				String folderText = txtDefFolder.getText().trim();
 				File file = new File(
-						StringUtils.isNullOrEmptyOrBlank(folderText) ? Config.getInstance().getCategoryOther()
+						StringUtils.isNullOrEmptyOrBlank(folderText) ? Config.getInstance().getOtherFolder()
 								: folderText);
 				if (file.exists()) {
 					jfc.setCurrentDirectory(file);
@@ -811,22 +762,22 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 						int index = cmbCategory.getSelectedIndex();
 						switch (index) {
 						case 0:
-							Config.getInstance().setCategoryOther(txtDefFolder.getText());
+							Config.getInstance().setOtherFolder(txtDefFolder.getText());
 							break;
 						case 1:
-							Config.getInstance().setCategoryDocuments(txtDefFolder.getText());
+							Config.getInstance().setDocumentsFolder(txtDefFolder.getText());
 							break;
 						case 2:
-							Config.getInstance().setCategoryCompressed(txtDefFolder.getText());
+							Config.getInstance().setCompressedFolder(txtDefFolder.getText());
 							break;
 						case 3:
-							Config.getInstance().setCategoryMusic(txtDefFolder.getText());
+							Config.getInstance().setMusicFolder(txtDefFolder.getText());
 							break;
 						case 4:
-							Config.getInstance().setCategoryVideos(txtDefFolder.getText());
+							Config.getInstance().setVideosFolder(txtDefFolder.getText());
 							break;
 						case 5:
-							Config.getInstance().setCategoryPrograms(txtDefFolder.getText());
+							Config.getInstance().setProgramsFolder(txtDefFolder.getText());
 							break;
 						}
 					}
@@ -836,7 +787,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 				JFileChooser jfc = new JFileChooser();
 				String folderText = txtTempFolder.getText().trim();
 				File file = new File(
-						StringUtils.isNullOrEmptyOrBlank(folderText) ? Config.getInstance().getCategoryOther()
+						StringUtils.isNullOrEmptyOrBlank(folderText) ? Config.getInstance().getOtherFolder()
 								: folderText);
 				if (file.exists()) {
 					jfc.setCurrentDirectory(file);
@@ -931,7 +882,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 
 	private void loadSchedulerSettings(int selectedQ) {
 		queueModel.clear();
-		for (DownloadQueue q : QueueManager.getInstance().getQueueList()) {
+		for (DownloadQueue q : QueueManager.getInstance().getDownloadQueues()) {
 			queueModel.addElement(q);
 		}
 		qList.setSelectedIndex(selectedQ);
@@ -948,7 +899,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		// cmbDupAction.setSelectedIndex(config.getDuplicateAction());
 		txtTempFolder.setText(config.getTemporaryFolder());
 		cmbCategory.setSelectedIndex(0);
-		txtDefFolder.setText(config.isForceSingleFolder() ? config.getDownloadFolder() : config.getCategoryOther());
+		txtDefFolder.setText(config.isForceSingleFolder() ? config.getDownloadFolder() : config.getOtherFolder());
 		chkNoTransparency.setSelected(config.isNoTransparency());
 		chkForceFolder.setSelected(config.isForceSingleFolder());
 		cmbCategory.setEnabled(!config.isForceSingleFolder());
@@ -1338,7 +1289,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		h += getScaledInt(30);
 
 		h = getScaledInt(25);
-		cmbMinVidSize = new JComboBox<String>(new String[] { "N/A", "512 KB", "1 MB", "5 MB", "10 MB" });
+		cmbMinVidSize = new JComboBox<>(new String[]{"N/A", "512 KB", "1 MB", "5 MB", "10 MB"});
 		cmbMinVidSize.setBackground(ColorResource.getDarkerBgColor());
 		cmbMinVidSize.setBounds(getScaledInt(250), y, getScaledInt(75), h);
 		cmbMinVidSize.setRenderer(new SimpleListRenderer());
@@ -1423,7 +1374,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		y += getScaledInt(5);
 
 		h = getScaledInt(20);
-		cmbTimeout = new JComboBox<String>(new String[] { "10", "30", "60", "120", "180", "360", "N/A" });
+		cmbTimeout = new JComboBox<>(new String[]{"10", "30", "60", "120", "180", "360", "N/A"});
 		cmbTimeout.setBackground(ColorResource.getDarkerBgColor());
 		cmbTimeout.setBounds(getScaledInt(250), y, getScaledInt(75), h);
 		cmbTimeout.setRenderer(new SimpleListRenderer());
@@ -1440,8 +1391,8 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		y += getScaledInt(5);
 
 		h = getScaledInt(20);
-		cmbSeg = new JComboBox<String>(new String[] { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12",
-				"13", "14", "15", "16", "20", "25", "30", "32" });
+		cmbSeg = new JComboBox<>(new String[]{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12",
+				"13", "14", "15", "16", "20", "25", "30", "32"});
 
 		cmbSeg.setBackground(ColorResource.getDarkerBgColor());
 		cmbSeg.setBounds(getScaledInt(250), y, getScaledInt(75), h);
@@ -1459,8 +1410,8 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		y += getScaledInt(5);
 
 		h = getScaledInt(20);
-		cmbTcp = new JComboBox<String>(
-				new String[] { "Default", "8", "16", "32", "64", "128", "256", "512", "1024", "2048", "4096", "8192" });
+		cmbTcp = new JComboBox<>(
+				new String[]{"Default", "8", "16", "32", "64", "128", "256", "512", "1024", "2048", "4096", "8192"});
 
 		cmbTcp.setBackground(ColorResource.getDarkerBgColor());
 		cmbTcp.setBounds(getScaledInt(250), y, getScaledInt(75), h);
@@ -1752,8 +1703,8 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 
 		int h = getScaledInt(100);
 
-		queueModel = new DefaultListModel<DownloadQueue>();
-		qList = new JList<DownloadQueue>(queueModel);
+		queueModel = new DefaultListModel<>();
+		qList = new JList<>(queueModel);
 		qList.setCellRenderer(new QueueListRenderer());
 		qList.setBorder(null);
 		qList.setOpaque(false);
@@ -1819,8 +1770,8 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 
 		h = getScaledInt(100);
 
-		queuedItemsModel = new DefaultListModel<String>();
-		qItemsList = new JList<String>(queuedItemsModel);
+		queuedItemsModel = new DefaultListModel<>();
+		qItemsList = new JList<>(queuedItemsModel);
 		qItemsList.setCellRenderer(new QueuedItemsRenderer());
 		qItemsList.setBorder(null);
 		qItemsList.setOpaque(false);
@@ -2017,9 +1968,9 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		y += getScaledInt(20);
 
 		h = getScaledInt(30);
-		chkExecAntivir = createCheckBox("EXE_ANTI_VIR");
-		chkExecAntivir.setBounds(getScaledInt(15), y, getScaledInt(350), h);
-		p.add(chkExecAntivir);
+		chkExecAntivirus = createCheckBox("EXE_ANTI_VIR");
+		chkExecAntivirus.setBounds(getScaledInt(15), y, getScaledInt(350), h);
+		p.add(chkExecAntivirus);
 		y += h;
 		y += getScaledInt(5);
 
@@ -2032,13 +1983,13 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		y += h;
 
 		h = getScaledInt(25);
-		txtAntivirCmd = new JTextField();
-		txtAntivirCmd.setBounds(getScaledInt(15), y,
+		txtAntivirusCmd = new JTextField();
+		txtAntivirusCmd.setBounds(getScaledInt(15), y,
 				getScaledInt(350) - getScaledInt(30) - getScaledInt(10) - getScaledInt(100), h);
-		txtAntivirCmd.setBorder(new LineBorder(ColorResource.getDarkBtnColor()));
-		txtAntivirCmd.setForeground(Color.WHITE);
-		txtAntivirCmd.setOpaque(false);
-		p.add(txtAntivirCmd);
+		txtAntivirusCmd.setBorder(new LineBorder(ColorResource.getDarkBtnColor()));
+		txtAntivirusCmd.setForeground(Color.WHITE);
+		txtAntivirusCmd.setOpaque(false);
+		p.add(txtAntivirusCmd);
 		JButton btnBrowse = createButton2("BTN_BROWSE");
 		btnBrowse.setName("BROWSE_ANTIVIR");
 		btnBrowse.setBackground(ColorResource.getDarkBtnColor());
@@ -2058,12 +2009,12 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		y += h;
 
 		h = getScaledInt(25);
-		txtAntivirArgs = new JTextField();
-		txtAntivirArgs.setBounds(getScaledInt(15), y, getScaledInt(350) - getScaledInt(30) - getScaledInt(10), h);
-		txtAntivirArgs.setBorder(new LineBorder(ColorResource.getDarkBtnColor()));
-		txtAntivirArgs.setForeground(Color.WHITE);
-		txtAntivirArgs.setOpaque(false);
-		p.add(txtAntivirArgs);
+		txtAntivirusArgs = new JTextField();
+		txtAntivirusArgs.setBounds(getScaledInt(15), y, getScaledInt(350) - getScaledInt(30) - getScaledInt(10), h);
+		txtAntivirusArgs.setBorder(new LineBorder(ColorResource.getDarkBtnColor()));
+		txtAntivirusArgs.setForeground(Color.WHITE);
+		txtAntivirusArgs.setOpaque(false);
+		p.add(txtAntivirusArgs);
 		y += h;
 		y += getScaledInt(20);
 		h = getScaledInt(30);
@@ -2092,15 +2043,15 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		chkHaltAfterFinish.setSelected(config.isAutoShutdown());
 		chkKeepAwake.setSelected(config.isKeepAwake());
 		chkExecCmd.setSelected(config.isExecCmd());
-		chkExecAntivir.setSelected(config.isExecAntivir());
+		chkExecAntivirus.setSelected(config.isExecAntivirus());
 		chkAutoStart.setSelected(XDMUtils.isAlreadyAutoStart());
 		chkShowTray.setSelected(!config.isHideTray());
 		if (!StringUtils.isNullOrEmptyOrBlank(config.getCustomCmd()))
 			txtCustomCmd.setText(config.getCustomCmd());
-		if (!StringUtils.isNullOrEmptyOrBlank(config.getAntivirCmd()))
-			txtAntivirArgs.setText(config.getAntivirCmd());
-		if (!StringUtils.isNullOrEmptyOrBlank(config.getAntivirExe()))
-			txtAntivirCmd.setText(config.getAntivirExe());
+		if (!StringUtils.isNullOrEmptyOrBlank(config.getAntivirusCmd()))
+			txtAntivirusArgs.setText(config.getAntivirusCmd());
+		if (!StringUtils.isNullOrEmptyOrBlank(config.getAntivirusExe()))
+			txtAntivirusCmd.setText(config.getAntivirusExe());
 	}
 
 	private void saveAdvSettings() {
@@ -2108,7 +2059,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		config.setAutoShutdown(chkHaltAfterFinish.isSelected());
 		config.setKeepAwake(chkKeepAwake.isSelected());
 		config.setExecCmd(chkExecCmd.isSelected());
-		config.setExecAntivir(chkExecAntivir.isSelected());
+		config.setExecAntivirus(chkExecAntivirus.isSelected());
 		config.setHideTray(!chkShowTray.isSelected());
 		if (chkAutoStart.isSelected()) {
 			XDMUtils.addToStartup();
@@ -2118,10 +2069,10 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		// config.setAutoStart(chkAutoStart.isSelected());
 		String customCmd = txtCustomCmd.getText();
 		config.setCustomCmd(customCmd);
-		String antivirExec = txtAntivirCmd.getText();
-		config.setAntivirExe(antivirExec);
-		String antivirCmd = txtAntivirArgs.getText();
-		config.setAntivirCmd(antivirCmd);
+		String txtAntivirusCmdText = txtAntivirusCmd.getText();
+		config.setAntivirusExe(txtAntivirusCmdText);
+		String txtAntivirusArgsText = txtAntivirusArgs.getText();
+		config.setAntivirusCmd(txtAntivirusArgsText);
 	}
 
 	private JRadioButton createRadioButton(String name, Font font) {
@@ -2152,7 +2103,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 
 		loadQueuedItems(q);
 
-		btnQMoveTo.setEnabled(QueueManager.getInstance().getQueueList().size() > 1 && q.getQueuedItems().size() > 0);
+		btnQMoveTo.setEnabled(QueueManager.getInstance().getDownloadQueues().size() > 1 && q.getQueuedItems().size() > 0);
 
 		Date startTime = DateTimeUtils.addTimePart(q.getStartTime());
 		Date endTime = DateTimeUtils.addTimePart(q.getEndTime());
@@ -2200,16 +2151,15 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 
 	private void loadQueuedItems(DownloadQueue q) {
 		queuedItemsModel.clear();
-		ArrayList<String> idList = q.getQueuedItems();
-		for (int i = 0; i < idList.size(); i++) {
-			String id = idList.get(i);
-			DownloadEntry ent = XDMApp.getInstance().getEntry(id);
+		ArrayDeque<String> queuedItems = q.getQueuedItems();
+		for (String queuedItem: queuedItems) {
+			DownloadEntry ent = XDMApp.getInstance().getEntry(queuedItem);
 			if (ent == null || ent.getState() == XDMConstants.FINISHED) {
 				continue;
 			}
-			queuedItemsModel.addElement(id);
+			queuedItemsModel.addElement(queuedItem);
 		}
-		if (idList.size() > 0) {
+		if (queuedItems.size() > 0) {
 			qItemsList.setSelectedIndex(0);
 		}
 	}
@@ -2268,7 +2218,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 			q.setStartTime(-1);
 		}
 
-		ArrayList<String> newOrder = new ArrayList<String>(queuedItemsModel.size());
+		ArrayList<String> newOrder = new ArrayList<>(queuedItemsModel.size());
 
 		for (int i = 0; i < queuedItemsModel.size(); i++) {
 			newOrder.add(queuedItemsModel.get(i));
@@ -2320,13 +2270,13 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 			return;
 		DownloadQueue q = queueModel.get(index);
 		QueueManager.getInstance().removeQueue(q.getQueueId());
-		loadSchedulerSettings(index < QueueManager.getInstance().getQueueList().size() ? index : index - 1);
+		loadSchedulerSettings(index < QueueManager.getInstance().getDownloadQueues().size() ? index : index - 1);
 	}
 
 	private void createNewQueue() {
-		int index = QueueManager.getInstance().getQueueList().size();
+		int index = QueueManager.getInstance().getDownloadQueues().size();
 		QueueManager.getInstance().createNewQueue();
-		int count = QueueManager.getInstance().getQueueList().size();
+		int count = QueueManager.getInstance().getDownloadQueues().size();
 		loadSchedulerSettings(index < count ? index : 0);
 	}
 
@@ -2336,17 +2286,17 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 			return;
 		}
 		DownloadQueue q = queueModel.get(index);
-		String qid = q.getQueueId();
-		if (qid == null)
+		String queueId = q.getQueueId();
+		if (queueId == null)
 			return;
 		JPopupMenu popupMenu = new JPopupMenu();
-		for (int i = 0; i < QueueManager.getInstance().getQueueList().size(); i++) {
-			DownloadQueue tq = QueueManager.getInstance().getQueueList().get(i);
-			if (qid.equals(tq.getQueueId())) {
+		Collection<DownloadQueue> queueList = QueueManager.getInstance().getDownloadQueues();
+		for (DownloadQueue downloadQueue:queueList) {
+			if (queueId.equals(downloadQueue.getQueueId())) {
 				continue;
 			}
-			JMenuItem item = new JMenuItem(tq.getName());
-			item.setName("Q_MOVE_TO:" + tq.getQueueId());
+			JMenuItem item = new JMenuItem(downloadQueue.getName());
+			item.setName("Q_MOVE_TO:" + downloadQueue.getQueueId());
 			item.addActionListener(this);
 			item.setForeground(Color.WHITE);
 			item.setFont(FontResource.getNormalFont());

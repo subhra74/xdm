@@ -1,9 +1,9 @@
 package xdman.downloaders;
 
-import java.io.*;
-
 import xdman.downloaders.http.HttpChannel;
-import xdman.util.*;
+import xdman.util.Logger;
+
+import java.io.InputStream;
 
 public abstract class AbstractChannel implements Runnable {
 	protected Segment chunk;

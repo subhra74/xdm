@@ -1,12 +1,12 @@
 package xdman.monitoring;
 
+import xdman.XDMApp;
+import xdman.util.Logger;
+
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-
-import xdman.XDMApp;
-import xdman.util.Logger;
 
 public class BrowserMonitor implements Runnable {
 	private static BrowserMonitor _this;

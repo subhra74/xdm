@@ -1,15 +1,14 @@
 package xdman.network.http;
 
-import java.io.*;
-import java.net.*;
+import xdman.network.*;
+import xdman.util.Logger;
+import xdman.util.NetUtils;
+import xdman.util.StringUtils;
 
-import xdman.network.FixedRangeInputStream;
-import xdman.network.HostUnreachableException;
-import xdman.network.KeepAliveConnectionCache;
-import xdman.network.NetworkException;
-import xdman.network.ParsedURL;
-import xdman.network.SocketFactory;
-import xdman.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
 
 public class XDMHttpClient extends HttpClient {
 	private ParsedURL _url;
@@ -108,7 +107,7 @@ public class XDMHttpClient extends HttpClient {
 			in = new FixedRangeInputStream(NetUtils.getInputStream(responseHeaders, socket.getInputStream()), length);
 
 			if (reusing) {
-				Logger.log("Socket reuse successfull");
+				Logger.log("Socket reuse successful");
 			}
 			
 

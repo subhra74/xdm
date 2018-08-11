@@ -1,22 +1,6 @@
 package xdman.downloaders;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.UUID;
-
 import xdman.Config;
-import xdman.DownloadListener;
 import xdman.XDMConstants;
 import xdman.downloaders.http.HttpChannel;
 import xdman.downloaders.metadata.DashMetadata;
@@ -24,10 +8,15 @@ import xdman.mediaconversion.FFmpeg;
 import xdman.mediaconversion.MediaConversionListener;
 import xdman.mediaconversion.MediaFormats;
 import xdman.util.FormatUtilities;
-import xdman.util.HttpDateParser;
 import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.UUID;
 
 public abstract class SegmentDownloader extends Downloader implements SegmentListener, MediaConversionListener {
 	private boolean init = false;

@@ -1,36 +1,6 @@
 package xdman.ui.components;
 
-import static xdman.util.XDMUtils.getScaledInt;
-
-import java.awt.Color;
-import java.awt.GraphicsDevice.WindowTranslucency;
-import java.awt.GraphicsEnvironment;
-import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.io.File;
-import java.util.ArrayList;
-
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JComponent;
-import javax.swing.JDialog;
-import javax.swing.JFileChooser;
-import javax.swing.JLabel;
-import javax.swing.JMenu;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import javax.swing.border.EmptyBorder;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import javax.swing.text.Document;
-
 import xdman.Config;
-import xdman.DownloadQueue;
 import xdman.XDMApp;
 import xdman.downloaders.metadata.DashMetadata;
 import xdman.downloaders.metadata.HttpMetadata;
@@ -42,6 +12,20 @@ import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 import xdman.util.Logger;
 import xdman.util.XDMUtils;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.text.Document;
+import java.awt.*;
+import java.awt.GraphicsDevice.WindowTranslucency;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+
+import static xdman.util.XDMUtils.getScaledInt;
 
 public class VideoDownloadWindow extends JDialog implements ActionListener, DocumentListener {
 
@@ -389,15 +373,10 @@ public class VideoDownloadWindow extends JDialog implements ActionListener, Docu
 	}
 
 	private void createQueueItems(JMenuItem queueMenuItem) {
-		ArrayList<DownloadQueue> queues = XDMApp.getInstance().getQueueList();
-		for (int i = 0; i < queues.size(); i++) {
-			DownloadQueue q = queues.get(i);
-			JMenuItem mItem = new JMenuItem(q.getName().length() < 1 ? "Default queue" : q.getName());
-			mItem.setName("QUEUE:" + q.getQueueId());
-			mItem.setForeground(Color.WHITE);
-			mItem.addActionListener(this);
-			queueMenuItem.add(mItem);
-		}
+		XDMApp.getInstance().addDownloadQueues(queueMenuItem,
+				"QUEUE",
+				ColorResource.getWhite(),
+				this);
 	}
 
 	// private void updateAppliableFormats() {

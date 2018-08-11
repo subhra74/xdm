@@ -1,20 +1,16 @@
 package xdman.ui.components;
 
+import xdman.ui.res.StringResource;
+import xdman.util.XDMUtils;
+
+import javax.swing.*;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
+import javax.swing.text.JTextComponent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-
-import javax.swing.JComponent;
-import javax.swing.JMenuItem;
-import javax.swing.JPopupMenu;
-import javax.swing.SwingUtilities;
-import javax.swing.event.PopupMenuEvent;
-import javax.swing.event.PopupMenuListener;
-import javax.swing.text.JTextComponent;
-
-import xdman.ui.res.StringResource;
-import xdman.util.XDMUtils;
 
 public class PopupAdapter extends MouseAdapter implements ActionListener {
 	private JTextComponent txt;

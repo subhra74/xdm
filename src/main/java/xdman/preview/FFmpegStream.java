@@ -1,12 +1,12 @@
 package xdman.preview;
 
+import xdman.Config;
+import xdman.util.XDMUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-
-import xdman.Config;
-import xdman.util.XDMUtils;
 
 public class FFmpegStream extends InputStream implements Runnable {
 	String input1, input2;

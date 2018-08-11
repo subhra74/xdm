@@ -1,10 +1,9 @@
 package xdman.ui.res;
 
-import java.awt.*;
-import java.io.*;
-
 import xdman.util.Logger;
 import xdman.util.XDMUtils;
+
+import java.awt.*;
 
 public class FontResource {
 	static {

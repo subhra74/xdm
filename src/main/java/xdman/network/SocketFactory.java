@@ -1,14 +1,13 @@
 package xdman.network;
 
-import java.net.*;
-
-import javax.net.ssl.*;
-
 import xdman.Config;
 import xdman.network.http.HttpContext;
 import xdman.util.Logger;
 
-import java.io.*;
+import javax.net.ssl.SSLSocket;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 
 public class SocketFactory {
 	// private static int timeOut = 0;

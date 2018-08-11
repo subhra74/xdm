@@ -1,11 +1,11 @@
 package xdman.ui.laf;
 
-import javax.swing.JComponent;
+import xdman.ui.components.PopupAdapter;
+
+import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicTextAreaUI;
 import javax.swing.text.JTextComponent;
-
-import xdman.ui.components.PopupAdapter;
 
 public class XDMTextAreaUI extends BasicTextAreaUI {
 	PopupAdapter popupAdapter;

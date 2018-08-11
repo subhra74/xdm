@@ -1,17 +1,13 @@
 package xdman.monitoring;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-
 import xdman.XDMApp;
 import xdman.downloaders.metadata.HdsMetadata;
 import xdman.downloaders.metadata.manifests.F4MManifest;
 import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
+
+import java.io.*;
 
 public class F4mHandler {
 	public static boolean handle(File f4mfile, ParsedHookData data) {

@@ -1,18 +1,12 @@
 package xdman.ui.laf;
 
-import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-
-import javax.swing.AbstractButton;
-import javax.swing.ButtonModel;
-import javax.swing.JButton;
-import javax.swing.JComponent;
-import javax.swing.plaf.ComponentUI;
-import javax.swing.plaf.basic.BasicButtonUI;
-
 import xdman.ui.components.CustomButton;
 import xdman.ui.res.ColorResource;
+
+import javax.swing.*;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.basic.BasicButtonUI;
+import java.awt.*;
 
 public class XDMButtonUI extends BasicButtonUI {
 

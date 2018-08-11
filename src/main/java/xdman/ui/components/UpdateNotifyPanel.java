@@ -1,15 +1,5 @@
 package xdman.ui.components;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.border.EmptyBorder;
-
 import xdman.XDMApp;
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
@@ -17,6 +7,13 @@ import xdman.ui.res.StringResource;
 import xdman.util.FFmpegDownloader;
 import xdman.util.UpdateChecker;
 import xdman.util.XDMUtils;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
 import static xdman.util.XDMUtils.getScaledInt;
 public class UpdateNotifyPanel extends JPanel {
 	/**

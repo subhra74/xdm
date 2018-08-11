@@ -1,33 +1,24 @@
 package xdman.downloaders.hls;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.math.BigInteger;
-import java.nio.charset.Charset;
-import java.security.Key;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.AlgorithmParameterSpec;
-import java.util.Iterator;
+import xdman.XDMConstants;
+import xdman.downloaders.Segment;
+import xdman.downloaders.http.HttpChannel;
+import xdman.network.ProxyResolver;
+import xdman.network.http.*;
+import xdman.util.Logger;
+import xdman.util.XDMUtils;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-
-import xdman.XDMConstants;
-import xdman.downloaders.Segment;
-import xdman.downloaders.http.HttpChannel;
-import xdman.network.ProxyResolver;
-import xdman.network.http.HeaderCollection;
-import xdman.network.http.HttpHeader;
-import xdman.network.http.JavaClientRequiredException;
-import xdman.network.http.JavaHttpClient;
-import xdman.network.http.WebProxy;
-import xdman.network.http.XDMHttpClient;
-import xdman.util.Logger;
-import xdman.util.StringUtils;
-import xdman.util.XDMUtils;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigInteger;
+import java.security.Key;
+import java.security.spec.AlgorithmParameterSpec;
+import java.util.Iterator;
 
 public class EncryptedHlsChannel extends HttpChannel {
 	private String keyUrl, mediaUrl;

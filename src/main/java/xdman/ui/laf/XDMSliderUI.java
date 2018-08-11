@@ -1,14 +1,12 @@
 package xdman.ui.laf;
 
-import java.awt.Color;
-import java.awt.Graphics;
+import xdman.ui.res.ColorResource;
 
-import javax.swing.JComponent;
-import javax.swing.JSlider;
+import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicSliderUI;
+import java.awt.*;
 
-import xdman.ui.res.ColorResource;
 import static xdman.util.XDMUtils.getScaledInt;
 public class XDMSliderUI extends BasicSliderUI {
 

@@ -1,10 +1,9 @@
 package xdman.ui.components;
 
-import java.awt.*;
+import xdman.ui.res.ImageResource;
 
 import javax.swing.*;
-
-import xdman.ui.res.ImageResource;
+import java.awt.*;
 
 public class BarPanel extends JPanel {
 	/**

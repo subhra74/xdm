@@ -1,16 +1,16 @@
 package xdman.mediaconversion;
 
+import xdman.Config;
+import xdman.util.Logger;
+import xdman.util.StringUtils;
+import xdman.util.XDMUtils;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import xdman.Config;
-import xdman.util.Logger;
-import xdman.util.StringUtils;
-import xdman.util.XDMUtils;
 
 public class FFmpeg {
 	public final static int FF_NOT_FOUND = 10, FF_LAUNCH_ERROR = 20, FF_CONVERSION_FAILED = 30, FF_SUCCESS = 0;

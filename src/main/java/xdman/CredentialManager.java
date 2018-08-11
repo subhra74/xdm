@@ -1,12 +1,10 @@
 package xdman;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
+import xdman.util.Base64;
+import xdman.util.Logger;
+import xdman.util.StringUtils;
+
+import java.io.*;
 import java.net.PasswordAuthentication;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -14,11 +12,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import xdman.util.Base64;
-import xdman.util.Logger;
-import xdman.util.StringUtils;
-
 public class CredentialManager {
+	private File credentialsFile = new File(Config.getInstance().getDataFolder(), ".credentials");
 	private Map<String, PasswordAuthentication> savedCredentials;
 	private Map<String, PasswordAuthentication> cachedCredentials;
 
@@ -83,12 +78,11 @@ public class CredentialManager {
 	private void load() {
 		BufferedReader br = null;
 		try {
-			File f = new File(Config.getInstance().getDataFolder(), ".credentials");
-			if (!f.exists()) {
+			if (!credentialsFile.exists()) {
 				Logger.log("No saved credentials");
 				return;
 			}
-			br = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
+			br = new BufferedReader(new InputStreamReader(new FileInputStream(credentialsFile)));
 			if (!savedCredentials.isEmpty())
 				savedCredentials.clear();
 			while (true) {
@@ -127,8 +121,7 @@ public class CredentialManager {
 		}
 		OutputStream out = null;
 		try {
-			File f = new File(Config.getInstance().getDataFolder(), ".credentials");
-			out = new FileOutputStream(f);
+			out = new FileOutputStream(credentialsFile);
 			out.write(buf.toString().getBytes());
 		} catch (Exception e) {
 			Logger.log(e);

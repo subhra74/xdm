@@ -1,10 +1,9 @@
 package xdman.ui.components;
 
-import javax.swing.JComboBox;
-import javax.swing.JOptionPane;
-
 import xdman.Config;
 import xdman.ui.res.StringResource;
+
+import javax.swing.*;
 
 public class SpeedLimiter {
 	public static int getSpeedLimit() {

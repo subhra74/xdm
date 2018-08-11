@@ -1,9 +1,12 @@
 package xdman.network.http;
 
-import java.util.*;
-import java.io.*;
-
 import xdman.util.NetUtils;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class HeaderCollection {
 	private List<HttpHeader> headers;

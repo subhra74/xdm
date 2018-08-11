@@ -1,29 +1,5 @@
 package xdman.ui.components;
 
-import static xdman.util.XDMUtils.getScaledInt;
-
-import java.awt.Color;
-import java.awt.GraphicsDevice.WindowTranslucency;
-import java.awt.GraphicsEnvironment;
-import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.File;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-
-import javax.swing.DefaultComboBoxModel;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JComponent;
-import javax.swing.JDialog;
-import javax.swing.JFileChooser;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
-import javax.swing.border.LineBorder;
-
 import xdman.Config;
 import xdman.DownloadQueue;
 import xdman.QueueManager;
@@ -38,6 +14,20 @@ import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 import xdman.util.Logger;
 import xdman.util.XDMUtils;
+
+import javax.swing.*;
+import javax.swing.border.LineBorder;
+import java.awt.*;
+import java.awt.GraphicsDevice.WindowTranslucency;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+
+import static xdman.util.XDMUtils.getScaledInt;
 
 public class BatchVideoWnd extends JDialog implements ActionListener {
 	private static final long serialVersionUID = -6712422188220449618L;
@@ -190,9 +180,9 @@ public class BatchVideoWnd extends JDialog implements ActionListener {
 		add(txtQName);
 
 		queueModel = new DefaultComboBoxModel<DownloadQueue>();
-		ArrayList<DownloadQueue> qlist = QueueManager.getInstance().getQueueList();
-		for (int i = 0; i < qlist.size(); i++) {
-			queueModel.addElement(qlist.get(i));
+		Collection<DownloadQueue> downloadQueues = QueueManager.getInstance().getDownloadQueues();
+		for (DownloadQueue downloadQueue: downloadQueues) {
+			queueModel.addElement(downloadQueue);
 		}
 		cmbQueues = new JComboBox<>(queueModel);
 		cmbQueues.setRenderer(new QueueListRenderer());

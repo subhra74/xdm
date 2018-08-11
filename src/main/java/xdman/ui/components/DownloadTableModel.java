@@ -1,11 +1,16 @@
 package xdman.ui.components;
 
-import java.util.*;
-
-import javax.swing.table.*;
-
-import xdman.*;
+import xdman.Config;
+import xdman.DownloadEntry;
+import xdman.ListChangeListener;
+import xdman.XDMApp;
 import xdman.util.Logger;
+
+import javax.swing.table.AbstractTableModel;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class DownloadTableModel extends AbstractTableModel implements ListChangeListener {
 	private static final long serialVersionUID = 5474784018135644748L;

@@ -1,16 +1,12 @@
 package xdman.monitoring;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-
 import xdman.XDMApp;
 import xdman.downloaders.metadata.HttpMetadata;
 import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
+
+import java.io.*;
 
 public class VimeoHandler {
 

@@ -1,15 +1,7 @@
 package xdman.downloaders.metadata;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.Iterator;
-
-import xdman.Config;
 import xdman.XDMConstants;
 import xdman.network.http.HeaderCollection;
-import xdman.network.http.HttpHeader;
 import xdman.util.Logger;
 
 public class DashMetadata extends HttpMetadata {

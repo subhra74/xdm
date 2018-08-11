@@ -1,6 +1,6 @@
 package xdman.mediaconversion;
 
-import javax.swing.ImageIcon;
+import javax.swing.*;
 
 public class MediaFormatInfo {
 	public String resolution;

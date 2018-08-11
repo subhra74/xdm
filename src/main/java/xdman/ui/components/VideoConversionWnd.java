@@ -1,11 +1,22 @@
 package xdman.ui.components;
 
-import static xdman.util.XDMUtils.getScaledInt;
+import xdman.Config;
+import xdman.mediaconversion.*;
+import xdman.ui.res.ColorResource;
+import xdman.ui.res.FontResource;
+import xdman.ui.res.ImageResource;
+import xdman.ui.res.StringResource;
+import xdman.util.Logger;
+import xdman.util.StringUtils;
+import xdman.util.XDMUtils;
 
-import java.awt.Color;
+import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import java.awt.*;
 import java.awt.GraphicsDevice.WindowTranslucency;
-import java.awt.GraphicsEnvironment;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -17,42 +28,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import javax.swing.DefaultListModel;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComponent;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JPanel;
-import javax.swing.JProgressBar;
-import javax.swing.JScrollBar;
-import javax.swing.JScrollPane;
-import javax.swing.JSlider;
-import javax.swing.JTextField;
-import javax.swing.ListSelectionModel;
-import javax.swing.SwingUtilities;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-
-import xdman.Config;
-import xdman.mediaconversion.ConversionItem;
-import xdman.mediaconversion.FFmpeg;
-import xdman.mediaconversion.MediaConversionListener;
-import xdman.mediaconversion.MediaFormat;
-import xdman.mediaconversion.MediaFormatInfo;
-import xdman.mediaconversion.MediaFormats;
-import xdman.mediaconversion.MediaInfoExtractor;
-import xdman.ui.res.ColorResource;
-import xdman.ui.res.FontResource;
-import xdman.ui.res.ImageResource;
-import xdman.ui.res.StringResource;
-import xdman.util.Logger;
-import xdman.util.StringUtils;
-import xdman.util.XDMUtils;
+import static xdman.util.XDMUtils.getScaledInt;
 
 public class VideoConversionWnd extends JFrame implements ActionListener, Runnable, MediaConversionListener {
 

@@ -1,21 +1,5 @@
 package xdman.monitoring;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.Socket;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.UUID;
-
 import xdman.Config;
 import xdman.XDMApp;
 import xdman.XDMConstants;
@@ -28,11 +12,20 @@ import xdman.network.http.JavaHttpClient;
 import xdman.preview.FFmpegStream;
 import xdman.preview.PreviewStream;
 import xdman.ui.components.VideoPopupItem;
-import xdman.util.Base64;
 import xdman.util.FormatUtilities;
 import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
+
+import java.io.*;
+import java.net.Socket;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.UUID;
 
 public class MonitoringSession implements Runnable {
 	private String msg204 = "HTTP/1.1 204 No Content\r\n" + "Content-length: 0\r\n\r\n";

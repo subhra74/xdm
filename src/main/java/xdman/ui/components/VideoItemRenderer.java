@@ -1,7 +1,5 @@
 package xdman.ui.components;
 
-import javax.swing.table.*;
-
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
@@ -9,8 +7,9 @@ import xdman.videoparser.YdlResponse.YdlVideo;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-
+import javax.swing.table.TableCellRenderer;
 import java.awt.*;
+
 import static xdman.util.XDMUtils.getScaledInt;
 
 public class VideoItemRenderer implements TableCellRenderer {

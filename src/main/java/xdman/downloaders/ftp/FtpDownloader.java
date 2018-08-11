@@ -6,7 +6,6 @@ import xdman.downloaders.Segment;
 import xdman.downloaders.SegmentDownloader;
 import xdman.downloaders.metadata.HttpMetadata;
 import xdman.util.Logger;
-import xdman.util.XDMUtils;
 
 public class FtpDownloader extends SegmentDownloader {
 	private HttpMetadata metadata;

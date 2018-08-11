@@ -1,10 +1,5 @@
 package xdman.downloaders;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-
 import xdman.Config;
 import xdman.DownloadListener;
 import xdman.XDMApp;
@@ -15,6 +10,11 @@ import xdman.mediaconversion.FFmpeg;
 import xdman.util.HttpDateParser;
 import xdman.util.Logger;
 import xdman.util.StringUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
 
 public abstract class Downloader implements SegmentListener {
 	protected volatile boolean stopFlag;

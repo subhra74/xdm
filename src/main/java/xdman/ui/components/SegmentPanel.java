@@ -20,16 +20,13 @@
 
 package xdman.ui.components;
 
-import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.util.ArrayList;
-
-import javax.swing.JComponent;
-
 import xdman.downloaders.SegmentDetails;
 import xdman.downloaders.SegmentInfo;
 import xdman.ui.res.ColorResource;
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.ArrayList;
 public class SegmentPanel extends JComponent {
 	private static final long serialVersionUID = -6537879808121349569L;
 	private SegmentDetails segDet;

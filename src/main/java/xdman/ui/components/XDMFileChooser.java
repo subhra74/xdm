@@ -1,8 +1,7 @@
 package xdman.ui.components;
 
+import javax.swing.*;
 import java.io.File;
-
-import javax.swing.JFileChooser;
 
 public class XDMFileChooser {
 	static JFileChooser jfc;

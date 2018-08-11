@@ -1,10 +1,10 @@
 package xdman.monitoring;
 
-import java.io.IOException;
-import java.io.InputStream;
-
 import xdman.network.http.HeaderCollection;
 import xdman.util.NetUtils;
+
+import java.io.IOException;
+import java.io.InputStream;
 
 public class Request {
 	private String url;
@@ -16,11 +16,11 @@ public class Request {
 		String reqLine = NetUtils.readLine(in);
 		//System.out.println(reqLine);
 		if (reqLine == null || reqLine.length() < 1) {
-			throw new IOException("Invalid request line: " + reqLine);
+			throw new IOException(String.format("Invalid request line: %s", reqLine));
 		}
 		String[] arr = reqLine.split(" ");
 		if (arr.length != 3) {
-			throw new IOException("Invalid request: " + reqLine);
+			throw new IOException(String.format("Invalid request: %s", reqLine));
 		}
 		this.url = arr[1];
 		this.method = arr[0].toLowerCase().equals("post") ? 1 : 2;

@@ -1,13 +1,12 @@
 package xdman.downloaders;
 
+import xdman.Config;
+import xdman.util.Logger;
+
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.UUID;
-
-import xdman.Config;
-import xdman.util.Logger;
 
 public class SegmentImpl implements Segment {
 

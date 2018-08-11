@@ -1,10 +1,9 @@
 package xdman.ui.components;
 
-import javax.swing.*;
-import javax.swing.event.*;
-
 import xdman.Config;
 
+import javax.swing.*;
+import javax.swing.event.MouseInputAdapter;
 import java.awt.*;
 
 public class LayeredPanel extends JPanel {

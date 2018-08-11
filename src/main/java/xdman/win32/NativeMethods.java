@@ -1,9 +1,9 @@
 package xdman.win32;
 
-import java.io.File;
-
 import xdman.util.Logger;
 import xdman.util.XDMUtils;
+
+import java.io.File;
 
 public class NativeMethods {
 	private static NativeMethods _me;

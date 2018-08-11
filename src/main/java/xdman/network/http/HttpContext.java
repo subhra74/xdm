@@ -1,21 +1,15 @@
 package xdman.network.http;
 
+import xdman.CredentialManager;
+import xdman.network.ICredentialManager;
+import xdman.util.Logger;
+
+import javax.net.ssl.*;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
 import java.net.Socket;
 import java.security.SecureRandom;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509ExtendedTrustManager;
-
-import xdman.CredentialManager;
-import xdman.network.ICredentialManager;
-import xdman.util.Logger;
 
 public class HttpContext {
 	private boolean init = false;

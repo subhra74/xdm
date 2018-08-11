@@ -1,9 +1,11 @@
 package xdman.util;
 
-import java.io.*;
-import java.util.zip.GZIPInputStream;
+import xdman.network.http.ChunkedInputStream;
+import xdman.network.http.HeaderCollection;
 
-import xdman.network.http.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.zip.GZIPInputStream;
 
 public class NetUtils {
 	public static byte[] getBytes(String str) {

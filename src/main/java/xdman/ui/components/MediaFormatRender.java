@@ -1,20 +1,15 @@
 package xdman.ui.components;
 
-import static xdman.util.XDMUtils.getScaledInt;
-
-import java.awt.BorderLayout;
-import java.awt.Component;
-
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JPanel;
-import javax.swing.ListCellRenderer;
-import javax.swing.border.EmptyBorder;
-
 import xdman.mediaconversion.Format;
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.util.StringUtils;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import java.awt.*;
+
+import static xdman.util.XDMUtils.getScaledInt;
 public class MediaFormatRender implements ListCellRenderer<Format> {
 	//private JPanel panel;
 	private JPanel component;

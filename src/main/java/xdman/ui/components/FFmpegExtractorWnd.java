@@ -1,21 +1,5 @@
 package xdman.ui.components;
 
-import static xdman.util.XDMUtils.getScaledInt;
-
-import java.awt.Color;
-import java.awt.GraphicsDevice.WindowTranslucency;
-import java.awt.GraphicsEnvironment;
-import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-
-import javax.swing.JButton;
-import javax.swing.JComponent;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JProgressBar;
-
 import xdman.Config;
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
@@ -24,6 +8,14 @@ import xdman.ui.res.StringResource;
 import xdman.util.FFExtractCallback;
 import xdman.util.FormatUtilities;
 import xdman.util.Logger;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.GraphicsDevice.WindowTranslucency;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import static xdman.util.XDMUtils.getScaledInt;
 
 public class FFmpegExtractorWnd extends JFrame implements ActionListener {
 	/**

@@ -1,13 +1,12 @@
 package xdman.util;
 
+import javax.swing.*;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Iterator;
 import java.util.Map;
-
-import javax.swing.JOptionPane;
 
 public class ParamUtils {
 	public static void sendParam(Map<String, String> params) {

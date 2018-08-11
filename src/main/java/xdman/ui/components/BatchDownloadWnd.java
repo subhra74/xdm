@@ -1,36 +1,5 @@
 package xdman.ui.components;
 
-import java.awt.Color;
-import java.awt.GraphicsEnvironment;
-import java.awt.Insets;
-import java.awt.GraphicsDevice.WindowTranslucency;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.io.File;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import javax.swing.DefaultComboBoxModel;
-import javax.swing.DefaultListModel;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JComponent;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JPanel;
-import javax.swing.JScrollBar;
-import javax.swing.JScrollPane;
-import javax.swing.JTextField;
-import javax.swing.border.LineBorder;
-
 import xdman.Config;
 import xdman.DownloadQueue;
 import xdman.QueueManager;
@@ -43,6 +12,19 @@ import xdman.ui.res.StringResource;
 import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
+
+import javax.swing.*;
+import javax.swing.border.LineBorder;
+import java.awt.*;
+import java.awt.GraphicsDevice.WindowTranslucency;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.io.File;
+import java.net.URL;
+import java.util.*;
+import java.util.List;
 
 import static xdman.util.XDMUtils.getScaledInt;
 
@@ -305,10 +287,10 @@ public class BatchDownloadWnd extends JFrame implements ActionListener {
 		lblQueue.setBounds(0, y, getScaledInt(80), getScaledInt(30));
 		add(lblQueue);
 
-		queueModel = new DefaultComboBoxModel<DownloadQueue>();
-		ArrayList<DownloadQueue> qlist = QueueManager.getInstance().getQueueList();
-		for (int i = 0; i < qlist.size(); i++) {
-			queueModel.addElement(qlist.get(i));
+		queueModel = new DefaultComboBoxModel<>();
+		Collection<DownloadQueue> downloadQueues = QueueManager.getInstance().getDownloadQueues();
+		for (DownloadQueue downloadQueue: downloadQueues) {
+			queueModel.addElement(downloadQueue);
 		}
 		cmbQueues = new JComboBox<>(queueModel);
 		cmbQueues.setRenderer(new QueueListRenderer());

@@ -4,14 +4,8 @@ import xdman.XDMConstants;
 import xdman.downloaders.AbstractChannel;
 import xdman.downloaders.Segment;
 import xdman.downloaders.SegmentDownloader;
-import xdman.downloaders.metadata.DashMetadata;
 import xdman.downloaders.metadata.HttpMetadata;
-import xdman.network.ProxyResolver;
-import xdman.util.Logger;
-import xdman.util.MimeUtil;
-import xdman.util.NetUtils;
-import xdman.util.StringUtils;
-import xdman.util.XDMUtils;
+import xdman.util.*;
 
 public class HttpDownloader extends SegmentDownloader {
 	private HttpMetadata metadata;

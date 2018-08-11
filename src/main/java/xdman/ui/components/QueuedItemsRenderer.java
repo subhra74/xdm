@@ -1,19 +1,15 @@
 package xdman.ui.components;
 
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
-
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.ListCellRenderer;
-import javax.swing.border.EmptyBorder;
-
 import xdman.DownloadEntry;
 import xdman.XDMApp;
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.util.FormatUtilities;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import java.awt.*;
+
 import static xdman.util.XDMUtils.getScaledInt;
 public class QueuedItemsRenderer extends JLabel implements ListCellRenderer<String> {
 

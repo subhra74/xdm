@@ -1,12 +1,18 @@
 package xdman.downloaders.metadata;
 
-import java.io.*;
+import xdman.Config;
+import xdman.XDMConstants;
+import xdman.network.http.HeaderCollection;
+import xdman.network.http.HttpHeader;
+import xdman.util.Logger;
+import xdman.util.StringUtils;
 
-import java.util.*;
-
-import xdman.*;
-import xdman.network.http.*;
-import xdman.util.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.util.Iterator;
+import java.util.UUID;
 
 public class HttpMetadata {
 	protected String id;

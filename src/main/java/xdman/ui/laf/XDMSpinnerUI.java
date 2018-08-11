@@ -1,16 +1,13 @@
 package xdman.ui.laf;
 
-import java.awt.Component;
-import java.awt.Insets;
-
-import javax.swing.JButton;
-import javax.swing.JComponent;
-import javax.swing.plaf.ComponentUI;
-import javax.swing.plaf.basic.BasicSpinnerUI;
-
 import xdman.ui.components.CustomButton;
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.ImageResource;
+
+import javax.swing.*;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.basic.BasicSpinnerUI;
+import java.awt.*;
 
 public class XDMSpinnerUI extends BasicSpinnerUI {
 	public static ComponentUI createUI(JComponent c) {

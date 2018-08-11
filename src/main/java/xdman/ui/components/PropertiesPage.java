@@ -1,18 +1,14 @@
 package xdman.ui.components;
 
-import java.awt.Color;
-import java.awt.Dimension;
-
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.border.LineBorder;
-
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.ui.res.StringResource;
 import xdman.util.FormatUtilities;
+
+import javax.swing.*;
+import javax.swing.border.LineBorder;
+import java.awt.*;
+
 import static xdman.util.XDMUtils.getScaledInt;
 public class PropertiesPage extends Page {
 	/**

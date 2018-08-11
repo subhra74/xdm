@@ -1,21 +1,5 @@
 package xdman.ui.components;
 
-import static xdman.util.XDMUtils.getScaledInt;
-
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.net.URL;
-
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.border.LineBorder;
-
 import xdman.LinkRefreshCallback;
 import xdman.XDMApp;
 import xdman.downloaders.metadata.DashMetadata;
@@ -29,6 +13,15 @@ import xdman.ui.res.StringResource;
 import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
+
+import javax.swing.*;
+import javax.swing.border.LineBorder;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.net.URL;
+
+import static xdman.util.XDMUtils.getScaledInt;
 public class RefreshUrlPage extends Page implements LinkRefreshCallback {
 	/**
 	 * 

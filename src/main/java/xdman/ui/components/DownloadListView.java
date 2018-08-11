@@ -1,13 +1,11 @@
 package xdman.ui.components;
 
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.border.EmptyBorder;
-
 import xdman.DownloadEntry;
 import xdman.XDMApp;
 import xdman.util.XDMUtils;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 
 public class DownloadListView {
 	private DownloadTableModel model;

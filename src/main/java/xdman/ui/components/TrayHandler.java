@@ -1,22 +1,5 @@
 package xdman.ui.components;
 
-import java.awt.AWTException;
-import java.awt.CheckboxMenuItem;
-import java.awt.Image;
-import java.awt.MenuItem;
-import java.awt.PopupMenu;
-import java.awt.SystemTray;
-import java.awt.TrayIcon;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.util.List;
-
-import javax.swing.JOptionPane;
-
 import xdman.Config;
 import xdman.MonitoringListener;
 import xdman.XDMApp;
@@ -25,6 +8,11 @@ import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 import xdman.util.Logger;
 import xdman.util.XDMUtils;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.List;
 
 public class TrayHandler {
 	static ActionListener act;

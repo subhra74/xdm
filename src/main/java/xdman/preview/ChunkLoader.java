@@ -1,5 +1,9 @@
 package xdman.preview;
 
+import xdman.DownloadEntry;
+import xdman.XDMApp;
+import xdman.XDMConstants;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -8,14 +12,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-
-import xdman.DownloadEntry;
-import xdman.XDMApp;
-import xdman.XDMConstants;
-import xdman.downloaders.Segment;
-import xdman.downloaders.SegmentImpl;
-import xdman.downloaders.metadata.DashMetadata;
-import xdman.util.Logger;
 
 public class ChunkLoader {
 	static List<Chunk> load(String id, int type) {

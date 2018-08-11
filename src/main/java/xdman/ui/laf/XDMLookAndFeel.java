@@ -1,9 +1,9 @@
 package xdman.ui.laf;
 
-import javax.swing.UIDefaults;
-import javax.swing.UIManager;
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.metal.MetalLookAndFeel;
+
 import static xdman.util.XDMUtils.getScaledInt;
 
 public class XDMLookAndFeel extends MetalLookAndFeel {

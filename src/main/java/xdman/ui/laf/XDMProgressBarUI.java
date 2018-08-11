@@ -1,16 +1,11 @@
 package xdman.ui.laf;
 
-import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Insets;
+import xdman.ui.res.ColorResource;
 
-import javax.swing.JComponent;
-import javax.swing.JProgressBar;
+import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicProgressBarUI;
-
-import xdman.ui.res.ColorResource;
+import java.awt.*;
 
 public class XDMProgressBarUI extends BasicProgressBarUI {
 

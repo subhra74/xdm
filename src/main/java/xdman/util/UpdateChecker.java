@@ -1,12 +1,12 @@
 package xdman.util;
 
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.InputStream;
-
 import xdman.Config;
 import xdman.XDMApp;
 import xdman.network.http.JavaHttpClient;
+
+import java.io.File;
+import java.io.FilenameFilter;
+import java.io.InputStream;
 
 public class UpdateChecker {
 	private static final String APP_UPDAT_URL = "http://xdman.sourceforge.net/update/update_check.php",

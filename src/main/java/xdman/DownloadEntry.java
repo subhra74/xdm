@@ -1,6 +1,7 @@
 package xdman;
 
-import xdman.util.*;
+import xdman.util.FormatUtilities;
+import xdman.util.StringUtils;
 
 public class DownloadEntry {
 	private String id, file, folder;

@@ -1,18 +1,6 @@
 package xdman.util;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.security.GeneralSecurityException;
-import java.util.UUID;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
-
 import org.tukaani.xz.XZInputStream;
-
 import xdman.Config;
 import xdman.DownloadListener;
 import xdman.DownloadWindowListener;
@@ -21,6 +9,14 @@ import xdman.downloaders.http.HttpDownloader;
 import xdman.downloaders.metadata.HttpMetadata;
 import xdman.ui.components.DownloadWindow;
 import xdman.ui.components.FFmpegExtractorWnd;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class FFmpegDownloader implements DownloadListener, DownloadWindowListener, FFExtractCallback {
 	HttpDownloader d;

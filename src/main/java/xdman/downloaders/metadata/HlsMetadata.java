@@ -1,12 +1,6 @@
 package xdman.downloaders.metadata;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.util.Iterator;
-
-import xdman.Config;
 import xdman.XDMConstants;
-import xdman.network.http.HttpHeader;
 import xdman.util.Logger;
 
 public class HlsMetadata extends HttpMetadata {

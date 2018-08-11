@@ -1,13 +1,11 @@
 package xdman.ui.laf;
 
-import java.awt.Graphics;
+import xdman.ui.res.ImageResource;
 
-import javax.swing.Icon;
-import javax.swing.JComponent;
+import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicTreeUI;
-
-import xdman.ui.res.ImageResource;
+import java.awt.*;
 
 public class XDMTreeUI extends BasicTreeUI {
 
