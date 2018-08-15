@@ -111,16 +111,6 @@ public class MonitoringSession implements Runnable {
 				metadatas.add(md);
 			}
 			XDMApp.getInstance().addLinks(metadatas);
-
-			// ParsedHookData data = ParsedHookData.parse(b);
-			// if (data.getUrl() != null && data.getUrl().length() > 0) {
-			// HttpMetadata metadata = new HttpMetadata();
-			// metadata.setUrl(data.getUrl());
-			// metadata.setHeaders(data.getRequestHeaders());
-			// metadata.setSize(data.getContentLength());
-			// String file = data.getFile();
-			// XDMApp.getInstance().addDownload(metadata, file);
-			// }
 		} finally {
 			setResponseOk(res);
 		}
