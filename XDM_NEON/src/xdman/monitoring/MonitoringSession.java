@@ -214,16 +214,17 @@ public class MonitoringSession implements Runnable {
 			String info = item.getInfo();
 			if (count > 0)
 				sb.append(",");
-			sb.append(String.format("{\"id\": \"%s\", \"text\": \"%s\",\"info\":\"%s\"}", id, text,
-					info));
+			sb.append(String.format("{\"id\": \"%s\", \"text\": \"%s\",\"info\":\"%s\"}", id, text, info));
 			count++;
 		}
 		json.append("\n\"vidList\": [");
 		json.append(sb.toString());
-		json.append("]");
+		json.append("],");
+		String mimeTypes = "\n\"mimeList\": [\"video/\",\"audio/\",\"mpegurl\",\"f4m\",\"m3u8\"]";
+		json.append(mimeTypes);
 		json.append("\n}");
 
-		//System.out.println(json);
+		// System.out.println(json);
 
 		byte[] b = json.toString().getBytes();
 
@@ -669,7 +670,7 @@ public class MonitoringSession implements Runnable {
 		File manifestfile = null;
 
 		try {
-			if (contentType.contains("mpegurl") || ".m3u8".equalsIgnoreCase(ext)) {
+			if (contentType.contains("mpegurl") || ".m3u8".equalsIgnoreCase(ext) || contentType.contains("m3u8")) {
 				Logger.log("Downloading m3u8 manifest");
 				manifestfile = downloadMenifest(data);
 				return M3U8Handler.handle(manifestfile, data);
@@ -760,11 +761,20 @@ public class MonitoringSession implements Runnable {
 		JavaHttpClient client = null;
 		OutputStream out = null;
 		try {
+			Logger.log("downloading manifest: " + data.getUrl());
 			client = new JavaHttpClient(data.getUrl());
 			Iterator<HttpHeader> headers = data.getRequestHeaders().getAll();
+			boolean hasAccept = false;
 			while (headers.hasNext()) {
 				HttpHeader header = headers.next();
+				Logger.log(header.getName() + " " + header.getValue());
+				if (header.getName().toLowerCase().equals("accept")) {
+					hasAccept = true;
+				}
 				client.addHeader(header.getName(), header.getValue());
+			}
+			if (!hasAccept) {
+				client.addHeader("Accept", "*");
 			}
 			client.setFollowRedirect(true);
 			client.connect();

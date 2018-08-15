@@ -6,8 +6,8 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="lib" path="/home/subhro/git/xdm/XDM_NEON/lib/commons-net-3.6.jar"/>
-	<classpathentry kind="lib" path="/home/subhro/git/xdm/XDM_NEON/lib/json-simple-1.1.1.jar"/>
-	<classpathentry kind="lib" path="/home/subhro/git/xdm/XDM_NEON/lib/xz-1.8.jar"/>
+	<classpathentry kind="lib" path="C:/Users/subhro/lib/commons-net-3.6.jar"/>
+	<classpathentry kind="lib" path="C:/Users/subhro/lib/json-simple-1.1.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/subhro/lib/xz-1.8.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
