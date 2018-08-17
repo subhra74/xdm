@@ -52,7 +52,10 @@ public class MainWindow extends XDMFrame implements ActionListener {
     JLabel btnMonitoring;
 
     public MainWindow() {
-        setTitle(StringResource.get("WINDOW_TITLE"));
+	    String windowTitle = String.format("%s %s",
+			    StringResource.get("WINDOW_TITLE"),
+			    XDMApp.APP_VERSION);
+	    setTitle(windowTitle);
         setWindowSizeAndPosition();
         initWindow();
         if (Config.getInstance().isFirstRun()) {
@@ -810,7 +813,10 @@ public class MainWindow extends XDMFrame implements ActionListener {
 
     private void initWindow() {
         setIconImage(ImageResource.get("icon.png").getImage());
-        JLabel lblTitle = new JLabel(StringResource.get("WINDOW_TITLE"));
+	    String windowTitle = String.format("%s %s",
+			    StringResource.get("WINDOW_TITLE"),
+			    XDMApp.APP_VERSION);
+	    JLabel lblTitle = new JLabel(windowTitle);
         lblTitle.setBorder(new EmptyBorder(scale(20), scale(20), 0, 0));
         lblTitle.setFont(FontResource.getBiggestFont());
         lblTitle.setForeground(ColorResource.getWhite());

@@ -4,7 +4,7 @@
     <artifactId>xdm</artifactId>
     <packaging>jar</packaging>
     <name>Xtreme Download Manager</name>
-    <version>2018.08.10</version>
+    <version>2018.08.17</version>
     <description>Powerful download accelerator and video downloader</description>
     <url>http://xdman.sourceforge.net/</url>
     <licenses>
@@ -22,6 +22,15 @@
                 <role>developer</role>
             </roles>
             <timezone>+8</timezone>
+        </developer>
+        <developer>
+            <id>VRDate</id>
+            <name>Tomer Bar-Shlomo</name>
+            <roles>
+                <role>architect</role>
+                <role>developer</role>
+            </roles>
+            <timezone>+2</timezone>
         </developer>
     </developers>
     <scm>

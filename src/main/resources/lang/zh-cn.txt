@@ -1,5 +1,5 @@
 LANGUAGE_TEXT=Chinese simplified (简体中文)
-WINDOW_TITLE=XDM 2018
+WINDOW_TITLE=XDM
 ALL_DOWNLOADS=所有下载
 ALL_UNFINISHED=未完成
 ALL_FINISHED=已完成
@@ -239,7 +239,7 @@ PROMPT_PROXY=此代理需要用户名和密码
 BTN_BROWSE=浏览
 TITLE_ABOUT=关于XDM
 FULL_NAME=Xtreme Download Manager
-ABOUT_DETAILS=软件版本： %s 运行时 %s on %s\n\n制作：Subhra Das Gupta\n\n%s\n版权所有 (C) 2018，所有权利保留。
+ABOUT_DETAILS=软件版本： %s 运行时 %s on %s\n\n制作：Subhra Das Gupta & Tomer Bar-Shlomo\n\n%s\n版权所有 (C) 2018，所有权利保留。
 BTN_SEARCH_VIDEO=查找
 BTN_DOWNLOAD_NOW=开始下载
 BTN_DOWNLOAD_LATER=延时下载

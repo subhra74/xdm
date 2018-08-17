@@ -30,7 +30,7 @@ import java.util.List;
 
 public class XDMApp implements DownloadListener, DownloadWindowListener, Comparator<String> {
 
-    public static final String APP_VERSION = "2018.08.10";
+	public static final String APP_VERSION = "2018.08.17";
 
     private ArrayList<ListChangeListener> listChangeListeners;
     private Map<String, DownloadEntry> downloads;

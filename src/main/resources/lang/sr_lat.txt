@@ -1,5 +1,5 @@
 LANGUAGE_TEXT=Srpski (ćirilica)
-WINDOW_TITLE=XDM 2018
+WINDOW_TITLE=XDM
 ALL_DOWNLOADS=Sve
 ALL_UNFINISHED=Aktivno
 ALL_FINISHED=Završeno
@@ -239,7 +239,7 @@ PROMPT_PROXY=Proksi zahteva korisničko ime i lozinku
 BTN_BROWSE=Izaberi
 TITLE_ABOUT=O PROGRAMU XDM
 FULL_NAME=Xtreme Download Manager
-ABOUT_DETAILS=Verzija %s sa pokretačem %s na %s\n\nNapravio: Subhra Das Gupta\nPreveo na Srpski: Bojan Maksimović\n\n%s\nAutorsko pravo (C) 2018, Sva prava zadržana.
+ABOUT_DETAILS=Verzija %s sa pokretačem %s na %s\n\nNapravio: Subhra Das Gupta & Tomer Bar-Shlomo\nPreveo na Srpski: Bojan Maksimović\n\n%s\nAutorsko pravo (C) 2018, Sva prava zadržana.
 BTN_SEARCH_VIDEO=Pronađi
 BTN_DOWNLOAD_NOW=Preuzmi sada
 BTN_DOWNLOAD_LATER=Preuzmi kasnije

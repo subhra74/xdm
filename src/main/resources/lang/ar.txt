@@ -1,5 +1,5 @@
-﻿
-WINDOW_TITLE=XDM 2018
+﻿﻿
+WINDOW_TITLE=XDM
 ALL_DOWNLOADS=الكل
 ALL_UNFINISHED=غير مكتمل
 ALL_FINISHED=مكتمل
@@ -251,7 +251,7 @@ PROMPT_PROXY=البروكسي يطلب اسم المستخدم وكلمة الس
 BTN_BROWSE=تصفح
 TITLE_ABOUT=XDM حول
 FULL_NAME=Xtreme Download Manager
-ABOUT_DETAILS=نسخة التطبيق %s مع وقت التشغيل %s %s\n\n مطور البرنامج: Subhra Das Gupta\n\n%s\n حقوق الطبع والنشر (ج) 2018 ، جميع الحقوق محفوظة
+ABOUT_DETAILS=نسخة التطبيق %s مع وقت التشغيل %s %s\n\n مطور البرنامج: Subhra Das Gupta & Tomer Bar-Shlomo\n\n%s\n حقوق الطبع والنشر (ج) 2018 ، جميع الحقوق محفوظة
 BTN_SEARCH_VIDEO=البحث
 BTN_DOWNLOAD_NOW=تحميل الان
 BTN_DOWNLOAD_LATER=تحميل ﻻحقا

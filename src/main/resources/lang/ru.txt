@@ -1,5 +1,5 @@
-﻿﻿
-WINDOW_TITLE=XDM 2018
+﻿﻿﻿
+WINDOW_TITLE=XDM
 ALL_DOWNLOADS=Все
 ALL_UNFINISHED=Незавершенные
 ALL_FINISHED=Завершенные
@@ -239,7 +239,7 @@ PROMPT_PROXY=Прокси требует имя пользователя и па
 BTN_BROWSE=Обзор
 TITLE_ABOUT=О XDM
 FULL_NAME=Xtreme Download Manager
-ABOUT_DETAILS=App version %s with runtime %s on %s\n\nCreated by: Subhra Das Gupta\n\n%s\nCopyright (C) 2018, All rights reserved.
+ABOUT_DETAILS=App version %s with runtime %s on %s\n\nCreated by: Subhra Das Gupta & Tomer Bar-Shlomo\n\n%s\nCopyright (C) 2018, All rights reserved.
 BTN_SEARCH_VIDEO=Найти
 BTN_DOWNLOAD_NOW=Загрузить сейчас
 BTN_DOWNLOAD_LATER=Загрузить позднее
