@@ -4,7 +4,7 @@
     <artifactId>xdm</artifactId>
     <packaging>jar</packaging>
     <name>Xtreme Download Manager</name>
-    <version>2018.08.17</version>
+    <version>2018.08.20</version>
     <description>Powerful download accelerator and video downloader</description>
     <url>http://xdman.sourceforge.net/</url>
     <licenses>
