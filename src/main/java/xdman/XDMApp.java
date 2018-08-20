@@ -10,6 +10,7 @@ import xdman.downloaders.metadata.DashMetadata;
 import xdman.downloaders.metadata.HdsMetadata;
 import xdman.downloaders.metadata.HlsMetadata;
 import xdman.downloaders.metadata.HttpMetadata;
+import xdman.mediaconversion.FFmpeg;
 import xdman.monitoring.BrowserMonitor;
 import xdman.network.http.HttpContext;
 import xdman.ui.components.*;
@@ -389,7 +390,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {
-				if (!XDMUtils.isFFmpegInstalled()) {
+				if (!FFmpeg.isFFmpegInstalled()) {
 					if (JOptionPane.showConfirmDialog(null, StringResource.get("MSG_INSTALL_ADDITIONAL_COMPONENTS"),
 							StringResource.get("MSG_COMPONENT_TITLE"),
 							JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
@@ -1269,7 +1270,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 	public void openPreview(String id) {
 		DownloadEntry ent = XDMApp.getInstance().getEntry(id);
 		if (ent != null && (ent.getCategory() == XDMConstants.VIDEO || ent.getCategory() == XDMConstants.MUSIC)) {
-			if (XDMUtils.isFFmpegInstalled()) {
+			if (FFmpeg.isFFmpegInstalled()) {
 				XDMApp.getInstance().openPreviewPlayer(id);
 			} else {
 				JOptionPane.showMessageDialog(null, StringResource.get("LBL_COMPONENT_MISSING"));

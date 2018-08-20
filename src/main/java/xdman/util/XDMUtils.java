@@ -376,20 +376,12 @@ public class XDMUtils {
 		return null;
 	}
 
-	public static boolean checkComponentsInstalled() {
-		File ffFile = new File(Config.getInstance().getDataFolder(),
-				FFmpeg.getFFMpeg());
-		File ytFile = new File(Config.getInstance().getDataFolder(),
-				YoutubeDLHandler.getYouTubeDL());
-		if ((ffFile.exists() && ytFile.exists())) {
-			return true;
-		} else {
-			ffFile = new File(XDMUtils.getJarFile().getParentFile(),
-					FFmpeg.getFFMpeg());
-			ytFile = new File(XDMUtils.getJarFile().getParentFile(),
-					YoutubeDLHandler.getYouTubeDL());
-			return (ffFile.exists() && ytFile.exists());
-		}
+	public static boolean areComponentsInstalled() {
+		boolean isFFmpegInstalled = FFmpeg.isFFmpegInstalled();
+		boolean isYouTubeDLInstalled = YoutubeDLHandler.isYouTubeDLInstalled();
+		boolean componentsInstalled = isFFmpegInstalled
+				&& isYouTubeDLInstalled;
+		return componentsInstalled;
 	}
 
 	public static String getClipBoardText() {
@@ -430,17 +422,6 @@ public class XDMUtils {
 			}
 		}
 		return new File(System.getProperty("user.home"), DOWNLOADS).getAbsolutePath();
-	}
-
-	public static boolean isFFmpegInstalled() {
-		File f1 = new File(Config.getInstance().getDataFolder(),
-				FFmpeg.getFFMpeg());
-		if (f1.exists()) {
-			return true;
-		}
-		return new File(XDMUtils.getJarFile().getParentFile(),
-				FFmpeg.getFFMpeg()).exists();
-
 	}
 
 	// public static boolean isYdlInstalled() {

@@ -9,6 +9,7 @@ import xdman.util.XDMUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +19,7 @@ public class YoutubeDLHandler {
 	private Process proc;
 	private int exitCode;
 	private String url;
-	private String ydlLocation;
+	private File youTubeDLFile;
 	private boolean stop;
 	private String user, pass;
 
@@ -27,16 +28,42 @@ public class YoutubeDLHandler {
 	public YoutubeDLHandler(String url, String user, String pass) {
 		this.url = url;
 		this.videos = new ArrayList<>();
-		String youTubeDL = getYouTubeDL();
-		File ydlFile = new File(Config.getInstance().getDataFolder(),
-				youTubeDL);
-		if (!ydlFile.exists()) {
-			ydlFile = new File(XDMUtils.getJarFile().getParentFile(),
-					youTubeDL);
-		}
-		ydlLocation = ydlFile.getAbsolutePath();
+		this.youTubeDLFile = getYouTubeDLFile();
 		this.user = user;
 		this.pass = pass;
+	}
+
+
+	public static boolean isYouTubeDLInstalled() {
+		File youTubeDLFile = getYouTubeDLFile();
+		boolean isYouTubeDLInstalled = isYouTubeDLInstalled(youTubeDLFile);
+		return isYouTubeDLInstalled;
+	}
+
+	public static boolean isYouTubeDLInstalled(File youTubeDLFile) {
+		boolean isYouTubeDLInstalled = youTubeDLFile != null
+				&& youTubeDLFile.exists();
+		Logger.log("is YouTube Downloader Installed",
+				youTubeDLFile != null
+						? youTubeDLFile.getAbsolutePath()
+						: null,
+				isYouTubeDLInstalled);
+		return isYouTubeDLInstalled;
+	}
+
+	public static File getYouTubeDLFile() {
+		String youTubeDL = getYouTubeDL();
+		File dataYouTubeDLFile = new File(Config.getInstance().getDataFolder(),
+				youTubeDL);
+		if (dataYouTubeDLFile.exists()) {
+			return dataYouTubeDLFile;
+		}
+		File jarYouTubeDLFile = new File(XDMUtils.getJarFile().getParentFile(),
+				youTubeDL);
+		File youTubeDLFile = jarYouTubeDLFile.exists()
+				? jarYouTubeDLFile
+				: null;
+		return youTubeDLFile;
 	}
 
 	public static String getYouTubeDL() {
@@ -45,12 +72,20 @@ public class YoutubeDLHandler {
 	}
 
 	public void start() {
+		if (!isYouTubeDLInstalled(youTubeDLFile)) {
+			IOException ioException = new IOException(String.format("YouTube Downloader not installed %s",
+					youTubeDLFile != null
+							? youTubeDLFile.getAbsolutePath()
+							: null));
+			Logger.log(ioException);
+			return;
+		}
 		File tmpError = new File(Config.getInstance().getTemporaryFolder(), UUID.randomUUID().toString());
 		File tmpOutput = new File(Config.getInstance().getTemporaryFolder(), UUID.randomUUID().toString());
 		InputStream in = null;
 		try {
 			List<String> args = new ArrayList<String>();
-			args.add(ydlLocation);
+			args.add(youTubeDLFile.getAbsolutePath());
 			args.add("--no-warnings");
 			args.add("-q");
 			args.add("-i");
@@ -67,10 +102,11 @@ public class YoutubeDLHandler {
 				StringBuilder sb = new StringBuilder();
 				String user = Config.getInstance().getProxyUser();
 				String pass = Config.getInstance().getProxyPass();
-				if (!(StringUtils.isNullOrEmptyOrBlank(user) || StringUtils.isNullOrEmptyOrBlank(pass))) {
-					sb.append(user + ":" + pass);
+				if (!(StringUtils.isNullOrEmptyOrBlank(user)
+						|| StringUtils.isNullOrEmptyOrBlank(pass))) {
+					sb.append(user).append(":").append(pass);
 				}
-				String proxy = "http://" + webproxy.getHost();
+				String proxy = String.format("http://%s", webproxy.getHost());
 				int port = webproxy.getPort();
 				if (port > 0 && port != 80) {
 					sb.append(":" + port);

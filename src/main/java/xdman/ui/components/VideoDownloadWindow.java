@@ -4,6 +4,7 @@ import xdman.Config;
 import xdman.XDMApp;
 import xdman.downloaders.metadata.DashMetadata;
 import xdman.downloaders.metadata.HttpMetadata;
+import xdman.mediaconversion.FFmpeg;
 import xdman.mediaconversion.MediaFormat;
 import xdman.mediaconversion.MediaFormats;
 import xdman.ui.res.ColorResource;
@@ -335,7 +336,7 @@ public class VideoDownloadWindow extends JDialog implements ActionListener, Docu
 		// cmbStmAction.setEnabled(metadata != null && metadata instanceof
 		// DashMetadata);
 
-		cmbOutFormat.setEnabled(XDMUtils.isFFmpegInstalled());
+		cmbOutFormat.setEnabled(FFmpeg.isFFmpegInstalled());
 
 	}
 
@@ -418,10 +419,11 @@ public class VideoDownloadWindow extends JDialog implements ActionListener, Docu
 	private void updateFileExtension() {
 		String file = XDMUtils.getFileNameWithoutExtension(filePane.getFileName());
 		if (cmbOutFormat.getSelectedIndex() < 1) {
-			filePane.setFileName(file + originalExt);
+			filePane.setFileName(String.format("%s%s", file, originalExt));
 		} else {
-			String ext = ((MediaFormat) cmbOutFormat.getSelectedItem()).getFormat();
-			filePane.setFileName(file + "." + ext);
+			MediaFormat mediaFormat = (MediaFormat) cmbOutFormat.getSelectedItem();
+			String ext = mediaFormat.getFormat();
+			filePane.setFileName(String.format("%s.%s", file, ext));
 		}
 	}
 }

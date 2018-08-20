@@ -7,6 +7,7 @@ import xdman.util.XDMUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,23 +38,21 @@ public class FFmpeg {
 	}
 
 	public int convert() {
+		File ffMpegFile = FFmpeg.getFFMpegFile();
+		if (!FFmpeg.isFFmpegInstalled(ffMpegFile)) {
+			IOException ioException = new IOException(String.format("FFMpeg not installed %s",
+					ffMpegFile != null
+							? ffMpegFile.getAbsolutePath()
+							: null));
+			Logger.log(ioException);
+			return FF_NOT_FOUND;
+		}
 		BufferedReader bufferedReader = null;
 		try {
-
 			Logger.log("Outformat:", outformat);
 
-			File ffFile = new File(Config.getInstance().getDataFolder(),
-					getFFMpeg());
-			if (!ffFile.exists()) {
-				ffFile = new File(XDMUtils.getJarFile().getParentFile(),
-						getFFMpeg());
-				if (!ffFile.exists()) {
-					return FF_NOT_FOUND;
-				}
-			}
-
 			List<String> args = new ArrayList<String>();
-			args.add(ffFile.getAbsolutePath());
+			args.add(ffMpegFile.getAbsolutePath());
 
 			if (useHwAccel) {
 				args.add("-hwaccel");
@@ -204,6 +203,37 @@ public class FFmpeg {
 				}
 			}
 		}
+	}
+
+	public static boolean isFFmpegInstalled() {
+		File ffMpegFile = getFFMpegFile();
+		boolean isFFmpegInstalled = isFFmpegInstalled(ffMpegFile);
+		return isFFmpegInstalled;
+	}
+
+	public static boolean isFFmpegInstalled(File ffMpegFile) {
+		boolean isFFmpegInstalled = ffMpegFile != null
+				&& ffMpegFile.exists();
+		Logger.log("is FFMpeg Installed",
+				ffMpegFile != null
+						? ffMpegFile.getAbsolutePath()
+						: null,
+				isFFmpegInstalled);
+		return isFFmpegInstalled;
+	}
+
+	public static File getFFMpegFile() {
+		String ffMpeg = getFFMpeg();
+		File dataFFmpegFile = new File(Config.getInstance().getDataFolder(),
+				ffMpeg);
+		if (dataFFmpegFile.exists()) {
+			return dataFFmpegFile;
+		}
+		File jarFFmpegFile = new File(XDMUtils.getJarFile().getParentFile(),
+				ffMpeg);
+		File ffmpegFile = jarFFmpegFile.exists() ? jarFFmpegFile
+				: null;
+		return ffmpegFile;
 	}
 
 	public static String getFFMpeg() {

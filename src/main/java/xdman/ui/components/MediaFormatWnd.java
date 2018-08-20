@@ -25,7 +25,7 @@ import static xdman.util.XDMUtils.getScaledInt;
 
 public class MediaFormatWnd extends JDialog implements ActionListener {
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = -8292378738777760999L;
 
@@ -287,24 +287,67 @@ public class MediaFormatWnd extends JDialog implements ActionListener {
 				if (index < 0)
 					return;
 				Format fmt = listModel.get(index);
-				addToModel(modelVideoCodec, fmt.getVideoCodecs(),
-						fmt.getDefautValue(fmt.getVideoCodecs(), fmt.getDefautVideoCodec()), cmbVideoCodec);
-				addToModel(modelAudioCodec, fmt.getAudioCodecs(),
-						fmt.getDefautValue(fmt.getAudioCodecs(), fmt.getDefautAudioCodec()), cmbAudioCodec);
-				addToModel(modelResolution, fmt.getResolutions(),
-						fmt.getDefautValue(fmt.getResolutions(), fmt.getDefaultResolution()), cmbResolution);
-				addToModel(modelFrameRate, fmt.getFrameRate(),
-						fmt.getDefautValue(fmt.getFrameRate(), fmt.getDefaultFrameRate()), cmbFrameRate);
-				addToModel(modelVBR, fmt.getVideoBitrate(),
-						fmt.getDefautValue(fmt.getVideoBitrate(), fmt.getDefaultVideoBitrate()), cmbVBR);
-				addToModel(modelAsr, fmt.getAudioSampleRate(),
-						fmt.getDefautValue(fmt.getAudioSampleRate(), fmt.getDefaultAudioSampleRate()), cmbAsr);
-				addToModel(modelAbr, fmt.getAudioBitrate(),
-						fmt.getDefautValue(fmt.getAudioBitrate(), fmt.getDefaultAudioBitrate()), cmbAbr);
-				addToModel(modelSize, fmt.getAspectRatio(),
-						fmt.getDefautValue(fmt.getAspectRatio(), fmt.getDefaultAspectRatio()), cmbSize);
-				addToModel(modelAc, fmt.getAudioChannel(),
-						fmt.getDefautValue(fmt.getAudioChannel(), fmt.getDefaultAudioChannel()), cmbAc);
+
+				List<String> videoCodecs = fmt.getVideoCodecs();
+				addToModel(modelVideoCodec,
+						videoCodecs,
+						fmt.getDefautValue(videoCodecs,
+								fmt.getDefautVideoCodec()),
+						cmbVideoCodec);
+
+				List<String> audioCodecs = fmt.getAudioCodecs();
+				addToModel(modelAudioCodec,
+						audioCodecs,
+						fmt.getDefautValue(audioCodecs,
+								fmt.getDefautAudioCodec()),
+						cmbAudioCodec);
+				addToModel(modelResolution,
+						fmt.getResolutions(),
+						fmt.getDefautValue(fmt.getResolutions(),
+								fmt.getDefaultResolution()),
+						cmbResolution);
+
+				List<String> frameRate = fmt.getFrameRate();
+				addToModel(modelFrameRate,
+						frameRate,
+						fmt.getDefautValue(frameRate,
+								fmt.getDefaultFrameRate()),
+						cmbFrameRate);
+
+				List<String> videoBitrate = fmt.getVideoBitrate();
+				addToModel(modelVBR,
+						videoBitrate,
+						fmt.getDefautValue(videoBitrate,
+								fmt.getDefaultVideoBitrate()),
+						cmbVBR);
+
+				List<String> audioSampleRate = fmt.getAudioSampleRate();
+				addToModel(modelAsr,
+						audioSampleRate,
+						fmt.getDefautValue(audioSampleRate,
+								fmt.getDefaultAudioSampleRate()),
+						cmbAsr);
+
+				List<String> audioBitrate = fmt.getAudioBitrate();
+				addToModel(modelAbr,
+						audioBitrate,
+						fmt.getDefautValue(audioBitrate,
+								fmt.getDefaultAudioBitrate()),
+						cmbAbr);
+
+				List<String> aspectRatio = fmt.getAspectRatio();
+				addToModel(modelSize,
+						aspectRatio,
+						fmt.getDefautValue(aspectRatio,
+								fmt.getDefaultAspectRatio()),
+						cmbSize);
+
+				List<String> audioChannel = fmt.getAudioChannel();
+				addToModel(modelAc,
+						audioChannel,
+						fmt.getDefautValue(audioChannel,
+								fmt.getDefaultAudioChannel()),
+						cmbAc);
 				updateFormat();
 			}
 		});
@@ -315,7 +358,7 @@ public class MediaFormatWnd extends JDialog implements ActionListener {
 	}
 
 	private void addToModel(DefaultComboBoxModel<String> model, List<String> list, String defaultValue,
-			JComboBox<String> cmb) {
+	                        JComboBox<String> cmb) {
 		model.removeAllElements();
 		if (list == null) {
 			return;
@@ -369,20 +412,49 @@ public class MediaFormatWnd extends JDialog implements ActionListener {
 
 	private void updateFormat() {
 		fmt = new MediaFormat();
+
+		String cmbResolutionSelectedItem = (String) cmbResolution.getSelectedItem();
+		String resolution = Format.getSize(cmbResolutionSelectedItem);
+		fmt.setResolution(resolution);
+
+		String cmbVideoCodecSelectedItem = (String) cmbVideoCodec.getSelectedItem();
+		String codecName = Format.getCodecName(cmbVideoCodecSelectedItem);
+		fmt.setVideo_codec(codecName);
+
+		String bitRateVal = getCmbVal(cmbVBR);
+		String bitRate = Format.getBitRate(bitRateVal);
+		fmt.setVideo_bitrate(bitRate);
+
+		String framerate = getCmbVal(cmbFrameRate);
+		fmt.setFramerate(framerate);
+
+		String aspectRatioVal = getCmbVal(cmbSize);
+		String aspectRatio = Format.getAspec(aspectRatioVal);
+		fmt.setAspectRatio(aspectRatio);
+
+		String audioCodecVal = getCmbVal(cmbAudioCodec);
+		String audioCodec = Format.getCodecName(audioCodecVal);
+		fmt.setAudio_codec(audioCodec);
+
+		String audioBitrateVal = getCmbVal(cmbAbr);
+		String audioBitrate = Format.getBitRate(audioBitrateVal);
+		fmt.setAudio_bitrate(audioBitrate);
+
+		String SamplerateVal = getCmbVal(cmbAsr);
+		fmt.setSamplerate(SamplerateVal);
+
+		String audioChannel = getCmbVal(cmbAc);
+		fmt.setAudio_channel(audioChannel);
 		Format format = listFormat.getSelectedValue();
-		fmt.setFormat(format.getExt());
-		fmt.setDescription(format.getDesc());
-		fmt.setResolution(Format.getSize((String) cmbResolution.getSelectedItem()));
-		fmt.setVideo_codec((Format.getCodecName((String) cmbVideoCodec.getSelectedItem())));
-		fmt.setVideo_bitrate(Format.getBitRate(getCmbVal(cmbVBR)));
-		String fr = getCmbVal(cmbFrameRate);
-		fmt.setFramerate(fr);
-		fmt.setAspectRatio(Format.getAspec(getCmbVal(cmbSize)));
-		fmt.setAudio_codec(Format.getCodecName(getCmbVal(cmbAudioCodec)));
-		fmt.setAudio_bitrate(Format.getBitRate(getCmbVal(cmbAbr)));
-		fmt.setSamplerate(getCmbVal(cmbAsr));
-		fmt.setAudio_channel(getCmbVal(cmbAc));
-		fmt.setVideo_param_extra(format.getVidExtra());
+		if (format == null) {
+			return;
+		}
+		String formatExt = format.getExt();
+		fmt.setFormat(formatExt);
+		String formatDesc = format.getDesc();
+		fmt.setDescription(formatDesc);
+		String formatVidExtra = format.getVidExtra();
+		fmt.setVideo_param_extra(formatVidExtra);
 	}
 
 }

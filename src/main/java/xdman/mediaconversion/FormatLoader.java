@@ -28,6 +28,9 @@ public class FormatLoader {
 			while ((ln = bufferedReader.readLine()) != null) {
 				FormatGroup fg = new FormatGroup();
 				String[] arr = ln.split("\\|");
+				if (arr.length != 2) {
+					break;
+				}
 				fg.name = arr[0].trim();
 				fg.desc = arr[1].trim();
 				Logger.log("group:", fg.name);

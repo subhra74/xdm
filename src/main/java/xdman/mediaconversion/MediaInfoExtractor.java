@@ -2,10 +2,10 @@ package xdman.mediaconversion;
 
 import xdman.Config;
 import xdman.util.Logger;
-import xdman.util.XDMUtils;
 
 import javax.swing.*;
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -39,24 +39,26 @@ public class MediaInfoExtractor {
 	}
 
 	public MediaFormatInfo getInfo(String file) {
+		File ffMpegFile = FFmpeg.getFFMpegFile();
+		if (!FFmpeg.isFFmpegInstalled(ffMpegFile)) {
+			IOException ioException = new IOException(String.format("FFMpeg not installed %s",
+					ffMpegFile != null
+							? ffMpegFile.getAbsolutePath()
+							: null));
+			Logger.log(ioException);
+			return null;
+		}
 		File f = new File(file);
 		File tmpOutput = new File(Config.getInstance().getTemporaryFolder(), UUID.randomUUID().toString());
 		File tmpImgFile = new File(Config.getInstance().getTemporaryFolder(), UUID.randomUUID().toString() + ".jpg");
 		if (!f.exists())
 			return null;
-		File ffFile = new File(Config.getInstance().getDataFolder(),
-				FFmpeg.getFFMpeg());
-		if (!ffFile.exists()) {
-			ffFile = new File(XDMUtils.getJarFile().getParentFile(),
-					FFmpeg.getFFMpeg());
-			if (!ffFile.exists()) {
-				return null;
-			}
+		if (stop) {
+			return null;
 		}
-		if(stop)return null;
 		try {
 			List<String> args = new ArrayList<String>();
-			args.add(ffFile.getAbsolutePath());
+			args.add(ffMpegFile.getAbsolutePath());
 			args.add("-i");
 			args.add(f.getAbsolutePath());
 			args.add("-vf");

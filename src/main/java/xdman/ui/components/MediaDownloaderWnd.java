@@ -300,12 +300,12 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 				JOptionPane.showMessageDialog(this, StringResource.get("MSG_NO_URL"));
 				return;
 			}
-			if (!XDMUtils.checkComponentsInstalled()) {
+			if (!XDMUtils.areComponentsInstalled()) {
 				JOptionPane.showMessageDialog(this, StringResource.get("LBL_COMPONENT_MISSING"));
 				return;
 			}
 			if (!txtURL.getText().startsWith("http")) {
-				txtURL.setText("http://" + txtURL.getText());
+				txtURL.setText(String.format("http://%s", txtURL.getText()));
 			}
 			jsp.setVisible(false);
 			prg.setVisible(true);
@@ -449,6 +449,16 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 			@Override
 			public void run() {
 				try {
+					File youTubeDLFile = YoutubeDLHandler.getYouTubeDLFile();
+					boolean isYouTubeDLInstalled = YoutubeDLHandler.isYouTubeDLInstalled(youTubeDLFile);
+					if (!isYouTubeDLInstalled) {
+						IOException ioException = new IOException(String.format("YouTube Downloader Installed not installed %s",
+								youTubeDLFile != null
+										? youTubeDLFile.getAbsolutePath()
+										: null));
+						Logger.log(ioException);
+						throw ioException;
+					}
 					// rootNode.removeAllChildren();
 					ydl = new YoutubeDLHandler(url, txtUser.getText(), txtPassword.getText());
 					// https://www.youtube.com/watch?v=PMR0ld5h938
@@ -516,7 +526,7 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 	private VideoWrapper createDownloadData(YdlVideo video) {
 		YdlMediaFormat fmt = video.mediaFormats.get(video.index);
 		String title = video.title;
-		String file = XDMUtils.getFileName(title) + "." + fmt.ext;
+		String file = String.format("%s.%s", XDMUtils.getFileName(title), fmt.ext);
 		HttpMetadata md = null;
 		switch (fmt.type) {
 		case YdlResponse.DASH_HTTP:

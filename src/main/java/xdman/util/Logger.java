@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 
 public class Logger {
-	public static final int MAX_THREAD_NAME_LENGTH = 16;
+	public static final int MAX_THREAD_NAME_LENGTH = 35;
 	private static File logFile = getLogFile();
 
 	public static void log(Object... objects) {

@@ -1,9 +1,7 @@
 package xdman.preview;
 
-import xdman.Config;
 import xdman.mediaconversion.FFmpeg;
 import xdman.util.Logger;
-import xdman.util.XDMUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,27 +28,29 @@ public class FFmpegStream extends InputStream implements Runnable {
 		try {
 			in.close();
 		} catch (Exception e) {
+			Logger.log(e);
 		}
 		try {
 			Logger.log("closing");
 			proc.destroyForcibly();
 			t.interrupt();
 		} catch (Exception e) {
+			Logger.log(e);
 		}
 	}
 
 	private void init() throws IOException {
-		ArrayList<String> args = new ArrayList<>();
-		File ffFile = new File(Config.getInstance().getDataFolder(),
-				FFmpeg.getFFMpeg());
-		if (!ffFile.exists()) {
-			ffFile = new File(XDMUtils.getJarFile().getParentFile(),
-					FFmpeg.getFFMpeg());
-			if (!ffFile.exists()) {
-				return;
-			}
+		File ffMpegFile = FFmpeg.getFFMpegFile();
+		if (!FFmpeg.isFFmpegInstalled(ffMpegFile)) {
+			IOException ioException = new IOException(String.format("FFMpeg not installed %s",
+					ffMpegFile != null
+							? ffMpegFile.getAbsolutePath()
+							: null));
+			Logger.log(ioException);
+			return;
 		}
-		args.add(ffFile.getAbsolutePath());
+		ArrayList<String> args = new ArrayList<>();
+		args.add(ffMpegFile.getAbsolutePath());
 		args.add("-err_detect");
 		args.add("ignore_err");
 		args.add("-i");
@@ -121,7 +121,7 @@ public class FFmpegStream extends InputStream implements Runnable {
 			read += x;
 			// Logger.log(new String(b, 0, x));
 		} else {
-			Logger.log("stream ended after " + read + " bytes");
+			Logger.log("stream ended after", read, "bytes");
 			// Logger.log(proc.exitValue());
 		}
 		return x;
