@@ -119,7 +119,7 @@ public class HttpContext {
 
 			Authenticator.setDefault(new Authenticator() {
 				protected PasswordAuthentication getPasswordAuthentication() {
-					System.out.println("Called on " + getRequestorType() + " scheme: " + getRequestingScheme()
+					Logger.log("Called on " + getRequestorType() + " scheme: " + getRequestingScheme()
 							+ " host: " + getRequestingHost() + " url: " + getRequestingURL() + " prompt: "
 							+ getRequestingPrompt());
 					if (getRequestorType() == RequestorType.SERVER) {

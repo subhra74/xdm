@@ -116,7 +116,7 @@ public class NewDownloadWindow extends JDialog implements ActionListener, Docume
                     Config.getInstance().addBlockedHosts(host);
                     Config.getInstance().save();
                     dispose();
-                    System.out.println("called");
+	                Logger.log("called");
 
                 } catch (Exception e2) {
                     e2.printStackTrace();

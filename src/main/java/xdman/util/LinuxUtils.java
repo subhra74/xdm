@@ -6,7 +6,7 @@ public class LinuxUtils {
 	static String shutdownCmds[] = {
 			"dbus-send --system --print-reply --dest=org.freedesktop.login1 /org/freedesktop/login1 \"org.freedesktop.login1.Manager.PowerOff\" boolean:true",
 			"dbus-send --system --print-reply --dest=\"org.freedesktop.ConsoleKit\" /org/freedesktop/ConsoleKit/Manager org.freedesktop.ConsoleKit.Manager.Stop",
-			"systemctl poweroff" };
+			"systemctl poweroff"};
 
 	public static void initShutdown() {
 		for (int i = 0; i < shutdownCmds.length; i++) {
@@ -84,10 +84,10 @@ public class LinuxUtils {
 			} catch (Exception e2) {
 			}
 		}
-		String str=new String(buf);
+		String str = new String(buf);
 		String s1 = getProperPath(System.getProperty("java.home"));
 		String s2 = XDMUtils.getJarFile().getAbsolutePath();
-		return str.contains(s1)&&str.contains(s2);
+		return str.contains(s1) && str.contains(s2);
 	}
 
 	public static void removeFromStartup() {
@@ -109,7 +109,7 @@ public class LinuxUtils {
 			return path;
 		return path + "/";
 	}
-	
+
 	public static void browseURL(final String url) {
 		try {
 			ProcessBuilder pb = new ProcessBuilder();
@@ -119,16 +119,19 @@ public class LinuxUtils {
 			Logger.log(e);
 		}
 	}
-	
-	public static String getXDGDownloaDir() {
-		BufferedReader br = null;
+
+	public static String getXDGDownloadDir() {
+		File userDirsFile = new File(System.getProperty("user.home"), ".config/user-dirs.dirs");
+		if (!userDirsFile.exists()) {
+			Logger.log("No saved XDG Download Dir",
+					userDirsFile.getAbsolutePath());
+			return null;
+		}
+		BufferedReader bufferedReader = null;
 		try {
-			br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(System.getProperty("user.home"),".config/user-dirs.dirs"))));
-			while (true) {
-				String line = br.readLine();
-				if (line == null) {
-					break;
-				}
+			bufferedReader = XDMUtils.getBufferedReader(userDirsFile);
+			String line;
+			while ((line = bufferedReader.readLine()) != null) {
 				if (line.startsWith("XDG_DOWNLOAD_DIR")) {
 					int index = line.indexOf("=");
 					if (index != -1) {
@@ -144,10 +147,11 @@ public class LinuxUtils {
 		} catch (Exception e) {
 			Logger.log(e);
 		} finally {
-			if (br != null) {
+			if (bufferedReader != null) {
 				try {
-					br.close();
+					bufferedReader.close();
 				} catch (Exception e2) {
+					Logger.log(e2);
 				}
 			}
 		}

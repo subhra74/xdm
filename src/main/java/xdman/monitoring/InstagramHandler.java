@@ -6,26 +6,30 @@ import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class InstagramHandler {
 	private static Pattern pattern;
 
-	public static boolean handle(File tempFile, ParsedHookData data) {
+	public static boolean handle(File instagramFile, ParsedHookData data) {
+		if (!instagramFile.exists()) {
+			Logger.log("No saved Instagram",
+					instagramFile.getAbsolutePath());
+			return false;
+		}
+		BufferedReader bufferedReader = null;
 		try {
 			StringBuffer buf = new StringBuffer();
-			InputStream in = new FileInputStream(tempFile);
-			BufferedReader r = new BufferedReader(new InputStreamReader(in));
-			while (true) {
-				String ln = r.readLine();
-				if (ln == null) {
-					break;
-				}
+			Logger.log("Loading Instagram...",
+					instagramFile.getAbsolutePath());
+			bufferedReader = XDMUtils.getBufferedReader(instagramFile);
+			String ln;
+			while ((ln = bufferedReader.readLine()) != null) {
 				buf.append(ln + "\n");
 			}
-			in.close();
 			Logger.log("Parsing instagram page...");
 			if (pattern == null) {
 				pattern = Pattern.compile("\"video\\_url\"\\s*:\\s*\"(.*?)\"");
@@ -35,7 +39,7 @@ public class InstagramHandler {
 				int start = matcher.start();
 				int end = matcher.end();
 				String url = matcher.group(1);
-				Logger.log("Url: " + url);
+				Logger.log("instagram Url:", url);
 				HttpMetadata metadata = new HttpMetadata();
 				metadata.setUrl(url);
 				metadata.setHeaders(data.getRequestHeaders());
@@ -49,12 +53,25 @@ public class InstagramHandler {
 				} else {
 					ext = "";
 				}
-				XDMApp.getInstance().addMedia(metadata, file + "." + ext, ext);
+				String instagramMediaFilePath = String.format("%s.%s", file, ext);
+				Logger.log("Instagram",
+						metadata,
+						"Media File Path:",
+						instagramMediaFilePath);
+				XDMApp.getInstance().addMedia(metadata, instagramMediaFilePath, ext);
 			}
 			return true;
 		} catch (Exception e) {
 			Logger.log(e);
 			return false;
+		} finally {
+			if (bufferedReader != null) {
+				try {
+					bufferedReader.close();
+				} catch (Exception e2) {
+					Logger.log(e2);
+				}
+			}
 		}
 	}
 }

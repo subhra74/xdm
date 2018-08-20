@@ -1,6 +1,8 @@
 package xdman.preview;
 
 import xdman.Config;
+import xdman.mediaconversion.FFmpeg;
+import xdman.util.Logger;
 import xdman.util.XDMUtils;
 
 import java.io.File;
@@ -30,7 +32,7 @@ public class FFmpegStream extends InputStream implements Runnable {
 		} catch (Exception e) {
 		}
 		try {
-			System.out.println("closing");
+			Logger.log("closing");
 			proc.destroyForcibly();
 			t.interrupt();
 		} catch (Exception e) {
@@ -40,10 +42,10 @@ public class FFmpegStream extends InputStream implements Runnable {
 	private void init() throws IOException {
 		ArrayList<String> args = new ArrayList<>();
 		File ffFile = new File(Config.getInstance().getDataFolder(),
-				System.getProperty("os.name").toLowerCase().contains("windows") ? "ffmpeg.exe" : "ffmpeg");
+				FFmpeg.getFFMpeg());
 		if (!ffFile.exists()) {
 			ffFile = new File(XDMUtils.getJarFile().getParentFile(),
-					System.getProperty("os.name").toLowerCase().contains("windows") ? "ffmpeg.exe" : "ffmpeg");
+					FFmpeg.getFFMpeg());
 			if (!ffFile.exists()) {
 				return;
 			}
@@ -87,15 +89,16 @@ public class FFmpegStream extends InputStream implements Runnable {
 			try {
 				Thread.sleep(2000);
 			} catch (Exception e) {
-				System.out.println("interrupted returing");
+				Logger.log("interrupted returning", e);
 				return;
 			}
 			if (read - last < 1) {
 				try {
 					in.close();
 				} catch (Exception e) {
+					Logger.log(e);
 				}
-				System.out.println("closing hanged ffmpeg");
+				Logger.log("closing hanged ffmpeg");
 				proc.destroyForcibly();
 				break;
 			}
@@ -116,10 +119,10 @@ public class FFmpegStream extends InputStream implements Runnable {
 		int x = in.read(b, off, len);
 		if (x != -1) {
 			read += x;
-			// System.out.println(new String(b, 0, x));
+			// Logger.log(new String(b, 0, x));
 		} else {
-			System.out.println("stream ended after " + read + " bytes");
-			// System.out.println(proc.exitValue());
+			Logger.log("stream ended after " + read + " bytes");
+			// Logger.log(proc.exitValue());
 		}
 		return x;
 	}

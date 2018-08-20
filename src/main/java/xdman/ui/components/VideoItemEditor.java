@@ -3,6 +3,7 @@ package xdman.ui.components;
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
+import xdman.util.Logger;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -87,7 +88,7 @@ public class VideoItemEditor extends AbstractCellEditor implements TableCellEdit
 	public Object getCellEditorValue() {
 		obj.videoItem.index = cmb.getSelectedIndex();
 		obj.checked = chk.isSelected();
-		System.out.println("value " + obj.videoItem.title + " " + obj.videoItem.index);
+		Logger.log("value " + obj.videoItem.title + " " + obj.videoItem.index);
 		return obj;
 	}
 
@@ -103,7 +104,7 @@ public class VideoItemEditor extends AbstractCellEditor implements TableCellEdit
 
 	@Override
 	public boolean stopCellEditing() {
-		System.out.println("requesting stop");
+		Logger.log("requesting stop");
 		fireEditingStopped();
 		return true;
 	}
@@ -115,7 +116,7 @@ public class VideoItemEditor extends AbstractCellEditor implements TableCellEdit
 		cmbModel.removeAllElements();
 		for (int i = 0; i < obj.videoItem.mediaFormats.size(); i++)
 			cmbModel.addElement(obj.videoItem.mediaFormats.get(i) + "");
-		// System.out.println(obj.title + " " + obj.index);
+		// Logger.log(obj.title , obj.index);
 		cmb.setSelectedIndex(obj.videoItem.index);
 		if (row == 0) {
 			lblBorder.setOpaque(false);
@@ -133,7 +134,7 @@ public class VideoItemEditor extends AbstractCellEditor implements TableCellEdit
 				if (icon != null) {
 					lblIcon.setIcon(icon);
 				} else {
-					System.out.println("null");
+					Logger.log("null");
 				}
 			}
 		}

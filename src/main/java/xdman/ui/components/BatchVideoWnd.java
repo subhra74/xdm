@@ -250,7 +250,7 @@ public class BatchVideoWnd extends JDialog implements ActionListener {
 	}
 
 	private void queueOptionUpdated() {
-		System.out.println("called");
+		Logger.log("Queue Option Updated");
 		if (cmbQueOpts.getSelectedIndex() == 0) {
 			lblName.setVisible(true);
 			txtQName.setVisible(true);

@@ -1,60 +1,64 @@
 package xdman.mediaconversion;
 
 import xdman.ui.res.StringResource;
+import xdman.util.Logger;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 public class FormatLoader {
+	private static final String FORMAT_DB_FILE_NAME = "formats/format_db.txt";
+
 	public static List<FormatGroup> load() {
+		BufferedReader bufferedReader = null;
 		List<FormatGroup> list = new ArrayList<>();
 		try {
-			InputStream inStream = StringResource.class.getResourceAsStream("/formats/format_db.txt");
+			InputStream inStream = StringResource.class.getResourceAsStream(String.format("/%s", FORMAT_DB_FILE_NAME));
 			if (inStream == null) {
-				inStream = new FileInputStream("formats/format_db.txt");
+				inStream = new FileInputStream(FORMAT_DB_FILE_NAME);
 			}
-			InputStreamReader r = new InputStreamReader(inStream, Charset.forName("utf-8"));
-
-			BufferedReader br = new BufferedReader(r);
-
-			while (true) {
-				String ln = br.readLine();
-				if (ln.length() < 1) {
-					break;
-				}
+			InputStreamReader r = new InputStreamReader(inStream, StandardCharsets.UTF_8);
+			bufferedReader = new BufferedReader(r);
+			String ln;
+			while ((ln = bufferedReader.readLine()) != null) {
 				FormatGroup fg = new FormatGroup();
 				String[] arr = ln.split("\\|");
 				fg.name = arr[0].trim();
 				fg.desc = arr[1].trim();
-				System.out.println("group: " + fg.name);
+				Logger.log("group:", fg.name);
 				list.add(fg);
 			}
-			while (true) {
-				Format format = Format.read(br);
-				if (format == null) {
-					break;
-				}
+			Format format;
+			while ((format = Format.read(bufferedReader)) != null) {
 				print(format);
 				for (FormatGroup fg : list) {
 					if (fg.name.equals(format.group)) {
-						System.out.println(fg.desc + " " + format.desc);
+						Logger.log(fg.desc, format.desc);
 						fg.formats.add(format);
 					}
 				}
 			}
 		} catch (Exception e) {
-
+			Logger.log(e);
+		} finally {
+			if (bufferedReader != null) {
+				try {
+					bufferedReader.close();
+				} catch (Exception e2) {
+					Logger.log(e2);
+				}
+			}
 		}
 		return list;
 	}
 
 	static void print(Format format) {
-		System.out.println("\t" + format.getDesc() + " '" + format.group + "'");
+		Logger.log("\t", format.getDesc(), "'", format.group, "'");
 		List<String> list = format.getVideoCodecs();
 		if (list.size() > 0) {
 			System.out.print("\t\tVideo Codec:");
@@ -67,7 +71,7 @@ public class FormatLoader {
 					System.out.print(list.get(i) + " ");
 				}
 			}
-			System.out.println("\n");
+			Logger.log("\n");
 		}
 
 		list = format.getResolutions();
@@ -82,7 +86,7 @@ public class FormatLoader {
 					System.out.print(list.get(i) + " ");
 				}
 			}
-			System.out.println("\n");
+			Logger.log("\n");
 		}
 
 		list = format.getAudioChannel();
@@ -95,7 +99,7 @@ public class FormatLoader {
 
 				System.out.print(list.get(i) + " ");
 			}
-			System.out.println("\n");
+			Logger.log("\n");
 		}
 
 	}

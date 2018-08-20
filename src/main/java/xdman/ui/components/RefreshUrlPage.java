@@ -47,7 +47,7 @@ public class RefreshUrlPage extends Page implements LinkRefreshCallback {
 		} else {
 			btnOpenPage.setVisible(true);
 		}
-		System.out.println("ydlurl: " + md.getYdlUrl());
+		Logger.log("ydlurl: " + md.getYdlUrl());
 		lblMonitoringTitle.setText(StringUtils.isNullOrEmptyOrBlank(md.getYdlUrl()) ? StringResource.get("REF_DESC1")
 				: StringResource.get("REF_DESC2"));
 

@@ -130,15 +130,11 @@ public class Format {
 		}
 	}
 
-	public static Format read(BufferedReader br) throws IOException {
+	public static Format read(BufferedReader bufferedReader) throws IOException {
 
 		Format format = new Format();
-
-		for (;;) {
-			String ln = br.readLine();
-			if (ln == null) {
-				return null;
-			}
+		String ln;
+		while ((ln = bufferedReader.readLine()) != null) {
 			int index = ln.indexOf(":");
 			if (index < 0) {
 				break;

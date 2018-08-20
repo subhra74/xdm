@@ -19,8 +19,8 @@ public class DownloadTableModel extends AbstractTableModel implements ListChange
 	DownloadSorter _sorter;
 
 	public DownloadTableModel() {
-		idList = new ArrayList<String>();
-		idIndexMap = new HashMap<String, Integer>();
+		idList = new ArrayList<>();
+		idIndexMap = new HashMap<>();
 	}
 
 	@Override
@@ -48,10 +48,12 @@ public class DownloadTableModel extends AbstractTableModel implements ListChange
 
 	@Override
 	public void listChanged() {
-		Logger.log("List changed");
-		idList = XDMApp.getInstance().getDownloadList(Config.getInstance().getCategoryFilter(),
-				Config.getInstance().getStateFilter(), Config.getInstance().getSearchText(),
-				Config.getInstance().getQueueIdFilter());
+		Logger.log("Downloads changed");
+		Config config = Config.getInstance();
+		idList = XDMApp.getInstance().getDownloadList(config.getCategoryFilter(),
+				config.getStateFilter(),
+				config.getSearchText(),
+				config.getQueueIdFilter());
 		sort();
 		refreshIdMap();
 		fireTableDataChanged();
@@ -59,7 +61,7 @@ public class DownloadTableModel extends AbstractTableModel implements ListChange
 
 	@Override
 	public void listItemUpdated(String id) {
-		Logger.log("List updated");
+		Logger.log("Downloads updated");
 		Integer index = idIndexMap.get(id);
 		if (index != null) {
 			fireTableRowsUpdated(index, index);

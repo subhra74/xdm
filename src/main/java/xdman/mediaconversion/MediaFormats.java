@@ -6,21 +6,22 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 public class MediaFormats {
+	private static final String FORMATS_FILE_NAME = "formats/list.txt";
 	private static MediaFormat[] supportedFormats;
 	static {
 		ArrayList<MediaFormat> list = new ArrayList<>();
 		list.add(new MediaFormat());
 		BufferedReader br = null;
 		try {
-			InputStream inStream = MediaFormats.class.getResourceAsStream("/formats/list.txt");
+			InputStream inStream = MediaFormats.class.getResourceAsStream(String.format("/%s", FORMATS_FILE_NAME));
 			if (inStream == null) {
-				inStream = new FileInputStream("formats/list.txt");
+				inStream = new FileInputStream(FORMATS_FILE_NAME);
 			}
-			InputStreamReader r = new InputStreamReader(inStream, Charset.forName("utf-8"));
+			InputStreamReader r = new InputStreamReader(inStream, StandardCharsets.UTF_8);
 			br = new BufferedReader(r, 1024);
 			while (true) {
 				String ln = br.readLine();

@@ -15,15 +15,13 @@ public class FBHandler {
 //	}
 
 	public static boolean handle(File tempFile, ParsedHookData data) {
+		BufferedReader bufferedReader = null;
 		try {
 			StringBuffer buf = new StringBuffer();
 			InputStream in = new FileInputStream(tempFile);
-			BufferedReader r = new BufferedReader(new InputStreamReader(in));
-			while (true) {
-				String ln = r.readLine();
-				if (ln == null) {
-					break;
-				}
+			bufferedReader = new BufferedReader(new InputStreamReader(in));
+			String ln;
+			while ((ln = bufferedReader.readLine()) != null) {
 				buf.append(ln + "\n");
 			}
 			in.close();
@@ -76,6 +74,14 @@ public class FBHandler {
 		} catch (Exception e) {
 			Logger.log(e);
 			return false;
+		} finally {
+			if (bufferedReader != null) {
+				try {
+					bufferedReader.close();
+				} catch (Exception e2) {
+					Logger.log(e2);
+				}
+			}
 		}
 	}
 
@@ -108,8 +114,9 @@ public class FBHandler {
 			if (ch == '"') {
 				index++;
 				int index3 = buf.indexOf("\"", index);
-				String url = decodeJSONEscape(buf.substring(index, index3).trim().replace("\"", ""));
-				Logger.log(keyword + ": " + url);
+				String trim = buf.substring(index, index3).trim();
+				String url = decodeJSONEscape(trim.replace("\"", ""));
+				Logger.log(keyword, ":", url);
 				urlList.add(url);
 			}
 
@@ -127,7 +134,7 @@ public class FBHandler {
 			//
 			// String url = decodeJSONEscape(buf.substring(collonIndex,
 			// index).trim().replace("\"", ""));
-			// Logger.log(keyword + ": " + url);
+			// Logger.log(keyword , ":" , url);
 			// if (!url.equals("null")) {
 			// urlList.add(url);
 			// }
@@ -143,7 +150,7 @@ public class FBHandler {
 			// int index3 = buf.indexOf("\"", index2 + urlStart.length());
 			// int end = buf.indexOf("\"", index3 + 1);
 			// String url = decodeJSONEscape(buf.substring(index3 + 1, end));
-			// Logger.log(keyword + ": " + url);
+			// Logger.log(keyword , ":" , url);
 			// if (!url.equals("null")) {
 			// urlList.add(url);
 			// }

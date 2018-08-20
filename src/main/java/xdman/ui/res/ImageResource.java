@@ -1,6 +1,7 @@
 package xdman.ui.res;
 
 import xdman.XDMConstants;
+import xdman.util.Logger;
 import xdman.util.XDMUtils;
 
 import javax.swing.*;
@@ -10,7 +11,7 @@ import java.util.Map;
 public class ImageResource {
 	private final static String ICON_FOLDER = "icons";
 
-	static Map<String, ImageIcon> iconMap = new HashMap<String, ImageIcon>();
+	static Map<String, ImageIcon> iconMap = new HashMap<>();
 
 	public static ImageIcon get(String id) {
 		return get(id, true);
@@ -29,7 +30,7 @@ public class ImageResource {
 
 	private static ImageIcon getIcon(String name) {
 		int screenType = XDMUtils.detectScreenType();
-		String folder = "hdpi";
+		String folder;
 		if (screenType == XDMConstants.XHDPI) {
 			folder = "xxhdpi";
 		} else if (screenType == XDMConstants.HDPI) {
@@ -37,14 +38,15 @@ public class ImageResource {
 		} else {
 			folder = "hdpi";
 		}
-		System.out.println("icon type:"+folder);
+		String iconFileName = String.format("%s/%s/%s", ICON_FOLDER, folder, name);
+		Logger.log("icon:", iconFileName);
 		try {
-			java.net.URL url = ImageResource.class.getResource("/" + ICON_FOLDER + "/" + folder + "/" + name);
+			java.net.URL url = ImageResource.class.getResource(String.format("/%s", iconFileName));
 			if (url == null)
 				throw new Exception();
 			return new ImageIcon(url);
 		} catch (Exception e) {
-			return new ImageIcon(ICON_FOLDER + "/" + folder + "/" + name);
+			return new ImageIcon(iconFileName);
 		}
 	}
 }

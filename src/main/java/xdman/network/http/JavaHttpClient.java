@@ -83,8 +83,7 @@ public class JavaHttpClient extends HttpClient {
 	// // hc.credentialMgr = new TestCredentialMgr();
 	// // hc.setProxyResolver(new TestProxyResolver());
 	// hc.connect();
-	// System.out.println(hc.getResponseHeader("location") + " "
-	// + hc.getContentLength());
+	// Logger.log(hc.getResponseHeader("location") , hc.getContentLength());
 	// }
 
 	@Override

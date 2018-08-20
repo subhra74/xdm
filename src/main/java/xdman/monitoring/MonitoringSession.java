@@ -40,7 +40,7 @@ public class MonitoringSession implements Runnable {
 		this.sock = socket;
 		this.request = new Request();
 		this.response = new Response();
-		System.out.println("New session");
+		Logger.log("New session");
 	}
 
 	public void start() {
@@ -82,7 +82,7 @@ public class MonitoringSession implements Runnable {
 			for (VideoPopupItem item : XDMApp.getInstance().getVideoItemsList()) {
 				if (id.equals(item.getMetadata().getId())) {
 					HttpMetadata md = item.getMetadata().derive();
-					Logger.log("dash metdata ? " + (md instanceof DashMetadata));
+					Logger.log("dash metdata ?", (md instanceof DashMetadata));
 					XDMApp.getInstance().addVideo(md, item.getFile());
 				}
 			}
@@ -98,7 +98,7 @@ public class MonitoringSession implements Runnable {
 			List<ParsedHookData> list = ParsedHookData.parseLinks(b);
 			List<HttpMetadata> metadatas = new ArrayList<>();
 			for (ParsedHookData d : list) {
-				System.out.println(d);
+				Logger.log(d);
 				HttpMetadata md = new HttpMetadata();
 				md.setUrl(d.getUrl());
 				md.setHeaders(d.getRequestHeaders());
@@ -218,7 +218,7 @@ public class MonitoringSession implements Runnable {
 		json.append(mimeTypes);
 		json.append("\n}");
 
-		// System.out.println(json);
+		// Logger.log(json);
 
 		byte[] b = json.toString().getBytes();
 
@@ -301,7 +301,10 @@ public class MonitoringSession implements Runnable {
 			Logger.log("sending 204...");
 			onVideoClear(request, response);
 		} else {
-			throw new IOException("invalid verb " + verb);
+			String message = String.format("invalid verb %s", verb);
+			IOException ioException = new IOException(message);
+			Logger.log(ioException);
+			throw ioException;
 		}
 	}
 
@@ -322,7 +325,7 @@ public class MonitoringSession implements Runnable {
 			if (url.startsWith("/preview/video")) {
 
 				String[] arr = url.split("/");
-				System.out.println(arr.length);
+				Logger.log(arr.length);
 				if (arr.length < 4) {
 					return;
 				}
@@ -351,19 +354,18 @@ public class MonitoringSession implements Runnable {
 					outStream.flush();
 				}
 				outStream.write("0\r\n\r\n".getBytes());
-				System.out.println("Done writing file");
+				Logger.log("Done writing file");
 				ps.close();
 				outStream.flush();
 				outStream.close();
 			} else if (url.startsWith("/preview/player")) {
 				int index = url.lastIndexOf("/");
 				String id = url.substring(index + 1);
-				String link = "http://127.0.0.1:9614/preview/media/" + id;
+				String link = String.format("http://127.0.0.1:9614/preview/media/%s", id);
 
-				String html = "<html><body><video id=\"myvideo\" width=\"640\" height=\"480\" controls>\r\n"
-						+ "    <source src=\"" + link + "\"" + " type=\"video/webm\"  />\r\n"
-						+ "</video><br/><h3>If the video does not play in you browser,<br/>please copy <a href=\""
-						+ link + "\">this link</a> and play this in VLC media player</body></html>";
+				String html = String.format("<html><body><video id=\"myvideo\" width=\"640\" height=\"480\" controls>\r\n<source src=\"%s\" type=\"video/webm\"  />\r\n</video><br/><h3>If the video does not play in you browser,<br/>please copy <a href=\"%s\">this link</a> and play this in VLC media player</body></html>",
+						link,
+						link);
 
 				byte[] b = html.getBytes();
 
@@ -434,7 +436,7 @@ public class MonitoringSession implements Runnable {
 				// String input = "http://127.0.0.1:9614/preview/video/" + (hls ?
 				// XDMConstants.HLS : XDMConstants.HTTP)
 				// + "/" + metadata.getId();
-				System.out.println("input: " + input1 + " - " + input2);
+				Logger.log("input:", input1, "-", input2);
 				String resp = "HTTP/1.1 200 OK\r\nContent-Type: video/webm\r\nTransfer-Encoding: Chunked\r\nCache-Control: no-cache, no-store, must-revalidate\r\n"
 						+ "Pragma: no-cache\r\n" + "Expires: 0\r\nConnection: close\r\n\r\n";
 				outStream.write(resp.getBytes());
@@ -454,17 +456,14 @@ public class MonitoringSession implements Runnable {
 					outStream.flush();
 				}
 				outStream.write("0\r\n\r\n".getBytes());
-				System.out.println("Done writing file");
+				Logger.log("Done writing file");
 				ff.close();
 				outStream.flush();
 				outStream.close();
 
-				System.out.println("Finished writing");
+				Logger.log("Finished writing");
 
-				html = "<html><body><video id=\"myvideo\" width=\"640\" height=\"480\" controls>\r\n"
-						+ "    <source src=\"http://127.0.0.1:9614/preview/video/"
-						+ (hls ? XDMConstants.HLS : XDMConstants.HTTP) + "/" + metadata.getId() + "\""
-						+ (hls ? "type=\"video/mp2t\"" : "") + "  />\r\n" + "</video></body></html>";
+				html = String.format("<html><body><video id=\"myvideo\" width=\"640\" height=\"480\" controls>\r\n    <source src=\"http://127.0.0.1:9614/preview/video/%d/%s\"%s  />\r\n</video></body></html>", hls ? XDMConstants.HLS : XDMConstants.HTTP, metadata.getId(), hls ? "type=\"video/mp2t\"" : "");
 				// }
 
 			}
@@ -477,7 +476,7 @@ public class MonitoringSession implements Runnable {
 			}
 			if (ff != null) {
 				try {
-					System.out.println("Closing FFStream");
+					Logger.log("Closing FFStream");
 					ff.close();
 				} catch (Exception e) {
 				}
@@ -592,58 +591,62 @@ public class MonitoringSession implements Runnable {
 					}
 				}
 
-				DASH_INFO info = new DASH_INFO();
-				info.url = yt_url.toString();
-				info.clen = clen;
-				info.video = mime.startsWith("video");
-				info.itag = itag;
-				info.id = id;
-				info.mime = mime;
-				info.headers = data.getRequestHeaders();
+				DASH_INFO dashInfo = new DASH_INFO();
+				dashInfo.url = yt_url.toString();
+				dashInfo.clen = clen;
+				dashInfo.video = mime.startsWith("video");
+				dashInfo.itag = itag;
+				dashInfo.id = id;
+				dashInfo.mime = mime;
+				dashInfo.headers = data.getRequestHeaders();
 
-				Logger.log("processing yt mime: " + mime + " id: " + id + " clen: " + clen + " itag: " + itag);
+				Logger.log("processing yt mime:", mime, "id:", id, "clen:", clen, "itag:", itag);
 
-				if (YtUtil.addToQueue(info)) {
-					DASH_INFO di = YtUtil.getDASHPair(info);
+				if (YtUtil.addToQueue(dashInfo)) {
+					DASH_INFO di = YtUtil.getDASHPair(dashInfo);
 
 					if (di != null) {
 						DashMetadata dm = new DashMetadata();
-						dm.setUrl(info.video ? info.url : di.url);
-						dm.setUrl2(info.video ? di.url : info.url);
-						dm.setLen1(info.video ? info.clen : di.clen);
-						dm.setLen2(info.video ? di.clen : info.clen);
-						dm.setHeaders(info.video ? info.headers : di.headers);
-						dm.setHeaders2(info.video ? di.headers : info.headers);
+						dm.setUrl(dashInfo.video ? dashInfo.url : di.url);
+						dm.setUrl2(dashInfo.video ? di.url : dashInfo.url);
+						dm.setLen1(dashInfo.video ? dashInfo.clen : di.clen);
+						dm.setLen2(dashInfo.video ? di.clen : dashInfo.clen);
+						dm.setHeaders(dashInfo.video ? dashInfo.headers : di.headers);
+						dm.setHeaders2(dashInfo.video ? di.headers : dashInfo.headers);
 						String file = data.getFile();
 						if (StringUtils.isNullOrEmptyOrBlank(file)) {
 							file = XDMUtils.getFileName(data.getUrl());
 						} else {
 							file = XDMUtils.createSafeFileName(file);
 						}
-						Logger.log("file: " + file + " url1: " + dm.getUrl() + " url2: " + dm.getUrl2() + " len1: "
-								+ dm.getLen1() + " len2: " + dm.getLen2());
+						Logger.log("file:", file, "url1:", dm.getUrl(), "url2:", dm.getUrl2(), "len1: "
+								+ dm.getLen1(), "len2:", dm.getLen2());
 
 						String szStr = null;
-						if (info.clen > 0 && di.clen > 0) {
-							szStr = FormatUtilities.formatSize(info.clen + di.clen);
+						if (dashInfo.clen > 0 && di.clen > 0) {
+							szStr = FormatUtilities.formatSize(dashInfo.clen + di.clen);
 						}
 
-						String videoContentType = info.video ? info.mime : di.mime;
-						String audioContentType = di.video ? info.mime : di.mime;
+						String videoContentType = dashInfo.video ? dashInfo.mime : di.mime;
+						String audioContentType = di.video ? dashInfo.mime : di.mime;
 
 						String ext = getYtDashFormat(videoContentType, audioContentType);
 						file += "." + ext;
 
-						XDMApp.getInstance().addMedia(dm, file, YtUtil.getInfoFromITAG(info.video ? info.itag : di.itag)
-								+ (szStr == null ? "" : " " + szStr));
+						int itag1 = dashInfo.video ? dashInfo.itag : di.itag;
+						String szInfo = szStr == null ? "" : String.format(" %s", szStr);
+						String infoFromITAG = YtUtil.getInfoFromITAG(itag1);
+						String info = String.format("%s%s", infoFromITAG,
+								szInfo);
+						XDMApp.getInstance().addMedia(dm, file, info);
 						return true;
 					}
 				} else {
-					System.out.println("+++updating");
+					Logger.log("+++updating");
 					// sometimes dash segments are available, but the title of the page is not
 					// properly updated yet
 					// update existing video name when ever the tab title changes
-					XDMApp.getInstance().youtubeVideoTitleUpdated(info.url, data.getFile());
+					XDMApp.getInstance().youtubeVideoTitleUpdated(dashInfo.url, data.getFile());
 				}
 				return true;
 			}
@@ -761,7 +764,7 @@ public class MonitoringSession implements Runnable {
 			boolean hasAccept = false;
 			while (headers.hasNext()) {
 				HttpHeader header = headers.next();
-				Logger.log(header.getName() + " " + header.getValue());
+				Logger.log(header.getName(), header.getValue());
 				if (header.getName().toLowerCase().equals("accept")) {
 					hasAccept = true;
 				}

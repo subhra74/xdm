@@ -48,7 +48,7 @@ public class QueueScheduler implements Runnable {
 					}
 
 					Collection<DownloadQueue> downloadQueues = QueueManager.getInstance().getDownloadQueues();
-					for (DownloadQueue downloadQueue: downloadQueues) {
+					for (DownloadQueue downloadQueue : downloadQueues) {
 						if (downloadQueue.isRunning() || downloadQueue.getStartTime() == -1) {
 							continue;
 						}
@@ -88,7 +88,7 @@ public class QueueScheduler implements Runnable {
 						downloadQueue.start();
 					}
 
-					for (DownloadQueue downloadQueue: downloadQueues) {
+					for (DownloadQueue downloadQueue : downloadQueues) {
 						if (!downloadQueue.isRunning()) {
 							continue;
 						}
@@ -103,32 +103,30 @@ public class QueueScheduler implements Runnable {
 					}
 					Thread.sleep(1000);
 				} catch (Exception e2) {
-					Logger.log("error in scheduler: " + e2);
-					Logger.log(e2);
+					Logger.log("Error in scheduler:", e2);
 				}
 
 				long now = System.currentTimeMillis();
 				if (now - lastUpdateChecked > 3600 * 1000) {
 					int stat = UpdateChecker.getUpdateStat();
 					switch (stat) {
-					case UpdateChecker.NO_UPDATE_AVAILABLE:
-						break;
-					case UpdateChecker.APP_UPDATE_AVAILABLE:
-						XDMApp.getInstance().notifyAppUpdate();
-						break;
-					case UpdateChecker.COMP_NOT_INSTALLED:
-						XDMApp.getInstance().notifyComponentInstall();
-						break;
-					case UpdateChecker.COMP_UPDATE_AVAILABLE:
-						XDMApp.getInstance().notifyComponentUpdate();
-						break;
+						case UpdateChecker.NO_UPDATE_AVAILABLE:
+							break;
+						case UpdateChecker.APP_UPDATE_AVAILABLE:
+							XDMApp.getInstance().notifyAppUpdate();
+							break;
+						case UpdateChecker.COMP_NOT_INSTALLED:
+							XDMApp.getInstance().notifyComponentInstall();
+							break;
+						case UpdateChecker.COMP_UPDATE_AVAILABLE:
+							XDMApp.getInstance().notifyComponentUpdate();
+							break;
 					}
 				}
 				lastUpdateChecked = now;
 			}
 		} catch (Exception e) {
-			Logger.log("error in scheduler: " + e);
-			Logger.log(e);
+			Logger.log("error in scheduler:", e);
 		}
 	}
 }

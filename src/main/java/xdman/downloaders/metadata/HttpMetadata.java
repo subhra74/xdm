@@ -6,18 +6,18 @@ import xdman.network.http.HeaderCollection;
 import xdman.network.http.HttpHeader;
 import xdman.util.Logger;
 import xdman.util.StringUtils;
+import xdman.util.XDMUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.util.Iterator;
 import java.util.UUID;
 
 public class HttpMetadata {
-	protected String id;
-	protected String url;
-	protected HeaderCollection headers;
+	private String id;
+	private String url;
+	private HeaderCollection headers;
 	private long size;
 	private String ydlUrl;
 
@@ -31,17 +31,17 @@ public class HttpMetadata {
 	}
 
 	public HttpMetadata() {
-		this.id = UUID.randomUUID().toString();
-		headers = new HeaderCollection();
+		this.setId(UUID.randomUUID().toString());
+		setHeaders(new HeaderCollection());
 	}
 
 	protected HttpMetadata(String id) {
-		this.id = id;
-		headers = new HeaderCollection();
+		this.setId(id);
+		setHeaders(new HeaderCollection());
 	}
 
 	public int getType() {
-		if (url.startsWith("ftp")) {
+		if (getUrl().startsWith("ftp")) {
 			return XDMConstants.FTP;
 		} else {
 			return XDMConstants.HTTP;
@@ -123,20 +123,28 @@ public class HttpMetadata {
 	// }
 
 	public static HttpMetadata load(String id) {
-		Logger.log("loading metadata: " + id);
-		BufferedReader br = null;
+		Logger.log("Loading Metadata:", id);
+		File metadataFile = new File(Config.getInstance().getMetadataFolder(), id);
+		if (!metadataFile.exists()) {
+			Logger.log("No saved Metadata",
+					metadataFile.getAbsolutePath());
+			return null;
+		}
+		BufferedReader bufferedReader = null;
 		HttpMetadata metadata = null;
 		int type;
 		try {
-			br = new BufferedReader(new FileReader(new File(Config.getInstance().getMetadataFolder(), id)));
-			String ln = br.readLine();
+			Logger.log("Loading Metadata...",
+					metadataFile.getAbsolutePath());
+			bufferedReader = XDMUtils.getBufferedReader(metadataFile);
+			String ln = bufferedReader.readLine();
 			if (ln == null) {
 				Logger.log("invalid metadata, file is empty");
 				return null;
 			}
 			int index = ln.indexOf(":");
 			if (index < 0) {
-				Logger.log("invalid metadata file starting with: " + ln);
+				Logger.log("invalid metadata file starting with:", ln);
 				return null;
 			}
 			String key = ln.substring(0, index).trim().toLowerCase();
@@ -153,67 +161,77 @@ public class HttpMetadata {
 					metadata = new DashMetadata(id);
 				}
 			} else {
-				Logger.log("invalid metadata file starting with: " + ln);
+				Logger.log("invalid metadata file starting with:", ln);
 				return null;
 			}
-			while (true) {
-				ln = br.readLine();
-				if (ln == null)
-					break;
-				index = ln.indexOf(":");
-				if (index < 0)
-					continue;
-				key = ln.substring(0, index).trim().toLowerCase();
-				val = ln.substring(index + 1).trim();
-				if (key.equals("url")) {
-					metadata.setUrl(val);
-				}
-				if (key.equals("size")) {
-					metadata.setSize(Long.parseLong(val));
-				}
-				if (key.equals("header")) {
-					int index2 = val.indexOf(":");
-					if (index2 < 0) {
+			if (metadata != null) {
+				while ((ln = bufferedReader.readLine()) != null) {
+					index = ln.indexOf(":");
+					if (index < 0)
 						continue;
+					key = ln.substring(0, index).trim().toLowerCase();
+					val = ln.substring(index + 1).trim();
+					if (key.equals("url")) {
+						metadata.setUrl(val);
 					}
-					String key1 = val.substring(0, index2).trim();
-					String val1 = val.substring(index2 + 1).trim();
-					metadata.headers.addHeader(key1, val1);
-				}
-				if (key.equals("header2")) {
-					int index2 = val.indexOf(":");
-					if (index2 < 0) {
-						continue;
+					if (key.equals("size")) {
+						metadata.setSize(Long.parseLong(val));
 					}
-					String key1 = val.substring(0, index2).trim();
-					String val1 = val.substring(index2 + 1).trim();
-					((DashMetadata) metadata).getHeaders2().addHeader(key1, val1);
-				}
-				if (key.equals("url2")) {
-					((DashMetadata) metadata).setUrl2(val);
-				}
-				if (key.equals("len1")) {
-					((DashMetadata) metadata).setLen1(Long.parseLong(val));
-				}
-				if (key.equals("len2")) {
-					((DashMetadata) metadata).setLen2(Long.parseLong(val));
-				}
-				if (key.equals("bitrate")) {
-					((HdsMetadata) metadata).setBitRate(Integer.parseInt(val));
-				}
-				if (key.equals("ydlurl")) {
-					Logger.log("ydurl: " + val);
-					metadata.ydlUrl = val;
+					if (key.equals("header")) {
+						int index2 = val.indexOf(":");
+						if (index2 < 0) {
+							continue;
+						}
+						String key1 = val.substring(0, index2).trim();
+						String val1 = val.substring(index2 + 1).trim();
+						metadata.getHeaders().addHeader(key1, val1);
+					}
+					if (key.equals("ydlurl")) {
+						Logger.log("ydurl:", val);
+						metadata.setYdlUrl(val);
+					}
+					DashMetadata dashMetadata = metadata instanceof DashMetadata
+							? (DashMetadata) metadata
+							: null;
+					if (dashMetadata != null) {
+						if (key.equals("header2")) {
+							int index2 = val.indexOf(":");
+							if (index2 < 0) {
+								continue;
+							}
+							String key1 = val.substring(0, index2).trim();
+							String val1 = val.substring(index2 + 1).trim();
+							dashMetadata.getHeaders2().addHeader(key1, val1);
+						}
+						if (key.equals("url2")) {
+							dashMetadata.setUrl2(val);
+						}
+						if (key.equals("len1")) {
+							dashMetadata.setLen1(Long.parseLong(val));
+						}
+						if (key.equals("len2")) {
+							dashMetadata.setLen2(Long.parseLong(val));
+						}
+					}
+					HdsMetadata hdsMetadata = metadata instanceof HdsMetadata
+							? (HdsMetadata) metadata
+							: null;
+					if (hdsMetadata != null) {
+						if (key.equals("bitrate")) {
+							hdsMetadata.setBitRate(Integer.parseInt(val));
+						}
+					}
 				}
 			}
-			br.close();
+			bufferedReader.close();
 		} catch (Exception e) {
 			Logger.log(e);
 		} finally {
-			if (br != null) {
+			if (bufferedReader != null) {
 				try {
-					br.close();
+					bufferedReader.close();
 				} catch (Exception ex) {
+					Logger.log(ex);
 				}
 			}
 		}
@@ -225,43 +243,43 @@ public class HttpMetadata {
 		FileOutputStream fw = null;
 		try {
 			StringBuilder sb = new StringBuilder();
-			if (url == null)
+			if (getUrl() == null)
 				throw new NullPointerException("url is null");
-			sb.append("type: " + getType() + "\n");
-			sb.append("url: " + url + "\n");
-			sb.append("size: " + size + "\n");
-			if (headers != null) {
-				Iterator<HttpHeader> headerIterator = headers.getAll();
+			sb.append("type: ").append(getType()).append("\n");
+			sb.append("url: ").append(getUrl()).append("\n");
+			sb.append("size: ").append(getSize()).append("\n");
+			if (getHeaders() != null) {
+				Iterator<HttpHeader> headerIterator = getHeaders().getAll();
 				while (headerIterator.hasNext()) {
 					HttpHeader header = headerIterator.next();
-					sb.append("header: " + header.getName() + ":" + header.getValue() + "\n");
+					sb.append("header: ").append(header.getName()).append(":").append(header.getValue()).append("\n");
 				}
 			}
-			if (getType() == XDMConstants.HDS) {
-				sb.append("bitrate: " + ((HdsMetadata) this).getBitRate() + "\n");
+			if (!StringUtils.isNullOrEmptyOrBlank(getYdlUrl())) {
+				sb.append("ydlUrl: ").append(getYdlUrl());
 			}
+
 			if (getType() == XDMConstants.DASH) {
-				sb.append("url2: " + ((DashMetadata) this).getUrl2() + "\n");
-				sb.append("len1: " + ((DashMetadata) this).getLen1() + "\n");
-				sb.append("len2: " + ((DashMetadata) this).getLen2() + "\n");
+				sb.append("url2: ").append(((DashMetadata) this).getUrl2()).append("\n");
+				sb.append("len1: ").append(((DashMetadata) this).getLen1()).append("\n");
+				sb.append("len2: ").append(((DashMetadata) this).getLen2()).append("\n");
 				if (((DashMetadata) this).getHeaders2() != null) {
 					Iterator<HttpHeader> headerIterator = ((DashMetadata) this).getHeaders2().getAll();
 					while (headerIterator.hasNext()) {
 						HttpHeader header = headerIterator.next();
-						sb.append("header2: " + header.getName() + ":" + header.getValue() + "\n");
+						sb.append("header2: ").append(header.getName()).append(":").append(header.getValue()).append("\n");
 					}
 				}
 
-			}
-			if (!StringUtils.isNullOrEmptyOrBlank(ydlUrl)) {
-				sb.append("ydlUrl: " + ydlUrl);
+			} else if (getType() == XDMConstants.HDS) {
+				sb.append("bitrate: " + ((HdsMetadata) this).getBitRate() + "\n");
 			}
 
 			File metadataFolder = new File(Config.getInstance().getMetadataFolder());
 			if (!metadataFolder.exists()) {
 				metadataFolder.mkdirs();
 			}
-			File file = new File(metadataFolder, id);
+			File file = new File(metadataFolder, getId());
 			fw = new FileOutputStream(file);
 			fw.write(sb.toString().getBytes());
 			fw.close();
@@ -271,6 +289,7 @@ public class HttpMetadata {
 				try {
 					fw.close();
 				} catch (Exception ex) {
+					Logger.log(e);
 				}
 			}
 		}
@@ -290,5 +309,9 @@ public class HttpMetadata {
 
 	public void setYdlUrl(String ydlUrl) {
 		this.ydlUrl = ydlUrl;
+	}
+
+	public void setId(String id) {
+		this.id = id;
 	}
 }

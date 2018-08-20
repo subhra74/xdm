@@ -622,21 +622,21 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 	@Override
 	public void thumbnailsLoaded(long key, String url, String file) {
 		// this key is changed on each time start button is clicked
-		System.out.println("Thumbnail callback");
+		Logger.log("Thumbnail callback");
 		if (this.instancekey == key) {
 			for (int i = 0; i < model.getRowCount(); i++) {
 				VideoItemWrapper wp = (VideoItemWrapper) model.getValueAt(i, 0);
 				YdlVideo video = wp.videoItem;
 				if (video.thumbnail != null && video.thumbnail.equals(url)) {
 					ImageIcon ico = loadImage(file, video.duration);
-					System.out.println("Icon: " + ico);
+					Logger.log("Icon: " + ico);
 					imageMap.put(url, ico);
 					model.fireTableCellUpdated(i, 0);
 					break;
 				}
 			}
 		} else {
-			System.out.println("diff instance");
+			Logger.log("diff instance");
 		}
 	}
 
@@ -682,7 +682,7 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 			Logger.log(e);
 			return null;
 		} finally {
-			System.out.println(f);
+			Logger.log(f);
 			f.delete();
 		}
 	}

@@ -2190,7 +2190,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		if (chkQStart.isSelected()) {
 
 			q.setStartTime(DateTimeUtils.getTimePart(spinnerDateModel1.getDate()));
-			System.out.println(spinnerDateModel1.getDate());
+			Logger.log(spinnerDateModel1.getDate());
 			if (chkQStop.isSelected()) {
 				q.setEndTime(DateTimeUtils.getTimePart(spinnerDateModel2.getDate()));
 			} else {

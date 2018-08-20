@@ -382,7 +382,7 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 			if (m2 instanceof DashMetadata) {
 				DashMetadata dm1 = (DashMetadata) m2;
 				if (isSameURL(dm1.getUrl(), id, len) || isSameURL(dm1.getUrl2(), id, len)) {
-					Logger.log("Updating title: " + title);
+					Logger.log("Updating title: ", title);
 					updateFileName(title, p);
 					updateButtonTitle(m2.getId(), p.toString());
 				}
@@ -393,8 +393,8 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 	private void updateFileName(String file, VideoPopupItem p) {
 		String oldFile = p.getFile();
 		String ext = XDMUtils.getExtension(oldFile);
-		p.setFile(file + (StringUtils.isNullOrEmptyOrBlank(ext) ? "" : ext));
-		Logger.log("renaming: " + oldFile + " to: " + file);
+		p.setFile(String.format("%s%s", file, StringUtils.isNullOrEmptyOrBlank(ext) ? "" : ext));
+		Logger.log("Renaming:", oldFile, "\nto:", file);
 	}
 
 	private void updateButtonTitle(String id, String title) {

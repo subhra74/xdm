@@ -27,15 +27,21 @@ public class YoutubeDLHandler {
 	public YoutubeDLHandler(String url, String user, String pass) {
 		this.url = url;
 		this.videos = new ArrayList<>();
+		String youTubeDL = getYouTubeDL();
 		File ydlFile = new File(Config.getInstance().getDataFolder(),
-				System.getProperty("os.name").toLowerCase().contains("windows") ? "youtube-dl.exe" : "youtube-dl");
+				youTubeDL);
 		if (!ydlFile.exists()) {
 			ydlFile = new File(XDMUtils.getJarFile().getParentFile(),
-					System.getProperty("os.name").toLowerCase().contains("windows") ? "youtube-dl.exe" : "youtube-dl");
+					youTubeDL);
 		}
 		ydlLocation = ydlFile.getAbsolutePath();
 		this.user = user;
 		this.pass = pass;
+	}
+
+	public static String getYouTubeDL() {
+		String youTubeDL = XDMUtils.getEXEFileName("youtube-dl");
+		return youTubeDL;
 	}
 
 	public void start() {
@@ -86,7 +92,7 @@ public class YoutubeDLHandler {
 				Logger.log(args.get(i));
 			}
 
-			Logger.log("Writing JSON to: " + tmpOutput);
+			Logger.log("Writing JSON to:", tmpOutput);
 
 			pb.redirectError(tmpError);
 			pb.redirectOutput(tmpOutput);
@@ -115,8 +121,7 @@ public class YoutubeDLHandler {
 			// }
 			// br.close();
 			// //String json = new String(bout.toByteArray());
-			// System.out.println("----json: " + json);
-			// System.out.println("----json end ----");
+			// Logger.log("----json end: " , json);
 			exitCode = proc.waitFor();
 			if (!stop) {
 				in = new FileInputStream(tmpOutput);

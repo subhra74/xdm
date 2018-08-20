@@ -46,7 +46,7 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 	}
 
 	public void start() {
-		Logger.log("creating folder " + folder);
+		Logger.log("HdsDownloader creating folder", folder);
 		new File(folder).mkdirs();
 
 		this.lastDownloaded = downloaded;
@@ -188,14 +188,14 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 					new File(folder, manifestSegment.getId()).getAbsolutePath());
 			mf.setSelectedBitRate(metadata.getBitRate());
 			this.totalDuration = mf.getDuration();
-			Logger.log("Total duration " + totalDuration);
+			Logger.log("Total duration", totalDuration);
 			ArrayList<String> urls = mf.getMediaUrls();
 			if (urls.size() < 1) {
 				Logger.log("Manifest contains no media");
 				return false;
 			}
 			if (urlList.size() > 0 && urlList.size() != urls.size()) {
-				Logger.log("Manifest media count mismatch- expected: " + urlList.size() + " got: " + urls.size());
+				Logger.log("Manifest media count mismatch- expected:", urlList.size(), "got:", urls.size());
 				return false;
 			}
 			if (urlList.size() > 0) {
@@ -209,7 +209,7 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 				for (int i = 0; i < urlList.size(); i++) {
 					if (newExtension == null && outputFormat == 0) {
 						newExtension = findExtension(urlList.get(i));
-						Logger.log("HDS: found new extension: " + newExtension);
+						Logger.log("HDS: found new extension:", newExtension);
 						if (newExtension != null) {
 							this.newFileName = getOutputFileName(false).replace(".flv", newExtension);
 
@@ -219,12 +219,12 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 						}
 					}
 
-					Logger.log("HDS: Newfile name: " + this.newFileName);
+					Logger.log("HDS: Newfile name:", this.newFileName);
 
 					Segment s2 = new SegmentImpl(this, folder);
 					s2.setTag("HLS");
 					s2.setLength(-1);
-					Logger.log("Adding chunk: " + s2);
+					Logger.log("Adding chunk:", s2);
 					chunks.add(s2);
 				}
 			}
@@ -238,7 +238,7 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 
 	private synchronized void processSegments() {
 		int activeCount = getActiveChunkCount();
-		Logger.log("active: " + activeCount);
+		Logger.log("active:", activeCount);
 		if (activeCount < MAX_COUNT) {
 			int rem = MAX_COUNT - activeCount;
 			try {
@@ -422,46 +422,50 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 	}
 
 	private boolean restoreState() {
-		BufferedReader br = null;
-		chunks = new ArrayList<Segment>();
-		File file = new File(folder, "state.txt");
-		if (!file.exists()) {
-			file = getBackupFile(folder);
-			if (file == null) {
+		BufferedReader bufferedReader = null;
+		chunks = new ArrayList<>();
+		File stateFile = new File(folder, "state.txt");
+		if (!stateFile.exists()) {
+			stateFile = getBackupFile(folder);
+			if (stateFile == null) {
+				Logger.log("No HdsDownloader saved State",
+						stateFile.getAbsolutePath());
 				return false;
 			}
 		}
 		try {
-			br = new BufferedReader(new FileReader(file));
-			this.length = Long.parseLong(br.readLine());
-			this.downloaded = Long.parseLong(br.readLine());
-			this.totalDuration = Long.parseLong(br.readLine());
-			int urlCount = Integer.parseInt(br.readLine());
+			Logger.log("Restoring HdsDownloader State...",
+					stateFile.getAbsolutePath());
+			bufferedReader = XDMUtils.getBufferedReader(stateFile);
+			this.length = Long.parseLong(bufferedReader.readLine());
+			this.downloaded = Long.parseLong(bufferedReader.readLine());
+			this.totalDuration = Long.parseLong(bufferedReader.readLine());
+			int urlCount = Integer.parseInt(bufferedReader.readLine());
 			for (int i = 0; i < urlCount; i++) {
-				String url = br.readLine();
+				String url = bufferedReader.readLine();
 				urlList.add(url);
 			}
-			int chunkCount = Integer.parseInt(br.readLine());
+			int chunkCount = Integer.parseInt(bufferedReader.readLine());
 			for (int i = 0; i < chunkCount; i++) {
-				String cid = br.readLine();
-				long len = Long.parseLong(br.readLine());
-				long off = Long.parseLong(br.readLine());
-				long dwn = Long.parseLong(br.readLine());
+				String cid = bufferedReader.readLine();
+				long len = Long.parseLong(bufferedReader.readLine());
+				long off = Long.parseLong(bufferedReader.readLine());
+				long dwn = Long.parseLong(bufferedReader.readLine());
 				Segment seg = new SegmentImpl(folder, cid, off, len, dwn);
 				seg.setTag("HLS");
-				Logger.log("id: " + seg.getId() + "\nlength: " + seg.getLength() + "\noffset: " + seg.getStartOffset()
-						+ "\ndownload: " + seg.getDownloaded());
+				Logger.log("id:", seg.getId(), "\nlength:", seg.getLength(), "\noffset:", seg.getStartOffset()
+						, "\ndownload:", seg.getDownloaded());
 				chunks.add(seg);
 			}
-			this.lastModified = br.readLine();
+			this.lastModified = bufferedReader.readLine();
 			return true;
 		} catch (Exception e) {
 			Logger.log("Failed to load saved state");
 			Logger.log(e);
 		} finally {
-			if (br != null) {
+			if (bufferedReader != null) {
 				try {
-					br.close();
+					bufferedReader.close();
 				} catch (IOException e) {
 				}
 			}
@@ -527,9 +531,12 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 		// File outFile = new File(outputFormat == 0 ? getOutputFolder() : folder,
 		// getOutputFileName(true));
 
-		String outFileName = (outputFormat == 0 ? UUID.randomUUID() + "_" + getOutputFileName(true)
+		String outFileName = (outputFormat == 0
+				? FormatUtilities.getRandomFileName(getOutputFileName(true))
 				: UUID.randomUUID().toString());
-		String outputFolder = (outputFormat == 0 ? getOutputFolder() : folder);
+		String outputFolder = (outputFormat == 0
+				? getOutputFolder()
+				: folder);
 		outFile = new File(outputFolder, outFileName);
 
 		try {
@@ -585,18 +592,19 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 			}
 			out.close();
 
-			Logger.log("Output format: " + outputFormat);
+			Logger.log("Output format:", outputFormat);
 
 			if (outputFormat != 0) {
 
 				this.converting = true;
-				ffOutFile = new File(getOutputFolder(), UUID.randomUUID() + "_" + getOutputFileName(true));
+				String ffOutFileName = FormatUtilities.getRandomFileName(getOutputFileName(true));
+				ffOutFile = new File(getOutputFolder(), ffOutFileName);
 
 				this.ffmpeg = new FFmpeg(Arrays.asList(outFile.getAbsolutePath()),
 						ffOutFile.getAbsolutePath(), this, MediaFormats.getSupportedFormats()[outputFormat],
 						outputFormat == 0);
 				int ret = ffmpeg.convert();
-				Logger.log("FFmpeg exit code: " + ret);
+				Logger.log("FFmpeg exit code:", ret);
 
 				if (ret != 0) {
 					throw new IOException("FFmpeg failed");

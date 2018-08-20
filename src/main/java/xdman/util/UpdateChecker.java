@@ -7,41 +7,51 @@ import xdman.network.http.JavaHttpClient;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.InputStream;
+import java.net.UnknownHostException;
 
 public class UpdateChecker {
-	private static final String APP_UPDAT_URL = "http://xdman.sourceforge.net/update/update_check.php",
+	private static final String APP_UPDATE_URL = "http://xdman.sourceforge.net/update/update_check.php",
 			COMPONENTS_UPDATE_URL = "http://xdman.sourceforge.net/components/update_check.php";
-	public static final int APP_UPDATE_AVAILABLE = 10, COMP_UPDATE_AVAILABLE = 20, COMP_NOT_INSTALLED = 30,
+	public static final int APP_UPDATE_AVAILABLE = 10,
+			COMP_UPDATE_AVAILABLE = 20,
+			COMP_NOT_INSTALLED = 30,
 			NO_UPDATE_AVAILABLE = 40;
 
 	public static int getUpdateStat() {
 
-		int stat = isComponentUpdateAvailable();
-		System.out.println("Stat: " + stat);
-		if (stat == 0) {
-			return COMP_UPDATE_AVAILABLE;
-		} else if (stat == -1) {
-			return COMP_NOT_INSTALLED;
+		Integer isComponentUpdateAvailable = isComponentUpdateAvailable();
+		Logger.log("isComponentUpdateAvailable: ", isComponentUpdateAvailable);
+		if (isComponentUpdateAvailable == COMP_UPDATE_AVAILABLE
+				|| isComponentUpdateAvailable == COMP_NOT_INSTALLED) {
+			return isComponentUpdateAvailable;
 		} else {
-			System.out.println("checking for app update");
-			if (isAppUpdateAvailable())
-				return APP_UPDATE_AVAILABLE;
-			return NO_UPDATE_AVAILABLE;
+			Logger.log("checking for app update");
+			int isAppUpdateAvailable = isAppUpdateAvailable();
+			Logger.log("isAppUpdateAvailable: ", isAppUpdateAvailable);
+			return isAppUpdateAvailable;
 		}
 	}
 
-	private static boolean isAppUpdateAvailable() {
-		return isUpdateAvailable(true, XDMApp.APP_VERSION);
+	private static int isAppUpdateAvailable() {
+		String appVersion = XDMApp.APP_VERSION;
+		Logger.log("Current App version:", appVersion);
+		int isUpdateAvailable = isUpdateAvailable(APP_UPDATE_URL,
+				appVersion,
+				APP_UPDATE_AVAILABLE);
+		return isUpdateAvailable;
 	}
 
 	// return 1 is no update required
 	// return 0, -1 if update required
-	private static int isComponentUpdateAvailable() {
+	private static Integer isComponentUpdateAvailable() {
 		String componentVersion = getComponentVersion();
-		System.out.println("current component version: " + componentVersion);
+		Logger.log("Current component version:", componentVersion);
 		if (componentVersion == null)
-			return -1;
-		return isUpdateAvailable(false, componentVersion) ? 0 : 1;
+			return COMP_NOT_INSTALLED;
+		int isUpdateAvailable = isUpdateAvailable(COMPONENTS_UPDATE_URL,
+				componentVersion,
+				COMP_UPDATE_AVAILABLE);
+		return isUpdateAvailable;
 	}
 
 	public static String getComponentVersion() {
@@ -75,38 +85,51 @@ public class UpdateChecker {
 		return files[0].split("\\.")[0];
 	}
 
-	private static boolean isUpdateAvailable(boolean app, String version) {
+	private static int isUpdateAvailable(String updateURL,
+	                                     String version,
+	                                     int updateAvailable) {
 		JavaHttpClient client = null;
 		try {
-			client = new JavaHttpClient((app ? APP_UPDAT_URL : COMPONENTS_UPDATE_URL) + "?ver=" + version);
+			String url = String.format("%s?ver=%s",
+					updateURL,
+					version);
+			Logger.log("isUpdateAvailable", url, version);
+			client = new JavaHttpClient(url);
 			client.setFollowRedirect(true);
 			client.connect();
 			int resp = client.getStatusCode();
-			Logger.log("manifest download response: " + resp);
+			Logger.log("manifest download response:", resp);
 			if (resp == 200) {
 				InputStream in = client.getInputStream();
 				StringBuffer sb = new StringBuffer();
-				while (true) {
-					int x = in.read();
-					if (x == -1)
-						break;
+				int x;
+				while ((x = in.read()) != -1) {
 					sb.append((char) x);
 				}
-				return isNewerVersion(sb.toString(), XDMApp.APP_VERSION);
+				Boolean isNewerVersion = isNewerVersion(sb.toString(),
+						XDMApp.APP_VERSION);
+				int isUpdateAvailable = isNewerVersion
+						? updateAvailable
+						: NO_UPDATE_AVAILABLE;
+				return isUpdateAvailable;
 			}
+		} catch (UnknownHostException e) {
+			Logger.log(e);
+			return NO_UPDATE_AVAILABLE;
 		} catch (Exception e) {
 			Logger.log(e);
 		} finally {
 			try {
 				client.dispose();
 			} catch (Exception e) {
+				Logger.log(e);
 			}
 		}
-		return false;
+		return NO_UPDATE_AVAILABLE;
 	}
 
-	private static boolean isNewerVersion(String v1, String v2) {
-		System.out.println(v1+" "+v2);
+	private static Boolean isNewerVersion(String v1, String v2) {
+		Logger.log("isNewerVersion", v1, v2);
 		try {
 			if (v1.indexOf(".") > 0 && v2.indexOf(".") > 0) {
 				String[] arr1 = v1.split("\\.");
@@ -121,7 +144,7 @@ public class UpdateChecker {
 			}
 			return false;
 		} catch (Exception e) {
-			return false;
+			return true;
 		}
 	}
 }

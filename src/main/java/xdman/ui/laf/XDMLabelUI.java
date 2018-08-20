@@ -12,7 +12,7 @@ public class XDMLabelUI extends BasicLabelUI {
 	
 //	@Override
 //	public void paint(Graphics g, JComponent c) {
-//		System.out.println("called label paint");
+//		Logger.log("called label paint");
 //		Graphics2D g2d = (Graphics2D) g;
 //		Toolkit tk = Toolkit.getDefaultToolkit();
 //		Map map = (Map) (tk.getDesktopProperty("awt.font.desktophints"));

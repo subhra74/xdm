@@ -3,6 +3,7 @@ package xdman;
 import xdman.util.Base64;
 import xdman.util.Logger;
 import xdman.util.StringUtils;
+import xdman.util.XDMUtils;
 
 import java.io.*;
 import java.net.PasswordAuthentication;
@@ -13,7 +14,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 public class CredentialManager {
-	private File credentialsFile = new File(Config.getInstance().getDataFolder(), ".credentials");
+	private static final File credentialsFile = new File(Config.getInstance().getDataFolder(), ".credentials");
 	private Map<String, PasswordAuthentication> savedCredentials;
 	private Map<String, PasswordAuthentication> cachedCredentials;
 
@@ -31,7 +32,7 @@ public class CredentialManager {
 	}
 
 	public PasswordAuthentication getCredentialForHost(String host) {
-		System.out.println("Getting cred for " + host);
+		Logger.log("Getting Credential for", host);
 		PasswordAuthentication pauth = savedCredentials.get(host);
 		if (pauth == null) {
 			return cachedCredentials.get(host);
@@ -52,7 +53,7 @@ public class CredentialManager {
 	private CredentialManager() {
 		savedCredentials = new HashMap<>();
 		cachedCredentials = new HashMap<>();
-		load();
+		loadCredentials(credentialsFile);
 	}
 
 	public void addCredentialForHost(String host, PasswordAuthentication pauth, boolean save) {
@@ -75,36 +76,47 @@ public class CredentialManager {
 		addCredentialForHost(host, pauth, false);
 	}
 
-	private void load() {
-		BufferedReader br = null;
+	private void loadCredentials(File credentialsFile) {
+		if (!credentialsFile.exists()) {
+			Logger.log("No saved Credentials",
+					credentialsFile.getAbsolutePath());
+			return;
+		}
+		BufferedReader bufferedReader = null;
 		try {
-			if (!credentialsFile.exists()) {
-				Logger.log("No saved credentials");
-				return;
-			}
-			br = new BufferedReader(new InputStreamReader(new FileInputStream(credentialsFile)));
-			if (!savedCredentials.isEmpty())
+			Logger.log("Loading Credentials...",
+					credentialsFile.getAbsolutePath());
+			bufferedReader = XDMUtils.getBufferedReader(credentialsFile);
+			if (!savedCredentials.isEmpty()) {
 				savedCredentials.clear();
-			while (true) {
-				String ln = br.readLine();
-				if (ln == null)
-					break;
+			}
+			String ln;
+			while ((ln = bufferedReader.readLine()) != null) {
 				String str = new String(Base64.decode(ln));
 				String[] arr = str.split("\n");
 				if (arr.length < 2)
 					continue;
-				savedCredentials.put(arr[0],
-						new PasswordAuthentication(arr[1], arr.length == 3 ? arr[2].toCharArray() : new char[0]));
+				String key = arr[0];
+				String userName = arr[1];
+				String password = arr.length == 3
+						? arr[2]
+						: null;
+				char[] passwordChars = password != null
+						? password.toCharArray()
+						: new char[0];
+				savedCredentials.put(key,
+						new PasswordAuthentication(userName,
+								passwordChars));
 			}
 		} catch (Exception e) {
 			Logger.log(e);
 		} finally {
 			try {
-				if (br != null) {
-					br.close();
+				if (bufferedReader != null) {
+					bufferedReader.close();
 				}
 			} catch (IOException e) {
-				e.printStackTrace();
+				Logger.log(e);
 			}
 		}
 	}
@@ -114,8 +126,11 @@ public class CredentialManager {
 		Iterator<String> savedKeyIterator = savedCredentials.keySet().iterator();
 		while (savedKeyIterator.hasNext()) {
 			String key = savedKeyIterator.next();
-			PasswordAuthentication pauth = savedCredentials.get(key);
-			String str = key + "\n" + pauth.getUserName() + "\n" + new String(pauth.getPassword());
+			PasswordAuthentication passwordAuthentication = savedCredentials.get(key);
+			String str = String.format("%s\n%s\n%s",
+					key,
+					passwordAuthentication.getUserName(),
+					new String(passwordAuthentication.getPassword()));
 			String str64 = Base64.encode(str.getBytes());
 			buf.append(str64 + "\n");
 		}
@@ -131,7 +146,7 @@ public class CredentialManager {
 					out.close();
 				}
 			} catch (Exception e) {
-
+				Logger.log(e);
 			}
 		}
 	}

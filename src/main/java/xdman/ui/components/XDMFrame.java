@@ -3,6 +3,7 @@ package xdman.ui.components;
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
+import xdman.util.Logger;
 import xdman.util.XDMUtils;
 
 import javax.swing.*;
@@ -360,7 +361,7 @@ public class XDMFrame extends JFrame implements ComponentListener {
 
 	public void showModal(MessageBox component) {
 		lastFocusOwner = getMostRecentFocusOwner();
-		System.out.println("Last focus owner: " + lastFocusOwner);
+		Logger.log("Last focus owner: " + lastFocusOwner);
 		modalPane.add(component);
 		component.setVisible(true);
 		modalPane.setVisible(true);
@@ -411,7 +412,7 @@ public class XDMFrame extends JFrame implements ComponentListener {
 					} else if (source instanceof MenuComponent) {
 						((MenuComponent) source).dispatchEvent(event);
 					} else {
-						System.err.println("Unable to dispatch: " + event);
+						Logger.log("Unable to dispatch: " + event);
 					}
 				}
 			} else {

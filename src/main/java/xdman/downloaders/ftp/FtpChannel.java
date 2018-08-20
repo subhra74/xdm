@@ -19,7 +19,7 @@ public class FtpChannel extends AbstractChannel {
 	private InputStream in;
 	private boolean redirected;
 	private String redirectUrl;
-	private long length; 
+	private long length;
 
 	public FtpChannel(Segment chunk, String url) {
 		super(chunk);
@@ -50,13 +50,16 @@ public class FtpChannel extends AbstractChannel {
 			return false;
 		}
 
-		PasswordAuthentication passwd = new PasswordAuthentication("anonymous", "anonymous".toCharArray());
+		PasswordAuthentication passwordAuthentication = new PasswordAuthentication("anonymous", "anonymous".toCharArray());
 
 		while (!stop) {
 			isRedirect = false;
 			try {
-				Logger.log("ftp Connecting to: " + url + " " + chunk.getTag() + " offset "
-						+ (chunk.getStartOffset() + chunk.getDownloaded()));
+				Logger.log("ftp Connecting to:",
+						url,
+						chunk.getTag(),
+						"offset",
+						(chunk.getStartOffset() + chunk.getDownloaded()));
 				hc = new FtpClient(url);
 
 				// hc.setHeader("user-agent", "Mozilla/5.0 (Windows NT 10.0;
@@ -68,8 +71,8 @@ public class FtpChannel extends AbstractChannel {
 					hc.setOffset(startOff);
 				}
 
-				hc.setUser(passwd.getUserName());
-				hc.setPassword(new String(passwd.getPassword()));
+				hc.setUser(passwordAuthentication.getUserName());
+				hc.setPassword(new String(passwordAuthentication.getPassword()));
 
 				hc.connect();
 
@@ -80,10 +83,16 @@ public class FtpChannel extends AbstractChannel {
 
 				int code = hc.getStatusCode();
 
-				Logger.log(chunk + ": " + code);
+				Logger.log(chunk, ":", code);
 
-				if (code != 200 && code != 206 && code != 416 && code != 413 && code != 401 && code != 408
-						&& code != 407 && code != 503) {
+				if (code != 200
+						&& code != 206
+						&& code != 416
+						&& code != 413
+						&& code != 401
+						&& code != 408
+						&& code != 407
+						&& code != 503) {
 					errorCode = XDMConstants.ERR_INVALID_RESP;
 					closeImpl();
 					return false;
@@ -92,16 +101,24 @@ public class FtpChannel extends AbstractChannel {
 				if (code == 407 || code == 401) {
 					Logger.log("asking for password");
 					boolean proxy = code == 407;
-					passwd = Authenticator.requestPasswordAuthentication(null, hc.getPort(), "ftp", "", "ftp");
+					passwordAuthentication = Authenticator.requestPasswordAuthentication(null,
+							hc.getPort(),
+							"ftp",
+							"",
+							"ftp");
 
-					if (passwd == null) {
+					if (passwordAuthentication == null) {
 						if (!chunk.promptCredential(hc.getHost(), proxy)) {
 							errorCode = XDMConstants.ERR_INVALID_RESP;
 							closeImpl();
 							return false;
 						} else {
-							passwd = Authenticator.requestPasswordAuthentication(null, hc.getPort(), "ftp", "", "ftp");
-							Logger.log("Passwd: "+passwd);
+							passwordAuthentication = Authenticator.requestPasswordAuthentication(null,
+									hc.getPort(),
+									"ftp",
+									"",
+									"ftp");
+							Logger.log("Password Authentication:", passwordAuthentication);
 							throw new JavaClientRequiredException();
 						}
 					}
@@ -119,7 +136,7 @@ public class FtpChannel extends AbstractChannel {
 				}
 
 				length = hc.getContentLength();
-				
+
 				if (hc.getContentLength() > 0 && XDMUtils.getFreeSpace(null) < hc.getContentLength()) {
 					Logger.log("Disk is full");
 					errorCode = XDMConstants.DISK_FAIURE;
@@ -151,7 +168,7 @@ public class FtpChannel extends AbstractChannel {
 			}
 		}
 
-		Logger.log("return as " + errorCode);
+		Logger.log("return as", errorCode);
 
 		return false;
 	}

@@ -139,7 +139,7 @@ public class MediaFormatWnd extends JDialog implements ActionListener {
 					return;
 				FormatGroup fg = list.get(index);
 				List<Format> formats = fg.getFormats();
-				System.out.println(formats.size());
+				Logger.log(formats.size());
 				listModel.removeAllElements();
 				for (Format format : formats) {
 					listModel.addElement(format);
@@ -283,7 +283,7 @@ public class MediaFormatWnd extends JDialog implements ActionListener {
 			public void valueChanged(ListSelectionEvent e) {
 
 				int index = listFormat.getSelectedIndex();
-				System.out.println("List selected " + index);
+				Logger.log("List selected " + index);
 				if (index < 0)
 					return;
 				Format fmt = listModel.get(index);

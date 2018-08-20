@@ -143,18 +143,16 @@ public class YdlResponse {
 			if (fmt.protocol.equals("http_dash_segments")) {
 				continue;
 			}
-			// System.out.println("fmt[" + i + "]: " + fmt.formatNote);
+			// Logger.log("fmt[" , i , "]:" , fmt.formatNote);
 			int type = getVideoType(fmt);
-			// System.out.println(fmt.acodec + " " + fmt.vcodec + " " +
-			// fmt.formatNote + " " + type);
+			// Logger.log(fmt.acodec , fmt.vcodec , fmt.formatNote , type);
 
 			if (type == DASH_VIDEO_ONLY) {
 				// ((fmt.formatNote + "").toLowerCase().contains("dash video"))
 				// {
 				for (int j = 0; j < formatList.size(); j++) {
 
-					// System.out.println(fmt2.acodec + " " + fmt2.vcodec + " "
-					// + fmt2.formatNote + " " + type2);
+					// Logger.log(fmt2.acodec , fmt2.vcodec , fmt2.formatNote , type2);
 					YdlFormat fmt2 = formatList.get(j);
 
 					int type2 = getVideoType(fmt2);
@@ -166,7 +164,7 @@ public class YdlResponse {
 						// } else {
 						// media.type = DASH_HTTP;
 						// }
-						// System.out.println("fmt2: " + fmt2.formatNote);
+						// Logger.log("fmt2:" , fmt2.formatNote);
 
 						if (fmt.protocol.equals(fmt2.protocol)) {
 							// if (fmt.protocol.equals("http_dash_segments")) {
@@ -208,7 +206,7 @@ public class YdlResponse {
 							// + " "
 							// + fmt2.format + " (" + fmt.vcodec + "+" +
 							// fmt2.acodec + ") " + fmt.protocol;
-							System.out.println(media.format + " " + media.url);
+							Logger.log(media.format + " " + media.url);
 							checkAndAddMedia(media, mediaList);
 						}
 					}
@@ -232,7 +230,7 @@ public class YdlResponse {
 
 				media.format = createFormat(media.ext, fmt.format, null, fmt.acodec, fmt.vcodec, fmt.width, fmt.height,
 						-1);
-				System.out.println(media.format + " " + media.url);
+				Logger.log(media.format + " " + media.url);
 				// media.format = "[" + (media.ext + "]").toUpperCase() + " " +
 				// " " + fmt.format
 				// + " " + " (" + fmt.vcodec

@@ -31,11 +31,11 @@ public class MediaInfoExtractor {
 
 	public MediaInfoExtractor() {
 		String str1="Duration:\\s+(\\d+:\\d+:\\d+)    "+"Stream .*, ([0-9]+x[0-9]+)";
-		System.out.println(str1);
+		Logger.log(str1);
 		pattern1 = Pattern.compile("Duration:\\s+([0-9]+:[0-9]+:[0-9]+)");
 		pattern2 = Pattern.compile("Stream .*, ([0-9]+x[0-9]+)");
-		
-		//System.out.println(pattern1.matcher("Duration: 00:07:38.36, start: ").m);
+
+		//Logger.log(pattern1.matcher("Duration: 00:07:38.36, start: ").m);
 	}
 
 	public MediaFormatInfo getInfo(String file) {
@@ -45,10 +45,10 @@ public class MediaInfoExtractor {
 		if (!f.exists())
 			return null;
 		File ffFile = new File(Config.getInstance().getDataFolder(),
-				System.getProperty("os.name").toLowerCase().contains("windows") ? "ffmpeg.exe" : "ffmpeg");
+				FFmpeg.getFFMpeg());
 		if (!ffFile.exists()) {
 			ffFile = new File(XDMUtils.getJarFile().getParentFile(),
-					System.getProperty("os.name").toLowerCase().contains("windows") ? "ffmpeg.exe" : "ffmpeg");
+					FFmpeg.getFFMpeg());
 			if (!ffFile.exists()) {
 				return null;
 			}
@@ -72,8 +72,8 @@ public class MediaInfoExtractor {
 			for(String s:args) {
 				str2+=" "+s;
 			}
-			
-			System.out.println(str2);
+
+			Logger.log(str2);
 
 			ProcessBuilder pb = new ProcessBuilder(args);
 			//pb.redirectErrorStream(false);
@@ -81,7 +81,7 @@ public class MediaInfoExtractor {
 			proc = pb.start();
 
 			int ret=proc.waitFor();
-			System.out.println("ret: "+ret);
+			Logger.log("ret:", ret);
 			if(stop) {
 				return null;
 			}
@@ -89,18 +89,18 @@ public class MediaInfoExtractor {
 			info.thumbnail = new ImageIcon(tmpImgFile.getAbsolutePath());
 			byte[] array = Files.readAllBytes(tmpOutput.toPath());
 			String str = new String(array, StandardCharsets.UTF_8);
-			System.out.println(str);
+			Logger.log(str);
 			Matcher matcher1 = pattern1.matcher(str);
 			Matcher matcher2 = pattern2.matcher(str);
 			if (matcher1.find()) {
 				info.duration = matcher1.group(1);
-				System.out.println("Match: "+info.duration);
+				Logger.log("Match:", info.duration);
 			}else {
-				System.out.println("no match");
+				Logger.log("no match");
 			}
 			if (matcher2.find()) {
 				info.resolution = matcher2.group(1);
-				System.out.println("Match: "+info.resolution);
+				Logger.log("Match:", info.resolution);
 			}
 			if(stop) {
 				return null;

@@ -29,8 +29,9 @@ public class FtpDownloader extends SegmentDownloader {
 
 	@Override
 	public boolean isFileNameChanged() {
-		Logger.log("Checking for filename change " + (newFileName != null));
-		return newFileName != null;
+		boolean isFileNameChanged = newFileName != null;
+		Logger.log("Checking for filename change", isFileNameChanged);
+		return isFileNameChanged;
 	}
 
 	@Override

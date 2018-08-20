@@ -21,8 +21,11 @@ public class HttpDownloader extends SegmentDownloader {
 	public AbstractChannel createChannel(Segment segment) {
 		StringBuffer buf = new StringBuffer();
 		metadata.getHeaders().appendToBuffer(buf);
-		System.out.println("Headers all: " + buf);
-		HttpChannel hc = new HttpChannel(segment, metadata.getUrl(), metadata.getHeaders(), length,
+		Logger.log("Headers all:", buf);
+		HttpChannel hc = new HttpChannel(segment,
+				metadata.getUrl(),
+				metadata.getHeaders(),
+				length,
 				isJavaClientRequired);
 		return hc;
 	}
@@ -34,8 +37,10 @@ public class HttpDownloader extends SegmentDownloader {
 
 	@Override
 	public boolean isFileNameChanged() {
-		Logger.log("Checking for filename change " + (newFileName != null));
-		return newFileName != null;
+		boolean isFileNameChanged = newFileName != null;
+		Logger.log("Checking for filename change",
+				isFileNameChanged);
+		return isFileNameChanged;
 	}
 
 	@Override
@@ -63,14 +68,15 @@ public class HttpDownloader extends SegmentDownloader {
 			//
 			// if (outputFormat == 0) {
 			// newFileName = XDMUtils.getFileName(metadata.getUrl());
-			// Logger.log("set new filename: " + newFileName);
-			// Logger.log("new file name: " + newFileName);
+			// Logger.log("set new filename:" , newFileName);
+			// Logger.log("new file name:" , newFileName);
 			// }
 		}
 
-		if ((hc.getHeader("content-type") + "").contains("text/html")) {
+		if ((hc.getHeader("content-type")).contains("text/html")) {
 			if (hc.getHeader("content-disposition") == null) {
-				newFileName = XDMUtils.getFileNameWithoutExtension(oldFileName) + ".html";
+				newFileName = String.format("%s.html",
+						XDMUtils.getFileNameWithoutExtension(oldFileName));
 				outputFormat = 0;
 			}
 		}
@@ -79,12 +85,12 @@ public class HttpDownloader extends SegmentDownloader {
 		String contentDispositionHeader = hc.getHeader("content-disposition");
 		if (contentDispositionHeader != null) {
 			if (outputFormat == 0) {
-				System.out.println("checking content disposition");
+				Logger.log("checking content disposition");
 				String name = NetUtils.getNameFromContentDisposition(contentDispositionHeader);
 				if (name != null) {
 					this.newFileName = name;
 					nameSet = true;
-					Logger.log("set new filename: " + newFileName);
+					Logger.log("set new filename:", newFileName);
 				}
 			}
 		}
@@ -94,7 +100,7 @@ public class HttpDownloader extends SegmentDownloader {
 		// if (!(upperStr.endsWith(".HTML") || upperStr.endsWith(".HTM"))) {
 		// outputFormat = 0;
 		// this.newFileName += ".html";
-		// Logger.log("set new filename: " + newFileName);
+		// Logger.log("set new filename:" , newFileName);
 		// }
 		// }
 		// }
@@ -103,10 +109,12 @@ public class HttpDownloader extends SegmentDownloader {
 			if (StringUtils.isNullOrEmptyOrBlank(ext)) {
 				String newExt = MimeUtil.getFileExt(hc.getHeader("content-type"));
 				if (newExt != null) {
-					newFileName = oldFileName + "." + newExt;
+					newFileName = String.format("%s.%s",
+							oldFileName,
+							newExt);
 				}
 			}
-			Logger.log("new filename: " + newFileName);
+			Logger.log("new filename:", newFileName);
 		}
 	}
 

@@ -6,7 +6,7 @@ import xdman.util.Logger;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 public class StringResource {
@@ -19,7 +19,7 @@ public class StringResource {
 			try {
 				strings = new Properties();
 				String lang = Config.getInstance().getLanguage();
-				System.out.println(lang);
+				Logger.log(lang);
 				if (!loadLang(lang, strings)) {
 					Logger.log("Unable to load language: " + lang);
 					strings.clear();
@@ -33,13 +33,14 @@ public class StringResource {
 	}
 
 	private static boolean loadLang(String code, Properties prop) {
-		Logger.log("Loading language " + code);
+		Logger.log("Loading language", code);
+		String languageFileName = String.format("lang/%s.txt", code);
 		try {
-			InputStream inStream = StringResource.class.getResourceAsStream("/lang/" + code + ".txt");
+			InputStream inStream = StringResource.class.getResourceAsStream(String.format("/%s", languageFileName));
 			if (inStream == null) {
-				inStream = new FileInputStream("lang/" + code + ".txt");
+				inStream = new FileInputStream(languageFileName);
 			}
-			InputStreamReader r = new InputStreamReader(inStream, Charset.forName("utf-8"));
+			InputStreamReader r = new InputStreamReader(inStream, StandardCharsets.UTF_8);
 			prop.load(r);
 			return true;
 		} catch (Exception e) {

@@ -2,11 +2,11 @@ package xdman.downloaders.metadata.manifests;
 
 import xdman.util.Logger;
 import xdman.util.StringUtils;
+import xdman.util.XDMUtils;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.URI;
 import java.util.ArrayList;
 
@@ -17,12 +17,12 @@ public class M3U8Manifest {
 	private boolean masterPlaylist;
 	private boolean encrypted;
 	private ArrayList<M3U8MediaInfo> mediaProperties;// valid only for master
-														// playlist
+	// playlist
 
 	public M3U8Manifest(String file, String playlistUrl) throws Exception {
 		this.playlistUrl = playlistUrl;
-		this.mediaUrls = new ArrayList<String>();
-		this.mediaProperties = new ArrayList<M3U8MediaInfo>();
+		this.mediaUrls = new ArrayList<>();
+		this.mediaProperties = new ArrayList<>();
 		ArrayList<String> urlList = parseManifest(file);
 		makeMediaUrls(urlList);
 	}
@@ -65,12 +65,14 @@ public class M3U8Manifest {
 
 	private String resolveURL(String playlistUrl, String segmentUrl) {
 		try {
-			Logger.log("Manifest Segment parsing ");
+			Logger.log("Resolving M3U8Manifest Segment URL...",
+					playlistUrl,
+					segmentUrl);
 			if (!(segmentUrl.startsWith("http://") || segmentUrl.startsWith("https://"))) {
 				URI uri = new URI(playlistUrl);
-				String str = uri.resolve(segmentUrl).normalize().toString();
-				Logger.log("Manifest Segment parsing: " + str);
-				return str;
+				String url = uri.resolve(segmentUrl).normalize().toString();
+				Logger.log("Resolved M3U8 Manifest Segment URL:", url);
+				return url;
 			} else {
 				return segmentUrl;
 			}
@@ -81,22 +83,28 @@ public class M3U8Manifest {
 		return null;
 	}
 
-	private ArrayList<String> parseManifest(String file) throws IOException {
-		ArrayList<String> urlList = new ArrayList<String>();
-		BufferedReader r = null;
+	private ArrayList<String> parseManifest(String manifestFilePath) throws IOException {
+		File manifestFile = new File(manifestFilePath);
+		if (!manifestFile.exists()) {
+			Logger.log("No saved M3U8 Manifest",
+					manifestFile.getAbsolutePath());
+			return null;
+		}
+		ArrayList<String> urlList = new ArrayList<>();
+		BufferedReader bufferedReader = null;
 		try {
-			r = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+			Logger.log("Loading M3U8 Manifest...",
+					manifestFile.getAbsolutePath());
+			bufferedReader = XDMUtils.getBufferedReader(manifestFile);
 			boolean expect = false;
-			while (true) {
-				String line = r.readLine();
-				if (line == null)
-					break;
+			String line;
+			while ((line = bufferedReader.readLine()) != null) {
 				String highline = line.toUpperCase().trim();
 				if (highline.length() < 1)
 					continue;
 
 				if (highline.startsWith("#EXT-X-KEY")) {
-					Logger.log("Encrypted segment detected: " + line);
+					Logger.log("Encrypted segment detected:", line);
 					// encrypted = true;
 					// break;
 				}
@@ -129,13 +137,19 @@ public class M3U8Manifest {
 				}
 			}
 		} catch (Exception e) {
-			Logger.log(e);
-			throw new IOException("Unable to parse menifest");
+			String message = String.format("Unable to parse M3U8 Manifest %s %s",
+					manifestFile.getAbsolutePath(),
+					e.getMessage());
+			IOException ioException = new IOException(message, e);
+			Logger.log(ioException);
+			throw ioException;
 		} finally {
-			try {
-				if (r != null)
-					r.close();
-			} catch (Exception e) {
+			if (bufferedReader != null) {
+				try {
+					bufferedReader.close();
+				} catch (Exception e) {
+					Logger.log(e);
+				}
 			}
 		}
 
@@ -175,7 +189,7 @@ public class M3U8Manifest {
 
 		@Override
 		public String toString() {
-			return "bw: " + bandwidth + " res: " + resolution;
+			return String.format("bw: %s res: %s", bandwidth, resolution);
 		}
 
 		public static M3U8MediaInfo parse(String str) {
@@ -215,8 +229,8 @@ public class M3U8Manifest {
 	// for (Iterator iterator = mf.getMediaUrls().iterator(); iterator
 	// .hasNext();) {
 	// String type = (String) iterator.next();
-	// System.out.println(type);
-	// System.out.println(mf.getMediaProperty(i));
+	// Logger.log(type);
+	// Logger.log(mf.getMediaProperty(i));
 	// i++;
 	// }
 	// }

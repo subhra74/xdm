@@ -3,6 +3,7 @@ package xdman.ui.components;
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
+import xdman.util.Logger;
 import xdman.videoparser.YdlResponse.YdlVideo;
 
 import javax.swing.*;
@@ -101,7 +102,7 @@ public class VideoItemRenderer implements TableCellRenderer {
 				if (icon != null) {
 					lblIcon.setIcon(icon);
 				} else {
-					System.out.println("null");
+					Logger.log("null");
 				}
 			}
 		}

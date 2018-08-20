@@ -107,7 +107,7 @@ public abstract class Downloader implements SegmentListener {
 			return 0;
 		int count = 0;
 		int totalInactive = findTotalInactiveChunk();
-		Logger.log("Total inactive chunks: " + totalInactive);
+		Logger.log("Total inactive chunks:", totalInactive);
 
 		if (totalInactive > rem) {
 			totalInactive = rem;
@@ -119,7 +119,7 @@ public abstract class Downloader implements SegmentListener {
 					c.download(this);
 					count++;
 				} else {
-					Logger.log("$$$ debug rem:" + rem);
+					Logger.log("$$$ debug rem:", rem);
 				}
 			}
 		}
@@ -195,7 +195,11 @@ public abstract class Downloader implements SegmentListener {
 		File[] files = dir.listFiles();
 		if (files != null) {
 			for (int i = 0; i < files.length; i++) {
-				Logger.log("Delete: " + files[i] + " [" + files[i].length() + "] " + files[i].delete());
+				Logger.log("Delete:",
+						files[i],
+						"/",
+						files[i].length(),
+						files[i].delete());
 			}
 		}
 
@@ -239,7 +243,7 @@ public abstract class Downloader implements SegmentListener {
 				this.errorCode = XDMConstants.ERR_INVALID_RESP;
 			}
 		} else {
-			Logger.log("Setting final error code: " + err);
+			Logger.log("Setting final error code:", err);
 			this.errorCode = err;
 		}
 
@@ -276,12 +280,12 @@ public abstract class Downloader implements SegmentListener {
 	public void setLastModifiedDate(File outFile) {
 		if (Config.getInstance().isFetchTs()) {
 			try {
-				System.out.println("setting date");
+				Logger.log("setting date");
 				Date lastModified = HttpDateParser.parseHttpDate(this.lastModified);
 				if (lastModified != null) {
-					System.out.println("setting date file " + lastModified);
+					Logger.log("setting date file", lastModified);
 					boolean val = outFile.setLastModified(lastModified.getTime());
-					System.out.println("rename: " + val + new Date(outFile.lastModified()));
+					Logger.log("rename:", val, new Date(outFile.lastModified()));
 				}
 			} catch (Exception e) {
 				Logger.log(e);

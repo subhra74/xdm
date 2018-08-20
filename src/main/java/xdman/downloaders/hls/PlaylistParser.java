@@ -3,18 +3,24 @@ package xdman.downloaders.hls;
 import xdman.util.FormatUtilities;
 import xdman.util.Logger;
 import xdman.util.StringUtils;
+import xdman.util.XDMUtils;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
 public class PlaylistParser {
 
-	public static HlsPlaylist parse(String file, String playlistUrl) {
+	public static HlsPlaylist parse(String filePath, String playlistUrl) {
+		File hlsPlaylistFile = new File(filePath);
+		if (!hlsPlaylistFile.exists()) {
+			Logger.log("No saved HlsPlaylist",
+					hlsPlaylistFile.getAbsolutePath());
+			return null;
+		}
 		HlsPlaylist playlist = new HlsPlaylist();
 		String keyUrl = null, IV = null;
 		String url = null, resolution = null, bandwidth = null, sMediaSequence = null;
@@ -22,21 +28,21 @@ public class PlaylistParser {
 		boolean isEncryptedSegment = false;
 		int mediaSequence = 0;
 		String duration = "";
-		BufferedReader r = null;
+		BufferedReader bufferedReader = null;
 		List<HlsPlaylistItem> items = new ArrayList<>();
 		float totalDuration = 0.0f;
 		String lastUrl = null;
 		boolean hasByteRange = false;
 		try {
-			r = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
-			if (!r.readLine().startsWith("#EXTM3U")) {
+			Logger.log("Loading HlsPlaylist...",
+					hlsPlaylistFile.getAbsolutePath());
+			bufferedReader = XDMUtils.getBufferedReader(hlsPlaylistFile);
+			if (!bufferedReader.readLine().startsWith("#EXTM3U")) {
 				throw new IOException("Not a valid HLS manifest");
 			}
 			String prefixLine = "";
-			while (true) {
-				String line = r.readLine();
-				if (line == null)
-					break;
+			String line;
+			while ((line = bufferedReader.readLine()) != null) {
 				line = line.trim();
 				if (line.length() < 1)
 					continue;
@@ -45,7 +51,7 @@ public class PlaylistParser {
 					continue;
 				} else {
 					if (prefixLine.length() > 0) {
-						line = prefixLine + " " + line;
+						line = String.format("%s %s", prefixLine, line);
 						prefixLine = "";
 					}
 				}
@@ -75,6 +81,7 @@ public class PlaylistParser {
 							totalDuration += Float.parseFloat(duration);
 						}
 					} catch (Exception e) {
+						Logger.log(e);
 					}
 					duration = "";
 				} else if (line.startsWith("#EXT")) {
@@ -131,7 +138,7 @@ public class PlaylistParser {
 								if (keyUrl != null) {
 									keyUrl = keyUrl.replace("\"", "");
 								}
-								System.out.println("Method: " + method + " URI: " + keyUrl);
+								Logger.log("Method:", method, "URI:", keyUrl);
 								if (method != null) {
 									if (method.equals("AES-128") || method.equals("NONE")) {
 										if (method.equals("AES-128")) {
@@ -140,16 +147,15 @@ public class PlaylistParser {
 											IV = getAttrValue(attrs, "IV");
 											String keyFormat = getAttrValue(attrs, "KEYFORMAT");
 											if (keyFormat != null && (!keyFormat.equals("identity"))) {
-												System.out.println("Unsupported encryption method: " + method
-														+ "/keyformat: " + keyFormat);
+												Logger.log("Unsupported encryption method:", method, "keyformat:", keyFormat);
 												return null;
 											}
 										} else {
 											isEncryptedSegment = false;
-											System.out.println("Non encrypted");
+											Logger.log("Non encrypted");
 										}
 									} else {
-										System.out.println("Unsupported encryption method: " + method);
+										Logger.log("Unsupported encryption method:", method);
 										return null;
 									}
 
@@ -165,12 +171,13 @@ public class PlaylistParser {
 			playlist.setDuration(totalDuration);
 			return playlist;
 		} catch (Exception e) {
-			e.printStackTrace();
+			Logger.log("Failed to load saved state", e);
 		} finally {
-			if (r != null) {
+			if (bufferedReader != null) {
 				try {
-					r.close();
+					bufferedReader.close();
 				} catch (Exception e2) {
+					Logger.log(e2);
 				}
 			}
 		}

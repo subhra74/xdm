@@ -28,7 +28,7 @@ public class FFmpeg {
 	private boolean useHwAccel;
 
 	public FFmpeg(List<String> inputFiles, String outputFile, MediaConversionListener listener, MediaFormat outformat,
-			boolean copy) {
+	              boolean copy) {
 		this.inputFiles = inputFiles;
 		this.outputFile = outputFile;
 		this.listener = listener;
@@ -37,15 +37,16 @@ public class FFmpeg {
 	}
 
 	public int convert() {
+		BufferedReader bufferedReader = null;
 		try {
 
-			Logger.log("Outformat: " + outformat);
+			Logger.log("Outformat:", outformat);
 
 			File ffFile = new File(Config.getInstance().getDataFolder(),
-					System.getProperty("os.name").toLowerCase().contains("windows") ? "ffmpeg.exe" : "ffmpeg");
+					getFFMpeg());
 			if (!ffFile.exists()) {
 				ffFile = new File(XDMUtils.getJarFile().getParentFile(),
-						System.getProperty("os.name").toLowerCase().contains("windows") ? "ffmpeg.exe" : "ffmpeg");
+						getFFMpeg());
 				if (!ffFile.exists()) {
 					return FF_NOT_FOUND;
 				}
@@ -171,19 +172,16 @@ public class FFmpeg {
 			args.add("-y");
 
 			for (String s : args) {
-				Logger.log("@ffmpeg_args: " + s);
+				Logger.log("@ffmpeg_args:", s);
 			}
 
 			ProcessBuilder pb = new ProcessBuilder(args);
 			pb.redirectErrorStream(true);
 			proc = pb.start();
 
-			BufferedReader br = new BufferedReader(new InputStreamReader(proc.getInputStream()), 1024);
-			while (true) {
-				String ln = br.readLine();
-				if (ln == null) {
-					break;
-				}
+			bufferedReader = new BufferedReader(new InputStreamReader(proc.getInputStream()), 1024);
+			String ln;
+			while ((ln = bufferedReader.readLine()) != null) {
 				try {
 					String text = ln.trim();
 					processOutput(text);
@@ -195,8 +193,22 @@ public class FFmpeg {
 			ffExitCode = proc.waitFor();
 			return ffExitCode == 0 ? FF_SUCCESS : FF_CONVERSION_FAILED;
 		} catch (Exception e) {
+			Logger.log(e);
 			return FF_LAUNCH_ERROR;
+		} finally {
+			if (bufferedReader != null) {
+				try {
+					bufferedReader.close();
+				} catch (Exception e2) {
+					Logger.log(e2);
+				}
+			}
 		}
+	}
+
+	public static String getFFMpeg() {
+		String ffmpeg = XDMUtils.getEXEFileName("ffmpeg");
+		return ffmpeg;
 	}
 
 	public void setHls(boolean hls) {
@@ -235,11 +247,11 @@ public class FFmpeg {
 				index1 = text.indexOf('=', index1);
 				int index2 = text.indexOf("bitrate=");
 				String dur = text.substring(index1 + 1, index2).trim();
-				Logger.log("Parsing duration: " + dur);
+				Logger.log("Parsing duration:", dur);
 				long t = parseDuration(dur);
-				Logger.log("Duration: " + t + " Total duration: " + totalDuration);
+				Logger.log("Duration:", t, "Total duration:", totalDuration);
 				int prg = (int) ((t * 100) / totalDuration);
-				Logger.log("ffmpeg prg: " + prg);
+				Logger.log("ffmpeg prg:", prg);
 				listener.progress(prg);
 			}
 		}
@@ -251,9 +263,9 @@ public class FFmpeg {
 					index1 = text.indexOf(':', index1);
 					int index2 = text.indexOf(",", index1);
 					String dur = text.substring(index1 + 1, index2).trim();
-					Logger.log("Parsing duration: " + dur);
+					Logger.log("Parsing duration:", dur);
 					totalDuration = parseDuration(dur);
-					Logger.log("Total duration: " + totalDuration);
+					Logger.log("Total duration:", totalDuration);
 				} catch (Exception e) {
 					Logger.log(e);
 					totalDuration = -1;

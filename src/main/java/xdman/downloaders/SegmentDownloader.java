@@ -36,9 +36,9 @@ public abstract class SegmentDownloader extends Downloader implements SegmentLis
 	}
 
 	public void start() {
-		Logger.log("creating folder " + folder);
+		Logger.log("SegmentDownloader creating folder", folder);
 		new File(folder).mkdirs();
-		chunks = new ArrayList<Segment>();
+		chunks = new ArrayList<>();
 		try {
 			Segment c1 = new SegmentImpl(this, folder);
 			// handle case of single dash stream
@@ -101,13 +101,13 @@ public abstract class SegmentDownloader extends Downloader implements SegmentLis
 		if (stopFlag)
 			return;
 		int activeCount = getActiveChunkCount();
-		Logger.log("active count:" + activeCount);
+		Logger.log("active count:", activeCount);
 		if (activeCount == MAX_COUNT) {
 			return;
 		}
 
 		int rem = MAX_COUNT - activeCount;
-		// Logger.log("rem:" + rem);
+		// Logger.log("rem:" , rem);
 
 		rem -= retryFailedChunks(rem);
 
@@ -115,7 +115,7 @@ public abstract class SegmentDownloader extends Downloader implements SegmentLis
 			Segment c1 = findMaxChunk();
 			Segment c = splitChunk(c1);
 			if (c != null) {
-				Logger.log("creating chunk " + c);
+				Logger.log("creating chunk", c);
 				chunks.add(c);
 				c.download(this);
 			}
@@ -153,8 +153,12 @@ public abstract class SegmentDownloader extends Downloader implements SegmentLis
 		long rem = c.getLength() - c.getDownloaded();
 		long offset = c.getStartOffset() + c.getLength() - rem / 2;
 		long len = rem / 2;
-		Logger.log("Changing length from: " + c.getLength() + " to " + (c.getLength() - rem / 2));
-		c.setLength(c.getLength() - rem / 2);
+		long newLength = c.getLength() - rem / 2;
+		Logger.log("Changing length from:",
+				c.getLength(),
+				"to",
+				newLength);
+		c.setLength(newLength);
 		Segment c2 = new SegmentImpl(this, folder);
 		// handle case of single dash stream
 		if (getMetadata() instanceof DashMetadata) {
@@ -207,11 +211,11 @@ public abstract class SegmentDownloader extends Downloader implements SegmentLis
 			return true;
 		}
 		Segment chunk = getById(id);
-		Logger.log("Complete: " + chunk + " " + chunk.getDownloaded() + " " + chunk.getLength());
+		Logger.log("Complete:", chunk, chunk.getDownloaded(), chunk.getLength());
 		Segment nextNeedyChunk = findNextNeedyChunk(chunk);
 		if (nextNeedyChunk != null) {
 			Logger.log("****************Needy chunk found!!!");
-			Logger.log("Stopping: " + nextNeedyChunk);
+			Logger.log("Stopping: ", nextNeedyChunk);
 			nextNeedyChunk.stop();
 			chunks.remove(nextNeedyChunk);
 			nextNeedyChunk.dispose();
@@ -232,7 +236,7 @@ public abstract class SegmentDownloader extends Downloader implements SegmentLis
 			Segment c = getById(id);
 			this.length = c.getLength();
 			init = true;
-			Logger.log("size: " + this.length);
+			Logger.log("size:", this.length);
 			if (c.getChannel() instanceof HttpChannel) {
 				super.getLastModifiedDate(c);
 			}
@@ -295,7 +299,7 @@ public abstract class SegmentDownloader extends Downloader implements SegmentLis
 		assembling = true;
 		assembleFinished = false;
 		String outFileFinal = getOutputFileName(true);
-		String outFileName = (outputFormat == 0 ? UUID.randomUUID().toString() + "_" + outFileFinal
+		String outFileName = (outputFormat == 0 ? FormatUtilities.getRandomFileName(outFileFinal)
 				: UUID.randomUUID().toString());
 		String outputFolder = (outputFormat == 0 ? getOutputFolder() : folder);
 		XDMUtils.mkdirs(getOutputFolder());
@@ -310,7 +314,7 @@ public abstract class SegmentDownloader extends Downloader implements SegmentLis
 			// chunks.sort(new SegmentComparator());
 			out = new FileOutputStream(outFile);
 			for (int i = 0; i < chunks.size(); i++) {
-				Logger.log("chunk " + i + " " + stopFlag);
+				Logger.log("chunk", i, stopFlag);
 				Segment c = chunks.get(i);
 				in = new FileInputStream(new File(folder, c.getId()));
 				long rem = c.getLength();
@@ -353,13 +357,13 @@ public abstract class SegmentDownloader extends Downloader implements SegmentLis
 			if (outputFormat != 0) {
 				XDMUtils.mkdirs(getOutputFolder());
 				this.converting = true;
-				ffOutFile = new File(getOutputFolder(), UUID.randomUUID().toString() + "_" + getOutputFileName(true));
+				ffOutFile = new File(getOutputFolder(), FormatUtilities.getRandomFileName(getOutputFileName(true)));
 
 				this.ffmpeg = new FFmpeg(Arrays.asList(outFile.getAbsolutePath()),
 						ffOutFile.getAbsolutePath(), this, MediaFormats.getSupportedFormats()[outputFormat],
 						outputFormat == 0);
 				int ret = ffmpeg.convert();
-				Logger.log("FFmpeg exit code: " + ret);
+				Logger.log("FFmpeg exit code:", ret);
 
 				if (ret != 0) {
 					throw new IOException("FFmpeg failed");
@@ -477,45 +481,51 @@ public abstract class SegmentDownloader extends Downloader implements SegmentLis
 	}
 
 	private boolean restoreState() {
-		BufferedReader br = null;
-		chunks = new ArrayList<Segment>();
-		File file = new File(folder, "state.txt");
-		if (!file.exists()) {
-			file = getBackupFile(folder);
-			if (file == null) {
+		BufferedReader bufferedReader = null;
+		chunks = new ArrayList<>();
+		File stateFile = new File(folder, "state.txt");
+		if (!stateFile.exists()) {
+			Logger.log("No SegmentDownloader saved State",
+					stateFile.getAbsolutePath());
+			stateFile = getBackupFile(folder);
+			if (stateFile == null) {
 				return false;
 			}
 		}
 		try {
-			br = new BufferedReader(new FileReader(file));
-			this.length = Long.parseLong(br.readLine());
-			this.downloaded = Long.parseLong(br.readLine());
-			int chunkCount = Integer.parseInt(br.readLine());
+			Logger.log("Restoring SegmentDownloader State...",
+					stateFile.getAbsolutePath());
+			bufferedReader = XDMUtils.getBufferedReader(stateFile);
+			this.length = Long.parseLong(bufferedReader.readLine());
+			this.downloaded = Long.parseLong(bufferedReader.readLine());
+			int chunkCount = Integer.parseInt(bufferedReader.readLine());
 			for (int i = 0; i < chunkCount; i++) {
-				String cid = br.readLine();
-				long len = Long.parseLong(br.readLine());
-				long off = Long.parseLong(br.readLine());
-				long dwn = Long.parseLong(br.readLine());
+				String cid = bufferedReader.readLine();
+				long len = Long.parseLong(bufferedReader.readLine());
+				long off = Long.parseLong(bufferedReader.readLine());
+				long dwn = Long.parseLong(bufferedReader.readLine());
 				Segment seg = new SegmentImpl(folder, cid, off, len, dwn);
 				// handle case of single dash stream
 				if (getMetadata() instanceof DashMetadata) {
 					seg.setTag("T1");
 				}
 
-				Logger.log("id: " + seg.getId() + "\nlength: " + seg.getLength() + "\noffset: " + seg.getStartOffset()
-						+ "\ndownload: " + seg.getDownloaded());
+				Logger.log("id:", seg.getId(),
+						"\nlength:", seg.getLength(),
+						"\noffset:", seg.getStartOffset(),
+						"\ndownload:", seg.getDownloaded());
 				chunks.add(seg);
 			}
-			this.lastModified = br.readLine();
+			this.lastModified = bufferedReader.readLine();
 			return true;
 		} catch (Exception e) {
-			Logger.log("Failed to load saved state");
-			Logger.log(e);
+			Logger.log("Failed to load saved state", e);
 		} finally {
-			if (br != null) {
+			if (bufferedReader != null) {
 				try {
-					br.close();
+					bufferedReader.close();
 				} catch (IOException e) {
+					Logger.log(e);
 				}
 			}
 		}

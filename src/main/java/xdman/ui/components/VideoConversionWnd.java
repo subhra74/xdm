@@ -90,7 +90,7 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 		}
 		if (mode == 1) {
 			if (ffmpeg != null) {
-				System.out.println("stopping ffmpeg");
+				Logger.log("stopping ffmpeg");
 				ffmpeg.stop();
 			}
 		}
@@ -409,7 +409,7 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 				if (item != null) {
 					if (!slVolume.getValueIsAdjusting()) {
 						item.volume = String.format("%.1f", slVolume.getValue() / 100f);
-						System.out.println(item.volume);
+						Logger.log(item.volume);
 					}
 				}
 
@@ -484,7 +484,7 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 					String ext = fmtWnd.getFormat().getFormat();
 					item.outFileName = file + "." + ext;
 				}
-				System.out.println("starting convert");
+				Logger.log("starting convert");
 				mode = 1;
 				t = new Thread(this);
 				t.start();
@@ -512,7 +512,7 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 		if (mode == 0) {
 			loadFiles();
 		} else if (mode == 1) {
-			System.out.println("starting conversion");
+			Logger.log("starting conversion");
 			convertFiles();
 		}
 	}
@@ -542,16 +542,16 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 				}
 
 				ConversionItem item = model.getElementAt(i);
-				System.out.println("item: " + item);
+				Logger.log("item: " + item);
 
 				String file = item.inputFile;
 
 				File outFile = new File(txtOutFolder.getText(), item.outFileName);
-				System.out.println(outFile);
+				Logger.log(outFile);
 
 				MediaFormat fmt = fmtWnd.getFormat();// MediaFormats.getSupportedFormats()[cmbOutFormat.getSelectedIndex()
 														// + 1];
-				System.out.println("format: " + fmt.getFormat());
+				Logger.log("format: " + fmt.getFormat());
 
 				this.ffmpeg = new FFmpeg(Arrays.asList(file), outFile.getAbsolutePath(), this, fmt,
 						false);
