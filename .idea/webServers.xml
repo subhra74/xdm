@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="80e30c4d-3e74-4ccd-a922-33b982e6c6b3" name="XDM" url="http://localhost">
+        <fileTransfer port="0" mountedRoot="C:\Program Files (x86)\XDM" accessType="MOUNT" />
+      </webServer>
+    </option>
+  </component>
+</project>

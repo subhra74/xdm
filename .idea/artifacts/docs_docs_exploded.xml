@@ -1,0 +1,9 @@
+<component name="ArtifactManager">
+  <artifact type="exploded-war" name="docs:docs exploded">
+    <output-path>$PROJECT_DIR$/classes/artifacts/docs_docs_exploded</output-path>
+    <root id="root">
+      <element id="javaee-facet-resources" facet="docs/web/docs" />
+      <element id="directory" name="WEB-INF" />
+    </root>
+  </artifact>
+</component>
