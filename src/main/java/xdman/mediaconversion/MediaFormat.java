@@ -44,7 +44,9 @@ public class MediaFormat {
 	// }
 
 	public final String getFormat() {
-		return format;
+		return format == null
+				? getOriginalFormat()
+				: format;
 	}
 
 	public final void setFormat(String format) {
@@ -52,7 +54,13 @@ public class MediaFormat {
 	}
 
 	public final String getDescription() {
-		return description;
+		return description == null
+				? getOriginalFormat()
+				: description;
+	}
+
+	public static String getOriginalFormat() {
+		return StringResource.get("VID_FMT_ORIG");
 	}
 
 	public final void setDescription(String description) {
@@ -61,11 +69,9 @@ public class MediaFormat {
 
 	@Override
 	public String toString() {
-		if (format == null) {
-			return StringResource.get("VID_FMT_ORIG");
-		}
-
-		return format + " " + description;
+		String format = getFormat();
+		String description = getDescription();
+		return String.format("%s %s", format, description);
 	}
 
 	public final boolean isAudioOnly() {

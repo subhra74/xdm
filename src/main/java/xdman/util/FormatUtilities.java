@@ -8,6 +8,7 @@ import xdman.ui.res.StringResource;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.UUID;
 
 public class FormatUtilities {
 	private static SimpleDateFormat _format;
@@ -121,5 +122,11 @@ public class FormatUtilities {
 			}
 		}
 		return name;
+	}
+
+	public static String getRandomFileName(String fileName) {
+		return String.format("%s_%s",
+				UUID.randomUUID(),
+				fileName);
 	}
 }

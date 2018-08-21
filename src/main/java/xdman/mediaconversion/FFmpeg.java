@@ -7,6 +7,7 @@ import xdman.util.XDMUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,7 +29,7 @@ public class FFmpeg {
 	private boolean useHwAccel;
 
 	public FFmpeg(List<String> inputFiles, String outputFile, MediaConversionListener listener, MediaFormat outformat,
-			boolean copy) {
+	              boolean copy) {
 		this.inputFiles = inputFiles;
 		this.outputFile = outputFile;
 		this.listener = listener;
@@ -37,22 +38,21 @@ public class FFmpeg {
 	}
 
 	public int convert() {
+		File ffMpegFile = FFmpeg.getFFMpegFile();
+		if (!FFmpeg.isFFmpegInstalled(ffMpegFile)) {
+			IOException ioException = new IOException(String.format("FFMpeg not installed %s",
+					ffMpegFile != null
+							? ffMpegFile.getAbsolutePath()
+							: null));
+			Logger.log(ioException);
+			return FF_NOT_FOUND;
+		}
+		BufferedReader bufferedReader = null;
 		try {
-
-			Logger.log("Outformat: " + outformat);
-
-			File ffFile = new File(Config.getInstance().getDataFolder(),
-					System.getProperty("os.name").toLowerCase().contains("windows") ? "ffmpeg.exe" : "ffmpeg");
-			if (!ffFile.exists()) {
-				ffFile = new File(XDMUtils.getJarFile().getParentFile(),
-						System.getProperty("os.name").toLowerCase().contains("windows") ? "ffmpeg.exe" : "ffmpeg");
-				if (!ffFile.exists()) {
-					return FF_NOT_FOUND;
-				}
-			}
+			Logger.log("Outformat:", outformat);
 
 			List<String> args = new ArrayList<String>();
-			args.add(ffFile.getAbsolutePath());
+			args.add(ffMpegFile.getAbsolutePath());
 
 			if (useHwAccel) {
 				args.add("-hwaccel");
@@ -171,19 +171,16 @@ public class FFmpeg {
 			args.add("-y");
 
 			for (String s : args) {
-				Logger.log("@ffmpeg_args: " + s);
+				Logger.log("@ffmpeg_args:", s);
 			}
 
 			ProcessBuilder pb = new ProcessBuilder(args);
 			pb.redirectErrorStream(true);
 			proc = pb.start();
 
-			BufferedReader br = new BufferedReader(new InputStreamReader(proc.getInputStream()), 1024);
-			while (true) {
-				String ln = br.readLine();
-				if (ln == null) {
-					break;
-				}
+			bufferedReader = new BufferedReader(new InputStreamReader(proc.getInputStream()), 1024);
+			String ln;
+			while ((ln = bufferedReader.readLine()) != null) {
 				try {
 					String text = ln.trim();
 					processOutput(text);
@@ -195,8 +192,53 @@ public class FFmpeg {
 			ffExitCode = proc.waitFor();
 			return ffExitCode == 0 ? FF_SUCCESS : FF_CONVERSION_FAILED;
 		} catch (Exception e) {
+			Logger.log(e);
 			return FF_LAUNCH_ERROR;
+		} finally {
+			if (bufferedReader != null) {
+				try {
+					bufferedReader.close();
+				} catch (Exception e2) {
+					Logger.log(e2);
+				}
+			}
 		}
+	}
+
+	public static boolean isFFmpegInstalled() {
+		File ffMpegFile = getFFMpegFile();
+		boolean isFFmpegInstalled = isFFmpegInstalled(ffMpegFile);
+		return isFFmpegInstalled;
+	}
+
+	public static boolean isFFmpegInstalled(File ffMpegFile) {
+		boolean isFFmpegInstalled = ffMpegFile != null
+				&& ffMpegFile.exists();
+		Logger.log("is FFMpeg Installed",
+				ffMpegFile != null
+						? ffMpegFile.getAbsolutePath()
+						: null,
+				isFFmpegInstalled);
+		return isFFmpegInstalled;
+	}
+
+	public static File getFFMpegFile() {
+		String ffMpeg = getFFMpeg();
+		File dataFFmpegFile = new File(Config.getInstance().getDataFolder(),
+				ffMpeg);
+		if (dataFFmpegFile.exists()) {
+			return dataFFmpegFile;
+		}
+		File jarFFmpegFile = new File(XDMUtils.getJarFile().getParentFile(),
+				ffMpeg);
+		File ffmpegFile = jarFFmpegFile.exists() ? jarFFmpegFile
+				: null;
+		return ffmpegFile;
+	}
+
+	public static String getFFMpeg() {
+		String ffmpeg = XDMUtils.getEXEFileName("ffmpeg");
+		return ffmpeg;
 	}
 
 	public void setHls(boolean hls) {
@@ -235,11 +277,11 @@ public class FFmpeg {
 				index1 = text.indexOf('=', index1);
 				int index2 = text.indexOf("bitrate=");
 				String dur = text.substring(index1 + 1, index2).trim();
-				Logger.log("Parsing duration: " + dur);
+				Logger.log("Parsing duration:", dur);
 				long t = parseDuration(dur);
-				Logger.log("Duration: " + t + " Total duration: " + totalDuration);
+				Logger.log("Duration:", t, "Total duration:", totalDuration);
 				int prg = (int) ((t * 100) / totalDuration);
-				Logger.log("ffmpeg prg: " + prg);
+				Logger.log("ffmpeg prg:", prg);
 				listener.progress(prg);
 			}
 		}
@@ -251,9 +293,9 @@ public class FFmpeg {
 					index1 = text.indexOf(':', index1);
 					int index2 = text.indexOf(",", index1);
 					String dur = text.substring(index1 + 1, index2).trim();
-					Logger.log("Parsing duration: " + dur);
+					Logger.log("Parsing duration:", dur);
 					totalDuration = parseDuration(dur);
-					Logger.log("Total duration: " + totalDuration);
+					Logger.log("Total duration:", totalDuration);
 				} catch (Exception e) {
 					Logger.log(e);
 					totalDuration = -1;

@@ -6,12 +6,15 @@ public class BrowserLauncher {
 	public static boolean launchFirefox(String args) {
 		int os = XDMUtils.detectOS();
 		if (os == XDMUtils.WINDOWS) {
-			File[] ffPaths = { new File(System.getenv("PROGRAMFILES"), "Mozilla Firefox\\firefox.exe"),
-					new File(System.getenv("PROGRAMFILES(X86)"), "Mozilla Firefox\\firefox.exe") };
+			String programFiles = System.getenv("PROGRAMFILES");
+			String programFilesX86 = System.getenv("PROGRAMFILES(X86)");
+			String firefox = "Mozilla Firefox\\firefox.exe";
+			File[] ffPaths = {new File(programFiles, firefox),
+					new File(programFilesX86, firefox)};
 			for (int i = 0; i < ffPaths.length; i++) {
-				System.out.println(ffPaths[i]);
+				Logger.log(ffPaths[i]);
 				if (ffPaths[i].exists()) {
-					return XDMUtils.exec("\"" + ffPaths[i] + "\" " + args);
+					return XDMUtils.exec(String.format("\"%s\" %s", ffPaths[i], args));
 				}
 			}
 		}
@@ -27,7 +30,7 @@ public class BrowserLauncher {
 			File[] ffPaths = { new File("/usr/bin/firefox") };
 			for (int i = 0; i < ffPaths.length; i++) {
 				if (ffPaths[i].exists()) {
-					return XDMUtils.exec(ffPaths[i] + " " + args);
+					return XDMUtils.exec(String.format("%s %s", ffPaths[i], args));
 				}
 			}
 		}
@@ -37,12 +40,16 @@ public class BrowserLauncher {
 	public static boolean launchChrome(String args) {
 		int os = XDMUtils.detectOS();
 		if (os == XDMUtils.WINDOWS) {
-			File[] ffPaths = { new File(System.getenv("PROGRAMFILES"), "Google\\Chrome\\Application\\chrome.exe"),
-					new File(System.getenv("PROGRAMFILES(X86)"), "Google\\Chrome\\Application\\chrome.exe"),
-					new File(System.getenv("LOCALAPPDATA"), "Google\\Chrome\\Application\\chrome.exe") };
+			String programFiles = System.getenv("PROGRAMFILES");
+			String programFilesX86 = System.getenv("PROGRAMFILES(X86)");
+			String localAppData = System.getenv("LOCALAPPDATA");
+			String chrome = "Google\\Chrome\\Application\\chrome.exe";
+			File[] ffPaths = {new File(programFiles, chrome),
+					new File(programFilesX86, chrome),
+					new File(localAppData, chrome)};
 			for (int i = 0; i < ffPaths.length; i++) {
 				if (ffPaths[i].exists()) {
-					return XDMUtils.exec("\"" + ffPaths[i] + "\" " + args);
+					return XDMUtils.exec(String.format("\"%s\" %s", ffPaths[i], args));
 				}
 			}
 		}
@@ -58,7 +65,7 @@ public class BrowserLauncher {
 			File[] ffPaths = { new File("/usr/bin/google-chrome") };
 			for (int i = 0; i < ffPaths.length; i++) {
 				if (ffPaths[i].exists()) {
-					return XDMUtils.exec(ffPaths[i] + " " + args);
+					return XDMUtils.exec(String.format("%s %s", ffPaths[i], args));
 				}
 			}
 		}

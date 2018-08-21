@@ -26,7 +26,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.*;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.List;
 
@@ -95,7 +95,7 @@ public class MainWindow extends XDMFrame implements ActionListener {
     private void filterQueue(String name, Config config) {
         String qName = getQueueName(name);
         config.setQueueIdFilter(qName);
-        System.out.println("filter queue name: " + qName);
+        Logger.log("filter queue name: " + qName);
 
         filter();
         String text = StringResource.get("LBL_ALL_QUEUE");
@@ -217,7 +217,7 @@ public class MainWindow extends XDMFrame implements ActionListener {
                 int ret = MessageBox.show(this, "sample title",
                         "sample textdgdfgdfgdfghdfh gfhsdgh gfgfh dfgdfqwewrqwerwerqwerqwerwerwqerqwerqwerqwerwerwegfterj jgh ker gwekl hwgklerhg ek hrkjlwhlk kj hgeklgh jkle herklj gheklwerjgh sample textdgdfgdfgdfghdfh gfhsdgh gfgfh dfgdfqwewrqwerwerqwerqwerwerwqerqwerqwerqwerwerwegfterj jgh ker gwekl hwgklerhg ek hrkjlwhlk kj hgeklgh jkle herklj gheklwerjgh",
                         MessageBox.OK_OPTION, MessageBox.OK);
-                System.out.println("After: " + ret);
+                Logger.log("After: " + ret);
                 // new DownloadCompleteWnd().setVisible(true);
             } else if ("MENU_OPTIONS".equals(name) || "OPTIONS".equals(name)) {
                 SettingsPage.getInstance().showPanel(this, "PG_SETTINGS");
@@ -267,13 +267,13 @@ public class MainWindow extends XDMFrame implements ActionListener {
                 JFileChooser jfc = new JFileChooser();
                 if (jfc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
                     File file = jfc.getSelectedFile();
-                    XDMApp.getInstance().loadDownloadList(file);
+                    XDMApp.getInstance().loadDownloads(file);
                 }
             } else if ("MENU_EXPORT".equals(name)) {
                 JFileChooser jfc = new JFileChooser();
                 if (jfc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
                     File file = jfc.getSelectedFile();
-                    XDMApp.getInstance().saveDownloadList(file);
+                    XDMApp.getInstance().saveDownloads(file);
                 }
             } else if ("MENU_CONTENTS".equals(name)) {
                 XDMUtils.browseURL("http://xdman.sourceforge.net/#help");
@@ -957,7 +957,7 @@ public class MainWindow extends XDMFrame implements ActionListener {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) {
-                    System.out.println("Opening file");
+                    Logger.log("Opening file");
                     openFile();
                 }
             }
@@ -1148,11 +1148,12 @@ public class MainWindow extends XDMFrame implements ActionListener {
         Properties langMap = new Properties();
         InputStream in = null;
         try {
-            in = StringResource.class.getResourceAsStream("/lang/map");
+            String languagesMapFileName = "lang/map";
+            in = StringResource.class.getResourceAsStream("/" + languagesMapFileName);
             if (in == null) {
-                in = new FileInputStream("lang/map");
+                in = new FileInputStream(languagesMapFileName);
             }
-            langMap.load(new InputStreamReader(in, Charset.forName("utf-8")));
+            langMap.load(new InputStreamReader(in, StandardCharsets.UTF_8));
         } catch (Exception e) {
             Logger.log(e);
         } finally {

@@ -28,7 +28,7 @@ public class DownloadListView {
 		// public void valueChanged(ListSelectionEvent e) {
 		// int selectedRow = e.getFirstIndex();
 		// selectedId = model.getIdAt(selectedRow);
-		// Logger.log("Selected id1: " + selectedId+" row: "+selectedRow);
+		// Logger.log("Selected id1:" , selectedId,"row:",selectedRow);
 		// }
 		// });
 		//
@@ -37,7 +37,7 @@ public class DownloadListView {
 		// public void tableChanged(TableModelEvent e) {
 		// if(selectedId!=null){
 		// int index=model.getIndexOfId(selectedId);
-		// Logger.log("Index of "+selectedId+" is: "+index);
+		// Logger.log("Index of",selectedId,"is:",index);
 		// if(index>-1){
 		// table.setRowSelectionInterval(index, index);
 		// }

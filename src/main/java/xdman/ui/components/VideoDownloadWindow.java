@@ -4,6 +4,7 @@ import xdman.Config;
 import xdman.XDMApp;
 import xdman.downloaders.metadata.DashMetadata;
 import xdman.downloaders.metadata.HttpMetadata;
+import xdman.mediaconversion.FFmpeg;
 import xdman.mediaconversion.MediaFormat;
 import xdman.mediaconversion.MediaFormats;
 import xdman.ui.res.ColorResource;
@@ -74,7 +75,7 @@ public class VideoDownloadWindow extends JDialog implements ActionListener, Docu
 		if (e.getSource() instanceof JComponent) {
 			String name = ((JComponent) e.getSource()).getName();
 			if (name.startsWith("QUEUE")) {
-				System.out.println(name);
+				Logger.log(name);
 				String[] arr = name.split(":");
 				if (arr.length < 2) {
 					queueId = "";
@@ -335,7 +336,7 @@ public class VideoDownloadWindow extends JDialog implements ActionListener, Docu
 		// cmbStmAction.setEnabled(metadata != null && metadata instanceof
 		// DashMetadata);
 
-		cmbOutFormat.setEnabled(XDMUtils.isFFmpegInstalled());
+		cmbOutFormat.setEnabled(FFmpeg.isFFmpegInstalled());
 
 	}
 
@@ -407,7 +408,7 @@ public class VideoDownloadWindow extends JDialog implements ActionListener, Docu
 	// int index = 0;
 	// for (MediaFormat fmt : MediaFormats.getSupportedFormats()) {
 	// if (format == fmt) {
-	// Logger.log("Format index: " + index);
+	// Logger.log("Format index:" , index);
 	// return index;
 	// }
 	// index++;
@@ -418,10 +419,11 @@ public class VideoDownloadWindow extends JDialog implements ActionListener, Docu
 	private void updateFileExtension() {
 		String file = XDMUtils.getFileNameWithoutExtension(filePane.getFileName());
 		if (cmbOutFormat.getSelectedIndex() < 1) {
-			filePane.setFileName(file + originalExt);
+			filePane.setFileName(String.format("%s%s", file, originalExt));
 		} else {
-			String ext = ((MediaFormat) cmbOutFormat.getSelectedItem()).getFormat();
-			filePane.setFileName(file + "." + ext);
+			MediaFormat mediaFormat = (MediaFormat) cmbOutFormat.getSelectedItem();
+			String ext = mediaFormat.getFormat();
+			filePane.setFileName(String.format("%s.%s", file, ext));
 		}
 	}
 }

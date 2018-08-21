@@ -59,7 +59,7 @@ public class EncryptedHlsChannel extends HttpChannel {
 		while (!stop) {
 			isRedirect = false;
 			try {
-				Logger.log("Connecting to: " + url + " " + chunk.getTag());
+				Logger.log("Connecting to:", url, chunk.getTag());
 				WebProxy wp = ProxyResolver.resolve(url);
 				if (wp != null) {
 					javaClientRequired = true;
@@ -80,7 +80,7 @@ public class EncryptedHlsChannel extends HttpChannel {
 					}
 				}
 
-				Logger.log("Initating connection");
+				Logger.log("Initiating connection");
 				hc.connect();
 
 				if (stop) {
@@ -90,33 +90,47 @@ public class EncryptedHlsChannel extends HttpChannel {
 
 				int code = hc.getStatusCode();
 
-				Logger.log(chunk + ": " + code);
+				Logger.log(chunk, ":", code);
 
 				if (code >= 300 && code < 400) {
 					closeImpl();
 					if (totalLength > 0) {
 						errorCode = XDMConstants.ERR_INVALID_RESP;
-						Logger.log(chunk + " Redirecting twice");
+						Logger.log(chunk, "Redirecting twice");
 						return false;
 					} else {
 						url = hc.getResponseHeader("location");
-						Logger.log(chunk + " location: " + url);
+						Logger.log(chunk, "location:", url);
 						if (!url.startsWith("http")) {
 							if (!url.startsWith("/")) {
-								url = "/" + url;
+								url = String.format("/%s", url);
 							}
-							url = "http://" + hc.getHost() + url;
+							url = String.format("http://%s%s",
+									hc.getHost(),
+									url);
 						}
-						url = url.replace(" ", "%20");
+						url = url.replace(" ",
+								"%20");
 						isRedirect = true;
 						redirected = true;
 						redirectUrl = url;
-						throw new Exception("Redirecting to: " + url);
+						String message = String.format("Redirecting %s to: %s",
+								chunk,
+								url);
+						Exception exception = new Exception(message);
+						Logger.log(exception);
+						throw exception;
 					}
 				}
 
-				if (code != 200 && code != 206 && code != 416 && code != 413 && code != 401 && code != 408
-						&& code != 407 && code != 503) {
+				if (code != 200
+						&& code != 206
+						&& code != 416
+						&& code != 413
+						&& code != 401
+						&& code != 408
+						&& code != 407
+						&& code != 503) {
 					errorCode = XDMConstants.ERR_INVALID_RESP;
 					closeImpl();
 					return false;
@@ -139,10 +153,10 @@ public class EncryptedHlsChannel extends HttpChannel {
 					if (isKey) {
 						ByteArrayOutputStream bout = new ByteArrayOutputStream();
 						InputStream inStr = hc.getInputStream();
-						System.out.println(inStr);
+						Logger.log(inStr);
 						long len = hc.getContentLength();
 						int read = 0;
-						System.out.println("reading url of length: " + len);
+						Logger.log("reading url of length:", len);
 						while (true) {
 							if (len > 0 && read == len)
 								break;
@@ -163,20 +177,26 @@ public class EncryptedHlsChannel extends HttpChannel {
 						this.url = mediaUrl;
 						source.setKey(keyUrl, buf);
 						isRedirect = true;
-						throw new Exception("Youtube text redirect to: " + url);
+						String message = String.format("Youtube text redirect to: %s", url);
+						Exception exception = new Exception(message);
+						Logger.log(exception);
+						throw exception;
 					}
 				}
 
 				firstLength = -1;
 
-				if (hc.getContentLength() > 0 && XDMUtils.getFreeSpace(null) < hc.getContentLength()) {
-					Logger.log("Disk is full");
+				if (hc.getContentLength() > 0
+						&& XDMUtils.getFreeSpace(null) < hc.getContentLength()) {
+					IOException diskIsFull = new IOException("Disk is full");
+					Logger.log(diskIsFull);
 					errorCode = XDMConstants.DISK_FAIURE;
 					closeImpl();
 					return false;
 				}
 
-				if (!(code == 200 || code == 206)) {
+				if (!(code == 200
+						|| code == 206)) {
 					errorCode = XDMConstants.ERR_INVALID_RESP;
 					closeImpl();
 					return false;
@@ -219,7 +239,7 @@ public class EncryptedHlsChannel extends HttpChannel {
 			}
 		}
 
-		Logger.log("return as " + errorCode);
+		Logger.log("return as", errorCode);
 
 		return false;
 	}

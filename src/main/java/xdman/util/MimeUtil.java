@@ -3,19 +3,14 @@ package xdman.util;
 import java.util.HashMap;
 
 public class MimeUtil {
-	static HashMap<String, String> mime;
-
-	private MimeUtil() {
-	}
+	public static HashMap<String, String> mime = getMimeMap();
 
 	public static String getFileExt(String target) {
-		if (mime == null)
-			init();
 		return mime.get(target);
 	}
 
-	static void init() {
-		mime = new HashMap<String, String>();
+	private static HashMap<String, String> getMimeMap() {
+		HashMap<String, String> mime = new HashMap<>();
 		mime.put("audio/x-aiff", "aiff");
 		mime.put("audio/basic", "au");
 		mime.put("video/x-msvideo", "avi");
@@ -39,7 +34,7 @@ public class MimeUtil {
 		mime.put("application/pdf", "pdf");
 		mime.put("application/vnd.ms-powerpoint", "ppt");
 		mime.put("application/postscript", "ps");
-		mime.put("video/quicktime", "qt");
+		//mime.put("video/quicktime", "qt");
 		mime.put("application/rtf", "rtf");
 		mime.put("application/x-stuffit", "sit");
 		mime.put("image/svg+xml", "svg");
@@ -58,5 +53,6 @@ public class MimeUtil {
 		mime.put("video/3gpp", "3gp");
 		mime.put("video/mp4", "mp4");
 		mime.put("video/x-ms-wmv", "wmv");
+		return mime;
 	}
 }

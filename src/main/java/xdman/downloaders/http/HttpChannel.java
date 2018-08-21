@@ -73,7 +73,7 @@ public class HttpChannel extends AbstractChannel {
 		while (!stop) {
 			isRedirect = false;
 			try {
-				Logger.log("Connecting to: " + url + " " + chunk.getTag());
+				Logger.log("Connecting to:", url, chunk.getTag());
 				WebProxy wp = ProxyResolver.resolve(url);
 				if (wp != null) {
 					javaClientRequired = true;
@@ -107,13 +107,22 @@ public class HttpChannel extends AbstractChannel {
 				long expectedLength = endOff - startOff;
 
 				if (length > 0 && expectedLength > 0) {
-					Logger.log(chunk + " requesting:- " + "Range:" + "bytes=" + startOff + "-" + (endOff - 1));
-					hc.setHeader("Range", "bytes=" + startOff + "-" + (endOff - 1));
+					Logger.log(chunk,
+							" requesting:-",
+							"Range:",
+							"bytes=",
+							startOff,
+							"-",
+							(endOff - 1));
+					String value = String.format("bytes=%d-%d",
+							startOff,
+							endOff - 1);
+					hc.setHeader("Range", value);
 				} else {
 					hc.setHeader("Range", "bytes=0-");
 				}
 
-				Logger.log("Initating connection");
+				Logger.log("Initiating connection");
 				hc.connect();
 
 				if (stop) {
@@ -123,39 +132,52 @@ public class HttpChannel extends AbstractChannel {
 
 				int code = hc.getStatusCode();
 
-				Logger.log(chunk + ": " + code);
+				Logger.log(chunk, ":", code);
 
 				if (code >= 300 && code < 400) {
 					closeImpl();
 					if (totalLength > 0) {
 						errorCode = XDMConstants.ERR_INVALID_RESP;
-						Logger.log(chunk + " Redirecting twice");
+						Logger.log(chunk, "Redirecting twice");
 						return false;
 					} else {
 						url = hc.getResponseHeader("location");
-						Logger.log(chunk + " location: " + url);
+						Logger.log(chunk, "location:", url);
 						if (!url.startsWith("http")) {
 							if (!url.startsWith("/")) {
 								url = "/" + url;
 							}
 							url = "http://" + hc.getHost() + url;
 						}
-						url = url.replace(" ", "%20");
+						url = url.replace(" ",
+								"%20");
 						isRedirect = true;
 						redirected = true;
 						redirectUrl = url;
-						throw new Exception("Redirecting to: " + url);
+						String message = String.format("Redirecting %s to: %s",
+								chunk,
+								url);
+						Exception exception = new Exception(message);
+						Logger.log(exception);
+						throw exception;
 					}
 				}
 
-				if (code != 200 && code != 206 && code != 416 && code != 413 && code != 401 && code != 408
-						&& code != 407 && code != 503) {
+				if (code != 200
+						&& code != 206
+						&& code != 416
+						&& code != 413
+						&& code != 401
+						&& code != 408
+						&& code != 407
+						&& code != 503) {
 					errorCode = XDMConstants.ERR_INVALID_RESP;
 					closeImpl();
 					return false;
 				}
 
-				if (code == 407 || code == 401) {
+				if (code == 407
+						|| code == 401) {
 					if (javaClientRequired) {
 						Logger.log("asking for password");
 						boolean proxy = code == 407;
@@ -169,14 +191,15 @@ public class HttpChannel extends AbstractChannel {
 				}
 
 
-				if ("T1".equals(chunk.getTag()) || "T2".equals(chunk.getTag())) {
+				if ("T1".equals(chunk.getTag())
+						|| "T2".equals(chunk.getTag())) {
 					if ("text/plain".equals(hc.getResponseHeader("content-type"))) {
 						ByteArrayOutputStream bout = new ByteArrayOutputStream();
 						InputStream inStr = hc.getInputStream();
-						System.out.println(inStr);
+						Logger.log(inStr);
 						long len = hc.getContentLength();
 						int read = 0;
-						System.out.println("reading url of length: " + len);
+						Logger.log("reading url of length:", len);
 						while (true) {
 							if (len > 0 && read == len)
 								break;
@@ -195,11 +218,18 @@ public class HttpChannel extends AbstractChannel {
 						byte[] buf = bout.toByteArray();
 						url = new String(buf, Charset.forName("ASCII"));
 						isRedirect = true;
-						throw new Exception("Youtube text redirect to: " + url);
+						String message = String.format("Youtube text redirect to: %s",
+								url);
+						Exception exception = new Exception(message);
+						Logger.log(exception);
+						throw exception;
 					}
 				}
 
-				if (((chunk.getDownloaded() + chunk.getStartOffset()) > 0) && code != 206) {
+				long chunkOffset = chunk.getDownloaded()
+						+ chunk.getStartOffset();
+				if (chunkOffset > 0
+						&& code != 206) {
 					closeImpl();
 					errorCode = XDMConstants.ERR_NO_RESUME;
 					return false;
@@ -219,20 +249,26 @@ public class HttpChannel extends AbstractChannel {
 					// if (chunk.getStartOffset() + chunk.getDownloaded()
 					// + firstLength != totalLength)
 					{
-						Logger.log(chunk + " length mismatch: expected: " + expectedLength + " got: " + firstLength);
+						Logger.log(chunk,
+								"length mismatch: expected:",
+								expectedLength,
+								"got:",
+								firstLength);
 						errorCode = XDMConstants.ERR_NO_RESUME;
 						closeImpl();
 						return false;
 					}
 				}
 				if (hc.getContentLength() > 0 && XDMUtils.getFreeSpace(null) < hc.getContentLength()) {
-					Logger.log("Disk is full");
+					IOException diskIsFull = new IOException("Disk is full");
+					Logger.log(diskIsFull);
 					errorCode = XDMConstants.DISK_FAIURE;
 					closeImpl();
 					return false;
 				}
 
-				if (!(code == 200 || code == 206)) {
+				if (!(code == 200
+						|| code == 206)) {
 					errorCode = XDMConstants.ERR_INVALID_RESP;
 					closeImpl();
 					return false;
@@ -264,7 +300,7 @@ public class HttpChannel extends AbstractChannel {
 			}
 		}
 
-		Logger.log("return as " + errorCode);
+		Logger.log("return as", errorCode);
 
 		return false;
 	}
@@ -313,6 +349,4 @@ public class HttpChannel extends AbstractChannel {
 	private String getHostName(String hostPort) {
 		return hostPort.split(":")[0];
 	}
-
-
 }

@@ -22,7 +22,8 @@ public class SocketFactory {
 			sock2.startHandshake();
 			return sock2;
 		} catch (IOException e) {
-			throw new NetworkException("Https connection failed: " + host + ":" + port);
+			String msg = String.format("Https connection failed: %s:%d", host, port);
+			throw new NetworkException(msg);
 		}
 	}
 

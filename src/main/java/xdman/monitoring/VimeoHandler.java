@@ -6,7 +6,8 @@ import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
 
 public class VimeoHandler {
 
@@ -14,19 +15,22 @@ public class VimeoHandler {
 	// handle(new File("C:\\Users\\subhro\\Desktop\\video.htm.txt"), null);
 	// }
 
-	public static boolean handle(File tempFile, ParsedHookData data) {
+	public static boolean handle(File vimeoFile, ParsedHookData data) {
+		if (!vimeoFile.exists()) {
+			Logger.log("No saved Vimeo",
+					vimeoFile.getAbsolutePath());
+			return false;
+		}
+		BufferedReader bufferedReader = null;
 		try {
 			StringBuffer buf = new StringBuffer();
-			InputStream in = new FileInputStream(tempFile);
-			BufferedReader r = new BufferedReader(new InputStreamReader(in));
-			while (true) {
-				String ln = r.readLine();
-				if (ln == null) {
-					break;
-				}
+			Logger.log("Loading Vimeo...",
+					vimeoFile.getAbsolutePath());
+			bufferedReader = XDMUtils.getBufferedReader(vimeoFile);
+			String ln;
+			while ((ln = bufferedReader.readLine()) != null) {
 				buf.append(ln + "\n");
 			}
-			in.close();
 			String keyword = "\"progressive\"";
 			int index = buf.indexOf(keyword);
 			if (index < 0) {
@@ -64,6 +68,14 @@ public class VimeoHandler {
 			}
 		} catch (Exception e) {
 			Logger.log(e);
+		} finally {
+			if (bufferedReader != null) {
+				try {
+					bufferedReader.close();
+				} catch (Exception e) {
+					Logger.log(e);
+				}
+			}
 		}
 		return false;
 	}

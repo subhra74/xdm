@@ -56,7 +56,7 @@ public class SegmentPanel extends JComponent {
 		// g2.setPaint(low);// g.setColor(Color.BLACK);
 		// g2.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
 		ArrayList<SegmentInfo> list = segDet.getChunkUpdates();
-		// Logger.log(list.size()+" r: "+r+" width: "+getWidth()+" length: "+length);
+		// Logger.log(list.size(),"r:",r," width: ,getWidth()," length:",length);
 		for (int i = 0; i < segDet.getChunkCount(); i++) {
 			SegmentInfo info = list.get(i);
 			int _start = (int) (info.getStart() * r);

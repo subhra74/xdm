@@ -6,61 +6,32 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 public class MediaFormats {
+	private static final String FORMATS_FILE_NAME = "formats/list.txt";
 	private static MediaFormat[] supportedFormats;
+
 	static {
 		ArrayList<MediaFormat> list = new ArrayList<>();
 		list.add(new MediaFormat());
 		BufferedReader br = null;
 		try {
-			InputStream inStream = MediaFormats.class.getResourceAsStream("/formats/list.txt");
+			InputStream inStream = MediaFormats.class.getResourceAsStream(String.format("/%s", FORMATS_FILE_NAME));
 			if (inStream == null) {
-				inStream = new FileInputStream("formats/list.txt");
+				inStream = new FileInputStream(FORMATS_FILE_NAME);
 			}
-			InputStreamReader r = new InputStreamReader(inStream, Charset.forName("utf-8"));
+			InputStreamReader r = new InputStreamReader(inStream, StandardCharsets.UTF_8);
 			br = new BufferedReader(r, 1024);
-			while (true) {
-				String ln = br.readLine();
-				if (ln == null)
-					break;
+			String ln;
+			while ((ln = br.readLine()) != null) {
 				if (ln.startsWith("#")) {
 					continue;
 				}
-				String[] arr = ln.split("\\|");
-				if (arr.length != 12) {
-					continue;
-				}
-				MediaFormat format = new MediaFormat();
-				String fmt = getString(arr[0]);
-				String resolution = getString(arr[1]);
-				String vcodec = getString(arr[2]);
-				String vbr = getString(arr[3]);
-				String fr = getString(arr[4]);
-				String vextra = getString(arr[5]);
-				String acodec = getString(arr[6]);
-				String abr = getString(arr[7]);
-				String asr = getString(arr[8]);
-				String aextra = getString(arr[9]);
-				String desc = getString(arr[10]);
-				String audioOnly = getString(arr[11]);
+				MediaFormat mediaFormat = parseMediaFormat(ln);
 
-				format.setFormat(fmt);
-				format.setResolution(resolution);
-				format.setVideo_codec(vcodec);
-				format.setVideo_bitrate(vbr);
-				format.setFramerate(fr);
-				format.setVideo_param_extra(vextra);
-				format.setAudio_codec(acodec);
-				format.setAudio_bitrate(abr);
-				format.setSamplerate(asr);
-				format.setAudio_extra_param(aextra);
-				format.setDescription(desc);
-				format.setAudioOnly("1".equals(audioOnly));
-
-				list.add(format);
+				list.add(mediaFormat);
 
 				supportedFormats = new MediaFormat[list.size()];
 				supportedFormats = list.toArray(supportedFormats);
@@ -103,4 +74,49 @@ public class MediaFormats {
 		supportedFormats = supportedFmts;
 	}
 
+	public static MediaFormat parseMediaFormat(String line) {
+
+		String[] arr = line.split("\\|");
+		if (arr.length != 12) {
+			return null;
+		}
+		MediaFormat mediaFormat = new MediaFormat();
+
+		String fmt = getString(arr[0]);
+		mediaFormat.setFormat(fmt);
+
+		String resolution = getString(arr[1]);
+		mediaFormat.setResolution(resolution);
+
+		String vcodec = getString(arr[2]);
+		mediaFormat.setVideo_codec(vcodec);
+
+		String vbr = getString(arr[3]);
+		mediaFormat.setVideo_bitrate(vbr);
+
+		String fr = getString(arr[4]);
+		mediaFormat.setFramerate(fr);
+
+		String vextra = getString(arr[5]);
+		mediaFormat.setVideo_param_extra(vextra);
+
+		String acodec = getString(arr[6]);
+		mediaFormat.setAudio_codec(acodec);
+
+		String abr = getString(arr[7]);
+		mediaFormat.setAudio_bitrate(abr);
+
+		String asr = getString(arr[8]);
+		mediaFormat.setSamplerate(asr);
+
+		String aextra = getString(arr[9]);
+		mediaFormat.setAudio_extra_param(aextra);
+
+		String desc = getString(arr[10]);
+		mediaFormat.setDescription(desc);
+
+		String audioOnly = getString(arr[11]);
+		mediaFormat.setAudioOnly("1".equals(audioOnly));
+		return mediaFormat;
+	}
 }

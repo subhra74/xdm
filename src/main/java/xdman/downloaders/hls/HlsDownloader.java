@@ -37,13 +37,13 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 		this.length = -1;
 		this.metadata = metadata;
 		this.MAX_COUNT = Config.getInstance().getMaxSegments();
-		items = new ArrayList<HlsPlaylistItem>();
-		chunks = new ArrayList<Segment>();
+		items = new ArrayList<>();
+		chunks = new ArrayList<>();
 		this.eta = "---";
 	}
 
 	public void start() {
-		Logger.log("creating folder " + folder);
+		Logger.log("HlsDownloader creating folder", folder);
 		new File(folder).mkdirs();
 
 		this.lastDownloaded = downloaded;
@@ -65,7 +65,7 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 	@Override
 	public void chunkInitiated(String id) {
 		if (!id.equals(manifestSegment.getId())) {
-			System.out.println("Non manifest segment: " + id + " manifest seg: " + manifestSegment.getId());
+			Logger.log("Non manifest segment:", id, "manifest seg:", manifestSegment.getId());
 			processSegments();
 		} else {
 			isJavaClientRequired = ((HttpChannel) manifestSegment.getChannel()).isJavaClientRequired();
@@ -84,10 +84,10 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 		}
 
 		if (id.equals(manifestSegment.getId())) {
-			Logger.log("Manifest segment complete: " + id);
+			Logger.log("Manifest segment complete:", id);
 			if (initOrUpdateSegments()) {
 				listener.downloadConfirmed(this.id);
-				System.out.println("confirmed");
+				Logger.log("confirmed");
 			} else {
 				if (!stopFlag) {
 					this.errorCode = XDMConstants.ERR_INVALID_RESP;
@@ -161,7 +161,7 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 			if (segment == chunks.get(i)) {
 				HlsPlaylistItem item = items.get(i);
 				if (keyMap != null && item.getKeyUrl() != null) {
-					System.out.println("Creating encrypted channel");
+					Logger.log("Creating encrypted channel");
 					return new EncryptedHlsChannel(segment, item.getUrl(), metadata.getHeaders(), -1,
 							isJavaClientRequired, this, item.getKeyUrl());
 				} else {
@@ -202,8 +202,8 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 				return false;
 			}
 			if (items.size() > 0 && items.size() != playlist.getItems().size()) {
-				Logger.log("Manifest media count mismatch- expected: " + items.size() + " got: "
-						+ playlist.getItems().size());
+				Logger.log("Manifest media count mismatch- expected:", items.size(),
+						"got:", playlist.getItems().size());
 				return false;
 			}
 			if (items.size() > 0) {
@@ -214,43 +214,45 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 				keyMap = new HashMap<>();
 			}
 
-			System.out.println("Pleylist items: " + playlist.getItems().size());
+			Logger.log("Play list items:", playlist.getItems().size());
 
 			for (HlsPlaylistItem item : playlist.getItems()) {
-				System.out.println(item);
+				Logger.log(item);
 				HlsPlaylistItem item2 = new HlsPlaylistItem(item.getUrl(), item.getKeyUrl(), item.getIV(), null, null,
 						item.getDuration());
 				this.items.add(item2);
 			}
 
 			String newExtension = null;
-			System.out.println("Chunk size: " + chunks.size());
+			Logger.log("Chunk size:", chunks.size());
 			if (chunks.size() < 1) {
-				System.out.println("Creating chunk");
-				for (int i = 0; i < items.size(); i++) {
+				Logger.log("Creating chunk");
+				for (HlsPlaylistItem hlsPlaylistItem : items) {
+					String url = hlsPlaylistItem.getUrl();
 					if (newExtension == null && outputFormat == 0) {
-						newExtension = findExtension(items.get(i).getUrl());
+						newExtension = findExtension(url);
 						if (newExtension != null) {
-							Logger.log("HLS: found new extension: " + newExtension);
+							Logger.log("HLS: found new extension:", newExtension);
 
 							this.newFileName = getOutputFileName(true).replace(".ts", newExtension);
 
 						} else {
 							newExtension = ".ts";// just to skip the whole file
-													// ext extraction
+							// ext extraction
 						}
 					}
 
-					// Logger.log("HLS: Newfile name: " + this.newFileName);
-					// Logger.log("segment creating for url: " + urlList.get(i));
+					Logger.log("HLS: New file name:",
+							this.newFileName,
+							"segment creating for url:",
+							url);
 					Segment s2 = new SegmentImpl(this, folder);
 					s2.setTag("HLS");
 					s2.setLength(-1);
-					Logger.log("Adding chunk: " + s2);
-					System.out.println("Adding");
+					Logger.log("Adding chunk:", s2);
 					chunks.add(s2);
 				}
-				System.out.println("Segments created");
+				Logger.log("Segments created");
 			}
 			return true;
 		} catch (Exception e) {
@@ -263,7 +265,7 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 	private synchronized void processSegments() {
 		Logger.log("HLS: process segment");
 		int activeCount = getActiveChunkCount();
-		Logger.log("active: " + activeCount);
+		Logger.log("active:", activeCount);
 		if (activeCount < MAX_COUNT) {
 			int rem = MAX_COUNT - activeCount;
 			try {
@@ -408,32 +410,32 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 		if (chunks.size() < 1)
 			return;
 		StringBuffer sb = new StringBuffer();
-		sb.append(this.length + "\n");
-		sb.append(downloaded + "\n");
-		sb.append(((long) this.totalDuration) + "\n");
-		sb.append(items.size() + "\n");
-		System.out.println("url saved of size: " + items.size());
+		sb.append(this.length).append("\n");
+		sb.append(downloaded).append("\n");
+		sb.append(((long) this.totalDuration)).append("\n");
+		sb.append(items.size()).append("\n");
+		Logger.log("url saved of size:", items.size());
 		for (int i = 0; i < items.size(); i++) {
 			String url = items.get(i).getUrl();
-			System.out.println("Saveing url: " + url);
-			sb.append(url + "\n");
+			Logger.log("Saving url: ", url);
+			sb.append(url).append("\n");
 		}
-		sb.append(chunks.size() + "\n");
+		sb.append(chunks.size()).append("\n");
 		for (int i = 0; i < chunks.size(); i++) {
 			Segment seg = chunks.get(i);
-			sb.append(seg.getId() + "\n");
+			sb.append(seg.getId()).append("\n");
 			if (seg.isFinished()) {
-				sb.append(seg.getLength() + "\n");
-				sb.append(seg.getStartOffset() + "\n");
-				sb.append(seg.getDownloaded() + "\n");
+				sb.append(seg.getLength()).append("\n");
+				sb.append(seg.getStartOffset()).append("\n");
+				sb.append(seg.getDownloaded()).append("\n");
 			} else {
 				sb.append("-1\n");
-				sb.append(seg.getStartOffset() + "\n");
-				sb.append(seg.getDownloaded() + "\n");
+				sb.append(seg.getStartOffset()).append("\n");
+				sb.append(seg.getDownloaded()).append("\n");
 			}
 		}
 		if (!StringUtils.isNullOrEmptyOrBlank(lastModified)) {
-			sb.append(this.lastModified + "\n");
+			sb.append(this.lastModified).append("\n");
 		}
 
 		sb.append(keyMap != null);// if this is true that means it can have info about encrypted segments
@@ -443,24 +445,25 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 				boolean hasKey = !StringUtils.isNullOrEmptyOrBlank(item.getKeyUrl());
 				sb.append(hasKey);
 				if (hasKey) {
-					sb.append(item.getKeyUrl() + "\n");
+					sb.append(item.getKeyUrl()).append("\n");
 				}
 				boolean hasIV = !StringUtils.isNullOrEmptyOrBlank(item.getIV());
 				sb.append(hasIV);
 				if (hasIV) {
-					sb.append(item.getIV() + "\n");
+					sb.append(item.getIV()).append("\n");
 				}
 			}
 
-			sb.append(keyMap.size() + "\n");
+			sb.append(keyMap.size()).append("\n");
 			for (Map.Entry<String, byte[]> ent : keyMap.entrySet()) {
-				sb.append(ent.getKey() + "\n");
+				sb.append(ent.getKey()).append("\n");
 				sb.append(Base64.getEncoder().encodeToString(ent.getValue()));
 			}
 		}
 
 		try {
-			File tmp = new File(folder, System.currentTimeMillis() + ".tmp");
+			String tmpFileName = String.format("%d.tmp", System.currentTimeMillis());
+			File tmp = new File(folder, tmpFileName);
 			File out = new File(folder, "state.txt");
 			FileOutputStream fs = new FileOutputStream(tmp);
 			fs.write(sb.toString().getBytes());
@@ -473,62 +476,68 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 	}
 
 	private boolean restoreState() {
-		BufferedReader br = null;
-		chunks = new ArrayList<Segment>();
-		File file = new File(folder, "state.txt");
-		if (!file.exists()) {
-			file = getBackupFile(folder);
-			if (file == null) {
+		BufferedReader bufferedReader = null;
+		chunks = new ArrayList<>();
+		File stateFile = new File(folder, "state.txt");
+		if (!stateFile.exists()) {
+			stateFile = getBackupFile(folder);
+			if (stateFile == null) {
+				Logger.log("No HlsDownloader saved State",
+						stateFile.getAbsolutePath());
 				return false;
 			}
 		}
 		try {
-			br = new BufferedReader(new FileReader(file));
-			this.length = Long.parseLong(br.readLine());
-			this.downloaded = Long.parseLong(br.readLine());
-			this.totalDuration = Long.parseLong(br.readLine());
-			int urlCount = Integer.parseInt(br.readLine());
-			System.out.println("Loading urls: " + urlCount);
+			Logger.log("Restoring HlsDownloader State...",
+					stateFile.getAbsolutePath());
+			bufferedReader = XDMUtils.getBufferedReader(stateFile);
+			this.length = Long.parseLong(bufferedReader.readLine());
+			this.downloaded = Long.parseLong(bufferedReader.readLine());
+			this.totalDuration = Long.parseLong(bufferedReader.readLine());
+			int urlCount = Integer.parseInt(bufferedReader.readLine());
+			Logger.log("Loading urls:", urlCount);
 			for (int i = 0; i < urlCount; i++) {
-				String url = br.readLine();
+				String url = bufferedReader.readLine();
 				HlsPlaylistItem item = new HlsPlaylistItem();
 				item.setUrl(url);
 				items.add(item);
-				System.out.println("loading url: " + url);
+				Logger.log("loading url:", url);
 			}
-			int chunkCount = Integer.parseInt(br.readLine());
+			int chunkCount = Integer.parseInt(bufferedReader.readLine());
 			for (int i = 0; i < chunkCount; i++) {
-				String cid = br.readLine();
-				long len = Long.parseLong(br.readLine());
-				long off = Long.parseLong(br.readLine());
-				long dwn = Long.parseLong(br.readLine());
+				String cid = bufferedReader.readLine();
+				long len = Long.parseLong(bufferedReader.readLine());
+				long off = Long.parseLong(bufferedReader.readLine());
+				long dwn = Long.parseLong(bufferedReader.readLine());
 				Segment seg = new SegmentImpl(folder, cid, off, len, dwn);
 				seg.setTag("HLS");
-				Logger.log("id: " + seg.getId() + "\nlength: " + seg.getLength() + "\noffset: " + seg.getStartOffset()
-						+ "\ndownload: " + seg.getDownloaded());
+				Logger.log("id: ", seg.getId(),
+						"\nlength: ", seg.getLength(),
+						"\noffset: ", seg.getStartOffset(),
+						"\ndownload: ", seg.getDownloaded());
 				chunks.add(seg);
 			}
-			this.lastModified = br.readLine();
+			this.lastModified = bufferedReader.readLine();
 
-			String strHasMoreInfo = br.readLine();
+			String strHasMoreInfo = bufferedReader.readLine();
 			if (strHasMoreInfo != null) {
 				// read encryption details
 				if ("true".equals(strHasMoreInfo)) {
 					for (int i = 0; i < urlCount; i++) {
 						HlsPlaylistItem item = items.get(i);
-						if ("true".equals(br.readLine())) {
-							item.setKeyUrl(br.readLine());
+						if ("true".equals(bufferedReader.readLine())) {
+							item.setKeyUrl(bufferedReader.readLine());
 						}
-						if ("true".equals(br.readLine())) {
-							item.setIV(br.readLine());
+						if ("true".equals(bufferedReader.readLine())) {
+							item.setIV(bufferedReader.readLine());
 						}
 					}
 
-					int keys = Integer.parseInt(br.readLine());
+					int keys = Integer.parseInt(bufferedReader.readLine());
 					for (int i = 0; i < keys; i++) {
-						String keyUrl = br.readLine();
-						System.out.println("Keydata: " + keyUrl);
-						String keyData = br.readLine();
+						String keyUrl = bufferedReader.readLine();
+						Logger.log("Keydata:", keyUrl);
+						String keyData = bufferedReader.readLine();
 						byte[] data = Base64.getDecoder().decode(keyData);
 						keyMap.put(keyUrl, data);
 					}
@@ -538,13 +547,13 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 			// get key iv and other details
 			return true;
 		} catch (Exception e) {
-			Logger.log("Failed to load saved state");
-			Logger.log(e);
+			Logger.log("Failed to load saved state", e);
 		} finally {
-			if (br != null) {
+			if (bufferedReader != null) {
 				try {
-					br.close();
+					bufferedReader.close();
 				} catch (IOException e) {
+					Logger.log(e);
 				}
 			}
 		}
@@ -591,7 +600,7 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 					}
 					if (!newExtension.contains("mp4")) {
 						newExtension = ".mkv"; // if extension is not mp4 or ts save it in MKV container, as it might be
-												// the case where m3u8 playlist is having wrong file extension
+						// the case where m3u8 playlist is having wrong file extension
 					}
 				}
 			}
@@ -606,7 +615,10 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 			assembleFinished = false;
 			StringBuffer sb = new StringBuffer();
 			for (Segment s : chunks) {
-				sb.append("file '" + new File(folder, s.getId()) + "'\r\n");
+				File file = new File(folder, s.getId());
+				sb.append("file '")
+						.append(file)
+						.append("'\r\n");
 			}
 			OutputStream hlsTextStream = null;
 			File hlsFile = new File(folder, id + "-hls.txt");
@@ -622,15 +634,19 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 				}
 			}
 			this.converting = true;
-			List<String> inputFiles = new ArrayList<String>();
+			List<String> inputFiles = new ArrayList<>();
 			inputFiles.add(hlsFile.getAbsolutePath());
-			ffOutFile = new File(getOutputFolder(), UUID.randomUUID() + "_" + getOutputFileName(true));
-			this.ffmpeg = new FFmpeg(inputFiles, ffOutFile.getAbsolutePath(), this,
-					MediaFormats.getSupportedFormats()[outputFormat], outputFormat == 0);
+			String randomFile = FormatUtilities.getRandomFileName(getOutputFileName(true));
+			ffOutFile = new File(getOutputFolder(), randomFile);
+			this.ffmpeg = new FFmpeg(inputFiles,
+					ffOutFile.getAbsolutePath(),
+					this,
+					MediaFormats.getSupportedFormats()[outputFormat],
+					outputFormat == 0);
 			ffmpeg.setHls(true);
 			ffmpeg.setHLSDuration(totalDuration);
 			int ret = ffmpeg.convert();
-			Logger.log("FFmpeg exit code: " + ret);
+			Logger.log("FFmpeg exit code:", ret);
 
 			if (ret != 0) {
 				throw new IOException("FFmpeg failed");

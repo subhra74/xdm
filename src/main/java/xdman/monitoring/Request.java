@@ -14,7 +14,7 @@ public class Request {
 
 	public void read(InputStream in) throws IOException {
 		String reqLine = NetUtils.readLine(in);
-		//System.out.println(reqLine);
+		//Logger.log(reqLine);
 		if (reqLine == null || reqLine.length() < 1) {
 			throw new IOException(String.format("Invalid request line: %s", reqLine));
 		}

@@ -46,7 +46,7 @@ public class BatchDownloadWnd extends JFrame implements ActionListener {
 		List<String> urls = new ArrayList<>();
 		String text = XDMUtils.getClipBoardText();
 		if (!StringUtils.isNullOrEmptyOrBlank(text)) {
-			System.out.println(text);
+			Logger.log(text);
 			String[] arr = text.split("\n");
 			for (int i = 0; i < arr.length; i++) {
 				String url = arr[i];
@@ -78,7 +78,7 @@ public class BatchDownloadWnd extends JFrame implements ActionListener {
 				String ext = XDMUtils.getExtension(file);
 				if (!StringUtils.isNullOrEmptyOrBlank(ext)) {
 					fileExts.add(ext);
-					System.out.println("adding ext: " + ext);
+					Logger.log("Adding Extension:" + ext);
 				}
 			} catch (Exception e) {
 

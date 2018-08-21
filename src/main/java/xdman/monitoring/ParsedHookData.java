@@ -67,7 +67,7 @@ public class ParsedHookData {
 					if (headerName.equals("cookie")) {
 						parseCookies(headerValue, cookies);
 					}
-					System.out.println(ln);
+					Logger.log(ln);
 				}
 			} else if (key.equals("res")) {
 				index = val.indexOf(":");
@@ -82,7 +82,7 @@ public class ParsedHookData {
 					String cookieName = val.substring(0, index).trim();
 					String cookieValue = val.substring(index + 1).trim();
 					cookies.put(cookieName, cookieValue);
-					// System.out.println("********Adding cookie " + val);
+					// Logger.log("********Adding cookie " , val);
 
 				}
 			}

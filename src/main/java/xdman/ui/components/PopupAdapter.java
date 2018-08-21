@@ -1,6 +1,7 @@
 package xdman.ui.components;
 
 import xdman.ui.res.StringResource;
+import xdman.util.Logger;
 import xdman.util.XDMUtils;
 
 import javax.swing.*;
@@ -75,7 +76,7 @@ public class PopupAdapter extends MouseAdapter implements ActionListener {
 	public void actionPerformed(ActionEvent e) {
 		if (txt == null)
 			return;
-		System.out.println(txt);
+		Logger.log(txt);
 		String name = ((JComponent) e.getSource()).getName();
 		if ("MENU_CUT".equals(name)) {
 			txt.cut();

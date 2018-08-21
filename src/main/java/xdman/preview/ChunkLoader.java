@@ -3,10 +3,11 @@ package xdman.preview;
 import xdman.DownloadEntry;
 import xdman.XDMApp;
 import xdman.XDMConstants;
+import xdman.util.Logger;
+import xdman.util.XDMUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,9 +27,9 @@ public class ChunkLoader {
 	}
 
 	private static List<Chunk> loadDash(String id) {
-		System.out.println("loading http chunk " + id);
+		Logger.log("Loading Dash http chunk", id);
 		ArrayList<Chunk> list = new ArrayList<>();
-		BufferedReader br = null;
+		BufferedReader bufferedReader = null;
 		try {
 			DownloadEntry ent = XDMApp.getInstance().getEntry(id);
 			if (ent == null) {
@@ -36,39 +37,49 @@ public class ChunkLoader {
 			}
 			String folder = ent.getTempFolder();
 			File f = new File(folder, id);
-			if (f.exists()) {
+			if (!f.exists()) {
+				Logger.log("No saved Dash http chunk",
+						f.getAbsolutePath());
+				return null;
+			} else {
 				f = new File(f.getAbsolutePath(), "state.txt");
+				if (!f.exists()) {
+					Logger.log("No saved Dash http chunk state",
+							f.getAbsolutePath());
+					return null;
+				} else {
+					Logger.log("Loading Dash http chunk state...",
+							f.getAbsolutePath());
+					bufferedReader = XDMUtils.getBufferedReader(f);
+					bufferedReader.readLine();
+					bufferedReader.readLine();
+					bufferedReader.readLine();
+					bufferedReader.readLine();
+					int chunkCount = Integer.parseInt(bufferedReader.readLine());
+					for (int i = 0; i < chunkCount; i++) {
+						String cid = bufferedReader.readLine();
+						long len = Long.parseLong(bufferedReader.readLine());
+						long off = Long.parseLong(bufferedReader.readLine());
+						bufferedReader.readLine();
+						String tag = bufferedReader.readLine();
+						Chunk chunk = new Chunk();
+						chunk.id = cid;
+						chunk.length = len;
+						chunk.startOff = off;
+						chunk.tag = tag;
+						list.add(chunk);
+					}
+					Collections.sort(list, new ChunkComparator());
+				}
 			}
-			if (f.exists()) {
-				br = new BufferedReader(new FileReader(f));
-			}
-			br.readLine();
-			br.readLine();
-			br.readLine();
-			br.readLine();
-			int chunkCount = Integer.parseInt(br.readLine());
-			for (int i = 0; i < chunkCount; i++) {
-				String cid = br.readLine();
-				long len = Long.parseLong(br.readLine());
-				long off = Long.parseLong(br.readLine());
-				br.readLine();
-				String tag = br.readLine();
-				Chunk chunk = new Chunk();
-				chunk.id = cid;
-				chunk.length = len;
-				chunk.startOff = off;
-				chunk.tag = tag;
-				list.add(chunk);
-			}
-			Collections.sort(list, new ChunkComparator());
 			return list;
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
 		} finally {
-			if (br != null) {
+			if (bufferedReader != null) {
 				try {
-					br.close();
+					bufferedReader.close();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -77,9 +88,9 @@ public class ChunkLoader {
 	}
 
 	private static List<Chunk> loadHLS(String id) {
-		System.out.println("loading http chunk " + id);
+		Logger.log("Loading HLS http chunk", id);
 		ArrayList<Chunk> list = new ArrayList<>();
-		BufferedReader br = null;
+		BufferedReader bufferedReader = null;
 		try {
 			DownloadEntry ent = XDMApp.getInstance().getEntry(id);
 			if (ent == null) {
@@ -87,40 +98,51 @@ public class ChunkLoader {
 			}
 			String folder = ent.getTempFolder();
 			File f = new File(folder, id);
-			if (f.exists()) {
+
+			if (!f.exists()) {
+				Logger.log("No saved HLS http chunk",
+						f.getAbsolutePath());
+				return null;
+			} else {
 				f = new File(f.getAbsolutePath(), "state.txt");
+				if (!f.exists()) {
+					Logger.log("No saved HLS http chunk state",
+							f.getAbsolutePath());
+					return null;
+				} else {
+					Logger.log("Loading HLS http chunk state...",
+							f.getAbsolutePath());
+					bufferedReader = XDMUtils.getBufferedReader(f);
+					bufferedReader.readLine();
+					bufferedReader.readLine();
+					bufferedReader.readLine();
+					int urlCount = Integer.parseInt(bufferedReader.readLine());
+					for (int i = 0; i < urlCount; i++) {
+						bufferedReader.readLine();
+					}
+					int chunkCount = Integer.parseInt(bufferedReader.readLine());
+					for (int i = 0; i < chunkCount; i++) {
+						String cid = bufferedReader.readLine();
+						long len = Long.parseLong(bufferedReader.readLine());
+						long off = Long.parseLong(bufferedReader.readLine());
+						bufferedReader.readLine();
+						Chunk chunk = new Chunk();
+						chunk.id = cid;
+						chunk.length = len;
+						chunk.startOff = off;
+						list.add(chunk);
+					}
+					Collections.sort(list, new ChunkComparator());
+				}
 			}
-			if (f.exists()) {
-				br = new BufferedReader(new FileReader(f));
-			}
-			br.readLine();
-			br.readLine();
-			br.readLine();
-			int urlCount = Integer.parseInt(br.readLine());
-			for (int i = 0; i < urlCount; i++) {
-				br.readLine();
-			}
-			int chunkCount = Integer.parseInt(br.readLine());
-			for (int i = 0; i < chunkCount; i++) {
-				String cid = br.readLine();
-				long len = Long.parseLong(br.readLine());
-				long off = Long.parseLong(br.readLine());
-				br.readLine();
-				Chunk chunk = new Chunk();
-				chunk.id = cid;
-				chunk.length = len;
-				chunk.startOff = off;
-				list.add(chunk);
-			}
-			Collections.sort(list, new ChunkComparator());
 			return list;
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
 		} finally {
-			if (br != null) {
+			if (bufferedReader != null) {
 				try {
-					br.close();
+					bufferedReader.close();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -129,9 +151,9 @@ public class ChunkLoader {
 	}
 
 	private static List<Chunk> loadHttp(String id) {
-		System.out.println("loading http chunk " + id);
+		Logger.log("Loading http chunk", id);
 		ArrayList<Chunk> list = new ArrayList<>();
-		BufferedReader br = null;
+		BufferedReader bufferedReader = null;
 		try {
 			DownloadEntry ent = XDMApp.getInstance().getEntry(id);
 			if (ent == null) {
@@ -139,35 +161,46 @@ public class ChunkLoader {
 			}
 			String folder = ent.getTempFolder();
 			File f = new File(folder, id);
-			if (f.exists()) {
+
+			if (!f.exists()) {
+				Logger.log("No saved http chunk",
+						f.getAbsolutePath());
+				return null;
+			} else {
 				f = new File(f.getAbsolutePath(), "state.txt");
+				if (!f.exists()) {
+					Logger.log("No saved http chunk state",
+							f.getAbsolutePath());
+					return null;
+				} else {
+					Logger.log("Loading http chunk state...",
+							f.getAbsolutePath());
+					bufferedReader = XDMUtils.getBufferedReader(f);
+					bufferedReader.readLine();
+					bufferedReader.readLine();
+					int chunkCount = Integer.parseInt(bufferedReader.readLine());
+					for (int i = 0; i < chunkCount; i++) {
+						String cid = bufferedReader.readLine();
+						long len = Long.parseLong(bufferedReader.readLine());
+						long off = Long.parseLong(bufferedReader.readLine());
+						bufferedReader.readLine();
+						Chunk chunk = new Chunk();
+						chunk.id = cid;
+						chunk.length = len;
+						chunk.startOff = off;
+						list.add(chunk);
+					}
+					Collections.sort(list, new ChunkComparator());
+				}
 			}
-			if (f.exists()) {
-				br = new BufferedReader(new FileReader(f));
-			}
-			br.readLine();
-			br.readLine();
-			int chunkCount = Integer.parseInt(br.readLine());
-			for (int i = 0; i < chunkCount; i++) {
-				String cid = br.readLine();
-				long len = Long.parseLong(br.readLine());
-				long off = Long.parseLong(br.readLine());
-				br.readLine();
-				Chunk chunk = new Chunk();
-				chunk.id = cid;
-				chunk.length = len;
-				chunk.startOff = off;
-				list.add(chunk);
-			}
-			Collections.sort(list, new ChunkComparator());
 			return list;
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
 		} finally {
-			if (br != null) {
+			if (bufferedReader != null) {
 				try {
-					br.close();
+					bufferedReader.close();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}

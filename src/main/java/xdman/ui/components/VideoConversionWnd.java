@@ -33,7 +33,7 @@ import static xdman.util.XDMUtils.getScaledInt;
 public class VideoConversionWnd extends JFrame implements ActionListener, Runnable, MediaConversionListener {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = -4989944222311757015L;
 	DefaultListModel<ConversionItem> model;
@@ -90,7 +90,7 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 		}
 		if (mode == 1) {
 			if (ffmpeg != null) {
-				System.out.println("stopping ffmpeg");
+				Logger.log("stopping ffmpeg");
 				ffmpeg.stop();
 			}
 		}
@@ -178,8 +178,11 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 		}
 
 		fmtWnd = new MediaFormatWnd();
-
-		btnOutFormat = new CustomButton(fmtWnd.getFormat().getDescription());
+		MediaFormat mediaFormat = fmtWnd.getFormat();
+		String description = mediaFormat == null
+				? StringResource.get("VID_FMT_ORIG")
+				: mediaFormat.getDescription();
+		btnOutFormat = new CustomButton(description);
 		btnOutFormat.setHorizontalAlignment(JButton.LEFT);
 		btnOutFormat.setBackground(ColorResource.getDarkBtnColor());
 		btnOutFormat.setBorderPainted(false);
@@ -398,9 +401,7 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 		// lblImg.setVerticalAlignment(JLabel.CENTER);
 		lblImg.setBounds(getScaledValue(501), getScaledValue(56), getScaledValue(200), getScaledValue(160));
 		add(lblImg);
-		MediaFormat f = fmtWnd.getFormat();
-		setDetails(f.getResolution(), f.getVideo_codec(), f.getAudio_codec());
-		lblImg.setFormat(f.getFormat());
+		lblImg.setFormat(description);
 		slVolume.addChangeListener(new ChangeListener() {
 
 			@Override
@@ -409,7 +410,7 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 				if (item != null) {
 					if (!slVolume.getValueIsAdjusting()) {
 						item.volume = String.format("%.1f", slVolume.getValue() / 100f);
-						System.out.println(item.volume);
+						Logger.log(item.volume);
 					}
 				}
 
@@ -461,41 +462,52 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 			JComponent btn = (JComponent) e.getSource();
 			String name = btn.getName();
 
+			MediaFormat mediaFormat = fmtWnd.getFormat();
+			String mediaFormatFormat = mediaFormat == null
+					? MediaFormat.getOriginalFormat()
+					: mediaFormat.getFormat();
+			String mediaFormatDescription = mediaFormat == null
+					? MediaFormat.getOriginalFormat()
+					: mediaFormat.getDescription();
+			btnOutFormat.setText(mediaFormatDescription);
 			switch (name) {
-			case "CLOSE":
-				onClosed();
-				break;
-			case "FORMAT_SELECT":
-				fmtWnd.setVisible(true);
-				if (fmtWnd.isApproveOption()) {
-					MediaFormat fmt = fmtWnd.getFormat();
-					btnOutFormat.setText(fmt.getDescription());
-					setDetails(fmt.getResolution(), fmt.getVideo_codec(), fmt.getAudio_codec());
-					lblImg.setFormat(fmt.getFormat());
-				}
-				break;
-			case "STOP":
-				stop();
-				break;
-			case "CONVERT":
-				for (int i = 0; i < model.size(); i++) {
-					ConversionItem item = model.getElementAt(i);
-					String file = XDMUtils.getFileNameWithoutExtension(item.inputFileName);
-					String ext = fmtWnd.getFormat().getFormat();
-					item.outFileName = file + "." + ext;
-				}
-				System.out.println("starting convert");
-				mode = 1;
-				t = new Thread(this);
-				t.start();
-				break;
-			case "BROWSE_FOLDER":
-				JFileChooser jfc = new JFileChooser();
-				jfc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-				if (jfc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-					txtOutFolder.setText(jfc.getSelectedFile().getAbsolutePath());
-				}
-				break;
+				case "CLOSE":
+					onClosed();
+					break;
+				case "FORMAT_SELECT":
+					fmtWnd.setVisible(true);
+					if (fmtWnd.isApproveOption()) {
+						setDetails(mediaFormat.getResolution(), mediaFormat.getVideo_codec(), mediaFormat.getAudio_codec());
+						lblImg.setFormat(mediaFormatFormat);
+					}
+					break;
+				case "STOP":
+					stop();
+					break;
+				case "CONVERT":
+					for (int i = 0; i < model.size(); i++) {
+						ConversionItem item = model.getElementAt(i);
+						String file = XDMUtils.getFileNameWithoutExtension(item.inputFileName);
+						String ext = mediaFormatFormat != null
+								&& !mediaFormatFormat.equals(MediaFormat.getOriginalFormat())
+								? mediaFormatFormat
+								: XDMUtils.getExtension(item.inputFileName);
+						item.outFileName = String.format("%s.%s",
+								file,
+								ext);
+					}
+					Logger.log("starting convert");
+					mode = 1;
+					t = new Thread(this);
+					t.start();
+					break;
+				case "BROWSE_FOLDER":
+					JFileChooser jfc = new JFileChooser();
+					jfc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+					if (jfc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+						txtOutFolder.setText(jfc.getSelectedFile().getAbsolutePath());
+					}
+					break;
 			}
 		}
 
@@ -512,7 +524,7 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 		if (mode == 0) {
 			loadFiles();
 		} else if (mode == 1) {
-			System.out.println("starting conversion");
+			Logger.log("starting conversion");
 			convertFiles();
 		}
 	}
@@ -542,18 +554,26 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 				}
 
 				ConversionItem item = model.getElementAt(i);
-				System.out.println("item: " + item);
+				Logger.log("item: " + item);
 
 				String file = item.inputFile;
 
 				File outFile = new File(txtOutFolder.getText(), item.outFileName);
-				System.out.println(outFile);
+				Logger.log(outFile);
 
-				MediaFormat fmt = fmtWnd.getFormat();// MediaFormats.getSupportedFormats()[cmbOutFormat.getSelectedIndex()
-														// + 1];
-				System.out.println("format: " + fmt.getFormat());
+				MediaFormat mediaFormat = fmtWnd.getFormat();// MediaFormats.getSupportedFormats()[cmbOutFormat.getSelectedIndex()
+				// + 1];
+				String mediaFormatFormat = mediaFormat.getFormat();
+				if (mediaFormatFormat.equals(mediaFormat.getOriginalFormat())) {
+					mediaFormatFormat = XDMUtils.getExtension(item.outFileName);
+					mediaFormat.setFormat(mediaFormatFormat);
+				}
+				Logger.log("Media Format Format: " + mediaFormatFormat);
 
-				this.ffmpeg = new FFmpeg(Arrays.asList(file), outFile.getAbsolutePath(), this, fmt,
+				this.ffmpeg = new FFmpeg(Arrays.asList(file),
+						outFile.getAbsolutePath(),
+						this,
+						mediaFormat,
 						false);
 				if (item.volume != null) {
 					this.ffmpeg.setVolume(item.volume);

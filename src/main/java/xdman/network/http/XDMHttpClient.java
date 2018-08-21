@@ -117,12 +117,12 @@ public class XDMHttpClient extends HttpClient {
 
 			keepAliveSupported = !"close".equals(responseHeaders.getValue("connection"));
 
-		} catch (HostUnreachableException e) {
-			e.printStackTrace();
-			throw new NetworkException("Unable to connect to server");
 		} catch (Exception e) {
-			e.printStackTrace();
-			throw new NetworkException(e.getMessage());
+			String msg = String.format("Unable to connect to server: %s",
+					e.getMessage());
+			Logger.log(msg,
+					e);
+			throw new NetworkException(msg);
 		}
 	}
 

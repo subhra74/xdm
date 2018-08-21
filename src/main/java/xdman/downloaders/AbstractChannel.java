@@ -38,14 +38,18 @@ public abstract class AbstractChannel implements Runnable {
 		try {
 			chunk.getChunkListener().synchronize();
 		} catch (NullPointerException e) {
-			Logger.log("stopped chunk " + chunk);
+			Logger.log("stopped chunk",
+					chunk);
 			return false;
 		}
 		if (connectImpl()) {
 			in = getInputStreamImpl();
 			long length = getLengthImpl();
 			if (chunk.getLength() < 0) {
-				Logger.log("Setting length of " + chunk.getId() + " to: " + length);
+				Logger.log("Setting length of",
+						chunk.getId(),
+						"to:",
+						length);
 				chunk.setLength(length);
 			}
 			return true;
@@ -80,8 +84,8 @@ public abstract class AbstractChannel implements Runnable {
 				}
 			}
 		} catch (Exception e) {
-			Logger.log("Internal problem: " + e);
-			Logger.log(e);
+			Logger.log("Internal problem:",
+					e);
 			if (!stop) {
 				chunk.transferFailed(errorMessage);
 			}
@@ -120,7 +124,10 @@ public abstract class AbstractChannel implements Runnable {
 						close();
 					}
 					if (chunk.transferComplete()) {
-						Logger.log(chunk + " complete and closing " + chunk.getDownloaded() + " " + chunk.getLength());
+						Logger.log(chunk,
+								"complete and closing",
+								chunk.getDownloaded(),
+								chunk.getLength());
 						return true;
 					}
 				}
@@ -131,7 +138,7 @@ public abstract class AbstractChannel implements Runnable {
 				// if (this.socketDataRemaining == 0) {
 				// // reuse socket and connect again as this connection has
 				// // consumed all data
-				// Logger.log(chunk + " length not satisfieble resending...");
+				// Logger.log(chunk , "length not satisfiable resending...");
 				// return false;
 				// }
 
@@ -144,9 +151,11 @@ public abstract class AbstractChannel implements Runnable {
 				if (stop)
 					return false;
 				if (x == -1) {
-					Logger.log("Unexpected eof");
-					throw new Exception("Unexpected eof - downloaded: " + chunk.getDownloaded() + " expected: "
-							+ chunk.getLength());
+					String message = String.format("Unexpected eof - downloaded: %d expected: %d",
+							chunk.getDownloaded(),
+							chunk.getLength());
+					Logger.log(message);
+					throw new Exception(message);
 				}
 				chunk.getOutStream().write(buf, 0, x);
 				if (stop)
@@ -194,5 +203,4 @@ public abstract class AbstractChannel implements Runnable {
 	public int getErrorCode() {
 		return errorCode;
 	}
-
 }

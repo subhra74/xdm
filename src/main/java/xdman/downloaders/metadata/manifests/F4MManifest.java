@@ -65,26 +65,28 @@ public class F4MManifest {
 		}
 		byte[] fragmentData = new byte[0];
 		lastFrag = fragNum;
-		System.out.println(fragNum + " " + fragCount);
+		Logger.log(fragNum, fragCount);
 		if (fragNum >= fragCount)
 			throw new Exception("No fragment available for downloading");
-		Logger.log("[F4M Parser: selectedMedia.url: " + selectedMedia.url);
+		Logger.log("[F4M Parser: selectedMedia.url:", selectedMedia.url);
 
 		if (selectedMedia.getUrl().startsWith("http")) {
-			System.out.println("============ " + selectedMedia.getUrl());
+			Logger.log("============", selectedMedia.getUrl());
 			fragUrl = selectedMedia.getUrl();
 		} else {
 			if (baseUrl.endsWith("/")) {
-				fragUrl = baseUrl + selectedMedia.getUrl();
+				fragUrl = String.format("%s%s", baseUrl, selectedMedia.getUrl());
 			} else {
-				fragUrl = baseUrl + "/" + selectedMedia.getUrl();
+				fragUrl = String.format("%s/%s", baseUrl, selectedMedia.getUrl());
 			}
 		}
-		Logger.log("fragUrl: " + fragUrl + "\nfragCount: " + fragCount + " baseUrl: " + baseUrl);
+		Logger.log("fragUrl:", fragUrl,
+				"\nfragCount:", fragCount,
+				"\nbaseUrl:", baseUrl);
 
 		int fragsToDownload = fragCount - fragNum;
 		while (fragNum < fragCount) {
-			Logger.log("Remaining: " + (fragCount - fragNum));
+			Logger.log("Remaining:", (fragCount - fragNum));
 			fragNum++;
 			segNum = getSegmentFromFragment(fragNum);
 
@@ -101,12 +103,12 @@ public class F4MManifest {
 				}
 			}
 			if (discontinuity != 0) {
-				Logger.log("Skipping fragment " + fragNum + " due to discontinuity, Type: " + discontinuity);
+				Logger.log("Skipping fragment", fragNum, "due to discontinuity, Type:", discontinuity);
 				continue;
 			}
 			String ___url = getFragmentUrl(segNum, fragNum);// +(string.IsNullOrEmpty(query)
-															// ? "" : "?" +
-															// query);
+			// ? "" : "?" +
+			// query);
 
 			if (!StringUtils.isNullOrEmpty(query)) {
 				if (___url.contains("?")) {
@@ -158,7 +160,7 @@ public class F4MManifest {
 					}
 				}
 				baseUrl = sb.toString();
-				System.out.println("*** URL: " + baseUrl);
+				Logger.log("*** URL:", baseUrl);
 			} catch (Exception e) {
 			}
 		}
@@ -197,7 +199,7 @@ public class F4MManifest {
 
 				if (bootstrapInfoIdNode != null) {
 					String bootstrapInfoId = bootstrapInfoIdNode.getNodeValue();
-					bootstrapInfoStr = xpath.evaluate("/ns:manifest/ns:bootstrapInfo[@id='" + bootstrapInfoId + "']",
+					bootstrapInfoStr = xpath.evaluate(String.format("/ns:manifest/ns:bootstrapInfo[@id='%s']", bootstrapInfoId),
 							doc);
 				} else {
 					bootstrapInfoStr = xpath.evaluate("/ns:manifest/ns:bootstrapInfo", doc);
@@ -235,7 +237,7 @@ public class F4MManifest {
 		} else {
 			Logger.log("F4M Parser: [Not Live stream]");
 		}
-		Logger.log("F4M Parser: Start- " + start);
+		Logger.log("F4M Parser: Start-", start);
 		selectedMedia = media;
 	}
 
@@ -347,13 +349,13 @@ public class F4MManifest {
 	}
 
 	private void parseBootstrapBox(byte[] bootstrapInfo, int pos) {
-		System.out.println("parsing abst");
+		Logger.log("parsing abst");
 		live = false;
 		isMetadata = true;
 		int version = readByte(bootstrapInfo, pos);
 		int flags = (int) readInt24(bootstrapInfo, pos + 1);
 		int bootstrapVersion = (int) readInt32(bootstrapInfo, pos + 4);
-		// Console.WriteLine("bootstrapVersion: " + bootstrapVersion);
+		// Console.WriteLine("bootstrapVersion:" , bootstrapVersion);
 		int b = readByte(bootstrapInfo, pos + 8);
 		int profile = (b & 0xC0) >> 6;
 		int update = (b & 0x10) >> 4;
@@ -375,7 +377,7 @@ public class F4MManifest {
 		bPtr.setPos(pos);
 
 		String movieIdentifier = readString(bPtr);
-		Logger.log("[F4M Parser- movieIdentifier: " + movieIdentifier);
+		Logger.log("[F4M Parser- movieIdentifier:", movieIdentifier);
 		pos = bPtr.getPos();
 
 		int serverEntryCount = readByte(bootstrapInfo, pos++);
@@ -421,7 +423,7 @@ public class F4MManifest {
 			pos = ptr.getPos();
 			boxSize = boxInfo.getBoxSize();
 			String boxType = boxInfo.getBoxType();
-			Logger.log("555 " + boxType + " " + boxSize);
+			Logger.log("555", boxType, boxSize);
 			if (boxType.equals("afrt"))
 				parseAfrtBox(bootstrapInfo, pos);
 			pos += (int) boxSize;
@@ -433,7 +435,7 @@ public class F4MManifest {
 	private void parseSegAndFragTable() {
 		Logger.log("parseSegAndFragTable called");
 		if ((segTable.size() == 0) || (fragTable.size() == 0)) {
-			System.out.println("return as zero " + segTable.size() + " " + fragTable.size());
+			Logger.log("return as zero", segTable.size(), fragTable.size());
 			return;
 		}
 		Segment firstSegment = segTable.get(0);
@@ -469,7 +471,7 @@ public class F4MManifest {
 		}
 		if (fragCount < lastFragment.firstFragment)
 			fragCount = lastFragment.firstFragment;
-		// Console.WriteLine("fragCount: " + fragCount.ToString());
+		// Console.WriteLine("fragCount:" , fragCount.ToString());
 
 		// Determine starting segment and fragment
 		if (segStart < 0) {
@@ -488,12 +490,12 @@ public class F4MManifest {
 			if (fragStart < 0)
 				fragStart = 0;
 		}
-		// Console.WriteLine("segStart : " + segStart.ToString());
-		// Console.WriteLine("fragStart: " + fragStart.ToString());
+		// Console.WriteLine("segStart :" , segStart.ToString());
+		// Console.WriteLine("fragStart:" , fragStart.ToString());
 	}
 
 	private void parseAsrtBox(byte[] asrt, int pos) {
-		System.out.println("parsing asrt");
+		Logger.log("parsing asrt");
 		int version = readByte(asrt, pos);
 		int flags = (int) readInt24(asrt, pos + 1);
 		int qualityEntryCount = readByte(asrt, pos + 4);
@@ -508,7 +510,7 @@ public class F4MManifest {
 		}
 		int segCount = (int) readInt32(asrt, pos);
 		pos += 4;
-		System.out.println("segcount: " + segCount);
+		Logger.log("segcount:", segCount);
 		for (int i = 0; i < segCount; i++) {
 			int firstSegment = (int) readInt32(asrt, pos);
 			Segment segEntry = new Segment();
@@ -522,7 +524,7 @@ public class F4MManifest {
 	}
 
 	private void parseAfrtBox(byte[] afrt, int pos) {
-		System.out.println("Parse afrt");
+		Logger.log("Parse afrt");
 		fragTable.clear();
 		int version = readByte(afrt, pos);
 		int flags = (int) readInt24(afrt, pos + 1);

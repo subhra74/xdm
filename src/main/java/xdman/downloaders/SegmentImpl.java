@@ -35,7 +35,7 @@ public class SegmentImpl implements Segment {
 		// FileOutputStream(new
 		// File(folder,
 		// id));
-		Logger.log("File opened " + id);
+		Logger.log("File opened", id);
 	}
 
 	public SegmentImpl(String folder, String id, long off, long len, long dwn) throws IOException {
@@ -52,7 +52,7 @@ public class SegmentImpl implements Segment {
 		try {
 			outStream = new RandomAccessFile(new File(folder, id), "rw");
 			outStream.seek(dwn);
-			Logger.log("File opened " + id);
+			Logger.log("File opened", id);
 		} catch (IOException e) {
 			Logger.log(e);
 			if (outStream != null) {
@@ -133,7 +133,7 @@ public class SegmentImpl implements Segment {
 			}
 		}
 		this.errorCode = channel.getErrorCode();
-		Logger.log(id + " notifying failure " + this.channel);
+		Logger.log(id, "notifying failure", this.channel);
 		this.channel = null;
 		cl.chunkFailed(id, reason);
 		cl = null;
@@ -265,14 +265,14 @@ public class SegmentImpl implements Segment {
 	// private void applyThrottling() {
 	// try {
 	// long maxBps = config.getSpeedLimit() * 1024;
-	// // System.out.println("Maxbps: "+maxBps);
+	// // Logger.log("Maxbps:",maxBps);
 	// if (maxBps < 1) {
 	// return;
 	// }
 	// long now = System.currentTimeMillis();
 	// long timeSpentInReal = now - time2;
 	// if (timeSpentInReal > 0) {
-	// // System.out.println("inside1");
+	// // Logger.log("inside1");
 	// long currentBpms = calculateBytesPerMilliSecond(bytesRead2, downloaded,
 	// time2, now);
 	// long expectedBpms = maxBps / (1000 * config.getMaxSegments());
@@ -285,7 +285,7 @@ public class SegmentImpl implements Segment {
 	// time2 = now;
 	// bytesRead2 = downloaded;
 	// if (timeShouldHaveSpent > 0 && timeShouldHaveSpent > timeSpentInReal) {
-	// // System.out.println("inside2: "+(timeShouldHaveSpent -
+	// // Logger.log("inside2:",(timeShouldHaveSpent -
 	// // timeSpentInReal));
 	// Thread.sleep(timeShouldHaveSpent - timeSpentInReal);
 	// }
@@ -348,7 +348,7 @@ public class SegmentImpl implements Segment {
 		try {
 			outStream = new RandomAccessFile(new File(folder, id), "rw");
 			outStream.seek(downloaded);
-			Logger.log("File opened " + id);
+			Logger.log("File opened", id);
 		} catch (IOException e) {
 			Logger.log(e);
 			if (outStream != null) {
