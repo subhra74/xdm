@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" serverName="XDM">
+    <serverData>
+      <paths name="XDM">
+        <serverdata>
+          <mappings>
+            <mapping deploy="\" local="$PROJECT_DIR$/target" web="/" />
+          </mappings>
+          <excludedPaths>
+            <excludedPath path="jre" />
+            <excludedPath local="true" path="$PROJECT_DIR$/target/classes" />
+            <excludedPath local="true" path="$PROJECT_DIR$/target/generated-sources" />
+            <excludedPath local="true" path="$PROJECT_DIR$/target/maven-archiver" />
+            <excludedPath local="true" path="$PROJECT_DIR$/target/maven-status" />
+          </excludedPaths>
+        </serverdata>
+      </paths>
+    </serverData>
+  </component>
+</project>
