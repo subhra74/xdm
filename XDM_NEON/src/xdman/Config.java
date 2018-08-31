@@ -55,6 +55,7 @@ public class Config {
 	private String lastFolder;
 	private List<MonitoringListener> listeners;
 	private String queueIdFilter;
+	private boolean showVideoListOnlyInBrowser;
 
 	public void addConfigListener(MonitoringListener listener) {
 		listeners.add(listener);
@@ -138,6 +139,7 @@ public class Config {
 			if (lastFolder != null) {
 				fw.write("lastFolder:" + this.lastFolder + newLine);
 			}
+			fw.write("showVideoListOnlyInBrowser:" + this.showVideoListOnlyInBrowser + newLine);
 
 		} catch (Exception e) {
 		}
@@ -267,6 +269,8 @@ public class Config {
 					this.hideTray = "true".equals(val);
 				} else if (key.equals("lastFolder")) {
 					this.lastFolder = val;
+				} else if (key.equals("showVideoListOnlyInBrowser")) {
+					this.showVideoListOnlyInBrowser = "true".equals(val);
 				}
 			}
 		} catch (Exception e) {
@@ -864,5 +868,13 @@ public class Config {
 
 	public void setQueueIdFilter(String queueIdFilter) {
 		this.queueIdFilter = queueIdFilter;
+	}
+
+	public boolean isShowVideoListOnlyInBrowser() {
+		return showVideoListOnlyInBrowser;
+	}
+
+	public void setShowVideoListOnlyInBrowser(boolean showVideoListOnlyInBrowser) {
+		this.showVideoListOnlyInBrowser = showVideoListOnlyInBrowser;
 	}
 }

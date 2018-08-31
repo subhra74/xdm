@@ -85,7 +85,9 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 			cb.addActionListener(this);
 			menuBox.add(cb, 0);
 			if (!isVisible()) {
-				setVisible(true);
+				if (!Config.getInstance().isShowVideoListOnlyInBrowser()) {
+					setVisible(true);
+				}
 			}
 			revalidate();
 			repaint();

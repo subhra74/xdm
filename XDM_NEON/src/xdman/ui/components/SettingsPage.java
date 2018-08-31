@@ -134,7 +134,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 	JTextField txtPACUrl, txtProxyHostnPort, txtProxyPass, txtProxyUser, txtSocksHostnPort;
 
 	JCheckBox chkHaltAfterFinish, chkKeepAwake, chkExecCmd, chkExecAntivir, chkAutoStart, chkMonitorClipboard,
-			chkDwnAuto, chkGetTs, chkNoTransparency, chkForceFolder, chkShowTray;
+			chkDwnAuto, chkGetTs, chkNoTransparency, chkForceFolder, chkShowTray, chkVidBrowserOnly;
 
 	JTextField txtCustomCmd, txtAntivirCmd, txtAntivirArgs;
 
@@ -348,6 +348,12 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		chkNoTransparency = createCheckBox("LBL_TRANSPARENCY");
 		chkNoTransparency.setBounds(getScaledInt(15), y, getScaledInt(350) - getScaledInt(30), h);
 		panel.add(chkNoTransparency);
+		y += h;
+
+		h = getScaledInt(30);
+		chkVidBrowserOnly = createCheckBox("LBL_SHOW_VIDEO_ONLY_IN_BROWSER");
+		chkVidBrowserOnly.setBounds(getScaledInt(15), y, getScaledInt(350) - getScaledInt(30), h);
+		panel.add(chkVidBrowserOnly);
 		y += h;
 
 		y += getScaledInt(10);
@@ -950,6 +956,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		cmbCategory.setSelectedIndex(0);
 		txtDefFolder.setText(config.isForceSingleFolder() ? config.getDownloadFolder() : config.getCategoryOther());
 		chkNoTransparency.setSelected(config.isNoTransparency());
+		chkVidBrowserOnly.setSelected(config.isShowVideoListOnlyInBrowser());
 		chkForceFolder.setSelected(config.isForceSingleFolder());
 		cmbCategory.setEnabled(!config.isForceSingleFolder());
 	}
@@ -2371,6 +2378,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		config.setDownloadFolder(txtDefFolder.getText());
 		config.setTemporaryFolder(txtTempFolder.getText());
 		config.setNoTransparency(chkNoTransparency.isSelected());
+		config.setShowVideoListOnlyInBrowser(chkVidBrowserOnly.isSelected());
 		config.save();
 	}
 
