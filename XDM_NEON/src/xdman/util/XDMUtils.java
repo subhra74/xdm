@@ -492,7 +492,7 @@ public class XDMUtils {
 			double height = d.getHeight();
 			if (height > 2000) {
 				screenType = XDMConstants.XHDPI;
-			} else if (height > 900) {
+			} else if (height > 1080) {
 				screenType = XDMConstants.HDPI;
 			} else {
 				screenType = XDMConstants.NORMAL;
