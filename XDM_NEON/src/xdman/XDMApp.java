@@ -61,7 +61,7 @@ import xdman.util.XDMUtils;
 
 public class XDMApp implements DownloadListener, DownloadWindowListener, Comparator<String> {
 
-	public static final String APP_VERSION = "7.2.7";
+	public static final String APP_VERSION = "7.2.8";
 
 	private ArrayList<ListChangeListener> listChangeListeners;
 	private Map<String, DownloadEntry> downloads;
