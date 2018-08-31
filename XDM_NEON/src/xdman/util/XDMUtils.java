@@ -31,20 +31,20 @@ import xdman.XDMConstants;
 import xdman.downloaders.metadata.HttpMetadata;
 
 public class XDMUtils {
-//	private static Map<Integer, String> categoryFolderMap;
-//
-//	static {
-//		categoryFolderMap = new HashMap<>();
-//		categoryFolderMap.put(XDMConstants.DOCUMENTS, "Documents");
-//		categoryFolderMap.put(XDMConstants.MUSIC, "Music");
-//		categoryFolderMap.put(XDMConstants.VIDEO, "Videos");
-//		categoryFolderMap.put(XDMConstants.PROGRAMS, "Programs");
-//		categoryFolderMap.put(XDMConstants.COMPRESSED, "Compressed");
-//	}
-//
-//	public static String getFolderForCategory(int category) {
-//		return categoryFolderMap.get(category);
-//	}
+	// private static Map<Integer, String> categoryFolderMap;
+	//
+	// static {
+	// categoryFolderMap = new HashMap<>();
+	// categoryFolderMap.put(XDMConstants.DOCUMENTS, "Documents");
+	// categoryFolderMap.put(XDMConstants.MUSIC, "Music");
+	// categoryFolderMap.put(XDMConstants.VIDEO, "Videos");
+	// categoryFolderMap.put(XDMConstants.PROGRAMS, "Programs");
+	// categoryFolderMap.put(XDMConstants.COMPRESSED, "Compressed");
+	// }
+	//
+	// public static String getFolderForCategory(int category) {
+	// return categoryFolderMap.get(category);
+	// }
 
 	private static final char[] invalid_chars = { '/', '\\', '"', '?', '*', '<', '>', ':', '|' };
 
@@ -231,7 +231,7 @@ public class XDMUtils {
 
 	public static final int detectOS() {
 		String os = System.getProperty("os.name").toLowerCase(Locale.ENGLISH);
-		if (os.contains("mac") || os.contains("darwin") || os.contains("os x") ) {
+		if (os.contains("mac") || os.contains("darwin") || os.contains("os x")) {
 			return MAC;
 		} else if (os.contains("linux")) {
 			return LINUX;
@@ -480,7 +480,7 @@ public class XDMUtils {
 		if (screenType == XDMConstants.XHDPI) {
 			return 2.0f;
 		} else if (screenType == XDMConstants.HDPI) {
-			return 1.3f;
+			return 1.5f;
 		} else {
 			return 1.0f;
 		}
@@ -488,11 +488,14 @@ public class XDMUtils {
 
 	public static int detectScreenType() {
 		if (screenType < 0) {
+			int dpi = Toolkit.getDefaultToolkit().getScreenResolution();
+			float dpiScale = dpi / 96.0f;
+			Logger.log("Dpi scale: "+dpiScale);
 			Dimension d = Toolkit.getDefaultToolkit().getScreenSize();
-			double height = d.getHeight();
-			if (height > 2000) {
+			//double height = d.getHeight();
+			if (dpiScale >= 2) {
 				screenType = XDMConstants.XHDPI;
-			} else if (height > 1080) {
+			} else if (dpiScale >= 1.5) {
 				screenType = XDMConstants.HDPI;
 			} else {
 				screenType = XDMConstants.NORMAL;
@@ -500,7 +503,7 @@ public class XDMUtils {
 		}
 		return screenType;
 	}
-	
+
 	public static List<HttpMetadata> toMetadata(List<String> urls) {
 		List<HttpMetadata> list = new ArrayList<>();
 		for (String url : urls) {
