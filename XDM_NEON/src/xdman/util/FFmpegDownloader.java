@@ -3,15 +3,10 @@ package xdman.util;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.GeneralSecurityException;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
-
-import org.tukaani.xz.XZInputStream;
 
 import xdman.Config;
 import xdman.DownloadListener;
@@ -29,20 +24,23 @@ public class FFmpegDownloader implements DownloadListener, DownloadWindowListene
 	String tmpFile;
 	boolean stop;
 
+	private static final String XP_COMPONENT = "xp.zip", WIN7_COMPONENT = "win.zip", MAC_COMPONENT = "mac.zip",
+			LINUX32_COMPONENT = "linux32.zip", LINUX64_COMPONENT = "linux64.zip";
+
 	public FFmpegDownloader() {
 		if (XDMUtils.detectOS() == XDMUtils.WINDOWS) {
 			if (XDMUtils.below7()) {
-				url += "xp.zip.xz";
+				url += XP_COMPONENT;
 			} else {
-				url += "win.zip.xz";
+				url += WIN7_COMPONENT;
 			}
 		} else if (XDMUtils.detectOS() == XDMUtils.MAC) {
-			url += "mac.zip.xz";
+			url += MAC_COMPONENT;
 		} else if (XDMUtils.detectOS() == XDMUtils.LINUX) {
 			if (XDMUtils.getOsArch() == 32) {
-				url += "linux86.zip.xz";
+				url += LINUX32_COMPONENT;
 			} else {
-				url += "linux64.zip.xz";
+				url += LINUX64_COMPONENT;
 			}
 		}
 		tmpFile = UUID.randomUUID().toString();
@@ -137,14 +135,18 @@ public class FFmpegDownloader implements DownloadListener, DownloadWindowListene
 		wnd2 = new FFmpegExtractorWnd(this);
 		wnd2.setVisible(true);
 		try {
+			String versionFile = null;
 			File input = new File(Config.getInstance().getTemporaryFolder(), tmpFile);
-			zipIn = new ZipInputStream(new XZInputStream(new FileInputStream(input)));
+			zipIn = new ZipInputStream(new FileInputStream(input));
 
 			while (true) {
 				ZipEntry ent = zipIn.getNextEntry();
 				if (ent == null)
 					break;
 				String name = ent.getName();
+				if (name.endsWith(".version")) {
+					versionFile = name;
+				}
 				File outFile = new File(Config.getInstance().getDataFolder(), name);
 				out = new FileOutputStream(outFile);
 				byte[] buf = new byte[8192];
@@ -158,6 +160,18 @@ public class FFmpegDownloader implements DownloadListener, DownloadWindowListene
 				out = null;
 				outFile.setExecutable(true);
 			}
+
+			// remove old x.version files if exists
+			try {
+				for (File f : new File(Config.getInstance().getDataFolder()).listFiles()) {
+					if (f.getName().endsWith(".version") && (!f.getName().equals(versionFile))) {
+						f.delete();
+					}
+				}
+			} catch (Exception e) {
+				Logger.log(e);
+			}
+
 			input.delete();
 			wnd2.dispose();
 		} catch (Exception e) {
@@ -177,7 +191,5 @@ public class FFmpegDownloader implements DownloadListener, DownloadWindowListene
 		if (wnd2 != null)
 			wnd2.dispose();
 	}
-
-	
 
 }
