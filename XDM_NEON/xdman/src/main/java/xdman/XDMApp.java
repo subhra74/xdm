@@ -10,6 +10,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.PasswordAuthentication;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -806,11 +807,13 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 
 	public void saveDownloadList(File file) {
 		int count = downloads.size();
-		BufferedWriter writer = null;
+		//BufferedWriter writer = null;
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		String newLine = System.getProperty("line.separator");
-		try {
-			writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), Charset.forName("UTF-8")));
+		try (
+				BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))
+		){
+
 			writer.write(count + "");
 			writer.newLine();
 			Iterator<String> keyIterator = downloads.keySet().iterator();
@@ -853,14 +856,14 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 				writer.write(sb.toString());
 
 			}
-			writer.close();
+			//writer.close();
 		} catch (Exception e) {
 			Logger.log(e);
-			try {
-				if (writer != null)
-					writer.close();
-			} catch (Exception e1) {
-			}
+//			try {
+//				if (writer != null)
+//					writer.close();
+//			} catch (Exception e1) {
+//			}
 		}
 	}
 

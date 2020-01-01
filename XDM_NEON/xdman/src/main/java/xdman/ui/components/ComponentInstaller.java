@@ -166,10 +166,13 @@ public class ComponentInstaller extends JDialog implements DownloadListener, FFE
 			JOptionPane.showMessageDialog(this, "Component installation failed");
 		} finally {
 			try {
-				zipIn.close();
-				if (out != null)
-					out.close();
+				if (zipIn != null) zipIn.close();
 			} catch (Exception e) {
+				Logger.log(e);
+			}
+			try {
+				if (out != null) out.close();
+			} catch (Exception e){
 				Logger.log(e);
 			}
 		}

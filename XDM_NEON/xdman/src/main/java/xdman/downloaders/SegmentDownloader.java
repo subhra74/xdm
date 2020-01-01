@@ -470,12 +470,11 @@ public abstract class SegmentDownloader extends Downloader implements SegmentLis
 		if (!StringUtils.isNullOrEmptyOrBlank(lastModified)) {
 			sb.append(this.lastModified + "\n");
 		}
-		try {
-			File tmp = new File(folder, System.currentTimeMillis() + ".tmp");
-			File out = new File(folder, "state.txt");
-			FileOutputStream fs = new FileOutputStream(tmp);
+		File tmp = new File(folder, System.currentTimeMillis() + ".tmp");
+		File out = new File(folder, "state.txt");
+		try (FileOutputStream fs = new FileOutputStream(tmp)){
 			fs.write(sb.toString().getBytes());
-			fs.close();
+			//fs.close()
 			out.delete();
 			tmp.renameTo(out);
 		} catch (Exception e) {

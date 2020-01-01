@@ -37,10 +37,13 @@ public class BrowserMonitor implements Runnable {
 		} catch (Exception e) {
 			Logger.log(e);
 			XDMApp.instanceAlreadyRunning();
+		} finally {
+			try {
+				if (serverSock!=null) serverSock.close();
+			} catch (Exception e) {
+				Logger.log(e);
+			}
 		}
-		try {
-			serverSock.close();
-		} catch (Exception e) {
-		}
+
 	}
 }

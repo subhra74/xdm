@@ -475,12 +475,11 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 			}
 		}
 
-		try {
-			File tmp = new File(folder, System.currentTimeMillis() + ".tmp");
-			File out = new File(folder, "state.txt");
-			FileOutputStream fs = new FileOutputStream(tmp);
+		File tmp = new File(folder, System.currentTimeMillis() + ".tmp");
+		File out = new File(folder, "state.txt");
+		try (FileOutputStream fs = new FileOutputStream(tmp)){
 			fs.write(sb.toString().getBytes());
-			fs.close();
+			//fs.close();
 			out.delete();
 			tmp.renameTo(out);
 		} catch (Exception e) {

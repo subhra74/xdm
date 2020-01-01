@@ -15,10 +15,10 @@ import xdman.util.XDMUtils;
 
 public class F4mHandler {
 	public static boolean handle(File f4mfile, ParsedHookData data) {
-		try {
+		try (InputStream in = new FileInputStream(f4mfile);
+			 BufferedReader r = new BufferedReader(new InputStreamReader(in))
+			 ){
 			StringBuffer buf = new StringBuffer();
-			InputStream in = new FileInputStream(f4mfile);
-			BufferedReader r = new BufferedReader(new InputStreamReader(in));
 			while (true) {
 				String ln = r.readLine();
 				if (ln == null) {

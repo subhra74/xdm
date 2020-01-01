@@ -1,9 +1,11 @@
 package xdman.ui.res;
 
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 import xdman.Config;
@@ -34,17 +36,24 @@ public class StringResource {
 
 	private static boolean loadLang(String code, Properties prop) {
 		Logger.log("Loading language " + code);
+		InputStream inStream = null;
 		try {
-			InputStream inStream = StringResource.class.getResourceAsStream("/lang/" + code + ".txt");
+			inStream = StringResource.class.getResourceAsStream("/lang/" + code + ".txt");
 			if (inStream == null) {
 				inStream = new FileInputStream("lang/" + code + ".txt");
 			}
-			InputStreamReader r = new InputStreamReader(inStream, Charset.forName("utf-8"));
+			InputStreamReader r = new InputStreamReader(inStream, StandardCharsets.UTF_8);
 			prop.load(r);
 			return true;
 		} catch (Exception e) {
 			Logger.log(e);
 			return false;
+		} finally {
+			try {
+				if (inStream != null) inStream.close();
+			} catch (IOException e){
+				Logger.log(e);
+			}
 		}
 	}
 
