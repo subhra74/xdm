@@ -19,10 +19,11 @@ public class VimeoHandler {
 	// }
 
 	public static boolean handle(File tempFile, ParsedHookData data) {
-		try {
+		try (InputStream in = new FileInputStream(tempFile);
+			 BufferedReader r = new BufferedReader(new InputStreamReader(in))
+			){
 			StringBuffer buf = new StringBuffer();
-			InputStream in = new FileInputStream(tempFile);
-			BufferedReader r = new BufferedReader(new InputStreamReader(in));
+
 			while (true) {
 				String ln = r.readLine();
 				if (ln == null) {

@@ -1,26 +1,28 @@
 package xdman.mediaconversion;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 import xdman.ui.res.StringResource;
+import xdman.util.Logger;
 
 public class FormatLoader {
 	public static List<FormatGroup> load() {
 		List<FormatGroup> list = new ArrayList<>();
+		InputStream inStream = null;
+		InputStreamReader r = null;
+		BufferedReader br = null;
 		try {
-			InputStream inStream = StringResource.class.getResourceAsStream("/formats/format_db.txt");
+			inStream = StringResource.class.getResourceAsStream("/formats/format_db.txt");
 			if (inStream == null) {
 				inStream = new FileInputStream("formats/format_db.txt");
 			}
-			InputStreamReader r = new InputStreamReader(inStream, Charset.forName("utf-8"));
+			r = new InputStreamReader(inStream, StandardCharsets.UTF_8);
 
-			BufferedReader br = new BufferedReader(r);
+			br = new BufferedReader(r);
 
 			while (true) {
 				String ln = br.readLine();
@@ -48,7 +50,16 @@ public class FormatLoader {
 				}
 			}
 		} catch (Exception e) {
-
+			Logger.log(e);
+		}
+		finally {
+			try {
+				if (inStream != null) inStream.close();
+				if (r != null) r.close();
+				if (br != null) br.close();
+			} catch (IOException e){
+				Logger.log(e);
+			}
 		}
 		return list;
 	}
