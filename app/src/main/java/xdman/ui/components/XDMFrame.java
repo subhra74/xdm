@@ -48,13 +48,14 @@ public class XDMFrame extends JFrame implements ComponentListener {
 
 	private JPanel contentPane, modalPane, dialogPane;
 
-	private static final int DEFAULT_LAYER = 0, MODAL_LAYER = 30, DIALOG_LAYER = 15;
+	private static final int DEFAULT_LAYER = 0, MODAL_LAYER = 30,
+			DIALOG_LAYER = 15;
 
 	private Component lastFocusOwner;
 
-	protected boolean showTwitterIcon, showFBIcon;
+	protected boolean showTwitterIcon, showFBIcon, showGitHubIcon;
 
-	protected String twitterUrl, fbUrl;
+	protected String twitterUrl, fbUrl, gitHubUrl;
 
 	public XDMFrame() {
 		setUndecorated(true);
@@ -67,7 +68,8 @@ public class XDMFrame extends JFrame implements ComponentListener {
 		createResizeGrip();
 		panTitle = new TitlePanel(new BorderLayout(), this);
 		panTitle.setBackground(ColorResource.getTitleColor());
-		panTitle.setBorder(new EmptyBorder(XDMUtils.getScaledInt(5), XDMUtils.getScaledInt(5), XDMUtils.getScaledInt(0),
+		panTitle.setBorder(new EmptyBorder(XDMUtils.getScaledInt(5),
+				XDMUtils.getScaledInt(5), XDMUtils.getScaledInt(0),
 				XDMUtils.getScaledInt(5)));
 		panTitle.setOpaque(true);
 		registerTitlePanel(panTitle);
@@ -117,29 +119,37 @@ public class XDMFrame extends JFrame implements ComponentListener {
 	private void createResizeGrip() {
 		GripMouseAdapter gma = new GripMouseAdapter();
 		lblRightGrip = new JLabel();
-		lblRightGrip.setMaximumSize(new Dimension(2, lblRightGrip.getMaximumSize().height));
-		lblRightGrip.setPreferredSize(new Dimension(2, lblRightGrip.getPreferredSize().height));
+		lblRightGrip.setMaximumSize(
+				new Dimension(2, lblRightGrip.getMaximumSize().height));
+		lblRightGrip.setPreferredSize(
+				new Dimension(2, lblRightGrip.getPreferredSize().height));
 		lblRightGrip.setBackground(Color.BLACK);
 		lblRightGrip.setOpaque(true);
 		contentPane.add(lblRightGrip, BorderLayout.EAST);
 
 		lblBottomGrip = new JLabel();
-		lblBottomGrip.setMaximumSize(new Dimension(lblBottomGrip.getPreferredSize().width, 2));
-		lblBottomGrip.setPreferredSize(new Dimension(lblBottomGrip.getPreferredSize().width, 2));
+		lblBottomGrip.setMaximumSize(
+				new Dimension(lblBottomGrip.getPreferredSize().width, 2));
+		lblBottomGrip.setPreferredSize(
+				new Dimension(lblBottomGrip.getPreferredSize().width, 2));
 		lblBottomGrip.setBackground(Color.BLACK);
 		lblBottomGrip.setOpaque(true);
 		contentPane.add(lblBottomGrip, BorderLayout.SOUTH);
 
 		lblLeftGrip = new JLabel();
-		lblLeftGrip.setMaximumSize(new Dimension(2, lblLeftGrip.getPreferredSize().height));
-		lblLeftGrip.setPreferredSize(new Dimension(2, lblLeftGrip.getPreferredSize().height));
+		lblLeftGrip.setMaximumSize(
+				new Dimension(2, lblLeftGrip.getPreferredSize().height));
+		lblLeftGrip.setPreferredSize(
+				new Dimension(2, lblLeftGrip.getPreferredSize().height));
 		lblLeftGrip.setBackground(Color.BLACK);
 		lblLeftGrip.setOpaque(true);
 		contentPane.add(lblLeftGrip, BorderLayout.WEST);
 
 		lblTopGrip = new JLabel();
-		lblTopGrip.setMaximumSize(new Dimension(lblTopGrip.getPreferredSize().width, 2));
-		lblTopGrip.setPreferredSize(new Dimension(lblTopGrip.getPreferredSize().width, 2));
+		lblTopGrip.setMaximumSize(
+				new Dimension(lblTopGrip.getPreferredSize().width, 2));
+		lblTopGrip.setPreferredSize(
+				new Dimension(lblTopGrip.getPreferredSize().width, 2));
 		lblTopGrip.setBackground(Color.BLACK);
 		lblTopGrip.setOpaque(true);
 		contentPane.add(lblTopGrip, BorderLayout.NORTH);
@@ -153,8 +163,10 @@ public class XDMFrame extends JFrame implements ComponentListener {
 				public void mouseDragged(MouseEvent me) {
 					int y = me.getYOnScreen();
 					int diff = XDMFrame.this.getLocationOnScreen().y - y;
-					XDMFrame.this.setLocation(XDMFrame.this.getLocation().x, me.getLocationOnScreen().y);
-					XDMFrame.this.setSize(XDMFrame.this.getWidth(), XDMFrame.this.getHeight() + diff);
+					XDMFrame.this.setLocation(XDMFrame.this.getLocation().x,
+							me.getLocationOnScreen().y);
+					XDMFrame.this.setSize(XDMFrame.this.getWidth(),
+							XDMFrame.this.getHeight() + diff);
 				}
 			});
 
@@ -176,8 +188,10 @@ public class XDMFrame extends JFrame implements ComponentListener {
 				public void mouseDragged(MouseEvent me) {
 					int x = me.getXOnScreen();
 					int diff = XDMFrame.this.getLocationOnScreen().x - x;
-					XDMFrame.this.setLocation(me.getLocationOnScreen().x, XDMFrame.this.getLocation().y);
-					XDMFrame.this.setSize(diff + XDMFrame.this.getWidth(), XDMFrame.this.getHeight());
+					XDMFrame.this.setLocation(me.getLocationOnScreen().x,
+							XDMFrame.this.getLocation().y);
+					XDMFrame.this.setSize(diff + XDMFrame.this.getWidth(),
+							XDMFrame.this.getHeight());
 				}
 			});
 
@@ -232,38 +246,64 @@ public class XDMFrame extends JFrame implements ComponentListener {
 		// //menuBtn = btn;
 		// // hBox.add(Box.createHorizontalStrut(10));
 		// }
+		if (showGitHubIcon) {
+			JButton btnG = createTransparentButton(
+					ImageResource.get("github.png"),
+					new Dimension(XDMUtils.getScaledInt(30),
+							XDMUtils.getScaledInt(30)),
+					actGitHub);
+			btnG.setToolTipText("GitHub");
+			// btn.setRolloverIcon(ImageResource.get("max_btn_r.png"));
+			hBox.add(btnG);
+		}
+
 		if (showTwitterIcon) {
-			JButton btnT = createTransparentButton(ImageResource.get("twitter.png"),
-					new Dimension(XDMUtils.getScaledInt(30), XDMUtils.getScaledInt(30)), actTwitter);
+			JButton btnT = createTransparentButton(
+					ImageResource.get("twitter.png"),
+					new Dimension(XDMUtils.getScaledInt(30),
+							XDMUtils.getScaledInt(30)),
+					actTwitter);
 			btnT.setToolTipText(StringResource.get("LBL_TWITTER_PAGE"));
 			// btn.setRolloverIcon(ImageResource.get("max_btn_r.png"));
 			hBox.add(btnT);
 		}
 
 		if (showFBIcon) {
-			JButton btnF = createTransparentButton(ImageResource.get("facebook.png"),
-					new Dimension(XDMUtils.getScaledInt(30), XDMUtils.getScaledInt(30)), actFb);
+			JButton btnF = createTransparentButton(
+					ImageResource.get("facebook.png"),
+					new Dimension(XDMUtils.getScaledInt(30),
+							XDMUtils.getScaledInt(30)),
+					actFb);
 			btnF.setToolTipText(StringResource.get("LBL_LIKE_ON_FB"));
 			// btn.setRolloverIcon(ImageResource.get("max_btn_r.png"));
 			hBox.add(btnF);
 		}
 
 		if (minimizeBox) {
-			JButton btn = createTransparentButton(ImageResource.get("title_min.png"),
-					new Dimension(XDMUtils.getScaledInt(30), XDMUtils.getScaledInt(30)), actMin);
+			JButton btn = createTransparentButton(
+					ImageResource.get("title_min.png"),
+					new Dimension(XDMUtils.getScaledInt(30),
+							XDMUtils.getScaledInt(30)),
+					actMin);
 			// btn.setRolloverIcon(ImageResource.get("min_btn_r.png"));
 			hBox.add(btn);
 		}
 
 		if (maximizeBox) {
-			JButton btn = createTransparentButton(ImageResource.get("title_max.png"),
-					new Dimension(XDMUtils.getScaledInt(30), XDMUtils.getScaledInt(30)), actMax);
+			JButton btn = createTransparentButton(
+					ImageResource.get("title_max.png"),
+					new Dimension(XDMUtils.getScaledInt(30),
+							XDMUtils.getScaledInt(30)),
+					actMax);
 			// btn.setRolloverIcon(ImageResource.get("max_btn_r.png"));
 			hBox.add(btn);
 		}
 
-		JButton btn = createTransparentButton(ImageResource.get("title_close.png"),
-				new Dimension(XDMUtils.getScaledInt(30), XDMUtils.getScaledInt(30)), actClose);
+		JButton btn = createTransparentButton(
+				ImageResource.get("title_close.png"),
+				new Dimension(XDMUtils.getScaledInt(30),
+						XDMUtils.getScaledInt(30)),
+				actClose);
 		// btn.setRolloverIcon(ImageResource.get("close_btn_r.png"));
 		hBox.add(btn);
 
@@ -275,23 +315,26 @@ public class XDMFrame extends JFrame implements ComponentListener {
 
 	ActionListener actClose = new ActionListener() {
 		public void actionPerformed(ActionEvent action) {
-			XDMFrame.this.dispatchEvent(new WindowEvent(XDMFrame.this, WindowEvent.WINDOW_CLOSING));
+			XDMFrame.this.dispatchEvent(
+					new WindowEvent(XDMFrame.this, WindowEvent.WINDOW_CLOSING));
 		};
 	};
 
 	ActionListener actMax = new ActionListener() {
 		public void actionPerformed(ActionEvent action) {
-			XDMFrame.this
-					.setMaximizedBounds(GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds());
-			XDMFrame.this.setExtendedState(
-					(XDMFrame.this.getExtendedState() & JFrame.MAXIMIZED_BOTH) == JFrame.MAXIMIZED_BOTH ? JFrame.NORMAL
+			XDMFrame.this.setMaximizedBounds(GraphicsEnvironment
+					.getLocalGraphicsEnvironment().getMaximumWindowBounds());
+			XDMFrame.this.setExtendedState((XDMFrame.this.getExtendedState()
+					& JFrame.MAXIMIZED_BOTH) == JFrame.MAXIMIZED_BOTH
+							? JFrame.NORMAL
 							: JFrame.MAXIMIZED_BOTH);
 		};
 	};
 
 	ActionListener actMin = new ActionListener() {
 		public void actionPerformed(ActionEvent action) {
-			XDMFrame.this.setExtendedState(XDMFrame.this.getExtendedState() | JFrame.ICONIFIED);
+			XDMFrame.this.setExtendedState(
+					XDMFrame.this.getExtendedState() | JFrame.ICONIFIED);
 		};
 	};
 
@@ -310,6 +353,14 @@ public class XDMFrame extends JFrame implements ComponentListener {
 		public void actionPerformed(ActionEvent e) {
 			if (fbUrl != null) {
 				XDMUtils.browseURL(fbUrl);
+			}
+		}
+	}, actGitHub = new ActionListener() {
+
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			if (gitHubUrl != null) {
+				XDMUtils.browseURL(gitHubUrl);
 			}
 		}
 	};
@@ -335,7 +386,8 @@ public class XDMFrame extends JFrame implements ComponentListener {
 
 	}
 
-	Cursor curDefault, curNResize, curEResize, curWResize, curSResize, curSEResize, curSWResize;
+	Cursor curDefault, curNResize, curEResize, curWResize, curSResize,
+			curSEResize, curSWResize;
 
 	private void createCursors() {
 		curDefault = new Cursor(Cursor.DEFAULT_CURSOR);
@@ -345,7 +397,8 @@ public class XDMFrame extends JFrame implements ComponentListener {
 		curSResize = new Cursor(Cursor.S_RESIZE_CURSOR);
 	}
 
-	JButton createTransparentButton(ImageIcon icon, Dimension d, ActionListener actionListener) {
+	JButton createTransparentButton(ImageIcon icon, Dimension d,
+			ActionListener actionListener) {
 		CustomButton btn = new CustomButton(icon);
 		btn.setBackground(ColorResource.getTitleColor());
 		btn.setBorderPainted(false);
@@ -427,7 +480,8 @@ public class XDMFrame extends JFrame implements ComponentListener {
 	private synchronized void startModal(Component comp) {
 		try {
 			if (SwingUtilities.isEventDispatchThread()) {
-				EventQueue theQueue = Toolkit.getDefaultToolkit().getSystemEventQueue();
+				EventQueue theQueue = Toolkit.getDefaultToolkit()
+						.getSystemEventQueue();
 				while (comp.isVisible()) {
 					AWTEvent event = theQueue.getNextEvent();
 					Object source = event.getSource();

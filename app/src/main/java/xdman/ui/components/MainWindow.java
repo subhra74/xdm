@@ -114,8 +114,10 @@ public class MainWindow extends XDMFrame implements ActionListener {
 	protected void registerTitlePanel(JPanel panel) {
 		showTwitterIcon = true;
 		showFBIcon = true;
+		showGitHubIcon = true;
 		fbUrl = "https://www.facebook.com/XDM.subhra74/";
 		twitterUrl = "https://twitter.com/XDM_subhra74";
+		gitHubUrl = "https://github.com/subhra74/xdm";
 		super.registerTitlePanel(panel);
 	}
 
