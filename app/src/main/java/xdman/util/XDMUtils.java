@@ -41,9 +41,10 @@ public class XDMUtils {
 	// }
 
 	static {
+		//Fixed issue with DPI scaling in Java 9 and higher
 		int dpi = Toolkit.getDefaultToolkit().getScreenResolution();
 		dpiScale = dpi / 96F;
-		System.out.println("DPI init " + dpiScale);
+		//System.out.println("DPI init " + dpiScale);
 	}
 
 	private static final char[] invalid_chars = { '/', '\\', '"', '?', '*', '<',
