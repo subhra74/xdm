@@ -29,7 +29,8 @@ public class SocketFactory {
 
 	public static Socket createSocket(String host, int port) throws HostUnreachableException {
 		Config config = Config.getInstance();
-		try (Socket sock = new Socket()) {
+		try {
+			Socket sock = new Socket();
 			sock.setSoTimeout(Config.getInstance().getNetworkTimeout() * 1000);
 			sock.setTcpNoDelay(true);
 			if (config.getTcpWindowSize() > 0) {
