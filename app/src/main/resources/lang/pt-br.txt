@@ -1,4 +1,4 @@
-﻿LANGUAGE_TEXT=Portugu\u00eas (Portugu\u00eas)
+LANGUAGE_TEXT=Portugu\u00eas (Portugu\u00eas)
 WINDOW_TITLE=XDM 2018
 ALL_DOWNLOADS=Todos
 ALL_UNFINISHED=Incompleto

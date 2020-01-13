@@ -1,8 +1,8 @@
-﻿
+LANGUAGE_TEXT=Arabic (العربية)
 WINDOW_TITLE=XDM 2018
 ALL_DOWNLOADS=الكل
 ALL_UNFINISHED=غير مكتمل
-ALL_FINISHED=مكتمل
+ALL_FINISHED=اكتمال
 CAT_ALL=جميع الفئات
 CAT_DOCUMENTS=مستندات
 CAT_COMPRESSED=مضغوط
@@ -18,8 +18,8 @@ MENU_ADD_URL=اضافة رابط
 MENU_BATCH_DOWNLOAD=باتش التحميل
 MENU_CLIP_ADD=اضفها إلى الحافظة
 MENU_VIDEO_DWN=تحميل فيديو
-MENU_DELETE_DWN=حذف التحميلات
-MENU_DELETE_COMPLETED=حذف التحميلات المكتملة
+MENU_DELETE_DWN=حذف التنزيلات
+MENU_DELETE_COMPLETED=تم الانتهاء من الحذف
 MENU_IMPORT=استيراد
 MENU_EXPORT=تصدير
 MENU_EXIT=خروج
@@ -50,12 +50,9 @@ SORT_DATE_ASC=أقدم على القمة
 SORT_SIZE_DESC=أكبر على القمة
 SORT_SIZE_ASC=أصغر على القمة
 SORT_NAME_DESC=اسم [Z-A]
-
 SORT_NAME_ASC=اسم [A-Z]
-
 SORT_TYPE_DESC=نوع [Z-A]
 SORT_TYPE_ASC=نوع [A-Z]
-
 STAT_PAUSED=توقف
 STAT_FINISHED=انتهى
 STAT_DOWNLOADING=جارى التحميل
@@ -70,7 +67,7 @@ ND_DOWNLOAD_LATER=التحميل لاحقا
 ND_IGNORE_URL=لا تلتقط التنزيل من هذا العنوان
 MSG_INVALID_URL=عنوان التنزيل غير صالح أو غير معتمد
 MSG_NO_URL=الرابط فارغ
-MSG_NO_FILE=الرجاء إدخال اسم الملف 
+MSG_NO_FILE=الرجاء إدخال اسم الملف
 DWN_TITLE=...جاري التحميل
 DWN_PLACEHOLDER=التحميل ---/---
 DWN_PREVIEW=معاينة
@@ -79,9 +76,8 @@ DWN_DOWNLOAD=التحميل
 MSG_OK=اوك
 MSG_FAILED=!فشل التحميل
 ERR_SESSION_FAILED=انتهت صلحيات التحميل,يرجى تحديث عنوان التحميل
-ERR_CONN_FAILED=غير قادر الاتصال بالخادم,الرجاء التحقق من الاتصال بالشبكة,الوسيط او تحقق من اعدادات الحماية البرنامج
+ERR_CONN_FAILED=البرنامج غير قادر الاتصال بالخادم,الرجاء التحقق من الاتصال بالشبكة,الوسيط او تحقق من اعدادات الحماية
 ERR_INVALID_RESP=ﻻ يمكن تحميل الملف كما ارسل الخادم استجابة غير صحيحة
-
 ERR_NO_RESUME=الخادم لا يدعم استئناف، يرجى إعادة تشغيل التحميل
 RESUME_FAILED=تعذر استئناف التحميل / بدا
 ERR_INTERNAL=خطأ داخلي
@@ -92,27 +88,22 @@ TITLE_SETTINGS=اعدادات
 SETTINGS_GENERAL=اعدادات عامة
 SHOW_DWN_PRG=عرض نافذة تقدم التنزيل
 SHOW_DWN_COMPLETE=عرض نافذة عند انتهاء عملية التحميل
-
 SHOW_DUP_ACT=عملية تحميل مزدجة
-
 DUT_ACT_RENAME=إعادة تسمية تلقائية
 DUP_ACT_PROMPT=مستعجل
-DUP_ACT_OPEN=فتح/استئنف
+DUP_ACT_OPEN=فتح/استئناف
 DUP_ACT_OVERWRITE=اعادة الكتابة
 SETTINGS_FOLDER=مجلد التحميل الافتراضي
 SETTINGS_FOLDER_CHANGE=تغيير
 SETTINGS_MONITORING=رصد المتصفح
-
 SETTINGS_NETWORK=اعدادات الشبكة
 SETTINGS_VIEW=عرض الإعدادات
 SETTINGS_SCHEDULER=جدولة الإعدادات
-
 SETTINGS_CRED=إدارة كلمة المرور
 SETTINGS_ADV=إعدادات متقدمة
 HINT_BROWSER_MON=تهيئة البرنامج لتولي التحميل والتقاط الفيديو من المتصفح
 HINT_NETWORK=تخصيص اعدادات الشبكة واعدادات البروكسي
 HINT_SCHEDULER=الجدول الزمني للتنزيلات وادارة ﻻئحة التحميل
-
 HINT_PASSWORD=إدارة كلمة المرور وبيانات الاعتماد لمواقع الويب
 HINT_ADV=إدارة الإعدادات المتقدمة مثل ماسح الفيروسات، وأنواع الملفات والاستثناءات
 
@@ -127,7 +118,7 @@ DESC_MOZILLA_BASED=الإصدارات القديمة من فايرفوكس وغ�
 DESC_CHROME_BASED=المتصفحات المعتمدة على كروميوم
 DESC_INSTALL=تثبيت الاضافة
 DESC_INSTRUCTION=تعليمات
-DESC_OTHER_BROWSERS=البرنامج يمكنه ان يكون متكامل في متصفحات المشتقة من كروميوم مثل  (فيفالدي، بايدو ..الخ) أو موزيلا على أساس (آيس ويزل، واتيرفوكس.. الخ) المتصفحات باستخدام الروابط أدناه 
+DESC_OTHER_BROWSERS=البرنامج يمكنه ان يكون متكامل في المتصفحات المشتقة من كروميوم مثل  (فيفالدي، بايدو ..الخ) أو موزيلا على أساس (آيس ويزل، واتيرفوكس.. الخ) باستخدام الروابط أدناه 
 DESC_FILETYPES=سياخذ تلقائيا التنزيلات من المتصفح لأنواع الملفات أدناه XDM 
 DESC_VIDEOTYPES=سيظهر خيار التحميل عند أدناه صيغ الفيديو هي XDM
 DESC_FILEEXCEPTIONS=لا تلتقط التنزيلات تلقائيا لأنواع الملفات التالية
@@ -139,18 +130,16 @@ DESC_DEF=الافتراضي
 DESC_NET=إعدادات الإتصال
 DESC_NET_TITLE=اعدادات الشبكة
 DESC_NET1=انتهى وقت محاولة الاتصال
-DESC_NET2=شرائح التحميل
-
+DESC_NET2=شرائح لكل تنزيل
 DESC_NET3=(tpc)التحكم في حجم النافذة
 DESC_NET4=اعدادات الوكيل
 DESC_NET5=استخدام الاعداد التلقائي لوسيط الروابط
-
 DESC_NET6=استخدام الخادم الوكيل <host:port>
-DESC_NET7=اسم المستخدم الوكيل
+DESC_NET7=اسم مستخدم الوكيل
 DESC_NET8=كلمة مرور الوكيل
 DESC_NET9=استخدام بروكسي الجوارب <host:port>
 
-DESC_PASS_TITLE=مدير كلمة السر
+DESC_PASS_TITLE=مدير كلمة المرور
 DESC_HOST=Host/Server
 DESC_USER=اسم المستخدم
 DESC_PASS=كلمة المرور
@@ -165,7 +154,6 @@ DESC_Q_TITLE=قائمة الانتظار وجدولة
 MSG_QNAME=اسم قائمة الانتظار
 MSG_Q_START=بدء قائمة الانتظار في
 MSG_Q_STOP=إقاف القائمة في
-
 MSQ_Q_ONETIME=مرة واحدة في
 MSG_Q_DAILY=يوميا
 MSG_Q_D1=الأحد
@@ -182,14 +170,13 @@ DESC_ADV_TITLE=إعدادات متقدمة
 MSG_HALT=إيقاف تشغيل الكمبيوتر بعد اكتمال التحميل
 MSG_AWAKE=منع السبات أو النوم أثناء التنزيلات
 EXEC_CMD=تشغيل البرنامج بعد انتهاء التحميل
-EXE_ANTI_VIR=فحص الملف بمكافح الفيروسات بعد التحميل
+EXE_ANTI_VIR=Sفحص الملف بمكافح الفيروسات بعد التحميل
 ANTIVIR_CMD=مكافحة الفيروسات قابل للتنفيذ
 ANTIVIR_ARGS=معلمات سطر الأوامر
 AUTO_START=بدء البرامج عند تشغيل النظام
 MSG_SPEED_LIMIT=تحميل الحد الأقصى للسرعة [كب / ثانية] (0 غير محدود)
 SPEED_LIMIT_TITLE=الحد الأقصى للسرعة
 DEF_QUEUE=القائمة الإفتراضية
-
 Q_LIST_DESC=القائمة
 Q_LIST_FILES=الملفات في قائمة الانتظار
 Q_SCHEDULE_TXT=جدولة
@@ -197,15 +184,16 @@ Q_EDIT_PROP=الخصائص
 Q_MOVE_UP=حرك للاعلى
 Q_MOVE_DN=حرك للاسفل
 Q_MOVE_TO=حرك الى
+Q_WORD=قائمة الإنتظار
 O_VID_FMT=الصيغة
-O_STM_FTM=الحفاظ على
+O_STM_FTM=احتفظ
 VID_FMT_ORIG=أصلي
 VID_FMT_BOTH=كل من الصوت والفيديو
 VID_FMT_AUDIO=الصوت فقط
 VID_FMT_VIDEO=الفيديو فقط
 VID_TITLE=تحميل فيديو
 CTX_OPEN_FILE=فتح
-CTX_OPEN_FOLDER=فتح ملف
+CTX_OPEN_FOLDER=فتح مجلد
 CTX_SAVE_AS=حفظ باسم
 CTX_COPY_URL=إنسخ الرابط
 CTX_COPY_FILE=نسخ الملف
@@ -214,8 +202,8 @@ ERR_MSG_FILE_NOT_FOUND_MSG=تم نقل الملف أو إعادة تسميته �
 CD_TITLE=تم التحميل
 MSG_DONT_SHOW_AGAIN=لا تعرض هذا مرة أخرى
 CD_LOC=موقعك
-CD_OPEN_FILE=المجلد
-CD_OPEN_FOLDER=فتح المجلد
+CD_OPEN_FILE=فتح
+CD_OPEN_FOLDER=افتح المجلد
 TITLE_PROP=الخصائص
 PROP_SIZE=حجم
 PROP_DATE=تاريخ
@@ -237,22 +225,22 @@ OPT_CONVERT=حول
 TITLE_CONVERT=...التحويل
 OPT_VID_PANE=عرض الخيار لتحميل الفيديو
 OPT_UPDATE_FFMPEG=تحديث المكونات
-LBL_COMPONENT_MISSING=يحتاج مكونات إضافية لتعمل بشكل صحيح 
+LBL_COMPONENT_MISSING=البرنامج يحتاج الى مكونات إضافية ليعمل بشكل صحيح
 LBL_COMPONENT_DESC=مطلوب تنزيل 14 ميغابايت تقريبا
 LBL_COMPONENT_OUTDATED=تحديث مكونات البرنامج
-LBL_APP_OUTDATED= إصدار أحدث من البرنامج متاح الآن
+LBL_APP_OUTDATED=متاح احدث اصدار من البرنامج
 LBL_UPDATE_DESC=يرجى تحديث البرنامج لتحسين الوظائف
 LBL_INSTALL_NOW=تثبيت الآن
 LBL_CONV_FAILED=فشل تحويل
 LBL_CLOSE=غلق
 PROMPT_CRED=إذن المطلوب
-PROMPT_SERVER=الموقع  يتطلب اسم المستخدم وكلمة المرور %s
-PROMPT_PROXY=البروكسي يطلب اسم المستخدم وكلمة السر
+PROMPT_SERVER=الموقع %s يتطلب اسم المستخدم وكلمة المرور
+PROMPT_PROXY=البروكسي يطلب اسم المستخدم وكلمة المرور
 BTN_BROWSE=تصفح
 TITLE_ABOUT=XDM حول
 FULL_NAME=Xtreme Download Manager
-ABOUT_DETAILS=نسخة التطبيق %s مع وقت التشغيل %s %s\n\n مطور البرنامج: Subhra Das Gupta\n\n%s\n حقوق الطبع والنشر (ج) 2018 ، جميع الحقوق محفوظة
-BTN_SEARCH_VIDEO=البحث
+ABOUT_DETAILS=App version %s with runtime %s on %s\n\nCreated by: Subhra Das Gupta\n\n%s\nCopyright (C) 2018, All rights reserved.
+BTN_SEARCH_VIDEO=بحث
 BTN_DOWNLOAD_NOW=تحميل الان
 BTN_DOWNLOAD_LATER=تحميل ﻻحقا
 BTN_STOP_PROCESSING=توقف
@@ -267,7 +255,8 @@ MSG_ADDON_DESC=ولصق هذا العنوان %s يرجى فتح %s
 MSG_GENERIC_ADDON_DESC=يرجى المحاولة الروابط أدناه لتثبيت الملحق\n\n%s\n%s
 MSG_LINUX_SUDO=sudo (Ubuntu/Debian based)
 MSG_LINUX_SU='su -c' (Fedora/Arch based)
-MSG_LINUX_SHUTDOWN_PROMPT=يحتاج الجذر لتفويض عملية إغلاق الحاسوب\n بدلا من ذلك يمكنك إنشاء إيقاف البرنامج النصي، حدد تشغيل البرنامج بعد انتهاء التحميل و تقديم سيناريو المسار
+MSG_LINUX_SHUTDOWN_PROMPT=يحتاج الجذر لتفويض عملية إغلاق الحاسوب
+n\n بدلا من ذلك يمكنك إنشاء إيقاف البرنامج النصي، حدد تشغيل البرنامج بعد انتهاء التحميل و تقديم سيناريو المسار
 MSG_ROOT_PASSWORD=كلمة مرور الجذر
 MSG_RESTORE=استعادة النافذة
 MENU_IMPORT=استيراد
@@ -281,65 +270,62 @@ CTX_PASTE=لصق
 CTX_SELECT_ALL=اختر الكل
 MSG_COMPONENT_TITLE=تثبيت العناصر
 MSG_INSTALL_ADDITIONAL_COMPONENTS=تحميل مكونات الآن ؟n\.تحتاج مكونات إضافية إلى تحميل هذا الفيديو
-LBL_MORE_FORMAT=More fomats
-LBL_FORMAT_HINT=Please select desired format in video player
-LBL_SAVE_IN=Save in
-LBL_QUEUE_USE=Queue
-LBL_QUEUE_OPT1=Create new queue
-LBL_QUEUE_OPT2=Add to existing queue
-LBL_QUEUE_OPT3=Do not use queue
-LBL_NEW_QUEUE=Name
-LBL_CONVERT_TO=Convert to
-LBL_OUTPUT_FOLDER=Output folder
-LBL_LOADING=Loading %s
-LBL_FILE_CONVERT_PRG=Converting %s
-LBL_VOLUME_BOOST=Boost
-LBL_CONV_SUCCESS=Conversion successful
-LBL_CONV_FAILED=Conversion failed
-LBL_OVERWRITE_EXISTING=Overwrite existing file
-LBL_GENERAL_CAT=General
-LBL_MIN_VIDEO_SIZE=Download video larger than
-LBL_STOP_Q=Stop queue processesing?
-LBL_DELETE_FILE=Delete files from disk
-LBL_TEMP_FOLDER=Temporary folder
-LBL_START_AUTO=Start download automatically
-LBL_HW_ACCEL=Hardware acceleration
-LBL_START_QUEUE_PROCESSING=Start queue processing?
-LBL_DOWNLOAD=DOWNLOAD
-LBL_DOWNLOAD_SMALL=Download
-LBL_SELECT_ALL=Select all
-LBL_NOT_A_VIDEO=The download is not a video and can not be previewed. Would you like to view the partially downloaded files?
+LBL_MORE_FORMAT=مزيد من التنسيقات
+LBL_FORMAT_HINT=الرجاء تحديد التنسيق المطلوب في مشغل الفيديو
+LBL_SAVE_IN=أحفظ في
+LBL_QUEUE_USE=قائمه الانتظار
+LBL_QUEUE_OPT1=انشاء قائمه انتظار
+LBL_QUEUE_OPT2=إضافة إلى قائمة الانتظار الحالية
+LBL_QUEUE_OPT3=لا تستخدم قائمة الانتظار
+LBL_NEW_QUEUE=اسم
+LBL_CONVERT_TO=حول الى
+LBL_OUTPUT_FOLDER=مجلد الإخراج
+LBL_LOADING=جاري التحميل %s
+LBL_FILE_CONVERT_PRG=تحويل %s
+LBL_VOLUME_BOOST=تعزيز
+LBL_CONV_SUCCESS=تم التحويل بنجاح
+LBL_CONV_FAILED=فشل التحويل
+LBL_OVERWRITE_EXISTING=الكتابة على مستند موجود
+LBL_GENERAL_CAT=عام
+LBL_MIN_VIDEO_SIZE=تحميل الملفات أكبر من
+LBL_STOP_Q=هل تريد إيقاف تشغيل قائمة الانتظار؟
+LBL_DELETE_FILE=حذف الملفات من القرص
+LBL_TEMP_FOLDER=المجلد المؤقت
+LBL_START_AUTO=بدء التحميل تلقائيا
+LBL_HW_ACCEL=استخدام العتاد للتسريع
+LBL_START_QUEUE_PROCESSING=بدأ المعالجة الصفية؟
+LBL_DOWNLOAD=تحميل
+LBL_DOWNLOAD_SMALL=تحميل
+LBL_SELECT_ALL=اختر الكل
+LBL_NOT_A_VIDEO=هذا التحميل ليس فيديو ولا يمكن معاينته. هل ترغب في عرض الملفات التي تم تنزيلها جزئيا؟
 LBL_TRANSLATED_BY=Subhra Das Gupta
-LBL_BATCH_EMPTY_CLIPBOARD=Clipboard is empty
-LBL_REPORT_PROBLEM=Report a bug
-LBL_LIKE_ON_FB=Like on Facebook
-LBL_SUPPORT_PAGE=Support page
-LBL_OPTIMIZE_NETWORK=Network optimization
-LBL_NET_OPT_MSG=Select your network type
-LBL_NET_OPT_DEF=System default
-LBL_NET_OPT_64=Low speed: Dial Up modem / ISDN / Bluetooth / Mobile Edge / IrDA
-LBL_NET_OPT_128=Medium speed: ADSL / DSL /  Mobile 3G / Wi-Fi / Bluetooth 3.0 / other
-LBL_NET_OPT_256=High speed: Direct connection (Ethernet/Cable) / Wi-Fi / Mobile 4G / other
-LBL_TRANSLATE=Translate XDM
-LBL_TWITTER_PAGE=XDM on Twitter
-LBL_GET_TIMESTAMP=Get timestamp from server
-LBL_TRANSPARENCY=Do not use transparency
-LBL_FORCE_FOLDER=Download all files to a single folder
-LBL_SHOW_TRAY=Show tray icon (needs restart)
-MENU_CLIP_ADD_MENU=Add from clipboard
-LBL_BATCH_DESC=Download a group of sequential files using asterisk wild card (example http://xdman.sourceforge.net/images/edge*.png)
-LBL_BATCH_ASTERISK=Replace asterisk with
-LBL_BATCH_LETTER=Letters
-LBL_BATCH_NUM=Numbers
-LBL_BATCH_FROM=From
-LBL_BATCH_TO=To
-LBL_BATCH_WILDCARD_SIZE=Wildcard size
-LBL_BATCH_CHK_AUTH=Use authorization
-LBL_BATCH_LOGIN_DET=Login
-LBL_BATCH_FILE1=First file
-LBL_BATCH_FILE2=Second file
-LBL_BATCH_FILEN=Last file
-LBL_SHOW_PROGRESS=Show progress
-LBL_FILE_TYPE=File type
-LBL_ALL_QUEUE=All queues
-LBL_SHOW_VIDEO_ONLY_IN_BROWSER=Disable floating 'DOWNLOAD VIDEO' popup
+LBL_BATCH_EMPTY_CLIPBOARD=الحافظة فارغة
+LBL_REPORT_PROBLEM=الإبلاغ عن خطأ
+LBL_LIKE_ON_FB=الإعجاب بصفحة الفيس بوك
+LBL_SUPPORT_PAGE=صفحة الدعم 
+LBL_OPTIMIZE_NETWORK=تحسين الشبكة
+LBL_NET_OPT_MSG=حدد نوع الشبكة
+LBL_NET_OPT_DEF=النظام الافتراضي
+LBL_NET_OPT_64=Dial Up modem / ISDN / Bluetooth / Mobile Edge / IrDA : سرعة منخفضة 
+LBL_NET_OPT_128=آخر/ADSL / DSL /  Mobile 3G / Wi-Fi /Bluetooth 3.0  : سرعة متوسطة
+LBL_NET_OPT_256=آخر/ Wi-Fi / Mobile 4G / Direct connection (Ethernet/Cable) : سرعة عالية
+LBL_TRANSLATE=XDM ترجمة 
+LBL_TWITTER_PAGE=تابعنا على تويتر
+LBL_GET_TIMESTAMP=الحصول على الطابع الزمني من الخادم
+LBL_TRANSPARENCY=لا تستخدم الشفافية
+LBL_FORCE_FOLDER=قم بتنزيل كافة الملفات إلى مجلد واحد
+LBL_SHOW_TRAY=اظهار ايقونة البرنامج في لوحة النظام (تحتاج إلى إعادة التشغيل)
+MENU_CLIP_ADD_MENU=أضف من الحافظة
+LBL_BATCH_DESC=قم بتنزيل مجموعة من الملفات المتسلسلة باستخدام بطاقة النجمة البرية (على سبيل المثال http://xdman.sourceforge.net/images/edge*.png)
+LBL_BATCH_ASTERISK=استبدل العلامة النجمية بـ
+LBL_BATCH_LETTER=حروف
+LBL_BATCH_NUM=أعداد
+LBL_BATCH_FROM=من عند
+LBL_BATCH_TO=إلى
+LBL_BATCH_WILDCARD_SIZE=حجم حرف البدل
+LBL_BATCH_CHK_AUTH=استخدم التفويض
+LBL_BATCH_LOGIN_DET=تسجيل الدخول
+LBL_BATCH_FILE1=الملف الأول
+LBL_BATCH_FILE2=الملف الثاني
+LBL_BATCH_FILEN=الملف الأخير
+LBL_SHOW_PROGRESS=عرض التقدم
