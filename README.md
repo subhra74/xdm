@@ -1,7 +1,40 @@
 # Xtreme Download Manager
 Xtreme Download Manager is a powerful tool to increase download speed up-to 500%, save streaming videos from YouTube, DailyMotion, Facebook, Vimeo, Google Video and 1000+ other websites, resume broken/dead downloads, schedule and convert downloads. XDM seamlessly integrates with Google Chrome, Mozilla Firefox Quantum, Opera, Vivaldi and other Chroumium and Firefox based browsers, to take over downloads and saving streaming videos from web. XDM has a built in video converter which lets you convert your downloaded videos to different formats so that you can watch then on your mobile or TV (100+ devices are supported)
 
-# <a href="http://xdman.sourceforge.net/#downloads" download>Download Now</a>
+
+
+<h2>Downloads:</h2>
+
+<table>
+  <tr>
+    <th>Windows</th>
+    <th>Linux 64 bit</th>
+    <th>Linux 32 bit</th>
+    <th>MacOS</th>
+    <th>Other</th>
+  </tr>
+  <tr>
+    <td>
+      <a href="https://sourceforge.net/projects/xdman/files/xdmsetup-2018.msi/download">MSI installer</a>
+    </td>
+    <td>
+      <a href="https://sourceforge.net/projects/xdman/files/xdm-2018-x64.tar.xz/download">Linux installer</a>
+    </td>
+    <td>
+      <a href="https://sourceforge.net/projects/xdman/files/xdm-2018-x86.tar.xz/download">Linux installer</a>
+    </td>
+    <td>
+      <a href="https://sourceforge.net/projects/xdman/files/XDMSetup.dmg/download">DMG installer</a>
+    </td>
+    <td>
+      <a href="http://xdman.sourceforge.net/xdman.jar">JAR (Java 11)</a>
+    </td>
+  </tr>
+</table>
+
+<h3>Alternative downloads are available at: <a href="https://github.com/subhra74/xdm/releases/latest">Release page</a></h3>
+
+
 
 <h3>Screenshots</h3>
 
