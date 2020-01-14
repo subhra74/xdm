@@ -38,7 +38,7 @@ public class AboutPage extends Page {
 		y += getScaledInt(20);
 
 		String details = String.format(StringResource.get("ABOUT_DETAILS"), XDMApp.APP_VERSION,
-				System.getProperty("java.version"), System.getProperty("os.name"), "http://xdman.sourceforge.net");
+				System.getProperty("java.version"), System.getProperty("os.name"), "https://github.com/subhra74/xdm");
 
 		h = getScaledInt(250);
 		JTextArea lblDetails = new JTextArea();
