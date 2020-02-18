@@ -66,13 +66,14 @@ public class XDMFrame extends JFrame implements ComponentListener {
 		dialogPane = new LayeredPanel(40);
 		dialogPane.setVisible(false);
 		createResizeGrip();
+
 		panTitle = new TitlePanel(new BorderLayout(), this);
 		panTitle.setBackground(ColorResource.getTitleColor());
 		panTitle.setBorder(new EmptyBorder(XDMUtils.getScaledInt(5),
 				XDMUtils.getScaledInt(5), XDMUtils.getScaledInt(0),
 				XDMUtils.getScaledInt(5)));
 		panTitle.setOpaque(true);
-		registerTitlePanel(panTitle);
+
 		panClient = new JPanel(new BorderLayout());
 		panClient.setBackground(Color.WHITE);
 		JPanel panContent = new JPanel(new BorderLayout());
@@ -212,7 +213,7 @@ public class XDMFrame extends JFrame implements ComponentListener {
 
 	Box vBox;
 
-	protected void registerTitlePanel(JPanel panel) {
+	protected Component createWindowButtons() {
 
 		vBox = Box.createVerticalBox();
 		vBox.setOpaque(true);
@@ -307,10 +308,7 @@ public class XDMFrame extends JFrame implements ComponentListener {
 		// btn.setRolloverIcon(ImageResource.get("close_btn_r.png"));
 		hBox.add(btn);
 
-		vBox.add(hBox);
-		vBox.add(Box.createVerticalGlue());
-
-		panel.add(vBox, BorderLayout.EAST);
+		return hBox;
 	}
 
 	ActionListener actClose = new ActionListener() {

@@ -90,6 +90,8 @@ public class MainWindow extends XDMFrame implements ActionListener {
 	UpdateNotifyPanel updateNotifyPanel;
 	JLabel btnMonitoring;
 
+	private Box rightbox; // holds tabs, menu and window control buttons
+
 	public MainWindow() {
 		setTitle(XDMApp.XDM_WINDOW_TITLE);
 		setWindowSizeAndPosition();
@@ -110,16 +112,16 @@ public class MainWindow extends XDMFrame implements ActionListener {
 		});
 	}
 
-	@Override
-	protected void registerTitlePanel(JPanel panel) {
-		showTwitterIcon = true;
-		showFBIcon = true;
-		showGitHubIcon = true;
-		fbUrl = "https://www.facebook.com/XDM.subhra74/";
-		twitterUrl = "https://twitter.com/XDM_subhra74";
-		gitHubUrl = "https://github.com/subhra74/xdm";
-		super.registerTitlePanel(panel);
-	}
+//	@Override
+//	protected void registerTitlePanel(JPanel panel) {
+//		showTwitterIcon = true;
+//		showFBIcon = true;
+//		showGitHubIcon = true;
+//		fbUrl = "https://www.facebook.com/XDM.subhra74/";
+//		twitterUrl = "https://twitter.com/XDM_subhra74";
+//		gitHubUrl = "https://github.com/subhra74/xdm";
+//		super.registerTitlePanel(panel);
+//	}
 
 	private String getQueueName(String str) {
 		if (str == null) {
@@ -579,11 +581,42 @@ public class MainWindow extends XDMFrame implements ActionListener {
 		bar.add(tools);
 		bar.add(help);
 
+		// bar.setAlignmentX(Box.RIGHT_ALIGNMENT);
+		// bar.setAlignmentY(Box.TOP_ALIGNMENT);
+
+//		Box vbox1=Box.createVerticalBox();
+//		vbox1.setPreferredSize(new Dimension(300, 30));
+//		vbox1.setOpaque(true);
+//		vbox1.setBackground(Color.RED);
+//		vbox1.setMinimumSize(new Dimension(300, 30));
+//		vbox1.add(bar);
+//		vbox1.add(Box.createVerticalGlue());
+
+//		JPanel panel = new JPanel(new BorderLayout());
+//		Box hb1 = Box.createHorizontalBox();
+//		hb1.add(Box.createHorizontalGlue());
+//		hb1.add(bar);
+//		hb1.add(Box.createHorizontalStrut(getScaledInt(30)));
+//		panel.add(hb1, BorderLayout.NORTH);
+
+//
+//		Box menuBox = Box.createHorizontalBox();
+//		menuBox.setOpaque(true);
+//		menuBox.setBackground(Color.RED);
+//		bar.setBackground(Color.RED);
+//		//menuBox.add(Box.createHorizontalGlue());
+//		menuBox.add(bar);
+//		//menuBox.add(Box.createHorizontalStrut(getScaledInt(30)));
+//		getTitlePanel().add(panel);
+
 		Box menuBox = Box.createHorizontalBox();
+		menuBox.setBorder(new EmptyBorder(0, 0, getScaledInt(20), 0));
 		menuBox.add(Box.createHorizontalGlue());
 		menuBox.add(bar);
 		menuBox.add(Box.createHorizontalStrut(getScaledInt(30)));
-		getTitlePanel().add(menuBox);
+		menuBox.add(super.createWindowButtons());
+		menuBox.setAlignmentX(Box.RIGHT_ALIGNMENT);
+		this.rightbox.add(menuBox);
 	}
 
 	private JMenu createMenu(String title) {
@@ -846,10 +879,8 @@ public class MainWindow extends XDMFrame implements ActionListener {
 		btnCompletedTab.setBackground(ColorResource.getTitleColor());
 		btnCompletedTab.setForeground(ColorResource.getDeepFontColor());
 
-		JPanel pp = new JPanel(new BorderLayout());
-		pp.setOpaque(false);
-
 		JPanel p = new JPanel(new GridLayout(1, 3, scale(5), 0));
+		p.setBorder(null);
 		p.setOpaque(false);
 		Dimension d = new Dimension(scale(380), scale(30));
 		p.setPreferredSize(d);
@@ -859,9 +890,14 @@ public class MainWindow extends XDMFrame implements ActionListener {
 		p.add(btnAllTab);
 		p.add(btnIncompleteTab);
 		p.add(btnCompletedTab);
-		pp.add(p, BorderLayout.EAST);
 
-		getTitlePanel().add(pp, BorderLayout.SOUTH);
+		p.setAlignmentX(Box.RIGHT_ALIGNMENT);
+
+		this.rightbox.add(p);
+
+		// pp.add(p, BorderLayout.EAST);
+
+		// getTitlePanel().add(pp, BorderLayout.SOUTH);
 	}
 
 	private void tabClicked(ActionEvent e) {
@@ -878,13 +914,25 @@ public class MainWindow extends XDMFrame implements ActionListener {
 
 	private void initWindow() {
 		setIconImage(ImageResource.get("icon.png").getImage());
+
+		showTwitterIcon = true;
+		showFBIcon = true;
+		showGitHubIcon = true;
+		fbUrl = "https://www.facebook.com/XDM.subhra74/";
+		twitterUrl = "https://twitter.com/XDM_subhra74";
+		gitHubUrl = "https://github.com/subhra74/xdm";
+
 		JLabel lblTitle = new JLabel(XDMApp.XDM_WINDOW_TITLE);
-		lblTitle.setBorder(new EmptyBorder(scale(20), scale(20), 0, 0));
+		lblTitle.setBorder(new EmptyBorder(scale(20), scale(20), scale(20), 0));
 		lblTitle.setFont(FontResource.getBiggestFont());
 		lblTitle.setForeground(ColorResource.getWhite());
-		getTitlePanel().add(lblTitle, BorderLayout.WEST);
-		createTabs();
+		getTitlePanel().add(lblTitle);
+		this.rightbox = Box.createVerticalBox();
+
 		createMainMenu();
+		rightbox.add(Box.createVerticalGlue());
+		createTabs();
+		getTitlePanel().add(rightbox, BorderLayout.EAST);
 
 		BarPanel bp = new BarPanel();
 		bp.setLayout(new BorderLayout());
