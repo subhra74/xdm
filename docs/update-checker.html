@@ -10,9 +10,7 @@
         if (match != null) {
             currentVersion = match[1];
         }
-        if (!currentVersion) {
-            return;
-        }
+        
         var xmlhttp = new XMLHttpRequest();
         var url = "https://api.github.com/repos/subhra74/xdm/releases/latest";
 
