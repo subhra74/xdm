@@ -2,6 +2,7 @@
 
 <head>
   <script src="popup.js"></script>
+  <link rel="stylesheet" href="styles.css">
   <!-- <style>
     /* width */
 
@@ -49,16 +50,12 @@
 
 <body style="min-width: 400px; display: flex; flex-direction: column;">
   <div>
-    <div style="font-size: 15px;">XDM Browser Monitor</div>
-  </div>
-  <div style="display: flex; justify-content: space-between;">
-    <span>Browser monitoring</span>
-    <input type="checkbox" id="chk" />
+    <div style="font-size: 18px; padding: 15px;">XDM Browser Monitor</div>
   </div>
   <div id="content">
     <div id="list">
 
-      <table id="table" style="display: block; max-height: 500px; overflow-y: auto;background: rgb(240,240,240);">
+      <table id="table" style="display: block; max-height: 400px; overflow-y: auto;background: rgb(240,240,240); margin: 0px; padding: 0px;">
 
       </table>
 
@@ -68,7 +65,10 @@
       <input type="button" value="Clear items" id="clear" class="button" />
     </div>
   </div>
-
+  <div style="display: flex; justify-content: space-between;">
+    <span>Browser monitoring</span>
+    <input type="checkbox" id="chk" />
+  </div>
 </body>
 
 </html>

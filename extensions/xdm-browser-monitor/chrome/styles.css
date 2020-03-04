@@ -1,5 +1,4 @@
-.popup-bg{
-    background-color: rgb(80,80,80);
-    color: rgb(240,240,240);
-    border-radius: 10px;
+html body{
+    padding: 0px;
+    margin: 0px;
 }
