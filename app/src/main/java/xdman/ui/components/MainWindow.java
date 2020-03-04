@@ -325,13 +325,12 @@ public class MainWindow extends XDMFrame implements ActionListener {
 					XDMApp.getInstance().saveDownloadList(file);
 				}
 			} else if ("MENU_CONTENTS".equals(name)) {
-				XDMUtils.browseURL("http://xdman.sourceforge.net/#help");
+				XDMUtils.browseURL("https://github.com/subhra74/xdm/wiki");
 			} else if ("MENU_HOME_PAGE".equals(name)) {
-				XDMUtils.browseURL("http://xdman.sourceforge.net/");
+				XDMUtils.browseURL("https://github.com/subhra74/xdm");
 			} else if ("MENU_UPDATE".equals(name)) {
 				XDMUtils.browseURL(
-						"http://xdman.sourceforge.net/update/update.php?ver="
-								+ XDMApp.APP_VERSION);
+						"https://subhra74.github.io/xdm/update-checker.html?v=" + XDMApp.APP_VERSION);
 			} else if ("MENU_LANG".equals(name)) {
 				showLanguageDlg();
 			} else if ("MENU_BATCH_DOWNLOAD".equals(name)) {
@@ -573,7 +572,7 @@ public class MainWindow extends XDMFrame implements ActionListener {
 		addMenuItem("LBL_REPORT_PROBLEM", help);
 		addMenuItem("LBL_TRANSLATE", help);
 		addMenuItem("MENU_UPDATE", help);
-		addMenuItem("OPT_UPDATE_FFMPEG", help);
+		//addMenuItem("OPT_UPDATE_FFMPEG", help);
 		addMenuItem("MENU_ABOUT", help);
 
 		bar.add(file);
@@ -1485,17 +1484,17 @@ public class MainWindow extends XDMFrame implements ActionListener {
 
 	private void openTranslationPage() {
 		XDMUtils.browseURL(
-				"https://sourceforge.net/p/xdman/discussion/translate/");
+				"https://github.com/subhra74/xdm/translations");
 	}
 
 	private void openSupportPage() {
 		XDMUtils.browseURL(
-				"https://sourceforge.net/p/xdman/discussion/xdmhelp/");
+				"https://github.com/subhra74/xdm/wiki");
 	}
 
 	private void openBugReportPage() {
 		XDMUtils.browseURL(
-				"https://sourceforge.net/p/xdman/discussion/xdmbug/");
+				"https://github.com/subhra74/xdm/issues");
 	}
 
 	private int scale(int i) {

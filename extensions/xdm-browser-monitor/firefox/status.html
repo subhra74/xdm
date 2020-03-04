@@ -1,0 +1,71 @@
+<html>
+
+<head>
+  <script src="popup.js"></script>
+  <style>
+    /* width */
+
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    /* Track */
+
+    ::-webkit-scrollbar-track {
+      background: #e4e3e3;
+    }
+
+    /* Handle */
+
+    ::-webkit-scrollbar-thumb {
+      background: #888;
+    }
+
+    /* Handle on hover */
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+
+    .button {
+      background-color: #008CBA;
+      /* Green */
+      border: none;
+      color: white;
+      padding: 5px 5px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      margin: 4px 2px;
+      cursor: pointer;
+    }
+
+    td:hover {
+      color: rgb(80, 80, 80);
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body style="text-align: center; min-width: 400px; background: rgb(230,230, 230);margin: 0px;">
+  <div style="margin: 10px;">
+    <input type="checkbox" id="chk" />
+    <label for="chk">Browser monitoring</label>
+  </div>
+  <div id="content">
+    <div id="list">
+
+      <table id="table" style="display: block; max-height: 500px; overflow-y: auto;background: rgb(240,240,240);">
+
+      </table>
+
+    </div>
+    <div style="margin: 10px;">
+      <input type="button" value="More formats" class="button" id="format" />
+      <input type="button" value="Clear items" id="clear" class="button" />
+    </div>
+  </div>
+
+</body>
+
+</html>
