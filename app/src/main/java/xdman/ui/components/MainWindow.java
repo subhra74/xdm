@@ -914,8 +914,8 @@ public class MainWindow extends XDMFrame implements ActionListener {
 	private void initWindow() {
 		setIconImage(ImageResource.get("icon.png").getImage());
 
-		showTwitterIcon = true;
-		showFBIcon = true;
+		showTwitterIcon = false;
+		showFBIcon = false;
 		showGitHubIcon = true;
 		fbUrl = "https://www.facebook.com/XDM.subhra74/";
 		twitterUrl = "https://twitter.com/XDM_subhra74";

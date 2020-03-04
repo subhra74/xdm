@@ -3,35 +3,45 @@ package xdman.util;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.InputStream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import xdman.Config;
 import xdman.XDMApp;
 import xdman.network.http.JavaHttpClient;
+import xdman.network.http.XDMHttpClient;
 
 public class UpdateChecker {
-	private static final String APP_UPDAT_URL = "http://xdman.sourceforge.net/update/update_check.php",
+	private static final String APP_UPDAT_URL = "https://api.github.com/repos/subhra74/xdm/releases/latest",
 			COMPONENTS_UPDATE_URL = "http://xdman.sourceforge.net/components/update_check.php";
-	public static final int APP_UPDATE_AVAILABLE = 10, COMP_UPDATE_AVAILABLE = 20, COMP_NOT_INSTALLED = 30,
+	public static final int APP_UPDATE_AVAILABLE = 10,
+			COMP_UPDATE_AVAILABLE = 20, COMP_NOT_INSTALLED = 30,
 			NO_UPDATE_AVAILABLE = 40;
 
-	public static int getUpdateStat() {
+	private static final Pattern PATTERN_TAG = Pattern
+			.compile("\\\"tag_name\\\"\\s*:\\s*\\\"(\\d+\\.\\d+\\.\\d+)\\\"");
 
-		int stat = isComponentUpdateAvailable();
-		System.out.println("Stat: " + stat);
-		if (stat == 0) {
-			return COMP_UPDATE_AVAILABLE;
-		} else if (stat == -1) {
-			return COMP_NOT_INSTALLED;
-		} else {
-			System.out.println("checking for app update");
-			if (isAppUpdateAvailable())
-				return APP_UPDATE_AVAILABLE;
-			return NO_UPDATE_AVAILABLE;
-		}
+	public static int getUpdateStat() {
+		System.out.println("checking for app update");
+		if (isAppUpdateAvailable())
+			return APP_UPDATE_AVAILABLE;
+		return NO_UPDATE_AVAILABLE;
+//		int stat = isComponentUpdateAvailable();
+//		System.out.println("Stat: " + stat);
+//		if (stat == 0) {
+//			return COMP_UPDATE_AVAILABLE;
+//		} else if (stat == -1) {
+//			return COMP_NOT_INSTALLED;
+//		} else {
+//			System.out.println("checking for app update");
+//			if (isAppUpdateAvailable())
+//				return APP_UPDATE_AVAILABLE;
+//			return NO_UPDATE_AVAILABLE;
+//		}
 	}
 
 	private static boolean isAppUpdateAvailable() {
-		return isUpdateAvailable(true, XDMApp.APP_VERSION);
+		return isUpdateAvailable(XDMApp.APP_VERSION);
 	}
 
 	// return 1 is no update required
@@ -41,7 +51,7 @@ public class UpdateChecker {
 		System.out.println("current component version: " + componentVersion);
 		if (componentVersion == null)
 			return -1;
-		return isUpdateAvailable(false, componentVersion) ? 0 : 1;
+		return isUpdateAvailable(componentVersion) ? 0 : 1;
 	}
 
 	public static String getComponentVersion() {
@@ -76,24 +86,24 @@ public class UpdateChecker {
 		return files[0].split("\\.")[0];
 	}
 
-	private static boolean isUpdateAvailable(boolean app, String version) {
+	private static boolean isUpdateAvailable(String version) {
 		JavaHttpClient client = null;
 		try {
-			client = new JavaHttpClient((app ? APP_UPDAT_URL : COMPONENTS_UPDATE_URL) + "?ver=" + version);
+			client = new JavaHttpClient(APP_UPDAT_URL + "?ver=" + version);
 			client.setFollowRedirect(true);
 			client.connect();
 			int resp = client.getStatusCode();
 			Logger.log("manifest download response: " + resp);
 			if (resp == 200) {
 				InputStream in = client.getInputStream();
-				StringBuffer sb = new StringBuffer();
+				StringBuilder sb = new StringBuilder();
 				while (true) {
 					int x = in.read();
 					if (x == -1)
 						break;
 					sb.append((char) x);
 				}
-				return isNewerVersion(sb.toString(), XDMApp.APP_VERSION);
+				return isNewerVersion(sb, XDMApp.APP_VERSION);
 			}
 		} catch (Exception e) {
 			Logger.log(e);
@@ -106,23 +116,29 @@ public class UpdateChecker {
 		return false;
 	}
 
-	private static boolean isNewerVersion(String v1, String v2) {
-		System.out.println(v1 + " " + v2);
+	private static boolean isNewerVersion(StringBuilder text, String v2) {
 		try {
-			if (v1.indexOf(".") > 0 && v2.indexOf(".") > 0) {
-				String[] arr1 = v1.split("\\.");
-				String[] arr2 = v2.split("\\.");
-				for (int i = 0; i < Math.min(arr1.length, arr2.length); i++) {
-					int ia = Integer.parseInt(arr1[i]);
-					int ib = Integer.parseInt(arr2[i]);
-					if (ia > ib) {
-						return true;
+			//System.out.println(text);
+			Matcher matcher = PATTERN_TAG.matcher(text);
+			if (matcher.find()) {
+				String v1 = matcher.group(1);
+				System.out.println(v1 + " " + v2);
+				if (v1.indexOf(".") > 0 && v2.indexOf(".") > 0) {
+					String[] arr1 = v1.split("\\.");
+					String[] arr2 = v2.split("\\.");
+					for (int i = 0; i < Math.min(arr1.length,
+							arr2.length); i++) {
+						int ia = Integer.parseInt(arr1[i]);
+						int ib = Integer.parseInt(arr2[i]);
+						if (ia > ib) {
+							return true;
+						}
 					}
 				}
 			}
-			return false;
 		} catch (Exception e) {
-			return false;
+			e.printStackTrace();
 		}
+		return false;
 	}
 }
