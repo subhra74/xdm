@@ -4,7 +4,7 @@
   "minimum_chrome_version": "18.0",
   "name": "XDM Browser Monitor",
   "description": "XDM integration module for Firefox and Chromimum based browsers",
-  "version": "2.0",
+  "version": "2.1",
   "icons": {
     "48": "icon.png"
   },
@@ -18,7 +18,6 @@
     "tabs",
     "cookies",
     "contextMenus",
-    "activeTab",
     "webRequest",
     "webRequestBlocking",
     "*://*/*"

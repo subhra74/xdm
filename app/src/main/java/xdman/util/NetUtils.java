@@ -15,7 +15,8 @@ public class NetUtils {
 		while (true) {
 			int x = in.read();
 			if (x == -1)
-				throw new IOException("Unexpected EOF while reading header line");
+				throw new IOException(
+						"Unexpected EOF while reading header line");
 			if (x == '\n')
 				return buf.toString();
 			if (x != '\r')
@@ -51,7 +52,8 @@ public class NetUtils {
 		}
 	}
 
-	public static InputStream getInputStream(HeaderCollection respHeaders, InputStream inStream) throws IOException {
+	public static InputStream getInputStream(HeaderCollection respHeaders,
+			InputStream inStream) throws IOException {
 		String transferEncoding = respHeaders.getValue("transfer-encoding");
 		if (!StringUtils.isNullOrEmptyOrBlank(transferEncoding)) {
 			inStream = new ChunkedInputStream(inStream);
@@ -61,20 +63,24 @@ public class NetUtils {
 		if (!StringUtils.isNullOrEmptyOrBlank(contentEncoding)) {
 			if (contentEncoding.equalsIgnoreCase("gzip")) {
 				inStream = new GZIPInputStream(inStream);
-			} else if (!(contentEncoding.equalsIgnoreCase("none") || contentEncoding.equalsIgnoreCase("identity"))) {
-				throw new IOException("Content Encoding not supported: " + contentEncoding);
+			} else if (!(contentEncoding.equalsIgnoreCase("none")
+					|| contentEncoding.equalsIgnoreCase("identity"))) {
+				throw new IOException(
+						"Content Encoding not supported: " + contentEncoding);
 			}
 		}
 		return inStream;
 	}
 
-	public static void skipRemainingStream(HeaderCollection respHeaders, InputStream inStream) throws IOException {
+	public static void skipRemainingStream(HeaderCollection respHeaders,
+			InputStream inStream) throws IOException {
 		inStream = getInputStream(respHeaders, inStream);
 		long length = getContentLength(respHeaders);
 		skipRemainingStream(inStream, length);
 	}
 
-	public static void skipRemainingStream(InputStream inStream, long length) throws IOException {
+	public static void skipRemainingStream(InputStream inStream, long length)
+			throws IOException {
 		byte buf[] = new byte[8192];
 		if (length > 0) {
 			while (length > 0) {
@@ -93,18 +99,41 @@ public class NetUtils {
 		}
 	}
 
+	private static String getExtendedContentDisposition(String header) {
+		try {
+			String arr[] = header.split(";");
+			for (String str : arr) {
+				if (str.contains("filename*")) {
+					int index = str.lastIndexOf("'");
+					if (index > 0) {
+						String st = str.substring(index + 1);
+						return XDMUtils.decodeFileName(st);
+					}
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
 	public static String getNameFromContentDisposition(String header) {
 		try {
 			if (header == null)
 				return null;
 			String headerLow = header.toLowerCase();
-			if (headerLow.startsWith("attachment") || headerLow.startsWith("inline")) {
+			if (headerLow.startsWith("attachment")
+					|| headerLow.startsWith("inline")) {
+				String name = getExtendedContentDisposition(header);
+				if (name != null)
+					return name;
 				String arr[] = header.split(";");
 				for (int i = 0; i < arr.length; i++) {
 					String str = arr[i].trim();
 					if (str.toLowerCase().startsWith("filename")) {
 						int index = str.indexOf('=');
-						String file = str.substring(index + 1).replace("\"", "").trim();
+						String file = str.substring(index + 1).replace("\"", "")
+								.trim();
 						try {
 							return XDMUtils.decodeFileName(file);
 						} catch (Exception e) {
