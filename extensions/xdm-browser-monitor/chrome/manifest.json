@@ -6,7 +6,8 @@
   "description": "XDM integration module for Firefox and Chromimum based browsers",
   "version": "2.1",
   "icons": {
-    "48": "icon.png"
+    "48": "icon.png",
+    "128": "icon-128.png"
   },
   "background": {
     "page": "background.html"
