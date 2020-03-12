@@ -1,11 +1,13 @@
 {
+  "update_url": "https://clients2.google.com/service/update2/crx",
   "manifest_version": 2,
   "minimum_chrome_version": "18.0",
-  "name": "XDM Browser Monitor",
-  "description": "XDM integration module for Firefox Quantum",
+  "name": "Xtreme Download Manager",
+  "description": "XDM is an open source download manager",
   "version": "2.1",
   "icons": {
-    "48": "icon.png"
+    "48": "icon.png",
+    "128": "icon-128.png"
   },
   "background": {
     "page": "background.html"
@@ -17,16 +19,10 @@
     "tabs",
     "cookies",
     "contextMenus",
-    "activeTab",
     "webRequest",
     "webRequestBlocking",
     "*://*/*"
   ],
-  "applications": {
-    "gecko": {
-      "id": "browser-mon@xdman.sourceforge.net"
-    }
-  },
   "commands": {
     "toggle-monitoring": {
       "suggested_key": {

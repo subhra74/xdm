@@ -2,70 +2,48 @@
 
 <head>
   <script src="popup.js"></script>
-  <style>
-    /* width */
-
-    ::-webkit-scrollbar {
-      width: 10px;
-    }
-
-    /* Track */
-
-    ::-webkit-scrollbar-track {
-      background: #e4e3e3;
-    }
-
-    /* Handle */
-
-    ::-webkit-scrollbar-thumb {
-      background: #888;
-    }
-
-    /* Handle on hover */
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: #555;
-    }
-
-    .button {
-      background-color: #008CBA;
-      /* Green */
-      border: none;
-      color: white;
-      padding: 5px 5px;
-      text-align: center;
-      text-decoration: none;
-      display: inline-block;
-      margin: 4px 2px;
-      cursor: pointer;
-    }
-
-    td:hover {
-      color: rgb(80, 80, 80);
-      cursor: pointer;
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css">
 </head>
 
-<body style="text-align: center; min-width: 400px; background: rgb(230,230, 230);margin: 0px;">
-  <div style="margin: 10px;">
-    <input type="checkbox" id="chk" />
-    <label for="chk">Browser monitoring</label>
+<body style="min-width: 400px; font-family:helvetica,arial,courier;">
+  <div style="font-size: 18px; border-bottom: 1px solid lightgray; padding: 15px; ">
+    XDM Browser Monitor
   </div>
-  <div id="content">
-    <div id="list">
+<div >
+  <div id="content" >
+    <div id="list" style="min-height: 200px; max-height: 400px; overflow: hidden; overflow-y: auto;">
 
-      <table id="table" style="display: block; max-height: 500px; overflow-y: auto;background: rgb(240,240,240);">
+      <table id="table"
+        style="overflow-y: auto;background: white; margin: 0px; padding: 0px;font-family:helvetica,arial,courier;">
 
       </table>
 
     </div>
-    <div style="margin: 10px;">
-      <input type="button" value="More formats" class="button" id="format" />
-      <input type="button" value="Clear items" id="clear" class="button" />
+    <div style="padding: 5px; display: flex;">
+      <button id="format" style="flex: 1;" class="flat-button">More formats</button>
+      <div style="padding: 5px;">
+        <div style="width: 1px; background: rgb(230,230,230); height: 20px;">
+
+        </div>
+      </div>
+      <button id="clear" style="flex: 1;"  class="flat-button">Clear items</button>
     </div>
   </div>
+</div>
+  <div style="font-size: 14px; padding-top: 5px; background-color: rgb(240,240,240);border-top: 1px solid rgb(200,200,200);">
+    <div>
+      <div style="display: flex; justify-content: space-between; padding: 20px; padding-top: 10px; padding-bottom: 10px;">
+        <!--span>Browser monitoring</span-->
 
+        <label class="container">Browser monitoring
+          <input type="checkbox"  id="chk">
+          <span class="checkmark"></span>
+        </label>
+
+        <!--input type="checkbox" id="chk" /-->
+      </div>
+    </div>
+  </div>
 </body>
 
 </html>

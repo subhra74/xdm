@@ -482,7 +482,7 @@
             );
 
         //check XDM if is running and enable monitoring
-        setInterval(function () { syncXDM(); }, 1000);
+        setInterval(function () { syncXDM(); }, 5000);
 
         chrome.runtime.onMessage.addListener(
             function (request, sender, sendResponse) {
