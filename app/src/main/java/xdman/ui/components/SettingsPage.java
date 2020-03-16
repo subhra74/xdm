@@ -140,8 +140,8 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 
 	JComboBox<String> cmbCategory;
 
-	private static final String chromeWebStoreURL = "https://chrome.google.com/webstore/detail/xdm-browser-monitor/bgpkelneombgembocnickiddlbebmica",
-			ffAMOURL = "https://subhra74.github.io/xdm-firefox/firefox.html", // "http://xdman.sourceforge.net/addons/xdm_ff_webext.xpi",
+	private static final String chromeWebStoreURL = "https://subhra74.github.io/xdm/redirect.html?target=chrome",
+			ffAMOURL = "https://subhra74.github.io/xdm/redirect.html?target=firefox", // "http://xdman.sourceforge.net/addons/xdm_ff_webext.xpi",
 			operaExtURL = "https://subhra74.github.io/xdm-firefox/chromium.html",
 			directCRXURL = "https://subhra74.github.io/xdm-firefox/chromium.html";
 	// https://subhra74.github.io/xdm-firefox/xdm_ff_webext.xpi

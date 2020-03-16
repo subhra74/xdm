@@ -53,7 +53,7 @@ public class XDMFrame extends JFrame implements ComponentListener {
 
 	private Component lastFocusOwner;
 
-	protected boolean showTwitterIcon, showFBIcon, showGitHubIcon;
+	protected boolean showTwitterIcon=true, showFBIcon=true, showGitHubIcon;
 
 	protected String twitterUrl, fbUrl, gitHubUrl;
 

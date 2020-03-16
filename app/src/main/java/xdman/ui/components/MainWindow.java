@@ -330,7 +330,8 @@ public class MainWindow extends XDMFrame implements ActionListener {
 				XDMUtils.browseURL("https://github.com/subhra74/xdm");
 			} else if ("MENU_UPDATE".equals(name)) {
 				XDMUtils.browseURL(
-						"https://subhra74.github.io/xdm/update-checker.html?v=" + XDMApp.APP_VERSION);
+						"https://subhra74.github.io/xdm/update-checker.html?v="
+								+ XDMApp.APP_VERSION);
 			} else if ("MENU_LANG".equals(name)) {
 				showLanguageDlg();
 			} else if ("MENU_BATCH_DOWNLOAD".equals(name)) {
@@ -572,7 +573,7 @@ public class MainWindow extends XDMFrame implements ActionListener {
 		addMenuItem("LBL_REPORT_PROBLEM", help);
 		addMenuItem("LBL_TRANSLATE", help);
 		addMenuItem("MENU_UPDATE", help);
-		//addMenuItem("OPT_UPDATE_FFMPEG", help);
+		// addMenuItem("OPT_UPDATE_FFMPEG", help);
 		addMenuItem("MENU_ABOUT", help);
 
 		bar.add(file);
@@ -914,8 +915,8 @@ public class MainWindow extends XDMFrame implements ActionListener {
 	private void initWindow() {
 		setIconImage(ImageResource.get("icon.png").getImage());
 
-		showTwitterIcon = false;
-		showFBIcon = false;
+		showTwitterIcon = true;
+		showFBIcon = true;
 		showGitHubIcon = true;
 		fbUrl = "https://www.facebook.com/XDM.subhra74/";
 		twitterUrl = "https://twitter.com/XDM_subhra74";
@@ -1483,18 +1484,15 @@ public class MainWindow extends XDMFrame implements ActionListener {
 	}
 
 	private void openTranslationPage() {
-		XDMUtils.browseURL(
-				"https://github.com/subhra74/xdm/translations");
+		XDMUtils.browseURL("https://github.com/subhra74/xdm/translations");
 	}
 
 	private void openSupportPage() {
-		XDMUtils.browseURL(
-				"https://github.com/subhra74/xdm/wiki");
+		XDMUtils.browseURL("https://github.com/subhra74/xdm/wiki");
 	}
 
 	private void openBugReportPage() {
-		XDMUtils.browseURL(
-				"https://github.com/subhra74/xdm/issues");
+		XDMUtils.browseURL("https://github.com/subhra74/xdm/issues");
 	}
 
 	private int scale(int i) {
