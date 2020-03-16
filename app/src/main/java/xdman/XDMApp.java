@@ -62,7 +62,7 @@ import xdman.util.XDMUtils;
 public class XDMApp implements DownloadListener, DownloadWindowListener,
 		Comparator<String> {
 
-	public static final String APP_VERSION = "7.2.9";
+	public static final String APP_VERSION = "7.2.10";
 	public static final String XDM_WINDOW_TITLE = "XDM 2020";
 
 	private ArrayList<ListChangeListener> listChangeListeners;

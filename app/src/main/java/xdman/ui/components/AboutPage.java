@@ -12,6 +12,7 @@ import javax.swing.JTextArea;
 import xdman.XDMApp;
 import xdman.ui.res.FontResource;
 import xdman.ui.res.StringResource;
+
 public class AboutPage extends Page {
 	/**
 	 * 
@@ -31,14 +32,18 @@ public class AboutPage extends Page {
 		JLabel lblTitle = new JLabel(StringResource.get("FULL_NAME"));
 		lblTitle.setFont(FontResource.getBiggerFont());
 		lblTitle.setForeground(Color.WHITE);
-		lblTitle.setBounds(getScaledInt(15), y, getScaledInt(350) - getScaledInt(30), h);
+		lblTitle.setBounds(getScaledInt(15), y,
+				getScaledInt(350) - getScaledInt(30), h);
 		panel.add(lblTitle);
 
 		y += h;
 		y += getScaledInt(20);
 
-		String details = String.format(StringResource.get("ABOUT_DETAILS"), XDMApp.APP_VERSION,
-				System.getProperty("java.version"), System.getProperty("os.name"), "https://github.com/subhra74/xdm");
+		String details = String.format(
+				"App version %s with runtime %s on %s\n\nCreated by: Subhra Das Gupta\n\n%s\nCopyright (C) 2020, All rights reserved.",
+				XDMApp.APP_VERSION, System.getProperty("java.version"),
+				System.getProperty("os.name"),
+				"https://github.com/subhra74/xdm");
 
 		h = getScaledInt(250);
 		JTextArea lblDetails = new JTextArea();
@@ -49,7 +54,8 @@ public class AboutPage extends Page {
 		lblDetails.setForeground(Color.WHITE);
 		lblDetails.setText(details);
 		lblDetails.setFont(FontResource.getBigFont());
-		lblDetails.setBounds(getScaledInt(15), y, getScaledInt(350) - getScaledInt(30), h);
+		lblDetails.setBounds(getScaledInt(15), y,
+				getScaledInt(350) - getScaledInt(30), h);
 		panel.add(lblDetails);
 		y += h;
 
