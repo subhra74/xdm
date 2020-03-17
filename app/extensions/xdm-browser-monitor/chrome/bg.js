@@ -426,7 +426,7 @@
             (
             function (info) { requests.push(info); },
             { urls: ["http://*/*", "https://*/*"] },
-            ["requestHeaders"]
+            ["requestHeaders","extraHeaders"]
             );
         chrome.webRequest.onCompleted.addListener
             (
