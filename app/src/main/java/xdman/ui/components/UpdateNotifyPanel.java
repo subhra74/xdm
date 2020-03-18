@@ -18,6 +18,7 @@ import xdman.util.FFmpegDownloader;
 import xdman.util.UpdateChecker;
 import xdman.util.XDMUtils;
 import static xdman.util.XDMUtils.getScaledInt;
+
 public class UpdateNotifyPanel extends JPanel {
 	/**
 	 * 
@@ -28,7 +29,8 @@ public class UpdateNotifyPanel extends JPanel {
 
 	public UpdateNotifyPanel() {
 		super(new BorderLayout());
-		setBorder(new EmptyBorder(getScaledInt(10), getScaledInt(15), getScaledInt(10), getScaledInt(15)));
+		setBorder(new EmptyBorder(getScaledInt(10), getScaledInt(15),
+				getScaledInt(10), getScaledInt(15)));
 		JPanel p2 = new JPanel(new BorderLayout());
 		p2.setOpaque(false);
 		lbl = new JLabel();
@@ -47,7 +49,8 @@ public class UpdateNotifyPanel extends JPanel {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if (mode == UpdateChecker.APP_UPDATE_AVAILABLE) {
-					XDMUtils.browseURL("http://xdman.sourceforge.net/update/update.php?ver=" + XDMApp.APP_VERSION);
+					XDMUtils.browseURL(
+							XDMApp.APP_UPDATE_CHK_URL + XDMApp.APP_VERSION);
 				} else {
 					FFmpegDownloader fd = new FFmpegDownloader();
 					fd.start();
@@ -60,7 +63,7 @@ public class UpdateNotifyPanel extends JPanel {
 
 	public void setDetails(int mode) {
 		if (mode == UpdateChecker.COMP_NOT_INSTALLED) {
-			setBackground(new Color(216,1,0));
+			setBackground(new Color(216, 1, 0));
 		} else {
 			setBackground(ColorResource.getDarkestBgColor());
 		}

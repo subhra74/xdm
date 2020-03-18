@@ -12,8 +12,7 @@ import xdman.network.http.JavaHttpClient;
 import xdman.network.http.XDMHttpClient;
 
 public class UpdateChecker {
-	private static final String APP_UPDAT_URL = "https://api.github.com/repos/subhra74/xdm/releases/latest",
-			COMPONENTS_UPDATE_URL = "http://xdman.sourceforge.net/components/update_check.php";
+
 	public static final int APP_UPDATE_AVAILABLE = 10,
 			COMP_UPDATE_AVAILABLE = 20, COMP_NOT_INSTALLED = 30,
 			NO_UPDATE_AVAILABLE = 40;
@@ -89,7 +88,8 @@ public class UpdateChecker {
 	private static boolean isUpdateAvailable(String version) {
 		JavaHttpClient client = null;
 		try {
-			client = new JavaHttpClient(APP_UPDAT_URL + "?ver=" + version);
+			client = new JavaHttpClient(
+					XDMApp.APP_UPDAT_URL + "?ver=" + version);
 			client.setFollowRedirect(true);
 			client.connect();
 			int resp = client.getStatusCode();
@@ -118,7 +118,7 @@ public class UpdateChecker {
 
 	private static boolean isNewerVersion(StringBuilder text, String v2) {
 		try {
-			//System.out.println(text);
+			// System.out.println(text);
 			Matcher matcher = PATTERN_TAG.matcher(text);
 			if (matcher.find()) {
 				String v1 = matcher.group(1);

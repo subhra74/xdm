@@ -144,7 +144,7 @@ public class TrayHandler {
 		popup.add(restoreItem);
 		popup.add(throttleItem);
 		popup.add(exitItem);
-		trayIcon.setToolTip("XDM 2018");
+		trayIcon.setToolTip(XDMApp.XDM_WINDOW_TITLE);
 		trayIcon.setPopupMenu(popup);
 
 		trayIcon.addMouseListener(new MouseAdapter() {

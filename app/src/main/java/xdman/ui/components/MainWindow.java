@@ -325,13 +325,12 @@ public class MainWindow extends XDMFrame implements ActionListener {
 					XDMApp.getInstance().saveDownloadList(file);
 				}
 			} else if ("MENU_CONTENTS".equals(name)) {
-				XDMUtils.browseURL("https://github.com/subhra74/xdm/wiki");
+				XDMUtils.browseURL(XDMApp.APP_WIKI_URL);
 			} else if ("MENU_HOME_PAGE".equals(name)) {
-				XDMUtils.browseURL("https://github.com/subhra74/xdm");
+				XDMUtils.browseURL(XDMApp.APP_HOME_URL);
 			} else if ("MENU_UPDATE".equals(name)) {
 				XDMUtils.browseURL(
-						"https://subhra74.github.io/xdm/update-checker.html?v="
-								+ XDMApp.APP_VERSION);
+						XDMApp.APP_UPDATE_CHK_URL + XDMApp.APP_VERSION);
 			} else if ("MENU_LANG".equals(name)) {
 				showLanguageDlg();
 			} else if ("MENU_BATCH_DOWNLOAD".equals(name)) {
@@ -918,9 +917,9 @@ public class MainWindow extends XDMFrame implements ActionListener {
 		showTwitterIcon = true;
 		showFBIcon = true;
 		showGitHubIcon = true;
-		fbUrl = "https://www.facebook.com/XDM.subhra74/";
-		twitterUrl = "https://twitter.com/XDM_subhra74";
-		gitHubUrl = "https://github.com/subhra74/xdm";
+		fbUrl = XDMApp.APP_FACEBOOK_URL;
+		twitterUrl = XDMApp.APP_TWITTER_URL;
+		gitHubUrl = XDMApp.APP_HOME_URL;
 
 		JLabel lblTitle = new JLabel(XDMApp.XDM_WINDOW_TITLE);
 		lblTitle.setBorder(new EmptyBorder(scale(20), scale(20), scale(20), 0));
