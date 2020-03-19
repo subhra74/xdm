@@ -3,7 +3,7 @@ Xtreme Download Manager is a powerful tool to increase download speed up-to 500%
 
 
 
-<h2>Downloads - 7.2.7:</h2>
+<h2 id="downloads">Downloads - 7.2.7:</h2>
 
 <table>
   <tr>
