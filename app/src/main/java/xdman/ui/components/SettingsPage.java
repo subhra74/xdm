@@ -121,6 +121,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 	JCheckBox chkEndWnd;
 	JCheckBox chkVidPan;
 	JCheckBox chkOverwriteExisting;
+	JCheckBox chkQuietMode;
 	JComboBox<String> cmbMax;
 	JComboBox<String> cmbMinVidSize;
 	// JComboBox<String> cmbDupAction;
@@ -342,6 +343,13 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		chkOverwriteExisting = createCheckBox("LBL_OVERWRITE_EXISTING");
 		chkOverwriteExisting.setBounds(getScaledInt(15), y, getScaledInt(350) - getScaledInt(30), h);
 		panel.add(chkOverwriteExisting);
+		y += h;
+		
+		h = getScaledInt(30);
+		chkQuietMode = createCheckBox("LBL_QUIET_MODE");
+		chkQuietMode.setBounds(getScaledInt(15), y, getScaledInt(350) - getScaledInt(30), h);
+		chkQuietMode.addActionListener(this);
+		panel.add(chkQuietMode);
 		y += h;
 
 		h = getScaledInt(30);
@@ -949,6 +957,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		chkPrgWnd.setSelected(config.showDownloadWindow());
 		chkEndWnd.setSelected(config.showDownloadCompleteWindow());
 		chkOverwriteExisting.setSelected(config.getDuplicateAction() == XDMConstants.DUP_ACT_OVERWRITE);
+		chkQuietMode.setSelected(config.isQuietMode());
 		Logger.log("Max download: " + config.getMaxDownloads());
 		cmbMax.setSelectedItem(config.getMaxDownloads() > 0 ? config.getMaxDownloads() + "" : "N/A");
 		// cmbDupAction.setSelectedIndex(config.getDuplicateAction());
@@ -2368,6 +2377,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		config.setShowDownloadWindow(chkPrgWnd.isSelected());
 		config.setShowDownloadCompleteWindow(chkEndWnd.isSelected());
 		config.setDuplicateAction(chkOverwriteExisting.isSelected() ? 1 : 0);
+		config.setQuietMode(chkQuietMode.isSelected());
 		String text = cmbMax.getSelectedItem() + "";
 		if ("N/A".equals(text)) {
 			config.setMaxDownloads(0);

@@ -32,6 +32,7 @@ public class Config {
 	private int parallalDownloads;
 	private boolean autoShutdown;
 	private int duplicateAction;
+	private boolean quietMode;
 	private String[] blockedHosts, vidUrls, fileExts, vidExts;
 	private String[] defaultFileTypes, defaultVideoTypes;
 	private int networkTimeout, tcpWindowSize;
@@ -539,6 +540,14 @@ public class Config {
 
 	public final void setDuplicateAction(int duplicateAction) {
 		this.duplicateAction = duplicateAction;
+	}
+	
+	public boolean isQuietMode() {
+		return quietMode;
+	}
+	
+	public void setQuietMode(boolean quietMode) {
+		this.quietMode = quietMode;
 	}
 
 	public final void setShowDownloadCompleteWindow(boolean show) {
