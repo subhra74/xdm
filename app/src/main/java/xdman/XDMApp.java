@@ -9,6 +9,7 @@ import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.PasswordAuthentication;
+import java.nio.file.Paths;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -156,7 +157,11 @@ public class XDMApp implements DownloadListener, DownloadWindowListener,
 			} else if ("-s".equals(args[i])) {
 				key = "screen";
 				expect = true;
-			} else if ("-q".equals(args[i]) || "--quiet".equals(args[i])) {
+			} else if ("-o".equals(args[i]) || "--output".equals(args[i])) {
+				key = "output";
+				expect = true;
+			}
+			else if ("-q".equals(args[i]) || "--quiet".equals(args[i])) {
 				paramMap.put("quiet", "true");
 				expect = false;
 			}
@@ -411,17 +416,45 @@ public class XDMApp implements DownloadListener, DownloadWindowListener,
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {
-				if (metadata != null
-						&& (Config.getInstance().isQuietMode()
-							|| Config.getInstance().isDownloadAutoStart())) {
-					String fileName = file;
-					if (StringUtils.isNullOrEmptyOrBlank(file)) {
+				String fileName;
+				String folderPath;
+				
+				if (StringUtils.isNullOrEmptyOrBlank(file)) {
+					if(metadata != null) {
 						fileName = XDMUtils.getFileName(metadata.getUrl());
+					} else {
+						fileName = null;
 					}
-					createDownload(fileName, null, metadata, true, "", 0, 0);
+					folderPath = null;
+				}
+				else {
+					var path = Paths.get(file);
+					
+					fileName = path.getFileName().toString();
+					
+					var parentPath = path.getParent();
+					if(parentPath.isAbsolute()) {
+						folderPath = parentPath.toString();
+					} else {
+						String downloadFolderPath;
+						if (Config.getInstance().isForceSingleFolder()) {
+							downloadFolderPath = Config.getInstance().getDownloadFolder();
+						} else {
+							var category = XDMUtils.findCategory(file);
+							downloadFolderPath = XDMApp.getInstance().getFolder(category);
+						}
+						
+						folderPath = Paths.get(downloadFolderPath, parentPath.toString()).toString();
+					}
+				}
+				
+				if (metadata != null 
+						&& Config.getInstance().isDownloadAutoStart()) {
+					createDownload(fileName, folderPath, metadata, true, "", 0, 0);
 					return;
 				}
-				new NewDownloadWindow(metadata, file).setVisible(true);
+				
+				new NewDownloadWindow(metadata, fileName, folderPath).setVisible(true);
 			}
 		});
 	}
@@ -743,6 +776,10 @@ public class XDMApp implements DownloadListener, DownloadWindowListener,
 			return Config.getInstance().getDownloadFolder();
 		}
 		int category = ent.getCategory();
+		return this.getFolder(category);
+	}
+	
+	public String getFolder(int category) {
 		switch (category) {
 		case XDMConstants.DOCUMENTS:
 			return Config.getInstance().getCategoryDocuments();
