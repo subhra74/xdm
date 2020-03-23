@@ -158,6 +158,10 @@ public class MonitoringSession implements Runnable {
 			XDMApp.getInstance().showMainWindow();
 		} else {
 			String[] arr = new String(data).split("\n");
+			
+			String url = null; 
+			String output = null;
+			
 			for (int i = 0; i < arr.length; i++) {
 				String str = arr[i];
 				int index = str.indexOf(":");
@@ -166,12 +170,25 @@ public class MonitoringSession implements Runnable {
 				String key = str.substring(0, index).trim();
 				String val = str.substring(index + 1).trim();
 				if (key.equals("url")) {
-					String url = val;
-					HttpMetadata metadata = new HttpMetadata();
-					metadata.setUrl(url);
-					String file = XDMUtils.getFileName(url);
-					XDMApp.getInstance().addDownload(metadata, file);
+					url = val;
 				}
+				if(key.equals("output")){
+					output = val;
+				}
+			}
+			
+			if(url != null) {
+				var metadata = new HttpMetadata();
+				metadata.setUrl(url);
+				
+				String file;
+				if(output != null) {
+					file = output;
+				} else {
+					file = XDMUtils.getFileName(url);
+				}
+				
+				XDMApp.getInstance().addDownload(metadata, file);
 			}
 		}
 		setResponseOk(res);

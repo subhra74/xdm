@@ -52,7 +52,7 @@ public class NewDownloadWindow extends JDialog implements ActionListener, Docume
 	// private String folder;
 	private String queueId;
 
-	public NewDownloadWindow(HttpMetadata metadata, String file) {
+	public NewDownloadWindow(HttpMetadata metadata, String fileName, String folderPath) {
 		initUI();
 		// this.folder = Config.getInstance().getDownloadFolder();
 		this.metadata = metadata;
@@ -71,8 +71,11 @@ public class NewDownloadWindow extends JDialog implements ActionListener, Docume
 				Logger.log(e);
 			}
 		}
-		if (file != null && file.length() > 0) {
-			filePane.setFileName(file);
+		if (!StringUtils.isNullOrEmptyOrBlank(fileName)) {
+			filePane.setFileName(fileName);
+		}
+		if (!StringUtils.isNullOrEmptyOrBlank(folderPath)) {
+			filePane.setFolder(folderPath);
 		}
 
 		getRootPane().setDefaultButton(btnDN);
