@@ -175,6 +175,9 @@ public class MonitoringSession implements Runnable {
 				if(key.equals("output")){
 					output = val;
 				}
+				if(key.equals("quiet")){
+					Config.getInstance().setQuietMode("true".equals(val));
+				}
 			}
 			
 			if(url != null) {

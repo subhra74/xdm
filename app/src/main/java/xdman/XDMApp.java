@@ -449,7 +449,8 @@ public class XDMApp implements DownloadListener, DownloadWindowListener,
 				}
 				
 				if (metadata != null 
-						&& Config.getInstance().isDownloadAutoStart()) {
+						&& (Config.getInstance().isQuietMode()
+								|| Config.getInstance().isDownloadAutoStart())) {
 					createDownload(fileName, folderPath, metadata, true, "", 0, 0);
 					return;
 				}
