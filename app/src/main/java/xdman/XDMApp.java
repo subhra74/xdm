@@ -429,7 +429,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener,
 					fileName = path.getFileName().toString();
 					
 					var parentPath = path.getParent();
-					if(parentPath.isAbsolute()) {
+					if(parentPath != null && parentPath.isAbsolute()) {
 						folderPath = parentPath.toString();
 					} else {
 						String downloadFolderPath;
@@ -440,7 +440,11 @@ public class XDMApp implements DownloadListener, DownloadWindowListener,
 							downloadFolderPath = XDMApp.getInstance().getFolder(category);
 						}
 						
-						folderPath = Paths.get(downloadFolderPath, parentPath.toString()).toString();
+						if(parentPath != null) {
+							folderPath = Paths.get(downloadFolderPath, parentPath.toString()).toString();
+						} else {
+							folderPath = downloadFolderPath;
+						}
 					}
 				}
 				
