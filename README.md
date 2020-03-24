@@ -89,3 +89,9 @@ Resumes broken/dead downloads caused by connection problem,power failure or sess
  <b>mvn clean install</b> to build the project.
  The jar will be created in target directory
 </pre>
+
+<h2>Submitting translations</h2>
+If you want to translate XDM to your language, feel free to submit a translation file.
+Steps are mentioned in: https://github.com/subhra74/xdm/wiki/Submitting-translations-for-XDM
+
+
