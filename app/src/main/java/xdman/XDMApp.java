@@ -156,6 +156,9 @@ public class XDMApp implements DownloadListener, DownloadWindowListener,
 			} else if ("-s".equals(args[i])) {
 				key = "screen";
 				expect = true;
+			} else if ("-q".equals(args[i]) || "--quiet".equals(args[i])) {
+				paramMap.put("quiet", "true");
+				expect = false;
 			}
 		}
 
@@ -409,7 +412,8 @@ public class XDMApp implements DownloadListener, DownloadWindowListener,
 			@Override
 			public void run() {
 				if (metadata != null
-						&& Config.getInstance().isDownloadAutoStart()) {
+						&& (Config.getInstance().isQuietMode()
+							|| Config.getInstance().isDownloadAutoStart())) {
 					String fileName = file;
 					if (StringUtils.isNullOrEmptyOrBlank(file)) {
 						fileName = XDMUtils.getFileName(metadata.getUrl());
@@ -533,7 +537,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener,
 						(HlsMetadata) metadata);
 			}
 			if (metadata instanceof HdsMetadata) {
-				Logger.log("Hls download created");
+				Logger.log("Hds download created");
 				d = new HdsDownloader(id, ent.getTempFolder(),
 						(HdsMetadata) metadata);
 			}
@@ -551,7 +555,8 @@ public class XDMApp implements DownloadListener, DownloadWindowListener,
 			ent.setState(XDMConstants.DOWNLOADING);
 			d.start();
 
-			if (Config.getInstance().showDownloadWindow()) {
+			if (!Config.getInstance().isQuietMode() 
+					&& Config.getInstance().showDownloadWindow()) {
 				DownloadWindow wnd = new DownloadWindow(id, this);
 				downloadWindows.put(id, wnd);
 				wnd.setVisible(true);
@@ -578,7 +583,8 @@ public class XDMApp implements DownloadListener, DownloadWindowListener,
 			if (!checkAndBufferRequests(id)) {
 				ent.setState(XDMConstants.DOWNLOADING);
 				HttpMetadata metadata = HttpMetadata.load(id);
-				if (Config.getInstance().showDownloadWindow()
+				if (!Config.getInstance().isQuietMode()
+						&& Config.getInstance().showDownloadWindow()
 						&& ent.isStartedByUser()) {
 					DownloadWindow wnd = new DownloadWindow(id, this);
 					downloadWindows.put(id, wnd);

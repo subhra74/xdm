@@ -172,6 +172,9 @@ public class MonitoringSession implements Runnable {
 					String file = XDMUtils.getFileName(url);
 					XDMApp.getInstance().addDownload(metadata, file);
 				}
+				if(key.equals("quiet")){
+					Config.getInstance().setQuietMode("true".equals(val));
+				}
 			}
 		}
 		setResponseOk(res);

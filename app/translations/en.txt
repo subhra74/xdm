@@ -285,6 +285,7 @@ LBL_VOLUME_BOOST=Boost
 LBL_CONV_SUCCESS=Conversion successful
 LBL_CONV_FAILED=Conversion failed
 LBL_OVERWRITE_EXISTING=Overwrite existing file
+LBL_QUIET_MODE = Quiet mode
 LBL_GENERAL_CAT=General
 LBL_MIN_VIDEO_SIZE=Download video larger than
 LBL_STOP_Q=Stop queue processesing?
