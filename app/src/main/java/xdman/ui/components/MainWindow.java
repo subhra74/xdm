@@ -913,7 +913,17 @@ public class MainWindow extends XDMFrame implements ActionListener {
 
 	private void initWindow() {
 		setIconImage(ImageResource.get("icon.png").getImage());
-
+		/* Set Dock icon in macOS */
+		try {
+			Taskbar.getTaskbar().setIconImage(ImageResource.get("icon.png").getImage());
+		} catch (final UnsupportedOperationException | SecurityException e) {
+			System.out.println("Error setting Dock icon");
+		}
+		/* Re-open XDM from dock on macOS */
+		if (XDMUtils.detectOS() == XDMUtils.MAC){
+			Desktop.getDesktop().addAppEventListener((AppReopenedListener) e -> XDMApp.getInstance().showMainWindow());
+		}
+		
 		showTwitterIcon = true;
 		showFBIcon = true;
 		showGitHubIcon = true;
