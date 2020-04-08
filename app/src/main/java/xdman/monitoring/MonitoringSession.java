@@ -579,7 +579,7 @@ public class MonitoringSession implements Runnable {
 							itag = Integer.parseInt(val);
 						}
 						if (key.equals("clen")) {
-							clen = Integer.parseInt(val);
+							clen = Long.parseLong(val);
 						}
 						if (key.startsWith("mime")) {
 							mime = URLDecoder.decode(val, "UTF-8");
