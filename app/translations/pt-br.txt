@@ -1,5 +1,5 @@
 LANGUAGE_TEXT=Portugu\u00eas (Portugu\u00eas)
-WINDOW_TITLE=XDM 2018
+WINDOW_TITLE=XDM 2020
 ALL_DOWNLOADS=Todos
 ALL_UNFINISHED=Incompleto
 ALL_FINISHED=Completo
@@ -239,7 +239,7 @@ PROMPT_PROXY=O proxy requer usu\u00e1rio e senha
 BTN_BROWSE=Navegar
 TITLE_ABOUT=Sobre o XDM
 FULL_NAME=Xtreme Download Manager
-ABOUT_DETAILS=Vers\u00e3o %s com runtime %s no %s\n\nCriado por: Subhra Das Gupta\n\n%s\nCopyright (C) 2018, Todos os direitos reservados.
+ABOUT_DETAILS=Vers\u00e3o %s com runtime %s no %s\n\nCriado por: Subhra Das Gupta\n\n%s\nCopyright (C) 2020, Todos os direitos reservados.
 BTN_SEARCH_VIDEO=Procurar
 BTN_DOWNLOAD_NOW=Baixar Agora
 BTN_DOWNLOAD_LATER=Baixar Depois

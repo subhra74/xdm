@@ -1,5 +1,5 @@
 LANGUAGE_TEXT=Bahasa Indonesia
-WINDOW_TITLE=XDM 2018
+WINDOW_TITLE=XDM 2020
 ALL_DOWNLOADS=Semua
 ALL_UNFINISHED=Belum Selesai
 ALL_FINISHED=Selesai
@@ -239,7 +239,7 @@ PROMPT_PROXY=Proxy memerlukan nama pengguna dan kata sandi
 BTN_BROWSE=Jelajah
 TITLE_ABOUT=TENTANG XDM
 FULL_NAME=Xtreme Download Manager
-ABOUT_DETAILS=Versi aplikasi %s dengan runtime %s pada %s\n\nDibuat oleh: Subhra Das Gupta\n\n%s\nHak cipta (C) 2018, Hak cipta dilindungi.
+ABOUT_DETAILS=Versi aplikasi %s dengan runtime %s pada %s\n\nDibuat oleh: Subhra Das Gupta\n\n%s\nHak cipta (C) 2020, Hak cipta dilindungi.
 BTN_SEARCH_VIDEO=Temukan
 BTN_DOWNLOAD_NOW=Unduh sekarang
 BTN_DOWNLOAD_LATER=Unduh nanti

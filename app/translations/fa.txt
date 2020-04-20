@@ -1,5 +1,5 @@
 
-WINDOW_TITLE = XDM 2018
+WINDOW_TITLE = XDM 2020
 ALL_DOWNLOADS = همه
 ALL_UNFINISHED = ناقص
 ALL_FINISHED = کامل
@@ -239,7 +239,7 @@ PROMPT_PROXY = پروکسی نیاز به یک نام کاربری و رمز ع�
 BTN_BROWSE = مرور کردن
 TITLE_ABOUT =  درباره XDM
 FULL_NAME = مدیریت دانلود Xtreme
-ABOUT_DETAILS = App version %s with runtime %s on %s\n\nCreated by: Subhra Das Gupta\n\n%s\nCopyright (C) 2018, All rights reserved.
+ABOUT_DETAILS = App version %s with runtime %s on %s\n\nCreated by: Subhra Das Gupta\n\n%s\nCopyright (C) 2020, All rights reserved.
 BTN_SEARCH_VIDEO = یافتن
 BTN_DOWNLOAD_NOW = اکنون دانلود کن
 BTN_DOWNLOAD_LATER = بعدا دانلود کن
