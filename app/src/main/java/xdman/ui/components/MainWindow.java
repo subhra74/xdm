@@ -20,6 +20,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -1300,20 +1302,26 @@ public class MainWindow extends XDMFrame implements ActionListener {
 			}
 		}
 
-		int index = 0;
-
+		String indexVal = null;
+		
 		ArrayList<String> keyList = new ArrayList<>(
 				langMap.stringPropertyNames());
+		
+		String[][] mapList = new String[keyList.size()][2];
 		Vector<String> valList = new Vector<>();
-
 		for (int i = 0; i < keyList.size(); i++) {
 			String name = keyList.get(i);
 			String val = langMap.getProperty(name);
 			valList.add(val);
+			mapList[i][0] = val;
+			mapList[i][1] = name;
 			if (name.equals(Config.getInstance().getLanguage())) {
-				index = i;
+				indexVal = val;
 			}
 		}
+		Collections.sort(valList);
+		Arrays.sort(mapList, (a,b) -> a[0].compareTo(b[0]));
+		int index = valList.indexOf(indexVal);
 
 		JComboBox<String> cmbLang = new JComboBox<>(valList);
 		cmbLang.setSelectedIndex(index);
@@ -1331,7 +1339,7 @@ public class MainWindow extends XDMFrame implements ActionListener {
 				null) == JOptionPane.OK_OPTION) {
 			index = cmbLang.getSelectedIndex();
 			if (index != -1) {
-				Config.getInstance().setLanguage(keyList.get(index));
+				Config.getInstance().setLanguage(mapList[index][1]);
 			}
 			String lang = langMap.getProperty(cmbLang.getSelectedItem() + "");
 			if (lang != null)
