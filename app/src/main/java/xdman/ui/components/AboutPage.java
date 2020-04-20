@@ -40,7 +40,7 @@ public class AboutPage extends Page {
 		y += getScaledInt(20);
 
 		String details = String.format(
-				"App version %s with runtime %s on %s\n\nCreated by: Subhra Das Gupta\n\n%s\nCopyright (C) 2020, All rights reserved.",
+				StringResource.get("ABOUT_DETAILS"),
 				XDMApp.APP_VERSION, System.getProperty("java.version"),
 				System.getProperty("os.name"),
 				"https://github.com/subhra74/xdm");
