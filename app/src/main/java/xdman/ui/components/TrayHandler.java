@@ -111,7 +111,7 @@ public class TrayHandler {
 		MenuItem restoreItem = new MenuItem(StringResource.get("MSG_RESTORE"));
 		restoreItem.setFont(FontResource.getBigFont());
 		restoreItem.addActionListener(act);
-		addClipItem.setName("ADD_CLIP");
+		restoreItem.setName("RESTORE");
 		CheckboxMenuItem monitoringItem = new CheckboxMenuItem(StringResource.get("BROWSER_MONITORING"));
 		monitoringItem.addItemListener(new ItemListener() {
 
