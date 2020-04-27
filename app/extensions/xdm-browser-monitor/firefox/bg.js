@@ -155,7 +155,7 @@
     };
 
     var isVideoMime = function (mimeText) {
-        if(!mimeList){
+        if (!mimeList) {
             return false;
         }
         var mime = mimeText.toLowerCase();
@@ -168,7 +168,7 @@
     }
 
     var checkForVideo = function (request, response) {
-        
+
         var mime = "";
         var video = false;
         var url = response.url;
@@ -180,11 +180,11 @@
             }
         }
 
-        
+
 
         if (mime.startsWith("audio/") || mime.startsWith("video/") ||
             mime.indexOf("mpegurl") > 0 || mime.indexOf("f4m") > 0 || isVideoMime(mime)) {
-                log("Checking video mime: "+mime+" "+JSON.stringify(mimeList));
+            log("Checking video mime: " + mime + " " + JSON.stringify(mimeList));
             video = true;
         }
 
@@ -230,10 +230,10 @@
             if (request.tabId != -1) {
                 chrome.tabs.get
                     (
-                    request.tabId,
-                    function (tab) {
-                        sendToXDM(request, response, tab.title, true);
-                    }
+                        request.tabId,
+                        function (tab) {
+                            sendToXDM(request, response, tab.title, true);
+                        }
                     );
             } else {
                 sendToXDM(request, response, null, true);
@@ -424,24 +424,24 @@
         //the object is removed from array when request completes or fails
         chrome.webRequest.onSendHeaders.addListener
             (
-            function (info) { requests.push(info); },
-            { urls: ["http://*/*", "https://*/*"] },
-            ["requestHeaders"]
+                function (info) { requests.push(info); },
+                { urls: ["http://*/*", "https://*/*"] },
+                ["requestHeaders"] // on chrome "extraHeaders" also needs to be added?
             );
         chrome.webRequest.onCompleted.addListener
             (
-            function (info) {
-                removeRequest(info.requestId);
-            },
-            { urls: ["http://*/*", "https://*/*"] }
+                function (info) {
+                    removeRequest(info.requestId);
+                },
+                { urls: ["http://*/*", "https://*/*"] }
             );
 
         chrome.webRequest.onErrorOccurred.addListener
             (
-            function (info) {
-                removeRequest(info.requestId);
-            },
-            { urls: ["http://*/*", "https://*/*"] }
+                function (info) {
+                    removeRequest(info.requestId);
+                },
+                { urls: ["http://*/*", "https://*/*"] }
             );
 
         //This will monitor and intercept files download if 
@@ -449,36 +449,36 @@
         //Use request array to get request headers
         chrome.webRequest.onHeadersReceived.addListener
             (
-            function (response) {
-                var requests = removeRequest(response.requestId);
-                if (!isXDMUp) {
-                    return;
-                }
+                function (response) {
+                    var requests = removeRequest(response.requestId);
+                    if (!isXDMUp) {
+                        return;
+                    }
 
-                if (!monitoring) {
-                    return;
-                }
+                    if (!monitoring) {
+                        return;
+                    }
 
-                if (disabled) {
-                    return;
-                }
+                    if (disabled) {
+                        return;
+                    }
 
-                if (!(response.statusLine.indexOf("200") > 0
-                    || response.statusLine.indexOf("206") > 0)) {
-                    return;
-                }
+                    if (!(response.statusLine.indexOf("200") > 0
+                        || response.statusLine.indexOf("206") > 0)) {
+                        return;
+                    }
 
-                if (requests) {
-                    if (requests.length == 1) {
-                        if (!(response.url + "").startsWith(xdmHost)) {
-                            //console.log("processing request " + response.url);
-                            return processRequest(requests[0], response);
+                    if (requests) {
+                        if (requests.length == 1) {
+                            if (!(response.url + "").startsWith(xdmHost)) {
+                                //console.log("processing request " + response.url);
+                                return processRequest(requests[0], response);
+                            }
                         }
                     }
-                }
-            },
-            { urls: ["http://*/*", "https://*/*"] },
-            ["blocking", "responseHeaders"]
+                },
+                { urls: ["http://*/*", "https://*/*"] },
+                ["blocking", "responseHeaders"]
             );
 
         //check XDM if is running and enable monitoring
@@ -541,6 +541,24 @@
             contexts: ["all"],
             onclick: runContentScript,
         });
+
+        /*
+        On startup, connect to the "native" app.
+        */
+        var port = browser.runtime.connectNative("xdmff.native_host");
+
+        /*
+        Listen for messages from the app.
+        */
+        port.onMessage.addListener((response) => {
+            console.log("Received: " + response);
+        });
+
+        /*
+        On start up send the app a message.
+        */
+        console.log("Sending to native...")
+        port.postMessage("hello from extension");
     };
 
     initSelf();
