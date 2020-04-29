@@ -61,6 +61,7 @@ public class MonitoringSession implements Runnable {
 		headers.setValue("content-type", "application/json");
 		headers.setValue("Cache-Control", "max-age=0, no-cache, must-revalidate");
 		res.setHeaders(headers);
+		Logger.log("Response set");
 	}
 
 	private void onDownload(Request request, Response res) throws UnsupportedEncodingException {
@@ -83,12 +84,17 @@ public class MonitoringSession implements Runnable {
 
 	private void onVideoRetrieve(Request request, Response res) throws UnsupportedEncodingException {
 		try {
-			String id = new String(request.getBody(), "utf-8");
-			for (VideoPopupItem item : XDMApp.getInstance().getVideoItemsList()) {
-				if (id.equals(item.getMetadata().getId())) {
-					HttpMetadata md = item.getMetadata().derive();
-					Logger.log("dash metdata ? " + (md instanceof DashMetadata));
-					XDMApp.getInstance().addVideo(md, item.getFile());
+			String content = new String(request.getBody(), "utf-8");
+			Logger.log("Video retrieve: "+content);
+			String lines[]=content.split("\r\n");
+			for(String line:lines) {
+				String id=line.trim();
+				for (VideoPopupItem item : XDMApp.getInstance().getVideoItemsList()) {
+					if (id.equals(item.getMetadata().getId())) {
+						HttpMetadata md = item.getMetadata().derive();
+						Logger.log("dash metdata ? " + (md instanceof DashMetadata));
+						XDMApp.getInstance().addVideo(md, item.getFile());
+					}
 				}
 			}
 		} finally {
@@ -125,8 +131,10 @@ public class MonitoringSession implements Runnable {
 
 	private void onVideo(Request request, Response res) throws UnsupportedEncodingException {
 		try {
+			Logger.log("video received");
 			Logger.log(new String(request.getBody()));
 			if (!Config.getInstance().isShowVideoNotification()) {
+				Logger.log("video received but disabled");
 				return;
 			}
 			byte[] b = request.getBody();
@@ -197,61 +205,20 @@ public class MonitoringSession implements Runnable {
 		setResponseOk(res);
 	}
 
-	private String encode(String str) {
-		StringBuilder sb = new StringBuilder();
-		int count = 0;
-		for (char ch : str.toCharArray()) {
-			if (count > 0)
-				sb.append(",");
-			sb.append((int) ch);
-			count++;
-		}
-		return sb.toString();
-	}
+	
 
 	private void onSync(Request request, Response res) throws UnsupportedEncodingException {
-		StringBuffer json = new StringBuffer();
-		json.append("{\n\"enabled\": ");
-		json.append(Config.getInstance().isBrowserMonitoringEnabled());
-		json.append(",\n\"blockedHosts\": [");
-		appendArray(Config.getInstance().getBlockedHosts(), json);
-		json.append("],");
-		json.append("\n\"videoUrls\": [");
-		appendArray(Config.getInstance().getVidUrls(), json);
-		json.append("],");
-		json.append("\n\"fileExts\": [");
-		appendArray(Config.getInstance().getFileExts(), json);
-		json.append("],");
-		json.append("\n\"vidExts\": [");
-		appendArray(Config.getInstance().getVidExts(), json);
-		json.append("],");
-		StringBuilder sb = new StringBuilder();
-		int count = 0;
-		for (VideoPopupItem item : XDMApp.getInstance().getVideoItemsList()) {
-			String id = item.getMetadata().getId();
-			String text = encode(item.getFile());
-			String info = item.getInfo();
-			if (count > 0)
-				sb.append(",");
-			sb.append(String.format("{\"id\": \"%s\", \"text\": \"%s\",\"info\":\"%s\"}", id, text, info));
-			count++;
-		}
-		json.append("\n\"vidList\": [");
-		json.append(sb.toString());
-		json.append("],");
-		String mimeTypes = "\n\"mimeList\": [\"video/\",\"audio/\",\"mpegurl\",\"f4m\",\"m3u8\"]";
-		json.append(mimeTypes);
-		json.append("\n}");
+		
 
 		// System.out.println(json);
 
-		byte[] b = json.toString().getBytes();
+		byte[] b = BrowserMonitor.getSyncJSON().getBytes();
 
 		res.setCode(200);
 		res.setMessage("OK");
 
 		HeaderCollection headers = new HeaderCollection();
-		headers.addHeader("Content-Length", b.length + "");
+		//headers.addHeader("Content-Length", b.length + "");
 		headers.addHeader("Content-Type", "application/json");
 		headers.addHeader("Cache-Control", "no-cache, no-store, must-revalidate");
 		headers.addHeader("Pragma", "no-cache");
@@ -517,6 +484,8 @@ public class MonitoringSession implements Runnable {
 			while (true) {
 				this.request.read(inStream);
 				this.processRequest(this.request, this.response);
+				System.out.println("Request processed, sending response\n");
+				this.response.write(System.out);
 				this.response.write(outStream);
 			}
 		} catch (Exception e) {
@@ -658,7 +627,7 @@ public class MonitoringSession implements Runnable {
 
 						String ext = getYtDashFormat(videoContentType, audioContentType);
 						file += "." + ext;
-
+						System.out.println("+++updating adding");
 						XDMApp.getInstance().addMedia(dm, file, YtUtil.getInfoFromITAG(info.video ? info.itag : di.itag)
 								+ (szStr == null ? "" : " " + szStr));
 						return true;

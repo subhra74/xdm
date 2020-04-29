@@ -4,7 +4,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
 
 import xdman.XDMConstants;
 import xdman.downloaders.AbstractChannel;
@@ -92,13 +95,18 @@ public class HttpChannel extends AbstractChannel {
 					hc = new XDMHttpClient(url);
 				}
 
-				
 				if (headers != null) {
 					Iterator<HttpHeader> headerIt = headers.getAll();
+					List<String> cookies = new ArrayList<String>();
 					while (headerIt.hasNext()) {
 						HttpHeader header = headerIt.next();
+						if (header.getName().toLowerCase(Locale.ENGLISH).equals("cookie")) {
+							cookies.add(header.getValue());
+							continue;
+						}
 						hc.addHeader(header.getName(), header.getValue());
 					}
+					hc.addHeader("Cookie", String.join(";", cookies));
 				}
 
 				long length = chunk.getLength();
@@ -173,7 +181,6 @@ public class HttpChannel extends AbstractChannel {
 					}
 					throw new JavaClientRequiredException();
 				}
-
 
 				if ("T1".equals(chunk.getTag()) || "T2".equals(chunk.getTag())) {
 					if ("text/plain".equals(hc.getResponseHeader("content-type"))) {
@@ -315,10 +322,9 @@ public class HttpChannel extends AbstractChannel {
 	public String getHeader(String name) {
 		return hc.getResponseHeader(name);
 	}
-	
+
 	private String getHostName(String hostPort) {
 		return hostPort.split(":")[0];
 	}
-
 
 }

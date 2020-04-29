@@ -33,7 +33,7 @@ public class Config {
 	private boolean autoShutdown;
 	private int duplicateAction;
 	private boolean quietMode;
-	private String[] blockedHosts, vidUrls, fileExts, vidExts;
+	private String[] blockedHosts, vidUrls, fileExts, vidExts, vidMime;
 	private String[] defaultFileTypes, defaultVideoTypes;
 	private int networkTimeout, tcpWindowSize;
 	private int proxyMode;// 0 no-proxy,1 pac, 2 http, 3 socks
@@ -327,6 +327,8 @@ public class Config {
 				"MOV", "MPG", "MPEG", "OPUS" };
 		this.vidExts = defaultVideoTypes;
 		this.vidUrls = new String[] { ".facebook.com|pagelet", "player.vimeo.com/", "instagram.com/p/" };
+		this.vidMime = new String[] { "video/", "audio/", "mpegurl", "f4m", "m3u8" };
+
 		this.networkTimeout = 60;
 		this.tcpWindowSize = 0;
 		this.speedLimit = 0;
@@ -541,11 +543,11 @@ public class Config {
 	public final void setDuplicateAction(int duplicateAction) {
 		this.duplicateAction = duplicateAction;
 	}
-	
+
 	public boolean isQuietMode() {
 		return quietMode;
 	}
-	
+
 	public void setQuietMode(boolean quietMode) {
 		this.quietMode = quietMode;
 	}
@@ -885,5 +887,13 @@ public class Config {
 
 	public void setShowVideoListOnlyInBrowser(boolean showVideoListOnlyInBrowser) {
 		this.showVideoListOnlyInBrowser = showVideoListOnlyInBrowser;
+	}
+
+	public String[] getVidMime() {
+		return vidMime;
+	}
+
+	public void setVidMime(String[] vidMime) {
+		this.vidMime = vidMime;
 	}
 }
