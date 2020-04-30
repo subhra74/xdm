@@ -8,6 +8,10 @@ import (
 
 //SpawnProcess creates a process
 func SpawnProcess() {
+
+	// log,err:=os.Create("C:\\Users\\subhro\\Documents\\go-projects\\native-messaging\\log2.txt")
+	// log.WriteString("Going to spawn process\n")
+
 	var sI syscall.StartupInfo
 	var pI syscall.ProcessInformation
 
@@ -19,11 +23,19 @@ func SpawnProcess() {
 
 	path,err:=os.Executable()
 
-	if err==nil{
+	// log.WriteString("path: "+path+"\n")
+
+
+	if err!=nil{
 		return
 	}
 
 	path=filepath.Dir(path)
+
+	// log.WriteString("path: "+path+"\n")
+
+	// log.WriteString("path: "+"\""+path+"\\jre\\bin\\javaw.exe\" -jar \""+path+"\\xdman.jar\" -m"+"\n")
+
 
 	 syscall.CreateProcess(
 		nil,//syscall.StringToUTF16Ptr(""),

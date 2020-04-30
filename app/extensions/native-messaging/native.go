@@ -12,12 +12,11 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 	"time"
 )
 
-var log *os.File
+//var log *os.File
 
 //NativeMessage serialized message structure
 type NativeMessage struct{
@@ -52,7 +51,7 @@ const CreateBreakAwayFromJob uint32 = 0x01000000
 const CreateNewProcessGroup uint32 = 0x01000000
 
 func readInt32() int64 {
-	log.WriteString("reading chunk size\n")
+	//log.WriteString("reading chunk size\n")
 	var chunkSize int32
 	in := make([]byte, 4)
 	c, err := os.Stdin.Read(in)
@@ -63,7 +62,7 @@ func readInt32() int64 {
 	if err != nil {
 		panic("could not read chunk size")
 	}
-	log.WriteString("chunk size: " + strconv.FormatInt(int64(chunkSize), 10) + "\n")
+	//log.WriteString("chunk size: " + strconv.FormatInt(int64(chunkSize), 10) + "\n")
 	return int64(chunkSize)
 }
 
@@ -71,7 +70,7 @@ func writeInt32(n int) {
 	buf := new(bytes.Buffer)
 	//out:=make([]byte,4)
 	n32 := int32(n)
-	log.WriteString("message payload2: " + strconv.FormatInt(int64(n32), 10) + "\n")
+	//log.WriteString("message payload2: " + strconv.FormatInt(int64(n32), 10) + "\n")
 
 	binary.Write(buf, binary.LittleEndian, n32)
 	os.Stdout.Write(buf.Bytes())
@@ -80,29 +79,29 @@ func writeInt32(n int) {
 func readNativeMessage() string {
 	chunkSize := readInt32()
 	buf := make([]byte, chunkSize)
-	c, err := io.ReadFull(os.Stdin, buf)
-	log.WriteString("message size: " + strconv.FormatInt(int64(c), 10) + "\n")
+	_, err := io.ReadFull(os.Stdin, buf)
+	//log.WriteString("message size: " + strconv.FormatInt(int64(c), 10) + "\n")
 
 	if err != nil {
 		panic("Error reading message body")
 	}
-	log.WriteString("Raw buffer\n")
-	log.Write(buf)
+	// log.WriteString("Raw buffer\n")
+	// log.Write(buf)
 
 	var dat map[string]interface{}
 
 	json.Unmarshal(buf,&dat)
-	log.WriteString("\nParsed message: "+dat["message"].(string)+"\n")
+	// log.WriteString("\nParsed message: "+dat["message"].(string)+"\n")
 
 	str := dat["message"].(string)
-	log.WriteString("message read: " + str + "\n" + strconv.FormatInt(int64(len(str)), 10))
+	// log.WriteString("message read: " + str + "\n" + strconv.FormatInt(int64(len(str)), 10))
 
 	return str
 }
 
 func writeNativeMessage(message string) {
 	buf := []byte(message)
-	log.WriteString("message payload: " + strconv.FormatInt(int64(len(buf)), 10) + "\n")
+	// log.WriteString("message payload: " + strconv.FormatInt(int64(len(buf)), 10) + "\n")
 
 	writeInt32(len(buf))
 	os.Stdout.Write(buf)
@@ -135,13 +134,13 @@ func writeNativeMessage(message string) {
 }
 */
 func createOrOpenXDM(message string){
-	log.WriteString("Processing message: "+message+"\n");
+	//log.WriteString("Processing message: "+message+"\n");
 	valid:=false
 	var header string
 	if len(message)>0{
 		lines:=strings.Split(message,"\r\n")
 		header=lines[0]
-		log.WriteString("Received header: '"+header+"'\r\n");
+		//log.WriteString("Received header: '"+header+"'\r\n");
 		if header=="/download"||header=="/video"||header=="/quit" ||
 			header=="/cmd"||header=="/preview"||header=="/links"||
 			header=="/item"||header=="/clear"{
@@ -149,7 +148,7 @@ func createOrOpenXDM(message string){
 		}
 	}
 	if(!valid){
-		log.WriteString("Received header: "+header+" is not valid\n");
+		//log.WriteString("Received header: "+header+" is not valid\n");
 		return
 	}
 	processCreated:=false
@@ -161,6 +160,7 @@ func createOrOpenXDM(message string){
 			return
 		}
 		if !processCreated{
+			//log.WriteString("Spawing process\n");
 			SpawnProcess()
 			processCreated = true
 		}
@@ -242,7 +242,7 @@ func loadSettings(settingsFile string){
 func watchForSettingsChange(){
 	userHome,err:=os.UserHomeDir()
 	if err!=nil{
-		log.WriteString("Unble to get user home!\n")
+		//log.WriteString("Unble to get user home!\n")
 		panic("Unble to get user home!\n")
 	}
 	keyFile:=path.Join(userHome,".xdman","settings_updated")
@@ -263,7 +263,8 @@ func watchForSettingsChange(){
 
 func main() {
 
-	log, _ = os.Create("C:\\Users\\subhro\\Documents\\go-projects\\native-messaging\\log.txt")
+	//log, _ = os.Create("C:\\Users\\subhro\\Documents\\go-projects\\native-messaging\\log.txt")
+	//SpawnProcess()
 	go watchForSettingsChange()
 	for {
 		message := readNativeMessage()
