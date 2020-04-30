@@ -231,7 +231,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		y = getScaledInt(25);
 		h = getScaledInt(40);
 
-		btnNav = new JLabel(ImageResource.get("back.png"));
+		btnNav = new JLabel(ImageResource.getIcon("back.png",32,32));
 		btnNav.setFont(FontResource.getBiggerFont());
 		btnNav.setForeground(ColorResource.getSelectionColor());
 		btnNav.setBounds(getScaledInt(15), y, getScaledInt(35), h);
@@ -344,7 +344,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		chkOverwriteExisting.setBounds(getScaledInt(15), y, getScaledInt(350) - getScaledInt(30), h);
 		panel.add(chkOverwriteExisting);
 		y += h;
-		
+
 		h = getScaledInt(30);
 		chkQuietMode = createCheckBox("LBL_QUIET_MODE");
 		chkQuietMode.setBounds(getScaledInt(15), y, getScaledInt(350) - getScaledInt(30), h);
@@ -634,8 +634,8 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 	private JCheckBox createCheckBox(String name, Font font) {
 		JCheckBox chk = new JCheckBox(StringResource.get(name));
 		chk.setName(name);
-		chk.setIcon(ImageResource.get("unchecked.png"));
-		chk.setSelectedIcon(ImageResource.get("checked.png"));
+		chk.setIcon(ImageResource.getIcon("unchecked.png", 16, 16));
+		chk.setSelectedIcon(ImageResource.getIcon("checked.png", 16, 16));
 		chk.setOpaque(false);
 		chk.setFocusPainted(false);
 		chk.setForeground(Color.WHITE);
@@ -2142,8 +2142,8 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 
 	private JRadioButton createRadioButton(String name, Font font) {
 		JRadioButton chk = new JRadioButton(StringResource.get(name));
-		chk.setIcon(ImageResource.get("unchecked.png"));
-		chk.setSelectedIcon(ImageResource.get("checked.png"));
+		chk.setIcon(ImageResource.getIcon("unchecked.png",16,16));
+		chk.setSelectedIcon(ImageResource.getIcon("checked.png",16,16));
 		chk.setOpaque(false);
 		chk.setFocusPainted(false);
 		chk.setForeground(Color.WHITE);

@@ -1,6 +1,8 @@
 package xdman.ui.components;
 
 import java.awt.*;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.*;
 import javax.swing.border.*;
@@ -15,6 +17,7 @@ public class XDMTableCellRenderer implements TableCellRenderer {
 
 	JLabel iconLbl, titleLbl, statLbl, dateLbl, lineLbl;
 	JPanel pcell;
+	private Map<String, Icon> iconMap = new HashMap<String, Icon>();
 
 	public XDMTableCellRenderer() {
 		titleLbl = new JLabel("This is sample title text");
@@ -29,7 +32,15 @@ public class XDMTableCellRenderer implements TableCellRenderer {
 
 		iconLbl.setOpaque(false);
 		iconLbl.setPreferredSize(new Dimension(XDMUtils.getScaledInt(56), XDMUtils.getScaledInt(56)));
-		iconLbl.setIcon(ImageResource.get("document.png"));
+
+		iconMap.put("document.png", ImageResource.getIcon("document.png", 48, 48));
+		iconMap.put("compressed.png", ImageResource.getIcon("compressed.png", 48, 48));
+		iconMap.put("program.png", ImageResource.getIcon("program.png", 48, 48));
+		iconMap.put("music.png", ImageResource.getIcon("music.png", 48, 48));
+		iconMap.put("video.png", ImageResource.getIcon("video.png", 48, 48));
+		iconMap.put("other.png", ImageResource.getIcon("other.png", 48, 48));
+
+		iconLbl.setIcon(iconMap.get("document.png"));
 		// iconLbl.setBorder(new EmptyBorder(5,5,5,5));
 
 		titleLbl.setBackground(Color.WHITE);
@@ -97,22 +108,22 @@ public class XDMTableCellRenderer implements TableCellRenderer {
 		}
 		switch (ent.getCategory()) {
 		case XDMConstants.DOCUMENTS:
-			iconLbl.setIcon(ImageResource.get("document.png"));
+			iconLbl.setIcon(iconMap.get("document.png"));
 			break;
 		case XDMConstants.COMPRESSED:
-			iconLbl.setIcon(ImageResource.get("compressed.png"));
+			iconLbl.setIcon(iconMap.get("compressed.png"));
 			break;
 		case XDMConstants.PROGRAMS:
-			iconLbl.setIcon(ImageResource.get("program.png"));
+			iconLbl.setIcon(iconMap.get("program.png"));
 			break;
 		case XDMConstants.MUSIC:
-			iconLbl.setIcon(ImageResource.get("music.png"));
+			iconLbl.setIcon(iconMap.get("music.png"));
 			break;
 		case XDMConstants.VIDEO:
-			iconLbl.setIcon(ImageResource.get("video.png"));
+			iconLbl.setIcon(iconMap.get("video.png"));
 			break;
 		default:
-			iconLbl.setIcon(ImageResource.get("other.png"));
+			iconLbl.setIcon(iconMap.get("other.png"));
 			break;
 		}
 		return pcell;

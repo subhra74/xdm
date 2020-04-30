@@ -543,13 +543,14 @@ public class XDMUtils {
 	private static int screenType = -1;
 
 	public static final int getScaledInt(int value) {
+		return value;
 		//System.err.println("in: " + value);
 //		if (dpiScale == 0.0f) {
 //			int dpi = Toolkit.getDefaultToolkit().getScreenResolution();
 //			dpiScale = dpi / 96;
 //		}
 		//System.err.println("out: " + (value * dpiScale) + " dpi: " + dpiScale);
-		return (int) (value * dpiScale);
+		//return (int) (value * dpiScale);
 	}
 
 	/*

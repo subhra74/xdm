@@ -23,8 +23,8 @@ public class SimpleCheckboxRender extends JCheckBox implements ListCellRenderer<
 		setOpaque(true);
 		setPreferredSize(new Dimension(getScaledInt(100), getScaledInt(30)));
 		setBorder(new EmptyBorder(getScaledInt(0), getScaledInt(5), 0, 0));
-		setIcon(ImageResource.get("unchecked.png"));
-		setSelectedIcon(ImageResource.get("checked.png"));
+		setIcon(ImageResource.getIcon("unchecked.png",16,16));
+		setSelectedIcon(ImageResource.getIcon("checked.png",16,16));
 	}
 
 	@Override

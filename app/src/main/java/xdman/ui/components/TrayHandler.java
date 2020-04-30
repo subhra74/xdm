@@ -41,10 +41,10 @@ public class TrayHandler {
 			if (Config.getInstance().isHideTray())
 				return;
 			else {
-				img = ImageResource.get("icon_linux.png").getImage();
+				img = ImageResource.getImage("icon_linux.png");
 			}
 		} else {
-			img = ImageResource.get("icon.png").getImage();
+			img = ImageResource.getImage("icon.png");
 		}
 
 		final PopupMenu popup = new PopupMenu();

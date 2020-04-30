@@ -231,7 +231,7 @@ public class NewDownloadWindow extends JDialog implements ActionListener, Docume
 			Logger.log(e);
 		}
 
-		setIconImage(ImageResource.get("icon.png").getImage());
+		setIconImage(ImageResource.getImage("icon.png"));
 		setSize(getScaledInt(400), getScaledInt(210));
 		setLocationRelativeTo(null);
 		setAlwaysOnTop(true);
@@ -249,7 +249,7 @@ public class NewDownloadWindow extends JDialog implements ActionListener, Docume
 		closeBtn.setFocusPainted(false);
 		closeBtn.setName("CLOSE");
 
-		closeBtn.setIcon(ImageResource.get("title_close.png"));
+		closeBtn.setIcon(ImageResource.getIcon("title_close.png",20,20));
 		closeBtn.addActionListener(this);
 		titlePanel.add(closeBtn);
 

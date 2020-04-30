@@ -141,8 +141,8 @@ public class MessageBox extends JPanel implements ActionListener {
 		jsp.setBorder(null);
 
 		chkOption = new JCheckBox(StringResource.get("LBL_DELETE_FILE"));
-		chkOption.setIcon(ImageResource.get("unchecked.png"));
-		chkOption.setSelectedIcon(ImageResource.get("checked.png"));
+		chkOption.setIcon(ImageResource.getIcon("unchecked.png",16,16));
+		chkOption.setSelectedIcon(ImageResource.getIcon("checked.png",16,16));
 		chkOption.setBounds(getScaledInt(15), getScaledInt(130), getScaledInt(320), getScaledInt(30));
 		chkOption.setOpaque(false);
 		chkOption.setFocusPainted(false);
