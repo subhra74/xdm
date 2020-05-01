@@ -20,7 +20,7 @@
     "activeTab",
     "webRequest",
     "webRequestBlocking",
-	"nativeMessaging",
+    "nativeMessaging",
     "*://*/*"
   ],
   "applications": {

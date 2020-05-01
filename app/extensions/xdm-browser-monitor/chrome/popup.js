@@ -47,7 +47,7 @@ function renderList(arr) {
     for (var i = 0; i < arr.length; i++) {
         var listItem = arr[i];
 
-        var text = toUTF8(listItem.text);
+        var text = listItem.text;//toUTF8(listItem.text);
 
         var info = listItem.info;
         var id = listItem.id;

@@ -576,13 +576,13 @@
                     }
                     updateBrowserAction();
 
-            console.log("Received: " + data);
+            log("Received: " + data);
         });
 
         /*
         On start up send the app a message.
         */
-        console.log("Sending to native...")
+        log("Sending to native...")
         port.postMessage({"message":"hello from extension"});
     };
 

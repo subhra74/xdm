@@ -4,7 +4,7 @@
   "minimum_chrome_version": "18.0",
   "name": "Xtreme Download Manager",
   "description": "XDM is an open source download manager",
-  "version": "2.1",
+  "version": "2.2",
   "icons": {
     "48": "icon.png",
     "128": "icon-128.png"
@@ -21,7 +21,8 @@
     "contextMenus",
     "webRequest",
     "webRequestBlocking",
-    "*://*/*"
+    "*://*/*",
+    "nativeMessaging"
   ],
   "commands": {
     "toggle-monitoring": {
