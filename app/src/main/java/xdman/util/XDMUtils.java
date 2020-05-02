@@ -24,7 +24,7 @@ import xdman.XDMConstants;
 import xdman.downloaders.metadata.HttpMetadata;
 
 public class XDMUtils {
-	private static float dpiScale;
+	//private static float dpiScale;
 	// private static Map<Integer, String> categoryFolderMap;
 	//
 	// static {
@@ -40,12 +40,12 @@ public class XDMUtils {
 	// return categoryFolderMap.get(category);
 	// }
 
-	static {
-		//Fixed issue with DPI scaling in Java 9 and higher
-		int dpi = Toolkit.getDefaultToolkit().getScreenResolution();
-		dpiScale = dpi / 96F;
-		//System.out.println("DPI init " + dpiScale);
-	}
+//	static {
+//		//Fixed issue with DPI scaling in Java 9 and higher
+//		int dpi = Toolkit.getDefaultToolkit().getScreenResolution();
+//		dpiScale = dpi / 96F;
+//		//System.out.println("DPI init " + dpiScale);
+//	}
 
 	private static final char[] invalid_chars = { '/', '\\', '"', '?', '*', '<',
 			'>', ':', '|' };
@@ -512,23 +512,23 @@ public class XDMUtils {
 		}
 	}
 
-	public static int detectScreenType() {
-		if (screenType < 0) {
-//			int dpi = Toolkit.getDefaultToolkit().getScreenResolution();
-//			dpiScale = dpi / 96.0f;
-			Logger.log("Dpi scale init: " + dpiScale);
-			// Dimension d = Toolkit.getDefaultToolkit().getScreenSize();
-			// double height = d.getHeight();
-			if (dpiScale >= 2) {
-				screenType = XDMConstants.XHDPI;
-			} else if (dpiScale >= 1.25) {
-				screenType = XDMConstants.HDPI;
-			} else {
-				screenType = XDMConstants.NORMAL;
-			}
-		}
-		return screenType;
-	}
+//	public static int detectScreenType() {
+////		if (screenType < 0) {
+//////			int dpi = Toolkit.getDefaultToolkit().getScreenResolution();
+//////			dpiScale = dpi / 96.0f;
+////			Logger.log("Dpi scale init: " + dpiScale);
+////			// Dimension d = Toolkit.getDefaultToolkit().getScreenSize();
+////			// double height = d.getHeight();
+////			if (dpiScale >= 2) {
+////				screenType = XDMConstants.XHDPI;
+////			} else if (dpiScale >= 1.25) {
+////				screenType = XDMConstants.HDPI;
+////			} else {
+////				screenType = XDMConstants.NORMAL;
+////			}
+////		}
+//		return screenType;
+//	}
 
 	public static List<HttpMetadata> toMetadata(List<String> urls) {
 		List<HttpMetadata> list = new ArrayList<>();

@@ -71,6 +71,10 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 	public static final String APP_HOME_URL = "https://github.com/subhra74/xdm";
 	public static final String APP_TWITTER_URL = "https://twitter.com/XDM_subhra74";
 	public static final String APP_FACEBOOK_URL = "https://www.facebook.com/XDM.subhra74/";
+	public static final String[] ZOOM_LEVEL_STRINGS = { "Default", "50%", "75%", "100%", "125%", "150%", "200%", "250%",
+			"300%", "350%", "400%", "450%", "500%" };
+	public static final double[] ZOOM_LEVEL_VALUES = { -1, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5,
+			5.0 };
 
 	private ArrayList<ListChangeListener> listChangeListeners;
 	private Map<String, DownloadEntry> downloads;
@@ -131,6 +135,16 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 	}
 
 	public static void start(String args[]) {
+
+		Config.getInstance().load();
+		if (Config.getInstance().getZoomLevelIndex() > 0) {
+			double zoom = XDMApp.ZOOM_LEVEL_VALUES[Config.getInstance().getZoomLevelIndex()];
+			System.out.println("Zoom index; " + Config.getInstance().getZoomLevelIndex() + " " + zoom);
+
+			System.setProperty("sun.java2d.uiScale.enabled", "true");
+			System.setProperty("sun.java2d.uiScale", String.format("%.2f", zoom));
+		}
+
 		paramMap = new HashMap<>();
 		boolean expect = false;
 		boolean winInstall = false;
@@ -197,22 +211,22 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 
 	private XDMApp() {
 		Logger.log("Init app");
-		String stype = paramMap.get("screen");
-		if (stype != null) {
-			if ("xxhdpi".equals(stype)) {
-				XDMUtils.forceScreenType(XDMConstants.XHDPI);
-			} else if ("xhdpi".equals(stype)) {
-				XDMUtils.forceScreenType(XDMConstants.HDPI);
-			} else if ("hdpi".equals(stype)) {
-				XDMUtils.forceScreenType(XDMConstants.NORMAL);
-			}
-		}
+//		String stype = paramMap.get("screen");
+//		if (stype != null) {
+//			if ("xxhdpi".equals(stype)) {
+//				XDMUtils.forceScreenType(XDMConstants.XHDPI);
+//			} else if ("xhdpi".equals(stype)) {
+//				XDMUtils.forceScreenType(XDMConstants.HDPI);
+//			} else if ("hdpi".equals(stype)) {
+//				XDMUtils.forceScreenType(XDMConstants.NORMAL);
+//			}
+//		}
 		try {
 			UIManager.setLookAndFeel(new XDMLookAndFeel());
 		} catch (Exception e) {
 			Logger.log(e);
 		}
-		Config.getInstance().load();
+
 		Config.getInstance().setAutoShutdown(false);
 		listChangeListeners = new ArrayList<ListChangeListener>();
 		downloads = new HashMap<String, DownloadEntry>();

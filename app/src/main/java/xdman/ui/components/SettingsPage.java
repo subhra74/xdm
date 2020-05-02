@@ -125,6 +125,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 	JCheckBox chkQuietMode;
 	JComboBox<String> cmbMax;
 	JComboBox<String> cmbMinVidSize;
+	JComboBox<String> cmbZoom;
 	// JComboBox<String> cmbDupAction;
 	JTextField txtDefFolder, txtTempFolder;
 
@@ -380,6 +381,24 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		cmbMax.setBounds(getScaledInt(250), y, getScaledInt(75), h);
 		cmbMax.setRenderer(new SimpleListRenderer());
 		panel.add(cmbMax);
+		y += h;
+		y += getScaledInt(10);
+
+		y += getScaledInt(10);
+		h = getScaledInt(30);
+		JLabel lblZoomTitle = new JLabel(StringResource.get("LBL_ZOOM_LEVEL"));
+		lblZoomTitle.setForeground(Color.WHITE);
+		lblZoomTitle.setFont(FontResource.getNormalFont());
+		lblZoomTitle.setBounds(getScaledInt(15), y, getScaledInt(350) - getScaledInt(30), h);
+		panel.add(lblZoomTitle);
+		y += getScaledInt(3);
+
+		h = getScaledInt(25);
+		cmbZoom = new JComboBox<String>(XDMApp.ZOOM_LEVEL_STRINGS);
+		cmbZoom.setBackground(ColorResource.getDarkerBgColor());
+		cmbZoom.setBounds(getScaledInt(250), y, getScaledInt(75), h);
+		cmbZoom.setRenderer(new SimpleListRenderer());
+		panel.add(cmbZoom);
 		y += h;
 		y += getScaledInt(10);
 
@@ -966,6 +985,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		chkQuietMode.setSelected(config.isQuietMode());
 		Logger.log("Max download: " + config.getMaxDownloads());
 		cmbMax.setSelectedItem(config.getMaxDownloads() > 0 ? config.getMaxDownloads() + "" : "N/A");
+		cmbZoom.setSelectedIndex(config.getZoomLevelIndex());
 		// cmbDupAction.setSelectedIndex(config.getDuplicateAction());
 		txtTempFolder.setText(config.getTemporaryFolder());
 		cmbCategory.setSelectedIndex(0);
@@ -2390,6 +2410,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		} else {
 			config.setMaxDownloads(Integer.parseInt(text));
 		}
+		config.setZoomLevelIndex(cmbZoom.getSelectedIndex());
 		// config.setDuplicateAction(cmbDupAction.getSelectedIndex());
 		config.setDownloadFolder(txtDefFolder.getText());
 		config.setTemporaryFolder(txtTempFolder.getText());

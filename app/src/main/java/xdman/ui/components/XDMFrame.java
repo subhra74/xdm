@@ -8,9 +8,14 @@ import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
+import java.awt.Insets;
 import java.awt.MenuComponent;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
@@ -19,6 +24,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.event.WindowEvent;
+import java.util.Arrays;
 
 import javax.swing.Box;
 import javax.swing.Icon;
@@ -286,13 +292,44 @@ public class XDMFrame extends JFrame implements ComponentListener {
 		};
 	};
 
+	Rectangle winDim = null;
+	boolean maximized = false;
+
 	ActionListener actMax = new ActionListener() {
 		public void actionPerformed(ActionEvent action) {
-			XDMFrame.this
-					.setMaximizedBounds(GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds());
-			XDMFrame.this.setExtendedState(
-					(XDMFrame.this.getExtendedState() & JFrame.MAXIMIZED_BOTH) == JFrame.MAXIMIZED_BOTH ? JFrame.NORMAL
-							: JFrame.MAXIMIZED_BOTH);
+			if (maximized) {
+				setSize(winDim.width, winDim.height);
+				setLocation(winDim.x, winDim.y);
+				maximized = false;
+			} else {
+				winDim = getBounds();
+				Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+				Insets scnMax = Toolkit.getDefaultToolkit().getScreenInsets(getGraphicsConfiguration());
+				Rectangle r = new Rectangle(0 + scnMax.left, 0 + scnMax.top, screenSize.width - scnMax.right,
+						screenSize.height - scnMax.bottom);
+				setSize(r.width, r.height);
+				setLocation(r.x, r.y);
+				maximized = true;
+			}
+
+			System.out.println("Dpi scale: " + DpiUtils.getWindowScale(XDMFrame.this));
+
+			// XDMFrame.this.setMaximizedBounds(null);
+//			new (0 + scnMax.left, 0 + scnMax.top,
+//					screenSize.width - scnMax.right, screenSize.height - scnMax.bottom));
+
+//			Rectangle r = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+//
+//			System.out.println(r + " -- " + getGraphicsConfiguration().getBounds() + " -- "
+//					+ GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds() + " -- "
+//					+ GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
+//							.getDefaultConfiguration().getBounds());
+//
+//			XDMFrame.this
+//					.setMaximizedBounds(GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds());
+//			XDMFrame.this.setExtendedState(
+//					(XDMFrame.this.getExtendedState() & JFrame.MAXIMIZED_BOTH) == JFrame.MAXIMIZED_BOTH ? JFrame.NORMAL
+//							: JFrame.MAXIMIZED_BOTH);
 		};
 	};
 
@@ -467,5 +504,35 @@ public class XDMFrame extends JFrame implements ComponentListener {
 
 	private synchronized void stopModal() {
 		// notifyAll();
+	}
+
+	static class DpiUtils {
+		public static double getWindowScale(Window window) {
+			GraphicsDevice device = getWindowDevice(window);
+			return device.getDisplayMode().getWidth() / (double) device.getDefaultConfiguration().getBounds().width;
+		}
+
+		public static GraphicsDevice getWindowDevice(Window window) {
+			Rectangle bounds = window.getBounds();
+			return Arrays.asList(GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices()).stream()
+
+					// pick devices where window located
+					.filter(d -> d.getDefaultConfiguration().getBounds().intersects(bounds))
+
+					// sort by biggest intersection square
+					.sorted((f, s) -> Long.compare(//
+							square(f.getDefaultConfiguration().getBounds().intersection(bounds)),
+							square(s.getDefaultConfiguration().getBounds().intersection(bounds))))
+
+					// use one with the biggest part of the window
+					.reduce((f, s) -> s) //
+
+					// fallback to default device
+					.orElse(window.getGraphicsConfiguration().getDevice());
+		}
+
+		public static long square(Rectangle rec) {
+			return Math.abs(rec.width * rec.height);
+		}
 	}
 }

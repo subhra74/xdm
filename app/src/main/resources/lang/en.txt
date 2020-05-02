@@ -332,3 +332,4 @@ LBL_SHOW_PROGRESS=Show progress
 LBL_FILE_TYPE=File type
 LBL_ALL_QUEUE=All queues
 LBL_SHOW_VIDEO_ONLY_IN_BROWSER=Disable floating 'DOWNLOAD VIDEO' popup
+LBL_ZOOM_LEVEL=Zoom screen (needs restart)

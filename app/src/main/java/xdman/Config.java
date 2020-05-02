@@ -57,6 +57,7 @@ public class Config {
 	private List<MonitoringListener> listeners;
 	private String queueIdFilter;
 	private boolean showVideoListOnlyInBrowser;
+	private int zoomLevelIndex = 0;
 
 	public void addConfigListener(MonitoringListener listener) {
 		listeners.add(listener);
@@ -141,6 +142,7 @@ public class Config {
 				fw.write("lastFolder:" + this.lastFolder + newLine);
 			}
 			fw.write("showVideoListOnlyInBrowser:" + this.showVideoListOnlyInBrowser + newLine);
+			fw.write("zoomLevelIndex:" + this.zoomLevelIndex + newLine);
 
 		} catch (Exception e) {
 		}
@@ -272,6 +274,8 @@ public class Config {
 					this.lastFolder = val;
 				} else if (key.equals("showVideoListOnlyInBrowser")) {
 					this.showVideoListOnlyInBrowser = "true".equals(val);
+				} else if (key.equals("zoomLevelIndex")) {
+					this.zoomLevelIndex = Integer.parseInt(val);
 				}
 			}
 		} catch (Exception e) {
@@ -290,6 +294,7 @@ public class Config {
 	private static Config _config;
 
 	private Config() {
+
 		forceSingleFolder = false;
 		File f = new File(System.getProperty("user.home"), ".xdman");
 		if (!f.exists()) {
@@ -305,13 +310,19 @@ public class Config {
 		if (!f.exists()) {
 			f.mkdir();
 		}
+
 		this.temporaryFolder = f.getAbsolutePath();
+
+//		System.setProperty("sun.java2d.uiScale.enabled", "true");
+//		System.setProperty("sun.java2d.uiScale", "2.75");// String.format("%.2f", zoom));
+
 		this.downloadFolder = XDMUtils.getDownloadsFolder();
 		if (!new File(this.downloadFolder).exists()) {
 			File file = new File(System.getProperty("user.home"), "Downloads");
 			file.mkdirs();
 			this.downloadFolder = file.getAbsolutePath();
 		}
+
 		this.monitoring = true;
 		this.showDownloadWindow = true;
 		this.setMaxSegments(8);
@@ -345,6 +356,7 @@ public class Config {
 		this.noTransparency = false;
 		this.hideTray = true;
 		this.listeners = new ArrayList<>();
+
 	}
 
 	public void createFolders() {
@@ -356,7 +368,7 @@ public class Config {
 		getCategoryVideos();
 	}
 
-	public static Config getInstance() {
+	public static synchronized Config getInstance() {
 		if (_config == null) {
 			_config = new Config();
 		}
@@ -895,5 +907,13 @@ public class Config {
 
 	public void setVidMime(String[] vidMime) {
 		this.vidMime = vidMime;
+	}
+
+	public int getZoomLevelIndex() {
+		return zoomLevelIndex;
+	}
+
+	public void setZoomLevelIndex(int zoomLevelIndex) {
+		this.zoomLevelIndex = zoomLevelIndex;
 	}
 }
