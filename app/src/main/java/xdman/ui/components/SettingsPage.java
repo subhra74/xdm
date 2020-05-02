@@ -64,6 +64,7 @@ import xdman.ui.res.StringResource;
 import xdman.util.BrowserLauncher;
 import xdman.util.DateTimeUtils;
 import xdman.util.Logger;
+import xdman.util.NativeMessagingHostInstaller;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
 
@@ -231,7 +232,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		y = getScaledInt(25);
 		h = getScaledInt(40);
 
-		btnNav = new JLabel(ImageResource.getIcon("back.png",32,32));
+		btnNav = new JLabel(ImageResource.getIcon("back.png", 32, 32));
 		btnNav.setFont(FontResource.getBiggerFont());
 		btnNav.setForeground(ColorResource.getSelectionColor());
 		btnNav.setBounds(getScaledInt(15), y, getScaledInt(35), h);
@@ -864,6 +865,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 				}
 			}
 			if ("FF_INSTALL".equals(name)) {
+				NativeMessagingHostInstaller.installNativeMessagingHostForFireFox();
 				if (!BrowserLauncher.launchFirefox(ffAMOURL)) {
 					String msg = String.format(StringResource.get("MSG_ADDON_DESC"), "Mozilla Firefox", ffAMOURL);
 					showAddonUrl(ffAMOURL, msg);
@@ -879,6 +881,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 				XDMUtils.browseURL("https://sourceforge.net/p/xdman/blog/2018/01/xdm-integration-with-microsoft-edge/");
 			}
 			if ("CR_INSTALL".equals(name)) {
+				NativeMessagingHostInstaller.installNativeMessagingHostForChrome();
 				if (!BrowserLauncher.launchChrome(chromeWebStoreURL)) {
 					String msg = String.format(StringResource.get("MSG_ADDON_DESC"), "Google Chrome",
 							chromeWebStoreURL);
@@ -890,6 +893,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 				}
 			}
 			if ("CM_INSTALL".equals(name)) {
+				NativeMessagingHostInstaller.installNativeMessagingHostForChromium();
 				String msg = String.format(StringResource.get("MSG_ADDON_DESC"), "Chromium", chromeWebStoreURL);
 				showAddonUrl(chromeWebStoreURL, msg);
 				// MessageBox.show(parent,
@@ -898,6 +902,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 				// MessageBox.OK);
 			}
 			if ("VL_INSTALL".equals(name)) {
+				NativeMessagingHostInstaller.installNativeMessagingHostForChrome();
 				String msg = String.format(StringResource.get("MSG_ADDON_DESC"), "Vivaldi", chromeWebStoreURL);
 				showAddonUrl(chromeWebStoreURL, msg);
 				// MessageBox.show(parent,
@@ -906,6 +911,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 				// MessageBox.OK);
 			}
 			if ("OP_INSTALL".equals(name)) {
+				NativeMessagingHostInstaller.installNativeMessagingHostForChrome();
 				String msg = String.format(StringResource.get("MSG_ADDON_DESC"), "Opera", operaExtURL);
 				showAddonUrl(operaExtURL, msg);
 				// MessageBox.show(parent,
@@ -2142,8 +2148,8 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 
 	private JRadioButton createRadioButton(String name, Font font) {
 		JRadioButton chk = new JRadioButton(StringResource.get(name));
-		chk.setIcon(ImageResource.getIcon("unchecked.png",16,16));
-		chk.setSelectedIcon(ImageResource.getIcon("checked.png",16,16));
+		chk.setIcon(ImageResource.getIcon("unchecked.png", 16, 16));
+		chk.setSelectedIcon(ImageResource.getIcon("checked.png", 16, 16));
 		chk.setOpaque(false);
 		chk.setFocusPainted(false);
 		chk.setForeground(Color.WHITE);

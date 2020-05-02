@@ -62,6 +62,14 @@ public class MessageBox extends JPanel implements ActionListener {
 		init();
 	}
 
+	public static int show(XDMFrame parent, String msg) {
+		return show(parent, "XDM", msg, MessageBox.OK_OPTION, MessageBox.OK);
+	}
+
+	public static int show(XDMFrame parent, String title, String msg) {
+		return show(parent, title, msg, MessageBox.OK_OPTION, MessageBox.OK);
+	}
+
 	public static int show(XDMFrame parent, String title, String msg, int buttons, int defaultButton) {
 		return show(parent, title, msg, buttons, defaultButton, null);
 	}
@@ -115,7 +123,8 @@ public class MessageBox extends JPanel implements ActionListener {
 		txtMessage.setLineWrap(true);
 		txtMessage.setBackground(ColorResource.getDarkerBgColor());
 		txtMessage.setForeground(Color.WHITE);
-		txtMessage.setBorder(new EmptyBorder(new Insets(getScaledInt(10), getScaledInt(10), getScaledInt(10), getScaledInt(30))));
+		txtMessage.setBorder(
+				new EmptyBorder(new Insets(getScaledInt(10), getScaledInt(10), getScaledInt(10), getScaledInt(30))));
 		txtMessage.setEditable(false);
 
 		setBackground(ColorResource.getDarkerBgColor());
@@ -141,8 +150,8 @@ public class MessageBox extends JPanel implements ActionListener {
 		jsp.setBorder(null);
 
 		chkOption = new JCheckBox(StringResource.get("LBL_DELETE_FILE"));
-		chkOption.setIcon(ImageResource.getIcon("unchecked.png",16,16));
-		chkOption.setSelectedIcon(ImageResource.getIcon("checked.png",16,16));
+		chkOption.setIcon(ImageResource.getIcon("unchecked.png", 16, 16));
+		chkOption.setSelectedIcon(ImageResource.getIcon("checked.png", 16, 16));
 		chkOption.setBounds(getScaledInt(15), getScaledInt(130), getScaledInt(320), getScaledInt(30));
 		chkOption.setOpaque(false);
 		chkOption.setFocusPainted(false);
