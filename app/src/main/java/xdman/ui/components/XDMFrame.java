@@ -35,6 +35,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
+import javax.swing.JRootPane;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 
@@ -65,6 +66,11 @@ public class XDMFrame extends JFrame implements ComponentListener {
 
 	public XDMFrame() {
 		setUndecorated(true);
+//		getRootPane().setWindowDecorationStyle(JRootPane.FRAME);
+//		setDefaultLookAndFeelDecorated(true);
+
+//		
+
 		createCursors();
 		contentPane = new JPanel(new BorderLayout());
 		modalPane = new LayeredPanel(150);
@@ -302,13 +308,28 @@ public class XDMFrame extends JFrame implements ComponentListener {
 				setLocation(winDim.x, winDim.y);
 				maximized = false;
 			} else {
+
 				winDim = getBounds();
-				Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+
+//				GraphicsEnvironment env = GraphicsEnvironment.getLocalGraphicsEnvironment();
+//				Rectangle bounds = env.getMaximumWindowBounds();
+//				setBounds(bounds);
+
+				Rectangle r1 = getGraphicsConfiguration().getBounds();
 				Insets scnMax = Toolkit.getDefaultToolkit().getScreenInsets(getGraphicsConfiguration());
-				Rectangle r = new Rectangle(0 + scnMax.left, 0 + scnMax.top, screenSize.width - scnMax.right,
-						screenSize.height - scnMax.bottom);
-				setSize(r.width, r.height);
-				setLocation(r.x, r.y);
+				r1.x += scnMax.left;
+				r1.y += scnMax.top;
+				r1.width -= (scnMax.right + scnMax.left);
+				r1.height -= (scnMax.bottom + scnMax.top);
+
+				setBounds(r1);
+
+//				Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+//				Insets scnMax = Toolkit.getDefaultToolkit().getScreenInsets(getGraphicsConfiguration());
+//				Rectangle r = new Rectangle(0, 0, screenSize.width - scnMax.right - scnMax.left,
+//						screenSize.height - scnMax.bottom - scnMax.top);
+//				setSize(r.width, r.height);
+//				setLocation(r.x, r.y);
 				maximized = true;
 			}
 
