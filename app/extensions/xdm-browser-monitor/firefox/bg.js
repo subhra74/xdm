@@ -521,7 +521,7 @@
                     // xhr.send(request.itemId);
                 }
                 else if (request.type === "clear") {
-                    port.postMessage({"message":"/clear\r\n"+request.itemId});
+                    port.postMessage({"message":"/clear"});
 
                     // var xhr = new XMLHttpRequest();
                     // xhr.open('GET', xdmHost + "/clear", true);

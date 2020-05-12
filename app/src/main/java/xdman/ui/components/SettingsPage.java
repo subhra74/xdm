@@ -57,6 +57,7 @@ import xdman.DownloadQueue;
 import xdman.QueueManager;
 import xdman.XDMApp;
 import xdman.XDMConstants;
+import xdman.monitoring.BrowserMonitor;
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
@@ -669,6 +670,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 
 	private void close() {
 		parent.hideDialog(this);
+		BrowserMonitor.getInstance().updateSettingsAndStatus();
 		System.gc();
 	}
 

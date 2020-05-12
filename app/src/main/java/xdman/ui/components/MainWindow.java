@@ -63,6 +63,7 @@ import xdman.downloaders.metadata.DashMetadata;
 import xdman.downloaders.metadata.HdsMetadata;
 import xdman.downloaders.metadata.HlsMetadata;
 import xdman.downloaders.metadata.HttpMetadata;
+import xdman.monitoring.BrowserMonitor;
 import xdman.network.http.HeaderCollection;
 import xdman.network.http.HttpHeader;
 import xdman.ui.res.ColorResource;
@@ -495,6 +496,7 @@ public class MainWindow extends XDMFrame implements ActionListener {
 		Config.getInstance().enableMonitoring(!Config.getInstance().isBrowserMonitoringEnabled());
 		btn.setIcon(Config.getInstance().isBrowserMonitoringEnabled() ? ImageResource.getIcon("on.png", 85, 21)
 				: ImageResource.getIcon("off.png", 85, 21));
+		BrowserMonitor.getInstance().updateSettingsAndStatus();
 	}
 
 	private void createMainMenu() {

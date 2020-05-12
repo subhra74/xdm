@@ -128,7 +128,7 @@ public class BrowserMonitor implements Runnable {
 			e.printStackTrace();
 		}
 
-		System.err.println(json);
+		//System.err.println(json);
 
 //		json = new StringBuilder();
 //		json.append("{\n\"enabled\": ");

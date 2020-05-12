@@ -12,6 +12,7 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 import xdman.Config;
@@ -85,10 +86,10 @@ public class MonitoringSession implements Runnable {
 	private void onVideoRetrieve(Request request, Response res) throws UnsupportedEncodingException {
 		try {
 			String content = new String(request.getBody(), "utf-8");
-			Logger.log("Video retrieve: "+content);
-			String lines[]=content.split("\r\n");
-			for(String line:lines) {
-				String id=line.trim();
+			Logger.log("Video retrieve: " + content);
+			String lines[] = content.split("\r\n");
+			for (String line : lines) {
+				String id = line.trim();
 				for (VideoPopupItem item : XDMApp.getInstance().getVideoItemsList()) {
 					if (id.equals(item.getMetadata().getId())) {
 						HttpMetadata md = item.getMetadata().derive();
@@ -166,10 +167,10 @@ public class MonitoringSession implements Runnable {
 			XDMApp.getInstance().showMainWindow();
 		} else {
 			String[] arr = new String(data).split("\n");
-			
-			String url = null; 
+
+			String url = null;
 			String output = null;
-			
+
 			for (int i = 0; i < arr.length; i++) {
 				String str = arr[i];
 				int index = str.indexOf(":");
@@ -180,35 +181,32 @@ public class MonitoringSession implements Runnable {
 				if (key.equals("url")) {
 					url = val;
 				}
-				if(key.equals("output")){
+				if (key.equals("output")) {
 					output = val;
 				}
-				if(key.equals("quiet")){
+				if (key.equals("quiet")) {
 					Config.getInstance().setQuietMode("true".equals(val));
 				}
 			}
-			
-			if(url != null) {
+
+			if (url != null) {
 				var metadata = new HttpMetadata();
 				metadata.setUrl(url);
-				
+
 				String file;
-				if(output != null) {
+				if (output != null) {
 					file = output;
 				} else {
 					file = XDMUtils.getFileName(url);
 				}
-				
+
 				XDMApp.getInstance().addDownload(metadata, file);
 			}
 		}
 		setResponseOk(res);
 	}
 
-	
-
 	private void onSync(Request request, Response res) throws UnsupportedEncodingException {
-		
 
 		// System.out.println(json);
 
@@ -218,7 +216,7 @@ public class MonitoringSession implements Runnable {
 		res.setMessage("OK");
 
 		HeaderCollection headers = new HeaderCollection();
-		//headers.addHeader("Content-Length", b.length + "");
+		// headers.addHeader("Content-Length", b.length + "");
 		headers.addHeader("Content-Type", "application/json");
 		headers.addHeader("Cache-Control", "no-cache, no-store, must-revalidate");
 		headers.addHeader("Pragma", "no-cache");
@@ -290,7 +288,7 @@ public class MonitoringSession implements Runnable {
 			Logger.log("sending 204...");
 			onVideoRetrieve(request, response);
 		} else if (verb.startsWith("/clear")) {
-			Logger.log("sending 204...");
+			Logger.log("Clearing video list");
 			onVideoClear(request, response);
 		} else {
 			throw new IOException("invalid verb " + verb);
@@ -300,6 +298,7 @@ public class MonitoringSession implements Runnable {
 	private void onVideoClear(Request request, Response response) {
 		try {
 			XDMApp.getInstance().getVideoItemsList().clear();
+			BrowserMonitor.getInstance().updateSettingsAndStatus();
 		} finally {
 			setResponseOk(response);
 		}
@@ -484,8 +483,8 @@ public class MonitoringSession implements Runnable {
 			while (true) {
 				this.request.read(inStream);
 				this.processRequest(this.request, this.response);
-				System.out.println("Request processed, sending response\n");
-				this.response.write(System.out);
+				// System.out.println("Request processed, sending response\n");
+				// this.response.write(System.out);
 				this.response.write(outStream);
 			}
 		} catch (Exception e) {
@@ -753,16 +752,24 @@ public class MonitoringSession implements Runnable {
 			client = new JavaHttpClient(data.getUrl());
 			Iterator<HttpHeader> headers = data.getRequestHeaders().getAll();
 			boolean hasAccept = false;
+			List<String> cookieList = new ArrayList<String>();
 			while (headers.hasNext()) {
 				HttpHeader header = headers.next();
-				Logger.log(header.getName() + " " + header.getValue());
+				//System.err.println(header.getName() + " " + header.getValue());
+				if (header.getName().toLowerCase(Locale.ENGLISH).equals("cookie")) {
+					cookieList.add(header.getValue());
+					continue;
+				}
 				if (header.getName().toLowerCase().equals("accept")) {
 					hasAccept = true;
 				}
 				client.addHeader(header.getName(), header.getValue());
 			}
 			if (!hasAccept) {
-				client.addHeader("Accept", "*");
+				client.addHeader("Accept", "*/*");
+			}
+			if (cookieList.size() > 0) {
+				client.addHeader("Cookie", String.join(";", cookieList));
 			}
 			client.setFollowRedirect(true);
 			client.connect();
