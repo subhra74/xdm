@@ -65,6 +65,11 @@ public class NativeMessagingHostInstaller {
 				return;
 			}
 		} else {
+			File manifestFolder = new File(os == XDMUtils.MAC ? (chromium ? CHROMIUM_MAC_LOCATION : CHROME_MAC_LOCATION)
+					: (chromium ? CHROMIUM_LINUX_LOCATION : CHROME_LINUX_LOCATION));
+			if (!manifestFolder.exists()) {
+				manifestFolder.mkdirs();
+			}
 			File manifestFile = new File(
 					os == XDMUtils.MAC ? (chromium ? CHROMIUM_MAC_LOCATION : CHROME_MAC_LOCATION)
 							: (chromium ? CHROMIUM_LINUX_LOCATION : CHROME_LINUX_LOCATION),
@@ -104,6 +109,10 @@ public class NativeMessagingHostInstaller {
 				return;
 			}
 		} else {
+			File manifestFolder = new File(os == XDMUtils.MAC ? FIREFOX_MAC_LOCATION : FIREFOX_LINUX_LOCATION);
+			if (!manifestFolder.exists()) {
+				manifestFolder.mkdirs();
+			}
 			File manifestFile = new File(os == XDMUtils.MAC ? FIREFOX_MAC_LOCATION : FIREFOX_LINUX_LOCATION,
 					"xdmff.native_host.json");
 			File nativeHostFile = new File(XDMUtils.getJarFile().getParentFile(),

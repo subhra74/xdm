@@ -31,6 +31,8 @@ public class Response {
 			if (body != null && body.length > 0) {
 				out.write(body);
 			}
+		} else {
+			out.write(buf.toString().getBytes());
 		}
 
 		out.flush();

@@ -128,6 +128,7 @@ public class MonitoringSession implements Runnable {
 		HeaderCollection headers = new HeaderCollection();
 		headers.setValue("Cache-Control", "max-age=0, no-cache, must-revalidate");
 		res.setHeaders(headers);
+		Logger.log("Response set for 204");
 	}
 
 	private void onVideo(Request request, Response res) throws UnsupportedEncodingException {

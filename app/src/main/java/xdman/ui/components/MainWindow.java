@@ -1445,7 +1445,7 @@ public class MainWindow extends XDMFrame implements ActionListener {
 	}
 
 	private void openTranslationPage() {
-		XDMUtils.browseURL("https://github.com/subhra74/xdm/translations");
+		XDMUtils.browseURL("https://github.com/subhra74/xdm/wiki/Submitting-translations-for-XDM");
 	}
 
 	private void openSupportPage() {

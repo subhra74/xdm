@@ -63,7 +63,7 @@ import xdman.util.XDMUtils;
 
 public class XDMApp implements DownloadListener, DownloadWindowListener, Comparator<String> {
 	public static final String GLOBAL_LOCK_FILE = ".xdm-global-lock";
-	public static final String APP_VERSION = "7.2.10";
+	public static final String APP_VERSION = "7.2.11";
 	public static final String XDM_WINDOW_TITLE = "XDM 2020";
 	public static final String APP_UPDAT_URL = "https://api.github.com/repos/subhra74/xdm/releases/latest";
 	public static final String APP_UPDATE_CHK_URL = "https://subhra74.github.io/xdm/update-checker.html?v=";
