@@ -20,12 +20,12 @@ public class NativeMessagingHostInstaller {
 
 	private static final String FIREFOX_EXTENSION_IDS = String.join(",", "\"browser-mon@xdman.sourceforge.net\"");
 
-	private static final String CHROME_LINUX_LOCATION = "~/.config/google-chrome/NativeMessagingHosts",
-			FIREFOX_LINUX_LOCATION = "~/.mozilla/native-messaging-hosts",
-			CHROME_MAC_LOCATION = "~/Library/Application Support/Google/Chrome/NativeMessagingHosts",
-			FIREFOX_MAC_LOCATION = "~/Library/Application Support/Mozilla/NativeMessagingHosts",
-			CHROMIUM_LINUX_LOCATION = "~/.config/chromium/NativeMessagingHosts",
-			CHROMIUM_MAC_LOCATION = "~/Library/Application Support/Chromium/NativeMessagingHosts";
+	private static final String CHROME_LINUX_LOCATION = ".config/google-chrome/NativeMessagingHosts",
+			FIREFOX_LINUX_LOCATION = ".mozilla/native-messaging-hosts",
+			CHROME_MAC_LOCATION = "Library/Application Support/Google/Chrome/NativeMessagingHosts",
+			FIREFOX_MAC_LOCATION = "Library/Application Support/Mozilla/NativeMessagingHosts",
+			CHROMIUM_LINUX_LOCATION = ".config/chromium/NativeMessagingHosts",
+			CHROMIUM_MAC_LOCATION = "Library/Application Support/Chromium/NativeMessagingHosts";
 
 	public static final synchronized void installNativeMessagingHostForChrome() {
 		installNativeMessagingHostForChrome(XDMUtils.detectOS(), false);
@@ -51,9 +51,7 @@ public class NativeMessagingHostInstaller {
 				}
 			}
 			File manifestFile = new File(Config.getInstance().getDataFolder(), "xdm_chrome.native_host.json");
-			File nativeHostFile = new File(XDMUtils.getJarFile().getParentFile(),
-					System.getProperty("os.name").toLowerCase().contains("windows") ? "native_host.exe"
-							: "native_host");
+			File nativeHostFile = new File(XDMUtils.getJarFile().getParentFile(), "native_host.exe");
 			createNativeManifest(manifestFile, nativeHostFile, BrowserType.Chrome);
 			try {
 				Advapi32Util.registrySetStringValue(WinReg.HKEY_CURRENT_USER,
@@ -65,18 +63,14 @@ public class NativeMessagingHostInstaller {
 				return;
 			}
 		} else {
-			File manifestFolder = new File(os == XDMUtils.MAC ? (chromium ? CHROMIUM_MAC_LOCATION : CHROME_MAC_LOCATION)
-					: (chromium ? CHROMIUM_LINUX_LOCATION : CHROME_LINUX_LOCATION));
+			File manifestFolder = new File(System.getProperty("user.home"),
+					os == XDMUtils.MAC ? (chromium ? CHROMIUM_MAC_LOCATION : CHROME_MAC_LOCATION)
+							: (chromium ? CHROMIUM_LINUX_LOCATION : CHROME_LINUX_LOCATION));
 			if (!manifestFolder.exists()) {
 				manifestFolder.mkdirs();
 			}
-			File manifestFile = new File(
-					os == XDMUtils.MAC ? (chromium ? CHROMIUM_MAC_LOCATION : CHROME_MAC_LOCATION)
-							: (chromium ? CHROMIUM_LINUX_LOCATION : CHROME_LINUX_LOCATION),
-					"xdm_chrome.native_host.json");
-			File nativeHostFile = new File(XDMUtils.getJarFile().getParentFile(),
-					System.getProperty("os.name").toLowerCase().contains("windows") ? "native_host.exe"
-							: "native_host");
+			File manifestFile = new File(manifestFolder, "xdm_chrome.native_host.json");
+			File nativeHostFile = new File(XDMUtils.getJarFile().getParentFile(), "native_host");
 			createNativeManifest(manifestFile, nativeHostFile, BrowserType.Chrome);
 		}
 
@@ -95,9 +89,7 @@ public class NativeMessagingHostInstaller {
 			}
 
 			File manifestFile = new File(Config.getInstance().getDataFolder(), "xdmff.native_host.json");
-			File nativeHostFile = new File(XDMUtils.getJarFile().getParentFile(),
-					System.getProperty("os.name").toLowerCase().contains("windows") ? "native_host.exe"
-							: "native_host");
+			File nativeHostFile = new File(XDMUtils.getJarFile().getParentFile(), "native_host.exe");
 			createNativeManifest(manifestFile, nativeHostFile, BrowserType.Firefox);
 			try {
 				Advapi32Util.registrySetStringValue(WinReg.HKEY_CURRENT_USER,
@@ -109,15 +101,13 @@ public class NativeMessagingHostInstaller {
 				return;
 			}
 		} else {
-			File manifestFolder = new File(os == XDMUtils.MAC ? FIREFOX_MAC_LOCATION : FIREFOX_LINUX_LOCATION);
+			File manifestFolder = new File(System.getProperty("user.home"),
+					os == XDMUtils.MAC ? FIREFOX_MAC_LOCATION : FIREFOX_LINUX_LOCATION);
 			if (!manifestFolder.exists()) {
 				manifestFolder.mkdirs();
 			}
-			File manifestFile = new File(os == XDMUtils.MAC ? FIREFOX_MAC_LOCATION : FIREFOX_LINUX_LOCATION,
-					"xdmff.native_host.json");
-			File nativeHostFile = new File(XDMUtils.getJarFile().getParentFile(),
-					System.getProperty("os.name").toLowerCase().contains("windows") ? "native_host.exe"
-							: "native_host");
+			File manifestFile = new File(manifestFolder, "xdmff.native_host.json");
+			File nativeHostFile = new File(XDMUtils.getJarFile().getParentFile(), "native_host");
 			createNativeManifest(manifestFile, nativeHostFile, BrowserType.Firefox);
 		}
 	}

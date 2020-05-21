@@ -56,7 +56,7 @@ public class ImageResource {
 			BufferedImage image = ImageIO.read(ImageResource.class.getResource("/icons/xxhdpi/" + icon));
 			BufferedImage scaledImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 
-			System.out.println("------*** " + image.getWidth() + " " + width);
+			//System.out.println("------*** " + image.getWidth() + " " + width);
 
 			Graphics2D g2 = scaledImage.createGraphics();
 			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);

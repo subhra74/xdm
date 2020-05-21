@@ -1402,5 +1402,4 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 	public MainWindow getMainWindow() {
 		return mainWindow;
 	}
-
 }
