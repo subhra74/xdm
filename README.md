@@ -16,6 +16,7 @@ XDM seamlessly integrates with Google Chrome, Mozilla Firefox Quantum, Opera, Vi
 
 | Version | Windows | Linux | MacOS | Other |
 | --- | --- | --- | --- | --- |
+| 7.2.11 | [MSI installer][100] | [Linux installer][101] | [TBD][12] | [TBD][12] |
 | 7.2.10 | [MSI installer][10] | [Linux installer][11] | [TBD][12] | [Portable JAR (Java 11)][13] |
 | 7.2.8 | [MSI installer][14] | [Linux installer][15] | [DMG installer][16] | [JAR (Java 11)][17] |
  	 	 	
@@ -71,6 +72,8 @@ Steps are mentioned in: https://github.com/subhra74/xdm/wiki/Submitting-translat
 [15]: https://sourceforge.net/projects/xdman/files/xdm-2018-x64.tar.xz/download
 [16]: https://sourceforge.net/projects/xdman/files/XDMSetup.dmg/download
 [17]: http://xdman.sourceforge.net/xdman.jar
+[100]: https://github.com/subhra74/xdm/releases/download/7.2.11/xdmsetup.msi
+[101]: https://github.com/subhra74/xdm/releases/download/7.2.11/xdm-setup-7.2.11.tar.xz
 
 [//]: #AddonLinks
 [18]: https://chrome.google.com/webstore/detail/xtreme-download-manager/dkckaoghoiffdbomfbbodbbgmhjblecj
