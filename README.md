@@ -16,7 +16,7 @@ XDM seamlessly integrates with Google Chrome, Mozilla Firefox Quantum, Opera, Vi
 
 | Version | Windows | Linux | MacOS | Other |
 | --- | --- | --- | --- | --- |
-| 7.2.11 | [MSI installer][100] | [Linux installer][101] | [TBD][12] | [Portable JAR (Java 11)][103] |
+| 7.2.11 | [MSI installer][100] | [Linux installer][101] | [TBD][12] | [Portable JAR (Java 11)][102] |
 | 7.2.10 | [MSI installer][10] | [Linux installer][11] | [TBD][12] | [Portable JAR (Java 11)][13] |
 | 7.2.8 | [MSI installer][14] | [Linux installer][15] | [DMG installer][16] | [JAR (Java 11)][17] |
  	 	 	
