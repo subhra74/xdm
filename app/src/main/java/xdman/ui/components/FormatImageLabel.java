@@ -2,6 +2,7 @@ package xdman.ui.components;
 
 import java.awt.Graphics;
 
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 
@@ -16,9 +17,9 @@ public class FormatImageLabel extends JLabel {
 	private static final long serialVersionUID = -7575672895109288082L;
 	String format;
 	int scaleFactor;
-	ImageIcon icon;
+	Icon icon;
 
-	public FormatImageLabel(int scaleFactor, ImageIcon icon) {
+	public FormatImageLabel(int scaleFactor, Icon icon) {
 		this.scaleFactor = scaleFactor;
 		this.icon = icon;
 	}

@@ -57,6 +57,7 @@ import xdman.DownloadQueue;
 import xdman.QueueManager;
 import xdman.XDMApp;
 import xdman.XDMConstants;
+import xdman.monitoring.BrowserMonitor;
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
@@ -64,6 +65,7 @@ import xdman.ui.res.StringResource;
 import xdman.util.BrowserLauncher;
 import xdman.util.DateTimeUtils;
 import xdman.util.Logger;
+import xdman.util.NativeMessagingHostInstaller;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
 
@@ -124,6 +126,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 	JCheckBox chkQuietMode;
 	JComboBox<String> cmbMax;
 	JComboBox<String> cmbMinVidSize;
+	JComboBox<String> cmbZoom;
 	// JComboBox<String> cmbDupAction;
 	JTextField txtDefFolder, txtTempFolder;
 
@@ -231,7 +234,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		y = getScaledInt(25);
 		h = getScaledInt(40);
 
-		btnNav = new JLabel(ImageResource.get("back.png"));
+		btnNav = new JLabel(ImageResource.getIcon("back.png", 32, 32));
 		btnNav.setFont(FontResource.getBiggerFont());
 		btnNav.setForeground(ColorResource.getSelectionColor());
 		btnNav.setBounds(getScaledInt(15), y, getScaledInt(35), h);
@@ -344,7 +347,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		chkOverwriteExisting.setBounds(getScaledInt(15), y, getScaledInt(350) - getScaledInt(30), h);
 		panel.add(chkOverwriteExisting);
 		y += h;
-		
+
 		h = getScaledInt(30);
 		chkQuietMode = createCheckBox("LBL_QUIET_MODE");
 		chkQuietMode.setBounds(getScaledInt(15), y, getScaledInt(350) - getScaledInt(30), h);
@@ -379,6 +382,24 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		cmbMax.setBounds(getScaledInt(250), y, getScaledInt(75), h);
 		cmbMax.setRenderer(new SimpleListRenderer());
 		panel.add(cmbMax);
+		y += h;
+		y += getScaledInt(10);
+
+		y += getScaledInt(10);
+		h = getScaledInt(30);
+		JLabel lblZoomTitle = new JLabel(StringResource.get("LBL_ZOOM_LEVEL"));
+		lblZoomTitle.setForeground(Color.WHITE);
+		lblZoomTitle.setFont(FontResource.getNormalFont());
+		lblZoomTitle.setBounds(getScaledInt(15), y, getScaledInt(350) - getScaledInt(30), h);
+		panel.add(lblZoomTitle);
+		y += getScaledInt(3);
+
+		h = getScaledInt(25);
+		cmbZoom = new JComboBox<String>(XDMApp.ZOOM_LEVEL_STRINGS);
+		cmbZoom.setBackground(ColorResource.getDarkerBgColor());
+		cmbZoom.setBounds(getScaledInt(250), y, getScaledInt(75), h);
+		cmbZoom.setRenderer(new SimpleListRenderer());
+		panel.add(cmbZoom);
 		y += h;
 		y += getScaledInt(10);
 
@@ -634,8 +655,8 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 	private JCheckBox createCheckBox(String name, Font font) {
 		JCheckBox chk = new JCheckBox(StringResource.get(name));
 		chk.setName(name);
-		chk.setIcon(ImageResource.get("unchecked.png"));
-		chk.setSelectedIcon(ImageResource.get("checked.png"));
+		chk.setIcon(ImageResource.getIcon("unchecked.png", 16, 16));
+		chk.setSelectedIcon(ImageResource.getIcon("checked.png", 16, 16));
 		chk.setOpaque(false);
 		chk.setFocusPainted(false);
 		chk.setForeground(Color.WHITE);
@@ -649,6 +670,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 
 	private void close() {
 		parent.hideDialog(this);
+		BrowserMonitor.getInstance().updateSettingsAndStatus();
 		System.gc();
 	}
 
@@ -864,6 +886,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 				}
 			}
 			if ("FF_INSTALL".equals(name)) {
+				NativeMessagingHostInstaller.installNativeMessagingHostForFireFox();
 				if (!BrowserLauncher.launchFirefox(ffAMOURL)) {
 					String msg = String.format(StringResource.get("MSG_ADDON_DESC"), "Mozilla Firefox", ffAMOURL);
 					showAddonUrl(ffAMOURL, msg);
@@ -879,6 +902,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 				XDMUtils.browseURL("https://sourceforge.net/p/xdman/blog/2018/01/xdm-integration-with-microsoft-edge/");
 			}
 			if ("CR_INSTALL".equals(name)) {
+				NativeMessagingHostInstaller.installNativeMessagingHostForChrome();
 				if (!BrowserLauncher.launchChrome(chromeWebStoreURL)) {
 					String msg = String.format(StringResource.get("MSG_ADDON_DESC"), "Google Chrome",
 							chromeWebStoreURL);
@@ -890,6 +914,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 				}
 			}
 			if ("CM_INSTALL".equals(name)) {
+				NativeMessagingHostInstaller.installNativeMessagingHostForChromium();
 				String msg = String.format(StringResource.get("MSG_ADDON_DESC"), "Chromium", chromeWebStoreURL);
 				showAddonUrl(chromeWebStoreURL, msg);
 				// MessageBox.show(parent,
@@ -898,6 +923,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 				// MessageBox.OK);
 			}
 			if ("VL_INSTALL".equals(name)) {
+				NativeMessagingHostInstaller.installNativeMessagingHostForChrome();
 				String msg = String.format(StringResource.get("MSG_ADDON_DESC"), "Vivaldi", chromeWebStoreURL);
 				showAddonUrl(chromeWebStoreURL, msg);
 				// MessageBox.show(parent,
@@ -906,6 +932,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 				// MessageBox.OK);
 			}
 			if ("OP_INSTALL".equals(name)) {
+				NativeMessagingHostInstaller.installNativeMessagingHostForChrome();
 				String msg = String.format(StringResource.get("MSG_ADDON_DESC"), "Opera", operaExtURL);
 				showAddonUrl(operaExtURL, msg);
 				// MessageBox.show(parent,
@@ -960,6 +987,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		chkQuietMode.setSelected(config.isQuietMode());
 		Logger.log("Max download: " + config.getMaxDownloads());
 		cmbMax.setSelectedItem(config.getMaxDownloads() > 0 ? config.getMaxDownloads() + "" : "N/A");
+		cmbZoom.setSelectedIndex(config.getZoomLevelIndex());
 		// cmbDupAction.setSelectedIndex(config.getDuplicateAction());
 		txtTempFolder.setText(config.getTemporaryFolder());
 		cmbCategory.setSelectedIndex(0);
@@ -2142,8 +2170,8 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 
 	private JRadioButton createRadioButton(String name, Font font) {
 		JRadioButton chk = new JRadioButton(StringResource.get(name));
-		chk.setIcon(ImageResource.get("unchecked.png"));
-		chk.setSelectedIcon(ImageResource.get("checked.png"));
+		chk.setIcon(ImageResource.getIcon("unchecked.png", 16, 16));
+		chk.setSelectedIcon(ImageResource.getIcon("checked.png", 16, 16));
 		chk.setOpaque(false);
 		chk.setFocusPainted(false);
 		chk.setForeground(Color.WHITE);
@@ -2384,6 +2412,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		} else {
 			config.setMaxDownloads(Integer.parseInt(text));
 		}
+		config.setZoomLevelIndex(cmbZoom.getSelectedIndex());
 		// config.setDuplicateAction(cmbDupAction.getSelectedIndex());
 		config.setDownloadFolder(txtDefFolder.getText());
 		config.setTemporaryFolder(txtTempFolder.getText());

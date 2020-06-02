@@ -22,8 +22,9 @@ public class XDMLookAndFeel extends MetalLookAndFeel {
 				XDMTextFieldUI.class.getName(), "TextAreaUI", XDMTextAreaUI.class.getName(), "SliderUI",
 				XDMSliderUI.class.getName(), "LabelUI", XDMLabelUI.class.getName(), "ScrollBarUI",
 				XDMScrollBarUI.class.getName(), "MenuItemUI", XDMMenuItemUI.class.getName(), "MenuUI",
-				XDMMenuUI.class.getName(), "CheckBoxMenuItemUI", XDMMenuItemUI.class.getName(), "TreeUI",
-				XDMTreeUI.class.getName(), "SpinnerUI", XDMSpinnerUI.class.getName(), "ProgressBarUI",
+				XDMMenuUI.class.getName(), "CheckBoxMenuItemUI", XDMMenuItemUI.class.getName(), //"TreeUI",
+				//XDMTreeUI.class.getName(), 
+				"SpinnerUI", XDMSpinnerUI.class.getName(), "ProgressBarUI",
 				XDMProgressBarUI.class.getName(), "ComboBoxUI", XDMComboBoxUI.class.getName() });
 		System.setProperty("xdm.defaulttheme", "true");
 

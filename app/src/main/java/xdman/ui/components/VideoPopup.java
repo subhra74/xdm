@@ -131,7 +131,7 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 		try {
 			setUndecorated(true);
 			setSize(getScaledInt(250), getScaledInt(40));
-			setIconImage(ImageResource.get("icon.png").getImage());
+			setIconImage(ImageResource.getImage("icon.png"));
 			setFocusableWindowState(false);
 			setType(Type.UTILITY);
 			setAlwaysOnTop(true);
@@ -165,7 +165,7 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 			closeBtn.setFocusPainted(false);
 			closeBtn.setName("CLOSE");
 
-			closeBtn.setIcon(ImageResource.get("title_close.png"));
+			closeBtn.setIcon(ImageResource.getIcon("title_close.png",20,20));
 			closeBtn.setMargin(new Insets(0, 0, 0, 0));
 			closeBtn.addActionListener(this);
 			bottomPanel.add(closeBtn, BorderLayout.EAST);
@@ -317,7 +317,7 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 			setLocation(getX(), initialY - preferedExpandedHeight + getHeight());
 			panel.add(bottomPanel, BorderLayout.SOUTH);
 			itemPanel.add(closePopupBtn, BorderLayout.NORTH);
-			closePopupBtn.setIcon(ImageResource.get("down.png"));
+			closePopupBtn.setIcon(ImageResource.getIcon("down.png",10,10));
 
 		} else {
 			if (screenHeight - getY() - bottomTaskbarHeight < preferedExpandedHeight) {
@@ -325,7 +325,7 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 			}
 			panel.add(bottomPanel, BorderLayout.NORTH);
 			itemPanel.add(closePopupBtn, BorderLayout.SOUTH);
-			closePopupBtn.setIcon(ImageResource.get("up.png"));
+			closePopupBtn.setIcon(ImageResource.getIcon("up.png",10,10));
 		}
 		setSize(getWidth(), preferedExpandedHeight);
 		revalidate();

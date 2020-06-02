@@ -18,13 +18,23 @@ public class Response {
 			if (code != 204) {
 				headers.addHeader("Content-Length", (body == null || body.length < 1) ? "0" : body.length + "");
 			}
-			headers.appendToBuffer(buf);
+		} else {
+			if (code != 204) {
+				headers.addHeader("Content-Length", "0");
+			}
 		}
+
+		headers.appendToBuffer(buf);
 		buf.append("\r\n");
-		out.write(buf.toString().getBytes());
-		if (body != null && body.length > 0) {
-			out.write(body);
+		if (code != 204) {
+			out.write(buf.toString().getBytes());
+			if (body != null && body.length > 0) {
+				out.write(body);
+			}
+		} else {
+			out.write(buf.toString().getBytes());
 		}
+
 		out.flush();
 	}
 

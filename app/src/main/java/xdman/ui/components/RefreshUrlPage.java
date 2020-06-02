@@ -117,8 +117,8 @@ public class RefreshUrlPage extends Page implements LinkRefreshCallback {
 
 		final JCheckBox chk = new JCheckBox(StringResource.get("SETTINGS_ADV"));
 		chk.setName("SETTINGS_ADV");
-		chk.setIcon(ImageResource.get("unchecked.png"));
-		chk.setSelectedIcon(ImageResource.get("checked.png"));
+		chk.setIcon(ImageResource.getIcon("unchecked.png",16,16));
+		chk.setSelectedIcon(ImageResource.getIcon("checked.png",16,16));
 		chk.setOpaque(false);
 		chk.setFocusPainted(false);
 		chk.setForeground(Color.WHITE);
