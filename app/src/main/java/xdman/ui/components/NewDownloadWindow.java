@@ -52,7 +52,7 @@ public class NewDownloadWindow extends JDialog implements ActionListener, Docume
 	// private String folder;
 	private String queueId;
 
-	public NewDownloadWindow(HttpMetadata metadata, String file) {
+	public NewDownloadWindow(HttpMetadata metadata, String fileName, String folderPath) {
 		initUI();
 		// this.folder = Config.getInstance().getDownloadFolder();
 		this.metadata = metadata;
@@ -71,8 +71,11 @@ public class NewDownloadWindow extends JDialog implements ActionListener, Docume
 				Logger.log(e);
 			}
 		}
-		if (file != null && file.length() > 0) {
-			filePane.setFileName(file);
+		if (!StringUtils.isNullOrEmptyOrBlank(fileName)) {
+			filePane.setFileName(fileName);
+		}
+		if (!StringUtils.isNullOrEmptyOrBlank(folderPath)) {
+			filePane.setFolder(folderPath);
 		}
 
 		getRootPane().setDefaultButton(btnDN);
@@ -228,7 +231,7 @@ public class NewDownloadWindow extends JDialog implements ActionListener, Docume
 			Logger.log(e);
 		}
 
-		setIconImage(ImageResource.get("icon.png").getImage());
+		setIconImage(ImageResource.getImage("icon.png"));
 		setSize(getScaledInt(400), getScaledInt(210));
 		setLocationRelativeTo(null);
 		setAlwaysOnTop(true);
@@ -246,7 +249,7 @@ public class NewDownloadWindow extends JDialog implements ActionListener, Docume
 		closeBtn.setFocusPainted(false);
 		closeBtn.setName("CLOSE");
 
-		closeBtn.setIcon(ImageResource.get("title_close.png"));
+		closeBtn.setIcon(ImageResource.getIcon("title_close.png",20,20));
 		closeBtn.addActionListener(this);
 		titlePanel.add(closeBtn);
 

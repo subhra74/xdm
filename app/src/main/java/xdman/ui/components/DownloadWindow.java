@@ -7,6 +7,8 @@ import java.awt.EventQueue;
 import java.awt.GraphicsDevice.WindowTranslucency;
 import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
+import java.awt.Taskbar;
+import java.awt.Taskbar.Feature;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -42,7 +44,7 @@ public class DownloadWindow extends JFrame implements ActionListener {
 	private CircleProgressBar prgCircle;
 	private SegmentPanel segProgress;
 	private int errCode, reason;
-	//private String errMsg;
+	// private String errMsg;
 	private JLabel titleLbl;
 	private JLabel lblSpeed;
 	private JLabel lblStat;
@@ -115,6 +117,13 @@ public class DownloadWindow extends JFrame implements ActionListener {
 		long sz = ((d.getType() == XDMConstants.HTTP || d.getType() == XDMConstants.FTP
 				|| d.getType() == XDMConstants.DASH) ? d.getSize() : 100);
 		segProgress.setValues(segDet, sz);
+		if (Taskbar.isTaskbarSupported()) {
+			Taskbar taskbar = Taskbar.getTaskbar();
+			if(taskbar.isSupported(Feature.PROGRESS_VALUE_WINDOW)) {
+				taskbar.setWindowProgressValue(this, d.getProgress());
+			}
+		}
+
 	}
 
 	private void createP2() {
@@ -134,7 +143,7 @@ public class DownloadWindow extends JFrame implements ActionListener {
 		p2.setBounds(0, getScaledInt(60), getScaledInt(350), getScaledInt(190));
 		p2.setBackground(ColorResource.getDarkestBgColor());
 
-		txtError = new JTextArea();//this.errMsg);
+		txtError = new JTextArea();// this.errMsg);
 		txtError.setFont(FontResource.getBigFont());
 		txtError.setEditable(false);
 		txtError.setCaretPosition(0);
@@ -183,7 +192,7 @@ public class DownloadWindow extends JFrame implements ActionListener {
 		}
 
 		setTitle("Downloading...");
-		setIconImage(ImageResource.get("icon.png").getImage());
+		setIconImage(ImageResource.getImage("icon.png"));
 		setSize(getScaledInt(350), getScaledInt(250));
 		setLocationRelativeTo(null);
 		setResizable(false);
@@ -197,7 +206,7 @@ public class DownloadWindow extends JFrame implements ActionListener {
 
 		closeBtn = new CustomButton();
 		closeBtn.setBounds(getScaledInt(320), getScaledInt(5), getScaledInt(24), getScaledInt(24));
-		closeBtn.setIcon(ImageResource.get("title_close.png"));
+		closeBtn.setIcon(ImageResource.getIcon("title_close.png", 20, 20));
 		closeBtn.setBackground(ColorResource.getDarkestBgColor());
 		closeBtn.setBorderPainted(false);
 		closeBtn.setFocusPainted(false);
@@ -206,7 +215,7 @@ public class DownloadWindow extends JFrame implements ActionListener {
 
 		minBtn = new CustomButton();
 		minBtn.setBounds(getScaledInt(296), getScaledInt(5), getScaledInt(24), getScaledInt(24));
-		minBtn.setIcon(ImageResource.get("title_min.png"));
+		minBtn.setIcon(ImageResource.getIcon("title_min.png", 20, 20));// ImageResource.get("title_min.png"));
 		minBtn.setBackground(ColorResource.getDarkestBgColor());
 		minBtn.setBorderPainted(false);
 		minBtn.setFocusPainted(false);

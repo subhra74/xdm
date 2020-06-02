@@ -9,6 +9,7 @@ import java.util.EventObject;
 
 import javax.swing.AbstractCellEditor;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -36,7 +37,7 @@ public class VideoItemEditor extends AbstractCellEditor implements TableCellEdit
 	private JPanel component;
 	private JLabel lblBorder;
 	private JCheckBox chk;
-	private ImageIcon ico;
+	private Icon ico;
 	private MediaImageSource imgSource;
 
 	public VideoItemEditor(MediaImageSource imgSource) {
@@ -53,7 +54,7 @@ public class VideoItemEditor extends AbstractCellEditor implements TableCellEdit
 		lblIcon.setMaximumSize(new Dimension(getScaledInt(119), getScaledInt(92)));
 		lblIcon.setPreferredSize(new Dimension(getScaledInt(119), getScaledInt(92)));
 		lblIcon.setHorizontalAlignment(JLabel.CENTER);
-		ico = ImageResource.get("videoplay.png");
+		ico = ImageResource.getIcon("videoplay.png",94,92);
 		lblIcon.setIcon(ico);
 		// lblIcon.setBorder(new EmptyBorder(12, 5, 5, 5));
 		lblIcon.setVerticalAlignment(JLabel.CENTER);
@@ -64,8 +65,8 @@ public class VideoItemEditor extends AbstractCellEditor implements TableCellEdit
 		p1.add(lblIcon);
 		chk = new JCheckBox("");
 		chk.setOpaque(false);
-		chk.setIcon(ImageResource.get("unchecked.png"));
-		chk.setSelectedIcon(ImageResource.get("checked.png"));
+		chk.setIcon(ImageResource.getIcon("unchecked.png",16,16));
+		chk.setSelectedIcon(ImageResource.getIcon("checked.png",16,16));
 		p1.add(chk, BorderLayout.WEST);
 		p1.setBorder(new EmptyBorder(getScaledInt(12), 0, getScaledInt(5), getScaledInt(5)));
 		component.add(p1, BorderLayout.WEST);

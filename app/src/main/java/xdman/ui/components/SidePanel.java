@@ -1,7 +1,9 @@
 package xdman.ui.components;
 
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.RenderingHints;
 
 import javax.swing.JPanel;
 
@@ -16,13 +18,16 @@ public class SidePanel extends JPanel {
 
 	public SidePanel() {
 		super();
-		imgBar = ImageResource.get("bg_nav.png").getImage();
+		imgBar = ImageResource.getImage("bg_nav.png");
 		this.setOpaque(false);
 	}
 
 	@Override
 	protected void paintComponent(Graphics g) {
-		g.drawImage(imgBar, 0, 0, this.getWidth(), this.getHeight(), this);// ,
-		super.paintComponent(g);
+		Graphics2D g2 = (Graphics2D) g;
+		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+		g2.drawImage(imgBar, 0, 0, this.getWidth(), this.getHeight(), this);// ,
+		super.paintComponent(g2);
 	}
 }

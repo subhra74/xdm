@@ -97,7 +97,7 @@ public class BatchPatternDialog extends JFrame implements ActionListener, Docume
 		spToModelAlpha = new SpinnerListModel(chars);
 
 		setTitle(StringResource.get("MENU_BATCH_DOWNLOAD"));
-		setIconImage(ImageResource.get("icon.png").getImage());
+		setIconImage(ImageResource.getImage("icon.png"));
 		setSize(getScaledInt(500), getScaledInt(420));
 		setLocationRelativeTo(null);
 		getContentPane().setLayout(null);
@@ -114,7 +114,7 @@ public class BatchPatternDialog extends JFrame implements ActionListener, Docume
 		closeBtn.setFocusPainted(false);
 		closeBtn.setName("CLOSE");
 
-		closeBtn.setIcon(ImageResource.get("title_close.png"));
+		closeBtn.setIcon(ImageResource.getIcon("title_close.png", 20, 20));
 		closeBtn.addActionListener(this);
 		titlePanel.add(closeBtn);
 
@@ -228,8 +228,8 @@ public class BatchPatternDialog extends JFrame implements ActionListener, Docume
 		chkUseAuth = new JCheckBox(StringResource.get("LBL_BATCH_CHK_AUTH"));
 		chkUseAuth.setName("LBL_USER_PASS");
 		chkUseAuth.setBackground(ColorResource.getDarkestBgColor());
-		chkUseAuth.setIcon(ImageResource.get("unchecked.png"));
-		chkUseAuth.setSelectedIcon(ImageResource.get("checked.png"));
+		chkUseAuth.setIcon(ImageResource.getIcon("unchecked.png", 16, 16));
+		chkUseAuth.setSelectedIcon(ImageResource.getIcon("checked.png", 16, 16));
 		chkUseAuth.addActionListener(this);
 		chkUseAuth.setForeground(Color.WHITE);
 		chkUseAuth.setFocusPainted(false);
@@ -366,8 +366,8 @@ public class BatchPatternDialog extends JFrame implements ActionListener, Docume
 
 	private JRadioButton createRadioButton(String name, Font font) {
 		JRadioButton chk = new JRadioButton(StringResource.get(name));
-		chk.setIcon(ImageResource.get("unchecked.png"));
-		chk.setSelectedIcon(ImageResource.get("checked.png"));
+		chk.setIcon(ImageResource.getIcon("unchecked.png", 16, 16));
+		chk.setSelectedIcon(ImageResource.getIcon("checked.png", 16, 16));
 		chk.setOpaque(false);
 		chk.setFocusPainted(false);
 		chk.setForeground(Color.WHITE);

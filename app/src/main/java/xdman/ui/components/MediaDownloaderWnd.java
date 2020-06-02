@@ -114,7 +114,7 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 		}
 
 		setTitle(StringResource.get("TITLE_DOWN_VID"));
-		setIconImage(ImageResource.get("icon.png").getImage());
+		setIconImage(ImageResource.getImage("icon.png"));
 		setSize(getScaledInt(500), getScaledInt(420));
 		setLocationRelativeTo(null);
 		getContentPane().setLayout(null);
@@ -131,7 +131,7 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 		closeBtn.setFocusPainted(false);
 		closeBtn.setName("CLOSE");
 
-		closeBtn.setIcon(ImageResource.get("title_close.png"));
+		closeBtn.setIcon(ImageResource.getIcon("title_close.png",20,20));
 		closeBtn.addActionListener(this);
 		titlePanel.add(closeBtn);
 
@@ -176,8 +176,8 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 		chkAdvanced = new JCheckBox(StringResource.get("SETTINGS_ADV"));
 		chkAdvanced.setName("LBL_USER_PASS");
 		chkAdvanced.setBackground(ColorResource.getDarkestBgColor());
-		chkAdvanced.setIcon(ImageResource.get("unchecked.png"));
-		chkAdvanced.setSelectedIcon(ImageResource.get("checked.png"));
+		chkAdvanced.setIcon(ImageResource.getIcon("unchecked.png",16,16));
+		chkAdvanced.setSelectedIcon(ImageResource.getIcon("checked.png",16,16));
 		chkAdvanced.addActionListener(this);
 		chkAdvanced.setForeground(Color.WHITE);
 		chkAdvanced.setFocusPainted(false);
@@ -259,8 +259,8 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 
 		chkSelectAll = new JCheckBox(StringResource.get("LBL_SELECT_ALL"));
 		chkSelectAll.setBackground(ColorResource.getDarkestBgColor());
-		chkSelectAll.setIcon(ImageResource.get("unchecked.png"));
-		chkSelectAll.setSelectedIcon(ImageResource.get("checked.png"));
+		chkSelectAll.setIcon(ImageResource.getIcon("unchecked.png",16,16));
+		chkSelectAll.setSelectedIcon(ImageResource.getIcon("checked.png",16,16));
 		chkSelectAll.addActionListener(this);
 		chkSelectAll.setForeground(Color.WHITE);
 		chkSelectAll.setFocusPainted(false);

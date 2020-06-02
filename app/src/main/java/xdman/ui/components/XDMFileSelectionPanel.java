@@ -70,7 +70,7 @@ public class XDMFileSelectionPanel extends JPanel implements ActionListener {
 
 		btnBrowse = new CustomButton();
 		btnBrowse.setBackground(ColorResource.getDarkestBgColor());
-		btnBrowse.setIcon(ImageResource.get("folder.png"));
+		btnBrowse.setIcon(ImageResource.getIcon("folder.png", 16, 16));
 		btnBrowse.setMargin(new Insets(0, 0, 0, 0));
 		btnBrowse.setContentAreaFilled(false);
 		btnBrowse.setBorderPainted(false);
@@ -80,7 +80,7 @@ public class XDMFileSelectionPanel extends JPanel implements ActionListener {
 
 		btnDropdown = new CustomButton();
 		btnDropdown.setBackground(ColorResource.getDarkestBgColor());
-		btnDropdown.setIcon(ImageResource.get("down_white.png"));
+		btnDropdown.setIcon(ImageResource.getIcon("down_white.png",16,16));
 		btnDropdown.setMargin(new Insets(0, 0, 0, 0));
 		btnDropdown.setContentAreaFilled(false);
 		btnDropdown.setBorderPainted(false);

@@ -67,7 +67,7 @@ public class MediaFormatWnd extends JDialog implements ActionListener {
 		}
 		setModal(true);
 		setTitle(StringResource.get("LBL_CONVERT_TO"));
-		setIconImage(ImageResource.get("icon.png").getImage());
+		setIconImage(ImageResource.getImage("icon.png"));
 		setSize(getScaledInt(600), getScaledInt(450));
 		setLocationRelativeTo(null);
 		getContentPane().setLayout(null);
@@ -84,7 +84,7 @@ public class MediaFormatWnd extends JDialog implements ActionListener {
 		closeBtn.setFocusPainted(false);
 		closeBtn.setName("CLOSE");
 
-		closeBtn.setIcon(ImageResource.get("title_close.png"));
+		closeBtn.setIcon(ImageResource.getIcon("title_close.png",20,20));
 		closeBtn.addActionListener(this);
 		titlePanel.add(closeBtn);
 

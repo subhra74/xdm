@@ -12,6 +12,7 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 import xdman.Config;
@@ -61,6 +62,7 @@ public class MonitoringSession implements Runnable {
 		headers.setValue("content-type", "application/json");
 		headers.setValue("Cache-Control", "max-age=0, no-cache, must-revalidate");
 		res.setHeaders(headers);
+		Logger.log("Response set");
 	}
 
 	private void onDownload(Request request, Response res) throws UnsupportedEncodingException {
@@ -83,12 +85,17 @@ public class MonitoringSession implements Runnable {
 
 	private void onVideoRetrieve(Request request, Response res) throws UnsupportedEncodingException {
 		try {
-			String id = new String(request.getBody(), "utf-8");
-			for (VideoPopupItem item : XDMApp.getInstance().getVideoItemsList()) {
-				if (id.equals(item.getMetadata().getId())) {
-					HttpMetadata md = item.getMetadata().derive();
-					Logger.log("dash metdata ? " + (md instanceof DashMetadata));
-					XDMApp.getInstance().addVideo(md, item.getFile());
+			String content = new String(request.getBody(), "utf-8");
+			Logger.log("Video retrieve: " + content);
+			String lines[] = content.split("\r\n");
+			for (String line : lines) {
+				String id = line.trim();
+				for (VideoPopupItem item : XDMApp.getInstance().getVideoItemsList()) {
+					if (id.equals(item.getMetadata().getId())) {
+						HttpMetadata md = item.getMetadata().derive();
+						Logger.log("dash metdata ? " + (md instanceof DashMetadata));
+						XDMApp.getInstance().addVideo(md, item.getFile());
+					}
 				}
 			}
 		} finally {
@@ -121,12 +128,15 @@ public class MonitoringSession implements Runnable {
 		HeaderCollection headers = new HeaderCollection();
 		headers.setValue("Cache-Control", "max-age=0, no-cache, must-revalidate");
 		res.setHeaders(headers);
+		Logger.log("Response set for 204");
 	}
 
 	private void onVideo(Request request, Response res) throws UnsupportedEncodingException {
 		try {
+			Logger.log("video received");
 			Logger.log(new String(request.getBody()));
 			if (!Config.getInstance().isShowVideoNotification()) {
+				Logger.log("video received but disabled");
 				return;
 			}
 			byte[] b = request.getBody();
@@ -158,6 +168,10 @@ public class MonitoringSession implements Runnable {
 			XDMApp.getInstance().showMainWindow();
 		} else {
 			String[] arr = new String(data).split("\n");
+
+			String url = null;
+			String output = null;
+
 			for (int i = 0; i < arr.length; i++) {
 				String str = arr[i];
 				int index = str.indexOf(":");
@@ -166,75 +180,44 @@ public class MonitoringSession implements Runnable {
 				String key = str.substring(0, index).trim();
 				String val = str.substring(index + 1).trim();
 				if (key.equals("url")) {
-					String url = val;
-					HttpMetadata metadata = new HttpMetadata();
-					metadata.setUrl(url);
-					String file = XDMUtils.getFileName(url);
-					XDMApp.getInstance().addDownload(metadata, file);
+					url = val;
 				}
-				if(key.equals("quiet")){
+				if (key.equals("output")) {
+					output = val;
+				}
+				if (key.equals("quiet")) {
 					Config.getInstance().setQuietMode("true".equals(val));
 				}
+			}
+
+			if (url != null) {
+				var metadata = new HttpMetadata();
+				metadata.setUrl(url);
+
+				String file;
+				if (output != null) {
+					file = output;
+				} else {
+					file = XDMUtils.getFileName(url);
+				}
+
+				XDMApp.getInstance().addDownload(metadata, file);
 			}
 		}
 		setResponseOk(res);
 	}
 
-	private String encode(String str) {
-		StringBuilder sb = new StringBuilder();
-		int count = 0;
-		for (char ch : str.toCharArray()) {
-			if (count > 0)
-				sb.append(",");
-			sb.append((int) ch);
-			count++;
-		}
-		return sb.toString();
-	}
-
 	private void onSync(Request request, Response res) throws UnsupportedEncodingException {
-		StringBuffer json = new StringBuffer();
-		json.append("{\n\"enabled\": ");
-		json.append(Config.getInstance().isBrowserMonitoringEnabled());
-		json.append(",\n\"blockedHosts\": [");
-		appendArray(Config.getInstance().getBlockedHosts(), json);
-		json.append("],");
-		json.append("\n\"videoUrls\": [");
-		appendArray(Config.getInstance().getVidUrls(), json);
-		json.append("],");
-		json.append("\n\"fileExts\": [");
-		appendArray(Config.getInstance().getFileExts(), json);
-		json.append("],");
-		json.append("\n\"vidExts\": [");
-		appendArray(Config.getInstance().getVidExts(), json);
-		json.append("],");
-		StringBuilder sb = new StringBuilder();
-		int count = 0;
-		for (VideoPopupItem item : XDMApp.getInstance().getVideoItemsList()) {
-			String id = item.getMetadata().getId();
-			String text = encode(item.getFile());
-			String info = item.getInfo();
-			if (count > 0)
-				sb.append(",");
-			sb.append(String.format("{\"id\": \"%s\", \"text\": \"%s\",\"info\":\"%s\"}", id, text, info));
-			count++;
-		}
-		json.append("\n\"vidList\": [");
-		json.append(sb.toString());
-		json.append("],");
-		String mimeTypes = "\n\"mimeList\": [\"video/\",\"audio/\",\"mpegurl\",\"f4m\",\"m3u8\"]";
-		json.append(mimeTypes);
-		json.append("\n}");
 
 		// System.out.println(json);
 
-		byte[] b = json.toString().getBytes();
+		byte[] b = BrowserMonitor.getSyncJSON().getBytes();
 
 		res.setCode(200);
 		res.setMessage("OK");
 
 		HeaderCollection headers = new HeaderCollection();
-		headers.addHeader("Content-Length", b.length + "");
+		// headers.addHeader("Content-Length", b.length + "");
 		headers.addHeader("Content-Type", "application/json");
 		headers.addHeader("Cache-Control", "no-cache, no-store, must-revalidate");
 		headers.addHeader("Pragma", "no-cache");
@@ -306,7 +289,7 @@ public class MonitoringSession implements Runnable {
 			Logger.log("sending 204...");
 			onVideoRetrieve(request, response);
 		} else if (verb.startsWith("/clear")) {
-			Logger.log("sending 204...");
+			Logger.log("Clearing video list");
 			onVideoClear(request, response);
 		} else {
 			throw new IOException("invalid verb " + verb);
@@ -316,6 +299,7 @@ public class MonitoringSession implements Runnable {
 	private void onVideoClear(Request request, Response response) {
 		try {
 			XDMApp.getInstance().getVideoItemsList().clear();
+			BrowserMonitor.getInstance().updateSettingsAndStatus();
 		} finally {
 			setResponseOk(response);
 		}
@@ -500,6 +484,8 @@ public class MonitoringSession implements Runnable {
 			while (true) {
 				this.request.read(inStream);
 				this.processRequest(this.request, this.response);
+				// System.out.println("Request processed, sending response\n");
+				// this.response.write(System.out);
 				this.response.write(outStream);
 			}
 		} catch (Exception e) {
@@ -579,7 +565,7 @@ public class MonitoringSession implements Runnable {
 							itag = Integer.parseInt(val);
 						}
 						if (key.equals("clen")) {
-							clen = Integer.parseInt(val);
+							clen = Long.parseLong(val);
 						}
 						if (key.startsWith("mime")) {
 							mime = URLDecoder.decode(val, "UTF-8");
@@ -641,7 +627,7 @@ public class MonitoringSession implements Runnable {
 
 						String ext = getYtDashFormat(videoContentType, audioContentType);
 						file += "." + ext;
-
+						System.out.println("+++updating adding");
 						XDMApp.getInstance().addMedia(dm, file, YtUtil.getInfoFromITAG(info.video ? info.itag : di.itag)
 								+ (szStr == null ? "" : " " + szStr));
 						return true;
@@ -767,16 +753,24 @@ public class MonitoringSession implements Runnable {
 			client = new JavaHttpClient(data.getUrl());
 			Iterator<HttpHeader> headers = data.getRequestHeaders().getAll();
 			boolean hasAccept = false;
+			List<String> cookieList = new ArrayList<String>();
 			while (headers.hasNext()) {
 				HttpHeader header = headers.next();
-				Logger.log(header.getName() + " " + header.getValue());
+				//System.err.println(header.getName() + " " + header.getValue());
+				if (header.getName().toLowerCase(Locale.ENGLISH).equals("cookie")) {
+					cookieList.add(header.getValue());
+					continue;
+				}
 				if (header.getName().toLowerCase().equals("accept")) {
 					hasAccept = true;
 				}
 				client.addHeader(header.getName(), header.getValue());
 			}
 			if (!hasAccept) {
-				client.addHeader("Accept", "*");
+				client.addHeader("Accept", "*/*");
+			}
+			if (cookieList.size() > 0) {
+				client.addHeader("Cookie", String.join(";", cookieList));
 			}
 			client.setFollowRedirect(true);
 			client.connect();

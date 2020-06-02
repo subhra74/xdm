@@ -126,19 +126,19 @@ public class XDMScrollBarUI extends BasicScrollBarUI {
 		btn.setMargin(new Insets(0, 0, 0, 0));
 		btn.setBorderPainted(false);
 		if (orientation == SwingConstants.NORTH) {
-			btn.setIcon(ImageResource.get("up.png"));
+			btn.setIcon(ImageResource.getIcon("up.png", 10, 10));
 			btn.setPreferredSize(new Dimension(XDMUtils.getScaledInt(15), XDMUtils.getScaledInt(18)));
 		}
 		if (orientation == SwingConstants.SOUTH) {
-			btn.setIcon(ImageResource.get("down.png"));
+			btn.setIcon(ImageResource.getIcon("down.png", 10, 10));
 			btn.setPreferredSize(new Dimension(XDMUtils.getScaledInt(15), XDMUtils.getScaledInt(18)));
 		}
 		if (orientation == SwingConstants.EAST) {
-			btn.setIcon(ImageResource.get("right.png"));
+			btn.setIcon(ImageResource.getIcon("right.png", 10, 10));
 			btn.setPreferredSize(new Dimension(XDMUtils.getScaledInt(18), XDMUtils.getScaledInt(15)));
 		}
 		if (orientation == SwingConstants.WEST) {
-			btn.setIcon(ImageResource.get("left.png"));
+			btn.setIcon(ImageResource.getIcon("left.png", 10, 10));
 			btn.setPreferredSize(new Dimension(XDMUtils.getScaledInt(18), XDMUtils.getScaledInt(15)));
 		}
 		return btn;

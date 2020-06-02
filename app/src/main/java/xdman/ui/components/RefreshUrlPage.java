@@ -6,7 +6,9 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -14,6 +16,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import javax.swing.border.LineBorder;
 
 import xdman.LinkRefreshCallback;
@@ -29,6 +32,7 @@ import xdman.ui.res.StringResource;
 import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
+
 public class RefreshUrlPage extends Page implements LinkRefreshCallback {
 	/**
 	 * 
@@ -55,8 +59,10 @@ public class RefreshUrlPage extends Page implements LinkRefreshCallback {
 			btnOpenPage.setVisible(true);
 		}
 		System.out.println("ydlurl: " + md.getYdlUrl());
-		lblMonitoringTitle.setText(StringUtils.isNullOrEmptyOrBlank(md.getYdlUrl()) ? StringResource.get("REF_DESC1")
-				: StringResource.get("REF_DESC2"));
+		lblMonitoringTitle
+				.setText(StringUtils.isNullOrEmptyOrBlank(md.getYdlUrl())
+						? StringResource.get("REF_DESC1")
+						: StringResource.get("REF_DESC2"));
 
 	}
 
@@ -69,10 +75,12 @@ public class RefreshUrlPage extends Page implements LinkRefreshCallback {
 		y += getScaledInt(10);
 
 		h = getScaledInt(40);
-		JLabel lblMaxTitle = new JLabel(StringResource.get("REF_WAITING_FOR_LINK"));
+		JLabel lblMaxTitle = new JLabel(
+				StringResource.get("REF_WAITING_FOR_LINK"));
 		lblMaxTitle.setForeground(Color.WHITE);
 		lblMaxTitle.setFont(FontResource.getItemFont());
-		lblMaxTitle.setBounds(getScaledInt(15), y, getScaledInt(350) - getScaledInt(30), h);
+		lblMaxTitle.setBounds(getScaledInt(15), y,
+				getScaledInt(350) - getScaledInt(30), h);
 		panel.add(lblMaxTitle);
 		y += h;
 		y += getScaledInt(10);
@@ -86,7 +94,8 @@ public class RefreshUrlPage extends Page implements LinkRefreshCallback {
 		lblMonitoringTitle.setEditable(false);
 		lblMonitoringTitle.setForeground(Color.WHITE);
 		lblMonitoringTitle.setFont(FontResource.getNormalFont());
-		lblMonitoringTitle.setBounds(getScaledInt(15), y, getScaledInt(350) - getScaledInt(30), h);
+		lblMonitoringTitle.setBounds(getScaledInt(15), y,
+				getScaledInt(350) - getScaledInt(30), h);
 		panel.add(lblMonitoringTitle);
 		y += h;
 
@@ -97,7 +106,8 @@ public class RefreshUrlPage extends Page implements LinkRefreshCallback {
 		btnOpenPage.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if ((!StringUtils.isNullOrEmptyOrBlank(md.getYdlUrl())) || md.getHeaders().containsHeader("referer")) {
+				if ((!StringUtils.isNullOrEmptyOrBlank(md.getYdlUrl()))
+						|| md.getHeaders().containsHeader("referer")) {
 					openLink();
 				}
 			}
@@ -107,13 +117,14 @@ public class RefreshUrlPage extends Page implements LinkRefreshCallback {
 
 		final JCheckBox chk = new JCheckBox(StringResource.get("SETTINGS_ADV"));
 		chk.setName("SETTINGS_ADV");
-		chk.setIcon(ImageResource.get("unchecked.png"));
-		chk.setSelectedIcon(ImageResource.get("checked.png"));
+		chk.setIcon(ImageResource.getIcon("unchecked.png",16,16));
+		chk.setSelectedIcon(ImageResource.getIcon("checked.png",16,16));
 		chk.setOpaque(false);
 		chk.setFocusPainted(false);
 		chk.setForeground(Color.WHITE);
 		chk.setFont(FontResource.getNormalFont());
-		chk.setBounds(getScaledInt(15), y, getScaledInt(350) - 2 * getScaledInt(15), getScaledInt(30));
+		chk.setBounds(getScaledInt(15), y,
+				getScaledInt(350) - 2 * getScaledInt(15), getScaledInt(30));
 		panel.add(chk);
 		chk.addActionListener(new ActionListener() {
 			@Override
@@ -126,7 +137,8 @@ public class RefreshUrlPage extends Page implements LinkRefreshCallback {
 		h = getScaledInt(30);
 
 		lblUrl = new JLabel(StringResource.get("ND_ADDRESS"));
-		lblUrl.setBounds(getScaledInt(15), y, getScaledInt(80), getScaledInt(30));
+		lblUrl.setBounds(getScaledInt(15), y, getScaledInt(80),
+				getScaledInt(30));
 		lblUrl.setFont(FontResource.getNormalFont());
 		lblUrl.setVisible(false);
 		panel.add(lblUrl);
@@ -135,7 +147,9 @@ public class RefreshUrlPage extends Page implements LinkRefreshCallback {
 		txtUrl.setBorder(new LineBorder(ColorResource.getDarkBtnColor()));
 		txtUrl.setForeground(Color.WHITE);
 		txtUrl.setOpaque(false);
-		txtUrl.setBounds(getScaledInt(95), y + getScaledInt(5), getScaledInt(350) - getScaledInt(95) - getScaledInt(15), getScaledInt(20));
+		txtUrl.setBounds(getScaledInt(95), y + getScaledInt(5),
+				getScaledInt(350) - getScaledInt(95) - getScaledInt(15),
+				getScaledInt(20));
 		txtUrl.setVisible(false);
 		panel.add(txtUrl);
 
@@ -157,13 +171,17 @@ public class RefreshUrlPage extends Page implements LinkRefreshCallback {
 							md.save();
 						}
 					} catch (Exception ex) {
-						MessageBox.show(getParentFrame(), StringResource.get("MSG_REF_LINK_CONFIRM"),
-								StringResource.get("MSG_INVALID_URL"), MessageBox.OK, MessageBox.OK);
+						MessageBox.show(getParentFrame(),
+								StringResource.get("MSG_REF_LINK_CONFIRM"),
+								StringResource.get("MSG_INVALID_URL"),
+								MessageBox.OK, MessageBox.OK);
 						Logger.log(ex);
 					}
-				}else {
-					MessageBox.show(getParentFrame(), StringResource.get("REF_TITLE"),
-							StringResource.get("MSG_NO_URL"), MessageBox.OK, MessageBox.OK);
+				} else {
+					MessageBox.show(getParentFrame(),
+							StringResource.get("REF_TITLE"),
+							StringResource.get("MSG_NO_URL"), MessageBox.OK,
+							MessageBox.OK);
 				}
 			}
 		});
@@ -210,11 +228,15 @@ public class RefreshUrlPage extends Page implements LinkRefreshCallback {
 	@Override
 	public boolean isValidLink(HttpMetadata metadata) {
 		Logger.log("Checking refresh link with checking size " + md.getSize());
+		Logger.log("Metadata type " + metadata.getSize() + " type: "
+				+ metadata.getType());
 		if (md.getType() == metadata.getType()) {
 			if (md instanceof DashMetadata) {
+				Logger.log("dash refresh");
 				DashMetadata dm1 = (DashMetadata) md;
 				DashMetadata dm2 = (DashMetadata) metadata;
-				if (dm1.getLen1() == dm2.getLen1() && dm1.getLen2() == dm2.getLen2()) {
+				if (dm1.getLen1() == dm2.getLen1()
+						&& dm1.getLen2() == dm2.getLen2()) {
 					dm1.setUrl(dm2.getUrl());
 					dm1.setUrl2(dm2.getUrl2());
 					dm1.setHeaders(dm2.getHeaders());
@@ -225,6 +247,7 @@ public class RefreshUrlPage extends Page implements LinkRefreshCallback {
 					return true;
 				}
 			} else if (md instanceof HlsMetadata) {
+				Logger.log("hls refresh");
 				HlsMetadata hm1 = (HlsMetadata) md;
 				HlsMetadata hm2 = (HlsMetadata) metadata;
 				if (confirmUrl("")) {
@@ -235,6 +258,7 @@ public class RefreshUrlPage extends Page implements LinkRefreshCallback {
 					return true;
 				}
 			} else if (md instanceof HdsMetadata) {
+				Logger.log("hds refresh");
 				HdsMetadata hm1 = (HdsMetadata) md;
 				HdsMetadata hm2 = (HdsMetadata) metadata;
 				if (confirmUrl("")) {
@@ -245,13 +269,19 @@ public class RefreshUrlPage extends Page implements LinkRefreshCallback {
 					return true;
 				}
 			} else {
+				Logger.log("http refresh");
 				boolean confirmed = false;
 				if (md.getSize() > 0) {
 					confirmed = md.getSize() == metadata.getSize();
 				} else {
-					confirmed = confirmUrl(StringResource.get("MSG_REF_LINK_QUESTION"));
+					confirmed = confirmUrl(
+							StringResource.get("MSG_REF_LINK_QUESTION"));
+					System.out.println("After confirm");
 				}
+				System.out.println("confirmed: " + confirmed);
 				if (confirmed) {
+					System.out.println("Old: " + md.getUrl());
+					System.out.println("New: " + metadata.getUrl());
 					md.setUrl(metadata.getUrl());
 					md.setHeaders(metadata.getHeaders());
 					md.save();
@@ -264,13 +294,41 @@ public class RefreshUrlPage extends Page implements LinkRefreshCallback {
 	}
 
 	private boolean confirmUrl(String msg) {
-		return (MessageBox.show(super.getParentFrame(), StringResource.get("MSG_REF_LINK_CONFIRM"), msg,
-				MessageBox.YES_NO_OPTION, MessageBox.YES) == MessageBox.YES);
+		System.out.println("Showing message box...");
+		AtomicBoolean resp = new AtomicBoolean(false);
+		try {
+			SwingUtilities.invokeAndWait(() -> {
+				resp.set((MessageBox.show(super.getParentFrame(),
+						StringResource.get("MSG_REF_LINK_CONFIRM"), msg,
+						MessageBox.YES_NO_OPTION,
+						MessageBox.YES) == MessageBox.YES));
+			});
+		} catch (InvocationTargetException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return resp.get();
 	}
 
 	private void showOkMsgAndClose() {
-		MessageBox.show(getParentFrame(), StringResource.get("MSG_REF_LINK_CONFIRM"),
-				StringResource.get("MSG_REF_LINK_MSG"), MessageBox.OK, MessageBox.OK);
+		try {
+			SwingUtilities.invokeAndWait(() -> {
+				MessageBox.show(getParentFrame(),
+						StringResource.get("MSG_REF_LINK_CONFIRM"),
+						StringResource.get("MSG_REF_LINK_MSG"), MessageBox.OK,
+						MessageBox.OK);
+			});
+		} catch (InvocationTargetException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
 	}
 
 	@Override
