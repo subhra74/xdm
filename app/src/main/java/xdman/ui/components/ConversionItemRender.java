@@ -13,6 +13,7 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
 import static xdman.util.XDMUtils.getScaledInt;
+
 public class ConversionItemRender implements ListCellRenderer<ConversionItem> {
 	private JPanel panel;
 	private JPanel component;
@@ -20,7 +21,7 @@ public class ConversionItemRender implements ListCellRenderer<ConversionItem> {
 	private JLabel lblIcon;
 	private JLabel lblVideoDet;
 	private JLabel lblBorder;
-	private ImageIcon ico;
+	private Icon ico;
 
 	public ConversionItemRender() {
 		component = new JPanel(new BorderLayout(getScaledInt(5), getScaledInt(5)));
@@ -34,7 +35,7 @@ public class ConversionItemRender implements ListCellRenderer<ConversionItem> {
 		lblIcon.setMaximumSize(new Dimension(getScaledInt(64), getScaledInt(64)));
 		lblIcon.setHorizontalAlignment(JLabel.CENTER);
 
-		ico = ImageResource.get("video.png");
+		ico = ImageResource.getIcon("video.png", 48, 48);
 		lblIcon.setIcon(ico);
 		// lblIcon.setBorder(new EmptyBorder(12, 5, 5, 5));
 		lblIcon.setVerticalAlignment(JLabel.CENTER);

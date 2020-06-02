@@ -1,9 +1,11 @@
 (function () {
     var requests = [];
-    var blockedHosts = [];
-    var videoUrls = [];
-    var fileExts = [];
-    var vidExts = [];
+    var blockedHosts = ["update.microsoft.com", "windowsupdate.com", "thwawte.com" ];
+    var videoUrls = [ ".facebook.com|pagelet", "player.vimeo.com/", "instagram.com/p/"];
+    var fileExts = ["3GP", "7Z", "AVI", "BZ2", "DEB", "DOC", "DOCX", "EXE", "GZ", "ISO",
+    "MSI", "PDF", "PPT", "PPTX", "RAR", "RPM", "XLS", "XLSX", "SIT", "SITX", "TAR", "JAR", "ZIP", "XZ"];
+    var vidExts = ["MP4", "M3U8", "F4M", "WEBM", "OGG", "MP3", "AAC", "FLV", "MKV", "DIVX",
+    "MOV", "MPG", "MPEG", "OPUS"];
     var isXDMUp = true;
     var monitoring = true;
     var debug = false;
@@ -12,7 +14,8 @@
     var lastIcon;
     var lastPopup;
     var videoList = [];
-    var mimeList = [];
+    var mimeList = ["video/","audio/","mpegurl","f4m","m3u8"];
+    var port;
 
     var log = function (msg) {
         if (debug) {
@@ -31,7 +34,7 @@
                 file = getFileFromUrl(response.url);
             }
             sendToXDM(request, response, file, false);
-            return { redirectUrl: "http://127.0.0.1:9614/204" };
+            return { cancel: true };//return { redirectUrl: "http://127.0.0.1:9614/204" };
         } else {
             checkForVideo(request, response);
         }
@@ -58,18 +61,22 @@
             }
             log(data);
 
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', xdmHost + (video ? "/video" : "/download"), true);
-            xhr.send(data);
+            port.postMessage({"message":(video ? "/video" : "/download")+"\r\n"+data});
+            // var xhr = new XMLHttpRequest();
+            // xhr.open('POST', xdmHost + (video ? "/video" : "/download"), true);
+            // xhr.send(data);
         });
     };
 
     var sendRecUrl = function (urls, index, data) {
         if (index == urls.length - 1) {
             log(data);
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', xdmHost + "/links", true);
-            xhr.send(data);
+
+            port.postMessage({"message":"/links"+"\r\n"+data});
+
+            // var xhr = new XMLHttpRequest();
+            // xhr.open('POST', xdmHost + "/links", true);
+            // xhr.send(data);
             return;
         }
         var url = urls[index];
@@ -100,9 +107,11 @@
             }
             log(data);
 
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', xdmHost + "/download", true);
-            xhr.send(data);
+            port.postMessage({"message":"/download"+"\r\n"+data});
+
+            // var xhr = new XMLHttpRequest();
+            // xhr.open('POST', xdmHost + "/download", true);
+            // xhr.send(data);
         });
     };
 
@@ -155,7 +164,7 @@
     };
 
     var isVideoMime = function (mimeText) {
-        if(!mimeList){
+        if (!mimeList) {
             return false;
         }
         var mime = mimeText.toLowerCase();
@@ -168,7 +177,7 @@
     }
 
     var checkForVideo = function (request, response) {
-        
+
         var mime = "";
         var video = false;
         var url = response.url;
@@ -180,11 +189,11 @@
             }
         }
 
-        
+
 
         if (mime.startsWith("audio/") || mime.startsWith("video/") ||
             mime.indexOf("mpegurl") > 0 || mime.indexOf("f4m") > 0 || isVideoMime(mime)) {
-                log("Checking video mime: "+mime+" "+JSON.stringify(mimeList));
+            log("Checking video mime: " + mime + " " + JSON.stringify(mimeList));
             video = true;
         }
 
@@ -230,10 +239,10 @@
             if (request.tabId != -1) {
                 chrome.tabs.get
                     (
-                    request.tabId,
-                    function (tab) {
-                        sendToXDM(request, response, tab.title, true);
-                    }
+                        request.tabId,
+                        function (tab) {
+                            sendToXDM(request, response, tab.title, true);
+                        }
                     );
             } else {
                 sendToXDM(request, response, null, true);
@@ -300,35 +309,35 @@
         return false;
     };
 
-    var syncXDM = function () {
-        var xhr = new XMLHttpRequest();
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState == XMLHttpRequest.DONE) {
-                if (xhr.status == 200) {
-                    var data = JSON.parse(xhr.responseText);
-                    monitoring = data.enabled;
-                    blockedHosts = data.blockedHosts;
-                    videoUrls = data.videoUrls;
-                    fileExts = data.fileExts;
-                    vidExts = data.vidExts;
-                    isXDMUp = true;
-                    videoList = data.vidList;
-                    if (data.mimeList) {
-                        mimeList = data.mimeList;
-                    }
-                    updateBrowserAction();
-                }
-                else {
-                    isXDMUp = false;
-                    monitoring = false;
-                    updateBrowserAction();
-                }
-            }
-        };
+    // var syncXDM = function () {
+    //     var xhr = new XMLHttpRequest();
+    //     xhr.onreadystatechange = function () {
+    //         if (xhr.readyState == XMLHttpRequest.DONE) {
+    //             if (xhr.status == 200) {
+    //                 var data = JSON.parse(xhr.responseText);
+    //                 monitoring = data.enabled;
+    //                 blockedHosts = data.blockedHosts;
+    //                 videoUrls = data.videoUrls;
+    //                 fileExts = data.fileExts;
+    //                 vidExts = data.vidExts;
+    //                 isXDMUp = true;
+    //                 videoList = data.vidList;
+    //                 if (data.mimeList) {
+    //                     mimeList = data.mimeList;
+    //                 }
+    //                 updateBrowserAction();
+    //             }
+    //             else {
+    //                 isXDMUp = false;
+    //                 monitoring = false;
+    //                 updateBrowserAction();
+    //             }
+    //         }
+    //     };
 
-        xhr.open('GET', xdmHost + "/sync", true);
-        xhr.send(null);
-    };
+    //     xhr.open('GET', xdmHost + "/sync", true);
+    //     xhr.send(null);
+    // };
 
     var getFileFromUrl = function (str) {
         return ustr = parseUrl(str).pathname;
@@ -424,24 +433,24 @@
         //the object is removed from array when request completes or fails
         chrome.webRequest.onSendHeaders.addListener
             (
-            function (info) { requests.push(info); },
-            { urls: ["http://*/*", "https://*/*"] },
-            ["requestHeaders"]
+                function (info) { requests.push(info); },
+                { urls: ["http://*/*", "https://*/*"] },
+                ["requestHeaders"] // on chrome "extraHeaders" also needs to be added?
             );
         chrome.webRequest.onCompleted.addListener
             (
-            function (info) {
-                removeRequest(info.requestId);
-            },
-            { urls: ["http://*/*", "https://*/*"] }
+                function (info) {
+                    removeRequest(info.requestId);
+                },
+                { urls: ["http://*/*", "https://*/*"] }
             );
 
         chrome.webRequest.onErrorOccurred.addListener
             (
-            function (info) {
-                removeRequest(info.requestId);
-            },
-            { urls: ["http://*/*", "https://*/*"] }
+                function (info) {
+                    removeRequest(info.requestId);
+                },
+                { urls: ["http://*/*", "https://*/*"] }
             );
 
         //This will monitor and intercept files download if 
@@ -449,40 +458,40 @@
         //Use request array to get request headers
         chrome.webRequest.onHeadersReceived.addListener
             (
-            function (response) {
-                var requests = removeRequest(response.requestId);
-                if (!isXDMUp) {
-                    return;
-                }
+                function (response) {
+                    var requests = removeRequest(response.requestId);
+                    if (!isXDMUp) {
+                        return;
+                    }
 
-                if (!monitoring) {
-                    return;
-                }
+                    if (!monitoring) {
+                        return;
+                    }
 
-                if (disabled) {
-                    return;
-                }
+                    if (disabled) {
+                        return;
+                    }
 
-                if (!(response.statusLine.indexOf("200") > 0
-                    || response.statusLine.indexOf("206") > 0)) {
-                    return;
-                }
+                    if (!(response.statusLine.indexOf("200") > 0
+                        || response.statusLine.indexOf("206") > 0)) {
+                        return;
+                    }
 
-                if (requests) {
-                    if (requests.length == 1) {
-                        if (!(response.url + "").startsWith(xdmHost)) {
-                            //console.log("processing request " + response.url);
-                            return processRequest(requests[0], response);
+                    if (requests) {
+                        if (requests.length == 1) {
+                            if (!(response.url + "").startsWith(xdmHost)) {
+                                //console.log("processing request " + response.url);
+                                return processRequest(requests[0], response);
+                            }
                         }
                     }
-                }
-            },
-            { urls: ["http://*/*", "https://*/*"] },
-            ["blocking", "responseHeaders"]
+                },
+                { urls: ["http://*/*", "https://*/*"] },
+                ["blocking", "responseHeaders"]
             );
 
         //check XDM if is running and enable monitoring
-        setInterval(function () { syncXDM(); }, 5000);
+        //setInterval(function () { syncXDM(); }, 5000);
 
         chrome.runtime.onMessage.addListener(
             function (request, sender, sendResponse) {
@@ -505,14 +514,18 @@
                     log("disabled " + disabled);
                 }
                 else if (request.type === "vid") {
-                    var xhr = new XMLHttpRequest();
-                    xhr.open('POST', xdmHost + "/item", true);
-                    xhr.send(request.itemId);
+                    port.postMessage({"message":"/item\r\n"+request.itemId});
+
+                    // var xhr = new XMLHttpRequest();
+                    // xhr.open('POST', xdmHost + "/item", true);
+                    // xhr.send(request.itemId);
                 }
                 else if (request.type === "clear") {
-                    var xhr = new XMLHttpRequest();
-                    xhr.open('GET', xdmHost + "/clear", true);
-                    xhr.send();
+                    port.postMessage({"message":"/clear"});
+
+                    // var xhr = new XMLHttpRequest();
+                    // xhr.open('GET', xdmHost + "/clear", true);
+                    // xhr.send();
                 }
             }
         );
@@ -541,6 +554,36 @@
             contexts: ["all"],
             onclick: runContentScript,
         });
+
+        /*
+        On startup, connect to the "native" app.
+        */
+        port = browser.runtime.connectNative("xdmff.native_host");
+
+        /*
+        Listen for messages from the app.
+        */
+        port.onMessage.addListener((data) => {
+                    monitoring = data.enabled;
+                    blockedHosts = data.blockedHosts;
+                    videoUrls = data.videoUrls;
+                    fileExts = data.fileExts;
+                    vidExts = data.vidExts;
+                    isXDMUp = true;
+                    videoList = data.vidList;
+                    if (data.mimeList) {
+                        mimeList = data.mimeList;
+                    }
+                    updateBrowserAction();
+
+            log("Received: " + data);
+        });
+
+        /*
+        On start up send the app a message.
+        */
+        log("Sending to native...")
+        port.postMessage({"message":"hello from extension"});
     };
 
     initSelf();

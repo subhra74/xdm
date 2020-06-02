@@ -108,7 +108,7 @@ public class MediaConversionWnd extends JFrame implements ActionListener, MediaC
 			Logger.log(e);
 		}
 
-		setIconImage(ImageResource.get("icon.png").getImage());
+		setIconImage(ImageResource.getImage("icon.png"));
 		setSize(getScaledInt(350), getScaledInt(200));
 		setLocationRelativeTo(null);
 		setResizable(false);
@@ -122,7 +122,7 @@ public class MediaConversionWnd extends JFrame implements ActionListener, MediaC
 
 		closeBtn = new CustomButton();
 		closeBtn.setBounds(getScaledInt(320), getScaledInt(5), getScaledInt(24), getScaledInt(24));
-		closeBtn.setIcon(ImageResource.get("title_close.png"));
+		closeBtn.setIcon(ImageResource.getIcon("title_close.png",20,20));
 		closeBtn.setBackground(ColorResource.getDarkestBgColor());
 		closeBtn.setBorderPainted(false);
 		closeBtn.setFocusPainted(false);
@@ -131,7 +131,7 @@ public class MediaConversionWnd extends JFrame implements ActionListener, MediaC
 
 		minBtn = new CustomButton();
 		minBtn.setBounds(getScaledInt(296), getScaledInt(5), getScaledInt(24), getScaledInt(24));
-		minBtn.setIcon(ImageResource.get("title_min.png"));
+		minBtn.setIcon(ImageResource.getIcon("title_min.png",20,20));
 		minBtn.setBackground(ColorResource.getDarkestBgColor());
 		minBtn.setBorderPainted(false);
 		minBtn.setFocusPainted(false);

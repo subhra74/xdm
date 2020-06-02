@@ -71,7 +71,7 @@ public class Page extends JPanel {
 		y = getScaledInt(25);
 		h = getScaledInt(40);
 
-		btnNav = new JLabel(ImageResource.get("back.png"));
+		btnNav = new JLabel(ImageResource.getIcon("back.png",32,32));
 		btnNav.setFont(FontResource.getBiggerFont());
 		btnNav.setForeground(ColorResource.getSelectionColor());
 		btnNav.setBounds(getScaledInt(10), y, getScaledInt(35), h);

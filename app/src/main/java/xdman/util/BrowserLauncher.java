@@ -6,7 +6,8 @@ public class BrowserLauncher {
 	public static boolean launchFirefox(String args) {
 		int os = XDMUtils.detectOS();
 		if (os == XDMUtils.WINDOWS) {
-			File[] ffPaths = { new File(System.getenv("PROGRAMFILES"), "Mozilla Firefox\\firefox.exe"),
+			File[] ffPaths = { new File(System.getenv("ProgramW6432"), "Mozilla Firefox\\firefox.exe"),
+					new File(System.getenv("PROGRAMFILES"), "Mozilla Firefox\\firefox.exe"),
 					new File(System.getenv("PROGRAMFILES(X86)"), "Mozilla Firefox\\firefox.exe") };
 			for (int i = 0; i < ffPaths.length; i++) {
 				System.out.println(ffPaths[i]);
@@ -23,7 +24,7 @@ public class BrowserLauncher {
 				}
 			}
 		}
-		if(os==XDMUtils.LINUX) {
+		if (os == XDMUtils.LINUX) {
 			File[] ffPaths = { new File("/usr/bin/firefox") };
 			for (int i = 0; i < ffPaths.length; i++) {
 				if (ffPaths[i].exists()) {

@@ -168,7 +168,7 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 		}
 
 		setTitle(StringResource.get("MENU_MEDIA_CONVERTER"));
-		setIconImage(ImageResource.get("icon.png").getImage());
+		setIconImage(ImageResource.getImage("icon.png"));
 		setSize(getScaledValue(700), getScaledValue(420));
 		setLocationRelativeTo(null);
 		getContentPane().setLayout(null);
@@ -185,7 +185,7 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 		closeBtn.setFocusPainted(false);
 		closeBtn.setName("CLOSE");
 
-		closeBtn.setIcon(ImageResource.get("title_close.png"));
+		closeBtn.setIcon(ImageResource.getIcon("title_close.png",20,20));
 		closeBtn.addActionListener(this);
 		titlePanel.add(closeBtn);
 
@@ -273,8 +273,8 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 
 		chkHwAccel = new JCheckBox(StringResource.get("LBL_HW_ACCEL"));
 		chkHwAccel.setBounds(getScaledValue(14), y, getScaledValue(190), getScaledValue(30));
-		chkHwAccel.setIcon(ImageResource.get("unchecked.png"));
-		chkHwAccel.setSelectedIcon(ImageResource.get("checked.png"));
+		chkHwAccel.setIcon(ImageResource.getIcon("unchecked.png",16,16));
+		chkHwAccel.setSelectedIcon(ImageResource.getIcon("checked.png",16,16));
 		chkHwAccel.setOpaque(false);
 		chkHwAccel.setFocusPainted(false);
 		chkHwAccel.setForeground(Color.WHITE);
@@ -416,7 +416,7 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 		add(lblVolume);
 		add(slVolume);
 
-		lblImg = new FormatImageLabel(1, ImageResource.get("covert_video.png"));
+		lblImg = new FormatImageLabel(1, ImageResource.getIcon("covert_video.png",128,128));
 		lblImg.setFont(FontResource.getBigBoldFont());
 		// lblImg.setHorizontalAlignment(JLabel.CENTER);
 		// lblImg.setVerticalAlignment(JLabel.CENTER);

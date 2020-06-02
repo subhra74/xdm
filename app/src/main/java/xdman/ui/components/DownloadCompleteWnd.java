@@ -49,7 +49,7 @@ public class DownloadCompleteWnd extends JDialog implements ActionListener {
 			Logger.log(e);
 		}
 
-		setIconImage(ImageResource.get("icon.png").getImage());
+		setIconImage(ImageResource.getImage("icon.png"));
 
 		setSize(getScaledInt(350), getScaledInt(210));
 		setLocationRelativeTo(null);
@@ -68,7 +68,7 @@ public class DownloadCompleteWnd extends JDialog implements ActionListener {
 		closeBtn.setBorderPainted(false);
 		closeBtn.setFocusPainted(false);
 		closeBtn.setName("CLOSE");
-		closeBtn.setIcon(ImageResource.get("title_close.png"));
+		closeBtn.setIcon(ImageResource.getIcon("title_close.png", 20, 20));
 		closeBtn.addActionListener(this);
 		titlePanel.add(closeBtn);
 
@@ -122,8 +122,8 @@ public class DownloadCompleteWnd extends JDialog implements ActionListener {
 		chkDontShow.setFocusPainted(false);
 
 		chkDontShow.setBounds(getScaledInt(75), getScaledInt(125), getScaledInt(200), getScaledInt(20));
-		chkDontShow.setIcon(ImageResource.get("unchecked.png"));
-		chkDontShow.setSelectedIcon(ImageResource.get("checked.png"));
+		chkDontShow.setIcon(ImageResource.getIcon("unchecked.png",16,16));
+		chkDontShow.setSelectedIcon(ImageResource.getIcon("checked.png",16,16));
 		chkDontShow.addActionListener(this);
 
 		add(chkDontShow);

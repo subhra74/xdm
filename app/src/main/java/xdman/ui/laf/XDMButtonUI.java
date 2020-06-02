@@ -3,6 +3,7 @@ package xdman.ui.laf;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 
 import javax.swing.AbstractButton;
 import javax.swing.ButtonModel;
@@ -41,6 +42,8 @@ public class XDMButtonUI extends BasicButtonUI {
 	protected void paintButtonNormal(Graphics g, AbstractButton b) {
 		if (!b.isOpaque()) {
 			Graphics2D g2 = (Graphics2D) g;
+			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
 			g2.setPaint(b.getBackground());
 			g2.fillRect(0, 0, b.getWidth(), b.getHeight());
 		}
@@ -48,6 +51,8 @@ public class XDMButtonUI extends BasicButtonUI {
 
 	protected void paintButtonPressed(Graphics g, AbstractButton b) {
 		Graphics2D g2 = (Graphics2D) g;
+		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
 		g2.setColor(b.getBackground());
 		// Color color = (Color) b.getClientProperty("xdmbutton.pressedcolor");
 		// if (color != null) {
@@ -60,6 +65,8 @@ public class XDMButtonUI extends BasicButtonUI {
 
 	protected void paintButtonRollOver(Graphics g, AbstractButton b) {
 		Graphics2D g2 = (Graphics2D) g;
+		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
 		// if (b.getClientProperty("xdmbutton.grayrollover") != null) {
 		// g2.setPaint(Color.DARK_GRAY);
 		// } else {
@@ -71,14 +78,18 @@ public class XDMButtonUI extends BasicButtonUI {
 
 	public void paint(Graphics g, JComponent c) {
 		try {
+			Graphics2D g2 = (Graphics2D) g;
+			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+			
 			AbstractButton b = (AbstractButton) c;
 			ButtonModel bm = b.getModel();
 			if (bm.isRollover()) {
-				paintButtonRollOver(g, b);
+				paintButtonRollOver(g2, b);
 			} else {
-				paintButtonNormal(g, b);
+				paintButtonNormal(g2, b);
 			}
-			super.paint(g, c);
+			super.paint(g2, c);
 		} catch (Exception e) {
 		}
 	}

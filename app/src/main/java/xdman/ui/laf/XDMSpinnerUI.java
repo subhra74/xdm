@@ -24,7 +24,7 @@ public class XDMSpinnerUI extends BasicSpinnerUI {
 		btn.setHorizontalAlignment(JButton.CENTER);
 		btn.setMargin(new Insets(0, 0, 0, 0));
 		btn.setBorderPainted(false);
-		btn.setIcon(ImageResource.get("up.png"));
+		btn.setIcon(ImageResource.getIcon("up.png",10,10));
 		btn.setName("Spinner.nextButton");
 		installNextButtonListeners(btn);
 		return btn;
@@ -37,7 +37,7 @@ public class XDMSpinnerUI extends BasicSpinnerUI {
 		btn.setHorizontalAlignment(JButton.CENTER);
 		btn.setMargin(new Insets(0, 0, 0, 0));
 		btn.setBorderPainted(false);
-		btn.setIcon(ImageResource.get("down.png"));
+		btn.setIcon(ImageResource.getIcon("down.png",10,10));
 		btn.setName("Spinner.previousButton");
 		installPreviousButtonListeners(btn);
 		return btn;

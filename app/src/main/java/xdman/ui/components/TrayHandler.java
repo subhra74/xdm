@@ -41,10 +41,10 @@ public class TrayHandler {
 			if (Config.getInstance().isHideTray())
 				return;
 			else {
-				img = ImageResource.get("icon_linux.png").getImage();
+				img = ImageResource.getImage("icon_linux.png");
 			}
 		} else {
-			img = ImageResource.get("icon.png").getImage();
+			img = ImageResource.getImage("icon.png");
 		}
 
 		final PopupMenu popup = new PopupMenu();
@@ -111,7 +111,7 @@ public class TrayHandler {
 		MenuItem restoreItem = new MenuItem(StringResource.get("MSG_RESTORE"));
 		restoreItem.setFont(FontResource.getBigFont());
 		restoreItem.addActionListener(act);
-		addClipItem.setName("ADD_CLIP");
+		restoreItem.setName("RESTORE");
 		CheckboxMenuItem monitoringItem = new CheckboxMenuItem(StringResource.get("BROWSER_MONITORING"));
 		monitoringItem.addItemListener(new ItemListener() {
 

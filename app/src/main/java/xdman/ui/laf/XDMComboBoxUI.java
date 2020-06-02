@@ -27,7 +27,7 @@ public class XDMComboBoxUI extends BasicComboBoxUI {
 	protected JButton createArrowButton() {
 		JButton button = new CustomButton();
 		button.setBackground(ColorResource.getDarkBgColor());
-		button.setIcon(ImageResource.get("down.png"));
+		button.setIcon(ImageResource.getIcon("down.png", 10, 10));
 		button.setBorderPainted(false);
 		button.setFocusPainted(false);
 		button.setName("ComboBox.arrowButton");
@@ -50,11 +50,9 @@ public class XDMComboBoxUI extends BasicComboBoxUI {
 
 			@Override
 			protected JScrollPane createScroller() {
-				JScrollPane scroller = new JScrollPane(list,
-						JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+				JScrollPane scroller = new JScrollPane(list, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 						JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-				scroller.setVerticalScrollBar(new DarkScrollBar(
-						JScrollBar.VERTICAL));
+				scroller.setVerticalScrollBar(new DarkScrollBar(JScrollBar.VERTICAL));
 				return scroller;
 			}
 		};

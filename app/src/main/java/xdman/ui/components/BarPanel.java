@@ -1,7 +1,9 @@
 package xdman.ui.components;
 
 import java.awt.*;
+import java.io.IOException;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 
 import xdman.ui.res.ImageResource;
@@ -15,13 +17,20 @@ public class BarPanel extends JPanel {
 
 	public BarPanel() {
 		super();
-		imgBar = ImageResource.get("bar.png").getImage();
+		try {
+			imgBar = ImageIO.read(ImageResource.class.getResource("/icons/xxhdpi/bar.png"));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		this.setOpaque(false);
 	}
 
 	@Override
 	protected void paintComponent(Graphics g) {
-		g.drawImage(imgBar, 0, 0, this.getWidth(), this.getHeight(), this);// ,
-		super.paintComponent(g);
+		Graphics2D g2=(Graphics2D) g;
+		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+		g2.drawImage(imgBar, 0, 0, this.getWidth(), this.getHeight(), this);// ,
+		super.paintComponent(g2);
 	}
 }

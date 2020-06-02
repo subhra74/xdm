@@ -35,6 +35,20 @@ public class StringResource {
 	private static boolean loadLang(String code, Properties prop) {
 		Logger.log("Loading language " + code);
 		try {
+			InputStream inStream = StringResource.class.getResourceAsStream("/lang/en.txt");
+			if (inStream == null) {
+				inStream = new FileInputStream("lang/" + code + ".txt");
+			}
+			InputStreamReader r = new InputStreamReader(inStream, Charset.forName("utf-8"));
+			prop.load(r);
+		} catch (Exception e) {
+			Logger.log(e);
+			return false;
+		}
+		if ("en".equals(code)) {
+			return true;
+		}
+		try {
 			InputStream inStream = StringResource.class.getResourceAsStream("/lang/" + code + ".txt");
 			if (inStream == null) {
 				inStream = new FileInputStream("lang/" + code + ".txt");
