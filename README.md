@@ -9,7 +9,7 @@
 </p>
 
 **X**treme **D**ownload **M**anager (XDM) is a powerful tool to increase download speeds up to 500%, save streaming videos from YouTube, DailyMotion, Facebook, Vimeo, Google Video and 1000+ other websites, resume broken/dead downloads, schedule and convert downloads.<br>
-XDM seamlessly integrates with Google Chrome, Mozilla Firefox Quantum, Opera, Vivaldi and other Chroumium and Firefox based browsers, to take over downloads and saving streaming videos from web. XDM has a built in video converter which lets you convert your downloaded videos to different formats so that you can watch then on your mobile or TV (100+ devices are supported)
+XDM seamlessly integrates with Google Chrome, Mozilla Firefox Quantum, Opera, Vivaldi and other Chroumium and Firefox based browsers, to take over downloads and saving streaming videos from web. XDM has a built in video converter which lets you convert your downloaded videos to different formats so that you can watch them on your mobile or TV (100+ devices are supported)
 
 
 ## Downloads
