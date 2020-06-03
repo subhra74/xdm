@@ -72,7 +72,7 @@ Steps are mentioned in: https://github.com/subhra74/xdm/wiki/Submitting-translat
 [15]: https://sourceforge.net/projects/xdman/files/xdm-2018-x64.tar.xz/download
 [16]: https://sourceforge.net/projects/xdman/files/XDMSetup.dmg/download
 [17]: http://xdman.sourceforge.net/xdman.jar
-[100]: https://github.com/subhra74/xdm/releases/download/7.2.11/xdmsetup.msi
+[100]: https://github.com/subhra74/xdm/releases/download/7.2.11/xdm-setup.msi
 [101]: https://github.com/subhra74/xdm/releases/download/7.2.11/xdm-setup-7.2.11.tar.xz
 [102]: https://github.com/subhra74/xdm/releases/download/7.2.11/xdman.jar
 
