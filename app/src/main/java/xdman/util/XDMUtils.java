@@ -53,7 +53,7 @@ public class XDMUtils {
 			'>', ':', '|' };
 
 	public static String decodeFileName(String encoded) {
-		String str = URLDecoder.decode(encoded, StandardCharsets.UTF_8);
+		String str = URLDecoder.decode(encoded.replace("+", "%2B"), StandardCharsets.UTF_8);
 		char ch[] = str.toCharArray();
 		StringBuffer buf = new StringBuffer();
 		for (char c : str.toCharArray()) {
