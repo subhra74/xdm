@@ -14,6 +14,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -50,23 +52,16 @@ public class XDMUtils {
 	private static final char[] invalid_chars = { '/', '\\', '"', '?', '*', '<',
 			'>', ':', '|' };
 
-	public static String decodeFileName(String str) {
+	public static String decodeFileName(String encoded) {
+		String str = URLDecoder.decode(encoded, StandardCharsets.UTF_8);
 		char ch[] = str.toCharArray();
 		StringBuffer buf = new StringBuffer();
-		for (int i = 0; i < ch.length; i++) {
-			if (ch[i] == '/' || ch[i] == '\\' || ch[i] == '"' || ch[i] == '?'
-					|| ch[i] == '*' || ch[i] == '<' || ch[i] == '>'
-					|| ch[i] == ':')
+		for (char c : str.toCharArray()) {
+			if (c == '/' || c == '\\' || c == '"' || c == '?'
+					|| c == '*' || c == '<' || c == '>'
+					|| c == ':')
 				continue;
-			if (ch[i] == '%') {
-				if (i + 2 < ch.length) {
-					int c = Integer.parseInt(ch[i + 1] + "" + ch[i + 2], 16);
-					buf.append((char) c);
-					i += 2;
-					continue;
-				}
-			}
-			buf.append(ch[i]);
+			buf.append(c);
 		}
 		return buf.toString();
 	}
