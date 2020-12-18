@@ -458,7 +458,9 @@ public class XDMUtils {
 				return path;
 			}
 		}
-		return new StringBuilder(System.getProperty("user.home")).append(File.separator).append("Downloads").toString();
+		return new StringBuilder(System
+                .getProperty("user.home"))
+            .append(File.separator).append("Downloads").toString();
 	}
 
 	public static boolean isFFmpegInstalled() {
