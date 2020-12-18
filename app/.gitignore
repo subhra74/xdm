@@ -1,1 +1,4 @@
 /target/
+
+#for when using vim
+*.swp
