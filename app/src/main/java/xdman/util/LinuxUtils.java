@@ -126,9 +126,13 @@ public class LinuxUtils {
 	}
 	
 	public static String getXDGDownloaDir() {
-		BufferedReader br = null;
-		try {
-			br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(System.getProperty("user.home"),".config/user-dirs.dirs"))));
+		
+		try (BufferedReader br =new BufferedReader(
+                    new InputStreamReader(
+                        new FileInputStream(
+                            new File(System
+                                .getProperty("user.home"),
+                                ".config/user-dirs.dirs"))))){
 			while (true) {
 				String line = br.readLine();
 				if (line == null) {
@@ -148,15 +152,8 @@ public class LinuxUtils {
 			}
 		} catch (Exception e) {
 			Logger.log(e);
-		} finally {
-			if (br != null) {
-				try {
-					br.close();
-				} catch (Exception e2) {
-				}
-			}
 		}
-		return null;
+        return null;
 	}
 
 }
