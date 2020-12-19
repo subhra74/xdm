@@ -155,139 +155,134 @@ public class Config {
 
 	public void load() {
 		Logger.log("Loading config...");
-		BufferedReader br = null;
-		try {
-			File file = new File(System.getProperty("user.home"), ".xdman/config.txt");
-			if (!file.exists()) {
-				return;
-			}
-			FileReader r = new FileReader(file);
-			br = new BufferedReader(r);
-			while (true) {
-				String ln = br.readLine();
-				if (ln == null)
-					break;
-				if (ln.startsWith("#"))
-					continue;
-				int index = ln.indexOf(":");
-				if (index < 1)
-					continue;
-				String key = ln.substring(0, index);
-				String val = ln.substring(index + 1);
-				if (key.equals("monitoring")) {
-					this.monitoring = val.equals("true");
-				} else if (key.equals("downloadFolder")) {
-					this.downloadFolder = val;
-				} else if (key.equals("temporaryFolder")) {
-					this.temporaryFolder = val;
-				} else if (key.equals("maxSegments")) {
-					this.maxSegments = Integer.parseInt(val);
-				} else if (key.equals("minSegmentSize2")) {
-					this.minSegmentSize = Integer.parseInt(val);
-				} else if (key.equals("networkTimeout")) {
-					this.networkTimeout = Integer.parseInt(val);
-				} else if (key.equals("tcpWindowSize2")) {
-					this.tcpWindowSize = Integer.parseInt(val);
-				} else if (key.equals("duplicateAction")) {
-					this.duplicateAction = Integer.parseInt(val);
-				} else if (key.equals("speedLimit")) {
-					this.speedLimit = Integer.parseInt(val);
-				} else if (key.equals("showDownloadWindow")) {
-					this.showDownloadWindow = val.equals("true");
-				} else if (key.equals("showDownloadCompleteWindow")) {
-					this.showDownloadCompleteWindow = val.equals("true");
-				} else if (key.equals("downloadAutoStart")) {
-					this.downloadAutoStart = val.equals("true");
-				} else if (key.equals("minVidSize")) {
-					this.minVidSize = Integer.parseInt(val);
-				} else if (key.equals("parallalDownloads")) {
-					this.parallalDownloads = Integer.parseInt(val);
-				} else if (key.equals("blockedHosts")) {
-					this.blockedHosts = val.split(",");
-				} else if (key.equals("vidUrls")) {
-					this.vidUrls = val.split(",");
-				} else if (key.equals("fileExts")) {
-					this.fileExts = val.split(",");
-				} else if (key.equals("vidExts")) {
-					this.vidExts = val.split(",");
-				} else if (key.equals("proxyMode")) {
-					this.proxyMode = Integer.parseInt(val);
-				} else if (key.equals("proxyPort")) {
-					this.proxyPort = Integer.parseInt(val);
-				} else if (key.equals("socksPort")) {
-					this.socksPort = Integer.parseInt(val);
-				} else if (key.equals("proxyPac")) {
-					this.proxyPac = val;
-				} else if (key.equals("proxyHost")) {
-					this.proxyHost = val;
-				} else if (key.equals("socksHost")) {
-					this.socksHost = val;
-				} else if (key.equals("proxyUser")) {
-					this.proxyUser = val;
-				} else if (key.equals("proxyPass")) {
-					this.proxyPass = val;
-				} else if (key.equals("showVideoNotification")) {
-					this.showVideoNotification = "true".equals(val);
-				} else if (key.equals("keepAwake")) {
-					this.keepAwake = "true".equals(val);
-				} else if (key.equals("autoStart")) {
-					this.autoStart = "true".equals(val);
-				} else if (key.equals("execAntivir")) {
-					this.execAntivir = "true".equals(val);
-				} else if (key.equals("execCmd")) {
-					this.execCmd = "true".equals(val);
-				} else if (key.equals("antivirExe")) {
-					this.antivirExe = val;
-				} else if (key.equals("antivirCmd")) {
-					this.antivirCmd = val;
-				} else if (key.equals("customCmd")) {
-					this.customCmd = val;
-				} else if (key.equals("autoShutdown")) {
-					this.autoShutdown = "true".equals(val);
-				} else if (key.equals("version")) {
-					this.firstRun = !XDMApp.APP_VERSION.equals(val);
-				} else if (key.equals("language")) {
-					this.language = val;
-				} else if (key.equals("monitorClipboard")) {
-					this.monitorClipboard = "true".equals(val);
-				} else if (key.equals("categoryOther")) {
-					this.categoryOther = val;
-				} else if (key.equals("categoryDocuments")) {
-					this.categoryDocuments = val;
-				} else if (key.equals("categoryCompressed")) {
-					this.categoryCompressed = val;
-				} else if (key.equals("categoryMusic")) {
-					this.categoryMusic = val;
-				} else if (key.equals("categoryVideos")) {
-					this.categoryVideos = val;
-				} else if (key.equals("categoryPrograms")) {
-					this.categoryPrograms = val;
-				} else if (key.equals("fetchTs")) {
-					this.fetchTs = "true".equals(val);
-				} else if (key.equals("noTransparency")) {
-					this.noTransparency = "true".equals(val);
-				} else if (key.equals("forceSingleFolder")) {
-					this.forceSingleFolder = "true".equals(val);
-				} else if (key.equals("hideTray")) {
-					this.hideTray = "true".equals(val);
-				} else if (key.equals("lastFolder")) {
-					this.lastFolder = val;
-				} else if (key.equals("showVideoListOnlyInBrowser")) {
-					this.showVideoListOnlyInBrowser = "true".equals(val);
-				} else if (key.equals("zoomLevelIndex")) {
-					this.zoomLevelIndex = Integer.parseInt(val);
+		File file = new File(System.getProperty("user.home"),
+				".xdman/config.txt");
+		
+		try (BufferedReader br = new BufferedReader(new FileReader(file))){
+			if (file.exists()) {
+				while (true) {
+					String ln = br.readLine();
+					if (ln == null)
+						break;
+					if (ln.startsWith("#"))
+						continue;
+					int index = ln.indexOf(":");
+					if (index < 1)
+						continue;
+					String key = ln.substring(0, index);
+					String val = ln.substring(index + 1);
+					if (key.equals("monitoring")) {
+						this.monitoring = val.equals("true");
+					} else if (key.equals("downloadFolder")) {
+						this.downloadFolder = val;
+					} else if (key.equals("temporaryFolder")) {
+						this.temporaryFolder = val;
+					} else if (key.equals("maxSegments")) {
+						this.maxSegments = Integer.parseInt(val);
+					} else if (key.equals("minSegmentSize2")) {
+						this.minSegmentSize = Integer.parseInt(val);
+					} else if (key.equals("networkTimeout")) {
+						this.networkTimeout = Integer.parseInt(val);
+					} else if (key.equals("tcpWindowSize2")) {
+						this.tcpWindowSize = Integer.parseInt(val);
+					} else if (key.equals("duplicateAction")) {
+						this.duplicateAction = Integer.parseInt(val);
+					} else if (key.equals("speedLimit")) {
+						this.speedLimit = Integer.parseInt(val);
+					} else if (key.equals("showDownloadWindow")) {
+						this.showDownloadWindow = val.equals("true");
+					} else if (key.equals("showDownloadCompleteWindow")) {
+						this.showDownloadCompleteWindow = val.equals("true");
+					} else if (key.equals("downloadAutoStart")) {
+						this.downloadAutoStart = val.equals("true");
+					} else if (key.equals("minVidSize")) {
+						this.minVidSize = Integer.parseInt(val);
+					} else if (key.equals("parallalDownloads")) {
+						this.parallalDownloads = Integer.parseInt(val);
+					} else if (key.equals("blockedHosts")) {
+						this.blockedHosts = val.split(",");
+					} else if (key.equals("vidUrls")) {
+						this.vidUrls = val.split(",");
+					} else if (key.equals("fileExts")) {
+						this.fileExts = val.split(",");
+					} else if (key.equals("vidExts")) {
+						this.vidExts = val.split(",");
+					} else if (key.equals("proxyMode")) {
+						this.proxyMode = Integer.parseInt(val);
+					} else if (key.equals("proxyPort")) {
+						this.proxyPort = Integer.parseInt(val);
+					} else if (key.equals("socksPort")) {
+						this.socksPort = Integer.parseInt(val);
+					} else if (key.equals("proxyPac")) {
+						this.proxyPac = val;
+					} else if (key.equals("proxyHost")) {
+						this.proxyHost = val;
+					} else if (key.equals("socksHost")) {
+						this.socksHost = val;
+					} else if (key.equals("proxyUser")) {
+						this.proxyUser = val;
+					} else if (key.equals("proxyPass")) {
+						this.proxyPass = val;
+					} else if (key.equals("showVideoNotification")) {
+						this.showVideoNotification = "true".equals(val);
+					} else if (key.equals("keepAwake")) {
+						this.keepAwake = "true".equals(val);
+					} else if (key.equals("autoStart")) {
+						this.autoStart = "true".equals(val);
+					} else if (key.equals("execAntivir")) {
+						this.execAntivir = "true".equals(val);
+					} else if (key.equals("execCmd")) {
+						this.execCmd = "true".equals(val);
+					} else if (key.equals("antivirExe")) {
+						this.antivirExe = val;
+					} else if (key.equals("antivirCmd")) {
+						this.antivirCmd = val;
+					} else if (key.equals("customCmd")) {
+						this.customCmd = val;
+					} else if (key.equals("autoShutdown")) {
+						this.autoShutdown = "true".equals(val);
+					} else if (key.equals("version")) {
+						this.firstRun = !XDMApp.APP_VERSION.equals(val);
+					} else if (key.equals("language")) {
+						this.language = val;
+					} else if (key.equals("monitorClipboard")) {
+						this.monitorClipboard = "true".equals(val);
+					} else if (key.equals("categoryOther")) {
+						this.categoryOther = val;
+					} else if (key.equals("categoryDocuments")) {
+						this.categoryDocuments = val;
+					} else if (key.equals("categoryCompressed")) {
+						this.categoryCompressed = val;
+					} else if (key.equals("categoryMusic")) {
+						this.categoryMusic = val;
+					} else if (key.equals("categoryVideos")) {
+						this.categoryVideos = val;
+					} else if (key.equals("categoryPrograms")) {
+						this.categoryPrograms = val;
+					} else if (key.equals("fetchTs")) {
+						this.fetchTs = "true".equals(val);
+					} else if (key.equals("noTransparency")) {
+						this.noTransparency = "true".equals(val);
+					} else if (key.equals("forceSingleFolder")) {
+						this.forceSingleFolder = "true".equals(val);
+					} else if (key.equals("hideTray")) {
+						this.hideTray = "true".equals(val);
+					} else if (key.equals("lastFolder")) {
+						this.lastFolder = val;
+					} else if (key.equals("showVideoListOnlyInBrowser")) {
+						this.showVideoListOnlyInBrowser = "true".equals(val);
+					} else if (key.equals("zoomLevelIndex")) {
+						this.zoomLevelIndex = Integer.parseInt(val);
+					}
 				}
 			}
-		} catch (Exception e) {
-			Logger.log(e);
-		} finally {
+
 			if (!forceSingleFolder) {
 				createFolders();
 			}
-			try {
-				br.close();
-			} catch (Exception e) {
-			}
+			
+		} catch (Exception e) {
+			Logger.log(e);
 		}
 	}
 
