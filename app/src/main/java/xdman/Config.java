@@ -319,7 +319,6 @@ public class Config {
 		this.downloadFolder = XDMUtils.getDownloadsFolder();
 		if (!new File(this.downloadFolder).exists()) {
 			File file = new File(System.getProperty("user.home"), "Downloads");
-			file.mkdirs();
 			this.downloadFolder = file.getAbsolutePath();
 		}
 
@@ -768,12 +767,36 @@ public class Config {
 		this.categoryOther = categoryOther;
 	}
 
+	private String createDirectoryIfNotExists(String location){
+
+		File folder=new File(location);
+
+		String folderParent=folder.getParentFile().getAbsolutePath();
+		// if folder parent not equal download Folder, then 
+		// switch to use the downloadFolder as parent dir
+		if(this.downloadFolder!=null &&
+				!this.downloadFolder.equals(folderParent)){
+			folder=new File(this.downloadFolder+
+					File.separator+folder.getName());
+		}
+
+		//location passed, folder exists
+		if(folder.exists()){
+			return folder.getAbsolutePath();
+		}else{
+			//location passed folder doesn't exist
+			folder.mkdirs();
+			return folder.getAbsolutePath();
+		}
+	}
+
 	public String getCategoryDocuments() {
 		if (this.categoryDocuments == null) {
 			File folder = new File(getDownloadFolder(), "Documents");
-			folder.mkdirs();
 			this.categoryDocuments = folder.getAbsolutePath();
 		}
+
+		createDirectoryIfNotExists(this.categoryDocuments);
 		return categoryDocuments;
 	}
 
@@ -784,9 +807,10 @@ public class Config {
 	public String getCategoryMusic() {
 		if (this.categoryMusic == null) {
 			File folder = new File(getDownloadFolder(), "Music");
-			folder.mkdirs();
 			this.categoryMusic = folder.getAbsolutePath();
 		}
+
+		createDirectoryIfNotExists(this.categoryMusic);
 		return categoryMusic;
 	}
 
@@ -797,9 +821,9 @@ public class Config {
 	public String getCategoryVideos() {
 		if (this.categoryVideos == null) {
 			File folder = new File(getDownloadFolder(), "Video");
-			folder.mkdirs();
 			this.categoryVideos = folder.getAbsolutePath();
 		}
+		createDirectoryIfNotExists(this.categoryVideos);
 		return categoryVideos;
 	}
 
@@ -814,9 +838,9 @@ public class Config {
 	public String getCategoryPrograms() {
 		if (this.categoryPrograms == null) {
 			File folder = new File(getDownloadFolder(), "Programs");
-			folder.mkdirs();
 			this.categoryPrograms = folder.getAbsolutePath();
 		}
+		createDirectoryIfNotExists(this.categoryPrograms);
 		return categoryPrograms;
 	}
 
@@ -827,9 +851,10 @@ public class Config {
 	public String getCategoryCompressed() {
 		if (this.categoryCompressed == null) {
 			File folder = new File(getDownloadFolder(), "Compressed");
-			folder.mkdirs();
 			this.categoryCompressed = folder.getAbsolutePath();
 		}
+
+		createDirectoryIfNotExists(this.categoryCompressed);
 		return categoryCompressed;
 	}
 
