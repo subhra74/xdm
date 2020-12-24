@@ -15,7 +15,6 @@ import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -53,17 +52,34 @@ public class XDMUtils {
 			'>', ':', '|' };
 
 	public static String decodeFileName(String encoded) {
-		String str = URLDecoder.decode(encoded.replace("+", "%2B"), StandardCharsets.UTF_8);
-		char ch[] = str.toCharArray();
-		StringBuffer buf = new StringBuffer();
+		String str;
+		try {
+			str = URLDecoder.decode(encoded.replace("+", "%2B"), "UTF-8");
+		} catch (Exception e) {
+			StringBuilder builder = new StringBuilder();
+			char[] ch = encoded.toCharArray();
+			for (int i = 0; i < ch.length; i++) {
+				if (ch[i] == '%') {
+					if (i + 2 < ch.length) {
+						int c = Integer.parseInt(ch[i + 1] + "" + ch[i + 2], 16);
+						builder.append((char) c);
+						i += 2;
+						continue;
+					}
+				}
+				builder.append(ch[i]);
+			}
+			str = builder.toString();
+		}
+		StringBuilder builder = new StringBuilder();
 		for (char c : str.toCharArray()) {
 			if (c == '/' || c == '\\' || c == '"' || c == '?'
 					|| c == '*' || c == '<' || c == '>'
 					|| c == ':')
 				continue;
-			buf.append(c);
+			builder.append(c);
 		}
-		return buf.toString();
+		return builder.toString();
 	}
 
 	public static String getFileName(String uri) {
