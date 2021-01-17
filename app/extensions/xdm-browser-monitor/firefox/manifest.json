@@ -3,7 +3,7 @@
   "minimum_chrome_version": "18.0",
   "name": "XDM Browser Monitor",
   "description": "XDM integration module for Firefox Quantum",
-  "version": "2.1",
+  "version": "2.2",
   "icons": {
     "48": "icon.png"
   },
