@@ -33,6 +33,7 @@ import xdman.Config;
 import xdman.DownloadQueue;
 import xdman.XDMApp;
 import xdman.downloaders.metadata.HttpMetadata;
+import xdman.monitoring.BrowserMonitor;
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
@@ -132,6 +133,7 @@ public class NewDownloadWindow extends JDialog implements ActionListener, Docume
 					}
 					Config.getInstance().addBlockedHosts(host);
 					Config.getInstance().save();
+					
 					dispose();
 					System.out.println("called");
 

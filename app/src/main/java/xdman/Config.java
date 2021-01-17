@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import xdman.monitoring.BrowserMonitor;
 import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
@@ -72,11 +73,7 @@ public class Config {
 	}
 
 	public void save() {
-		FileWriter fw = null;
-		try {
-			File file = new File(System.getProperty("user.home"), ".xdman/config.txt");
-			fw = new FileWriter(file);
-
+		try (FileWriter fw = new FileWriter(new File(System.getProperty("user.home"), ".xdman/config.txt"))) {
 			String newLine = "\n";
 
 			fw.write("monitoring:" + this.monitoring + newLine);
@@ -144,11 +141,8 @@ public class Config {
 			fw.write("showVideoListOnlyInBrowser:" + this.showVideoListOnlyInBrowser + newLine);
 			fw.write("zoomLevelIndex:" + this.zoomLevelIndex + newLine);
 
-		} catch (Exception e) {
-		}
-		try {
-			if (fw != null)
-				fw.close();
+			BrowserMonitor.getInstance().updateSettingsAndStatus();
+
 		} catch (Exception e) {
 		}
 	}
