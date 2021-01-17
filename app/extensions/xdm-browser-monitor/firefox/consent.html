@@ -1,0 +1,37 @@
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <script src="consent.js"></script>
+        <link rel="stylesheet" href="styles.css">
+      </head>
+    <body style="height: 100vh; background: rgb(169,34,195); background: linear-gradient(40deg, rgba(169,34,195,1) 0%, rgba(45,185,253,1) 100%);">
+        <div style="display: flex; justify-content: center; padding-top: 30px;">
+            <div style="width: 600px; background: rgb(40, 40, 40, 0.6); padding: 50px; border-radius: 10px;">
+                <div class="consent-title">
+                    Xtreme Download Manager - Privacy
+                </div>
+                <div  style="display: flex; justify-content: center;">
+                    <div class="consent-content">
+                        <div style="padding-bottom: 20px;">
+                            Please accept below conditions to use this extension:
+                        </div>
+                        <div style="padding-bottom: 10px; color: white;">
+                            To capture downloads from your browser, "XDM browser monitor" extension will collect and send browsing data to XDM (Xtreme Download Manager) application running on you computer. 
+                        </div>
+                        <div style="padding-bottom: 10px;color: white;">
+                            The data may include URL, internet address, cookies, query parameters, post data, namely all the data that the browser sends to the server when requesting the file.
+                        </div>
+                        <div style="padding-bottom: 10px; color: white;">
+                            This data is stored on your local computer until you delete this download from XDM list of downloads. To download a file, XDM re-sends the original download query made by your browser. XDM sends the data only to the server where the browser sent it to, XDM DOES NOT send this data to our servers, or any 3rd party servers.
+                         </div>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: center; padding-top: 20px;">
+                    <button id="accept" class="consent-accept-btn">Accept and continue</button>
+                    <div style="padding: 10px;"></div>
+                    <button id="reject" class="consent-reject-btn">Remove extension</button>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

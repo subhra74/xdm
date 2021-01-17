@@ -543,6 +543,30 @@
         });
     };
 
-    initSelf();
+    var getUserConcent=function(){
+        log("user consent");
+        if(!localStorage.getItem("xdm-first-run-key")){
+            browser.tabs.create({url:"consent.html"});
+            chrome.runtime.onMessage.addListener(
+                function (request, sender, sendResponse) {
+                    if (request.type === "user-consent-accepted") {
+                        localStorage.setItem("xdm-first-run-key","true");
+                        initSelf();
+                    }
+                }
+            );
+    
+            // if(!confirm("Please confirm to accept below conditions to use this extension:\n'XDM browser monitor' extension will collect and send data to XDM (Xtreme Download Manager) application running on you computer.\nThe data may include URL, internet address, cookies, query parameters, post data, namely all the data that the browser sends to the server when requesting the file.\nThis data is stored on your local computer until you delete this download from XDM list of downloads. To download a file, XDM re-sends the original download query made by your browser. XDM sends the data only to the server where the browser sent it to, XDM DOES NOT send this data to our servers, or any 3rd party servers.")){
+            //     browser.management.uninstallSelf({
+            //         showConfirmDialog: true
+            //     });
+            // }else{
+            //     localStorage.setItem("xdm-first-run-key","true");
+            // }
+        }else{
+            initSelf();
+        }
+    };
+    getUserConcent();
     log("loaded");
 })();

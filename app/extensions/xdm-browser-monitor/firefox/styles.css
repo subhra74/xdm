@@ -84,3 +84,55 @@ table tbody{
     -ms-transform: rotate(45deg);
     transform: rotate(45deg);
   }
+
+  .consent-title{
+    font-size: 30px;
+    text-align: center;
+    padding: 20px;
+    font-family: Arial, Helvetica, sans-serif;
+    color: white;
+  }
+
+  .consent-content{
+    font-size: 20px;
+    padding: 20px;
+    width: 600px;
+    font-family: Arial, Helvetica, sans-serif;
+    color: white;
+  }
+
+  .consent-accept-btn{
+    background: dodgerblue;
+    padding: 20px;
+    font-size: 20px;
+    font-family: Arial, Helvetica, sans-serif;
+    border-radius: 7px;
+    border: none;
+    color: white;
+  }
+
+  .consent-accept-btn:hover{
+    background: indigo;
+    padding: 20px;
+    font-size: 20px;
+    font-family: Arial, Helvetica, sans-serif;
+    border-radius: 7px;
+  }
+
+  .consent-reject-btn{
+    background: red;
+    padding: 20px;
+    font-size: 20px;
+    font-family: Arial, Helvetica, sans-serif;
+    border-radius: 7px;
+    border: none;
+    color: white;
+  }
+
+  .consent-reject-btn:hover{
+    background: maroon;
+    padding: 20px;
+    font-size: 20px;
+    font-family: Arial, Helvetica, sans-serif;
+    border-radius: 7px;
+  }
