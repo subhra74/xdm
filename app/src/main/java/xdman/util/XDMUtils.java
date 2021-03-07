@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -458,9 +459,8 @@ public class XDMUtils {
 				return path;
 			}
 		}
-		return new StringBuilder(System
-                .getProperty("user.home"))
-            .append(File.separator).append("Downloads").toString();
+
+		return Paths.get(System.getProperty("user.home"), "Downloads").toAbsolutePath().toString();
 	}
 
 	public static boolean isFFmpegInstalled() {
