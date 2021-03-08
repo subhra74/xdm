@@ -1,11 +1,13 @@
 package xdman.util;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.InputStreamReader;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class LinuxUtils {
 	static String shutdownCmds[] = {
@@ -126,34 +128,23 @@ public class LinuxUtils {
 	}
 	
 	public static String getXDGDownloaDir() {
-		
-		try (BufferedReader br =new BufferedReader(
-                    new InputStreamReader(
-                        new FileInputStream(
-                            new File(System
-                                .getProperty("user.home"),
-                                ".config/user-dirs.dirs"))))){
-			while (true) {
-				String line = br.readLine();
-				if (line == null) {
-					break;
-				}
-				if (line.startsWith("XDG_DOWNLOAD_DIR")) {
-					int index = line.indexOf("=");
-					if (index != -1) {
-						String path = line.substring(index + 1).trim();
-						path = path.replace("$HOME", System.getProperty("user.home"));
-						File f = new File(path);
-						if (f.exists()) {
-							return f.getAbsolutePath();
-						}
-					}
-				}
-			}
-		} catch (Exception e) {
+		Path path=Paths.
+				get(System.getProperty("user.home"),".config/user-dirs.dirs");
+
+		try{
+			String downloadLocation= Files.lines(path,Charset.defaultCharset()).filter(line->{
+				// check for line begining with XDG_DOWNLOAD_DIR
+				return line.startsWith("XDG_DOWNLOAD_DIR") && line.indexOf("=")!=-1;
+			}).map(line->{
+				int index=line.indexOf("=");
+				String download_dir=line.substring(index+1).trim()
+						.replace("$HOME", System.getProperty("user.home"));
+				return  download_dir;
+			}).findFirst().get();
+			return downloadLocation;
+		}catch(Exception e){
 			Logger.log(e);
 		}
-        return null;
+		return null;
 	}
-
 }
