@@ -16,6 +16,8 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.net.URLDecoder;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -471,7 +473,7 @@ public class XDMUtils {
 			}
 		}
 
-		return Paths.get(System.getProperty("user.home"), "Downloads").toAbsolutePath().toString();
+		return Paths.get(System.getProperty("user.home"), "Downloads").toString();
 	}
 
 	public static boolean isFFmpegInstalled() {
@@ -507,6 +509,16 @@ public class XDMUtils {
 		File outFolder = new File(folder);
 		if (!outFolder.exists()) {
 			outFolder.mkdirs();
+		}
+	}
+
+	public static void mkdirs(Path path){
+		if(!Files.exists(path)){
+			try {
+				Files.createDirectories(path);
+			} catch (IOException ex) {
+				Logger.log(ex);
+			}
 		}
 	}
 

@@ -138,7 +138,8 @@ public class LinuxUtils {
 			}).map(line->{
 				int index=line.indexOf("=");
 				String download_dir=line.substring(index+1).trim()
-						.replace("$HOME", System.getProperty("user.home"));
+						.replace("$HOME", System.getProperty("user.home"))
+						.replace("\"","");
 				return  download_dir;
 			}).findFirst().get();
 			return downloadLocation;

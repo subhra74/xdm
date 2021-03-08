@@ -4,6 +4,10 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -291,31 +295,29 @@ public class Config {
 	private Config() {
 
 		forceSingleFolder = false;
-		File f = new File(System.getProperty("user.home"), ".xdman");
-		if (!f.exists()) {
-			f.mkdirs();
-		}
-		dataFolder = f.getAbsolutePath();
-		f = new File(dataFolder, "metadata");
-		if (!f.exists()) {
-			f.mkdir();
-		}
-		this.metadataFolder = f.getAbsolutePath();
-		f = new File(dataFolder, "temp");
-		if (!f.exists()) {
-			f.mkdir();
-		}
+		var f=Paths.get(System.getProperty("user.home"),".xdman");
+		XDMUtils.mkdirs(f);
+		dataFolder = f.toString();
 
-		this.temporaryFolder = f.getAbsolutePath();
+		f = Paths.get(dataFolder, "metadata");
+		XDMUtils.mkdirs(f);
+		this.metadataFolder = f.toString();
+
+		f = Paths.get(dataFolder, "temp");
+		XDMUtils.mkdirs(f);
+		this.temporaryFolder = f.toString();
 
 //		System.setProperty("sun.java2d.uiScale.enabled", "true");
 //		System.setProperty("sun.java2d.uiScale", "2.75");// String.format("%.2f", zoom));
 
 		this.downloadFolder = XDMUtils.getDownloadsFolder();
-		if (!new File(this.downloadFolder).exists()) {
-			File file = new File(System.getProperty("user.home"), "Downloads");
-			file.mkdirs();
-			this.downloadFolder = file.getAbsolutePath();
+		var downloadDir=Paths.get(downloadFolder);
+		if (!Files.exists(downloadDir,LinkOption.NOFOLLOW_LINKS)) {
+			try {
+				Files.createDirectory(downloadDir);
+			} catch (IOException ex) {
+				Logger.log(ex);
+			}
 		}
 
 		this.monitoring = true;
