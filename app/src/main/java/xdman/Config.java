@@ -1,8 +1,6 @@
 package xdman;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -11,8 +9,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
 import xdman.util.Logger;
+
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
 
@@ -157,137 +155,185 @@ public class Config {
 		}
 	}
 
+	private void setupConfigs(String line){
+		int index = line.indexOf(":");
+		String key = line.substring(0, index);
+		String val = line.substring(index + 1);
+
+
+		switch(key){
+			case "monitoring":
+				this.monitoring = val.equals("true");
+				break;
+			case "downloadFolder":
+				this.downloadFolder = val;
+				break;
+			case "temporaryFolder":
+				this.temporaryFolder = val;
+				break;
+			case "maxSegments":
+				this.maxSegments = Integer.parseInt(val);
+				break;
+			case "minSegmentSize2":
+				this.minSegmentSize = Integer.parseInt(val);
+				break;
+			case "networkTimeout":
+				this.networkTimeout = Integer.parseInt(val);
+				break;
+			case "tcpWindowSize2":
+				this.tcpWindowSize = Integer.parseInt(val);
+				break;
+			case "duplicateAction":
+				this.duplicateAction = Integer.parseInt(val);
+				break;
+			case "speedLimit":
+				this.speedLimit = Integer.parseInt(val);
+				break;
+			case "showDownloadWindow":
+				this.showDownloadWindow = val.equals("true");
+				break;
+			case "showDownloadCompleteWindow":
+				this.showDownloadCompleteWindow = val.equals("true");
+				break;
+			case "downloadAutoStart":
+				this.downloadAutoStart = val.equals("true");
+				break;
+			case "minVidSize":
+				this.minVidSize = Integer.parseInt(val);
+				break;
+			case "parallalDownloads":
+				this.parallalDownloads = Integer.parseInt(val);
+				break;
+			case "blockedHosts":
+				this.blockedHosts = val.split(",");
+				break;
+			case "vidUrls":
+				this.vidUrls = val.split(",");
+				break;
+			case "fileExts":
+				this.fileExts = val.split(",");
+				break;
+			case "vidExts":
+				this.vidExts = val.split(",");
+				break;
+			case "proxyMode":
+				this.proxyMode = Integer.parseInt(val);
+				break;
+			case "proxyPort":
+				this.proxyPort = Integer.parseInt(val);
+				break;
+			case "socksPort":
+				this.socksPort = Integer.parseInt(val);
+				break;
+			case "proxyPac":
+				this.proxyPac = val;
+				break;
+			case "proxyHost":
+				this.proxyHost = val;
+				break;
+			case "socksHost":
+				this.socksHost = val;
+				break;
+			case "proxyUser":
+				this.proxyUser = val;
+				break;
+			case "proxyPass":
+				this.proxyPass = val;
+				break;
+			case "showVideoNotification":
+				this.showVideoNotification = "true".equals(val);
+				break;
+			case "keepAwake":
+				this.keepAwake = "true".equals(val);
+				break;
+			case "autoStart":
+				this.autoStart = "true".equals(val);
+				break;
+			case "execAntivir":
+				this.execAntivir = "true".equals(val);
+				break;
+			case "execCmd":
+				this.execCmd = "true".equals(val);
+				break;
+			case "antivirExe":
+				this.antivirExe = val;
+				break;
+			case "antivirCmd":
+				this.antivirCmd = val;
+				break;
+			case "customCmd":
+				this.customCmd = val;
+				break;
+			case "autoShutdown":
+				this.autoShutdown = "true".equals(val);
+				break;
+			case "version":
+				this.firstRun = !XDMApp.APP_VERSION.equals(val);
+				break;
+			case "language":
+				this.language = val;
+				break;
+			case "monitorClipboard":
+				this.monitorClipboard = "true".equals(val);
+				break;
+			case "categoryOther":
+				this.categoryOther = val;
+				break;
+			case "categoryDocuments":
+				this.categoryDocuments = val;
+				break;
+			case "categoryCompressed":
+				this.categoryCompressed = val;
+				break;
+			case "categoryMusic":
+				this.categoryMusic = val;
+				break;
+			case "categoryVideos":
+				this.categoryVideos = val;
+				break;
+			case "categoryPrograms":
+				this.categoryPrograms = val;
+				break;
+			case "fetchTs":
+				this.fetchTs = "true".equals(val);
+				break;
+			case "noTransparency":
+				this.noTransparency = "true".equals(val);
+				break;
+			case "forceSingleFolder":
+				this.forceSingleFolder = "true".equals(val);
+				break;
+			case "hideTray":
+				this.hideTray = "true".equals(val);
+				break;
+			case "lastFolder":
+				this.lastFolder = val;
+				break;
+			case "showVideoListOnlyInBrowser":
+				this.showVideoListOnlyInBrowser = "true".equals(val);
+				break;
+			case "zoomLevelIndex":
+				this.zoomLevelIndex = Integer.parseInt(val);
+				break;
+		}
+	}
+
 	public void load() {
 		Logger.log("Loading config...");
-		File file = new File(System.getProperty("user.home"),
-				".xdman/config.txt");
-		
-		try (BufferedReader br = new BufferedReader(new FileReader(file))){
-			if (file.exists()) {
-				while (true) {
-					String ln = br.readLine();
-					if (ln == null)
-						break;
-					if (ln.startsWith("#"))
-						continue;
-					int index = ln.indexOf(":");
-					if (index < 1)
-						continue;
-					String key = ln.substring(0, index);
-					String val = ln.substring(index + 1);
-					if (key.equals("monitoring")) {
-						this.monitoring = val.equals("true");
-					} else if (key.equals("downloadFolder")) {
-						this.downloadFolder = val;
-					} else if (key.equals("temporaryFolder")) {
-						this.temporaryFolder = val;
-					} else if (key.equals("maxSegments")) {
-						this.maxSegments = Integer.parseInt(val);
-					} else if (key.equals("minSegmentSize2")) {
-						this.minSegmentSize = Integer.parseInt(val);
-					} else if (key.equals("networkTimeout")) {
-						this.networkTimeout = Integer.parseInt(val);
-					} else if (key.equals("tcpWindowSize2")) {
-						this.tcpWindowSize = Integer.parseInt(val);
-					} else if (key.equals("duplicateAction")) {
-						this.duplicateAction = Integer.parseInt(val);
-					} else if (key.equals("speedLimit")) {
-						this.speedLimit = Integer.parseInt(val);
-					} else if (key.equals("showDownloadWindow")) {
-						this.showDownloadWindow = val.equals("true");
-					} else if (key.equals("showDownloadCompleteWindow")) {
-						this.showDownloadCompleteWindow = val.equals("true");
-					} else if (key.equals("downloadAutoStart")) {
-						this.downloadAutoStart = val.equals("true");
-					} else if (key.equals("minVidSize")) {
-						this.minVidSize = Integer.parseInt(val);
-					} else if (key.equals("parallalDownloads")) {
-						this.parallalDownloads = Integer.parseInt(val);
-					} else if (key.equals("blockedHosts")) {
-						this.blockedHosts = val.split(",");
-					} else if (key.equals("vidUrls")) {
-						this.vidUrls = val.split(",");
-					} else if (key.equals("fileExts")) {
-						this.fileExts = val.split(",");
-					} else if (key.equals("vidExts")) {
-						this.vidExts = val.split(",");
-					} else if (key.equals("proxyMode")) {
-						this.proxyMode = Integer.parseInt(val);
-					} else if (key.equals("proxyPort")) {
-						this.proxyPort = Integer.parseInt(val);
-					} else if (key.equals("socksPort")) {
-						this.socksPort = Integer.parseInt(val);
-					} else if (key.equals("proxyPac")) {
-						this.proxyPac = val;
-					} else if (key.equals("proxyHost")) {
-						this.proxyHost = val;
-					} else if (key.equals("socksHost")) {
-						this.socksHost = val;
-					} else if (key.equals("proxyUser")) {
-						this.proxyUser = val;
-					} else if (key.equals("proxyPass")) {
-						this.proxyPass = val;
-					} else if (key.equals("showVideoNotification")) {
-						this.showVideoNotification = "true".equals(val);
-					} else if (key.equals("keepAwake")) {
-						this.keepAwake = "true".equals(val);
-					} else if (key.equals("autoStart")) {
-						this.autoStart = "true".equals(val);
-					} else if (key.equals("execAntivir")) {
-						this.execAntivir = "true".equals(val);
-					} else if (key.equals("execCmd")) {
-						this.execCmd = "true".equals(val);
-					} else if (key.equals("antivirExe")) {
-						this.antivirExe = val;
-					} else if (key.equals("antivirCmd")) {
-						this.antivirCmd = val;
-					} else if (key.equals("customCmd")) {
-						this.customCmd = val;
-					} else if (key.equals("autoShutdown")) {
-						this.autoShutdown = "true".equals(val);
-					} else if (key.equals("version")) {
-						this.firstRun = !XDMApp.APP_VERSION.equals(val);
-					} else if (key.equals("language")) {
-						this.language = val;
-					} else if (key.equals("monitorClipboard")) {
-						this.monitorClipboard = "true".equals(val);
-					} else if (key.equals("categoryOther")) {
-						this.categoryOther = val;
-					} else if (key.equals("categoryDocuments")) {
-						this.categoryDocuments = val;
-					} else if (key.equals("categoryCompressed")) {
-						this.categoryCompressed = val;
-					} else if (key.equals("categoryMusic")) {
-						this.categoryMusic = val;
-					} else if (key.equals("categoryVideos")) {
-						this.categoryVideos = val;
-					} else if (key.equals("categoryPrograms")) {
-						this.categoryPrograms = val;
-					} else if (key.equals("fetchTs")) {
-						this.fetchTs = "true".equals(val);
-					} else if (key.equals("noTransparency")) {
-						this.noTransparency = "true".equals(val);
-					} else if (key.equals("forceSingleFolder")) {
-						this.forceSingleFolder = "true".equals(val);
-					} else if (key.equals("hideTray")) {
-						this.hideTray = "true".equals(val);
-					} else if (key.equals("lastFolder")) {
-						this.lastFolder = val;
-					} else if (key.equals("showVideoListOnlyInBrowser")) {
-						this.showVideoListOnlyInBrowser = "true".equals(val);
-					} else if (key.equals("zoomLevelIndex")) {
-						this.zoomLevelIndex = Integer.parseInt(val);
-					}
+		var configFile=Paths.get(this.dataFolder,"config.txt");
+
+		try {
+			if(Files.exists(configFile)){
+				Files.lines(configFile)
+						.filter(line->!line.startsWith("#")&& !line.isEmpty())
+						.forEach(line->setupConfigs(line));
+				if (!forceSingleFolder) {
+					createFolders();
 				}
 			}
-
-			if (!forceSingleFolder) {
-				createFolders();
-			}
-			
-		} catch (Exception e) {
-			Logger.log(e);
-		}
+		} catch (IOException ex) {
+			Logger.log(ex);
+		}		
 	}
 
 	private static Config _config;
