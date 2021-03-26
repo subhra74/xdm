@@ -12,14 +12,7 @@
 XDM seamlessly integrates with Google Chrome, Mozilla Firefox Quantum, Opera, Vivaldi and other Chroumium and Firefox based browsers, to take over downloads and saving streaming videos from web. XDM has a built in video converter which lets you convert your downloaded videos to different formats so that you can watch them on your mobile or TV (100+ devices are supported)
 
 
-## Downloads
-
-| Version | Windows | Linux | MacOS | Other |
-| --- | --- | --- | --- | --- |
-| 7.2.11 | [MSI installer][100] | [Linux installer][101] | [TBD][12] | [Portable JAR (Java 11)][102] |
-| 7.2.10 | [MSI installer][10] | [Linux installer][11] | [TBD][12] | [Portable JAR (Java 11)][13] |
-| 7.2.8 | [MSI installer][14] | [Linux installer][15] | [DMG installer][16] | [JAR (Java 11)][17] |
- 	 	 	
+[![name](https://subhra74.github.io/xdm/download.png)](https://subhra74.github.io/xdm/#downloads)
 
 ## Screenshots
 
