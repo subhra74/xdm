@@ -12,7 +12,7 @@
 XDM seamlessly integrates with Google Chrome, Mozilla Firefox Quantum, Opera, Vivaldi and other Chroumium and Firefox based browsers, to take over downloads and saving streaming videos from web. XDM has a built in video converter which lets you convert your downloaded videos to different formats so that you can watch them on your mobile or TV (100+ devices are supported)
 
 
-[![name](https://subhra74.github.io/xdm/download.png)](https://subhra74.github.io/xdm/#downloads)
+[![name](https://subhra74.github.io/xdm/download.png)](https://xdmweb.github.io/#downloads)
 
 ## Screenshots
 
