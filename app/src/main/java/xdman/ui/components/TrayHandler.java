@@ -72,11 +72,6 @@ public class TrayHandler {
 				} else if ("ADD_VID".equals(name)) {
 					MediaDownloaderWnd wnd = new MediaDownloaderWnd();
 					wnd.setVisible(true);
-				} else if ("THROTTLE".equals(name)) {
-					int ret = SpeedLimiter.getSpeedLimit();
-					if (ret >= 0) {
-						Config.getInstance().setSpeedLimit(ret);
-					}
 				} else if ("ADD_BAT".equals(name)) {
 					new BatchPatternDialog().setVisible(true);
 				} else if ("ADD_CLIP".equals(name)) {

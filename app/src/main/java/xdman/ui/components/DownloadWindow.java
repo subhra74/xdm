@@ -37,6 +37,7 @@ import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 import xdman.util.FormatUtilities;
 import xdman.util.Logger;
+import xdman.ui.components.*;
 
 public class DownloadWindow extends JFrame implements ActionListener {
 	private static final long serialVersionUID = -5523541940635914890L;
@@ -311,8 +312,13 @@ public class DownloadWindow extends JFrame implements ActionListener {
 		sv.addActionListener(this);
 		pop.add(sv);
 
-		pop.setInvoker(btnMore);
+		JMenuItem sl = new JMenuItem(StringResource.get("MENU_SPEED_LIMITER"));
+		sl.setName("LIMIT_SPEED");
+		sl.setForeground(Color.WHITE);
+		sl.addActionListener(this);
+		pop.add(sl);
 
+		pop.setInvoker(btnMore);
 	}
 
 	void applyStyle(CustomButton btn) {
@@ -344,6 +350,11 @@ public class DownloadWindow extends JFrame implements ActionListener {
 			pop.show(btnMore, 0, btnMore.getHeight());
 		} else if ("SAVE_AS".equals(name)) {
 			changeFile(id);
+		} else if ("LIMIT_SPEED".equals(name)) {
+			int ret = SpeedLimiter.getSpeedLimit();
+			if (ret >= 0) {
+				Config.getInstance().setSpeedLimit(ret);
+			}
 		}
 	}
 
