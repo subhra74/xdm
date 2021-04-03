@@ -1,5 +1,4 @@
-
-WINDOW_TITLE=XDM 2018
+WINDOW_TITLE=XDM 2020
 ALL_DOWNLOADS=Усі
 ALL_UNFINISHED=Незавершені
 ALL_FINISHED=Завершені
@@ -239,7 +238,7 @@ PROMPT_PROXY=Проксі-сервер вимагає ім'я користува
 BTN_BROWSE=Огляд
 TITLE_ABOUT=ПРО XDM
 FULL_NAME=Xtreme Download Manager
-ABOUT_DETAILS=Версія програми %s із середовищем виконання %s на %s\n\nАвтор: Subhra Das Gupta\n\n%s\nАвторські права (C) 2018, Усі права захищені.
+ABOUT_DETAILS=Версія програми %s із середовищем виконання %s на %s\n\nАвтор: Subhra Das Gupta\n\n%s\nАвторські права (C) 2020, Усі права захищені.
 BTN_SEARCH_VIDEO=Знайти
 BTN_DOWNLOAD_NOW=Завантажити зараз
 BTN_DOWNLOAD_LATER=Завантажити пізніше

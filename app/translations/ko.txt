@@ -1,5 +1,5 @@
 
-WINDOW_TITLE=XDM 2018
+WINDOW_TITLE=XDM 2020
 ALL_DOWNLOADS=모두
 ALL_UNFINISHED=미완료
 ALL_FINISHED=완료
@@ -239,7 +239,7 @@ PROMPT_PROXY=프록시에는 사용자 이름과 암호가 필요함
 BTN_BROWSE=찾아보기
 TITLE_ABOUT=XDM 소개
 FULL_NAME=Xtreme 다운로드 관리자
-AUOUT_DETAILS= App version %s with runtime %s on %s\n\nCreated by: Subhra Das Gupta\n\n%s\nCopyright (C) 2018, All rights reserved.
+AUOUT_DETAILS= App version %s with runtime %s on %s\n\nCreated by: Subhra Das Gupta\n\n%s\nCopyright (C) 2020, All rights reserved.
 BTN_SEARCH_VIDEO=찾기
 BTN_DOWNLOAD_지금 다운로드
 BTN_DOWNLOAD_LATER=나중에 다운로드

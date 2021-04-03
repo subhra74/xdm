@@ -1,5 +1,5 @@
 LANGUAGE_TEXT=繁體中文(台灣)
-WINDOW_TITLE=XDM 2018
+WINDOW_TITLE=XDM 2020
 ALL_DOWNLOADS=全部下載
 ALL_UNFINISHED=正在下載
 ALL_FINISHED=已完成
@@ -239,7 +239,7 @@ PROMPT_PROXY =代理需要使用者名稱和密碼
 BTN_BROWSE =瀏覽
 TITLE_ABOUT =關於XDM
 FULL_NAME = Xtreme下載管理器
-ABOUT_DETAILS =程式版本％s和Java執行時％s％s \ n \ n作者：Subhra Das Gupta \ n \ n％s \ n版權所有（C）2018，保留所有權利。
+ABOUT_DETAILS =程式版本％s和Java執行時％s％s \ n \ n作者：Subhra Das Gupta \ n \ n％s \ n版權所有（C）2020，保留所有權利。
 BTN_SEARCH_VIDEO =搜尋
 BTN_DOWNLOAD_NOW =現在下載
 BTN_DOWNLOAD_LATER =稍後下載
