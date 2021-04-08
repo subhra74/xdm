@@ -57,7 +57,8 @@ public class Config {
 	private List<MonitoringListener> listeners;
 	private String queueIdFilter;
 	private boolean showVideoListOnlyInBrowser;
-	private int zoomLevelIndex = 0;
+	private int zoomLevelIndex = 0;       
+        private boolean autoDownloadVideo = false;
 
 	public void addConfigListener(MonitoringListener listener) {
 		listeners.add(listener);
@@ -143,6 +144,8 @@ public class Config {
 			}
 			fw.write("showVideoListOnlyInBrowser:" + this.showVideoListOnlyInBrowser + newLine);
 			fw.write("zoomLevelIndex:" + this.zoomLevelIndex + newLine);
+                        
+                        fw.write("autoDownloadVideo:" + this.autoDownloadVideo + newLine);
 
 		} catch (Exception e) {
 		}
@@ -276,6 +279,8 @@ public class Config {
 					this.showVideoListOnlyInBrowser = "true".equals(val);
 				} else if (key.equals("zoomLevelIndex")) {
 					this.zoomLevelIndex = Integer.parseInt(val);
+				} else if (key.equals("autoDownloadVideo")) {
+					this.autoDownloadVideo = "true".equals(val);
 				}
 			}
 		} catch (Exception e) {
@@ -916,4 +921,14 @@ public class Config {
 	public void setZoomLevelIndex(int zoomLevelIndex) {
 		this.zoomLevelIndex = zoomLevelIndex;
 	}
+
+        public boolean isAutoDownloadVideo() {
+            return autoDownloadVideo;
+        }
+
+        public void setAutoDownloadVideo(boolean autoDownloadVideo) {
+            this.autoDownloadVideo = autoDownloadVideo;
+        }
+        
+        
 }
