@@ -39,9 +39,9 @@ public class AboutPage extends Page {
 		y += getScaledInt(20);
 
 		String details = String.format(
-				"Version %s with Java %s on %s\n\nCreated by: Subhra Das Gupta\n\n%s\nCopyright (C) 2020, All rights reserved.",
-				XDMApp.APP_VERSION, (System.getProperty("java.vendor") + " " + System.getProperty("java.version")),
-				System.getProperty("os.name"), "https://github.com/subhra74/xdm");
+				StringResource.get("ABOUT_DETAILS"),
+				XDMApp.APP_VERSION, System.getProperty("java.version"),
+				System.getProperty("os.name"),"https://github.com/subhra74/xdm");
 
 		h = getScaledInt(250);
 		JTextArea lblDetails = new JTextArea();
