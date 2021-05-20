@@ -210,7 +210,7 @@ public class DownloadWindow extends JFrame implements ActionListener {
 		closeBtn.setBackground(ColorResource.getDarkestBgColor());
 		closeBtn.setBorderPainted(false);
 		closeBtn.setFocusPainted(false);
-		closeBtn.setName("PAUSE");
+		closeBtn.setName("BACKGROUND");
 		closeBtn.addActionListener(this);
 
 		minBtn = new CustomButton();
