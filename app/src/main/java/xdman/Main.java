@@ -12,6 +12,7 @@ public class Main {
 		System.setProperty("sun.java2d.d3d", "false");
 		System.setProperty("sun.java2d.opengl", "false");
 		System.setProperty("sun.java2d.xrender", "false");
+		System.setProperty("java.util.Arrays.useLegacyMergeSort", "true");
 		// Disable Java 9 Dpi scaling as XDM uses its own dpi scaling
 		// System.setProperty("sun.java2d.uiScale.enabled", "true");
 		// System.setProperty("sun.java2d.uiScale", "2.75");
