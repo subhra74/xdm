@@ -8,9 +8,9 @@ import xdman.ui.res.StringResource;
 
 public class SpeedLimiter {
 	public static int getSpeedLimit() {
-		int[] limitInts = { 0, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 };
+		int[] limitInts = { 0, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1500, 200, 2500, 3000, 3500, 4000 };
 		String[] limits = { "Unlimited", "50k", "100k", "200k", "300k", "400k", "500k", "600k", "700k", "800k", "900k",
-				"1000k" };
+				"1000k", "1500k", "2000k", "2500k", "3000k", "3500k", "4000k" };
 		JComboBox<String> cmb = new JComboBox<>(limits);
 		Object[] components = { StringResource.get("MSG_SPEED_LIMIT"), cmb };
 		int currentSpeedLimit = Config.getInstance().getSpeedLimit();
