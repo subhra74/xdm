@@ -8,9 +8,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
+
+import org.tinylog.Logger;
 
 public class Config {
 	private boolean forceSingleFolder;
@@ -145,16 +146,18 @@ public class Config {
 			fw.write("zoomLevelIndex:" + this.zoomLevelIndex + newLine);
 
 		} catch (Exception e) {
+			Logger.error(e);
 		}
 		try {
 			if (fw != null)
 				fw.close();
 		} catch (Exception e) {
+			Logger.error(e);
 		}
 	}
 
 	public void load() {
-		Logger.log("Loading config...");
+		Logger.info("Loading config...");
 		BufferedReader br = null;
 		try {
 			File file = new File(System.getProperty("user.home"), ".xdman/config.txt");
@@ -279,7 +282,7 @@ public class Config {
 				}
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		} finally {
 			if (!forceSingleFolder) {
 				createFolders();
@@ -287,6 +290,7 @@ public class Config {
 			try {
 				br.close();
 			} catch (Exception e) {
+				Logger.error(e);
 			}
 		}
 	}
@@ -360,7 +364,7 @@ public class Config {
 	}
 
 	public void createFolders() {
-		Logger.log("Creating folders");
+		Logger.info("Creating folders");
 		getCategoryDocuments();
 		getCategoryMusic();
 		getCategoryCompressed();
