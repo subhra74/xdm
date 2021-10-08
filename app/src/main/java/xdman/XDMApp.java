@@ -26,6 +26,8 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
+import org.tinylog.Logger;
+
 import xdman.downloaders.Downloader;
 import xdman.downloaders.dash.DashDownloader;
 import xdman.downloaders.ftp.FtpDownloader;
@@ -52,7 +54,6 @@ import xdman.ui.laf.XDMLookAndFeel;
 import xdman.ui.res.StringResource;
 import xdman.util.FFmpegDownloader;
 import xdman.util.LinuxUtils;
-import xdman.util.Logger;
 import xdman.util.MacUtils;
 import xdman.util.NativeMessagingHostInstaller;
 import xdman.util.ParamUtils;
@@ -102,13 +103,13 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 	private ArrayList<VideoPopupItem> itemList = new ArrayList<>();
 
 	public static void instanceStarted() {
-		Logger.log("instance starting...");
+		Logger.info("instance starting...");
 		final XDMApp app = XDMApp.getInstance();
 		EventQueue.invokeLater(new Runnable() {
 			@Override
 			public void run() {
 				if (!paramMap.containsKey("background")) {
-					Logger.log("showing main window.");
+					Logger.info("showing main window.");
 					app.showMainWindow();
 				}
 				TrayHandler.createTray();
@@ -125,11 +126,11 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 			NativeMessagingHostInstaller.installNativeMessagingHostForFireFox();
 			NativeMessagingHostInstaller.installNativeMessagingHostForChromium();
 		}
-		Logger.log("instance started.");
+		Logger.info("instance started.");
 	}
 
 	public static void instanceAlreadyRunning() {
-		Logger.log("instance already runninng");
+		Logger.info("instance already runninng");
 		ParamUtils.sendParam(paramMap);
 		System.exit(0);
 	}
@@ -193,11 +194,11 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 					}
 				});
 			} catch (Exception e) {
-
+				Logger.error(e);
 			}
 		}
 
-		Logger.log("starting monitoring...");
+		Logger.info("starting monitoring...");
 		BrowserMonitor.getInstance().startMonitoring();
 	}
 
@@ -210,7 +211,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 	}
 
 	private XDMApp() {
-		Logger.log("Init app");
+		Logger.info("Init app");
 //		String stype = paramMap.get("screen");
 //		if (stype != null) {
 //			if ("xxhdpi".equals(stype)) {
@@ -224,7 +225,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 		try {
 			UIManager.setLookAndFeel(new XDMLookAndFeel());
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 
 		Config.getInstance().setAutoShutdown(false);
@@ -290,7 +291,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 	public void downloadFailed(String id) {
 		Downloader d = downloaders.remove(id);
 		if (id == null) {
-			Logger.log("Download failed, id null");
+			Logger.warn("Download failed, id null");
 			return;
 		}
 		DownloadWindow wnd = downloadWindows.get(id);
@@ -298,13 +299,13 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 			wnd.close(XDMConstants.FAILED, d.getErrorCode());
 			downloadWindows.remove(id);
 		} else {
-			Logger.log("Wnd is null!!!");
+			Logger.warn("Wnd is null!!!");
 		}
 		DownloadEntry ent = downloads.get(id);
 		ent.setState(XDMConstants.PAUSED);
 		notifyListeners(id);
 		saveDownloadList();
-		Logger.log("removed");
+		Logger.info("removed");
 		processNextItem(id);
 	}
 
@@ -323,7 +324,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 	}
 
 	public void downloadConfirmed(String id) {
-		Logger.log("confirmed " + id);
+		Logger.info("confirmed " + id);
 		Downloader d = downloaders.get(id);
 		DownloadEntry ent = downloads.get(id);
 		ent.setSize(d.getSize());
@@ -358,7 +359,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 			DownloadEntry ent = downloads.get(id);
 			Downloader d = downloaders.get(id);
 			if (d == null) {
-				Logger.log("################# sync error ##############");
+				Logger.warn("################# sync error ##############");
 				return;
 			}
 			ent.setSize(d.getSize());
@@ -541,7 +542,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 		if (!now) {
 			DownloadQueue q = qMgr.getQueueById(queueId);
 			if (q != null && q.isRunning()) {
-				Logger.log("Queue is running, if no pending download pickup next available download");
+				Logger.info("Queue is running, if no pending download pickup next available download");
 				q.next();
 			}
 		}
@@ -554,11 +555,11 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 	// could be new or resume
 	private void startDownload(String id, HttpMetadata metadata, DownloadEntry ent, int streams) {
 		if (!checkAndBufferRequests(id)) {
-			Logger.log("starting " + id + " with: " + metadata + " is dash: " + (metadata instanceof DashMetadata));
+			Logger.info("starting " + id + " with: " + metadata + " is dash: " + (metadata instanceof DashMetadata));
 			Downloader d = null;
 
 			if (metadata instanceof DashMetadata) {
-				Logger.log("Dash download with stream: " + streams);
+				Logger.info("Dash download with stream: " + streams);
 				if (streams == 1) {
 					DashMetadata dm = (DashMetadata) metadata;
 					dm.setUrl(dm.getUrl2());// set video url as main url
@@ -567,18 +568,18 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 					DashMetadata dm = (DashMetadata) metadata;
 					dm.setUrl2(null);
 				} else {
-					Logger.log("Dash download created");
+					Logger.info("Dash download created");
 					// create dash downloader
 					DashMetadata dm = (DashMetadata) metadata;
 					d = new DashDownloader(id, ent.getTempFolder(), dm);
 				}
 			}
 			if (metadata instanceof HlsMetadata) {
-				Logger.log("Hls download created");
+				Logger.info("Hls download created");
 				d = new HlsDownloader(id, ent.getTempFolder(), (HlsMetadata) metadata);
 			}
 			if (metadata instanceof HdsMetadata) {
-				Logger.log("Hds download created");
+				Logger.info("Hds download created");
 				d = new HdsDownloader(id, ent.getTempFolder(), (HdsMetadata) metadata);
 			}
 			if (d == null) {
@@ -601,7 +602,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 				wnd.setVisible(true);
 			}
 		} else {
-			Logger.log(id + ": Maximum download limit reached, queueing request");
+			Logger.warn(id + ": Maximum download limit reached, queueing request");
 		}
 	}
 
@@ -629,21 +630,21 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 				Downloader d = null;
 				if (metadata instanceof DashMetadata) {
 					DashMetadata dm = (DashMetadata) metadata;
-					Logger.log("Dash download- url1: " + dm.getUrl() + " url2: " + dm.getUrl2());
+					Logger.info("Dash download- url1: " + dm.getUrl() + " url2: " + dm.getUrl2());
 					d = new DashDownloader(id, ent.getTempFolder(), dm);
 				}
 				if (metadata instanceof HlsMetadata) {
 					HlsMetadata hm = (HlsMetadata) metadata;
-					Logger.log("HLS download- url1: " + hm.getUrl());
+					Logger.info("HLS download- url1: " + hm.getUrl());
 					d = new HlsDownloader(id, ent.getTempFolder(), hm);
 				}
 				if (metadata instanceof HdsMetadata) {
 					HdsMetadata hm = (HdsMetadata) metadata;
-					Logger.log("HLS download- url1: " + hm.getUrl());
+					Logger.info("HLS download- url1: " + hm.getUrl());
 					d = new HdsDownloader(id, ent.getTempFolder(), hm);
 				}
 				if (d == null) {
-					Logger.log("normal download");
+					Logger.info("normal download");
 					if (metadata.getType() == XDMConstants.FTP) {
 						d = new FtpDownloader(id, ent.getTempFolder(), metadata);
 					} else {
@@ -656,7 +657,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 				d.resume();
 
 			} else {
-				Logger.log(id + ": Maximum download limit reached, queueing request");
+				Logger.warn(id + ": Maximum download limit reached, queueing request");
 			}
 			notifyListeners(null);
 		}
@@ -866,7 +867,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 			}
 			reader.close();
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 
 	}
@@ -927,11 +928,12 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 			}
 			writer.close();
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 			try {
 				if (writer != null)
 					writer.close();
 			} catch (Exception e1) {
+				Logger.error(e1);
 			}
 		}
 	}
@@ -961,7 +963,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 	private synchronized boolean checkAndBufferRequests(String id) {
 		int actCount = getActiveDownloadCount();
 		if (Config.getInstance().getMaxDownloads() > 0 && actCount >= Config.getInstance().getMaxDownloads()) {
-			Logger.log("active: " + actCount + " max: " + Config.getInstance().getMaxDownloads());
+			Logger.info("active: " + actCount + " max: " + Config.getInstance().getMaxDownloads());
 			if (!pendingDownloads.contains(id)) {
 				pendingDownloads.add(id);
 			}
@@ -1038,12 +1040,12 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 		DownloadQueue q = getQueueById(queueId);
 		String id = ent.getId();
 		if (q == null) {
-			Logger.log("No queue found for: '" + queueId + "'");
+			Logger.warn("No queue found for: '" + queueId + "'");
 			return;
 		}
 		String qid = ent.getQueueId();
 		DownloadQueue oldQ = getQueueById(qid);
-		Logger.log("Adding to: '" + queueId + "'");
+		Logger.info("Adding to: '" + queueId + "'");
 		if (!q.getQueueId().equals(qid)) {
 			if (oldQ != null) {
 				// remove from previous queue
@@ -1092,7 +1094,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 	}
 
 	private void initShutdown() {
-		Logger.log("Initiating shutdown");
+		Logger.info("Initiating shutdown");
 		int os = XDMUtils.detectOS();
 		if (os == XDMUtils.LINUX) {
 			LinuxUtils.initShutdown();
@@ -1139,20 +1141,20 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 		if (ent == null)
 			return;
 		String id = ent.getId();
-		Logger.log("Deleting metadata for " + id);
+		Logger.info("Deleting metadata for " + id);
 		File mf = new File(Config.getInstance().getMetadataFolder(), id);
 		boolean deleted = mf.delete();
-		Logger.log("Deleted manifest " + id + " " + deleted);
+		Logger.info("Deleted manifest " + id + " " + deleted);
 		File df = new File(ent.getTempFolder(), id);
 		File[] files = df.listFiles();
 		if (files != null && files.length > 0) {
 			for (File f : files) {
 				deleted = f.delete();
-				Logger.log("Deleted tmp file " + id + " " + deleted);
+				Logger.info("Deleted tmp file " + id + " " + deleted);
 			}
 		}
 		deleted = df.delete();
-		Logger.log("Deleted tmp folder " + id + " " + deleted);
+		Logger.info("Deleted tmp folder " + id + " " + deleted);
 		if (outfile) {
 			File f = new File(XDMApp.getInstance().getFolder(ent), ent.getFile());
 			f.delete();
@@ -1173,7 +1175,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 				return metadata.getUrl();
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 		return "";
 	}
@@ -1215,7 +1217,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 				Config.getInstance().setProxyPass(new String(pauth.getPassword()));
 			}
 		} else {
-			Logger.log("saving password for: " + msg);
+			Logger.info("saving password for: " + msg);
 			CredentialManager.getInstance().addCredentialForHost(msg, pauth);
 		}
 		return true;
@@ -1258,7 +1260,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 		if (Config.getInstance().getDuplicateAction() == XDMConstants.DUP_ACT_OVERWRITE) {
 			return;
 		}
-		Logger.log("checking for same named file on disk...");
+		Logger.info("checking for same named file on disk...");
 		String id = ent.getId();
 		String outputFolder = getOutputFolder(id);
 		File f = new File(outputFolder, ent.getFile());
@@ -1276,7 +1278,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 			f = new File(outputFolder, f2 + "_" + c + ext);
 			c++;
 		}
-		Logger.log("Updating file name- old: " + ent.getFile() + " new: " + f.getName());
+		Logger.info("Updating file name- old: " + ent.getFile() + " new: " + f.getName());
 		ent.setFile(f.getName());
 	}
 
@@ -1352,7 +1354,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 		try {
 			XDMUtils.openFolder(null, df.getAbsolutePath());
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 	}
 
