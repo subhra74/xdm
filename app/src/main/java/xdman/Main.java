@@ -1,6 +1,9 @@
 package xdman;
 
-import xdman.util.Logger;
+import org.tinylog.Logger;
+import org.tinylog.configuration.Configuration;
+
+import java.time.LocalDate;
 
 public class Main {
 	static {
@@ -17,11 +20,19 @@ public class Main {
 		// System.setProperty("sun.java2d.uiScale", "2.75");
 	}
 
+	private static void loadLoggerConfiguration() {
+		String logFile = System.getProperty("user.home") + "/.xdman/logs/log-" + LocalDate.now() + ".log";
+		Configuration.set("writer", "file");
+		Configuration.set("writer.level ", "debug");
+		Configuration.set("writer.file", logFile);
+		Configuration.set("writer.charset", "UTF-8");
+		Configuration.set("writer.append", "true");
+	}
+
 	public static void main(String[] args) {
-		Logger.log("loading...");
-		Logger.log(System.getProperty("java.version") + " " + System.getProperty("os.version"));
-		
-		
+		loadLoggerConfiguration();
+		Logger.info("loading...");
+		Logger.info(System.getProperty("java.version") + " " + System.getProperty("os.version"));
 		XDMApp.start(args);
 	}
 
