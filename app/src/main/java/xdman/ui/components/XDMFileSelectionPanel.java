@@ -21,8 +21,9 @@ import javax.swing.border.LineBorder;
 import xdman.Config;
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.ImageResource;
-import xdman.util.Logger;
 import xdman.util.StringUtils;
+
+import org.tinylog.Logger;
 
 public class XDMFileSelectionPanel extends JPanel implements ActionListener {
 	private static final long serialVersionUID = 2333430406492555559L;
@@ -116,7 +117,7 @@ public class XDMFileSelectionPanel extends JPanel implements ActionListener {
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() instanceof JMenuItem) {
 			this.folder = ((JMenuItem) e.getSource()).getText();
-			Logger.log("Selected folder: " + this.folder);
+			Logger.info("Selected folder: " + this.folder);
 		}
 		if (e.getSource() == btnBrowse) {
 			choseFolder();
