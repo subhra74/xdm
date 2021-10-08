@@ -49,6 +49,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.MouseInputAdapter;
 
+import org.tinylog.Logger;
 import xdman.ClipboardMonitor;
 import xdman.Config;
 import xdman.CredentialManager;
@@ -64,7 +65,6 @@ import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 import xdman.util.BrowserLauncher;
 import xdman.util.DateTimeUtils;
-import xdman.util.Logger;
 import xdman.util.NativeMessagingHostInstaller;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
@@ -711,7 +711,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 					if (index < 0)
 						return;
 					String id = queuedItemsModel.get(index);
-					Logger.log("Moving to target queue: " + targetQ);
+					Logger.info("Moving to target queue: " + targetQ);
 					index = qList.getSelectedIndex();
 					if (index < 0)
 						return;
@@ -725,7 +725,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		}
 		if (e.getSource() == cmbCategory) {
 			int index = cmbCategory.getSelectedIndex();
-			Logger.log("Category changed");
+			Logger.info("Category changed");
 			switch (index) {
 			case 0:
 				txtDefFolder.setText(Config.getInstance().getCategoryOther());
@@ -753,7 +753,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 			if ("MSG_Q_START".equals(chk.getName())) {
 				enableSchedulerFields();
 			} else if ("LBL_FORCE_FOLDER".equals(chk.getName())) {
-				Logger.log("Checked");
+				Logger.info("Checked");
 				if (chkForceFolder.isSelected()) {
 					cmbCategory.setSelectedIndex(0);
 					cmbCategory.setEnabled(false);
@@ -985,7 +985,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		chkEndWnd.setSelected(config.showDownloadCompleteWindow());
 		chkOverwriteExisting.setSelected(config.getDuplicateAction() == XDMConstants.DUP_ACT_OVERWRITE);
 		chkQuietMode.setSelected(config.isQuietMode());
-		Logger.log("Max download: " + config.getMaxDownloads());
+		Logger.info("Max download: " + config.getMaxDownloads());
 		cmbMax.setSelectedItem(config.getMaxDownloads() > 0 ? config.getMaxDownloads() + "" : "N/A");
 		cmbZoom.setSelectedIndex(config.getZoomLevelIndex());
 		// cmbDupAction.setSelectedIndex(config.getDuplicateAction());
@@ -1096,7 +1096,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		String user = txtUserName.getText();
 		String password = txtPassword.getText();
 
-		Logger.log(host + " " + user);
+		Logger.info(host + " " + user);
 
 		if (StringUtils.isNullOrEmptyOrBlank(host) || StringUtils.isNullOrEmptyOrBlank(user)) {
 			return;
@@ -2284,7 +2284,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		if (chkQStart.isSelected()) {
 
 			q.setStartTime(DateTimeUtils.getTimePart(spinnerDateModel1.getDate()));
-			System.out.println(spinnerDateModel1.getDate());
+			Logger.info(spinnerDateModel1.getDate());
 			if (chkQStop.isSelected()) {
 				q.setEndTime(DateTimeUtils.getTimePart(spinnerDateModel2.getDate()));
 			} else {
@@ -2452,6 +2452,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		try {
 			ival = Integer.parseInt(val);
 		} catch (Exception e) {
+			Logger.error(e);
 		}
 		config.setTcpWindowSize(ival);
 		// try {
@@ -2484,6 +2485,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 				} catch (Exception e) {
 					host = null;
 					port = 0;
+					Logger.error(e);
 				}
 			} else {
 				host = proxyText;
@@ -2506,6 +2508,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 				} catch (Exception e) {
 					host = null;
 					port = 0;
+					Logger.error(e);
 				}
 			} else {
 				host = socksText;
