@@ -3,7 +3,7 @@ package xdman;
 import java.util.ArrayList;
 import java.util.Date;
 
-import xdman.util.Logger;
+import org.tinylog.Logger;
 
 public class DownloadQueue {
 	private boolean running;
@@ -52,7 +52,7 @@ public class DownloadQueue {
 	}
 
 	public synchronized void next() {
-		Logger.log(queueId + " attmpting to process next item");
+		Logger.info(queueId + " attempting to process next item");
 		if (!running)
 			return;
 		int c = 0;
@@ -60,7 +60,7 @@ public class DownloadQueue {
 		if (queuedItems == null)
 			return;
 		if (app.queueItemPending(queueId)) {
-			Logger.log(queueId + " not processing as has already pending download");
+			Logger.warn(queueId + " not processing as has already pending download");
 			return;
 		}
 		if (currentItemId != null) {
@@ -68,12 +68,12 @@ public class DownloadQueue {
 			if (ent != null) {
 				int state = ent.getState();
 				if (!(state == XDMConstants.FAILED || state == XDMConstants.PAUSED || state == XDMConstants.FINISHED)) {
-					Logger.log(queueId + " not processing as has already active download");
+					Logger.warn(queueId + " not processing as has already active download");
 					return;
 				}
 			}
 		}
-		Logger.log(queueId + " total queued " + queuedItems.size());
+		Logger.info(queueId + " total queued " + queuedItems.size());
 		if (!(index < queuedItems.size())) {
 			index = 0;
 		}
@@ -83,7 +83,7 @@ public class DownloadQueue {
 			if (ent != null) {
 				int state = ent.getState();
 				if (state == XDMConstants.FAILED || state == XDMConstants.PAUSED) {
-					Logger.log("index: " + index + " c: " + c);
+					Logger.info("index: " + index + " c: " + c);
 					currentItemId = id;
 					index++;
 					ent.setStartedByUser(false);
@@ -120,7 +120,7 @@ public class DownloadQueue {
 
 	public void addToQueue(String id) {
 		if (!queuedItems.contains(id)) {
-			Logger.log(id + " added to " + queueId);
+			Logger.info(id + " added to " + queueId);
 			queuedItems.add(id);
 			DownloadEntry ent = XDMApp.getInstance().getEntry(id);
 			if (ent != null) {
