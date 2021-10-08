@@ -29,9 +29,10 @@ import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
-import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
+
+import org.tinylog.Logger;
 
 public class RefreshUrlPage extends Page implements LinkRefreshCallback {
 	/**
@@ -58,7 +59,7 @@ public class RefreshUrlPage extends Page implements LinkRefreshCallback {
 		} else {
 			btnOpenPage.setVisible(true);
 		}
-		System.out.println("ydlurl: " + md.getYdlUrl());
+		Logger.info("ydlurl: " + md.getYdlUrl());
 		lblMonitoringTitle
 				.setText(StringUtils.isNullOrEmptyOrBlank(md.getYdlUrl())
 						? StringResource.get("REF_DESC1")
@@ -175,7 +176,7 @@ public class RefreshUrlPage extends Page implements LinkRefreshCallback {
 								StringResource.get("MSG_REF_LINK_CONFIRM"),
 								StringResource.get("MSG_INVALID_URL"),
 								MessageBox.OK, MessageBox.OK);
-						Logger.log(ex);
+						Logger.error(ex);
 					}
 				} else {
 					MessageBox.show(getParentFrame(),
@@ -227,12 +228,12 @@ public class RefreshUrlPage extends Page implements LinkRefreshCallback {
 
 	@Override
 	public boolean isValidLink(HttpMetadata metadata) {
-		Logger.log("Checking refresh link with checking size " + md.getSize());
-		Logger.log("Metadata type " + metadata.getSize() + " type: "
+		Logger.info("Checking refresh link with checking size " + md.getSize());
+		Logger.info("Metadata type " + metadata.getSize() + " type: "
 				+ metadata.getType());
 		if (md.getType() == metadata.getType()) {
 			if (md instanceof DashMetadata) {
-				Logger.log("dash refresh");
+				Logger.info("dash refresh");
 				DashMetadata dm1 = (DashMetadata) md;
 				DashMetadata dm2 = (DashMetadata) metadata;
 				if (dm1.getLen1() == dm2.getLen1()
@@ -247,7 +248,7 @@ public class RefreshUrlPage extends Page implements LinkRefreshCallback {
 					return true;
 				}
 			} else if (md instanceof HlsMetadata) {
-				Logger.log("hls refresh");
+				Logger.info("hls refresh");
 				HlsMetadata hm1 = (HlsMetadata) md;
 				HlsMetadata hm2 = (HlsMetadata) metadata;
 				if (confirmUrl("")) {
@@ -258,7 +259,7 @@ public class RefreshUrlPage extends Page implements LinkRefreshCallback {
 					return true;
 				}
 			} else if (md instanceof HdsMetadata) {
-				Logger.log("hds refresh");
+				Logger.info("hds refresh");
 				HdsMetadata hm1 = (HdsMetadata) md;
 				HdsMetadata hm2 = (HdsMetadata) metadata;
 				if (confirmUrl("")) {
@@ -269,19 +270,19 @@ public class RefreshUrlPage extends Page implements LinkRefreshCallback {
 					return true;
 				}
 			} else {
-				Logger.log("http refresh");
+				Logger.info("http refresh");
 				boolean confirmed = false;
 				if (md.getSize() > 0) {
 					confirmed = md.getSize() == metadata.getSize();
 				} else {
 					confirmed = confirmUrl(
 							StringResource.get("MSG_REF_LINK_QUESTION"));
-					System.out.println("After confirm");
+					Logger.info("After confirm");
 				}
-				System.out.println("confirmed: " + confirmed);
+				Logger.info("confirmed: " + confirmed);
 				if (confirmed) {
-					System.out.println("Old: " + md.getUrl());
-					System.out.println("New: " + metadata.getUrl());
+					Logger.info("Old: " + md.getUrl());
+					Logger.info("New: " + metadata.getUrl());
 					md.setUrl(metadata.getUrl());
 					md.setHeaders(metadata.getHeaders());
 					md.save();
@@ -294,7 +295,7 @@ public class RefreshUrlPage extends Page implements LinkRefreshCallback {
 	}
 
 	private boolean confirmUrl(String msg) {
-		System.out.println("Showing message box...");
+		Logger.info("Showing message box...");
 		AtomicBoolean resp = new AtomicBoolean(false);
 		try {
 			SwingUtilities.invokeAndWait(() -> {
@@ -303,12 +304,8 @@ public class RefreshUrlPage extends Page implements LinkRefreshCallback {
 						MessageBox.YES_NO_OPTION,
 						MessageBox.YES) == MessageBox.YES));
 			});
-		} catch (InvocationTargetException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (InvocationTargetException | InterruptedException e) {
+			Logger.error(e);
 		}
 		return resp.get();
 	}
@@ -321,12 +318,8 @@ public class RefreshUrlPage extends Page implements LinkRefreshCallback {
 						StringResource.get("MSG_REF_LINK_MSG"), MessageBox.OK,
 						MessageBox.OK);
 			});
-		} catch (InvocationTargetException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (InvocationTargetException | InterruptedException e) {
+			Logger.error(e);
 		}
 
 	}
