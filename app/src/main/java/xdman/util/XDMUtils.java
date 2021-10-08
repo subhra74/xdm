@@ -24,6 +24,8 @@ import xdman.Main;
 import xdman.XDMConstants;
 import xdman.downloaders.metadata.HttpMetadata;
 
+import org.tinylog.Logger;
+
 public class XDMUtils {
 	//private static float dpiScale;
 	// private static Map<Integer, String> categoryFolderMap;
@@ -70,6 +72,7 @@ public class XDMUtils {
 				builder.append(ch[i]);
 			}
 			str = builder.toString();
+			Logger.error(e);
 		}
 		StringBuilder builder = new StringBuilder();
 		for (char c : str.toCharArray()) {
@@ -105,7 +108,7 @@ public class XDMUtils {
 				return "FILE";
 			return createSafeFileName(path);
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 			return "FILE";
 		}
 	}
@@ -130,6 +133,7 @@ public class XDMUtils {
 			}
 			return false;
 		} catch (Exception e) {
+			Logger.error(e);
 			return false;
 		}
 	}
@@ -314,16 +318,16 @@ public class XDMUtils {
 			Toolkit.getDefaultToolkit().getSystemClipboard()
 					.setContents(new StringSelection(url), null);
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 	}
 
 	public static boolean exec(String args) {
 		try {
-			Logger.log("Launching: " + args);
+			Logger.info("Launching: " + args);
 			Runtime.getRuntime().exec(args);
 		} catch (IOException e) {
-			Logger.log(e);
+			Logger.error(e);
 			return false;
 		}
 		return true;
@@ -348,7 +352,7 @@ public class XDMUtils {
 				MacUtils.keepAwakePing();
 			}
 		} catch (Throwable e) {
-			// Logger.log(e);
+			Logger.error(e);
 		}
 	}
 
@@ -364,7 +368,7 @@ public class XDMUtils {
 			}
 			return false;
 		} catch (Throwable e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 		return false;
 	}
@@ -380,7 +384,7 @@ public class XDMUtils {
 				MacUtils.addToStartup();
 			}
 		} catch (Throwable e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 	}
 
@@ -395,7 +399,7 @@ public class XDMUtils {
 				MacUtils.removeFromStartup();
 			}
 		} catch (Throwable e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 	}
 
@@ -404,8 +408,7 @@ public class XDMUtils {
 			return new File(Main.class.getProtectionDomain().getCodeSource()
 					.getLocation().toURI().getPath());
 		} catch (URISyntaxException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			Logger.error(e);
 		}
 		return null;
 	}
@@ -435,7 +438,7 @@ public class XDMUtils {
 			return (String) Toolkit.getDefaultToolkit().getSystemClipboard()
 					.getData(DataFlavor.stringFlavor);
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 		return "";
 	}
@@ -457,7 +460,7 @@ public class XDMUtils {
 					.parseInt(System.getProperty("os.version").split("\\.")[0]);
 			return (version < 6);
 		} catch (Exception e) {
-
+			Logger.error(e);
 		}
 		return false;
 	}
