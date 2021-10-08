@@ -13,6 +13,8 @@ import xdman.Config;
 import xdman.XDMApp;
 import xdman.ui.components.MessageBox;
 
+import org.tinylog.Logger;
+
 public class NativeMessagingHostInstaller {
 	private static final String CHROME_EXTENSION_IDS = String.join(",",
 			"\"chrome-extension://danmljfachfhpbfikjgedlfifabhofcj/\"",
@@ -60,6 +62,7 @@ public class NativeMessagingHostInstaller {
 			} catch (Exception e) {
 				MessageBox.show(XDMApp.getInstance().getMainWindow(),
 						"Error: Unable to register native messaging host");
+				Logger.error(e);
 				return;
 			}
 		} else {
@@ -98,6 +101,7 @@ public class NativeMessagingHostInstaller {
 			} catch (Exception e) {
 				MessageBox.show(XDMApp.getInstance().getMainWindow(),
 						"Error: Unable to register native messaging host");
+				Logger.error(e);
 				return;
 			}
 		} else {
@@ -132,10 +136,8 @@ public class NativeMessagingHostInstaller {
 					name, nativeHostFile.getAbsolutePath().replace("\\", "\\\\"), manifestKey, extension);
 
 			out.write(json.getBytes("utf-8"));
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
 		} catch (IOException e) {
-			e.printStackTrace();
+			Logger.error(e);
 		}
 	}
 
