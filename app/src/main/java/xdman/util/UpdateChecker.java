@@ -10,6 +10,8 @@ import xdman.Config;
 import xdman.XDMApp;
 import xdman.network.http.JavaHttpClient;
 
+import org.tinylog.Logger;
+
 public class UpdateChecker {
 
 	public static final int APP_UPDATE_AVAILABLE = 10,
@@ -61,8 +63,8 @@ public class UpdateChecker {
 			}
 		});
 		if (files == null || files.length < 1) {
-			Logger.log("Component not installed");
-			Logger.log("Checking fallback components");
+			Logger.warn("Component not installed");
+			Logger.warn("Checking fallback components");
 			return getFallbackComponentVersion();
 		}
 		return files[0].split("\\.")[0];
@@ -77,7 +79,7 @@ public class UpdateChecker {
 			}
 		});
 		if (files == null || files.length < 1) {
-			Logger.log("Component not installed");
+			Logger.warn("Component not installed");
 			return null;
 		}
 
@@ -92,7 +94,7 @@ public class UpdateChecker {
 			client.setFollowRedirect(true);
 			client.connect();
 			int resp = client.getStatusCode();
-			Logger.log("manifest download response: " + resp);
+			Logger.info("manifest download response: " + resp);
 			if (resp == 200) {
 				InputStream in = client.getInputStream();
 				StringBuilder sb = new StringBuilder();
@@ -105,11 +107,12 @@ public class UpdateChecker {
 				return isNewerVersion(sb, XDMApp.APP_VERSION);
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		} finally {
 			try {
 				client.dispose();
 			} catch (Exception e) {
+				Logger.error(e);
 			}
 		}
 		return false;
