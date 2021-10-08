@@ -9,8 +9,9 @@ import java.util.UUID;
 
 import xdman.Config;
 import xdman.network.http.JavaHttpClient;
-import xdman.util.Logger;
 import xdman.util.XDMUtils;
+
+import org.tinylog.Logger;
 
 public class ThumbnailDownloader implements Runnable {
 	private String[] thumbnails;
@@ -64,7 +65,7 @@ public class ThumbnailDownloader implements Runnable {
 				}
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		} finally {
 			if (stop) {
 				for (String file : list) {
@@ -86,27 +87,29 @@ public class ThumbnailDownloader implements Runnable {
 			if (stop) {
 				return null;
 			}
-			Logger.log("manifest download response: " + resp);
+			Logger.info("manifest download response: " + resp);
 			if (resp == 200 || resp == 206) {
 				InputStream in = client.getInputStream();
 				long len = client.getContentLength();
 				out = new FileOutputStream(tmpFile);
 				XDMUtils.copyStream(in, out, len);
-				Logger.log("thumbnail download successfull");
+				Logger.info("thumbnail download successful");
 				return tmpFile.getAbsolutePath();
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		} finally {
 			try {
 				client.dispose();
 			} catch (Exception e) {
+				Logger.error(e);
 			}
 			try {
 				if (out != null) {
 					out.close();
 				}
 			} catch (Exception e) {
+				Logger.error(e);
 			}
 			if (stop) {
 				tmpFile.delete();
