@@ -3,9 +3,10 @@ package xdman;
 import java.net.URL;
 
 import xdman.downloaders.metadata.HttpMetadata;
-import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
+
+import org.tinylog.Logger;
 
 public class ClipboardMonitor implements Runnable {
 
@@ -31,7 +32,7 @@ public class ClipboardMonitor implements Runnable {
 				t.start();
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 
 	}
@@ -43,7 +44,7 @@ public class ClipboardMonitor implements Runnable {
 				t = null;
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 
 	}
@@ -57,7 +58,7 @@ public class ClipboardMonitor implements Runnable {
 					return;
 				}
 				if (!txt.equals(lastContent)) {
-					Logger.log("New content: " + txt);
+					Logger.info("New content: " + txt);
 					lastContent = txt;
 					try {
 						new URL(txt);
@@ -81,13 +82,14 @@ public class ClipboardMonitor implements Runnable {
 							XDMApp.getInstance().addDownload(md, file);
 						}
 					} catch (Exception e) {
+						Logger.error(e);
 					}
 
 				}
 				Thread.sleep(1000);
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 	}
 
