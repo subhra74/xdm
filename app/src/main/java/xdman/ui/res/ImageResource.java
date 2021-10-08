@@ -13,6 +13,8 @@ import java.awt.image.ImageObserver;
 import java.io.IOException;
 import java.net.URL;
 
+import org.tinylog.Logger;
+
 public class ImageResource {
 //	private final static String ICON_FOLDER = "icons";
 //
@@ -36,11 +38,10 @@ public class ImageResource {
 	public static Image getImage(String name) {
 		try {
 			URL url=ImageResource.class.getResource("/icons/xxhdpi/" + name);
-			System.out.println("Loading image from url: "+url);
+			Logger.info("Loading image from url: "+url);
 			return ImageIO.read(url);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			Logger.error(e);
 		}
 		return null;
 	}
@@ -85,7 +86,7 @@ public class ImageResource {
 				}
 			};
 		} catch (Exception e) {
-			e.printStackTrace();
+			Logger.error(e);
 			return new ImageIcon();
 		}
 	}
