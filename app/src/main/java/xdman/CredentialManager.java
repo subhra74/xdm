@@ -15,8 +15,9 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import xdman.util.Base64;
-import xdman.util.Logger;
 import xdman.util.StringUtils;
+
+import org.tinylog.Logger;
 
 public class CredentialManager {
 	private Map<String, PasswordAuthentication> savedCredentials;
@@ -85,7 +86,7 @@ public class CredentialManager {
 		try {
 			File f = new File(Config.getInstance().getDataFolder(), ".credentials");
 			if (!f.exists()) {
-				Logger.log("No saved credentials");
+				Logger.warn("No saved credentials");
 				return;
 			}
 			br = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
@@ -103,14 +104,14 @@ public class CredentialManager {
 						new PasswordAuthentication(arr[1], arr.length == 3 ? arr[2].toCharArray() : new char[0]));
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		} finally {
 			try {
 				if (br != null) {
 					br.close();
 				}
 			} catch (IOException e) {
-				e.printStackTrace();
+				Logger.error(e);
 			}
 		}
 	}
@@ -131,14 +132,14 @@ public class CredentialManager {
 			out = new FileOutputStream(f);
 			out.write(buf.toString().getBytes());
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		} finally {
 			try {
 				if (out != null) {
 					out.close();
 				}
 			} catch (Exception e) {
-
+				Logger.error(e);
 			}
 		}
 	}
