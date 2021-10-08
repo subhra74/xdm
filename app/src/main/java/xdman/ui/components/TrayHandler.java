@@ -23,15 +23,16 @@ import xdman.XDMApp;
 import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
-import xdman.util.Logger;
 import xdman.util.XDMUtils;
+
+import org.tinylog.Logger;
 
 public class TrayHandler {
 	static ActionListener act;
 
 	public static void createTray() {
 		if (!SystemTray.isSupported()) {
-			Logger.log("SystemTray is not supported");
+			Logger.warn("SystemTray is not supported");
 			return;
 		}
 
@@ -117,7 +118,7 @@ public class TrayHandler {
 
 			@Override
 			public void itemStateChanged(ItemEvent e) {
-				Logger.log("monitoring change");
+				Logger.info("monitoring change");
 				Config.getInstance().enableMonitoring(!Config.getInstance().isBrowserMonitoringEnabled());
 
 			}
@@ -159,7 +160,8 @@ public class TrayHandler {
 		try {
 			tray.add(trayIcon);
 		} catch (AWTException e) {
-			Logger.log("TrayIcon could not be added.");
+			Logger.warn("TrayIcon could not be added.");
+			Logger.error(e);
 		}
 
 		Config.getInstance().addConfigListener(new MonitoringListener() {
