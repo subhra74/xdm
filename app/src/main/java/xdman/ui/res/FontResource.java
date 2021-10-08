@@ -2,12 +2,13 @@ package xdman.ui.res;
 
 import java.awt.Font;
 
-import xdman.util.Logger;
 import xdman.util.XDMUtils;
+
+import org.tinylog.Logger;
 
 public class FontResource {
 	static {
-		Logger.log("Loading fonts");
+		Logger.info("Loading fonts");
 	}
 
 	public static Font getNormalFont() {
