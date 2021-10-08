@@ -14,8 +14,9 @@ import org.json.simple.parser.JSONParser;
 
 import xdman.network.http.HttpHeader;
 import xdman.util.FormatUtilities;
-import xdman.util.Logger;
 import xdman.util.StringUtils;
+
+import org.tinylog.Logger;
 
 public class YdlResponse {
 	public static final int DASH_HTTP = 99, HTTP = 98, HLS = 97, HDS = 96;
@@ -28,7 +29,7 @@ public class YdlResponse {
 		JSONArray entries = (JSONArray) obj.get("entries");
 		if (entries == null) {
 			// its a playlist
-			Logger.log("no playlist entry");
+			Logger.warn("no playlist entry");
 			entries = new JSONArray();
 			entries.add(obj);
 		}
@@ -40,12 +41,12 @@ public class YdlResponse {
 				if (v != null) {
 					playList.add(v);
 				} else {
-					Logger.log("Parsing failed");
+					Logger.warn("Parsing failed");
 				}
 			}
 
 		}
-		Logger.log("Playlist size: " + playList.size());
+		Logger.info("Playlist size: " + playList.size());
 		return playList;
 	}
 
@@ -57,7 +58,7 @@ public class YdlResponse {
 		JSONArray formats = (JSONArray) obj.get("formats");
 		if (formats != null) {
 			for (int i = 0; i < formats.size(); i++) {
-				Logger.log("Parsing format info");
+				Logger.info("Parsing format info");
 				JSONObject formatObj = (JSONObject) formats.get(i);
 				String protocol = getString(formatObj.get("protocol"));
 				YdlFormat format = new YdlFormat();
@@ -76,8 +77,9 @@ public class YdlResponse {
 				String sabr = formatObj.get("abr") + "";
 				try {
 					format.abr = Integer.parseInt(sabr);
-				} catch (Exception e) {
+				} catch (NumberFormatException e) {
 					format.abr = -1;
+					Logger.error(e);
 				}
 
 				JSONObject jsHeaders = (JSONObject) formatObj.get("http_headers");
@@ -118,13 +120,15 @@ public class YdlResponse {
 				format.vcodec = getString(obj.get("vcodec"));
 				try {
 					format.width = getInt(obj.get("width"));
-				} catch (Exception e) {
+				} catch (NumberFormatException e) {
 					format.width = -1;
+					Logger.error(e);
 				}
 				try {
 					format.height = getInt(obj.get("height"));
-				} catch (Exception e) {
+				} catch (NumberFormatException e) {
 					format.width = -1;
+					Logger.error(e);
 				}
 
 				format.ext = getString(obj.get("ext"));
@@ -133,14 +137,15 @@ public class YdlResponse {
 				String sabr = obj.get("abr") + "";
 				try {
 					format.abr = Integer.parseInt(sabr);
-				} catch (Exception e) {
+				} catch (NumberFormatException e) {
 					format.abr = -1;
+					Logger.error(e);
 				}
 				formatList.add(format);
 			}
 		}
 
-		Logger.log("Format list count: " + formatList.size());
+		Logger.info("Format list count: " + formatList.size());
 
 		ArrayList<YdlMediaFormat> mediaList = new ArrayList<>();
 
@@ -228,7 +233,7 @@ public class YdlResponse {
 				} else if ("http".equals(fmt.protocol) || "https".equals(fmt.protocol)) {
 					media.type = HTTP;
 				} else {
-					Logger.log("unsupported protocol: " + fmt.protocol);
+					Logger.warn("unsupported protocol: " + fmt.protocol);
 					continue;
 				}
 				media.url = fmt.url;
@@ -250,9 +255,9 @@ public class YdlResponse {
 				checkAndAddMedia(media, mediaList);
 			}
 		}
-		Logger.log("VIDEO----" + obj.get("title"));
+		Logger.info("VIDEO----" + obj.get("title"));
 		for (int i = 0; i < mediaList.size(); i++) {
-			Logger.log(mediaList.get(i).type + " " + mediaList.get(i).format);
+			Logger.info(mediaList.get(i).type + " " + mediaList.get(i).format);
 		}
 
 		YdlVideo pl = new YdlVideo();
@@ -292,7 +297,7 @@ public class YdlResponse {
 			JSONArray thumbnails = (JSONArray) obj.get("thumbnails");
 			if (thumbnails != null) {
 				for (int i = 0; i < thumbnails.size(); i++) {
-					Logger.log("Parsing thumbnails info");
+					Logger.info("Parsing thumbnails info");
 					JSONObject thumbnailObj = (JSONObject) thumbnails.get(i);
 					thumbnail = (String) thumbnailObj.get("url");
 					if (thumbnail != null) {
@@ -310,8 +315,9 @@ public class YdlResponse {
 			if (!(sdur.equals("none") || sdur.equals("null"))) {
 				try {
 					pl.duration = Long.parseLong(sdur);
-				} catch (Exception e) {
+				} catch (NumberFormatException e) {
 					pl.duration = -1;
+					Logger.error(e);
 				}
 			}
 		}
