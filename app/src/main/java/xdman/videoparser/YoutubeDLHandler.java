@@ -10,9 +10,10 @@ import java.util.UUID;
 import xdman.Config;
 import xdman.network.ProxyResolver;
 import xdman.network.http.WebProxy;
-import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
+
+import org.tinylog.Logger;
 
 public class YoutubeDLHandler {
 	private Process proc;
@@ -83,10 +84,10 @@ public class YoutubeDLHandler {
 
 			ProcessBuilder pb = new ProcessBuilder(args);
 			for (int i = 0; i < args.size(); i++) {
-				Logger.log(args.get(i));
+				Logger.info(args.get(i));
 			}
 
-			Logger.log("Writing JSON to: " + tmpOutput);
+			Logger.info("Writing JSON to: " + tmpOutput);
 
 			pb.redirectError(tmpError);
 			pb.redirectOutput(tmpOutput);
@@ -121,17 +122,17 @@ public class YoutubeDLHandler {
 			if (!stop) {
 				in = new FileInputStream(tmpOutput);
 				videos.addAll(YdlResponse.parse(in));
-				Logger.log("video found: " + videos.size());
+				Logger.info("video found: " + videos.size());
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		} finally {
 			try {
 				if (in != null) {
 					in.close();
 				}
 			} catch (Exception e) {
-
+				Logger.error(e);
 			}
 			tmpError.delete();
 			tmpOutput.delete();
@@ -154,7 +155,7 @@ public class YoutubeDLHandler {
 		try {
 			proc.destroy();
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 	}
 }
