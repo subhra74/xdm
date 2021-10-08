@@ -38,8 +38,9 @@ import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
-import xdman.util.Logger;
 import xdman.util.XDMUtils;
+
+import org.tinylog.Logger;
 
 public class VideoDownloadWindow extends JDialog implements ActionListener, DocumentListener {
 
@@ -136,7 +137,7 @@ public class VideoDownloadWindow extends JDialog implements ActionListener, Docu
 		// metadata.setUrl(urlStr);
 		// }
 		dispose();
-		Logger.log("file: " + filePane.getFileName());
+		Logger.info("file: " + filePane.getFileName());
 		if (filePane.getFileName().length() < 1) {
 			JOptionPane.showMessageDialog(this, StringResource.get("MSG_NO_FILE"));
 			return;
@@ -194,7 +195,7 @@ public class VideoDownloadWindow extends JDialog implements ActionListener, Docu
 			String text = doc.getText(0, len);
 			filePane.setFileName(XDMUtils.getFileName(text));
 		} catch (Exception err) {
-			Logger.log(err);
+			Logger.error(err);
 		}
 	}
 
@@ -209,7 +210,7 @@ public class VideoDownloadWindow extends JDialog implements ActionListener, Docu
 				}
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 
 		setIconImage(ImageResource.getImage("icon.png"));
@@ -345,7 +346,7 @@ public class VideoDownloadWindow extends JDialog implements ActionListener, Docu
 		styleButton(btnCN);
 		panel.add(btnCN);
 
-		Logger.log("Dash metadata? " + (metadata instanceof DashMetadata));
+		Logger.info("Dash metadata? " + (metadata instanceof DashMetadata));
 		// cmbStmAction.setEnabled(metadata != null && metadata instanceof
 		// DashMetadata);
 
