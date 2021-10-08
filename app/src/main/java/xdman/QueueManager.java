@@ -15,8 +15,9 @@ import java.util.Iterator;
 import java.util.UUID;
 
 import xdman.ui.res.StringResource;
-import xdman.util.Logger;
 import xdman.util.XDMUtils;
+
+import org.tinylog.Logger;
 
 public class QueueManager {
 	private static QueueManager _this;
@@ -118,7 +119,7 @@ public class QueueManager {
 				}
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 	}
 
@@ -165,13 +166,13 @@ public class QueueManager {
 				}
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 		if (writer != null) {
 			try {
 				writer.close();
 			} catch (IOException e) {
-				Logger.log(e);
+				Logger.error(e);
 			}
 		}
 	}
