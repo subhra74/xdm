@@ -7,6 +7,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 
+import org.tinylog.Logger;
+
 public class LinuxUtils {
 	static String shutdownCmds[] = {
 			"dbus-send --system --print-reply --dest=org.freedesktop.login1 /org/freedesktop/login1 \"org.freedesktop.login1.Manager.PowerOff\" boolean:true",
@@ -22,7 +24,7 @@ public class LinuxUtils {
 				if (ret == 0)
 					break;
 			} catch (Exception e) {
-				Logger.log(e);
+				Logger.error(e);
 			}
 		}
 	}
@@ -36,7 +38,7 @@ public class LinuxUtils {
 			pb.command("xdg-open", f.getAbsolutePath());
 			pb.start();// .waitFor();
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 	}
 
@@ -45,7 +47,7 @@ public class LinuxUtils {
 			Runtime.getRuntime().exec(
 					"dbus-send --print-reply --type=method_call --dest=org.freedesktop.ScreenSaver /ScreenSaver org.freedesktop.ScreenSaver.SimulateUserActivity");
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 	}
 
@@ -58,12 +60,13 @@ public class LinuxUtils {
 			fs = new FileOutputStream(f);
 			fs.write(getDesktopFileString().getBytes());
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		} finally {
 			try {
 				if (fs != null)
 					fs.close();
 			} catch (Exception e2) {
+				Logger.error(e2);
 			}
 		}
 		f.setExecutable(true);
@@ -81,12 +84,13 @@ public class LinuxUtils {
 				return false;
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		} finally {
 			try {
 				if (in != null)
 					in.close();
 			} catch (Exception e2) {
+				Logger.error(e2);
 			}
 		}
 		String str=new String(buf);
@@ -121,7 +125,7 @@ public class LinuxUtils {
 			pb.command("xdg-open", url);
 			pb.start();// .waitFor();
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 	}
 	
@@ -147,12 +151,13 @@ public class LinuxUtils {
 				}
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		} finally {
 			if (br != null) {
 				try {
 					br.close();
 				} catch (Exception e2) {
+					Logger.error(e2);
 				}
 			}
 		}
