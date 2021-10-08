@@ -37,9 +37,10 @@ import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
-import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
+
+import org.tinylog.Logger;
 
 public class NewDownloadWindow extends JDialog implements ActionListener, DocumentListener {
 
@@ -68,7 +69,7 @@ public class NewDownloadWindow extends JDialog implements ActionListener, Docume
 				txtURL.setText(url.toString());
 				txtURL.setCaretPosition(0);
 			} catch (Exception e) {
-				Logger.log(e);
+				Logger.error(e);
 			}
 		}
 		if (!StringUtils.isNullOrEmptyOrBlank(fileName)) {
@@ -133,10 +134,10 @@ public class NewDownloadWindow extends JDialog implements ActionListener, Docume
 					Config.getInstance().addBlockedHosts(host);
 					Config.getInstance().save();
 					dispose();
-					System.out.println("called");
+					Logger.info("called");
 
 				} catch (Exception e2) {
-					e2.printStackTrace();
+					Logger.error(e);
 					return;
 				}
 			}
@@ -163,7 +164,7 @@ public class NewDownloadWindow extends JDialog implements ActionListener, Docume
 			metadata.setUrl(urlStr);
 		}
 		dispose();
-		Logger.log("file: " + filePane.getFileName());
+		Logger.info("file: " + filePane.getFileName());
 		if (filePane.getFileName().length() < 1) {
 			JOptionPane.showMessageDialog(this, StringResource.get("MSG_NO_FILE"));
 			return;
@@ -213,7 +214,7 @@ public class NewDownloadWindow extends JDialog implements ActionListener, Docume
 			String text = doc.getText(0, len);
 			filePane.setFileName(XDMUtils.getFileName(text));
 		} catch (Exception err) {
-			Logger.log(err);
+			Logger.error(err);
 		}
 	}
 
@@ -228,7 +229,7 @@ public class NewDownloadWindow extends JDialog implements ActionListener, Docume
 				}
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 
 		setIconImage(ImageResource.getImage("icon.png"));
