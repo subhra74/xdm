@@ -32,8 +32,9 @@ import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
-import xdman.util.Logger;
 import xdman.util.StringUtils;
+
+import org.tinylog.Logger;
 
 public class MediaFormatWnd extends JDialog implements ActionListener {
 	/**
@@ -63,7 +64,7 @@ public class MediaFormatWnd extends JDialog implements ActionListener {
 				}
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 		setModal(true);
 		setTitle(StringResource.get("LBL_CONVERT_TO"));
@@ -151,7 +152,7 @@ public class MediaFormatWnd extends JDialog implements ActionListener {
 					return;
 				FormatGroup fg = list.get(index);
 				List<Format> formats = fg.getFormats();
-				System.out.println(formats.size());
+				Logger.info(formats.size());
 				listModel.removeAllElements();
 				for (Format format : formats) {
 					listModel.addElement(format);
@@ -295,7 +296,7 @@ public class MediaFormatWnd extends JDialog implements ActionListener {
 			public void valueChanged(ListSelectionEvent e) {
 
 				int index = listFormat.getSelectedIndex();
-				System.out.println("List selected " + index);
+				Logger.info("List selected " + index);
 				if (index < 0)
 					return;
 				Format fmt = listModel.get(index);
