@@ -50,9 +50,10 @@ import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
-import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
+
+import org.tinylog.Logger;
 
 public class VideoConversionWnd extends JFrame implements ActionListener, Runnable, MediaConversionListener {
 
@@ -142,7 +143,7 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 					float f = format.parse(volume).floatValue();
 					return (int) (f * 100);
 				} catch (ParseException e) {
-					e.printStackTrace();
+					Logger.error(e);
 				}
 				return 100;
 			}
@@ -164,7 +165,7 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 					setOpacity(0.85f);
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 
 		setTitle(StringResource.get("MENU_MEDIA_CONVERTER"));
@@ -601,7 +602,7 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 					item.conversionState = 2;
 				}
 				model.setElementAt(item, i);
-				Logger.log("FFmpeg exit code: " + ret);
+				Logger.info("FFmpeg exit code: " + ret);
 			}
 		} finally {
 			SwingUtilities.invokeLater(new Runnable() {
