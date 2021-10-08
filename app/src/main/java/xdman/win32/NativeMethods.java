@@ -2,8 +2,9 @@ package xdman.win32;
 
 import java.io.File;
 
-import xdman.util.Logger;
 import xdman.util.XDMUtils;
+
+import org.tinylog.Logger;
 
 public class NativeMethods {
 	private static NativeMethods _me;
@@ -20,7 +21,7 @@ public class NativeMethods {
 		try {
 			System.load(dllPath);
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 	}
 
