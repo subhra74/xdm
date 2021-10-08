@@ -7,7 +7,8 @@ import java.nio.charset.Charset;
 import java.util.Properties;
 
 import xdman.Config;
-import xdman.util.Logger;
+
+import org.tinylog.Logger;
 
 public class StringResource {
 	private static Properties strings;
@@ -21,19 +22,19 @@ public class StringResource {
 				String lang = Config.getInstance().getLanguage();
 				System.out.println(lang);
 				if (!loadLang(lang, strings)) {
-					Logger.log("Unable to load language: " + lang);
+					Logger.warn("Unable to load language: " + lang);
 					strings.clear();
 					loadLang("en", strings);
 				}
 			} catch (Exception e) {
-				e.printStackTrace();
+				Logger.error(e);
 			}
 		}
 		return strings.getProperty(id);
 	}
 
 	private static boolean loadLang(String code, Properties prop) {
-		Logger.log("Loading language " + code);
+		Logger.info("Loading language " + code);
 		try {
 			InputStream inStream = StringResource.class.getResourceAsStream("/lang/en.txt");
 			if (inStream == null) {
@@ -42,7 +43,7 @@ public class StringResource {
 			InputStreamReader r = new InputStreamReader(inStream, Charset.forName("utf-8"));
 			prop.load(r);
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 			return false;
 		}
 		if ("en".equals(code)) {
@@ -57,7 +58,7 @@ public class StringResource {
 			prop.load(r);
 			return true;
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 			return false;
 		}
 	}
