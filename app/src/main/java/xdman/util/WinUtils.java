@@ -7,6 +7,8 @@ import java.util.ArrayList;
 
 import xdman.win32.NativeMethods;
 
+import org.tinylog.Logger;
+
 public class WinUtils {
 	public static void open(File f) throws FileNotFoundException {
 		if (!f.exists()) {
@@ -21,7 +23,7 @@ public class WinUtils {
 			builder.command(lst);
 			builder.start();
 		} catch (IOException e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 	}
 
@@ -43,7 +45,7 @@ public class WinUtils {
 			builder.command(lst);
 			builder.start();
 		} catch (IOException e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 	}
 
@@ -56,7 +58,7 @@ public class WinUtils {
 			builder.command(lst);
 			builder.start();
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 	}
 
@@ -67,14 +69,14 @@ public class WinUtils {
 	public static void addToStartup() {
 		String launchCmd = "\"" + System.getProperty("java.home") + "\\bin\\javaw.exe\" -Xmx1024m -jar \""
 				+ XDMUtils.getJarFile().getAbsolutePath() + "\" -m";
-		Logger.log("Launch CMD: " + launchCmd);
+		Logger.info("Launch CMD: " + launchCmd);
 		NativeMethods.getInstance().addToStartup("XDM", launchCmd);
 	}
 
 	public static boolean isAlreadyAutoStart() {
 		String launchCmd = "\"" + System.getProperty("java.home") + "\\bin\\javaw.exe\" -Xmx1024m -jar \""
 				+ XDMUtils.getJarFile().getAbsolutePath() + "\" -m";
-		Logger.log("Launch CMD: " + launchCmd);
+		Logger.info("Launch CMD: " + launchCmd);
 		return NativeMethods.getInstance().presentInStartup("XDM", launchCmd);
 	}
 
@@ -92,7 +94,7 @@ public class WinUtils {
 			builder.command(lst);
 			builder.start();
 		} catch (IOException e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 	}
 
@@ -107,7 +109,7 @@ public class WinUtils {
 			builder.command(lst);
 			builder.start();
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 	}
 
