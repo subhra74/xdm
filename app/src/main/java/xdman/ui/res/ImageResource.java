@@ -1,23 +1,17 @@
 package xdman.ui.res;
 
+import javax.imageio.ImageIO;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.RenderingHints;
-import java.awt.image.BaseMultiResolutionImage;
 import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
-import java.awt.image.MultiResolutionImage;
 import java.io.IOException;
 import java.net.URL;
-import java.util.*;
-
-import javax.imageio.ImageIO;
-import javax.swing.*;
-
-import xdman.XDMConstants;
-import xdman.util.XDMUtils;
 
 public class ImageResource {
 //	private final static String ICON_FOLDER = "icons";
