@@ -9,6 +9,8 @@ import java.util.Map;
 
 import javax.swing.JOptionPane;
 
+import org.tinylog.Logger;
+
 public class ParamUtils {
 	public static void sendParam(Map<String, String> params) {
 		StringBuffer sb = new StringBuffer();
@@ -37,11 +39,13 @@ public class ParamUtils {
 			resp = NetUtils.readLine(in);
 			resp = resp.split(" ")[1];
 		} catch (Exception e) {
+			Logger.error(e);
 		} finally {
 			if (sock != null) {
 				try {
 					sock.close();
 				} catch (Exception e2) {
+					Logger.error(e2);
 				}
 			}
 		}
