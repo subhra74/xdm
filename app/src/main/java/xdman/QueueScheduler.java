@@ -5,9 +5,10 @@ import java.util.Calendar;
 import java.util.Date;
 
 import xdman.util.DateTimeUtils;
-import xdman.util.Logger;
 import xdman.util.UpdateChecker;
 import xdman.util.XDMUtils;
+
+import org.tinylog.Logger;
 
 public class QueueScheduler implements Runnable {
 	// private boolean stop;
@@ -105,8 +106,8 @@ public class QueueScheduler implements Runnable {
 					}
 					Thread.sleep(1000);
 				} catch (Exception e2) {
-					Logger.log("error in scheduler: " + e2);
-					Logger.log(e2);
+					Logger.error("error in scheduler: " + e2);
+					Logger.error(e2);
 				}
 
 				long now = System.currentTimeMillis();
@@ -129,8 +130,8 @@ public class QueueScheduler implements Runnable {
 				lastUpdateChecked = now;
 			}
 		} catch (Exception e) {
-			Logger.log("error in scheduler: " + e);
-			Logger.log(e);
+			Logger.error("error in scheduler: " + e);
+			Logger.error(e);
 		}
 	}
 }
