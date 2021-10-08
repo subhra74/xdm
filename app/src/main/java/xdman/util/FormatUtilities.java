@@ -6,6 +6,8 @@ import java.util.*;
 import xdman.*;
 import xdman.ui.res.StringResource;
 
+import org.tinylog.Logger;
+
 public class FormatUtilities {
 	private static SimpleDateFormat _format;
 	private static final int MB = 1024 * 1024, KB = 1024;
@@ -95,6 +97,7 @@ public class FormatUtilities {
 					Integer.parseInt(res);
 					return res + "p";
 				} catch (Exception e) {
+					Logger.error(e);
 				}
 			}
 		}
