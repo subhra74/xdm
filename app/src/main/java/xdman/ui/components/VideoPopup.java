@@ -39,9 +39,10 @@ import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
-import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
+
+import org.tinylog.Logger;
 
 public class VideoPopup extends JDialog implements ActionListener, Comparator<VideoPopupItem> {
 
@@ -144,7 +145,7 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 					}
 				}
 			} catch (Exception e) {
-				Logger.log(e);
+				Logger.error(e);
 			}
 
 			panel = new JPanel(new BorderLayout());
@@ -248,7 +249,7 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 			closePopupBtn.addActionListener(this);
 
 		} catch (Exception e) {
-			e.printStackTrace();
+			Logger.error(e);
 		}
 	}
 
@@ -271,7 +272,7 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 			if (name.equals(item.getMetadata().getId())) {
 				collapse();
 				HttpMetadata md = item.getMetadata().derive();
-				Logger.log("dash metdata ? " + (md instanceof DashMetadata));
+				Logger.info("dash metdata ? " + (md instanceof DashMetadata));
 				XDMApp.getInstance().addVideo(md, item.getFile());
 			}
 		}
@@ -348,7 +349,7 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 		repaint();
 		expanded = false;
 		upward = false;
-		Logger.log("Closed");
+		Logger.info("Closed");
 	}
 
 	@Override
@@ -401,7 +402,7 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 			if (m2 instanceof DashMetadata) {
 				DashMetadata dm1 = (DashMetadata) m2;
 				if (isSameURL(dm1.getUrl(), id, len) || isSameURL(dm1.getUrl2(), id, len)) {
-					Logger.log("Updating title: " + title);
+					Logger.info("Updating title: " + title);
 					updateFileName(title, p);
 					updateButtonTitle(m2.getId(), p.toString());
 				}
@@ -413,7 +414,7 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 		String oldFile = p.getFile();
 		String ext = XDMUtils.getExtension(oldFile);
 		p.setFile(file + (StringUtils.isNullOrEmptyOrBlank(ext) ? "" : ext));
-		Logger.log("renaming: " + oldFile + " to: " + file);
+		Logger.info("renaming: " + oldFile + " to: " + file);
 	}
 
 	private void updateButtonTitle(String id, String title) {
@@ -460,6 +461,7 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 				return url.contains(id) && url.contains(clen);
 			}
 		} catch (Exception e) {
+			Logger.error(e);
 		}
 
 		return false;
