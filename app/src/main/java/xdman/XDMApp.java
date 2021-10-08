@@ -65,7 +65,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 	public static final String GLOBAL_LOCK_FILE = ".xdm-global-lock";
 	public static final String APP_VERSION = "7.2.11";
 	public static final String XDM_WINDOW_TITLE = "XDM 2020";
-	public static final String APP_UPDAT_URL = "https://api.github.com/repos/subhra74/xdm/releases/latest";
+	public static final String APP_UPDATE_URL = "https://api.github.com/repos/subhra74/xdm/releases/latest";
 	public static final String APP_UPDATE_CHK_URL = "https://subhra74.github.io/xdm/update-checker.html?v=";
 	public static final String APP_WIKI_URL = "https://github.com/subhra74/xdm/wiki";
 	public static final String APP_HOME_URL = "https://github.com/subhra74/xdm";

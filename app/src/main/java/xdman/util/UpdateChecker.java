@@ -9,7 +9,6 @@ import java.util.regex.Pattern;
 import xdman.Config;
 import xdman.XDMApp;
 import xdman.network.http.JavaHttpClient;
-import xdman.network.http.XDMHttpClient;
 
 public class UpdateChecker {
 
@@ -89,7 +88,7 @@ public class UpdateChecker {
 		JavaHttpClient client = null;
 		try {
 			client = new JavaHttpClient(
-					XDMApp.APP_UPDAT_URL + "?ver=" + version);
+					XDMApp.APP_UPDATE_URL + "?ver=" + version);
 			client.setFollowRedirect(true);
 			client.connect();
 			int resp = client.getStatusCode();
