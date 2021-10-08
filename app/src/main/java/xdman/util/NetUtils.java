@@ -5,6 +5,8 @@ import java.util.zip.GZIPInputStream;
 
 import xdman.network.http.*;
 
+import org.tinylog.Logger;
+
 public class NetUtils {
 	public static byte[] getBytes(String str) {
 		return str.getBytes();
@@ -48,6 +50,7 @@ public class NetUtils {
 				}
 			}
 		} catch (Exception e) {
+			Logger.error(e);
 			return -1;
 		}
 	}
@@ -59,7 +62,7 @@ public class NetUtils {
 			inStream = new ChunkedInputStream(inStream);
 		}
 		String contentEncoding = respHeaders.getValue("content-encoding");
-		Logger.log("Content-Encoding: " + contentEncoding);
+		Logger.info("Content-Encoding: " + contentEncoding);
 		if (!StringUtils.isNullOrEmptyOrBlank(contentEncoding)) {
 			if (contentEncoding.equalsIgnoreCase("gzip")) {
 				inStream = new GZIPInputStream(inStream);
@@ -112,7 +115,7 @@ public class NetUtils {
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			Logger.error(e);
 		}
 		return null;
 	}
@@ -137,6 +140,7 @@ public class NetUtils {
 						try {
 							return XDMUtils.decodeFileName(file);
 						} catch (Exception e) {
+							Logger.error(e);
 							return file;
 						}
 
@@ -144,6 +148,7 @@ public class NetUtils {
 				}
 			}
 		} catch (Exception e) {
+			Logger.error(e);
 		}
 		return null;
 	}
