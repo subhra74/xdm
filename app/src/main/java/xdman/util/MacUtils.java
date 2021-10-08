@@ -6,6 +6,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 
+import org.tinylog.Logger;
+
 public class MacUtils {
 	public static void open(final File f) throws FileNotFoundException {
 		if (!f.exists()) {
@@ -18,7 +20,7 @@ public class MacUtils {
 				throw new FileNotFoundException();
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 	}
 
@@ -33,13 +35,13 @@ public class MacUtils {
 		}
 		try {
 			ProcessBuilder pb = new ProcessBuilder();
-			Logger.log("Opening folder: " + f.getAbsolutePath());
+			Logger.info("Opening folder: " + f.getAbsolutePath());
 			pb.command("open", "-R", f.getAbsolutePath());
 			if (pb.start().waitFor() != 0) {
 				throw new FileNotFoundException();
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 	}
 
@@ -52,7 +54,7 @@ public class MacUtils {
 			builder.command(lst);
 			builder.start();
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 	}
 
@@ -66,7 +68,7 @@ public class MacUtils {
 			// Runtime.getRuntime().exec(new String[] { "open \"" + app + "\" " + args });
 			return true;
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 			return false;
 		}
 	}
@@ -75,7 +77,7 @@ public class MacUtils {
 		try {
 			Runtime.getRuntime().exec("caffeinate -i -t 3");
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 	}
 
@@ -88,12 +90,13 @@ public class MacUtils {
 			fs = new FileOutputStream(f);
 			fs.write(getStartupPlist().getBytes());
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		} finally {
 			try {
 				if (fs != null)
 					fs.close();
 			} catch (Exception e2) {
+				Logger.error(e2);
 			}
 		}
 		f.setExecutable(true);
@@ -111,12 +114,13 @@ public class MacUtils {
 				return false;
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		} finally {
 			try {
 				if (in != null)
 					in.close();
 			} catch (Exception e2) {
+				Logger.error(e2);
 			}
 		}
 		String str = new String(buf);
@@ -160,7 +164,7 @@ public class MacUtils {
 			pb.command("open", url);
 			pb.start();// .waitFor();
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 	}
 
@@ -174,7 +178,7 @@ public class MacUtils {
 			builder.command(lst);
 			builder.start();
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 	}
 }
