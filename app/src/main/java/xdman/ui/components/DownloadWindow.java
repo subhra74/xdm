@@ -36,7 +36,8 @@ import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 import xdman.util.FormatUtilities;
-import xdman.util.Logger;
+
+import org.tinylog.Logger;
 
 public class DownloadWindow extends JFrame implements ActionListener {
 	private static final long serialVersionUID = -5523541940635914890L;
@@ -188,7 +189,7 @@ public class DownloadWindow extends JFrame implements ActionListener {
 				}
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 
 		setTitle("Downloading...");
