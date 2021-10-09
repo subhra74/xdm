@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import xdman.Config;
 import xdman.util.XDMUtils;
 
+import org.tinylog.Logger;
+
 public class FFmpegStream extends InputStream implements Runnable {
 	String input1, input2;
 	Process proc;
@@ -28,12 +30,14 @@ public class FFmpegStream extends InputStream implements Runnable {
 		try {
 			in.close();
 		} catch (Exception e) {
+			Logger.error(e);
 		}
 		try {
-			System.out.println("closing");
+			Logger.info("closing");
 			proc.destroyForcibly();
 			t.interrupt();
 		} catch (Exception e) {
+			Logger.error(e);
 		}
 	}
 
@@ -87,15 +91,17 @@ public class FFmpegStream extends InputStream implements Runnable {
 			try {
 				Thread.sleep(2000);
 			} catch (Exception e) {
-				System.out.println("interrupted returing");
+				Logger.error(e);
+				Logger.warn("interrupted returning");
 				return;
 			}
 			if (read - last < 1) {
 				try {
 					in.close();
 				} catch (Exception e) {
+					Logger.error(e);
 				}
-				System.out.println("closing hanged ffmpeg");
+				Logger.info("closing hanged ffmpeg");
 				proc.destroyForcibly();
 				break;
 			}
@@ -118,7 +124,7 @@ public class FFmpegStream extends InputStream implements Runnable {
 			read += x;
 			// System.out.println(new String(b, 0, x));
 		} else {
-			System.out.println("stream ended after " + read + " bytes");
+			Logger.info("stream ended after " + read + " bytes");
 			// System.out.println(proc.exitValue());
 		}
 		return x;
