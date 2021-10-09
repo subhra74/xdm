@@ -8,6 +8,8 @@ import java.util.List;
 
 import xdman.XDMApp;
 
+import org.tinylog.Logger;
+
 public class PreviewStream extends InputStream {
 	List<Chunk> chunks;
 	String currentId;
@@ -60,7 +62,7 @@ public class PreviewStream extends InputStream {
 			chunks = ChunkLoader.load(id, type);
 			Chunk c = findCurrentChunk();
 			if (read >= c.length) {
-				System.out.println("Chunk finished, trying next chunk");
+				Logger.info("Chunk finished, trying next chunk");
 				c = findNext();
 				currentId = c.id;
 				openstream();
@@ -73,7 +75,7 @@ public class PreviewStream extends InputStream {
 				read += r;
 				return r;
 			} else {
-				System.out.println("Chunk is not finshed, sending 00000.....");
+				Logger.info("Chunk is not finshed, sending 00000.....");
 				int rem = (c.length - read) > buf.length ? buf.length : ((int) (c.length - read));
 				r = rem;
 				for (int i = 0; i < rem; i++) {
@@ -126,7 +128,7 @@ public class PreviewStream extends InputStream {
 		String tempFolder = XDMApp.getInstance().getEntry(id).getTempFolder();
 		File tmpFolder = new File(tempFolder, id);
 		chunkStream = new FileInputStream(new File(tmpFolder, currentId));
-		System.out.println("Stream opened");
+		Logger.info("Stream opened");
 	}
 
 	@Override
