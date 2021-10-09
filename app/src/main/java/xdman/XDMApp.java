@@ -105,18 +105,15 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 	public static void instanceStarted() {
 		Logger.info("instance starting...");
 		final XDMApp app = XDMApp.getInstance();
-		EventQueue.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				if (!paramMap.containsKey("background")) {
-					Logger.info("showing main window.");
-					app.showMainWindow();
-				}
-				TrayHandler.createTray();
-				// if (XDMUtils.detectOS() != XDMUtils.LINUX) {
-				// TrayHandler.createTray();
-				// }
+		EventQueue.invokeLater(() -> {
+			if (!paramMap.containsKey("background")) {
+				Logger.info("showing main window.");
+				app.showMainWindow();
 			}
+			TrayHandler.createTray();
+			// if (XDMUtils.detectOS() != XDMUtils.LINUX) {
+			// TrayHandler.createTray();
+			// }
 		});
 		if (Config.getInstance().isFirstRun()) {
 			if (XDMUtils.detectOS() != XDMUtils.WINDOWS) {
@@ -182,16 +179,12 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 
 		if (winInstall) {
 			try {
-				SwingUtilities.invokeAndWait(new Runnable() {
-
-					@Override
-					public void run() {
-						Logger.info("wininstall");
-						if (UpdateChecker.getComponentVersion() == null) {
-							new ComponentInstaller().setVisible(true);
-						}
-
+				SwingUtilities.invokeAndWait(() -> {
+					Logger.info("wininstall");
+					if (UpdateChecker.getComponentVersion() == null) {
+						new ComponentInstaller().setVisible(true);
 					}
+
 				});
 			} catch (Exception e) {
 				Logger.error(e);
@@ -388,12 +381,9 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 	}
 
 	public void addLinks(final List<HttpMetadata> list) {
-		SwingUtilities.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				BatchDownloadWnd wnd = new BatchDownloadWnd(list);
-				wnd.setVisible(true);
-			}
+		SwingUtilities.invokeLater(() -> {
+			BatchDownloadWnd wnd = new BatchDownloadWnd(list);
+			wnd.setVisible(true);
 		});
 	}
 
@@ -424,52 +414,49 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 			// }
 			// }
 		}
-		SwingUtilities.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				String fileName;
-				String folderPath;
+		SwingUtilities.invokeLater(() -> {
+			String fileName;
+			String folderPath;
 
-				if (StringUtils.isNullOrEmptyOrBlank(file)) {
-					if (metadata != null) {
-						fileName = XDMUtils.getFileName(metadata.getUrl());
-					} else {
-						fileName = null;
-					}
-					folderPath = null;
+			if (StringUtils.isNullOrEmptyOrBlank(file)) {
+				if (metadata != null) {
+					fileName = XDMUtils.getFileName(metadata.getUrl());
 				} else {
-					var path = Paths.get(file);
+					fileName = null;
+				}
+				folderPath = null;
+			} else {
+				var path = Paths.get(file);
 
-					fileName = path.getFileName().toString();
+				fileName = path.getFileName().toString();
 
-					var parentPath = path.getParent();
-					if (parentPath != null && parentPath.isAbsolute()) {
-						folderPath = parentPath.toString();
+				var parentPath = path.getParent();
+				if (parentPath != null && parentPath.isAbsolute()) {
+					folderPath = parentPath.toString();
+				} else {
+					String downloadFolderPath;
+					if (Config.getInstance().isForceSingleFolder()) {
+						downloadFolderPath = Config.getInstance().getDownloadFolder();
 					} else {
-						String downloadFolderPath;
-						if (Config.getInstance().isForceSingleFolder()) {
-							downloadFolderPath = Config.getInstance().getDownloadFolder();
-						} else {
-							var category = XDMUtils.findCategory(file);
-							downloadFolderPath = XDMApp.getInstance().getFolder(category);
-						}
+						var category = XDMUtils.findCategory(file);
+						downloadFolderPath = XDMApp.getInstance().getFolder(category);
+					}
 
-						if (parentPath != null) {
-							folderPath = Paths.get(downloadFolderPath, parentPath.toString()).toString();
-						} else {
-							folderPath = downloadFolderPath;
-						}
+					if (parentPath != null) {
+						folderPath = Paths.get(downloadFolderPath, parentPath.toString()).toString();
+					} else {
+						folderPath = downloadFolderPath;
 					}
 				}
-
-				if (metadata != null
-						&& (Config.getInstance().isQuietMode() || Config.getInstance().isDownloadAutoStart())) {
-					createDownload(fileName, folderPath, metadata, true, "", 0, 0);
-					return;
-				}
-
-				new NewDownloadWindow(metadata, fileName, folderPath).setVisible(true);
 			}
+
+			if (metadata != null
+					&& (Config.getInstance().isQuietMode() || Config.getInstance().isDownloadAutoStart())) {
+				createDownload(fileName, folderPath, metadata, true, "", 0, 0);
+				return;
+			}
+
+			new NewDownloadWindow(metadata, fileName, folderPath).setVisible(true);
 		});
 	}
 
@@ -479,45 +466,36 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 				return;
 			}
 		}
-		SwingUtilities.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				if (!XDMUtils.isFFmpegInstalled()) {
-					if (JOptionPane.showConfirmDialog(null, StringResource.get("MSG_INSTALL_ADDITIONAL_COMPONENTS"),
-							StringResource.get("MSG_COMPONENT_TITLE"),
-							JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-						FFmpegDownloader fd = new FFmpegDownloader();
-						fd.start();
-					}
-					return;
+		SwingUtilities.invokeLater(() -> {
+			if (!XDMUtils.isFFmpegInstalled()) {
+				if (JOptionPane.showConfirmDialog(null, StringResource.get("MSG_INSTALL_ADDITIONAL_COMPONENTS"),
+						StringResource.get("MSG_COMPONENT_TITLE"),
+						JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+					FFmpegDownloader fd = new FFmpegDownloader();
+					fd.start();
 				}
-				new VideoDownloadWindow(metadata, file).setVisible(true);
+				return;
 			}
+			new VideoDownloadWindow(metadata, file).setVisible(true);
 		});
 	}
 
 	public void addMedia(final HttpMetadata metadata, final String file, final String info) {
 		Logger.info("video notification: " + Config.getInstance().isShowVideoNotification());
 		if (Config.getInstance().isShowVideoNotification()) {
-			SwingUtilities.invokeLater(new Runnable() {
-				@Override
-				public void run() {
-					VideoPopup.getInstance().addVideo(metadata, file, info);
-					BrowserMonitor.getInstance().updateSettingsAndStatus();
-				}
+			SwingUtilities.invokeLater(() -> {
+				VideoPopup.getInstance().addVideo(metadata, file, info);
+				BrowserMonitor.getInstance().updateSettingsAndStatus();
 			});
 		}
 	}
 
 	public void youtubeVideoTitleUpdated(String url, String title) {
 		if (Config.getInstance().isShowVideoNotification()) {
-			SwingUtilities.invokeLater(new Runnable() {
-				@Override
-				public void run() {
-					if (VideoPopup.hasInstance()) {
-						VideoPopup.getInstance().updateYoutubeTitle(url, title);
-						BrowserMonitor.getInstance().updateSettingsAndStatus();
-					}
+			SwingUtilities.invokeLater(() -> {
+				if (VideoPopup.hasInstance()) {
+					VideoPopup.getInstance().updateYoutubeTitle(url, title);
+					BrowserMonitor.getInstance().updateSettingsAndStatus();
 				}
 			});
 		}
