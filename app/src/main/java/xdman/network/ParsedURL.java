@@ -4,6 +4,8 @@ import java.net.*;
 
 import xdman.util.StringUtils;
 
+import org.tinylog.Logger;
+
 public class ParsedURL {
 	private String _url;
 	private int port;
@@ -32,6 +34,7 @@ public class ParsedURL {
 			}
 			return parsedURL;
 		} catch (Exception e) {
+			Logger.error(e);
 			return null;
 		}
 	}
