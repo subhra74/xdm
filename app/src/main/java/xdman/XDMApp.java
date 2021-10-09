@@ -886,36 +886,36 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 			for (String key : downloads.keySet()) {
 				DownloadEntry ent = downloads.get(key);
 				int c = 0;
-				StringBuffer sb = new StringBuffer();
-				sb.append("id: " + ent.getId() + newLine);
+				StringBuilder sb = new StringBuilder();
+				sb.append("id: ").append(ent.getId()).append(newLine);
 				c++;
-				sb.append("file: " + ent.getFile() + newLine);
+				sb.append("file: ").append(ent.getFile()).append(newLine);
 				c++;
-				sb.append("category: " + ent.getCategory() + newLine);
+				sb.append("category: ").append(ent.getCategory()).append(newLine);
 				c++;
-				sb.append("state: " + ent.getState() + newLine);
+				sb.append("state: ").append(ent.getState()).append(newLine);
 				c++;
 				if (ent.getFolder() != null) {
-					sb.append("folder: " + ent.getFolder() + newLine);
+					sb.append("folder: ").append(ent.getFolder()).append(newLine);
 					c++;
 				}
-				sb.append("date: " + dateFormat.format(new Date(ent.getDate())) + newLine);
+				sb.append("date: ").append(dateFormat.format(new Date(ent.getDate()))).append(newLine);
 				c++;
-				sb.append("downloaded: " + ent.getDownloaded() + newLine);
+				sb.append("downloaded: ").append(ent.getDownloaded()).append(newLine);
 				c++;
-				sb.append("size: " + ent.getSize() + newLine);
+				sb.append("size: ").append(ent.getSize()).append(newLine);
 				c++;
-				sb.append("progress: " + ent.getProgress() + newLine);
+				sb.append("progress: ").append(ent.getProgress()).append(newLine);
 				c++;
 				if (ent.getTempFolder() != null) {
-					sb.append("tempfolder: " + ent.getTempFolder() + newLine);
+					sb.append("tempfolder: ").append(ent.getTempFolder()).append(newLine);
 					c++;
 				}
 				if (ent.getQueueId() != null) {
-					sb.append("queueid: " + ent.getQueueId() + newLine);
+					sb.append("queueid: ").append(ent.getQueueId()).append(newLine);
 					c++;
 				}
-				sb.append("formatIndex: " + ent.getOutputFormatIndex() + newLine);
+				sb.append("formatIndex: ").append(ent.getOutputFormatIndex()).append(newLine);
 				c++;
 				writer.write(c + newLine);
 				writer.write(sb.toString());
