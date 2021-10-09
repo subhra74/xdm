@@ -1,33 +1,6 @@
 package xdman;
 
-import java.awt.EventQueue;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.net.PasswordAuthentication;
-import java.nio.file.Paths;
-import java.nio.charset.Charset;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-import javax.swing.JOptionPane;
-import javax.swing.JPasswordField;
-import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-
 import org.tinylog.Logger;
-
 import xdman.downloaders.Downloader;
 import xdman.downloaders.dash.DashDownloader;
 import xdman.downloaders.ftp.FtpDownloader;
@@ -40,27 +13,20 @@ import xdman.downloaders.metadata.HlsMetadata;
 import xdman.downloaders.metadata.HttpMetadata;
 import xdman.monitoring.BrowserMonitor;
 import xdman.network.http.HttpContext;
-import xdman.ui.components.BatchDownloadWnd;
-import xdman.ui.components.ComponentInstaller;
-import xdman.ui.components.DownloadCompleteWnd;
-import xdman.ui.components.DownloadWindow;
-import xdman.ui.components.MainWindow;
-import xdman.ui.components.NewDownloadWindow;
-import xdman.ui.components.TrayHandler;
-import xdman.ui.components.VideoDownloadWindow;
-import xdman.ui.components.VideoPopup;
-import xdman.ui.components.VideoPopupItem;
+import xdman.ui.components.*;
 import xdman.ui.laf.XDMLookAndFeel;
 import xdman.ui.res.StringResource;
-import xdman.util.FFmpegDownloader;
-import xdman.util.LinuxUtils;
-import xdman.util.MacUtils;
-import xdman.util.NativeMessagingHostInstaller;
-import xdman.util.ParamUtils;
-import xdman.util.StringUtils;
-import xdman.util.UpdateChecker;
-import xdman.util.WinUtils;
-import xdman.util.XDMUtils;
+import xdman.util.*;
+
+import javax.swing.*;
+import java.awt.*;
+import java.io.*;
+import java.net.PasswordAuthentication;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.util.List;
+import java.util.*;
 
 public class XDMApp implements DownloadListener, DownloadWindowListener, Comparator<String> {
 	public static final String GLOBAL_LOCK_FILE = ".xdm-global-lock";
@@ -77,16 +43,16 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 	public static final double[] ZOOM_LEVEL_VALUES = { -1, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5,
 			5.0 };
 
-	private ArrayList<ListChangeListener> listChangeListeners;
-	private Map<String, DownloadEntry> downloads;
+	private final ArrayList<ListChangeListener> listChangeListeners;
+	private final Map<String, DownloadEntry> downloads;
 	private static XDMApp _this;
-	private HashMap<String, Downloader> downloaders;
-	private HashMap<String, DownloadWindow> downloadWindows;
+	private final HashMap<String, Downloader> downloaders;
+	private final HashMap<String, DownloadWindow> downloadWindows;
 	private long lastSaved;
-	private QueueManager qMgr;
+	private final QueueManager qMgr;
 	private LinkRefreshCallback refreshCallback;
 
-	private ArrayList<String> pendingDownloads;// this buffer is used when there
+	private final ArrayList<String> pendingDownloads;// this buffer is used when there
 												// is a limit on maximum
 												// simultaneous downloads and
 												// more downloads are started
@@ -100,7 +66,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 											// notification is stored in this
 											// variable
 
-	private ArrayList<VideoPopupItem> itemList = new ArrayList<>();
+	private final ArrayList<VideoPopupItem> itemList = new ArrayList<>();
 
 	public static void instanceStarted() {
 		Logger.info("instance starting...");
@@ -127,7 +93,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 	}
 
 	public static void instanceAlreadyRunning() {
-		Logger.info("instance already runninng");
+		Logger.info("instance already running");
 		ParamUtils.sendParam(paramMap);
 		System.exit(0);
 	}
@@ -266,7 +232,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 		saveDownloadList();
 		if (Config.getInstance().isExecAntivir()) {
 			if (!StringUtils.isNullOrEmptyOrBlank(Config.getInstance().getAntivirExe())) {
-				execAntivir();
+				execAntivirus();
 			}
 		}
 
@@ -777,7 +743,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		// BufferedReader reader = null;
 		try (BufferedReader reader = new BufferedReader(
-				new InputStreamReader(new FileInputStream(file), Charset.forName("UTF-8")))) {
+				new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
 			// reader = new BufferedReader(new InputStreamReader(new
 			// FileInputStream(file),
 			// Charset.forName("UTF-8")));
@@ -856,7 +822,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		String newLine = System.getProperty("line.separator");
 		try {
-			writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), Charset.forName("UTF-8")));
+			writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8));
 			writer.write(count + "");
 			writer.newLine();
 			for (String key : downloads.keySet()) {
@@ -949,7 +915,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 		if (ent == null) {
 			return;
 		}
-		DownloadQueue queue = null;
+		DownloadQueue queue;
 		if ("".equals(ent.getQueueId())) {
 			queue = qMgr.getDefaultQueue();
 		} else {
@@ -1031,13 +997,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 			return -1;
 		if (ent2 == null)
 			return 1;
-		if (ent1.getDate() > ent2.getDate()) {
-			return 1;
-		} else if (ent1.getDate() < ent2.getDate()) {
-			return -1;
-		} else {
-			return 0;
-		}
+		return Long.compare(ent1.getDate(), ent2.getDate());
 	}
 
 	private Iterator<String> getDownloadIds() {
@@ -1072,7 +1032,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 		}
 	}
 
-	public int deleteDownloads(ArrayList<String> ids, boolean outflie) {
+	public int deleteDownloads(ArrayList<String> ids, boolean outfile) {
 		int c = 0;
 		for (String id : ids) {
 			DownloadEntry ent = getEntry(id);
@@ -1092,7 +1052,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 							}
 						}
 					}
-					deleteFiles(ent, outflie);
+					deleteFiles(ent, outfile);
 					c++;
 				}
 			}
@@ -1173,18 +1133,18 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 			return false;
 		if (!ent.isStartedByUser())
 			return false;
-		PasswordAuthentication pauth = getCredential(msg, proxy);
-		if (pauth == null) {
+		PasswordAuthentication passwordAuth = getCredential(msg, proxy);
+		if (passwordAuth == null) {
 			return false;
 		}
 		if (proxy) {
-			Config.getInstance().setProxyUser(pauth.getUserName());
-			if (pauth.getPassword() != null) {
-				Config.getInstance().setProxyPass(new String(pauth.getPassword()));
+			Config.getInstance().setProxyUser(passwordAuth.getUserName());
+			if (passwordAuth.getPassword() != null) {
+				Config.getInstance().setProxyPass(new String(passwordAuth.getPassword()));
 			}
 		} else {
 			Logger.info("saving password for: " + msg);
-			CredentialManager.getInstance().addCredentialForHost(msg, pauth);
+			CredentialManager.getInstance().addCredentialForHost(msg, passwordAuth);
 		}
 		return true;
 	}
@@ -1205,8 +1165,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 
 		if (JOptionPane.showOptionDialog(null, obj, StringResource.get("PROMPT_CRED"), JOptionPane.OK_CANCEL_OPTION,
 				JOptionPane.PLAIN_MESSAGE, null, null, null) == JOptionPane.OK_OPTION) {
-			PasswordAuthentication pauth = new PasswordAuthentication(user.getText(), pass.getPassword());
-			return pauth;
+			return new PasswordAuthentication(user.getText(), pass.getPassword());
 		}
 		return null;
 	}
@@ -1217,7 +1176,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 		}
 	}
 
-	private void execAntivir() {
+	private void execAntivirus() {
 		XDMUtils.exec(Config.getInstance().getAntivirExe() + " "
 				+ (Config.getInstance().getAntivirCmd() == null ? "" : Config.getInstance().getAntivirCmd()));
 	}
