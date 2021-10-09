@@ -30,6 +30,8 @@ package xdman.network.http;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.tinylog.Logger;
+
 /**
  * Implements chunked transfer coding. The content is received in small chunks.
  * Entities transferred using this input stream can be of unlimited length.
@@ -254,6 +256,7 @@ public class ChunkedInputStream extends InputStream {
 				return Integer.parseInt(this.buffer.substring(0, separator)
 						.trim(), 16);
 			} catch (NumberFormatException e) {
+				Logger.error(e);
 				throw new IllegalArgumentException("Bad chunk header");
 			}
 		default:
