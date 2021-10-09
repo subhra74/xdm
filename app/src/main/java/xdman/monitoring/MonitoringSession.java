@@ -28,9 +28,11 @@ import xdman.preview.FFmpegStream;
 import xdman.preview.PreviewStream;
 import xdman.ui.components.VideoPopupItem;
 import xdman.util.FormatUtilities;
-import xdman.util.Logger;
+import xdman.util.IOUtils;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
+
+import org.tinylog.Logger;
 
 public class MonitoringSession implements Runnable {
 	// private String msg204 = "HTTP/1.1 204 No Content\r\n" + "Content-length:
@@ -62,12 +64,12 @@ public class MonitoringSession implements Runnable {
 		headers.setValue("content-type", "application/json");
 		headers.setValue("Cache-Control", "max-age=0, no-cache, must-revalidate");
 		res.setHeaders(headers);
-		Logger.log("Response set");
+		Logger.info("Response set");
 	}
 
 	private void onDownload(Request request, Response res) throws UnsupportedEncodingException {
 		try {
-			Logger.log(new String(request.getBody()));
+			Logger.info(new String(request.getBody()));
 			byte[] b = request.getBody();
 			ParsedHookData data = ParsedHookData.parse(b);
 			if (data.getUrl() != null && data.getUrl().length() > 0) {
@@ -86,14 +88,14 @@ public class MonitoringSession implements Runnable {
 	private void onVideoRetrieve(Request request, Response res) throws UnsupportedEncodingException {
 		try {
 			String content = new String(request.getBody(), "utf-8");
-			Logger.log("Video retrieve: " + content);
+			Logger.info("Video retrieve: " + content);
 			String lines[] = content.split("\r\n");
 			for (String line : lines) {
 				String id = line.trim();
 				for (VideoPopupItem item : XDMApp.getInstance().getVideoItemsList()) {
 					if (id.equals(item.getMetadata().getId())) {
 						HttpMetadata md = item.getMetadata().derive();
-						Logger.log("dash metdata ? " + (md instanceof DashMetadata));
+						Logger.info("dash metadata ? " + (md instanceof DashMetadata));
 						XDMApp.getInstance().addVideo(md, item.getFile());
 					}
 				}
@@ -105,7 +107,7 @@ public class MonitoringSession implements Runnable {
 
 	private void onLinksReceived(Request request, Response res) throws UnsupportedEncodingException {
 		try {
-			Logger.log(new String(request.getBody()));
+			Logger.info(new String(request.getBody()));
 			byte[] b = request.getBody();
 			List<ParsedHookData> list = ParsedHookData.parseLinks(b);
 			List<HttpMetadata> metadatas = new ArrayList<>();
@@ -128,15 +130,15 @@ public class MonitoringSession implements Runnable {
 		HeaderCollection headers = new HeaderCollection();
 		headers.setValue("Cache-Control", "max-age=0, no-cache, must-revalidate");
 		res.setHeaders(headers);
-		Logger.log("Response set for 204");
+		Logger.info("Response set for 204");
 	}
 
 	private void onVideo(Request request, Response res) throws UnsupportedEncodingException {
 		try {
-			Logger.log("video received");
-			Logger.log(new String(request.getBody()));
+			Logger.info("video received");
+			Logger.info(new String(request.getBody()));
 			if (!Config.getInstance().isShowVideoNotification()) {
-				Logger.log("video received but disabled");
+				Logger.info("video received but disabled");
 				return;
 			}
 			byte[] b = request.getBody();
@@ -280,16 +282,16 @@ public class MonitoringSession implements Runnable {
 		} else if (verb.startsWith("/preview")) {
 			onPreview(request, response);
 		} else if (verb.startsWith("/204")) {
-			Logger.log("sending 204...");
+			Logger.info("sending 204...");
 			on204(request, response);
 		} else if (verb.startsWith("/links")) {
-			Logger.log("sending 204...");
+			Logger.info("sending 204...");
 			onLinksReceived(request, response);
 		} else if (verb.startsWith("/item")) {
-			Logger.log("sending 204...");
+			Logger.info("sending 204...");
 			onVideoRetrieve(request, response);
 		} else if (verb.startsWith("/clear")) {
-			Logger.log("Clearing video list");
+			Logger.info("Clearing video list");
 			onVideoClear(request, response);
 		} else {
 			throw new IOException("invalid verb " + verb);
@@ -461,19 +463,8 @@ public class MonitoringSession implements Runnable {
 
 			}
 		} finally {
-			if (ps != null) {
-				try {
-					ps.close();
-				} catch (Exception e) {
-				}
-			}
-			if (ff != null) {
-				try {
-					System.out.println("Closing FFStream");
-					ff.close();
-				} catch (Exception e) {
-				}
-			}
+			IOUtils.closeFlow(ps);
+			IOUtils.closeFlow(ff);
 		}
 	}
 
@@ -489,26 +480,15 @@ public class MonitoringSession implements Runnable {
 				this.response.write(outStream);
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 		cleanup();
 	}
 
 	private void cleanup() {
-		try {
-			inStream.close();
-		} catch (Exception e) {
-		}
-
-		try {
-			outStream.close();
-		} catch (Exception e) {
-		}
-
-		try {
-			sock.close();
-		} catch (Exception e) {
-		}
+		IOUtils.closeFlow(this.inStream);
+		IOUtils.closeFlow(this.outStream);
+		IOUtils.closeFlow(this.sock);
 	}
 
 	@Override
@@ -521,7 +501,7 @@ public class MonitoringSession implements Runnable {
 			URL url = new URL(data.getUrl());
 			String host = url.getHost();
 			if (!(host.contains("youtube.com") || host.contains("googlevideo.com"))) {
-				Logger.log("non yt host");
+				Logger.warn("non yt host");
 				return false;
 			}
 			String type = data.getContentType();
@@ -529,7 +509,7 @@ public class MonitoringSession implements Runnable {
 				type = "";
 			}
 			if (!(type.contains("audio/") || type.contains("video/") || type.contains("application/octet"))) {
-				Logger.log("non yt type");
+				Logger.warn("non yt type");
 				return false;
 			}
 			String low_path = data.getUrl().toLowerCase();
@@ -581,7 +561,7 @@ public class MonitoringSession implements Runnable {
 				}
 				if (itag != 0) {
 					if (YtUtil.isNormalVideo(itag)) {
-						Logger.log("Normal vid");
+						Logger.info("Normal vid");
 						return false;
 					}
 				}
@@ -595,7 +575,7 @@ public class MonitoringSession implements Runnable {
 				info.mime = mime;
 				info.headers = data.getRequestHeaders();
 
-				Logger.log("processing yt mime: " + mime + " id: " + id + " clen: " + clen + " itag: " + itag);
+				Logger.info("processing yt mime: " + mime + " id: " + id + " clen: " + clen + " itag: " + itag);
 
 				if (YtUtil.addToQueue(info)) {
 					DASH_INFO di = YtUtil.getDASHPair(info);
@@ -614,7 +594,7 @@ public class MonitoringSession implements Runnable {
 						} else {
 							file = XDMUtils.createSafeFileName(file);
 						}
-						Logger.log("file: " + file + " url1: " + dm.getUrl() + " url2: " + dm.getUrl2() + " len1: "
+						Logger.info("file: " + file + " url1: " + dm.getUrl() + " url2: " + dm.getUrl2() + " len1: "
 								+ dm.getLen1() + " len2: " + dm.getLen2());
 
 						String szStr = null;
@@ -642,7 +622,7 @@ public class MonitoringSession implements Runnable {
 				return true;
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 		return false;
 	}
@@ -659,31 +639,32 @@ public class MonitoringSession implements Runnable {
 
 		try {
 			if (contentType.contains("mpegurl") || ".m3u8".equalsIgnoreCase(ext) || contentType.contains("m3u8")) {
-				Logger.log("Downloading m3u8 manifest");
+				Logger.info("Downloading m3u8 manifest");
 				manifestfile = downloadMenifest(data);
 				return M3U8Handler.handle(manifestfile, data);
 			}
 			if (contentType.contains("f4m") || ".f4m".equalsIgnoreCase(ext)) {
-				Logger.log("Downloading f4m manifest");
+				Logger.info("Downloading f4m manifest");
 				manifestfile = downloadMenifest(data);
 				return F4mHandler.handle(manifestfile, data);
 			}
 			if (url.contains(".facebook.com") && url.toLowerCase().contains("pagelet")) {
-				Logger.log("Downloading fb manifest");
+				Logger.info("Downloading fb manifest");
 				manifestfile = downloadMenifest(data);
 				return FBHandler.handle(manifestfile, data);
 			}
 			if (url.contains("player.vimeo.com") && contentType.toLowerCase().contains("json")) {
-				Logger.log("Downloading video manifest");
+				Logger.info("Downloading video manifest");
 				manifestfile = downloadMenifest(data);
 				return VimeoHandler.handle(manifestfile, data);
 			}
 			if (url.contains("instagram.com/p/")) {
-				Logger.log("Downloading video manifest");
+				Logger.info("Downloading video manifest");
 				manifestfile = downloadMenifest(data);
 				return InstagramHandler.handle(manifestfile, data);
 			}
 		} catch (Exception e) {
+			Logger.info(e);
 		} finally {
 			if (manifestfile != null) {
 				manifestfile.delete();
@@ -723,7 +704,7 @@ public class MonitoringSession implements Runnable {
 		file += "." + ext;
 
 		if (data.getContentLength() < Config.getInstance().getMinVidSize()) {
-			Logger.log("video less than min size");
+			Logger.info("video less than min size");
 			return;
 		}
 
@@ -749,7 +730,7 @@ public class MonitoringSession implements Runnable {
 		JavaHttpClient client = null;
 		OutputStream out = null;
 		try {
-			Logger.log("downloading manifest: " + data.getUrl());
+			Logger.info("downloading manifest: " + data.getUrl());
 			client = new JavaHttpClient(data.getUrl());
 			Iterator<HttpHeader> headers = data.getRequestHeaders().getAll();
 			boolean hasAccept = false;
@@ -775,27 +756,27 @@ public class MonitoringSession implements Runnable {
 			client.setFollowRedirect(true);
 			client.connect();
 			int resp = client.getStatusCode();
-			Logger.log("manifest download response: " + resp);
+			Logger.info("manifest download response: " + resp);
 			if (resp == 206 || resp == 200) {
 				InputStream in = client.getInputStream();
 				File tmpFile = new File(Config.getInstance().getTemporaryFolder(), UUID.randomUUID().toString());
 				long len = client.getContentLength();
 				out = new FileOutputStream(tmpFile);
 				XDMUtils.copyStream(in, out, len);
-				Logger.log("manifest download successfull");
+				Logger.info("manifest download successful");
 
 				return tmpFile;
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		} finally {
-			try {
-				out.close();
-			} catch (Exception e) {
-			}
-			try {
-				client.dispose();
-			} catch (Exception e) {
+			IOUtils.closeFlow(out);
+			if (client != null) {
+				try {
+					client.dispose();
+				} catch (Exception e) {
+					Logger.error(e);
+				}
 			}
 		}
 		return null;
