@@ -36,8 +36,9 @@ import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
-import xdman.util.Logger;
 import xdman.util.XDMUtils;
+
+import org.tinylog.Logger;
 
 public class BatchVideoWnd extends JDialog implements ActionListener {
 	private static final long serialVersionUID = -6712422188220449618L;
@@ -67,7 +68,7 @@ public class BatchVideoWnd extends JDialog implements ActionListener {
 				}
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 
 		setIconImage(ImageResource.getImage("icon.png"));
@@ -260,7 +261,7 @@ public class BatchVideoWnd extends JDialog implements ActionListener {
 	}
 
 	private void queueOptionUpdated() {
-		System.out.println("called");
+		Logger.info("called");
 		if (cmbQueOpts.getSelectedIndex() == 0) {
 			lblName.setVisible(true);
 			txtQName.setVisible(true);
