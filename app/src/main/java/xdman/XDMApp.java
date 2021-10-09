@@ -222,13 +222,13 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 		}
 
 		Config.getInstance().setAutoShutdown(false);
-		listChangeListeners = new ArrayList<ListChangeListener>();
-		downloads = new HashMap<String, DownloadEntry>();
-		downloaders = new HashMap<String, Downloader>();
-		downloadWindows = new HashMap<String, DownloadWindow>();
+		listChangeListeners = new ArrayList<>();
+		downloads = new HashMap<>();
+		downloaders = new HashMap<>();
+		downloadWindows = new HashMap<>();
 		loadDownloadList();
 		lastSaved = System.currentTimeMillis();
-		pendingDownloads = new ArrayList<String>();
+		pendingDownloads = new ArrayList<>();
 		qMgr = QueueManager.getInstance();
 		qMgr.fixCorruptEntries(getDownloadIds(), this);
 		QueueScheduler.getInstance().start();
@@ -676,7 +676,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 	}
 
 	public ArrayList<String> getDownloadList(int category, int state, String searchText, String queueId) {
-		ArrayList<String> idList = new ArrayList<String>();
+		ArrayList<String> idList = new ArrayList<>();
 		for (String key : downloads.keySet()) {
 			DownloadEntry ent = downloads.get(key);
 			if (state == XDMConstants.ALL || state == (ent.getState() == XDMConstants.FINISHED ? XDMConstants.FINISHED
@@ -965,7 +965,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 	private void processPendingRequests() {
 		int activeCount = getActiveDownloadCount();
 		int maxDownloadCount = Config.getInstance().getMaxDownloads();
-		List<String> tobeStartedIds = new ArrayList<String>();
+		List<String> tobeStartedIds = new ArrayList<>();
 		if (maxDownloadCount - activeCount > 0) {
 			for (int i = 0; i < Math.min(maxDownloadCount, pendingDownloads.size()); i++) {
 				String ent = pendingDownloads.get(i);
@@ -1158,7 +1158,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 
 	public void deleteCompleted() {
 		Iterator<String> allIds = downloads.keySet().iterator();
-		ArrayList<String> idList = new ArrayList<String>();
+		ArrayList<String> idList = new ArrayList<>();
 		while (allIds.hasNext()) {
 			String id = allIds.next();
 			DownloadEntry ent = downloads.get(id);
