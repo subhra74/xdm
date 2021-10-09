@@ -71,9 +71,10 @@ import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 import xdman.util.FFmpegDownloader;
-import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
+
+import org.tinylog.Logger;
 
 public class MainWindow extends XDMFrame implements ActionListener {
 	private static final long serialVersionUID = -3119522563540700138L;
@@ -140,7 +141,7 @@ public class MainWindow extends XDMFrame implements ActionListener {
 	private void filterQueue(String name, Config config) {
 		String qName = getQueueName(name);
 		config.setQueueIdFilter(qName);
-		System.out.println("filter queue name: " + qName);
+		Logger.info("filter queue name: " + qName);
 
 		filter();
 		String text = StringResource.get("LBL_ALL_QUEUE");
@@ -264,7 +265,7 @@ public class MainWindow extends XDMFrame implements ActionListener {
 				int ret = MessageBox.show(this, "sample title",
 						"sample textdgdfgdfgdfghdfh gfhsdgh gfgfh dfgdfqwewrqwerwerqwerqwerwerwqerqwerqwerqwerwerwegfterj jgh ker gwekl hwgklerhg ek hrkjlwhlk kj hgeklgh jkle herklj gheklwerjgh sample textdgdfgdfgdfghdfh gfhsdgh gfgfh dfgdfqwewrqwerwerqwerqwerwerwqerqwerqwerqwerwerwegfterj jgh ker gwekl hwgklerhg ek hrkjlwhlk kj hgeklgh jkle herklj gheklwerjgh",
 						MessageBox.OK_OPTION, MessageBox.OK);
-				System.out.println("After: " + ret);
+				Logger.info("After: " + ret);
 				// new DownloadCompleteWnd().setVisible(true);
 			} else if ("MENU_OPTIONS".equals(name) || "OPTIONS".equals(name)) {
 				SettingsPage.getInstance().showPanel(this, "PG_SETTINGS");
@@ -892,7 +893,7 @@ public class MainWindow extends XDMFrame implements ActionListener {
 		try {
 			Taskbar.getTaskbar().setIconImage(ImageResource.getImage("icon.png"));
 		} catch (final UnsupportedOperationException | SecurityException e) {
-			System.out.println("Error setting Dock icon");
+			Logger.error(e, "Error setting Dock icon");
 		}
 		/* Re-open XDM from dock on macOS */
 		if (XDMUtils.detectOS() == XDMUtils.MAC) {
@@ -1065,7 +1066,7 @@ public class MainWindow extends XDMFrame implements ActionListener {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				if (e.getClickCount() == 2) {
-					System.out.println("Opening file");
+					Logger.info("Opening file");
 					openFile();
 				}
 			}
@@ -1152,7 +1153,7 @@ public class MainWindow extends XDMFrame implements ActionListener {
 				rp.setDetails(md);
 				rp.showPanel();
 			} catch (Exception e2) {
-				Logger.log(e2);
+				Logger.error(e2);
 			}
 		}
 	}
@@ -1164,11 +1165,11 @@ public class MainWindow extends XDMFrame implements ActionListener {
 				try {
 					XDMUtils.openFile(ent.getFile(), XDMApp.getInstance().getFolder(ent));
 				} catch (FileNotFoundException e) {
-					Logger.log(e);
+					Logger.error(e);
 					MessageBox.show(this, StringResource.get("ERR_MSG_FILE_NOT_FOUND"),
 							StringResource.get("ERR_MSG_FILE_NOT_FOUND_MSG"), MessageBox.OK, MessageBox.OK);
 				} catch (Exception e) {
-					Logger.log(e);
+					Logger.error(e);
 				}
 			}
 		}
@@ -1181,11 +1182,11 @@ public class MainWindow extends XDMFrame implements ActionListener {
 				try {
 					XDMUtils.openFolder(ent.getFile(), XDMApp.getInstance().getFolder(ent));
 				} catch (FileNotFoundException e) {
-					Logger.log(e);
+					Logger.error(e);
 					MessageBox.show(this, StringResource.get("ERR_MSG_FILE_NOT_FOUND"),
 							StringResource.get("ERR_MSG_FILE_NOT_FOUND_MSG"), MessageBox.OK, MessageBox.OK);
 				} catch (Exception e) {
-					Logger.log(e);
+					Logger.error(e);
 				}
 			}
 		}
@@ -1220,7 +1221,7 @@ public class MainWindow extends XDMFrame implements ActionListener {
 				return;
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 	}
 
@@ -1262,12 +1263,13 @@ public class MainWindow extends XDMFrame implements ActionListener {
 			}
 			langMap.load(new InputStreamReader(in, Charset.forName("utf-8")));
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		} finally {
 			if (in != null) {
 				try {
 					in.close();
 				} catch (Exception e2) {
+					Logger.error(e2);
 				}
 			}
 		}
