@@ -31,9 +31,9 @@ import xdman.downloaders.metadata.HttpMetadata;
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.util.FFExtractCallback;
-import xdman.util.Logger;
 import xdman.util.XDMUtils;
 
+import org.tinylog.Logger;
 
 import static xdman.util.XDMUtils.getScaledInt;
 
@@ -119,20 +119,20 @@ public class ComponentInstaller extends JDialog implements DownloadListener, FFE
 	}
 
 	private void deleteTmpFiles(String id) {
-		Logger.log("Deleting metadata for " + id);
+		Logger.info("Deleting metadata for " + id);
 		File mf = new File(Config.getInstance().getMetadataFolder(), id);
 		boolean deleted = mf.delete();
-		Logger.log("Deleted manifest " + id + " " + deleted);
+		Logger.info("Deleted manifest " + id + " " + deleted);
 		File df = new File(Config.getInstance().getTemporaryFolder(), id);
 		File[] files = df.listFiles();
 		if (files != null && files.length > 0) {
 			for (File f : files) {
 				deleted = f.delete();
-				Logger.log("Deleted tmp file " + id + " " + deleted);
+				Logger.info("Deleted tmp file " + id + " " + deleted);
 			}
 		}
 		deleted = df.delete();
-		Logger.log("Deleted tmp folder " + id + " " + deleted);
+		Logger.info("Deleted tmp folder " + id + " " + deleted);
 	}
 
 	private void extractFFmpeg() {
@@ -162,7 +162,7 @@ public class ComponentInstaller extends JDialog implements DownloadListener, FFE
 			}
 			input.delete();
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 			JOptionPane.showMessageDialog(this, "Component installation failed");
 		} finally {
 			try {
@@ -170,7 +170,7 @@ public class ComponentInstaller extends JDialog implements DownloadListener, FFE
 				if (out != null)
 					out.close();
 			} catch (Exception e) {
-				Logger.log(e);
+				Logger.error(e);
 			}
 		}
 	}
