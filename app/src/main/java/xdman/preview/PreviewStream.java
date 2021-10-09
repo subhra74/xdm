@@ -9,6 +9,7 @@ import java.util.List;
 import xdman.XDMApp;
 
 import org.tinylog.Logger;
+import xdman.util.IOUtils;
 
 public class PreviewStream extends InputStream {
 	List<Chunk> chunks;
@@ -55,10 +56,8 @@ public class PreviewStream extends InputStream {
 		}
 		// System.out.println("data read : " + r);
 		if (r == -1) {
-			if (chunkStream != null) {
-				chunkStream.close();
-				chunkStream = null;
-			}
+			IOUtils.closeFlow(chunkStream);
+			chunkStream = null;
 			chunks = ChunkLoader.load(id, type);
 			Chunk c = findCurrentChunk();
 			if (read >= c.length) {
@@ -69,7 +68,7 @@ public class PreviewStream extends InputStream {
 				read = 0;
 				r = chunkStream.read(buf, off, len);
 				if (r == -1) {
-					chunkStream.close();
+					IOUtils.closeFlow(chunkStream);
 					return -1;
 				}
 				read += r;
@@ -143,10 +142,6 @@ public class PreviewStream extends InputStream {
 
 	@Override
 	public void close() throws IOException {
-		try {
-			chunkStream.close();
-		} catch (Exception e) {
-			// TODO: handle exception
-		}
+		IOUtils.closeFlow(chunkStream);
 	}
 }
