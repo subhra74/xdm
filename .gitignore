@@ -3,3 +3,4 @@ app/.classpath
 app/.project
 app/.settings/*
 app/target/*
+app/.idea/
