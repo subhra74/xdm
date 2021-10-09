@@ -2136,15 +2136,15 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		chkHaltAfterFinish.setSelected(config.isAutoShutdown());
 		chkKeepAwake.setSelected(config.isKeepAwake());
 		chkExecCmd.setSelected(config.isExecCmd());
-		chkExecAntivir.setSelected(config.isExecAntivir());
+		chkExecAntivir.setSelected(config.isExecAntivirus());
 		chkAutoStart.setSelected(XDMUtils.isAlreadyAutoStart());
 		chkShowTray.setSelected(!config.isHideTray());
 		if (!StringUtils.isNullOrEmptyOrBlank(config.getCustomCmd()))
 			txtCustomCmd.setText(config.getCustomCmd());
-		if (!StringUtils.isNullOrEmptyOrBlank(config.getAntivirCmd()))
-			txtAntivirArgs.setText(config.getAntivirCmd());
-		if (!StringUtils.isNullOrEmptyOrBlank(config.getAntivirExe()))
-			txtAntivirCmd.setText(config.getAntivirExe());
+		if (!StringUtils.isNullOrEmptyOrBlank(config.getAntivirusCmd()))
+			txtAntivirArgs.setText(config.getAntivirusCmd());
+		if (!StringUtils.isNullOrEmptyOrBlank(config.getAntivirusExe()))
+			txtAntivirCmd.setText(config.getAntivirusExe());
 	}
 
 	private void saveAdvSettings() {
@@ -2152,7 +2152,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		config.setAutoShutdown(chkHaltAfterFinish.isSelected());
 		config.setKeepAwake(chkKeepAwake.isSelected());
 		config.setExecCmd(chkExecCmd.isSelected());
-		config.setExecAntivir(chkExecAntivir.isSelected());
+		config.setExecAntivirus(chkExecAntivir.isSelected());
 		config.setHideTray(!chkShowTray.isSelected());
 		if (chkAutoStart.isSelected()) {
 			XDMUtils.addToStartup();
@@ -2163,9 +2163,9 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		String customCmd = txtCustomCmd.getText();
 		config.setCustomCmd(customCmd);
 		String antivirExec = txtAntivirCmd.getText();
-		config.setAntivirExe(antivirExec);
+		config.setAntivirusExe(antivirExec);
 		String antivirCmd = txtAntivirArgs.getText();
-		config.setAntivirCmd(antivirCmd);
+		config.setAntivirusCmd(antivirCmd);
 	}
 
 	private JRadioButton createRadioButton(String name, Font font) {

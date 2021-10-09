@@ -230,8 +230,8 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 		}
 		notifyListeners(null);
 		saveDownloadList();
-		if (Config.getInstance().isExecAntivir()) {
-			if (!StringUtils.isNullOrEmptyOrBlank(Config.getInstance().getAntivirExe())) {
+		if (Config.getInstance().isExecAntivirus()) {
+			if (!StringUtils.isNullOrEmptyOrBlank(Config.getInstance().getAntivirusExe())) {
 				execAntivirus();
 			}
 		}
@@ -1177,8 +1177,8 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 	}
 
 	private void execAntivirus() {
-		XDMUtils.exec(Config.getInstance().getAntivirExe() + " "
-				+ (Config.getInstance().getAntivirCmd() == null ? "" : Config.getInstance().getAntivirCmd()));
+		XDMUtils.exec(Config.getInstance().getAntivirusExe() + " "
+				+ (Config.getInstance().getAntivirusCmd() == null ? "" : Config.getInstance().getAntivirusCmd()));
 	}
 
 	private void updateFileName(DownloadEntry ent) {
