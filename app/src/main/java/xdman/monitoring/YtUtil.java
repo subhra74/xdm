@@ -3,7 +3,8 @@ package xdman.monitoring;
 import java.util.*;
 
 import xdman.network.http.HeaderCollection;
-import xdman.util.Logger;
+
+import org.tinylog.Logger;
 
 public class YtUtil {
 	static DASH_INFO lastVid;
@@ -34,7 +35,7 @@ public class YtUtil {
 					}
 				}
 				videoQueue.add(info);
-				Logger.log("video added " + videoQueue.size());
+				Logger.info("video added " + videoQueue.size());
 
 				return true;
 			} else {
@@ -47,7 +48,7 @@ public class YtUtil {
 					}
 				}
 				audioQueue.add(info);
-				Logger.log("added added " + audioQueue.size());
+				Logger.info("added added " + audioQueue.size());
 				return true;
 			}
 		}
@@ -61,7 +62,7 @@ public class YtUtil {
 				for (int i = audioQueue.size() - 1; i >= 0; i--) {
 					DASH_INFO di = audioQueue.get(i);
 					if (di.id.equals(info.id)) {
-						Logger.log("found matching audio");
+						Logger.info("found matching audio");
 						return di;
 					}
 				}
@@ -75,7 +76,7 @@ public class YtUtil {
 							return null;
 						}
 						lastVid = di;
-						Logger.log("found matching video");
+						Logger.info("found matching video");
 						return di;
 					}
 				}
