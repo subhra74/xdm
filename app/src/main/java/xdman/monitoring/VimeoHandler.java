@@ -8,9 +8,10 @@ import java.io.InputStreamReader;
 
 import xdman.XDMApp;
 import xdman.downloaders.metadata.HttpMetadata;
-import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
+
+import org.tinylog.Logger;
 
 public class VimeoHandler {
 
@@ -67,7 +68,7 @@ public class VimeoHandler {
 				}
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 		return false;
 	}
@@ -82,15 +83,15 @@ public class VimeoHandler {
 				String val = arr[i].substring(index + 1).replace("\"", "");
 				if (key.equals("url")) {
 					url = val;
-					Logger.log(url);
+					Logger.info(url);
 				}
 				if (key.equals("quality")) {
 					quality = val;
-					Logger.log(quality);
+					Logger.info(quality);
 				}
 				if (key.equals("mime")) {
 					type = val;
-					Logger.log(type);
+					Logger.info(type);
 				}
 			}
 		}
