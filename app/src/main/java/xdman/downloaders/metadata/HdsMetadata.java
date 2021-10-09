@@ -1,7 +1,7 @@
 package xdman.downloaders.metadata;
 
+import org.tinylog.Logger;
 import xdman.XDMConstants;
-import xdman.util.Logger;
 
 public class HdsMetadata extends HttpMetadata {
 	private int bitRate;
@@ -37,7 +37,7 @@ public class HdsMetadata extends HttpMetadata {
 
 	@Override
 	public HttpMetadata derive() {
-		Logger.log("derive hds metadata");
+		Logger.info("derive hds metadata");
 		HdsMetadata md = new HdsMetadata();
 		md.setHeaders(this.getHeaders());
 		md.setUrl(this.getUrl());

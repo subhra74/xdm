@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 
+import org.tinylog.Logger;
 import xdman.util.StringUtils;
 
 public class MediaFormats {
@@ -68,7 +69,7 @@ public class MediaFormats {
 
 			}
 		} catch (RuntimeException | IOException e) {
-			// TODO: handle exception
+			Logger.error(e);
 		}
 
 		// supportedFormats = new MediaFormat[11];

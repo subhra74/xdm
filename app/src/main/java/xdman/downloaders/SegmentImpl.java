@@ -5,8 +5,9 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.UUID;
 
+import org.tinylog.Logger;
 import xdman.Config;
-import xdman.util.Logger;
+import xdman.util.IOUtils;
 
 public class SegmentImpl implements Segment {
 
@@ -35,7 +36,7 @@ public class SegmentImpl implements Segment {
 		// FileOutputStream(new
 		// File(folder,
 		// id));
-		Logger.log("File opened " + id);
+		Logger.info("File opened " + id);
 	}
 
 	public SegmentImpl(String folder, String id, long off, long len, long dwn) throws IOException {
@@ -52,12 +53,10 @@ public class SegmentImpl implements Segment {
 		try {
 			outStream = new RandomAccessFile(new File(folder, id), "rw");
 			outStream.seek(dwn);
-			Logger.log("File opened " + id);
+			Logger.error("File opened " + id);
 		} catch (IOException e) {
-			Logger.log(e);
-			if (outStream != null) {
-				outStream.close();
-			}
+			Logger.error(e);
+			IOUtils.closeFlow(this.outStream);
 			throw new IOException(e);
 		}
 		this.config = Config.getInstance();
@@ -91,11 +90,7 @@ public class SegmentImpl implements Segment {
 			length = downloaded;
 		}
 		if (cl.chunkComplete(id)) {
-			try {
-				outStream.close();
-			} catch (IOException e) {
-				Logger.log(e);
-			}
+			IOUtils.closeFlow(this.outStream);
 			channel = null;
 			if (cl != null) {
 				if (cl.shouldCleanup()) {
@@ -125,15 +120,11 @@ public class SegmentImpl implements Segment {
 		if (stop)
 			return;
 		if (outStream != null) {
-			try {
-				outStream.close();
-				outStream = null;
-			} catch (IOException e) {
-				Logger.log(e);
-			}
+			IOUtils.closeFlow(this.outStream);
+			this.outStream = null;
 		}
 		this.errorCode = channel.getErrorCode();
-		Logger.log(id + " notifying failure " + this.channel);
+		Logger.warn(id + " notifying failure " + this.channel);
 		this.channel = null;
 		cl.chunkFailed(id, reason);
 		cl = null;
@@ -194,11 +185,7 @@ public class SegmentImpl implements Segment {
 			channel.stop();
 		}
 		if (outStream != null) {
-			try {
-				outStream.close();
-			} catch (IOException e) {
-				Logger.log(e);
-			}
+			IOUtils.closeFlow(this.outStream);
 		}
 	}
 
@@ -258,7 +245,7 @@ public class SegmentImpl implements Segment {
 				}
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 	}
 
@@ -313,6 +300,7 @@ public class SegmentImpl implements Segment {
 			if (isFinished())
 				return 0;
 		} catch (Exception e) {
+			Logger.error(e);
 		}
 		return transferRate;
 	}
@@ -348,12 +336,10 @@ public class SegmentImpl implements Segment {
 		try {
 			outStream = new RandomAccessFile(new File(folder, id), "rw");
 			outStream.seek(downloaded);
-			Logger.log("File opened " + id);
+			Logger.info("File opened " + id);
 		} catch (IOException e) {
-			Logger.log(e);
-			if (outStream != null) {
-				outStream.close();
-			}
+			Logger.error(e);
+			IOUtils.closeFlow(this.outStream);
 			throw new IOException(e);
 		}
 	}

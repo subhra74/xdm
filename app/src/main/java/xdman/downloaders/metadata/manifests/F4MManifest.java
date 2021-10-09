@@ -9,6 +9,7 @@ import javax.xml.namespace.NamespaceContext;
 import javax.xml.parsers.*;
 import javax.xml.xpath.*;
 
+import org.tinylog.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -16,7 +17,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 import xdman.util.Base64;
-import xdman.util.Logger;
+import xdman.util.IOUtils;
 import xdman.util.StringUtils;
 
 public class F4MManifest {
@@ -62,13 +63,13 @@ public class F4MManifest {
 		}
 		// byte[] fragmentData = new byte[0];
 		// lastFrag = fragNum;
-		System.out.println(fragNum + " " + fragCount);
+		Logger.info(fragNum + " " + fragCount);
 		if (fragNum >= fragCount)
 			throw new Exception("No fragment available for downloading");
-		Logger.log("[F4M Parser: selectedMedia.url: " + selectedMedia.url);
+		Logger.info("[F4M Parser: selectedMedia.url: " + selectedMedia.url);
 
 		if (selectedMedia.getUrl().startsWith("http")) {
-			System.out.println("============ " + selectedMedia.getUrl());
+			Logger.info("============ " + selectedMedia.getUrl());
 			fragUrl = selectedMedia.getUrl();
 		} else {
 			if (baseUrl.endsWith("/")) {
@@ -77,11 +78,11 @@ public class F4MManifest {
 				fragUrl = baseUrl + "/" + selectedMedia.getUrl();
 			}
 		}
-		Logger.log("fragUrl: " + fragUrl + "\nfragCount: " + fragCount + " baseUrl: " + baseUrl);
+		Logger.info("fragUrl: " + fragUrl + "\nfragCount: " + fragCount + " baseUrl: " + baseUrl);
 
 		// int fragsToDownload = fragCount - fragNum;
 		while (fragNum < fragCount) {
-			Logger.log("Remaining: " + (fragCount - fragNum));
+			Logger.info("Remaining: " + (fragCount - fragNum));
 			fragNum++;
 			segNum = getSegmentFromFragment(fragNum);
 
@@ -98,7 +99,7 @@ public class F4MManifest {
 				}
 			}
 			if (discontinuity != 0) {
-				Logger.log("Skipping fragment " + fragNum + " due to discontinuity, Type: " + discontinuity);
+				Logger.info("Skipping fragment " + fragNum + " due to discontinuity, Type: " + discontinuity);
 				continue;
 			}
 			String ___url = getFragmentUrl(segNum, fragNum);// +(string.IsNullOrEmpty(query)
@@ -122,7 +123,7 @@ public class F4MManifest {
 			}
 
 			// query = query + (query.Contains("?") ? "&" + pv : "?" + pv);
-			Logger.log(___url);
+			Logger.info(___url);
 			urlList.add(___url);
 		}
 
@@ -155,8 +156,9 @@ public class F4MManifest {
 					}
 				}
 				baseUrl = sb.toString();
-				System.out.println("*** URL: " + baseUrl);
+				Logger.info("*** URL: " + baseUrl);
 			} catch (Exception e) {
+				Logger.error(e);
 			}
 		}
 
@@ -206,7 +208,7 @@ public class F4MManifest {
 		}
 
 		if (media == null) {
-			Logger.log("Could not find media");
+			Logger.warn("Could not find media");
 			return;
 		}
 
@@ -228,11 +230,11 @@ public class F4MManifest {
 			fragsPerSeg = fragCount;
 		if (live) {
 			fromTimestamp = -1;
-			Logger.log("F4M Parser: [Live stream]");
+			Logger.info("F4M Parser: [Live stream]");
 		} else {
-			Logger.log("F4M Parser: [Not Live stream]");
+			Logger.warn("F4M Parser: [Not Live stream]");
 		}
-		Logger.log("F4M Parser: Start- " + start);
+		Logger.info("F4M Parser: Start- " + start);
 		selectedMedia = media;
 	}
 
@@ -265,6 +267,7 @@ public class F4MManifest {
 
 			return bitRateArr;
 		} catch (Exception e) {
+			Logger.error(e);
 		}
 		return null;
 	}
@@ -279,14 +282,9 @@ public class F4MManifest {
 			Document doc = builder.parse(new InputSource(r));
 			return doc;
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		} finally {
-			if (r != null) {
-				try {
-					r.close();
-				} catch (Exception ee) {
-				}
-			}
+			IOUtils.closeFlow(r);
 		}
 		return null;
 	}
@@ -344,7 +342,7 @@ public class F4MManifest {
 	}
 
 	private void parseBootstrapBox(byte[] bootstrapInfo, int pos) {
-		System.out.println("parsing abst");
+		Logger.info("parsing abst");
 		live = false;
 		// isMetadata = true;
 		readByte(bootstrapInfo, pos);
@@ -372,7 +370,7 @@ public class F4MManifest {
 		bPtr.setPos(pos);
 
 		String movieIdentifier = readString(bPtr);
-		Logger.log("[F4M Parser- movieIdentifier: " + movieIdentifier);
+		Logger.info("[F4M Parser- movieIdentifier: " + movieIdentifier);
 		pos = bPtr.getPos();
 
 		int serverEntryCount = readByte(bootstrapInfo, pos++);
@@ -418,7 +416,7 @@ public class F4MManifest {
 			pos = ptr.getPos();
 			boxSize = boxInfo.getBoxSize();
 			String boxType = boxInfo.getBoxType();
-			Logger.log("555 " + boxType + " " + boxSize);
+			Logger.info("555 " + boxType + " " + boxSize);
 			if (boxType.equals("afrt"))
 				parseAfrtBox(bootstrapInfo, pos);
 			pos += (int) boxSize;
@@ -428,9 +426,9 @@ public class F4MManifest {
 	}
 
 	private void parseSegAndFragTable() {
-		Logger.log("parseSegAndFragTable called");
+		Logger.info("parseSegAndFragTable called");
 		if ((segTable.size() == 0) || (fragTable.size() == 0)) {
-			System.out.println("return as zero " + segTable.size() + " " + fragTable.size());
+			Logger.info("return as zero " + segTable.size() + " " + fragTable.size());
 			return;
 		}
 		Segment firstSegment = segTable.get(0);
@@ -490,7 +488,7 @@ public class F4MManifest {
 	}
 
 	private void parseAsrtBox(byte[] asrt, int pos) {
-		System.out.println("parsing asrt");
+		Logger.info("parsing asrt");
 		readByte(asrt, (int) pos);
 		readInt24(asrt, pos + 1);
 		int qualityEntryCount = readByte(asrt, pos + 4);
@@ -505,7 +503,7 @@ public class F4MManifest {
 		}
 		int segCount = (int) readInt32(asrt, pos);
 		pos += 4;
-		System.out.println("segcount: " + segCount);
+		Logger.info("segcount: " + segCount);
 		for (int i = 0; i < segCount; i++) {
 			int firstSegment = (int) readInt32(asrt, pos);
 			Segment segEntry = new Segment();
@@ -519,7 +517,7 @@ public class F4MManifest {
 	}
 
 	private void parseAfrtBox(byte[] afrt, int pos) {
-		System.out.println("Parse afrt");
+		Logger.info("Parse afrt");
 		fragTable.clear();
 		readByte(afrt, pos);
 		readInt24(afrt, pos + 1);

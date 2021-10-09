@@ -1,8 +1,8 @@
 package xdman.downloaders.metadata;
 
+import org.tinylog.Logger;
 import xdman.XDMConstants;
 import xdman.network.http.HeaderCollection;
-import xdman.util.Logger;
 
 public class DashMetadata extends HttpMetadata {
 	private String url2;
@@ -11,7 +11,7 @@ public class DashMetadata extends HttpMetadata {
 
 	@Override
 	public HttpMetadata derive() {
-		Logger.log("derive dash metadata");
+		Logger.info("derive dash metadata");
 		DashMetadata md = new DashMetadata();
 		md.setHeaders(this.getHeaders());
 		md.setHeaders2(this.getHeaders2());

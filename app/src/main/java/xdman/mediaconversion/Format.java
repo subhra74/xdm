@@ -1,5 +1,7 @@
 package xdman.mediaconversion;
 
+import org.tinylog.Logger;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -11,6 +13,7 @@ public class Format {
 		try {
 			Double.parseDouble(s);
 		} catch (Exception e) {
+			Logger.error(e);
 			return null;
 		}
 		return s + "k";

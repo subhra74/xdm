@@ -9,9 +9,10 @@ import java.util.ArrayList;
 
 import xdman.XDMApp;
 import xdman.downloaders.metadata.HttpMetadata;
-import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
+
+import org.tinylog.Logger;
 
 public class FBHandler {
 //	public static void main(String[] args) {
@@ -31,7 +32,7 @@ public class FBHandler {
 				buf.append(ln + "\n");
 			}
 			in.close();
-			Logger.log("Parsing facebook page...");
+			Logger.info("Parsing facebook page...");
 			ArrayList<String> sdUrls1 = findURL("sd_src", buf);
 			ArrayList<String> sdUrls2 = findURL("sd_src_no_ratelimit", buf);
 			ArrayList<String> hdUrls1 = findURL("hd_src", buf);
@@ -78,7 +79,7 @@ public class FBHandler {
 			}
 			return true;
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 			return false;
 		}
 	}
@@ -113,7 +114,7 @@ public class FBHandler {
 				index++;
 				int index3 = buf.indexOf("\"", index);
 				String url = decodeJSONEscape(buf.substring(index, index3).trim().replace("\"", ""));
-				Logger.log(keyword + ": " + url);
+				Logger.info(keyword + ": " + url);
 				urlList.add(url);
 			}
 

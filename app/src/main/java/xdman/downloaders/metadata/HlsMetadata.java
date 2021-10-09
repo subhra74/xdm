@@ -1,7 +1,7 @@
 package xdman.downloaders.metadata;
 
+import org.tinylog.Logger;
 import xdman.XDMConstants;
-import xdman.util.Logger;
 
 public class HlsMetadata extends HttpMetadata {
 	public HlsMetadata() {
@@ -19,7 +19,7 @@ public class HlsMetadata extends HttpMetadata {
 
 	@Override
 	public HttpMetadata derive() {
-		Logger.log("derive hls metadata");
+		Logger.info("derive hls metadata");
 		HlsMetadata md = new HlsMetadata();
 		md.setHeaders(this.getHeaders());
 		md.setUrl(this.getUrl());

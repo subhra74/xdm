@@ -3,7 +3,8 @@ package xdman.downloaders;
 import java.io.*;
 
 import xdman.downloaders.http.HttpChannel;
-import xdman.util.*;
+
+import org.tinylog.Logger;
 
 public abstract class AbstractChannel implements Runnable {
 	protected Segment chunk;
@@ -38,14 +39,15 @@ public abstract class AbstractChannel implements Runnable {
 		try {
 			chunk.getChunkListener().synchronize();
 		} catch (NullPointerException e) {
-			Logger.log("stopped chunk " + chunk);
+			Logger.error(e);
+			Logger.info("stopped chunk " + chunk);
 			return false;
 		}
 		if (connectImpl()) {
 			in = getInputStreamImpl();
 			long length = getLengthImpl();
 			if (chunk.getLength() < 0) {
-				Logger.log("Setting length of " + chunk.getId() + " to: " + length);
+				Logger.info("Setting length of " + chunk.getId() + " to: " + length);
 				chunk.setLength(length);
 			}
 			return true;
@@ -73,15 +75,15 @@ public abstract class AbstractChannel implements Runnable {
 				
 				chunk.transferInitiated();
 				if (((chunk.getLength() > 0) ? copyStream1() : copyStream2())) {
-					Logger.log("Copy Stream finished");
+					Logger.info("Copy Stream finished");
 					break;
 				} else {
-					Logger.log("Copy Stream not finished");
+					Logger.warn("Copy Stream not finished");
 				}
 			}
 		} catch (Exception e) {
-			Logger.log("Internal problem: " + e);
-			Logger.log(e);
+			Logger.warn("Internal problem: " + e);
+			Logger.error(e);
 			if (!stop) {
 				chunk.transferFailed(errorMessage);
 			}
@@ -106,7 +108,7 @@ public abstract class AbstractChannel implements Runnable {
 	}
 
 	private boolean copyStream1() {
-		Logger.log("Receiving by copyStream1");
+		Logger.info("Receiving by copyStream1");
 		try {
 			while (!stop) {
 				chunk.getChunkListener().synchronize();
@@ -120,7 +122,7 @@ public abstract class AbstractChannel implements Runnable {
 						close();
 					}
 					if (chunk.transferComplete()) {
-						Logger.log(chunk + " complete and closing " + chunk.getDownloaded() + " " + chunk.getLength());
+						Logger.info(chunk + " complete and closing " + chunk.getDownloaded() + " " + chunk.getLength());
 						return true;
 					}
 				}
@@ -144,7 +146,7 @@ public abstract class AbstractChannel implements Runnable {
 				if (stop)
 					return false;
 				if (x == -1) {
-					Logger.log("Unexpected eof");
+					Logger.warn("Unexpected eof");
 					throw new Exception("Unexpected eof - downloaded: " + chunk.getDownloaded() + " expected: "
 							+ chunk.getLength());
 				}
@@ -157,7 +159,7 @@ public abstract class AbstractChannel implements Runnable {
 			}
 			return false;
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 			return false;
 		} finally {
 			close();
@@ -165,7 +167,7 @@ public abstract class AbstractChannel implements Runnable {
 	}
 
 	private boolean copyStream2() {
-		Logger.log("Receiving by copyStream2");
+		Logger.info("Receiving by copyStream2");
 		try {
 			while (!stop) {
 				chunk.getChunkListener().synchronize();
@@ -184,7 +186,7 @@ public abstract class AbstractChannel implements Runnable {
 			}
 			return false;
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 			return false;
 		} finally {
 			close();

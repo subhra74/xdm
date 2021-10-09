@@ -10,8 +10,8 @@ import java.util.regex.Pattern;
 
 import javax.swing.ImageIcon;
 
+import org.tinylog.Logger;
 import xdman.Config;
-import xdman.util.Logger;
 import xdman.util.XDMUtils;
 
 public class MediaInfoExtractor {
@@ -25,13 +25,14 @@ public class MediaInfoExtractor {
 			try {
 				proc.destroy();
 			} catch (Exception e) {
+				Logger.error(e);
 			}
 		}
 	}
 
 	public MediaInfoExtractor() {
 		String str1="Duration:\\s+(\\d+:\\d+:\\d+)    "+"Stream .*, ([0-9]+x[0-9]+)";
-		System.out.println(str1);
+		Logger.info(str1);
 		pattern1 = Pattern.compile("Duration:\\s+([0-9]+:[0-9]+:[0-9]+)");
 		pattern2 = Pattern.compile("Stream .*, ([0-9]+x[0-9]+)");
 		
@@ -73,7 +74,7 @@ public class MediaInfoExtractor {
 				str2+=" "+s;
 			}
 			
-			System.out.println(str2);
+			Logger.info(str2);
 
 			ProcessBuilder pb = new ProcessBuilder(args);
 			//pb.redirectErrorStream(false);
@@ -81,7 +82,7 @@ public class MediaInfoExtractor {
 			proc = pb.start();
 
 			int ret=proc.waitFor();
-			System.out.println("ret: "+ret);
+			Logger.info("ret: "+ret);
 			if(stop) {
 				return null;
 			}
@@ -89,25 +90,25 @@ public class MediaInfoExtractor {
 			info.thumbnail = new ImageIcon(tmpImgFile.getAbsolutePath());
 			byte[] array = Files.readAllBytes(tmpOutput.toPath());
 			String str = new String(array, "utf-8");
-			System.out.println(str);
+			Logger.info(str);
 			Matcher matcher1 = pattern1.matcher(str);
 			Matcher matcher2 = pattern2.matcher(str);
 			if (matcher1.find()) {
 				info.duration = matcher1.group(1);
-				System.out.println("Match: "+info.duration);
+				Logger.info("Match: "+info.duration);
 			}else {
-				System.out.println("no match");
+				Logger.info("no match");
 			}
 			if (matcher2.find()) {
 				info.resolution = matcher2.group(1);
-				System.out.println("Match: "+info.resolution);
+				Logger.info("Match: "+info.resolution);
 			}
 			if(stop) {
 				return null;
 			}
 			return info;
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		} finally {
 			tmpOutput.delete();
 			tmpImgFile.delete();

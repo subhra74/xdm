@@ -4,9 +4,11 @@ import java.io.*;
 
 import java.util.*;
 
+import org.tinylog.Logger;
 import xdman.*;
 import xdman.network.http.*;
-import xdman.util.*;
+import xdman.util.IOUtils;
+import xdman.util.StringUtils;
 
 public class HttpMetadata {
 	protected String id;
@@ -16,7 +18,7 @@ public class HttpMetadata {
 	private String ydlUrl;
 
 	public HttpMetadata derive() {
-		Logger.log("derive normal metadata");
+		Logger.info("derive normal metadata");
 		HttpMetadata md = new HttpMetadata();
 		md.setHeaders(this.getHeaders());
 		md.setUrl(this.getUrl());
@@ -117,7 +119,7 @@ public class HttpMetadata {
 	// }
 
 	public static HttpMetadata load(String id) {
-		Logger.log("loading metadata: " + id);
+		Logger.info("loading metadata: " + id);
 		BufferedReader br = null;
 		HttpMetadata metadata = null;
 		int type;
@@ -125,12 +127,12 @@ public class HttpMetadata {
 			br = new BufferedReader(new FileReader(new File(Config.getInstance().getMetadataFolder(), id)));
 			String ln = br.readLine();
 			if (ln == null) {
-				Logger.log("invalid metadata, file is empty");
+				Logger.warn("invalid metadata, file is empty");
 				return null;
 			}
 			int index = ln.indexOf(":");
 			if (index < 0) {
-				Logger.log("invalid metadata file starting with: " + ln);
+				Logger.warn("invalid metadata file starting with: " + ln);
 				return null;
 			}
 			String key = ln.substring(0, index).trim().toLowerCase();
@@ -147,7 +149,7 @@ public class HttpMetadata {
 					metadata = new DashMetadata(id);
 				}
 			} else {
-				Logger.log("invalid metadata file starting with: " + ln);
+				Logger.warn("invalid metadata file starting with: " + ln);
 				return null;
 			}
 			while (true) {
@@ -196,20 +198,15 @@ public class HttpMetadata {
 					((HdsMetadata) metadata).setBitRate(Integer.parseInt(val));
 				}
 				if (key.equals("ydlurl")) {
-					Logger.log("ydurl: " + val);
+					Logger.info("ydurl: " + val);
 					metadata.ydlUrl = val;
 				}
 			}
-			br.close();
+			IOUtils.closeFlow(br);
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		} finally {
-			if (br != null) {
-				try {
-					br.close();
-				} catch (Exception ex) {
-				}
-			}
+			IOUtils.closeFlow(br);
 		}
 		return metadata;
 
@@ -258,15 +255,10 @@ public class HttpMetadata {
 			File file = new File(metadataFolder, id);
 			fw = new FileOutputStream(file);
 			fw.write(sb.toString().getBytes());
-			fw.close();
+			IOUtils.closeFlow(fw);
 		} catch (Exception e) {
-			Logger.log(e);
-			if (fw != null) {
-				try {
-					fw.close();
-				} catch (Exception ex) {
-				}
-			}
+			Logger.error(e);
+			IOUtils.closeFlow(fw);
 		}
 	}
 

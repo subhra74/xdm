@@ -15,11 +15,12 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
+import org.tinylog.Logger;
 import xdman.Config;
 import xdman.XDMApp;
 import xdman.ui.components.VideoPopupItem;
 import xdman.util.Base64;
-import xdman.util.Logger;
+import xdman.util.IOUtils;
 
 public class BrowserMonitor implements Runnable {
 	private static BrowserMonitor _this;
@@ -48,7 +49,7 @@ public class BrowserMonitor implements Runnable {
 			Files.writeString(Paths.get(System.getProperty("user.home"), ".xdman", "settings.json"), getSync());
 			Files.writeString(Paths.get(System.getProperty("user.home"), ".xdman", "settings_updated"), "");
 		} catch (IOException e) {
-			e.printStackTrace();
+			Logger.error(e);
 		}
 	}
 
@@ -125,7 +126,7 @@ public class BrowserMonitor implements Runnable {
 			}
 			json.append("vidList:" + String.join(",", videoPopupItems) + "\n");
 		} catch (Exception e) {
-			e.printStackTrace();
+			Logger.error(e);
 		}
 
 		//System.err.println(json);
@@ -192,13 +193,10 @@ public class BrowserMonitor implements Runnable {
 				session.start();
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 			XDMApp.instanceAlreadyRunning();
 		}
-		try {
-			serverSock.close();
-		} catch (Exception e) {
-		}
+		IOUtils.closeFlow(serverSock);
 	}
 
 	private void acquireGlobalLock() {
@@ -210,7 +208,7 @@ public class BrowserMonitor implements Runnable {
 			for (int i = 0; i < maxRetry; i++) {
 				fileLock = fc.tryLock();
 				if (fileLock != null) {
-					Logger.log("Lock acquired...");
+					Logger.info("Lock acquired...");
 					return;
 				}
 
@@ -220,7 +218,7 @@ public class BrowserMonitor implements Runnable {
 				Thread.sleep(500);
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			Logger.error(e);
 		}
 
 	}

@@ -13,6 +13,7 @@ import javax.crypto.CipherInputStream;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.tinylog.Logger;
 import xdman.XDMConstants;
 import xdman.downloaders.Segment;
 import xdman.downloaders.http.HttpChannel;
@@ -23,7 +24,6 @@ import xdman.network.http.JavaClientRequiredException;
 import xdman.network.http.JavaHttpClient;
 import xdman.network.http.WebProxy;
 import xdman.network.http.XDMHttpClient;
-import xdman.util.Logger;
 import xdman.util.XDMUtils;
 
 public class EncryptedHlsChannel extends HttpChannel {
@@ -52,20 +52,19 @@ public class EncryptedHlsChannel extends HttpChannel {
 			chunk.resetStream();
 			chunk.setDownloaded(0);
 		} catch (IOException e) {
-			Logger.log("Stream rest failed");
-			Logger.log(e);
+			Logger.error(e, "Stream rest failed");
 		}
 
 		boolean isKey = !source.hasKey(keyUrl);
 		if (isKey) {
-			Logger.log("Retrieving key");
+			Logger.info("Retrieving key");
 			url = keyUrl;
 		}
 
 		while (!stop) {
 			isRedirect = false;
 			try {
-				Logger.log("Connecting to: " + url + " " + chunk.getTag());
+				Logger.info("Connecting to: " + url + " " + chunk.getTag());
 				WebProxy wp = ProxyResolver.resolve(url);
 				if (wp != null) {
 					javaClientRequired = true;
@@ -86,7 +85,7 @@ public class EncryptedHlsChannel extends HttpChannel {
 					}
 				}
 
-				Logger.log("Initating connection");
+				Logger.info("Initiating connection");
 				hc.connect();
 
 				if (stop) {
@@ -96,17 +95,17 @@ public class EncryptedHlsChannel extends HttpChannel {
 
 				int code = hc.getStatusCode();
 
-				Logger.log(chunk + ": " + code);
+				Logger.info(chunk + ": " + code);
 
 				if (code >= 300 && code < 400) {
 					closeImpl();
 					if (totalLength > 0) {
 						errorCode = XDMConstants.ERR_INVALID_RESP;
-						Logger.log(chunk + " Redirecting twice");
+						Logger.info(chunk + " Redirecting twice");
 						return false;
 					} else {
 						url = hc.getResponseHeader("location");
-						Logger.log(chunk + " location: " + url);
+						Logger.info(chunk + " location: " + url);
 						if (!url.startsWith("http")) {
 							if (!url.startsWith("/")) {
 								url = "/" + url;
@@ -130,7 +129,7 @@ public class EncryptedHlsChannel extends HttpChannel {
 
 				if (code == 407 || code == 401) {
 					if (javaClientRequired) {
-						Logger.log("asking for password");
+						Logger.info("asking for password");
 						boolean proxy = code == 407;
 						if (!chunk.promptCredential(hc.getHost(), proxy)) {
 							errorCode = XDMConstants.ERR_INVALID_RESP;
@@ -145,10 +144,10 @@ public class EncryptedHlsChannel extends HttpChannel {
 					if (isKey) {
 						ByteArrayOutputStream bout = new ByteArrayOutputStream();
 						InputStream inStr = hc.getInputStream();
-						System.out.println(inStr);
+						Logger.info(inStr);
 						long len = hc.getContentLength();
 						int read = 0;
-						System.out.println("reading url of length: " + len);
+						Logger.info("reading url of length: " + len);
 						while (true) {
 							if (len > 0 && read == len)
 								break;
@@ -176,7 +175,7 @@ public class EncryptedHlsChannel extends HttpChannel {
 				firstLength = -1;
 
 				if (hc.getContentLength() > 0 && XDMUtils.getFreeSpace(null) < hc.getContentLength()) {
-					Logger.log("Disk is full");
+					Logger.warn("Disk is full");
 					errorCode = XDMConstants.DISK_FAIURE;
 					closeImpl();
 					return false;
@@ -200,16 +199,15 @@ public class EncryptedHlsChannel extends HttpChannel {
 					return false;
 				}
 				// in = hc.getInputStream();
-				Logger.log("Connection success");
+				Logger.info("Connection success");
 				return true;
 
 			} catch (JavaClientRequiredException e) {
-				Logger.log("java client required");
+				Logger.error(e, "java client required");
 				javaClientRequired = true;
 				sleepInterval = 0;
 			} catch (Exception e) {
-				Logger.log(chunk);
-				Logger.log(e);
+				Logger.error(e, chunk.toString());
 				if (isRedirect) {
 					closeImpl();
 					continue;
@@ -225,7 +223,7 @@ public class EncryptedHlsChannel extends HttpChannel {
 			}
 		}
 
-		Logger.log("return as " + errorCode);
+		Logger.info("return as " + errorCode);
 
 		return false;
 	}

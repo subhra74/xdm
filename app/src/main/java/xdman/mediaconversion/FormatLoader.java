@@ -8,6 +8,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.tinylog.Logger;
 import xdman.ui.res.StringResource;
 
 public class FormatLoader {
@@ -31,7 +32,7 @@ public class FormatLoader {
 				String[] arr = ln.split("\\|");
 				fg.name = arr[0].trim();
 				fg.desc = arr[1].trim();
-				System.out.println("group: " + fg.name);
+				Logger.info("group: " + fg.name);
 				list.add(fg);
 			}
 			while (true) {
@@ -42,60 +43,60 @@ public class FormatLoader {
 				print(format);
 				for (FormatGroup fg : list) {
 					if (fg.name.equals(format.group)) {
-						System.out.println(fg.desc + " " + format.desc);
+						Logger.info(fg.desc + " " + format.desc);
 						fg.formats.add(format);
 					}
 				}
 			}
 		} catch (Exception e) {
-
+			Logger.error(e);
 		}
 		return list;
 	}
 
 	static void print(Format format) {
-		System.out.println("\t" + format.getDesc() + " '" + format.group + "'");
+		Logger.info("\t" + format.getDesc() + " '" + format.group + "'");
 		List<String> list = format.getVideoCodecs();
 		if (list.size() > 0) {
-			System.out.print("\t\tVideo Codec:");
+			Logger.info("\t\tVideo Codec:");
 			for (int i = 0; i < list.size(); i++) {
 				if (list.get(i).length() > 1) {
 					if (list.get(i).equals(format.getDefautVideoCodec())) {
-						System.out.print("*");
+						Logger.info("*");
 					}
 
-					System.out.print(list.get(i) + " ");
+					Logger.info(list.get(i) + " ");
 				}
 			}
-			System.out.println("\n");
+			Logger.info("\n");
 		}
 
 		list = format.getResolutions();
 		if (list.size() > 0) {
-			System.out.print("\t\tResolution:");
+			Logger.info("\t\tResolution:");
 			for (int i = 0; i < list.size(); i++) {
 				if (list.get(i).length() > 1) {
 					if (list.get(i).equals(format.getDefaultResolution())) {
-						System.out.print("*");
+						Logger.info("*");
 					}
 
-					System.out.print(list.get(i) + " ");
+					Logger.info(list.get(i) + " ");
 				}
 			}
-			System.out.println("\n");
+			Logger.info("\n");
 		}
 
 		list = format.getAudioChannel();
 		if (list.size() > 0) {
-			System.out.print("\t\tChannel:");
+			Logger.info("\t\tChannel:");
 			for (int i = 0; i < list.size(); i++) {
 				if (list.get(i).equals(format.getDefaultAudioChannel())) {
-					System.out.print("*");
+					Logger.info("*");
 				}
 
-				System.out.print(list.get(i) + " ");
+				Logger.info(list.get(i) + " ");
 			}
-			System.out.println("\n");
+			Logger.info("\n");
 		}
 
 	}

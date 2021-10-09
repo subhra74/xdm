@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.tinylog.Logger;
 import xdman.Config;
 import xdman.XDMConstants;
 import xdman.downloaders.AbstractChannel;
@@ -29,7 +30,7 @@ import xdman.mediaconversion.FFmpeg;
 import xdman.mediaconversion.MediaConversionListener;
 import xdman.mediaconversion.MediaFormats;
 import xdman.util.FormatUtilities;
-import xdman.util.Logger;
+import xdman.util.IOUtils;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
 
@@ -59,7 +60,7 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 	}
 
 	public void start() {
-		Logger.log("creating folder " + folder);
+		Logger.info("creating folder " + folder);
 		new File(folder).mkdirs();
 
 		this.lastDownloaded = downloaded;
@@ -75,13 +76,14 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 		} catch (IOException e) {
 			this.errorCode = XDMConstants.RESUME_FAILED;
 			this.listener.downloadFailed(id);
+			Logger.error(e);
 		}
 	}
 
 	@Override
 	public void chunkInitiated(String id) {
 		if (!id.equals(manifestSegment.getId())) {
-			System.out.println("Non manifest segment: " + id + " manifest seg: " + manifestSegment.getId());
+			Logger.info("Non manifest segment: " + id + " manifest seg: " + manifestSegment.getId());
 			processSegments();
 		} else {
 			isJavaClientRequired = ((HttpChannel) manifestSegment.getChannel()).isJavaClientRequired();
@@ -100,10 +102,10 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 		}
 
 		if (id.equals(manifestSegment.getId())) {
-			Logger.log("Manifest segment complete: " + id);
+			Logger.info("Manifest segment complete: " + id);
 			if (initOrUpdateSegments()) {
 				listener.downloadConfirmed(this.id);
-				System.out.println("confirmed");
+				Logger.info("confirmed");
 			} else {
 				if (!stopFlag) {
 					this.errorCode = XDMConstants.ERR_INVALID_RESP;
@@ -127,13 +129,13 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 					if (!assembleFinished) {
 						throw new IOException("Assemble not finished successfully");
 					}
-					Logger.log("********Download finished*********");
+					Logger.info("********Download finished*********");
 					updateStatus();
 
 					listener.downloadFinished(this.id);
 				} catch (Exception e) {
 					if (!stopFlag) {
-						Logger.log(e);
+						Logger.error(e);
 						this.errorCode = XDMConstants.ERR_ASM_FAILED;
 						listener.downloadFailed(this.id);
 					}
@@ -177,7 +179,7 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 			if (segment == chunks.get(i)) {
 				HlsPlaylistItem item = items.get(i);
 				if (keyMap != null && item.getKeyUrl() != null) {
-					System.out.println("Creating encrypted channel");
+					Logger.info("Creating encrypted channel");
 					return new EncryptedHlsChannel(segment, item.getUrl(), metadata.getHeaders(), -1,
 							isJavaClientRequired, this, item.getKeyUrl());
 				} else {
@@ -185,7 +187,7 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 				}
 			}
 		}
-		Logger.log("Create manifest channel");
+		Logger.info("Create manifest channel");
 		return new HttpChannel(segment, metadata.getUrl(), metadata.getHeaders(), -1, isJavaClientRequired);
 	}
 
@@ -200,25 +202,25 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 					metadata.getUrl());
 
 			if (this.playlist == null) {
-				Logger.log("Manifest either invalid or have unsupported DRM");
+				Logger.warn("Manifest either invalid or have unsupported DRM");
 				return false;
 			}
 			// M3U8Manifest mf = new M3U8Manifest(new File(folder,
 			// manifestSegment.getId()).getAbsolutePath(),
 			// metadata.getUrl());
 			this.totalDuration = playlist.getDuration();
-			Logger.log("Total duration");
+			Logger.info("Total duration");
 			List<HlsPlaylistItem> pitems = playlist.getItems();
 			if (pitems == null) {
-				Logger.log("Manifest either invalid or have unsupported DRM");
+				Logger.warn("Manifest either invalid or have unsupported DRM");
 				return false;
 			}
 			if (pitems.size() < 1) {
-				Logger.log("Manifest contains no media");
+				Logger.warn("Manifest contains no media");
 				return false;
 			}
 			if (items.size() > 0 && items.size() != playlist.getItems().size()) {
-				Logger.log("Manifest media count mismatch- expected: " + items.size() + " got: "
+				Logger.warn("Manifest media count mismatch- expected: " + items.size() + " got: "
 						+ playlist.getItems().size());
 				return false;
 			}
@@ -230,24 +232,24 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 				keyMap = new HashMap<>();
 			}
 
-			System.out.println("Pleylist items: " + playlist.getItems().size());
+			Logger.info("Playlist items: " + playlist.getItems().size());
 
 			for (HlsPlaylistItem item : playlist.getItems()) {
-				System.out.println(item);
+				Logger.info(item);
 				HlsPlaylistItem item2 = new HlsPlaylistItem(item.getUrl(), item.getKeyUrl(), item.getIV(), null, null,
 						item.getDuration());
 				this.items.add(item2);
 			}
 
 			String newExtension = null;
-			System.out.println("Chunk size: " + chunks.size());
+			Logger.info("Chunk size: " + chunks.size());
 			if (chunks.size() < 1) {
-				System.out.println("Creating chunk");
+				Logger.info("Creating chunk");
 				for (int i = 0; i < items.size(); i++) {
 					if (newExtension == null && outputFormat == 0) {
 						newExtension = findExtension(items.get(i).getUrl());
 						if (newExtension != null) {
-							Logger.log("HLS: found new extension: " + newExtension);
+							Logger.info("HLS: found new extension: " + newExtension);
 
 							this.newFileName = getOutputFileName(true).replace(".ts", newExtension);
 
@@ -262,30 +264,30 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 					Segment s2 = new SegmentImpl(this, folder);
 					s2.setTag("HLS");
 					s2.setLength(-1);
-					Logger.log("Adding chunk: " + s2);
-					System.out.println("Adding");
+					Logger.info("Adding chunk: " + s2);
+					Logger.info("Adding");
 					chunks.add(s2);
 				}
-				System.out.println("Segments created");
+				Logger.info("Segments created");
 			}
 			return true;
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 			return false;
 		}
 
 	}
 
 	private synchronized void processSegments() {
-		Logger.log("HLS: process segment");
+		Logger.info("HLS: process segment");
 		int activeCount = getActiveChunkCount();
-		Logger.log("active: " + activeCount);
+		Logger.info("active: " + activeCount);
 		if (activeCount < MAX_COUNT) {
 			int rem = MAX_COUNT - activeCount;
 			try {
 				retryFailedChunks(rem);
 			} catch (IOException e) {
-				Logger.log(e);
+				Logger.error(e);
 			}
 		}
 	}
@@ -353,7 +355,7 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 
 			listener.downloadUpdated(id);
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 	}
 
@@ -376,24 +378,24 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 	public void resume() {
 		try {
 			stopFlag = false;
-			Logger.log("Resuming");
+			Logger.info("Resuming");
 			if (!restoreState()) {
-				Logger.log("Starting from beginning");
+				Logger.info("Starting from beginning");
 				start();
 				return;
 			}
-			Logger.log("Restore success");
+			Logger.info("Restore success");
 			this.lastDownloaded = downloaded;
 			this.lastProgress = this.progress;
 			this.prevTime = System.currentTimeMillis();
 			if (allFinished()) {
 				assembleAsync();
 			} else {
-				Logger.log("Starting");
+				Logger.info("Starting");
 				start();
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 			this.errorCode = XDMConstants.RESUME_FAILED;
 			listener.downloadFailed(this.id);
 			return;
@@ -428,10 +430,10 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 		sb.append(downloaded + "\n");
 		sb.append(((long) this.totalDuration) + "\n");
 		sb.append(items.size() + "\n");
-		System.out.println("url saved of size: " + items.size());
+		Logger.info("url saved of size: " + items.size());
 		for (int i = 0; i < items.size(); i++) {
 			String url = items.get(i).getUrl();
-			System.out.println("Saveing url: " + url);
+			Logger.info("Saving url: " + url);
 			sb.append(url + "\n");
 		}
 		sb.append(chunks.size() + "\n");
@@ -484,7 +486,7 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 			out.delete();
 			tmp.renameTo(out);
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 	}
 
@@ -504,13 +506,13 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 			this.downloaded = Long.parseLong(br.readLine());
 			this.totalDuration = Long.parseLong(br.readLine());
 			int urlCount = Integer.parseInt(br.readLine());
-			System.out.println("Loading urls: " + urlCount);
+			Logger.info("Loading urls: " + urlCount);
 			for (int i = 0; i < urlCount; i++) {
 				String url = XDMUtils.readLineSafe(br);// br.readLine();
 				HlsPlaylistItem item = new HlsPlaylistItem();
 				item.setUrl(url);
 				items.add(item);
-				System.out.println("loading url: " + url);
+				Logger.info("loading url: " + url);
 			}
 			int chunkCount = Integer.parseInt(br.readLine());
 			for (int i = 0; i < chunkCount; i++) {
@@ -520,7 +522,7 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 				long dwn = Long.parseLong(br.readLine());
 				Segment seg = new SegmentImpl(folder, cid, off, len, dwn);
 				seg.setTag("HLS");
-				Logger.log("id: " + seg.getId() + "\nlength: " + seg.getLength() + "\noffset: " + seg.getStartOffset()
+				Logger.info("id: " + seg.getId() + "\nlength: " + seg.getLength() + "\noffset: " + seg.getStartOffset()
 						+ "\ndownload: " + seg.getDownloaded());
 				chunks.add(seg);
 			}
@@ -543,7 +545,7 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 					int keys = Integer.parseInt(br.readLine());
 					for (int i = 0; i < keys; i++) {
 						String keyUrl = XDMUtils.readLineSafe(br);
-						System.out.println("Keydata: " + keyUrl);
+						Logger.info("Keydata: " + keyUrl);
 						String keyData = XDMUtils.readLineSafe(br);
 						byte[] data = Base64.getDecoder().decode(keyData);
 						keyMap.put(keyUrl, data);
@@ -554,15 +556,9 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 			// get key iv and other details
 			return true;
 		} catch (Exception e) {
-			Logger.log("Failed to load saved state");
-			Logger.log(e);
+			Logger.error(e, "Failed to load saved state");
 		} finally {
-			if (br != null) {
-				try {
-					br.close();
-				} catch (IOException e) {
-				}
-			}
+			IOUtils.closeFlow(br);
 		}
 		return false;
 	}
@@ -578,13 +574,13 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 					if (!assembleFinished) {
 						throw new IOException("Assemble not finished successfully");
 					}
-					Logger.log("********Download finished*********");
+					Logger.info("********Download finished*********");
 					updateStatus();
 					cleanup();
 					listener.downloadFinished(id);
 				} catch (Exception e) {
 					if (!stopFlag) {
-						Logger.log(e);
+						Logger.error(e);
 						errorCode = XDMConstants.ERR_ASM_FAILED;
 						listener.downloadFailed(id);
 					}
@@ -602,7 +598,7 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 				if (!ext.toLowerCase().contains("ts")) {
 					newExtension = ext.toLowerCase();
 					if (newExtension.contains("m4s")) {
-						Logger.log("HLS extension: MP4");
+						Logger.info("HLS extension: MP4");
 						newExtension = ".mp4";
 					}
 					if (!newExtension.contains("mp4")) {
@@ -631,6 +627,7 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 				hlsTextStream.write(sb.toString().getBytes());
 				hlsTextStream.close();
 			} catch (Exception e) {
+				Logger.error(e);
 			}
 			this.converting = true;
 			List<String> inputFiles = new ArrayList<String>();
@@ -641,7 +638,7 @@ public class HlsDownloader extends Downloader implements SegmentListener, MediaC
 			ffmpeg.setHls(true);
 			ffmpeg.setHLSDuration(totalDuration);
 			int ret = ffmpeg.convert();
-			Logger.log("FFmpeg exit code: " + ret);
+			Logger.info("FFmpeg exit code: " + ret);
 
 			if (ret != 0) {
 				throw new IOException("FFmpeg failed");

@@ -7,7 +7,8 @@ import java.io.InputStreamReader;
 import java.net.URI;
 import java.util.ArrayList;
 
-import xdman.util.Logger;
+import org.tinylog.Logger;
+import xdman.util.IOUtils;
 import xdman.util.StringUtils;
 
 public class M3U8Manifest {
@@ -65,18 +66,17 @@ public class M3U8Manifest {
 
 	private String resolveURL(String playlistUrl, String segmentUrl) {
 		try {
-			Logger.log("Manifest Segment parsing ");
+			Logger.info("Manifest Segment parsing ");
 			if (!(segmentUrl.startsWith("http://") || segmentUrl.startsWith("https://"))) {
 				URI uri = new URI(playlistUrl);
 				String str = uri.resolve(segmentUrl).normalize().toString();
-				Logger.log("Manifest Segment parsing: " + str);
+				Logger.info("Manifest Segment parsing: " + str);
 				return str;
 			} else {
 				return segmentUrl;
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
-			Logger.log(e);
+			Logger.error(e);
 		}
 		return null;
 	}
@@ -96,7 +96,7 @@ public class M3U8Manifest {
 					continue;
 
 				if (highline.startsWith("#EXT-X-KEY")) {
-					Logger.log("Encrypted segment detected: " + line);
+					Logger.info("Encrypted segment detected: " + line);
 					// encrypted = true;
 					// break;
 				}
@@ -123,20 +123,16 @@ public class M3U8Manifest {
 							duration += Float.parseFloat(str);
 						}
 					} catch (Exception e) {
-						Logger.log(e);
+						Logger.error(e);
 					}
 
 				}
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 			throw new IOException("Unable to parse menifest");
 		} finally {
-			try {
-				if (r != null)
-					r.close();
-			} catch (Exception e) {
-			}
+			IOUtils.closeFlow(r);
 		}
 
 		return urlList;
@@ -197,10 +193,12 @@ public class M3U8Manifest {
 								bps = Integer.parseInt(info.bandwidth);
 								info.bandwidth = (bps / 1000) + " kbps";
 							} catch (Exception e) {
+								Logger.error(e);
 							}
 						}
 					}
 				} catch (Exception e) {
+					Logger.error(e);
 				}
 			}
 			return info;

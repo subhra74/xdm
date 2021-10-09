@@ -8,14 +8,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.tinylog.Logger;
 import xdman.Config;
-import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
 
 public class FFmpeg {
 	public final static int FF_NOT_FOUND = 10, FF_LAUNCH_ERROR = 20, FF_CONVERSION_FAILED = 30, FF_SUCCESS = 0;
-	private MediaFormat outformat;
+	private MediaFormat outFormat;
 	private MediaConversionListener listener;
 	private boolean copy;
 	private List<String> inputFiles;
@@ -28,19 +28,19 @@ public class FFmpeg {
 	private String volume;
 	private boolean useHwAccel;
 
-	public FFmpeg(List<String> inputFiles, String outputFile, MediaConversionListener listener, MediaFormat outformat,
+	public FFmpeg(List<String> inputFiles, String outputFile, MediaConversionListener listener, MediaFormat outFormat,
 			boolean copy) {
 		this.inputFiles = inputFiles;
 		this.outputFile = outputFile;
 		this.listener = listener;
-		this.outformat = outformat;
+		this.outFormat = outFormat;
 		this.copy = copy;
 	}
 
 	public int convert() {
 		try {
 
-			Logger.log("Outformat: " + outformat);
+			Logger.info("Out format: " + outFormat);
 
 			File ffFile = new File(Config.getInstance().getDataFolder(),
 					System.getProperty("os.name").toLowerCase().contains("windows") ? "ffmpeg.exe" : "ffmpeg");
@@ -80,56 +80,56 @@ public class FFmpeg {
 			} else {
 				// args.add("-f");
 				// args.add(outformat.getFormat());
-				if (outformat.getResolution() != null) {
+				if (outFormat.getResolution() != null) {
 					args.add("-s");
-					args.add(outformat.getResolution());
+					args.add(outFormat.getResolution());
 				}
-				if (outformat.getVideo_codec() != null) {
+				if (outFormat.getVideo_codec() != null) {
 					args.add("-vcodec");
-					args.add(outformat.getVideo_codec());
+					args.add(outFormat.getVideo_codec());
 				}
-				if (outformat.getVideo_bitrate() != null) {
+				if (outFormat.getVideo_bitrate() != null) {
 					args.add("-b:v");
-					args.add(outformat.getVideo_bitrate());
+					args.add(outFormat.getVideo_bitrate());
 				}
-				if (outformat.getFramerate() != null) {
+				if (outFormat.getFramerate() != null) {
 					args.add("-r");
-					args.add(outformat.getFramerate());
+					args.add(outFormat.getFramerate());
 				}
-				if (outformat.getAspectRatio() != null) {
+				if (outFormat.getAspectRatio() != null) {
 					args.add("-aspect");
-					args.add(outformat.getAspectRatio());
+					args.add(outFormat.getAspectRatio());
 				}
-				if (outformat.getVideo_param_extra() != null) {
-					String[] arr = outformat.getVideo_param_extra().split(" ");
+				if (outFormat.getVideo_param_extra() != null) {
+					String[] arr = outFormat.getVideo_param_extra().split(" ");
 					if (arr.length > 0) {
 						args.addAll(Arrays.asList(arr));
 					}
 				} else {
-					if ("libx264".equals(outformat.getVideo_codec())) {
+					if ("libx264".equals(outFormat.getVideo_codec())) {
 						args.add("-profile:v");
 						args.add("baseline");
 					}
 				}
 
-				if (outformat.getAudio_codec() != null) {
+				if (outFormat.getAudio_codec() != null) {
 					args.add("-acodec");
-					args.add(outformat.getAudio_codec());
+					args.add(outFormat.getAudio_codec());
 				}
-				if (outformat.getAudio_bitrate() != null) {
+				if (outFormat.getAudio_bitrate() != null) {
 					args.add("-b:a");
-					args.add(outformat.getAudio_bitrate());
+					args.add(outFormat.getAudio_bitrate());
 				}
-				if (isNumeric(outformat.getSamplerate())) {
+				if (isNumeric(outFormat.getSamplerate())) {
 					args.add("-ar");
-					args.add(outformat.getSamplerate());
+					args.add(outFormat.getSamplerate());
 				}
-				if (isNumeric(outformat.getAudio_channel())) {
+				if (isNumeric(outFormat.getAudio_channel())) {
 					args.add("-ac");
-					args.add(outformat.getAudio_channel());
+					args.add(outFormat.getAudio_channel());
 				}
-				if (outformat.getAudio_extra_param() != null) {
-					String[] arr = outformat.getAudio_extra_param().split(" ");
+				if (outFormat.getAudio_extra_param() != null) {
+					String[] arr = outFormat.getAudio_extra_param().split(" ");
 					if (arr.length > 0) {
 						args.addAll(Arrays.asList(arr));
 					}
@@ -172,7 +172,7 @@ public class FFmpeg {
 			args.add("-y");
 
 			for (String s : args) {
-				Logger.log("@ffmpeg_args: " + s);
+				Logger.info("@ffmpeg_args: " + s);
 			}
 
 			ProcessBuilder pb = new ProcessBuilder(args);
@@ -189,13 +189,14 @@ public class FFmpeg {
 					String text = ln.trim();
 					processOutput(text);
 				} catch (Exception e) {
-					Logger.log(e);
+					Logger.error(e);
 				}
 			}
 
 			ffExitCode = proc.waitFor();
 			return ffExitCode == 0 ? FF_SUCCESS : FF_CONVERSION_FAILED;
 		} catch (RuntimeException | InterruptedException | IOException e) {
+			Logger.error(e);
 			return FF_LAUNCH_ERROR;
 		}
 	}
@@ -236,11 +237,11 @@ public class FFmpeg {
 				index1 = text.indexOf('=', index1);
 				int index2 = text.indexOf("bitrate=");
 				String dur = text.substring(index1 + 1, index2).trim();
-				Logger.log("Parsing duration: " + dur);
+				Logger.info("Parsing duration: " + dur);
 				long t = parseDuration(dur);
-				Logger.log("Duration: " + t + " Total duration: " + totalDuration);
+				Logger.info("Duration: " + t + " Total duration: " + totalDuration);
 				int prg = (int) ((t * 100) / totalDuration);
-				Logger.log("ffmpeg prg: " + prg);
+				Logger.info("ffmpeg prg: " + prg);
 				listener.progress(prg);
 			}
 		}
@@ -252,11 +253,11 @@ public class FFmpeg {
 					index1 = text.indexOf(':', index1);
 					int index2 = text.indexOf(",", index1);
 					String dur = text.substring(index1 + 1, index2).trim();
-					Logger.log("Parsing duration: " + dur);
+					Logger.info("Parsing duration: " + dur);
 					totalDuration = parseDuration(dur);
-					Logger.log("Total duration: " + totalDuration);
+					Logger.info("Total duration: " + totalDuration);
 				} catch (Exception e) {
-					Logger.log(e);
+					Logger.error(e);
 					totalDuration = -1;
 				}
 			}
@@ -269,6 +270,7 @@ public class FFmpeg {
 				proc.destroy();
 			}
 		} catch (Exception e) {
+			Logger.error(e);
 		}
 	}
 
@@ -288,6 +290,7 @@ public class FFmpeg {
 		try {
 			Double.parseDouble(s);
 		} catch (Exception e) {
+			Logger.error(e);
 			return false;
 		}
 		return true;

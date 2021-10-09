@@ -10,9 +10,10 @@ import java.util.regex.Pattern;
 
 import xdman.XDMApp;
 import xdman.downloaders.metadata.HttpMetadata;
-import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
+
+import org.tinylog.Logger;
 
 public class InstagramHandler {
 	private static Pattern pattern;
@@ -30,7 +31,7 @@ public class InstagramHandler {
 				buf.append(ln + "\n");
 			}
 			in.close();
-			Logger.log("Parsing instagram page...");
+			Logger.info("Parsing instagram page...");
 			if (pattern == null) {
 				pattern = Pattern.compile("\"video\\_url\"\\s*:\\s*\"(.*?)\"");
 			}
@@ -39,7 +40,7 @@ public class InstagramHandler {
 				//int start = matcher.start();
 				//int end = matcher.end();
 				String url = matcher.group(1);
-				Logger.log("Url: " + url);
+				Logger.info("Url: " + url);
 				HttpMetadata metadata = new HttpMetadata();
 				metadata.setUrl(url);
 				metadata.setHeaders(data.getRequestHeaders());
@@ -57,7 +58,7 @@ public class InstagramHandler {
 			}
 			return true;
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 			return false;
 		}
 	}

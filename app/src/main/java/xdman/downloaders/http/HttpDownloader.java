@@ -1,11 +1,11 @@
 package xdman.downloaders.http;
 
+import org.tinylog.Logger;
 import xdman.XDMConstants;
 import xdman.downloaders.AbstractChannel;
 import xdman.downloaders.Segment;
 import xdman.downloaders.SegmentDownloader;
 import xdman.downloaders.metadata.HttpMetadata;
-import xdman.util.Logger;
 import xdman.util.MimeUtil;
 import xdman.util.NetUtils;
 import xdman.util.StringUtils;
@@ -25,7 +25,7 @@ public class HttpDownloader extends SegmentDownloader {
 	public AbstractChannel createChannel(Segment segment) {
 		StringBuffer buf = new StringBuffer();
 		metadata.getHeaders().appendToBuffer(buf);
-		System.out.println("Headers all: " + buf);
+		Logger.info("Headers all: " + buf);
 		HttpChannel hc = new HttpChannel(segment, metadata.getUrl(), metadata.getHeaders(), length,
 				isJavaClientRequired);
 		return hc;
@@ -38,7 +38,7 @@ public class HttpDownloader extends SegmentDownloader {
 
 	@Override
 	public boolean isFileNameChanged() {
-		Logger.log("Checking for filename change " + (newFileName != null));
+		Logger.info("Checking for filename change " + (newFileName != null));
 		return newFileName != null;
 	}
 
@@ -83,12 +83,12 @@ public class HttpDownloader extends SegmentDownloader {
 		String contentDispositionHeader = hc.getHeader("content-disposition");
 		if (contentDispositionHeader != null) {
 			if (outputFormat == 0) {
-				System.out.println("checking content disposition");
+				Logger.info("checking content disposition");
 				String name = NetUtils.getNameFromContentDisposition(contentDispositionHeader);
 				if (name != null) {
 					this.newFileName = name;
 					nameSet = true;
-					Logger.log("set new filename: " + newFileName);
+					Logger.info("set new filename: " + newFileName);
 				}
 			}
 		}
@@ -110,7 +110,7 @@ public class HttpDownloader extends SegmentDownloader {
 					newFileName = oldFileName + "." + newExt;
 				}
 			}
-			Logger.log("new filename: " + newFileName);
+			Logger.info("new filename: " + newFileName);
 		}
 	}
 

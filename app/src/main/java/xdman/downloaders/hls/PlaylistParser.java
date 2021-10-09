@@ -8,8 +8,9 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.tinylog.Logger;
 import xdman.util.FormatUtilities;
-import xdman.util.Logger;
+import xdman.util.IOUtils;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
 
@@ -76,6 +77,7 @@ public class PlaylistParser {
 							totalDuration += Float.parseFloat(duration);
 						}
 					} catch (Exception e) {
+						Logger.error(e);
 					}
 					duration = "";
 				} else if (line.startsWith("#EXT")) {
@@ -92,6 +94,7 @@ public class PlaylistParser {
 									long bw = Integer.parseInt(bandwidth);
 									bandwidth = (bw / 1000) + "k";
 								} catch (Exception e) {
+									Logger.error(e);
 									bandwidth = "";
 								}
 							}
@@ -105,6 +108,7 @@ public class PlaylistParser {
 								try {
 									duration = sDuration;
 								} catch (Exception e) {
+									Logger.error(e);
 								}
 							}
 						}
@@ -132,7 +136,7 @@ public class PlaylistParser {
 								if (keyUrl != null) {
 									keyUrl = keyUrl.replace("\"", "");
 								}
-								System.out.println("Method: " + method + " URI: " + keyUrl);
+								Logger.info("Method: " + method + " URI: " + keyUrl);
 								if (method != null) {
 									if (method.equals("AES-128") || method.equals("NONE")) {
 										if (method.equals("AES-128")) {
@@ -141,16 +145,16 @@ public class PlaylistParser {
 											IV = getAttrValue(attrs, "IV");
 											String keyFormat = getAttrValue(attrs, "KEYFORMAT");
 											if (keyFormat != null && (!keyFormat.equals("identity"))) {
-												System.out.println("Unsupported encryption method: " + method
+												Logger.warn("Unsupported encryption method: " + method
 														+ "/keyformat: " + keyFormat);
 												return null;
 											}
 										} else {
 											isEncryptedSegment = false;
-											System.out.println("Non encrypted");
+											Logger.info("Non encrypted");
 										}
 									} else {
-										System.out.println("Unsupported encryption method: " + method);
+										Logger.warn("Unsupported encryption method: " + method);
 										return null;
 									}
 
@@ -166,14 +170,9 @@ public class PlaylistParser {
 			playlist.setDuration(totalDuration);
 			return playlist;
 		} catch (Exception e) {
-			e.printStackTrace();
+			Logger.error(e);
 		} finally {
-			if (r != null) {
-				try {
-					r.close();
-				} catch (Exception e2) {
-				}
-			}
+			IOUtils.closeFlow(r);
 		}
 		return null;
 	}
@@ -221,8 +220,7 @@ public class PlaylistParser {
 				return segmentUrl;
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
-			Logger.log(e);
+			Logger.error(e);
 		}
 		return null;
 	}

@@ -5,12 +5,12 @@ import java.io.InputStream;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
 
+import org.tinylog.Logger;
 import xdman.XDMConstants;
 import xdman.downloaders.AbstractChannel;
 import xdman.downloaders.Segment;
 import xdman.network.ftp.FtpClient;
 import xdman.network.http.JavaClientRequiredException;
-import xdman.util.Logger;
 import xdman.util.XDMUtils;
 
 public class FtpChannel extends AbstractChannel {
@@ -38,13 +38,13 @@ public class FtpChannel extends AbstractChannel {
 		if (chunk.getLength() < 0 && chunk.getDownloaded() > 0) {
 			errorCode = XDMConstants.ERR_NO_RESUME;
 			closeImpl();
-			Logger.log("server does not support resuming");
+			Logger.warn("server does not support resuming");
 			return false;
 		}
 		try {
 			chunk.reopenStream();
 		} catch (IOException e) {
-			Logger.log(e);
+			Logger.error(e);
 			closeImpl();
 			errorCode = XDMConstants.ERR_NO_RESUME;
 			return false;
@@ -55,7 +55,7 @@ public class FtpChannel extends AbstractChannel {
 		while (!stop) {
 			isRedirect = false;
 			try {
-				Logger.log("ftp Connecting to: " + url + " " + chunk.getTag() + " offset "
+				Logger.info("ftp Connecting to: " + url + " " + chunk.getTag() + " offset "
 						+ (chunk.getStartOffset() + chunk.getDownloaded()));
 				hc = new FtpClient(url);
 
@@ -80,7 +80,7 @@ public class FtpChannel extends AbstractChannel {
 
 				int code = hc.getStatusCode();
 
-				Logger.log(chunk + ": " + code);
+				Logger.info(chunk + ": " + code);
 
 				if (code != 200 && code != 206 && code != 416 && code != 413 && code != 401 && code != 408
 						&& code != 407 && code != 503) {
@@ -90,7 +90,7 @@ public class FtpChannel extends AbstractChannel {
 				}
 
 				if (code == 407 || code == 401) {
-					Logger.log("asking for password");
+					Logger.info("asking for password");
 					boolean proxy = code == 407;
 					passwd = Authenticator.requestPasswordAuthentication(null, hc.getPort(), "ftp", "", "ftp");
 
@@ -101,7 +101,7 @@ public class FtpChannel extends AbstractChannel {
 							return false;
 						} else {
 							passwd = Authenticator.requestPasswordAuthentication(null, hc.getPort(), "ftp", "", "ftp");
-							Logger.log("Passwd: " + passwd);
+							Logger.info("Passwd: " + passwd);
 							throw new JavaClientRequiredException();
 						}
 					}
@@ -121,21 +121,21 @@ public class FtpChannel extends AbstractChannel {
 				length = hc.getContentLength();
 
 				if (hc.getContentLength() > 0 && XDMUtils.getFreeSpace(null) < hc.getContentLength()) {
-					Logger.log("Disk is full");
+					Logger.warn("Disk is full");
 					errorCode = XDMConstants.DISK_FAIURE;
 					closeImpl();
 					return false;
 				}
 
 				in = hc.getInputStream();
-				Logger.log("Connection success");
+				Logger.info("Connection success");
 				return true;
 
 			} catch (JavaClientRequiredException e) {
 				sleepInterval = 0;
+				Logger.error(e);
 			} catch (Exception e) {
-				Logger.log(chunk);
-				Logger.log(e);
+				Logger.error(e, chunk.toString());
 				if (isRedirect) {
 					closeImpl();
 					continue;
@@ -148,10 +148,11 @@ public class FtpChannel extends AbstractChannel {
 			try {
 				Thread.sleep(sleepInterval);
 			} catch (Exception e) {
+				Logger.error(e);
 			}
 		}
 
-		Logger.log("return as " + errorCode);
+		Logger.warn("return as " + errorCode);
 
 		return false;
 	}
