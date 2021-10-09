@@ -12,6 +12,7 @@ import java.util.List;
 import xdman.DownloadEntry;
 import xdman.XDMApp;
 import xdman.XDMConstants;
+import xdman.util.IOUtils;
 import xdman.util.XDMUtils;
 
 import org.tinylog.Logger;
@@ -71,13 +72,7 @@ public class ChunkLoader {
 			Logger.error(e);
 			return null;
 		} finally {
-			if (br != null) {
-				try {
-					br.close();
-				} catch (IOException e) {
-					Logger.error(e);
-				}
-			}
+			IOUtils.closeFlow(br);
 		}
 	}
 
@@ -125,13 +120,7 @@ public class ChunkLoader {
 			Logger.error(e);
 			return null;
 		} finally {
-			if (br != null) {
-				try {
-					br.close();
-				} catch (IOException e) {
-					Logger.error(e);
-				}
-			}
+			IOUtils.closeFlow(br);
 		}
 	}
 
@@ -174,13 +163,7 @@ public class ChunkLoader {
 			Logger.error(e);
 			return null;
 		} finally {
-			if (br != null) {
-				try {
-					br.close();
-				} catch (IOException e) {
-					Logger.error(e);
-				}
-			}
+			IOUtils.closeFlow(br);
 		}
 	}
 }
