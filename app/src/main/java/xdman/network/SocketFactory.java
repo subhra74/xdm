@@ -1,14 +1,13 @@
 package xdman.network;
 
+import java.io.*;
 import java.net.*;
-
 import javax.net.ssl.*;
 
 import xdman.Config;
 import xdman.network.http.HttpContext;
-import xdman.util.Logger;
 
-import java.io.*;
+import org.tinylog.Logger;
 
 public class SocketFactory {
 	// private static int timeOut = 0;
@@ -23,6 +22,7 @@ public class SocketFactory {
 			sock2.startHandshake();
 			return sock2;
 		} catch (IOException e) {
+			Logger.error(e);
 			throw new NetworkException("Https connection failed: " + host + ":" + port);
 		}
 	}
@@ -37,15 +37,16 @@ public class SocketFactory {
 				try {
 					sock.setReceiveBufferSize(config.getTcpWindowSize() * 1024);
 				} catch (Exception e) {
-					Logger.log(e);
+					Logger.error(e);
 				}
 			}
-			Logger.log("Tcp RWin: "+sock.getReceiveBufferSize());
+			Logger.info("Tcp RWin: "+sock.getReceiveBufferSize());
 			// sock.setReceiveBufferSize(tcpBufSize);
 			sock.setSoLinger(false, 0);
 			sock.connect(new InetSocketAddress(host, port));
 			return sock;
 		} catch (IOException e) {
+			Logger.error(e);
 			throw new HostUnreachableException("Unable to connect to: " + host + ":" + port);
 		}
 	}
