@@ -9,7 +9,7 @@ import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPReply;
 
-import xdman.util.Logger;
+import org.tinylog.Logger;
 
 public class FtpClient {
 	private String url;
@@ -40,26 +40,26 @@ public class FtpClient {
 	}
 
 	public void connect() throws IOException {
-		Logger.log("Initiate ftp: " + url);
+		Logger.info("Initiate ftp: " + url);
 		URI ftpuri;
 		try {
 			ftpuri = new URI(url);
 		} catch (URISyntaxException e) {
-			Logger.log(e);
+			Logger.error(e);
 			throw new IOException(e);
 		}
 		host = ftpuri.getHost();
 		port = ftpuri.getPort();
 		path = ftpuri.getPath();
-		Logger.log("Path: " + path);
+		Logger.info("Path: " + path);
 		getPath();
 		fc = new FTPClient();
-		Logger.log("Connecting ftp: " + host + ":" + port);
+		Logger.info("Connecting ftp: " + host + ":" + port);
 		if (port > 0)
 			fc.connect(host, port);
 		else
 			fc.connect(host);
-		Logger.log("Loggin in");
+		Logger.info("Loggin in");
 		fc.login(user, password);
 		int reply = fc.getReplyCode();
 		if (!FTPReply.isPositiveCompletion(reply)) {
@@ -68,7 +68,7 @@ public class FtpClient {
 			fc.disconnect();
 			return;
 		}
-		Logger.log("Going binary");
+		Logger.info("Going binary");
 		fc.setFileType(FTPClient.BINARY_FILE_TYPE);
 		reply = fc.getReplyCode();
 		if (!FTPReply.isPositiveCompletion(reply)) {
@@ -77,9 +77,9 @@ public class FtpClient {
 			fc.disconnect();
 			return;
 		}
-		Logger.log("Going passive");
+		Logger.info("Going passive");
 		fc.enterLocalPassiveMode();
-		Logger.log("cd " + dir);
+		Logger.info("cd " + dir);
 		fc.changeWorkingDirectory(dir);
 		reply = fc.getReplyCode();
 		if (!FTPReply.isPositiveCompletion(reply)) {
@@ -89,7 +89,7 @@ public class FtpClient {
 			return;
 		}
 
-		Logger.log("Listing files");
+		Logger.info("Listing files");
 		FTPFile files[] = fc.listFiles(dir);
 		reply = fc.getReplyCode();
 		if (!FTPReply.isPositiveCompletion(reply)) {
@@ -102,20 +102,20 @@ public class FtpClient {
 			FTPFile f = files[i];
 			if (f.getName().equals(file)) {
 				this.length = f.getSize();
-				Logger.log("Length retrived: " + length);
+				Logger.info("Length retrived: " + length);
 				break;
 			}
 		}
 		this.statusCode = 200;
 
 		if (offset > 0 && length > 0) {
-			Logger.log("Setting offset");
+			Logger.info("Setting offset");
 			fc.setRestartOffset(offset);
 			if (!FTPReply.isPositiveCompletion(reply)) {
 				throw new IOException(fc.getReplyString());
 			}
 			this.length -= offset;
-			Logger.log("Length after seek: " + length);
+			Logger.info("Length after seek: " + length);
 			this.statusCode = 206;
 		}
 
@@ -191,7 +191,7 @@ public class FtpClient {
 		try {
 			fc.disconnect();
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 	}
 }
