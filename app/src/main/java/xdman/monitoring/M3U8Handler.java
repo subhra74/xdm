@@ -3,6 +3,8 @@ package xdman.monitoring;
 import java.io.File;
 import java.util.List;
 
+import org.tinylog.Logger;
+
 import xdman.XDMApp;
 import xdman.downloaders.hls.HlsPlaylist;
 import xdman.downloaders.hls.HlsPlaylistItem;
@@ -14,10 +16,10 @@ import xdman.util.XDMUtils;
 public class M3U8Handler {
 	public static boolean handle(File m3u8file, ParsedHookData data) {
 		try {
-			System.out.println("Handing manifest: ...");
+			Logger.info("Handing manifest: ...");
 			HlsPlaylist playlist = PlaylistParser.parse(m3u8file.getAbsolutePath(), data.getUrl());
 			if (playlist == null) {
-				System.out.println("Playlist empty");
+				Logger.info("Playlist empty");
 				return true;
 			}
 				
@@ -35,7 +37,7 @@ public class M3U8Handler {
 					if (StringUtils.isNullOrEmptyOrBlank(file)) {
 						file = XDMUtils.getFileName(data.getUrl());
 					}
-					System.out.println("adding media");
+					Logger.info("adding media");
 					XDMApp.getInstance().addMedia(metadata, file + ".ts", "HLS");
 				}
 			} else {
@@ -62,14 +64,14 @@ public class M3U8Handler {
 						if (!StringUtils.isNullOrEmptyOrBlank(item.getResolution())) {
 							infoStr.append(item.getResolution());
 						}
-						System.out.println("adding media");
+						Logger.info("adding media");
 						XDMApp.getInstance().addMedia(metadata, file + ".ts", infoStr.toString());
 					}
 				}
 			}
 			return true;
 		} catch (Exception e) {
-			e.printStackTrace();
+			Logger.error(e);
 		}
 		return false;
 	}
