@@ -648,8 +648,6 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 			ent.setState(XDMConstants.PAUSED);
 			clearData(ent);
 			resumeDownload(id, true);
-		} else {
-			return;
 		}
 	}
 
