@@ -15,7 +15,8 @@ import javax.net.ssl.X509ExtendedTrustManager;
 
 import xdman.CredentialManager;
 import xdman.network.ICredentialManager;
-import xdman.util.Logger;
+
+import org.tinylog.Logger;
 
 public class HttpContext {
 	private boolean init = false;
@@ -44,14 +45,14 @@ public class HttpContext {
 
 	public void init() {
 		if (!init) {
-			Logger.log("Context initialized");
+			Logger.info("Context initialized");
 			System.setProperty("http.auth.preference", "ntlm");
 			try {
 				try {
 					// sslContext = SSLContext.getInstance("SSLv3");
 					sslContext = SSLContext.getInstance("TLS");
 				} catch (Exception e) {
-					e.printStackTrace();
+					Logger.error(e);
 					sslContext = SSLContext.getInstance("SSL");
 				}
 
@@ -126,12 +127,12 @@ public class HttpContext {
 				sslContext.init(null, trustAllCerts, new SecureRandom());
 				HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
 			} catch (Exception e) {
-				Logger.log(e);
+				Logger.error(e);
 			}
 
 			Authenticator.setDefault(new Authenticator() {
 				protected PasswordAuthentication getPasswordAuthentication() {
-					System.out.println("Called on " + getRequestorType() + " scheme: " + getRequestingScheme()
+					Logger.info("Called on " + getRequestorType() + " scheme: " + getRequestingScheme()
 							+ " host: " + getRequestingHost() + " url: " + getRequestingURL() + " prompt: "
 							+ getRequestingPrompt());
 					if (getRequestorType() == RequestorType.SERVER) {
