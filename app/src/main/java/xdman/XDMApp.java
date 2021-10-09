@@ -132,7 +132,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 		System.exit(0);
 	}
 
-	public static void start(String args[]) {
+	public static void start(String[] args) {
 
 		Config.getInstance().load();
 		if (Config.getInstance().getZoomLevelIndex() > 0) {
