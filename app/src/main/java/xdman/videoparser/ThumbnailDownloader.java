@@ -1,5 +1,11 @@
 package xdman.videoparser;
 
+import org.tinylog.Logger;
+import xdman.Config;
+import xdman.network.http.JavaHttpClient;
+import xdman.util.IOUtils;
+import xdman.util.XDMUtils;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -7,114 +13,102 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import xdman.Config;
-import xdman.network.http.JavaHttpClient;
-import xdman.util.XDMUtils;
-
-import org.tinylog.Logger;
-
 public class ThumbnailDownloader implements Runnable {
-	private String[] thumbnails;
-	private Thread t;
-	private boolean stop;
-	private ThumbnailListener listener;
-	private long instanceKey;
+    private final String[] thumbnails;
+    private final long instanceKey;
+    private boolean stop;
+    private ThumbnailListener listener;
 
-	public void download() {
-		t = new Thread(this);
-		t.start();
-	}
+    public ThumbnailDownloader(ArrayList<String> list, ThumbnailListener listener, long instanceKey) {
+        this.thumbnails = new String[list.size()];
+        int i = 0;
+        for (String str : list) {
+            this.thumbnails[i++] = str;
+        }
+        this.listener = listener;
+        this.instanceKey = instanceKey;
+    }
 
-	public ThumbnailDownloader(ArrayList<String> list, ThumbnailListener listener, long instanceKey) {
-		thumbnails = new String[list.size()];
-		int i = 0;
-		for (String str : list) {
-			thumbnails[i++] = str;
-		}
-		this.listener = listener;
-		this.instanceKey = instanceKey;
-	}
+    public void download() {
+        Thread t = new Thread(this);
+        t.start();
+    }
 
-	public void stop() {
-		stop = true;
-		this.listener = null;
-	}
+    public void stop() {
+        this.stop = true;
+        this.listener = null;
+    }
 
-	public void removeThumbnailListener() {
-		this.listener = null;
-	}
+    public void removeThumbnailListener() {
+        this.listener = null;
+    }
 
-	@Override
-	public void run() {
-		List<String> list = new ArrayList<>();
-		try {
-			if (thumbnails == null)
-				return;
-			for (int i = 0; i < thumbnails.length; i++) {
-				if (stop)
-					return;
-				String url = thumbnails[i];
-				String file = downloadReal(url);
-				if (stop)
-					return;
-				if (file != null) {
-					if (listener != null) {
-						listener.thumbnailsLoaded(instanceKey, url, file);
-					}
-					list.add(file);
-				}
-			}
-		} catch (Exception e) {
-			Logger.error(e);
-		} finally {
-			if (stop) {
-				for (String file : list) {
-					new File(file).delete();
-				}
-			}
-		}
-	}
+    @Override
+    public void run() {
+        List<String> list = new ArrayList<>();
+        try {
+            if (this.thumbnails == null)
+                return;
+            for (String thumbnail : this.thumbnails) {
+                if (this.stop)
+                    return;
+                String file = downloadReal(thumbnail);
+                if (this.stop)
+                    return;
+                if (file != null) {
+                    if (this.listener != null) {
+                        this.listener.thumbnailsLoaded(this.instanceKey, thumbnail, file);
+                    }
+                    list.add(file);
+                }
+            }
+        } catch (Exception e) {
+            Logger.error(e);
+        } finally {
+            if (this.stop) {
+                for (String file : list) {
+                    new File(file).delete();
+                }
+            }
+        }
+    }
 
-	private String downloadReal(String url) {
-		JavaHttpClient client = null;
-		File tmpFile = new File(Config.getInstance().getTemporaryFolder(), UUID.randomUUID().toString());
-		FileOutputStream out = null;
-		try {
-			client = new JavaHttpClient(url);
-			client.setFollowRedirect(true);
-			client.connect();
-			int resp = client.getStatusCode();
-			if (stop) {
-				return null;
-			}
-			Logger.info("manifest download response: " + resp);
-			if (resp == 200 || resp == 206) {
-				InputStream in = client.getInputStream();
-				long len = client.getContentLength();
-				out = new FileOutputStream(tmpFile);
-				XDMUtils.copyStream(in, out, len);
-				Logger.info("thumbnail download successful");
-				return tmpFile.getAbsolutePath();
-			}
-		} catch (Exception e) {
-			Logger.error(e);
-		} finally {
-			try {
-				client.dispose();
-			} catch (Exception e) {
-				Logger.error(e);
-			}
-			try {
-				if (out != null) {
-					out.close();
-				}
-			} catch (Exception e) {
-				Logger.error(e);
-			}
-			if (stop) {
-				tmpFile.delete();
-			}
-		}
-		return null;
-	}
+    private String downloadReal(String url) {
+        JavaHttpClient client = null;
+        File tmpFile = new File(Config.getInstance().getTemporaryFolder(), UUID.randomUUID().toString());
+        FileOutputStream out = null;
+        try {
+            client = new JavaHttpClient(url);
+            client.setFollowRedirect(true);
+            client.connect();
+            int resp = client.getStatusCode();
+            if (this.stop) {
+                return null;
+            }
+            Logger.info("manifest download response: " + resp);
+            if (resp == 200 || resp == 206) {
+                InputStream in = client.getInputStream();
+                long len = client.getContentLength();
+                out = new FileOutputStream(tmpFile);
+                XDMUtils.copyStream(in, out, len);
+                Logger.info("thumbnail download successful");
+                return tmpFile.getAbsolutePath();
+            }
+        } catch (Exception e) {
+            Logger.error(e);
+        } finally {
+            if (client != null) {
+                try {
+                    client.dispose();
+                } catch (Exception e) {
+                    Logger.error(e);
+                }
+            }
+            IOUtils.closeFlow(out);
+            if (this.stop) {
+                tmpFile.delete();
+            }
+        }
+        return null;
+    }
 }
