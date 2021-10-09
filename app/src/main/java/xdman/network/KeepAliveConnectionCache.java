@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
 
+import org.tinylog.Logger;
+
 public class KeepAliveConnectionCache implements Runnable {
 	private ArrayList<KeepAliveInfo> socketList;
 	private boolean stop;
@@ -72,7 +74,7 @@ public class KeepAliveConnectionCache implements Runnable {
 				try {
 					info.getSocket().close();
 				} catch (IOException e) {
-					e.printStackTrace();
+					Logger.error(e);
 				}
 			}
 		}
@@ -89,7 +91,7 @@ public class KeepAliveConnectionCache implements Runnable {
 				try {
 					Thread.sleep(MAX_KEEP_ALIVE_INT - (now - lastrun));
 				} catch (InterruptedException e) {
-					e.printStackTrace();
+					Logger.error(e);
 				}
 			}
 		}
