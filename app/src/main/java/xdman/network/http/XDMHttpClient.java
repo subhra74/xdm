@@ -9,7 +9,11 @@ import xdman.network.KeepAliveConnectionCache;
 import xdman.network.NetworkException;
 import xdman.network.ParsedURL;
 import xdman.network.SocketFactory;
-import xdman.util.*;
+import xdman.util.IOUtils;
+import xdman.util.NetUtils;
+import xdman.util.StringUtils;
+
+import org.tinylog.Logger;
 
 public class XDMHttpClient extends HttpClient {
 	private ParsedURL _url;
@@ -30,6 +34,7 @@ public class XDMHttpClient extends HttpClient {
 		try {
 			return (in.isStreamFinished() && keepAliveSupported);
 		} catch (Exception e) {
+			Logger.error(e);
 		}
 		return false;
 	}
@@ -45,13 +50,9 @@ public class XDMHttpClient extends HttpClient {
 				return;
 			}
 		} catch (Exception e) {
-
+			Logger.error(e);
 		}
-		try {
-			this.socket.close();
-		} catch (Exception e) {
-
-		}
+		IOUtils.closeFlow(this.socket);
 	}
 
 	@Override
@@ -68,11 +69,11 @@ public class XDMHttpClient extends HttpClient {
 			Socket sock = KeepAliveConnectionCache.getInstance().getReusableSocket(_url.getHost(), _url.getPort());
 			boolean reusing = false;
 			if (sock == null) {
-				Logger.log("Creating new socket");
+				Logger.info("Creating new socket");
 				this.socket = createSocket();
 			} else {
 				reusing = true;
-				Logger.log("Reusing existing socket");
+				Logger.info("Reusing existing socket");
 				this.socket = sock;
 			}
 			OutputStream sockOut = socket.getOutputStream();
@@ -83,7 +84,7 @@ public class XDMHttpClient extends HttpClient {
 			requestHeaders.appendToBuffer(reqBuf);
 			reqBuf.append("\r\n");
 
-			Logger.log("Sending request:\n" + reqBuf);
+			Logger.info("Sending request:\n" + reqBuf);
 
 			sockOut.write(StringUtils.getBytes(reqBuf));
 			sockOut.flush();
@@ -97,18 +98,18 @@ public class XDMHttpClient extends HttpClient {
 				this.statusMessage = "";
 			}
 
-			Logger.log(statusLine);
+			Logger.info(statusLine);
 
 			responseHeaders.loadFromStream(sockIn);
 			length = NetUtils.getContentLength(responseHeaders);
 			StringBuffer b2 = new StringBuffer();
 			responseHeaders.appendToBuffer(b2);
-			Logger.log(b2);
+			Logger.info(b2);
 			
 			in = new FixedRangeInputStream(NetUtils.getInputStream(responseHeaders, socket.getInputStream()), length);
 
 			if (reusing) {
-				Logger.log("Socket reuse successfull");
+				Logger.info("Socket reuse successful");
 			}
 			
 
@@ -128,7 +129,7 @@ public class XDMHttpClient extends HttpClient {
 	}
 
 	private void releaseSocket() {
-		Logger.log("Releasing socket for reuse");
+		Logger.info("Releasing socket for reuse");
 		KeepAliveConnectionCache.getInstance().putSocket(socket, _url.getHost(), _url.getPort());
 	}
 
