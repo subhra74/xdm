@@ -150,31 +150,31 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 		boolean expect = false;
 		boolean winInstall = false;
 		String key = null;
-		for (int i = 0; i < args.length; i++) {
+		for (String arg : args) {
 			if (expect) {
 				if (key != null) {
-					paramMap.put(key, args[i]);
+					paramMap.put(key, arg);
 				}
 				expect = false;
 				continue;
 			}
-			if ("-u".equals(args[i])) {
+			if ("-u".equals(arg)) {
 				key = "url";
 				expect = true;
-			} else if ("-m".equals(args[i])) {
+			} else if ("-m".equals(arg)) {
 				paramMap.put("background", "true");
 				expect = false;
-			} else if ("-i".equals(args[i])) {
+			} else if ("-i".equals(arg)) {
 				paramMap.put("installer", "true");
 				expect = false;
 				winInstall = true;
-			} else if ("-s".equals(args[i])) {
+			} else if ("-s".equals(arg)) {
 				key = "screen";
 				expect = true;
-			} else if ("-o".equals(args[i]) || "--output".equals(args[i])) {
+			} else if ("-o".equals(arg) || "--output".equals(arg)) {
 				key = "output";
 				expect = true;
-			} else if ("-q".equals(args[i]) || "--quiet".equals(args[i])) {
+			} else if ("-q".equals(arg) || "--quiet".equals(arg)) {
 				paramMap.put("quiet", "true");
 				expect = false;
 			}
@@ -685,11 +685,11 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 
 	private void notifyListeners(String id) {
 		if (listChangeListeners != null) {
-			for (int i = 0; i < listChangeListeners.size(); i++)
+			for (ListChangeListener listChangeListener : listChangeListeners)
 				if (id != null)
-					listChangeListeners.get(i).listItemUpdated(id);
+					listChangeListener.listItemUpdated(id);
 				else
-					listChangeListeners.get(i).listChanged();
+					listChangeListener.listChanged();
 		}
 	}
 
@@ -699,9 +699,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 
 	public ArrayList<String> getDownloadList(int category, int state, String searchText, String queueId) {
 		ArrayList<String> idList = new ArrayList<String>();
-		Iterator<String> keyIterator = downloads.keySet().iterator();
-		while (keyIterator.hasNext()) {
-			String key = keyIterator.next();
+		for (String key : downloads.keySet()) {
 			DownloadEntry ent = downloads.get(key);
 			if (state == XDMConstants.ALL || state == (ent.getState() == XDMConstants.FINISHED ? XDMConstants.FINISHED
 					: XDMConstants.UNFINISHED)) {
@@ -737,8 +735,8 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 		File folder = new File(ent.getTempFolder(), ent.getId());
 		File[] files = folder.listFiles();
 		if (files != null) {
-			for (int i = 0; i < files.length; i++) {
-				files[i].delete();
+			for (File file : files) {
+				file.delete();
 			}
 		}
 		folder.delete();
@@ -865,7 +863,6 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 				}
 				downloads.put(ent.getId(), ent);
 			}
-			reader.close();
 		} catch (Exception e) {
 			Logger.error(e);
 		}
@@ -886,9 +883,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 			writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), Charset.forName("UTF-8")));
 			writer.write(count + "");
 			writer.newLine();
-			Iterator<String> keyIterator = downloads.keySet().iterator();
-			while (keyIterator.hasNext()) {
-				String key = keyIterator.next();
+			for (String key : downloads.keySet()) {
 				DownloadEntry ent = downloads.get(key);
 				int c = 0;
 				StringBuffer sb = new StringBuffer();
@@ -948,9 +943,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 
 	private synchronized int getActiveDownloadCount() {
 		int count = 0;
-		Iterator<String> keyIterator = downloads.keySet().iterator();
-		while (keyIterator.hasNext()) {
-			String key = keyIterator.next();
+		for (String key : downloads.keySet()) {
 			DownloadEntry ent = downloads.get(key);
 			int state = ent.getState();
 			if (state == XDMConstants.FINISHED || state == XDMConstants.PAUSED || state == XDMConstants.FAILED)
@@ -1002,8 +995,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 			}
 		}
 		if (tobeStartedIds.size() > 0) {
-			for (int i = 0; i < tobeStartedIds.size(); i++) {
-				String id = tobeStartedIds.get(i);
+			for (String id : tobeStartedIds) {
 				pendingDownloads.remove(id);
 				DownloadEntry ent = getEntry(id);
 				if (ent != null) {
@@ -1016,8 +1008,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 	public boolean queueItemPending(String queueId) {
 		if (queueId == null)
 			return false;
-		for (int i = 0; i < pendingDownloads.size(); i++) {
-			String id = pendingDownloads.get(i);
+		for (String id : pendingDownloads) {
 			DownloadEntry ent = getEntry(id);
 			if (ent == null || ent.getQueueId() == null)
 				continue;
@@ -1107,8 +1098,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 
 	public int deleteDownloads(ArrayList<String> ids, boolean outflie) {
 		int c = 0;
-		for (int i = 0; i < ids.size(); i++) {
-			String id = ids.get(i);
+		for (String id : ids) {
 			DownloadEntry ent = getEntry(id);
 			if (ent != null) {
 				if (ent.getState() == XDMConstants.FINISHED || ent.getState() == XDMConstants.PAUSED
