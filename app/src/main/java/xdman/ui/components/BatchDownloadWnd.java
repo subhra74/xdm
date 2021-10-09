@@ -40,9 +40,10 @@ import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
-import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
+
+import org.tinylog.Logger;
 
 import static xdman.util.XDMUtils.getScaledInt;
 
@@ -64,7 +65,7 @@ public class BatchDownloadWnd extends JFrame implements ActionListener {
 		List<String> urls = new ArrayList<>();
 		String text = XDMUtils.getClipBoardText();
 		if (!StringUtils.isNullOrEmptyOrBlank(text)) {
-			System.out.println(text);
+			Logger.info(text);
 			String[] arr = text.split("\n");
 			for (int i = 0; i < arr.length; i++) {
 				String url = arr[i];
@@ -72,7 +73,7 @@ public class BatchDownloadWnd extends JFrame implements ActionListener {
 					new URL(url);
 					urls.add(url);
 				} catch (Exception e) {
-
+					Logger.error(e);
 				}
 			}
 		}
@@ -96,10 +97,10 @@ public class BatchDownloadWnd extends JFrame implements ActionListener {
 				String ext = XDMUtils.getExtension(file);
 				if (!StringUtils.isNullOrEmptyOrBlank(ext)) {
 					fileExts.add(ext);
-					System.out.println("adding ext: " + ext);
+					Logger.info("adding ext: " + ext);
 				}
 			} catch (Exception e) {
-
+				Logger.error(e);
 			}
 		}
 
@@ -164,7 +165,7 @@ public class BatchDownloadWnd extends JFrame implements ActionListener {
 					setOpacity(0.85f);
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 
 		setTitle(StringResource.get("MENU_BATCH_DOWNLOAD"));
