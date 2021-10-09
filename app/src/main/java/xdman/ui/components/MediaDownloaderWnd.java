@@ -52,7 +52,6 @@ import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 import xdman.util.FormatUtilities;
-import xdman.util.Logger;
 import xdman.util.XDMUtils;
 import xdman.videoparser.ThumbnailDownloader;
 import xdman.videoparser.ThumbnailListener;
@@ -60,6 +59,8 @@ import xdman.videoparser.YdlResponse;
 import xdman.videoparser.YdlResponse.YdlMediaFormat;
 import xdman.videoparser.YdlResponse.YdlVideo;
 import xdman.videoparser.YoutubeDLHandler;
+
+import org.tinylog.Logger;
 
 public class MediaDownloaderWnd extends JFrame implements ActionListener, ThumbnailListener, MediaImageSource {
 
@@ -95,7 +96,7 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 			txtURL.setText(url.toString());
 			txtURL.setCaretPosition(0);
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 	}
 
@@ -110,7 +111,7 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 				}
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 
 		setTitle(StringResource.get("TITLE_DOWN_VID"));
@@ -482,11 +483,11 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 						@Override
 						public void run() {
 							ArrayList<VideoItemWrapper> list = new ArrayList<>();
-							Logger.log("Total video found: " + ydl.getVideos().size());
+							Logger.info("Total video found: " + ydl.getVideos().size());
 							for (int i = 0; i < ydl.getVideos().size(); i++) {
 								YdlVideo ydln = ydl.getVideos().get(i);
 								if (ydln.mediaFormats == null || ydln.mediaFormats.size() < 1) {
-									Logger.log("media formats not available");
+									Logger.warn("media formats not available");
 									continue;
 								}
 								VideoItemWrapper wrapper = new VideoItemWrapper();
@@ -511,7 +512,7 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 						}
 					});
 				} catch (Exception e) {
-					Logger.log(e);
+					Logger.error(e);
 				}
 				try {
 					SwingUtilities.invokeAndWait(new Runnable() {
@@ -526,7 +527,7 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 				} catch (InvocationTargetException |
 
 						InterruptedException e) {
-					Logger.log(e);
+					Logger.error(e);
 				}
 			}
 		}.start();
@@ -641,21 +642,21 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 	@Override
 	public void thumbnailsLoaded(long key, String url, String file) {
 		// this key is changed on each time start button is clicked
-		System.out.println("Thumbnail callback");
+		Logger.info("Thumbnail callback");
 		if (this.instancekey == key) {
 			for (int i = 0; i < model.getRowCount(); i++) {
 				VideoItemWrapper wp = (VideoItemWrapper) model.getValueAt(i, 0);
 				YdlVideo video = wp.videoItem;
 				if (video.thumbnail != null && video.thumbnail.equals(url)) {
 					ImageIcon ico = loadImage(file, video.duration);
-					System.out.println("Icon: " + ico);
+					Logger.info("Icon: " + ico);
 					imageMap.put(url, ico);
 					model.fireTableCellUpdated(i, 0);
 					break;
 				}
 			}
 		} else {
-			System.out.println("diff instance");
+			Logger.info("diff instance");
 		}
 	}
 
@@ -698,10 +699,10 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 			img.flush();
 			return new ImageIcon(image);
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 			return null;
 		} finally {
-			System.out.println(f);
+			Logger.info(f);
 			f.delete();
 		}
 	}
