@@ -7,10 +7,11 @@ import java.util.List;
 import java.util.Map;
 
 import xdman.network.http.HeaderCollection;
-import xdman.util.Logger;
 import xdman.util.NetUtils;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
+
+import org.tinylog.Logger;
 
 public class ParsedHookData {
 
@@ -66,7 +67,7 @@ public class ParsedHookData {
 					if (headerName.equals("cookie")) {
 						parseCookies(headerValue, cookies);
 					}
-					System.out.println(ln);
+					Logger.info(ln);
 				}
 			} else if (key.equals("res")) {
 				index = val.indexOf(":");
@@ -106,6 +107,7 @@ public class ParsedHookData {
 		try {
 			data.setExt(XDMUtils.getExtension(XDMUtils.getFileName(data.getUrl())));
 		} catch (Exception e) {
+			Logger.error(e);
 		}
 		return data;
 	}
@@ -120,7 +122,7 @@ public class ParsedHookData {
 				String[] s = str.trim().split("=");
 				cookieMap.put(s[0].trim(), s[1].trim());
 			} catch (Exception e) {
-				Logger.log(e);
+				Logger.error(e);
 			}
 		}
 	}
