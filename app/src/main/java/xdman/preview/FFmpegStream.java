@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 
 import xdman.Config;
+import xdman.util.IOUtils;
 import xdman.util.XDMUtils;
 
 import org.tinylog.Logger;
@@ -27,11 +28,7 @@ public class FFmpegStream extends InputStream implements Runnable {
 
 	@Override
 	public void close() throws IOException {
-		try {
-			in.close();
-		} catch (Exception e) {
-			Logger.error(e);
-		}
+		IOUtils.closeFlow(in);
 		try {
 			Logger.info("closing");
 			proc.destroyForcibly();
@@ -96,11 +93,7 @@ public class FFmpegStream extends InputStream implements Runnable {
 				return;
 			}
 			if (read - last < 1) {
-				try {
-					in.close();
-				} catch (Exception e) {
-					Logger.error(e);
-				}
+				IOUtils.closeFlow(in);
 				Logger.info("closing hanged ffmpeg");
 				proc.destroyForcibly();
 				break;
