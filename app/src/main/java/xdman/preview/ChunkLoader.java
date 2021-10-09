@@ -14,6 +14,8 @@ import xdman.XDMApp;
 import xdman.XDMConstants;
 import xdman.util.XDMUtils;
 
+import org.tinylog.Logger;
+
 public class ChunkLoader {
 	static List<Chunk> load(String id, int type) {
 		if (type == XDMConstants.HTTP) {
@@ -27,7 +29,7 @@ public class ChunkLoader {
 	}
 
 	private static List<Chunk> loadDash(String id) {
-		System.out.println("loading http chunk " + id);
+		Logger.info("loading http chunk " + id);
 		ArrayList<Chunk> list = new ArrayList<>();
 		BufferedReader br = null;
 		try {
@@ -66,21 +68,21 @@ public class ChunkLoader {
 			Collections.sort(list, new ChunkComparator());
 			return list;
 		} catch (Exception e) {
-			e.printStackTrace();
+			Logger.error(e);
 			return null;
 		} finally {
 			if (br != null) {
 				try {
 					br.close();
 				} catch (IOException e) {
-					e.printStackTrace();
+					Logger.error(e);
 				}
 			}
 		}
 	}
 
 	private static List<Chunk> loadHLS(String id) {
-		System.out.println("loading http chunk " + id);
+		Logger.info("loading http chunk " + id);
 		ArrayList<Chunk> list = new ArrayList<>();
 		BufferedReader br = null;
 		try {
@@ -120,21 +122,21 @@ public class ChunkLoader {
 			Collections.sort(list, new ChunkComparator());
 			return list;
 		} catch (Exception e) {
-			e.printStackTrace();
+			Logger.error(e);
 			return null;
 		} finally {
 			if (br != null) {
 				try {
 					br.close();
 				} catch (IOException e) {
-					e.printStackTrace();
+					Logger.error(e);
 				}
 			}
 		}
 	}
 
 	private static List<Chunk> loadHttp(String id) {
-		System.out.println("loading http chunk " + id);
+		Logger.info("loading http chunk " + id);
 		ArrayList<Chunk> list = new ArrayList<>();
 		BufferedReader br = null;
 		try {
@@ -169,14 +171,14 @@ public class ChunkLoader {
 			Collections.sort(list, new ChunkComparator());
 			return list;
 		} catch (Exception e) {
-			e.printStackTrace();
+			Logger.error(e);
 			return null;
 		} finally {
 			if (br != null) {
 				try {
 					br.close();
 				} catch (IOException e) {
-					e.printStackTrace();
+					Logger.error(e);
 				}
 			}
 		}
