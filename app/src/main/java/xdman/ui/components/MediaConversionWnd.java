@@ -26,7 +26,9 @@ import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 import xdman.util.FormatUtilities;
-import xdman.util.Logger;
+
+import org.tinylog.Logger;
+
 import static xdman.util.XDMUtils.getScaledInt;
 
 public class MediaConversionWnd extends JFrame implements ActionListener, MediaConversionListener, Runnable {
@@ -105,7 +107,7 @@ public class MediaConversionWnd extends JFrame implements ActionListener, MediaC
 					setOpacity(0.85f);
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 
 		setIconImage(ImageResource.getImage("icon.png"));
@@ -205,7 +207,7 @@ public class MediaConversionWnd extends JFrame implements ActionListener, MediaC
 				ffmpeg = null;
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 		dispose();
 	}
@@ -219,9 +221,9 @@ public class MediaConversionWnd extends JFrame implements ActionListener, MediaC
 			this.ffmpeg = new FFmpeg(inputFiles, output.getAbsolutePath(), this, format, false);
 			ffmpeg.convert();
 			ret = ffmpeg.getFfExitCode();
-			Logger.log("FFmpeg exit code: " + ret);
+			Logger.info("FFmpeg exit code: " + ret);
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 			ret = -1;
 		}
 		final int r = ret;
