@@ -16,6 +16,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 
+import org.tinylog.Logger;
 import xdman.Config;
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
@@ -23,7 +24,6 @@ import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 import xdman.util.FFExtractCallback;
 import xdman.util.FormatUtilities;
-import xdman.util.Logger;
 
 public class FFmpegExtractorWnd extends JFrame implements ActionListener {
 	/**
@@ -89,7 +89,7 @@ public class FFmpegExtractorWnd extends JFrame implements ActionListener {
 					setOpacity(0.85f);
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 
 		setIconImage(ImageResource.getImage("icon.png"));
@@ -183,7 +183,7 @@ public class FFmpegExtractorWnd extends JFrame implements ActionListener {
 				callback = null;
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 		dispose();
 	}
