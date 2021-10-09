@@ -42,8 +42,9 @@ import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
-import xdman.util.Logger;
 import xdman.util.XDMUtils;
+
+import org.tinylog.Logger;
 
 public class BatchPatternDialog extends JFrame implements ActionListener, DocumentListener, ChangeListener {
 	/**
@@ -76,7 +77,7 @@ public class BatchPatternDialog extends JFrame implements ActionListener, Docume
 					setOpacity(0.85f);
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 
 		spFromModelNum = new SpinnerNumberModel(Integer.valueOf(0), Integer.valueOf(0), Integer.valueOf(9999),
@@ -405,7 +406,7 @@ public class BatchPatternDialog extends JFrame implements ActionListener, Docume
 					new BatchDownloadWnd(XDMUtils.toMetadata(urls)).setVisible(true);
 				}
 			} catch (Exception e2) {
-				Logger.log(e2);
+				Logger.error(e2);
 			}
 
 		} else if ("CLOSE".equals(name)) {
@@ -431,7 +432,7 @@ public class BatchPatternDialog extends JFrame implements ActionListener, Docume
 				txtFileN.setText(this.urls.get(this.urls.size() - 1));
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 	}
 
