@@ -140,7 +140,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 		Config.getInstance().load();
 		if (Config.getInstance().getZoomLevelIndex() > 0) {
 			double zoom = XDMApp.ZOOM_LEVEL_VALUES[Config.getInstance().getZoomLevelIndex()];
-			System.out.println("Zoom index; " + Config.getInstance().getZoomLevelIndex() + " " + zoom);
+			Logger.info("Zoom index; " + Config.getInstance().getZoomLevelIndex() + " " + zoom);
 
 			System.setProperty("sun.java2d.uiScale.enabled", "true");
 			System.setProperty("sun.java2d.uiScale", String.format("%.2f", zoom));
@@ -186,7 +186,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 
 					@Override
 					public void run() {
-						System.out.println("wininstall");
+						Logger.info("wininstall");
 						if (UpdateChecker.getComponentVersion() == null) {
 							new ComponentInstaller().setVisible(true);
 						}
@@ -497,7 +497,7 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 	}
 
 	public void addMedia(final HttpMetadata metadata, final String file, final String info) {
-		System.out.println("video notification: " + Config.getInstance().isShowVideoNotification());
+		Logger.info("video notification: " + Config.getInstance().isShowVideoNotification());
 		if (Config.getInstance().isShowVideoNotification()) {
 			SwingUtilities.invokeLater(new Runnable() {
 				@Override

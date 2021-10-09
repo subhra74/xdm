@@ -2,6 +2,8 @@ package xdman.util;
 
 import java.io.File;
 
+import org.tinylog.Logger;
+
 public class BrowserLauncher {
 	public static boolean launchFirefox(String args) {
 		int os = XDMUtils.detectOS();
@@ -10,7 +12,7 @@ public class BrowserLauncher {
 					new File(System.getenv("PROGRAMFILES"), "Mozilla Firefox\\firefox.exe"),
 					new File(System.getenv("PROGRAMFILES(X86)"), "Mozilla Firefox\\firefox.exe") };
 			for (int i = 0; i < ffPaths.length; i++) {
-				System.out.println(ffPaths[i]);
+				Logger.info(ffPaths[i]);
 				if (ffPaths[i].exists()) {
 					return XDMUtils.exec("\"" + ffPaths[i] + "\" " + args);
 				}

@@ -2,6 +2,7 @@ package xdman.ui.components;
 
 import javax.swing.table.*;
 
+import org.tinylog.Logger;
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
@@ -102,7 +103,7 @@ public class VideoItemRenderer implements TableCellRenderer {
 				if (icon != null) {
 					lblIcon.setIcon(icon);
 				} else {
-					System.out.println("null");
+					Logger.info("null");
 				}
 			}
 		}

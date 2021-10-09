@@ -51,7 +51,7 @@ public class FFmpegDownloader implements DownloadListener, DownloadWindowListene
 	public void start() {
 		HttpMetadata metadata = new HttpMetadata();
 		metadata.setUrl(url);
-		System.out.println(url);
+		Logger.info(url);
 		d = new HttpDownloader(metadata.getId(), Config.getInstance().getTemporaryFolder(), metadata);
 		d.registerListener(this);
 		d.start();

@@ -22,7 +22,7 @@ public class UpdateChecker {
 			.compile("\\\"tag_name\\\"\\s*:\\s*\\\"(\\d+\\.\\d+\\.\\d+)\\\"");
 
 	public static int getUpdateStat() {
-		System.out.println("checking for app update");
+		Logger.info("checking for app update");
 		if (isAppUpdateAvailable())
 			return APP_UPDATE_AVAILABLE;
 		return NO_UPDATE_AVAILABLE;
@@ -48,7 +48,7 @@ public class UpdateChecker {
 	// return 0, -1 if update required
 	private static int isComponentUpdateAvailable() {
 		String componentVersion = getComponentVersion();
-		System.out.println("current component version: " + componentVersion);
+		Logger.info("current component version: " + componentVersion);
 		if (componentVersion == null)
 			return -1;
 		return isUpdateAvailable(componentVersion) ? 0 : 1;
@@ -124,7 +124,7 @@ public class UpdateChecker {
 			Matcher matcher = PATTERN_TAG.matcher(text);
 			if (matcher.find()) {
 				String v1 = matcher.group(1);
-				System.out.println(v1 + " " + v2);
+				Logger.info(v1 + " " + v2);
 				if (v1.indexOf(".") > 0 && v2.indexOf(".") > 0) {
 					String[] arr1 = v1.split("\\.");
 					String[] arr2 = v2.split("\\.");

@@ -48,7 +48,7 @@ public class MonitoringSession implements Runnable {
 		this.sock = socket;
 		this.request = new Request();
 		this.response = new Response();
-		System.out.println("New session");
+		Logger.info("New session");
 	}
 
 	public void start() {
@@ -112,7 +112,7 @@ public class MonitoringSession implements Runnable {
 			List<ParsedHookData> list = ParsedHookData.parseLinks(b);
 			List<HttpMetadata> metadatas = new ArrayList<>();
 			for (ParsedHookData d : list) {
-				System.out.println(d);
+				Logger.info(d);
 				HttpMetadata md = new HttpMetadata();
 				md.setUrl(d.getUrl());
 				md.setHeaders(d.getRequestHeaders());
@@ -316,7 +316,7 @@ public class MonitoringSession implements Runnable {
 			if (url.startsWith("/preview/video")) {
 
 				String[] arr = url.split("/");
-				System.out.println(arr.length);
+				Logger.info(arr.length);
 				if (arr.length < 4) {
 					return;
 				}
@@ -345,7 +345,7 @@ public class MonitoringSession implements Runnable {
 					outStream.flush();
 				}
 				outStream.write("0\r\n\r\n".getBytes());
-				System.out.println("Done writing file");
+				Logger.info("Done writing file");
 				ps.close();
 				outStream.flush();
 				outStream.close();
@@ -428,7 +428,7 @@ public class MonitoringSession implements Runnable {
 				// String input = "http://127.0.0.1:9614/preview/video/" + (hls ?
 				// XDMConstants.HLS : XDMConstants.HTTP)
 				// + "/" + metadata.getId();
-				System.out.println("input: " + input1 + " - " + input2);
+				Logger.info("input: " + input1 + " - " + input2);
 				String resp = "HTTP/1.1 200 OK\r\nContent-Type: video/webm\r\nTransfer-Encoding: Chunked\r\nCache-Control: no-cache, no-store, must-revalidate\r\n"
 						+ "Pragma: no-cache\r\n" + "Expires: 0\r\nConnection: close\r\n\r\n";
 				outStream.write(resp.getBytes());
@@ -448,12 +448,12 @@ public class MonitoringSession implements Runnable {
 					outStream.flush();
 				}
 				outStream.write("0\r\n\r\n".getBytes());
-				System.out.println("Done writing file");
+				Logger.info("Done writing file");
 				ff.close();
 				outStream.flush();
 				outStream.close();
 
-				System.out.println("Finished writing");
+				Logger.info("Finished writing");
 
 //				html = "<html><body><video id=\"myvideo\" width=\"640\" height=\"480\" controls>\r\n"
 //						+ "    <source src=\"http://127.0.0.1:9614/preview/video/"
@@ -607,13 +607,13 @@ public class MonitoringSession implements Runnable {
 
 						String ext = getYtDashFormat(videoContentType, audioContentType);
 						file += "." + ext;
-						System.out.println("+++updating adding");
+						Logger.info("+++updating adding");
 						XDMApp.getInstance().addMedia(dm, file, YtUtil.getInfoFromITAG(info.video ? info.itag : di.itag)
 								+ (szStr == null ? "" : " " + szStr));
 						return true;
 					}
 				} else {
-					System.out.println("+++updating");
+					Logger.info("+++updating");
 					// sometimes dash segments are available, but the title of the page is not
 					// properly updated yet
 					// update existing video name when ever the tab title changes

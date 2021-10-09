@@ -39,6 +39,7 @@ import javax.swing.JRootPane;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 
+import org.tinylog.Logger;
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
@@ -333,7 +334,7 @@ public class XDMFrame extends JFrame implements ComponentListener {
 				maximized = true;
 			}
 
-			System.out.println("Dpi scale: " + DpiUtils.getWindowScale(XDMFrame.this));
+			Logger.info("Dpi scale: " + DpiUtils.getWindowScale(XDMFrame.this));
 
 			// XDMFrame.this.setMaximizedBounds(null);
 //			new (0 + scnMax.left, 0 + scnMax.top,
@@ -460,7 +461,7 @@ public class XDMFrame extends JFrame implements ComponentListener {
 
 	public void showModal(MessageBox component) {
 		lastFocusOwner = getMostRecentFocusOwner();
-		System.out.println("Last focus owner: " + lastFocusOwner);
+		Logger.info("Last focus owner: " + lastFocusOwner);
 		modalPane.add(component);
 		component.setVisible(true);
 		modalPane.setVisible(true);

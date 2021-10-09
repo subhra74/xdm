@@ -89,7 +89,7 @@ public class VideoDownloadWindow extends JDialog implements ActionListener, Docu
 		if (e.getSource() instanceof JComponent) {
 			String name = ((JComponent) e.getSource()).getName();
 			if (name.startsWith("QUEUE")) {
-				System.out.println(name);
+				Logger.info(name);
 				String[] arr = name.split(":");
 				if (arr.length < 2) {
 					queueId = "";

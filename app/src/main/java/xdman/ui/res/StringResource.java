@@ -20,7 +20,7 @@ public class StringResource {
 			strings = new Properties();
 			try {
 				String lang = Config.getInstance().getLanguage();
-				System.out.println(lang);
+				Logger.info(lang);
 				if (!loadLang(lang, strings)) {
 					Logger.warn("Unable to load language: " + lang);
 					strings.clear();

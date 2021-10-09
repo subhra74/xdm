@@ -219,7 +219,7 @@ public class YdlResponse {
 							// + " "
 							// + fmt2.format + " (" + fmt.vcodec + "+" +
 							// fmt2.acodec + ") " + fmt.protocol;
-							System.out.println(media.format + " " + media.url);
+							Logger.info(media.format + " " + media.url);
 							checkAndAddMedia(media, mediaList);
 						}
 					}
@@ -243,7 +243,7 @@ public class YdlResponse {
 
 				media.format = createFormat(media.ext, fmt.format, null, fmt.acodec, fmt.vcodec, fmt.width, fmt.height,
 						-1);
-				System.out.println(media.format + " " + media.url);
+				Logger.info(media.format + " " + media.url);
 				// media.format = "[" + (media.ext + "]").toUpperCase() + " " +
 				// " " + fmt.format
 				// + " " + " (" + fmt.vcodec

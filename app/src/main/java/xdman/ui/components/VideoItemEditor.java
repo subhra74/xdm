@@ -19,6 +19,7 @@ import javax.swing.JTable;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.TableCellEditor;
 
+import org.tinylog.Logger;
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
@@ -98,7 +99,7 @@ public class VideoItemEditor extends AbstractCellEditor implements TableCellEdit
 	public Object getCellEditorValue() {
 		obj.videoItem.index = cmb.getSelectedIndex();
 		obj.checked = chk.isSelected();
-		System.out.println("value " + obj.videoItem.title + " " + obj.videoItem.index);
+		Logger.info("value " + obj.videoItem.title + " " + obj.videoItem.index);
 		return obj;
 	}
 
@@ -114,7 +115,7 @@ public class VideoItemEditor extends AbstractCellEditor implements TableCellEdit
 
 	@Override
 	public boolean stopCellEditing() {
-		System.out.println("requesting stop");
+		Logger.info("requesting stop");
 		fireEditingStopped();
 		return true;
 	}
@@ -144,7 +145,7 @@ public class VideoItemEditor extends AbstractCellEditor implements TableCellEdit
 				if (icon != null) {
 					lblIcon.setIcon(icon);
 				} else {
-					System.out.println("null");
+					Logger.info("null");
 				}
 			}
 		}

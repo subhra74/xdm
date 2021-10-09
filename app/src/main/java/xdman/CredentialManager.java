@@ -37,7 +37,7 @@ public class CredentialManager {
 	}
 
 	public PasswordAuthentication getCredentialForHost(String host) {
-		System.out.println("Getting cred for " + host);
+		Logger.info("Getting cred for " + host);
 		PasswordAuthentication pauth = savedCredentials.get(host);
 		if (pauth == null) {
 			return cachedCredentials.get(host);
