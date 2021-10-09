@@ -21,8 +21,9 @@ import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
-import xdman.util.Logger;
 import xdman.util.XDMUtils;
+
+import org.tinylog.Logger;
 
 import static xdman.util.XDMUtils.getScaledInt;
 
@@ -46,7 +47,7 @@ public class DownloadCompleteWnd extends JDialog implements ActionListener {
 				}
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error(e);
 		}
 
 		setIconImage(ImageResource.getImage("icon.png"));
@@ -178,14 +179,14 @@ public class DownloadCompleteWnd extends JDialog implements ActionListener {
 					XDMUtils.openFile(txtFile.getText(), txtFolder.getText());
 					dispose();
 				} catch (Exception e1) {
-					Logger.log(e1);
+					Logger.error(e1);
 				}
 			} else if (name.equals("CTX_OPEN_FOLDER")) {
 				try {
 					XDMUtils.openFolder(txtFile.getText(), txtFolder.getText());
 					dispose();
 				} catch (Exception e1) {
-					Logger.log(e1);
+					Logger.error(e1);
 				}
 			}
 		}
