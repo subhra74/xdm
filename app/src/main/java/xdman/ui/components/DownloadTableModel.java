@@ -5,7 +5,8 @@ import java.util.*;
 import javax.swing.table.*;
 
 import xdman.*;
-import xdman.util.Logger;
+
+import org.tinylog.Logger;
 
 public class DownloadTableModel extends AbstractTableModel implements ListChangeListener {
 	private static final long serialVersionUID = 5474784018135644748L;
@@ -43,7 +44,7 @@ public class DownloadTableModel extends AbstractTableModel implements ListChange
 
 	@Override
 	public void listChanged() {
-		Logger.log("List changed");
+		Logger.info("List changed");
 		idList = XDMApp.getInstance().getDownloadList(Config.getInstance().getCategoryFilter(),
 				Config.getInstance().getStateFilter(), Config.getInstance().getSearchText(),
 				Config.getInstance().getQueueIdFilter());
@@ -54,7 +55,7 @@ public class DownloadTableModel extends AbstractTableModel implements ListChange
 
 	@Override
 	public void listItemUpdated(String id) {
-		Logger.log("List updated");
+		Logger.info("List updated");
 		Integer index = idIndexMap.get(id);
 		if (index != null) {
 			fireTableRowsUpdated(index, index);
