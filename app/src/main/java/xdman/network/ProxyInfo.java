@@ -1,5 +1,7 @@
 package xdman.network;
 
+import org.tinylog.Logger;
+
 public final class ProxyInfo {
 	private String proxy = null;
 	private int port = -1;
@@ -22,7 +24,8 @@ public final class ProxyInfo {
 				this.proxy = paramString1.substring(0, i);
 				try {
 					this.port = Integer.parseInt(paramString1.substring(i + 1).trim());
-				} catch (Exception localException1) {
+				} catch (Exception ex) {
+					Logger.error(ex);
 				}
 			} else if (!paramString1.equals("")) {
 				this.proxy = paramString1;
@@ -34,7 +37,8 @@ public final class ProxyInfo {
 				this.socksProxy = paramString2.substring(0, i);
 				try {
 					this.socksPort = Integer.parseInt(paramString2.substring(i + 1).trim());
-				} catch (Exception localException2) {
+				} catch (Exception ex) {
+					Logger.error(ex);
 				}
 			} else if (!paramString2.equals("")) {
 				this.socksProxy = paramString2;
