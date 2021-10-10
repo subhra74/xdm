@@ -33,7 +33,9 @@ import xdman.ui.components.CustomButton;
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.ImageResource;
 
+@SuppressWarnings("unused")
 public class XDMSpinnerUI extends BasicSpinnerUI {
+
 	public static ComponentUI createUI(JComponent c) {
 		return new XDMSpinnerUI();
 	}

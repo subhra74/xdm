@@ -36,7 +36,6 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.swing.DefaultListModel;
@@ -55,8 +54,6 @@ import javax.swing.JSlider;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
@@ -77,6 +74,7 @@ import xdman.ui.res.StringResource;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
 
+@SuppressWarnings("ResultOfMethodCallIgnored")
 public class VideoConversionWnd extends JFrame implements ActionListener, Runnable, MediaConversionListener {
 
 	/**
@@ -88,10 +86,10 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 	JButton btnOutFormat;
 	JTextField txtOutFolder;
 	JProgressBar prgConvert;
-	JLabel lblConvertFormat, lblOutputFolder, lblPrg;
+	JLabel lblOutputFolder, lblPrg;
 	JButton browse, convert, stop;
 	JLabel lineLbl2;
-	int mode = 0;// 0 - loading, 1 - converting
+	int mode;// 0 - loading, 1 - converting
 	ArrayList<String> filesToLoad;
 	boolean stopflag;
 	Thread t;
@@ -407,19 +405,15 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 		MediaFormat f = fmtWnd.getFormat();
 		setDetails(f.getResolution(), f.getVideo_codec(), f.getAudio_codec());
 		lblImg.setFormat(f.getFormat());
-		slVolume.addChangeListener(new ChangeListener() {
-
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				ConversionItem item = list.getSelectedValue();
-				if (item != null) {
-					if (!slVolume.getValueIsAdjusting()) {
-						item.volume = String.format("%.1f", slVolume.getValue() / 100f);
-						Logger.info(item.volume);
-					}
+		slVolume.addChangeListener(e -> {
+			ConversionItem item = list.getSelectedValue();
+			if (item != null) {
+				if (!slVolume.getValueIsAdjusting()) {
+					item.volume = String.format("%.1f", slVolume.getValue() / 100f);
+					Logger.info(item.volume);
 				}
-
 			}
+
 		});
 	}
 
@@ -530,13 +524,7 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 	}
 
 	private void convertFiles() {
-		SwingUtilities.invokeLater(new Runnable() {
-
-			@Override
-			public void run() {
-				showProgressPanel();
-			}
-		});
+		SwingUtilities.invokeLater(this::showProgressPanel);
 		try {
 			if (filesToLoad == null || filesToLoad.size() < 1)
 				return;
@@ -563,13 +551,9 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 
 				this.ffmpeg.setUseHwAccel(chkHwAccel.isSelected());
 
-				SwingUtilities.invokeLater(new Runnable() {
-
-					@Override
-					public void run() {
-						String str = String.format(StringResource.get("LBL_FILE_CONVERT_PRG"), item.inputFileName);
-						lblPrg.setText(str);
-					}
+				SwingUtilities.invokeLater(() -> {
+					String str = String.format(StringResource.get("LBL_FILE_CONVERT_PRG"), item.inputFileName);
+					lblPrg.setText(str);
 				});
 
 				int ret = ffmpeg.convert();
@@ -582,13 +566,7 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 				Logger.info("FFmpeg exit code: " + ret);
 			}
 		} finally {
-			SwingUtilities.invokeLater(new Runnable() {
-
-				@Override
-				public void run() {
-					showFormatPanel();
-				}
-			});
+			SwingUtilities.invokeLater(this::showFormatPanel);
 		}
 
 	}
@@ -609,23 +587,14 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 				item.info = info;
 				item.inputFileName = new File(file).getName();
 				final int count = i;
-				SwingUtilities.invokeLater(new Runnable() {
-					@Override
-					public void run() {
-						model.addElement(item);
-						prgConvert.setValue((count * 100) / filesToLoad.size());
-					}
+				SwingUtilities.invokeLater(() -> {
+					model.addElement(item);
+					prgConvert.setValue((count * 100) / filesToLoad.size());
 				});
 				extractor = null;
 			}
 		} finally {
-			SwingUtilities.invokeLater(new Runnable() {
-
-				@Override
-				public void run() {
-					showFormatPanel();
-				}
-			});
+			SwingUtilities.invokeLater(this::showFormatPanel);
 		}
 	}
 
@@ -636,13 +605,7 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 		long currentTime = System.currentTimeMillis();
 		if (currentTime - lastTime > 1000) {
 			lastTime = currentTime;
-			SwingUtilities.invokeLater(new Runnable() {
-
-				@Override
-				public void run() {
-					prgConvert.setValue(progress);
-				}
-			});
+			SwingUtilities.invokeLater(() -> prgConvert.setValue(progress));
 		}
 	}
 }

@@ -33,6 +33,7 @@ import java.net.PasswordAuthentication;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -79,7 +80,7 @@ import xdman.util.*;
 public class XDMApp implements DownloadListener, DownloadWindowListener, Comparator<String> {
 	public static final String GLOBAL_LOCK_FILE = ".xdm-global-lock";
 	public static final String APP_VERSION = "7.2.11";
-	public static final String XDM_WINDOW_TITLE = "XDM 2020";
+	public static final String XDM_WINDOW_TITLE = "XDM " + LocalDate.now().getYear();
 	public static final String APP_UPDATE_URL = "https://api.github.com/repos/subhra74/xdm/releases/latest";
 	public static final String APP_UPDATE_CHK_URL = "https://subhra74.github.io/xdm/update-checker.html?v=";
 	public static final String APP_WIKI_URL = "https://github.com/subhra74/xdm/wiki";

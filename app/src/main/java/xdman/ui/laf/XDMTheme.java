@@ -33,6 +33,7 @@ import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.util.XDMUtils;
 
+@SuppressWarnings("unused")
 public class XDMTheme extends OceanTheme {
 	FontUIResource fontResource;
 
@@ -127,7 +128,7 @@ public class XDMTheme extends OceanTheme {
 		table.put("ComboBox.background", ColorResource.getDarkBgColor());
 		table.put("Label.foreground", Color.WHITE);
 		table.put("Panel.background", ColorResource.getDarkerBgColor());
-		table.put("ScrollBar.width", Integer.valueOf(XDMUtils.getScaledInt(15)));
+		table.put("ScrollBar.width", XDMUtils.getScaledInt(15));
 		table.put("Popup.background", ColorResource.getDarkerBgColor());
 
 		table.put("TextArea.background", ColorResource.getDarkerBgColor());

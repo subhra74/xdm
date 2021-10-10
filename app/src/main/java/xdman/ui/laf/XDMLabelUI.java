@@ -29,6 +29,7 @@ import javax.swing.JComponent;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicLabelUI;
 
+@SuppressWarnings("unused")
 public class XDMLabelUI extends BasicLabelUI {
 
 	public static ComponentUI createUI(JComponent c) {

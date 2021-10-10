@@ -23,44 +23,45 @@ package xdman.ui.res;
 
 import java.awt.Color;
 
+@SuppressWarnings("unused")
 public class ColorResource {
-	private static Color whiteColor = new Color(235, 235, 235);
-	private static Color titleColor = new Color(14, 20, 25);
-	private static Color selectedColor = new Color(51, 181, 229);
-	private static Color activeTabColor = new Color(242, 242, 242);
-	private static Color darkBgColor = new Color(73, 73, 73);
-	private static Color darkerBgColor = new Color(50, 50, 50);
-	private static Color darkPressedColor = new Color(43, 43, 43);
-	private static Color deepFontColor = new Color(160, 160, 160);
-	private static Color lightFontColor = new Color(190, 190, 190);
+	private static final Color whiteColor = new Color(235, 235, 235);
+	private static final Color titleColor = new Color(14, 20, 25);
+	private static final Color selectedColor = new Color(51, 181, 229);
+	private static final Color activeTabColor = new Color(242, 242, 242);
+	private static final Color darkBgColor = new Color(73, 73, 73);
+	private static final Color darkerBgColor = new Color(50, 50, 50);
+	private static final Color darkPressedColor = new Color(43, 43, 43);
+	private static final Color deepFontColor = new Color(160, 160, 160);
+	private static final Color lightFontColor = new Color(190, 190, 190);
 	private static Color darkBtnColor = new Color(73, 73, 73);
 	private static Color darkestBgColor = new Color(30, 30, 30);
 
-	public static final Color getActiveTabColor() {
+	public static Color getActiveTabColor() {
 		return activeTabColor;
 	}
 
-	public static final Color getWhite() {
+	public static Color getWhite() {
 		return whiteColor;
 	}
 
-	public static final Color getTitleColor() {
+	public static Color getTitleColor() {
 		return titleColor;
 	}
 
-	public static final Color getSelectionColor() {
+	public static Color getSelectionColor() {
 		return selectedColor;
 	}
 
-	public static final Color getButtonBackColor() {
+	public static Color getButtonBackColor() {
 		return selectedColor;
 	}
 
-	public static final Color getDarkBgColor() {
+	public static Color getDarkBgColor() {
 		return darkBgColor;
 	}
 
-	public static final Color getDarkerBgColor() {
+	public static Color getDarkerBgColor() {
 		return darkerBgColor;
 	}
 
@@ -68,19 +69,19 @@ public class ColorResource {
 		return darkPressedColor;
 	}
 
-	public static final Color getDeepFontColor() {
+	public static Color getDeepFontColor() {
 		return deepFontColor;
 	}
 
-	public static final Color getLightFontColor() {
+	public static Color getLightFontColor() {
 		return lightFontColor;
 	}
 
-	public static final Color getDarkBtnColor() {
+	public static Color getDarkBtnColor() {
 		return darkBtnColor;
 	}
 
-	public static final void setDarkBtnColor(Color darkBtnColor) {
+	public static void setDarkBtnColor(Color darkBtnColor) {
 		ColorResource.darkBtnColor = darkBtnColor;
 	}
 

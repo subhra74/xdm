@@ -37,7 +37,7 @@ public class MimeUtil {
 	}
 
 	static void init() {
-		mime = new HashMap<String, String>();
+		mime = new HashMap<>();
 		mime.put("audio/x-aiff", "aiff");
 		mime.put("audio/basic", "au");
 		mime.put("video/x-msvideo", "avi");

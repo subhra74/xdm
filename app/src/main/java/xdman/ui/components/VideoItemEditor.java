@@ -46,22 +46,23 @@ import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
 
+@SuppressWarnings("FieldCanBeLocal")
 public class VideoItemEditor extends AbstractCellEditor implements TableCellEditor {
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 8968170364342941003L;
-	private JPanel panel;
-	private JLabel lbl;
-	private JComboBox<String> cmb;
-	private DefaultComboBoxModel<String> cmbModel;
+	private final JPanel panel;
+	private final JLabel lbl;
+	private final JComboBox<String> cmb;
+	private final DefaultComboBoxModel<String> cmbModel;
 	private VideoItemWrapper obj;
-	private JLabel lblIcon;
-	private JPanel component;
-	private JLabel lblBorder;
-	private JCheckBox chk;
-	private Icon ico;
-	private MediaImageSource imgSource;
+	private final JLabel lblIcon;
+	private final JPanel component;
+	private final JLabel lblBorder;
+	private final JCheckBox chk;
+	private final Icon ico;
+	private final MediaImageSource imgSource;
 
 	public VideoItemEditor(MediaImageSource imgSource) {
 		component = new JPanel(new BorderLayout(getScaledInt(5), getScaledInt(5)));
@@ -147,11 +148,7 @@ public class VideoItemEditor extends AbstractCellEditor implements TableCellEdit
 		for (int i = 0; i < obj.videoItem.mediaFormats.size(); i++)
 			cmbModel.addElement(obj.videoItem.mediaFormats.get(i) + "");
 		cmb.setSelectedIndex(obj.videoItem.index);
-		if (row == 0) {
-			lblBorder.setOpaque(false);
-		} else {
-			lblBorder.setOpaque(true);
-		}
+		lblBorder.setOpaque(row != 0);
 		chk.setSelected(obj.checked);
 
 		lblIcon.setIcon(ico);

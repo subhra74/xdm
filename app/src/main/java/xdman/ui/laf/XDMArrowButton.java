@@ -25,6 +25,7 @@ import java.awt.Color;
 
 import javax.swing.plaf.basic.BasicArrowButton;
 
+@SuppressWarnings("unused")
 public class XDMArrowButton extends BasicArrowButton {
 
 	/**

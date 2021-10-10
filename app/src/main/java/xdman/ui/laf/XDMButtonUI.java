@@ -33,9 +33,11 @@ import javax.swing.JComponent;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicButtonUI;
 
+import org.tinylog.Logger;
 import xdman.ui.components.CustomButton;
 import xdman.ui.res.ColorResource;
 
+@SuppressWarnings("unused")
 public class XDMButtonUI extends BasicButtonUI {
 
 	static XDMButtonUI buttonUI;
@@ -101,6 +103,7 @@ public class XDMButtonUI extends BasicButtonUI {
 			}
 			super.paint(g2, c);
 		} catch (Exception e) {
+			Logger.error(e);
 		}
 	}
 }

@@ -35,6 +35,7 @@ import xdman.ui.components.DarkScrollBar;
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.ImageResource;
 
+@SuppressWarnings("unused")
 public class XDMComboBoxUI extends BasicComboBoxUI {
 
 	static XDMComboBoxUI buttonUI;

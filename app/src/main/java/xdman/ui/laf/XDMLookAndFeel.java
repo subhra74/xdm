@@ -50,7 +50,7 @@ public class XDMLookAndFeel extends MetalLookAndFeel {
 
 		UIManager.put("Table.focusCellHighlightBorder", new EmptyBorder(1, 1, 1, 1));
 		UIManager.put("ComboBox.rendererUseListColors", Boolean.TRUE);
-		UIManager.put("Slider.thumbWidth", Integer.valueOf(getScaledInt(4)));
+		UIManager.put("Slider.thumbWidth", getScaledInt(4));
 	}
 
 	protected void initComponentDefaults(UIDefaults table) {

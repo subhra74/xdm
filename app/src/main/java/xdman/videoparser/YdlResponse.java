@@ -101,10 +101,11 @@ public class YdlResponse {
 					Logger.error(e);
 				}
 
-				JSONObject jsHeaders = (JSONObject) formatObj.get("http_headers");
+				JSONObject jsHeaders = (JSONObject)formatObj.get("http_headers");
 				if (jsHeaders != null) {
 					format.headers = new ArrayList<>();
-					for (String key : (Iterable<String>) jsHeaders.keySet()) {
+					for (Object item : jsHeaders.keySet()) {
+						String key = (String) item;
 						String value = (String) jsHeaders.get(key);
 						format.headers.add(new HttpHeader(key, value));
 					}

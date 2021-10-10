@@ -37,7 +37,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 
 import javax.swing.Box;
@@ -65,6 +64,7 @@ import xdman.ui.res.StringResource;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
 
+@SuppressWarnings("FieldCanBeLocal")
 public class VideoPopup extends JDialog implements ActionListener, Comparator<VideoPopupItem> {
 
 	/**
@@ -118,16 +118,15 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 
 	private void arrangeList() {
 		videoItems.clear();
-		ArrayList<VideoPopupItem> itemsCopy = new ArrayList<VideoPopupItem>();
-		itemsCopy.addAll(XDMApp.getInstance().getVideoItemsList());
-		Collections.sort(itemsCopy, this);
+		ArrayList<VideoPopupItem> itemsCopy = new ArrayList<>(XDMApp.getInstance().getVideoItemsList());
+		itemsCopy.sort(this);
 		for (VideoPopupItem item : itemsCopy) {
 			videoItems.addElement(item);
 		}
 	}
 
 	private VideoPopup() {
-		videoItems = new DefaultListModel<VideoPopupItem>();
+		videoItems = new DefaultListModel<>();
 		init();
 		Dimension d = Toolkit.getDefaultToolkit().getScreenSize();
 
@@ -143,7 +142,7 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 	private JButton closePopupBtn;
 	private JPanel itemPanel;
 	private boolean upward = false;
-	private DefaultListModel<VideoPopupItem> videoItems;
+	private final DefaultListModel<VideoPopupItem> videoItems;
 
 	private JList<VideoPopupItem> itemListBox;
 	private int mHoveredJListIndex = -1;
@@ -208,7 +207,7 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 			itemPanel = new JPanel(new BorderLayout());
 			itemPanel.setOpaque(false);
 
-			itemListBox = new JList<VideoPopupItem>(videoItems);
+			itemListBox = new JList<>(videoItems);
 			itemListBox.setOpaque(false);
 			itemListBox.setCellRenderer(new SimpleListRenderer());
 			itemListBox.addMouseMotionListener(new MouseAdapter() {
@@ -284,22 +283,27 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 				XDMApp.getInstance().addVideo(md, item.getFile());
 			}
 		}
-		if (name.equals("CLOSE")) {
-			collapse();
-			menuBox.removeAll();
-			XDMApp.getInstance().getVideoItemsList().clear();
-			dispose();
-			_this = null;
-		} else if (name.equals("COLAPSE")) {
-			collapse();
-		} else if (name.equals("EXPAND")) {
-			if (!expanded) {
-				expand();
-			} else {
+		switch (name) {
+			case "CLOSE":
 				collapse();
-			}
-		} else if (name.equals("MORE_FORMAT")) {
-			JOptionPane.showMessageDialog(null, StringResource.get("LBL_FORMAT_HINT"));
+				menuBox.removeAll();
+				XDMApp.getInstance().getVideoItemsList().clear();
+				dispose();
+				_this = null;
+				break;
+			case "COLAPSE":
+				collapse();
+				break;
+			case "EXPAND":
+				if (!expanded) {
+					expand();
+				} else {
+					collapse();
+				}
+				break;
+			case "MORE_FORMAT":
+				JOptionPane.showMessageDialog(null, StringResource.get("LBL_FORMAT_HINT"));
+				break;
 		}
 	}
 
@@ -441,10 +445,9 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 	private String[] getIdAndLen(String url) {
 		int index = url.indexOf("?");
 		String query = url.substring(index + 1);
-		String arr[] = query.split("&");
+		String[] arr = query.split("&");
 		String clen = null, id = null;
-		for (int i = 0; i < arr.length; i++) {
-			String str = arr[i];
+		for (String str : arr) {
 			index = str.indexOf("=");
 			if (index > 0) {
 				String key = str.substring(0, index).trim();

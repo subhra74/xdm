@@ -24,7 +24,7 @@ package xdman.ui.res;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 import org.tinylog.Logger;
@@ -59,7 +59,7 @@ public class StringResource {
 			if (inStream == null) {
 				inStream = new FileInputStream("lang/" + code + ".txt");
 			}
-			InputStreamReader r = new InputStreamReader(inStream, Charset.forName("utf-8"));
+			InputStreamReader r = new InputStreamReader(inStream, StandardCharsets.UTF_8);
 			prop.load(r);
 		} catch (Exception e) {
 			Logger.error(e);
@@ -73,7 +73,7 @@ public class StringResource {
 			if (inStream == null) {
 				inStream = new FileInputStream("lang/" + code + ".txt");
 			}
-			InputStreamReader r = new InputStreamReader(inStream, Charset.forName("utf-8"));
+			InputStreamReader r = new InputStreamReader(inStream, StandardCharsets.UTF_8);
 			prop.load(r);
 			return true;
 		} catch (Exception e) {

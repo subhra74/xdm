@@ -25,8 +25,6 @@ import static xdman.util.XDMUtils.getScaledInt;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -64,18 +62,14 @@ public class UpdateNotifyPanel extends JPanel {
 		JButton btn = new JButton(StringResource.get("LBL_INSTALL_NOW"));
 		btn.setFont(FontResource.getBigBoldFont());
 		btn.setName("OPT_UPDATE_FFMPEG");
-		btn.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (mode == UpdateChecker.APP_UPDATE_AVAILABLE) {
-					XDMUtils.browseURL(XDMApp.APP_UPDATE_CHK_URL + XDMApp.APP_VERSION);
-				} else {
-					FFmpegDownloader fd = new FFmpegDownloader();
-					fd.start();
-				}
-				XDMApp.getInstance().clearNotifications();
+		btn.addActionListener(e -> {
+			if (mode == UpdateChecker.APP_UPDATE_AVAILABLE) {
+				XDMUtils.browseURL(XDMApp.APP_UPDATE_CHK_URL + XDMApp.APP_VERSION);
+			} else {
+				FFmpegDownloader fd = new FFmpegDownloader();
+				fd.start();
 			}
+			XDMApp.getInstance().clearNotifications();
 		});
 		add(btn, BorderLayout.EAST);
 	}

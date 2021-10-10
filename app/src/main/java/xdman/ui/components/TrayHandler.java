@@ -28,12 +28,10 @@ import java.awt.MenuItem;
 import java.awt.PopupMenu;
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.time.LocalDate;
 import java.util.List;
 
 import javax.swing.JOptionPane;
@@ -41,7 +39,6 @@ import javax.swing.JOptionPane;
 import org.tinylog.Logger;
 
 import xdman.Config;
-import xdman.MonitoringListener;
 import xdman.XDMApp;
 import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
@@ -49,6 +46,9 @@ import xdman.ui.res.StringResource;
 import xdman.util.XDMUtils;
 
 public class TrayHandler {
+
+	private static final String  TRAY_ICON_TITLE = "Xtreme Download Manager" + LocalDate.now().getYear();
+
 	static ActionListener act;
 
 	public static void createTray() {
@@ -57,7 +57,7 @@ public class TrayHandler {
 			return;
 		}
 
-		Image img = null;
+		Image img;
 
 		if (XDMUtils.detectOS() == XDMUtils.LINUX) {
 			if (Config.getInstance().isHideTray())
@@ -71,43 +71,35 @@ public class TrayHandler {
 
 		final PopupMenu popup = new PopupMenu();
 		final TrayIcon trayIcon = new TrayIcon(img);
+		trayIcon.setToolTip(TRAY_ICON_TITLE);
 		trayIcon.setImageAutoSize(true);
 		final SystemTray tray = SystemTray.getSystemTray();
 
-		act = new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				MenuItem c = (MenuItem) e.getSource();
-				String name = c.getName();
-				if ("ADD_URL".equals(name)) {
-					XDMApp.getInstance().addDownload(null, null);
-				} else if ("RESTORE".equals(name)) {
-					XDMApp.getInstance().showMainWindow();
-				} else if ("EXIT".equals(name)) {
-					XDMApp.getInstance().exit();
-				} else if ("THROTTLE".equals(name)) {
-					int ret = SpeedLimiter.getSpeedLimit();
-					if (ret >= 0) {
-						Config.getInstance().setSpeedLimit(ret);
-					}
-				} else if ("ADD_VID".equals(name)) {
-					MediaDownloaderWnd wnd = new MediaDownloaderWnd();
-					wnd.setVisible(true);
-				} else if ("THROTTLE".equals(name)) {
-					int ret = SpeedLimiter.getSpeedLimit();
-					if (ret >= 0) {
-						Config.getInstance().setSpeedLimit(ret);
-					}
-				} else if ("ADD_BAT".equals(name)) {
-					new BatchPatternDialog().setVisible(true);
-				} else if ("ADD_CLIP".equals(name)) {
-					List<String> urlList = BatchDownloadWnd.getUrls();
-					if (urlList.size() > 0) {
-						new BatchDownloadWnd(XDMUtils.toMetadata(urlList)).setVisible(true);
-					} else {
-						JOptionPane.showMessageDialog(null, StringResource.get("LBL_BATCH_EMPTY_CLIPBOARD"));
-					}
+		act = e -> {
+			MenuItem c = (MenuItem) e.getSource();
+			String name = c.getName();
+			if ("ADD_URL".equals(name)) {
+				XDMApp.getInstance().addDownload(null, null);
+			} else if ("RESTORE".equals(name)) {
+				XDMApp.getInstance().showMainWindow();
+			} else if ("EXIT".equals(name)) {
+				XDMApp.getInstance().exit();
+			} else if ("THROTTLE".equals(name)) {
+				int ret = SpeedLimiter.getSpeedLimit();
+				if (ret >= 0) {
+					Config.getInstance().setSpeedLimit(ret);
+				}
+			} else if ("ADD_VID".equals(name)) {
+				MediaDownloaderWnd wnd = new MediaDownloaderWnd();
+				wnd.setVisible(true);
+			} else if ("ADD_BAT".equals(name)) {
+				new BatchPatternDialog().setVisible(true);
+			} else if ("ADD_CLIP".equals(name)) {
+				List<String> urlList = BatchDownloadWnd.getUrls();
+				if (urlList.size() > 0) {
+					new BatchDownloadWnd(XDMUtils.toMetadata(urlList)).setVisible(true);
+				} else {
+					JOptionPane.showMessageDialog(null, StringResource.get("LBL_BATCH_EMPTY_CLIPBOARD"));
 				}
 			}
 		};
@@ -133,14 +125,10 @@ public class TrayHandler {
 		restoreItem.addActionListener(act);
 		restoreItem.setName("RESTORE");
 		CheckboxMenuItem monitoringItem = new CheckboxMenuItem(StringResource.get("BROWSER_MONITORING"));
-		monitoringItem.addItemListener(new ItemListener() {
+		monitoringItem.addItemListener(e -> {
+			Logger.info("monitoring change");
+			Config.getInstance().enableMonitoring(!Config.getInstance().isBrowserMonitoringEnabled());
 
-			@Override
-			public void itemStateChanged(ItemEvent e) {
-				Logger.info("monitoring change");
-				Config.getInstance().enableMonitoring(!Config.getInstance().isBrowserMonitoringEnabled());
-
-			}
 		});
 		monitoringItem.setFont(FontResource.getBigFont());
 		monitoringItem.setState(Config.getInstance().isBrowserMonitoringEnabled());
@@ -182,13 +170,7 @@ public class TrayHandler {
 			Logger.error(e);
 		}
 
-		Config.getInstance().addConfigListener(new MonitoringListener() {
-
-			@Override
-			public void configChanged() {
-				monitoringItem.setState(Config.getInstance().isBrowserMonitoringEnabled());
-			}
-		});
+		Config.getInstance().addConfigListener(() -> monitoringItem.setState(Config.getInstance().isBrowserMonitoringEnabled()));
 
 	}
 }

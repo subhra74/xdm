@@ -38,6 +38,7 @@ import javax.swing.plaf.basic.BasicMenuUI;
 
 import xdman.ui.res.ColorResource;
 
+@SuppressWarnings("unused")
 public class XDMMenuUI extends BasicMenuUI {
 	Color colorSelect, colorBg;
 

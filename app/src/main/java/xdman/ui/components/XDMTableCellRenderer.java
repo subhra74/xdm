@@ -48,7 +48,7 @@ public class XDMTableCellRenderer implements TableCellRenderer {
 
 	JLabel iconLbl, titleLbl, statLbl, dateLbl, lineLbl;
 	JPanel pcell;
-	private Map<String, Icon> iconMap = new HashMap<String, Icon>();
+	private final Map<String, Icon> iconMap = new HashMap<>();
 
 	public XDMTableCellRenderer() {
 		titleLbl = new JLabel("This is sample title text");

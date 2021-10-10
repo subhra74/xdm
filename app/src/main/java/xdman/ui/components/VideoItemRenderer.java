@@ -45,17 +45,18 @@ import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
 import xdman.videoparser.YdlResponse.YdlVideo;
 
+@SuppressWarnings("FieldCanBeLocal")
 public class VideoItemRenderer implements TableCellRenderer {
-	private JPanel panel;
-	private JPanel component;
-	private JLabel lbl;
-	private JLabel lblIcon;
-	private JComboBox<String> cmb;
-	private DefaultComboBoxModel<String> cmbModel;
-	private JLabel lblBorder;
-	private JCheckBox chk;
-	private MediaImageSource imgSource;
-	private Icon ico;
+	private final JPanel panel;
+	private final JPanel component;
+	private final JLabel lbl;
+	private final JLabel lblIcon;
+	private final JComboBox<String> cmb;
+	private final DefaultComboBoxModel<String> cmbModel;
+	private final JLabel lblBorder;
+	private final JCheckBox chk;
+	private final MediaImageSource imgSource;
+	private final Icon ico;
 
 	public VideoItemRenderer(MediaImageSource imgSource) {
 		component = new JPanel(new BorderLayout(getScaledInt(5), getScaledInt(5)));
@@ -114,11 +115,7 @@ public class VideoItemRenderer implements TableCellRenderer {
 		lbl.setText(obj.title);
 		cmbModel.removeAllElements();
 		cmbModel.addElement(obj.mediaFormats.get(obj.index) + "");
-		if (row == 0) {
-			lblBorder.setOpaque(false);
-		} else {
-			lblBorder.setOpaque(true);
-		}
+		lblBorder.setOpaque(row != 0);
 		lblIcon.setIcon(ico);
 		chk.setSelected(wrapper.checked);
 		if (obj.thumbnail != null) {

@@ -28,6 +28,7 @@ import javax.swing.text.JTextComponent;
 
 import xdman.ui.components.PopupAdapter;
 
+@SuppressWarnings("unused")
 public class XDMTextAreaUI extends BasicTextAreaUI {
 	PopupAdapter popupAdapter;
 

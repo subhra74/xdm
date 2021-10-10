@@ -123,7 +123,7 @@ public class LinuxUtils {
 				+ "Name=Xtreme Download Manager\r\n" + "Comment=Xtreme Download Manager\r\n" + "Categories=Network;\r\n"
 				+ "Icon=/opt/xdman/icon.png";
 		String s1 = getProperPath(System.getProperty("java.home"));
-		String s2 = XDMUtils.getJarFile().getAbsolutePath();
+		String s2 = Objects.requireNonNull(XDMUtils.getJarFile()).getAbsolutePath();
 		return String.format(str, s1, s2);
 	}
 

@@ -40,6 +40,7 @@ import xdman.ui.components.DarkScrollBar;
 import xdman.ui.res.ImageResource;
 import xdman.util.XDMUtils;
 
+@SuppressWarnings("unused")
 public class XDMScrollBarUI extends BasicScrollBarUI {
 
 	public static ComponentUI createUI(JComponent c) {

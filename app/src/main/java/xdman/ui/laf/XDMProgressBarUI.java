@@ -33,6 +33,7 @@ import javax.swing.plaf.basic.BasicProgressBarUI;
 
 import xdman.ui.res.ColorResource;
 
+@SuppressWarnings("unused")
 public class XDMProgressBarUI extends BasicProgressBarUI {
 
 	public static ComponentUI createUI(JComponent c) {

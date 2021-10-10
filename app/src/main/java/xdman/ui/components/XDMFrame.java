@@ -45,6 +45,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.event.WindowEvent;
 import java.util.Arrays;
+import java.util.Comparator;
 
 import javax.swing.Box;
 import javax.swing.Icon;
@@ -64,15 +65,18 @@ import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 import xdman.util.XDMUtils;
 
+@SuppressWarnings({"FieldCanBeLocal", "unused"})
 public class XDMFrame extends JFrame implements ComponentListener {
 
 	private static final long serialVersionUID = -8094995420106046965L;
 
-	private JLayeredPane layeredPane;
+	private final JLayeredPane layeredPane;
 
 	private boolean maximizeBox = true, minimizeBox = true;
 
-	private JPanel contentPane, modalPane, dialogPane;
+	private final JPanel contentPane;
+	private final JPanel modalPane;
+	private final JPanel dialogPane;
 
 	private static final int DEFAULT_LAYER = 0, MODAL_LAYER = 30, DIALOG_LAYER = 15;
 
@@ -274,47 +278,37 @@ public class XDMFrame extends JFrame implements ComponentListener {
 		return hBox;
 	}
 
-	ActionListener actClose = new ActionListener() {
-		public void actionPerformed(ActionEvent action) {
-			XDMFrame.this.dispatchEvent(new WindowEvent(XDMFrame.this, WindowEvent.WINDOW_CLOSING));
-		};
-	};
+	ActionListener actClose = action -> XDMFrame.this.dispatchEvent(new WindowEvent(XDMFrame.this, WindowEvent.WINDOW_CLOSING));
 
 	Rectangle winDim = null;
 	boolean maximized = false;
 
-	ActionListener actMax = new ActionListener() {
-		public void actionPerformed(ActionEvent action) {
-			if (maximized) {
-				setSize(winDim.width, winDim.height);
-				setLocation(winDim.x, winDim.y);
-				maximized = false;
-			} else {
+	ActionListener actMax = action -> {
+		if (maximized) {
+			setSize(winDim.width, winDim.height);
+			setLocation(winDim.x, winDim.y);
+			maximized = false;
+		} else {
 
-				winDim = getBounds();
+			winDim = getBounds();
 
-				Rectangle r1 = getGraphicsConfiguration().getBounds();
-				Insets scnMax = Toolkit.getDefaultToolkit().getScreenInsets(getGraphicsConfiguration());
-				r1.x += scnMax.left;
-				r1.y += scnMax.top;
-				r1.width -= (scnMax.right + scnMax.left);
-				r1.height -= (scnMax.bottom + scnMax.top);
+			Rectangle r1 = getGraphicsConfiguration().getBounds();
+			Insets scnMax = Toolkit.getDefaultToolkit().getScreenInsets(getGraphicsConfiguration());
+			r1.x += scnMax.left;
+			r1.y += scnMax.top;
+			r1.width -= (scnMax.right + scnMax.left);
+			r1.height -= (scnMax.bottom + scnMax.top);
 
-				setBounds(r1);
+			setBounds(r1);
 
-				maximized = true;
-			}
+			maximized = true;
+		}
 
-			Logger.info("Dpi scale: " + DpiUtils.getWindowScale(XDMFrame.this));
+		Logger.info("Dpi scale: " + DpiUtils.getWindowScale(XDMFrame.this));
 
-		};
 	};
 
-	ActionListener actMin = new ActionListener() {
-		public void actionPerformed(ActionEvent action) {
-			XDMFrame.this.setExtendedState(XDMFrame.this.getExtendedState() | JFrame.ICONIFIED);
-		};
-	};
+	ActionListener actMin = action -> XDMFrame.this.setExtendedState(XDMFrame.this.getExtendedState() | JFrame.ICONIFIED);
 
 	ActionListener actTwitter = new ActionListener() {
 
@@ -484,16 +478,10 @@ public class XDMFrame extends JFrame implements ComponentListener {
 
 		public static GraphicsDevice getWindowDevice(Window window) {
 			Rectangle bounds = window.getBounds();
-			return Arrays.asList(GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices()).stream()
-
+			return Arrays.stream(GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices())
 					.filter(d -> d.getDefaultConfiguration().getBounds().intersects(bounds))
-
-					.sorted((f, s) -> Long.compare(//
-							square(f.getDefaultConfiguration().getBounds().intersection(bounds)),
-							square(s.getDefaultConfiguration().getBounds().intersection(bounds))))
-
+					.sorted(Comparator.comparingLong(f -> square(f.getDefaultConfiguration().getBounds().intersection(bounds))))
 					.reduce((f, s) -> s) //
-
 					.orElse(window.getGraphicsConfiguration().getDevice());
 		}
 

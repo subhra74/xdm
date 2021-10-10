@@ -32,6 +32,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
+import java.util.Objects;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -63,6 +64,7 @@ import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 import xdman.util.XDMUtils;
 
+@SuppressWarnings("FieldCanBeLocal")
 public class VideoDownloadWindow extends JDialog implements ActionListener, DocumentListener {
 
 	private static final long serialVersionUID = 416356191545932172L;
@@ -253,7 +255,7 @@ public class VideoDownloadWindow extends JDialog implements ActionListener, Docu
 		lblFmt.setBounds(getScaledInt(10), getScaledInt(111), getScaledInt(75), getScaledInt(23));
 		add(lblFmt);
 
-		cmbOutFormat = new JComboBox<MediaFormat>(MediaFormats.getSupportedFormats());
+		cmbOutFormat = new JComboBox<>(MediaFormats.getSupportedFormats());
 		cmbOutFormat.addActionListener(this);
 		cmbOutFormat.setOpaque(true);
 		cmbOutFormat.setBounds(getScaledInt(90), getScaledInt(111), getScaledInt(277), getScaledInt(20));
@@ -324,8 +326,7 @@ public class VideoDownloadWindow extends JDialog implements ActionListener, Docu
 
 	private void createQueueItems(JMenuItem queueMenuItem) {
 		ArrayList<DownloadQueue> queues = XDMApp.getInstance().getQueueList();
-		for (int i = 0; i < queues.size(); i++) {
-			DownloadQueue q = queues.get(i);
+		for (DownloadQueue q : queues) {
 			JMenuItem mItem = new JMenuItem(q.getName().length() < 1 ? "Default queue" : q.getName());
 			mItem.setName("QUEUE:" + q.getQueueId());
 			mItem.setForeground(Color.WHITE);
@@ -339,7 +340,7 @@ public class VideoDownloadWindow extends JDialog implements ActionListener, Docu
 		if (cmbOutFormat.getSelectedIndex() < 1) {
 			filePane.setFileName(file + originalExt);
 		} else {
-			String ext = ((MediaFormat) cmbOutFormat.getSelectedItem()).getFormat();
+			String ext = ((MediaFormat) Objects.requireNonNull(cmbOutFormat.getSelectedItem())).getFormat();
 			filePane.setFileName(file + "." + ext);
 		}
 	}

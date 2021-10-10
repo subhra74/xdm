@@ -30,6 +30,7 @@ import javax.swing.ButtonModel;
 import javax.swing.JComponent;
 import javax.swing.plaf.basic.BasicButtonUI;
 
+@SuppressWarnings("unused")
 public class XDMToolBarButtonUI extends BasicButtonUI {
 	Color pressedColor = new Color(170, 170, 170), rolloverColor = new Color(180, 180, 180);
 

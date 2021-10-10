@@ -46,8 +46,7 @@ public class VideoTableModel extends AbstractTableModel {
 
 	public ArrayList<YdlVideo> getSelectedVideoList() {
 		ArrayList<YdlVideo> selectedList = new ArrayList<>();
-		for (int i = 0; i < this.list.size(); i++) {
-			VideoItemWrapper w = list.get(i);
+		for (VideoItemWrapper w : this.list) {
 			if (w.checked) {
 				selectedList.add(w.videoItem);
 			}
