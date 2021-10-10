@@ -1,9 +1,30 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.components;
+
+import static xdman.util.XDMUtils.getScaledInt;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -22,6 +43,7 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.border.EmptyBorder;
 
+import org.tinylog.Logger;
 import org.tukaani.xz.XZInputStream;
 
 import xdman.Config;
@@ -31,20 +53,19 @@ import xdman.downloaders.metadata.HttpMetadata;
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.util.FFExtractCallback;
+import xdman.util.IOUtils;
 import xdman.util.XDMUtils;
 
-import org.tinylog.Logger;
-
-import static xdman.util.XDMUtils.getScaledInt;
-
+@SuppressWarnings({"unused", "ResultOfMethodCallIgnored"})
 public class ComponentInstaller extends JDialog implements DownloadListener, FFExtractCallback {
+
 	private static final long serialVersionUID = -7332687839394110921L;
 	private JLabel prgLabel;
 	private JProgressBar prg;
 	private HttpDownloader d;
-	String url = "http://xdman.sourceforge.net/components/";
-	String tmpFile;
-	boolean stop;
+	private String url = "http://xdman.sourceforge.net/components/";
+	private final String tmpFile;
+	private boolean stop;
 
 	public ComponentInstaller() {
 		initUI();
@@ -98,7 +119,6 @@ public class ComponentInstaller extends JDialog implements DownloadListener, FFE
 
 	@Override
 	public void downloadConfirmed(String id) {
-		// TODO Auto-generated method stub
 
 	}
 
@@ -156,7 +176,7 @@ public class ComponentInstaller extends JDialog implements DownloadListener, FFE
 						break;
 					out.write(buf, 0, x);
 				}
-				out.close();
+				IOUtils.closeFlow(out);
 				out = null;
 				outFile.setExecutable(true);
 			}
@@ -165,13 +185,8 @@ public class ComponentInstaller extends JDialog implements DownloadListener, FFE
 			Logger.error(e);
 			JOptionPane.showMessageDialog(this, "Component installation failed");
 		} finally {
-			try {
-				zipIn.close();
-				if (out != null)
-					out.close();
-			} catch (Exception e) {
-				Logger.error(e);
-			}
+			IOUtils.closeFlow(zipIn);
+			IOUtils.closeFlow(out);
 		}
 	}
 
@@ -208,16 +223,11 @@ public class ComponentInstaller extends JDialog implements DownloadListener, FFE
 		add(prg);
 
 		JButton btn = createButton2();
-		btn.setBounds(getBounds().width - getScaledInt(80) - getScaledInt(20), getBounds().height - getScaledInt(80), getScaledInt(80), getScaledInt(30));
+		btn.setBounds(getBounds().width - getScaledInt(80) - getScaledInt(20), getBounds().height - getScaledInt(80),
+				getScaledInt(80), getScaledInt(30));
 		add(btn);
 
-		btn.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				cancel();
-			}
-		});
+		btn.addActionListener(e -> cancel());
 
 		addWindowListener(new WindowAdapter() {
 			@Override
@@ -244,4 +254,5 @@ public class ComponentInstaller extends JDialog implements DownloadListener, FFE
 			d.stop();
 		}
 	}
+
 }

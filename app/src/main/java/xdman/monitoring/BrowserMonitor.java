@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.monitoring;
 
 import java.io.IOException;
@@ -7,6 +28,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -16,13 +38,16 @@ import java.util.EnumSet;
 import java.util.List;
 
 import org.tinylog.Logger;
+
 import xdman.Config;
 import xdman.XDMApp;
 import xdman.ui.components.VideoPopupItem;
 import xdman.util.Base64;
 import xdman.util.IOUtils;
 
+@SuppressWarnings("FieldCanBeLocal")
 public class BrowserMonitor implements Runnable {
+
 	private static BrowserMonitor _this;
 	private FileChannel fc;
 	private FileLock fileLock;
@@ -56,34 +81,32 @@ public class BrowserMonitor implements Runnable {
 	private static void appendArray(String[] arr, StringBuilder buf) {
 		boolean insertComma = false;
 		if (arr != null && arr.length > 0) {
-			for (int i = 0; i < arr.length; i++) {
+			for (String s : arr) {
 				if (insertComma) {
 					buf.append(",");
 				} else {
 					insertComma = true;
 				}
-				buf.append("\"" + arr[i] + "\"");
+				buf.append("\"").append(s).append("\"");
 			}
 		}
 	}
-	
+
 	public static String getSyncJSON() {
 		StringBuilder json = new StringBuilder();
 		json.append("{\n\"enabled\": ");
 		json.append(Config.getInstance().isBrowserMonitoringEnabled());
 		json.append(",\n\"blockedHosts\": [");
 		appendArray(Config.getInstance().getBlockedHosts(), json);// json.append(String.join(",",
-																	// Config.getInstance().getBlockedHosts()));
 		json.append("],");
 		json.append("\n\"videoUrls\": [");
 		appendArray(Config.getInstance().getVidUrls(), json);// json.append(String.join(",",
-																// Config.getInstance().getVidUrls()));
 		json.append("],");
 		json.append("\n\"fileExts\": [");
-		appendArray(Config.getInstance().getFileExts(), json);
+		appendArray(Config.getInstance().getFileExits(), json);
 		json.append("],");
 		json.append("\n\"vidExts\": [");
-		appendArray(Config.getInstance().getVidExts(), json);
+		appendArray(Config.getInstance().getVidExits(), json);
 		json.append("],");
 		StringBuilder sb = new StringBuilder();
 		int count = 0;
@@ -97,7 +120,7 @@ public class BrowserMonitor implements Runnable {
 			count++;
 		}
 		json.append("\n\"vidList\": [");
-		json.append(sb.toString());
+		json.append(sb);
 		json.append("],");
 		String mimeTypes = "\n\"mimeList\": [\"video/\",\"audio/\",\"mpegurl\",\"f4m\",\"m3u8\"]";
 		json.append(mimeTypes);
@@ -109,62 +132,26 @@ public class BrowserMonitor implements Runnable {
 
 		StringBuilder json = new StringBuilder();
 		try {
-			json.append("enabled:" + Config.getInstance().isBrowserMonitoringEnabled() + "\n");
-			json.append("blockedHosts:" + String.join(",", Config.getInstance().getBlockedHosts()) + "\n");
-			json.append("videoUrls:" + String.join(",", Config.getInstance().getVidUrls()) + "\n");
-			json.append("fileExts:" + String.join(",", Config.getInstance().getFileExts()) + "\n");
-			json.append("vidExts:" + String.join(",", Config.getInstance().getVidExts()) + "\n");
-			json.append("mimeList:" + String.join(",", Config.getInstance().getVidMime()) + "\n");
+			json.append("enabled:").append(Config.getInstance().isBrowserMonitoringEnabled()).append("\n");
+			json.append("blockedHosts:").append(String.join(",", Config.getInstance().getBlockedHosts())).append("\n");
+			json.append("videoUrls:").append(String.join(",", Config.getInstance().getVidUrls())).append("\n");
+			json.append("fileExts:").append(String.join(",", Config.getInstance().getFileExits())).append("\n");
+			json.append("vidExts:").append(String.join(",", Config.getInstance().getVidExits())).append("\n");
+			json.append("mimeList:").append(String.join(",", Config.getInstance().getVidMime())).append("\n");
 
 			List<String> videoPopupItems = new ArrayList<>();
 			for (VideoPopupItem item : XDMApp.getInstance().getVideoItemsList()) {
 				String id = item.getMetadata().getId();
 				String text = item.getFile();
 				String info = item.getInfo();
-				videoPopupItems.add(String.join("|", Base64.encode(id.getBytes("utf-8")),
-						Base64.encode(text.getBytes("utf-8")), Base64.encode(info.getBytes("utf-8"))));
+				videoPopupItems.add(String.join("|", Base64.encode(id.getBytes(StandardCharsets.UTF_8)),
+						Base64.encode(text.getBytes(StandardCharsets.UTF_8)), Base64.encode(info.getBytes(StandardCharsets.UTF_8))));
 			}
-			json.append("vidList:" + String.join(",", videoPopupItems) + "\n");
+			json.append("vidList:").append(String.join(",", videoPopupItems)).append("\n");
 		} catch (Exception e) {
 			Logger.error(e);
 		}
 
-		//System.err.println(json);
-
-//		json = new StringBuilder();
-//		json.append("{\n\"enabled\": ");
-//		json.append(Config.getInstance().isBrowserMonitoringEnabled());
-//		json.append(",\n\"blockedHosts\": [");
-//		appendArray(Config.getInstance().getBlockedHosts(), json);// json.append(String.join(",",
-//																	// Config.getInstance().getBlockedHosts()));
-//		json.append("],");
-//		json.append("\n\"videoUrls\": [");
-//		appendArray(Config.getInstance().getVidUrls(), json);// json.append(String.join(",",
-//																// Config.getInstance().getVidUrls()));
-//		json.append("],");
-//		json.append("\n\"fileExts\": [");
-//		appendArray(Config.getInstance().getFileExts(), json);
-//		json.append("],");
-//		json.append("\n\"vidExts\": [");
-//		appendArray(Config.getInstance().getVidExts(), json);
-//		json.append("],");
-//		StringBuilder sb = new StringBuilder();
-//		int count = 0;
-//		for (VideoPopupItem item : XDMApp.getInstance().getVideoItemsList()) {
-//			String id = item.getMetadata().getId();
-//			String text = encode(item.getFile());
-//			String info = item.getInfo();
-//			if (count > 0)
-//				sb.append(",");
-//			sb.append(String.format("{\"id\": \"%s\", \"text\": \"%s\",\"info\":\"%s\"}", id, text, info));
-//			count++;
-//		}
-//		json.append("\n\"vidList\": [");
-//		json.append(sb.toString());
-//		json.append("],");
-//		String mimeTypes = "\n\"mimeList\": [\"video/\",\"audio/\",\"mpegurl\",\"f4m\",\"m3u8\"]";
-//		json.append(mimeTypes);
-//		json.append("\n}");
 		return json.toString();
 	}
 
@@ -212,9 +199,6 @@ public class BrowserMonitor implements Runnable {
 					return;
 				}
 
-				// if lock is already acquired by some other process wait
-				// and retry for at most 5 sec, after that throw error and
-				// exit
 				Thread.sleep(500);
 			}
 		} catch (Exception e) {

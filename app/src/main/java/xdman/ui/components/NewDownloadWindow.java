@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.components;
 
 import static xdman.util.XDMUtils.getScaledInt;
@@ -29,6 +50,8 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.Document;
 
+import org.tinylog.Logger;
+
 import xdman.Config;
 import xdman.DownloadQueue;
 import xdman.XDMApp;
@@ -40,8 +63,7 @@ import xdman.ui.res.StringResource;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
 
-import org.tinylog.Logger;
-
+@SuppressWarnings("FieldCanBeLocal")
 public class NewDownloadWindow extends JDialog implements ActionListener, DocumentListener {
 
 	private static final long serialVersionUID = 416356191545932172L;
@@ -50,12 +72,10 @@ public class NewDownloadWindow extends JDialog implements ActionListener, Docume
 	private JPopupMenu pop;
 	private CustomButton btnMore, btnDN, btnCN;
 	private HttpMetadata metadata;
-	// private String folder;
 	private String queueId;
 
 	public NewDownloadWindow(HttpMetadata metadata, String fileName, String folderPath) {
 		initUI();
-		// this.folder = Config.getInstance().getDownloadFolder();
 		this.metadata = metadata;
 		if (this.metadata == null) {
 			this.metadata = new HttpMetadata();
@@ -113,13 +133,7 @@ public class NewDownloadWindow extends JDialog implements ActionListener, Docume
 					createPopup();
 				}
 				pop.show(btnMore, 0, btnMore.getHeight());
-			}
-			//
-			// else if (name.equals("BROWSE_FOLDER")) {
-			// choseFolder();
-			// }
-			//
-			else if (name.equals("IGNORE_URL")) {
+			} else if (name.equals("IGNORE_URL")) {
 				String urlStr = txtURL.getText();
 				if (urlStr.length() < 1) {
 					return;
@@ -138,7 +152,6 @@ public class NewDownloadWindow extends JDialog implements ActionListener, Docume
 
 				} catch (Exception e2) {
 					Logger.error(e);
-					return;
 				}
 			}
 
@@ -174,23 +187,6 @@ public class NewDownloadWindow extends JDialog implements ActionListener, Docume
 
 		XDMApp.getInstance().createDownload(file, filePane.getFolder(), metadata, now, queueId, 0, 0);
 	}
-
-	// private void choseFolder() {
-	// String dir = folder;
-	// if (StringUtils.isNullOrEmptyOrBlank(dir)) {
-	// dir = Config.getInstance().getLastFolder();
-	// if (StringUtils.isNullOrEmptyOrBlank(dir)) {
-	// dir = Config.getInstance().getDownloadFolder();
-	// }
-	// }
-	// JFileChooser jfc =
-	// XDMFileChooser.getFileChooser(JFileChooser.DIRECTORIES_ONLY, new File(dir));
-	// if (jfc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-	// folder = jfc.getSelectedFile().getAbsolutePath();
-	// Config.getInstance().setLastFolder(folder);
-	// // Config.getInstance().setDownloadFolder(folder);
-	// }
-	// }
 
 	@Override
 	public void changedUpdate(DocumentEvent e) {
@@ -250,7 +246,7 @@ public class NewDownloadWindow extends JDialog implements ActionListener, Docume
 		closeBtn.setFocusPainted(false);
 		closeBtn.setName("CLOSE");
 
-		closeBtn.setIcon(ImageResource.getIcon("title_close.png",20,20));
+		closeBtn.setIcon(ImageResource.getIcon("title_close.png", 20, 20));
 		closeBtn.addActionListener(this);
 		titlePanel.add(closeBtn);
 
@@ -267,7 +263,6 @@ public class NewDownloadWindow extends JDialog implements ActionListener, Docume
 		add(lineLbl);
 
 		txtURL = new JTextField();
-		// PopupAdapter.registerTxtPopup(txtURL);
 		txtURL.getDocument().addDocumentListener(this);
 		txtURL.setBorder(new LineBorder(ColorResource.getSelectionColor(), 1));
 		txtURL.setBackground(ColorResource.getDarkestBgColor());
@@ -280,28 +275,6 @@ public class NewDownloadWindow extends JDialog implements ActionListener, Docume
 		filePane = new XDMFileSelectionPanel();
 		filePane.setBounds(getScaledInt(77), getScaledInt(111), getScaledInt(291), getScaledInt(20));
 		add(filePane);
-		// // PopupAdapter.registerTxtPopup(txtFile);
-		// txtFile.setBorder(new LineBorder(ColorResource.getSelectionColor(), 1));
-		// txtFile.setBackground(ColorResource.getDarkestBgColor());
-		// txtFile.setForeground(Color.WHITE);
-		// txtFile.setBounds(getScaledInt(77), getScaledInt(111), getScaledInt(241),
-		// getScaledInt(20));
-		// txtFile.setCaretColor(ColorResource.getSelectionColor());
-		//
-		// add(txtFile);
-		//
-		// JButton browse = new CustomButton("...");
-		// browse.setName("BROWSE_FOLDER");
-		// browse.setMargin(new Insets(0, 0, 0, 0));
-		// browse.setBounds(getScaledInt(325), getScaledInt(111), getScaledInt(40),
-		// getScaledInt(20));
-		// browse.setFocusPainted(false);
-		// browse.setBackground(ColorResource.getDarkestBgColor());
-		// browse.setBorder(new LineBorder(ColorResource.getSelectionColor(), 1));
-		// browse.setForeground(Color.WHITE);
-		// browse.addActionListener(this);
-		// browse.setFont(FontResource.getItemFont());
-		// add(browse);
 
 		add(titlePanel);
 
@@ -351,7 +324,6 @@ public class NewDownloadWindow extends JDialog implements ActionListener, Docume
 		dl.addActionListener(this);
 		dl.setBackground(ColorResource.getDarkerBgColor());
 		dl.setBorderPainted(false);
-		// dl.setBackground(C);
 		pop.add(dl);
 
 		createQueueItems(dl);
@@ -377,8 +349,7 @@ public class NewDownloadWindow extends JDialog implements ActionListener, Docume
 
 	private void createQueueItems(JMenuItem queueMenuItem) {
 		ArrayList<DownloadQueue> queues = XDMApp.getInstance().getQueueList();
-		for (int i = 0; i < queues.size(); i++) {
-			DownloadQueue q = queues.get(i);
+		for (DownloadQueue q : queues) {
 			JMenuItem mItem = new JMenuItem(q.getName().length() < 1 ? "Default queue" : q.getName());
 			mItem.setName("QUEUE:" + q.getQueueId());
 			mItem.setForeground(Color.WHITE);

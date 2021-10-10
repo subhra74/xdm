@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.network.ftp;
 
 import java.io.IOException;
@@ -8,11 +29,12 @@ import java.net.URISyntaxException;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPReply;
-
 import org.tinylog.Logger;
 
+@SuppressWarnings({"unused", "FieldCanBeLocal"})
 public class FtpClient {
-	private String url;
+
+	private final String url;
 	private int statusCode;
 	private String statusMessage;
 	private long offset;
@@ -90,7 +112,7 @@ public class FtpClient {
 		}
 
 		Logger.info("Listing files");
-		FTPFile files[] = fc.listFiles(dir);
+		FTPFile[] files = fc.listFiles(dir);
 		reply = fc.getReplyCode();
 		if (!FTPReply.isPositiveCompletion(reply)) {
 			statusCode = 403;
@@ -98,8 +120,7 @@ public class FtpClient {
 			fc.disconnect();
 			return;
 		}
-		for (int i = 0; i < files.length; i++) {
-			FTPFile f = files[i];
+		for (FTPFile f : files) {
 			if (f.getName().equals(file)) {
 				this.length = f.getSize();
 				Logger.info("Length retrived: " + length);
@@ -118,22 +139,6 @@ public class FtpClient {
 			Logger.info("Length after seek: " + length);
 			this.statusCode = 206;
 		}
-
-		// if (!FTPReply.isPositiveCompletion(reply)) {
-		// PasswordAuthentication passwd =
-		// Authenticator.requestPasswordAuthentication(fc.getRemoteAddress(),
-		// fc.getPassivePort(), "ftp", "", "ftp");
-		// if (passwd == null) {
-		// if (!XDMApp.getInstance().promptCredential(null, "", false)) {
-		// throw new IOException(fc.getReplyString());
-		// }
-		// passwd = Authenticator.requestPasswordAuthentication(fc.getRemoteAddress(),
-		// fc.getPassivePort(), "ftp", "", "ftp");
-		// if (passwd == null) {
-		// throw new IOException(fc.getReplyString());
-		// }
-		// }
-		// }
 
 	}
 
@@ -194,4 +199,5 @@ public class FtpClient {
 			Logger.error(e);
 		}
 	}
+
 }

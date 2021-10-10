@@ -1,8 +1,26 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.res;
 
-import javax.imageio.ImageIO;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -13,32 +31,18 @@ import java.awt.image.ImageObserver;
 import java.io.IOException;
 import java.net.URL;
 
+import javax.imageio.ImageIO;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+
 import org.tinylog.Logger;
 
 public class ImageResource {
-//	private final static String ICON_FOLDER = "icons";
-//
-//	static Map<String, ImageIcon> iconMap = new HashMap<String, ImageIcon>();
-//
-//	public static ImageIcon get(String id) {
-//		return get(id, true);
-//	}
-//
-//	public static ImageIcon get(String id, boolean cacheResult) {
-//		ImageIcon icon = iconMap.get(id);
-//		if (icon == null) {
-//			icon = getIcon(id);
-//			if (icon != null && cacheResult) {
-//				iconMap.put(id, icon);
-//			}
-//		}
-//		return icon;
-//	}
 
 	public static Image getImage(String name) {
 		try {
-			URL url=ImageResource.class.getResource("/icons/xxhdpi/" + name);
-			Logger.info("Loading image from url: "+url);
+			URL url = ImageResource.class.getResource("/icons/xxhdpi/" + name);
+			Logger.info("Loading image from url: " + url);
 			return ImageIO.read(url);
 		} catch (IOException e) {
 			Logger.error(e);
@@ -50,8 +54,6 @@ public class ImageResource {
 		try {
 			BufferedImage image = ImageIO.read(ImageResource.class.getResource("/icons/xxhdpi/" + icon));
 			BufferedImage scaledImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-
-			//System.out.println("------*** " + image.getWidth() + " " + width);
 
 			Graphics2D g2 = scaledImage.createGraphics();
 			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -91,37 +93,4 @@ public class ImageResource {
 		}
 	}
 
-//	private static ImageIcon getIcon(String name) {
-//		try {
-//
-//			java.net.URL urlHdpi = ImageResource.class.getResource("/" + ICON_FOLDER + "/hdpi/" + name);
-//			java.net.URL urlXhdpi = ImageResource.class.getResource("/" + ICON_FOLDER + "/xhdpi/" + name);
-//			java.net.URL urlXxhdpi = ImageResource.class.getResource("/" + ICON_FOLDER + "/xxhdpi/" + name);
-//
-//			BaseMultiResolutionImage img = new BaseMultiResolutionImage(0, ImageIO.read(urlHdpi),
-//					ImageIO.read(urlXhdpi), ImageIO.read(urlXxhdpi));
-//			return new ImageIcon(img);
-//		} catch (Exception e) {
-//			return new ImageIcon();
-//		}
-//
-////		int screenType = XDMUtils.detectScreenType();
-////		String folder = "hdpi";
-////		if (screenType == XDMConstants.XHDPI) {
-////			folder = "xxhdpi";
-////		} else if (screenType == XDMConstants.HDPI) {
-////			folder = "xhdpi";
-////		} else {
-////			folder = "hdpi";
-////		}
-////		System.out.println("icon type:"+folder);
-////		try {
-////			java.net.URL url = ImageResource.class.getResource("/" + ICON_FOLDER + "/" + folder + "/" + name);
-////			if (url == null)
-////				throw new Exception();
-////			return new ImageIcon(url);
-////		} catch (Exception e) {
-////			return new ImageIcon(ICON_FOLDER + "/" + folder + "/" + name);
-////		}
-//	}
 }

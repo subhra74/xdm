@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.monitoring;
 
 import java.io.File;
@@ -9,11 +30,14 @@ import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+
+import org.tinylog.Logger;
 
 import xdman.Config;
 import xdman.XDMApp;
@@ -32,17 +56,14 @@ import xdman.util.IOUtils;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
 
-import org.tinylog.Logger;
-
+@SuppressWarnings({"unused", "ResultOfMethodCallIgnored"})
 public class MonitoringSession implements Runnable {
-	// private String msg204 = "HTTP/1.1 204 No Content\r\n" + "Content-length:
-	// 0\r\n\r\n";
 
-	private Socket sock;
+	private final Socket sock;
 	private InputStream inStream;
 	private OutputStream outStream;
-	private Request request;
-	private Response response;
+	private final Request request;
+	private final Response response;
 
 	public MonitoringSession(Socket socket) {
 		this.sock = socket;
@@ -85,11 +106,11 @@ public class MonitoringSession implements Runnable {
 		}
 	}
 
-	private void onVideoRetrieve(Request request, Response res) throws UnsupportedEncodingException {
+	private void onVideoRetrieve(Request request, Response res) {
 		try {
-			String content = new String(request.getBody(), "utf-8");
+			String content = new String(request.getBody(), StandardCharsets.UTF_8);
 			Logger.info("Video retrieve: " + content);
-			String lines[] = content.split("\r\n");
+			String[] lines = content.split("\r\n");
 			for (String line : lines) {
 				String id = line.trim();
 				for (VideoPopupItem item : XDMApp.getInstance().getVideoItemsList()) {
@@ -110,15 +131,15 @@ public class MonitoringSession implements Runnable {
 			Logger.info(new String(request.getBody()));
 			byte[] b = request.getBody();
 			List<ParsedHookData> list = ParsedHookData.parseLinks(b);
-			List<HttpMetadata> metadatas = new ArrayList<>();
+			List<HttpMetadata> metadataList = new ArrayList<>();
 			for (ParsedHookData d : list) {
 				Logger.info(d);
 				HttpMetadata md = new HttpMetadata();
 				md.setUrl(d.getUrl());
 				md.setHeaders(d.getRequestHeaders());
-				metadatas.add(md);
+				metadataList.add(md);
 			}
-			XDMApp.getInstance().addLinks(metadatas);
+			XDMApp.getInstance().addLinks(metadataList);
 		} finally {
 			setResponseOk(res);
 		}
@@ -174,8 +195,7 @@ public class MonitoringSession implements Runnable {
 			String url = null;
 			String output = null;
 
-			for (int i = 0; i < arr.length; i++) {
-				String str = arr[i];
+			for (String str : arr) {
 				int index = str.indexOf(":");
 				if (index < 1)
 					continue;
@@ -209,9 +229,7 @@ public class MonitoringSession implements Runnable {
 		setResponseOk(res);
 	}
 
-	private void onSync(Request request, Response res) throws UnsupportedEncodingException {
-
-		// System.out.println(json);
+	private void onSync(Request request, Response res) {
 
 		byte[] b = BrowserMonitor.getSyncJSON().getBytes();
 
@@ -219,7 +237,6 @@ public class MonitoringSession implements Runnable {
 		res.setMessage("OK");
 
 		HeaderCollection headers = new HeaderCollection();
-		// headers.addHeader("Content-Length", b.length + "");
 		headers.addHeader("Content-Type", "application/json");
 		headers.addHeader("Cache-Control", "no-cache, no-store, must-revalidate");
 		headers.addHeader("Pragma", "no-cache");
@@ -231,41 +248,16 @@ public class MonitoringSession implements Runnable {
 	private void appendArray(String[] arr, StringBuffer buf) {
 		boolean insertComma = false;
 		if (arr != null && arr.length > 0) {
-			for (int i = 0; i < arr.length; i++) {
+			for (String s : arr) {
 				if (insertComma) {
 					buf.append(",");
 				} else {
 					insertComma = true;
 				}
-				buf.append("\"" + arr[i] + "\"");
+				buf.append("\"").append(s).append("\"");
 			}
 		}
 	}
-
-	// private void onFF(Request request, Response res) {
-	// ByteArrayOutputStream bout=new ByteArrayOutputStream();
-	// InputStream inStream = StringResource.class
-	// .getResourceAsStream("/addons/" + "xdm_ff_webext.xpi");
-	//
-	// byte []b=new byte[8192];
-	//
-	// while(true){
-	// int x=inStream.read(b);
-	// if(x==-1)break;
-	// bout.write(b,0,x);
-	// }
-	//
-	// b=bout.toByteArray();
-	//
-	// res.setCode(200);
-	// res.setMessage("OK");
-	//
-	// HeaderCollection headers = new HeaderCollection();
-	// headers.addHeader("Content-Length", b.length + "");
-	// headers.addHeader("Content-Type", "application/json");
-	// res.setHeaders(headers);
-	// res.setBody(b);
-	// }
 
 	private void processRequest(Request request, Response res) throws IOException {
 		String verb = request.getUrl();
@@ -307,7 +299,6 @@ public class MonitoringSession implements Runnable {
 		}
 	}
 
-	// the url should be /preview/ffmpeg/1/{UUID}/{T1,T2,NULL}
 	private void onPreview(Request request, Response response) throws IOException {
 		PreviewStream ps = null;
 		FFmpegStream ff = null;
@@ -331,7 +322,7 @@ public class MonitoringSession implements Runnable {
 				outStream.write(resp.getBytes());
 				outStream.flush();
 				ps = new PreviewStream(id, type, tag);
-				byte buf[] = new byte[8192];
+				byte[] buf = new byte[8192];
 				while (true) {
 					int x = ps.read(buf);
 					if (x == -1) {
@@ -346,9 +337,9 @@ public class MonitoringSession implements Runnable {
 				}
 				outStream.write("0\r\n\r\n".getBytes());
 				Logger.info("Done writing file");
-				ps.close();
+				IOUtils.closeFlow(ps);
 				outStream.flush();
-				outStream.close();
+				IOUtils.closeFlow(outStream);
 			} else if (url.startsWith("/preview/player")) {
 				int index = url.lastIndexOf("/");
 				String id = url.substring(index + 1);
@@ -372,7 +363,6 @@ public class MonitoringSession implements Runnable {
 				headers.addHeader("Expires", "0");
 				response.setHeaders(headers);
 				response.setBody(b);
-				return;
 			} else if (url.startsWith("/preview/media")) {
 				boolean dash = false;
 				boolean hls = false;
@@ -385,36 +375,7 @@ public class MonitoringSession implements Runnable {
 				if (metadata instanceof HlsMetadata) {
 					hls = true;
 				}
-				// String html = "";
-				// if (dash) {
-				// html = "<html><body><video id=\"myvideo\" width=\"640\" height=\"480\"
-				// controls>\r\n"
-				// + " <source src=\"http://127.0.0.1:9614/preview/video/" + XDMConstants.DASH +
-				// "/"
-				// + metadata.getId() + "/T1\" />\r\n" + " <audio id=\"myaudio\" controls>\r\n"
-				// + " <source src=\"http://127.0.0.1:9614/preview/video/" + XDMConstants.DASH +
-				// "/"
-				// + metadata.getId() + "/T2\" />\r\n" + " </audio>\r\n" + "</video>\r\n" +
-				// "\r\n"
-				// + "<script>\r\n" + "var myvideo = document.getElementById(\"myvideo\");\r\n"
-				// + "var myaudio = document.getElementById(\"myaudio\");\r\n"
-				// + "myvideo.onplay = function() { myaudio.play(); }\r\n"
-				// + "myvideo.onpause = function() { myaudio.pause(); }\r\n" +
-				// "</script></body></html>";
-				//
-				// byte[] b = html.getBytes();
-				//
-				// response.setCode(200);
-				// response.setMessage("OK");
-				//
-				// HeaderCollection headers = new HeaderCollection();
-				// headers.addHeader("Content-Length", b.length + "");
-				// headers.addHeader("Content-Type", "text/html");
-				// response.setHeaders(headers);
-				// response.setBody(b);
-				// return;
-				// } else {
-				String input1 = null, input2 = null;
+				String input1, input2 = null;
 				if (dash) {
 					input1 = "http://127.0.0.1:9614/preview/video/" + XDMConstants.DASH + "/" + metadata.getId()
 							+ "/T1";
@@ -425,16 +386,13 @@ public class MonitoringSession implements Runnable {
 				} else {
 					input1 = "http://127.0.0.1:9614/preview/video/" + XDMConstants.HTTP + "/" + metadata.getId();
 				}
-				// String input = "http://127.0.0.1:9614/preview/video/" + (hls ?
-				// XDMConstants.HLS : XDMConstants.HTTP)
-				// + "/" + metadata.getId();
 				Logger.info("input: " + input1 + " - " + input2);
 				String resp = "HTTP/1.1 200 OK\r\nContent-Type: video/webm\r\nTransfer-Encoding: Chunked\r\nCache-Control: no-cache, no-store, must-revalidate\r\n"
 						+ "Pragma: no-cache\r\n" + "Expires: 0\r\nConnection: close\r\n\r\n";
 				outStream.write(resp.getBytes());
 				outStream.flush();
 				ff = new FFmpegStream(input1, input2);
-				byte buf[] = new byte[8192];
+				byte[] buf = new byte[8192];
 				while (true) {
 					int x = ff.read(buf);
 					if (x == -1) {
@@ -449,18 +407,11 @@ public class MonitoringSession implements Runnable {
 				}
 				outStream.write("0\r\n\r\n".getBytes());
 				Logger.info("Done writing file");
-				ff.close();
+				IOUtils.closeFlow(ff);
 				outStream.flush();
-				outStream.close();
+				IOUtils.closeFlow(outStream);
 
 				Logger.info("Finished writing");
-
-//				html = "<html><body><video id=\"myvideo\" width=\"640\" height=\"480\" controls>\r\n"
-//						+ "    <source src=\"http://127.0.0.1:9614/preview/video/"
-//						+ (hls ? XDMConstants.HLS : XDMConstants.HTTP) + "/" + metadata.getId() + "\""
-//						+ (hls ? "type=\"video/mp2t\"" : "") + "  />\r\n" + "</video></body></html>";
-//				// }
-
 			}
 		} finally {
 			IOUtils.closeFlow(ps);
@@ -475,8 +426,6 @@ public class MonitoringSession implements Runnable {
 			while (true) {
 				this.request.read(inStream);
 				this.processRequest(this.request, this.response);
-				// System.out.println("Request processed, sending response\n");
-				// this.response.write(System.out);
 				this.response.write(outStream);
 			}
 		} catch (Exception e) {
@@ -513,8 +462,7 @@ public class MonitoringSession implements Runnable {
 				return false;
 			}
 			String low_path = data.getUrl().toLowerCase();
-			if (low_path.indexOf("videoplayback") >= 0 && low_path.indexOf("itag") >= 0) {
-				// found DASH audio/video stream
+			if (low_path.contains("videoplayback") && low_path.contains("itag")) {
 				if (StringUtils.isNullOrEmptyOrBlank(url.getQuery())) {
 					return false;
 				}
@@ -524,9 +472,9 @@ public class MonitoringSession implements Runnable {
 				String path = data.getUrl().substring(0, index);
 				String query = data.getUrl().substring(index + 1);
 
-				String arr[] = query.split("&");
+				String[] arr = query.split("&");
 				StringBuilder yt_url = new StringBuilder();
-				yt_url.append(path + "?");
+				yt_url.append(path).append("?");
 				int itag = 0;
 				long clen = 0;
 				String id = "";
@@ -548,7 +496,7 @@ public class MonitoringSession implements Runnable {
 							clen = Long.parseLong(val);
 						}
 						if (key.startsWith("mime")) {
-							mime = URLDecoder.decode(val, "UTF-8");
+							mime = URLDecoder.decode(val, StandardCharsets.UTF_8);
 						}
 						if (str.startsWith("id")) {
 							id = val;
@@ -614,9 +562,6 @@ public class MonitoringSession implements Runnable {
 					}
 				} else {
 					Logger.info("+++updating");
-					// sometimes dash segments are available, but the title of the page is not
-					// properly updated yet
-					// update existing video name when ever the tab title changes
 					XDMApp.getInstance().youtubeVideoTitleUpdated(info.url, data.getFile());
 				}
 				return true;
@@ -629,7 +574,6 @@ public class MonitoringSession implements Runnable {
 
 	private boolean processVideoManifest(ParsedHookData data) {
 		String url = data.getUrl();
-		// String file = data.getFile();
 		String contentType = data.getContentType();
 		if (contentType == null) {
 			contentType = "";
@@ -683,7 +627,7 @@ public class MonitoringSession implements Runnable {
 		if (StringUtils.isNullOrEmptyOrBlank(file)) {
 			file = XDMUtils.getFileName(data.getUrl());
 		}
-		String ext = "";
+		String ext;
 		if (type.contains("video/mp4")) {
 			ext = "mp4";
 		} else if (type.contains("video/x-flv")) {
@@ -719,9 +663,7 @@ public class MonitoringSession implements Runnable {
 			}
 		}
 		String sz = (size > 0 ? FormatUtilities.formatSize(size) : "");
-		if (ext.length() > 0) {
-			sz += " " + ext.toUpperCase();
-		}
+		sz += " " + ext.toUpperCase();
 
 		XDMApp.getInstance().addMedia(metadata, file, sz);
 	}
@@ -734,15 +676,14 @@ public class MonitoringSession implements Runnable {
 			client = new JavaHttpClient(data.getUrl());
 			Iterator<HttpHeader> headers = data.getRequestHeaders().getAll();
 			boolean hasAccept = false;
-			List<String> cookieList = new ArrayList<String>();
+			List<String> cookieList = new ArrayList<>();
 			while (headers.hasNext()) {
 				HttpHeader header = headers.next();
-				//System.err.println(header.getName() + " " + header.getValue());
 				if (header.getName().toLowerCase(Locale.ENGLISH).equals("cookie")) {
 					cookieList.add(header.getValue());
 					continue;
 				}
-				if (header.getName().toLowerCase().equals("accept")) {
+				if (header.getName().equalsIgnoreCase("accept")) {
 					hasAccept = true;
 				}
 				client.addHeader(header.getName(), header.getValue());

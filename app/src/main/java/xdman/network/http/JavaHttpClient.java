@@ -1,12 +1,40 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.network.http;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.URL;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 import xdman.network.ProxyResolver;
 
 public class JavaHttpClient extends HttpClient {
+
 	private HttpURLConnection hc;
 	private boolean followRedirect = false;
 
@@ -17,7 +45,7 @@ public class JavaHttpClient extends HttpClient {
 		this.responseHeaders = new HeaderCollection();
 	}
 
-	private String _url;
+	private final String _url;
 	private URL realURL;
 
 	public void connect() throws IOException {
@@ -39,23 +67,16 @@ public class JavaHttpClient extends HttpClient {
 		}
 		hc.setInstanceFollowRedirects(this.followRedirect);
 
-		// System.out
-		// .println(hc.getResponseCode() + " " + hc.getResponseMessage());
-
 		this.statusCode = hc.getResponseCode();
 		this.statusMessage = hc.getResponseMessage();
 
 		Map<String, List<String>> responseHeaderMap = hc.getHeaderFields();
 
-		Iterator<String> headerIterator = responseHeaderMap.keySet().iterator();
-		while (headerIterator.hasNext()) {
-			String key = headerIterator.next();
+		for (String key : responseHeaderMap.keySet()) {
 			if (key == null)
 				continue;
 			List<String> headerValues = responseHeaderMap.get(key);
-			Iterator<String> headerValueIterator = headerValues.iterator();
-			while (headerValueIterator.hasNext()) {
-				String value = headerValueIterator.next();
+			for (String value : headerValues) {
 				HttpHeader header = new HttpHeader(key, value);
 				this.responseHeaders.addHeader(header);
 			}
@@ -71,16 +92,6 @@ public class JavaHttpClient extends HttpClient {
 		return hc.getContentLengthLong();
 	}
 
-	// public static void main(String[] args) throws IOException {
-	// JavaHttpClient hc = new JavaHttpClient(
-	// "https://intraeasy.techmahindra.com/CIOPRD1_DOWN/CIOPRD11.html");
-	// // hc.credentialMgr = new TestCredentialMgr();
-	// // hc.setProxyResolver(new TestProxyResolver());
-	// hc.connect();
-	// System.out.println(hc.getResponseHeader("location") + " "
-	// + hc.getContentLength());
-	// }
-
 	@Override
 	public void dispose() {
 		hc.disconnect();
@@ -95,4 +106,5 @@ public class JavaHttpClient extends HttpClient {
 	public String getHost() {
 		return realURL.getHost() + (realURL.getPort() > 0 ? ":" + realURL.getPort() : "");
 	}
+
 }

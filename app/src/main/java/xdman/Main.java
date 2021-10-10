@@ -1,9 +1,30 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman;
+
+import java.time.LocalDate;
 
 import org.tinylog.Logger;
 import org.tinylog.configuration.Configuration;
-
-import java.time.LocalDate;
 
 public class Main {
 	static {
@@ -15,9 +36,6 @@ public class Main {
 		System.setProperty("sun.java2d.d3d", "false");
 		System.setProperty("sun.java2d.opengl", "false");
 		System.setProperty("sun.java2d.xrender", "false");
-		// Disable Java 9 Dpi scaling as XDM uses its own dpi scaling
-		// System.setProperty("sun.java2d.uiScale.enabled", "true");
-		// System.setProperty("sun.java2d.uiScale", "2.75");
 	}
 
 	private static void loadLoggerConfiguration() {

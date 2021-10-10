@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.downloaders;
 
 import java.io.File;
@@ -6,9 +27,11 @@ import java.io.RandomAccessFile;
 import java.util.UUID;
 
 import org.tinylog.Logger;
+
 import xdman.Config;
 import xdman.util.IOUtils;
 
+@SuppressWarnings("unused")
 public class SegmentImpl implements Segment {
 
 	private volatile long length, startOffset, downloaded;
@@ -19,11 +42,11 @@ public class SegmentImpl implements Segment {
 
 	private long bytesRead1, bytesRead2, time1, time2;
 	private float transferRate;
-	private Config config;
+	private final Config config;
 	private volatile boolean stop;
 	private int errorCode;
 	private Object tag;
-	private String folder;
+	private final String folder;
 
 	public SegmentImpl(SegmentListener cl, String folder) throws IOException {
 		id = UUID.randomUUID().toString();
@@ -33,14 +56,10 @@ public class SegmentImpl implements Segment {
 		this.time2 = time1;
 		this.config = Config.getInstance();
 		outStream = new RandomAccessFile(new File(folder, id), "rw");// new
-		// FileOutputStream(new
-		// File(folder,
-		// id));
 		Logger.info("File opened " + id);
 	}
 
 	public SegmentImpl(String folder, String id, long off, long len, long dwn) throws IOException {
-		this.id = id;
 		this.id = id;
 		this.startOffset = off;
 		this.folder = folder;
@@ -201,7 +220,6 @@ public class SegmentImpl implements Segment {
 		cl.chunkUpdated(id);
 		calculateTransferRate();
 		throttle();
-		// applyThrottling();
 	}
 
 	@Override
@@ -231,7 +249,7 @@ public class SegmentImpl implements Segment {
 				return;
 			if (cl.getActiveChunkCount() < 1)
 				return;
-			long maxBpms = (config.getSpeedLimit() * 1024) / (cl.getActiveChunkCount() * 1000);
+			long maxBpms = (config.getSpeedLimit() * 1024L) / (cl.getActiveChunkCount() * 1000L);
 			long now = System.currentTimeMillis();
 			long timeSpentInReal = now - time2;
 			if (timeSpentInReal > 0) {
@@ -248,51 +266,6 @@ public class SegmentImpl implements Segment {
 			Logger.error(e);
 		}
 	}
-
-	// private void applyThrottling() {
-	// try {
-	// long maxBps = config.getSpeedLimit() * 1024;
-	// // System.out.println("Maxbps: "+maxBps);
-	// if (maxBps < 1) {
-	// return;
-	// }
-	// long now = System.currentTimeMillis();
-	// long timeSpentInReal = now - time2;
-	// if (timeSpentInReal > 0) {
-	// // System.out.println("inside1");
-	// long currentBpms = calculateBytesPerMilliSecond(bytesRead2, downloaded,
-	// time2, now);
-	// long expectedBpms = maxBps / (1000 * config.getMaxSegments());
-	// if (expectedBpms > 0 && expectedBpms < currentBpms) {
-	// // calculate the time that would have required if
-	// // downloading
-	// // was
-	// // in expected speed
-	// long timeShouldHaveSpent = currentBpms / expectedBpms;
-	// time2 = now;
-	// bytesRead2 = downloaded;
-	// if (timeShouldHaveSpent > 0 && timeShouldHaveSpent > timeSpentInReal) {
-	// // System.out.println("inside2: "+(timeShouldHaveSpent -
-	// // timeSpentInReal));
-	// Thread.sleep(timeShouldHaveSpent - timeSpentInReal);
-	// }
-	// }
-	// }
-	// } catch (Exception e) {
-	// Logger.log(e);
-	// }
-	//
-	// }
-
-	// private long calculateBytesPerMilliSecond(long bytes1, long bytes2, long
-	// oldtime, long newtime) {
-	// long timeDiff = newtime - oldtime;
-	// if (timeDiff > 0) {
-	// long bytesPerMilliSec = (bytes2 - bytes1) / timeDiff;
-	// return bytesPerMilliSec;
-	// }
-	// return -1L;
-	// }
 
 	@Override
 	public final float getTransferRate() {

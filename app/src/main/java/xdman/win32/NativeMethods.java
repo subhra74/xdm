@@ -1,38 +1,62 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.win32;
 
+import java.io.File;
+import java.util.Objects;
+
 import org.tinylog.Logger;
+
 import xdman.util.XDMUtils;
 
-import java.io.File;
-
+@SuppressWarnings("unused")
 public class NativeMethods {
-    private static NativeMethods _me;
+	private static NativeMethods _me;
 
-    private NativeMethods() {
-        String dllPath = new File(XDMUtils.getJarFile().getParentFile(), "xdm_native.dll").getAbsolutePath();
-        try {
-            System.load(dllPath);
-        } catch (Exception e) {
-            Logger.error(e);
-        }
-    }
+	private NativeMethods() {
+		try {
+			System.load(new File(Objects.requireNonNull(XDMUtils.getJarFile()).getParentFile(), "xdm_native.dll")
+					.getAbsolutePath());
+		} catch (Exception e) {
+			Logger.error(e);
+		}
+	}
 
-    public static NativeMethods getInstance() {
-        if (_me == null) {
-            _me = new NativeMethods();
-        }
-        return _me;
-    }
+	public static NativeMethods getInstance() {
+		if (_me == null) {
+			_me = new NativeMethods();
+		}
+		return _me;
+	}
 
-    public final native void keepAwakePing();
+	public final native void keepAwakePing();
 
-    public final native void addToStartup(String key, String value);
+	public final native void addToStartup(String key, String value);
 
-    public final native boolean presentInStartup(String key, String value);
+	public final native boolean presentInStartup(String key, String value);
 
-    public final native void removeFromStartup(String key);
+	public final native void removeFromStartup(String key);
 
-    public final native String getDownloadsFolder();
+	public final native String getDownloadsFolder();
 
-    public final native String stringTest(String str);
+	public final native String stringTest(String str);
 }

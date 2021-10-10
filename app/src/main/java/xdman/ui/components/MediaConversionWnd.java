@@ -1,4 +1,27 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.components;
+
+import static xdman.util.XDMUtils.getScaledInt;
 
 import java.awt.Color;
 import java.awt.GraphicsDevice.WindowTranslucency;
@@ -17,6 +40,8 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.SwingUtilities;
 
+import org.tinylog.Logger;
+
 import xdman.Config;
 import xdman.mediaconversion.FFmpeg;
 import xdman.mediaconversion.MediaConversionListener;
@@ -27,11 +52,9 @@ import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 import xdman.util.FormatUtilities;
 
-import org.tinylog.Logger;
-
-import static xdman.util.XDMUtils.getScaledInt;
-
+@SuppressWarnings({"unused", "FieldCanBeLocal"})
 public class MediaConversionWnd extends JFrame implements ActionListener, MediaConversionListener, Runnable {
+
 	/**
 	 * 
 	 */
@@ -39,8 +62,9 @@ public class MediaConversionWnd extends JFrame implements ActionListener, MediaC
 	private JPanel titlePanel, panel;
 	private JButton closeBtn, minBtn;
 	private JLabel titleLbl;
-	private File input, output;
-	private MediaFormat format;
+	private final File input;
+	private final File output;
+	private final MediaFormat format;
 	private FFmpeg ffmpeg;
 	private Thread thread;
 	private JProgressBar prg;
@@ -124,7 +148,7 @@ public class MediaConversionWnd extends JFrame implements ActionListener, MediaC
 
 		closeBtn = new CustomButton();
 		closeBtn.setBounds(getScaledInt(320), getScaledInt(5), getScaledInt(24), getScaledInt(24));
-		closeBtn.setIcon(ImageResource.getIcon("title_close.png",20,20));
+		closeBtn.setIcon(ImageResource.getIcon("title_close.png", 20, 20));
 		closeBtn.setBackground(ColorResource.getDarkestBgColor());
 		closeBtn.setBorderPainted(false);
 		closeBtn.setFocusPainted(false);
@@ -133,7 +157,7 @@ public class MediaConversionWnd extends JFrame implements ActionListener, MediaC
 
 		minBtn = new CustomButton();
 		minBtn.setBounds(getScaledInt(296), getScaledInt(5), getScaledInt(24), getScaledInt(24));
-		minBtn.setIcon(ImageResource.getIcon("title_min.png",20,20));
+		minBtn.setIcon(ImageResource.getIcon("title_min.png", 20, 20));
 		minBtn.setBackground(ColorResource.getDarkestBgColor());
 		minBtn.setBorderPainted(false);
 		minBtn.setFocusPainted(false);
@@ -214,7 +238,7 @@ public class MediaConversionWnd extends JFrame implements ActionListener, MediaC
 
 	@Override
 	public void run() {
-		int ret = -1;
+		int ret;
 		try {
 			ArrayList<String> inputFiles = new ArrayList<>();
 			inputFiles.add(input.getAbsolutePath());
@@ -227,11 +251,7 @@ public class MediaConversionWnd extends JFrame implements ActionListener, MediaC
 			ret = -1;
 		}
 		final int r = ret;
-		SwingUtilities.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				finished(r);
-			}
-		});
+		SwingUtilities.invokeLater(() -> finished(r));
 	}
+
 }

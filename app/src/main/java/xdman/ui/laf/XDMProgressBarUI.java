@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.laf;
 
 import java.awt.Color;
@@ -48,7 +69,6 @@ public class XDMProgressBarUI extends BasicProgressBarUI {
 
 		Graphics2D g2 = (Graphics2D) g;
 
-		// Paint the bouncing box.
 		boxRect = getBox(boxRect);
 		if (boxRect != null) {
 			g2.setPaint(ColorResource.getSelectionColor());
@@ -66,7 +86,6 @@ public class XDMProgressBarUI extends BasicProgressBarUI {
 			return;
 		}
 
-		// amount of progress to draw
 		int amountFull = getAmountFull(b, barRectWidth, barRectHeight);
 
 		Graphics2D g2 = (Graphics2D) g;
@@ -74,16 +93,7 @@ public class XDMProgressBarUI extends BasicProgressBarUI {
 
 		if (progressBar.getOrientation() == JProgressBar.HORIZONTAL) {
 			g2.fillRect(0, 0, amountFull, c.getHeight());
-		} else { // VERTICAL
 		}
-
-		// Deal with possible text painting
-		// if (progressBar.isStringPainted()) {
-		// paintString(g, b.left, b.top, barRectWidth, barRectHeight,
-		// amountFull, b);
-		// }
 	}
-	
-	
 
 }

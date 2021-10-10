@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.laf;
 
 import java.awt.Color;
@@ -33,10 +54,7 @@ public class XDMScrollBarUI extends BasicScrollBarUI {
 
 	boolean darkMode = false;
 
-	// Color borderColor = new Color(170, 170, 170);
-
 	public XDMScrollBarUI() {
-		// borderColor = new Color(185, 185, 185);
 		roColor1 = new Color(170, 170, 170);
 		barColor1 = new Color(215, 215, 215);
 		trackColor1 = new Color(240, 240, 240);
@@ -78,11 +96,8 @@ public class XDMScrollBarUI extends BasicScrollBarUI {
 			g2.setColor(darkMode ? barColor2 : barColor1);
 		}
 
-		// g.fillRect(1, 0, w - 3, h - 1);
 		g.fillRect(0, 0, w, h);
 
-		// g2.setColor(borderColor);
-		// g.drawRect(1, 0, w - 3, h - 1);
 		g.translate(-thumbBounds.x, -thumbBounds.y);
 	}
 
@@ -92,7 +107,6 @@ public class XDMScrollBarUI extends BasicScrollBarUI {
 		g.translate(r.x, r.y);
 		g.fillRect(0, 0, r.width, r.height);
 		g.translate(-r.x, -r.y);
-		// super.paintTrack(g, c, r);
 	}
 
 	protected JButton createDecreaseButton(int orientation) {

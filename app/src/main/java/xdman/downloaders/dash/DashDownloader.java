@@ -1,29 +1,30 @@
-package xdman.downloaders.dash;
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+package xdman.downloaders.dash;
 
 import org.tinylog.Logger;
 import xdman.Config;
 import xdman.XDMConstants;
-import xdman.downloaders.AbstractChannel;
-import xdman.downloaders.Downloader;
-import xdman.downloaders.Segment;
-import xdman.downloaders.SegmentComparator;
-import xdman.downloaders.SegmentDetails;
-import xdman.downloaders.SegmentImpl;
-import xdman.downloaders.SegmentInfo;
-import xdman.downloaders.SegmentListener;
+import xdman.downloaders.*;
 import xdman.downloaders.http.HttpChannel;
 import xdman.downloaders.metadata.DashMetadata;
 import xdman.downloaders.metadata.HttpMetadata;
@@ -35,9 +36,23 @@ import xdman.util.IOUtils;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+@SuppressWarnings("ResultOfMethodCallIgnored")
 public class DashDownloader extends Downloader implements SegmentListener, MediaConversionListener {
-	private DashMetadata metadata;
-	private long MIN_CHUNK_SIZE = 256 * 1024;
+
+	private final DashMetadata metadata;
+	private final long MIN_CHUNK_SIZE;
 	private long len1, len2;
 	private boolean assembleFinished;
 
@@ -56,7 +71,7 @@ public class DashDownloader extends Downloader implements SegmentListener, Media
 		new File(folder).mkdirs();
 		this.lastDownloaded = downloaded;
 		this.prevTime = System.currentTimeMillis();
-		chunks = new ArrayList<Segment>();
+		chunks = new ArrayList<>();
 		try {
 			Segment c1 = new SegmentImpl(this, folder);
 			c1.setTag("T1");
@@ -73,7 +88,6 @@ public class DashDownloader extends Downloader implements SegmentListener, Media
 			chunks.add(c2);
 
 			c1.download(this);
-			// c2.download(this);
 		} catch (IOException e) {
 			this.errorCode = XDMConstants.RESUME_FAILED;
 			this.listener.downloadFailed(id);
@@ -98,10 +112,7 @@ public class DashDownloader extends Downloader implements SegmentListener, Media
 			Logger.warn(id + " is no longer valid chunk");
 			return;
 		}
-		// int code = dc.getCode();
-		// Logger.log(id + " code: " + code + " len: " + c.getLength());
 		if (isFirstChunk(c)) {
-			// HttpChannel dc = (HttpChannel) c.getChannel();
 			super.getLastModifiedDate(c);
 			if (c.getTag().equals("T1")) {
 				this.len1 = c.getLength();
@@ -113,10 +124,10 @@ public class DashDownloader extends Downloader implements SegmentListener, Media
 
 		if (this.length < 1 && this.len1 > 0 && this.len2 > 0) {
 			this.length = len1 + len2;
-			System.out.println("length set - this.len1: " + this.len1 + " this.len2: " + this.len2);
+			Logger.info("length set - this.len1: " + this.len1 + " this.len2: " + this.len2);
 			listener.downloadConfirmed(this.id);
 		} else {
-			System.out.println("this.len1: " + this.len1 + " this.len2: " + this.len2);
+			Logger.info("this.len1: " + this.len1 + " this.len2: " + this.len2);
 		}
 
 		if ("T1".equals(c.getTag()) && this.len1 > 0) {
@@ -129,16 +140,13 @@ public class DashDownloader extends Downloader implements SegmentListener, Media
 
 	private synchronized boolean onComplete(String id) throws IOException {
 		if (allFinished()) {
-			// finish
 			finished = true;
 			updateStatus();
 			try {
-				// assembleFinished = false;
 				assemble();
 				if (!assembleFinished) {
 					throw new IOException("Assemble failed");
 				}
-				// assembleFinished = true;
 				Logger.info("********Download finished*********");
 				updateStatus();
 				listener.downloadFinished(this.id);
@@ -267,7 +275,6 @@ public class DashDownloader extends Downloader implements SegmentListener, Media
 				setLastModifiedDate(outFile);
 			}
 
-			// delete the original file if exists and rename the temp file to original
 			File realFile = new File(getOutputFolder(), getOutputFileName(true));
 			if (realFile.exists()) {
 				realFile.delete();
@@ -322,14 +329,12 @@ public class DashDownloader extends Downloader implements SegmentListener, Media
 					downloadSpeed += s.getTransferRate();
 				}
 				this.downloaded = downloaded2;
-				this.downloaded = downloaded2;
 				if (length > 0) {
 					progress = (int) ((downloaded * 100) / length);
 					long diff = downloaded - lastDownloaded;
 					long timeSpend = now - prevTime;
 					if (timeSpend > 0) {
 						float rate = ((float) diff / timeSpend) * 1000;
-						// downloadSpeed = rate;
 						this.eta = FormatUtilities.getETA(length - downloaded, rate);
 						if (this.eta == null) {
 							this.eta = "---";
@@ -359,10 +364,9 @@ public class DashDownloader extends Downloader implements SegmentListener, Media
 		try {
 			if (stopFlag)
 				return;
-			byte buf[] = new byte[8192 * 8];
+			byte[] buf = new byte[8192 * 8];
 			Logger.info("assembling... " + stopFlag);
-			Collections.sort(list, new SegmentComparator());
-			// list.sort(new SegmentComparator());
+			list.sort(new SegmentComparator());
 			out = new FileOutputStream(file);
 			for (int i = 0; i < list.size(); i++) {
 				Logger.info("chunk " + i + " " + stopFlag);
@@ -373,7 +377,6 @@ public class DashDownloader extends Downloader implements SegmentListener, Media
 					int x = (int) (rem > 0 ? (rem > buf.length ? buf.length : rem) : buf.length);
 					int r = in.read(buf, 0, x);
 					if (stopFlag) {
-						// closeStream(in, out);
 						return;
 					}
 
@@ -389,7 +392,6 @@ public class DashDownloader extends Downloader implements SegmentListener, Media
 
 					out.write(buf, 0, r);
 					if (stopFlag) {
-						// closeStream(in, out);
 						return;
 					}
 					if (length > 0) {
@@ -407,8 +409,6 @@ public class DashDownloader extends Downloader implements SegmentListener, Media
 				IOUtils.closeFlow(in);
 			}
 			IOUtils.closeFlow(out);
-			// assembleFinished = true;
-			// listener.downloadFinished(id);
 		} catch (Exception e) {
 			Logger.error(e);
 			throw new IOException(e);
@@ -432,8 +432,8 @@ public class DashDownloader extends Downloader implements SegmentListener, Media
 	public void stop() {
 		stopFlag = true;
 		saveState();
-		for (int i = 0; i < chunks.size(); i++) {
-			chunks.get(i).stop();
+		for (Segment chunk : chunks) {
+			chunk.stop();
 		}
 		if (this.ffmpeg != null) {
 			this.ffmpeg.stop();
@@ -462,8 +462,7 @@ public class DashDownloader extends Downloader implements SegmentListener, Media
 			}
 
 			Segment c1 = null;
-			for (int i = 0; i < chunks.size(); i++) {
-				Segment c = chunks.get(i);
+			for (Segment c : chunks) {
 				if (c.isFinished() || c.isActive())
 					continue;
 				if (c.getTag().equals("T1")) {
@@ -473,8 +472,7 @@ public class DashDownloader extends Downloader implements SegmentListener, Media
 			}
 
 			Segment c2 = null;
-			for (int i = 0; i < chunks.size(); i++) {
-				Segment c = chunks.get(i);
+			for (Segment c : chunks) {
 				if (c.isFinished() || c.isActive())
 					continue;
 				if (c.getTag().equals("T2")) {
@@ -508,7 +506,6 @@ public class DashDownloader extends Downloader implements SegmentListener, Media
 			Logger.error(e);
 			this.errorCode = XDMConstants.RESUME_FAILED;
 			listener.downloadFailed(this.id);
-			return;
 		}
 	}
 
@@ -535,29 +532,28 @@ public class DashDownloader extends Downloader implements SegmentListener, Media
 	private void saveState() {
 		if (chunks.size() < 1)
 			return;
-		StringBuffer sb = new StringBuffer();
-		sb.append(this.length + "\n");
-		sb.append(downloaded + "\n");
-		sb.append(this.len1 + "\n");
-		sb.append(this.len2 + "\n");
-		sb.append(chunks.size() + "\n");
-		for (int i = 0; i < chunks.size(); i++) {
-			Segment seg = chunks.get(i);
-			sb.append(seg.getId() + "\n");
-			sb.append(seg.getLength() + "\n");
-			sb.append(seg.getStartOffset() + "\n");
-			sb.append(seg.getDownloaded() + "\n");
-			sb.append(seg.getTag() + "\n");
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.length).append("\n");
+		sb.append(downloaded).append("\n");
+		sb.append(this.len1).append("\n");
+		sb.append(this.len2).append("\n");
+		sb.append(chunks.size()).append("\n");
+		for (Segment seg : chunks) {
+			sb.append(seg.getId()).append("\n");
+			sb.append(seg.getLength()).append("\n");
+			sb.append(seg.getStartOffset()).append("\n");
+			sb.append(seg.getDownloaded()).append("\n");
+			sb.append(seg.getTag()).append("\n");
 		}
 		if (!StringUtils.isNullOrEmptyOrBlank(lastModified)) {
-			sb.append(this.lastModified + "\n");
+			sb.append(this.lastModified).append("\n");
 		}
 		try {
 			File tmp = new File(folder, System.currentTimeMillis() + ".tmp");
 			File out = new File(folder, "state.txt");
 			FileOutputStream fs = new FileOutputStream(tmp);
 			fs.write(sb.toString().getBytes());
-			fs.close();
+			IOUtils.closeFlow(fs);
 			out.delete();
 			tmp.renameTo(out);
 		} catch (Exception e) {
@@ -567,7 +563,7 @@ public class DashDownloader extends Downloader implements SegmentListener, Media
 
 	private boolean restoreState() {
 		BufferedReader br = null;
-		chunks = new ArrayList<Segment>();
+		chunks = new ArrayList<>();
 		File file = new File(folder, "state.txt");
 		if (!file.exists()) {
 			file = getBackupFile(folder);
@@ -587,7 +583,7 @@ public class DashDownloader extends Downloader implements SegmentListener, Media
 				long len = Long.parseLong(br.readLine());
 				long off = Long.parseLong(br.readLine());
 				long dwn = Long.parseLong(br.readLine());
-				String tag = XDMUtils.readLineSafe(br);//br.readLine();
+				String tag = XDMUtils.readLineSafe(br);// br.readLine();
 				Segment seg = new SegmentImpl(folder, cid, off, len, dwn);
 				seg.setTag(tag);
 				Logger.info("id: " + seg.getId() + "\nlength: " + seg.getLength() + "\noffset: " + seg.getStartOffset()
@@ -605,26 +601,22 @@ public class DashDownloader extends Downloader implements SegmentListener, Media
 	}
 
 	private void assembleAsync() {
-		new Thread(new Runnable() {
-
-			@Override
-			public void run() {
-				finished = true;
-				try {
-					assemble();
-					if (!assembleFinished) {
-						throw new IOException("Assemble not finished successfully");
-					}
-					Logger.info("********Download finished*********");
-					updateStatus();
-					cleanup();
-					listener.downloadFinished(id);
-				} catch (Exception e) {
-					if (!stopFlag) {
-						Logger.error(e);
-						errorCode = XDMConstants.ERR_ASM_FAILED;
-						listener.downloadFailed(id);
-					}
+		new Thread(() -> {
+			finished = true;
+			try {
+				assemble();
+				if (!assembleFinished) {
+					throw new IOException("Assemble not finished successfully");
+				}
+				Logger.info("********Download finished*********");
+				updateStatus();
+				cleanup();
+				listener.downloadFinished(id);
+			} catch (Exception e) {
+				if (!stopFlag) {
+					Logger.error(e);
+					errorCode = XDMConstants.ERR_ASM_FAILED;
+					listener.downloadFailed(id);
 				}
 			}
 		}).start();
@@ -641,7 +633,6 @@ public class DashDownloader extends Downloader implements SegmentListener, Media
 		}
 
 		int rem = MAX_COUNT - activeCount;
-		// Logger.log("rem:" + rem);
 
 		rem -= retryFailedChunks(rem);
 
@@ -661,8 +652,7 @@ public class DashDownloader extends Downloader implements SegmentListener, Media
 			return null;
 		long size = -1;
 		String id = null;
-		for (int i = 0; i < chunks.size(); i++) {
-			Segment c = chunks.get(i);
+		for (Segment c : chunks) {
 			if (c.isActive()) {
 				long rem = c.getLength() - c.getDownloaded();
 				if (rem > size) {
@@ -676,7 +666,6 @@ public class DashDownloader extends Downloader implements SegmentListener, Media
 		return getById(id);
 	}
 
-	// merge c2 into c1
 	private void mergeChunk(Segment c1, Segment c2) {
 		c1.setLength(c1.getLength() + c2.getLength());
 	}
@@ -700,8 +689,7 @@ public class DashDownloader extends Downloader implements SegmentListener, Media
 		if (stopFlag)
 			return null;
 		long offset = chunk.getStartOffset() + chunk.getLength();
-		for (int i = 0; i < chunks.size(); i++) {
-			Segment c = chunks.get(i);
+		for (Segment c : chunks) {
 			if (c.getDownloaded() == 0) {
 				if (!c.isFinished()) {
 					if (c.getStartOffset() == offset && chunk.getTag().equals(c.getTag())) {
@@ -722,16 +710,5 @@ public class DashDownloader extends Downloader implements SegmentListener, Media
 			lastUpdated = now;
 		}
 	}
-
-	// public static void main(String[] args) {
-	// DashDownloader d2 = new DashDownloader(UUID.randomUUID().toString(),
-	// "C:\\Users\\subhro\\Desktop\\temp");
-	// d2.metadata = new DashMetadata();
-	// d2.metadata.setUrl(
-	// "https://r1---sn-np2a-2o9e.googlevideo.com/videoplayback?mt=1506358716&mv=m&ei=_jXJWev8JJr8oQO5tJnoBg&itag=244&ms=au&sparams=aitags%2Cclen%2Cdur%2Cei%2Cgir%2Cid%2Cinitcwndbps%2Cip%2Cipbits%2Citag%2Ckeepalive%2Clmt%2Cmime%2Cmm%2Cmn%2Cms%2Cmv%2Cpcm2cms%2Cpl%2Crequiressl%2Csource%2Cexpire&keepalive=yes&mm=31&mn=sn-np2a-2o9e&initcwndbps=1576250&expire=1506380382&clen=33592703&mime=video%2Fwebm&pl=24&source=youtube&dur=964.597&lmt=1466914855692296&key=yt6&ipbits=0&aitags=133%2C134%2C135%2C136%2C137%2C160%2C242%2C243%2C244%2C247%2C248%2C278&id=o-AGId65IVcAk9ngAq8kRwiEkXcsZCKAxpi9z1xPXKEwLM&ip=137.59.65.111&requiressl=yes&gir=yes&signature=D851E33F0ADB1514421437792F19FF598591E4F8.25078AEA597B68501AE55991A17F12994060AFB6&pcm2cms=yes&alr=yes&ratebypass=yes&cpn=CLvL20LuzQ5vz5XZ&c=web&cver=html5&range=0-&rn=2&rbuf=0");
-	// d2.metadata.setUrl2(
-	// "https://r1---sn-np2a-2o9e.googlevideo.com/videoplayback?mt=1506358716&mv=m&ei=_jXJWev8JJr8oQO5tJnoBg&itag=251&ms=au&sparams=clen%2Cdur%2Cei%2Cgir%2Cid%2Cinitcwndbps%2Cip%2Cipbits%2Citag%2Ckeepalive%2Clmt%2Cmime%2Cmm%2Cmn%2Cms%2Cmv%2Cpcm2cms%2Cpl%2Crequiressl%2Csource%2Cexpire&keepalive=yes&mm=31&mn=sn-np2a-2o9e&initcwndbps=1576250&expire=1506380382&clen=11812252&mime=audio%2Fwebm&pl=24&source=youtube&dur=964.641&lmt=1466913413788649&key=yt6&ipbits=0&id=o-AGId65IVcAk9ngAq8kRwiEkXcsZCKAxpi9z1xPXKEwLM&ip=137.59.65.111&requiressl=yes&gir=yes&signature=255A0C5DDABDB26A4DD2AD89D50E3FC7FD1988E5.126AF8828D8BC9E13052C77A26D56F263A255C4A&pcm2cms=yes&alr=yes&ratebypass=yes&cpn=CLvL20LuzQ5vz5XZ&c=web&cver=html5&range=0-&rn=5&rbuf=0");
-	// d2.start();
-	// }
 
 }

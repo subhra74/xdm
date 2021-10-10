@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.monitoring;
 
 import java.io.BufferedReader;
@@ -7,16 +28,19 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import org.tinylog.Logger;
+
 import xdman.XDMApp;
 import xdman.downloaders.metadata.HdsMetadata;
 import xdman.downloaders.metadata.manifests.F4MManifest;
+import xdman.util.IOUtils;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
 
 public class F4mHandler {
+
 	public static boolean handle(File f4mfile, ParsedHookData data) {
 		try {
-			StringBuffer buf = new StringBuffer();
+			StringBuilder buf = new StringBuilder();
 			InputStream in = new FileInputStream(f4mfile);
 			BufferedReader r = new BufferedReader(new InputStreamReader(in));
 			while (true) {
@@ -24,9 +48,9 @@ public class F4mHandler {
 				if (ln == null) {
 					break;
 				}
-				buf.append(ln + "\n");
+				buf.append(ln).append("\n");
 			}
-			in.close();
+			IOUtils.closeFlow(in);
 			Logger.info("HDS manifest validating...");
 			if (buf.indexOf("http://ns.adobe.com/f4m/1.0") < 0) {
 				Logger.warn("No namespace");
@@ -49,16 +73,16 @@ public class F4mHandler {
 			F4MManifest manifest = new F4MManifest(data.getUrl(), f4mfile.getAbsolutePath());
 			long[] bitRates = manifest.getBitRates();
 			Logger.info("Bitrates: " + bitRates.length);
-			for (int i = 0; i < bitRates.length; i++) {
+			for (long bitRate : bitRates) {
 				HdsMetadata metadata = new HdsMetadata();
 				metadata.setUrl(data.getUrl());
-				metadata.setBitRate((int) bitRates[i]);
+				metadata.setBitRate((int) bitRate);
 				metadata.setHeaders(data.getRequestHeaders());
 				String file = data.getFile();
 				if (StringUtils.isNullOrEmptyOrBlank(file)) {
 					file = XDMUtils.getFileName(data.getUrl());
 				}
-				XDMApp.getInstance().addMedia(metadata, file + ".flv", "FLV " + bitRates[i] + " bps");
+				XDMApp.getInstance().addMedia(metadata, file + ".flv", "FLV " + bitRate + " bps");
 			}
 			Logger.info("Manifest valid");
 			return true;
@@ -67,4 +91,5 @@ public class F4mHandler {
 			return false;
 		}
 	}
+
 }

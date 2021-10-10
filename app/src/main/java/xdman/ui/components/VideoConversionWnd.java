@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.components;
 
 import static xdman.util.XDMUtils.getScaledInt;
@@ -16,6 +37,7 @@ import java.text.DecimalFormatSymbols;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
@@ -38,6 +60,8 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import org.tinylog.Logger;
+
 import xdman.Config;
 import xdman.mediaconversion.ConversionItem;
 import xdman.mediaconversion.FFmpeg;
@@ -52,8 +76,6 @@ import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
-
-import org.tinylog.Logger;
 
 public class VideoConversionWnd extends JFrame implements ActionListener, Runnable, MediaConversionListener {
 
@@ -115,7 +137,7 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 		}
 		if (mode == 1) {
 			if (ffmpeg != null) {
-				System.out.println("stopping ffmpeg");
+				Logger.info("stopping ffmpeg");
 				ffmpeg.stop();
 			}
 		}
@@ -154,8 +176,6 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 		list.setBackground(ColorResource.getDarkestBgColor());
 		list.setBorder(null);
 
-		// list.setOpaque(false);
-
 		setUndecorated(true);
 
 		try {
@@ -186,7 +206,7 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 		closeBtn.setFocusPainted(false);
 		closeBtn.setName("CLOSE");
 
-		closeBtn.setIcon(ImageResource.getIcon("title_close.png",20,20));
+		closeBtn.setIcon(ImageResource.getIcon("title_close.png", 20, 20));
 		closeBtn.addActionListener(this);
 		titlePanel.add(closeBtn);
 
@@ -241,7 +261,6 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 		JScrollPane jsp = new JScrollPane(list);
 		jsp.setBounds(0, y, getWidth() - getScaledValue(200), h + getScaledValue(55));
 		jsp.setBorder(null);
-		// jsp.setOpaque(false);
 		DarkScrollBar scrollBar2 = new DarkScrollBar(JScrollBar.VERTICAL);
 		jsp.setVerticalScrollBar(scrollBar2);
 		jsp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
@@ -262,20 +281,10 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 
 		h = getScaledValue(30);
 
-		// lblConvertFormat = new JLabel(StringResource.get("LBL_CONVERT_TO"));
-		// lblConvertFormat.setFont(FontResource.getNormalFont());
-		// lblConvertFormat.setHorizontalAlignment(JLabel.RIGHT);
-		// lblConvertFormat.setBounds(0, y, getScaledValue(100), h);
-		// add(lblConvertFormat);
-		//
-		//
-		// y += h;
-		// y += getScaledValue(5);
-
 		chkHwAccel = new JCheckBox(StringResource.get("LBL_HW_ACCEL"));
 		chkHwAccel.setBounds(getScaledValue(14), y, getScaledValue(190), getScaledValue(30));
-		chkHwAccel.setIcon(ImageResource.getIcon("unchecked.png",16,16));
-		chkHwAccel.setSelectedIcon(ImageResource.getIcon("checked.png",16,16));
+		chkHwAccel.setIcon(ImageResource.getIcon("unchecked.png", 16, 16));
+		chkHwAccel.setSelectedIcon(ImageResource.getIcon("checked.png", 16, 16));
 		chkHwAccel.setOpaque(false);
 		chkHwAccel.setFocusPainted(false);
 		chkHwAccel.setForeground(Color.WHITE);
@@ -290,10 +299,6 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 
 		txtOutFolder = new JTextField();
 		txtOutFolder.setText(getVideoFolder());
-		// txtOutFolder.setBorder(new LineBorder(ColorResource.getSelectionColor(), 1));
-		// txtOutFolder.setBackground(ColorResource.getDarkestBgColor());
-		// txtOutFolder.setForeground(Color.WHITE);
-		// txtOutFolder.setCaretColor(ColorResource.getSelectionColor());
 		txtOutFolder.setBounds(getScaledValue(270), y + getScaledValue(5), getScaledValue(200), getScaledValue(20));
 		add(txtOutFolder);
 
@@ -362,31 +367,8 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 
 		y += getScaledValue(30);
 
-		// showProgressPanel();
-
 		list.setFixedCellWidth(getWidth());
 		list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
-		//
-		//
-		// JMenuItem item1 = new JMenuItem("150%");
-		// item1.addActionListener(this);
-		// item1.setName("1.5");
-		// JMenuItem item2 = new JMenuItem("200%");
-		// item2.addActionListener(this);
-		// item2.setName("2.0");
-		// JMenuItem item3 = new JMenuItem("250%");
-		// item3.addActionListener(this);
-		// item3.setName("2.5");
-		// JMenuItem item4 = new JMenuItem("300%");
-		// item4.addActionListener(this);
-		// item4.setName("3.0");
-		//
-		// pop.add(item1);
-		// pop.add(item2);
-		// pop.add(item3);
-		// pop.add(item4);
-		// cmbOutFormat.setSelectedIndex(0);
 
 		lblResolution = new JLabel("Resolution: ");
 		lblVideoCodec = new JLabel("Video codec: ");
@@ -417,10 +399,9 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 		add(lblVolume);
 		add(slVolume);
 
-		lblImg = new FormatImageLabel(1, ImageResource.getIcon("covert_video.png",128,128));
+		lblImg = new FormatImageLabel(1, ImageResource.getIcon("covert_video.png", 128, 128));
 		lblImg.setFont(FontResource.getBigBoldFont());
-		// lblImg.setHorizontalAlignment(JLabel.CENTER);
-		// lblImg.setVerticalAlignment(JLabel.CENTER);
+
 		lblImg.setBounds(getScaledValue(501), getScaledValue(56), getScaledValue(200), getScaledValue(160));
 		add(lblImg);
 		MediaFormat f = fmtWnd.getFormat();
@@ -434,7 +415,7 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 				if (item != null) {
 					if (!slVolume.getValueIsAdjusting()) {
 						item.volume = String.format("%.1f", slVolume.getValue() / 100f);
-						System.out.println(item.volume);
+						Logger.info(item.volume);
 					}
 				}
 
@@ -453,7 +434,6 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 
 	private void showProgressPanel() {
 		lblOutputFolder.setVisible(false);
-		// lblConvertFormat.setVisible(false);
 		btnOutFormat.setVisible(false);
 		txtOutFolder.setVisible(false);
 		browse.setVisible(false);
@@ -466,7 +446,6 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 
 	private void showFormatPanel() {
 		lblOutputFolder.setVisible(true);
-		// lblConvertFormat.setVisible(true);
 		btnOutFormat.setVisible(true);
 		txtOutFolder.setVisible(true);
 		browse.setVisible(true);
@@ -509,7 +488,7 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 					String ext = fmtWnd.getFormat().getFormat();
 					item.outFileName = file + "." + ext;
 				}
-				System.out.println("starting convert");
+				Logger.info("starting convert");
 				mode = 1;
 				t = new Thread(this);
 				t.start();
@@ -537,7 +516,7 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 		if (mode == 0) {
 			loadFiles();
 		} else if (mode == 1) {
-			System.out.println("starting conversion");
+			Logger.info("starting conversion");
 			convertFiles();
 		}
 	}
@@ -567,19 +546,17 @@ public class VideoConversionWnd extends JFrame implements ActionListener, Runnab
 				}
 
 				ConversionItem item = model.getElementAt(i);
-				System.out.println("item: " + item);
+				Logger.info("item: " + item);
 
 				String file = item.inputFile;
 
 				File outFile = new File(txtOutFolder.getText(), item.outFileName);
-				System.out.println(outFile);
+				Logger.info(outFile);
 
 				MediaFormat fmt = fmtWnd.getFormat();// MediaFormats.getSupportedFormats()[cmbOutFormat.getSelectedIndex()
-														// + 1];
-				System.out.println("format: " + fmt.getFormat());
+				Logger.info("format: " + fmt.getFormat());
 
-				this.ffmpeg = new FFmpeg(Arrays.asList(new String[] { file }), outFile.getAbsolutePath(), this, fmt,
-						false);
+				this.ffmpeg = new FFmpeg(List.of(file), outFile.getAbsolutePath(), this, fmt, false);
 				if (item.volume != null) {
 					this.ffmpeg.setVolume(item.volume);
 				}

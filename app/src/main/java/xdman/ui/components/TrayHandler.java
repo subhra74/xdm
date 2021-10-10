@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.components;
 
 import java.awt.AWTException;
@@ -17,6 +38,8 @@ import java.util.List;
 
 import javax.swing.JOptionPane;
 
+import org.tinylog.Logger;
+
 import xdman.Config;
 import xdman.MonitoringListener;
 import xdman.XDMApp;
@@ -24,8 +47,6 @@ import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 import xdman.util.XDMUtils;
-
-import org.tinylog.Logger;
 
 public class TrayHandler {
 	static ActionListener act;
@@ -87,12 +108,10 @@ public class TrayHandler {
 					} else {
 						JOptionPane.showMessageDialog(null, StringResource.get("LBL_BATCH_EMPTY_CLIPBOARD"));
 					}
-				} else if ("MONITORING".equals(name)) {
 				}
 			}
 		};
 
-		// Create a pop-up menu components
 		MenuItem addUrlItem = new MenuItem(StringResource.get("MENU_ADD_URL"));
 		addUrlItem.setFont(FontResource.getBigFont());
 		addUrlItem.addActionListener(act);
@@ -136,7 +155,6 @@ public class TrayHandler {
 		exitItem.addActionListener(act);
 		exitItem.setName("EXIT");
 
-		// Add components to pop-up menu
 		popup.add(addUrlItem);
 		popup.add(addVidItem);
 		popup.add(addBatchItem);

@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.downloaders.ftp;
 
 import java.io.IOException;
@@ -6,6 +27,7 @@ import java.net.Authenticator;
 import java.net.PasswordAuthentication;
 
 import org.tinylog.Logger;
+
 import xdman.XDMConstants;
 import xdman.downloaders.AbstractChannel;
 import xdman.downloaders.Segment;
@@ -13,12 +35,13 @@ import xdman.network.ftp.FtpClient;
 import xdman.network.http.JavaClientRequiredException;
 import xdman.util.XDMUtils;
 
+@SuppressWarnings("unused")
 public class FtpChannel extends AbstractChannel {
-	private String url;
+
+	private final String url;
 	private FtpClient hc;
 	private InputStream in;
 	private boolean redirected;
-	// private String redirectUrl;
 	private long length;
 
 	public FtpChannel(Segment chunk, String url) {
@@ -28,8 +51,8 @@ public class FtpChannel extends AbstractChannel {
 
 	@Override
 	protected boolean connectImpl() {
-		int sleepInterval = 0;
-		boolean isRedirect = false;
+		int sleepInterval;
+		boolean isRedirect;
 		if (stop) {
 			closeImpl();
 			return false;
@@ -58,9 +81,6 @@ public class FtpChannel extends AbstractChannel {
 				Logger.info("ftp Connecting to: " + url + " " + chunk.getTag() + " offset "
 						+ (chunk.getStartOffset() + chunk.getDownloaded()));
 				hc = new FtpClient(url);
-
-				// hc.setHeader("user-agent", "Mozilla/5.0 (Windows NT 10.0;
-				// rv:51.0) Gecko/20100101 Firefox/51.0");
 
 				long startOff = chunk.getStartOffset() + chunk.getDownloaded();
 
@@ -183,6 +203,7 @@ public class FtpChannel extends AbstractChannel {
 	}
 
 	public String getRedirectUrl() {
-		return null;// return redirectUrl;
+		return null;
 	}
+
 }

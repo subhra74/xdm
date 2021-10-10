@@ -1,6 +1,28 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.downloaders.http;
 
 import org.tinylog.Logger;
+
 import xdman.XDMConstants;
 import xdman.downloaders.AbstractChannel;
 import xdman.downloaders.Segment;
@@ -12,7 +34,8 @@ import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
 
 public class HttpDownloader extends SegmentDownloader {
-	private HttpMetadata metadata;
+
+	private final HttpMetadata metadata;
 	private String newFileName;
 	private boolean isJavaClientRequired;
 
@@ -26,9 +49,8 @@ public class HttpDownloader extends SegmentDownloader {
 		StringBuffer buf = new StringBuffer();
 		metadata.getHeaders().appendToBuffer(buf);
 		Logger.info("Headers all: " + buf);
-		HttpChannel hc = new HttpChannel(segment, metadata.getUrl(), metadata.getHeaders(), length,
+		return new HttpChannel(segment, metadata.getUrl(), metadata.getHeaders(), length,
 				isJavaClientRequired);
-		return hc;
 	}
 
 	@Override
@@ -49,12 +71,6 @@ public class HttpDownloader extends SegmentDownloader {
 
 	@Override
 	protected void chunkConfirmed(Segment c) {
-		// logic
-		// if the response has html content type and no attachment
-		// no matter what is the target file extension, if any, will be changed to html.
-		// If the download
-		// has video conversion option, then conversion format will be removed.
-		// in case of having an attachment, attachment extension will be used
 		String oldFileName = getOutputFileName(false);
 		HttpChannel hc = (HttpChannel) c.getChannel();
 		this.isJavaClientRequired = hc.isJavaClientRequired();
@@ -63,13 +79,6 @@ public class HttpDownloader extends SegmentDownloader {
 			metadata.setUrl(hc.getRedirectUrl());
 			metadata.save();
 
-			// newFileName = XDMUtils.getFileName(metadata.getUrl());
-			//
-			// if (outputFormat == 0) {
-			// newFileName = XDMUtils.getFileName(metadata.getUrl());
-			// Logger.log("set new filename: " + newFileName);
-			// Logger.log("new file name: " + newFileName);
-			// }
 		}
 
 		if ((hc.getHeader("content-type") + "").contains("text/html")) {
@@ -92,16 +101,6 @@ public class HttpDownloader extends SegmentDownloader {
 				}
 			}
 		}
-		// if ((hc.getHeader("content-type") + "").contains("/html")) {
-		// if (this.newFileName != null) {
-		// String upperStr = this.newFileName.toUpperCase();
-		// if (!(upperStr.endsWith(".HTML") || upperStr.endsWith(".HTM"))) {
-		// outputFormat = 0;
-		// this.newFileName += ".html";
-		// Logger.log("set new filename: " + newFileName);
-		// }
-		// }
-		// }
 		if (!nameSet) {
 			String ext = XDMUtils.getExtension(oldFileName);
 			if (StringUtils.isNullOrEmptyOrBlank(ext)) {

@@ -1,62 +1,84 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.downloaders;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
 public interface Segment {
-	public long getLength();
+	long getLength();
 
-	public long getStartOffset();
+	long getStartOffset();
 
-	public long getDownloaded();
+	long getDownloaded();
 
-	public RandomAccessFile getOutStream();
+	RandomAccessFile getOutStream();
 
-	public boolean transferComplete() throws IOException;
+	boolean transferComplete() throws IOException;
 
-	public void transferInitiated() throws IOException;
+	void transferInitiated() throws IOException;
 
-	public void transferring();
+	void transferring();
 
-	public void transferFailed(String reason);
+	void transferFailed(String reason);
 
-	public boolean isFinished();
+	boolean isFinished();
 
-	public boolean isActive();
+	boolean isActive();
 
-	public String getId();
+	String getId();
 
-	public void setId(String id);
+	void setId(String id);
 
-	public void download(SegmentListener listenre) throws IOException;
+	void download(SegmentListener listenre) throws IOException;
 
-	public void setLength(long length);
+	void setLength(long length);
 
-	public void setDownloaded(long downloaded);
+	void setDownloaded(long downloaded);
 
-	public void setStartOffset(long offset);
+	void setStartOffset(long offset);
 
-	public void stop();
+	void stop();
 
-	public SegmentListener getChunkListener();
+	SegmentListener getChunkListener();
 
-	public void dispose();
+	void dispose();
 
-	public AbstractChannel getChannel();
+	AbstractChannel getChannel();
 
-	public float getTransferRate();
+	float getTransferRate();
 
-	public int getErrorCode();
+	int getErrorCode();
 
-	public Object getTag();
+	Object getTag();
 
-	public void setTag(Object obj);
+	void setTag(Object obj);
 
-	public void resetStream() throws IOException;
+	void resetStream() throws IOException;
 
-	public void reopenStream() throws IOException;
+	void reopenStream() throws IOException;
 
-	public boolean promptCredential(String msg, boolean proxy);
+	boolean promptCredential(String msg, boolean proxy);
 
-	public void clearChannel();
+	void clearChannel();
+
 }

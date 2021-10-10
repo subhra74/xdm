@@ -1,10 +1,34 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.util;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
+
+import org.tinylog.Logger;
 
 import com.sun.jna.platform.win32.Advapi32Util;
 import com.sun.jna.platform.win32.WinReg;
@@ -13,8 +37,7 @@ import xdman.Config;
 import xdman.XDMApp;
 import xdman.ui.components.MessageBox;
 
-import org.tinylog.Logger;
-
+@SuppressWarnings("ResultOfMethodCallIgnored")
 public class NativeMessagingHostInstaller {
 	private static final String CHROME_EXTENSION_IDS = String.join(",",
 			"\"chrome-extension://danmljfachfhpbfikjgedlfifabhofcj/\"",
@@ -29,19 +52,19 @@ public class NativeMessagingHostInstaller {
 			CHROMIUM_LINUX_LOCATION = ".config/chromium/NativeMessagingHosts",
 			CHROMIUM_MAC_LOCATION = "Library/Application Support/Chromium/NativeMessagingHosts";
 
-	public static final synchronized void installNativeMessagingHostForChrome() {
+	public static synchronized void installNativeMessagingHostForChrome() {
 		installNativeMessagingHostForChrome(XDMUtils.detectOS(), false);
 	}
 
-	public static final void installNativeMessagingHostForChromium() {
+	public static void installNativeMessagingHostForChromium() {
 		installNativeMessagingHostForChrome(XDMUtils.detectOS(), true);
 	}
 
-	public static final void installNativeMessagingHostForFireFox() {
+	public static void installNativeMessagingHostForFireFox() {
 		installNativeMessagingHostForFireFox(XDMUtils.detectOS());
 	}
 
-	private static final void installNativeMessagingHostForChrome(int os, boolean chromium) {
+	private static void installNativeMessagingHostForChrome(int os, boolean chromium) {
 		if (os == XDMUtils.WINDOWS) {
 			if (!Advapi32Util.registryKeyExists(WinReg.HKEY_CURRENT_USER,
 					"Software\\Google\\Chrome\\NativeMessagingHosts\\xdm_chrome.native_host")) {
@@ -53,7 +76,8 @@ public class NativeMessagingHostInstaller {
 				}
 			}
 			File manifestFile = new File(Config.getInstance().getDataFolder(), "xdm_chrome.native_host.json");
-			File nativeHostFile = new File(XDMUtils.getJarFile().getParentFile(), "native_host.exe");
+			File nativeHostFile = new File(Objects.requireNonNull(XDMUtils.getJarFile()).getParentFile(),
+					"native_host.exe");
 			createNativeManifest(manifestFile, nativeHostFile, BrowserType.Chrome);
 			try {
 				Advapi32Util.registrySetStringValue(WinReg.HKEY_CURRENT_USER,
@@ -63,7 +87,6 @@ public class NativeMessagingHostInstaller {
 				MessageBox.show(XDMApp.getInstance().getMainWindow(),
 						"Error: Unable to register native messaging host");
 				Logger.error(e);
-				return;
 			}
 		} else {
 			File manifestFolder = new File(System.getProperty("user.home"),
@@ -73,13 +96,14 @@ public class NativeMessagingHostInstaller {
 				manifestFolder.mkdirs();
 			}
 			File manifestFile = new File(manifestFolder, "xdm_chrome.native_host.json");
-			File nativeHostFile = new File(XDMUtils.getJarFile().getParentFile(), "native_host");
+			File nativeHostFile = new File(Objects.requireNonNull(XDMUtils.getJarFile()).getParentFile(),
+					"native_host");
 			createNativeManifest(manifestFile, nativeHostFile, BrowserType.Chrome);
 		}
 
 	}
 
-	public static final void installNativeMessagingHostForFireFox(int os) {
+	public static void installNativeMessagingHostForFireFox(int os) {
 		if (os == XDMUtils.WINDOWS) {
 			if (!Advapi32Util.registryKeyExists(WinReg.HKEY_CURRENT_USER,
 					"Software\\Mozilla\\NativeMessagingHosts\\xdmff.native_host")) {
@@ -92,7 +116,8 @@ public class NativeMessagingHostInstaller {
 			}
 
 			File manifestFile = new File(Config.getInstance().getDataFolder(), "xdmff.native_host.json");
-			File nativeHostFile = new File(XDMUtils.getJarFile().getParentFile(), "native_host.exe");
+			File nativeHostFile = new File(Objects.requireNonNull(XDMUtils.getJarFile()).getParentFile(),
+					"native_host.exe");
 			createNativeManifest(manifestFile, nativeHostFile, BrowserType.Firefox);
 			try {
 				Advapi32Util.registrySetStringValue(WinReg.HKEY_CURRENT_USER,
@@ -102,7 +127,6 @@ public class NativeMessagingHostInstaller {
 				MessageBox.show(XDMApp.getInstance().getMainWindow(),
 						"Error: Unable to register native messaging host");
 				Logger.error(e);
-				return;
 			}
 		} else {
 			File manifestFolder = new File(System.getProperty("user.home"),
@@ -111,12 +135,13 @@ public class NativeMessagingHostInstaller {
 				manifestFolder.mkdirs();
 			}
 			File manifestFile = new File(manifestFolder, "xdmff.native_host.json");
-			File nativeHostFile = new File(XDMUtils.getJarFile().getParentFile(), "native_host");
+			File nativeHostFile = new File(Objects.requireNonNull(XDMUtils.getJarFile()).getParentFile(),
+					"native_host");
 			createNativeManifest(manifestFile, nativeHostFile, BrowserType.Firefox);
 		}
 	}
 
-	private static final void createNativeManifest(File manifestFile, File nativeHostFile, BrowserType browserType) {
+	private static void createNativeManifest(File manifestFile, File nativeHostFile, BrowserType browserType) {
 		try (OutputStream out = new FileOutputStream(manifestFile)) {
 			String name, manifestKey, extension;
 			if (browserType == BrowserType.Chrome || browserType == BrowserType.Chromium) {
@@ -135,7 +160,7 @@ public class NativeMessagingHostInstaller {
 							+ "  \"path\": \"%s\",\n" + "  \"type\": \"stdio\",\n" + "  %s: [ %s ]\n" + "}",
 					name, nativeHostFile.getAbsolutePath().replace("\\", "\\\\"), manifestKey, extension);
 
-			out.write(json.getBytes("utf-8"));
+			out.write(json.getBytes(StandardCharsets.UTF_8));
 		} catch (IOException e) {
 			Logger.error(e);
 		}

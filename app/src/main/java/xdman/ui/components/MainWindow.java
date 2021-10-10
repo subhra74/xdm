@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.components;
 
 import static xdman.util.XDMUtils.getScaledInt;
@@ -21,14 +42,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Properties;
-import java.util.Set;
-import java.util.Vector;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 import javax.swing.Box;
 import javax.swing.JButton;
@@ -52,10 +67,11 @@ import javax.swing.border.LineBorder;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 
+import org.tinylog.Logger;
+
 import xdman.Config;
 import xdman.DownloadEntry;
 import xdman.DownloadQueue;
-import xdman.MonitoringListener;
 import xdman.QueueManager;
 import xdman.XDMApp;
 import xdman.XDMConstants;
@@ -71,29 +87,30 @@ import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 import xdman.util.FFmpegDownloader;
+import xdman.util.IOUtils;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
 
-import org.tinylog.Logger;
-
+@SuppressWarnings("unused")
 public class MainWindow extends XDMFrame implements ActionListener {
+
 	private static final long serialVersionUID = -3119522563540700138L;
 
-	CustomButton btnTabArr[];
-	CustomButton btnSort;
-	CustomButton btnQueue;
-	JTextField txtSearch;
-	JMenuItem[] sortItems;
-	String[][] sortStatusText;
-	JLabel[] lblCatArr;
-	SidePanel sp;
-	DownloadListView lv;
-	JPopupMenu popupCtx;
-	JMenu startQMenu, stopQMenu, convertMenu;
+	private CustomButton[] btnTabArr;
+	private CustomButton btnSort;
+	private CustomButton btnQueue;
+	private JTextField txtSearch;
+	private JMenuItem[] sortItems;
+	private String[][] sortStatusText;
+	private JLabel[] lblCatArr;
+	private SidePanel sp;
+	private DownloadListView lv;
+	private JPopupMenu popupCtx;
+	private JMenu startQMenu, stopQMenu, convertMenu;
 
-	JPanel toolbar;
-	UpdateNotifyPanel updateNotifyPanel;
-	JLabel btnMonitoring;
+	private JPanel toolbar;
+	private UpdateNotifyPanel updateNotifyPanel;
+	private JLabel btnMonitoring;
 
 	private Box rightbox; // holds tabs, menu and window control buttons
 
@@ -105,27 +122,10 @@ public class MainWindow extends XDMFrame implements ActionListener {
 			SettingsPage.getInstance().showPanel(this, "BTN_MONITORING");
 		}
 		showNotification();
-		Config.getInstance().addConfigListener(new MonitoringListener() {
-
-			@Override
-			public void configChanged() {
-				btnMonitoring.setIcon(
-						Config.getInstance().isBrowserMonitoringEnabled() ? ImageResource.getIcon("on.png", 85, 21)
-								: ImageResource.getIcon("off.png", 85, 21));
-			}
-		});
+		Config.getInstance().addConfigListener(() -> btnMonitoring.setIcon(
+				Config.getInstance().isBrowserMonitoringEnabled() ? ImageResource.getIcon("on.png", 85, 21)
+						: ImageResource.getIcon("off.png", 85, 21)));
 	}
-
-//	@Override
-//	protected void registerTitlePanel(JPanel panel) {
-//		showTwitterIcon = true;
-//		showFBIcon = true;
-//		showGitHubIcon = true;
-//		fbUrl = "https://www.facebook.com/XDM.subhra74/";
-//		twitterUrl = "https://twitter.com/XDM_subhra74";
-//		gitHubUrl = "https://github.com/subhra74/xdm";
-//		super.registerTitlePanel(panel);
-//	}
 
 	private String getQueueName(String str) {
 		if (str == null) {
@@ -204,13 +204,13 @@ public class MainWindow extends XDMFrame implements ActionListener {
 				}
 			} else if ("MENU_RESTART".equals(name)) {
 				String[] ids = lv.getSelectedIds();
-				for (int i = 0; i < ids.length; i++) {
-					XDMApp.getInstance().restartDownload(ids[i]);
+				for (String id : ids) {
+					XDMApp.getInstance().restartDownload(id);
 				}
 			} else if ("RESUME".equals(name) || "MENU_RESUME".equals(name)) {
 				String[] ids = lv.getSelectedIds();
-				for (int i = 0; i < ids.length; i++) {
-					XDMApp.getInstance().resumeDownload(ids[i], true);
+				for (String id : ids) {
+					XDMApp.getInstance().resumeDownload(id, true);
 				}
 			} else if ("CTX_OPEN_FILE".equals(name)) {
 				openFile();
@@ -266,7 +266,6 @@ public class MainWindow extends XDMFrame implements ActionListener {
 						"sample textdgdfgdfgdfghdfh gfhsdgh gfgfh dfgdfqwewrqwerwerqwerqwerwerwqerqwerqwerqwerwerwegfterj jgh ker gwekl hwgklerhg ek hrkjlwhlk kj hgeklgh jkle herklj gheklwerjgh sample textdgdfgdfgdfghdfh gfhsdgh gfgfh dfgdfqwewrqwerwerqwerqwerwerwqerqwerqwerqwerwerwegfterj jgh ker gwekl hwgklerhg ek hrkjlwhlk kj hgeklgh jkle herklj gheklwerjgh",
 						MessageBox.OK_OPTION, MessageBox.OK);
 				Logger.info("After: " + ret);
-				// new DownloadCompleteWnd().setVisible(true);
 			} else if ("MENU_OPTIONS".equals(name) || "OPTIONS".equals(name)) {
 				SettingsPage.getInstance().showPanel(this, "PG_SETTINGS");
 			} else if ("MENU_REFRESH_LINK".equals(name)) {
@@ -289,10 +288,7 @@ public class MainWindow extends XDMFrame implements ActionListener {
 						MessageBox.YES_NO_OPTION, MessageBox.YES,
 						StringResource.get("LBL_DELETE_FILE")) == MessageBox.YES) {
 					String[] ids = lv.getSelectedIds();
-					ArrayList<String> idList = new ArrayList<String>();
-					for (int i = 0; i < ids.length; i++) {
-						idList.add(ids[i]);
-					}
+					ArrayList<String> idList = new ArrayList<>(Arrays.asList(ids));
 					XDMApp.getInstance().deleteDownloads(idList, MessageBox.isChecked());
 				}
 			} else if ("MENU_DELETE_COMPLETED".equals(name)) {
@@ -359,12 +355,12 @@ public class MainWindow extends XDMFrame implements ActionListener {
 	}
 
 	private void updateSidePanel(JLabel lbl) {
-		for (int i = 0; i < lblCatArr.length; i++) {
-			if (lbl == lblCatArr[i]) {
-				lblCatArr[i].setBackground(ColorResource.getActiveTabColor());
-				lblCatArr[i].setOpaque(true);
+		for (JLabel jLabel : lblCatArr) {
+			if (lbl == jLabel) {
+				jLabel.setBackground(ColorResource.getActiveTabColor());
+				jLabel.setOpaque(true);
 			} else {
-				lblCatArr[i].setOpaque(false);
+				jLabel.setOpaque(false);
 			}
 		}
 		lv.refresh();
@@ -426,10 +422,8 @@ public class MainWindow extends XDMFrame implements ActionListener {
 		toolBox.add(Box.createHorizontalGlue());
 
 		btnMonitoring = new JLabel(ImageResource.getIcon("on.png", 85, 21));
-		// btnMonitoring.setForeground(Color.WHITE);
 		btnMonitoring.setIconTextGap(scale(15));
 		btnMonitoring.putClientProperty("xdmbutton.norollover", "true");
-		// btnMonitoring.setBackground(ColorResource.getTitleColor());
 		btnMonitoring.setName("BROWSER_MONITORING");
 		btnMonitoring.setText(StringResource.get("BROWSER_MONITORING"));
 		btnMonitoring.setHorizontalTextPosition(JButton.LEADING);
@@ -551,7 +545,6 @@ public class MainWindow extends XDMFrame implements ActionListener {
 		addMenuItem("MENU_OPTIONS", tools);
 		addMenuItem("MENU_REFRESH_LINK", tools);
 		addMenuItem("MENU_PROPERTIES", tools);
-		// addMenuItem("MENU_FORCE_ASSEMBLE", tools);
 		addMenuItem("MENU_SPEED_LIMITER", tools);
 		addMenuItem("MENU_LANG", tools);
 		addMenuItem("MENU_MEDIA_CONVERTER", tools);
@@ -565,41 +558,12 @@ public class MainWindow extends XDMFrame implements ActionListener {
 		addMenuItem("LBL_REPORT_PROBLEM", help);
 		addMenuItem("LBL_TRANSLATE", help);
 		addMenuItem("MENU_UPDATE", help);
-		// addMenuItem("OPT_UPDATE_FFMPEG", help);
 		addMenuItem("MENU_ABOUT", help);
 
 		bar.add(file);
 		bar.add(dwn);
 		bar.add(tools);
 		bar.add(help);
-
-		// bar.setAlignmentX(Box.RIGHT_ALIGNMENT);
-		// bar.setAlignmentY(Box.TOP_ALIGNMENT);
-
-//		Box vbox1=Box.createVerticalBox();
-//		vbox1.setPreferredSize(new Dimension(300, 30));
-//		vbox1.setOpaque(true);
-//		vbox1.setBackground(Color.RED);
-//		vbox1.setMinimumSize(new Dimension(300, 30));
-//		vbox1.add(bar);
-//		vbox1.add(Box.createVerticalGlue());
-
-//		JPanel panel = new JPanel(new BorderLayout());
-//		Box hb1 = Box.createHorizontalBox();
-//		hb1.add(Box.createHorizontalGlue());
-//		hb1.add(bar);
-//		hb1.add(Box.createHorizontalStrut(getScaledInt(30)));
-//		panel.add(hb1, BorderLayout.NORTH);
-
-//
-//		Box menuBox = Box.createHorizontalBox();
-//		menuBox.setOpaque(true);
-//		menuBox.setBackground(Color.RED);
-//		bar.setBackground(Color.RED);
-//		//menuBox.add(Box.createHorizontalGlue());
-//		menuBox.add(bar);
-//		//menuBox.add(Box.createHorizontalStrut(getScaledInt(30)));
-//		getTitlePanel().add(panel);
 
 		Box menuBox = Box.createHorizontalBox();
 		menuBox.setBorder(new EmptyBorder(0, 0, getScaledInt(20), 0));
@@ -613,7 +577,6 @@ public class MainWindow extends XDMFrame implements ActionListener {
 
 	private JMenu createMenu(String title) {
 		JMenu menu = new JMenu(title);
-		// menu.setForeground(ColorResource.getDeepFontColor());
 		menu.setFont(FontResource.getBoldFont());
 		menu.setBorderPainted(false);
 		menu.setBorder(new EmptyBorder(getScaledInt(5), getScaledInt(5), getScaledInt(5), getScaledInt(5)));
@@ -622,7 +585,6 @@ public class MainWindow extends XDMFrame implements ActionListener {
 
 	private void addMenuItem(String id, JComponent menu) {
 		JMenuItem mitem = new JMenuItem(StringResource.get(id));
-		// mitem.setForeground(ColorResource.getLightFontColor());
 		mitem.setName(id);
 		mitem.setFont(FontResource.getNormalFont());
 		mitem.addActionListener(this);
@@ -633,9 +595,7 @@ public class MainWindow extends XDMFrame implements ActionListener {
 		JMenu menu = new JMenu(StringResource.get(id));
 		menu.setName(id);
 		menu.setFont(FontResource.getNormalFont());
-		// menu.setForeground(ColorResource.getLightFontColor());
 		menu.addActionListener(this);
-		// menu.setBackground(ColorResource.getDarkerBgColor());
 		menu.setBorderPainted(false);
 		menu.getPopupMenu().addPopupMenuListener(popupListener);
 		parentMenu.add(menu);
@@ -666,13 +626,6 @@ public class MainWindow extends XDMFrame implements ActionListener {
 
 	private Component createSearchPane() {
 		btnSort = createDropdownBtn("SORT_DATE_DESC");
-
-		// btnSort = new CustomButton(StringResource.get("SORT_DATE_DESC"));
-		// btnSort.setBackground(ColorResource.getActiveTabColor());
-		// btnSort.setBorderPainted(false);
-		// btnSort.setFocusPainted(false);
-		// btnSort.setContentAreaFilled(false);
-		// btnSort.setFont(FontResource.getNormalFont());
 
 		btnQueue = createDropdownBtn("LBL_ALL_QUEUE");
 
@@ -747,19 +700,9 @@ public class MainWindow extends XDMFrame implements ActionListener {
 
 		popSort.setInvoker(btnSort);
 
-		btnSort.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				popSort.show(btnSort, 0, btnSort.getHeight());
-			}
-		});
+		btnSort.addActionListener(e -> popSort.show(btnSort, 0, btnSort.getHeight()));
 
-		btnQueue.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				prepeareQueuePopupButton();
-			}
-		});
+		btnQueue.addActionListener(e -> prepeareQueuePopupButton());
 
 		return bp;
 	}
@@ -803,7 +746,7 @@ public class MainWindow extends XDMFrame implements ActionListener {
 
 	private void updateSortMenu() {
 		for (int i = 0; i < sortItems.length; i++) {
-			if (i >= 0 && i <= 3) {
+			if (i <= 3) {
 				if (i == Config.getInstance().getSortField()) {
 					sortItems[i].setFont(FontResource.getBoldFont());
 					sortItems[i].setForeground(ColorResource.getLightFontColor());// (FontResource.getBoldFont());
@@ -870,9 +813,6 @@ public class MainWindow extends XDMFrame implements ActionListener {
 
 		this.rightbox.add(p);
 
-		// pp.add(p, BorderLayout.EAST);
-
-		// getTitlePanel().add(pp, BorderLayout.SOUTH);
 	}
 
 	private void tabClicked(ActionEvent e) {
@@ -950,9 +890,6 @@ public class MainWindow extends XDMFrame implements ActionListener {
 
 		sortStatusText[3][0] = StringResource.get("SORT_TYPE_DESC");
 		sortStatusText[3][1] = StringResource.get("SORT_TYPE_ASC");
-		// test ui
-
-		// setMenuActionListener(this);
 
 		lv = new DownloadListView(panCenter);
 		filter();
@@ -1004,8 +941,7 @@ public class MainWindow extends XDMFrame implements ActionListener {
 	private void loadStopQueueMenu(JMenu menu) {
 		menu.removeAll();
 		ArrayList<DownloadQueue> queues = XDMApp.getInstance().getQueueList();
-		for (int i = 0; i < queues.size(); i++) {
-			DownloadQueue q = queues.get(i);
+		for (DownloadQueue q : queues) {
 			if (q.isRunning()) {
 				JMenuItem mitem = new JMenuItem(q.getName());
 				mitem.setForeground(ColorResource.getLightFontColor());
@@ -1019,8 +955,7 @@ public class MainWindow extends XDMFrame implements ActionListener {
 	private void loadStartQueueMenu(JMenu menu) {
 		menu.removeAll();
 		ArrayList<DownloadQueue> queues = XDMApp.getInstance().getQueueList();
-		for (int i = 0; i < queues.size(); i++) {
-			DownloadQueue q = queues.get(i);
+		for (DownloadQueue q : queues) {
 			if (!q.isRunning()) {
 				JMenuItem mitem = new JMenuItem(q.getName());
 				mitem.setForeground(ColorResource.getLightFontColor());
@@ -1045,20 +980,6 @@ public class MainWindow extends XDMFrame implements ActionListener {
 		addMenuItem("CTX_COPY_URL", popupCtx);
 		addMenuItem("CTX_COPY_FILE", popupCtx);
 		addMenuItem("OPT_CONVERT", popupCtx);
-		// convertMenu = createMenu(StringResource.get("OPT_CONVERT"));
-		// convertMenu.setBorder(new EmptyBorder(5, 10, 5, 5));
-		// convertMenu.setFont(FontResource.getNormalFont());
-		//
-		// MediaFormat[] fmts = MediaFormats.getSupportedFormats();
-		// for (int i = 1; i < fmts.length; i++) {
-		// MediaFormat fmt = fmts[i];
-		// JMenuItem mitem = new JMenuItem(fmt.toString());
-		// mitem.setName("FORMAT=" + i);
-		// mitem.addActionListener(this);
-		// convertMenu.add(mitem);
-		// }
-		//
-		// popupCtx.add(convertMenu);
 
 		addMenuItem("MENU_PROPERTIES", popupCtx);
 		popupCtx.setInvoker(lv.getTable());
@@ -1073,8 +994,6 @@ public class MainWindow extends XDMFrame implements ActionListener {
 
 			@Override
 			public void mouseReleased(MouseEvent me) {
-				// JOptionPane.showMessageDialog(null,"Mouse clicked:
-				// "+me.getButton()+" "+MouseEvent.BUTTON3);
 				if (me.getButton() == MouseEvent.BUTTON3 || SwingUtilities.isRightMouseButton(me) || me.isPopupTrigger()
 						|| XDMUtils.isMacPopupTrigger(me)) {
 					Point p = me.getPoint();
@@ -1090,10 +1009,6 @@ public class MainWindow extends XDMFrame implements ActionListener {
 					if (tbl.getSelectedRows().length > 0) {
 						popupCtx.show(lv.getTable(), me.getX(), me.getY());
 					}
-					// int row = tbl.rowAtPoint(p);
-					// if (row < 0) {
-					// tbl.setRowSelectionInterval(row, row);
-					// }
 				}
 			}
 		});
@@ -1117,7 +1032,7 @@ public class MainWindow extends XDMFrame implements ActionListener {
 						referer = header.getValue();
 					}
 					if ("cookie".equalsIgnoreCase(header.getName())) {
-						cookies.append(header.getValue() + "\n");
+						cookies.append(header.getValue()).append("\n");
 					}
 				}
 				String type = "HTTP";
@@ -1218,7 +1133,6 @@ public class MainWindow extends XDMFrame implements ActionListener {
 			String[] ids = lv.getSelectedIds();
 			if (ids.length > 0) {
 				showConversionWindow(ids);
-				return;
 			}
 		} catch (Exception e) {
 			Logger.error(e);
@@ -1261,17 +1175,11 @@ public class MainWindow extends XDMFrame implements ActionListener {
 			if (in == null) {
 				in = new FileInputStream("lang/map");
 			}
-			langMap.load(new InputStreamReader(in, Charset.forName("utf-8")));
+			langMap.load(new InputStreamReader(in, StandardCharsets.UTF_8));
 		} catch (Exception e) {
 			Logger.error(e);
 		} finally {
-			if (in != null) {
-				try {
-					in.close();
-				} catch (Exception e2) {
-					Logger.error(e2);
-				}
-			}
+			IOUtils.closeFlow(in);
 		}
 
 		int index = 0;
@@ -1337,9 +1245,9 @@ public class MainWindow extends XDMFrame implements ActionListener {
 
 	private void pauseDownloads() {
 		String[] ids = lv.getSelectedIds();
-		Set<String> queues = new HashSet<String>();
-		for (int i = 0; i < ids.length; i++) {
-			DownloadEntry ent = XDMApp.getInstance().getEntry(ids[i]);
+		Set<String> queues = new HashSet<>();
+		for (String id : ids) {
+			DownloadEntry ent = XDMApp.getInstance().getEntry(id);
 			String qid = ent.getQueueId();
 			queues.add(qid);
 		}
@@ -1374,8 +1282,8 @@ public class MainWindow extends XDMFrame implements ActionListener {
 				}
 			}
 		} else {
-			for (int i = 0; i < ids.length; i++) {
-				XDMApp.getInstance().pauseDownload(ids[i]);
+			for (String id : ids) {
+				XDMApp.getInstance().pauseDownload(id);
 			}
 		}
 	}
@@ -1465,15 +1373,5 @@ public class MainWindow extends XDMFrame implements ActionListener {
 	private void showBatchPatternDialog() {
 		new BatchPatternDialog().setVisible(true);
 	}
-
-	// void test() {
-	// HttpMetadata m = new HttpMetadata();
-	// m.setUrl("http://localhost:8080/x.zip");
-	// HttpDownloader hd = new HttpDownloader(UUID.randomUUID().toString(),
-	// "c:\\users\\subhro\\desktop\\temp", m,
-	// new TestProxyResolver());
-	// hd.registerListener(XDMApp.getInstance());
-	// hd.start();
-	// }
 
 }

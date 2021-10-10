@@ -1,3 +1,23 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtreme Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ */
+
 package xdman.ui.components;
 
 import java.awt.event.ActionEvent;
@@ -13,10 +33,12 @@ import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import javax.swing.text.JTextComponent;
 
+import org.tinylog.Logger;
 import xdman.ui.res.StringResource;
 import xdman.util.XDMUtils;
 
 public class PopupAdapter extends MouseAdapter implements ActionListener {
+
 	private JTextComponent txt;
 	private JPopupMenu popup;
 
@@ -79,7 +101,7 @@ public class PopupAdapter extends MouseAdapter implements ActionListener {
 	public void actionPerformed(ActionEvent e) {
 		if (txt == null)
 			return;
-		System.out.println(txt);
+		Logger.info(txt);
 		String name = ((JComponent) e.getSource()).getName();
 		if ("MENU_CUT".equals(name)) {
 			txt.cut();
@@ -91,4 +113,5 @@ public class PopupAdapter extends MouseAdapter implements ActionListener {
 			txt.paste();
 		}
 	}
+
 }

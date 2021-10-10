@@ -1,14 +1,39 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.util;
 
-import java.text.*;
-import java.util.*;
-
-import xdman.*;
-import xdman.ui.res.StringResource;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import org.tinylog.Logger;
 
+import xdman.DownloadEntry;
+import xdman.DownloadQueue;
+import xdman.QueueManager;
+import xdman.XDMConstants;
+import xdman.ui.res.StringResource;
+
 public class FormatUtilities {
+
 	private static SimpleDateFormat _format;
 	private static final int MB = 1024 * 1024, KB = 1024;
 
@@ -79,12 +104,11 @@ public class FormatUtilities {
 	}
 
 	public static String hms(int sec) {
-		int hrs = 0, min = 0;
+		int hrs, min;
 		hrs = sec / 3600;
 		min = (sec % 3600) / 60;
 		sec = sec % 60;
-		String str = String.format("%02d:%02d:%02d", hrs, min, sec);
-		return str;
+		return String.format("%02d:%02d:%02d", hrs, min, sec);
 	}
 
 	public static String getResolution(String res) {
@@ -122,4 +146,5 @@ public class FormatUtilities {
 		}
 		return name;
 	}
+
 }

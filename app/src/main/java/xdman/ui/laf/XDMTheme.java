@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.laf;
 
 import java.awt.Color;
@@ -50,9 +71,6 @@ public class XDMTheme extends OceanTheme {
 	}
 
 	Color gray = Color.BLACK, light_gray = Color.BLACK, lighter_gray = Color.BLACK;// new
-																					// Color(230,
-																					// 230,
-																					// 230);
 
 	ColorUIResource pm1 = new ColorUIResource(Color.BLACK);
 	ColorUIResource pm2 = new ColorUIResource(Color.WHITE);// gray);
@@ -60,11 +78,7 @@ public class XDMTheme extends OceanTheme {
 
 	ColorUIResource sc1 = new ColorUIResource(Color.BLACK);// BORDER COLOR
 	ColorUIResource sc2 = new ColorUIResource(lighter_gray);// BUTTON LOWER
-	// GRADIENT
 	ColorUIResource sc3 = new ColorUIResource(Color.BLACK);// lighter_gray);//
-
-	// BACKGROUND
-	// COLOR
 
 	@Override
 	protected ColorUIResource getPrimary1() {
@@ -96,10 +110,6 @@ public class XDMTheme extends OceanTheme {
 		return sc3;
 	}
 
-	// @Override
-	// protected ColorUIResource getPrimary1() {
-	// return sc1;
-	// }
 	@Override
 	public void addCustomEntriesToTable(UIDefaults table) {
 		super.addCustomEntriesToTable(table);

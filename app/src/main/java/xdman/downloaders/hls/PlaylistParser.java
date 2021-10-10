@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.downloaders.hls;
 
 import java.io.BufferedReader;
@@ -9,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.tinylog.Logger;
+
 import xdman.util.FormatUtilities;
 import xdman.util.IOUtils;
 import xdman.util.StringUtils;
@@ -19,7 +41,7 @@ public class PlaylistParser {
 	public static HlsPlaylist parse(String file, String playlistUrl) {
 		HlsPlaylist playlist = new HlsPlaylist();
 		String keyUrl = null, IV = null;
-		String url = null, resolution = null, bandwidth = null, sMediaSequence = null;
+		String url, resolution = null, bandwidth = null, sMediaSequence = null;
 		boolean isMasterPlaylist = false, isEncryptedPlaylist = false;
 		boolean isEncryptedSegment = false;
 		int mediaSequence = 0;
@@ -27,8 +49,6 @@ public class PlaylistParser {
 		BufferedReader r = null;
 		List<HlsPlaylistItem> items = new ArrayList<>();
 		float totalDuration = 0.0f;
-		String lastUrl = null;
-		boolean hasByteRange = false;
 		try {
 			r = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
 			if (!XDMUtils.readLineSafe(r).startsWith("#EXTM3U")) {
@@ -53,25 +73,21 @@ public class PlaylistParser {
 				}
 
 				if (!line.startsWith("#")) {
-					int segSeq = -1;
+					int segSeq;
 					if (sMediaSequence != null) {
 						segSeq = Integer.parseInt(sMediaSequence);
 						if (mediaSequence == 0) {
 							mediaSequence = segSeq;
 						}
-					} else {
-						segSeq = mediaSequence;
 					}
 					url = line;
-					if (!(hasByteRange && lastUrl != null && url.equals(lastUrl))) {
-						HlsPlaylistItem item = new HlsPlaylistItem(getAbsUrl(url, playlistUrl),
-								isEncryptedSegment ? getAbsUrl(keyUrl, playlistUrl) : null,
-								isEncryptedSegment ? getIV(IV, mediaSequence) : null, resolution, bandwidth, duration);
-						items.add(item);
-						mediaSequence++;
-					}
+					HlsPlaylistItem item = new HlsPlaylistItem(getAbsUrl(url, playlistUrl),
+							isEncryptedSegment ? getAbsUrl(keyUrl, playlistUrl) : null,
+							isEncryptedSegment ? getIV(IV, mediaSequence) : null, resolution, bandwidth, duration);
+					items.add(item);
+					mediaSequence++;
 
-					url = sMediaSequence = resolution = bandwidth = null;
+					sMediaSequence = resolution = bandwidth = null;
 					try {
 						if (!StringUtils.isNullOrEmptyOrBlank(duration)) {
 							totalDuration += Float.parseFloat(duration);
@@ -86,7 +102,7 @@ public class PlaylistParser {
 						String attribSet = getKeyString(line);
 						if (!StringUtils.isNullOrEmptyOrBlank(attribSet)) {
 							String[] attrs = attribSet.split(",");
-							if (attrs != null && attrs.length > 0) {
+							if (attrs.length > 0) {
 								resolution = getAttrValue(attrs, "RESOLUTION");
 								resolution = FormatUtilities.getResolution(resolution);
 								bandwidth = getAttrValue(attrs, "BANDWIDTH");
@@ -103,7 +119,7 @@ public class PlaylistParser {
 						String attribSet = getKeyString(line);
 						if (!StringUtils.isNullOrEmptyOrBlank(attribSet)) {
 							String[] attrs = attribSet.split(",");
-							if (attrs != null && attrs.length > 0) {
+							if (attrs.length > 0) {
 								String sDuration = attrs[0].trim();
 								try {
 									duration = sDuration;
@@ -113,7 +129,6 @@ public class PlaylistParser {
 							}
 						}
 					} else if (line.startsWith("#EXT-X-BYTERANGE:")) {
-						hasByteRange = true;
 						if (isEncryptedPlaylist) {
 							throw new IOException("Encryption is not supported with byte range");
 						}
@@ -121,7 +136,7 @@ public class PlaylistParser {
 						String attribSet = getKeyString(line);
 						if (!StringUtils.isNullOrEmptyOrBlank(attribSet)) {
 							String[] attrs = attribSet.split(",");
-							if (attrs != null && attrs.length > 0) {
+							if (attrs.length > 0) {
 								sMediaSequence = attrs[0];
 							}
 						}
@@ -130,7 +145,7 @@ public class PlaylistParser {
 						String attribSet = getKeyString(line);
 						if (!StringUtils.isNullOrEmptyOrBlank(attribSet)) {
 							String[] attrs = attribSet.split(",");
-							if (attrs != null && attrs.length > 0) {
+							if (attrs.length > 0) {
 								String method = getAttrValue(attrs, "METHOD");
 								keyUrl = getAttrValue(attrs, "URI");
 								if (keyUrl != null) {
@@ -145,8 +160,8 @@ public class PlaylistParser {
 											IV = getAttrValue(attrs, "IV");
 											String keyFormat = getAttrValue(attrs, "KEYFORMAT");
 											if (keyFormat != null && (!keyFormat.equals("identity"))) {
-												Logger.warn("Unsupported encryption method: " + method
-														+ "/keyformat: " + keyFormat);
+												Logger.warn("Unsupported encryption method: " + method + "/keyformat: "
+														+ keyFormat);
 												return null;
 											}
 										} else {
@@ -191,7 +206,7 @@ public class PlaylistParser {
 		return line.substring(index + 1);
 	}
 
-	private static String getAttrValue(String attrs[], String name) {
+	private static String getAttrValue(String[] attrs, String name) {
 		if (attrs != null) {
 			for (String attr : attrs) {
 				String attrib = attr.trim();
@@ -214,8 +229,7 @@ public class PlaylistParser {
 		try {
 			if (!(segmentUrl.startsWith("http://") || segmentUrl.startsWith("https://"))) {
 				URI uri = new URI(playlistUrl);
-				String str = uri.resolve(segmentUrl).normalize().toString();
-				return str;
+				return uri.resolve(segmentUrl).normalize().toString();
 			} else {
 				return segmentUrl;
 			}
@@ -231,4 +245,5 @@ public class PlaylistParser {
 		}
 		return iv;
 	}
+
 }

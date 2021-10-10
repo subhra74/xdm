@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.components;
 
 import static xdman.util.XDMUtils.getScaledInt;
@@ -50,6 +71,7 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.event.MouseInputAdapter;
 
 import org.tinylog.Logger;
+
 import xdman.ClipboardMonitor;
 import xdman.Config;
 import xdman.CredentialManager;
@@ -127,13 +149,11 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 	JComboBox<String> cmbMax;
 	JComboBox<String> cmbMinVidSize;
 	JComboBox<String> cmbZoom;
-	// JComboBox<String> cmbDupAction;
 	JTextField txtDefFolder, txtTempFolder;
 
 	JTextArea txtFileTyp, txtVidType, txtBlockedHosts;
 
 	JComboBox<String> cmbTimeout, cmbSeg, cmbTcp;
-	// JTextField txtSpeedLimit;
 	JCheckBox chkUsePac, chkUseProxy, chkUseSocks;
 	JTextField txtPACUrl, txtProxyHostnPort, txtProxyPass, txtProxyUser, txtSocksHostnPort;
 
@@ -148,7 +168,6 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 			ffAMOURL = "https://subhra74.github.io/xdm/redirect.html?target=firefox", // "http://xdman.sourceforge.net/addons/xdm_ff_webext.xpi",
 			operaExtURL = "https://subhra74.github.io/xdm-firefox/chromium.html",
 			directCRXURL = "https://subhra74.github.io/xdm-firefox/chromium.html";
-	// https://subhra74.github.io/xdm-firefox/xdm_ff_webext.xpi
 
 	public static SettingsPage getInstance() {
 		if (page == null) {
@@ -403,27 +422,6 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		y += h;
 		y += getScaledInt(10);
 
-		// h = 30;
-		// JLabel lblDupTitle = new JLabel(StringResource.get("SHOW_DUP_ACT"));
-		// lblDupTitle.setForeground(Color.WHITE);
-		// lblDupTitle.setFont(FontResource.getNormalFont());
-		// lblDupTitle.setBounds(15, y, 350 - 30, h);
-		// panel.add(lblDupTitle);
-		// y += h;
-		//
-		// h = 25;
-		// cmbDupAction = new JComboBox<String>(
-		// new String[] { StringResource.get("DUT_ACT_RENAME"),
-		// StringResource.get("DUP_ACT_OVERWRITE"),
-		// StringResource.get("DUP_ACT_OPEN"),
-		// StringResource.get("DUP_ACT_PROMPT") });
-		// cmbDupAction.setBackground(ColorResource.getDarkerBgColor());
-		// cmbDupAction.setOpaque(false);
-		// cmbDupAction.setBounds(15, y, 350 - 40, h);
-		// cmbDupAction.setRenderer(new SimpleListRenderer());
-		// panel.add(cmbDupAction);
-		// y += h;
-
 		y += getScaledInt(10);
 
 		h = getScaledInt(30);
@@ -624,7 +622,6 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		y += getScaledInt(10);
 
 		panel.setPreferredSize(new Dimension(getScaledInt(300), y + getScaledInt(50)));
-		// panel.setMinimumSize(new Dimension(300, 700));
 		return panel;
 	}
 
@@ -890,12 +887,6 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 				if (!BrowserLauncher.launchFirefox(ffAMOURL)) {
 					String msg = String.format(StringResource.get("MSG_ADDON_DESC"), "Mozilla Firefox", ffAMOURL);
 					showAddonUrl(ffAMOURL, msg);
-					// BrowserAddonDlg dlg = new BrowserAddonDlg(ffAMOURL, msg);
-					// dlg.setVisible(true);
-					// MessageBox.show(parent,
-					// StringResource.get("MSG_ADDON_TITLE"), msg,
-					// MessageBox.OK_OPTION,
-					// MessageBox.OK);
 				}
 			}
 			if ("EDGE_INSTALL".equals(name)) {
@@ -907,58 +898,23 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 					String msg = String.format(StringResource.get("MSG_ADDON_DESC"), "Google Chrome",
 							chromeWebStoreURL);
 					showAddonUrl(chromeWebStoreURL, msg);
-					// MessageBox.show(parent,
-					// StringResource.get("MSG_ADDON_TITLE"), msg,
-					// MessageBox.OK_OPTION,
-					// MessageBox.OK);
 				}
 			}
 			if ("CM_INSTALL".equals(name)) {
 				NativeMessagingHostInstaller.installNativeMessagingHostForChromium();
 				String msg = String.format(StringResource.get("MSG_ADDON_DESC"), "Chromium", chromeWebStoreURL);
 				showAddonUrl(chromeWebStoreURL, msg);
-				// MessageBox.show(parent,
-				// StringResource.get("MSG_ADDON_TITLE"), msg,
-				// MessageBox.OK_OPTION,
-				// MessageBox.OK);
 			}
 			if ("VL_INSTALL".equals(name)) {
 				NativeMessagingHostInstaller.installNativeMessagingHostForChrome();
 				String msg = String.format(StringResource.get("MSG_ADDON_DESC"), "Vivaldi", chromeWebStoreURL);
 				showAddonUrl(chromeWebStoreURL, msg);
-				// MessageBox.show(parent,
-				// StringResource.get("MSG_ADDON_TITLE"), msg,
-				// MessageBox.OK_OPTION,
-				// MessageBox.OK);
 			}
 			if ("OP_INSTALL".equals(name)) {
 				NativeMessagingHostInstaller.installNativeMessagingHostForChrome();
 				String msg = String.format(StringResource.get("MSG_ADDON_DESC"), "Opera", operaExtURL);
 				showAddonUrl(operaExtURL, msg);
-				// MessageBox.show(parent,
-				// StringResource.get("MSG_ADDON_TITLE"), msg,
-				// MessageBox.OK_OPTION,
-				// MessageBox.OK);
 			}
-			//
-			// if ("GEN_INSTALL1".equals(name)) {
-			// String msg =
-			// String.format(StringResource.get("MSG_GENERIC_ADDON_DESC1"),
-			// oldSignedPrivateMozillaExt,
-			// ffAMOURL);
-			// MessageBox.show(parent, StringResource.get("MSG_ADDON_TITLE"),
-			// msg, MessageBox.OK_OPTION,
-			// MessageBox.OK);
-			// }
-			// if ("GEN_INSTALL2".equals(name)) {
-			// String msg =
-			// String.format(StringResource.get("MSG_GENERIC_ADDON_DESC2"),
-			// chromeWebStoreURL,
-			// directCRXURL);
-			// MessageBox.show(parent, StringResource.get("MSG_ADDON_TITLE"),
-			// msg, MessageBox.OK_OPTION,
-			// MessageBox.OK);
-			// }
 			if (setPage(name)) {
 				level = 1;
 				SwingUtilities.invokeLater(new Runnable() {
@@ -988,7 +944,6 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		Logger.info("Max download: " + config.getMaxDownloads());
 		cmbMax.setSelectedItem(config.getMaxDownloads() > 0 ? config.getMaxDownloads() + "" : "N/A");
 		cmbZoom.setSelectedIndex(config.getZoomLevelIndex());
-		// cmbDupAction.setSelectedIndex(config.getDuplicateAction());
 		txtTempFolder.setText(config.getTemporaryFolder());
 		cmbCategory.setSelectedIndex(0);
 		txtDefFolder.setText(config.isForceSingleFolder() ? config.getDownloadFolder() : config.getCategoryOther());
@@ -1000,8 +955,8 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 
 	private void loadMonitoringSettings() {
 		Config config = Config.getInstance();
-		txtFileTyp.setText(XDMUtils.appendArray2Str(config.getFileExts()));
-		txtVidType.setText(XDMUtils.appendArray2Str(config.getVidExts()));
+		txtFileTyp.setText(XDMUtils.appendArray2Str(config.getFileExits()));
+		txtVidType.setText(XDMUtils.appendArray2Str(config.getVidExits()));
 		txtBlockedHosts.setText(XDMUtils.appendArray2Str(config.getBlockedHosts()));
 		chkVidPan.setSelected(config.isShowVideoNotification());
 		chkMonitorClipboard.setSelected(config.isMonitorClipboard());
@@ -1031,8 +986,6 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 			val = ival + "";
 		}
 		cmbTcp.setSelectedItem(val);
-		// txtSpeedLimit.setText(config.getSpeedLimit() < 1 ? "N/A" :
-		// config.getSpeedLimit() + "");
 		int proxyMode = config.getProxyMode();
 		if (proxyMode == 0) {
 			chkUsePac.setSelected(false);
@@ -1259,13 +1212,11 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		y += h;
 		JButton btnEdge = createButton2("DESC_INSTALL");
 		btnEdge.setName("VL_INSTALL");
-		// btnEdge.addActionListener(this);
 		btnEdge.setBounds(getScaledInt(15), y, getScaledInt(140), h);
 		p.add(btnEdge);
 
 		JButton btnEdge2 = createButton2("DESC_INSTRUCTION");
 		btnEdge2.setName("EDGE_INSTALL");
-		// btnEdge2.addActionListener(this);
 		btnEdge2.setBounds(getScaledInt(180), y, getScaledInt(140), h);
 		p.add(btnEdge2);
 		y += h;
@@ -1514,41 +1465,6 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 
 		y += getScaledInt(50);
 
-		// h = getScaledInt(30);
-		// JLabel lbl51 = new JLabel(StringResource.get("SPEED_LIMIT_TITLE"));
-		// lbl51.setForeground(Color.WHITE);
-		// lbl51.setFont(FontResource.getItemFont());
-		// lbl51.setBounds(getScaledInt(15), y, getScaledInt(350) -
-		// getScaledInt(30),
-		// h);
-		// p.add(lbl51);
-		// y += h;
-		//
-		// h = getScaledInt(30);
-		// JLabel lbl71 = new JLabel(StringResource.get("MSG_SPEED_LIMIT"));
-		// lbl71.setForeground(Color.WHITE);
-		// lbl71.setFont(FontResource.getNormalFont());
-		// lbl71.setBounds(getScaledInt(15), y, getScaledInt(350) -
-		// getScaledInt(30),
-		// h);
-		// p.add(lbl71);
-		// y += h;
-		//
-		// h = getScaledInt(25);
-		// txtSpeedLimit = new JTextField();
-		// txtSpeedLimit.setBounds(getScaledInt(15), y, getScaledInt(350) -
-		// getScaledInt(250), h);
-		// txtSpeedLimit.setBorder(new
-		// LineBorder(ColorResource.getDarkBtnColor()));
-		// txtSpeedLimit.setEditable(true);
-		// txtSpeedLimit.setCaretColor(ColorResource.getActiveTabColor());
-		// txtSpeedLimit.setForeground(Color.WHITE);
-		// txtSpeedLimit.setOpaque(false);
-		// p.add(txtSpeedLimit);
-		// y += h;
-		//
-		// y += getScaledInt(50);
-
 		h = getScaledInt(30);
 		JLabel lbl5 = new JLabel(StringResource.get("DESC_NET4"));
 		lbl5.setForeground(Color.WHITE);
@@ -1557,13 +1473,11 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		p.add(lbl5);
 		y += h;
 
-		// y += getScaledInt(10);
 		h = getScaledInt(30);
 		chkUsePac = createCheckBox("DESC_NET5");
 		chkUsePac.setBounds(getScaledInt(15), y, getScaledInt(350) - getScaledInt(30), h);
 		p.add(chkUsePac);
 		chkUsePac.setVisible(false);
-		// y += h;
 
 		h = getScaledInt(25);
 		txtPACUrl = new JTextField();
@@ -1574,10 +1488,8 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		txtPACUrl.setCaretColor(ColorResource.getActiveTabColor());
 		txtPACUrl.setOpaque(false);
 		p.add(txtPACUrl);
-		// y += h;
 		txtPACUrl.setVisible(false);
 
-		// y += getScaledInt(10);
 		h = getScaledInt(30);
 		chkUseProxy = createCheckBox("DESC_NET6");
 		chkUseProxy.setBounds(getScaledInt(15), y, getScaledInt(350) - getScaledInt(30), h);
@@ -2159,7 +2071,6 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		} else {
 			XDMUtils.removeFromStartup();
 		}
-		// config.setAutoStart(chkAutoStart.isSelected());
 		String customCmd = txtCustomCmd.getText();
 		config.setCustomCmd(customCmd);
 		String antivirExec = txtAntivirCmd.getText();
@@ -2413,7 +2324,6 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 			config.setMaxDownloads(Integer.parseInt(text));
 		}
 		config.setZoomLevelIndex(cmbZoom.getSelectedIndex());
-		// config.setDuplicateAction(cmbDupAction.getSelectedIndex());
 		config.setDownloadFolder(txtDefFolder.getText());
 		config.setTemporaryFolder(txtTempFolder.getText());
 		config.setNoTransparency(chkNoTransparency.isSelected());
@@ -2423,8 +2333,8 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 
 	private void saveMonitoringSettings() {
 		Config config = Config.getInstance();
-		config.setFileExts(XDMUtils.appendStr2Array(txtFileTyp.getText()));
-		config.setVidExts(XDMUtils.appendStr2Array(txtVidType.getText()));
+		config.setFileExits(XDMUtils.appendStr2Array(txtFileTyp.getText()));
+		config.setVidExits(XDMUtils.appendStr2Array(txtVidType.getText()));
 		config.setBlockedHosts(XDMUtils.appendStr2Array(txtBlockedHosts.getText()));
 		config.setShowVideoNotification(chkVidPan.isSelected());
 		config.setMonitorClipboard(chkMonitorClipboard.isSelected());
@@ -2455,11 +2365,6 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 			Logger.error(e);
 		}
 		config.setTcpWindowSize(ival);
-		// try {
-		// int speedLimit = Integer.parseInt(txtSpeedLimit.getText());
-		// config.setSpeedLimit(speedLimit);
-		// } catch (Exception e) {
-		// }
 
 		int proxyMode = 0;
 		if (chkUsePac.isSelected()) {
@@ -2522,9 +2427,11 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		config.setProxyUser(txtProxyUser.getText());
 		config.setProxyPass(txtProxyPass.getText());
 	}
+
 }
 
 class PasswordItem {
+
 	String host;
 	String user;
 	String password;
@@ -2533,4 +2440,5 @@ class PasswordItem {
 	public String toString() {
 		return host + "[" + user + "]";
 	}
+
 }

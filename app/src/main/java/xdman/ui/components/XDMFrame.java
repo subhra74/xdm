@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.components;
 
 import java.awt.AWTEvent;
@@ -8,7 +29,6 @@ import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.EventQueue;
-import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
@@ -28,18 +48,17 @@ import java.util.Arrays;
 
 import javax.swing.Box;
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
-import javax.swing.JRootPane;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 
 import org.tinylog.Logger;
+
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
@@ -53,8 +72,6 @@ public class XDMFrame extends JFrame implements ComponentListener {
 
 	private boolean maximizeBox = true, minimizeBox = true;
 
-	// private JButton menuBtn;
-
 	private JPanel contentPane, modalPane, dialogPane;
 
 	private static final int DEFAULT_LAYER = 0, MODAL_LAYER = 30, DIALOG_LAYER = 15;
@@ -67,10 +84,6 @@ public class XDMFrame extends JFrame implements ComponentListener {
 
 	public XDMFrame() {
 		setUndecorated(true);
-//		getRootPane().setWindowDecorationStyle(JRootPane.FRAME);
-//		setDefaultLookAndFeelDecorated(true);
-
-//		
 
 		createCursors();
 		contentPane = new JPanel(new BorderLayout());
@@ -221,37 +234,10 @@ public class XDMFrame extends JFrame implements ComponentListener {
 		Box hBox = Box.createHorizontalBox();
 		hBox.setBackground(ColorResource.getTitleColor());
 
-		// if (menuBox) {
-		// // JButton btn2 =
-		// createTransparentButton(ImageResource.get("exit.png"), new
-		// Dimension(30, 30), null);
-		// // btn2.setName("MENU_OPEN");
-		// // // btn.setRolloverIcon(ImageResource.get("min_btn_r.png"));
-		// // hBox.add(btn2);
-		// // JButton btn =
-		// createTransparentButton(ImageResource.get("drop.png"), new
-		// Dimension(30, 30), null);
-		// // btn.setName("MENU_OPEN");
-		// // // btn.setRolloverIcon(ImageResource.get("min_btn_r.png"));
-		// // hBox.add(btn);
-		// // hBox.add(Box.createRigidArea(new Dimension(10, 1)));
-		// // // hBox.add(Box.createHorizontalStrut(10));
-		//
-		// JLabel lbl = new JLabel();
-		// lbl.setMaximumSize(new Dimension(1, 12));
-		// lbl.setPreferredSize(new Dimension(1, 12));
-		// lbl.setBackground(new Color(65,65,65));
-		// lbl.setOpaque(true);
-		// hBox.add(lbl);
-		// hBox.add(Box.createRigidArea(new Dimension(10, 1)));
-		// //menuBtn = btn;
-		// // hBox.add(Box.createHorizontalStrut(10));
-		// }
 		if (showGitHubIcon) {
 			JButton btnG = createTransparentButton(ImageResource.getIcon("github.png", 16, 16),
 					new Dimension(XDMUtils.getScaledInt(30), XDMUtils.getScaledInt(30)), actGitHub);
 			btnG.setToolTipText("GitHub");
-			// btn.setRolloverIcon(ImageResource.get("max_btn_r.png"));
 			hBox.add(btnG);
 		}
 
@@ -259,7 +245,6 @@ public class XDMFrame extends JFrame implements ComponentListener {
 			JButton btnT = createTransparentButton(ImageResource.getIcon("twitter.png", 16, 16),
 					new Dimension(XDMUtils.getScaledInt(30), XDMUtils.getScaledInt(30)), actTwitter);
 			btnT.setToolTipText(StringResource.get("LBL_TWITTER_PAGE"));
-			// btn.setRolloverIcon(ImageResource.get("max_btn_r.png"));
 			hBox.add(btnT);
 		}
 
@@ -267,27 +252,23 @@ public class XDMFrame extends JFrame implements ComponentListener {
 			JButton btnF = createTransparentButton(ImageResource.getIcon("facebook.png", 16, 16),
 					new Dimension(XDMUtils.getScaledInt(30), XDMUtils.getScaledInt(30)), actFb);
 			btnF.setToolTipText(StringResource.get("LBL_LIKE_ON_FB"));
-			// btn.setRolloverIcon(ImageResource.get("max_btn_r.png"));
 			hBox.add(btnF);
 		}
 
 		if (minimizeBox) {
 			JButton btn = createTransparentButton(ImageResource.getIcon("title_min.png", 20, 20),
 					new Dimension(XDMUtils.getScaledInt(30), XDMUtils.getScaledInt(30)), actMin);
-			// btn.setRolloverIcon(ImageResource.get("min_btn_r.png"));
 			hBox.add(btn);
 		}
 
 		if (maximizeBox) {
 			JButton btn = createTransparentButton(ImageResource.getIcon("title_max.png", 20, 20),
 					new Dimension(XDMUtils.getScaledInt(30), XDMUtils.getScaledInt(30)), actMax);
-			// btn.setRolloverIcon(ImageResource.get("max_btn_r.png"));
 			hBox.add(btn);
 		}
 
 		JButton btn = createTransparentButton(ImageResource.getIcon("title_close.png", 20, 20),
 				new Dimension(XDMUtils.getScaledInt(30), XDMUtils.getScaledInt(30)), actClose);
-		// btn.setRolloverIcon(ImageResource.get("close_btn_r.png"));
 		hBox.add(btn);
 
 		return hBox;
@@ -312,10 +293,6 @@ public class XDMFrame extends JFrame implements ComponentListener {
 
 				winDim = getBounds();
 
-//				GraphicsEnvironment env = GraphicsEnvironment.getLocalGraphicsEnvironment();
-//				Rectangle bounds = env.getMaximumWindowBounds();
-//				setBounds(bounds);
-
 				Rectangle r1 = getGraphicsConfiguration().getBounds();
 				Insets scnMax = Toolkit.getDefaultToolkit().getScreenInsets(getGraphicsConfiguration());
 				r1.x += scnMax.left;
@@ -325,33 +302,11 @@ public class XDMFrame extends JFrame implements ComponentListener {
 
 				setBounds(r1);
 
-//				Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-//				Insets scnMax = Toolkit.getDefaultToolkit().getScreenInsets(getGraphicsConfiguration());
-//				Rectangle r = new Rectangle(0, 0, screenSize.width - scnMax.right - scnMax.left,
-//						screenSize.height - scnMax.bottom - scnMax.top);
-//				setSize(r.width, r.height);
-//				setLocation(r.x, r.y);
 				maximized = true;
 			}
 
 			Logger.info("Dpi scale: " + DpiUtils.getWindowScale(XDMFrame.this));
 
-			// XDMFrame.this.setMaximizedBounds(null);
-//			new (0 + scnMax.left, 0 + scnMax.top,
-//					screenSize.width - scnMax.right, screenSize.height - scnMax.bottom));
-
-//			Rectangle r = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
-//
-//			System.out.println(r + " -- " + getGraphicsConfiguration().getBounds() + " -- "
-//					+ GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds() + " -- "
-//					+ GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
-//							.getDefaultConfiguration().getBounds());
-//
-//			XDMFrame.this
-//					.setMaximizedBounds(GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds());
-//			XDMFrame.this.setExtendedState(
-//					(XDMFrame.this.getExtendedState() & JFrame.MAXIMIZED_BOTH) == JFrame.MAXIMIZED_BOTH ? JFrame.NORMAL
-//							: JFrame.MAXIMIZED_BOTH);
 		};
 	};
 
@@ -429,12 +384,6 @@ public class XDMFrame extends JFrame implements ComponentListener {
 		btn.addActionListener(actionListener);
 		return btn;
 	}
-
-//	protected void setMenuActionListener(ActionListener a) {
-//		if (menuBtn != null) {
-//			menuBtn.addActionListener(a);
-//		}
-//	}
 
 	@Override
 	public void componentHidden(ComponentEvent c) {
@@ -525,7 +474,6 @@ public class XDMFrame extends JFrame implements ComponentListener {
 	}
 
 	private synchronized void stopModal() {
-		// notifyAll();
 	}
 
 	static class DpiUtils {
@@ -538,18 +486,14 @@ public class XDMFrame extends JFrame implements ComponentListener {
 			Rectangle bounds = window.getBounds();
 			return Arrays.asList(GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices()).stream()
 
-					// pick devices where window located
 					.filter(d -> d.getDefaultConfiguration().getBounds().intersects(bounds))
 
-					// sort by biggest intersection square
 					.sorted((f, s) -> Long.compare(//
 							square(f.getDefaultConfiguration().getBounds().intersection(bounds)),
 							square(s.getDefaultConfiguration().getBounds().intersection(bounds))))
 
-					// use one with the biggest part of the window
 					.reduce((f, s) -> s) //
 
-					// fallback to default device
 					.orElse(window.getGraphicsConfiguration().getDevice());
 		}
 

@@ -19,18 +19,16 @@
  * 
  */
 
-package xdman.network;
+package xdman.downloaders.hls;
 
-import java.io.IOException;
+public interface HlsEncryptedSource {
 
-@SuppressWarnings({"unused"})
-public class HostUnreachableException extends IOException {
+	boolean hasKey(String keyUrl);
 
-	public HostUnreachableException() {
-	}
+	void setKey(String keyUrl, byte[] data);
 
-	public HostUnreachableException(String msg) {
-		super(msg);
-	}
+	String getIV(String url);
+
+	byte[] getKey(String keyUrl);
 
 }

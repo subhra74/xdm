@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.downloaders.hls;
 
 import java.io.ByteArrayOutputStream;
@@ -14,6 +35,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.tinylog.Logger;
+
 import xdman.XDMConstants;
 import xdman.downloaders.Segment;
 import xdman.downloaders.http.HttpChannel;
@@ -27,11 +49,13 @@ import xdman.network.http.XDMHttpClient;
 import xdman.util.XDMUtils;
 
 public class EncryptedHlsChannel extends HttpChannel {
-	private String keyUrl, mediaUrl;
-	private HlsEncryptedSouce source;
+
+	private final String keyUrl;
+	private final String mediaUrl;
+	private final HlsEncryptedSource source;
 
 	public EncryptedHlsChannel(Segment chunk, String url, HeaderCollection headers, long totalLength,
-			boolean javaClientRequired, HlsEncryptedSouce source, String keyurl) {
+							   boolean javaClientRequired, HlsEncryptedSource source, String keyurl) {
 		super(chunk, url, headers, totalLength, javaClientRequired);
 		this.source = source;
 		this.url = this.mediaUrl = url;
@@ -40,8 +64,8 @@ public class EncryptedHlsChannel extends HttpChannel {
 
 	@Override
 	protected boolean connectImpl() {
-		int sleepInterval = 0;
-		boolean isRedirect = false;
+		int sleepInterval;
+		boolean isRedirect;
 		if (stop) {
 			closeImpl();
 			return false;
@@ -73,7 +97,6 @@ public class EncryptedHlsChannel extends HttpChannel {
 				if (javaClientRequired) {
 					hc = new JavaHttpClient(url);
 				} else {
-					// this.socketDataRemaining = -1;
 					hc = new XDMHttpClient(url);
 				}
 
@@ -160,7 +183,6 @@ public class EncryptedHlsChannel extends HttpChannel {
 								}
 							}
 							read++;
-							// System.out.print((char) x);
 							bout.write(x);
 						}
 						byte[] buf = bout.toByteArray();
@@ -193,12 +215,11 @@ public class EncryptedHlsChannel extends HttpChannel {
 				try {
 					in = getCypherStream(in, key, getIV(ivStr));
 				} catch (Exception e) {
-					e.printStackTrace();
+					Logger.error(e);
 					errorCode = XDMConstants.ERR_INVALID_RESP;
 					closeImpl();
 					return false;
 				}
-				// in = hc.getInputStream();
 				Logger.info("Connection success");
 				return true;
 
@@ -220,6 +241,7 @@ public class EncryptedHlsChannel extends HttpChannel {
 			try {
 				Thread.sleep(sleepInterval);
 			} catch (Exception e) {
+				Logger.error(e);
 			}
 		}
 
@@ -248,4 +270,5 @@ public class EncryptedHlsChannel extends HttpChannel {
 		cipher.init(Cipher.DECRYPT_MODE, cipherKey, cipherIV);
 		return new CipherInputStream(in, cipher);
 	}
+
 }

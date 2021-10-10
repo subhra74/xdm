@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.downloaders.metadata.manifests;
 
 import java.io.BufferedReader;
@@ -8,22 +29,24 @@ import java.net.URI;
 import java.util.ArrayList;
 
 import org.tinylog.Logger;
+
 import xdman.util.IOUtils;
 import xdman.util.StringUtils;
 
+@SuppressWarnings("unused")
 public class M3U8Manifest {
-	private String playlistUrl;
+
+	private final String playlistUrl;
 	private float duration;
-	private ArrayList<String> mediaUrls;
+	private final ArrayList<String> mediaUrls;
 	private boolean masterPlaylist;
 	private boolean encrypted;
-	private ArrayList<M3U8MediaInfo> mediaProperties;// valid only for master
-														// playlist
+	private final ArrayList<M3U8MediaInfo> mediaProperties;// valid only for master
 
 	public M3U8Manifest(String file, String playlistUrl) throws Exception {
 		this.playlistUrl = playlistUrl;
-		this.mediaUrls = new ArrayList<String>();
-		this.mediaProperties = new ArrayList<M3U8MediaInfo>();
+		this.mediaUrls = new ArrayList<>();
+		this.mediaProperties = new ArrayList<>();
 		ArrayList<String> urlList = parseManifest(file);
 		makeMediaUrls(urlList);
 	}
@@ -39,8 +62,7 @@ public class M3U8Manifest {
 	private void makeMediaUrls(ArrayList<String> list) throws Exception {
 		String base_url = "";
 		URI uri = null;
-		for (int i = 0; i < list.size(); i++) {
-			String item = list.get(i);
+		for (String item : list) {
 			String item_url = resolveURL(playlistUrl, item);
 			if (item_url == null) {
 				if (item.startsWith("/")) {
@@ -82,7 +104,7 @@ public class M3U8Manifest {
 	}
 
 	private ArrayList<String> parseManifest(String file) throws IOException {
-		ArrayList<String> urlList = new ArrayList<String>();
+		ArrayList<String> urlList = new ArrayList<>();
 		BufferedReader r = null;
 		try {
 			r = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
@@ -97,8 +119,6 @@ public class M3U8Manifest {
 
 				if (highline.startsWith("#EXT-X-KEY")) {
 					Logger.info("Encrypted segment detected: " + line);
-					// encrypted = true;
-					// break;
 				}
 				if (expect) {
 					urlList.add(line.trim());
@@ -177,9 +197,9 @@ public class M3U8Manifest {
 		public static M3U8MediaInfo parse(String str) {
 			String[] arr = str.split(",");
 			M3U8MediaInfo info = new M3U8MediaInfo();
-			for (int j = 0; j < arr.length; j++) {
+			for (String s : arr) {
 				try {
-					String ss = arr[j].toUpperCase();
+					String ss = s.toUpperCase();
 					if (ss.startsWith("RESOLUTION")) {
 						if (ss.contains("=")) {
 							info.resolution = ss.split("=")[1].trim();
@@ -188,7 +208,7 @@ public class M3U8Manifest {
 					if (ss.startsWith("BANDWIDTH")) {
 						if (ss.contains("=")) {
 							info.bandwidth = ss.split("=")[1].trim();
-							int bps = 0;
+							int bps;
 							try {
 								bps = Integer.parseInt(info.bandwidth);
 								info.bandwidth = (bps / 1000) + " kbps";
@@ -205,17 +225,4 @@ public class M3U8Manifest {
 		}
 	}
 
-	// public static void main(String[] args) throws Exception {
-	// M3U8Manifest mf = new
-	// M3U8Manifest("C:\\Users\\sd00109548\\Desktop\\test.m3u8",
-	// "http://dfgdfgsdfg/");
-	// int i = 0;
-	// for (Iterator iterator = mf.getMediaUrls().iterator(); iterator
-	// .hasNext();) {
-	// String type = (String) iterator.next();
-	// System.out.println(type);
-	// System.out.println(mf.getMediaProperty(i));
-	// i++;
-	// }
-	// }
 }

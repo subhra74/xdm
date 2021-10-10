@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.laf;
 
 import static xdman.util.XDMUtils.getScaledInt;
@@ -22,69 +43,14 @@ public class XDMLookAndFeel extends MetalLookAndFeel {
 				XDMTextFieldUI.class.getName(), "TextAreaUI", XDMTextAreaUI.class.getName(), "SliderUI",
 				XDMSliderUI.class.getName(), "LabelUI", XDMLabelUI.class.getName(), "ScrollBarUI",
 				XDMScrollBarUI.class.getName(), "MenuItemUI", XDMMenuItemUI.class.getName(), "MenuUI",
-				XDMMenuUI.class.getName(), "CheckBoxMenuItemUI", XDMMenuItemUI.class.getName(), //"TreeUI",
-				//XDMTreeUI.class.getName(), 
-				"SpinnerUI", XDMSpinnerUI.class.getName(), "ProgressBarUI",
-				XDMProgressBarUI.class.getName(), "ComboBoxUI", XDMComboBoxUI.class.getName() });
+				XDMMenuUI.class.getName(), "CheckBoxMenuItemUI", XDMMenuItemUI.class.getName(), // "TreeUI",
+				"SpinnerUI", XDMSpinnerUI.class.getName(), "ProgressBarUI", XDMProgressBarUI.class.getName(),
+				"ComboBoxUI", XDMComboBoxUI.class.getName() });
 		System.setProperty("xdm.defaulttheme", "true");
 
 		UIManager.put("Table.focusCellHighlightBorder", new EmptyBorder(1, 1, 1, 1));
 		UIManager.put("ComboBox.rendererUseListColors", Boolean.TRUE);
 		UIManager.put("Slider.thumbWidth", Integer.valueOf(getScaledInt(4)));
-		// UIManager.put("TabbedPane.selected", new Color(220, 220, 220));
-		// UIManager.put("TabbedPane.borderHightlightColor", Color.LIGHT_GRAY);
-		// UIManager.put("TabbedPane.contentAreaColor", Color.LIGHT_GRAY);
-		// UIManager.put("TabbedPane.contentOpaque", Boolean.FALSE);
-		// UIManager.put("OptionPane.background", new
-		// ColorUIResource(Color.WHITE));
-		// UIManager.put("Panel.background", new ColorUIResource(Color.WHITE));
-		// UIManager.put("CheckBox.background", new
-		// ColorUIResource(Color.WHITE));
-		// UIManager.put("PopupMenu.border", new
-		// LineBorder(ColorResource.getDarkBgColor()));
-		// UIManager.put("PopupMenu.background",
-		// ColorResource.getDarkerBgColor());
-		// UIManager.put("MenuItem.selectionForeground", Color.WHITE);
-		// UIManager.put("Menu.selectionForeground", Color.WHITE);
-		// UIManager.put("Button.foreground", Color.WHITE);
-		// UIManager.put("PopupMenuItem.selectionForeground", Color.WHITE);
-		// UIManager.put("MenuItem.font", FontResource.getNormalFont());
-		// UIManager.put("ComboBox.selectionBackground",
-		// ColorResource.getSelectionColor());
-		// UIManager.put("ComboBox.selectionForeground", Color.WHITE);
-		// UIManager.put("ComboBox.disabledForeground", Color.GRAY);
-		// UIManager.put("ComboBox.disabledBackground",
-		// ColorResource.getDarkerBgColor());
-		// UIManager.put("ComboBox.foreground", Color.WHITE);
-		// UIManager.put("ComboBox.background",
-		// ColorResource.getDarkerBgColor());
-		// UIManager.put("Label.foreground", Color.WHITE);
-		// UIManager.put("Panel.background", ColorResource.getDarkerBgColor());
-		// UIManager.put("ScrollBar.width", new Integer(15));
-		// UIManager.put("Popup.background", ColorResource.getDarkerBgColor());
-		// UIManager.put("TextField.background",
-		// ColorResource.getDarkerBgColor());
-		// UIManager.put("TextField.border", new
-		// LineBorder(ColorResource.getDarkBgColor(), 1));
-		// UIManager.put("TextField.foreground", Color.WHITE);
-		// UIManager.put("ComboBox.border", new
-		// LineBorder(ColorResource.getDarkBgColor(), 1));
-		// UIManager.put("TextField.selectionBackground",
-		// ColorResource.getSelectionColor());
-		// UIManager.put("TextField.selectionForeground", Color.WHITE);
-		// UIManager.put("List.selectionBackground",
-		// ColorResource.getSelectionColor());
-		// UIManager.put("List.selectionForeground", Color.WHITE);
-		// UIManager.put("List.focusCellHighlightBorder",
-		// ColorResource.getSelectionColor());
-		// UIManager.put("List.border", new LineBorder(Color.WHITE, 1));
-		// UIManager.put("ScrollPane.border", new
-		// LineBorder(ColorResource.getDarkBgColor(), 1));
-		// UIManager.put("TableHeader.background",
-		// ColorResource.getDarkerBgColor());
-		// UIManager.put("TableHeader.cellBorder", new
-		// LineBorder(ColorResource.getDarkBgColor(), 1));
-		// UIManager.put("TableHeader.foreground", Color.WHITE);
 	}
 
 	protected void initComponentDefaults(UIDefaults table) {

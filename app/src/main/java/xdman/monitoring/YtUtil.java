@@ -1,21 +1,44 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.monitoring;
 
-import java.util.*;
-
-import xdman.network.http.HeaderCollection;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.tinylog.Logger;
 
+import xdman.network.http.HeaderCollection;
+
 public class YtUtil {
+
 	static DASH_INFO lastVid;
 
-	public static boolean isNormalVideo(int itag) {
-		return ((itag > 4 && itag < 79) || (itag > 81 && itag < 86) || (itag > 99 && itag < 103));
+	public static boolean isNormalVideo(int infoTag) {
+		return ((infoTag > 4 && infoTag < 79) || (infoTag > 81 && infoTag < 86) || (infoTag > 99 && infoTag < 103));
 	}
 
-	static Object lockObject = new Object();
+	static final Object lockObject = new Object();
 
-	static ArrayList<DASH_INFO> videoQueue = new ArrayList<DASH_INFO>(), audioQueue = new ArrayList<DASH_INFO>();
+	static ArrayList<DASH_INFO> videoQueue = new ArrayList<>(), audioQueue = new ArrayList<>();
 
 	public static boolean addToQueue(DASH_INFO info) {
 		synchronized (lockObject) {
@@ -37,7 +60,6 @@ public class YtUtil {
 				videoQueue.add(info);
 				Logger.info("video added " + videoQueue.size());
 
-				return true;
 			} else {
 				for (int i = audioQueue.size() - 1; i >= 0; i--) {
 					DASH_INFO di = audioQueue.get(i);
@@ -49,8 +71,8 @@ public class YtUtil {
 				}
 				audioQueue.add(info);
 				Logger.info("added added " + audioQueue.size());
-				return true;
 			}
+			return true;
 		}
 	}
 
@@ -85,75 +107,75 @@ public class YtUtil {
 		}
 	}
 
-	private static HashMap<Integer, String> itags;
-	
+	private static final HashMap<Integer, String> INFORMATION_TAGS;
+
 	static {
-		itags = new HashMap<Integer, String>();
-		itags.put(5, "240p");
-		itags.put(6, "270p");
-		itags.put(13, "Small");
-		itags.put(17, "144p");
-		itags.put(18, "360p");
-		itags.put(22, "720p");
-		itags.put(34, "360p");
-		itags.put(35, "480p");
-		itags.put(36, "240p");
-		itags.put(37, "1080p");
-		itags.put(38, "1080p");
-		itags.put(43, "360p");
-		itags.put(44, "480p");
-		itags.put(45, "720p");
-		itags.put(46, "1080p");
-		itags.put(59, "480p");
-		itags.put(78, "480p");
-		itags.put(82, "360p 3D");
-		itags.put(83, "480p 3D");
-		itags.put(84, "720p 3D");
-		itags.put(85, "1080p 3D");
-		itags.put(100, "360p 3D");
-		itags.put(101, "480p 3D");
-		itags.put(102, "720p 3D");
-		itags.put(133, "240p");
-		itags.put(134, "360p");
-		itags.put(135, "480p");
-		itags.put(136, "720p");
-		itags.put(137, "1080p");
-		itags.put(139, "Low bitrate");
-		itags.put(140, "Med bitrate");
-		itags.put(141, "Hi  bitrate");
-		itags.put(160, "144p");
-		itags.put(167, "360p");
-		itags.put(168, "480p");
-		itags.put(169, "720p");
-		itags.put(170, "1080p");
-		itags.put(171, "Med bitrate");
-		itags.put(172, "Hi  bitrate");
-		itags.put(218, "480p");
-		itags.put(219, "480p");
-		itags.put(242, "240p");
-		itags.put(243, "360p");
-		itags.put(244, "480p");
-		itags.put(245, "480p");
-		itags.put(246, "480p");
-		itags.put(247, "720p");
-		itags.put(248, "1080p");
-		itags.put(264, "1440p");
-		itags.put(266, "2160p");
-		itags.put(271, "1440p");
-		itags.put(272, "2160p");
-		itags.put(278, "144p");
-		itags.put(298, "720p");
-		itags.put(302, "720p");
-		itags.put(303, "1080p");
-		itags.put(308, "1440p");
-		itags.put(313, "2160p");
-		itags.put(315, "2160p");
-		itags.put(299, "2160p");
+		INFORMATION_TAGS = new HashMap<>();
+		INFORMATION_TAGS.put(5, "240p");
+		INFORMATION_TAGS.put(6, "270p");
+		INFORMATION_TAGS.put(13, "Small");
+		INFORMATION_TAGS.put(17, "144p");
+		INFORMATION_TAGS.put(18, "360p");
+		INFORMATION_TAGS.put(22, "720p");
+		INFORMATION_TAGS.put(34, "360p");
+		INFORMATION_TAGS.put(35, "480p");
+		INFORMATION_TAGS.put(36, "240p");
+		INFORMATION_TAGS.put(37, "1080p");
+		INFORMATION_TAGS.put(38, "1080p");
+		INFORMATION_TAGS.put(43, "360p");
+		INFORMATION_TAGS.put(44, "480p");
+		INFORMATION_TAGS.put(45, "720p");
+		INFORMATION_TAGS.put(46, "1080p");
+		INFORMATION_TAGS.put(59, "480p");
+		INFORMATION_TAGS.put(78, "480p");
+		INFORMATION_TAGS.put(82, "360p 3D");
+		INFORMATION_TAGS.put(83, "480p 3D");
+		INFORMATION_TAGS.put(84, "720p 3D");
+		INFORMATION_TAGS.put(85, "1080p 3D");
+		INFORMATION_TAGS.put(100, "360p 3D");
+		INFORMATION_TAGS.put(101, "480p 3D");
+		INFORMATION_TAGS.put(102, "720p 3D");
+		INFORMATION_TAGS.put(133, "240p");
+		INFORMATION_TAGS.put(134, "360p");
+		INFORMATION_TAGS.put(135, "480p");
+		INFORMATION_TAGS.put(136, "720p");
+		INFORMATION_TAGS.put(137, "1080p");
+		INFORMATION_TAGS.put(139, "Low bitrate");
+		INFORMATION_TAGS.put(140, "Med bitrate");
+		INFORMATION_TAGS.put(141, "Hi  bitrate");
+		INFORMATION_TAGS.put(160, "144p");
+		INFORMATION_TAGS.put(167, "360p");
+		INFORMATION_TAGS.put(168, "480p");
+		INFORMATION_TAGS.put(169, "720p");
+		INFORMATION_TAGS.put(170, "1080p");
+		INFORMATION_TAGS.put(171, "Med bitrate");
+		INFORMATION_TAGS.put(172, "Hi  bitrate");
+		INFORMATION_TAGS.put(218, "480p");
+		INFORMATION_TAGS.put(219, "480p");
+		INFORMATION_TAGS.put(242, "240p");
+		INFORMATION_TAGS.put(243, "360p");
+		INFORMATION_TAGS.put(244, "480p");
+		INFORMATION_TAGS.put(245, "480p");
+		INFORMATION_TAGS.put(246, "480p");
+		INFORMATION_TAGS.put(247, "720p");
+		INFORMATION_TAGS.put(248, "1080p");
+		INFORMATION_TAGS.put(264, "1440p");
+		INFORMATION_TAGS.put(266, "2160p");
+		INFORMATION_TAGS.put(271, "1440p");
+		INFORMATION_TAGS.put(272, "2160p");
+		INFORMATION_TAGS.put(278, "144p");
+		INFORMATION_TAGS.put(298, "720p");
+		INFORMATION_TAGS.put(302, "720p");
+		INFORMATION_TAGS.put(303, "1080p");
+		INFORMATION_TAGS.put(308, "1440p");
+		INFORMATION_TAGS.put(313, "2160p");
+		INFORMATION_TAGS.put(315, "2160p");
+		INFORMATION_TAGS.put(299, "2160p");
 
 	}
 
-	public static String getInfoFromITAG(int itag) {
-		return (String) itags.get(itag);
+	public static String getInfoFromITAG(int infoTag) {
+		return INFORMATION_TAGS.get(infoTag);
 	}
 
 }

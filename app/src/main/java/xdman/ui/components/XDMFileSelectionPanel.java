@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.components;
 
 import static xdman.util.XDMUtils.getScaledInt;
@@ -18,12 +39,12 @@ import javax.swing.JPopupMenu;
 import javax.swing.JTextField;
 import javax.swing.border.LineBorder;
 
+import org.tinylog.Logger;
+
 import xdman.Config;
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.ImageResource;
 import xdman.util.StringUtils;
-
-import org.tinylog.Logger;
 
 public class XDMFileSelectionPanel extends JPanel implements ActionListener {
 	private static final long serialVersionUID = 2333430406492555559L;
@@ -81,7 +102,7 @@ public class XDMFileSelectionPanel extends JPanel implements ActionListener {
 
 		btnDropdown = new CustomButton();
 		btnDropdown.setBackground(ColorResource.getDarkestBgColor());
-		btnDropdown.setIcon(ImageResource.getIcon("down_white.png",16,16));
+		btnDropdown.setIcon(ImageResource.getIcon("down_white.png", 16, 16));
 		btnDropdown.setMargin(new Insets(0, 0, 0, 0));
 		btnDropdown.setContentAreaFilled(false);
 		btnDropdown.setBorderPainted(false);

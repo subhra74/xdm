@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.downloaders;
 
 import java.io.File;
@@ -6,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Date;
 
 import org.tinylog.Logger;
+
 import xdman.Config;
 import xdman.DownloadListener;
 import xdman.XDMApp;
@@ -16,7 +38,9 @@ import xdman.mediaconversion.FFmpeg;
 import xdman.util.HttpDateParser;
 import xdman.util.StringUtils;
 
+@SuppressWarnings("ResultOfMethodCallIgnored")
 public abstract class Downloader implements SegmentListener {
+
 	protected volatile boolean stopFlag;
 	protected boolean isJavaClientRequired;
 	protected long length;
@@ -98,7 +122,7 @@ public abstract class Downloader implements SegmentListener {
 		return segDet;
 	}
 
-	public void setOuputMediaFormat(int format) {
+	public void setOutputMediaFormat(int format) {
 		this.outputFormat = format;
 	}
 
@@ -129,8 +153,7 @@ public abstract class Downloader implements SegmentListener {
 	protected Segment findInactiveChunk() {
 		if (stopFlag)
 			return null;
-		for (int i = 0; i < chunks.size(); i++) {
-			Segment c = chunks.get(i);
+		for (Segment c : chunks) {
 			if (c.isFinished() || c.isActive())
 				continue;
 			return c;
@@ -140,8 +163,7 @@ public abstract class Downloader implements SegmentListener {
 
 	protected int findTotalInactiveChunk() {
 		int count = 0;
-		for (int i = 0; i < chunks.size(); i++) {
-			Segment c = chunks.get(i);
+		for (Segment c : chunks) {
 			if (c.isFinished() || c.isActive())
 				continue;
 			count++;
@@ -151,8 +173,8 @@ public abstract class Downloader implements SegmentListener {
 
 	public int getActiveChunkCount() {
 		int count = 0;
-		for (int i = 0; i < chunks.size(); i++) {
-			if (chunks.get(i).isActive()) {
+		for (Segment chunk : chunks) {
+			if (chunk.isActive()) {
 				count++;
 			}
 		}
@@ -169,8 +191,7 @@ public abstract class Downloader implements SegmentListener {
 
 	protected boolean allFinished() {
 		if (chunks.size() > 0) {
-			for (int i = 0; i < chunks.size(); i++) {
-				Segment chunk = chunks.get(i);
+			for (Segment chunk : chunks) {
 				if (!chunk.isFinished()) {
 					return false;
 				}
@@ -182,9 +203,9 @@ public abstract class Downloader implements SegmentListener {
 	}
 
 	protected Segment getById(String id) {
-		for (int i = 0; i < chunks.size(); i++) {
-			if (chunks.get(i).getId().equals(id)) {
-				return chunks.get(i);
+		for (Segment chunk : chunks) {
+			if (chunk.getId().equals(id)) {
+				return chunk;
 			}
 		}
 		return null;
@@ -194,17 +215,14 @@ public abstract class Downloader implements SegmentListener {
 		File dir = new File(folder);
 		File[] files = dir.listFiles();
 		if (files != null) {
-			for (int i = 0; i < files.length; i++) {
-				Logger.info("Delete: " + files[i] + " [" + files[i].length() + "] " + files[i].delete());
+			for (File file : files) {
+				Logger.info("Delete: " + file + " [" + file.length() + "] " + file.delete());
 			}
 		}
 
-		new File(folder).delete();
+		new File(this.folder).delete();
 	}
 
-	// call this method before calling socket.recv
-	// so that thread waits before all length manipulation is
-	// done without data corruption
 	public synchronized void synchronize() {
 
 	}
@@ -214,8 +232,7 @@ public abstract class Downloader implements SegmentListener {
 		if (stopFlag)
 			return;
 		int err = 0;
-		for (int i = 0; i < chunks.size(); i++) {
-			Segment chunk = chunks.get(i);
+		for (Segment chunk : chunks) {
 			if (chunk.isActive()) {
 				return;
 			}
@@ -262,7 +279,7 @@ public abstract class Downloader implements SegmentListener {
 
 	protected File getBackupFile(String folder) {
 		File f = new File(folder);
-		File files[] = f.listFiles();
+		File[] files = f.listFiles();
 		if (files == null || files.length < 1)
 			return null;
 		for (File file : files) {

@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.components;
 
 import static xdman.util.XDMUtils.getScaledInt;
@@ -17,6 +38,7 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 
 import org.tinylog.Logger;
+
 import xdman.Config;
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
@@ -25,7 +47,9 @@ import xdman.ui.res.StringResource;
 import xdman.util.FFExtractCallback;
 import xdman.util.FormatUtilities;
 
+@SuppressWarnings({"FieldCanBeLocal", "unused"})
 public class FFmpegExtractorWnd extends JFrame implements ActionListener {
+
 	/**
 	 * 
 	 */
@@ -106,7 +130,7 @@ public class FFmpegExtractorWnd extends JFrame implements ActionListener {
 
 		closeBtn = new CustomButton();
 		closeBtn.setBounds(getScaledInt(320), getScaledInt(5), getScaledInt(24), getScaledInt(24));
-		closeBtn.setIcon(ImageResource.getIcon("title_close.png",20,20));
+		closeBtn.setIcon(ImageResource.getIcon("title_close.png", 20, 20));
 		closeBtn.setBackground(ColorResource.getDarkestBgColor());
 		closeBtn.setBorderPainted(false);
 		closeBtn.setFocusPainted(false);
@@ -115,7 +139,7 @@ public class FFmpegExtractorWnd extends JFrame implements ActionListener {
 
 		minBtn = new CustomButton();
 		minBtn.setBounds(getScaledInt(296), getScaledInt(5), getScaledInt(24), getScaledInt(24));
-		minBtn.setIcon(ImageResource.getIcon("title_min.png",20,20));
+		minBtn.setIcon(ImageResource.getIcon("title_min.png", 20, 20));
 		minBtn.setBackground(ColorResource.getDarkestBgColor());
 		minBtn.setBorderPainted(false);
 		minBtn.setFocusPainted(false);
@@ -187,4 +211,5 @@ public class FFmpegExtractorWnd extends JFrame implements ActionListener {
 		}
 		dispose();
 	}
+
 }

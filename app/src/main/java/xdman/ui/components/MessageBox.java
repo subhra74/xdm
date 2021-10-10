@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.components;
 
 import static xdman.util.XDMUtils.getScaledInt;
@@ -33,7 +54,9 @@ import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 
+@SuppressWarnings("unused")
 public class MessageBox extends JPanel implements ActionListener {
+
 	/**
 	 * 
 	 */
@@ -142,7 +165,6 @@ public class MessageBox extends JPanel implements ActionListener {
 		jsp = new JScrollPane(txtMessage);
 
 		JScrollBar sc1 = new DarkScrollBar(JScrollBar.VERTICAL);
-		// sc1.putClientProperty("Scrollbar.darkMode", new Integer(1));
 
 		jsp.setVerticalScrollBar(sc1);
 
@@ -239,11 +261,9 @@ public class MessageBox extends JPanel implements ActionListener {
 		btn.setBackground(ColorResource.getDarkerBgColor());// );
 		btn.setForeground(Color.WHITE);
 		btn.setFocusable(true);
-		// btn.setForeground(Color.WHITE);
 		btn.setFont(FontResource.getBigFont());
 		btn.setBorderPainted(false);
 		btn.setMargin(new Insets(0, 0, 0, 0));
-		// btn.setFocusPainted(false);
 		btn.getInputMap(WHEN_FOCUSED).put(KeyStroke.getKeyStroke("ENTER"), "pressed");
 		btn.getInputMap(WHEN_FOCUSED).put(KeyStroke.getKeyStroke("released ENTER"), "released");
 	}
@@ -254,8 +274,6 @@ public class MessageBox extends JPanel implements ActionListener {
 			public void mousePressed(MouseEvent me) {
 				diffx = me.getXOnScreen() - getLocationOnScreen().x + parent.getLocationOnScreen().x;
 				diffy = me.getYOnScreen() - getLocationOnScreen().y + parent.getLocationOnScreen().y;
-				// diffx = me.getX(); // - panel.getLocation().x;
-				// diffy = me.getY(); // - panel.getLocation().y;
 			}
 		});
 
@@ -289,7 +307,7 @@ public class MessageBox extends JPanel implements ActionListener {
 		Vector<Component> order;
 
 		public MsgBoxFocusTraversalPolicy(Vector<Component> order) {
-			this.order = new Vector<Component>(order.size());
+			this.order = new Vector<>(order.size());
 			this.order.addAll(order);
 		}
 
@@ -320,7 +338,7 @@ public class MessageBox extends JPanel implements ActionListener {
 	}
 
 	public static boolean isChecked() {
-		return msgBox != null ? msgBox.chkOption.isSelected() : false;
+		return msgBox != null && msgBox.chkOption.isSelected();
 	}
 
 }

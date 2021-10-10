@@ -1,10 +1,33 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.downloaders.metadata;
 
 import org.tinylog.Logger;
+
 import xdman.XDMConstants;
 import xdman.network.http.HeaderCollection;
 
 public class DashMetadata extends HttpMetadata {
+
 	private String url2;
 	private long len1, len2;
 	private HeaderCollection headers2;
@@ -53,48 +76,6 @@ public class DashMetadata extends HttpMetadata {
 		return this.headers2;
 	}
 
-	// @Override
-	// public void load(BufferedReader br) throws IOException {
-	// url = br.readLine();
-	// url2 = br.readLine();
-	// headers = new HeaderCollection();
-	// while (true) {
-	// String ln = br.readLine();
-	// if (ln == null)
-	// break;
-	// HttpHeader header = HttpHeader.parse(ln);
-	// if (header != null) {
-	// headers.addHeader(header);
-	// }
-	// }
-	// }
-
-	// @Override
-	// public void save() {
-	// FileWriter fw = null;
-	// try {
-	// File file = new File(Config.getInstance().getMetadataFolder(), id);
-	// fw = new FileWriter(file);
-	// fw.write(getType() + "\n");
-	// fw.write(url + "\n");
-	// fw.write(url2 + "\n");
-	// Iterator<HttpHeader> headerIterator = headers.getAll();
-	// while (headerIterator.hasNext()) {
-	// HttpHeader header = headerIterator.next();
-	// fw.write(header.getName() + ":" + header.getValue() + "\n");
-	// }
-	// fw.close();
-	// } catch (Exception e) {
-	// Logger.log(e);
-	// if (fw != null) {
-	// try {
-	// fw.close();
-	// } catch (Exception ex) {
-	// }
-	// }
-	// }
-	// }
-
 	public long getLen1() {
 		return len1;
 	}
@@ -110,4 +91,5 @@ public class DashMetadata extends HttpMetadata {
 	public void setLen2(long len2) {
 		this.len2 = len2;
 	}
+
 }

@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.monitoring;
 
 import java.io.IOException;
@@ -6,7 +27,9 @@ import java.io.InputStream;
 import xdman.network.http.HeaderCollection;
 import xdman.util.NetUtils;
 
+@SuppressWarnings("unused")
 public class Request {
+
 	private String url;
 	private HeaderCollection headers;
 	private byte[] body;
@@ -14,8 +37,7 @@ public class Request {
 
 	public void read(InputStream in) throws IOException {
 		String reqLine = NetUtils.readLine(in);
-		//System.out.println(reqLine);
-		if (reqLine == null || reqLine.length() < 1) {
+		if (reqLine.length() < 1) {
 			throw new IOException("Invalid request line: " + reqLine);
 		}
 		String[] arr = reqLine.split(" ");
@@ -23,7 +45,7 @@ public class Request {
 			throw new IOException("Invalid request: " + reqLine);
 		}
 		this.url = arr[1];
-		this.method = arr[0].toLowerCase().equals("post") ? 1 : 2;
+		this.method = arr[0].equalsIgnoreCase("post") ? 1 : 2;
 		this.headers = new HeaderCollection();
 		headers.loadFromStream(in);
 		String header = headers.getValue("Content-Length");
@@ -73,4 +95,5 @@ public class Request {
 	public final void setMethod(int method) {
 		this.method = method;
 	}
+
 }

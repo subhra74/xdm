@@ -1,4 +1,27 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.components;
+
+import static xdman.util.XDMUtils.getScaledInt;
 
 import java.awt.Color;
 import java.awt.GraphicsDevice.WindowTranslucency;
@@ -16,6 +39,8 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.LineBorder;
 
+import org.tinylog.Logger;
+
 import xdman.Config;
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
@@ -23,11 +48,8 @@ import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 import xdman.util.XDMUtils;
 
-import org.tinylog.Logger;
-
-import static xdman.util.XDMUtils.getScaledInt;
-
 public class DownloadCompleteWnd extends JDialog implements ActionListener {
+
 	private static final long serialVersionUID = -6513935849910094705L;
 	JTextField txtFile, txtFolder;
 	JCheckBox chkDontShow;
@@ -86,7 +108,6 @@ public class DownloadCompleteWnd extends JDialog implements ActionListener {
 		add(lineLbl);
 
 		JLabel lblFile = new JLabel(StringResource.get("ND_FILE"), JLabel.RIGHT);
-		// lblFile.setVerticalTextPosition(JLabel.CENTER);//VerticalAlignment(JLabel.CENTER);
 		lblFile.setBounds(0, getScaledInt(75), getScaledInt(70), getScaledInt(20));
 		lblFile.setForeground(Color.WHITE);
 		add(lblFile);
@@ -123,8 +144,8 @@ public class DownloadCompleteWnd extends JDialog implements ActionListener {
 		chkDontShow.setFocusPainted(false);
 
 		chkDontShow.setBounds(getScaledInt(75), getScaledInt(125), getScaledInt(200), getScaledInt(20));
-		chkDontShow.setIcon(ImageResource.getIcon("unchecked.png",16,16));
-		chkDontShow.setSelectedIcon(ImageResource.getIcon("checked.png",16,16));
+		chkDontShow.setIcon(ImageResource.getIcon("unchecked.png", 16, 16));
+		chkDontShow.setSelectedIcon(ImageResource.getIcon("checked.png", 16, 16));
 		chkDontShow.addActionListener(this);
 
 		add(chkDontShow);
@@ -191,4 +212,5 @@ public class DownloadCompleteWnd extends JDialog implements ActionListener {
 			}
 		}
 	}
+
 }

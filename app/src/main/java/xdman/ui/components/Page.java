@@ -1,4 +1,27 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.components;
+
+import static xdman.util.XDMUtils.getScaledInt;
 
 import java.awt.Color;
 import java.awt.Component;
@@ -19,21 +42,21 @@ import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
 
-
-import static xdman.util.XDMUtils.getScaledInt;
+@SuppressWarnings({"FieldCanBeLocal", "unused"})
 public class Page extends JPanel {
+
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -1452620326785609526L;
-	private XDMFrame parent;
+	private final XDMFrame parent;
 	private int diffx, diffy;
 	private Color bgColor;
 	protected JScrollPane jsp;
 	private int y = 0, h = 0;
 	private JLabel titleLbl, btnNav;
-	private int width;
-	private String title;
+	private final int width;
+	private final String title;
 
 	public Page(String title, int width, XDMFrame parent) {
 		setOpaque(false);
@@ -41,7 +64,7 @@ public class Page extends JPanel {
 		this.title = title;
 		this.width = width;
 		this.parent = parent;
-		bgColor = new Color(0, 0, 0, Config.getInstance().isNoTransparency()?255:200);
+		bgColor = new Color(0, 0, 0, Config.getInstance().isNoTransparency() ? 255 : 200);
 		MouseInputAdapter ma = new MouseInputAdapter() {
 		};
 
@@ -71,7 +94,7 @@ public class Page extends JPanel {
 		y = getScaledInt(25);
 		h = getScaledInt(40);
 
-		btnNav = new JLabel(ImageResource.getIcon("back.png",32,32));
+		btnNav = new JLabel(ImageResource.getIcon("back.png", 32, 32));
 		btnNav.setFont(FontResource.getBiggerFont());
 		btnNav.setForeground(ColorResource.getSelectionColor());
 		btnNav.setBounds(getScaledInt(10), y, getScaledInt(35), h);
@@ -134,11 +157,7 @@ public class Page extends JPanel {
 		jsp.setBounds(0, y, width, parent.getHeight() - y);
 		setBounds(x, 0, width, parent.getHeight());
 		parent.showDialog(this);
-		SwingUtilities.invokeLater(new Runnable() {
-			public void run() {
-				jsp.getVerticalScrollBar().setValue(0);
-			}
-		});
+		SwingUtilities.invokeLater(() -> jsp.getVerticalScrollBar().setValue(0));
 	}
 
 	@Override
@@ -155,4 +174,5 @@ public class Page extends JPanel {
 	protected XDMFrame getParentFrame() {
 		return parent;
 	}
+
 }

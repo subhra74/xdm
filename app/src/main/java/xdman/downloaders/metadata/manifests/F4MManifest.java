@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.downloaders.metadata.manifests;
 
 import java.io.FileReader;
@@ -6,8 +27,12 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import javax.xml.namespace.NamespaceContext;
-import javax.xml.parsers.*;
-import javax.xml.xpath.*;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
 import org.tinylog.Logger;
 import org.w3c.dom.Document;
@@ -20,7 +45,9 @@ import xdman.util.Base64;
 import xdman.util.IOUtils;
 import xdman.util.StringUtils;
 
+@SuppressWarnings({"FieldCanBeLocal", "unused"})
 public class F4MManifest {
+
 	private static XPath xpath;
 	private long selectedBitRate;
 	private ArrayList<Fragment> fragTable;
@@ -39,7 +66,8 @@ public class F4MManifest {
 	private String query;
 	private String pv;
 
-	private String url, file;
+	private final String url;
+	private final String file;
 
 	public F4MManifest(String url, String file) {
 		this.url = url;
@@ -47,9 +75,9 @@ public class F4MManifest {
 	}
 
 	public ArrayList<String> getMediaUrls() throws Exception {
-		ArrayList<String> urlList = new ArrayList<String>();
-		fragTable = new ArrayList<Fragment>();
-		segTable = new ArrayList<Segment>();
+		ArrayList<String> urlList = new ArrayList<>();
+		fragTable = new ArrayList<>();
+		segTable = new ArrayList<>();
 
 		query = getQuery(url);
 		parseDoc(loadDoc(file), url);
@@ -61,8 +89,6 @@ public class F4MManifest {
 			segStart = segNum;
 			fragStart = fragNum;
 		}
-		// byte[] fragmentData = new byte[0];
-		// lastFrag = fragNum;
 		Logger.info(fragNum + " " + fragCount);
 		if (fragNum >= fragCount)
 			throw new Exception("No fragment available for downloading");
@@ -80,7 +106,6 @@ public class F4MManifest {
 		}
 		Logger.info("fragUrl: " + fragUrl + "\nfragCount: " + fragCount + " baseUrl: " + baseUrl);
 
-		// int fragsToDownload = fragCount - fragNum;
 		while (fragNum < fragCount) {
 			Logger.info("Remaining: " + (fragCount - fragNum));
 			fragNum++;
@@ -90,11 +115,10 @@ public class F4MManifest {
 			if (fragIndex >= 0)
 				discontinuity = fragTable.get(fragIndex).discontinuityIndicator;
 			else {
-				// search closest
-				for (int i = 0; i < fragTable.size(); i++) {
-					if (fragTable.get(i).firstFragment < fragNum)
+				for (Fragment fragment : fragTable) {
+					if (fragment.firstFragment < fragNum)
 						continue;
-					discontinuity = fragTable.get(i).discontinuityIndicator;
+					discontinuity = fragment.discontinuityIndicator;
 					break;
 				}
 			}
@@ -102,9 +126,7 @@ public class F4MManifest {
 				Logger.info("Skipping fragment " + fragNum + " due to discontinuity, Type: " + discontinuity);
 				continue;
 			}
-			String ___url = getFragmentUrl(segNum, fragNum);// +(string.IsNullOrEmpty(query)
-															// ? "" : "?" +
-															// query);
+			String ___url = getFragmentUrl(segNum, fragNum);
 
 			if (!StringUtils.isNullOrEmpty(query)) {
 				if (___url.contains("?")) {
@@ -122,7 +144,6 @@ public class F4MManifest {
 				}
 			}
 
-			// query = query + (query.Contains("?") ? "&" + pv : "?" + pv);
 			Logger.info(___url);
 			urlList.add(___url);
 		}
@@ -152,7 +173,7 @@ public class F4MManifest {
 				String[] arr = path.split("/");
 				for (int i = 0; i < arr.length - 1; i++) {
 					if (arr[i].length() > 0) {
-						sb.append("/" + arr[i]);
+						sb.append("/").append(arr[i]);
 					}
 				}
 				baseUrl = sb.toString();
@@ -192,7 +213,7 @@ public class F4MManifest {
 				media.setUrl(attrMap.getNamedItem("url").getNodeValue());
 				Node bootstrapInfoIdNode = attrMap.getNamedItem("bootstrapInfoId");
 
-				String bootstrapInfoStr = null;
+				String bootstrapInfoStr;
 
 				if (bootstrapInfoIdNode != null) {
 					String bootstrapInfoId = bootstrapInfoIdNode.getNodeValue();
@@ -221,7 +242,6 @@ public class F4MManifest {
 		BoxInfo boxInfo = readBoxHeader(ptr);
 
 		pos = ptr.getPos();
-		// long boxSize = boxInfo.getBoxSize();
 		String boxType = boxInfo.getBoxType();
 
 		if (boxType.equals("abst"))
@@ -249,7 +269,7 @@ public class F4MManifest {
 				return null;
 			}
 
-			ArrayList<Long> bitRates = new ArrayList<Long>();
+			ArrayList<Long> bitRates = new ArrayList<>();
 
 			for (int i = 0; i < mediaNodeList.getLength(); i++) {
 				Node mediaNode = mediaNodeList.item(i);
@@ -279,8 +299,7 @@ public class F4MManifest {
 			DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
 			domFactory.setNamespaceAware(true);
 			DocumentBuilder builder = domFactory.newDocumentBuilder();
-			Document doc = builder.parse(new InputSource(r));
-			return doc;
+			return builder.parse(new InputSource(r));
 		} catch (Exception e) {
 			Logger.error(e);
 		} finally {
@@ -289,7 +308,7 @@ public class F4MManifest {
 		return null;
 	}
 
-	private static final void initXPath() {
+	private static void initXPath() {
 		xpath = XPathFactory.newInstance().newXPath();
 		xpath.setNamespaceContext(new NamespaceContext() {
 
@@ -344,17 +363,13 @@ public class F4MManifest {
 	private void parseBootstrapBox(byte[] bootstrapInfo, int pos) {
 		Logger.info("parsing abst");
 		live = false;
-		// isMetadata = true;
 		readByte(bootstrapInfo, pos);
 		readInt24(bootstrapInfo, pos + 1);
 		readInt32(bootstrapInfo, pos + 4);
-		// Console.WriteLine("bootstrapVersion: " + bootstrapVersion);
 		int b = readByte(bootstrapInfo, pos + 8);
-		// int profile = (b & 0xC0) >> 6;
 		int update = (b & 0x10) >> 4;
 		if (((b & 0x20) >> 5) > 0) {
 			live = true;
-			// isMetadata = false;
 		}
 		if (update == 0) {
 			segTable.clear();
@@ -389,14 +404,14 @@ public class F4MManifest {
 		pos = bPtr.getPos();
 		int segRunTableCount = readByte(bootstrapInfo, pos++);
 
-		long boxSize = 0;
+		long boxSize;
 
 		BufferPointer ptr = new BufferPointer();
 		ptr.setBuf(bootstrapInfo);
 
 		for (int i = 0; i < segRunTableCount; i++) {
 			ptr.setPos(pos);
-			String boxType = "";
+			String boxType;
 
 			BoxInfo boxInfo = readBoxHeader(ptr);
 			boxSize = boxInfo.getBoxSize();
@@ -436,22 +451,17 @@ public class F4MManifest {
 		Fragment firstFragment = fragTable.get(0);
 		Fragment lastFragment = fragTable.get(fragTable.size() - 1);
 
-		// Check if live stream is still live
 		if ((lastFragment.fragmentDuration == 0) && (lastFragment.discontinuityIndicator == 0)) {
 			live = false;
-			if (fragTable.size() > 0)
-				fragTable.remove(fragTable.size() - 1);
+			fragTable.remove(fragTable.size() - 1);
 			if (fragTable.size() > 0)
 				lastFragment = fragTable.get(fragTable.size() - 1);
 		}
 
-		// Count total fragments by adding all entries in compactly coded
-		// segment table
 		boolean invalidFragCount = false;
 		Segment prev = segTable.get(0);
 		fragCount = prev.fragmentsPerSegment;
-		for (int i = 0; i < segTable.size(); i++) {
-			Segment current = segTable.get(i);
+		for (Segment current : segTable) {
 			fragCount += (current.firstSegment - prev.firstSegment - 1) * prev.fragmentsPerSegment;
 			fragCount += current.fragmentsPerSegment;
 			prev = current;
@@ -464,9 +474,7 @@ public class F4MManifest {
 		}
 		if (fragCount < lastFragment.firstFragment)
 			fragCount = lastFragment.firstFragment;
-		// Console.WriteLine("fragCount: " + fragCount.ToString());
 
-		// Determine starting segment and fragment
 		if (segStart < 0) {
 			if (live)
 				segStart = lastSegment.firstSegment;
@@ -483,13 +491,11 @@ public class F4MManifest {
 			if (fragStart < 0)
 				fragStart = 0;
 		}
-		// Console.WriteLine("segStart : " + segStart.ToString());
-		// Console.WriteLine("fragStart: " + fragStart.ToString());
 	}
 
 	private void parseAsrtBox(byte[] asrt, int pos) {
 		Logger.info("parsing asrt");
-		readByte(asrt, (int) pos);
+		readByte(asrt, pos);
 		readInt24(asrt, pos + 1);
 		int qualityEntryCount = readByte(asrt, pos + 4);
 		segTable.clear();
@@ -548,7 +554,6 @@ public class F4MManifest {
 			if ((fromTimestamp > 0) && (fragEntry.firstFragmentTimestamp > 0)
 					&& (fragEntry.firstFragmentTimestamp < fromTimestamp))
 				start = fragEntry.firstFragment + 1;
-			// start = i + 1;
 		}
 	}
 
@@ -556,7 +561,7 @@ public class F4MManifest {
 		int pos = ptr.getPos();
 		byte[] bytesData = ptr.getBuf();
 		StringBuilder boxType = new StringBuilder();
-		long boxSize = 0;
+		long boxSize;
 		boxSize = readInt32(bytesData, pos);
 		boxType.append(readStringBytes(bytesData, pos + 4, 4));
 		if (boxSize == 1) {
@@ -601,23 +606,20 @@ public class F4MManifest {
 
 	private long readInt24(byte[] data, int pos) {
 		long iValLo = (data[pos + 2] & 0xFF + ((data[pos + 1] & 0xFF) * 256));
-		long iValHi = data[pos + 0] & 0xFF;
-		long iVal = iValLo + (iValHi * 65536);
-		return iVal;
+		long iValHi = data[pos] & 0xFF;
+		return iValLo + (iValHi * 65536);
 	}
 
 	private static long readInt32(byte[] data, int pos) {
 		long iValLo = ((long) (data[pos + 3] & 0xFF) + (long) (data[pos + 2] & 0xFF) * 256);
-		long iValHi = ((long) (data[pos + 1] & 0xFF) + ((long) (data[pos + 0] & 0xFF) * 256));
-		long iVal = iValLo + (iValHi * 65536);
-		return iVal;
+		long iValHi = ((long) (data[pos + 1] & 0xFF) + ((long) (data[pos] & 0xFF) * 256));
+		return iValLo + (iValHi * 65536);
 	}
 
 	private static long readInt64(byte[] data, int pos) {
 		long iValLo = readInt32(data, pos + 4);
-		long iValHi = readInt32(data, pos + 0);
-		long iVal = iValLo + (iValHi * 4294967296L);
-		return iVal;
+		long iValHi = readInt32(data, pos);
+		return iValLo + (iValHi * 4294967296L);
 	}
 
 	private int findFragmentInTable(int needle) {
@@ -641,7 +643,8 @@ public class F4MManifest {
 		return fragUrl + "Seg" + segNum + "-Frag" + fragNum;
 	}
 
-	class Segment {
+	@SuppressWarnings("unused")
+	static class Segment {
 		private int firstSegment;
 		private int fragmentsPerSegment;
 
@@ -662,6 +665,7 @@ public class F4MManifest {
 		}
 	}
 
+	@SuppressWarnings({"unused", "InnerClassMayBeStatic"})
 	class Fragment {
 		private int firstFragment;
 		private long firstFragmentTimestamp;
@@ -701,7 +705,7 @@ public class F4MManifest {
 		}
 	}
 
-	class BoxInfo {
+	static class BoxInfo {
 		private String boxType;
 		private long boxSize;
 
@@ -722,7 +726,7 @@ public class F4MManifest {
 		}
 	}
 
-	class BufferPointer {
+	static class BufferPointer {
 		private byte[] buf;
 		private int pos;
 
@@ -743,6 +747,7 @@ public class F4MManifest {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	static class F4MMedia {
 		private String baseUrl;
 		private String url;
@@ -815,4 +820,5 @@ public class F4MManifest {
 	public void setSelectedBitRate(long selectedBitRate) {
 		this.selectedBitRate = selectedBitRate;
 	}
+
 }

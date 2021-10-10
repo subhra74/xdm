@@ -1,4 +1,38 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.components;
+
+import static xdman.util.XDMUtils.getScaledInt;
+
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Dimension;
+
+import javax.swing.Icon;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JPanel;
+import javax.swing.ListCellRenderer;
+import javax.swing.border.EmptyBorder;
 
 import xdman.mediaconversion.ConversionItem;
 import xdman.ui.res.ColorResource;
@@ -7,21 +41,16 @@ import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 import xdman.util.StringUtils;
 
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-
-import java.awt.*;
-
-import static xdman.util.XDMUtils.getScaledInt;
-
+@SuppressWarnings("FieldCanBeLocal")
 public class ConversionItemRender implements ListCellRenderer<ConversionItem> {
-	private JPanel panel;
-	private JPanel component;
-	private JLabel lbl;
-	private JLabel lblIcon;
-	private JLabel lblVideoDet;
-	private JLabel lblBorder;
-	private Icon ico;
+
+	private final JPanel panel;
+	private final JPanel component;
+	private final JLabel lbl;
+	private final JLabel lblIcon;
+	private final JLabel lblVideoDet;
+	private final JLabel lblBorder;
+	private final Icon ico;
 
 	public ConversionItemRender() {
 		component = new JPanel(new BorderLayout(getScaledInt(5), getScaledInt(5)));
@@ -37,21 +66,13 @@ public class ConversionItemRender implements ListCellRenderer<ConversionItem> {
 
 		ico = ImageResource.getIcon("video.png", 48, 48);
 		lblIcon.setIcon(ico);
-		// lblIcon.setBorder(new EmptyBorder(12, 5, 5, 5));
 		lblIcon.setVerticalAlignment(JLabel.CENTER);
-		// lblIcon.setPreferredSize(new Dimension(53, 53));
 
 		JPanel p1 = new JPanel(new BorderLayout());
 		p1.setOpaque(false);
 		p1.add(lblIcon);
-		// chk = new JCheckBox("");
-		// chk.setOpaque(false);
-		// chk.setIcon(ImageResource.get("unchecked.png"));
-		// chk.setSelectedIcon(ImageResource.get("checked.png"));
-		// p1.add(chk, BorderLayout.WEST);
 		p1.setBorder(new EmptyBorder(getScaledInt(12), getScaledInt(5), getScaledInt(5), getScaledInt(5)));
 		component.add(p1, BorderLayout.WEST);
-		// component.add(lblIcon, BorderLayout.WEST);
 		lbl = new JLabel();
 		lbl.setFont(FontResource.getItemFont());
 		lbl.setBorder(new EmptyBorder(0, 0, 0, getScaledInt(5)));
@@ -90,7 +111,7 @@ public class ConversionItemRender implements ListCellRenderer<ConversionItem> {
 				lblIcon.setIcon(value.info.thumbnail);
 			}
 			if (!StringUtils.isNullOrEmptyOrBlank(value.info.duration)) {
-				buf.append("[" + value.info.duration + "]");
+				buf.append("[").append(value.info.duration).append("]");
 			}
 			if (!StringUtils.isNullOrEmptyOrBlank(value.info.resolution)) {
 				buf.append(buf.length() > 0 ? " " : "");
@@ -112,11 +133,8 @@ public class ConversionItemRender implements ListCellRenderer<ConversionItem> {
 			}
 		}
 		lbl.setText(value.inputFileName);
-		if (index == 0) {
-			lblBorder.setOpaque(false);
-		} else {
-			lblBorder.setOpaque(true);
-		}
+		lblBorder.setOpaque(index != 0);
 		return component;
 	}
+
 }

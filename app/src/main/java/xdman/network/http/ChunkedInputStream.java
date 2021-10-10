@@ -1,4 +1,25 @@
 /*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
+/*
  * ====================================================================
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -77,14 +98,12 @@ public class ChunkedInputStream extends InputStream {
 	/**
 	 * Wraps session input stream and reads chunk coded input.
 	 * 
-	 * @param in
-	 *            The session input buffer
+	 * @param in The session input buffer
 	 */
 	public ChunkedInputStream(final InputStream in) {
 		super();
 		if (in == null) {
-			throw new IllegalArgumentException(
-					"Session input buffer may not be null");
+			throw new IllegalArgumentException("Session input buffer may not be null");
 		}
 		this.in = in;
 		this.pos = 0;
@@ -100,21 +119,19 @@ public class ChunkedInputStream extends InputStream {
 	 * </p>
 	 * 
 	 * <p>
-	 * Trailer headers are read automatically at the end of the stream and can
-	 * be obtained with the getResponseFooters() method.
+	 * Trailer headers are read automatically at the end of the stream and can be
+	 * obtained with the getResponseFooters() method.
 	 * </p>
 	 * 
-	 * @return -1 of the end of the stream has been reached or the next data
-	 *         byte
-	 * @throws IOException
-	 *             in case of an I/O error
+	 * @return -1 of the end of the stream has been reached or the next data byte
+	 * @throws IOException in case of an I/O error
 	 */
 	public int read() throws IOException {
 		if (this.closed) {
 			throw new IOException("Attempted read from closed stream.");
 		}
 		if (this.eof) {
-			
+
 			return -1;
 		}
 		if (state != CHUNK_DATA) {
@@ -136,17 +153,13 @@ public class ChunkedInputStream extends InputStream {
 	/**
 	 * Read some bytes from the stream.
 	 * 
-	 * @param b
-	 *            The byte array that will hold the contents from the stream.
-	 * @param off
-	 *            The offset into the byte array at which bytes will start to be
+	 * @param b   The byte array that will hold the contents from the stream.
+	 * @param off The offset into the byte array at which bytes will start to be
 	 *            placed.
-	 * @param len
-	 *            the maximum number of bytes that can be returned.
+	 * @param len the maximum number of bytes that can be returned.
 	 * @return The number of bytes returned or -1 if the end of stream has been
 	 *         reached.
-	 * @throws IOException
-	 *             in case of an I/O error
+	 * @throws IOException in case of an I/O error
 	 */
 	public int read(byte[] b, int off, int len) throws IOException {
 
@@ -173,21 +186,18 @@ public class ChunkedInputStream extends InputStream {
 			return bytesRead;
 		} else {
 			eof = true;
-			throw new IllegalArgumentException("Truncated chunk "
-					+ "( expected size: " + chunkSize + "; actual size: " + pos
-					+ ")");
+			throw new IllegalArgumentException(
+					"Truncated chunk " + "( expected size: " + chunkSize + "; actual size: " + pos + ")");
 		}
 	}
 
 	/**
 	 * Read some bytes from the stream.
 	 * 
-	 * @param b
-	 *            The byte array that will hold the contents from the stream.
+	 * @param b The byte array that will hold the contents from the stream.
 	 * @return The number of bytes returned or -1 if the end of stream has been
 	 *         reached.
-	 * @throws IOException
-	 *             in case of an I/O error
+	 * @throws IOException in case of an I/O error
 	 */
 	public int read(byte[] b) throws IOException {
 		return read(b, 0, b.length);
@@ -196,8 +206,7 @@ public class ChunkedInputStream extends InputStream {
 	/**
 	 * Read the next chunk.
 	 * 
-	 * @throws IOException
-	 *             in case of an I/O error
+	 * @throws IOException in case of an I/O error
 	 */
 	private void nextChunk() throws IOException {
 		chunkSize = getChunkSize();
@@ -213,14 +222,12 @@ public class ChunkedInputStream extends InputStream {
 	}
 
 	/**
-	 * Expects the stream to start with a chunksize in hex with optional
-	 * comments after a semicolon. The line must end with a CRLF: "a3; some
-	 * comment\r\n" Positions the stream at the start of the next line.
+	 * Expects the stream to start with a chunksize in hex with optional comments
+	 * after a semicolon. The line must end with a CRLF: "a3; some comment\r\n"
+	 * Positions the stream at the start of the next line.
 	 * 
-	 * @param in
-	 *            The new input stream.
-	 * @param required
-	 *            <tt>true<tt/> if a valid chunk must be present,
+	 * @param in       The new input stream.
+	 * @param required <tt>true<tt/> if a valid chunk must be present,
 	 *                 <tt>false<tt/> otherwise.
 	 * 
 	 * @return the chunk size as integer
@@ -237,11 +244,9 @@ public class ChunkedInputStream extends InputStream {
 				return 0;
 			}
 			if (this.buffer.length() != 0) {
-				throw new IllegalArgumentException(
-						"Unexpected content at the end of chunk");
+				throw new IllegalArgumentException("Unexpected content at the end of chunk");
 			}
 			state = CHUNK_LEN;
-			// $FALL-THROUGH$
 		case CHUNK_LEN:
 			this.buffer = new StringBuffer();
 			i = readLine(this.in, this.buffer);
@@ -253,8 +258,7 @@ public class ChunkedInputStream extends InputStream {
 				separator = this.buffer.length();
 			}
 			try {
-				return Integer.parseInt(this.buffer.substring(0, separator)
-						.trim(), 16);
+				return Integer.parseInt(this.buffer.substring(0, separator).trim(), 16);
 			} catch (NumberFormatException e) {
 				Logger.error(e);
 				throw new IllegalArgumentException("Bad chunk header");
@@ -267,8 +271,7 @@ public class ChunkedInputStream extends InputStream {
 	/**
 	 * Reads and stores the Trailer headers.
 	 * 
-	 * @throws IOException
-	 *             in case of an I/O error
+	 * @throws IOException in case of an I/O error
 	 */
 	private void parseTrailerHeaders() throws IOException {
 		while (true) {
@@ -284,18 +287,16 @@ public class ChunkedInputStream extends InputStream {
 
 	/**
 	 * Upon close, this reads the remainder of the chunked message, leaving the
-	 * underlying socket at a position to start reading the next response
-	 * without scanning.
+	 * underlying socket at a position to start reading the next response without
+	 * scanning.
 	 * 
-	 * @throws IOException
-	 *             in case of an I/O error
+	 * @throws IOException in case of an I/O error
 	 */
 	public void close() throws IOException {
 		if (!closed) {
 			try {
 				if (!eof) {
-					// read and discard the remainder of the message
-					byte buffer[] = new byte[BUFFER_SIZE];
+					byte[] buffer = new byte[BUFFER_SIZE];
 					while (read(buffer) >= 0) {
 					}
 				}
@@ -306,8 +307,7 @@ public class ChunkedInputStream extends InputStream {
 		}
 	}
 
-	public static final int readLine(InputStream in, StringBuffer buf)
-			throws IOException {
+	public static int readLine(InputStream in, StringBuffer buf) throws IOException {
 		boolean gotCR = false;
 		while (true) {
 			int x = in.read();
@@ -318,11 +318,7 @@ public class ChunkedInputStream extends InputStream {
 					return buf.length();
 				}
 			}
-			if (x == '\r') {
-				gotCR = true;
-			} else {
-				gotCR = false;
-			}
+			gotCR = x == '\r';
 			if (x != '\r')
 				buf.append((char) x);
 		}

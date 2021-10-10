@@ -1,8 +1,31 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.components;
 
 import java.util.Comparator;
 
-import xdman.*;
+import xdman.Config;
+import xdman.DownloadEntry;
+import xdman.XDMApp;
 
 public class DownloadSorter implements Comparator<String> {
 
@@ -11,7 +34,6 @@ public class DownloadSorter implements Comparator<String> {
 		DownloadEntry o1 = XDMApp.getInstance().getEntry(id1);
 		DownloadEntry o2 = XDMApp.getInstance().getEntry(id2);
 		int res = 0;
-		//System.out.println(Config.getInstance().getSortField()+" "+Config.getInstance().getSortAsc());
 		switch (Config.getInstance().getSortField()) {
 		case 0:// sort by date
 			res = o1.getDate() > o2.getDate() ? 1 : -1;
@@ -29,11 +51,10 @@ public class DownloadSorter implements Comparator<String> {
 			break;
 		}
 		if (Config.getInstance().getSortAsc()) {
-			// asc
 			return res;
 		} else {
-			// desc
 			return -res;
 		}
 	}
+
 }

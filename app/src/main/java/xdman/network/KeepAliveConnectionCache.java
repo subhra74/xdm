@@ -1,18 +1,40 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.network;
 
-import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
 
 import org.tinylog.Logger;
+import xdman.util.IOUtils;
 
 public class KeepAliveConnectionCache implements Runnable {
-	private ArrayList<KeepAliveInfo> socketList;
+
+	private final ArrayList<KeepAliveInfo> socketList;
 	private boolean stop;
 	private final int MAX_KEEP_ALIVE_INT = 2000;
 	private Thread t;
 	private static KeepAliveConnectionCache _this;
-	private static Object lock = new Object();
+	private static final Object lock = new Object();
 
 	public static KeepAliveConnectionCache getInstance() {
 		synchronized (lock) {
@@ -25,7 +47,7 @@ public class KeepAliveConnectionCache implements Runnable {
 	}
 
 	private KeepAliveConnectionCache() {
-		this.socketList = new ArrayList<KeepAliveInfo>();
+		this.socketList = new ArrayList<>();
 	}
 
 	public synchronized void putSocket(Socket socket, String host, int port) {
@@ -53,7 +75,7 @@ public class KeepAliveConnectionCache implements Runnable {
 
 	private void scavengeCache() {
 
-		ArrayList<Socket> sockets2Close = new ArrayList<Socket>();
+		ArrayList<Socket> sockets2Close = new ArrayList<>();
 
 		synchronized (_this) {
 			for (int i = 0; i < socketList.size(); i++) {
@@ -71,11 +93,7 @@ public class KeepAliveConnectionCache implements Runnable {
 			long now = System.currentTimeMillis();
 			if (now - info.getLastUsed() >= MAX_KEEP_ALIVE_INT) {
 				socketList.remove(i);
-				try {
-					info.getSocket().close();
-				} catch (IOException e) {
-					Logger.error(e);
-				}
+				IOUtils.closeFlow(info.getSocket());
 			}
 		}
 	}
@@ -108,4 +126,5 @@ public class KeepAliveConnectionCache implements Runnable {
 			t.interrupt();
 		}
 	}
+
 }

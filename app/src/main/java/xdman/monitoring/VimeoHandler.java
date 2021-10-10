@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.monitoring;
 
 import java.io.BufferedReader;
@@ -6,18 +27,16 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import org.tinylog.Logger;
+
 import xdman.XDMApp;
 import xdman.downloaders.metadata.HttpMetadata;
+import xdman.util.IOUtils;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
 
-import org.tinylog.Logger;
-
+@SuppressWarnings("StringBufferMayBeStringBuilder")
 public class VimeoHandler {
-
-	// public static void main(String[] args) {
-	// handle(new File("C:\\Users\\subhro\\Desktop\\video.htm.txt"), null);
-	// }
 
 	public static boolean handle(File tempFile, ParsedHookData data) {
 		try {
@@ -29,9 +48,9 @@ public class VimeoHandler {
 				if (ln == null) {
 					break;
 				}
-				buf.append(ln + "\n");
+				buf.append(ln).append("\n");
 			}
-			in.close();
+			IOUtils.closeFlow(in);
 			String keyword = "\"progressive\"";
 			int index = buf.indexOf(keyword);
 			if (index < 0) {
@@ -76,11 +95,11 @@ public class VimeoHandler {
 	private static void processString(String str, ParsedHookData data) {
 		String quality = "", type = "", url = "";
 		String[] arr = str.split(",");
-		for (int i = 0; i < arr.length; i++) {
-			int index = arr[i].indexOf(":");
+		for (String s : arr) {
+			int index = s.indexOf(":");
 			if (index > 0) {
-				String key = arr[i].substring(0, index).replace("\"", "");
-				String val = arr[i].substring(index + 1).replace("\"", "");
+				String key = s.substring(0, index).replace("\"", "");
+				String val = s.substring(index + 1).replace("\"", "");
 				if (key.equals("url")) {
 					url = val;
 					Logger.info(url);
@@ -110,4 +129,5 @@ public class VimeoHandler {
 		}
 		XDMApp.getInstance().addMedia(metadata, file + "." + ext, ext.toUpperCase() + " " + quality);
 	}
+
 }

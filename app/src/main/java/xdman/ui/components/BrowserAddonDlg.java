@@ -1,9 +1,32 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.components;
+
+import static xdman.util.XDMUtils.getScaledInt;
 
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.GraphicsEnvironment;
 import java.awt.GraphicsDevice.WindowTranslucency;
+import java.awt.GraphicsEnvironment;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -13,16 +36,14 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 
+import org.tinylog.Logger;
+
 import xdman.Config;
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 import xdman.util.XDMUtils;
-
-import org.tinylog.Logger;
-
-import static xdman.util.XDMUtils.getScaledInt;
 
 public class BrowserAddonDlg extends JDialog implements ActionListener {
 
@@ -31,7 +52,8 @@ public class BrowserAddonDlg extends JDialog implements ActionListener {
 	 */
 	private static final long serialVersionUID = 1L;
 
-	private String url, desc;
+	private final String url;
+	private final String desc;
 
 	public BrowserAddonDlg(String url, String desc) {
 		setModal(true);
@@ -119,8 +141,7 @@ public class BrowserAddonDlg extends JDialog implements ActionListener {
 		JButton btViewMonitoring = createButton1("CTX_COPY_URL", getScaledInt(15), y);
 		btViewMonitoring.setName("COPY");
 		add(btViewMonitoring);
-		y += btViewMonitoring.getHeight();
-
+		btViewMonitoring.getHeight();
 	}
 
 	private JButton createButton1(String name, int x, int y) {

@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.mediaconversion;
 
 import java.io.BufferedReader;
@@ -5,13 +26,17 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 import org.tinylog.Logger;
+
+import xdman.util.IOUtils;
 import xdman.util.StringUtils;
 
+@SuppressWarnings("unused")
 public class MediaFormats {
+
 	private static MediaFormat[] supportedFormats;
 	static {
 		ArrayList<MediaFormat> list = new ArrayList<>();
@@ -22,7 +47,7 @@ public class MediaFormats {
 			if (inStream == null) {
 				inStream = new FileInputStream("formats/list.txt");
 			}
-			InputStreamReader r = new InputStreamReader(inStream, Charset.forName("utf-8"));
+			InputStreamReader r = new InputStreamReader(inStream, StandardCharsets.UTF_8);
 			br = new BufferedReader(r, 1024);
 			while (true) {
 				String ln = br.readLine();
@@ -57,7 +82,7 @@ public class MediaFormats {
 				format.setVideo_param_extra(vextra);
 				format.setAudio_codec(acodec);
 				format.setAudio_bitrate(abr);
-				format.setSamplerate(asr);
+				format.setSampleRate(asr);
 				format.setAudio_extra_param(aextra);
 				format.setDescription(desc);
 				format.setAudioOnly("1".equals(audioOnly));
@@ -70,20 +95,9 @@ public class MediaFormats {
 			}
 		} catch (RuntimeException | IOException e) {
 			Logger.error(e);
+		} finally {
+			IOUtils.closeFlow(br);
 		}
-
-		// supportedFormats = new MediaFormat[11];
-		// supportedFormats[0] = new MediaFormat(-1, -1, null, null);
-		// supportedFormats[1] = new MediaFormat(1366, 768, "MP4", "Video");
-		// supportedFormats[2] = new MediaFormat(1920, 1080, "MP4", "Video");
-		// supportedFormats[3] = new MediaFormat(1280, 800, "MP4", "Video");
-		// supportedFormats[4] = new MediaFormat(320, 568, "MP4", "Video");
-		// supportedFormats[5] = new MediaFormat(320, 480, "MP4", "Video");
-		// supportedFormats[6] = new MediaFormat(1920, 1200, "MP4", "Video");
-		// supportedFormats[7] = new MediaFormat(720, 1280, "MP4", "Video");
-		// supportedFormats[8] = new MediaFormat(96, -1, "MP3", "Audio", true);
-		// supportedFormats[9] = new MediaFormat(128, -1, "MP3", "Audio", true);
-		// supportedFormats[10] = new MediaFormat(320, -1, "MP3", "Audio", true);
 	}
 
 	static String getString(String str) {
@@ -97,11 +111,11 @@ public class MediaFormats {
 
 	}
 
-	public static final MediaFormat[] getSupportedFormats() {
+	public static MediaFormat[] getSupportedFormats() {
 		return supportedFormats;
 	}
 
-	public static final void setSupportedFormats(MediaFormat[] supportedFmts) {
+	public static void setSupportedFormats(MediaFormat[] supportedFmts) {
 		supportedFormats = supportedFmts;
 	}
 

@@ -1,47 +1,38 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.mediaconversion;
 
 import xdman.ui.res.StringResource;
 
 public class MediaFormat {
+
 	public MediaFormat() {
 	}
 
-	// public MediaFormat(int width, int height, String format, String description,
-	// boolean audioOnly) {
-	// this.width = width;
-	// this.height = height;
-	// this.format = format;
-	// this.description = description;
-	// this.audioOnly = audioOnly;
-	// }
-
-	// public MediaFormat(int width, int height, String format, String description)
-	// {
-	// this(width, height, format, description, false);
-	// }
-
 	private String resolution, video_codec, video_bitrate, framerate, video_param_extra, audio_codec, audio_bitrate,
-			samplerate, audio_extra_param, audio_channel, aspectRatio;
+			sampleRate, audio_extra_param, audio_channel, aspectRatio;
 
-	// private int width, height;
 	private String format, description;
 	private boolean audioOnly;
-
-	// public final int getWidth() {
-	// return width;
-	// }
-	//
-	// public final void setWidth(int width) {
-	// this.width = width;
-	// }
-	//
-	// public final int getHeight() {
-	// return height;
-	// }
-	//
-	// public final void setHeight(int height) {
-	// this.height = height;
-	// }
 
 	public final String getFormat() {
 		return format;
@@ -132,12 +123,12 @@ public class MediaFormat {
 		this.audio_bitrate = audio_bitrate;
 	}
 
-	public String getSamplerate() {
-		return samplerate;
+	public String getSampleRate() {
+		return sampleRate;
 	}
 
-	public void setSamplerate(String samplerate) {
-		this.samplerate = samplerate;
+	public void setSampleRate(String sampleRate) {
+		this.sampleRate = sampleRate;
 	}
 
 	public String getAudio_extra_param() {
@@ -163,4 +154,5 @@ public class MediaFormat {
 	public void setAspectRatio(String aspectRatio) {
 		this.aspectRatio = aspectRatio;
 	}
+
 }

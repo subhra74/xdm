@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.components;
 
 import static xdman.util.XDMUtils.getScaledInt;
@@ -36,6 +57,8 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+import org.tinylog.Logger;
+
 import xdman.Config;
 import xdman.CredentialManager;
 import xdman.ui.res.ColorResource;
@@ -44,9 +67,9 @@ import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 import xdman.util.XDMUtils;
 
-import org.tinylog.Logger;
-
+@SuppressWarnings("unused")
 public class BatchPatternDialog extends JFrame implements ActionListener, DocumentListener, ChangeListener {
+
 	/**
 	 * 
 	 */
@@ -85,7 +108,7 @@ public class BatchPatternDialog extends JFrame implements ActionListener, Docume
 		spToModelNum = new SpinnerNumberModel(Integer.valueOf(100), Integer.valueOf(0), Integer.valueOf(9999),
 				Integer.valueOf(1));
 
-		String chars[] = new String[52];
+		String[] chars = new String[52];
 		int index = 0;
 		for (char i = 'a'; i <= 'z'; i++) {
 			chars[index++] = i + "";
@@ -195,7 +218,6 @@ public class BatchPatternDialog extends JFrame implements ActionListener, Docume
 		x += w;
 		x += getScaledInt(5);
 
-		w = getScaledInt(50);
 		spFrom = new JSpinner();
 		spFrom.addChangeListener(this);
 		spFrom.setBounds(x, y, w, h);
@@ -220,8 +242,6 @@ public class BatchPatternDialog extends JFrame implements ActionListener, Docume
 		transparentSpinner(spTo);
 		spTo.setBounds(x, y, w, h);
 		add(spTo);
-		x += w;
-		x += getScaledInt(10);
 
 		y += h;
 		y += getScaledInt(10);
@@ -328,7 +348,6 @@ public class BatchPatternDialog extends JFrame implements ActionListener, Docume
 
 			@Override
 			public void windowLostFocus(WindowEvent e) {
-				// TODO Auto-generated method stub
 
 			}
 

@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.components;
 
 import javax.swing.JPanel;
@@ -10,8 +31,9 @@ import xdman.XDMApp;
 import xdman.util.XDMUtils;
 
 public class DownloadListView {
-	private DownloadTableModel model;
-	private JTable table;
+
+	private final DownloadTableModel model;
+	private final JTable table;
 
 	public DownloadListView(JPanel container) {
 		model = new DownloadTableModel();
@@ -24,28 +46,6 @@ public class DownloadListView {
 		table.setFillsViewportHeight(true);
 		table.setBorder(new EmptyBorder(0, 0, 0, 0));
 		table.setDragEnabled(true);
-		// table.getSelectionModel().addListSelectionListener(new
-		// ListSelectionListener() {
-		// @Override
-		// public void valueChanged(ListSelectionEvent e) {
-		// int selectedRow = e.getFirstIndex();
-		// selectedId = model.getIdAt(selectedRow);
-		// Logger.log("Selected id1: " + selectedId+" row: "+selectedRow);
-		// }
-		// });
-		//
-		// model.addTableModelListener(new TableModelListener() {
-		// @Override
-		// public void tableChanged(TableModelEvent e) {
-		// if(selectedId!=null){
-		// int index=model.getIndexOfId(selectedId);
-		// Logger.log("Index of "+selectedId+" is: "+index);
-		// if(index>-1){
-		// table.setRowSelectionInterval(index, index);
-		// }
-		// }
-		// }
-		// });
 
 		JScrollPane jsp = new JScrollPane(table);
 		jsp.setBorder(new EmptyBorder(0, 0, 0, 0));
@@ -70,4 +70,5 @@ public class DownloadListView {
 	public void refresh() {
 		model.listChanged();
 	}
+
 }

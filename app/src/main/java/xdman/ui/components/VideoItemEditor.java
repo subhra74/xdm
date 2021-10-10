@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.components;
 
 import static xdman.util.XDMUtils.getScaledInt;
@@ -20,6 +41,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.TableCellEditor;
 
 import org.tinylog.Logger;
+
 import xdman.ui.res.ColorResource;
 import xdman.ui.res.FontResource;
 import xdman.ui.res.ImageResource;
@@ -55,19 +77,17 @@ public class VideoItemEditor extends AbstractCellEditor implements TableCellEdit
 		lblIcon.setMaximumSize(new Dimension(getScaledInt(119), getScaledInt(92)));
 		lblIcon.setPreferredSize(new Dimension(getScaledInt(119), getScaledInt(92)));
 		lblIcon.setHorizontalAlignment(JLabel.CENTER);
-		ico = ImageResource.getIcon("videoplay.png",94,92);
+		ico = ImageResource.getIcon("videoplay.png", 94, 92);
 		lblIcon.setIcon(ico);
-		// lblIcon.setBorder(new EmptyBorder(12, 5, 5, 5));
 		lblIcon.setVerticalAlignment(JLabel.CENTER);
-		// lblIcon.setPreferredSize(new Dimension(53, 53));
 
 		JPanel p1 = new JPanel(new BorderLayout());
 		p1.setOpaque(false);
 		p1.add(lblIcon);
 		chk = new JCheckBox("");
 		chk.setOpaque(false);
-		chk.setIcon(ImageResource.getIcon("unchecked.png",16,16));
-		chk.setSelectedIcon(ImageResource.getIcon("checked.png",16,16));
+		chk.setIcon(ImageResource.getIcon("unchecked.png", 16, 16));
+		chk.setSelectedIcon(ImageResource.getIcon("checked.png", 16, 16));
 		p1.add(chk, BorderLayout.WEST);
 		p1.setBorder(new EmptyBorder(getScaledInt(12), 0, getScaledInt(5), getScaledInt(5)));
 		component.add(p1, BorderLayout.WEST);
@@ -88,7 +108,6 @@ public class VideoItemEditor extends AbstractCellEditor implements TableCellEdit
 		component.add(lblBorder, BorderLayout.NORTH);
 		component.setOpaque(false);
 		this.imgSource = imgSource;
-		// component.setBackground(ColorResource.getSelectionColor());
 	}
 
 	public void select(boolean flag) {
@@ -127,15 +146,12 @@ public class VideoItemEditor extends AbstractCellEditor implements TableCellEdit
 		cmbModel.removeAllElements();
 		for (int i = 0; i < obj.videoItem.mediaFormats.size(); i++)
 			cmbModel.addElement(obj.videoItem.mediaFormats.get(i) + "");
-		// System.out.println(obj.title + " " + obj.index);
 		cmb.setSelectedIndex(obj.videoItem.index);
 		if (row == 0) {
 			lblBorder.setOpaque(false);
 		} else {
 			lblBorder.setOpaque(true);
 		}
-		// component.setBackground(isSelected ? ColorResource.getSelectionColor() :
-		// ColorResource.getDarkestBgColor());
 		chk.setSelected(obj.checked);
 
 		lblIcon.setIcon(ico);

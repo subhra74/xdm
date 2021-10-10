@@ -1,7 +1,32 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.network.http;
 
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+
+import org.tinylog.Logger;
 
 import xdman.network.FixedRangeInputStream;
 import xdman.network.HostUnreachableException;
@@ -13,10 +38,10 @@ import xdman.util.IOUtils;
 import xdman.util.NetUtils;
 import xdman.util.StringUtils;
 
-import org.tinylog.Logger;
-
+@SuppressWarnings("FieldCanBeLocal")
 public class XDMHttpClient extends HttpClient {
-	private ParsedURL _url;
+
+	private final ParsedURL _url;
 	private Socket socket;
 	private String statusLine;
 	private long length;
@@ -80,7 +105,7 @@ public class XDMHttpClient extends HttpClient {
 			InputStream sockIn = socket.getInputStream();
 			String reqLine = "GET " + _url.getPathAndQuery() + " HTTP/1.1";
 			StringBuffer reqBuf = new StringBuffer();
-			reqBuf.append(reqLine + "\r\n");
+			reqBuf.append(reqLine).append("\r\n");
 			requestHeaders.appendToBuffer(reqBuf);
 			reqBuf.append("\r\n");
 
@@ -105,25 +130,20 @@ public class XDMHttpClient extends HttpClient {
 			StringBuffer b2 = new StringBuffer();
 			responseHeaders.appendToBuffer(b2);
 			Logger.info(b2);
-			
+
 			in = new FixedRangeInputStream(NetUtils.getInputStream(responseHeaders, socket.getInputStream()), length);
 
 			if (reusing) {
 				Logger.info("Socket reuse successful");
 			}
-			
-
-			// if (statusCode == 401 || statusCode == 407) {
-			// throw new JavaClientRequiredException();
-			// }
 
 			keepAliveSupported = !"close".equals(responseHeaders.getValue("connection"));
 
 		} catch (HostUnreachableException e) {
-			e.printStackTrace();
+			Logger.error(e);
 			throw new NetworkException("Unable to connect to server");
 		} catch (Exception e) {
-			e.printStackTrace();
+			Logger.error(e);
 			throw new NetworkException(e.getMessage());
 		}
 	}
@@ -150,4 +170,5 @@ public class XDMHttpClient extends HttpClient {
 	public String getHost() {
 		return _url.getHost() + ":" + _url.getPort();
 	}
+
 }

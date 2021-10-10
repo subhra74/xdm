@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.components;
 
 import static xdman.util.XDMUtils.getScaledInt;
@@ -24,6 +45,8 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
+import org.tinylog.Logger;
+
 import xdman.Config;
 import xdman.DownloadEntry;
 import xdman.DownloadWindowListener;
@@ -37,15 +60,13 @@ import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 import xdman.util.FormatUtilities;
 
-import org.tinylog.Logger;
-
 public class DownloadWindow extends JFrame implements ActionListener {
+
 	private static final long serialVersionUID = -5523541940635914890L;
-	private String id;
+	private final String id;
 	private CircleProgressBar prgCircle;
 	private SegmentPanel segProgress;
 	private int errCode, reason;
-	// private String errMsg;
 	private JLabel titleLbl;
 	private JLabel lblSpeed;
 	private JLabel lblStat;
@@ -69,15 +90,12 @@ public class DownloadWindow extends JFrame implements ActionListener {
 		this.errCode = error;
 		this.reason = code;
 		this.listener = null;
-		EventQueue.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				if (reason == XDMConstants.FAILED) {
-					createP2();
-					showErrorMsg(errCode);
-				} else {
-					dispose();
-				}
+		EventQueue.invokeLater(() -> {
+			if (reason == XDMConstants.FAILED) {
+				createP2();
+				showErrorMsg(errCode);
+			} else {
+				dispose();
 			}
 		});
 	}
@@ -89,7 +107,7 @@ public class DownloadWindow extends JFrame implements ActionListener {
 		} else {
 			setTitle(file);
 		}
-		String statTxt = "";
+		String statTxt;
 		if (d.isConverting()) {
 			statTxt = StringResource.get("TITLE_CONVERT");
 		} else if (d.isAssembling()) {
@@ -98,13 +116,6 @@ public class DownloadWindow extends JFrame implements ActionListener {
 			statTxt = StringResource.get("STAT_DOWNLOADING");
 		}
 		lblStat.setText(statTxt);
-		// StringBuilder sb = new StringBuilder();
-		// sb.append((d.isAssembling() ? StringResource.get("STAT_ASSEMBLING")
-		// : StringResource.get("DWN_DOWNLOAD")));
-		// sb.append(" ");
-		// sb.append(FormatUtilities.formatSize(d.getDownloaded()));
-		// sb.append(" ");
-		// sb.append(d.getType()==XDMConstants.HTTP?)
 
 		lblDet.setText((d.isAssembling() ? StringResource.get("STAT_ASSEMBLING") : StringResource.get("DWN_DOWNLOAD"))
 				+ " " + FormatUtilities.formatSize(d.getDownloaded()) + " "
@@ -120,7 +131,7 @@ public class DownloadWindow extends JFrame implements ActionListener {
 		segProgress.setValues(segDet, sz);
 		if (Taskbar.isTaskbarSupported()) {
 			Taskbar taskbar = Taskbar.getTaskbar();
-			if(taskbar.isSupported(Feature.PROGRESS_VALUE_WINDOW)) {
+			if (taskbar.isSupported(Feature.PROGRESS_VALUE_WINDOW)) {
 				taskbar.setWindowProgressValue(this, d.getProgress());
 			}
 		}
@@ -389,7 +400,6 @@ public class DownloadWindow extends JFrame implements ActionListener {
 			return;
 		default:
 			txtError.setText(StringResource.get("ERR_INTERNAL"));
-			return;
 		}
 	}
 

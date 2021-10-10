@@ -1,19 +1,39 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.components;
 
+import static xdman.util.XDMUtils.getScaledInt;
+
 import java.awt.Color;
+import java.awt.GraphicsDevice.WindowTranslucency;
 import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
-import java.awt.GraphicsDevice.WindowTranslucency;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListModel;
@@ -31,6 +51,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.border.LineBorder;
 
+import org.tinylog.Logger;
+
 import xdman.Config;
 import xdman.DownloadQueue;
 import xdman.QueueManager;
@@ -42,10 +64,6 @@ import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
-
-import org.tinylog.Logger;
-
-import static xdman.util.XDMUtils.getScaledInt;
 
 public class BatchDownloadWnd extends JFrame implements ActionListener {
 
@@ -67,8 +85,7 @@ public class BatchDownloadWnd extends JFrame implements ActionListener {
 		if (!StringUtils.isNullOrEmptyOrBlank(text)) {
 			Logger.info(text);
 			String[] arr = text.split("\n");
-			for (int i = 0; i < arr.length; i++) {
-				String url = arr[i];
+			for (String url : arr) {
 				try {
 					new URL(url);
 					urls.add(url);
@@ -138,7 +155,8 @@ public class BatchDownloadWnd extends JFrame implements ActionListener {
 	}
 
 	private void createDownload(DownloadQueue q) {
-		String folder = txtFile.getText();
+		txtFile.getText();
+		String folder;
 		for (int i = 0; i < model.size(); i++) {
 			BatchItem item = model.getElementAt(i);
 			if (item.selected) {
@@ -206,7 +224,6 @@ public class BatchDownloadWnd extends JFrame implements ActionListener {
 
 		int y = getScaledInt(55);
 		int h = getScaledInt(420) - getScaledInt(100) - getScaledInt(70) - getScaledInt(20);
-		// y += getScaledInt(40);
 
 		list.setBorder(null);
 		list.setOpaque(false);
@@ -230,9 +247,6 @@ public class BatchDownloadWnd extends JFrame implements ActionListener {
 		add(lineLbl2);
 
 		y += getScaledInt(5);
-		// y += getScaledInt(15);
-
-		// LBL_FILE_TYPE
 
 		JLabel lblFileTypes = new JLabel(StringResource.get("LBL_FILE_TYPE"), JLabel.RIGHT);
 		lblFileTypes.setFont(FontResource.getNormalFont());
@@ -247,28 +261,22 @@ public class BatchDownloadWnd extends JFrame implements ActionListener {
 		cmbFilter.setBounds(getScaledInt(90), y + getScaledInt(5),
 				getScaledInt(305) - getScaledInt(15) + getScaledInt(50), getScaledInt(20));
 		add(cmbFilter);
-		cmbFilter.addActionListener(new ActionListener() {
+		cmbFilter.addActionListener(e -> {
 
-			@Override
-			public void actionPerformed(ActionEvent e) {
-
-				model.removeAllElements();
-				for (BatchItem item : items) {
-					boolean add = true;
-					if (cmbFilter.getSelectedIndex() > 0) {
-						String ext = (String) cmbFilter.getSelectedItem();
-						add = item.file.endsWith(ext);
-					}
-					if (add) {
-						model.addElement(item);
-					}
+			model.removeAllElements();
+			for (BatchItem item : items) {
+				boolean add = true;
+				if (cmbFilter.getSelectedIndex() > 0) {
+					String ext = Objects.requireNonNull(cmbFilter.getSelectedItem()).toString();
+					add = item.file.endsWith(ext);
+				}
+				if (add) {
+					model.addElement(item);
 				}
 			}
 		});
 
 		y += getScaledInt(25);
-
-		// y += getScaledInt(40);
 
 		JLabel lblFile = new JLabel(StringResource.get("LBL_SAVE_IN"), JLabel.RIGHT);
 		lblFile.setFont(FontResource.getNormalFont());
@@ -306,10 +314,10 @@ public class BatchDownloadWnd extends JFrame implements ActionListener {
 		lblQueue.setBounds(0, y, getScaledInt(80), getScaledInt(30));
 		add(lblQueue);
 
-		queueModel = new DefaultComboBoxModel<DownloadQueue>();
+		queueModel = new DefaultComboBoxModel<>();
 		ArrayList<DownloadQueue> qlist = QueueManager.getInstance().getQueueList();
-		for (int i = 0; i < qlist.size(); i++) {
-			queueModel.addElement(qlist.get(i));
+		for (DownloadQueue downloadQueue : qlist) {
+			queueModel.addElement(downloadQueue);
 		}
 		cmbQueues = new JComboBox<>(queueModel);
 		cmbQueues.setRenderer(new QueueListRenderer());
@@ -347,7 +355,6 @@ public class BatchDownloadWnd extends JFrame implements ActionListener {
 			@Override
 			public void mouseClicked(MouseEvent event) {
 				int index = list.locationToIndex(event.getPoint());// Get index of item
-																	// clicked
 				BatchItem cItem = model.getElementAt(index);
 				cItem.selected = !cItem.selected; // Toggle selected state
 				list.repaint(list.getCellBounds(index, index));// Repaint cell
@@ -370,6 +377,7 @@ public class BatchDownloadWnd extends JFrame implements ActionListener {
 }
 
 class BatchItem {
+
 	String file;
 	boolean selected;
 	HttpMetadata metadata;
@@ -378,4 +386,5 @@ class BatchItem {
 	public String toString() {
 		return file;
 	}
+
 }

@@ -1,29 +1,53 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.preview;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Objects;
+
+import org.tinylog.Logger;
 
 import xdman.Config;
 import xdman.util.IOUtils;
 import xdman.util.XDMUtils;
 
-import org.tinylog.Logger;
-
 public class FFmpegStream extends InputStream implements Runnable {
-	String input1, input2;
-	Process proc;
-	InputStream in;
-	long read;
-	Thread t;
+
+	private final String input1;
+	private final String input2;
+	private Process proc;
+	private InputStream in;
+	private long read;
+	private final Thread executorThread;
 
 	public FFmpegStream(String input1, String input2) throws IOException {
 		this.input1 = input1;
 		this.input2 = input2;
 		init();
-		t = new Thread(this);
-		t.start();
+		executorThread = new Thread(this);
+		executorThread.start();
 	}
 
 	@Override
@@ -32,7 +56,7 @@ public class FFmpegStream extends InputStream implements Runnable {
 		try {
 			Logger.info("closing");
 			proc.destroyForcibly();
-			t.interrupt();
+			executorThread.interrupt();
 		} catch (Exception e) {
 			Logger.error(e);
 		}
@@ -43,7 +67,7 @@ public class FFmpegStream extends InputStream implements Runnable {
 		File ffFile = new File(Config.getInstance().getDataFolder(),
 				System.getProperty("os.name").toLowerCase().contains("windows") ? "ffmpeg.exe" : "ffmpeg");
 		if (!ffFile.exists()) {
-			ffFile = new File(XDMUtils.getJarFile().getParentFile(),
+			ffFile = new File(Objects.requireNonNull(XDMUtils.getJarFile()).getParentFile(),
 					System.getProperty("os.name").toLowerCase().contains("windows") ? "ffmpeg.exe" : "ffmpeg");
 			if (!ffFile.exists()) {
 				return;
@@ -76,7 +100,6 @@ public class FFmpegStream extends InputStream implements Runnable {
 		args.add("-nostdin");
 
 		ProcessBuilder pb = new ProcessBuilder(args);
-		//pb.redirectError(new File(System.getProperty("user.home"), "error.txt"));
 		proc = pb.start();
 		in = proc.getInputStream();
 	}
@@ -115,10 +138,8 @@ public class FFmpegStream extends InputStream implements Runnable {
 		int x = in.read(b, off, len);
 		if (x != -1) {
 			read += x;
-			// System.out.println(new String(b, 0, x));
 		} else {
 			Logger.info("stream ended after " + read + " bytes");
-			// System.out.println(proc.exitValue());
 		}
 		return x;
 	}

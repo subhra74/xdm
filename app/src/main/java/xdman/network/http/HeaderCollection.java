@@ -1,20 +1,44 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.network.http;
 
-import java.util.*;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 import xdman.util.NetUtils;
 
 public class HeaderCollection {
-	private List<HttpHeader> headers;
+
+	private final List<HttpHeader> headers;
 
 	public HeaderCollection() {
-		headers = new ArrayList<HttpHeader>();
+		headers = new ArrayList<>();
 	}
 
 	public String getValue(String name) {
-		for (int i = 0; i < headers.size(); i++) {
-			HttpHeader header = headers.get(i);
+		for (HttpHeader header : headers) {
 			if (header.getName().equalsIgnoreCase(name)) {
 				return header.getValue();
 			}
@@ -23,8 +47,7 @@ public class HeaderCollection {
 	}
 
 	public boolean containsHeader(String name) {
-		for (int i = 0; i < headers.size(); i++) {
-			HttpHeader header = headers.get(i);
+		for (HttpHeader header : headers) {
 			if (header.getName().equalsIgnoreCase(name)) {
 				return true;
 			}
@@ -33,9 +56,8 @@ public class HeaderCollection {
 	}
 
 	public Iterator<HttpHeader> getHeaders(String name) {
-		List<HttpHeader> list = new ArrayList<HttpHeader>();
-		for (int i = 0; i < headers.size(); i++) {
-			HttpHeader header = headers.get(i);
+		List<HttpHeader> list = new ArrayList<>();
+		for (HttpHeader header : headers) {
 			if (header.getName().equalsIgnoreCase(name)) {
 				list.add(header);
 			}
@@ -59,8 +81,7 @@ public class HeaderCollection {
 
 	public void setValue(String name, String value) {
 		boolean found = false;
-		for (int i = 0; i < headers.size(); i++) {
-			HttpHeader header = headers.get(i);
+		for (HttpHeader header : headers) {
 			if (header.getName().equalsIgnoreCase(name)) {
 				header.setValue(value);
 				found = true;
@@ -80,9 +101,8 @@ public class HeaderCollection {
 	}
 
 	public void appendToBuffer(StringBuffer buf) {
-		for (int i = 0; i < headers.size(); i++) {
-			HttpHeader header = headers.get(i);
-			buf.append(header.getName() + ": " + header.getValue() + "\r\n");
+		for (HttpHeader header : headers) {
+			buf.append(header.getName()).append(": ").append(header.getValue()).append("\r\n");
 		}
 	}
 
@@ -100,4 +120,5 @@ public class HeaderCollection {
 			}
 		}
 	}
+
 }

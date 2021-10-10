@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.downloaders.hds;
 
 import java.io.BufferedReader;
@@ -9,10 +30,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 import org.tinylog.Logger;
+
 import xdman.Config;
 import xdman.XDMConstants;
 import xdman.downloaders.AbstractChannel;
@@ -34,9 +56,11 @@ import xdman.util.IOUtils;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
 
+@SuppressWarnings("ResultOfMethodCallIgnored")
 public class HdsDownloader extends Downloader implements SegmentListener, MediaConversionListener {
-	private HdsMetadata metadata;
-	private ArrayList<String> urlList;
+
+	private final HdsMetadata metadata;
+	private final ArrayList<String> urlList;
 	private Segment manifestSegment;
 	private long totalAssembled;
 	private String newFileName;
@@ -54,8 +78,8 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 		this.length = -1;
 		this.metadata = metadata;
 		this.MAX_COUNT = Config.getInstance().getMaxSegments();
-		urlList = new ArrayList<String>();
-		chunks = new ArrayList<Segment>();
+		urlList = new ArrayList<>();
+		chunks = new ArrayList<>();
 		this.eta = "---";
 	}
 
@@ -130,14 +154,12 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 				updateStatus();
 
 				try {
-					// assembleFinished = false;
 					assemble();
 					if (!assembleFinished) {
 						throw new IOException("Assemble not finished successfully");
 					}
 					Logger.info("********Download finished*********");
 					updateStatus();
-					// assembleFinished = true;
 					listener.downloadFinished(this.id);
 				} catch (Exception e) {
 					if (!stopFlag) {
@@ -220,16 +242,15 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 			String newExtension = null;
 
 			if (chunks.size() < 1) {
-				for (int i = 0; i < urlList.size(); i++) {
+				for (String s : urlList) {
 					if (newExtension == null && outputFormat == 0) {
-						newExtension = findExtension(urlList.get(i));
+						newExtension = findExtension(s);
 						Logger.info("HDS: found new extension: " + newExtension);
 						if (newExtension != null) {
 							this.newFileName = getOutputFileName(false).replace(".flv", newExtension);
 
 						} else {
 							newExtension = ".flv";// just to skip the whole file
-													// ext extraction
 						}
 					}
 
@@ -279,8 +300,7 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 				int processedSegments = 0;
 				int partPrg = 0;
 				downloadSpeed = 0;
-				for (int i = 0; i < chunks.size(); i++) {
-					Segment s = chunks.get(i);
+				for (Segment s : chunks) {
 					downloaded2 += s.getDownloaded();
 					downloadSpeed += s.getTransferRate();
 					if (s.isFinished()) {
@@ -292,7 +312,7 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 				}
 				this.downloaded = downloaded2;
 				if (chunks.size() > 0) {
-					progress = (int) ((processedSegments * 100) / chunks.size());
+					progress = (processedSegments * 100) / chunks.size();
 					progress += (partPrg / chunks.size());
 					if (segDet == null) {
 						segDet = new SegmentDetails();
@@ -305,11 +325,8 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 					info.setDownloaded(progress);
 					info.setLength(100);
 					info.setStart(0);
-					//long diff = downloaded - lastDownloaded;
 					long timeSpend = now - prevTime;
 					if (timeSpend > 0) {
-						// float rate = ((float) diff / timeSpend) * 1000;
-						// downloadSpeed = rate;
 
 						int prgDiff = progress - lastProgress;
 						if (prgDiff > 0) {
@@ -334,8 +351,8 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 	public void stop() {
 		stopFlag = true;
 		saveState();
-		for (int i = 0; i < chunks.size(); i++) {
-			chunks.get(i).stop();
+		for (Segment chunk : chunks) {
+			chunk.stop();
 		}
 		if (this.ffmpeg != null) {
 			this.ffmpeg.stop();
@@ -369,7 +386,6 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 			Logger.error(e);
 			this.errorCode = XDMConstants.RESUME_FAILED;
 			listener.downloadFailed(this.id);
-			return;
 		}
 	}
 
@@ -396,38 +412,36 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 	private void saveState() {
 		if (chunks.size() < 1)
 			return;
-		StringBuffer sb = new StringBuffer();
-		sb.append(this.length + "\n");
-		sb.append(downloaded + "\n");
-		sb.append(((long) this.totalDuration) + "\n");
-		sb.append(urlList.size() + "\n");
-		for (int i = 0; i < urlList.size(); i++) {
-			String url = urlList.get(i);
-			sb.append(url + "\n");
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.length).append("\n");
+		sb.append(downloaded).append("\n");
+		sb.append((long) this.totalDuration).append("\n");
+		sb.append(urlList.size()).append("\n");
+		for (String url : urlList) {
+			sb.append(url).append("\n");
 		}
-		sb.append(chunks.size() + "\n");
-		for (int i = 0; i < chunks.size(); i++) {
-			Segment seg = chunks.get(i);
-			sb.append(seg.getId() + "\n");
+		sb.append(chunks.size()).append("\n");
+		for (Segment seg : chunks) {
+			sb.append(seg.getId()).append("\n");
 			if (seg.isFinished()) {
-				sb.append(seg.getLength() + "\n");
-				sb.append(seg.getStartOffset() + "\n");
-				sb.append(seg.getDownloaded() + "\n");
+				sb.append(seg.getLength()).append("\n");
+				sb.append(seg.getStartOffset()).append("\n");
+				sb.append(seg.getDownloaded()).append("\n");
 			} else {
 				sb.append("-1\n");
-				sb.append(seg.getStartOffset() + "\n");
-				sb.append(seg.getDownloaded() + "\n");
+				sb.append(seg.getStartOffset()).append("\n");
+				sb.append(seg.getDownloaded()).append("\n");
 			}
 		}
 		if (!StringUtils.isNullOrEmptyOrBlank(lastModified)) {
-			sb.append(this.lastModified + "\n");
+			sb.append(this.lastModified).append("\n");
 		}
 		try {
 			File tmp = new File(folder, System.currentTimeMillis() + ".tmp");
 			File out = new File(folder, "state.txt");
 			FileOutputStream fs = new FileOutputStream(tmp);
 			fs.write(sb.toString().getBytes());
-			fs.close();
+			IOUtils.closeFlow(fs);
 			out.delete();
 			tmp.renameTo(out);
 		} catch (Exception e) {
@@ -437,7 +451,7 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 
 	private boolean restoreState() {
 		BufferedReader br = null;
-		chunks = new ArrayList<Segment>();
+		chunks = new ArrayList<>();
 		File file = new File(folder, "state.txt");
 		if (!file.exists()) {
 			file = getBackupFile(folder);
@@ -478,26 +492,22 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 	}
 
 	private void assembleAsync() {
-		new Thread(new Runnable() {
-
-			@Override
-			public void run() {
-				finished = true;
-				try {
-					assemble();
-					if (!assembleFinished) {
-						throw new IOException("Assemble not finished successfully");
-					}
-					Logger.info("********Download finished*********");
-					updateStatus();
-					cleanup();
-					listener.downloadFinished(id);
-				} catch (Exception e) {
-					if (!stopFlag) {
-						Logger.error(e);
-						errorCode = XDMConstants.ERR_ASM_FAILED;
-						listener.downloadFailed(id);
-					}
+		new Thread(() -> {
+			finished = true;
+			try {
+				assemble();
+				if (!assembleFinished) {
+					throw new IOException("Assemble not finished successfully");
+				}
+				Logger.info("********Download finished*********");
+				updateStatus();
+				cleanup();
+				listener.downloadFinished(id);
+			} catch (Exception e) {
+				if (!stopFlag) {
+					Logger.error(e);
+					errorCode = XDMConstants.ERR_ASM_FAILED;
+					listener.downloadFailed(id);
 				}
 			}
 		}).start();
@@ -521,19 +531,16 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 		return newExtension;
 	}
 
-	private void assemble() throws IOException {
+	private void assemble() {
 		InputStream in = null;
 		OutputStream out = null;
 		totalAssembled = 0L;
 		assembling = true;
 		assembleFinished = false;
 		File ffOutFile = null;
-		File outFile = null;
+		File outFile;
 
 		XDMUtils.mkdirs(getOutputFolder());
-
-		// File outFile = new File(outputFormat == 0 ? getOutputFolder() : folder,
-		// getOutputFileName(true));
 
 		String outFileName = (outputFormat == 0 ? UUID.randomUUID() + "_" + getOutputFileName(true)
 				: UUID.randomUUID().toString());
@@ -555,27 +562,27 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 						return;
 					}
 
-					long boxsize = readInt32(in);
+					long boxSize = readInt32(in);
 					streamPos += 4;
 					String box_type = readStringBytes(in, 4);
 					streamPos += 4;
-					if (boxsize == 1) {
-						boxsize = readInt64(in) - 16;
+					if (boxSize == 1) {
+						boxSize = readInt64(in) - 16;
 						streamPos += 8;
 					} else {
-						boxsize -= 8;
+						boxSize -= 8;
 					}
 					if (box_type.equals("mdat")) {
-						long boxsz = boxsize;
-						while (boxsz > 0) {
+						long boxSize2 = boxSize;
+						while (boxSize2 > 0) {
 							if (stopFlag)
 								return;
-							int c = (int) (boxsz > b.length ? b.length : boxsz);
+							int c = (int) (boxSize2 > b.length ? b.length : boxSize2);
 							int x = in.read(b, 0, c);
 							if (x == -1)
 								throw new IOException("Unexpected EOF");
 							out.write(b, 0, x);
-							boxsz -= x;
+							boxSize2 -= x;
 							totalAssembled += x;
 							long now = System.currentTimeMillis();
 							if (now - lastUpdated > 1000) {
@@ -584,10 +591,10 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 							}
 						}
 					} else {
-						in.skip(boxsize);
+						in.skip(boxSize);
 					}
 
-					streamPos += boxsize;
+					streamPos += boxSize;
 				}
 				IOUtils.closeFlow(in);
 			}
@@ -600,7 +607,7 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 				this.converting = true;
 				ffOutFile = new File(getOutputFolder(), UUID.randomUUID() + "_" + getOutputFileName(true));
 
-				this.ffmpeg = new FFmpeg(Arrays.asList(new String[] { outFile.getAbsolutePath() }),
+				this.ffmpeg = new FFmpeg(List.of(outFile.getAbsolutePath()),
 						ffOutFile.getAbsolutePath(), this, MediaFormats.getSupportedFormats()[outputFormat],
 						outputFormat == 0);
 				int ret = ffmpeg.convert();
@@ -617,7 +624,6 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 				}
 			}
 
-			// delete the original file if exists and rename the temp file to original
 			File realFile = new File(getOutputFolder(), getOutputFileName(true));
 			if (realFile.exists()) {
 				realFile.delete();
@@ -661,18 +667,16 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 		if (s.read(bytesData, 0, bytesData.length) != bytesData.length) {
 			throw new IOException("Invalid F4F box");
 		}
-		long iValLo = (long) ((bytesData[3] & 0xff) + ((long) (bytesData[2] & 0xff) * 256));
-		long iValHi = (long) ((bytesData[1] & 0xff) + ((long) (bytesData[0] & 0xff) * 256));
-		long iVal = iValLo + (iValHi * 65536);
-		return iVal;
+		long iValLo = (bytesData[3] & 0xff) + ((long) (bytesData[2] & 0xff) * 256);
+		long iValHi = (bytesData[1] & 0xff) + ((long) (bytesData[0] & 0xff) * 256);
+		return iValLo + (iValHi * 65536);
 	}
 
 	private long readInt64(InputStream s) throws IOException {
 		long iValHi = readInt32(s);
 		long iValLo = readInt32(s);
 
-		long iVal = iValLo + (iValHi * 4294967296L);
-		return iVal;
+		return iValLo + (iValHi * 4294967296L);
 	}
 
 	private String readStringBytes(InputStream s, long len) throws IOException {
@@ -682,20 +686,5 @@ public class HdsDownloader extends Downloader implements SegmentListener, MediaC
 		}
 		return resultValue.toString();
 	}
-
-	// public static void main(String[] args) {
-	// try {
-	// Thread.sleep(5000);
-	// } catch (InterruptedException e) {
-	// // TODO Auto-generated catch block
-	// e.printStackTrace();
-	// }
-	//
-	// HlsDownloader d2 = new HlsDownloader(UUID.randomUUID().toString(),
-	// "C:\\Users\\sd00109548\\Desktop\\temp");
-	// d2.metadata = new HlsMetadata();
-	// d2.metadata.setUrl("http://localhost:8080/test.m3u8");
-	// d2.start();
-	// }
 
 }

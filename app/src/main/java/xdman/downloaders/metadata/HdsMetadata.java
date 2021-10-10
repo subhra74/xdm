@@ -1,9 +1,32 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.downloaders.metadata;
 
 import org.tinylog.Logger;
+
 import xdman.XDMConstants;
 
 public class HdsMetadata extends HttpMetadata {
+
 	private int bitRate;
 
 	public HdsMetadata() {
@@ -19,22 +42,6 @@ public class HdsMetadata extends HttpMetadata {
 		super(id);
 	}
 
-//	@Override
-//	public void load(BufferedReader br) throws IOException {
-//		url = br.readLine();
-//		bitRate = Integer.parseInt(br.readLine());
-//		headers = new HeaderCollection();
-//		while (true) {
-//			String ln = br.readLine();
-//			if (ln == null)
-//				break;
-//			HttpHeader header = HttpHeader.parse(ln);
-//			if (header != null) {
-//				headers.addHeader(header);
-//			}
-//		}
-//	}
-
 	@Override
 	public HttpMetadata derive() {
 		Logger.info("derive hds metadata");
@@ -45,32 +52,6 @@ public class HdsMetadata extends HttpMetadata {
 		return md;
 	}
 
-//	@Override
-//	public void save() {
-//		FileWriter fw = null;
-//		try {
-//			File file = new File(Config.getInstance().getMetadataFolder(), id);
-//			fw = new FileWriter(file);
-//			fw.write(getType() + "\n");
-//			fw.write(url + "\n");
-//			fw.write(bitRate + "\n");
-//			Iterator<HttpHeader> headerIterator = headers.getAll();
-//			while (headerIterator.hasNext()) {
-//				HttpHeader header = headerIterator.next();
-//				fw.write(header.getName() + ":" + header.getValue() + "\n");
-//			}
-//			fw.close();
-//		} catch (Exception e) {
-//			Logger.log(e);
-//			if (fw != null) {
-//				try {
-//					fw.close();
-//				} catch (Exception ex) {
-//				}
-//			}
-//		}
-//	}
-
 	public int getBitRate() {
 		return bitRate;
 	}
@@ -78,4 +59,5 @@ public class HdsMetadata extends HttpMetadata {
 	public void setBitRate(int bitRate) {
 		this.bitRate = bitRate;
 	}
+
 }

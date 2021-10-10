@@ -1,17 +1,40 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.mediaconversion;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.tinylog.Logger;
+
 import xdman.ui.res.StringResource;
 
 public class FormatLoader {
+
 	public static List<FormatGroup> load() {
 		List<FormatGroup> list = new ArrayList<>();
 		try {
@@ -19,13 +42,13 @@ public class FormatLoader {
 			if (inStream == null) {
 				inStream = new FileInputStream("formats/format_db.txt");
 			}
-			InputStreamReader r = new InputStreamReader(inStream, Charset.forName("utf-8"));
+			InputStreamReader r = new InputStreamReader(inStream, StandardCharsets.UTF_8);
 
 			BufferedReader br = new BufferedReader(r);
 
 			while (true) {
 				String ln = br.readLine();
-				if (ln == null||ln.length() < 1) {
+				if (ln == null || ln.length() < 1) {
 					break;
 				}
 				FormatGroup fg = new FormatGroup();
@@ -59,13 +82,13 @@ public class FormatLoader {
 		List<String> list = format.getVideoCodecs();
 		if (list.size() > 0) {
 			Logger.info("\t\tVideo Codec:");
-			for (int i = 0; i < list.size(); i++) {
-				if (list.get(i).length() > 1) {
-					if (list.get(i).equals(format.getDefautVideoCodec())) {
+			for (String s : list) {
+				if (s.length() > 1) {
+					if (s.equals(format.getDefautVideoCodec())) {
 						Logger.info("*");
 					}
 
-					Logger.info(list.get(i) + " ");
+					Logger.info(s + " ");
 				}
 			}
 			Logger.info("\n");
@@ -74,13 +97,13 @@ public class FormatLoader {
 		list = format.getResolutions();
 		if (list.size() > 0) {
 			Logger.info("\t\tResolution:");
-			for (int i = 0; i < list.size(); i++) {
-				if (list.get(i).length() > 1) {
-					if (list.get(i).equals(format.getDefaultResolution())) {
+			for (String s : list) {
+				if (s.length() > 1) {
+					if (s.equals(format.getDefaultResolution())) {
 						Logger.info("*");
 					}
 
-					Logger.info(list.get(i) + " ");
+					Logger.info(s + " ");
 				}
 			}
 			Logger.info("\n");
@@ -89,15 +112,16 @@ public class FormatLoader {
 		list = format.getAudioChannel();
 		if (list.size() > 0) {
 			Logger.info("\t\tChannel:");
-			for (int i = 0; i < list.size(); i++) {
-				if (list.get(i).equals(format.getDefaultAudioChannel())) {
+			for (String s : list) {
+				if (s.equals(format.getDefaultAudioChannel())) {
 					Logger.info("*");
 				}
 
-				Logger.info(list.get(i) + " ");
+				Logger.info(s + " ");
 			}
 			Logger.info("\n");
 		}
 
 	}
+
 }

@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.components;
 
 import static xdman.util.XDMUtils.getScaledInt;
@@ -24,6 +45,8 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.LineBorder;
 
+import org.tinylog.Logger;
+
 import xdman.Config;
 import xdman.DownloadQueue;
 import xdman.QueueManager;
@@ -38,9 +61,9 @@ import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 import xdman.util.XDMUtils;
 
-import org.tinylog.Logger;
-
+@SuppressWarnings("FieldCanBeLocal")
 public class BatchVideoWnd extends JDialog implements ActionListener {
+
 	private static final long serialVersionUID = -6712422188220449618L;
 	private JTextField txtFile, txtQName;
 	private JLabel lblName;
@@ -50,7 +73,7 @@ public class BatchVideoWnd extends JDialog implements ActionListener {
 	private SimpleDateFormat dateFormat;
 	private JComboBox<MediaFormat> cmbOutFormat;
 
-	private ArrayList<VideoWrapper> items;
+	private final ArrayList<VideoWrapper> items;
 
 	public BatchVideoWnd(ArrayList<VideoWrapper> items) {
 		this.items = items;
@@ -89,7 +112,7 @@ public class BatchVideoWnd extends JDialog implements ActionListener {
 		closeBtn.setFocusPainted(false);
 		closeBtn.setName("CLOSE");
 
-		closeBtn.setIcon(ImageResource.getIcon("title_close.png",20,20));
+		closeBtn.setIcon(ImageResource.getIcon("title_close.png", 20, 20));
 		closeBtn.addActionListener(this);
 		titlePanel.add(closeBtn);
 
@@ -165,14 +188,6 @@ public class BatchVideoWnd extends JDialog implements ActionListener {
 		cmbQueOpts.setBounds(getScaledInt(97), getScaledInt(160), getScaledInt(200) - getScaledInt(20),
 				getScaledInt(23));
 		cmbQueOpts.addActionListener(this);
-		// cmbQueOpts.addItemListener(new ItemListener() {
-		//
-		// @Override
-		// public void itemStateChanged(ItemEvent e) {
-		// queueOptionUpdated();
-		//
-		// }
-		// });
 		add(cmbQueOpts);
 
 		lblName = new JLabel(StringResource.get("LBL_NEW_QUEUE"), JLabel.RIGHT);
@@ -190,10 +205,10 @@ public class BatchVideoWnd extends JDialog implements ActionListener {
 		txtQName.setText(getNewQueName());
 		add(txtQName);
 
-		queueModel = new DefaultComboBoxModel<DownloadQueue>();
+		queueModel = new DefaultComboBoxModel<>();
 		ArrayList<DownloadQueue> qlist = QueueManager.getInstance().getQueueList();
-		for (int i = 0; i < qlist.size(); i++) {
-			queueModel.addElement(qlist.get(i));
+		for (DownloadQueue downloadQueue : qlist) {
+			queueModel.addElement(downloadQueue);
 		}
 		cmbQueues = new JComboBox<>(queueModel);
 		cmbQueues.setRenderer(new QueueListRenderer());
@@ -229,17 +244,6 @@ public class BatchVideoWnd extends JDialog implements ActionListener {
 		btn.setFocusPainted(false);
 		btn.addActionListener(this);
 	}
-
-	// private JButton createButton(String name) {
-	// JButton btn = new CustomButton(StringResource.get(name));
-	// btn.setBackground(ColorResource.getDarkBtnColor());
-	// btn.setBorderPainted(false);
-	// btn.setFocusPainted(false);
-	// btn.setForeground(Color.WHITE);
-	// btn.setFont(FontResource.getNormalFont());
-	// btn.addActionListener(this);
-	// return btn;
-	// }
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
@@ -317,4 +321,5 @@ public class BatchVideoWnd extends JDialog implements ActionListener {
 		}
 
 	}
+
 }

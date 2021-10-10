@@ -1,6 +1,25 @@
-package xdman.mediaconversion;
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
 
-import org.tinylog.Logger;
+package xdman.mediaconversion;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -8,7 +27,11 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.tinylog.Logger;
+
+@SuppressWarnings("unused")
 public class Format {
+
 	public static String getBitRate(String s) {
 		try {
 			Double.parseDouble(s);
@@ -53,7 +76,6 @@ public class Format {
 			return "wmv1";
 		case "wmv v8":
 		case "wmv2":
-			return "wmv2";
 		case "wmv v9":
 		case "wmv3":
 			return "wmv2";
@@ -260,7 +282,7 @@ public class Format {
 	}
 
 	public String getList(List<String> list) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		boolean first = true;
 		if (list != null) {
 			for (String s : list) {
@@ -494,4 +516,5 @@ public class Format {
 	public void setVidExtra(String vidExtra) {
 		this.vidExtra = vidExtra;
 	}
+
 }

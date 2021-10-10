@@ -1,17 +1,48 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.components;
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.table.*;
+import javax.swing.Box;
+import javax.swing.Icon;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTable;
+import javax.swing.border.EmptyBorder;
+import javax.swing.table.TableCellRenderer;
 
-import xdman.ui.res.*;
+import xdman.DownloadEntry;
+import xdman.XDMConstants;
+import xdman.ui.res.ColorResource;
+import xdman.ui.res.FontResource;
+import xdman.ui.res.ImageResource;
 import xdman.util.FormatUtilities;
 import xdman.util.XDMUtils;
-import xdman.*;
 
 public class XDMTableCellRenderer implements TableCellRenderer {
 
@@ -41,22 +72,18 @@ public class XDMTableCellRenderer implements TableCellRenderer {
 		iconMap.put("other.png", ImageResource.getIcon("other.png", 48, 48));
 
 		iconLbl.setIcon(iconMap.get("document.png"));
-		// iconLbl.setBorder(new EmptyBorder(5,5,5,5));
 
 		titleLbl.setBackground(Color.WHITE);
 		titleLbl.setFont(FontResource.getItemFont());
 		titleLbl.setOpaque(false);
-		// title.setPreferredSize(new Dimension(64, 64));
 
 		statLbl.setBackground(Color.WHITE);
 		statLbl.setFont(FontResource.getNormalFont());
 		statLbl.setOpaque(false);
-		// status.setPreferredSize(new Dimension(64, 64));
 
 		dateLbl.setBackground(Color.WHITE);
 		dateLbl.setOpaque(false);
 		dateLbl.setFont(FontResource.getNormalFont());
-		// date.setPreferredSize(new Dimension(64, 64));
 
 		lineLbl = new JLabel();
 		lineLbl.setBackground(ColorResource.getWhite());

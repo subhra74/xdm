@@ -1,15 +1,37 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.downloaders;
 
-import java.io.*;
-
-import xdman.downloaders.http.HttpChannel;
+import java.io.InputStream;
 
 import org.tinylog.Logger;
 
+import xdman.downloaders.http.HttpChannel;
+
 public abstract class AbstractChannel implements Runnable {
+
 	protected Segment chunk;
 	private InputStream in;
-	private byte[] buf;
+	private final byte[] buf;
 	protected volatile boolean stop;
 	protected String errorMessage;
 	private boolean closed;
@@ -67,12 +89,11 @@ public abstract class AbstractChannel implements Runnable {
 					close();
 					break;
 				}
-				
-				// do not proceed if chunk is stoppped
+
 				if (chunk == null) {
 					continue;
 				}
-				
+
 				chunk.transferInitiated();
 				if (((chunk.getLength() > 0) ? copyStream1() : copyStream2())) {
 					Logger.info("Copy Stream finished");
@@ -130,17 +151,7 @@ public abstract class AbstractChannel implements Runnable {
 					return false;
 				}
 
-				// if (this.socketDataRemaining == 0) {
-				// // reuse socket and connect again as this connection has
-				// // consumed all data
-				// Logger.log(chunk + " length not satisfieble resending...");
-				// return false;
-				// }
-
 				int diff = (int) (rem > buf.length ? buf.length : rem);
-				// if (diff > this.socketDataRemaining) {
-				// diff = (int) this.socketDataRemaining;
-				// }
 
 				int x = in.read(buf, 0, diff);
 				if (stop)
@@ -154,7 +165,6 @@ public abstract class AbstractChannel implements Runnable {
 				if (stop)
 					return false;
 				chunk.setDownloaded(chunk.getDownloaded() + x);
-				// this.socketDataRemaining -= x;
 				chunk.transferring();
 			}
 			return false;

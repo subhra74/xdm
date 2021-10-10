@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.components;
 
 import static xdman.util.XDMUtils.getScaledInt;
@@ -31,6 +52,8 @@ import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
 
+import org.tinylog.Logger;
+
 import xdman.Config;
 import xdman.XDMApp;
 import xdman.downloaders.metadata.DashMetadata;
@@ -41,8 +64,6 @@ import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
-
-import org.tinylog.Logger;
 
 public class VideoPopup extends JDialog implements ActionListener, Comparator<VideoPopupItem> {
 
@@ -166,7 +187,7 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 			closeBtn.setFocusPainted(false);
 			closeBtn.setName("CLOSE");
 
-			closeBtn.setIcon(ImageResource.getIcon("title_close.png",20,20));
+			closeBtn.setIcon(ImageResource.getIcon("title_close.png", 20, 20));
 			closeBtn.setMargin(new Insets(0, 0, 0, 0));
 			closeBtn.addActionListener(this);
 			bottomPanel.add(closeBtn, BorderLayout.EAST);
@@ -185,7 +206,6 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 			bottomPanel.add(popupBtn);
 
 			itemPanel = new JPanel(new BorderLayout());
-			// itemPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 			itemPanel.setOpaque(false);
 
 			itemListBox = new JList<VideoPopupItem>(videoItems);
@@ -253,18 +273,6 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 		}
 	}
 
-	// public static void main(String[] args) {
-	// SwingUtilities.invokeLater(new Runnable() {
-	//
-	// @Override
-	// public void run() {
-	// new VideoPopup().setVisible(true);
-	//
-	// }
-	// });
-	//
-	// }
-
 	@Override
 	public synchronized void actionPerformed(ActionEvent e) {
 		String name = ((JComponent) e.getSource()).getName();
@@ -318,7 +326,7 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 			setLocation(getX(), initialY - preferedExpandedHeight + getHeight());
 			panel.add(bottomPanel, BorderLayout.SOUTH);
 			itemPanel.add(closePopupBtn, BorderLayout.NORTH);
-			closePopupBtn.setIcon(ImageResource.getIcon("down.png",10,10));
+			closePopupBtn.setIcon(ImageResource.getIcon("down.png", 10, 10));
 
 		} else {
 			if (screenHeight - getY() - bottomTaskbarHeight < preferedExpandedHeight) {
@@ -326,7 +334,7 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 			}
 			panel.add(bottomPanel, BorderLayout.NORTH);
 			itemPanel.add(closePopupBtn, BorderLayout.SOUTH);
-			closePopupBtn.setIcon(ImageResource.getIcon("up.png",10,10));
+			closePopupBtn.setIcon(ImageResource.getIcon("up.png", 10, 10));
 		}
 		setSize(getWidth(), preferedExpandedHeight);
 		revalidate();

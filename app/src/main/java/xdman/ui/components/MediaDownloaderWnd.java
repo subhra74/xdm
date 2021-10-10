@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.components;
 
 import static xdman.util.XDMUtils.getScaledInt;
@@ -40,6 +61,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.TableCellEditor;
 
+import org.tinylog.Logger;
+
 import xdman.Config;
 import xdman.XDMApp;
 import xdman.downloaders.metadata.DashMetadata;
@@ -60,8 +83,7 @@ import xdman.videoparser.YdlResponse.YdlMediaFormat;
 import xdman.videoparser.YdlResponse.YdlVideo;
 import xdman.videoparser.YoutubeDLHandler;
 
-import org.tinylog.Logger;
-
+@SuppressWarnings("ResultOfMethodCallIgnored")
 public class MediaDownloaderWnd extends JFrame implements ActionListener, ThumbnailListener, MediaImageSource {
 
 	/**
@@ -75,13 +97,11 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 	JScrollPane jsp;
 	private boolean stop;
 	JLabel lineLbl2;
-	// DefaultMutableTreeNode rootNode;
-	// JTree tree;
 	YoutubeDLHandler ydl;
 	private VideoTableModel model;
 	private JTable table;
 	private long instancekey;
-	private Map<String, ImageIcon> imageMap;
+	private final Map<String, ImageIcon> imageMap;
 	private ThumbnailDownloader thumbnailDownloader;
 	private JCheckBox chkSelectAll;
 	private JLabel lblUser, lblPass;
@@ -132,7 +152,7 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 		closeBtn.setFocusPainted(false);
 		closeBtn.setName("CLOSE");
 
-		closeBtn.setIcon(ImageResource.getIcon("title_close.png",20,20));
+		closeBtn.setIcon(ImageResource.getIcon("title_close.png", 20, 20));
 		closeBtn.addActionListener(this);
 		titlePanel.add(closeBtn);
 
@@ -165,7 +185,6 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 		add(prg);
 
 		txtURL = new JTextField();
-		//PopupAdapter.registerTxtPopup(txtURL);
 		txtURL.setBounds(getScaledInt(15), y, getWidth() - getScaledInt(30) - getScaledInt(110), h);
 		add(txtURL);
 
@@ -177,8 +196,8 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 		chkAdvanced = new JCheckBox(StringResource.get("SETTINGS_ADV"));
 		chkAdvanced.setName("LBL_USER_PASS");
 		chkAdvanced.setBackground(ColorResource.getDarkestBgColor());
-		chkAdvanced.setIcon(ImageResource.getIcon("unchecked.png",16,16));
-		chkAdvanced.setSelectedIcon(ImageResource.getIcon("checked.png",16,16));
+		chkAdvanced.setIcon(ImageResource.getIcon("unchecked.png", 16, 16));
+		chkAdvanced.setSelectedIcon(ImageResource.getIcon("checked.png", 16, 16));
 		chkAdvanced.addActionListener(this);
 		chkAdvanced.setForeground(Color.WHITE);
 		chkAdvanced.setFocusPainted(false);
@@ -222,17 +241,11 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 		table.setDefaultEditor(VideoItemWrapper.class, new VideoItemEditor(this));
 		table.setTableHeader(null);
 
-		// rootNode = new DefaultMutableTreeNode("Videos");
-		// tree = new JTree(rootNode);
-		// tree.setOpaque(false);
-
 		jsp = new JScrollPane();
-		// jsp = new JScrollPane(list);
 		jsp.setBounds(0, y1, getWidth(), h + getScaledInt(15));
 		jsp.setBorder(new EmptyBorder(0, 0, 0, 0));
 		jsp.getViewport().setBorder(null);
 		jsp.getViewport().setOpaque(false);
-		// jsp.setViewportView(tree);
 		jsp.setViewportView(table);
 		jsp.setOpaque(false);
 		DarkScrollBar scrollBar = new DarkScrollBar(JScrollBar.VERTICAL);
@@ -260,8 +273,8 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 
 		chkSelectAll = new JCheckBox(StringResource.get("LBL_SELECT_ALL"));
 		chkSelectAll.setBackground(ColorResource.getDarkestBgColor());
-		chkSelectAll.setIcon(ImageResource.getIcon("unchecked.png",16,16));
-		chkSelectAll.setSelectedIcon(ImageResource.getIcon("checked.png",16,16));
+		chkSelectAll.setIcon(ImageResource.getIcon("unchecked.png", 16, 16));
+		chkSelectAll.setSelectedIcon(ImageResource.getIcon("checked.png", 16, 16));
 		chkSelectAll.addActionListener(this);
 		chkSelectAll.setForeground(Color.WHITE);
 		chkSelectAll.setFocusPainted(false);
@@ -271,11 +284,6 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 		chkSelectAll.setName("SELECT_ALL");
 
 		add(chkSelectAll);
-		// btnQ = createButton("BTN_DOWNLOAD_LATER");
-		// btnQ.setBounds(getWidth() - 15 - 150 - 160, y, 150, h);
-		// btnQ.setName("BTN_Q");
-		// add(btnQ);
-		// btnQ.setVisible(false);
 
 		btnBack = createButton("BTN_BACK");
 		btnBack.setBounds(getScaledInt(15), y, getScaledInt(100), h);
@@ -359,7 +367,6 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 			if (table.isEditing()) {
 				table.getCellEditor().stopCellEditing();
 			}
-			// table.getDefaultEditor(YdlVideo.class).stopCellEditing();
 			model.clear();
 			prg.setVisible(false);
 			txtURL.setVisible(true);
@@ -374,7 +381,6 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 			lblUser.setVisible(chkAdvanced.isSelected());
 			lblPass.setVisible(chkAdvanced.isSelected());
 
-			// btnQ.setVisible(false);
 			jsp.setVisible(false);
 			lineLbl2.setVisible(false);
 			btnBack.setVisible(false);
@@ -416,7 +422,6 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 		btnDwn.setName("DOWNLOAD");
 		btnDwn.setText(StringResource.get("LBL_DOWNLOAD"));
 		btnDwn.setVisible(false);
-		// btnQ.setVisible(false);
 		jsp.setVisible(false);
 		btnBack.setVisible(false);
 		stop = true;
@@ -439,7 +444,6 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 		chkSelectAll.setVisible(true);
 		chkSelectAll.setSelected(true);
 		btnDwn.setText(StringResource.get("LBL_DOWNLOAD"));
-		// http://demo.unified-streaming.com/video/tears-of-steel/tears-of-steel.mp4/.m3u8
 		btnDwn.setVisible(true);
 		btnBack.setVisible(true);
 
@@ -458,85 +462,50 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 		}
 		thumbnailDownloader = new ThumbnailDownloader(thumbUrls, this, instancekey);
 		thumbnailDownloader.download();
-		// if (table.getRowCount() > 0) {
-		// table.setRowSelectionInterval(0, 0);
-		// }
-		// btnQ.setVisible(true);
 	}
 
 	private void getVideoItems(final String url) {
-		new Thread() {
-			@Override
-			public void run() {
-				try {
-					// rootNode.removeAllChildren();
-					ydl = new YoutubeDLHandler(url, txtUser.getText(), txtPassword.getText());
-					// https://www.youtube.com/watch?v=PMR0ld5h938
-					// "C:\\Users\\subhro\\Desktop\\ytdl\\youtube-dl.exe",
-					// url);//
-					// "https://www.youtube.com/user/koushks");//
-					// "https://www.youtube.com/watch?v=Yv2xctJxE-w&list=PL4AFF701184976B25");
-					// "http://demo.unified-streaming.com/video/tears-of-steel/tears-of-steel.ism/.m3u8");//
-					// "https://www.youtube.com/watch?v=Yv2xctJxE-w&list=PL4AFF701184976B25");
-					ydl.start();
-					SwingUtilities.invokeAndWait(new Runnable() {
-						@Override
-						public void run() {
-							ArrayList<VideoItemWrapper> list = new ArrayList<>();
-							Logger.info("Total video found: " + ydl.getVideos().size());
-							for (int i = 0; i < ydl.getVideos().size(); i++) {
-								YdlVideo ydln = ydl.getVideos().get(i);
-								if (ydln.mediaFormats == null || ydln.mediaFormats.size() < 1) {
-									Logger.warn("media formats not available");
-									continue;
-								}
-								VideoItemWrapper wrapper = new VideoItemWrapper();
-								wrapper.checked = true;
-								wrapper.videoItem = ydln;
-								list.add(wrapper);
-								// DefaultMutableTreeNode node = new DefaultMutableTreeNode(ydln.title);
-								// rootNode.add(node);
-								// for (int j = 0; j < ydln.mediaFormats.size(); j++) {
-								// YdlMediaFormat fmt = ydln.mediaFormats.get(j);
-								// DefaultMutableTreeNode node2 = new DefaultMutableTreeNode(fmt);
-								// node.add(node2);
-								// }
-							}
-							// if (rootNode.getChildCount() > 1) {
-							// tree.expandRow(0);
-							// } else {
-							// tree.expandRow(0);
-							// tree.expandRow(1);
-							// }
-							model.setList(list);
+		new Thread(() -> {
+			try {
+				ydl = new YoutubeDLHandler(url, txtUser.getText(), txtPassword.getText());
+				ydl.start();
+				SwingUtilities.invokeAndWait(() -> {
+					ArrayList<VideoItemWrapper> list = new ArrayList<>();
+					Logger.info("Total video found: " + ydl.getVideos().size());
+					for (int i = 0; i < ydl.getVideos().size(); i++) {
+						YdlVideo ydln = ydl.getVideos().get(i);
+						if (ydln.mediaFormats == null || ydln.mediaFormats.size() < 1) {
+							Logger.warn("media formats not available");
+							continue;
 						}
-					});
-				} catch (Exception e) {
-					Logger.error(e);
-				}
-				try {
-					SwingUtilities.invokeAndWait(new Runnable() {
-
-						@Override
-						public void run() {
-							if (!stop)
-								onVideoListReady();
-
-						}
-					});
-				} catch (InvocationTargetException |
-
-						InterruptedException e) {
-					Logger.error(e);
-				}
+						VideoItemWrapper wrapper = new VideoItemWrapper();
+						wrapper.checked = true;
+						wrapper.videoItem = ydln;
+						list.add(wrapper);
+					}
+					model.setList(list);
+				});
+			} catch (Exception e) {
+				Logger.error(e);
 			}
-		}.start();
+			try {
+				SwingUtilities.invokeAndWait(() -> {
+					if (!stop)
+						onVideoListReady();
+
+				});
+			} catch (InvocationTargetException |
+
+					InterruptedException e) {
+				Logger.error(e);
+			}
+		}).start();
 	}
 
 	private VideoWrapper createDownloadData(YdlVideo video) {
 		YdlMediaFormat fmt = video.mediaFormats.get(video.index);
 		String title = video.title;
-		String file = XDMUtils.getFileName(title) + "." + fmt.ext;
+		String file = XDMUtils.getFileName(title) + "." + fmt.extension;
 		HttpMetadata md = null;
 		switch (fmt.type) {
 		case YdlResponse.DASH_HTTP:
@@ -598,8 +567,8 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 
 	private void downloadBatch(ArrayList<YdlVideo> items) {
 		ArrayList<VideoWrapper> listWrap = new ArrayList<>();
-		for (int i = 0; i < items.size(); i++) {
-			VideoWrapper wp = createDownloadData(items.get(i));
+		for (YdlVideo item : items) {
+			VideoWrapper wp = createDownloadData(item);
 			if (wp != null) {
 				listWrap.add(wp);
 			}
@@ -634,14 +603,15 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 		btnStart.doClick();
 	}
 
-	class VideoWrapper {
+	static class VideoWrapper {
+
 		HttpMetadata md;
 		String file;
+
 	}
 
 	@Override
 	public void thumbnailsLoaded(long key, String url, String file) {
-		// this key is changed on each time start button is clicked
 		Logger.info("Thumbnail callback");
 		if (this.instancekey == key) {
 			for (int i = 0; i < model.getRowCount(); i++) {
@@ -687,15 +657,12 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 					int textWidth = g.getFontMetrics().stringWidth(sDuration);
 					int textHeight = g.getFontMetrics().getHeight();
 					int y = getScaledInt(92) - g.getFontMetrics().getDescent();// - textHeight +
-																				// g.getFontMetrics().getAscent() -
-					// g.getFontMetrics().getDescent();
 					g.fillRect(getScaledInt(119) - textWidth, getScaledInt(92) - textHeight, textWidth, textHeight);
 					g.setColor(Color.WHITE);
 					g.drawString(sDuration, getScaledInt(119) - textWidth, y);
 				}
 			}
 			g.dispose();
-			// scaledImg.flush();
 			img.flush();
 			return new ImageIcon(image);
 		} catch (Exception e) {
@@ -710,4 +677,5 @@ public class MediaDownloaderWnd extends JFrame implements ActionListener, Thumbn
 	public ImageIcon getImage(String url) {
 		return imageMap.get(url);
 	}
+
 }

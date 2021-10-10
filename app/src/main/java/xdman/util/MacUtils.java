@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.util;
 
 import java.io.File;
@@ -5,10 +26,13 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
+import java.util.Objects;
 
 import org.tinylog.Logger;
 
+@SuppressWarnings("ResultOfMethodCallIgnored")
 public class MacUtils {
+
 	public static void open(final File f) throws FileNotFoundException {
 		if (!f.exists()) {
 			throw new FileNotFoundException();
@@ -48,7 +72,7 @@ public class MacUtils {
 	private static void openFolder2(String folder) {
 		try {
 			ProcessBuilder builder = new ProcessBuilder();
-			ArrayList<String> lst = new ArrayList<String>();
+			ArrayList<String> lst = new ArrayList<>();
 			lst.add("open");
 			lst.add(folder);
 			builder.command(lst);
@@ -65,7 +89,6 @@ public class MacUtils {
 			if (pb.start().waitFor() != 0) {
 				throw new FileNotFoundException();
 			}
-			// Runtime.getRuntime().exec(new String[] { "open \"" + app + "\" " + args });
 			return true;
 		} catch (Exception e) {
 			Logger.error(e);
@@ -92,12 +115,7 @@ public class MacUtils {
 		} catch (Exception e) {
 			Logger.error(e);
 		} finally {
-			try {
-				if (fs != null)
-					fs.close();
-			} catch (Exception e2) {
-				Logger.error(e2);
-			}
+			IOUtils.closeFlow(fs);
 		}
 		f.setExecutable(true);
 	}
@@ -116,16 +134,11 @@ public class MacUtils {
 		} catch (Exception e) {
 			Logger.error(e);
 		} finally {
-			try {
-				if (in != null)
-					in.close();
-			} catch (Exception e2) {
-				Logger.error(e2);
-			}
+			IOUtils.closeFlow(in);
 		}
 		String str = new String(buf);
 		String s1 = getProperPath(System.getProperty("java.home"));
-		String s2 = XDMUtils.getJarFile().getAbsolutePath();
+		String s2 = Objects.requireNonNull(XDMUtils.getJarFile()).getAbsolutePath();
 		return str.contains(s1) && str.contains(s2);
 	}
 
@@ -148,7 +161,7 @@ public class MacUtils {
 				+ "		<true />\r\n" + "		<key>KeepAlive</key>\r\n" + "		<false />\r\n" + "	</dict>\r\n"
 				+ "</plist>";
 		String s1 = getProperPath(System.getProperty("java.home"));
-		String s2 = XDMUtils.getJarFile().getAbsolutePath();
+		String s2 = Objects.requireNonNull(XDMUtils.getJarFile()).getAbsolutePath();
 		return String.format(str, s1, s2);
 	}
 
@@ -171,7 +184,7 @@ public class MacUtils {
 	public static void initShutdown() {
 		try {
 			ProcessBuilder builder = new ProcessBuilder();
-			ArrayList<String> lst = new ArrayList<String>();
+			ArrayList<String> lst = new ArrayList<>();
 			lst.add("osascript");
 			lst.add("-e");
 			lst.add("tell app \"System Events\" to shut down");

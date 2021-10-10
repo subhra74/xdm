@@ -1,10 +1,30 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.util;
 
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.Iterator;
 import java.util.Map;
 
 import javax.swing.JOptionPane;
@@ -12,21 +32,18 @@ import javax.swing.JOptionPane;
 import org.tinylog.Logger;
 
 public class ParamUtils {
+
 	public static void sendParam(Map<String, String> params) {
-		StringBuffer sb = new StringBuffer();
-		Iterator<String> paramIter = params.keySet().iterator();
-		while (paramIter.hasNext()) {
-			String key = paramIter.next();
+		StringBuilder sb = new StringBuilder();
+		for (String key : params.keySet()) {
 			String value = params.get(key);
-			sb.append(key + ":" + value + "\n");
+			sb.append(key).append(":").append(value).append("\n");
 		}
 
-		InetAddress addr = InetAddress.getLoopbackAddress();
-
-		StringBuffer reqBuf = new StringBuffer();
+		StringBuilder reqBuf = new StringBuilder();
 		reqBuf.append("GET /cmd HTTP/1.1\r\n");
-		reqBuf.append("Content-Length: " + sb.length() + "\r\n");
-		reqBuf.append("Host: " + addr.getHostName() + "\r\n");
+		reqBuf.append("Content-Length: ").append(sb.length()).append("\r\n");
+		reqBuf.append("Host: ").append(InetAddress.getLoopbackAddress().getHostName()).append("\r\n");
 		reqBuf.append("Connection: close\r\n\r\n");
 		reqBuf.append(sb);
 		String resp = null;
@@ -41,13 +58,7 @@ public class ParamUtils {
 		} catch (Exception e) {
 			Logger.error(e);
 		} finally {
-			if (sock != null) {
-				try {
-					sock.close();
-				} catch (Exception e2) {
-					Logger.error(e2);
-				}
-			}
+			IOUtils.closeFlow(sock);
 		}
 
 		if (!"200".equals(resp)) {

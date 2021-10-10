@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.laf;
 
 import static xdman.util.XDMUtils.getScaledInt;
@@ -19,6 +40,7 @@ import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicMenuItemUI;
 
 import xdman.ui.res.ColorResource;
+
 public class XDMMenuItemUI extends BasicMenuItemUI {
 	Color colorSelect, colorBg;
 
@@ -32,10 +54,8 @@ public class XDMMenuItemUI extends BasicMenuItemUI {
 	}
 
 	@Override
-	protected Dimension getPreferredMenuItemSize(JComponent c, Icon checkIcon,
-			Icon arrowIcon, int defaultTextIconGap) {
-		Dimension d = super.getPreferredMenuItemSize(c, checkIcon, arrowIcon,
-				defaultTextIconGap);
+	protected Dimension getPreferredMenuItemSize(JComponent c, Icon checkIcon, Icon arrowIcon, int defaultTextIconGap) {
+		Dimension d = super.getPreferredMenuItemSize(c, checkIcon, arrowIcon, defaultTextIconGap);
 		return new Dimension(d.width + getScaledInt(10), d.height);
 	}
 
@@ -73,36 +93,15 @@ public class XDMMenuItemUI extends BasicMenuItemUI {
 		}
 		g.fillRect(0, 0, menuWidth, menuHeight);
 
-		if (model.isArmed()
-				|| (menuItem instanceof JMenu && model.isSelected())) {
+		if (model.isArmed() || (menuItem instanceof JMenu && model.isSelected())) {
 			paintButtonPressed(g, menuItem);
-		} else {
-			// if (menuItem.getIcon() != null) {
-			// int gap = menuItem.getIcon().getIconWidth() + 2;
-			// g.setColor(this.darkColor);
-			// g.drawLine(gap, 0, gap, menuItem.getHeight());
-			// g.setColor(this.lightColor);
-			// g.drawLine(gap + 1, 0, gap + 1, menuItem.getHeight());
-			// }
 		}
 
 		if (menuItem instanceof JCheckBoxMenuItem) {
-			if (((JCheckBoxMenuItem) menuItem).isSelected()) {
-				// chkIcon.paintIcon(menuItem, g, 5, 5);
-			}
+			menuItem.isSelected();
 		}
 
 		g.setColor(oldColor);
 	}
-	
-//	@Override
-//	public void paint(Graphics g, JComponent c) {
-//		Graphics2D g2d=(Graphics2D) g;
-//		Toolkit tk = Toolkit.getDefaultToolkit();
-//		Map map = (Map)(tk.getDesktopProperty("awt.font.desktophints"));
-//		if (map != null) {
-//		    g2d.addRenderingHints(map);
-//		}
-//		super.paint(g, c);
-//	}
+
 }

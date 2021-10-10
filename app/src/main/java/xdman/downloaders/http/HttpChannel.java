@@ -1,15 +1,37 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.downloaders.http;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
 import org.tinylog.Logger;
+
 import xdman.XDMConstants;
 import xdman.downloaders.AbstractChannel;
 import xdman.downloaders.Segment;
@@ -24,6 +46,7 @@ import xdman.network.http.XDMHttpClient;
 import xdman.util.XDMUtils;
 
 public class HttpChannel extends AbstractChannel {
+
 	protected String url;
 	protected HeaderCollection headers;
 	protected HttpClient hc;
@@ -35,8 +58,6 @@ public class HttpChannel extends AbstractChannel {
 	protected String redirectUrl;
 
 	public HttpChannel(Segment chunk, String url, HeaderCollection headers, long totalLength,
-			// it may be known from first connection
-			// if java client is required
 			boolean javaClientRequired) {
 		super(chunk);
 		this.url = url;
@@ -47,8 +68,8 @@ public class HttpChannel extends AbstractChannel {
 
 	@Override
 	protected boolean connectImpl() {
-		int sleepInterval = 0;
-		boolean isRedirect = false;
+		int sleepInterval;
+		boolean isRedirect;
 		if (stop) {
 			closeImpl();
 			return false;
@@ -90,13 +111,12 @@ public class HttpChannel extends AbstractChannel {
 				if (javaClientRequired) {
 					hc = new JavaHttpClient(url);
 				} else {
-					// this.socketDataRemaining = -1;
 					hc = new XDMHttpClient(url);
 				}
 
 				if (headers != null) {
 					Iterator<HttpHeader> headerIt = headers.getAll();
-					List<String> cookies = new ArrayList<String>();
+					List<String> cookies = new ArrayList<>();
 					while (headerIt.hasNext()) {
 						HttpHeader header = headerIt.next();
 						if (header.getName().toLowerCase(Locale.ENGLISH).equals("cookie")) {
@@ -109,9 +129,6 @@ public class HttpChannel extends AbstractChannel {
 				}
 
 				long length = chunk.getLength();
-
-				// hc.setHeader("user-agent", "Mozilla/5.0 (Windows NT 10.0;
-				// rv:51.0) Gecko/20100101 Firefox/51.0");
 
 				long startOff = chunk.getStartOffset() + chunk.getDownloaded();
 
@@ -204,8 +221,7 @@ public class HttpChannel extends AbstractChannel {
 							Logger.info((char) x + "\n");
 							bout.write(x);
 						}
-						byte[] buf = bout.toByteArray();
-						url = new String(buf, Charset.forName("ASCII"));
+						url = bout.toString(StandardCharsets.US_ASCII);
 						isRedirect = true;
 						throw new Exception("Youtube text redirect to: " + url);
 					}
@@ -217,20 +233,13 @@ public class HttpChannel extends AbstractChannel {
 					return false;
 				}
 
-				// first length will be used if this is the first thread
-				// otherwise its value will be lost
 				if ("HLS".equals(chunk.getTag())) {
 					firstLength = -1;
 				} else {
 					firstLength = hc.getContentLength();
 				}
-				// this.socketDataRemaining = firstLength;
-				// we should check content range header instead of this
 				if (length > 0) {
-					if (firstLength != expectedLength)
-					// if (chunk.getStartOffset() + chunk.getDownloaded()
-					// + firstLength != totalLength)
-					{
+					if (firstLength != expectedLength) {
 						Logger.info(chunk + " length mismatch: expected: " + expectedLength + " got: " + firstLength);
 						errorCode = XDMConstants.ERR_NO_RESUME;
 						closeImpl();

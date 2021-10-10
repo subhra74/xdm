@@ -1,9 +1,32 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.network.http.proxy;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings("unused")
 public final class BrowserProxyInfo {
+
 	private int type = 0;
 	private String _httpHost;
 	private int _httpPort = -1;
@@ -164,82 +187,4 @@ public final class BrowserProxyInfo {
 		return this._hintOnly;
 	}
 
-//  public String toString()
-//  {
-//    StringBuffer localStringBuffer = new StringBuffer();
-//    localStringBuffer.append(ResourceManager.getMessage("net.proxy.configuration.text"));
-//    switch (this.type)
-//    {
-//    case 3: 
-//      localStringBuffer.append(ResourceManager.getMessage("net.proxy.type.browser"));
-//      break;
-//    case 2: 
-//      localStringBuffer.append(ResourceManager.getMessage("net.proxy.type.auto"));
-//      localStringBuffer.append("\n");
-//      localStringBuffer.append("     URL: " + this._autoConfigURL);
-//      break;
-//    case 1: 
-//      localStringBuffer.append(ResourceManager.getMessage("net.proxy.type.manual"));
-//      localStringBuffer.append("\n");
-//      localStringBuffer.append("     " + ResourceManager.getMessage("net.proxy.text"));
-//      if (this._httpHost != null)
-//      {
-//        localStringBuffer.append("http=" + this._httpHost);
-//        if (this._httpPort != -1) {
-//          localStringBuffer.append(":" + this._httpPort);
-//        }
-//      }
-//      if (this._httpsHost != null)
-//      {
-//        localStringBuffer.append(",https=" + this._httpsHost);
-//        if (this._httpsPort != -1) {
-//          localStringBuffer.append(":" + this._httpsPort);
-//        }
-//      }
-//      if (this._ftpHost != null)
-//      {
-//        localStringBuffer.append(",ftp=" + this._ftpHost);
-//        if (this._ftpPort != -1) {
-//          localStringBuffer.append(":" + this._ftpPort);
-//        }
-//      }
-//      if (this._gopherHost != null)
-//      {
-//        localStringBuffer.append(",gopher=" + this._gopherHost);
-//        if (this._gopherPort != -1) {
-//          localStringBuffer.append(":" + this._gopherPort);
-//        }
-//      }
-//      if (this._socksHost != null)
-//      {
-//        localStringBuffer.append(",socks=" + this._socksHost);
-//        if (this._socksPort != -1) {
-//          localStringBuffer.append(":" + this._socksPort);
-//        }
-//      }
-//      localStringBuffer.append("\n");
-//      localStringBuffer.append("     " + ResourceManager.getMessage("net.proxy.override.text"));
-//      if (this._overrides != null)
-//      {
-//        int i = 1;
-//        for (int j = 0; j < this._overrides.length; j++)
-//        {
-//          if (j != 0) {
-//            localStringBuffer.append(",");
-//          }
-//          localStringBuffer.append(this._overrides[j]);
-//        }
-//      }
-//      break;
-//    case 0: 
-//      localStringBuffer.append(ResourceManager.getMessage("net.proxy.type.none"));
-//      break;
-//    case 4: 
-//      localStringBuffer.append(ResourceManager.getMessage("net.proxy.type.system"));
-//      break;
-//    default: 
-//      localStringBuffer.append("<Unrecognized Proxy Type>");
-//    }
-//    return localStringBuffer.toString();
-//  }
 }

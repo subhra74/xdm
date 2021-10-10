@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.mediaconversion;
 
 import java.io.BufferedReader;
@@ -7,24 +28,27 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import org.tinylog.Logger;
+
 import xdman.Config;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
 
+@SuppressWarnings("unused")
 public class FFmpeg {
+
 	public final static int FF_NOT_FOUND = 10, FF_LAUNCH_ERROR = 20, FF_CONVERSION_FAILED = 30, FF_SUCCESS = 0;
-	private MediaFormat outFormat;
-	private MediaConversionListener listener;
-	private boolean copy;
-	private List<String> inputFiles;
-	private String outputFile;
+	private final MediaFormat outFormat;
+	private final MediaConversionListener listener;
+	private final boolean copy;
+	private final List<String> inputFiles;
+	private final String outputFile;
 	private boolean hls;
 	private long totalDuration = 0;
 	private Process proc;
 	private int ffExitCode;
-	//private String preset = "ultrafast";
 	private String volume;
 	private boolean useHwAccel;
 
@@ -45,14 +69,14 @@ public class FFmpeg {
 			File ffFile = new File(Config.getInstance().getDataFolder(),
 					System.getProperty("os.name").toLowerCase().contains("windows") ? "ffmpeg.exe" : "ffmpeg");
 			if (!ffFile.exists()) {
-				ffFile = new File(XDMUtils.getJarFile().getParentFile(),
+				ffFile = new File(Objects.requireNonNull(XDMUtils.getJarFile()).getParentFile(),
 						System.getProperty("os.name").toLowerCase().contains("windows") ? "ffmpeg.exe" : "ffmpeg");
 				if (!ffFile.exists()) {
 					return FF_NOT_FOUND;
 				}
 			}
 
-			List<String> args = new ArrayList<String>();
+			List<String> args = new ArrayList<>();
 			args.add(ffFile.getAbsolutePath());
 
 			if (useHwAccel) {
@@ -67,9 +91,9 @@ public class FFmpeg {
 				args.add("0");
 			}
 
-			for (int i = 0; i < inputFiles.size(); i++) {
+			for (String inputFile : inputFiles) {
 				args.add("-i");
-				args.add(inputFiles.get(i));
+				args.add(inputFile);
 			}
 
 			if (copy) {
@@ -78,8 +102,6 @@ public class FFmpeg {
 				args.add("-vcodec");
 				args.add("copy");
 			} else {
-				// args.add("-f");
-				// args.add(outformat.getFormat());
 				if (outFormat.getResolution() != null) {
 					args.add("-s");
 					args.add(outFormat.getResolution());
@@ -120,9 +142,9 @@ public class FFmpeg {
 					args.add("-b:a");
 					args.add(outFormat.getAudio_bitrate());
 				}
-				if (isNumeric(outFormat.getSamplerate())) {
+				if (isNumeric(outFormat.getSampleRate())) {
 					args.add("-ar");
-					args.add(outFormat.getSamplerate());
+					args.add(outFormat.getSampleRate());
 				}
 				if (isNumeric(outFormat.getAudio_channel())) {
 					args.add("-ac");
@@ -139,34 +161,6 @@ public class FFmpeg {
 					args.add("volume=" + volume);
 				}
 			}
-
-			// if (!copy) {
-			// args.add("-preset");
-			// args.add(preset);
-			// }
-
-			// if (outformat.isAudioOnly()) {
-			// if (outformat.getWidth() > 0) {
-			// args.add("-b:a");
-			// args.add(outformat.getWidth() + "k");
-			// } else if (copy) {
-			// args.add("-acodec");
-			// args.add("copy");
-			// }
-			// } else {
-			// if (outformat.getWidth() > 0) {
-			// args.add("-vf");
-			// args.add("scale=" + outformat.getWidth() + ":" + outformat.getHeight());
-			// // args.add("scale=w=" + outformat.getWidth() + ":h=" +
-			// // outformat.getHeight()
-			// // + ":force_original_aspect_ratio=decrease");
-			// } else if (copy) {
-			// args.add("-acodec");
-			// args.add("copy");
-			// args.add("-vcodec");
-			// args.add("copy");
-			// }
-			// }
 
 			args.add(outputFile);
 			args.add("-y");
@@ -214,11 +208,11 @@ public class FFmpeg {
 		String[] arr = dur.split(":");
 		String s = arr[0].trim();
 		if (!StringUtils.isNullOrEmpty(s)) {
-			duration = Integer.parseInt(s, 10) * 3600;
+			duration = Integer.parseInt(s, 10) * 3600L;
 		}
 		s = arr[1].trim();
 		if (!StringUtils.isNullOrEmpty(s)) {
-			duration += Integer.parseInt(arr[1].trim(), 10) * 60;
+			duration += Integer.parseInt(arr[1].trim(), 10) * 60L;
 		}
 		s = arr[2].split("\\.")[0].trim();
 		if (!StringUtils.isNullOrEmpty(s)) {
@@ -303,4 +297,5 @@ public class FFmpeg {
 	public void setUseHwAccel(boolean useHwAccel) {
 		this.useHwAccel = useHwAccel;
 	}
+
 }

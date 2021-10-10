@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.components;
 
 import static xdman.util.XDMUtils.getScaledInt;
@@ -23,6 +44,8 @@ import javax.swing.JScrollPane;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import org.tinylog.Logger;
+
 import xdman.Config;
 import xdman.mediaconversion.Format;
 import xdman.mediaconversion.FormatGroup;
@@ -34,9 +57,8 @@ import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 import xdman.util.StringUtils;
 
-import org.tinylog.Logger;
-
 public class MediaFormatWnd extends JDialog implements ActionListener {
+
 	/**
 	 * 
 	 */
@@ -48,10 +70,9 @@ public class MediaFormatWnd extends JDialog implements ActionListener {
 
 	boolean selected;
 
-	MediaFormat fmt;
-	String text;
-	JList<Format> listFormat;
-	JComboBox<String> cmbSize, cmbAc, cmbAbr, cmbAsr, cmbVBR, cmbFrameRate, cmbResolution, cmbAudioCodec, cmbVideoCodec;
+	private MediaFormat fmt;
+	private JList<Format> listFormat;
+	private JComboBox<String> cmbSize, cmbAc, cmbAbr, cmbAsr, cmbVBR, cmbFrameRate, cmbResolution, cmbAudioCodec, cmbVideoCodec;
 
 	private void initUI() {
 		setUndecorated(true);
@@ -85,7 +106,7 @@ public class MediaFormatWnd extends JDialog implements ActionListener {
 		closeBtn.setFocusPainted(false);
 		closeBtn.setName("CLOSE");
 
-		closeBtn.setIcon(ImageResource.getIcon("title_close.png",20,20));
+		closeBtn.setIcon(ImageResource.getIcon("title_close.png", 20, 20));
 		closeBtn.addActionListener(this);
 		titlePanel.add(closeBtn);
 
@@ -105,7 +126,7 @@ public class MediaFormatWnd extends JDialog implements ActionListener {
 
 		List<FormatGroup> list = FormatLoader.load();
 		FormatGroup[] fgArr = new FormatGroup[list.size()];
-		fgArr = list.toArray(fgArr);
+		list.toArray(fgArr);
 
 		int y = getScaledInt(56);
 		y += getScaledInt(10);
@@ -127,7 +148,6 @@ public class MediaFormatWnd extends JDialog implements ActionListener {
 		listFormat.setCellRenderer(new MediaFormatRender());
 		listFormat.setFont(FontResource.getItemFont());
 		listFormat.setBackground(ColorResource.getDarkerBgColor());
-		// listFormat.setFixedCellHeight(56);
 		listFormat.setBorder(null);
 
 		JScrollPane jsp = new JScrollPane(listFormat);
@@ -144,23 +164,20 @@ public class MediaFormatWnd extends JDialog implements ActionListener {
 		jsp.getVerticalScrollBar().setUnitIncrement(getScaledInt(10));
 		jsp.getVerticalScrollBar().setBlockIncrement(getScaledInt(25));
 
-		cmbFormatGroup.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				int index = cmbFormatGroup.getSelectedIndex();
-				if (index < 0)
-					return;
-				FormatGroup fg = list.get(index);
-				List<Format> formats = fg.getFormats();
-				Logger.info(formats.size());
-				listModel.removeAllElements();
-				for (Format format : formats) {
-					listModel.addElement(format);
-				}
+		cmbFormatGroup.addActionListener(e -> {
+			int index = cmbFormatGroup.getSelectedIndex();
+			if (index < 0)
+				return;
+			FormatGroup fg = list.get(index);
+			List<Format> formats = fg.getFormats();
+			Logger.info(formats.size());
+			listModel.removeAllElements();
+			for (Format format : formats) {
+				listModel.addElement(format);
+			}
 
-				if (listModel.getSize() > 0) {
-					listFormat.setSelectedIndex(0);
-				}
+			if (listModel.getSize() > 0) {
+				listFormat.setSelectedIndex(0);
 			}
 		});
 
@@ -281,45 +298,43 @@ public class MediaFormatWnd extends JDialog implements ActionListener {
 		JButton btn = createButton2(StringResource.get("ND_CANCEL"));
 		btn.setName("CLOSE");
 		btn.addActionListener(this);
-		btn.setBounds(getBounds().width - getScaledInt(100) - getScaledInt(20), getHeight() - getScaledInt(45), getScaledInt(100), getScaledInt(30));
+		btn.setBounds(getBounds().width - getScaledInt(100) - getScaledInt(20), getHeight() - getScaledInt(45),
+				getScaledInt(100), getScaledInt(30));
 		add(btn);
 
 		JButton btn2 = createButton2(StringResource.get("MSG_OK"));
-		btn2.setBounds(getBounds().width - getScaledInt(100) - getScaledInt(20) - getScaledInt(100) - getScaledInt(10), getHeight() - getScaledInt(45), getScaledInt(100), getScaledInt(30));
+		btn2.setBounds(getBounds().width - getScaledInt(100) - getScaledInt(20) - getScaledInt(100) - getScaledInt(10),
+				getHeight() - getScaledInt(45), getScaledInt(100), getScaledInt(30));
 		btn2.setName("BTN_OK");
 		btn2.addActionListener(this);
 		add(btn2);
 
-		listFormat.addListSelectionListener(new ListSelectionListener() {
+		listFormat.addListSelectionListener(e -> {
 
-			@Override
-			public void valueChanged(ListSelectionEvent e) {
-
-				int index = listFormat.getSelectedIndex();
-				Logger.info("List selected " + index);
-				if (index < 0)
-					return;
-				Format fmt = listModel.get(index);
-				addToModel(modelVideoCodec, fmt.getVideoCodecs(),
-						fmt.getDefautValue(fmt.getVideoCodecs(), fmt.getDefautVideoCodec()), cmbVideoCodec);
-				addToModel(modelAudioCodec, fmt.getAudioCodecs(),
-						fmt.getDefautValue(fmt.getAudioCodecs(), fmt.getDefautAudioCodec()), cmbAudioCodec);
-				addToModel(modelResolution, fmt.getResolutions(),
-						fmt.getDefautValue(fmt.getResolutions(), fmt.getDefaultResolution()), cmbResolution);
-				addToModel(modelFrameRate, fmt.getFrameRate(),
-						fmt.getDefautValue(fmt.getFrameRate(), fmt.getDefaultFrameRate()), cmbFrameRate);
-				addToModel(modelVBR, fmt.getVideoBitrate(),
-						fmt.getDefautValue(fmt.getVideoBitrate(), fmt.getDefaultVideoBitrate()), cmbVBR);
-				addToModel(modelAsr, fmt.getAudioSampleRate(),
-						fmt.getDefautValue(fmt.getAudioSampleRate(), fmt.getDefaultAudioSampleRate()), cmbAsr);
-				addToModel(modelAbr, fmt.getAudioBitrate(),
-						fmt.getDefautValue(fmt.getAudioBitrate(), fmt.getDefaultAudioBitrate()), cmbAbr);
-				addToModel(modelSize, fmt.getAspectRatio(),
-						fmt.getDefautValue(fmt.getAspectRatio(), fmt.getDefaultAspectRatio()), cmbSize);
-				addToModel(modelAc, fmt.getAudioChannel(),
-						fmt.getDefautValue(fmt.getAudioChannel(), fmt.getDefaultAudioChannel()), cmbAc);
-				updateFormat();
-			}
+			int index = listFormat.getSelectedIndex();
+			Logger.info("List selected " + index);
+			if (index < 0)
+				return;
+			Format fmt = listModel.get(index);
+			addToModel(modelVideoCodec, fmt.getVideoCodecs(),
+					fmt.getDefautValue(fmt.getVideoCodecs(), fmt.getDefautVideoCodec()), cmbVideoCodec);
+			addToModel(modelAudioCodec, fmt.getAudioCodecs(),
+					fmt.getDefautValue(fmt.getAudioCodecs(), fmt.getDefautAudioCodec()), cmbAudioCodec);
+			addToModel(modelResolution, fmt.getResolutions(),
+					fmt.getDefautValue(fmt.getResolutions(), fmt.getDefaultResolution()), cmbResolution);
+			addToModel(modelFrameRate, fmt.getFrameRate(),
+					fmt.getDefautValue(fmt.getFrameRate(), fmt.getDefaultFrameRate()), cmbFrameRate);
+			addToModel(modelVBR, fmt.getVideoBitrate(),
+					fmt.getDefautValue(fmt.getVideoBitrate(), fmt.getDefaultVideoBitrate()), cmbVBR);
+			addToModel(modelAsr, fmt.getAudioSampleRate(),
+					fmt.getDefautValue(fmt.getAudioSampleRate(), fmt.getDefaultAudioSampleRate()), cmbAsr);
+			addToModel(modelAbr, fmt.getAudioBitrate(),
+					fmt.getDefautValue(fmt.getAudioBitrate(), fmt.getDefaultAudioBitrate()), cmbAbr);
+			addToModel(modelSize, fmt.getAspectRatio(),
+					fmt.getDefautValue(fmt.getAspectRatio(), fmt.getDefaultAspectRatio()), cmbSize);
+			addToModel(modelAc, fmt.getAudioChannel(),
+					fmt.getDefautValue(fmt.getAudioChannel(), fmt.getDefaultAudioChannel()), cmbAc);
+			updateFormat();
 		});
 
 		if (model.getSize() > 0) {
@@ -393,7 +408,7 @@ public class MediaFormatWnd extends JDialog implements ActionListener {
 		fmt.setAspectRatio(Format.getAspec(getCmbVal(cmbSize)));
 		fmt.setAudio_codec(Format.getCodecName(getCmbVal(cmbAudioCodec)));
 		fmt.setAudio_bitrate(Format.getBitRate(getCmbVal(cmbAbr)));
-		fmt.setSamplerate(getCmbVal(cmbAsr));
+		fmt.setSampleRate(getCmbVal(cmbAsr));
 		fmt.setAudio_channel(getCmbVal(cmbAc));
 		fmt.setVideo_param_extra(format.getVidExtra());
 	}

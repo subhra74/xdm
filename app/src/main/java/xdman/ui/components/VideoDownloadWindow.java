@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.ui.components;
 
 import static xdman.util.XDMUtils.getScaledInt;
@@ -27,6 +48,8 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.Document;
 
+import org.tinylog.Logger;
+
 import xdman.Config;
 import xdman.DownloadQueue;
 import xdman.XDMApp;
@@ -40,8 +63,6 @@ import xdman.ui.res.ImageResource;
 import xdman.ui.res.StringResource;
 import xdman.util.XDMUtils;
 
-import org.tinylog.Logger;
-
 public class VideoDownloadWindow extends JDialog implements ActionListener, DocumentListener {
 
 	private static final long serialVersionUID = 416356191545932172L;
@@ -49,16 +70,12 @@ public class VideoDownloadWindow extends JDialog implements ActionListener, Docu
 	private JPopupMenu pop;
 	private CustomButton btnMore, btnDN, btnCN;
 	private HttpMetadata metadata;
-	// private String folder;
 	private String queueId;
-	// private JComboBox<String> cmbStmAction;
 	private JComboBox<MediaFormat> cmbOutFormat;
 	private String originalExt;
-	// private DefaultComboBoxModel<MediaFormat> formatListModel;
 	private boolean dashAudioOnly;
 
 	public VideoDownloadWindow(HttpMetadata metadata, String file) {
-		// this.folder = Config.getInstance().getDownloadFolder();
 		this.metadata = metadata;
 		if (this.metadata == null) {
 			this.metadata = new HttpMetadata();
@@ -68,7 +85,6 @@ public class VideoDownloadWindow extends JDialog implements ActionListener, Docu
 
 		if (file != null && file.length() > 0) {
 			filePane.setFileName(file);
-			// txtFile.setCaretPosition(0);
 			originalExt = XDMUtils.getExtension(filePane.getFileName());
 		}
 
@@ -109,11 +125,7 @@ public class VideoDownloadWindow extends JDialog implements ActionListener, Docu
 					createPopup();
 				}
 				pop.show(btnMore, 0, btnMore.getHeight());
-			} 
-//			
-//			else if (name.equals("BROWSE_FOLDER")) {
-//				choseFolder();
-//			}
+			}
 		}
 	}
 
@@ -123,19 +135,6 @@ public class VideoDownloadWindow extends JDialog implements ActionListener, Docu
 			JOptionPane.showMessageDialog(this, StringResource.get("MSG_NO_URL"));
 			return;
 		}
-		// if (!XDMUtils.validateURL(urlStr)) {
-		// urlStr = "http://" + urlStr;
-		// if (!XDMUtils.validateURL(urlStr)) {
-		// JOptionPane.showMessageDialog(this,
-		// StringResource.get("MSG_INVALID_URL"));
-		// return;
-		// } else {
-		// txtURL.setText(urlStr);
-		// }
-		// }
-		// if (!urlStr.equals(metadata.getUrl())) {
-		// metadata.setUrl(urlStr);
-		// }
 		dispose();
 		Logger.info("file: " + filePane.getFileName());
 		if (filePane.getFileName().length() < 1) {
@@ -161,17 +160,6 @@ public class VideoDownloadWindow extends JDialog implements ActionListener, Docu
 		XDMApp.getInstance().createDownload(file, filePane.getFolder(), metadata, now, queueId, fmtIndex,
 				dashAudioOnly ? 1 : 0);
 	}
-
-	// private void choseFolder() {
-	// JFileChooser jfc =
-	// XDMFileChooser.getFileChooser(JFileChooser.DIRECTORIES_ONLY,
-	// new File(folder == null ? Config.getInstance().getDownloadFolder() :
-	// folder));
-	// if (jfc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-	// folder = jfc.getSelectedFile().getAbsolutePath();
-	// // Config.getInstance().setDownloadFolder(folder);
-	// }
-	// }
 
 	@Override
 	public void changedUpdate(DocumentEvent e) {
@@ -231,7 +219,7 @@ public class VideoDownloadWindow extends JDialog implements ActionListener, Docu
 		closeBtn.setFocusPainted(false);
 		closeBtn.setName("CLOSE");
 
-		closeBtn.setIcon(ImageResource.getIcon("title_close.png",20,20));
+		closeBtn.setIcon(ImageResource.getIcon("title_close.png", 20, 20));
 		closeBtn.addActionListener(this);
 		titlePanel.add(closeBtn);
 
@@ -251,29 +239,6 @@ public class VideoDownloadWindow extends JDialog implements ActionListener, Docu
 		filePane.setBounds(getScaledInt(90), getScaledInt(79), getScaledInt(277), getScaledInt(20));
 		add(filePane);
 
-		// txtFile = new JTextField();
-		// txtFile.setBorder(new LineBorder(ColorResource.getSelectionColor(), 1));
-		// txtFile.setBackground(ColorResource.getDarkestBgColor());
-		// txtFile.setForeground(Color.WHITE);
-		// txtFile.setBounds(getScaledInt(90), getScaledInt(79), getScaledInt(230),
-		// getScaledInt(20));
-		// txtFile.setCaretColor(ColorResource.getSelectionColor());
-		//
-		// add(txtFile);
-		//
-		// JButton browse = new CustomButton("...");
-		// browse.setName("BROWSE_FOLDER");
-		// browse.setMargin(new Insets(0, 0, 0, 0));
-		// browse.setBounds(getScaledInt(325), getScaledInt(79), getScaledInt(40),
-		// getScaledInt(20));
-		// browse.setFocusPainted(false);
-		// browse.setBackground(ColorResource.getDarkestBgColor());
-		// browse.setBorder(new LineBorder(ColorResource.getSelectionColor(), 1));
-		// browse.setForeground(Color.WHITE);
-		// browse.addActionListener(this);
-		// browse.setFont(FontResource.getItemFont());
-		// add(browse);
-
 		add(titlePanel);
 
 		JLabel lblFile = new JLabel(StringResource.get("ND_FILE"), JLabel.RIGHT);
@@ -292,35 +257,8 @@ public class VideoDownloadWindow extends JDialog implements ActionListener, Docu
 		cmbOutFormat.addActionListener(this);
 		cmbOutFormat.setOpaque(true);
 		cmbOutFormat.setBounds(getScaledInt(90), getScaledInt(111), getScaledInt(277), getScaledInt(20));
-		// cmbStmAction.setRenderer(new SimpleListRenderer());
 		cmbOutFormat.setName("FORMAT_SELECT");
 		add(cmbOutFormat);
-		// JLabel lblStream = new JLabel(StringResource.get("O_STM_FTM"), JLabel.RIGHT);
-		// lblStream.setFont(FontResource.getNormalFont());
-		// lblStream.setForeground(Color.WHITE);
-		// lblStream.setBounds(10, 111, 61, 20);
-		// add(lblStream);
-
-		// cmbStmAction = new JComboBox<String>(new String[] {
-		// StringResource.get("VID_FMT_BOTH"),
-		// StringResource.get("VID_FMT_AUDIO"), StringResource.get("VID_FMT_VIDEO") });
-		// // cmbStmAction.setBackground(ColorResource.getDarkerBgColor());
-		// cmbStmAction.addActionListener(this);
-		// cmbStmAction.setOpaque(true);
-		// cmbStmAction.setBounds(77, 111, 291, 20);
-		// // cmbStmAction.setRenderer(new SimpleListRenderer());
-		// cmbStmAction.setName("STREAM");
-		// add(cmbStmAction);
-
-		// txtFile = new JTextField();
-		// txtFile.setBorder(new LineBorder(ColorResource.getSelectionColor(),
-		// 1));
-		// txtFile.setBackground(ColorResource.getDarkestBgColor());
-		// txtFile.setForeground(Color.WHITE);
-		// txtFile.setBounds(77, 111, 241, 20);
-		// txtFile.setCaretColor(ColorResource.getSelectionColor());
-		//
-		// add(txtFile);
 
 		JPanel panel = new JPanel(null);
 		panel.setBounds(0, getScaledInt(155), getScaledInt(400), getScaledInt(55));
@@ -347,8 +285,6 @@ public class VideoDownloadWindow extends JDialog implements ActionListener, Docu
 		panel.add(btnCN);
 
 		Logger.info("Dash metadata? " + (metadata instanceof DashMetadata));
-		// cmbStmAction.setEnabled(metadata != null && metadata instanceof
-		// DashMetadata);
 
 		cmbOutFormat.setEnabled(XDMUtils.isFFmpegInstalled());
 
@@ -363,7 +299,6 @@ public class VideoDownloadWindow extends JDialog implements ActionListener, Docu
 		dl.addActionListener(this);
 		dl.setBackground(ColorResource.getDarkerBgColor());
 		dl.setBorderPainted(false);
-		// dl.setBackground(C);
 		pop.add(dl);
 
 		createQueueItems(dl);
@@ -398,42 +333,6 @@ public class VideoDownloadWindow extends JDialog implements ActionListener, Docu
 			queueMenuItem.add(mItem);
 		}
 	}
-
-	// private void updateAppliableFormats() {
-	// int index = cmbStmAction.getSelectedIndex();
-	// if (index < 0)
-	// return;
-	// MediaFormat[] fmts = MediaFormats.getSupportedFormats();
-	// formatListModel.removeAllElements();
-	// for (MediaFormat fmt : fmts) {
-	// if (index == 1) {
-	// if (fmt.isAudioOnly()) {
-	// formatListModel.addElement(fmt);
-	// }
-	// } else if (index == 2) {
-	// if (!fmt.isAudioOnly() && fmt.getWidth() > 0) {// skip default
-	// formatListModel.addElement(fmt);
-	// }
-	// } else {
-	// formatListModel.addElement(fmt);
-	// }
-	// }
-	// }
-
-	// private int getFormatIndex(int relativeIndex) {
-	// if (relativeIndex < 0)
-	// return 0;
-	// MediaFormat format = formatListModel.getElementAt(relativeIndex);
-	// int index = 0;
-	// for (MediaFormat fmt : MediaFormats.getSupportedFormats()) {
-	// if (format == fmt) {
-	// Logger.log("Format index: " + index);
-	// return index;
-	// }
-	// index++;
-	// }
-	// return 0;
-	// }
 
 	private void updateFileExtension() {
 		String file = XDMUtils.getFileNameWithoutExtension(filePane.getFileName());

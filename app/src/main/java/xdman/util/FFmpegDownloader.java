@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.util;
 
 import java.io.File;
@@ -8,6 +29,8 @@ import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import org.tinylog.Logger;
+
 import xdman.Config;
 import xdman.DownloadListener;
 import xdman.DownloadWindowListener;
@@ -17,14 +40,15 @@ import xdman.downloaders.metadata.HttpMetadata;
 import xdman.ui.components.DownloadWindow;
 import xdman.ui.components.FFmpegExtractorWnd;
 
-import org.tinylog.Logger;
-
+@SuppressWarnings({ "ResultOfMethodCallIgnored", "unused" })
 public class FFmpegDownloader implements DownloadListener, DownloadWindowListener, FFExtractCallback {
-	HttpDownloader d;
-	DownloadWindow wnd;
-	String url = "http://xdman.sourceforge.net/components/";
-	String tmpFile;
-	boolean stop;
+
+	private FFmpegExtractorWnd wnd2;
+	private HttpDownloader d;
+	private DownloadWindow wnd;
+	private String url = "http://xdman.sourceforge.net/components/";
+	private final String tmpFile;
+	private boolean stop;
 
 	private static final String XP_COMPONENT = "xp.zip", WIN7_COMPONENT = "win.zip", MAC_COMPONENT = "mac.zip",
 			LINUX32_COMPONENT = "linux32.zip", LINUX64_COMPONENT = "linux64.zip";
@@ -32,60 +56,58 @@ public class FFmpegDownloader implements DownloadListener, DownloadWindowListene
 	public FFmpegDownloader() {
 		if (XDMUtils.detectOS() == XDMUtils.WINDOWS) {
 			if (XDMUtils.below7()) {
-				url += XP_COMPONENT;
+				this.url += XP_COMPONENT;
 			} else {
-				url += WIN7_COMPONENT;
+				this.url += WIN7_COMPONENT;
 			}
 		} else if (XDMUtils.detectOS() == XDMUtils.MAC) {
-			url += MAC_COMPONENT;
+			this.url += MAC_COMPONENT;
 		} else if (XDMUtils.detectOS() == XDMUtils.LINUX) {
 			if (XDMUtils.getOsArch() == 32) {
-				url += LINUX32_COMPONENT;
+				this.url += LINUX32_COMPONENT;
 			} else {
-				url += LINUX64_COMPONENT;
+				this.url += LINUX64_COMPONENT;
 			}
 		}
-		tmpFile = UUID.randomUUID().toString();
+		this.tmpFile = UUID.randomUUID().toString();
 	}
 
 	public void start() {
 		HttpMetadata metadata = new HttpMetadata();
-		metadata.setUrl(url);
-		Logger.info(url);
-		d = new HttpDownloader(metadata.getId(), Config.getInstance().getTemporaryFolder(), metadata);
-		d.registerListener(this);
-		d.start();
-		wnd = new DownloadWindow(metadata.getId(), this);
-		wnd.setVisible(true);
+		metadata.setUrl(this.url);
+		Logger.info(this.url);
+		this.d = new HttpDownloader(metadata.getId(), Config.getInstance().getTemporaryFolder(), metadata);
+		this.d.registerListener(this);
+		this.d.start();
+		this.wnd = new DownloadWindow(metadata.getId(), this);
+		this.wnd.setVisible(true);
 	}
 
 	@Override
 	public void downloadFinished(String id) {
 		extractFFmpeg();
-		wnd.close(XDMConstants.FINISHED, 0);
+		this.wnd.close(XDMConstants.FINISHED, 0);
 	}
 
 	@Override
 	public void downloadFailed(String id) {
-		wnd.close(XDMConstants.FAILED, d.getErrorCode());
+		this.wnd.close(XDMConstants.FAILED, this.d.getErrorCode());
 		deleteTmpFiles(id);
 	}
 
 	@Override
 	public void downloadStopped(String id) {
-		wnd.close(XDMConstants.PAUSED, 0);
+		this.wnd.close(XDMConstants.PAUSED, 0);
 		deleteTmpFiles(id);
 	}
 
 	@Override
 	public void downloadConfirmed(String id) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void downloadUpdated(String id) {
-		wnd.update(d, "Components");
+		this.wnd.update(d, "Components");
 	}
 
 	@Override
@@ -95,21 +117,19 @@ public class FFmpegDownloader implements DownloadListener, DownloadWindowListene
 
 	@Override
 	public String getOutputFile(String id, boolean update) {
-		return tmpFile;
+		return this.tmpFile;
 	}
 
 	@Override
 	public void pauseDownload(String id) {
-		if (d != null) {
-			d.stop();
-			d.unregisterListener();
+		if (this.d != null) {
+			this.d.stop();
+			this.d.unregisterListener();
 		}
 	}
 
 	@Override
 	public void hidePrgWnd(String id) {
-		// TODO Auto-generated method stub
-
 	}
 
 	private void deleteTmpFiles(String id) {
@@ -129,16 +149,14 @@ public class FFmpegDownloader implements DownloadListener, DownloadWindowListene
 		Logger.info("Deleted tmp folder " + id + " " + deleted);
 	}
 
-	FFmpegExtractorWnd wnd2;
-
 	private void extractFFmpeg() {
 		ZipInputStream zipIn = null;
 		OutputStream out = null;
-		wnd2 = new FFmpegExtractorWnd(this);
-		wnd2.setVisible(true);
+		this.wnd2 = new FFmpegExtractorWnd(this);
+		this.wnd2.setVisible(true);
 		try {
 			String versionFile = null;
-			File input = new File(Config.getInstance().getTemporaryFolder(), tmpFile);
+			File input = new File(Config.getInstance().getTemporaryFolder(), this.tmpFile);
 			zipIn = new ZipInputStream(new FileInputStream(input));
 
 			while (true) {
@@ -158,12 +176,11 @@ public class FFmpegDownloader implements DownloadListener, DownloadWindowListene
 						break;
 					out.write(buf, 0, x);
 				}
-				out.close();
+				IOUtils.closeFlow(out);
 				out = null;
 				outFile.setExecutable(true);
 			}
 
-			// remove old x.version files if exists
 			try {
 				if (Config.getInstance().getDataFolder() != null) {
 					File[] files = new File(Config.getInstance().getDataFolder()).listFiles();
@@ -178,25 +195,20 @@ public class FFmpegDownloader implements DownloadListener, DownloadWindowListene
 			} catch (Exception e) {
 				Logger.error(e);
 			}
-
 			input.delete();
-			wnd2.dispose();
+			this.wnd2.dispose();
 		} catch (Exception e) {
 			Logger.error(e);
 		} finally {
-			try {
-				zipIn.close();
-				if (out != null)
-					out.close();
-			} catch (Exception e) {
-				Logger.error(e);
-			}
+			IOUtils.closeFlow(zipIn);
+			IOUtils.closeFlow(out);
 		}
 	}
 
 	public void stop() {
-		if (wnd2 != null)
-			wnd2.dispose();
+		if (this.wnd2 != null) {
+			this.wnd2.dispose();
+		}
 	}
 
 }

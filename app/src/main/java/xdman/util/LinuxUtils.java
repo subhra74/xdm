@@ -1,3 +1,24 @@
+/*
+ * Copyright (c)  Subhra Das Gupta
+ *
+ * This file is part of Xtreme Download Manager.
+ *
+ * Xtreme Download Manager is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Xtreme Download Manager is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with Xtream Download Manager; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ */
+
 package xdman.util;
 
 import java.io.BufferedReader;
@@ -6,11 +27,13 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
+import java.util.Objects;
 
 import org.tinylog.Logger;
 
+@SuppressWarnings("ResultOfMethodCallIgnored")
 public class LinuxUtils {
-	static String shutdownCmds[] = {
+	static String[] shutdownCmds = {
 			"dbus-send --system --print-reply --dest=org.freedesktop.login1 /org/freedesktop/login1 \"org.freedesktop.login1.Manager.PowerOff\" boolean:true",
 			"dbus-send --system --print-reply --dest=\"org.freedesktop.ConsoleKit\" /org/freedesktop/ConsoleKit/Manager org.freedesktop.ConsoleKit.Manager.Stop",
 			"systemctl poweroff" };
@@ -36,7 +59,7 @@ public class LinuxUtils {
 		try {
 			ProcessBuilder pb = new ProcessBuilder();
 			pb.command("xdg-open", f.getAbsolutePath());
-			pb.start();// .waitFor();
+			pb.start();
 		} catch (Exception e) {
 			Logger.error(e);
 		}
@@ -62,12 +85,7 @@ public class LinuxUtils {
 		} catch (Exception e) {
 			Logger.error(e);
 		} finally {
-			try {
-				if (fs != null)
-					fs.close();
-			} catch (Exception e2) {
-				Logger.error(e2);
-			}
+			IOUtils.closeFlow(fs);
 		}
 		f.setExecutable(true);
 	}
@@ -86,17 +104,12 @@ public class LinuxUtils {
 		} catch (Exception e) {
 			Logger.error(e);
 		} finally {
-			try {
-				if (in != null)
-					in.close();
-			} catch (Exception e2) {
-				Logger.error(e2);
-			}
+			IOUtils.closeFlow(in);
 		}
-		String str=new String(buf);
+		String str = new String(buf);
 		String s1 = getProperPath(System.getProperty("java.home"));
-		String s2 = XDMUtils.getJarFile().getAbsolutePath();
-		return str.contains(s1)&&str.contains(s2);
+		String s2 = Objects.requireNonNull(XDMUtils.getJarFile()).getAbsolutePath();
+		return str.contains(s1) && str.contains(s2);
 	}
 
 	public static void removeFromStartup() {
@@ -106,8 +119,9 @@ public class LinuxUtils {
 
 	private static String getDesktopFileString() {
 		String str = "[Desktop Entry]\r\n" + "Encoding=UTF-8\r\n" + "Version=1.0\r\n" + "Type=Application\r\n"
-				+ "Terminal=false\r\n" + "Exec=\"%sbin/java\" -Xmx1024m -jar \"%s\" -m\r\n" + "Name=Xtreme Download Manager\r\n"
-				+ "Comment=Xtreme Download Manager\r\n" + "Categories=Network;\r\n" + "Icon=/opt/xdman/icon.png";
+				+ "Terminal=false\r\n" + "Exec=\"%sbin/java\" -Xmx1024m -jar \"%s\" -m\r\n"
+				+ "Name=Xtreme Download Manager\r\n" + "Comment=Xtreme Download Manager\r\n" + "Categories=Network;\r\n"
+				+ "Icon=/opt/xdman/icon.png";
 		String s1 = getProperPath(System.getProperty("java.home"));
 		String s2 = XDMUtils.getJarFile().getAbsolutePath();
 		return String.format(str, s1, s2);
@@ -118,21 +132,22 @@ public class LinuxUtils {
 			return path;
 		return path + "/";
 	}
-	
+
 	public static void browseURL(final String url) {
 		try {
 			ProcessBuilder pb = new ProcessBuilder();
 			pb.command("xdg-open", url);
-			pb.start();// .waitFor();
+			pb.start();
 		} catch (Exception e) {
 			Logger.error(e);
 		}
 	}
-	
-	public static String getXDGDownloaDir() {
+
+	public static String getXDGDownloadDir() {
 		BufferedReader br = null;
 		try {
-			br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(System.getProperty("user.home"),".config/user-dirs.dirs"))));
+			br = new BufferedReader(new InputStreamReader(
+					new FileInputStream(new File(System.getProperty("user.home"), ".config/user-dirs.dirs"))));
 			while (true) {
 				String line = br.readLine();
 				if (line == null) {
@@ -153,13 +168,7 @@ public class LinuxUtils {
 		} catch (Exception e) {
 			Logger.error(e);
 		} finally {
-			if (br != null) {
-				try {
-					br.close();
-				} catch (Exception e2) {
-					Logger.error(e2);
-				}
-			}
+			IOUtils.closeFlow(br);
 		}
 		return null;
 	}
