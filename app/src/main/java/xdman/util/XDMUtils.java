@@ -64,7 +64,7 @@ public class XDMUtils {
 	static String[] vid = { ".mpg", ".mpeg", ".avi", ".flv", ".asf", ".mov", ".mpe", ".wmv", ".mkv", ".mp4", ".3gp",
 			".divx", ".vob", ".webm", ".ts" };
 	static String[] prog = { ".exe", ".msi", ".bin", ".sh", ".deb", ".cab", ".cpio", ".dll", ".jar", "rpm", ".run",
-			".py", ".AppImage", ".out" };
+			".py", ".AppImage", ".out", ".so" };
 	private static int screenType = -1;
 
 	public static String decodeFileName(String encoded) {
