@@ -27,9 +27,9 @@ import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
-import java.awt.image.ImageObserver;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Objects;
 
 import javax.imageio.ImageIO;
 import javax.swing.Icon;
@@ -42,8 +42,10 @@ public class ImageResource {
 	public static Image getImage(String name) {
 		try {
 			URL url = ImageResource.class.getResource("/icons/xxhdpi/" + name);
-			Logger.info("Loading image from url: " + url);
-			return ImageIO.read(url);
+			if (url != null ){
+				Logger.info("Loading image from url: " + url);
+				return ImageIO.read(url);
+			}
 		} catch (IOException e) {
 			Logger.error(e);
 		}
@@ -52,18 +54,13 @@ public class ImageResource {
 
 	public static Icon getIcon(String icon, int width, int height) {
 		try {
-			BufferedImage image = ImageIO.read(ImageResource.class.getResource("/icons/xxhdpi/" + icon));
+			BufferedImage image = ImageIO.read(Objects.requireNonNull(ImageResource.class.getResource("/icons/xxhdpi/" + icon)));
 			BufferedImage scaledImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 
 			Graphics2D g2 = scaledImage.createGraphics();
 			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 			g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-			g2.drawImage(image, 0, 0, width, height, new ImageObserver() {
-				@Override
-				public boolean imageUpdate(Image img, int infoflags, int x, int y, int width, int height) {
-					return true;
-				}
-			});
+			g2.drawImage(image, 0, 0, width, height, (img, infoflags, x, y, width1, height1) -> true);
 			g2.dispose();
 			image.flush();
 			return new Icon() {
