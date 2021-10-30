@@ -39,7 +39,7 @@ public class UpdateChecker {
 	public static final int APP_UPDATE_AVAILABLE = 10, COMP_UPDATE_AVAILABLE = 20, COMP_NOT_INSTALLED = 30,
 			NO_UPDATE_AVAILABLE = 40;
 
-	private static final Pattern PATTERN_TAG = Pattern.compile("\\\"tag_name\\\"\\s*:\\s*\\\"(\\d+\\.\\d+\\.\\d+)\\\"");
+	private static final Pattern PATTERN_TAG = Pattern.compile("\"tag_name\"\\s*:\\s*\"(\\d+\\.\\d+\\.\\d+)\"");
 
 	public static int getUpdateStat() {
 		Logger.info("checking for app update");
