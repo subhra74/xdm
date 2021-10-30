@@ -26,7 +26,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Objects;
 
 import org.tinylog.Logger;
@@ -146,21 +147,20 @@ public class LinuxUtils {
 	public static String getXDGDownloadDir() {
 		BufferedReader br = null;
 		try {
-			br = new BufferedReader(new InputStreamReader(
-					new FileInputStream(new File(System.getProperty("user.home"), ".config/user-dirs.dirs"))));
+			String userHome = System.getProperty("user.home");
+			br = Files.newBufferedReader(Paths.get(userHome + "/.config/user-dirs.dirs"));
 			while (true) {
 				String line = br.readLine();
 				if (line == null) {
 					break;
 				}
 				if (line.startsWith("XDG_DOWNLOAD_DIR")) {
-					int index = line.indexOf("=");
-					if (index != -1) {
-						String path = line.substring(index + 1).trim();
-						path = path.replace("$HOME", System.getProperty("user.home"));
-						File f = new File(path);
-						if (f.exists()) {
-							return f.getAbsolutePath();
+					String[] lines = line.split("=");
+					if (lines.length > 0)  {
+						String path = lines[1].replace("\"", "").replace("$HOME", userHome);
+						File downloadDir = new File(path);
+						if (downloadDir.exists()) {
+							return downloadDir.getAbsolutePath();
 						}
 					}
 				}
