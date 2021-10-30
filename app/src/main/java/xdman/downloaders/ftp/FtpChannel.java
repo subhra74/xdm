@@ -142,7 +142,7 @@ public class FtpChannel extends AbstractChannel {
 
 				if (hc.getContentLength() > 0 && XDMUtils.getFreeSpace(null) < hc.getContentLength()) {
 					Logger.warn("Disk is full");
-					errorCode = XDMConstants.DISK_FAIURE;
+					errorCode = XDMConstants.DISK_FAILURE;
 					closeImpl();
 					return false;
 				}

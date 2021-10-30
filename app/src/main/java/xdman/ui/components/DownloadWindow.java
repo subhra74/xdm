@@ -395,7 +395,7 @@ public class DownloadWindow extends JFrame implements ActionListener {
 		case XDMConstants.RESUME_FAILED:
 			txtError.setText(StringResource.get("RESUME_FAILED"));
 			return;
-		case XDMConstants.DISK_FAIURE:
+		case XDMConstants.DISK_FAILURE:
 			txtError.setText(StringResource.get("ERR_DISK_FAILED"));
 			return;
 		default:
