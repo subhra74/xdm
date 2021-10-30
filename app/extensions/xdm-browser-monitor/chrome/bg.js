@@ -1,11 +1,11 @@
 (function () {
     var requests = [];
-    var blockedHosts = ["update.microsoft.com", "windowsupdate.com", "thwawte.com" ];
-    var videoUrls = [ ".facebook.com|pagelet", "player.vimeo.com/", "instagram.com/p/"];
+    var blockedHosts = ["update.microsoft.com", "windowsupdate.com", "thwawte.com"];
+    var videoUrls = [".facebook.com|pagelet", "player.vimeo.com/", "instagram.com/p/"];
     var fileExts = ["3GP", "7Z", "AVI", "BZ2", "DEB", "DOC", "DOCX", "EXE", "GZ", "ISO",
-    "MSI", "PDF", "PPT", "PPTX", "RAR", "RPM", "XLS", "XLSX", "SIT", "SITX", "TAR", "JAR", "ZIP", "XZ"];
+        "MSI", "PDF", "PPT", "PPTX", "RAR", "RPM", "XLS", "XLSX", "SIT", "SITX", "TAR", "JAR", "ZIP", "XZ"];
     var vidExts = ["MP4", "M3U8", "F4M", "WEBM", "OGG", "MP3", "AAC", "FLV", "MKV", "DIVX",
-    "MOV", "MPG", "MPEG", "OPUS"];
+        "MOV", "MPG", "MPEG", "OPUS"];
     var isXDMUp = true;
     var monitoring = true;
     var debug = false;
@@ -60,7 +60,7 @@
             }
             log(data);
 
-            port.postMessage({"message":(video ? "/video" : "/download")+"\r\n"+data});
+            port.postMessage({ "message": (video ? "/video" : "/download") + "\r\n" + data });
             // var xhr = new XMLHttpRequest();
             // xhr.open('POST', xdmHost + (video ? "/video" : "/download"), true);
             // xhr.send(data);
@@ -71,7 +71,7 @@
         if (index == urls.length - 1) {
             log(data);
 
-            port.postMessage({"message":"/links"+"\r\n"+data});
+            port.postMessage({ "message": "/links" + "\r\n" + data });
 
             // var xhr = new XMLHttpRequest();
             // xhr.open('POST', xdmHost + "/links", true);
@@ -106,7 +106,7 @@
             }
             log(data);
 
-            port.postMessage({"message":"/download"+"\r\n"+data});
+            port.postMessage({ "message": "/download" + "\r\n" + data });
 
             // var xhr = new XMLHttpRequest();
             // xhr.open('POST', xdmHost + "/download", true);
@@ -163,7 +163,7 @@
     };
 
     var isVideoMime = function (mimeText) {
-        if(!mimeList){
+        if (!mimeList) {
             return false;
         }
         var mime = mimeText.toLowerCase();
@@ -176,7 +176,7 @@
     }
 
     var checkForVideo = function (request, response) {
-        
+
         var mime = "";
         var video = false;
         var url = response.url;
@@ -188,11 +188,11 @@
             }
         }
 
-        
+
 
         if (mime.startsWith("audio/") || mime.startsWith("video/") ||
             mime.indexOf("mpegurl") > 0 || mime.indexOf("f4m") > 0 || isVideoMime(mime)) {
-                log("Checking video mime: "+mime+" "+JSON.stringify(mimeList));
+            log("Checking video mime: " + mime + " " + JSON.stringify(mimeList));
             video = true;
         }
 
@@ -238,10 +238,10 @@
             if (request.tabId != -1) {
                 chrome.tabs.get
                     (
-                    request.tabId,
-                    function (tab) {
-                        sendToXDM(request, response, tab.title, true);
-                    }
+                        request.tabId,
+                        function (tab) {
+                            sendToXDM(request, response, tab.title, true);
+                        }
                     );
             } else {
                 sendToXDM(request, response, null, true);
@@ -432,24 +432,24 @@
         //the object is removed from array when request completes or fails
         chrome.webRequest.onSendHeaders.addListener
             (
-            function (info) { requests.push(info); },
-            { urls: ["http://*/*", "https://*/*"] },
-            ["requestHeaders","extraHeaders"]
+                function (info) { requests.push(info); },
+                { urls: ["http://*/*", "https://*/*"] },
+                ["requestHeaders", "extraHeaders"]
             );
         chrome.webRequest.onCompleted.addListener
             (
-            function (info) {
-                removeRequest(info.requestId);
-            },
-            { urls: ["http://*/*", "https://*/*"] }
+                function (info) {
+                    removeRequest(info.requestId);
+                },
+                { urls: ["http://*/*", "https://*/*"] }
             );
 
         chrome.webRequest.onErrorOccurred.addListener
             (
-            function (info) {
-                removeRequest(info.requestId);
-            },
-            { urls: ["http://*/*", "https://*/*"] }
+                function (info) {
+                    removeRequest(info.requestId);
+                },
+                { urls: ["http://*/*", "https://*/*"] }
             );
 
         //This will monitor and intercept files download if 
@@ -457,36 +457,36 @@
         //Use request array to get request headers
         chrome.webRequest.onHeadersReceived.addListener
             (
-            function (response) {
-                var requests = removeRequest(response.requestId);
-                if (!isXDMUp) {
-                    return;
-                }
+                function (response) {
+                    var requests = removeRequest(response.requestId);
+                    if (!isXDMUp) {
+                        return;
+                    }
 
-                if (!monitoring) {
-                    return;
-                }
+                    if (!monitoring) {
+                        return;
+                    }
 
-                if (disabled) {
-                    return;
-                }
+                    if (disabled) {
+                        return;
+                    }
 
-                if (!(response.statusLine.indexOf("200") > 0
-                    || response.statusLine.indexOf("206") > 0)) {
-                    return;
-                }
+                    if (!(response.statusLine.indexOf("200") > 0
+                        || response.statusLine.indexOf("206") > 0)) {
+                        return;
+                    }
 
-                if (requests) {
-                    if (requests.length == 1) {
-                        if (!(response.url + "").startsWith(xdmHost)) {
-                            //console.log("processing request " + response.url);
-                            return processRequest(requests[0], response);
+                    if (requests) {
+                        if (requests.length == 1) {
+                            if (!(response.url + "").startsWith(xdmHost)) {
+                                //console.log("processing request " + response.url);
+                                return processRequest(requests[0], response);
+                            }
                         }
                     }
-                }
-            },
-            { urls: ["http://*/*", "https://*/*"] },
-            ["blocking", "responseHeaders"]
+                },
+                { urls: ["http://*/*", "https://*/*"] },
+                ["blocking", "responseHeaders"]
             );
 
         //check XDM if is running and enable monitoring
@@ -513,14 +513,14 @@
                     log("disabled " + disabled);
                 }
                 else if (request.type === "vid") {
-                    port.postMessage({"message":"/item\r\n"+request.itemId});
+                    port.postMessage({ "message": "/item\r\n" + request.itemId });
 
                     // var xhr = new XMLHttpRequest();
                     // xhr.open('POST', xdmHost + "/item", true);
                     // xhr.send(request.itemId);
                 }
                 else if (request.type === "clear") {
-                    port.postMessage({"message":"/clear"});
+                    port.postMessage({ "message": "/clear" });
 
                     // var xhr = new XMLHttpRequest();
                     // xhr.open('GET', xdmHost + "/clear", true);
@@ -558,32 +558,32 @@
         /*
         On startup, connect to the "native" app.
         */
-       port = chrome.runtime.connectNative("xdm_chrome.native_host");
+        port = chrome.runtime.connectNative("xdm_chrome.native_host");
 
-       /*
-       Listen for messages from the app.
-       */
-       port.onMessage.addListener((data) => {
-                   monitoring = data.enabled;
-                   blockedHosts = data.blockedHosts;
-                   videoUrls = data.videoUrls;
-                   fileExts = data.fileExts;
-                   vidExts = data.vidExts;
-                   isXDMUp = true;
-                   videoList = data.vidList;
-                   if (data.mimeList) {
-                       mimeList = data.mimeList;
-                   }
-                   updateBrowserAction();
+        /*
+        Listen for messages from the app.
+        */
+        port.onMessage.addListener((data) => {
+            monitoring = data.enabled;
+            blockedHosts = data.blockedHosts;
+            videoUrls = data.videoUrls;
+            fileExts = data.fileExts;
+            vidExts = data.vidExts;
+            isXDMUp = true;
+            videoList = data.vidList;
+            if (data.mimeList) {
+                mimeList = data.mimeList;
+            }
+            updateBrowserAction();
 
-           log("Received: " + data);
-       });
+            log("Received: " + data);
+        });
 
-       /*
-       On start up send the app a message.
-       */
-       log("Sending to native...")
-       port.postMessage({"message":"hello from extension"});
+        /*
+        On start up send the app a message.
+        */
+        log("Sending to native...")
+        port.postMessage({ "message": "hello from extension" });
     };
 
     initSelf();

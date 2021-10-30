@@ -42,7 +42,7 @@ function renderList(arr) {
 
     var table = document.getElementById("table");
 
-    console.log("total element: "+arr.length);
+    console.log("total element: " + arr.length);
 
     for (var i = 0; i < arr.length; i++) {
         var listItem = arr[i];
@@ -72,7 +72,7 @@ function renderList(arr) {
         div.setAttribute("style", "padding: 10px; display: flex; flex-direction: column;" + border);
 
         var p1 = document.createElement('span');
-        p1.id=listItem.id;
+        p1.id = listItem.id;
         p1.setAttribute("style", "font-family:helvetica,arial,courier; font-size: 14px; cursor: pointer;");
         var node = document.createTextNode(text);
         p1.appendChild(node);
