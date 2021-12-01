@@ -579,14 +579,14 @@ namespace XDM.SystemTests
 
     class FakeMediaProcessor : BaseMediaProcessor
     {
-        public override MediaProcessingResult MergeAudioVideStream(string file1, string file2, string outfile, CancellationToken cancellationToken, out long outFileSize)
+        public override MediaProcessingResult MergeAudioVideStream(string file1, string file2, string outfile, CancelFlag cancellationToken, out long outFileSize)
         {
             Log.Information(file1 + " " + file2 + " " + outfile);
             outFileSize = new FileInfo(file1).Length + new FileInfo(file2).Length;
             return MediaProcessingResult.Success;
         }
 
-        public override MediaProcessingResult MergeHLSAudioVideStream(string segmentListFile, string outfile, CancellationToken cancellationToken, out long outFileSize)
+        public override MediaProcessingResult MergeHLSAudioVideStream(string segmentListFile, string outfile, CancelFlag cancellationToken, out long outFileSize)
         {
             Log.Information(segmentListFile + " " + outfile);
             outFileSize = -1;

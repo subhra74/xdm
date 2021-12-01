@@ -943,24 +943,24 @@ namespace XDM.SystemTests
             Assert.IsNotNull(Helpers.FindExecutableFromSystemPath("ffmpeg.exe"));
         }
 
-        [Test]
-        public async Task TestRedirect()
-        {
-            var hc = new HttpClient(new TestHandler(new HttpClientHandler()));
-            var res = await hc.GetAsync("http://facebook.com").ConfigureAwait(false);
-            Console.WriteLine(res.StatusCode + "" + res.RequestMessage.RequestUri + " " + res.Content.Headers.ContentType.MediaType);
-        }
+        //[Test]
+        //public async Task TestRedirect()
+        //{
+        //    var hc = new HttpClient(new TestHandler(new HttpClientHandler()));
+        //    var res = await hc.GetAsync("http://facebook.com").ConfigureAwait(false);
+        //    Console.WriteLine(res.StatusCode + "" + res.RequestMessage.RequestUri + " " + res.Content.Headers.ContentType.MediaType);
+        //}
 
-        class TestHandler : DelegatingHandler
-        {
-            public TestHandler(HttpMessageHandler handler) : base(handler) { }
-            protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-            {
-                var res = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
-                request.RequestUri = new Uri("https://www.google.com/");
-                res = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
-                return res;
-            }
-        }
+        //class TestHandler : DelegatingHandler
+        //{
+        //    public TestHandler(HttpMessageHandler handler) : base(handler) { }
+        //    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        //    {
+        //        var res = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        //        request.RequestUri = new Uri("https://www.google.com/");
+        //        res = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        //        return res;
+        //    }
+        //}
     }
 }
