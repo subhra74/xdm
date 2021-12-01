@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net3.5;net4.5;net4.7.2;net5.0</TargetFrameworks>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <LangVersion>9.0</LangVersion>
+    <Platforms>AnyCPU;x86</Platforms>
+    <!--<PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>Link</TrimMode>
+    <Platforms>AnyCPU;x86</Platforms>
+    <RuntimeIdentifier>win-x86</RuntimeIdentifier>-->
+  </PropertyGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' != 'net5.0' ">
+    <ProjectReference Include="..\NetFX.Polyfill\NetFX.Polyfill.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BrowserMonitor\BrowserMonitor.csproj" />
+    <ProjectReference Include="..\TraceLog\TraceLog.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net5.0' or '$(TargetFramework)' == 'net4.7.2' or '$(TargetFramework)' == 'net4.5' ">
+    <AppConfig>App.PostDotNet4.config</AppConfig>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net3.5' ">
+    <AppConfig>App.PreDotNet4.config</AppConfig>
+  </PropertyGroup>
+
+</Project>

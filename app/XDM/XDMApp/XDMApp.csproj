@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net3.5;net4.5;net4.7.2;net5.0</TargetFrameworks>
+    <Platforms>AnyCPU;x86</Platforms>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BrowserMonitor\BrowserMonitor.csproj" />
+    <ProjectReference Include="..\XDM.Common.UI\XDM.Common.UI.csproj" />
+    <ProjectReference Include="..\XDM_CoreFx\XDM.Core.csproj" />
+    <ProjectReference Include="..\YoutubeDLHandler\YDLWrapper.csproj" />
+    <ProjectReference Include="..\TraceLog\TraceLog.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' != 'net5.0' ">
+    <ProjectReference Include="..\NetFX.Polyfill\NetFX.Polyfill.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net3.5' ">
+    <PackageReference Include="DotNetZip" Version="1.12.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' != 'net3.5' ">
+    <PackageReference Include="System.IO.Compression" Version="4.3.0" />
+  </ItemGroup>
+
+</Project>

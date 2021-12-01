@@ -1,0 +1,7 @@
+{
+  "name": "xdm_chrome.native_host",
+  "description": "Native messaging host for Xtreme Download Manager",
+  "path": "C:\\Users\\subhro\\Documents\\GitHub\\xdm-ng\\XDM-Ng\\NativeMessagingHost\\bin\\Debug\\net5.0\\NativeMessagingHost.exe",
+  "type": "stdio",
+  "allowed_origins": [ "chrome-extension://danmljfachfhpbfikjgedlfifabhofcj/","chrome-extension://dkckaoghoiffdbomfbbodbbgmhjblecj/","chrome-extension://ejpbcmllmliidhlpkcgbphhmaodjihnc/" ]
+}

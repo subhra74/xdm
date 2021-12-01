@@ -1,0 +1,96 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFrameworks>net4.7.2;net5.0-windows;net4.5;net3.5</TargetFrameworks>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!--<DisableWinExeOutputInference>true</DisableWinExeOutputInference>-->
+    <!--<InvariantGlobalization>true</InvariantGlobalization>-->
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>Link</TrimMode>
+    <Platforms>x86</Platforms>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <!--<ItemGroup>
+    <PackageReference Include="Serilog" Version="2.10.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
+    <PackageReference Include="Serilog.Sinks.File" Version="4.1.0" />
+    <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
+  </ItemGroup>-->
+
+  <ItemGroup>
+    <ProjectReference Include="..\NativeMessagingHost\NativeMessagingHost.csproj" />
+    <ProjectReference Include="..\Translations\Translations.csproj" />
+    <ProjectReference Include="..\XDM.Common.UI\XDM.Common.UI.csproj" />
+    <ProjectReference Include="..\XDMApp\XDMApp.csproj" />
+    <ProjectReference Include="..\XDM_CoreFx\XDM.Core.csproj" />
+    <ProjectReference Include="..\YoutubeDLHandler\YDLWrapper.csproj" />
+    <ProjectReference Include="..\TraceLog\TraceLog.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="FontAwesome\brave-logo.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="FontAwesome\fa-regular-400.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="FontAwesome\fa-solid-900.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="FontAwesome\fontawesome-webfont.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="FontAwesome\icomoon.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="FontAwesome\remixicon.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <LangFiles Include="$(SolutionDir)\Lang\**" />
+  </ItemGroup>
+
+  <Target Name="Copy" AfterTargets="Build">
+    <Copy SourceFiles="@(LangFiles)" DestinationFolder="$(OutDir)\Lang" />
+  </Target>
+
+  <ItemGroup Condition=" '$(TargetFramework)' != 'net5.0-windows' ">
+    <ProjectReference Include="..\NetFX.Polyfill\NetFX.Polyfill.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net5.0-windows' or '$(TargetFramework)' == 'net4.7.2' ">
+    <AppConfig>App.HiDpi.config</AppConfig>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net4.5' or '$(TargetFramework)' == 'net3.5' ">
+    <AppConfig>App.LowDpi.config</AppConfig>
+  </PropertyGroup>
+
+</Project>

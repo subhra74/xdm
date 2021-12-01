@@ -1,0 +1,109 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net5.0</TargetFramework>
+		<InvariantGlobalization>true</InvariantGlobalization>
+		<PublishTrimmed>true</PublishTrimmed>
+		<TrimMode>Link</TrimMode>
+		<RootNamespace>XDM.GtkUI</RootNamespace>
+    <!--RuntimeIdentifier>linux-x64</RuntimeIdentifier-->
+    <!--RuntimeIdentifier>win-x64</RuntimeIdentifier-->
+    <!--RuntimeIdentifier>win-x86</RuntimeIdentifier-->
+		<!--<Platforms>AnyCPU;x86</Platforms>-->
+		<Platforms>AnyCPU;x86</Platforms>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="GtkSharp" Version="3.24.24.34" />
+		<PackageReference Include="Serilog" Version="2.10.0" />
+		<PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
+		<PackageReference Include="Serilog.Sinks.File" Version="4.1.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Include="images\*.*">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Include="glade\*.*">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+    <Content Include="svg-icons\*.*">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+	</ItemGroup>
+
+  <ItemGroup>
+    <LangFiles Include="$(SolutionDir)\Lang\**" />
+  </ItemGroup>
+
+  <Target Name="Copy" AfterTargets="Build">
+    <Copy SourceFiles="@(LangFiles)" DestinationFolder="$(OutDir)\Lang" />
+  </Target>
+
+	<ItemGroup>
+		<None Remove="images\add-line.svg" />
+		<None Remove="images\apps-line.svg" />
+		<None Remove="images\check-line.svg" />
+		<None Remove="images\delete-bin-line.svg" />
+		<None Remove="images\download-line.svg" />
+		<None Remove="images\file-4-line.svg" />
+		<None Remove="images\file-chart-2-line.svg" />
+		<None Remove="images\file-download-line.svg" />
+		<None Remove="images\file-line.svg" />
+		<None Remove="images\file-text-line.svg" />
+		<None Remove="images\file-zip-line.svg" />
+		<None Remove="images\film-line.svg" />
+		<None Remove="images\folder-download-line.svg" />
+		<None Remove="images\image-line.svg" />
+		<None Remove="images\menu-line.svg" />
+		<None Remove="images\music-2-line.svg" />
+		<None Remove="images\pause-line.svg" />
+		<None Remove="images\play-line.svg" />
+		<None Remove="images\search-line.svg" />
+		<None Remove="images\task-line.svg" />
+		<None Remove="images\time-line.svg" />
+		<None Remove="images\video-download-line.svg" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Translations\Translations.csproj" />
+	  <ProjectReference Include="..\XDMApp\XDMApp.csproj" />
+	  <ProjectReference Include="..\XDM_CoreFx\XDM.Core.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Reference Include="AtkSharp">
+	    <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\AtkSharp.dll</HintPath>
+	  </Reference>
+	  <Reference Include="CairoSharp">
+	    <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\CairoSharp.dll</HintPath>
+	  </Reference>
+	  <Reference Include="GdkSharp">
+	    <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\GdkSharp.dll</HintPath>
+	  </Reference>
+	  <Reference Include="GioSharp">
+	    <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\GioSharp.dll</HintPath>
+	  </Reference>
+	  <Reference Include="GLibSharp">
+	    <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\GLibSharp.dll</HintPath>
+	  </Reference>
+	  <Reference Include="GtkSharp">
+	    <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\GtkSharp.dll</HintPath>
+	  </Reference>
+	  <Reference Include="GtkSourceSharp">
+	    <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\GtkSourceSharp.dll</HintPath>
+	  </Reference>
+	  <Reference Include="PangoSharp">
+	    <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\PangoSharp.dll</HintPath>
+	  </Reference>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="svg-icons\" />
+	</ItemGroup>
+
+
+</Project>
