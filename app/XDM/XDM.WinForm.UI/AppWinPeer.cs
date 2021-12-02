@@ -46,10 +46,10 @@ namespace XDM.WinForm.UI
         private Point startPoint = new Point(0, 0); // also for the moving
         private NotifyIcon trayIcon;
         private Font buttonFont;
-        private PrivateFontCollection fcIconMoon, fcFontAwesome, fcRemixIcon;
+        //private PrivateFontCollection fcIconMoon, fcFontAwesome, fcRemixIcon;
         private bool darkMode;
         private string scheduledIcon, waitingIcon;
-        private Font ri16Font, fa16Font;
+        private Font ri16Font, ri14Font, ri12Font, fa16Font, fa10Font;
         private string searchText;
         public event EventHandler ClipboardChanged;
         private IButton newButton, deleteButton, pauseButton, resumeButton, openFileButton, openFolderButton;
@@ -84,15 +84,15 @@ namespace XDM.WinForm.UI
 
         public AppWinPeer()
         {
-            fcRemixIcon = new PrivateFontCollection();
-            fcRemixIcon.AddFontFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"FontAwesome\remixicon.ttf"));
-            remixIconFont = new Font(fcRemixIcon.Families[0], 24);
-            fcFontAwesome = new PrivateFontCollection();
-            fcFontAwesome.AddFontFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"FontAwesome\fontawesome-webfont.ttf"));
-            ri16Font = new Font(fcRemixIcon.Families[0], 16); //new Font(fcFontAwesome.Families[0], 16);
-            fa16Font = new Font(fcFontAwesome.Families[0], 14);
+            remixIconFont = new Font(GlobalFontCollection.RiFontInstance.Families[0], 24);
+            ri16Font = new Font(GlobalFontCollection.RiFontInstance.Families[0], 16); //new Font(fcFontAwesome.Families[0], 16);
+            ri14Font = new Font(GlobalFontCollection.RiFontInstance.Families[0], 14); //new Font(fcFontAwesome.Families[0], 16);
+            ri12Font = new Font(GlobalFontCollection.RiFontInstance.Families[0], 12); //new Font(fcFontAwesome.Families[0], 16);
+            fa16Font = new Font(GlobalFontCollection.FaFontInstance.Families[0], 14);
+            fa10Font = new Font(GlobalFontCollection.FaFontInstance.Families[0], 10);
             scheduledIcon = RemixIcon.GetFontIcon(RemixIcon.ScheduledFileIcon);
             waitingIcon = RemixIcon.GetFontIcon(RemixIcon.ScheduledFileIcon);
+
             this.InitializeComponent();
 
             AppsUseLightTheme = !Config.Instance.AllowSystemDarkTheme || !ImmersiveThemeHelper.IsDarkThemeActive();
@@ -106,9 +106,8 @@ namespace XDM.WinForm.UI
             downloadsDB = new(dgActiveList, dgCompletedList);
 
             this.DoubleBuffered = true;
-            fcIconMoon = new PrivateFontCollection();
-            fcIconMoon.AddFontFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"FontAwesome\icomoon.ttf"));
-            var fontAwesomeFont2 = new Font(fcIconMoon.Families[0], 12);
+
+            var fontAwesomeFont2 = new Font(GlobalFontCollection.ImFontInstance.Families[0], 12);
             buttonFont = fontAwesomeFont2;
 
             panel3.BackColor = panel6.BackColor = FormColors.BorderColor;
@@ -181,14 +180,14 @@ namespace XDM.WinForm.UI
 
         private void CreateFooter()
         {
-            btnMonitoring.Font = new Font(fcFontAwesome.Families[0], 14);
+            btnMonitoring.Font = this.fa16Font;
             btnMonitoring.ForeColor = FormColors.IconColor;
             btnMonitoring.Text = RemixIcon.GetFontIcon("f205");
 
-            btnHelp.Image = CreateToolbarIcon(new Font(fcRemixIcon.Families[0], 12),
+            btnHelp.Image = CreateToolbarIcon(this.ri12Font,
                 RemixIcon.GetFontIcon(RemixIcon.HelpIcon), FormColors.IconColor, LogicalToDeviceUnits(10));
 
-            btnParallel.Image = CreateToolbarIcon(new Font(fcRemixIcon.Families[0], 12),
+            btnParallel.Image = CreateToolbarIcon(this.ri12Font,
                 RemixIcon.GetFontIcon(RemixIcon.SettingsIcon), FormColors.IconColor, LogicalToDeviceUnits(10));
 
             label3.ForeColor = btnParallel.ForeColor = btnHelp.ForeColor = FormColors.FooterForeColor;
@@ -204,7 +203,7 @@ namespace XDM.WinForm.UI
         {
             tableLayoutPanel1.BackColor = FormColors.ToolbarBackColor;
             ButtonHelper.ParentBackColor = tableLayoutPanel1.BackColor;
-            var toolbarImageFont = new Font(fcRemixIcon.Families[0], 12);
+            var toolbarImageFont = this.ri12Font;
             var fg1 = FormColors.ToolbarButtonForeColor;
             var fg2 = FormColors.ToolbarButtonDisabledForeColor;
 
@@ -303,7 +302,7 @@ namespace XDM.WinForm.UI
 
             ButtonHelper.SetFlatStyle(btnMenu, FormColors);
 
-            this.btnSearch.Font = new Font(fcFontAwesome.Families[0], 10); //
+            this.btnSearch.Font = fa10Font; //
             this.btnSearch.Padding = new Padding(0);
             this.btnSearch.ForeColor = FormColors.SearchButtonColor;//Color.FromArgb(190, 190, 190); //
             this.btnSearch.Text = ((char)Int32.Parse("f002"/*RemixIcon.SearchIcon*/, System.Globalization.NumberStyles.HexNumber)).ToString();//((char)Int32.Parse("f04c", System.Globalization.NumberStyles.HexNumber)).ToString();
@@ -572,14 +571,14 @@ namespace XDM.WinForm.UI
             //this.dgActiveList.Columns["EtaCol"].Visible = false;
             //this.dgActiveList.Columns["ImgCol"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
 
-            dgState.Columns[0].DefaultCellStyle.Font = new Font(fcRemixIcon.Families[0], 14); //
+            dgState.Columns[0].DefaultCellStyle.Font = this.ri14Font; //
             dgState.Rows.Add(((char)Int32.Parse("ea4c", System.Globalization.NumberStyles.HexNumber)).ToString(), "incomplete");
             dgState.Rows.Add(((char)Int32.Parse("eb7b", System.Globalization.NumberStyles.HexNumber)).ToString(), "complete");
 
             var h1 = (int)Math.Ceiling(this.Font.Height * 0.4);
             var w1 = (int)Math.Ceiling(this.Font.Height * 0.2);
 
-            dgCategories.Columns[0].DefaultCellStyle.Font = new Font(fcRemixIcon.Families[0], 14);
+            dgCategories.Columns[0].DefaultCellStyle.Font = this.ri14Font;
             string GetFontIcon(string name)
             {
                 switch (name)
@@ -1925,6 +1924,7 @@ namespace XDM.WinForm.UI
         {
             // Hide tray icon, otherwise it will remain shown until user mouses over it
             trayIcon.Visible = false;
+            GlobalFontCollection.Dispose();
             Application.Exit();
             Environment.Exit(0);
         }
@@ -2452,12 +2452,13 @@ namespace XDM.WinForm.UI
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            GlobalFontCollection.Dispose();
             Environment.Exit(0);
         }
 
         public void ShowYoutubeDLDialog(IAppUI appUI, IApp app)
         {
-            var dlg = new VideoDownloaderWindow(new Font(fcFontAwesome.Families[0], 10), app, appUI);
+            var dlg = new VideoDownloaderWindow(fa10Font, app, appUI);
             dlg.Visible = true;
         }
 
@@ -2883,7 +2884,7 @@ namespace XDM.WinForm.UI
 
         public void ShowSettingsDialog(IApp app, int page = 1)
         {
-            using var dlg = new SettingsWindow(fcRemixIcon, app, page);
+            using var dlg = new SettingsWindow(app, page);
             dlg.ShowDialog(this);
         }
 
@@ -3074,7 +3075,7 @@ namespace XDM.WinForm.UI
 
         public void ShowUpdateAvailableNotification()
         {
-            btnHelp.Image = CreateToolbarIcon(new Font(fcRemixIcon.Families[0], 12),
+            btnHelp.Image = CreateToolbarIcon(ri12Font,
                     RemixIcon.GetFontIcon(RemixIcon.NotificationIcon), FormColors.IconColor);
             btnHelp.Text = "Update(s) available";
             btnHelp.ForeColor = FormColors.IconColor;
@@ -3085,7 +3086,7 @@ namespace XDM.WinForm.UI
         {
             RunOnUIThread(() =>
             {
-                btnHelp.Image = CreateToolbarIcon(new Font(fcRemixIcon.Families[0], 12),
+                btnHelp.Image = CreateToolbarIcon(ri12Font,
                     RemixIcon.GetFontIcon(RemixIcon.HelpIcon), FormColors.FooterForeColor);
                 btnHelp.ForeColor = FormColors.FooterForeColor;
                 btnHelp.Text = "Help and support";
@@ -3134,6 +3135,8 @@ namespace XDM.WinForm.UI
             label3.Text = TextResource.GetText("SETTINGS_MONITORING");
             btnHelp.Text = TextResource.GetText("LBL_SUPPORT_PAGE");
             btnParallel.Text = TextResource.GetText("DESC_Q_TITLE");
+
+
 
             //var i = 0;
             //foreach (var category in Config.Instance.Categories)

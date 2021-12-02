@@ -16,14 +16,15 @@ namespace XDM.WinForm.UI.SettingsPages
     public partial class BrowserMonitoringPage : UserControl, ISettingsPage
     {
         private Font ri64Font, ri16Font;
-        private PrivateFontCollection fc1;
         private IApp app;
-        public BrowserMonitoringPage(PrivateFontCollection fontCollection,IApp app)
+        private PrivateFontCollection fc1;
+
+        public BrowserMonitoringPage(IApp app)
         {
             InitializeComponent();
             this.app = app;
             AutoScrollMinSize = tableLayoutPanel1.Size;
-            ri64Font = new Font(fontCollection.Families[0], 32);
+            ri64Font = new Font(GlobalFontCollection.RiFontInstance.Families[0], 32);
 
             button1.Image = FontImageHelper.FontToBitmap(this, ri64Font, RemixIcon.GetFontIcon("eb8c"), Color.Gray);
             button1.TextImageRelation = TextImageRelation.ImageAboveText;
@@ -46,16 +47,14 @@ namespace XDM.WinForm.UI.SettingsPages
             button2.Text = "Vivaldi";
 
             fc1 = new PrivateFontCollection();
-            //fontCollection.AddFontFile("fontawesome-webfont.ttf");
             fc1.AddFontFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"FontAwesome\brave-logo.ttf"));
-            //var bf = new Font(fc1.Families[0], 12);
 
             button4.Image = FontImageHelper.FontToBitmap(this, new Font(fc1.Families[0], 32),
                 RemixIcon.GetFontIcon("e900"), Color.Gray);
             button4.TextImageRelation = TextImageRelation.ImageAboveText;
             button4.Text = "Brave";
 
-            ri16Font = new Font(fontCollection.Families[0], 12);
+            ri16Font = new Font(GlobalFontCollection.RiFontInstance.Families[0], 12);
             button7.Font = ri16Font;
             button7.Text = RemixIcon.GetFontIcon("ecd5");
 

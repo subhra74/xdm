@@ -24,23 +24,21 @@ namespace XDM.WinForm.UI
     {
         private IApp app;
         private int initialPage;
-        private PrivateFontCollection fontCollection;
 
-        public SettingsWindow(PrivateFontCollection fontCollection, IApp app,
+        public SettingsWindow(IApp app,
             int initialPage = 0)
         {
             InitializeComponent();
             this.app = app;
             this.initialPage = initialPage;
-            this.fontCollection = fontCollection;
             var pagePadding = new Padding(LogicalToDeviceUnits(10));
             var panels = new UserControl[]
             {
-                new BrowserMonitoringPage(fontCollection,app),
-                new GeneralSettingsPage(fontCollection),
+                new BrowserMonitoringPage(app),
+                new GeneralSettingsPage(),
                 new NetworkSettingsPage(),
                 new PasswordManagerPage(),
-                new AdvancedSettingsPage(fontCollection),
+                new AdvancedSettingsPage(),
             };
 
             foreach (var panel in panels)

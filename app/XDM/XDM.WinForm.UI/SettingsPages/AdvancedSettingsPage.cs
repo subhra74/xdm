@@ -11,13 +11,11 @@ namespace XDM.WinForm.UI.SettingsPages
     public partial class AdvancedSettingsPage : UserControl, ISettingsPage
     {
         private Font ri16Font;
-        private PrivateFontCollection fc;
-        public AdvancedSettingsPage(PrivateFontCollection fc)
+        public AdvancedSettingsPage()
         {
             InitializeComponent();
             AutoScrollMinSize = tableLayoutPanel1.Size; 
-            this.fc = fc;
-            this.ri16Font = new Font(fc.Families[0], 12);
+            this.ri16Font = new Font(GlobalFontCollection.RiFontInstance.Families[0], 12);
             button1.Font = this.ri16Font;
             button1.Text = RemixIcon.GetFontIcon("ed70");
         }

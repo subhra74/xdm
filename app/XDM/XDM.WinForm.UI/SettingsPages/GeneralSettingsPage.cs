@@ -18,12 +18,10 @@ namespace XDM.WinForm.UI.SettingsPages
     public partial class GeneralSettingsPage : UserControl, ISettingsPage
     {
         private Font ri16Font;
-        private PrivateFontCollection fc;
-        public GeneralSettingsPage(PrivateFontCollection fc)
+        public GeneralSettingsPage()
         {
             InitializeComponent();
-            this.fc = fc;
-            this.ri16Font = new Font(fc.Families[0], 12);
+            this.ri16Font = new Font(GlobalFontCollection.RiFontInstance.Families[0], 12);
             AutoScrollMinSize = tableLayoutPanel1.Size;
             listView1.Columns[0].Width = DpiCompat.ToDeviceUnits(this, 150);
             listView1.Columns[1].Width = DpiCompat.ToDeviceUnits(this, 150);
