@@ -3121,6 +3121,7 @@ namespace XDM.WinForm.UI
             exitToolStripMenuItem.Text = TextResource.GetText("MENU_EXIT");
             exportToolStripMenuItem1.Text = TextResource.GetText("MENU_EXPORT");
             importToolStripMenuItem.Text = TextResource.GetText("MENU_IMPORT");
+
 #if NET5_0_OR_GREATER
             textBox1.PlaceholderText = TextResource.GetText("LBL_SEARCH");
 #endif
@@ -3136,14 +3137,24 @@ namespace XDM.WinForm.UI
             btnHelp.Text = TextResource.GetText("LBL_SUPPORT_PAGE");
             btnParallel.Text = TextResource.GetText("DESC_Q_TITLE");
 
-
-
-            //var i = 0;
-            //foreach (var category in Config.Instance.Categories)
-            //{
-            //    dgCategories.Rows[i++].Cells[1].Value = category.IsPredefined ?
-            //        App.GetText(category.Name) : category.DisplayName;
-            //}
+            pauseToolStripMenuItem.Text = TextResource.GetText("MENU_PAUSE");
+            resumeToolStripMenuItem.Text = TextResource.GetText("MENU_RESUME");
+            deleteToolStripMenuItem.Text = TextResource.GetText("DESC_DEL");
+            saveAsToolStripMenuItem1.Text = TextResource.GetText("CTX_SAVE_AS");
+            refreshLinkToolStripMenuItem.Text = TextResource.GetText("MENU_REFRESH_LINK");
+            showProgressToolStripMenuItem.Text = TextResource.GetText("LBL_SHOW_PROGRESS");
+            copyURLToolStripMenuItem.Text = TextResource.GetText("CTX_COPY_URL");
+            propertiesToolStripMenuItem.Text = TextResource.GetText("MENU_PROPERTIES");
+            openToolStripMenuItem.Text = TextResource.GetText("CTX_OPEN_FILE");
+            openFolderToolStripMenuItem.Text = TextResource.GetText("CTX_OPEN_FOLDER");
+            deleteDownloadsToolStripMenuItem.Text = TextResource.GetText("MENU_DELETE_DWN");
+            copyURLToolStripMenuItem1.Text = TextResource.GetText("CTX_COPY_URL");
+            copyFileToolStripMenuItem.Text = TextResource.GetText("CTX_COPY_FILE");
+            propertiesToolStripMenuItem1.Text = TextResource.GetText("MENU_PROPERTIES");
+            restartToolStripMenuItem.Text = TextResource.GetText("MENU_RESTART");
+            scheduleToolStripMenuItem.Text = TextResource.GetText("Q_SCHEDULE_TXT");
+            downloadAgainToolStripMenuItem1.Text = TextResource.GetText("MENU_RESTART");
+            moveToQueueToolStripMenuItem.Text = TextResource.GetText("Q_MOVE_TO");
         }
 
         public IInProgressDownloadRow? FindInProgressItem(string id)
