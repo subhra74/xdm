@@ -56,7 +56,6 @@ namespace HttpServer
                 catch (Exception ex)
                 {
                     Log.Debug(ex, ex.Message);
-                    throw;
                 }
                 finally
                 {

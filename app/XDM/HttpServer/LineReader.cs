@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
+using TraceLog;
 
 namespace HttpServer
 {
@@ -10,6 +10,9 @@ namespace HttpServer
     {
         internal static IEnumerable<string> ReadLines(Stream stream)
         {
+            //try
+            //{
+            // var lines = new List<string>();
             var buffer = new StringBuilder();
             while (true)
             {
@@ -18,10 +21,19 @@ namespace HttpServer
                 if (x == '\n')
                 {
                     if (buffer.Length == 0) yield break;
-                    yield return buffer.ToString();
+                    var line = buffer.ToString();
+                    buffer = new StringBuilder();
+                    yield return line;
                 }
-                if (x != '\r') buffer.Append((char)x);
+                else if (x != '\r') buffer.Append((char)x);
             }
+            //return lines;
+            //}
+            //catch (Exception e)
+            //{
+            //    Log.Debug(e, "Error parsing headers");
+            //    throw e;
+            //}
         }
     }
 }

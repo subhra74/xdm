@@ -35,6 +35,7 @@ namespace HttpServer
             {
                 key = headerLine.Substring(0, index).Trim();
                 value = headerLine.Substring(index + 1).Trim();
+                return;
             }
             throw new IOException("Invalid header");
         }
@@ -61,12 +62,14 @@ namespace HttpServer
             byte[]? body = null;
             var io = tcp.GetStream();
             var first = true;
+            //var lines = LineReader.ReadLines(io);
             foreach (var line in LineReader.ReadLines(io))
             {
                 if (first)
                 {
                     path = ParseRequestStatusLine(line);
                     first = false;
+                    continue;
                 }
                 ParseHeader(line, out string headerName, out string headerValue);
                 var values = headers.GetValueOrDefault(headerName, new List<string>());
