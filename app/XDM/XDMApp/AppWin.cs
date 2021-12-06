@@ -221,9 +221,16 @@ namespace XDMApp
 
         public void ShowNewDownloadDialog(Message message)
         {
+            var url = message.Url;
+            if (NewDownloadPromptTracker.IsPromptAlreadyOpen(url))
+            {
+                return;
+            }
             RunOnUiThread(() =>
             {
-                NewDownloadDialogHelper.CreateAndShowDialog(this.App, this, this.CreateNewDownloadDialog(false), message);
+                NewDownloadPromptTracker.PromptOpen(url);
+                NewDownloadDialogHelper.CreateAndShowDialog(this.App, this, this.CreateNewDownloadDialog(false), message,
+                    () => NewDownloadPromptTracker.PromptClosed(url));
             });
         }
 

@@ -18,7 +18,7 @@ namespace HttpServer
                 var arr = statusLine.Split(' ');
                 if (arr.Length > 2)
                 {
-                    return arr[0];
+                    return arr[1];
                 }
             }
             catch (Exception ex)
@@ -42,7 +42,8 @@ namespace HttpServer
 
         internal static long ParseContentLength(Dictionary<string, List<string>> headers)
         {
-            return Int64.Parse(headers.GetValueOrDefault("Content-Length")?[0] ?? "-1");
+            var value = headers.GetValueOrDefault("Content-Length")?[0];
+            return Int64.Parse(value ?? "-1");
         }
 
         private static bool ShouldKeepAlive(Dictionary<string, List<string>> headers)
@@ -73,7 +74,7 @@ namespace HttpServer
                 }
                 ParseHeader(line, out string headerName, out string headerValue);
                 var values = headers.GetValueOrDefault(headerName, new List<string>());
-                values.Add(headerName);
+                values.Add(headerValue);
                 headers[headerName] = values;
             }
             var contentLength = ParseContentLength(headers);
@@ -91,7 +92,7 @@ namespace HttpServer
         {
             byte[] buffer = new byte[8192];
             int read;
-            while ((read = stream.Read(buffer, 0, (int)Math.Min(buffer.Length, limit))) != 0)
+            while (limit > 0 && (read = stream.Read(buffer, 0, (int)Math.Min(buffer.Length, limit))) != 0)
             {
                 destination.Write(buffer, 0, read);
                 limit -= read;

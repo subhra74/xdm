@@ -7,6 +7,7 @@ using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Util;
 using HttpServer;
 using System.Threading;
+using TraceLog;
 
 namespace BrowserMonitoring
 {
@@ -52,7 +53,7 @@ namespace BrowserMonitoring
                 switch (context.RequestPath)
                 {
                     case "/download":
-                        Console.WriteLine(Encoding.UTF8.GetString(context.RequestBody!));
+                        Log.Debug(Encoding.UTF8.GetString(context.RequestBody!));
                         var message = Message.ParseMessage(Encoding.UTF8.GetString(context.RequestBody!));
                         if (!(Helpers.IsBlockedHost(message.Url) || Helpers.IsCompressedJSorCSS(message.Url)))
                         {

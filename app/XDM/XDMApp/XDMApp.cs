@@ -39,7 +39,7 @@ namespace XDMApp
         private NativeMessagingHostHandler nativeMessaging;
         private bool isClipboardMonitorActive = false;
         private string lastClipboardText;
-        private Timer AwakePingTimer;
+        private Timer awakePingTimer;
         private System.Threading.Timer UpdateCheckTimer;
 
         public IList<UpdateInfo>? Updates { get; private set; }
@@ -66,11 +66,11 @@ namespace XDMApp
             Config.DataDir = configPath;
             Config.LoadConfig();
 
-            AwakePingTimer = new Timer(60000)
+            awakePingTimer = new Timer(60000)
             {
                 AutoReset = true
             };
-            AwakePingTimer.Elapsed += (a, b) => Helpers.SendKeepAlivePing();
+            awakePingTimer.Elapsed += (a, b) => Helpers.SendKeepAlivePing();
 
             //UpdateCheckTimer = new System.Threading.Timer(
             //    callback: a => CheckForUpdate(),
@@ -207,10 +207,10 @@ namespace XDMApp
             ProxyInfo? proxyInfo,
             int maxSpeedLimit)
         {
-            if (!AwakePingTimer.Enabled)
+            if (!awakePingTimer.Enabled)
             {
                 Log.Debug("Starting keep awaik timer");
-                AwakePingTimer.Start();
+                awakePingTimer.Start();
             }
             var id = download.Id;
             var startType = DownloadStartType.Waiting;
@@ -501,10 +501,10 @@ namespace XDMApp
         public void ResumeDownload(Dictionary<string, BaseDownloadEntry> list,
             bool nonInteractive = false)
         {
-            if (!AwakePingTimer.Enabled)
+            if (!awakePingTimer.Enabled)
             {
                 Log.Debug("Starting keep awake timer");
-                AwakePingTimer.Start();
+                awakePingTimer.Start();
             }
 
             AppUI.RunOnUiThread((Action)(() =>
@@ -906,10 +906,10 @@ namespace XDMApp
                 {
                     Helpers.ShutDownPC();
                 }
-                if (AwakePingTimer.Enabled)
+                if (awakePingTimer.Enabled)
                 {
                     Log.Debug("Stopping keep awake timer");
-                    AwakePingTimer.Stop();
+                    awakePingTimer.Stop();
                 }
                 if (Config.Instance.RunCommandAfterCompletion)
                 {

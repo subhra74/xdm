@@ -117,11 +117,16 @@ namespace XDM.WinForm.UI
 #if !NET35
             linkLabel1.Margin = new Padding(5);
 #endif
+
+            this.FormClosed += (a, b) =>
+            {
+                this.DestroyEvent?.Invoke(this, EventArgs.Empty);
+            };
         }
 
         public void DisposeWindow()
         {
-            this.Dispose();
+            this.Close();
         }
 
         //private string? SelectFile()

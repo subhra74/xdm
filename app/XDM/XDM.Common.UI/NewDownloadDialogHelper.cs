@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Common.Segmented;
 using XDM.Core.Lib.Util;
 
@@ -10,8 +9,10 @@ namespace XDM.Common.UI
     public class NewDownloadDialogHelper
     {
         public static void CreateAndShowDialog(IApp app, IAppUI appUi,
-            INewDownloadDialogSkeleton window, Message message = null)
+            INewDownloadDialogSkeleton window, Message? message = null,
+            Action? destroyCallback = null)
         {
+            window.DestroyEvent += (_, _) => destroyCallback?.Invoke();
             window.SetFolderValues(CommonUtils.GetFolderValues());
             window.SeletedFolderIndex = Config.Instance.FolderSelectionMode == FolderSelectionMode.Auto ? 0 : 2;
 
