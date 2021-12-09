@@ -4,13 +4,11 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Drawing.Text;
-using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Util;
-using System.Reflection;
 using System.Drawing.Drawing2D;
 using XDM.Common.UI;
 using TraceLog;
@@ -3096,6 +3094,15 @@ namespace XDM.WinForm.UI
 
         private void LoadTexts()
         {
+            dgActiveList.Columns["NameCol"].HeaderText = TextResource.GetText("SORT_NAME");
+            dgActiveList.Columns["ActiveDateCol"].HeaderText = TextResource.GetText("SORT_DATE");
+            dgActiveList.Columns["SizeCol"].HeaderText = TextResource.GetText("SORT_SIZE");
+            dgActiveList.Columns["StatusCol"].HeaderText = TextResource.GetText("SORT_STATUS");
+
+            dgCompletedList.Columns["CompletedNameCol"].HeaderText = TextResource.GetText("SORT_NAME");
+            dgCompletedList.Columns["CompletedDateCol"].HeaderText = TextResource.GetText("SORT_DATE");
+            dgCompletedList.Columns["CompletedSizeCol"].HeaderText = TextResource.GetText("SORT_SIZE");
+
             btnNew.Text = TextResource.GetText("DESC_NEW");
             btnDelete.Text = TextResource.GetText("DESC_DEL");
             btnOpenFile.Text = TextResource.GetText("CTX_OPEN_FILE");
@@ -3112,7 +3119,6 @@ namespace XDM.WinForm.UI
 
             settingsToolStripMenuItem1.Text = TextResource.GetText("TITLE_SETTINGS");
             removeFinishedToolStripMenuItem.Text = TextResource.GetText("MENU_DELETE_COMPLETED");
-            importToolStripMenuItem.Text = TextResource.GetText("LBL_IMPORT_EXPORT");
             browserMonitoringToolStripMenuItem.Text = TextResource.GetText("SETTINGS_MONITORING");
             helpAndSupportToolStripMenuItem.Text = TextResource.GetText("LBL_SUPPORT_PAGE");
             reportAProblemToolStripMenuItem.Text = TextResource.GetText("LBL_REPORT_PROBLEM");
@@ -3121,6 +3127,7 @@ namespace XDM.WinForm.UI
             exitToolStripMenuItem.Text = TextResource.GetText("MENU_EXIT");
             exportToolStripMenuItem1.Text = TextResource.GetText("MENU_EXPORT");
             importToolStripMenuItem.Text = TextResource.GetText("MENU_IMPORT");
+            langToolStripMenuItem1.Text = TextResource.GetText("MENU_LANG");
 
 #if NET5_0_OR_GREATER
             textBox1.PlaceholderText = TextResource.GetText("LBL_SEARCH");
@@ -3334,6 +3341,14 @@ namespace XDM.WinForm.UI
         private void toolStripMenuItem1_Click(object sender, EventArgs e)
         {
             ExportClicked?.Invoke(sender, e);
+        }
+
+        private void langToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            using (var langDlg = new LanguageSelectionDlg())
+            {
+                langDlg.ShowDialog(this);
+            }
         }
 
         public bool IsInProgressViewSelected => dgState.SelectedRows.Count == 1 && dgState.Rows[0].Selected;
