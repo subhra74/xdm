@@ -17,7 +17,6 @@ LBL_SUPPORT_PAGE=Help and support
 MENU_DELETE_DWN=Delete downloads
 LBL_NEW_DOWNLOAD=New download
 LBL_MENU=Menu
-LBL_IMPORT_EXPORT=Import/Export
 SETTINGS_MONITORING=Browser monitoring
 ALL_UNFINISHED=Incomplete
 ALL_FINISHED=Complete

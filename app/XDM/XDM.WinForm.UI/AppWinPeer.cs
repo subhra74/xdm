@@ -1911,10 +1911,17 @@ namespace XDM.WinForm.UI
                 Icon = this.Icon,
                 Text = "XDM"
             };
+
             trayIcon.DoubleClick += (a, b) =>
             {
+                this.WindowState = FormWindowState.Normal;
                 this.Visible = true;
                 this.BringToFront();
+                if (!this.IsHandleCreated)
+                {
+                    this.CreateHandle();
+                }
+                SetForegroundWindow(this.Handle);
             };
         }
 
@@ -3478,5 +3485,8 @@ namespace XDM.WinForm.UI
         //    //this.dgCompletedList.Columns["CompletedDateCol"].HeaderCell.SortGlyphDirection = SortOrder.Descending;
         //    this.dgActiveList.ClearSelection();
         //}
+
+        [DllImport("user32.dll")]
+        static extern bool SetForegroundWindow(IntPtr hWnd);
     }
 }
