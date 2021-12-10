@@ -71,8 +71,8 @@ jobs:
     - name: Setup MSBuild.exe
       uses: microsoft/setup-msbuild@v1.0.2
         
-    - name: Build Winforms project with Debug configuration
-      run: msbuild /t:build /p:Configuration=Debug /p:TargetFramework=net4.7.2 app\XDM\XDM.WinForm.UI\XDM.WinForm.UI.csproj
+    #- name: Build Winforms project with Debug configuration
+    #  run: msbuild /t:build /p:Configuration=Debug /p:TargetFramework=net4.7.2 app\XDM\XDM.WinForm.UI\XDM.WinForm.UI.csproj
 
     # Install the .NET Core workload
     - name: Install .NET Core
