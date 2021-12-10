@@ -78,14 +78,18 @@ jobs:
       uses: microsoft/setup-msbuild@v1.0.2
 
     # Execute all unit tests in the solution
-    - name: Execute unit tests
-      run: dotnet test
+    #- name: Execute unit tests
+    #  run: dotnet test $env:Test_Project_Path
+    
+    # Execute all unit tests in the solution
+    - name: Build Winforms project
+      run: dotnet build $env:Wap_Project_Path
 
     # Restore the application to populate the obj folder with RuntimeIdentifiers
-    - name: Restore the application
-      run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration
-      env:
-        Configuration: ${{ matrix.configuration }}
+    #- name: Restore the application
+    #  run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration
+    #  env:
+    #    Configuration: ${{ matrix.configuration }}
 
     # Decode the base 64 encoded pfx and save the Signing_Certificate
     #- name: Decode the pfx
