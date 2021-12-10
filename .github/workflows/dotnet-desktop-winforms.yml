@@ -83,7 +83,7 @@ jobs:
     
     # Execute all unit tests in the solution
     - name: Build Winforms project
-      run: dotnet build $env:Wap_Project_Path
+      run: dotnet build -f net4.7.2 $env:Wap_Project_Path
 
     # Restore the application to populate the obj folder with RuntimeIdentifiers
     #- name: Restore the application
