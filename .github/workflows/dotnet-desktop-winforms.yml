@@ -48,9 +48,9 @@ jobs:
 
   build:
 
-    strategy:
-      matrix:
-        configuration: [Debug, Release]
+    #strategy:
+    #  matrix:
+    #    configuration: [Debug, Release]
 
     runs-on: windows-latest  # For a list of available runner types, refer to
                              # https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
@@ -82,8 +82,11 @@ jobs:
     #  run: dotnet test $env:Test_Project_Path
     
     # Execute all unit tests in the solution
-    - name: Build Winforms project
-      run: dotnet build -f net4.7.2 $env:Wap_Project_Path
+    - name: Build Winforms project with Debug configuration
+      run: dotnet build -f net4.7.2 -c Debug $env:Wap_Project_Path
+      
+    - name: Build Winforms project with Release configuration
+      run: dotnet build -f net4.7.2 -c Release $env:Wap_Project_Path
 
     # Restore the application to populate the obj folder with RuntimeIdentifiers
     #- name: Restore the application
