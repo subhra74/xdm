@@ -66,6 +66,9 @@ jobs:
       uses: actions/checkout@v2
       with:
         fetch-depth: 0
+        
+    - name: Build Winforms project with Debug configuration
+      run: msbuild /t:build /p:Configuration=Debug /p:TargetFramework=net4.7.2
 
     # Install the .NET Core workload
     - name: Install .NET Core
