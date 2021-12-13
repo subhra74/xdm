@@ -17,6 +17,8 @@ using XDMApp;
 using XDM.Core.Lib.UI;
 using Translations;
 using XDM.WinForm.UI.FormHelper;
+using System.Threading;
+using XDM.WinForm.UI.Win32;
 
 #if !(NET472_OR_GREATER || NET5_0_OR_GREATER)
 using static XDM.WinForm.UI.WinFormsPolyfill;
@@ -52,7 +54,7 @@ namespace XDM.WinForm.UI
         public event EventHandler ClipboardChanged;
         private IButton newButton, deleteButton, pauseButton, resumeButton, openFileButton, openFolderButton;
         private IMenuItem[] menuItems;
-        private Timer runAfterShown;
+        private System.Windows.Forms.Timer runAfterShown;
 
         private IFormColors FormColors;
 
@@ -114,7 +116,7 @@ namespace XDM.WinForm.UI
 
             Shown += (_, _) =>
             {
-                runAfterShown = new Timer { Interval = 1000 };
+                runAfterShown = new() { Interval = 1000 };
                 runAfterShown.Tick += (x, y) =>
                 {
                     Helpers.RunGC();
@@ -1764,13 +1766,13 @@ namespace XDM.WinForm.UI
 
         public INewDownloadDialogSkeleton CreateNewDownloadDialog(bool empty)
         {
-            var newDownloadDialogWin32 = new NewDownloadDialogView(empty);
+            var newDownloadDialogWin32 = new NewDownloadDialogView(empty/*, GlobalFontCollection.RiFontInstance*/);
             return newDownloadDialogWin32;
         }
 
         public INewVideoDownloadDialog CreateNewVideoDialog()
         {
-            var newVideoDialogWin32 = new NewVideoDownloadDialogView();
+            var newVideoDialogWin32 = new NewVideoDownloadDialogView(GlobalFontCollection.RiFontInstance);
             return newVideoDialogWin32;
         }
 
@@ -1921,7 +1923,7 @@ namespace XDM.WinForm.UI
                 {
                     this.CreateHandle();
                 }
-                SetForegroundWindow(this.Handle);
+                NativeMethods.SetForegroundWindow(this.Handle);
             };
         }
 
@@ -2634,6 +2636,24 @@ namespace XDM.WinForm.UI
                 action.Invoke();
             }
         }
+
+        //public void RunOnNewThread(Action action)
+        //{
+        //    var t = new Thread(() =>
+        //    {
+        //        try
+        //        {
+        //            action.Invoke();
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            Log.Debug(ex, ex.Message);
+        //        }
+        //    })
+        //    { Name = "NEw threAD" };
+        //    t.SetApartmentState(ApartmentState.STA);
+        //    t.Start();
+        //}
 
         public void ShowBatchDownloadWindow(IApp app, IAppUI appUi)
         {
@@ -3486,7 +3506,7 @@ namespace XDM.WinForm.UI
         //    this.dgActiveList.ClearSelection();
         //}
 
-        [DllImport("user32.dll")]
-        static extern bool SetForegroundWindow(IntPtr hWnd);
+        //[DllImport("user32.dll")]
+        //static extern bool SetForegroundWindow(IntPtr hWnd);
     }
 }

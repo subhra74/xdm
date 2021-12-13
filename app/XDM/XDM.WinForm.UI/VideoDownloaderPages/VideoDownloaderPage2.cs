@@ -12,6 +12,7 @@ using XDM.Core.Lib.Util;
 using YDLWrapper;
 using XDM.WinForm.UI.FormHelper;
 using System.Drawing;
+using Translations;
 
 #if !(NET472_OR_GREATER || NET5_0_OR_GREATER)
 using static XDM.WinForm.UI.WinFormsPolyfill;
@@ -132,6 +133,8 @@ namespace XDM.WinForm.UI.VideoDownloaderPages
                 MenuHelper.CustomizeMenuAppearance(contextMenuStrip1);
                 MenuHelper.FixHiDpiMargin(contextMenuStrip1);
             }
+
+            LoadTexts();
         }
 
         public void SetVideoResultList(List<YDLVideoEntry> items)
@@ -376,6 +379,22 @@ namespace XDM.WinForm.UI.VideoDownloaderPages
         private void manageQueueAndSchedulersToolStripMenuItem_Click(object sender, EventArgs e)
         {
             App.AppUI.ShowQueueWindow(this.ParentForm);
+        }
+
+        private void LoadTexts()
+        {
+            label2.Text = TextResource.GetText("O_VID_FMT");
+            checkBox1.Text = TextResource.GetText("VID_CHK");
+            label1.Text = TextResource.GetText("LBL_SAVE_IN");
+            button4.Text = TextResource.GetText("ND_MORE");
+            button2.Text = TextResource.GetText("ND_DOWNLOAD_LATER");
+            button1.Text = TextResource.GetText("ND_DOWNLOAD_NOW");
+
+            dataGridView1.Columns["Column2"].HeaderText = TextResource.GetText("SORT_NAME");
+            dataGridView1.Columns["Column4"].HeaderText = TextResource.GetText("O_VID_FMT");
+
+            doNotAddToQueueToolStripMenuItem.Text = TextResource.GetText("LBL_QUEUE_OPT3");
+            manageQueueAndSchedulersToolStripMenuItem.Text = TextResource.GetText("DESC_Q_TITLE");
         }
     }
 }

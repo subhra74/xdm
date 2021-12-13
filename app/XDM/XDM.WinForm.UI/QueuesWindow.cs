@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
+using Translations;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.UI;
 using XDM.Core.Lib.Util;
@@ -80,6 +81,8 @@ namespace XDM.WinForm.UI
             button1.Padding = button2.Padding = button3.Padding = button3.Padding =
                 button4.Padding = button5.Padding = button6.Padding = button7.Padding =
                 button9.Padding = button10.Padding = btnUp.Padding = btnDown.Padding = buttonMargin;
+
+            LoadTexts();
         }
 
         private void ListSelectionChanged()
@@ -433,6 +436,25 @@ namespace XDM.WinForm.UI
             this.queueSelectionDialog!.FormClosing -= QueueSelectionDialog_FormClosing;
             this.queueSelectionDialog = null;
             this.tableLayoutPanel1.Enabled = true;
+        }
+
+        private void LoadTexts()
+        {
+            Text = TextResource.GetText("DESC_Q_TITLE");
+            button1.Text = TextResource.GetText("DESC_NEW");
+            button2.Text = TextResource.GetText("DESC_DEL");
+            button3.Text = TextResource.GetText("MENU_START_Q");
+            button4.Text = TextResource.GetText("MENU_PAUSE");
+            button5.Text = TextResource.GetText("DESC_SAVE_Q");
+            button6.Text = TextResource.GetText("ND_CANCEL");
+            button7.Text = TextResource.GetText("Q_ADD");
+            button9.Text = TextResource.GetText("Q_REMOVE");
+            btnUp.Text = TextResource.GetText("Q_MOVE_UP");
+            btnDown.Text = TextResource.GetText("Q_MOVE_DN");
+            button10.Text = TextResource.GetText("Q_MOVE_TO");
+            tabPage1.Text = TextResource.GetText("Q_LIST_FILES");
+            tabPage2.Text = TextResource.GetText("Q_SCHEDULE_TXT");
+            checkBox1.Text = TextResource.GetText("Q_ENABLE");
         }
     }
 }

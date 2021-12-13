@@ -12,6 +12,7 @@ namespace XDM.Core.Lib.Common
         void DisposeWindow();
         void Invoke(Action callback);
         void ShowWindow();
+        void ShowMessageBox(string message);
         string Url { get; set; }
         AuthenticationInfo? Authentication { get; set; }
         ProxyInfo? Proxy { get; set; }

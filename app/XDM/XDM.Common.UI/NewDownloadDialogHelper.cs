@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Translations;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Common.Segmented;
 using XDM.Core.Lib.Util;
@@ -74,12 +75,12 @@ namespace XDM.Common.UI
 
             window.DownloadClicked += (a, b) =>
             {
-                OnDownloadClicked(app, appUi, window, fileName, CommonUtils.SelectedFolderFromIndex(window.SeletedFolderIndex), message, true);
+                OnDownloadClicked(app, window, fileName, CommonUtils.SelectedFolderFromIndex(window.SeletedFolderIndex), message, true);
             };
 
             window.DownloadLaterClicked += (a, b) =>
             {
-                OnDownloadClicked(app, appUi, window, fileName, CommonUtils.SelectedFolderFromIndex(window.SeletedFolderIndex), message, false, b.QueueId);
+                OnDownloadClicked(app, window, fileName, CommonUtils.SelectedFolderFromIndex(window.SeletedFolderIndex), message, false, b.QueueId);
             };
 
             window.QueueSchedulerClicked += (s, e) =>
@@ -128,17 +129,18 @@ namespace XDM.Common.UI
         //    window.ShowWindow();
         //}
 
-        private static void OnDownloadClicked(IApp app, IAppUI appUi, INewDownloadDialogSkeleton window,
+        private static void OnDownloadClicked(IApp app, INewDownloadDialogSkeleton window,
             string fileName, string? selectedFolder, Message message, bool startImmediately, string? queueId = null)
         {
+
             if (!Helpers.IsUriValid(window.Url))
             {
-                appUi.ShowMessageBox(window, "URL is invalid");
+                window.ShowMessageBox(TextResource.GetText("MSG_INVALID_URL"));
                 return;
             }
             if (string.IsNullOrEmpty(window.SelectedFileName))
             {
-                appUi.ShowMessageBox(window, "No filename");
+                window.ShowMessageBox(TextResource.GetText("MSG_NO_FILE"));
                 return;
             }
 

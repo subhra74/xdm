@@ -280,9 +280,9 @@ namespace XDM.WinForm.UI
             "Use Systems proxy settings",
             "No Proxy",
             "Manual proxy"});
-            this.comboBox1.Location = new System.Drawing.Point(119, 13);
+            this.comboBox1.Location = new System.Drawing.Point(116, 13);
             this.comboBox1.Name = "comboBox1";
-            this.comboBox1.Size = new System.Drawing.Size(397, 23);
+            this.comboBox1.Size = new System.Drawing.Size(400, 23);
             this.comboBox1.TabIndex = 0;
             // 
             // label3
@@ -302,7 +302,7 @@ namespace XDM.WinForm.UI
             this.label4.Location = new System.Drawing.Point(15, 44);
             this.label4.Margin = new System.Windows.Forms.Padding(5);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(96, 19);
+            this.label4.Size = new System.Drawing.Size(93, 19);
             this.label4.TabIndex = 2;
             this.label4.Text = "Proxy Host";
             // 
@@ -313,7 +313,7 @@ namespace XDM.WinForm.UI
             this.label5.Location = new System.Drawing.Point(15, 73);
             this.label5.Margin = new System.Windows.Forms.Padding(5);
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(96, 19);
+            this.label5.Size = new System.Drawing.Size(93, 19);
             this.label5.TabIndex = 3;
             this.label5.Text = "Proxy Username";
             // 
@@ -321,7 +321,7 @@ namespace XDM.WinForm.UI
             // 
             this.label6.AutoSize = true;
             this.label6.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.label6.Location = new System.Drawing.Point(272, 44);
+            this.label6.Location = new System.Drawing.Point(271, 44);
             this.label6.Margin = new System.Windows.Forms.Padding(5);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(90, 19);
@@ -332,7 +332,7 @@ namespace XDM.WinForm.UI
             // 
             this.label7.AutoSize = true;
             this.label7.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.label7.Location = new System.Drawing.Point(272, 73);
+            this.label7.Location = new System.Drawing.Point(271, 73);
             this.label7.Margin = new System.Windows.Forms.Padding(5);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(90, 19);
@@ -342,41 +342,44 @@ namespace XDM.WinForm.UI
             // textBox3
             // 
             this.textBox3.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.textBox3.Location = new System.Drawing.Point(119, 42);
+            this.textBox3.Location = new System.Drawing.Point(116, 42);
             this.textBox3.Name = "textBox3";
-            this.textBox3.Size = new System.Drawing.Size(145, 23);
+            this.textBox3.Size = new System.Drawing.Size(147, 23);
             this.textBox3.TabIndex = 6;
             // 
             // textBox4
             // 
             this.textBox4.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.textBox4.Location = new System.Drawing.Point(370, 42);
+            this.textBox4.Location = new System.Drawing.Point(369, 42);
             this.textBox4.Name = "textBox4";
-            this.textBox4.Size = new System.Drawing.Size(146, 23);
+            this.textBox4.Size = new System.Drawing.Size(147, 23);
             this.textBox4.TabIndex = 7;
             // 
             // textBox5
             // 
             this.textBox5.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.textBox5.Location = new System.Drawing.Point(119, 71);
+            this.textBox5.Location = new System.Drawing.Point(116, 71);
             this.textBox5.Name = "textBox5";
-            this.textBox5.Size = new System.Drawing.Size(145, 23);
+            this.textBox5.Size = new System.Drawing.Size(147, 23);
             this.textBox5.TabIndex = 8;
             // 
             // textBox6
             // 
             this.textBox6.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.textBox6.Location = new System.Drawing.Point(370, 71);
+            this.textBox6.Location = new System.Drawing.Point(369, 71);
             this.textBox6.Name = "textBox6";
-            this.textBox6.Size = new System.Drawing.Size(146, 23);
+            this.textBox6.Size = new System.Drawing.Size(147, 23);
             this.textBox6.TabIndex = 9;
             // 
             // button3
             // 
+            this.button3.AutoSize = true;
+            this.button3.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.tableLayoutPanel3.SetColumnSpan(this.button3, 4);
             this.button3.Dock = System.Windows.Forms.DockStyle.Fill;
             this.button3.Location = new System.Drawing.Point(13, 100);
             this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(100, 23);
+            this.button3.Size = new System.Drawing.Size(503, 25);
             this.button3.TabIndex = 10;
             this.button3.Text = "Proxy";
             this.button3.UseVisualStyleBackColor = true;

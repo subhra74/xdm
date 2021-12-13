@@ -57,7 +57,7 @@ namespace XDMApp
                     Id = id,
                     Progress = 0,
                     Size = fileSize,
-                    Status = DownloadStatus.Waiting,
+                    Status = DownloadStatus.Stopped,
                     TargetDir = "",
                     PrimaryUrl = primaryUrl,
                     Authentication = authentication,
@@ -193,7 +193,7 @@ namespace XDMApp
             {
                 var download = this.peer.FindInProgressItem(id);
                 if (download == null) return;
-                download.Status = DownloadStatus.Waiting;
+                download.Status = DownloadStatus.Stopped;
                 UpdateToolbarButtonState();
             });
         }
@@ -226,7 +226,7 @@ namespace XDMApp
             {
                 return;
             }
-            RunOnUiThread(() =>
+            peer.RunOnUIThread(() =>
             {
                 NewDownloadPromptTracker.PromptOpen(url);
                 NewDownloadDialogHelper.CreateAndShowDialog(this.App, this, this.CreateNewDownloadDialog(false), message,
@@ -389,7 +389,10 @@ namespace XDMApp
         {
             peer.NewDownloadClicked += (s, e) =>
             {
-                NewDownloadDialogHelper.CreateAndShowDialog(this.App, this, CreateNewDownloadDialog(true));
+                peer.RunOnUIThread(() =>
+                {
+                    NewDownloadDialogHelper.CreateAndShowDialog(this.App, this, CreateNewDownloadDialog(true));
+                });
             };
 
             peer.YoutubeDLDownloadClicked += (s, e) =>

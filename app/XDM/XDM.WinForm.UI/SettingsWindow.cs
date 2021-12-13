@@ -1,15 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Drawing.Text;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
 
 using System.Windows.Forms;
+using Translations;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Util;
 using XDM.WinForm.UI.SettingsPages;
@@ -29,6 +21,9 @@ namespace XDM.WinForm.UI
             int initialPage = 0)
         {
             InitializeComponent();
+            Text = TextResource.GetText("TITLE_SETTINGS");
+            button2.Text = TextResource.GetText("DESC_SAVE_Q");
+            button1.Text = TextResource.GetText("ND_CANCEL");
             this.app = app;
             this.initialPage = initialPage;
             var pagePadding = new Padding(LogicalToDeviceUnits(10));
@@ -56,12 +51,14 @@ namespace XDM.WinForm.UI
                 }
             }
 
-            var panelNames = new string[] {
-                "Browser monitoring",
-                "General settings",
-                "Network settings",
-                "Password manager",
-                "Advanced settings" };
+            var panelNames = new string[]
+            {
+                TextResource.GetText("SETTINGS_MONITORING"),
+                TextResource.GetText("SETTINGS_GENERAL"),
+                TextResource.GetText("SETTINGS_NETWORK"),
+                TextResource.GetText("SETTINGS_CRED"),
+                TextResource.GetText("SETTINGS_ADV")
+            };
 
             foreach (var text in panelNames)
             {

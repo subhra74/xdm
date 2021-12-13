@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows.Forms;
+using Translations;
 
 namespace XDM.WinForm.UI
 {
@@ -9,6 +10,9 @@ namespace XDM.WinForm.UI
         {
             InitializeComponent();
             numericUpDown1.Maximum = Int32.MaxValue;
+
+            checkBox2.Text = TextResource.GetText("MENU_SPEED_LIMITER");
+            label8.Text = TextResource.GetText("MSG_SPEED_LIMIT");
         }
 
         private void checkBox2_CheckedChanged(object sender, EventArgs e)

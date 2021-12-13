@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 
 using System.Windows.Forms;
+using Translations;
 using XDM.WinForm.UI.FormHelper;
 
 namespace XDM.WinForm.UI.VideoDownloaderPages
@@ -23,6 +24,7 @@ namespace XDM.WinForm.UI.VideoDownloaderPages
                 var fg = Color.White;
                 DarkModeHelper.StyleFlatButton(button1, bg, fg);
             }
+            button1.Text = TextResource.GetText("ND_CANCEL");
         }
 
         private void button1_Click(object sender, EventArgs e)

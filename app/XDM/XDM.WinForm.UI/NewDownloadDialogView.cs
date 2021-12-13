@@ -2,11 +2,14 @@
 using System.Drawing;
 using System.Drawing.Text;
 using System.IO;
+using System.Threading;
 using System.Windows.Forms;
+using TraceLog;
+using Translations;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.UI;
 using XDM.WinForm.UI.FormHelper;
-using XDMApp;
+using XDM.WinForm.UI.Win32;
 
 #if !(NET472_OR_GREATER || NET5_0_OR_GREATER)
 using static XDM.WinForm.UI.WinFormsPolyfill;
@@ -48,7 +51,9 @@ namespace XDM.WinForm.UI
 
         public NewDownloadDialogView(bool empty)
         {
+            Log.Debug("Thread name: " + Thread.CurrentThread.Name);
             InitializeComponent();
+            this.TopMost = true;
             comboBox1 = AppWinPeer.AppsUseLightTheme ? new ComboBox() : new SkinnableComboBox();
             this.tableLayoutPanel2.SetColumnSpan(this.comboBox1, 2);
             comboBox1.SelectedIndexChanged += comboBox1_SelectedIndexChanged;
@@ -122,6 +127,8 @@ namespace XDM.WinForm.UI
             {
                 this.DestroyEvent?.Invoke(this, EventArgs.Empty);
             };
+
+            LoadTexts();
         }
 
         public void DisposeWindow()
@@ -178,9 +185,35 @@ namespace XDM.WinForm.UI
         //    set => /*comboBox2.SelectedIndex = value == FileConflictResolution.AutoRename ?*/ value = 0 /*: 1*/;
         //}
 
+        //[STAThread]
         public void ShowWindow()
         {
             this.Show();
+            //var f = new Form();
+            //f.TopMost = true;
+            //f.Show();
+            //Log.Debug("Thread: " + Thread.CurrentThread.Name);
+            //if (!IsHandleCreated)
+            //{
+            //    CreateHandle();
+            //}
+            //NativeMethods.SetWindowTopMost(this);
+            //NativeMethods.SetForegroundWindow(this.Handle);
+            //this.Shown += (_, _) =>
+            //{
+            //    TopLevel = true;
+            //    TopMost = true;
+            //    NativeMethods.SetForegroundWindow(this.Handle);
+            //    NativeMethods.SetWindowTopMost(this);
+            //    NativeMethods.SetForegroundWindow(this.Handle);
+            //};
+            //TopMost = true;
+            //Application.DoEvents();
+            //this.BringToFront();
+            //Log.Debug("Thread name: " + Thread.CurrentThread.Name);
+            //this.Visible = true;
+            //this.Activate();
+            //Application.Run(this);
         }
 
         void INewDownloadDialogSkeleton.Invoke(Action callback)
@@ -340,6 +373,25 @@ namespace XDM.WinForm.UI
         private void manageQueueAndSchedulersToolStripMenuItem_Click(object sender, EventArgs e)
         {
             this.QueueSchedulerClicked?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void LoadTexts()
+        {
+            label1.Text = TextResource.GetText("ND_ADDRESS");
+            label2.Text = TextResource.GetText("ND_FILE");
+            label3.Text = TextResource.GetText("LBL_SAVE_IN");
+            linkLabel1.Text = TextResource.GetText("ND_IGNORE_URL");
+            button4.Text = TextResource.GetText("ND_MORE");
+            button2.Text = TextResource.GetText("ND_DOWNLOAD_LATER");
+            button1.Text = TextResource.GetText("ND_DOWNLOAD_NOW");
+            Text = TextResource.GetText("ND_TITLE");
+            doNotAddToQueueToolStripMenuItem.Text= TextResource.GetText("LBL_QUEUE_OPT3");
+            manageQueueAndSchedulersToolStripMenuItem.Text= TextResource.GetText("DESC_Q_TITLE");
+        }
+
+        public void ShowMessageBox(string text)
+        {
+            MessageBox.Show(this, text);
         }
     }
 }

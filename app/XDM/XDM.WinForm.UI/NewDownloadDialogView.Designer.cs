@@ -338,7 +338,6 @@ namespace XDM.WinForm.UI
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "NewDownloadDialogView";
-            this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "New Download";
             this.TopMost = true;

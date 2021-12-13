@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 
 using System.Windows.Forms;
+using Translations;
 using XDM.Core.Lib.Common;
 using XDM.WinForm.UI.FormHelper;
 
@@ -51,6 +52,11 @@ namespace XDM.WinForm.UI.VideoDownloaderPages
                 textBox3.BackColor = Color.FromArgb(65, 65, 65);
                 textBox3.ForeColor = Color.White;
             }
+
+            label1.Text = TextResource.GetText("VID_PASTE_URL");
+            checkBox1.Text = TextResource.GetText("SETTINGS_ADV");
+            label2.Text = TextResource.GetText("DESC_USER");
+            label3.Text = TextResource.GetText("DESC_PASS");
         }
 
         private void button1_Click(object sender, EventArgs e)

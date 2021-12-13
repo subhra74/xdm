@@ -124,6 +124,8 @@ namespace XDM.Core.Lib.UI
 
         IQueueSelectionDialog CreateQueueSelectionDialog();
 
+        //void RunOnNewThread(Action action);
+
         event EventHandler<CategoryChangedEventArgs> CategoryChanged;
 
         event EventHandler InProgressContextMenuOpening;

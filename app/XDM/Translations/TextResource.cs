@@ -36,6 +36,10 @@ namespace Translations
             var lines = File.ReadAllLines(path);
             foreach (var line in lines)
             {
+                if (string.IsNullOrEmpty(line))
+                {
+                    continue;
+                }
                 var index = line.IndexOf('=');
                 var key = line.Substring(0, index);
                 var val = line.Substring(index + 1);

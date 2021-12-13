@@ -301,7 +301,7 @@ namespace XDM.WinForm.UI.VideoDownloaderPages
             this.doNotAddToQueueToolStripMenuItem,
             this.manageQueueAndSchedulersToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(231, 48);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(231, 70);
             // 
             // doNotAddToQueueToolStripMenuItem
             // 

@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 
 using System.Windows.Forms;
+using Translations;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Common.Segmented;
@@ -98,6 +99,8 @@ namespace XDM.WinForm.UI
             this.Controls.Add(page1);
             this.Controls.Add(page2);
             page1.BringToFront();
+
+            Text = TextResource.GetText("MENU_BATCH_DOWNLOAD");
         }
     }
 

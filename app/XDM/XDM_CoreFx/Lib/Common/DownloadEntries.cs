@@ -80,7 +80,7 @@ namespace XDM.Core.Lib.Common
 
     public enum DownloadStatus
     {
-        Downloading, Stopped, Finished, Waiting
+        Downloading, Stopped, Finished
     }
 
     internal static class FinishedDownloadEntrySerializerV1

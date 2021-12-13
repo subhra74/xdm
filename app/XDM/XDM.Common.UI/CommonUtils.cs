@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using TraceLog;
+using Translations;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.UI;
 
@@ -7,8 +8,8 @@ namespace XDM.Common.UI
 {
     internal static class CommonUtils
     {
-        private static string AutoSelectText = "Automatically select based on file type";
-        private static string BrowseText = "Browse...";
+        private static string AutoSelectText = TextResource.GetText("ND_AUTO_CAT");
+        private static string BrowseText = TextResource.GetText("BTN_BROWSE");
         //internal static void ProcessManualSelection(string selectedFile, IFileSelectable window, ref string? selectedFolder)
         //{
         //    var file = Path.GetFileName(selectedFile);

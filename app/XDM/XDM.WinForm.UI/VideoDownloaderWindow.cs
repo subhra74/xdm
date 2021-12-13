@@ -10,6 +10,7 @@ using XDM.WinForm.UI.VideoDownloaderPages;
 using YDLWrapper;
 using System.Threading;
 using XDM.WinForm.UI.FormHelper;
+using Translations;
 
 namespace XDM.WinForm.UI
 {
@@ -18,7 +19,7 @@ namespace XDM.WinForm.UI
         private VideoDownloaderPage1 page1;
         private VideoDownloaderPage2 page2;
         private VideoDownloaderPage3 page3;
-        private YDLProcess ydl; 
+        private YDLProcess ydl;
         private IFormColors colors;
 
         public VideoDownloaderWindow(Font searchFont, IApp app, IAppUI appUi)
@@ -80,6 +81,8 @@ namespace XDM.WinForm.UI
                 DarkModeHelper.UseImmersiveDarkMode(this.Handle, true);
                 this.BackColor = colors.ToolbarBackColor;
             }
+
+            Text = TextResource.GetText("LBL_VIDEO_DOWNLOAD");
         }
 
         protected override void OnClosing(CancelEventArgs e)

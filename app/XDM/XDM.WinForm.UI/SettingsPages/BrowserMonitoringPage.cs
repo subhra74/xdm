@@ -10,6 +10,7 @@ using System.Drawing.Text;
 using XDM.WinForm.UI.FormHelper;
 using System.IO;
 using XDMApp;
+using Translations;
 
 namespace XDM.WinForm.UI.SettingsPages
 {
@@ -66,6 +67,8 @@ namespace XDM.WinForm.UI.SettingsPages
 
             //button3.Font = ri64Font;
             //button3.Text = RemixIcon.GetFontIcon("ec7d") + "\nEdge";
+
+            LoadTexts();
         }
 
         protected override void OnHandleCreated(EventArgs e)
@@ -183,6 +186,23 @@ namespace XDM.WinForm.UI.SettingsPages
             Config.Instance.FetchServerTimeStamp = checkBox4.Checked;
             Config.Instance.MonitorClipboard = checkBox2.Checked;
             Config.Instance.MinVideoSize = (int)numericUpDown1.Value;
+        }
+
+        private void LoadTexts()
+        {
+            label1.Text = TextResource.GetText("DESC_MONITORING_1");
+            label2.Text = TextResource.GetText("DESC_OTHER_BROWSERS");
+            label4.Text = TextResource.GetText("DESC_MOZ");
+            label3.Text = TextResource.GetText("DESC_CHROME");
+            label5.Text = TextResource.GetText("DESC_FILETYPES");
+            button9.Text = TextResource.GetText("DESC_DEF");
+            button11.Text = TextResource.GetText("DESC_DEF");
+            button10.Text = TextResource.GetText("DESC_DEF");
+            label6.Text = TextResource.GetText("DESC_VIDEOTYPES");
+            label7.Text = TextResource.GetText("LBL_MIN_VIDEO_SIZE");
+            label9.Text = TextResource.GetText("DESC_SITEEXCEPTIONS");
+            checkBox2.Text = TextResource.GetText("MENU_CLIP_ADD");
+            checkBox4.Text = TextResource.GetText("LBL_GET_TIMESTAMP");
         }
     }
 }

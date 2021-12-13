@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 
 using System.Windows.Forms;
+using Translations;
 using XDM.Core.Lib.Common;
 
 namespace XDM.WinForm.UI
@@ -43,6 +44,8 @@ namespace XDM.WinForm.UI
 
             dateTimePicker1.ValueChanged += (_, _) => this.ValueChanged?.Invoke(this, EventArgs.Empty);
             dateTimePicker2.ValueChanged += (_, _) => this.ValueChanged?.Invoke(this, EventArgs.Empty);
+
+            LoadTexts();
         }
 
         private CheckBox[] checkBoxes;
@@ -112,6 +115,20 @@ namespace XDM.WinForm.UI
                     chk.Checked = true;
                 }
             }
+        }
+
+        private void LoadTexts()
+        {
+            label2.Text = TextResource.GetText("MSG_Q_START");
+            label1.Text = TextResource.GetText("MSG_Q_STOP");
+            chkEveryday.Text = TextResource.GetText("MSG_Q_DAILY");
+            chkSun.Text = TextResource.GetText("MSG_Q_D1");
+            chkMon.Text = TextResource.GetText("MSG_Q_D2");
+            chkTue.Text = TextResource.GetText("MSG_Q_D3");
+            chkWed.Text = TextResource.GetText("MSG_Q_D4");
+            chkThu.Text = TextResource.GetText("MSG_Q_D5");
+            chkFri.Text = TextResource.GetText("MSG_Q_D6");
+            chkSat.Text = TextResource.GetText("MSG_Q_D7");
         }
     }
 }

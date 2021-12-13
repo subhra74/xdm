@@ -1,14 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Diagnostics;
-using System.Drawing;
-using System.Linq;
-using System.Text;
 
 using System.Windows.Forms;
+using Translations;
 using XDM.Core.Lib.Common;
+
+#if !(NET472_OR_GREATER || NET5_0_OR_GREATER)
+using static XDM.WinForm.UI.WinFormsPolyfill;
+#endif
 
 namespace XDM.WinForm.UI
 {
@@ -115,10 +114,13 @@ namespace XDM.WinForm.UI
             {
                 if (!Int32.TryParse(textBox4.Text, out _))
                 {
-                    MessageBox.Show("Invalid port");
+                    MessageBox.Show(TextResource.GetText("MSG_INVALID_PORT"));
                     e.Cancel = true;
                 }
             };
+
+            button3.Margin = new Padding(0, LogicalToDeviceUnits(10), 0, LogicalToDeviceUnits(10));
+            LoadTexts();
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -152,6 +154,24 @@ namespace XDM.WinForm.UI
         private void button2_Click(object sender, EventArgs e)
         {
             DialogResult = DialogResult.Cancel;
+        }
+
+        private void LoadTexts()
+        {
+            tabPage1.Text = TextResource.GetText("ND_AUTH");
+            tabPage2.Text = TextResource.GetText("DESC_NET4");
+            tabPage4.Text = TextResource.GetText("MENU_SPEED_LIMITER");
+
+            label1.Text = TextResource.GetText("DESC_USER");
+            label2.Text = TextResource.GetText("DESC_PASS");
+            checkBox1.Text = TextResource.GetText("ND_AUTH_REMEMBER");
+
+            label3.Text = TextResource.GetText("DESC_NET4");
+            label4.Text = TextResource.GetText("PROXY_HOST");
+            label5.Text = TextResource.GetText("DESC_NET7");
+            label6.Text = TextResource.GetText("Proxy Port");
+            label7.Text = TextResource.GetText("DESC_NET8");
+            button3.Text = TextResource.GetText("ND_SYSTEM_PROXY");
         }
     }
 }

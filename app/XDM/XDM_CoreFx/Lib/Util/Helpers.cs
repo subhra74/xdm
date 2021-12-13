@@ -15,6 +15,7 @@ using XDM.Core.Lib.Common.Segmented;
 using XDM.Core.Lib.Common.Hls;
 using XDM.Core.Lib.Common.Dash;
 using System.Text;
+using Translations;
 
 #if !NET5_0_OR_GREATER
 using NetFX.Polyfill;
@@ -81,7 +82,12 @@ namespace XDM.Core.Lib.Util
         {
             try
             {
-                new Uri(url);
+                var u = new Uri(url);
+                var scheme = u.Scheme?.ToLowerInvariant();
+                if (scheme != "http" && scheme != "https")
+                {
+                    return false;
+                }
                 return true;
             }
             catch
@@ -1140,6 +1146,21 @@ namespace XDM.Core.Lib.Util
             return category.Value.FileExtensions.Contains(ext.ToUpperInvariant());
         }
 
+        private static string GetStatusText(DownloadStatus status)
+        {
+            switch (status)
+            {
+                case DownloadStatus.Downloading:
+                    return TextResource.GetText("STAT_DOWNLOADING");
+                case DownloadStatus.Stopped:
+                    return TextResource.GetText("STAT_STOPPED");
+                case DownloadStatus.Finished:
+                    return TextResource.GetText("STAT_FINISHED");
+                default:
+                    return status.ToString();
+            }
+        }
+
         public static string GenerateStatusText(InProgressDownloadEntry ent)
         {
             var text = string.Empty;
@@ -1148,7 +1169,7 @@ namespace XDM.Core.Lib.Util
             {
                 if (string.IsNullOrEmpty(ent.ETA) && string.IsNullOrEmpty(ent.DownloadSpeed))
                 {
-                    text = ent.Status.ToString();
+                    text = GetStatusText(ent.Status);
                 }
                 else if (string.IsNullOrEmpty(ent.ETA))
                 {
@@ -1160,12 +1181,12 @@ namespace XDM.Core.Lib.Util
                 }
                 else
                 {
-                    text = ent.ETA + " @ " + ent.DownloadSpeed;
+                    text = $"{ent.DownloadSpeed} - {ent.ETA}";
                 }
             }
             else
             {
-                text = ent.Status.ToString();
+                text = GetStatusText(ent.Status);
             }
 
             return text;

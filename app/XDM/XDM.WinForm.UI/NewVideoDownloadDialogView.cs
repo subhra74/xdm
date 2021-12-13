@@ -2,7 +2,9 @@
 using System.Drawing;
 using System.Drawing.Text;
 using System.IO;
+using System.Threading;
 using System.Windows.Forms;
+using Translations;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.UI;
 using XDM.WinForm.UI.FormHelper;
@@ -34,7 +36,7 @@ namespace XDM.WinForm.UI
 
         public DownloadSchedule? DownloadSchedule { get; set; }
 
-        public NewVideoDownloadDialogView()
+        public NewVideoDownloadDialogView(PrivateFontCollection fc)
         {
             InitializeComponent();
 
@@ -45,11 +47,10 @@ namespace XDM.WinForm.UI
             comboBox1.Dock = DockStyle.Fill;
             this.tableLayoutPanel2.Controls.Add(this.comboBox1, 1, 1);
 
-            fontCollection = new PrivateFontCollection();
-            fontCollection.AddFontFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"FontAwesome\remixicon.ttf"));
+            fontCollection = fc;
             fontAwesomeFont = new Font(fontCollection.Families[0], 32);
             lblFileIcon.Font = fontAwesomeFont;
-            lblFileIcon.Text = ((char)Int32.Parse("ecd9"/*"ec28"*//*"eb99"*/, 
+            lblFileIcon.Text = ((char)Int32.Parse("ecd9"/*"ec28"*//*"eb99"*/,
                 System.Globalization.NumberStyles.HexNumber)).ToString();
 
             if (!AppWinPeer.AppsUseLightTheme)
@@ -68,7 +69,7 @@ namespace XDM.WinForm.UI
                 comboBox1.ForeColor = colors.ToolbarButtonForeColor;
                 ((SkinnableComboBox)comboBox1).BorderColor = colors.ToolbarBackColor;
                 ((SkinnableComboBox)comboBox1).ButtonColor = colors.BorderColor;
-                DarkModeHelper.StyleFlatTextBox(txtFileName,colors);
+                DarkModeHelper.StyleFlatTextBox(txtFileName, colors);
                 //DarkModeHelper.StyleFlatTextBox(textBox2);
 
                 DarkModeHelper.StyleFlatButton(btnCancel, colors);
@@ -81,6 +82,7 @@ namespace XDM.WinForm.UI
 
                 //label5.ForeColor = Color.FromArgb(50, 50, 50);
             }
+            LoadTexts();
         }
 
         public event EventHandler DownloadClicked;
@@ -168,9 +170,20 @@ namespace XDM.WinForm.UI
         //    return null;
         //}
 
+        //[STAThread]
         public void ShowWindow()
         {
             this.Show();
+            //var t = new Thread(() =>
+            //{
+            //    this.Load += (_, _) =>
+            //    {
+            //        this.TopMost = true;
+            //    };
+            //    Application.Run(this);
+            //});
+            //t.SetApartmentState(ApartmentState.STA);
+            //t.Start();
         }
 
         private void btnDownload_Click(object sender, EventArgs e)
@@ -254,6 +267,23 @@ namespace XDM.WinForm.UI
         private void manageQueueAndSchedulerToolStripMenuItem_Click(object sender, EventArgs e)
         {
             this.QueueSchedulerClicked?.Invoke(this, EventArgs.Empty);
+        }
+
+        public void ShowMessageBox(string text)
+        {
+            MessageBox.Show(this, text);
+        }
+
+        private void LoadTexts()
+        {
+            lblAddress.Text = TextResource.GetText("LBL_NEW_QUEUE");
+            lblFile.Text = TextResource.GetText("LBL_SAVE_IN");
+            btnCancel.Text = TextResource.GetText("ND_MORE");
+            btnLater.Text = TextResource.GetText("ND_DOWNLOAD_LATER");
+            btnDownload.Text = TextResource.GetText("ND_DOWNLOAD_NOW");
+            Text = TextResource.GetText("ND_TITLE");
+            doNotAddToQueueToolStripMenuItem.Text = TextResource.GetText("LBL_QUEUE_OPT3");
+            manageQueueAndSchedulerToolStripMenuItem.Text = TextResource.GetText("DESC_Q_TITLE");
         }
     }
 }

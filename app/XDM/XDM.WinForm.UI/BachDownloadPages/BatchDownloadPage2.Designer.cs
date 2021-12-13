@@ -186,7 +186,7 @@ namespace XDM.WinForm.UI.BachDownloadPages
             this.doNotAddToQueueToolStripMenuItem,
             this.manageQueueAndSchedulersToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(231, 70);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(231, 48);
             // 
             // doNotAddToQueueToolStripMenuItem
             // 

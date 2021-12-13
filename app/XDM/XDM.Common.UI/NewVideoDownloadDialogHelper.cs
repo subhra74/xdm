@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using Translations;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Common.MediaProcessor;
 using XDM.Core.Lib.Util;
@@ -21,12 +22,12 @@ namespace XDM.Common.UI
             {
                 if (string.IsNullOrEmpty(window.SelectedFileName))
                 {
-                    appUi.ShowMessageBox(window, "No filename");
+                    window.ShowMessageBox(TextResource.GetText("MSG_NO_FILE"));
                     return;
                 }
                 if (app.IsFFmpegRequiredForDownload(id) && !IsFFmpegInstalled())
                 {
-                    if (appUi.Confirm(window, "Download FFmpeg?"))
+                    if (appUi.Confirm(window, TextResource.GetText("MSG_DOWNLOAD_FFMPEG")))
                     {
                         appUi.InstallLatestFFmpeg();
                     }
@@ -46,7 +47,7 @@ namespace XDM.Common.UI
             {
                 if (string.IsNullOrEmpty(window.SelectedFileName))
                 {
-                    appUi.ShowMessageBox(window, "No filename");
+                    window.ShowMessageBox(TextResource.GetText("MSG_NO_FILE"));
                     return;
                 }
                 app.StartVideoDownload(id, Helpers.SanitizeFileName(window.SelectedFileName),

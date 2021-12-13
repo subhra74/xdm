@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
+using Translations;
 
 namespace XDM.WinForm.UI.BachDownloadPages
 {
@@ -65,7 +66,7 @@ namespace XDM.WinForm.UI.BachDownloadPages
             };
             comboBox1.SelectedIndex = 0;
             comboBox2.SelectedIndex = comboBox2.Items.Count - 1;
-
+            LoadTexts();
         }
 
         private void OnBatchPatternChange()
@@ -98,7 +99,7 @@ namespace XDM.WinForm.UI.BachDownloadPages
             }
             catch (UriFormatException)
             {
-                MessageBox.Show("Invalid url");
+                MessageBox.Show(this,TextResource.GetText("MSG_INVALID_URL"));
             }
             catch (Exception ex)
             {
@@ -155,6 +156,21 @@ namespace XDM.WinForm.UI.BachDownloadPages
                     yield return new Uri(url.Replace('*', i));
                 }
             }
+        }
+
+        private void LoadTexts()
+        {
+            label1.Text = TextResource.GetText("LBL_BATCH_DESC");
+            label2.Text = TextResource.GetText("ND_ADDRESS");
+            label3.Text = TextResource.GetText("LBL_BATCH_ASTERISK");
+            radioButton1.Text = TextResource.GetText("LBL_BATCH_NUM");
+            radioButton2.Text = TextResource.GetText("LBL_BATCH_LETTER");
+            label4.Text = TextResource.GetText("LBL_BATCH_FROM");
+            label5.Text = TextResource.GetText("LBL_BATCH_TO");
+            label8.Text = TextResource.GetText("LBL_BATCH_FILE1");
+            label9.Text = TextResource.GetText("LBL_BATCH_FILE2");
+            label10.Text = TextResource.GetText("LBL_BATCH_FILEN");
+            checkBox1.Text = TextResource.GetText("BAT_LEADING_ZERO");
         }
     }
 }

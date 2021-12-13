@@ -4,8 +4,9 @@ using System.Collections.Generic;
 using System.Windows.Forms;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Util;
+using Translations;
 
-#if !(NET472_OR_GREATER||NET5_0_OR_GREATER)
+#if !(NET472_OR_GREATER || NET5_0_OR_GREATER)
 using static XDM.WinForm.UI.WinFormsPolyfill;
 #endif
 
@@ -34,6 +35,7 @@ namespace XDM.WinForm.UI.BachDownloadPages
             label1.Padding = label2.Padding = textBox1.Margin = button3.Margin = padding2;
             button1.Padding = button4.Padding = button5.Padding = button2.Padding = padding1;
             this.Padding = new Padding(LogicalToDeviceUnits(10));
+            LoadTexts();
         }
 
         public void SetBatchLinks(IEnumerable<Uri> links)
@@ -47,7 +49,7 @@ namespace XDM.WinForm.UI.BachDownloadPages
             }
             catch (UriFormatException)
             {
-                MessageBox.Show("Invalid url");
+                MessageBox.Show(this, TextResource.GetText("MSG_INVALID_URL"));
             }
             catch (Exception ex)
             {
@@ -127,6 +129,19 @@ namespace XDM.WinForm.UI.BachDownloadPages
         private void manageQueueAndSchedulersToolStripMenuItem_Click(object sender, EventArgs e)
         {
             appUI.ShowQueueWindow(this.ParentForm);
+        }
+
+        private void LoadTexts()
+        {
+            label2.Text = TextResource.GetText("BAT_SELECT_ITEMS");
+            label1.Text = TextResource.GetText("LBL_SAVE_IN");
+            button1.Text = TextResource.GetText("ND_DOWNLOAD_LATER");
+            button2.Text = TextResource.GetText("ND_DOWNLOAD_NOW");
+            button4.Text = TextResource.GetText("ND_CANCEL");
+            button5.Text = TextResource.GetText("ND_MORE");
+
+            doNotAddToQueueToolStripMenuItem.Text = TextResource.GetText("LBL_QUEUE_OPT3");
+            manageQueueAndSchedulersToolStripMenuItem.Text = TextResource.GetText("DESC_Q_TITLE");
         }
     }
 }

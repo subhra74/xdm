@@ -17,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\MediaParser.Hls\MediaParser.csproj" />
     <ProjectReference Include="..\TraceLog\TraceLog.csproj" />
+    <ProjectReference Include="..\Translations\Translations.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' != 'net5.0' ">
