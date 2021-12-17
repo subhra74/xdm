@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Windows.Forms;
+using Translations;
 using XDM.WinForm.UI.FormHelper;
 
 #if !(NET472_OR_GREATER||NET5_0_OR_GREATER)
@@ -19,6 +20,7 @@ namespace XDM.WinForm.UI.SettingsPages
             Width = LogicalToDeviceUnits(400);
             Height = LogicalToDeviceUnits(250);
             Padding = new Padding(LogicalToDeviceUnits(10));
+            LoadTexts();
         }
 
         public string CategoryName
@@ -68,6 +70,15 @@ namespace XDM.WinForm.UI.SettingsPages
             {
                 textBox3.Text = fb.SelectedPath;
             }
+        }
+
+        private void LoadTexts()
+        {
+            label1.Text = TextResource.GetText("SORT_NAME");
+            label2.Text = TextResource.GetText("SETTINGS_CAT_TYPES");
+            label3.Text = TextResource.GetText("SETTINGS_CAT_FOLDER");
+            button2.Text = TextResource.GetText("MSG_OK");
+            button1.Text = TextResource.GetText("ND_CANCEL");
         }
     }
 }

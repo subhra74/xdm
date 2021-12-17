@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Drawing.Text;
 using System.Windows.Forms;
+using Translations;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Util;
 using XDMApp;
@@ -14,10 +15,12 @@ namespace XDM.WinForm.UI.SettingsPages
         public AdvancedSettingsPage()
         {
             InitializeComponent();
-            AutoScrollMinSize = tableLayoutPanel1.Size; 
+            AutoScrollMinSize = tableLayoutPanel1.Size;
             this.ri16Font = new Font(GlobalFontCollection.RiFontInstance.Families[0], 12);
             button1.Font = this.ri16Font;
             button1.Text = RemixIcon.GetFontIcon("ed70");
+
+            LoadTexts();
         }
 
         public void PopulateUI()
@@ -54,6 +57,17 @@ namespace XDM.WinForm.UI.SettingsPages
             {
                 textBox2.Text = fc.FileName;
             }
+        }
+
+        private void LoadTexts()
+        {
+            checkBox1.Text = TextResource.GetText("MSG_HALT");
+            checkBox2.Text = TextResource.GetText("MSG_AWAKE");
+            checkBox3.Text = TextResource.GetText("EXEC_CMD");
+            checkBox4.Text = TextResource.GetText("EXE_ANTI_VIR");
+            checkBox5.Text = TextResource.GetText("AUTO_START");
+            label2.Text = TextResource.GetText("ANTIVIR_CMD");
+            label1.Text = TextResource.GetText("ANTIVIR_ARGS");
         }
     }
 }

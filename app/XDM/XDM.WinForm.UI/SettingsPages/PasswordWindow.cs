@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 
 using System.Windows.Forms;
+using Translations;
 using XDM.Core.Lib.Common;
 
 #if !(NET472_OR_GREATER||NET5_0_OR_GREATER)
@@ -22,6 +23,7 @@ namespace XDM.WinForm.UI.SettingsPages
             InitializeComponent();
             Width = LogicalToDeviceUnits(350);
             Height = LogicalToDeviceUnits(200);
+            LoadTexts();
         }
 
         public PasswordEntry PasswordEntry
@@ -58,6 +60,16 @@ namespace XDM.WinForm.UI.SettingsPages
         {
             DialogResult = DialogResult.Cancel;
             Visible = false;
+        }
+
+        private void LoadTexts()
+        {
+            label1.Text = TextResource.GetText("DESC_HOST");
+            label2.Text = TextResource.GetText("DESC_USER");
+            label3.Text = TextResource.GetText("DESC_PASS");
+            button2.Text = TextResource.GetText("MSG_OK");
+            button1.Text = TextResource.GetText("ND_CANCEL");
+
         }
     }
 }

@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 
 using System.Windows.Forms;
+using Translations;
 using XDM.Core.Lib.Common;
 
 #if !(NET472_OR_GREATER||NET5_0_OR_GREATER)
@@ -30,6 +31,8 @@ namespace XDM.WinForm.UI.SettingsPages
                 LogicalToDeviceUnits(10), LogicalToDeviceUnits(5));
             flowLayoutPanel1.Margin = new Padding(LogicalToDeviceUnits(10), LogicalToDeviceUnits(10),
                 LogicalToDeviceUnits(10), LogicalToDeviceUnits(5));
+
+            LoadTexts();
         }
 
         public void PopulateUI()
@@ -102,6 +105,17 @@ namespace XDM.WinForm.UI.SettingsPages
             if (listView1.SelectedIndices.Count == 0) return;
             var selectedIndex = listView1.SelectedIndices[0];
             listView1.Items.RemoveAt(selectedIndex);
+        }
+
+        private void LoadTexts()
+        {
+            button1.Text = TextResource.GetText("SETTINGS_CAT_ADD");
+            button2.Text = TextResource.GetText("SETTINGS_CAT_EDIT");
+            button3.Text = TextResource.GetText("DESC_DEL");
+
+            listView1.Columns[0].Text = TextResource.GetText("DESC_HOST");
+            listView1.Columns[1].Text = TextResource.GetText("DESC_USER");
+            listView1.Columns[2].Text = TextResource.GetText("DESC_PASS");
         }
     }
 }

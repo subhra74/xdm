@@ -169,7 +169,7 @@ namespace XDM.WinForm.UI
             label3.Text = TextResource.GetText("DESC_NET4");
             label4.Text = TextResource.GetText("PROXY_HOST");
             label5.Text = TextResource.GetText("DESC_NET7");
-            label6.Text = TextResource.GetText("Proxy Port");
+            label6.Text = TextResource.GetText("PROXY_PORT");
             label7.Text = TextResource.GetText("DESC_NET8");
             button3.Text = TextResource.GetText("ND_SYSTEM_PROXY");
         }

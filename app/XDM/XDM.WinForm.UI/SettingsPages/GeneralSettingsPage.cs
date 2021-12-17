@@ -1,14 +1,11 @@
 ﻿
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Drawing.Text;
 using System.Linq;
-using System.Text;
 
 using System.Windows.Forms;
+using Translations;
 using XDM.Core.Lib.Common;
 using XDM.WinForm.UI.FormHelper;
 using XDMApp;
@@ -29,6 +26,7 @@ namespace XDM.WinForm.UI.SettingsPages
             button1.Text = RemixIcon.GetFontIcon("ed70");
             button6.Font = this.ri16Font;
             button6.Text = RemixIcon.GetFontIcon("ed70");
+            LoadTexts();
         }
 
         public void PopulateUI()
@@ -104,6 +102,7 @@ namespace XDM.WinForm.UI.SettingsPages
             {
                 categories.Add((Category)lvi.Tag);
             }
+
             Config.Instance.Categories = categories;
             Config.Instance.FolderSelectionMode = checkBox5.Checked ? FolderSelectionMode.Auto : FolderSelectionMode.Manual;
             Config.Instance.DefaultDownloadFolder = textBox2.Text;
@@ -200,6 +199,27 @@ namespace XDM.WinForm.UI.SettingsPages
             {
                 textBox2.Text = fb.SelectedPath;
             }
+        }
+
+        private void LoadTexts()
+        {
+            checkBox1.Text = TextResource.GetText("SHOW_DWN_PRG");
+            checkBox2.Text = TextResource.GetText("SHOW_DWN_COMPLETE");
+            checkBox3.Text = TextResource.GetText("LBL_START_AUTO");
+            checkBox4.Text = TextResource.GetText("LBL_OVERWRITE_EXISTING");
+            label1.Text = TextResource.GetText("LBL_TEMP_FOLDER");
+            label2.Text = TextResource.GetText("MSG_MAX_DOWNLOAD");
+            label3.Text = TextResource.GetText("SETTINGS_CAT");
+            listView1.Columns[0].Text= TextResource.GetText("SETTINGS_CAT_NAME");
+            listView1.Columns[1].Text= TextResource.GetText("SETTINGS_CAT_TYPES");
+            listView1.Columns[2].Text= TextResource.GetText("SETTINGS_CAT_FOLDER");
+            checkBox5.Text = TextResource.GetText("SETTINGS_ATUO_CAT");
+            label4.Text = TextResource.GetText("SETTINGS_FOLDER");
+            checkBox6.Text = TextResource.GetText("SETTINGS_DARK_THEME");
+            button5.Text= TextResource.GetText("SETTINGS_CAT_ADD");
+            button4.Text= TextResource.GetText("SETTINGS_CAT_EDIT");
+            button3.Text= TextResource.GetText("DESC_DEL");
+            button2.Text= TextResource.GetText("DESC_DEF");
         }
     }
 }

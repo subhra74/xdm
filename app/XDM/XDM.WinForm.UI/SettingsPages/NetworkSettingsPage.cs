@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 
 using System.Windows.Forms;
+using Translations;
 using XDM.Core.Lib.Common;
 
 #if !(NET472_OR_GREATER||NET5_0_OR_GREATER)
@@ -17,7 +18,6 @@ namespace XDM.WinForm.UI.SettingsPages
 {
     public partial class NetworkSettingsPage : UserControl, ISettingsPage
     {
-
         public NetworkSettingsPage()
         {
             InitializeComponent();
@@ -30,10 +30,11 @@ namespace XDM.WinForm.UI.SettingsPages
             {
                 if (!Int32.TryParse(textBox4.Text, out _))
                 {
-                    MessageBox.Show("Invalid port");
+                    MessageBox.Show(this,TextResource.GetText("MSG_INVALID_PORT"));
                     e.Cancel = true;
                 }
             };
+            LoadTexts();
         }
 
         public void PopulateUI()
@@ -71,6 +72,20 @@ namespace XDM.WinForm.UI.SettingsPages
         private void button3_Click(object sender, EventArgs e)
         {
             tableLayoutPanel3.Padding = new Padding(LogicalToDeviceUnits(5));
+        }
+
+        private void LoadTexts()
+        {
+            label1.Text = TextResource.GetText("DESC_NET1");
+            label2.Text = TextResource.GetText("DESC_NET2");
+            label3.Text = TextResource.GetText("NET_MAX_RETRY");
+            checkBox3.Text= TextResource.GetText("MSG_SPEED_LIMIT");
+            label4.Text = TextResource.GetText("DESC_NET4");
+            label5.Text = TextResource.GetText("PROXY_HOST");
+            label6.Text = TextResource.GetText("DESC_NET7");
+            label7.Text = TextResource.GetText("PROXY_PORT");
+            label8.Text = TextResource.GetText("DESC_NET8");
+            button3.Text = TextResource.GetText("ND_SYSTEM_PROXY");
         }
     }
 }

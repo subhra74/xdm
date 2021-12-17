@@ -211,7 +211,7 @@ namespace XDM.WinForm.UI.SettingsPages
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.White;
             this.Controls.Add(this.tableLayoutPanel1);
-            this.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.Name = "AdvancedSettingsPage";
             this.Padding = new System.Windows.Forms.Padding(10);
             this.Size = new System.Drawing.Size(349, 329);

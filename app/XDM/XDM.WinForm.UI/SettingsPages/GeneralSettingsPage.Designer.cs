@@ -30,6 +30,7 @@ namespace XDM.WinForm.UI.SettingsPages
         private void InitializeComponent()
         {
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
+            this.checkBox6 = new System.Windows.Forms.CheckBox();
             this.label3 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.checkBox4 = new System.Windows.Forms.CheckBox();
@@ -54,7 +55,6 @@ namespace XDM.WinForm.UI.SettingsPages
             this.button6 = new System.Windows.Forms.Button();
             this.checkBox5 = new System.Windows.Forms.CheckBox();
             this.label4 = new System.Windows.Forms.Label();
-            this.checkBox6 = new System.Windows.Forms.CheckBox();
             this.tableLayoutPanel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
             this.panel1.SuspendLayout();
@@ -105,6 +105,19 @@ namespace XDM.WinForm.UI.SettingsPages
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanel1.Size = new System.Drawing.Size(410, 620);
             this.tableLayoutPanel1.TabIndex = 0;
+            // 
+            // checkBox6
+            // 
+            this.checkBox6.AutoSize = true;
+            this.tableLayoutPanel1.SetColumnSpan(this.checkBox6, 2);
+            this.checkBox6.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.checkBox6.Location = new System.Drawing.Point(8, 528);
+            this.checkBox6.Name = "checkBox6";
+            this.checkBox6.Padding = new System.Windows.Forms.Padding(5);
+            this.checkBox6.Size = new System.Drawing.Size(399, 44);
+            this.checkBox6.TabIndex = 31;
+            this.checkBox6.Text = "Use dark theme if possible (Require app restart)";
+            this.checkBox6.UseVisualStyleBackColor = true;
             // 
             // label3
             // 
@@ -370,19 +383,6 @@ namespace XDM.WinForm.UI.SettingsPages
             this.label4.Size = new System.Drawing.Size(318, 30);
             this.label4.TabIndex = 30;
             this.label4.Text = "Default download folder";
-            // 
-            // checkBox6
-            // 
-            this.checkBox6.AutoSize = true;
-            this.tableLayoutPanel1.SetColumnSpan(this.checkBox6, 2);
-            this.checkBox6.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.checkBox6.Location = new System.Drawing.Point(8, 528);
-            this.checkBox6.Name = "checkBox6";
-            this.checkBox6.Padding = new System.Windows.Forms.Padding(5);
-            this.checkBox6.Size = new System.Drawing.Size(399, 44);
-            this.checkBox6.TabIndex = 31;
-            this.checkBox6.Text = "Use dark theme if possible (Require app restart)";
-            this.checkBox6.UseVisualStyleBackColor = true;
             // 
             // GeneralSettingsPage
             // 
