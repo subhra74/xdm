@@ -1,9 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
+using Translations;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Util;
 using XDMApp;
+
+#if !(NET472_OR_GREATER||NET5_0_OR_GREATER)
+using static XDM.WinForm.UI.WinFormsPolyfill;
+#endif
 
 namespace XDM.WinForm.UI
 {
@@ -53,7 +58,7 @@ namespace XDM.WinForm.UI
             {
                 if (string.IsNullOrEmpty(textBox1.Text))
                 {
-                    MessageBox.Show("Please specify queue name");
+                    MessageBox.Show(TextResource.GetText("MSG_QUEUE_NAME_MISSING"));
                     return;
                 }
                 var list = new List<string>(listView1.CheckedItems.Count);
@@ -72,27 +77,46 @@ namespace XDM.WinForm.UI
                 }
                 Close();
             };
-        }
 
-        private void button3_Click(object sender, EventArgs e)
-        {
-            foreach (ListViewItem lvi in listView1.Items)
-            {
-                lvi.Checked = true;
-            }
-        }
+            button1.Margin = button2.Margin = checkBox1.Margin =
+                new Padding(LogicalToDeviceUnits(3),
+                LogicalToDeviceUnits(12),
+                LogicalToDeviceUnits(12),
+                LogicalToDeviceUnits(3));
 
-        private void button4_Click(object sender, EventArgs e)
-        {
-            foreach (ListViewItem lvi in listView1.Items)
+            foreach (ColumnHeader col in listView1.Columns)
             {
-                lvi.Checked = false;
+                col.Width = col.Index == 0 ? LogicalToDeviceUnits(200) : LogicalToDeviceUnits(100);
             }
+
+            LoadTexts();
         }
 
         private void button2_Click_1(object sender, EventArgs e)
         {
             Close();
+        }
+
+        private void LoadTexts()
+        {
+            Text = TextResource.GetText("LBL_QUEUE_OPT1");
+            label1.Text = TextResource.GetText("MSG_QUEUE_NAME");
+            label2.Text = TextResource.GetText("MSG_QUEUE_SELECT_ITEMS");
+            listView1.Columns[0].Text = TextResource.GetText("SORT_NAME");
+            listView1.Columns[1].Text = TextResource.GetText("SORT_DATE");
+            listView1.Columns[2].Text = TextResource.GetText("SORT_SIZE");
+            listView1.Columns[3].Text = TextResource.GetText("SORT_STATUS");
+            checkBox1.Text = TextResource.GetText("VID_CHK");
+            button1.Text = TextResource.GetText("MSG_OK");
+            button2.Text = TextResource.GetText("ND_CANCEL");
+        }
+
+        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        {
+            foreach (ListViewItem lvi in listView1.Items)
+            {
+                lvi.Checked = checkBox1.Checked;
+            }
         }
     }
 }

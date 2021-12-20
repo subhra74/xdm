@@ -5,6 +5,7 @@ using System.Drawing.Text;
 using System.IO;
 
 using System.Windows.Forms;
+using Translations;
 using XDM.Common.UI;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Util;
@@ -21,7 +22,6 @@ namespace XDM.WinForm.UI
         private PrivateFontCollection fontCollection;
         private Font fontAwesomeFont;
         private string downloadId;
-        private bool cancelled, failed;
         private Action<int> actSetProgress;
 
         public IApp App { get; set; }
@@ -180,13 +180,13 @@ namespace XDM.WinForm.UI
             if (button2.Tag != null)
             {
                 AppUI.ResumeDownload(downloadId);
-                button2.Text = "Pause";
+                button2.Text = TextResource.GetText("MENU_PAUSE");
                 button2.Tag = null;
             }
             else
             {
                 StopDownload(false);
-                button2.Text = "Resume";
+                button2.Text = TextResource.GetText("MENU_RESUME");
                 button2.Tag = new();
             }
         }
@@ -305,7 +305,7 @@ namespace XDM.WinForm.UI
                 new Action<ErrorDetails>(error =>
                 {
                     label4.Text = error.Message;
-                    button2.Text = "Resume";
+                    button2.Text = TextResource.GetText("MENU_RESUME");
                     label6.Text = string.Empty;
                     button2.Tag = new();
                     linkLabel1.Visible = false;
@@ -319,9 +319,9 @@ namespace XDM.WinForm.UI
             UIRunner.RunOnUiThread(this,
                 new Action(() =>
                 {
-                    label4.Text = "Download cancelled";
+                    label4.Text = TextResource.GetText("MSG_DWN_STOP");
                     label6.Text = string.Empty;
-                    button2.Text = "Resume";
+                    button2.Text = TextResource.GetText("MENU_RESUME");
                     button2.Tag = new();
                     linkLabel1.Visible = false;
                     speedLimiterDlg?.Close();
@@ -333,7 +333,7 @@ namespace XDM.WinForm.UI
         {
             UIRunner.RunOnUiThread(this, () =>
              {
-                 button2.Text = "Pause";
+                 button2.Text = TextResource.GetText("MENU_PAUSE");
                  button2.Tag = null;
                  linkLabel1.Visible = true;
 
@@ -348,11 +348,11 @@ namespace XDM.WinForm.UI
         {
             if (enable && limit > 0)
             {
-                linkLabel1.Text = $"Speed Limit - {limit}K/S";
+                linkLabel1.Text = $"{TextResource.GetText("SPEED_LIMIT_TITLE")} - {limit}K/S";
             }
             else
             {
-                linkLabel1.Text = "No speed limit";
+                linkLabel1.Text = TextResource.GetText("MSG_NO_SPEED_LIMIT");
             }
         }
     }

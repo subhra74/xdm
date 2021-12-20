@@ -1334,6 +1334,29 @@ namespace XDM.Core.Lib.Util
             }
             return cookieBuf.ToString();
         }
+
+        public static void OpenWindowsProxySettings()
+        {
+            if (Environment.OSVersion.Version.Major == 10)
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = "ms-settings:network-proxy",
+                    UseShellExecute = true
+                };
+                Process.Start(psi);
+            }
+            else
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = "rundll32.exe",
+                    Arguments = "inetcpl.cpl,LaunchConnectionDialog",
+                    UseShellExecute = true
+                };
+                Process.Start(psi);
+            }
+        }
     }
 
     public enum NativeHostBrowser

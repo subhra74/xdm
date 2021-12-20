@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using TraceLog;
+using Translations;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Common.Segmented;
 using XDM.Core.Lib.UI;
@@ -19,7 +20,7 @@ namespace XDMApp
             {
                 var selectedItems = peer.SelectedInProgressRows;
                 app.StopDownloads(selectedItems.Select(x => x.DownloadEntry.Id));
-                if (peer.Confirm(peer, $"Delete {selectedItems.Count} item{(selectedItems.Count > 1 ? "s" : "")}?"))
+                if (peer.Confirm(peer, TextResource.GetText("DEL_SEL_TEXT")))
                 {
                     foreach (var item in selectedItems)
                     {
@@ -35,7 +36,7 @@ namespace XDMApp
             else
             {
                 var selectedRows = peer.SelectedFinishedRows;
-                peer.ConfirmDelete($"Delete {selectedRows.Count} item{(selectedRows.Count > 1 ? "s" : "")}?",
+                peer.ConfirmDelete(TextResource.GetText("DEL_SEL_TEXT"),
                     out bool approved, out bool deleteFiles);
                 if (approved)
                 {
@@ -56,14 +57,14 @@ namespace XDMApp
             {
                 var row = selectedRows[0];
                 var ent = row.DownloadEntry;
-                Log.Debug("Open folder: " + ent.TargetDir);
+                //Log.Debug("Open folder: " + ent.TargetDir);
                 if (!Helpers.OpenFolder(ent.TargetDir, ent.Name))
                 {
-                    peer.ShowMessageBox(peer, "Could not open folder, it is either deleted or moved to a different location");
+                    peer.ShowMessageBox(peer, TextResource.GetText("ERR_MSG_FILE_NOT_FOUND_MSG"));
                 }
                 return;
             }
-            peer.ShowMessageBox(peer, "Please select a item to open");
+            peer.ShowMessageBox(peer, TextResource.GetText("NO_ITEM_SELECTED"));
         }
 
         public static void OpenSelectedFile(IAppWinPeer peer)
@@ -76,10 +77,10 @@ namespace XDMApp
                 if (!string.IsNullOrEmpty(ent.TargetDir))
                 {
                     var file = Path.Combine(ent.TargetDir, ent.Name);
-                    Log.Debug("Open: " + file);
+                    //Log.Debug("Open: " + file);
                     if (!Helpers.OpenFile(file))
                     {
-                        peer.ShowMessageBox(peer, "Could not open file, it is either deleted or moved to a different location");
+                        peer.ShowMessageBox(peer, TextResource.GetText("ERR_MSG_FILE_NOT_FOUND_MSG"));
                     }
                     return;
                 }
@@ -88,7 +89,7 @@ namespace XDMApp
                     Log.Debug("Path is null");
                 }
             }
-            peer.ShowMessageBox(peer, "Please select a file to open");
+            peer.ShowMessageBox(peer, TextResource.GetText("NO_ITEM_SELECTED"));
         }
 
         public static void StopSelectedDownloads(IAppWinPeer peer, IApp app)
@@ -244,7 +245,7 @@ namespace XDMApp
             }
             else
             {
-                peer.ShowMessageBox(peer, "File does not exist");
+                peer.ShowMessageBox(peer, TextResource.GetText("ERR_MSG_FILE_NOT_FOUND_MSG"));
             }
         }
 

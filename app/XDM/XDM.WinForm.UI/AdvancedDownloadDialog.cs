@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Windows.Forms;
 using Translations;
 using XDM.Core.Lib.Common;
+using XDM.Core.Lib.Util;
 
 #if !(NET472_OR_GREATER || NET5_0_OR_GREATER)
 using static XDM.WinForm.UI.WinFormsPolyfill;
@@ -130,25 +131,7 @@ namespace XDM.WinForm.UI
 
         private void button3_Click(object sender, EventArgs e)
         {
-            if (Environment.OSVersion.Version.Major == 10)
-            {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "ms-settings:network-proxy",
-                    UseShellExecute = true
-                };
-                Process.Start(psi);
-            }
-            else
-            {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "rundll32.exe",
-                    Arguments = "inetcpl.cpl,LaunchConnectionDialog",
-                    UseShellExecute = true
-                };
-                Process.Start(psi);
-            }
+            Helpers.OpenWindowsProxySettings();
         }
 
         private void button2_Click(object sender, EventArgs e)

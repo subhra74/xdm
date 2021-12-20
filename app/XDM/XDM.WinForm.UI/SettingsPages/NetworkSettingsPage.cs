@@ -9,8 +9,9 @@ using System.Text;
 using System.Windows.Forms;
 using Translations;
 using XDM.Core.Lib.Common;
+using XDM.Core.Lib.Util;
 
-#if !(NET472_OR_GREATER||NET5_0_OR_GREATER)
+#if !(NET472_OR_GREATER || NET5_0_OR_GREATER)
 using static XDM.WinForm.UI.WinFormsPolyfill;
 #endif
 
@@ -71,7 +72,8 @@ namespace XDM.WinForm.UI.SettingsPages
 
         private void button3_Click(object sender, EventArgs e)
         {
-            tableLayoutPanel3.Padding = new Padding(LogicalToDeviceUnits(5));
+            Helpers.OpenWindowsProxySettings();
+            //tableLayoutPanel3.Padding = new Padding(LogicalToDeviceUnits(5));
         }
 
         private void LoadTexts()

@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.Windows.Forms;
+using Translations;
 
 #if !(NET472_OR_GREATER || NET5_0_OR_GREATER)
 using static XDM.WinForm.UI.WinFormsPolyfill;
@@ -24,6 +19,7 @@ namespace XDM.WinForm.UI
                 checkBox1.Padding =
                 button1.Margin =
                 button2.Margin = new Padding(LogicalToDeviceUnits(5));
+            LoadTexts();
         }
 
         public string DescriptionText
@@ -44,6 +40,14 @@ namespace XDM.WinForm.UI
         private void button2_Click(object sender, EventArgs e)
         {
             DialogResult = DialogResult.Cancel;
+        }
+
+        private void LoadTexts()
+        {
+            Text = TextResource.GetText("MENU_DELETE_DWN");
+            checkBox1.Text = TextResource.GetText("LBL_DELETE_FILE");
+            button1.Text = TextResource.GetText("DESC_DEL");
+            button2.Text = TextResource.GetText("ND_CANCEL");
         }
     }
 }

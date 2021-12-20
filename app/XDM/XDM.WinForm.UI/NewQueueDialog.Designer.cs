@@ -40,8 +40,7 @@ namespace XDM.WinForm.UI
             this.button2 = new System.Windows.Forms.Button();
             this.button1 = new System.Windows.Forms.Button();
             this.label2 = new System.Windows.Forms.Label();
-            this.button3 = new System.Windows.Forms.Button();
-            this.button4 = new System.Windows.Forms.Button();
+            this.checkBox1 = new System.Windows.Forms.CheckBox();
             this.tableLayoutPanel1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -60,8 +59,7 @@ namespace XDM.WinForm.UI
             this.tableLayoutPanel1.Controls.Add(this.button2, 5, 4);
             this.tableLayoutPanel1.Controls.Add(this.button1, 4, 4);
             this.tableLayoutPanel1.Controls.Add(this.label2, 0, 2);
-            this.tableLayoutPanel1.Controls.Add(this.button3, 0, 4);
-            this.tableLayoutPanel1.Controls.Add(this.button4, 1, 4);
+            this.tableLayoutPanel1.Controls.Add(this.checkBox1, 0, 4);
             this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tableLayoutPanel1.Location = new System.Drawing.Point(0, 0);
             this.tableLayoutPanel1.Name = "tableLayoutPanel1";
@@ -137,8 +135,8 @@ namespace XDM.WinForm.UI
             // button2
             // 
             this.button2.AutoSize = true;
-            this.button2.Location = new System.Drawing.Point(482, 369);
-            this.button2.Margin = new System.Windows.Forms.Padding(3, 12, 3, 3);
+            this.button2.Location = new System.Drawing.Point(473, 369);
+            this.button2.Margin = new System.Windows.Forms.Padding(3, 12, 12, 3);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(87, 27);
             this.button2.TabIndex = 4;
@@ -149,7 +147,7 @@ namespace XDM.WinForm.UI
             // button1
             // 
             this.button1.AutoSize = true;
-            this.button1.Location = new System.Drawing.Point(380, 369);
+            this.button1.Location = new System.Drawing.Point(371, 369);
             this.button1.Margin = new System.Windows.Forms.Padding(3, 12, 12, 3);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(87, 25);
@@ -169,29 +167,18 @@ namespace XDM.WinForm.UI
             this.label2.TabIndex = 5;
             this.label2.Text = "Select downloads to add to queue";
             // 
-            // button3
+            // checkBox1
             // 
-            this.button3.AutoSize = true;
-            this.button3.Location = new System.Drawing.Point(15, 369);
-            this.button3.Margin = new System.Windows.Forms.Padding(3, 12, 12, 3);
-            this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(75, 25);
-            this.button3.TabIndex = 6;
-            this.button3.Text = "Check all";
-            this.button3.UseVisualStyleBackColor = true;
-            this.button3.Click += new System.EventHandler(this.button3_Click);
-            // 
-            // button4
-            // 
-            this.button4.AutoSize = true;
-            this.button4.Location = new System.Drawing.Point(105, 369);
-            this.button4.Margin = new System.Windows.Forms.Padding(3, 12, 3, 3);
-            this.button4.Name = "button4";
-            this.button4.Size = new System.Drawing.Size(78, 25);
-            this.button4.TabIndex = 7;
-            this.button4.Text = "Uncheck all";
-            this.button4.UseVisualStyleBackColor = true;
-            this.button4.Click += new System.EventHandler(this.button4_Click);
+            this.checkBox1.AutoSize = true;
+            this.tableLayoutPanel1.SetColumnSpan(this.checkBox1, 4);
+            this.checkBox1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.checkBox1.Location = new System.Drawing.Point(15, 360);
+            this.checkBox1.Name = "checkBox1";
+            this.checkBox1.Size = new System.Drawing.Size(350, 36);
+            this.checkBox1.TabIndex = 7;
+            this.checkBox1.Text = "checkBox1";
+            this.checkBox1.UseVisualStyleBackColor = true;
+            this.checkBox1.CheckedChanged += new System.EventHandler(this.checkBox1_CheckedChanged);
             // 
             // NewQueueDialog
             // 
@@ -224,7 +211,6 @@ namespace XDM.WinForm.UI
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.Button button2;
         private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.Button button3;
-        private System.Windows.Forms.Button button4;
+        private System.Windows.Forms.CheckBox checkBox1;
     }
 }

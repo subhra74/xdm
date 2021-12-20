@@ -52,6 +52,11 @@ namespace XDM.WinForm.UI
             checkBox1.CheckedChanged += (_, _) =>
             {
                 schedulerPanel.Enabled = checkBox1.Checked;
+
+                if (this.treeView1.SelectedNode?.Tag is DownloadQueue queue)
+                {
+                    queue.Schedule = checkBox1.Checked ? this.schedulerPanel.Schedule : null;
+                }
             };
 
             this.FormClosing += (s, e) =>
@@ -455,6 +460,9 @@ namespace XDM.WinForm.UI
             tabPage1.Text = TextResource.GetText("Q_LIST_FILES");
             tabPage2.Text = TextResource.GetText("Q_SCHEDULE_TXT");
             checkBox1.Text = TextResource.GetText("Q_ENABLE");
+            listView1.Columns[0].Text = TextResource.GetText("ND_FILE");
+            listView1.Columns[1].Text = TextResource.GetText("SORT_SIZE");
+            listView1.Columns[2].Text = TextResource.GetText("SORT_STATUS");
         }
     }
 }
