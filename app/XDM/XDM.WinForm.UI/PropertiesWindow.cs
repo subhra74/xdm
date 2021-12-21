@@ -1,5 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Windows.Forms;
+using Translations;
+
+#if !(NET472_OR_GREATER || NET5_0_OR_GREATER)
+using static XDM.WinForm.UI.WinFormsPolyfill;
+#endif
 
 namespace XDM.WinForm.UI
 {
@@ -8,11 +13,13 @@ namespace XDM.WinForm.UI
         public PropertiesWindow()
         {
             InitializeComponent();
-            lvCookies.Columns[0].Width = 200;
-            lvCookies.Columns[1].Width = 200;
+            lvCookies.Columns[0].Width = LogicalToDeviceUnits(200);
+            lvCookies.Columns[1].Width = LogicalToDeviceUnits(200);
 
-            lvHeaders.Columns[0].Width = 200;
-            lvHeaders.Columns[1].Width = 200;
+            lvHeaders.Columns[0].Width = LogicalToDeviceUnits(200);
+            lvHeaders.Columns[1].Width = LogicalToDeviceUnits(200);
+
+            LoadTexts();
         }
 
         public string FileName { set => txtFile.Text = value; }
@@ -60,6 +67,20 @@ namespace XDM.WinForm.UI
                     }
                 }
             }
+        }
+
+        private void LoadTexts()
+        {
+            Text = TextResource.GetText("MENU_PROPERTIES");
+            lblFile.Text = TextResource.GetText("SORT_NAME");
+            lblFolder.Text = TextResource.GetText("LBL_SAVE_IN");
+            lblUrl.Text = TextResource.GetText("ND_ADDRESS");
+            lblSize.Text = TextResource.GetText("SORT_SIZE");
+            lblDate.Text = TextResource.GetText("SORT_DATE");
+            lblType.Text = TextResource.GetText("SORT_TYPE");
+            lblReferer.Text = TextResource.GetText("PROP_REFERER");
+            lblCookies.Text = TextResource.GetText("PROP_COOKIE");
+            lblHeader.Text = TextResource.GetText("MSG_HEADERS");
         }
     }
 }

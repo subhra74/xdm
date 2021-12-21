@@ -14,6 +14,7 @@ using BrowserMonitoring;
 using XDM.Core.Lib.Common.Collections;
 using System.Timers;
 using TraceLog;
+using Translations;
 
 #if !NET5_0_OR_GREATER
 using NetFX.Polyfill;
@@ -554,7 +555,7 @@ namespace XDMApp
                     {
                         var prgWin = CreateOrGetProgressWindow(download);
                         prgWin.FileNameText = download.TargetFileName;
-                        prgWin.FileSizeText = $"Downloading...";
+                        prgWin.FileSizeText = $"{TextResource.GetText("STAT_DOWNLOADING")} ...";
                         prgWin.DownloadStarted();
                         prgWin.ShowProgressWindow();
                     }
@@ -574,7 +575,7 @@ namespace XDMApp
                 var downloader = liveDownloads[downloadId].Downloader;
                 var prgWin = CreateOrGetProgressWindow(downloader);
                 prgWin.FileNameText = downloader.TargetFileName;
-                prgWin.FileSizeText = $"Downloading...";
+                prgWin.FileSizeText = $"{TextResource.GetText("STAT_DOWNLOADING")} ...";
                 prgWin.ShowProgressWindow();
             }
             catch (Exception ex)
@@ -681,9 +682,9 @@ namespace XDMApp
                 {
                     var prgWin = activeProgressWindows[http.Id];
                     prgWin.DownloadProgress = args.Progress;
-                    prgWin.FileSizeText = $"Downloading {Helpers.FormatSize(args.Downloaded)} / {Helpers.FormatSize(http.FileSize)}";
-                    prgWin.DownloadSpeedText = Helpers.FormatSize((long)args.DownloadSpeed) + "/Sec";
-                    prgWin.DownloadETAText = $"Time left: {Helpers.ToHMS(args.Eta)}";
+                    prgWin.FileSizeText = $"{TextResource.GetText("STAT_DOWNLOADING")} {Helpers.FormatSize(args.Downloaded)} / {Helpers.FormatSize(http.FileSize)}";
+                    prgWin.DownloadSpeedText = Helpers.FormatSize((long)args.DownloadSpeed) + "/s";
+                    prgWin.DownloadETAText = $"{TextResource.GetText("MSG_TIME_LEFT")}: {Helpers.ToHMS(args.Eta)}";
                 }
             }
         }
@@ -778,7 +779,7 @@ namespace XDMApp
                 {
                     var prgWin = activeProgressWindows[http.Id];
                     prgWin.FileNameText = http.TargetFileName;
-                    prgWin.FileSizeText = $"Downloading {Helpers.FormatSize(0)} / {Helpers.FormatSize(http.FileSize)}";
+                    prgWin.FileSizeText = $"{TextResource.GetText("STAT_DOWNLOADING")} {Helpers.FormatSize(0)} / {Helpers.FormatSize(http.FileSize)}";
                 }
             }
         }

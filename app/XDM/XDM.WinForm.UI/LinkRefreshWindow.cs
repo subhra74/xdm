@@ -1,12 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
 
 using System.Windows.Forms;
+using Translations;
 using XDM.Core.Lib.Common;
 
 namespace XDM.WinForm.UI
@@ -16,6 +11,9 @@ namespace XDM.WinForm.UI
         public LinkRefreshWindow()
         {
             InitializeComponent();
+            Text = TextResource.GetText("MENU_REFRESH_LINK");
+            label1.Text = TextResource.GetText("REF_WAITING_FOR_LINK");
+            button1.Text = TextResource.GetText("BTN_STOP_PROCESSING");
         }
 
         public event EventHandler WatchingStopped;

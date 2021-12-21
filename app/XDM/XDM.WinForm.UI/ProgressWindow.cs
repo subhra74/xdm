@@ -166,6 +166,8 @@ namespace XDM.WinForm.UI
                 progressBar1.BackColor = colors.DataGridViewBackColor;
                 progressBar1.ForeColor = Color.DodgerBlue;
             }
+
+            LoadTexts();
         }
 
         private void Win32ProgressWindow_FormClosing(object? sender, FormClosingEventArgs e)
@@ -354,6 +356,15 @@ namespace XDM.WinForm.UI
             {
                 linkLabel1.Text = TextResource.GetText("MSG_NO_SPEED_LIMIT");
             }
+        }
+
+        private void LoadTexts()
+        {
+            linkLabel1.Text = TextResource.GetText("MSG_NO_SPEED_LIMIT");
+            button2.Text = TextResource.GetText("MENU_PAUSE");
+            //button2.Text = TextResource.GetText("MENU_RESUME");
+            button3.Text = TextResource.GetText("BTN_STOP_PROCESSING");
+            button1.Text = TextResource.GetText("DWN_HIDE");
         }
     }
 }

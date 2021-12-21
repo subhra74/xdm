@@ -1,14 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
 
 using System.Windows.Forms;
-using XDM.Common.UI;
-using XDM.Core.Lib.Common;
+using Translations;
 using XDM.Core.Lib.Common;
 
 namespace XDM.WinForm.UI
@@ -20,6 +13,9 @@ namespace XDM.WinForm.UI
         {
             InitializeComponent();
             this.AppUI = AppUI;
+            Text = TextResource.GetText("OPT_UPDATE_FFMPEG");
+            label1.Text = TextResource.GetText("STAT_DOWNLOADING");
+            button1.Text = TextResource.GetText("ND_CANCEL");
         }
 
         public event EventHandler? Cancelled;
@@ -32,13 +28,13 @@ namespace XDM.WinForm.UI
 
         public void DownloadFailed(object? sender, DownloadFailedEventArgs e)
         {
-            MessageBox.Show("Update failed");
+            MessageBox.Show(TextResource.GetText("MSG_FAILED"));
             AppUI.RunOnUiThread(() => Dispose());
         }
 
         public void DownloadFinished(object? sender, EventArgs e)
         {
-            MessageBox.Show("Update successfull");
+            MessageBox.Show(TextResource.GetText("MSG_UPDATED"));
             this.Finished?.Invoke(sender, e);
             AppUI.RunOnUiThread(() => Dispose());
         }
@@ -70,7 +66,7 @@ namespace XDM.WinForm.UI
 
         public void ShowNoUpdateMessage()
         {
-            MessageBox.Show("No updates available/already upto date");
+            MessageBox.Show(TextResource.GetText("MSG_NO_UPDATE"));
             AppUI.RunOnUiThread(() => Dispose());
             this.Finished?.Invoke(this, EventArgs.Empty);
         }

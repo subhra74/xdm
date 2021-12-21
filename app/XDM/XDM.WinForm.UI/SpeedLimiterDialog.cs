@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Windows.Forms;
+using Translations;
 
-#if !(NET472_OR_GREATER||NET5_0_OR_GREATER)
+#if !(NET472_OR_GREATER || NET5_0_OR_GREATER)
 using static XDM.WinForm.UI.WinFormsPolyfill;
 #endif
 
@@ -20,6 +21,7 @@ namespace XDM.WinForm.UI
                 LogicalToDeviceUnits(10), LogicalToDeviceUnits(2));
             flowLayoutPanel1.Padding = new Padding(LogicalToDeviceUnits(2));
             button1.Margin = button2.Margin = new Padding(LogicalToDeviceUnits(3));
+            LoadTexts();
         }
 
         public int SpeedLimit
@@ -43,6 +45,13 @@ namespace XDM.WinForm.UI
         {
             OkClicked?.Invoke(sender, EventArgs.Empty);
             Close();
+        }
+
+        private void LoadTexts()
+        {
+            Text = TextResource.GetText("MENU_SPEED_LIMITER");
+            button1.Text= TextResource.GetText("ND_CANCEL");
+            button2.Text= TextResource.GetText("MSG_OK");
         }
     }
 }

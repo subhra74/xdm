@@ -50,7 +50,7 @@ namespace XDM.WinForm.UI
                 }
                 else
                 {
-                    MessageBox.Show("Invalid URL");
+                    MessageBox.Show(TextResource.GetText("MSG_INVALID_URL"));
                 }
             };
 

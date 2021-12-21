@@ -5,8 +5,6 @@ using System.IO;
 using System.Threading;
 using TraceLog;
 using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Common.Segmented;
 using XDM.Core.Lib.Common.Segmented;
 
 namespace XDM.Common.UI

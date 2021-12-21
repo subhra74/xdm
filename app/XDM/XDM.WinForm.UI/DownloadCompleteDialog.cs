@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 
 using System.Windows.Forms;
+using Translations;
 using XDM.Core.Lib.Common;
 using XDM.WinForm.UI.FormHelper;
 using XDMApp;
@@ -73,6 +74,8 @@ namespace XDM.WinForm.UI
                 tableLayoutPanel2.BackColor = colors.DataGridViewBackColor;
                 tableLayoutPanel1.BackColor = colors.ToolbarBackColor;
             }
+
+            LoadTexts();
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -107,7 +110,15 @@ namespace XDM.WinForm.UI
 
         private void button1_Click(object sender, EventArgs e)
         {
+            Close();
+        }
 
+        private void LoadTexts()
+        {
+            button1.Text = TextResource.GetText("ND_CANCEL");
+            button3.Text = TextResource.GetText("CTX_OPEN_FOLDER");
+            button2.Text = TextResource.GetText("CTX_OPEN_FILE");
+            Text = TextResource.GetText("CD_TITLE");
         }
     }
 }
