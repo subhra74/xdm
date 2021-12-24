@@ -280,21 +280,20 @@ namespace XDMApp
         {
             try
             {
-                peer.InProgressDownloads = TransactedIO.ReadInProgressList("inprogress-downloads.db", Config.DataDir);
-                peer.FinishedDownloads = TransactedIO.ReadFinishedList("finished-downloads.db", Config.DataDir);
+                peer.InProgressDownloads = TransactedIO.ReadInProgressList("inprogress-downloads.dat", Config.DataDir);
+                peer.FinishedDownloads = TransactedIO.ReadFinishedList("finished-downloads.dat", Config.DataDir);
             }
             catch (Exception ex)
             {
                 Log.Debug(ex, "LoadDownloadList");
             }
-
         }
 
         private void SaveInProgressList()
         {
             lock (this)
             {
-                TransactedIO.WriteInProgressList(peer.InProgressDownloads, "inprogress-downloads.db", Config.DataDir);
+                TransactedIO.WriteInProgressList(peer.InProgressDownloads, "inprogress-downloads.dat", Config.DataDir);
             }
         }
 
@@ -302,7 +301,7 @@ namespace XDMApp
         {
             lock (this)
             {
-                TransactedIO.WriteFinishedList(peer.FinishedDownloads, "finished-downloads.db", Config.DataDir);
+                TransactedIO.WriteFinishedList(peer.FinishedDownloads, "finished-downloads.dat", Config.DataDir);
             }
         }
 

@@ -16,6 +16,42 @@
 
 //        private static void GenerateCode(Type type, StringBuilder serializer, StringBuilder deserializer)
 //        {
+//            serializer.Append(@"
+//        private static void WriteString(BinaryWriter w, string value, string name)
+//        {
+//            w.Write(name);
+//            w.Write(STRING);
+//            w.Write(value ?? string.Empty);
+//        }
+
+//        private static void WriteBoolean(BinaryWriter w, bool value, string name)
+//        {
+//            w.Write(name);
+//            w.Write(BOOL);
+//            w.Write(value);
+//        }
+
+//        private static void WriteInt32(BinaryWriter w, int value, string name)
+//        {
+//            w.Write(name);
+//            w.Write(INT);
+//            w.Write(value);
+//        }
+
+//        private static void WriteStringArray(BinaryWriter w, IEnumerable<string> array, string name, int count)
+//        {
+//            w.Write(name);
+//            w.Write(STRING_ARRAY);
+//            w.Write((short)count);
+//            foreach (var item in array)
+//            {
+//                w.Write(item);
+//            }
+//        }
+
+//        private
+//");
+
 //            foreach (var property in type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly))
 //            {
 //                if (property.PropertyType.IsArray || property.PropertyType.GetInterface("IEnumerable") != null)

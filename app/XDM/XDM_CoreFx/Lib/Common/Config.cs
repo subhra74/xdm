@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -189,12 +190,12 @@ namespace XDM.Core.Lib.Common
             {
                 TempDir = Path.Combine(Config.DataDir, "temp")
             };
-            var bytes = TransactedIO.ReadBytes("settings.db", Config.DataDir);
+            var bytes = TransactedIO.ReadBytes("settings.dat", Config.DataDir);
             if (bytes != null)
             {
                 using var ms = new MemoryStream(bytes);
                 using var reader = new BinaryReader(ms);
-                PopulateConfig(Instance, reader);
+                SerializationHelper.DeserializeConfig(Instance, reader);
             }
 
 
@@ -249,251 +250,11 @@ namespace XDM.Core.Lib.Common
             //};
         }
 
-        private const byte INT = 0, STRING = 1, BOOL = 2, STRING_ARRAY = 3, INT_ARRAY = 4, OBJECT_ARRAY = 5;
 
-        private static void SkipUnknownField(byte type, string name, BinaryReader r)
-        {
-            Log.Debug($"Config skipping unknown field '{name}' of type '{type}'");
-            switch (type)
-            {
-                case INT:
-                    r.ReadInt32();
-                    break;
-                case STRING:
-                    r.ReadString();
-                    break;
-                case BOOL:
-                    r.ReadBoolean();
-                    break;
-                case STRING_ARRAY:
-                    var sc = r.ReadInt16();
-                    for (int i = 0; i < sc; i++)
-                    {
-                        r.ReadString();
-                    }
-                    break;
-                case INT_ARRAY:
-                    var ic = r.ReadInt16();
-                    for (int i = 0; i < ic; i++)
-                    {
-                        r.ReadInt32();
-                    }
-                    break;
-                case OBJECT_ARRAY:
-                    var oc = r.ReadInt16();
-                    for (int i = 0; i < oc; i++)
-                    {
-                        var name1 = r.ReadString();
-                        var type1 = r.ReadByte();
-                        SkipUnknownField(type1, name1, r);
-                    }
-                    break;
-                default:
-                    throw new IOException($"Unknown field type '{type}'");
-            }
-        }
 
-        private static void PopulateConfig2(Config instance, BinaryReader r)
-        {
-            var fieldsCount = r.ReadInt16();
-            for (var i = 0; i < fieldsCount; i++)
-            {
-                var fieldName = r.ReadString();
-                var fieldType = r.ReadByte();
-                switch (fieldName)
-                {
-                    case "AfterCompletionCommand":
-                        instance.AfterCompletionCommand = r.ReadString();
-                        break;
-                    case "AntiVirusArgs":
-                        instance.AntiVirusArgs = r.ReadString();
-                        break;
-                    case "AntiVirusExecutable":
-                        instance.AntiVirusExecutable = r.ReadString();
-                        break;
-                    case "BlockedHosts":
-                        var blockedHostsLength = r.ReadInt16();
-                        instance.BlockedHosts = new string[blockedHostsLength];
-                        for (int a = 0; a < blockedHostsLength; a++)
-                        {
-                            instance.BlockedHosts[i] = r.ReadString();
-                        }
-                        break;
-                    case "Categories":
-                        var categoriessLength = r.ReadInt16();
-                        var categories = new List<Category>(categoriessLength);
-                        for (int a = 0; a < categoriessLength; a++)
-                        {
-                            var cat = new Category();
-                            var fieldName1 = r.ReadString();
-                            var fieldType1 = r.ReadByte();
-                            switch (fieldName1)
-                            {
-                                case "DefaultFolder":
-                                    cat.DefaultFolder = r.ReadString();
-                                    break;
-                                case "DisplayName":
-                                    cat.DisplayName = r.ReadString();
-                                    break;
-                                case "IsPredefined":
-                                    cat.IsPredefined = r.ReadBoolean();
-                                    break;
-                                case "Name":
-                                    cat.Name = r.ReadString();
-                                    break;
-                                case "FileExtensions":
-                                    cat.FileExtensions = new HashSet<string>();
-                                    var fileExtensionsLength1 = r.ReadInt16();
-                                    for (int m = 0; m < fileExtensionsLength1; m++)
-                                    {
-                                        cat.FileExtensions.Add(r.ReadString());
-                                    }
-                                    break;
-                                default:
-                                    SkipUnknownField(fieldType1, fieldName1, r);
-                                    break;
-                            }
-                            categories.Add(cat);
-                            instance.Categories = categories;
-                        }
-                        break;
-                    case "DefaultDownloadFolder":
-                        instance.DefaultDownloadFolder = r.ReadString();
-                        break;
-                    case "EnableSpeedLimit":
-                        instance.EnableSpeedLimit = r.ReadBoolean();
-                        break;
-                    case "FetchServerTimeStamp":
-                        instance.FetchServerTimeStamp = r.ReadBoolean();
-                        break;
-                    case "FileConflictResolution":
-                        instance.FileConflictResolution = (FileConflictResolution)r.ReadInt32();
-                        break;
-                    case "FolderSelectionMode":
-                        instance.FolderSelectionMode = (FolderSelectionMode)r.ReadInt32();
-                        break;
-                    case "DefaltDownloadSpeed":
-                        instance.DefaltDownloadSpeed = r.ReadInt32();
-                        break;
-                    case "IsBrowserMonitoringEnabled":
-                        instance.IsBrowserMonitoringEnabled = r.ReadBoolean();
-                        break;
-                    case "KeepPCAwake":
-                        instance.KeepPCAwake = r.ReadBoolean();
-                        break;
-                    case "Language":
-                        instance.Language = r.ReadString();
-                        break;
-                    case "MaxParallelDownloads":
-                        instance.MaxParallelDownloads = r.ReadInt32();
-                        break;
-                    case "MaxRetry":
-                        instance.MaxRetry = r.ReadInt32();
-                        break;
-                    case "MaxSegments":
-                        instance.MaxSegments = r.ReadInt32();
-                        break;
-                    case "MinVideoSize":
-                        instance.MinVideoSize = r.ReadInt32();
-                        break;
-                    case "MonitorClipboard":
-                        instance.MonitorClipboard = r.ReadBoolean();
-                        break;
-                    case "NetworkTimeout":
-                        instance.NetworkTimeout = r.ReadInt32();
-                        break;
-                    case "RetryDelay":
-                        instance.RetryDelay = r.ReadInt32();
-                        break;
-                    case "RunCommandAfterCompletion":
-                        instance.RunCommandAfterCompletion = r.ReadBoolean();
-                        break;
-                    case "RunOnLogon":
-                        instance.RunOnLogon = r.ReadBoolean();
-                        break;
-                    case "ScanWithAntiVirus":
-                        instance.ScanWithAntiVirus = r.ReadBoolean();
-                        break;
-                    case "ShowDownloadCompleteWindow":
-                        instance.ShowDownloadCompleteWindow = r.ReadBoolean();
-                        break;
-                    case "ShowProgressWindow":
-                        instance.ShowProgressWindow = r.ReadBoolean();
-                        break;
-                    case "ShutdownAfterAllFinished":
-                        instance.ShutdownAfterAllFinished = r.ReadBoolean();
-                        break;
-                    case "StartDownloadAutomatically":
-                        instance.StartDownloadAutomatically = r.ReadBoolean();
-                        break;
-                    case "TempDir":
-                        instance.TempDir = r.ReadString();
-                        break;
-                    case "AllowSystemDarkTheme":
-                        instance.AllowSystemDarkTheme = r.ReadBoolean();
-                        break;
-                    case "FileExtensions":
-                        var fileExtensionsLength = r.ReadInt16();
-                        instance.FileExtensions = new string[fileExtensionsLength];
-                        for (int a = 0; a < fileExtensionsLength; a++)
-                        {
-                            instance.FileExtensions[i] = r.ReadString();
-                        }
-                        break;
-                    case "RecentFolders":
-                        var recentFoldersLength = r.ReadInt16();
-                        instance.RecentFolders = new List<string>(recentFoldersLength);
-                        for (int a = 0; a < recentFoldersLength; a++)
-                        {
-                            instance.RecentFolders.Add(r.ReadString());
-                        }
-                        break;
-                    case "VideoExtensions":
-                        var videoExtensionsLength = r.ReadInt16();
-                        instance.VideoExtensions = new string[videoExtensionsLength];
-                        for (int a = 0; a < videoExtensionsLength; a++)
-                        {
-                            instance.VideoExtensions[i] = r.ReadString();
-                        }
-                        break;
-                    case "UserCredentials":
-                        var userCredentialsLength = r.ReadInt16();
-                        var passwordEntries = new List<PasswordEntry>(userCredentialsLength);
-                        for (int a = 0; a < userCredentialsLength; a++)
-                        {
-                            var passwordEntry = new PasswordEntry();
-                            var fieldName1 = r.ReadString();
-                            var fieldType1 = r.ReadByte();
-                            switch (fieldName1)
-                            {
-                                case "Host":
-                                    passwordEntry.Host = r.ReadString();
-                                    break;
-                                case "User":
-                                    passwordEntry.User = r.ReadString();
-                                    break;
-                                case "Password":
-                                    passwordEntry.Password = r.ReadString();
-                                    break;
-                                default:
-                                    SkipUnknownField(fieldType1, fieldName1, r);
-                                    break;
-                            }
-                            passwordEntries.Add(passwordEntry);
-                            instance.UserCredentials = passwordEntries;
-                        }
-                        break;
-                    case "Proxy":
-                        instance.Proxy = ProxyInfoSerializer.Deserialize(r);
-                        break;
-                    default:
-                        SkipUnknownField(fieldType, fieldName, r);
-                        break;
-                }
-            }
-        }
 
-        private static void PopulateConfig(Config instance, BinaryReader r)
+
+        private static void PopulateConfig32(Config instance, BinaryReader r)
         {
             instance.AfterCompletionCommand = Helpers.ReadString(r);
             instance.AntiVirusArgs = Helpers.ReadString(r);
@@ -585,6 +346,11 @@ namespace XDM.Core.Lib.Common
 
         public static void SaveConfig()
         {
+            SerializationHelper.SerializeConfig();
+        }
+
+        public static void SaveConfig3()
+        {
             using var ms = new MemoryStream();
             using var writer = new BinaryWriter(ms);
             writer.Write(Instance.AfterCompletionCommand ?? string.Empty);
@@ -661,8 +427,8 @@ namespace XDM.Core.Lib.Common
             {
                 writer.Write(ext);
             }
-            ProxyInfoSerializer.Serialize(Instance.Proxy, writer);
-            writer.Write(Instance.AllowSystemDarkTheme);
+            //ProxyInfoSerializer.Serialize(Instance.Proxy, writer);
+            //writer.Write(Instance.AllowSystemDarkTheme);
             writer.Close();
             ms.Close();
             TransactedIO.WriteBytes(ms.ToArray(), "settings.db", Config.DataDir);

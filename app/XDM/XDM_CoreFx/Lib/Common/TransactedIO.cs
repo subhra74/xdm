@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using TraceLog;
+using XDM.Core.Lib.Util;
 
 namespace XDM.Core.Lib.Common
 {
@@ -33,17 +34,18 @@ namespace XDM.Core.Lib.Common
 
         private static List<FinishedDownloadEntry> ReadFinishedList(string file)
         {
-            var list = new List<FinishedDownloadEntry>();
+            var list = new List<FinishedDownloadEntry>(0);
             using var reader = new BinaryReader(new FileStream(file, FileMode.Open));
             try
             {
-                var count = reader.ReadInt32();
-                for (var i = 0; i < count; i++)
-                {
-                    var version = reader.ReadInt32();
-                    var entry = FinishedDownloadEntry.Deserialize(version, reader);
-                    list.Add(entry);
-                }
+                list = SerializationHelper.DeserializeFinishedDownloadEntry(reader);
+                //var count = reader.ReadInt32();
+                //for (var i = 0; i < count; i++)
+                //{
+                //    var version = reader.ReadInt32();
+                //    var entry = FinishedDownloadEntry.Deserialize(version, reader);
+                //    list.Add(entry);
+                //}
             }
             catch (Exception ex)
             {
@@ -80,13 +82,14 @@ namespace XDM.Core.Lib.Common
             using var reader = new BinaryReader(new FileStream(file, FileMode.Open));
             try
             {
-                var count = reader.ReadInt32();
-                for (var i = 0; i < count; i++)
-                {
-                    var version = reader.ReadInt32();
-                    var entry = InProgressDownloadEntry.Deserialize(version, reader);
-                    list.Add(entry);
-                }
+                list = SerializationHelper.DeserializeInProgressDownloadEntry(reader);
+                //var count = reader.ReadInt32();
+                //for (var i = 0; i < count; i++)
+                //{
+                //    var version = reader.ReadInt32();
+                //    var entry = InProgressDownloadEntry.Deserialize(version, reader);
+                //    list.Add(entry);
+                //}
             }
             catch (Exception ex)
             {
@@ -97,13 +100,8 @@ namespace XDM.Core.Lib.Common
 
         private static void WriteInProgressList(IEnumerable<InProgressDownloadEntry> list, string file)
         {
-            var count = list.Count();
             using var writer = new BinaryWriter(new FileStream(file, FileMode.Create));
-            writer.Write(count);
-            foreach (var item in list)
-            {
-                item.Serialize(writer);
-            }
+            SerializationHelper.SerializeInProgressDownloadEntry(writer, new List<InProgressDownloadEntry>(list));
         }
 
         public static bool WriteInProgressList(IEnumerable<InProgressDownloadEntry> list, string fileName, string folder)
@@ -135,13 +133,8 @@ namespace XDM.Core.Lib.Common
 
         private static void WriteFinishedList(IEnumerable<FinishedDownloadEntry> list, string file)
         {
-            var count = list.Count();
             using var writer = new BinaryWriter(new FileStream(file, FileMode.Create));
-            writer.Write(count);
-            foreach (var item in list)
-            {
-                item.Serialize(writer);
-            }
+            SerializationHelper.SerializeFinishedDownloadEntry(writer, new List<FinishedDownloadEntry>(list));
         }
 
         public static bool WriteFinishedList(IEnumerable<FinishedDownloadEntry> list, string fileName, string folder)
