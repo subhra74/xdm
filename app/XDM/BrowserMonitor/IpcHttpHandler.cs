@@ -8,6 +8,7 @@ using XDM.Core.Lib.Util;
 using HttpServer;
 using System.Threading;
 using TraceLog;
+using Translations;
 
 namespace BrowserMonitoring
 {
@@ -30,7 +31,16 @@ namespace BrowserMonitoring
         {
             new Thread(() =>
             {
-                server.Start();
+                try
+                {
+                    server.Start();
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex.ToString());
+                    app.AppUI.ShowMessageBox(null, TextResource.GetText("MSG_ALREADY_RUNNING"));
+                }
+
             }).Start();
         }
 

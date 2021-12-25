@@ -187,3 +187,4 @@ OPT_UPDATE_FFMPEG=*Update components
 MSG_FAILED=*Download failed
 MSG_NO_UPDATE=*No updates available/already upto date
 MSG_UPDATED=*Update successfull
+MSG_ALREADY_RUNNING=*An old version of XDM is already running
