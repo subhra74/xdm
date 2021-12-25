@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 #if NET35
@@ -29,35 +28,40 @@ namespace XDMApp
 
             var existingDownloads = new HashSet<string>();
 
-            var finishedDownloads = JsonConvert.DeserializeObject<List<FinishedDownloadEntry>>(
-                            File.ReadAllText(Path.Combine(
-                                Config.DataDir,
-                                "finished-downloads.json"))) ?? new List<FinishedDownloadEntry>(0);
+            var finishedDownloads = TransactedIO.ReadFinishedList("finished-downloads.dat", Config.DataDir);
+            // JsonConvert.DeserializeObject<List<FinishedDownloadEntry>>(
+            //File.ReadAllText(Path.Combine(
+            //    Config.DataDir,
+            //    "finished-downloads.json"))) ?? new List<FinishedDownloadEntry>(0);
 
             foreach (var d in finishedDownloads)
             {
                 existingDownloads.Add(d.Id);
             }
 
-            var incompleteDownloads = JsonConvert.DeserializeObject<List<InProgressDownloadEntry>>(
-                            File.ReadAllText(Path.Combine(
-                                Config.DataDir,
-                                "incomplete-downloads.json"))) ?? new List<InProgressDownloadEntry>(0);
+            var incompleteDownloads = TransactedIO.ReadInProgressList("incomplete-downloads.dat", Config.DataDir);// JsonConvert.DeserializeObject<List<InProgressDownloadEntry>>(
+            //File.ReadAllText(Path.Combine(
+            //                    Config.DataDir,
+            //                    "incomplete-downloads.json"))) ?? new List<InProgressDownloadEntry>(0);
 
             foreach (var d in incompleteDownloads)
             {
                 existingDownloads.Add(d.Id);
             }
 
-            var importedFinishedDownloads = JsonConvert.DeserializeObject<List<FinishedDownloadEntry>>(
-                            File.ReadAllText(Path.Combine(
-                                tempDir,
-                                "finished-downloads.json"))) ?? new List<FinishedDownloadEntry>(0);
+            var importedFinishedDownloads = new List<FinishedDownloadEntry>(
+                TransactedIO.ReadFinishedList("finished-downloads.dat", Config.DataDir));
+            //JsonConvert.DeserializeObject<List<FinishedDownloadEntry>>(
+            //                File.ReadAllText(Path.Combine(
+            //                    tempDir,
+            //                    "finished-downloads.dat"))) ?? new List<FinishedDownloadEntry>(0);
 
-            var importedUnfinishedDownloads = JsonConvert.DeserializeObject<List<InProgressDownloadEntry>>(
-                            File.ReadAllText(Path.Combine(
-                                tempDir,
-                                "incomplete-downloads.json"))) ?? new List<InProgressDownloadEntry>(0);
+            var importedUnfinishedDownloads = new List<InProgressDownloadEntry>(
+                TransactedIO.ReadInProgressList("incomplete-downloads.dat", Config.DataDir));
+            //JsonConvert.DeserializeObject<List<InProgressDownloadEntry>>(
+            //                File.ReadAllText(Path.Combine(
+            //                    tempDir,
+            //                    "incomplete-downloads.dat"))) ?? new List<InProgressDownloadEntry>(0);
 
             foreach (var d1 in importedFinishedDownloads)
             {
@@ -74,11 +78,14 @@ namespace XDMApp
             importedFinishedDownloads.Sort((x, y) => y.DateAdded.CompareTo(x.DateAdded));
             importedUnfinishedDownloads.Sort((x, y) => y.DateAdded.CompareTo(x.DateAdded));
 
-            File.WriteAllText(Path.Combine(Config.DataDir, "incomplete-downloads.json"),
-                        JsonConvert.SerializeObject(incompleteDownloads));
+            TransactedIO.WriteFinishedList(finishedDownloads, "finished-downloads.dat", Config.DataDir);
+            TransactedIO.WriteInProgressList(incompleteDownloads, "incomplete-downloads.dat", Config.DataDir);
 
-            File.WriteAllText(Path.Combine(Config.DataDir, "finished-downloads.json"),
-                JsonConvert.SerializeObject(finishedDownloads));
+            //File.WriteAllText(Path.Combine(Config.DataDir, "incomplete-downloads.json"),
+            //            JsonConvert.SerializeObject(incompleteDownloads));
+
+            //File.WriteAllText(Path.Combine(Config.DataDir, "finished-downloads.json"),
+            //    JsonConvert.SerializeObject(finishedDownloads));
 
             foreach (var file in Directory.GetFiles(tempDir, "*.state"))
             {
@@ -96,7 +103,7 @@ namespace XDMApp
         {
             var dir = new DirectoryInfo(Config.DataDir);
             var filesToAdd = new List<string>();
-            filesToAdd.AddRange(dir.GetFiles("*downloads.json").Select(x => x.FullName));
+            filesToAdd.AddRange(dir.GetFiles("*downloads.dat").Select(x => x.FullName));
             filesToAdd.AddRange(dir.GetFiles("*.state").Select(x => x.FullName));
             filesToAdd.AddRange(dir.GetFiles("*.info").Select(x => x.FullName));
 

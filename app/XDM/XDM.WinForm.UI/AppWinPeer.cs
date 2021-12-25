@@ -3025,6 +3025,7 @@ namespace XDM.WinForm.UI
             using var fc = new SaveFileDialog();
             fc.FileName = "xdm-download-list.zip";
             fc.DefaultExt = "zip";
+            fc.Filter = "All files (*.*)|*.*";
             if (fc.ShowDialog(this) == DialogResult.OK)
             {
                 Log.Debug("Exporting to: " + fc.FileName);

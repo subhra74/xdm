@@ -10,7 +10,7 @@ namespace XDM.Core.Lib.Common
     public static class TransactedIO
 
     {
-        public static IEnumerable<FinishedDownloadEntry> ReadFinishedList(string fileName, string folder)
+        public static List<FinishedDownloadEntry> ReadFinishedList(string fileName, string folder)
         {
             try
             {
