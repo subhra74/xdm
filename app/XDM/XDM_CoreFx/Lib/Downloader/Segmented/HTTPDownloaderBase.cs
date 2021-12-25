@@ -29,6 +29,7 @@ namespace XDM.Core.Lib.Common.Segmented
         //protected readonly CookieContainer cookieContainer = new();
         protected long downloadedBytes = 0L;
         protected long downloadSizeAtResume = 0L;
+        protected long lastDownloadedBytes = 0L;
         protected long ticksAtDownloadStartOrResume = 0L;
         protected SpeedLimiter speedLimiter = new();
 
@@ -280,15 +281,18 @@ namespace XDM.Core.Lib.Common.Segmented
                     SaveChunkState();
                     lastStateSavedAt = ticks;
                 }
+
                 var ticksElapsed = ticks - ticksAtDownloadStartOrResume;
                 if (ticks - lastProgressUpdatedAt > 500 && ticksElapsed > 0)
                 {
-                    //var downloaded = pieces.Select(kv => kv.Value).Sum(pc => pc.Downloaded);
+                    var instantSpeed = ((downloadedBytes - lastDownloadedBytes) * 1000) / (ticks - lastProgressUpdatedAt);
+                    var avgSpeed = ((downloadedBytes - downloadSizeAtResume) * 1000.0) / ticksElapsed;
                     lastProgressUpdatedAt = ticks;
-                    progressResult.DownloadSpeed = ((downloadedBytes - downloadSizeAtResume) * 1000.0) / ticksElapsed;
+                    lastDownloadedBytes = downloadedBytes;
+                    progressResult.DownloadSpeed = instantSpeed;//((downloadedBytes - downloadSizeAtResume) * 1000.0) / ticksElapsed;
                     progressResult.Downloaded = downloadedBytes;
                     progressResult.Progress = FileSize > 0 ? (int)(downloadedBytes * 100 / FileSize) : 0;
-                    progressResult.Eta = FileSize > 0 ? (long)Math.Ceiling((FileSize - downloadedBytes) / progressResult.DownloadSpeed) : 0;
+                    progressResult.Eta = FileSize > 0 ? (long)Math.Ceiling((FileSize - downloadedBytes) / avgSpeed /*progressResult.DownloadSpeed*/) : 0;
                     ProgressChanged?.Invoke(this, progressResult);
                 }
             }
