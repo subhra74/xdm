@@ -60,6 +60,7 @@ namespace XDM.WinForm.UI
             AppContext.SetSwitch(DisableCachingName, true);
             AppContext.SetSwitch(DontEnableSchUseStrongCryptoName, true);
 #endif
+            
             var commandOptions = ArgsProcessor.ParseArgs(args);
             //Application.SetHighDpiMode(HighDpiMode.SystemAware);
             Application.EnableVisualStyles();
@@ -69,11 +70,16 @@ namespace XDM.WinForm.UI
             TextResource.Load(Config.Instance.Language);
             var appWin = new AppWinPeer();
             app.AppUI = new XDMApp.AppWin(appWin, app);
-            appWin.Visible = !commandOptions.ContainsKey("-m");
-            //app.LoadDownloadList();
+            //if (commandOptions.ContainsKey("-m"))
+            //{
+            //    appWin.Visible = false;
+            //}
+            ////appWin.Visible = !commandOptions.ContainsKey("-m");
+            ////app.LoadDownloadList();
             app.StartClipboardMonitor();
             app.StartScheduler();
             app.StartNativeMessagingHost();
+            appWin.Visible = !commandOptions.ContainsKey("-m");
             Application.Run(new ApplicationContext());
         }
 

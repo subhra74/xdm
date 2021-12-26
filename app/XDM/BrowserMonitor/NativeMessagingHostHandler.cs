@@ -18,13 +18,38 @@ namespace BrowserMonitoring
     public class NativeMessagingHostHandler : IDisposable
     {
         private int MaxPipeInstance = 254;
-        private readonly string PipeName = "XDM_Ipc_Browser_Monitoring_Pipe";
+        private static readonly string PipeName = "XDM_Ipc_Browser_Monitoring_Pipe";
         private List<NamedPipeServerStream> inPipes = new();
         private Dictionary<NamedPipeServerStream, NamedPipeClientStream> inOutMap = new();
         private readonly IApp app;
-        private readonly Mutex globalMutex;
+        private static Mutex globalMutex;
         private readonly BlockingCollection<byte[]> Messages = new();
         private Thread WriterThread;
+
+        public static void EnsureSingleInstance(IApp app)
+        {
+            try
+            {
+                using var mutex = Mutex.OpenExisting(@"Global\XDM_Active_Instance");
+                throw new InstanceAlreadyRunningException(@"XDM instance already running, Mutex exists 'Global\XDM_Active_Instance'");
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Exception in NativeMessagingHostHandler ctor");
+                if (ex is InstanceAlreadyRunningException)
+                {
+                    Log.Debug(ex, "Sending args to running instance");
+
+                    if (app.Args != null && app.Args.Length > 0)
+                    {
+                        SendArgsToRunningInstance(app.Args);
+                        Environment.Exit(0);
+                    }
+                    throw;
+                }
+            }
+            globalMutex = new Mutex(true, @"Global\XDM_Active_Instance");
+        }
 
         public NativeMessagingHostHandler(IApp app)
         {
@@ -54,7 +79,7 @@ namespace BrowserMonitoring
 
         public void BroadcastConfig()
         {
-            var bytes = GetSyncBytes();
+            var bytes = GetSyncBytes(app);
             Messages.Add(bytes);
         }
 
@@ -180,7 +205,7 @@ namespace BrowserMonitoring
 
         private void SendConfig(Stream pipe)
         {
-            var bytes = GetSyncBytes();
+            var bytes = GetSyncBytes(app);
             WriteMessage(pipe, bytes);
         }
 
@@ -207,7 +232,7 @@ namespace BrowserMonitoring
             return bytes;
         }
 
-        private void WriteMessage(Stream pipe, string message)
+        private static void WriteMessage(Stream pipe, string message)
         {
             var msgBytes = Encoding.UTF8.GetBytes(message);
             WriteMessage(pipe, msgBytes);
@@ -230,7 +255,7 @@ namespace BrowserMonitoring
             }
         }
 
-        private byte[] GetSyncBytes()
+        private static byte[] GetSyncBytes(IApp app)
         {
             var msg = new SyncMessage()
             {
@@ -252,7 +277,7 @@ namespace BrowserMonitoring
             return msg.Serialize();
         }
 
-        private void SendArgsToRunningInstance(string[] args)
+        private static void SendArgsToRunningInstance(string[] args)
         {
             using var clientPipe =
                            new NamedPipeClientStream(".", PipeName, PipeDirection.Out);
