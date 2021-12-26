@@ -5,11 +5,10 @@ using System.Linq;
 using TraceLog;
 using XDM.Core.Lib.Clients.Http;
 using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Common.Dash;
 using XDM.Core.Lib.Common.MediaProcessor;
 using XDM.Core.Lib.Util;
 
-namespace XDM.Core.Lib.Common.Segmented
+namespace XDM.Core.Lib.Downloader.Adaptive.Dash
 {
     public class MultiSourceDASHDownloader : MultiSourceDownloaderBase
     {

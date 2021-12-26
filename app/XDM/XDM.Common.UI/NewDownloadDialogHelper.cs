@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using Translations;
 using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Common.Segmented;
+using XDM.Core.Lib.Downloader;
+using XDM.Core.Lib.Downloader.Progressive.SingleHttp;
 using XDM.Core.Lib.Util;
 
 namespace XDM.Common.UI

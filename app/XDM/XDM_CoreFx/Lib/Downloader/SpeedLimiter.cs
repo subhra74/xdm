@@ -3,7 +3,7 @@ using System.Threading;
 using TraceLog;
 using XDM.Core.Lib.Util;
 
-namespace XDM.Core.Lib.Common
+namespace XDM.Core.Lib.Downloader
 {
     public class SpeedLimiter
     {

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using XDM.Core.Lib.Common;
 
-namespace XDM.Core.Lib.Common
+namespace XDM.Core.Lib.Downloader.Adaptive
 {
     class CancelRequestor : ICancelRequster
     {

@@ -6,6 +6,7 @@ using System.Linq;
 using TraceLog;
 using XDM.Common.UI;
 using XDM.Core.Lib.Common;
+using XDM.Core.Lib.Downloader;
 using XDM.Core.Lib.UI;
 using XDM.Core.Lib.Util;
 

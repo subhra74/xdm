@@ -1,10 +1,11 @@
-﻿using Newtonsoft.Json;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using TraceLog;
 using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Common.Segmented;
+using XDM.Core.Lib.Downloader;
+using XDM.Core.Lib.Downloader.Progressive.DualHttp;
+using XDM.Core.Lib.Downloader.Progressive.SingleHttp;
 using XDM.Core.Lib.Util;
 
 namespace XDM.Common.UI

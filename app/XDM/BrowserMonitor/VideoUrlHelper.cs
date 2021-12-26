@@ -5,19 +5,17 @@ using System.Text;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Util;
 //using XDM.Core.Lib.Downloader.YT.Dash;
-using XDM.Core.Lib.Common.Segmented;
 using System.IO;
-using System.Net;
-using XDM.Core.Lib.Common.Segmented;
 using MediaParser.Hls;
-using XDM.Core.Lib.Common.Hls;
 using MediaParser.Dash;
-using XDM.Core.Lib.Common.Dash;
 using MediaParser.YouTube;
 using System.Security.Cryptography;
-using XDM.Core.Lib.Common;
 using TraceLog;
 using XDM.Core.Lib.Clients.Http;
+using XDM.Core.Lib.Downloader.Progressive.DualHttp;
+using XDM.Core.Lib.Downloader.Progressive.SingleHttp;
+using XDM.Core.Lib.Downloader.Adaptive.Dash;
+using XDM.Core.Lib.Downloader.Adaptive.Hls;
 
 #if !NET5_0_OR_GREATER
 using NetFX.Polyfill;

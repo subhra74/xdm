@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using XDM.Core.Lib.Downloader;
 
 namespace XDM.Core.Lib.Common.MediaProcessor
 {

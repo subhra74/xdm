@@ -1,23 +1,17 @@
 using System;
 using System.IO;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using XDM.Core.Lib.Common;
 //using XDM.Core.Lib.Downloader.YT.Dash;
-using XDM.Core.Lib.Common.Segmented;
-using XDM.Core.Lib.Common.Segmented;
-using Moq;
-using System.Net.Http;
-using Moq.Protected;
 using System.Threading;
 using System.Collections.Generic;
 
 using static XDM.SystemTests.TestUtil;
 using XDM.Core.Lib.Util;
-using System.Text.RegularExpressions;
 using Serilog;
+using XDM.Core.Lib.Downloader.Progressive.SingleHttp;
+using XDM.Core.Lib.Downloader.Progressive.DualHttp;
 
 namespace XDM.SystemTests
 {

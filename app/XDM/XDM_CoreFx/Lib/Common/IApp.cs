@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Common.Dash;
-using XDM.Core.Lib.Common.Hls;
-using XDM.Core.Lib.Common.Segmented;
-using XDM.Core.Lib.Common.Segmented;
+using XDM.Core.Lib.Downloader;
+using XDM.Core.Lib.Downloader.Adaptive.Dash;
+using XDM.Core.Lib.Downloader.Adaptive.Hls;
+using XDM.Core.Lib.Downloader.Progressive;
+using XDM.Core.Lib.Downloader.Progressive.DualHttp;
+using XDM.Core.Lib.Downloader.Progressive.SingleHttp;
 using XDM.Core.Lib.UI;
 
 namespace XDM.Core.Lib.Common

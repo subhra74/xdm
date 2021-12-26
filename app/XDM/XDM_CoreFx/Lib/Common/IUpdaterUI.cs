@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 
 using XDM.Core.Lib.Common;
+using XDM.Core.Lib.Downloader;
 
 namespace XDM.Core.Lib.Common
 {

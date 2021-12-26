@@ -1,24 +1,15 @@
 ﻿using System;
 using System.IO;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Common.Segmented;
-using Moq;
-using System.Net.Http;
-using Moq.Protected;
 using System.Threading;
-using System.Collections.Generic;
-using XDM.Core.Lib.Common.Hls;
 using MediaParser.Hls;
-
-using static XDM.SystemTests.TestUtil;
-using XDM.Core.Lib.Common.Segmented;
 using Serilog;
 using XDM.Core.Lib.Common.MediaProcessor;
 using System.Net;
+using XDM.Core.Lib.Downloader.Adaptive.Hls;
 
 namespace XDM.SystemTests
 {

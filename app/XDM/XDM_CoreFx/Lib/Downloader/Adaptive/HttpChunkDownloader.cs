@@ -8,7 +8,7 @@ using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Util;
 using XDM.Core.Lib.Clients.Http;
 
-namespace XDM.Core.Lib.Common
+namespace XDM.Core.Lib.Downloader.Adaptive
 {
     public class HttpChunkDownloader
     {

@@ -11,11 +11,13 @@ using System.Text.RegularExpressions;
 using TraceLog;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.UI;
-using XDM.Core.Lib.Common.Segmented;
-using XDM.Core.Lib.Common.Hls;
-using XDM.Core.Lib.Common.Dash;
 using System.Text;
 using Translations;
+using XDM.Core.Lib.Downloader.Adaptive.Dash;
+using XDM.Core.Lib.Downloader.Progressive.DualHttp;
+using XDM.Core.Lib.Downloader.Adaptive.Hls;
+using XDM.Core.Lib.Downloader.Progressive.SingleHttp;
+using XDM.Core.Lib.Downloader;
 
 #if !NET5_0_OR_GREATER
 using NetFX.Polyfill;

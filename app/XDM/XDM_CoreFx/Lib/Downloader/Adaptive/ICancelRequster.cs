@@ -1,6 +1,6 @@
 ﻿using XDM.Core.Lib.Common;
 
-namespace XDM.Core.Lib.Common
+namespace XDM.Core.Lib.Downloader.Adaptive
 {
     public interface ICancelRequster
     {

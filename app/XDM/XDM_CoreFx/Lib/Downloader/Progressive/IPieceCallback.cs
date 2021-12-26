@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Clients.Http;
 
-namespace XDM.Core.Lib.Common.Segmented
+namespace XDM.Core.Lib.Downloader.Progressive
 {
     public interface IPieceCallback
     {

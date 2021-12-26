@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
-using XDM.Core.Lib.Common.Segmented;
-
-namespace XDM.Core.Lib.Common.Dash
+namespace XDM.Core.Lib.Downloader.Adaptive.Dash
 {
     public class MultiSourceDASHDownloadInfo : MultiSourceDownloadInfo
     {

@@ -11,7 +11,7 @@ using XDM.Core.Lib.Clients.Http;
 using NetFX.Polyfill;
 #endif
 
-namespace XDM.Core.Lib.Common.Segmented
+namespace XDM.Core.Lib.Downloader.Progressive
 {
     public abstract class HTTPDownloaderBase : IPieceCallback, IBaseDownloader
     {

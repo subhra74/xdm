@@ -1,6 +1,4 @@
-﻿using System.IO;
-
-namespace XDM.Core.Lib.Common
+﻿namespace XDM.Core.Lib.Downloader.Adaptive
 {
     public interface IChunkStreamMap
     {

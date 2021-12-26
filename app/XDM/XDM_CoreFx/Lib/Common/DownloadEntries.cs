@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System;
+using XDM.Core.Lib.Downloader;
 
 namespace XDM.Core.Lib.Common
 {

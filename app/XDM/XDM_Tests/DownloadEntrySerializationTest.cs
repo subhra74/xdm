@@ -4,6 +4,7 @@ using System.IO;
 using Newtonsoft.Json;
 using NUnit.Framework;
 using XDM.Core.Lib.Common;
+using XDM.Core.Lib.Downloader;
 
 namespace XDM.SystemTests
 {

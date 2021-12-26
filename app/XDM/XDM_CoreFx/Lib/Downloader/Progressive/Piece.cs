@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Text;
+﻿using System.Threading;
 
 
-namespace XDM.Core.Lib.Common.Segmented
+namespace XDM.Core.Lib.Downloader.Progressive
 {
     public class Piece
     {

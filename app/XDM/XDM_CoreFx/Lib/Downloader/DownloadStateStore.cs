@@ -3,9 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using XDM.Core.Lib.Common;
+using XDM.Core.Lib.Downloader.Adaptive.Dash;
+using XDM.Core.Lib.Downloader.Adaptive.Hls;
+using XDM.Core.Lib.Downloader.Progressive.DualHttp;
+using XDM.Core.Lib.Downloader.Progressive.SingleHttp;
 using XDM.Core.Lib.Util;
 
-namespace XDM.Core.Lib.Common.Segmented
+namespace XDM.Core.Lib.Downloader
 {
     public static class DownloadStateStore
     {

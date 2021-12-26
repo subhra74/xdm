@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace XDM.Core.Lib.Common
+namespace XDM.Core.Lib.Downloader
 {
     public class Chunk
     {

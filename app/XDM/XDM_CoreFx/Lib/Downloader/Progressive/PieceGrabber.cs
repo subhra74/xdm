@@ -8,7 +8,7 @@ using TraceLog;
 using XDM.Core.Lib.Clients.Http;
 using System.Linq;
 
-namespace XDM.Core.Lib.Common.Segmented
+namespace XDM.Core.Lib.Downloader.Progressive
 {
     public class PieceGrabber : IDisposable
     {

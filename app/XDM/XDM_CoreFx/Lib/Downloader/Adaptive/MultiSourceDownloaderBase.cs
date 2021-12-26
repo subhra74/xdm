@@ -9,7 +9,7 @@ using XDM.Core.Lib.Common.MediaProcessor;
 using XDM.Core.Lib.Util;
 using XDM.Core.Lib.Clients.Http;
 
-namespace XDM.Core.Lib.Common.Segmented
+namespace XDM.Core.Lib.Downloader.Adaptive
 {
     public abstract class MultiSourceDownloaderBase : IBaseDownloader
     {

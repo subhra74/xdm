@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Drawing;
 using System.Drawing.Text;
-using System.IO;
-using System.Threading;
 using System.Windows.Forms;
 using Translations;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.UI;
 using XDM.WinForm.UI.FormHelper;
-using XDMApp;
 
 #if !(NET472_OR_GREATER || NET5_0_OR_GREATER)
 using static XDM.WinForm.UI.WinFormsPolyfill;

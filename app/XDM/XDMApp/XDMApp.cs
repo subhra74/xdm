@@ -5,9 +5,6 @@ using System.Linq;
 using System.Text;
 using XDM.Common.UI;
 using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Common.Dash;
-using XDM.Core.Lib.Common.Hls;
-using XDM.Core.Lib.Common.Segmented;
 using XDM.Core.Lib.Common.MediaProcessor;
 using XDM.Core.Lib.Util;
 using BrowserMonitoring;
@@ -15,6 +12,12 @@ using XDM.Core.Lib.Common.Collections;
 using System.Timers;
 using TraceLog;
 using Translations;
+using XDM.Core.Lib.Downloader;
+using XDM.Core.Lib.Downloader.Progressive.DualHttp;
+using XDM.Core.Lib.Downloader.Progressive.SingleHttp;
+using XDM.Core.Lib.Downloader.Adaptive.Hls;
+using XDM.Core.Lib.Downloader.Adaptive.Dash;
+using XDM.Core.Lib.Downloader.Progressive;
 
 #if !NET5_0_OR_GREATER
 using NetFX.Polyfill;

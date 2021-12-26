@@ -1,18 +1,19 @@
 ﻿using TraceLog;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using System.Windows.Forms;
 using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Common.Dash;
-using XDM.Core.Lib.Common.Hls;
-using XDM.Core.Lib.Common.Segmented;
 using XDM.Core.Lib.Util;
 using YDLWrapper;
 using XDM.WinForm.UI.FormHelper;
 using System.Drawing;
 using Translations;
+using XDM.Core.Lib.Downloader;
+using XDM.Core.Lib.Downloader.Progressive.DualHttp;
+using XDM.Core.Lib.Downloader.Progressive.SingleHttp;
+using XDM.Core.Lib.Downloader.Adaptive.Hls;
+using XDM.Core.Lib.Downloader.Adaptive.Dash;
 
 #if !(NET472_OR_GREATER || NET5_0_OR_GREATER)
 using static XDM.WinForm.UI.WinFormsPolyfill;

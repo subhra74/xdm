@@ -5,7 +5,8 @@ using System.IO;
 using System.Threading;
 using TraceLog;
 using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Common.Segmented;
+using XDM.Core.Lib.Downloader;
+using XDM.Core.Lib.Downloader.Progressive.SingleHttp;
 
 namespace XDM.Common.UI
 {

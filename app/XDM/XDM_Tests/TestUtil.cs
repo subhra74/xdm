@@ -7,6 +7,7 @@ using System.Security.Cryptography;
 using System.IO;
 using XDM.Core.Lib.Common;
 using System.Threading;
+using XDM.Core.Lib.Downloader;
 
 namespace XDM.SystemTests
 {

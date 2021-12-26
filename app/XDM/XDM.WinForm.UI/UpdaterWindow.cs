@@ -3,6 +3,7 @@
 using System.Windows.Forms;
 using Translations;
 using XDM.Core.Lib.Common;
+using XDM.Core.Lib.Downloader;
 
 namespace XDM.WinForm.UI
 {
