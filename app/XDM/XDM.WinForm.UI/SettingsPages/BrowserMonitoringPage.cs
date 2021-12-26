@@ -96,12 +96,22 @@ namespace XDM.WinForm.UI.SettingsPages
             try
             {
                 Helpers.InstallNativeMessagingHost(NativeHostBrowser.Chrome);
-                Helpers.OpenBrowser(app.ChromeExtensionUrl);
             }
             catch (Exception ex)
             {
                 Log.Debug(ex, "Error installing native host");
-                MessageBox.Show("Error installing native host");
+                MessageBox.Show(TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
+                return;
+            }
+
+            try
+            {
+                BrowserLauncher.LaunchGoogleChrome(app.ChromeExtensionUrl);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error launching Google Chrome");
+                MessageBox.Show($"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Google Chrome");
             }
         }
 
@@ -110,18 +120,47 @@ namespace XDM.WinForm.UI.SettingsPages
             try
             {
                 Helpers.InstallNativeMessagingHost(NativeHostBrowser.Firefox);
-                Helpers.OpenBrowser(app.FirefoxExtensionUrl);
             }
             catch (Exception ex)
             {
                 Log.Debug(ex, "Error installing native host");
-                MessageBox.Show("Error installing native host");
+                MessageBox.Show(TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
+                return;
+            }
+
+            try
+            {
+                BrowserLauncher.LaunchFirefox(app.FirefoxExtensionUrl);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error launching Firefox");
+                MessageBox.Show($"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Firefox");
             }
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
-            button1_Click(sender, e);
+            try
+            {
+                Helpers.InstallNativeMessagingHost(NativeHostBrowser.Chrome);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error installing native host");
+                MessageBox.Show(TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
+                return;
+            }
+
+            try
+            {
+                BrowserLauncher.LaunchMicrosoftEdge(app.ChromeExtensionUrl);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error Microsoft Edge");
+                MessageBox.Show($"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Microsoft Edge");
+            }
         }
 
         private void button7_Click(object sender, EventArgs e)
@@ -161,20 +200,74 @@ namespace XDM.WinForm.UI.SettingsPages
 
         private void button6_Click(object sender, EventArgs e)
         {
-            Helpers.InstallNativeMessagingHost(NativeHostBrowser.Chrome);
-            Helpers.OpenBrowser(app.ChromeExtensionUrl);
+            try
+            {
+                Helpers.InstallNativeMessagingHost(NativeHostBrowser.Chrome);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error installing native host");
+                MessageBox.Show(TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
+                return;
+            }
+
+            try
+            {
+                BrowserLauncher.LaunchOperaBrowser(app.ChromeExtensionUrl);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error launching Opera");
+                MessageBox.Show($"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Opera");
+            }
         }
 
         private void button4_Click(object sender, EventArgs e)
         {
-            Helpers.InstallNativeMessagingHost(NativeHostBrowser.Chrome);
-            Helpers.OpenBrowser(app.ChromeExtensionUrl);
+            try
+            {
+                Helpers.InstallNativeMessagingHost(NativeHostBrowser.Chrome);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error installing native host");
+                MessageBox.Show(TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
+                return;
+            }
+
+            try
+            {
+                BrowserLauncher.LaunchBraveBrowser(app.ChromeExtensionUrl);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error launching Brave");
+                MessageBox.Show($"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Brave");
+            }
         }
 
         private void button2_Click(object sender, EventArgs e)
         {
-            Helpers.InstallNativeMessagingHost(NativeHostBrowser.Chrome);
-            Helpers.OpenBrowser(app.ChromeExtensionUrl);
+            try
+            {
+                Helpers.InstallNativeMessagingHost(NativeHostBrowser.Chrome);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error installing native host");
+                MessageBox.Show(TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
+                return;
+            }
+
+            try
+            {
+                BrowserLauncher.LaunchVivaldi(app.ChromeExtensionUrl);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error launching Vivaldi");
+                MessageBox.Show($"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Vivaldi");
+            }
         }
 
         public void UpdateConfig()

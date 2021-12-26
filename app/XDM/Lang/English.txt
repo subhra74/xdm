@@ -188,3 +188,5 @@ MSG_FAILED=Download failed
 MSG_NO_UPDATE=No updates available/already upto date
 MSG_UPDATED=Update successfull
 MSG_ALREADY_RUNNING=An old version of XDM is already running
+MSG_BROWSER_LAUNCH_FAILED=Unable to launch
+MSG_NATIVE_HOST_FAILED=Error installing native host
