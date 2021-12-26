@@ -7,6 +7,7 @@ using System.Windows.Forms;
 using TraceLog;
 using Translations;
 using XDM.Core.Lib.Common;
+using XDMApp;
 
 namespace XDM.WinForm.UI
 {
@@ -59,11 +60,12 @@ namespace XDM.WinForm.UI
             AppContext.SetSwitch(DisableCachingName, true);
             AppContext.SetSwitch(DontEnableSchUseStrongCryptoName, true);
 #endif
-            var commandOptions = ParseArgs(args);
+            var commandOptions = ArgsProcessor.ParseArgs(args);
             //Application.SetHighDpiMode(HighDpiMode.SystemAware);
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             var app = new XDMApp.XDMApp();
+            app.Args = args;
             TextResource.Load(Config.Instance.Language);
             var appWin = new AppWinPeer();
             app.AppUI = new XDMApp.AppWin(appWin, app);
@@ -85,26 +87,6 @@ namespace XDM.WinForm.UI
         private static void Application_ThreadException(object sender, System.Threading.ThreadExceptionEventArgs e)
         {
             Log.Debug(string.Format("Unhandled exception caught {0}", e.Exception));
-        }
-
-        private static Dictionary<string, string> ParseArgs(string[] args)
-        {
-            var options = new Dictionary<string, string>();
-            var key = string.Empty;
-            foreach (var arg in args)
-            {
-                if (key != string.Empty)
-                {
-                    options[key] = arg;
-                    key = string.Empty;
-                }
-                else
-                {
-                    key = arg;
-                    options[key] = null;
-                }
-            }
-            return options;
         }
 
         [DllImport("user32.dll", SetLastError = true)]

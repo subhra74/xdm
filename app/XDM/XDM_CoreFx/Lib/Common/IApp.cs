@@ -25,6 +25,7 @@ namespace XDM.Core.Lib.Common
         public bool ComponentsInstalled { get; }
         public bool IsAppUpdateAvailable { get; }
         public string ComponentUpdateText { get; }
+        string[] Args { get; set; }
 
         public void AddDownload(Message message);
 

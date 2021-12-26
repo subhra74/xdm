@@ -37,7 +37,17 @@ namespace BrowserMonitoring
             catch (Exception ex)
             {
                 Log.Debug(ex, "Exception in NativeMessagingHostHandler ctor");
-                if (ex is InstanceAlreadyRunningException) throw;
+                if (ex is InstanceAlreadyRunningException)
+                {
+                    Log.Debug(ex, "Sending args to running instance");
+
+                    if (app.Args != null && app.Args.Length > 0)
+                    {
+                        SendArgsToRunningInstance(app.Args);
+                        Environment.Exit(0);
+                    }
+                    throw;
+                }
             }
             globalMutex = new Mutex(true, @"Global\XDM_Active_Instance");
         }
@@ -127,6 +137,13 @@ namespace BrowserMonitoring
                 Log.Debug("Initiate message handshake");
                 var clientPipeName = Encoding.UTF8.GetString(ReadMessageBytes(inPipe));
                 Log.Debug("Client pipe: " + clientPipeName);
+                if (clientPipeName.StartsWith("XDM-APP-"))
+                {
+                    var command = ReadMessageBytes(inPipe);
+                    var args = ArgsProcessor.ParseArgs(Encoding.UTF8.GetString(command).Split('\r'));
+                    ArgsProcessor.Process(app, args);
+                    return;
+                }
                 var outPipe = new NamedPipeClientStream(".", clientPipeName, PipeDirection.Out);
                 outPipe.Connect();
                 SendConfig(outPipe);
@@ -233,6 +250,16 @@ namespace BrowserMonitoring
                 VideoUrlsWithPostReq = new string[] { "ubei/v1/player?key=", "ubei/v1/next?key=" }
             };
             return msg.Serialize();
+        }
+
+        private void SendArgsToRunningInstance(string[] args)
+        {
+            using var clientPipe =
+                           new NamedPipeClientStream(".", PipeName, PipeDirection.Out);
+            clientPipe.Connect();
+            WriteMessage(clientPipe, $"XDM-APP-${Guid.NewGuid()}");
+            WriteMessage(clientPipe, string.Join("\r", args));
+            clientPipe.Flush();
         }
     }
 

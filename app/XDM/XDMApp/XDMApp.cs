@@ -60,6 +60,8 @@ namespace XDMApp
         public string OperaExtensionUrl => "https://subhra74.github.io/xdm/redirect.html?target=opera";
         public string EdgeExtensionUrl => "https://subhra74.github.io/xdm/redirect.html?target=edge";
 
+        public string[] Args { get; set; }
+
         public XDMApp()
         {
             var configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".xdman");
