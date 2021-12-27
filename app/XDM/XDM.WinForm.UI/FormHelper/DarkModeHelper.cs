@@ -14,8 +14,8 @@ namespace XDM.WinForm.UI.FormHelper
         public static void StyleFlatTextBox(TextBox textBox, IFormColors colors)
         {
             textBox.BackColor = colors.TextBackColor;
-            textBox.ForeColor = colors.ToolbarButtonForeColor;
-            textBox.BorderStyle = BorderStyle.None;
+            textBox.ForeColor = colors.TextForeColor;
+            textBox.BorderStyle = BorderStyle.Fixed3D;
             textBox.Dock = DockStyle.Fill;
         }
 
@@ -28,9 +28,9 @@ namespace XDM.WinForm.UI.FormHelper
         public static void StyleFlatButton(Button button, IFormColors colors)
         {
             button.FlatStyle = FlatStyle.Flat;
-            button.BackColor = colors.ToolbarBackColor;
-            button.ForeColor = colors.ToolbarButtonForeColor;
-            button.FlatAppearance.BorderSize = 0;
+            button.BackColor = colors.ButtonColor;
+            button.ForeColor = colors.TextForeColor;
+            //button.FlatAppearance.BorderSize = 0;
         }
 
         public static void StyleFlatButton(Button button, Color bg, Color fg)
@@ -38,14 +38,16 @@ namespace XDM.WinForm.UI.FormHelper
             button.FlatStyle = FlatStyle.Flat;
             button.BackColor = bg;
             button.ForeColor = fg;
-            button.FlatAppearance.BorderSize = 0;
+            //button.FlatAppearance.BorderSize = 0;
         }
 
-        public static void EnabledDarkMode(ComboBox comboBox)
+        public static void EnabledDarkMode(ComboBox comboBox, Color bg, Color fg)
         {
-            comboBox.DrawMode = DrawMode.OwnerDrawFixed;
-            comboBox.DrawItem += ComboBox_DrawItem;
+            //comboBox.DrawMode = DrawMode.OwnerDrawFixed;
+            //comboBox.DrawItem += ComboBox_DrawItem;
             comboBox.FlatStyle = FlatStyle.Flat;
+            comboBox.ForeColor = fg;
+            comboBox.BackColor = bg;
         }
 
         public static void EnableDarkMode(ComboBox comboBox, Color bg, Color fg)

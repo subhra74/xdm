@@ -54,12 +54,18 @@ namespace XDM.WinForm.UI
             Log.Debug("Thread name: " + Thread.CurrentThread.Name);
             InitializeComponent();
             this.TopMost = true;
-            comboBox1 = AppWinPeer.AppsUseLightTheme ? new ComboBox() : new SkinnableComboBox();
+
+            comboBox1 = new ComboBox();
             this.tableLayoutPanel2.SetColumnSpan(this.comboBox1, 2);
             comboBox1.SelectedIndexChanged += comboBox1_SelectedIndexChanged;
             comboBox1.DropDownStyle = ComboBoxStyle.DropDownList;
             comboBox1.Dock = DockStyle.Fill;
             this.tableLayoutPanel2.Controls.Add(this.comboBox1, 1, 2);
+
+            textBox1.Margin = new Padding(5);
+            textBox2.Margin = new Padding(5);
+            linkLabel1.Margin = new Padding(5);
+            comboBox1.Margin = new Padding(5);
 
             this.empty = empty;
             fontCollection = new PrivateFontCollection();
@@ -85,13 +91,13 @@ namespace XDM.WinForm.UI
                 }
 
                 DarkModeHelper.UseImmersiveDarkMode(this.Handle, true);
-                tableLayoutPanel2.BackColor = colors.ToolbarBackColor;
-                tableLayoutPanel1.BackColor = colors.DataGridViewBackColor;
-                DarkModeHelper.EnabledDarkMode(comboBox1);
-                comboBox1.BackColor = colors.TextBackColor;
-                comboBox1.ForeColor = colors.ToolbarButtonForeColor;
-                ((SkinnableComboBox)comboBox1).BorderColor = colors.ToolbarBackColor;
-                ((SkinnableComboBox)comboBox1).ButtonColor = colors.BorderColor;
+                tableLayoutPanel2.BackColor = colors.BackColor;
+                tableLayoutPanel1.BackColor = colors.ButtonColor;
+                DarkModeHelper.EnabledDarkMode(comboBox1, colors.TextBackColor, colors.TextForeColor);
+                //comboBox1.BackColor = colors.TextBackColor;
+                //comboBox1.ForeColor = colors.ToolbarButtonForeColor;
+                //((SkinnableComboBox)comboBox1).BorderColor = colors.ToolbarBackColor;
+                //((SkinnableComboBox)comboBox1).ButtonColor = colors.BorderColor;
 
                 DarkModeHelper.StyleFlatTextBox(textBox1, colors);
                 DarkModeHelper.StyleFlatTextBox(textBox2, colors);
@@ -102,9 +108,9 @@ namespace XDM.WinForm.UI
 
                 label1.ForeColor = label2.ForeColor =
                     label3.ForeColor = label6.ForeColor =
-                     colors.ToolbarButtonForeColor;
+                     colors.TextForeColor;
 
-                label5.ForeColor = Color.FromArgb(50, 50, 50);
+                label5.ForeColor = colors.TextForeColor;
 
                 //panel1.BackColor = colors.TextBackColor;
                 //panel2.BackColor = colors.TextBackColor;
@@ -112,16 +118,13 @@ namespace XDM.WinForm.UI
                 //panel1.Margin = panel2.Margin = new Padding(LogicalToDeviceUnits(3));
                 //textBox1.Location = new Point(LogicalToDeviceUnits(5), LogicalToDeviceUnits(5));
                 //textBox2.Location = new Point(LogicalToDeviceUnits(5), LogicalToDeviceUnits(5));
-                linkLabel1.LinkColor = Color.DimGray;
+                linkLabel1.LinkColor = Color.DodgerBlue;
                 //panel1.Padding = panel2.Padding = new Padding(LogicalToDeviceUnits(0));
                 //panel1.Margin = panel2.Margin = new Padding(LogicalToDeviceUnits(0));
 
                 MenuHelper.CustomizeMenuAppearance(contextMenuStrip1);
                 MenuHelper.FixHiDpiMargin(contextMenuStrip1);
             }
-#if !NET35
-            linkLabel1.Margin = new Padding(5);
-#endif
 
             this.FormClosed += (a, b) =>
             {

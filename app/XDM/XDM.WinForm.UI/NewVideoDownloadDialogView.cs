@@ -37,12 +37,15 @@ namespace XDM.WinForm.UI
         {
             InitializeComponent();
 
-            comboBox1 = AppWinPeer.AppsUseLightTheme ? new ComboBox() : new SkinnableComboBox();
+            comboBox1 = new ComboBox(); /*AppWinPeer.AppsUseLightTheme ? new ComboBox() : new SkinnableComboBox();*/
             this.tableLayoutPanel2.SetColumnSpan(this.comboBox1, 2);
             comboBox1.SelectedIndexChanged += comboBox1_SelectedIndexChanged;
             comboBox1.DropDownStyle = ComboBoxStyle.DropDownList;
             comboBox1.Dock = DockStyle.Fill;
             this.tableLayoutPanel2.Controls.Add(this.comboBox1, 1, 1);
+
+            txtFileName.Margin = new Padding(5);
+            comboBox1.Margin = new Padding(5);
 
             fontCollection = fc;
             fontAwesomeFont = new Font(fontCollection.Families[0], 32);
@@ -59,13 +62,13 @@ namespace XDM.WinForm.UI
                 }
 
                 DarkModeHelper.UseImmersiveDarkMode(this.Handle, true);
-                tableLayoutPanel2.BackColor = colors.ToolbarBackColor;
-                tableLayoutPanel1.BackColor = colors.DataGridViewBackColor;
-                DarkModeHelper.EnabledDarkMode(comboBox1);
-                comboBox1.BackColor = colors.TextBackColor;
-                comboBox1.ForeColor = colors.ToolbarButtonForeColor;
-                ((SkinnableComboBox)comboBox1).BorderColor = colors.ToolbarBackColor;
-                ((SkinnableComboBox)comboBox1).ButtonColor = colors.BorderColor;
+                tableLayoutPanel2.BackColor = colors.BackColor;
+                tableLayoutPanel1.BackColor = colors.ButtonColor;
+                DarkModeHelper.EnabledDarkMode(comboBox1, colors.TextBackColor, colors.TextForeColor);
+                //comboBox1.BackColor = colors.TextBackColor;
+                //comboBox1.ForeColor = colors.ToolbarButtonForeColor;
+                //((SkinnableComboBox)comboBox1).BorderColor = colors.ToolbarBackColor;
+                //((SkinnableComboBox)comboBox1).ButtonColor = colors.BorderColor;
                 DarkModeHelper.StyleFlatTextBox(txtFileName, colors);
                 //DarkModeHelper.StyleFlatTextBox(textBox2);
 
@@ -75,9 +78,9 @@ namespace XDM.WinForm.UI
 
                 lblAddress.ForeColor = lblFile.ForeColor =
                     lblFileIcon.ForeColor = lblFileSize.ForeColor =
-                     colors.ToolbarButtonForeColor;
+                     colors.TextForeColor;
 
-                //label5.ForeColor = Color.FromArgb(50, 50, 50);
+               // label5.ForeColor = Color.FromArgb(50, 50, 50);
             }
             LoadTexts();
         }

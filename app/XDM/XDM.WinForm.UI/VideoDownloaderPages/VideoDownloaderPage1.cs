@@ -36,16 +36,14 @@ namespace XDM.WinForm.UI.VideoDownloaderPages
             }
             if (!AppWinPeer.AppsUseLightTheme)
             {
+                var colors = new FormColorsDark();
                 label1.ForeColor = checkBox1.ForeColor = label2.ForeColor = label3.ForeColor = Color.White;
-                DarkModeHelper.StyleFlatButton(button1, Color.FromArgb(55, 55, 55), Color.White);
-                var bg = Color.FromArgb(60, 60, 60);
+                DarkModeHelper.StyleFlatButton(button1, colors.BackColor, colors.ForeColor);
+                var bg = colors.BackColor;
                 tableLayoutPanel1.BackColor = bg;
-                textBox1.BackColor = Color.FromArgb(65, 65, 65);
-                textBox1.ForeColor = Color.White;
-                textBox2.BackColor = Color.FromArgb(65, 65, 65);
-                textBox2.ForeColor = Color.White;
-                textBox3.BackColor = Color.FromArgb(65, 65, 65);
-                textBox3.ForeColor = Color.White;
+                DarkModeHelper.StyleFlatTextBox(textBox1, colors);
+                DarkModeHelper.StyleFlatTextBox(textBox2, colors);
+                DarkModeHelper.StyleFlatTextBox(textBox3, colors);
             }
 
             label1.Text = TextResource.GetText("VID_PASTE_URL");

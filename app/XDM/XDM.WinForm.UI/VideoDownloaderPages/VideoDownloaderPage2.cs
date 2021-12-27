@@ -40,7 +40,7 @@ namespace XDM.WinForm.UI.VideoDownloaderPages
         public VideoDownloaderPage2()
         {
             InitializeComponent();
-            comboBox1 = AppWinPeer.AppsUseLightTheme ? new ComboBox() : new SkinnableComboBox();
+            comboBox1 = new ComboBox();
             comboBox1.DropDownStyle = ComboBoxStyle.DropDownList;
             this.tableLayoutPanel3.Controls.Add(this.comboBox1, 2, 0);
 
@@ -128,8 +128,7 @@ namespace XDM.WinForm.UI.VideoDownloaderPages
                 DarkModeHelper.StyleFlatButton(button2, bg2, fg);
                 DarkModeHelper.StyleFlatButton(button3, bg2, fg);
                 DarkModeHelper.StyleFlatButton(button4, bg2, fg);
-                textBox1.BackColor = bg;
-                textBox1.ForeColor = fg;
+                DarkModeHelper.StyleFlatTextBox(textBox1, colors);
 
                 MenuHelper.CustomizeMenuAppearance(contextMenuStrip1);
                 MenuHelper.FixHiDpiMargin(contextMenuStrip1);
