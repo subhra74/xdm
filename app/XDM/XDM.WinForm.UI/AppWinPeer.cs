@@ -18,6 +18,7 @@ using Translations;
 using XDM.WinForm.UI.FormHelper;
 using System.Threading;
 using XDM.WinForm.UI.Win32;
+using Microsoft.Win32;
 
 #if !(NET472_OR_GREATER || NET5_0_OR_GREATER)
 using static XDM.WinForm.UI.WinFormsPolyfill;
@@ -175,6 +176,14 @@ namespace XDM.WinForm.UI
             MenuHelper.CustomizeMenuAppearance(ctxMenuActiveList);
             MenuHelper.CustomizeMenuAppearance(ctxMenuCompletedList);
             MenuHelper.CustomizeMenuAppearance(ctxMenuNotifyIcon);
+
+            SystemEvents.DisplaySettingsChanged += SystemEvents_DisplaySettingsChanged;
+        }
+
+        private void SystemEvents_DisplaySettingsChanged(object sender, EventArgs e)
+        {
+            MessageBox.Show("SystemEvents_DisplaySettingsChanged");
+            AdaptDpiChange();
         }
 
         private void CreateFooter()
@@ -198,21 +207,17 @@ namespace XDM.WinForm.UI
             ButtonHelper.SetFlatStyle(this.btnMonitoring, FormColors);
         }
 
-        private void CreateToolbar()
+        private void ApplyToolbarPadding()
         {
-            tableLayoutPanel1.BackColor = FormColors.ToolbarBackColor;
-            ButtonHelper.ParentBackColor = tableLayoutPanel1.BackColor;
             var toolbarImageFont = this.ri12Font;
             var fg1 = FormColors.ToolbarButtonForeColor;
             var fg2 = FormColors.ToolbarButtonDisabledForeColor;
 
             this.btnNew.ForeColor = fg1;
-            ButtonHelper.SetFlatStyle(this.btnNew, FormColors);
             this.btnNew.Image = CreateToolbarIcon(toolbarImageFont,
                                         RemixIcon.GetFontIcon(RemixIcon.LinkIcon),
                                         fg1, 2);
-            //Log.Debug("Height1: " + LogicalToDeviceUnits(3) + " height2: " + ((Math.Ceiling(btnNew.Image.Height * 0.5))));
-            //var buttonPadding = new Padding(LogicalToDeviceUnits(3));
+
             var height = Math.Max((int)(Math.Ceiling(btnNew.Image.Height * 0.5)), LogicalToDeviceUnits(3));
             var buttonPadding = new Padding(LogicalToDeviceUnits(3), height, LogicalToDeviceUnits(3), height);
 
@@ -265,44 +270,70 @@ namespace XDM.WinForm.UI
                                     )
             };
 
-            //this.btnDelete.Font = new Font(fontCollection5.Families[0], 12); //
             this.btnDelete.Image = ButtonHelper.ButtonStateIcons[this.btnDelete].ImgEnabled;
             this.btnDelete.Padding = buttonPadding;
-            this.btnDelete.ForeColor = fg1;//Color.FromArgb(190, 190, 190); //
-            this.btnDelete.Text = "Delete";//((char)Int32.Parse("f1f8"/*RemixIcon.RemoveIcon*//*"ec28"*//*"eb99"*/, System.Globalization.NumberStyles.HexNumber)).ToString();//((char)Int32.Parse("f1f8", System.Globalization.NumberStyles.HexNumber)).ToString();
 
-            //this.btnOpenFolder.Font = new Font(fontCollection5.Families[0], 12); //
-            this.btnOpenFolder.ForeColor = fg1;//Color.FromArgb(190, 190, 190); //
             this.btnOpenFolder.Image = ButtonHelper.ButtonStateIcons[this.btnOpenFolder].ImgEnabled;
             this.btnOpenFolder.Padding = buttonPadding;
-            this.btnOpenFolder.Text = "Open folder";
 
-            //this.btnOpenFile.Font = new Font(fontCollection5.Families[0], 12); //
-            this.btnOpenFile.ForeColor = fg1;// Color.FromArgb(190, 190, 190); //
             this.btnOpenFile.Image = ButtonHelper.ButtonStateIcons[this.btnOpenFile].ImgEnabled;
             this.btnOpenFile.Padding = buttonPadding;
-            this.btnOpenFile.Text = "Open file";
 
-            //this.btnResume.Font = new Font(fontCollection5.Families[0], 12); //
             this.btnResume.Image = ButtonHelper.ButtonStateIcons[this.btnResume].ImgEnabled;
             this.btnResume.Padding = buttonPadding;
-            this.btnResume.ForeColor = fg1;// Color.FromArgb(190, 190, 190); //
-            this.btnResume.Text = "Resume";
 
-            //this.btnPause.Font = new Font(fontCollection5.Families[0], 12); //
-            this.btnPause.ForeColor = fg1;//Color.FromArgb(190, 190, 190); //
-            this.btnPause.Text = "Pause";
             this.btnPause.Image = ButtonHelper.ButtonStateIcons[this.btnPause].ImgEnabled;
             this.btnPause.Padding = buttonPadding;
 
-            this.btnMenu.Font = toolbarImageFont; //
-            this.btnMenu.ForeColor = fg1;//Color.FromArgb(190, 190, 190); //
-            this.btnMenu.Text = RemixIcon.GetFontIcon(RemixIcon.MenuIcon);//((char)Int32.Parse("f0c9"/*RemixIcon.MenuIcon*/, System.Globalization.NumberStyles.HexNumber)).ToString();//((char)Int32.Parse("f04c", System.Globalization.NumberStyles.HexNumber)).ToString();
-
-            ButtonHelper.SetFlatStyle(btnMenu, FormColors);
-
-            this.btnSearch.Font = fa10Font; //
             this.btnSearch.Padding = new Padding(0);
+
+            btnNew.Tag = "enabled";
+
+            textBox1.Margin = new Padding(LogicalToDeviceUnits(3), 0, 0, 0);
+            tableLayoutPanel3.Padding = new Padding(LogicalToDeviceUnits(3), 0, 0, 0);
+            panel9.Padding = new Padding(LogicalToDeviceUnits(1));
+
+            btnNew.Padding = new Padding(LogicalToDeviceUnits(6));
+            textBox1.Margin = new Padding(LogicalToDeviceUnits(3));
+            btnSearch.Margin = new Padding(LogicalToDeviceUnits(3));
+
+            btnMenu.Padding = new Padding(
+                LogicalToDeviceUnits(5),
+                LogicalToDeviceUnits(8),
+                LogicalToDeviceUnits(5),
+                LogicalToDeviceUnits(8));
+            tableLayoutPanel2.Padding = new Padding(LogicalToDeviceUnits(5));
+        }
+
+        private void CreateToolbar()
+        {
+            var toolbarImageFont = this.ri12Font;
+            var fg1 = FormColors.ToolbarButtonForeColor;
+            var fg2 = FormColors.ToolbarButtonDisabledForeColor;
+
+            tableLayoutPanel1.BackColor = FormColors.ToolbarBackColor;
+            ButtonHelper.ParentBackColor = tableLayoutPanel1.BackColor;
+           
+            this.btnDelete.Text = "Delete";
+            this.btnDelete.ForeColor = fg1;
+
+            this.btnOpenFolder.Text = "Open folder"; 
+            this.btnOpenFolder.ForeColor = fg1;
+
+            this.btnOpenFile.ForeColor = fg1;
+            this.btnOpenFile.Text = "Open file";
+
+            this.btnResume.Text = "Resume";
+            this.btnResume.ForeColor = fg1;
+
+            this.btnPause.ForeColor = fg1;
+            this.btnPause.Text = "Pause";
+
+            this.btnMenu.Font = toolbarImageFont;
+            this.btnMenu.ForeColor = fg1;
+            this.btnMenu.Text = RemixIcon.GetFontIcon(RemixIcon.MenuIcon);
+
+            this.btnSearch.Font = fa10Font;
             this.btnSearch.ForeColor = FormColors.SearchButtonColor;//Color.FromArgb(190, 190, 190); //
             this.btnSearch.Text = ((char)Int32.Parse("f002"/*RemixIcon.SearchIcon*/, System.Globalization.NumberStyles.HexNumber)).ToString();//((char)Int32.Parse("f04c", System.Globalization.NumberStyles.HexNumber)).ToString();
 
@@ -320,7 +351,9 @@ namespace XDM.WinForm.UI
                 Search();
             };
 
+            ButtonHelper.SetFlatStyle(btnMenu, FormColors);
             ButtonHelper.SetFlatStyle(btnSearch, FormColors);
+            ButtonHelper.SetFlatStyle(this.btnNew, FormColors);
 
             this.btnMenu.Click += (a, b) =>
             {
@@ -343,20 +376,7 @@ namespace XDM.WinForm.UI
             btnSearch.BackColor = FormColors.TextBackColor;
             btnSearch.ForeColor = FormColors.SearchButtonColor;
 
-            textBox1.Margin = new Padding(LogicalToDeviceUnits(3), 0, 0, 0);
-            tableLayoutPanel3.Padding = new Padding(LogicalToDeviceUnits(3), 0, 0, 0);
-            panel9.Padding = new Padding(LogicalToDeviceUnits(1));
-
-            btnNew.Padding = new Padding(LogicalToDeviceUnits(6));
-            textBox1.Margin = new Padding(LogicalToDeviceUnits(3));
-            btnSearch.Margin = new Padding(LogicalToDeviceUnits(3));
-
-            btnMenu.Padding = new Padding(
-                LogicalToDeviceUnits(5),
-                LogicalToDeviceUnits(8),
-                LogicalToDeviceUnits(5),
-                LogicalToDeviceUnits(8));
-            tableLayoutPanel2.Padding = new Padding(LogicalToDeviceUnits(5));
+            ApplyToolbarPadding();
         }
 
         private void StyleDataGridView(DataGridView dataGridView, bool inProgress)
@@ -367,7 +387,7 @@ namespace XDM.WinForm.UI
             //pi?.SetValue(dataGridView, true, null);
 
             var padding = new Padding(LogicalToDeviceUnits(5));
-            var headerPadding = new Padding(LogicalToDeviceUnits(5));//, LogicalToDeviceUnits(5), 0, LogicalToDeviceUnits(5));
+            var headerPadding = new Padding(LogicalToDeviceUnits(3));//, LogicalToDeviceUnits(5), 0, LogicalToDeviceUnits(5));
 
             dataGridView.ColumnHeadersDefaultCellStyle.Padding = headerPadding;// new Padding(0, LogicalToDeviceUnits(10), 0, LogicalToDeviceUnits(10));
             //dataGridView.DefaultCellStyle.Padding = padding;
@@ -643,11 +663,11 @@ namespace XDM.WinForm.UI
                 SelectionChanged?.Invoke(this, EventArgs.Empty);
             };
 
-            this.dgState.Columns[0].DefaultCellStyle.Padding = new System.Windows.Forms.Padding(2 * h1, h1, 0, h1);
-            this.dgState.Columns[1].DefaultCellStyle.Padding = new System.Windows.Forms.Padding(w1, h1, 0, h1);
+            this.dgState.Columns[0].DefaultCellStyle.Padding = new Padding(2 * h1, h1, 0, h1);
+            this.dgState.Columns[1].DefaultCellStyle.Padding = new Padding(w1, h1, 0, h1);
 
-            this.dgCategories.Columns[0].DefaultCellStyle.Padding = new System.Windows.Forms.Padding(4 * h1, h1, 0, h1);
-            this.dgCategories.Columns[1].DefaultCellStyle.Padding = new System.Windows.Forms.Padding(w1, h1, 0, h1);
+            this.dgCategories.Columns[0].DefaultCellStyle.Padding = new Padding(4 * h1, h1, 0, h1);
+            this.dgCategories.Columns[1].DefaultCellStyle.Padding = new Padding(w1, h1, 0, h1);
         }
 
         private void DgActiveList_CellValueNeeded(object sender, DataGridViewCellValueEventArgs e)
@@ -899,10 +919,11 @@ namespace XDM.WinForm.UI
         //    button.Tag = "enabled";
         //}
 
-        private void Form2_Load(object sender, EventArgs e)
+        private void AdaptDpiChange()
         {
-            Log.Debug("LogicalToDeviceUnits(5): " + LogicalToDeviceUnits(5));
-
+            var height1 = ri14Font.Height + LogicalToDeviceUnits(12);
+            dgState.RowTemplate.Height = height1;
+            dgCategories.RowTemplate.Height = height1;
 
             var height = 0;
             for (int i = 0; i < dgState.Rows.Count; i++)
@@ -912,14 +933,21 @@ namespace XDM.WinForm.UI
             dgState.Height = height;
 
             height = 0;
-
             dgCategories.Top = dgState.Height;
-
             for (int i = 0; i < dgCategories.Rows.Count; i++)
             {
                 height += dgCategories.Rows[i].Height;
             }
             dgCategories.Height = height;
+
+            ApplyToolbarPadding();
+        }
+
+        private void Form2_Load(object sender, EventArgs e)
+        {
+            Log.Debug("LogicalToDeviceUnits(5): " + LogicalToDeviceUnits(5));
+            AdaptDpiChange();
+
             dgState.Rows[1].Selected = true;
 
             dgActiveList.ClearSelection();
@@ -1728,6 +1756,14 @@ namespace XDM.WinForm.UI
                 //case (0x0001): // WM_CREATE
                 //    hWndNextWindow = SetClipboardViewer(this.Handle);
                 //    break;
+                case 0x02E0: //WM_DPICHANGED
+                    {
+                        //int newDpi = m.WParam.ToInt32() & 0xFFFF;
+                        //float scaleFactor = (float)newDpi / (float)96;
+                        Log.Debug("Dpi changed");
+                        AdaptDpiChange();
+                    }
+                    break;
                 case (0x0002): // WM_DESTROY
                     ChangeClipboardChain(this.Handle, hWndNextWindow);
                     break;
