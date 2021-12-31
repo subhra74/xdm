@@ -37,12 +37,12 @@ public class XDMTableCellRenderer implements TableCellRenderer {
 			iconFont = Font.createFont(Font.TRUETYPE_FONT, new File(System.getProperty("user.home"), "remixicon.ttf"))
 					.deriveFont(24.0f);
 			iconLbl.setFont(iconFont);
-			iconLbl.setText("\ueceb");
+			iconLbl.setText(RemixIconConstants.FILE_FILL);
 		} catch (FontFormatException | IOException e) {
 			e.printStackTrace();
 		}
 		iconLbl.setOpaque(false);
-		iconLbl.setBorder(new EmptyBorder(5, 5, 5, 5));
+		iconLbl.setBorder(new EmptyBorder(XDMUtils.getScaledInt(5),XDMUtils.getScaledInt(10), XDMUtils.getScaledInt(5), XDMUtils.getScaledInt(5)));
 		// iconLbl.setPreferredSize(new Dimension(XDMUtils.getScaledInt(56),
 		// XDMUtils.getScaledInt(56)));
 
@@ -72,13 +72,13 @@ public class XDMTableCellRenderer implements TableCellRenderer {
 		// date.setPreferredSize(new Dimension(64, 64));
 
 		lineLbl = new JLabel();
-		lineLbl.setBackground(ColorResource.getWhite());
+		// lineLbl.setBackground(ColorResource.getWhite());
 		lineLbl.setOpaque(true);
 		lineLbl.setMinimumSize(new Dimension(10, 1));
 		lineLbl.setMaximumSize(new Dimension(lineLbl.getMaximumSize().width, 1));
 		lineLbl.setPreferredSize(new Dimension(lineLbl.getPreferredSize().width, 1));
 
-		pcell = new JPanel(new BorderLayout());
+		pcell = new JPanel(new BorderLayout(5, 5));
 		// pcell.setBackground(Color.WHITE);
 
 		pcell.add(iconLbl, BorderLayout.WEST);
@@ -87,7 +87,7 @@ public class XDMTableCellRenderer implements TableCellRenderer {
 		box.add(statLbl);
 		box.add(Box.createHorizontalGlue());
 		box.add(dateLbl);
-		box.setBorder(new EmptyBorder(0, 0, XDMUtils.getScaledInt(3), 0));
+		box.setBorder(new EmptyBorder(0, 0, XDMUtils.getScaledInt(3), XDMUtils.getScaledInt(5)));
 
 		JPanel p = new JPanel(new BorderLayout());
 		p.setOpaque(false);
@@ -96,8 +96,9 @@ public class XDMTableCellRenderer implements TableCellRenderer {
 		p.setBorder(new EmptyBorder(XDMUtils.getScaledInt(5), 0, XDMUtils.getScaledInt(0), XDMUtils.getScaledInt(10)));
 
 		pcell.add(p);
-		// pcell.add(lineLbl, BorderLayout.SOUTH);
-		pcell.setBorder(new EmptyBorder(XDMUtils.getScaledInt(5), XDMUtils.getScaledInt(5), XDMUtils.getScaledInt(5), XDMUtils.getScaledInt(5)));
+		pcell.add(lineLbl, BorderLayout.SOUTH);
+		pcell.setBorder(new EmptyBorder(XDMUtils.getScaledInt(5), XDMUtils.getScaledInt(0), XDMUtils.getScaledInt(0),
+				XDMUtils.getScaledInt(0)));
 	}
 
 	public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,

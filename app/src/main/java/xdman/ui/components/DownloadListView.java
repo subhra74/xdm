@@ -49,7 +49,7 @@ public class DownloadListView {
 		// });
 
 		JScrollPane jsp = new JScrollPane(table);
-		jsp.setBorder(new EmptyBorder(0, 0, 0, 0));
+		jsp.setBorder(new EmptyBorder(0, 10, 10, 10));
 
 		container.add(jsp);
 	}

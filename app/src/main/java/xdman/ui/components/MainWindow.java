@@ -16,8 +16,12 @@ import java.awt.Taskbar;
 import java.awt.desktop.AppReopenedListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -79,8 +83,15 @@ import xdman.util.FFmpegDownloader;
 import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
+import xdman.win32.DwmApi;
 
-public class MainWindow extends JFrame implements ActionListener {
+public class MainWindow extends XDMFrame implements ActionListener {
+
+//	static {
+//
+//		JFrame.setDefaultLookAndFeelDecorated(true);
+//	}
+
 	private static final long serialVersionUID = -3119522563540700138L;
 
 	CustomButton btnTabArr[];
@@ -103,6 +114,8 @@ public class MainWindow extends JFrame implements ActionListener {
 
 	public MainWindow() {
 		setTitle(XDMApp.XDM_WINDOW_TITLE);
+		System.out.println(System.getProperty("os.name") + " " + System.getProperty("os.version"));
+		// setUndecorated(true);
 		setWindowSizeAndPosition();
 		initWindow();
 //		if (Config.getInstance().isFirstRun()) {
@@ -118,6 +131,21 @@ public class MainWindow extends JFrame implements ActionListener {
 								: ImageResource.getIcon("off.png", 85, 21));
 			}
 		});
+//		addComponentListener(new ComponentAdapter() {
+//			@Override
+//			public void componentShown(ComponentEvent e) {
+//				System.out.println("Window opened");
+//				DwmApi.SetDarkTitleBar(MainWindow.this);
+//			}
+//		});
+//		addWindowListener(new WindowAdapter() {
+//			@Override
+//			public void windowOpened(WindowEvent e) {
+//				System.out.println("Window opened");
+//				DwmApi.SetDarkTitleBar(MainWindow.this);
+//				MainWindow.this.repaint();
+//			}
+//		});
 	}
 
 //	@Override
@@ -980,13 +1008,7 @@ public class MainWindow extends JFrame implements ActionListener {
 		bp.add(Box.createRigidArea(new Dimension(0, scale(30))));
 		bp.add(createSearchPane(), BorderLayout.EAST);
 
-		Font iconFont = null;
-		try {
-			iconFont = Font.createFont(Font.TRUETYPE_FONT, new File(System.getProperty("user.home"), "remixicon.ttf"))
-					.deriveFont(16.0f);
-		} catch (FontFormatException | IOException e) {
-			e.printStackTrace();
-		}
+		Font iconFont = FontResource.getIconFont();
 
 		JPanel panCenter = new JPanel(new BorderLayout());
 		panCenter.setBackground(Color.WHITE);

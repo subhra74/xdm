@@ -14,13 +14,14 @@ public class XDMDarkTheme extends AbstractXDMTheme {
 	public void addCustomEntriesToTable(UIDefaults table) {
 		super.addCustomEntriesToTable(table);
 		var selectionTextColor = new Color(0xecf0f1);
-		var controlTextColor = new Color(0x72767E);
-		var controlBackgroundColor = new Color(0x2D3038);
-		var editorBackgroundColor = new Color(0x373A42);
+		var controlTextColor = new Color(0xAAAAAA);// new Color(0x72767E);
+		var controlBackgroundColor = new Color(0x25262E);// new Color(0x2D3038);
+		var editorBackgroundColor = new Color(0x2D3038);
 		var activeButtonColor = new Color(0x3498db);
-		var selectionColor = new Color(0x2980b9);//0x373A42);
+		var selectionColor = new Color(0x2980b9);// 0x373A42);
 		var tableBackgroundColor = new Color(0x2D3038);
-		var listBackgroundColor = new Color(0x25262E);
+		var listBackgroundColor = new Color(0x2D3038);// new Color(0x1D1D1D);
+		var scrollThumbColor = new Color(0x5A5A5A);
 		table.put("Menu.foreground", controlTextColor);
 		table.put("PopupMenu.border", new LineBorder(ColorResource.getDarkBgColor()));
 		table.put("PopupMenu.background", controlBackgroundColor);
@@ -33,7 +34,9 @@ public class XDMDarkTheme extends AbstractXDMTheme {
 		table.put("ComboBox.disabledBackground", ColorResource.getDarkerBgColor());
 		table.put("ComboBox.foreground", Color.WHITE);
 		table.put("ComboBox.background", ColorResource.getDarkBgColor());
-		table.put("Label.foreground", new Color(0xecf0f1));
+
+		table.put("Label.foreground", controlTextColor);
+		table.put("Label.background", controlBackgroundColor);
 
 		table.put("Panel.background", controlBackgroundColor);
 
@@ -82,9 +85,9 @@ public class XDMDarkTheme extends AbstractXDMTheme {
 		table.put("ScrollPane.border", new LineBorder(controlBackgroundColor, 0));
 		table.put("ScrollPane.background", controlBackgroundColor);
 		table.put("ScrollPane.foreground", tableBackgroundColor);
-		
+
 		table.put("ScrollBar.background", controlBackgroundColor);
-		table.put("ScrollBar.foreground", controlTextColor);
+		table.put("ScrollBar.foreground", scrollThumbColor);
 
 		table.put("TableHeader.background", controlBackgroundColor);
 		table.put("TableHeader.cellBorder", new LineBorder(controlBackgroundColor, 1));

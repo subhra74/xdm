@@ -1,6 +1,9 @@
 package xdman.ui.res;
 
 import java.awt.Font;
+import java.awt.FontFormatException;
+import java.io.File;
+import java.io.IOException;
 
 import xdman.util.Logger;
 import xdman.util.XDMUtils;
@@ -66,6 +69,19 @@ public class FontResource {
 		return plainFontBig2;
 	}
 
+	public static Font getIconFont() {
+		if (iconFont == null) {
+			try {
+				iconFont = Font
+						.createFont(Font.TRUETYPE_FONT, new File(System.getProperty("user.home"), "remixicon.ttf"))
+						.deriveFont(16.0f);
+			} catch (FontFormatException | IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return iconFont;
+	}
+
 	private static Font smallFont;
 	private static Font plainFont;
 	private static Font boldFont;
@@ -75,4 +91,5 @@ public class FontResource {
 	private static Font plainFontBig1;
 	private static Font plainFontBig2;
 	private static Font itemFont;
+	private static Font iconFont;
 }
