@@ -7,6 +7,8 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Desktop;
 import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontFormatException;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.Point;
@@ -19,10 +21,12 @@ import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -35,6 +39,7 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -75,7 +80,7 @@ import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
 
-public class MainWindow extends XDMFrame implements ActionListener {
+public class MainWindow extends JFrame implements ActionListener {
 	private static final long serialVersionUID = -3119522563540700138L;
 
 	CustomButton btnTabArr[];
@@ -90,7 +95,7 @@ public class MainWindow extends XDMFrame implements ActionListener {
 	JPopupMenu popupCtx;
 	JMenu startQMenu, stopQMenu, convertMenu;
 
-	JPanel toolbar;
+	// JPanel toolbar;
 	UpdateNotifyPanel updateNotifyPanel;
 	JLabel btnMonitoring;
 
@@ -100,9 +105,9 @@ public class MainWindow extends XDMFrame implements ActionListener {
 		setTitle(XDMApp.XDM_WINDOW_TITLE);
 		setWindowSizeAndPosition();
 		initWindow();
-		if (Config.getInstance().isFirstRun()) {
-			SettingsPage.getInstance().showPanel(this, "BTN_MONITORING");
-		}
+//		if (Config.getInstance().isFirstRun()) {
+//			SettingsPage.getInstance().showPanel(this, "BTN_MONITORING");
+//		}
 		showNotification();
 		Config.getInstance().addConfigListener(new MonitoringListener() {
 
@@ -157,6 +162,50 @@ public class MainWindow extends XDMFrame implements ActionListener {
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		Config config = Config.getInstance();
+		switch (e.getActionCommand()) {
+		case "ALL_DOWNLOADS":
+			config.setStateFilter(XDMConstants.ALL);
+			config.setCategoryFilter(XDMConstants.ALL);
+			filter();
+			break;
+		case "ALL_UNFINISHED":
+			config.setStateFilter(XDMConstants.UNFINISHED);
+			config.setCategoryFilter(XDMConstants.ALL);
+			filter();
+			break;
+		case "ALL_FINISHED":
+			config.setStateFilter(XDMConstants.FINISHED);
+			config.setCategoryFilter(XDMConstants.ALL);
+			filter();
+			break;
+		case "CAT_DOCUMENTS":
+			config.setStateFilter(XDMConstants.FINISHED);
+			config.setCategoryFilter(XDMConstants.DOCUMENTS);
+			filter();
+			break;
+		case "CAT_COMPRESSED":
+			config.setStateFilter(XDMConstants.FINISHED);
+			config.setCategoryFilter(XDMConstants.COMPRESSED);
+			filter();
+			break;
+		case "CAT_MUSIC":
+			config.setStateFilter(XDMConstants.FINISHED);
+			config.setCategoryFilter(XDMConstants.MUSIC);
+			filter();
+			break;
+		case "CAT_PROGRAMS":
+			config.setStateFilter(XDMConstants.FINISHED);
+			config.setCategoryFilter(XDMConstants.PROGRAMS);
+			filter();
+			break;
+		case "CAT_VIDEOS":
+			config.setStateFilter(XDMConstants.FINISHED);
+			config.setCategoryFilter(XDMConstants.VIDEO);
+			filter();
+			break;
+		default:
+			break;
+		}
 		if (e.getSource() instanceof JComponent) {
 			String name = ((JComponent) e.getSource()).getName();
 			if (name == null) {
@@ -175,18 +224,18 @@ public class MainWindow extends XDMFrame implements ActionListener {
 				startQueue(name);
 			} else if ("ADD_URL".equals(name) || "MENU_ADD_URL".equals(name)) {
 				XDMApp.getInstance().addDownload(null, null);
-			} else if ("ALL_DOWNLOADS".equals(name)) {
-				tabClicked(e);
-				config.setStateFilter(XDMConstants.ALL);
-				filter();
-			} else if ("ALL_UNFINISHED".equals(name)) {
-				tabClicked(e);
-				config.setStateFilter(XDMConstants.UNFINISHED);
-				filter();
-			} else if ("ALL_FINISHED".equals(name)) {
-				tabClicked(e);
-				config.setStateFilter(XDMConstants.FINISHED);
-				filter();
+//			} else if ("ALL_DOWNLOADS".equals(name)) {
+//				tabClicked(e);
+//				config.setStateFilter(XDMConstants.ALL);
+//				filter();
+//			} else if ("ALL_UNFINISHED".equals(name)) {
+//				tabClicked(e);
+//				config.setStateFilter(XDMConstants.UNFINISHED);
+//				filter();
+//			} else if ("ALL_FINISHED".equals(name)) {
+//				tabClicked(e);
+//				config.setStateFilter(XDMConstants.FINISHED);
+//				filter();
 			} else if ("PAUSE".equals(name) || "MENU_PAUSE".equals(name)) {
 				pauseDownloads();
 			} else if ("CTX_COPY_URL".equals(name)) {
@@ -242,66 +291,66 @@ public class MainWindow extends XDMFrame implements ActionListener {
 			} else if ("BTN_SEARCH".equals(name)) {
 				config.setSearchText(txtSearch.getText());
 				filter();
-			} else if ("CAT_DOCUMENTS".equals(name)) {
-				config.setCategoryFilter(XDMConstants.DOCUMENTS);
-				updateSidePanel((JLabel) e.getSource());
-			} else if ("CAT_COMPRESSED".equals(name)) {
-				config.setCategoryFilter(XDMConstants.COMPRESSED);
-				updateSidePanel((JLabel) e.getSource());
-			} else if ("CAT_MUSIC".equals(name)) {
-				config.setCategoryFilter(XDMConstants.MUSIC);
-				updateSidePanel((JLabel) e.getSource());
-			} else if ("CAT_PROGRAMS".equals(name)) {
-				config.setCategoryFilter(XDMConstants.PROGRAMS);
-				updateSidePanel((JLabel) e.getSource());
-			} else if ("CAT_VIDEOS".equals(name)) {
-				config.setCategoryFilter(XDMConstants.VIDEO);
-				updateSidePanel((JLabel) e.getSource());
-			} else if ("CAT_ALL".equals(name)) {
-				config.setCategoryFilter(XDMConstants.ALL);
-				updateSidePanel((JLabel) e.getSource());
-			} else if ("MENU_CLIP_ADD".equals(name)) {
-				int ret = MessageBox.show(this, "sample title",
-						"sample textdgdfgdfgdfghdfh gfhsdgh gfgfh dfgdfqwewrqwerwerqwerqwerwerwqerqwerqwerqwerwerwegfterj jgh ker gwekl hwgklerhg ek hrkjlwhlk kj hgeklgh jkle herklj gheklwerjgh sample textdgdfgdfgdfghdfh gfhsdgh gfgfh dfgdfqwewrqwerwerqwerqwerwerwqerqwerqwerqwerwerwegfterj jgh ker gwekl hwgklerhg ek hrkjlwhlk kj hgeklgh jkle herklj gheklwerjgh",
-						MessageBox.OK_OPTION, MessageBox.OK);
-				System.out.println("After: " + ret);
-				// new DownloadCompleteWnd().setVisible(true);
-			} else if ("MENU_OPTIONS".equals(name) || "OPTIONS".equals(name)) {
-				SettingsPage.getInstance().showPanel(this, "PG_SETTINGS");
-			} else if ("MENU_REFRESH_LINK".equals(name)) {
-				openRefreshPage();
-			} else if ("MENU_PROPERTIES".equals(name)) {
-				showProperties();
-			} else if ("MENU_BROWSER_INT".equals(name)) {
-				SettingsPage.getInstance().showPanel(this, "BTN_MONITORING");
-			} else if ("MENU_SPEED_LIMITER".equals(name)) {
-				int ret = SpeedLimiter.getSpeedLimit();
-				if (ret >= 0) {
-					Config.getInstance().setSpeedLimit(ret);
-				}
+//			} else if ("CAT_DOCUMENTS".equals(name)) {
+//				config.setCategoryFilter(XDMConstants.DOCUMENTS);
+//				updateSidePanel((JLabel) e.getSource());
+//			} else if ("CAT_COMPRESSED".equals(name)) {
+//				config.setCategoryFilter(XDMConstants.COMPRESSED);
+//				updateSidePanel((JLabel) e.getSource());
+//			} else if ("CAT_MUSIC".equals(name)) {
+//				config.setCategoryFilter(XDMConstants.MUSIC);
+//				updateSidePanel((JLabel) e.getSource());
+//			} else if ("CAT_PROGRAMS".equals(name)) {
+//				config.setCategoryFilter(XDMConstants.PROGRAMS);
+//				updateSidePanel((JLabel) e.getSource());
+//			} else if ("CAT_VIDEOS".equals(name)) {
+//				config.setCategoryFilter(XDMConstants.VIDEO);
+//				updateSidePanel((JLabel) e.getSource());
+//			} else if ("CAT_ALL".equals(name)) {
+//				config.setCategoryFilter(XDMConstants.ALL);
+//				updateSidePanel((JLabel) e.getSource());
+//			} else if ("MENU_CLIP_ADD".equals(name)) {
+//				int ret = MessageBox.show(this, "sample title",
+//						"sample textdgdfgdfgdfghdfh gfhsdgh gfgfh dfgdfqwewrqwerwerqwerqwerwerwqerqwerqwerqwerwerwegfterj jgh ker gwekl hwgklerhg ek hrkjlwhlk kj hgeklgh jkle herklj gheklwerjgh sample textdgdfgdfgdfghdfh gfhsdgh gfgfh dfgdfqwewrqwerwerqwerqwerwerwqerqwerqwerqwerwerwegfterj jgh ker gwekl hwgklerhg ek hrkjlwhlk kj hgeklgh jkle herklj gheklwerjgh",
+//						MessageBox.OK_OPTION, MessageBox.OK);
+//				System.out.println("After: " + ret);
+//				// new DownloadCompleteWnd().setVisible(true);
+//			} else if ("MENU_OPTIONS".equals(name) || "OPTIONS".equals(name)) {
+//				SettingsPage.getInstance().showPanel(this, "PG_SETTINGS");
+//			} else if ("MENU_REFRESH_LINK".equals(name)) {
+//				openRefreshPage();
+//			} else if ("MENU_PROPERTIES".equals(name)) {
+//				showProperties();
+//			} else if ("MENU_BROWSER_INT".equals(name)) {
+//				SettingsPage.getInstance().showPanel(this, "BTN_MONITORING");
+//			} else if ("MENU_SPEED_LIMITER".equals(name)) {
+//				int ret = SpeedLimiter.getSpeedLimit();
+//				if (ret >= 0) {
+//					Config.getInstance().setSpeedLimit(ret);
+//				}
 			} else if ("DESC_Q_TITLE".equals(name)) {
-				SettingsPage.getInstance().showPanel(this, "Q_MAN");
+//				SettingsPage.getInstance().showPanel(this, "Q_MAN");
 			} else if ("MENU_MEDIA_CONVERTER".equals(name)) {
 				convert();
-			} else if ("MENU_DELETE_DWN".equals(name) || "DELETE".equals(name)) {
-				if (MessageBox.show(this, StringResource.get("DEL_TITLE"), StringResource.get("DEL_SEL_TEXT"),
-						MessageBox.YES_NO_OPTION, MessageBox.YES,
-						StringResource.get("LBL_DELETE_FILE")) == MessageBox.YES) {
-					String[] ids = lv.getSelectedIds();
-					ArrayList<String> idList = new ArrayList<String>();
-					for (int i = 0; i < ids.length; i++) {
-						idList.add(ids[i]);
-					}
-					XDMApp.getInstance().deleteDownloads(idList, MessageBox.isChecked());
-				}
-			} else if ("MENU_DELETE_COMPLETED".equals(name)) {
-				if (MessageBox.show(this, StringResource.get("DEL_TITLE"), StringResource.get("DEL_FINISHED_TEXT"),
-						MessageBox.YES_NO_OPTION, MessageBox.YES) == MessageBox.YES) {
-					XDMApp.getInstance().deleteCompleted();
-				}
-			} else if ("MENU_ABOUT".equals(name)) {
-				AboutPage aboutPage = new AboutPage(this);
-				aboutPage.showPanel();
+//			} else if ("MENU_DELETE_DWN".equals(name) || "DELETE".equals(name)) {
+//				if (MessageBox.show(this, StringResource.get("DEL_TITLE"), StringResource.get("DEL_SEL_TEXT"),
+//						MessageBox.YES_NO_OPTION, MessageBox.YES,
+//						StringResource.get("LBL_DELETE_FILE")) == MessageBox.YES) {
+//					String[] ids = lv.getSelectedIds();
+//					ArrayList<String> idList = new ArrayList<String>();
+//					for (int i = 0; i < ids.length; i++) {
+//						idList.add(ids[i]);
+//					}
+//					XDMApp.getInstance().deleteDownloads(idList, MessageBox.isChecked());
+//				}
+//			} else if ("MENU_DELETE_COMPLETED".equals(name)) {
+//				if (MessageBox.show(this, StringResource.get("DEL_TITLE"), StringResource.get("DEL_FINISHED_TEXT"),
+//						MessageBox.YES_NO_OPTION, MessageBox.YES) == MessageBox.YES) {
+//					XDMApp.getInstance().deleteCompleted();
+//				}
+//			} else if ("MENU_ABOUT".equals(name)) {
+//				AboutPage aboutPage = new AboutPage(this);
+//				aboutPage.showPanel();
 			} else if ("CTX_SAVE_AS".equals(name)) {
 				String[] ids = lv.getSelectedIds();
 				if (ids.length > 0) {
@@ -377,6 +426,14 @@ public class MainWindow extends XDMFrame implements ActionListener {
 	}
 
 	private JPanel createToolbar() {
+		try {
+			Font iconFont = Font
+					.createFont(Font.TRUETYPE_FONT, new File(System.getProperty("user.home"), "remixicon.ttf"))
+					.deriveFont(16.0f);
+		} catch (FontFormatException | IOException e1) {
+			e1.printStackTrace();
+		}
+
 		JPanel p = new JPanel(new BorderLayout());
 		Box toolBox = Box.createHorizontalBox();
 		toolBox.add(Box.createRigidArea(new Dimension(scale(20), scale(60))));
@@ -605,7 +662,7 @@ public class MainWindow extends XDMFrame implements ActionListener {
 		menuBox.add(Box.createHorizontalGlue());
 		menuBox.add(bar);
 		menuBox.add(Box.createHorizontalStrut(getScaledInt(30)));
-		menuBox.add(super.createWindowButtons());
+//		menuBox.add(super.createWindowButtons());
 		menuBox.setAlignmentX(Box.RIGHT_ALIGNMENT);
 		this.rightbox.add(menuBox);
 	}
@@ -899,40 +956,60 @@ public class MainWindow extends XDMFrame implements ActionListener {
 			Desktop.getDesktop().addAppEventListener((AppReopenedListener) e -> XDMApp.getInstance().showMainWindow());
 		}
 
-		showTwitterIcon = true;
-		showFBIcon = true;
-		showGitHubIcon = true;
-		fbUrl = XDMApp.APP_FACEBOOK_URL;
-		twitterUrl = XDMApp.APP_TWITTER_URL;
-		gitHubUrl = XDMApp.APP_HOME_URL;
+//		showTwitterIcon = true;
+//		showFBIcon = true;
+//		showGitHubIcon = true;
+//		fbUrl = XDMApp.APP_FACEBOOK_URL;
+//		twitterUrl = XDMApp.APP_TWITTER_URL;
+//		gitHubUrl = XDMApp.APP_HOME_URL;
 
 		JLabel lblTitle = new JLabel(XDMApp.XDM_WINDOW_TITLE);
 		lblTitle.setBorder(new EmptyBorder(scale(20), scale(20), scale(20), 0));
 		lblTitle.setFont(FontResource.getBiggestFont());
 		lblTitle.setForeground(ColorResource.getWhite());
-		getTitlePanel().add(lblTitle);
+//		getTitlePanel().add(lblTitle);
 		this.rightbox = Box.createVerticalBox();
 
 		createMainMenu();
 		rightbox.add(Box.createVerticalGlue());
 		createTabs();
-		getTitlePanel().add(rightbox, BorderLayout.EAST);
+//		getTitlePanel().add(rightbox, BorderLayout.EAST);
 
 		BarPanel bp = new BarPanel();
 		bp.setLayout(new BorderLayout());
 		bp.add(Box.createRigidArea(new Dimension(0, scale(30))));
 		bp.add(createSearchPane(), BorderLayout.EAST);
 
+		Font iconFont = null;
+		try {
+			iconFont = Font.createFont(Font.TRUETYPE_FONT, new File(System.getProperty("user.home"), "remixicon.ttf"))
+					.deriveFont(16.0f);
+		} catch (FontFormatException | IOException e) {
+			e.printStackTrace();
+		}
+
 		JPanel panCenter = new JPanel(new BorderLayout());
 		panCenter.setBackground(Color.WHITE);
-		panCenter.add(bp, BorderLayout.NORTH);
+		panCenter.add(new MainToolbar(iconFont.deriveFont(20.0f)), BorderLayout.NORTH);
+
+		var categoryList = new CategoryList(iconFont);
+		categoryList.setActionListener(this);
+		categoryList.addCategory("ALL_DOWNLOADS", "\ueceb", true);
+		categoryList.addCategory("ALL_UNFINISHED", "\ueceb", true);
+		categoryList.addCategory("ALL_FINISHED", "\ueceb", true);
+
+		categoryList.addCategory("CAT_DOCUMENTS", "\ueceb", false);
+		categoryList.addCategory("CAT_COMPRESSED", "\ueceb", false);
+		categoryList.addCategory("CAT_MUSIC", "\ueceb", false);
+		categoryList.addCategory("CAT_VIDEOS", "\ueceb", false);
+		categoryList.addCategory("CAT_PROGRAMS", "\ueceb", false);
 
 		JPanel pClient = new JPanel(new BorderLayout());
 		pClient.add(panCenter);
-		pClient.add(createSidePanel(), BorderLayout.WEST);
+		pClient.add(categoryList.getListComponent(), BorderLayout.WEST);
 
-		toolbar = createToolbar();
-		pClient.add(toolbar, BorderLayout.SOUTH);
+//		toolbar = createToolbar();
+//		pClient.add(toolbar, BorderLayout.SOUTH);
 
 		add(pClient);
 
@@ -959,11 +1036,13 @@ public class MainWindow extends XDMFrame implements ActionListener {
 		createPopupMenu();
 
 		ToolTipManager.sharedInstance().setInitialDelay(500);
+
+		categoryList.selectFirstIndex();
 	}
 
 	private void setWindowSizeAndPosition() {
 		if (Config.getInstance().getWidth() < 0 || Config.getInstance().getHeight() < 0)
-			setSize(scale(750), scale(450));
+			setSize(scale(800), scale(500));
 		if (Config.getInstance().getX() < 0 || Config.getInstance().getY() < 0)
 			setLocationRelativeTo(null);
 	}
@@ -1099,96 +1178,96 @@ public class MainWindow extends XDMFrame implements ActionListener {
 	}
 
 	private void showProperties() {
-		String[] ids = lv.getSelectedIds();
-		if (ids.length > 0) {
-			String id = ids[0];
-			DownloadEntry ent = XDMApp.getInstance().getEntry(id);
-			if (id != null) {
-				PropertiesPage propPage = PropertiesPage.getPage(this);
-				HttpMetadata md = HttpMetadata.load(id);
-				HeaderCollection headers = md.getHeaders();
-				String referer = "";
-				StringBuilder cookies = new StringBuilder();
-				Iterator<HttpHeader> cookieIt = headers.getAll();
-				while (cookieIt.hasNext()) {
-					HttpHeader header = cookieIt.next();
-					if ("referer".equalsIgnoreCase(header.getName())) {
-						referer = header.getValue();
-					}
-					if ("cookie".equalsIgnoreCase(header.getName())) {
-						cookies.append(header.getValue() + "\n");
-					}
-				}
-				String type = "HTTP";
-				if (md instanceof DashMetadata) {
-					type = "DASH";
-				} else if (md instanceof HlsMetadata) {
-					type = "HLS";
-				} else if (md instanceof HdsMetadata) {
-					type = "HDS";
-				}
-
-				propPage.setDetails(ent.getFile(), XDMApp.getInstance().getFolder(ent), ent.getSize(), md.getUrl(),
-						referer, ent.getDateStr(), cookies.toString(), type);
-				propPage.showPanel();
-			}
-		}
+//		String[] ids = lv.getSelectedIds();
+//		if (ids.length > 0) {
+//			String id = ids[0];
+//			DownloadEntry ent = XDMApp.getInstance().getEntry(id);
+//			if (id != null) {
+//				PropertiesPage propPage = PropertiesPage.getPage(this);
+//				HttpMetadata md = HttpMetadata.load(id);
+//				HeaderCollection headers = md.getHeaders();
+//				String referer = "";
+//				StringBuilder cookies = new StringBuilder();
+//				Iterator<HttpHeader> cookieIt = headers.getAll();
+//				while (cookieIt.hasNext()) {
+//					HttpHeader header = cookieIt.next();
+//					if ("referer".equalsIgnoreCase(header.getName())) {
+//						referer = header.getValue();
+//					}
+//					if ("cookie".equalsIgnoreCase(header.getName())) {
+//						cookies.append(header.getValue() + "\n");
+//					}
+//				}
+//				String type = "HTTP";
+//				if (md instanceof DashMetadata) {
+//					type = "DASH";
+//				} else if (md instanceof HlsMetadata) {
+//					type = "HLS";
+//				} else if (md instanceof HdsMetadata) {
+//					type = "HDS";
+//				}
+//
+//				propPage.setDetails(ent.getFile(), XDMApp.getInstance().getFolder(ent), ent.getSize(), md.getUrl(),
+//						referer, ent.getDateStr(), cookies.toString(), type);
+//				propPage.showPanel();
+//			}
+//		}
 	}
 
 	public void openRefreshPage() {
-		String[] ids = lv.getSelectedIds();
-		if (ids.length > 0) {
-			String id = ids[0];
-			DownloadEntry ent = XDMApp.getInstance().getEntry(id);
-			if (ent == null) {
-				return;
-			}
-			if (!(ent.getState() == XDMConstants.PAUSED || ent.getState() == XDMConstants.FAILED)) {
-				return;
-			}
-			try {
-				HttpMetadata md = HttpMetadata.load(id);
-				RefreshUrlPage rp = RefreshUrlPage.getPage(this);
-				rp.setDetails(md);
-				rp.showPanel();
-			} catch (Exception e2) {
-				Logger.log(e2);
-			}
-		}
+//		String[] ids = lv.getSelectedIds();
+//		if (ids.length > 0) {
+//			String id = ids[0];
+//			DownloadEntry ent = XDMApp.getInstance().getEntry(id);
+//			if (ent == null) {
+//				return;
+//			}
+//			if (!(ent.getState() == XDMConstants.PAUSED || ent.getState() == XDMConstants.FAILED)) {
+//				return;
+//			}
+//			try {
+//				HttpMetadata md = HttpMetadata.load(id);
+//				RefreshUrlPage rp = RefreshUrlPage.getPage(this);
+//				rp.setDetails(md);
+//				rp.showPanel();
+//			} catch (Exception e2) {
+//				Logger.log(e2);
+//			}
+//		}
 	}
 
 	public void openFile(String id) {
-		DownloadEntry ent = XDMApp.getInstance().getEntry(id);
-		if (ent != null) {
-			if (ent.getState() == XDMConstants.FINISHED) {
-				try {
-					XDMUtils.openFile(ent.getFile(), XDMApp.getInstance().getFolder(ent));
-				} catch (FileNotFoundException e) {
-					Logger.log(e);
-					MessageBox.show(this, StringResource.get("ERR_MSG_FILE_NOT_FOUND"),
-							StringResource.get("ERR_MSG_FILE_NOT_FOUND_MSG"), MessageBox.OK, MessageBox.OK);
-				} catch (Exception e) {
-					Logger.log(e);
-				}
-			}
-		}
+//		DownloadEntry ent = XDMApp.getInstance().getEntry(id);
+//		if (ent != null) {
+//			if (ent.getState() == XDMConstants.FINISHED) {
+//				try {
+//					XDMUtils.openFile(ent.getFile(), XDMApp.getInstance().getFolder(ent));
+//				} catch (FileNotFoundException e) {
+//					Logger.log(e);
+//					MessageBox.show(this, StringResource.get("ERR_MSG_FILE_NOT_FOUND"),
+//							StringResource.get("ERR_MSG_FILE_NOT_FOUND_MSG"), MessageBox.OK, MessageBox.OK);
+//				} catch (Exception e) {
+//					Logger.log(e);
+//				}
+//			}
+//		}
 	}
 
 	public void openFolder(String id) {
-		DownloadEntry ent = XDMApp.getInstance().getEntry(id);
-		if (ent != null) {
-			if (ent.getState() == XDMConstants.FINISHED) {
-				try {
-					XDMUtils.openFolder(ent.getFile(), XDMApp.getInstance().getFolder(ent));
-				} catch (FileNotFoundException e) {
-					Logger.log(e);
-					MessageBox.show(this, StringResource.get("ERR_MSG_FILE_NOT_FOUND"),
-							StringResource.get("ERR_MSG_FILE_NOT_FOUND_MSG"), MessageBox.OK, MessageBox.OK);
-				} catch (Exception e) {
-					Logger.log(e);
-				}
-			}
-		}
+//		DownloadEntry ent = XDMApp.getInstance().getEntry(id);
+//		if (ent != null) {
+//			if (ent.getState() == XDMConstants.FINISHED) {
+//				try {
+//					XDMUtils.openFolder(ent.getFile(), XDMApp.getInstance().getFolder(ent));
+//				} catch (FileNotFoundException e) {
+//					Logger.log(e);
+//					MessageBox.show(this, StringResource.get("ERR_MSG_FILE_NOT_FOUND"),
+//							StringResource.get("ERR_MSG_FILE_NOT_FOUND_MSG"), MessageBox.OK, MessageBox.OK);
+//				} catch (Exception e) {
+//					Logger.log(e);
+//				}
+//			}
+//		}
 	}
 
 	private void showConversionWindow(String[] ids) {
@@ -1316,7 +1395,7 @@ public class MainWindow extends XDMFrame implements ActionListener {
 		}
 		if (updateNotifyPanel == null) {
 			updateNotifyPanel = new UpdateNotifyPanel();
-			toolbar.add(updateNotifyPanel, BorderLayout.SOUTH);
+			// toolbar.add(updateNotifyPanel, BorderLayout.SOUTH);
 		}
 		updateNotifyPanel.setDetails(mode);
 		revalidate();
@@ -1327,55 +1406,55 @@ public class MainWindow extends XDMFrame implements ActionListener {
 		if (updateNotifyPanel == null)
 			return;
 		updateNotifyPanel.setVisible(false);
-		toolbar.remove(updateNotifyPanel);
+		// toolbar.remove(updateNotifyPanel);
 		updateNotifyPanel = null;
 		invalidate();
 		repaint();
 	}
 
 	private void pauseDownloads() {
-		String[] ids = lv.getSelectedIds();
-		Set<String> queues = new HashSet<String>();
-		for (int i = 0; i < ids.length; i++) {
-			DownloadEntry ent = XDMApp.getInstance().getEntry(ids[i]);
-			String qid = ent.getQueueId();
-			queues.add(qid);
-		}
-
-		Iterator<String> qit = queues.iterator();
-		boolean qRunning = false;
-		while (qit.hasNext()) {
-			String qid = qit.next();
-			if (qid != null) {
-				DownloadQueue q = XDMApp.getInstance().getQueueById(qid);
-				if (q != null) {
-					if (q.isRunning()) {
-						qRunning = true;
-						break;
-					}
-				}
-			}
-		}
-
-		if (qRunning && (MessageBox.show(this, StringResource.get("MSG_REF_LINK_CONFIRM"),
-				StringResource.get("LBL_STOP_Q"), MessageBox.YES_NO_OPTION, MessageBox.YES) == MessageBox.YES)) {
-			qit = queues.iterator();
-			while (qit.hasNext()) {
-				String qid = qit.next();
-				if (qid != null) {
-					DownloadQueue q = XDMApp.getInstance().getQueueById(qid);
-					if (q != null) {
-						if (q.isRunning()) {
-							q.stop();
-						}
-					}
-				}
-			}
-		} else {
-			for (int i = 0; i < ids.length; i++) {
-				XDMApp.getInstance().pauseDownload(ids[i]);
-			}
-		}
+//		String[] ids = lv.getSelectedIds();
+//		Set<String> queues = new HashSet<String>();
+//		for (int i = 0; i < ids.length; i++) {
+//			DownloadEntry ent = XDMApp.getInstance().getEntry(ids[i]);
+//			String qid = ent.getQueueId();
+//			queues.add(qid);
+//		}
+//
+//		Iterator<String> qit = queues.iterator();
+//		boolean qRunning = false;
+//		while (qit.hasNext()) {
+//			String qid = qit.next();
+//			if (qid != null) {
+//				DownloadQueue q = XDMApp.getInstance().getQueueById(qid);
+//				if (q != null) {
+//					if (q.isRunning()) {
+//						qRunning = true;
+//						break;
+//					}
+//				}
+//			}
+//		}
+//
+//		if (qRunning && (MessageBox.show(this, StringResource.get("MSG_REF_LINK_CONFIRM"),
+//				StringResource.get("LBL_STOP_Q"), MessageBox.YES_NO_OPTION, MessageBox.YES) == MessageBox.YES)) {
+//			qit = queues.iterator();
+//			while (qit.hasNext()) {
+//				String qid = qit.next();
+//				if (qid != null) {
+//					DownloadQueue q = XDMApp.getInstance().getQueueById(qid);
+//					if (q != null) {
+//						if (q.isRunning()) {
+//							q.stop();
+//						}
+//					}
+//				}
+//			}
+//		} else {
+//			for (int i = 0; i < ids.length; i++) {
+//				XDMApp.getInstance().pauseDownload(ids[i]);
+//			}
+//		}
 	}
 
 	private void openFile() {
@@ -1387,13 +1466,13 @@ public class MainWindow extends XDMFrame implements ActionListener {
 	}
 
 	private void showBatchDialog() {
-		List<String> urlList = BatchDownloadWnd.getUrls();
-		if (urlList.size() > 0) {
-			new BatchDownloadWnd(XDMUtils.toMetadata(urlList)).setVisible(true);
-		} else {
-			MessageBox.show(this, StringResource.get("MENU_BATCH_DOWNLOAD"),
-					StringResource.get("LBL_BATCH_EMPTY_CLIPBOARD"), MessageBox.OK_OPTION, MessageBox.OK);
-		}
+//		List<String> urlList = BatchDownloadWnd.getUrls();
+//		if (urlList.size() > 0) {
+//			new BatchDownloadWnd(XDMUtils.toMetadata(urlList)).setVisible(true);
+//		} else {
+//			MessageBox.show(this, StringResource.get("MENU_BATCH_DOWNLOAD"),
+//					StringResource.get("LBL_BATCH_EMPTY_CLIPBOARD"), MessageBox.OK_OPTION, MessageBox.OK);
+//		}
 	}
 
 	private void optimizeRWin() {

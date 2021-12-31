@@ -29,14 +29,15 @@ public class XDMButtonUI extends BasicButtonUI {
 	@Override
 	public void installUI(JComponent c) {
 		super.installUI(c);
-		if (c instanceof JButton) {
-			JButton btn = (JButton) c;
-			if (!(c instanceof CustomButton)) {
-				c.setForeground(Color.WHITE);
-				c.setBackground(ColorResource.getButtonBackColor());
-				btn.setBorderPainted(false);
-			}
-		}
+//		if (c instanceof JButton) {
+//			JButton btn = (JButton) c;
+//			if()
+////			if (!(c instanceof CustomButton)) {
+////				c.setForeground(Color.WHITE);
+////				c.setBackground(ColorResource.getButtonBackColor());
+////				btn.setBorderPainted(false);
+////			}
+//		}
 	}
 
 	protected void paintButtonNormal(Graphics g, AbstractButton b) {

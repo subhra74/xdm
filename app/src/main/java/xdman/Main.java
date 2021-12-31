@@ -9,12 +9,12 @@ public class Main {
 		System.setProperty("sun.net.http.errorstream.enableBuffering", "false");
 		System.setProperty("awt.useSystemAAFontSettings", "lcd");
 		System.setProperty("swing.aatext", "true");
-		System.setProperty("sun.java2d.d3d", "false");
+		System.setProperty("sun.java2d.d3d", "true");
 		System.setProperty("sun.java2d.opengl", "false");
 		System.setProperty("sun.java2d.xrender", "false");
 		// Disable Java 9 Dpi scaling as XDM uses its own dpi scaling
 		// System.setProperty("sun.java2d.uiScale.enabled", "true");
-		// System.setProperty("sun.java2d.uiScale", "2.75");
+		//System.setProperty("sun.java2d.uiScale", "1.25");
 	}
 
 	public static void main(String[] args) {

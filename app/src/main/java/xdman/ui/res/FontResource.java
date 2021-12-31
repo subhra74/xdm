@@ -10,6 +10,13 @@ public class FontResource {
 		Logger.log("Loading fonts");
 	}
 
+	public static Font getSmallFont() {
+		if (smallFont == null) {
+			smallFont = new Font(Font.SANS_SERIF, Font.PLAIN, XDMUtils.getScaledInt(11));
+		}
+		return smallFont;
+	}
+
 	public static Font getNormalFont() {
 		if (plainFont == null) {
 			plainFont = new Font(Font.SANS_SERIF, Font.PLAIN, XDMUtils.getScaledInt(12));
@@ -59,6 +66,7 @@ public class FontResource {
 		return plainFontBig2;
 	}
 
+	private static Font smallFont;
 	private static Font plainFont;
 	private static Font boldFont;
 	private static Font boldFont2;

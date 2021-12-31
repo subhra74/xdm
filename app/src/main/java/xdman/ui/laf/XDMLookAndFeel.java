@@ -12,7 +12,7 @@ public class XDMLookAndFeel extends MetalLookAndFeel {
 	private static final long serialVersionUID = 6437510613485554397L;
 
 	public XDMLookAndFeel() {
-		setCurrentTheme(new XDMTheme());
+		setCurrentTheme(new XDMDarkTheme());
 	}
 
 	@Override

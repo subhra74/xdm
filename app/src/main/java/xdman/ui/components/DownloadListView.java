@@ -18,8 +18,9 @@ public class DownloadListView {
 		XDMApp.getInstance().addListener(model);
 		table = new JTable(model);
 		table.setTableHeader(null);
-		table.setDefaultRenderer(DownloadEntry.class, new XDMTableCellRenderer());
-		table.setRowHeight(XDMUtils.getScaledInt(70));
+		var cellRenderer = new XDMTableCellRenderer();
+		table.setDefaultRenderer(DownloadEntry.class, cellRenderer);
+		table.setRowHeight(cellRenderer.getComponent().getPreferredSize().height);
 		table.setShowGrid(false);
 		table.setFillsViewportHeight(true);
 		table.setBorder(new EmptyBorder(0, 0, 0, 0));
