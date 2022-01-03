@@ -585,23 +585,29 @@ namespace XDMApp
 
         private void AttachContextMenuEvents()
         {
-            peer.MenuItemMap["pause"].Clicked += (_, _) => UIActions.StopSelectedDownloads(peer, App);
-            peer.MenuItemMap["resume"].Clicked += (_, _) => UIActions.ResumeDownloads(peer, App);
-            peer.MenuItemMap["delete"].Clicked += (_, _) => DeleteDownloads();
-            peer.MenuItemMap["saveAs"].Clicked += (_, _) => UIActions.SaveAs(peer, App);
-            peer.MenuItemMap["refresh"].Clicked += (_, _) => UIActions.RefreshLink(peer, App);
-            peer.MenuItemMap["showProgress"].Clicked += (_, _) => UIActions.ShowProgressWindow(peer, App);
-            peer.MenuItemMap["copyURL"].Clicked += (_, _) => UIActions.CopyURL1(peer, App);
-            peer.MenuItemMap["copyURL1"].Clicked += (_, _) => UIActions.CopyURL2(peer, App);
-            peer.MenuItemMap["properties"].Clicked += (_, _) => UIActions.ShowSeletectedItemProperties(peer, App);
-            peer.MenuItemMap["open"].Clicked += (_, _) => UIActions.OpenSelectedFile(peer);
-            peer.MenuItemMap["openFolder"].Clicked += (_, _) => UIActions.OpenSelectedFolder(peer);
-            peer.MenuItemMap["deleteDownloads"].Clicked += (_, _) => DeleteDownloads();
-            peer.MenuItemMap["copyFile"].Clicked += (_, _) => UIActions.CopyFile(peer);
-            peer.MenuItemMap["properties1"].Clicked += (_, _) => UIActions.ShowSeletectedItemProperties(peer, App);
-            peer.MenuItemMap["downloadAgain"].Clicked += (_, _) => UIActions.RestartDownload(peer, App);
-            peer.MenuItemMap["restart"].Clicked += (_, _) => UIActions.RestartDownload(peer, App);
-            //peer.MenuItemMap["schedule"].Clicked += (_, _) => UIActions.ScheduleDownload(peer, App);
+            try
+            {
+                peer.MenuItemMap["pause"].Clicked += (_, _) => UIActions.StopSelectedDownloads(peer, App);
+                peer.MenuItemMap["resume"].Clicked += (_, _) => UIActions.ResumeDownloads(peer, App);
+                peer.MenuItemMap["delete"].Clicked += (_, _) => DeleteDownloads();
+                peer.MenuItemMap["saveAs"].Clicked += (_, _) => UIActions.SaveAs(peer, App);
+                peer.MenuItemMap["refresh"].Clicked += (_, _) => UIActions.RefreshLink(peer, App);
+                peer.MenuItemMap["showProgress"].Clicked += (_, _) => UIActions.ShowProgressWindow(peer, App);
+                peer.MenuItemMap["copyURL"].Clicked += (_, _) => UIActions.CopyURL1(peer, App);
+                peer.MenuItemMap["copyURL1"].Clicked += (_, _) => UIActions.CopyURL2(peer, App);
+                peer.MenuItemMap["properties"].Clicked += (_, _) => UIActions.ShowSeletectedItemProperties(peer, App);
+                peer.MenuItemMap["open"].Clicked += (_, _) => UIActions.OpenSelectedFile(peer);
+                peer.MenuItemMap["openFolder"].Clicked += (_, _) => UIActions.OpenSelectedFolder(peer);
+                peer.MenuItemMap["deleteDownloads"].Clicked += (_, _) => DeleteDownloads();
+                peer.MenuItemMap["copyFile"].Clicked += (_, _) => UIActions.CopyFile(peer);
+                peer.MenuItemMap["properties1"].Clicked += (_, _) => UIActions.ShowSeletectedItemProperties(peer, App);
+                peer.MenuItemMap["downloadAgain"].Clicked += (_, _) => UIActions.RestartDownload(peer, App);
+                peer.MenuItemMap["restart"].Clicked += (_, _) => UIActions.RestartDownload(peer, App);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, ex.Message);
+            }
         }
 
         private void InProgressContextMenuOpening()

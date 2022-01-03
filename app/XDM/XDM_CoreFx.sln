@@ -37,6 +37,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HttpServer", "HttpServer\Ht
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SerializeGenerator", "SerializeGenerator\SerializeGenerator.csproj", "{EE8ECACB-C1E3-4E16-AECF-41AFFFE17745}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XDM.Wpf.UI", "XDM.Wpf.UI\XDM.Wpf.UI.csproj", "{71AD2923-E0DE-4691-AD8D-279457EC4091}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -181,6 +183,14 @@ Global
 		{EE8ECACB-C1E3-4E16-AECF-41AFFFE17745}.Release|Any CPU.Build.0 = Release|Any CPU
 		{EE8ECACB-C1E3-4E16-AECF-41AFFFE17745}.Release|x86.ActiveCfg = Release|Any CPU
 		{EE8ECACB-C1E3-4E16-AECF-41AFFFE17745}.Release|x86.Build.0 = Release|Any CPU
+		{71AD2923-E0DE-4691-AD8D-279457EC4091}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{71AD2923-E0DE-4691-AD8D-279457EC4091}.Debug|Any CPU.Build.0 = Debug|x86
+		{71AD2923-E0DE-4691-AD8D-279457EC4091}.Debug|x86.ActiveCfg = Debug|x86
+		{71AD2923-E0DE-4691-AD8D-279457EC4091}.Debug|x86.Build.0 = Debug|x86
+		{71AD2923-E0DE-4691-AD8D-279457EC4091}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{71AD2923-E0DE-4691-AD8D-279457EC4091}.Release|Any CPU.Build.0 = Release|Any CPU
+		{71AD2923-E0DE-4691-AD8D-279457EC4091}.Release|x86.ActiveCfg = Release|Any CPU
+		{71AD2923-E0DE-4691-AD8D-279457EC4091}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
