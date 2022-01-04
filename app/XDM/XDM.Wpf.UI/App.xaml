@@ -6,50 +6,82 @@
              Startup="Application_Startup">
     <Application.Resources>
         <ResourceDictionary>
-            <Geometry x:Key="ri-file-line">
-                M9 2.003V2h10.998C20.55 2 21 2.455 21 2.992v18.016a.993.993 0 0 1-.993.992H3.993A1 1 0 0 1 3 20.993V8l6-5.997zM5.83 8H9V4.83L5.83 8zM11 4v5a1 1 0 0 1-1 1H5v10h14V4h-8z
-            </Geometry>
-            <Geometry x:Key="ri-file-fill">
-                M3 8l6.003-6h10.995C20.55 2 21 2.455 21 2.992v18.016a.993.993 0 0 1-.993.992H3.993A1 1 0 0 1 3 20.993V8zm7-4.5L4.5 9H10V3.5z
-            </Geometry>
-            <Geometry x:Key="ri-microsoft-fill">
-                M11.5 3v8.5H3V3h8.5zm0 18H3v-8.5h8.5V21zm1-18H21v8.5h-8.5V3zm8.5 9.5V21h-8.5v-8.5H21z
-            </Geometry>
-            <Geometry x:Key="ri-microsoft-line">
-                M11 5H5v6h6V5zm2 0v6h6V5h-6zm6 8h-6v6h6v-6zm-8 6v-6H5v6h6zM3 3h18v18H3V3z
-            </Geometry>
-            <Geometry x:Key="ri-file-text-fill">
-                M21 9v11.993A1 1 0 0 1 20.007 22H3.993A.993.993 0 0 1 3 21.008V2.992C3 2.455 3.447 2 3.998 2H14v6a1 1 0 0 0 1 1h6zm0-2h-5V2.003L21 7zM8 7v2h3V7H8zm0 4v2h8v-2H8zm0 4v2h8v-2H8z
-            </Geometry>
-            <Geometry x:Key="ri-file-text-line">
-                M21 8v12.993A1 1 0 0 1 20.007 22H3.993A.993.993 0 0 1 3 21.008V2.992C3 2.455 3.449 2 4.002 2h10.995L21 8zm-2 1h-5V4H5v16h14V9zM8 7h3v2H8V7zm0 4h8v2H8v-2zm0 4h8v2H8v-2z
-            </Geometry>
-            <Geometry x:Key="ri-movie-fill">
-                M2 3.993A1 1 0 0 1 2.992 3h18.016c.548 0 .992.445.992.993v16.014a1 1 0 0 1-.992.993H2.992A.993.993 0 0 1 2 20.007V3.993zm8.622 4.422a.4.4 0 0 0-.622.332v6.506a.4.4 0 0 0 .622.332l4.879-3.252a.4.4 0 0 0 0-.666l-4.88-3.252z
-            </Geometry>
-            <Geometry x:Key="ri-movie-line">
-                M2 3.993A1 1 0 0 1 2.992 3h18.016c.548 0 .992.445.992.993v16.014a1 1 0 0 1-.992.993H2.992A.993.993 0 0 1 2 20.007V3.993zM4 5v14h16V5H4zm6.622 3.415l4.879 3.252a.4.4 0 0 1 0 .666l-4.88 3.252a.4.4 0 0 1-.621-.332V8.747a.4.4 0 0 1 .622-.332z
-            </Geometry>
-            <Geometry x:Key="ri-file-music-fill">
-                M16 2l5 5v14.008a.993.993 0 0 1-.993.992H3.993A1 1 0 0 1 3 21.008V2.992C3 2.444 3.445 2 3.993 2H16zm-5 10.05a2.5 2.5 0 1 0 2 2.45V10h3V8h-5v4.05z
-            </Geometry>
-            <Geometry x:Key="ri-file-music-line">
-                M16 8v2h-3v4.5a2.5 2.5 0 1 1-2-2.45V8h4V4H5v16h14V8h-3zM3 2.992C3 2.444 3.447 2 3.999 2H16l5 5v13.993A1 1 0 0 1 20.007 22H3.993A1 1 0 0 1 3 21.008V2.992z
-            </Geometry>
-            <Geometry x:Key="ri-file-zip-fill">
-                M10 2v2h2V2h8.007c.548 0 .993.444.993.992v18.016a1 1 0 0 1-.993.992H3.993A.993.993 0 0 1 3 21.008V2.992A1 1 0 0 1 3.993 2H10zm2 2v2h2V4h-2zm-2 2v2h2V6h-2zm2 2v2h2V8h-2zm-2 2v2h2v-2h-2zm2 2v2h-2v3h4v-5h-2z
-            </Geometry>
-            <Geometry x:Key="ri-file-zip-line">
-                M20 22H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1zm-1-2V4H5v16h14zm-5-8v5h-4v-3h2v-2h2zm-2-8h2v2h-2V4zm-2 2h2v2h-2V6zm2 2h2v2h-2V8zm-2 2h2v2h-2v-2z
-            </Geometry>
-            <Geometry x:Key="ri-arrow-down-line">
-                M13 16.172l5.364-5.364 1.414 1.414L12 20l-7.778-7.778 1.414-1.414L11 16.172V4h2v12.172z
-            </Geometry>
-            <Geometry x:Key="ri-check-line">
-                M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z
-            </Geometry>
-            <local:FileExtensionToVectorImageConverter x:Key="FileExtensionToVectorImageConverter"></local:FileExtensionToVectorImageConverter>
-            <local:CategoryToVectorImageConverter x:Key="CategoryToVectorImageConverter"></local:CategoryToVectorImageConverter>
+            <ResourceDictionary.MergedDictionaries>
+                <local:SkinResourceDictionary LightSource="Themes/LightTheme.xaml" 
+                                              DarkSource="Themes/DarkTheme.xaml" />
+                <ResourceDictionary Source="Themes/CommonStyles.xaml"/>
+                <ResourceDictionary>
+                    <Geometry x:Key="ri-file-line">
+                        M9 2.003V2h10.998C20.55 2 21 2.455 21 2.992v18.016a.993.993 0 0 1-.993.992H3.993A1 1 0 0 1 3 20.993V8l6-5.997zM5.83 8H9V4.83L5.83 8zM11 4v5a1 1 0 0 1-1 1H5v10h14V4h-8z
+                    </Geometry>
+                    <Geometry x:Key="ri-file-fill">
+                        M3 8l6.003-6h10.995C20.55 2 21 2.455 21 2.992v18.016a.993.993 0 0 1-.993.992H3.993A1 1 0 0 1 3 20.993V8zm7-4.5L4.5 9H10V3.5z
+                    </Geometry>
+                    <Geometry x:Key="ri-microsoft-fill">
+                        M11.5 3v8.5H3V3h8.5zm0 18H3v-8.5h8.5V21zm1-18H21v8.5h-8.5V3zm8.5 9.5V21h-8.5v-8.5H21z
+                    </Geometry>
+                    <Geometry x:Key="ri-microsoft-line">
+                        M11 5H5v6h6V5zm2 0v6h6V5h-6zm6 8h-6v6h6v-6zm-8 6v-6H5v6h6zM3 3h18v18H3V3z
+                    </Geometry>
+                    <Geometry x:Key="ri-file-text-fill">
+                        M21 9v11.993A1 1 0 0 1 20.007 22H3.993A.993.993 0 0 1 3 21.008V2.992C3 2.455 3.447 2 3.998 2H14v6a1 1 0 0 0 1 1h6zm0-2h-5V2.003L21 7zM8 7v2h3V7H8zm0 4v2h8v-2H8zm0 4v2h8v-2H8z
+                    </Geometry>
+                    <Geometry x:Key="ri-file-text-line">
+                        M21 8v12.993A1 1 0 0 1 20.007 22H3.993A.993.993 0 0 1 3 21.008V2.992C3 2.455 3.449 2 4.002 2h10.995L21 8zm-2 1h-5V4H5v16h14V9zM8 7h3v2H8V7zm0 4h8v2H8v-2zm0 4h8v2H8v-2z
+                    </Geometry>
+                    <Geometry x:Key="ri-movie-fill">
+                        M2 3.993A1 1 0 0 1 2.992 3h18.016c.548 0 .992.445.992.993v16.014a1 1 0 0 1-.992.993H2.992A.993.993 0 0 1 2 20.007V3.993zm8.622 4.422a.4.4 0 0 0-.622.332v6.506a.4.4 0 0 0 .622.332l4.879-3.252a.4.4 0 0 0 0-.666l-4.88-3.252z
+                    </Geometry>
+                    <Geometry x:Key="ri-movie-line">
+                        M2 3.993A1 1 0 0 1 2.992 3h18.016c.548 0 .992.445.992.993v16.014a1 1 0 0 1-.992.993H2.992A.993.993 0 0 1 2 20.007V3.993zM4 5v14h16V5H4zm6.622 3.415l4.879 3.252a.4.4 0 0 1 0 .666l-4.88 3.252a.4.4 0 0 1-.621-.332V8.747a.4.4 0 0 1 .622-.332z
+                    </Geometry>
+                    <Geometry x:Key="ri-file-music-fill">
+                        M16 2l5 5v14.008a.993.993 0 0 1-.993.992H3.993A1 1 0 0 1 3 21.008V2.992C3 2.444 3.445 2 3.993 2H16zm-5 10.05a2.5 2.5 0 1 0 2 2.45V10h3V8h-5v4.05z
+                    </Geometry>
+                    <Geometry x:Key="ri-file-music-line">
+                        M16 8v2h-3v4.5a2.5 2.5 0 1 1-2-2.45V8h4V4H5v16h14V8h-3zM3 2.992C3 2.444 3.447 2 3.999 2H16l5 5v13.993A1 1 0 0 1 20.007 22H3.993A1 1 0 0 1 3 21.008V2.992z
+                    </Geometry>
+                    <Geometry x:Key="ri-file-zip-fill">
+                        M10 2v2h2V2h8.007c.548 0 .993.444.993.992v18.016a1 1 0 0 1-.993.992H3.993A.993.993 0 0 1 3 21.008V2.992A1 1 0 0 1 3.993 2H10zm2 2v2h2V4h-2zm-2 2v2h2V6h-2zm2 2v2h2V8h-2zm-2 2v2h2v-2h-2zm2 2v2h-2v3h4v-5h-2z
+                    </Geometry>
+                    <Geometry x:Key="ri-file-zip-line">
+                        M20 22H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1zm-1-2V4H5v16h14zm-5-8v5h-4v-3h2v-2h2zm-2-8h2v2h-2V4zm-2 2h2v2h-2V6zm2 2h2v2h-2V8zm-2 2h2v2h-2v-2z
+                    </Geometry>
+                    <Geometry x:Key="ri-arrow-down-line">
+                        M13 16.172l5.364-5.364 1.414 1.414L12 20l-7.778-7.778 1.414-1.414L11 16.172V4h2v12.172z
+                    </Geometry>
+                    <Geometry x:Key="ri-check-line">
+                        M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z
+                    </Geometry>
+                    <Geometry x:Key="ri-links-line">
+                        M13.06 8.11l1.415 1.415a7 7 0 0 1 0 9.9l-.354.353a7 7 0 0 1-9.9-9.9l1.415 1.415a5 5 0 1 0 7.071 7.071l.354-.354a5 5 0 0 0 0-7.07l-1.415-1.415 1.415-1.414zm6.718 6.011l-1.414-1.414a5 5 0 1 0-7.071-7.071l-.354.354a5 5 0 0 0 0 7.07l1.415 1.415-1.415 1.414-1.414-1.414a7 7 0 0 1 0-9.9l.354-.353a7 7 0 0 1 9.9 9.9z
+                    </Geometry>
+                    <Geometry x:Key="ri-delete-bin-line">
+                        M17 6h5v2h-2v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8H2V6h5V3a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v3zm1 2H6v12h12V8zm-9 3h2v6H9v-6zm4 0h2v6h-2v-6zM9 4v2h6V4H9z
+                    </Geometry>
+                    <Geometry x:Key="ri-share-box-line">
+                        M10 3v2H5v14h14v-5h2v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h6zm7.586 2H13V3h8v8h-2V6.414l-7 7L10.586 12l7-7z
+                    </Geometry>
+                    <Geometry x:Key="ri-folder-shared-line">
+                        M22 13h-2V7h-8.414l-2-2H4v14h9v2H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h7.414l2 2H21a1 1 0 0 1 1 1v7zm-4 4v-3.5l5 4.5-5 4.5V19h-3v-2h3z
+                    </Geometry>
+                    <Geometry x:Key="ri-pause-line">
+                        M6 5h2v14H6V5zm10 0h2v14h-2V5z
+                    </Geometry>
+                    <Geometry x:Key="ri-play-line">
+                        M16.394 12L10 7.737v8.526L16.394 12zm2.982.416L8.777 19.482A.5.5 0 0 1 8 19.066V4.934a.5.5 0 0 1 .777-.416l10.599 7.066a.5.5 0 0 1 0 .832z
+                    </Geometry>
+                    <Geometry x:Key="ri-search-line">
+                        M18.031 16.617l4.283 4.282-1.415 1.415-4.282-4.283A8.96 8.96 0 0 1 11 20c-4.968 0-9-4.032-9-9s4.032-9 9-9 9 4.032 9 9a8.96 8.96 0 0 1-1.969 5.617zm-2.006-.742A6.977 6.977 0 0 0 18 11c0-3.868-3.133-7-7-7-3.868 0-7 3.132-7 7 0 3.867 3.132 7 7 7a6.977 6.977 0 0 0 4.875-1.975l.15-.15z
+                    </Geometry>
+                    <Geometry x:Key="ri-menu-line">
+                        M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z
+                    </Geometry>
+                    <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+                    <local:FileExtensionToVectorImageConverter x:Key="FileExtensionToVectorImageConverter"></local:FileExtensionToVectorImageConverter>
+                    <local:CategoryToVectorImageConverter x:Key="CategoryToVectorImageConverter"></local:CategoryToVectorImageConverter>
+                </ResourceDictionary>
+            </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

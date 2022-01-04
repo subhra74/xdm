@@ -10,6 +10,7 @@ using XDM.WinForm.UI.FormHelper;
 using System.IO;
 using XDMApp;
 using Translations;
+using System.Runtime.InteropServices;
 
 namespace XDM.WinForm.UI.SettingsPages
 {
@@ -72,10 +73,10 @@ namespace XDM.WinForm.UI.SettingsPages
 
         protected override void OnHandleCreated(EventArgs e)
         {
-            //AllowDarkModeForWindow(this.Handle, 1);
-            //SetWindowTheme(this.Handle, "Explorer", null);
-            //SetWindowTheme(this.Handle, "DarkMode_Explorer", null);
-            //base.OnHandleCreated(e);
+            AllowDarkModeForWindow(this.Handle, 1);
+            SetWindowTheme(this.Handle, "Explorer", null);
+            SetWindowTheme(this.Handle, "DarkMode_Explorer", null);
+            base.OnHandleCreated(e);
         }
 
         //protected override void OnShown(EventArgs e)
@@ -85,11 +86,11 @@ namespace XDM.WinForm.UI.SettingsPages
         //    base.OnShown(e);
         //}
 
-        //[DllImport("uxtheme.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "#133")]
-        //public static extern int AllowDarkModeForWindow(IntPtr hWnd, int allow);
+        [DllImport("uxtheme.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "#133")]
+        public static extern int AllowDarkModeForWindow(IntPtr hWnd, int allow);
 
-        //[DllImport("uxtheme.dll", SetLastError = true, ExactSpelling = true, CharSet = CharSet.Unicode)]
-        //public static extern int SetWindowTheme(IntPtr hWnd, string pszSubAppName, string pszSubIdList);
+        [DllImport("uxtheme.dll", SetLastError = true, ExactSpelling = true, CharSet = CharSet.Unicode)]
+        public static extern int SetWindowTheme(IntPtr hWnd, string pszSubAppName, string pszSubIdList);
 
         private void button1_Click(object sender, EventArgs e)
         {

@@ -1,0 +1,7 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <SolidColorBrush x:Key="CategoryForegroundNormal" Color="#808080"/>
+    <SolidColorBrush x:Key="CategoryForegroundSelected" Color="White"/>
+    <SolidColorBrush x:Key="CategoryHighlight" Color="#0A6AB6"/>
+    <SolidColorBrush x:Key="CategoryListBackground" Color="#24292E"/>
+</ResourceDictionary>

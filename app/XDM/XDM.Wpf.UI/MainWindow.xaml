@@ -4,17 +4,153 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:XDM.Wpf.UI"
+        DataContext="{Binding RelativeSource={RelativeSource Self}}"
         mc:Ignorable="d"
         Title="MainWindow" Height="500" Width="800" WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <Style x:Key="DisabledColumn"  
+               BasedOn="{StaticResource {x:Type GridViewColumnHeader}}" 
+               TargetType="{x:Type GridViewColumnHeader}">
+            <Setter Property="IsHitTestVisible" Value="False"/>
+        </Style>
+        <ControlTemplate x:Key="ToolbarButtonTemplate" TargetType="{x:Type Button}">
+            <Border Name="Border" BorderBrush="{StaticResource ToolButtonColor}"  >
+                <StackPanel Orientation="Horizontal" Margin="{TemplateBinding Padding}">
+                    <Path 
+                                VerticalAlignment="Center" 
+                                Margin="0,0,5,0"
+                                StrokeThickness="0" 
+                                Stretch="None" 
+                                Fill="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Border},Path=BorderBrush}"
+                                Width="24" Height="24"  
+                                Stroke="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Border},Path=BorderBrush}" 
+                                Data="{TemplateBinding Tag}"
+                                SnapsToDevicePixels="True"/>
+                    <ContentPresenter 
+                        VerticalAlignment="Center" 
+                        x:Name="ContentSite" 
+                        Margin="0,0,3,0" 
+                        TextBlock.Foreground="{StaticResource ToolButtonColor}">
+                    </ContentPresenter>
+                </StackPanel>
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter TargetName="Border" Property="Background" Value="{StaticResource ToolButtonMouseOverColor}" />
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter TargetName="Border" Property="Background" Value="{StaticResource ToolButtonMousePressedColor}" />
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource ToolButtonMouseDisabledColor}" />
+                    <Setter TargetName="ContentSite" Property="TextBlock.Foreground" Value="{StaticResource ToolButtonMouseDisabledColor}" />
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+        <ControlTemplate x:Key="ToolbarButtonTemplateIconOnly" TargetType="{x:Type Button}">
+            <Border Name="Border" BorderBrush="{StaticResource ToolButtonColor}"  >
+                <StackPanel Orientation="Horizontal" Margin="{TemplateBinding Padding}">
+                    <Path VerticalAlignment="Center" 
+                          Margin="0,0,0,0"
+                          StrokeThickness="0" 
+                          Stretch="None" 
+                          Fill="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Border},Path=BorderBrush}"
+                          Width="24" Height="24"  
+                          Stroke="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Border},Path=BorderBrush}" 
+                          Data="{TemplateBinding Tag}"
+                          SnapsToDevicePixels="True"/>
+                </StackPanel>
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter TargetName="Border" Property="Background" Value="{StaticResource ToolButtonMouseOverColor}" />
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter TargetName="Border" Property="Background" Value="{StaticResource ToolButtonMousePressedColor}" />
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource ToolButtonMouseDisabledColor}" />
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+        <ControlTemplate x:Key="ToolbarButtonTemplateIconOnlySmall" TargetType="{x:Type Button}">
+            <Border Name="Border" BorderBrush="{StaticResource ToolButtonColor}"  >
+                <StackPanel Orientation="Horizontal" Margin="{TemplateBinding Padding}">
+                    <Path 
+                                VerticalAlignment="Center" 
+                                Margin="0,0,0,0"
+                                StrokeThickness="0" 
+                                Stretch="Uniform" 
+                                Fill="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Border},Path=BorderBrush}"
+                                Width="16" Height="16"  
+                                Stroke="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Border},Path=BorderBrush}" 
+                                Data="{TemplateBinding Tag}"
+                                SnapsToDevicePixels="True"/>
+                </StackPanel>
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter TargetName="Border" Property="Background" Value="{StaticResource ToolButtonMouseOverColor}" />
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter TargetName="Border" Property="Background" Value="{StaticResource ToolButtonMousePressedColor}" />
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource ToolButtonMouseDisabledColor}" />
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+    </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="200"></ColumnDefinition>
             <ColumnDefinition Width="*"></ColumnDefinition>
         </Grid.ColumnDefinitions>
-        <ListBox BorderThickness="0" Name="lvCategory" SelectionChanged="lvCategory_SelectionChanged">
+        <ListBox BorderThickness="0" Name="lvCategory" 
+                 SelectionChanged="lvCategory_SelectionChanged" Background="{StaticResource CategoryListBackground}" >
+            <ListBox.Resources>
+                <Style TargetType="{x:Type ListBoxItem}">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                <Border x:Name="Bd" BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="0"
+                                    Background="{TemplateBinding Background}"
+                                    Padding="{TemplateBinding Padding}"
+                                    Tag="{StaticResource CategoryForegroundNormal}"
+                                    SnapsToDevicePixels="true">
+                                    <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <MultiTrigger>
+                                        <MultiTrigger.Conditions>
+                                            <Condition Property="Selector.IsSelectionActive" Value="False" />
+                                            <Condition Property="IsSelected" Value="True" />
+                                        </MultiTrigger.Conditions>
+                                        <Setter Property="Background" TargetName="Bd" Value="{StaticResource CategoryHighlight}" />
+                                        <Setter Property="Tag" TargetName="Bd" Value="{StaticResource CategoryForegroundSelected}" />
+                                    </MultiTrigger>
+                                    <MultiTrigger>
+                                        <MultiTrigger.Conditions>
+                                            <Condition Property="Selector.IsSelectionActive"
+                                            Value="True" />
+                                            <Condition Property="IsSelected"
+                                            Value="True" />
+                                        </MultiTrigger.Conditions>
+                                        <Setter Property="Background" TargetName="Bd" Value="{StaticResource CategoryHighlight}" />
+                                        <Setter Property="Tag" TargetName="Bd" Value="{StaticResource CategoryForegroundSelected}" />
+                                    </MultiTrigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ListBox.Resources>
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <StackPanel x:Name="hello">
+                    <StackPanel x:Name="CategoryItem" IsHitTestVisible="True">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -23,23 +159,25 @@
                             <Path 
                                 Grid.Column="0" 
                                 VerticalAlignment="Center" 
-                                Margin="5,5" 
+                                Margin="5,0" 
                                 StrokeThickness="0" 
-                                Stretch="Uniform" 
-                                Fill="Gray"
-                                Width="16" Height="16"  Stroke="Gray" 
+                                Stretch="None" 
+                                Fill="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Border},Path=Tag}"
+                                Width="24" Height="24"  Stroke="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Border},Path=Tag}"
                                 Data="{Binding Path=VectorIcon, 
                                 Converter={StaticResource CategoryToVectorImageConverter}}"
                                 SnapsToDevicePixels="True"/>
-                            <TextBlock Margin="5,5" Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center" />
+                            <TextBlock Margin="5,0" Grid.Column="1" Text="{Binding Name}" 
+                                       VerticalAlignment="Center" 
+                                       Foreground="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Border},Path=Tag}" />
                         </Grid>
                     </StackPanel>
                     <DataTemplate.Triggers>
                         <DataTrigger Binding="{Binding Path=IsTopLevel}" Value="True">
-                            <Setter TargetName="hello" Property="Margin" Value="10,5,10,5" />
+                            <Setter TargetName="CategoryItem" Property="Margin" Value="10,5,10,5" />
                         </DataTrigger>
                         <DataTrigger Binding="{Binding Path=IsTopLevel}" Value="False">
-                            <Setter TargetName="hello" Property="Margin" Value="30,5,10,5" />
+                            <Setter TargetName="CategoryItem" Property="Margin" Value="25,5,10,5" />
                         </DataTrigger>
                     </DataTemplate.Triggers>
                 </DataTemplate>
@@ -48,24 +186,96 @@
         <DockPanel Grid.Column="1">
             <Grid DockPanel.Dock="Top">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="auto" />
-                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="auto"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Orientation="Horizontal" >
-                    <Button>New</Button>
-                    <Button>Delete</Button>
-                    <Button>Delete</Button>
-                    <Button>Open</Button>
-                    <Button>Open folder</Button>
+                    <Button Template="{StaticResource ToolbarButtonTemplate}" 
+                            Padding="5,5" 
+                            Margin="5,0"  
+                            Tag="{StaticResource ri-links-line}"
+                            Name="BtnNew">
+                        New
+                    </Button>
+                    <Button Template="{StaticResource ToolbarButtonTemplate}" 
+                            Padding="5,5" 
+                            Margin="5,0"  
+                            IsEnabled="False" 
+                            Tag="{StaticResource ri-delete-bin-line}"
+                            Name="BtnDelete">
+                        Delete
+                    </Button>
+                    <Button Template="{StaticResource ToolbarButtonTemplate}" 
+                            Padding="5,5" 
+                            Margin="5,0"  
+                            IsEnabled="False" 
+                            Tag="{StaticResource ri-share-box-line}"
+                            Name="BtnOpen">
+                        Open
+                    </Button>
+                    <Button Template="{StaticResource ToolbarButtonTemplate}" 
+                            Padding="5,5" 
+                            Margin="5,0"  
+                            IsEnabled="False" 
+                            Tag="{StaticResource ri-folder-shared-line}"
+                            Name="BtnOpenFolder">
+                        Open folder
+                    </Button>
+                    <Button Template="{StaticResource ToolbarButtonTemplate}" 
+                            Padding="5,5" 
+                            Margin="5,0"  
+                            IsEnabled="False" 
+                            Tag="{StaticResource ri-pause-line}" 
+                            Name="BtnPause">
+                        Pause
+                    </Button>
+                    <Button Template="{StaticResource ToolbarButtonTemplate}" 
+                            Padding="5,5" 
+                            Margin="5,0"  
+                            IsEnabled="False" 
+                            Tag="{StaticResource ri-play-line}"
+                            Name="BtnResume"
+                            >
+                        Resume
+                    </Button>
                 </StackPanel>
-                <StackPanel Grid.Column="1" ></StackPanel>
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBox AcceptsReturn="False" TextWrapping="NoWrap" Width="120"></TextBox>
-                        <Button>Search</Button>
-                    </StackPanel>
-                    <Button>Menu</Button>
+                    <Border BorderBrush="{StaticResource SearchBorder}" BorderThickness="1">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Name="TxtSearch"  AcceptsReturn="False"  
+                                 TextWrapping="NoWrap" Width="120" VerticalContentAlignment="Center" BorderThickness="0"></TextBox>
+                            <TextBlock Grid.Column="0" x:Name="Placeholder" IsHitTestVisible="False" 
+                                       TextWrapping="NoWrap" Text="Search" VerticalAlignment="Center"  
+                                       Foreground="{StaticResource SearchBorder}" Margin="5,5" >
+                                <TextBlock.Style>
+                                    <Style TargetType="{x:Type TextBlock}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsFocused, ElementName=TxtSearch}" Value="false" />
+                                                    <Condition Binding="{Binding Text, ElementName=TxtSearch}" Value="" />
+                                                </MultiDataTrigger.Conditions>
+                                                <MultiDataTrigger.Setters>
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </MultiDataTrigger.Setters>
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <Button Grid.Column="1" Padding="5,5" 
+                                    Template="{StaticResource ToolbarButtonTemplateIconOnlySmall}" 
+                                    Tag="{StaticResource ri-search-line}" />
+                        </Grid>
+                    </Border>
+                    <Button Padding="5,5" 
+                            Margin="5,0"  
+                            Template="{StaticResource ToolbarButtonTemplateIconOnly}" Tag="{StaticResource ri-menu-line}" />
                 </StackPanel>
             </Grid>
             <Grid>
@@ -79,14 +289,27 @@
                           VerticalContentAlignment="Stretch" 
                           HorizontalAlignment="Stretch" 
                           Grid.Column="0" Grid.Row="0">
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Style.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="Blue"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="Blue"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ListView.ItemContainerStyle>
                     <ListView.View>
                         <GridView>
                             <GridViewColumn Header="Name" Width="150"  >
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
-                                            <Path SnapsToDevicePixels="True" VerticalAlignment="Center" Margin="5,5" StrokeThickness="0" Stretch="Uniform" Fill="Gray"
-                                                  Width="18" Height="18"  Stroke="Gray" 
+                                            <Path SnapsToDevicePixels="True" 
+                                                  VerticalAlignment="Center" Margin="5,5" StrokeThickness="0" Stretch="None" Fill="Gray"
+                                                  Width="24" Height="24"  Stroke="Gray" 
                                                   Data="{Binding Path=Name, Converter={StaticResource FileExtensionToVectorImageConverter}}"
                                                   />
                                             <TextBlock Text="{Binding Name}" Margin="5,5" VerticalAlignment="Center"></TextBlock>
@@ -94,9 +317,15 @@
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
-                            <GridViewColumn Header="Date" Width="50" DisplayMemberBinding="{Binding DateAdded}" />
+                            <GridViewColumn Header="Date" Width="50" DisplayMemberBinding="{Binding DateAdded}"  />
                             <GridViewColumn Header="Size" Width="150" DisplayMemberBinding="{Binding Size}" />
-                            <GridViewColumn Header="%" Width="150" DisplayMemberBinding="{Binding Progress}" />
+                            <GridViewColumn Header="%" Width="80" x:Name="h1" HeaderContainerStyle="{StaticResource DisabledColumn}">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ProgressBar Width="80" Value="{Binding Progress}" Maximum="100" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
                             <GridViewColumn Header="Status" Width="150" DisplayMemberBinding="{Binding Status}" />
                         </GridView>
                     </ListView.View>
@@ -111,8 +340,8 @@
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
-                                            <Path SnapsToDevicePixels="True" VerticalAlignment="Center" Margin="5,5" StrokeThickness="0" Stretch="Uniform" Fill="Gray"
-                                                  Width="18" Height="18"  Stroke="Gray" 
+                                            <Path SnapsToDevicePixels="True" VerticalAlignment="Center" Margin="5,5" StrokeThickness="0" Stretch="None" Fill="Gray"
+                                                  Width="24" Height="24"  Stroke="Gray" 
                                                   Data="{Binding Path=Name, Converter={StaticResource FileExtensionToVectorImageConverter}}"
                                                   />
                                             <TextBlock Text="{Binding Name}" Margin="5,5" VerticalAlignment="Center"></TextBlock>

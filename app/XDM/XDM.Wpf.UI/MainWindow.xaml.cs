@@ -32,11 +32,16 @@ namespace XDM.Wpf.UI
             = new ObservableCollection<FinishedDownloadEntryWrapper>();
 
         private IButton newButton, deleteButton, pauseButton, resumeButton, openFileButton, openFolderButton;
-        private IButton button = new DummyButton();
 
         public MainWindow()
         {
             InitializeComponent();
+            newButton = new ButtonWrapper(this.BtnNew);
+            deleteButton = new ButtonWrapper(this.BtnDelete);
+            pauseButton = new ButtonWrapper(this.BtnPause);
+            resumeButton = new ButtonWrapper(this.BtnResume);
+            openFileButton = new ButtonWrapper(this.BtnOpen);
+            openFolderButton = new ButtonWrapper(this.BtnOpenFolder);
             var categories = new List<CategoryWrapper>();
             categories.Add(new CategoryWrapper() { IsTopLevel = true, DisplayName = "Incomplete", VectorIcon = "ri-arrow-down-line" });
             categories.Add(new CategoryWrapper() { IsTopLevel = true, DisplayName = "Complete", VectorIcon = "ri-check-line" });
@@ -57,20 +62,33 @@ namespace XDM.Wpf.UI
             {
                 lvInProgress.Visibility = Visibility.Visible;
                 lvFinished.Visibility = Visibility.Collapsed;
+                CategoryChanged?.Invoke(this, new CategoryChangedEventArgs { Level = 0, Index = 0 });
             }
             else if (index > 0)
             {
                 lvInProgress.Visibility = Visibility.Collapsed;
                 lvFinished.Visibility = Visibility.Visible;
 
+                ListCollectionView view = (ListCollectionView)
+                        CollectionViewSource.GetDefaultView(lvFinished.ItemsSource);
                 if (index > 1)
                 {
-                    var cat = lvCategory.SelectedItem;
-                    ListCollectionView view = (ListCollectionView)
-                        CollectionViewSource.GetDefaultView(lvFinished.ItemsSource);
+                    var cat = (CategoryWrapper)lvCategory.SelectedItem;
+                    view.Filter = a => IsCategoryMatched((FinishedDownloadEntryWrapper)a, cat);
+                    CategoryChanged?.Invoke(this, new CategoryChangedEventArgs
+                    {
+                        Level = 1,
+                        Index = index - 2,
+                        Category = cat.category
+                    });
+                }
+                else
+                {
                     view.Filter = a => true;
+                    CategoryChanged?.Invoke(this, new CategoryChangedEventArgs { Level = 0, Index = 1 });
                 }
             }
+            SelectionChanged?.Invoke(this, EventArgs.Empty);
         }
 
         private bool IsCategoryMatched(FinishedDownloadEntryWrapper entry, CategoryWrapper category)
@@ -128,17 +146,17 @@ namespace XDM.Wpf.UI
         public IList<IFinishedDownloadRow> SelectedFinishedRows =>
             this.lvFinished.SelectedItems.OfType<IFinishedDownloadRow>().ToList();
 
-        public IButton NewButton => button;
+        public IButton NewButton => newButton;
 
-        public IButton DeleteButton => button;
+        public IButton DeleteButton => deleteButton;
 
-        public IButton PauseButton => button;
+        public IButton PauseButton => pauseButton;
 
-        public IButton ResumeButton => button;
+        public IButton ResumeButton => resumeButton;
 
-        public IButton OpenFileButton => button;
+        public IButton OpenFileButton => openFileButton;
 
-        public IButton OpenFolderButton => button;
+        public IButton OpenFolderButton => openFolderButton;
 
         public bool IsInProgressViewSelected => lvCategory.SelectedIndex == 0;
 
@@ -371,5 +389,35 @@ namespace XDM.Wpf.UI
         public bool Enable { get => true; set { } }
 
         public event EventHandler Clicked;
+    }
+
+    internal class ButtonWrapper : IButton
+    {
+        private Button button;
+
+        public ButtonWrapper(Button button)
+        {
+            this.button = button;
+            this.button.Click += Button_Click;
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            Clicked?.Invoke(sender, e);
+        }
+
+        public bool Visible
+        {
+            get => button.Visibility == Visibility.Visible;
+            set => button.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        public bool Enable
+        {
+            get => button.IsEnabled;
+            set => button.IsEnabled = value;
+        }
+
+        public event EventHandler? Clicked;
     }
 }
