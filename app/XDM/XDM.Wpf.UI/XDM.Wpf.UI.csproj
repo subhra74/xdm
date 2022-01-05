@@ -19,4 +19,8 @@
     <ProjectReference Include="..\TraceLog\TraceLog.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="PresentationFramework.Aero2" />
+  </ItemGroup>
+
 </Project>

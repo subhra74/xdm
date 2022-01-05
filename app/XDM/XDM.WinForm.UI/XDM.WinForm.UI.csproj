@@ -7,8 +7,8 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <!--<DisableWinExeOutputInference>true</DisableWinExeOutputInference>-->
     <!--<InvariantGlobalization>true</InvariantGlobalization>-->
-    <PublishTrimmed>true</PublishTrimmed>
-    <TrimMode>Link</TrimMode>
+    <!--<PublishTrimmed>true</PublishTrimmed>-->
+    <!--<TrimMode>Link</TrimMode>-->
     <Platforms>x86</Platforms>
     <LangVersion>9.0</LangVersion>
     <Nullable>enable</Nullable>

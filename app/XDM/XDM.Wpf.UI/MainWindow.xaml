@@ -288,21 +288,56 @@
                 <ListView Margin="10" Name="lvInProgress"  
                           VerticalContentAlignment="Stretch" 
                           HorizontalAlignment="Stretch" 
-                          Grid.Column="0" Grid.Row="0">
+                          Grid.Column="0" Grid.Row="0"
+                          VirtualizingStackPanel.VirtualizationMode="Recycling">
                     <ListView.ItemContainerStyle>
-                        <Style TargetType="ListViewItem">
-                            <Style.Triggers>
-                                <Trigger Property="IsSelected" Value="True">
-                                    <Setter Property="Background" Value="Blue"/>
-                                </Trigger>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="Blue"/>
-                                </Trigger>
-                            </Style.Triggers>
+                        <Style TargetType="{x:Type ListViewItem}">
+                            <Setter Property="Foreground" Value="Gray"></Setter>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="{x:Type ListViewItem}">
+                                        <Border Padding="{TemplateBinding Padding}"
+                                                Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                SnapsToDevicePixels="true">
+                                            <GridViewRowPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="Blue"/>
+                                                <Setter Property="BorderBrush" Value="Blue"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="Blue"/>
+                                                <Setter Property="BorderBrush" Value="Blue"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
                         </Style>
                     </ListView.ItemContainerStyle>
                     <ListView.View>
                         <GridView>
+                            <GridView.ColumnHeaderContainerStyle>
+                                <Style TargetType="GridViewColumnHeader">
+                                    <Setter Property="BorderThickness" Value="0"></Setter>
+                                    <Setter Property="BorderBrush" Value="White"></Setter>
+                                    <Setter Property="Height" Value="Auto"></Setter>
+                                    <Setter Property="Background" Value="White"/>
+                                    <Setter Property="Foreground" Value="Gray"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="Blue"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </GridView.ColumnHeaderContainerStyle>
                             <GridViewColumn Header="Name" Width="150"  >
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
@@ -333,7 +368,15 @@
                 <ListView Margin="10" Name="lvFinished"  
                           VerticalContentAlignment="Stretch" 
                           HorizontalAlignment="Stretch" 
-                          Grid.Column="0" Grid.Row="0">
+                          Grid.Column="0" Grid.Row="0"
+                          VirtualizingStackPanel.VirtualizationMode="Recycling">
+                    <ListView.Resources>
+                        <ResourceDictionary>
+                            <ResourceDictionary.MergedDictionaries>
+                                <ResourceDictionary Source="Resources/MainListViewStyles.xaml"/>
+                            </ResourceDictionary.MergedDictionaries>
+                        </ResourceDictionary>
+                    </ListView.Resources>
                     <ListView.View>
                         <GridView>
                             <GridViewColumn Header="Name" Width="150"  >

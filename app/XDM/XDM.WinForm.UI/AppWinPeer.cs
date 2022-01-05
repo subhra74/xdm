@@ -3534,6 +3534,49 @@ namespace XDM.WinForm.UI
             }
         }
 
+#if NET472
+        internal const uint WM_DPICHANGED = 0x02E0;
+
+        [DllImport("user32.dll")]
+        internal static extern int GetDpiForWindow(IntPtr hwnd);
+
+        [DllImport("user32.dll")]
+        internal static extern IntPtr SendMessage(IntPtr hWnd, uint msg, IntPtr wParam, ref RECT lParam);
+
+        internal static IntPtr MakeLParam(int lowWord, int highWord)
+        {
+            return (IntPtr)((highWord << 16) | (lowWord & 0xffff));
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct RECT
+        {
+            public int left;
+            public int top;
+            public int right;
+            public int bottom;
+        }
+
+
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+
+            int realDpi = GetDpiForWindow(this.Handle);
+            double scaleFactor = (double)realDpi / (double)this.DeviceDpi;
+
+            int newWidth = (int)(this.Size.Width * scaleFactor);
+            int newHeight = (int)(this.Size.Height * scaleFactor);
+
+            int dpiLeft = this.Location.X + ((this.Size.Width - newWidth) / 2);
+            int dpiTop = this.Location.Y + ((this.Size.Height - newHeight) / 2); ;
+            int dpiRight = dpiLeft + newWidth;
+            int dpiBottom = dpiTop + newHeight;
+
+            RECT rect = new RECT() { left = dpiLeft, top = dpiTop, right = dpiRight, bottom = dpiBottom };
+            SendMessage(this.Handle, WM_DPICHANGED, MakeLParam(realDpi, realDpi), ref rect);
+        }
+#endif
         //public void SetInProgressDownloads(List<InProgressDownloadDTO> list)
         //{
         //    this.inprogressList = list;
