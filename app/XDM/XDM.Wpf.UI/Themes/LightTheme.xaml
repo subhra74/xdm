@@ -1,8 +1,15 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <SolidColorBrush x:Key="ToolButtonColor" Color="DimGray"/>
-    <SolidColorBrush x:Key="ToolButtonMouseOverColor" Color="WhiteSmoke"/>
-    <SolidColorBrush x:Key="ToolButtonMousePressedColor" Color="Silver"/>
-    <SolidColorBrush x:Key="ToolButtonMouseDisabledColor" Color="LightGray"/>
+    <SolidColorBrush x:Key="ToolButtonForecolor" Color="#696969"/>
+    <SolidColorBrush x:Key="ToolButtonMouseOverBackcolor" Color="#E6E6E6"/>
+    <SolidColorBrush x:Key="ToolButtonMousePressedBackcolor" Color="#C8C8C8"/>
+    <SolidColorBrush x:Key="ToolButtonMouseDisabledForecolor" Color="LightGray"/>
     <SolidColorBrush x:Key="SearchBorder" Color="#E6E6E6"/>
+    <SolidColorBrush x:Key="ControlBackcolor" Color="#F6F6F6"/>
+    <SolidColorBrush x:Key="ControlBordercolor" Color="#E6E6E6"/>
+    <SolidColorBrush x:Key="ControlForecolor" Color="#696969"/>
+    <SolidColorBrush x:Key="ButtonOverBackcolor" Color="#E6E6E6"/>
+    <SolidColorBrush x:Key="TextBackcolor" Color="White"/>
+    <SolidColorBrush x:Key="ListSelectedForecolor" Color="Black"/>
+    <SolidColorBrush x:Key="ListSelectedBackcolor" Color="#E6E6E6"/>
 </ResourceDictionary>

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net4.7.2</TargetFramework>
+    <TargetFrameworks>net4.7.2;net3.5</TargetFrameworks>
     <UseWPF>true</UseWPF>
     <Platforms>AnyCPU;x86</Platforms>
     <LangVersion>9.0</LangVersion>

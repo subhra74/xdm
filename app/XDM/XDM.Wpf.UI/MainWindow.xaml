@@ -8,47 +8,44 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="500" Width="800" WindowStartupLocation="CenterScreen">
     <Window.Resources>
-        <Style x:Key="DisabledColumn"  
-               BasedOn="{StaticResource {x:Type GridViewColumnHeader}}" 
-               TargetType="{x:Type GridViewColumnHeader}">
-            <Setter Property="IsHitTestVisible" Value="False"/>
-        </Style>
         <ControlTemplate x:Key="ToolbarButtonTemplate" TargetType="{x:Type Button}">
-            <Border Name="Border" BorderBrush="{StaticResource ToolButtonColor}"  >
+            <Border Name="Border" BorderBrush="{StaticResource ControlForecolor}"  >
                 <StackPanel Orientation="Horizontal" Margin="{TemplateBinding Padding}">
                     <Path 
                                 VerticalAlignment="Center" 
                                 Margin="0,0,5,0"
                                 StrokeThickness="0" 
                                 Stretch="None" 
-                                Fill="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Border},Path=BorderBrush}"
+                                Fill="{Binding RelativeSource={RelativeSource Mode=FindAncestor, 
+                        AncestorType=Border},Path=BorderBrush}"
                                 Width="24" Height="24"  
-                                Stroke="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Border},Path=BorderBrush}" 
+                                Stroke="{Binding RelativeSource={RelativeSource Mode=FindAncestor, 
+                        AncestorType=Border},Path=BorderBrush}" 
                                 Data="{TemplateBinding Tag}"
                                 SnapsToDevicePixels="True"/>
                     <ContentPresenter 
                         VerticalAlignment="Center" 
                         x:Name="ContentSite" 
                         Margin="0,0,3,0" 
-                        TextBlock.Foreground="{StaticResource ToolButtonColor}">
+                        TextBlock.Foreground="{StaticResource ToolButtonForecolor}">
                     </ContentPresenter>
                 </StackPanel>
             </Border>
             <ControlTemplate.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter TargetName="Border" Property="Background" Value="{StaticResource ToolButtonMouseOverColor}" />
+                    <Setter TargetName="Border" Property="Background" Value="{StaticResource ToolButtonMouseOverBackcolor}" />
                 </Trigger>
                 <Trigger Property="IsPressed" Value="True">
-                    <Setter TargetName="Border" Property="Background" Value="{StaticResource ToolButtonMousePressedColor}" />
+                    <Setter TargetName="Border" Property="Background" Value="{StaticResource ToolButtonMousePressedBackcolor}" />
                 </Trigger>
                 <Trigger Property="IsEnabled" Value="False">
-                    <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource ToolButtonMouseDisabledColor}" />
-                    <Setter TargetName="ContentSite" Property="TextBlock.Foreground" Value="{StaticResource ToolButtonMouseDisabledColor}" />
+                    <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource ToolButtonMouseDisabledForecolor}" />
+                    <Setter TargetName="ContentSite" Property="TextBlock.Foreground" Value="{StaticResource ToolButtonMouseDisabledForecolor}" />
                 </Trigger>
             </ControlTemplate.Triggers>
         </ControlTemplate>
         <ControlTemplate x:Key="ToolbarButtonTemplateIconOnly" TargetType="{x:Type Button}">
-            <Border Name="Border" BorderBrush="{StaticResource ToolButtonColor}"  >
+            <Border Name="Border" BorderBrush="{StaticResource ToolButtonForecolor}"  >
                 <StackPanel Orientation="Horizontal" Margin="{TemplateBinding Padding}">
                     <Path VerticalAlignment="Center" 
                           Margin="0,0,0,0"
@@ -63,18 +60,18 @@
             </Border>
             <ControlTemplate.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter TargetName="Border" Property="Background" Value="{StaticResource ToolButtonMouseOverColor}" />
+                    <Setter TargetName="Border" Property="Background" Value="{StaticResource ToolButtonMouseOverBackcolor}" />
                 </Trigger>
                 <Trigger Property="IsPressed" Value="True">
-                    <Setter TargetName="Border" Property="Background" Value="{StaticResource ToolButtonMousePressedColor}" />
+                    <Setter TargetName="Border" Property="Background" Value="{StaticResource ToolButtonMousePressedBackcolor}" />
                 </Trigger>
                 <Trigger Property="IsEnabled" Value="False">
-                    <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource ToolButtonMouseDisabledColor}" />
+                    <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource ToolButtonMouseDisabledForecolor}" />
                 </Trigger>
             </ControlTemplate.Triggers>
         </ControlTemplate>
         <ControlTemplate x:Key="ToolbarButtonTemplateIconOnlySmall" TargetType="{x:Type Button}">
-            <Border Name="Border" BorderBrush="{StaticResource ToolButtonColor}"  >
+            <Border Name="Border" BorderBrush="{StaticResource ToolButtonForecolor}"  >
                 <StackPanel Orientation="Horizontal" Margin="{TemplateBinding Padding}">
                     <Path 
                                 VerticalAlignment="Center" 
@@ -90,13 +87,13 @@
             </Border>
             <ControlTemplate.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter TargetName="Border" Property="Background" Value="{StaticResource ToolButtonMouseOverColor}" />
+                    <Setter TargetName="Border" Property="Background" Value="{StaticResource ToolButtonMouseOverBackcolor}" />
                 </Trigger>
                 <Trigger Property="IsPressed" Value="True">
-                    <Setter TargetName="Border" Property="Background" Value="{StaticResource ToolButtonMousePressedColor}" />
+                    <Setter TargetName="Border" Property="Background" Value="{StaticResource ToolButtonMousePressedBackcolor}" />
                 </Trigger>
                 <Trigger Property="IsEnabled" Value="False">
-                    <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource ToolButtonMouseDisabledColor}" />
+                    <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource ToolButtonMouseDisabledForecolor}" />
                 </Trigger>
             </ControlTemplate.Triggers>
         </ControlTemplate>
@@ -184,100 +181,102 @@
             </ListBox.ItemTemplate>
         </ListBox>
         <DockPanel Grid.Column="1">
-            <Grid DockPanel.Dock="Top">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="auto"/>
-                </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0" Orientation="Horizontal" >
-                    <Button Template="{StaticResource ToolbarButtonTemplate}" 
+            <Border Background="{StaticResource ControlBackcolor}" BorderThickness="1" BorderBrush="{StaticResource ControlBordercolor}" DockPanel.Dock="Top">
+                <Grid  >
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="5">
+                        <Button Template="{StaticResource ToolbarButtonTemplate}" 
                             Padding="5,5" 
                             Margin="5,0"  
                             Tag="{StaticResource ri-links-line}"
                             Name="BtnNew">
-                        New
-                    </Button>
-                    <Button Template="{StaticResource ToolbarButtonTemplate}" 
+                            New
+                        </Button>
+                        <Button Template="{StaticResource ToolbarButtonTemplate}" 
                             Padding="5,5" 
                             Margin="5,0"  
                             IsEnabled="False" 
                             Tag="{StaticResource ri-delete-bin-line}"
                             Name="BtnDelete">
-                        Delete
-                    </Button>
-                    <Button Template="{StaticResource ToolbarButtonTemplate}" 
+                            Delete
+                        </Button>
+                        <Button Template="{StaticResource ToolbarButtonTemplate}" 
                             Padding="5,5" 
                             Margin="5,0"  
                             IsEnabled="False" 
                             Tag="{StaticResource ri-share-box-line}"
                             Name="BtnOpen">
-                        Open
-                    </Button>
-                    <Button Template="{StaticResource ToolbarButtonTemplate}" 
+                            Open
+                        </Button>
+                        <Button Template="{StaticResource ToolbarButtonTemplate}" 
                             Padding="5,5" 
                             Margin="5,0"  
                             IsEnabled="False" 
                             Tag="{StaticResource ri-folder-shared-line}"
                             Name="BtnOpenFolder">
-                        Open folder
-                    </Button>
-                    <Button Template="{StaticResource ToolbarButtonTemplate}" 
+                            Open folder
+                        </Button>
+                        <Button Template="{StaticResource ToolbarButtonTemplate}" 
                             Padding="5,5" 
                             Margin="5,0"  
                             IsEnabled="False" 
                             Tag="{StaticResource ri-pause-line}" 
                             Name="BtnPause">
-                        Pause
-                    </Button>
-                    <Button Template="{StaticResource ToolbarButtonTemplate}" 
+                            Pause
+                        </Button>
+                        <Button Template="{StaticResource ToolbarButtonTemplate}" 
                             Padding="5,5" 
                             Margin="5,0"  
                             IsEnabled="False" 
                             Tag="{StaticResource ri-play-line}"
                             Name="BtnResume"
                             >
-                        Resume
-                    </Button>
-                </StackPanel>
-                <StackPanel Grid.Column="2" Orientation="Horizontal">
-                    <Border BorderBrush="{StaticResource SearchBorder}" BorderThickness="1">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition/>
-                                <ColumnDefinition/>
-                            </Grid.ColumnDefinitions>
-                            <TextBox Grid.Column="0" Name="TxtSearch"  AcceptsReturn="False"  
+                            Resume
+                        </Button>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="5">
+                        <Border BorderBrush="{StaticResource SearchBorder}" BorderThickness="1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" Name="TxtSearch"  AcceptsReturn="False"  
                                  TextWrapping="NoWrap" Width="120" VerticalContentAlignment="Center" BorderThickness="0"></TextBox>
-                            <TextBlock Grid.Column="0" x:Name="Placeholder" IsHitTestVisible="False" 
+                                <TextBlock Grid.Column="0" x:Name="Placeholder" IsHitTestVisible="False" 
                                        TextWrapping="NoWrap" Text="Search" VerticalAlignment="Center"  
                                        Foreground="{StaticResource SearchBorder}" Margin="5,5" >
-                                <TextBlock.Style>
-                                    <Style TargetType="{x:Type TextBlock}">
-                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                        <Style.Triggers>
-                                            <MultiDataTrigger>
-                                                <MultiDataTrigger.Conditions>
-                                                    <Condition Binding="{Binding IsFocused, ElementName=TxtSearch}" Value="false" />
-                                                    <Condition Binding="{Binding Text, ElementName=TxtSearch}" Value="" />
-                                                </MultiDataTrigger.Conditions>
-                                                <MultiDataTrigger.Setters>
-                                                    <Setter Property="Visibility" Value="Visible"/>
-                                                </MultiDataTrigger.Setters>
-                                            </MultiDataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                            <Button Grid.Column="1" Padding="5,5" 
+                                    <TextBlock.Style>
+                                        <Style TargetType="{x:Type TextBlock}">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding IsFocused, ElementName=TxtSearch}" Value="false" />
+                                                        <Condition Binding="{Binding Text, ElementName=TxtSearch}" Value="" />
+                                                    </MultiDataTrigger.Conditions>
+                                                    <MultiDataTrigger.Setters>
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </MultiDataTrigger.Setters>
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <Button Grid.Column="1" Padding="5,5" 
                                     Template="{StaticResource ToolbarButtonTemplateIconOnlySmall}" 
                                     Tag="{StaticResource ri-search-line}" />
-                        </Grid>
-                    </Border>
-                    <Button Padding="5,5" 
+                            </Grid>
+                        </Border>
+                        <Button Padding="5,5" 
                             Margin="5,0"  
                             Template="{StaticResource ToolbarButtonTemplateIconOnly}" Tag="{StaticResource ri-menu-line}" />
-                </StackPanel>
-            </Grid>
+                    </StackPanel>
+                </Grid>
+            </Border>
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
@@ -285,12 +284,19 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <ListView Margin="10" Name="lvInProgress"  
+                <ListView Name="lvInProgress"  
                           VerticalContentAlignment="Stretch" 
                           HorizontalAlignment="Stretch" 
                           Grid.Column="0" Grid.Row="0"
                           VirtualizingStackPanel.VirtualizationMode="Recycling">
-                    <ListView.ItemContainerStyle>
+                    <ListView.Resources>
+                        <ResourceDictionary>
+                            <ResourceDictionary.MergedDictionaries>
+                                <ResourceDictionary Source="Resources/MainListViewStyles.xaml"/>
+                            </ResourceDictionary.MergedDictionaries>
+                        </ResourceDictionary>
+                    </ListView.Resources>
+                    <!--<ListView.ItemContainerStyle>
                         <Style TargetType="{x:Type ListViewItem}">
                             <Setter Property="Foreground" Value="Gray"></Setter>
                             <Setter Property="Template">
@@ -321,10 +327,10 @@
                                 </Setter.Value>
                             </Setter>
                         </Style>
-                    </ListView.ItemContainerStyle>
+                    </ListView.ItemContainerStyle>-->
                     <ListView.View>
                         <GridView>
-                            <GridView.ColumnHeaderContainerStyle>
+                            <!--<GridView.ColumnHeaderContainerStyle>
                                 <Style TargetType="GridViewColumnHeader">
                                     <Setter Property="BorderThickness" Value="0"></Setter>
                                     <Setter Property="BorderBrush" Value="White"></Setter>
@@ -337,7 +343,7 @@
                                         </Trigger>
                                     </Style.Triggers>
                                 </Style>
-                            </GridView.ColumnHeaderContainerStyle>
+                            </GridView.ColumnHeaderContainerStyle>-->
                             <GridViewColumn Header="Name" Width="150"  >
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
@@ -354,10 +360,12 @@
                             </GridViewColumn>
                             <GridViewColumn Header="Date" Width="50" DisplayMemberBinding="{Binding DateAdded}" />
                             <GridViewColumn Header="Size" Width="150" DisplayMemberBinding="{Binding Size}" />
-                            <GridViewColumn Header="%" Width="80" x:Name="h1" HeaderContainerStyle="{StaticResource DisabledColumn}">
+                            <GridViewColumn Header="%" Width="80" x:Name="h1" >
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <ProgressBar Width="80" Value="{Binding Progress}" Maximum="100" />
+                                        <ProgressBar Width="{Binding Path=Width, ElementName=h1}" 
+                                                     Value="{Binding Progress}" 
+                                                     Maximum="100"   />
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
@@ -365,7 +373,7 @@
                         </GridView>
                     </ListView.View>
                 </ListView>
-                <ListView Margin="10" Name="lvFinished"  
+                <ListView Name="lvFinished"  
                           VerticalContentAlignment="Stretch" 
                           HorizontalAlignment="Stretch" 
                           Grid.Column="0" Grid.Row="0"
