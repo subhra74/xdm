@@ -352,7 +352,7 @@
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
-                            <GridViewColumn Header="Date" Width="50" DisplayMemberBinding="{Binding DateAdded}"  />
+                            <GridViewColumn Header="Date" Width="50" DisplayMemberBinding="{Binding DateAdded}" />
                             <GridViewColumn Header="Size" Width="150" DisplayMemberBinding="{Binding Size}" />
                             <GridViewColumn Header="%" Width="80" x:Name="h1" HeaderContainerStyle="{StaticResource DisabledColumn}">
                                 <GridViewColumn.CellTemplate>
