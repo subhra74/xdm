@@ -52,6 +52,8 @@ namespace XDM.Wpf.UI
 
             lvInProgress.ItemsSource = inProgressList;
             lvFinished.ItemsSource = finishedList;
+
+            SwitchToFinishedView();
         }
 
         private void lvCategory_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -94,7 +96,6 @@ namespace XDM.Wpf.UI
         {
             return Helpers.IsOfCategoryOrMatchesKeyword(entry.Name, null, category.category);
         }
-
 
         public event EventHandler<CategoryChangedEventArgs> CategoryChanged;
         public event EventHandler InProgressContextMenuOpening;
@@ -380,6 +381,8 @@ namespace XDM.Wpf.UI
         {
             throw new NotImplementedException();
         }
+
+        internal bool BrowserMonitoringEnabled => Config.Instance.IsBrowserMonitoringEnabled;
     }
 
     internal class DummyButton : IButton

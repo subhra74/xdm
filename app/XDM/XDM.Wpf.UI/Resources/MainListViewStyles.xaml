@@ -1,7 +1,7 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <!--Control colors.-->
-    <Color x:Key="WindowColor">#FFE8EDF9</Color>
+    <!--<Color x:Key="WindowColor">#FFE8EDF9</Color>
     <Color x:Key="ContentAreaColorLight">#FFC5CBF9</Color>
     <Color x:Key="ContentAreaColorDark">#FF7381F9</Color>
 
@@ -21,10 +21,10 @@
 
 
     <Color x:Key="GlyphColor">#FF444444</Color>
-    <Color x:Key="GlyphMouseOver">sc#1, 0.004391443, 0.002428215, 0.242281124</Color>
+    <Color x:Key="GlyphMouseOver">sc#1, 0.004391443, 0.002428215, 0.242281124</Color>-->
 
     <!--Border colors-->
-    <Color x:Key="BorderLightColor">#FFCCCCCC</Color>
+    <!--<Color x:Key="BorderLightColor">#FFCCCCCC</Color>
     <Color x:Key="BorderMediumColor">#FF888888</Color>
     <Color x:Key="BorderDarkColor">#FF444444</Color>
 
@@ -34,10 +34,10 @@
     <Color x:Key="DisabledBorderLightColor">#FFAAAAAA</Color>
     <Color x:Key="DisabledBorderDarkColor">#FF888888</Color>
 
-    <Color x:Key="DefaultBorderBrushDarkColor">Black</Color>
+    <Color x:Key="DefaultBorderBrushDarkColor">Black</Color>-->
 
     <!--Control-specific resources.-->
-    <Color x:Key="HeaderTopColor">#FFC5CBF9</Color>
+    <!--<Color x:Key="HeaderTopColor">#FFC5CBF9</Color>
     <Color x:Key="DatagridCurrentCellBorderColor">Black</Color>
     <Color x:Key="SliderTrackDarkColor">#FFC5CBF9</Color>
 
@@ -69,7 +69,7 @@
                     Offset="1" />
             </GradientStopCollection>
         </LinearGradientBrush.GradientStops>
-    </LinearGradientBrush>
+    </LinearGradientBrush>-->
     <Style x:Key="ScrollBarLineButton"
        TargetType="{x:Type RepeatButton}">
         <Setter Property="SnapsToDevicePixels"
@@ -333,20 +333,19 @@
 
     <Style x:Key="GridViewColumnHeaderGripper" TargetType="Thumb">
         <Setter Property="Width" Value="18" />
-        <Setter Property="Background" Value="{StaticResource TextBackcolor}">
-        </Setter>
+        <Setter Property="Background" Value="Transparent"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type Thumb}">
-                    <Border Padding="{TemplateBinding Padding}" Background="{StaticResource TextBackcolor}">
+                    <Border Padding="{TemplateBinding Padding}" Background="Transparent">
                         <Rectangle HorizontalAlignment="Center"
                      Width="1"
-                     Fill="{TemplateBinding Background}" />
+                     Fill="Transparent" />
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
-        <Setter Property="BorderBrush" Value="{StaticResource TextBackcolor}"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
     </Style>
 
     <Style x:Key="{x:Type GridViewColumnHeader}"
@@ -356,16 +355,16 @@
         <Setter Property="VerticalContentAlignment"
           Value="Center" />
         <Setter Property="Foreground"
-          Value="{StaticResource ControlForecolor}" />
+          Value="{StaticResource ToolButtonMouseDisabledForecolor}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="GridViewColumnHeader">
                     <Grid>
                         <Border x:Name="HeaderBorder"
                             BorderThickness="0,1,0,1"
-                            Padding="10,5" BorderBrush="{StaticResource TextBackcolor}" Background="{StaticResource TextBackcolor}">
+                            Padding="0,5" BorderBrush="{StaticResource TextBackcolor}" Background="{StaticResource TextBackcolor}">
                             <ContentPresenter x:Name="HeaderContent"
-                              Margin="0,0,0,1"
+                              Margin="5,0,5,1"
                               RecognizesAccessKey="True"
                               VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                               HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"

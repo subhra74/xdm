@@ -77,6 +77,18 @@
                     <Geometry x:Key="ri-menu-line">
                         M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z
                     </Geometry>
+                    <Geometry x:Key="ri-mail-open-line">
+                        M2.243 6.854L11.49 1.31a1 1 0 0 1 1.029 0l9.238 5.545a.5.5 0 0 1 .243.429V20a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7.283a.5.5 0 0 1 .243-.429zM4 8.133V19h16V8.132l-7.996-4.8L4 8.132zm8.06 5.565l5.296-4.463 1.288 1.53-6.57 5.537-6.71-5.53 1.272-1.544 5.424 4.47z
+                    </Geometry>
+                    <Geometry x:Key="ri-toggle-fill">
+                        M8 5h8a7 7 0 0 1 0 14H8A7 7 0 0 1 8 5zm8 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z
+                    </Geometry>
+                    <Geometry x:Key="ri-list-settings-fill">
+                        M2 18h7v2H2v-2zm0-7h9v2H2v-2zm0-7h20v2H2V4zm18.674 9.025l1.156-.391 1 1.732-.916.805a4.017 4.017 0 0 1 0 1.658l.916.805-1 1.732-1.156-.391c-.41.37-.898.655-1.435.83L19 21h-2l-.24-1.196a3.996 3.996 0 0 1-1.434-.83l-1.156.392-1-1.732.916-.805a4.017 4.017 0 0 1 0-1.658l-.916-.805 1-1.732 1.156.391c.41-.37.898-.655 1.435-.83L17 11h2l.24 1.196c.536.174 1.024.46 1.434.83zM18 17a1 1 0 1 0 0-2 1 1 0 0 0 0 2z
+                    </Geometry>
+                    <Geometry x:Key="ri-question-line">
+                        M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm-1-5h2v2h-2v-2zm2-1.645V14h-2v-1.5a1 1 0 0 1 1-1 1.5 1.5 0 1 0-1.471-1.794l-1.962-.393A3.501 3.501 0 1 1 13 13.355z
+                    </Geometry>
                     <BooleanToVisibilityConverter x:Key="BoolToVis"/>
                     <local:FileExtensionToVectorImageConverter x:Key="FileExtensionToVectorImageConverter"></local:FileExtensionToVectorImageConverter>
                     <local:CategoryToVectorImageConverter x:Key="CategoryToVectorImageConverter"></local:CategoryToVectorImageConverter>
