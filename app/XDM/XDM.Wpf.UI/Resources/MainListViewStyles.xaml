@@ -402,10 +402,6 @@
                     </Setter.Value>
                 </Setter>
             </Trigger>
-            <Trigger Property="IsEnabled" Value="False">
-                <Setter Property="IsHitTestVisible" Value="False"/>
-                <Setter Property="Background"   Value="Red"/>
-            </Trigger>
         </Style.Triggers>
     </Style>
 

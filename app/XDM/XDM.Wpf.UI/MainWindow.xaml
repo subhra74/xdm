@@ -425,7 +425,13 @@
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
-                            <GridViewColumn Header="Date" Width="50" DisplayMemberBinding="{Binding DateAdded}" />
+                            <GridViewColumn Header="Date" Width="80"  >
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding DateAdded, StringFormat=d}"  />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
                             <GridViewColumn Header="Size" Width="150" DisplayMemberBinding="{Binding Size}" />
                             <GridViewColumn Header="%" Width="80" x:Name="h1" >
                                 <GridViewColumn.CellTemplate>
