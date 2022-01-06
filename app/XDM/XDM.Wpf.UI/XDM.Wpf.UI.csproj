@@ -7,6 +7,7 @@
     <Platforms>AnyCPU;x86</Platforms>
     <LangVersion>9.0</LangVersion>
     <Nullable>enable</Nullable>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 
   <ItemGroup>

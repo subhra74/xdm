@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
@@ -35,6 +37,7 @@ namespace XDM.Wpf.UI
         public MainWindow()
         {
             InitializeComponent();
+
             newButton = new ButtonWrapper(this.BtnNew);
             deleteButton = new ButtonWrapper(this.BtnDelete);
             pauseButton = new ButtonWrapper(this.BtnPause);
@@ -383,6 +386,20 @@ namespace XDM.Wpf.UI
         }
 
         internal bool BrowserMonitoringEnabled => Config.Instance.IsBrowserMonitoringEnabled;
+
+#if NET45_OR_GREATER
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+
+            if (App.Skin == Skin.Dark)
+            {
+                var helper = new WindowInteropHelper(this);
+                helper.EnsureHandle();
+                DarkModeHelper.UseImmersiveDarkMode(helper.Handle, true);
+            }
+        }
+#endif
     }
 
     internal class DummyButton : IButton

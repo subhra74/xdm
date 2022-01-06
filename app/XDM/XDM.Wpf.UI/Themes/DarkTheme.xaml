@@ -1,4 +1,18 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    
+    <SolidColorBrush x:Key="ToolButtonForecolor" Color="DarkGray"/>
+    <SolidColorBrush x:Key="ToolButtonMouseOverBackcolor" Color="#383838"/>
+    <SolidColorBrush x:Key="ToolButtonMousePressedBackcolor" Color="#383838"/>
+    <SolidColorBrush x:Key="ToolButtonMouseDisabledForecolor" Color="#646464"/>
+    <SolidColorBrush x:Key="SearchBorder" Color="#000000"/>
+    <SolidColorBrush x:Key="ControlBackcolor" Color="#121212"/>
+    <SolidColorBrush x:Key="ControlBordercolor" Color="#000000"/>
+    <SolidColorBrush x:Key="ControlForecolor" Color="#A0A0A0"/>
+    <SolidColorBrush x:Key="ButtonOverBackcolor" Color="#383838"/>
+    <SolidColorBrush x:Key="TextBackcolor" Color="#1E1E1E"/>
+    <SolidColorBrush x:Key="ListSelectedForecolor" Color="White"/>
+    <SolidColorBrush x:Key="ListSelectedBackcolor" Color="#383838"/>
+    <SolidColorBrush x:Key="PlaceHolderForecolor" Color="#646464"/>
+    <SolidColorBrush x:Key="ListViewIconForecolor" Color="DimGray"/>
+    <SolidColorBrush x:Key="StatusbarBackcolor" Color="#1E1E1E"/>
 </ResourceDictionary>
