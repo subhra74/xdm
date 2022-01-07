@@ -1,18 +1,39 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <SolidColorBrush x:Key="ToolButtonForecolor" Color="DarkGray"/>
-    <SolidColorBrush x:Key="ToolButtonMouseOverBackcolor" Color="#383838"/>
-    <SolidColorBrush x:Key="ToolButtonMousePressedBackcolor" Color="#383838"/>
+    <SolidColorBrush x:Key="CategoryForegroundNormal" Color="#808080"/>
+    <SolidColorBrush x:Key="CategoryForegroundSelected" Color="White"/>
+    <SolidColorBrush x:Key="CategoryHighlight" Color="#0A6AB6"/>
+    <SolidColorBrush x:Key="CategoryListBackground" Color="#21252B"/>
+
+    <SolidColorBrush x:Key="ToolButtonForecolor" Color="#ABB2BF"/>
+    <SolidColorBrush x:Key="ToolButtonMouseOverBackcolor" Color="#373D48"/>
+    <SolidColorBrush x:Key="ToolButtonMousePressedBackcolor" Color="#333842"/>
     <SolidColorBrush x:Key="ToolButtonMouseDisabledForecolor" Color="#646464"/>
+    
     <SolidColorBrush x:Key="SearchBorder" Color="#000000"/>
-    <SolidColorBrush x:Key="ControlBackcolor" Color="#121212"/>
+    
+    <SolidColorBrush x:Key="ControlBackcolor" Color="#21252B"/>
     <SolidColorBrush x:Key="ControlBordercolor" Color="#000000"/>
     <SolidColorBrush x:Key="ControlForecolor" Color="#A0A0A0"/>
+    
     <SolidColorBrush x:Key="ButtonOverBackcolor" Color="#383838"/>
-    <SolidColorBrush x:Key="TextBackcolor" Color="#1E1E1E"/>
-    <SolidColorBrush x:Key="ListSelectedForecolor" Color="White"/>
-    <SolidColorBrush x:Key="ListSelectedBackcolor" Color="#383838"/>
+    
+    <SolidColorBrush x:Key="TextBackcolor" Color="#282C34"/>
+
+    <SolidColorBrush x:Key="ListViewBackcolor" Color="#282C34"/>
+    <SolidColorBrush x:Key="ListViewForecolor" Color="#ABB2BF"/>
+    <SolidColorBrush x:Key="ListViewMouseOverBackcolor" Color="#31363F"/>
+    <SolidColorBrush x:Key="ListViewMouseOverForecolor" Color="#F0F0F0"/>
+    <SolidColorBrush x:Key="ListViewSelectedForecolor" Color="White"/>
+    <SolidColorBrush x:Key="ListViewSelectedBackcolor" Color="#3A3F4B"/>
+    <SolidColorBrush x:Key="ListViewIconForecolor" Color="#777D88"/>
+    <SolidColorBrush x:Key="ListViewHeaderForecolor" Color="#777D88"/>
+    
+    <SolidColorBrush x:Key="StatusbarBackcolor" Color="#21252B"/>
+    <SolidColorBrush x:Key="StatusbarIconcolor" Color="#777D88"/>
+    
+    <Thickness x:Key="CategoryListBorderThickness">0,0,1,0</Thickness>
+    <Thickness x:Key="MainContentBorderThickness">0,1,0,0</Thickness>
+
     <SolidColorBrush x:Key="PlaceHolderForecolor" Color="#646464"/>
-    <SolidColorBrush x:Key="ListViewIconForecolor" Color="DimGray"/>
-    <SolidColorBrush x:Key="StatusbarBackcolor" Color="#1E1E1E"/>
 </ResourceDictionary>

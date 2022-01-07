@@ -355,14 +355,16 @@
         <Setter Property="VerticalContentAlignment"
           Value="Center" />
         <Setter Property="Foreground"
-          Value="{StaticResource ToolButtonMouseDisabledForecolor}" />
+          Value="{StaticResource ListViewHeaderForecolor}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="GridViewColumnHeader">
                     <Grid>
-                        <Border x:Name="HeaderBorder"
-                            BorderThickness="0,1,0,1"
-                            Padding="0,5" BorderBrush="{StaticResource TextBackcolor}" Background="{StaticResource TextBackcolor}">
+                        <Border x:Name="HeaderBorder" 
+                                BorderThickness="0,1,0,1" 
+                                Padding="0,5" 
+                                BorderBrush="{StaticResource ListViewBackcolor}" 
+                                Background="{StaticResource ListViewBackcolor}">
                             <ContentPresenter x:Name="HeaderContent"
                               Margin="5,0,5,1"
                               RecognizesAccessKey="True"
@@ -385,7 +387,7 @@
                     <Setter.Value>
                         <ControlTemplate TargetType="GridViewColumnHeader">
                             <Canvas Name="PART_FloatingHeaderCanvas">
-                                <Rectangle Fill="{StaticResource TextBackcolor}" Width="{TemplateBinding ActualWidth}"  
+                                <Rectangle Fill="{StaticResource ListViewBackcolor}" Width="{TemplateBinding ActualWidth}"  
                                            Height="{TemplateBinding ActualHeight}" />
                             </Canvas>
                         </ControlTemplate>
@@ -396,7 +398,9 @@
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="GridViewColumnHeader">
-                            <Border Name="HeaderBorder" BorderThickness="0,1,0,1" Background="{StaticResource TextBackcolor}" BorderBrush="{StaticResource TextBackcolor}">
+                            <Border Name="HeaderBorder" BorderThickness="0,1,0,1" 
+                                    Background="{StaticResource ListViewBackcolor}" 
+                                    BorderBrush="{StaticResource ListViewBackcolor}">
                             </Border>
                         </ControlTemplate>
                     </Setter.Value>
@@ -416,7 +420,8 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ListView">
-                    <Border Name="Border" BorderThickness="1" Background="{StaticResource TextBackcolor}" BorderBrush="{StaticResource TextBackcolor}">
+                    <Border Name="Border" BorderThickness="1" Background="{StaticResource ListViewBackcolor}" 
+                            BorderBrush="{StaticResource ListViewBackcolor}">
                         <ScrollViewer Style="{StaticResource {x:Static GridView.GridViewScrollViewerStyleKey}}">
                             <ItemsPresenter />
                         </ScrollViewer>
@@ -426,7 +431,7 @@
                             <Setter Property="ScrollViewer.CanContentScroll" Value="false" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="false">
-                            <Setter TargetName="Border" Property="Background" Value="{StaticResource TextBackcolor}"/>
+                            <Setter TargetName="Border" Property="Background" Value="{StaticResource ListViewBackcolor}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -437,14 +442,11 @@
     <Style x:Key="{x:Type ListViewItem}" TargetType="ListViewItem">
         <Setter Property="SnapsToDevicePixels" Value="true" />
         <Setter Property="OverridesDefaultStyle" Value="true" />
-        <Setter Property="Foreground" Value="{StaticResource ControlForecolor}"></Setter>
+        <Setter Property="Foreground" Value="{StaticResource ListViewForecolor}"></Setter>
         <Setter Property="VerticalContentAlignment" Value="Center"></Setter>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ListViewItem}">
-                    <!--<Border x:Name="Border" Padding="2" SnapsToDevicePixels="true" Background="Transparent">
-                        <GridViewRowPresenter VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
-                    </Border>-->
                     <Border x:Name="Border" Padding="{TemplateBinding Padding}"
                                                 Background="{TemplateBinding Background}"
                                                 BorderBrush="{TemplateBinding BorderBrush}"
@@ -456,13 +458,14 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsSelected" Value="True" >
-                            <Setter TargetName="Border" Property="Background" Value="{StaticResource ListSelectedBackcolor}"/>
-                            <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource ListSelectedBackcolor}"/>
-                            <Setter Property="Foreground" Value="{StaticResource ListSelectedForecolor}"/>
+                            <Setter TargetName="Border" Property="Background" Value="{StaticResource ListViewSelectedBackcolor}"/>
+                            <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource ListViewSelectedBackcolor}"/>
+                            <Setter Property="Foreground" Value="{StaticResource ListViewSelectedForecolor}"/>
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Border" Property="Background" Value="{StaticResource ControlBackcolor}"/>
-                            <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource ControlBackcolor}"/>
+                            <Setter TargetName="Border" Property="Background" Value="{StaticResource ListViewMouseOverBackcolor}"/>
+                            <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource ListViewMouseOverBackcolor}"/>
+                            <Setter Property="Foreground" Value="{StaticResource ListViewMouseOverForecolor}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

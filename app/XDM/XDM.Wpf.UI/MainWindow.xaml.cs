@@ -61,6 +61,13 @@ namespace XDM.Wpf.UI
 
         private void lvCategory_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            SearchText = string.Empty;
+            TxtSearch.Text = SearchText;
+            ApplyFilter();
+        }
+
+        private void ApplyFilter()
+        {
             var index = lvCategory.SelectedIndex;
             if (index == 0)
             {
@@ -77,7 +84,7 @@ namespace XDM.Wpf.UI
                         CollectionViewSource.GetDefaultView(lvFinished.ItemsSource);
                 if (index > 1)
                 {
-                    var cat = (CategoryWrapper)lvCategory.SelectedItem;
+                    CategoryWrapper? cat = (CategoryWrapper)lvCategory.SelectedItem;
                     view.Filter = a => IsCategoryMatched((FinishedDownloadEntryWrapper)a, cat);
                     CategoryChanged?.Invoke(this, new CategoryChangedEventArgs
                     {
@@ -88,16 +95,17 @@ namespace XDM.Wpf.UI
                 }
                 else
                 {
-                    view.Filter = a => true;
+                    view.Filter = a => IsCategoryMatched((FinishedDownloadEntryWrapper)a, null);
                     CategoryChanged?.Invoke(this, new CategoryChangedEventArgs { Level = 0, Index = 1 });
                 }
             }
+
             SelectionChanged?.Invoke(this, EventArgs.Empty);
         }
 
-        private bool IsCategoryMatched(FinishedDownloadEntryWrapper entry, CategoryWrapper category)
+        private bool IsCategoryMatched(FinishedDownloadEntryWrapper entry, CategoryWrapper? category)
         {
-            return Helpers.IsOfCategoryOrMatchesKeyword(entry.Name, null, category.category);
+            return Helpers.IsOfCategoryOrMatchesKeyword(entry.Name, SearchText, category?.category);
         }
 
         public event EventHandler<CategoryChangedEventArgs> CategoryChanged;
@@ -370,6 +378,11 @@ namespace XDM.Wpf.UI
             throw new NotImplementedException();
         }
 
+        private void SearchButton_Click(object sender, RoutedEventArgs e)
+        {
+            ApplyFilter();
+        }
+
         public void ClearUpdateInformation()
         {
             throw new NotImplementedException();
@@ -400,6 +413,8 @@ namespace XDM.Wpf.UI
             }
         }
 #endif
+
+        public string SearchText { get; set; }
     }
 
     internal class DummyButton : IButton
