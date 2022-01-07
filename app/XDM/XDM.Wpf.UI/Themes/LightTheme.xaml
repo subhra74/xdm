@@ -17,8 +17,9 @@
     <SolidColorBrush x:Key="ControlForecolor" Color="#696969"/>
     
     <SolidColorBrush x:Key="ButtonOverBackcolor" Color="#E6E6E6"/>
-    
+
     <SolidColorBrush x:Key="TextBackcolor" Color="White"/>
+    <SolidColorBrush x:Key="TextForecolor" Color="#828282"/>
 
     <SolidColorBrush x:Key="ListViewSelectedForecolor" Color="Black"/>
     <SolidColorBrush x:Key="ListViewSelectedBackcolor" Color="#E6E6E6"/>

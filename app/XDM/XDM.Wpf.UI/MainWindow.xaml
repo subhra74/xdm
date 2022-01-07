@@ -125,7 +125,7 @@
         </ControlTemplate>
     </Window.Resources>
     <Border BorderBrush="{StaticResource ControlBordercolor}" 
-            BorderThickness="{StaticResource MainContentBorderThickness}">
+            BorderThickness="{StaticResource MainContentBorderThickness}" SnapsToDevicePixels="True">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="200"></ColumnDefinition>
@@ -275,8 +275,9 @@
                                     </Grid.ColumnDefinitions>
                                     <TextBox Grid.Column="0" Name="TxtSearch"  AcceptsReturn="False"  
                                                 TextWrapping="NoWrap" Width="100" VerticalContentAlignment="Center" 
+                                                Padding="5,0"
                                                 BorderThickness="0" Background="{StaticResource TextBackcolor}"
-                                                Text="{Binding SearchText,Mode=TwoWay}"/>
+                                                Foreground="{StaticResource TextForecolor}"/>
                                     <TextBlock Grid.Column="0" x:Name="Placeholder" IsHitTestVisible="False" 
                                        TextWrapping="NoWrap" Text="Search" VerticalAlignment="Center"  
                                        Background="{StaticResource TextBackcolor}"
@@ -458,7 +459,8 @@
                           VerticalContentAlignment="Stretch" 
                           HorizontalAlignment="Stretch" 
                           Grid.Column="0" Grid.Row="0"
-                          VirtualizingStackPanel.VirtualizationMode="Recycling">
+                          VirtualizingStackPanel.VirtualizationMode="Recycling"
+                          GridViewColumnHeader.Click="lvFinished_Click">
                         <ListView.Resources>
                             <ResourceDictionary>
                                 <ResourceDictionary.MergedDictionaries>

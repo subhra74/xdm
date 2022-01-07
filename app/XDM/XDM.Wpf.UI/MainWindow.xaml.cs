@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -33,6 +34,8 @@ namespace XDM.Wpf.UI
             = new ObservableCollection<FinishedDownloadEntryWrapper>();
 
         private IButton newButton, deleteButton, pauseButton, resumeButton, openFileButton, openFolderButton;
+        private GridViewColumnHeader _lastHeaderClicked = null;
+        private ListSortDirection _lastDirection = ListSortDirection.Ascending;
 
         public MainWindow()
         {
@@ -61,8 +64,7 @@ namespace XDM.Wpf.UI
 
         private void lvCategory_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            SearchText = string.Empty;
-            TxtSearch.Text = SearchText;
+            TxtSearch.Text = string.Empty;
             ApplyFilter();
         }
 
@@ -105,7 +107,7 @@ namespace XDM.Wpf.UI
 
         private bool IsCategoryMatched(FinishedDownloadEntryWrapper entry, CategoryWrapper? category)
         {
-            return Helpers.IsOfCategoryOrMatchesKeyword(entry.Name, SearchText, category?.category);
+            return Helpers.IsOfCategoryOrMatchesKeyword(entry.Name, TxtSearch.Text, category?.category);
         }
 
         public event EventHandler<CategoryChangedEventArgs> CategoryChanged;
@@ -383,6 +385,11 @@ namespace XDM.Wpf.UI
             ApplyFilter();
         }
 
+        private void lvFinished_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
         public void ClearUpdateInformation()
         {
             throw new NotImplementedException();
@@ -414,7 +421,6 @@ namespace XDM.Wpf.UI
         }
 #endif
 
-        public string SearchText { get; set; }
     }
 
     internal class DummyButton : IButton
