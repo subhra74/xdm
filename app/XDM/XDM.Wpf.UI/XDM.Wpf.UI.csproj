@@ -28,4 +28,13 @@
     <Folder Include="MainWindow\Resources\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <LangFiles Include="$(SolutionDir)\Lang\**" />
+  </ItemGroup>
+
+  <Target Name="Copy" AfterTargets="Build">
+    <Copy SourceFiles="@(LangFiles)" DestinationFolder="$(OutDir)\Lang" />
+  </Target>
+
+
 </Project>

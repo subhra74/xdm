@@ -16,6 +16,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using Translations;
 using XDM.Common.UI;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.UI;
@@ -39,6 +40,8 @@ namespace XDM.Wpf.UI
         private GridViewColumnHeader inProgressListViewSortCol = null;
         private SortAdorner inProgressListViewSortAdorner = null;
 
+        private IMenuItem[] menuItems;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -61,6 +64,16 @@ namespace XDM.Wpf.UI
             lvInProgress.ItemsSource = inProgressList;
             lvFinished.ItemsSource = finishedList;
 
+            lvInProgress.SelectionChanged += (sender, args) =>
+            {
+                this.SelectionChanged?.Invoke(sender, args);
+            };
+
+            lvFinished.SelectionChanged += (sender, args) =>
+            {
+                this.SelectionChanged?.Invoke(sender, args);
+            };
+
             lvInProgress.IsVisibleChanged += (_, _) =>
             {
                 if (lvInProgress.Visibility == Visibility.Visible)
@@ -72,11 +85,13 @@ namespace XDM.Wpf.UI
             SwitchToFinishedView();
 
             this.Loaded += MainWindow_Loaded;
+
+            CreateMenuItems();
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            ;
+
         }
 
         private void InProgressListViewInitialSortIfNotAlreadySorted()
@@ -223,9 +238,9 @@ namespace XDM.Wpf.UI
 
         public bool IsInProgressViewSelected => lvCategory.SelectedIndex == 0;
 
-        public IMenuItem[] MenuItems => new IMenuItem[0];
+        public IMenuItem[] MenuItems => this.menuItems;
 
-        public Dictionary<string, IMenuItem> MenuItemMap => throw new NotImplementedException();
+        public Dictionary<string, IMenuItem> MenuItemMap { get; private set; }
 
         public IInProgressDownloadRow FindInProgressItem(string id) =>
             this.lvInProgress.Items.OfType<IInProgressDownloadRow>()
@@ -520,6 +535,68 @@ namespace XDM.Wpf.UI
             AdornerLayer.GetAdornerLayer(inProgressListViewSortCol).Add(inProgressListViewSortAdorner);
             lvInProgress.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
         }
+
+        private void CreateMenuItems()
+        {
+            menuItems = new IMenuItem[]
+            {
+                new MenuItemWrapper("pause",TextResource.GetText("MENU_PAUSE")),
+                new MenuItemWrapper("resume",TextResource.GetText("MENU_RESUME")),
+                new MenuItemWrapper("delete",TextResource.GetText("DESC_DEL")),
+                new MenuItemWrapper("saveAs",TextResource.GetText("CTX_SAVE_AS")),
+                new MenuItemWrapper("refresh",TextResource.GetText("MENU_REFRESH_LINK")),
+                new MenuItemWrapper("showProgress",TextResource.GetText("LBL_SHOW_PROGRESS")),
+                new MenuItemWrapper("copyURL",TextResource.GetText("CTX_COPY_URL")),
+                new MenuItemWrapper("restart",TextResource.GetText("MENU_RESTART")),
+                new MenuItemWrapper("moveToQueue",TextResource.GetText("Q_MOVE_TO")),
+                new MenuItemWrapper("properties",TextResource.GetText("MENU_PROPERTIES")),
+
+                new MenuItemWrapper("open",TextResource.GetText("CTX_OPEN_FILE")),
+                new MenuItemWrapper("openFolder",TextResource.GetText("CTX_OPEN_FOLDER")),
+                new MenuItemWrapper("deleteDownloads",TextResource.GetText("MENU_DELETE_DWN")),
+                new MenuItemWrapper("copyURL1",TextResource.GetText("CTX_COPY_URL")),
+                new MenuItemWrapper("copyFile",TextResource.GetText("CTX_COPY_FILE")),
+                new MenuItemWrapper("downloadAgain",TextResource.GetText("MENU_RESTART")),
+                new MenuItemWrapper("properties1",TextResource.GetText("MENU_PROPERTIES")),
+                new MenuItemWrapper("schedule",TextResource.GetText("Q_SCHEDULE_TXT"),false)
+            };
+
+            var dict = new Dictionary<string, IMenuItem>();
+            foreach (var mi in menuItems)
+            {
+                dict[mi.Name] = mi;
+            }
+
+            this.MenuItemMap = dict;
+
+            var lvInProgressContextMenu = (ContextMenu)this.FindResource("lvInProgressContextMenu");
+            var lvFinishedContextMenu = (ContextMenu)this.FindResource("lvFinishedContextMenu");
+            var i = 0;
+            foreach (MenuItemWrapper mi in menuItems)
+            {
+                if (i < 10)
+                {
+                    lvInProgressContextMenu.Items.Add(mi.Menu);
+                }
+                else
+                {
+                    lvFinishedContextMenu.Items.Add(mi.Menu);
+                }
+                i++;
+            }
+            lvInProgress.ContextMenuOpening += LvInProgressContextMenu_ContextMenuOpening;
+            lvFinished.ContextMenuOpening += LvFinishedContextMenu_ContextMenuOpening;
+        }
+
+        private void LvFinishedContextMenu_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            this.FinishedContextMenuOpening?.Invoke(sender, e);
+        }
+
+        private void LvInProgressContextMenu_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            this.InProgressContextMenuOpening?.Invoke(sender, e);
+        }
     }
 
     internal class DummyButton : IButton
@@ -528,57 +605,5 @@ namespace XDM.Wpf.UI
         public bool Enable { get => true; set { } }
 
         public event EventHandler Clicked;
-    }
-
-    internal class ButtonWrapper : IButton
-    {
-        private Button button;
-
-        public ButtonWrapper(Button button)
-        {
-            this.button = button;
-            this.button.Click += Button_Click;
-        }
-
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-            Clicked?.Invoke(sender, e);
-        }
-
-        public bool Visible
-        {
-            get => button.Visibility == Visibility.Visible;
-            set => button.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
-        }
-
-        public bool Enable
-        {
-            get => button.IsEnabled;
-            set => button.IsEnabled = value;
-        }
-
-        public event EventHandler? Clicked;
-    }
-
-    internal class MenuItemWrapper : IMenuItem
-    {
-        private MenuItem menu;
-
-        public MenuItemWrapper(MenuItem mi)
-        {
-            this.menu = mi;
-            this.menu.Click += Mi_Click;
-        }
-
-        private void Mi_Click(object sender, RoutedEventArgs e)
-        {
-            this.Clicked?.Invoke(this, e);
-        }
-
-        public string Name => menu.Name;
-
-        public bool Enabled { get => menu.IsEnabled; set => menu.IsEnabled = value; }
-
-        public event EventHandler? Clicked;
     }
 }
