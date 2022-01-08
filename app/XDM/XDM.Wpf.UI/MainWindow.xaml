@@ -8,6 +8,8 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="500" Width="800" WindowStartupLocation="CenterScreen">
     <Window.Resources>
+        <ContextMenu x:Key="lvInProgressContextMenu"></ContextMenu>
+        <ContextMenu x:Key="lvFinishedContextMenu"></ContextMenu>
         <ControlTemplate x:Key="ToolbarButtonTemplate" TargetType="{x:Type Button}">
             <Border Name="Border" BorderBrush="{StaticResource ToolButtonForecolor}"  >
                 <StackPanel Orientation="Horizontal" Margin="{TemplateBinding Padding}">
@@ -468,6 +470,11 @@
                                 <GridViewColumn Header="Status" Width="150" DisplayMemberBinding="{Binding Status}" />
                             </GridView>
                         </ListView.View>
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="{x:Type ListViewItem}" BasedOn="{StaticResource {x:Type ListViewItem}}">
+                                <Setter Property="ContextMenu" Value="{StaticResource lvInProgressContextMenu}" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
                     </ListView>
                     <ListView Name="lvFinished"  
                           VerticalContentAlignment="Stretch" 
@@ -525,6 +532,11 @@
                                 </GridViewColumn>
                             </GridView>
                         </ListView.View>
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="{x:Type ListViewItem}" BasedOn="{StaticResource {x:Type ListViewItem}}">
+                                <Setter Property="ContextMenu" Value="{StaticResource lvFinishedContextMenu}" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
                     </ListView>
                 </Grid>
             </DockPanel>

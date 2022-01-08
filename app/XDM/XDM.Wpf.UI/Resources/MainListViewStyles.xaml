@@ -409,8 +409,7 @@
         </Style.Triggers>
     </Style>
 
-    <Style x:Key="{x:Type ListView}"
-       TargetType="ListView">
+    <Style x:Key="{x:Type ListView}" TargetType="ListView">
         <Setter Property="SnapsToDevicePixels" Value="true" />
         <Setter Property="OverridesDefaultStyle" Value="true" />
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
@@ -439,7 +438,7 @@
         </Setter>
     </Style>
 
-    <Style x:Key="{x:Type ListViewItem}" TargetType="ListViewItem">
+    <Style x:Key="{x:Type ListViewItem}" TargetType="ListViewItem" >
         <Setter Property="SnapsToDevicePixels" Value="true" />
         <Setter Property="OverridesDefaultStyle" Value="true" />
         <Setter Property="Foreground" Value="{StaticResource ListViewForecolor}"></Setter>
@@ -451,7 +450,8 @@
                                                 Background="{TemplateBinding Background}"
                                                 BorderBrush="{TemplateBinding BorderBrush}"
                                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                                SnapsToDevicePixels="true" >
+                                                SnapsToDevicePixels="true" 
+                                                ContextMenu="{TemplateBinding ContextMenu}">
                         <GridViewRowPresenter  HorizontalAlignment="Stretch" 
                                                 VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                                 SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"  />

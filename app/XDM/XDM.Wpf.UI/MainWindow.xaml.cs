@@ -559,4 +559,26 @@ namespace XDM.Wpf.UI
 
         public event EventHandler? Clicked;
     }
+
+    internal class MenuItemWrapper : IMenuItem
+    {
+        private MenuItem menu;
+
+        public MenuItemWrapper(MenuItem mi)
+        {
+            this.menu = mi;
+            this.menu.Click += Mi_Click;
+        }
+
+        private void Mi_Click(object sender, RoutedEventArgs e)
+        {
+            this.Clicked?.Invoke(this, e);
+        }
+
+        public string Name => menu.Name;
+
+        public bool Enabled { get => menu.IsEnabled; set => menu.IsEnabled = value; }
+
+        public event EventHandler? Clicked;
+    }
 }

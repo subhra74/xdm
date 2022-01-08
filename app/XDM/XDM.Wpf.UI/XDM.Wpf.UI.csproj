@@ -24,4 +24,8 @@
     <Reference Include="PresentationFramework.Aero2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="MainWindow\Resources\" />
+  </ItemGroup>
+
 </Project>
