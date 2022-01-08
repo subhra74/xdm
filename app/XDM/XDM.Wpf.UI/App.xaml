@@ -95,6 +95,24 @@
                     <local:FileExtensionToVectorImageConverter x:Key="FileExtensionToVectorImageConverter"></local:FileExtensionToVectorImageConverter>
                     <local:CategoryToVectorImageConverter x:Key="CategoryToVectorImageConverter"></local:CategoryToVectorImageConverter>
                     <local:FileSizeValueConverter x:Key="FileSizeValueConverter"></local:FileSizeValueConverter>
+                    <DataTemplate x:Key="HeaderTemplateArrowUp">
+                        <DockPanel>
+                            <TextBlock HorizontalAlignment="Left" Text="{Binding}"/>
+                            <Path x:Name="arrow"
+                                StrokeThickness = "1"                                     
+                                Fill = "gray"
+                                Data = "M 5,10 L 15,10 L 10,5 L 5,10"/>
+                        </DockPanel>
+                    </DataTemplate>
+                    <DataTemplate x:Key="HeaderTemplateArrowDown">
+                        <DockPanel>
+                            <TextBlock HorizontalAlignment="Left" Text="{Binding}"/>
+                            <Path x:Name="arrow" 
+                            StrokeThickness = "1"                                     
+                            Fill = "gray"
+                            Data = "M 5,5 L 15,5 L 10,10 L 5,5"/>
+                        </DockPanel>
+                    </DataTemplate>
                 </ResourceDictionary>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>

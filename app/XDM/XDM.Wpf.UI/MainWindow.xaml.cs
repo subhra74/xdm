@@ -34,8 +34,10 @@ namespace XDM.Wpf.UI
             = new ObservableCollection<FinishedDownloadEntryWrapper>();
 
         private IButton newButton, deleteButton, pauseButton, resumeButton, openFileButton, openFolderButton;
-        private GridViewColumnHeader _lastHeaderClicked = null;
-        private ListSortDirection _lastDirection = ListSortDirection.Ascending;
+        private GridViewColumnHeader finishedListViewSortCol = null;
+        private SortAdorner finishedListViewSortAdorner = null;
+        private GridViewColumnHeader inProgressListViewSortCol = null;
+        private SortAdorner inProgressListViewSortAdorner = null;
 
         public MainWindow()
         {
@@ -59,7 +61,51 @@ namespace XDM.Wpf.UI
             lvInProgress.ItemsSource = inProgressList;
             lvFinished.ItemsSource = finishedList;
 
+            lvInProgress.IsVisibleChanged += (_, _) =>
+            {
+                if (lvInProgress.Visibility == Visibility.Visible)
+                {
+                    InProgressListViewInitialSortIfNotAlreadySorted();
+                }
+            };
+
             SwitchToFinishedView();
+
+            this.Loaded += MainWindow_Loaded;
+        }
+
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            ;
+        }
+
+        private void InProgressListViewInitialSortIfNotAlreadySorted()
+        {
+            //sort in-progress list view by date
+            if (inProgressListViewSortCol == null)
+            {
+                var col = (GridViewColumnHeader)FindName("lvInProgress_DateAdded");
+                var layer = AdornerLayer.GetAdornerLayer(col);
+                if (layer != null)
+                {
+                    inProgressListViewSortCol = col;
+                    inProgressListViewSortAdorner = new SortAdorner(inProgressListViewSortCol, ListSortDirection.Descending);
+                    layer.Add(inProgressListViewSortAdorner);
+                }
+                lvInProgress.Items.SortDescriptions.Add(new SortDescription("DateAdded", ListSortDirection.Descending));
+            }
+        }
+
+        private void FinishedListViewInitialSortIfNotAlreadySorted()
+        {
+            //sort finished list view by date
+            if (finishedListViewSortCol == null)
+            {
+                finishedListViewSortCol = (GridViewColumnHeader)FindName("lvFinished_DateAdded");
+                finishedListViewSortAdorner = new SortAdorner(finishedListViewSortCol, ListSortDirection.Descending);
+                AdornerLayer.GetAdornerLayer(finishedListViewSortCol).Add(finishedListViewSortAdorner);
+                lvFinished.Items.SortDescriptions.Add(new SortDescription("DateAdded", ListSortDirection.Descending));
+            }
         }
 
         private void lvCategory_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -75,6 +121,8 @@ namespace XDM.Wpf.UI
             {
                 lvInProgress.Visibility = Visibility.Visible;
                 lvFinished.Visibility = Visibility.Collapsed;
+                InProgressListViewInitialSortIfNotAlreadySorted();
+
                 CategoryChanged?.Invoke(this, new CategoryChangedEventArgs { Level = 0, Index = 0 });
             }
             else if (index > 0)
@@ -139,6 +187,7 @@ namespace XDM.Wpf.UI
                 this.finishedList = new ObservableCollection<FinishedDownloadEntryWrapper>(
                     value.Select(x => new FinishedDownloadEntryWrapper(x)));
                 this.lvFinished.ItemsSource = finishedList;
+                FinishedListViewInitialSortIfNotAlreadySorted();
             }
         }
 
@@ -150,6 +199,7 @@ namespace XDM.Wpf.UI
                 this.inProgressList = new ObservableCollection<InProgressDownloadEntryWrapper>(
                     value.Select(x => new InProgressDownloadEntryWrapper(x)));
                 this.lvInProgress.ItemsSource = inProgressList;
+                //InProgressListViewInitialSortIfNotAlreadySorted();
             }
         }
 
@@ -385,11 +435,6 @@ namespace XDM.Wpf.UI
             ApplyFilter();
         }
 
-        private void lvFinished_Click(object sender, RoutedEventArgs e)
-        {
-
-        }
-
         public void ClearUpdateInformation()
         {
             throw new NotImplementedException();
@@ -398,6 +443,12 @@ namespace XDM.Wpf.UI
         public IQueuesWindow CreateQueuesAndSchedulerWindow(IAppUI appUi)
         {
             throw new NotImplementedException();
+        }
+
+        private void BtnNew_Click(object sender, RoutedEventArgs e)
+        {
+            var c1 = (GridViewColumn)FindName("lvInProgress_DateAdded");
+            var a = AdornerLayer.GetAdornerLayer((GridViewColumnHeader)c1.Header);
         }
 
         public IQueueSelectionDialog CreateQueueSelectionDialog()
@@ -421,6 +472,54 @@ namespace XDM.Wpf.UI
         }
 #endif
 
+        private void lvFinished_Click(object sender, RoutedEventArgs e)
+        {
+            GridViewColumnHeader column = (GridViewColumnHeader)e.OriginalSource;
+            string sortBy = (string)column.Tag;
+            if (string.IsNullOrEmpty(sortBy))
+            {
+                return;
+            }
+            if (finishedListViewSortCol != null)
+            {
+                AdornerLayer.GetAdornerLayer(finishedListViewSortCol).Remove(finishedListViewSortAdorner);
+                lvFinished.Items.SortDescriptions.Clear();
+            }
+
+            ListSortDirection newDir = ListSortDirection.Ascending;
+            if (finishedListViewSortCol == column && finishedListViewSortAdorner.Direction == newDir)
+                newDir = ListSortDirection.Descending;
+
+            finishedListViewSortCol = column;
+            finishedListViewSortAdorner = new SortAdorner(finishedListViewSortCol, newDir);
+            AdornerLayer.GetAdornerLayer(finishedListViewSortCol).Add(finishedListViewSortAdorner);
+            lvFinished.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
+        }
+
+        private void lvInProgress_Click(object sender, RoutedEventArgs e)
+        {
+
+            GridViewColumnHeader column = (GridViewColumnHeader)e.OriginalSource;
+            string sortBy = (string)column.Tag;
+            if (string.IsNullOrEmpty(sortBy))
+            {
+                return;
+            }
+            if (inProgressListViewSortCol != null)
+            {
+                AdornerLayer.GetAdornerLayer(inProgressListViewSortCol).Remove(inProgressListViewSortAdorner);
+                lvInProgress.Items.SortDescriptions.Clear();
+            }
+
+            ListSortDirection newDir = ListSortDirection.Ascending;
+            if (inProgressListViewSortCol == column && inProgressListViewSortAdorner.Direction == newDir)
+                newDir = ListSortDirection.Descending;
+
+            inProgressListViewSortCol = column;
+            inProgressListViewSortAdorner = new SortAdorner(inProgressListViewSortCol, newDir);
+            AdornerLayer.GetAdornerLayer(inProgressListViewSortCol).Add(inProgressListViewSortAdorner);
+            lvInProgress.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
+        }
     }
 
     internal class DummyButton : IButton

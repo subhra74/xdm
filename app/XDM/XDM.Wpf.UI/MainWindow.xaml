@@ -226,7 +226,7 @@
                             <Button Template="{StaticResource ToolbarButtonTemplate}" 
                             Padding="15,12" 
                             Tag="{StaticResource ri-links-line}"
-                            Name="BtnNew">
+                            Name="BtnNew" Click="BtnNew_Click">
                                 New
                             </Button>
                             <Button Template="{StaticResource ToolbarButtonTemplate}" 
@@ -406,7 +406,8 @@
                           VerticalContentAlignment="Stretch" 
                           HorizontalAlignment="Stretch" 
                           Grid.Column="0" Grid.Row="0"
-                          VirtualizingStackPanel.VirtualizationMode="Recycling">
+                          VirtualizingStackPanel.VirtualizationMode="Recycling"
+                          GridViewColumnHeader.Click="lvInProgress_Click" >
                         <ListView.Resources>
                             <ResourceDictionary>
                                 <ResourceDictionary.MergedDictionaries>
@@ -416,9 +417,11 @@
                         </ListView.Resources>
                         <ListView.View>
                             <GridView>
-                                <GridViewColumn Width="200"  >
+                                <GridViewColumn Width="200">
                                     <GridViewColumn.Header>
-                                        <TextBlock Padding="40,0">Name</TextBlock>
+                                        <GridViewColumnHeader Tag="Name">
+                                            <TextBlock Padding="40,0">Name</TextBlock>
+                                        </GridViewColumnHeader>
                                     </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
@@ -433,15 +436,26 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Header="Date" Width="60">
+                                <GridViewColumn Width="60">
+                                    <GridViewColumn.Header>
+                                        <GridViewColumnHeader Tag="DateAdded" Name="lvInProgress_DateAdded">
+                                            <TextBlock>Date</TextBlock>
+                                        </GridViewColumnHeader>
+                                    </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock Text="{Binding DateAdded, StringFormat=d}"  />
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Header="Size" Width="60" 
-                                            DisplayMemberBinding="{Binding Size, Converter={StaticResource FileSizeValueConverter}}" />
+                                <GridViewColumn Width="60" 
+                                            DisplayMemberBinding="{Binding Size, Converter={StaticResource FileSizeValueConverter}}" >
+                                    <GridViewColumn.Header>
+                                        <GridViewColumnHeader Tag="Size">
+                                            <TextBlock>Size</TextBlock>
+                                        </GridViewColumnHeader>
+                                    </GridViewColumn.Header>
+                                </GridViewColumn>
                                 <GridViewColumn Header="%" Width="50" x:Name="p1" >
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
@@ -470,9 +484,11 @@
                         </ListView.Resources>
                         <ListView.View>
                             <GridView>
-                                <GridViewColumn  Width="400"   >
+                                <GridViewColumn  Width="400" >
                                     <GridViewColumn.Header>
-                                        <TextBlock Padding="40,0">Name</TextBlock>
+                                        <GridViewColumnHeader Tag="Name">
+                                            <TextBlock Padding="40,0">Name</TextBlock>
+                                        </GridViewColumnHeader>
                                     </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
@@ -487,15 +503,26 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Header="Date" Width="80">
+                                <GridViewColumn Width="80">
+                                    <GridViewColumn.Header>
+                                        <GridViewColumnHeader Tag="DateAdded" Name="lvFinished_DateAdded">
+                                            <TextBlock>Date</TextBlock>
+                                        </GridViewColumnHeader>
+                                    </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock Text="{Binding DateAdded, StringFormat=d}"  />
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Header="Size" Width="60" 
-                               DisplayMemberBinding="{Binding Size, Converter={StaticResource FileSizeValueConverter}}" />
+                                <GridViewColumn  Width="60"
+                                    DisplayMemberBinding="{Binding Size, Converter={StaticResource FileSizeValueConverter}}" >
+                                    <GridViewColumn.Header>
+                                        <GridViewColumnHeader Tag="Size">
+                                            <TextBlock>Size</TextBlock>
+                                        </GridViewColumnHeader>
+                                    </GridViewColumn.Header>
+                                </GridViewColumn>
                             </GridView>
                         </ListView.View>
                     </ListView>

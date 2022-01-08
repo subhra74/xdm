@@ -9,7 +9,7 @@ namespace XDM.Wpf.UI
     /// </summary>
     public partial class App : Application
     {
-        public static Skin Skin = Skin.Light;
+        public static Skin Skin = Skin.Dark;
         private XDMApp.XDMApp app;
         private MainWindow win;
         private void Application_Startup(object sender, StartupEventArgs e)
