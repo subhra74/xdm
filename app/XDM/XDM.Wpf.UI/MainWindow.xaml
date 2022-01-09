@@ -73,11 +73,12 @@
                 </Trigger>
             </ControlTemplate.Triggers>
         </ControlTemplate>
-        <ControlTemplate x:Key="ToolbarButtonTemplateIconOnlySmall" TargetType="{x:Type Button}">
+        <ControlTemplate x:Key="ToolbarButtonTemplateIconOnlySmall" TargetType="{x:Type Button}" >
             <Border Name="Border" 
                     BorderBrush="{StaticResource ToolButtonForecolor}" 
                     Background="{StaticResource TextBackcolor}" 
-                    BorderThickness="0" >
+                    BorderThickness="0" 
+                    >
                 <StackPanel Orientation="Horizontal" Margin="{TemplateBinding Padding}" Background="Transparent">
                     <Path 
                                 VerticalAlignment="Center" 
@@ -125,6 +126,11 @@
                 </Trigger>
             </ControlTemplate.Triggers>
         </ControlTemplate>
+        <ContextMenu x:Key="newDownloadContextMenu">
+            <MenuItem Name="menuNewDownload" Foreground="{StaticResource ControlForecolor}"/>
+            <MenuItem Name="menuVideoDownload" Foreground="{StaticResource ControlForecolor}"/>
+            <MenuItem Name="menuBatchDownload" Foreground="{StaticResource ControlForecolor}"/>
+        </ContextMenu>
     </Window.Resources>
     <Border BorderBrush="{StaticResource ControlBordercolor}" 
             BorderThickness="{StaticResource MainContentBorderThickness}" SnapsToDevicePixels="True">
@@ -228,7 +234,7 @@
                             <Button Template="{StaticResource ToolbarButtonTemplate}" 
                             Padding="15,12" 
                             Tag="{StaticResource ri-links-line}"
-                            Name="BtnNew" Click="BtnNew_Click">
+                            Name="BtnNew">
                                 New
                             </Button>
                             <Button Template="{StaticResource ToolbarButtonTemplate}" 
@@ -311,7 +317,8 @@
                             </Border>
                         </StackPanel>
                         <Button Grid.Column="2" Padding="15,15" Margin="2,0,0,0" 
-                            Template="{StaticResource ToolbarButtonTemplateIconOnly}" Tag="{StaticResource ri-menu-line}" />
+                            Template="{StaticResource ToolbarButtonTemplateIconOnly}" Tag="{StaticResource ri-menu-line}" >
+                        </Button>
                     </Grid>
                 </Border>
                 <Border BorderThickness="0,1,0,0" 
@@ -409,7 +416,7 @@
                           HorizontalAlignment="Stretch" 
                           Grid.Column="0" Grid.Row="0"
                           VirtualizingStackPanel.VirtualizationMode="Recycling"
-                          GridViewColumnHeader.Click="lvInProgress_Click" >
+                          GridViewColumnHeader.Click="lvInProgress_Click">
                         <ListView.Resources>
                             <ResourceDictionary>
                                 <ResourceDictionary.MergedDictionaries>

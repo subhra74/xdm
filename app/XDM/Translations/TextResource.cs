@@ -46,5 +46,10 @@ namespace Translations
                 texts[key] = val;
             }
         }
+
+        public static IEnumerable<string> GetKeys()
+        {
+            return texts.Keys;
+        }
     }
 }

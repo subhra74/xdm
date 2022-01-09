@@ -3,24 +3,19 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Interop;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Windows.Threading;
 using Translations;
 using XDM.Common.UI;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.UI;
 using XDM.Core.Lib.Util;
+using XDM.Wpf.UI.Dialogs.NewDownload;
 
 namespace XDM.Wpf.UI
 {
@@ -91,7 +86,7 @@ namespace XDM.Wpf.UI
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-
+            FinishedListViewInitialSortIfNotAlreadySorted();
         }
 
         private void InProgressListViewInitialSortIfNotAlreadySorted()
@@ -116,9 +111,17 @@ namespace XDM.Wpf.UI
             //sort finished list view by date
             if (finishedListViewSortCol == null)
             {
-                finishedListViewSortCol = (GridViewColumnHeader)FindName("lvFinished_DateAdded");
-                finishedListViewSortAdorner = new SortAdorner(finishedListViewSortCol, ListSortDirection.Descending);
-                AdornerLayer.GetAdornerLayer(finishedListViewSortCol).Add(finishedListViewSortAdorner);
+                var col = (GridViewColumnHeader)FindName("lvFinished_DateAdded");
+                var layer = AdornerLayer.GetAdornerLayer(col);
+                if (layer != null)
+                {
+                    finishedListViewSortCol = col;
+                    finishedListViewSortAdorner = new SortAdorner(finishedListViewSortCol, ListSortDirection.Descending);
+                    layer.Add(finishedListViewSortAdorner);
+                }
+                //finishedListViewSortCol = (GridViewColumnHeader)FindName("lvFinished_DateAdded");
+                //finishedListViewSortAdorner = new SortAdorner(finishedListViewSortCol, ListSortDirection.Descending);
+                //AdornerLayer.GetAdornerLayer(finishedListViewSortCol).Add(finishedListViewSortAdorner);
                 lvFinished.Items.SortDescriptions.Add(new SortDescription("DateAdded", ListSortDirection.Descending));
             }
         }
@@ -214,7 +217,7 @@ namespace XDM.Wpf.UI
                 this.inProgressList = new ObservableCollection<InProgressDownloadEntryWrapper>(
                     value.Select(x => new InProgressDownloadEntryWrapper(x)));
                 this.lvInProgress.ItemsSource = inProgressList;
-                //InProgressListViewInitialSortIfNotAlreadySorted();
+                InProgressListViewInitialSortIfNotAlreadySorted();
             }
         }
 
@@ -282,7 +285,7 @@ namespace XDM.Wpf.UI
 
         public bool Confirm(object window, string text)
         {
-            throw new NotImplementedException();
+            return MessageBox.Show((Window)window, text, "XDM", MessageBoxButton.YesNo) == MessageBoxResult.Yes;
         }
 
         public void ConfirmDelete(string text, out bool approved, out bool deleteFiles)
@@ -362,12 +365,15 @@ namespace XDM.Wpf.UI
 
         public void ShowMessageBox(object window, string message)
         {
-            throw new NotImplementedException();
+            MessageBox.Show((Window)window, message);
         }
 
         public void OpenNewDownloadMenu()
         {
-            throw new NotImplementedException();
+            var nctx = (ContextMenu)FindResource("newDownloadContextMenu");
+            nctx.PlacementTarget = BtnNew;
+            nctx.Placement = PlacementMode.Bottom;
+            nctx.IsOpen = true;
         }
 
         public string SaveFileDialog(string initialPath)
@@ -462,8 +468,7 @@ namespace XDM.Wpf.UI
 
         private void BtnNew_Click(object sender, RoutedEventArgs e)
         {
-            var c1 = (GridViewColumn)FindName("lvInProgress_DateAdded");
-            var a = AdornerLayer.GetAdornerLayer((GridViewColumnHeader)c1.Header);
+
         }
 
         public IQueueSelectionDialog CreateQueueSelectionDialog()
@@ -586,6 +591,26 @@ namespace XDM.Wpf.UI
             }
             lvInProgress.ContextMenuOpening += LvInProgressContextMenu_ContextMenuOpening;
             lvFinished.ContextMenuOpening += LvFinishedContextMenu_ContextMenuOpening;
+
+            var newDownloadMenu = (ContextMenu)FindResource("newDownloadContextMenu");
+
+            var menuNewDownload = (MenuItem)newDownloadMenu.Items[0];
+            menuNewDownload.Click += MenuNewDownload_Click;
+            menuNewDownload.Header = TextResource.GetText("LBL_NEW_DOWNLOAD");
+
+            var menuVideoDownload = (MenuItem)newDownloadMenu.Items[1];
+            menuVideoDownload.Click += MenuNewDownload_Click;
+            menuVideoDownload.Header = TextResource.GetText("LBL_VIDEO_DOWNLOAD");
+
+            var menuBatchDownload = (MenuItem)newDownloadMenu.Items[2];
+            menuBatchDownload.Click += MenuNewDownload_Click;
+            menuBatchDownload.Header = TextResource.GetText("MENU_BATCH_DOWNLOAD");
+        }
+
+        private void MenuNewDownload_Click(object sender, RoutedEventArgs e)
+        {
+            var nw = new NewDownloadWindow();
+            nw.Show();
         }
 
         private void LvFinishedContextMenu_ContextMenuOpening(object sender, ContextMenuEventArgs e)

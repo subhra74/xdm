@@ -1,0 +1,71 @@
+﻿<Window x:Class="XDM.Wpf.UI.Dialogs.NewDownload.NewDownloadWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:XDM.Wpf.UI.Dialogs.NewDownload"
+        mc:Ignorable="d"
+        Title="NewDownloadWindow" Height="300" Width="550" Topmost="True" WindowStartupLocation="CenterScreen">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="auto"/>
+        </Grid.RowDefinitions>
+        <Border Background="{StaticResource ListViewBackcolor}">
+            <Grid  Margin="20,20,10,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Text="{StaticResource ND_ADDRESS}" Margin="10" HorizontalAlignment="Right"/>
+                <TextBlock Grid.Row="1" Text="{StaticResource ND_FILE}" Margin="10" HorizontalAlignment="Right"/>
+                <TextBlock Grid.Row="2" Text="{StaticResource LBL_SAVE_IN}" Margin="10" HorizontalAlignment="Right"/>
+                <TextBox Grid.Row="0" Grid.Column="1" Margin="5" 
+                         VerticalAlignment="Stretch" VerticalContentAlignment="Center" 
+                         BorderBrush="{StaticResource ControlBordercolor}" 
+                         Background="{StaticResource NewDownloadTextBoxBackground}"/>
+                <TextBox Grid.Row="1" Grid.Column="1" Margin="5" VerticalAlignment="Stretch" VerticalContentAlignment="Center"
+                         BorderBrush="{StaticResource ControlBordercolor}"
+                         Background="{StaticResource NewDownloadTextBoxBackground}"/>
+                <ComboBox Background="{StaticResource NewDownloadTextBoxBackground}" Grid.Row="2" Grid.Column="1" Margin="5" 
+                          VerticalAlignment="Stretch" VerticalContentAlignment="Center">
+                    <ComboBoxItem>One</ComboBoxItem>
+                    <ComboBoxItem>Two</ComboBoxItem>
+                    <ComboBoxItem>Three</ComboBoxItem>
+                </ComboBox>
+                <TextBlock Grid.Row="3" Grid.Column="1" Text="{StaticResource ND_IGNORE_URL}" Margin="5,15" Cursor="Hand" />
+                <TextBlock Grid.Row="0" Grid.Column="2" Grid.RowSpan="2" Margin="20"/>
+                <TextBlock Grid.Row="2" Grid.Column="2" Text="---" Margin="10"/>
+            </Grid>
+        </Border>
+        <Border Grid.Row="1" Background="{StaticResource ControlBackcolor}" BorderBrush="{StaticResource ControlBordercolor}" 
+                BorderThickness="0,1,0,0" Padding="10">
+            <Grid  Background="{StaticResource ControlBackcolor}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="auto"/>
+                    <ColumnDefinition Width="auto"/>
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0" 
+                        Padding="20,5"
+                        Name="btnAdvanced" Content="{StaticResource ND_MORE}"/>
+                <Button Grid.Column="2" 
+                        Padding="20,5"
+                        Margin="0,0,10,0"
+                        Name="btnDownloadLater" Content="{StaticResource ND_DOWNLOAD_LATER}"/>
+                <Button Grid.Column="3" 
+                        Padding="20,5"
+                        Name="btnDownload" Content="{StaticResource ND_DOWNLOAD_NOW}"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

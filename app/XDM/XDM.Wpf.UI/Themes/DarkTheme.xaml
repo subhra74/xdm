@@ -37,4 +37,11 @@
     <Thickness x:Key="MainContentBorderThickness">0,1,0,0</Thickness>
 
     <SolidColorBrush x:Key="PlaceHolderForecolor" Color="#646464"/>
+
+    <SolidColorBrush x:Key="{x:Static SystemColors.ControlTextBrushKey }" Color="#A0A0A0"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.WindowTextBrushKey }" Color="#A0A0A0"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey }" Color="#282C34"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey }" Color="#0A6AB6"/>
+
+    <SolidColorBrush x:Key="NewDownloadTextBoxBackground" Color="#21252B"/>
 </ResourceDictionary>
