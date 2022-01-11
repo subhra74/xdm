@@ -208,5 +208,15 @@ namespace XDM.Wpf.UI.Dialogs.NewDownload
             nctx.Placement = PlacementMode.Bottom;
             nctx.IsOpen = true;
         }
+
+        private void DontAddToQueueMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            this.DownloadLaterClicked?.Invoke(this, new DownloadLaterEventArgs(string.Empty));
+        }
+
+        private void QueueAndSchedulerMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            this.QueueSchedulerClicked?.Invoke(this, EventArgs.Empty);
+        }
     }
 }

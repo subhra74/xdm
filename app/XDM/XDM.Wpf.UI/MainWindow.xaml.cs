@@ -15,6 +15,7 @@ using XDM.Common.UI;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.UI;
 using XDM.Core.Lib.Util;
+using XDM.Wpf.UI.Dialogs.CompletedDialog;
 using XDM.Wpf.UI.Dialogs.NewDownload;
 using XDM.Wpf.UI.Dialogs.ProgressWindow;
 
@@ -79,12 +80,8 @@ namespace XDM.Wpf.UI
             };
 
             SwitchToFinishedView();
-
             this.Loaded += MainWindow_Loaded;
-
             CreateMenuItems();
-
-            new DownloadProgressWindow().Show();
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -258,17 +255,17 @@ namespace XDM.Wpf.UI
 
         public void AddToTop(InProgressDownloadEntry entry)
         {
-            this.lvInProgress.Items.Add(entry);
+            this.inProgressList.Add(new InProgressDownloadEntryWrapper(entry));
         }
 
         public void AddToTop(FinishedDownloadEntry entry)
         {
-            this.lvFinished.Items.Add(entry);
+            this.finishedList.Add(new FinishedDownloadEntryWrapper(entry));
         }
 
         public void SwitchToInProgressView()
         {
-            lvInProgress.SelectedIndex = 0;
+            lvCategory.SelectedIndex = 0;
         }
 
         public void ClearInProgressViewSelection()
@@ -298,7 +295,7 @@ namespace XDM.Wpf.UI
 
         public IDownloadCompleteDialog CreateDownloadCompleteDialog(IApp app)
         {
-            throw new NotImplementedException();
+            return new DownloadCompleteWindow { App = app };
         }
 
         public INewDownloadDialogSkeleton CreateNewDownloadDialog(bool empty)
@@ -313,7 +310,12 @@ namespace XDM.Wpf.UI
 
         public IProgressWindow CreateProgressWindow(string downloadId, IApp app, IAppUI appUI)
         {
-            throw new NotImplementedException();
+            return new DownloadProgressWindow
+            {
+                DownloadId = downloadId,
+                App = app,
+                AppUI = appUI
+            };
         }
 
         public void RunOnUIThread(Action action)
@@ -328,12 +330,12 @@ namespace XDM.Wpf.UI
 
         public void Delete(IInProgressDownloadRow row)
         {
-            throw new NotImplementedException();
+            this.inProgressList.Remove((InProgressDownloadEntryWrapper)row);
         }
 
         public void Delete(IFinishedDownloadRow row)
         {
-            throw new NotImplementedException();
+            this.finishedList.Remove((FinishedDownloadEntryWrapper)row);
         }
 
         public void DeleteAllFinishedDownloads()

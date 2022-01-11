@@ -709,12 +709,15 @@ namespace XDMApp
                     prgWin.Destroy();
                 }
 
-                (_, bool nonInteractive) = liveDownloads[http.Id];
-                liveDownloads.Remove(http.Id);
-
-                if (!nonInteractive && Config.Instance.ShowDownloadCompleteWindow)
+                if (liveDownloads.ContainsKey(http.Id))
                 {
-                    AppUI.ShowDownloadCompleteDialog(http.TargetFileName, Path.GetDirectoryName(http.TargetFile));
+                    (_, bool nonInteractive) = liveDownloads[http.Id];
+                    liveDownloads.Remove(http.Id);
+
+                    if (!nonInteractive && Config.Instance.ShowDownloadCompleteWindow)
+                    {
+                        AppUI.ShowDownloadCompleteDialog(http.TargetFileName, Path.GetDirectoryName(http.TargetFile));
+                    }
                 }
 
                 if (Config.Instance.ScanWithAntiVirus)

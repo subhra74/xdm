@@ -45,4 +45,5 @@
     <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey }" Color="#0A6AB6"/>
 
     <SolidColorBrush x:Key="NewDownloadTextBoxBackground" Color="White"/>
+    <SolidColorBrush x:Key="HyperlinkForecolor" Color="DodgerBlue"/>
 </ResourceDictionary>

@@ -5,12 +5,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:XDM.Wpf.UI.Dialogs.NewDownload"
         mc:Ignorable="d"
-        Title="NewDownloadWindow" Height="300" Width="550" Topmost="True" WindowStartupLocation="CenterScreen"
+        Title="{StaticResource ND_TITLE}" Height="300" Width="550" Topmost="True" WindowStartupLocation="CenterScreen"
         Closed="Window_Closed">
     <Window.Resources>
         <ContextMenu x:Key="DownloadLaterContextMenu"></ContextMenu>
-        <MenuItem x:Key="DontAddToQueueMenuItem" Header="{StaticResource LBL_QUEUE_OPT3}"/>
-        <MenuItem x:Key="QueueAndSchedulerMenuItem" Header="{StaticResource DESC_Q_TITLE}"/>
+        <MenuItem x:Key="DontAddToQueueMenuItem" Header="{StaticResource LBL_QUEUE_OPT3}" Click="DontAddToQueueMenuItem_Click"/>
+        <MenuItem x:Key="QueueAndSchedulerMenuItem" Header="{StaticResource DESC_Q_TITLE}" Click="QueueAndSchedulerMenuItem_Click"/>
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -48,9 +48,23 @@
                           VerticalAlignment="Stretch" VerticalContentAlignment="Center"
                           Name="CmbLocation" SelectionChanged="CmbLocation_SelectionChanged">
                 </ComboBox>
-                <TextBlock Grid.Row="3" Grid.Column="1" Text="{StaticResource ND_IGNORE_URL}" Margin="5,15" Cursor="Hand" MouseDown="TextBlock_MouseDown" />
+                <TextBlock Grid.Row="3" Grid.Column="1" Text="{StaticResource ND_IGNORE_URL}" Margin="5,15" 
+                           Cursor="Hand" MouseDown="TextBlock_MouseDown" Foreground="{StaticResource HyperlinkForecolor}"
+                           />
                 <TextBlock Grid.Row="0" Grid.Column="2" Grid.RowSpan="2" Margin="20"/>
-                <TextBlock Grid.Row="2" Grid.Column="2" Text="---" Margin="10" Name="TxtFileSize"/>
+                <Path Grid.Column="2" Grid.Row="0" Grid.RowSpan="2" 
+                      VerticalAlignment="Bottom" 
+                      HorizontalAlignment="Center"
+                      Margin="20,10" 
+                      StrokeThickness="0" 
+                      Stretch="Uniform" 
+                      Fill="{StaticResource ToolButtonMouseDisabledForecolor}"
+                      Width="32" Height="32"  
+                      Stroke="{StaticResource ToolButtonMouseDisabledForecolor}"
+                      Data="{StaticResource ri-file-download-line}"
+                      SnapsToDevicePixels="True"/>
+                <TextBlock Grid.Row="2" Grid.Column="2" Text="---" Margin="10" Name="TxtFileSize" 
+                           HorizontalAlignment="Center" VerticalAlignment="Top"/>
             </Grid>
         </Border>
         <Border Grid.Row="1" Background="{StaticResource ControlBackcolor}" BorderBrush="{StaticResource ControlBordercolor}" 

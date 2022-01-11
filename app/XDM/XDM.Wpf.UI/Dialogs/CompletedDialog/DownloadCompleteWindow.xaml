@@ -1,0 +1,66 @@
+﻿<Window x:Class="XDM.Wpf.UI.Dialogs.CompletedDialog.DownloadCompleteWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:XDM.Wpf.UI.Dialogs.CompletedDialog"
+        mc:Ignorable="d"
+        Title="{StaticResource CD_TITLE}" Height="200" Width="400" WindowStartupLocation="CenterScreen">
+    <DockPanel>
+        <Grid DockPanel.Dock="Bottom" Margin="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition Width="auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" x:Name="TxtDontShowCompleteDialog" 
+                       MouseDown="TxtDontShowCompleteDialog_MouseDown" 
+                       Text="{StaticResource MSG_DONT_SHOW_AGAIN}" 
+                       Cursor="Hand" 
+                       Foreground="{StaticResource HyperlinkForecolor}"/>
+            <Button Grid.Column="2" Padding="15,5" Margin="10,5" Name="BtnOpenFolder" Content="{StaticResource CTX_OPEN_FOLDER}"/>
+            <Button Grid.Column="3" Padding="15,5" Margin="0,5,10,5" Name="BtnOpen" Content="{StaticResource CTX_OPEN_FILE}" Click="BtnOpen_Click"/>
+        </Grid>
+        <Grid Background="{StaticResource TextBackcolor}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <Path Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" 
+                      VerticalAlignment="Bottom" 
+                      HorizontalAlignment="Center"
+                      Margin="20,10" 
+                      StrokeThickness="0" 
+                      Stretch="Uniform" 
+                      Fill="{StaticResource ToolButtonMouseDisabledForecolor}"
+                      Width="32" Height="32"  
+                      Stroke="{StaticResource ToolButtonMouseDisabledForecolor}"
+                      Data="{StaticResource ri-file-download-line}"
+                      SnapsToDevicePixels="True"/>
+            <TextBlock Grid.Row="0" Grid.Column="1" x:Name="TxtFileName" 
+                           Text="sdfsdf" Margin="0,10,10,0" 
+                           FontSize="16" Foreground="{StaticResource HyperlinkForecolor}"/>
+            <TextBlock Grid.Row="1" Grid.Column="1" x:Name="TxtLocation" Text="sdfsdf" Margin="0,5,10,5"
+                           Foreground="{StaticResource ToolButtonMouseDisabledForecolor}"/>
+            <Path Grid.Column="0" Grid.Row="2" Grid.RowSpan="1" 
+                      VerticalAlignment="Bottom" 
+                      HorizontalAlignment="Center"
+                      Margin="20,0" 
+                      StrokeThickness="0" 
+                      Stretch="Uniform" 
+                      Fill="{StaticResource ToolButtonMouseDisabledForecolor}"
+                      Width="16" Height="16"  
+                      Stroke="{StaticResource ToolButtonMouseDisabledForecolor}"
+                      Data="{StaticResource ri-drag-drop-line}"
+                      SnapsToDevicePixels="True"
+                      Cursor="Hand"/>
+        </Grid>
+    </DockPanel>
+</Window>

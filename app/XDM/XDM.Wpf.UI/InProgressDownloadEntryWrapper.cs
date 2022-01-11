@@ -67,7 +67,8 @@ namespace XDM.Wpf.UI
 
         public DownloadStatus Status
         {
-            get => entry.Status; set
+            get => entry.Status;
+            set
             {
                 entry.Status = value;
                 OnPropertyChanged("Status");
@@ -76,7 +77,8 @@ namespace XDM.Wpf.UI
 
         public string DownloadSpeed
         {
-            get => entry.DownloadSpeed; set
+            get => entry.DownloadSpeed;
+            set
             {
                 entry.DownloadSpeed = value;
                 OnPropertyChanged("Status");
@@ -85,7 +87,8 @@ namespace XDM.Wpf.UI
 
         public string ETA
         {
-            get => entry.ETA; set
+            get => entry.ETA;
+            set
             {
                 entry.ETA = value;
                 OnPropertyChanged("Status");
@@ -102,7 +105,7 @@ namespace XDM.Wpf.UI
 
         private void OnPropertyChanged(string propName)
         {
-            PropertyChanged(this, new PropertyChangedEventArgs(propName));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
         }
     }
 }
