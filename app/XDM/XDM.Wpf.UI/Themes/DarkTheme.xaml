@@ -9,7 +9,8 @@
     <SolidColorBrush x:Key="ToolButtonMouseOverBackcolor" Color="#373D48"/>
     <SolidColorBrush x:Key="ToolButtonMousePressedBackcolor" Color="#333842"/>
     <SolidColorBrush x:Key="ToolButtonMouseDisabledForecolor" Color="#646464"/>
-    
+    <SolidColorBrush x:Key="ToolbarBordercolor" Color="#000000"/>
+
     <SolidColorBrush x:Key="SearchBorder" Color="#000000"/>
     
     <SolidColorBrush x:Key="ControlBackcolor" Color="#21252B"/>

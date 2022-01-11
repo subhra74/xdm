@@ -5,7 +5,13 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:XDM.Wpf.UI.Dialogs.NewDownload"
         mc:Ignorable="d"
-        Title="NewDownloadWindow" Height="300" Width="550" Topmost="True" WindowStartupLocation="CenterScreen">
+        Title="NewDownloadWindow" Height="300" Width="550" Topmost="True" WindowStartupLocation="CenterScreen"
+        Closed="Window_Closed">
+    <Window.Resources>
+        <ContextMenu x:Key="DownloadLaterContextMenu"></ContextMenu>
+        <MenuItem x:Key="DontAddToQueueMenuItem" Header="{StaticResource LBL_QUEUE_OPT3}"/>
+        <MenuItem x:Key="QueueAndSchedulerMenuItem" Header="{StaticResource DESC_Q_TITLE}"/>
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
@@ -31,19 +37,20 @@
                 <TextBox Grid.Row="0" Grid.Column="1" Margin="5" 
                          VerticalAlignment="Stretch" VerticalContentAlignment="Center" 
                          BorderBrush="{StaticResource ControlBordercolor}" 
-                         Background="{StaticResource NewDownloadTextBoxBackground}"/>
+                         Background="{StaticResource NewDownloadTextBoxBackground}"
+                         Name="TxtUrl"
+                         TextChanged="TxtUrl_TextChanged"/>
                 <TextBox Grid.Row="1" Grid.Column="1" Margin="5" VerticalAlignment="Stretch" VerticalContentAlignment="Center"
                          BorderBrush="{StaticResource ControlBordercolor}"
-                         Background="{StaticResource NewDownloadTextBoxBackground}"/>
+                         Background="{StaticResource NewDownloadTextBoxBackground}"
+                         Name="TxtFile"/>
                 <ComboBox Background="{StaticResource NewDownloadTextBoxBackground}" Grid.Row="2" Grid.Column="1" Margin="5" 
-                          VerticalAlignment="Stretch" VerticalContentAlignment="Center">
-                    <ComboBoxItem>One</ComboBoxItem>
-                    <ComboBoxItem>Two</ComboBoxItem>
-                    <ComboBoxItem>Three</ComboBoxItem>
+                          VerticalAlignment="Stretch" VerticalContentAlignment="Center"
+                          Name="CmbLocation" SelectionChanged="CmbLocation_SelectionChanged">
                 </ComboBox>
-                <TextBlock Grid.Row="3" Grid.Column="1" Text="{StaticResource ND_IGNORE_URL}" Margin="5,15" Cursor="Hand" />
+                <TextBlock Grid.Row="3" Grid.Column="1" Text="{StaticResource ND_IGNORE_URL}" Margin="5,15" Cursor="Hand" MouseDown="TextBlock_MouseDown" />
                 <TextBlock Grid.Row="0" Grid.Column="2" Grid.RowSpan="2" Margin="20"/>
-                <TextBlock Grid.Row="2" Grid.Column="2" Text="---" Margin="10"/>
+                <TextBlock Grid.Row="2" Grid.Column="2" Text="---" Margin="10" Name="TxtFileSize"/>
             </Grid>
         </Border>
         <Border Grid.Row="1" Background="{StaticResource ControlBackcolor}" BorderBrush="{StaticResource ControlBordercolor}" 
@@ -57,14 +64,17 @@
                 </Grid.ColumnDefinitions>
                 <Button Grid.Column="0" 
                         Padding="20,5"
-                        Name="btnAdvanced" Content="{StaticResource ND_MORE}"/>
+                        Name="btnAdvanced" Content="{StaticResource ND_MORE}"
+                        Click="btnAdvanced_Click"/>
                 <Button Grid.Column="2" 
                         Padding="20,5"
                         Margin="0,0,10,0"
-                        Name="btnDownloadLater" Content="{StaticResource ND_DOWNLOAD_LATER}"/>
+                        Name="btnDownloadLater" Content="{StaticResource ND_DOWNLOAD_LATER}"
+                        Click="btnDownloadLater_Click"/>
                 <Button Grid.Column="3" 
                         Padding="20,5"
-                        Name="btnDownload" Content="{StaticResource ND_DOWNLOAD_NOW}"/>
+                        Name="btnDownload" Content="{StaticResource ND_DOWNLOAD_NOW}"
+                        Click="btnDownload_Click"/>
             </Grid>
         </Border>
     </Grid>

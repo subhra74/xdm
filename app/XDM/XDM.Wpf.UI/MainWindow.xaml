@@ -132,7 +132,7 @@
             <MenuItem Name="menuBatchDownload" Foreground="{StaticResource ControlForecolor}"/>
         </ContextMenu>
     </Window.Resources>
-    <Border BorderBrush="{StaticResource ControlBordercolor}" 
+    <Border BorderBrush="{StaticResource ToolbarBordercolor}" 
             BorderThickness="{StaticResource MainContentBorderThickness}" SnapsToDevicePixels="True">
         <Grid>
             <Grid.ColumnDefinitions>
@@ -223,7 +223,7 @@
                 <Border  DockPanel.Dock="Top" 
                      Background="{StaticResource ControlBackcolor}" 
                      BorderThickness="0,0,0,1" 
-                     BorderBrush="{StaticResource ControlBordercolor}">
+                     BorderBrush="{StaticResource ToolbarBordercolor}">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -322,7 +322,7 @@
                     </Grid>
                 </Border>
                 <Border BorderThickness="0,1,0,0" 
-                    BorderBrush="{StaticResource ControlBordercolor}" 
+                    BorderBrush="{StaticResource ToolbarBordercolor}" 
                     DockPanel.Dock="Bottom" 
                     Background="{StaticResource StatusbarBackcolor}"
                     SnapsToDevicePixels="True"

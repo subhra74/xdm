@@ -300,7 +300,7 @@ namespace XDM.Wpf.UI
 
         public INewDownloadDialogSkeleton CreateNewDownloadDialog(bool empty)
         {
-            throw new NotImplementedException();
+            return new NewDownloadWindow() { IsEmpty = empty };
         }
 
         public INewVideoDownloadDialog CreateNewVideoDialog()
@@ -348,9 +348,14 @@ namespace XDM.Wpf.UI
             throw new NotImplementedException();
         }
 
-        public string GetUrlFromClipboard()
+        public string? GetUrlFromClipboard()
         {
-            throw new NotImplementedException();
+            var text = Clipboard.GetText();
+            if (XDM.Core.Lib.Util.Helpers.IsUriValid(text))
+            {
+                return text;
+            }
+            return null;
         }
 
         public AuthenticationInfo? PromtForCredentials(string message)
@@ -609,8 +614,7 @@ namespace XDM.Wpf.UI
 
         private void MenuNewDownload_Click(object sender, RoutedEventArgs e)
         {
-            var nw = new NewDownloadWindow();
-            nw.Show();
+            this.NewDownloadClicked?.Invoke(sender, e);
         }
 
         private void LvFinishedContextMenu_ContextMenuOpening(object sender, ContextMenuEventArgs e)

@@ -173,7 +173,7 @@
                                     Property="Background"
                                     Value="{StaticResource TextBackcolor}"/>
                             <Setter Property="Foreground"
-                                    Value="{StaticResource CategoryForegroundSelected}"/>
+                                    Value="{StaticResource ControlForecolor}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
