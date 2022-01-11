@@ -157,25 +157,23 @@ namespace XDM.Wpf.UI.Dialogs.NewDownload
 
         private void btnAdvanced_Click(object sender, RoutedEventArgs e)
         {
-            var dlg = new AdvancedDownloadOptionDialog();
-            dlg.Owner = this;
+            var dlg = new AdvancedDownloadOptionDialog
+            {
+                Authentication = Authentication,
+                Proxy = Proxy,
+                EnableSpeedLimit = EnableSpeedLimit,
+                SpeedLimit = SpeedLimit,
+                Owner = this
+            };
             var ret = dlg.ShowDialog(this);
-            MessageBox.Show("Ret " + ret);
-            ////dlg.Authentication = Authentication;
-            ////dlg.Proxy = Proxy;
-            ////dlg.Isspe = EnableSpeedLimit;
-            ////dlg.SpeedLimit = SpeedLimit;
-            //dlg.Show();
-            //this.IsEnabled = false;
-            //this.IsHitTestVisible = false;
-            //if (ret.HasValue && ret.Value)
-            //{
-            //    //Authentication = dlg.Authentication;
-            //    //Proxy = dlg.Proxy;
-            //    //EnableSpeedLimit = dlg.EnableSpeedLimit;
-            //    //SpeedLimit = dlg.SpeedLimit;
-            //}
-            //AdvancedDialogHelper.Show(ref authentication, ref proxy, ref enableSpeedLimit, ref speedLimit, this);
+
+            if (ret.HasValue && ret.Value)
+            {
+                Authentication = dlg.Authentication;
+                Proxy = dlg.Proxy;
+                EnableSpeedLimit = dlg.EnableSpeedLimit;
+                SpeedLimit = dlg.SpeedLimit;
+            }
         }
 
         private void TextBlock_MouseDown(object sender, MouseButtonEventArgs e)

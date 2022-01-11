@@ -16,6 +16,7 @@ using XDM.Core.Lib.Common;
 using XDM.Core.Lib.UI;
 using XDM.Core.Lib.Util;
 using XDM.Wpf.UI.Dialogs.NewDownload;
+using XDM.Wpf.UI.Dialogs.ProgressWindow;
 
 namespace XDM.Wpf.UI
 {
@@ -82,6 +83,8 @@ namespace XDM.Wpf.UI
             this.Loaded += MainWindow_Loaded;
 
             CreateMenuItems();
+
+            new DownloadProgressWindow().Show();
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)

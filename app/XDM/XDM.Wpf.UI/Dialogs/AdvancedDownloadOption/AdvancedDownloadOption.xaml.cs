@@ -12,13 +12,14 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Util;
+using XDM.Wpf.UI.Common;
 
 namespace XDM.Wpf.UI.Dialogs.AdvancedDownloadOption
 {
     /// <summary>
     /// Interaction logic for AdvancedDownloadOption.xaml
     /// </summary>
-    public partial class AdvancedDownloadOptionDialog : Window
+    public partial class AdvancedDownloadOptionDialog : Window, IDialog
     {
         public AdvancedDownloadOptionDialog()
         {
@@ -114,15 +115,17 @@ namespace XDM.Wpf.UI.Dialogs.AdvancedDownloadOption
             set => this.SpeedLimiter.IsSpeedLimitEnabled = value;
         }
 
+        public bool Result { get; set; } = false;
+
         private void BtnOK_Click(object sender, RoutedEventArgs e)
         {
-            DialogResult = true;
+            Result = true;
             Close();
         }
 
         private void BtnCancel_Click(object sender, RoutedEventArgs e)
         {
-            DialogResult = false;
+            Result = false;
             Close();
         }
 

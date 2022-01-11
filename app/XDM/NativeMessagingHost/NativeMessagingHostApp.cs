@@ -108,7 +108,7 @@ namespace NativeHost
                 Debug("XDM instance creating...1");
                 ProcessStartInfo psi = new()
                 {
-                    FileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "XDM.WinForm.UI.exe"),
+                    FileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "XDM.Wpf.UI.exe"),
                     UseShellExecute = true,
                     Arguments = "-m"
                 };

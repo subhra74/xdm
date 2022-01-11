@@ -22,6 +22,7 @@ namespace XDM.Wpf.UI.Dialogs.SpeedLimiter
         public SpeedLimiter()
         {
             InitializeComponent();
+            TxtSpeedLimit.Text = "0";
         }
 
         public bool IsSpeedLimitEnabled

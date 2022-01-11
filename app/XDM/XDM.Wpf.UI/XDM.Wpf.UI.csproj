@@ -12,6 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\BrowserMonitor\BrowserMonitor.csproj" />
     <ProjectReference Include="..\NativeMessagingHost\NativeMessagingHost.csproj" />
     <ProjectReference Include="..\Translations\Translations.csproj" />
     <ProjectReference Include="..\XDM.Common.UI\XDM.Common.UI.csproj" />

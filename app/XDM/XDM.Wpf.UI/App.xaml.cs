@@ -23,6 +23,10 @@ namespace XDM.Wpf.UI
                 win.Show();
             };
             app.AppUI = new XDMApp.AppWin(win, app);
+            app.StartClipboardMonitor();
+            app.StartScheduler();
+            app.StartNativeMessagingHost();
+            //appWin.Visible = !commandOptions.ContainsKey("-m");
             win.Show();
             Log.Debug("Application_Startup");
         }
