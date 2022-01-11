@@ -6,7 +6,7 @@
              xmlns:local="clr-namespace:XDM.Wpf.UI.Dialogs.SpeedLimiter"
              mc:Ignorable="d" 
              d:DesignHeight="400" d:DesignWidth="400">
-    <Grid>
+    <Grid Margin="10">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="auto"/>
@@ -16,12 +16,20 @@
             <RowDefinition Height="auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <CheckBox Name="ChkEnabled" Content="{StaticResource MENU_SPEED_LIMITER}" Grid.ColumnSpan="2"/>
-        <TextBlock Text="{StaticResource MSG_SPEED_LIMIT}" Grid.Row="1"/>
+        <CheckBox Name="ChkEnabled" 
+                  Margin="10"
+                  Content="{StaticResource MENU_SPEED_LIMITER}" 
+                  Grid.ColumnSpan="2" Checked="ChkEnabled_Checked"/>
+        <TextBlock Text="{StaticResource MSG_SPEED_LIMIT}" 
+                   Margin="10"
+                   Grid.Row="1"/>
         <TextBox Grid.Row="1" Grid.Column="1" 
+                 MinWidth="80"
+                 Margin="5,5"
                  Name="TxtSpeedLimit" TextWrapping="NoWrap" 
                  AcceptsReturn="False"
-                 IsReadOnly ="{Binding ElementName=ChkEnabled, Path=IsChecked}"
+                 VerticalContentAlignment="Center"
+                 IsReadOnly ="True"
                  PreviewTextInput="TxtSpeedLimit_PreviewTextInput"
                  DataObject.Pasting="TxtSpeedLimit_Pasting"/>
     </Grid>

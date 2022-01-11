@@ -16,6 +16,7 @@ using System.Windows.Shapes;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.UI;
 using XDM.Wpf.UI.Dialogs.AdvancedDownloadOption;
+using XDM.Wpf.UI.Win32;
 using XDMApp;
 
 namespace XDM.Wpf.UI.Dialogs.NewDownload
@@ -158,13 +159,15 @@ namespace XDM.Wpf.UI.Dialogs.NewDownload
         {
             var dlg = new AdvancedDownloadOptionDialog();
             dlg.Owner = this;
-            //dlg.Authentication = Authentication;
-            //dlg.Proxy = Proxy;
-            //dlg.Isspe = EnableSpeedLimit;
-            //dlg.SpeedLimit = SpeedLimit;
-            dlg.Show();
-            this.IsEnabled = false;
-            this.IsHitTestVisible = false;
+            var ret = dlg.ShowDialog(this);
+            MessageBox.Show("Ret " + ret);
+            ////dlg.Authentication = Authentication;
+            ////dlg.Proxy = Proxy;
+            ////dlg.Isspe = EnableSpeedLimit;
+            ////dlg.SpeedLimit = SpeedLimit;
+            //dlg.Show();
+            //this.IsEnabled = false;
+            //this.IsHitTestVisible = false;
             //if (ret.HasValue && ret.Value)
             //{
             //    //Authentication = dlg.Authentication;

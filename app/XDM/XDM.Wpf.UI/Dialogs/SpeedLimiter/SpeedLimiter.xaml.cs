@@ -63,5 +63,10 @@ namespace XDM.Wpf.UI.Dialogs.SpeedLimiter
                 e.CancelCommand();
             }
         }
+
+        private void ChkEnabled_Checked(object sender, RoutedEventArgs e)
+        {
+            TxtSpeedLimit.IsReadOnly = !(ChkEnabled.IsChecked ?? false);
+        }
     }
 }

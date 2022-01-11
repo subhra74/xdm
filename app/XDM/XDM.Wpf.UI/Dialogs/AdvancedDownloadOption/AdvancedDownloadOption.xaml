@@ -4,9 +4,10 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:XDM.Wpf.UI.Dialogs.AdvancedDownloadOption"
+        xmlns:uc="clr-namespace:XDM.Wpf.UI.Dialogs.SpeedLimiter"
         mc:Ignorable="d"
-        Title="AdvancedDownloadOption" Height="450" Width="640" WindowStartupLocation="CenterScreen">
-    <Grid>
+        Title="AdvancedDownloadOption" Height="450" Width="450" WindowStartupLocation="CenterScreen">
+    <Grid Margin="10">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="auto"/>
@@ -18,13 +19,119 @@
         </Grid.RowDefinitions>
         <TabControl Grid.ColumnSpan="3">
             <TabItem Header="{StaticResource ND_AUTH}">
+                <Grid Margin="20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Margin="10" Grid.Row="0" Grid.Column="0" Text="{StaticResource DESC_USER}"/>
+                    <TextBlock Margin="10" Grid.Row="1" Grid.Column="0" Text="{StaticResource DESC_PASS}"/>
+                    <TextBox Name="TxtUserName" 
+                             Grid.Row="0" Grid.Column="1" 
+                             Margin="5"
+                             TextWrapping="NoWrap" 
+                             AcceptsReturn="False"
+                             VerticalAlignment="Stretch" 
+                             VerticalContentAlignment="Center"/>
+                    <TextBox Name="TxtPassword" 
+                             Grid.Row="1" Grid.Column="1"
+                             Margin="5"
+                             TextWrapping="NoWrap" 
+                             AcceptsReturn="False"
+                             VerticalAlignment="Stretch" 
+                             VerticalContentAlignment="Center"/>
+                    <CheckBox Name="ChkRememberAuth"
+                              Grid.Row="2" Grid.Column="0" 
+                              Grid.ColumnSpan="2" 
+                              Margin="10"
+                              Content="{StaticResource ND_AUTH_REMEMBER}"/>
+                </Grid>
             </TabItem>
             <TabItem Header="{StaticResource DESC_NET4}">
+                <Grid Margin="15">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Grid.Column="0"
+                        Text="{StaticResource DESC_NET4}"
+                               Margin="5,10"/>
+                    <TextBlock Grid.Row="1" Grid.Column="0"
+                        Text="{StaticResource PROXY_HOST}"
+                               Margin="5,10"/>
+                    <TextBlock Grid.Row="2" Grid.Column="0"
+                        Text="{StaticResource PROXY_PORT}"
+                               Margin="5,10"/>
+                    <TextBlock Grid.Row="3" Grid.Column="0"
+                        Text="{StaticResource DESC_NET7}"
+                               Margin="5,10"/>
+                    <TextBlock Grid.Row="4" Grid.Column="0"
+                        Text="{StaticResource DESC_NET8}"
+                               Margin="5,10"/>
+                    <ComboBox Grid.Row="0" Grid.Column="1" 
+                              Margin="5" Grid.ColumnSpan="3"
+                              Name="CmbProxyType" SelectionChanged="CmbProxyType_SelectionChanged">
+                        <ComboBoxItem Content="{StaticResource NET_SYSTEM_PROXY}"/>
+                        <ComboBoxItem Content="{StaticResource ND_NO_PROXY}"/>
+                        <ComboBoxItem Content="{StaticResource ND_MANUAL_PROXY}"/>
+                    </ComboBox>
+                    <TextBox Name="TxtProxyHost" 
+                             Grid.Row="1" Grid.Column="1"
+                             Margin="5"
+                             TextWrapping="NoWrap" 
+                             AcceptsReturn="False"
+                             VerticalAlignment="Stretch" 
+                             VerticalContentAlignment="Center"/>
+                    <TextBox Name="TxtProxyPort" 
+                             Grid.Row="2" Grid.Column="1"
+                             Margin="5"
+                             TextWrapping="NoWrap" 
+                             AcceptsReturn="False"
+                             VerticalAlignment="Stretch" 
+                             VerticalContentAlignment="Center"/>
+                    <TextBox Name="TxtProxyUser" 
+                             Grid.Row="3" Grid.Column="1"
+                             Margin="5"
+                             TextWrapping="NoWrap" 
+                             AcceptsReturn="False"
+                             VerticalAlignment="Stretch" 
+                             VerticalContentAlignment="Center"/>
+                    <TextBox Name="TxtProxyPassword" 
+                             Grid.Row="4" Grid.Column="1"
+                             Margin="5"
+                             TextWrapping="NoWrap" 
+                             AcceptsReturn="False"
+                             VerticalAlignment="Stretch" 
+                             VerticalContentAlignment="Center"/>
+                    <StackPanel Grid.Column="0" Grid.Row="5" Margin="5" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" >
+                        <Button Name="BtnSystemProxy" Margin="0,10,0,0" Padding="5"  
+                                Content="{StaticResource ND_SYSTEM_PROXY}"
+                                Click="BtnSystemProxy_Click"/>
+                    </StackPanel>
+                </Grid>
             </TabItem>
             <TabItem Header="{StaticResource MENU_SPEED_LIMITER}">
+                <uc:SpeedLimiter x:Name="SpeedLimiter"/>
             </TabItem>
         </TabControl>
-        <Button Grid.Column="1" Grid.Row="1" Content="{StaticResource MSG_OK}" Margin="10"/>
-        <Button Grid.Column="2" Grid.Row="1" Content="{StaticResource ND_CANCEL}" Margin="10"/>
+        <Button Padding="20,5" Name="BtnOK" Grid.Column="1" Grid.Row="1" 
+                Content="{StaticResource MSG_OK}" Margin="0,10,0,0" Click="BtnOK_Click"/>
+        <Button Padding="15,5" Name="BtnCancel" Grid.Column="2" Grid.Row="1" 
+                Content="{StaticResource ND_CANCEL}" Margin="10,10,0,0" Click="BtnCancel_Click"/>
     </Grid>
 </Window>
