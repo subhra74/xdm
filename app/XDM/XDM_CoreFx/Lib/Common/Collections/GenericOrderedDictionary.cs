@@ -19,7 +19,10 @@ namespace XDM.Core.Lib.Common.Collections
             {
                 lock (this)
                 {
-                    keys.Add(key);
+                    if (!dict.ContainsKey(key))
+                    {
+                        keys.Add(key);
+                    }
                     dict[key] = value;
                 }
             }
@@ -46,7 +49,10 @@ namespace XDM.Core.Lib.Common.Collections
         {
             lock (this)
             {
-                keys.Add(key);
+                if (!dict.ContainsKey(key))
+                {
+                    keys.Add(key);
+                }
                 dict[key] = value;
             }
         }
