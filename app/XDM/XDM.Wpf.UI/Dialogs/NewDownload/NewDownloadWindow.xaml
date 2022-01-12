@@ -51,7 +51,6 @@
                 <TextBlock Grid.Row="3" Grid.Column="1" Text="{StaticResource ND_IGNORE_URL}" Margin="5,15" 
                            Cursor="Hand" MouseDown="TextBlock_MouseDown" Foreground="{StaticResource HyperlinkForecolor}"
                            />
-                <TextBlock Grid.Row="0" Grid.Column="2" Grid.RowSpan="2" Margin="20"/>
                 <Path Grid.Column="2" Grid.Row="0" Grid.RowSpan="2" 
                       VerticalAlignment="Bottom" 
                       HorizontalAlignment="Center"

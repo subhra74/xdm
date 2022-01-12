@@ -10,32 +10,32 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using Translations;
+using XDM.Core.Lib.Common;
 using XDM.Wpf.UI.Common;
 using XDM.Wpf.UI.Win32;
 
-namespace XDM.Wpf.UI.Dialogs.DeleteConfirm
+namespace XDM.Wpf.UI.Dialogs.CredentialDialog
 {
     /// <summary>
-    /// Interaction logic for DeleteConfirmDialog.xaml
+    /// Interaction logic for CredentialsPromptDialog.xaml
     /// </summary>
-    public partial class DeleteConfirmDialog : Window, IDialog
+    public partial class CredentialsPromptDialog : Window, IDialog
     {
+        public AuthenticationInfo? Credentials => new AuthenticationInfo
+        {
+            UserName = TxtUserName.Text,
+            Password = TxtPassword.Password
+        };
+
         public bool Result { get; set; } = false;
 
-        public DeleteConfirmDialog()
+        public string PromptText { set => TxtMessage.Text = value; }
+
+        public CredentialsPromptDialog()
         {
             InitializeComponent();
         }
-
-        public string DescriptionText
-        {
-            set
-            {
-                TxtLabel.Text = value;
-            }
-        }
-
-        public bool ShouldDeleteFile => ChkDiskDel.IsChecked ?? false;
 
         protected override void OnSourceInitialized(EventArgs e)
         {
@@ -43,8 +43,14 @@ namespace XDM.Wpf.UI.Dialogs.DeleteConfirm
             NativeMethods.DisableMinMaxButton(this);
         }
 
-        private void BtnDelete_Click(object sender, RoutedEventArgs e)
+        private void BtnOk_Click(object sender, RoutedEventArgs e)
         {
+            if (string.IsNullOrEmpty(TxtUserName.Text))
+            {
+                MessageBox.Show(this, TextResource.GetText("MSG_NO_USERNAME"));
+                return;
+            }
+
             Result = true;
             Close();
         }

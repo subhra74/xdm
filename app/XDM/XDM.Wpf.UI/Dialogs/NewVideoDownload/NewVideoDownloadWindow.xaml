@@ -1,0 +1,74 @@
+﻿<Window x:Class="XDM.Wpf.UI.Dialogs.NewVideoDownload.NewVideoDownloadWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:XDM.Wpf.UI.Dialogs.NewVideoDownload"
+        mc:Ignorable="d"
+        Title="{StaticResource ND_TITLE}" Height="250" Width="500" Topmost="True" WindowStartupLocation="CenterScreen"
+        Closed="Window_Closed">
+    <DockPanel>
+        <Border DockPanel.Dock="Bottom" Grid.Row="1" 
+                Background="{StaticResource ControlBackcolor}" BorderBrush="{StaticResource ControlBordercolor}" 
+                BorderThickness="0,1,0,0">
+            <Grid Margin="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0" 
+                        Padding="20,5"
+                        Name="btnAdvanced" Content="{StaticResource ND_MORE}"
+                        Click="btnAdvanced_Click"/>
+                <Button Grid.Column="2" 
+                        Padding="20,5"
+                        Margin="0,0,10,0"
+                        Name="btnDownloadLater" Content="{StaticResource ND_DOWNLOAD_LATER}"
+                        Click="btnDownloadLater_Click"/>
+                <Button Grid.Column="3" 
+                        Padding="20,5"
+                        Name="btnDownload" Content="{StaticResource ND_DOWNLOAD_NOW}"
+                        Click="btnDownload_Click"/>
+            </Grid>
+        </Border>
+        <Border Padding="10,20" Background="{StaticResource ListViewBackcolor}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Text="{StaticResource LBL_NEW_QUEUE}" Margin="20,10,10,10" HorizontalAlignment="Right"/>
+                <TextBlock Grid.Row="1" Text="{StaticResource LBL_SAVE_IN}" Margin="20,10,10,5" HorizontalAlignment="Right"/>
+                <TextBox Grid.Row="0" Grid.Column="1" Margin="5" VerticalAlignment="Stretch" VerticalContentAlignment="Center"
+                         BorderBrush="{StaticResource ControlBordercolor}"
+                         Background="{StaticResource NewDownloadTextBoxBackground}"
+                         Name="TxtFile"/>
+                <ComboBox Background="{StaticResource NewDownloadTextBoxBackground}" Grid.Row="1" Grid.Column="1" Margin="5,5,5,0" 
+                          VerticalAlignment="Stretch" VerticalContentAlignment="Center"
+                          Name="CmbLocation" SelectionChanged="CmbLocation_SelectionChanged">
+                </ComboBox>
+                <Path Grid.Column="2" Grid.Row="0" Grid.RowSpan="2" 
+                      VerticalAlignment="Bottom" 
+                      HorizontalAlignment="Center"
+                      Margin="20,0,20,10" 
+                      StrokeThickness="0" 
+                      Stretch="Uniform" 
+                      Fill="{StaticResource ToolButtonMouseDisabledForecolor}"
+                      Width="32" Height="32"  
+                      Stroke="{StaticResource ToolButtonMouseDisabledForecolor}"
+                      Data="{StaticResource ri-file-download-line}"
+                      SnapsToDevicePixels="True"/>
+                <TextBlock Grid.Row="2" Grid.Column="2" Text="---" Margin="10,0,10,0" Name="TxtFileSize" 
+                           HorizontalAlignment="Center" VerticalAlignment="Top"/>
+            </Grid>
+        </Border>
+    </DockPanel>
+</Window>

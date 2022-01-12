@@ -18,8 +18,10 @@ using XDM.Core.Lib.Common;
 using XDM.Core.Lib.UI;
 using XDM.Core.Lib.Util;
 using XDM.Wpf.UI.Dialogs.CompletedDialog;
+using XDM.Wpf.UI.Dialogs.CredentialDialog;
 using XDM.Wpf.UI.Dialogs.DeleteConfirm;
 using XDM.Wpf.UI.Dialogs.NewDownload;
+using XDM.Wpf.UI.Dialogs.NewVideoDownload;
 using XDM.Wpf.UI.Dialogs.ProgressWindow;
 using XDM.Wpf.UI.Win32;
 
@@ -312,6 +314,7 @@ namespace XDM.Wpf.UI
 
         public INewDownloadDialogSkeleton CreateNewDownloadDialog(bool empty)
         {
+            new NewVideoDownloadWindow().Show();
             return new NewDownloadWindow() { IsEmpty = empty };
         }
 
@@ -379,7 +382,7 @@ namespace XDM.Wpf.UI
         public string? GetUrlFromClipboard()
         {
             var text = Clipboard.GetText();
-            if (XDM.Core.Lib.Util.Helpers.IsUriValid(text))
+            if (Helpers.IsUriValid(text))
             {
                 return text;
             }
@@ -388,7 +391,13 @@ namespace XDM.Wpf.UI
 
         public AuthenticationInfo? PromtForCredentials(string message)
         {
-            throw new NotImplementedException();
+            var dlg = new CredentialsPromptDialog { PromptText = message ?? "Authentication required", Owner = this };
+            var ret = dlg.ShowDialog(this);
+            if (ret.HasValue && ret.Value)
+            {
+                return dlg.Credentials;
+            }
+            return null;
         }
 
         public void ShowUpdateAvailableNotification()

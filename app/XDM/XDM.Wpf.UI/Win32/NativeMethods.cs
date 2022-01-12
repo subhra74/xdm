@@ -35,5 +35,27 @@ namespace XDM.Wpf.UI.Win32
 
         [DllImport("user32.dll")]
         private static extern bool EnableWindow(IntPtr hWnd, bool bEnable);
+
+        [DllImport("user32.dll")]
+        private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+        [DllImport("user32.dll")]
+        private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+
+        private const int GWL_STYLE = -16;
+        private const int WS_MAXIMIZEBOX = 0x10000;
+        private const int WS_MINIMIZEBOX = 0x20000;
+
+        public static void DisableMaxButton(Window window)
+        {
+            var hwnd = new WindowInteropHelper(window).Handle;
+            var value = GetWindowLong(hwnd, GWL_STYLE);
+            SetWindowLong(hwnd, GWL_STYLE, (int)(value & ~WS_MAXIMIZEBOX));
+        }
+        public static void DisableMinMaxButton(Window window)
+        {
+            var hwnd = new WindowInteropHelper(window).Handle;
+            var value = GetWindowLong(hwnd, GWL_STYLE);
+            SetWindowLong(hwnd, GWL_STYLE, (int)(value & ~WS_MAXIMIZEBOX & ~WS_MINIMIZEBOX));
+        }
     }
 }

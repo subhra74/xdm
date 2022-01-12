@@ -37,7 +37,7 @@ namespace XDM.Wpf.UI.Dialogs.AdvancedDownloadOption
                 return new AuthenticationInfo
                 {
                     UserName = TxtUserName.Text,
-                    Password = TxtPassword.Text
+                    Password = TxtPassword.Password
                 };
             }
             set
@@ -45,7 +45,7 @@ namespace XDM.Wpf.UI.Dialogs.AdvancedDownloadOption
                 if (value.HasValue)
                 {
                     TxtUserName.Text = value.Value.UserName;
-                    TxtPassword.Text = value.Value.Password;
+                    TxtPassword.Password = value.Value.Password;
                 }
             }
         }

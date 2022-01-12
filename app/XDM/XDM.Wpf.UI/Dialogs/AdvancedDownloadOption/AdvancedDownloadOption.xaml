@@ -6,7 +6,8 @@
         xmlns:local="clr-namespace:XDM.Wpf.UI.Dialogs.AdvancedDownloadOption"
         xmlns:uc="clr-namespace:XDM.Wpf.UI.Dialogs.SpeedLimiter"
         mc:Ignorable="d"
-        Title="AdvancedDownloadOption" Height="450" Width="450" WindowStartupLocation="CenterScreen">
+        Title="AdvancedDownloadOption" Height="450" Width="450" 
+        WindowStartupLocation="CenterScreen" ShowInTaskbar="False">
     <Grid Margin="10">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
@@ -39,11 +40,9 @@
                              AcceptsReturn="False"
                              VerticalAlignment="Stretch" 
                              VerticalContentAlignment="Center"/>
-                    <TextBox Name="TxtPassword" 
+                    <PasswordBox Name="TxtPassword" 
                              Grid.Row="1" Grid.Column="1"
                              Margin="5"
-                             TextWrapping="NoWrap" 
-                             AcceptsReturn="False"
                              VerticalAlignment="Stretch" 
                              VerticalContentAlignment="Center"/>
                     <CheckBox Name="ChkRememberAuth"

@@ -191,3 +191,4 @@ MSG_ALREADY_RUNNING=An old version of XDM is already running
 MSG_BROWSER_LAUNCH_FAILED=Unable to launch
 MSG_NATIVE_HOST_FAILED=Error installing native host
 MSG_DONT_SHOW_AGAIN=Don't show this again
+MSG_NO_USERNAME=User name request
