@@ -17,10 +17,12 @@
             <TextBlock Grid.Column="0" x:Name="TxtDontShowCompleteDialog" 
                        MouseDown="TxtDontShowCompleteDialog_MouseDown" 
                        Text="{StaticResource MSG_DONT_SHOW_AGAIN}" 
+                       Margin="10,0,0,0"
+                       VerticalAlignment="Center"
                        Cursor="Hand" 
                        Foreground="{StaticResource HyperlinkForecolor}"/>
-            <Button Grid.Column="2" Padding="15,5" Margin="10,5" Name="BtnOpenFolder" Content="{StaticResource CTX_OPEN_FOLDER}"/>
-            <Button Grid.Column="3" Padding="15,5" Margin="0,5,10,5" Name="BtnOpen" Content="{StaticResource CTX_OPEN_FILE}" Click="BtnOpen_Click"/>
+            <Button Grid.Column="2" Padding="10,5" Margin="0,5,10,5" Name="BtnOpenFolder" Content="{StaticResource CTX_OPEN_FOLDER}"/>
+            <Button Grid.Column="3" Padding="25,5" Margin="0,5,10,5" Name="BtnOpen" Content="{StaticResource CTX_OPEN_FILE}" Click="BtnOpen_Click"/>
         </Grid>
         <Grid Background="{StaticResource TextBackcolor}">
             <Grid.ColumnDefinitions>
