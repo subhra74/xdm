@@ -476,11 +476,6 @@ namespace XDM.Wpf.UI
             throw new NotImplementedException();
         }
 
-        private void BtnNew_Click(object sender, RoutedEventArgs e)
-        {
-
-        }
-
         public IQueueSelectionDialog CreateQueueSelectionDialog()
         {
             throw new NotImplementedException();
@@ -526,9 +521,31 @@ namespace XDM.Wpf.UI
             lvFinished.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
         }
 
+        private void BtnMenu_Click(object sender, RoutedEventArgs e)
+        {
+            var nctx = (ContextMenu)FindResource("ctxMainMenu");
+            if (nctx.Placement != PlacementMode.Bottom || nctx.PlacementTarget != BtnMenu)
+            {
+                nctx.Placement = PlacementMode.Bottom;
+                nctx.PlacementTarget = BtnMenu;
+            }
+            nctx.IsOpen = true;
+        }
+
+        private void ctxMainMenu_LayoutUpdated(object sender, EventArgs e)
+        {
+            var ctx = (ContextMenu)FindResource("ctxMainMenu");
+            if (ctx.HorizontalOffset != 0) return;
+            ctx.HorizontalOffset = BtnMenu.ActualWidth - ctx.ActualWidth;
+        }
+
+        private void menuExit_Click(object sender, RoutedEventArgs e)
+        {
+            Environment.Exit(0);
+        }
+
         private void lvInProgress_Click(object sender, RoutedEventArgs e)
         {
-
             GridViewColumnHeader column = (GridViewColumnHeader)e.OriginalSource;
             string sortBy = (string)column.Tag;
             if (string.IsNullOrEmpty(sortBy))

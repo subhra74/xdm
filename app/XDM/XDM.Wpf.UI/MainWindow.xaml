@@ -6,8 +6,33 @@
         xmlns:local="clr-namespace:XDM.Wpf.UI"
         DataContext="{Binding RelativeSource={RelativeSource Self}}"
         mc:Ignorable="d"
-        Title="MainWindow" Height="500" Width="800" WindowStartupLocation="CenterScreen">
+        Title="Xtreme Download Manager" Height="500" Width="800" WindowStartupLocation="CenterScreen">
     <Window.Resources>
+        <ContextMenu x:Key="ctxMainMenu" x:Name="ctxMainMenu" 
+                     LayoutUpdated="ctxMainMenu_LayoutUpdated">
+            <MenuItem Name="menuSettings" Header="{StaticResource TITLE_SETTINGS}" 
+                      Foreground="{StaticResource ControlForecolor}"/>
+            <MenuItem Name="menuClearFinished" Header="{StaticResource MENU_DELETE_COMPLETED}" 
+                      Foreground="{StaticResource ControlForecolor}"/>
+            <MenuItem Name="menuExport" Header="{StaticResource MENU_EXPORT}" 
+                      Foreground="{StaticResource ControlForecolor}"/>
+            <MenuItem Name="menuImport" Header="{StaticResource MENU_IMPORT}" 
+                      Foreground="{StaticResource ControlForecolor}"/>
+            <MenuItem Name="menuLanguage" Header="{StaticResource MENU_LANG}" 
+                      Foreground="{StaticResource ControlForecolor}"/>
+            <MenuItem Name="menuBrowserMonitor" Header="{StaticResource SETTINGS_MONITORING}" 
+                      Foreground="{StaticResource ControlForecolor}"/>
+            <MenuItem Name="menuHelpAndSupport" Header="{StaticResource LBL_SUPPORT_PAGE}" 
+                      Foreground="{StaticResource ControlForecolor}"/>
+            <MenuItem Name="menuReportProblem" Header="{StaticResource LBL_REPORT_PROBLEM}" 
+                      Foreground="{StaticResource ControlForecolor}"/>
+            <MenuItem Name="menuCheckForUpdate" Header="{StaticResource MENU_UPDATE}" 
+                      Foreground="{StaticResource ControlForecolor}"/>
+            <MenuItem Name="menuAbout" Header="{StaticResource MENU_ABOUT}" 
+                      Foreground="{StaticResource ControlForecolor}"/>
+            <MenuItem Name="menuExit" Header="{StaticResource MENU_EXIT}" 
+                      Foreground="{StaticResource ControlForecolor}" Click="menuExit_Click"/>
+        </ContextMenu>
         <ContextMenu x:Key="lvInProgressContextMenu"></ContextMenu>
         <ContextMenu x:Key="lvFinishedContextMenu"></ContextMenu>
         <ControlTemplate x:Key="ToolbarButtonTemplate" TargetType="{x:Type Button}">
@@ -316,8 +341,24 @@
                                 </Grid>
                             </Border>
                         </StackPanel>
-                        <Button Grid.Column="2" Padding="15,15" Margin="2,0,0,0" 
-                            Template="{StaticResource ToolbarButtonTemplateIconOnly}" Tag="{StaticResource ri-menu-line}" >
+                        <Button Name="BtnMenu" Grid.Column="2" Padding="15,15" Margin="2,0,0,0" 
+                            Template="{StaticResource ToolbarButtonTemplateIconOnly}" Tag="{StaticResource ri-menu-line}" 
+                                Click="BtnMenu_Click">
+                            <!--<Button.ContextMenu>
+                                <ContextMenu x:Name="ctxMainMenu" Width="250">
+                                    <MenuItem Name="menuSettings" Header="{StaticResource TITLE_SETTINGS}" Foreground="{StaticResource ControlForecolor}"/>
+                                    <MenuItem Name="menuClearFinished" Header="{StaticResource MENU_DELETE_COMPLETED}" Foreground="{StaticResource ControlForecolor}"/>
+                                    <MenuItem Name="menuExport" Header="{StaticResource MENU_EXPORT}" Foreground="{StaticResource ControlForecolor}"/>
+                                    <MenuItem Name="menuImport" Header="{StaticResource MENU_IMPORT}" Foreground="{StaticResource ControlForecolor}"/>
+                                    <MenuItem Name="menuLanguage" Header="{StaticResource MENU_LANG}" Foreground="{StaticResource ControlForecolor}"/>
+                                    <MenuItem Name="menuBrowserMonitor" Header="{StaticResource SETTINGS_MONITORING}" Foreground="{StaticResource ControlForecolor}"/>
+                                    <MenuItem Name="menuHelpAndSupport" Header="{StaticResource LBL_SUPPORT_PAGE}" Foreground="{StaticResource ControlForecolor}"/>
+                                    <MenuItem Name="menuReportProblem" Header="{StaticResource LBL_REPORT_PROBLEM}" Foreground="{StaticResource ControlForecolor}"/>
+                                    <MenuItem Name="menuCheckForUpdate" Header="{StaticResource MENU_UPDATE}" Foreground="{StaticResource ControlForecolor}"/>
+                                    <MenuItem Name="menuAbout" Header="{StaticResource MENU_ABOUT}" Foreground="{StaticResource ControlForecolor}"/>
+                                    <MenuItem Name="menuExit" Header="{StaticResource MENU_EXIT}" Foreground="{StaticResource ControlForecolor}" Click="menuExit_Click"/>
+                                </ContextMenu>
+                            </Button.ContextMenu>-->
                         </Button>
                     </Grid>
                 </Border>
@@ -445,7 +486,7 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Width="60">
+                                <GridViewColumn Width="80">
                                     <GridViewColumn.Header>
                                         <GridViewColumnHeader Tag="DateAdded" Name="lvInProgress_DateAdded">
                                             <TextBlock>Date</TextBlock>
