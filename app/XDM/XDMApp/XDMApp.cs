@@ -253,7 +253,6 @@ namespace XDMApp
                     activeProgressWindows[download.Id] = prgWin;
                     prgWin.FileNameText = download.TargetFileName;
                     prgWin.FileSizeText = string.Empty;
-                    activeProgressWindows[download.Id] = prgWin;
                     prgWin.ShowProgressWindow();
                 }
 
@@ -702,13 +701,7 @@ namespace XDMApp
                 DetachEventHandlers(http);
                 AppUI.DownloadFinished(http.Id, http.FileSize < 0 ? new FileInfo(http.TargetFile).Length : http.FileSize, http.TargetFile);
 
-                if (activeProgressWindows.ContainsKey(http.Id))
-                {
-                    var prgWin = activeProgressWindows[http.Id];
-                    activeProgressWindows.Remove(http.Id);
-                    prgWin.Destroy();
-                }
-
+                var showCompleteDialog = false;
                 if (liveDownloads.ContainsKey(http.Id))
                 {
                     (_, bool nonInteractive) = liveDownloads[http.Id];
@@ -716,8 +709,21 @@ namespace XDMApp
 
                     if (!nonInteractive && Config.Instance.ShowDownloadCompleteWindow)
                     {
-                        AppUI.ShowDownloadCompleteDialog(http.TargetFileName, Path.GetDirectoryName(http.TargetFile));
+                        showCompleteDialog = true;
                     }
+                }
+
+                if (activeProgressWindows.ContainsKey(http.Id))
+                {
+                    var prgWin = activeProgressWindows[http.Id];
+                    activeProgressWindows.Remove(http.Id);
+                    prgWin.DownloadId = null;
+                    prgWin.Destroy();
+                }
+
+                if (showCompleteDialog)
+                {
+                    AppUI.ShowDownloadCompleteDialog(http.TargetFileName, Path.GetDirectoryName(http.TargetFile));
                 }
 
                 if (Config.Instance.ScanWithAntiVirus)

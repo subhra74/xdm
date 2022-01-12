@@ -173,7 +173,10 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
 
         private void StopDownload(bool close)
         {
-            App?.StopDownloads(new List<string> { downloadId }, close);
+            if (downloadId != null)
+            {
+                App?.StopDownloads(new List<string> { downloadId }, close);
+            }
         }
 
         private Action<string> actSpeedUpdate, actEtaUpdate, actStatusUpdate;
