@@ -1,6 +1,8 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Windows;
@@ -16,8 +18,10 @@ using XDM.Core.Lib.Common;
 using XDM.Core.Lib.UI;
 using XDM.Core.Lib.Util;
 using XDM.Wpf.UI.Dialogs.CompletedDialog;
+using XDM.Wpf.UI.Dialogs.DeleteConfirm;
 using XDM.Wpf.UI.Dialogs.NewDownload;
 using XDM.Wpf.UI.Dialogs.ProgressWindow;
+using XDM.Wpf.UI.Win32;
 
 namespace XDM.Wpf.UI
 {
@@ -283,14 +287,22 @@ namespace XDM.Wpf.UI
             lvFinished.SelectedIndex = -1;
         }
 
-        public bool Confirm(object window, string text)
+        public bool Confirm(object? window, string text)
         {
-            return MessageBox.Show((Window)window, text, "XDM", MessageBoxButton.YesNo) == MessageBoxResult.Yes;
+            return MessageBox.Show((Window)(window ?? this), text, "XDM", MessageBoxButton.YesNo) == MessageBoxResult.Yes;
         }
 
         public void ConfirmDelete(string text, out bool approved, out bool deleteFiles)
         {
-            throw new NotImplementedException();
+            DeleteConfirmDialog dc = new() { DescriptionText = text, Owner = this };
+            approved = false;
+            deleteFiles = false;
+            bool? ret = dc.ShowDialog(this);
+            if (ret.HasValue && ret.Value)
+            {
+                approved = true;
+                deleteFiles = dc.ShouldDeleteFile;
+            }
         }
 
         public IDownloadCompleteDialog CreateDownloadCompleteDialog(IApp app)
@@ -340,17 +352,28 @@ namespace XDM.Wpf.UI
 
         public void DeleteAllFinishedDownloads()
         {
-            throw new NotImplementedException();
+            if (MessageBox.Show(this, TextResource.GetText("MENU_DELETE_COMPLETED"), "XDM", MessageBoxButton.YesNo)
+                != MessageBoxResult.Yes)
+            {
+                return;
+            }
+            finishedList.Clear();
         }
 
         public void Delete(IEnumerable<IInProgressDownloadRow> rows)
         {
-            throw new NotImplementedException();
+            foreach (var row in rows)
+            {
+                inProgressList.Remove((InProgressDownloadEntryWrapper)row);
+            }
         }
 
         public void Delete(IEnumerable<IFinishedDownloadRow> rows)
         {
-            throw new NotImplementedException();
+            foreach (var row in rows)
+            {
+                finishedList.Remove((FinishedDownloadEntryWrapper)row);
+            }
         }
 
         public string? GetUrlFromClipboard()
@@ -388,7 +411,17 @@ namespace XDM.Wpf.UI
 
         public string SaveFileDialog(string initialPath)
         {
-            throw new NotImplementedException();
+            var fc = new SaveFileDialog();
+            if (!string.IsNullOrEmpty(initialPath))
+            {
+                fc.FileName = initialPath;
+            }
+            var ret = fc.ShowDialog();
+            if (ret.HasValue && ret.Value)
+            {
+                return fc.FileName;
+            }
+            return null;
         }
 
         public void ShowRefreshLinkDialog(InProgressDownloadEntry entry, IApp app)
@@ -398,12 +431,14 @@ namespace XDM.Wpf.UI
 
         public void SetClipboardText(string text)
         {
-            throw new NotImplementedException();
+            Clipboard.SetText(text);
         }
 
         public void SetClipboardFile(string file)
         {
-            throw new NotImplementedException();
+            var sc = new StringCollection();
+            sc.Add(file);
+            Clipboard.SetFileDropList(sc);
         }
 
         public void ShowPropertiesDialog(BaseDownloadEntry ent, ShortState state)
