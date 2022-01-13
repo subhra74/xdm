@@ -19,7 +19,7 @@
             <MenuItem Name="menuImport" Header="{StaticResource MENU_IMPORT}" 
                       Foreground="{StaticResource ControlForecolor}"/>
             <MenuItem Name="menuLanguage" Header="{StaticResource MENU_LANG}" 
-                      Foreground="{StaticResource ControlForecolor}"/>
+                      Foreground="{StaticResource ControlForecolor}" Click="menuLanguage_Click"/>
             <MenuItem Name="menuBrowserMonitor" Header="{StaticResource SETTINGS_MONITORING}" 
                       Foreground="{StaticResource ControlForecolor}"/>
             <MenuItem Name="menuHelpAndSupport" Header="{StaticResource LBL_SUPPORT_PAGE}" 

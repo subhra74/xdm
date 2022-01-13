@@ -8,7 +8,7 @@ namespace XDM.Core.Lib.Common
 {
     public interface IRefreshLinkDialogSkeleton
     {
-        event EventHandler WatchingStopped;
+        event EventHandler? WatchingStopped;
 
         void ShowWindow();
 

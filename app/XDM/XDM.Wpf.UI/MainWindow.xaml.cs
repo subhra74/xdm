@@ -20,9 +20,11 @@ using XDM.Core.Lib.Util;
 using XDM.Wpf.UI.Dialogs.CompletedDialog;
 using XDM.Wpf.UI.Dialogs.CredentialDialog;
 using XDM.Wpf.UI.Dialogs.DeleteConfirm;
+using XDM.Wpf.UI.Dialogs.LanguageSettings;
 using XDM.Wpf.UI.Dialogs.NewDownload;
 using XDM.Wpf.UI.Dialogs.NewVideoDownload;
 using XDM.Wpf.UI.Dialogs.ProgressWindow;
+using XDM.Wpf.UI.Dialogs.RefreshLink;
 using XDM.Wpf.UI.Win32;
 
 namespace XDM.Wpf.UI
@@ -434,7 +436,8 @@ namespace XDM.Wpf.UI
 
         public void ShowRefreshLinkDialog(InProgressDownloadEntry entry, IApp app)
         {
-            throw new NotImplementedException();
+            var dlg = new LinkRefreshWindow();
+            LinkRefreshDialogHelper.RefreshLink(entry, app, dlg);
         }
 
         public void SetClipboardText(string text)
@@ -585,6 +588,15 @@ namespace XDM.Wpf.UI
         private void menuExit_Click(object sender, RoutedEventArgs e)
         {
             Environment.Exit(0);
+        }
+
+        private void menuLanguage_Click(object sender, RoutedEventArgs e)
+        {
+            var langDlg = new LanguageSettingsWindow
+            {
+                Owner = this
+            };
+            langDlg.ShowDialog(this);
         }
 
         private void lvInProgress_Click(object sender, RoutedEventArgs e)

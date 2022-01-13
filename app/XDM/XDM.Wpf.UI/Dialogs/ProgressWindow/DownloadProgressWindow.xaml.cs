@@ -94,7 +94,14 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
 
         public void Destroy()
         {
-            Dispatcher.Invoke(new Action(() => this.Close()));
+            Dispatcher.Invoke(new Action(() =>
+            {
+                try
+                {
+                    Close();
+                }
+                catch { }
+            }));
         }
 
         public void ShowProgressWindow()

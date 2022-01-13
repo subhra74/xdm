@@ -192,3 +192,4 @@ MSG_BROWSER_LAUNCH_FAILED=Unable to launch
 MSG_NATIVE_HOST_FAILED=Error installing native host
 MSG_DONT_SHOW_AGAIN=Don't show this again
 MSG_NO_USERNAME=User name request
+MSG_REF_LINK_MSG=New download link is accepted

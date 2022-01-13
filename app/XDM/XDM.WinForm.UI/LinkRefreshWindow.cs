@@ -16,7 +16,7 @@ namespace XDM.WinForm.UI
             button1.Text = TextResource.GetText("BTN_STOP_PROCESSING");
         }
 
-        public event EventHandler WatchingStopped;
+        public event EventHandler? WatchingStopped;
 
         public void ShowWindow()
         {
