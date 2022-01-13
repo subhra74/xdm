@@ -67,10 +67,11 @@ namespace XDMApp
 
         public XDMApp()
         {
-            var configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".xdman");
-            Directory.CreateDirectory(configPath);
-            Config.DataDir = configPath;
-            Config.LoadConfig();
+            //var configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".xdman");
+            //Directory.CreateDirectory(configPath);
+            //Config.DataDir = configPath;
+            //Config.LoadConfig();
+            //TextResource.Load(Config.Instance.Language);
 
             awakePingTimer = new Timer(60000)
             {

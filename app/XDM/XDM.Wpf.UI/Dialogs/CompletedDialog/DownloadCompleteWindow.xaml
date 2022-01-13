@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Title="{StaticResource CD_TITLE}" Height="200" Width="400" WindowStartupLocation="CenterScreen">
     <DockPanel>
-        <Grid DockPanel.Dock="Bottom" Margin="10">
+        <Grid DockPanel.Dock="Bottom" Margin="5">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="auto"/>
                 <ColumnDefinition Width="*"/>

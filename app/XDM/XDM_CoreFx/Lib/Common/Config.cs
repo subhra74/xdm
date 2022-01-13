@@ -10,7 +10,31 @@ namespace XDM.Core.Lib.Common
 {
     public class Config
     {
-        public static Config Instance { get; private set; }
+        private static Config instance;
+        private static object lockObj = new();
+        public static Config Instance
+        {
+            get
+            {
+                if (instance == null)
+                {
+                    lock (lockObj)
+                    {
+                        if (instance == null)
+                        {
+                            LoadConfig();
+                        }
+                    }
+                }
+
+                return instance!;
+            }
+
+            private set
+            {
+                instance = value;
+            }
+        }
 
         public static string DataDir { get; set; }
 
@@ -184,18 +208,31 @@ namespace XDM.Core.Lib.Common
 
         public IEnumerable<PasswordEntry> UserCredentials { get; set; } = new List<PasswordEntry>();
 
-        public static void LoadConfig()
+        public static void LoadConfig(string? path = null)
         {
-            Instance = new Config
+            DataDir = path ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".xdman");
+            instance = new Config
             {
-                TempDir = Path.Combine(Config.DataDir, "temp")
+                TempDir = Path.Combine(DataDir, "temp")
             };
-            var bytes = TransactedIO.ReadBytes("settings.dat", Config.DataDir);
-            if (bytes != null)
+            try
             {
-                using var ms = new MemoryStream(bytes);
-                using var reader = new BinaryReader(ms);
-                SerializationHelper.DeserializeConfig(Instance, reader);
+                if (!Directory.Exists(DataDir))
+                {
+                    Directory.CreateDirectory(DataDir);
+                }
+
+                var bytes = TransactedIO.ReadBytes("settings.dat", DataDir);
+                if (bytes != null)
+                {
+                    using var ms = new MemoryStream(bytes);
+                    using var reader = new BinaryReader(ms);
+                    SerializationHelper.DeserializeConfig(instance, reader);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, ex.Message);
             }
 
 
@@ -249,10 +286,6 @@ namespace XDM.Core.Lib.Common
             //    TempDir = Path.Combine(Config.DataDir, "temp")
             //};
         }
-
-
-
-
 
         private static void PopulateConfig32(Config instance, BinaryReader r)
         {
