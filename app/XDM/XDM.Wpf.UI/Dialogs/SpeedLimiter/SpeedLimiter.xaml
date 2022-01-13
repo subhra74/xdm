@@ -31,6 +31,7 @@
                  VerticalContentAlignment="Center"
                  IsReadOnly ="True"
                  PreviewTextInput="TxtSpeedLimit_PreviewTextInput"
-                 DataObject.Pasting="TxtSpeedLimit_Pasting"/>
+                 DataObject.Pasting="TxtSpeedLimit_Pasting"
+                 LostFocus="TxtSpeedLimit_LostFocus"/>
     </Grid>
 </UserControl>

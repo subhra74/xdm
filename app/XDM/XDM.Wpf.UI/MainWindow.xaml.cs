@@ -314,13 +314,12 @@ namespace XDM.Wpf.UI
 
         public INewDownloadDialogSkeleton CreateNewDownloadDialog(bool empty)
         {
-            new NewVideoDownloadWindow().Show();
             return new NewDownloadWindow() { IsEmpty = empty };
         }
 
         public INewVideoDownloadDialog CreateNewVideoDialog()
         {
-            throw new NotImplementedException();
+            return new NewVideoDownloadWindow();
         }
 
         public IProgressWindow CreateProgressWindow(string downloadId, IApp app, IAppUI appUI)

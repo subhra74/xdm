@@ -14,6 +14,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.UI;
+using XDM.Wpf.UI.Common.Helpers;
 using XDM.Wpf.UI.Dialogs.AdvancedDownloadOption;
 using XDM.Wpf.UI.Win32;
 
@@ -64,6 +65,7 @@ namespace XDM.Wpf.UI.Dialogs.NewVideoDownload
         protected override void OnSourceInitialized(EventArgs e)
         {
             base.OnSourceInitialized(e);
+            NativeMethods.DisableMinMaxButton(this);
 
             if (App.Skin == Skin.Dark)
             {
@@ -97,7 +99,7 @@ namespace XDM.Wpf.UI.Dialogs.NewVideoDownload
 
         private void btnDownloadLater_Click(object sender, RoutedEventArgs e)
         {
-
+            DownloadLaterMenuHelper.PopulateMenuAndAttachEvents(DownloadLaterClicked, btnDownloadLater, this);
         }
 
         private void btnDownload_Click(object sender, RoutedEventArgs e)
@@ -144,6 +146,16 @@ namespace XDM.Wpf.UI.Dialogs.NewVideoDownload
         private void Window_Closed(object sender, EventArgs e)
         {
             this.DestroyEvent?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void DontAddToQueueMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            this.DownloadLaterClicked?.Invoke(this, new DownloadLaterEventArgs(string.Empty));
+        }
+
+        private void QueueAndSchedulerMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            this.QueueSchedulerClicked?.Invoke(this, EventArgs.Empty);
         }
 
         public void ShowMessageBox(string text)

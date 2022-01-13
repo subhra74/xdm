@@ -1,23 +1,14 @@
 ﻿using Microsoft.Win32;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Interop;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.UI;
+using XDM.Wpf.UI.Common.Helpers;
 using XDM.Wpf.UI.Dialogs.AdvancedDownloadOption;
 using XDM.Wpf.UI.Win32;
-using XDMApp;
 
 namespace XDM.Wpf.UI.Dialogs.NewDownload
 {
@@ -105,6 +96,8 @@ namespace XDM.Wpf.UI.Dialogs.NewDownload
         {
             base.OnSourceInitialized(e);
 
+            NativeMethods.DisableMinMaxButton(this);
+
             if (App.Skin == Skin.Dark)
             {
                 var helper = new WindowInteropHelper(this);
@@ -183,30 +176,7 @@ namespace XDM.Wpf.UI.Dialogs.NewDownload
 
         private void ShowQueuesContextMenu()
         {
-            var nctx = (ContextMenu)FindResource("DownloadLaterContextMenu");
-            nctx.Items.Clear();
-            foreach (var queue in QueueManager.Queues)
-            {
-                var menuItem = new MenuItem
-                {
-                    Tag = queue.ID,
-                    Header = queue.Name
-                };
-                menuItem.Click += (s, e) =>
-                {
-                    MenuItem m = (MenuItem)e.OriginalSource;
-                    var args = new DownloadLaterEventArgs((string)m.Tag);
-                    DownloadLaterClicked?.Invoke(this, args);
-                };
-                nctx.Items.Add(menuItem);
-            }
-            nctx.Items.Add(FindResource("DontAddToQueueMenuItem"));
-            nctx.Items.Add(FindResource("QueueAndSchedulerMenuItem"));
-
-
-            nctx.PlacementTarget = btnDownloadLater;
-            nctx.Placement = PlacementMode.Bottom;
-            nctx.IsOpen = true;
+            DownloadLaterMenuHelper.PopulateMenuAndAttachEvents(DownloadLaterClicked, btnDownloadLater, this);
         }
 
         private void DontAddToQueueMenuItem_Click(object sender, RoutedEventArgs e)

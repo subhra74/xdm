@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:XDM.Wpf.UI.Dialogs.NewDownload"
         mc:Ignorable="d"
         Title="{StaticResource ND_TITLE}" Height="300" Width="550" Topmost="True" WindowStartupLocation="CenterScreen"
-        Closed="Window_Closed">
+        Closed="Window_Closed" ShowInTaskbar="False">
     <Window.Resources>
         <ContextMenu x:Key="DownloadLaterContextMenu"></ContextMenu>
         <MenuItem x:Key="DontAddToQueueMenuItem" Header="{StaticResource LBL_QUEUE_OPT3}" Click="DontAddToQueueMenuItem_Click"/>

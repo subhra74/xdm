@@ -1,18 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using Translations;
 using XDM.Common.UI;
 using XDM.Core.Lib.Common;
+using XDM.Wpf.UI.Dialogs.SpeedLimiter;
 
 namespace XDM.Wpf.UI.Dialogs.ProgressWindow
 {
@@ -118,8 +111,8 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
                     BtnPause.Tag = new();
                     TxtETA.Text = string.Empty;
                     TxtSpeedLimit.Visibility = Visibility.Collapsed;
-                    //speedLimiterDlg?.Close();
-                    //speedLimiterDlg = null;
+                    speedLimiterDlg?.Close();
+                    speedLimiterDlg = null;
                 }), error);
         }
 
@@ -132,8 +125,8 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
                     BtnPause.Content = TextResource.GetText("MENU_RESUME");
                     BtnPause.Tag = new();
                     TxtSpeedLimit.Visibility = Visibility.Collapsed;
-                    //speedLimiterDlg?.Close();
-                    //speedLimiterDlg = null;
+                    speedLimiterDlg?.Close();
+                    speedLimiterDlg = null;
                 }));
         }
 
@@ -184,8 +177,8 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             StopDownload(true);
-            //speedLimiterDlg?.Close();
-            //speedLimiterDlg = null;
+            speedLimiterDlg?.Close();
+            speedLimiterDlg = null;
         }
 
         private void BtnPause_Click(object sender, RoutedEventArgs e)
@@ -195,6 +188,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
                 AppUI.ResumeDownload(downloadId);
                 BtnPause.Content = TextResource.GetText("MENU_PAUSE");
                 BtnPause.Tag = null;
+                TxtSpeedLimit.Visibility = Visibility.Visible;
             }
             else
             {
@@ -216,7 +210,44 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
             Close();
         }
 
+        private void TxtSpeedLimit_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (speedLimiterDlg == null)
+            {
+                speedLimiterDlg = new SpeedLimiterWindow
+                {
+                    Owner = this
+                };
+                if (App.GetLiveDownloadSpeedLimit(downloadId, out bool enable, out int limit))
+                {
+                    speedLimiterDlg.EnableSpeedLimit = enable;
+                    speedLimiterDlg.SpeedLimit = limit;
+                }
+                speedLimiterDlg.Closed += (_, _) =>
+                {
+                    speedLimiterDlg = null;
+                };
+                speedLimiterDlg.OkClicked += (a, b) =>
+                {
+                    var limit2 = speedLimiterDlg.SpeedLimit;
+                    App.UpdateSpeedLimit(DownloadId, speedLimiterDlg.EnableSpeedLimit, limit2);
+                    SetSpeedLimitText(speedLimiterDlg.EnableSpeedLimit, limit2);
+                };
+            }
+
+            if (!speedLimiterDlg.IsVisible)
+            {
+                speedLimiterDlg.Show();
+            }
+            else
+            {
+                speedLimiterDlg.Activate();
+            }
+        }
+
         private Action<int> actPrgUpdate;
         private string downloadId = string.Empty;
+        private SpeedLimiterWindow? speedLimiterDlg;
     }
 }
+

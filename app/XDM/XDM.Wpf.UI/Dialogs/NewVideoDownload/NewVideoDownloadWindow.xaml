@@ -6,7 +6,12 @@
         xmlns:local="clr-namespace:XDM.Wpf.UI.Dialogs.NewVideoDownload"
         mc:Ignorable="d"
         Title="{StaticResource ND_TITLE}" Height="250" Width="500" Topmost="True" WindowStartupLocation="CenterScreen"
-        Closed="Window_Closed">
+        Closed="Window_Closed" ShowInTaskbar="False">
+    <Window.Resources>
+        <ContextMenu x:Key="DownloadLaterContextMenu"></ContextMenu>
+        <MenuItem x:Key="DontAddToQueueMenuItem" Name="DontAddToQueueMenuItem" Header="{StaticResource LBL_QUEUE_OPT3}" Click="DontAddToQueueMenuItem_Click"/>
+        <MenuItem x:Key="QueueAndSchedulerMenuItem" Name="QueueAndSchedulerMenuItem" Header="{StaticResource DESC_Q_TITLE}" Click="QueueAndSchedulerMenuItem_Click"/>
+    </Window.Resources>
     <DockPanel>
         <Border DockPanel.Dock="Bottom" Grid.Row="1" 
                 Background="{StaticResource ControlBackcolor}" BorderBrush="{StaticResource ControlBordercolor}" 

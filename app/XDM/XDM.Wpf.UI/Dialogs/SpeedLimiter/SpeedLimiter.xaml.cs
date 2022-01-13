@@ -51,9 +51,9 @@ namespace XDM.Wpf.UI.Dialogs.SpeedLimiter
 
         private void TxtSpeedLimit_Pasting(object sender, DataObjectPastingEventArgs e)
         {
-            if (e.DataObject.GetDataPresent(typeof(String)))
+            if (e.DataObject.GetDataPresent(typeof(string)))
             {
-                String text = (String)e.DataObject.GetData(typeof(String));
+                string text = (string)e.DataObject.GetData(typeof(string));
                 if (!Int32.TryParse(text, out _))
                 {
                     e.CancelCommand();
@@ -68,6 +68,20 @@ namespace XDM.Wpf.UI.Dialogs.SpeedLimiter
         private void ChkEnabled_Checked(object sender, RoutedEventArgs e)
         {
             TxtSpeedLimit.IsReadOnly = !(ChkEnabled.IsChecked ?? false);
+        }
+
+        private void TxtSpeedLimit_LostFocus(object sender, RoutedEventArgs e)
+        {
+            var valid = true;
+            if (string.IsNullOrEmpty(TxtSpeedLimit.Text))
+            {
+                valid = false;
+            }
+            if (!Int32.TryParse(TxtSpeedLimit.Text, out _))
+            {
+                valid = false;
+            }
+            ChkEnabled.IsChecked = valid;
         }
     }
 }
