@@ -1,0 +1,40 @@
+﻿<Window x:Class="XDM.Wpf.UI.Dialogs.QueuesWindow.NewQueueWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:XDM.Wpf.UI.Dialogs.QueuesWindow"
+        mc:Ignorable="d"
+        Title="{StaticResource LBL_QUEUE_OPT1}" 
+        Height="480" Width="640" ShowInTaskbar="False" WindowStartupLocation="CenterOwner">
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Name="{StaticResource MSG_QUEUE_NAME}" Margin="0,5" Grid.ColumnSpan="3"/>
+        <TextBox Name="TxtQueueName"  VerticalContentAlignment="Center"  Grid.ColumnSpan="3" Grid.Row="1"/>
+        <TextBlock Name="{StaticResource MSG_QUEUE_SELECT_ITEMS}" Margin="0,5" Grid.Row="2" Grid.ColumnSpan="3"/>
+        <ListView Name="lvDownloads" Grid.Row="3" Grid.ColumnSpan="3">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="{StaticResource SORT_NAME}" Width="200" DisplayMemberBinding="{Binding Name}" />
+                    <GridViewColumn Header="{StaticResource SORT_DATE}" Width="80" DisplayMemberBinding="{Binding DateAdded}" />
+                    <GridViewColumn Header="{StaticResource SORT_SIZE}" Width="80" DisplayMemberBinding="{Binding Size}" />
+                    <GridViewColumn Header="{StaticResource SORT_STATUS}" Width="120" DisplayMemberBinding="{Binding Status}" />
+                </GridView>
+            </ListView.View>
+        </ListView>
+        <CheckBox Name="Chk" Content="{StaticResource VID_CHK}" Margin="5,10,0,0" VerticalAlignment="Center" Grid.Row="4" Checked="Chk_Checked"/>
+        <Button Margin="5,10,5,0" Content="{StaticResource MSG_OK}" Padding="10,3" Name="BtnOK" Grid.Row="4" Grid.Column="1"/>
+        <Button Margin="5,10,0,0" Content="{StaticResource ND_CANCEL}" Padding="10,3" Name="BtnCancel"  Grid.Row="4" Grid.Column="2"/>
+    </Grid>
+</Window>

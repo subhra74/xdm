@@ -24,6 +24,7 @@ using XDM.Wpf.UI.Dialogs.LanguageSettings;
 using XDM.Wpf.UI.Dialogs.NewDownload;
 using XDM.Wpf.UI.Dialogs.NewVideoDownload;
 using XDM.Wpf.UI.Dialogs.ProgressWindow;
+using XDM.Wpf.UI.Dialogs.QueuesWindow;
 using XDM.Wpf.UI.Dialogs.RefreshLink;
 using XDM.Wpf.UI.Win32;
 
@@ -464,7 +465,14 @@ namespace XDM.Wpf.UI
 
         public DownloadSchedule? ShowSchedulerDialog(DownloadSchedule schedule)
         {
-            throw new NotImplementedException();
+            var dlg = new ManageQueueDialog { Owner = this };
+            //dlg.Schedule = schedule;
+            var ret = dlg.ShowDialog(this);
+            if (ret.HasValue&&ret.Value)
+            {
+                //return dlg.Schedule;
+            }
+            return null;
         }
 
         public void ShowBatchDownloadWindow(IApp app, IAppUI appUi)
@@ -597,6 +605,15 @@ namespace XDM.Wpf.UI
                 Owner = this
             };
             langDlg.ShowDialog(this);
+        }
+
+        private void BtnQueue_Click(object sender, RoutedEventArgs e)
+        {
+            var qmDlg = new ManageQueueDialog
+            {
+                Owner = this
+            };
+            qmDlg.ShowDialog(this);
         }
 
         private void lvInProgress_Click(object sender, RoutedEventArgs e)

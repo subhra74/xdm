@@ -406,6 +406,8 @@
                             </Button.Style>
                         </Button>
                         <Button Grid.Column="2" 
+                                Name="BtnQueue"
+                                Click="BtnQueue_Click"
                             Template="{StaticResource MonitoringToggleButton}" 
                             Foreground="{StaticResource ToolButtonForecolor}"
                             Margin="15,0" Background="{StaticResource StatusbarBackcolor}" >
