@@ -465,13 +465,6 @@ namespace XDM.Wpf.UI
 
         public DownloadSchedule? ShowSchedulerDialog(DownloadSchedule schedule)
         {
-            var dlg = new ManageQueueDialog { Owner = this };
-            //dlg.Schedule = schedule;
-            var ret = dlg.ShowDialog(this);
-            if (ret.HasValue&&ret.Value)
-            {
-                //return dlg.Schedule;
-            }
             return null;
         }
 
@@ -527,7 +520,12 @@ namespace XDM.Wpf.UI
 
         public IQueuesWindow CreateQueuesAndSchedulerWindow(IAppUI appUi)
         {
-            throw new NotImplementedException();
+            return new ManageQueueDialog(appUi)
+            {
+                Owner = this
+            };
+            //qmDlg.ShowDialog(this);
+            //return this;
         }
 
         public IQueueSelectionDialog CreateQueueSelectionDialog()
@@ -609,11 +607,7 @@ namespace XDM.Wpf.UI
 
         private void BtnQueue_Click(object sender, RoutedEventArgs e)
         {
-            var qmDlg = new ManageQueueDialog
-            {
-                Owner = this
-            };
-            qmDlg.ShowDialog(this);
+            this.SchedulerClicked?.Invoke(sender, e);
         }
 
         private void lvInProgress_Click(object sender, RoutedEventArgs e)

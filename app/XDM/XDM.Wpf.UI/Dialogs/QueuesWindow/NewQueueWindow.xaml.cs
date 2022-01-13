@@ -1,16 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
+using Translations;
 using XDM.Core.Lib.Common;
+using XDM.Core.Lib.Util;
 using XDM.Wpf.UI.Common;
 using XDM.Wpf.UI.Win32;
 using XDMApp;
@@ -22,12 +17,17 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
     /// </summary>
     public partial class NewQueueWindow : Window, IDialog
     {
-        public NewQueueWindow(IAppUI ui, 
-            Action<DownloadQueue, bool> okAction, 
+        private ObservableCollection<InProgressDownloadEntryWrapper> list;
+        private DownloadQueue? modifyingQueue;
+        private Action<DownloadQueue, bool> okAction;
+
+        public NewQueueWindow(IAppUI ui,
+            Action<DownloadQueue, bool> okAction,
             DownloadQueue? modifyingQueue)
         {
             InitializeComponent();
 
+            this.okAction = okAction;
             if (modifyingQueue == null)
             {
                 this.TxtQueueName.Text = "New queue #" + QueueManager.QueueAutoNumber;
@@ -36,12 +36,10 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
             else
             {
                 this.TxtQueueName.Text = modifyingQueue.Name;
+                this.modifyingQueue = modifyingQueue;
             }
-            listView1.Items.Clear();
-            listView1.CheckBoxes = true;
-            var list = new List<InProgressDownloadEntry>(ui.GetAllInProgressDownloads());
-            var set = new HashSet<string>();
 
+            var set = new HashSet<string>();
             foreach (var queue in QueueManager.Queues)
             {
                 foreach (var id in queue.DownloadIds)
@@ -50,54 +48,39 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
                 }
             }
 
-            foreach (var ent in list)
+            var list = new List<InProgressDownloadEntryWrapper>();
+            foreach (var ent in ui.GetAllInProgressDownloads())
             {
                 if (!set.Contains(ent.Id))
                 {
-                    var arr = new string[]
-                    {
-                    ent.Name,
-                    ent.DateAdded.ToShortDateString(),
-                    Helpers.FormatSize(ent.Size),
-                    ent.Status==DownloadStatus.Downloading?$"{ent.Progress}%":ent.Status.ToString()
-                    };
-                    listView1.Items.Add(new ListViewItem(arr) { Checked = false, Tag = ent });
+                    list.Add(new InProgressDownloadEntryWrapper(ent));
                 }
             }
 
-            button1.Click += (a, b) =>
-            {
-                if (string.IsNullOrEmpty(textBox1.Text))
-                {
-                    MessageBox.Show(TextResource.GetText("MSG_QUEUE_NAME_MISSING"));
-                    return;
-                }
-                var list = new List<string>(listView1.CheckedItems.Count);
-                foreach (ListViewItem lvi in listView1.CheckedItems)
-                {
-                    list.Add(((InProgressDownloadEntry)lvi.Tag).Id);
-                }
-                if (modifyingQueue == null)
-                {
-                    okAction.Invoke(new DownloadQueue(Guid.NewGuid().ToString(), textBox1.Text) { DownloadIds = list }, true);
-                }
-                else
-                {
-                    modifyingQueue.DownloadIds.AddRange(list);
-                    okAction.Invoke(modifyingQueue, false);
-                }
-                Close();
-            };
+            this.list = new ObservableCollection<InProgressDownloadEntryWrapper>(list);
+            lvDownloads.ItemsSource = this.list;
+        }
 
-            button1.Margin = button2.Margin = checkBox1.Margin =
-                new Padding(LogicalToDeviceUnits(3),
-                LogicalToDeviceUnits(12),
-                LogicalToDeviceUnits(12),
-                LogicalToDeviceUnits(3));
-
-            foreach (ColumnHeader col in listView1.Columns)
+        private void OnApproved()
+        {
+            if (string.IsNullOrEmpty(TxtQueueName.Text))
             {
-                col.Width = col.Index == 0 ? LogicalToDeviceUnits(200) : LogicalToDeviceUnits(100);
+                MessageBox.Show(this, TextResource.GetText("MSG_QUEUE_NAME_MISSING"));
+                return;
+            }
+            var list2 = new List<string>(this.list.Count);
+            foreach (var entry in list)
+            {
+                list2.Add(entry.Id);
+            }
+            if (modifyingQueue == null)
+            {
+                okAction.Invoke(new DownloadQueue(Guid.NewGuid().ToString(), TxtQueueName.Text) { DownloadIds = list2 }, true);
+            }
+            else
+            {
+                modifyingQueue.DownloadIds.AddRange(list2);
+                okAction.Invoke(modifyingQueue, false);
             }
         }
 
@@ -109,9 +92,58 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
 
         public bool Result { get; set; } = false;
 
-        private void Chk_Checked(object sender, RoutedEventArgs e)
+        private void BtnOK_Click(object sender, RoutedEventArgs e)
         {
-
+            OnApproved();
+            Close();
         }
+
+        private void BtnCancel_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+
+        private void ChkSelectAll_Checked(object sender, RoutedEventArgs e)
+        {
+            foreach (var ent in this.list)
+            {
+                if (ChkSelectAll.IsChecked.HasValue)
+                {
+                    ent.IsSelected = ChkSelectAll.IsChecked.Value;
+                }
+                else
+                {
+                    ent.IsSelected = false;
+                }
+            }
+        }
+    }
+
+    internal class InProgressDownloadEntryWrapper : INotifyPropertyChanged
+    {
+        private InProgressDownloadEntry entry;
+        private bool selected;
+
+        internal InProgressDownloadEntryWrapper(InProgressDownloadEntry entry)
+        {
+            this.entry = entry;
+        }
+
+        public bool IsSelected
+        {
+            get => selected;
+            set
+            {
+                selected = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("IsSelected"));
+            }
+        }
+        public string Name => entry.Name;
+        public string Size => Helpers.FormatSize(entry.Size);
+        public string DateAdded => entry.DateAdded.ToShortDateString() + " " + entry.DateAdded.ToShortTimeString();
+        public string Status => entry.Status.ToString();
+        public string Id => entry.Id;
+
+        public event PropertyChangedEventHandler? PropertyChanged;
     }
 }

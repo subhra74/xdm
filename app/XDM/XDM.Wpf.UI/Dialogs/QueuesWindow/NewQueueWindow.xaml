@@ -20,21 +20,28 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <TextBlock Name="{StaticResource MSG_QUEUE_NAME}" Margin="0,5" Grid.ColumnSpan="3"/>
-        <TextBox Name="TxtQueueName"  VerticalContentAlignment="Center"  Grid.ColumnSpan="3" Grid.Row="1"/>
-        <TextBlock Name="{StaticResource MSG_QUEUE_SELECT_ITEMS}" Margin="0,5" Grid.Row="2" Grid.ColumnSpan="3"/>
+        <TextBlock Text="{StaticResource MSG_QUEUE_NAME}" Margin="0,5" Grid.ColumnSpan="3"/>
+        <TextBox Name="TxtQueueName"  VerticalContentAlignment="Center"  Grid.ColumnSpan="3" Grid.Row="1" Padding="5"/>
+        <TextBlock Text="{StaticResource MSG_QUEUE_SELECT_ITEMS}" Margin="0,5" Grid.Row="2" Grid.ColumnSpan="3"/>
         <ListView Name="lvDownloads" Grid.Row="3" Grid.ColumnSpan="3">
             <ListView.View>
                 <GridView>
-                    <GridViewColumn Header="{StaticResource SORT_NAME}" Width="200" DisplayMemberBinding="{Binding Name}" />
-                    <GridViewColumn Header="{StaticResource SORT_DATE}" Width="80" DisplayMemberBinding="{Binding DateAdded}" />
+                    <GridViewColumn Header="{StaticResource SORT_NAME}" Width="200">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox IsChecked="{Binding IsSelected, NotifyOnSourceUpdated=True,Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Name="MycheckBox" Content="{Binding Name}"></CheckBox>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <!--<GridViewColumn Header="{StaticResource SORT_NAME}" Width="200" DisplayMemberBinding="{Binding Name}" />-->
+                    <GridViewColumn Header="{StaticResource SORT_DATE}" Width="120" DisplayMemberBinding="{Binding DateAdded}" />
                     <GridViewColumn Header="{StaticResource SORT_SIZE}" Width="80" DisplayMemberBinding="{Binding Size}" />
                     <GridViewColumn Header="{StaticResource SORT_STATUS}" Width="120" DisplayMemberBinding="{Binding Status}" />
                 </GridView>
             </ListView.View>
         </ListView>
-        <CheckBox Name="Chk" Content="{StaticResource VID_CHK}" Margin="5,10,0,0" VerticalAlignment="Center" Grid.Row="4" Checked="Chk_Checked"/>
-        <Button Margin="5,10,5,0" Content="{StaticResource MSG_OK}" Padding="10,3" Name="BtnOK" Grid.Row="4" Grid.Column="1"/>
-        <Button Margin="5,10,0,0" Content="{StaticResource ND_CANCEL}" Padding="10,3" Name="BtnCancel"  Grid.Row="4" Grid.Column="2"/>
+        <CheckBox Name="ChkSelectAll" Content="{StaticResource VID_CHK}" Margin="5,10,0,0" VerticalAlignment="Center" Grid.Row="4" Unchecked="ChkSelectAll_Checked" Checked="ChkSelectAll_Checked"/>
+        <Button Margin="5,10,5,0" Content="{StaticResource MSG_OK}" Padding="20,3" Name="BtnOK" Grid.Row="4" Grid.Column="1" Click="BtnOK_Click"/>
+        <Button Margin="5,10,0,0" Content="{StaticResource ND_CANCEL}" Padding="10,3" Name="BtnCancel"  Grid.Row="4" Grid.Column="2" Click="BtnCancel_Click"/>
     </Grid>
 </Window>

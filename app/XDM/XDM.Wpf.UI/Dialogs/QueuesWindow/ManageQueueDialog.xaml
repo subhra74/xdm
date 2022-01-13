@@ -25,7 +25,7 @@
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
-            <Button Name="BtnNew" Content="{StaticResource DESC_NEW}" Margin="5,10,5,5" Padding="3" Grid.Row="1"/>
+            <Button Name="BtnNew" Content="{StaticResource DESC_NEW}" Margin="5,10,5,5" Padding="3" Grid.Row="1" Click="BtnNew_Click"/>
             <Button Name="BtnDel" Content="{StaticResource DESC_DEL}" Grid.Column="1" Margin="5,10,5,5" Padding="3" Grid.Row="1"/>
         </Grid>
         <Grid Margin="0,5,10,5">
