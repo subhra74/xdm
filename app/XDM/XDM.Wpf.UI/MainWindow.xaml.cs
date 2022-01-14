@@ -279,7 +279,7 @@ namespace XDM.Wpf.UI
 
         public void ClearInProgressViewSelection()
         {
-            lvInProgress.SelectedIndex = -1;
+            lvInProgress.UnselectAll();
         }
 
         public void SwitchToFinishedView()
@@ -289,7 +289,7 @@ namespace XDM.Wpf.UI
 
         public void ClearFinishedViewSelection()
         {
-            lvFinished.SelectedIndex = -1;
+            lvFinished.UnselectAll();
         }
 
         public bool Confirm(object? window, string text)

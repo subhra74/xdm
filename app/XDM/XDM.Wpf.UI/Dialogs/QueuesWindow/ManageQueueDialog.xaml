@@ -7,7 +7,7 @@
         xmlns:sc="clr-namespace:XDM.Wpf.UI.Dialogs.Scheduler"
         mc:Ignorable="d"
         Title="{StaticResource DESC_Q_TITLE}" Height="500" Width="700" ShowInTaskbar="False" WindowStartupLocation="CenterOwner">
-    <DockPanel>
+    <DockPanel Margin="0,5,0,0">
         <Grid Margin="10,5" DockPanel.Dock="Left">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
@@ -25,7 +25,7 @@
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
-            <Button Name="BtnNew" Content="{StaticResource DESC_NEW}" Margin="5,10,5,5" Padding="3" Grid.Row="1" Click="BtnNew_Click"/>
+            <Button Name="BtnNew" Content="{StaticResource DESC_NEW}" Margin="0,10,5,5" Padding="3" Grid.Row="1" Click="BtnNew_Click"/>
             <Button Name="BtnDel" Content="{StaticResource DESC_DEL}" Grid.Column="1" Margin="5,10,5,5" Padding="3" Grid.Row="1" Click="BtnDel_Click"/>
         </Grid>
         <Grid Margin="0,5,10,5">
@@ -57,17 +57,17 @@
                             <RowDefinition/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
-                        <ListView Margin="10" Name="lvFiles" Grid.ColumnSpan="7" Grid.Column="1">
+                        <ListView Margin="10" Name="lvFiles" Grid.ColumnSpan="7" Grid.Column="1" >
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Header="{StaticResource ND_FILE}" Width="200" DisplayMemberBinding="{Binding Name}" />
-                                    <GridViewColumn Header="{StaticResource SORT_SIZE}" Width="80" DisplayMemberBinding="{Binding Size}" />
+                                    <GridViewColumn Header="{StaticResource SORT_SIZE}" Width="80" DisplayMemberBinding="{Binding Path=Size, Converter={StaticResource FileSizeValueConverter}}" />
                                     <GridViewColumn Header="{StaticResource SORT_STATUS}" Width="150" DisplayMemberBinding="{Binding Status}" />
                                 </GridView>
                             </ListView.View>
                         </ListView>
                         <Button Name="BtnAdd" Content="{StaticResource Q_ADD}" 
-                                Margin="10,3,5,3" Padding="5,3" Grid.Row="1" 
+                                Margin="10,3,5,3" Padding="10,3" Grid.Row="1" 
                                 Grid.Column="1" 
                                 Click="BtnAdd_Click"/>
                         <Button Name="BtnRemove" Content="{StaticResource Q_REMOVE}" Margin="0,3,5,3" Padding="5,3" 
@@ -87,10 +87,10 @@
                     </DockPanel>
                 </TabItem>
             </TabControl>
-            <Button Name="BtnStart" Content="{StaticResource MENU_START_Q}" Grid.Row="1" Grid.Column="0" Margin="5,10,5,5" Padding="5,3" Click="BtnStart_Click"/>
+            <Button Name="BtnStart" Content="{StaticResource MENU_START_Q}" Grid.Row="1" Grid.Column="0" Margin="0,10,5,5" Padding="5,3" Click="BtnStart_Click"/>
             <Button Name="BtnStop" Content="{StaticResource MENU_PAUSE}" Grid.Row="1" Grid.Column="1" Margin="5,10,5,5" Padding="20,3" Click="BtnStop_Click"/>
             <Button Name="BtnSave" Content="{StaticResource DESC_SAVE_Q}" Grid.Row="1" Grid.Column="3" Margin="5,10,5,5" Padding="20,3" Click="BtnSave_Click"/>
-            <Button Name="BtnCancel" Content="{StaticResource ND_CANCEL}" Grid.Row="1" Grid.Column="4" Margin="5,10,5,5" Padding="15,3" Click="BtnCancel_Click"/>
+            <Button Name="BtnCancel" Content="{StaticResource ND_CANCEL}" Grid.Row="1" Grid.Column="4" Margin="5,10,0,5" Padding="15,3" Click="BtnCancel_Click"/>
         </Grid>
     </DockPanel>
 </Window>

@@ -14,6 +14,7 @@ using System.Windows.Shapes;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.UI;
 using XDM.Wpf.UI.Common;
+using XDM.Wpf.UI.Common.Helpers;
 using XDM.Wpf.UI.Win32;
 using XDMApp;
 
@@ -61,6 +62,14 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
             };
 
             this.LbQueues.ItemsSource = queues;
+            this.LbQueues.SelectionChanged += (_, _) =>
+            {
+                var selected = (DownloadQueue)this.LbQueues.SelectedItem;
+                if (selected != null)
+                {
+                    UpdateControls(selected);
+                }
+            };
 
             this.lvFiles.ItemsSource = downloads;
             this.lvFiles.SelectionChanged += (_, _) => ListSelectionChanged();
@@ -127,7 +136,7 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
 
         private void ListSelectionChanged()
         {
-            BtnAdd.IsEnabled = BtnRemove.IsEnabled = BtnUp.IsEnabled = BtnDown.IsEnabled = lvFiles.SelectedItems.Count > 0;
+            BtnRemove.IsEnabled = BtnUp.IsEnabled = BtnDown.IsEnabled = BtnMoveTo.IsEnabled = lvFiles.SelectedItems.Count > 0;
         }
 
         public void SetData(IEnumerable<DownloadQueue> queues)
@@ -137,6 +146,11 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
             {
                 this.queues.Add(item);
             }
+            if (this.queues.Count > 0)
+            {
+                this.LbQueues.SelectedIndex = 0;
+            }
+            ListSelectionChanged();
         }
 
         public void ShowWindow(object peer)
@@ -157,8 +171,8 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
                     this.downloads.Add(ent);
                 }
             }
+            
             lvFiles.ItemsSource = this.downloads;
-            ChkEnableScheduler.IsChecked = queue.Schedule.HasValue;
             if (queue.Schedule.HasValue)
             {
                 this.SchedulerPanel.Schedule = queue.Schedule.Value;
@@ -167,7 +181,7 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
             {
                 this.SchedulerPanel.Schedule = this.defaultSchedule;
             }
-            this.SchedulerPanel.Schedule = queue.Schedule ?? default;
+            ChkEnableScheduler.IsChecked = queue.Schedule.HasValue;
         }
 
         private void EnableControls(bool enable)
@@ -265,23 +279,29 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
             //    listView1.Items.Remove(lvi);
             //    listView1.Items.Insert(listView1.SelectedIndices[listView1.SelectedIndices.Count - 1] + 1, lvi);
             //}
-            if (lvFiles.SelectedItems.Count > 0 && lvFiles.SelectedIndex > 0)
+            var indices = lvFiles.GetSelectedIndices();
+            if (indices.Length > 0 && indices[0] > 0)
             {
-                var index1 = lvFiles.SelectedIndex - 1;
-                var index2 = lvFiles.SelectedIndex + lvFiles.SelectedItems.Count;
-                var value = this.downloads[index1];
-                this.downloads.RemoveAt(index1);
-                this.downloads.Insert(index2, value);
+                var item = this.downloads[indices[0] - 1];
+                var index = indices[indices.Length - 1];
+                this.downloads.Remove(item);
+                this.downloads.Insert(index, item);
+                //var index1 = indices[0] - 1;
+                //var index2 = indices[0] + lvFiles.SelectedItems.Count - 1;
+                //var value = this.downloads[index1];
+                //this.downloads.RemoveAt(index1);
+                //this.downloads.Insert(index2, value);
             }
         }
 
         private void BtnDown_Click(object sender, RoutedEventArgs e)
         {
-            if (lvFiles.SelectedItems.Count > 0 && lvFiles.SelectedItems.Count + lvFiles.SelectedIndex < this.downloads.Count)
+            var indices = lvFiles.GetSelectedIndices();
+            if (indices.Length > 0 && indices[indices.Length - 1] < this.downloads.Count - 1)
             {
-                var item = this.downloads[lvFiles.SelectedItems.Count + lvFiles.SelectedIndex];
-                this.downloads.RemoveAt(lvFiles.SelectedItems.Count + lvFiles.SelectedIndex);
-                this.downloads.Insert(lvFiles.SelectedIndex, item);
+                var item = this.downloads[indices[indices.Length - 1] + 1];
+                this.downloads.Remove(item);
+                this.downloads.Insert(indices[0], item);
             }
             //if (listView1.SelectedIndices.Count > 0 && listView1.SelectedIndices[listView1.SelectedIndices.Count - 1] < listView1.Items.Count - 1)
             //{

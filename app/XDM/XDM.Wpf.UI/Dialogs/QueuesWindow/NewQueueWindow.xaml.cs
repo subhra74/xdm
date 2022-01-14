@@ -71,7 +71,10 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
             var list2 = new List<string>(this.list.Count);
             foreach (var entry in list)
             {
-                list2.Add(entry.Id);
+                if (entry.IsSelected)
+                {
+                    list2.Add(entry.Id);
+                }
             }
             if (modifyingQueue == null)
             {

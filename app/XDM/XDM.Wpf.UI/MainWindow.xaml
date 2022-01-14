@@ -36,8 +36,8 @@
         <ContextMenu x:Key="lvInProgressContextMenu"></ContextMenu>
         <ContextMenu x:Key="lvFinishedContextMenu"></ContextMenu>
         <ControlTemplate x:Key="ToolbarButtonTemplate" TargetType="{x:Type Button}">
-            <Border Name="Border" BorderBrush="{StaticResource ToolButtonForecolor}"  >
-                <StackPanel Orientation="Horizontal" Margin="{TemplateBinding Padding}">
+            <Border Name="Border" BorderBrush="{StaticResource ToolButtonForecolor}" IsHitTestVisible="True" >
+                <StackPanel Orientation="Horizontal" Margin="{TemplateBinding Padding}" IsHitTestVisible="True">
                     <Path 
                                 VerticalAlignment="Center" 
                                 Margin="0,0,10,0"

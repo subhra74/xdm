@@ -16,7 +16,7 @@
         </Grid.ColumnDefinitions>
         <ComboBox Name="CmbHour" HorizontalAlignment="Stretch" MinWidth="30" Width="50"/>
         <TextBlock Text=":" Margin="2" Grid.Column="1"/>
-        <ComboBox Name="CmbMinute" Grid.Column="2" HorizontalAlignment="Stretch" MinWidth="30"  Width="50"/>
+        <ComboBox Name="CmbMinute" Grid.Column="2" HorizontalAlignment="Stretch" MinWidth="30"  Width="50" ItemStringFormat="D2"/>
         <TextBlock Text=":" Margin="2" Grid.Column="3"/>
         <ComboBox Name="CmbAmPm"  Grid.Column="4" HorizontalAlignment="Stretch" MinWidth="30"  Width="50">
             <ComboBoxItem>AM</ComboBoxItem>
