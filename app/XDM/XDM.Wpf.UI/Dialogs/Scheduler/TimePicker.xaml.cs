@@ -9,6 +9,7 @@ namespace XDM.Wpf.UI.Dialogs.Scheduler
     /// </summary>
     public partial class TimePicker : UserControl
     {
+        public event EventHandler? ValueChanged;
         public TimePicker()
         {
             InitializeComponent();
@@ -33,6 +34,10 @@ namespace XDM.Wpf.UI.Dialogs.Scheduler
             CmbMinute.SelectedIndex = 0;
 
             CmbAmPm.SelectedIndex = 0;
+
+            CmbHour.SelectionChanged += (_, _) => this.ValueChanged?.Invoke(this, EventArgs.Empty);
+            CmbMinute.SelectionChanged += (_, _) => this.ValueChanged?.Invoke(this, EventArgs.Empty);
+            CmbAmPm.SelectionChanged += (_, _) => this.ValueChanged?.Invoke(this, EventArgs.Empty);
         }
 
         public TimeSpan Time

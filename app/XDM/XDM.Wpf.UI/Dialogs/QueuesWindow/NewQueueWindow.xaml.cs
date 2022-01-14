@@ -48,7 +48,7 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
                 }
             }
 
-            var list = new List<InProgressDownloadEntryWrapper>();
+            var list = new ObservableCollection<InProgressDownloadEntryWrapper>();
             foreach (var ent in ui.GetAllInProgressDownloads())
             {
                 if (!set.Contains(ent.Id))
@@ -57,16 +57,16 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
                 }
             }
 
-            this.list = new ObservableCollection<InProgressDownloadEntryWrapper>(list);
+            this.list = list;
             lvDownloads.ItemsSource = this.list;
         }
 
-        private void OnApproved()
+        private bool OnApproved()
         {
             if (string.IsNullOrEmpty(TxtQueueName.Text))
             {
                 MessageBox.Show(this, TextResource.GetText("MSG_QUEUE_NAME_MISSING"));
-                return;
+                return false;
             }
             var list2 = new List<string>(this.list.Count);
             foreach (var entry in list)
@@ -82,6 +82,7 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
                 modifyingQueue.DownloadIds.AddRange(list2);
                 okAction.Invoke(modifyingQueue, false);
             }
+            return true;
         }
 
         protected override void OnSourceInitialized(EventArgs e)
@@ -94,8 +95,10 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
 
         private void BtnOK_Click(object sender, RoutedEventArgs e)
         {
-            OnApproved();
-            Close();
+            if (OnApproved())
+            {
+                Close();
+            }
         }
 
         private void BtnCancel_Click(object sender, RoutedEventArgs e)

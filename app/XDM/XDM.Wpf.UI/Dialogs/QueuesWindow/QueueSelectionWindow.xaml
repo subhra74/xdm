@@ -1,0 +1,27 @@
+﻿<Window x:Class="XDM.Wpf.UI.Dialogs.QueuesWindow.QueueSelectionWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:XDM.Wpf.UI.Dialogs.QueuesWindow"
+        mc:Ignorable="d"
+        Title="{StaticResource LBL_QUEUE_OPT1}" 
+        Height="300" Width="400" ShowInTaskbar="False" WindowStartupLocation="CenterOwner">
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Text="{StaticResource Q_MOVE_TO}" Grid.ColumnSpan="3" Margin="0,0,0,10"/>
+        <ListBox Name="LbQueues" Grid.Row="1" Grid.ColumnSpan="3" Margin="0,0,0,10"></ListBox>
+        <Button Name="BtnOK" Content="{StaticResource MSG_OK}" Grid.Row="2" Grid.Column="1" Margin="0,0,10,0" Padding="15,3" Click="BtnOK_Click"/>
+        <Button Name="BtnCancel" Content="{StaticResource ND_CANCEL}" Grid.Row="2" Grid.Column="2" Padding="5,3" Click="BtnCancel_Click"/>
+
+    </Grid>
+</Window>

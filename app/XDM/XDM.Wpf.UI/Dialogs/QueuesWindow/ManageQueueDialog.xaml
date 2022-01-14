@@ -18,7 +18,7 @@
                 <RowDefinition/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <ListBox Grid.ColumnSpan="2" MinWidth="150">
+            <ListBox Grid.ColumnSpan="2" MinWidth="150" Name="LbQueues">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <TextBlock Text="{Binding Name}" />
@@ -26,7 +26,7 @@
                 </ListBox.ItemTemplate>
             </ListBox>
             <Button Name="BtnNew" Content="{StaticResource DESC_NEW}" Margin="5,10,5,5" Padding="3" Grid.Row="1" Click="BtnNew_Click"/>
-            <Button Name="BtnDel" Content="{StaticResource DESC_DEL}" Grid.Column="1" Margin="5,10,5,5" Padding="3" Grid.Row="1"/>
+            <Button Name="BtnDel" Content="{StaticResource DESC_DEL}" Grid.Column="1" Margin="5,10,5,5" Padding="3" Grid.Row="1" Click="BtnDel_Click"/>
         </Grid>
         <Grid Margin="0,5,10,5">
             <Grid.ColumnDefinitions>
@@ -40,10 +40,11 @@
                 <RowDefinition/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <TabControl Grid.ColumnSpan="5">
+            <TabControl Grid.ColumnSpan="5" Name="Tab">
                 <TabItem Header="{StaticResource Q_LIST_FILES}">
                     <Grid Margin="0,0,0,10">
                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
@@ -56,7 +57,7 @@
                             <RowDefinition/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
-                        <ListView Margin="10" Name="lvFiles" Grid.ColumnSpan="7">
+                        <ListView Margin="10" Name="lvFiles" Grid.ColumnSpan="7" Grid.Column="1">
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Header="{StaticResource ND_FILE}" Width="200" DisplayMemberBinding="{Binding Name}" />
@@ -65,24 +66,31 @@
                                 </GridView>
                             </ListView.View>
                         </ListView>
-                        <Button Name="BtnAdd" Content="{StaticResource Q_ADD}" Margin="10,3,5,3" Padding="5,3" Grid.Row="1" Grid.Column="0"/>
-                        <Button Name="BtnRemove" Content="{StaticResource Q_REMOVE}" Margin="0,3,5,3" Padding="5,3" Grid.Row="1" Grid.Column="1"/>
-                        <Button Name="BtnUp" Content="{StaticResource Q_MOVE_UP}" Margin="0,3,5,3" Padding="5,3" Grid.Row="1" Grid.Column="2"/>
-                        <Button Name="BtnDown" Content="{StaticResource Q_MOVE_DN}" Margin="0,3,5,3" Padding="5,3" Grid.Row="1" Grid.Column="3"/>
-                        <Button Name="BtnMoveTo" Content="{StaticResource Q_MOVE_TO}" Margin="0,3,5,3" Padding="5,3" Grid.Row="1" Grid.Column="4"/>
+                        <Button Name="BtnAdd" Content="{StaticResource Q_ADD}" 
+                                Margin="10,3,5,3" Padding="5,3" Grid.Row="1" 
+                                Grid.Column="1" 
+                                Click="BtnAdd_Click"/>
+                        <Button Name="BtnRemove" Content="{StaticResource Q_REMOVE}" Margin="0,3,5,3" Padding="5,3" 
+                                Grid.Row="1" Grid.Column="2" Click="BtnRemove_Click"/>
+                        <Button Name="BtnUp" Content="{StaticResource Q_MOVE_UP}" Margin="0,3,5,3" Padding="5,3" 
+                                Grid.Row="1" Grid.Column="3" Click="BtnUp_Click"/>
+                        <Button Name="BtnDown" Content="{StaticResource Q_MOVE_DN}" Margin="0,3,5,3" Padding="5,3" 
+                                Grid.Row="1" Grid.Column="4" Click="BtnDown_Click"/>
+                        <Button Name="BtnMoveTo" Content="{StaticResource Q_MOVE_TO}" Margin="0,3,5,3" Padding="5,3" 
+                                Grid.Row="1" Grid.Column="5" Click="BtnMoveTo_Click"/>
                     </Grid>
                 </TabItem>
                 <TabItem Header="{StaticResource Q_SCHEDULE_TXT}">
                     <DockPanel>
                         <CheckBox Name="ChkEnableScheduler" Content="{StaticResource Q_ENABLE}" DockPanel.Dock="Top" Margin="10"/>
-                        <sc:SchedulerPanel/>
+                        <sc:SchedulerPanel x:Name="SchedulerPanel"/>
                     </DockPanel>
                 </TabItem>
             </TabControl>
-            <Button Name="BtnStart" Content="{StaticResource MENU_START_Q}" Grid.Row="1" Grid.Column="0" Margin="5,10,5,5" Padding="5,3"/>
-            <Button Name="BtnStop" Content="{StaticResource MENU_PAUSE}" Grid.Row="1" Grid.Column="1" Margin="5,10,5,5" Padding="20,3"/>
-            <Button Name="BtnSave" Content="{StaticResource DESC_SAVE_Q}" Grid.Row="1" Grid.Column="3" Margin="5,10,5,5" Padding="20,3"/>
-            <Button Name="BtnCancel" Content="{StaticResource ND_CANCEL}" Grid.Row="1" Grid.Column="4" Margin="5,10,5,5" Padding="15,3"/>
+            <Button Name="BtnStart" Content="{StaticResource MENU_START_Q}" Grid.Row="1" Grid.Column="0" Margin="5,10,5,5" Padding="5,3" Click="BtnStart_Click"/>
+            <Button Name="BtnStop" Content="{StaticResource MENU_PAUSE}" Grid.Row="1" Grid.Column="1" Margin="5,10,5,5" Padding="20,3" Click="BtnStop_Click"/>
+            <Button Name="BtnSave" Content="{StaticResource DESC_SAVE_Q}" Grid.Row="1" Grid.Column="3" Margin="5,10,5,5" Padding="20,3" Click="BtnSave_Click"/>
+            <Button Name="BtnCancel" Content="{StaticResource ND_CANCEL}" Grid.Row="1" Grid.Column="4" Margin="5,10,5,5" Padding="15,3" Click="BtnCancel_Click"/>
         </Grid>
     </DockPanel>
 </Window>
