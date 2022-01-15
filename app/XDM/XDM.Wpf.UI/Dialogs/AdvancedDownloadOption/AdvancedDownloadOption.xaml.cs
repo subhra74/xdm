@@ -72,25 +72,14 @@ namespace XDM.Wpf.UI.Dialogs.AdvancedDownloadOption
                         Host = TxtProxyHost.Text,
                         Port = Int32.Parse(TxtProxyPort.Text),
                         UserName = TxtProxyUser.Text,
-                        Password = TxtProxyPassword.Text
+                        Password = TxtProxyPassword.Password
                     };
                 }
                 return null;
             }
             set
             {
-                if (value.HasValue)
-                {
-                    CmbProxyType.SelectedIndex = (int)(Config.Instance.Proxy?.ProxyType ?? ProxyType.System);
-                    TxtProxyHost.Text = Config.Instance.Proxy?.Host;
-                    TxtProxyPort.Text = (Config.Instance.Proxy?.Port ?? 0).ToString();
-                    TxtProxyUser.Text = Config.Instance.Proxy?.UserName;
-                    TxtProxyPassword.Text = Config.Instance.Proxy?.Password;
-                }
-                else
-                {
-                    SetProxy(value ?? Config.Instance.Proxy);
-                }
+                SetProxy(value ?? Config.Instance.Proxy);
             }
         }
 
@@ -100,7 +89,7 @@ namespace XDM.Wpf.UI.Dialogs.AdvancedDownloadOption
             TxtProxyHost.Text = proxy?.Host;
             TxtProxyPort.Text = proxy?.Port.ToString();
             TxtProxyUser.Text = proxy?.UserName;
-            TxtProxyPassword.Text = proxy?.Password;
+            TxtProxyPassword.Password = proxy?.Password;
         }
 
         public int SpeedLimit

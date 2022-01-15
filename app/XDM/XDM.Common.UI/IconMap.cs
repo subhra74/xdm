@@ -24,7 +24,7 @@ namespace XDM.Common.UI
                 "CAT_VIDEOS" => "ri-movie-line",
                 "CAT_DOCUMENTS" => "ri-file-text-line",
                 "CAT_PROGRAMS" => "ri-microsoft-line",
-                _ => "ri-file-fill",
+                _ => "ri-file-line",
             };
         }
 

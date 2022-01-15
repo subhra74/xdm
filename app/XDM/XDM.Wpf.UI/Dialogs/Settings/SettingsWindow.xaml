@@ -1,0 +1,46 @@
+﻿<Window x:Class="XDM.Wpf.UI.Dialogs.Settings.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:XDM.Wpf.UI.Dialogs.Settings"
+        mc:Ignorable="d"
+        Title="SettingsWindow" Height="500" Width="700" ShowInTaskbar="False" 
+        WindowStartupLocation="CenterOwner">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Button  Grid.Row="1" Grid.Column="2" Margin="0,10,10,10" Padding="10,3" Content="{StaticResource DESC_SAVE_Q}" Name="BtnOK" Click="BtnOK_Click"/>
+        <Button  Grid.Row="1" Grid.Column="3" Margin="0,10,10,10" Padding="10,3" Content="{StaticResource ND_CANCEL}" Name="BtnCancel" Click="BtnCancel_Click"/>
+        <ListBox Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" Name="LbTitles" SelectionChanged="LbTitles_SelectionChanged">
+            <ListBoxItem>
+                <TextBlock Padding="10,10,20,10" Text="{StaticResource SETTINGS_MONITORING}"/>
+            </ListBoxItem>
+            <ListBoxItem>
+                <TextBlock Padding="10,10,20,10" Text="{StaticResource SETTINGS_GENERAL}"/>
+            </ListBoxItem>
+            <ListBoxItem>
+                <TextBlock Padding="10,10,20,10" Text="{StaticResource SETTINGS_NETWORK}"/>
+            </ListBoxItem>
+            <ListBoxItem>
+                <TextBlock Padding="10,10,20,10" Text="{StaticResource SETTINGS_CRED}"/>
+            </ListBoxItem>
+            <ListBoxItem>
+                <TextBlock Padding="10,10,20,10" Text="{StaticResource SETTINGS_ADV}"/>
+            </ListBoxItem>
+        </ListBox>
+        <local:BrowserMonitoringView x:Name="BrowserMonitoringView" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="3"/>
+        <local:GeneralSettingsView x:Name="GeneralSettingsView" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="3"/>
+        <local:NetworkSettingsView x:Name="NetworkSettingsView" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="3"/>
+        <local:PasswordManagerView x:Name="PasswordManagerView" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="3"/>
+        <local:AdvancedSettingsView x:Name="AdvancedSettingsView" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="3"/>
+    </Grid>
+</Window>

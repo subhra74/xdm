@@ -19,7 +19,8 @@
         <CheckBox Name="ChkEnabled" 
                   Margin="10"
                   Content="{StaticResource MENU_SPEED_LIMITER}" 
-                  Grid.ColumnSpan="2" Checked="ChkEnabled_Checked"/>
+                  Grid.ColumnSpan="2" Checked="ChkEnabled_Checked" 
+                  Unchecked="ChkEnabled_Checked"/>
         <TextBlock Text="{StaticResource MSG_SPEED_LIMIT}" 
                    Margin="10"
                    Grid.Row="1"/>

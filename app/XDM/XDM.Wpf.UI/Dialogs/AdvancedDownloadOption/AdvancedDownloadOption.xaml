@@ -110,11 +110,9 @@
                              AcceptsReturn="False"
                              VerticalAlignment="Stretch" 
                              VerticalContentAlignment="Center"/>
-                    <TextBox Name="TxtProxyPassword" 
+                    <PasswordBox Name="TxtProxyPassword" 
                              Grid.Row="4" Grid.Column="1"
                              Margin="5"
-                             TextWrapping="NoWrap" 
-                             AcceptsReturn="False"
                              VerticalAlignment="Stretch" 
                              VerticalContentAlignment="Center"/>
                     <StackPanel Grid.Column="0" Grid.Row="5" Margin="5" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" >

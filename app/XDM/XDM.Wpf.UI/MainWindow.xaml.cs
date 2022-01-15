@@ -26,6 +26,7 @@ using XDM.Wpf.UI.Dialogs.NewVideoDownload;
 using XDM.Wpf.UI.Dialogs.ProgressWindow;
 using XDM.Wpf.UI.Dialogs.QueuesWindow;
 using XDM.Wpf.UI.Dialogs.RefreshLink;
+using XDM.Wpf.UI.Dialogs.Settings;
 using XDM.Wpf.UI.Win32;
 
 namespace XDM.Wpf.UI
@@ -475,7 +476,8 @@ namespace XDM.Wpf.UI
 
         public void ShowSettingsDialog(IApp app, int page = 0)
         {
-            throw new NotImplementedException();
+            var settings = new SettingsWindow(app) { Owner = this };
+            settings.ShowDialog(this);
         }
 
         public void ImportDownloads(IApp app)
@@ -500,7 +502,7 @@ namespace XDM.Wpf.UI
 
         public void UpdateParallalismLabel()
         {
-            throw new NotImplementedException();
+
         }
 
         public IUpdaterUI CreateUpdateUIDialog(IAppUI ui)
@@ -608,6 +610,11 @@ namespace XDM.Wpf.UI
         private void BtnQueue_Click(object sender, RoutedEventArgs e)
         {
             this.SchedulerClicked?.Invoke(sender, e);
+        }
+
+        private void menuSettings_Click(object sender, RoutedEventArgs e)
+        {
+            this.SettingsClicked?.Invoke(this, e);
         }
 
         private void lvInProgress_Click(object sender, RoutedEventArgs e)

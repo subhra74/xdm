@@ -22,7 +22,7 @@
     <SolidColorBrush x:Key="TextBackcolor" Color="#282C34"/>
     <SolidColorBrush x:Key="TextForecolor" Color="#ABB2BF"/>
 
-    <SolidColorBrush x:Key="ListViewBackcolor" Color="#282C34"/>
+    <SolidColorBrush x:Key="ListViewBackcolor" Color="#21252B"/>
     <SolidColorBrush x:Key="ListViewForecolor" Color="#ABB2BF"/>
     <SolidColorBrush x:Key="ListViewMouseOverBackcolor" Color="#31363F"/>
     <SolidColorBrush x:Key="ListViewMouseOverForecolor" Color="#F0F0F0"/>

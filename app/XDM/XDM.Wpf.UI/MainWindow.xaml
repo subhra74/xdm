@@ -11,7 +11,7 @@
         <ContextMenu x:Key="ctxMainMenu" x:Name="ctxMainMenu" 
                      LayoutUpdated="ctxMainMenu_LayoutUpdated">
             <MenuItem Name="menuSettings" Header="{StaticResource TITLE_SETTINGS}" 
-                      Foreground="{StaticResource ControlForecolor}"/>
+                      Foreground="{StaticResource ControlForecolor}" Click="menuSettings_Click"/>
             <MenuItem Name="menuClearFinished" Header="{StaticResource MENU_DELETE_COMPLETED}" 
                       Foreground="{StaticResource ControlForecolor}"/>
             <MenuItem Name="menuExport" Header="{StaticResource MENU_EXPORT}" 
@@ -161,13 +161,13 @@
             BorderThickness="{StaticResource MainContentBorderThickness}" SnapsToDevicePixels="True">
         <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="200"></ColumnDefinition>
+                <ColumnDefinition Width="190"></ColumnDefinition>
                 <ColumnDefinition Width="*"></ColumnDefinition>
             </Grid.ColumnDefinitions>
             <ListBox BorderThickness="{StaticResource CategoryListBorderThickness}" 
                  Name="lvCategory" 
                  SelectionChanged="lvCategory_SelectionChanged" 
-                 BorderBrush="Black"
+                 BorderBrush="{StaticResource ToolbarBordercolor}"
                  Background="{StaticResource CategoryListBackground}" >
                 <ListBox.Resources>
                     <Style TargetType="{x:Type ListBoxItem}">
