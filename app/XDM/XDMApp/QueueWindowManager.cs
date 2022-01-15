@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using TraceLog;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.UI;
-using XDMApp;
 
 namespace XDMApp
 {
@@ -30,7 +27,6 @@ namespace XDMApp
         {
             if (queueWindow != null)
             {
-                queueWindow.ShowWindow(window);
                 return;
             }
 
@@ -51,7 +47,7 @@ namespace XDMApp
             queueWindow.ShowWindow(window);
         }
 
-        private static void QueueWindow_WindowClosing(object sender, EventArgs e)
+        private static void QueueWindow_WindowClosing(object? sender, EventArgs e)
         {
             queueWindow!.QueuesModified -= QueueWindow_QueuesModified;
             queueWindow!.QueueStartRequested -= QueueWindow_QueueStartRequested;
@@ -59,20 +55,19 @@ namespace XDMApp
             queueWindow!.WindowClosing -= QueueWindow_WindowClosing;
             queueWindow = null;
             app = null;
-            Log.Debug("QueueWindow_WindowClosing");
         }
 
-        private static void QueueWindow_QueueStopRequested(object sender, DownloadListEventArgs e)
+        private static void QueueWindow_QueueStopRequested(object? sender, DownloadListEventArgs e)
         {
             app?.StopDownloads(e.Downloads, true);
         }
 
-        private static void QueueWindow_QueueStartRequested(object sender, DownloadListEventArgs e)
+        private static void QueueWindow_QueueStartRequested(object? sender, DownloadListEventArgs e)
         {
             app?.ResumeNonInteractiveDownloads(e.Downloads);
         }
 
-        private static void QueueWindow_QueuesModified(object sender, QueueListEventArgs e)
+        private static void QueueWindow_QueuesModified(object? sender, QueueListEventArgs e)
         {
             OnQueueModified(e.Queues);
         }

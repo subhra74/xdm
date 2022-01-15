@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Windows.Controls;
 using TraceLog;
+using XDM.Core.Lib.Util;
 
 namespace XDM.Wpf.UI.Dialogs.Scheduler
 {
@@ -66,45 +67,17 @@ namespace XDM.Wpf.UI.Dialogs.Scheduler
         {
             get
             {
-                var hour = (int)CmbHour.SelectedItem;
-                if (CmbAmPm.SelectedIndex == 0 && hour == 12)
-                {
-                    hour = 0;
-                }
-                else if (CmbAmPm.SelectedIndex == 1)
-                {
-                    hour += 12;
-                }
-                return new TimeSpan(hour, (int)CmbMinute.SelectedItem, 0);
+                return TimeHelper.ConvertH12ToH24((int)CmbHour.SelectedItem,
+                    (int)CmbMinute.SelectedItem, CmbAmPm.SelectedIndex == 0);
             }
             set
             {
-                Log.Debug("setting time to: " + value);
                 suppressEvent = true;
-                var hour = value.Hours;
-                if (hour < 1)
-                {
-                    CmbAmPm.SelectedIndex = 0;
-                    CmbHour.SelectedItem = 12;
-                }
-                else if (hour < 12)
-                {
-                    CmbAmPm.SelectedIndex = 0;
-                    CmbHour.SelectedItem = hour;
-                }
-                else if (hour == 12)
-                {
-                    CmbAmPm.SelectedIndex = 1;
-                    CmbHour.SelectedItem = 12;
-                }
-                else if (hour > 12)
-                {
-                    CmbAmPm.SelectedIndex = 1;
-                    CmbHour.SelectedItem = hour - 12;
-                }
-                CmbMinute.SelectedItem = value.Minutes;
+                TimeHelper.ConvertH24ToH12(value, out int hh, out int mi, out bool am);
+                CmbAmPm.SelectedIndex = am ? 0 : 1;
+                CmbHour.SelectedItem = hh;
+                CmbMinute.SelectedItem = mi;
                 suppressEvent = false;
-                Log.Debug("CmbHour.SelectedItem: " + CmbHour.SelectedItem);
             }
         }
     }

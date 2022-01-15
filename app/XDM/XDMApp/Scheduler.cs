@@ -43,14 +43,27 @@ namespace XDMApp
 
         private void StartOrStopItem(DownloadQueue item)
         {
-            if (item.Schedule!.Value.EndTime == DateTime.Now.TimeOfDay)
+            var h1 = DateTime.Now.TimeOfDay.Hours;
+            var m1 = DateTime.Now.TimeOfDay.Minutes;
+            var h2 = item.Schedule!.Value.EndTime.Hours;
+            var m2 = item.Schedule!.Value.EndTime.Minutes;
+            var h3 = item.Schedule!.Value.StartTime.Hours;
+            var m3 = item.Schedule!.Value.StartTime.Minutes;
+
+            //Log.Debug("DateTime.Now.TimeOfDay: " + DateTime.Now.TimeOfDay
+            //    + "\nitem.Schedule!.Value.StartTime: "
+            //    + item.Schedule!.Value.StartTime
+            //    + "\nitem.Schedule!.Value.EndTime: "
+            //    + item.Schedule!.Value.EndTime);
+
+            if (h1 == h2 && m1 == m2)
             {
                 app.StopDownloads(new List<string>(item.DownloadIds), true);
                 this.activeSchedules.Remove(item.ID);
                 return;
             }
 
-            if (item.Schedule.Value.StartTime == DateTime.Now.TimeOfDay)
+            if (h1 == h3 && m1 == m3)
             {
                 if (this.activeSchedules.Contains(item.ID))
                 {
@@ -74,7 +87,7 @@ namespace XDMApp
         {
             if (queue.Schedule != null)
             {
-                Log.Debug("Queue " + queue + " has schedule: " + queue.Schedule.HasValue);
+                //Log.Debug("Queue " + queue + " has schedule: " + queue.Schedule.HasValue);
                 var day = queue.Schedule.Value.Days;
 
                 if ((DateTime.Now.DayOfWeek == DayOfWeek.Sunday && HasFlag(day, WeekDays.Sun)) ||

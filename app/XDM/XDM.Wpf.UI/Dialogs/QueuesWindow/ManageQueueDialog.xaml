@@ -83,7 +83,7 @@
                 <TabItem Header="{StaticResource Q_SCHEDULE_TXT}">
                     <DockPanel>
                         <CheckBox Name="ChkEnableScheduler" Content="{StaticResource Q_ENABLE}" DockPanel.Dock="Top" Margin="10"/>
-                        <sc:SchedulerPanel x:Name="SchedulerPanel"/>
+                        <sc:SchedulerPanel x:Name="SchedulerPanel" IsEnabled="False"/>
                     </DockPanel>
                 </TabItem>
             </TabControl>
