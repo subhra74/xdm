@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Windows;
 using TraceLog;
+using XDM.Core.Lib.Common;
 
 namespace XDM.Wpf.UI
 {
@@ -9,7 +10,7 @@ namespace XDM.Wpf.UI
     /// </summary>
     public partial class App : Application
     {
-        public static Skin Skin = Skin.Light;
+        public static Skin Skin = Config.Instance.AllowSystemDarkTheme ? Skin.Dark : Skin.Light;
         private XDMApp.XDMApp app;
         private MainWindow win;
 
