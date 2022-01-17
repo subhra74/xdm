@@ -472,15 +472,15 @@
                                 <GridViewColumn Width="200">
                                     <GridViewColumn.Header>
                                         <GridViewColumnHeader Tag="Name">
-                                            <TextBlock Padding="50,0" >Name</TextBlock>
+                                            <TextBlock Padding="40,0" >Name</TextBlock>
                                         </GridViewColumnHeader>
                                     </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal">
                                                 <Path SnapsToDevicePixels="True" 
-                                                  VerticalAlignment="Center" Margin="10,5" StrokeThickness="0" Stretch="Uniform" Fill="{StaticResource ListViewIconForecolor}"
-                                                  Width="24" Height="24"  Stroke="{StaticResource ListViewIconForecolor}" 
+                                                  VerticalAlignment="Center" Margin="5,5" StrokeThickness="0" Stretch="None" Fill="{StaticResource ListViewIconForecolor}"
+                                                  Width="24" Height="24" 
                                                   Data="{Binding Path=Name, Converter={StaticResource FileExtensionToVectorImageConverter}}"
                                                   />
                                                 <TextBlock Text="{Binding Name}" Margin="5,5" VerticalAlignment="Center"></TextBlock>
@@ -544,15 +544,15 @@
                                 <GridViewColumn  Width="400" >
                                     <GridViewColumn.Header>
                                         <GridViewColumnHeader Tag="Name">
-                                            <TextBlock Padding="50,0">Name</TextBlock>
+                                            <TextBlock Padding="40,0">Name</TextBlock>
                                         </GridViewColumnHeader>
                                     </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal">
                                                 <Path SnapsToDevicePixels="True" VerticalAlignment="Center" 
-                                                  Margin="10,5" StrokeThickness="0" Stretch="Uniform" Fill="{StaticResource ListViewIconForecolor}"
-                                                  Width="24" Height="24"  Stroke="{StaticResource ListViewIconForecolor}" 
+                                                  Margin="5,5" StrokeThickness="0" Stretch="None" Fill="{StaticResource ListViewIconForecolor}"
+                                                  Width="24" Height="24"  
                                                   Data="{Binding Path=Name, Converter={StaticResource FileExtensionToVectorImageConverter}}"
                                                   />
                                                 <TextBlock Text="{Binding Name}" Margin="5,5" VerticalAlignment="Center"></TextBlock>

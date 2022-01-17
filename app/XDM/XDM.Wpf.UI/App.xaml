@@ -119,6 +119,7 @@
                     </Geometry>
                     <BooleanToVisibilityConverter x:Key="BoolToVis"/>
                     <local:FileExtensionToVectorImageConverter x:Key="FileExtensionToVectorImageConverter"></local:FileExtensionToVectorImageConverter>
+                    <local:FileExtensionToColorConverter x:Key="FileExtensionToColorConverter"></local:FileExtensionToColorConverter>
                     <local:CategoryToVectorImageConverter x:Key="CategoryToVectorImageConverter"></local:CategoryToVectorImageConverter>
                     <local:FileSizeValueConverter x:Key="FileSizeValueConverter"></local:FileSizeValueConverter>
                     <DataTemplate x:Key="HeaderTemplateArrowUp">
