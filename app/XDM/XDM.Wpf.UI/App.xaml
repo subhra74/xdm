@@ -139,6 +139,11 @@
                             Data = "M 5,5 L 15,5 L 10,10 L 5,5"/>
                         </DockPanel>
                     </DataTemplate>
+                    <SolidColorBrush x:Key="color-ri-movie-fill" Color="#007AFF"/>
+                    <SolidColorBrush x:Key="color-ri-file-zip-fill" Color="#FF9500"/>
+                    <SolidColorBrush x:Key="color-ri-microsoft-fill" Color="#FF3A31"/>
+                    <SolidColorBrush x:Key="color-ri-file-fill" Color="#6AC4DC"/>
+                    <SolidColorBrush x:Key="color-ri-file-text-fill" Color="#00C7BE"/>
                 </ResourceDictionary>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>

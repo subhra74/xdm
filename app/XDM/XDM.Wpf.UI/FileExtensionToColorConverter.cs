@@ -7,12 +7,13 @@ using XDM.Common.UI;
 
 namespace XDM.Wpf.UI
 {
-    [ValueConversion(typeof(string), typeof(Geometry))]
-    internal class FileExtensionToVectorImageConverter : IValueConverter
+    [ValueConversion(typeof(string), typeof(SolidColorBrush))]
+    internal class FileExtensionToColorConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return Application.Current.TryFindResource(IconMap.GetVectorNameForFileType(value as string));
+            var res = IconMap.GetVectorNameForFileType(value as string);
+            return Application.Current.TryFindResource("color-" + res);
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
@@ -21,3 +22,4 @@ namespace XDM.Wpf.UI
         }
     }
 }
+

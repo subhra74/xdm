@@ -553,26 +553,28 @@ namespace XDM.Wpf.UI
 
         private void lvFinished_Click(object sender, RoutedEventArgs e)
         {
-            GridViewColumnHeader column = (GridViewColumnHeader)e.OriginalSource;
-            string sortBy = (string)column.Tag;
-            if (string.IsNullOrEmpty(sortBy))
+            if(e.OriginalSource is GridViewColumnHeader column)
             {
-                return;
-            }
-            if (finishedListViewSortCol != null)
-            {
-                AdornerLayer.GetAdornerLayer(finishedListViewSortCol).Remove(finishedListViewSortAdorner);
-                lvFinished.Items.SortDescriptions.Clear();
-            }
+                string sortBy = (string)column.Tag;
+                if (string.IsNullOrEmpty(sortBy))
+                {
+                    return;
+                }
+                if (finishedListViewSortCol != null)
+                {
+                    AdornerLayer.GetAdornerLayer(finishedListViewSortCol).Remove(finishedListViewSortAdorner);
+                    lvFinished.Items.SortDescriptions.Clear();
+                }
 
-            ListSortDirection newDir = ListSortDirection.Ascending;
-            if (finishedListViewSortCol == column && finishedListViewSortAdorner.Direction == newDir)
-                newDir = ListSortDirection.Descending;
+                ListSortDirection newDir = ListSortDirection.Ascending;
+                if (finishedListViewSortCol == column && finishedListViewSortAdorner.Direction == newDir)
+                    newDir = ListSortDirection.Descending;
 
-            finishedListViewSortCol = column;
-            finishedListViewSortAdorner = new SortAdorner(finishedListViewSortCol, newDir);
-            AdornerLayer.GetAdornerLayer(finishedListViewSortCol).Add(finishedListViewSortAdorner);
-            lvFinished.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
+                finishedListViewSortCol = column;
+                finishedListViewSortAdorner = new SortAdorner(finishedListViewSortCol, newDir);
+                AdornerLayer.GetAdornerLayer(finishedListViewSortCol).Add(finishedListViewSortAdorner);
+                lvFinished.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
+            }
         }
 
         private void BtnMenu_Click(object sender, RoutedEventArgs e)
@@ -619,26 +621,28 @@ namespace XDM.Wpf.UI
 
         private void lvInProgress_Click(object sender, RoutedEventArgs e)
         {
-            GridViewColumnHeader column = (GridViewColumnHeader)e.OriginalSource;
-            string sortBy = (string)column.Tag;
-            if (string.IsNullOrEmpty(sortBy))
+            if(e.OriginalSource is GridViewColumnHeader column)
             {
-                return;
-            }
-            if (inProgressListViewSortCol != null)
-            {
-                AdornerLayer.GetAdornerLayer(inProgressListViewSortCol).Remove(inProgressListViewSortAdorner);
-                lvInProgress.Items.SortDescriptions.Clear();
-            }
+                string sortBy = (string)column.Tag;
+                if (string.IsNullOrEmpty(sortBy))
+                {
+                    return;
+                }
+                if (inProgressListViewSortCol != null)
+                {
+                    AdornerLayer.GetAdornerLayer(inProgressListViewSortCol).Remove(inProgressListViewSortAdorner);
+                    lvInProgress.Items.SortDescriptions.Clear();
+                }
 
-            ListSortDirection newDir = ListSortDirection.Ascending;
-            if (inProgressListViewSortCol == column && inProgressListViewSortAdorner.Direction == newDir)
-                newDir = ListSortDirection.Descending;
+                ListSortDirection newDir = ListSortDirection.Ascending;
+                if (inProgressListViewSortCol == column && inProgressListViewSortAdorner.Direction == newDir)
+                    newDir = ListSortDirection.Descending;
 
-            inProgressListViewSortCol = column;
-            inProgressListViewSortAdorner = new SortAdorner(inProgressListViewSortCol, newDir);
-            AdornerLayer.GetAdornerLayer(inProgressListViewSortCol).Add(inProgressListViewSortAdorner);
-            lvInProgress.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
+                inProgressListViewSortCol = column;
+                inProgressListViewSortAdorner = new SortAdorner(inProgressListViewSortCol, newDir);
+                AdornerLayer.GetAdornerLayer(inProgressListViewSortCol).Add(inProgressListViewSortAdorner);
+                lvInProgress.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
+            }
         }
 
         private void CreateMenuItems()

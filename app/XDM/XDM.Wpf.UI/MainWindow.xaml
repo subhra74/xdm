@@ -472,15 +472,15 @@
                                 <GridViewColumn Width="200">
                                     <GridViewColumn.Header>
                                         <GridViewColumnHeader Tag="Name">
-                                            <TextBlock Padding="50,0">Name</TextBlock>
+                                            <TextBlock Padding="50,0" >Name</TextBlock>
                                         </GridViewColumnHeader>
                                     </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal">
                                                 <Path SnapsToDevicePixels="True" 
-                                                  VerticalAlignment="Center" Margin="10,6" StrokeThickness="0" Stretch="Uniform" Fill="{StaticResource ListViewIconForecolor}"
-                                                  Width="26" Height="26"  Stroke="{StaticResource ListViewIconForecolor}" 
+                                                  VerticalAlignment="Center" Margin="10,5" StrokeThickness="0" Stretch="Uniform" Fill="{StaticResource ListViewIconForecolor}"
+                                                  Width="24" Height="24"  Stroke="{StaticResource ListViewIconForecolor}" 
                                                   Data="{Binding Path=Name, Converter={StaticResource FileExtensionToVectorImageConverter}}"
                                                   />
                                                 <TextBlock Text="{Binding Name}" Margin="5,5" VerticalAlignment="Center"></TextBlock>
@@ -551,8 +551,8 @@
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal">
                                                 <Path SnapsToDevicePixels="True" VerticalAlignment="Center" 
-                                                  Margin="10,6" StrokeThickness="0" Stretch="Uniform" Fill="{StaticResource ListViewIconForecolor}"
-                                                  Width="26" Height="26"  Stroke="{StaticResource ListViewIconForecolor}" 
+                                                  Margin="10,5" StrokeThickness="0" Stretch="Uniform" Fill="{StaticResource ListViewIconForecolor}"
+                                                  Width="24" Height="24"  Stroke="{StaticResource ListViewIconForecolor}" 
                                                   Data="{Binding Path=Name, Converter={StaticResource FileExtensionToVectorImageConverter}}"
                                                   />
                                                 <TextBlock Text="{Binding Name}" Margin="5,5" VerticalAlignment="Center"></TextBlock>
