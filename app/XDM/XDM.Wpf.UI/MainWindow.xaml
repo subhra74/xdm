@@ -551,7 +551,8 @@
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal">
                                                 <Path SnapsToDevicePixels="True" VerticalAlignment="Center" 
-                                                  Margin="5,5" StrokeThickness="0" Stretch="None" Fill="{StaticResource ListViewIconForecolor}"
+                                                  Margin="5,5" StrokeThickness="0" Stretch="None" 
+                                                      Fill="{StaticResource ListViewIconForecolor}"
                                                   Width="24" Height="24"  
                                                   Data="{Binding Path=Name, Converter={StaticResource FileExtensionToVectorImageConverter}}"
                                                   />

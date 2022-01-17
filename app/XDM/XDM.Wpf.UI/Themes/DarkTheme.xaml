@@ -2,8 +2,8 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <SolidColorBrush x:Key="CategoryForegroundNormal" Color="#808080"/>
     <SolidColorBrush x:Key="CategoryForegroundSelected" Color="White"/>
-    <SolidColorBrush x:Key="CategoryHighlight" Color="#0A6AB6"/>
-    <SolidColorBrush x:Key="CategoryListBackground" Color="#21252B"/>
+    <SolidColorBrush x:Key="CategoryHighlight" Color="#31363F"/>
+    <SolidColorBrush x:Key="CategoryListBackground" Color="#1B1C1E"/>
 
     <SolidColorBrush x:Key="ToolButtonForecolor" Color="#ABB2BF"/>
     <SolidColorBrush x:Key="ToolButtonMouseOverBackcolor" Color="#373D48"/>
@@ -12,8 +12,8 @@
     <SolidColorBrush x:Key="ToolbarBordercolor" Color="#000000"/>
 
     <SolidColorBrush x:Key="SearchBorder" Color="#000000"/>
-    
-    <SolidColorBrush x:Key="ControlBackcolor" Color="#21252B"/>
+
+    <SolidColorBrush x:Key="ControlBackcolor" Color="#1B1C1E"/>
     <SolidColorBrush x:Key="ControlBordercolor" Color="#000000"/>
     <SolidColorBrush x:Key="ControlForecolor" Color="#A0A0A0"/>
     
@@ -22,7 +22,7 @@
     <SolidColorBrush x:Key="TextBackcolor" Color="#282C34"/>
     <SolidColorBrush x:Key="TextForecolor" Color="#ABB2BF"/>
 
-    <SolidColorBrush x:Key="ListViewBackcolor" Color="#21252B"/>
+    <SolidColorBrush x:Key="ListViewBackcolor" Color="#212121"/>
     <SolidColorBrush x:Key="ListViewForecolor" Color="#ABB2BF"/>
     <SolidColorBrush x:Key="ListViewMouseOverBackcolor" Color="#31363F"/>
     <SolidColorBrush x:Key="ListViewMouseOverForecolor" Color="#F0F0F0"/>
@@ -30,8 +30,8 @@
     <SolidColorBrush x:Key="ListViewSelectedBackcolor" Color="#3A3F4B"/>
     <SolidColorBrush x:Key="ListViewIconForecolor" Color="#777D88"/>
     <SolidColorBrush x:Key="ListViewHeaderForecolor" Color="#777D88"/>
-    
-    <SolidColorBrush x:Key="StatusbarBackcolor" Color="#21252B"/>
+
+    <SolidColorBrush x:Key="StatusbarBackcolor" Color="#212121"/>
     <SolidColorBrush x:Key="StatusbarIconcolor" Color="#777D88"/>
     
     <Thickness x:Key="CategoryListBorderThickness">0,0,1,0</Thickness>
