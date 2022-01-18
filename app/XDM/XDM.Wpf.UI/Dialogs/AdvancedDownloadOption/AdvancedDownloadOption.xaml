@@ -39,11 +39,13 @@
                              TextWrapping="NoWrap" 
                              AcceptsReturn="False"
                              VerticalAlignment="Stretch" 
+                             Background="{StaticResource TextBackcolor}"
                              VerticalContentAlignment="Center"/>
                     <PasswordBox Name="TxtPassword" 
                              Grid.Row="1" Grid.Column="1"
                              Margin="5"
                              VerticalAlignment="Stretch" 
+                             Background="{StaticResource TextBackcolor}"
                              VerticalContentAlignment="Center"/>
                     <CheckBox Name="ChkRememberAuth"
                               Grid.Row="2" Grid.Column="0" 
@@ -95,6 +97,7 @@
                              TextWrapping="NoWrap" 
                              AcceptsReturn="False"
                              VerticalAlignment="Stretch" 
+                             Background="{StaticResource TextBackcolor}"
                              VerticalContentAlignment="Center"/>
                     <TextBox Name="TxtProxyPort" 
                              Grid.Row="2" Grid.Column="1"
@@ -102,10 +105,12 @@
                              TextWrapping="NoWrap" 
                              AcceptsReturn="False"
                              VerticalAlignment="Stretch" 
+                             Background="{StaticResource TextBackcolor}"
                              VerticalContentAlignment="Center"/>
                     <TextBox Name="TxtProxyUser" 
                              Grid.Row="3" Grid.Column="1"
                              Margin="5"
+                             Background="{StaticResource TextBackcolor}"
                              TextWrapping="NoWrap" 
                              AcceptsReturn="False"
                              VerticalAlignment="Stretch" 
@@ -114,6 +119,7 @@
                              Grid.Row="4" Grid.Column="1"
                              Margin="5"
                              VerticalAlignment="Stretch" 
+                                 Background="{StaticResource TextBackcolor}"
                              VerticalContentAlignment="Center"/>
                     <StackPanel Grid.Column="0" Grid.Row="5" Margin="5" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" >
                         <Button Name="BtnSystemProxy" Margin="0,10,0,0" Padding="5"  

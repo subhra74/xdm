@@ -7,12 +7,14 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Util;
 using XDM.Wpf.UI.Common;
+using XDM.Wpf.UI.Win32;
 
 namespace XDM.Wpf.UI.Dialogs.AdvancedDownloadOption
 {
@@ -128,5 +130,21 @@ namespace XDM.Wpf.UI.Dialogs.AdvancedDownloadOption
             TxtProxyUser.IsEnabled = TxtProxyPassword.IsEnabled = TxtProxyHost.IsEnabled =
                 TxtProxyPort.IsEnabled = CmbProxyType.SelectedIndex == 2;
         }
+
+#if NET45_OR_GREATER
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+
+            NativeMethods.DisableMinMaxButton(this);
+
+            if (App.Skin == Skin.Dark)
+            {
+                var helper = new WindowInteropHelper(this);
+                helper.EnsureHandle();
+                DarkModeHelper.UseImmersiveDarkMode(helper.Handle, true);
+            }
+        }
+#endif
     }
 }

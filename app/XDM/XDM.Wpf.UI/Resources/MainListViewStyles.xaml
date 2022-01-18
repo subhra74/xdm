@@ -135,8 +135,14 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type Thumb}">
-                    <Border Background="{StaticResource ToolButtonMousePressedBackcolor}" 
-                            BorderBrush="{StaticResource ToolButtonMousePressedBackcolor}" BorderThickness="1" />
+                    <Border Name="ThumBorder" Background="{StaticResource ScrollBarThumbColorNormal}" 
+                            BorderBrush="{StaticResource ScrollBarThumbColorNormal}" BorderThickness="1" />
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver"  Value="True">
+                            <Setter TargetName="ThumBorder" Property="Background" Value="{StaticResource ScrollBarThumbColorHot}"/>
+                            <Setter TargetName="ThumBorder" Property="BorderBrush" Value="{StaticResource ScrollBarThumbColorHot}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -163,8 +169,9 @@
                       Command="ScrollBar.PageUpCommand" />
                 </Track.DecreaseRepeatButton>
                 <Track.Thumb>
-                    <Thumb Style="{StaticResource ScrollBarThumb}" Margin="1,0,1,0" Background="{StaticResource ToolButtonMousePressedBackcolor}" 
-                           BorderBrush="{StaticResource ToolButtonMousePressedBackcolor}"/>
+                    <Thumb Style="{StaticResource ScrollBarThumb}" Margin="1,0,1,0" 
+                           Background="{StaticResource ScrollBarThumbColorNormal}" 
+                           BorderBrush="{StaticResource ScrollBarThumbColorNormal}"/>
                 </Track.Thumb>
                 <Track.IncreaseRepeatButton>
                     <RepeatButton Style="{StaticResource ScrollBarPageButton}"
@@ -202,8 +209,8 @@
                 </Track.DecreaseRepeatButton>
                 <Track.Thumb>
                     <Thumb Style="{StaticResource ScrollBarThumb}"
-                        Margin="0,1,0,1" Background="{StaticResource ToolButtonMousePressedBackcolor}" 
-                           BorderBrush="{StaticResource ToolButtonMousePressedBackcolor}">
+                        Margin="0,1,0,1" Background="{StaticResource ScrollBarThumbColorNormal}" 
+                           BorderBrush="{StaticResource ScrollBarThumbColorNormal}">
                     </Thumb>
                 </Track.Thumb>
                 <Track.IncreaseRepeatButton>

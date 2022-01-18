@@ -24,7 +24,6 @@
                 <ControlTemplate TargetType="Button">
                     <Border 
           x:Name="Border"  
-          CornerRadius="5" 
           BorderThickness="1"
           Padding="{TemplateBinding Padding}"
           Background="{StaticResource ControlBackcolor}"

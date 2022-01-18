@@ -47,4 +47,7 @@
 
     <SolidColorBrush x:Key="NewDownloadTextBoxBackground" Color="White"/>
     <SolidColorBrush x:Key="HyperlinkForecolor" Color="DodgerBlue"/>
+
+    <SolidColorBrush x:Key="ScrollBarThumbColorNormal" Color="#ECECEC"/>
+    <SolidColorBrush x:Key="ScrollBarThumbColorHot" Color="#E2E2E2"/>
 </ResourceDictionary>
