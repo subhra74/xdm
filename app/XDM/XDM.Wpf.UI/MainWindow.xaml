@@ -101,7 +101,7 @@
         <ControlTemplate x:Key="ToolbarButtonTemplateIconOnlySmall" TargetType="{x:Type Button}" >
             <Border Name="Border" 
                     BorderBrush="{StaticResource ToolButtonForecolor}" 
-                    Background="{StaticResource TextBackcolor}" 
+                    Background="{StaticResource SearchBackcolor}" 
                     BorderThickness="0" 
                     >
                 <StackPanel Orientation="Horizontal" Margin="{TemplateBinding Padding}" Background="Transparent">
@@ -299,7 +299,8 @@
                                 Resume
                             </Button>
                         </StackPanel>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,5" VerticalAlignment="Stretch">
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,5" VerticalAlignment="Stretch" 
+                                    Background="{StaticResource SearchBackcolor}">
                             <Border BorderBrush="{StaticResource SearchBorder}" BorderThickness="1">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
@@ -309,11 +310,11 @@
                                     <TextBox Grid.Column="0" Name="TxtSearch"  AcceptsReturn="False"  
                                                 TextWrapping="NoWrap" Width="100" VerticalContentAlignment="Center" 
                                                 Padding="5,0"
-                                                BorderThickness="0" Background="{StaticResource TextBackcolor}"
+                                                BorderThickness="0" Background="{StaticResource SearchBackcolor}"
                                                 Foreground="{StaticResource TextForecolor}"/>
                                     <TextBlock Grid.Column="0" x:Name="Placeholder" IsHitTestVisible="False" 
                                        TextWrapping="NoWrap" Text="Search" VerticalAlignment="Center"  
-                                       Background="{StaticResource TextBackcolor}"
+                                       Background="{StaticResource SearchBackcolor}"
                                        Margin="10,5" 
                                        Foreground="{StaticResource PlaceHolderForecolor}">
                                         <TextBlock.Style>
@@ -334,7 +335,7 @@
                                         </TextBlock.Style>
                                     </TextBlock>
                                     <Button Grid.Column="1" Padding="10,5" 
-                                            Background="{StaticResource TextBackcolor}"
+                                            Background="{StaticResource SearchBackcolor}"
                                             Template="{StaticResource ToolbarButtonTemplateIconOnlySmall}" 
                                             Tag="{StaticResource ri-search-line}"
                                             Click="SearchButton_Click"/>

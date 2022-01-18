@@ -37,12 +37,12 @@
                 <TextBox Grid.Row="0" Grid.Column="1" Margin="5" 
                          VerticalAlignment="Stretch" VerticalContentAlignment="Center" 
                          BorderBrush="{StaticResource ControlBordercolor}" 
-                         Background="{StaticResource NewDownloadTextBoxBackground}"
+                         Background="{StaticResource ControlBackcolor}"
                          Name="TxtUrl"
                          TextChanged="TxtUrl_TextChanged"/>
                 <TextBox Grid.Row="1" Grid.Column="1" Margin="5" VerticalAlignment="Stretch" VerticalContentAlignment="Center"
                          BorderBrush="{StaticResource ControlBordercolor}"
-                         Background="{StaticResource NewDownloadTextBoxBackground}"
+                         Background="{StaticResource ControlBackcolor}"
                          Name="TxtFile"/>
                 <ComboBox Background="{StaticResource NewDownloadTextBoxBackground}" Grid.Row="2" Grid.Column="1" Margin="5" 
                           VerticalAlignment="Stretch" VerticalContentAlignment="Center"

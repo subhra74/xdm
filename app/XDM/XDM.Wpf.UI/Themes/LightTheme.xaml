@@ -12,6 +12,7 @@
     <SolidColorBrush x:Key="ToolbarBordercolor" Color="#E6E6E6"/>
     
     <SolidColorBrush x:Key="SearchBorder" Color="#E6E6E6"/>
+    <SolidColorBrush x:Key="SearchBackcolor" Color="White"/>
     
     <SolidColorBrush x:Key="ControlBackcolor" Color="#F6F6F6"/>
     <SolidColorBrush x:Key="ControlBordercolor" Color="DarkGray"/>
@@ -39,10 +40,10 @@
     
     <SolidColorBrush x:Key="PlaceHolderForecolor" Color="#B4B4B4"/>
 
-    <SolidColorBrush x:Key="{x:Static SystemColors.ControlTextBrushKey }" Color="#696969"/>
+    <!--<SolidColorBrush x:Key="{x:Static SystemColors.ControlTextBrushKey }" Color="#696969"/>
     <SolidColorBrush x:Key="{x:Static SystemColors.WindowTextBrushKey }" Color="#696969"/>
     <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey }" Color="#F6F6F6"/>
-    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey }" Color="#0A6AB6"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey }" Color="#0A6AB6"/>-->
 
     <SolidColorBrush x:Key="NewDownloadTextBoxBackground" Color="White"/>
     <SolidColorBrush x:Key="HyperlinkForecolor" Color="DodgerBlue"/>
