@@ -131,20 +131,20 @@ namespace XDM.Wpf.UI.Dialogs.AdvancedDownloadOption
                 TxtProxyPort.IsEnabled = CmbProxyType.SelectedIndex == 2;
         }
 
-#if NET45_OR_GREATER
         protected override void OnSourceInitialized(EventArgs e)
         {
             base.OnSourceInitialized(e);
 
             NativeMethods.DisableMinMaxButton(this);
-
+#if NET45_OR_GREATER
             if (App.Skin == Skin.Dark)
             {
                 var helper = new WindowInteropHelper(this);
                 helper.EnsureHandle();
                 DarkModeHelper.UseImmersiveDarkMode(helper.Handle, true);
             }
-        }
 #endif
+        }
+
     }
 }

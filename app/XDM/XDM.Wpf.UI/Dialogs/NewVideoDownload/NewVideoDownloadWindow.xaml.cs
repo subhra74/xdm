@@ -61,20 +61,22 @@ namespace XDM.Wpf.UI.Dialogs.NewVideoDownload
             }
         }
 
-#if NET45_OR_GREATER
+
         protected override void OnSourceInitialized(EventArgs e)
         {
             base.OnSourceInitialized(e);
             NativeMethods.DisableMinMaxButton(this);
 
-            if (App.Skin == Skin.Dark)
+#if NET45_OR_GREATER
+            if (XDM.Wpf.UI.App.Skin == Skin.Dark)
             {
                 var helper = new WindowInteropHelper(this);
                 helper.EnsureHandle();
                 DarkModeHelper.UseImmersiveDarkMode(helper.Handle, true);
             }
-        }
 #endif
+        }
+
 
         private void btnAdvanced_Click(object sender, RoutedEventArgs e)
         {

@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Interop;
 using Translations;
 using XDM.Common.UI;
 using XDM.Core.Lib.Common;
 using XDM.Wpf.UI.Dialogs.SpeedLimiter;
+using XDM.Wpf.UI.Win32;
 
 namespace XDM.Wpf.UI.Dialogs.ProgressWindow
 {
@@ -250,6 +252,21 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
             {
                 speedLimiterDlg.Activate();
             }
+        }
+
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+
+            NativeMethods.DisableMinMaxButton(this);
+#if NET45_OR_GREATER
+            if (XDM.Wpf.UI.App.Skin == Skin.Dark)
+            {
+                var helper = new WindowInteropHelper(this);
+                helper.EnsureHandle();
+                DarkModeHelper.UseImmersiveDarkMode(helper.Handle, true);
+            }
+#endif
         }
 
         private Action<int> actPrgUpdate;

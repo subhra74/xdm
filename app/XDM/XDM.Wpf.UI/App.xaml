@@ -11,6 +11,7 @@
                 <local:TranslationResourceDictionary x:Name="TranslationResource"></local:TranslationResourceDictionary>
                 <local:SkinResourceDictionary LightSource="Themes/LightTheme.xaml" 
                                               DarkSource="Themes/DarkTheme.xaml" />
+                <ResourceDictionary Source="Resources/MainListViewStyles.xaml"/>
                 <!--<ResourceDictionary Source="Resources/ContextMenuStyles.xaml"/>
                 <ResourceDictionary Source="Resources/ComboBoxStyles.xaml"/>
                 <ResourceDictionary Source="Resources/ButtonStyles.xaml"/>-->

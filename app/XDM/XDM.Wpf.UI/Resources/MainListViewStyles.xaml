@@ -70,7 +70,7 @@
             </GradientStopCollection>
         </LinearGradientBrush.GradientStops>
     </LinearGradientBrush>-->
-    <Style x:Key="ScrollBarLineButton"
+    <!--<Style x:Key="ScrollBarLineButton"
        TargetType="{x:Type RepeatButton}">
         <Setter Property="SnapsToDevicePixels"
           Value="True" />
@@ -252,7 +252,9 @@
               Value="{StaticResource VerticalScrollBar}" />
             </Trigger>
         </Style.Triggers>
-    </Style>
+    </Style>-->
+    
+    
     <DataTemplate x:Key="HeaderTemplateArrowUp">
         <DockPanel>
             <TextBlock HorizontalAlignment="Left" Text="{Binding}"/>
@@ -450,6 +452,8 @@
         <Setter Property="OverridesDefaultStyle" Value="true" />
         <Setter Property="Foreground" Value="{StaticResource ListViewForecolor}"></Setter>
         <Setter Property="VerticalContentAlignment" Value="Center"></Setter>
+        <Setter Property="Background" Value="{StaticResource ListViewBackcolor}"></Setter>
+        <Setter Property="Padding" Value="5"></Setter>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ListViewItem}">

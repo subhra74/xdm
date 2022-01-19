@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Windows;
+using System.Windows.Interop;
 using XDM.Core.Lib.UI;
 using XDM.Wpf.UI.Common;
 using XDM.Wpf.UI.Win32;
@@ -38,6 +39,15 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
         {
             base.OnSourceInitialized(e);
             NativeMethods.DisableMinMaxButton(this);
+
+#if NET45_OR_GREATER
+            if (XDM.Wpf.UI.App.Skin == Skin.Dark)
+            {
+                var helper = new WindowInteropHelper(this);
+                helper.EnsureHandle();
+                DarkModeHelper.UseImmersiveDarkMode(helper.Handle, true);
+            }
+#endif
         }
 
         private void BtnOK_Click(object sender, RoutedEventArgs e)
