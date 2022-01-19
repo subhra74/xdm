@@ -4,7 +4,7 @@
 
     <SolidColorBrush x:Key="CategoryForegroundNormal" Color="#808080"/>
     <SolidColorBrush x:Key="CategoryForegroundSelected" Color="White"/>
-    <SolidColorBrush x:Key="CategoryHighlight" Color="#114C7B"/>
+    <SolidColorBrush x:Key="CategoryHighlight" Color="#303541"/>
     <SolidColorBrush x:Key="CategoryListBackground" Color="#1B1C1E"/>
 
     <SolidColorBrush x:Key="ToolButtonForecolor" Color="#ABB2BF"/>
@@ -22,16 +22,19 @@
 
     <SolidColorBrush x:Key="ButtonOverBackcolor" Color="#383838"/>
 
-    <SolidColorBrush x:Key="TextBackcolor" Color="#111214"/>
+    <SolidColorBrush x:Key="TextBackcolor" Color="#2B2B2B"/>
     <SolidColorBrush x:Key="DisabledTextBackcolor" Color="#252628"/>
     <SolidColorBrush x:Key="TextForecolor" Color="#ABB2BF"/>
+    <SolidColorBrush x:Key="TextMouseOverBorder" Color="#114C7B"/>
+    <SolidColorBrush x:Key="TextBorder" Color="#3C3C3C"/>
+    <SolidColorBrush x:Key="TextFocusedBorder" Color="#114C7B"/>
 
     <SolidColorBrush x:Key="ListViewBackcolor" Color="#212121"/>
-    <SolidColorBrush x:Key="ListViewForecolor" Color="#ABB2BF"/>
+    <SolidColorBrush x:Key="ListViewForecolor" Color="#B5BCC9"/>
     <SolidColorBrush x:Key="ListViewMouseOverBackcolor" Color="#31363F"/>
     <SolidColorBrush x:Key="ListViewMouseOverForecolor" Color="#F0F0F0"/>
     <SolidColorBrush x:Key="ListViewSelectedForecolor" Color="White"/>
-    <SolidColorBrush x:Key="ListViewSelectedBackcolor" Color="#3A3F4B"/>
+    <SolidColorBrush x:Key="ListViewSelectedBackcolor" Color="#303541"/>
     <SolidColorBrush x:Key="ListViewIconForecolor" Color="#777D88"/>
     <SolidColorBrush x:Key="ListViewHeaderForecolor" Color="#777D88"/>
 
@@ -521,7 +524,7 @@
         <Setter Property="Padding"
           Value="2" />
         <Setter Property="BorderBrush"
-          Value="{StaticResource ControlBordercolor}" />
+          Value="{StaticResource TextBorder}" />
         <Setter Property="Foreground"
           Value="{StaticResource TextForecolor}" />
         <Setter Property="Background"
@@ -570,13 +573,16 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="Border" Property="Background" Value="{StaticResource DisabledTextBackcolor}"/>
+                            <Setter TargetName="Border" Property="Background" Value="{StaticResource TextBorder}"/>
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource ListViewMouseOverBackcolor}"/>
+                            <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource TextMouseOverBorder}"/>
                         </Trigger>
                         <Trigger Property="IsReadOnly" Value="True">
-                            <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource ListViewMouseOverBackcolor}"/>
+                            <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource TextBorder}"/>
+                        </Trigger>
+                        <Trigger Property="IsFocused" Value="True">
+                            <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource TextFocusedBorder}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
