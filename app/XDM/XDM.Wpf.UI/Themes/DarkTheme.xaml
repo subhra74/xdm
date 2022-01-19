@@ -4,7 +4,7 @@
 
     <SolidColorBrush x:Key="CategoryForegroundNormal" Color="#808080"/>
     <SolidColorBrush x:Key="CategoryForegroundSelected" Color="White"/>
-    <SolidColorBrush x:Key="CategoryHighlight" Color="#31363F"/>
+    <SolidColorBrush x:Key="CategoryHighlight" Color="#114C7B"/>
     <SolidColorBrush x:Key="CategoryListBackground" Color="#1B1C1E"/>
 
     <SolidColorBrush x:Key="ToolButtonForecolor" Color="#ABB2BF"/>
@@ -41,7 +41,7 @@
     <Thickness x:Key="CategoryListBorderThickness">0,0,1,0</Thickness>
     <Thickness x:Key="MainContentBorderThickness">0,1,0,0</Thickness>
 
-    <SolidColorBrush x:Key="PlaceHolderForecolor" Color="#646464"/>
+    <SolidColorBrush x:Key="PlaceHolderForecolor" Color="#969696"/>
 
     <SolidColorBrush x:Key="{x:Static SystemColors.ControlTextBrushKey }" Color="#A0A0A0"/>
     <SolidColorBrush x:Key="{x:Static SystemColors.WindowTextBrushKey }" Color="#A0A0A0"/>
