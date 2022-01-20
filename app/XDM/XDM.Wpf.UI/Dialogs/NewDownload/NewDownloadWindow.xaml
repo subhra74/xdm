@@ -17,7 +17,7 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
-        <Border Background="{StaticResource ListViewBackcolor}">
+        <Border>
             <Grid  Margin="20,20,10,10">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="auto"/>
@@ -36,15 +36,11 @@
                 <TextBlock Grid.Row="2" Text="{StaticResource LBL_SAVE_IN}" Margin="10" HorizontalAlignment="Right"/>
                 <TextBox Grid.Row="0" Grid.Column="1" Margin="5" 
                          VerticalAlignment="Stretch" VerticalContentAlignment="Center" 
-                         BorderBrush="{StaticResource ControlBordercolor}" 
-                         Background="{StaticResource ControlBackcolor}"
                          Name="TxtUrl"
                          TextChanged="TxtUrl_TextChanged"/>
                 <TextBox Grid.Row="1" Grid.Column="1" Margin="5" VerticalAlignment="Stretch" VerticalContentAlignment="Center"
-                         BorderBrush="{StaticResource ControlBordercolor}"
-                         Background="{StaticResource ControlBackcolor}"
                          Name="TxtFile"/>
-                <ComboBox Background="{StaticResource NewDownloadTextBoxBackground}" Grid.Row="2" Grid.Column="1" Margin="5" 
+                <ComboBox Grid.Row="2" Grid.Column="1" Margin="5" 
                           VerticalAlignment="Stretch" VerticalContentAlignment="Center"
                           Name="CmbLocation" SelectionChanged="CmbLocation_SelectionChanged">
                 </ComboBox>
