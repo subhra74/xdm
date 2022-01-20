@@ -7,7 +7,7 @@
     <SolidColorBrush x:Key="CategoryHighlight" Color="#303541"/>
     <SolidColorBrush x:Key="CategoryListBackground" Color="#1B1C1E"/>
 
-    <SolidColorBrush x:Key="ToolButtonForecolor" Color="#ABB2BF"/>
+    <SolidColorBrush x:Key="ToolButtonForecolor" Color="#B5BCC9"/>
     <SolidColorBrush x:Key="ToolButtonMouseOverBackcolor" Color="#373D48"/>
     <SolidColorBrush x:Key="ToolButtonMousePressedBackcolor" Color="#333842"/>
     <SolidColorBrush x:Key="ToolButtonMouseDisabledForecolor" Color="#646464"/>
