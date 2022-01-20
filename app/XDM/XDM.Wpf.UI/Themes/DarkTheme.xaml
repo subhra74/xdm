@@ -4,7 +4,7 @@
 
     <SolidColorBrush x:Key="CategoryForegroundNormal" Color="#808080"/>
     <SolidColorBrush x:Key="CategoryForegroundSelected" Color="White"/>
-    <SolidColorBrush x:Key="CategoryHighlight" Color="#303541"/>
+    <SolidColorBrush x:Key="CategoryHighlight" Color="#114C7B"/>
     <SolidColorBrush x:Key="CategoryListBackground" Color="#1B1C1E"/>
 
     <SolidColorBrush x:Key="ButtonBackcolor" Color="#2B2B2B"/>
@@ -42,7 +42,7 @@
     <SolidColorBrush x:Key="ListViewMouseOverBackcolor" Color="#31363F"/>
     <SolidColorBrush x:Key="ListViewMouseOverForecolor" Color="#F0F0F0"/>
     <SolidColorBrush x:Key="ListViewSelectedForecolor" Color="White"/>
-    <SolidColorBrush x:Key="ListViewSelectedBackcolor" Color="#303541"/>
+    <SolidColorBrush x:Key="ListViewSelectedBackcolor" Color="#114C7B"/>
     <SolidColorBrush x:Key="ListViewIconForecolor" Color="#777D88"/>
     <SolidColorBrush x:Key="ListViewHeaderForecolor" Color="#777D88"/>
 

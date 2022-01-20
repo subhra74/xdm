@@ -278,6 +278,7 @@
                                     <TextBlock Foreground="{StaticResource ButtonForecolor}" Text="{StaticResource DESC_NEW}"/>
                                 </StackPanel>
                             </Button>
+
                             <Button 
                                 Background="{StaticResource ControlBackcolor}"
                                 BorderThickness="0"
@@ -388,7 +389,7 @@
                         </StackPanel>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,5" VerticalAlignment="Stretch" 
                                     Background="{StaticResource SearchBackcolor}">
-                            <Border BorderBrush="{StaticResource SearchBorder}" BorderThickness="1">
+                            <Border BorderBrush="{StaticResource SearchBorder}" BorderThickness="1" SnapsToDevicePixels="True">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition/>
@@ -421,11 +422,14 @@
                                             </Style>
                                         </TextBlock.Style>
                                     </TextBlock>
-                                    <Button Grid.Column="1" Padding="10,5" 
-                                            Background="{StaticResource SearchBackcolor}"
-                                            Template="{StaticResource ToolbarButtonTemplateIconOnlySmall}" 
-                                            Tag="{StaticResource ri-search-line}"
-                                            Click="SearchButton_Click"/>
+                                    <Button Grid.Column="1" Padding="6,4" Margin="1"
+                                            Background="{StaticResource SearchBackcolor}" BorderThickness="0" SnapsToDevicePixels="True"
+                                            Click="SearchButton_Click">
+                                        <Path VerticalAlignment="Center"  Margin="0,0,0,0" Width="12" Height="12" Stretch="Uniform" 
+                                              StrokeThickness="0" Fill="White" 
+                                              Stroke="{StaticResource ButtonForecolor}"  SnapsToDevicePixels="True" 
+                                              Data="{StaticResource ri-search-line}"/>
+                                    </Button>
                                 </Grid>
                             </Border>
                         </StackPanel>

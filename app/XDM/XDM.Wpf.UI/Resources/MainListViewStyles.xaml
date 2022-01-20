@@ -463,7 +463,7 @@
                                                 BorderThickness="{TemplateBinding BorderThickness}"
                                                 SnapsToDevicePixels="true" 
                                                 ContextMenu="{TemplateBinding ContextMenu}">
-                        <GridViewRowPresenter  HorizontalAlignment="Stretch" 
+                        <GridViewRowPresenter x:Name="Row" HorizontalAlignment="Stretch" 
                                                 VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                                 SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"  />
                     </Border>
@@ -476,7 +476,6 @@
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Border" Property="Background" Value="{StaticResource ListViewMouseOverBackcolor}"/>
                             <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource ListViewMouseOverBackcolor}"/>
-                            <Setter Property="Foreground" Value="{StaticResource ListViewMouseOverForecolor}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
