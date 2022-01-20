@@ -264,20 +264,42 @@
                             <ColumnDefinition Width="auto"/>
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0" Orientation="Horizontal" >
-                            <Button Template="{StaticResource ToolbarButtonTemplate}" 
-                            Padding="15,12" 
-                            Tag="{StaticResource ri-links-line}"
-                            Name="BtnNew">
-                                New
+                            <Button 
+                                Background="{StaticResource ControlBackcolor}"
+                                BorderThickness="0"
+                                Margin="0"
+                                Padding="15,12" 
+                                Name="BtnNew">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path 
+                                        VerticalAlignment="Center"  Margin="0,0,10,0" Width="14" Height="14" Stretch="Uniform" StrokeThickness="0" 
+                                        Fill="{StaticResource ButtonForecolor}" Stroke="{StaticResource ButtonForecolor}" 
+                                        Data="{StaticResource ri-links-line}" SnapsToDevicePixels="True"/>
+                                    <TextBlock Foreground="{StaticResource ButtonForecolor}" Text="{StaticResource DESC_NEW}"/>
+                                </StackPanel>
                             </Button>
-                            <Button Template="{StaticResource ToolbarButtonTemplate}" 
+                            <Button 
+                                Background="{StaticResource ControlBackcolor}"
+                                BorderThickness="0"
+                                Margin="0"
+                                Padding="10,12" 
+                                Name="BtnDelete">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path 
+                                        VerticalAlignment="Center"  Margin="0,0,10,0" Width="14" Height="14" Stretch="Uniform" StrokeThickness="0"
+                                        Fill="{StaticResource ButtonForecolor}" Stroke="{StaticResource ButtonForecolor}"  SnapsToDevicePixels="True"
+                                        Data="{StaticResource ri-delete-bin-line}"/>
+                                    <TextBlock Foreground="{StaticResource ButtonForecolor}" Text="{StaticResource DESC_DEL}"/>
+                                </StackPanel>
+                            </Button>
+                            <!--<Button Template="{StaticResource ToolbarButtonTemplate}" 
                             Padding="12,12" 
                             IsEnabled="False" 
                             Tag="{StaticResource ri-delete-bin-line}"
                             Name="BtnDelete">
                                 Delete
-                            </Button>
-                            <Button Template="{StaticResource ToolbarButtonTemplate}" 
+                            </Button>-->
+                            <!--<Button Template="{StaticResource ToolbarButtonTemplate}" 
                             Padding="12,12"   
                             IsEnabled="False" 
                             Tag="{StaticResource ri-mail-open-line}"
@@ -305,6 +327,63 @@
                             Name="BtnResume"
                             >
                                 Resume
+                            </Button>-->
+                            <Button 
+                                Visibility="Collapsed"
+                                Background="{StaticResource ControlBackcolor}"
+                                BorderThickness="0"
+                                Margin="0"
+                                Padding="10,12" 
+                                Name="BtnOpen">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path 
+                                        VerticalAlignment="Center"  Margin="0,0,10,0" Width="14" Height="14" Stretch="Uniform" StrokeThickness="0"
+                                        Fill="{StaticResource ButtonForecolor}" Stroke="{StaticResource ButtonForecolor}"  SnapsToDevicePixels="True"
+                                        Data="{StaticResource ri-mail-open-line}"/>
+                                    <TextBlock Foreground="{StaticResource ButtonForecolor}" Text="{StaticResource CTX_OPEN_FILE}"/>
+                                </StackPanel>
+                            </Button>
+                            <Button 
+                                Background="{StaticResource ControlBackcolor}"
+                                BorderThickness="0"
+                                Margin="0"
+                                Padding="10,12" 
+                                Name="BtnOpenFolder">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path 
+                                        VerticalAlignment="Center"  Margin="0,0,10,0" Width="14" Height="14" Stretch="Uniform" StrokeThickness="0"
+                                        Fill="{StaticResource ButtonForecolor}" Stroke="{StaticResource ButtonForecolor}"  SnapsToDevicePixels="True"
+                                        Data="{StaticResource ri-folder-shared-line}"/>
+                                    <TextBlock Foreground="{StaticResource ButtonForecolor}" Text="{StaticResource CTX_OPEN_FOLDER}"/>
+                                </StackPanel>
+                            </Button>
+                            <Button 
+                                Background="{StaticResource ControlBackcolor}"
+                                BorderThickness="0"
+                                Margin="0"
+                                Padding="10,12" 
+                                Name="BtnPause">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path 
+                                        VerticalAlignment="Center"  Margin="0,0,10,0" Width="14" Height="14" Stretch="Uniform" StrokeThickness="0"
+                                        Fill="{StaticResource ButtonForecolor}" Stroke="{StaticResource ButtonForecolor}"  SnapsToDevicePixels="True"
+                                        Data="{StaticResource ri-pause-line}"/>
+                                    <TextBlock Foreground="{StaticResource ButtonForecolor}" Text="{StaticResource MENU_PAUSE}"/>
+                                </StackPanel>
+                            </Button>
+                            <Button 
+                                Background="{StaticResource ControlBackcolor}"
+                                BorderThickness="0"
+                                Margin="0"
+                                Padding="10,12" 
+                                Name="BtnResume">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path 
+                                        VerticalAlignment="Center"  Margin="0,0,10,0" Width="14" Height="14" Stretch="Uniform" StrokeThickness="0"
+                                        Fill="{StaticResource ButtonForecolor}" Stroke="{StaticResource ButtonForecolor}"  SnapsToDevicePixels="True"
+                                        Data="{StaticResource ri-play-line}"/>
+                                    <TextBlock Foreground="{StaticResource ButtonForecolor}" Text="{StaticResource MENU_RESUME}"/>
+                                </StackPanel>
                             </Button>
                         </StackPanel>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,5" VerticalAlignment="Stretch" 
@@ -389,10 +468,11 @@
                                Foreground="{StaticResource ToolButtonForecolor}" 
                                Background="{StaticResource StatusbarBackcolor}"
                                VerticalAlignment="Center">Browser monitoring</TextBlock>
-                        <Button Grid.Column="1" 
+                        <Button Grid.Column="1"  Name="BtnMonitoring"
                             Template="{StaticResource MonitoringToggleButton}" 
                             Foreground="{StaticResource ToolButtonForecolor}"
-                            Margin="0,0" Background="{StaticResource StatusbarBackcolor}">
+                            Margin="0,0" Background="{StaticResource StatusbarBackcolor}"
+                                Click="BtnMonitoring_Click">
                             <Path Name="MonitoringToggleIcon"
                                 Height="24"
                                 Width="24"
@@ -402,17 +482,18 @@
                                 Stretch="None" 
                                 Fill="{StaticResource StatusbarIconcolor}"
                                 Stroke="{StaticResource StatusbarIconcolor}" 
-                                Data="{StaticResource ri-toggle-fill}"
-                                SnapsToDevicePixels="True"/>
-                            <Button.Style>
-                                <Style TargetType="Button">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Path=BrowserMonitoringEnabled}" Value="True">
-                                            <Setter Property="Foreground"  Value="{StaticResource ToolButtonForecolor}" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
+                                Data="{StaticResource ri-toggle-line}"
+                                SnapsToDevicePixels="True">
+                                <!--<Path.Style>
+                                    <Style TargetType="Path">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Path=BrowserMonitoringEnabled,NotifyOnSourceUpdated=True}" Value="True">
+                                                <Setter Property="Data"  Value="{StaticResource ri-toggle-fill}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Path.Style>-->
+                            </Path>
                         </Button>
                         <Button Grid.Column="2" 
                                 Name="BtnQueue"

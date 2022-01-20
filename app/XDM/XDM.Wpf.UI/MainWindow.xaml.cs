@@ -97,6 +97,7 @@ namespace XDM.Wpf.UI
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             FinishedListViewInitialSortIfNotAlreadySorted();
+            UpdateBrowserMonitorButton();
         }
 
         private void InProgressListViewInitialSortIfNotAlreadySorted()
@@ -492,7 +493,8 @@ namespace XDM.Wpf.UI
 
         public void UpdateBrowserMonitorButton()
         {
-            throw new NotImplementedException();
+            this.MonitoringToggleIcon.Data = (System.Windows.Media.Geometry)FindResource(Config.Instance.IsBrowserMonitoringEnabled?
+                "ri-toggle-fill": "ri-toggle-line");
         }
 
         public void ShowBrowserMonitoringDialog(IApp app)
@@ -535,25 +537,24 @@ namespace XDM.Wpf.UI
             throw new NotImplementedException();
         }
 
-        internal bool BrowserMonitoringEnabled => Config.Instance.IsBrowserMonitoringEnabled;
 
-#if NET45_OR_GREATER
         protected override void OnSourceInitialized(EventArgs e)
         {
             base.OnSourceInitialized(e);
-
+#if NET45_OR_GREATER
             if (App.Skin == Skin.Dark)
             {
                 var helper = new WindowInteropHelper(this);
                 helper.EnsureHandle();
                 DarkModeHelper.UseImmersiveDarkMode(helper.Handle, true);
             }
-        }
 #endif
+        }
+
 
         private void lvFinished_Click(object sender, RoutedEventArgs e)
         {
-            if(e.OriginalSource is GridViewColumnHeader column)
+            if (e.OriginalSource is GridViewColumnHeader column)
             {
                 string sortBy = (string)column.Tag;
                 if (string.IsNullOrEmpty(sortBy))
@@ -619,9 +620,14 @@ namespace XDM.Wpf.UI
             this.SettingsClicked?.Invoke(this, e);
         }
 
+        private void BtnMonitoring_Click(object sender, RoutedEventArgs e)
+        {
+            BrowserMonitoringButtonClicked?.Invoke(sender, e);
+        }
+
         private void lvInProgress_Click(object sender, RoutedEventArgs e)
         {
-            if(e.OriginalSource is GridViewColumnHeader column)
+            if (e.OriginalSource is GridViewColumnHeader column)
             {
                 string sortBy = (string)column.Tag;
                 if (string.IsNullOrEmpty(sortBy))
