@@ -17,7 +17,7 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
-        <Border>
+        <Border Background="{StaticResource ListViewBackcolor}">
             <Grid  Margin="20,20,10,10">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="auto"/>
@@ -63,7 +63,7 @@
             </Grid>
         </Border>
         <Border Grid.Row="1" Background="{StaticResource ControlBackcolor}" BorderBrush="{StaticResource ControlBordercolor}" 
-                BorderThickness="0,1,0,0" Padding="10">
+                BorderThickness="0,1,0,0" Padding="0,5">
             <Grid  Background="{StaticResource ControlBackcolor}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="auto"/>
@@ -73,15 +73,17 @@
                 </Grid.ColumnDefinitions>
                 <Button Grid.Column="0" 
                         Padding="20,5"
+                        Margin="10,5"
                         Name="btnAdvanced" Content="{StaticResource ND_MORE}"
                         Click="btnAdvanced_Click"/>
                 <Button Grid.Column="2" 
                         Padding="20,5"
-                        Margin="0,0,10,0"
+                        Margin="10,5,0,5"
                         Name="btnDownloadLater" Content="{StaticResource ND_DOWNLOAD_LATER}"
                         Click="btnDownloadLater_Click"/>
                 <Button Grid.Column="3" 
                         Padding="20,5"
+                        Margin="10,5"
                         Name="btnDownload" Content="{StaticResource ND_DOWNLOAD_NOW}"
                         Click="btnDownload_Click"/>
             </Grid>

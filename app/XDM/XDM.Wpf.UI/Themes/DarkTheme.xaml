@@ -61,7 +61,7 @@
     <SolidColorBrush x:Key="{x:Static SystemColors.ControlTextColorKey }" Color="#A0A0A0"/>
 
     <SolidColorBrush x:Key="NewDownloadTextBoxBackground" Color="#21252B"/>
-    <SolidColorBrush x:Key="HyperlinkForecolor" Color="#114C7B"/>
+    <SolidColorBrush x:Key="HyperlinkForecolor" Color="Gray"/>
 
     <SolidColorBrush x:Key="ScrollBarThumbColorNormal" Color="#343537"/>
     <SolidColorBrush x:Key="ScrollBarThumbColorHot" Color="#3E3F41"/>
@@ -105,17 +105,17 @@
                    VerticalAlignment="Center" Data="M 0 0 L 4 4 L 8 0 Z"/>
         </Grid>
         <ControlTemplate.Triggers>
-            <Trigger Property="ToggleButton.IsMouseOver" Value="true">
+            <!--<Trigger Property="ToggleButton.IsMouseOver" Value="true">
                 <Setter TargetName="Border" Property="Background" Value="{StaticResource ToolButtonMouseOverBackcolor}" />
                 <Setter TargetName="Content" Property="Background" Value="{StaticResource ToolButtonMouseOverBackcolor}" />
-            </Trigger>
+            </Trigger>-->
             <Trigger Property="ToggleButton.IsChecked" Value="true">
-                <Setter TargetName="Border" Property="Background" Value="{StaticResource ToolButtonMouseOverBackcolor}" />
-                <Setter TargetName="Content" Property="Background" Value="{StaticResource ToolButtonMouseOverBackcolor}" />
+                <Setter TargetName="Border" Property="Background" Value="{StaticResource ButtonMousePressedBackcolor}" />
+                <Setter TargetName="Content" Property="Background" Value="{StaticResource ButtonMousePressedBackcolor}" />
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
-                <Setter TargetName="Border" Property="Background" Value="{StaticResource ControlBackcolor}" />
-                <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource ControlBackcolor}" />
+                <!--<Setter TargetName="Border" Property="Background" Value="{StaticResource ControlBackcolor}" />-->
+                <!--<Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource ControlBackcolor}" />-->
                 <Setter Property="Foreground" Value="{StaticResource ControlForecolor}"/>
                 <Setter TargetName="Arrow" Property="Fill" Value="{StaticResource ControlForecolor}" />
             </Trigger>
@@ -132,57 +132,60 @@
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
         <Setter Property="ScrollViewer.CanContentScroll" Value="true"/>
-        <Setter Property="MinWidth" Value="120"/>
+        <Setter Property="BorderBrush" Value="{StaticResource TextBorder}"/>
+        <Setter Property="Foreground" Value="{StaticResource TextForecolor}" />
+        <Setter Property="Background" Value="{StaticResource TextBackcolor}" />
+        <Setter Property="MinWidth" Value="20"/>
         <Setter Property="MinHeight" Value="20"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ComboBox">
                     <Grid>
-                        <ToggleButton 
-            Name="ToggleButton" 
-            Template="{StaticResource ComboBoxToggleButton}" 
-            Grid.Column="2" 
-            Focusable="false"
-            IsChecked="{Binding Path=IsDropDownOpen,Mode=TwoWay,RelativeSource={RelativeSource TemplatedParent}}"
-            ClickMode="Press">
+                        <ToggleButton  Name="ToggleButton"  Template="{StaticResource ComboBoxToggleButton}"  Grid.Column="2" 
+                                       Focusable="false" 
+                                       Foreground="{TemplateBinding Foreground}"
+                                       Background="{TemplateBinding Background}"
+                                       BorderBrush="{TemplateBinding BorderBrush}"
+                                       IsChecked="{Binding Path=IsDropDownOpen,Mode=TwoWay,RelativeSource={RelativeSource TemplatedParent}}"
+                                       ClickMode="Press">
                         </ToggleButton>
                         <ContentPresenter
-            Name="ContentSite"
-            IsHitTestVisible="False" 
-            Content="{TemplateBinding SelectionBoxItem}"
-            ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-            ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
-            Margin="3,3,23,3"
-            VerticalAlignment="Center"
-            HorizontalAlignment="Left" />
+                            Name="ContentSite"
+                            IsHitTestVisible="False" 
+                            Content="{TemplateBinding SelectionBoxItem}"
+                            ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                            ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                            Margin="3,3,23,3"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Left" />
                         <TextBox x:Name="PART_EditableTextBox"
-            Style="{x:Null}" 
-            Template="{StaticResource ComboBoxTextBox}" 
-            HorizontalAlignment="Left" 
-            VerticalAlignment="Center" 
-            Margin="3,3,23,3"
-            Focusable="True" 
-            Background="Transparent"
-            Visibility="Hidden"
-            IsReadOnly="{TemplateBinding IsReadOnly}"/>
+                            Style="{x:Null}" 
+                            Template="{StaticResource ComboBoxTextBox}" 
+                            HorizontalAlignment="Left" 
+                            VerticalAlignment="Center" 
+                            Margin="3,3,23,3"
+                            Focusable="True" 
+                            Background="Transparent"
+                            Visibility="Hidden"
+                            IsReadOnly="{TemplateBinding IsReadOnly}"/> 
                         <Popup 
-            Name="Popup"
-            Placement="Bottom"
-            IsOpen="{TemplateBinding IsDropDownOpen}"
-            AllowsTransparency="True" 
-            Focusable="False"
-            PopupAnimation="Slide">
+                            Name="Popup"
+                            Placement="Bottom"
+                            IsOpen="{TemplateBinding IsDropDownOpen}"
+                            AllowsTransparency="True" 
+                            Focusable="False"
+                            PopupAnimation="Slide">
                             <Grid 
-              Name="DropDown"
-              SnapsToDevicePixels="True"                
-              MinWidth="{TemplateBinding ActualWidth}"
-              MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                Name="DropDown"
+                                SnapsToDevicePixels="True"                
+                                MinWidth="{TemplateBinding ActualWidth}"
+                                MaxHeight="{TemplateBinding MaxDropDownHeight}">
                                 <Border 
                                     CornerRadius="5"
-                x:Name="DropDownBorder"
-                Background="{StaticResource ControlBackcolor}"
-                BorderThickness="1"
-                BorderBrush="{StaticResource ControlBordercolor}"/>
+                                        x:Name="DropDownBorder"
+                                        Background="{TemplateBinding Background}"
+                                        BorderThickness="1"
+                                        BorderBrush="{StaticResource ControlBordercolor}"/>
                                 <ScrollViewer Margin="4,6,4,6" SnapsToDevicePixels="True">
                                     <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained" />
                                 </ScrollViewer>
@@ -207,6 +210,12 @@
                             <Setter Property="IsTabStop" Value="false"/>
                             <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible"/>
                             <Setter TargetName="ContentSite" Property="Visibility" Value="Hidden"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="BorderBrush" Value="{StaticResource TextMouseOverBorder}"/>
+                        </Trigger>
+                        <Trigger Property="IsFocused" Value="True">
+                            <Setter Property="BorderBrush" Value="{StaticResource TextFocusedBorder}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -255,7 +264,7 @@
                                  Value="true">
                             <Setter TargetName="Bd"
                                     Property="Background"
-                                    Value="{StaticResource ListViewBackcolor}"/>
+                                    Value="{StaticResource CategoryHighlight}"/>
                             <Setter Property="Foreground"
                                     Value="{StaticResource ControlForecolor}"/>
                         </Trigger>
