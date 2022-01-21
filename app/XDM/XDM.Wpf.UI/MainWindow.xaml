@@ -8,6 +8,54 @@
         mc:Ignorable="d"
         Title="Xtreme Download Manager" Height="500" Width="800" WindowStartupLocation="CenterScreen">
     <Window.Resources>
+        <Style TargetType="Button" >
+            <Setter Property="SnapsToDevicePixels" Value="true"/>
+            <Setter Property="OverridesDefaultStyle" Value="true"/>
+            <Setter Property="FocusVisualStyle"  Value="{x:Null}"/>
+            <Setter Property="MinHeight" Value="23"/>
+            <Setter Property="MinWidth" Value="5"/>
+            <Setter Property="Background" Value="{StaticResource ButtonBackcolor}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource ButtonBorder}"/>
+            <Setter Property="Padding" Value="10,3"/>
+            <Setter Property="Margin" Value="3,3"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border 
+                              x:Name="Border"  
+                              BorderThickness="{TemplateBinding BorderThickness}"
+                              Padding="{TemplateBinding Padding}"
+                              Margin="{TemplateBinding Margin}"
+                              Background="{TemplateBinding Background}"
+                              BorderBrush="{TemplateBinding BorderBrush}">
+                            <ContentPresenter SnapsToDevicePixels="True"  Margin="2" HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsKeyboardFocused" Value="true">
+                                <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource ButtonFocusedBorder}" />
+                            </Trigger>
+                            <Trigger Property="IsDefaulted" Value="true">
+                                <Setter TargetName="Border" Property="Background" Value="{StaticResource ButtonBackcolor}" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="true">
+                                <Setter TargetName="Border" Property="Background" Value="{StaticResource ButtonMouseOverBackcolor}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="true">
+                                <Setter TargetName="Border" Property="Background" Value="{StaticResource ButtonMousePressedBackcolor}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="false">
+                                <Setter Property="Opacity" Value="{StaticResource ButtonDisabledOpacity}"/>
+                            </Trigger>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource ButtonFocusedBorder}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <ContextMenu x:Key="ctxMainMenu" x:Name="ctxMainMenu" 
                      LayoutUpdated="ctxMainMenu_LayoutUpdated">
             <MenuItem Name="menuSettings" Header="{StaticResource TITLE_SETTINGS}" 
@@ -444,7 +492,7 @@
                                 Foreground="{StaticResource ToolButtonForecolor}"
                                 BorderThickness="0"
                                 Click="BtnMenu_Click">
-                            <Path VerticalAlignment="Center" Width="24" Height="24"  Margin="0,0,0,0" Stretch="None" 
+                            <Path VerticalAlignment="Center" Width="16" Height="16"  Margin="0,0,0,0" Stretch="Uniform" 
                                   StrokeThickness="0" Fill="{StaticResource ToolButtonForecolor}" 
                                   Stroke="{StaticResource ToolButtonForecolor}"  SnapsToDevicePixels="True"
                                   Data="{StaticResource  ri-menu-line}"/>
