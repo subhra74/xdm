@@ -190,7 +190,7 @@
                                             <Setter Property="Tag" TargetName="Bd" Value="{StaticResource CategoryForegroundSelected}" />
                                         </Trigger>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" TargetName="Bd" Value="{StaticResource ListViewMouseOverBackcolor}" />
+                                            <Setter Property="Background" TargetName="Bd" Value="{StaticResource CategoryMouseOverBackground}" />
                                             <Setter Property="Tag" TargetName="Bd" Value="{StaticResource CategoryForegroundSelected}" />
                                         </Trigger>
                                         <!--<MultiTrigger>
@@ -266,6 +266,7 @@
                         <StackPanel Grid.Column="0" Orientation="Horizontal" >
                             <Button 
                                 Background="{StaticResource ControlBackcolor}"
+                                Foreground="{StaticResource ToolButtonForecolor}"
                                 BorderThickness="0"
                                 Margin="0"
                                 Padding="15,12" 
@@ -273,14 +274,15 @@
                                 <StackPanel Orientation="Horizontal">
                                     <Path 
                                         VerticalAlignment="Center"  Margin="0,0,10,0" Width="14" Height="14" Stretch="Uniform" StrokeThickness="0" 
-                                        Fill="{StaticResource ButtonForecolor}" Stroke="{StaticResource ButtonForecolor}" 
+                                        Fill="{StaticResource ToolButtonForecolor}" Stroke="{StaticResource ToolButtonForecolor}" 
                                         Data="{StaticResource ri-links-line}" SnapsToDevicePixels="True"/>
-                                    <TextBlock Foreground="{StaticResource ButtonForecolor}" Text="{StaticResource DESC_NEW}"/>
+                                    <TextBlock Foreground="{StaticResource ToolButtonForecolor}" Text="{StaticResource DESC_NEW}"/>
                                 </StackPanel>
                             </Button>
 
                             <Button 
                                 Background="{StaticResource ControlBackcolor}"
+                                Foreground="{StaticResource ToolButtonForecolor}"
                                 BorderThickness="0"
                                 Margin="0"
                                 Padding="10,12" 
@@ -288,9 +290,9 @@
                                 <StackPanel Orientation="Horizontal">
                                     <Path 
                                         VerticalAlignment="Center"  Margin="0,0,10,0" Width="14" Height="14" Stretch="Uniform" StrokeThickness="0"
-                                        Fill="{StaticResource ButtonForecolor}" Stroke="{StaticResource ButtonForecolor}"  SnapsToDevicePixels="True"
+                                        Fill="{StaticResource ToolButtonForecolor}" Stroke="{StaticResource ToolButtonForecolor}"  SnapsToDevicePixels="True"
                                         Data="{StaticResource ri-delete-bin-line}"/>
-                                    <TextBlock Foreground="{StaticResource ButtonForecolor}" Text="{StaticResource DESC_DEL}"/>
+                                    <TextBlock Foreground="{StaticResource ToolButtonForecolor}" Text="{StaticResource DESC_DEL}"/>
                                 </StackPanel>
                             </Button>
                             <!--<Button Template="{StaticResource ToolbarButtonTemplate}" 
@@ -332,6 +334,7 @@
                             <Button 
                                 Visibility="Collapsed"
                                 Background="{StaticResource ControlBackcolor}"
+                                Foreground="{StaticResource ToolButtonForecolor}"
                                 BorderThickness="0"
                                 Margin="0"
                                 Padding="10,12" 
@@ -339,13 +342,14 @@
                                 <StackPanel Orientation="Horizontal">
                                     <Path 
                                         VerticalAlignment="Center"  Margin="0,0,10,0" Width="14" Height="14" Stretch="Uniform" StrokeThickness="0"
-                                        Fill="{StaticResource ButtonForecolor}" Stroke="{StaticResource ButtonForecolor}"  SnapsToDevicePixels="True"
+                                        Fill="{StaticResource ToolButtonForecolor}" Stroke="{StaticResource ToolButtonForecolor}"  SnapsToDevicePixels="True"
                                         Data="{StaticResource ri-mail-open-line}"/>
-                                    <TextBlock Foreground="{StaticResource ButtonForecolor}" Text="{StaticResource CTX_OPEN_FILE}"/>
+                                    <TextBlock Foreground="{StaticResource ToolButtonForecolor}" Text="{StaticResource CTX_OPEN_FILE}"/>
                                 </StackPanel>
                             </Button>
                             <Button 
                                 Background="{StaticResource ControlBackcolor}"
+                                Foreground="{StaticResource ToolButtonForecolor}"
                                 BorderThickness="0"
                                 Margin="0"
                                 Padding="10,12" 
@@ -353,13 +357,14 @@
                                 <StackPanel Orientation="Horizontal">
                                     <Path 
                                         VerticalAlignment="Center"  Margin="0,0,10,0" Width="14" Height="14" Stretch="Uniform" StrokeThickness="0"
-                                        Fill="{StaticResource ButtonForecolor}" Stroke="{StaticResource ButtonForecolor}"  SnapsToDevicePixels="True"
+                                        Fill="{StaticResource ToolButtonForecolor}" Stroke="{StaticResource ToolButtonForecolor}"  SnapsToDevicePixels="True"
                                         Data="{StaticResource ri-folder-shared-line}"/>
-                                    <TextBlock Foreground="{StaticResource ButtonForecolor}" Text="{StaticResource CTX_OPEN_FOLDER}"/>
+                                    <TextBlock Foreground="{StaticResource ToolButtonForecolor}" Text="{StaticResource CTX_OPEN_FOLDER}"/>
                                 </StackPanel>
                             </Button>
                             <Button 
                                 Background="{StaticResource ControlBackcolor}"
+                                Foreground="{StaticResource ToolButtonForecolor}"
                                 BorderThickness="0"
                                 Margin="0"
                                 Padding="10,12" 
@@ -367,13 +372,14 @@
                                 <StackPanel Orientation="Horizontal">
                                     <Path 
                                         VerticalAlignment="Center"  Margin="0,0,10,0" Width="14" Height="14" Stretch="Uniform" StrokeThickness="0"
-                                        Fill="{StaticResource ButtonForecolor}" Stroke="{StaticResource ButtonForecolor}"  SnapsToDevicePixels="True"
+                                        Fill="{StaticResource ToolButtonForecolor}" Stroke="{StaticResource ToolButtonForecolor}"  SnapsToDevicePixels="True"
                                         Data="{StaticResource ri-pause-line}"/>
-                                    <TextBlock Foreground="{StaticResource ButtonForecolor}" Text="{StaticResource MENU_PAUSE}"/>
+                                    <TextBlock Foreground="{StaticResource ToolButtonForecolor}" Text="{StaticResource MENU_PAUSE}"/>
                                 </StackPanel>
                             </Button>
                             <Button 
                                 Background="{StaticResource ControlBackcolor}"
+                                Foreground="{StaticResource ToolButtonForecolor}"
                                 BorderThickness="0"
                                 Margin="0"
                                 Padding="10,12" 
@@ -381,9 +387,9 @@
                                 <StackPanel Orientation="Horizontal">
                                     <Path 
                                         VerticalAlignment="Center"  Margin="0,0,10,0" Width="14" Height="14" Stretch="Uniform" StrokeThickness="0"
-                                        Fill="{StaticResource ButtonForecolor}" Stroke="{StaticResource ButtonForecolor}"  SnapsToDevicePixels="True"
+                                        Fill="{StaticResource ToolButtonForecolor}" Stroke="{StaticResource ToolButtonForecolor}"  SnapsToDevicePixels="True"
                                         Data="{StaticResource ri-play-line}"/>
-                                    <TextBlock Foreground="{StaticResource ButtonForecolor}" Text="{StaticResource MENU_RESUME}"/>
+                                    <TextBlock Foreground="{StaticResource ToolButtonForecolor}" Text="{StaticResource MENU_RESUME}"/>
                                 </StackPanel>
                             </Button>
                         </StackPanel>
@@ -426,31 +432,22 @@
                                             Background="{StaticResource SearchBackcolor}" BorderThickness="0" SnapsToDevicePixels="True"
                                             Click="SearchButton_Click">
                                         <Path VerticalAlignment="Center"  Margin="0,0,0,0" Width="12" Height="12" Stretch="Uniform" 
-                                              StrokeThickness="0" Fill="{StaticResource ButtonForecolor}" 
-                                              Stroke="{StaticResource ButtonForecolor}"  SnapsToDevicePixels="True" 
+                                              StrokeThickness="0" Fill="{StaticResource ToolButtonForecolor}" 
+                                              Stroke="{StaticResource ToolButtonForecolor}"  SnapsToDevicePixels="True" 
                                               Data="{StaticResource ri-search-line}"/>
                                     </Button>
                                 </Grid>
                             </Border>
                         </StackPanel>
-                        <Button Name="BtnMenu" Grid.Column="2" Padding="15,15" Margin="2,0,0,0" 
-                            Template="{StaticResource ToolbarButtonTemplateIconOnly}" Tag="{StaticResource ri-menu-line}" 
+                        <Button Name="BtnMenu" Grid.Column="2" Padding="10,0" Margin="2,0,0,0" 
+                                Background="{StaticResource ControlBackcolor}"
+                                Foreground="{StaticResource ToolButtonForecolor}"
+                                BorderThickness="0"
                                 Click="BtnMenu_Click">
-                            <!--<Button.ContextMenu>
-                                <ContextMenu x:Name="ctxMainMenu" Width="250">
-                                    <MenuItem Name="menuSettings" Header="{StaticResource TITLE_SETTINGS}" Foreground="{StaticResource ControlForecolor}"/>
-                                    <MenuItem Name="menuClearFinished" Header="{StaticResource MENU_DELETE_COMPLETED}" Foreground="{StaticResource ControlForecolor}"/>
-                                    <MenuItem Name="menuExport" Header="{StaticResource MENU_EXPORT}" Foreground="{StaticResource ControlForecolor}"/>
-                                    <MenuItem Name="menuImport" Header="{StaticResource MENU_IMPORT}" Foreground="{StaticResource ControlForecolor}"/>
-                                    <MenuItem Name="menuLanguage" Header="{StaticResource MENU_LANG}" Foreground="{StaticResource ControlForecolor}"/>
-                                    <MenuItem Name="menuBrowserMonitor" Header="{StaticResource SETTINGS_MONITORING}" Foreground="{StaticResource ControlForecolor}"/>
-                                    <MenuItem Name="menuHelpAndSupport" Header="{StaticResource LBL_SUPPORT_PAGE}" Foreground="{StaticResource ControlForecolor}"/>
-                                    <MenuItem Name="menuReportProblem" Header="{StaticResource LBL_REPORT_PROBLEM}" Foreground="{StaticResource ControlForecolor}"/>
-                                    <MenuItem Name="menuCheckForUpdate" Header="{StaticResource MENU_UPDATE}" Foreground="{StaticResource ControlForecolor}"/>
-                                    <MenuItem Name="menuAbout" Header="{StaticResource MENU_ABOUT}" Foreground="{StaticResource ControlForecolor}"/>
-                                    <MenuItem Name="menuExit" Header="{StaticResource MENU_EXIT}" Foreground="{StaticResource ControlForecolor}" Click="menuExit_Click"/>
-                                </ContextMenu>
-                            </Button.ContextMenu>-->
+                            <Path VerticalAlignment="Center" Width="24" Height="24"  Margin="0,0,0,0" Stretch="None" 
+                                  StrokeThickness="0" Fill="{StaticResource ToolButtonForecolor}" 
+                                  Stroke="{StaticResource ToolButtonForecolor}"  SnapsToDevicePixels="True"
+                                  Data="{StaticResource  ri-menu-line}"/>
                         </Button>
                     </Grid>
                 </Border>
@@ -459,7 +456,7 @@
                     DockPanel.Dock="Bottom" 
                     Background="{StaticResource StatusbarBackcolor}"
                     SnapsToDevicePixels="True"
-                    Padding="5,8">
+                    Padding="5,5">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="auto"/>
@@ -472,11 +469,9 @@
                                Foreground="{StaticResource ToolButtonForecolor}" 
                                Background="{StaticResource StatusbarBackcolor}"
                                VerticalAlignment="Center">Browser monitoring</TextBlock>
-                        <Button Grid.Column="1"  Name="BtnMonitoring"
-                            Template="{StaticResource MonitoringToggleButton}" 
-                            Foreground="{StaticResource ToolButtonForecolor}"
-                            Margin="0,0" Background="{StaticResource StatusbarBackcolor}"
-                                Click="BtnMonitoring_Click">
+                        <Button Grid.Column="1"  Name="BtnMonitoring" Foreground="{StaticResource ToolButtonForecolor}"
+                            Margin="0" Padding="0" BorderThickness="0" Background="{StaticResource StatusbarBackcolor}"
+                            Click="BtnMonitoring_Click">
                             <Path Name="MonitoringToggleIcon"
                                 Height="24"
                                 Width="24"
@@ -488,23 +483,11 @@
                                 Stroke="{StaticResource StatusbarIconcolor}" 
                                 Data="{StaticResource ri-toggle-line}"
                                 SnapsToDevicePixels="True">
-                                <!--<Path.Style>
-                                    <Style TargetType="Path">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Path=BrowserMonitoringEnabled,NotifyOnSourceUpdated=True}" Value="True">
-                                                <Setter Property="Data"  Value="{StaticResource ri-toggle-fill}" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Path.Style>-->
                             </Path>
                         </Button>
-                        <Button Grid.Column="2" 
-                                Name="BtnQueue"
-                                Click="BtnQueue_Click"
-                            Template="{StaticResource MonitoringToggleButton}" 
-                            Foreground="{StaticResource ToolButtonForecolor}"
-                            Margin="15,0" Background="{StaticResource StatusbarBackcolor}" >
+                        <Button Grid.Column="2" Name="BtnQueue" Foreground="{StaticResource ToolButtonForecolor}"
+                            Margin="10,0" Padding="0" BorderThickness="0" Background="{StaticResource StatusbarBackcolor}"
+                                Click="BtnQueue_Click">
                             <StackPanel Orientation="Horizontal" Margin="5,0,10,0">
                                 <Path
                                 Height="14"
@@ -520,10 +503,8 @@
                                 <TextBlock Padding="3,0,3,2" VerticalAlignment="Center">Queues and scheduler</TextBlock>
                             </StackPanel>
                         </Button>
-                        <Button Grid.Column="4" 
-                            Template="{StaticResource MonitoringToggleButton}" 
-                            Foreground="{StaticResource ToolButtonForecolor}"
-                            Margin="10,0" Background="{StaticResource StatusbarBackcolor}" >
+                        <Button Grid.Column="4" Foreground="{StaticResource ToolButtonForecolor}"
+                            Margin="0,0" Padding="0" BorderThickness="0" Background="{StaticResource StatusbarBackcolor}" >
                             <StackPanel Orientation="Horizontal" Margin="5,0,10,0">
                                 <Path
                                 Height="16"

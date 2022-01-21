@@ -1,0 +1,88 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Style x:Key="{x:Type ProgressBar}" TargetType="{x:Type ProgressBar}">
+        <Setter Property="Background" Value="{StaticResource ProgressBarBackcolor}"/>
+        <Setter Property="Foreground" Value="{StaticResource ProgressBarForecolor}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ProgressBar}">
+                    <Grid MinHeight="1" MinWidth="1" Background="{TemplateBinding Background}">
+                        <!--<VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Determinate" />
+                                <VisualState x:Name="Indeterminate">
+                                    <Storyboard>
+                                        <ObjectAnimationUsingKeyFrames Duration="00:00:00"
+                                                 Storyboard.TargetName="PART_Indicator"
+                                                 Storyboard.TargetProperty="Background">
+                                            <DiscreteObjectKeyFrame KeyTime="00:00:00">
+                                                <DiscreteObjectKeyFrame.Value>
+                                                    <SolidColorBrush>Transparent</SolidColorBrush>
+                                                </DiscreteObjectKeyFrame.Value>
+                                            </DiscreteObjectKeyFrame>
+                                        </ObjectAnimationUsingKeyFrames>
+
+                                    </Storyboard>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>-->
+                        <Border x:Name="PART_Track" Background="{TemplateBinding Background}"/>
+                        <Border x:Name="PART_Indicator" HorizontalAlignment="Left" 
+                                Background="{TemplateBinding Foreground}" Margin="0"/>
+                        <!--<Border.BorderBrush>
+                                <LinearGradientBrush StartPoint="0,0"
+                                   EndPoint="0,1">
+                                    <GradientBrush.GradientStops>
+                                        <GradientStopCollection>
+                                            <GradientStop Color="{DynamicResource BorderLightColor}"
+                                  Offset="0.0" />
+                                            <GradientStop Color="{DynamicResource BorderMediumColor}"
+                                  Offset="1.0" />
+                                        </GradientStopCollection>
+                                    </GradientBrush.GradientStops>
+                                </LinearGradientBrush>
+
+                            </Border.BorderBrush>-->
+                        <Grid ClipToBounds="True"
+                                x:Name="Animation">
+                            <Rectangle x:Name="PART_GlowRect" Width="100" HorizontalAlignment="Left" 
+                                           Fill="{TemplateBinding Foreground}"
+                                    Margin="-100,0,0,0" />
+                        </Grid>
+
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsIndeterminate" Value="False">
+                            <Setter TargetName="Animation" Property="Visibility" Value="Collapsed"/>
+                        </Trigger>
+                        <Trigger Property="IsIndeterminate" Value="True">
+                            <Setter TargetName="PART_Indicator" Property="Visibility" Value="Collapsed"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <!--<Setter Property="Background">
+            <Setter.Value>
+                <LinearGradientBrush EndPoint="0,1"
+                           StartPoint="0,0">
+                    <GradientStop Color="{DynamicResource ControlLightColor}"
+                      Offset="0" />
+                    <GradientStop Color="{DynamicResource ControlMediumColor}"
+                      Offset="1" />
+                </LinearGradientBrush>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Foreground">
+            <Setter.Value>
+                <LinearGradientBrush EndPoint="0.5,1"
+                           StartPoint="0.5,0">
+                    <GradientStop Color="{DynamicResource ControlMediumColor}"
+                      Offset="0" />
+                    <GradientStop Color="{DynamicResource ControlDarkColor}"
+                      Offset="1" />
+                </LinearGradientBrush>
+            </Setter.Value>
+        </Setter>-->
+    </Style>
+</ResourceDictionary>

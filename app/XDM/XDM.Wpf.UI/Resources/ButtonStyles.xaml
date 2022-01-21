@@ -4,10 +4,9 @@
         <Setter Property="Control.Template">
             <Setter.Value>
                 <ControlTemplate>
-                    <Rectangle Margin="2"
+                    <Rectangle 
                                StrokeThickness="1"
-                               Stroke="{StaticResource ControlBordercolor}"
-                               StrokeDashArray="1 2"
+                               Stroke="{StaticResource ButtonFocusedBorder}"
                                SnapsToDevicePixels="true"/>
                 </ControlTemplate>
             </Setter.Value>
@@ -16,39 +15,44 @@
     <Style TargetType="Button" >
         <Setter Property="SnapsToDevicePixels" Value="true"/>
         <Setter Property="OverridesDefaultStyle" Value="true"/>
-        <Setter Property="FocusVisualStyle" Value="{StaticResource ButtonFocusVisual}"/>
+        <Setter Property="FocusVisualStyle"  Value="{x:Null}"/>
         <Setter Property="MinHeight" Value="23"/>
         <Setter Property="MinWidth" Value="5"/>
+        <Setter Property="Background" Value="{StaticResource ButtonBackcolor}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource ButtonBorder}"/>
+        <Setter Property="Padding" Value="10,3"/>
+        <Setter Property="Margin" Value="3,3"/>
+        <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border 
-          x:Name="Border"  
-          BorderThickness="1"
-          Padding="{TemplateBinding Padding}"
-          Background="{StaticResource ControlBackcolor}"
-          BorderBrush="{StaticResource ControlBordercolor}">
-                        <ContentPresenter 
-            Margin="2"
-            HorizontalAlignment="Center"
-            VerticalAlignment="Center"
-            RecognizesAccessKey="True"/>
+                              x:Name="Border"  
+                              BorderThickness="{TemplateBinding BorderThickness}"
+                              Padding="{TemplateBinding Padding}"
+                              Margin="{TemplateBinding Margin}"
+                              Background="{TemplateBinding Background}"
+                              BorderBrush="{TemplateBinding BorderBrush}">
+                        <ContentPresenter SnapsToDevicePixels="True"  Margin="2" HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsKeyboardFocused" Value="true">
-                            <Setter TargetName="Border" Property="Background" Value="{StaticResource ToolButtonMouseOverBackcolor}" />
+                            <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource ButtonFocusedBorder}" />
                         </Trigger>
                         <Trigger Property="IsDefaulted" Value="true">
-                            <Setter TargetName="Border" Property="Background" Value="{StaticResource ToolButtonMouseOverBackcolor}" />
+                            <Setter TargetName="Border" Property="Background" Value="{StaticResource ButtonBackcolor}" />
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="true">
-                            <Setter TargetName="Border" Property="Background" Value="{StaticResource ToolButtonMouseOverBackcolor}" />
+                            <Setter TargetName="Border" Property="Background" Value="{StaticResource ButtonMouseOverBackcolor}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="true">
-                            <Setter TargetName="Border" Property="Background" Value="{StaticResource ToolButtonMouseOverBackcolor}" />
+                            <Setter TargetName="Border" Property="Background" Value="{StaticResource ButtonMousePressedBackcolor}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="false">
-                            <Setter Property="Foreground" Value="{StaticResource ToolButtonMouseDisabledForecolor}"/>
+                            <Setter Property="Opacity" Value="{StaticResource ButtonDisabledOpacity}"/>
+                        </Trigger>
+                        <Trigger Property="IsFocused" Value="True">
+                            <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource ButtonFocusedBorder}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
