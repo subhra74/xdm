@@ -17,7 +17,7 @@
             </Grid.ColumnDefinitions>
             <Button Grid.Column="0" Name="BtnHide" Margin="10,5" Padding="15,5" Content="{StaticResource DWN_HIDE}" Click="BtnHide_Click"/>
             <Button Grid.Column="2" Name="BtnStop" Margin="10,5" Padding="15,5" Content="{StaticResource BTN_STOP_PROCESSING}" Click="BtnStop_Click"/>
-            <Button Grid.Column="3" Name="BtnPause" Margin="0,5,10,5" Padding="15,5" Content="{StaticResource MENU_PAUSE}" Click="BtnPause_Click"/>
+            <Button Grid.Column="3" Name="BtnPause" Margin="10,5" Padding="15,5" Content="{StaticResource MENU_PAUSE}" Click="BtnPause_Click"/>
         </Grid>
         <Border Background="{StaticResource TextBackcolor}" Padding="10">
             <Grid>
@@ -52,7 +52,7 @@
                            Foreground="{StaticResource ToolButtonMouseDisabledForecolor}"/>
                 <TextBlock Grid.Row="3" Grid.Column="1" x:Name="TxtStatus" Text="" Margin="10,5" />
                 <TextBlock Grid.Row="3" Grid.Column="2" x:Name="TxtSpeed" Text="" Margin="10,5" HorizontalAlignment="Right" />
-                <ProgressBar Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" x:Name="PrgProgress" MinHeight="10" Margin="10,5" />
+                <ProgressBar Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" x:Name="PrgProgress" MinHeight="5" Margin="10,5"  />
                 <TextBlock Grid.Row="5" Grid.Column="1" x:Name="TxtETA" Text="" Margin="10,5" />
                 <TextBlock Grid.Row="5" Grid.Column="2" x:Name="TxtSpeedLimit" Text="{StaticResource MSG_NO_SPEED_LIMIT}" 
                            Margin="10,5"  HorizontalAlignment="Right"

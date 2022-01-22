@@ -108,6 +108,7 @@ namespace XDM.Core.Lib.Common.MediaProcessor
                     var line = b.Data;
                     if (line != null)
                     {
+                        Log.Debug(line);
                         if (duration == 0.0)
                         {
                             var md = Helpers.RxDuration.Match(line);
@@ -129,6 +130,16 @@ namespace XDM.Core.Lib.Common.MediaProcessor
                         }
                     }
                 };
+
+                proc.ErrorDataReceived += (a, b) =>
+                {
+                    var line = b.Data;
+                    if (line != null)
+                    {
+                        Log.Debug(line);
+                    }
+                };
+
                 proc.BeginOutputReadLine();
 
                 proc.WaitForExit();

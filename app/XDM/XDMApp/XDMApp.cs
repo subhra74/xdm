@@ -85,7 +85,14 @@ namespace XDMApp
             //    dueTime: TimeSpan.FromSeconds(5),
             //    period: TimeSpan.FromHours(3));
 
-            QueueManager.Load();
+            try
+            {
+                QueueManager.Load();
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, ex.ToString());
+            }
         }
 
         public void StartClipboardMonitor()

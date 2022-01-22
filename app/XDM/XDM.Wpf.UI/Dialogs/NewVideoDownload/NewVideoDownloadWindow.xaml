@@ -24,16 +24,18 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <Button Grid.Column="0" 
-                        Padding="20,5"
+                        Padding="15,5"
+                        Margin="5,0,10,0"
                         Name="btnAdvanced" Content="{StaticResource ND_MORE}"
                         Click="btnAdvanced_Click"/>
                 <Button Grid.Column="2" 
-                        Padding="20,5"
-                        Margin="0,0,10,0"
+                        Padding="15,5"
+                        Margin="0,0,15,0"
                         Name="btnDownloadLater" Content="{StaticResource ND_DOWNLOAD_LATER}"
                         Click="btnDownloadLater_Click"/>
                 <Button Grid.Column="3" 
-                        Padding="20,5"
+                        Margin="0,0,5,0"
+                        Padding="15,5"
                         Name="btnDownload" Content="{StaticResource ND_DOWNLOAD_NOW}"
                         Click="btnDownload_Click"/>
             </Grid>
@@ -53,14 +55,13 @@
                 <TextBlock Grid.Row="0" Text="{StaticResource LBL_NEW_QUEUE}" Margin="20,10,10,10" HorizontalAlignment="Right"/>
                 <TextBlock Grid.Row="1" Text="{StaticResource LBL_SAVE_IN}" Margin="20,10,10,5" HorizontalAlignment="Right"/>
                 <TextBox Grid.Row="0" Grid.Column="1" Margin="5" VerticalAlignment="Stretch" VerticalContentAlignment="Center"
-                         BorderBrush="{StaticResource ControlBordercolor}"
-                         Background="{StaticResource NewDownloadTextBoxBackground}"
                          Name="TxtFile"/>
-                <ComboBox Background="{StaticResource NewDownloadTextBoxBackground}" Grid.Row="1" Grid.Column="1" Margin="5,5,5,0" 
+                <ComboBox Grid.Row="1" Grid.Column="1" Margin="5,5,5,0" 
                           VerticalAlignment="Stretch" VerticalContentAlignment="Center"
                           Name="CmbLocation" SelectionChanged="CmbLocation_SelectionChanged">
                 </ComboBox>
-                <Path Grid.Column="2" Grid.Row="0" Grid.RowSpan="2" 
+                <StackPanel  Grid.Column="2" Grid.Row="0" Grid.RowSpan="2" Margin="0,10,0,0">
+                    <Path Grid.Column="2" Grid.Row="0" Grid.RowSpan="2" 
                       VerticalAlignment="Bottom" 
                       HorizontalAlignment="Center"
                       Margin="20,0,20,10" 
@@ -71,8 +72,9 @@
                       Stroke="{StaticResource ToolButtonMouseDisabledForecolor}"
                       Data="{StaticResource ri-file-download-line}"
                       SnapsToDevicePixels="True"/>
-                <TextBlock Grid.Row="2" Grid.Column="2" Text="---" Margin="10,0,10,0" Name="TxtFileSize" 
+                    <TextBlock Grid.Row="2" Grid.Column="2" Text="---" Margin="10,0,10,0" Name="TxtFileSize" 
                            HorizontalAlignment="Center" VerticalAlignment="Top"/>
+                </StackPanel>
             </Grid>
         </Border>
     </DockPanel>

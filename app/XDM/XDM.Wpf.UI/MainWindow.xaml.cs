@@ -339,12 +339,12 @@ namespace XDM.Wpf.UI
 
         public void RunOnUIThread(Action action)
         {
-            Dispatcher.Invoke(action);
+            Dispatcher.BeginInvoke(action);
         }
 
         public void RunOnUIThread(Action<string, int, double, long> action, string id, int progress, double speed, long eta)
         {
-            Dispatcher.Invoke(action, id, progress, speed, eta);
+            Dispatcher.BeginInvoke(action, id, progress, speed, eta);
         }
 
         public void Delete(IInProgressDownloadRow row)
