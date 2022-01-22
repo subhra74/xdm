@@ -62,7 +62,7 @@
     <SolidColorBrush x:Key="{x:Static SystemColors.ControlTextColorKey }" Color="#A0A0A0"/>
 
     <SolidColorBrush x:Key="NewDownloadTextBoxBackground" Color="#21252B"/>
-    <SolidColorBrush x:Key="HyperlinkForecolor" Color="Gray"/>
+    <SolidColorBrush x:Key="HyperlinkForecolor" Color="DodgerBlue"/>
 
     <SolidColorBrush x:Key="ScrollBarThumbColorNormal" Color="#343537"/>
     <SolidColorBrush x:Key="ScrollBarThumbColorHot" Color="#3E3F41"/>

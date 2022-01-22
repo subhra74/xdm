@@ -80,5 +80,10 @@ namespace XDM.Wpf.UI.Dialogs.CompletedDialog
             }
 #endif
         }
+
+        private void BtnOpenFolder_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }
