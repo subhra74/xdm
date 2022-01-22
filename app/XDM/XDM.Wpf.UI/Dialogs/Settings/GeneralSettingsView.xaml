@@ -47,14 +47,14 @@
                 <TextBlock Margin="10,10,10,0" Text="{StaticResource LBL_TEMP_FOLDER}" Grid.Row="4" Grid.ColumnSpan="4" />
                 <TextBox Name="TxtTempFolder" Grid.Row="5" Grid.Column="0" Margin="10" VerticalContentAlignment="Center" 
                          AcceptsReturn="False" TextWrapping="NoWrap" Grid.ColumnSpan="3" IsReadOnly="True"/>
-                <Button Name="BtnTempFolderBrowse"  Grid.Row="5" Grid.Column="3" Margin="0,10,10,10" Padding="3" Content="..." Click="BtnTempFolderBrowse_Click"/>
+                <Button Name="BtnTempFolderBrowse"  Grid.Row="5" Grid.Column="3" Margin="0,10,10,10" Padding="5,3" Content="..." Click="BtnTempFolderBrowse_Click"/>
                 <TextBlock Margin="10,10,10,0" Text="{StaticResource SETTINGS_FOLDER}" Grid.Row="6" Grid.ColumnSpan="4" />
                 <TextBox Name="TxtDownloadFolder" Grid.Row="7" Grid.Column="0" Margin="10" VerticalContentAlignment="Center" 
                          AcceptsReturn="False" TextWrapping="NoWrap" Grid.ColumnSpan="3" IsReadOnly="True"/>
                 <Button Name="BtnDownloadFolderBrowse"  Grid.Row="7" Grid.Column="3" Margin="0,10,10,10" Padding="3" Content="..." Click="BtnDownloadFolderBrowse_Click" />
                 <TextBlock Margin="10" Text="{StaticResource MSG_MAX_DOWNLOAD}" VerticalAlignment="Center" Grid.Row="8"  Grid.ColumnSpan="2" />
                 <StackPanel Margin="10" Grid.Row="8"  Grid.ColumnSpan="2" Grid.Column="2">
-                    <ComboBox Margin="5" Grid.Row="8" Name="CmbMaxParallalDownloads" HorizontalAlignment="Right"
+                    <ComboBox Grid.Row="8" Name="CmbMaxParallalDownloads" HorizontalAlignment="Right"
                               VerticalAlignment="Center"/>
                 </StackPanel>
                 <CheckBox Name="ChkDarkTheme" Grid.Row="9" Grid.Column="0" Grid.ColumnSpan="4" VerticalContentAlignment="Center" 
@@ -62,7 +62,8 @@
                 <CheckBox Name="ChkAutoCat" Grid.Row="10" Grid.Column="0" Grid.ColumnSpan="4" VerticalContentAlignment="Center" 
                           Margin="10,5" Padding="3" Content="{StaticResource SETTINGS_ATUO_CAT}"/>
                 <TextBlock Margin="10,15,10,5" Text="{StaticResource SETTINGS_CAT}" Grid.Row="11" Grid.ColumnSpan="4" />
-                <ListView Margin="10,5" Name="LvCategories" Grid.ColumnSpan="4" Grid.Row="12">
+                <ListView Margin="10,5" Name="LvCategories" Grid.ColumnSpan="4" Grid.Row="12" BorderThickness="1" 
+                          BorderBrush="{StaticResource ControlBordercolor}">
                     <ListView.View>
                         <GridView>
                             <GridViewColumn Header="{StaticResource SETTINGS_CAT_NAME}" Width="120" DisplayMemberBinding="{Binding DisplayName}" />

@@ -577,7 +577,8 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <ListView Name="lvInProgress"  
+                    <ListView Name="lvInProgress"
+                              BorderThickness="0"
                           VerticalContentAlignment="Stretch" 
                           HorizontalAlignment="Stretch" 
                           Grid.Column="0" Grid.Row="0"
@@ -652,6 +653,7 @@
                     </ListView>
                     <ListView Name="lvFinished"  
                           VerticalContentAlignment="Stretch" 
+                              BorderThickness="0"
                           HorizontalAlignment="Stretch" 
                           Grid.Column="0" Grid.Row="0"
                           VirtualizingStackPanel.VirtualizationMode="Recycling"

@@ -26,7 +26,8 @@
     <SolidColorBrush x:Key="SearchBackcolor" Color="White"/>
 
     <SolidColorBrush x:Key="ControlBackcolor" Color="#F3F3F3"/>
-    <SolidColorBrush x:Key="ControlBordercolor" Color="#E5E5E5"/>
+    <!--<SolidColorBrush x:Key="ControlBordercolor" Color="#E5E5E5"/>-->
+    <SolidColorBrush x:Key="ControlBordercolor" Color="DarkGray"/>
     <SolidColorBrush x:Key="ControlForecolor" Color="Black"/>
 
     <SolidColorBrush x:Key="TextBackcolor" Color="White"/>
@@ -53,11 +54,11 @@
 
     <SolidColorBrush x:Key="PlaceHolderForecolor" Color="#B4B4B4"/>
 
-    <SolidColorBrush x:Key="{x:Static SystemColors.ControlTextBrushKey }" Color="Black"/>
-    <SolidColorBrush x:Key="{x:Static SystemColors.WindowTextBrushKey }" Color="Black"/>
+    <!--<SolidColorBrush x:Key="{x:Static SystemColors.ControlTextBrushKey }" Color="Black"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.WindowTextBrushKey }" Color="Black"/>-->
     <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey }" Color="#F3F3F3"/>
     <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey }" Color="DodgerBlue"/>
-    <SolidColorBrush x:Key="{x:Static SystemColors.ControlTextColorKey }" Color="Black"/>
+    <!--<SolidColorBrush x:Key="{x:Static SystemColors.ControlTextColorKey }" Color="Black"/>-->
 
     <SolidColorBrush x:Key="NewDownloadTextBoxBackground" Color="White"/>
     <SolidColorBrush x:Key="HyperlinkForecolor" Color="DodgerBlue"/>
@@ -72,6 +73,21 @@
     <SolidColorBrush x:Key="ProgressBarForecolor" Color="DodgerBlue"/>
 
     <core:Double x:Key="ButtonDisabledOpacity">0.5</core:Double>
+
+    <Style TargetType="{x:Type Button}">
+        <Setter Property="MinHeight" Value="23"/>
+        <Setter Property="MinWidth" Value="5"/>
+        <Setter Property="Padding" Value="10,3"/>
+        <Setter Property="Margin" Value="3,3"/>
+    </Style>
+
+    <Style TargetType="{x:Type TextBox}">
+        <Setter Property="Padding" Value="3,5"/>
+    </Style>
+
+    <Style TargetType="{x:Type ComboBox}">
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
 
     <!--<Style TargetType="{x:Type TextBlock}">
         <Setter Property="Foreground"

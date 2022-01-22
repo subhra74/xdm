@@ -35,16 +35,16 @@
                           Margin="10,5" Padding="3" Content="{StaticResource EXEC_CMD}"/>
                 <TextBox Name="TxtCustomCmd" Grid.Row="3" Grid.Column="0" Margin="10" VerticalContentAlignment="Center" 
                          AcceptsReturn="False" TextWrapping="NoWrap" Grid.ColumnSpan="3"
-                         Padding="5"/>
+                         />
                 <CheckBox Name="ChkRunAntivirus" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="4" VerticalContentAlignment="Center" 
                           Margin="10,5" Padding="3" Content="{StaticResource EXE_ANTI_VIR}"/>
                 <TextBlock Margin="10,10,10,0" Text="{StaticResource ANTIVIR_CMD}" Grid.Row="5" Grid.ColumnSpan="4" />
                 <TextBox Name="TxtAntiVirusCmd" Grid.Row="6" Grid.Column="0" Margin="10" VerticalContentAlignment="Center" 
-                         AcceptsReturn="False" TextWrapping="NoWrap" Padding="5"/>
+                         AcceptsReturn="False" TextWrapping="NoWrap"/>
                 <Button Name="BtnBrowse"  Grid.Row="6" Grid.Column="1" Margin="0,10,10,10" Padding="5,3" Content="..." Click="BtnBrowse_Click"/>
                 <TextBlock Margin="10,10,10,0" Text="{StaticResource ANTIVIR_ARGS}" Grid.Row="7" Grid.ColumnSpan="4" />
                 <TextBox Name="TxtAntiVirusArgs" Grid.Row="8" Grid.Column="0" Margin="10" VerticalContentAlignment="Center" 
-                         AcceptsReturn="False" TextWrapping="NoWrap" Grid.ColumnSpan="3" Padding="5"/>
+                         AcceptsReturn="False" TextWrapping="NoWrap" Grid.ColumnSpan="3"/>
                 <CheckBox Name="ChkAutoRun" Grid.Row="9" Grid.Column="0" Grid.ColumnSpan="4" VerticalContentAlignment="Center" 
                           Margin="10,5" Padding="3" Content="{StaticResource AUTO_START}"/>
             </Grid>

@@ -21,9 +21,9 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <TextBlock Text="{StaticResource MSG_QUEUE_NAME}" Margin="0,5" Grid.ColumnSpan="3"/>
-        <TextBox Name="TxtQueueName"  VerticalContentAlignment="Center"  Grid.ColumnSpan="3" Grid.Row="1" Padding="5"/>
-        <TextBlock Text="{StaticResource MSG_QUEUE_SELECT_ITEMS}" Margin="0,5" Grid.Row="2" Grid.ColumnSpan="3"/>
-        <ListView Name="lvDownloads" Grid.Row="3" Grid.ColumnSpan="3">
+        <TextBox Name="TxtQueueName"  VerticalContentAlignment="Center"  Grid.ColumnSpan="3" Grid.Row="1" />
+        <TextBlock Text="{StaticResource MSG_QUEUE_SELECT_ITEMS}" Margin="0,10,0,5" Grid.Row="2" Grid.ColumnSpan="3"/>
+        <ListView Name="lvDownloads" Grid.Row="3" Grid.ColumnSpan="3" BorderBrush="{StaticResource ControlBordercolor}" BorderThickness="1">
             <ListView.View>
                 <GridView>
                     <GridViewColumn Header="{StaticResource SORT_NAME}" Width="200">

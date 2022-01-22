@@ -6,8 +6,8 @@
         xmlns:local="clr-namespace:XDM.Wpf.UI.Dialogs.AdvancedDownloadOption"
         xmlns:uc="clr-namespace:XDM.Wpf.UI.Dialogs.SpeedLimiter"
         mc:Ignorable="d"
-        Title="AdvancedDownloadOption" Height="450" Width="450" 
-        WindowStartupLocation="CenterScreen" ShowInTaskbar="False">
+        Title="AdvancedDownloadOption" Height="450" Width="550" 
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
     <Grid Margin="10">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>

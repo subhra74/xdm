@@ -94,8 +94,9 @@
                 <ControlTemplate TargetType="{x:Type CheckBox}">
                     <BulletDecorator Background="Transparent" VerticalAlignment="Center">
                         <BulletDecorator.Bullet>
-                            <Border x:Name="Border" Width="16" Height="16" CornerRadius="3"
-                                    BorderThickness="0" BorderBrush="DodgerBlue" Background="DodgerBlue" Opacity="1.0">
+                            <Border x:Name="Border" Width="16" Height="16"  CornerRadius="3"
+                                    BorderThickness="0" BorderBrush="{StaticResource CategoryHighlight}" 
+                                    Background="{StaticResource CategoryHighlight}" Opacity="1.0">
                                 <!--<Border.BorderBrush>
                                     <LinearGradientBrush StartPoint="0,0"
                                      EndPoint="0,1">
@@ -207,7 +208,7 @@
                                 </VisualState>
                             </VisualStateGroup>
                         </VisualStateManager.VisualStateGroups>-->
-                        <ContentPresenter SnapsToDevicePixels="True" Margin="4,0,0,0"
+                        <ContentPresenter SnapsToDevicePixels="True" Margin="10,0,0,0"
                             VerticalAlignment="Center"
                             HorizontalAlignment="Left"
                             RecognizesAccessKey="True" />
@@ -217,7 +218,7 @@
                             <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Border" Property="Background" Value="DeepSkyBlue"/>
+                            <Setter TargetName="Border" Property="Opacity" Value="0.7"/>
                         </Trigger>
                         <!--<Trigger Property="IsIndeterminate" Value="True">
                             <Setter TargetName="InderminateMark" Property="Visibility" Value="Visible"/>
@@ -528,7 +529,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type RepeatButton}">
-                    <Border x:Name="Border" Margin="1" BorderThickness="0" 
+                    <Border x:Name="Border" Margin="0" BorderThickness="0" 
                             Background="{StaticResource ControlBackcolor}" 
                             BorderBrush="{StaticResource ControlBackcolor}">
                         <Path x:Name="Arrow" HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -730,10 +731,12 @@
                                 </VisualState>
                             </VisualStateGroup>
                         </VisualStateManager.VisualStateGroups>-->
-                        <TabPanel x:Name="HeaderPanel" Grid.Row="0" Panel.ZIndex="1" Margin="0,0,0,0"
-                                IsItemsHost="True"
+                        <Border BorderBrush="{StaticResource ControlBordercolor}" BorderThickness="1,1,1,0">
+                            <TabPanel x:Name="HeaderPanel" Grid.Row="0" Panel.ZIndex="1" Margin="0,0,0,0"
+                                IsItemsHost="True" 
                                 KeyboardNavigation.TabIndex="1"
-                                Background="Transparent" />
+                                Background="{StaticResource ControlBackcolor}" />
+                        </Border>
                         <Border x:Name="Border" 
                                   Grid.Row="1"
                                   BorderThickness="1"
@@ -754,7 +757,7 @@
                             <Border.BorderBrush>
                                 <SolidColorBrush Color="{DynamicResource BorderMediumColor}"/>
                             </Border.BorderBrush>-->
-                            <ContentPresenter x:Name="PART_SelectedContentHost"
+                            <ContentPresenter  x:Name="PART_SelectedContentHost"
                               Margin="4"
                               ContentSource="SelectedContent" />
                         </Border>
@@ -814,7 +817,7 @@
                                 </VisualState>
                             </VisualStateGroup>
                         </VisualStateManager.VisualStateGroups>-->
-                        <Border x:Name="Border" Margin="0,0,0,0"
+                        <Border x:Name="Border" Margin="10,0" Padding="0,5"
                             BorderThickness="0,0,0,2" BorderBrush="{StaticResource ControlBackcolor}" 
                                 Background="{StaticResource ControlBackcolor}">
                             <!--<Border.BorderBrush>
@@ -847,16 +850,16 @@
                         <Trigger Property="IsSelected" Value="True">
                             <Setter Property="Panel.ZIndex" Value="100" />
                             <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource TabSelectionColor}" />
-                            <Setter TargetName="Border" Property="Background" Value="{StaticResource ListViewBackcolor}" />
+                            <!--<Setter TargetName="Border" Property="Background" Value="{StaticResource ListViewBackcolor}" />-->
                         </Trigger>
                         <Trigger Property="IsSelected" Value="False">
                             <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource ControlBackcolor}" />
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Border" Property="Background" Value="{StaticResource ListViewBackcolor}" />
+                            <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource TabSelectionColor}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="Border" Property="Background" Value="{StaticResource ControlDisabledBackcolor}" />
+                            <Setter TargetName="Border" Property="Background" Value="{StaticResource ControlBackcolor}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -972,7 +975,6 @@
                               x:Name="Border"  
                               BorderThickness="{TemplateBinding BorderThickness}"
                               Padding="{TemplateBinding Padding}"
-                              Margin="{TemplateBinding Margin}"
                               Background="{TemplateBinding Background}"
                               BorderBrush="{TemplateBinding BorderBrush}">
                         <ContentPresenter SnapsToDevicePixels="True"  Margin="2" HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True"/>
