@@ -51,7 +51,7 @@ namespace XDM.Common.UI
             {
                 return;
             }
-            var folder = Path.GetDirectoryName(args.SelectedFile)!;
+            var folder = args.SelectedFile;// Path.GetDirectoryName(args.SelectedFile)!;
             if (!Config.Instance.RecentFolders.Contains(folder))
             {
                 Config.Instance.RecentFolders.Insert(0, folder);

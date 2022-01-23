@@ -114,14 +114,19 @@ namespace XDM.Wpf.UI.Dialogs.NewVideoDownload
         {
             if (CmbLocation.SelectedIndex == 1)
             {
-                var fc = new SaveFileDialog();
-                fc.Filter = "All files (*.*)|*.*";
-                fc.FileName = TxtFile.Text;
-                var ret = fc.ShowDialog(this);
-                if (ret.HasValue && ret.Value)
+                using var fb = new System.Windows.Forms.FolderBrowserDialog();
+                if (fb.ShowDialog(new WinformsWindow(this)) == System.Windows.Forms.DialogResult.OK)
                 {
-                    this.FileBrowsedEvent?.Invoke(this, new FileBrowsedEventArgs(fc.FileName));
+                    this.FileBrowsedEvent?.Invoke(this, new FileBrowsedEventArgs(fb.SelectedPath));
                 }
+                //var fc = new SaveFileDialog();
+                //fc.Filter = "All files (*.*)|*.*";
+                //fc.FileName = TxtFile.Text;
+                //var ret = fc.ShowDialog(this);
+                //if (ret.HasValue && ret.Value)
+                //{
+                //    this.FileBrowsedEvent?.Invoke(this, new FileBrowsedEventArgs(fc.FileName));
+                //}
                 else
                 {
                     CmbLocation.SelectedIndex = previousIndex;
