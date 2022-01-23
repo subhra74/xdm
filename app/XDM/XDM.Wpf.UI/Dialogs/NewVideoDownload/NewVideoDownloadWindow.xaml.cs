@@ -1,6 +1,7 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Windows;
@@ -35,10 +36,12 @@ namespace XDM.Wpf.UI.Dialogs.NewVideoDownload
         private ProxyInfo? proxy = Config.Instance.Proxy;
         private int speedLimit = Config.Instance.DefaltDownloadSpeed;
         private bool enableSpeedLimit = Config.Instance.EnableSpeedLimit;
+        private ObservableCollection<string> dropdownItems = new();
 
         public NewVideoDownloadWindow()
         {
             InitializeComponent();
+            CmbLocation.ItemsSource = dropdownItems;
         }
 
         public event EventHandler DownloadClicked;
@@ -61,7 +64,6 @@ namespace XDM.Wpf.UI.Dialogs.NewVideoDownload
             }
         }
 
-
         protected override void OnSourceInitialized(EventArgs e)
         {
             base.OnSourceInitialized(e);
@@ -76,7 +78,6 @@ namespace XDM.Wpf.UI.Dialogs.NewVideoDownload
             }
 #endif
         }
-
 
         private void btnAdvanced_Click(object sender, RoutedEventArgs e)
         {
@@ -113,7 +114,6 @@ namespace XDM.Wpf.UI.Dialogs.NewVideoDownload
         {
             if (CmbLocation.SelectedIndex == 1)
             {
-                CmbLocation.SelectedIndex = previousIndex;
                 var fc = new SaveFileDialog();
                 fc.Filter = "All files (*.*)|*.*";
                 fc.FileName = TxtFile.Text;
@@ -121,6 +121,10 @@ namespace XDM.Wpf.UI.Dialogs.NewVideoDownload
                 if (ret.HasValue && ret.Value)
                 {
                     this.FileBrowsedEvent?.Invoke(this, new FileBrowsedEventArgs(fc.FileName));
+                }
+                else
+                {
+                    CmbLocation.SelectedIndex = previousIndex;
                 }
             }
             else
@@ -167,11 +171,15 @@ namespace XDM.Wpf.UI.Dialogs.NewVideoDownload
 
         public void SetFolderValues(string[] values)
         {
+            if (dropdownItems.Count > 0)
+            {
+                dropdownItems = new();
+                CmbLocation.ItemsSource = dropdownItems;
+            }
             previousIndex = 0;
-            CmbLocation.Items.Clear();
             foreach (var item in values)
             {
-                CmbLocation.Items.Add(item);
+                dropdownItems.Add(item);
             }
         }
     }

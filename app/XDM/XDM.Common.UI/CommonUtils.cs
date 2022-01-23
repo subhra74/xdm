@@ -47,6 +47,10 @@ namespace XDM.Common.UI
         internal static void OnFileBrowsed(object? sender, FileBrowsedEventArgs args)
         {
             var file = Path.GetFileName(args.SelectedFile);
+            if (string.IsNullOrEmpty(file))
+            {
+                return;
+            }
             var folder = Path.GetDirectoryName(args.SelectedFile)!;
             if (!Config.Instance.RecentFolders.Contains(folder))
             {
@@ -73,10 +77,10 @@ namespace XDM.Common.UI
                 {
                     Config.Instance.FolderSelectionMode = FolderSelectionMode.Auto;
                 }
-                else
+                else if(!string.IsNullOrEmpty(args.SelectedFile))
                 {
                     Config.Instance.FolderSelectionMode = FolderSelectionMode.Manual;
-                    if (index != 1)
+                    if (index > 1)
                     {
                         Config.Instance.RecentFolders.Remove(args.SelectedFile);
                         Config.Instance.RecentFolders.Insert(0, args.SelectedFile);

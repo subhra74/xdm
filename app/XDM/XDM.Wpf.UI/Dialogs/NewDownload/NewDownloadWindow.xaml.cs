@@ -1,5 +1,6 @@
 ﻿using Microsoft.Win32;
 using System;
+using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -22,10 +23,12 @@ namespace XDM.Wpf.UI.Dialogs.NewDownload
         private int speedLimit = Config.Instance.DefaltDownloadSpeed;
         private bool enableSpeedLimit = Config.Instance.EnableSpeedLimit;
         private int previousIndex = 0;
+        private ObservableCollection<string> dropdownItems = new();
 
         public NewDownloadWindow()
         {
             InitializeComponent();
+            CmbLocation.ItemsSource = dropdownItems;
         }
 
         public bool IsEmpty { get => !TxtUrl.IsReadOnly; set => TxtUrl.IsReadOnly = !value; }
@@ -73,11 +76,15 @@ namespace XDM.Wpf.UI.Dialogs.NewDownload
 
         public void SetFolderValues(string[] values)
         {
+            if (dropdownItems.Count > 0)
+            {
+                dropdownItems = new();
+                CmbLocation.ItemsSource = dropdownItems;
+            }
             previousIndex = 0;
-            CmbLocation.Items.Clear();
             foreach (var item in values)
             {
-                CmbLocation.Items.Add(item);
+                dropdownItems.Add(item);
             }
         }
 
@@ -111,9 +118,9 @@ namespace XDM.Wpf.UI.Dialogs.NewDownload
 
         private void CmbLocation_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            e.Handled = true;
             if (CmbLocation.SelectedIndex == 1)
             {
-                CmbLocation.SelectedIndex = previousIndex;
                 var fc = new SaveFileDialog();
                 fc.Filter = "All files (*.*)|*.*";
                 fc.FileName = TxtFile.Text;
@@ -122,11 +129,15 @@ namespace XDM.Wpf.UI.Dialogs.NewDownload
                 {
                     this.FileBrowsedEvent?.Invoke(this, new FileBrowsedEventArgs(fc.FileName));
                 }
+                else
+                {
+                    CmbLocation.SelectedIndex = previousIndex;
+                }
             }
             else
             {
                 previousIndex = CmbLocation.SelectedIndex;
-                this.DropdownSelectionChangedEvent?.Invoke(this, new FileBrowsedEventArgs(CmbLocation.Text));
+                this.DropdownSelectionChangedEvent?.Invoke(this, new FileBrowsedEventArgs((string)CmbLocation.SelectedItem));
             }
         }
 
