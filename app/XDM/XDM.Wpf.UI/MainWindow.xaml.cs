@@ -12,6 +12,7 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Interop;
 using System.Windows.Threading;
+using TraceLog;
 using Translations;
 using XDM.Common.UI;
 using XDM.Core.Lib.Common;
@@ -24,6 +25,7 @@ using XDM.Wpf.UI.Dialogs.LanguageSettings;
 using XDM.Wpf.UI.Dialogs.NewDownload;
 using XDM.Wpf.UI.Dialogs.NewVideoDownload;
 using XDM.Wpf.UI.Dialogs.ProgressWindow;
+using XDM.Wpf.UI.Dialogs.PropertiesDialog;
 using XDM.Wpf.UI.Dialogs.QueuesWindow;
 using XDM.Wpf.UI.Dialogs.RefreshLink;
 using XDM.Wpf.UI.Dialogs.Settings;
@@ -422,14 +424,45 @@ namespace XDM.Wpf.UI
             nctx.IsOpen = true;
         }
 
-        public string SaveFileDialog(string initialPath)
+        public string? SaveFileDialog(string? initialPath, string? defaultExt, string? filter)
         {
             var fc = new SaveFileDialog();
             if (!string.IsNullOrEmpty(initialPath))
             {
                 fc.FileName = initialPath;
             }
-            var ret = fc.ShowDialog();
+            if (!string.IsNullOrEmpty(defaultExt))
+            {
+                fc.DefaultExt = defaultExt;
+            }
+            if (!string.IsNullOrEmpty(filter))
+            {
+                fc.Filter = filter;
+            }
+            var ret = fc.ShowDialog(this);
+            if (ret.HasValue && ret.Value)
+            {
+                return fc.FileName;
+            }
+            return null;
+        }
+
+        public string? OpenFileDialog(string? initialPath, string? defaultExt, string? filter)
+        {
+            var fc = new OpenFileDialog();
+            if (!string.IsNullOrEmpty(initialPath))
+            {
+                fc.FileName = initialPath;
+            }
+            if (!string.IsNullOrEmpty(defaultExt))
+            {
+                fc.DefaultExt = defaultExt;
+            }
+            if (!string.IsNullOrEmpty(filter))
+            {
+                fc.Filter = filter;
+            }
+            var ret = fc.ShowDialog(this);
             if (ret.HasValue && ret.Value)
             {
                 return fc.FileName;
@@ -455,19 +488,27 @@ namespace XDM.Wpf.UI
             Clipboard.SetFileDropList(sc);
         }
 
-        public void ShowPropertiesDialog(BaseDownloadEntry ent, ShortState state)
+        public void ShowPropertiesDialog(BaseDownloadEntry ent, ShortState? state)
         {
-            throw new NotImplementedException();
+            var propertiesWindow = new DownloadPropertiesWindow
+            {
+                FileName = ent.Name,
+                Folder = ent.TargetDir ?? Helpers.GetDownloadFolderByFileName(ent.Name),
+                Address = ent.PrimaryUrl,
+                FileSize = Helpers.FormatSize(ent.Size),
+                DateAdded = ent.DateAdded.ToLongDateString() + " " + ent.DateAdded.ToLongTimeString(),
+                DownloadType = ent.DownloadType,
+                Referer = ent.RefererUrl,
+                Cookies = state?.Cookies ?? state?.Cookies1 ?? new Dictionary<string, string>(),
+                Headers = state?.Headers ?? state?.Headers1 ?? new Dictionary<string, List<string>>(),
+                Owner = this
+            };
+            propertiesWindow.ShowDialog(this);
         }
 
         public void ShowYoutubeDLDialog(IAppUI appUI, IApp app)
         {
             throw new NotImplementedException();
-        }
-
-        public DownloadSchedule? ShowSchedulerDialog(DownloadSchedule schedule)
-        {
-            return null;
         }
 
         public void ShowBatchDownloadWindow(IApp app, IAppUI appUi)
@@ -481,25 +522,16 @@ namespace XDM.Wpf.UI
             settings.ShowDialog(this);
         }
 
-        public void ImportDownloads(IApp app)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void ExportDownloads(IApp app)
-        {
-            throw new NotImplementedException();
-        }
-
         public void UpdateBrowserMonitorButton()
         {
-            this.MonitoringToggleIcon.Data = (System.Windows.Media.Geometry)FindResource(Config.Instance.IsBrowserMonitoringEnabled?
-                "ri-toggle-fill": "ri-toggle-line");
+            this.MonitoringToggleIcon.Data = (System.Windows.Media.Geometry)FindResource(Config.Instance.IsBrowserMonitoringEnabled ?
+                "ri-toggle-fill" : "ri-toggle-line");
         }
 
         public void ShowBrowserMonitoringDialog(IApp app)
         {
-            throw new NotImplementedException();
+            var settings = new SettingsWindow(app, 0) { Owner = this };
+            settings.ShowDialog(this);
         }
 
         public void UpdateParallalismLabel()
@@ -623,6 +655,46 @@ namespace XDM.Wpf.UI
         private void BtnMonitoring_Click(object sender, RoutedEventArgs e)
         {
             BrowserMonitoringButtonClicked?.Invoke(sender, e);
+        }
+
+        private void menuClearFinished_Click(object sender, RoutedEventArgs e)
+        {
+            this.ClearAllFinishedClicked?.Invoke(sender, e);
+        }
+
+        private void menuBrowserMonitor_Click(object sender, RoutedEventArgs e)
+        {
+            BrowserMonitoringSettingsClicked?.Invoke(sender, e);
+        }
+
+        private void menuImport_Click(object sender, RoutedEventArgs e)
+        {
+            ImportClicked?.Invoke(sender, e);
+        }
+
+        private void menuExport_Click(object sender, RoutedEventArgs e)
+        {
+            ExportClicked?.Invoke(sender, e);
+        }
+
+        private void menuHelpAndSupport_Click(object sender, RoutedEventArgs e)
+        {
+            SupportPageClicked?.Invoke(sender, e);
+        }
+
+        private void menuReportProblem_Click(object sender, RoutedEventArgs e)
+        {
+            BugReportClicked?.Invoke(sender, e);
+        }
+
+        private void menuCheckForUpdate_Click(object sender, RoutedEventArgs e)
+        {
+            UpdateClicked?.Invoke(sender, e);
+        }
+
+        private void menuAbout_Click(object sender, RoutedEventArgs e)
+        {
+
         }
 
         private void lvInProgress_Click(object sender, RoutedEventArgs e)

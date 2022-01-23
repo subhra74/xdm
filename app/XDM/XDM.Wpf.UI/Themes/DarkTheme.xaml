@@ -61,6 +61,8 @@
     <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey }" Color="#0A6AB6"/>
     <SolidColorBrush x:Key="{x:Static SystemColors.ControlTextColorKey }" Color="#A0A0A0"/>
 
+    <!--<SolidColorBrush x:Key="{x:Static SystemColors.DesktopBrushKey }" Color="#1B1C1E"/>-->
+
     <SolidColorBrush x:Key="NewDownloadTextBoxBackground" Color="#21252B"/>
     <SolidColorBrush x:Key="HyperlinkForecolor" Color="DodgerBlue"/>
 
@@ -584,7 +586,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type Thumb}">
                     <Border Name="ThumBorder" Background="{StaticResource ScrollBarThumbColorNormal}" 
-                            BorderBrush="{StaticResource ScrollBarThumbColorNormal}" BorderThickness="1" />
+                            BorderBrush="{StaticResource ScrollBarThumbColorNormal}" BorderThickness="0" />
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver"  Value="True">
                             <Setter TargetName="ThumBorder" Property="Background" Value="{StaticResource ScrollBarThumbColorHot}"/>
@@ -617,7 +619,7 @@
                       Command="ScrollBar.PageUpCommand" />
                 </Track.DecreaseRepeatButton>
                 <Track.Thumb>
-                    <Thumb Style="{StaticResource ScrollBarThumb}" Margin="1,0,1,0" 
+                    <Thumb Style="{StaticResource ScrollBarThumb}" Margin="0" 
                            Background="{StaticResource ScrollBarThumbColorNormal}" 
                            BorderBrush="{StaticResource ScrollBarThumbColorNormal}"/>
                 </Track.Thumb>
@@ -657,7 +659,7 @@
                 </Track.DecreaseRepeatButton>
                 <Track.Thumb>
                     <Thumb Style="{StaticResource ScrollBarThumb}"
-                        Margin="0,1,0,1" Background="{StaticResource ScrollBarThumbColorNormal}" 
+                        Margin="0" Background="{StaticResource ScrollBarThumbColorNormal}" 
                            BorderBrush="{StaticResource ScrollBarThumbColorNormal}">
                     </Thumb>
                 </Track.Thumb>
@@ -934,7 +936,7 @@
                             </VisualStateGroup>
                         </VisualStateManager.VisualStateGroups>-->
                         <ScrollViewer Margin="0"
-                        x:Name="PART_ContentHost" />
+                        x:Name="PART_ContentHost" Background="{TemplateBinding Background}"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsEnabled" Value="False">
@@ -999,6 +1001,45 @@
                             <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource ButtonFocusedBorder}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <!--#endregion-->
+    
+    <!--#region ScrollViewer-->
+    <Style
+       TargetType="{x:Type ScrollViewer}">
+        <Setter Property="OverridesDefaultStyle"
+          Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ScrollViewer}">
+                    <Grid Background="Transparent">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Border Grid.Column="1" BorderThickness="0" Background="{StaticResource ControlBackcolor}" />
+                        <ScrollContentPresenter CanContentScroll="{TemplateBinding CanContentScroll}"  />
+                        <ScrollBar x:Name="PART_VerticalScrollBar"
+                     Value="{TemplateBinding VerticalOffset}"
+                     Maximum="{TemplateBinding ScrollableHeight}"
+                     ViewportSize="{TemplateBinding ViewportHeight}"
+                     Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}" Grid.Column="1"/>
+                        <ScrollBar x:Name="PART_HorizontalScrollBar"
+                     Orientation="Horizontal"
+                     Grid.Row="1"
+                     Grid.Column="0"
+                     Value="{TemplateBinding HorizontalOffset}"
+                     Maximum="{TemplateBinding ScrollableWidth}"
+                     ViewportSize="{TemplateBinding ViewportWidth}"
+                     Visibility="{TemplateBinding ComputedHorizontalScrollBarVisibility}"/>
+                    </Grid>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

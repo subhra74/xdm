@@ -26,7 +26,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
         private ISettingsPage[] pages;
         private IApp app;
 
-        public SettingsWindow(IApp app)
+        public SettingsWindow(IApp app, int selectedPageIndex)
         {
             InitializeComponent();
             this.app = app;
@@ -38,7 +38,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
                 PasswordManagerView,
                 AdvancedSettingsView
             };
-            LbTitles.SelectedIndex = 1;
+            LbTitles.SelectedIndex = selectedPageIndex;
             foreach (var page in pages)
             {
                 page.App = app;
@@ -47,6 +47,8 @@ namespace XDM.Wpf.UI.Dialogs.Settings
             GeneralSettingsView.Window = this;
             PasswordManagerView.Window = this;
         }
+
+        public SettingsWindow(IApp app) : this(app, 1) { }
 
         public bool Result { get; set; } = false;
 

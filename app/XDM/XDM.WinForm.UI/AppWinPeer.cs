@@ -2509,18 +2509,6 @@ namespace XDM.WinForm.UI
             YoutubeDLDownloadClicked?.Invoke(sender, e);
         }
 
-
-        public DownloadSchedule? ShowSchedulerDialog(DownloadSchedule schedule)
-        {
-            using var dlg = new SchedulerWindow();
-            dlg.Schedule = schedule;
-            if (dlg.ShowDialog(this) == DialogResult.OK)
-            {
-                return dlg.Schedule;
-            }
-            return null;
-        }
-
         //private void scheduleToolStripMenuItem_Click(object sender, EventArgs e)
         //{
         //    using var dlg = new Win32SchedulerWindow();
@@ -3487,9 +3475,24 @@ namespace XDM.WinForm.UI
             this.MenuItemMap = dict;
         }
 
-        public string? SaveFileDialog(string? initialPath)
+        public string? SaveFileDialog(string? initialPath, string? defaultExt, string? filter)
         {
             using var fc = new SaveFileDialog();
+            if (!string.IsNullOrEmpty(initialPath))
+            {
+                fc.FileName = initialPath;
+            }
+            //Path.Combine(item.TargetDir ?? Helpers.GetDownloadFolderByFileName(item.Name), item.Name);
+            if (fc.ShowDialog(this) != DialogResult.OK)
+            {
+                return null;
+            }
+            return fc.FileName;
+        }
+
+        public string? OpenFileDialog(string? initialPath, string? defaultExt, string? filter)
+        {
+            using var fc = new OpenFileDialog();
             if (!string.IsNullOrEmpty(initialPath))
             {
                 fc.FileName = initialPath;

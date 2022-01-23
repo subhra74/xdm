@@ -471,13 +471,23 @@ namespace XDMApp
 
             peer.ImportClicked += (s, e) =>
             {
-                peer.ImportDownloads(app);
+                var file = peer.OpenFileDialog(null, "zip", null);
+                if (!string.IsNullOrEmpty(file) && File.Exists(file))
+                {
+                    Log.Debug("Exporting to: " + file);
+                    app.Import(file!);
+                }
                 LoadDownloadList();
             };
 
             peer.ExportClicked += (s, e) =>
             {
-                peer.ExportDownloads(app);
+                var file = peer.SaveFileDialog("xdm-download-list.zip", "zip", "All files (*.*)|*.*");
+                if (!string.IsNullOrEmpty(file))
+                {
+                    Log.Debug("Exporting to: " + file);
+                    app.Export(file!);
+                }
             };
 
             peer.HelpClicked += (s, e) =>

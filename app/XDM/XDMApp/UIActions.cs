@@ -113,7 +113,7 @@ namespace XDMApp
             var rows = peer.SelectedInProgressRows;
             if (rows == null || rows.Count < 1) return;
             var item = rows[0].DownloadEntry;
-            var file = peer.SaveFileDialog(Path.Combine(item.TargetDir ?? Helpers.GetDownloadFolderByFileName(item.Name), item.Name));
+            var file = peer.SaveFileDialog(Path.Combine(item.TargetDir ?? Helpers.GetDownloadFolderByFileName(item.Name), item.Name), null, null);
             if (file == null)
             {
                 return;

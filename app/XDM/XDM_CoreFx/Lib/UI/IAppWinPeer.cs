@@ -88,7 +88,9 @@ namespace XDM.Core.Lib.UI
 
         Dictionary<string, IMenuItem> MenuItemMap { get; }
 
-        string? SaveFileDialog(string? initialPath);
+        string? SaveFileDialog(string? initialPath, string? defaultExt, string? filter);
+
+        string? OpenFileDialog(string? initialPath, string? defaultExt, string? filter);
 
         void ShowRefreshLinkDialog(InProgressDownloadEntry entry, IApp app);
 
@@ -100,15 +102,9 @@ namespace XDM.Core.Lib.UI
 
         void ShowYoutubeDLDialog(IAppUI appUI, IApp app);
 
-        DownloadSchedule? ShowSchedulerDialog(DownloadSchedule schedule);
-
         void ShowBatchDownloadWindow(IApp app, IAppUI appUi);
 
         void ShowSettingsDialog(IApp app, int page = 0);
-
-        void ImportDownloads(IApp app);
-
-        void ExportDownloads(IApp app);
 
         void UpdateBrowserMonitorButton();
 

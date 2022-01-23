@@ -60,23 +60,23 @@
                      LayoutUpdated="ctxMainMenu_LayoutUpdated">
             <MenuItem Name="menuSettings" Header="{StaticResource TITLE_SETTINGS}" 
                       Foreground="{StaticResource ControlForecolor}" Click="menuSettings_Click"/>
-            <MenuItem Name="menuClearFinished" Header="{StaticResource MENU_DELETE_COMPLETED}" 
+            <MenuItem Name="menuClearFinished" Header="{StaticResource MENU_DELETE_COMPLETED}" Click="menuClearFinished_Click" 
                       Foreground="{StaticResource ControlForecolor}"/>
-            <MenuItem Name="menuExport" Header="{StaticResource MENU_EXPORT}" 
+            <MenuItem Name="menuExport" Header="{StaticResource MENU_EXPORT}" Click="menuExport_Click"
                       Foreground="{StaticResource ControlForecolor}"/>
-            <MenuItem Name="menuImport" Header="{StaticResource MENU_IMPORT}" 
+            <MenuItem Name="menuImport" Header="{StaticResource MENU_IMPORT}" Click="menuImport_Click"
                       Foreground="{StaticResource ControlForecolor}"/>
             <MenuItem Name="menuLanguage" Header="{StaticResource MENU_LANG}" 
                       Foreground="{StaticResource ControlForecolor}" Click="menuLanguage_Click"/>
-            <MenuItem Name="menuBrowserMonitor" Header="{StaticResource SETTINGS_MONITORING}" 
+            <MenuItem Name="menuBrowserMonitor" Header="{StaticResource SETTINGS_MONITORING}" Click="menuBrowserMonitor_Click"
                       Foreground="{StaticResource ControlForecolor}"/>
-            <MenuItem Name="menuHelpAndSupport" Header="{StaticResource LBL_SUPPORT_PAGE}" 
+            <MenuItem Name="menuHelpAndSupport" Header="{StaticResource LBL_SUPPORT_PAGE}" Click="menuHelpAndSupport_Click"
                       Foreground="{StaticResource ControlForecolor}"/>
-            <MenuItem Name="menuReportProblem" Header="{StaticResource LBL_REPORT_PROBLEM}" 
+            <MenuItem Name="menuReportProblem" Header="{StaticResource LBL_REPORT_PROBLEM}" Click="menuReportProblem_Click"
                       Foreground="{StaticResource ControlForecolor}"/>
-            <MenuItem Name="menuCheckForUpdate" Header="{StaticResource MENU_UPDATE}" 
+            <MenuItem Name="menuCheckForUpdate" Header="{StaticResource MENU_UPDATE}" Click="menuCheckForUpdate_Click"
                       Foreground="{StaticResource ControlForecolor}"/>
-            <MenuItem Name="menuAbout" Header="{StaticResource MENU_ABOUT}" 
+            <MenuItem Name="menuAbout" Header="{StaticResource MENU_ABOUT}" Click="menuAbout_Click"
                       Foreground="{StaticResource ControlForecolor}"/>
             <MenuItem Name="menuExit" Header="{StaticResource MENU_EXIT}" 
                       Foreground="{StaticResource ControlForecolor}" Click="menuExit_Click"/>
