@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:XDM.Wpf.UI.Dialogs.CompletedDialog"
         mc:Ignorable="d"
-        Title="{StaticResource CD_TITLE}" Height="200" Width="400" WindowStartupLocation="CenterScreen">
+        Title="{StaticResource CD_TITLE}" Height="200" Width="400" WindowStartupLocation="CenterScreen" Topmost="True">
     <DockPanel>
         <Grid DockPanel.Dock="Bottom" Margin="5">
             <Grid.ColumnDefinitions>

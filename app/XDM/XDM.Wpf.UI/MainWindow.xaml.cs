@@ -29,6 +29,7 @@ using XDM.Wpf.UI.Dialogs.PropertiesDialog;
 using XDM.Wpf.UI.Dialogs.QueuesWindow;
 using XDM.Wpf.UI.Dialogs.RefreshLink;
 using XDM.Wpf.UI.Dialogs.Settings;
+using XDM.Wpf.UI.Dialogs.VideoDownloader;
 using XDM.Wpf.UI.Win32;
 
 namespace XDM.Wpf.UI
@@ -508,7 +509,8 @@ namespace XDM.Wpf.UI
 
         public void ShowYoutubeDLDialog(IAppUI appUI, IApp app)
         {
-            throw new NotImplementedException();
+            var ydlWindow = new VideoDownloaderWindow(app,appUI) { Owner = this };
+            ydlWindow.Show();
         }
 
         public void ShowBatchDownloadWindow(IApp app, IAppUI appUi)
@@ -781,7 +783,7 @@ namespace XDM.Wpf.UI
             menuNewDownload.Header = TextResource.GetText("LBL_NEW_DOWNLOAD");
 
             var menuVideoDownload = (MenuItem)newDownloadMenu.Items[1];
-            menuVideoDownload.Click += MenuNewDownload_Click;
+            menuVideoDownload.Click += MenuVideoDownload_Click;
             menuVideoDownload.Header = TextResource.GetText("LBL_VIDEO_DOWNLOAD");
 
             var menuBatchDownload = (MenuItem)newDownloadMenu.Items[2];
@@ -792,6 +794,11 @@ namespace XDM.Wpf.UI
         private void MenuNewDownload_Click(object sender, RoutedEventArgs e)
         {
             this.NewDownloadClicked?.Invoke(sender, e);
+        }
+
+        private void MenuVideoDownload_Click(object sender, RoutedEventArgs e)
+        {
+            this.YoutubeDLDownloadClicked?.Invoke(sender, e);
         }
 
         private void LvFinishedContextMenu_ContextMenuOpening(object sender, ContextMenuEventArgs e)

@@ -1,0 +1,15 @@
+﻿<Window x:Class="XDM.Wpf.UI.Dialogs.VideoDownloader.VideoDownloaderWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:XDM.Wpf.UI.Dialogs.VideoDownloader"
+        mc:Ignorable="d"
+        Title="{StaticResource LBL_VIDEO_DOWNLOAD}" Height="500" Width="600" ShowInTaskbar="True" 
+        WindowStartupLocation="CenterScreen" Closing="Window_Closing">
+    <Grid Margin="10">
+        <local:VideoDownloaderPage1 x:Name="Page1"/>
+        <local:VideoDownloaderPage2 Visibility="Collapsed" x:Name="Page2"/>
+        <local:VideoDownloaderPage3 Visibility="Collapsed" x:Name="Page3"/>
+    </Grid>
+</Window>
