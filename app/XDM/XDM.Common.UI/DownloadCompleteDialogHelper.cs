@@ -11,11 +11,21 @@ namespace XDM.Common.UI
             dwnCmpldDlg.FolderText = folder;
             dwnCmpldDlg.FileOpenClicked += (sender, args) =>
             {
-                Helpers.OpenFile(args.Path);
+                if (!string.IsNullOrEmpty(args.Path))
+                {
+                    Helpers.OpenFile(args.Path!);
+                }
             };
             dwnCmpldDlg.FolderOpenClicked += (sender, args) =>
             {
-                Helpers.OpenFolder(args.Path, args.FileName);
+                if (!string.IsNullOrEmpty(args.Path))
+                {
+                    Helpers.OpenFolder(args.Path!, args.FileName);
+                }
+            };
+            dwnCmpldDlg.DontShowAgainClickd += (sender, args) =>
+            {
+                Config.Instance.ShowDownloadCompleteWindow = false;
             };
             dwnCmpldDlg.ShowDownloadCompleteDialog();
         }

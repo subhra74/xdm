@@ -33,6 +33,10 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
             InitializeComponent();
             Page1.InitPage(appUi);
 
+            Page3.App = app;
+            Page3.AppUI = appUi;
+            Page3.ParentWindow = this;
+
             Page1.SearchClicked += (a, b) =>
             {
                 if (Helpers.IsUriValid(Page1.UrlText))
@@ -43,7 +47,7 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
                     {
                         Page2.Visibility = Visibility.Collapsed;
                         Page3.Visibility = Visibility.Visible;
-                        //page2.SetVideoResultList(result);
+                        Page3.SetVideoResultList(result);
                     })));
                 }
                 else
@@ -86,8 +90,8 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
                 catch (Exception ex)
                 {
                     Log.Debug(ex, "Error while running youtube-dl");
+                    callback.Invoke(new());
                 }
-                callback.Invoke(new());
             }).Start();
         }
 

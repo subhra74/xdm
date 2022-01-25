@@ -9,7 +9,7 @@ namespace XDM.WinForm.UI.VideoDownloaderPages
 {
     public partial class VideoDownloaderPage3 : UserControl
     {
-        public EventHandler CancelClicked;
+        public EventHandler? CancelClicked;
         public VideoDownloaderPage3()
         {
             InitializeComponent();

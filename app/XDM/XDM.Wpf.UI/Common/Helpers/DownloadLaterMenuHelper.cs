@@ -15,7 +15,7 @@ namespace XDM.Wpf.UI.Common.Helpers
         internal static void PopulateMenuAndAttachEvents(
             EventHandler<DownloadLaterEventArgs>? DownloadLaterClicked,
             Button button,
-            Window window)
+            FrameworkElement window)
         {
             var nctx = (ContextMenu)window.FindResource("DownloadLaterContextMenu");
             nctx.Items.Clear();

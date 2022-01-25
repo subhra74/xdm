@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using XDM.Core.Lib.Common;
+using XDM.Core.Lib.Util;
 using XDM.Wpf.UI.Win32;
 
 namespace XDM.Wpf.UI.Dialogs.CompletedDialog
@@ -21,9 +22,10 @@ namespace XDM.Wpf.UI.Dialogs.CompletedDialog
     /// </summary>
     public partial class DownloadCompleteWindow : Window, IDownloadCompleteDialog
     {
-        public IApp App { get; set; }
-        public event EventHandler<DownloadCompleteDialogEventArgs> FileOpenClicked;
-        public event EventHandler<DownloadCompleteDialogEventArgs> FolderOpenClicked;
+        public IApp? App { get; set; }
+        public event EventHandler<DownloadCompleteDialogEventArgs>? FileOpenClicked;
+        public event EventHandler<DownloadCompleteDialogEventArgs>? FolderOpenClicked;
+        public event EventHandler? DontShowAgainClickd;
 
         public string FileNameText
         {
@@ -44,12 +46,7 @@ namespace XDM.Wpf.UI.Dialogs.CompletedDialog
 
         private void TxtDontShowCompleteDialog_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            FolderOpenClicked?.Invoke(sender, new DownloadCompleteDialogEventArgs
-            {
-                Path = TxtLocation.Text,
-                FileName = TxtFileName.Text
-            });
-            Close();
+            
         }
 
         private void BtnOpen_Click(object sender, RoutedEventArgs e)
@@ -83,7 +80,12 @@ namespace XDM.Wpf.UI.Dialogs.CompletedDialog
 
         private void BtnOpenFolder_Click(object sender, RoutedEventArgs e)
         {
-
+            FolderOpenClicked?.Invoke(sender, new DownloadCompleteDialogEventArgs
+            {
+                Path = TxtLocation.Text,
+                FileName = TxtFileName.Text
+            });
+            Close();
         }
     }
 }
