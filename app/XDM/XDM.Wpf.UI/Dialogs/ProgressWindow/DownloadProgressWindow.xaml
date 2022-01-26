@@ -45,11 +45,11 @@
                   Stroke="{StaticResource ToolButtonMouseDisabledForecolor}"
                   Data="{StaticResource ri-file-download-line}"
                   SnapsToDevicePixels="True"/>
-                <TextBlock Grid.Row="0" Grid.Column="1" x:Name="TxtFileName" 
+                <TextBlock Grid.Row="0" Grid.Column="1" x:Name="TxtFileName" Grid.ColumnSpan="3"
                            Text="" Margin="10,10,0,0" 
-                           FontSize="16" Foreground="{StaticResource HyperlinkForecolor}"/>
+                           FontSize="16" Foreground="{StaticResource HyperlinkForecolor}" TextTrimming="CharacterEllipsis"/>
                 <TextBlock Grid.Row="1" Grid.Column="1" x:Name="TxtUrl" Text="" Margin="10,0"
-                           Foreground="{StaticResource ToolButtonMouseDisabledForecolor}"/>
+                           Foreground="{StaticResource ToolButtonMouseDisabledForecolor}" TextTrimming="CharacterEllipsis"/>
                 <TextBlock Grid.Row="3" Grid.Column="1" x:Name="TxtStatus" Text="" Margin="10,5" />
                 <TextBlock Grid.Row="3" Grid.Column="2" x:Name="TxtSpeed" Text="" Margin="10,5" HorizontalAlignment="Right" />
                 <ProgressBar Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" x:Name="PrgProgress" MinHeight="5" Margin="10,5"  />

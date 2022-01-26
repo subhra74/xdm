@@ -48,9 +48,9 @@
                       SnapsToDevicePixels="True"/>
             <TextBlock Grid.Row="0" Grid.Column="1" x:Name="TxtFileName" 
                            Text="sdfsdf" Margin="0,20,10,0" 
-                           FontSize="16" />
-            <TextBlock Grid.Row="1" Grid.Column="1" x:Name="TxtLocation" Text="sdfsdf" Margin="0,5,10,5"
-                           Foreground="{StaticResource ToolButtonMouseDisabledForecolor}"/>
+                           FontSize="16" TextTrimming="CharacterEllipsis" />
+            <TextBlock Grid.Row="1" Grid.Column="1" x:Name="TxtLocation" Text="" Margin="0,5,10,5"
+                           Foreground="{StaticResource ToolButtonMouseDisabledForecolor}" TextTrimming="CharacterEllipsis"/>
             <Path Grid.Column="0" Grid.Row="2" Grid.RowSpan="1" 
                       VerticalAlignment="Bottom" 
                       HorizontalAlignment="Center"

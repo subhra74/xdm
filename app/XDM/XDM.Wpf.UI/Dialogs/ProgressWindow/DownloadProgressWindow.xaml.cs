@@ -22,11 +22,25 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
             actSpeedUpdate = value => this.TxtSpeed.Text = value;
             actEtaUpdate = value => this.TxtETA.Text = value;
             actStatusUpdate = value => this.TxtStatus.Text = value;
+
+#if NET45_OR_GREATER
+            this.TaskbarItemInfo = new System.Windows.Shell.TaskbarItemInfo
+            {
+                Description = "",
+                ProgressState = System.Windows.Shell.TaskbarItemProgressState.Normal
+            };
+#endif
+
             actPrgUpdate = value =>
             {
-                this.PrgProgress.Value = value >= 0 && value <= 100 ? value : 0;
+                var val = value >= 0 && value <= 100 ? value : 0;
+                this.PrgProgress.Value = val;
                 var prg = value >= 0 && value <= 100 ? value + "% " : "";
                 this.Title = $"{prg}{FileNameText}";
+#if NET45_OR_GREATER
+                this.TaskbarItemInfo.Description = this.Title;
+                this.TaskbarItemInfo.ProgressValue = val / 100.0;
+#endif
             };
         }
 
@@ -53,7 +67,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
             get => this.TxtStatus.Text;
             set
             {
-               Dispatcher.BeginInvoke(actStatusUpdate, value);
+                Dispatcher.BeginInvoke(actStatusUpdate, value);
             }
         }
 
@@ -145,7 +159,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
             {
                 BtnPause.Content = TextResource.GetText("MENU_PAUSE");
                 BtnPause.Tag = null;
-                TxtSpeedLimit.Visibility = Visibility.Collapsed;
+                TxtSpeedLimit.Visibility = Visibility.Visible;
 
                 if (App.GetLiveDownloadSpeedLimit(downloadId, out bool enable, out int limit))
                 {

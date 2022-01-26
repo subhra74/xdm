@@ -93,24 +93,28 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
             formatsList.Sort();
             formatsList.Reverse();
             this.videoQualities = formatsList;
-            this.LbFormat.SelectedIndex = 0;
+            LbQuality.ItemsSource = this.videoQualities.Select(n => $"{n}p");
+            if (this.videoQualities.Count > 0)
+            {
+                LbQuality.SelectedIndex = 0;
+            }
         }
 
         private void LbFormat_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (LbFormat.SelectedIndex == 0)
-            {
-                LbQuality.ItemsSource = this.videoQualities.Select(n => $"{n}p");
-                if (this.videoQualities.Count > 0)
-                {
-                    LbQuality.SelectedIndex = 0;
-                }
-            }
-            else
-            {
-                LbQuality.ItemsSource = new string[] { "320Kbps", "128kbps" };
-                LbQuality.SelectedIndex = 0;
-            }
+            //if (LbFormat.SelectedIndex == 0)
+            //{
+            //    LbQuality.ItemsSource = this.videoQualities.Select(n => $"{n}p");
+            //    if (this.videoQualities.Count > 0)
+            //    {
+            //        LbQuality.SelectedIndex = 0;
+            //    }
+            //}
+            //else
+            //{
+            //    LbQuality.ItemsSource = new string[] { "320Kbps", "128kbps" };
+            //    LbQuality.SelectedIndex = 0;
+            //}
         }
 
         private void ChkSelectAll_Checked(object sender, RoutedEventArgs e)
@@ -202,25 +206,24 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
                 AppUI!.ShowMessageBox(AppUI, TextResource.GetText("BAT_SELECT_ITEMS"));
                 return;
             }
-            if (LbFormat.SelectedIndex == 0)
+            var quality = -1;
+            if (LbQuality.SelectedIndex >= 0)
             {
-                var quality = -1;
-                if (LbQuality.SelectedIndex >= 0)
+                quality = this.videoQualities[LbQuality.SelectedIndex];
+            }
+
+            foreach (var item in this.videos)
+            {
+                if (item.IsSelected)
                 {
-                    quality = this.videoQualities[LbQuality.SelectedIndex];
-                }
-                foreach (var item in this.videos)
-                {
-                    if (item.IsSelected)
+                    var fmt = FindMatchingFormatByQuality(item.VideoEntry, quality);
+                    if (fmt.HasValue)
                     {
-                        var fmt = FindMatchingFormatByQuality(item.VideoEntry, quality);
-                        if (fmt.HasValue)
-                        {
-                            AddDownload(fmt.Value, startImmediately, queueId);
-                        }
+                        AddDownload(fmt.Value, startImmediately, queueId);
                     }
                 }
             }
+            ParentWindow.Close();
         }
 
         private YDLVideoFormatEntry? FindOnlyMatchingMp4(YDLVideoEntry videoEntry, int quality)
@@ -322,7 +325,7 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
         {
             this.videoEntry = videoEntry;
         }
-        private bool selected = false;
+        private bool selected = true;
         public bool IsSelected
         {
             get

@@ -390,6 +390,7 @@ namespace XDM.Core.Lib.Downloader.Progressive.DualHttp
                     var plist1 = pieces.Where(pc => pc.StreamType == StreamType.Primary).ToList();
                     var plist2 = pieces.Where(pc => pc.StreamType == StreamType.Secondary).ToList();
 
+
                     AssemblePieces(plist1, outfs1, ref buf, ref totalBytes);
                     AssemblePieces(plist2, outfs2, ref buf, ref totalBytes);
 
@@ -398,7 +399,13 @@ namespace XDM.Core.Lib.Downloader.Progressive.DualHttp
 
                     if (mediaProcessor != null)
                     {
-                        mediaProcessor.ProgressChanged += (s, e) => this.OnAssembleProgressChanged(e.Progress);
+                        mediaProcessor.ProgressChanged += (s, e) =>
+                        {
+                            var basePrg = 60;
+                            var prg = basePrg + e.Progress / 3;
+                            if (prg > 100) prg = 100;
+                            this.OnAssembleProgressChanged(prg);
+                        };
                         var res = mediaProcessor.MergeAudioVideStream(file1, file2, TargetFile,
                             this.cancelFlag, out totalBytes);
                         if (res != MediaProcessingResult.Success)
@@ -448,6 +455,14 @@ namespace XDM.Core.Lib.Downloader.Progressive.DualHttp
         private void AssemblePieces(IList<Piece> pieces, FileStream outfs, ref byte[] buf, ref long totalBytes)
         {
             var bytes = 0L;
+            var streamSize = 0L;
+            if (this.FileSize > 0)
+            {
+                foreach (var pc in pieces)
+                {
+                    streamSize += pc.Length;
+                }
+            }
             foreach (var pc in pieces)
             {
                 if (this.cancelFlag.IsCancellationRequested) return;
@@ -496,6 +511,12 @@ namespace XDM.Core.Lib.Downloader.Progressive.DualHttp
                         len -= x;
                         totalBytes += x;
                         bytes += x;
+                        if (streamSize > 0)
+                        {
+                            var progress = (int)Math.Ceiling(totalBytes * 100 / (double)streamSize * 3);
+                            if (progress > 100) progress = 100;
+                            this.OnAssembleProgressChanged(progress);
+                        }
                     }
                 }
             }

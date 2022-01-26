@@ -105,29 +105,36 @@ namespace XDM.Core.Lib.Common.MediaProcessor
 
                 proc.OutputDataReceived += (a, b) =>
                 {
-                    var line = b.Data;
-                    if (line != null)
+                    try
                     {
-                        Log.Debug(line);
-                        if (duration == 0.0)
+                        var line = b.Data;
+                        if (line != null)
                         {
-                            var md = Helpers.RxDuration.Match(line);
-                            var ret = Helpers.ParseTime(md);
-                            if (ret > 0) duration = ret;
-                        }
-                        var mt = Helpers.RxTime.Match(line);
-                        var ret2 = Helpers.ParseTime(mt);
-                        if (ret2 > 0)
-                        {
-                            time += ret2;
-
-                            var tick = Helpers.TickCount();
-
-                            if (duration > 0 && tick - lastTick > 1000)
+                            Log.Debug(line);
+                            if (duration == 0.0)
                             {
-                                UpdateProgress((int)((time * 100) / duration));
+                                var md = Helpers.RxDuration.Match(line);
+                                var ret = Helpers.ParseTime(md);
+                                if (ret > 0) duration = ret;
+                            }
+                            var mt = Helpers.RxTime.Match(line);
+                            var ret2 = Helpers.ParseTime(mt);
+                            if (ret2 > 0)
+                            {
+                                time += ret2;
+
+                                var tick = Helpers.TickCount();
+
+                                if (duration > 0 && tick - lastTick > 1000)
+                                {
+                                    UpdateProgress((int)((time * 100) / duration));
+                                }
                             }
                         }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Debug(ex, ex.Message);
                     }
                 };
 

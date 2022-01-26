@@ -64,9 +64,9 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition/>
             </Grid.RowDefinitions>
-            <TextBlock Grid.Row="0" Text="{StaticResource O_VID_FMT}" Margin="0,0,0,5"/>
+            <TextBlock Grid.Row="0" Text="{StaticResource O_VID_FMT}" Margin="0,0,0,5" Visibility="Collapsed"/>
             <ListBox Name="LbFormat" Grid.Row="1" MinWidth="60" BorderThickness="1" MinHeight="60"
-                  BorderBrush="{StaticResource ControlBordercolor}" SelectionChanged="LbFormat_SelectionChanged">
+                  BorderBrush="{StaticResource ControlBordercolor}" SelectionChanged="LbFormat_SelectionChanged" Visibility="Collapsed">
                 <ListBoxItem>
                     <TextBlock Text="{StaticResource CAT_VIDEOS}"/>
                 </ListBoxItem>
@@ -74,7 +74,7 @@
                     <TextBlock Text="{StaticResource MSG_MP3}"/>
                 </ListBoxItem>
             </ListBox>
-            <TextBlock Grid.Row="2" Text="{StaticResource MSG_QUALITY}" Margin="0,10,0,5"/>
+            <TextBlock Grid.Row="2" Text="{StaticResource MSG_QUALITY}" Margin="0,0,0,5" Visibility="Collapsed"/>
             <ListBox Name="LbQuality" Grid.Row="3" MinWidth="60" BorderThickness="1" 
                   BorderBrush="{StaticResource ControlBordercolor}">
             </ListBox>

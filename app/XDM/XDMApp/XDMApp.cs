@@ -251,6 +251,7 @@ namespace XDMApp
                 download.Probed += HandleProbeResult;
                 download.Finished += DownloadFinished;
                 download.ProgressChanged += DownloadProgressChanged;
+                download.AssembingProgressChanged += AssembleProgressChanged;
                 download.Cancelled += DownloadCancelled;
                 download.Failed += DownloadFailed;
 
@@ -555,6 +556,7 @@ namespace XDMApp
                     download.Probed += HandleProbeResult;
                     download.Finished += DownloadFinished;
                     download.ProgressChanged += DownloadProgressChanged;
+                    download.AssembingProgressChanged += AssembleProgressChanged;
                     download.Cancelled += DownloadCancelled;
                     download.Failed += DownloadFailed;
                     download.SetTargetDirectory(item.Value.TargetDir);
@@ -701,6 +703,23 @@ namespace XDMApp
             }
         }
 
+        void AssembleProgressChanged(object source, ProgressResultEventArgs args)
+        {
+            lock (this)
+            {
+                var http = source as IBaseDownloader;
+                //AppUI.UpdateProgress(http.Id, args.Progress, args.DownloadSpeed, args.Eta);
+                if (activeProgressWindows.ContainsKey(http.Id))
+                {
+                    var prgWin = activeProgressWindows[http.Id];
+                    prgWin.DownloadProgress = args.Progress;
+                    prgWin.FileSizeText = $"{TextResource.GetText("STAT_ASSEMBLING")} {Helpers.FormatSize(args.Downloaded)} / {Helpers.FormatSize(http.FileSize)}";
+                    prgWin.DownloadSpeedText = "---";
+                    prgWin.DownloadETAText = "---";
+                }
+            }
+        }
+
         void DownloadFinished(object source, EventArgs args)
         {
             lock (this)
@@ -749,6 +768,7 @@ namespace XDMApp
         {
             lock (this)
             {
+                Log.Debug("Download failed: " + args.ErrorCode);
                 var http = source as IBaseDownloader;
                 DetachEventHandlers(http);
                 liveDownloads.Remove(http.Id);
@@ -772,6 +792,7 @@ namespace XDMApp
         {
             lock (this)
             {
+                Log.Debug("Download cancelled");
                 var http = source as IBaseDownloader;
                 DetachEventHandlers(http);
                 liveDownloads.Remove(http.Id);
@@ -1040,6 +1061,7 @@ namespace XDMApp
                 download.Probed -= HandleProbeResult;
                 download.Finished -= DownloadFinished;
                 download.ProgressChanged -= DownloadProgressChanged;
+                download.AssembingProgressChanged += AssembleProgressChanged;
                 download.Cancelled -= DownloadCancelled;
                 download.Failed -= DownloadFailed;
             }
