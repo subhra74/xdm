@@ -1,10 +1,10 @@
-### New version is coming soon (https://github.com/subhra74/xdm/discussions/768) ###
-
 ---
 name: Bug report
 about: Create a report to help us improve
 
 ---
+
+### New version is coming soon (https://github.com/subhra74/xdm/discussions/768) ###
 
 **PLEASE DO NOT JUST SAY "It does not work, or something not working etc." Provide enough relevent details so that the issue can be analyzed and reproduced easily**
 
