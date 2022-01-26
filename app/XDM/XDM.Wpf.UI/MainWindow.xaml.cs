@@ -18,6 +18,7 @@ using XDM.Common.UI;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.UI;
 using XDM.Core.Lib.Util;
+using XDM.Wpf.UI.Dialogs.BatchDownload;
 using XDM.Wpf.UI.Dialogs.CompletedDialog;
 using XDM.Wpf.UI.Dialogs.CredentialDialog;
 using XDM.Wpf.UI.Dialogs.DeleteConfirm;
@@ -414,7 +415,14 @@ namespace XDM.Wpf.UI
 
         public void ShowMessageBox(object window, string message)
         {
-            MessageBox.Show((Window)window, message);
+            if (window is IAppUI || window == this)
+            {
+                MessageBox.Show(this, message);
+            }
+            else
+            {
+                MessageBox.Show((Window)window, message);
+            }
         }
 
         public void OpenNewDownloadMenu()
@@ -509,13 +517,14 @@ namespace XDM.Wpf.UI
 
         public void ShowYoutubeDLDialog(IAppUI appUI, IApp app)
         {
-            var ydlWindow = new VideoDownloaderWindow(app,appUI) { Owner = this };
+            var ydlWindow = new VideoDownloaderWindow(app, appUI) { Owner = this };
             ydlWindow.Show();
         }
 
         public void ShowBatchDownloadWindow(IApp app, IAppUI appUi)
         {
-            throw new NotImplementedException();
+            var batWin = new BatchDownloadWindow(app, appUi) { Owner = this };
+            batWin.Show();
         }
 
         public void ShowSettingsDialog(IApp app, int page = 0)
@@ -787,7 +796,7 @@ namespace XDM.Wpf.UI
             menuVideoDownload.Header = TextResource.GetText("LBL_VIDEO_DOWNLOAD");
 
             var menuBatchDownload = (MenuItem)newDownloadMenu.Items[2];
-            menuBatchDownload.Click += MenuNewDownload_Click;
+            menuBatchDownload.Click += MenuBatchDownload_Click;
             menuBatchDownload.Header = TextResource.GetText("MENU_BATCH_DOWNLOAD");
         }
 
@@ -799,6 +808,11 @@ namespace XDM.Wpf.UI
         private void MenuVideoDownload_Click(object sender, RoutedEventArgs e)
         {
             this.YoutubeDLDownloadClicked?.Invoke(sender, e);
+        }
+
+        private void MenuBatchDownload_Click(object sender, RoutedEventArgs e)
+        {
+            this.BatchDownloadClicked?.Invoke(sender, e);
         }
 
         private void LvFinishedContextMenu_ContextMenuOpening(object sender, ContextMenuEventArgs e)

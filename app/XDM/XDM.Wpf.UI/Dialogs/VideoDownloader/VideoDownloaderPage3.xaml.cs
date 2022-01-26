@@ -22,6 +22,8 @@ using XDM.Core.Lib.Downloader.Progressive.DualHttp;
 using XDM.Core.Lib.Downloader.Progressive.SingleHttp;
 using XDM.Core.Lib.Util;
 using XDM.Wpf.UI.Common.Helpers;
+using XDM.Wpf.UI.Dialogs.AdvancedDownloadOption;
+using XDM.Wpf.UI.Win32;
 using YDLWrapper;
 
 namespace XDM.Wpf.UI.Dialogs.VideoDownloader
@@ -193,17 +195,16 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
             }
         }
 
-
         private void DownloadSelectedItems(bool startImmediately, string? queueId)
         {
             if (string.IsNullOrEmpty(TxtSaveIn.Text))
             {
-                AppUI!.ShowMessageBox(AppUI, TextResource.GetText("MSG_CAT_FOLDER_MISSING"));
+                AppUI!.ShowMessageBox(ParentWindow, TextResource.GetText("MSG_CAT_FOLDER_MISSING"));
                 return;
             }
             if (this.videos.Select(x => x.IsSelected).Count() == 0)
             {
-                AppUI!.ShowMessageBox(AppUI, TextResource.GetText("BAT_SELECT_ITEMS"));
+                AppUI!.ShowMessageBox(ParentWindow, TextResource.GetText("BAT_SELECT_ITEMS"));
                 return;
             }
             var quality = -1;
@@ -315,6 +316,26 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
         private void BtnDownloadLater_Click(object sender, RoutedEventArgs e)
         {
             ShowQueuesContextMenu();
+        }
+
+        private void BtnMore_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new AdvancedDownloadOptionDialog
+            {
+                Authentication = Authentication,
+                Proxy = Proxy,
+                EnableSpeedLimit = EnableSpeedLimit,
+                SpeedLimit = SpeedLimit,
+                Owner = ParentWindow
+            };
+            var ret = dlg.ShowDialog(ParentWindow);
+            if (ret.HasValue && ret.Value)
+            {
+                Authentication = dlg.Authentication;
+                Proxy = dlg.Proxy;
+                EnableSpeedLimit = dlg.EnableSpeedLimit;
+                SpeedLimit = dlg.SpeedLimit;
+            }
         }
     }
 
