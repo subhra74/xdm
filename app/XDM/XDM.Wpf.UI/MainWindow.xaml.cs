@@ -577,7 +577,7 @@ namespace XDM.Wpf.UI
 
         public IQueueSelectionDialog CreateQueueSelectionDialog()
         {
-            throw new NotImplementedException();
+            return new QueueSelectionWindow() { Owner = this };
         }
 
 

@@ -20,11 +20,7 @@ namespace XDM.Wpf.UI
 
         public App()
         {
-            ServicePointManager.ServerCertificateValidationCallback += (a, b, c, d) =>
-            {
-                return true;
-            };
-
+            ServicePointManager.ServerCertificateValidationCallback += (a, b, c, d) => true;
             ServicePointManager.DefaultConnectionLimit = 100;
 
 #if NET45
@@ -38,12 +34,20 @@ namespace XDM.Wpf.UI
             AppContext.SetSwitch(DontEnableSchUseStrongCryptoName, true);
 #endif
 
+
         }
 
         private void Application_Startup(object sender, StartupEventArgs e)
         {
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+
             app = new XDMApp.XDMApp();
             win = new MainWindow();
+
+            var args = Environment.GetCommandLineArgs();
+            var commandOptions = ArgsProcessor.ParseArgs(args);
+            app.Args = args;
+
             AppTrayIcon.AttachToSystemTray();
             AppTrayIcon.TrayClick += (_, _) =>
             {
@@ -53,14 +57,31 @@ namespace XDM.Wpf.UI
             app.StartClipboardMonitor();
             app.StartScheduler();
             app.StartNativeMessagingHost();
-            //appWin.Visible = !commandOptions.ContainsKey("-m");
-            win.Show();
+            if (!commandOptions.ContainsKey("-m"))
+            {
+                win.Show();
+            }
             Log.Debug("Application_Startup");
         }
 
         private void Application_Exit(object sender, ExitEventArgs e)
         {
             AppTrayIcon.DetachFromSystemTray();
+        }
+
+        private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            Log.Debug(string.Format("Unhandled exception caught {0} and will {1}",
+                e.ExceptionObject,
+                e.IsTerminating ? "Terminating" : "Continue"));
+        }
+
+        private void Application_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
+        {
+            Log.Debug(string.Format("Unhandled exception caught {0} and application will terminate",
+                e.Exception));
+            AppTrayIcon.DetachFromSystemTray();
+            Environment.Exit(1);
         }
     }
 
