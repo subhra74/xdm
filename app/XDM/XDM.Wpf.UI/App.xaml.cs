@@ -33,19 +33,19 @@ namespace XDM.Wpf.UI
             AppContext.SetSwitch(DisableCachingName, true);
             AppContext.SetSwitch(DontEnableSchUseStrongCryptoName, true);
 #endif
-
-
         }
 
         private void Application_Startup(object sender, StartupEventArgs e)
         {
+            Log.Debug("Application_Startup");
+
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
             app = new XDMApp.XDMApp();
             win = new MainWindow();
 
             var args = Environment.GetCommandLineArgs();
-            var commandOptions = ArgsProcessor.ParseArgs(args);
+            var commandOptions = ArgsProcessor.ParseArgs(args, 1);
             app.Args = args;
 
             AppTrayIcon.AttachToSystemTray();
@@ -61,7 +61,6 @@ namespace XDM.Wpf.UI
             {
                 win.Show();
             }
-            Log.Debug("Application_Startup");
         }
 
         private void Application_Exit(object sender, ExitEventArgs e)

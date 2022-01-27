@@ -1158,6 +1158,8 @@ namespace XDM.Core.Lib.Util
                     return TextResource.GetText("STAT_STOPPED");
                 case DownloadStatus.Finished:
                     return TextResource.GetText("STAT_FINISHED");
+                case DownloadStatus.Waiting:
+                    return TextResource.GetText("STAT_WAITING");
                 default:
                     return status.ToString();
             }

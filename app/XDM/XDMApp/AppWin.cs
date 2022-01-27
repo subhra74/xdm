@@ -58,7 +58,7 @@ namespace XDMApp
                     Id = id,
                     Progress = 0,
                     Size = fileSize,
-                    Status = DownloadStatus.Stopped,
+                    Status = startType == DownloadStartType.Waiting ? DownloadStatus.Waiting : DownloadStatus.Stopped,
                     TargetDir = "",
                     PrimaryUrl = primaryUrl,
                     Authentication = authentication,
@@ -194,7 +194,7 @@ namespace XDMApp
             {
                 var download = this.peer.FindInProgressItem(id);
                 if (download == null) return;
-                download.Status = DownloadStatus.Stopped;
+                download.Status = DownloadStatus.Waiting;
                 UpdateToolbarButtonState();
             });
         }
@@ -545,26 +545,6 @@ namespace XDMApp
                 ShowQueueWindow(peer);
             };
 
-            peer.MoveToQueueClicked += (s, e) =>
-            {
-                var selectedIds = peer.SelectedInProgressRows?.Select(x => x.DownloadEntry.Id)?.ToArray() ?? new string[0];
-                MoveToQueue(selectedIds);
-                //var queueSelectionDialog = peer.CreateQueueSelectionDialog();
-                //queueSelectionDialog.SetData(QueueManager.Queues.Select(q => q.Name), selectedIds);
-                //queueSelectionDialog.ManageQueuesClicked += (_, _) =>
-                //{
-                //    ShowQueueWindow();
-                //};
-                //queueSelectionDialog.QueueSelected += (s, e) =>
-                //{
-                //    var index = e.SelectedQueueIndex;
-                //    var queueId = QueueManager.Queues[index].ID;
-                //    var downloadIds = e.DownloadIds;
-                //    QueueManager.AddDownloadsToQueue(queueId, downloadIds);
-                //};
-                //queueSelectionDialog.ShowWindow(peer);
-            };
-
             AttachContextMenuEvents();
 
             peer.InProgressContextMenuOpening += (_, _) => InProgressContextMenuOpening();
@@ -602,6 +582,7 @@ namespace XDMApp
                 peer.MenuItemMap["delete"].Clicked += (_, _) => DeleteDownloads();
                 peer.MenuItemMap["saveAs"].Clicked += (_, _) => UIActions.SaveAs(peer, App);
                 peer.MenuItemMap["refresh"].Clicked += (_, _) => UIActions.RefreshLink(peer, App);
+                peer.MenuItemMap["moveToQueue"].Clicked += (_, _) => UIActions.MoveToQueue(peer, this);
                 peer.MenuItemMap["showProgress"].Clicked += (_, _) => UIActions.ShowProgressWindow(peer, App);
                 peer.MenuItemMap["copyURL"].Clicked += (_, _) => UIActions.CopyURL1(peer, App);
                 peer.MenuItemMap["copyURL1"].Clicked += (_, _) => UIActions.CopyURL2(peer, App);
@@ -690,28 +671,6 @@ namespace XDMApp
         public void InstallLatestYoutubeDL()
         {
             LaunchUpdater(UpdateMode.YoutubeDLUpdateOnly);
-        }
-
-        public void MoveToQueue(string[] selectedIds, bool prompt = false, Action? callback = null)
-        {
-            if (prompt && !peer.Confirm(peer, "Add to queue?"))
-            {
-                return;
-            }
-            var queueSelectionDialog = peer.CreateQueueSelectionDialog();
-            queueSelectionDialog.SetData(QueueManager.Queues.Select(q => q.Name), selectedIds);
-            queueSelectionDialog.ManageQueuesClicked += (_, _) =>
-            {
-                ShowQueueWindow(peer);
-            };
-            queueSelectionDialog.QueueSelected += (s, e) =>
-            {
-                var index = e.SelectedQueueIndex;
-                var queueId = QueueManager.Queues[index].ID;
-                var downloadIds = e.DownloadIds;
-                QueueManager.AddDownloadsToQueue(queueId, downloadIds);
-            };
-            queueSelectionDialog.ShowWindow(peer);
         }
     }
 }

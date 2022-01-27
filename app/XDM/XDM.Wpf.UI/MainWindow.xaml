@@ -455,7 +455,7 @@
                                                 BorderThickness="0" Background="{StaticResource SearchBackcolor}"
                                                 Foreground="{StaticResource TextForecolor}"/>
                                     <TextBlock Grid.Column="0" x:Name="Placeholder" IsHitTestVisible="False" 
-                                       TextWrapping="NoWrap" Text="Search" VerticalAlignment="Center"  
+                                       TextWrapping="NoWrap" Text="{StaticResource LBL_SEARCH}" VerticalAlignment="Center"  
                                        Background="{StaticResource SearchBackcolor}"
                                        Margin="10,5" 
                                        Foreground="{StaticResource PlaceHolderForecolor}">
@@ -516,7 +516,7 @@
                         <TextBlock Padding="10,0,7,2" 
                                Foreground="{StaticResource ToolButtonForecolor}" 
                                Background="{StaticResource StatusbarBackcolor}"
-                               VerticalAlignment="Center">Browser monitoring</TextBlock>
+                               VerticalAlignment="Center" Text="{StaticResource SETTINGS_MONITORING}"/>
                         <Button Grid.Column="1"  Name="BtnMonitoring" Foreground="{StaticResource ToolButtonForecolor}"
                             Margin="0" Padding="0" BorderThickness="0" Background="{StaticResource StatusbarBackcolor}"
                             Click="BtnMonitoring_Click">
@@ -548,24 +548,24 @@
                                 Stroke="{StaticResource StatusbarIconcolor}" 
                                 Data="{StaticResource ri-list-settings-fill}"
                                 SnapsToDevicePixels="True"/>
-                                <TextBlock Padding="3,0,3,2" VerticalAlignment="Center">Queues and scheduler</TextBlock>
+                                <TextBlock Padding="3,0,3,2" VerticalAlignment="Center" Text="{StaticResource DESC_Q_TITLE}"/>
                             </StackPanel>
                         </Button>
-                        <Button Grid.Column="4" Foreground="{StaticResource ToolButtonForecolor}"
-                            Margin="0,0" Padding="0" BorderThickness="0" Background="{StaticResource StatusbarBackcolor}" >
+                        <Button Name="BtnHelp" Grid.Column="4" Foreground="{StaticResource ToolButtonForecolor}"
+                            Margin="0,0" Padding="0" BorderThickness="0" Background="{StaticResource StatusbarBackcolor}" Click="BtnHelp_Click">
                             <StackPanel Orientation="Horizontal" Margin="5,0,10,0">
-                                <Path
-                                Height="16"
-                                Width="16"
-                                Margin="5,0"
-                                VerticalAlignment="Center" 
-                                StrokeThickness="0"
-                                Stretch="Fill" 
-                                Fill="{StaticResource StatusbarIconcolor}"
-                                Stroke="{StaticResource StatusbarIconcolor}" 
-                                Data="{StaticResource ri-question-line}"
-                                SnapsToDevicePixels="True"/>
-                                <TextBlock Padding="3,0,3,2" VerticalAlignment="Center">Help and support</TextBlock>
+                                <Path Name="PathHelp"
+                                    Height="16"
+                                    Width="16"
+                                    Margin="5,0"
+                                    VerticalAlignment="Center" 
+                                    StrokeThickness="0"
+                                    Stretch="Fill" 
+                                    Fill="{StaticResource StatusbarIconcolor}"
+                                    Stroke="{StaticResource StatusbarIconcolor}" 
+                                    Data="{StaticResource ri-question-line}"
+                                    SnapsToDevicePixels="True"/>
+                                <TextBlock Padding="3,0,3,2" VerticalAlignment="Center" Name="TxtHelp" Text="{StaticResource LBL_SUPPORT_PAGE}"/>
                             </StackPanel>
                         </Button>
                     </Grid>
@@ -596,7 +596,7 @@
                                 <GridViewColumn Width="200">
                                     <GridViewColumn.Header>
                                         <GridViewColumnHeader Tag="Name">
-                                            <TextBlock Padding="40,0" >Name</TextBlock>
+                                            <TextBlock Padding="40,0" Text="{StaticResource SORT_NAME}" />
                                         </GridViewColumnHeader>
                                     </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
@@ -615,7 +615,7 @@
                                 <GridViewColumn Width="80">
                                     <GridViewColumn.Header>
                                         <GridViewColumnHeader Tag="DateAdded" Name="lvInProgress_DateAdded">
-                                            <TextBlock>Date</TextBlock>
+                                            <TextBlock Text="{StaticResource SORT_DATE}"/>
                                         </GridViewColumnHeader>
                                     </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
@@ -628,7 +628,7 @@
                                             DisplayMemberBinding="{Binding Size, Converter={StaticResource FileSizeValueConverter}}" >
                                     <GridViewColumn.Header>
                                         <GridViewColumnHeader Tag="Size">
-                                            <TextBlock>Size</TextBlock>
+                                            <TextBlock Text="{StaticResource SORT_SIZE}"/>
                                         </GridViewColumnHeader>
                                     </GridViewColumn.Header>
                                 </GridViewColumn>
@@ -641,7 +641,7 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Header="Status" Width="150" DisplayMemberBinding="{Binding Status}" />
+                                <GridViewColumn Header="{StaticResource SORT_STATUS}" Width="150" DisplayMemberBinding="{Binding Status}" />
                             </GridView>
                         </ListView.View>
                         <ListView.ItemContainerStyle>
@@ -670,7 +670,7 @@
                                 <GridViewColumn  Width="400" >
                                     <GridViewColumn.Header>
                                         <GridViewColumnHeader Tag="Name">
-                                            <TextBlock Padding="40,0">Name</TextBlock>
+                                            <TextBlock Padding="40,0" Text="{StaticResource SORT_NAME}"/>
                                         </GridViewColumnHeader>
                                     </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
@@ -690,7 +690,7 @@
                                 <GridViewColumn Width="80">
                                     <GridViewColumn.Header>
                                         <GridViewColumnHeader Tag="DateAdded" Name="lvFinished_DateAdded">
-                                            <TextBlock>Date</TextBlock>
+                                            <TextBlock Text="{StaticResource SORT_DATE}"/>
                                         </GridViewColumnHeader>
                                     </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
@@ -703,7 +703,7 @@
                                     DisplayMemberBinding="{Binding Size, Converter={StaticResource FileSizeValueConverter}}" >
                                     <GridViewColumn.Header>
                                         <GridViewColumnHeader Tag="Size">
-                                            <TextBlock>Size</TextBlock>
+                                            <TextBlock Text="{StaticResource SORT_SIZE}"/>
                                         </GridViewColumnHeader>
                                     </GridViewColumn.Header>
                                 </GridViewColumn>

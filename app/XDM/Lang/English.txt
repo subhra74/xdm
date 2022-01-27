@@ -202,3 +202,5 @@ MSG_QUALITY=Quality
 MSG_MP3=Mp3 Audio
 MSG_TIME=Time
 STAT_ASSEMBLING=Assembling
+STAT_WAITING=Waiting
+MSG_UPDATE_AVAILABLE=Update(s) available

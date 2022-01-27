@@ -11,6 +11,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Threading;
 using TraceLog;
 using Translations;
@@ -410,7 +411,24 @@ namespace XDM.Wpf.UI
 
         public void ShowUpdateAvailableNotification()
         {
-            throw new NotImplementedException();
+            RunOnUIThread(() =>
+            {
+                PathHelp.Data = (Geometry)FindResource("ri-notification-3-fill");
+                PathHelp.Fill = (SolidColorBrush)FindResource("color-update-avaliable");
+                TxtHelp.Text = TextResource.GetText("MSG_UPDATE_AVAILABLE");
+                BtnHelp.Tag = new object();
+            });
+        }
+
+        public void ClearUpdateInformation()
+        {
+            RunOnUIThread(() =>
+            {
+                PathHelp.Data = (Geometry)FindResource("ri-question-line");
+                TxtHelp.Text = TextResource.GetText("LBL_SUPPORT_PAGE");
+                PathHelp.Fill = (SolidColorBrush)FindResource("StatusbarIconcolor");
+                BtnHelp.Tag = null;
+            });
         }
 
         public void ShowMessageBox(object window, string message)
@@ -558,11 +576,6 @@ namespace XDM.Wpf.UI
         private void SearchButton_Click(object sender, RoutedEventArgs e)
         {
             ApplyFilter();
-        }
-
-        public void ClearUpdateInformation()
-        {
-            throw new NotImplementedException();
         }
 
         public IQueuesWindow CreateQueuesAndSchedulerWindow(IAppUI appUi)
@@ -798,6 +811,18 @@ namespace XDM.Wpf.UI
             var menuBatchDownload = (MenuItem)newDownloadMenu.Items[2];
             menuBatchDownload.Click += MenuBatchDownload_Click;
             menuBatchDownload.Header = TextResource.GetText("MENU_BATCH_DOWNLOAD");
+        }
+
+        private void BtnHelp_Click(object sender, RoutedEventArgs e)
+        {
+            if (BtnHelp.Tag != null)
+            {
+                UpdateClicked?.Invoke(sender, e);
+            }
+            else
+            {
+                HelpClicked?.Invoke(sender, e);
+            }
         }
 
         private void MenuNewDownload_Click(object sender, RoutedEventArgs e)

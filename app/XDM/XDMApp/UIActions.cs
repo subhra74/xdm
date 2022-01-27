@@ -108,6 +108,34 @@ namespace XDMApp
             app.ResumeDownload(idDict);
         }
 
+        public static void MoveToQueue(IAppWinPeer peer, IAppUI appUI)
+        {
+            var selectedIds = peer.SelectedInProgressRows?.Select(x => x.DownloadEntry.Id)?.ToArray() ?? new string[0];
+            MoveToQueue(peer, appUI, selectedIds);
+        }
+
+        public static void MoveToQueue(IAppWinPeer peer, IAppUI appUI, string[] selectedIds, bool prompt = false, Action? callback = null)
+        {
+            if (prompt && !peer.Confirm(peer, "Add to queue?"))
+            {
+                return;
+            }
+            var queueSelectionDialog = peer.CreateQueueSelectionDialog();
+            queueSelectionDialog.SetData(QueueManager.Queues.Select(q => q.Name), selectedIds);
+            queueSelectionDialog.ManageQueuesClicked += (_, _) =>
+            {
+                appUI.ShowQueueWindow(peer);
+            };
+            queueSelectionDialog.QueueSelected += (s, e) =>
+            {
+                var index = e.SelectedQueueIndex;
+                var queueId = QueueManager.Queues[index].ID;
+                var downloadIds = e.DownloadIds;
+                QueueManager.AddDownloadsToQueue(queueId, downloadIds);
+            };
+            queueSelectionDialog.ShowWindow(peer);
+        }
+
         public static void SaveAs(IAppWinPeer peer, IApp app)
         {
             var rows = peer.SelectedInProgressRows;

@@ -192,7 +192,7 @@ namespace XDM.Core.Lib.Common
 
         public void InstallLatestYoutubeDL();
 
-        public void MoveToQueue(string[] selectedIds, bool prompt = false, Action? callback = null);
+       // public void MoveToQueue(string[] selectedIds, bool prompt = false, Action? callback = null);
 
         void ShowQueueWindow(object window);
     }

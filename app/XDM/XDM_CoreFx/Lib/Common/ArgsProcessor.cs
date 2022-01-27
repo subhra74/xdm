@@ -20,12 +20,13 @@ namespace XDM.Core.Lib.Common
             }
         }
 
-        public static Dictionary<string, string?> ParseArgs(string[] args)
+        public static Dictionary<string, string?> ParseArgs(string[] args, int start = 0)
         {
             var options = new Dictionary<string, string?>();
             var key = string.Empty;
-            foreach (var arg in args)
+            for (int i = start; i < args.Length; i++)
             {
+                var arg = args[i];
                 if (key != string.Empty)
                 {
                     options[key] = arg;

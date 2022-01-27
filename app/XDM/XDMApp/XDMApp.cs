@@ -79,11 +79,11 @@ namespace XDMApp
             };
             awakePingTimer.Elapsed += (a, b) => Helpers.SendKeepAlivePing();
 
-            //UpdateCheckTimer = new System.Threading.Timer(
-            //    callback: a => CheckForUpdate(),
-            //    state: null,
-            //    dueTime: TimeSpan.FromSeconds(5),
-            //    period: TimeSpan.FromHours(3));
+            UpdateCheckTimer = new System.Threading.Timer(
+                callback: a => CheckForUpdate(),
+                state: null,
+                dueTime: TimeSpan.FromSeconds(5),
+                period: TimeSpan.FromHours(3));
 
             try
             {
@@ -521,7 +521,7 @@ namespace XDMApp
                 awakePingTimer.Start();
             }
 
-            AppUI.RunOnUiThread((Action)(() =>
+            AppUI.RunOnUiThread(() =>
             {
                 foreach (var item in list)
                 {
@@ -574,7 +574,7 @@ namespace XDMApp
                         prgWin.ShowProgressWindow();
                     }
                 }
-            }));
+            });
         }
 
         public void ShowProgressWindow(string downloadId)
@@ -1330,6 +1330,7 @@ namespace XDMApp
         {
             try
             {
+                Log.Debug("CheckForUpdate");
                 if (UpdateChecker.GetAppUpdates(AppVerion, out IList<UpdateInfo> updates, out bool firstUpdate))
                 {
                     this.Updates = updates;

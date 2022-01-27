@@ -38,9 +38,9 @@ namespace XDM.Core.Lib.Common
     {
         public int Progress { get; set; }
         public DownloadStatus Status { get; set; }
-        [JsonIgnore]
+        //[JsonIgnore]
         public string? DownloadSpeed { get; set; }
-        [JsonIgnore]
+        //[JsonIgnore]
         public string? ETA { get; set; }
 
         //public static InProgressDownloadEntry Deserialize(int version, BinaryReader reader)
@@ -77,7 +77,7 @@ namespace XDM.Core.Lib.Common
 
     public enum DownloadStatus
     {
-        Downloading, Stopped, Finished
+        Downloading, Stopped, Finished, Waiting
     }
 
     //internal static class FinishedDownloadEntrySerializerV1
