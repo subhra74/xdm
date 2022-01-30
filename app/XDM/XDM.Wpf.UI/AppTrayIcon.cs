@@ -47,7 +47,10 @@ namespace XDM.Wpf.UI
 
         private static void NotifyIcon_MouseClick(object sender, MouseEventArgs e)
         {
-            TrayClick?.Invoke(sender, e);
+            if (e.Button == MouseButtons.Left)
+            {
+                TrayClick?.Invoke(sender, e);
+            }
         }
 
         public static void DetachFromSystemTray()
