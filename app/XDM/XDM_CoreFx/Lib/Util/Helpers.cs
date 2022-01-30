@@ -680,9 +680,10 @@ namespace XDM.Core.Lib.Util
                     allowed_origins = new[] {
                         "chrome-extension://danmljfachfhpbfikjgedlfifabhofcj/",
                         "chrome-extension://dkckaoghoiffdbomfbbodbbgmhjblecj/",
-                        "chrome-extension://ejpbcmllmliidhlpkcgbphhmaodjihnc/"
+                        "chrome-extension://ejpbcmllmliidhlpkcgbphhmaodjihnc/",
+                        "chrome-extension://fogpiboapmefmkbodpmfnohfflonbgig/"
                     }
-                });
+                },Formatting.Indented);
                 return json;
                 //var manifestPath = Path.Combine(Config.DataDir, "xdm_chrome.native_host.json");
                 //File.WriteAllText(manifestPath, json);

@@ -227,6 +227,10 @@ namespace BrowserMonitoring
             var b4 = new byte[4];
             ReadFully(pipe, b4, 4);
             var syncLength = BitConverter.ToInt32(b4, 0);
+            if (syncLength > 4 * 8196)
+            {
+                throw new ArgumentException($"Message length too long: {syncLength}");
+            }
             var bytes = new byte[syncLength];
             ReadFully(pipe, bytes, syncLength);
             return bytes;

@@ -19,6 +19,7 @@ using XDM.Common.UI;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.UI;
 using XDM.Core.Lib.Util;
+using XDM.Wpf.UI.Dialogs.About;
 using XDM.Wpf.UI.Dialogs.BatchDownload;
 using XDM.Wpf.UI.Dialogs.CompletedDialog;
 using XDM.Wpf.UI.Dialogs.CredentialDialog;
@@ -433,14 +434,17 @@ namespace XDM.Wpf.UI
 
         public void ShowMessageBox(object window, string message)
         {
-            if (window is IAppUI || window == this)
+            Dispatcher.Invoke(new Action(() =>
             {
-                MessageBox.Show(this, message);
-            }
-            else
-            {
-                MessageBox.Show((Window)window, message);
-            }
+                if (window is IAppUI || window == this || window == null)
+                {
+                    MessageBox.Show(this, message);
+                }
+                else
+                {
+                    MessageBox.Show((Window)window, message);
+                }
+            }));
         }
 
         public void OpenNewDownloadMenu()
@@ -718,7 +722,11 @@ namespace XDM.Wpf.UI
 
         private void menuAbout_Click(object sender, RoutedEventArgs e)
         {
-
+            var win = new AboutWindow
+            {
+                Owner = this
+            };
+            win.ShowDialog(this);
         }
 
         private void lvInProgress_Click(object sender, RoutedEventArgs e)

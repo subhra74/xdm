@@ -40,7 +40,6 @@ namespace BrowserMonitoring
                     Log.Debug(ex.ToString());
                     app.AppUI.ShowMessageBox(null, TextResource.GetText("MSG_ALREADY_RUNNING"));
                 }
-
             }).Start();
         }
 

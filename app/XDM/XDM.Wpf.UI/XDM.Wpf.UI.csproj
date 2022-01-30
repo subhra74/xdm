@@ -9,6 +9,7 @@
     <LangVersion>9.0</LangVersion>
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>xdm-logo.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -32,6 +33,12 @@
 
   <ItemGroup>
     <LangFiles Include="$(SolutionDir)\Lang\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="xdm-logo.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <Target Name="Copy" AfterTargets="Build">

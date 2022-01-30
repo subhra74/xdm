@@ -27,26 +27,30 @@ namespace NativeHost
         {
             //var json = BinaryToJson(new byte[0]);
 #if !NET35
-            Debug(Environment.Is64BitProcess+"");
+            Debug("Is64BitProcess: "+Environment.Is64BitProcess);
 #endif
             try
             {
-                Debug("Trying to open mutex");
-                using var mutex = Mutex.OpenExisting(@"Global\XDM_Active_Instance");
-                Debug("Mutex opened");
-            }
-            catch
-            {
-                Debug("Mutex open failed, spawn xdm process...++");
-                CreateXDMInstance();
-            }
-            Debug("next");
-            try
-            {
-
-
                 var inputReader = Console.OpenStandardInput();
                 var outputWriter = Console.OpenStandardOutput();
+
+                //var msg = ReadMessageBytes(inputReader);
+                //var message = Encoding.UTF8.GetString(msg);
+                //Debug(message);
+                try
+                {
+                    Debug("Trying to open mutex");
+                    using var mutex = Mutex.OpenExisting(@"Global\XDM_Active_Instance");
+                    Debug("Mutex opened");
+                }
+                catch
+                {
+                    Debug("Mutex open failed, spawn xdm process...++");
+                    CreateXDMInstance();
+                }
+                Debug("next");
+
+
                 var t1 = new Thread(() =>
                   {
                       try
@@ -101,7 +105,7 @@ namespace NativeHost
             }
         }
 
-        private static void CreateXDMInstance()
+        private static void CreateXDMInstance(bool minimized = true)
         {
             try
             {
@@ -109,9 +113,13 @@ namespace NativeHost
                 ProcessStartInfo psi = new()
                 {
                     FileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "XDM.Wpf.UI.exe"),
-                    UseShellExecute = true,
-                    Arguments = "-m"
+                    UseShellExecute = true
                 };
+
+                if (minimized)
+                {
+                    psi.Arguments = "-m";
+                }
 
                 Debug("XDM instance creating...");
                 Process.Start(psi);
@@ -174,7 +182,7 @@ namespace NativeHost
                              }
                              catch (Exception ex)
                              {
-                                 Debug(ex.ToString());
+                                 Debug(ex.ToString(), ex);
                                  queuedBrowserMessages.Add(Encoding.UTF8.GetBytes("{\"appExited\":\"true\"}"));
                              }
                              waitHandle.Set();
@@ -204,7 +212,7 @@ namespace NativeHost
                             }
                             catch (Exception ex)
                             {
-                                Debug(ex.ToString());
+                                Debug(ex.ToString(), ex);
                             }
                             waitHandle.Set();
                             Debug("Task2 finished");
@@ -220,7 +228,7 @@ namespace NativeHost
                     }
                     catch (Exception ex)
                     {
-                        Debug(ex.ToString());
+                        Debug(ex.ToString(), ex);
                     }
 
                     try
@@ -246,7 +254,7 @@ namespace NativeHost
             }
         }
 
-        private static void Debug(string msg)
+        private static void Debug(string msg, Exception ex2 = null)
         {
             try
             {
@@ -254,8 +262,12 @@ namespace NativeHost
                 log.Flush();
                 //File.AppendAllText(@"c:\log.txt", msg + "\r\n");
                 Trace.WriteLine($"[{DateTime.Now}][NativeHost] {msg}");
+                if (ex2 != null)
+                {
+                    Trace.WriteLine($"[{DateTime.Now}][NativeHost] {ex2}");
+                }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 log.WriteLine(ex.ToString());
                 log.Flush();
@@ -280,6 +292,10 @@ namespace NativeHost
             var b4 = new byte[4];
             ReadFully(pipe, b4, 4);
             var syncLength = BitConverter.ToInt32(b4, 0);
+            if (syncLength > 4 * 8196)
+            {
+                throw new ArgumentException($"Message length too long: {syncLength}");
+            }
             var bytes = new byte[syncLength];
             ReadFully(pipe, bytes, syncLength);
             return bytes;

@@ -84,3 +84,15 @@ table tbody{
     -ms-transform: rotate(45deg);
     transform: rotate(45deg);
   }
+
+  .primary-button{
+    padding: 10px;
+    background: #2196F3;
+    color: white;
+    border-radius: 3px;
+    border: none;
+  }
+
+  .primary-button:hover{
+    background: #2d99f1;
+  }

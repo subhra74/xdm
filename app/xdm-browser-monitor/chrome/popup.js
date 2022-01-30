@@ -27,6 +27,11 @@ window.onload = function () {
         chrome.runtime.sendMessage({ type: "cmd", disable: !this.checked });
         window.close();
     });
+
+    // document.getElementById("RunXDM").addEventListener('click', function () {
+    //     chrome.runtime.sendMessage({ type: "reconnect" });
+    //     window.close();
+    // });
 };
 
 function toUTF8(str) {
