@@ -15,9 +15,9 @@
                 <ColumnDefinition Width="auto"/>
                 <ColumnDefinition Width="auto"/>
             </Grid.ColumnDefinitions>
-            <Button Grid.Column="0" Name="BtnHide" Margin="10,5" Padding="15,5" Content="{StaticResource DWN_HIDE}" Click="BtnHide_Click"/>
-            <Button Grid.Column="2" Name="BtnStop" Margin="10,5" Padding="15,5" Content="{StaticResource BTN_STOP_PROCESSING}" Click="BtnStop_Click"/>
-            <Button Grid.Column="3" Name="BtnPause" Margin="10,5" Padding="15,5" Content="{StaticResource MENU_PAUSE}" Click="BtnPause_Click"/>
+            <Button Grid.Column="0" Name="BtnHide" Margin="0" Padding="20,5" Content="{StaticResource DWN_HIDE}" Click="BtnHide_Click"/>
+            <Button Grid.Column="2" Name="BtnStop" Margin="0" Padding="20,5" Content="{StaticResource BTN_STOP_PROCESSING}" Click="BtnStop_Click"/>
+            <Button Grid.Column="3" Name="BtnPause" Margin="10,0,0,0" Padding="15,5" Content="{StaticResource MENU_PAUSE}" Click="BtnPause_Click"/>
         </Grid>
         <Border Background="{StaticResource TextBackcolor}" Padding="10">
             <Grid>

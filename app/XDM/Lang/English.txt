@@ -204,3 +204,4 @@ MSG_TIME=Time
 STAT_ASSEMBLING=Assembling
 STAT_WAITING=Waiting
 MSG_UPDATE_AVAILABLE=Update(s) available
+MSG_RESTORE=Restore Window

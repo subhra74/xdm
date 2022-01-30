@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:XDM.Wpf.UI"
         DataContext="{Binding RelativeSource={RelativeSource Self}}"
         mc:Ignorable="d"
-        Title="Xtreme Download Manager" Height="500" Width="800" WindowStartupLocation="CenterScreen">
+        Title="Xtreme Download Manager" Height="500" Width="800" WindowStartupLocation="CenterScreen" Closing="Window_Closing">
     <Window.Resources>
         <Style TargetType="Button" >
             <Setter Property="SnapsToDevicePixels" Value="true"/>

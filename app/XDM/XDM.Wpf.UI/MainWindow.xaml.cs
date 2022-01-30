@@ -833,6 +833,12 @@ namespace XDM.Wpf.UI
             }
         }
 
+        private void Window_Closing(object sender, CancelEventArgs e)
+        {
+            e.Cancel = true;
+            this.Hide();
+        }
+
         private void MenuNewDownload_Click(object sender, RoutedEventArgs e)
         {
             this.NewDownloadClicked?.Invoke(sender, e);

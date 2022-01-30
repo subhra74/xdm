@@ -69,7 +69,7 @@
     <SolidColorBrush x:Key="ControlDisabledBackcolor" Color="#3C3C3C"/>
     <SolidColorBrush x:Key="TabSelectionColor" Color="DodgerBlue"/>
 
-    <SolidColorBrush x:Key="ProgressBarBackcolor" Color="#777D88"/>
+    <SolidColorBrush x:Key="ProgressBarBackcolor" Color="#DCDCDC"/>
     <SolidColorBrush x:Key="ProgressBarForecolor" Color="DodgerBlue"/>
 
     <core:Double x:Key="ButtonDisabledOpacity">0.5</core:Double>

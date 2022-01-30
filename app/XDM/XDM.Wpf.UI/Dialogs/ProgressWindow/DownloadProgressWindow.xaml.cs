@@ -49,7 +49,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
             get => this.TxtFileName.Text;
             set
             {
-                Dispatcher.BeginInvoke(new Action(() => SetFileText(value)));
+                Dispatcher.Invoke(new Action(() => SetFileText(value)));
             }
         }
 
@@ -58,7 +58,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
             get => this.TxtUrl.Text;
             set
             {
-                Dispatcher.BeginInvoke(new Action(() => TxtUrl.Text = value));
+                Dispatcher.Invoke(new Action(() => TxtUrl.Text = value));
             }
         }
 
@@ -67,7 +67,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
             get => this.TxtStatus.Text;
             set
             {
-                Dispatcher.BeginInvoke(actStatusUpdate, value);
+                Dispatcher.Invoke(actStatusUpdate, value);
             }
         }
 
@@ -76,7 +76,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
             get => this.TxtSpeed.Text;
             set
             {
-                Dispatcher.BeginInvoke(actSpeedUpdate, value);
+                Dispatcher.Invoke(actSpeedUpdate, value);
             }
         }
 
@@ -85,7 +85,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
             get => this.TxtETA.Text;
             set
             {
-                Dispatcher.BeginInvoke(actEtaUpdate, value);
+                Dispatcher.Invoke(actEtaUpdate, value);
             }
         }
 
@@ -94,7 +94,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
             get => (int)this.PrgProgress.Value;
             set
             {
-                Dispatcher.BeginInvoke(actPrgUpdate, value);
+                Dispatcher.Invoke(actPrgUpdate, value);
             }
         }
 
