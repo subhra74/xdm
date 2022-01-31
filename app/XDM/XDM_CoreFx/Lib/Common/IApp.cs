@@ -86,7 +86,7 @@ namespace XDM.Core.Lib.Common
         public void AddVideoNotifications(IEnumerable<(SingleSourceHTTPDownloadInfo Info, StreamingVideoDisplayInfo DisplayInfo)> notifications);
         public void AddVideoNotifications(IEnumerable<(MultiSourceHLSDownloadInfo Info, StreamingVideoDisplayInfo DisplayInfo)> notifications);
         public void AddVideoNotifications(IEnumerable<(MultiSourceDASHDownloadInfo Info, StreamingVideoDisplayInfo DisplayInfo)> notifications);
-        public List<(string ID, string File, string DisplayName)> GetVideoList(bool encode = true);
+        public List<(string ID, string File, string DisplayName, DateTime Time)> GetVideoList(bool encode = true);
         public void AddVideoDownload(string videoId);
         //public void LoadDownloadList();
         public void StartVideoDownload(string videoId,

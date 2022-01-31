@@ -229,7 +229,11 @@ namespace XDM.Core.Lib.Downloader.Progressive.SingleHttp
                             }
                             break;
                         case FileNameFetchMode.ExtensionOnly:
-                            this.TargetFileName = Helpers.AddFileExtension(this.TargetFileName, result.ContentType);
+                            var name = string.Empty;
+                            if (Helpers.AddFileExtension(this.TargetFileName, result.ContentType, out name))
+                            {
+                                this.TargetFileName = name;
+                            }
                             break;
                     }
 

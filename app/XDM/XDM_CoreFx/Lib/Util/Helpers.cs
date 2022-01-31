@@ -141,56 +141,64 @@ namespace XDM.Core.Lib.Util
             return Config.Instance.DefaultDownloadFolder;
         }
 
-        public static string GetFileNameFromProbeResult(ProbeResult probeResult, bool keepOriginalName = false,
-            string originalName = null)
-        {
-            if (keepOriginalName && string.IsNullOrEmpty(originalName))
-            {
-                throw new InvalidOperationException("keepOriginalName is set with no original file name");
-            }
-            var fileName = "";
-            if (probeResult.AttachmentName != null)
-            {
-                fileName = probeResult.AttachmentName;
-            }
-            else
-            {
-                if (keepOriginalName)
-                {
-                    fileName = Helpers.AddFileExtension(originalName, probeResult.ContentType);
-                }
-                else
-                {
-                    fileName = Helpers.GetFileName(
-                        probeResult.FinalUri, probeResult.ContentType);
-                }
-            }
-            return fileName;
-        }
+        //public static string GetFileNameFromProbeResult(ProbeResult probeResult, bool keepOriginalName = false,
+        //    string originalName = null)
+        //{
+        //    if (keepOriginalName && string.IsNullOrEmpty(originalName))
+        //    {
+        //        throw new InvalidOperationException("keepOriginalName is set with no original file name");
+        //    }
+        //    var fileName = "";
+        //    if (probeResult.AttachmentName != null)
+        //    {
+        //        fileName = probeResult.AttachmentName;
+        //    }
+        //    else
+        //    {
+        //        if (keepOriginalName)
+        //        {
+        //            fileName = Helpers.AddFileExtension(originalName, probeResult.ContentType);
+        //        }
+        //        else
+        //        {
+        //            fileName = Helpers.GetFileName(
+        //                probeResult.FinalUri, probeResult.ContentType);
+        //        }
+        //    }
+        //    return fileName;
+        //}
 
-        public static string AddFileExtension(string name, string contentType)
+        public static bool AddFileExtension(string name, string contentType, out string nameWithExt)
         {
             name = SanitizeFileName(name);
+            if (name.EndsWith("."))
+            {
+                name = name.TrimEnd('.');
+            }
             if (string.IsNullOrEmpty(contentType))
             {
-                return name;
+                nameWithExt = name;
+                return false;
             }
             if (contentType == "text/html")
             {
-                return name + ".html";
+                nameWithExt = name + ".html";
+                return true;
             }
             else
             {
                 try
                 {
-                    if (contentType == null) return name;
                     var ext = MimeTypes.GetValueOrDefault(contentType.ToLowerInvariant());
                     if (!string.IsNullOrEmpty(ext))
                     {
                         var prevExt = Path.GetExtension(name);
                         var nameWithoutExt = Path.GetFileNameWithoutExtension(name);
                         if (!("." + ext).Equals(prevExt, StringComparison.InvariantCultureIgnoreCase))
-                            name = nameWithoutExt + "." + ext;
+                        {
+                            nameWithExt = nameWithoutExt + "." + ext;
+                            return true;
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -198,7 +206,8 @@ namespace XDM.Core.Lib.Util
                     Log.Debug(ex, "Error in AddFileExtension");
                 }
 
-                return name;
+                nameWithExt = name;
+                return true;
             }
         }
 
@@ -683,7 +692,7 @@ namespace XDM.Core.Lib.Util
                         "chrome-extension://ejpbcmllmliidhlpkcgbphhmaodjihnc/",
                         "chrome-extension://fogpiboapmefmkbodpmfnohfflonbgig/"
                     }
-                },Formatting.Indented);
+                }, Formatting.Indented);
                 return json;
                 //var manifestPath = Path.Combine(Config.DataDir, "xdm_chrome.native_host.json");
                 //File.WriteAllText(manifestPath, json);

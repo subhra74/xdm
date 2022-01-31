@@ -16,7 +16,7 @@ namespace XDM.Core.Lib.Downloader.Progressive.DualHttp
         private DualSourceHTTPDownloaderState state;
         private BaseMediaProcessor mediaProcessor;
         public override string Type => "Dash";
-        public override Uri PrimaryUrl => this.state?.Url1;
+        public override Uri PrimaryUrl => this.state?.Url1 ?? this.state?.Url2;
         public override int SpeedLimit => this.state?.SpeedLimit ?? 0;
         public override bool EnableSpeedLimit => this.state?.SpeedLimit > 0;
 
@@ -205,17 +205,21 @@ namespace XDM.Core.Lib.Downloader.Progressive.DualHttp
                         case FileNameFetchMode.ExtensionOnly:
                             if (state.Init1 || state.Init2)
                             {
-                                var name = Helpers.AddFileExtension(this.TargetFileName, result.ContentType);
+                                Helpers.AddFileExtension(this.TargetFileName, result.ContentType, out string name);
                                 var ext1 = Path.GetExtension(this.TargetFileName);
                                 var ext2 = Path.GetExtension(name);
                                 if (ext1 == ".mkv" || ext2 == ".mkv")
                                 {
-                                    this.TargetFileName = name + ".mkv";
+                                    this.TargetFileName = Path.GetFileNameWithoutExtension(name) + ".mkv";
                                 }
                             }
                             else
                             {
-                                this.TargetFileName = Helpers.AddFileExtension(this.TargetFileName, result.ContentType);
+                                var name = string.Empty;
+                                if(Helpers.AddFileExtension(this.TargetFileName, result.ContentType, out name))
+                                {
+                                    this.TargetFileName = name;
+                                }
                             }
                             break;
                     }

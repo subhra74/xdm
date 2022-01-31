@@ -262,6 +262,7 @@ namespace XDMApp
                     activeProgressWindows[download.Id] = prgWin;
                     prgWin.FileNameText = download.TargetFileName;
                     prgWin.FileSizeText = string.Empty;
+                    prgWin.UrlText = download.PrimaryUrl?.ToString() ?? string.Empty;
                     prgWin.ShowProgressWindow();
                 }
 
@@ -475,25 +476,26 @@ namespace XDMApp
         //    }
         //}
 
-        public List<(string ID, string File, string DisplayName)> GetVideoList(bool encode = true)
+        public List<(string ID, string File, string DisplayName, DateTime Time)> GetVideoList(bool encode = true)
         {
-            var list = new List<(string ID, string File, string DisplayName)>();
+            var list = new List<(string ID, string File, string DisplayName, DateTime Time)>();
             foreach (var e in ytVideoList)
             {
-                list.Add((e.Key, encode ? EncodeToCharCode(e.Value.Info.File) : e.Value.Info.File, e.Value.DisplayInfo.Quality));
+                list.Add((e.Key, encode ? EncodeToCharCode(e.Value.Info.File) : e.Value.Info.File, e.Value.DisplayInfo.Quality, e.Value.DisplayInfo.CreationTime));
             }
             foreach (var e in videoList)
             {
-                list.Add((e.Key, encode ? EncodeToCharCode(e.Value.Info.File) : e.Value.Info.File, e.Value.DisplayInfo.Quality));
+                list.Add((e.Key, encode ? EncodeToCharCode(e.Value.Info.File) : e.Value.Info.File, e.Value.DisplayInfo.Quality, e.Value.DisplayInfo.CreationTime));
             }
             foreach (var e in hlsVideoList)
             {
-                list.Add((e.Key, encode ? EncodeToCharCode(e.Value.Info.File) : e.Value.Info.File, e.Value.DisplayInfo.Quality));
+                list.Add((e.Key, encode ? EncodeToCharCode(e.Value.Info.File) : e.Value.Info.File, e.Value.DisplayInfo.Quality, e.Value.DisplayInfo.CreationTime));
             }
             foreach (var e in dashVideoList)
             {
-                list.Add((e.Key, encode ? EncodeToCharCode(e.Value.Info.File) : e.Value.Info.File, e.Value.DisplayInfo.Quality));
+                list.Add((e.Key, encode ? EncodeToCharCode(e.Value.Info.File) : e.Value.Info.File, e.Value.DisplayInfo.Quality, e.Value.DisplayInfo.CreationTime));
             }
+            list.Sort((a, b) => a.Time.CompareTo(b.Time));
             return list;
         }
 

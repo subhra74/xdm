@@ -11,5 +11,6 @@ namespace XDM.Core.Lib.Common
         public string Quality { get; set; }
         public long Size { get; set; }
         public long Duration { get; set; }
+        public DateTime CreationTime { get; set; }
     }
 }

@@ -86,7 +86,8 @@ namespace BrowserMonitoring
                             var displayInfo = new StreamingVideoDisplayInfo
                             {
                                 Quality = $"[{fileExt.ToUpperInvariant()}] {size} {item.FormatDescription}",
-                                Size = item.Size
+                                Size = item.Size,
+                                CreationTime = DateTime.Now
                             };
 
                             //var displayText = $"[{fileExt.ToUpperInvariant()}] {size} {item.FormatDescription}";
@@ -117,7 +118,8 @@ namespace BrowserMonitoring
                             var displayInfo = new StreamingVideoDisplayInfo
                             {
                                 Quality = $"[{fileExt.ToUpperInvariant()}] {size} {item.FormatDescription}",
-                                Size = item.Size
+                                Size = item.Size,
+                                CreationTime = DateTime.Now
                             };
 
                             list.Add((Info: mediaItem, DisplayInfo: displayInfo));
@@ -175,7 +177,8 @@ namespace BrowserMonitoring
                             Log.Debug("Display text dash: " + displayText);
                             app.AddVideoNotification(new StreamingVideoDisplayInfo
                             {
-                                Quality = displayText
+                                Quality = displayText,
+                                CreationTime = DateTime.Now
                             }, mediaItem);
                         }
                         else
@@ -197,7 +200,8 @@ namespace BrowserMonitoring
                             Log.Debug("Display text hls: " + displayText);
                             app.AddVideoNotification(new StreamingVideoDisplayInfo
                             {
-                                Quality = displayText
+                                Quality = displayText,
+                                CreationTime = DateTime.Now
                             }, mediaItem);
                         }
                     }
@@ -235,7 +239,8 @@ namespace BrowserMonitoring
             Log.Debug("Display text hls: " + displayText);
             app.AddVideoNotification(new StreamingVideoDisplayInfo
             {
-                Quality = displayText
+                Quality = displayText,
+                CreationTime = DateTime.Now
             }, mediaItem);
         }
 
@@ -309,7 +314,8 @@ namespace BrowserMonitoring
                             Log.Debug("Display text hls: " + plc.Quality);
                             app.AddVideoNotification(new StreamingVideoDisplayInfo
                             {
-                                Quality = displayText
+                                Quality = displayText,
+                                CreationTime = DateTime.Now
                             }, video);
                         }
                     }
@@ -336,7 +342,8 @@ namespace BrowserMonitoring
                     var displayText = $"[{container}]";
                     app.AddVideoNotification(new StreamingVideoDisplayInfo
                     {
-                        Quality = displayText
+                        Quality = displayText,
+                        CreationTime = DateTime.Now
                     }, video);
                 }
             }
@@ -457,7 +464,8 @@ namespace BrowserMonitoring
                     app.AddVideoNotification(new StreamingVideoDisplayInfo
                     {
                         Quality = displayText,
-                        Size = size
+                        Size = size,
+                        CreationTime = DateTime.Now
                     }, video);
                 }
 
@@ -530,7 +538,8 @@ namespace BrowserMonitoring
             app.AddVideoNotification(new StreamingVideoDisplayInfo
             {
                 Quality = displayText,
-                Size = size
+                Size = size,
+                CreationTime = DateTime.Now
             }, video); ;
         }
 
