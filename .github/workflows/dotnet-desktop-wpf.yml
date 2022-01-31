@@ -40,9 +40,9 @@ name: .NET Core Desktop
 
 on:
   push:
-    branches: [ "migrate-to-c#" ]
+    branches: [ "wpf" ]
   pull_request:
-    branches: [ "migrate-to-c#" ]
+    branches: [ "wpf" ]
 
 jobs:
 
@@ -58,8 +58,8 @@ jobs:
     env:
       Solution_Name: XDM_CoreFx.sln                         # Replace with your solution name, i.e. MyWpfApp.sln.
       Test_Project_Path: XDM_Tests\XDM.SystemTests.csproj                 # Replace with the path to your test project, i.e. MyWpfApp.Tests\MyWpfApp.Tests.csproj.
-      Wap_Project_Directory: XDM.WinForm.UI    # Replace with the Wap project directory relative to the solution, i.e. MyWpfApp.Package.
-      Wap_Project_Path: XDM.WinForm.UI\XDM.WinForm.UI.csproj                   # Replace with the path to your Wap project, i.e. MyWpf.App.Package\MyWpfApp.Package.wapproj.
+      Wap_Project_Directory: XDM.Wpf.UI    # Replace with the Wap project directory relative to the solution, i.e. MyWpfApp.Package.
+      Wap_Project_Path: XDM.Wpf.UI\XDM.Wpf.UI.csproj                   # Replace with the path to your Wap project, i.e. MyWpf.App.Package\MyWpfApp.Package.wapproj.
 
     steps:
     - name: Checkout
