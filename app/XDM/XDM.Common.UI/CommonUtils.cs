@@ -46,12 +46,11 @@ namespace XDM.Common.UI
 
         internal static void OnFileBrowsed(object? sender, FileBrowsedEventArgs args)
         {
-            var file = Path.GetFileName(args.SelectedFile);
-            if (string.IsNullOrEmpty(file))
+            var folder = args.SelectedFile;
+            if (string.IsNullOrEmpty(folder))
             {
                 return;
             }
-            var folder = args.SelectedFile;// Path.GetDirectoryName(args.SelectedFile)!;
             if (!Config.Instance.RecentFolders.Contains(folder))
             {
                 Config.Instance.RecentFolders.Insert(0, folder);
@@ -59,7 +58,6 @@ namespace XDM.Common.UI
             if (sender != null)
             {
                 var fileSelectable = (IFileSelectable)sender;
-                fileSelectable.SelectedFileName = file;
                 fileSelectable.SetFolderValues(GetFolderValues());
                 fileSelectable.SeletedFolderIndex = 2;
             }
