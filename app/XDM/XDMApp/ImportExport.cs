@@ -8,6 +8,8 @@ using System.IO.Compression;
 #endif
 using System.Linq;
 using XDM.Core.Lib.Common;
+using System.Globalization;
+using XDM.Core.Lib.Downloader;
 
 namespace XDMApp
 {
@@ -123,5 +125,177 @@ namespace XDMApp
             }
 #endif
         }
+
+        //internal static void ImportFromPreviousVersion()
+        //{
+        //    var file = Path.Combine(Environment.GetEnvironmentVariable("%USERPROFILE%"), @".xdman\downloads.txt");
+        //    if (File.Exists(file))
+        //    {
+        //        var lines = File.ReadAllLines(file);
+        //        var c = 0;
+        //        var count = Int32.Parse(lines[c++]);
+        //        for (int i = 0; i < count; i++)
+        //        {
+        //            var fieldCount = Int32.Parse(lines[c++]);
+
+        //            string id = null, name = null, folder = null;
+        //            bool finished = false;
+        //            int progress = 0;
+        //            long downloaded = 0, size = 0;
+        //            DateTime date = DateTime.Now;
+
+        //            string url = null, url2 = null, type = null;
+        //            long len, len2, bitrate;
+        //            Dictionary<string, List<string>> headers = new(), headers2 = new();
+        //            List<string> cookies = new(), cookies2 = new();
+        //            for (int j = 0; j < fieldCount; j++)
+        //            {
+        //                var str = lines[c++];
+        //                var index = str.IndexOf(':');
+        //                if (index < 0)
+        //                {
+        //                    continue;
+        //                }
+        //                var key = str.Substring(0, index).Trim();
+        //                var val = str.Substring(index + 1).Trim();
+        //                switch (key)
+        //                {
+        //                    case "id":
+        //                        id = val;
+        //                        break;
+        //                    case "file":
+        //                        name = val;
+        //                        break;
+        //                    case "folder":
+        //                        folder = val;
+        //                        break;
+        //                    case "state":
+        //                        finished = Int32.Parse(val) == 100;
+        //                        break;
+        //                    case "progress":
+        //                        progress = Int32.Parse(val);
+        //                        break;
+        //                    case "downloaded":
+        //                        downloaded = Int64.Parse(val);
+        //                        break;
+        //                    case "size":
+        //                        size = Int64.Parse(val);
+        //                        break;
+        //                    case "date":
+        //                        date = DateTime.ParseExact(val, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+        //                        break;
+        //                    default:
+        //                        break;
+        //                }
+        //            }
+        //            if (string.IsNullOrEmpty(id))
+        //            {
+        //                continue;
+        //            }
+        //            var metadataFile = Path.Combine(Environment.GetEnvironmentVariable("%USERPROFILE%"),
+        //                $@".xdman\\metadata\{id}");
+        //            if (File.Exists(metadataFile))
+        //            {
+        //                var fp = new StreamReader(metadataFile);
+        //                var downloadType = Int32.Parse(fp.ReadLine());
+        //                switch (downloadType)
+        //                {
+        //                    case 1000:
+        //                        type = DownloadTypes.Http;
+        //                        break;
+        //                    case 1001:
+        //                        type = DownloadTypes.Hls;
+        //                        break;
+        //                    case 1003:
+        //                        type = DownloadTypes.Dash;
+        //                        break;
+        //                    default:
+        //                        type = null;
+        //                        break;
+        //                }
+        //                while (true)
+        //                {
+        //                    var str = fp.ReadLine();
+        //                    if (string.IsNullOrEmpty(str)) break;
+        //                    var index = str.IndexOf(':');
+        //                    if (index < 0)
+        //                    {
+        //                        continue;
+        //                    }
+        //                    var key = str.Substring(0, index).Trim();
+        //                    var val = str.Substring(index + 1).Trim();
+        //                    switch (key)
+        //                    {
+        //                        case "url":
+        //                            url = val;
+        //                            break;
+        //                        case "url2":
+        //                            url2 = val;
+        //                            break;
+        //                        case "size":
+        //                        case "len1":
+        //                            len = Int64.Parse(val);
+        //                            break;
+        //                        case "len2":
+        //                            len2 = Int64.Parse(val);
+        //                            break;
+        //                        case "bitrate":
+        //                            bitrate = Int32.Parse(val);
+        //                            break;
+        //                        case "header":
+        //                            ParseHeaderAndCookie(val, headers, cookies);
+        //                            break;
+        //                        case "header2":
+        //                            ParseHeaderAndCookie(val, headers2, cookies2);
+        //                            break;
+        //                        default:
+        //                            break;
+        //                    }
+        //                }
+        //            }
+        //            if (!string.IsNullOrEmpty(type))
+        //            {
+        //                if (finished)
+        //                {
+        //                    var finishedEntry = new FinishedDownloadEntry
+        //                    {
+        //                        Id = id,
+        //                        DateAdded = date,
+        //                        DownloadType=type,
+                                
+        //                    };
+        //                }
+        //            }
+        //        }
+        //    }
+        //}
+
+        //private static void ParseHeaderAndCookie(string val, Dictionary<string, List<string>> headers, List<string> cookies)
+        //{
+        //    {
+        //        var index1 = val.IndexOf(':');
+        //        if (index1 < 0)
+        //        {
+        //            return;
+        //        }
+        //        var key1 = val.Substring(0, index1).Trim();
+        //        var val1 = val.Substring(index1 + 1).Trim();
+        //        if (key1.Equals("cookie", StringComparison.InvariantCultureIgnoreCase))
+        //        {
+        //            cookies.Add(val1);
+        //        }
+        //        else
+        //        {
+        //            if (!headers.TryGetValue(key1, out List<string> headerList))
+        //            {
+        //                headerList.Add(val1);
+        //            }
+        //            else
+        //            {
+        //                headers[key1] = new List<string> { val1 };
+        //            }
+        //        }
+        //    }
+        //}
     }
 }

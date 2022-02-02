@@ -648,6 +648,7 @@
                             <Style TargetType="{x:Type ListViewItem}" BasedOn="{StaticResource {x:Type ListViewItem}}">
                                 <Setter Property="ContextMenu" Value="{StaticResource lvInProgressContextMenu}" />
                                 <Setter Property="Padding" Value="0,0" />
+                                <EventSetter Event="MouseDoubleClick" Handler="ListViewItem_MouseDoubleClick"/>
                             </Style>
                         </ListView.ItemContainerStyle>
                     </ListView>
@@ -713,6 +714,7 @@
                             <Style TargetType="{x:Type ListViewItem}" BasedOn="{StaticResource {x:Type ListViewItem}}">
                                 <Setter Property="ContextMenu" Value="{StaticResource lvFinishedContextMenu}" />
                                 <Setter Property="Padding" Value="0,0" />
+                                <EventSetter Event="MouseDoubleClick" Handler="ListViewItem_MouseDoubleClick"/>
                             </Style>
                         </ListView.ItemContainerStyle>
                     </ListView>

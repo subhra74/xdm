@@ -205,3 +205,5 @@ STAT_ASSEMBLING=Assembling
 STAT_WAITING=Waiting
 MSG_UPDATE_AVAILABLE=Update(s) available
 MSG_RESTORE=Restore Window
+MSG_DOUBLE_CLICK_ACTION=Double click on download item
+MSG_OPEN_FILE=Open file

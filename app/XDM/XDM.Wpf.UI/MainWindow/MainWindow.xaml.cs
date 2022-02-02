@@ -213,6 +213,7 @@ namespace XDM.Wpf.UI
         public event EventHandler CheckForUpdateClicked;
         public event EventHandler SchedulerClicked;
         public event EventHandler MoveToQueueClicked;
+        public event EventHandler DownloadListDoubleClicked;
 
         public IEnumerable<FinishedDownloadEntry> FinishedDownloads
         {
@@ -837,6 +838,11 @@ namespace XDM.Wpf.UI
         {
             e.Cancel = true;
             this.Hide();
+        }
+
+        private void ListViewItem_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            DownloadListDoubleClicked?.Invoke(sender, e);
         }
 
         private void MenuNewDownload_Click(object sender, RoutedEventArgs e)

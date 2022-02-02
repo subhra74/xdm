@@ -128,6 +128,8 @@ namespace XDM.Core.Lib.Common
 
         public ProxyInfo? Proxy { get; set; }
 
+        public bool DoubleClickOpenFile { get; set; } = false;
+
         [JsonIgnore]
         public bool RunOnLogon
         {
@@ -290,187 +292,187 @@ namespace XDM.Core.Lib.Common
             //};
         }
 
-        private static void PopulateConfig32(Config instance, BinaryReader r)
-        {
-            instance.AfterCompletionCommand = Helpers.ReadString(r);
-            instance.AntiVirusArgs = Helpers.ReadString(r);
-            instance.AntiVirusExecutable = Helpers.ReadString(r);
-            var count = r.ReadInt32();
-            instance.BlockedHosts = new string[count];
-            for (int i = 0; i < count; i++)
-            {
-                instance.BlockedHosts[i] = r.ReadString();
-            }
-            count = r.ReadInt32();
-            var list = new List<Category>(count);
-            for (int i = 0; i < count; i++)
-            {
-                var category = new Category
-                {
-                    DefaultFolder = Helpers.ReadString(r),
-                    DisplayName = Helpers.ReadString(r),
-                    FileExtensions = new HashSet<string>(),
-                };
-                var c2 = r.ReadInt32();
-                for (int j = 0; j < c2; j++)
-                {
-                    category.FileExtensions.Add(r.ReadString());
-                }
-                category.IsPredefined = r.ReadBoolean();
-                category.Name = r.ReadString();
-                list.Add(category);
-            }
-            instance.Categories = list;
-            instance.DefaultDownloadFolder = Helpers.ReadString(r);
-            instance.EnableSpeedLimit = r.ReadBoolean();
-            instance.FetchServerTimeStamp = r.ReadBoolean();
-            instance.FileConflictResolution = (FileConflictResolution)r.ReadInt32();
-            count = r.ReadInt32();
-            instance.FileExtensions = new string[count];
-            for (int i = 0; i < count; i++)
-            {
-                instance.FileExtensions[i] = r.ReadString();
-            }
-            instance.FolderSelectionMode = (FolderSelectionMode)r.ReadInt32();
-            instance.DefaltDownloadSpeed = r.ReadInt32();
-            instance.IsBrowserMonitoringEnabled = r.ReadBoolean();
-            instance.KeepPCAwake = r.ReadBoolean();
-            instance.Language = r.ReadString();
-            instance.MaxParallelDownloads = r.ReadInt32();
-            instance.MaxRetry = r.ReadInt32();
-            instance.MaxSegments = r.ReadInt32();
-            instance.MinVideoSize = r.ReadInt32();
-            instance.MonitorClipboard = r.ReadBoolean();
-            instance.NetworkTimeout = r.ReadInt32();
-            count = r.ReadInt32();
-            instance.RecentFolders = new List<string>(count);
-            for (int i = 0; i < count; i++)
-            {
-                instance.RecentFolders.Add(r.ReadString());
-            }
-            instance.RetryDelay = r.ReadInt32();
-            instance.RunCommandAfterCompletion = r.ReadBoolean();
-            instance.RunOnLogon = r.ReadBoolean();
-            instance.ScanWithAntiVirus = r.ReadBoolean();
-            instance.ShowDownloadCompleteWindow = r.ReadBoolean();
-            instance.ShowProgressWindow = r.ReadBoolean();
-            instance.ShutdownAfterAllFinished = r.ReadBoolean();
-            instance.StartDownloadAutomatically = r.ReadBoolean();
-            instance.TempDir = Helpers.ReadString(r);
-            count = r.ReadInt32();
-            var list2 = new List<PasswordEntry>(count);
-            for (int i = 0; i < count; i++)
-            {
-                var passwordEntry = new PasswordEntry
-                {
-                    Host = Helpers.ReadString(r),
-                    User = Helpers.ReadString(r),
-                    Password = Helpers.ReadString(r)
-                };
-                list2.Add(passwordEntry);
-            }
-            instance.UserCredentials = list2;
-            count = r.ReadInt32();
-            instance.VideoExtensions = new string[count];
-            for (int i = 0; i < count; i++)
-            {
-                instance.VideoExtensions[i] = r.ReadString();
-            }
-            instance.Proxy = ProxyInfoSerializer.Deserialize(r);
-            instance.AllowSystemDarkTheme = r.ReadBoolean();
-        }
+        //private static void PopulateConfig32(Config instance, BinaryReader r)
+        //{
+        //    instance.AfterCompletionCommand = Helpers.ReadString(r);
+        //    instance.AntiVirusArgs = Helpers.ReadString(r);
+        //    instance.AntiVirusExecutable = Helpers.ReadString(r);
+        //    var count = r.ReadInt32();
+        //    instance.BlockedHosts = new string[count];
+        //    for (int i = 0; i < count; i++)
+        //    {
+        //        instance.BlockedHosts[i] = r.ReadString();
+        //    }
+        //    count = r.ReadInt32();
+        //    var list = new List<Category>(count);
+        //    for (int i = 0; i < count; i++)
+        //    {
+        //        var category = new Category
+        //        {
+        //            DefaultFolder = Helpers.ReadString(r),
+        //            DisplayName = Helpers.ReadString(r),
+        //            FileExtensions = new HashSet<string>(),
+        //        };
+        //        var c2 = r.ReadInt32();
+        //        for (int j = 0; j < c2; j++)
+        //        {
+        //            category.FileExtensions.Add(r.ReadString());
+        //        }
+        //        category.IsPredefined = r.ReadBoolean();
+        //        category.Name = r.ReadString();
+        //        list.Add(category);
+        //    }
+        //    instance.Categories = list;
+        //    instance.DefaultDownloadFolder = Helpers.ReadString(r);
+        //    instance.EnableSpeedLimit = r.ReadBoolean();
+        //    instance.FetchServerTimeStamp = r.ReadBoolean();
+        //    instance.FileConflictResolution = (FileConflictResolution)r.ReadInt32();
+        //    count = r.ReadInt32();
+        //    instance.FileExtensions = new string[count];
+        //    for (int i = 0; i < count; i++)
+        //    {
+        //        instance.FileExtensions[i] = r.ReadString();
+        //    }
+        //    instance.FolderSelectionMode = (FolderSelectionMode)r.ReadInt32();
+        //    instance.DefaltDownloadSpeed = r.ReadInt32();
+        //    instance.IsBrowserMonitoringEnabled = r.ReadBoolean();
+        //    instance.KeepPCAwake = r.ReadBoolean();
+        //    instance.Language = r.ReadString();
+        //    instance.MaxParallelDownloads = r.ReadInt32();
+        //    instance.MaxRetry = r.ReadInt32();
+        //    instance.MaxSegments = r.ReadInt32();
+        //    instance.MinVideoSize = r.ReadInt32();
+        //    instance.MonitorClipboard = r.ReadBoolean();
+        //    instance.NetworkTimeout = r.ReadInt32();
+        //    count = r.ReadInt32();
+        //    instance.RecentFolders = new List<string>(count);
+        //    for (int i = 0; i < count; i++)
+        //    {
+        //        instance.RecentFolders.Add(r.ReadString());
+        //    }
+        //    instance.RetryDelay = r.ReadInt32();
+        //    instance.RunCommandAfterCompletion = r.ReadBoolean();
+        //    instance.RunOnLogon = r.ReadBoolean();
+        //    instance.ScanWithAntiVirus = r.ReadBoolean();
+        //    instance.ShowDownloadCompleteWindow = r.ReadBoolean();
+        //    instance.ShowProgressWindow = r.ReadBoolean();
+        //    instance.ShutdownAfterAllFinished = r.ReadBoolean();
+        //    instance.StartDownloadAutomatically = r.ReadBoolean();
+        //    instance.TempDir = Helpers.ReadString(r);
+        //    count = r.ReadInt32();
+        //    var list2 = new List<PasswordEntry>(count);
+        //    for (int i = 0; i < count; i++)
+        //    {
+        //        var passwordEntry = new PasswordEntry
+        //        {
+        //            Host = Helpers.ReadString(r),
+        //            User = Helpers.ReadString(r),
+        //            Password = Helpers.ReadString(r)
+        //        };
+        //        list2.Add(passwordEntry);
+        //    }
+        //    instance.UserCredentials = list2;
+        //    count = r.ReadInt32();
+        //    instance.VideoExtensions = new string[count];
+        //    for (int i = 0; i < count; i++)
+        //    {
+        //        instance.VideoExtensions[i] = r.ReadString();
+        //    }
+        //    instance.Proxy = ProxyInfoSerializer.Deserialize(r);
+        //    instance.AllowSystemDarkTheme = r.ReadBoolean();
+        //}
 
         public static void SaveConfig()
         {
             SerializationHelper.SerializeConfig();
         }
 
-        public static void SaveConfig3()
-        {
-            using var ms = new MemoryStream();
-            using var writer = new BinaryWriter(ms);
-            writer.Write(Instance.AfterCompletionCommand ?? string.Empty);
-            writer.Write(Instance.AntiVirusArgs ?? string.Empty);
-            writer.Write(Instance.AntiVirusExecutable ?? string.Empty);
-            var count = Instance.BlockedHosts?.Length ?? 0;
-            writer.Write(count);
-            for (int i = 0; i < count; i++)
-            {
-                writer.Write(Instance.BlockedHosts![i]);
-            }
-            count = Instance.Categories.Count();
-            writer.Write(count);
-            foreach (var category in Instance.Categories)
-            {
-                writer.Write(category.DefaultFolder);
-                writer.Write(category.DisplayName ?? string.Empty);
-                count = category.FileExtensions.Count();
-                writer.Write(count);
-                foreach (var ext in category.FileExtensions)
-                {
-                    writer.Write(ext);
-                }
-                writer.Write(category.IsPredefined);
-                writer.Write(category.Name);
-            }
-            writer.Write(Instance.DefaultDownloadFolder ?? string.Empty);
-            writer.Write(Instance.EnableSpeedLimit);
-            writer.Write(Instance.FetchServerTimeStamp);
-            writer.Write((int)Instance.FileConflictResolution);
-            count = Instance.FileExtensions.Length;
-            writer.Write(count);
-            foreach (var ext in Instance.FileExtensions)
-            {
-                writer.Write(ext);
-            }
-            writer.Write((int)Instance.FolderSelectionMode);
-            writer.Write(Instance.DefaltDownloadSpeed);
-            writer.Write(Instance.IsBrowserMonitoringEnabled);
-            writer.Write(Instance.KeepPCAwake);
-            writer.Write(Instance.Language);
-            writer.Write(Instance.MaxParallelDownloads);
-            writer.Write(Instance.MaxRetry);
-            writer.Write(Instance.MaxSegments);
-            writer.Write(Instance.MinVideoSize);
-            writer.Write(Instance.MonitorClipboard);
-            writer.Write(Instance.NetworkTimeout);
-            count = Instance.RecentFolders.Count;
-            writer.Write(count);
-            foreach (var recentFolder in Instance.RecentFolders)
-            {
-                writer.Write(recentFolder);
-            }
-            writer.Write(Instance.RetryDelay);
-            writer.Write(Instance.RunCommandAfterCompletion);
-            writer.Write(Instance.RunOnLogon);
-            writer.Write(Instance.ScanWithAntiVirus);
-            writer.Write(Instance.ShowDownloadCompleteWindow);
-            writer.Write(Instance.ShowProgressWindow);
-            writer.Write(Instance.ShutdownAfterAllFinished);
-            writer.Write(Instance.StartDownloadAutomatically);
-            writer.Write(Instance.TempDir);
-            count = Instance.UserCredentials.Count();
-            writer.Write(count);
-            foreach (var pe in Instance.UserCredentials)
-            {
-                writer.Write(pe.Host ?? string.Empty);
-                writer.Write(pe.User ?? string.Empty);
-                writer.Write(pe.Password ?? string.Empty);
-            }
-            count = Instance.VideoExtensions.Length;
-            writer.Write(count);
-            foreach (var ext in Instance.VideoExtensions)
-            {
-                writer.Write(ext);
-            }
-            //ProxyInfoSerializer.Serialize(Instance.Proxy, writer);
-            //writer.Write(Instance.AllowSystemDarkTheme);
-            writer.Close();
-            ms.Close();
-            TransactedIO.WriteBytes(ms.ToArray(), "settings.db", Config.DataDir);
-            //TransactedIO.Write(JsonConvert.SerializeObject(Config.Instance), "settings.json", Config.DataDir);
-            //File.WriteAllText(Path.Combine(Config.DataDir, "settings.json"), JsonConvert.SerializeObject(Config.Instance));
-        }
+        //public static void SaveConfig3()
+        //{
+        //    using var ms = new MemoryStream();
+        //    using var writer = new BinaryWriter(ms);
+        //    writer.Write(Instance.AfterCompletionCommand ?? string.Empty);
+        //    writer.Write(Instance.AntiVirusArgs ?? string.Empty);
+        //    writer.Write(Instance.AntiVirusExecutable ?? string.Empty);
+        //    var count = Instance.BlockedHosts?.Length ?? 0;
+        //    writer.Write(count);
+        //    for (int i = 0; i < count; i++)
+        //    {
+        //        writer.Write(Instance.BlockedHosts![i]);
+        //    }
+        //    count = Instance.Categories.Count();
+        //    writer.Write(count);
+        //    foreach (var category in Instance.Categories)
+        //    {
+        //        writer.Write(category.DefaultFolder);
+        //        writer.Write(category.DisplayName ?? string.Empty);
+        //        count = category.FileExtensions.Count();
+        //        writer.Write(count);
+        //        foreach (var ext in category.FileExtensions)
+        //        {
+        //            writer.Write(ext);
+        //        }
+        //        writer.Write(category.IsPredefined);
+        //        writer.Write(category.Name);
+        //    }
+        //    writer.Write(Instance.DefaultDownloadFolder ?? string.Empty);
+        //    writer.Write(Instance.EnableSpeedLimit);
+        //    writer.Write(Instance.FetchServerTimeStamp);
+        //    writer.Write((int)Instance.FileConflictResolution);
+        //    count = Instance.FileExtensions.Length;
+        //    writer.Write(count);
+        //    foreach (var ext in Instance.FileExtensions)
+        //    {
+        //        writer.Write(ext);
+        //    }
+        //    writer.Write((int)Instance.FolderSelectionMode);
+        //    writer.Write(Instance.DefaltDownloadSpeed);
+        //    writer.Write(Instance.IsBrowserMonitoringEnabled);
+        //    writer.Write(Instance.KeepPCAwake);
+        //    writer.Write(Instance.Language);
+        //    writer.Write(Instance.MaxParallelDownloads);
+        //    writer.Write(Instance.MaxRetry);
+        //    writer.Write(Instance.MaxSegments);
+        //    writer.Write(Instance.MinVideoSize);
+        //    writer.Write(Instance.MonitorClipboard);
+        //    writer.Write(Instance.NetworkTimeout);
+        //    count = Instance.RecentFolders.Count;
+        //    writer.Write(count);
+        //    foreach (var recentFolder in Instance.RecentFolders)
+        //    {
+        //        writer.Write(recentFolder);
+        //    }
+        //    writer.Write(Instance.RetryDelay);
+        //    writer.Write(Instance.RunCommandAfterCompletion);
+        //    writer.Write(Instance.RunOnLogon);
+        //    writer.Write(Instance.ScanWithAntiVirus);
+        //    writer.Write(Instance.ShowDownloadCompleteWindow);
+        //    writer.Write(Instance.ShowProgressWindow);
+        //    writer.Write(Instance.ShutdownAfterAllFinished);
+        //    writer.Write(Instance.StartDownloadAutomatically);
+        //    writer.Write(Instance.TempDir);
+        //    count = Instance.UserCredentials.Count();
+        //    writer.Write(count);
+        //    foreach (var pe in Instance.UserCredentials)
+        //    {
+        //        writer.Write(pe.Host ?? string.Empty);
+        //        writer.Write(pe.User ?? string.Empty);
+        //        writer.Write(pe.Password ?? string.Empty);
+        //    }
+        //    count = Instance.VideoExtensions.Length;
+        //    writer.Write(count);
+        //    foreach (var ext in Instance.VideoExtensions)
+        //    {
+        //        writer.Write(ext);
+        //    }
+        //    //ProxyInfoSerializer.Serialize(Instance.Proxy, writer);
+        //    //writer.Write(Instance.AllowSystemDarkTheme);
+        //    writer.Close();
+        //    ms.Close();
+        //    TransactedIO.WriteBytes(ms.ToArray(), "settings.db", Config.DataDir);
+        //    //TransactedIO.Write(JsonConvert.SerializeObject(Config.Instance), "settings.json", Config.DataDir);
+        //    //File.WriteAllText(Path.Combine(Config.DataDir, "settings.json"), JsonConvert.SerializeObject(Config.Instance));
+        //}
     }
 
     public enum FolderSelectionMode

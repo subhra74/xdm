@@ -214,6 +214,9 @@ namespace XDM.Core.Lib.Util
                     case "AllowSystemDarkTheme":
                         instance.AllowSystemDarkTheme = r.ReadBoolean();
                         break;
+                    case "DoubleClickOpenFile":
+                        instance.DoubleClickOpenFile = r.ReadBoolean();
+                        break;
                     case "FileExtensions":
                         var fileExtensionsLength = r.ReadInt16();
                         instance.FileExtensions = new string[fileExtensionsLength];
@@ -324,7 +327,7 @@ namespace XDM.Core.Lib.Util
             using var ms = new MemoryStream();
             using var w = new BinaryWriter(ms);
 
-            w.Write((short)(instance.Proxy.HasValue ? 35 : 34)); //total fields
+            w.Write((short)(instance.Proxy.HasValue ? 36 : 35)); //total fields
 
             WriteString(w, instance.AfterCompletionCommand, "AfterCompletionCommand");
             WriteString(w, instance.AntiVirusArgs, "AntiVirusArgs");
@@ -346,6 +349,7 @@ namespace XDM.Core.Lib.Util
             WriteBoolean(w, instance.ShutdownAfterAllFinished, "ShutdownAfterAllFinished");
             WriteBoolean(w, instance.StartDownloadAutomatically, "StartDownloadAutomatically");
             WriteBoolean(w, instance.AllowSystemDarkTheme, "AllowSystemDarkTheme");
+            WriteBoolean(w, instance.DoubleClickOpenFile, "DoubleClickOpenFile");
 
             WriteInt32(w, (int)instance.FileConflictResolution, "FileConflictResolution");
             WriteInt32(w, (int)instance.FolderSelectionMode, "FolderSelectionMode");

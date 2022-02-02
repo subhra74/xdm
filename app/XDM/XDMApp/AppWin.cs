@@ -425,10 +425,9 @@ namespace XDMApp
                 DeleteDownloads();
             };
 
-            peer.OpenFolderButton.Clicked += (a, b) =>
-            {
-                UIActions.OpenSelectedFolder(peer);
-            };
+            peer.DownloadListDoubleClicked += (a, b) => UIActions.OnDblClick(peer, App);
+
+            peer.OpenFolderButton.Clicked += (a, b) => UIActions.OpenSelectedFolder(peer);
 
             peer.OpenFileButton.Clicked += (a, b) =>
             {

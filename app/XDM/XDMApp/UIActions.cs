@@ -50,6 +50,25 @@ namespace XDMApp
             }
         }
 
+        public static void OnDblClick(IAppWinPeer peer,IApp app)
+        {
+            if (peer.IsInProgressViewSelected)
+            {
+                ShowSeletectedItemProperties(peer, app);
+            }
+            else
+            {
+                if (Config.Instance.DoubleClickOpenFile)
+                {
+                    OpenSelectedFile(peer);
+                }
+                else
+                {
+                    OpenSelectedFolder(peer);
+                }
+            }
+        }
+
         public static void OpenSelectedFolder(IAppWinPeer peer)
         {
             var selectedRows = peer.SelectedFinishedRows;

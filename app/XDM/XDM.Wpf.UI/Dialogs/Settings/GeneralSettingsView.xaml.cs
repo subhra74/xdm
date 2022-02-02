@@ -45,6 +45,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
             CmbMaxParallalDownloads.SelectedItem = Config.Instance.MaxParallelDownloads;
             ChkAutoCat.IsChecked = Config.Instance.FolderSelectionMode == FolderSelectionMode.Auto;
             TxtDownloadFolder.Text = Config.Instance.DefaultDownloadFolder;
+            CmbDblClickAction.SelectedIndex = Config.Instance.DoubleClickOpenFile ? 1 : 0;
 
             foreach (var cat in Config.Instance.Categories)
             {
@@ -68,6 +69,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
                 FolderSelectionMode.Auto : FolderSelectionMode.Manual;
             Config.Instance.DefaultDownloadFolder = TxtDownloadFolder.Text;
             Config.Instance.AllowSystemDarkTheme = ChkDarkTheme.IsChecked ?? false;
+            Config.Instance.DoubleClickOpenFile = CmbDblClickAction.SelectedIndex == 1;
         }
 
         private void CatAdd_Click(object sender, RoutedEventArgs e)

@@ -161,6 +161,8 @@ namespace XDM.Core.Lib.UI
         event EventHandler SchedulerClicked;
 
         event EventHandler MoveToQueueClicked;
+
+        event EventHandler DownloadListDoubleClicked;
     }
 
     public class CategoryChangedEventArgs : EventArgs

@@ -34,6 +34,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <CheckBox Name="ChkShowPrg" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" 
                           VerticalContentAlignment="Center" Margin="10,5" Padding="3" 
@@ -44,25 +45,33 @@
                           Margin="10,5" Padding="3" Content="{StaticResource LBL_START_AUTO}"/>
                 <CheckBox Name="ChkOverwrite" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="4" VerticalContentAlignment="Center" 
                           Margin="10,5" Padding="3" Content="{StaticResource LBL_OVERWRITE_EXISTING}"/>
-                <TextBlock Margin="10,10,10,0" Text="{StaticResource LBL_TEMP_FOLDER}" Grid.Row="4" Grid.ColumnSpan="4" />
-                <TextBox Name="TxtTempFolder" Grid.Row="5" Grid.Column="0" Margin="10" VerticalContentAlignment="Center" 
+                <TextBlock Margin="10" Text="{StaticResource MSG_DOUBLE_CLICK_ACTION}" VerticalAlignment="Center" Grid.Row="4"  Grid.ColumnSpan="2" />
+                <StackPanel Margin="10" Grid.Row="4"  Grid.ColumnSpan="2" Grid.Column="2">
+                    <ComboBox Grid.Row="8" Name="CmbDblClickAction" HorizontalAlignment="Right"
+                              VerticalAlignment="Center" MinWidth="150">
+                        <ComboBoxItem Content="{StaticResource CTX_OPEN_FOLDER}"/>
+                        <ComboBoxItem Content="{StaticResource MSG_OPEN_FILE}"/>
+                    </ComboBox>
+                </StackPanel>
+                <TextBlock Margin="10,10,10,0" Text="{StaticResource LBL_TEMP_FOLDER}" Grid.Row="5" Grid.ColumnSpan="4" />
+                <TextBox Name="TxtTempFolder" Grid.Row="6" Grid.Column="0" Margin="10" VerticalContentAlignment="Center" 
                          AcceptsReturn="False" TextWrapping="NoWrap" Grid.ColumnSpan="3" IsReadOnly="True"/>
-                <Button Name="BtnTempFolderBrowse"  Grid.Row="5" Grid.Column="3" Margin="0,10,10,10" Padding="5,3" Content="..." Click="BtnTempFolderBrowse_Click"/>
-                <TextBlock Margin="10,10,10,0" Text="{StaticResource SETTINGS_FOLDER}" Grid.Row="6" Grid.ColumnSpan="4" />
-                <TextBox Name="TxtDownloadFolder" Grid.Row="7" Grid.Column="0" Margin="10" VerticalContentAlignment="Center" 
+                <Button Name="BtnTempFolderBrowse"  Grid.Row="6" Grid.Column="3" Margin="0,10,10,10" Padding="5,3" Content="..." Click="BtnTempFolderBrowse_Click"/>
+                <TextBlock Margin="10,10,10,0" Text="{StaticResource SETTINGS_FOLDER}" Grid.Row="7" Grid.ColumnSpan="4" />
+                <TextBox Name="TxtDownloadFolder" Grid.Row="8" Grid.Column="0" Margin="10" VerticalContentAlignment="Center" 
                          AcceptsReturn="False" TextWrapping="NoWrap" Grid.ColumnSpan="3" IsReadOnly="True"/>
-                <Button Name="BtnDownloadFolderBrowse"  Grid.Row="7" Grid.Column="3" Margin="0,10,10,10" Padding="3" Content="..." Click="BtnDownloadFolderBrowse_Click" />
-                <TextBlock Margin="10" Text="{StaticResource MSG_MAX_DOWNLOAD}" VerticalAlignment="Center" Grid.Row="8"  Grid.ColumnSpan="2" />
-                <StackPanel Margin="10" Grid.Row="8"  Grid.ColumnSpan="2" Grid.Column="2">
+                <Button Name="BtnDownloadFolderBrowse"  Grid.Row="8" Grid.Column="3" Margin="0,10,10,10" Padding="3" Content="..." Click="BtnDownloadFolderBrowse_Click" />
+                <TextBlock Margin="10" Text="{StaticResource MSG_MAX_DOWNLOAD}" VerticalAlignment="Center" Grid.Row="9"  Grid.ColumnSpan="2" />
+                <StackPanel Margin="10" Grid.Row="9"  Grid.ColumnSpan="2" Grid.Column="2">
                     <ComboBox Grid.Row="8" Name="CmbMaxParallalDownloads" HorizontalAlignment="Right"
                               VerticalAlignment="Center"/>
                 </StackPanel>
-                <CheckBox Name="ChkDarkTheme" Grid.Row="9" Grid.Column="0" Grid.ColumnSpan="4" VerticalContentAlignment="Center" 
+                <CheckBox Name="ChkDarkTheme" Grid.Row="10" Grid.Column="0" Grid.ColumnSpan="4" VerticalContentAlignment="Center" 
                           Margin="10,5" Padding="3" Content="{StaticResource SETTINGS_DARK_THEME}"/>
-                <CheckBox Name="ChkAutoCat" Grid.Row="10" Grid.Column="0" Grid.ColumnSpan="4" VerticalContentAlignment="Center" 
+                <CheckBox Name="ChkAutoCat" Grid.Row="11" Grid.Column="0" Grid.ColumnSpan="4" VerticalContentAlignment="Center" 
                           Margin="10,5" Padding="3" Content="{StaticResource SETTINGS_ATUO_CAT}"/>
-                <TextBlock Margin="10,15,10,5" Text="{StaticResource SETTINGS_CAT}" Grid.Row="11" Grid.ColumnSpan="4" />
-                <ListView Margin="10,5" Name="LvCategories" Grid.ColumnSpan="4" Grid.Row="12" BorderThickness="1" 
+                <TextBlock Margin="10,15,10,5" Text="{StaticResource SETTINGS_CAT}" Grid.Row="12" Grid.ColumnSpan="4" />
+                <ListView Margin="10,5" Name="LvCategories" Grid.ColumnSpan="4" Grid.Row="13" BorderThickness="1" 
                           BorderBrush="{StaticResource ControlBordercolor}">
                     <ListView.View>
                         <GridView>
@@ -72,7 +81,7 @@
                         </GridView>
                     </ListView.View>
                 </ListView>
-                <StackPanel Margin="10,0" Grid.Row="13" Grid.ColumnSpan="4" HorizontalAlignment="Right" Orientation="Horizontal">
+                <StackPanel Margin="10,0" Grid.Row="14" Grid.ColumnSpan="4" HorizontalAlignment="Right" Orientation="Horizontal">
                     <Button Name="CatAdd" Margin="5" Padding="10,3" Content="{StaticResource SETTINGS_CAT_ADD}" Click="CatAdd_Click"/>
                     <Button Name="CatEdit" Margin="5" Padding="10,3" Content="{StaticResource SETTINGS_CAT_EDIT}" Click="CatEdit_Click"/>
                     <Button Name="CatDel" Margin="5" Padding="10,3" Content="{StaticResource DESC_DEL}" Click="CatDel_Click"/>
