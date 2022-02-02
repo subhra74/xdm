@@ -4,6 +4,7 @@
     <TargetFrameworks>net3.5;net4.5;net4.7.2;net5.0</TargetFrameworks>
     <LangVersion>9.0</LangVersion>
     <Nullable>enable</Nullable>
+    <Platforms>AnyCPU;x86</Platforms>
   </PropertyGroup>
   <ItemGroup Condition=" '$(TargetFramework)' != 'net5.0' ">
     <ProjectReference Include="..\NetFX.Polyfill\NetFX.Polyfill.csproj" />
