@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?define ProductVersion = "8.0.1"?>
+<?define ProductUpgradeCode="3E462F34-3D19-4247-AD64-1B74703555D6"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"  xmlns:ui="http://schemas.microsoft.com/wix/UIExtension">
+  <Product Id="*" Name="Xtreme Download Manager" Language="1033" Version="$(var.ProductVersion)" Manufacturer="Subhra Das Gupta" UpgradeCode="$(var.ProductUpgradeCode)">
+    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+
+    <Upgrade Id="$(var.ProductUpgradeCode)">
+      <UpgradeVersion Minimum="$(var.ProductVersion)" OnlyDetect="yes" Property="NEWERVERSIONDETECTED"></UpgradeVersion>
+      <UpgradeVersion Minimum="0.0.0" Maximum="$(var.ProductVersion)" IncludeMinimum="yes" IncludeMaximum="no" Property="OLDERVERSIONBEINGUPGRADED"></UpgradeVersion>
+    </Upgrade>
+
+    <Condition Message="A newer or same version of this software is already istalled">
+      NOT NEWERVERSIONDETECTED
+    </Condition>
+	
+	<Condition Message="This setup is only supported on Windows 10 or higher. To install XDM on Win7 or Win8 please install the appropriate installer from https://xtremedownloadmanager.com">
+		<![CDATA[Installed OR (VersionNT > 602)]]>
+	</Condition>
+	
+	<Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Open Xtreme Download Manager" />
+	<Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1"/>
+	
+	<!-- <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value="Thank you for installing this product." /> -->
+	<WixVariable Id="WixUILicenseRtf" Value="gpl-3.0.rtf" />
+	<Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+	
+	<!-- <UIRef Id="WixUI_InstallDir" /> -->
+	
+	<UI>
+        <UIRef Id="WixUI_InstallDir" />
+        <Publish Dialog="ExitDialog" 
+            Control="Finish" 
+            Event="DoAction" 
+            Value="LaunchXDM">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
+    </UI>
+	
+    <InstallExecuteSequence>
+      <RemoveExistingProducts After="InstallValidate" />
+    </InstallExecuteSequence>
+
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high"  />
+	
+	<Feature Id="ProductFeature" Title="XDM" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+	  <ComponentGroupRef Id="NET472" />
+      <ComponentRef Id="StartMenuShortcut" />
+      <ComponentRef Id="ProgramShortcut" />
+      <ComponentRef Id="DesktopShortcut" />
+      <ComponentRef Id="ProductComponent4" />
+    </Feature>
+
+    <CustomAction Id="LaunchXDM"  Directory="INSTALLFOLDER" ExeCommand='"[INSTALLFOLDER]XDM.Wpf.UI.exe" -i'  Return="asyncNoWait" Impersonate="yes"/>
+
+
+    <!-- <InstallExecuteSequence> -->
+      <!-- <Custom Action="LaunchXDM" OnExit="success" ></Custom> -->
+    <!-- </InstallExecuteSequence> -->
+
+  </Product>
+
+  <Fragment>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLFOLDER" Name="XDM">
+        </Directory>
+      </Directory>
+      <Directory Id="DesktopFolder"/>
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ProgramMenuSubFolder" Name="Xtreme Download Manager"></Directory>
+      </Directory>
+    </Directory>
+  </Fragment>
+
+  <Fragment>
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+	  <Component Id="YoutubeDL" Guid="9dc21cf0-cbed-46e0-8273-b4c9dbaa23ac" KeyPath="yes">
+        <File Id="youtubedlexe" Source="youtube-dl.exe"></File>
+      </Component>
+	  <Component Id="FFmpeg" Guid="7220b8b0-04dd-4222-ba54-e3bb2323e420" KeyPath="yes">
+        <File Id="ffmpegexe" Source="ffmpeg-x86.exe"></File>
+      </Component>
+    </ComponentGroup>
+    <DirectoryRef Id="INSTALLFOLDER">
+      <Component Id="ProductComponent4" Guid="4c5c4bde-2625-4aa0-8741-a5ab5378ccef" >
+        <RegistryValue Id="AutoStart" Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Run" Name="XDM" Value='"[INSTALLFOLDER]XDM.Wpf.UI.exe" -m' Type="string" ></RegistryValue>
+        <RegistryValue Root="HKCU" Key="Software\Xtreme Download Manager" Name="Installed5" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+  </Fragment>
+
+  <Fragment>
+    <Icon Id="AppIcon" SourceFile="icon.ico"/>
+    <DirectoryRef Id="ProgramMenuSubFolder">
+      <Component Id="StartMenuShortcut" Guid="4c5c4bce-2625-4aa0-8741-a5ab43168cef">
+        <Shortcut Id="AppStartMenuShortcut" Name="Xtreme Download Manager" Icon="AppIcon" WorkingDirectory="INSTALLFOLDER" Target='[INSTALLFOLDER]XDM.Wpf.UI.exe'  Advertise="no"></Shortcut>
+        <RegistryValue Root="HKCU" Key="Software\Xtreme Download Manager" Name="Installed1" Type="integer" Value="1" KeyPath="yes"/>
+        <RemoveFolder Id="ProgramMenuSubFolder" On="uninstall"/>
+      </Component>
+    </DirectoryRef>
+    <DirectoryRef Id="INSTALLFOLDER">
+      <Component Id="ProgramShortcut" Guid="4c5c4bce-2625-4aa0-8741-a5ab53168cef">
+        <Shortcut Id="AppShortcut" Name="Xtreme Download Manager" Icon="AppIcon" WorkingDirectory="INSTALLFOLDER" Target='[INSTALLFOLDER]XDM.Wpf.UI.exe'  Advertise="no"></Shortcut>
+        <RegistryValue Root="HKLM" Key="Software\Xtreme Download Manager" Name="Installed2" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+    <DirectoryRef Id="DesktopFolder">
+      <Component Id="DesktopShortcut" Guid="4c5c4bce-2625-4aa0-8741-a5ab53268cef">
+        <Shortcut Id="AppDesktopShortcut"  Name="Xtreme Download Manager" Icon="AppIcon" WorkingDirectory="INSTALLFOLDER" Target='[INSTALLFOLDER]XDM.Wpf.UI.exe'  Advertise="no"></Shortcut>
+        <RegistryValue Root="HKCU" Key="Software\Xtreme Download Manager" Name="Installed3" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+  </Fragment>
+
+</Wix>

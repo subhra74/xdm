@@ -348,3 +348,10 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+app/XDM/XDM.Win.Installer/ffmpeg-x86.exe
+*.wixobj
+app/XDM/XDM.Win.Installer/net4.7.2.wxs
+app/XDM/XDM.Win.Installer/net4.7.2/
+app/XDM/XDM.Win.Installer/xdmsetup.msi
+*.wixpdb
+app/XDM/XDM.Win.Installer/youtube-dl.exe
