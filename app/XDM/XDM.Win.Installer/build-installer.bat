@@ -1,6 +1,10 @@
+DEL /s /q *.wixobj
+DEL /s /q net4.7.2.wxs
+RMDIR /S /Q net4.7.2
+
 Rem heat dir net3.5 -o net3.5.wxs -scom -frag -srd -sreg -ag -cg NET35 -dr INSTALLFOLDER
 
-robocopy ..\XDM.Wpf.UI\bin\x86\Release\net4.7.2 net4.7.2
+robocopy ..\XDM.Wpf.UI\bin\x86\Release\net4.7.2 net4.7.2 /E
 
 heat dir net4.7.2 -o net4.7.2.wxs -scom -frag -srd -sreg -gg -cg NET472 -dr INSTALLFOLDER
 

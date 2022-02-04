@@ -10,12 +10,12 @@ namespace Translations
 
         static TextResource()
         {
-            Load("English");
+            Load("English.txt");
         }
 
         public static void Load(string language)
         {
-            var file = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, Path.Combine("Lang", $"{language}.txt"));
+            var file = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, Path.Combine("Lang", $"{language}"));
             if (File.Exists(file))
             {
                 LoadTexts(file);

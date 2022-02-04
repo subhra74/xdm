@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Net;
+using System.Linq;
 using System.Windows;
 using TraceLog;
 using XDM.Core.Lib.Common;
+using XDM.Core.Lib.Util;
 
 namespace XDM.Wpf.UI
 {
@@ -14,7 +16,7 @@ namespace XDM.Wpf.UI
         private const string DisableCachingName = @"TestSwitch.LocalAppContext.DisableCaching";
         private const string DontEnableSchUseStrongCryptoName = @"Switch.System.Net.DontEnableSchUseStrongCrypto";
 
-        public static Skin Skin = Config.Instance.AllowSystemDarkTheme ? Skin.Dark : Skin.Light;
+        public static Skin Skin = ShouldSelectDarkTheme() ? Skin.Dark : Skin.Light;
         private XDMApp.XDMApp app;
         private MainWindow win;
 
@@ -60,6 +62,10 @@ namespace XDM.Wpf.UI
             if (!commandOptions.ContainsKey("-m"))
             {
                 win.Show();
+                if (commandOptions.ContainsKey("-i"))
+                {
+                    win.ShowBrowserMonitoringDialog(app);
+                }
             }
         }
 
@@ -81,6 +87,22 @@ namespace XDM.Wpf.UI
                 e.Exception));
             AppTrayIcon.DetachFromSystemTray();
             Environment.Exit(1);
+        }
+
+        private static bool ShouldSelectDarkTheme()
+        {
+            if ((Environment.GetCommandLineArgs()?.Contains("-i") ?? false)
+                && Environment.OSVersion.Version.Major >= 10
+                && DarkModeHelper.IsWin10DarkThemeActive())
+            {
+                Config.Instance.AllowSystemDarkTheme = true;
+                Config.SaveConfig();
+                return true;
+            }
+            else
+            {
+                return Config.Instance.AllowSystemDarkTheme ? true : false;
+            }
         }
     }
 

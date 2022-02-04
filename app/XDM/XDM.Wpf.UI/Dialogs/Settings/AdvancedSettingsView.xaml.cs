@@ -39,6 +39,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
             TxtCustomCmd.Text = Config.Instance.AfterCompletionCommand;
             TxtAntiVirusCmd.Text = Config.Instance.AntiVirusExecutable;
             TxtAntiVirusArgs.Text = Config.Instance.AntiVirusArgs;
+            TxtDefaultUserAgent.Text = Config.Instance.FallbackUserAgent;
         }
 
         public void UpdateConfig()
@@ -52,6 +53,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
             Config.Instance.AfterCompletionCommand = TxtCustomCmd.Text;
             Config.Instance.AntiVirusExecutable = TxtAntiVirusCmd.Text;
             Config.Instance.AntiVirusArgs = TxtAntiVirusArgs.Text;
+            Config.Instance.FallbackUserAgent = TxtDefaultUserAgent.Text;
         }
 
         private void BtnBrowse_Click(object sender, RoutedEventArgs e)
@@ -62,6 +64,11 @@ namespace XDM.Wpf.UI.Dialogs.Settings
             {
                 TxtAntiVirusCmd.Text = fd.FileName;
             }
+        }
+
+        private void BtnUserAgentReset_Click(object sender, RoutedEventArgs e)
+        {
+            Config.Instance.FallbackUserAgent = Config.DefaultFallbackUserAgent;
         }
     }
 }

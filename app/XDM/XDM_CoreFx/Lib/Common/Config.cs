@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -42,6 +41,10 @@ namespace XDM.Core.Lib.Common
         public static string DataDir { get; set; }
 
         public bool IsBrowserMonitoringEnabled { get; set; } = true;
+
+        public static string DefaultFallbackUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36";
+
+        public string FallbackUserAgent { get; set; } = DefaultFallbackUserAgent;
 
         public static string[] DefaultVideoExtensions => new string[]
             {
@@ -111,7 +114,6 @@ namespace XDM.Core.Lib.Common
 
         public bool EnableSpeedLimit { get; set; } = false;
 
-        [JsonIgnore]
         public bool ShutdownAfterAllFinished { get; set; } = false;
 
         public bool KeepPCAwake { get; set; } = true;
@@ -130,7 +132,6 @@ namespace XDM.Core.Lib.Common
 
         public bool DoubleClickOpenFile { get; set; } = false;
 
-        [JsonIgnore]
         public bool RunOnLogon
         {
             get => Helpers.IsAutoStartEnabled();

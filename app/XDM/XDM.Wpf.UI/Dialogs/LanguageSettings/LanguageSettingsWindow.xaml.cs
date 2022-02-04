@@ -28,10 +28,37 @@ namespace XDM.Wpf.UI.Dialogs.LanguageSettings
         public LanguageSettingsWindow()
         {
             InitializeComponent();
-            CmbLanguage.ItemsSource = Directory.GetFiles(
-                System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Lang"))
-                ?.Select(x => System.IO.Path.GetFileNameWithoutExtension(x));
-            CmbLanguage.SelectedItem = Config.Instance.Language;
+            var indexFile = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Lang\index.txt");
+            if (System.IO.File.Exists(indexFile))
+            {
+                var lines = System.IO.File.ReadAllLines(indexFile);
+                var items = new List<FileMap>(lines.Length);
+                FileMap selection = default;
+                foreach (var line in lines)
+                {
+                    var index = line.IndexOf("=");
+                    if (index > 0)
+                    {
+                        var name = line.Substring(0, index);
+                        var value = line.Substring(index + 1);
+                        var fm = new FileMap
+                        {
+                            Name = name,
+                            File = value
+                        };
+                        items.Add(fm);
+                        if (name == Config.Instance.Language)
+                        {
+                            selection = fm;
+                        }
+                    }
+                }
+                CmbLanguage.ItemsSource = items;
+                //CmbLanguage.ItemsSource = Directory.GetFiles(
+                //    System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Lang"))
+                //    ?.Select(x => System.IO.Path.GetFileNameWithoutExtension(x));
+                CmbLanguage.SelectedItem = selection;
+            }
         }
 
         protected override void OnSourceInitialized(EventArgs e)
@@ -64,6 +91,16 @@ namespace XDM.Wpf.UI.Dialogs.LanguageSettings
         {
             Close();
             Result = false;
+        }
+    }
+
+    internal struct FileMap
+    {
+        public string Name, File;
+
+        public override string ToString()
+        {
+            return Name;
         }
     }
 }

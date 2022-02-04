@@ -37,6 +37,11 @@ namespace XDM.Core.Lib.Downloader.Progressive.SingleHttp
                 SpeedLimit = speedLimit
             };
 
+            if (this.state.Headers == null)
+            {
+                this.CreateDefaultHeaders();
+            }
+
             if (this.state.Authentication == null)
             {
                 this.state.Authentication = Helpers.GetAuthenticationInfoFromConfig(this.state.Url);
@@ -421,6 +426,19 @@ namespace XDM.Core.Lib.Downloader.Progressive.SingleHttp
         public override void UpdateSpeedLimit(bool enable, int limit)
         {
             base.UpdateSpeedLimit(this.state, enable, limit);
+        }
+
+        private void CreateDefaultHeaders()
+        {
+            this.state!.Headers = new Dictionary<string, List<string>>
+            {
+                ["User-Agent"] = new() { Config.Instance.FallbackUserAgent },
+                ["Accept"] = new() { "*/*", },
+                ["Accept-Encoding"] = new() { "identity", },
+                ["Accept-Language"] = new() { "en-US", },
+                ["Accept-Charset"] = new() { "*", },
+                ["Referer"] = new() { new Uri(this.state.Url, ".").ToString() }
+            };
         }
     }
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
+using Microsoft.Win32;
 
 namespace XDM.Wpf.UI
 {
@@ -35,6 +36,20 @@ namespace XDM.Wpf.UI
         private static bool IsWindows10OrGreater(int build = -1)
         {
             return Environment.OSVersion.Version.Major >= 10 && Environment.OSVersion.Version.Build >= build;
+        }
+
+        public static bool IsWin10DarkThemeActive()
+        {
+            //return false;
+            try
+            {
+                using var rk = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+                if (rk == null) return false;
+                var appsUseLightTheme = (Int32)rk.GetValue("AppsUseLightTheme");
+                return appsUseLightTheme == 0;
+            }
+            catch { }
+            return false;
         }
 
     }

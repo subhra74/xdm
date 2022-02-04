@@ -10,6 +10,7 @@
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>xdm-logo.ico</ApplicationIcon>
+    <AssemblyName>xdm-app</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

@@ -41,39 +41,41 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition/>
                         <ColumnDefinition/>
-                        <ColumnDefinition/>
-                        <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
                         <RowDefinition/>
                         <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
                     </Grid.RowDefinitions>
-                    <Button Name="BtnChrome" Margin="1,5" Click="BtnChrome_Click">
-                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0" >
+                    <Button Name="BtnChrome" Margin="5" Grid.Column="0" Grid.Row="0" Click="BtnChrome_Click">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,15" Orientation="Horizontal" >
                             <Path HorizontalAlignment="Center" VerticalAlignment="Bottom" Data="{StaticResource ri-chrome-fill}" 
                           Fill="{StaticResource ControlForecolor}" Stretch="Fill" Height="32" Width="32"/>
-                            <TextBlock Text="Chrome" Margin="0,10,0,0" Foreground="{StaticResource ControlForecolor}"/>
+                            <TextBlock Text="Chrome" Margin="10,0,0,0" Foreground="{StaticResource ControlForecolor}" 
+                                       VerticalAlignment="Center" FontSize="16"/>
                         </StackPanel>
                     </Button>
-                    <Button Name="BtnFirefox" Margin="1,5" Grid.Column="1" Click="BtnFirefox_Click">
-                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,20" >
+                    <Button Name="BtnFirefox" Margin="5" Grid.Column="1" Grid.Row="0" Click="BtnFirefox_Click">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,15" Orientation="Horizontal" >
                             <Path HorizontalAlignment="Center" VerticalAlignment="Bottom" Data="{StaticResource ri-firefox-fill}" 
                           Fill="{StaticResource ControlForecolor}" Stretch="Fill" Height="32" Width="32" />
-                            <TextBlock Text="Firefox" Margin="0,10,0,0" Foreground="{StaticResource ControlForecolor}"/>
+                            <TextBlock Text="Firefox" Margin="10,0,0,0" VerticalAlignment="Center" FontSize="16"
+                                       Foreground="{StaticResource ControlForecolor}"/>
                         </StackPanel>
                     </Button>
-                    <Button Name="BtnEdge" Margin="1,5" Grid.Column="2" Click="BtnEdge_Click">
-                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,20" >
+                    <Button Name="BtnEdge" Margin="5" Grid.Column="0" Grid.Row="1" Click="BtnEdge_Click" >
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,15" Orientation="Horizontal">
                             <Path HorizontalAlignment="Center" VerticalAlignment="Bottom" Data="{StaticResource ri-edge-fill}" 
                           Fill="{StaticResource ControlForecolor}" Stretch="Fill" Height="32" Width="32"/>
-                            <TextBlock Text="Edge" Margin="0,10,0,0" Foreground="{StaticResource ControlForecolor}"/>
+                            <TextBlock Text="Edge" Margin="10,0,0,0" VerticalAlignment="Center" FontSize="16" Foreground="{StaticResource ControlForecolor}"/>
                         </StackPanel>
                     </Button>
-                    <Button Name="BtnOpera" Margin="1,5" Grid.Column="3" Click="BtnOpera_Click">
-                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,20" >
+                    <Button Name="BtnOpera" Margin="5" Grid.Column="1" Grid.Row="1" Click="BtnOpera_Click">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,15" Orientation="Horizontal">
                             <Path HorizontalAlignment="Center" VerticalAlignment="Bottom" Data="{StaticResource ri-opera-fill}" 
                           Fill="{StaticResource ControlForecolor}" Stretch="Fill" Height="32" Width="32"/>
-                            <TextBlock Text="Opera" Margin="0,10,0,0" Foreground="{StaticResource ControlForecolor}"/>
+                            <TextBlock Text="Opera" Margin="10,0,0,0" VerticalAlignment="Center" FontSize="16" Foreground="{StaticResource ControlForecolor}"/>
                         </StackPanel>
                     </Button>
                 </Grid>
