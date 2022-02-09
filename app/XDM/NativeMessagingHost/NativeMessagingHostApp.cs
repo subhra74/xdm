@@ -25,6 +25,8 @@ namespace NativeHost
         static StreamWriter log = new StreamWriter(new FileStream(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "native-host.log"), FileMode.Create));
         static void Main(string[] args)
         {
+            Debug("Process running from: " + AppDomain.CurrentDomain.BaseDirectory);
+
             //var json = BinaryToJson(new byte[0]);
 #if !NET35
             Debug("Is64BitProcess: "+Environment.Is64BitProcess);
@@ -48,19 +50,20 @@ namespace NativeHost
                     Debug("Mutex open failed, spawn xdm process...++");
                     CreateXDMInstance();
                 }
-                Debug("next");
-
 
                 var t1 = new Thread(() =>
                   {
+                      Debug("t1 reading messages from stdin sent by browser: ");
                       try
                       {
                           while (true)
                           {
                               //read from process stdin and write to blocking queue,
                               //they will be sent to xdm once pipe handshake complets
-                              var msg = ReadMessageBytes(inputReader);
-                              Debug(Encoding.UTF8.GetString(msg));
+                              Debug("Waiting for message - stdin...");
+                              var msg = NativeMessageSerializer.ReadMessageBytes(inputReader, false);
+                              Debug("Reading message from stdin - size: " + msg.Length);
+                              Debug("Stdin - " + Encoding.UTF8.GetString(msg));
                               receivedBrowserMessages.Add(JsonToBinary(msg));
                           }
                       }
@@ -81,10 +84,12 @@ namespace NativeHost
                           {
                               //read from blocking queue and write to stdout,
                               //these messages were queued by xdm
-                              var msg = queuedBrowserMessages.Take();//doesn't make much sense to it async
+                              var msg = queuedBrowserMessages.Take();
+                              Debug("Sending to browser: "+Encoding.UTF8.GetString(msg));
                               var json = BinaryToJson(msg);
+                              Debug("Sending to browser: ");
                               Debug(Encoding.UTF8.GetString(json));
-                              WriteMessage(outputWriter, json);
+                              NativeMessageSerializer.WriteMessage(outputWriter, json, false);
                           }
                       }
                       catch (Exception exx)
@@ -133,7 +138,7 @@ namespace NativeHost
 
         private static void ProcessMessages()
         {
-            Debug("Log start");
+            Debug("start");
 
             try
             {
@@ -150,11 +155,11 @@ namespace NativeHost
                         outPipe = new NamedPipeClientStream(".", "XDM_Ipc_Browser_Monitoring_Pipe", PipeDirection.Out);
                         Debug("start handshake with XDM");
                         outPipe.Connect();
-                        WriteMessage(outPipe, pipeName);
+                        NativeMessageSerializer.WriteMessage(outPipe, pipeName);
                         Debug("pipename: " + pipeName);
 
                         inPipe.WaitForConnection();
-                        var syncMsgBytes = ReadMessageBytes(inPipe);
+                        var syncMsgBytes = NativeMessageSerializer.ReadMessageBytes(inPipe);
                         Debug("No task message size: " + syncMsgBytes.Length);
 
                         queuedBrowserMessages.Add(syncMsgBytes);
@@ -171,12 +176,13 @@ namespace NativeHost
                              {
                                  while (true)
                                  {
-                                     var syncMsgBytes = ReadMessageBytes(inPipe);
-                                     //Debug("Task1 message size: " + syncMsgBytes.Length);
+                                     var syncMsgBytes = NativeMessageSerializer.ReadMessageBytes(inPipe);
+                                     Debug("Message received from XDM of size: " + syncMsgBytes.Length);
                                      if (syncMsgBytes.Length == 0)
                                      {
                                          break;
                                      }
+                                     Debug("Message from XDM: " + Encoding.UTF8.GetString(syncMsgBytes));
                                      queuedBrowserMessages.Add(syncMsgBytes);
                                  }
                              }
@@ -198,7 +204,7 @@ namespace NativeHost
                                 while (true)
                                 {
                                     byte[] syncMsgBytes = null;
-                                    Debug("Task2 reading from browser stdin...");
+                                    Debug("Task2 reading messages queued by browser...");
                                     syncMsgBytes = receivedBrowserMessages.Take();
                                     if (syncMsgBytes.Length == 2 && (char)syncMsgBytes[0] == '{' && (char)syncMsgBytes[1] == '}')
                                     {
@@ -206,8 +212,8 @@ namespace NativeHost
                                         throw new OperationCanceledException("Empty object");
                                     }
                                     //Debug("Task2 message size fron browser stdin: " + syncMsgBytes.Length);
-                                    //Debug(Encoding.UTF8.GetString(syncMsgBytes));
-                                    WriteMessage(outPipe, syncMsgBytes);
+                                    Debug("Sending message to XDM...");
+                                    NativeMessageSerializer.WriteMessage(outPipe, syncMsgBytes);
                                 }
                             }
                             catch (Exception ex)
@@ -274,55 +280,15 @@ namespace NativeHost
             }
         }
 
-        private static void WriteMessage(Stream pipe, string message)
-        {
-            var msgBytes = Encoding.UTF8.GetBytes(message);
-            WriteMessage(pipe, msgBytes);
-        }
-
-        private static void WriteMessage(Stream pipe, byte[] msgBytes)
-        {
-            pipe.Write(BitConverter.GetBytes(msgBytes.Length), 0, 4);
-            pipe.Write(msgBytes, 0, msgBytes.Length);
-            pipe.Flush();
-        }
-
-        private static byte[] ReadMessageBytes(Stream pipe)
-        {
-            var b4 = new byte[4];
-            ReadFully(pipe, b4, 4);
-            var syncLength = BitConverter.ToInt32(b4, 0);
-            if (syncLength > 4 * 8196)
-            {
-                throw new ArgumentException($"Message length too long: {syncLength}");
-            }
-            var bytes = new byte[syncLength];
-            ReadFully(pipe, bytes, syncLength);
-            return bytes;
-        }
-
-        private static string ReadMessageString(Stream pipe)
-        {
-            var b4 = new byte[4];
-            ReadFully(pipe, b4, 4);
-            var syncLength = BitConverter.ToInt32(b4, 0);
-            var bytes = new byte[syncLength];
-            ReadFully(pipe, bytes, syncLength);
-            return Encoding.UTF8.GetString(bytes);
-        }
-
-        private static void ReadFully(Stream stream, byte[] buf, int bytesToRead)
-        {
-            var rem = bytesToRead;
-            var index = 0;
-            while (rem > 0)
-            {
-                var c = stream.Read(buf, index, rem);
-                if (c == 0) throw new IOException("Unexpected EOF");
-                index += c;
-                rem -= c;
-            }
-        }
+        //private static string ReadMessageString(Stream pipe)
+        //{
+        //    var b4 = new byte[4];
+        //    ReadFully(pipe, b4, 4);
+        //    var syncLength = BitConverter.ToInt32(b4, 0);
+        //    var bytes = new byte[syncLength];
+        //    ReadFully(pipe, bytes, syncLength);
+        //    return Encoding.UTF8.GetString(bytes);
+        //}
 
         private static byte[] JsonToBinary(byte[] input)
         {

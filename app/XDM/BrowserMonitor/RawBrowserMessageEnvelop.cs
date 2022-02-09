@@ -11,6 +11,8 @@ namespace BrowserMonitoring
 
         public RawBrowserMessage Message { get; set; }
 
+        public RawBrowserMessage[] Messages { get; set; }
+
         public string[] VideoIds { get; set; }
 
         public void Serialize(BinaryWriter w)
@@ -55,6 +57,22 @@ namespace BrowserMonitoring
                     w.Write(item);
                 }
             }
+            w.Write(e.Messages != null);
+            if (e.Messages != null)
+            {
+                count = e.Messages.Length;
+                w.Write(count);
+                foreach (var message in e.Messages)
+                {
+                    w.Write(message.Url ?? string.Empty);
+                    w.Write(message.File ?? string.Empty);
+                    w.Write(message.Method ?? string.Empty);
+                    w.Write(message.RequestBody ?? string.Empty);
+                    Helpers.WriteStateHeaders(message.RequestHeaders, w);
+                    Helpers.WriteStateHeaders(message.ResponseHeaders, w);
+                    Helpers.WriteStateCookies(message.Cookies, w);
+                }
+            }
         }
 
         public static RawBrowserMessageEnvelop Deserialize(BinaryReader r)
@@ -80,6 +98,27 @@ namespace BrowserMonitoring
             for (int i = 0; i < count; i++)
             {
                 e.VideoIds[i] = r.ReadString();
+            }
+            if (r.ReadBoolean())
+            {
+                count = r.ReadInt32();
+                var list = new RawBrowserMessage[count];
+                for (int i = 0; i < count; i++)
+                {
+                    var message = new RawBrowserMessage();
+                    message.Url = Helpers.ReadString(r);
+                    message.File = Helpers.ReadString(r);
+                    message.Method = Helpers.ReadString(r);
+                    message.RequestBody = Helpers.ReadString(r);
+                    Helpers.ReadStateHeaders(r, out Dictionary<string, List<string>> dict1);
+                    Helpers.ReadStateHeaders(r, out Dictionary<string, List<string>> dict2);
+                    Helpers.ReadStateCookies(r, out Dictionary<string, string> dict3);
+                    message.RequestHeaders = dict1;
+                    message.ResponseHeaders = dict2;
+                    message.Cookies = dict3;
+                    list[i] = message;
+                }
+                e.Messages = list;
             }
             return e;
         }

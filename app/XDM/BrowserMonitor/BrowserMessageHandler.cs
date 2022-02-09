@@ -33,9 +33,9 @@ namespace BrowserMonitoring
             }
 
             var rawMessage = envelop.Message;
-            if (rawMessage == null)
+            if (rawMessage == null && envelop.Messages == null)
             {
-                Log.Debug("Raw message is null");
+                Log.Debug("Raw message/messages is null");
                 return;
             };
 
@@ -48,6 +48,17 @@ namespace BrowserMonitoring
                         {
                             app.AddDownload(message);
                         }
+                        break;
+                    }
+                case "links":
+                    {
+                        var messages = new List<Message>(envelop.Messages.Length);
+                        foreach (var msg in envelop.Messages)
+                        {
+                            var message = Parse(msg);
+                            messages.Add(message);
+                        }
+                        app.AddBatchLinks(messages);
                         break;
                     }
                 case "video":

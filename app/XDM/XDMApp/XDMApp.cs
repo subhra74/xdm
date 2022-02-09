@@ -274,6 +274,25 @@ namespace XDMApp
             }
         }
 
+        public void AddBatchLinks(List<Message> messages)
+        {
+            var list = new List<object>(messages.Count);
+            foreach (var message in messages)
+            {
+                var url = message.Url;
+                var file = Helpers.SanitizeFileName(message.File ?? Helpers.GetFileName(new Uri(message.Url)));
+                var si = new SingleSourceHTTPDownloadInfo
+                {
+                    Uri = url,
+                    File = file,
+                    Headers = message?.RequestHeaders,
+                    Cookies = message?.Cookies
+                };
+                list.Add(si);
+            }
+            AppUI.ShowDownloadSelectionWindow(FileNameFetchMode.FileNameAndExtension, list);
+        }
+
         public void AddDownload(Message message)
         {
             if (refreshLinkCandidate != null && IsMatchingSingleSourceLink(message))

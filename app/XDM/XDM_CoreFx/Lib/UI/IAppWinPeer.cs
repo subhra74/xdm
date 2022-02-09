@@ -5,6 +5,7 @@ using System.Text;
 
 using XDM.Common.UI;
 using XDM.Core.Lib.Common;
+using XDM.Core.Lib.Downloader;
 
 namespace XDM.Core.Lib.UI
 {
@@ -119,6 +120,8 @@ namespace XDM.Core.Lib.UI
         IQueuesWindow CreateQueuesAndSchedulerWindow(IAppUI appUi);
 
         IQueueSelectionDialog CreateQueueSelectionDialog();
+
+        void ShowDownloadSelectionWindow(IApp app, IAppUI appUI, FileNameFetchMode mode, IEnumerable<object> downloads);
 
         //void RunOnNewThread(Action action);
 

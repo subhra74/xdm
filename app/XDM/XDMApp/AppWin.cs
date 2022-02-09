@@ -671,5 +671,13 @@ namespace XDMApp
         {
             LaunchUpdater(UpdateMode.YoutubeDLUpdateOnly);
         }
+
+        public void ShowDownloadSelectionWindow(FileNameFetchMode mode, IEnumerable<object> downloads)
+        {
+            RunOnUiThread(() =>
+            {
+                peer.ShowDownloadSelectionWindow(this.App, this, mode, downloads);
+            });
+        }
     }
 }

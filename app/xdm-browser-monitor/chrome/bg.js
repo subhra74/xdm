@@ -33,7 +33,7 @@
 
     function postNativeMessage(message) {
         if (hasNativeMessagingHost && port) {
-            //log(JSON.stringify(message));
+            log(JSON.stringify(message));
             try {
                 port.postMessage(message);
             } catch (err) {
@@ -154,10 +154,12 @@
     };
 
     function sendRecUrl(urls, index, data) {
-        if (index == urls.length - 1) {
+        if (index > 0 && index == urls.length - 1) {
             log(data);
             if (hasNativeMessagingHost) {
-                port.postMessage({ "links": data });
+                log("Sending links to native host");
+                log(data);
+                postNativeMessage({ messageType: "links", messages: data });
             } else {
                 var text = "";
                 data.forEach(item => {
@@ -175,6 +177,7 @@
             return;
         }
 
+        let url = urls[index];
         chrome.cookies.getAll({ "url": url }, function (cookies) {
             var cookieDict = {};
             cookies.forEach(cookie => {
@@ -191,7 +194,9 @@
     };
 
     function sendUrlsToXDM(urls) {
-        sendRecUrl(urls, 0, []);
+        if (urls && urls.length > 0) {
+            sendRecUrl(urls, 0, []);
+        }
     };
 
     function sendUrlToXDM(url) {

@@ -120,5 +120,6 @@ namespace XDM.Core.Lib.Common
         bool IsFFmpegRequiredForDownload(string id);
         void UpdateSpeedLimit(string id, bool enable, int limit);
         bool GetLiveDownloadSpeedLimit(string id, out bool enabled, out int limit);
+        void AddBatchLinks(List<Message> messages);
     }
 }

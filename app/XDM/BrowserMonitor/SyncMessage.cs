@@ -86,6 +86,10 @@ namespace BrowserMonitoring
         private static string[] ReadStringArray(BinaryReader r)
         {
             var c = r.ReadInt32();
+            if (c > 1024)
+            {
+                throw new IOException("Too many lines in message: " + c);
+            }
             var arr = new string[c];
             for (int i = 0; i < c; i++)
             {

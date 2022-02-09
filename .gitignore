@@ -352,6 +352,6 @@ app/XDM/XDM.Win.Installer/ffmpeg-x86.exe
 *.wixobj
 app/XDM/XDM.Win.Installer/net4.7.2.wxs
 app/XDM/XDM.Win.Installer/net4.7.2/
-app/XDM/XDM.Win.Installer/xdmsetup.msi
+app/XDM/XDM.Win.Installer/*.msi
 *.wixpdb
-app/XDM/XDM.Win.Installer/youtube-dl.exe
+app/XDM/XDM.Win.Installer/*.exe

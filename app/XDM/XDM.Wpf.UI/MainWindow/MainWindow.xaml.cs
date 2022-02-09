@@ -17,6 +17,7 @@ using TraceLog;
 using Translations;
 using XDM.Common.UI;
 using XDM.Core.Lib.Common;
+using XDM.Core.Lib.Downloader;
 using XDM.Core.Lib.UI;
 using XDM.Core.Lib.Util;
 using XDM.Wpf.UI.Dialogs.About;
@@ -24,6 +25,7 @@ using XDM.Wpf.UI.Dialogs.BatchDownload;
 using XDM.Wpf.UI.Dialogs.CompletedDialog;
 using XDM.Wpf.UI.Dialogs.CredentialDialog;
 using XDM.Wpf.UI.Dialogs.DeleteConfirm;
+using XDM.Wpf.UI.Dialogs.DownloadSelection;
 using XDM.Wpf.UI.Dialogs.LanguageSettings;
 using XDM.Wpf.UI.Dialogs.NewDownload;
 using XDM.Wpf.UI.Dialogs.NewVideoDownload;
@@ -868,6 +870,12 @@ namespace XDM.Wpf.UI
         private void LvInProgressContextMenu_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
             this.InProgressContextMenuOpening?.Invoke(sender, e);
+        }
+
+        public void ShowDownloadSelectionWindow(IApp app, IAppUI appUI, FileNameFetchMode mode, IEnumerable<object> downloads)
+        {
+            var window = new DownloadSelectionWindow(app, appUI, FileNameFetchMode.FileNameAndExtension, downloads);
+            window.Show();
         }
     }
 

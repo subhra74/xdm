@@ -97,7 +97,7 @@ namespace BrowserMonitoring
                          try
                          {
                              var outpipe = inOutMap[key];
-                             WriteMessage(outpipe, bytes);
+                             NativeMessageSerializer.WriteMessage(outpipe, bytes);
                              //Log.Debug("Send message to native host successfully");
                          }
                          catch (Exception ex)
@@ -160,11 +160,11 @@ namespace BrowserMonitoring
             try
             {
                 Log.Debug("Initiate message handshake");
-                var clientPipeName = Encoding.UTF8.GetString(ReadMessageBytes(inPipe));
+                var clientPipeName = Encoding.UTF8.GetString(NativeMessageSerializer.ReadMessageBytes(inPipe));
                 Log.Debug("Client pipe: " + clientPipeName);
                 if (clientPipeName.StartsWith("XDM-APP-"))
                 {
-                    var command = ReadMessageBytes(inPipe);
+                    var command = NativeMessageSerializer.ReadMessageBytes(inPipe);
                     var args = ArgsProcessor.ParseArgs(Encoding.UTF8.GetString(command).Split('\r'));
                     ArgsProcessor.Process(app, args);
                     return;
@@ -176,7 +176,7 @@ namespace BrowserMonitoring
                 Log.Debug("Message handshake completed");
                 while (true)
                 {
-                    var text = ReadMessageBytes(inPipe);
+                    var text = NativeMessageSerializer.ReadMessageBytes(inPipe);
                     using var ms = new MemoryStream(text);
                     using var br = new BinaryReader(ms);
                     // Log.Debug("{Text}", text);
@@ -206,49 +206,50 @@ namespace BrowserMonitoring
         private void SendConfig(Stream pipe)
         {
             var bytes = GetSyncBytes(app);
-            WriteMessage(pipe, bytes);
+            NativeMessageSerializer.WriteMessage(pipe, bytes);
         }
 
-        private static void ReadFully(Stream stream, byte[] buf, int bytesToRead)
-        {
-            var rem = bytesToRead;
-            var index = 0;
-            while (rem > 0)
-            {
-                var c = stream.Read(buf, index, rem);
-                if (c == 0) throw new IOException("Unexpected EOF");
-                index += c;
-                rem -= c;
-            }
-        }
+        //private static void ReadFully(Stream stream, byte[] buf, int bytesToRead)
+        //{
+        //    var rem = bytesToRead;
+        //    var index = 0;
+        //    while (rem > 0)
+        //    {
+        //        var c = stream.Read(buf, index, rem);
+        //        if (c == 0) throw new IOException("Unexpected EOF");
+        //        index += c;
+        //        rem -= c;
+        //    }
+        //}
 
-        private static byte[] ReadMessageBytes(Stream pipe)
-        {
-            var b4 = new byte[4];
-            ReadFully(pipe, b4, 4);
-            var syncLength = BitConverter.ToInt32(b4, 0);
-            if (syncLength > 4 * 8196)
-            {
-                throw new ArgumentException($"Message length too long: {syncLength}");
-            }
-            var bytes = new byte[syncLength];
-            ReadFully(pipe, bytes, syncLength);
-            return bytes;
-        }
+        //private static byte[] ReadMessageBytes(Stream pipe)
+        //{
+        //    var b4 = new byte[4];
+        //    ReadFully(pipe, b4, 4);
+        //    var syncLength = BitConverter.ToInt32(b4, 0);
+        //    if (syncLength > 4 * 8196)
+        //    {
+        //        throw new ArgumentException($"Message length too long: {syncLength}");
+        //    }
+        //    var bytes = new byte[syncLength];
+        //    ReadFully(pipe, bytes, syncLength);
+        //    return bytes;
+        //}
 
-        private static void WriteMessage(Stream pipe, string message)
-        {
-            var msgBytes = Encoding.UTF8.GetBytes(message);
-            WriteMessage(pipe, msgBytes);
-        }
+        //private static void WriteMessage(Stream pipe, string message)
+        //{
+        //    var msgBytes = Encoding.UTF8.GetBytes(message);
+        //    WriteMessage(pipe, msgBytes);
+        //}
 
-        private static void WriteMessage(Stream pipe, byte[] msgBytes)
-        {
-            var bytes = BitConverter.GetBytes(msgBytes.Length);
-            pipe.Write(bytes, 0, bytes.Length);
-            pipe.Write(msgBytes, 0, msgBytes.Length);
-            pipe.Flush();
-        }
+        //private static void WriteMessage(Stream pipe, byte[] msgBytes)
+        //{
+
+        //    var bytes = BitConverter.GetBytes(msgBytes.Length);
+        //    pipe.Write(bytes, 0, bytes.Length);
+        //    pipe.Write(msgBytes, 0, msgBytes.Length);
+        //    pipe.Flush();
+        //}
 
         public void Dispose()
         {
@@ -286,8 +287,8 @@ namespace BrowserMonitoring
             using var clientPipe =
                            new NamedPipeClientStream(".", PipeName, PipeDirection.Out);
             clientPipe.Connect();
-            WriteMessage(clientPipe, $"XDM-APP-${Guid.NewGuid()}");
-            WriteMessage(clientPipe, string.Join("\r", args));
+            NativeMessageSerializer.WriteMessage(clientPipe, $"XDM-APP-${Guid.NewGuid()}");
+            NativeMessageSerializer.WriteMessage(clientPipe, string.Join("\r", args));
             clientPipe.Flush();
         }
     }
