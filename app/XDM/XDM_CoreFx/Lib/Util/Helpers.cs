@@ -802,7 +802,7 @@ namespace XDM.Core.Lib.Util
                     {
                         if (enable)
                         {
-                            var xdmExe = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "XDM.WinForm.UI.exe");
+                            var xdmExe = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-app.exe");
                             hkcuRun.SetValue("XDM", $"\"{xdmExe}\" -m");
                         }
                         else
