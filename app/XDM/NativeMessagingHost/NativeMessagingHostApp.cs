@@ -142,27 +142,27 @@ namespace NativeHost
 
             try
             {
-                NamedPipeServerStream inPipe = null;
+                //NamedPipeServerStream inPipe = null;
                 NamedPipeClientStream outPipe = null;
-                while (true)
+               // while (true)
                 {
                     try
                     {
-                        var pipeName = Guid.NewGuid().ToString();
-                        inPipe = new NamedPipeServerStream(pipeName, PipeDirection.In, 1, PipeTransmissionMode.Byte, PipeOptions.WriteThrough);
+                        //var pipeName = Guid.NewGuid().ToString();
+                        //inPipe = new NamedPipeServerStream(pipeName, PipeDirection.In, 1, PipeTransmissionMode.Byte, PipeOptions.WriteThrough);
 
                         //start handshake with XDM
-                        outPipe = new NamedPipeClientStream(".", "XDM_Ipc_Browser_Monitoring_Pipe", PipeDirection.Out);
+                        outPipe = new NamedPipeClientStream(".", "XDM_Ipc_Browser_Monitoring_Pipe", PipeDirection.InOut,PipeOptions.Asynchronous);
                         Debug("start handshake with XDM");
                         outPipe.Connect();
-                        NativeMessageSerializer.WriteMessage(outPipe, pipeName);
-                        Debug("pipename: " + pipeName);
+                        //NativeMessageSerializer.WriteMessage(outPipe, pipeName);
+                        //Debug("pipename: " + pipeName);
 
-                        inPipe.WaitForConnection();
-                        var syncMsgBytes = NativeMessageSerializer.ReadMessageBytes(inPipe);
-                        Debug("No task message size: " + syncMsgBytes.Length);
+                        //inPipe.WaitForConnection();
+                        //var syncMsgBytes = NativeMessageSerializer.ReadMessageBytes(inPipe);
+                        //Debug("No task message size: " + syncMsgBytes.Length);
 
-                        queuedBrowserMessages.Add(syncMsgBytes);
+                        //queuedBrowserMessages.Add(syncMsgBytes);
 
                         //handshake with XDM is complete
                         Debug("handshake with XDM is complete");
@@ -176,7 +176,7 @@ namespace NativeHost
                              {
                                  while (true)
                                  {
-                                     var syncMsgBytes = NativeMessageSerializer.ReadMessageBytes(inPipe);
+                                     var syncMsgBytes = NativeMessageSerializer.ReadMessageBytes(outPipe);
                                      Debug("Message received from XDM of size: " + syncMsgBytes.Length);
                                      if (syncMsgBytes.Length == 0)
                                      {
@@ -214,6 +214,7 @@ namespace NativeHost
                                     //Debug("Task2 message size fron browser stdin: " + syncMsgBytes.Length);
                                     Debug("Sending message to XDM...");
                                     NativeMessageSerializer.WriteMessage(outPipe, syncMsgBytes);
+                                    Debug("Sent message to XDM");
                                 }
                             }
                             catch (Exception ex)
@@ -237,9 +238,14 @@ namespace NativeHost
                         Debug(ex.ToString(), ex);
                     }
 
+                    //try
+                    //{
+                    //    inPipe.Disconnect();
+                    //}
+                    //catch { }
                     try
                     {
-                        inPipe.Disconnect();
+                        outPipe.Close();
                     }
                     catch { }
                     try
@@ -247,11 +253,11 @@ namespace NativeHost
                         outPipe.Dispose();
                     }
                     catch { }
-                    try
-                    {
-                        inPipe.Dispose();
-                    }
-                    catch { }
+                    //try
+                    //{
+                    //    inPipe.Dispose();
+                    //}
+                    //catch { }
                 }
             }
             catch (Exception exxxx)

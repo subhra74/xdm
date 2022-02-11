@@ -44,15 +44,21 @@ namespace XDM.Wpf.UI.Dialogs.Updater
 
         public void DownloadFailed(object? sender, DownloadFailedEventArgs e)
         {
-            MessageBox.Show(TextResource.GetText("MSG_FAILED"));
-            Dispatcher.Invoke(actClose);
+            Dispatcher.Invoke(new Action(() =>
+            {
+                MessageBox.Show(this, TextResource.GetText("MSG_FAILED"));
+                Close();
+            }));
         }
 
         public void DownloadFinished(object? sender, EventArgs e)
         {
-            MessageBox.Show(TextResource.GetText("MSG_UPDATED"));
+            Dispatcher.Invoke(new Action(() =>
+            {
+                MessageBox.Show(this, TextResource.GetText("MSG_UPDATED"));
+                Close();
+            }));
             this.Finished?.Invoke(sender, e);
-            Dispatcher.Invoke(actClose);
         }
 
         public void DownloadProgressChanged(object? sender, ProgressResultEventArgs e)
@@ -87,8 +93,12 @@ namespace XDM.Wpf.UI.Dialogs.Updater
 
         public void ShowNoUpdateMessage()
         {
-            MessageBox.Show(TextResource.GetText("MSG_NO_UPDATE"));
-            Dispatcher.Invoke(actClose);
+
+            Dispatcher.Invoke(new Action(() =>
+            {
+                MessageBox.Show(this, TextResource.GetText("MSG_NO_UPDATE"));
+                Close();
+            }));
             this.Finished?.Invoke(this, EventArgs.Empty);
         }
 

@@ -5,15 +5,15 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:XDM.Wpf.UI.Dialogs.Updater"
         mc:Ignorable="d"
-        Title="{StaticResource OPT_UPDATE_FFMPEG}" Height="250" Width="500">
+        Title="{StaticResource OPT_UPDATE_FFMPEG}" Height="250" Width="500" WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <TextBlock x:Name="TxtHeading" Text="{StaticResource STAT_DOWNLOADING}"/>
-        <ProgressBar Name="Prg" IsIndeterminate="False" Grid.Row="1" VerticalAlignment="Center" Height="5" Width="100"/>
+        <TextBlock x:Name="TxtHeading" Text="{StaticResource STAT_DOWNLOADING}" Margin="10" HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
+        <ProgressBar Name="Prg" IsIndeterminate="False" Grid.Row="1" VerticalAlignment="Top" Height="5" Width="200"/>
         <Button Name="BtnCancel" Content="{StaticResource ND_CANCEL}" Grid.Row="2" HorizontalAlignment="Right" Margin="10" Padding="10,3"/>
     </Grid>
 </Window>

@@ -19,12 +19,14 @@ namespace BrowserMonitoring
     {
         private int MaxPipeInstance = 254;
         private static readonly string PipeName = "XDM_Ipc_Browser_Monitoring_Pipe";
-        private List<NamedPipeServerStream> inPipes = new();
-        private Dictionary<NamedPipeServerStream, NamedPipeClientStream> inOutMap = new();
+        private List<NativeMessagingHostChannel> connectedChannels = new();
+        //private List<NamedPipeServerStream> inPipes = new();
+        //private Dictionary<NamedPipeServerStream, NamedPipeClientStream> inOutMap = new();
         private readonly IApp app;
         private static Mutex globalMutex;
-        private readonly BlockingCollection<byte[]> Messages = new();
-        private Thread WriterThread;
+       // private readonly BlockingCollection<byte[]> Messages = new();
+        //private Thread WriterThread;
+        private Thread listenerThread;
 
         public static void EnsureSingleInstance(IApp app)
         {
@@ -80,134 +82,198 @@ namespace BrowserMonitoring
         public void BroadcastConfig()
         {
             var bytes = GetSyncBytes(app);
-            Messages.Add(bytes);
+            lock (this)
+            {
+                foreach (var channel in connectedChannels)
+                {
+                    try
+                    {
+                        channel.Publish(bytes);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Debug(ex, ex.Message);
+                    }
+                }
+            }
+            //Messages.Add(bytes);
         }
 
         public void StartPipedChannel()
         {
-            WriterThread = new Thread(() =>
-             {
-                 while (true)
-                 {
-                     //Log.Debug("Total messages to be sent to native host: " + Messages.Count);
-                     var bytes = Messages.Take();
-                     foreach (var key in inOutMap.Keys)
-                     {
-                         //Log.Debug("Sending message to native host");
-                         try
-                         {
-                             var outpipe = inOutMap[key];
-                             NativeMessageSerializer.WriteMessage(outpipe, bytes);
-                             //Log.Debug("Send message to native host successfully");
-                         }
-                         catch (Exception ex)
-                         {
-                             Log.Debug(ex, "Send message to native host failed");
-                         }
-                     }
-                 }
-             });
-            WriterThread.Start();
-            new Thread(() =>
+            listenerThread = new Thread(() =>
+              {
+                  while (true)
+                  {
+                      var pipe =
+                            new NamedPipeServerStream(PipeName,
+                            PipeDirection.InOut, NamedPipeServerStream.MaxAllowedServerInstances,
+                            PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+                      Log.Debug("Waiting for native host pipe...");
+                      pipe.WaitForConnection();
+                      Log.Debug("Pipe request received");
+                      lock (connectedChannels)
+                      {
+                          var channel = CreateChannel(pipe);
+                          connectedChannels.Add(channel);
+                          channel.Start(GetSyncBytes(app));
+                      }
+                  }
+              });
+            listenerThread.Start();
+        }
+
+        private NativeMessagingHostChannel CreateChannel(NamedPipeServerStream pipe)
+        {
+            var channel = new NativeMessagingHostChannel(pipe);
+            channel.MessageReceived += (sender, args) =>
             {
                 try
                 {
-                    if (inPipes.Count == MaxPipeInstance)
-                    {
-                        Log.Debug("Max pipe count of " + MaxPipeInstance + " is reached");
-                        return;
-                    }
-                    var inPipe =
-                            new NamedPipeServerStream(PipeName,
-                            PipeDirection.In, NamedPipeServerStream.MaxAllowedServerInstances,
-                            PipeTransmissionMode.Byte, PipeOptions.WriteThrough);
-                    inPipes.Add(inPipe);
-                    var first = true;
-                    while (true)
-                    {
-                        Log.Debug("Waiting for native host pipe...");
-                        inPipe.WaitForConnection();
-                        Log.Debug("Pipe request received");
-
-                        if (first)
-                        {
-                            Log.Debug("Creating one more additional pipe");
-                            StartPipedChannel();
-                            first = false;
-                        }
-
-                        try
-                        {
-                            ConsumePipe(inPipe);
-                        }
-                        catch (Exception e)
-                        {
-                            inPipe.Disconnect();
-                            Log.Debug(e, "Error in message exchange");
-                        }
-                        Log.Debug("Terminated message exchange, will reuse the pipe");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Debug(ex, "Error in message exchange flow");
-                }
-            }).Start();
-        }
-
-        private void ConsumePipe(NamedPipeServerStream inPipe)
-        {
-            try
-            {
-                Log.Debug("Initiate message handshake");
-                var clientPipeName = Encoding.UTF8.GetString(NativeMessageSerializer.ReadMessageBytes(inPipe));
-                Log.Debug("Client pipe: " + clientPipeName);
-                if (clientPipeName.StartsWith("XDM-APP-"))
-                {
-                    var command = NativeMessageSerializer.ReadMessageBytes(inPipe);
-                    var args = ArgsProcessor.ParseArgs(Encoding.UTF8.GetString(command).Split('\r'));
-                    ArgsProcessor.Process(app, args);
-                    return;
-                }
-                var outPipe = new NamedPipeClientStream(".", clientPipeName, PipeDirection.Out);
-                outPipe.Connect();
-                SendConfig(outPipe);
-                inOutMap[inPipe] = outPipe;
-                Log.Debug("Message handshake completed");
-                while (true)
-                {
-                    var text = NativeMessageSerializer.ReadMessageBytes(inPipe);
-                    using var ms = new MemoryStream(text);
-                    using var br = new BinaryReader(ms);
-                    // Log.Debug("{Text}", text);
+                    using var br = new BinaryReader(new MemoryStream(args.Data));
                     var envelop = RawBrowserMessageEnvelop.Deserialize(br);
                     BrowserMessageHandler.Handle(app, envelop);
                 }
-            }
-            finally
-            {
-                try
+                catch (Exception ex)
                 {
-                    NamedPipeClientStream? op = null;
-                    lock (this)
-                    {
-                        if (inOutMap.TryGetValue(inPipe, out op))
-                        {
-                            inOutMap.Remove(inPipe);
-                        }
-                    }
-                    op?.Close();
-                    op?.Dispose();
+                    Log.Debug(ex, ex.ToString());
                 }
-                catch { }
-            }
+            };
+            channel.Disconnected += (sender, bytes) =>
+            {
+                lock (connectedChannels)
+                {
+                    connectedChannels.Remove((NativeMessagingHostChannel)sender);
+                }
+            };
+            return channel;
         }
 
-        private void SendConfig(Stream pipe)
-        {
-            var bytes = GetSyncBytes(app);
-            NativeMessageSerializer.WriteMessage(pipe, bytes);
-        }
+        //public void StartPipedChannel()
+        //{
+        //    WriterThread = new Thread(() =>
+        //     {
+        //         while (true)
+        //         {
+        //             //Log.Debug("Total messages to be sent to native host: " + Messages.Count);
+        //             var bytes = Messages.Take();
+        //             foreach (var key in inOutMap.Keys)
+        //             {
+        //                 //Log.Debug("Sending message to native host");
+        //                 try
+        //                 {
+        //                     var outpipe = inOutMap[key];
+        //                     NativeMessageSerializer.WriteMessage(outpipe, bytes);
+        //                     //Log.Debug("Send message to native host successfully");
+        //                 }
+        //                 catch (Exception ex)
+        //                 {
+        //                     Log.Debug(ex, "Send message to native host failed");
+        //                 }
+        //             }
+        //         }
+        //     });
+        //    WriterThread.Start();
+        //    new Thread(() =>
+        //    {
+        //        try
+        //        {
+        //            if (inPipes.Count == MaxPipeInstance)
+        //            {
+        //                Log.Debug("Max pipe count of " + MaxPipeInstance + " is reached");
+        //                return;
+        //            }
+        //            var inPipe =
+        //                    new NamedPipeServerStream(PipeName,
+        //                    PipeDirection.In, NamedPipeServerStream.MaxAllowedServerInstances,
+        //                    PipeTransmissionMode.Byte, PipeOptions.WriteThrough);
+        //            inPipes.Add(inPipe);
+        //            var first = true;
+        //            while (true)
+        //            {
+        //                Log.Debug("Waiting for native host pipe...");
+        //                inPipe.WaitForConnection();
+        //                Log.Debug("Pipe request received");
+
+        //                if (first)
+        //                {
+        //                    Log.Debug("Creating one more additional pipe");
+        //                    StartPipedChannel();
+        //                    first = false;
+        //                }
+
+        //                try
+        //                {
+        //                    ConsumePipe(inPipe);
+        //                }
+        //                catch (Exception e)
+        //                {
+        //                    inPipe.Disconnect();
+        //                    Log.Debug(e, "Error in message exchange");
+        //                }
+        //                Log.Debug("Terminated message exchange, will reuse the pipe");
+        //            }
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            Log.Debug(ex, "Error in message exchange flow");
+        //        }
+        //    }).Start();
+        //}
+
+        //private void ConsumePipe(NamedPipeServerStream inPipe)
+        //{
+        //    try
+        //    {
+        //        Log.Debug("Initiate message handshake");
+        //        var clientPipeName = Encoding.UTF8.GetString(NativeMessageSerializer.ReadMessageBytes(inPipe));
+        //        Log.Debug("Client pipe: " + clientPipeName);
+        //        if (clientPipeName.StartsWith("XDM-APP-"))
+        //        {
+        //            var command = NativeMessageSerializer.ReadMessageBytes(inPipe);
+        //            var args = ArgsProcessor.ParseArgs(Encoding.UTF8.GetString(command).Split('\r'));
+        //            ArgsProcessor.Process(app, args);
+        //            return;
+        //        }
+        //        var outPipe = new NamedPipeClientStream(".", clientPipeName, PipeDirection.Out);
+        //        outPipe.Connect();
+        //        SendConfig(outPipe);
+        //        inOutMap[inPipe] = outPipe;
+        //        Log.Debug("Message handshake completed");
+        //        while (true)
+        //        {
+        //            var text = NativeMessageSerializer.ReadMessageBytes(inPipe);
+        //            using var ms = new MemoryStream(text);
+        //            using var br = new BinaryReader(ms);
+        //            // Log.Debug("{Text}", text);
+        //            var envelop = RawBrowserMessageEnvelop.Deserialize(br);
+        //            BrowserMessageHandler.Handle(app, envelop);
+        //        }
+        //    }
+        //    finally
+        //    {
+        //        try
+        //        {
+        //            NamedPipeClientStream? op = null;
+        //            lock (this)
+        //            {
+        //                if (inOutMap.TryGetValue(inPipe, out op))
+        //                {
+        //                    inOutMap.Remove(inPipe);
+        //                }
+        //            }
+        //            op?.Close();
+        //            op?.Dispose();
+        //        }
+        //        catch { }
+        //    }
+        //}
+
+        //private void SendConfig(Stream pipe)
+        //{
+        //    var bytes = GetSyncBytes(app);
+        //    NativeMessageSerializer.WriteMessage(pipe, bytes);
+        //}
 
         //private static void ReadFully(Stream stream, byte[] buf, int bytesToRead)
         //{
@@ -253,11 +319,18 @@ namespace BrowserMonitoring
 
         public void Dispose()
         {
-            foreach (var pipe in inPipes)
+            lock (connectedChannels)
             {
-                try { pipe.Disconnect(); } catch { }
-                try { pipe.Dispose(); } catch { }
+                foreach (var channel in connectedChannels)
+                {
+                    channel.Disconnect();
+                }
             }
+            //foreach (var pipe in inPipes)
+            //{
+            //    try { pipe.Disconnect(); } catch { }
+            //    try { pipe.Dispose(); } catch { }
+            //}
         }
 
         private static byte[] GetSyncBytes(IApp app)

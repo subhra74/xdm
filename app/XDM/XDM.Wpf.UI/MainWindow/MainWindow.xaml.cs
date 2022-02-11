@@ -34,6 +34,7 @@ using XDM.Wpf.UI.Dialogs.PropertiesDialog;
 using XDM.Wpf.UI.Dialogs.QueuesWindow;
 using XDM.Wpf.UI.Dialogs.RefreshLink;
 using XDM.Wpf.UI.Dialogs.Settings;
+using XDM.Wpf.UI.Dialogs.Updater;
 using XDM.Wpf.UI.Dialogs.VideoDownloader;
 using XDM.Wpf.UI.Win32;
 
@@ -577,7 +578,7 @@ namespace XDM.Wpf.UI
 
         public IUpdaterUI CreateUpdateUIDialog(IAppUI ui)
         {
-            throw new NotImplementedException();
+            return new UpdaterWindow(ui);
         }
 
         private void SearchButton_Click(object sender, RoutedEventArgs e)
