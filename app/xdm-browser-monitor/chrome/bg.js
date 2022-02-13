@@ -585,46 +585,50 @@
     }
 
     function connectToNativeMessagingHost() {
-        try {
-            log("Connecting to native messaging host: xdm_chrome.native_host");
-            port = chrome.runtime.connectNative("xdm_chrome.native_host");
-            log("Connected to native messaging host");
-            port.onDisconnect.addListener(function () {
-                log("Disconnected from native messaging host!");
-                hasNativeMessagingHost = false;
-                isXDMUp = false;
-                updateBrowserAction();
-                port = undefined;
-            });
-            port.onMessage.addListener((data) => {
-                log(JSON.stringify(data));
-                if (data.appExited) {
-                    postNativeMessage({});
-                    isXDMUp = false;
+        return new Promise((resolve, reject) => {
+            try {
+                log("Connecting to native messaging host: xdm_chrome.native_host");
+                port = chrome.runtime.connectNative("xdm_chrome.native_host");
+                log("Connected to native messaging host");
+                port.onDisconnect.addListener(function () {
+                    log("Disconnected from native messaging host!");
                     hasNativeMessagingHost = false;
-                } else {
-                    monitoring = data.enabled;
-                    blockedHosts = data.blockedHosts;
-                    videoUrls = data.videoUrls;
-                    fileExts = data.fileExts;
-                    vidExts = data.vidExts;
-                    isXDMUp = true;
-                    hasNativeMessagingHost = true;
-                    videoList = data.vidList;
-                    if (data.mimeList) {
-                        mimeList = data.mimeList;
+                    isXDMUp = false;
+                    updateBrowserAction();
+                    port = undefined;
+                    reject("disconnected from native host");
+                });
+                port.onMessage.addListener((data) => {
+                    log(JSON.stringify(data));
+                    if (data.appExited) {
+                        postNativeMessage({});
+                        isXDMUp = false;
+                        hasNativeMessagingHost = false;
+                    } else {
+                        monitoring = data.enabled;
+                        blockedHosts = data.blockedHosts;
+                        videoUrls = data.videoUrls;
+                        fileExts = data.fileExts;
+                        vidExts = data.vidExts;
+                        isXDMUp = true;
+                        hasNativeMessagingHost = true;
+                        videoList = data.vidList;
+                        if (data.mimeList) {
+                            mimeList = data.mimeList;
+                        }
+                        if (data.videoUrlsWithPostReq) {
+                            videoUrlsWithPostReq = data.videoUrlsWithPostReq;
+                        }
                     }
-                    if (data.videoUrlsWithPostReq) {
-                        videoUrlsWithPostReq = data.videoUrlsWithPostReq;
-                    }
-                }
-                updateBrowserAction();
-            });
-            return true;
-        } catch (err) {
-            log(err);
-            return false;
-        }
+                    updateBrowserAction();
+                    resolve(true);
+                });
+            } catch (err) {
+                log("Error while creating native messaging host");
+                log(err);
+                reject("unable to connect to native host");
+            }
+        });
     }
 
     function initSelf() {
@@ -676,8 +680,11 @@
                     sendResponse({ done: "done" });
                 }
                 else if (request.type === "stat") {
-                    var resp = { isDisabled: disabled };
-                    resp.list = videoList;
+                    var resp = {
+                        isDisabled: disabled,
+                        encodedName: hasNativeMessagingHost,
+                        list: videoList
+                    };
                     sendResponse(resp);
                 }
                 else if (request.type === "cmd") {
@@ -736,15 +743,13 @@
             onclick: runContentScript,
         });
 
-
         /*
         On startup, connect to the "native" app.
         */
-        if (!connectToNativeMessagingHost()) {
+        connectToNativeMessagingHost().catch(err => {
             //play nice with older XDM versions
             setInterval(function () { syncXDM(); }, 5000);
-        }
-
+        });
     };
 
     initSelf();

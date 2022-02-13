@@ -11,6 +11,14 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>xdm-logo.ico</ApplicationIcon>
     <AssemblyName>xdm-app</AssemblyName>
+    <StartupObject>XDM.Wpf.UI.App</StartupObject>
+    <Description>Xtreme Download Manager</Description>
+    <AssemblyTitle>Xtreme Download Manager</AssemblyTitle>
+    <AssemblyVersion>8.0.1</AssemblyVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net4.7.2|x86'">
+    <Optimize>true</Optimize>
   </PropertyGroup>
 
   <ItemGroup>
