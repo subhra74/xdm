@@ -24,7 +24,7 @@
             <Button Grid.Column="2" Padding="10,5" Margin="0,5,10,5" Name="BtnOpenFolder" Content="{StaticResource CTX_OPEN_FOLDER}" Click="BtnOpenFolder_Click"/>
             <Button Grid.Column="3" Padding="25,5" Margin="5,5,10,5" Name="BtnOpen" Content="{StaticResource CTX_OPEN_FILE}" Click="BtnOpen_Click"/>
         </Grid>
-        <Grid Background="{StaticResource TextBackcolor}">
+        <Grid Background="{StaticResource ListViewBackcolor}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="auto"/>
                 <ColumnDefinition Width="*"/>

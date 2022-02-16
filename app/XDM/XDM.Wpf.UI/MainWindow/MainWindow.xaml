@@ -641,7 +641,7 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Header="{StaticResource SORT_STATUS}" Width="150" DisplayMemberBinding="{Binding Status}" />
+                                <GridViewColumn Header="{StaticResource SORT_STATUS}" Width="150" DisplayMemberBinding="{Binding StatusText}" />
                             </GridView>
                         </ListView.View>
                         <ListView.ItemContainerStyle>

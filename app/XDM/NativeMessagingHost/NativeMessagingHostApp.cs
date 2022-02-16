@@ -143,7 +143,7 @@ namespace NativeHost
             try
             {
                 //NamedPipeServerStream inPipe = null;
-                NamedPipeClientStream outPipe = null;
+                NamedPipeClientStream pipe = null;
                // while (true)
                 {
                     try
@@ -152,9 +152,9 @@ namespace NativeHost
                         //inPipe = new NamedPipeServerStream(pipeName, PipeDirection.In, 1, PipeTransmissionMode.Byte, PipeOptions.WriteThrough);
 
                         //start handshake with XDM
-                        outPipe = new NamedPipeClientStream(".", "XDM_Ipc_Browser_Monitoring_Pipe", PipeDirection.InOut,PipeOptions.Asynchronous);
+                        pipe = new NamedPipeClientStream(".", "XDM_Ipc_Browser_Monitoring_Pipe", PipeDirection.InOut,PipeOptions.Asynchronous);
                         Debug("start handshake with XDM");
-                        outPipe.Connect();
+                        pipe.Connect();
                         //NativeMessageSerializer.WriteMessage(outPipe, pipeName);
                         //Debug("pipename: " + pipeName);
 
@@ -169,14 +169,15 @@ namespace NativeHost
 
                         using var waitHandle = new ManualResetEvent(false);
 
-                        //queue messages from xdm pipe for browser
+                        //Direction: XDM ---> NativeHost
+                        //Read messages from XDM's named pipe and add them to queuedBrowserMessages
                         var task1 = new Thread(() =>
                          {
                              try
                              {
                                  while (true)
                                  {
-                                     var syncMsgBytes = NativeMessageSerializer.ReadMessageBytes(outPipe);
+                                     var syncMsgBytes = NativeMessageSerializer.ReadMessageBytes(pipe);
                                      Debug("Message received from XDM of size: " + syncMsgBytes.Length);
                                      if (syncMsgBytes.Length == 0)
                                      {
@@ -196,7 +197,8 @@ namespace NativeHost
                          }
                         );
 
-                        //queue messages to xdm pipe from browser
+                        //Direction: NativeHost ---> XDM
+                        //Take messages from receivedBrowserMessages and write them to XDM's named pipe
                         var task2 = new Thread(() =>
                         {
                             try
@@ -213,7 +215,7 @@ namespace NativeHost
                                     }
                                     //Debug("Task2 message size fron browser stdin: " + syncMsgBytes.Length);
                                     Debug("Sending message to XDM...");
-                                    NativeMessageSerializer.WriteMessage(outPipe, syncMsgBytes);
+                                    NativeMessageSerializer.WriteMessage(pipe, syncMsgBytes);
                                     Debug("Sent message to XDM");
                                 }
                             }
@@ -245,12 +247,12 @@ namespace NativeHost
                     //catch { }
                     try
                     {
-                        outPipe.Close();
+                        pipe.Close();
                     }
                     catch { }
                     try
                     {
-                        outPipe.Dispose();
+                        pipe.Dispose();
                     }
                     catch { }
                     //try

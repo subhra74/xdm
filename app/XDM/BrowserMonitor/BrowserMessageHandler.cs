@@ -32,6 +32,13 @@ namespace BrowserMonitoring
                 return;
             }
 
+            if (envelop.MessageType == "custom")
+            {
+                var args = ArgsProcessor.ParseArgs(envelop.CustomData.Split('\r'));
+                ArgsProcessor.Process(app, args);
+                return;
+            }
+
             var rawMessage = envelop.Message;
             if (rawMessage == null && envelop.Messages == null)
             {

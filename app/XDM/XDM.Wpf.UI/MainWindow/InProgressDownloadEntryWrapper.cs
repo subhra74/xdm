@@ -56,6 +56,7 @@ namespace XDM.Wpf.UI
                 entry.Progress = value;
                 OnPropertyChanged("Progress");
                 OnPropertyChanged("Status");
+                OnPropertyChanged("StatusText");
             }
         }
 
@@ -72,6 +73,7 @@ namespace XDM.Wpf.UI
             {
                 entry.Status = value;
                 OnPropertyChanged("Status");
+                OnPropertyChanged("StatusText");
             }
         }
 
@@ -82,6 +84,7 @@ namespace XDM.Wpf.UI
             {
                 entry.DownloadSpeed = value;
                 OnPropertyChanged("Status");
+                OnPropertyChanged("StatusText");
             }
         }
 
@@ -92,6 +95,7 @@ namespace XDM.Wpf.UI
             {
                 entry.ETA = value;
                 OnPropertyChanged("Status");
+                OnPropertyChanged("StatusText");
             }
         }
 
@@ -101,6 +105,7 @@ namespace XDM.Wpf.UI
         public void UpdateStatusText()
         {
             OnPropertyChanged("Status");
+            OnPropertyChanged("StatusText");
         }
 
         private void OnPropertyChanged(string propName)

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using XDM.Core.Lib.Util;
 
@@ -15,6 +16,8 @@ namespace BrowserMonitoring
 
         public string[] VideoIds { get; set; }
 
+        public string CustomData { get; set; }
+
         public void Serialize(BinaryWriter w)
         {
             RawBrowserMessageEnvelopSerializerV1.Serialize(this, w);
@@ -26,6 +29,11 @@ namespace BrowserMonitoring
             if (version == 1)
             {
                 return RawBrowserMessageEnvelopSerializerV1.Deserialize(r);
+            }
+            if (version == Int32.MaxValue) //custom data
+            {
+                var data = Helpers.ReadString(r);
+                return new RawBrowserMessageEnvelop { MessageType = "custom", CustomData = data };
             }
             throw new InvalidDataException($"Version ${version} not supported.");
         }

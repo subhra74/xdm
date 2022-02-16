@@ -40,10 +40,9 @@ namespace BrowserMonitoring
                 Log.Debug(ex, "Exception in NativeMessagingHostHandler ctor");
                 if (ex is InstanceAlreadyRunningException)
                 {
-                    Log.Debug(ex, "Sending args to running instance");
-
                     if (app.Args != null && app.Args.Length > 0)
                     {
+                        Log.Debug(ex, "Sending args to running instance");
                         SendArgsToRunningInstance(app.Args);
                         Environment.Exit(0);
                     }
@@ -56,27 +55,7 @@ namespace BrowserMonitoring
         public NativeMessagingHostHandler(IApp app)
         {
             this.app = app;
-            try
-            {
-                using var mutex = Mutex.OpenExisting(@"Global\XDM_Active_Instance");
-                throw new InstanceAlreadyRunningException(@"XDM instance already running, Mutex exists 'Global\XDM_Active_Instance'");
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Exception in NativeMessagingHostHandler ctor");
-                if (ex is InstanceAlreadyRunningException)
-                {
-                    Log.Debug(ex, "Sending args to running instance");
-
-                    if (app.Args != null && app.Args.Length > 0)
-                    {
-                        SendArgsToRunningInstance(app.Args);
-                        Environment.Exit(0);
-                    }
-                    throw;
-                }
-            }
-            globalMutex = new Mutex(true, @"Global\XDM_Active_Instance");
+            EnsureSingleInstance(this.app);
         }
 
         public void BroadcastConfig()
@@ -357,12 +336,17 @@ namespace BrowserMonitoring
 
         private static void SendArgsToRunningInstance(string[] args)
         {
-            using var clientPipe =
+            using var npc =
                            new NamedPipeClientStream(".", PipeName, PipeDirection.Out);
-            clientPipe.Connect();
-            NativeMessageSerializer.WriteMessage(clientPipe, $"XDM-APP-${Guid.NewGuid()}");
-            NativeMessageSerializer.WriteMessage(clientPipe, string.Join("\r", args));
-            clientPipe.Flush();
+            npc.Connect();
+            var b = new MemoryStream();
+            var wb = new BinaryWriter(b);
+            wb.Write(Int32.MaxValue);
+            wb.Write(string.Join("\r", args));
+            wb.Close();
+            NativeMessageSerializer.WriteMessage(npc, b.ToArray());
+            npc.Flush();
+            npc.Close();
         }
     }
 

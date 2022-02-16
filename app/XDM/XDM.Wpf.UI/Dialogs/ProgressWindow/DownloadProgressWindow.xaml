@@ -19,7 +19,7 @@
             <Button Grid.Column="2" Name="BtnStop" Margin="0" Padding="20,5" Content="{StaticResource BTN_STOP_PROCESSING}" Click="BtnStop_Click"/>
             <Button Grid.Column="3" Name="BtnPause" Margin="10,0,0,0" Padding="15,5" Content="{StaticResource MENU_PAUSE}" Click="BtnPause_Click"/>
         </Grid>
-        <Border Background="{StaticResource TextBackcolor}" Padding="10">
+        <Border Background="{StaticResource ListViewBackcolor}" Padding="10">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="auto"/>
@@ -47,7 +47,7 @@
                   SnapsToDevicePixels="True"/>
                 <TextBlock Grid.Row="0" Grid.Column="1" x:Name="TxtFileName" Grid.ColumnSpan="3"
                            Text="" Margin="10,10,0,0" 
-                           FontSize="16" Foreground="{StaticResource HyperlinkForecolor}" TextTrimming="CharacterEllipsis"/>
+                           FontSize="16" TextTrimming="CharacterEllipsis"/>
                 <TextBlock Grid.Row="1" Grid.Column="1" x:Name="TxtUrl" Text="" Margin="10,0" Grid.ColumnSpan="3"
                            Foreground="{StaticResource ToolButtonMouseDisabledForecolor}" TextTrimming="CharacterEllipsis"/>
                 <TextBlock Grid.Row="3" Grid.Column="1" x:Name="TxtStatus" Text="" Margin="10,5" />
