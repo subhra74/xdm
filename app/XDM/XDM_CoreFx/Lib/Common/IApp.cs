@@ -43,7 +43,8 @@ namespace XDM.Core.Lib.Common
             bool startImmediately,
             AuthenticationInfo? authentication,
             ProxyInfo? proxyInfo,
-            int maxSpeedLimit, string? queueId);
+            int maxSpeedLimit, string? queueId,
+            bool convertToMp3);
 
         public string StartDownload(DualSourceHTTPDownloadInfo info,
             string fileName,
@@ -96,7 +97,9 @@ namespace XDM.Core.Lib.Common
             AuthenticationInfo? authentication,
             ProxyInfo? proxyInfo,
             int maxSpeedLimit,
-            string? queueId);
+            string? queueId,
+            bool convertToMp3 = false //only applicable for dual source http downloads
+        );
         //public void SaveInProgressList(IEnumerable<InProgresDownloadEntry> list);
         //public void SaveFinishedList(IEnumerable<FinishedDownloadEntry> list);
         public void ClearVideoList();

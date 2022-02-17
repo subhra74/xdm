@@ -13,5 +13,9 @@ namespace XDM.Core.Lib.Downloader.Progressive.DualHttp
         public Dictionary<string, List<string>> Headers2 { get; set; }
         public string File { get; set; }
         public long ContentLength { get; set; }
+        public long ContentLength1 { get; set; }
+        public long ContentLength2 { get; set; }
+        public string ContentType1 { get; set; }
+        public string ContentType2 { get; set; }
     }
 }

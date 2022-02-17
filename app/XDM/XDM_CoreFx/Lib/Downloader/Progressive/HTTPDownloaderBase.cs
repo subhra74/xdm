@@ -6,6 +6,7 @@ using TraceLog;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Util;
 using XDM.Core.Lib.Clients.Http;
+using XDM.Core.Lib.Common.MediaProcessor;
 
 #if !NET5_0_OR_GREATER
 using NetFX.Polyfill;
@@ -32,6 +33,7 @@ namespace XDM.Core.Lib.Downloader.Progressive
         protected long lastDownloadedBytes = 0L;
         protected long ticksAtDownloadStartOrResume = 0L;
         protected SpeedLimiter speedLimiter = new();
+        protected BaseMediaProcessor? mediaProcessor;
 
         public FileNameFetchMode FileNameFetchMode
         {

@@ -169,7 +169,7 @@ namespace XDM.Common.UI
                 selectedFolder,
                 startImmediately,
                 window.Authentication, window.Proxy ?? Config.Instance.Proxy,
-                window.EnableSpeedLimit ? window.SpeedLimit : 0, queueId);
+                window.EnableSpeedLimit ? window.SpeedLimit : 0, queueId, false);
 
             //var http = new SingleSourceHTTPDownloader(new SingleSourceHTTPDownloadInfo
             //{

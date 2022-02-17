@@ -80,7 +80,7 @@ namespace XDM.Core.Lib.Common
         /// <param name="videoId"></param>
         /// <param name="name"></param>
         /// <param name="size"></param>
-        public void ShowVideoDownloadDialog(string videoId, string name, long size);
+        public void ShowVideoDownloadDialog(string videoId, string name, long size, string? contentType);
         /// <summary>
         /// 
         /// </summary>

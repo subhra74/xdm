@@ -48,6 +48,7 @@ namespace XDM.Core.Lib.Downloader
                     Password = Helpers.ReadString(r),
                 };
             }
+            state.ConvertToMp3 = r.ReadBoolean();
             return state;
         }
 
@@ -83,6 +84,7 @@ namespace XDM.Core.Lib.Downloader
                 w.Write(state.Proxy!.Value.UserName ?? string.Empty);
                 w.Write(state.Proxy!.Value.Password ?? string.Empty);
             }
+            w.Write(state.ConvertToMp3);
             return ms.ToArray();
         }
 

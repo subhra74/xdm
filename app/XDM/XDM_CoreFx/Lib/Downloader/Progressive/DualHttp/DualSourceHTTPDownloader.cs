@@ -14,15 +14,14 @@ namespace XDM.Core.Lib.Downloader.Progressive.DualHttp
     public class DualSourceHTTPDownloader : HTTPDownloaderBase
     {
         private DualSourceHTTPDownloaderState state;
-        private BaseMediaProcessor mediaProcessor;
         public override string Type => "Dash";
         public override Uri PrimaryUrl => this.state?.Url1 ?? this.state?.Url2;
         public override int SpeedLimit => this.state?.SpeedLimit ?? 0;
         public override bool EnableSpeedLimit => this.state?.SpeedLimit > 0;
 
         public DualSourceHTTPDownloader(DualSourceHTTPDownloadInfo info, IHttpClient hc = null,
-            BaseMediaProcessor mediaProcessor = null,
-            AuthenticationInfo? authentication = null, ProxyInfo? proxy = null, int speedLimit = 0)
+            AuthenticationInfo? authentication = null, ProxyInfo? proxy = null, int speedLimit = 0,
+            BaseMediaProcessor mediaProcessor = null)
         {
             Id = Guid.NewGuid().ToString();
 
@@ -393,7 +392,6 @@ namespace XDM.Core.Lib.Downloader.Progressive.DualHttp
 
                     var plist1 = pieces.Where(pc => pc.StreamType == StreamType.Primary).ToList();
                     var plist2 = pieces.Where(pc => pc.StreamType == StreamType.Secondary).ToList();
-
 
                     AssemblePieces(plist1, outfs1, ref buf, ref totalBytes);
                     AssemblePieces(plist2, outfs2, ref buf, ref totalBytes);

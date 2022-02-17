@@ -46,7 +46,7 @@ namespace XDM.Wpf.UI.Dialogs.NewVideoDownload
 
         public event EventHandler DownloadClicked;
         public event EventHandler<DownloadLaterEventArgs> DownloadLaterClicked;
-        public event EventHandler CancelClicked, DestroyEvent, QueueSchedulerClicked;
+        public event EventHandler CancelClicked, DestroyEvent, QueueSchedulerClicked, Mp3CheckChanged;
         public event EventHandler<FileBrowsedEventArgs> DropdownSelectionChangedEvent;
         public event EventHandler<FileBrowsedEventArgs> FileBrowsedEvent;
 
@@ -63,6 +63,14 @@ namespace XDM.Wpf.UI.Dialogs.NewVideoDownload
                 previousIndex = value;
             }
         }
+
+        public bool ShowMp3Checkbox
+        {
+            get => ChkMp3.Visibility == Visibility.Visible;
+            set => ChkMp3.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        public bool IsMp3CheckboxChecked { get => ChkMp3.IsChecked ?? false; set => ChkMp3.IsChecked = value; }
 
         protected override void OnSourceInitialized(EventArgs e)
         {
@@ -162,6 +170,16 @@ namespace XDM.Wpf.UI.Dialogs.NewVideoDownload
         private void DontAddToQueueMenuItem_Click(object sender, RoutedEventArgs e)
         {
             this.DownloadLaterClicked?.Invoke(this, new DownloadLaterEventArgs(string.Empty));
+        }
+
+        private void ChkMp3_Checked(object sender, RoutedEventArgs e)
+        {
+            Mp3CheckChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void ChkMp3_Unchecked(object sender, RoutedEventArgs e)
+        {
+            Mp3CheckChanged?.Invoke(this, EventArgs.Empty);
         }
 
         private void QueueAndSchedulerMenuItem_Click(object sender, RoutedEventArgs e)

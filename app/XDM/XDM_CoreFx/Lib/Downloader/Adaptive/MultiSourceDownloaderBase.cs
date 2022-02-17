@@ -813,6 +813,7 @@ namespace XDM.Core.Lib.Downloader.Adaptive
         public Dictionary<string, string> Cookies { get; set; }
         public Dictionary<string, List<string>> Headers { get; set; }
         public string File { get; set; }
+        public string ContentType { get; set; }
     }
 
     public abstract class MultiSourceDownloadState

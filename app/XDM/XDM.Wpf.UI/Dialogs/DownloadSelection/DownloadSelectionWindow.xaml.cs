@@ -80,7 +80,7 @@ namespace XDM.Wpf.UI.Dialogs.DownloadSelection
                         TxtSaveIn.Text,
                         startImmediately,
                         authentication, proxy ?? Config.Instance.Proxy,
-                        enableSpeedLimit ? speedLimit : 0, queueId
+                        enableSpeedLimit ? speedLimit : 0, queueId, false
                     );
                     break;
                 case "Dash":

@@ -50,6 +50,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
                 <TextBlock Grid.Row="0" Text="{StaticResource LBL_NEW_QUEUE}" Margin="20,10,10,10" HorizontalAlignment="Right"/>
@@ -60,6 +61,10 @@
                           VerticalAlignment="Stretch" VerticalContentAlignment="Center"
                           Name="CmbLocation" SelectionChanged="CmbLocation_SelectionChanged">
                 </ComboBox>
+                <CheckBox Grid.Row="2" Grid.Column="1" Margin="5,5,5,0" 
+                          VerticalAlignment="Stretch" VerticalContentAlignment="Center" 
+                          Content="{StaticResource MSG_SAVE_AS_MP3}"
+                          Name="ChkMp3" Checked="ChkMp3_Checked" Unchecked="ChkMp3_Unchecked" Visibility="Collapsed"/>
                 <StackPanel  Grid.Column="2" Grid.Row="0" Grid.RowSpan="2" Margin="0,10,0,0">
                     <Path Grid.Column="2" Grid.Row="0" Grid.RowSpan="2" 
                       VerticalAlignment="Bottom" 

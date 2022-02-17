@@ -235,11 +235,12 @@ namespace XDMApp
             });
         }
 
-        public void ShowVideoDownloadDialog(string videoId, string name, long size)
+        public void ShowVideoDownloadDialog(string videoId, string name, long size, string? contentType)
         {
             RunOnUiThread(() =>
             {
-                NewVideoDownloadDialogHelper.ShowVideoDownloadDialog(this.App, this, this.CreateNewVideoDialog(), videoId, name, size);
+                NewVideoDownloadDialogHelper.ShowVideoDownloadDialog(this.App, this, this.CreateNewVideoDialog(),
+                    videoId, name, size, contentType);
             });
         }
 

@@ -8,7 +8,8 @@ namespace XDM.Common.UI
 {
     public class NewVideoDownloadDialogHelper
     {
-        public static void ShowVideoDownloadDialog(IApp app, IAppUI appUi, INewVideoDownloadDialog window, string id, string name, long size)
+        public static void ShowVideoDownloadDialog(IApp app, IAppUI appUi, INewVideoDownloadDialog window,
+            string id, string name, long size, string? contentType)
         {
             window.SetFolderValues(CommonUtils.GetFolderValues());
             window.SeletedFolderIndex = Config.Instance.FolderSelectionMode == FolderSelectionMode.Auto ? 0 : 2;
@@ -17,6 +18,18 @@ namespace XDM.Common.UI
 
             window.FileBrowsedEvent += CommonUtils.OnFileBrowsed;
             window.DropdownSelectionChangedEvent += CommonUtils.OnDropdownSelectionChanged;
+
+            if (!string.IsNullOrEmpty(contentType))
+            {
+                var mime = contentType!.ToLowerInvariant();
+                if (mime.StartsWith("audio"))
+                {
+                    if (!(mime.Contains("mpeg") || mime.Contains("mp3")))
+                    {
+                        window.ShowMp3Checkbox = true;
+                    }
+                }
+            }
 
             window.DownloadClicked += (a, b) =>
             {
@@ -33,13 +46,19 @@ namespace XDM.Common.UI
                     }
                     return;
                 }
-                app.StartVideoDownload(id, Helpers.SanitizeFileName(window.SelectedFileName),
+                var name = Helpers.SanitizeFileName(window.SelectedFileName);
+                if (window.IsMp3CheckboxChecked)
+                {
+                    name = AddMp3Extension(name);
+                }
+                app.StartVideoDownload(id, name,
                     CommonUtils.SelectedFolderFromIndex(window.SeletedFolderIndex),
                     true,
                     window.Authentication,
                     window.Proxy ?? Config.Instance.Proxy,
                     window.EnableSpeedLimit ? window.SpeedLimit : 0,
-                    null);
+                    null,
+                    window.IsMp3CheckboxChecked);
                 window.DisposeWindow();
             };
 
@@ -50,13 +69,19 @@ namespace XDM.Common.UI
                     window.ShowMessageBox(TextResource.GetText("MSG_NO_FILE"));
                     return;
                 }
-                app.StartVideoDownload(id, Helpers.SanitizeFileName(window.SelectedFileName),
+                var name = Helpers.SanitizeFileName(window.SelectedFileName);
+                if (window.IsMp3CheckboxChecked)
+                {
+                    name = AddMp3Extension(name);
+                }
+                app.StartVideoDownload(id, name,
                     CommonUtils.SelectedFolderFromIndex(window.SeletedFolderIndex),
                     false,
                     window.Authentication,
                     window.Proxy ?? Config.Instance.Proxy,
                     window.EnableSpeedLimit ? window.SpeedLimit : 0,
-                    b.QueueId);
+                    b.QueueId,
+                    window.IsMp3CheckboxChecked);
                 window.DisposeWindow();
             };
 
@@ -71,6 +96,11 @@ namespace XDM.Common.UI
             };
 
             window.ShowWindow();
+        }
+
+        private static string AddMp3Extension(string name)
+        {
+            return $"{Path.GetFileNameWithoutExtension(name)}.mp3";
         }
 
         private static bool IsFFmpegInstalled()

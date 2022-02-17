@@ -10,5 +10,7 @@ namespace XDM.Core.Lib.Downloader.Progressive.SingleHttp
         public Dictionary<string, List<string>> Headers { get; set; }
         public string File { get; set; }
         public long ContentLength { get; set; }
+        public bool ConvertToMp3 { get; set; }
+        public string ContentType { get; set; }
     }
 }

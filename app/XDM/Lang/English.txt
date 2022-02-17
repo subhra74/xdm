@@ -208,3 +208,4 @@ MSG_RESTORE=Restore Window
 MSG_DOUBLE_CLICK_ACTION=Double click on download item
 MSG_OPEN_FILE=Open file
 MSG_FALLBACK_UA=User agent to be used if download is added manually
+MSG_SAVE_AS_MP3=Save as MP3

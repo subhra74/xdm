@@ -17,8 +17,10 @@ namespace XDM.Core.Lib.Common
         public ProxyInfo? Proxy { get; set; }
         public int SpeedLimit { get; set; }
         public bool EnableSpeedLimit { get; set; }
+        public bool ShowMp3Checkbox { get; set; }
+        public bool IsMp3CheckboxChecked { get; set; }
 
-        event EventHandler DownloadClicked, CancelClicked, DestroyEvent, QueueSchedulerClicked;
+        event EventHandler DownloadClicked, CancelClicked, DestroyEvent, QueueSchedulerClicked, Mp3CheckChanged;
         event EventHandler<DownloadLaterEventArgs> DownloadLaterClicked;
     }
 }

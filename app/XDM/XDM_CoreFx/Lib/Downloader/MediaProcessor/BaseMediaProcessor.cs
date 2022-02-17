@@ -9,6 +9,7 @@ namespace XDM.Core.Lib.Common.MediaProcessor
         protected readonly ProgressResultEventArgs progressResult = new ProgressResultEventArgs();
         public abstract MediaProcessingResult MergeAudioVideStream(string file1, string file2, string outfile, CancelFlag cancellationToken, out long outFileSize);
         public abstract MediaProcessingResult MergeHLSAudioVideStream(string segmentListFile, string outfile, CancelFlag cancellationToken, out long outFileSize);
+        public abstract MediaProcessingResult ConvertToMp3Audio(string segmentListFile, string outfile, CancelFlag cancellationToken, out long outFileSize);
         
         public virtual event EventHandler<ProgressResultEventArgs> ProgressChanged;
 

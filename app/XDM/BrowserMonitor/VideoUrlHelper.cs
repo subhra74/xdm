@@ -439,22 +439,27 @@ namespace BrowserMonitoring
 
                 if (AddToQueue(info))
                 {
+                    if (!info.IsVideo && mime.StartsWith("audio/"))
+                    {
+                        HandleDashAudio(info, app, message);
+                    }
                     var di = GetDASHPair(info);
                     if (di == null)
                     {
                         return true;
                     }
-                    var video = new DualSourceHTTPDownloadInfo
-                    {
-                        Uri1 = di.Url,
-                        Uri2 = info.Url,
-                        Headers1 = di.Headers,
-                        Headers2 = info.Headers,
-                        File = Helpers.SanitizeFileName(message.File ?? Helpers.GetFileName(new Uri(message.Url))) + ".mkv",
-                        Cookies1 = di.Cookies,
-                        Cookies2 = info.Cookies,
-                        ContentLength = di.Length + info.Length
-                    };
+                    var video = CreateDualSourceHTTPDownloadInfo(di, info, message);
+                    //    new DualSourceHTTPDownloadInfo
+                    //{
+                    //    Uri1 = di.Url,
+                    //    Uri2 = info.Url,
+                    //    Headers1 = di.Headers,
+                    //    Headers2 = info.Headers,
+                    //    File = Helpers.SanitizeFileName(message.File ?? Helpers.GetFileName(new Uri(message.Url))) + ".mkv",
+                    //    Cookies1 = di.Cookies,
+                    //    Cookies2 = info.Cookies,
+                    //    ContentLength = di.Length + info.Length
+                    //};
 
                     var size = di.Length + info.Length;
                     Log.Debug("Itag: " + info.ITag + " " + di.ITag);
@@ -473,6 +478,62 @@ namespace BrowserMonitoring
             }
             catch { }
             return false;
+        }
+
+        private static void HandleDashAudio(DashInfo info, IApp app, Message message)
+        {
+            try
+            {
+                var size = info.Length;
+                Log.Debug("Itag: " + info.ITag + " " + info.ITag);
+                var name = Helpers.GetFileName(new Uri(info.Url));
+                var ext = Path.GetExtension(name);
+
+                if (string.IsNullOrEmpty(ext))
+                {
+                    ext = info.Mime.Contains("webm") ? ".webm" : info.Mime.Contains("mp4") ? ".mp4" : "mkv";
+                }
+
+                var quality = ext.Substring(1)?.ToUpperInvariant();
+                var displayText = $"[{quality} AUDIO] {(size > 0 ? Helpers.FormatSize(size) : string.Empty)}";
+
+                var video = new SingleSourceHTTPDownloadInfo
+                {
+                    Uri = info.Url,
+                    Headers = info.Headers,
+                    File = Helpers.SanitizeFileName(message.File ?? Helpers.GetFileName(new Uri(message.Url))) + ext,
+                    Cookies = info.Cookies,
+                    ContentLength = size,
+                    ContentType = info.Mime
+                };
+
+                app.AddVideoNotification(new StreamingVideoDisplayInfo
+                {
+                    Quality = displayText,
+                    Size = size,
+                    CreationTime = DateTime.Now
+                }, video);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, ex.Message);
+            }
+        }
+
+        private static DualSourceHTTPDownloadInfo CreateDualSourceHTTPDownloadInfo(DashInfo info1, DashInfo info2, Message message)
+        {
+            var (video, audio) = info1.IsVideo ? (info1, info2) : (info2, info1);
+            return new DualSourceHTTPDownloadInfo
+            {
+                Uri1 = video.Url,
+                Uri2 = audio.Url,
+                Headers1 = video.Headers,
+                Headers2 = audio.Headers,
+                File = Helpers.SanitizeFileName(message.File ?? Helpers.GetFileName(new Uri(message.Url))) + ".mkv",
+                Cookies1 = video.Cookies,
+                Cookies2 = audio.Cookies,
+                ContentLength = video.Length + audio.Length
+            };
         }
 
         internal static void ProcessNormalVideo(Message message2, IApp app)

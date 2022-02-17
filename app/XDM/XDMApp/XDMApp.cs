@@ -131,10 +131,13 @@ namespace XDMApp
             AuthenticationInfo? authentication,
             ProxyInfo? proxyInfo,
             int maxSpeedLimit,
-            string? queueId)
+            string? queueId,
+            bool convertToMp3)
         {
+            Log.Debug($"Starting download: {fileName} {fileNameFetchMode} {convertToMp3}");
             var http = new SingleSourceHTTPDownloader(info, authentication: authentication,
-                proxy: proxyInfo, speedLimit: maxSpeedLimit);
+                proxy: proxyInfo, speedLimit: maxSpeedLimit, mediaProcessor: new FFmpegMediaProcessor(),
+                convertToMp3: convertToMp3);
             if (!string.IsNullOrEmpty(queueId))
             {
                 QueueManager.AddDownloadsToQueue(queueId!, new string[] { http.Id });
@@ -318,7 +321,7 @@ namespace XDMApp
                     true,
                     null,
                     Config.Instance.Proxy,
-                    GetSpeedLimit(), null);
+                    GetSpeedLimit(), null, false);
             }
             else
             {
@@ -335,6 +338,7 @@ namespace XDMApp
         {
             var name = string.Empty;
             var size = 0L;
+            var contentType = string.Empty;
             var valid = false;
             if (ytVideoList.ContainsKey(videoId))
             {
@@ -346,6 +350,7 @@ namespace XDMApp
                 }
                 name = ytVideoList[videoId].Info.File;
                 size = ytVideoList[videoId].DisplayInfo.Size;
+                contentType = ytVideoList[videoId].Info.ContentType1;
                 valid = true;
             }
             else if (videoList.ContainsKey(videoId))
@@ -357,6 +362,7 @@ namespace XDMApp
                 }
                 name = videoList[videoId].Info.File;
                 size = videoList[videoId].DisplayInfo.Size;
+                contentType = videoList[videoId].Info.ContentType;
                 valid = true;
             }
             else if (hlsVideoList.ContainsKey(videoId))
@@ -364,11 +370,13 @@ namespace XDMApp
                 Log.Debug("Download HLS video added with id: " + videoId);
                 name = hlsVideoList[videoId].Info.File;
                 valid = true;
+                contentType = videoList[videoId].Info.ContentType;
             }
             else if (dashVideoList.ContainsKey(videoId))
             {
                 Log.Debug("Download DASH video added with id: " + videoId);
                 name = dashVideoList[videoId].Info.File;
+                contentType = videoList[videoId].Info.ContentType;
                 valid = true;
             }
             if (valid)
@@ -382,7 +390,7 @@ namespace XDMApp
                 }
                 else
                 {
-                    AppUI.ShowVideoDownloadDialog(videoId, name, size);
+                    AppUI.ShowVideoDownloadDialog(videoId, name, size, contentType);
                 }
             }
         }
@@ -437,30 +445,42 @@ namespace XDMApp
 
         public void AddVideoNotification(StreamingVideoDisplayInfo displayInfo, DualSourceHTTPDownloadInfo info)
         {
-            ytVideoList.Add(Guid.NewGuid().ToString(), (info, displayInfo));
-            nativeMessaging.BroadcastConfig();
+            lock (this)
+            {
+                ytVideoList.Add(Guid.NewGuid().ToString(), (info, displayInfo));
+                nativeMessaging.BroadcastConfig();
+            }
         }
 
         public void AddVideoNotification(StreamingVideoDisplayInfo displayInfo, SingleSourceHTTPDownloadInfo info)
         {
-            videoList.Add(Guid.NewGuid().ToString(), (info, displayInfo));
-            nativeMessaging.BroadcastConfig();
+            lock (this)
+            {
+                videoList.Add(Guid.NewGuid().ToString(), (info, displayInfo));
+                nativeMessaging.BroadcastConfig();
+            }
         }
 
         public void AddVideoNotification(StreamingVideoDisplayInfo displayInfo, MultiSourceHLSDownloadInfo info)
         {
-            var id = Guid.NewGuid().ToString();
-            Log.Debug("HLS video added with id: " + id);
-            hlsVideoList.Add(id, (info, displayInfo));
-            nativeMessaging.BroadcastConfig();
+            lock (this)
+            {
+                var id = Guid.NewGuid().ToString();
+                Log.Debug("HLS video added with id: " + id);
+                hlsVideoList.Add(id, (info, displayInfo));
+                nativeMessaging.BroadcastConfig();
+            }
         }
 
         public void AddVideoNotification(StreamingVideoDisplayInfo displayInfo, MultiSourceDASHDownloadInfo info)
         {
-            var id = Guid.NewGuid().ToString();
-            Log.Debug("DASH video added with id: " + id);
-            dashVideoList.Add(id, (info, displayInfo));
-            nativeMessaging.BroadcastConfig();
+            lock (this)
+            {
+                var id = Guid.NewGuid().ToString();
+                Log.Debug("DASH video added with id: " + id);
+                dashVideoList.Add(id, (info, displayInfo));
+                nativeMessaging.BroadcastConfig();
+            }
         }
 
         //public void DeleteDownloads(List<string> list)
@@ -497,25 +517,28 @@ namespace XDMApp
 
         public List<(string ID, string File, string DisplayName, DateTime Time)> GetVideoList(bool encode = true)
         {
-            var list = new List<(string ID, string File, string DisplayName, DateTime Time)>();
-            foreach (var e in ytVideoList)
+            lock (this)
             {
-                list.Add((e.Key, encode ? EncodeToCharCode(e.Value.Info.File) : e.Value.Info.File, e.Value.DisplayInfo.Quality, e.Value.DisplayInfo.CreationTime));
+                var list = new List<(string ID, string File, string DisplayName, DateTime Time)>();
+                foreach (var e in ytVideoList)
+                {
+                    list.Add((e.Key, encode ? EncodeToCharCode(e.Value.Info.File) : e.Value.Info.File, e.Value.DisplayInfo.Quality, e.Value.DisplayInfo.CreationTime));
+                }
+                foreach (var e in videoList)
+                {
+                    list.Add((e.Key, encode ? EncodeToCharCode(e.Value.Info.File) : e.Value.Info.File, e.Value.DisplayInfo.Quality, e.Value.DisplayInfo.CreationTime));
+                }
+                foreach (var e in hlsVideoList)
+                {
+                    list.Add((e.Key, encode ? EncodeToCharCode(e.Value.Info.File) : e.Value.Info.File, e.Value.DisplayInfo.Quality, e.Value.DisplayInfo.CreationTime));
+                }
+                foreach (var e in dashVideoList)
+                {
+                    list.Add((e.Key, encode ? EncodeToCharCode(e.Value.Info.File) : e.Value.Info.File, e.Value.DisplayInfo.Quality, e.Value.DisplayInfo.CreationTime));
+                }
+                list.Sort((a, b) => a.Time.CompareTo(b.Time));
+                return list;
             }
-            foreach (var e in videoList)
-            {
-                list.Add((e.Key, encode ? EncodeToCharCode(e.Value.Info.File) : e.Value.Info.File, e.Value.DisplayInfo.Quality, e.Value.DisplayInfo.CreationTime));
-            }
-            foreach (var e in hlsVideoList)
-            {
-                list.Add((e.Key, encode ? EncodeToCharCode(e.Value.Info.File) : e.Value.Info.File, e.Value.DisplayInfo.Quality, e.Value.DisplayInfo.CreationTime));
-            }
-            foreach (var e in dashVideoList)
-            {
-                list.Add((e.Key, encode ? EncodeToCharCode(e.Value.Info.File) : e.Value.Info.File, e.Value.DisplayInfo.Quality, e.Value.DisplayInfo.CreationTime));
-            }
-            list.Sort((a, b) => a.Time.CompareTo(b.Time));
-            return list;
         }
 
         public void ResumeNonInteractiveDownloads(IEnumerable<string> idList)
@@ -558,7 +581,8 @@ namespace XDMApp
                     switch (item.Value.DownloadType)
                     {
                         case "Http":
-                            download = new SingleSourceHTTPDownloader((string)item.Key);
+                            download = new SingleSourceHTTPDownloader((string)item.Key,
+                                 mediaProcessor: new FFmpegMediaProcessor());
                             break;
                         case "Dash":
                             download = new DualSourceHTTPDownloader((string)item.Key,
@@ -629,26 +653,46 @@ namespace XDMApp
 
         public void StartVideoDownload(string videoId,
             string name,
-            string folder,
+            string? folder,
             bool startImmediately,
             AuthenticationInfo? authentication,
             ProxyInfo? proxyInfo,
             int maxSpeedLimit,
-            string? queueId)
+            string? queueId,
+            bool convertToMp3 = false //only applicable for dual source http downloads
+            )
         {
             //IBaseDownloader downloader = null;
             if (ytVideoList.ContainsKey(videoId))
             {
                 StartDownload(ytVideoList[videoId].Info, name, FileNameFetchMode.ExtensionOnly,
-                    folder, startImmediately, authentication, proxyInfo, GetSpeedLimit(), queueId);
+                        folder, startImmediately, authentication, proxyInfo, GetSpeedLimit(), queueId);
+                //if (convertToMp3)
+                //{
+                //    var info = new SingleSourceHTTPDownloadInfo
+                //    {
+                //        Uri = ytVideoList[videoId].Info.Uri2,
+                //        Headers = ytVideoList[videoId].Info.Headers2,
+                //        Cookies = ytVideoList[videoId].Info.Cookies2,
+                //        ContentLength = ytVideoList[videoId].Info.ContentLength2,
+                //        File = name
+                //    };
+                //    StartDownload(info, name, FileNameFetchMode.None,
+                //        folder, startImmediately, authentication, proxyInfo, GetSpeedLimit(), queueId);
+                //}
+                //else
+                //{
+                //    StartDownload(ytVideoList[videoId].Info, name, FileNameFetchMode.ExtensionOnly,
+                //        folder, startImmediately, authentication, proxyInfo, GetSpeedLimit(), queueId);
+                //}
                 //downloader =
                 //    new DualSourceHTTPDownloader(ytVideoList[videoId].Info,
                 //    mediaProcessor: new FFmpegMediaProcessor());
             }
             else if (videoList.ContainsKey(videoId))
             {
-                StartDownload(videoList[videoId].Info, name, FileNameFetchMode.ExtensionOnly,
-                    folder, startImmediately, authentication, proxyInfo, GetSpeedLimit(), queueId);
+                StartDownload(videoList[videoId].Info, name, convertToMp3 ? FileNameFetchMode.None : FileNameFetchMode.ExtensionOnly,
+                    folder, startImmediately, authentication, proxyInfo, GetSpeedLimit(), queueId, convertToMp3);
                 //downloader = new SingleSourceHTTPDownloader(videoList[videoId].Info);
             }
             else if (hlsVideoList.ContainsKey(videoId))
@@ -1264,7 +1308,8 @@ namespace XDMApp
                         {
                             this.StartDownload(h1, entry.Name,
                                 FileNameFetchMode.FileNameAndExtension,
-                                entry.TargetDir, true, entry.Authentication, entry.Proxy, GetSpeedLimit(), null);
+                                entry.TargetDir, true, entry.Authentication, entry.Proxy, GetSpeedLimit(), null,
+                                h1.ConvertToMp3);
                         }
                         break;
                     case "Dash":

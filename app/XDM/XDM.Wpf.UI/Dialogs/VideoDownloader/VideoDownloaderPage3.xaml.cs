@@ -142,7 +142,7 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
                         TxtSaveIn.Text,
                         startImmediately,
                         Authentication, Proxy ?? Config.Instance.Proxy,
-                        EnableSpeedLimit ? SpeedLimit : 0, queueId
+                        EnableSpeedLimit ? SpeedLimit : 0, queueId, false
                     );
                     break;
                 case YDLEntryType.Dash:
@@ -355,7 +355,7 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
             }
             set
             {
-                selected = value; 
+                selected = value;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("IsSelected"));
             }
         }
