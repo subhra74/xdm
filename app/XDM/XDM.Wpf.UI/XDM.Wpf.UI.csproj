@@ -21,6 +21,11 @@
     <Optimize>true</Optimize>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net4.7.2|x86'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\BrowserMonitor\BrowserMonitor.csproj" />
     <ProjectReference Include="..\NativeMessagingHost\NativeMessagingHost.csproj" />
