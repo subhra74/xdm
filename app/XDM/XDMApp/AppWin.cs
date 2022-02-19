@@ -680,5 +680,10 @@ namespace XDMApp
                 peer.ShowDownloadSelectionWindow(this.App, this, mode, downloads);
             });
         }
+
+        public IClipboardMonitor GetClipboardMonitor()
+        {
+            return peer.GetClipboardMonitor();
+        }
     }
 }

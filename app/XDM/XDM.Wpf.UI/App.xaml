@@ -4,7 +4,9 @@
              xmlns:local="clr-namespace:XDM.Wpf.UI"
              xmlns:clr="clr-namespace:System;assembly=mscorlib"
              Startup="Application_Startup"
-             Exit="Application_Exit" DispatcherUnhandledException="Application_DispatcherUnhandledException">
+             Exit="Application_Exit" 
+             DispatcherUnhandledException="Application_DispatcherUnhandledException"
+             SessionEnding="Application_SessionEnding">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>

@@ -98,9 +98,10 @@ namespace XDMApp
         public void StartClipboardMonitor()
         {
             if (isClipboardMonitorActive) return;
-            if (Config.Instance.MonitorClipboard && AppUI is IClipboardMonitor cm)
+            var cm = AppUI.GetClipboardMonitor();
+            if (Config.Instance.MonitorClipboard)
             {
-                cm?.StartClipboardMonitoring();
+                cm.StartClipboardMonitoring();
                 isClipboardMonitorActive = true;
                 cm.ClipboardChanged += Cm_ClipboardChanged;
             }

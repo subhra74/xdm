@@ -55,6 +55,8 @@ namespace XDM.Wpf.UI
         private SortAdorner finishedListViewSortAdorner = null;
         private GridViewColumnHeader inProgressListViewSortCol = null;
         private SortAdorner inProgressListViewSortAdorner = null;
+        private MessageLoop messageLoop;
+        private Win32ClipboarMonitor clipboarMonitor;
 
         private IMenuItem[] menuItems;
 
@@ -217,6 +219,7 @@ namespace XDM.Wpf.UI
         public event EventHandler SchedulerClicked;
         public event EventHandler MoveToQueueClicked;
         public event EventHandler DownloadListDoubleClicked;
+        public event EventHandler? ClipboardChanged;
 
         public IEnumerable<FinishedDownloadEntry> FinishedDownloads
         {
@@ -605,14 +608,19 @@ namespace XDM.Wpf.UI
         protected override void OnSourceInitialized(EventArgs e)
         {
             base.OnSourceInitialized(e);
+            var helper = new WindowInteropHelper(this);
+
 #if NET45_OR_GREATER
             if (App.Skin == Skin.Dark)
             {
-                var helper = new WindowInteropHelper(this);
                 helper.EnsureHandle();
                 DarkModeHelper.UseImmersiveDarkMode(helper.Handle, true);
             }
 #endif
+            clipboarMonitor = new Win32ClipboarMonitor(helper.Handle);
+            clipboarMonitor.ClipboardChanged += (sender, args) => this.ClipboardChanged?.Invoke(this, EventArgs.Empty);
+            this.messageLoop = new MessageLoop(clipboarMonitor);
+            messageLoop.Start();
         }
 
 
@@ -878,6 +886,8 @@ namespace XDM.Wpf.UI
             var window = new DownloadSelectionWindow(app, appUI, FileNameFetchMode.FileNameAndExtension, downloads);
             window.Show();
         }
+
+        public IClipboardMonitor GetClipboardMonitor() => this.clipboarMonitor;
     }
 
     internal class DummyButton : IButton

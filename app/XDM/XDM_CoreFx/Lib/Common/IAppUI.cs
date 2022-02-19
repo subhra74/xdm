@@ -197,6 +197,8 @@ namespace XDM.Core.Lib.Common
         void ShowQueueWindow(object window);
 
         void ShowDownloadSelectionWindow(FileNameFetchMode mode, IEnumerable<object> downloads);
+
+        IClipboardMonitor GetClipboardMonitor();
     }
 
     public enum DownloadStartType

@@ -123,6 +123,8 @@ namespace XDM.Core.Lib.UI
 
         void ShowDownloadSelectionWindow(IApp app, IAppUI appUI, FileNameFetchMode mode, IEnumerable<object> downloads);
 
+        IClipboardMonitor GetClipboardMonitor();
+
         //void RunOnNewThread(Action action);
 
         event EventHandler<CategoryChangedEventArgs> CategoryChanged;

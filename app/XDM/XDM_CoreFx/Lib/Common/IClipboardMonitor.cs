@@ -12,7 +12,7 @@ namespace XDM.Core.Lib.Common
 
         void StopClipboardMonitoring();
 
-        event EventHandler ClipboardChanged;
+        event EventHandler? ClipboardChanged;
         string GetClipboardText();
     }
 }

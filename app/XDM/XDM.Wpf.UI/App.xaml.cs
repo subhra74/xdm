@@ -5,6 +5,7 @@ using System.Windows;
 using TraceLog;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Util;
+using System.Windows.Interop;
 
 namespace XDM.Wpf.UI
 {
@@ -103,6 +104,11 @@ namespace XDM.Wpf.UI
             {
                 return Config.Instance.AllowSystemDarkTheme ? true : false;
             }
+        }
+
+        private void Application_SessionEnding(object sender, SessionEndingCancelEventArgs e)
+        {
+            e.Cancel = false;
         }
     }
 
