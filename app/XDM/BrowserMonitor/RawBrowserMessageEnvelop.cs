@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using TraceLog;
 using XDM.Core.Lib.Util;
 
 
@@ -32,6 +33,7 @@ namespace BrowserMonitoring
             }
             if (version == Int32.MaxValue) //custom data
             {
+                Log.Debug("Deseialize custom message");
                 var data = Helpers.ReadString(r);
                 return new RawBrowserMessageEnvelop { MessageType = "custom", CustomData = data };
             }

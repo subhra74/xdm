@@ -71,8 +71,15 @@ namespace BrowserMonitoring
 
         internal void Start(byte[] initialConfig)
         {
-            NativeMessageSerializer.WriteMessage(pipe, initialConfig);
-            readerThread.Start();
+            try
+            {
+                readerThread.Start();
+                NativeMessageSerializer.WriteMessage(pipe, initialConfig);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, ex.Message);
+            }
         }
     }
 

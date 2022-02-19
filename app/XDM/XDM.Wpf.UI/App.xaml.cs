@@ -48,7 +48,7 @@ namespace XDM.Wpf.UI
 
             var args = Environment.GetCommandLineArgs();
             var commandOptions = ArgsProcessor.ParseArgs(args, 1);
-            app.Args = args;
+            app.Args = args.Skip(1).ToArray();
 
             AppTrayIcon.AttachToSystemTray();
             AppTrayIcon.TrayClick += (_, _) =>

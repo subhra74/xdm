@@ -24,7 +24,7 @@ namespace BrowserMonitoring
         //private Dictionary<NamedPipeServerStream, NamedPipeClientStream> inOutMap = new();
         private readonly IApp app;
         private static Mutex globalMutex;
-       // private readonly BlockingCollection<byte[]> Messages = new();
+        // private readonly BlockingCollection<byte[]> Messages = new();
         //private Thread WriterThread;
         private Thread listenerThread;
 
@@ -336,17 +336,25 @@ namespace BrowserMonitoring
 
         private static void SendArgsToRunningInstance(string[] args)
         {
-            using var npc =
-                           new NamedPipeClientStream(".", PipeName, PipeDirection.Out);
-            npc.Connect();
-            var b = new MemoryStream();
-            var wb = new BinaryWriter(b);
-            wb.Write(Int32.MaxValue);
-            wb.Write(string.Join("\r", args));
-            wb.Close();
-            NativeMessageSerializer.WriteMessage(npc, b.ToArray());
-            npc.Flush();
-            npc.Close();
+            if (args == null || args.Length < 1) return;
+            try
+            {
+                using var npc =
+                               new NamedPipeClientStream(".", PipeName, PipeDirection.Out);
+                npc.Connect();
+                var b = new MemoryStream();
+                var wb = new BinaryWriter(b);
+                wb.Write(Int32.MaxValue);
+                wb.Write(string.Join("\r", args));
+                wb.Close();
+                NativeMessageSerializer.WriteMessage(npc, b.ToArray());
+                npc.Flush();
+                npc.Close();
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, ex.Message);
+            }
         }
     }
 
