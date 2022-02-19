@@ -41,10 +41,10 @@ namespace XDM.Core.Lib.Common.MediaProcessor
             return ret;
         }
 
-        public override MediaProcessingResult ConvertToMp3Audio(string fileList, string outfile,
+        public override MediaProcessingResult ConvertToMp3Audio(string infile, string outfile,
             CancelFlag cancellationToken, out long outFileSize)
         {
-            var args = CreateMP3MergeArgs(fileList, outfile);
+            var args = CreateMP3MergeArgs(infile, outfile);
             var ret = this.ProcessMedia(args, cancellationToken);
             try
             {
@@ -69,7 +69,7 @@ namespace XDM.Core.Lib.Common.MediaProcessor
 
         private string[] CreateMP3MergeArgs(string file, string outfile)
         {
-            var args = new string[] { "-f", "concat", "-safe", "0", "-i", file, "-auto_convert", "1", "-acodec", "libmp3lame", outfile, "-y" };
+            var args = new string[] { "-i", file, "-acodec", "libmp3lame", outfile, "-y" };
             return args;
         }
 

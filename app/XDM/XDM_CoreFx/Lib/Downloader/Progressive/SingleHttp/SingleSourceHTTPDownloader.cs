@@ -321,108 +321,109 @@ namespace XDM.Core.Lib.Downloader.Progressive.SingleHttp
                     var buf = System.Buffers.ArrayPool<byte>.Shared.Rent(5 * 1024 * 1024);
 #endif
 
-                    if (state!.ConvertToMp3)
-                    {
-                        var file = Path.Combine(this.GetState().TempDir, $"concat-{Guid.NewGuid()}.txt");
-                        File.WriteAllLines(file,
-                            pieces.Select(pc => $"file '{GetPieceFile(pc.Id)}'").ToArray());
-                        if (mediaProcessor != null)
-                        {
-                            mediaProcessor.ProgressChanged += (s, e) =>
-                            {
-                                var prg = e.Progress;
-                                if (prg > 100) prg = 100;
-                                this.OnAssembleProgressChanged(prg);
-                            };
-                            var res = mediaProcessor.ConvertToMp3Audio(file, TargetFile,
-                                this.cancelFlag, out totalBytes);
-                            if (res != MediaProcessingResult.Success)
-                            {
-                                throw new AssembleFailedException(
-                                    res == MediaProcessingResult.AppNotFound ? ErrorCode.FFmpegNotFound :
-                                    ErrorCode.FFmpegError); //TODO: Add more info about error
-                            }
 
-                            if (Config.Instance.FetchServerTimeStamp)
-                            {
-                                try
-                                {
-                                    File.SetLastWriteTime(TargetFile, state.LastModified);
-                                }
-                                catch { }
-                            }
-                            this.totalSize = totalBytes;
-                        }
-                        else
+                    var outFile = state!.ConvertToMp3 ? Path.Combine(this.GetState().TempDir!, Guid.NewGuid().ToString())
+                        : this.TargetFile;
+                    using var outfs = new FileStream(outFile!, FileMode.Create, FileAccess.Write);
+                    try
+                    {
+                        foreach (var pc in pieces)
                         {
-                            throw new AssembleFailedException(ErrorCode.Generic); //TODO: Add more info about error
+                            if (this.cancelFlag.IsCancellationRequested) return;
+                            using var infs = new FileStream(GetPieceFile(pc.Id), FileMode.Open, FileAccess.Read);
+                            var len = pc.Length;
+                            if (this.FileSize < 1)
+                            {
+                                while (!this.cancelFlag.IsCancellationRequested)
+                                {
+                                    var x = infs.Read(buf, 0, buf.Length);
+                                    if (x == 0)
+                                    {
+                                        break;
+                                    }
+                                    try
+                                    {
+                                        outfs.Write(buf, 0, x);
+                                    }
+                                    catch (IOException ioe)
+                                    {
+                                        Log.Debug(ioe, "AssemblePieces");
+                                        throw new AssembleFailedException(ErrorCode.DiskError, ioe);
+                                    }
+                                    totalBytes += x;
+                                }
+                            }
+                            else
+                            {
+                                while (len > 0)
+                                {
+                                    if (this.cancelFlag.IsCancellationRequested) return;
+                                    var x = infs.Read(buf, 0, (int)Math.Min(buf.Length, len));
+                                    if (x == 0)
+                                    {
+                                        Log.Debug("EOF :: File corrupted");
+                                        throw new Exception("EOF :: File corrupted");
+                                    }
+                                    try
+                                    {
+                                        outfs.Write(buf, 0, x);
+                                    }
+                                    catch (IOException ioe)
+                                    {
+                                        Log.Debug(ioe, "AssemblePieces");
+                                        throw new AssembleFailedException(ErrorCode.DiskError, ioe);
+                                    }
+                                    len -= x;
+                                    totalBytes += x;
+                                    var prg = (int)(totalBytes * 100 / FileSize);
+                                    if (state!.ConvertToMp3) prg /= 2;
+                                    this.OnAssembleProgressChanged(prg);
+                                }
+                            }
+                        }
+
+                        if (state!.ConvertToMp3)
+                        {
+                            if (mediaProcessor != null)
+                            {
+                                mediaProcessor.ProgressChanged += (s, e) =>
+                                {
+                                    var prg = 50 + e.Progress / 2;
+                                    if (prg > 100) prg = 100;
+                                    this.OnAssembleProgressChanged(prg);
+                                };
+                                var res = mediaProcessor.ConvertToMp3Audio(outFile!, TargetFile!,
+                                    this.cancelFlag, out totalBytes);
+                                if (res != MediaProcessingResult.Success)
+                                {
+                                    throw new AssembleFailedException(
+                                        res == MediaProcessingResult.AppNotFound ? ErrorCode.FFmpegNotFound :
+                                        ErrorCode.FFmpegError); //TODO: Add more info about error
+                                }
+
+                                if (Config.Instance.FetchServerTimeStamp)
+                                {
+                                    try
+                                    {
+                                        File.SetLastWriteTime(TargetFile, state.LastModified);
+                                    }
+                                    catch { }
+                                }
+                                this.totalSize = totalBytes;
+                            }
+                            else
+                            {
+                                throw new AssembleFailedException(ErrorCode.Generic); //TODO: Add more info about error
+                            }
                         }
                     }
-                    else
+                    finally
                     {
-                        using var outfs = new FileStream(this.TargetFile, FileMode.Create, FileAccess.Write);
-                        try
-                        {
-                            foreach (var pc in pieces)
-                            {
-                                if (this.cancelFlag.IsCancellationRequested) return;
-                                using var infs = new FileStream(GetPieceFile(pc.Id), FileMode.Open, FileAccess.Read);
-                                var len = pc.Length;
-                                if (this.FileSize < 1)
-                                {
-                                    while (!this.cancelFlag.IsCancellationRequested)
-                                    {
-                                        var x = infs.Read(buf, 0, buf.Length);
-                                        if (x == 0)
-                                        {
-                                            break;
-                                        }
-                                        try
-                                        {
-                                            outfs.Write(buf, 0, x);
-                                        }
-                                        catch (IOException ioe)
-                                        {
-                                            Log.Debug(ioe, "AssemblePieces");
-                                            throw new AssembleFailedException(ErrorCode.DiskError, ioe);
-                                        }
-                                        totalBytes += x;
-                                    }
-                                }
-                                else
-                                {
-                                    while (len > 0)
-                                    {
-                                        if (this.cancelFlag.IsCancellationRequested) return;
-                                        var x = infs.Read(buf, 0, (int)Math.Min(buf.Length, len));
-                                        if (x == 0)
-                                        {
-                                            Log.Debug("EOF :: File corrupted");
-                                            throw new Exception("EOF :: File corrupted");
-                                        }
-                                        try
-                                        {
-                                            outfs.Write(buf, 0, x);
-                                        }
-                                        catch (IOException ioe)
-                                        {
-                                            Log.Debug(ioe, "AssemblePieces");
-                                            throw new AssembleFailedException(ErrorCode.DiskError, ioe);
-                                        }
-                                        len -= x;
-                                        totalBytes += x;
-                                        if (FileSize > 0) this.OnAssembleProgressChanged((int)(totalBytes * 100 / FileSize));
-                                    }
-                                }
-                            }
-                        }
-                        finally
-                        {
 #if !NET35
                             System.Buffers.ArrayPool<byte>.Shared.Return(buf);
 #endif
-                        }
                     }
+
 
                     //Console.WriteLine("Total bytes written: {0} total size: {1}", totalBytes, this.totalSize);
                     if (this.totalSize < 1)

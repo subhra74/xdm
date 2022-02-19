@@ -61,7 +61,7 @@
                           VerticalAlignment="Stretch" VerticalContentAlignment="Center"
                           Name="CmbLocation" SelectionChanged="CmbLocation_SelectionChanged">
                 </ComboBox>
-                <CheckBox Grid.Row="2" Grid.Column="1" Margin="5,5,5,0" 
+                <CheckBox Grid.Row="2" Grid.Column="1" Margin="5,10,5,0" 
                           VerticalAlignment="Stretch" VerticalContentAlignment="Center" 
                           Content="{StaticResource MSG_SAVE_AS_MP3}"
                           Name="ChkMp3" Checked="ChkMp3_Checked" Unchecked="ChkMp3_Unchecked" Visibility="Collapsed"/>
