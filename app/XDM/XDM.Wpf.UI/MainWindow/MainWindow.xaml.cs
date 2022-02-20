@@ -620,7 +620,7 @@ namespace XDM.Wpf.UI
             clipboarMonitor = new Win32ClipboarMonitor(helper.Handle);
             clipboarMonitor.ClipboardChanged += (sender, args) => this.ClipboardChanged?.Invoke(this, EventArgs.Empty);
             this.messageLoop = new MessageLoop(clipboarMonitor);
-            messageLoop.Start();
+            messageLoop.Start(helper.Handle);
         }
 
 

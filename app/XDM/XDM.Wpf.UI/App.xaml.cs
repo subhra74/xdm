@@ -108,7 +108,9 @@ namespace XDM.Wpf.UI
 
         private void Application_SessionEnding(object sender, SessionEndingCancelEventArgs e)
         {
-            e.Cancel = false;
+            Log.Debug("Application_SessionEnding: Session ending message received...");
+            //e.Cancel = false;
+            Environment.Exit(0);
         }
     }
 

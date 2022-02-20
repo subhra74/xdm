@@ -16,17 +16,20 @@ namespace XDM.Wpf.UI
             this.clipboarMonitor = clipboarMonitor;
         }
 
-        public void Start()
+        public void Start(IntPtr handle)
         {
-            ComponentDispatcher.ThreadFilterMessage += ComponentDispatcher_ThreadFilterMessage;
+            HwndSource source = HwndSource.FromHwnd(handle);
+            source.AddHook(new HwndSourceHook(WndProc));
         }
 
-        internal void ComponentDispatcher_ThreadFilterMessage(ref MSG msg, ref bool handled)
+        private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
-            switch (msg.message)
+            //  do stuff
+            switch (msg)
             {
                 case 0x16: //WM_ENDSESSION
                     {
+                        Log.Debug("WM_ENDSESSION message received...");
                         AppTrayIcon.DetachFromSystemTray();
                         Log.Debug("WM_ENDSESSION message received, exiting application...");
                         Environment.Exit(0);
@@ -40,13 +43,13 @@ namespace XDM.Wpf.UI
                     }
                 case 0x030D: // WM_CHANGECBCHAIN
                     {
-                        clipboarMonitor.OnChangeCBChain(ref msg);
+                        clipboarMonitor.OnChangeCBChain(msg, wParam, lParam);
                         handled = true;
                         break;
                     }
                 case 0x0308: // WM_DRAWCLIPBOARD
                     {
-                        clipboarMonitor.OnDrawClipboard(ref msg);
+                        clipboarMonitor.OnDrawClipboard(msg, wParam, lParam);
                         handled = true;
                         break;
                     }
@@ -54,6 +57,7 @@ namespace XDM.Wpf.UI
                     handled = false;
                     break;
             }
+            return IntPtr.Zero;
         }
     }
 }

@@ -24,18 +24,18 @@ namespace XDM.Wpf.UI
             ChangeClipboardChain(hWndCurrentWindow, hWndNextWindow);
         }
 
-        public void OnChangeCBChain(ref MSG m)
+        public void OnChangeCBChain(int message, IntPtr wParam, IntPtr lParam)
         {
-            if (m.wParam == hWndNextWindow)
-                hWndNextWindow = m.lParam;
+            if (wParam == hWndNextWindow)
+                hWndNextWindow = lParam;
             else if (hWndNextWindow != IntPtr.Zero)
-                SendMessage(hWndNextWindow, m.message, m.wParam, m.lParam);
+                SendMessage(hWndNextWindow, message, wParam, lParam);
         }
 
-        public void OnDrawClipboard(ref MSG m)
+        public void OnDrawClipboard(int message, IntPtr wParam, IntPtr lParam)
         {
             OnClipboardChanged();
-            SendMessage(hWndNextWindow, m.message, m.wParam, m.lParam);
+            SendMessage(hWndNextWindow, message, wParam, lParam);
         }
 
         public void StartClipboardMonitoring()
