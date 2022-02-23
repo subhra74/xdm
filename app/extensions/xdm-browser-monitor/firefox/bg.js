@@ -44,7 +44,7 @@
         log("sending to xdm: " + response.url);
         var data = "url=" + response.url + "\r\n";
         if (file) {
-            data += "file=" + file + "\r\n";
+            data += "file=" + file.replaceAll(/[\\/:*?"<>\|\%]/g, "_") + "\r\n";
         }
         for (var i = 0; i < request.requestHeaders.length; i++) {
             data += "req=" + request.requestHeaders[i].name + ":" + request.requestHeaders[i].value + "\r\n";
