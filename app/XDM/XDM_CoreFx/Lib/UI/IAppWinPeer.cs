@@ -168,6 +168,8 @@ namespace XDM.Core.Lib.UI
         event EventHandler MoveToQueueClicked;
 
         event EventHandler DownloadListDoubleClicked;
+
+        event EventHandler WindowCreated;
     }
 
     public class CategoryChangedEventArgs : EventArgs

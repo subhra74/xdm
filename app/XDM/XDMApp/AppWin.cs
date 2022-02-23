@@ -19,6 +19,7 @@ namespace XDMApp
         private delegate void UpdateItemCallBack(string id, string targetFileName, long size);
         private Action<string, int, double, long> updateProgressAction;
         private long lastProgressUpdate = 0;
+        public event EventHandler WindowLoaded;
 
         public AppWin(IAppWinPeer peer, IApp app)
         {
@@ -543,6 +544,11 @@ namespace XDMApp
             peer.SchedulerClicked += (s, e) =>
             {
                 ShowQueueWindow(peer);
+            };
+
+            peer.WindowCreated += (s, e) =>
+            {
+                this.WindowLoaded?.Invoke(this, EventArgs.Empty);
             };
 
             AttachContextMenuEvents();

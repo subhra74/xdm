@@ -27,14 +27,6 @@ namespace XDM.Wpf.UI
             //  do stuff
             switch (msg)
             {
-                case 0x16: //WM_ENDSESSION
-                    {
-                        Log.Debug("WM_ENDSESSION message received...");
-                        AppTrayIcon.DetachFromSystemTray();
-                        Log.Debug("WM_ENDSESSION message received, exiting application...");
-                        Environment.Exit(0);
-                        break;
-                    }
                 case 0x0002: // WM_DESTROY
                     {
                         clipboarMonitor.ChangeClipboardChain();

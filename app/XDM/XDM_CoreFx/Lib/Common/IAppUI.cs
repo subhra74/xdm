@@ -5,7 +5,6 @@ using System.Text;
 
 using XDM.Common.UI;
 using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Downloader;
 
 namespace XDM.Core.Lib.Common
@@ -199,6 +198,8 @@ namespace XDM.Core.Lib.Common
         void ShowDownloadSelectionWindow(FileNameFetchMode mode, IEnumerable<object> downloads);
 
         IClipboardMonitor GetClipboardMonitor();
+
+        event EventHandler WindowLoaded;
     }
 
     public enum DownloadStartType

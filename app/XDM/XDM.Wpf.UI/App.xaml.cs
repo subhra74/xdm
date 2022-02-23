@@ -57,7 +57,7 @@ namespace XDM.Wpf.UI
                 win.Show();
             };
             app.AppUI = new XDMApp.AppWin(win, app);
-            app.StartClipboardMonitor();
+            app.AppUI.WindowLoaded += (_, _) => app.StartClipboardMonitor();
             app.StartScheduler();
             app.StartNativeMessagingHost();
             if (!commandOptions.ContainsKey("-m"))

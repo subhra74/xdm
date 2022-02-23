@@ -97,6 +97,7 @@ namespace XDMApp
 
         public void StartClipboardMonitor()
         {
+            Log.Debug("StartClipboardMonitor");
             if (isClipboardMonitorActive) return;
             var cm = AppUI.GetClipboardMonitor();
             if (Config.Instance.MonitorClipboard)
@@ -110,12 +111,10 @@ namespace XDMApp
         public void StopClipboardMonitor()
         {
             if (!isClipboardMonitorActive) return;
-            if (AppUI is IClipboardMonitor cm)
-            {
-                cm?.StopClipboardMonitoring();
-                isClipboardMonitorActive = false;
-                cm.ClipboardChanged -= Cm_ClipboardChanged;
-            }
+            var cm = AppUI.GetClipboardMonitor();
+            cm.StopClipboardMonitoring();
+            isClipboardMonitorActive = false;
+            cm.ClipboardChanged -= Cm_ClipboardChanged;
         }
 
         public void StartNativeMessagingHost()
@@ -1147,9 +1146,9 @@ namespace XDMApp
             nativeMessaging.BroadcastConfig();
         }
 
-        private void Cm_ClipboardChanged(object sender, EventArgs e)
+        private void Cm_ClipboardChanged(object? sender, EventArgs e)
         {
-            var text = ((IClipboardMonitor)AppUI).GetClipboardText();
+            var text = AppUI.GetClipboardMonitor().GetClipboardText();
             if (!string.IsNullOrEmpty(text) && Helpers.IsUriValid(text) && text != lastClipboardText)
             {
                 lastClipboardText = text;

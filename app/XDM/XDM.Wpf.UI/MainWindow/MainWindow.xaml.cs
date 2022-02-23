@@ -220,6 +220,7 @@ namespace XDM.Wpf.UI
         public event EventHandler MoveToQueueClicked;
         public event EventHandler DownloadListDoubleClicked;
         public event EventHandler? ClipboardChanged;
+        public event EventHandler? WindowCreated;
 
         public IEnumerable<FinishedDownloadEntry> FinishedDownloads
         {
@@ -621,6 +622,7 @@ namespace XDM.Wpf.UI
             clipboarMonitor.ClipboardChanged += (sender, args) => this.ClipboardChanged?.Invoke(this, EventArgs.Empty);
             this.messageLoop = new MessageLoop(clipboarMonitor);
             messageLoop.Start(helper.Handle);
+            WindowCreated?.Invoke(this, EventArgs.Empty);
         }
 
 
