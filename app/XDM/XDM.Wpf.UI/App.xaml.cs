@@ -40,6 +40,12 @@ namespace XDM.Wpf.UI
 
         private void Application_Startup(object sender, StartupEventArgs e)
         {
+            var logFile = System.IO.Path.Combine(Config.DataDir, "log.txt");
+            if (System.IO.File.Exists(logFile))
+            {
+                //Only if user has chosen to generate log
+                Log.InitFileBasedTrace(System.IO.Path.Combine(Config.DataDir, "log.txt"));
+            }
             Log.Debug("Application_Startup");
 
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;

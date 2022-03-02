@@ -22,7 +22,7 @@ namespace NativeHost
         static BlockingCollection<byte[]> receivedBrowserMessages = new();
         static BlockingCollection<byte[]> queuedBrowserMessages = new();
         static CamelCasePropertyNamesContractResolver cr = new();
-        static StreamWriter log = new StreamWriter(new FileStream(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "native-host.log"), FileMode.Create));
+        //static StreamWriter log = new StreamWriter(new FileStream(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "native-host.log"), FileMode.Create));
         static void Main(string[] args)
         {
             Debug("Process running from: " + AppDomain.CurrentDomain.BaseDirectory);
@@ -270,21 +270,10 @@ namespace NativeHost
 
         private static void Debug(string msg, Exception ex2 = null)
         {
-            try
+            Trace.WriteLine($"[xdm-native-messaging-host {DateTime.Now}] {msg}");
+            if (ex2 != null)
             {
-                log.WriteLine(msg);
-                log.Flush();
-                //File.AppendAllText(@"c:\log.txt", msg + "\r\n");
-                Trace.WriteLine($"[{DateTime.Now}][NativeHost] {msg}");
-                if (ex2 != null)
-                {
-                    Trace.WriteLine($"[{DateTime.Now}][NativeHost] {ex2}");
-                }
-            }
-            catch (Exception ex)
-            {
-                log.WriteLine(ex.ToString());
-                log.Flush();
+                Trace.WriteLine($"[xdm-native-messaging-host {DateTime.Now}] {ex2}");
             }
         }
 

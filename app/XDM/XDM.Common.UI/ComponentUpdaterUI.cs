@@ -51,7 +51,7 @@ namespace XDM.Common.UI
                 try
                 {
                     updaterUI.Inderminate = true;
-                    if (!UpdateChecker.GetAppUpdates(app.AppVerion, out IList<UpdateInfo> updates, out _, this.updateMode))
+                    if (!UpdateChecker.GetAppUpdates(app.AppVerion, out updates, out _, this.updateMode))
                     {
                         updaterUI.DownloadFailed(this, new DownloadFailedEventArgs(ErrorCode.Generic));
                     }
