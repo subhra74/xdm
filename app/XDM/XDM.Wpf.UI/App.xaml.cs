@@ -71,6 +71,8 @@ namespace XDM.Wpf.UI
                 win.Show();
                 if (commandOptions.ContainsKey("-i"))
                 {
+                    Config.Instance.RunOnLogon = true;
+                    Config.SaveConfig();
                     win.ShowBrowserMonitoringDialog(app);
                 }
             }

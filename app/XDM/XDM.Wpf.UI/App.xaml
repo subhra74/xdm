@@ -133,6 +133,18 @@
                     <Geometry x:Key="ri-notification-3-fill">
                         M2 8.994A5.99 5.99 0 0 1 8 3h8c3.313 0 6 2.695 6 5.994V21H8c-3.313 0-6-2.695-6-5.994V8.994zM20 19V8.994A4.004 4.004 0 0 0 16 5H8a3.99 3.99 0 0 0-4 3.994v6.012A4.004 4.004 0 0 0 8 19h12zm-6-8h2v2h-2v-2zm-6 0h2v2H8v-2z
                     </Geometry>
+                    <Geometry x:Key="ri-pushpin-2-line">
+                        M18 3v2h-1v6l2 3v2h-6v7h-2v-7H5v-2l2-3V5H6V3h12zM9 5v6.606L7.404 14h9.192L15 11.606V5H9z
+                    </Geometry>
+                    <Geometry x:Key="ri-pushpin-2-fill">
+                        M18 3v2h-1v6l2 3v2h-6v7h-2v-7H5v-2l2-3V5H6V3z
+                    </Geometry>
+                    <Geometry x:Key="ri-file-download-fill">
+                        M12.414 5H21a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h7.414l2 2zM4 5v14h16V7h-8.414l-2-2H4zm9 8h3l-4 4-4-4h3V9h2v4z
+                    </Geometry>
+                    <Geometry x:Key="ri-close-fill">
+                        M12 10.586l4.95-4.95 1.414 1.414-4.95 4.95 4.95 4.95-1.414 1.414-4.95-4.95-4.95 4.95-1.414-1.414 4.95-4.95-4.95-4.95L7.05 5.636z
+                    </Geometry>
                     <BooleanToVisibilityConverter x:Key="BoolToVis"/>
                     <local:FileExtensionToVectorImageConverter x:Key="FileExtensionToVectorImageConverter"></local:FileExtensionToVectorImageConverter>
                     <local:FileExtensionToColorConverter x:Key="FileExtensionToColorConverter"></local:FileExtensionToColorConverter>

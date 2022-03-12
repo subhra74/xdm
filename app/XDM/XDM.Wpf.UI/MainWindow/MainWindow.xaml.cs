@@ -36,6 +36,7 @@ using XDM.Wpf.UI.Dialogs.RefreshLink;
 using XDM.Wpf.UI.Dialogs.Settings;
 using XDM.Wpf.UI.Dialogs.Updater;
 using XDM.Wpf.UI.Dialogs.VideoDownloader;
+using XDM.Wpf.UI.Dialogs.Widget;
 using XDM.Wpf.UI.Win32;
 
 namespace XDM.Wpf.UI
@@ -103,6 +104,8 @@ namespace XDM.Wpf.UI
             SwitchToFinishedView();
             this.Loaded += MainWindow_Loaded;
             CreateMenuItems();
+            //var floatingWidget = new FloatingWidget();
+            //floatingWidget.Show();
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)

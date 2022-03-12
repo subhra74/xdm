@@ -177,5 +177,10 @@ namespace XDM.Wpf.UI.Dialogs.Settings
         {
             TxtExceptions.Text = string.Join(",", Config.DefaultBlockedHosts);
         }
+
+        private void VideoWikiLink_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            Helpers.OpenBrowser("https://subhra74.github.io/xdm/redirect-support.html?path=video");
+        }
     }
 }

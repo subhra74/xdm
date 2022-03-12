@@ -36,7 +36,14 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <TextBlock Padding="10" TextWrapping="Wrap" Text="{StaticResource DESC_MONITORING_1}" Grid.Row="1" Grid.ColumnSpan="4" />
+                <StackPanel Orientation="Vertical" Margin="10" Grid.Row="1" Grid.ColumnSpan="4">
+                    <TextBlock TextWrapping="Wrap" Text="{StaticResource DESC_MONITORING_1}"  />
+                    <WrapPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <TextBlock Text="{StaticResource MSG_VID_WIKI_TEXT}" Padding="0,0,10,0" />
+                        <TextBlock Text="{StaticResource MSG_VID_WIKI_LINK}" Foreground="DodgerBlue" Name="VideoWikiLink" 
+                                   MouseDown="VideoWikiLink_MouseDown" Cursor="Hand"/>
+                    </WrapPanel>
+                </StackPanel>
                 <Grid Grid.Row="2" Grid.ColumnSpan="4" Margin="10">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition/>
