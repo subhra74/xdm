@@ -125,6 +125,8 @@ namespace XDM.Core.Lib.UI
 
         IClipboardMonitor GetClipboardMonitor();
 
+        void ShowFloatingWidget();
+
         //void RunOnNewThread(Action action);
 
         event EventHandler<CategoryChangedEventArgs> CategoryChanged;

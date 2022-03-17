@@ -44,12 +44,13 @@ namespace XDMApp
         private bool isClipboardMonitorActive = false;
         private string lastClipboardText;
         private Timer awakePingTimer;
-        private System.Threading.Timer UpdateCheckTimer;
+        private readonly System.Threading.Timer UpdateCheckTimer;
 
         public IList<UpdateInfo>? Updates { get; private set; }
         public bool ComponentsInstalled { get; private set; }
-        public bool IsAppUpdateAvailable { get => Updates?.Any(u => !u.IsExternal) ?? false; }
-        public string ComponentUpdateText { get => GetUpdateText(); }
+        public bool IsAppUpdateAvailable => Updates?.Any(u => !u.IsExternal) ?? false;
+        public bool IsComponentUpdateAvailable => Updates?.Any(u => u.IsExternal) ?? false;
+        public string ComponentUpdateText => GetUpdateText();
 
         public int ActiveDownloadCount { get => liveDownloads.Count + queuedDownloads.Count; }
 
@@ -1396,7 +1397,7 @@ namespace XDMApp
         {
             try
             {
-                Log.Debug("CheckForUpdate");
+                Log.Debug("Checking for updates...");
                 if (UpdateChecker.GetAppUpdates(AppVerion, out IList<UpdateInfo> updates, out bool firstUpdate))
                 {
                     this.Updates = updates;
@@ -1412,7 +1413,7 @@ namespace XDMApp
 
         private string GetUpdateText()
         {
-            if (Updates == null) return string.Empty;
+            if (Updates == null || Updates.Count < 1) return TextResource.GetText("MSG_NO_UPDATE");
             var text = new StringBuilder();
             var size = 0L;
             text.Append((ComponentsInstalled ? "Update available: " : "XDM require FFmpeg and YoutubeDL to download streaming videos") + Environment.NewLine);

@@ -104,8 +104,6 @@ namespace XDM.Wpf.UI
             SwitchToFinishedView();
             this.Loaded += MainWindow_Loaded;
             CreateMenuItems();
-            //var floatingWidget = new FloatingWidget();
-            //floatingWidget.Show();
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -890,6 +888,12 @@ namespace XDM.Wpf.UI
         {
             var window = new DownloadSelectionWindow(app, appUI, FileNameFetchMode.FileNameAndExtension, downloads);
             window.Show();
+        }
+
+        public void ShowFloatingWidget()
+        {
+            var floatingWidget = new FloatingWidget();
+            floatingWidget.Show();
         }
 
         public IClipboardMonitor GetClipboardMonitor() => this.clipboarMonitor;

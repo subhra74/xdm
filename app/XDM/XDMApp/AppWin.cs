@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using TraceLog;
+using Translations;
 using XDM.Common.UI;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Downloader;
@@ -501,14 +502,14 @@ namespace XDMApp
                 if (App.IsAppUpdateAvailable)
                 {
                     Helpers.OpenBrowser(App.UpdatePage);
+                    return;
                 }
-                else
+                if (App.IsComponentUpdateAvailable && peer.Confirm(peer, App.ComponentUpdateText))
                 {
-                    if (peer.Confirm(peer, App.ComponentUpdateText))
-                    {
-                        LaunchUpdater(UpdateMode.FFmpegUpdateOnly | UpdateMode.YoutubeDLUpdateOnly);
-                    }
+                    LaunchUpdater(UpdateMode.FFmpegUpdateOnly | UpdateMode.YoutubeDLUpdateOnly);
+                    return;
                 }
+                peer.ShowMessageBox(peer, TextResource.GetText("MSG_NO_UPDATE"));
             };
 
             peer.BrowserMonitoringButtonClicked += (s, e) =>
@@ -690,6 +691,11 @@ namespace XDMApp
         public IClipboardMonitor GetClipboardMonitor()
         {
             return peer.GetClipboardMonitor();
+        }
+
+        public void ShowFloatingVideoWidget()
+        {
+            peer.ShowFloatingWidget();
         }
     }
 }

@@ -199,6 +199,8 @@ namespace XDM.Core.Lib.Common
 
         IClipboardMonitor GetClipboardMonitor();
 
+        void ShowFloatingVideoWidget();
+
         event EventHandler WindowLoaded;
     }
 

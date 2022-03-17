@@ -25,6 +25,7 @@ namespace XDM.Core.Lib.Common
         public IList<UpdateInfo>? Updates { get; }
         public bool ComponentsInstalled { get; }
         public bool IsAppUpdateAvailable { get; }
+        public bool IsComponentUpdateAvailable { get; }
         public string ComponentUpdateText { get; }
         string[] Args { get; set; }
 
