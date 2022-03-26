@@ -9,7 +9,7 @@
     <!--<InvariantGlobalization>true</InvariantGlobalization>-->
     <!--<PublishTrimmed>true</PublishTrimmed>-->
     <!--<TrimMode>Link</TrimMode>-->
-    <Platforms>x86</Platforms>
+    <Platforms>x86;x64</Platforms>
     <LangVersion>9.0</LangVersion>
     <Nullable>enable</Nullable>
     <ServerGarbageCollection>false</ServerGarbageCollection>

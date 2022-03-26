@@ -11,7 +11,7 @@
     <!--RuntimeIdentifier>win-x64</RuntimeIdentifier-->
     <!--RuntimeIdentifier>win-x86</RuntimeIdentifier-->
 		<!--<Platforms>AnyCPU;x86</Platforms>-->
-		<Platforms>AnyCPU;x86</Platforms>
+		<Platforms>AnyCPU;x64</Platforms>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
 	</PropertyGroup>

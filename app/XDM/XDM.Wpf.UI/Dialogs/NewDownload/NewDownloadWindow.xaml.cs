@@ -175,7 +175,6 @@ namespace XDM.Wpf.UI.Dialogs.NewDownload
                 Owner = this
             };
             var ret = dlg.ShowDialog(this);
-
             if (ret.HasValue && ret.Value)
             {
                 Authentication = dlg.Authentication;

@@ -5,7 +5,7 @@
     <TargetFrameworks>net3.5;net4.5;net4.7.2;net5.0</TargetFrameworks>
     <InvariantGlobalization>true</InvariantGlobalization>
     <LangVersion>9.0</LangVersion>
-    <Platforms>AnyCPU;x86</Platforms>
+    <Platforms>AnyCPU;x86;x64</Platforms>
     <!--<PublishTrimmed>true</PublishTrimmed>
     <TrimMode>Link</TrimMode>
     <Platforms>AnyCPU;x86</Platforms>

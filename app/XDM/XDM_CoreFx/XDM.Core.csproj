@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <RootNamespace>XDM.Core</RootNamespace>
     <AssemblyName>XDM.Core</AssemblyName>
-    <Platforms>AnyCPU;x86</Platforms>
+    <Platforms>AnyCPU;x86;x64</Platforms>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net4.7.2|x86'">

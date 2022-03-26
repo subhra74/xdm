@@ -19,6 +19,8 @@ using Translations;
 using XDM.Core.Lib.UI;
 using Menu = Gtk.Menu;
 using MenuItem = Gtk.MenuItem;
+using XDM.Core.Lib.Downloader;
+using XDM.GtkUI.Dialogs.NewDownload;
 
 namespace XDM.GtkUI
 {
@@ -29,12 +31,14 @@ namespace XDM.GtkUI
         private ListStore inprogressDownloadsStore, finishedDownloadsStore;
         private TreeView lvInprogress, lvFinished;
         private ScrolledWindow swInProgress, swFinished;
-        private TreeModelFilter filter;
+        private TreeModelFilter finishedDownloadFilter;
+        private TreeModelFilter inprogressDownloadFilter;
         private string? searchKeyword;
         private Category? category;
         private ToolButton btnNew, btnDel, btnOpenFile, btnOpenFolder, btnResume, btnPause;
         private IButton newButton, deleteButton, pauseButton, resumeButton, openFileButton, openFolderButton;
         private IMenuItem[] menuItems;
+        private Menu newDownloadMenu;
 
         public IEnumerable<FinishedDownloadEntry> FinishedDownloads
         {
@@ -91,6 +95,8 @@ namespace XDM.GtkUI
         public event EventHandler<CategoryChangedEventArgs> CategoryChanged;
         public event EventHandler SchedulerClicked;
         public event EventHandler MoveToQueueClicked;
+        public event EventHandler DownloadListDoubleClicked;
+        public event EventHandler WindowCreated;
 
         private const int FINISHED_DATA_INDEX = 3;
         private const int INPROGRESS_DATA_INDEX = 5;
@@ -169,6 +175,37 @@ namespace XDM.GtkUI
             menuInProgress.Append(((MenuItemWrapper)dict["copyURL"]).MenuItem);
             menuInProgress.Append(((MenuItemWrapper)dict["properties"]).MenuItem);
             menuInProgress.ShowAll();
+
+            newDownloadMenu = new Menu();
+
+            var menuNewDownload = new MenuItem(TextResource.GetText("LBL_NEW_DOWNLOAD"));
+            menuNewDownload.Activated += MenuNewDownload_Click;
+
+            var menuVideoDownload = new MenuItem(TextResource.GetText("LBL_VIDEO_DOWNLOAD"));
+            menuVideoDownload.Activated += MenuVideoDownload_Click;
+
+            var menuBatchDownload = new MenuItem(TextResource.GetText("MENU_BATCH_DOWNLOAD"));
+            menuBatchDownload.Activated += MenuBatchDownload_Click;
+
+            newDownloadMenu.Append(menuNewDownload);
+            newDownloadMenu.Append(menuVideoDownload);
+            newDownloadMenu.Append(menuBatchDownload);
+            newDownloadMenu.ShowAll();
+        }
+
+        private void MenuBatchDownload_Click(object? sender, EventArgs e)
+        {
+            this.BatchDownloadClicked?.Invoke(sender, e);
+        }
+
+        private void MenuVideoDownload_Click(object? sender, EventArgs e)
+        {
+            this.YoutubeDLDownloadClicked?.Invoke(sender, e);
+        }
+
+        private void MenuNewDownload_Click(object? sender, EventArgs e)
+        {
+            this.NewDownloadClicked?.Invoke(sender, e);
         }
 
         private Widget CreateMainPanel()
@@ -206,11 +243,11 @@ namespace XDM.GtkUI
             //toolbar.Add(new SeparatorToolItem() { Expand = true, Draw = false });
             var cont = new ToolItem() { MarginEnd = 3 };
 
-            var searchEntry = new Entry() { WidthChars = 10, PlaceholderText = TextResource.GetText("LBL_SEARCH") };
+            var searchEntry = new Entry() { WidthChars = 15, PlaceholderText = TextResource.GetText("LBL_SEARCH") };
             searchEntry.Activated += (a, b) =>
             {
                 searchKeyword = searchEntry.Text;
-                filter.Refilter();
+                finishedDownloadFilter.Refilter();
             };
             cont.Add(searchEntry);
             toolbar.Add(cont);
@@ -250,14 +287,16 @@ namespace XDM.GtkUI
 
             categoryTree = new TreeView()
             {
-                HeadersVisible = false
+                HeadersVisible = false,
+                ShowExpanders = false,
+                LevelIndentation = 15
             };
             categoryTree.StyleContext.AddClass("dark");
 
             var cols = new TreeViewColumn();
 
             var cell1 = new CellRendererPixbuf();
-            cell1.SetPadding(5, 5);
+            cell1.SetPadding(3, 5);
             cols.PackStart(cell1, false);
             cols.AddAttribute(cell1, "pixbuf", 0);
 
@@ -292,7 +331,7 @@ namespace XDM.GtkUI
             scrolledWindow.ShadowType = ShadowType.In;
             scrolledWindow.SetPolicy(PolicyType.Automatic, PolicyType.Automatic);
             scrolledWindow.Add(categoryTree);
-            scrolledWindow.SetSizeRequest(200, 200);
+            scrolledWindow.SetSizeRequest(160, 200);
             return scrolledWindow;
         }
 
@@ -324,7 +363,7 @@ namespace XDM.GtkUI
                     swFinished.ShowAll();
                     swInProgress.Hide();
                     category = null;
-                    filter.Refilter();
+                    finishedDownloadFilter.Refilter();
                     btnOpenFile.Visible = btnOpenFolder.Visible = true;
                     btnPause.Visible = btnResume.Visible = false;
                 }
@@ -337,7 +376,7 @@ namespace XDM.GtkUI
                 {
                     category = (Category)model.GetValue(iter, 2);
                 }
-                filter.Refilter();
+                finishedDownloadFilter.Refilter();
             }
         }
 
@@ -351,8 +390,47 @@ namespace XDM.GtkUI
                 typeof(InProgressDownloadEntry)                             // download type
                 );
 
-            lvInprogress = new TreeView(inprogressDownloadsStore);
+            inprogressDownloadFilter = new TreeModelFilter(inprogressDownloadsStore, null);
+            inprogressDownloadFilter.VisibleFunc = (model, iter) =>
+            {
+                var name = (string)model.GetValue(iter, 0);
+                return Helpers.IsOfCategoryOrMatchesKeyword(name, searchKeyword, category);
+            };
 
+            var sortedStore = new TreeModelSort(inprogressDownloadFilter);
+
+            sortedStore.SetSortFunc(0, (model, iter1, iter2) =>
+            {
+                Console.WriteLine("called");
+                var t1 = (string)model.GetValue(iter1, 0);
+                var t2 = (string)model.GetValue(iter2, 0);
+                if (t1 == null && t2 == null) return 0;
+                if (t1 == null) return 1;
+                if (t2 == null) return 2;
+                return t1.CompareTo(t2);
+            });
+
+            sortedStore.SetSortFunc(1, (model, iter1, iter2) =>
+            {
+                var t1 = (InProgressDownloadEntry)model.GetValue(iter1, 5);
+                var t2 = (InProgressDownloadEntry)model.GetValue(iter2, 5);
+                if (t1 == null && t2 == null) return 0;
+                if (t1 == null) return 1;
+                if (t2 == null) return 2;
+                return t1.DateAdded.CompareTo(t2.DateAdded);
+            });
+
+            sortedStore.SetSortFunc(2, (model, iter1, iter2) =>
+            {
+                var t1 = (InProgressDownloadEntry)model.GetValue(iter1, 5);
+                var t2 = (InProgressDownloadEntry)model.GetValue(iter2, 5);
+                if (t1 == null && t2 == null) return 0;
+                if (t1 == null) return 1;
+                if (t2 == null) return 2;
+                return t1.Size.CompareTo(t2.Size);
+            });
+
+            lvInprogress = new TreeView(sortedStore);
             lvInprogress.Selection.Mode = SelectionMode.Multiple;
 
             //File name column
@@ -384,6 +462,8 @@ namespace XDM.GtkUI
                 Sizing = TreeViewColumnSizing.Fixed,
                 FixedWidth = 100
             };
+            lastModifiedColumn.SortColumnId = 1;
+            lastModifiedColumn.SortOrder = SortType.Descending;
             lastModifiedColumn.SetAttributes(lastModifiedRendererText, "text", 1);
             lvInprogress.AppendColumn(lastModifiedColumn);
 
@@ -420,7 +500,6 @@ namespace XDM.GtkUI
             progressColumn.SetAttributes(fileRendererProgress, "value", 3);
             lvInprogress.AppendColumn(progressColumn);
 
-
             //Download status column
             var statusRendererText = new CellRendererText();
             statusRendererText.SetPadding(5, 8);
@@ -448,6 +527,8 @@ namespace XDM.GtkUI
                 }
             };
 
+            sortedStore.SetSortColumnId(1, SortType.Descending);
+
             swInProgress = new ScrolledWindow { OverlayScrolling = true, Margin = 5, MarginStart = 0, MarginTop = 0, ShadowType = ShadowType.In };
             swInProgress.SetPolicy(PolicyType.Automatic, PolicyType.Automatic);
             swInProgress.Add(lvInprogress);
@@ -464,20 +545,25 @@ namespace XDM.GtkUI
                 typeof(FinishedDownloadEntry)                               // download type
                 );
 
-            filter = new TreeModelFilter(finishedDownloadsStore, null);
-            filter.VisibleFunc = (model, iter) =>
+            finishedDownloadFilter = new TreeModelFilter(finishedDownloadsStore, null);
+            finishedDownloadFilter.VisibleFunc = (model, iter) =>
             {
                 var name = (string)model.GetValue(iter, 0);
                 return Helpers.IsOfCategoryOrMatchesKeyword(name, searchKeyword, category);
             };
 
-            var sortedStore = new TreeModelSort(filter);
+            var sortedStore = new TreeModelSort(finishedDownloadFilter);
 
             sortedStore.SetSortFunc(0, (model, iter1, iter2) =>
             {
                 Console.WriteLine("called");
                 var t1 = (string)model.GetValue(iter1, 0);
                 var t2 = (string)model.GetValue(iter2, 0);
+
+                if (t1 == null && t2 == null) return 0;
+                if (t1 == null) return 1;
+                if (t2 == null) return 2;
+
                 return t1.CompareTo(t2);
             });
 
@@ -485,6 +571,11 @@ namespace XDM.GtkUI
             {
                 var t1 = (FinishedDownloadEntry)model.GetValue(iter1, 3);
                 var t2 = (FinishedDownloadEntry)model.GetValue(iter2, 3);
+
+                if (t1 == null && t2 == null) return 0;
+                if (t1 == null) return 1;
+                if (t2 == null) return 2;
+
                 return t1.DateAdded.CompareTo(t2.DateAdded);
             });
 
@@ -492,6 +583,11 @@ namespace XDM.GtkUI
             {
                 var t1 = (FinishedDownloadEntry)model.GetValue(iter1, 3);
                 var t2 = (FinishedDownloadEntry)model.GetValue(iter2, 3);
+
+                if (t1 == null && t2 == null) return 0;
+                if (t1 == null) return 1;
+                if (t2 == null) return 2;
+
                 return t1.Size.CompareTo(t2.Size);
             });
 
@@ -562,6 +658,8 @@ namespace XDM.GtkUI
                     menuFinished.PopupAtPointer(b.Event);
                 }
             };
+
+            sortedStore.SetSortColumnId(1, SortType.Descending);
 
             swFinished = new ScrolledWindow { OverlayScrolling = true, Margin = 5, MarginStart = 0, MarginTop = 0, ShadowType = ShadowType.In };
             swFinished.SetPolicy(PolicyType.Automatic, PolicyType.Automatic);
@@ -693,7 +791,7 @@ namespace XDM.GtkUI
 
         public INewDownloadDialogSkeleton CreateNewDownloadDialog(bool empty)
         {
-            throw new NotImplementedException();
+            return new NewDownloadWindow() { IsEmpty = empty };
         }
 
         public INewVideoDownloadDialog CreateNewVideoDialog()
@@ -743,7 +841,9 @@ namespace XDM.GtkUI
 
         public string GetUrlFromClipboard()
         {
-            throw new NotImplementedException();
+            //var cb = Clipboard.GetDefault(this.Display);
+            //cb.
+            return null;
         }
 
         public AuthenticationInfo? PromtForCredentials(string message)
@@ -767,7 +867,7 @@ namespace XDM.GtkUI
 
         public void OpenNewDownloadMenu()
         {
-            throw new NotImplementedException();
+            newDownloadMenu.PopupAtWidget(this.btnNew, Gdk.Gravity.SouthWest, Gdk.Gravity.NorthWest, null);
         }
 
         public string? SaveFileDialog(string? initialPath)
@@ -961,6 +1061,47 @@ namespace XDM.GtkUI
         }
 
         public IQueueSelectionDialog CreateQueueSelectionDialog()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ConfirmDelete(string text, out bool approved, out bool deleteFiles)
+        {
+            Log.Debug(text);
+            throw new NotImplementedException();
+        }
+
+        public string? SaveFileDialog(string? initialPath, string? defaultExt, string? filter)
+        {
+            throw new NotImplementedException();
+        }
+
+        public string? OpenFileDialog(string? initialPath, string? defaultExt, string? filter)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ShowBatchDownloadWindow(IApp app, IAppUI appUi)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IQueuesWindow CreateQueuesAndSchedulerWindow(IAppUI appUi)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ShowDownloadSelectionWindow(IApp app, IAppUI appUI, FileNameFetchMode mode, IEnumerable<object> downloads)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IClipboardMonitor GetClipboardMonitor()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ShowFloatingWidget()
         {
             throw new NotImplementedException();
         }
