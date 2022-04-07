@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq;
 using Translations;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Common.MediaProcessor;
@@ -12,7 +13,24 @@ namespace XDM.Common.UI
             string id, string name, long size, string? contentType)
         {
             window.SetFolderValues(CommonUtils.GetFolderValues());
-            window.SeletedFolderIndex = Config.Instance.FolderSelectionMode == FolderSelectionMode.Auto ? 0 : 2;
+            if (Config.Instance.FolderSelectionMode == FolderSelectionMode.Auto)
+            {
+                window.SeletedFolderIndex = 0;
+            }
+            else
+            {
+                var index = CommonUtils.GetFolderValues().ToList().IndexOf(Config.Instance.UserSelectedDownloadFolder);
+                if (index > 1)
+                {
+                    window.SeletedFolderIndex = index;
+                }
+                else
+                {
+                    Config.Instance.FolderSelectionMode = FolderSelectionMode.Auto;
+                    window.SeletedFolderIndex = 0;
+                }
+            }
+            //window.SeletedFolderIndex = Config.Instance.FolderSelectionMode == FolderSelectionMode.Auto ? 0 : 2;
             window.SelectedFileName = Helpers.SanitizeFileName(name);
             window.FileSize = Helpers.FormatSize(size);
 

@@ -138,6 +138,8 @@ namespace XDM.Core.Lib.Common
             set => Helpers.EnableAutoStart(value);
         }
 
+        public string UserSelectedDownloadFolder { get; set; }
+
         public string DefaultDownloadFolder { get; set; } =
             Helpers.GetOsDefaultDownloadFolder();
 

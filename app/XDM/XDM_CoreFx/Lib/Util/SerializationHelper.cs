@@ -83,6 +83,9 @@ namespace XDM.Core.Lib.Util
                     case "AfterCompletionCommand":
                         instance.AfterCompletionCommand = r.ReadString();
                         break;
+                    case "UserSelectedDownloadFolder":
+                        instance.UserSelectedDownloadFolder = r.ReadString();
+                        break;
                     case "AntiVirusArgs":
                         instance.AntiVirusArgs = r.ReadString();
                         break;
@@ -330,6 +333,7 @@ namespace XDM.Core.Lib.Util
             w.Write((short)(instance.Proxy.HasValue ? 36 : 35)); //total fields
 
             WriteString(w, instance.AfterCompletionCommand, "AfterCompletionCommand");
+            WriteString(w, instance.UserSelectedDownloadFolder, "UserSelectedDownloadFolder");
             WriteString(w, instance.AntiVirusArgs, "AntiVirusArgs");
             WriteString(w, instance.AntiVirusExecutable, "AntiVirusExecutable");
             WriteString(w, instance.DefaultDownloadFolder, "DefaultDownloadFolder");

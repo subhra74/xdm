@@ -150,9 +150,9 @@ namespace XDM.GtkUI.Dialogs.NewDownload
             if (CmbLocation.Active == 1)
             {
                 var fc = new FileChooserDialog("XDM", this, FileChooserAction.SelectFolder);
-                fc.AddButton(Gtk.Stock.Cancel, ResponseType.Cancel);
-                fc.AddButton(Gtk.Stock.Save, ResponseType.Accept);
-                if (fc.Run() == (int)Gtk.ResponseType.Accept)
+                fc.AddButton(Stock.Cancel, ResponseType.Cancel);
+                fc.AddButton(Stock.Save, ResponseType.Accept);
+                if (fc.Run() == (int)ResponseType.Accept)
                 {
                     this.FileBrowsedEvent?.Invoke(this, new FileBrowsedEventArgs(fc.Filename));
                 }
@@ -243,6 +243,5 @@ namespace XDM.GtkUI.Dialogs.NewDownload
         {
             this.QueueSchedulerClicked?.Invoke(this, EventArgs.Empty);
         }
-
     }
 }
