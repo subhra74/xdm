@@ -832,7 +832,7 @@ namespace XDM.Core.Lib.Util
                         var command = (string)hkcuRun.GetValue("XDM");
                         var path = GetFileNameFromQuote(command);
                         return !string.IsNullOrEmpty(path) &&
-                            path == Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "XDM.WinForm.UI.exe");
+                            path == Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-app.exe");
                     }
                 }
             }

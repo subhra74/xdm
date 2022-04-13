@@ -97,13 +97,8 @@ namespace XDM.Common.UI
                 Log.Debug($"Index value {index} is invalid for {Config.Instance.FolderSelectionMode}");
                 return null;
             }
-            return Config.Instance.RecentFolders.Count > 0 ? Config.Instance.RecentFolders[0] :
-                Config.Instance.DefaultDownloadFolder; //index reording done in OnDropdownSelectionChanged
-            //if (index - 2 < Config.Instance.RecentFolders.Count)
-            //{
-            //    return Config.Instance.RecentFolders[index - 2];
-            //}
-            //return Config.Instance.DefaultDownloadFolder;
+            return Config.Instance.RecentFolders.Count > 0 ? Config.Instance.RecentFolders[index - 2] :
+                Config.Instance.DefaultDownloadFolder; 
         }
     }
 }

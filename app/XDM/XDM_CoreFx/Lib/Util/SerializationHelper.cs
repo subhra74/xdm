@@ -193,9 +193,9 @@ namespace XDM.Core.Lib.Util
                     case "RunCommandAfterCompletion":
                         instance.RunCommandAfterCompletion = r.ReadBoolean();
                         break;
-                    case "RunOnLogon":
-                        instance.RunOnLogon = r.ReadBoolean();
-                        break;
+                    //case "RunOnLogon":
+                    //    instance.RunOnLogon = r.ReadBoolean();
+                    //    break;
                     case "ScanWithAntiVirus":
                         instance.ScanWithAntiVirus = r.ReadBoolean();
                         break;
@@ -346,7 +346,7 @@ namespace XDM.Core.Lib.Util
             WriteBoolean(w, instance.KeepPCAwake, "KeepPCAwake");
             WriteBoolean(w, instance.MonitorClipboard, "MonitorClipboard");
             WriteBoolean(w, instance.RunCommandAfterCompletion, "RunCommandAfterCompletion");
-            WriteBoolean(w, instance.RunOnLogon, "RunOnLogon");
+            //WriteBoolean(w, instance.RunOnLogon, "RunOnLogon");
             WriteBoolean(w, instance.ScanWithAntiVirus, "ScanWithAntiVirus");
             WriteBoolean(w, instance.ShowDownloadCompleteWindow, "ShowDownloadCompleteWindow");
             WriteBoolean(w, instance.ShowProgressWindow, "ShowProgressWindow");
