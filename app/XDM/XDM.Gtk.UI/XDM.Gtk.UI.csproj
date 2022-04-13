@@ -44,6 +44,7 @@
   </Target>
 
 	<ItemGroup>
+		<None Remove="glade\advanced-download-window.glade" />
 		<None Remove="images\add-line.svg" />
 		<None Remove="images\apps-line.svg" />
 		<None Remove="images\check-line.svg" />

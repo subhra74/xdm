@@ -13,6 +13,7 @@ using XDM.Core.Lib.Common;
 using XDM.Core.Lib.UI;
 using XDM.GtkUI.Utils;
 using Translations;
+using XDM.GtkUI.Dialogs.AdvancedDownload;
 
 namespace XDM.GtkUI.Dialogs.NewDownload
 {
@@ -30,11 +31,15 @@ namespace XDM.GtkUI.Dialogs.NewDownload
         private Label lblFileSize, lblAddress, lblFile, lblSaveIn;
         private LinkButton lblIgnoreLabel;
         private Button btnDownloadLater, btnDownloadNow, btnMore;
+        private WindowGroup windowGroup;
 
         public NewDownloadWindow() : base(TextResource.GetText("ND_TITLE"))
         {
             SetDefaultSize(550, 300);
             SetPosition(WindowPosition.Center);
+
+            windowGroup = new WindowGroup();
+            windowGroup.AddWindow(this);
 
             var builder = new Builder();
             builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "new-download-window.glade"));
@@ -205,14 +210,17 @@ namespace XDM.GtkUI.Dialogs.NewDownload
 
         private void btnAdvanced_Click(object? sender, EventArgs e)
         {
-            //var dlg = new AdvancedDownloadOptionDialog
-            //{
-            //    Authentication = Authentication,
-            //    Proxy = Proxy,
-            //    EnableSpeedLimit = EnableSpeedLimit,
-            //    SpeedLimit = SpeedLimit,
-            //    Owner = this
-            //};
+            var dlg = new AdvancedDownloadDialog(this,this.windowGroup)
+            {
+                //Authentication = Authentication,
+                //Proxy = Proxy,
+                //EnableSpeedLimit = EnableSpeedLimit,
+                //SpeedLimit = SpeedLimit,
+                //Owner = this
+            };
+            //this.windowGroup.AddWindow(dlg);
+            dlg.Run();
+            //Console.WriteLine(ret);
             //var ret = dlg.ShowDialog(this);
 
             //if (ret.HasValue && ret.Value)

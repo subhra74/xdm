@@ -39,6 +39,7 @@ namespace XDM.GtkUI
         private IButton newButton, deleteButton, pauseButton, resumeButton, openFileButton, openFolderButton;
         private IMenuItem[] menuItems;
         private Menu newDownloadMenu;
+        private WindowGroup windowGroup;
 
         public IEnumerable<FinishedDownloadEntry> FinishedDownloads
         {
@@ -108,6 +109,8 @@ namespace XDM.GtkUI
             SetDefaultSize(800, 500);
             SetPosition(WindowPosition.Center);
             DeleteEvent += AppWin1_DeleteEvent;
+            this.windowGroup = new WindowGroup();
+            this.windowGroup.AddWindow(this);
 
             var hbMain = new HBox();
             Add(hbMain);
