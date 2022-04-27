@@ -14,6 +14,7 @@ using XDM.Core.Lib.UI;
 using XDM.GtkUI.Utils;
 using Translations;
 using XDM.GtkUI.Dialogs.AdvancedDownload;
+using UI = Gtk.Builder.ObjectAttribute;
 
 namespace XDM.GtkUI.Dialogs.NewDownload
 {
@@ -24,44 +25,56 @@ namespace XDM.GtkUI.Dialogs.NewDownload
         private int speedLimit = Config.Instance.DefaltDownloadSpeed;
         private bool enableSpeedLimit = Config.Instance.EnableSpeedLimit;
         private int previousIndex = 0;
-
-        private Entry TxtUrl, TxtFile;
-        private ComboBox CmbLocation;
         private ListStore dropdownItems;
-        private Label lblFileSize, lblAddress, lblFile, lblSaveIn;
-        private LinkButton lblIgnoreLabel;
-        private Button btnDownloadLater, btnDownloadNow, btnMore;
+
+        [UI] private Entry TxtUrl;
+        [UI] private Entry TxtFile;
+        [UI] private ComboBox CmbLocation;
+        [UI] private Label lblFileSize;
+        [UI] private Label lblAddress;
+        [UI] private Label lblFile;
+        [UI] private Label lblSaveIn;
+        [UI] private LinkButton lblIgnoreLabel;
+        [UI] private MenuButton btnDownloadLater;
+        [UI] private Button btnDownloadNow;
+        [UI] private Button btnMore;
+        [UI] private Gtk.Menu menu1;
+
         private WindowGroup windowGroup;
 
-        public NewDownloadWindow() : base(TextResource.GetText("ND_TITLE"))
+        private Gtk.MenuItem dontAddToQueueMenuItem;
+        private Gtk.MenuItem queueAndSchedulerMenuItem;
+
+        private static Builder builder = new Builder();
+
+        static NewDownloadWindow()
         {
-            SetDefaultSize(550, 300);
+            builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "new-download-window.glade"));
+        }
+
+        public NewDownloadWindow() : base(builder.GetRawOwnedObject("window"))
+        {
+            builder.Autoconnect(this);
+            SetSizeRequest(500, 300);
+            Title = TextResource.GetText("ND_TITLE");
             SetPosition(WindowPosition.Center);
 
             windowGroup = new WindowGroup();
             windowGroup.AddWindow(this);
 
-            var builder = new Builder();
-            builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "new-download-window.glade"));
-            var tempWindow = (Window)builder.GetObject("window");
-            var mainBox = (Widget)builder.GetObject("mainBox");
-            tempWindow.Remove(mainBox);
-            mainBox.ShowAll();
-            this.Add(mainBox);
-
             dropdownItems = new ListStore(typeof(string));
 
-            TxtUrl = (Entry)builder.GetObject("txtUrl");
-            TxtFile = (Entry)builder.GetObject("txtFile");
-            CmbLocation = (ComboBox)builder.GetObject("cmdFolder");
-            lblFileSize = (Label)builder.GetObject("lblFileSize");
-            lblIgnoreLabel = (LinkButton)builder.GetObject("lblIgnoreLabel");
-            btnDownloadLater = (Button)builder.GetObject("btnDownloadLater");
-            btnDownloadNow = (Button)builder.GetObject("btnDownloadNow");
-            btnMore = (Button)builder.GetObject("btnMore");
-            lblAddress = (Label)builder.GetObject("lblAddress");
-            lblFile = (Label)builder.GetObject("lblFile");
-            lblSaveIn = (Label)builder.GetObject("lblSaveIn");
+            //TxtUrl = (Entry)builder.GetObject("txtUrl");
+            //TxtFile = (Entry)builder.GetObject("txtFile");
+            //CmbLocation = (ComboBox)builder.GetObject("cmdFolder");
+            //lblFileSize = (Label)builder.GetObject("lblFileSize");
+            //lblIgnoreLabel = (LinkButton)builder.GetObject("lblIgnoreLabel");
+            //btnDownloadLater = (Button)builder.GetObject("btnDownloadLater");
+            //btnDownloadNow = (Button)builder.GetObject("btnDownloadNow");
+            //btnMore = (Button)builder.GetObject("btnMore");
+            //lblAddress = (Label)builder.GetObject("lblAddress");
+            //lblFile = (Label)builder.GetObject("lblFile");
+            //lblSaveIn = (Label)builder.GetObject("lblSaveIn");
 
             lblAddress.Text = TextResource.GetText("ND_ADDRESS");
             lblFile.Text = TextResource.GetText("ND_FILE");
@@ -79,10 +92,17 @@ namespace XDM.GtkUI.Dialogs.NewDownload
             btnMore.Clicked += btnAdvanced_Click;
             lblIgnoreLabel.Clicked += TextBlock_MouseDown;
 
-            CmbLocation.Model = dropdownItems;
-            var cmbRenderer = new CellRendererText();
-            CmbLocation.PackStart(cmbRenderer, true);
-            CmbLocation.AddAttribute(cmbRenderer, "text", 0);
+            dropdownItems = GtkHelper.PopulateComboBox(CmbLocation);
+
+            //CmbLocation.Model = dropdownItems;
+            //var cmbRenderer = new CellRendererText();
+            //CmbLocation.PackStart(cmbRenderer, true);
+            //CmbLocation.AddAttribute(cmbRenderer, "text", 0);
+
+            dontAddToQueueMenuItem = new Gtk.MenuItem(TextResource.GetText("LBL_QUEUE_OPT3"));
+            queueAndSchedulerMenuItem = new Gtk.MenuItem(TextResource.GetText("DESC_Q_TITLE"));
+
+            PrepareMenu();
 
             this.ShowAll();
         }
@@ -155,25 +175,13 @@ namespace XDM.GtkUI.Dialogs.NewDownload
             if (CmbLocation.Active == 1)
             {
                 var fc = new FileChooserDialog("XDM", this, FileChooserAction.SelectFolder);
+                windowGroup.AddWindow(fc);
                 fc.AddButton(Stock.Cancel, ResponseType.Cancel);
                 fc.AddButton(Stock.Save, ResponseType.Accept);
                 if (fc.Run() == (int)ResponseType.Accept)
                 {
                     this.FileBrowsedEvent?.Invoke(this, new FileBrowsedEventArgs(fc.Filename));
                 }
-                //using var fb = new System.Windows.Forms.FolderBrowserDialog();
-                //if (fb.ShowDialog(new WinformsWindow(this)) == System.Windows.Forms.DialogResult.OK)
-                //{
-                //    this.FileBrowsedEvent?.Invoke(this, new FileBrowsedEventArgs(fb.SelectedPath));
-                //}
-                ////var fc = new SaveFileDialog();
-                ////fc.Filter = "All files (*.*)|*.*";
-                ////fc.FileName = TxtFile.Text;
-                ////var ret = fc.ShowDialog(this);
-                ////if (ret.HasValue && ret.Value)
-                ////{
-                ////    this.FileBrowsedEvent?.Invoke(this, new FileBrowsedEventArgs(fc.FileName));
-                ////}
                 else
                 {
                     CmbLocation.Active = previousIndex;
@@ -210,26 +218,22 @@ namespace XDM.GtkUI.Dialogs.NewDownload
 
         private void btnAdvanced_Click(object? sender, EventArgs e)
         {
-            var dlg = new AdvancedDownloadDialog(this,this.windowGroup)
+            var dlg = new AdvancedDownloadDialog(AdvancedDownloadDialog.LoadBuilder(), this, this.windowGroup)
             {
-                //Authentication = Authentication,
-                //Proxy = Proxy,
-                //EnableSpeedLimit = EnableSpeedLimit,
-                //SpeedLimit = SpeedLimit,
-                //Owner = this
+                Authentication = Authentication,
+                Proxy = Proxy,
+                EnableSpeedLimit = EnableSpeedLimit,
+                SpeedLimit = SpeedLimit,
             };
-            //this.windowGroup.AddWindow(dlg);
             dlg.Run();
-            //Console.WriteLine(ret);
-            //var ret = dlg.ShowDialog(this);
-
-            //if (ret.HasValue && ret.Value)
-            //{
-            //    Authentication = dlg.Authentication;
-            //    Proxy = dlg.Proxy;
-            //    EnableSpeedLimit = dlg.EnableSpeedLimit;
-            //    SpeedLimit = dlg.SpeedLimit;
-            //}
+            if (dlg.Result)
+            {
+                Authentication = dlg.Authentication;
+                Proxy = dlg.Proxy;
+                EnableSpeedLimit = dlg.EnableSpeedLimit;
+                SpeedLimit = dlg.SpeedLimit;
+            }
+            dlg.Destroy();
         }
 
         private void TextBlock_MouseDown(object? sender, EventArgs e)
@@ -250,6 +254,16 @@ namespace XDM.GtkUI.Dialogs.NewDownload
         private void QueueAndSchedulerMenuItem_Click(object sender, EventArgs e)
         {
             this.QueueSchedulerClicked?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void PrepareMenu()
+        {
+            DownloadLaterMenuHelper.PopulateMenuAndAttachEvents(
+                DownloadLaterClicked,
+                menu1,
+                dontAddToQueueMenuItem,
+                queueAndSchedulerMenuItem,
+                this);
         }
     }
 }
