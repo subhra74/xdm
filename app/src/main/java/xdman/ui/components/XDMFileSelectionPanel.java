@@ -92,9 +92,10 @@ public class XDMFileSelectionPanel extends JPanel implements ActionListener {
 
 		add(hbox, BorderLayout.EAST);
 		pop = new JPopupMenu();
-		if (!StringUtils.isNullOrEmptyOrBlank(Config.getInstance().getLastFolder())) {
-			pop.add(createMenuItem(Config.getInstance().getLastFolder()));
-		}
+		for (String recentFolder : Config.getInstance().getRecentFolders())
+        {
+            pop.add(createMenuItem(recentFolder));
+        }
 		pop.add(createMenuItem(Config.getInstance().getDownloadFolder()));
 		if (!Config.getInstance().isForceSingleFolder()) {
 			pop.add(createMenuItem(Config.getInstance().getCategoryDocuments()));

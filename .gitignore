@@ -3,3 +3,5 @@ app/.classpath
 app/.project
 app/.settings/*
 app/target/*
+.idea
+app/xdman.iml

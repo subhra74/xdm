@@ -7,6 +7,7 @@ import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.ArrayDeque;
 
 import xdman.util.Logger;
 import xdman.util.StringUtils;
@@ -54,6 +55,8 @@ public class Config {
 	private boolean noTransparency;
 	private boolean hideTray;
 	private String lastFolder;
+    private final int maxRecentFoldersCount = 5;
+    private ArrayDeque<String> recentFolders;
 	private List<MonitoringListener> listeners;
 	private String queueIdFilter;
 	private boolean showVideoListOnlyInBrowser;
@@ -141,6 +144,7 @@ public class Config {
 			if (lastFolder != null) {
 				fw.write("lastFolder:" + this.lastFolder + newLine);
 			}
+			writeRecentFoldersToFile(fw);
 			fw.write("showVideoListOnlyInBrowser:" + this.showVideoListOnlyInBrowser + newLine);
 			fw.write("zoomLevelIndex:" + this.zoomLevelIndex + newLine);
 
@@ -277,6 +281,9 @@ public class Config {
 				} else if (key.equals("zoomLevelIndex")) {
 					this.zoomLevelIndex = Integer.parseInt(val);
 				}
+				else if (key.equals("recentFolders")){
+                    readRecentFoldersFromFile(val);
+                }
 			}
 		} catch (Exception e) {
 			Logger.log(e);
@@ -356,6 +363,7 @@ public class Config {
 		this.noTransparency = false;
 		this.hideTray = true;
 		this.listeners = new ArrayList<>();
+        this.recentFolders = new ArrayDeque<>();
 
 	}
 
@@ -366,6 +374,32 @@ public class Config {
 		getCategoryCompressed();
 		getCategoryPrograms();
 		getCategoryVideos();
+	}
+
+	private void writeRecentFoldersToFile(FileWriter fw)
+	{
+	    if (recentFolders.isEmpty())
+	        return;
+	    try
+	    {
+	        fw.write("recentFolders:");
+            for (String recentFolder : recentFolders)
+            {
+                fw.write(recentFolder + ",");
+            }
+            fw.write("\n");
+	    }
+	    catch (Exception e)
+	    {
+	        Logger.log(e);
+	    }
+
+	}
+	private void readRecentFoldersFromFile(String val)
+	{
+        String[] folders = val.split(",");
+        for (String folder: folders)
+            this.recentFolders.addLast(folder);
 	}
 
 	public static synchronized Config getInstance() {
@@ -881,10 +915,23 @@ public class Config {
 		return lastFolder;
 	}
 
+	public ArrayDeque<String> getRecentFolders()
+    {
+        return recentFolders;
+    }
+
 	public void setLastFolder(String lastFolder) {
 		this.lastFolder = lastFolder;
+        updateRecentFolders(lastFolder);
 	}
 
+    private void updateRecentFolders(String lastFolder)
+	{
+		if (recentFolders.size() == maxRecentFoldersCount)
+			recentFolders.removeLast();
+
+		recentFolders.addFirst(lastFolder);
+	}
 	public String getQueueIdFilter() {
 		return queueIdFilter;
 	}
