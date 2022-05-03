@@ -119,4 +119,27 @@ public class HttpDownloader extends SegmentDownloader {
 		return this.metadata;
 	}
 
+	public static void injectReferrerHeaders(HttpMetadata metadata)
+	{
+		String referrer = getReferrer(metadata.getUrl());
+
+		if (StringUtils.isNullOrEmpty(referrer))
+			return;
+
+		var headers = metadata.getHeaders();
+		headers.setValue("referer", referrer);
+		headers.setValue("origin", referrer);
+		metadata.setHeaders(headers);
+
+	}
+
+	// should contain different referrers of different sites
+	private static String getReferrer(String url)
+	{
+		if (url.contains("amd"))
+			return "https://www.amd.com/";
+
+		return null;
+	}
+
 }
