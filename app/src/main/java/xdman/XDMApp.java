@@ -585,7 +585,6 @@ public class XDMApp implements DownloadListener, DownloadWindowListener, Compara
 				if (metadata.getType() == XDMConstants.FTP) {
 					d = new FtpDownloader(id, ent.getTempFolder(), metadata);
 				} else {
-					HttpDownloader.injectReferrerHeaders(metadata);
 					d = new HttpDownloader(id, ent.getTempFolder(), metadata);
 				}
 			}
