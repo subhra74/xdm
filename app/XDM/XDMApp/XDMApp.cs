@@ -265,7 +265,7 @@ namespace XDMApp
                     var prgWin = CreateProgressWindow(download);
                     activeProgressWindows[download.Id] = prgWin;
                     prgWin.FileNameText = download.TargetFileName;
-                    prgWin.FileSizeText = string.Empty;
+                    prgWin.FileSizeText = $"{TextResource.GetText("STAT_DOWNLOADING")} ...";
                     prgWin.UrlText = download.PrimaryUrl?.ToString() ?? string.Empty;
                     prgWin.ShowProgressWindow();
                 }
@@ -978,6 +978,9 @@ namespace XDMApp
         {
             var prgWin = AppUI.CreateProgressWindow(downloader.Id);
             prgWin.UrlText = AppUI.GetInProgressDownloadEntry(downloader.Id)?.PrimaryUrl;
+            prgWin.DownloadSpeedText = "---";
+            prgWin.DownloadETAText = "---";
+            prgWin.FileSizeText = "---";
             return prgWin;
         }
 

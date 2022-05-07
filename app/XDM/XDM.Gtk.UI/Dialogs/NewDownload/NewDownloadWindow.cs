@@ -99,15 +99,12 @@ namespace XDM.GtkUI.Dialogs.NewDownload
             //CmbLocation.PackStart(cmbRenderer, true);
             //CmbLocation.AddAttribute(cmbRenderer, "text", 0);
 
-            dontAddToQueueMenuItem = new Gtk.MenuItem(TextResource.GetText("LBL_QUEUE_OPT3"));
-            queueAndSchedulerMenuItem = new Gtk.MenuItem(TextResource.GetText("DESC_Q_TITLE"));
-
             PrepareMenu();
 
             this.ShowAll();
         }
 
-        public bool IsEmpty { get => !TxtUrl.IsEditable; set => TxtUrl.IsEditable = !value; }
+        public bool IsEmpty { get => TxtUrl.IsEditable; set => TxtUrl.IsEditable = value; }
         public string Url { get => TxtUrl.Text; set => TxtUrl.Text = value; }
         public AuthenticationInfo? Authentication { get => authentication; set => authentication = value; }
         public ProxyInfo? Proxy { get => proxy; set => proxy = value; }
@@ -246,20 +243,26 @@ namespace XDM.GtkUI.Dialogs.NewDownload
             //DownloadLaterMenuHelper.PopulateMenuAndAttachEvents(DownloadLaterClicked, btnDownloadLater, this);
         }
 
-        private void DontAddToQueueMenuItem_Click(object sender, EventArgs e)
+        private void DontAddToQueueMenuItem_Click(object? sender, EventArgs e)
         {
             this.DownloadLaterClicked?.Invoke(this, new DownloadLaterEventArgs(string.Empty));
         }
 
-        private void QueueAndSchedulerMenuItem_Click(object sender, EventArgs e)
+        private void QueueAndSchedulerMenuItem_Click(object? sender, EventArgs e)
         {
             this.QueueSchedulerClicked?.Invoke(this, EventArgs.Empty);
         }
 
         private void PrepareMenu()
         {
+            dontAddToQueueMenuItem = new Gtk.MenuItem(TextResource.GetText("LBL_QUEUE_OPT3"));
+            queueAndSchedulerMenuItem = new Gtk.MenuItem(TextResource.GetText("DESC_Q_TITLE"));
+
+            dontAddToQueueMenuItem.Activated += DontAddToQueueMenuItem_Click;
+            queueAndSchedulerMenuItem.Activated += QueueAndSchedulerMenuItem_Click;
+
             DownloadLaterMenuHelper.PopulateMenuAndAttachEvents(
-                DownloadLaterClicked,
+                args => DownloadLaterClicked?.Invoke(this, args),
                 menu1,
                 dontAddToQueueMenuItem,
                 queueAndSchedulerMenuItem,

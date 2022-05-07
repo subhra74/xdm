@@ -12,6 +12,7 @@ namespace XDM.GtkUI.Utils
         public static void ShowMessageBox(Window window, string text)
         {
             var msgBox = new MessageDialog(window, DialogFlags.Modal, MessageType.Info, ButtonsType.Ok, text);
+            msgBox.Title = window.Title;
             if (window.Group != null)
             {
                 window.Group.AddWindow(msgBox);

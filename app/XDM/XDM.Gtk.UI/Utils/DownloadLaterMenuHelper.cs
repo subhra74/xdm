@@ -12,7 +12,7 @@ namespace XDM.GtkUI.Utils
     internal static class DownloadLaterMenuHelper
     {
         internal static void PopulateMenuAndAttachEvents(
-            EventHandler<DownloadLaterEventArgs>? DownloadLaterClicked,
+            Action<DownloadLaterEventArgs>? DownloadLaterClicked,
             Menu nctx,
             MenuItem dontAddToQueueMenuItem,
             MenuItem queueAndSchedulerMenuItem,
@@ -28,7 +28,7 @@ namespace XDM.GtkUI.Utils
                 menuItem.Activated += (s, e) =>
                 {
                     var args = new DownloadLaterEventArgs((string)menuItem.Name);
-                    DownloadLaterClicked?.Invoke(window, args);
+                    DownloadLaterClicked?.Invoke(args);
                 };
                 nctx.Append(menuItem);
             }

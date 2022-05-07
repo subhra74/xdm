@@ -48,10 +48,10 @@
                 <TextBlock Grid.Row="0" Grid.Column="1" x:Name="TxtFileName" Grid.ColumnSpan="3"
                            Text="" Margin="10,10,0,0" 
                            FontSize="16" TextTrimming="CharacterEllipsis"/>
-                <TextBlock Grid.Row="1" Grid.Column="1" x:Name="TxtUrl" Text="" Margin="10,0" Grid.ColumnSpan="3"
+                <TextBlock Grid.Row="1" Grid.Column="1" x:Name="TxtUrl" Text="---" Margin="10,0" Grid.ColumnSpan="3"
                            Foreground="{StaticResource ToolButtonMouseDisabledForecolor}" TextTrimming="CharacterEllipsis"/>
-                <TextBlock Grid.Row="3" Grid.Column="1" x:Name="TxtStatus" Text="" Margin="10,5" />
-                <TextBlock Grid.Row="3" Grid.Column="2" x:Name="TxtSpeed" Text="" Margin="10,5" HorizontalAlignment="Right" />
+                <TextBlock Grid.Row="3" Grid.Column="1" x:Name="TxtStatus" Text="---" Margin="10,5" />
+                <TextBlock Grid.Row="3" Grid.Column="2" x:Name="TxtSpeed" Text="---" Margin="10,5" HorizontalAlignment="Right" />
                 <ProgressBar Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" x:Name="PrgProgress" MinHeight="5" Margin="10,5"  />
                 <TextBlock Grid.Row="5" Grid.Column="1" x:Name="TxtETA" Text="" Margin="10,5" />
                 <TextBlock Grid.Row="5" Grid.Column="2" x:Name="TxtSpeedLimit" Text="{StaticResource MSG_NO_SPEED_LIMIT}" 
