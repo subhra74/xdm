@@ -1,5 +1,6 @@
 ﻿using Gtk;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -66,6 +67,13 @@ namespace XDM.GtkUI.Utils
             comboBox.PackStart(cell, true);
             comboBox.AddAttribute(cell, "text", 0);
             return cmbStore;
+        }
+
+        public static Gdk.Pixbuf LoadSvg(string name, int dimension = 16)
+        {
+            return new Gdk.Pixbuf(
+                Path.Combine(
+                    AppDomain.CurrentDomain.BaseDirectory, "svg-icons", $"{name}.svg"), dimension, dimension, true);
         }
     }
 }

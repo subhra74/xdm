@@ -45,7 +45,7 @@ namespace XDM.GtkUI
             set
             {
                 this.DownloadEntry.Size = value;
-                store.SetValue(treeIter, 2, Helpers.FormatSize( value));
+                store.SetValue(treeIter, 2, Helpers.FormatSize(value));
             }
         }
 
@@ -97,6 +97,16 @@ namespace XDM.GtkUI
                 this.DownloadEntry.ETA = value;
                 store.SetValue(treeIter, 4, Helpers.GenerateStatusText(this.DownloadEntry));
             }
+        }
+
+        public TreeIter GetTreeIter()
+        {
+            return this.treeIter;
+        }
+
+        public ITreeModel GetStore()
+        {
+            return this.store;
         }
     }
 }

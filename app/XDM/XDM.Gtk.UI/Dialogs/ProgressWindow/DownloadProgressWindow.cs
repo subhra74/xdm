@@ -10,6 +10,7 @@ using IoPath = System.IO.Path;
 using XDM.Common.UI;
 using Translations;
 using XDM.Core.Lib.Common;
+using XDM.GtkUI.Utils;
 
 namespace XDM.GtkUI.Dialogs.ProgressWindow
 {
@@ -208,7 +209,7 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
             //speedLimiterDlg = null;
         }
 
-        private void BtnPause_Click(object sender, EventArgs e)
+        private void BtnPause_Click(object? sender, EventArgs e)
         {
             if (!string.IsNullOrEmpty(BtnPause.Name))
             {
@@ -225,12 +226,12 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
             }
         }
 
-        private void BtnStop_Click(object sender, EventArgs e)
+        private void BtnStop_Click(object? sender, EventArgs e)
         {
             StopDownload(true);
         }
 
-        private void BtnHide_Click(object sender, EventArgs e)
+        private void BtnHide_Click(object? sender, EventArgs e)
         {
             DeleteEvent -= DownloadProgressWindow_DeleteEvent;
             App.HideProgressWindow(downloadId);
@@ -282,18 +283,13 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
         [UI] private Button BtnHide;
         [UI] private Button BtnStop;
         [UI] private Button BtnPause;
+        [UI] private Image ImgIcon;
 
         private Action<string> actSpeedUpdate, actEtaUpdate, actStatusUpdate;
         private Action<int> actPrgUpdate;
         private string downloadId = string.Empty;
-        private static Builder builder = new Builder();
 
-        static DownloadProgressWindow()
-        {
-            builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "download-progress-window.glade"));
-        }
-
-        public DownloadProgressWindow() : base(builder.GetRawOwnedObject("window"))
+        private DownloadProgressWindow(Builder builder) : base(builder.GetRawOwnedObject("window"))
         {
             builder.Autoconnect(this);
             SetSizeRequest(450, 280);
@@ -313,6 +309,24 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
             };
 
             this.DeleteEvent += DownloadProgressWindow_DeleteEvent;
+            this.BtnPause.Clicked += BtnPause_Click;
+            this.BtnStop.Clicked += BtnStop_Click;
+            this.BtnHide.Clicked += BtnHide_Click;
+
+            this.BtnHide.Label = TextResource.GetText("DWN_HIDE");
+            this.BtnStop.Label = TextResource.GetText("BTN_STOP_PROCESSING");
+            this.BtnPause.Label = TextResource.GetText("MENU_PAUSE");
+            this.TxtSpeedLimit.Label = TextResource.GetText("MSG_NO_SPEED_LIMIT");
+            this.ImgIcon.Pixbuf = GtkHelper.LoadSvg("file-download-line", 48);
+
+            this.BtnPause.Name = string.Empty;
+        }
+
+        public static DownloadProgressWindow CreateFromGladeFile()
+        {
+            var builder = new Builder();
+            builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "download-progress-window.glade"));
+            return new DownloadProgressWindow(builder);
         }
     }
 }

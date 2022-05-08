@@ -46,6 +46,7 @@
 	<ItemGroup>
 		<None Remove="glade\advanced-download-dialog.glade" />
 		<None Remove="glade\advanced-download-window.glade" />
+		<None Remove="glade\download-complete-window.glade" />
 		<None Remove="glade\download-progress-window.glade" />
 		<None Remove="images\add-line.svg" />
 		<None Remove="images\apps-line.svg" />
@@ -69,6 +70,7 @@
 		<None Remove="images\task-line.svg" />
 		<None Remove="images\time-line.svg" />
 		<None Remove="images\video-download-line.svg" />
+		<None Remove="svg-icons\download-complete-window.glade" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -105,7 +107,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="svg-icons\" />
+	  <Content Update="glade\download-complete-window.glade">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
 	</ItemGroup>
 
 

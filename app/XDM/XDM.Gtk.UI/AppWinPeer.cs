@@ -21,6 +21,9 @@ using Menu = Gtk.Menu;
 using MenuItem = Gtk.MenuItem;
 using XDM.Core.Lib.Downloader;
 using XDM.GtkUI.Dialogs.NewDownload;
+using XDM.GtkUI.Dialogs.ProgressWindow;
+using XDM.GtkUI.Utils;
+using XDM.GtkUI.Dialogs.DownloadComplete;
 
 namespace XDM.GtkUI
 {
@@ -685,9 +688,10 @@ namespace XDM.GtkUI
 
         private static Gdk.Pixbuf LoadSvg(string name, int dimension = 16)
         {
-            return new Gdk.Pixbuf(
-                IoPath.Combine(
-                    AppDomain.CurrentDomain.BaseDirectory, "svg-icons", $"{name}.svg"), dimension, dimension, true);
+            return GtkHelper.LoadSvg(name, dimension);
+            //new Gdk.Pixbuf(
+            //    IoPath.Combine(
+            //        AppDomain.CurrentDomain.BaseDirectory, "svg-icons", $"{name}.svg"), dimension, dimension, true);
         }
 
         public IInProgressDownloadRow? FindInProgressItem(string id)
@@ -789,12 +793,16 @@ namespace XDM.GtkUI
 
         public IDownloadCompleteDialog CreateDownloadCompleteDialog(IApp app)
         {
-            throw new NotImplementedException();
+            var win = DownloadCompleteDialog.CreateFromGladeFile();
+            win.App = app;
+            return win;
         }
 
         public INewDownloadDialogSkeleton CreateNewDownloadDialog(bool empty)
         {
-            return new NewDownloadWindow() { IsEmpty = empty };
+            var window = NewDownloadWindow.CreateFromGladeFile();
+            window.IsEmpty = empty;
+            return window;
         }
 
         public INewVideoDownloadDialog CreateNewVideoDialog()
@@ -804,7 +812,11 @@ namespace XDM.GtkUI
 
         public IProgressWindow CreateProgressWindow(string downloadId, IApp app, IAppUI appUI)
         {
-            throw new NotImplementedException();
+            var prgWin = DownloadProgressWindow.CreateFromGladeFile();
+            prgWin.DownloadId = downloadId;
+            prgWin.App = app;
+            prgWin.AppUI = appUI;
+            return prgWin;
         }
 
         public void RunOnUIThread(System.Action action)
@@ -819,7 +831,8 @@ namespace XDM.GtkUI
 
         public void Delete(IInProgressDownloadRow row)
         {
-            throw new NotImplementedException();
+            var iter = ((InProgressEntryWrapper)row).GetTreeIter();
+            inprogressDownloadsStore.Remove(ref iter);
         }
 
         public void Delete(IFinishedDownloadRow row)

@@ -12,6 +12,14 @@ namespace XDM.GtkUI
         {
             Application.Init();
 
+            var globalStyleSheet = @"
+                                    .large-font{ font-size: 20px; }
+                                    ";
+
+            var screen = Gdk.Screen.Default;
+            var provider = new CssProvider();
+            provider.LoadFromData(globalStyleSheet);
+            Gtk.StyleContext.AddProviderForScreen(screen, provider, 800);
             //var screen = Gdk.Screen.Default;
             //var provider = new CssProvider();
             //provider.LoadFromData(@".dark 

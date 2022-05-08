@@ -45,14 +45,14 @@ namespace XDM.GtkUI.Dialogs.NewDownload
         private Gtk.MenuItem dontAddToQueueMenuItem;
         private Gtk.MenuItem queueAndSchedulerMenuItem;
 
-        private static Builder builder = new Builder();
-
-        static NewDownloadWindow()
+        public static NewDownloadWindow CreateFromGladeFile()
         {
+            var builder = new Builder();
             builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "new-download-window.glade"));
+            return new NewDownloadWindow(builder);
         }
 
-        public NewDownloadWindow() : base(builder.GetRawOwnedObject("window"))
+        private NewDownloadWindow(Builder builder) : base(builder.GetRawOwnedObject("window"))
         {
             builder.Autoconnect(this);
             SetSizeRequest(500, 300);
