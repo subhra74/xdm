@@ -46,6 +46,8 @@
                     <property name="valign">start</property>
                     <property name="margin-start">10</property>
                     <property name="label" translatable="yes">label</property>
+                    <property name="ellipsize">end</property>
+                    <property name="single-line-mode">True</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>

@@ -95,7 +95,11 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
 
         public void ShowProgressWindow()
         {
-            Application.Invoke((a, b) => this.Show());
+            Application.Invoke((a, b) =>
+            {
+                this.SetDefaultSize(450, 280);
+                this.ShowAll();
+            });
             //Dispatcher.Invoke(new Action(() => this.Show()));
         }
 
@@ -292,7 +296,6 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
         private DownloadProgressWindow(Builder builder) : base(builder.GetRawOwnedObject("window"))
         {
             builder.Autoconnect(this);
-            SetSizeRequest(450, 280);
             Title = TextResource.GetText("STAT_DOWNLOADING");
             SetPosition(WindowPosition.Center);
 
@@ -320,6 +323,10 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
             this.ImgIcon.Pixbuf = GtkHelper.LoadSvg("file-download-line", 48);
 
             this.BtnPause.Name = string.Empty;
+            this.TxtFileName.StyleContext.AddClass("medium-font");
+
+            TxtUrl.Ellipsize = Pango.EllipsizeMode.End;
+            TxtFileName.Ellipsize = Pango.EllipsizeMode.End;
         }
 
         public static DownloadProgressWindow CreateFromGladeFile()

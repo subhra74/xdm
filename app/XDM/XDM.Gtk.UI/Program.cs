@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using Gtk;
 using Translations;
 using XDM.Core.Lib.Common;
@@ -8,12 +9,16 @@ namespace XDM.GtkUI
 {
     class Program
     {
+        private const string DisableCachingName = @"TestSwitch.LocalAppContext.DisableCaching";
+        private const string DontEnableSchUseStrongCryptoName = @"Switch.System.Net.DontEnableSchUseStrongCrypto";
+
         static void Main(string[] args)
         {
             Application.Init();
 
             var globalStyleSheet = @"
                                     .large-font{ font-size: 20px; }
+                                    .medium-font{ font-size: 14px; }
                                     ";
 
             var screen = Gdk.Screen.Default;
@@ -54,11 +59,22 @@ namespace XDM.GtkUI
             //                                  ");
             //Gtk.StyleContext.AddProviderForScreen(screen, provider, 800);
 
+            ServicePointManager.ServerCertificateValidationCallback += (a, b, c, d) => true;
+            ServicePointManager.DefaultConnectionLimit = 100;
+
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.SystemDefault;
+
+            AppContext.SetSwitch(DisableCachingName, true);
+            AppContext.SetSwitch(DontEnableSchUseStrongCryptoName, true);
+
             var app = new XDMApp.XDMApp();
             TextResource.Load(Config.Instance.Language);
             var appWin = new AppWinPeer();
             app.AppUI = new XDMApp.AppWin(appWin, app);
             appWin.ShowAll();
+            app.AppUI.WindowLoaded += (_, _) => app.StartClipboardMonitor();
+            app.StartScheduler();
+            app.StartNativeMessagingHost();
             Application.Run();
 
             //var app = new XDMApp.XDMApp();

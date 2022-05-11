@@ -24,6 +24,7 @@ using XDM.GtkUI.Dialogs.NewDownload;
 using XDM.GtkUI.Dialogs.ProgressWindow;
 using XDM.GtkUI.Utils;
 using XDM.GtkUI.Dialogs.DownloadComplete;
+using XDM.GtkUI.Dialogs.NewVideoDownload;
 
 namespace XDM.GtkUI
 {
@@ -807,7 +808,8 @@ namespace XDM.GtkUI
 
         public INewVideoDownloadDialog CreateNewVideoDialog()
         {
-            throw new NotImplementedException();
+            var window = NewVideoDownloadWindow.CreateFromGladeFile();
+            return window;
         }
 
         public IProgressWindow CreateProgressWindow(string downloadId, IApp app, IAppUI appUI)

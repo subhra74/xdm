@@ -64,6 +64,7 @@ namespace XDM.GtkUI.Utils
             }
             comboBox.Model = cmbStore;
             var cell = new CellRendererText();
+            cell.Ellipsize = Pango.EllipsizeMode.End;
             comboBox.PackStart(cell, true);
             comboBox.AddAttribute(cell, "text", 0);
             return cmbStore;

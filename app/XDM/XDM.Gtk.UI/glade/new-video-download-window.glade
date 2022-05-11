@@ -14,7 +14,7 @@
         <property name="can-focus">False</property>
         <property name="orientation">vertical</property>
         <child>
-          <!-- n-columns=3 n-rows=4 -->
+          <!-- n-columns=3 n-rows=3 -->
           <object class="GtkGrid">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
@@ -23,19 +23,6 @@
             <property name="margin-top">20</property>
             <property name="hexpand">True</property>
             <property name="vexpand">True</property>
-            <child>
-              <object class="GtkLabel" id="lblAddress">
-                <property name="visible">True</property>
-                <property name="can-focus">False</property>
-                <property name="margin-end">10</property>
-                <property name="margin-bottom">10</property>
-                <property name="label" translatable="yes">lblAddress</property>
-              </object>
-              <packing>
-                <property name="left-attach">0</property>
-                <property name="top-attach">0</property>
-              </packing>
-            </child>
             <child>
               <object class="GtkLabel" id="lblFile">
                 <property name="visible">True</property>
@@ -46,30 +33,6 @@
               </object>
               <packing>
                 <property name="left-attach">0</property>
-                <property name="top-attach">1</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkLabel" id="lblSaveIn">
-                <property name="visible">True</property>
-                <property name="can-focus">False</property>
-                <property name="margin-end">10</property>
-                <property name="label" translatable="yes">lblSaveIn</property>
-              </object>
-              <packing>
-                <property name="left-attach">0</property>
-                <property name="top-attach">2</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkEntry" id="TxtUrl">
-                <property name="visible">True</property>
-                <property name="can-focus">True</property>
-                <property name="margin-bottom">10</property>
-                <property name="hexpand">True</property>
-              </object>
-              <packing>
-                <property name="left-attach">1</property>
                 <property name="top-attach">0</property>
               </packing>
             </child>
@@ -82,6 +45,18 @@
               </object>
               <packing>
                 <property name="left-attach">1</property>
+                <property name="top-attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="lblSaveIn">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="margin-end">10</property>
+                <property name="label" translatable="yes">lblSaveIn</property>
+              </object>
+              <packing>
+                <property name="left-attach">0</property>
                 <property name="top-attach">1</property>
               </packing>
             </child>
@@ -93,16 +68,42 @@
               </object>
               <packing>
                 <property name="left-attach">1</property>
-                <property name="top-attach">2</property>
+                <property name="top-attach">1</property>
               </packing>
             </child>
             <child>
-              <object class="GtkImage" id="imgFileIcon">
+              <object class="GtkBox">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="valign">end</property>
-                <property name="margin-start">20</property>
-                <property name="stock">gtk-missing-image</property>
+                <property name="orientation">vertical</property>
+                <child>
+                  <object class="GtkImage" id="imgFileIcon">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="valign">end</property>
+                    <property name="margin-start">20</property>
+                    <property name="stock">gtk-missing-image</property>
+                  </object>
+                  <packing>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="lblFileSize">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="valign">start</property>
+                    <property name="margin-start">20</property>
+                    <property name="label" translatable="yes">label</property>
+                  </object>
+                  <packing>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
               </object>
               <packing>
                 <property name="left-attach">2</property>
@@ -111,31 +112,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkLabel" id="lblFileSize">
-                <property name="visible">True</property>
-                <property name="can-focus">False</property>
-                <property name="margin-start">20</property>
-                <property name="label" translatable="yes">label</property>
-              </object>
-              <packing>
-                <property name="left-attach">2</property>
-                <property name="top-attach">2</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkLinkButton" id="lblIgnoreLabel">
-                <property name="label" translatable="yes">button</property>
-                <property name="visible">True</property>
-                <property name="can-focus">True</property>
-                <property name="receives-default">True</property>
-                <property name="halign">start</property>
-                <property name="valign">start</property>
-                <property name="relief">none</property>
-              </object>
-              <packing>
-                <property name="left-attach">1</property>
-                <property name="top-attach">3</property>
-              </packing>
+              <placeholder/>
             </child>
             <child>
               <placeholder/>
@@ -175,8 +152,6 @@
               <object class="GtkLabel">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="wrap">True</property>
-                <property name="wrap-mode">char</property>
               </object>
               <packing>
                 <property name="expand">True</property>

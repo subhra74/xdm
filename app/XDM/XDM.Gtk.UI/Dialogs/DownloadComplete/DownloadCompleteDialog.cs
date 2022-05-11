@@ -43,7 +43,8 @@ namespace XDM.GtkUI.Dialogs.DownloadComplete
         private DownloadCompleteDialog(Builder builder) : base(builder.GetRawOwnedObject("window"))
         {
             builder.Autoconnect(this);
-            SetSizeRequest(400, 200);
+            SetDefaultSize(400, 200);
+            KeepAbove = true;
             Title = TextResource.GetText("CD_TITLE");
             SetPosition(WindowPosition.Center);
 
