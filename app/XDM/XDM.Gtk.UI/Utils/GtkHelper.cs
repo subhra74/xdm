@@ -54,6 +54,35 @@ namespace XDM.GtkUI.Utils
         //    while (comboBox.Model.IterNext(ref iter));
         //}
 
+        public static int GetSelectedIndex(TreeView treeView)
+        {
+            var paths = treeView.Selection.GetSelectedRows();
+            if (paths != null && paths.Length > 0)
+            {
+                return paths[0].Indices[0];
+            }
+            return -1;
+        }
+
+        public static void SetSelectedIndex(TreeView treeView, int index)
+        {
+            if (!treeView.Model.GetIterFirst(out TreeIter iter))
+            {
+                return;
+            }
+            var i = 0;
+            do
+            {
+                if (index == i)
+                {
+                    treeView.Selection.SelectIter(iter);
+                    return;
+                }
+                i++;
+            }
+            while (treeView.Model.IterNext(ref iter));
+        }
+
         public static ListStore PopulateComboBox(ComboBox comboBox, params string[] values)
         {
             var cmbStore = new ListStore(typeof(string));

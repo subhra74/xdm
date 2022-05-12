@@ -11,7 +11,6 @@ using IoPath = System.IO.Path;
 using XDM.Core.Lib.Common;
 using XDMApp;
 using XDM.Core.Lib.Util;
-using XDM.Core.Lib.Common;
 using XDM.Common.UI;
 using Newtonsoft.Json;
 using Log = Serilog.Log;
@@ -25,6 +24,7 @@ using XDM.GtkUI.Dialogs.ProgressWindow;
 using XDM.GtkUI.Utils;
 using XDM.GtkUI.Dialogs.DownloadComplete;
 using XDM.GtkUI.Dialogs.NewVideoDownload;
+using XDM.GtkUI.Dialogs.VideoDownloader;
 
 namespace XDM.GtkUI
 {
@@ -915,7 +915,8 @@ namespace XDM.GtkUI
 
         public void ShowYoutubeDLDialog(IAppUI appUI, IApp app)
         {
-            throw new NotImplementedException();
+            var win = VideoDownloaderWindow.CreateFromGladeFile(app, appUI);
+            win.Show();
         }
 
         public DownloadSchedule? ShowSchedulerDialog(DownloadSchedule schedule)

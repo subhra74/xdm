@@ -46,8 +46,16 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
                     ProcessVideo(Page1.UrlText, result => Dispatcher.BeginInvoke(new Action(() =>
                     {
                         Page2.Visibility = Visibility.Collapsed;
-                        Page3.Visibility = Visibility.Visible;
-                        Page3.SetVideoResultList(result);
+                        if (result == null)
+                        {
+                            Page3.Visibility = Visibility.Collapsed;
+                            Page1.Visibility = Visibility.Visible;
+                        }
+                        else
+                        {
+                            Page3.Visibility = Visibility.Visible;
+                            Page3.SetVideoResultList(result);
+                        }
                     })));
                 }
                 else
@@ -74,7 +82,7 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
             };
         }
 
-        private void ProcessVideo(string url, Action<List<YDLVideoEntry>> callback)
+        private void ProcessVideo(string url, Action<List<YDLVideoEntry>?> callback)
         {
             ydl = new YDLProcess
             {
@@ -90,7 +98,7 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
                 catch (Exception ex)
                 {
                     Log.Debug(ex, "Error while running youtube-dl");
-                    callback.Invoke(new());
+                    callback.Invoke(null);
                 }
             }).Start();
         }
