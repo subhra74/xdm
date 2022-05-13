@@ -178,19 +178,15 @@ namespace XDM.GtkUI.Dialogs.NewDownload
         {
             if (CmbLocation.Active == 1)
             {
-                var fc = new FileChooserDialog("XDM", this, FileChooserAction.SelectFolder);
-                windowGroup.AddWindow(fc);
-                fc.AddButton(Stock.Cancel, ResponseType.Cancel);
-                fc.AddButton(Stock.Save, ResponseType.Accept);
-                if (fc.Run() == (int)ResponseType.Accept)
+                var folder = GtkHelper.SelectFolder(this);
+                if (!string.IsNullOrEmpty(folder))
                 {
-                    this.FileBrowsedEvent?.Invoke(this, new FileBrowsedEventArgs(fc.Filename));
+                    this.FileBrowsedEvent?.Invoke(this, new FileBrowsedEventArgs(folder));
                 }
                 else
                 {
                     CmbLocation.Active = previousIndex;
                 }
-                fc.Destroy();
             }
             else
             {

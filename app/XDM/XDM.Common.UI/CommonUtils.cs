@@ -3,6 +3,7 @@ using TraceLog;
 using Translations;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.UI;
+using XDM.Core.Lib.Util;
 
 namespace XDM.Common.UI
 {
@@ -51,18 +52,13 @@ namespace XDM.Common.UI
             {
                 return;
             }
-            if (!Config.Instance.RecentFolders.Contains(folder))
-            {
-                Config.Instance.RecentFolders.Insert(0, folder);
-            }
+            Helpers.UpdateRecentFolderList(folder);
             if (sender != null)
             {
                 var fileSelectable = (IFileSelectable)sender;
                 fileSelectable.SetFolderValues(GetFolderValues());
                 fileSelectable.SeletedFolderIndex = 2;
             }
-            Config.Instance.FolderSelectionMode = FolderSelectionMode.Manual;
-            Config.SaveConfig();
         }
 
         internal static void OnDropdownSelectionChanged(object? sender, FileBrowsedEventArgs args)
@@ -98,7 +94,7 @@ namespace XDM.Common.UI
                 return null;
             }
             return Config.Instance.RecentFolders.Count > 0 ? Config.Instance.RecentFolders[index - 2] :
-                Config.Instance.DefaultDownloadFolder; 
+                Config.Instance.DefaultDownloadFolder;
         }
     }
 }

@@ -52,21 +52,7 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
         public VideoDownloaderPage3()
         {
             InitializeComponent();
-            if (Config.Instance.FolderSelectionMode == FolderSelectionMode.Manual)
-            {
-                if (Config.Instance.RecentFolders != null && Config.Instance.RecentFolders.Count > 0)
-                {
-                    this.TxtSaveIn.Text = Config.Instance.RecentFolders[0];
-                }
-                else
-                {
-                    this.TxtSaveIn.Text = Config.Instance.DefaultDownloadFolder;
-                }
-            }
-            else
-            {
-                this.TxtSaveIn.Text = Helpers.GetDownloadFolderByFileName("video.mp4");
-            }
+            this.TxtSaveIn.Text = Helpers.GetVideoDownloadFolder();
         }
 
         public void SetVideoResultList(List<YDLVideoEntry> items)
@@ -335,6 +321,18 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
                 Proxy = dlg.Proxy;
                 EnableSpeedLimit = dlg.EnableSpeedLimit;
                 SpeedLimit = dlg.SpeedLimit;
+            }
+        }
+
+        private void BtnBrowse_Click(object sender, RoutedEventArgs e)
+        {
+            using var fb = new System.Windows.Forms.FolderBrowserDialog();
+            if (fb.ShowDialog(new WinformsWindow(ParentWindow)) == System.Windows.Forms.DialogResult.OK)
+            {
+                var folder = fb.SelectedPath;
+                TxtSaveIn.Text = folder;
+                Config.Instance.UserSelectedDownloadFolder = folder;
+                Helpers.UpdateRecentFolderList(folder);
             }
         }
     }

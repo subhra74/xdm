@@ -1371,6 +1371,38 @@ namespace XDM.Core.Lib.Util
                 Process.Start(psi);
             }
         }
+
+        public static void UpdateRecentFolderList(string folder)
+        {
+            if (string.IsNullOrEmpty(folder))
+            {
+                return;
+            }
+            if (!Config.Instance.RecentFolders.Contains(folder))
+            {
+                Config.Instance.RecentFolders.Insert(0, folder);
+            }
+            Config.Instance.FolderSelectionMode = FolderSelectionMode.Manual;
+            Config.SaveConfig();
+        }
+
+        public static string GetVideoDownloadFolder()
+        {
+            if (Config.Instance.FolderSelectionMode == FolderSelectionMode.Manual)
+            {
+                if (Config.Instance.RecentFolders != null && Config.Instance.RecentFolders.Count > 0)
+                {
+                    if (!string.IsNullOrEmpty(Config.Instance.UserSelectedDownloadFolder) &&
+                        Config.Instance.RecentFolders.Contains(Config.Instance.UserSelectedDownloadFolder))
+                    {
+                        return Config.Instance.UserSelectedDownloadFolder;
+                    }
+                    return Config.Instance.RecentFolders[0];
+                }
+                return Config.Instance.DefaultDownloadFolder;
+            }
+            return Helpers.GetDownloadFolderByFileName("video.mp4");
+        }
     }
 
     public enum NativeHostBrowser

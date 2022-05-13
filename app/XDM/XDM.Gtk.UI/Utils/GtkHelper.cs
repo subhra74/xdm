@@ -19,6 +19,10 @@ namespace XDM.GtkUI.Utils
                 window.Group.AddWindow(msgBox);
             }
             msgBox.Run();
+            if (window.Group != null)
+            {
+                window.Group.RemoveWindow(msgBox);
+            }
             msgBox.Destroy();
         }
 
@@ -104,6 +108,33 @@ namespace XDM.GtkUI.Utils
             return new Gdk.Pixbuf(
                 Path.Combine(
                     AppDomain.CurrentDomain.BaseDirectory, "svg-icons", $"{name}.svg"), dimension, dimension, true);
+        }
+
+        public static string? SelectFolder(Window parent)
+        {
+            var fc = new FileChooserDialog("XDM", parent, FileChooserAction.SelectFolder);
+            try
+            {
+                if (parent.Group != null)
+                {
+                    parent.Group.AddWindow(fc);
+                }
+                fc.AddButton(Stock.Save, ResponseType.Accept);
+                fc.AddButton(Stock.Cancel, ResponseType.Cancel);
+                if (fc.Run() == (int)ResponseType.Accept)
+                {
+                    return fc.Filename;
+                }
+                return null;
+            }
+            finally
+            {
+                if (parent.Group != null)
+                {
+                    parent.Group.RemoveWindow(fc);
+                }
+                fc.Destroy();
+            }
         }
     }
 }

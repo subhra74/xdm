@@ -13,11 +13,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TraceLog\TraceLog.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\XDM_CoreFx\XDM.Core.csproj" />
+    <ProjectReference Include="..\YoutubeDLHandler\YDLWrapper.csproj" />
+    <ProjectReference Include="..\TraceLog\TraceLog.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' != 'net5.0' ">

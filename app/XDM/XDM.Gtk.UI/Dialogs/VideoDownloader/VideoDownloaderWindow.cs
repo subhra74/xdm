@@ -13,10 +13,11 @@ using System;
 using YDLWrapper;
 using XDM.Core.Lib.Util;
 using TraceLog;
+using XDM.Core.Lib.UI;
 
 namespace XDM.GtkUI.Dialogs.VideoDownloader
 {
-    public class VideoDownloaderWindow : Window
+    public class VideoDownloaderWindow : Window, IVideoDownloadView
     {
         private YDLProcess? ydl;
 
@@ -48,15 +49,88 @@ namespace XDM.GtkUI.Dialogs.VideoDownloader
         private ListStore formatStore;
 
         private IApp app;
-        private IAppUI appUi;
+        private IAppUI AppUI;
+
+        private WindowGroup windowGroup;
+
+        public string DownloadLocation { get => TxtSaveIn.Text; set => TxtSaveIn.Text = value; }
+        public string Url { get => TxtUrl.Text; set => TxtUrl.Text = value; }
+        public event EventHandler? CancelClicked;
+        public event EventHandler? BrowseClicked;
+        public event EventHandler? SearchClicked;
+        public event EventHandler? WindowClosed;
+        public event EventHandler? DownloadClicked;
+        public event EventHandler? DownloadLaterClicked;
+
+        public void SwitchToInitialPage()
+        {
+            Page2.Hide();
+            Page3.Hide();
+            Page1.Show();
+        }
+        public void SwitchToProcessingPage()
+        {
+            Page2.Show();
+            Page3.Hide();
+            Page1.Hide();
+        }
+        public void SwitchToFinalPage()
+        {
+            Page3.Show();
+            Page2.Hide();
+            Page1.Hide();
+        }
+
+        public int SelectedFormat
+        {
+            get => GtkHelper.GetSelectedIndex(LvFormats);
+            set => GtkHelper.SetSelectedIndex(LvFormats, value);
+        }
+
+        public IEnumerable<int> SelectedRows => GetSelectedVideoList();
+
+        public int SelectedItemCount => GetSelectedVideoCount();
+
+        public string? SelectFolder()
+        {
+            return GtkHelper.SelectFolder(this);
+        }
+
+        public void SetVideoResultList(IEnumerable<string> videos, IEnumerable<string> formats)
+        {
+            videoStore.Clear();
+            foreach (var video in videos)
+            {
+                videoStore.AppendValues(true, video);
+            }
+            formatStore.Clear();
+            foreach (var format in formats)
+            {
+                formatStore.AppendValues(format);
+            }
+        }
+
+        public void CloseWindow()
+        {
+            this.Close();
+            this.Destroy();
+        }
+
+        public void ShowWindow()
+        {
+            this.Show();
+        }
 
         private VideoDownloaderWindow(Builder builder, IApp app, IAppUI appUi) : base(builder.GetRawOwnedObject("window"))
         {
             builder.Autoconnect(this);
             SetDefaultSize(600, 500);
 
+            windowGroup = new WindowGroup();
+            windowGroup.AddWindow(this);
+
             this.app = app;
-            this.appUi = appUi;
+            this.AppUI = appUi;
 
             Title = TextResource.GetText("LBL_VIDEO_DOWNLOAD");
             SetPosition(WindowPosition.Center);
@@ -89,7 +163,7 @@ namespace XDM.GtkUI.Dialogs.VideoDownloader
             BtnGo.Clicked += BtnGo_Clicked;
             BtnCancel.Clicked += BtnCancel_Clicked;
 
-            videoStore = new ListStore(typeof(bool), typeof(string));
+            videoStore = new ListStore(typeof(bool), typeof(string), typeof(YDLVideoEntry));
             formatStore = new ListStore(typeof(string), typeof(int));
 
             LvVideoList.Model = videoStore;
@@ -127,6 +201,38 @@ namespace XDM.GtkUI.Dialogs.VideoDownloader
             LvFormats.AppendColumn(formatColumn);
 
             SwFormats.SetSizeRequest(100, 100);
+
+            DeleteEvent += VideoDownloaderWindow_DeleteEvent;
+
+            BtnBrowse.Clicked += BtnBrowse_Clicked;
+            BtnDownloadNow.Clicked += BtnDownloadNow_Clicked;
+
+            TxtSaveIn.Text = Helpers.GetVideoDownloadFolder();
+        }
+
+        private void BtnGo_Clicked(object? sender, EventArgs e)
+        {
+            SearchClicked?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void BtnDownloadNow_Clicked(object? sender, EventArgs e)
+        {
+            DownloadClicked?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void BtnBrowse_Clicked(object? sender, EventArgs e)
+        {
+            BrowseClicked?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void VideoDownloaderWindow_DeleteEvent(object o, DeleteEventArgs args)
+        {
+            WindowClosed?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void BtnCancel_Clicked(object? sender, EventArgs e)
+        {
+            CancelClicked?.Invoke(this, EventArgs.Empty);
         }
 
         private void CheckboxRenderer_Toggled(object o, ToggledArgs args)
@@ -136,120 +242,153 @@ namespace XDM.GtkUI.Dialogs.VideoDownloader
                 videoStore.SetValue(iter, 0, !(bool)videoStore.GetValue(iter, 0));
         }
 
-        private void BtnCancel_Clicked(object? sender, EventArgs e)
+        //public void SetVideoResultList(List<YDLVideoEntry> items)
+        //{
+        //    if (items == null) return;
+        //    var formatSet = new HashSet<int>();
+
+        //    videoStore.Clear();
+        //    foreach (var item in items)
+        //    {
+        //        videoStore.AppendValues(true, item.Title, item);
+        //    }
+
+        //    foreach (var item in items)
+        //    {
+        //        if (item.Formats != null)
+        //        {
+        //            item.Formats.ForEach(item =>
+        //            {
+        //                if (!string.IsNullOrEmpty(item.Height))
+        //                {
+        //                    if (Int32.TryParse(item.Height, out int height))
+        //                    {
+        //                        formatSet.Add(height);
+        //                    }
+        //                }
+        //            });
+        //        }
+        //    }
+        //    var formatsList = new List<int>(formatSet);
+        //    formatsList.Sort();
+        //    formatsList.Reverse();
+
+        //    formatStore.Clear();
+        //    foreach (var format in formatsList)
+        //    {
+        //        formatStore.AppendValues($"{format}p", format);
+        //    }
+
+        //    if (formatsList.Count > 0)
+        //    {
+        //        GtkHelper.SetSelectedIndex(LvFormats, 0);
+        //    }
+
+        //    //this.videoQualities = formatsList;
+        //    //LbQuality.ItemsSource = this.videoQualities.Select(n => $"{n}p");
+        //    //if (this.videoQualities.Count > 0)
+        //    //{
+        //    //    LbQuality.SelectedIndex = 0;
+        //    //}
+        //}
+
+        //private void DownloadSelectedItems(bool startImmediately, string? queueId)
+        //{
+        //    if (string.IsNullOrEmpty(TxtSaveIn.Text))
+        //    {
+        //        AppUI!.ShowMessageBox(ParentWindow, TextResource.GetText("MSG_CAT_FOLDER_MISSING"));
+        //        return;
+        //    }
+        //    if (this.GetSelectedVideoCount() == 0)
+        //    {
+        //        AppUI!.ShowMessageBox(ParentWindow, TextResource.GetText("BAT_SELECT_ITEMS"));
+        //        return;
+        //    }
+        //    var quality = -1;
+        //    if (GtkHelper.GetSelectedIndex(LvFormats) >= 0)
+        //    {
+        //        quality = this.GetSelectedFormat();
+        //    }
+
+        //    foreach (var item in this.GetSelectedVideoList())
+        //    {
+        //        var fmt = FindMatchingFormatByQuality(item, quality);
+        //        if (fmt.HasValue)
+        //        {
+        //            AddDownload(fmt.Value, startImmediately, queueId);
+        //        }
+        //    }
+        //    this.Close();
+        //}
+
+        private int GetSelectedVideoCount()
         {
-            try
+            if (!videoStore.GetIterFirst(out TreeIter iter))
             {
-                if (ydl != null)
+                return 0;
+            }
+            var count = 0;
+            do
+            {
+                if ((bool)videoStore.GetValue(iter, 0))
                 {
-                    ydl.Cancel();
+                    count++;
                 }
             }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error cancelling ydl");
-            }
-            Page2.Hide();
-            Page3.Hide();
-            Page1.Show();
+            while (videoStore.IterNext(ref iter));
+            return count;
         }
 
-        private void BtnGo_Clicked(object? sender, EventArgs e)
+        private List<int> GetSelectedVideoList()
         {
-            if (Helpers.IsUriValid(TxtUrl.Text))
+            var list = new List<int>();
+            if (!videoStore.GetIterFirst(out TreeIter iter))
             {
-                Page1.Hide();
-                Page2.ShowAll();
-                ProcessVideo(TxtUrl.Text, result => Application.Invoke((_, _) =>
+                return list;
+            }
+            var count = 0;
+            do
+            {
+                if ((bool)videoStore.GetValue(iter, 0))
                 {
-                    Page2.Hide();
-                    if (result == null)
-                    {
-                        Page3.Hide();
-                        Page1.Show();
-                    }
-                    else
-                    {
-                        Page3.ShowAll();
-                        SetVideoResultList(result);
-                    }
-                }));
+                    list.Add(count);
+                }
+                count++;
             }
-            else
-            {
-                appUi.ShowMessageBox(this, TextResource.GetText("MSG_INVALID_URL"));
-            }
+            while (videoStore.IterNext(ref iter));
+            return list;
         }
 
-        public void SetVideoResultList(List<YDLVideoEntry> items)
+        //private List<YDLVideoEntry> GetSelectedVideoList()
+        //{
+        //    var list = new List<YDLVideoEntry>();
+        //    if (!videoStore.GetIterFirst(out TreeIter iter))
+        //    {
+        //        return list;
+        //    }
+        //    do
+        //    {
+        //        if ((bool)videoStore.GetValue(iter, 0))
+        //        {
+        //            var entry = (YDLVideoEntry)videoStore.GetValue(iter, 2);
+        //            list.Add(entry);
+        //        }
+        //    }
+        //    while (videoStore.IterNext(ref iter));
+        //    return list;
+        //}
+
+        private int GetSelectedFormat()
         {
-            if (items == null) return;
-            var formatSet = new HashSet<int>();
-
-            videoStore.Clear();
-            foreach (var item in items)
+            var paths = LvFormats.Selection.GetSelectedRows();
+            if (paths != null && paths.Length > 0)
             {
-                videoStore.AppendValues(true, item.Title);
-            }
-
-            foreach (var item in items)
-            {
-                if (item.Formats != null)
+                if (formatStore.GetIter(out TreeIter iter, paths[0]))
                 {
-                    item.Formats.ForEach(item =>
-                    {
-                        if (!string.IsNullOrEmpty(item.Height))
-                        {
-                            if (Int32.TryParse(item.Height, out int height))
-                            {
-                                formatSet.Add(height);
-                            }
-                        }
-                    });
+                    return (int)formatStore.GetValue(iter, 1);
                 }
             }
-            var formatsList = new List<int>(formatSet);
-            formatsList.Sort();
-            formatsList.Reverse();
-
-            formatStore.Clear();
-            foreach (var format in formatsList)
-            {
-                formatStore.AppendValues($"{format}p", format);
-            }
-
-            if (formatsList.Count > 0)
-            {
-                GtkHelper.SetSelectedIndex(LvFormats, 0);
-            }
-
-            //this.videoQualities = formatsList;
-            //LbQuality.ItemsSource = this.videoQualities.Select(n => $"{n}p");
-            //if (this.videoQualities.Count > 0)
-            //{
-            //    LbQuality.SelectedIndex = 0;
-            //}
-        }
-
-        private void ProcessVideo(string url, Action<List<YDLVideoEntry>?> callback)
-        {
-            ydl = new YDLProcess
-            {
-                Uri = new Uri(url)
-            };
-            new System.Threading.Thread(() =>
-            {
-                try
-                {
-                    ydl.Start();
-                    callback.Invoke(YDLOutputParser.Parse(ydl.JsonOutputFile));
-                }
-                catch (Exception ex)
-                {
-                    Log.Debug(ex, "Error while running youtube-dl");
-                    callback.Invoke(null);
-                }
-            }).Start();
+            return -1;
         }
 
         public static VideoDownloaderWindow CreateFromGladeFile(IApp app, IAppUI appUi)

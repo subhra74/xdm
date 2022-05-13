@@ -880,7 +880,7 @@ namespace XDM.GtkUI
             {
                 owner = this;
             }
-            throw new NotImplementedException();
+            GtkHelper.ShowMessageBox(owner, message);
         }
 
         public void OpenNewDownloadMenu()
