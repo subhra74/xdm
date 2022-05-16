@@ -43,7 +43,6 @@ namespace XDM.GtkUI.Dialogs.DownloadComplete
         private DownloadCompleteDialog(Builder builder) : base(builder.GetRawOwnedObject("window"))
         {
             builder.Autoconnect(this);
-            SetDefaultSize(400, 200);
             KeepAbove = true;
             Title = TextResource.GetText("CD_TITLE");
             SetPosition(WindowPosition.Center);
@@ -52,11 +51,13 @@ namespace XDM.GtkUI.Dialogs.DownloadComplete
             BtnOpenFolder.Label = TextResource.GetText("CTX_OPEN_FOLDER");
             TxtDontShowCompleteDialog.Label = TextResource.GetText("MSG_DONT_SHOW_AGAIN");
             TxtFileName.StyleContext.AddClass("large-font");
+            TxtFileName.Ellipsize = Pango.EllipsizeMode.End;
             ImgFileIcon.Pixbuf = GtkHelper.LoadSvg("file-download-line", 64);
 
             BtnOpen.Clicked += BtnOpen_Click;
             BtnOpenFolder.Clicked += BtnOpenFolder_Click;
             TxtDontShowCompleteDialog.Clicked += TxtDontShowCompleteDialog_MouseDown;
+            SetDefaultSize(400, 200);
         }
 
         private void TxtDontShowCompleteDialog_MouseDown(object? sender, EventArgs e)
@@ -75,6 +76,7 @@ namespace XDM.GtkUI.Dialogs.DownloadComplete
 
         public void ShowDownloadCompleteDialog()
         {
+            SetDefaultSize(400, 200);
             this.Show();
         }
 

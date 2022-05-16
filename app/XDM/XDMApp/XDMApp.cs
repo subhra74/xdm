@@ -124,6 +124,68 @@ namespace XDMApp
             BrowserMonitor.RunHttpIpcHandler(this);
         }
 
+        public void SubmitDownload(object downloadInfo,
+            string fileName,
+            FileNameFetchMode fileNameFetchMode,
+            string? targetFolder,
+            bool startImmediately,
+            AuthenticationInfo? authentication,
+            ProxyInfo? proxyInfo,
+            bool enableSpeedLimit,
+            int speedLimit,
+            string? queueId,
+            bool convertToMp3)
+        {
+
+            switch (downloadInfo)
+            {
+                case SingleSourceHTTPDownloadInfo info:
+                    this.StartDownload(
+                        info,
+                        fileName,
+                        fileNameFetchMode,
+                        targetFolder,
+                        startImmediately,
+                        authentication, proxyInfo ?? Config.Instance.Proxy,
+                        enableSpeedLimit ? speedLimit : 0, queueId, convertToMp3
+                    );
+                    break;
+                case DualSourceHTTPDownloadInfo info:
+                    this.StartDownload(
+                        info,
+                        fileName,
+                        fileNameFetchMode,
+                        targetFolder,
+                        startImmediately,
+                        authentication, proxyInfo ?? Config.Instance.Proxy,
+                        enableSpeedLimit ? speedLimit : 0, queueId
+                    );
+                    break;
+                case MultiSourceHLSDownloadInfo info:
+                    this.StartDownload(
+                        info,
+                        fileName,
+                        fileNameFetchMode,
+                        targetFolder,
+                        startImmediately,
+                        authentication, proxyInfo ?? Config.Instance.Proxy,
+                        enableSpeedLimit ? speedLimit : 0, queueId
+                    );
+                    break;
+                case MultiSourceDASHDownloadInfo info:
+                    this.StartDownload(
+                        info,
+                        fileName,
+                        fileNameFetchMode,
+                        targetFolder,
+                        startImmediately,
+                        authentication, proxyInfo ?? Config.Instance.Proxy,
+                        enableSpeedLimit ? speedLimit : 0, queueId
+                        );
+                    break;
+            }
+        }
+
         public string StartDownload(SingleSourceHTTPDownloadInfo info,
             string fileName,
             FileNameFetchMode fileNameFetchMode,

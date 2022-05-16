@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using XDM.Core.Lib.Common;
 
 namespace XDM.Core.Lib.UI
 {
@@ -14,7 +15,8 @@ namespace XDM.Core.Lib.UI
         event EventHandler? BrowseClicked;
         event EventHandler? SearchClicked;
         event EventHandler? DownloadClicked;
-        event EventHandler? DownloadLaterClicked;
+        event EventHandler? QueueSchedulerClicked;
+        event EventHandler<DownloadLaterEventArgs>? DownloadLaterClicked;
         void SwitchToInitialPage();
         void SwitchToProcessingPage();
         void SwitchToFinalPage();
@@ -25,5 +27,9 @@ namespace XDM.Core.Lib.UI
         public int SelectedItemCount { get; }
         public void CloseWindow();
         public void ShowWindow();
+        AuthenticationInfo? Authentication { get; set; }
+        ProxyInfo? Proxy { get; set; }
+        int SpeedLimit { get; set; }
+        bool EnableSpeedLimit { get; set; }
     }
 }

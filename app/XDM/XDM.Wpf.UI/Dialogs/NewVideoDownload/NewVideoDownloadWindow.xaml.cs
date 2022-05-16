@@ -143,7 +143,7 @@ namespace XDM.Wpf.UI.Dialogs.NewVideoDownload
             else
             {
                 previousIndex = CmbLocation.SelectedIndex;
-                this.DropdownSelectionChangedEvent?.Invoke(this, new FileBrowsedEventArgs(CmbLocation.Text));
+                this.DropdownSelectionChangedEvent?.Invoke(this, new FileBrowsedEventArgs((string)CmbLocation.SelectedItem));
             }
         }
 

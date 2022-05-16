@@ -21,7 +21,7 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
     /// </summary>
     public partial class VideoDownloaderPage1 : UserControl
     {
-        public string UrlText => TxtUrl.Text;
+        public string UrlText { get => TxtUrl.Text; set => TxtUrl.Text = value; }
         public string UserNameText => TxtUserName.Text;
         public string PasswordText => TxtPassword.Password;
         public bool UseCredentials => ChkAuth.IsChecked.HasValue ? ChkAuth.IsChecked.Value : false;
@@ -35,11 +35,7 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
 
         public void InitPage(IAppUI appUi)
         {
-            var url = appUi.GetUrlFromClipboard();
-            if (url != null && Helpers.IsUriValid(url))
-            {
-                TxtUrl.Text = url;
-            }
+
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)

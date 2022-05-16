@@ -14,6 +14,7 @@ using YDLWrapper;
 using XDM.Core.Lib.Util;
 using TraceLog;
 using XDM.Core.Lib.UI;
+using XDM.GtkUI.Dialogs.AdvancedDownload;
 
 namespace XDM.GtkUI.Dialogs.VideoDownloader
 {
@@ -36,7 +37,7 @@ namespace XDM.GtkUI.Dialogs.VideoDownloader
         [UI] private Button BtnCancel;
         [UI] private Button BtnBrowse;
         [UI] private Button BtnDownloadNow;
-        [UI] private Button BtnDownloadLater;
+        [UI] private MenuButton BtnDownloadLater;
         [UI] private Button BtnMore;
         [UI] private CheckButton ChkAuth;
         [UI] private CheckButton ChkSelectAll;
@@ -44,12 +45,10 @@ namespace XDM.GtkUI.Dialogs.VideoDownloader
         [UI] private TreeView LvVideoList;
         [UI] private TreeView LvFormats;
         [UI] private ScrolledWindow SwFormats;
+        [UI] private Gtk.Menu menu1;
 
         private ListStore videoStore;
         private ListStore formatStore;
-
-        private IApp app;
-        private IAppUI AppUI;
 
         private WindowGroup windowGroup;
 
@@ -60,7 +59,8 @@ namespace XDM.GtkUI.Dialogs.VideoDownloader
         public event EventHandler? SearchClicked;
         public event EventHandler? WindowClosed;
         public event EventHandler? DownloadClicked;
-        public event EventHandler? DownloadLaterClicked;
+        public event EventHandler? QueueSchedulerClicked;
+        public event EventHandler<DownloadLaterEventArgs>? DownloadLaterClicked;
 
         public void SwitchToInitialPage()
         {
@@ -91,6 +91,11 @@ namespace XDM.GtkUI.Dialogs.VideoDownloader
 
         public int SelectedItemCount => GetSelectedVideoCount();
 
+        public AuthenticationInfo? Authentication { get => authentication; set => authentication = value; }
+        public ProxyInfo? Proxy { get => proxy; set => proxy = value; }
+        public int SpeedLimit { get => speedLimit; set => speedLimit = value; }
+        public bool EnableSpeedLimit { get => enableSpeedLimit; set => enableSpeedLimit = value; }
+
         public string? SelectFolder()
         {
             return GtkHelper.SelectFolder(this);
@@ -112,6 +117,7 @@ namespace XDM.GtkUI.Dialogs.VideoDownloader
 
         public void CloseWindow()
         {
+            windowGroup.RemoveWindow(this);
             this.Close();
             this.Destroy();
         }
@@ -121,16 +127,21 @@ namespace XDM.GtkUI.Dialogs.VideoDownloader
             this.Show();
         }
 
-        private VideoDownloaderWindow(Builder builder, IApp app, IAppUI appUi) : base(builder.GetRawOwnedObject("window"))
+        private Gtk.MenuItem dontAddToQueueMenuItem;
+        private Gtk.MenuItem queueAndSchedulerMenuItem;
+
+        private AuthenticationInfo? authentication;
+        private ProxyInfo? proxy = Config.Instance.Proxy;
+        private int speedLimit = Config.Instance.DefaltDownloadSpeed;
+        private bool enableSpeedLimit = Config.Instance.EnableSpeedLimit;
+
+        private VideoDownloaderWindow(Builder builder) : base(builder.GetRawOwnedObject("window"))
         {
             builder.Autoconnect(this);
             SetDefaultSize(600, 500);
 
             windowGroup = new WindowGroup();
             windowGroup.AddWindow(this);
-
-            this.app = app;
-            this.AppUI = appUi;
 
             Title = TextResource.GetText("LBL_VIDEO_DOWNLOAD");
             SetPosition(WindowPosition.Center);
@@ -163,8 +174,8 @@ namespace XDM.GtkUI.Dialogs.VideoDownloader
             BtnGo.Clicked += BtnGo_Clicked;
             BtnCancel.Clicked += BtnCancel_Clicked;
 
-            videoStore = new ListStore(typeof(bool), typeof(string), typeof(YDLVideoEntry));
-            formatStore = new ListStore(typeof(string), typeof(int));
+            videoStore = new ListStore(typeof(bool), typeof(string));
+            formatStore = new ListStore(typeof(string));
 
             LvVideoList.Model = videoStore;
             LvFormats.Model = formatStore;
@@ -208,6 +219,9 @@ namespace XDM.GtkUI.Dialogs.VideoDownloader
             BtnDownloadNow.Clicked += BtnDownloadNow_Clicked;
 
             TxtSaveIn.Text = Helpers.GetVideoDownloadFolder();
+
+            BtnMore.Clicked += btnAdvanced_Click;
+            PrepareMenu();
         }
 
         private void BtnGo_Clicked(object? sender, EventArgs e)
@@ -378,24 +392,57 @@ namespace XDM.GtkUI.Dialogs.VideoDownloader
         //    return list;
         //}
 
-        private int GetSelectedFormat()
+        private void DontAddToQueueMenuItem_Click(object? sender, EventArgs e)
         {
-            var paths = LvFormats.Selection.GetSelectedRows();
-            if (paths != null && paths.Length > 0)
-            {
-                if (formatStore.GetIter(out TreeIter iter, paths[0]))
-                {
-                    return (int)formatStore.GetValue(iter, 1);
-                }
-            }
-            return -1;
+            this.DownloadLaterClicked?.Invoke(this, new DownloadLaterEventArgs(string.Empty));
         }
 
-        public static VideoDownloaderWindow CreateFromGladeFile(IApp app, IAppUI appUi)
+        private void QueueAndSchedulerMenuItem_Click(object? sender, EventArgs e)
+        {
+            this.QueueSchedulerClicked?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void PrepareMenu()
+        {
+            dontAddToQueueMenuItem = new Gtk.MenuItem(TextResource.GetText("LBL_QUEUE_OPT3"));
+            queueAndSchedulerMenuItem = new Gtk.MenuItem(TextResource.GetText("DESC_Q_TITLE"));
+
+            dontAddToQueueMenuItem.Activated += DontAddToQueueMenuItem_Click;
+            queueAndSchedulerMenuItem.Activated += QueueAndSchedulerMenuItem_Click;
+
+            DownloadLaterMenuHelper.PopulateMenuAndAttachEvents(
+                args => DownloadLaterClicked?.Invoke(this, args),
+                menu1,
+                dontAddToQueueMenuItem,
+                queueAndSchedulerMenuItem,
+                this);
+        }
+
+        private void btnAdvanced_Click(object? sender, EventArgs e)
+        {
+            var dlg = new AdvancedDownloadDialog(AdvancedDownloadDialog.LoadBuilder(), this, this.windowGroup)
+            {
+                Authentication = Authentication,
+                Proxy = Proxy,
+                EnableSpeedLimit = EnableSpeedLimit,
+                SpeedLimit = SpeedLimit,
+            };
+            dlg.Run();
+            if (dlg.Result)
+            {
+                Authentication = dlg.Authentication;
+                Proxy = dlg.Proxy;
+                EnableSpeedLimit = dlg.EnableSpeedLimit;
+                SpeedLimit = dlg.SpeedLimit;
+            }
+            dlg.Destroy();
+        }
+
+        public static VideoDownloaderWindow CreateFromGladeFile()
         {
             var builder = new Builder();
             builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "video-downloader-window.glade"));
-            return new VideoDownloaderWindow(builder, app, appUi);
+            return new VideoDownloaderWindow(builder);
         }
     }
 }

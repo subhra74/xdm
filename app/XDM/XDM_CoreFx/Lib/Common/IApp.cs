@@ -74,6 +74,18 @@ namespace XDM.Core.Lib.Common
             ProxyInfo? proxyInfo,
             int maxSpeedLimit, string? queueId);
 
+        public void SubmitDownload(object downloadInfo,
+            string fileName,
+            FileNameFetchMode fileNameFetchMode,
+            string? targetFolder,
+            bool startImmediately,
+            AuthenticationInfo? authentication,
+            ProxyInfo? proxyInfo,
+            bool enableSpeedLimit,
+            int speedLimit,
+            string? queueId,
+            bool convertToMp3);
+
         public void SaveState();
         public void SetUI(IListUI listUI);
         public void StopDownloads(IEnumerable<string> list, bool closeProgressWindow = false);

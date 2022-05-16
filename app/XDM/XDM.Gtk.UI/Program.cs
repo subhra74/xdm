@@ -17,7 +17,7 @@ namespace XDM.GtkUI
             Application.Init();
 
             var globalStyleSheet = @"
-                                    .large-font{ font-size: 20px; }
+                                    .large-font{ font-size: 16px; }
                                     .medium-font{ font-size: 14px; }
                                     ";
 
@@ -75,6 +75,18 @@ namespace XDM.GtkUI
             app.AppUI.WindowLoaded += (_, _) => app.StartClipboardMonitor();
             app.StartScheduler();
             app.StartNativeMessagingHost();
+
+            //var t = new System.Threading.Thread(() =>
+            //  {
+            //      while (true)
+            //      {
+            //          System.Threading.Thread.Sleep(5000);
+            //          Console.WriteLine("Trigger GC");
+            //          GC.Collect();
+            //      }
+            //  });
+            //t.Start();
+
             Application.Run();
 
             //var app = new XDMApp.XDMApp();

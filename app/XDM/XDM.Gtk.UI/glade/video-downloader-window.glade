@@ -2,6 +2,10 @@
 <!-- Generated with glade 3.38.2 -->
 <interface>
   <requires lib="gtk+" version="3.24"/>
+  <object class="GtkMenu" id="menu1">
+    <property name="visible">True</property>
+    <property name="can-focus">False</property>
+  </object>
   <object class="GtkWindow" id="window">
     <property name="can-focus">False</property>
     <child>
@@ -346,12 +350,17 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="BtnDownloadLater">
-                    <property name="label" translatable="yes">button</property>
+                  <object class="GtkMenuButton" id="BtnDownloadLater">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
+                    <property name="focus-on-click">False</property>
                     <property name="receives-default">True</property>
+                    <property name="margin-end">10</property>
                     <property name="margin-top">10</property>
+                    <property name="popup">menu1</property>
+                    <child>
+                      <placeholder/>
+                    </child>
                   </object>
                   <packing>
                     <property name="expand">False</property>

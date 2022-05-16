@@ -19,8 +19,8 @@
                 <property name="can-focus">False</property>
                 <property name="halign">start</property>
                 <property name="valign">start</property>
-                <property name="margin-start">30</property>
-                <property name="margin-end">30</property>
+                <property name="margin-start">15</property>
+                <property name="margin-end">15</property>
                 <property name="margin-top">30</property>
                 <property name="stock">gtk-missing-image</property>
               </object>

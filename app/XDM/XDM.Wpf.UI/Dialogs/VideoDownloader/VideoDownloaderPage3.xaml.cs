@@ -33,10 +33,7 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
     /// </summary>
     public partial class VideoDownloaderPage3 : UserControl
     {
-        private AuthenticationInfo? authentication;
-        private ProxyInfo? proxy = Config.Instance.Proxy;
-        private int speedLimit = Config.Instance.DefaltDownloadSpeed;
-        private bool enableSpeedLimit = Config.Instance.EnableSpeedLimit;
+
         private EventHandler? FormatChanged;
         private List<int> videoQualities;
         private ObservableCollection<VideoEntryViewModel> videos;
@@ -44,49 +41,53 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
         public IApp? App { get; set; }
         public IAppUI? AppUI { get; set; }
         public Window ParentWindow { get; set; }
-        public AuthenticationInfo? Authentication { get => authentication; set => authentication = value; }
-        public ProxyInfo? Proxy { get => proxy; set => proxy = value; }
-        public int SpeedLimit { get => speedLimit; set => speedLimit = value; }
-        public bool EnableSpeedLimit { get => enableSpeedLimit; set => enableSpeedLimit = value; }
+        public Action DownloadNowClicked { get => downloadNowClicked; set => downloadNowClicked = value; }
+        public Action DontAddToQueue { get => dontAddToQueue; set => dontAddToQueue = value; }
+        public Action QueueAndScheduler { get => queueAndScheduler; set => queueAndScheduler = value; }
+        public Action<string> DownloadLaterClicked { get => downloadLaterClicked; set => downloadLaterClicked = value; }
+
+        private Action downloadNowClicked;
+        private Action dontAddToQueue;
+        private Action queueAndScheduler;
+        private Action<string> downloadLaterClicked;
 
         public VideoDownloaderPage3()
         {
             InitializeComponent();
-            this.TxtSaveIn.Text = Helpers.GetVideoDownloadFolder();
         }
 
-        public void SetVideoResultList(List<YDLVideoEntry> items)
-        {
-            if (items == null) return;
-            var formatSet = new HashSet<int>();
-            this.videos = new(items.Select(x => new VideoEntryViewModel(x)));
-            LvVideoList.ItemsSource = this.videos;
-            foreach (var item in items)
-            {
-                if (item.Formats != null)
-                {
-                    item.Formats.ForEach(item =>
-                    {
-                        if (!string.IsNullOrEmpty(item.Height))
-                        {
-                            if (Int32.TryParse(item.Height, out int height))
-                            {
-                                formatSet.Add(height);
-                            }
-                        }
-                    });
-                }
-            }
-            var formatsList = new List<int>(formatSet);
-            formatsList.Sort();
-            formatsList.Reverse();
-            this.videoQualities = formatsList;
-            LbQuality.ItemsSource = this.videoQualities.Select(n => $"{n}p");
-            if (this.videoQualities.Count > 0)
-            {
-                LbQuality.SelectedIndex = 0;
-            }
-        }
+        //public void SetVideoResultList(List<YDLVideoEntry> items)
+        //{
+        //    if (items == null) return;
+        //    var formatSet = new HashSet<int>();
+        //    this.videos = new(items.Select(x => new VideoEntryViewModel { x.}));
+        //    LvVideoList.ItemsSource = this.videos;
+        //    foreach (var item in items)
+        //    {
+        //        if (item.Formats != null)
+        //        {
+        //            item.Formats.ForEach(item =>
+        //            {
+        //                if (!string.IsNullOrEmpty(item.Height))
+        //                {
+        //                    if (Int32.TryParse(item.Height, out int height))
+        //                    {
+        //                        formatSet.Add(height);
+        //                    }
+        //                }
+        //            });
+        //        }
+        //    }
+        //    var formatsList = new List<int>(formatSet);
+        //    formatsList.Sort();
+        //    formatsList.Reverse();
+        //    this.videoQualities = formatsList;
+        //    LbQuality.ItemsSource = this.videoQualities.Select(n => $"{n}p");
+        //    if (this.videoQualities.Count > 0)
+        //    {
+        //        LbQuality.SelectedIndex = 0;
+        //    }
+        //}
 
         private void LbFormat_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -113,181 +114,19 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
             }
         }
 
-        private void AddDownload(YDLVideoFormatEntry videoEntry, bool startImmediately, string? queueId)
-        {
-            switch (videoEntry.YDLEntryType)
-            {
-                case YDLEntryType.Http:
-                    App!.StartDownload(
-                        new SingleSourceHTTPDownloadInfo
-                        {
-                            Uri = videoEntry.VideoUrl
-                        },
-                        videoEntry.Title + "." + videoEntry.FileExt,
-                        FileNameFetchMode.None,
-                        TxtSaveIn.Text,
-                        startImmediately,
-                        Authentication, Proxy ?? Config.Instance.Proxy,
-                        EnableSpeedLimit ? SpeedLimit : 0, queueId, false
-                    );
-                    break;
-                case YDLEntryType.Dash:
-                    App!.StartDownload(
-                        new DualSourceHTTPDownloadInfo
-                        {
-                            Uri1 = videoEntry.VideoUrl,
-                            Uri2 = videoEntry.AudioUrl
-                        },
-                        videoEntry.Title + "." + videoEntry.FileExt,
-                        FileNameFetchMode.None,
-                        TxtSaveIn.Text,
-                        startImmediately,
-                        Authentication, Proxy ?? Config.Instance.Proxy,
-                        EnableSpeedLimit ? SpeedLimit : 0, queueId
-                    );
-                    break;
-                case YDLEntryType.Hls:
-                    App!.StartDownload(
-                        new MultiSourceHLSDownloadInfo
-                        {
-                            VideoUri = videoEntry.VideoUrl,
-                            AudioUri = videoEntry.AudioUrl
-                        },
-                        videoEntry.Title + "." + videoEntry.FileExt,
-                        FileNameFetchMode.None,
-                        TxtSaveIn.Text,
-                        startImmediately,
-                        Authentication, Proxy ?? Config.Instance.Proxy,
-                        EnableSpeedLimit ? SpeedLimit : 0, queueId
-                    );
-                    break;
-                case YDLEntryType.MpegDash:
-                    App!.StartDownload(
-                        new MultiSourceDASHDownloadInfo
-                        {
-                            VideoSegments = videoEntry.VideoFragments?.Select(x => new Uri(new Uri(videoEntry.FragmentBaseUrl), x.Path)).ToList(),
-                            AudioSegments = videoEntry.AudioFragments?.Select(x => new Uri(new Uri(videoEntry.FragmentBaseUrl), x.Path)).ToList(),
-                            AudioFormat = videoEntry.AudioFormat != null ? "." + videoEntry.AudioFormat : null,
-                            VideoFormat = videoEntry.VideoFormat != null ? "." + videoEntry.VideoFormat : null,
-                            Url = videoEntry.VideoUrl
-                        },
-                        videoEntry.Title + "." + videoEntry.FileExt,
-                        FileNameFetchMode.None,
-                        TxtSaveIn.Text,
-                        startImmediately, Authentication, Proxy ?? Config.Instance.Proxy,
-                        EnableSpeedLimit ? SpeedLimit : 0, queueId
-                    );
-                    break;
-            }
-        }
-
-        private void DownloadSelectedItems(bool startImmediately, string? queueId)
-        {
-            if (string.IsNullOrEmpty(TxtSaveIn.Text))
-            {
-                AppUI!.ShowMessageBox(ParentWindow, TextResource.GetText("MSG_CAT_FOLDER_MISSING"));
-                return;
-            }
-            if (this.videos.Select(x => x.IsSelected).Count() == 0)
-            {
-                AppUI!.ShowMessageBox(ParentWindow, TextResource.GetText("BAT_SELECT_ITEMS"));
-                return;
-            }
-            var quality = -1;
-            if (LbQuality.SelectedIndex >= 0)
-            {
-                quality = this.videoQualities[LbQuality.SelectedIndex];
-            }
-
-            foreach (var item in this.videos)
-            {
-                if (item.IsSelected)
-                {
-                    var fmt = FindMatchingFormatByQuality(item.VideoEntry, quality);
-                    if (fmt.HasValue)
-                    {
-                        AddDownload(fmt.Value, startImmediately, queueId);
-                    }
-                }
-            }
-            ParentWindow.Close();
-        }
-
-        private YDLVideoFormatEntry? FindOnlyMatchingMp4(YDLVideoEntry videoEntry, int quality)
-        {
-            if (videoEntry.Formats.Count == 0) return null;
-            foreach (var format in videoEntry.Formats)
-            {
-                if (!string.IsNullOrEmpty(format.Height) &&
-                    Int32.TryParse(format.Height, out int height) &&
-                    height == quality &&
-                    (format.FileExt?.ToLowerInvariant()?.EndsWith("mp4") ?? false))
-                {
-                    return format;
-                }
-            }
-            return null;
-        }
-
-        private YDLVideoFormatEntry? FindMatchingFormatByQuality(YDLVideoEntry videoEntry, int quality = -1)
-        {
-            if (videoEntry.Formats.Count == 0) return null;
-            if (quality == -1)
-            {
-                return videoEntry.Formats[0];
-            }
-            //if we find an mp4 video with desired height/resolution return it
-            var fmt = FindOnlyMatchingMp4(videoEntry, quality);
-            if (fmt != null)
-            {
-                return fmt;
-            }
-            //if no mp4 is found look for other formats like mkv or webm
-            foreach (var format in videoEntry.Formats)
-            {
-                if (!string.IsNullOrEmpty(format.Height) &&
-                    Int32.TryParse(format.Height, out int height) &&
-                    height == quality)
-                {
-                    return format;
-                }
-            }
-            //so far no luck, try to find next best resoultion
-            var max = -1;
-            foreach (var format in videoEntry.Formats)
-            {
-                if (!string.IsNullOrEmpty(format.Height) &&
-                    Int32.TryParse(format.Height, out int height) &&
-                    height > 0 &&
-                    quality > height)
-                {
-                    if (height > max)
-                    {
-                        max = height;
-                        fmt = format;
-                    }
-                }
-            }
-            if (fmt != null)
-            {
-                return fmt;
-            }
-            //could not found anything as per criteria, return the first format
-            return videoEntry.Formats[0];
-        }
-
         private void BtnDownloadNow_Click(object sender, RoutedEventArgs e)
         {
-            DownloadSelectedItems(true, null);
+            DownloadNowClicked.Invoke();
         }
 
         private void DontAddToQueueMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            DownloadSelectedItems(false, null);
+            DontAddToQueue.Invoke();
         }
 
         private void QueueAndSchedulerMenuItem_Click(object sender, RoutedEventArgs e)
         {
+            QueueAndScheduler.Invoke();
             AppUI!.ShowQueueWindow(this.ParentWindow);
         }
 
@@ -295,7 +134,7 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
         {
             DownloadLaterMenuHelper.PopulateMenuAndAttachEvents((s, e) =>
             {
-                DownloadSelectedItems(false, e.QueueId);
+                DownloadLaterClicked.Invoke(e.QueueId);
             }, BtnDownloadLater, this);
         }
 
@@ -303,47 +142,10 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
         {
             ShowQueuesContextMenu();
         }
-
-        private void BtnMore_Click(object sender, RoutedEventArgs e)
-        {
-            var dlg = new AdvancedDownloadOptionDialog
-            {
-                Authentication = Authentication,
-                Proxy = Proxy,
-                EnableSpeedLimit = EnableSpeedLimit,
-                SpeedLimit = SpeedLimit,
-                Owner = ParentWindow
-            };
-            var ret = dlg.ShowDialog(ParentWindow);
-            if (ret.HasValue && ret.Value)
-            {
-                Authentication = dlg.Authentication;
-                Proxy = dlg.Proxy;
-                EnableSpeedLimit = dlg.EnableSpeedLimit;
-                SpeedLimit = dlg.SpeedLimit;
-            }
-        }
-
-        private void BtnBrowse_Click(object sender, RoutedEventArgs e)
-        {
-            using var fb = new System.Windows.Forms.FolderBrowserDialog();
-            if (fb.ShowDialog(new WinformsWindow(ParentWindow)) == System.Windows.Forms.DialogResult.OK)
-            {
-                var folder = fb.SelectedPath;
-                TxtSaveIn.Text = folder;
-                Config.Instance.UserSelectedDownloadFolder = folder;
-                Helpers.UpdateRecentFolderList(folder);
-            }
-        }
     }
 
     internal class VideoEntryViewModel : INotifyPropertyChanged
     {
-        private YDLVideoEntry videoEntry;
-        public VideoEntryViewModel(YDLVideoEntry videoEntry)
-        {
-            this.videoEntry = videoEntry;
-        }
         private bool selected = true;
         public bool IsSelected
         {
@@ -357,8 +159,7 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("IsSelected"));
             }
         }
-        public string Name => this.videoEntry.Title;
-        public YDLVideoEntry VideoEntry => videoEntry;
+        public string Name { get; set; }
 
         public event PropertyChangedEventHandler? PropertyChanged;
     }

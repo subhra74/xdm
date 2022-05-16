@@ -859,9 +859,8 @@ namespace XDM.GtkUI
 
         public string GetUrlFromClipboard()
         {
-            //var cb = Clipboard.GetDefault(this.Display);
-            //cb.
-            return null;
+            var cb = Clipboard.Get(Gdk.Selection.Clipboard);
+            return cb.WaitForText();
         }
 
         public AuthenticationInfo? PromtForCredentials(string message)
@@ -915,8 +914,8 @@ namespace XDM.GtkUI
 
         public void ShowYoutubeDLDialog(IAppUI appUI, IApp app)
         {
-            var win = VideoDownloaderWindow.CreateFromGladeFile(app, appUI);
-            win.Show();
+            var win = new VideoDownloaderController(VideoDownloaderWindow.CreateFromGladeFile(), appUI, app);
+            win.Run();
         }
 
         public DownloadSchedule? ShowSchedulerDialog(DownloadSchedule schedule)
