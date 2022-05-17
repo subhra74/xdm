@@ -549,7 +549,8 @@ namespace XDM.Wpf.UI
         public void ShowYoutubeDLDialog(IAppUI appUI, IApp app)
         {
             var ydlWindow = new VideoDownloaderWindow(app, appUI) { Owner = this };
-            ydlWindow.Show();
+            var win = new VideoDownloaderController(ydlWindow, appUI, app);
+            win.Run();
         }
 
         public void ShowBatchDownloadWindow(IApp app, IAppUI appUi)

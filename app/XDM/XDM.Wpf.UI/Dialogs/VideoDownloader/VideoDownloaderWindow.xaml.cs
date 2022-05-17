@@ -128,18 +128,18 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
             };
         }
 
-        event EventHandler<DownloadLaterEventArgs>? IVideoDownloadView.DownloadLaterClicked
-        {
-            add
-            {
-                throw new NotImplementedException();
-            }
+        //event EventHandler<DownloadLaterEventArgs>? IVideoDownloadView.DownloadLaterClicked
+        //{
+        //    add
+        //    {
+        //        throw new NotImplementedException();
+        //    }
 
-            remove
-            {
-                throw new NotImplementedException();
-            }
-        }
+        //    remove
+        //    {
+        //        throw new NotImplementedException();
+        //    }
+        //}
 
         private void BtnBrowse_Click(object sender, RoutedEventArgs e)
         {
