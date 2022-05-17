@@ -36,7 +36,6 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
 
         private EventHandler? FormatChanged;
         private List<int> videoQualities;
-        private ObservableCollection<VideoEntryViewModel> videos;
 
         public IApp? App { get; set; }
         public IAppUI? AppUI { get; set; }
@@ -56,63 +55,7 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
             InitializeComponent();
         }
 
-        //public void SetVideoResultList(List<YDLVideoEntry> items)
-        //{
-        //    if (items == null) return;
-        //    var formatSet = new HashSet<int>();
-        //    this.videos = new(items.Select(x => new VideoEntryViewModel { x.}));
-        //    LvVideoList.ItemsSource = this.videos;
-        //    foreach (var item in items)
-        //    {
-        //        if (item.Formats != null)
-        //        {
-        //            item.Formats.ForEach(item =>
-        //            {
-        //                if (!string.IsNullOrEmpty(item.Height))
-        //                {
-        //                    if (Int32.TryParse(item.Height, out int height))
-        //                    {
-        //                        formatSet.Add(height);
-        //                    }
-        //                }
-        //            });
-        //        }
-        //    }
-        //    var formatsList = new List<int>(formatSet);
-        //    formatsList.Sort();
-        //    formatsList.Reverse();
-        //    this.videoQualities = formatsList;
-        //    LbQuality.ItemsSource = this.videoQualities.Select(n => $"{n}p");
-        //    if (this.videoQualities.Count > 0)
-        //    {
-        //        LbQuality.SelectedIndex = 0;
-        //    }
-        //}
-
-        private void LbFormat_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            //if (LbFormat.SelectedIndex == 0)
-            //{
-            //    LbQuality.ItemsSource = this.videoQualities.Select(n => $"{n}p");
-            //    if (this.videoQualities.Count > 0)
-            //    {
-            //        LbQuality.SelectedIndex = 0;
-            //    }
-            //}
-            //else
-            //{
-            //    LbQuality.ItemsSource = new string[] { "320Kbps", "128kbps" };
-            //    LbQuality.SelectedIndex = 0;
-            //}
-        }
-
-        private void ChkSelectAll_Checked(object sender, RoutedEventArgs e)
-        {
-            foreach (var item in videos)
-            {
-                item.IsSelected = ChkSelectAll.IsChecked ?? false;
-            }
-        }
+        
 
         private void BtnDownloadNow_Click(object sender, RoutedEventArgs e)
         {

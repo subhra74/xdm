@@ -116,6 +116,8 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
             Page3.DownloadLaterClicked += q => DownloadLaterClicked?.Invoke(this, new DownloadLaterEventArgs(q));
             Page3.DontAddToQueue += () => DownloadLaterClicked?.Invoke(this, new DownloadLaterEventArgs(null));
             Page3.QueueAndScheduler += () => QueueSchedulerClicked?.Invoke(this, EventArgs.Empty);
+            Page3.ChkSelectAll.Checked += ChkSelectAll_Checked;
+            Page3.ChkSelectAll.Unchecked += ChkSelectAll_Checked;
 
             Page1.SearchClicked += (a, b) =>
             {
@@ -126,6 +128,14 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
             {
                 CancelClicked?.Invoke(this, EventArgs.Empty);
             };
+        }
+
+        private void ChkSelectAll_Checked(object sender, RoutedEventArgs e)
+        {
+            foreach (VideoEntryViewModel item in Page3.LvVideoList.Items)
+            {
+                item.IsSelected = Page3.ChkSelectAll.IsChecked ?? false;
+            }
         }
 
         //event EventHandler<DownloadLaterEventArgs>? IVideoDownloadView.DownloadLaterClicked

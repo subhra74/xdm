@@ -25,8 +25,7 @@
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
-        <CheckBox Name="ChkSelectAll" Content="{StaticResource VID_CHK}" Grid.ColumnSpan="5" Margin="5,0,0,10" 
-                  Checked="ChkSelectAll_Checked" Unchecked="ChkSelectAll_Checked"/>
+        <CheckBox Name="ChkSelectAll" Content="{StaticResource VID_CHK}" Grid.ColumnSpan="5" Margin="5,0,0,10" />
         <ListBox Name="LvVideoList" Grid.Row="1" Grid.ColumnSpan="3" Margin="0,0,10,0" BorderThickness="1" 
                   BorderBrush="{StaticResource ControlBordercolor}">
             <ListBox.ItemTemplate>
@@ -66,7 +65,7 @@
             </Grid.RowDefinitions>
             <TextBlock Grid.Row="0" Text="{StaticResource O_VID_FMT}" Margin="0,0,0,5" Visibility="Collapsed"/>
             <ListBox Name="LbFormat" Grid.Row="1" MinWidth="60" BorderThickness="1" MinHeight="60"
-                  BorderBrush="{StaticResource ControlBordercolor}" SelectionChanged="LbFormat_SelectionChanged" Visibility="Collapsed">
+                  BorderBrush="{StaticResource ControlBordercolor}" Visibility="Collapsed">
                 <ListBoxItem>
                     <TextBlock Text="{StaticResource CAT_VIDEOS}"/>
                 </ListBoxItem>
