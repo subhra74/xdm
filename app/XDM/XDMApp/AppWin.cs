@@ -148,9 +148,14 @@ namespace XDMApp
             return peer.FindInProgressItem(downloadId)?.DownloadEntry;
         }
 
-        public string GetUrlFromClipboard()
+        public string? GetUrlFromClipboard()
         {
-            return peer.GetUrlFromClipboard();
+            var text = peer.GetUrlFromClipboard();
+            if (Helpers.IsUriValid(text))
+            {
+                return text;
+            }
+            return null;
         }
 
         public AuthenticationInfo? PromtForCredentials(string message)

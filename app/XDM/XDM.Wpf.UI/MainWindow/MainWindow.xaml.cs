@@ -400,12 +400,7 @@ namespace XDM.Wpf.UI
 
         public string? GetUrlFromClipboard()
         {
-            var text = Clipboard.GetText();
-            if (Helpers.IsUriValid(text))
-            {
-                return text;
-            }
-            return null;
+            return Clipboard.GetText();
         }
 
         public AuthenticationInfo? PromtForCredentials(string message)

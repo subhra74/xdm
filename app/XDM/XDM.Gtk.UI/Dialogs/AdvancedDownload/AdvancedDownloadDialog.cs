@@ -77,8 +77,8 @@ namespace XDM.GtkUI.Dialogs.AdvancedDownload
                 TextResource.GetText("ND_NO_PROXY"),
                 TextResource.GetText("ND_MANUAL_PROXY"));
 
-            ConfigurePasswordField(TxtPassword);
-            ConfigurePasswordField(TxtProxyPassword);
+            GtkHelper.ConfigurePasswordField(TxtPassword);
+            GtkHelper.ConfigurePasswordField(TxtProxyPassword);
             TxtSpeedLimit!.Text = "0";
             CmbProxyType!.Changed += CmbProxyType_Changed;
 
@@ -86,17 +86,8 @@ namespace XDM.GtkUI.Dialogs.AdvancedDownload
             btnCancel.Clicked += BtnCancel_Click;
 
             LoadTexts();
-        }
 
-        private void ConfigurePasswordField(Entry? entry)
-        {
-            if (entry == null)
-            {
-                return;
-            }
-            entry.Visibility = false;
-            entry.InvisibleChar = '*';
-            entry.InputPurpose = InputPurpose.Password;
+            GtkHelper.AttachSafeDispose(this);
         }
 
         public AuthenticationInfo? Authentication

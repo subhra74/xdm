@@ -25,6 +25,8 @@ using XDM.GtkUI.Utils;
 using XDM.GtkUI.Dialogs.DownloadComplete;
 using XDM.GtkUI.Dialogs.NewVideoDownload;
 using XDM.GtkUI.Dialogs.VideoDownloader;
+using XDM.GtkUI.Dialogs;
+using XDM.GtkUI.Dialogs.DeleteConfirm;
 
 namespace XDM.GtkUI
 {
@@ -833,28 +835,41 @@ namespace XDM.GtkUI
 
         public void Delete(IInProgressDownloadRow row)
         {
-            var iter = ((InProgressEntryWrapper)row).GetTreeIter();
+            var iter = ((InProgressEntryWrapper)row).TreeIter;
             inprogressDownloadsStore.Remove(ref iter);
         }
 
         public void Delete(IFinishedDownloadRow row)
         {
-            throw new NotImplementedException();
+            var iter = ((FinishedEntryWrapper)row).TreeIter;
+            finishedDownloadsStore.Remove(ref iter);
         }
 
         public void DeleteAllFinishedDownloads()
         {
-            throw new NotImplementedException();
+            if (GtkHelper.ShowConfirmMessageBox(this, TextResource.GetText("MENU_DELETE_COMPLETED"), "XDM"))
+            {
+                return;
+            }
+            finishedDownloadsStore.Clear();
         }
 
         public void Delete(IEnumerable<IInProgressDownloadRow> rows)
         {
-            throw new NotImplementedException();
+            foreach (var row in rows)
+            {
+                var iter = ((InProgressEntryWrapper)row).TreeIter;
+                inprogressDownloadsStore.Remove(ref iter);
+            }
         }
 
         public void Delete(IEnumerable<IFinishedDownloadRow> rows)
         {
-            throw new NotImplementedException();
+            foreach (var row in rows)
+            {
+                var iter = ((FinishedEntryWrapper)row).TreeIter;
+                inprogressDownloadsStore.Remove(ref iter);
+            }
         }
 
         public string GetUrlFromClipboard()
@@ -865,7 +880,14 @@ namespace XDM.GtkUI
 
         public AuthenticationInfo? PromtForCredentials(string message)
         {
-            throw new NotImplementedException();
+            var dlg = CredentialsDialog.CreateFromGladeFile(this, windowGroup);
+            dlg.PromptText = message ?? "Authentication required";
+            dlg.Run();
+            if (dlg.Result)
+            {
+                return dlg.Credentials;
+            }
+            return null;
         }
 
         public void ShowUpdateAvailableNotification()
@@ -1085,8 +1107,20 @@ namespace XDM.GtkUI
 
         public void ConfirmDelete(string text, out bool approved, out bool deleteFiles)
         {
-            Log.Debug(text);
-            throw new NotImplementedException();
+            approved = false;
+            deleteFiles = false;
+            using var dlg = DeleteConfirmDialog.CreateFromGladeFile(this, this.windowGroup);
+            if (!string.IsNullOrEmpty(text))
+            {
+                dlg.DescriptionText = text;
+            }
+            dlg.Run();
+            if (dlg.Result)
+            {
+                approved = true;
+                deleteFiles = dlg.ShouldDeleteFile;
+            }
+            dlg.Destroy();
         }
 
         public string? SaveFileDialog(string? initialPath, string? defaultExt, string? filter)

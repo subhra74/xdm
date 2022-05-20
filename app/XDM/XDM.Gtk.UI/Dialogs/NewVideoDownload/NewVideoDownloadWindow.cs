@@ -96,6 +96,8 @@ namespace XDM.GtkUI.Dialogs.NewVideoDownload
             PrepareMenu();
 
             this.ShowAll();
+
+            GtkHelper.AttachSafeDispose(this);
         }
 
         private void CmbLocation_Changed(object? sender, EventArgs e)

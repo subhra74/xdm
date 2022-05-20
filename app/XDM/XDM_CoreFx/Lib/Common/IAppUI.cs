@@ -124,7 +124,7 @@ namespace XDM.Core.Lib.Common
         /// 
         /// </summary>
         /// <returns></returns>
-        string GetUrlFromClipboard();
+        string? GetUrlFromClipboard();
 
         /// <summary>
         /// 

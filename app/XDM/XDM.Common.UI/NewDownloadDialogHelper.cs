@@ -17,7 +17,7 @@ namespace XDM.Common.UI
         {
             window.DestroyEvent += (_, _) => destroyCallback?.Invoke();
             window.SetFolderValues(CommonUtils.GetFolderValues());
-            if(Config.Instance.FolderSelectionMode == FolderSelectionMode.Auto)
+            if (Config.Instance.FolderSelectionMode == FolderSelectionMode.Auto)
             {
                 window.SeletedFolderIndex = 0;
             }
@@ -59,7 +59,7 @@ namespace XDM.Common.UI
             else
             {
                 var url = appUi.GetUrlFromClipboard();
-                if (url != null)
+                if (!string.IsNullOrEmpty(url))
                 {
                     window.Url = url;
                     window.SelectedFileName = Helpers.SanitizeFileName(Helpers.GetFileName(new Uri(url)));

@@ -10,10 +10,10 @@ namespace XDM.GtkUI.Utils
 {
     internal static class GtkHelper
     {
-        public static void ShowMessageBox(Window window, string text)
+        public static void ShowMessageBox(Window window, string text, string? title = null)
         {
-            var msgBox = new MessageDialog(window, DialogFlags.Modal, MessageType.Info, ButtonsType.Ok, text);
-            msgBox.Title = window.Title;
+            using var msgBox = new MessageDialog(window, DialogFlags.Modal, MessageType.Info, ButtonsType.Ok, text);
+            msgBox.Title = title ?? window.Title;
             if (window.Group != null)
             {
                 window.Group.AddWindow(msgBox);
@@ -24,6 +24,23 @@ namespace XDM.GtkUI.Utils
                 window.Group.RemoveWindow(msgBox);
             }
             msgBox.Destroy();
+        }
+
+        public static bool ShowConfirmMessageBox(Window window, string text, string? title = null)
+        {
+            using var msgBox = new MessageDialog(window, DialogFlags.Modal, MessageType.Question, ButtonsType.YesNo, text);
+            msgBox.Title = title ?? window.Title;
+            if (window.Group != null)
+            {
+                window.Group.AddWindow(msgBox);
+            }
+            var ret = msgBox.Run();
+            if (window.Group != null)
+            {
+                window.Group.RemoveWindow(msgBox);
+            }
+            msgBox.Destroy();
+            return ret == (int)ResponseType.Yes;
         }
 
         public static T GetComboBoxSelectedItem<T>(ComboBox comboBox)
@@ -112,7 +129,7 @@ namespace XDM.GtkUI.Utils
 
         public static string? SelectFolder(Window parent)
         {
-            var fc = new FileChooserDialog("XDM", parent, FileChooserAction.SelectFolder);
+            using var fc = new FileChooserDialog("XDM", parent, FileChooserAction.SelectFolder);
             try
             {
                 if (parent.Group != null)
@@ -134,7 +151,50 @@ namespace XDM.GtkUI.Utils
                     parent.Group.RemoveWindow(fc);
                 }
                 fc.Destroy();
+                fc.Dispose();
             }
+        }
+
+        public static void AttachSafeDispose(Window window)
+        {
+            window.DeleteEvent += (s, _) =>
+            {
+                try
+                {
+                    if (s is Window w)
+                    {
+                        var g = w.Group;
+                        if (g != null)
+                        {
+                            g.RemoveWindow(w);
+                        }
+                    }
+                }
+                catch { }
+            };
+
+            window.Destroyed += (s, _) =>
+            {
+                try
+                {
+                    if (s is Window w)
+                    {
+                        w.Dispose();
+                    }
+                }
+                catch { }
+            };
+        }
+
+        public static void ConfigurePasswordField(Entry? entry)
+        {
+            if (entry == null)
+            {
+                return;
+            }
+            entry.Visibility = false;
+            entry.InvisibleChar = '*';
+            entry.InputPurpose = InputPurpose.Password;
         }
     }
 }

@@ -99,10 +99,7 @@ namespace XDM.GtkUI
             }
         }
 
-        public TreeIter GetTreeIter()
-        {
-            return this.treeIter;
-        }
+        internal TreeIter TreeIter => treeIter;
 
         public ITreeModel GetStore()
         {

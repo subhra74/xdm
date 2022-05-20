@@ -58,6 +58,8 @@ namespace XDM.GtkUI.Dialogs.DownloadComplete
             BtnOpenFolder.Clicked += BtnOpenFolder_Click;
             TxtDontShowCompleteDialog.Clicked += TxtDontShowCompleteDialog_MouseDown;
             SetDefaultSize(400, 200);
+
+            GtkHelper.AttachSafeDispose(this);
         }
 
         private void TxtDontShowCompleteDialog_MouseDown(object? sender, EventArgs e)

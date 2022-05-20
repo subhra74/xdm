@@ -109,6 +109,8 @@ namespace XDM.GtkUI.Dialogs.NewDownload
             PrepareMenu();
 
             this.ShowAll();
+
+            GtkHelper.AttachSafeDispose(this);
         }
 
         public bool IsEmpty { get => TxtUrl.IsEditable; set => TxtUrl.IsEditable = value; }

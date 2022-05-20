@@ -327,6 +327,8 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
 
             TxtUrl.Ellipsize = Pango.EllipsizeMode.End;
             TxtFileName.Ellipsize = Pango.EllipsizeMode.End;
+
+            GtkHelper.AttachSafeDispose(this);
         }
 
         public static DownloadProgressWindow CreateFromGladeFile()

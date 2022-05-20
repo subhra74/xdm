@@ -222,6 +222,8 @@ namespace XDM.GtkUI.Dialogs.VideoDownloader
 
             BtnMore.Clicked += btnAdvanced_Click;
             PrepareMenu();
+
+            GtkHelper.AttachSafeDispose(this);
         }
 
         private void BtnGo_Clicked(object? sender, EventArgs e)
