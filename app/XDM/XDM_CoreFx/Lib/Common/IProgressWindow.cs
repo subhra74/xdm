@@ -30,7 +30,7 @@ namespace XDM.Common.UI
 
         public void DownloadStarted();
 
-        public void Destroy();
+        public void DestroyWindow();
     }
 
     public struct ErrorDetails

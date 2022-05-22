@@ -80,9 +80,17 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
 
         public IAppUI AppUI { get; set; }
 
-        public override void Destroy()
+        public void DestroyWindow()
         {
-            Application.Invoke((a, b) => { try { this.Close(); base.Destroy(); } catch { } });
+            Application.Invoke((a, b) =>
+            {
+                try
+                {
+                    Destroy();
+                    Dispose();
+                }
+                catch { }
+            });
             //Dispatcher.Invoke(new Action(() =>
             //{
             //    try
@@ -208,9 +216,11 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
 
         private void DownloadProgressWindow_DeleteEvent(object o, DeleteEventArgs args)
         {
+            args.RetVal = true;
             StopDownload(true);
-            //speedLimiterDlg?.Close();
-            //speedLimiterDlg = null;
+            //Close();
+            //Dispose();
+            //Destroy();
         }
 
         private void BtnPause_Click(object? sender, EventArgs e)
@@ -233,13 +243,18 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
         private void BtnStop_Click(object? sender, EventArgs e)
         {
             StopDownload(true);
+            //Close();
+            //Dispose();
+            //Destroy();
         }
 
         private void BtnHide_Click(object? sender, EventArgs e)
         {
             DeleteEvent -= DownloadProgressWindow_DeleteEvent;
             App.HideProgressWindow(downloadId);
-            Close();
+            //Close();
+            //Destroy();
+            //Dispose();
         }
 
         //private void TxtSpeedLimit_Click(object sender, EventArgs e)
@@ -292,12 +307,16 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
         private Action<string> actSpeedUpdate, actEtaUpdate, actStatusUpdate;
         private Action<int> actPrgUpdate;
         private string downloadId = string.Empty;
+        private WindowGroup windowGroup;
 
         private DownloadProgressWindow(Builder builder) : base(builder.GetRawOwnedObject("window"))
         {
             builder.Autoconnect(this);
             Title = TextResource.GetText("STAT_DOWNLOADING");
             SetPosition(WindowPosition.Center);
+
+            this.windowGroup = new WindowGroup();
+            this.windowGroup.AddWindow(this);
 
             actSpeedUpdate = value => this.TxtSpeed.Text = value;
             actEtaUpdate = value => this.TxtETA.Text = value;

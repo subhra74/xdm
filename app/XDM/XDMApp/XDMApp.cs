@@ -670,7 +670,6 @@ namespace XDMApp
                     download.SetTargetDirectory(item.Value.TargetDir);
                     download.SetFileName(item.Value.Name, item.Value.FileNameFetchMode);
                     liveDownloads[item.Key] = (Downloader: download, NonInteractive: nonInteractive);
-                    liveDownloads[item.Key].Downloader.Resume();
 
                     var showProgressWindow = Config.Instance.ShowProgressWindow;
                     if (showProgressWindow && !nonInteractive)
@@ -681,6 +680,7 @@ namespace XDMApp
                         prgWin.DownloadStarted();
                         prgWin.ShowProgressWindow();
                     }
+                    liveDownloads[item.Key].Downloader.Resume();
                 }
             });
         }
@@ -807,7 +807,7 @@ namespace XDMApp
                     {
                         var prgWin = activeProgressWindows[id];
                         activeProgressWindows.Remove(id);
-                        prgWin.Destroy();
+                        prgWin.DestroyWindow();
                         Log.Debug("Progress window removed");
                     }
                 };
@@ -873,7 +873,7 @@ namespace XDMApp
                     var prgWin = activeProgressWindows[http.Id];
                     activeProgressWindows.Remove(http.Id);
                     prgWin.DownloadId = null;
-                    prgWin.Destroy();
+                    prgWin.DestroyWindow();
                 }
 
                 if (showCompleteDialog)
@@ -1240,7 +1240,9 @@ namespace XDMApp
         {
             if (activeProgressWindows.ContainsKey(id))
             {
+                var prgWin = activeProgressWindows[id];
                 activeProgressWindows.Remove(id);
+                prgWin.DestroyWindow();
             }
         }
 

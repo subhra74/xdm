@@ -211,7 +211,7 @@ namespace XDM.WinForm.UI
             App?.StopDownloads(new List<string> { downloadId }, close);
         }
 
-        public void Destroy()
+        public void DestroyWindow()
         {
             if (this.InvokeRequired)
             {

@@ -27,6 +27,7 @@ using XDM.GtkUI.Dialogs.NewVideoDownload;
 using XDM.GtkUI.Dialogs.VideoDownloader;
 using XDM.GtkUI.Dialogs;
 using XDM.GtkUI.Dialogs.DeleteConfirm;
+using XDM.GtkUI.Dialogs.QueueScheduler;
 
 namespace XDM.GtkUI
 {
@@ -39,13 +40,18 @@ namespace XDM.GtkUI
         private ScrolledWindow swInProgress, swFinished;
         private TreeModelFilter finishedDownloadFilter;
         private TreeModelFilter inprogressDownloadFilter;
+        private TreeModelSort inprogressDownloadsStoreSorted;
+        private TreeModelSort finishedDownloadsStoreSorted;
         private string? searchKeyword;
         private Category? category;
-        private ToolButton btnNew, btnDel, btnOpenFile, btnOpenFolder, btnResume, btnPause;
+        private ToolButton btnNew, btnDel, btnOpenFile, btnOpenFolder, btnResume, btnPause, btnMenu;
         private IButton newButton, deleteButton, pauseButton, resumeButton, openFileButton, openFolderButton;
         private IMenuItem[] menuItems;
         private Menu newDownloadMenu;
+        private Menu mainMenu;
         private WindowGroup windowGroup;
+        private CheckButton btnMonitoring;
+        private bool isUpdateAvailable;
 
         public IEnumerable<FinishedDownloadEntry> FinishedDownloads
         {
@@ -127,6 +133,7 @@ namespace XDM.GtkUI
             categoryTreeStore!.GetIterFirst(out TreeIter iter);
             categoryTreeStore.IterNext(ref iter);
             categoryTree!.Selection.SelectIter(iter);
+            UpdateBrowserMonitorButton();
 
             CreateMenu();
         }
@@ -135,23 +142,25 @@ namespace XDM.GtkUI
         {
             menuItems = new IMenuItem[]
             {
-                new MenuItemWrapper("pause",new MenuItem("Pause")),
-                new MenuItemWrapper("resume",new MenuItem("Resume") ),
-                new MenuItemWrapper("delete",new MenuItem("Delete")),
-                new MenuItemWrapper("saveAs",new MenuItem("Save As")),
-                new MenuItemWrapper("refresh",new MenuItem("Refresh link")),
-                new MenuItemWrapper("showProgress",new MenuItem("Show progress")),
-                new MenuItemWrapper("copyURL",new MenuItem("Copy URL")),
-                new MenuItemWrapper("properties",new MenuItem("Properties")),
-                new MenuItemWrapper("open",new MenuItem("Open")),
-                new MenuItemWrapper("openFolder",new MenuItem("Open folder")),
-                new MenuItemWrapper("deleteDownloads",new MenuItem("Delete downloads")),
-                new MenuItemWrapper("copyURL1",new MenuItem("Copy URL")),
-                new MenuItemWrapper("copyFile",new MenuItem("Copy file")),
-                new MenuItemWrapper("properties1",new MenuItem("Properties")),
-                new MenuItemWrapper("restart",new MenuItem("Restart")),
-                new MenuItemWrapper("schedule",new MenuItem("Schedule")),
-                new MenuItemWrapper("downloadAgain",new MenuItem("Download again"))
+                new MenuItemWrapper("pause",TextResource.GetText("MENU_PAUSE")),
+                new MenuItemWrapper("resume",TextResource.GetText("MENU_RESUME")),
+                new MenuItemWrapper("delete",TextResource.GetText("DESC_DEL")),
+                new MenuItemWrapper("saveAs",TextResource.GetText("CTX_SAVE_AS")),
+                new MenuItemWrapper("refresh",TextResource.GetText("MENU_REFRESH_LINK")),
+                new MenuItemWrapper("showProgress",TextResource.GetText("LBL_SHOW_PROGRESS")),
+                new MenuItemWrapper("copyURL",TextResource.GetText("CTX_COPY_URL")),
+                new MenuItemWrapper("restart",TextResource.GetText("MENU_RESTART")),
+                new MenuItemWrapper("moveToQueue",TextResource.GetText("Q_MOVE_TO")),
+                new MenuItemWrapper("properties",TextResource.GetText("MENU_PROPERTIES")),
+
+                new MenuItemWrapper("open",TextResource.GetText("CTX_OPEN_FILE")),
+                new MenuItemWrapper("openFolder",TextResource.GetText("CTX_OPEN_FOLDER")),
+                new MenuItemWrapper("deleteDownloads",TextResource.GetText("MENU_DELETE_DWN")),
+                new MenuItemWrapper("copyURL1",TextResource.GetText("CTX_COPY_URL")),
+                new MenuItemWrapper("copyFile",TextResource.GetText("CTX_COPY_FILE")),
+                new MenuItemWrapper("downloadAgain",TextResource.GetText("MENU_RESTART")),
+                new MenuItemWrapper("properties1",TextResource.GetText("MENU_PROPERTIES")),
+                new MenuItemWrapper("schedule",TextResource.GetText("Q_SCHEDULE_TXT"),false)
             };
 
             var dict = new Dictionary<string, IMenuItem>();
@@ -186,20 +195,107 @@ namespace XDM.GtkUI
             menuInProgress.ShowAll();
 
             newDownloadMenu = new Menu();
-
             var menuNewDownload = new MenuItem(TextResource.GetText("LBL_NEW_DOWNLOAD"));
             menuNewDownload.Activated += MenuNewDownload_Click;
-
             var menuVideoDownload = new MenuItem(TextResource.GetText("LBL_VIDEO_DOWNLOAD"));
             menuVideoDownload.Activated += MenuVideoDownload_Click;
-
             var menuBatchDownload = new MenuItem(TextResource.GetText("MENU_BATCH_DOWNLOAD"));
             menuBatchDownload.Activated += MenuBatchDownload_Click;
-
             newDownloadMenu.Append(menuNewDownload);
             newDownloadMenu.Append(menuVideoDownload);
             newDownloadMenu.Append(menuBatchDownload);
             newDownloadMenu.ShowAll();
+
+            mainMenu = new Menu();
+            var menuSettings = new MenuItem(TextResource.GetText("TITLE_SETTINGS"));
+            var menuClearFinished = new MenuItem(TextResource.GetText("MENU_DELETE_COMPLETED"));
+            var menuExport = new MenuItem(TextResource.GetText("MENU_EXPORT"));
+            var menuImport = new MenuItem(TextResource.GetText("MENU_IMPORT"));
+            var menuLanguage = new MenuItem(TextResource.GetText("MENU_LANG"));
+            var menuBrowserMonitor = new MenuItem(TextResource.GetText("SETTINGS_MONITORING"));
+            var menuHelpAndSupport = new MenuItem(TextResource.GetText("LBL_SUPPORT_PAGE"));
+            var menuReportProblem = new MenuItem(TextResource.GetText("LBL_REPORT_PROBLEM"));
+            var menuCheckForUpdate = new MenuItem(TextResource.GetText("MENU_UPDATE"));
+            var menuAbout = new MenuItem(TextResource.GetText("MENU_ABOUT"));
+            var menuExit = new MenuItem(TextResource.GetText("MENU_EXIT"));
+            menuSettings.Activated += MenuSettings_Activated;
+            menuClearFinished.Activated += MenuClearFinished_Activated;
+            menuExport.Activated += MenuExport_Activated;
+            menuImport.Activated += MenuImport_Activated;
+            menuLanguage.Activated += MenuLanguage_Activated;
+            menuBrowserMonitor.Activated += MenuBrowserMonitor_Activated;
+            menuHelpAndSupport.Activated += MenuHelpAndSupport_Activated;
+            menuReportProblem.Activated += MenuReportProblem_Activated;
+            menuCheckForUpdate.Activated += MenuCheckForUpdate_Activated;
+            menuAbout.Activated += MenuAbout_Activated;
+            menuExit.Activated += MenuExit_Activated;
+            mainMenu.Append(menuSettings);
+            mainMenu.Append(menuClearFinished);
+            mainMenu.Append(menuExport);
+            mainMenu.Append(menuImport);
+            mainMenu.Append(menuLanguage);
+            mainMenu.Append(menuBrowserMonitor);
+            mainMenu.Append(menuHelpAndSupport);
+            mainMenu.Append(menuReportProblem);
+            mainMenu.Append(menuCheckForUpdate);
+            mainMenu.Append(menuAbout);
+            mainMenu.Append(menuExit);
+            mainMenu.ShowAll();
+        }
+
+        private void MenuExit_Activated(object? sender, EventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void MenuAbout_Activated(object? sender, EventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void MenuCheckForUpdate_Activated(object? sender, EventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void MenuReportProblem_Activated(object? sender, EventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void MenuHelpAndSupport_Activated(object? sender, EventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void MenuBrowserMonitor_Activated(object? sender, EventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void MenuLanguage_Activated(object? sender, EventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void MenuImport_Activated(object? sender, EventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void MenuExport_Activated(object? sender, EventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void MenuClearFinished_Activated(object? sender, EventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void MenuSettings_Activated(object? sender, EventArgs e)
+        {
+            throw new NotImplementedException();
         }
 
         private void MenuBatchDownload_Click(object? sender, EventArgs e)
@@ -223,7 +319,104 @@ namespace XDM.GtkUI
             vbMain.PackStart(CreateToolbar(), false, false, 1);
             vbMain.PackStart(CreateInProgressListView(), true, true, 1);
             vbMain.PackStart(CreateFinishedListView(), true, true, 1);
+            vbMain.PackStart(CreateBottombar(), false, false, 1);
             return vbMain;
+        }
+
+        private Button CreateButtonWithContent(string icon, string text)
+        {
+            return new Button
+            {
+                Label = text,
+                MarginBottom = 0,
+                Relief = ReliefStyle.None,
+                Valign = Align.Start,
+                Image = new Image(LoadSvg(icon, 16)),
+                AlwaysShowImage = true,
+            };
+            //var hbox = new HBox();
+            //hbox.PackStart(new Image(LoadSvg(icon, 16)), false, false, 5);
+            //hbox.PackStart(new Label { Text = text }, false, false, 5);
+
+            //var button = new Button
+            //{
+            //    Relief = ReliefStyle.None,
+            //    Valign = Align.Start,
+            //};
+            //button.Add(hbox);
+            //return button;
+        }
+
+        private Widget CreateBottombar()
+        {
+            var hbox = new HBox();
+            //var lblMonitoring = new Label { Text = TextResource.GetText("SETTINGS_MONITORING"), MarginBottom = 5 };
+            //hbox.PackStart(lblMonitoring, false, false, 0);
+            btnMonitoring = new CheckButton { Label = TextResource.GetText("SETTINGS_MONITORING"), Margin = 2 };
+            btnMonitoring.Clicked += BtnMonitoring_Clicked;
+            hbox.PackStart(btnMonitoring, false, false, 0);
+
+            //var h1 = new HBox();
+            //h1.PackStart(new Image(LoadSvg("links-line", 14)), false, false, 0);
+            //h1.PackStart(new Label { Text = TextResource.GetText("DESC_Q_TITLE") }, false, false, 10);
+
+            var btnScheduler = CreateButtonWithContent("list-settings-fill", TextResource.GetText("DESC_Q_TITLE"));
+            btnScheduler.Clicked += BtnScheduler_Clicked;
+            //new Button
+            //{
+            //    Label = TextResource.GetText("DESC_Q_TITLE"),
+            //    MarginBottom = 0,
+            //    Relief = ReliefStyle.None,
+            //    Valign = Align.Start,
+            //    Image = new Image(LoadSvg("list-settings-fill", 16)),
+            //    AlwaysShowImage = true,
+
+            //};
+            //btnScheduler.Add(h1);
+            btnScheduler.Margin = 2;
+            hbox.PackStart(btnScheduler, false, false, 15);
+
+            var btnHelp = CreateButtonWithContent("question-line", TextResource.GetText("LBL_SUPPORT_PAGE"));
+            btnHelp.Clicked += BtnHelp_Clicked;
+            btnHelp.Margin = 2;
+            btnHelp.MarginEnd = 5;
+            //new Button
+            //{
+            //    Label = TextResource.GetText("LBL_SUPPORT_PAGE"),
+            //    MarginBottom = 0,
+            //    Relief = ReliefStyle.None,
+            //    Valign = Align.Start,
+            //    Image = new Image(LoadSvg("question-line", 16)),
+            //    AlwaysShowImage = true,
+            //};
+            hbox.PackEnd(btnHelp, false, false, 0);
+
+            return hbox;
+        }
+
+        private void BtnHelp_Clicked(object? sender, EventArgs e)
+        {
+            if (isUpdateAvailable)
+            {
+                UpdateClicked?.Invoke(sender, e);
+            }
+            else
+            {
+                HelpClicked?.Invoke(sender, e);
+            }
+        }
+
+        private void BtnScheduler_Clicked(object? sender, EventArgs e)
+        {
+            //using var dlg = QueueSchedulerDialog.CreateFromGladeFile(this, this.windowGroup);
+            //dlg.Run();
+            //dlg.Destroy();
+            this.SchedulerClicked?.Invoke(sender, e);
+        }
+
+        private void BtnMonitoring_Clicked(object? sender, EventArgs e)
+        {
+            BrowserMonitoringButtonClicked?.Invoke(sender, e);
         }
 
         private Widget CreateToolbar()
@@ -260,7 +453,7 @@ namespace XDM.GtkUI
             };
             cont.Add(searchEntry);
             toolbar.Add(cont);
-            var btnMenu = new ToolButton(new Image(LoadSvg("menu-line", 14)), string.Empty) { IsImportant = false };
+            btnMenu = new ToolButton(new Image(LoadSvg("menu-line", 14)), string.Empty) { IsImportant = false };
             toolbar.Add(btnMenu);
 
             newButton = new ButtonWrapper(this.btnNew);
@@ -270,7 +463,14 @@ namespace XDM.GtkUI
             openFileButton = new ButtonWrapper(this.btnOpenFile);
             openFolderButton = new ButtonWrapper(this.btnOpenFolder);
 
+            btnMenu.Clicked += BtnMenu_Clicked;
+
             return toolbar;
+        }
+
+        private void BtnMenu_Clicked(object? sender, EventArgs e)
+        {
+            OpenMainMenu();
         }
 
         private Widget CreateCategoryTree()
@@ -439,6 +639,7 @@ namespace XDM.GtkUI
                 return t1.Size.CompareTo(t2.Size);
             });
 
+            inprogressDownloadsStoreSorted = sortedStore;
             lvInprogress = new TreeView(sortedStore);
             lvInprogress.Selection.Mode = SelectionMode.Multiple;
 
@@ -538,7 +739,7 @@ namespace XDM.GtkUI
 
             sortedStore.SetSortColumnId(1, SortType.Descending);
 
-            swInProgress = new ScrolledWindow { OverlayScrolling = true, Margin = 5, MarginStart = 0, MarginTop = 0, ShadowType = ShadowType.In };
+            swInProgress = new ScrolledWindow { OverlayScrolling = true, MarginStart = 0, MarginEnd = 5, ShadowType = ShadowType.In };
             swInProgress.SetPolicy(PolicyType.Automatic, PolicyType.Automatic);
             swInProgress.Add(lvInprogress);
             //scrolledWindow.SetSizeRequest(200, 200);
@@ -600,6 +801,7 @@ namespace XDM.GtkUI
                 return t1.Size.CompareTo(t2.Size);
             });
 
+            finishedDownloadsStoreSorted = sortedStore;
             lvFinished = new TreeView(sortedStore);
             lvFinished.Selection.Mode = SelectionMode.Multiple;
 
@@ -670,7 +872,7 @@ namespace XDM.GtkUI
 
             sortedStore.SetSortColumnId(1, SortType.Descending);
 
-            swFinished = new ScrolledWindow { OverlayScrolling = true, Margin = 5, MarginStart = 0, MarginTop = 0, ShadowType = ShadowType.In };
+            swFinished = new ScrolledWindow { OverlayScrolling = true, MarginStart = 0, MarginEnd = 5, ShadowType = ShadowType.In };
             swFinished.SetPolicy(PolicyType.Automatic, PolicyType.Automatic);
             swFinished.Add(lvFinished);
             return swFinished;
@@ -686,7 +888,8 @@ namespace XDM.GtkUI
 
         private void AppWin1_DeleteEvent(object o, DeleteEventArgs args)
         {
-            Application.Quit();
+            args.RetVal = true;
+            this.Hide();
         }
 
         private static Gdk.Pixbuf LoadSvg(string name, int dimension = 16)
@@ -715,6 +918,23 @@ namespace XDM.GtkUI
             return null;
         }
 
+        public TreeIter? FindInProgressItemIterById(string id)
+        {
+            if (!inprogressDownloadsStore!.GetIterFirst(out TreeIter iter))
+            {
+                return null;
+            }
+            do
+            {
+                var ent = (InProgressDownloadEntry)inprogressDownloadsStore.GetValue(iter, INPROGRESS_DATA_INDEX);
+                if (ent.Id == id)
+                {
+                    return iter;
+                }
+            }
+            while (inprogressDownloadsStore.IterNext(ref iter));
+            return null;
+        }
 
         public IFinishedDownloadRow? FindFinishedItem(string id)
         {
@@ -728,6 +948,24 @@ namespace XDM.GtkUI
                 if (ent.Id == id)
                 {
                     return new FinishedEntryWrapper(ent, iter, finishedDownloadsStore);
+                }
+            }
+            while (finishedDownloadsStore.IterNext(ref iter));
+            return null;
+        }
+
+        public TreeIter? FindFinishedItemIterById(string id)
+        {
+            if (!this.finishedDownloadsStore!.GetIterFirst(out TreeIter iter))
+            {
+                return null;
+            }
+            do
+            {
+                var ent = (FinishedDownloadEntry)finishedDownloadsStore.GetValue(iter, FINISHED_DATA_INDEX);
+                if (ent.Id == id)
+                {
+                    return iter;
                 }
             }
             while (finishedDownloadsStore.IterNext(ref iter));
@@ -835,14 +1073,30 @@ namespace XDM.GtkUI
 
         public void Delete(IInProgressDownloadRow row)
         {
-            var iter = ((InProgressEntryWrapper)row).TreeIter;
-            inprogressDownloadsStore.Remove(ref iter);
+            var id = row.DownloadEntry.Id;
+            var modelIter = FindInProgressItemIterById(id);
+            if (modelIter.HasValue)
+            {
+                var iter = modelIter.Value;
+                inprogressDownloadsStore.Remove(ref iter);
+            }
+
+            //var iter = GtkHelper.ConvertViewToModel(((InProgressEntryWrapper)row).TreeIter,
+            //    inprogressDownloadsStoreSorted, inprogressDownloadFilter);
+            //inprogressDownloadsStore.Remove(ref iter);
         }
 
         public void Delete(IFinishedDownloadRow row)
         {
-            var iter = ((FinishedEntryWrapper)row).TreeIter;
-            finishedDownloadsStore.Remove(ref iter);
+            var id = row.DownloadEntry.Id;
+            var modelIter = FindFinishedItemIterById(id);
+            if (modelIter.HasValue)
+            {
+                var iter = modelIter.Value;
+                finishedDownloadsStore.Remove(ref iter);
+            }
+            //var iter = GtkHelper.ConvertViewToModel(((FinishedEntryWrapper)row).TreeIter,
+            //    finishedDownloadsStoreSorted, finishedDownloadFilter);
         }
 
         public void DeleteAllFinishedDownloads()
@@ -858,8 +1112,9 @@ namespace XDM.GtkUI
         {
             foreach (var row in rows)
             {
-                var iter = ((InProgressEntryWrapper)row).TreeIter;
-                inprogressDownloadsStore.Remove(ref iter);
+                Delete(row);
+                //var iter = ((InProgressEntryWrapper)row).TreeIter;
+                //inprogressDownloadsStore.Remove(ref iter);
             }
         }
 
@@ -867,8 +1122,9 @@ namespace XDM.GtkUI
         {
             foreach (var row in rows)
             {
-                var iter = ((FinishedEntryWrapper)row).TreeIter;
-                inprogressDownloadsStore.Remove(ref iter);
+                Delete(row);
+                //var iter = ((FinishedEntryWrapper)row).TreeIter;
+                //inprogressDownloadsStore.Remove(ref iter);
             }
         }
 
@@ -906,7 +1162,12 @@ namespace XDM.GtkUI
 
         public void OpenNewDownloadMenu()
         {
-            newDownloadMenu.PopupAtWidget(this.btnNew, Gdk.Gravity.SouthWest, Gdk.Gravity.NorthWest, null);
+            newDownloadMenu.PopupAtWidget(this.btnNew, Gdk.Gravity.SouthEast, Gdk.Gravity.NorthWest, null);
+        }
+
+        private void OpenMainMenu()
+        {
+            mainMenu.PopupAtWidget(this.btnMenu, Gdk.Gravity.SouthEast, Gdk.Gravity.NorthEast, null);
         }
 
         public string? SaveFileDialog(string? initialPath)
@@ -967,7 +1228,7 @@ namespace XDM.GtkUI
 
         public void UpdateBrowserMonitorButton()
         {
-            throw new NotImplementedException();
+            btnMonitoring.Active = Config.Instance.IsBrowserMonitoringEnabled;
         }
 
         public void ShowBrowserMonitoringDialog(IApp app)
@@ -1097,7 +1358,7 @@ namespace XDM.GtkUI
 
         public IQueuesWindow CreateQueuesAndSchedulerWindow(IAppUI appUi, IEnumerable<DownloadQueue> queues)
         {
-            throw new NotImplementedException();
+            return QueueSchedulerDialog.CreateFromGladeFile(this, this.windowGroup, appUi);
         }
 
         public IQueueSelectionDialog CreateQueueSelectionDialog()
@@ -1140,7 +1401,7 @@ namespace XDM.GtkUI
 
         public IQueuesWindow CreateQueuesAndSchedulerWindow(IAppUI appUi)
         {
-            throw new NotImplementedException();
+            return QueueSchedulerDialog.CreateFromGladeFile(this, this.windowGroup, appUi);
         }
 
         public void ShowDownloadSelectionWindow(IApp app, IAppUI appUI, FileNameFetchMode mode, IEnumerable<object> downloads)

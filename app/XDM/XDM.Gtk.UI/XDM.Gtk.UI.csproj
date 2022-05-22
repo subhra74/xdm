@@ -49,6 +49,7 @@
 		<None Remove="glade\download-complete-window.glade" />
 		<None Remove="glade\download-progress-window.glade" />
 		<None Remove="glade\new-video-download-window.glade" />
+		<None Remove="glade\queue-manager-dialog.glade" />
 		<None Remove="glade\video-downloader-window.glade" />
 		<None Remove="images\add-line.svg" />
 		<None Remove="images\apps-line.svg" />
@@ -73,6 +74,8 @@
 		<None Remove="images\time-line.svg" />
 		<None Remove="images\video-download-line.svg" />
 		<None Remove="svg-icons\download-complete-window.glade" />
+		<None Remove="svg-icons\list-settings-fill.svg" />
+		<None Remove="svg-icons\question-line.svg" />
 	</ItemGroup>
 
 	<ItemGroup>

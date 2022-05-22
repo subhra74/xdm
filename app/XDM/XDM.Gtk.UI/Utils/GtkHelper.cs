@@ -104,6 +104,26 @@ namespace XDM.GtkUI.Utils
             while (treeView.Model.IterNext(ref iter));
         }
 
+        public static T? SetSelectedValue<T>(TreeView treeView, int dataIndex)
+        {
+            var index = GetSelectedIndex(treeView);
+            if (!treeView.Model.GetIterFirst(out TreeIter iter))
+            {
+                return default(T);
+            }
+            var i = 0;
+            do
+            {
+                if (index == i)
+                {
+                    return (T)treeView.Model.GetValue(iter, dataIndex);
+                }
+                i++;
+            }
+            while (treeView.Model.IterNext(ref iter));
+            return default(T);
+        }
+
         public static ListStore PopulateComboBox(ComboBox comboBox, params string[] values)
         {
             var cmbStore = new ListStore(typeof(string));
@@ -195,6 +215,12 @@ namespace XDM.GtkUI.Utils
             entry.Visibility = false;
             entry.InvisibleChar = '*';
             entry.InputPurpose = InputPurpose.Password;
+        }
+
+        public static TreeIter ConvertViewToModel(TreeIter iter, TreeModelSort sortedModel, TreeModelFilter filterModel)
+        {
+            var iter1 = sortedModel.ConvertIterToChildIter(iter);
+            return filterModel.ConvertIterToChildIter(iter1);
         }
     }
 }

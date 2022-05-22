@@ -108,13 +108,16 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
 
         public IAppUI AppUI { get; set; }
 
-        public void Destroy()
+        public void DestroyWindow()
         {
             Dispatcher.Invoke(new Action(() =>
             {
                 try
                 {
                     Close();
+
+                    speedLimiterDlg?.Close();
+                    speedLimiterDlg = null;
                 }
                 catch { }
             }));
@@ -200,8 +203,6 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             StopDownload(true);
-            speedLimiterDlg?.Close();
-            speedLimiterDlg = null;
         }
 
         private void BtnPause_Click(object sender, RoutedEventArgs e)
@@ -230,7 +231,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
         {
             Closing -= Window_Closing;
             App.HideProgressWindow(downloadId);
-            Close();
+            //Close();
         }
 
         private void TxtSpeedLimit_MouseDown(object sender, MouseButtonEventArgs e)

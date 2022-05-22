@@ -16,7 +16,7 @@ namespace XDM.GtkUI
         private TreeIter treeIter;
         private ITreeModel store;
 
-        public InProgressEntryWrapper(InProgressDownloadEntry downloadEntry,
+        internal InProgressEntryWrapper(InProgressDownloadEntry downloadEntry,
             TreeIter treeIter,
             ITreeModel store)
         {

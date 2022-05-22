@@ -562,7 +562,7 @@ namespace XDM.Wpf.UI
 
         public void UpdateBrowserMonitorButton()
         {
-            this.MonitoringToggleIcon.Data = (System.Windows.Media.Geometry)FindResource(Config.Instance.IsBrowserMonitoringEnabled ?
+            this.MonitoringToggleIcon.Data = (Geometry)FindResource(Config.Instance.IsBrowserMonitoringEnabled ?
                 "ri-toggle-fill" : "ri-toggle-line");
         }
 
