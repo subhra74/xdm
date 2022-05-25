@@ -1162,7 +1162,7 @@ namespace XDM.GtkUI
 
         public void OpenNewDownloadMenu()
         {
-            newDownloadMenu.PopupAtWidget(this.btnNew, Gdk.Gravity.SouthEast, Gdk.Gravity.NorthWest, null);
+            newDownloadMenu.PopupAtWidget(this.btnNew, Gdk.Gravity.SouthWest, Gdk.Gravity.NorthWest, null);
         }
 
         private void OpenMainMenu()
@@ -1270,10 +1270,10 @@ namespace XDM.GtkUI
             {
                 yield break;
             }
-            yield return (InProgressDownloadEntry)inprogressDownloadsStore.GetValue(iter, FINISHED_DATA_INDEX);
+            yield return (InProgressDownloadEntry)inprogressDownloadsStore.GetValue(iter, INPROGRESS_DATA_INDEX);
             while (inprogressDownloadsStore.IterNext(ref iter))
             {
-                yield return (InProgressDownloadEntry)inprogressDownloadsStore.GetValue(iter, FINISHED_DATA_INDEX);
+                yield return (InProgressDownloadEntry)inprogressDownloadsStore.GetValue(iter, INPROGRESS_DATA_INDEX);
             }
         }
 

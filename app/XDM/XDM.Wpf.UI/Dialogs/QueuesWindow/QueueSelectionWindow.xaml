@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:XDM.Wpf.UI.Dialogs.QueuesWindow"
         mc:Ignorable="d"
-        Title="{StaticResource LBL_QUEUE_OPT1}" 
+        Title="{StaticResource Q_MOVE_TO}" 
         Height="300" Width="400" ShowInTaskbar="False" WindowStartupLocation="CenterOwner">
     <Grid Margin="10">
         <Grid.ColumnDefinitions>
@@ -14,15 +14,13 @@
             <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
             <RowDefinition/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <TextBlock Text="{StaticResource Q_MOVE_TO}" Grid.ColumnSpan="3" Margin="0,0,0,10"/>
-        <ListBox Name="LbQueues" Grid.Row="1" Grid.ColumnSpan="3" Margin="0,0,0,10" 
+        <ListBox Name="LbQueues" Grid.Row="0" Grid.ColumnSpan="3" Margin="0,0,0,10" 
                  BorderBrush="{StaticResource ControlBordercolor}" BorderThickness="1"></ListBox>
-        <Button Name="BtnOK" Content="{StaticResource MSG_OK}" Grid.Row="2" Grid.Column="1" Margin="0,0,5,0" Padding="15,3" Click="BtnOK_Click"/>
-        <Button Name="BtnCancel" Content="{StaticResource ND_CANCEL}" Grid.Row="2" Margin="5,0,0,0" Grid.Column="2" Padding="5,3" Click="BtnCancel_Click"/>
+        <Button Name="BtnOK" Content="{StaticResource MSG_OK}" Grid.Row="1" Grid.Column="1" Margin="0,0,5,0" Padding="15,3" Click="BtnOK_Click"/>
+        <Button Name="BtnCancel" Content="{StaticResource ND_CANCEL}" Grid.Row="1" Margin="5,0,0,0" Grid.Column="2" Padding="5,3" Click="BtnCancel_Click"/>
 
     </Grid>
 </Window>

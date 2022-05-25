@@ -180,12 +180,16 @@ namespace XDM.GtkUI.Dialogs.VideoDownloader
             LvVideoList.Model = videoStore;
             LvFormats.Model = formatStore;
 
+            LvVideoList.HeadersVisible = false;
+            LvFormats.HeadersVisible = false;
+
             var fileNameColumn = new TreeViewColumn
             {
-                Resizable = true,
+                Resizable = false,
                 Reorderable = false,
-                Title = "Name",
-                Sizing = TreeViewColumnSizing.Autosize
+                Title = TextResource.GetText("SORT_NAME"),
+                Sizing = TreeViewColumnSizing.Autosize,
+                Expand = true
             };
 
             var checkboxRenderer = new CellRendererToggle { };
@@ -200,10 +204,11 @@ namespace XDM.GtkUI.Dialogs.VideoDownloader
 
             var formatColumn = new TreeViewColumn
             {
-                Resizable = true,
+                Resizable = false,
                 Reorderable = false,
                 Title = "Formats",
-                Sizing = TreeViewColumnSizing.Autosize
+                Sizing = TreeViewColumnSizing.Autosize,
+                Expand = true
             };
 
             var formatRendererText = new CellRendererText();

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using Gtk;
+using TraceLog;
 using Translations;
 using XDM.Core.Lib.Common;
 using XDMApp;
@@ -67,8 +68,18 @@ namespace XDM.GtkUI
             AppContext.SetSwitch(DisableCachingName, true);
             AppContext.SetSwitch(DontEnableSchUseStrongCryptoName, true);
 
-            var app = new XDMApp.XDMApp();
             TextResource.Load(Config.Instance.Language);
+
+            var logFile = System.IO.Path.Combine(Config.DataDir, "log.txt");
+            if (System.IO.File.Exists(logFile))
+            {
+                //Only if user has chosen to generate log
+                Log.InitFileBasedTrace(System.IO.Path.Combine(Config.DataDir, "log.txt"));
+            }
+            Log.Debug("Application_Startup");
+
+            var app = new XDMApp.XDMApp();
+            
             var appWin = new AppWinPeer();
             app.AppUI = new XDMApp.AppWin(appWin, app);
             appWin.ShowAll();

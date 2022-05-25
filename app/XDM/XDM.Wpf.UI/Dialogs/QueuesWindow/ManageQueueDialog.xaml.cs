@@ -12,6 +12,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using TraceLog;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.UI;
 using XDM.Wpf.UI.Common;
@@ -181,7 +182,7 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
                     this.downloads.Add(ent);
                 }
             }
-            
+
             lvFiles.ItemsSource = this.downloads;
             if (queue.Schedule.HasValue)
             {
@@ -274,9 +275,14 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
         {
             var selectedQueue = (DownloadQueue)LbQueues.SelectedItem;
             if (selectedQueue == null) return;
-            foreach (InProgressDownloadEntry entry in this.downloads)
+            var selectedIds = new List<string>(lvFiles.SelectedItems?.Count ?? 0);
+            foreach (InProgressDownloadEntry item in lvFiles.SelectedItems!)
             {
-                selectedQueue.DownloadIds.Remove(entry.Id);
+                selectedIds.Add(item.Id);
+            }
+            foreach (var id in selectedIds)
+            {
+                selectedQueue.DownloadIds.Remove(id);
             }
             LoadQueueDetails(selectedQueue);
         }
@@ -323,26 +329,31 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
 
         private void BtnMoveTo_Click(object sender, RoutedEventArgs e)
         {
-            if (lvFiles.SelectedItems.Count > 0 && queues.Count > 1)
+            if (lvFiles.SelectedItems.Count > 0 && queues.Count > 1 && LbQueues.SelectedItems.Count > 0)
             {
                 var qsd = new QueueSelectionWindow() { Owner = this };
                 var queues1 = new List<string>(this.queues.Count);
-                var selectedItems = LbQueues.SelectedItems;
+                var selectedItem = (DownloadQueue)LbQueues.SelectedItems[0];
                 foreach (DownloadQueue item in queues)
                 {
-                    var found = false;
-                    foreach (var si in selectedItems)
-                    {
-                        if (si == item)
-                        {
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found)
+                    if (item != selectedItem)
                     {
                         queues1.Add(item.Name);
                     }
+                    //var found = false;
+
+                    //foreach (var si in selectedItems)
+                    //{
+                    //    if (si == item)
+                    //    {
+                    //        found = true;
+                    //        break;
+                    //    }
+                    //}
+                    //if (!found)
+                    //{
+                    //    queues1.Add(item.Name);
+                    //}
                 }
                 var downloadIds = new string[this.lvFiles.SelectedItems.Count];
                 var index = 0;

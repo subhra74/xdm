@@ -85,6 +85,16 @@ namespace XDM.GtkUI.Utils
             return -1;
         }
 
+        public static int[] GetSelectedIndices(TreeView treeView)
+        {
+            var paths = treeView.Selection.GetSelectedRows();
+            if (paths != null && paths.Length > 0)
+            {
+                return paths.Select(path => path.Indices[0]).ToArray();
+            }
+            return new int[0];
+        }
+
         public static void SetSelectedIndex(TreeView treeView, int index)
         {
             if (!treeView.Model.GetIterFirst(out TreeIter iter))
@@ -104,7 +114,7 @@ namespace XDM.GtkUI.Utils
             while (treeView.Model.IterNext(ref iter));
         }
 
-        public static T? SetSelectedValue<T>(TreeView treeView, int dataIndex)
+        public static T? GetSelectedValue<T>(TreeView treeView, int dataIndex)
         {
             var index = GetSelectedIndex(treeView);
             if (!treeView.Model.GetIterFirst(out TreeIter iter))
@@ -122,6 +132,90 @@ namespace XDM.GtkUI.Utils
             }
             while (treeView.Model.IterNext(ref iter));
             return default(T);
+        }
+
+        public static T? GetValueAt<T>(TreeView treeView, int index, int dataIndex)
+        {
+            if (!treeView.Model.GetIterFirst(out TreeIter iter))
+            {
+                return default(T);
+            }
+            var i = 0;
+            do
+            {
+                if (index == i)
+                {
+                    return (T)treeView.Model.GetValue(iter, dataIndex);
+                }
+                i++;
+            }
+            while (treeView.Model.IterNext(ref iter));
+            return default(T);
+        }
+
+        public static List<T> GetSelectedValues<T>(TreeView treeView, int dataIndex)
+        {
+            var list = new List<T>();
+            if (!treeView.Model.GetIterFirst(out TreeIter iter))
+            {
+                return list;
+            }
+            do
+            {
+                if (treeView.Selection.IterIsSelected(iter))
+                {
+                    list.Add((T)treeView.Model.GetValue(iter, dataIndex));
+                }
+            }
+            while (treeView.Model.IterNext(ref iter));
+            return list;
+        }
+
+        public static void RemoveAt(ListStore model, int index)
+        {
+            if (!model.GetIterFirst(out TreeIter iter))
+            {
+                return;
+            }
+            var i = 0;
+            do
+            {
+                if (index == i)
+                {
+                    model.Remove(ref iter);
+                    break;
+                }
+                i++;
+            }
+            while (model.IterNext(ref iter));
+        }
+
+        public static List<T> GetListStoreValues<T>(ITreeModel model, int dataIndex)
+        {
+            var list = new List<T>();
+            if (!model.GetIterFirst(out TreeIter iter))
+            {
+                return list;
+            }
+            do
+            {
+                list.Add((T)model.GetValue(iter, dataIndex));
+            }
+            while (model.IterNext(ref iter));
+            return list;
+        }
+
+        public static void ListStoreForEach(ITreeModel model, Action<TreeIter> iterCallback)
+        {
+            if (!model.GetIterFirst(out TreeIter iter))
+            {
+                return;
+            }
+            do
+            {
+                iterCallback.Invoke(iter);
+            }
+            while (model.IterNext(ref iter));
         }
 
         public static ListStore PopulateComboBox(ComboBox comboBox, params string[] values)
