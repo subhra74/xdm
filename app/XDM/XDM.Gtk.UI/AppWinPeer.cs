@@ -352,7 +352,7 @@ namespace XDM.GtkUI
             var hbox = new HBox();
             //var lblMonitoring = new Label { Text = TextResource.GetText("SETTINGS_MONITORING"), MarginBottom = 5 };
             //hbox.PackStart(lblMonitoring, false, false, 0);
-            btnMonitoring = new CheckButton { Label = TextResource.GetText("SETTINGS_MONITORING"), Margin = 2 };
+            btnMonitoring = new CheckButton { Label = TextResource.GetText("SETTINGS_MONITORING"), Margin = 1 };
             btnMonitoring.Clicked += BtnMonitoring_Clicked;
             hbox.PackStart(btnMonitoring, false, false, 0);
 
@@ -373,12 +373,12 @@ namespace XDM.GtkUI
 
             //};
             //btnScheduler.Add(h1);
-            btnScheduler.Margin = 2;
+            btnScheduler.Margin = 1;
             hbox.PackStart(btnScheduler, false, false, 15);
 
             var btnHelp = CreateButtonWithContent("question-line", TextResource.GetText("LBL_SUPPORT_PAGE"));
             btnHelp.Clicked += BtnHelp_Clicked;
-            btnHelp.Margin = 2;
+            btnHelp.Margin = 1;
             btnHelp.MarginEnd = 5;
             //new Button
             //{

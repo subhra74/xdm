@@ -332,36 +332,23 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
             if (lvFiles.SelectedItems.Count > 0 && queues.Count > 1 && LbQueues.SelectedItems.Count > 0)
             {
                 var qsd = new QueueSelectionWindow() { Owner = this };
-                var queues1 = new List<string>(this.queues.Count);
+                var queueNames = new List<string>();
+                var queueIds = new List<string>();
                 var selectedItem = (DownloadQueue)LbQueues.SelectedItems[0];
                 foreach (DownloadQueue item in queues)
                 {
                     if (item != selectedItem)
                     {
-                        queues1.Add(item.Name);
+                        queueNames.Add(item.Name);
+                        queueIds.Add(item.ID);
                     }
-                    //var found = false;
-
-                    //foreach (var si in selectedItems)
-                    //{
-                    //    if (si == item)
-                    //    {
-                    //        found = true;
-                    //        break;
-                    //    }
-                    //}
-                    //if (!found)
-                    //{
-                    //    queues1.Add(item.Name);
-                    //}
                 }
-                var downloadIds = new string[this.lvFiles.SelectedItems.Count];
-                var index = 0;
+                var downloadIds = new List<string>();
                 foreach (InProgressDownloadEntry lvi in this.lvFiles.SelectedItems)
                 {
-                    downloadIds[index++] = lvi.Id;
+                    downloadIds.Add(lvi.Id);
                 }
-                qsd.SetData(queues1, downloadIds);
+                qsd.SetData(queueNames, queueIds, downloadIds);
                 qsd.QueueSelected += QueueSelectionDialog_QueueSelected;
                 qsd.ShowDialog(this);
             }
@@ -369,7 +356,8 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
 
         private void QueueSelectionDialog_QueueSelected(object sender, QueueSelectionEventArgs e)
         {
-            var queue = (DownloadQueue)queues[e.SelectedQueueIndex];
+            var qid = e.SelectedQueueId;
+            var queue = this.queues.First(x => x.ID == qid);/// (DownloadQueue)queues[e.SelectedQueueIndex];
             var downloadIds = e.DownloadIds;
             var selectedQueue = (DownloadQueue)LbQueues.SelectedItem;
             foreach (var id in downloadIds)

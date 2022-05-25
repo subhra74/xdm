@@ -50,7 +50,7 @@ namespace XDMApp
             }
         }
 
-        public static void OnDblClick(IAppWinPeer peer,IApp app)
+        public static void OnDblClick(IAppWinPeer peer, IApp app)
         {
             if (peer.IsInProgressViewSelected)
             {
@@ -140,17 +140,17 @@ namespace XDMApp
                 return;
             }
             var queueSelectionDialog = peer.CreateQueueSelectionDialog();
-            queueSelectionDialog.SetData(QueueManager.Queues.Select(q => q.Name), selectedIds);
+            queueSelectionDialog.SetData(QueueManager.Queues.Select(q => q.Name), QueueManager.Queues.Select(q => q.ID), selectedIds);
             queueSelectionDialog.ManageQueuesClicked += (_, _) =>
             {
                 appUI.ShowQueueWindow(peer);
             };
             queueSelectionDialog.QueueSelected += (s, e) =>
             {
-                var index = e.SelectedQueueIndex;
-                var queueId = QueueManager.Queues[index].ID;
+                //var index = e.SelectedQueueIndex;
+                //var queueId = QueueManager.Queues[index].ID;
                 var downloadIds = e.DownloadIds;
-                QueueManager.AddDownloadsToQueue(queueId, downloadIds);
+                QueueManager.AddDownloadsToQueue(e.SelectedQueueId, downloadIds.ToArray());
             };
             queueSelectionDialog.ShowWindow(peer);
         }

@@ -181,22 +181,26 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
                 LbQueues.Selection.CountSelectedRows() > 0)
             {
                 var qsd = QueueSelectionDialog.CreateFromGladeFile(this, this.group);
-                var queues1 = new List<string>();
+                var queueNames = new List<string>();
+                var queueIds = new List<string>();
                 var selectedItem = GtkHelper.GetSelectedValue<DownloadQueue>(LbQueues, 1);
+                var index = 0;
                 foreach (DownloadQueue item in GtkHelper.GetListStoreValues<DownloadQueue>(queueListStore, 1))
                 {
                     if (item != selectedItem)
                     {
-                        queues1.Add(item.Name);
+                        queueNames.Add(item.Name);
+                        queueIds.Add(item.ID);
                     }
+                    index++;
                 }
                 var downloadIds = new string[this.lvFiles.Selection.CountSelectedRows()];
-                var index = 0;
+                index = 0;
                 foreach (InProgressDownloadEntry lvi in GtkHelper.GetSelectedValues<InProgressDownloadEntry>(lvFiles, 3))
                 {
                     downloadIds[index++] = lvi.Id;
                 }
-                qsd.SetData(queues1, downloadIds);
+                qsd.SetData(queueNames, queueIds, downloadIds);
                 qsd.QueueSelected += Qsd_QueueSelected;
                 qsd.Run();
                 qsd.Destroy();
@@ -206,7 +210,8 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
 
         private void Qsd_QueueSelected(object? sender, QueueSelectionEventArgs e)
         {
-            var queue = GtkHelper.GetValueAt<DownloadQueue>(LbQueues, e.SelectedQueueIndex, 1);
+            var qid = e.SelectedQueueId;
+            var queue = GtkHelper.GetListStoreValues<DownloadQueue>(queueListStore, 1).Find(x => x.ID == qid);// GtkHelper.GetValueAt<DownloadQueue>(LbQueues, e.SelectedQueueIndex, 1);
             var downloadIds = e.DownloadIds;
             var selectedQueue = GtkHelper.GetSelectedValue<DownloadQueue>(LbQueues, 1);
             foreach (var id in downloadIds)

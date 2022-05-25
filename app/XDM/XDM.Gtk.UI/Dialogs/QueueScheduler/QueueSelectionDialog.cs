@@ -27,8 +27,9 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
         [UI] private Button BtnCancel = null;
         [UI] private TreeView LbQueues = null;
 
-        private string[] downloadIds = new string[0];
-        private ListStore listStore; 
+        private IEnumerable<string> downloadIds;
+        private IEnumerable<string> queueIds;
+        private ListStore listStore;
         private WindowGroup group;
         public bool Result { get; set; } = false;
 
@@ -66,7 +67,9 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
 
         private void BtnOK_Clicked(object? sender, EventArgs e)
         {
-            QueueSelected?.Invoke(this, new QueueSelectionEventArgs(GtkHelper.GetSelectedIndex(LbQueues), downloadIds));
+            var selectedIndex = GtkHelper.GetSelectedIndex(LbQueues);
+            var queueId = this.queueIds.ElementAt(selectedIndex);
+            QueueSelected?.Invoke(this, new QueueSelectionEventArgs(queueId, downloadIds));
             QueueSelected = null;
             Result = true;
             this.group.RemoveWindow(this);
@@ -80,12 +83,13 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
             Visible = false;
         }
 
-        public void SetData(IEnumerable<string> items, string[] downloadIds)
+        public void SetData(IEnumerable<string> queueNames, IEnumerable<string> queueIds, IEnumerable<string> downloadIds)
         {
+            this.queueIds = queueIds;
             this.downloadIds = downloadIds;
-            foreach (var item in items)
+            foreach (var name in queueNames)
             {
-                listStore.AppendValues(item);
+                listStore.AppendValues(name);
             }
             if (listStore.IterNChildren() > 0)
             {

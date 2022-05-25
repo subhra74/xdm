@@ -8,11 +8,11 @@ namespace XDM.Core.Lib.UI
 {
     public class QueueSelectionEventArgs : EventArgs
     {
-        public int SelectedQueueIndex { get; }
-        public string[] DownloadIds { get; }
-        public QueueSelectionEventArgs(int index, string[] downloadIds)
+        public string SelectedQueueId { get; }
+        public IEnumerable<string> DownloadIds { get; }
+        public QueueSelectionEventArgs(string id, IEnumerable<string> downloadIds)
         {
-            this.SelectedQueueIndex = index;
+            this.SelectedQueueId = id;
             this.DownloadIds = downloadIds;
         }
     }

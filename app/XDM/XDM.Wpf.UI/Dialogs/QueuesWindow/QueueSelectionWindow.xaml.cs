@@ -5,6 +5,7 @@ using System.Windows.Interop;
 using XDM.Core.Lib.UI;
 using XDM.Wpf.UI.Common;
 using XDM.Wpf.UI.Win32;
+using System.Linq;
 
 namespace XDM.Wpf.UI.Dialogs.QueuesWindow
 {
@@ -15,7 +16,8 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
     {
         public event EventHandler<QueueSelectionEventArgs>? QueueSelected;
         public event EventHandler? ManageQueuesClicked;
-        private string[] downloadIds = new string[0];
+        private IEnumerable<string> downloadIds;
+        private IEnumerable<string> queueIds;
         public bool Result { get; set; } = false;
 
         public QueueSelectionWindow()
@@ -23,10 +25,11 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
             InitializeComponent();
         }
 
-        public void SetData(IEnumerable<string> items, string[] downloadIds)
+        public void SetData(IEnumerable<string> queueNames, IEnumerable<string> queueIds, IEnumerable<string> downloadIds)
         {
+            this.queueIds = queueIds;
             this.downloadIds = downloadIds;
-            this.LbQueues.ItemsSource = items;
+            this.LbQueues.ItemsSource = queueNames;
             LbQueues.SelectedIndex = 0;
         }
 
@@ -52,7 +55,8 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
 
         private void BtnOK_Click(object sender, RoutedEventArgs e)
         {
-            QueueSelected?.Invoke(this, new QueueSelectionEventArgs(LbQueues.SelectedIndex, downloadIds));
+            var id = queueIds.ElementAt(LbQueues.SelectedIndex);
+            QueueSelected?.Invoke(this, new QueueSelectionEventArgs(id, downloadIds));
             QueueSelected = null;
             Close();
         }
