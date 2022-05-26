@@ -22,20 +22,22 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
         public event EventHandler? ValueChanged;
         private bool suppressEvent = false;
         private ComboBox cmbHrs, cmbMin, cmbAmPm;
+        private Label label;
 
         public bool Enabled
         {
             set
             {
-                cmbHrs.Sensitive = cmbMin.Sensitive = cmbAmPm.Sensitive = value;
+                cmbHrs.Sensitive = cmbMin.Sensitive = cmbAmPm.Sensitive = label.Sensitive = value;
             }
         }
 
-        public TimePickerControl(ComboBox cmbHrs, ComboBox cmbMin, ComboBox cmbAmPm)
+        public TimePickerControl(ComboBox cmbHrs, ComboBox cmbMin, ComboBox cmbAmPm, Label label)
         {
             this.cmbHrs = cmbHrs;
             this.cmbMin = cmbMin;
             this.cmbAmPm = cmbAmPm;
+            this.label = label;
 
             GtkHelper.PopulateComboBox(this.cmbHrs, Enumerable.Range(1, 12).Select(x => $"{x}").ToArray());
             GtkHelper.PopulateComboBox(this.cmbMin, Enumerable.Range(0, 60).Select(x => x.ToString("D2")).ToArray());

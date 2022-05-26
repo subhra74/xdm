@@ -25,6 +25,7 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
         private byte[] bits;
         private readonly CheckButton[] checkboxes;
         private TimePickerControl StartTime, EndTime;
+        private bool suppressEvents = false;
 
         public bool Enabled
         {
@@ -61,7 +62,7 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
                     {
                         chkEveryday.Active = false;
                     }
-                    this.ValueChanged?.Invoke(this, EventArgs.Empty);
+                    EmitValueChanged();
                 };
             }
 
@@ -76,8 +77,16 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
                 }
             };
 
-            startTime.ValueChanged += (_, _) => this.ValueChanged?.Invoke(this, EventArgs.Empty);
-            endTime.ValueChanged += (_, _) => this.ValueChanged?.Invoke(this, EventArgs.Empty);
+            startTime.ValueChanged += (_, _) => EmitValueChanged();
+            endTime.ValueChanged += (_, _) => EmitValueChanged();
+        }
+
+        private void EmitValueChanged()
+        {
+            if (!suppressEvents)
+            {
+                this.ValueChanged?.Invoke(this, EventArgs.Empty);
+            }
         }
 
         private void SetDays(WeekDays days)
@@ -130,9 +139,11 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
             }
             set
             {
+                suppressEvents = true;
                 SetDays(value.Days);
                 StartTime.Time = value.StartTime;
                 EndTime.Time = value.EndTime;
+                suppressEvents = false;
             }
         }
     }

@@ -127,8 +127,8 @@ namespace XDM.GtkUI
             var hbMain = new HBox();
             Add(hbMain);
 
-            hbMain.PackStart(CreateCategoryTree(), false, true, 2);
-            hbMain.PackStart(CreateMainPanel(), true, true, 1);
+            hbMain.PackStart(CreateCategoryTree(), false, true, 0);
+            hbMain.PackStart(CreateMainPanel(), true, true, 0);
 
             categoryTreeStore!.GetIterFirst(out TreeIter iter);
             categoryTreeStore.IterNext(ref iter);
@@ -316,10 +316,10 @@ namespace XDM.GtkUI
         private Widget CreateMainPanel()
         {
             var vbMain = new VBox();
-            vbMain.PackStart(CreateToolbar(), false, false, 1);
-            vbMain.PackStart(CreateInProgressListView(), true, true, 1);
-            vbMain.PackStart(CreateFinishedListView(), true, true, 1);
-            vbMain.PackStart(CreateBottombar(), false, false, 1);
+            vbMain.PackStart(CreateToolbar(), false, false, 0);
+            vbMain.PackStart(CreateInProgressListView(), true, true, 0);
+            vbMain.PackStart(CreateFinishedListView(), true, true, 0);
+            vbMain.PackStart(CreateBottombar(), false, false, 0);
             return vbMain;
         }
 
@@ -534,7 +534,7 @@ namespace XDM.GtkUI
             {
                 OverlayScrolling = true,
                 Margin = 5,
-                MarginEnd = 2
+                MarginEnd = 0
             };
             //scrolledWindow.Margin = 5;
             scrolledWindow.ShadowType = ShadowType.In;
@@ -739,7 +739,7 @@ namespace XDM.GtkUI
 
             sortedStore.SetSortColumnId(1, SortType.Descending);
 
-            swInProgress = new ScrolledWindow { OverlayScrolling = true, MarginStart = 0, MarginEnd = 5, ShadowType = ShadowType.In };
+            swInProgress = new ScrolledWindow { OverlayScrolling = true, Margin = 5, MarginBottom = 0, ShadowType = ShadowType.In };
             swInProgress.SetPolicy(PolicyType.Automatic, PolicyType.Automatic);
             swInProgress.Add(lvInprogress);
             //scrolledWindow.SetSizeRequest(200, 200);
@@ -872,7 +872,7 @@ namespace XDM.GtkUI
 
             sortedStore.SetSortColumnId(1, SortType.Descending);
 
-            swFinished = new ScrolledWindow { OverlayScrolling = true, MarginStart = 0, MarginEnd = 5, ShadowType = ShadowType.In };
+            swFinished = new ScrolledWindow { OverlayScrolling = true, Margin = 5, MarginBottom = 0, ShadowType = ShadowType.In };
             swFinished.SetPolicy(PolicyType.Automatic, PolicyType.Automatic);
             swFinished.Add(lvFinished);
             return swFinished;

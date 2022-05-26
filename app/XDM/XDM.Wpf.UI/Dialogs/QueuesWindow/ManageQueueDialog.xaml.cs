@@ -54,12 +54,14 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
 
             this.SchedulerPanel.ValueChanged += (_, _) =>
             {
+                DownloadSchedule? schedule = null;
                 if (ChkEnableScheduler.IsChecked.HasValue && ChkEnableScheduler.IsChecked.Value)
                 {
-                    if (LbQueues.SelectedItem is DownloadQueue queue)
-                    {
-                        queue.Schedule = this.SchedulerPanel.Schedule;
-                    }
+                    schedule = this.SchedulerPanel.Schedule;
+                }
+                if (LbQueues.SelectedItem is DownloadQueue queue)
+                {
+                    queue.Schedule = schedule;
                 }
             };
 

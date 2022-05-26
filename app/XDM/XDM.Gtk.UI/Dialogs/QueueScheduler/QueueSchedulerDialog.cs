@@ -121,20 +121,22 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
             this.SchedulerPanel = new SchedulerPanelControl(
                 chkEveryday,
                 new CheckButton[] { chkSun, chkMon, chkTue, chkWed, chkThu, chkFri, chkSat },
-                new TimePickerControl(CmbHour1, CmbMinute1, CmbAmPm1),
-                new TimePickerControl(CmbHour2, CmbMinute2, CmbAmPm2)
+                new TimePickerControl(CmbHour1, CmbMinute1, CmbAmPm1, LblQueueStart),
+                new TimePickerControl(CmbHour2, CmbMinute2, CmbAmPm2, LblQueueStop)
                 );
 
             this.SchedulerPanel.Schedule = defaultSchedule;
 
             this.SchedulerPanel.ValueChanged += (_, _) =>
             {
+                DownloadSchedule? schedule = null;
                 if (ChkEnableScheduler.Active)
                 {
-                    if (GtkHelper.GetSelectedValue<DownloadQueue>(LbQueues, 1) is DownloadQueue queue)
-                    {
-                        queue.Schedule = this.SchedulerPanel.Schedule;
-                    }
+                    schedule = this.SchedulerPanel.Schedule;
+                }
+                if (GtkHelper.GetSelectedValue<DownloadQueue>(LbQueues, 1) is DownloadQueue queue)
+                {
+                    queue.Schedule = schedule;
                 }
             };
 
@@ -159,7 +161,6 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
             };
 
             Hidden += QueueSchedulerDialog_Hidden;
-
             BtnNew.Clicked += BtnNew_Clicked;
             BtnStart.Clicked += BtnStart_Clicked;
             BtnStop.Clicked += BtnStop_Clicked;
@@ -170,8 +171,18 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
             BtnUp.Clicked += BtnUp_Clicked;
             BtnDown.Clicked += BtnDown_Clicked;
             BtnMoveTo.Clicked += BtnMoveTo_Clicked;
+            BtnSave.Clicked += BtnSave_Clicked;
 
             lvFiles.Selection.Mode = SelectionMode.Multiple;
+
+            SchedulerPanel.Enabled = false;
+        }
+
+        private void BtnSave_Clicked(object? sender, EventArgs e)
+        {
+            SaveQueues();
+            Destroy();
+            Dispose();
         }
 
         private void BtnMoveTo_Clicked(object? sender, EventArgs e)
