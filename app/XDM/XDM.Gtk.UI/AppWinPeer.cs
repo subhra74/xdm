@@ -44,7 +44,7 @@ namespace XDM.GtkUI
         private TreeModelSort finishedDownloadsStoreSorted;
         private string? searchKeyword;
         private Category? category;
-        private ToolButton btnNew, btnDel, btnOpenFile, btnOpenFolder, btnResume, btnPause, btnMenu;
+        private Button btnNew, btnDel, btnOpenFile, btnOpenFolder, btnResume, btnPause, btnMenu;
         private IButton newButton, deleteButton, pauseButton, resumeButton, openFileButton, openFolderButton;
         private IMenuItem[] menuItems;
         private Menu newDownloadMenu;
@@ -118,24 +118,23 @@ namespace XDM.GtkUI
 
         public AppWinPeer() : base("Xtreme Download Manager")
         {
-            SetDefaultSize(800, 500);
             SetPosition(WindowPosition.Center);
             DeleteEvent += AppWin1_DeleteEvent;
             this.windowGroup = new WindowGroup();
             this.windowGroup.AddWindow(this);
 
             var hbMain = new HBox();
-            Add(hbMain);
-
             hbMain.PackStart(CreateCategoryTree(), false, true, 0);
             hbMain.PackStart(CreateMainPanel(), true, true, 0);
+            Add(hbMain);
+            hbMain.Show();
 
             categoryTreeStore!.GetIterFirst(out TreeIter iter);
             categoryTreeStore.IterNext(ref iter);
             categoryTree!.Selection.SelectIter(iter);
             UpdateBrowserMonitorButton();
-
             CreateMenu();
+            SetDefaultSize(800, 500);
         }
 
         private void CreateMenu()
@@ -320,41 +319,59 @@ namespace XDM.GtkUI
             vbMain.PackStart(CreateInProgressListView(), true, true, 0);
             vbMain.PackStart(CreateFinishedListView(), true, true, 0);
             vbMain.PackStart(CreateBottombar(), false, false, 0);
+            vbMain.Show();
             return vbMain;
         }
 
-        private Button CreateButtonWithContent(string icon, string text)
+        private Button CreateButtonWithContent(string icon, string? text = null)
         {
-            return new Button
-            {
-                Label = text,
-                MarginBottom = 0,
-                Relief = ReliefStyle.None,
-                Valign = Align.Start,
-                Image = new Image(LoadSvg(icon, 16)),
-                AlwaysShowImage = true,
-            };
-            //var hbox = new HBox();
-            //hbox.PackStart(new Image(LoadSvg(icon, 16)), false, false, 5);
-            //hbox.PackStart(new Label { Text = text }, false, false, 5);
-
             //var button = new Button
             //{
+            //    MarginBottom = 0,
             //    Relief = ReliefStyle.None,
             //    Valign = Align.Start,
+            //    Image = new Image(LoadSvg(icon, 16)),
+            //    AlwaysShowImage = true,
             //};
-            //button.Add(hbox);
+            //if (!string.IsNullOrEmpty(text))
+            //{
+            //    button.Label = text;
+            //}
             //return button;
+            var hbox = new HBox(false, 10)
+            {
+                MarginStart = 5,
+                MarginEnd = 5
+            };
+            hbox.PackStart(new Image(LoadSvg(icon, 16)), false, false, 0);
+            if (!string.IsNullOrEmpty(text))
+            {
+                hbox.PackStart(new Label { Text = text }, false, false, 0);
+            }
+
+            var button = new Button
+            {
+                Relief = ReliefStyle.None,
+                Valign = Align.Center,
+            };
+            button.Add(hbox);
+            return button;
         }
 
         private Widget CreateBottombar()
         {
-            var hbox = new HBox();
+            var hbox = new HBox(false, 10);
+            hbox.Margin = 2;
+            hbox.MarginStart = 5;
+            hbox.MarginEnd = 5;
             //var lblMonitoring = new Label { Text = TextResource.GetText("SETTINGS_MONITORING"), MarginBottom = 5 };
             //hbox.PackStart(lblMonitoring, false, false, 0);
-            btnMonitoring = new CheckButton { Label = TextResource.GetText("SETTINGS_MONITORING"), Margin = 1 };
+            btnMonitoring = new CheckButton { MarginStart = 5 };
             btnMonitoring.Clicked += BtnMonitoring_Clicked;
             hbox.PackStart(btnMonitoring, false, false, 0);
+
+            var lblMonitoring = new Label { Text = TextResource.GetText("SETTINGS_MONITORING") };
+            hbox.PackStart(lblMonitoring, false, false, 0);
 
             //var h1 = new HBox();
             //h1.PackStart(new Image(LoadSvg("links-line", 14)), false, false, 0);
@@ -373,13 +390,13 @@ namespace XDM.GtkUI
 
             //};
             //btnScheduler.Add(h1);
-            btnScheduler.Margin = 1;
-            hbox.PackStart(btnScheduler, false, false, 15);
+            //btnScheduler.Margin = 1;
+            hbox.PackStart(btnScheduler, false, false, 0);
 
             var btnHelp = CreateButtonWithContent("question-line", TextResource.GetText("LBL_SUPPORT_PAGE"));
             btnHelp.Clicked += BtnHelp_Clicked;
-            btnHelp.Margin = 1;
-            btnHelp.MarginEnd = 5;
+            //btnHelp.Margin = 1;
+            //btnHelp.MarginEnd = 5;
             //new Button
             //{
             //    Label = TextResource.GetText("LBL_SUPPORT_PAGE"),
@@ -391,6 +408,7 @@ namespace XDM.GtkUI
             //};
             hbox.PackEnd(btnHelp, false, false, 0);
 
+            hbox.ShowAll();
             return hbox;
         }
 
@@ -421,29 +439,22 @@ namespace XDM.GtkUI
 
         private Widget CreateToolbar()
         {
+            var toolbar = new HBox(false, 5);
+            btnNew = CreateButtonWithContent("links-line", TextResource.GetText("DESC_NEW"));
+            toolbar.PackStart(btnNew, false, false, 0);
+            btnDel = CreateButtonWithContent("delete-bin-7-line", TextResource.GetText("DESC_DEL"));
+            toolbar.PackStart(btnDel, false, false, 0);
+            btnOpenFile = CreateButtonWithContent("external-link-line", TextResource.GetText("CTX_OPEN_FILE"));
+            toolbar.PackStart(btnOpenFile, false, false, 0);
+            btnOpenFolder = CreateButtonWithContent("folder-shared-line", TextResource.GetText("CTX_OPEN_FOLDER"));
+            toolbar.PackStart(btnOpenFolder, false, false, 0);
+            btnResume = CreateButtonWithContent("play-line", TextResource.GetText("MENU_RESUME"));
+            toolbar.PackStart(btnResume, false, false, 0);
+            btnPause = CreateButtonWithContent("pause-line", TextResource.GetText("MENU_PAUSE"));
+            toolbar.PackStart(btnPause, false, false, 0);
 
-            var toolbar = new Toolbar
-            {
-                Style = ToolbarStyle.BothHoriz
-            };
-
-            btnNew = new ToolButton(new Image(LoadSvg("links-line", 14)), TextResource.GetText("DESC_NEW")) { IsImportant = true, MarginStart = 0, MarginEnd = 0 };
-            toolbar.Add(btnNew);
-            btnDel = new ToolButton(new Image(LoadSvg("delete-bin-7-line", 14)), TextResource.GetText("DESC_DEL")) { IsImportant = true, MarginStart = 0, MarginEnd = 0 };
-            toolbar.Add(btnDel);
-            btnOpenFile = new ToolButton(new Image(LoadSvg("external-link-line", 14)), TextResource.GetText("CTX_OPEN_FILE")) { IsImportant = true, MarginStart = 0, MarginEnd = 0 };
-            toolbar.Add(btnOpenFile);
-            btnOpenFolder = new ToolButton(new Image(LoadSvg("folder-shared-line", 14)), TextResource.GetText("CTX_OPEN_FOLDER")) { IsImportant = true, MarginStart = 0, MarginEnd = 0 };
-            toolbar.Add(btnOpenFolder);
-            btnResume = new ToolButton(new Image(LoadSvg("play-line", 14)), TextResource.GetText("MENU_RESUME")) { IsImportant = true, MarginStart = 0, MarginEnd = 0 };
-            toolbar.Add(btnResume);
-            btnPause = new ToolButton(new Image(LoadSvg("pause-line", 14)), TextResource.GetText("MENU_PAUSE")) { IsImportant = true, MarginStart = 0, MarginEnd = 0 };
-            toolbar.Add(btnPause);
-
-            toolbar.Add(new ToolItem() { Expand = true });
-
-            //toolbar.Add(new SeparatorToolItem() { Expand = true, Draw = false });
-            var cont = new ToolItem() { MarginEnd = 3 };
+            btnMenu = CreateButtonWithContent("menu-line");
+            toolbar.PackEnd(btnMenu, false, false, 0);
 
             var searchEntry = new Entry() { WidthChars = 15, PlaceholderText = TextResource.GetText("LBL_SEARCH") };
             searchEntry.Activated += (a, b) =>
@@ -451,10 +462,47 @@ namespace XDM.GtkUI
                 searchKeyword = searchEntry.Text;
                 finishedDownloadFilter.Refilter();
             };
-            cont.Add(searchEntry);
-            toolbar.Add(cont);
-            btnMenu = new ToolButton(new Image(LoadSvg("menu-line", 14)), string.Empty) { IsImportant = false };
-            toolbar.Add(btnMenu);
+            toolbar.PackEnd(searchEntry, false, false, 0);
+            toolbar.Margin = 5;
+            toolbar.ShowAll();
+
+            btnOpenFile.Visible = false;
+            btnOpenFolder.Visible = false;
+            btnResume.Visible = false;
+            btnPause.Visible = false;
+            //var toolbar = new Toolbar
+            //{
+            //    Style = ToolbarStyle.BothHoriz
+            //};
+
+            //btnNew = new ToolButton(new Image(LoadSvg("links-line", 14)), TextResource.GetText("DESC_NEW")) { IsImportant = true, MarginStart = 0, MarginEnd = 0 };
+            //toolbar.Add(btnNew);
+            //btnDel = new ToolButton(new Image(LoadSvg("delete-bin-7-line", 14)), TextResource.GetText("DESC_DEL")) { IsImportant = true, MarginStart = 0, MarginEnd = 0 };
+            //toolbar.Add(btnDel);
+            //btnOpenFile = new ToolButton(new Image(LoadSvg("external-link-line", 14)), TextResource.GetText("CTX_OPEN_FILE")) { IsImportant = true, MarginStart = 0, MarginEnd = 0 };
+            //toolbar.Add(btnOpenFile);
+            //btnOpenFolder = new ToolButton(new Image(LoadSvg("folder-shared-line", 14)), TextResource.GetText("CTX_OPEN_FOLDER")) { IsImportant = true, MarginStart = 0, MarginEnd = 0 };
+            //toolbar.Add(btnOpenFolder);
+            //btnResume = new ToolButton(new Image(LoadSvg("play-line", 14)), TextResource.GetText("MENU_RESUME")) { IsImportant = true, MarginStart = 0, MarginEnd = 0 };
+            //toolbar.Add(btnResume);
+            //btnPause = new ToolButton(new Image(LoadSvg("pause-line", 14)), TextResource.GetText("MENU_PAUSE")) { IsImportant = true, MarginStart = 0, MarginEnd = 0 };
+            //toolbar.Add(btnPause);
+
+            //toolbar.Add(new ToolItem() { Expand = true });
+
+            ////toolbar.Add(new SeparatorToolItem() { Expand = true, Draw = false });
+            //var cont = new ToolItem() { MarginEnd = 3 };
+
+            //var searchEntry = new Entry() { WidthChars = 15, PlaceholderText = TextResource.GetText("LBL_SEARCH") };
+            //searchEntry.Activated += (a, b) =>
+            //{
+            //    searchKeyword = searchEntry.Text;
+            //    finishedDownloadFilter.Refilter();
+            //};
+            //cont.Add(searchEntry);
+            //toolbar.Add(cont);
+            //btnMenu = new ToolButton(new Image(LoadSvg("menu-line", 14)), string.Empty) { IsImportant = false };
+            //toolbar.Add(btnMenu);
 
             newButton = new ButtonWrapper(this.btnNew);
             deleteButton = new ButtonWrapper(this.btnDel);
@@ -541,6 +589,8 @@ namespace XDM.GtkUI
             scrolledWindow.SetPolicy(PolicyType.Automatic, PolicyType.Automatic);
             scrolledWindow.Add(categoryTree);
             scrolledWindow.SetSizeRequest(160, 200);
+
+            scrolledWindow.ShowAll();
             return scrolledWindow;
         }
 
@@ -739,9 +789,10 @@ namespace XDM.GtkUI
 
             sortedStore.SetSortColumnId(1, SortType.Descending);
 
-            swInProgress = new ScrolledWindow { OverlayScrolling = true, Margin = 5, MarginBottom = 0, ShadowType = ShadowType.In };
+            swInProgress = new ScrolledWindow { OverlayScrolling = true, Margin = 5, MarginBottom = 0, MarginTop = 0, ShadowType = ShadowType.In };
             swInProgress.SetPolicy(PolicyType.Automatic, PolicyType.Automatic);
             swInProgress.Add(lvInprogress);
+            swInProgress.ShowAll();
             //scrolledWindow.SetSizeRequest(200, 200);
 
             return swInProgress;
@@ -872,9 +923,10 @@ namespace XDM.GtkUI
 
             sortedStore.SetSortColumnId(1, SortType.Descending);
 
-            swFinished = new ScrolledWindow { OverlayScrolling = true, Margin = 5, MarginBottom = 0, ShadowType = ShadowType.In };
+            swFinished = new ScrolledWindow { OverlayScrolling = true, Margin = 5, MarginBottom = 0, MarginTop = 0, ShadowType = ShadowType.In };
             swFinished.SetPolicy(PolicyType.Automatic, PolicyType.Automatic);
             swFinished.Add(lvFinished);
+            swFinished.ShowAll();
             return swFinished;
         }
 

@@ -10,9 +10,9 @@ namespace XDM.GtkUI
 {
     internal class ButtonWrapper : IButton
     {
-        private readonly ToolButton button;
+        private readonly Button button;
 
-        public ButtonWrapper(ToolButton button)
+        public ButtonWrapper(Button button)
         {
             this.button = button;
             button.Clicked += (s, e) =>

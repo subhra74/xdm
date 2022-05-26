@@ -82,7 +82,7 @@ namespace XDM.GtkUI
             
             var appWin = new AppWinPeer();
             app.AppUI = new XDMApp.AppWin(appWin, app);
-            appWin.ShowAll();
+            appWin.Show();
             app.AppUI.WindowLoaded += (_, _) => app.StartClipboardMonitor();
             app.StartScheduler();
             app.StartNativeMessagingHost();
