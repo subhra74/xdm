@@ -28,6 +28,7 @@ using XDM.GtkUI.Dialogs.VideoDownloader;
 using XDM.GtkUI.Dialogs;
 using XDM.GtkUI.Dialogs.DeleteConfirm;
 using XDM.GtkUI.Dialogs.QueueScheduler;
+using XDM.GtkUI.Dialogs.BatchWindow;
 
 namespace XDM.GtkUI
 {
@@ -720,7 +721,7 @@ namespace XDM.GtkUI
                 Resizable = true,
                 Reorderable = false,
                 Sizing = TreeViewColumnSizing.Fixed,
-                FixedWidth = 100
+                FixedWidth = 120
             };
             lastModifiedColumn.SortColumnId = 1;
             lastModifiedColumn.SortOrder = SortType.Descending;
@@ -884,7 +885,7 @@ namespace XDM.GtkUI
                 Resizable = true,
                 Reorderable = false,
                 Sizing = TreeViewColumnSizing.Fixed,
-                FixedWidth = 100
+                FixedWidth = 120
             };
             lastModifiedColumn.SetAttributes(lastModifiedRendererText, "text", 1);
             lastModifiedColumn.SortColumnId = 1;
@@ -1258,9 +1259,10 @@ namespace XDM.GtkUI
             throw new NotImplementedException();
         }
 
-        public void ShowBatchDownloadWindow(IApp app)
+        public void ShowBatchDownloadWindow(IApp app, IAppUI appUi)
         {
-            throw new NotImplementedException();
+            var batWin = BatchDownloadWindow.CreateFromGladeFile(this, app, appUi);// new BatchDownloadWindow(app, appUi) { Owner = this };
+            batWin.Show();
         }
 
         public void ShowSettingsDialog(IApp app, int page = 0)
@@ -1442,11 +1444,6 @@ namespace XDM.GtkUI
         }
 
         public string? OpenFileDialog(string? initialPath, string? defaultExt, string? filter)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void ShowBatchDownloadWindow(IApp app, IAppUI appUi)
         {
             throw new NotImplementedException();
         }

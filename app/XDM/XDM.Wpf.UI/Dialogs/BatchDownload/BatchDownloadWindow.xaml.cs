@@ -15,6 +15,7 @@ using TraceLog;
 using Translations;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Downloader.Progressive.SingleHttp;
+using XDM.Core.Lib.UI;
 using XDM.Wpf.UI.Dialogs.DownloadSelection;
 using XDM.Wpf.UI.Win32;
 
@@ -23,11 +24,29 @@ namespace XDM.Wpf.UI.Dialogs.BatchDownload
     /// <summary>
     /// Interaction logic for BatchDownloadWindow.xaml
     /// </summary>
-    public partial class BatchDownloadWindow : Window
+    public partial class BatchDownloadWindow : Window, IBatchDownloadDialogView
     {
         public int BatchSize { get; private set; } = 0;
         public IAppUI AppUI { get; set; }
         public IApp App { get; set; }
+        public bool IsLetterMode { get => CmbType.SelectedIndex == 0; set => CmbType.SelectedIndex = value ? 0 : 1; }
+        public bool IsUsingLeadingZero { get => IsChecked(ChkLeadingZero); set => ChkLeadingZero.IsChecked = value; }
+        public string Url { get => TxtAddress.Text; set => TxtAddress.Text = value; }
+
+        public void SetStartLetterRange(string[] range)
+        {
+            this.CmbLetterFrom.ItemsSource = range;
+        }
+
+        public void SetEndLetterRange(string[] range)
+        {
+            this.CmbLetterTo.ItemsSource = range;
+        }
+
+        public void ShowWindow(object parent)
+        {
+            throw new NotImplementedException();
+        }
 
         public BatchDownloadWindow(IApp app, IAppUI appUI)
         {
@@ -39,6 +58,8 @@ namespace XDM.Wpf.UI.Dialogs.BatchDownload
             this.CmbLetterTo.ItemsSource = arr;
             CmbType.SelectedIndex = 0;
         }
+
+        public event EventHandler? PatternChanged;
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
