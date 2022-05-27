@@ -1261,8 +1261,10 @@ namespace XDM.GtkUI
 
         public void ShowBatchDownloadWindow(IApp app, IAppUI appUi)
         {
-            var batWin = BatchDownloadWindow.CreateFromGladeFile(this, app, appUi);// new BatchDownloadWindow(app, appUi) { Owner = this };
-            batWin.Show();
+            var uvc = new BatchDownloadViewController(BatchDownloadWindow.CreateFromGladeFile(this), app, appUi);
+            uvc.Run();
+            //var batWin = BatchDownloadWindow.CreateFromGladeFile(this, app, appUi);// new BatchDownloadWindow(app, appUi) { Owner = this };
+            //batWin.Show();
         }
 
         public void ShowSettingsDialog(IApp app, int page = 0)

@@ -36,9 +36,6 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
 
         private EventHandler? FormatChanged;
         private List<int> videoQualities;
-
-        public IApp? App { get; set; }
-        public IAppUI? AppUI { get; set; }
         public Window ParentWindow { get; set; }
         public Action DownloadNowClicked { get => downloadNowClicked; set => downloadNowClicked = value; }
         public Action DontAddToQueue { get => dontAddToQueue; set => dontAddToQueue = value; }
@@ -55,8 +52,6 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
             InitializeComponent();
         }
 
-        
-
         private void BtnDownloadNow_Click(object sender, RoutedEventArgs e)
         {
             DownloadNowClicked.Invoke();
@@ -70,7 +65,7 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
         private void QueueAndSchedulerMenuItem_Click(object sender, RoutedEventArgs e)
         {
             QueueAndScheduler.Invoke();
-            AppUI!.ShowQueueWindow(this.ParentWindow);
+            //AppUI!.ShowQueueWindow(this.ParentWindow);
         }
 
         private void ShowQueuesContextMenu()

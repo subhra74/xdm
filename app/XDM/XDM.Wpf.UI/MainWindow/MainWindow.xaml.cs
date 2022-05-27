@@ -550,7 +550,7 @@ namespace XDM.Wpf.UI
 
         public void ShowBatchDownloadWindow(IApp app, IAppUI appUi)
         {
-            var uvc = new BatchDownloadDialogViewController(new BatchDownloadWindow { Owner = this }, app, appUi);
+            var uvc = new BatchDownloadViewController(new BatchDownloadWindow { Owner = this }, app, appUi);
             uvc.Run();
         }
 
@@ -882,8 +882,11 @@ namespace XDM.Wpf.UI
 
         public void ShowDownloadSelectionWindow(IApp app, IAppUI appUI, FileNameFetchMode mode, IEnumerable<object> downloads)
         {
-            var window = new DownloadSelectionWindow(app, appUI, FileNameFetchMode.FileNameAndExtension, downloads);
-            window.Show();
+            var dsvc = new DownloadSelectionViewController(new DownloadSelectionWindow(),
+                    app, appUI, FileNameFetchMode.FileNameAndExtension, downloads);
+            dsvc.Run();
+            //var window = new DownloadSelectionWindow(app, appUI, FileNameFetchMode.FileNameAndExtension, downloads);
+            //window.Show();
         }
 
         public void ShowFloatingWidget()

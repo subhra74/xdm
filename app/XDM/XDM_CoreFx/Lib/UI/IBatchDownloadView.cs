@@ -5,7 +5,7 @@ using System.Text;
 
 namespace XDM.Core.Lib.UI
 {
-    public interface IBatchDownloadDialogView
+    public interface IBatchDownloadView
     {
         void SetStartLetterRange(string[] range);
         void SetEndLetterRange(string[] range);

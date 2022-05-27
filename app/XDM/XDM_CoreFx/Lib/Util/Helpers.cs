@@ -1386,7 +1386,7 @@ namespace XDM.Core.Lib.Util
             Config.SaveConfig();
         }
 
-        public static string GetVideoDownloadFolder()
+        public static string? GetManualDownloadFolder()
         {
             if (Config.Instance.FolderSelectionMode == FolderSelectionMode.Manual)
             {
@@ -1401,7 +1401,17 @@ namespace XDM.Core.Lib.Util
                 }
                 return Config.Instance.DefaultDownloadFolder;
             }
-            return Helpers.GetDownloadFolderByFileName("video.mp4");
+            return null;
+        }
+
+        public static string GetVideoDownloadFolder()
+        {
+            var folder = GetManualDownloadFolder();
+            if (string.IsNullOrEmpty(folder))
+            {
+                folder = Helpers.GetDownloadFolderByFileName("video.mp4");
+            }
+            return folder!;
         }
 
         public static int ParseIntSafe(string text) { return Int32.TryParse(text, out int n) ? n : 0; }

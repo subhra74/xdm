@@ -5,19 +5,20 @@ using System.Text;
 using TraceLog;
 using Translations;
 using XDM.Core.Lib.Common;
+using XDM.Core.Lib.Downloader;
 using XDM.Core.Lib.Downloader.Progressive.SingleHttp;
 using XDM.Core.Lib.UI;
 
 namespace XDM.Common.UI
 {
-    public class BatchDownloadDialogViewController
+    public class BatchDownloadViewController
     {
-        private IBatchDownloadDialogView view;
+        private IBatchDownloadView view;
         public IAppUI AppUI { get; set; }
         public IApp App { get; set; }
         public int BatchSize { get; private set; } = 0;
 
-        public BatchDownloadDialogViewController(IBatchDownloadDialogView view, IApp app, IAppUI appUI)
+        public BatchDownloadViewController(IBatchDownloadView view, IApp app, IAppUI appUI)
         {
             this.view = view;
             this.AppUI = appUI;
@@ -58,6 +59,10 @@ namespace XDM.Common.UI
                     return;
                 }
                 this.view.DestroyWindow();
+                AppUI.ShowDownloadSelectionWindow(FileNameFetchMode.FileNameAndExtension, links);
+                //var dsvc = new DownloadSelectionViewController(this.view.CreateDownloadSelectionView(),
+                //    App, AppUI, FileNameFetchMode.FileNameAndExtension, links);
+                //dsvc.Run();
                 //var window = new DownloadSelectionWindow(App, AppUI, Core.Lib.Downloader.FileNameFetchMode.FileNameAndExtension, links);
                 //this.Close();
                 //window.Show();

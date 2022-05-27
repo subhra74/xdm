@@ -25,9 +25,8 @@ namespace XDM.Wpf.UI.Dialogs.BatchDownload
     /// <summary>
     /// Interaction logic for BatchDownloadWindow.xaml
     /// </summary>
-    public partial class BatchDownloadWindow : Window, IBatchDownloadDialogView
+    public partial class BatchDownloadWindow : Window, IBatchDownloadView
     {
-        public int BatchSize { get; private set; } = 0;
         public bool IsLetterMode { get => CmbType.SelectedIndex == 0; set => CmbType.SelectedIndex = value ? 0 : 1; }
         public bool IsUsingLeadingZero { get => IsChecked(ChkLeadingZero); set => ChkLeadingZero.IsChecked = value; }
         public string Url { get => TxtAddress.Text; set => TxtAddress.Text = value; }

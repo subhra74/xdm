@@ -107,8 +107,6 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
             InitializeComponent();
             Page1.InitPage(appUi);
 
-            Page3.App = app;
-            Page3.AppUI = appUi;
             Page3.ParentWindow = this;
             Page3.BtnMore.Click += BtnMore_Click;
             Page3.BtnBrowse.Click += BtnBrowse_Click;
