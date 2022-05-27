@@ -1403,6 +1403,8 @@ namespace XDM.Core.Lib.Util
             }
             return Helpers.GetDownloadFolderByFileName("video.mp4");
         }
+
+        public static int ParseIntSafe(string text) { return Int32.TryParse(text, out int n) ? n : 0; }
     }
 
     public enum NativeHostBrowser

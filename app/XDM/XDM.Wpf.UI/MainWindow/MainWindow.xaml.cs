@@ -550,8 +550,8 @@ namespace XDM.Wpf.UI
 
         public void ShowBatchDownloadWindow(IApp app, IAppUI appUi)
         {
-            var batWin = new BatchDownloadWindow(app, appUi) { Owner = this };
-            batWin.Show();
+            var uvc = new BatchDownloadDialogViewController(new BatchDownloadWindow { Owner = this }, app, appUi);
+            uvc.Run();
         }
 
         public void ShowSettingsDialog(IApp app, int page = 0)
