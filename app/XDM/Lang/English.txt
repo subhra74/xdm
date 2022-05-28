@@ -211,3 +211,4 @@ MSG_FALLBACK_UA=User agent to be used if download is added manually
 MSG_SAVE_AS_MP3=Save as MP3
 MSG_VID_WIKI_TEXT=If you are interested in downloading streaming video from the browser using XDM
 MSG_VID_WIKI_LINK=Please click here
+NO_REFRESH_LINK=Link refresh is not available for this download

@@ -29,6 +29,8 @@ using XDM.GtkUI.Dialogs;
 using XDM.GtkUI.Dialogs.DeleteConfirm;
 using XDM.GtkUI.Dialogs.QueueScheduler;
 using XDM.GtkUI.Dialogs.BatchWindow;
+using XDM.GtkUI.Dialogs.DownloadSelection;
+using XDM.GtkUI.Dialogs.LinkRefresh;
 
 namespace XDM.GtkUI
 {
@@ -1230,7 +1232,13 @@ namespace XDM.GtkUI
 
         public void ShowRefreshLinkDialog(InProgressDownloadEntry entry, IApp app)
         {
-            throw new NotImplementedException();
+            var dlg = LinkRefreshWindow.CreateFromGladeFile();
+            var ret = LinkRefreshDialogHelper.RefreshLink(entry, app, dlg);
+            if (!ret)
+            {
+                GtkHelper.ShowMessageBox(this, TextResource.GetText("NO_REFRESH_LINK"));
+                return;
+            }
         }
 
         public void SetClipboardText(string text)
@@ -1457,7 +1465,9 @@ namespace XDM.GtkUI
 
         public void ShowDownloadSelectionWindow(IApp app, IAppUI appUI, FileNameFetchMode mode, IEnumerable<object> downloads)
         {
-            throw new NotImplementedException();
+            var dsvc = new DownloadSelectionViewController(DownloadSelectionWindow.CreateFromGladeFile(),
+                    app, appUI, FileNameFetchMode.FileNameAndExtension, downloads);
+            dsvc.Run();
         }
 
         public IClipboardMonitor GetClipboardMonitor()

@@ -122,6 +122,7 @@ namespace XDM.Common.UI
 
         private IEnumerable<Uri> GenerateBatchLink(string url)
         {
+            var list = new List<Uri>();
             if (this.view.IsLetterMode)
             {
                 if (!(this.view.StartLetter.HasValue && this.view.EndLetter.HasValue)) throw new ArgumentException();
@@ -130,12 +131,13 @@ namespace XDM.Common.UI
 
                 if (startChar >= endChar)
                 {
-                    throw new ArgumentException();
+                    Log.Debug("startChar >= endChar");
+                    return list;
                 }
 
                 for (var i = startChar; i <= endChar; i++)
                 {
-                    yield return new Uri(url.Replace('*', i));
+                    list.Add(new Uri(url.Replace('*', i)));
                 }
             }
             else
@@ -145,7 +147,8 @@ namespace XDM.Common.UI
 
                 if (startNum >= endNum)
                 {
-                    throw new ArgumentException();
+                    Log.Debug("startNum >= endNum");
+                    return list;
                 }
 
                 for (var i = startNum; i <= endNum; i++)
@@ -153,9 +156,10 @@ namespace XDM.Common.UI
                     var s = url.Replace("*",
                         this.view.IsUsingLeadingZero ? i.ToString($"D{this.view.LeadingZeroCount}") :
                         i.ToString());
-                    yield return new Uri(s);
+                    list.Add(new Uri(s));
                 }
             }
+            return list;
         }
     }
 }

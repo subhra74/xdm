@@ -33,7 +33,7 @@ namespace XDM.Wpf.UI.Dialogs.RefreshLink
             NativeMethods.DisableMinMaxButton(this);
 
 #if NET45_OR_GREATER
-            if (XDM.Wpf.UI.App.Skin == Skin.Dark)
+            if (App.Skin == Skin.Dark)
             {
                 var helper = new WindowInteropHelper(this);
                 helper.EnsureHandle();
@@ -69,7 +69,7 @@ namespace XDM.Wpf.UI.Dialogs.RefreshLink
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            WatchingStopped?.Invoke(this, e);
+            WatchingStopped?.Invoke(this, EventArgs.Empty);
         }
     }
 }

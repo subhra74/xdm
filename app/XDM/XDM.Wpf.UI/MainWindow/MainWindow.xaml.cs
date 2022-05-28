@@ -508,7 +508,13 @@ namespace XDM.Wpf.UI
         public void ShowRefreshLinkDialog(InProgressDownloadEntry entry, IApp app)
         {
             var dlg = new LinkRefreshWindow();
-            LinkRefreshDialogHelper.RefreshLink(entry, app, dlg);
+            var ret = LinkRefreshDialogHelper.RefreshLink(entry, app, dlg);
+            if (!ret)
+            {
+                ShowMessageBox(this, TextResource.GetText("NO_REFRESH_LINK"));
+                return;
+            }
+
         }
 
         public void SetClipboardText(string text)

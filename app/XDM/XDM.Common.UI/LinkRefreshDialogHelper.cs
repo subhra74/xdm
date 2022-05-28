@@ -12,8 +12,12 @@ namespace XDM.Common.UI
 {
     public static class LinkRefreshDialogHelper
     {
-        public static void RefreshLink(BaseDownloadEntry item, IApp app, IRefreshLinkDialogSkeleton dialog)
+        public static bool RefreshLink(BaseDownloadEntry item, IApp app, IRefreshLinkDialogSkeleton dialog)
         {
+            if (item.DownloadType != "Http" && item.DownloadType != "Dash")
+            {
+                return false;
+            }
             string referer = null;
             if (item.DownloadType == "Http")
             {
@@ -31,9 +35,18 @@ namespace XDM.Common.UI
                 //    File.ReadAllText(Path.Combine(Config.DataDir, item.Id + ".state")));
                 referer = GetReferer(state.Headers1);
             }
+            else
+            {
+                return false;
+            }
             Log.Debug("Referer: " + referer);
             if (referer != null)
             {
+                dialog.WatchingStopped += (a, b) =>
+                {
+                    app.ClearRefreshLinkCandidate();
+                };
+
                 OpenBrowser(referer);
                 if (item.DownloadType == "Http")
                 {
@@ -51,12 +64,10 @@ namespace XDM.Common.UI
                 }
 
                 dialog.ShowWindow();
+                return true;
             }
 
-            dialog.WatchingStopped += (a, b) =>
-            {
-                app.ClearRefreshLinkCandidate();
-            };
+            return false;
         }
 
         private static string GetReferer(Dictionary<string, List<string>> headers)

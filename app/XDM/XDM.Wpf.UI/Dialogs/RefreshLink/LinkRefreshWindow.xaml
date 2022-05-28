@@ -7,8 +7,12 @@
         mc:Ignorable="d"
         Title="{StaticResource MENU_REFRESH_LINK}" Height="200" Width="300" ShowInTaskbar="False" 
         WindowStartupLocation="CenterScreen" Topmost="True" Closing="Window_Closing">
-    <StackPanel VerticalAlignment="Center" >
-        <TextBlock Text="{StaticResource REF_WAITING_FOR_LINK}" Margin="10"/>
-        <Button Name="BtnStop" Content="{StaticResource BTN_STOP_PROCESSING}" Margin="10" Padding="5" Click="BtnStop_Click"/>
-    </StackPanel>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Text="{StaticResource REF_WAITING_FOR_LINK}" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+        <Button Name="BtnStop" Grid.Row="1" HorizontalAlignment="Right" Content="{StaticResource BTN_STOP_PROCESSING}" Margin="5" Padding="10,5" Click="BtnStop_Click"/>
+    </Grid>
 </Window>
