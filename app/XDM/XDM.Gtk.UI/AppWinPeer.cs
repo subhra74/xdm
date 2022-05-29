@@ -31,6 +31,7 @@ using XDM.GtkUI.Dialogs.QueueScheduler;
 using XDM.GtkUI.Dialogs.BatchWindow;
 using XDM.GtkUI.Dialogs.DownloadSelection;
 using XDM.GtkUI.Dialogs.LinkRefresh;
+using XDM.GtkUI.Dialogs.Properties;
 
 namespace XDM.GtkUI
 {
@@ -247,7 +248,8 @@ namespace XDM.GtkUI
 
         private void MenuExit_Activated(object? sender, EventArgs e)
         {
-            throw new NotImplementedException();
+            Application.Quit();
+            Environment.Exit(0);
         }
 
         private void MenuAbout_Activated(object? sender, EventArgs e)
@@ -1225,11 +1227,6 @@ namespace XDM.GtkUI
             mainMenu.PopupAtWidget(this.btnMenu, Gdk.Gravity.SouthEast, Gdk.Gravity.NorthEast, null);
         }
 
-        public string? SaveFileDialog(string? initialPath)
-        {
-            throw new NotImplementedException();
-        }
-
         public void ShowRefreshLinkDialog(InProgressDownloadEntry entry, IApp app)
         {
             var dlg = LinkRefreshWindow.CreateFromGladeFile();
@@ -1253,7 +1250,19 @@ namespace XDM.GtkUI
 
         public void ShowPropertiesDialog(BaseDownloadEntry ent, ShortState? state)
         {
-            throw new NotImplementedException();
+            using var propWin = PropertiesDialog.CreateFromGladeFile(this, this.Group);
+            propWin.FileName = ent.Name;
+            propWin.Folder = ent.TargetDir ?? Helpers.GetDownloadFolderByFileName(ent.Name);
+            propWin.Address = ent.PrimaryUrl;
+            propWin.FileSize = Helpers.FormatSize(ent.Size);
+            propWin.DateAdded = ent.DateAdded.ToLongDateString() + " " + ent.DateAdded.ToLongTimeString();
+            propWin.DownloadType = ent.DownloadType;
+            propWin.Referer = ent.RefererUrl;
+            propWin.Cookies = state?.Cookies ?? state?.Cookies1 ?? new Dictionary<string, string>();
+            propWin.Headers = state?.Headers ?? state?.Headers1 ?? new Dictionary<string, List<string>>();
+            propWin.Run();
+            propWin.Destroy();
+            propWin.Dispose();
         }
 
         public void ShowYoutubeDLDialog(IAppUI appUI, IApp app)
@@ -1450,12 +1459,12 @@ namespace XDM.GtkUI
 
         public string? SaveFileDialog(string? initialPath, string? defaultExt, string? filter)
         {
-            throw new NotImplementedException();
+            return GtkHelper.SaveFile(this, initialPath);
         }
 
         public string? OpenFileDialog(string? initialPath, string? defaultExt, string? filter)
         {
-            throw new NotImplementedException();
+            return GtkHelper.SelectFolder(this);
         }
 
         public IQueuesWindow CreateQueuesAndSchedulerWindow(IAppUI appUi)

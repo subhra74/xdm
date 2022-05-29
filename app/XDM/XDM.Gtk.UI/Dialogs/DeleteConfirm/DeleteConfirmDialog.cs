@@ -58,9 +58,6 @@ namespace XDM.GtkUI.Dialogs.DeleteConfirm
 
             Title = TextResource.GetText("MENU_DELETE_DWN");
             SetDefaultSize(400, 200);
-
-
-            // ShowAll();
         }
 
         private void BtnCancel_Clicked(object? sender, EventArgs e)

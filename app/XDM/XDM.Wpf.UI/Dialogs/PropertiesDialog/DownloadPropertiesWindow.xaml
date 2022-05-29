@@ -25,6 +25,8 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <TextBlock Grid.Row="0" Text="{StaticResource SORT_NAME}" Grid.ColumnSpan="2" Margin="0,0,0,5"/>
@@ -42,8 +44,8 @@
         <TextBlock Grid.Row="9" Text="{StaticResource PROP_REFERER}" Grid.ColumnSpan="2" Margin="0,10,0,5"/>
         <TextBox Grid.Row="10" Grid.ColumnSpan="2" x:Name="TxtReferer" IsReadOnly="True" />
         <TextBlock Grid.Row="11" Text="{StaticResource PROP_COOKIE}" Grid.ColumnSpan="2" Margin="0,10,0,5"/>
-        <TextBox Grid.Row="12" Grid.ColumnSpan="2" x:Name="TxtCookie" IsReadOnly="True" />
-        <TextBlock Grid.Row="13" Text="{StaticResource MSG_HEADERS}" Grid.ColumnSpan="2"/>
+        <TextBox Grid.Row="12" Grid.ColumnSpan="2" x:Name="TxtCookie" IsReadOnly="True"  />
+        <TextBlock Grid.Row="13" Text="{StaticResource MSG_HEADERS}" Grid.ColumnSpan="2" Margin="0,10,0,5"/>
         <TextBox Grid.Row="14" Grid.ColumnSpan="2" x:Name="TxtHeaders" IsReadOnly="True" 
                  ScrollViewer.VerticalScrollBarVisibility="Auto" 
                  ScrollViewer.HorizontalScrollBarVisibility="Auto"

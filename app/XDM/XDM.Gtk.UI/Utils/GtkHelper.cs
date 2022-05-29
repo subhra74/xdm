@@ -269,6 +269,40 @@ namespace XDM.GtkUI.Utils
             }
         }
 
+        public static string? SaveFile(Window parent, string? path)
+        {
+            using var fc = new FileChooserDialog("XDM", parent, FileChooserAction.Save);
+            if (!string.IsNullOrEmpty(path))
+            {
+                var dir = Path.GetDirectoryName(path);
+                fc.SetFilename(Path.GetFileName(path));
+                fc.SetCurrentFolderFile(GLib.FileFactory.NewForPath(dir));
+            }
+            try
+            {
+                if (parent.Group != null)
+                {
+                    parent.Group.AddWindow(fc);
+                }
+                fc.AddButton(Stock.Save, ResponseType.Accept);
+                fc.AddButton(Stock.Cancel, ResponseType.Cancel);
+                if (fc.Run() == (int)ResponseType.Accept)
+                {
+                    return fc.Filename;
+                }
+                return null;
+            }
+            finally
+            {
+                if (parent.Group != null)
+                {
+                    parent.Group.RemoveWindow(fc);
+                }
+                fc.Destroy();
+                fc.Dispose();
+            }
+        }
+
         public static void AttachSafeDispose(Window window)
         {
             window.DeleteEvent += (s, _) =>
