@@ -67,7 +67,7 @@ namespace XDM.GtkUI.Dialogs.AdvancedDownload
             builder.Autoconnect(this);
             Title = TextResource.GetText("DESC_ADV_TITLE");
             Modal = true;
-            SetPosition(WindowPosition.Center);
+            SetPosition(WindowPosition.CenterAlways);
             TransientFor = parent;
             this.group = group;
             this.group.AddWindow(this);

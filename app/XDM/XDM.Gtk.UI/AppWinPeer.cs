@@ -122,7 +122,7 @@ namespace XDM.GtkUI
 
         public AppWinPeer() : base("Xtreme Download Manager")
         {
-            SetPosition(WindowPosition.Center);
+            SetPosition(WindowPosition.CenterAlways);
             DeleteEvent += AppWin1_DeleteEvent;
             this.windowGroup = new WindowGroup();
             this.windowGroup.AddWindow(this);

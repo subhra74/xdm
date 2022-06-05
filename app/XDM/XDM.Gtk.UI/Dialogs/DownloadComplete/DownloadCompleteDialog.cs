@@ -45,7 +45,7 @@ namespace XDM.GtkUI.Dialogs.DownloadComplete
             builder.Autoconnect(this);
             KeepAbove = true;
             Title = TextResource.GetText("CD_TITLE");
-            SetPosition(WindowPosition.Center);
+            SetPosition(WindowPosition.CenterAlways);
 
             BtnOpen.Label = TextResource.GetText("CTX_OPEN_FILE");
             BtnOpenFolder.Label = TextResource.GetText("CTX_OPEN_FOLDER");

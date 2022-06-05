@@ -41,7 +41,7 @@ namespace XDM.GtkUI.Dialogs.DeleteConfirm
 
            
             Modal = true;
-            SetPosition(WindowPosition.Center);
+            SetPosition(WindowPosition.CenterAlways);
             TransientFor = parent;
             this.group = group;
             this.group.AddWindow(this);

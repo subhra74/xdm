@@ -144,7 +144,7 @@ namespace XDM.GtkUI.Dialogs.VideoDownloader
             windowGroup.AddWindow(this);
 
             Title = TextResource.GetText("LBL_VIDEO_DOWNLOAD");
-            SetPosition(WindowPosition.Center);
+            SetPosition(WindowPosition.CenterAlways);
 
             Page1.ShowAll();
             Page2.Visible = false;

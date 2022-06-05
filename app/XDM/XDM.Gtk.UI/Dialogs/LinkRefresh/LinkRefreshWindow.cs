@@ -45,7 +45,7 @@ namespace XDM.GtkUI.Dialogs.LinkRefresh
         {
             builder.Autoconnect(this);
             SetDefaultSize(400, 200);
-            SetPosition(WindowPosition.Center);
+            SetPosition(WindowPosition.CenterAlways);
             this.group = new WindowGroup();
             this.group.AddWindow(this);
 

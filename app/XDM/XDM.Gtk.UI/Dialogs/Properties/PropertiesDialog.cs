@@ -39,7 +39,7 @@ namespace XDM.GtkUI.Dialogs.Properties
         {
             builder.Autoconnect(this);
             Modal = true;
-            SetPosition(WindowPosition.Center);
+            SetPosition(WindowPosition.CenterAlways);
             TransientFor = parent;
             group.AddWindow(this);
             GtkHelper.AttachSafeDispose(this);

@@ -313,7 +313,7 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
         {
             builder.Autoconnect(this);
             Title = TextResource.GetText("STAT_DOWNLOADING");
-            SetPosition(WindowPosition.Center);
+            SetPosition(WindowPosition.CenterAlways);
 
             this.windowGroup = new WindowGroup();
             this.windowGroup.AddWindow(this);

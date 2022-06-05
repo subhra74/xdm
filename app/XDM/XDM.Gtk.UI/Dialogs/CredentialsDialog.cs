@@ -45,7 +45,7 @@ namespace XDM.GtkUI.Dialogs
             SetDefaultSize(400, 200);
 
             Modal = true;
-            SetPosition(WindowPosition.Center);
+            SetPosition(WindowPosition.CenterAlways);
             TransientFor = parent;
             this.group = group;
             this.group.AddWindow(this);

@@ -130,7 +130,7 @@ namespace XDM.GtkUI.Dialogs.DownloadSelection
             windowGroup.AddWindow(this);
 
             Title = TextResource.GetText("BAT_SELECT_ITEMS");
-            SetPosition(WindowPosition.Center);
+            SetPosition(WindowPosition.CenterAlways);
 
             PrepareMenu();
             GtkHelper.AttachSafeDispose(this);

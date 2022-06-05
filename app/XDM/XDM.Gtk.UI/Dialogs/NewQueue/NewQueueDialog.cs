@@ -43,7 +43,7 @@ namespace XDM.GtkUI.Dialogs.NewQueue
             builder.Autoconnect(this);
 
             Modal = true;
-            SetPosition(WindowPosition.Center);
+            SetPosition(WindowPosition.CenterAlways);
             TransientFor = parent;
             this.group = group;
             this.group.AddWindow(this);

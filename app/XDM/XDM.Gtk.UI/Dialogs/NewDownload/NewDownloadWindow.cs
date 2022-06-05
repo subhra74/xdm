@@ -59,7 +59,7 @@ namespace XDM.GtkUI.Dialogs.NewDownload
             KeepAbove = true;
 
             Title = TextResource.GetText("ND_TITLE");
-            SetPosition(WindowPosition.Center);
+            SetPosition(WindowPosition.CenterAlways);
 
             windowGroup = new WindowGroup();
             windowGroup.AddWindow(this);
