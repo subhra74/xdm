@@ -49,7 +49,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
             get => this.TxtFileName.Text;
             set
             {
-                Dispatcher.Invoke(new Action(() => SetFileText(value)));
+                Dispatcher.BeginInvoke(new Action(() => SetFileText(value)));
             }
         }
 
@@ -58,7 +58,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
             get => this.TxtUrl.Text;
             set
             {
-                Dispatcher.Invoke(new Action(() => TxtUrl.Text = value));
+                Dispatcher.BeginInvoke(new Action(() => TxtUrl.Text = value));
             }
         }
 
@@ -67,7 +67,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
             get => this.TxtStatus.Text;
             set
             {
-                Dispatcher.Invoke(actStatusUpdate, value);
+                Dispatcher.BeginInvoke(actStatusUpdate, value);
             }
         }
 
@@ -76,7 +76,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
             get => this.TxtSpeed.Text;
             set
             {
-                Dispatcher.Invoke(actSpeedUpdate, value);
+                Dispatcher.BeginInvoke(actSpeedUpdate, value);
             }
         }
 
@@ -85,7 +85,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
             get => this.TxtETA.Text;
             set
             {
-                Dispatcher.Invoke(actEtaUpdate, value);
+                Dispatcher.BeginInvoke(actEtaUpdate, value);
             }
         }
 
@@ -94,7 +94,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
             get => (int)this.PrgProgress.Value;
             set
             {
-                Dispatcher.Invoke(actPrgUpdate, value);
+                Dispatcher.BeginInvoke(actPrgUpdate, value);
             }
         }
 
@@ -110,7 +110,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
 
         public void DestroyWindow()
         {
-            Dispatcher.Invoke(new Action(() =>
+            Dispatcher.BeginInvoke(new Action(() =>
             {
                 try
                 {
@@ -125,12 +125,12 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
 
         public void ShowProgressWindow()
         {
-            Dispatcher.Invoke(new Action(() => this.Show()));
+            Dispatcher.BeginInvoke(new Action(() => this.Show()));
         }
 
         public void DownloadFailed(ErrorDetails error)
         {
-            Dispatcher.Invoke(new Action<ErrorDetails>(error =>
+            Dispatcher.BeginInvoke(new Action<ErrorDetails>(error =>
                 {
                     TxtStatus.Text = error.Message;
                     BtnPause.Content = TextResource.GetText("MENU_RESUME");
@@ -144,7 +144,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
 
         public void DownloadCancelled()
         {
-            Dispatcher.Invoke(new Action(() =>
+            Dispatcher.BeginInvoke(new Action(() =>
                 {
                     TxtStatus.Text = TextResource.GetText("MSG_DWN_STOP");
                     TxtETA.Text = string.Empty;
@@ -158,7 +158,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
 
         public void DownloadStarted()
         {
-            Dispatcher.Invoke(new Action(() =>
+            Dispatcher.BeginInvoke(new Action(() =>
             {
                 BtnPause.Content = TextResource.GetText("MENU_PAUSE");
                 BtnPause.Tag = null;

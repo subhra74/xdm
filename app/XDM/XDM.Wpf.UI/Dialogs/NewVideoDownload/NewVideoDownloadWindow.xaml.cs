@@ -154,7 +154,7 @@ namespace XDM.Wpf.UI.Dialogs.NewVideoDownload
 
         public void Invoke(Action callback)
         {
-            Dispatcher.Invoke(callback);
+            Dispatcher.BeginInvoke(callback);
         }
 
         public void ShowWindow()

@@ -18,6 +18,7 @@ using XDM.Core.Lib.Downloader.Progressive.SingleHttp;
 using XDM.Core.Lib.Downloader.Adaptive.Hls;
 using XDM.Core.Lib.Downloader.Adaptive.Dash;
 using XDM.Core.Lib.Downloader.Progressive;
+using XDM.Core.Lib.DataAccess;
 
 #if !NET5_0_OR_GREATER
 using NetFX.Polyfill;
@@ -608,14 +609,19 @@ namespace XDMApp
         {
             foreach (var id in idList)
             {
-                AppUI.RunOnUiThread(() =>
+                var entry = AppDB.Instance.DownloadsDB.GetDownloadById(id);// AppUI.GetInProgressDownloadEntry(id);
+                if (entry != null)
                 {
-                    var entry = AppUI.GetInProgressDownloadEntry(id);
-                    if (entry != null)
-                    {
-                        ResumeDownload(new Dictionary<string, BaseDownloadEntry> { [id] = entry }, true);
-                    }
-                });
+                    ResumeDownload(new Dictionary<string, BaseDownloadEntry> { [id] = entry }, true);
+                }
+                //AppUI.RunOnUiThread(() =>
+                //{
+                //    var entry = AppUI.GetInProgressDownloadEntry(id);
+                //    if (entry != null)
+                //    {
+                //        ResumeDownload(new Dictionary<string, BaseDownloadEntry> { [id] = entry }, true);
+                //    }
+                //});
             }
         }
 
@@ -628,61 +634,96 @@ namespace XDMApp
                 awakePingTimer.Start();
             }
 
-            AppUI.RunOnUiThread(() =>
+            foreach (var item in list)
             {
-                foreach (var item in list)
+                if (liveDownloads.ContainsKey(item.Key) || queuedDownloads.ContainsKey(item.Key)) return;
+                if (liveDownloads.Count >= Config.Instance.MaxParallelDownloads)
                 {
-                    if (liveDownloads.ContainsKey(item.Key) || queuedDownloads.ContainsKey(item.Key)) return;
-                    if (liveDownloads.Count >= Config.Instance.MaxParallelDownloads)
+                    queuedDownloads.Add(item.Key, nonInteractive);
+                    AppUI.RunOnUiThread(() =>
                     {
-                        queuedDownloads.Add(item.Key, nonInteractive);
                         AppUI.SetDownloadStatusWaiting(item.Key);
                         Log.Debug("Setting status waiting...");
-                        continue;
-                    }
-                    IBaseDownloader download = null;
-                    switch (item.Value.DownloadType)
-                    {
-                        case "Http":
-                            download = new SingleSourceHTTPDownloader((string)item.Key,
-                                 mediaProcessor: new FFmpegMediaProcessor());
-                            break;
-                        case "Dash":
-                            download = new DualSourceHTTPDownloader((string)item.Key,
-                                mediaProcessor: new FFmpegMediaProcessor());
-                            break;
-                        case "Hls":
-                            download = new MultiSourceHLSDownloader(item.Key,
-                                mediaProcessor: new FFmpegMediaProcessor());
-                            break;
-                        case "Mpd-Dash":
-                            download = new MultiSourceDASHDownloader(item.Key,
-                                mediaProcessor: new FFmpegMediaProcessor());
-                            break;
-                    }
-                    download.Started += HandleDownloadStart;
-                    download.Probed += HandleProbeResult;
-                    download.Finished += DownloadFinished;
-                    download.ProgressChanged += DownloadProgressChanged;
-                    download.AssembingProgressChanged += AssembleProgressChanged;
-                    download.Cancelled += DownloadCancelled;
-                    download.Failed += DownloadFailed;
-                    download.SetTargetDirectory(item.Value.TargetDir);
-                    download.SetFileName(item.Value.Name, item.Value.FileNameFetchMode);
-                    liveDownloads[item.Key] = (Downloader: download, NonInteractive: nonInteractive);
+                    });
+                    continue;
+                }
+                IBaseDownloader download = null;
+                switch (item.Value.DownloadType)
+                {
+                    case "Http":
+                        download = new SingleSourceHTTPDownloader((string)item.Key,
+                             mediaProcessor: new FFmpegMediaProcessor());
+                        break;
+                    case "Dash":
+                        download = new DualSourceHTTPDownloader((string)item.Key,
+                            mediaProcessor: new FFmpegMediaProcessor());
+                        break;
+                    case "Hls":
+                        download = new MultiSourceHLSDownloader(item.Key,
+                            mediaProcessor: new FFmpegMediaProcessor());
+                        break;
+                    case "Mpd-Dash":
+                        download = new MultiSourceDASHDownloader(item.Key,
+                            mediaProcessor: new FFmpegMediaProcessor());
+                        break;
+                }
+                download.Started += HandleDownloadStart;
+                download.Probed += HandleProbeResult;
+                download.Finished += DownloadFinished;
+                download.ProgressChanged += DownloadProgressChanged;
+                download.AssembingProgressChanged += AssembleProgressChanged;
+                download.Cancelled += DownloadCancelled;
+                download.Failed += DownloadFailed;
+                download.SetTargetDirectory(item.Value.TargetDir);
+                download.SetFileName(item.Value.Name, item.Value.FileNameFetchMode);
+                liveDownloads[item.Key] = (Downloader: download, NonInteractive: nonInteractive);
 
-                    var showProgressWindow = Config.Instance.ShowProgressWindow;
-                    if (showProgressWindow && !nonInteractive)
+                var showProgressWindow = Config.Instance.ShowProgressWindow;
+                if (showProgressWindow && !nonInteractive)
+                {
+                    var prgWin = GetProgressWindow(download);// CreateOrGetProgressWindow(download);
+                    AppUI.RunOnUiThread(() =>
                     {
-                        var prgWin = CreateOrGetProgressWindow(download);
+                        if (prgWin == null)
+                        {
+                            prgWin = CreateProgressWindow(download);
+                            activeProgressWindows[download.Id] = prgWin;
+                        }
                         prgWin.FileNameText = download.TargetFileName;
                         prgWin.FileSizeText = $"{TextResource.GetText("STAT_DOWNLOADING")} ...";
                         prgWin.DownloadStarted();
                         prgWin.ShowProgressWindow();
-                    }
-                    liveDownloads[item.Key].Downloader.Resume();
+                    });
                 }
-            });
+
+                //AppUI.RunOnUiThread(() =>
+                //{
+                //    var showProgressWindow = Config.Instance.ShowProgressWindow;
+                //    if (showProgressWindow && !nonInteractive)
+                //    {
+                //        var prgWin = GetProgressWindow(download);// CreateOrGetProgressWindow(download);
+                //        prgWin.FileNameText = download.TargetFileName;
+                //        prgWin.FileSizeText = $"{TextResource.GetText("STAT_DOWNLOADING")} ...";
+                //        prgWin.DownloadStarted();
+                //        prgWin.ShowProgressWindow();
+                //    }
+                //});
+                liveDownloads[item.Key].Downloader.Resume();
+            }
+
+            //AppUI.RunOnUiThread(() =>
+            //{
+            //    var showProgressWindow = Config.Instance.ShowProgressWindow;
+            //    if (showProgressWindow && !nonInteractive)
+            //    {
+            //        var prgWin = GetProgressWindow(CreateOrGetProgressWindow(download);
+            //        prgWin.FileNameText = download.TargetFileName;
+            //        prgWin.FileSizeText = $"{TextResource.GetText("STAT_DOWNLOADING")} ...";
+            //        prgWin.DownloadStarted();
+            //        prgWin.ShowProgressWindow();
+            //    }
+            //});
+            //liveDownloads[item.Key].Downloader.Resume();
         }
 
         public void ShowProgressWindow(string downloadId)
@@ -1016,6 +1057,18 @@ namespace XDMApp
             return sb.ToString();
         }
 
+        private IProgressWindow? GetProgressWindow(IBaseDownloader downloader)
+        {
+            IProgressWindow? prgWin = null;
+#pragma warning disable CS8604 // Possible null reference argument.
+            if (activeProgressWindows.ContainsKey(downloader.Id))
+#pragma warning restore CS8604 // Possible null reference argument.
+            {
+                prgWin = activeProgressWindows[downloader.Id];
+            }
+            return prgWin;
+        }
+
         private IProgressWindow CreateOrGetProgressWindow(IBaseDownloader downloader)
         {
             IProgressWindow prgWin = null;
@@ -1026,7 +1079,7 @@ namespace XDMApp
             else
             {
                 prgWin = CreateProgressWindow(downloader);
-                prgWin.UrlText = AppUI.GetInProgressDownloadEntry(downloader.Id)?.PrimaryUrl;
+                //prgWin.UrlText = AppUI.GetInProgressDownloadEntry(downloader.Id)?.PrimaryUrl;
                 activeProgressWindows[downloader.Id] = prgWin;
             }
             //var prgWin = activeProgressWindows.ContainsKey(item.Key) ? activeProgressWindows[item.Key]

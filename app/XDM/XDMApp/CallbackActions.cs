@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using TraceLog;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.UI;
@@ -21,7 +22,8 @@ namespace XDMApp
             download.Status = DownloadStatus.Stopped;
         }
 
-        public static void DownloadFinished(string id, long finalFileSize, string filePath, IAppWinPeer peer, IApp app)
+        public static void DownloadFinished(string id, long finalFileSize, string filePath,
+            IAppWinPeer peer, IApp app, Action callback)
         {
             Log.Debug("Final file name: " + filePath);
             var download = peer.FindInProgressItem(id);
@@ -52,6 +54,8 @@ namespace XDMApp
                 Log.Debug("switching to finished listview");
                 peer.SwitchToFinishedView();
             }
+
+            callback.Invoke();
         }
     }
 }

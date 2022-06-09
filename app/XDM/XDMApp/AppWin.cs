@@ -7,6 +7,7 @@ using TraceLog;
 using Translations;
 using XDM.Common.UI;
 using XDM.Core.Lib.Common;
+using XDM.Core.Lib.DataAccess;
 using XDM.Core.Lib.Downloader;
 using XDM.Core.Lib.UI;
 using XDM.Core.Lib.Util;
@@ -50,29 +51,46 @@ namespace XDMApp
             ProxyInfo? proxyInfo,
             int maxSpeedLimit)
         {
+            var downloadEntry = new InProgressDownloadEntry
+            {
+                Name = targetFileName,
+                DateAdded = date,
+                DownloadType = type,
+                Id = id,
+                Progress = 0,
+                Size = fileSize,
+                Status = startType == DownloadStartType.Waiting ? DownloadStatus.Waiting : DownloadStatus.Stopped,
+                TargetDir = "",
+                PrimaryUrl = primaryUrl,
+                Authentication = authentication,
+                Proxy = proxyInfo,
+                MaxSpeedLimitInKiB = maxSpeedLimit,
+            };
+            AppDB.Instance.DownloadsDB.AddNewDownload(downloadEntry);
+
             RunOnUiThread(() =>
             {
-                var downloadEntry = new InProgressDownloadEntry
-                {
-                    Name = targetFileName,
-                    DateAdded = date,
-                    DownloadType = type,
-                    Id = id,
-                    Progress = 0,
-                    Size = fileSize,
-                    Status = startType == DownloadStartType.Waiting ? DownloadStatus.Waiting : DownloadStatus.Stopped,
-                    TargetDir = "",
-                    PrimaryUrl = primaryUrl,
-                    Authentication = authentication,
-                    Proxy = proxyInfo,
-                    MaxSpeedLimitInKiB = maxSpeedLimit,
-                };
+                //var downloadEntry = new InProgressDownloadEntry
+                //{
+                //    Name = targetFileName,
+                //    DateAdded = date,
+                //    DownloadType = type,
+                //    Id = id,
+                //    Progress = 0,
+                //    Size = fileSize,
+                //    Status = startType == DownloadStartType.Waiting ? DownloadStatus.Waiting : DownloadStatus.Stopped,
+                //    TargetDir = "",
+                //    PrimaryUrl = primaryUrl,
+                //    Authentication = authentication,
+                //    Proxy = proxyInfo,
+                //    MaxSpeedLimitInKiB = maxSpeedLimit,
+                //};
 
                 this.peer.AddToTop(downloadEntry);
                 this.peer.SwitchToInProgressView();
                 this.peer.ClearInProgressViewSelection();
 
-                this.SaveInProgressList();
+                //this.SaveInProgressList();
                 UpdateToolbarButtonState();
             });
         }
@@ -109,24 +127,87 @@ namespace XDMApp
 
         public void DownloadFailed(string id)
         {
+            AppDB.Instance.DownloadsDB.UpdateDownloadStatus(id, DownloadStatus.Stopped);
             RunOnUiThread(() =>
             {
                 CallbackActions.DownloadFailed(id, peer);
-                SaveInProgressList();
+                //SaveInProgressList();
                 UpdateToolbarButtonState();
             });
         }
 
         public void DownloadFinished(string id, long finalFileSize, string filePath)
         {
-            RunOnUiThread(() =>
+            if (!string.IsNullOrEmpty(filePath))
             {
-                CallbackActions.DownloadFinished(id, finalFileSize, filePath, peer, app);
-                this.SaveFinishedList();
-                this.SaveInProgressList();
-                UpdateToolbarButtonState();
-                QueueWindowManager.RefreshView();
-            });
+                var name = Path.GetFileName(filePath);
+                var folder = Path.GetDirectoryName(filePath);
+                AppDB.Instance.DownloadsDB.MarkAsFinished(id, finalFileSize, name, folder);
+            }
+
+            Log.Debug("Final file name: " + filePath);
+            var downloadEntry = AppDB.Instance.DownloadsDB.GetDownloadById(id);
+            if (downloadEntry != null)
+            {
+                var finishedEntry = new FinishedDownloadEntry
+                {
+                    Name = Path.GetFileName(filePath),
+                    Id = downloadEntry.Id,
+                    DateAdded = downloadEntry.DateAdded,
+                    Size = downloadEntry.Size > 0 ? downloadEntry.Size : finalFileSize,
+                    DownloadType = downloadEntry.DownloadType,
+                    TargetDir = Path.GetDirectoryName(filePath)!,
+                    PrimaryUrl = downloadEntry.PrimaryUrl,
+                    Authentication = downloadEntry.Authentication,
+                    Proxy = downloadEntry.Proxy
+                };
+                AppDB.Instance.DownloadsDB.UpdateDownloadEntry(finishedEntry);
+
+                RunOnUiThread(() =>
+                {
+                    var download = peer.FindInProgressItem(id);
+                    if (download == null) return;
+
+                    peer.AddToTop(finishedEntry);
+                    peer.Delete(download);
+
+                    QueueManager.RemoveFinishedDownload(download.DownloadEntry.Id);
+
+                    if (app.ActiveDownloadCount == 0 && peer.IsInProgressViewSelected)
+                    {
+                        Log.Debug("switching to finished listview");
+                        peer.SwitchToFinishedView();
+                    }
+                });
+            }
+
+            //var download = peer.FindInProgressItem(id);
+            //if (download == null) return;
+
+            //peer.AddToTop(finishedEntry);
+            //peer.Delete(download);
+
+            //QueueManager.RemoveFinishedDownload(download.DownloadEntry.Id);
+
+            //if (app.ActiveDownloadCount == 0 && peer.IsInProgressViewSelected)
+            //{
+            //    Log.Debug("switching to finished listview");
+            //    peer.SwitchToFinishedView();
+            //}
+
+            //RunOnUiThread(() =>
+            //{
+            //    CallbackActions.DownloadFinished(id, finalFileSize, filePath, peer, app, () =>
+            //    {
+            //        UpdateToolbarButtonState();
+            //        QueueWindowManager.RefreshView();
+            //    });
+
+            //    //this.SaveFinishedList();
+            //    //this.SaveInProgressList();
+            //    //UpdateToolbarButtonState();
+            //    //QueueWindowManager.RefreshView();
+            //});
         }
 
         public void DownloadStarted(string id)
@@ -140,6 +221,12 @@ namespace XDMApp
 
         public IEnumerable<InProgressDownloadEntry> GetAllInProgressDownloads()
         {
+            //var downloads = new List<InProgressDownloadEntry>();
+            //if (!AppDB.Instance.DownloadsDB.LoadDownloads(out downloads, out _, QueryMode.InProgress))
+            //{
+            //    Log.Debug("GetAllInProgressDownloads::failed");
+            //}
+            //return downloads;
             return peer.InProgressDownloads;
         }
 
@@ -165,6 +252,10 @@ namespace XDMApp
 
         public void RenameFileOnUI(string id, string folder, string file)
         {
+            if (!AppDB.Instance.DownloadsDB.UpdateNameAndFolder(id, file, folder))
+            {
+                Log.Debug("RenameFileOnUI::failed");
+            }
             RunOnUiThread(() =>
             {
                 var downloadEntry = this.peer.FindInProgressItem(id);
@@ -177,7 +268,7 @@ namespace XDMApp
                 {
                     downloadEntry.DownloadEntry.TargetDir = folder;
                 }
-                this.SaveInProgressList();
+                //this.SaveInProgressList();
             });
         }
 
@@ -253,13 +344,17 @@ namespace XDMApp
 
         public void UpdateItem(string id, string targetFileName, long size)
         {
+            if (!AppDB.Instance.DownloadsDB.UpdateNameAndSize(id, size, targetFileName))
+            {
+                Log.Debug("UpdateItem::failed");
+            }
             RunOnUiThread(() =>
             {
                 var download = peer.FindInProgressItem(id);
                 if (download == null) return;
                 download.Name = targetFileName;
                 download.Size = size;
-                this.SaveInProgressList();
+                //this.SaveInProgressList();
             });
         }
 
@@ -271,17 +366,15 @@ namespace XDMApp
                 downloadEntry.Progress = progress;
                 downloadEntry.DownloadSpeed = Helpers.FormatSize(speed) + "/s";
                 downloadEntry.ETA = Helpers.ToHMS(eta);
-                var time = DateTime.Now.Ticks;
-                if (time - lastProgressUpdate > 3000)
-                {
-                    lastProgressUpdate = time;
-                    this.SaveInProgressList();
-                }
             }
         }
 
         public void UpdateProgress(string id, int progress, double speed, long eta)
         {
+            if (!AppDB.Instance.DownloadsDB.UpdateDownloadProgress(id, progress))
+            {
+                Log.Debug("UpdateProgress::failed");
+            }
             peer.RunOnUIThread(this.updateProgressAction, id, progress, speed, eta);
         }
 
@@ -289,8 +382,15 @@ namespace XDMApp
         {
             try
             {
-                peer.InProgressDownloads = TransactedIO.ReadInProgressList("inprogress-downloads.dat", Config.DataDir);
-                peer.FinishedDownloads = TransactedIO.ReadFinishedList("finished-downloads.dat", Config.DataDir);
+                if (AppDB.Instance.DownloadsDB.LoadDownloads(out var inProgressDownloads, out var finishedDownloads))
+                {
+                    peer.InProgressDownloads = inProgressDownloads;
+                    peer.FinishedDownloads = finishedDownloads;
+                    return;
+                }
+                Log.Debug("Could not load download list");
+                //peer.InProgressDownloads = TransactedIO.ReadInProgressList("inprogress-downloads.dat", Config.DataDir);
+                //peer.FinishedDownloads = TransactedIO.ReadFinishedList("finished-downloads.dat", Config.DataDir);
             }
             catch (Exception ex)
             {
@@ -298,21 +398,21 @@ namespace XDMApp
             }
         }
 
-        private void SaveInProgressList()
-        {
-            lock (this)
-            {
-                TransactedIO.WriteInProgressList(peer.InProgressDownloads, "inprogress-downloads.dat", Config.DataDir);
-            }
-        }
+        //private void SaveInProgressList()
+        //{
+        //    lock (this)
+        //    {
+        //        TransactedIO.WriteInProgressList(peer.InProgressDownloads, "inprogress-downloads.dat", Config.DataDir);
+        //    }
+        //}
 
-        private void SaveFinishedList()
-        {
-            lock (this)
-            {
-                TransactedIO.WriteFinishedList(peer.FinishedDownloads, "finished-downloads.dat", Config.DataDir);
-            }
-        }
+        //private void SaveFinishedList()
+        //{
+        //    lock (this)
+        //    {
+        //        TransactedIO.WriteFinishedList(peer.FinishedDownloads, "finished-downloads.dat", Config.DataDir);
+        //    }
+        //}
 
         private void DisableButton(IButton button)
         {
@@ -380,17 +480,18 @@ namespace XDMApp
         private void DeleteDownloads()
         {
             UIActions.DeleteDownloads(peer.IsInProgressViewSelected,
-                peer, App, inProgress =>
-                {
-                    if (inProgress)
-                    {
-                        SaveInProgressList();
-                    }
-                    else
-                    {
-                        SaveFinishedList();
-                    }
-                });
+                peer, App, null);
+            //inProgress =>
+            //{
+            //    if (inProgress)
+            //    {
+            //        SaveInProgressList();
+            //    }
+            //    else
+            //    {
+            //        SaveFinishedList();
+            //    }
+            //});
         }
 
         private void AttachedEventHandler()
@@ -473,7 +574,7 @@ namespace XDMApp
             peer.ClearAllFinishedClicked += (s, e) =>
             {
                 peer.DeleteAllFinishedDownloads();
-                SaveFinishedList();
+                //SaveFinishedList();
             };
 
             peer.ImportClicked += (s, e) =>

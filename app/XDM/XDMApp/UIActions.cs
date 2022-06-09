@@ -14,7 +14,7 @@ namespace XDMApp
 {
     internal static class UIActions
     {
-        public static void DeleteDownloads(bool inProgressOnly, IAppWinPeer peer, IApp app, Action<bool> callback)
+        public static void DeleteDownloads(bool inProgressOnly, IAppWinPeer peer, IApp app, Action<bool>? callback)
         {
             if (inProgressOnly)
             {
@@ -30,7 +30,7 @@ namespace XDMApp
                             app.RemoveDownload(item.DownloadEntry, false);
                         }
                     }
-                    callback.Invoke(true);
+                    callback?.Invoke(true);
                 }
             }
             else
@@ -45,7 +45,7 @@ namespace XDMApp
                         app.RemoveDownload(selectedRow.DownloadEntry, deleteFiles);
                         peer.Delete(selectedRow);
                     }
-                    callback.Invoke(false);
+                    callback?.Invoke(false);
                 }
             }
         }

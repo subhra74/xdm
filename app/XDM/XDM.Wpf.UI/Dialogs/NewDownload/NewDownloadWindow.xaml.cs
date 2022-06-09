@@ -66,7 +66,7 @@ namespace XDM.Wpf.UI.Dialogs.NewDownload
 
         public void Invoke(Action callback)
         {
-            Dispatcher.Invoke(callback);
+            Dispatcher.BeginInvoke(callback);
         }
 
         public void SetFileSizeText(string text)

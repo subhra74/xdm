@@ -6,6 +6,8 @@ using TraceLog;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Util;
 using System.Windows.Interop;
+using XDM.Core.Lib.DataAccess;
+using System.IO;
 
 namespace XDM.Wpf.UI
 {
@@ -49,6 +51,8 @@ namespace XDM.Wpf.UI
             Log.Debug("Application_Startup");
 
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+
+            AppDB.Instance.Init(Path.Combine(Config.DataDir, "downloads.db"));
 
             app = new XDMApp.XDMApp();
             win = new MainWindow();
