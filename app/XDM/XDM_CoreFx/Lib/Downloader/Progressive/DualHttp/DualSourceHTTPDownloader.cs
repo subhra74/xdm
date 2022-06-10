@@ -139,11 +139,11 @@ namespace XDM.Core.Lib.Downloader.Progressive.DualHttp
                      if (pieces.Count != 0)
                      {
                          OnStarted();
-                         Console.WriteLine("Chunks found: " + pieces.Count);
+                         Log.Debug("Chunks found: " + pieces.Count);
                          if (this.AllFinished())
                          {
                              this.AssemblePieces();
-                             Console.WriteLine("Download finished");
+                             Log.Debug("Download finished");
                              base.OnFinished();
                              return;
                          }
@@ -156,13 +156,13 @@ namespace XDM.Core.Lib.Downloader.Progressive.DualHttp
                      }
                      else
                      {
-                         Console.WriteLine("Starting new download");
+                         Log.Debug("Starting new download");
                          Start();
                      }
                  }
                  catch (Exception e)
                  {
-                     Console.WriteLine(e);
+                     Log.Debug(e, e.Message);
                      base.OnFailed(e is DownloadException ex ? ex.ErrorCode : ErrorCode.Generic);
                  }
              }).Start();
@@ -215,7 +215,7 @@ namespace XDM.Core.Lib.Downloader.Progressive.DualHttp
                             else
                             {
                                 var name = string.Empty;
-                                if(Helpers.AddFileExtension(this.TargetFileName, result.ContentType, out name))
+                                if (Helpers.AddFileExtension(this.TargetFileName, result.ContentType, out name))
                                 {
                                     this.TargetFileName = name;
                                 }
@@ -225,12 +225,12 @@ namespace XDM.Core.Lib.Downloader.Progressive.DualHttp
 
                     if (piece.StreamType == StreamType.Primary)
                     {
-                        Console.WriteLine("Primary initiated - length: " + piece.Length);
+                        Log.Debug("Primary initiated - length: " + piece.Length);
                         state.Init1 = true;
                     }
                     else
                     {
-                        Console.WriteLine("Secondary initiated - length: " + piece.Length);
+                        Log.Debug("Secondary initiated - length: " + piece.Length);
                         state.Init2 = true;
                     }
 
@@ -304,7 +304,7 @@ namespace XDM.Core.Lib.Downloader.Progressive.DualHttp
             lock (this)
             {
                 if (pieces.Count == 0) return;
-                TransactedIO.WriteBytes(ChunkStateToBytes(), "chunks.db", state.TempDir);
+                TransactedIO.WriteStream("chunks.db", state!.TempDir!, base.ChunkStateToBytes);
             }
         }
 
@@ -323,24 +323,31 @@ namespace XDM.Core.Lib.Downloader.Progressive.DualHttp
             state = DownloadStateStore.DualSourceHTTPDownloaderStateFromBytes(bytes);
             try
             {
-                var chunkBytes = TransactedIO.ReadBytes("chunks.db", state.TempDir);
-                if (chunkBytes == null)
+                if (!TransactedIO.ReadStream("chunks.db", state!.TempDir!, s =>
+                 {
+                     pieces = ChunkStateFromBytes(s);
+                 }))
                 {
-                    throw new FileNotFoundException(Path.Combine(state.TempDir, "chunks.json"));
+                    throw new FileNotFoundException(Path.Combine(state.TempDir, "chunks.db"));
                 }
-                pieces = ChunkStateFromBytes(chunkBytes);
+                //var chunkBytes = TransactedIO.ReadBytes("chunks.db", state.TempDir);
+                //if (chunkBytes == null)
+                //{
+                //    throw new FileNotFoundException(Path.Combine(state.TempDir, "chunks.json"));
+                //}
+                //pieces = ChunkStateFromBytes(chunkBytes);
             }
             catch
             {
                 // ignored
-                Console.WriteLine("Chunk restore failed");
+                Log.Debug("Chunk restore failed");
             }
             TicksAndSizeAtResume();
         }
 
         protected override void AssemblePieces()
         {
-            Log.Debug("Assembling...");
+            Log.Debug("Assembling..." + this.Id);
 
             lock (this)
             {
@@ -375,7 +382,7 @@ namespace XDM.Core.Lib.Downloader.Progressive.DualHttp
                         }
                     }
 
-                    Console.WriteLine("Assembling...");
+                    Log.Debug("Assembling...");
                     var pieces = this.pieces.Select(p => p.Value).ToList();
                     pieces.Sort((a, b) =>
                     {
@@ -399,6 +406,8 @@ namespace XDM.Core.Lib.Downloader.Progressive.DualHttp
                     outfs1.Close();
                     outfs2.Close();
 
+                    if (this.cancelFlag.IsCancellationRequested) return;
+
                     if (mediaProcessor != null)
                     {
                         mediaProcessor.ProgressChanged += (s, e) =>
@@ -410,6 +419,7 @@ namespace XDM.Core.Lib.Downloader.Progressive.DualHttp
                         };
                         var res = mediaProcessor.MergeAudioVideStream(file1, file2, TargetFile,
                             this.cancelFlag, out totalBytes);
+                        if (this.cancelFlag.IsCancellationRequested) return;
                         if (res != MediaProcessingResult.Success)
                         {
                             throw new AssembleFailedException(
@@ -432,11 +442,14 @@ namespace XDM.Core.Lib.Downloader.Progressive.DualHttp
                         throw new AssembleFailedException(ErrorCode.Generic); //TODO: Add more info about error
                     }
 
+                    if (this.cancelFlag.IsCancellationRequested) return;
+
                     if (this.totalSize < 1)
                     {
                         this.totalSize = totalBytes;
                     }
-
+                    if (this.cancelFlag.IsCancellationRequested) return;
+                    Log.Debug("Deleting file parts");
                     DeleteFileParts();
                 }
                 catch (Exception ex)

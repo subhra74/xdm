@@ -353,16 +353,16 @@ namespace XDM.Core.Lib.Downloader.Progressive
             if (this.callback == null || this.pieceId == null) throw new OperationCanceledException();
             var headerCookieUrl = this.callback.GetHeaderUrlAndCookies(this.pieceId);
             if (headerCookieUrl == null) throw new OperationCanceledException();
-            if (headerCookieUrl.Value.Headers != null)
-            {
-                foreach (var item in headerCookieUrl.Value.Headers.Keys)
-                {
-                    Log.Debug(item + ": " + headerCookieUrl.Value.Headers[item].First());
-                }
-            }
-            Log.Debug("Create request with " + headerCookieUrl.Value.Headers?.Count +
-                " headers and " +
-                headerCookieUrl.Value.Cookies?.Count + " cookies");
+            //if (headerCookieUrl.Value.Headers != null)
+            //{
+            //    foreach (var item in headerCookieUrl.Value.Headers.Keys)
+            //    {
+            //        Log.Debug(item + ": " + headerCookieUrl.Value.Headers[item].First());
+            //    }
+            //}
+            //Log.Debug("Create request with " + headerCookieUrl.Value.Headers?.Count +
+            //    " headers and " +
+            //    headerCookieUrl.Value.Cookies?.Count + " cookies");
             var req = hc.CreateGetRequest(this.redirectUri ?? headerCookieUrl.Value.Url,
                 headerCookieUrl.Value.Headers,
                 headerCookieUrl.Value.Cookies,

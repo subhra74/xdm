@@ -168,7 +168,20 @@ namespace XDM.Core.Lib.Common.MediaProcessor
 
                 proc.BeginOutputReadLine();
 
-                proc.WaitForExit();
+                while (true)
+                {
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        proc.Kill();
+                        break;
+                    }
+                    if (proc.WaitForExit(100))
+                    {
+                        proc.WaitForExit(); //see remarks section https://docs.microsoft.com/en-us/dotnet/api/system.diagnostics.process.waitforexit?view=net-6.0
+                        break;
+                    }
+                }
+
                 if (proc.ExitCode == 0)
                 {
                     return MediaProcessingResult.Success;

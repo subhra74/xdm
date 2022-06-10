@@ -160,7 +160,8 @@ namespace XDM.Core.Lib.Downloader.Progressive.SingleHttp
             lock (this)
             {
                 if (pieces.Count == 0) return;
-                TransactedIO.WriteBytes(ChunkStateToBytes(), "chunks.db", state.TempDir);
+                TransactedIO.WriteStream("chunks.db", state!.TempDir!, base.ChunkStateToBytes);
+                //TransactedIO.WriteBytes(ChunkStateToBytes(), "chunks.db", state.TempDir);
             }
         }
 
@@ -179,18 +180,25 @@ namespace XDM.Core.Lib.Downloader.Progressive.SingleHttp
             state = DownloadStateStore.SingleSourceHTTPDownloaderStateFromBytes(bytes);
             try
             {
-                var chunkBytes = TransactedIO.ReadBytes("chunks.db", state.TempDir);
-                if (chunkBytes == null)
+                //var chunkBytes = TransactedIO.ReadBytes("chunks.db", state.TempDir);
+                //if (chunkBytes == null)
+                //{
+                //    throw new FileNotFoundException(Path.Combine(state.TempDir, "chunks.json"));
+                //}
+                //pieces = ChunkStateFromBytes(chunkBytes);
+                if (!TransactedIO.ReadStream("chunks.db", state!.TempDir!, s =>
                 {
-                    throw new FileNotFoundException(Path.Combine(state.TempDir, "chunks.json"));
+                    pieces = ChunkStateFromBytes(s);
+                }))
+                {
+                    throw new FileNotFoundException(Path.Combine(state.TempDir, "chunks.db"));
                 }
-                pieces = ChunkStateFromBytes(chunkBytes);
                 Log.Debug("Total size: " + state.FileSize);
-                foreach (var item in pieces.Keys)
-                {
-                    Log.Debug("Chunk id: " + item + " offset: " + pieces[item].Offset + " downloaded: " +
-                        pieces[item].Downloaded + " length: " + pieces[item].Length + " state: " + pieces[item].State);
-                }
+                //foreach (var item in pieces.Keys)
+                //{
+                //    Log.Debug("Chunk id: " + item + " offset: " + pieces[item].Offset + " downloaded: " +
+                //        pieces[item].Downloaded + " length: " + pieces[item].Length + " state: " + pieces[item].State);
+                //}
             }
             catch
             {
@@ -382,6 +390,8 @@ namespace XDM.Core.Lib.Downloader.Progressive.SingleHttp
                             }
                         }
 
+                        if (this.cancelFlag.IsCancellationRequested) return;
+
                         if (state!.ConvertToMp3)
                         {
                             if (mediaProcessor != null)
@@ -424,6 +434,7 @@ namespace XDM.Core.Lib.Downloader.Progressive.SingleHttp
 #endif
                     }
 
+                    if (this.cancelFlag.IsCancellationRequested) return;
 
                     //Console.WriteLine("Total bytes written: {0} total size: {1}", totalBytes, this.totalSize);
                     if (this.totalSize < 1)
@@ -438,7 +449,8 @@ namespace XDM.Core.Lib.Downloader.Progressive.SingleHttp
                         }
                         catch { }
                     }
-
+                    if (this.cancelFlag.IsCancellationRequested) return;
+                    Log.Debug("Deleting file parts");
                     DeleteFileParts();
                 }
                 catch (Exception ex)

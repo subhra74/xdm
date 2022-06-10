@@ -7,6 +7,7 @@ using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Util;
 using XDM.Core.Lib.Clients.Http;
 using XDM.Core.Lib.Common.MediaProcessor;
+using System.Text;
 
 #if !NET5_0_OR_GREATER
 using NetFX.Polyfill;
@@ -549,19 +550,32 @@ namespace XDM.Core.Lib.Downloader.Progressive
             }
         }
 
-        protected Dictionary<string, Piece> ChunkStateFromBytes(byte[] bytes)
+        protected Dictionary<string, Piece> ChunkStateFromBytes(Stream stream)
         {
-            var r = new BinaryReader(new MemoryStream(bytes));
+#if NET35
+            var ms = new MemoryStream();
+            stream.CopyTo(ms);
+            using var r = new BinaryReader(ms);
             ReadChunkState(r, out Dictionary<string, Piece> chunks);
             return chunks;
+#else
+            using var r = new BinaryReader(stream, Encoding.UTF8, true);
+            ReadChunkState(r, out Dictionary<string, Piece> chunks);
+            return chunks;
+#endif
         }
 
-        protected byte[] ChunkStateToBytes()
+        protected void ChunkStateToBytes(Stream stream)
         {
+#if NET35
             using var ms = new MemoryStream();
-            using var w = new BinaryWriter(ms);
+            using var w = new BinaryWriter(ms, Encoding.UTF8);
             WriteChunkState(pieces, w);
-            return ms.ToArray();
+            ms.CopyTo(stream);
+#else
+            using var w = new BinaryWriter(stream, Encoding.UTF8, true);
+            WriteChunkState(pieces, w);
+#endif
         }
 
         protected void UpdateSpeedLimit(BaseHTTPDownloaderState? state, bool enable, int limit)

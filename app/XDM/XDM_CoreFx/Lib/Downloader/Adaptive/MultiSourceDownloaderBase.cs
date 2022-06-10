@@ -553,6 +553,7 @@ namespace XDM.Core.Lib.Downloader.Adaptive
         protected virtual void Assemble()
         {
             SaveChunkState();
+            if (this._cancellationTokenSource.IsCancellationRequested) return;
             if (string.IsNullOrEmpty(this.TargetDir))
             {
                 this.TargetDir = Helpers.GetDownloadFolderByFileName(this.TargetFileName);
@@ -571,6 +572,7 @@ namespace XDM.Core.Lib.Downloader.Adaptive
             if (!_state.Demuxed)
             {
                 ConcatSegments(this._chunks.Select(c => this._chunkStreamMap.GetStream(c.Id)), TargetFile);
+                if (this._cancellationTokenSource.IsCancellationRequested) return;
                 DeleteFileParts();
                 return;
             }
@@ -589,9 +591,11 @@ namespace XDM.Core.Lib.Downloader.Adaptive
                             videoFile);
             ConcatSegments(this._chunks.Where(c => c.StreamIndex == 1).Select(c => this._chunkStreamMap.GetStream(c.Id)),
                 audioFile);
+            if (this._cancellationTokenSource.IsCancellationRequested) return;
 
             var res = mediaProcessor.MergeAudioVideStream(videoFile, audioFile, TargetFile,
                 this._cancellationTokenSource, out long totalSize);
+            if (this._cancellationTokenSource.IsCancellationRequested) return;
             if (res != MediaProcessingResult.Success)
             {
                 //try with matroska container
@@ -608,6 +612,7 @@ namespace XDM.Core.Lib.Downloader.Adaptive
                 }
             }
 
+            if (this._cancellationTokenSource.IsCancellationRequested) return;
             DeleteFileParts();
 
             this._state.FileSize = totalSize;
@@ -615,6 +620,7 @@ namespace XDM.Core.Lib.Downloader.Adaptive
 
         private void DeleteFileParts()
         {
+            Log.Debug("DeleteFileParts...");
             try
             {
                 Directory.Delete(_state.TempDirectory, true);

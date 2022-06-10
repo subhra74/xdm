@@ -123,7 +123,7 @@ namespace XDM.Core.Lib.DataAccess
                     }
                     SetParam("@id", id, cmdFetchOne.Parameters);
                     //cmdFetchOne.Parameters["@id"].Value = id;
-                    using SQLiteDataReader r = cmdFetchAll.ExecuteReader();
+                    using SQLiteDataReader r = cmdFetchOne.ExecuteReader();
                     if (r.Read())
                     {
                         var inProgress = r.GetInt32(1) == 0;

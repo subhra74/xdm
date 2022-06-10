@@ -614,14 +614,6 @@ namespace XDMApp
                 {
                     ResumeDownload(new Dictionary<string, BaseDownloadEntry> { [id] = entry }, true);
                 }
-                //AppUI.RunOnUiThread(() =>
-                //{
-                //    var entry = AppUI.GetInProgressDownloadEntry(id);
-                //    if (entry != null)
-                //    {
-                //        ResumeDownload(new Dictionary<string, BaseDownloadEntry> { [id] = entry }, true);
-                //    }
-                //});
             }
         }
 
@@ -695,35 +687,8 @@ namespace XDMApp
                         prgWin.ShowProgressWindow();
                     });
                 }
-
-                //AppUI.RunOnUiThread(() =>
-                //{
-                //    var showProgressWindow = Config.Instance.ShowProgressWindow;
-                //    if (showProgressWindow && !nonInteractive)
-                //    {
-                //        var prgWin = GetProgressWindow(download);// CreateOrGetProgressWindow(download);
-                //        prgWin.FileNameText = download.TargetFileName;
-                //        prgWin.FileSizeText = $"{TextResource.GetText("STAT_DOWNLOADING")} ...";
-                //        prgWin.DownloadStarted();
-                //        prgWin.ShowProgressWindow();
-                //    }
-                //});
                 liveDownloads[item.Key].Downloader.Resume();
             }
-
-            //AppUI.RunOnUiThread(() =>
-            //{
-            //    var showProgressWindow = Config.Instance.ShowProgressWindow;
-            //    if (showProgressWindow && !nonInteractive)
-            //    {
-            //        var prgWin = GetProgressWindow(CreateOrGetProgressWindow(download);
-            //        prgWin.FileNameText = download.TargetFileName;
-            //        prgWin.FileSizeText = $"{TextResource.GetText("STAT_DOWNLOADING")} ...";
-            //        prgWin.DownloadStarted();
-            //        prgWin.ShowProgressWindow();
-            //    }
-            //});
-            //liveDownloads[item.Key].Downloader.Resume();
         }
 
         public void ShowProgressWindow(string downloadId)
@@ -826,33 +791,31 @@ namespace XDMApp
 
         public void StopDownloads(IEnumerable<string> list, bool closeProgressWindow = false)
         {
-            AppUI.RunOnUiThread(() =>
+            var ids = new List<string>(list);
+            foreach (var id in ids)
             {
-                foreach (var id in list)
+                (var http, _) = liveDownloads.GetValueOrDefault(id);
+                if (http != null)
                 {
-                    (var http, var nonInteractive) = liveDownloads.GetValueOrDefault(id);
-                    if (http != null)
+                    http.Stop();
+                    liveDownloads.Remove(id);
+                }
+                else
+                {
+                    if (queuedDownloads.ContainsKey(id))
                     {
-                        http.Stop();
-                        liveDownloads.Remove(id);
+                        queuedDownloads.Remove(id);
                     }
-                    else
-                    {
-                        if (queuedDownloads.ContainsKey(id))
-                        {
-                            queuedDownloads.Remove(id);
-                        }
-                    }
+                }
 
-                    if (activeProgressWindows.ContainsKey(id) && closeProgressWindow)
-                    {
-                        var prgWin = activeProgressWindows[id];
-                        activeProgressWindows.Remove(id);
-                        prgWin.DestroyWindow();
-                        Log.Debug("Progress window removed");
-                    }
-                };
-            });
+                if (activeProgressWindows.ContainsKey(id) && closeProgressWindow)
+                {
+                    var prgWin = activeProgressWindows[id];
+                    activeProgressWindows.Remove(id);
+                    prgWin.DestroyWindow();
+                    Log.Debug("Progress window removed");
+                }
+            };
         }
 
         void DownloadProgressChanged(object source, ProgressResultEventArgs args)
@@ -1119,14 +1082,11 @@ namespace XDMApp
             {
                 var kv = queuedDownloads.First();
                 queuedDownloads.Remove(kv.Key);
-                AppUI.RunOnUiThread(() =>
+                var entry = AppDB.Instance.DownloadsDB.GetDownloadById(kv.Key);// AppUI.GetInProgressDownloadEntry(kv.Key);
+                if (entry != null)
                 {
-                    var entry = AppUI.GetInProgressDownloadEntry(kv.Key);
-                    if (entry != null)
-                    {
-                        ResumeDownload(new Dictionary<string, BaseDownloadEntry> { [kv.Key] = entry }, kv.Value);
-                    }
-                });
+                    ResumeDownload(new Dictionary<string, BaseDownloadEntry> { [kv.Key] = entry }, kv.Value);
+                }
             }
             else
             {

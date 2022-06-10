@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using TraceLog;
 using XDM.Core.Lib.Common;
+using XDM.Core.Lib.DataAccess;
 
 namespace XDMApp
 {
@@ -11,19 +12,19 @@ namespace XDMApp
         private Timer? timer;
         private readonly IApp app;
         private HashSet<string> activeSchedules;
-        private Action callback;
+        //private Action callback;
 
         public Scheduler(IApp app)
         {
             this.app = app;
             this.activeSchedules = new HashSet<string>();
-            this.callback = new Action(() =>
-            {
-                foreach (var queue in QueueManager.Queues)
-                {
-                    ProcessScheduledItem(queue);
-                }
-            });
+            //this.callback = new Action(() =>
+            //{
+            //    foreach (var queue in QueueManager.Queues)
+            //    {
+            //        ProcessScheduledItem(queue);
+            //    }
+            //});
         }
 
         public void Start()
@@ -73,7 +74,7 @@ namespace XDMApp
                 var dict = new Dictionary<string, BaseDownloadEntry>();
                 foreach (var id in item.DownloadIds)
                 {
-                    var ent = app.AppUI.GetInProgressDownloadEntry(id);
+                    var ent = AppDB.Instance.DownloadsDB.GetDownloadById(id);// app.AppUI.GetInProgressDownloadEntry(id);
                     if (ent != null)
                     {
                         dict[id] = ent;
@@ -110,7 +111,11 @@ namespace XDMApp
 
         private void OnTimer(object? state)
         {
-            app.AppUI.RunOnUiThread(callback);
+            foreach (var queue in QueueManager.Queues)
+            {
+                ProcessScheduledItem(queue);
+            }
+            //app.AppUI.RunOnUiThread(callback);
         }
     }
 }
