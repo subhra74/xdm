@@ -310,17 +310,18 @@ namespace XDM.Core.Lib.Downloader.Progressive.DualHttp
 
         protected override void SaveState()
         {
-            TransactedIO.WriteBytes(DownloadStateStore.StateToBytes(state), Id + ".state", Config.DataDir);
+            DownloadStateStore.Save(state);// TransactedIO.WriteBytes(DownloadStateStore.Save(state), Id + ".state", Config.DataDir);
         }
 
         public override void RestoreState()
         {
-            var bytes = TransactedIO.ReadBytes(Id + ".state", Config.DataDir);
-            if (bytes == null)
-            {
-                throw new FileNotFoundException(Path.Combine(Config.DataDir, Id + ".state"));
-            }
-            state = DownloadStateStore.DualSourceHTTPDownloaderStateFromBytes(bytes);
+            state = DownloadStateStore.LoadDualSourceHTTPDownloaderState(Id!);
+            //var bytes = TransactedIO.ReadBytes(Id + ".state", Config.DataDir);
+            //if (bytes == null)
+            //{
+            //    throw new FileNotFoundException(Path.Combine(Config.DataDir, Id + ".state"));
+            //}
+            //state = DownloadStateStore.DualSourceHTTPDownloaderStateFromBytes(bytes);
             try
             {
                 if (!TransactedIO.ReadStream("chunks.db", state!.TempDir!, s =>

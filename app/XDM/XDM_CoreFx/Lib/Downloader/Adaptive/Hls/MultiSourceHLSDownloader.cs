@@ -359,14 +359,17 @@ namespace XDM.Core.Lib.Downloader.Adaptive.Hls
 
         protected override void RestoreState()
         {
-            var bytes = TransactedIO.ReadBytes(Id + ".state", Config.DataDir);
-            if (bytes == null)
-            {
-                throw new FileNotFoundException(Path.Combine(Config.DataDir, Id + ".state"));
-            }
-
-            var state = DownloadStateStore.MultiSourceHLSDownloadStateFromBytes(bytes);
+            var state = DownloadStateStore.LoadMultiSourceHLSDownloadState(Id!);
             this._state = state;
+
+            //var bytes = TransactedIO.ReadBytes(Id + ".state", Config.DataDir);
+            //if (bytes == null)
+            //{
+            //    throw new FileNotFoundException(Path.Combine(Config.DataDir, Id + ".state"));
+            //}
+
+            //var state = DownloadStateStore.MultiSourceHLSDownloadStateFromBytes(bytes);
+            //this._state = state;
 
 
             //var text = TransactedIO.Read(Id + ".state", Config.DataDir);
@@ -381,15 +384,23 @@ namespace XDM.Core.Lib.Downloader.Adaptive.Hls
 
             try
             {
-                Log.Debug("Restoring chunks from: " + Path.Combine(state.TempDirectory, "chunks.json"));
+                Log.Debug("Restoring chunks from: " + Path.Combine(state.TempDirectory, "chunks.db"));
 
-                var bytes2 = TransactedIO.ReadBytes("chunks.db", _state.TempDirectory);
-                if (bytes2 == null)
+                if (!TransactedIO.ReadStream("chunks.db", state.TempDirectory, s =>
                 {
-                    throw new FileNotFoundException(Path.Combine(_state.TempDirectory, "chunks.json"));
+                    _chunks = ChunkStateFromBytes(s);// pieces = ChunkStateFromBytes(s);
+                }))
+                {
+                    throw new FileNotFoundException(Path.Combine(state.TempDirectory, "chunks.db"));
                 }
 
-                _chunks = ChunkStateFromBytes(bytes2);
+                //var bytes2 = TransactedIO.ReadBytes("chunks.db", _state.TempDirectory);
+                //if (bytes2 == null)
+                //{
+                //    throw new FileNotFoundException(Path.Combine(_state.TempDirectory, "chunks.json"));
+                //}
+
+                //_chunks = ChunkStateFromBytes(bytes2);
 
                 var hlsDir = state.TempDirectory;
 
@@ -422,7 +433,8 @@ namespace XDM.Core.Lib.Downloader.Adaptive.Hls
 
         protected override void SaveState()
         {
-            TransactedIO.WriteBytes(DownloadStateStore.StateToBytes((MultiSourceHLSDownloadState)this._state), Id + ".state", Config.DataDir);
+            DownloadStateStore.Save((MultiSourceHLSDownloadState)this._state);
+            //TransactedIO.WriteBytes(DownloadStateStore.Save((MultiSourceHLSDownloadState)this._state), Id + ".state", Config.DataDir);
             //((TransactedIO.Write(JsonConvert.SerializeObject(_state as MultiSourceHLSDownloadState), Id + ".state", Config.DataDir);
             //File.WriteAllText(Path.Combine(Config.DataDir, Id + ".state"), JsonConvert.SerializeObject(_state as MultiSourceHLSDownloadState));
         }

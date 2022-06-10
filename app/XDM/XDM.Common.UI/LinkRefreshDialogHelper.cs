@@ -22,19 +22,29 @@ namespace XDM.Common.UI
                 {
                     return false;
                 }
-                string referer = null;
+                string? referer = null;
                 if (item.DownloadType == "Http")
                 {
-                    var state = DownloadStateStore.SingleSourceHTTPDownloaderStateFromBytes(
-                        File.ReadAllBytes(Path.Combine(Config.DataDir, item.Id + ".state")));
-                    //JsonConvert.DeserializeObject<SingleSourceHTTPDownloaderState>(
-                    //    File.ReadAllText(Path.Combine(Config.DataDir, item.Id + ".state")));
+                    var state = DownloadStateStore.LoadSingleSourceHTTPDownloaderState(item.Id);
                     referer = GetReferer(state.Headers);
+                    //if (!TransactedIO.ReadStream(item.Id + ".state", Config.DataDir, s =>
+                    //{
+                    //    var state = DownloadStateStore.SingleSourceHTTPDownloaderStateFromBytes(s);
+                    //    referer = GetReferer(state.Headers);
+                    //}))
+                    //{
+                    //    throw new FileNotFoundException(Path.Combine(Config.DataDir, item.Id + ".state"));
+                    //}
+
+                    //var state = DownloadStateStore.SingleSourceHTTPDownloaderStateFromBytes(
+                    //    File.ReadAllBytes(Path.Combine(Config.DataDir, item.Id + ".state")));
+                    ////JsonConvert.DeserializeObject<SingleSourceHTTPDownloaderState>(
+                    ////    File.ReadAllText(Path.Combine(Config.DataDir, item.Id + ".state")));
+                    //referer = GetReferer(state.Headers);
                 }
                 else if (item.DownloadType == "Dash")
                 {
-                    var state = DownloadStateStore.DualSourceHTTPDownloaderStateFromBytes(
-                        File.ReadAllBytes(Path.Combine(Config.DataDir, item.Id + ".state")));
+                    var state = DownloadStateStore.LoadDualSourceHTTPDownloaderState(item.Id);
                     //JsonConvert.DeserializeObject<DualSourceHTTPDownloaderState>(
                     //    File.ReadAllText(Path.Combine(Config.DataDir, item.Id + ".state")));
                     referer = GetReferer(state.Headers1);

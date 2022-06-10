@@ -1304,12 +1304,10 @@ namespace XDMApp
                 if (entry == null) return;
                 string? tempDir = null;
                 var validEntry = false;
-                var stateFile = Path.Combine(Config.DataDir, entry.Id + ".state");
-                var bytes = File.ReadAllBytes(stateFile);
                 switch (entry.DownloadType)
                 {
                     case "Http":
-                        var h1 = DownloadStateStore.SingleSourceHTTPDownloaderStateFromBytes(bytes);
+                        var h1 = DownloadStateStore.LoadSingleSourceHTTPDownloaderState(entry.Id);
                         if (h1 != null)
                         {
                             tempDir = h1.TempDir;
@@ -1317,7 +1315,7 @@ namespace XDMApp
                         }
                         break;
                     case "Dash":
-                        var h2 = DownloadStateStore.DualSourceHTTPDownloaderStateFromBytes(bytes);
+                        var h2 = DownloadStateStore.LoadDualSourceHTTPDownloaderState(entry.Id);
                         if (h2 != null)
                         {
                             tempDir = h2.TempDir;
@@ -1325,7 +1323,7 @@ namespace XDMApp
                         }
                         break;
                     case "Hls":
-                        var hls = DownloadStateStore.MultiSourceHLSDownloadStateFromBytes(bytes);
+                        var hls = DownloadStateStore.LoadMultiSourceHLSDownloadState(entry.Id);
                         if (hls != null)
                         {
                             tempDir = hls.TempDirectory;
@@ -1333,7 +1331,7 @@ namespace XDMApp
                         }
                         break;
                     case "Mpd-Dash":
-                        var dash = DownloadStateStore.MultiSourceDASHDownloadStateFromBytes(bytes);
+                        var dash = DownloadStateStore.LoadMultiSourceDASHDownloadState(entry.Id);
                         if (dash != null)
                         {
                             tempDir = dash.TempDirectory;
@@ -1345,7 +1343,7 @@ namespace XDMApp
                 if (validEntry)
                 {
                     var infoFile = Path.Combine(Config.DataDir, entry.Id + ".info");
-
+                    var stateFile = Path.Combine(Config.DataDir, entry.Id + ".state");
                     if (Directory.Exists(tempDir) && !string.IsNullOrEmpty(tempDir))
                     {
                         Directory.Delete(tempDir, true);

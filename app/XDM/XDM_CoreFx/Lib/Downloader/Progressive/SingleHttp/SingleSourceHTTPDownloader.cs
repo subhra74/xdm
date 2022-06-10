@@ -167,17 +167,29 @@ namespace XDM.Core.Lib.Downloader.Progressive.SingleHttp
 
         protected override void SaveState()
         {
-            TransactedIO.WriteBytes(DownloadStateStore.StateToBytes(state), Id + ".state", Config.DataDir);
+            DownloadStateStore.Save(state!);
+            //TransactedIO.WriteStream(Id + ".state", Config.DataDir, s => DownloadStateStore.StateToBytes(state!, s));
+            //TransactedIO.WriteBytes(DownloadStateStore.StateToBytes(state), Id + ".state", Config.DataDir);
         }
 
         public override void RestoreState()
         {
-            var bytes = TransactedIO.ReadBytes(Id + ".state", Config.DataDir);
-            if (bytes == null)
-            {
-                throw new FileNotFoundException(Path.Combine(Config.DataDir, Id + ".state"));
-            }
-            state = DownloadStateStore.SingleSourceHTTPDownloaderStateFromBytes(bytes);
+            state = DownloadStateStore.LoadSingleSourceHTTPDownloaderState(Id!);
+            //if (!TransactedIO.ReadStream(Id + ".state", Config.DataDir, s =>
+            //{
+            //    state = DownloadStateStore.SingleSourceHTTPDownloaderStateFromBytes(s);
+            //}))
+            //{
+            //    throw new FileNotFoundException(Path.Combine(Config.DataDir, Id + ".state"));
+            //}
+
+            //var bytes = TransactedIO.ReadBytes(Id + ".state", Config.DataDir);
+            //if (bytes == null)
+            //{
+            //    throw new FileNotFoundException(Path.Combine(Config.DataDir, Id + ".state"));
+            //}
+
+            //state = DownloadStateStore.SingleSourceHTTPDownloaderStateFromBytes(bytes);
             try
             {
                 //var chunkBytes = TransactedIO.ReadBytes("chunks.db", state.TempDir);
@@ -430,7 +442,7 @@ namespace XDM.Core.Lib.Downloader.Progressive.SingleHttp
                     finally
                     {
 #if !NET35
-                            System.Buffers.ArrayPool<byte>.Shared.Return(buf);
+                        System.Buffers.ArrayPool<byte>.Shared.Return(buf);
 #endif
                     }
 

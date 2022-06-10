@@ -8,6 +8,10 @@ using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Common.MediaProcessor;
 using XDM.Core.Lib.Util;
 using XDM.Core.Lib.Clients.Http;
+#if NET35
+using NetFX.Polyfill;
+#endif
+using System.Text;
 
 namespace XDM.Core.Lib.Downloader.Adaptive
 {
@@ -223,7 +227,8 @@ namespace XDM.Core.Lib.Downloader.Adaptive
             if (_chunks == null) return;
             lock (this)
             {
-                TransactedIO.WriteBytes(ChunkStateToBytes(), "chunks.db", _state.TempDirectory);
+                TransactedIO.WriteStream("chunks.db", _state.TempDirectory, ChunkStateToBytes);
+                //TransactedIO.WriteBytes(ChunkStateToBytes(), "chunks.db", _state.TempDirectory);
                 //TransactedIO.Write(JsonConvert.SerializeObject(_chunks), "chunks.json", _state.TempDirectory);
 
                 //File.WriteAllText(Path.Combine(_state.TempDirectory, "chunks.json"),
@@ -774,19 +779,30 @@ namespace XDM.Core.Lib.Downloader.Adaptive
             }
         }
 
-        protected List<MultiSourceChunk> ChunkStateFromBytes(byte[] bytes)
+        protected List<MultiSourceChunk> ChunkStateFromBytes(Stream stream)
         {
-            var r = new BinaryReader(new MemoryStream(bytes));
+#if NET35
+            var ms = new MemoryStream();
+            stream.CopyTo(ms);
+            using var r = new BinaryReader(ms);
+#else
+            using var r = new BinaryReader(stream, Encoding.UTF8, true);
+#endif
             ReadChunkState(r, out List<MultiSourceChunk> chunks);
             return chunks;
         }
 
-        protected byte[] ChunkStateToBytes()
+        protected void ChunkStateToBytes(Stream stream)
         {
+#if NET35
             using var ms = new MemoryStream();
-            using var w = new BinaryWriter(ms);
+            using var w = new BinaryWriter(ms, Encoding.UTF8);
             WriteChunkState(_chunks, w);
-            return ms.ToArray();
+            ms.CopyTo(stream);
+#else
+            using var w = new BinaryWriter(stream, Encoding.UTF8, true);
+            WriteChunkState(_chunks, w);
+#endif
         }
 
         public void UpdateSpeedLimit(bool enable, int limit)

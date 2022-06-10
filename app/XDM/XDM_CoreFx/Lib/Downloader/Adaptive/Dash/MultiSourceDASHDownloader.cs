@@ -157,14 +157,17 @@ namespace XDM.Core.Lib.Downloader.Adaptive.Dash
 
         protected override void RestoreState()
         {
-            var bytes = TransactedIO.ReadBytes(Id + ".state", Config.DataDir);
-            if (bytes == null)
-            {
-                throw new FileNotFoundException(Path.Combine(Config.DataDir, Id + ".state"));
-            }
-
-            var state = DownloadStateStore.MultiSourceDASHDownloadStateFromBytes(bytes);
+            var state = DownloadStateStore.LoadMultiSourceDASHDownloadState(Id!);
             this._state = state;
+
+            //var bytes = TransactedIO.ReadBytes(Id + ".state", Config.DataDir);
+            //if (bytes == null)
+            //{
+            //    throw new FileNotFoundException(Path.Combine(Config.DataDir, Id + ".state"));
+            //}
+
+            //var state = DownloadStateStore.MultiSourceDASHDownloadStateFromBytes(bytes);
+            //this._state = state;
 
             //var text = TransactedIO.Read(Id + ".state", Config.DataDir);
             //if (text == null)
@@ -178,15 +181,23 @@ namespace XDM.Core.Lib.Downloader.Adaptive.Dash
 
             try
             {
-                Log.Debug("Restoring chunks from: " + Path.Combine(_state.TempDirectory, "chunks.json"));
+                Log.Debug("Restoring chunks from: " + Path.Combine(_state.TempDirectory, "chunks.db"));
 
-                var bytes2 = TransactedIO.ReadBytes("chunks.db", _state.TempDirectory);
-                if (bytes2 == null)
+                if (!TransactedIO.ReadStream("chunks.db", state.TempDirectory, s =>
                 {
-                    throw new FileNotFoundException(Path.Combine(_state.TempDirectory, "chunks.json"));
+                    _chunks = ChunkStateFromBytes(s);// pieces = ChunkStateFromBytes(s);
+                }))
+                {
+                    throw new FileNotFoundException(Path.Combine(state.TempDirectory, "chunks.db"));
                 }
 
-                _chunks = ChunkStateFromBytes(bytes2);
+                //var bytes2 = TransactedIO.ReadBytes("chunks.db", _state.TempDirectory);
+                //if (bytes2 == null)
+                //{
+                //    throw new FileNotFoundException(Path.Combine(_state.TempDirectory, "chunks.json"));
+                //}
+
+                //_chunks = ChunkStateFromBytes(bytes2);
 
                 var dashDir = _state.TempDirectory;
                 var streamMap = _chunks.Select(c => new
@@ -229,7 +240,8 @@ namespace XDM.Core.Lib.Downloader.Adaptive.Dash
 
         protected override void SaveState()
         {
-            TransactedIO.WriteBytes(DownloadStateStore.StateToBytes((MultiSourceDASHDownloadState)_state), Id + ".state", Config.DataDir);
+            DownloadStateStore.Save((MultiSourceDASHDownloadState)_state);
+            //TransactedIO.WriteBytes(DownloadStateStore.Save((MultiSourceDASHDownloadState)_state), Id + ".state", Config.DataDir);
             //TransactedIO.Write(JsonConvert.SerializeObject(_state as MultiSourceDASHDownloadState),
             //    Id + ".state", Config.DataDir);
 

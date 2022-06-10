@@ -9,14 +9,72 @@ using XDM.Core.Lib.Downloader.Adaptive.Hls;
 using XDM.Core.Lib.Downloader.Progressive.DualHttp;
 using XDM.Core.Lib.Downloader.Progressive.SingleHttp;
 using XDM.Core.Lib.Util;
+#if NET35
+using NetFX.Polyfill;
+#endif
 
 namespace XDM.Core.Lib.Downloader
 {
+    delegate void BinaryReaderStreamConsumer(BinaryReader r);
+    delegate void BinaryWriterStreamConsumer(BinaryWriter w);
+
+    internal static class TransactedBinaryDataReader
+    {
+        public static void Read(string file, string folder, BinaryReaderStreamConsumer callback)
+        {
+            if (!TransactedIO.ReadStream(file, folder, stream =>
+            {
+#if NET35
+                using var ms = new MemoryStream();
+                stream.CopyTo(ms);
+                using var r = new BinaryReader(ms);
+                callback(r);
+#else
+                using var r = new BinaryReader(stream, Encoding.UTF8, true);
+                callback(r);
+#endif
+            }))
+            {
+                throw new IOException(Path.Combine(Config.DataDir, file));
+            }
+        }
+
+        public static void Write(string file, string folder, BinaryWriterStreamConsumer callback)
+        {
+            TransactedIO.WriteStream(file, folder, stream =>
+            {
+#if NET35
+                using var ms = new MemoryStream();
+                using var w = new BinaryWriter(ms);
+#else
+                using var w = new BinaryWriter(stream, Encoding.UTF8, true);
+#endif
+                callback(w);
+#if NET35
+                ms.CopyTo(stream);
+#endif
+            });
+        }
+    }
+
     public static class DownloadStateStore
     {
-        public static SingleSourceHTTPDownloaderState SingleSourceHTTPDownloaderStateFromBytes(byte[] bytes)
+        public static SingleSourceHTTPDownloaderState LoadSingleSourceHTTPDownloaderState(string id)
         {
-            var r = new BinaryReader(new MemoryStream(bytes));
+            SingleSourceHTTPDownloaderState? state = null;
+            TransactedBinaryDataReader.Read($"{id}.state", Config.DataDir, r =>
+            {
+                state = SingleSourceHTTPDownloaderStateFromBytes(r);
+            });
+            if (state == null)
+            {
+                throw new IOException("Unable to read state: " + id);
+            }
+            return state;
+        }
+
+        private static SingleSourceHTTPDownloaderState SingleSourceHTTPDownloaderStateFromBytes(BinaryReader r)
+        {
             var state = new SingleSourceHTTPDownloaderState
             {
                 Id = r.ReadString(),
@@ -52,11 +110,14 @@ namespace XDM.Core.Lib.Downloader
             return state;
         }
 
-        public static byte[] StateToBytes(SingleSourceHTTPDownloaderState state)
+        public static void Save(SingleSourceHTTPDownloaderState state)
         {
-            using var ms = new MemoryStream();
-            using var w = new BinaryWriter(ms);
-            w.Write(state.Id);
+            TransactedBinaryDataReader.Write($"{state.Id}.state", Config.DataDir, w => StateToBytes(state, w));
+        }
+
+        private static void StateToBytes(SingleSourceHTTPDownloaderState state, BinaryWriter w)
+        {
+            w.Write(state!.Id!);
             w.Write(state.TempDir ?? string.Empty);
             w.Write(state.FileSize);
             w.Write(state.LastModified.ToBinary());
@@ -85,12 +146,24 @@ namespace XDM.Core.Lib.Downloader
                 w.Write(state.Proxy!.Value.Password ?? string.Empty);
             }
             w.Write(state.ConvertToMp3);
-            return ms.ToArray();
         }
 
-        public static DualSourceHTTPDownloaderState DualSourceHTTPDownloaderStateFromBytes(byte[] bytes)
+        public static DualSourceHTTPDownloaderState LoadDualSourceHTTPDownloaderState(string id)
         {
-            var r = new BinaryReader(new MemoryStream(bytes));
+            DualSourceHTTPDownloaderState? state = null;
+            TransactedBinaryDataReader.Read($"{id}.state", Config.DataDir, r =>
+            {
+                state = DualSourceHTTPDownloaderStateFromBytes(r);
+            });
+            if (state == null)
+            {
+                throw new IOException("Unable to read state: " + id);
+            }
+            return state;
+        }
+
+        private static DualSourceHTTPDownloaderState DualSourceHTTPDownloaderStateFromBytes(BinaryReader r)
+        {
             var state = new DualSourceHTTPDownloaderState
             {
                 Id = r.ReadString(),
@@ -136,11 +209,15 @@ namespace XDM.Core.Lib.Downloader
             }
             return state;
         }
-        public static byte[] StateToBytes(DualSourceHTTPDownloaderState state)
+
+        public static void Save(DualSourceHTTPDownloaderState state)
         {
-            using var ms = new MemoryStream();
-            using var w = new BinaryWriter(ms);
-            w.Write(state.Id);
+            TransactedBinaryDataReader.Write($"{state.Id}.state", Config.DataDir, w => StateToBytes(state, w));
+        }
+
+        private static void StateToBytes(DualSourceHTTPDownloaderState state, BinaryWriter w)
+        {
+            w.Write(state.Id!);
             w.Write(state.TempDir ?? string.Empty);
             w.Write(state.FileSize);
             w.Write(state.LastModified.ToBinary());
@@ -183,13 +260,15 @@ namespace XDM.Core.Lib.Downloader
                 w.Write(state.Proxy!.Value.UserName ?? string.Empty);
                 w.Write(state.Proxy!.Value.Password ?? string.Empty);
             }
-            return ms.ToArray();
         }
 
-        public static byte[] StateToBytes(MultiSourceDASHDownloadState state)
+        public static void Save(MultiSourceDASHDownloadState state)
         {
-            using var ms = new MemoryStream();
-            using var w = new BinaryWriter(ms);
+            TransactedBinaryDataReader.Write($"{state.Id}.state", Config.DataDir, w => StateToBytes(state, w));
+        }
+
+        private static void StateToBytes(MultiSourceDASHDownloadState state, BinaryWriter w)
+        {
             w.Write(state.Id);
             w.Write(state.TempDirectory ?? string.Empty);
             w.Write(state.FileSize);
@@ -233,12 +312,24 @@ namespace XDM.Core.Lib.Downloader
                 w.Write(state.Proxy!.Value.UserName ?? string.Empty);
                 w.Write(state.Proxy!.Value.Password ?? string.Empty);
             }
-            return ms.ToArray();
         }
 
-        public static MultiSourceDASHDownloadState MultiSourceDASHDownloadStateFromBytes(byte[] bytes)
+        public static MultiSourceDASHDownloadState LoadMultiSourceDASHDownloadState(string id)
         {
-            var r = new BinaryReader(new MemoryStream(bytes));
+            MultiSourceDASHDownloadState? state = null;
+            TransactedBinaryDataReader.Read($"{id}.state", Config.DataDir, r =>
+            {
+                state = MultiSourceDASHDownloadStateFromBytes(r);
+            });
+            if (state == null)
+            {
+                throw new IOException("Unable to read state: " + id);
+            }
+            return state;
+        }
+
+        private static MultiSourceDASHDownloadState MultiSourceDASHDownloadStateFromBytes(BinaryReader r)
+        {
             var state = new MultiSourceDASHDownloadState
             {
                 Id = r.ReadString(),
@@ -298,10 +389,13 @@ namespace XDM.Core.Lib.Downloader
             return state;
         }
 
-        public static byte[] StateToBytes(MultiSourceHLSDownloadState state)
+        public static void Save(MultiSourceHLSDownloadState state)
         {
-            using var ms = new MemoryStream();
-            using var w = new BinaryWriter(ms);
+            TransactedBinaryDataReader.Write($"{state.Id}.state", Config.DataDir, w => StateToBytes(state, w));
+        }
+
+        private static void StateToBytes(MultiSourceHLSDownloadState state, BinaryWriter w)
+        {
             w.Write(state.Id);
             w.Write(state.TempDirectory ?? string.Empty);
             w.Write(state.FileSize);
@@ -337,12 +431,24 @@ namespace XDM.Core.Lib.Downloader
                 w.Write(state.Proxy!.Value.UserName ?? string.Empty);
                 w.Write(state.Proxy!.Value.Password ?? string.Empty);
             }
-            return ms.ToArray();
         }
 
-        public static MultiSourceHLSDownloadState MultiSourceHLSDownloadStateFromBytes(byte[] bytes)
+        public static MultiSourceHLSDownloadState LoadMultiSourceHLSDownloadState(string id)
         {
-            var r = new BinaryReader(new MemoryStream(bytes));
+            MultiSourceHLSDownloadState? state = null;
+            TransactedBinaryDataReader.Read($"{id}.state", Config.DataDir, r =>
+            {
+                state = MultiSourceHLSDownloadStateFromBytes(r);
+            });
+            if (state == null)
+            {
+                throw new IOException("Unable to read state: " + id);
+            }
+            return state;
+        }
+
+        private static MultiSourceHLSDownloadState MultiSourceHLSDownloadStateFromBytes(BinaryReader r)
+        {
             var state = new MultiSourceHLSDownloadState
             {
                 Id = r.ReadString(),

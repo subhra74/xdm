@@ -229,12 +229,10 @@ namespace XDMApp
             ShortState? state = null;
             try
             {
-                var stateFile = Path.Combine(Config.DataDir, ent.Id + ".state");
-                var bytes = File.ReadAllBytes(stateFile);
                 switch (ent.DownloadType)
                 {
                     case "Http":
-                        var s = DownloadStateStore.SingleSourceHTTPDownloaderStateFromBytes(bytes);
+                        var s = DownloadStateStore.LoadSingleSourceHTTPDownloaderState(ent.Id);
                         state = new()
                         {
                             Headers = s.Headers,
@@ -242,7 +240,7 @@ namespace XDMApp
                         };
                         break;
                     case "Dash":
-                        var d = DownloadStateStore.DualSourceHTTPDownloaderStateFromBytes(bytes);
+                        var d = DownloadStateStore.LoadDualSourceHTTPDownloaderState(ent.Id);
                         state = new()
                         {
                             Headers1 = d.Headers1,
@@ -252,7 +250,7 @@ namespace XDMApp
                         };
                         break;
                     case "Hls":
-                        var h = DownloadStateStore.MultiSourceHLSDownloadStateFromBytes(bytes);
+                        var h = DownloadStateStore.LoadMultiSourceHLSDownloadState(ent.Id);
                         state = new()
                         {
                             Headers = h.Headers,
@@ -260,7 +258,7 @@ namespace XDMApp
                         };
                         break;
                     case "Mpd-Dash":
-                        var m = DownloadStateStore.MultiSourceDASHDownloadStateFromBytes(bytes);
+                        var m = DownloadStateStore.LoadMultiSourceDASHDownloadState(ent.Id);
                         state = new()
                         {
                             Headers = m.Headers,
@@ -268,13 +266,6 @@ namespace XDMApp
                         };
                         break;
                 }
-
-                state = JsonConvert.DeserializeObject<ShortState>(
-                    File.ReadAllText(stateFile),
-                    new JsonSerializerSettings
-                    {
-                        MissingMemberHandling = MissingMemberHandling.Ignore,
-                    });
             }
             catch { }
             peer.ShowPropertiesDialog(ent, state);
