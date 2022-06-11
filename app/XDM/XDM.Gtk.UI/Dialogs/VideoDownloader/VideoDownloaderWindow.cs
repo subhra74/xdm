@@ -25,6 +25,7 @@ namespace XDM.GtkUI.Dialogs.VideoDownloader
         [UI] private Box Page1;
         [UI] private Box Page2;
         [UI] private Box Page3;
+        [UI] private Box Page4;
         [UI] private Label LblUrl;
         [UI] private Label LblUserName;
         [UI] private Label LblPass;
@@ -45,7 +46,11 @@ namespace XDM.GtkUI.Dialogs.VideoDownloader
         [UI] private TreeView LvVideoList;
         [UI] private TreeView LvFormats;
         [UI] private ScrolledWindow SwFormats;
-        [UI] private Gtk.Menu menu1;
+        [UI] private Menu menu1;
+        [UI] private CheckButton ChkReadCookie;
+        [UI] private ComboBox CmbBrowser;
+        [UI] private Label LblHelpMessage;
+        [UI] private Button BtnHelp;
 
         private ListStore videoStore;
         private ListStore formatStore;
@@ -62,22 +67,57 @@ namespace XDM.GtkUI.Dialogs.VideoDownloader
         public event EventHandler? QueueSchedulerClicked;
         public event EventHandler<DownloadLaterEventArgs>? DownloadLaterClicked;
 
+        public string? SelectedBrowser
+        {
+            get
+            {
+                if (ChkReadCookie.Active)
+                {
+                    var val = GtkHelper.GetComboBoxSelectedItem<string>(this.CmbBrowser);
+                    return val;
+                }
+                return null;
+            }
+        }
+
+        public List<string> AllowedBrowsers
+        {
+            set
+            {
+                GtkHelper.PopulateComboBox(CmbBrowser, value.ToArray());
+                if (value.Count > 0)
+                {
+                    CmbBrowser.Active = 0;
+                }
+            }
+        }
+
         public void SwitchToInitialPage()
         {
             Page2.Hide();
             Page3.Hide();
+            Page4.Hide();
             Page1.Show();
         }
         public void SwitchToProcessingPage()
         {
             Page2.Show();
             Page3.Hide();
+            Page4.Hide();
             Page1.Hide();
         }
         public void SwitchToFinalPage()
         {
             Page3.Show();
             Page2.Hide();
+            Page4.Hide();
+            Page1.Hide();
+        }
+        public void SwitchToErrorPage()
+        {
+            Page4.Show();
+            Page2.Hide();
+            Page3.Hide();
             Page1.Hide();
         }
 
@@ -149,6 +189,7 @@ namespace XDM.GtkUI.Dialogs.VideoDownloader
             Page1.ShowAll();
             Page2.Visible = false;
             Page3.Visible = false;
+            Page4.Visible = false;
 
             LblUrl.Text = TextResource.GetText("VID_PASTE_URL");
             ChkAuth.Label = TextResource.GetText("SETTINGS_ADV");
@@ -225,10 +266,28 @@ namespace XDM.GtkUI.Dialogs.VideoDownloader
 
             TxtSaveIn.Text = Helpers.GetVideoDownloadFolder();
 
+            ChkReadCookie.Label = TextResource.GetText("MSG_READ_BROWSER_COOKIE");
+            BtnHelp.Label = TextResource.GetText("MSG_VIDEO_DOWNLOAD_HELP");
+            LblHelpMessage.Text = TextResource.GetText("MSG_NO_VIDEO");
+
+            BtnHelp.Clicked += BtnHelp_Clicked;
+            CmbBrowser.Sensitive = false;
+            ChkReadCookie.Toggled += ChkReadCookie_Toggled;
+
             BtnMore.Clicked += btnAdvanced_Click;
             PrepareMenu();
 
             GtkHelper.AttachSafeDispose(this);
+        }
+
+        private void ChkReadCookie_Toggled(object? sender, EventArgs e)
+        {
+            CmbBrowser.Sensitive = ChkReadCookie.Active;
+        }
+
+        private void BtnHelp_Clicked(object? sender, EventArgs e)
+        {
+            Helpers.OpenBrowser("https://github.com/subhra74/xdm");
         }
 
         private void BtnGo_Clicked(object? sender, EventArgs e)

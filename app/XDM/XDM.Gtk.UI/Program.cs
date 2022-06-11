@@ -4,6 +4,7 @@ using Gtk;
 using TraceLog;
 using Translations;
 using XDM.Core.Lib.Common;
+using XDM.Core.Lib.DataAccess;
 using XDMApp;
 
 namespace XDM.GtkUI
@@ -77,6 +78,8 @@ namespace XDM.GtkUI
                 Log.InitFileBasedTrace(System.IO.Path.Combine(Config.DataDir, "log.txt"));
             }
             Log.Debug("Application_Startup");
+
+            AppDB.Instance.Init(System.IO.Path.Combine(Config.DataDir, "downloads.db"));
 
             var app = new XDMApp.XDMApp();
             
