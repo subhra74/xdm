@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using TraceLog;
 using Translations;
 using XDM.Core.Lib.Common;
@@ -30,18 +31,42 @@ namespace XDM.Common.UI
             this.appUI = appUI;
             this.app = app;
             this.view = view;
+
+            var browsers = new Dictionary<string, string>
+            {
+                ["Google Chrome"] = "chrome",
+                ["Microsoft Edge"] = "edge",
+                ["Mozilla Firefox"] = "firefox",
+                ["Brave"] = "brave",
+                ["Opera"] = "opera",
+                ["Chromium"] = "chromium",
+                ["Safari"] = "safari",
+                ["Vivaldi"] = "vivaldi"
+            };
+
+            this.view.AllowedBrowsers = browsers.Keys.ToList();
+
             view.SearchClicked += (_, _) =>
             {
                 var url = view.Url;
+                string? browser = null;
+                if (!string.IsNullOrEmpty(view.SelectedBrowser))
+                {
+                    browsers.TryGetValue(view.SelectedBrowser!, out browser);
+                }
                 if (Helpers.IsUriValid(url))
                 {
                     view.SwitchToProcessingPage();
-                    ProcessVideo(url, result => appUI.RunOnUiThread(() =>
+                    ProcessVideo(url, browser, result => appUI.RunOnUiThread(() =>
                     {
                         if (result != null)
                         {
                             view.SwitchToFinalPage();
                             SetVideoResultList(result);
+                        }
+                        else
+                        {
+                            view.SwitchToErrorPage();
                         }
                     }));
                 }
@@ -156,13 +181,14 @@ namespace XDM.Common.UI
             }
         }
 
-        private void ProcessVideo(string url, Action<List<YDLVideoEntry>?> callback)
+        private void ProcessVideo(string url, string? browser, Action<List<YDLVideoEntry>?> callback)
         {
             ydl = new YDLProcess
             {
-                Uri = new Uri(url)
+                Uri = new Uri(url),
+                BrowserName = browser
             };
-            new System.Threading.Thread(() =>
+            new Thread(() =>
             {
                 try
                 {

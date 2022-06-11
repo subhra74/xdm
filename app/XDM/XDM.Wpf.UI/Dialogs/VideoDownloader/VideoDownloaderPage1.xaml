@@ -18,6 +18,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <TextBlock Text="{StaticResource VID_PASTE_URL}" Grid.ColumnSpan="3" Margin="0,10,0,5"/>
         <TextBox Grid.Row="1" Grid.ColumnSpan="2" Name="TxtUrl"/>
@@ -33,8 +34,20 @@
                       Data="{StaticResource ri-search-line}"
                       SnapsToDevicePixels="True"/>
         </Button>
-        <CheckBox Margin="0,10" Grid.ColumnSpan="3" Grid.Row="3" Name="ChkAuth" Content="{StaticResource SETTINGS_ADV}"/>
-        <StackPanel Grid.ColumnSpan="3" Grid.Row="4" 
+        <Grid Grid.ColumnSpan="2" Grid.Row="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <CheckBox Margin="0,10" Grid.Column="0" Grid.Row="4" Name="ChkReadCookie" 
+                      Content="{StaticResource MSG_READ_BROWSER_COOKIE}" 
+                      VerticalAlignment="Center"
+                      Checked="ChkReadCookie_Checked"
+                      Unchecked="ChkReadCookie_Checked"/>
+            <ComboBox Grid.Column="1" Name="CmbBrowser" Margin="10,5,0,0" VerticalAlignment="Center" Padding="5" IsEnabled="False"/>
+        </Grid>
+        <CheckBox Margin="0,10" Grid.ColumnSpan="3" Grid.Row="4" Name="ChkAuth" Content="{StaticResource SETTINGS_ADV}"/>
+        <StackPanel Grid.ColumnSpan="3" Grid.Row="5" 
          Visibility="{Binding ElementName=ChkAuth, Path=IsChecked, Converter={StaticResource BoolToVis}}">
             <TextBlock  Text="{StaticResource DESC_USER}" Margin="0,10,0,5"/>
             <TextBox Name="TxtUserName"/>

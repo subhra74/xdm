@@ -11,5 +11,6 @@
         <local:VideoDownloaderPage1 x:Name="Page1"/>
         <local:VideoDownloaderPage2 Visibility="Collapsed" x:Name="Page2"/>
         <local:VideoDownloaderPage3 Visibility="Collapsed" x:Name="Page3"/>
+        <local:VideoDownloaderPage4 Visibility="Collapsed" x:Name="Page4"/>
     </Grid>
 </Window>

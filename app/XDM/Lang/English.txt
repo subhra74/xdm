@@ -212,3 +212,6 @@ MSG_SAVE_AS_MP3=Save as MP3
 MSG_VID_WIKI_TEXT=If you are interested in downloading streaming video from the browser using XDM
 MSG_VID_WIKI_LINK=Please click here
 NO_REFRESH_LINK=Link refresh is not available for this download
+MSG_NO_VIDEO=No video found. However there might be other ways to download the video. Please click "Learn More" button for details.
+MSG_VIDEO_DOWNLOAD_HELP=Learn More
+MSG_READ_BROWSER_COOKIE=Read cookies from browser

@@ -10,6 +10,8 @@ namespace XDM.Core.Lib.UI
     {
         string DownloadLocation { get; set; }
         string Url { get; set; }
+        string? SelectedBrowser { get; }
+        List<string> AllowedBrowsers { set; }
         event EventHandler? CancelClicked;
         event EventHandler? WindowClosed;
         event EventHandler? BrowseClicked;
@@ -20,6 +22,7 @@ namespace XDM.Core.Lib.UI
         void SwitchToInitialPage();
         void SwitchToProcessingPage();
         void SwitchToFinalPage();
+        void SwitchToErrorPage();
         string? SelectFolder();
         public void SetVideoResultList(IEnumerable<string> items, IEnumerable<string> formats);
         public int SelectedFormat { get; set; }

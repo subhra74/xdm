@@ -42,5 +42,10 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
         {
             SearchClicked?.Invoke(this, EventArgs.Empty);
         }
+
+        private void ChkReadCookie_Checked(object sender, RoutedEventArgs e)
+        {
+            this.CmbBrowser.IsEnabled = ChkReadCookie.IsChecked ?? false;
+        }
     }
 }

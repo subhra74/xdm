@@ -43,6 +43,30 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
         public IEnumerable<int> SelectedRows => GetSelectedVideoList();
         public int SelectedItemCount => GetSelectedVideoListCount();
 
+        public string? SelectedBrowser
+        {
+            get
+            {
+                if (Page1.ChkReadCookie.IsChecked ?? false)
+                {
+                    return (string)this.Page1.CmbBrowser.SelectedValue;
+                }
+                return null;
+            }
+        }
+
+        public List<string> AllowedBrowsers
+        {
+            set
+            {
+                this.Page1.CmbBrowser.ItemsSource = value;
+                if (value.Count > 0)
+                {
+                    this.Page1.CmbBrowser.SelectedIndex = 0;
+                }
+            }
+        }
+
         public AuthenticationInfo? Authentication { get => authentication; set => authentication = value; }
         public ProxyInfo? Proxy { get => proxy; set => proxy = value; }
         public int SpeedLimit { get => speedLimit; set => speedLimit = value; }
@@ -57,6 +81,7 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
         {
             Page2.Visibility = Visibility.Collapsed;
             Page3.Visibility = Visibility.Collapsed;
+            Page4.Visibility = Visibility.Collapsed;
             Page1.Visibility = Visibility.Visible;
         }
 
@@ -64,6 +89,7 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
         {
             Page3.Visibility = Visibility.Collapsed;
             Page1.Visibility = Visibility.Collapsed;
+            Page4.Visibility = Visibility.Collapsed;
             Page2.Visibility = Visibility.Visible;
         }
 
@@ -71,6 +97,7 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
         {
             Page1.Visibility = Visibility.Collapsed;
             Page2.Visibility = Visibility.Collapsed;
+            Page4.Visibility = Visibility.Collapsed;
             Page3.Visibility = Visibility.Visible;
         }
 
@@ -220,6 +247,14 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
                 }
             }
             return count;
+        }
+
+        public void SwitchToErrorPage()
+        {
+            Page1.Visibility = Visibility.Collapsed;
+            Page2.Visibility = Visibility.Collapsed;
+            Page3.Visibility = Visibility.Collapsed;
+            Page4.Visibility = Visibility.Visible;
         }
     }
 }
