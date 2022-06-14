@@ -434,13 +434,20 @@ namespace XDMApp
                 Log.Debug("Download HLS video added with id: " + videoId);
                 name = hlsVideoList[videoId].Info.File;
                 valid = true;
-                contentType = videoList[videoId].Info.ContentType;
+                try
+                {
+                    contentType = hlsVideoList[videoId].Info.ContentType;
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex, ex.Message);
+                }
             }
             else if (dashVideoList.ContainsKey(videoId))
             {
                 Log.Debug("Download DASH video added with id: " + videoId);
                 name = dashVideoList[videoId].Info.File;
-                contentType = videoList[videoId].Info.ContentType;
+                contentType = dashVideoList[videoId].Info.ContentType;
                 valid = true;
             }
             if (valid)
