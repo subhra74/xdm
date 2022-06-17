@@ -65,6 +65,11 @@ namespace XDM.Wpf.UI
             AppTrayIcon.TrayClick += (_, _) =>
             {
                 win.Show();
+                if (win.WindowState == WindowState.Minimized)
+                {
+                    win.WindowState = WindowState.Normal;
+                }
+                win.Activate();
             };
             app.AppUI = new XDMApp.AppWin(win, app);
             app.AppUI.WindowLoaded += (_, _) => app.StartClipboardMonitor();
