@@ -119,7 +119,7 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
                 BtnPause.Label = TextResource.GetText("MENU_RESUME");
                 BtnPause.Name = "Paused";
                 TxtETA.Text = string.Empty;
-                TxtSpeedLimit.Visible = false;
+                //TxtSpeedLimit.Visible = false;
                 //speedLimiterDlg?.Close();
                 //speedLimiterDlg = null;
             });
@@ -143,7 +143,7 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
                 TxtETA.Text = string.Empty;
                 BtnPause.Label = TextResource.GetText("MENU_RESUME");
                 BtnPause.Name = "Paused";
-                TxtSpeedLimit.Visible = false;
+                //TxtSpeedLimit.Visible = false;
                 //speedLimiterDlg?.Close();
                 //speedLimiterDlg = null;
             });
@@ -166,7 +166,7 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
             {
                 BtnPause.Label = TextResource.GetText("MENU_PAUSE");
                 BtnPause.Name = string.Empty;
-                TxtSpeedLimit.Visible = false;
+                //TxtSpeedLimit.Visible = false;
 
                 if (App.GetLiveDownloadSpeedLimit(downloadId, out bool enable, out int limit))
                 {
@@ -189,14 +189,14 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
 
         private void SetSpeedLimitText(bool enable, int limit)
         {
-            if (enable && limit > 0)
-            {
-                TxtSpeedLimit.Label = $"{TextResource.GetText("SPEED_LIMIT_TITLE")} - {limit}K/S";
-            }
-            else
-            {
-                TxtSpeedLimit.Label = TextResource.GetText("MSG_NO_SPEED_LIMIT");
-            }
+            //if (enable && limit > 0)
+            //{
+            //    TxtSpeedLimit.Label = $"{TextResource.GetText("SPEED_LIMIT_TITLE")} - {limit}K/S";
+            //}
+            //else
+            //{
+            //    TxtSpeedLimit.Label = TextResource.GetText("MSG_NO_SPEED_LIMIT");
+            //}
         }
 
         private void SetFileText(string value)
@@ -230,7 +230,7 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
                 AppUI.ResumeDownload(downloadId);
                 BtnPause.Label = TextResource.GetText("MENU_PAUSE");
                 BtnPause.Name = string.Empty;
-                TxtSpeedLimit.Visible = true;
+                //TxtSpeedLimit.Visible = true;
             }
             else
             {
@@ -297,7 +297,7 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
         [UI] private Label TxtStatus;
         [UI] private Label TxtSpeed;
         [UI] private Label TxtETA;
-        [UI] private LinkButton TxtSpeedLimit;
+        //[UI] private LinkButton TxtSpeedLimit;
         [UI] private ProgressBar PrgProgress;
         [UI] private Button BtnHide;
         [UI] private Button BtnStop;
@@ -338,7 +338,7 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
             this.BtnHide.Label = TextResource.GetText("DWN_HIDE");
             this.BtnStop.Label = TextResource.GetText("BTN_STOP_PROCESSING");
             this.BtnPause.Label = TextResource.GetText("MENU_PAUSE");
-            this.TxtSpeedLimit.Label = TextResource.GetText("MSG_NO_SPEED_LIMIT");
+            //this.TxtSpeedLimit.Label = TextResource.GetText("MSG_NO_SPEED_LIMIT");
             this.ImgIcon.Pixbuf = GtkHelper.LoadSvg("file-download-line", 48);
 
             this.BtnPause.Name = string.Empty;

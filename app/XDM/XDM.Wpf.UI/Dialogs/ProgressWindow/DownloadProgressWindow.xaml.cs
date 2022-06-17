@@ -136,7 +136,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
                     BtnPause.Content = TextResource.GetText("MENU_RESUME");
                     BtnPause.Tag = new();
                     TxtETA.Text = string.Empty;
-                    TxtSpeedLimit.Visibility = Visibility.Collapsed;
+                    //TxtSpeedLimit.Visibility = Visibility.Collapsed;
                     speedLimiterDlg?.Close();
                     speedLimiterDlg = null;
                 }), error);
@@ -150,7 +150,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
                     TxtETA.Text = string.Empty;
                     BtnPause.Content = TextResource.GetText("MENU_RESUME");
                     BtnPause.Tag = new();
-                    TxtSpeedLimit.Visibility = Visibility.Collapsed;
+                    //TxtSpeedLimit.Visibility = Visibility.Collapsed;
                     speedLimiterDlg?.Close();
                     speedLimiterDlg = null;
                 }));
@@ -162,7 +162,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
             {
                 BtnPause.Content = TextResource.GetText("MENU_PAUSE");
                 BtnPause.Tag = null;
-                TxtSpeedLimit.Visibility = Visibility.Visible;
+                //TxtSpeedLimit.Visibility = Visibility.Visible;
 
                 if (App.GetLiveDownloadSpeedLimit(downloadId, out bool enable, out int limit))
                 {
@@ -173,14 +173,14 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
 
         private void SetSpeedLimitText(bool enable, int limit)
         {
-            if (enable && limit > 0)
-            {
-                TxtSpeedLimit.Text = $"{TextResource.GetText("SPEED_LIMIT_TITLE")} - {limit}K/S";
-            }
-            else
-            {
-                TxtSpeedLimit.Text = TextResource.GetText("MSG_NO_SPEED_LIMIT");
-            }
+            //if (enable && limit > 0)
+            //{
+            //    TxtSpeedLimit.Text = $"{TextResource.GetText("SPEED_LIMIT_TITLE")} - {limit}K/S";
+            //}
+            //else
+            //{
+            //    TxtSpeedLimit.Text = TextResource.GetText("MSG_NO_SPEED_LIMIT");
+            //}
         }
 
         private void SetFileText(string value)
@@ -212,7 +212,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
                 AppUI.ResumeDownload(downloadId);
                 BtnPause.Content = TextResource.GetText("MENU_PAUSE");
                 BtnPause.Tag = null;
-                TxtSpeedLimit.Visibility = Visibility.Visible;
+                //TxtSpeedLimit.Visibility = Visibility.Visible;
             }
             else
             {

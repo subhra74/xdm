@@ -127,7 +127,7 @@
                 <property name="label" translatable="yes">button</property>
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
-                <property name="receives-default">True</property>
+                <property name="receives-default">False</property>
                 <property name="halign">start</property>
                 <property name="valign">start</property>
                 <property name="relief">none</property>
@@ -210,6 +210,8 @@
                 <property name="label" translatable="yes">button</property>
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
+                <property name="has-focus">True</property>
+                <property name="is-focus">True</property>
                 <property name="receives-default">True</property>
                 <property name="margin-start">10</property>
               </object>
