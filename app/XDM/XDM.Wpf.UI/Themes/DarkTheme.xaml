@@ -64,7 +64,7 @@
     <!--<SolidColorBrush x:Key="{x:Static SystemColors.DesktopBrushKey }" Color="#1B1C1E"/>-->
 
     <SolidColorBrush x:Key="NewDownloadTextBoxBackground" Color="#21252B"/>
-    <SolidColorBrush x:Key="HyperlinkForecolor" Color="DodgerBlue"/>
+    <SolidColorBrush x:Key="HyperlinkForecolor" Color="#25608F"/>
 
     <SolidColorBrush x:Key="ScrollBarThumbColorNormal" Color="#343537"/>
     <SolidColorBrush x:Key="ScrollBarThumbColorHot" Color="#3E3F41"/>
@@ -72,7 +72,7 @@
     <SolidColorBrush x:Key="ControlDisabledBackcolor" Color="#111214"/>
     <SolidColorBrush x:Key="TabSelectionColor" Color="#114C7B"/>
 
-    <SolidColorBrush x:Key="ProgressBarBackcolor" Color="#777D88"/>
+    <SolidColorBrush x:Key="ProgressBarBackcolor" Color="#343537"/>
     <SolidColorBrush x:Key="ProgressBarForecolor" Color="#114C7B"/>
 
     <core:Double x:Key="ButtonDisabledOpacity">0.4</core:Double>
