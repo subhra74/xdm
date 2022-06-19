@@ -32,6 +32,7 @@ using XDM.GtkUI.Dialogs.BatchWindow;
 using XDM.GtkUI.Dialogs.DownloadSelection;
 using XDM.GtkUI.Dialogs.LinkRefresh;
 using XDM.GtkUI.Dialogs.Properties;
+using XDM.GtkUI.Dialogs.Settings;
 
 namespace XDM.GtkUI
 {
@@ -299,7 +300,7 @@ namespace XDM.GtkUI
 
         private void MenuSettings_Activated(object? sender, EventArgs e)
         {
-            throw new NotImplementedException();
+            this.SettingsClicked?.Invoke(this, e);
         }
 
         private void MenuBatchDownload_Click(object? sender, EventArgs e)
@@ -1286,7 +1287,9 @@ namespace XDM.GtkUI
 
         public void ShowSettingsDialog(IApp app, int page = 0)
         {
-            throw new NotImplementedException();
+            using var win = SettingsDialog.CreateFromGladeFile(this, windowGroup, app.AppUI, app);
+            win.Run();
+            win.Destroy();
         }
 
         public void ImportDownloads(IApp app)
@@ -1311,7 +1314,7 @@ namespace XDM.GtkUI
 
         public void UpdateParallalismLabel()
         {
-            throw new NotImplementedException();
+            
         }
 
         public IUpdaterUI CreateUpdateUIDialog(IAppUI ui)
