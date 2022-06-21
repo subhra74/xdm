@@ -234,6 +234,64 @@ namespace XDM.GtkUI.Utils
             return cmbStore;
         }
 
+        public static ListStore PopulateComboBoxGeneric<T>(ComboBox comboBox, params T[] values)
+        {
+            var cmbStore = new ListStore(typeof(string), typeof(T));
+            foreach (var text in values)
+            {
+                var iter = cmbStore.Append();
+                cmbStore.SetValue(iter, 0, $"{text}");
+                cmbStore.SetValue(iter, 1, text);
+            }
+            comboBox.Model = cmbStore;
+            var cell = new CellRendererText();
+            cell.Ellipsize = Pango.EllipsizeMode.End;
+            comboBox.PackStart(cell, true);
+            comboBox.AddAttribute(cell, "text", 0);
+            return cmbStore;
+        }
+
+        public static T? GetSelectedComboBoxValue<T>(ComboBox comboBox)
+        {
+            var index = comboBox.Active;
+            var count = 0;
+            if (!comboBox.Model.GetIterFirst(out TreeIter iter))
+            {
+                return default(T);
+            }
+            do
+            {
+
+                if (index == count)
+                {
+                    return (T)comboBox.Model.GetValue(iter, 1);
+                }
+                count++;
+            }
+            while (comboBox.Model.IterNext(ref iter));
+            return default(T);
+        }
+
+        public static void SetSelectedComboBoxValue<T>(ComboBox comboBox, T value)
+        {
+            var count = 0;
+            if (!comboBox.Model.GetIterFirst(out TreeIter iter))
+            {
+                return;
+            }
+            do
+            {
+                var val = (T)comboBox.Model.GetValue(iter, 1);
+                if (EqualityComparer<T>.Default.Equals(val, value))
+                {
+                    comboBox.Active = count;
+                    return;
+                }
+                count++;
+            }
+            while (comboBox.Model.IterNext(ref iter));
+        }
+
         public static Gdk.Pixbuf LoadSvg(string name, int dimension = 16)
         {
             return new Gdk.Pixbuf(

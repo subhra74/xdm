@@ -14,6 +14,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Util;
+using XDM.Core.Lib.UI;
 
 namespace XDM.Wpf.UI.Dialogs.Settings
 {

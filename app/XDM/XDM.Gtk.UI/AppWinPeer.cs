@@ -1288,6 +1288,7 @@ namespace XDM.GtkUI
         public void ShowSettingsDialog(IApp app, int page = 0)
         {
             using var win = SettingsDialog.CreateFromGladeFile(this, windowGroup, app.AppUI, app);
+            win.LoadConfig();
             win.Run();
             win.Destroy();
         }

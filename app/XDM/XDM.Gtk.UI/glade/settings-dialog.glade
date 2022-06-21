@@ -323,11 +323,10 @@
                           <object class="GtkScrolledWindow">
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
-                            <property name="margin-right">10</property>
                             <property name="margin-end">10</property>
                             <property name="shadow-type">in</property>
                             <child>
-                              <object class="GtkTextView">
+                              <object class="GtkTextView" id="TxtDefaultFileTypes">
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                               </object>
@@ -374,7 +373,7 @@
                             <property name="margin-end">10</property>
                             <property name="shadow-type">in</property>
                             <child>
-                              <object class="GtkTextView">
+                              <object class="GtkTextView" id="TxtDefaultVideoFormats">
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                               </object>
@@ -421,7 +420,7 @@
                             <property name="margin-end">10</property>
                             <property name="shadow-type">in</property>
                             <child>
-                              <object class="GtkTextView">
+                              <object class="GtkTextView" id="TxtExceptions">
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                               </object>
@@ -468,7 +467,7 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkComboBox">
+                              <object class="GtkComboBox" id="CmbMinVidSize">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                               </object>
@@ -650,7 +649,7 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkComboBox">
+                              <object class="GtkComboBox" id="CmbDblClickAction">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                               </object>
@@ -790,7 +789,7 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkComboBox">
+                              <object class="GtkComboBox" id="CmbMaxParallalDownloads">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                               </object>
@@ -852,9 +851,11 @@
                           <object class="GtkScrolledWindow">
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
+                            <property name="margin-end">10</property>
                             <property name="shadow-type">in</property>
+                            <property name="min-content-height">200</property>
                             <child>
-                              <object class="GtkTreeView">
+                              <object class="GtkTreeView" id="LvCategories">
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                                 <child internal-child="selection">
@@ -1303,11 +1304,11 @@
                 <property name="orientation">vertical</property>
                 <property name="spacing">10</property>
                 <child>
-                  <object class="GtkLabel">
+                  <object class="GtkLabel" id="Label26">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="halign">start</property>
-                    <property name="label" translatable="yes">label</property>
+                    <property name="label" translatable="yes">Label26</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -1342,7 +1343,7 @@
                     <property name="can-focus">False</property>
                     <property name="spacing">10</property>
                     <child>
-                      <object class="GtkButton">
+                      <object class="GtkButton" id="DelPass">
                         <property name="label" translatable="yes">button</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
@@ -1356,7 +1357,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton">
+                      <object class="GtkButton" id="EditPass">
                         <property name="label" translatable="yes">button</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
@@ -1370,7 +1371,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton">
+                      <object class="GtkButton" id="AddPass">
                         <property name="label" translatable="yes">button</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
@@ -1426,11 +1427,11 @@
                         <property name="orientation">vertical</property>
                         <property name="spacing">10</property>
                         <child>
-                          <object class="GtkLabel">
+                          <object class="GtkLabel" id="Label27">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
                             <property name="halign">start</property>
-                            <property name="label" translatable="yes">label</property>
+                            <property name="label" translatable="yes">Label27</property>
                           </object>
                           <packing>
                             <property name="expand">False</property>
@@ -1439,7 +1440,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton">
+                          <object class="GtkCheckButton" id="ChkHalt">
                             <property name="label" translatable="yes">checkbutton</property>
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
@@ -1453,7 +1454,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton">
+                          <object class="GtkCheckButton" id="ChkKeepAwake">
                             <property name="label" translatable="yes">checkbutton</property>
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
@@ -1467,7 +1468,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton">
+                          <object class="GtkCheckButton" id="ChkRunCmd">
                             <property name="label" translatable="yes">checkbutton</property>
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
@@ -1481,7 +1482,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkEntry">
+                          <object class="GtkEntry" id="TxtCustomCmd">
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
                             <property name="margin-right">10</property>
@@ -1494,7 +1495,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton">
+                          <object class="GtkCheckButton" id="ChkRunAntivirus">
                             <property name="label" translatable="yes">checkbutton</property>
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
@@ -1508,11 +1509,11 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel">
+                          <object class="GtkLabel" id="Label28">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
                             <property name="halign">start</property>
-                            <property name="label" translatable="yes">label</property>
+                            <property name="label" translatable="yes">Label28</property>
                           </object>
                           <packing>
                             <property name="expand">False</property>
@@ -1528,7 +1529,7 @@
                             <property name="margin-end">10</property>
                             <property name="spacing">10</property>
                             <child>
-                              <object class="GtkEntry">
+                              <object class="GtkEntry" id="TxtAntiVirusCmd">
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                                 <property name="hexpand">True</property>
@@ -1540,8 +1541,8 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkButton">
-                                <property name="label" translatable="yes">button</property>
+                              <object class="GtkButton" id="BtnBrowse">
+                                <property name="label" translatable="yes">...</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                                 <property name="receives-default">True</property>
@@ -1560,11 +1561,11 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel">
+                          <object class="GtkLabel" id="Label29">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
                             <property name="halign">start</property>
-                            <property name="label" translatable="yes">label</property>
+                            <property name="label" translatable="yes">Label29</property>
                           </object>
                           <packing>
                             <property name="expand">False</property>
@@ -1573,7 +1574,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkEntry">
+                          <object class="GtkEntry" id="TxtAntiVirusArgs">
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
                             <property name="margin-right">10</property>
@@ -1586,7 +1587,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton">
+                          <object class="GtkCheckButton" id="ChkAutoRun">
                             <property name="label" translatable="yes">checkbutton</property>
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
@@ -1600,11 +1601,11 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel">
+                          <object class="GtkLabel" id="Label30">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
                             <property name="halign">start</property>
-                            <property name="label" translatable="yes">label</property>
+                            <property name="label" translatable="yes">Label30</property>
                           </object>
                           <packing>
                             <property name="expand">False</property>
@@ -1620,7 +1621,7 @@
                             <property name="margin-end">10</property>
                             <property name="spacing">10</property>
                             <child>
-                              <object class="GtkEntry">
+                              <object class="GtkEntry" id="TxtDefaultUserAgent">
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                                 <property name="hexpand">True</property>
@@ -1632,8 +1633,8 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkButton">
-                                <property name="label" translatable="yes">button</property>
+                              <object class="GtkButton" id="BtnUserAgentReset">
+                                <property name="label" translatable="yes">...</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                                 <property name="receives-default">True</property>

@@ -15,6 +15,7 @@ using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Util;
 using XDM.Wpf.UI.Common;
 using XDM.Wpf.UI.Win32;
+using XDM.Core.Lib.UI;
 
 namespace XDM.Wpf.UI.Dialogs.Settings
 {

@@ -14,6 +14,7 @@ using System.Windows.Shapes;
 using TraceLog;
 using Translations;
 using XDM.Core.Lib.Common;
+using XDM.Core.Lib.UI;
 using XDM.Core.Lib.Util;
 
 namespace XDM.Wpf.UI.Dialogs.Settings
@@ -49,6 +50,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
 
         public void UpdateConfig()
         {
+            //Browser monitoring
             Config.Instance.FileExtensions = TxtDefaultFileTypes.Text.Split(',').Select(x => x.Trim()).Where(x => x.Length > 0).ToArray();
             Config.Instance.VideoExtensions = TxtDefaultVideoFormats.Text.Split(',').Select(x => x.Trim()).Where(x => x.Length > 0).ToArray();
             Config.Instance.BlockedHosts = TxtExceptions.Text.Split(',').Select(x => x.Trim()).Where(x => x.Length > 0).ToArray();
