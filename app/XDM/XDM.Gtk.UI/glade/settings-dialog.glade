@@ -276,7 +276,6 @@
                             </child>
                             <child>
                               <object class="GtkButton" id="BtnCopy1">
-                                <property name="label" translatable="yes">button</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                                 <property name="receives-default">True</property>
@@ -288,7 +287,6 @@
                             </child>
                             <child>
                               <object class="GtkButton" id="BtnCopy2">
-                                <property name="label" translatable="yes">button</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                                 <property name="receives-default">True</property>
@@ -995,7 +993,6 @@
                           <object class="GtkBox">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
-                            <property name="margin-right">10</property>
                             <property name="margin-end">10</property>
                             <property name="spacing">10</property>
                             <child>
@@ -1013,7 +1010,7 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkComboBox">
+                              <object class="GtkComboBox" id="CmbTimeOut">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                               </object>
@@ -1034,7 +1031,6 @@
                           <object class="GtkBox">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
-                            <property name="margin-right">10</property>
                             <property name="margin-end">10</property>
                             <property name="spacing">10</property>
                             <child>
@@ -1052,7 +1048,7 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkComboBox">
+                              <object class="GtkComboBox" id="CmbMaxSegments">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                               </object>
@@ -1073,7 +1069,6 @@
                           <object class="GtkBox">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
-                            <property name="margin-right">10</property>
                             <property name="margin-end">10</property>
                             <property name="spacing">10</property>
                             <child>
@@ -1091,7 +1086,7 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkComboBox">
+                              <object class="GtkComboBox" id="CmbMaxRetry">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                               </object>
@@ -1129,7 +1124,7 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkEntry">
+                              <object class="GtkEntry" id="TxtMaxSpeedLimit">
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                               </object>
@@ -1169,7 +1164,7 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkComboBox">
+                              <object class="GtkComboBox" id="CmbProxyType">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                               </object>
@@ -1227,7 +1222,7 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkEntry">
+                              <object class="GtkEntry" id="TxtProxyHost">
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                               </object>
@@ -1237,7 +1232,7 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkEntry">
+                              <object class="GtkEntry" id="TxtProxyPort">
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                               </object>
@@ -1247,7 +1242,7 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkEntry">
+                              <object class="GtkEntry" id="TxtProxyUser">
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                               </object>
@@ -1257,7 +1252,7 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkEntry">
+                              <object class="GtkEntry" id="TxtProxyPassword">
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                               </object>
@@ -1322,7 +1317,7 @@
                     <property name="can-focus">True</property>
                     <property name="shadow-type">in</property>
                     <child>
-                      <object class="GtkTreeView">
+                      <object class="GtkTreeView" id="LvPasswords">
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <child internal-child="selection">
@@ -1485,7 +1480,6 @@
                           <object class="GtkEntry" id="TxtCustomCmd">
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
-                            <property name="margin-right">10</property>
                             <property name="margin-end">10</property>
                           </object>
                           <packing>
@@ -1525,7 +1519,6 @@
                           <object class="GtkBox">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
-                            <property name="margin-right">10</property>
                             <property name="margin-end">10</property>
                             <property name="spacing">10</property>
                             <child>
@@ -1577,7 +1570,6 @@
                           <object class="GtkEntry" id="TxtAntiVirusArgs">
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
-                            <property name="margin-right">10</property>
                             <property name="margin-end">10</property>
                           </object>
                           <packing>
@@ -1617,7 +1609,6 @@
                           <object class="GtkBox">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
-                            <property name="margin-right">10</property>
                             <property name="margin-end">10</property>
                             <property name="spacing">10</property>
                             <child>

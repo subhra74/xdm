@@ -58,6 +58,7 @@
 		<None Remove="images\download-line.svg" />
 		<None Remove="images\file-4-line.svg" />
 		<None Remove="images\file-chart-2-line.svg" />
+		<None Remove="images\file-copy-line.svg" />
 		<None Remove="images\file-download-line.svg" />
 		<None Remove="images\file-line.svg" />
 		<None Remove="images\file-text-line.svg" />

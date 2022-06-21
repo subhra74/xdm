@@ -1241,7 +1241,11 @@ namespace XDM.GtkUI
 
         public void SetClipboardText(string text)
         {
-            throw new NotImplementedException();
+            var cb = Clipboard.Get(Gdk.Selection.Clipboard);
+            if (cb != null)
+            {
+                cb.Text = text;
+            }
         }
 
         public void SetClipboardFile(string file)

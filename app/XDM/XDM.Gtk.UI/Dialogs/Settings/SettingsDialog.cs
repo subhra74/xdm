@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Gtk;
-using GLib;
 using Application = Gtk.Application;
 using IoPath = System.IO.Path;
 using XDM.Core.Lib.Common;
@@ -13,6 +12,7 @@ using UI = Gtk.Builder.ObjectAttribute;
 using XDM.GtkUI.Utils;
 using XDMApp;
 using XDM.Core.Lib.Util;
+using TraceLog;
 
 namespace XDM.GtkUI.Dialogs.Settings
 {
@@ -32,21 +32,26 @@ namespace XDM.GtkUI.Dialogs.Settings
         private LinkButton VideoWikiLink;
         [UI]
         Button BtnChrome, BtnFirefox, BtnEdge, BtnOpera, BtnDefault1, BtnDefault2,
-            BtnDefault3, CatAdd, CatEdit, CatDel, CatDef, AddPass, EditPass, DelPass, BtnUserAgentReset;
+            BtnDefault3, CatAdd, CatEdit, CatDel, CatDef, AddPass, EditPass, DelPass, BtnUserAgentReset,
+            BtnCopy1, BtnCopy2;
         [UI]
         private CheckButton ChkMonitorClipboard, ChkTimestamp, ChkDarkTheme, ChkAutoCat, ChkShowPrg,
             ChkShowComplete, ChkStartAuto, ChkOverwrite, ChkEnableSpeedLimit, ChkHalt, ChkKeepAwake,
             ChkRunCmd, ChkRunAntivirus, ChkAutoRun;
         [UI]
-        private ComboBox CmbMinVidSize, CmbDblClickAction, CmbMaxParallalDownloads;
+        private ComboBox CmbMinVidSize, CmbDblClickAction, CmbMaxParallalDownloads,
+            CmbTimeOut, CmbMaxSegments, CmbMaxRetry, CmbProxyType;
         [UI]
-        private Entry TxtChromeWebStoreUrl, TxtFirefoxAMOUrl, TxtTempFolder, TxtDownloadFolder;
+        private Entry TxtChromeWebStoreUrl, TxtFirefoxAMOUrl, TxtTempFolder, TxtDownloadFolder,
+            TxtMaxSpeedLimit, TxtProxyHost, TxtProxyPort, TxtProxyUser, TxtProxyPassword,
+            TxtCustomCmd, TxtAntiVirusCmd, TxtAntiVirusArgs, TxtDefaultUserAgent;
         [UI]
         private TextView TxtExceptions, TxtDefaultVideoFormats, TxtDefaultFileTypes;
         [UI]
-        private TreeView LvCategories;
+        private TreeView LvCategories, LvPasswords;
 
-        private ListStore categoryStore;
+        private ListStore categoryStore, passwordStore;
+        private IApp app;
 
         private SettingsDialog(Builder builder,
             Window parent,
@@ -62,6 +67,7 @@ namespace XDM.GtkUI.Dialogs.Settings
             TransientFor = parent;
             this.group = group;
             this.group.AddWindow(this);
+            this.app = app;
             GtkHelper.AttachSafeDispose(this);
             LoadTexts();
             Title = TextResource.GetText("TITLE_SETTINGS");
@@ -69,6 +75,162 @@ namespace XDM.GtkUI.Dialogs.Settings
             GtkHelper.PopulateComboBoxGeneric<int>(CmbMaxParallalDownloads, Enumerable.Range(1, 50).ToArray());
             GtkHelper.PopulateComboBox(CmbDblClickAction, TextResource.GetText("CTX_OPEN_FOLDER"), TextResource.GetText("MSG_OPEN_FILE"));
             CreateCategoryListView();
+
+            GtkHelper.PopulateComboBoxGeneric<int>(CmbTimeOut, Enumerable.Range(1, 300).ToArray());
+            GtkHelper.PopulateComboBoxGeneric<int>(CmbMaxSegments, Enumerable.Range(1, 64).ToArray());
+            GtkHelper.PopulateComboBoxGeneric<int>(CmbMaxRetry, Enumerable.Range(1, 100).ToArray());
+            GtkHelper.PopulateComboBox(CmbProxyType, TextResource.GetText("NET_SYSTEM_PROXY"),
+                TextResource.GetText("ND_NO_PROXY"), TextResource.GetText("ND_MANUAL_PROXY"));
+
+            CreatePasswordManagerListView();
+
+            VideoWikiLink.Clicked += VideoWikiLink_Clicked;
+            BtnChrome.Clicked += BtnChrome_Clicked;
+            BtnFirefox.Clicked += BtnFirefox_Clicked;
+            BtnEdge.Clicked += BtnEdge_Clicked;
+            BtnOpera.Clicked += BtnOpera_Clicked;
+            BtnCopy1.Clicked += BtnCopy1_Clicked;
+            BtnCopy2.Clicked += BtnCopy2_Clicked;
+            BtnDefault1.Clicked += BtnDefault1_Clicked;
+            BtnDefault2.Clicked += BtnDefault2_Clicked;
+            BtnDefault3.Clicked += BtnDefault3_Clicked;
+
+            BtnCopy1.Image = new Image(GtkHelper.LoadSvg("file-copy-line"));
+            BtnCopy2.Image = new Image(GtkHelper.LoadSvg("file-copy-line"));
+        }
+
+        private void BtnDefault3_Clicked(object? sender, EventArgs e)
+        {
+            TxtExceptions.Buffer.Text = string.Join(",", Config.DefaultBlockedHosts);
+        }
+
+        private void BtnDefault2_Clicked(object? sender, EventArgs e)
+        {
+            TxtDefaultVideoFormats.Buffer.Text = string.Join(",", Config.DefaultVideoExtensions);
+        }
+
+        private void BtnDefault1_Clicked(object? sender, EventArgs e)
+        {
+            TxtDefaultFileTypes.Buffer.Text = string.Join(",", Config.DefaultFileExtensions);
+        }
+
+        private void BtnCopy2_Clicked(object? sender, EventArgs e)
+        {
+            var cb = Clipboard.Get(Gdk.Selection.Clipboard);
+            if (cb != null)
+            {
+                cb.Text = TxtFirefoxAMOUrl.Text;
+            }
+        }
+
+        private void BtnCopy1_Clicked(object? sender, EventArgs e)
+        {
+            var cb = Clipboard.Get(Gdk.Selection.Clipboard);
+            if (cb != null)
+            {
+                cb.Text = TxtChromeWebStoreUrl.Text;
+            }
+        }
+
+        private void BtnOpera_Clicked(object? sender, EventArgs e)
+        {
+            try
+            {
+                Helpers.InstallNativeMessagingHost(NativeHostBrowser.Chrome);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error installing native host");
+                GtkHelper.ShowMessageBox(this, TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
+                return;
+            }
+
+            try
+            {
+                BrowserLauncher.LaunchOperaBrowser(this.app.ChromeExtensionUrl);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error launching Opera");
+                GtkHelper.ShowMessageBox(this, $"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Opera");
+            }
+        }
+
+        private void BtnEdge_Clicked(object? sender, EventArgs e)
+        {
+            try
+            {
+                Helpers.InstallNativeMessagingHost(NativeHostBrowser.Chrome);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error installing native host");
+                GtkHelper.ShowMessageBox(this, TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
+                return;
+            }
+
+            try
+            {
+                BrowserLauncher.LaunchMicrosoftEdge(this.app.ChromeExtensionUrl);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error Microsoft Edge");
+                GtkHelper.ShowMessageBox(this, $"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Microsoft Edge");
+            }
+        }
+
+        private void BtnFirefox_Clicked(object? sender, EventArgs e)
+        {
+            try
+            {
+                Helpers.InstallNativeMessagingHost(NativeHostBrowser.Firefox);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error installing native host");
+                GtkHelper.ShowMessageBox(this, TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
+                return;
+            }
+
+            try
+            {
+                BrowserLauncher.LaunchFirefox(this.app.FirefoxExtensionUrl);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error launching Firefox");
+                GtkHelper.ShowMessageBox(this, $"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Firefox");
+            }
+        }
+
+        private void BtnChrome_Clicked(object? sender, EventArgs e)
+        {
+            try
+            {
+                Helpers.InstallNativeMessagingHost(NativeHostBrowser.Chrome);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error installing native host");
+                GtkHelper.ShowMessageBox(this, TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
+                return;
+            }
+
+            try
+            {
+                BrowserLauncher.LaunchGoogleChrome(this.app.ChromeExtensionUrl);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error launching Google Chrome");
+                GtkHelper.ShowMessageBox(this, $"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Google Chrome");
+            }
+        }
+
+        private void VideoWikiLink_Clicked(object? sender, EventArgs e)
+        {
+            Helpers.OpenBrowser("https://subhra74.github.io/xdm/redirect-support.html?path=video");
         }
 
         private void LoadTexts()
@@ -191,6 +353,36 @@ namespace XDM.GtkUI.Dialogs.Settings
                 categoryStore.AppendValues(cat.DisplayName, string.Join(",", cat.FileExtensions), cat.DefaultFolder, cat);
             }
             //LvCategories.ItemsSource = categories;
+
+            //Network settings
+            GtkHelper.SetSelectedComboBoxValue<int>(CmbTimeOut, Config.Instance.NetworkTimeout);
+            GtkHelper.SetSelectedComboBoxValue<int>(CmbMaxSegments, Config.Instance.MaxSegments);
+            GtkHelper.SetSelectedComboBoxValue<int>(CmbMaxRetry, Config.Instance.MaxRetry);
+            TxtMaxSpeedLimit.Text = Config.Instance.DefaltDownloadSpeed.ToString();
+            ChkEnableSpeedLimit.Active = Config.Instance.EnableSpeedLimit;
+            CmbProxyType.Active = (int)(Config.Instance.Proxy?.ProxyType ?? ProxyType.System);
+            TxtProxyHost.Text = Config.Instance.Proxy?.Host;
+            TxtProxyPort.Text = (Config.Instance.Proxy?.Port ?? 0).ToString();
+            TxtProxyUser.Text = Config.Instance.Proxy?.UserName;
+            TxtProxyPassword.Text = Config.Instance.Proxy?.Password;
+
+            //Password manager
+            foreach (var password in Config.Instance.UserCredentials)
+            {
+                passwordStore.AppendValues(password.Host, password.User, password);
+            }
+
+            //Advanced settings
+            ChkHalt.Active = Config.Instance.ShutdownAfterAllFinished;
+            ChkKeepAwake.Active = Config.Instance.KeepPCAwake;
+            ChkRunCmd.Active = Config.Instance.RunCommandAfterCompletion;
+            ChkRunAntivirus.Active = Config.Instance.ScanWithAntiVirus;
+            ChkAutoRun.Active = Helpers.IsAutoStartEnabled();
+
+            TxtCustomCmd.Text = Config.Instance.AfterCompletionCommand;
+            TxtAntiVirusCmd.Text = Config.Instance.AntiVirusExecutable;
+            TxtAntiVirusArgs.Text = Config.Instance.AntiVirusArgs;
+            TxtDefaultUserAgent.Text = Config.Instance.FallbackUserAgent;
         }
 
         private void CreateCategoryListView()
@@ -210,6 +402,26 @@ namespace XDM.GtkUI.Dialogs.Settings
                     FixedWidth = 150
                 };
                 LvCategories.AppendColumn(treeViewColumn);
+            }
+        }
+
+        private void CreatePasswordManagerListView()
+        {
+            passwordStore = new ListStore(typeof(string), typeof(string), typeof(PasswordEntry));
+            LvPasswords.Model = passwordStore;
+
+            var k = 0;
+            foreach (var key in new string[] { "DESC_HOST", "DESC_USER" })
+            {
+                var cellRendererText = new CellRendererText();
+                var treeViewColumn = new TreeViewColumn(TextResource.GetText(key), cellRendererText, "text", k++)
+                {
+                    Resizable = true,
+                    Reorderable = false,
+                    Sizing = TreeViewColumnSizing.Fixed,
+                    FixedWidth = 150
+                };
+                LvPasswords.AppendColumn(treeViewColumn);
             }
         }
 
