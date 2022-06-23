@@ -33,7 +33,7 @@ namespace XDM.GtkUI.Dialogs.Settings
         [UI]
         Button BtnChrome, BtnFirefox, BtnEdge, BtnOpera, BtnDefault1, BtnDefault2,
             BtnDefault3, CatAdd, CatEdit, CatDel, CatDef, AddPass, EditPass, DelPass, BtnUserAgentReset,
-            BtnCopy1, BtnCopy2, BtnCancel, BtnOK, BtnDownloadFolderBrowse, BtnTempFolderBrowse;
+            BtnCopy1, BtnCopy2, BtnCancel, BtnOK, BtnDownloadFolderBrowse, BtnTempFolderBrowse, BtnBrowse;
         [UI]
         private CheckButton ChkMonitorClipboard, ChkTimestamp, ChkDarkTheme, ChkAutoCat, ChkShowPrg,
             ChkShowComplete, ChkStartAuto, ChkOverwrite, ChkEnableSpeedLimit, ChkHalt, ChkKeepAwake,
@@ -116,6 +116,23 @@ namespace XDM.GtkUI.Dialogs.Settings
             AddPass.Clicked += AddPass_Clicked;
             DelPass.Clicked += DelPass_Clicked;
             EditPass.Clicked += EditPass_Clicked;
+
+            BtnBrowse.Clicked += BtnBrowse_Clicked;
+            BtnUserAgentReset.Clicked += BtnUserAgentReset_Clicked;
+        }
+
+        private void BtnUserAgentReset_Clicked(object? sender, EventArgs e)
+        {
+            TxtDefaultUserAgent.Text = Config.DefaultFallbackUserAgent;
+        }
+
+        private void BtnBrowse_Clicked(object? sender, EventArgs e)
+        {
+            var file = GtkHelper.SelectFile(this);
+            if (!string.IsNullOrEmpty(file))
+            {
+                TxtAntiVirusCmd.Text = file;
+            }
         }
 
         private void EditPass_Clicked(object? sender, EventArgs e)
@@ -262,6 +279,7 @@ namespace XDM.GtkUI.Dialogs.Settings
             UpdateGeneralSettingsConfig();
             UpdateNetworkSettingsConfig();
             UpdatePasswordManagerConfig();
+            UpdateAdvancedSettingsConfig();
             Config.SaveConfig();
             app.ApplyConfig();
             Dispose();
@@ -660,6 +678,20 @@ namespace XDM.GtkUI.Dialogs.Settings
         private void UpdatePasswordManagerConfig()
         {
             Config.Instance.UserCredentials = GtkHelper.GetListStoreValues<PasswordEntry>(passwordStore, 2);
+        }
+
+        private void UpdateAdvancedSettingsConfig()
+        {
+            Config.Instance.ShutdownAfterAllFinished = ChkHalt.Active;
+            Config.Instance.KeepPCAwake = ChkKeepAwake.Active;
+            Config.Instance.RunCommandAfterCompletion = ChkRunCmd.Active;
+            Config.Instance.ScanWithAntiVirus = ChkRunAntivirus.Active;
+            Helpers.EnableAutoStart(ChkAutoRun.Active);
+
+            Config.Instance.AfterCompletionCommand = TxtCustomCmd.Text;
+            Config.Instance.AntiVirusExecutable = TxtAntiVirusCmd.Text;
+            Config.Instance.AntiVirusArgs = TxtAntiVirusArgs.Text;
+            Config.Instance.FallbackUserAgent = TxtDefaultUserAgent.Text;
         }
 
         public static SettingsDialog CreateFromGladeFile(Window parent, WindowGroup group, IAppUI ui, IApp app)
