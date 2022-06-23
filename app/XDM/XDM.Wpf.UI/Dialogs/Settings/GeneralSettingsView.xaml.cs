@@ -129,7 +129,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
             {
                 this.categories.Remove(cat);
             }
-            foreach (var cat in Config.Instance.Categories)
+            foreach (var cat in Config.DefaultCategories)
             {
                 this.categories.Add(cat);
             }

@@ -40,7 +40,7 @@
         </Grid>
         <StackPanel Grid.Row="6" Grid.Column="1" Margin="10,10" Orientation="Horizontal" HorizontalAlignment="Right"
                     Grid.ColumnSpan="3">
-            <Button Name="BtnOk" Content="{StaticResource MSG_OK}"  Padding="25,3" Click="BtnOk_Click"/>
+            <Button Name="BtnOk" Content="{StaticResource MSG_OK}" Margin="0" Padding="25,3" Click="BtnOk_Click"/>
             <Button Name="BtnCancel" Content="{StaticResource ND_CANCEL}" Margin="10,0,0,0" Padding="15,3" Click="BtnCancel_Click"/>
         </StackPanel>
     </Grid>

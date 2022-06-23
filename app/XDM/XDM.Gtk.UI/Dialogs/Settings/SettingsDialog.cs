@@ -33,7 +33,7 @@ namespace XDM.GtkUI.Dialogs.Settings
         [UI]
         Button BtnChrome, BtnFirefox, BtnEdge, BtnOpera, BtnDefault1, BtnDefault2,
             BtnDefault3, CatAdd, CatEdit, CatDel, CatDef, AddPass, EditPass, DelPass, BtnUserAgentReset,
-            BtnCopy1, BtnCopy2;
+            BtnCopy1, BtnCopy2, BtnCancel, BtnOK, BtnDownloadFolderBrowse, BtnTempFolderBrowse;
         [UI]
         private CheckButton ChkMonitorClipboard, ChkTimestamp, ChkDarkTheme, ChkAutoCat, ChkShowPrg,
             ChkShowComplete, ChkStartAuto, ChkOverwrite, ChkEnableSpeedLimit, ChkHalt, ChkKeepAwake,
@@ -44,9 +44,8 @@ namespace XDM.GtkUI.Dialogs.Settings
         [UI]
         private Entry TxtChromeWebStoreUrl, TxtFirefoxAMOUrl, TxtTempFolder, TxtDownloadFolder,
             TxtMaxSpeedLimit, TxtProxyHost, TxtProxyPort, TxtProxyUser, TxtProxyPassword,
-            TxtCustomCmd, TxtAntiVirusCmd, TxtAntiVirusArgs, TxtDefaultUserAgent;
-        [UI]
-        private TextView TxtExceptions, TxtDefaultVideoFormats, TxtDefaultFileTypes;
+            TxtCustomCmd, TxtAntiVirusCmd, TxtAntiVirusArgs, TxtDefaultUserAgent,
+            TxtExceptions, TxtDefaultVideoFormats, TxtDefaultFileTypes;
         [UI]
         private TreeView LvCategories, LvPasswords;
 
@@ -69,11 +68,14 @@ namespace XDM.GtkUI.Dialogs.Settings
             this.group.AddWindow(this);
             this.app = app;
             GtkHelper.AttachSafeDispose(this);
+
             LoadTexts();
+
             Title = TextResource.GetText("TITLE_SETTINGS");
             GtkHelper.PopulateComboBoxGeneric<int>(CmbMinVidSize, new int[] { 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768 });
             GtkHelper.PopulateComboBoxGeneric<int>(CmbMaxParallalDownloads, Enumerable.Range(1, 50).ToArray());
             GtkHelper.PopulateComboBox(CmbDblClickAction, TextResource.GetText("CTX_OPEN_FOLDER"), TextResource.GetText("MSG_OPEN_FILE"));
+
             CreateCategoryListView();
 
             GtkHelper.PopulateComboBoxGeneric<int>(CmbTimeOut, Enumerable.Range(1, 300).ToArray());
@@ -97,21 +99,188 @@ namespace XDM.GtkUI.Dialogs.Settings
 
             BtnCopy1.Image = new Image(GtkHelper.LoadSvg("file-copy-line"));
             BtnCopy2.Image = new Image(GtkHelper.LoadSvg("file-copy-line"));
+
+            BtnOK.Clicked += BtnOK_Clicked;
+            BtnCancel.Clicked += BtnCancel_Clicked;
+
+            BtnTempFolderBrowse.Clicked += BtnTempFolderBrowse_Clicked;
+            BtnDownloadFolderBrowse.Clicked += BtnDownloadFolderBrowse_Clicked;
+
+            CatAdd.Clicked += CatAdd_Clicked;
+            CatEdit.Clicked += CatEdit_Clicked;
+            CatDel.Clicked += CatDel_Clicked;
+            CatDef.Clicked += CatDef_Clicked;
+
+            CmbProxyType.Changed += CmbProxyType_Changed;
+
+            AddPass.Clicked += AddPass_Clicked;
+            DelPass.Clicked += DelPass_Clicked;
+            EditPass.Clicked += EditPass_Clicked;
+        }
+
+        private void EditPass_Clicked(object? sender, EventArgs e)
+        {
+            var passwd = GtkHelper.GetSelectedValue<PasswordEntry?>(this.LvPasswords, 2);
+            if (passwd.HasValue)
+            {
+                using var dlg = PasswordDialog.CreateFromGladeFile(this, this.group);
+                dlg.SetPassword(passwd.Value);
+                dlg.Run();
+                if (dlg.Result)
+                {
+                    var password = new PasswordEntry
+                    {
+                        Host = dlg.Host,
+                        User = dlg.UserName,
+                        Password = dlg.Password
+                    };
+                    if (LvPasswords.Selection.GetSelected(out var iter))
+                    {
+                        passwordStore.SetValues(iter, password.Host, password.User, password);
+                    }
+                }
+            }
+        }
+
+        private void DelPass_Clicked(object? sender, EventArgs e)
+        {
+            if (LvPasswords.Selection.GetSelected(out var iter))
+            {
+                passwordStore.Remove(ref iter);
+            }
+        }
+
+        private void AddPass_Clicked(object? sender, EventArgs e)
+        {
+            using var dlg = PasswordDialog.CreateFromGladeFile(this, this.group);
+            dlg.Run();
+            if (dlg.Result)
+            {
+                var password = new PasswordEntry
+                {
+                    Host = dlg.Host,
+                    User = dlg.UserName,
+                    Password = dlg.Password
+                };
+                passwordStore.AppendValues(password.Host, password.User, password);
+            }
+        }
+
+        private void CmbProxyType_Changed(object? sender, EventArgs e)
+        {
+            TxtProxyUser.Sensitive = TxtProxyPassword.Sensitive = TxtProxyHost.Sensitive =
+                TxtProxyPort.Sensitive = CmbProxyType.Active == 2;
+        }
+
+        private void CatDef_Clicked(object? sender, EventArgs e)
+        {
+            categoryStore.Clear();
+            foreach (var cat in Config.DefaultCategories)
+            {
+                categoryStore.AppendValues(cat.DisplayName, string.Join(",", cat.FileExtensions), cat.DefaultFolder, cat);
+            }
+        }
+
+        private void CatDel_Clicked(object? sender, EventArgs e)
+        {
+            if (LvCategories.Selection.GetSelected(out var iter))
+            {
+                categoryStore.Remove(ref iter);
+            }
+        }
+
+        private void CatEdit_Clicked(object? sender, EventArgs e)
+        {
+            var cat = GtkHelper.GetSelectedValue<Category?>(this.LvCategories, 3);
+            if (cat.HasValue)
+            {
+                using var dlg = CategoryEditDialog.CreateFromGladeFile(this, this.group);
+                dlg.SetCategory(cat.Value);
+                dlg.Run();
+                if (dlg.Result)
+                {
+                    var cat1 = new Category
+                    {
+                        Name = cat.Value.Name,
+                        DisplayName = dlg.DisplayName!,
+                        DefaultFolder = dlg.Folder!,
+                        FileExtensions = new HashSet<string>(dlg.FileTypes!.Replace("\r\n", "")
+                        .Split(',').Select(x => x.Trim()).Where(x => x.Length > 0))
+                    };
+                    if (LvCategories.Selection.GetSelected(out var iter))
+                    {
+                        categoryStore.SetValues(iter, cat1.DisplayName, string.Join(",", cat1.FileExtensions), cat1.DefaultFolder, cat1);
+                    }
+                }
+            }
+        }
+
+        private void CatAdd_Clicked(object? sender, EventArgs e)
+        {
+            using var dlg = CategoryEditDialog.CreateFromGladeFile(this, this.group);
+            dlg.Run();
+            if (dlg.Result)
+            {
+                var cat = new Category
+                {
+                    Name = Guid.NewGuid().ToString(),
+                    DisplayName = dlg.DisplayName!,
+                    DefaultFolder = dlg.Folder!,
+                    FileExtensions = new HashSet<string>(dlg.FileTypes!.Replace("\r\n", "")
+                    .Split(',').Select(x => x.Trim()).Where(x => x.Length > 0))
+                };
+                categoryStore.AppendValues(cat.DisplayName, string.Join(",", cat.FileExtensions), cat.DefaultFolder, cat);
+            }
+        }
+
+        private void BtnDownloadFolderBrowse_Clicked(object? sender, EventArgs e)
+        {
+            var folder = GtkHelper.SelectFolder(this);
+            if (!string.IsNullOrEmpty(folder))
+            {
+                TxtDownloadFolder.Text = folder;
+            }
+        }
+
+        private void BtnTempFolderBrowse_Clicked(object? sender, EventArgs e)
+        {
+            var folder = GtkHelper.SelectFolder(this);
+            if (!string.IsNullOrEmpty(folder))
+            {
+                TxtTempFolder.Text = folder;
+            }
+        }
+
+        private void BtnCancel_Clicked(object? sender, EventArgs e)
+        {
+            Dispose();
+        }
+
+        private void BtnOK_Clicked(object? sender, EventArgs e)
+        {
+            UpdateBrowserMonitoringConfig();
+            UpdateGeneralSettingsConfig();
+            UpdateNetworkSettingsConfig();
+            UpdatePasswordManagerConfig();
+            Config.SaveConfig();
+            app.ApplyConfig();
+            Dispose();
+            Helpers.RunGC();
         }
 
         private void BtnDefault3_Clicked(object? sender, EventArgs e)
         {
-            TxtExceptions.Buffer.Text = string.Join(",", Config.DefaultBlockedHosts);
+            TxtExceptions.Text = string.Join(",", Config.DefaultBlockedHosts);
         }
 
         private void BtnDefault2_Clicked(object? sender, EventArgs e)
         {
-            TxtDefaultVideoFormats.Buffer.Text = string.Join(",", Config.DefaultVideoExtensions);
+            TxtDefaultVideoFormats.Text = string.Join(",", Config.DefaultVideoExtensions);
         }
 
         private void BtnDefault1_Clicked(object? sender, EventArgs e)
         {
-            TxtDefaultFileTypes.Buffer.Text = string.Join(",", Config.DefaultFileExtensions);
+            TxtDefaultFileTypes.Text = string.Join(",", Config.DefaultFileExtensions);
         }
 
         private void BtnCopy2_Clicked(object? sender, EventArgs e)
@@ -321,6 +490,9 @@ namespace XDM.GtkUI.Dialogs.Settings
             Label28.Text = TextResource.GetText("ANTIVIR_CMD");
             Label29.Text = TextResource.GetText("ANTIVIR_ARGS");
             Label30.Text = TextResource.GetText("MSG_FALLBACK_UA");
+
+            BtnOK.Label = TextResource.GetText("DESC_SAVE_Q");
+            BtnCancel.Label = TextResource.GetText("ND_CANCEL");
         }
 
         public void LoadConfig()
@@ -328,9 +500,9 @@ namespace XDM.GtkUI.Dialogs.Settings
             //Browser monitoring
             TxtChromeWebStoreUrl.Text = Config.ChromeWebstoreUrl;
             TxtFirefoxAMOUrl.Text = Config.FirefoxAMOUrl;
-            TxtDefaultFileTypes.Buffer.Text = string.Join(",", Config.Instance.FileExtensions);
-            TxtDefaultVideoFormats.Buffer.Text = string.Join(",", Config.Instance.VideoExtensions);
-            TxtExceptions.Buffer.Text = string.Join(",", Config.Instance.BlockedHosts);
+            TxtDefaultFileTypes.Text = string.Join(",", Config.Instance.FileExtensions);
+            TxtDefaultVideoFormats.Text = string.Join(",", Config.Instance.VideoExtensions);
+            TxtExceptions.Text = string.Join(",", Config.Instance.BlockedHosts);
             GtkHelper.SetSelectedComboBoxValue<int>(CmbMinVidSize, Config.Instance.MinVideoSize);
             ChkMonitorClipboard.Active = Config.Instance.MonitorClipboard;
             ChkTimestamp.Active = Config.Instance.FetchServerTimeStamp;
@@ -343,7 +515,6 @@ namespace XDM.GtkUI.Dialogs.Settings
             ChkDarkTheme.Active = Config.Instance.AllowSystemDarkTheme;
             TxtTempFolder.Text = Config.Instance.TempDir;
             GtkHelper.SetSelectedComboBoxValue<int>(CmbMaxParallalDownloads, Config.Instance.MaxParallelDownloads);
-            //CmbMaxParallalDownloads.SelectedItem = Config.Instance.MaxParallelDownloads;
             ChkAutoCat.Active = Config.Instance.FolderSelectionMode == FolderSelectionMode.Auto;
             TxtDownloadFolder.Text = Config.Instance.DefaultDownloadFolder;
             CmbDblClickAction.Active = Config.Instance.DoubleClickOpenFile ? 1 : 0;
@@ -352,7 +523,6 @@ namespace XDM.GtkUI.Dialogs.Settings
             {
                 categoryStore.AppendValues(cat.DisplayName, string.Join(",", cat.FileExtensions), cat.DefaultFolder, cat);
             }
-            //LvCategories.ItemsSource = categories;
 
             //Network settings
             GtkHelper.SetSelectedComboBoxValue<int>(CmbTimeOut, Config.Instance.NetworkTimeout);
@@ -403,6 +573,14 @@ namespace XDM.GtkUI.Dialogs.Settings
                 };
                 LvCategories.AppendColumn(treeViewColumn);
             }
+
+            LvCategories.Selection.Changed += CategorySelection_Changed;
+        }
+
+        private void CategorySelection_Changed(object? sender, EventArgs e)
+        {
+            var count = LvCategories.Selection.CountSelectedRows();
+            CatEdit.Sensitive = CatDel.Sensitive = count > 0;
         }
 
         private void CreatePasswordManagerListView()
@@ -423,6 +601,65 @@ namespace XDM.GtkUI.Dialogs.Settings
                 };
                 LvPasswords.AppendColumn(treeViewColumn);
             }
+            LvPasswords.Selection.Changed += Selection_Changed; ;
+        }
+
+        private void Selection_Changed(object? sender, EventArgs e)
+        {
+            var count = LvPasswords.Selection.CountSelectedRows();
+            EditPass.Sensitive = DelPass.Sensitive = count > 0;
+        }
+
+        private void UpdateBrowserMonitoringConfig()
+        {
+            Config.Instance.FileExtensions = TxtDefaultFileTypes.Text.Split(',').Select(x => x.Trim()).Where(x => x.Length > 0).ToArray();
+            Config.Instance.VideoExtensions = TxtDefaultVideoFormats.Text.Split(',').Select(x => x.Trim()).Where(x => x.Length > 0).ToArray();
+            Config.Instance.BlockedHosts = TxtExceptions.Text.Split(',').Select(x => x.Trim()).Where(x => x.Length > 0).ToArray();
+            Config.Instance.FetchServerTimeStamp = ChkTimestamp.Active;
+            Config.Instance.MonitorClipboard = ChkMonitorClipboard.Active;
+            Config.Instance.MinVideoSize = GtkHelper.GetSelectedComboBoxValue<int>(CmbMinVidSize);
+        }
+
+        private void UpdateGeneralSettingsConfig()
+        {
+            Config.Instance.ShowProgressWindow = ChkShowPrg.Active;
+            Config.Instance.ShowDownloadCompleteWindow = ChkShowComplete.Active;
+            Config.Instance.StartDownloadAutomatically = ChkStartAuto.Active;
+            Config.Instance.FileConflictResolution =
+                ChkOverwrite.Active ? FileConflictResolution.Overwrite : FileConflictResolution.AutoRename;
+            Config.Instance.TempDir = TxtTempFolder.Text;
+            Config.Instance.MaxParallelDownloads = GtkHelper.GetSelectedComboBoxValue<int>(CmbMaxParallalDownloads);
+            Config.Instance.Categories = GtkHelper.GetListStoreValues<Category>(categoryStore, 3);
+            Config.Instance.FolderSelectionMode = ChkAutoCat.Active ? FolderSelectionMode.Auto : FolderSelectionMode.Manual;
+            Config.Instance.DefaultDownloadFolder = TxtDownloadFolder.Text;
+            Config.Instance.AllowSystemDarkTheme = ChkDarkTheme.Active;
+            Config.Instance.DoubleClickOpenFile = CmbDblClickAction.Active == 1;
+        }
+
+        private void UpdateNetworkSettingsConfig()
+        {
+            Config.Instance.NetworkTimeout = GtkHelper.GetSelectedComboBoxValue<int>(CmbTimeOut);
+            Config.Instance.MaxSegments = GtkHelper.GetSelectedComboBoxValue<int>(CmbMaxSegments);
+            Config.Instance.MaxRetry = GtkHelper.GetSelectedComboBoxValue<int>(CmbMaxRetry);
+            if (Int32.TryParse(TxtMaxSpeedLimit.Text, out int speed))
+            {
+                Config.Instance.DefaltDownloadSpeed = speed;
+            }
+            Config.Instance.EnableSpeedLimit = ChkEnableSpeedLimit.Active;
+            Int32.TryParse(TxtProxyPort.Text, out int port);
+            Config.Instance.Proxy = new ProxyInfo
+            {
+                ProxyType = (ProxyType)CmbProxyType.Active,
+                Host = TxtProxyHost.Text,
+                UserName = TxtProxyUser.Text,
+                Password = TxtProxyPassword.Text,
+                Port = port
+            };
+        }
+
+        private void UpdatePasswordManagerConfig()
+        {
+            Config.Instance.UserCredentials = GtkHelper.GetListStoreValues<PasswordEntry>(passwordStore, 2);
         }
 
         public static SettingsDialog CreateFromGladeFile(Window parent, WindowGroup group, IAppUI ui, IApp app)
