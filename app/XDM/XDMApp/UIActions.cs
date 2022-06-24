@@ -6,6 +6,7 @@ using System.Linq;
 using TraceLog;
 using Translations;
 using XDM.Core.Lib.Common;
+using XDM.Core.Lib.DataAccess;
 using XDM.Core.Lib.Downloader;
 using XDM.Core.Lib.UI;
 using XDM.Core.Lib.Util;
@@ -28,6 +29,8 @@ namespace XDMApp
                         {
                             peer.Delete(item);
                             app.RemoveDownload(item.DownloadEntry, false);
+                            AppDB.Instance.DownloadsDB.RemoveDownloadById(item.DownloadEntry.Id);
+
                         }
                     }
                     callback?.Invoke(true);
@@ -44,6 +47,7 @@ namespace XDMApp
                     {
                         app.RemoveDownload(selectedRow.DownloadEntry, deleteFiles);
                         peer.Delete(selectedRow);
+                        AppDB.Instance.DownloadsDB.RemoveDownloadById(selectedRow.DownloadEntry.Id);
                     }
                     callback?.Invoke(false);
                 }

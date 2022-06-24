@@ -29,9 +29,9 @@ namespace XDM.Wpf.UI.Dialogs.LanguageSettings
         {
             InitializeComponent();
             var indexFile = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Lang\index.txt");
-            if (System.IO.File.Exists(indexFile))
+            if (File.Exists(indexFile))
             {
-                var lines = System.IO.File.ReadAllLines(indexFile);
+                var lines = File.ReadAllLines(indexFile);
                 var items = new List<FileMap>(lines.Length);
                 FileMap selection = default;
                 foreach (var line in lines)
@@ -54,9 +54,6 @@ namespace XDM.Wpf.UI.Dialogs.LanguageSettings
                     }
                 }
                 CmbLanguage.ItemsSource = items;
-                //CmbLanguage.ItemsSource = Directory.GetFiles(
-                //    System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Lang"))
-                //    ?.Select(x => System.IO.Path.GetFileNameWithoutExtension(x));
                 CmbLanguage.SelectedItem = selection;
             }
         }
@@ -67,7 +64,7 @@ namespace XDM.Wpf.UI.Dialogs.LanguageSettings
             NativeMethods.DisableMinMaxButton(this);
 
 #if NET45_OR_GREATER
-            if (XDM.Wpf.UI.App.Skin == Skin.Dark)
+            if (App.Skin == Skin.Dark)
             {
                 var helper = new WindowInteropHelper(this);
                 helper.EnsureHandle();
@@ -97,7 +94,6 @@ namespace XDM.Wpf.UI.Dialogs.LanguageSettings
     internal struct FileMap
     {
         public string Name, File;
-
         public override string ToString()
         {
             return Name;

@@ -52,7 +52,7 @@
           </packing>
         </child>
         <child>
-          <object class="GtkNotebook">
+          <object class="GtkNotebook" id="Tabs">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="margin-start">10</property>

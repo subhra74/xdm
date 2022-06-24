@@ -49,6 +49,9 @@ namespace XDM.GtkUI.Dialogs.Settings
         [UI]
         private TreeView LvCategories, LvPasswords;
 
+        [UI]
+        private Notebook Tabs;
+
         private ListStore categoryStore, passwordStore;
         private IApp app;
 
@@ -143,6 +146,7 @@ namespace XDM.GtkUI.Dialogs.Settings
                 using var dlg = PasswordDialog.CreateFromGladeFile(this, this.group);
                 dlg.SetPassword(passwd.Value);
                 dlg.Run();
+                dlg.Destroy();
                 if (dlg.Result)
                 {
                     var password = new PasswordEntry
@@ -171,6 +175,7 @@ namespace XDM.GtkUI.Dialogs.Settings
         {
             using var dlg = PasswordDialog.CreateFromGladeFile(this, this.group);
             dlg.Run();
+            dlg.Destroy();
             if (dlg.Result)
             {
                 var password = new PasswordEntry
@@ -214,6 +219,7 @@ namespace XDM.GtkUI.Dialogs.Settings
                 using var dlg = CategoryEditDialog.CreateFromGladeFile(this, this.group);
                 dlg.SetCategory(cat.Value);
                 dlg.Run();
+                dlg.Destroy();
                 if (dlg.Result)
                 {
                     var cat1 = new Category
@@ -236,6 +242,7 @@ namespace XDM.GtkUI.Dialogs.Settings
         {
             using var dlg = CategoryEditDialog.CreateFromGladeFile(this, this.group);
             dlg.Run();
+            dlg.Destroy();
             if (dlg.Result)
             {
                 var cat = new Category
@@ -692,6 +699,11 @@ namespace XDM.GtkUI.Dialogs.Settings
             Config.Instance.AntiVirusExecutable = TxtAntiVirusCmd.Text;
             Config.Instance.AntiVirusArgs = TxtAntiVirusArgs.Text;
             Config.Instance.FallbackUserAgent = TxtDefaultUserAgent.Text;
+        }
+
+        public void SetActivePage(int page)
+        {
+            Tabs.Page = page;
         }
 
         public static SettingsDialog CreateFromGladeFile(Window parent, WindowGroup group, IAppUI ui, IApp app)

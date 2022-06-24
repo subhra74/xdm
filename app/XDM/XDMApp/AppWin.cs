@@ -574,6 +574,7 @@ namespace XDMApp
             peer.ClearAllFinishedClicked += (s, e) =>
             {
                 peer.DeleteAllFinishedDownloads();
+                AppDB.Instance.DownloadsDB.RemoveAllFinished();
                 //SaveFinishedList();
             };
 

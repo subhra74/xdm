@@ -275,12 +275,14 @@ namespace XDM.GtkUI
 
         private void MenuBrowserMonitor_Activated(object? sender, EventArgs e)
         {
-            throw new NotImplementedException();
+            this.BrowserMonitoringSettingsClicked?.Invoke(this, e);
         }
 
         private void MenuLanguage_Activated(object? sender, EventArgs e)
         {
-            throw new NotImplementedException();
+            using var win = LanguageDialog.CreateFromGladeFile(this, windowGroup);
+            win.Run();
+            win.Destroy();
         }
 
         private void MenuImport_Activated(object? sender, EventArgs e)
@@ -295,7 +297,7 @@ namespace XDM.GtkUI
 
         private void MenuClearFinished_Activated(object? sender, EventArgs e)
         {
-            throw new NotImplementedException();
+            this.ClearAllFinishedClicked?.Invoke(sender, e);
         }
 
         private void MenuSettings_Activated(object? sender, EventArgs e)
@@ -1159,7 +1161,7 @@ namespace XDM.GtkUI
 
         public void DeleteAllFinishedDownloads()
         {
-            if (GtkHelper.ShowConfirmMessageBox(this, TextResource.GetText("MENU_DELETE_COMPLETED"), "XDM"))
+            if (!GtkHelper.ShowConfirmMessageBox(this, TextResource.GetText("MENU_DELETE_COMPLETED"), "XDM"))
             {
                 return;
             }
@@ -1292,6 +1294,7 @@ namespace XDM.GtkUI
         public void ShowSettingsDialog(IApp app, int page = 0)
         {
             using var win = SettingsDialog.CreateFromGladeFile(this, windowGroup, app.AppUI, app);
+            win.SetActivePage(page);
             win.LoadConfig();
             win.Run();
             win.Destroy();
@@ -1314,12 +1317,12 @@ namespace XDM.GtkUI
 
         public void ShowBrowserMonitoringDialog(IApp app)
         {
-            throw new NotImplementedException();
+            ShowSettingsDialog(app, 0);
         }
 
         public void UpdateParallalismLabel()
         {
-            
+
         }
 
         public IUpdaterUI CreateUpdateUIDialog(IAppUI ui)

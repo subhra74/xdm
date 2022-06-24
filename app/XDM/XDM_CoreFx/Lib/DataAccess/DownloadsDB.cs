@@ -22,7 +22,7 @@ namespace XDM.Core.Lib.DataAccess
         }
 
         private SQLiteCommand cmdFetchAll, cmdFetchConditional, cmdFetchOne, cmdUpdateProgress, cmdUpdateTargetDir,
-            cmdInsertOne, cmdMarkFinished, cmdUpdateStatus, cmdUpdateNameAndSize, cmdUpdateNameAndFolder, cmdUpdateOne;
+            cmdInsertOne, cmdMarkFinished, cmdUpdateStatus, cmdUpdateNameAndSize, cmdUpdateNameAndFolder, cmdUpdateOne, cmdDelete;
 
         public bool LoadDownloads(
             out List<InProgressDownloadEntry> inProgressDownloads,
@@ -417,6 +417,46 @@ namespace XDM.Core.Lib.DataAccess
                     SetParam("@targetdir", folder, cmdUpdateNameAndFolder.Parameters);
                     SetParam("@id", id, cmdUpdateNameAndFolder.Parameters);
                     cmdUpdateNameAndFolder.ExecuteNonQuery();
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex, ex.Message);
+                    return false;
+                }
+            }
+        }
+
+        public bool RemoveAllFinished()
+        {
+            lock (db)
+            {
+                try
+                {
+                    using var cmdClearAllFinished = new SQLiteCommand("DELETE FROM downloads WHERE completed=1", db);
+                    cmdClearAllFinished.ExecuteNonQuery();
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex, ex.Message);
+                    return false;
+                }
+            }
+        }
+
+        public bool RemoveDownloadById(string id)
+        {
+            lock (db)
+            {
+                try
+                {
+                    if (cmdDelete == null)
+                    {
+                        cmdDelete = new SQLiteCommand("DELETE FROM downloads WHERE id=@id", db);
+                    }
+                    SetParam("@id", id, cmdDelete.Parameters);
+                    cmdDelete.ExecuteNonQuery();
                     return true;
                 }
                 catch (Exception ex)
