@@ -196,6 +196,7 @@ namespace XDM.GtkUI
             menuInProgress.Append(((MenuItemWrapper)dict["schedule"]).MenuItem);
             menuInProgress.Append(((MenuItemWrapper)dict["showProgress"]).MenuItem);
             menuInProgress.Append(((MenuItemWrapper)dict["copyURL"]).MenuItem);
+            menuInProgress.Append(((MenuItemWrapper)dict["moveToQueue"]).MenuItem);
             menuInProgress.Append(((MenuItemWrapper)dict["properties"]).MenuItem);
             menuInProgress.ShowAll();
 
@@ -263,17 +264,17 @@ namespace XDM.GtkUI
 
         private void MenuCheckForUpdate_Activated(object? sender, EventArgs e)
         {
-            throw new NotImplementedException();
+            UpdateClicked?.Invoke(sender, e);
         }
 
         private void MenuReportProblem_Activated(object? sender, EventArgs e)
         {
-            throw new NotImplementedException();
+            BugReportClicked?.Invoke(sender, e);
         }
 
         private void MenuHelpAndSupport_Activated(object? sender, EventArgs e)
         {
-            throw new NotImplementedException();
+            SupportPageClicked?.Invoke(sender, e);
         }
 
         private void MenuBrowserMonitor_Activated(object? sender, EventArgs e)
@@ -290,12 +291,12 @@ namespace XDM.GtkUI
 
         private void MenuImport_Activated(object? sender, EventArgs e)
         {
-            throw new NotImplementedException();
+            ImportClicked?.Invoke(sender, e);
         }
 
         private void MenuExport_Activated(object? sender, EventArgs e)
         {
-            throw new NotImplementedException();
+            ExportClicked?.Invoke(sender, e);
         }
 
         private void MenuClearFinished_Activated(object? sender, EventArgs e)
@@ -1303,16 +1304,6 @@ namespace XDM.GtkUI
             win.Destroy();
         }
 
-        public void ImportDownloads(IApp app)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void ExportDownloads(IApp app)
-        {
-            throw new NotImplementedException();
-        }
-
         public void UpdateBrowserMonitorButton()
         {
             btnMonitoring.Active = Config.Instance.IsBrowserMonitoringEnabled;
@@ -1450,7 +1441,8 @@ namespace XDM.GtkUI
 
         public IQueueSelectionDialog CreateQueueSelectionDialog()
         {
-            throw new NotImplementedException();
+            var qsd = QueueSelectionDialog.CreateFromGladeFile(this, windowGroup);
+            return qsd;
         }
 
         public void ConfirmDelete(string text, out bool approved, out bool deleteFiles)

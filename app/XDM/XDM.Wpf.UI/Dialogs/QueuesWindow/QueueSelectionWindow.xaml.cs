@@ -25,7 +25,10 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
             InitializeComponent();
         }
 
-        public void SetData(IEnumerable<string> queueNames, IEnumerable<string> queueIds, IEnumerable<string> downloadIds)
+        public void SetData(
+            IEnumerable<string> queueNames,
+            IEnumerable<string> queueIds,
+            IEnumerable<string> downloadIds)
         {
             this.queueIds = queueIds;
             this.downloadIds = downloadIds;
@@ -44,7 +47,7 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
             NativeMethods.DisableMinMaxButton(this);
 
 #if NET45_OR_GREATER
-            if (XDM.Wpf.UI.App.Skin == Skin.Dark)
+            if (App.Skin == Skin.Dark)
             {
                 var helper = new WindowInteropHelper(this);
                 helper.EnsureHandle();
@@ -66,5 +69,7 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
             QueueSelected = null;
             Close();
         }
+
+        public void Dispose() { }
     }
 }

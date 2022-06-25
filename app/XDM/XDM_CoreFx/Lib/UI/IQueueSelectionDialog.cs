@@ -6,7 +6,7 @@ using System.Text;
 
 namespace XDM.Core.Lib.UI
 {
-    public interface IQueueSelectionDialog
+    public interface IQueueSelectionDialog : IDisposable
     {
         event EventHandler<QueueSelectionEventArgs>? QueueSelected;
         event EventHandler? ManageQueuesClicked;

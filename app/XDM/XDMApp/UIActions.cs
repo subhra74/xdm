@@ -143,7 +143,7 @@ namespace XDMApp
             {
                 return;
             }
-            var queueSelectionDialog = peer.CreateQueueSelectionDialog();
+            using var queueSelectionDialog = peer.CreateQueueSelectionDialog();
             queueSelectionDialog.SetData(QueueManager.Queues.Select(q => q.Name), QueueManager.Queues.Select(q => q.ID), selectedIds);
             queueSelectionDialog.ManageQueuesClicked += (_, _) =>
             {
