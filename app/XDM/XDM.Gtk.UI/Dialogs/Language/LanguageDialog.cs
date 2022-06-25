@@ -12,7 +12,7 @@ using UI = Gtk.Builder.ObjectAttribute;
 using XDM.GtkUI.Utils;
 using System.IO;
 
-namespace XDM.GtkUI.Dialogs
+namespace XDM.GtkUI.Dialogs.Language
 {
     public class LanguageDialog : Dialog
     {

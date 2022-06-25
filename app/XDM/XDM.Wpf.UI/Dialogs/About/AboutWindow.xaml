@@ -16,9 +16,9 @@
                 <Rectangle Width="30" Height="50" Fill="White" Canvas.Left="49" Canvas.Top="30"/>
                 <Polygon Points="34,70 94,70, 64,100" Fill="White" />
             </Canvas>
-            <TextBlock Text="Xtreme Download Manager 8.0.1 BETA " FontSize="16" Padding="10,20,10,10" HorizontalAlignment="Center"/>
-            <TextBlock Text="© 2013 Subhra Das Gupta" Padding="10,0" HorizontalAlignment="Center"/>
-            <TextBlock Text="www.xtremedownloadmanager.com" Cursor="Hand" Foreground="DeepSkyBlue" 
+            <TextBlock Name="TxtAppVersion"  FontSize="16" Padding="10,20,10,10" HorizontalAlignment="Center"/>
+            <TextBlock Name="TxtCopyright"  Padding="10,0" HorizontalAlignment="Center"/>
+            <TextBlock Name="TxtWebsite"  Cursor="Hand" Foreground="DeepSkyBlue" 
                        Padding="10" FontSize="14" HorizontalAlignment="Center" MouseDown="TextBlock_MouseDown"/>
         </StackPanel>
     </Grid>

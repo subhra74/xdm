@@ -25,6 +25,9 @@ namespace XDM.Wpf.UI.Dialogs.About
         public AboutWindow()
         {
             InitializeComponent();
+            this.TxtAppVersion.Text = "Xtreme Download Manager 8.0.1 BETA";
+            this.TxtCopyright.Text = "© 2013 Subhra Das Gupta";
+            this.TxtWebsite.Text = "www.xtremedownloadmanager.com";
         }
 
         public bool Result { get; set; }

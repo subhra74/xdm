@@ -33,6 +33,7 @@ using XDM.GtkUI.Dialogs.DownloadSelection;
 using XDM.GtkUI.Dialogs.LinkRefresh;
 using XDM.GtkUI.Dialogs.Properties;
 using XDM.GtkUI.Dialogs.Settings;
+using XDM.GtkUI.Dialogs.Language;
 
 namespace XDM.GtkUI
 {
@@ -255,7 +256,9 @@ namespace XDM.GtkUI
 
         private void MenuAbout_Activated(object? sender, EventArgs e)
         {
-            throw new NotImplementedException();
+            using var win = XDM.GtkUI.Dialogs.About.AboutDialog.CreateFromGladeFile(this, windowGroup);
+            win.Run();
+            win.Destroy();
         }
 
         private void MenuCheckForUpdate_Activated(object? sender, EventArgs e)
