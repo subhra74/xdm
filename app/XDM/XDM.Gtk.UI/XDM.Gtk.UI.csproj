@@ -1,39 +1,41 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-	<PropertyGroup>
-		<OutputType>Exe</OutputType>
-		<TargetFramework>net6.0</TargetFramework>
-		<InvariantGlobalization>true</InvariantGlobalization>
-		<PublishTrimmed>true</PublishTrimmed>
-		<TrimMode>Link</TrimMode>
-		<RootNamespace>XDM.GtkUI</RootNamespace>
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <PublishTrimmed>true</PublishTrimmed>
+    <!--<TrimMode>CopyUsed</TrimMode>-->
+    <!--<PublishTrimmed>true</PublishTrimmed>
+		<TrimMode>Link</TrimMode>-->
+    <RootNamespace>XDM.GtkUI</RootNamespace>
     <!--RuntimeIdentifier>linux-x64</RuntimeIdentifier-->
     <!--RuntimeIdentifier>win-x64</RuntimeIdentifier-->
     <!--RuntimeIdentifier>win-x86</RuntimeIdentifier-->
-		<!--<Platforms>AnyCPU;x86</Platforms>-->
-		<Platforms>AnyCPU;x64</Platforms>
+    <!--<Platforms>AnyCPU;x86</Platforms>-->
+    <Platforms>AnyCPU;x64</Platforms>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
-	</PropertyGroup>
+  </PropertyGroup>
 
-	<ItemGroup>
-		<PackageReference Include="GtkSharp" Version="3.24.24.38" />
-		<PackageReference Include="Serilog" Version="2.10.0" />
-		<PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
-		<PackageReference Include="Serilog.Sinks.File" Version="4.1.0" />
-	</ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="GtkSharp" Version="3.24.24.38" />
+    <PackageReference Include="Serilog" Version="2.10.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
+    <PackageReference Include="Serilog.Sinks.File" Version="4.1.0" />
+  </ItemGroup>
 
-	<ItemGroup>
-		<Content Include="images\*.*">
+  <ItemGroup>
+    <!--<Content Include="images\*.*">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</Content>
-		<Content Include="glade\*.*">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</Content>
+		</Content>-->
+    <Content Include="glade\*.*">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="svg-icons\*.*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-	</ItemGroup>
+  </ItemGroup>
 
   <ItemGroup>
     <LangFiles Include="$(SolutionDir)\Lang\**" />
@@ -43,7 +45,7 @@
     <Copy SourceFiles="@(LangFiles)" DestinationFolder="$(OutDir)\Lang" />
   </Target>
 
-	<ItemGroup>
+  <!--<ItemGroup>
 		<None Remove="glade\advanced-download-dialog.glade" />
 		<None Remove="glade\advanced-download-window.glade" />
 		<None Remove="glade\download-complete-window.glade" />
@@ -78,46 +80,46 @@
 		<None Remove="svg-icons\list-settings-fill.svg" />
 		<None Remove="svg-icons\notification-3-fill.svg" />
 		<None Remove="svg-icons\question-line.svg" />
-	</ItemGroup>
+	</ItemGroup>-->
 
-	<ItemGroup>
-	  <ProjectReference Include="..\Translations\Translations.csproj" />
-	  <ProjectReference Include="..\XDMApp\XDMApp.csproj" />
-	  <ProjectReference Include="..\XDM_CoreFx\XDM.Core.csproj" />
-	</ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Translations\Translations.csproj" />
+    <ProjectReference Include="..\XDMApp\XDMApp.csproj" />
+    <ProjectReference Include="..\XDM_CoreFx\XDM.Core.csproj" />
+  </ItemGroup>
 
-	<ItemGroup>
-	  <Reference Include="AtkSharp">
-	    <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\AtkSharp.dll</HintPath>
-	  </Reference>
-	  <Reference Include="CairoSharp">
-	    <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\CairoSharp.dll</HintPath>
-	  </Reference>
-	  <Reference Include="GdkSharp">
-	    <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\GdkSharp.dll</HintPath>
-	  </Reference>
-	  <Reference Include="GioSharp">
-	    <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\GioSharp.dll</HintPath>
-	  </Reference>
-	  <Reference Include="GLibSharp">
-	    <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\GLibSharp.dll</HintPath>
-	  </Reference>
-	  <Reference Include="GtkSharp">
-	    <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\GtkSharp.dll</HintPath>
-	  </Reference>
-	  <Reference Include="GtkSourceSharp">
-	    <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\GtkSourceSharp.dll</HintPath>
-	  </Reference>
-	  <Reference Include="PangoSharp">
-	    <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\PangoSharp.dll</HintPath>
-	  </Reference>
-	</ItemGroup>
+  <ItemGroup>
+    <Reference Include="AtkSharp">
+      <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\AtkSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="CairoSharp">
+      <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\CairoSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="GdkSharp">
+      <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\GdkSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="GioSharp">
+      <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\GioSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="GLibSharp">
+      <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\GLibSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="GtkSharp">
+      <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\GtkSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="GtkSourceSharp">
+      <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\GtkSourceSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="PangoSharp">
+      <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\PangoSharp.dll</HintPath>
+    </Reference>
+  </ItemGroup>
 
-	<ItemGroup>
+  <!--<ItemGroup>
 	  <Content Update="glade\download-complete-window.glade">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </Content>
-	</ItemGroup>
+	</ItemGroup>-->
 
 
 </Project>
