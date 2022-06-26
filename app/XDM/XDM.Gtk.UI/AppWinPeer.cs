@@ -34,6 +34,7 @@ using XDM.GtkUI.Dialogs.LinkRefresh;
 using XDM.GtkUI.Dialogs.Properties;
 using XDM.GtkUI.Dialogs.Settings;
 using XDM.GtkUI.Dialogs.Language;
+using XDM.GtkUI.Dialogs.Updater;
 
 namespace XDM.GtkUI
 {
@@ -50,7 +51,7 @@ namespace XDM.GtkUI
         private TreeModelSort finishedDownloadsStoreSorted;
         private string? searchKeyword;
         private Category? category;
-        private Button btnNew, btnDel, btnOpenFile, btnOpenFolder, btnResume, btnPause, btnMenu;
+        private Button btnNew, btnDel, btnOpenFile, btnOpenFolder, btnResume, btnPause, btnMenu, btnHelp, btnScheduler;
         private IButton newButton, deleteButton, pauseButton, resumeButton, openFileButton, openFolderButton;
         private IMenuItem[] menuItems;
         private Menu newDownloadMenu;
@@ -58,6 +59,7 @@ namespace XDM.GtkUI
         private WindowGroup windowGroup;
         private CheckButton btnMonitoring;
         private bool isUpdateAvailable;
+        private Image helpImage;
 
         public IEnumerable<FinishedDownloadEntry> FinishedDownloads
         {
@@ -121,6 +123,7 @@ namespace XDM.GtkUI
         private const int INPROGRESS_DATA_INDEX = 5;
 
         private Menu menuInProgress, menuFinished;
+        private IClipboardMonitor clipboarMonitor;
 
         public AppWinPeer() : base("Xtreme Download Manager")
         {
@@ -141,6 +144,9 @@ namespace XDM.GtkUI
             UpdateBrowserMonitorButton();
             CreateMenu();
             SetDefaultSize(800, 500);
+
+            clipboarMonitor = new PollingClipboardMonitor();
+            clipboarMonitor.ClipboardChanged += (_, _) => this.ClipboardChanged?.Invoke(this, EventArgs.Empty);
         }
 
         private void CreateMenu()
@@ -337,25 +343,18 @@ namespace XDM.GtkUI
 
         private Button CreateButtonWithContent(string icon, string? text = null)
         {
-            //var button = new Button
-            //{
-            //    MarginBottom = 0,
-            //    Relief = ReliefStyle.None,
-            //    Valign = Align.Start,
-            //    Image = new Image(LoadSvg(icon, 16)),
-            //    AlwaysShowImage = true,
-            //};
-            //if (!string.IsNullOrEmpty(text))
-            //{
-            //    button.Label = text;
-            //}
-            //return button;
+            return CreateButtonWithContent(new Image(LoadSvg(icon, 16)), text);
+        }
+
+        private Button CreateButtonWithContent(Image image, string? text = null)
+        {
             var hbox = new HBox(false, 10)
             {
                 MarginStart = 5,
                 MarginEnd = 5
             };
-            hbox.PackStart(new Image(LoadSvg(icon, 16)), false, false, 0);
+
+            hbox.PackStart(image, false, false, 0);
             if (!string.IsNullOrEmpty(text))
             {
                 hbox.PackStart(new Label { Text = text }, false, false, 0);
@@ -389,7 +388,7 @@ namespace XDM.GtkUI
             //h1.PackStart(new Image(LoadSvg("links-line", 14)), false, false, 0);
             //h1.PackStart(new Label { Text = TextResource.GetText("DESC_Q_TITLE") }, false, false, 10);
 
-            var btnScheduler = CreateButtonWithContent("list-settings-fill", TextResource.GetText("DESC_Q_TITLE"));
+            btnScheduler = CreateButtonWithContent("list-settings-fill", TextResource.GetText("DESC_Q_TITLE"));
             btnScheduler.Clicked += BtnScheduler_Clicked;
             //new Button
             //{
@@ -405,7 +404,8 @@ namespace XDM.GtkUI
             //btnScheduler.Margin = 1;
             hbox.PackStart(btnScheduler, false, false, 0);
 
-            var btnHelp = CreateButtonWithContent("question-line", TextResource.GetText("LBL_SUPPORT_PAGE"));
+            helpImage = new Image(LoadSvg("question-line", 16));
+            btnHelp = CreateButtonWithContent(helpImage, TextResource.GetText("LBL_SUPPORT_PAGE"));
             btnHelp.Clicked += BtnHelp_Clicked;
             //btnHelp.Margin = 1;
             //btnHelp.MarginEnd = 5;
@@ -1210,11 +1210,6 @@ namespace XDM.GtkUI
             return null;
         }
 
-        public void ShowUpdateAvailableNotification()
-        {
-            //throw new NotImplementedException();
-        }
-
         public void ShowMessageBox(object? window, string message)
         {
             if (window is not Window owner)
@@ -1256,7 +1251,8 @@ namespace XDM.GtkUI
 
         public void SetClipboardFile(string file)
         {
-            throw new NotImplementedException();
+            var cbcp = new ClipboardFileCopy(file);
+            cbcp.Exec();
         }
 
         public void ShowPropertiesDialog(BaseDownloadEntry ent, ShortState? state)
@@ -1280,11 +1276,6 @@ namespace XDM.GtkUI
         {
             var win = new VideoDownloaderController(VideoDownloaderWindow.CreateFromGladeFile(), appUI, app);
             win.Run();
-        }
-
-        public DownloadSchedule? ShowSchedulerDialog(DownloadSchedule schedule)
-        {
-            throw new NotImplementedException();
         }
 
         public void ShowBatchDownloadWindow(IApp app, IAppUI appUi)
@@ -1316,17 +1307,28 @@ namespace XDM.GtkUI
 
         public void UpdateParallalismLabel()
         {
-
         }
 
         public IUpdaterUI CreateUpdateUIDialog(IAppUI ui)
         {
-            throw new NotImplementedException();
+            return UpdaterWindow.CreateFromGladeFile(ui);
+        }
+
+        public void ShowUpdateAvailableNotification()
+        {
+            isUpdateAvailable = true;
+            btnHelp.Label = TextResource.GetText("MSG_UPDATE_AVAILABLE");
+            helpImage.Pixbuf = LoadSvg("notification-3-fill", 16);
         }
 
         public void ClearUpdateInformation()
         {
-            throw new NotImplementedException();
+            RunOnUIThread(() =>
+            {
+                isUpdateAvailable = false;
+                btnHelp.Label = TextResource.GetText("LBL_SUPPORT_PAGE");
+                helpImage.Pixbuf = LoadSvg("question-line", 16);
+            });
         }
 
         private IEnumerable<FinishedDownloadEntry> GetAllFinishedDownloads()
@@ -1429,11 +1431,6 @@ namespace XDM.GtkUI
             return -1;
         }
 
-        public void ShowQueuesAndSchedulerWindow()
-        {
-            throw new NotImplementedException();
-        }
-
         public IQueuesWindow CreateQueuesAndSchedulerWindow(IAppUI appUi, IEnumerable<DownloadQueue> queues)
         {
             return QueueSchedulerDialog.CreateFromGladeFile(this, this.windowGroup, appUi);
@@ -1485,14 +1482,10 @@ namespace XDM.GtkUI
             dsvc.Run();
         }
 
-        public IClipboardMonitor GetClipboardMonitor()
-        {
-            throw new NotImplementedException();
-        }
+        public IClipboardMonitor GetClipboardMonitor() => this.clipboarMonitor;
 
         public void ShowFloatingWidget()
         {
-            throw new NotImplementedException();
         }
 
         //private ref InProgressEntryWrapper? FindInProgressDownloadById()

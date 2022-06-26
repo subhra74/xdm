@@ -76,6 +76,7 @@
 		<None Remove="images\video-download-line.svg" />
 		<None Remove="svg-icons\download-complete-window.glade" />
 		<None Remove="svg-icons\list-settings-fill.svg" />
+		<None Remove="svg-icons\notification-3-fill.svg" />
 		<None Remove="svg-icons\question-line.svg" />
 	</ItemGroup>
 

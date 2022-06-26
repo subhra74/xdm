@@ -25,12 +25,22 @@ namespace XDM.Wpf.UI.Dialogs.Updater
     {
         private IAppUI AppUI;
         private Action actClose;
+        private bool active = false;
         public UpdaterWindow(IAppUI AppUI)
         {
             InitializeComponent();
             this.AppUI = AppUI;
             this.Loaded += (_, _) => Load?.Invoke(this, EventArgs.Empty);
             actClose = new Action(() => Close());
+            Closing += UpdaterWindow_Closing;
+        }
+
+        private void UpdaterWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (active)
+            {
+                Cancelled?.Invoke(sender, e);
+            }
         }
 
         public event EventHandler? Cancelled;
@@ -44,6 +54,7 @@ namespace XDM.Wpf.UI.Dialogs.Updater
 
         public void DownloadFailed(object? sender, DownloadFailedEventArgs e)
         {
+            active = false;
             Dispatcher.Invoke(new Action(() =>
             {
                 MessageBox.Show(this, TextResource.GetText("MSG_FAILED"));
@@ -53,6 +64,7 @@ namespace XDM.Wpf.UI.Dialogs.Updater
 
         public void DownloadFinished(object? sender, EventArgs e)
         {
+            active = false;
             Dispatcher.Invoke(new Action(() =>
             {
                 MessageBox.Show(this, TextResource.GetText("MSG_UPDATED"));
@@ -68,7 +80,7 @@ namespace XDM.Wpf.UI.Dialogs.Updater
 
         public void DownloadStarted(object? sender, EventArgs e)
         {
-
+            active = true;
         }
 
         public string Label
@@ -93,7 +105,7 @@ namespace XDM.Wpf.UI.Dialogs.Updater
 
         public void ShowNoUpdateMessage()
         {
-
+            active = false;
             Dispatcher.Invoke(new Action(() =>
             {
                 MessageBox.Show(this, TextResource.GetText("MSG_NO_UPDATE"));
