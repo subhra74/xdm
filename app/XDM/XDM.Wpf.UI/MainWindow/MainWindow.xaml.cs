@@ -72,8 +72,8 @@ namespace XDM.Wpf.UI
             openFileButton = new ButtonWrapper(this.BtnOpen);
             openFolderButton = new ButtonWrapper(this.BtnOpenFolder);
             var categories = new List<CategoryWrapper>();
-            categories.Add(new CategoryWrapper() { IsTopLevel = true, DisplayName = "Incomplete", VectorIcon = "ri-arrow-down-line" });
-            categories.Add(new CategoryWrapper() { IsTopLevel = true, DisplayName = "Complete", VectorIcon = "ri-check-line" });
+            categories.Add(new CategoryWrapper() { IsTopLevel = true, DisplayName = TextResource.GetText("ALL_UNFINISHED"), VectorIcon = "ri-arrow-down-line" });
+            categories.Add(new CategoryWrapper() { IsTopLevel = true, DisplayName = TextResource.GetText("ALL_FINISHED"), VectorIcon = "ri-check-line" });
             categories.AddRange(Config.Instance.Categories.Select(c => new CategoryWrapper(c)
             {
                 VectorIcon = IconMap.GetVectorNameForCategory(c.Name)

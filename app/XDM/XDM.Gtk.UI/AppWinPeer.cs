@@ -350,8 +350,8 @@ namespace XDM.GtkUI
         {
             var hbox = new HBox(false, 10)
             {
-                MarginStart = 5,
-                MarginEnd = 5
+                MarginStart = 2,
+                MarginEnd = 2
             };
 
             hbox.PackStart(image, false, false, 0);
@@ -364,6 +364,7 @@ namespace XDM.GtkUI
             {
                 Relief = ReliefStyle.None,
                 Valign = Align.Center,
+                
             };
             button.Add(hbox);
             return button;
@@ -710,7 +711,7 @@ namespace XDM.GtkUI
             {
                 Resizable = true,
                 Reorderable = false,
-                Title = "Name",
+                Title = TextResource.GetText("SORT_NAME"),
                 Sizing = TreeViewColumnSizing.Fixed,
                 FixedWidth = 200
             };
@@ -727,7 +728,7 @@ namespace XDM.GtkUI
 
             //Last modified column
             var lastModifiedRendererText = new CellRendererText();
-            var lastModifiedColumn = new TreeViewColumn("Date added", lastModifiedRendererText, "text", 1)
+            var lastModifiedColumn = new TreeViewColumn(TextResource.GetText("SORT_DATE"), lastModifiedRendererText, "text", 1)
             {
                 Resizable = true,
                 Reorderable = false,
@@ -749,7 +750,7 @@ namespace XDM.GtkUI
                 Reorderable = false,
                 Sizing = TreeViewColumnSizing.Fixed,
                 FixedWidth = 80,
-                Title = "Size",
+                Title = TextResource.GetText("SORT_SIZE"),
             };
             fileSizeColumn.PackStart(fileSizeRendererText, false);
             fileSizeColumn.SetAttributes(fileSizeRendererText, "text", 2);
@@ -762,7 +763,7 @@ namespace XDM.GtkUI
             };
             fileRendererProgress.SetPadding(5, 10);
 
-            var progressColumn = new TreeViewColumn("Progress", fileRendererProgress, "value", 3)
+            var progressColumn = new TreeViewColumn("%", fileRendererProgress, "value", 3)
             {
                 Resizable = true,
                 Reorderable = false,
@@ -775,7 +776,7 @@ namespace XDM.GtkUI
             //Download status column
             var statusRendererText = new CellRendererText();
             statusRendererText.SetPadding(5, 8);
-            var statusColumn = new TreeViewColumn("Status", statusRendererText, "text", 4)
+            var statusColumn = new TreeViewColumn(TextResource.GetText("SORT_STATUS"), statusRendererText, "text", 4)
             {
                 Resizable = true,
                 Reorderable = false,
@@ -873,9 +874,9 @@ namespace XDM.GtkUI
             {
                 Resizable = true,
                 Reorderable = false,
-                Title = "Name",
+                Title = TextResource.GetText("SORT_NAME"),
                 Sizing = TreeViewColumnSizing.Fixed,
-                FixedWidth = 200
+                FixedWidth = 400
             };
 
             var fileIconRenderer = new CellRendererPixbuf { };
@@ -891,7 +892,7 @@ namespace XDM.GtkUI
 
             //Last modified column
             var lastModifiedRendererText = new CellRendererText();
-            var lastModifiedColumn = new TreeViewColumn("Date added", lastModifiedRendererText, "text", 1)
+            var lastModifiedColumn = new TreeViewColumn(TextResource.GetText("SORT_DATE"), lastModifiedRendererText, "text", 1)
             {
                 Resizable = true,
                 Reorderable = false,
@@ -912,7 +913,7 @@ namespace XDM.GtkUI
                 Reorderable = false,
                 Sizing = TreeViewColumnSizing.Fixed,
                 FixedWidth = 80,
-                Title = "Size",
+                Title = TextResource.GetText("SORT_SIZE"),
             };
             fileSizeColumn.PackStart(fileSizeRendererText, false);
             fileSizeColumn.SetAttributes(fileSizeRendererText, "text", 2);
