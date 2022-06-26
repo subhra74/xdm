@@ -60,6 +60,7 @@ namespace XDM.GtkUI
         private CheckButton btnMonitoring;
         private bool isUpdateAvailable;
         private Image helpImage;
+        private Label helpLabel;
 
         public IEnumerable<FinishedDownloadEntry> FinishedDownloads
         {
@@ -343,10 +344,15 @@ namespace XDM.GtkUI
 
         private Button CreateButtonWithContent(string icon, string? text = null)
         {
-            return CreateButtonWithContent(new Image(LoadSvg(icon, 16)), text);
+            Label? lbl = null;
+            if (!string.IsNullOrEmpty(text))
+            {
+                lbl = new Label { Text = text };
+            }
+            return CreateButtonWithContent(new Image(LoadSvg(icon, 16)), lbl);
         }
 
-        private Button CreateButtonWithContent(Image image, string? text = null)
+        private Button CreateButtonWithContent(Image image, Label? label)
         {
             var hbox = new HBox(false, 10)
             {
@@ -355,16 +361,16 @@ namespace XDM.GtkUI
             };
 
             hbox.PackStart(image, false, false, 0);
-            if (!string.IsNullOrEmpty(text))
+            if (label != null)
             {
-                hbox.PackStart(new Label { Text = text }, false, false, 0);
+                hbox.PackStart(label, false, false, 0);
             }
 
             var button = new Button
             {
                 Relief = ReliefStyle.None,
                 Valign = Align.Center,
-                
+
             };
             button.Add(hbox);
             return button;
@@ -406,7 +412,8 @@ namespace XDM.GtkUI
             hbox.PackStart(btnScheduler, false, false, 0);
 
             helpImage = new Image(LoadSvg("question-line", 16));
-            btnHelp = CreateButtonWithContent(helpImage, TextResource.GetText("LBL_SUPPORT_PAGE"));
+            helpLabel = new Label { Text = TextResource.GetText("LBL_SUPPORT_PAGE") };
+            btnHelp = CreateButtonWithContent(helpImage, helpLabel);
             btnHelp.Clicked += BtnHelp_Clicked;
             //btnHelp.Margin = 1;
             //btnHelp.MarginEnd = 5;
@@ -1318,8 +1325,9 @@ namespace XDM.GtkUI
         public void ShowUpdateAvailableNotification()
         {
             isUpdateAvailable = true;
-            btnHelp.Label = TextResource.GetText("MSG_UPDATE_AVAILABLE");
+            helpLabel.Text = TextResource.GetText("MSG_UPDATE_AVAILABLE");
             helpImage.Pixbuf = LoadSvg("notification-3-fill", 16);
+            helpImage.ShowAll();
         }
 
         public void ClearUpdateInformation()
@@ -1327,8 +1335,9 @@ namespace XDM.GtkUI
             RunOnUIThread(() =>
             {
                 isUpdateAvailable = false;
-                btnHelp.Label = TextResource.GetText("LBL_SUPPORT_PAGE");
+                helpLabel.Text = TextResource.GetText("LBL_SUPPORT_PAGE");
                 helpImage.Pixbuf = LoadSvg("question-line", 16);
+                helpImage.ShowAll();
             });
         }
 
