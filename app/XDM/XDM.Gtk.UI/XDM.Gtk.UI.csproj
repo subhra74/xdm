@@ -84,9 +84,14 @@
 	</ItemGroup>-->
 
   <ItemGroup>
+    <ProjectReference Include="..\BrowserMonitor\BrowserMonitor.csproj" />
+    <ProjectReference Include="..\NativeMessagingHost\NativeMessagingHost.csproj" />
     <ProjectReference Include="..\Translations\Translations.csproj" />
+    <ProjectReference Include="..\XDM.Common.UI\XDM.Common.UI.csproj" />
     <ProjectReference Include="..\XDMApp\XDMApp.csproj" />
     <ProjectReference Include="..\XDM_CoreFx\XDM.Core.csproj" />
+    <ProjectReference Include="..\YoutubeDLHandler\YDLWrapper.csproj" />
+    <ProjectReference Include="..\TraceLog\TraceLog.csproj" />
   </ItemGroup>
 
   <ItemGroup>

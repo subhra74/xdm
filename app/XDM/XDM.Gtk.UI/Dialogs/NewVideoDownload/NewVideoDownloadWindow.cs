@@ -29,6 +29,7 @@ namespace XDM.GtkUI.Dialogs.NewVideoDownload
         [UI] private Button btnDownloadNow;
         [UI] private Button btnMore;
         [UI] private Gtk.Menu menu1;
+        [UI] private Image ImgFileIcon;
 
         private WindowGroup windowGroup;
 
@@ -68,6 +69,7 @@ namespace XDM.GtkUI.Dialogs.NewVideoDownload
             KeepAbove = true;
             Title = TextResource.GetText("ND_TITLE");
             SetPosition(WindowPosition.CenterAlways);
+            ImgFileIcon!.Pixbuf = GtkHelper.LoadSvg("file-download-line", 48);
 
             windowGroup = new WindowGroup();
             windowGroup.AddWindow(this);

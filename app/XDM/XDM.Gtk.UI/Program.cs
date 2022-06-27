@@ -71,10 +71,10 @@ namespace XDM.GtkUI
 
             TextResource.Load(Config.Instance.Language);
 
-            var logFile = System.IO.Path.Combine(Config.DataDir, "log.txt");
-            if (System.IO.File.Exists(logFile))
+            var debugMode = Environment.GetEnvironmentVariable("XDM_DEBUG_MODE");
+            if (!string.IsNullOrEmpty(debugMode) && debugMode == "1")
             {
-                //Only if user has chosen to generate log
+                var logFile = System.IO.Path.Combine(Config.DataDir, "log.txt");
                 Log.InitFileBasedTrace(System.IO.Path.Combine(Config.DataDir, "log.txt"));
             }
             Log.Debug("Application_Startup");

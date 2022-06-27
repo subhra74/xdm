@@ -587,7 +587,7 @@ namespace XDM.Core.Lib.Util
                     break;
 #endif
             }
-
+            Log.Debug("Chrome executable not found!");
             return null;
         }
 
@@ -631,7 +631,7 @@ namespace XDM.Core.Lib.Util
                     break;
 #endif
             }
-
+            Log.Debug("Firefox executable not found!");
             return null;
         }
 

@@ -42,10 +42,11 @@ namespace XDM.Wpf.UI
 
         private void Application_Startup(object sender, StartupEventArgs e)
         {
-            var logFile = System.IO.Path.Combine(Config.DataDir, "log.txt");
-            if (System.IO.File.Exists(logFile))
+            //Only if user has chosen to generate log
+            var debugMode = Environment.GetEnvironmentVariable("XDM_DEBUG_MODE");
+            if (!string.IsNullOrEmpty(debugMode) && debugMode == "1")
             {
-                //Only if user has chosen to generate log
+                var logFile = System.IO.Path.Combine(Config.DataDir, "log.txt");
                 Log.InitFileBasedTrace(System.IO.Path.Combine(Config.DataDir, "log.txt"));
             }
             Log.Debug("Application_Startup");

@@ -12,7 +12,7 @@
     <RuntimeIdentifier>win-x86</RuntimeIdentifier>-->
   </PropertyGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' != 'net5.0' ">
+  <ItemGroup Condition=" '$(TargetFramework)' != 'net5.0' or '$(TargetFramework)' != 'net6.0' ">
     <ProjectReference Include="..\NetFX.Polyfill\NetFX.Polyfill.csproj" />
   </ItemGroup>
 
