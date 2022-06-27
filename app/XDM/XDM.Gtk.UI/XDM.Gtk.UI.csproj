@@ -5,6 +5,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <InvariantGlobalization>true</InvariantGlobalization>
     <PublishTrimmed>true</PublishTrimmed>
+    <AssemblyName>xdm-app</AssemblyName>
     <!--<TrimMode>CopyUsed</TrimMode>-->
     <!--<PublishTrimmed>true</PublishTrimmed>
 		<TrimMode>Link</TrimMode>-->

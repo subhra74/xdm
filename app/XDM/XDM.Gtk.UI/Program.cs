@@ -17,7 +17,7 @@ namespace XDM.GtkUI
         static void Main(string[] args)
         {
             Application.Init();
-
+            GLib.ExceptionManager.UnhandledException += ExceptionManager_UnhandledException;
             var globalStyleSheet = @"
                                     .large-font{ font-size: 16px; }
                                     .medium-font{ font-size: 14px; }
@@ -82,7 +82,7 @@ namespace XDM.GtkUI
             AppDB.Instance.Init(System.IO.Path.Combine(Config.DataDir, "downloads.db"));
 
             var app = new XDMApp.XDMApp();
-            
+
             var appWin = new AppWinPeer();
             app.AppUI = new XDMApp.AppWin(appWin, app);
             appWin.Show();
@@ -125,6 +125,12 @@ namespace XDM.GtkUI
             //            appWin.Show();
             //            Console.WriteLine("Finished show all");
             //            Application.Run();
+        }
+
+        private static void ExceptionManager_UnhandledException(GLib.UnhandledExceptionArgs args)
+        {
+            Log.Debug("GLib ExceptionManager_UnhandledException: " + args.ExceptionObject);
+            args.ExitApplication = false;
         }
     }
 }

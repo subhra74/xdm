@@ -54,7 +54,7 @@ namespace XDM.Core.Lib.Util
             hrs = sec / 3600;
             min = (sec % 3600) / 60;
             sec = sec % 60;
-            String str = hrs.ToString().PadLeft(2, '0') + ":" + min.ToString().PadLeft(2, '0') + ":" + sec.ToString().PadLeft(2, '0');
+            var str = hrs.ToString().PadLeft(2, '0') + ":" + min.ToString().PadLeft(2, '0') + ":" + sec.ToString().PadLeft(2, '0');
             return str;
         }
 
@@ -371,7 +371,7 @@ namespace XDM.Core.Lib.Util
                     case PlatformID.Unix:
                         var psi = new ProcessStartInfo
                         {
-                            FileName = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "xdg-open" : "open"
+                            FileName = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "open" : "xdg-open"
                         };
                         psi.Arguments = "\"" + path + "\"";
                         Process.Start(psi);
@@ -409,7 +409,7 @@ namespace XDM.Core.Lib.Util
                             case PlatformID.Unix:
                                 var psi = new ProcessStartInfo
                                 {
-                                    FileName = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "xdg-open" : "open"
+                                    FileName = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "open" : "xdg-open"
                                 };
                                 psi.Arguments = $"\"{path}\"";
                                 Process.Start(psi);
@@ -444,7 +444,7 @@ namespace XDM.Core.Lib.Util
                 case PlatformID.Unix:
                     var psi = new ProcessStartInfo
                     {
-                        FileName = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "xdg-open" : "open"
+                        FileName = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "open" : "xdg-open"
                     };
                     psi.Arguments = "\"" + url + "\"";
                     Process.Start(psi);
@@ -810,14 +810,130 @@ namespace XDM.Core.Lib.Util
                             hkcuRun.DeleteValue("XDM", false);
                         }
                     }
+                    return true;
                 }
+#if NET5_0_OR_GREATER
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    return true;
+                }
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    var autoStartDir = GetLinuxDesktopAutoStartDir();
+                    if (!Directory.Exists(autoStartDir))
+                    {
+                        Directory.CreateDirectory(autoStartDir);
+                    }
+                    File.WriteAllText(Path.Combine(autoStartDir, "xdm-app.desktop"), GetLinuxDesktopFile());
+                    return true;
+                }
+#endif
             }
             catch (Exception ex)
             {
-                Log.Debug(ex, "Error setting registry key");
+                Log.Debug(ex, ex.Message);
             }
             return false;
         }
+#if NET5_0_OR_GREATER
+        public static string GetLinuxDesktopAutoStartDir()
+        {
+            var configDir = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            if (string.IsNullOrEmpty(configDir))
+            {
+                configDir = Path.Combine(Environment.GetEnvironmentVariable("HOME") ?? "~", ".config");
+            }
+            return Path.Combine(configDir, "autostart");
+        }
+
+        public static string GetLinuxDesktopFile()
+        {
+            var appPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-app");
+            var iconPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "svg-icons", "xdm-logo.svg");
+
+            return "[Desktop Entry]\r\n" +
+                "Encoding=UTF-8\r\n" +
+                "Version=1.0\r\n" +
+                "Type=Application\r\n" +
+                "Terminal=false\r\n" +
+                $"Exec=\"{appPath}\" -m\r\n" +
+                "Name=Xtreme Download Manager\r\n" +
+                "Comment=Xtreme Download Manager\r\n" +
+                "Categories=Network;\r\n" +
+                $"Icon=\"{iconPath}\"";
+        }
+
+        //     public static void addToStartup()
+        //     {
+        //         File dir = new File(System.getProperty("user.home"), "Library/LaunchAgents");
+        //         dir.mkdirs();
+        //         File f = new File(dir, "org.sdg.xdman.plist");
+        //         FileOutputStream fs = null;
+        //         try
+        //         {
+        //             fs = new FileOutputStream(f);
+        //             fs.write(getStartupPlist().getBytes());
+        //         }
+        //         catch (Exception e)
+        //         {
+        //             Logger.log(e);
+        //         }
+        //         finally
+        //         {
+        //             try
+        //             {
+        //                 if (fs != null)
+        //                     fs.close();
+        //             }
+        //             catch (Exception e2)
+        //             {
+        //             }
+        //         }
+        //         f.setExecutable(true);
+        //     }
+
+        //     public static boolean isAlreadyAutoStart()
+        //     {
+        //         File f = new File(System.getProperty("user.home"), "Library/LaunchAgents/org.sdg.xdman.plist");
+        //         if (!f.exists())
+        //             return false;
+        //         FileInputStream in = null;
+        //         byte[] buf = new byte[(int)f.length()];
+        //         try
+        //         {
+        //in = new FileInputStream(f);
+        //             if (in.read(buf) != f.length()) {
+        //                 return false;
+        //             }
+        //         }
+        //         catch (Exception e)
+        //         {
+        //             Logger.log(e);
+        //         }
+        //         finally
+        //         {
+        //             try
+        //             {
+        //                 if (in != null)
+        //		in.close();
+        //             }
+        //             catch (Exception e2)
+        //             {
+        //             }
+        //         }
+        //         String str = new String(buf);
+        //         String s1 = getProperPath(System.getProperty("java.home"));
+        //         String s2 = XDMUtils.getJarFile().getAbsolutePath();
+        //         return str.contains(s1) && str.contains(s2);
+        //     }
+
+        //     public static void removeFromStartup()
+        //     {
+        //         File f = new File(System.getProperty("user.home"), "Library/LaunchAgents/org.sdg.xdman.plist");
+        //         f.delete();
+        //     }
+
+#endif
 
         public static bool IsAutoStartEnabled()
         {
@@ -835,10 +951,27 @@ namespace XDM.Core.Lib.Util
                             path == Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-app.exe");
                     }
                 }
+#if NET5_0_OR_GREATER
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    var autoStartDir = GetLinuxDesktopAutoStartDir();
+                    if (!Directory.Exists(autoStartDir))
+                    {
+                        return false;
+                    }
+                    var file = Path.Combine(autoStartDir, "xdm-app.desktop");
+                    if (!File.Exists(file))
+                    {
+                        return false;
+                    }
+                    var text = File.ReadAllText(file);
+                    return text.Contains(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-app"));
+                }
+#endif
             }
             catch (Exception ex)
             {
-                Log.Debug(ex, "Error setting registry key");
+                Log.Debug(ex, ex.Message);
             }
 
             return false;
@@ -867,24 +1000,104 @@ namespace XDM.Core.Lib.Util
             return false;
         }
 
+        public static void SpawnSubProcess(string executable,
+            string[]? args = null,
+            bool useShellExecute = false,
+            bool createNoWindow = true)
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = executable,
+                UseShellExecute = useShellExecute,
+                CreateNoWindow = createNoWindow
+            };
+            if (args != null && args.Length > 0)
+            {
+                psi.Arguments = string.Join(" ", args);
+            }
+            Process.Start(psi);
+        }
+
         public static void ShutDownPC()
         {
-            Log.Debug("Issuing shutdown command");
+            //dbus-send --system --print-reply --dest=org.freedesktop.login1 /org/freedesktop/login1 "org.freedesktop.login1.Manager.PowerOff" boolean:true
+            //https://gitlab.xfce.org/xfce/xfce4-power-manager/-/blob/master/src/xfpm-systemd.c
+            //https://askubuntu.com/questions/454039/what-command-is-executed-when-shutdown-from-the-graphical-menu-in-14-04
+            Log.Debug("Issuing shutdown command...");
+            switch (Environment.OSVersion.Platform)
+            {
+                case PlatformID.Win32NT:
+                    SpawnSubProcess("shutdown", new string[] { "/t", "30", "/s" });
+                    break;
+#if NET5_0_OR_GREATER
+                case PlatformID.Unix:
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                    {
+                        var cmd = "org.freedesktop.login1.Manager.PowerOff";
+                        SpawnSubProcess("dbus-send", new string[] { "--system", "--print-reply",
+                            "--dest=org.freedesktop.login1", "/org/freedesktop/login1", $"\"{cmd}\"","boolean:true"});
+                        return;
+                    }
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                    {
+                        var cmd = "tell app \"System Events\" to shut down";
+                        SpawnSubProcess("osascript", new string[] { "-e", $"\"{cmd}\"" });
+                    }
+                    break;
+#endif
+                default:
+                    Log.Debug("Operating system not supported");
+                    break;
+            }
         }
 
         public static void SendKeepAlivePing()
         {
             Log.Debug("Keep alive ping...");
+            switch (Environment.OSVersion.Platform)
+            {
+                case PlatformID.Win32NT:
+                    SetThreadExecutionState(EXECUTION_STATE.ES_SYSTEM_REQUIRED);
+                    break;
+#if NET5_0_OR_GREATER
+                case PlatformID.Unix:
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                    {
+                        SpawnSubProcess("dbus-send", new string[] { "--print-reply --type=method_call",
+                            "--dest=org.freedesktop.ScreenSaver /ScreenSaver org.freedesktop.ScreenSaver.SimulateUserActivity"});
+                        return;
+                    }
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                    {
+                        SpawnSubProcess("caffeinate", new string[] { "-i -t 3" });
+                    }
+                    break;
+#endif
+                default:
+                    Log.Debug("Operating system not supported");
+                    break;
+            }
         }
 
         public static void RunCommand(string cmd)
         {
             Log.Debug("Running command: " + cmd);
+            SpawnSubProcess(QuoteFilePathIfNeeded(cmd));
         }
 
         public static void RunAntivirus(string cmd, string options, string file)
         {
             Log.Debug("Running antivirus: " + cmd + " " + options + " " + file);
+            SpawnSubProcess(QuoteFilePathIfNeeded(cmd), new string[] { options, QuoteFilePathIfNeeded(file) });
+        }
+
+        public static string QuoteFilePathIfNeeded(string file)
+        {
+            if (file.Contains(" "))
+            {
+                return Environment.OSVersion.Platform == PlatformID.Win32NT ? $"\"{file}\"" : $"\"{file}\"";
+            }
+            return file;
         }
 
         public static AuthenticationInfo? GetAuthenticationInfoFromConfig(Uri url)
@@ -1224,6 +1437,20 @@ namespace XDM.Core.Lib.Util
 
         [DllImport("kernel32.dll")]
         public static extern UInt64 GetTickCount64();
+
+        [FlagsAttribute]
+        public enum EXECUTION_STATE : uint
+        {
+            ES_AWAYMODE_REQUIRED = 0x00000040,
+            ES_CONTINUOUS = 0x80000000,
+            ES_DISPLAY_REQUIRED = 0x00000002,
+            ES_SYSTEM_REQUIRED = 0x00000001
+            // Legacy flag, should not be used.
+            // ES_USER_PRESENT = 0x00000004
+        }
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        public static extern EXECUTION_STATE SetThreadExecutionState(EXECUTION_STATE esFlags);
 
         public static string? ReadString(BinaryReader r)
         {

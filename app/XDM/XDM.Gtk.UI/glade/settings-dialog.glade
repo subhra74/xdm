@@ -124,8 +124,9 @@
                           <object class="GtkLinkButton" id="VideoWikiLink">
                             <property name="label" translatable="yes">button</property>
                             <property name="visible">True</property>
-                            <property name="can-focus">True</property>
-                            <property name="receives-default">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="focus-on-click">False</property>
+                            <property name="receives-default">False</property>
                             <property name="halign">start</property>
                             <property name="relief">none</property>
                           </object>

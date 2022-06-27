@@ -95,16 +95,17 @@ namespace XDM.Wpf.UI
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             Log.Debug(string.Format("Unhandled exception caught {0} and will {1}",
-                e.ExceptionObject,
-                e.IsTerminating ? "Terminating" : "Continue"));
+                   e.ExceptionObject,
+                   e.IsTerminating ? "Terminating" : "Continue"));
         }
 
         private void Application_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
         {
-            Log.Debug(string.Format("Unhandled exception caught {0} and application will terminate",
+            Log.Debug(string.Format("Unhandled exception caught {0} and application would have been terminated",
                 e.Exception));
-            AppTrayIcon.DetachFromSystemTray();
-            Environment.Exit(1);
+            e.Handled = true;
+            //AppTrayIcon.DetachFromSystemTray();
+            //Environment.Exit(1);
         }
 
         private static bool ShouldSelectDarkTheme()
