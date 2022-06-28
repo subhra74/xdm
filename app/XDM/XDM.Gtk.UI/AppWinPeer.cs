@@ -13,7 +13,6 @@ using XDMApp;
 using XDM.Core.Lib.Util;
 using XDM.Common.UI;
 using Newtonsoft.Json;
-using Log = Serilog.Log;
 using Translations;
 using XDM.Core.Lib.UI;
 using Menu = Gtk.Menu;

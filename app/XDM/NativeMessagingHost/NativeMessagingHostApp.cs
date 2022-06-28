@@ -6,11 +6,11 @@ using System.Text;
 using System.Threading;
 using System.Diagnostics;
 using Newtonsoft.Json;
-using BrowserMonitoring;
 using Newtonsoft.Json.Serialization;
+using BrowserMonitoring;
 
 #if NET35
-using NetFX.Polyfill;
+using NetFX.Polyfill2;
 #else
 using System.Collections.Concurrent;
 #endif
@@ -85,7 +85,7 @@ namespace NativeHost
                               //read from blocking queue and write to stdout,
                               //these messages were queued by xdm
                               var msg = queuedBrowserMessages.Take();
-                              Debug("Sending to browser: "+Encoding.UTF8.GetString(msg));
+                              Debug("Sending to browser: " + Encoding.UTF8.GetString(msg));
                               var json = BinaryToJson(msg);
                               Debug("Sending to browser: ");
                               Debug(Encoding.UTF8.GetString(json));
@@ -144,7 +144,7 @@ namespace NativeHost
             {
                 //NamedPipeServerStream inPipe = null;
                 NamedPipeClientStream pipe = null;
-               // while (true)
+                // while (true)
                 {
                     try
                     {
@@ -152,7 +152,7 @@ namespace NativeHost
                         //inPipe = new NamedPipeServerStream(pipeName, PipeDirection.In, 1, PipeTransmissionMode.Byte, PipeOptions.WriteThrough);
 
                         //start handshake with XDM
-                        pipe = new NamedPipeClientStream(".", "XDM_Ipc_Browser_Monitoring_Pipe", PipeDirection.InOut,PipeOptions.Asynchronous);
+                        pipe = new NamedPipeClientStream(".", "XDM_Ipc_Browser_Monitoring_Pipe", PipeDirection.InOut, PipeOptions.Asynchronous);
                         Debug("start handshake with XDM");
                         pipe.Connect();
                         //NativeMessageSerializer.WriteMessage(outPipe, pipeName);

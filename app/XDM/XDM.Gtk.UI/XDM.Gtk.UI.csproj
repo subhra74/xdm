@@ -17,13 +17,32 @@
     <Platforms>AnyCPU;x64</Platforms>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
+    <!--<ValidateExecutableReferencesMatchSelfContained>false</ValidateExecutableReferencesMatchSelfContained>-->
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="GtkSharp" Version="3.24.24.38" />
-    <PackageReference Include="Serilog" Version="2.10.0" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
-    <PackageReference Include="Serilog.Sinks.File" Version="4.1.0" />
+    <PackageReference Include="Microsoft.Windows.Compatibility" Version="5.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.116" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' != 'net3.5' ">
+    <PackageReference Include="System.Buffers" Version="4.5.1" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net4.5' or '$(TargetFramework)' == 'net4.7.2' or '$(TargetFramework)' == 'net5.0' or '$(TargetFramework)' == 'net6.0'">
+    <PackageReference Include="System.ValueTuple">
+      <Version>4.5.0</Version>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net3.5' ">
+    <PackageReference Include="DotNetZip" Version="1.12.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' != 'net3.5' ">
+    <PackageReference Include="System.IO.Compression" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -83,7 +102,7 @@
 		<None Remove="svg-icons\question-line.svg" />
 	</ItemGroup>-->
 
-  <ItemGroup>
+  <!--<ItemGroup>
     <ProjectReference Include="..\BrowserMonitor\BrowserMonitor.csproj" />
     <ProjectReference Include="..\NativeMessagingHost\NativeMessagingHost.csproj" />
     <ProjectReference Include="..\Translations\Translations.csproj" />
@@ -92,7 +111,7 @@
     <ProjectReference Include="..\XDM_CoreFx\XDM.Core.csproj" />
     <ProjectReference Include="..\YoutubeDLHandler\YDLWrapper.csproj" />
     <ProjectReference Include="..\TraceLog\TraceLog.csproj" />
-  </ItemGroup>
+  </ItemGroup>-->
 
   <ItemGroup>
     <Reference Include="AtkSharp">
@@ -120,6 +139,10 @@
       <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\PangoSharp.dll</HintPath>
     </Reference>
   </ItemGroup>
+
+  <Import Project="..\XDM.App.Core\XDM.App.Core.projitems" Label="Shared" />
+
+  <Import Project="..\XDM.Messaging\XDM.Messaging.projitems" Label="Shared" />
 
   <!--<ItemGroup>
 	  <Content Update="glade\download-complete-window.glade">

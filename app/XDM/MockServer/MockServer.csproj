@@ -19,8 +19,4 @@
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net4.5.2' ">
-    <ProjectReference Include="..\CoreFx.Polyfill\CoreFx.Polyfill.csproj" />
-  </ItemGroup>
-
 </Project>

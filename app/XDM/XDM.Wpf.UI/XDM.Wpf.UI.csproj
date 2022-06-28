@@ -35,7 +35,7 @@
     <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
 
-  <ItemGroup>
+  <!--<ItemGroup>
     <ProjectReference Include="..\BrowserMonitor\BrowserMonitor.csproj" />
     <ProjectReference Include="..\NativeMessagingHost\NativeMessagingHost.csproj" />
     <ProjectReference Include="..\Translations\Translations.csproj" />
@@ -44,7 +44,7 @@
     <ProjectReference Include="..\XDM_CoreFx\XDM.Core.csproj" />
     <ProjectReference Include="..\YoutubeDLHandler\YDLWrapper.csproj" />
     <ProjectReference Include="..\TraceLog\TraceLog.csproj" />
-  </ItemGroup>
+  </ItemGroup>-->
 
   <ItemGroup>
     <Reference Include="PresentationFramework.Aero2" />
@@ -68,5 +68,36 @@
     <Copy SourceFiles="@(LangFiles)" DestinationFolder="$(OutDir)\Lang" />
   </Target>
 
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Windows.Compatibility" Version="5.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.116" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' != 'net3.5' ">
+    <PackageReference Include="System.Buffers" Version="4.5.1" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net4.5' or '$(TargetFramework)' == 'net4.7.2' or '$(TargetFramework)' == 'net5.0' or '$(TargetFramework)' == 'net6.0'">
+    <PackageReference Include="System.ValueTuple">
+      <Version>4.5.0</Version>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net3.5' ">
+    <PackageReference Include="DotNetZip" Version="1.12.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' != 'net3.5' ">
+    <PackageReference Include="System.IO.Compression" Version="4.3.0" />
+  </ItemGroup>
+
+  <!--<ItemGroup>
+    <ProjectReference Include="..\NativeMessagingHost\NativeMessagingHost.csproj" />
+  </ItemGroup>-->
+
+  <Import Project="..\XDM.App.Core\XDM.App.Core.projitems" Label="Shared" />
+
+  <Import Project="..\XDM.Messaging\XDM.Messaging.projitems" Label="Shared" />
 
 </Project>

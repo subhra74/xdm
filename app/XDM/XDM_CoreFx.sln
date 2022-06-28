@@ -25,8 +25,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MediaParser", "MediaParser.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "YDLWrapper", "YoutubeDLHandler\YDLWrapper.csproj", "{2BBDEB4A-CB3D-4C9D-BED2-DB0C78EC858F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoreFx.Polyfill", "CoreFx.Polyfill\CoreFx.Polyfill.csproj", "{26A20A40-D8CC-43D9-8DAF-65FAE947FBF8}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Translations", "Translations\Translations.csproj", "{59F38F42-D77A-4E2B-8C4D-C45898CC6AA8}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetFX.Polyfill", "NetFX.Polyfill\NetFX.Polyfill.csproj", "{F9882AF4-CF6D-450E-A629-739C9FE198EC}"
@@ -42,7 +40,22 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "XDM.App.Core", "XDM.App.Core\XDM.App.Core.shproj", "{5BBEA202-65D2-481A-B457-6D8FCC8970D7}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XDM.Tests", "XDM.Tests\XDM.Tests.csproj", "{559A3ABB-6A04-4169-A605-8C068EF77DB7}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "XDM.Messaging", "XDM.Messaging\XDM.Messaging.shproj", "{417407F5-8DBA-474E-8AB7-66F2CC33B777}"
+EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		XDM.Messaging\XDM.Messaging.projitems*{020e5526-c4d5-4225-a5ee-3f52c207f5cb}*SharedItemsImports = 5
+		XDM.Messaging\XDM.Messaging.projitems*{417407f5-8dba-474e-8ab7-66f2cc33b777}*SharedItemsImports = 13
+		XDM.App.Core\XDM.App.Core.projitems*{5bbea202-65d2-481a-b457-6d8fcc8970d7}*SharedItemsImports = 13
+		XDM.App.Core\XDM.App.Core.projitems*{71ad2923-e0de-4691-ad8d-279457ec4091}*SharedItemsImports = 5
+		XDM.Messaging\XDM.Messaging.projitems*{71ad2923-e0de-4691-ad8d-279457ec4091}*SharedItemsImports = 5
+		XDM.App.Core\XDM.App.Core.projitems*{957eea56-e3b8-48e5-81bb-93a6e59b155c}*SharedItemsImports = 5
+		XDM.Messaging\XDM.Messaging.projitems*{957eea56-e3b8-48e5-81bb-93a6e59b155c}*SharedItemsImports = 5
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|x64 = Debug|x64
@@ -184,18 +197,6 @@ Global
 		{2BBDEB4A-CB3D-4C9D-BED2-DB0C78EC858F}.Release|x64.Build.0 = Release|x64
 		{2BBDEB4A-CB3D-4C9D-BED2-DB0C78EC858F}.Release|x86.ActiveCfg = Release|x86
 		{2BBDEB4A-CB3D-4C9D-BED2-DB0C78EC858F}.Release|x86.Build.0 = Release|x86
-		{26A20A40-D8CC-43D9-8DAF-65FAE947FBF8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{26A20A40-D8CC-43D9-8DAF-65FAE947FBF8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{26A20A40-D8CC-43D9-8DAF-65FAE947FBF8}.Debug|x64.ActiveCfg = Debug|x64
-		{26A20A40-D8CC-43D9-8DAF-65FAE947FBF8}.Debug|x64.Build.0 = Debug|x64
-		{26A20A40-D8CC-43D9-8DAF-65FAE947FBF8}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{26A20A40-D8CC-43D9-8DAF-65FAE947FBF8}.Debug|x86.Build.0 = Debug|Any CPU
-		{26A20A40-D8CC-43D9-8DAF-65FAE947FBF8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{26A20A40-D8CC-43D9-8DAF-65FAE947FBF8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{26A20A40-D8CC-43D9-8DAF-65FAE947FBF8}.Release|x64.ActiveCfg = Release|x64
-		{26A20A40-D8CC-43D9-8DAF-65FAE947FBF8}.Release|x64.Build.0 = Release|x64
-		{26A20A40-D8CC-43D9-8DAF-65FAE947FBF8}.Release|x86.ActiveCfg = Release|x86
-		{26A20A40-D8CC-43D9-8DAF-65FAE947FBF8}.Release|x86.Build.0 = Release|x86
 		{59F38F42-D77A-4E2B-8C4D-C45898CC6AA8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{59F38F42-D77A-4E2B-8C4D-C45898CC6AA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{59F38F42-D77A-4E2B-8C4D-C45898CC6AA8}.Debug|x64.ActiveCfg = Debug|x64
@@ -256,6 +257,18 @@ Global
 		{71AD2923-E0DE-4691-AD8D-279457EC4091}.Release|x64.Build.0 = Release|x64
 		{71AD2923-E0DE-4691-AD8D-279457EC4091}.Release|x86.ActiveCfg = Release|x86
 		{71AD2923-E0DE-4691-AD8D-279457EC4091}.Release|x86.Build.0 = Release|x86
+		{559A3ABB-6A04-4169-A605-8C068EF77DB7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{559A3ABB-6A04-4169-A605-8C068EF77DB7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{559A3ABB-6A04-4169-A605-8C068EF77DB7}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{559A3ABB-6A04-4169-A605-8C068EF77DB7}.Debug|x64.Build.0 = Debug|Any CPU
+		{559A3ABB-6A04-4169-A605-8C068EF77DB7}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{559A3ABB-6A04-4169-A605-8C068EF77DB7}.Debug|x86.Build.0 = Debug|Any CPU
+		{559A3ABB-6A04-4169-A605-8C068EF77DB7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{559A3ABB-6A04-4169-A605-8C068EF77DB7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{559A3ABB-6A04-4169-A605-8C068EF77DB7}.Release|x64.ActiveCfg = Release|Any CPU
+		{559A3ABB-6A04-4169-A605-8C068EF77DB7}.Release|x64.Build.0 = Release|Any CPU
+		{559A3ABB-6A04-4169-A605-8C068EF77DB7}.Release|x86.ActiveCfg = Release|Any CPU
+		{559A3ABB-6A04-4169-A605-8C068EF77DB7}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
