@@ -18,11 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\HttpServer\HttpServer.csproj" />
-    <ProjectReference Include="..\MediaParser.Hls\MediaParser.csproj" />
     <ProjectReference Include="..\MockServer\MockServer.csproj" />
-    <ProjectReference Include="..\XDM_CoreFx\XDM.Core.csproj" />
-    <ProjectReference Include="..\YoutubeDLHandler\YDLWrapper.csproj" />
   </ItemGroup>
 
 </Project>

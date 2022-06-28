@@ -22,12 +22,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NativeMessagingHost\NativeMessagingHost.csproj" />
-    <ProjectReference Include="..\Translations\Translations.csproj" />
-    <ProjectReference Include="..\XDM.Common.UI\XDM.Common.UI.csproj" />
     <ProjectReference Include="..\XDMApp\XDMApp.csproj" />
-    <ProjectReference Include="..\XDM_CoreFx\XDM.Core.csproj" />
     <ProjectReference Include="..\YoutubeDLHandler\YDLWrapper.csproj" />
-    <ProjectReference Include="..\TraceLog\TraceLog.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -76,10 +72,6 @@
   <Target Name="Copy" AfterTargets="Build">
     <Copy SourceFiles="@(LangFiles)" DestinationFolder="$(OutDir)\Lang" />
   </Target>
-
-  <ItemGroup Condition=" '$(TargetFramework)' != 'net5.0-windows' ">
-    <ProjectReference Include="..\NetFX.Polyfill\NetFX.Polyfill.csproj" />
-  </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net4.7.2'">
     <PackageReference Include="System.Resources.Extensions">

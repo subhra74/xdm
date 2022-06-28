@@ -24,16 +24,6 @@
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.116" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\MediaParser.Hls\MediaParser.csproj" />
-    <ProjectReference Include="..\TraceLog\TraceLog.csproj" />
-    <ProjectReference Include="..\Translations\Translations.csproj" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' != 'net5.0' ">
-    <ProjectReference Include="..\NetFX.Polyfill\NetFX.Polyfill.csproj" />
-  </ItemGroup>
-
   <ItemGroup Condition=" '$(TargetFramework)' != 'net3.5' ">
     <PackageReference Include="System.Buffers" Version="4.5.1" />
   </ItemGroup>
