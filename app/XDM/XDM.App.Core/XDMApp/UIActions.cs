@@ -29,7 +29,7 @@ namespace XDMApp
                         {
                             peer.Delete(item);
                             app.RemoveDownload(item.DownloadEntry, false);
-                            AppDB.Instance.DownloadsDB.RemoveDownloadById(item.DownloadEntry.Id);
+                            AppDB.Instance.Downloads.RemoveDownloadById(item.DownloadEntry.Id);
 
                         }
                     }
@@ -47,7 +47,7 @@ namespace XDMApp
                     {
                         app.RemoveDownload(selectedRow.DownloadEntry, deleteFiles);
                         peer.Delete(selectedRow);
-                        AppDB.Instance.DownloadsDB.RemoveDownloadById(selectedRow.DownloadEntry.Id);
+                        AppDB.Instance.Downloads.RemoveDownloadById(selectedRow.DownloadEntry.Id);
                     }
                     callback?.Invoke(false);
                 }

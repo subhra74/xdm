@@ -81,6 +81,11 @@ namespace XDM.GtkUI
 
             AppDB.Instance.Init(System.IO.Path.Combine(Config.DataDir, "downloads.db"));
 
+            if (Config.Instance.AllowSystemDarkTheme)
+            {
+                Gtk.Settings.Default.ThemeName = "Adwaita";
+                Gtk.Settings.Default.ApplicationPreferDarkTheme = true;
+            }
             var app = new XDMApp.XDMApp();
 
             var appWin = new AppWinPeer();

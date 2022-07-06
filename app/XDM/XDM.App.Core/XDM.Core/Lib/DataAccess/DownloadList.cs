@@ -12,11 +12,11 @@ using XDM.Core.Lib.Downloader;
 
 namespace XDM.Core.Lib.DataAccess
 {
-    public class DownloadsDB
+    public class DownloadList
     {
         private SQLiteConnection db;
 
-        public DownloadsDB(SQLiteConnection db)
+        public DownloadList(SQLiteConnection db)
         {
             this.db = db;
         }

@@ -66,7 +66,7 @@ namespace XDMApp
                 Proxy = proxyInfo,
                 MaxSpeedLimitInKiB = maxSpeedLimit,
             };
-            AppDB.Instance.DownloadsDB.AddNewDownload(downloadEntry);
+            AppDB.Instance.Downloads.AddNewDownload(downloadEntry);
 
             RunOnUiThread(() =>
             {
@@ -127,7 +127,7 @@ namespace XDMApp
 
         public void DownloadFailed(string id)
         {
-            AppDB.Instance.DownloadsDB.UpdateDownloadStatus(id, DownloadStatus.Stopped);
+            AppDB.Instance.Downloads.UpdateDownloadStatus(id, DownloadStatus.Stopped);
             RunOnUiThread(() =>
             {
                 CallbackActions.DownloadFailed(id, peer);
@@ -142,11 +142,11 @@ namespace XDMApp
             {
                 var name = Path.GetFileName(filePath);
                 var folder = Path.GetDirectoryName(filePath);
-                AppDB.Instance.DownloadsDB.MarkAsFinished(id, finalFileSize, name, folder);
+                AppDB.Instance.Downloads.MarkAsFinished(id, finalFileSize, name, folder);
             }
 
             Log.Debug("Final file name: " + filePath);
-            var downloadEntry = AppDB.Instance.DownloadsDB.GetDownloadById(id);
+            var downloadEntry = AppDB.Instance.Downloads.GetDownloadById(id);
             if (downloadEntry != null)
             {
                 var finishedEntry = new FinishedDownloadEntry
@@ -161,7 +161,7 @@ namespace XDMApp
                     Authentication = downloadEntry.Authentication,
                     Proxy = downloadEntry.Proxy
                 };
-                AppDB.Instance.DownloadsDB.UpdateDownloadEntry(finishedEntry);
+                AppDB.Instance.Downloads.UpdateDownloadEntry(finishedEntry);
 
                 RunOnUiThread(() =>
                 {
@@ -252,7 +252,7 @@ namespace XDMApp
 
         public void RenameFileOnUI(string id, string folder, string file)
         {
-            if (!AppDB.Instance.DownloadsDB.UpdateNameAndFolder(id, file, folder))
+            if (!AppDB.Instance.Downloads.UpdateNameAndFolder(id, file, folder))
             {
                 Log.Debug("RenameFileOnUI::failed");
             }
@@ -344,7 +344,7 @@ namespace XDMApp
 
         public void UpdateItem(string id, string targetFileName, long size)
         {
-            if (!AppDB.Instance.DownloadsDB.UpdateNameAndSize(id, size, targetFileName))
+            if (!AppDB.Instance.Downloads.UpdateNameAndSize(id, size, targetFileName))
             {
                 Log.Debug("UpdateItem::failed");
             }
@@ -371,7 +371,7 @@ namespace XDMApp
 
         public void UpdateProgress(string id, int progress, double speed, long eta)
         {
-            if (!AppDB.Instance.DownloadsDB.UpdateDownloadProgress(id, progress))
+            if (!AppDB.Instance.Downloads.UpdateDownloadProgress(id, progress))
             {
                 Log.Debug("UpdateProgress::failed");
             }
@@ -382,13 +382,16 @@ namespace XDMApp
         {
             try
             {
-                if (AppDB.Instance.DownloadsDB.LoadDownloads(out var inProgressDownloads, out var finishedDownloads))
+                if (AppDB.Instance.Downloads.LoadDownloads(out var inProgressDownloads, out var finishedDownloads))
                 {
                     peer.InProgressDownloads = inProgressDownloads;
                     peer.FinishedDownloads = finishedDownloads;
                     return;
                 }
-                Log.Debug("Could not load download list");
+                else
+                {
+                    Log.Debug("Could not load download list");
+                }
                 //peer.InProgressDownloads = TransactedIO.ReadInProgressList("inprogress-downloads.dat", Config.DataDir);
                 //peer.FinishedDownloads = TransactedIO.ReadFinishedList("finished-downloads.dat", Config.DataDir);
             }
@@ -574,7 +577,7 @@ namespace XDMApp
             peer.ClearAllFinishedClicked += (s, e) =>
             {
                 peer.DeleteAllFinishedDownloads();
-                AppDB.Instance.DownloadsDB.RemoveAllFinished();
+                AppDB.Instance.Downloads.RemoveAllFinished();
                 //SaveFinishedList();
             };
 
@@ -611,10 +614,17 @@ namespace XDMApp
                     Helpers.OpenBrowser(App.UpdatePage);
                     return;
                 }
-                if (App.IsComponentUpdateAvailable && peer.Confirm(peer, App.ComponentUpdateText))
+                if (App.IsComponentUpdateAvailable)
                 {
-                    LaunchUpdater(UpdateMode.FFmpegUpdateOnly | UpdateMode.YoutubeDLUpdateOnly);
-                    return;
+                    if (peer.Confirm(peer, App.ComponentUpdateText))
+                    {
+                        LaunchUpdater(UpdateMode.FFmpegUpdateOnly | UpdateMode.YoutubeDLUpdateOnly);
+                        return;
+                    }
+                    else
+                    {
+                        return;
+                    }
                 }
                 peer.ShowMessageBox(peer, TextResource.GetText("MSG_NO_UPDATE"));
             };

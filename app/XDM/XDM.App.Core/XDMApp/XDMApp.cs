@@ -616,7 +616,7 @@ namespace XDMApp
         {
             foreach (var id in idList)
             {
-                var entry = AppDB.Instance.DownloadsDB.GetDownloadById(id);// AppUI.GetInProgressDownloadEntry(id);
+                var entry = AppDB.Instance.Downloads.GetDownloadById(id);// AppUI.GetInProgressDownloadEntry(id);
                 if (entry != null)
                 {
                     ResumeDownload(new Dictionary<string, BaseDownloadEntry> { [id] = entry }, true);
@@ -1089,7 +1089,7 @@ namespace XDMApp
             {
                 var kv = queuedDownloads.First();
                 queuedDownloads.Remove(kv.Key);
-                var entry = AppDB.Instance.DownloadsDB.GetDownloadById(kv.Key);// AppUI.GetInProgressDownloadEntry(kv.Key);
+                var entry = AppDB.Instance.Downloads.GetDownloadById(kv.Key);// AppUI.GetInProgressDownloadEntry(kv.Key);
                 if (entry != null)
                 {
                     ResumeDownload(new Dictionary<string, BaseDownloadEntry> { [kv.Key] = entry }, kv.Value);
@@ -1520,6 +1520,7 @@ namespace XDMApp
         public void Import(string path)
         {
             ImportExport.Import(path);
+            AppUI.ShowMessageBox(null, TextResource.GetText("MSG_IMPORT_DONE"));
         }
 
         public bool IsFFmpegRequiredForDownload(string id)

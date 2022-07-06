@@ -1097,6 +1097,7 @@ namespace XDM.GtkUI
                 owner = this;
             }
             using var msg = new MessageDialog(owner, DialogFlags.Modal, MessageType.Question, ButtonsType.YesNo, text);
+            msg.Title = "XDM";
             if (msg.Run() == (int)ResponseType.Yes)
             {
                 return true;
@@ -1477,7 +1478,7 @@ namespace XDM.GtkUI
 
         public string? OpenFileDialog(string? initialPath, string? defaultExt, string? filter)
         {
-            return GtkHelper.SelectFolder(this);
+            return GtkHelper.SelectFile(this);
         }
 
         public IQueuesWindow CreateQueuesAndSchedulerWindow(IAppUI appUi)

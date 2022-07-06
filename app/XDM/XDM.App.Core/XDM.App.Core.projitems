@@ -118,8 +118,9 @@
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Common\UpdateChecker.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Common\UrlConstants.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\DataAccess\AppDB.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\DataAccess\DownloadsDB.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\DataAccess\DownloadList.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\DataAccess\Extensions\DataReaderExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\DataAccess\DataImportExport.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\DataAccess\SchemaInitializer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Downloader\Adaptive\CancelRequestor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Downloader\Adaptive\Dash\MultiSourceDASHDownloader.cs" />

@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using TraceLog;
+using XDM.App.Core.XDM.Core.Lib.DataAccess;
 using XDM.Core.Lib.Common;
 using XDM.Core.Lib.Downloader;
 
@@ -17,8 +18,8 @@ namespace XDM.Core.Lib.DataAccess
         private bool init = false;
         private SQLiteConnection db;
         private AppDB() { }
-        private DownloadsDB downloadsDB;
-        public DownloadsDB DownloadsDB => downloadsDB;
+        private DownloadList downloadsDB;
+        public DownloadList Downloads => downloadsDB;
         private static AppDB instance;
         public static AppDB Instance
         {
@@ -49,7 +50,7 @@ namespace XDM.Core.Lib.DataAccess
                     db = new SQLiteConnection(cs);
                     db.Open();
                     SchemaInitializer.Init(db);
-                    this.downloadsDB = new DownloadsDB(db);
+                    this.downloadsDB = new DownloadList(db);
                     init = true;
                     return true;
                 }
@@ -58,6 +59,36 @@ namespace XDM.Core.Lib.DataAccess
                     Log.Debug(ex, ex.Message);
                     return false;
                 }
+            }
+        }
+
+        public bool Export(string file)
+        {
+            try
+            {
+                DataImportExport.CopyToFile(db, file);
+                return true;
+            }
+            catch (Exception e)
+            {
+                Log.Debug(e, e.Message);
+                return false;
+                throw;
+            }
+        }
+
+        public bool Import(string file)
+        {
+            try
+            {
+                DataImportExport.CopyFromFile(db, file);
+                return true;
+            }
+            catch (Exception e)
+            {
+                Log.Debug(e, e.Message);
+                return false;
+                throw;
             }
         }
     }

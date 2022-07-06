@@ -74,7 +74,7 @@ namespace XDMApp
                 var dict = new Dictionary<string, BaseDownloadEntry>();
                 foreach (var id in item.DownloadIds)
                 {
-                    var ent = AppDB.Instance.DownloadsDB.GetDownloadById(id);// app.AppUI.GetInProgressDownloadEntry(id);
+                    var ent = AppDB.Instance.Downloads.GetDownloadById(id);// app.AppUI.GetInProgressDownloadEntry(id);
                     if (ent != null)
                     {
                         dict[id] = ent;
