@@ -1,18 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Gtk;
-using System.IO;
-using GLib;
 using Application = Gtk.Application;
 using IoPath = System.IO.Path;
 using XDM.Core.Lib.Common;
 using XDMApp;
 using XDM.Core.Lib.Util;
 using XDM.Common.UI;
-using Newtonsoft.Json;
 using Translations;
 using XDM.Core.Lib.UI;
 using Menu = Gtk.Menu;
@@ -490,40 +484,6 @@ namespace XDM.GtkUI
             btnOpenFolder.Visible = false;
             btnResume.Visible = false;
             btnPause.Visible = false;
-            //var toolbar = new Toolbar
-            //{
-            //    Style = ToolbarStyle.BothHoriz
-            //};
-
-            //btnNew = new ToolButton(new Image(LoadSvg("links-line", 14)), TextResource.GetText("DESC_NEW")) { IsImportant = true, MarginStart = 0, MarginEnd = 0 };
-            //toolbar.Add(btnNew);
-            //btnDel = new ToolButton(new Image(LoadSvg("delete-bin-7-line", 14)), TextResource.GetText("DESC_DEL")) { IsImportant = true, MarginStart = 0, MarginEnd = 0 };
-            //toolbar.Add(btnDel);
-            //btnOpenFile = new ToolButton(new Image(LoadSvg("external-link-line", 14)), TextResource.GetText("CTX_OPEN_FILE")) { IsImportant = true, MarginStart = 0, MarginEnd = 0 };
-            //toolbar.Add(btnOpenFile);
-            //btnOpenFolder = new ToolButton(new Image(LoadSvg("folder-shared-line", 14)), TextResource.GetText("CTX_OPEN_FOLDER")) { IsImportant = true, MarginStart = 0, MarginEnd = 0 };
-            //toolbar.Add(btnOpenFolder);
-            //btnResume = new ToolButton(new Image(LoadSvg("play-line", 14)), TextResource.GetText("MENU_RESUME")) { IsImportant = true, MarginStart = 0, MarginEnd = 0 };
-            //toolbar.Add(btnResume);
-            //btnPause = new ToolButton(new Image(LoadSvg("pause-line", 14)), TextResource.GetText("MENU_PAUSE")) { IsImportant = true, MarginStart = 0, MarginEnd = 0 };
-            //toolbar.Add(btnPause);
-
-            //toolbar.Add(new ToolItem() { Expand = true });
-
-            ////toolbar.Add(new SeparatorToolItem() { Expand = true, Draw = false });
-            //var cont = new ToolItem() { MarginEnd = 3 };
-
-            //var searchEntry = new Entry() { WidthChars = 15, PlaceholderText = TextResource.GetText("LBL_SEARCH") };
-            //searchEntry.Activated += (a, b) =>
-            //{
-            //    searchKeyword = searchEntry.Text;
-            //    finishedDownloadFilter.Refilter();
-            //};
-            //cont.Add(searchEntry);
-            //toolbar.Add(cont);
-            //btnMenu = new ToolButton(new Image(LoadSvg("menu-line", 14)), string.Empty) { IsImportant = false };
-            //toolbar.Add(btnMenu);
-
             newButton = new ButtonWrapper(this.btnNew);
             deleteButton = new ButtonWrapper(this.btnDel);
             pauseButton = new ButtonWrapper(this.btnPause);

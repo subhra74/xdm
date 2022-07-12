@@ -1,36 +1,42 @@
 {
-  "update_url": "https://clients2.google.com/service/update2/crx",
-  "manifest_version": 2,
-  "minimum_chrome_version": "18.0",
-  "name": "Xtreme Download Manager",
-  "description": "XDM is an open source download manager",
-  "version": "2.2",
-  "icons": {
-    "48": "icon.png",
-    "128": "icon-128.png"
-  },
-  "background": {
-    "page": "background.html"
-  },
-  "browser_action": {
-    "default_icon": "icon.png"
-  },
-  "permissions": [
-    "activeTab",
-    "cookies",
-    "contextMenus",
-    "webRequest",
-    "webRequestBlocking",
-    "*://*/*",
-    "nativeMessaging"
-  ],
-  "commands": {
-    "toggle-monitoring": {
-      "suggested_key": {
-        "default": "Ctrl+Shift+E",
-        "mac": "Command+Shift+E"
-      },
-      "description": "Toggle monitoring"
+    "update_url": "https://clients2.google.com/service/update2/crx",
+    "manifest_version": 2,
+    "minimum_chrome_version": "18.0",
+    "name": "Xtreme Download Manager",
+    "description": "XDM is an open source download manager",
+    "version": "2.2",
+    "icons": {
+        "48": "icon.png",
+        "128": "icon-128.png"
+    },
+    "background": {
+        "scripts": [
+            "init.js",
+            "util.js",
+            "lib.js",
+            "messaging.js",
+            "bg2.js"
+        ]
+    },
+    "browser_action": {
+        "default_icon": "icon.png"
+    },
+    "permissions": [
+        "activeTab",
+        "cookies",
+        "contextMenus",
+        "webRequest",
+        "*://*/*",
+        "nativeMessaging",
+        "downloads"
+    ],
+    "commands": {
+        "toggle-monitoring": {
+            "suggested_key": {
+                "default": "Ctrl+Shift+E",
+                "mac": "Command+Shift+E"
+            },
+            "description": "Toggle monitoring"
+        }
     }
-  }
 }

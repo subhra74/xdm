@@ -62,46 +62,59 @@ namespace BrowserMonitoring
                 switch (context.RequestPath)
                 {
                     case "/download":
-                        Log.Debug(Encoding.UTF8.GetString(context.RequestBody!));
-                        var message = Message.ParseMessage(Encoding.UTF8.GetString(context.RequestBody!));
-                        if (!(Helpers.IsBlockedHost(message.Url) || Helpers.IsCompressedJSorCSS(message.Url)))
                         {
-                            app.AddDownload(message);
-                        }
-                        break;
-                    case "/video":
-                        Console.WriteLine(Encoding.UTF8.GetString(context.RequestBody!));
-                        var message2 = Message.ParseMessage(Encoding.UTF8.GetString(context.RequestBody!));
-                        var contentType = message2.GetResponseHeaderFirstValue("Content-Type")?.ToLowerInvariant() ?? string.Empty;
-
-                        if (VideoUrlHelper.IsHLS(contentType))
-                        {
-                            VideoUrlHelper.ProcessHLSVideo(message2, app);
-                        }
-
-                        if (VideoUrlHelper.IsDASH(contentType))
-                        {
-                            VideoUrlHelper.ProcessDashVideo(message2, app);
-                        }
-
-                        if (!VideoUrlHelper.ProcessYtDashSegment(message2, app))
-                        {
-                            if (contentType != null && !(contentType.Contains("f4f") ||
-                                contentType.Contains("m4s") ||
-                                contentType.Contains("mp2t") || message2.Url.Contains("abst") ||
-                                message2.Url.Contains("f4x") || message2.Url.Contains(".fbcdn")
-                                || message2.Url.Contains("http://127.0.0.1:9614")))
+                            var text = Encoding.UTF8.GetString(context.RequestBody!);
+                            Log.Debug(text);
+                            var message = Message.ParseMessage(text);
+                            if (!(Helpers.IsBlockedHost(message.Url) || Helpers.IsCompressedJSorCSS(message.Url)))
                             {
-                                VideoUrlHelper.ProcessNormalVideo(message2, app);
+                                app.AddDownload(message);
                             }
+                            break;
                         }
-                        break;
-                    case "/item":
-                        foreach (var item in Encoding.UTF8.GetString(context.RequestBody!).Split(new char[] { '\r', '\n' }))
+                    case "/video":
                         {
-                            app.AddVideoDownload(item);
+                            var text = Encoding.UTF8.GetString(context.RequestBody!);
+                            Log.Debug(text);
+                            var message2 = Message.ParseMessage(Encoding.UTF8.GetString(context.RequestBody!));
+                            var contentType = message2.GetResponseHeaderFirstValue("Content-Type")?.ToLowerInvariant() ?? string.Empty;
+                            if (VideoUrlHelper.IsHLS(contentType))
+                            {
+                                VideoUrlHelper.ProcessHLSVideo(message2, app);
+                            }
+                            if (VideoUrlHelper.IsDASH(contentType))
+                            {
+                                VideoUrlHelper.ProcessDashVideo(message2, app);
+                            }
+                            if (!VideoUrlHelper.ProcessYtDashSegment(message2, app))
+                            {
+                                if (contentType != null && !(contentType.Contains("f4f") ||
+                                    contentType.Contains("m4s") ||
+                                    contentType.Contains("mp2t") || message2.Url.Contains("abst") ||
+                                    message2.Url.Contains("f4x") || message2.Url.Contains(".fbcdn")
+                                    || message2.Url.Contains("http://127.0.0.1:9614")))
+                                {
+                                    VideoUrlHelper.ProcessNormalVideo(message2, app);
+                                }
+                            }
+                            break;
                         }
-                        break;
+                    case "/links":
+                        {
+                            var text = Encoding.UTF8.GetString(context.RequestBody!);
+                            Log.Debug(text);
+                            var arr = text.Split(new string[] { "\r\n\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+                            app.AddBatchLinks(arr.Select(str => Message.ParseMessage(str.Trim())).ToList());
+                            break;
+                        }
+                    case "/item":
+                        {
+                            foreach (var item in Encoding.UTF8.GetString(context.RequestBody!).Split(new char[] { '\r', '\n' }))
+                            {
+                                app.AddVideoDownload(item);
+                            }
+                            break;
+                        }
                     case "/clear":
                         app.ClearVideoList();
                         break;

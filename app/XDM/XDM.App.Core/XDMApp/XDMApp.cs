@@ -347,6 +347,7 @@ namespace XDMApp
             foreach (var message in messages)
             {
                 var url = message.Url;
+                if (string.IsNullOrEmpty(url)) continue;
                 var file = Helpers.SanitizeFileName(message.File ?? Helpers.GetFileName(new Uri(message.Url)));
                 var si = new SingleSourceHTTPDownloadInfo
                 {
