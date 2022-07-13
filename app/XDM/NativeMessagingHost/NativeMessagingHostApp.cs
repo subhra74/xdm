@@ -29,7 +29,7 @@ namespace NativeHost
 
             //var json = BinaryToJson(new byte[0]);
 #if !NET35
-            Debug("Is64BitProcess: "+Environment.Is64BitProcess);
+            Debug("Is64BitProcess: " + Environment.Is64BitProcess);
 #endif
             try
             {
@@ -114,10 +114,12 @@ namespace NativeHost
         {
             try
             {
-                Debug("XDM instance creating...1");
+                var file = Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".."),
+                         Environment.OSVersion.Platform == PlatformID.Win32NT ? "xdm-app.exe" : "xdm-app");
+                Debug("XDM instance creating...1 " + file);
                 ProcessStartInfo psi = new()
                 {
-                    FileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-app.exe"),
+                    FileName = file,
                     UseShellExecute = true
                 };
 

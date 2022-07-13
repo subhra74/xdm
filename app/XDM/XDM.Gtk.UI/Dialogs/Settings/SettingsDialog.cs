@@ -13,6 +13,7 @@ using XDM.GtkUI.Utils;
 using XDMApp;
 using XDM.Core.Lib.Util;
 using TraceLog;
+using BrowserMonitoring;
 
 namespace XDM.GtkUI.Dialogs.Settings
 {
@@ -354,7 +355,7 @@ namespace XDM.GtkUI.Dialogs.Settings
         {
             try
             {
-                Helpers.InstallNativeMessagingHost(NativeHostBrowser.Chrome);
+                NativeMessagingConfigurer.InstallNativeMessagingHost(Browser.Chrome);
             }
             catch (Exception ex)
             {

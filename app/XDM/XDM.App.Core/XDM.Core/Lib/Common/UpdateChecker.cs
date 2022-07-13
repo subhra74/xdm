@@ -36,7 +36,7 @@ namespace XDM.Core.Lib.Common
                     firstUpdate = false;
                 }
 
-                using var hc  = HttpClientFactory.NewHttpClient(null);
+                using var hc = HttpClientFactory.NewHttpClient(null);
                 hc.Timeout = TimeSpan.FromSeconds(Config.Instance.NetworkTimeout);
 
                 if ((updateMode & UpdateMode.AppUpdateOnly) == UpdateMode.AppUpdateOnly)
@@ -89,13 +89,16 @@ namespace XDM.Core.Lib.Common
                     ["User-Agent"] = new List<string> { UserAgent }
                 });
                 using var response = hc.Send(request);
-                var content = response.ReadAsString(CancelFlag.None);
-                if (content == null) return null;
-                var release = JsonConvert.DeserializeObject<GitHubRelease>(content);
-                if (condition.Invoke(release))
+                using var stream = response.GetResponseStream();
+                using var streamReader = new StreamReader(stream);
+                using var r = new JsonTextReader(streamReader);
+                var serializer = new JsonSerializer();
+                var release = serializer.Deserialize<GitHubRelease?>(r);
+                if (!release.HasValue) return null;
+                if (condition.Invoke(release.Value))
                 {
-                    if (release.Assets == null) return null;
-                    foreach (var asset in release.Assets)
+                    if (release.Value.Assets == null) return null;
+                    foreach (var asset in release.Value.Assets)
                     {
                         if (asset.Name == assetName || assetName == null)
                         {
@@ -104,8 +107,8 @@ namespace XDM.Core.Lib.Common
                                 Url = asset.Url,
                                 Name = asset.Name,
                                 Size = asset.Size,
-                                Description = release.Body,
-                                TagName = release.TagName,
+                                Description = release.Value.Body,
+                                TagName = release.Value.TagName,
                                 IsExternal = true
                             };
                         }

@@ -668,7 +668,7 @@ namespace XDM.Core.Lib.Util
                 {
                     name = name,
                     description = "Native messaging host for Xtreme Download Manager",
-                    path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "NativeMessagingHost.exe"),
+                    path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-messaging-host.exe"),
                     type = "stdio",
                     allowed_extensions = new[] {
                         "browser-mon@xdman.sourceforge.net"

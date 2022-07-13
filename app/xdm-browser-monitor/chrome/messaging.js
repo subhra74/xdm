@@ -17,7 +17,7 @@ xdm.messaging = {
         chrome.runtime.onMessage.addListener(xdm.messaging.onPageMessage);
     },
     sendToXDM: function (request, response, file, video, referer) {
-        xdm.log("sending to xdm: " + response.url);
+        xdm.log("sending to xdm: " + response.url+" "+xdm.messaging.nativePort);
         try {
             if (xdm.messaging.nativePort) {
                 xdm.messaging.sendWithNativeMessaging(request, response, file, video, referer);
@@ -51,6 +51,7 @@ xdm.messaging = {
                     xdm.messaging.onDisconnect();
                     reject("Disconnected from native messaging host!");
                 });
+                resolve(port);
                 port.onMessage.addListener(function (data) {
                     if (data.appExited) {
                         xdm.messaging.postNativeMessage({});
@@ -58,7 +59,6 @@ xdm.messaging = {
                     } else {
                         xdm.messaging.onSync(data);
                     }
-                    resolve(port);
                 });
             } catch (err) {
                 log("Error while creating native messaging host");
@@ -161,9 +161,6 @@ xdm.messaging = {
             method: request.method
         };
         var hasReferer = false;
-        if (requestBody) {
-            data.requestBody = xdm.util.arrayBufferToBase64(requestBody);
-        }
         if (request.extraHeaders) {
             request.extraHeaders.forEach(header => {
                 xdm.util.addToValueList(data.requestHeaders, header.name, header.value);
@@ -239,7 +236,7 @@ xdm.messaging = {
     postNativeMessage: function (message) {
         if (xdm.messaging.nativePort) {
             try {
-                port.postMessage(message);
+                xdm.messaging.nativePort.postMessage(message);
             } catch (err) {
                 xdm.log(err);
                 try { xdm.messaging.nativePort.disconnect(); } catch { }

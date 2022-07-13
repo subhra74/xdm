@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BrowserMonitoring;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -63,7 +64,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
         {
             try
             {
-                Helpers.InstallNativeMessagingHost(NativeHostBrowser.Chrome);
+                NativeMessagingConfigurer.InstallNativeMessagingHost(Browser.Chrome);
             }
             catch (Exception ex)
             {

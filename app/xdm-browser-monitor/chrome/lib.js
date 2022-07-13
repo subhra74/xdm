@@ -15,12 +15,12 @@ xdm.requestWatcher = {
     },
 
     clearRequestResponse: function (id) {
-        var response = this.responses[id];
+        var response = xdm.requestWatcher.responses[id];
         if (response && response.url) {
-            delete this.urlMap[response.url];
+            delete xdm.requestWatcher.urlMap[response.url];
         }
-        delete this.requests[id];
-        delete this.responses[id];
+        delete xdm.requestWatcher.requests[id];
+        delete xdm.requestWatcher.responses[id];
     },
 
     onSendHeaders: function (info) {

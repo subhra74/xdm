@@ -7,6 +7,7 @@
     <LangVersion>9.0</LangVersion>
     <Nullable>enable</Nullable>
     <Platforms>AnyCPU;x86;x64</Platforms>
+    <AssemblyName>xdm-messaging-host</AssemblyName>
     <!--<PublishTrimmed>true</PublishTrimmed>
     <TrimMode>Link</TrimMode>
     <Platforms>AnyCPU;x86</Platforms>
@@ -21,7 +22,7 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net5.0' or '$(TargetFramework)' == 'net4.7.2' or '$(TargetFramework)' == 'net4.5' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net4.7.2' or '$(TargetFramework)' == 'net4.5' ">
     <AppConfig>App.PostDotNet4.config</AppConfig>
   </PropertyGroup>
 

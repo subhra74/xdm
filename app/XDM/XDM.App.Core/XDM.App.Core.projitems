@@ -9,17 +9,14 @@
     <Import_RootNamespace>XDM.App.Core</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitor\BrowserMessageHandler.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitor\BrowserMonitor.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitor\IpcHttpHandler.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitor\JsonMessageParser.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitor\NativeMessageSerializer.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitor\NativeMessagingHostChannel.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitor\NativeMessagingHostHandler.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitor\RawBrowserMessage.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitor\RawBrowserMessageEnvelop.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitor\SyncMessage.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitor\VideoUrlHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\BrowserMessageHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\BrowserMonitor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\IpcHttpHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\JsonMessageParser.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\NativeMessagingConfigurer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\NativeMessagingHostChannel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\NativeMessagingHostHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\VideoUrlHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)HttpServer\HttpParser.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)HttpServer\HttpServer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)HttpServer\LineReader.cs" />
@@ -192,5 +189,8 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="$(MSBuildThisFileDirectory)Translations\ReadME.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Updater\" />
   </ItemGroup>
 </Project>
