@@ -112,7 +112,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Common\ShortState.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Common\StreamingVideoDisplayInfo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Common\TransactedIO.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Common\UpdateChecker.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Updater\UpdateChecker.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Common\UrlConstants.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\DataAccess\AppDB.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\DataAccess\DownloadList.cs" />

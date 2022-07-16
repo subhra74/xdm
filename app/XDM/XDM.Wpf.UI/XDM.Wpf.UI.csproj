@@ -5,7 +5,7 @@
     <TargetFrameworks>net4.7.2;net3.5</TargetFrameworks>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
-    <Platforms>AnyCPU;x86;x64</Platforms>
+    <Platforms>x86</Platforms>
     <LangVersion>9.0</LangVersion>
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -51,12 +51,18 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="MainWindow\Resources\" />
+    <Content Include="..\Lang\**"
+          CopyToOutputDirectory="Always"
+          LinkBase="Lang\" />
   </ItemGroup>
 
   <ItemGroup>
-    <LangFiles Include="$(SolutionDir)\Lang\**" />
+    <Folder Include="MainWindow\Resources\" />
   </ItemGroup>
+
+  <!--<ItemGroup>
+    <LangFiles Include="$(SolutionDir)\Lang\**" />
+  </ItemGroup>-->
 
   <ItemGroup>
     <None Update="xdm-logo.ico">
@@ -64,9 +70,9 @@
     </None>
   </ItemGroup>
 
-  <Target Name="Copy" AfterTargets="Build">
+  <!--<Target Name="Copy" AfterTargets="Build">
     <Copy SourceFiles="@(LangFiles)" DestinationFolder="$(OutDir)\Lang" />
-  </Target>
+  </Target>-->
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Windows.Compatibility" Version="5.0.2" />

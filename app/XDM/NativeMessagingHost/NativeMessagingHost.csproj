@@ -2,15 +2,15 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net3.5;net4.5;net4.7.2;net6.0</TargetFrameworks>
+    <TargetFrameworks>net3.5;net4.7.2;net6.0</TargetFrameworks>
     <InvariantGlobalization>true</InvariantGlobalization>
     <LangVersion>9.0</LangVersion>
     <Nullable>enable</Nullable>
-    <Platforms>AnyCPU;x86;x64</Platforms>
+    <Platforms>x86;x64</Platforms>
     <AssemblyName>xdm-messaging-host</AssemblyName>
-    <!--<PublishTrimmed>true</PublishTrimmed>
+    <PublishTrimmed>true</PublishTrimmed>
     <TrimMode>Link</TrimMode>
-    <Platforms>AnyCPU;x86</Platforms>
+    <!--<Platforms>AnyCPU;x86</Platforms>
     <RuntimeIdentifier>win-x86</RuntimeIdentifier>-->
   </PropertyGroup>
 

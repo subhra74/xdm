@@ -14,7 +14,7 @@
     <!--RuntimeIdentifier>win-x64</RuntimeIdentifier-->
     <!--RuntimeIdentifier>win-x86</RuntimeIdentifier-->
     <!--<Platforms>AnyCPU;x86</Platforms>-->
-    <Platforms>AnyCPU;x64</Platforms>
+    <Platforms>x64</Platforms>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <!--<ValidateExecutableReferencesMatchSelfContained>false</ValidateExecutableReferencesMatchSelfContained>-->
@@ -55,15 +55,19 @@
     <Content Include="svg-icons\*.*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\Lang\*.*"
+          CopyToOutputDirectory="Always"
+            CopyToPublishDirectory="Always"
+          LinkBase="Lang\" />
   </ItemGroup>
 
-  <ItemGroup>
+  <!--<ItemGroup>
     <LangFiles Include="$(SolutionDir)\Lang\**" />
   </ItemGroup>
 
   <Target Name="Copy" AfterTargets="Build">
     <Copy SourceFiles="@(LangFiles)" DestinationFolder="$(OutDir)\Lang" />
-  </Target>
+  </Target>-->
 
   <!--<ItemGroup>
 		<None Remove="glade\advanced-download-dialog.glade" />
