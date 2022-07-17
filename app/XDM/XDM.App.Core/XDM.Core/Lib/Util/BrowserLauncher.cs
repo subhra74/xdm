@@ -25,7 +25,7 @@ namespace XDM.Core.Lib.Util
             else if (Environment.OSVersion.Platform == PlatformID.Unix)
             {
                 paths = new string[]{
-                    "/usr/bin/chrome"
+                    "/usr/bin/google-chrome"
                 };
             }
             else if (Environment.OSVersion.Platform == PlatformID.MacOSX)

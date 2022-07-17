@@ -69,28 +69,20 @@ namespace BrowserMonitoring
             {
 #if NET5_0_OR_GREATER
                 string manifestPath;
+                var home = Environment.GetEnvironmentVariable("HOME")!;
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
-                    if (browser == Browser.Firefox)
-                    {
-                        manifestPath = $"~/Library/Application Support/Mozilla/NativeMessagingHosts/{appName}.json";
-                    }
-                    else
-                    {
-                        manifestPath = $"~/Library/Application Support/Google/Chrome/NativeMessagingHosts/{appName}.json";
-                    }
+                    manifestPath = Path.Combine(home, browser == Browser.Firefox ?
+                            $"Library/Application Support/Mozilla/NativeMessagingHosts/{appName}.json" :
+                            $"Library/Application Support/Google/Chrome/NativeMessagingHosts/{appName}.json");
                 }
                 else
                 {
-                    if (browser == Browser.Firefox)
-                    {
-                        manifestPath = $"~/.mozilla/native-messaging-hosts/{appName}.json";
-                    }
-                    else
-                    {
-                        manifestPath = $"~/.config/google-chrome/NativeMessagingHosts/{appName}.json";
-                    }
+                    manifestPath = Path.Combine(home, browser == Browser.Firefox ?
+                            $".mozilla/native-messaging-hosts/{appName}.json" :
+                            $".config/google-chrome/NativeMessagingHosts/{appName}.json");
                 }
+                Log.Debug($"Manifest file: {manifestPath}");
                 CreateMessagingHostManifest(browser, appName, manifestPath);
 #endif
             }

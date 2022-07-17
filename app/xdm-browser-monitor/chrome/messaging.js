@@ -2,6 +2,7 @@
 xdm.messaging = {
     xhrHost: "http://127.0.0.1:9614",
     nativePort: undefined,
+    nativeHostVerified: false,
     onDisconnect: function () { },
     onSync: function (data) { },
     connectWithApp: function (onSync, onDisconnect) {
@@ -17,7 +18,7 @@ xdm.messaging = {
         chrome.runtime.onMessage.addListener(xdm.messaging.onPageMessage);
     },
     sendToXDM: function (request, response, file, video, referer) {
-        xdm.log("sending to xdm: " + response.url+" "+xdm.messaging.nativePort);
+        xdm.log("sending to xdm: " + response.url + " " + xdm.messaging.nativePort);
         try {
             if (xdm.messaging.nativePort) {
                 xdm.messaging.sendWithNativeMessaging(request, response, file, video, referer);
@@ -47,16 +48,21 @@ xdm.messaging = {
                 }
                 xdm.log("Connected to native messaging host");
                 port.onDisconnect.addListener(function () {
-                    xdm.log("Disconnected from native messaging host!");
-                    xdm.messaging.onDisconnect();
-                    reject("Disconnected from native messaging host!");
+                    if (!xdm.messaging.nativePort) {
+                        reject("Failed to connect to native messaging host!");
+                    } else {
+                        xdm.messaging.onDisconnect();
+                        reject("Disconnected from native messaging host!");
+                    }
                 });
-                resolve(port);
                 port.onMessage.addListener(function (data) {
                     if (data.appExited) {
                         xdm.messaging.postNativeMessage({});
                         xdm.messaging.onDisconnect();
                     } else {
+                        if (!xdm.messaging.nativePort) {
+                            resolve(port);
+                        }
                         xdm.messaging.onSync(data);
                     }
                 });
@@ -253,7 +259,8 @@ xdm.messaging = {
         else if (request.type === "stat") {
             var resp = {
                 isDisabled: xdm.monitoring.state.disabled,
-                list: xdm.monitoring.videoList
+                list: xdm.monitoring.videoList,
+                noEncoding: xdm.messaging.nativePort ? true : false
             };
             sendResponse(resp);
         }

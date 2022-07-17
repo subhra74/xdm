@@ -10,8 +10,8 @@
     <AssemblyName>xdm-messaging-host</AssemblyName>
     <PublishTrimmed>true</PublishTrimmed>
     <TrimMode>Link</TrimMode>
-    <!--<Platforms>AnyCPU;x86</Platforms>
-    <RuntimeIdentifier>win-x86</RuntimeIdentifier>-->
+    <!--<Platforms>AnyCPU;x86</Platforms>-->
+    <!--<RuntimeIdentifiers>win-x86;linux-x64</RuntimeIdentifiers>-->
   </PropertyGroup>
 
   <!--<ItemGroup Condition=" '$(TargetFramework)' != 'net5.0' or '$(TargetFramework)' != 'net6.0' ">

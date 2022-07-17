@@ -64,7 +64,7 @@ xdm.requestWatcher = {
             chrome.downloads.erase({ id: item.id });
             chrome.downloads.removeFile(item.id);
 
-            alert(item.finalUrl + " " + item.referrer + " " +
+            xdm.log(item.finalUrl + " " + item.referrer + " " +
                 item.filename + " " + item.headers + " " + item.method);
 
             this.callback.onDownload(item, this.requests[requestId], this.responses[requestId]);

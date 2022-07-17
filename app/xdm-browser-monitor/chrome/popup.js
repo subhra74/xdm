@@ -19,7 +19,7 @@ window.onload = function () {
             //return;
         }
 
-        renderList(response.list, response.hasNativeMessagingHost);
+        renderList(response.list, response.noEncoding);
 
     });
 
@@ -43,7 +43,7 @@ function toUTF8(str) {
     return text;
 }
 
-function renderList(arr, hasNativeMessagingHost) {
+function renderList(arr, noEncoding) {
 
     var table = document.getElementById("table");
 
@@ -52,7 +52,7 @@ function renderList(arr, hasNativeMessagingHost) {
     for (var i = 0; i < arr.length; i++) {
         var listItem = arr[i];
 
-        var text = hasNativeMessagingHost ? listItem.text : toUTF8(listItem.text);
+        var text = noEncoding ? listItem.text : toUTF8(listItem.text);
 
         var info = listItem.info;
         var id = listItem.id;

@@ -25,9 +25,19 @@ namespace NativeHost
         //static StreamWriter log = new StreamWriter(new FileStream(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "native-host.log"), FileMode.Create));
         static void Main(string[] args)
         {
+            try
+            {
+                var debugMode = Environment.GetEnvironmentVariable("XDM_DEBUG_MODE");
+                if (!string.IsNullOrEmpty(debugMode) && debugMode == "1")
+                {
+                    var logFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "messaging-log.txt");
+                    Trace.Listeners.Add(new TextWriterTraceListener(logFile, "myListener"));
+                    Trace.AutoFlush = true;
+                }
+                Debug("Application_Startup");
+            }
+            catch { }
             Debug("Process running from: " + AppDomain.CurrentDomain.BaseDirectory);
-
-            //var json = BinaryToJson(new byte[0]);
 #if !NET35
             Debug("Is64BitProcess: " + Environment.Is64BitProcess);
 #endif
@@ -270,7 +280,7 @@ namespace NativeHost
             }
         }
 
-        private static void Debug(string msg, Exception ex2 = null)
+        private static void Debug(string msg, Exception? ex2 = null)
         {
             Trace.WriteLine($"[xdm-native-messaging-host {DateTime.Now}] {msg}");
             if (ex2 != null)

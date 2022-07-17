@@ -660,97 +660,6 @@ namespace XDM.Core.Lib.Util
             return null;
         }
 
-        private static string CreateNativeMessagingHostManifest(NativeHostBrowser browser, string name)
-        {
-            if (browser == NativeHostBrowser.Firefox)
-            {
-                var json = JsonConvert.SerializeObject(new
-                {
-                    name = name,
-                    description = "Native messaging host for Xtreme Download Manager",
-                    path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-messaging-host.exe"),
-                    type = "stdio",
-                    allowed_extensions = new[] {
-                        "browser-mon@xdman.sourceforge.net"
-                    }
-                });
-                return json;
-                //var manifestPath = Path.Combine(Config.DataDir, "xdmff.native_host.json");
-                //File.WriteAllText(manifestPath, json);
-                //return manifestPath;
-            }
-            else
-            {
-                var json = JsonConvert.SerializeObject(new
-                {
-                    name = name,
-                    description = "Native messaging host for Xtreme Download Manager",
-                    path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "NativeMessagingHost.exe"),
-                    type = "stdio",
-                    allowed_origins = new[] {
-                        "chrome-extension://danmljfachfhpbfikjgedlfifabhofcj/",
-                        "chrome-extension://dkckaoghoiffdbomfbbodbbgmhjblecj/",
-                        "chrome-extension://ejpbcmllmliidhlpkcgbphhmaodjihnc/",
-                        "chrome-extension://fogpiboapmefmkbodpmfnohfflonbgig/"
-                    }
-                }, Formatting.Indented);
-                return json;
-                //var manifestPath = Path.Combine(Config.DataDir, "xdm_chrome.native_host.json");
-                //File.WriteAllText(manifestPath, json);
-                //return manifestPath;
-            }
-        }
-
-        public static void InstallNativeMessagingHost(NativeHostBrowser browser)
-        {
-            var name = browser == NativeHostBrowser.Firefox ? "xdmff.native_host" :
-                    "xdm_chrome.native_host";
-            var manifestJSON = CreateNativeMessagingHostManifest(browser, name);
-
-            var os = Environment.OSVersion.Platform;
-            if (os == PlatformID.Win32NT)
-            {
-                var manifestPath = Path.Combine(Config.DataDir, $"{name}.json");
-                File.WriteAllText(manifestPath, manifestJSON);
-                var regPath = (browser == NativeHostBrowser.Firefox ?
-                    @"Software\Mozilla\NativeMessagingHosts\" :
-                    @"SOFTWARE\Google\Chrome\NativeMessagingHosts");
-                using var regKey = Registry.CurrentUser.CreateSubKey(regPath);
-                using var key = regKey.CreateSubKey(name, RegistryKeyPermissionCheck.ReadWriteSubTree);
-                key.SetValue(null, manifestPath);
-            }
-            else
-            {
-#if NET5_0_OR_GREATER
-                string manifestPath;
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                {
-                    if (browser == NativeHostBrowser.Firefox)
-                    {
-                        manifestPath = $"~/Library/Application Support/Mozilla/NativeMessagingHosts/{name}.json";
-                    }
-                    else
-                    {
-                        manifestPath = $"~/Library/Application Support/Google/Chrome/NativeMessagingHosts/{name}.json";
-                    }
-                }
-                else
-                {
-                    if (browser == NativeHostBrowser.Firefox)
-                    {
-                        manifestPath = $"~/.mozilla/native-messaging-hosts/{name}.json";
-                    }
-                    else
-                    {
-                        manifestPath = $"~/.config/google-chrome/NativeMessagingHosts/{name}.json";
-                    }
-                }
-
-                File.WriteAllText(manifestPath, manifestJSON);
-#endif
-            }
-        }
-
         public static void RunGC()
         {
 #if NET35
@@ -1601,10 +1510,5 @@ namespace XDM.Core.Lib.Util
         }
 
         public static int ParseIntSafe(string text) { return Int32.TryParse(text, out int n) ? n : 0; }
-    }
-
-    public enum NativeHostBrowser
-    {
-        Chrome, Firefox, MSEdge
     }
 }
