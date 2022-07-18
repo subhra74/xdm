@@ -1,10 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net5.0;net4.5.2</TargetFrameworks>
-    <Platforms>AnyCPU;x86</Platforms>
+    <TargetFrameworks>net5.0;</TargetFrameworks>
+    <Platforms>AnyCPU;x86;x64</Platforms>
     <LangVersion>9.0</LangVersion>
     <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net5.0|x86'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,10 +17,6 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="4.1.0" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net4.5.2' ">
-    <ProjectReference Include="..\CoreFx.Polyfill\CoreFx.Polyfill.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,6 +1,7 @@
 <html>
 
 <head>
+  <script src="fatal.js"></script>
   <link rel="stylesheet" href="styles.css">
 </head>
 
@@ -10,9 +11,13 @@
   </div>
   <div style="padding: 15px; font-size: 14px; padding-top: 5px; background-color: rgb(240,240,240);">
     <p>Browser monitoring is disabled</p>
-    <p style="color: gray;">Please make sure XDM is runnning and you have latest version of XDM installed, This addon is compatible with XDM
+    <p style="color: gray;">Please make sure XDM is runnning and you have latest version of XDM installed, This addon is
+      compatible with XDM
       7.0 or higher</p>
-    <p><a href="https://github.com/subhra74/xdm">Download XDM</a></p>
+    <div style="display: flex; justify-content: space-between;">
+      <button id="RunXDM" class="primary-button">Run XDM</button>
+      <p><a href="https://github.com/subhra74/xdm">Download XDM</a></p>
+    </div>
   </div>
 </body>
 

@@ -1,0 +1,59 @@
+﻿<UserControl x:Class="XDM.Wpf.UI.Dialogs.Settings.AdvancedSettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:XDM.Wpf.UI.Dialogs.Settings"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <DockPanel>
+        <TextBlock Padding="10" Text="{StaticResource SETTINGS_ADV}" FontSize="14" DockPanel.Dock="Top" />
+        <ScrollViewer>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <CheckBox Name="ChkHalt" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" 
+                          VerticalContentAlignment="Center" Margin="10,5" Padding="3" 
+                          Content="{StaticResource MSG_HALT}"/>
+                <CheckBox Name="ChkKeepAwake" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4" 
+                          VerticalContentAlignment="Center" Margin="10,5" Padding="3" Content="{StaticResource MSG_AWAKE}"/>
+                <CheckBox Name="ChkRunCmd" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4" VerticalContentAlignment="Center" 
+                          Margin="10,5" Padding="3" Content="{StaticResource EXEC_CMD}"/>
+                <TextBox Name="TxtCustomCmd" Grid.Row="3" Grid.Column="0" Margin="10" VerticalContentAlignment="Center" 
+                         AcceptsReturn="False" TextWrapping="NoWrap" Grid.ColumnSpan="3"
+                         />
+                <CheckBox Name="ChkRunAntivirus" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="4" VerticalContentAlignment="Center" 
+                          Margin="10,5" Padding="3" Content="{StaticResource EXE_ANTI_VIR}"/>
+                <TextBlock Margin="10,10,10,0" Text="{StaticResource ANTIVIR_CMD}" Grid.Row="5" Grid.ColumnSpan="4" />
+                <TextBox Name="TxtAntiVirusCmd" Grid.Row="6" Grid.Column="0" Margin="10" VerticalContentAlignment="Center" 
+                         AcceptsReturn="False" TextWrapping="NoWrap"/>
+                <Button Name="BtnBrowse"  Grid.Row="6" Grid.Column="1" Margin="0,10,10,10" Padding="5,3" Content="..." Click="BtnBrowse_Click"/>
+                <TextBlock Margin="10,10,10,0" Text="{StaticResource ANTIVIR_ARGS}" Grid.Row="7" Grid.ColumnSpan="4" />
+                <TextBox Name="TxtAntiVirusArgs" Grid.Row="8" Grid.Column="0" Margin="10" VerticalContentAlignment="Center" 
+                         AcceptsReturn="False" TextWrapping="NoWrap" Grid.ColumnSpan="3"/>
+                <CheckBox Name="ChkAutoRun" Grid.Row="9" Grid.Column="0" Grid.ColumnSpan="4" VerticalContentAlignment="Center" 
+                          Margin="10,5" Padding="3" Content="{StaticResource AUTO_START}"/>
+                <TextBlock Margin="10,10,10,0" Text="{StaticResource MSG_FALLBACK_UA}" Grid.Row="10" Grid.ColumnSpan="4" />
+                <TextBox Name="TxtDefaultUserAgent" Grid.Row="11" Grid.Column="0" Margin="10" VerticalContentAlignment="Center" 
+                         AcceptsReturn="False" TextWrapping="NoWrap"/>
+                <Button Name="BtnUserAgentReset"  Grid.Row="11" Grid.Column="1" Margin="0,10,10,10" Padding="5,3" Content="{StaticResource DESC_DEF}" Click="BtnUserAgentReset_Click"/>
+            </Grid>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

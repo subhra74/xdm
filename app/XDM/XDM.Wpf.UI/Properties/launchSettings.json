@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "XDM.Wpf.UI": {
+      "commandName": "Project",
+      "commandLineArgs": "-u http://abc/xyz"
+    }
+  }
+}

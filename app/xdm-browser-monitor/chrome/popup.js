@@ -19,7 +19,7 @@ window.onload = function () {
             //return;
         }
 
-        renderList(response.list);
+        renderList(response.list, response.noEncoding);
 
     });
 
@@ -27,6 +27,11 @@ window.onload = function () {
         chrome.runtime.sendMessage({ type: "cmd", disable: !this.checked });
         window.close();
     });
+
+    // document.getElementById("RunXDM").addEventListener('click', function () {
+    //     chrome.runtime.sendMessage({ type: "reconnect" });
+    //     window.close();
+    // });
 };
 
 function toUTF8(str) {
@@ -38,16 +43,16 @@ function toUTF8(str) {
     return text;
 }
 
-function renderList(arr) {
+function renderList(arr, noEncoding) {
 
     var table = document.getElementById("table");
 
-    console.log("total element: "+arr.length);
+    console.log("total element: " + arr.length);
 
     for (var i = 0; i < arr.length; i++) {
         var listItem = arr[i];
 
-        var text = listItem.text;//toUTF8(listItem.text);
+        var text = noEncoding ? listItem.text : toUTF8(listItem.text);
 
         var info = listItem.info;
         var id = listItem.id;
@@ -72,7 +77,7 @@ function renderList(arr) {
         div.setAttribute("style", "padding: 10px; display: flex; flex-direction: column;" + border);
 
         var p1 = document.createElement('span');
-        p1.id=listItem.id;
+        p1.id = listItem.id;
         p1.setAttribute("style", "font-family:helvetica,arial,courier; font-size: 14px; cursor: pointer;");
         var node = document.createTextNode(text);
         p1.appendChild(node);

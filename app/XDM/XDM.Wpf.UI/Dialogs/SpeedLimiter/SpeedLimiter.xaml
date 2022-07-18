@@ -1,0 +1,38 @@
+﻿<UserControl x:Class="XDM.Wpf.UI.Dialogs.SpeedLimiter.SpeedLimiter"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:XDM.Wpf.UI.Dialogs.SpeedLimiter"
+             mc:Ignorable="d" 
+             d:DesignHeight="400" d:DesignWidth="400">
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="auto"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <CheckBox Name="ChkEnabled" 
+                  Margin="10"
+                  Content="{StaticResource MENU_SPEED_LIMITER}" 
+                  Grid.ColumnSpan="2" Checked="ChkEnabled_Checked" 
+                  Unchecked="ChkEnabled_Checked"/>
+        <TextBlock Text="{StaticResource MSG_SPEED_LIMIT}" 
+                   Margin="10"
+                   Grid.Row="1"/>
+        <TextBox Grid.Row="1" Grid.Column="1" 
+                 MinWidth="80"
+                 Margin="5,5"
+                 Name="TxtSpeedLimit" TextWrapping="NoWrap" 
+                 AcceptsReturn="False"
+                 VerticalContentAlignment="Center"
+                 IsReadOnly ="True"
+                 PreviewTextInput="TxtSpeedLimit_PreviewTextInput"
+                 DataObject.Pasting="TxtSpeedLimit_Pasting"
+                 LostFocus="TxtSpeedLimit_LostFocus"/>
+    </Grid>
+</UserControl>

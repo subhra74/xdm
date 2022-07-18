@@ -1,0 +1,96 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:core="clr-namespace:System;assembly=mscorlib"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <SolidColorBrush x:Key="CategoryForegroundNormal" Color="#808080"/>
+    <SolidColorBrush x:Key="CategoryForegroundSelected" Color="White"/>
+    <SolidColorBrush x:Key="CategoryHighlight" Color="#0A6AB6"/>
+    <SolidColorBrush x:Key="CategoryListBackground" Color="#24292E"/>
+    <SolidColorBrush x:Key="CategoryMouseOverBackground" Color="#2E3338"/>
+
+    <SolidColorBrush x:Key="ButtonBackcolor" Color="White"/>
+    <SolidColorBrush x:Key="ButtonForecolor" Color="Black"/>
+    <SolidColorBrush x:Key="ButtonMouseOverBackcolor" Color="#E6E6E6"/>
+    <SolidColorBrush x:Key="ButtonMousePressedBackcolor" Color="#D2D2D2"/>
+    <SolidColorBrush x:Key="ButtonDisabledBackcolor" Color="#FBFBFB"/>
+    <SolidColorBrush x:Key="ButtonBorder" Color="#E5E5E5"/>
+    <SolidColorBrush x:Key="ButtonFocusedBorder" Color="DodgerBlue"/>
+    <SolidColorBrush x:Key="ButtonOverBackcolor" Color="#F5F5F5"/>
+
+    <SolidColorBrush x:Key="ToolButtonForecolor" Color="#828282"/>
+    <SolidColorBrush x:Key="ToolButtonMouseOverBackcolor" Color="#F5F5F5"/>
+    <SolidColorBrush x:Key="ToolButtonMousePressedBackcolor" Color="#F3F3F3"/>
+    <SolidColorBrush x:Key="ToolButtonMouseDisabledForecolor" Color="#828282"/>
+    <SolidColorBrush x:Key="ToolbarBordercolor" Color="#E5E5E5"/>
+
+    <SolidColorBrush x:Key="SearchBorder" Color="#E5E5E5"/>
+    <SolidColorBrush x:Key="SearchBackcolor" Color="White"/>
+
+    <SolidColorBrush x:Key="ControlBackcolor" Color="#F3F3F3"/>
+    <!--<SolidColorBrush x:Key="ControlBordercolor" Color="#E5E5E5"/>-->
+    <SolidColorBrush x:Key="ControlBordercolor" Color="DarkGray"/>
+    <SolidColorBrush x:Key="ControlForecolor" Color="Black"/>
+
+    <SolidColorBrush x:Key="TextBackcolor" Color="White"/>
+    <SolidColorBrush x:Key="TextForecolor" Color="Black"/>
+    <SolidColorBrush x:Key="DisabledTextBackcolor" Color="White"/>
+    <SolidColorBrush x:Key="TextMouseOverBorder" Color="DodgerBlue"/>
+    <SolidColorBrush x:Key="TextBorder" Color="#E5E5E5"/>
+    <SolidColorBrush x:Key="TextFocusedBorder" Color="DodgerBlue"/>
+
+    <SolidColorBrush x:Key="ListViewBackcolor" Color="White"/>
+    <SolidColorBrush x:Key="ListViewForecolor" Color="#696969"/>
+    <SolidColorBrush x:Key="ListViewSelectedForecolor" Color="Black"/>
+    <SolidColorBrush x:Key="ListViewSelectedBackcolor" Color="#E6E6E6"/>
+    <SolidColorBrush x:Key="ListViewIconForecolor" Color="DodgerBlue"/>
+    <SolidColorBrush x:Key="ListViewMouseOverBackcolor" Color="#F5F5F5"/>
+    <SolidColorBrush x:Key="ListViewMouseOverForecolor" Color="#3C3C3C"/>
+    <SolidColorBrush x:Key="ListViewHeaderForecolor" Color="#A0A0A0"/>
+
+    <SolidColorBrush x:Key="StatusbarBackcolor" Color="White"/>
+    <SolidColorBrush x:Key="StatusbarIconcolor" Color="DodgerBlue"/>
+
+    <Thickness x:Key="CategoryListBorderThickness">0</Thickness>
+    <Thickness x:Key="MainContentBorderThickness">0,1,0,0</Thickness>
+
+    <SolidColorBrush x:Key="PlaceHolderForecolor" Color="#B4B4B4"/>
+
+    <!--<SolidColorBrush x:Key="{x:Static SystemColors.ControlTextBrushKey }" Color="Black"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.WindowTextBrushKey }" Color="Black"/>-->
+    <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey }" Color="#F3F3F3"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey }" Color="DodgerBlue"/>
+    <!--<SolidColorBrush x:Key="{x:Static SystemColors.ControlTextColorKey }" Color="Black"/>-->
+
+    <SolidColorBrush x:Key="NewDownloadTextBoxBackground" Color="White"/>
+    <SolidColorBrush x:Key="HyperlinkForecolor" Color="DodgerBlue"/>
+
+    <SolidColorBrush x:Key="ScrollBarThumbColorNormal" Color="#ECECEC"/>
+    <SolidColorBrush x:Key="ScrollBarThumbColorHot" Color="#E2E2E2"/>
+
+    <SolidColorBrush x:Key="ControlDisabledBackcolor" Color="#3C3C3C"/>
+    <SolidColorBrush x:Key="TabSelectionColor" Color="DodgerBlue"/>
+
+    <SolidColorBrush x:Key="ProgressBarBackcolor" Color="#DCDCDC"/>
+    <SolidColorBrush x:Key="ProgressBarForecolor" Color="DodgerBlue"/>
+
+    <core:Double x:Key="ButtonDisabledOpacity">0.5</core:Double>
+
+    <Style TargetType="{x:Type Button}">
+        <Setter Property="MinHeight" Value="23"/>
+        <Setter Property="MinWidth" Value="5"/>
+        <Setter Property="Padding" Value="10,3"/>
+        <Setter Property="Margin" Value="3,3"/>
+    </Style>
+
+    <Style TargetType="{x:Type TextBox}">
+        <Setter Property="Padding" Value="3,5"/>
+    </Style>
+
+    <Style TargetType="{x:Type ComboBox}">
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+
+    <!--<Style TargetType="{x:Type TextBlock}">
+        <Setter Property="Foreground"
+            Value="{StaticResource ControlForecolor}"/>
+    </Style>-->
+</ResourceDictionary>

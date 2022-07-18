@@ -1,0 +1,14 @@
+{
+    "name": "XDM Browser Integration Module",
+    "action": {},
+    "manifest_version": 3,
+    "version": "1.0",
+    "description": "Extension to integrate Xtreme Download Manager with Chrome",
+    "permissions": [
+        "downloads"
+    ],
+    "background": {
+        "service_worker": "main.js",
+        "type": "module"
+    }
+}

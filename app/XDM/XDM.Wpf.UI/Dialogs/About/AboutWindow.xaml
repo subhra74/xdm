@@ -1,0 +1,25 @@
+﻿<Window x:Class="XDM.Wpf.UI.Dialogs.About.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:XDM.Wpf.UI.Dialogs.About"
+        mc:Ignorable="d"
+        Title="{StaticResource MENU_ABOUT}" Height="450" Width="500" ShowInTaskbar="False" WindowStartupLocation="CenterOwner">
+    <Grid>
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+            <Canvas Width="128" Height="128" Background="#2471A3">
+                <Canvas.Clip>
+                    <RectangleGeometry Rect="0,0,128,128" />
+                </Canvas.Clip>
+                <Ellipse Width="200" Height="100" Canvas.Left="-36" Canvas.Top="-30" Fill="#3498DB"/>
+                <Rectangle Width="30" Height="50" Fill="White" Canvas.Left="49" Canvas.Top="30"/>
+                <Polygon Points="34,70 94,70, 64,100" Fill="White" />
+            </Canvas>
+            <TextBlock Name="TxtAppVersion"  FontSize="16" Padding="10,20,10,10" HorizontalAlignment="Center"/>
+            <TextBlock Name="TxtCopyright"  Padding="10,0" HorizontalAlignment="Center"/>
+            <TextBlock Name="TxtWebsite"  Cursor="Hand" Foreground="DeepSkyBlue" 
+                       Padding="10" FontSize="14" HorizontalAlignment="Center" MouseDown="TextBlock_MouseDown"/>
+        </StackPanel>
+    </Grid>
+</Window>

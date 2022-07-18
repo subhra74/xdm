@@ -2,35 +2,39 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net3.5;net4.5;net4.7.2;net5.0</TargetFrameworks>
+    <TargetFrameworks>net3.5;net4.7.2;net6.0</TargetFrameworks>
     <InvariantGlobalization>true</InvariantGlobalization>
     <LangVersion>9.0</LangVersion>
-    <Platforms>AnyCPU;x86</Platforms>
-    <!--<PublishTrimmed>true</PublishTrimmed>
+    <Nullable>enable</Nullable>
+    <Platforms>x86;x64</Platforms>
+    <AssemblyName>xdm-messaging-host</AssemblyName>
+    <PublishTrimmed>true</PublishTrimmed>
     <TrimMode>Link</TrimMode>
-    <Platforms>AnyCPU;x86</Platforms>
-    <RuntimeIdentifier>win-x86</RuntimeIdentifier>-->
+    <!--<Platforms>AnyCPU;x86</Platforms>-->
+    <!--<RuntimeIdentifiers>win-x86;linux-x64</RuntimeIdentifiers>-->
   </PropertyGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' != 'net5.0' ">
+  <!--<ItemGroup Condition=" '$(TargetFramework)' != 'net5.0' or '$(TargetFramework)' != 'net6.0' ">
     <ProjectReference Include="..\NetFX.Polyfill\NetFX.Polyfill.csproj" />
-  </ItemGroup>
+  </ItemGroup>-->
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\BrowserMonitor\BrowserMonitor.csproj" />
-    <ProjectReference Include="..\TraceLog\TraceLog.csproj" />
-  </ItemGroup>
-
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net5.0' or '$(TargetFramework)' == 'net4.7.2' or '$(TargetFramework)' == 'net4.5' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net4.7.2' or '$(TargetFramework)' == 'net4.5' ">
     <AppConfig>App.PostDotNet4.config</AppConfig>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net3.5' ">
     <AppConfig>App.PreDotNet4.config</AppConfig>
   </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net4.7.2|x86'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
+
+  <Import Project="..\XDM.Messaging\XDM.Messaging.projitems" Label="Shared" />
 
 </Project>

@@ -1,17 +1,32 @@
 ﻿using System;
+using System.Net;
 using Gtk;
+using TraceLog;
 using Translations;
 using XDM.Core.Lib.Common;
+using XDM.Core.Lib.DataAccess;
 using XDMApp;
 
 namespace XDM.GtkUI
 {
     class Program
     {
+        private const string DisableCachingName = @"TestSwitch.LocalAppContext.DisableCaching";
+        private const string DontEnableSchUseStrongCryptoName = @"Switch.System.Net.DontEnableSchUseStrongCrypto";
+
         static void Main(string[] args)
         {
             Application.Init();
+            GLib.ExceptionManager.UnhandledException += ExceptionManager_UnhandledException;
+            var globalStyleSheet = @"
+                                    .large-font{ font-size: 16px; }
+                                    .medium-font{ font-size: 14px; }
+                                    ";
 
+            var screen = Gdk.Screen.Default;
+            var provider = new CssProvider();
+            provider.LoadFromData(globalStyleSheet);
+            Gtk.StyleContext.AddProviderForScreen(screen, provider, 800);
             //var screen = Gdk.Screen.Default;
             //var provider = new CssProvider();
             //provider.LoadFromData(@".dark 
@@ -46,11 +61,51 @@ namespace XDM.GtkUI
             //                                  ");
             //Gtk.StyleContext.AddProviderForScreen(screen, provider, 800);
 
-            var app = new XDMApp.XDMApp();
+            ServicePointManager.ServerCertificateValidationCallback += (a, b, c, d) => true;
+            ServicePointManager.DefaultConnectionLimit = 100;
+
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.SystemDefault;
+
+            AppContext.SetSwitch(DisableCachingName, true);
+            AppContext.SetSwitch(DontEnableSchUseStrongCryptoName, true);
+
             TextResource.Load(Config.Instance.Language);
+
+            var debugMode = Environment.GetEnvironmentVariable("XDM_DEBUG_MODE");
+            if (!string.IsNullOrEmpty(debugMode) && debugMode == "1")
+            {
+                var logFile = System.IO.Path.Combine(Config.DataDir, "log.txt");
+                Log.InitFileBasedTrace(System.IO.Path.Combine(Config.DataDir, "log.txt"));
+            }
+            Log.Debug("Application_Startup");
+
+            AppDB.Instance.Init(System.IO.Path.Combine(Config.DataDir, "downloads.db"));
+
+            if (Config.Instance.AllowSystemDarkTheme)
+            {
+                Gtk.Settings.Default.ThemeName = "Adwaita";
+                Gtk.Settings.Default.ApplicationPreferDarkTheme = true;
+            }
+            var app = new XDMApp.XDMApp();
+
             var appWin = new AppWinPeer();
             app.AppUI = new XDMApp.AppWin(appWin, app);
-            appWin.ShowAll();
+            appWin.Show();
+            app.AppUI.WindowLoaded += (_, _) => app.StartClipboardMonitor();
+            app.StartScheduler();
+            app.StartNativeMessagingHost();
+
+            //var t = new System.Threading.Thread(() =>
+            //  {
+            //      while (true)
+            //      {
+            //          System.Threading.Thread.Sleep(5000);
+            //          Console.WriteLine("Trigger GC");
+            //          GC.Collect();
+            //      }
+            //  });
+            //t.Start();
+
             Application.Run();
 
             //var app = new XDMApp.XDMApp();
@@ -75,6 +130,12 @@ namespace XDM.GtkUI
             //            appWin.Show();
             //            Console.WriteLine("Finished show all");
             //            Application.Run();
+        }
+
+        private static void ExceptionManager_UnhandledException(GLib.UnhandledExceptionArgs args)
+        {
+            Log.Debug("GLib ExceptionManager_UnhandledException: " + args.ExceptionObject);
+            args.ExitApplication = false;
         }
     }
 }
