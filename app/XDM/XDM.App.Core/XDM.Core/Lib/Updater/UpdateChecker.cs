@@ -144,8 +144,21 @@ namespace XDM.Core.Lib.Common
             Environment.OSVersion.Platform == PlatformID.Win32NT ? "ffmpeg-x86.exe" : "ffmpeg";
 
         //TODO: Handle Linux and Mac
-        private static string GetAppExecutableNameForCurrentOS() =>
-            Environment.OSVersion.Platform == PlatformID.Win32NT ? "xdmsetup.exe" : "xdmsetup";
+        private static string? GetAppInstallerNameForCurrentOS()
+        {
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            {
+                return "xdmsetup.exe";
+            }
+            var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            var pkgTypeFile = Path.Combine(baseDir, "source_pkg");
+            if (File.Exists(pkgTypeFile))
+            {
+                var pkgType = File.ReadAllText(pkgTypeFile);
+                return $"xdmsetup.{pkgType}";
+            }
+            return null;
+        }
 
         private static UpdateInfo? FindNewYoutubeDLVersion(IHttpClient hc, DateTime lastUpdated) =>
             FindNewRelease(hc, "https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest",
@@ -157,7 +170,7 @@ namespace XDM.Core.Lib.Common
 
         private static UpdateInfo? FindNewAppVersion(IHttpClient hc, Version appVersion) =>
             FindNewRelease(hc, "https://api.github.com/repos/subhra74/xdm/releases/latest",
-                null, r => ParseGitHubTag(r.TagName) > appVersion);
+                GetAppInstallerNameForCurrentOS(), r => ParseGitHubTag(r.TagName) > appVersion);
     }
 
     internal struct GitHubRelease

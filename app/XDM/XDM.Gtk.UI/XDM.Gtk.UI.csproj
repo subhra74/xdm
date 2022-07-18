@@ -55,10 +55,7 @@
     <Content Include="svg-icons\*.*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Lang\*.*"
-          CopyToOutputDirectory="Always"
-            CopyToPublishDirectory="Always"
-          LinkBase="Lang\" />
+    <Content Include="..\Lang\*.*" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" LinkBase="Lang\" />
   </ItemGroup>
 
   <!--<ItemGroup>
@@ -142,6 +139,12 @@
     <Reference Include="PangoSharp">
       <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\PangoSharp.dll</HintPath>
     </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="source_pkg.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <Import Project="..\XDM.App.Core\XDM.App.Core.projitems" Label="Shared" />
