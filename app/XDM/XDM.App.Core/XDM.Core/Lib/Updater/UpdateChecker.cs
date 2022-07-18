@@ -107,7 +107,6 @@ namespace XDM.Core.Lib.Common
                                 Url = asset.Url,
                                 Name = asset.Name,
                                 Size = asset.Size,
-                                Description = release.Value.Body,
                                 TagName = release.Value.TagName,
                                 IsExternal = true
                             };
@@ -138,7 +137,7 @@ namespace XDM.Core.Lib.Common
 
         //TODO: Handle MacOS
         private static string GetYoutubeDLExecutableNameForCurrentOS() =>
-            Environment.OSVersion.Platform == PlatformID.Win32NT ? "youtube-dl.exe" : "youtube-dl";
+            Environment.OSVersion.Platform == PlatformID.Win32NT ? "yt-dlp_x86.exe" : "yt-dlp";
 
         //TODO: Handle MacOS
         private static string GetFFmpegExecutableNameForCurrentOS() =>
@@ -149,7 +148,7 @@ namespace XDM.Core.Lib.Common
             Environment.OSVersion.Platform == PlatformID.Win32NT ? "xdmsetup.exe" : "xdmsetup";
 
         private static UpdateInfo? FindNewYoutubeDLVersion(IHttpClient hc, DateTime lastUpdated) =>
-            FindNewRelease(hc, "https://api.github.com/repos/ytdl-org/youtube-dl/releases/latest",
+            FindNewRelease(hc, "https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest",
                 GetYoutubeDLExecutableNameForCurrentOS(), r => r.PublishedAt > lastUpdated);
 
         private static UpdateInfo? FindNewFFmpegVersion(IHttpClient hc, DateTime lastUpdated) =>
@@ -186,7 +185,6 @@ namespace XDM.Core.Lib.Common
         public string Name { get; set; }
         public string Url { get; set; }
         public long Size { get; set; }
-        public string Description { get; set; }
         public string TagName { get; set; }
         public bool IsExternal { get; set; }
     }
