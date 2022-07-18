@@ -60,8 +60,8 @@ xdm.monitoring = {
     },
 
     isMatchingDownload: function (download, response) {
-        if (xdm.util.isBlocked(download.finalUrl||download.url) || download.method === "POST") {
-            xdm.log("blocked: " + (download.finalUrl||download.url));
+        if (xdm.util.isBlocked(download.finalUrl || download.url) || download.method === "POST") {
+            xdm.log("blocked: " + (download.finalUrl || download.url));
             return false;
         }
         if (download.filename && xdm.util.hasMatchingExtension(download.filename)) {
@@ -75,7 +75,7 @@ xdm.monitoring = {
     },
 
     onDownload: function (download, request, response) {
-        var filename = download.filename;
+        var filename = xdm.util.getFileName(download);
         if (!filename) {
             filename = xdm.util.guessFileName(response);
         }

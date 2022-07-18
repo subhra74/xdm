@@ -49,7 +49,7 @@ namespace XDM.Wpf.UI
                 var logFile = System.IO.Path.Combine(Config.DataDir, "log.txt");
                 Log.InitFileBasedTrace(System.IO.Path.Combine(Config.DataDir, "log.txt"));
             }
-            Log.Debug("Application_Startup");
+            Log.Debug($"Application_Startup::args->: {string.Join(" ", Environment.GetCommandLineArgs())}");
 
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 

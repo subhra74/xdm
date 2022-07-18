@@ -22,6 +22,18 @@ namespace BrowserMonitoring
                         "chrome-extension://ejpbcmllmliidhlpkcgbphhmaodjihnc/",
                         "chrome-extension://fogpiboapmefmkbodpmfnohfflonbgig/"
                     };
+            var folder = Path.GetDirectoryName(manifestPath)!;
+            if (!Directory.Exists(folder))
+            {
+                try
+                {
+                    Directory.CreateDirectory(folder);
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex, ex.Message);
+                }
+            }
             using var stream = new FileStream(manifestPath, FileMode.Create);
             using var textWriter = new StreamWriter(stream);
             using var writer = new JsonTextWriter(textWriter);

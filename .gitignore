@@ -355,3 +355,4 @@ app/XDM/XDM.Win.Installer/net4.7.2/
 app/XDM/XDM.Win.Installer/*.msi
 *.wixpdb
 app/XDM/XDM.Win.Installer/*.exe
+app/xdm-browser-monitor/extension-code.js

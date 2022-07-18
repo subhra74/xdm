@@ -19,6 +19,7 @@ namespace NativeHost
 {
     public class NativeMessagingHostApp
     {
+        static bool isFirefox = true;
         static BlockingCollection<byte[]> receivedBrowserMessages = new();
         static BlockingCollection<byte[]> queuedBrowserMessages = new();
         static CamelCasePropertyNamesContractResolver cr = new();
@@ -35,6 +36,10 @@ namespace NativeHost
                     Trace.AutoFlush = true;
                 }
                 Debug("Application_Startup");
+                if (args.Length > 0 && args[0].StartsWith("chrome-extension:"))
+                {
+                    isFirefox = false;
+                }
             }
             catch { }
             Debug("Process running from: " + AppDomain.CurrentDomain.BaseDirectory);
@@ -127,20 +132,31 @@ namespace NativeHost
                 var file = Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".."),
                          Environment.OSVersion.Platform == PlatformID.Win32NT ? "xdm-app.exe" : "xdm-app");
                 Debug("XDM instance creating...1 " + file);
-                ProcessStartInfo psi = new()
+                if (isFirefox && Environment.OSVersion.Platform == PlatformID.Win32NT)
                 {
-                    FileName = file,
-                    UseShellExecute = true
-                };
-
-                if (minimized)
-                {
-                    psi.Arguments = "-m";
+                    var args = minimized ? " -m" : "";
+                    if (!NativeProcess.Win32CreateProcess(file, $"\"{file}\"{args}"))
+                    {
+                        Debug("Win32 create process failed!");
+                    }
                 }
+                else
+                {
+                    ProcessStartInfo psi = new()
+                    {
+                        FileName = file,
+                        UseShellExecute = true
+                    };
 
-                Debug("XDM instance creating...");
-                Process.Start(psi);
-                Debug("XDM instance created");
+                    if (minimized)
+                    {
+                        psi.Arguments = "-m";
+                    }
+
+                    Debug("XDM instance creating...");
+                    Process.Start(psi);
+                    Debug("XDM instance created");
+                }
             }
             catch (Exception ex)
             {

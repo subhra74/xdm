@@ -88,7 +88,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
         {
             try
             {
-                Helpers.InstallNativeMessagingHost(NativeHostBrowser.Firefox);
+                NativeMessagingConfigurer.InstallNativeMessagingHost(Browser.Firefox);
             }
             catch (Exception ex)
             {
@@ -112,7 +112,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
         {
             try
             {
-                Helpers.InstallNativeMessagingHost(NativeHostBrowser.Chrome);
+                NativeMessagingConfigurer.InstallNativeMessagingHost(Browser.Chrome);
             }
             catch (Exception ex)
             {
@@ -136,7 +136,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
         {
             try
             {
-                Helpers.InstallNativeMessagingHost(NativeHostBrowser.Chrome);
+                NativeMessagingConfigurer.InstallNativeMessagingHost(Browser.Chrome);
             }
             catch (Exception ex)
             {

@@ -5,17 +5,10 @@
   "description": "XDM integration module for Firefox Quantum",
   "version": "2.2",
   "icons": {
-    "48": "icon.png",
-    "128": "icon-128.png"
+    "48": "icon.png"
   },
   "background": {
-    "scripts": [
-      "init.js",
-      "util.js",
-      "lib.js",
-      "messaging.js",
-      "bg2.js"
-    ]
+    "page": "background.html"
   },
   "browser_action": {
     "default_icon": "icon.png"
@@ -28,7 +21,6 @@
     "webRequest",
     "webRequestBlocking",
     "nativeMessaging",
-    "downloads",
     "*://*/*"
   ],
   "applications": {
