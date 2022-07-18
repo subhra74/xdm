@@ -32,6 +32,10 @@ function App() {
     setMappings(dict);
   }
   function generateTranslation() {
+    if(!language||language.length<1){
+      alert("Please enter valid file name");
+      return;
+    }
     const text = Object.keys(mappings).map(keyName => keyName + "=" + mappings[keyName].text).join("\r\n");
     var MIME_TYPE = "application/octet-stream";
     var blob = new Blob([text], { type: MIME_TYPE });
@@ -45,17 +49,15 @@ function App() {
   }
   return (
     <div className="App">
-      <div style={{
-        position: 'fixed', left: '0px', top: '0px',
-        right: '0px', backgroundColor: 'dodgerblue', padding: '20px',
-        color: 'white', fontSize: '20px', textAlign: 'center'
-      }}>
-        XDM translation generator
+      <nav className="navbar fixed-top navbar-dark bg-dark">
+        <div className="navbar-brand" style={{padding: "10px"}}>XDM translation generator</div>
+      </nav>
+      <div style={{ paddingTop: '100px', paddingBottom: '20px' }}>
+        <label htmlFor='txtname'>Translating to </label>
+        <input className='form-control' type="text" value={language} onChange={(e) => setLanguage(e.target.value)} id="txtname" />
       </div>
-      <div style={{ paddingTop: '100px', paddingBottom:'20px' }}>
-        <span>Translating to </span>
-        <input type="text" value={language} onChange={(e) => setLanguage(e.target.value)} />
-        <span>.txt</span>
+      <div className="alert-info" style={{ padding: "20px", margin: "10px 0px", borderRadius: "5px" }}>
+        Please enter translated text for the specified english text below
       </div>
       <div style={{ paddingBottom: '100px' }}>
         {Object.keys(mappings).map(keyName => (
@@ -69,11 +71,13 @@ function App() {
       </div>
       <div style={{
         position: 'fixed', left: '0px', bottom: '0px',
-        right: '0px', backgroundColor: 'dimgray', padding: '10px',
+        right: '0px', padding: '10px',
         display: 'flex',
-        justifyContent: 'flex-end'
-      }}>
-        <button style={{ padding: '10px', paddingLeft: '20px', paddingRight: '20px' }}
+        justifyContent: 'flex-end',
+        background: 'white',
+        borderTop: '1px solid gray'
+      }} >
+        <button type="button" className="btn btn-primary btn-lg" style={{ padding: '10px', paddingLeft: '20px', paddingRight: '20px' }}
           onClick={generateTranslation}>Generate translation</button>
       </div>
     </div>
