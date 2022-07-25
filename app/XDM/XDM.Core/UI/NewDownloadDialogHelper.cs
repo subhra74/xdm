@@ -11,7 +11,7 @@ namespace XDM.Core.UI
 {
     public class NewDownloadDialogHelper
     {
-        public static void CreateAndShowDialog(IAppService app, IAppController appUi,
+        public static void CreateAndShowDialog(IAppService app, IUIService appUi,
             INewDownloadDialogSkeleton window, Message? message = null,
             Action? destroyCallback = null)
         {

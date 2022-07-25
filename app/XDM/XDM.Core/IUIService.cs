@@ -9,7 +9,7 @@ using XDM.Core.Downloader;
 
 namespace XDM.Core
 {
-    public interface IAppController
+    public interface IUIService
     {
         /// <summary>
         /// 

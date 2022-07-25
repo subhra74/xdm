@@ -9,6 +9,7 @@
     <Import_RootNamespace>XDM.Core</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)AppInstance.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\BrowserMessageHandler.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\BrowserMonitor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\IpcHttpHandler.cs" />
@@ -82,7 +83,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Exceptions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GenericEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)IAppService.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)IAppController.cs" />
+    <Compile Include="..\XDM.Core\IUIService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)IClipboardMonitor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\IDownloadCompleteDialog.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\IFileSelectable.cs" />
@@ -160,7 +161,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Util\SerializationHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Util\TimeHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Util\Win32NativeMethods.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)AppController.cs" />
+    <Compile Include="..\XDM.Core\UIService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CallbackActions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ErrorMessages.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)IconResource.cs" />

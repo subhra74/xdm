@@ -131,13 +131,13 @@ namespace XDM.Core
             app.ResumeDownload(idDict);
         }
 
-        public static void MoveToQueue(IMainView peer, IAppController appUI)
+        public static void MoveToQueue(IMainView peer, IUIService appUI)
         {
             var selectedIds = peer.SelectedInProgressRows?.Select(x => x.DownloadEntry.Id)?.ToArray() ?? new string[0];
             MoveToQueue(peer, appUI, selectedIds);
         }
 
-        public static void MoveToQueue(IMainView peer, IAppController appUI, string[] selectedIds, bool prompt = false, Action? callback = null)
+        public static void MoveToQueue(IMainView peer, IUIService appUI, string[] selectedIds, bool prompt = false, Action? callback = null)
         {
             if (prompt && !peer.Confirm(peer, "Add to queue?"))
             {

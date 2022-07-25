@@ -1085,7 +1085,7 @@ namespace XDM.GtkUI
             return window;
         }
 
-        public IProgressWindow CreateProgressWindow(string downloadId, IAppService app, IAppController appUI)
+        public IProgressWindow CreateProgressWindow(string downloadId, IAppService app, IUIService appUI)
         {
             var prgWin = DownloadProgressWindow.CreateFromGladeFile();
             prgWin.DownloadId = downloadId;
@@ -1241,13 +1241,13 @@ namespace XDM.GtkUI
             propWin.Dispose();
         }
 
-        public void ShowYoutubeDLDialog(IAppController appUI, IAppService app)
+        public void ShowYoutubeDLDialog(IUIService appUI, IAppService app)
         {
             var win = new VideoDownloaderController(VideoDownloaderWindow.CreateFromGladeFile(), appUI, app);
             win.Run();
         }
 
-        public void ShowBatchDownloadWindow(IAppService app, IAppController appUi)
+        public void ShowBatchDownloadWindow(IAppService app, IUIService appUi)
         {
             var uvc = new BatchDownloadViewController(BatchDownloadWindow.CreateFromGladeFile(this), app, appUi);
             uvc.Run();
@@ -1257,7 +1257,7 @@ namespace XDM.GtkUI
 
         public void ShowSettingsDialog(IAppService app, int page = 0)
         {
-            using var win = SettingsDialog.CreateFromGladeFile(this, windowGroup, app.AppUI, app);
+            using var win = SettingsDialog.CreateFromGladeFile(this, windowGroup, AppInstance.UI, app);
             win.SetActivePage(page);
             win.LoadConfig();
             win.Run();
@@ -1278,7 +1278,7 @@ namespace XDM.GtkUI
         {
         }
 
-        public IUpdaterUI CreateUpdateUIDialog(IAppController ui)
+        public IUpdaterUI CreateUpdateUIDialog(IUIService ui)
         {
             return UpdaterWindow.CreateFromGladeFile(ui);
         }
@@ -1402,7 +1402,7 @@ namespace XDM.GtkUI
             return -1;
         }
 
-        public IQueuesWindow CreateQueuesAndSchedulerWindow(IAppController appUi, IEnumerable<DownloadQueue> queues)
+        public IQueuesWindow CreateQueuesAndSchedulerWindow(IUIService appUi, IEnumerable<DownloadQueue> queues)
         {
             return QueueSchedulerDialog.CreateFromGladeFile(this, this.windowGroup, appUi);
         }
@@ -1441,12 +1441,12 @@ namespace XDM.GtkUI
             return GtkHelper.SelectFile(this);
         }
 
-        public IQueuesWindow CreateQueuesAndSchedulerWindow(IAppController appUi)
+        public IQueuesWindow CreateQueuesAndSchedulerWindow(IUIService appUi)
         {
             return QueueSchedulerDialog.CreateFromGladeFile(this, this.windowGroup, appUi);
         }
 
-        public void ShowDownloadSelectionWindow(IAppService app, IAppController appUI, FileNameFetchMode mode, IEnumerable<object> downloads)
+        public void ShowDownloadSelectionWindow(IAppService app, IUIService appUI, FileNameFetchMode mode, IEnumerable<object> downloads)
         {
             var dsvc = new DownloadSelectionViewController(DownloadSelectionWindow.CreateFromGladeFile(),
                     app, appUI, FileNameFetchMode.FileNameAndExtension, downloads);

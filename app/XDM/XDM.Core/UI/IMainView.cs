@@ -57,7 +57,7 @@ namespace XDM.Core.UI
 
         INewVideoDownloadDialog CreateNewVideoDialog();
 
-        IProgressWindow CreateProgressWindow(string downloadId, IAppService app, IAppController appUI);
+        IProgressWindow CreateProgressWindow(string downloadId, IAppService app, IUIService appUI);
 
         void RunOnUIThread(Action action);
 
@@ -101,9 +101,9 @@ namespace XDM.Core.UI
 
         void ShowPropertiesDialog(BaseDownloadEntry ent, ShortState? state);
 
-        void ShowYoutubeDLDialog(IAppController appUI, IAppService app);
+        void ShowYoutubeDLDialog(IUIService appUI, IAppService app);
 
-        void ShowBatchDownloadWindow(IAppService app, IAppController appUi);
+        void ShowBatchDownloadWindow(IAppService app, IUIService appUi);
 
         void ShowSettingsDialog(IAppService app, int page = 0);
 
@@ -113,15 +113,15 @@ namespace XDM.Core.UI
 
         void UpdateParallalismLabel();
 
-        IUpdaterUI CreateUpdateUIDialog(IAppController ui);
+        IUpdaterUI CreateUpdateUIDialog(IUIService ui);
 
         void ClearUpdateInformation();
 
-        IQueuesWindow CreateQueuesAndSchedulerWindow(IAppController appUi);
+        IQueuesWindow CreateQueuesAndSchedulerWindow(IUIService appUi);
 
         IQueueSelectionDialog CreateQueueSelectionDialog();
 
-        void ShowDownloadSelectionWindow(IAppService app, IAppController appUI, FileNameFetchMode mode, IEnumerable<object> downloads);
+        void ShowDownloadSelectionWindow(IAppService app, IUIService appUI, FileNameFetchMode mode, IEnumerable<object> downloads);
 
         IClipboardMonitor GetClipboardMonitor();
 

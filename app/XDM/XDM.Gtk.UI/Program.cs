@@ -89,7 +89,7 @@ namespace XDM.GtkUI
             var app = new XDM.Core.AppService();
 
             var appWin = new AppWinPeer();
-            app.AppUI = new XDM.Core.AppController(appWin, app);
+            app.AppUI = new XDM.Core.UIService(appWin, app);
             appWin.Show();
             app.AppUI.WindowLoaded += (_, _) => app.StartClipboardMonitor();
             app.StartScheduler();

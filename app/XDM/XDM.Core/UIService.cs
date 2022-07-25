@@ -13,7 +13,7 @@ using XDM.Core.Util;
 
 namespace XDM.Core
 {
-    public class UIService : IAppController
+    public class UIService : IUIService
     {
         private IMainView peer;
         private IAppService app;

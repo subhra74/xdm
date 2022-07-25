@@ -78,7 +78,7 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
 
         public IAppService App { get; set; }
 
-        public IAppController AppUI { get; set; }
+        public IUIService AppUI { get; set; }
 
         public void DestroyWindow()
         {

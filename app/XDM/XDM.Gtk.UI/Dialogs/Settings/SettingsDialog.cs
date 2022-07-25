@@ -59,7 +59,7 @@ namespace XDM.GtkUI.Dialogs.Settings
         private SettingsDialog(Builder builder,
             Window parent,
             WindowGroup group,
-            IAppController ui,
+            IUIService ui,
             IAppService app) : base(builder.GetRawOwnedObject("dialog"))
         {
             builder.Autoconnect(this);
@@ -707,7 +707,7 @@ namespace XDM.GtkUI.Dialogs.Settings
             Tabs.Page = page;
         }
 
-        public static SettingsDialog CreateFromGladeFile(Window parent, WindowGroup group, IAppController ui, IAppService app)
+        public static SettingsDialog CreateFromGladeFile(Window parent, WindowGroup group, IUIService ui, IAppService app)
         {
             var builder = new Builder();
             builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "settings-dialog.glade"));

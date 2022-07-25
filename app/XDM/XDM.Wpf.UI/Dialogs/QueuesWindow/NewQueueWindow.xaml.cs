@@ -22,7 +22,7 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
         private DownloadQueue? modifyingQueue;
         private Action<DownloadQueue, bool> okAction;
 
-        public NewQueueWindow(IAppController ui,
+        public NewQueueWindow(IUIService ui,
             Action<DownloadQueue, bool> okAction,
             DownloadQueue? modifyingQueue)
         {

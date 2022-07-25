@@ -341,7 +341,7 @@ namespace XDM.Wpf.UI
             return new NewVideoDownloadWindow();
         }
 
-        public IProgressWindow CreateProgressWindow(string downloadId, IAppService app, IAppController appUI)
+        public IProgressWindow CreateProgressWindow(string downloadId, IAppService app, IUIService appUI)
         {
             return new DownloadProgressWindow
             {
@@ -439,7 +439,7 @@ namespace XDM.Wpf.UI
         {
             Dispatcher.Invoke(new Action(() =>
             {
-                if (window is IAppController || window == this || window == null)
+                if (window is IUIService || window == this || window == null)
                 {
                     MessageBox.Show(this, message);
                 }
@@ -546,14 +546,14 @@ namespace XDM.Wpf.UI
             propertiesWindow.ShowDialog(this);
         }
 
-        public void ShowYoutubeDLDialog(IAppController appUI, IAppService app)
+        public void ShowYoutubeDLDialog(IUIService appUI, IAppService app)
         {
             var ydlWindow = new VideoDownloaderWindow(app, appUI) { Owner = this };
             var win = new VideoDownloaderController(ydlWindow, appUI, app);
             win.Run();
         }
 
-        public void ShowBatchDownloadWindow(IAppService app, IAppController appUi)
+        public void ShowBatchDownloadWindow(IAppService app, IUIService appUi)
         {
             var uvc = new BatchDownloadViewController(new BatchDownloadWindow { Owner = this }, app, appUi);
             uvc.Run();
@@ -582,7 +582,7 @@ namespace XDM.Wpf.UI
 
         }
 
-        public IUpdaterUI CreateUpdateUIDialog(IAppController ui)
+        public IUpdaterUI CreateUpdateUIDialog(IUIService ui)
         {
             return new UpdaterWindow(ui);
         }
@@ -592,7 +592,7 @@ namespace XDM.Wpf.UI
             ApplyFilter();
         }
 
-        public IQueuesWindow CreateQueuesAndSchedulerWindow(IAppController appUi)
+        public IQueuesWindow CreateQueuesAndSchedulerWindow(IUIService appUi)
         {
             return new ManageQueueDialog(appUi)
             {
@@ -885,7 +885,7 @@ namespace XDM.Wpf.UI
             this.InProgressContextMenuOpening?.Invoke(sender, e);
         }
 
-        public void ShowDownloadSelectionWindow(IAppService app, IAppController appUI, FileNameFetchMode mode, IEnumerable<object> downloads)
+        public void ShowDownloadSelectionWindow(IAppService app, IUIService appUI, FileNameFetchMode mode, IEnumerable<object> downloads)
         {
             var dsvc = new DownloadSelectionViewController(new DownloadSelectionWindow(),
                     app, appUI, FileNameFetchMode.FileNameAndExtension, downloads);

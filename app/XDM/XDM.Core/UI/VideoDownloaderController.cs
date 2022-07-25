@@ -23,10 +23,10 @@ namespace XDM.Core.UI
         private List<YDLVideoEntry> videoItemList;
         private List<int> videoQualities;
         private IVideoDownloadView view;
-        private IAppController appUI;
+        private IUIService appUI;
         private IAppService app;
 
-        public VideoDownloaderController(IVideoDownloadView view, IAppController appUI, IAppService app)
+        public VideoDownloaderController(IVideoDownloadView view, IUIService appUI, IAppService app)
         {
             this.appUI = appUI;
             this.app = app;

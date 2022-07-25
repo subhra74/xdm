@@ -13,7 +13,6 @@ namespace XDM.Core
     public interface IAppService
     {
         public Version AppVerion { get; }
-        public IAppController AppUI { get; set; }
         public string HelpPage { get; }
         public string UpdatePage { get; }
         public string IssuePage { get; }

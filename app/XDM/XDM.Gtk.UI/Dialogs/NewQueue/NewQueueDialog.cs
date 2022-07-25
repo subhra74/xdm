@@ -36,7 +36,7 @@ namespace XDM.GtkUI.Dialogs.NewQueue
         private NewQueueDialog(Builder builder,
             Window parent,
             WindowGroup group,
-            IAppController ui,
+            IUIService ui,
             Action<DownloadQueue, bool> okAction,
             DownloadQueue? modifyingQueue) : base(builder.GetRawOwnedObject("dialog"))
         {
@@ -232,7 +232,7 @@ namespace XDM.GtkUI.Dialogs.NewQueue
             BtnCancel.Label = TextResource.GetText("ND_CANCEL");
         }
 
-        public static NewQueueDialog CreateFromGladeFile(Window parent, WindowGroup group, IAppController ui,
+        public static NewQueueDialog CreateFromGladeFile(Window parent, WindowGroup group, IUIService ui,
             Action<DownloadQueue, bool> okAction,
             DownloadQueue? modifyingQueue)
         {

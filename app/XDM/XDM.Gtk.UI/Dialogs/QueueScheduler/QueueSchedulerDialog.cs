@@ -60,7 +60,7 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
         private ListStore queueListStore;
         private ListStore filesListStore;
         private bool suppressEvent;
-        private IAppController appUI;
+        private IUIService appUI;
         private byte[] bits;
         private readonly CheckButton[] checkboxes;
         private DownloadSchedule defaultSchedule;
@@ -71,7 +71,7 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
         public event EventHandler<DownloadListEventArgs>? QueueStopRequested;
         public event EventHandler? WindowClosing;
 
-        private QueueSchedulerDialog(Builder builder, Window parent, WindowGroup group, IAppController appUI) : base(builder.GetRawOwnedObject("dialog"))
+        private QueueSchedulerDialog(Builder builder, Window parent, WindowGroup group, IUIService appUI) : base(builder.GetRawOwnedObject("dialog"))
         {
             builder.Autoconnect(this);
             Modal = true;
@@ -498,7 +498,7 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
         //    SetTime(value, CmbHour2, CmbMinute2, CmbAmPm2);
         //}
 
-        public static QueueSchedulerDialog CreateFromGladeFile(Window parent, WindowGroup group, IAppController appUI)
+        public static QueueSchedulerDialog CreateFromGladeFile(Window parent, WindowGroup group, IUIService appUI)
         {
             var builder = new Builder();
             builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "queue-manager-dialog.glade"));

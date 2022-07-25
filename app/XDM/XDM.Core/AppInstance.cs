@@ -8,7 +8,7 @@ namespace XDM.Core
     public static class AppInstance
     {
         private static IAppService? s_AppService;
-        private static IAppController? s_AppController;
+        private static IUIService? s_AppController;
         private static IMainView? s_MainView;
 
         private static bool s_Init = false;
@@ -25,7 +25,7 @@ namespace XDM.Core
             }
         }
 
-        public static IAppController Controller
+        public static IUIService UI
         {
             get
             {
@@ -57,7 +57,7 @@ namespace XDM.Core
                 return this;
             }
 
-            public AppInstanceConfigurer RegisterAppController(IAppController controller)
+            public AppInstanceConfigurer RegisterAppController(IUIService controller)
             {
                 s_AppController = controller;
                 return this;
