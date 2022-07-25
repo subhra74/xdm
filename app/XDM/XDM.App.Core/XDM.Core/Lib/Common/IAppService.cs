@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using XDM.Core.Lib.Downloader;
-using XDM.Core.Lib.Downloader.Adaptive.Dash;
-using XDM.Core.Lib.Downloader.Adaptive.Hls;
-using XDM.Core.Lib.Downloader.Progressive;
-using XDM.Core.Lib.Downloader.Progressive.DualHttp;
-using XDM.Core.Lib.Downloader.Progressive.SingleHttp;
-using XDM.Core.Lib.UI;
+using XDM.Core.Downloader;
+using XDM.Core.Downloader.Adaptive.Dash;
+using XDM.Core.Downloader.Adaptive.Hls;
+using XDM.Core.Downloader.Progressive;
+using XDM.Core.Downloader.Progressive.DualHttp;
+using XDM.Core.Downloader.Progressive.SingleHttp;
+using XDM.Core.UI;
 
-namespace XDM.Core.Lib.Common
+namespace XDM.Core
 {
     public interface IAppService
     {

@@ -1,7 +1,7 @@
 ﻿using System;
-using XDM.Core.Lib.Common;
+using XDM.Core;
 
-namespace XDM.Core.Lib.Downloader
+namespace XDM.Core.Downloader
 {
     public class DownloadFailedEventArgs : EventArgs
     {

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using TraceLog;
-using XDM.Core.Lib.Common;
+using XDM.Core;
 
 namespace XDMApp
 {

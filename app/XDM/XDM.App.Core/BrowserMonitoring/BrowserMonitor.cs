@@ -1,4 +1,4 @@
-﻿using XDM.Core.Lib.Common;
+﻿using XDM.Core;
 
 namespace BrowserMonitoring
 {

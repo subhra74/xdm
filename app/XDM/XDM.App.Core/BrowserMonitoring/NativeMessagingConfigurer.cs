@@ -6,7 +6,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using TraceLog;
-using XDM.Core.Lib.Common;
+using XDM.Core;
 
 namespace BrowserMonitoring
 {

@@ -4,11 +4,11 @@ using System.IO;
 using System.Net;
 using System.Threading;
 using TraceLog;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Util;
-using XDM.Core.Lib.Clients.Http;
+using XDM.Core;
+using XDM.Core.Util;
+using XDM.Core.Clients.Http;
 
-namespace XDM.Core.Lib.Downloader.Adaptive
+namespace XDM.Core.Downloader.Adaptive
 {
     public class HttpChunkDownloader
     {

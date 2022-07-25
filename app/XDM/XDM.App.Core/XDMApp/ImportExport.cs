@@ -7,8 +7,8 @@ using Ionic.Zip;
 using System.IO.Compression;
 #endif
 using System.Linq;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.DataAccess;
+using XDM.Core;
+using XDM.Core.DataAccess;
 
 namespace XDMApp
 {

@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text;
 using TraceLog;
 using Translations;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Downloader;
-using XDM.Core.Lib.Downloader.Progressive.SingleHttp;
-using XDM.Core.Lib.UI;
+using XDM.Core;
+using XDM.Core.Downloader;
+using XDM.Core.Downloader.Progressive.SingleHttp;
+using XDM.Core.UI;
 
 namespace XDM.Common.UI
 {

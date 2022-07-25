@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.IO.Pipes;
 using System.IO;
-using XDM.Core.Lib.Common;
+using XDM.Core;
 using System.Threading;
 #if NET35
 using NetFX.Polyfill;

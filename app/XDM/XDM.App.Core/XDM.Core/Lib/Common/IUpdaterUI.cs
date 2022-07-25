@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Downloader;
+using XDM.Core;
+using XDM.Core.Downloader;
 
-namespace XDM.Core.Lib.Common
+namespace XDM.Core
 {
     public interface IUpdaterUI
     {

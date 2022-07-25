@@ -6,11 +6,11 @@ using System.Linq;
 using TraceLog;
 using Translations;
 using XDM.Common.UI;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.DataAccess;
-using XDM.Core.Lib.Downloader;
-using XDM.Core.Lib.UI;
-using XDM.Core.Lib.Util;
+using XDM.Core;
+using XDM.Core.DataAccess;
+using XDM.Core.Downloader;
+using XDM.Core.UI;
+using XDM.Core.Util;
 
 namespace XDMApp
 {

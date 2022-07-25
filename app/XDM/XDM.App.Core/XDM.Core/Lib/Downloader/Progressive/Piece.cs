@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 
 
-namespace XDM.Core.Lib.Downloader.Progressive
+namespace XDM.Core.Downloader.Progressive
 {
     public class Piece
     {

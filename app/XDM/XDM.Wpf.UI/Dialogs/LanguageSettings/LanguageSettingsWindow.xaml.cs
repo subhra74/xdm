@@ -12,7 +12,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using XDM.Core.Lib.Common;
+using XDM.Core;
 using XDM.Wpf.UI.Common;
 using XDM.Wpf.UI.Win32;
 

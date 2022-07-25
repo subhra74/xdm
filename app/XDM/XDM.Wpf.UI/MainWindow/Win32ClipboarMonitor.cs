@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using TraceLog;
-using XDM.Core.Lib.Common;
+using XDM.Core;
 
 namespace XDM.Wpf.UI
 {

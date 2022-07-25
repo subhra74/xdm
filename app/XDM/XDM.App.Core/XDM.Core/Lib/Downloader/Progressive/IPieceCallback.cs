@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Clients.Http;
+using XDM.Core;
+using XDM.Core.Clients.Http;
 
-namespace XDM.Core.Lib.Downloader.Progressive
+namespace XDM.Core.Downloader.Progressive
 {
     public interface IPieceCallback
     {

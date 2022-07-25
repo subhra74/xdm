@@ -4,12 +4,12 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using TraceLog;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Clients.Http;
-using XDM.Core.Lib.Common.MediaProcessor;
-using XDM.Core.Lib.Util;
+using XDM.Core;
+using XDM.Core.Clients.Http;
+using XDM.Core.MediaProcessor;
+using XDM.Core.Util;
 
-namespace XDM.Core.Lib.Downloader.Progressive.DualHttp
+namespace XDM.Core.Downloader.Progressive.DualHttp
 {
     public class DualSourceHTTPDownloader : HTTPDownloaderBase
     {

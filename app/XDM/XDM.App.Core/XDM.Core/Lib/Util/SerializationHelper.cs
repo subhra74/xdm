@@ -4,10 +4,10 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using TraceLog;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Downloader;
+using XDM.Core;
+using XDM.Core.Downloader;
 
-namespace XDM.Core.Lib.Util
+namespace XDM.Core.Util
 {
     internal static class SerializationHelper
     {

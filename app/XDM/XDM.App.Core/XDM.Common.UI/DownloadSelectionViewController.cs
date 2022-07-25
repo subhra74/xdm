@@ -3,14 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Translations;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Downloader;
-using XDM.Core.Lib.Downloader.Adaptive.Dash;
-using XDM.Core.Lib.Downloader.Adaptive.Hls;
-using XDM.Core.Lib.Downloader.Progressive.DualHttp;
-using XDM.Core.Lib.Downloader.Progressive.SingleHttp;
-using XDM.Core.Lib.UI;
-using XDM.Core.Lib.Util;
+using XDM.Core;
+using XDM.Core.Downloader;
+using XDM.Core.Downloader.Adaptive.Dash;
+using XDM.Core.Downloader.Adaptive.Hls;
+using XDM.Core.Downloader.Progressive.DualHttp;
+using XDM.Core.Downloader.Progressive.SingleHttp;
+using XDM.Core.UI;
+using XDM.Core.Util;
 
 namespace XDM.Common.UI
 {

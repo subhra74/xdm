@@ -1,4 +1,4 @@
-﻿namespace XDM.Core.Lib.Downloader.Adaptive.Hls
+﻿namespace XDM.Core.Downloader.Adaptive.Hls
 {
     public class MultiSourceHLSDownloadInfo : MultiSourceDownloadInfo
     {

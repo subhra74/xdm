@@ -5,7 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 
-namespace XDM.Core.Lib.Common.Collections
+namespace XDM.Core.Collections
 {
     public class GenericOrderedDictionary<K, V> : IDictionary<K, V>
     {

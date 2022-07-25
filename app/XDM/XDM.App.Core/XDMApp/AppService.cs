@@ -4,27 +4,27 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using XDM.Common.UI;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Common.MediaProcessor;
-using XDM.Core.Lib.Util;
+using XDM.Core;
+using XDM.Core.MediaProcessor;
+using XDM.Core.Util;
 using BrowserMonitoring;
-using XDM.Core.Lib.Common.Collections;
+using XDM.Core.Collections;
 using System.Timers;
 using TraceLog;
 using Translations;
-using XDM.Core.Lib.Downloader;
-using XDM.Core.Lib.Downloader.Progressive.DualHttp;
-using XDM.Core.Lib.Downloader.Progressive.SingleHttp;
-using XDM.Core.Lib.Downloader.Adaptive.Hls;
-using XDM.Core.Lib.Downloader.Adaptive.Dash;
-using XDM.Core.Lib.Downloader.Progressive;
-using XDM.Core.Lib.DataAccess;
+using XDM.Core.Downloader;
+using XDM.Core.Downloader.Progressive.DualHttp;
+using XDM.Core.Downloader.Progressive.SingleHttp;
+using XDM.Core.Downloader.Adaptive.Hls;
+using XDM.Core.Downloader.Adaptive.Dash;
+using XDM.Core.Downloader.Progressive;
+using XDM.Core.DataAccess;
 
 #if !NET5_0_OR_GREATER
 using NetFX.Polyfill;
 #endif
 
-//using XDM.Core.Lib.Downloader.YT.Dash;
+//using XDM.Core.Downloader.YT.Dash;
 
 namespace XDMApp
 {

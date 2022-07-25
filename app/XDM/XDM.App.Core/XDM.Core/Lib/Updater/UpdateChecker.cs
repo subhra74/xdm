@@ -3,10 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using TraceLog;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Clients.Http;
+using XDM.Core;
+using XDM.Core.Clients.Http;
 
-namespace XDM.Core.Lib.Common
+namespace XDM.Core
 {
     public class UpdateChecker
     {

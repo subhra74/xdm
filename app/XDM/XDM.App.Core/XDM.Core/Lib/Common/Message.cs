@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using XDM.Core.Lib.Util;
+using XDM.Core.Util;
 
 #if !NET5_0_OR_GREATER
 using NetFX.Polyfill;
 #endif
 
-namespace XDM.Core.Lib.Common
+namespace XDM.Core
 {
     public class Message
     {

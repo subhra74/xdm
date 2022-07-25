@@ -5,7 +5,7 @@ using System.Text;
 using System.Timers;
 using System.Threading.Tasks;
 using Gtk;
-using XDM.Core.Lib.Common;
+using XDM.Core;
 using TraceLog;
 
 namespace XDM.GtkUI

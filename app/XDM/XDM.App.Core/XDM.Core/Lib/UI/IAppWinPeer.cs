@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text;
 
 using XDM.Common.UI;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Downloader;
+using XDM.Core;
+using XDM.Core.Downloader;
 
-namespace XDM.Core.Lib.UI
+namespace XDM.Core.UI
 {
     public interface IAppWinPeer
     {

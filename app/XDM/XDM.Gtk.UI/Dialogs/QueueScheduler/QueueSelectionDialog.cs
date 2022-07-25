@@ -8,12 +8,12 @@ using Gtk;
 using System.IO;
 using Application = Gtk.Application;
 using IoPath = System.IO.Path;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.UI;
+using XDM.Core;
+using XDM.Core.UI;
 using XDM.GtkUI.Utils;
 using Translations;
 using UI = Gtk.Builder.ObjectAttribute;
-using XDM.Core.Lib.Util;
+using XDM.Core.Util;
 using XDMApp;
 
 namespace XDM.GtkUI.Dialogs.QueueScheduler

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 
 
-namespace XDM.Core.Lib.Common
+namespace XDM.Core
 {
     public struct PasswordEntry
     {

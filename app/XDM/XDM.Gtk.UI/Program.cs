@@ -3,8 +3,8 @@ using System.Net;
 using Gtk;
 using TraceLog;
 using Translations;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.DataAccess;
+using XDM.Core;
+using XDM.Core.DataAccess;
 using XDMApp;
 
 namespace XDM.GtkUI

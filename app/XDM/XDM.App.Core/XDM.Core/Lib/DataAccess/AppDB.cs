@@ -6,11 +6,11 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using TraceLog;
-using XDM.App.Core.XDM.Core.Lib.DataAccess;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Downloader;
+using XDM.App.Core.XDM.Core.DataAccess;
+using XDM.Core;
+using XDM.Core.Downloader;
 
-namespace XDM.Core.Lib.DataAccess
+namespace XDM.Core.DataAccess
 {
     public class AppDB
     {

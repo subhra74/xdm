@@ -5,11 +5,11 @@
 //using System.Linq;
 //using System.Net;
 //using System.Text;
-//using XDM.Core.Lib.Common;
+//using XDM.Core;
 //using TraceLog;
 //using System.Runtime.InteropServices;
 
-//namespace XDM.Core.Lib.Clients.Http
+//namespace XDM.Core.Clients.Http
 //{
 //    internal class WinInetSession : IHttpSession
 //    {

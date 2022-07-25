@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 
 
-namespace XDM.Core.Lib.Downloader
+namespace XDM.Core.Downloader
 {
     public class CountdownLatch
     {

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 
 
-namespace XDM.Core.Lib.Downloader.Progressive.SingleHttp
+namespace XDM.Core.Downloader.Progressive.SingleHttp
 {
     public class SingleSourceHTTPDownloadInfo
     {

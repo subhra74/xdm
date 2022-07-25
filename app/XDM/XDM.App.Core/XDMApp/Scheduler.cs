@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Threading;
 using TraceLog;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.DataAccess;
+using XDM.Core;
+using XDM.Core.DataAccess;
 
 namespace XDMApp
 {

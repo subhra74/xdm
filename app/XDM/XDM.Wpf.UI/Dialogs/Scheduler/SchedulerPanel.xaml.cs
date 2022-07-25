@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Windows.Controls;
-using XDM.Core.Lib.Common;
+using XDM.Core;
 
 namespace XDM.Wpf.UI.Dialogs.Scheduler
 {

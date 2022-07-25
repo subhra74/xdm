@@ -3,10 +3,10 @@ using System.Net;
 using System.Linq;
 using System.Windows;
 using TraceLog;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Util;
+using XDM.Core;
+using XDM.Core.Util;
 using System.Windows.Interop;
-using XDM.Core.Lib.DataAccess;
+using XDM.Core.DataAccess;
 using System.IO;
 
 namespace XDM.Wpf.UI

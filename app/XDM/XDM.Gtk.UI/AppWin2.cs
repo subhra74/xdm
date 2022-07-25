@@ -4,7 +4,7 @@
 //using System.IO;
 //using Gdk;
 //using GLib;
-//using XDM.Core.Lib.Util;
+//using XDM.Core.Util;
 //using XDMApp;
 //using Application = Gtk.Application;
 //using DateTime = System.DateTime;
@@ -13,10 +13,10 @@
 //using Range = System.Range;
 //using Window = Gtk.Window;
 //using IoPath = System.IO.Path;
-//using XDM.Core.Lib.Common;
-//using XDM.Core.Lib.Common.Segmented;
+//using XDM.Core;
+//using XDM.Core.Segmented;
 //using System.Threading.Tasks;
-//using XDM.Core.Lib.Common.Segmented;
+//using XDM.Core.Segmented;
 //using System.Runtime.InteropServices;
 //using System.Linq;
 

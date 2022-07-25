@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Interop;
-using XDM.Core.Lib.UI;
+using XDM.Core.UI;
 using XDM.Wpf.UI.Common;
 using XDM.Wpf.UI.Win32;
 using System.Linq;

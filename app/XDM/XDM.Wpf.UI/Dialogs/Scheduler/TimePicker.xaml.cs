@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Windows.Controls;
 using TraceLog;
-using XDM.Core.Lib.Util;
+using XDM.Core.Util;
 
 namespace XDM.Wpf.UI.Dialogs.Scheduler
 {

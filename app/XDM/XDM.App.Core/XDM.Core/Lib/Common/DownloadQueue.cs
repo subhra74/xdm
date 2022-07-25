@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using XDM.Core.Lib.Common;
+using XDM.Core;
 
-namespace XDM.Core.Lib.Common
+namespace XDM.Core
 {
     public class DownloadQueue
     {

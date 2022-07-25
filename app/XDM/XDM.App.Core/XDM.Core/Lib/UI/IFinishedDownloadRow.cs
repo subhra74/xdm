@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using XDM.Core.Lib.Common;
+using XDM.Core;
 
-namespace XDM.Core.Lib.UI
+namespace XDM.Core.UI
 {
     public interface IFinishedDownloadRow
     {

@@ -3,8 +3,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using TraceLog;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Util;
+using XDM.Core;
+using XDM.Core.Util;
 
 namespace YDLWrapper
 {

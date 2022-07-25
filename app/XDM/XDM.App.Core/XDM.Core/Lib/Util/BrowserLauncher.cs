@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using TraceLog;
 
-namespace XDM.Core.Lib.Util
+namespace XDM.Core.Util
 {
     public static class BrowserLauncher
     {

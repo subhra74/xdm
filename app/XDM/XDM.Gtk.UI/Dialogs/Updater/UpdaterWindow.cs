@@ -7,11 +7,11 @@ using Gtk;
 using GLib;
 using Application = Gtk.Application;
 using IoPath = System.IO.Path;
-using XDM.Core.Lib.Common;
+using XDM.Core;
 using Translations;
 using UI = Gtk.Builder.ObjectAttribute;
 using XDM.GtkUI.Utils;
-using XDM.Core.Lib.Downloader;
+using XDM.Core.Downloader;
 
 namespace XDM.GtkUI.Dialogs.Updater
 {

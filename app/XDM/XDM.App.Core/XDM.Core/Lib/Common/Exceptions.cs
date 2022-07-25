@@ -5,7 +5,7 @@ using System.Net;
 using System.Text;
 
 
-namespace XDM.Core.Lib.Common
+namespace XDM.Core
 {
     public class DownloadException : Exception
     {

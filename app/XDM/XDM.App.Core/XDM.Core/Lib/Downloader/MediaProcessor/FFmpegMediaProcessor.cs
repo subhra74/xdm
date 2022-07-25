@@ -5,13 +5,13 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-using XDM.Core.Lib.Common;
+using XDM.Core;
 using System.Diagnostics;
 using System.Threading;
-using XDM.Core.Lib.Util;
+using XDM.Core.Util;
 using TraceLog;
 
-namespace XDM.Core.Lib.Common.MediaProcessor
+namespace XDM.Core.MediaProcessor
 {
     public class FFmpegMediaProcessor : BaseMediaProcessor
     {

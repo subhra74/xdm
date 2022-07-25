@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Windows.Data;
-using XDM.Core.Lib.Util;
+using XDM.Core.Util;
 
 namespace XDM.Wpf.UI
 {

@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using XDM.Core.Lib.Common;
+using XDM.Core;
 
 #if !NET5_0_OR_GREATER
 using NetFX.Polyfill;

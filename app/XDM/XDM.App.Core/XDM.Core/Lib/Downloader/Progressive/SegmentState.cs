@@ -1,4 +1,4 @@
-﻿namespace XDM.Core.Lib.Downloader.Progressive
+﻿namespace XDM.Core.Downloader.Progressive
 {
     public enum SegmentState
     {

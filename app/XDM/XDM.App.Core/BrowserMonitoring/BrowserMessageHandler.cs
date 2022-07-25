@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using TraceLog;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Util;
+using XDM.Core;
+using XDM.Core.Util;
 
 namespace BrowserMonitoring
 {

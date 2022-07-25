@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using TraceLog;
-using XDM.Core.Lib.Util;
+using XDM.Core.Util;
 
-namespace XDM.Core.Lib.Common
+namespace XDM.Core
 {
     public class Config
     {

@@ -6,10 +6,10 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
 using TraceLog;
-using XDM.Core.Lib.Common;
+using XDM.Core;
 using static Interop.WinHttp;
 
-namespace XDM.Core.Lib.Clients.Http
+namespace XDM.Core.Clients.Http
 {
     internal class WinHttpSession : IHttpSession
     {

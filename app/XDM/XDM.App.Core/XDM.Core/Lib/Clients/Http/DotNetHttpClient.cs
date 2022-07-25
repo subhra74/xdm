@@ -9,9 +9,9 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
 using TraceLog;
-using XDM.Core.Lib.Common;
+using XDM.Core;
 
-namespace XDM.Core.Lib.Clients.Http
+namespace XDM.Core.Clients.Http
 {
     internal class DotNetHttpClient : IHttpClient
     {

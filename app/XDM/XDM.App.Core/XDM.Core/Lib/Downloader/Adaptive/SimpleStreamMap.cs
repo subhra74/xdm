@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using XDM.Core.Lib.Common;
+using XDM.Core;
 
-namespace XDM.Core.Lib.Downloader.Adaptive
+namespace XDM.Core.Downloader.Adaptive
 {
     public class SimpleStreamMap : IChunkStreamMap
     {

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 
 
-namespace XDM.Core.Lib.Downloader.Progressive.DualHttp
+namespace XDM.Core.Downloader.Progressive.DualHttp
 {
     public class DualSourceHTTPDownloadInfo
     {

@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using static Interop.WinHttp;
 
-namespace XDM.Core.Lib.Clients.Http
+namespace XDM.Core.Clients.Http
 {
     internal class WinHttpResponseStream : Stream
     {

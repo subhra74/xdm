@@ -5,17 +5,17 @@ using System.Threading.Tasks;
 using Gtk;
 using Application = Gtk.Application;
 using IoPath = System.IO.Path;
-using XDM.Core.Lib.Common;
+using XDM.Core;
 using Translations;
 using UI = Gtk.Builder.ObjectAttribute;
 using XDM.GtkUI.Utils;
 using System;
 using YDLWrapper;
-using XDM.Core.Lib.Util;
+using XDM.Core.Util;
 using TraceLog;
-using XDM.Core.Lib.UI;
+using XDM.Core.UI;
 using XDM.GtkUI.Dialogs.AdvancedDownload;
-using XDM.Core.Lib.Downloader;
+using XDM.Core.Downloader;
 
 namespace XDM.GtkUI.Dialogs.DownloadSelection
 {

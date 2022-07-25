@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace XDM.Core.Lib.Util
+namespace XDM.Core.Util
 {
     public static class TimeHelper
     {

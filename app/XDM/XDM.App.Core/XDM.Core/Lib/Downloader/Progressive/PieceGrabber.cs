@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.IO;
-using XDM.Core.Lib.Common;
+using XDM.Core;
 using TraceLog;
-using XDM.Core.Lib.Clients.Http;
+using XDM.Core.Clients.Http;
 using System.Linq;
 
-namespace XDM.Core.Lib.Downloader.Progressive
+namespace XDM.Core.Downloader.Progressive
 {
     public class PieceGrabber : IDisposable
     {

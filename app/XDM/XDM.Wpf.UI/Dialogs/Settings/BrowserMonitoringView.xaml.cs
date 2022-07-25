@@ -14,9 +14,9 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using TraceLog;
 using Translations;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.UI;
-using XDM.Core.Lib.Util;
+using XDM.Core;
+using XDM.Core.UI;
+using XDM.Core.Util;
 
 namespace XDM.Wpf.UI.Dialogs.Settings
 {

@@ -1,8 +1,8 @@
 ﻿using Newtonsoft.Json;
 using System;
-using XDM.Core.Lib.Downloader;
+using XDM.Core.Downloader;
 
-namespace XDM.Core.Lib.Common
+namespace XDM.Core
 {
     public abstract class BaseDownloadEntry : IComparable
     {

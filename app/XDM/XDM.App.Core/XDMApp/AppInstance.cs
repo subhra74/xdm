@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using XDM.Core.Lib.Common;
+using XDM.Core;
 
 namespace XDM.App.Core.XDMApp
 {

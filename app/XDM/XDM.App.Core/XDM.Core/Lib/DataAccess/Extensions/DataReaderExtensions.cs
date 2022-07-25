@@ -4,7 +4,7 @@ using System.Data.SQLite;
 using System.Linq;
 using System.Text;
 
-namespace XDM.Core.Lib.DataAccess.Extensions
+namespace XDM.Core.DataAccess.Extensions
 {
     public static class DataReaderExtensions
     {

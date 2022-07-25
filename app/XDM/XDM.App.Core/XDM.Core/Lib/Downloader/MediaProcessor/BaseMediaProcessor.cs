@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Threading;
-using XDM.Core.Lib.Downloader;
+using XDM.Core.Downloader;
 
-namespace XDM.Core.Lib.Common.MediaProcessor
+namespace XDM.Core.MediaProcessor
 {
     public abstract class BaseMediaProcessor
     {

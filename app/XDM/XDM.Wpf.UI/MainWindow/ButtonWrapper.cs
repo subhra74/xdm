@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Controls;
-using XDM.Core.Lib.UI;
+using XDM.Core.UI;
 
 namespace XDM.Wpf.UI
 {

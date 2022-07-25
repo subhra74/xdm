@@ -4,7 +4,7 @@ using System.Data.SQLite;
 using System.Linq;
 using System.Text;
 
-namespace XDM.Core.Lib.DataAccess
+namespace XDM.Core.DataAccess
 {
     public static class SchemaInitializer
     {

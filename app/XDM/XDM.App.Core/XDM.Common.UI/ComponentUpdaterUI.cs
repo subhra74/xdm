@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using TraceLog;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Downloader;
-using XDM.Core.Lib.Downloader.Progressive.SingleHttp;
+using XDM.Core;
+using XDM.Core.Downloader;
+using XDM.Core.Downloader.Progressive.SingleHttp;
 
 namespace XDM.Common.UI
 {

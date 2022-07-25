@@ -9,22 +9,22 @@ using System.Runtime;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using TraceLog;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.UI;
+using XDM.Core;
+using XDM.Core.UI;
 using System.Text;
 using Translations;
-using XDM.Core.Lib.Downloader.Adaptive.Dash;
-using XDM.Core.Lib.Downloader.Progressive.DualHttp;
-using XDM.Core.Lib.Downloader.Adaptive.Hls;
-using XDM.Core.Lib.Downloader.Progressive.SingleHttp;
-using XDM.Core.Lib.Downloader;
+using XDM.Core.Downloader.Adaptive.Dash;
+using XDM.Core.Downloader.Progressive.DualHttp;
+using XDM.Core.Downloader.Adaptive.Hls;
+using XDM.Core.Downloader.Progressive.SingleHttp;
+using XDM.Core.Downloader;
 using XDM.Messaging;
 
 #if !NET5_0_OR_GREATER
 using NetFX.Polyfill;
 #endif
 
-namespace XDM.Core.Lib.Util
+namespace XDM.Core.Util
 {
     public static class Helpers
     {

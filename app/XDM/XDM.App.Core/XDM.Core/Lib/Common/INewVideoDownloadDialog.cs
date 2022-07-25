@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using XDM.Core.Lib.UI;
+using XDM.Core.UI;
 
-namespace XDM.Core.Lib.Common
+namespace XDM.Core
 {
     public interface INewVideoDownloadDialog : IFileSelectable
     {

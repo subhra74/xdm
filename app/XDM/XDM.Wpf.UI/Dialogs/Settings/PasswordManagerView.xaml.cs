@@ -12,9 +12,9 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using XDM.Core.Lib.Common;
+using XDM.Core;
 using XDM.Wpf.UI.Win32;
-using XDM.Core.Lib.UI;
+using XDM.Core.UI;
 
 namespace XDM.Wpf.UI.Dialogs.Settings
 {

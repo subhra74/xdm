@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using System.Threading;
-using XDM.Core.Lib.Util;
-using XDM.Core.Lib.Common;
+using XDM.Core.Util;
+using XDM.Core;
 using TraceLog;
-using XDM.Core.Lib.Clients.Http;
-using XDM.Core.Lib.Common.MediaProcessor;
+using XDM.Core.Clients.Http;
+using XDM.Core.MediaProcessor;
 
-namespace XDM.Core.Lib.Downloader.Progressive.SingleHttp
+namespace XDM.Core.Downloader.Progressive.SingleHttp
 {
     public class SingleSourceHTTPDownloader : HTTPDownloaderBase
     {

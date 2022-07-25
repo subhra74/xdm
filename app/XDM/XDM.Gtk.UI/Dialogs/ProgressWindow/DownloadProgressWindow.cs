@@ -9,7 +9,7 @@ using Application = Gtk.Application;
 using IoPath = System.IO.Path;
 using XDM.Common.UI;
 using Translations;
-using XDM.Core.Lib.Common;
+using XDM.Core;
 using XDM.GtkUI.Utils;
 
 namespace XDM.GtkUI.Dialogs.ProgressWindow

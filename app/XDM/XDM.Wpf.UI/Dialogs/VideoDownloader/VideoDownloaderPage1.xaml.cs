@@ -11,8 +11,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Util;
+using XDM.Core;
+using XDM.Core.Util;
 
 namespace XDM.Wpf.UI.Dialogs.VideoDownloader
 {

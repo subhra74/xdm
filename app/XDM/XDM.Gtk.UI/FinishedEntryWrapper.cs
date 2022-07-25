@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.UI;
+using XDM.Core;
+using XDM.Core.UI;
 using XDMApp;
 
 namespace XDM.GtkUI

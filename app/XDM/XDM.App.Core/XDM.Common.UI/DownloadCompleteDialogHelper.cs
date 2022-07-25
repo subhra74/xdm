@@ -1,5 +1,5 @@
-﻿using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Util;
+﻿using XDM.Core;
+using XDM.Core.Util;
 
 namespace XDM.Common.UI
 {

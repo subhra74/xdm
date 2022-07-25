@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Gtk;
 using Application = Gtk.Application;
 using IoPath = System.IO.Path;
-using XDM.Core.Lib.Common;
+using XDM.Core;
 using Translations;
 using UI = Gtk.Builder.ObjectAttribute;
 using XDM.GtkUI.Utils;

@@ -11,11 +11,11 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Util;
+using XDM.Core;
+using XDM.Core.Util;
 using XDM.Wpf.UI.Common;
 using XDM.Wpf.UI.Win32;
-using XDM.Core.Lib.UI;
+using XDM.Core.UI;
 
 namespace XDM.Wpf.UI.Dialogs.Settings
 {

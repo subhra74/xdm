@@ -12,8 +12,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using Translations;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Downloader;
+using XDM.Core;
+using XDM.Core.Downloader;
 using XDM.Wpf.UI.Win32;
 
 namespace XDM.Wpf.UI.Dialogs.Updater

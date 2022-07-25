@@ -1,8 +1,8 @@
 ﻿using System;
 using System.IO;
 using TraceLog;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.UI;
+using XDM.Core;
+using XDM.Core.UI;
 
 namespace XDMApp
 {

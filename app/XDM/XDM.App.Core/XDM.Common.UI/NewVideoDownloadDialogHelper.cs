@@ -1,9 +1,9 @@
 ﻿using System.IO;
 using System.Linq;
 using Translations;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Common.MediaProcessor;
-using XDM.Core.Lib.Util;
+using XDM.Core;
+using XDM.Core.MediaProcessor;
+using XDM.Core.Util;
 
 namespace XDM.Common.UI
 {

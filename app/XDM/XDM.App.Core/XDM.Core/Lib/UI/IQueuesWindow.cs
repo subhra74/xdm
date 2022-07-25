@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.UI;
+using XDM.Core;
+using XDM.Core.UI;
 
-namespace XDM.Core.Lib.UI
+namespace XDM.Core.UI
 {
     public interface IQueuesWindow
     {

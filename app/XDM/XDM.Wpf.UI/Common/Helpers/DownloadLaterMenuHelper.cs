@@ -5,7 +5,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-using XDM.Core.Lib.UI;
+using XDM.Core.UI;
 using XDMApp;
 
 namespace XDM.Wpf.UI.Common.Helpers

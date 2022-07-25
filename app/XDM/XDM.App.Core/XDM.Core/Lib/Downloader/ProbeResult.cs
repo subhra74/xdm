@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace XDM.Core.Lib.Downloader
+namespace XDM.Core.Downloader
 {
     public class ProbeResult
     {

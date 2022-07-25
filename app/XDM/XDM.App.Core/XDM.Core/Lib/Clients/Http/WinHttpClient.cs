@@ -4,13 +4,13 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using System.Net;
-using XDM.Core.Lib.Common;
+using XDM.Core;
 using static Interop.WinHttp;
 using System.Runtime.InteropServices;
 using TraceLog;
 using System.Net.Http;
 
-namespace XDM.Core.Lib.Clients.Http
+namespace XDM.Core.Clients.Http
 {
     internal class WinHttpClient : IHttpClient
     {

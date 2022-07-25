@@ -3,17 +3,17 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using TraceLog;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Util;
-using XDM.Core.Lib.Clients.Http;
-using XDM.Core.Lib.Common.MediaProcessor;
+using XDM.Core;
+using XDM.Core.Util;
+using XDM.Core.Clients.Http;
+using XDM.Core.MediaProcessor;
 using System.Text;
 
 #if !NET5_0_OR_GREATER
 using NetFX.Polyfill;
 #endif
 
-namespace XDM.Core.Lib.Downloader.Progressive
+namespace XDM.Core.Downloader.Progressive
 {
     public abstract class HTTPDownloaderBase : IPieceCallback, IBaseDownloader
     {

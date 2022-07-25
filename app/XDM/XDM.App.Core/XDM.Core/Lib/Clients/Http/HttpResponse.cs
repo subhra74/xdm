@@ -4,9 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
-using XDM.Core.Lib.Common;
+using XDM.Core;
 
-namespace XDM.Core.Lib.Clients.Http
+namespace XDM.Core.Clients.Http
 {
     public class HttpResponse : IDisposable
     {

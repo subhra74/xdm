@@ -2,10 +2,10 @@
 using System.Linq;
 using System.Collections.Generic;
 using Translations;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Downloader;
-using XDM.Core.Lib.Downloader.Progressive.SingleHttp;
-using XDM.Core.Lib.Util;
+using XDM.Core;
+using XDM.Core.Downloader;
+using XDM.Core.Downloader.Progressive.SingleHttp;
+using XDM.Core.Util;
 
 namespace XDM.Common.UI
 {

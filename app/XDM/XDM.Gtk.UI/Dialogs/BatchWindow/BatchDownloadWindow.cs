@@ -9,10 +9,10 @@ using Application = Gtk.Application;
 using IoPath = System.IO.Path;
 using XDM.Common.UI;
 using Translations;
-using XDM.Core.Lib.Common;
+using XDM.Core;
 using XDM.GtkUI.Utils;
-using XDM.Core.Lib.UI;
-using XDM.Core.Lib.Util;
+using XDM.Core.UI;
+using XDM.Core.Util;
 
 namespace XDM.GtkUI.Dialogs.BatchWindow
 {

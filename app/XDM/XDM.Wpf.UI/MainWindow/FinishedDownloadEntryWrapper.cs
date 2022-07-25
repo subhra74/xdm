@@ -1,8 +1,8 @@
 ﻿using System;
 using System.ComponentModel;
 using XDM.Common.UI;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.UI;
+using XDM.Core;
+using XDM.Core.UI;
 
 namespace XDM.Wpf.UI
 {

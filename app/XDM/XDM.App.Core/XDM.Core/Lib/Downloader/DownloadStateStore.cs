@@ -3,17 +3,17 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Downloader.Adaptive.Dash;
-using XDM.Core.Lib.Downloader.Adaptive.Hls;
-using XDM.Core.Lib.Downloader.Progressive.DualHttp;
-using XDM.Core.Lib.Downloader.Progressive.SingleHttp;
-using XDM.Core.Lib.Util;
+using XDM.Core;
+using XDM.Core.Downloader.Adaptive.Dash;
+using XDM.Core.Downloader.Adaptive.Hls;
+using XDM.Core.Downloader.Progressive.DualHttp;
+using XDM.Core.Downloader.Progressive.SingleHttp;
+using XDM.Core.Util;
 #if NET35
 using NetFX.Polyfill;
 #endif
 
-namespace XDM.Core.Lib.Downloader
+namespace XDM.Core.Downloader
 {
     delegate void BinaryReaderStreamConsumer(BinaryReader r);
     delegate void BinaryWriterStreamConsumer(BinaryWriter w);

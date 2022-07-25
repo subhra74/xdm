@@ -5,10 +5,10 @@ using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using TraceLog;
-using XDM.Core.Lib.Common;
-using XDM.Core.Lib.Util;
+using XDM.Core;
+using XDM.Core.Util;
 
-namespace XDM.Core.Lib.Clients.Http
+namespace XDM.Core.Clients.Http
 {
     public static class WebRequestExtensions
     {
