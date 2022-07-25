@@ -1,4 +1,4 @@
-﻿using BrowserMonitoring;
+﻿using XDM.Core.BrowserMonitoring;
 using System;
 using System.Collections.Generic;
 using System.Linq;

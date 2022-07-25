@@ -4,7 +4,7 @@ using System.Text;
 using System.IO;
 using Newtonsoft.Json;
 
-namespace BrowserMonitoring
+namespace XDM.Core.BrowserMonitoring
 {
     public class JsonMessageParser
     {

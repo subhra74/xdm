@@ -7,7 +7,7 @@ using System.Threading;
 using System.Diagnostics;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using BrowserMonitoring;
+using XDM.Core.BrowserMonitoring;
 
 #if NET35
 using NetFX.Polyfill2;

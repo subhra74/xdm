@@ -6,9 +6,9 @@ using XDM.Core;
 using XDM.Core.Util;
 //using XDM.Core.Downloader.YT.Dash;
 using System.IO;
-using MediaParser.Hls;
-using MediaParser.Dash;
-using MediaParser.YouTube;
+using XDM.Core.MediaParser.Hls;
+using XDM.Core.MediaParser.Dash;
+using XDM.Core.MediaParser.YouTube;
 using System.Security.Cryptography;
 using TraceLog;
 using XDM.Core.Clients.Http;
@@ -18,10 +18,10 @@ using XDM.Core.Downloader.Adaptive.Dash;
 using XDM.Core.Downloader.Adaptive.Hls;
 
 #if !NET5_0_OR_GREATER
-using NetFX.Polyfill;
+using XDM.Compatibility;
 #endif
 
-namespace BrowserMonitoring
+namespace XDM.Core.BrowserMonitoring
 {
     static class VideoUrlHelper
     {

@@ -14,7 +14,7 @@ using XDM.GtkUI.Utils;
 using Translations;
 using UI = Gtk.Builder.ObjectAttribute;
 using XDM.Core.Util;
-using XDMApp;
+using XDM.Core;
 using XDM.GtkUI.Dialogs.NewQueue;
 
 namespace XDM.GtkUI.Dialogs.QueueScheduler

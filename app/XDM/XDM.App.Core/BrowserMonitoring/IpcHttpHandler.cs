@@ -5,12 +5,12 @@ using System.Linq;
 using Newtonsoft.Json;
 using XDM.Core;
 using XDM.Core.Util;
-using HttpServer;
+using XDM.Core.HttpServer;
 using System.Threading;
 using TraceLog;
 using Translations;
 
-namespace BrowserMonitoring
+namespace XDM.Core.BrowserMonitoring
 {
     public class IpcHttpHandler
     {

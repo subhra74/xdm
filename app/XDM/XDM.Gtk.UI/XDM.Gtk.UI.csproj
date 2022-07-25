@@ -107,8 +107,8 @@
     <ProjectReference Include="..\BrowserMonitor\BrowserMonitor.csproj" />
     <ProjectReference Include="..\NativeMessagingHost\NativeMessagingHost.csproj" />
     <ProjectReference Include="..\Translations\Translations.csproj" />
-    <ProjectReference Include="..\XDM.Common.UI\XDM.Common.UI.csproj" />
-    <ProjectReference Include="..\XDMApp\XDMApp.csproj" />
+    <ProjectReference Include="..\XDM.Core.UI\XDM.Core.UI.csproj" />
+    <ProjectReference Include="..\XDM.Core\XDM.Core.csproj" />
     <ProjectReference Include="..\XDM_CoreFx\XDM.Core.csproj" />
     <ProjectReference Include="..\YoutubeDLHandler\YDLWrapper.csproj" />
     <ProjectReference Include="..\TraceLog\TraceLog.csproj" />
@@ -150,6 +150,8 @@
   <Import Project="..\XDM.App.Core\XDM.App.Core.projitems" Label="Shared" />
 
   <Import Project="..\XDM.Messaging\XDM.Messaging.projitems" Label="Shared" />
+
+  <Import Project="..\XDM.Compatibility\XDM.Compatibility.projitems" Label="Shared" />
 
   <!--<ItemGroup>
 	  <Content Update="glade\download-complete-window.glade">

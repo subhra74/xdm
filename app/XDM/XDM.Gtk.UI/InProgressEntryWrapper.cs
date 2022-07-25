@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using XDM.Core;
 using XDM.Core.UI;
 using XDM.Core.Util;
-using XDMApp;
+using XDM.Core;
 
 namespace XDM.GtkUI
 {

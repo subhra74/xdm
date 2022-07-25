@@ -7,13 +7,13 @@ using System.IO;
 using XDM.Core;
 using System.Threading;
 #if NET35
-using NetFX.Polyfill;
+using XDM.Compatibility;
 #else
 using System.Collections.Concurrent;
 #endif
 using TraceLog;
 
-namespace BrowserMonitoring
+namespace XDM.Core.BrowserMonitoring
 {
     public class NativeMessagingHostHandler : IDisposable
     {

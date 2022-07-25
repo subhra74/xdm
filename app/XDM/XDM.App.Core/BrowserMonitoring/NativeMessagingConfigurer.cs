@@ -8,7 +8,7 @@ using System.Text;
 using TraceLog;
 using XDM.Core;
 
-namespace BrowserMonitoring
+namespace XDM.Core.BrowserMonitoring
 {
     internal static class NativeMessagingConfigurer
     {

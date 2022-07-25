@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text.RegularExpressions;
 
-namespace MediaParser.Dash
+namespace XDM.Core.MediaParser.Dash
 {
     public static class DashUtil
     {

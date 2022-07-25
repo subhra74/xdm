@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace HttpServer
+namespace XDM.Core.HttpServer
 {
     public struct ResponseStatus
     {

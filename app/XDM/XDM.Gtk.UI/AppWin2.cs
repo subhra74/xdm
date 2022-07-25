@@ -5,7 +5,7 @@
 //using Gdk;
 //using GLib;
 //using XDM.Core.Util;
-//using XDMApp;
+//using XDM.Core;
 //using Application = Gtk.Application;
 //using DateTime = System.DateTime;
 //using Menu = Gtk.Menu;

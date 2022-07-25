@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Text;
 #if !NET5_0_OR_GREATER
-using NetFX.Polyfill;
+using XDM.Compatibility;
 #endif
 
-namespace HttpServer
+namespace XDM.Core.HttpServer
 {
     public class RequestContext
     {

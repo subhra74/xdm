@@ -7,7 +7,7 @@ using UI = Gtk.Builder.ObjectAttribute;
 using Gtk;
 using Application = Gtk.Application;
 using IoPath = System.IO.Path;
-using XDM.Common.UI;
+using XDM.Core.UI;
 using Translations;
 using XDM.Core;
 using XDM.GtkUI.Utils;

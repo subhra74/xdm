@@ -20,7 +20,7 @@ namespace XDM.Wpf.UI
         private const string DontEnableSchUseStrongCryptoName = @"Switch.System.Net.DontEnableSchUseStrongCrypto";
 
         public static Skin Skin = ShouldSelectDarkTheme() ? Skin.Dark : Skin.Light;
-        private XDMApp.AppService app;
+        private XDM.Core.AppService app;
         private MainWindow win;
 
         public App()
@@ -55,7 +55,7 @@ namespace XDM.Wpf.UI
 
             AppDB.Instance.Init(Path.Combine(Config.DataDir, "downloads.db"));
 
-            app = new XDMApp.AppService();
+            app = new XDM.Core.AppService();
             win = new MainWindow();
 
             var args = Environment.GetCommandLineArgs();
@@ -72,7 +72,7 @@ namespace XDM.Wpf.UI
                 }
                 win.Activate();
             };
-            app.AppUI = new XDMApp.AppController(win, app);
+            app.AppUI = new XDM.Core.AppController(win, app);
             app.AppUI.WindowLoaded += (_, _) => app.StartClipboardMonitor();
             app.StartScheduler();
             app.StartNativeMessagingHost();

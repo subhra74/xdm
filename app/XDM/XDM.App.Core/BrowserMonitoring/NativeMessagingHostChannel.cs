@@ -3,7 +3,7 @@ using System.IO.Pipes;
 using System.Threading;
 using TraceLog;
 
-namespace BrowserMonitoring
+namespace XDM.Core.BrowserMonitoring
 {
     internal sealed class NativeMessagingHostChannel
     {

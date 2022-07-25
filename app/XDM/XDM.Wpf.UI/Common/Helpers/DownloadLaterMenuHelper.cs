@@ -6,7 +6,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using XDM.Core.UI;
-using XDMApp;
+using XDM.Core;
 
 namespace XDM.Wpf.UI.Common.Helpers
 {

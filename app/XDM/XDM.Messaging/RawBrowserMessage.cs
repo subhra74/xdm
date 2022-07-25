@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace BrowserMonitoring
+namespace XDM.Core.BrowserMonitoring
 {
     public class RawBrowserMessage
     {

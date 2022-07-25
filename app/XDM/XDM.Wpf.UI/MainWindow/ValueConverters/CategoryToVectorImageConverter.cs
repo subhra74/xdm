@@ -6,7 +6,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
-using XDM.Common.UI;
+using XDM.Core.UI;
 
 namespace XDM.Wpf.UI
 {

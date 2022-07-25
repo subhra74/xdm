@@ -4,7 +4,7 @@ using System.Net.Sockets;
 using System.Threading;
 using TraceLog;
 
-namespace HttpServer
+namespace XDM.Core.HttpServer
 {
     public class NanoServer
     {

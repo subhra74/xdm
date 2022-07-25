@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using XDM.Messaging;
 
-namespace BrowserMonitoring
+namespace XDM.Core.BrowserMonitoring
 {
     public struct RawBrowserMessageEnvelop
     {

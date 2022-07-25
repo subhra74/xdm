@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using XDM.Messaging;
 
-namespace BrowserMonitoring
+namespace XDM.Core.BrowserMonitoring
 {
     public class SyncMessage
     {

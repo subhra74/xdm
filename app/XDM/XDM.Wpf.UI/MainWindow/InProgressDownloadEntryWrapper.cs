@@ -1,6 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
-using XDM.Common.UI;
+using XDM.Core.UI;
 using XDM.Core;
 using XDM.Core.UI;
 using XDM.Core.Util;

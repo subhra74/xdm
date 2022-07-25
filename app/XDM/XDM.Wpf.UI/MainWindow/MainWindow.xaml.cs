@@ -15,7 +15,7 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using TraceLog;
 using Translations;
-using XDM.Common.UI;
+using XDM.Core.UI;
 using XDM.Core;
 using XDM.Core.Downloader;
 using XDM.Core.UI;

@@ -5,7 +5,7 @@ using TraceLog;
 using XDM.Core;
 using XDM.Core.Util;
 
-namespace BrowserMonitoring
+namespace XDM.Core.BrowserMonitoring
 {
     internal static class BrowserMessageHandler
     {

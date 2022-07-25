@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace MediaParser.Dash
+namespace XDM.Core.MediaParser.Dash
 {
     public class Representation
     {

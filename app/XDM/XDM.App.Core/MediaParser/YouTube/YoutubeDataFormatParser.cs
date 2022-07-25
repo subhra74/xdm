@@ -6,7 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 
-namespace MediaParser.YouTube
+namespace XDM.Core.MediaParser.YouTube
 {
     public class YoutubeDataFormatParser
     {

@@ -4,10 +4,10 @@ using System.IO;
 using System.Net.Sockets;
 using TraceLog;
 #if !NET5_0_OR_GREATER
-using NetFX.Polyfill;
+using XDM.Compatibility;
 #endif
 
-namespace HttpServer
+namespace XDM.Core.HttpServer
 {
     internal static class HttpParser
     {

@@ -4,7 +4,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
 using Translations;
-using XDM.Common.UI;
+using XDM.Core.UI;
 using XDM.Core;
 using XDM.Wpf.UI.Dialogs.SpeedLimiter;
 using XDM.Wpf.UI.Win32;

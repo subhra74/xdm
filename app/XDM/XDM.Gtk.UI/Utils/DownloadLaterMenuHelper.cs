@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using XDM.Core.UI;
-using XDMApp;
+using XDM.Core;
 
 namespace XDM.GtkUI.Utils
 {

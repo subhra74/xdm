@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace MediaParser.Util
+namespace XDM.Core.MediaParser.Util
 {
     internal static class UrlResolver
     {

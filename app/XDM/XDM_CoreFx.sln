@@ -24,14 +24,19 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XDM.Tests", "XDM.Tests\XDM.
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "XDM.Messaging", "XDM.Messaging\XDM.Messaging.shproj", "{417407F5-8DBA-474E-8AB7-66F2CC33B777}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "XDM.Compatibility", "XDM.Compatibility\XDM.Compatibility.shproj", "{6BFFA6BC-BF01-450E-96B7-9A1D3DCC2333}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		XDM.Messaging\XDM.Messaging.projitems*{020e5526-c4d5-4225-a5ee-3f52c207f5cb}*SharedItemsImports = 5
 		XDM.Messaging\XDM.Messaging.projitems*{417407f5-8dba-474e-8ab7-66f2cc33b777}*SharedItemsImports = 13
 		XDM.App.Core\XDM.App.Core.projitems*{5bbea202-65d2-481a-b457-6d8fcc8970d7}*SharedItemsImports = 13
+		XDM.Compatibility\XDM.Compatibility.projitems*{6bffa6bc-bf01-450e-96b7-9a1d3dcc2333}*SharedItemsImports = 13
 		XDM.App.Core\XDM.App.Core.projitems*{71ad2923-e0de-4691-ad8d-279457ec4091}*SharedItemsImports = 5
+		XDM.Compatibility\XDM.Compatibility.projitems*{71ad2923-e0de-4691-ad8d-279457ec4091}*SharedItemsImports = 5
 		XDM.Messaging\XDM.Messaging.projitems*{71ad2923-e0de-4691-ad8d-279457ec4091}*SharedItemsImports = 5
 		XDM.App.Core\XDM.App.Core.projitems*{957eea56-e3b8-48e5-81bb-93a6e59b155c}*SharedItemsImports = 5
+		XDM.Compatibility\XDM.Compatibility.projitems*{957eea56-e3b8-48e5-81bb-93a6e59b155c}*SharedItemsImports = 5
 		XDM.Messaging\XDM.Messaging.projitems*{957eea56-e3b8-48e5-81bb-93a6e59b155c}*SharedItemsImports = 5
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

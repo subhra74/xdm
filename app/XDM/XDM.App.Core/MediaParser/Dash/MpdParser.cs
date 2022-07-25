@@ -4,13 +4,13 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.IO;
-using MediaParser.Util;
+using XDM.Core.MediaParser.Util;
 
 #if !NET5_0_OR_GREATER
-using NetFX.Polyfill;
+using XDM.Compatibility;
 #endif
 
-namespace MediaParser.Dash
+namespace XDM.Core.MediaParser.Dash
 {
     public static class MpdParser
     {

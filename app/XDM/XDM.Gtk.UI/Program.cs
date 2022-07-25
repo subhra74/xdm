@@ -5,7 +5,7 @@ using TraceLog;
 using Translations;
 using XDM.Core;
 using XDM.Core.DataAccess;
-using XDMApp;
+using XDM.Core;
 
 namespace XDM.GtkUI
 {
@@ -86,10 +86,10 @@ namespace XDM.GtkUI
                 Gtk.Settings.Default.ThemeName = "Adwaita";
                 Gtk.Settings.Default.ApplicationPreferDarkTheme = true;
             }
-            var app = new XDMApp.XDMApp();
+            var app = new XDM.Core.AppService();
 
             var appWin = new AppWinPeer();
-            app.AppUI = new XDMApp.AppWin(appWin, app);
+            app.AppUI = new XDM.Core.AppController(appWin, app);
             appWin.Show();
             app.AppUI.WindowLoaded += (_, _) => app.StartClipboardMonitor();
             app.StartScheduler();
@@ -108,7 +108,7 @@ namespace XDM.GtkUI
 
             Application.Run();
 
-            //var app = new XDMApp.XDMApp();
+            //var app = new XDM.Core.XDM.Core();
             //var appWin = new AppWinPeer(app);
             //appWin.ShowAll();
             //Application.Run();

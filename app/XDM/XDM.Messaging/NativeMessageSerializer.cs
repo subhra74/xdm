@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace BrowserMonitoring
+namespace XDM.Core.BrowserMonitoring
 {
     public static class NativeMessageSerializer
     {

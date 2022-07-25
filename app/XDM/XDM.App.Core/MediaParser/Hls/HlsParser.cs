@@ -1,12 +1,12 @@
-﻿using MediaParser.Util;
+﻿using XDM.Core.MediaParser.Util;
 using System;
 using System.Collections.Generic;
 
 #if !NET5_0_OR_GREATER
-using NetFX.Polyfill;
+using XDM.Compatibility;
 #endif
 
-namespace MediaParser.Hls
+namespace XDM.Core.MediaParser.Hls
 {
     public static class HlsParser
     {

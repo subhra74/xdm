@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text;
 
 #if !NET5_0_OR_GREATER
-using NetFX.Polyfill;
+using XDM.Compatibility;
 #endif
 
-namespace MediaParser.Hls
+namespace XDM.Core.MediaParser.Hls
 {
     public class HlsPlaylistContainer
     {

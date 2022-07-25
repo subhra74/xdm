@@ -4,7 +4,7 @@ using System.IO;
 using System.Text;
 using TraceLog;
 
-namespace HttpServer
+namespace XDM.Core.HttpServer
 {
     internal static class LineReader
     {

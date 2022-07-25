@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace MediaParser.YouTube
+namespace XDM.Core.MediaParser.YouTube
 {
     public class VideoFormatData
     {

@@ -1,6 +1,6 @@
 ﻿using XDM.Core;
 
-namespace BrowserMonitoring
+namespace XDM.Core.BrowserMonitoring
 {
     public static class BrowserMonitor
     {

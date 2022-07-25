@@ -18,7 +18,7 @@ using XDM.Core.UI;
 using XDM.Wpf.UI.Common;
 using XDM.Wpf.UI.Common.Helpers;
 using XDM.Wpf.UI.Win32;
-using XDMApp;
+using XDM.Core;
 
 namespace XDM.Wpf.UI.Dialogs.QueuesWindow
 {
