@@ -6,7 +6,7 @@
     <SharedGUID>5bbea202-65d2-481a-b457-6d8fcc8970d7</SharedGUID>
   </PropertyGroup>
   <PropertyGroup Label="Configuration">
-    <Import_RootNamespace>XDM.App.Core</Import_RootNamespace>
+    <Import_RootNamespace>XDM.Core</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\BrowserMessageHandler.cs" />

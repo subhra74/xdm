@@ -3,7 +3,7 @@ using System.Data.SQLite;
 using System.IO;
 using TraceLog;
 
-namespace XDM.App.Core.XDM.Core.DataAccess
+namespace XDM.Core.DataAccess
 {
     public static class DataImportExport
     {

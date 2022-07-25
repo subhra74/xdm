@@ -147,7 +147,7 @@
     </None>
   </ItemGroup>
 
-  <Import Project="..\XDM.App.Core\XDM.App.Core.projitems" Label="Shared" />
+  <Import Project="..\XDM.Core\XDM.Core.projitems" Label="Shared" />
 
   <Import Project="..\XDM.Messaging\XDM.Messaging.projitems" Label="Shared" />
 
