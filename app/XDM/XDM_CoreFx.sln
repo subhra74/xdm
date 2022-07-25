@@ -18,7 +18,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
-Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "XDM.App.Core", "XDM.App.Core\XDM.App.Core.shproj", "{5BBEA202-65D2-481A-B457-6D8FCC8970D7}"
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "XDM.Core", "XDM.App.Core\XDM.Core.shproj", "{5BBEA202-65D2-481A-B457-6D8FCC8970D7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XDM.Tests", "XDM.Tests\XDM.Tests.csproj", "{559A3ABB-6A04-4169-A605-8C068EF77DB7}"
 EndProject

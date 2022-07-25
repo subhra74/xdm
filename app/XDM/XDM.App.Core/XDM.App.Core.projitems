@@ -57,9 +57,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Interop.WinHttp\Interop.SafeWinHttpHandle.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Interop.WinHttp\Interop.winhttp.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Interop.WinHttp\Interop.winhttp_types.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Clients\Http\CurlHttpClient.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Clients\Http\CurlResponseStream.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Clients\Http\CurlSession.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Clients\Http\DotNetHttpClient.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Clients\Http\DotNetHttpSession.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Clients\Http\HttpClientFactory.cs" />
