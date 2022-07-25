@@ -9,7 +9,7 @@ using XDM.Core.Downloader;
 
 namespace XDM.Core.UI
 {
-    public interface IMainView
+    public interface IApplicationWindow
     {
         IEnumerable<FinishedDownloadEntry> FinishedDownloads { get; set; }
 
@@ -51,13 +51,13 @@ namespace XDM.Core.UI
 
         void ConfirmDelete(string text, out bool approved, out bool deleteFiles);
 
-        IDownloadCompleteDialog CreateDownloadCompleteDialog(IAppService app);
+        IDownloadCompleteDialog CreateDownloadCompleteDialog(IApplicationCore app);
 
         INewDownloadDialogSkeleton CreateNewDownloadDialog(bool empty);
 
         INewVideoDownloadDialog CreateNewVideoDialog();
 
-        IProgressWindow CreateProgressWindow(string downloadId, IAppService app, IUIService appUI);
+        IProgressWindow CreateProgressWindow(string downloadId, IApplicationCore app, IApplication appUI);
 
         void RunOnUIThread(Action action);
 
@@ -93,7 +93,7 @@ namespace XDM.Core.UI
 
         string? OpenFileDialog(string? initialPath, string? defaultExt, string? filter);
 
-        void ShowRefreshLinkDialog(InProgressDownloadEntry entry, IAppService app);
+        void ShowRefreshLinkDialog(InProgressDownloadEntry entry, IApplicationCore app);
 
         void SetClipboardText(string text);
 
@@ -101,27 +101,27 @@ namespace XDM.Core.UI
 
         void ShowPropertiesDialog(BaseDownloadEntry ent, ShortState? state);
 
-        void ShowYoutubeDLDialog(IUIService appUI, IAppService app);
+        void ShowYoutubeDLDialog(IApplication appUI, IApplicationCore app);
 
-        void ShowBatchDownloadWindow(IAppService app, IUIService appUi);
+        void ShowBatchDownloadWindow(IApplicationCore app, IApplication appUi);
 
-        void ShowSettingsDialog(IAppService app, int page = 0);
+        void ShowSettingsDialog(IApplicationCore app, int page = 0);
 
         void UpdateBrowserMonitorButton();
 
-        void ShowBrowserMonitoringDialog(IAppService app);
+        void ShowBrowserMonitoringDialog(IApplicationCore app);
 
         void UpdateParallalismLabel();
 
-        IUpdaterUI CreateUpdateUIDialog(IUIService ui);
+        IUpdaterUI CreateUpdateUIDialog(IApplication ui);
 
         void ClearUpdateInformation();
 
-        IQueuesWindow CreateQueuesAndSchedulerWindow(IUIService appUi);
+        IQueuesWindow CreateQueuesAndSchedulerWindow(IApplication appUi);
 
         IQueueSelectionDialog CreateQueueSelectionDialog();
 
-        void ShowDownloadSelectionWindow(IAppService app, IUIService appUI, FileNameFetchMode mode, IEnumerable<object> downloads);
+        void ShowDownloadSelectionWindow(IApplicationCore app, IApplication appUI, FileNameFetchMode mode, IEnumerable<object> downloads);
 
         IClipboardMonitor GetClipboardMonitor();
 

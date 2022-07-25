@@ -8,14 +8,14 @@ namespace XDM.Core
 {
     internal static class CallbackActions
     {
-        public static void DownloadStarted(string id, IMainView peer)
+        public static void DownloadStarted(string id, IApplicationWindow peer)
         {
             var download = peer.FindInProgressItem(id);
             if (download == null) return;
             download.Status = DownloadStatus.Downloading;
         }
 
-        public static void DownloadFailed(string id, IMainView peer)
+        public static void DownloadFailed(string id, IApplicationWindow peer)
         {
             var download = peer.FindInProgressItem(id);
             if (download == null) return;
@@ -23,7 +23,7 @@ namespace XDM.Core
         }
 
         public static void DownloadFinished(string id, long finalFileSize, string filePath,
-            IMainView peer, IAppService app, Action callback)
+            IApplicationWindow peer, IApplicationCore app, Action callback)
         {
             Log.Debug("Final file name: " + filePath);
             var download = peer.FindInProgressItem(id);

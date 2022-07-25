@@ -5,7 +5,7 @@ namespace XDM.Core.UI
 {
     public static class DownloadCompleteDialogHelper
     {
-        public static void ShowDialog(IAppService app, IDownloadCompleteDialog dwnCmpldDlg, string file, string folder)
+        public static void ShowDialog(IApplicationCore app, IDownloadCompleteDialog dwnCmpldDlg, string file, string folder)
         {
             dwnCmpldDlg.FileNameText = file;
             dwnCmpldDlg.FolderText = folder;

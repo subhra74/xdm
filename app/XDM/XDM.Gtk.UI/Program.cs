@@ -16,7 +16,7 @@ namespace XDM.GtkUI
 
         static void Main(string[] args)
         {
-            Application.Init();
+            Gtk.Application.Init();
             GLib.ExceptionManager.UnhandledException += ExceptionManager_UnhandledException;
             var globalStyleSheet = @"
                                     .large-font{ font-size: 16px; }
@@ -86,10 +86,10 @@ namespace XDM.GtkUI
                 Gtk.Settings.Default.ThemeName = "Adwaita";
                 Gtk.Settings.Default.ApplicationPreferDarkTheme = true;
             }
-            var app = new XDM.Core.AppService();
+            var app = new XDM.Core.ApplicationCore();
 
             var appWin = new AppWinPeer();
-            app.AppUI = new XDM.Core.UIService(appWin, app);
+            app.AppUI = new XDM.Core.Application(appWin, app);
             appWin.Show();
             app.AppUI.WindowLoaded += (_, _) => app.StartClipboardMonitor();
             app.StartScheduler();
@@ -106,7 +106,7 @@ namespace XDM.GtkUI
             //  });
             //t.Start();
 
-            Application.Run();
+            Gtk.Application.Run();
 
             //var app = new XDM.Core.XDM.Core();
             //var appWin = new AppWinPeer(app);

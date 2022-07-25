@@ -104,9 +104,9 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
             set => this.downloadId = value;
         }
 
-        public IAppService App { get; set; }
+        public IApplicationCore App { get; set; }
 
-        public IUIService AppUI { get; set; }
+        public IApplication AppUI { get; set; }
 
         public void DestroyWindow()
         {

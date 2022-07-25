@@ -23,7 +23,7 @@ namespace XDM.Wpf.UI.Dialogs.CompletedDialog
     /// </summary>
     public partial class DownloadCompleteWindow : Window, IDownloadCompleteDialog
     {
-        public IAppService? App { get; set; }
+        public IApplicationCore? App { get; set; }
         public event EventHandler<DownloadCompleteDialogEventArgs>? FileOpenClicked;
         public event EventHandler<DownloadCompleteDialogEventArgs>? FolderOpenClicked;
         public event EventHandler? DontShowAgainClickd;

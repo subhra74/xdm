@@ -82,8 +82,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)ErrorCode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Exceptions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GenericEventArgs.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)IAppService.cs" />
-    <Compile Include="..\XDM.Core\IUIService.cs" />
+    <Compile Include="..\XDM.Core\IApplicationCore.cs" />
+    <Compile Include="..\XDM.Core\IApplication.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)IClipboardMonitor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\IDownloadCompleteDialog.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\IFileSelectable.cs" />
@@ -143,7 +143,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)UI\DownloadLaterEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\DownloadListEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\FileBrowsedEventArgs.cs" />
-    <Compile Include="..\XDM.Core\UI\IMainView.cs" />
+    <Compile Include="..\XDM.Core\UI\IApplicationWindow.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\IBatchDownloadView.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\IButton.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\IDownloadSelectionView.cs" />
@@ -161,7 +161,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Util\SerializationHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Util\TimeHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Util\Win32NativeMethods.cs" />
-    <Compile Include="..\XDM.Core\UIService.cs" />
+    <Compile Include="..\XDM.Core\Application.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CallbackActions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ErrorMessages.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)IconResource.cs" />
@@ -172,7 +172,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)RemixIcon.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Scheduler.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UIActions.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)AppService.cs" />
+    <Compile Include="..\XDM.Core\ApplicationCore.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)YDLWrapper\Structs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)YDLWrapper\YDLOutputParser.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)YDLWrapper\YDLProcess.cs" />

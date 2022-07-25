@@ -23,10 +23,10 @@ namespace XDM.Wpf.UI.Dialogs.Updater
     /// </summary>
     public partial class UpdaterWindow : Window, IUpdaterUI
     {
-        private IUIService AppUI;
+        private IApplication AppUI;
         private Action actClose;
         private bool active = false;
-        public UpdaterWindow(IUIService AppUI)
+        public UpdaterWindow(IApplication AppUI)
         {
             InitializeComponent();
             this.AppUI = AppUI;

@@ -14,10 +14,10 @@ namespace XDM.Core.BrowserMonitoring
 {
     public class IpcHttpHandler
     {
-        private IAppService app;
+        private IApplicationCore app;
         private NanoServer server;
 
-        public IpcHttpHandler(IAppService app)
+        public IpcHttpHandler(IApplicationCore app)
         {
             this.app = app;
             server = new NanoServer(IPAddress.Loopback, 9614);
@@ -38,7 +38,7 @@ namespace XDM.Core.BrowserMonitoring
                 catch (Exception ex)
                 {
                     Log.Debug(ex.ToString());
-                    AppInstance.UI.ShowMessageBox(null, TextResource.GetText("MSG_ALREADY_RUNNING"));
+                    AppInstance.IApplication.ShowMessageBox(null, TextResource.GetText("MSG_ALREADY_RUNNING"));
                 }
             }).Start();
         }

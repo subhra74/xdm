@@ -9,7 +9,7 @@ namespace XDM.Core
     internal static class QueueWindowManager
     {
         private static IQueuesWindow? queueWindow;
-        private static IAppService? app;
+        private static IApplicationCore? app;
 
         internal static void RefreshView()
         {
@@ -22,7 +22,7 @@ namespace XDM.Core
         internal static void ShowWindow(
             object window,
             IQueuesWindow qwin,
-            IAppService a
+            IApplicationCore a
             )
         {
             if (queueWindow != null)

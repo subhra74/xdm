@@ -7,13 +7,13 @@ namespace XDM.Core
 {
     public static class AppInstance
     {
-        private static IAppService? s_AppService;
-        private static IUIService? s_AppController;
-        private static IMainView? s_MainView;
+        private static IApplicationCore? s_ApplicationCore;
+        private static IApplication? s_IApplication;
+        private static IApplicationWindow? s_ApplicationWindow;
 
         private static bool s_Init = false;
 
-        public static IAppService Service
+        public static IApplicationCore ApplicationCore
         {
             get
             {
@@ -21,11 +21,11 @@ namespace XDM.Core
                 {
                     throw new Exception("AppInstance is not initialized...");
                 }
-                return s_AppService!;
+                return s_ApplicationCore!;
             }
         }
 
-        public static IUIService UI
+        public static IApplication IApplication
         {
             get
             {
@@ -33,11 +33,11 @@ namespace XDM.Core
                 {
                     throw new Exception("AppInstance is not initialized...");
                 }
-                return s_AppController!;
+                return s_IApplication!;
             }
         }
 
-        public static IMainView MainView
+        public static IApplicationWindow MainView
         {
             get
             {
@@ -45,33 +45,33 @@ namespace XDM.Core
                 {
                     throw new Exception("AppInstance is not initialized...");
                 }
-                return s_MainView!;
+                return s_ApplicationWindow!;
             }
         }
 
         public class AppInstanceConfigurer
         {
-            public AppInstanceConfigurer RegisterAppService(IAppService service)
+            public AppInstanceConfigurer RegisterAppService(IApplicationCore service)
             {
-                s_AppService = service;
+                s_ApplicationCore = service;
                 return this;
             }
 
-            public AppInstanceConfigurer RegisterAppController(IUIService controller)
+            public AppInstanceConfigurer RegisterAppController(IApplication controller)
             {
-                s_AppController = controller;
+                s_IApplication = controller;
                 return this;
             }
 
-            public AppInstanceConfigurer RegisterMainView(IMainView view)
+            public AppInstanceConfigurer RegisterMainView(IApplicationWindow view)
             {
-                s_MainView = view;
+                s_ApplicationWindow = view;
                 return this;
             }
 
             public void Configure()
             {
-                if (s_AppService == null || s_AppController == null)
+                if (s_ApplicationCore == null || s_IApplication == null)
                 {
                     throw new Exception("Please configure service, controller and other dependecies");
                 }

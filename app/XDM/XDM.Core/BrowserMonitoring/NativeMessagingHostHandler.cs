@@ -22,13 +22,13 @@ namespace XDM.Core.BrowserMonitoring
         private List<NativeMessagingHostChannel> connectedChannels = new();
         //private List<NamedPipeServerStream> inPipes = new();
         //private Dictionary<NamedPipeServerStream, NamedPipeClientStream> inOutMap = new();
-        private readonly IAppService app;
+        private readonly IApplicationCore app;
         private static Mutex globalMutex;
         // private readonly BlockingCollection<byte[]> Messages = new();
         //private Thread WriterThread;
         private Thread listenerThread;
 
-        public static void EnsureSingleInstance(IAppService app)
+        public static void EnsureSingleInstance(IApplicationCore app)
         {
             try
             {
@@ -52,7 +52,7 @@ namespace XDM.Core.BrowserMonitoring
             globalMutex = new Mutex(true, @"Global\XDM_Active_Instance");
         }
 
-        public NativeMessagingHostHandler(IAppService app)
+        public NativeMessagingHostHandler(IApplicationCore app)
         {
             this.app = app;
             EnsureSingleInstance(this.app);
@@ -312,7 +312,7 @@ namespace XDM.Core.BrowserMonitoring
             //}
         }
 
-        private static byte[] GetSyncBytes(IAppService app)
+        private static byte[] GetSyncBytes(IApplicationCore app)
         {
             var msg = new SyncMessage()
             {

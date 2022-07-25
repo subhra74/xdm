@@ -8,7 +8,7 @@ namespace XDM.Core
 {
     public static class ArgsProcessor
     {
-        public static void Process(IAppService app, Dictionary<string, string?> args)
+        public static void Process(IApplicationCore app, Dictionary<string, string?> args)
         {
             if (args.ContainsKey("-u"))
             {

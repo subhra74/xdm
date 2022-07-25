@@ -24,7 +24,7 @@ namespace XDM.GtkUI
 
         private void Timer_Elapsed(object? sender, ElapsedEventArgs e)
         {
-            Application.Invoke(CheckGtkClipboardContents);
+            Gtk.Application.Invoke(this.CheckGtkClipboardContents);
         }
 
         private void CheckGtkClipboardContents(object? sender, EventArgs e)

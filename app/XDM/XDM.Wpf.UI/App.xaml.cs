@@ -14,13 +14,13 @@ namespace XDM.Wpf.UI
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>
-    public partial class App : Application
+    public partial class App : System.Windows.Application
     {
         private const string DisableCachingName = @"TestSwitch.LocalAppContext.DisableCaching";
         private const string DontEnableSchUseStrongCryptoName = @"Switch.System.Net.DontEnableSchUseStrongCrypto";
 
         public static Skin Skin = ShouldSelectDarkTheme() ? Skin.Dark : Skin.Light;
-        private XDM.Core.AppService app;
+        private XDM.Core.ApplicationCore app;
         private MainWindow win;
 
         public App()
@@ -55,7 +55,7 @@ namespace XDM.Wpf.UI
 
             AppDB.Instance.Init(Path.Combine(Config.DataDir, "downloads.db"));
 
-            app = new XDM.Core.AppService();
+            app = new XDM.Core.ApplicationCore();
             win = new MainWindow();
 
             var args = Environment.GetCommandLineArgs();
@@ -72,7 +72,7 @@ namespace XDM.Wpf.UI
                 }
                 win.Activate();
             };
-            app.AppUI = new XDM.Core.UIService(win, app);
+            app.AppUI = new XDM.Core.Application(win, app);
             app.AppUI.WindowLoaded += (_, _) => app.StartClipboardMonitor();
             app.StartScheduler();
             app.StartNativeMessagingHost();

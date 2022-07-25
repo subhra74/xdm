@@ -10,11 +10,11 @@ namespace XDM.Core
     public class Scheduler : IDisposable
     {
         private Timer? timer;
-        private readonly IAppService app;
+        private readonly IApplicationCore app;
         private HashSet<string> activeSchedules;
         //private Action callback;
 
-        public Scheduler(IAppService app)
+        public Scheduler(IApplicationCore app)
         {
             this.app = app;
             this.activeSchedules = new HashSet<string>();

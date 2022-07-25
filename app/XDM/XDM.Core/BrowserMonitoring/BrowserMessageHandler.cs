@@ -9,7 +9,7 @@ namespace XDM.Core.BrowserMonitoring
 {
     internal static class BrowserMessageHandler
     {
-        internal static void Handle(IAppService app, RawBrowserMessageEnvelop envelop)
+        internal static void Handle(IApplicationCore app, RawBrowserMessageEnvelop envelop)
         {
             //Log.Debug("Type: " + envelop.MessageType);
             if (envelop.MessageType == "videoIds")

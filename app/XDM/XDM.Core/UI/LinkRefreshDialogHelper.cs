@@ -13,7 +13,7 @@ namespace XDM.Core.UI
 {
     public static class LinkRefreshDialogHelper
     {
-        public static bool RefreshLink(BaseDownloadEntry item, IAppService app, IRefreshLinkDialogSkeleton dialog)
+        public static bool RefreshLink(BaseDownloadEntry item, IApplicationCore app, IRefreshLinkDialogSkeleton dialog)
         {
             try
             {

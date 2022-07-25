@@ -10,7 +10,7 @@ using XDM.Core.UI;
 
 namespace XDM.Core
 {
-    public interface IAppService
+    public interface IApplicationCore
     {
         public Version AppVerion { get; }
         public string HelpPage { get; }

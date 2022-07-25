@@ -13,16 +13,16 @@ using XDM.Core.Util;
 
 namespace XDM.Core
 {
-    public class UIService : IUIService
+    public class Application : IApplication
     {
-        private IMainView peer;
-        private IAppService app;
+        private IApplicationWindow peer;
+        private IApplicationCore app;
         private delegate void UpdateItemCallBack(string id, string targetFileName, long size);
         private Action<string, int, double, long> updateProgressAction;
         private long lastProgressUpdate = 0;
         public event EventHandler WindowLoaded;
 
-        public UIService(IMainView peer, IAppService app)
+        public Application(IApplicationWindow peer, IApplicationCore app)
         {
             this.peer = peer;
             this.app = app;
@@ -35,7 +35,7 @@ namespace XDM.Core
             UpdateToolbarButtonState();
         }
 
-        public IAppService App { get => app; set => app = value; }
+        public IApplicationCore App { get => app; set => app = value; }
 
         public void AddItemToTop(
             string id,

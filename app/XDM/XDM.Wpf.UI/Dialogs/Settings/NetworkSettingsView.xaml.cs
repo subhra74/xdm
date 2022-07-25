@@ -22,7 +22,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
     /// </summary>
     public partial class NetworkSettingsView : UserControl, ISettingsPage
     {
-        public IAppService App { get; set; }
+        public IApplicationCore App { get; set; }
         public NetworkSettingsView()
         {
             InitializeComponent();

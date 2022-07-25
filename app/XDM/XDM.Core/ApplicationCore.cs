@@ -28,7 +28,7 @@ using XDM.Compatibility;
 
 namespace XDM.Core
 {
-    public class AppService : IAppService
+    public class ApplicationCore : IApplicationCore
     {
         public Version AppVerion => new(8, 0, 0);
         private Dictionary<string, (IBaseDownloader Downloader, bool NonInteractive)> liveDownloads = new();
@@ -55,7 +55,7 @@ namespace XDM.Core
 
         public int ActiveDownloadCount { get => liveDownloads.Count + queuedDownloads.Count; }
 
-        public IUIService AppUI { get; set; }
+        public IApplication AppUI { get; set; }
 
         public string HelpPage => "https://subhra74.github.io/xdm/redirect-support.html";
         public string UpdatePage => $"https://subhra74.github.io/xdm/update-checker.html?v={AppVerion}";
@@ -67,7 +67,7 @@ namespace XDM.Core
 
         public string[] Args { get; set; }
 
-        public AppService()
+        public ApplicationCore()
         {
             //var configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".xdman");
             //Directory.CreateDirectory(configPath);
