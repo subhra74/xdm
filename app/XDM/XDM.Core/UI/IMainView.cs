@@ -9,7 +9,7 @@ using XDM.Core.Downloader;
 
 namespace XDM.Core.UI
 {
-    public interface IAppWinPeer
+    public interface IMainView
     {
         IEnumerable<FinishedDownloadEntry> FinishedDownloads { get; set; }
 

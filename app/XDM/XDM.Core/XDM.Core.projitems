@@ -142,7 +142,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)UI\DownloadLaterEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\DownloadListEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\FileBrowsedEventArgs.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)UI\IAppWinPeer.cs" />
+    <Compile Include="..\XDM.Core\UI\IMainView.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\IBatchDownloadView.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\IButton.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\IDownloadSelectionView.cs" />

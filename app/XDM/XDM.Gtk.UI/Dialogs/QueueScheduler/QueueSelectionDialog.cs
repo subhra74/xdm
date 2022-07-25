@@ -97,7 +97,7 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
             }
         }
 
-        public void ShowWindow(IAppWinPeer peer)
+        public void ShowWindow(IMainView peer)
         {
             this.Run();
             this.Destroy();

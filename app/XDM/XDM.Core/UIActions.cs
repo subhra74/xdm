@@ -15,7 +15,7 @@ namespace XDM.Core
 {
     internal static class UIActions
     {
-        public static void DeleteDownloads(bool inProgressOnly, IAppWinPeer peer, IAppService app, Action<bool>? callback)
+        public static void DeleteDownloads(bool inProgressOnly, IMainView peer, IAppService app, Action<bool>? callback)
         {
             if (inProgressOnly)
             {
@@ -54,7 +54,7 @@ namespace XDM.Core
             }
         }
 
-        public static void OnDblClick(IAppWinPeer peer, IAppService app)
+        public static void OnDblClick(IMainView peer, IAppService app)
         {
             if (peer.IsInProgressViewSelected)
             {
@@ -73,7 +73,7 @@ namespace XDM.Core
             }
         }
 
-        public static void OpenSelectedFolder(IAppWinPeer peer)
+        public static void OpenSelectedFolder(IMainView peer)
         {
             var selectedRows = peer.SelectedFinishedRows;
             if (selectedRows.Count > 0)
@@ -90,7 +90,7 @@ namespace XDM.Core
             peer.ShowMessageBox(peer, TextResource.GetText("NO_ITEM_SELECTED"));
         }
 
-        public static void OpenSelectedFile(IAppWinPeer peer)
+        public static void OpenSelectedFile(IMainView peer)
         {
             var selectedRows = peer.SelectedFinishedRows;
             if (selectedRows.Count > 0)
@@ -115,12 +115,12 @@ namespace XDM.Core
             peer.ShowMessageBox(peer, TextResource.GetText("NO_ITEM_SELECTED"));
         }
 
-        public static void StopSelectedDownloads(IAppWinPeer peer, IAppService app)
+        public static void StopSelectedDownloads(IMainView peer, IAppService app)
         {
             app.StopDownloads(peer.SelectedInProgressRows.Select(x => x.DownloadEntry.Id), true);
         }
 
-        public static void ResumeDownloads(IAppWinPeer peer, IAppService app)
+        public static void ResumeDownloads(IMainView peer, IAppService app)
         {
             var idDict = new Dictionary<string, BaseDownloadEntry>();
             var list = peer.SelectedInProgressRows;
@@ -131,13 +131,13 @@ namespace XDM.Core
             app.ResumeDownload(idDict);
         }
 
-        public static void MoveToQueue(IAppWinPeer peer, IAppController appUI)
+        public static void MoveToQueue(IMainView peer, IAppController appUI)
         {
             var selectedIds = peer.SelectedInProgressRows?.Select(x => x.DownloadEntry.Id)?.ToArray() ?? new string[0];
             MoveToQueue(peer, appUI, selectedIds);
         }
 
-        public static void MoveToQueue(IAppWinPeer peer, IAppController appUI, string[] selectedIds, bool prompt = false, Action? callback = null)
+        public static void MoveToQueue(IMainView peer, IAppController appUI, string[] selectedIds, bool prompt = false, Action? callback = null)
         {
             if (prompt && !peer.Confirm(peer, "Add to queue?"))
             {
@@ -159,7 +159,7 @@ namespace XDM.Core
             queueSelectionDialog.ShowWindow(peer);
         }
 
-        public static void SaveAs(IAppWinPeer peer, IAppService app)
+        public static void SaveAs(IMainView peer, IAppService app)
         {
             var rows = peer.SelectedInProgressRows;
             if (rows == null || rows.Count < 1) return;
@@ -173,21 +173,21 @@ namespace XDM.Core
             app.RenameDownload(item.Id, Path.GetDirectoryName(file)!, Path.GetFileName(file));
         }
 
-        public static void RefreshLink(IAppWinPeer peer, IAppService app)
+        public static void RefreshLink(IMainView peer, IAppService app)
         {
             var selected = peer.SelectedInProgressRows;
             if (selected == null || selected.Count == 0) return;
             peer.ShowRefreshLinkDialog(selected[0].DownloadEntry, app);
         }
 
-        public static void ShowProgressWindow(IAppWinPeer peer, IAppService app)
+        public static void ShowProgressWindow(IMainView peer, IAppService app)
         {
             var selected = peer.SelectedInProgressRows;
             if (selected == null || selected.Count == 0) return;
             app.ShowProgressWindow(selected[0].DownloadEntry.Id);
         }
 
-        public static void CopyURL1(IAppWinPeer peer, IAppService app)
+        public static void CopyURL1(IMainView peer, IAppService app)
         {
             var selected = peer.SelectedInProgressRows;
             if (selected == null || selected.Count == 0) return;
@@ -198,7 +198,7 @@ namespace XDM.Core
             }
         }
 
-        public static void CopyURL2(IAppWinPeer peer, IAppService app)
+        public static void CopyURL2(IMainView peer, IAppService app)
         {
             var selected = peer.SelectedFinishedRows;
             if (selected == null || selected.Count == 0) return;
@@ -209,7 +209,7 @@ namespace XDM.Core
             }
         }
 
-        public static void ShowSeletectedItemProperties(IAppWinPeer peer, IAppService app)
+        public static void ShowSeletectedItemProperties(IMainView peer, IAppService app)
         {
             BaseDownloadEntry? ent = null;
             if (peer.IsInProgressViewSelected)
@@ -275,7 +275,7 @@ namespace XDM.Core
             peer.ShowPropertiesDialog(ent, state);
         }
 
-        public static void CopyFile(IAppWinPeer peer)
+        public static void CopyFile(IMainView peer)
         {
             var selected = peer.SelectedFinishedRows;
             if (selected == null || selected.Count == 0) return;
@@ -291,7 +291,7 @@ namespace XDM.Core
             }
         }
 
-        public static void RestartDownload(IAppWinPeer peer, IAppService app)
+        public static void RestartDownload(IMainView peer, IAppService app)
         {
             BaseDownloadEntry? ent = null;
             if (peer.IsInProgressViewSelected)

@@ -18,7 +18,6 @@ using Translations;
 using XDM.Core.UI;
 using XDM.Core;
 using XDM.Core.Downloader;
-using XDM.Core.UI;
 using XDM.Core.Util;
 using XDM.Wpf.UI.Dialogs.About;
 using XDM.Wpf.UI.Dialogs.BatchDownload;
@@ -44,7 +43,7 @@ namespace XDM.Wpf.UI
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window, IAppWinPeer
+    public partial class MainWindow : Window, IMainView
     {
         private ObservableCollection<InProgressDownloadEntryWrapper> inProgressList
             = new ObservableCollection<InProgressDownloadEntryWrapper>();

@@ -31,7 +31,7 @@ using XDM.GtkUI.Dialogs.Updater;
 
 namespace XDM.GtkUI
 {
-    public class AppWinPeer : Window, IAppWinPeer
+    public class AppWinPeer : Window, IMainView
     {
         private TreeStore categoryTreeStore;
         private TreeView categoryTree;

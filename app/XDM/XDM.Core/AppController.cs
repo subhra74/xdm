@@ -16,14 +16,14 @@ namespace XDM.Core
 {
     public class AppController : IAppController
     {
-        private IAppWinPeer peer;
+        private IMainView peer;
         private IAppService app;
         private delegate void UpdateItemCallBack(string id, string targetFileName, long size);
         private Action<string, int, double, long> updateProgressAction;
         private long lastProgressUpdate = 0;
         public event EventHandler WindowLoaded;
 
-        public AppController(IAppWinPeer peer, IAppService app)
+        public AppController(IMainView peer, IAppService app)
         {
             this.peer = peer;
             this.app = app;

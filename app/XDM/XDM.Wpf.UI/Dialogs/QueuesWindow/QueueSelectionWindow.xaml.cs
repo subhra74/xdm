@@ -36,7 +36,7 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
             LbQueues.SelectedIndex = 0;
         }
 
-        public void ShowWindow(IAppWinPeer peer)
+        public void ShowWindow(IMainView peer)
         {
             NativeMethods.ShowDialog(this, (Window)peer);
         }
