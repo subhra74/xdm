@@ -1257,7 +1257,7 @@ namespace XDM.GtkUI
 
         public void ShowSettingsDialog(IApplicationCore app, int page = 0)
         {
-            using var win = SettingsDialog.CreateFromGladeFile(this, windowGroup, AppInstance.IApplication, app);
+            using var win = SettingsDialog.CreateFromGladeFile(this, windowGroup, AppInstance.Current, app);
             win.SetActivePage(page);
             win.LoadConfig();
             win.Run();

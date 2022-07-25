@@ -181,8 +181,6 @@ namespace XDM.Core
         /// <param name="file"></param>
         void RenameFileOnUI(string id, string folder, string file);
 
-        IApplicationCore App { get; set; }
-
         public AuthenticationInfo? PromtForCredentials(string message);
         //public void LoadDownloadsDB();
         public void ShowUpdateAvailableNotification();

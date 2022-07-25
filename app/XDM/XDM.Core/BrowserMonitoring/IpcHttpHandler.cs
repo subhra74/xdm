@@ -38,7 +38,7 @@ namespace XDM.Core.BrowserMonitoring
                 catch (Exception ex)
                 {
                     Log.Debug(ex.ToString());
-                    AppInstance.IApplication.ShowMessageBox(null, TextResource.GetText("MSG_ALREADY_RUNNING"));
+                    AppInstance.Current.ShowMessageBox(null, TextResource.GetText("MSG_ALREADY_RUNNING"));
                 }
             }).Start();
         }

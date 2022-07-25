@@ -15,27 +15,18 @@ namespace XDM.Core
 {
     public class Application : IApplication
     {
-        private IApplicationWindow peer;
-        private IApplicationCore app;
         private delegate void UpdateItemCallBack(string id, string targetFileName, long size);
         private Action<string, int, double, long> updateProgressAction;
         private long lastProgressUpdate = 0;
         public event EventHandler WindowLoaded;
 
-        public Application(IApplicationWindow peer, IApplicationCore app)
+        public Application()
         {
-            this.peer = peer;
-            this.app = app;
             this.updateProgressAction = new Action<string, int, double, long>(this.UpdateProgressOnUI);
-
             AttachedEventHandler();
-
             this.LoadDownloadList();
-
             UpdateToolbarButtonState();
         }
-
-        public IApplicationCore App { get => app; set => app = value; }
 
         public void AddItemToTop(
             string id,
@@ -69,54 +60,36 @@ namespace XDM.Core
 
             RunOnUiThread(() =>
             {
-                //var downloadEntry = new InProgressDownloadEntry
-                //{
-                //    Name = targetFileName,
-                //    DateAdded = date,
-                //    DownloadType = type,
-                //    Id = id,
-                //    Progress = 0,
-                //    Size = fileSize,
-                //    Status = startType == DownloadStartType.Waiting ? DownloadStatus.Waiting : DownloadStatus.Stopped,
-                //    TargetDir = "",
-                //    PrimaryUrl = primaryUrl,
-                //    Authentication = authentication,
-                //    Proxy = proxyInfo,
-                //    MaxSpeedLimitInKiB = maxSpeedLimit,
-                //};
-
-                this.peer.AddToTop(downloadEntry);
-                this.peer.SwitchToInProgressView();
-                this.peer.ClearInProgressViewSelection();
-
-                //this.SaveInProgressList();
+                AppInstance.MainWindow.AddToTop(downloadEntry);
+                AppInstance.MainWindow.SwitchToInProgressView();
+                AppInstance.MainWindow.ClearInProgressViewSelection();
                 UpdateToolbarButtonState();
             });
         }
 
         public bool Confirm(object? window, string text)
         {
-            return peer.Confirm(window, text);
+            return AppInstance.MainWindow.Confirm(window, text);
         }
 
         public IDownloadCompleteDialog CreateDownloadCompleteDialog()
         {
-            return peer.CreateDownloadCompleteDialog(this.app);
+            return AppInstance.MainWindow.CreateDownloadCompleteDialog(AppInstance.Core);
         }
 
         public INewDownloadDialogSkeleton CreateNewDownloadDialog(bool empty)
         {
-            return peer.CreateNewDownloadDialog(empty);
+            return AppInstance.MainWindow.CreateNewDownloadDialog(empty);
         }
 
         public INewVideoDownloadDialog CreateNewVideoDialog()
         {
-            return peer.CreateNewVideoDialog();
+            return AppInstance.MainWindow.CreateNewVideoDialog();
         }
 
         public IProgressWindow CreateProgressWindow(string downloadId)
         {
-            return peer.CreateProgressWindow(downloadId, this.app, this);
+            return AppInstance.MainWindow.CreateProgressWindow(downloadId, AppInstance.Core, this);
         }
 
         public void DownloadCanelled(string id)
@@ -129,8 +102,7 @@ namespace XDM.Core
             AppDB.Instance.Downloads.UpdateDownloadStatus(id, DownloadStatus.Stopped);
             RunOnUiThread(() =>
             {
-                CallbackActions.DownloadFailed(id, peer);
-                //SaveInProgressList();
+                CallbackActions.DownloadFailed(id, AppInstance.MainWindow);
                 UpdateToolbarButtonState();
             });
         }
@@ -164,79 +136,45 @@ namespace XDM.Core
 
                 RunOnUiThread(() =>
                 {
-                    var download = peer.FindInProgressItem(id);
+                    var download = AppInstance.MainWindow.FindInProgressItem(id);
                     if (download == null) return;
 
-                    peer.AddToTop(finishedEntry);
-                    peer.Delete(download);
+                    AppInstance.MainWindow.AddToTop(finishedEntry);
+                    AppInstance.MainWindow.Delete(download);
 
                     QueueManager.RemoveFinishedDownload(download.DownloadEntry.Id);
 
-                    if (app.ActiveDownloadCount == 0 && peer.IsInProgressViewSelected)
+                    if (AppInstance.Core.ActiveDownloadCount == 0 && AppInstance.MainWindow.IsInProgressViewSelected)
                     {
                         Log.Debug("switching to finished listview");
-                        peer.SwitchToFinishedView();
+                        AppInstance.MainWindow.SwitchToFinishedView();
                     }
                 });
             }
-
-            //var download = peer.FindInProgressItem(id);
-            //if (download == null) return;
-
-            //peer.AddToTop(finishedEntry);
-            //peer.Delete(download);
-
-            //QueueManager.RemoveFinishedDownload(download.DownloadEntry.Id);
-
-            //if (app.ActiveDownloadCount == 0 && peer.IsInProgressViewSelected)
-            //{
-            //    Log.Debug("switching to finished listview");
-            //    peer.SwitchToFinishedView();
-            //}
-
-            //RunOnUiThread(() =>
-            //{
-            //    CallbackActions.DownloadFinished(id, finalFileSize, filePath, peer, app, () =>
-            //    {
-            //        UpdateToolbarButtonState();
-            //        QueueWindowManager.RefreshView();
-            //    });
-
-            //    //this.SaveFinishedList();
-            //    //this.SaveInProgressList();
-            //    //UpdateToolbarButtonState();
-            //    //QueueWindowManager.RefreshView();
-            //});
         }
 
         public void DownloadStarted(string id)
         {
             RunOnUiThread(() =>
             {
-                CallbackActions.DownloadStarted(id, peer);
+                CallbackActions.DownloadStarted(id, AppInstance.MainWindow);
                 UpdateToolbarButtonState();
             });
         }
 
         public IEnumerable<InProgressDownloadEntry> GetAllInProgressDownloads()
         {
-            //var downloads = new List<InProgressDownloadEntry>();
-            //if (!AppDB.Instance.DownloadsDB.LoadDownloads(out downloads, out _, QueryMode.InProgress))
-            //{
-            //    Log.Debug("GetAllInProgressDownloads::failed");
-            //}
-            //return downloads;
-            return peer.InProgressDownloads;
+            return AppInstance.MainWindow.InProgressDownloads;
         }
 
         public InProgressDownloadEntry? GetInProgressDownloadEntry(string downloadId)
         {
-            return peer.FindInProgressItem(downloadId)?.DownloadEntry;
+            return AppInstance.MainWindow.FindInProgressItem(downloadId)?.DownloadEntry;
         }
 
         public string? GetUrlFromClipboard()
         {
-            var text = peer.GetUrlFromClipboard();
+            var text = AppInstance.MainWindow.GetUrlFromClipboard();
             if (Helpers.IsUriValid(text))
             {
                 return text;
@@ -246,7 +184,7 @@ namespace XDM.Core
 
         public AuthenticationInfo? PromtForCredentials(string message)
         {
-            return peer.PromtForCredentials(message);
+            return AppInstance.MainWindow.PromtForCredentials(message);
         }
 
         public void RenameFileOnUI(string id, string folder, string file)
@@ -257,7 +195,7 @@ namespace XDM.Core
             }
             RunOnUiThread(() =>
             {
-                var downloadEntry = this.peer.FindInProgressItem(id);
+                var downloadEntry = AppInstance.MainWindow.FindInProgressItem(id);
                 if (downloadEntry == null) return;
                 if (file != null)
                 {
@@ -274,22 +212,22 @@ namespace XDM.Core
         public void ResumeDownload(string downloadId)
         {
             var idDict = new Dictionary<string, BaseDownloadEntry>();
-            var download = peer.FindInProgressItem(downloadId);
+            var download = AppInstance.MainWindow.FindInProgressItem(downloadId);
             if (download == null) return;
             idDict[download.DownloadEntry.Id] = download.DownloadEntry;
-            App.ResumeDownload(idDict);
+            AppInstance.Core.ResumeDownload(idDict);
         }
 
         public void RunOnUiThread(Action action)
         {
-            peer.RunOnUIThread(action);
+            AppInstance.MainWindow.RunOnUIThread(action);
         }
 
         public void SetDownloadStatusWaiting(string id)
         {
             RunOnUiThread(() =>
             {
-                var download = this.peer.FindInProgressItem(id);
+                var download = AppInstance.MainWindow.FindInProgressItem(id);
                 if (download == null) return;
                 download.Status = DownloadStatus.Waiting;
                 UpdateToolbarButtonState();
@@ -300,7 +238,7 @@ namespace XDM.Core
         {
             RunOnUiThread(() =>
             {
-                peer.ShowUpdateAvailableNotification();
+                AppInstance.MainWindow.ShowUpdateAvailableNotification();
             });
         }
 
@@ -308,13 +246,13 @@ namespace XDM.Core
         {
             RunOnUiThread(() =>
             {
-                DownloadCompleteDialogHelper.ShowDialog(this.App, CreateDownloadCompleteDialog(), file, folder);
+                DownloadCompleteDialogHelper.ShowDialog(AppInstance.Core, CreateDownloadCompleteDialog(), file, folder);
             });
         }
 
         public void ShowMessageBox(object? window, string message)
         {
-            peer.ShowMessageBox(window, message);
+            AppInstance.MainWindow.ShowMessageBox(window, message);
         }
 
         public void ShowNewDownloadDialog(Message message)
@@ -324,10 +262,10 @@ namespace XDM.Core
             {
                 return;
             }
-            peer.RunOnUIThread(() =>
+            AppInstance.MainWindow.RunOnUIThread(() =>
             {
                 NewDownloadPromptTracker.PromptOpen(url);
-                NewDownloadDialogHelper.CreateAndShowDialog(this.App, this, this.CreateNewDownloadDialog(false), message,
+                NewDownloadDialogHelper.CreateAndShowDialog(AppInstance.Core, this, this.CreateNewDownloadDialog(false), message,
                     () => NewDownloadPromptTracker.PromptClosed(url));
             });
         }
@@ -336,7 +274,7 @@ namespace XDM.Core
         {
             RunOnUiThread(() =>
             {
-                NewVideoDownloadDialogHelper.ShowVideoDownloadDialog(this.App, this, this.CreateNewVideoDialog(),
+                NewVideoDownloadDialogHelper.ShowVideoDownloadDialog(AppInstance.Core, this, this.CreateNewVideoDialog(),
                     videoId, name, size, contentType);
             });
         }
@@ -349,7 +287,7 @@ namespace XDM.Core
             }
             RunOnUiThread(() =>
             {
-                var download = peer.FindInProgressItem(id);
+                var download = AppInstance.MainWindow.FindInProgressItem(id);
                 if (download == null) return;
                 download.Name = targetFileName;
                 download.Size = size;
@@ -359,7 +297,7 @@ namespace XDM.Core
 
         private void UpdateProgressOnUI(string id, int progress, double speed, long eta)
         {
-            var downloadEntry = peer.FindInProgressItem(id);
+            var downloadEntry = AppInstance.MainWindow.FindInProgressItem(id);
             if (downloadEntry != null)
             {
                 downloadEntry.Progress = progress;
@@ -374,7 +312,7 @@ namespace XDM.Core
             {
                 Log.Debug("UpdateProgress::failed");
             }
-            peer.RunOnUIThread(this.updateProgressAction, id, progress, speed, eta);
+            AppInstance.MainWindow.RunOnUIThread(this.updateProgressAction, id, progress, speed, eta);
         }
 
         private void LoadDownloadList()
@@ -383,38 +321,20 @@ namespace XDM.Core
             {
                 if (AppDB.Instance.Downloads.LoadDownloads(out var inProgressDownloads, out var finishedDownloads))
                 {
-                    peer.InProgressDownloads = inProgressDownloads;
-                    peer.FinishedDownloads = finishedDownloads;
+                    AppInstance.MainWindow.InProgressDownloads = inProgressDownloads;
+                    AppInstance.MainWindow.FinishedDownloads = finishedDownloads;
                     return;
                 }
                 else
                 {
                     Log.Debug("Could not load download list");
                 }
-                //peer.InProgressDownloads = TransactedIO.ReadInProgressList("inprogress-downloads.dat", Config.DataDir);
-                //peer.FinishedDownloads = TransactedIO.ReadFinishedList("finished-downloads.dat", Config.DataDir);
             }
             catch (Exception ex)
             {
                 Log.Debug(ex, "LoadDownloadList");
             }
         }
-
-        //private void SaveInProgressList()
-        //{
-        //    lock (this)
-        //    {
-        //        TransactedIO.WriteInProgressList(peer.InProgressDownloads, "inprogress-downloads.dat", Config.DataDir);
-        //    }
-        //}
-
-        //private void SaveFinishedList()
-        //{
-        //    lock (this)
-        //    {
-        //        TransactedIO.WriteFinishedList(peer.FinishedDownloads, "finished-downloads.dat", Config.DataDir);
-        //    }
-        //}
 
         private void DisableButton(IButton button)
         {
@@ -428,61 +348,61 @@ namespace XDM.Core
 
         private void UpdateToolbarButtonState()
         {
-            DisableButton(peer.OpenFileButton);
-            DisableButton(peer.OpenFolderButton);
-            DisableButton(peer.PauseButton);
-            DisableButton(peer.ResumeButton);
-            DisableButton(peer.DeleteButton);
+            DisableButton(AppInstance.MainWindow.OpenFileButton);
+            DisableButton(AppInstance.MainWindow.OpenFolderButton);
+            DisableButton(AppInstance.MainWindow.PauseButton);
+            DisableButton(AppInstance.MainWindow.ResumeButton);
+            DisableButton(AppInstance.MainWindow.DeleteButton);
 
-            if (peer.IsInProgressViewSelected)
+            if (AppInstance.MainWindow.IsInProgressViewSelected)
             {
-                peer.OpenFileButton.Visible = peer.OpenFolderButton.Visible = false;
-                peer.PauseButton.Visible = peer.ResumeButton.Visible = true;
-                var selectedRows = peer.SelectedInProgressRows;
+                AppInstance.MainWindow.OpenFileButton.Visible = AppInstance.MainWindow.OpenFolderButton.Visible = false;
+                AppInstance.MainWindow.PauseButton.Visible = AppInstance.MainWindow.ResumeButton.Visible = true;
+                var selectedRows = AppInstance.MainWindow.SelectedInProgressRows;
                 if (selectedRows.Count > 0)
                 {
-                    EnableButton(peer.DeleteButton);
+                    EnableButton(AppInstance.MainWindow.DeleteButton);
                 }
                 if (selectedRows.Count > 1)
                 {
-                    EnableButton(peer.ResumeButton);
-                    EnableButton(peer.PauseButton);
+                    EnableButton(AppInstance.MainWindow.ResumeButton);
+                    EnableButton(AppInstance.MainWindow.PauseButton);
                 }
                 else if (selectedRows.Count == 1)
                 {
                     var ent = selectedRows[0];
-                    var isActive = App.IsDownloadActive(ent.DownloadEntry.Id);
+                    var isActive = AppInstance.Core.IsDownloadActive(ent.DownloadEntry.Id);
                     if (isActive)
                     {
-                        EnableButton(peer.PauseButton);
+                        EnableButton(AppInstance.MainWindow.PauseButton);
                     }
                     else
                     {
-                        EnableButton(peer.ResumeButton);
+                        EnableButton(AppInstance.MainWindow.ResumeButton);
                     }
                 }
             }
             else
             {
-                peer.OpenFileButton.Visible = peer.OpenFolderButton.Visible = true;
-                peer.PauseButton.Visible = peer.ResumeButton.Visible = false;
-                if (peer.SelectedFinishedRows.Count > 0)
+                AppInstance.MainWindow.OpenFileButton.Visible = AppInstance.MainWindow.OpenFolderButton.Visible = true;
+                AppInstance.MainWindow.PauseButton.Visible = AppInstance.MainWindow.ResumeButton.Visible = false;
+                if (AppInstance.MainWindow.SelectedFinishedRows.Count > 0)
                 {
-                    EnableButton(peer.DeleteButton);
+                    EnableButton(AppInstance.MainWindow.DeleteButton);
                 }
 
-                if (peer.SelectedFinishedRows.Count == 1)
+                if (AppInstance.MainWindow.SelectedFinishedRows.Count == 1)
                 {
-                    EnableButton(peer.OpenFileButton);
-                    EnableButton(peer.OpenFolderButton);
+                    EnableButton(AppInstance.MainWindow.OpenFileButton);
+                    EnableButton(AppInstance.MainWindow.OpenFolderButton);
                 }
             }
         }
 
         private void DeleteDownloads()
         {
-            UIActions.DeleteDownloads(peer.IsInProgressViewSelected,
-                peer, App, null);
+            UIActions.DeleteDownloads(AppInstance.MainWindow.IsInProgressViewSelected,
+                AppInstance.MainWindow, AppInstance.Core, null);
             //inProgress =>
             //{
             //    if (inProgress)
@@ -498,124 +418,124 @@ namespace XDM.Core
 
         private void AttachedEventHandler()
         {
-            peer.NewDownloadClicked += (s, e) =>
+            AppInstance.MainWindow.NewDownloadClicked += (s, e) =>
             {
-                peer.RunOnUIThread(() =>
+                AppInstance.MainWindow.RunOnUIThread(() =>
                 {
-                    NewDownloadDialogHelper.CreateAndShowDialog(this.App, this, CreateNewDownloadDialog(true));
+                    NewDownloadDialogHelper.CreateAndShowDialog(AppInstance.Core, this, CreateNewDownloadDialog(true));
                 });
             };
 
-            peer.YoutubeDLDownloadClicked += (s, e) =>
+            AppInstance.MainWindow.YoutubeDLDownloadClicked += (s, e) =>
             {
-                peer.ShowYoutubeDLDialog(this, app);
+                AppInstance.MainWindow.ShowYoutubeDLDialog(this, AppInstance.Core);
             };
 
-            peer.BatchDownloadClicked += (s, e) =>
+            AppInstance.MainWindow.BatchDownloadClicked += (s, e) =>
             {
-                peer.ShowBatchDownloadWindow(app, this);
+                AppInstance.MainWindow.ShowBatchDownloadWindow(AppInstance.Core, this);
             };
 
-            peer.SelectionChanged += (s, e) =>
-            {
-                UpdateToolbarButtonState();
-            };
-
-            peer.CategoryChanged += (s, e) =>
+            AppInstance.MainWindow.SelectionChanged += (s, e) =>
             {
                 UpdateToolbarButtonState();
             };
 
-            peer.NewButton.Clicked += (s, e) =>
+            AppInstance.MainWindow.CategoryChanged += (s, e) =>
             {
-                peer.OpenNewDownloadMenu();
+                UpdateToolbarButtonState();
             };
 
-            peer.DeleteButton.Clicked += (a, b) =>
+            AppInstance.MainWindow.NewButton.Clicked += (s, e) =>
+            {
+                AppInstance.MainWindow.OpenNewDownloadMenu();
+            };
+
+            AppInstance.MainWindow.DeleteButton.Clicked += (a, b) =>
             {
                 DeleteDownloads();
             };
 
-            peer.DownloadListDoubleClicked += (a, b) => UIActions.OnDblClick(peer, App);
+            AppInstance.MainWindow.DownloadListDoubleClicked += (a, b) => UIActions.OnDblClick(AppInstance.MainWindow, AppInstance.Core);
 
-            peer.OpenFolderButton.Clicked += (a, b) => UIActions.OpenSelectedFolder(peer);
+            AppInstance.MainWindow.OpenFolderButton.Clicked += (a, b) => UIActions.OpenSelectedFolder(AppInstance.MainWindow);
 
-            peer.OpenFileButton.Clicked += (a, b) =>
+            AppInstance.MainWindow.OpenFileButton.Clicked += (a, b) =>
             {
-                UIActions.OpenSelectedFile(peer);
+                UIActions.OpenSelectedFile(AppInstance.MainWindow);
             };
 
-            peer.PauseButton.Clicked += (a, b) =>
+            AppInstance.MainWindow.PauseButton.Clicked += (a, b) =>
             {
-                if (peer.IsInProgressViewSelected)
+                if (AppInstance.MainWindow.IsInProgressViewSelected)
                 {
-                    UIActions.StopSelectedDownloads(peer, App);
+                    UIActions.StopSelectedDownloads(AppInstance.MainWindow, AppInstance.Core);
                 }
             };
 
-            peer.ResumeButton.Clicked += (a, b) =>
+            AppInstance.MainWindow.ResumeButton.Clicked += (a, b) =>
             {
-                if (peer.IsInProgressViewSelected)
+                if (AppInstance.MainWindow.IsInProgressViewSelected)
                 {
-                    UIActions.ResumeDownloads(peer, App);
+                    UIActions.ResumeDownloads(AppInstance.MainWindow, AppInstance.Core);
                 }
             };
 
-            peer.SettingsClicked += (s, e) =>
+            AppInstance.MainWindow.SettingsClicked += (s, e) =>
             {
-                peer.ShowSettingsDialog(app, 1);
-                peer.UpdateParallalismLabel();
+                AppInstance.MainWindow.ShowSettingsDialog(AppInstance.Core, 1);
+                AppInstance.MainWindow.UpdateParallalismLabel();
             };
 
-            peer.BrowserMonitoringSettingsClicked += (s, e) =>
+            AppInstance.MainWindow.BrowserMonitoringSettingsClicked += (s, e) =>
             {
-                peer.ShowBrowserMonitoringDialog(app);
-                peer.UpdateParallalismLabel();
+                AppInstance.MainWindow.ShowBrowserMonitoringDialog(AppInstance.Core);
+                AppInstance.MainWindow.UpdateParallalismLabel();
             };
 
-            peer.ClearAllFinishedClicked += (s, e) =>
+            AppInstance.MainWindow.ClearAllFinishedClicked += (s, e) =>
             {
-                peer.DeleteAllFinishedDownloads();
+                AppInstance.MainWindow.DeleteAllFinishedDownloads();
                 AppDB.Instance.Downloads.RemoveAllFinished();
                 //SaveFinishedList();
             };
 
-            peer.ImportClicked += (s, e) =>
+            AppInstance.MainWindow.ImportClicked += (s, e) =>
             {
-                var file = peer.OpenFileDialog(null, "zip", null);
+                var file = AppInstance.MainWindow.OpenFileDialog(null, "zip", null);
                 if (!string.IsNullOrEmpty(file) && File.Exists(file))
                 {
                     Log.Debug("Exporting to: " + file);
-                    app.Import(file!);
+                    AppInstance.Core.Import(file!);
                 }
                 LoadDownloadList();
             };
 
-            peer.ExportClicked += (s, e) =>
+            AppInstance.MainWindow.ExportClicked += (s, e) =>
             {
-                var file = peer.SaveFileDialog("xdm-download-list.zip", "zip", "All files (*.*)|*.*");
+                var file = AppInstance.MainWindow.SaveFileDialog("xdm-download-list.zip", "zip", "All files (*.*)|*.*");
                 if (!string.IsNullOrEmpty(file))
                 {
                     Log.Debug("Exporting to: " + file);
-                    app.Export(file!);
+                    AppInstance.Core.Export(file!);
                 }
             };
 
-            peer.HelpClicked += (s, e) =>
+            AppInstance.MainWindow.HelpClicked += (s, e) =>
             {
-                Helpers.OpenBrowser(app.HelpPage);
+                Helpers.OpenBrowser(AppInstance.Core.HelpPage);
             };
 
-            peer.UpdateClicked += (s, e) =>
+            AppInstance.MainWindow.UpdateClicked += (s, e) =>
             {
-                if (App.IsAppUpdateAvailable)
+                if (AppInstance.Core.IsAppUpdateAvailable)
                 {
-                    Helpers.OpenBrowser(App.UpdatePage);
+                    Helpers.OpenBrowser(AppInstance.Core.UpdatePage);
                     return;
                 }
-                if (App.IsComponentUpdateAvailable)
+                if (AppInstance.Core.IsComponentUpdateAvailable)
                 {
-                    if (peer.Confirm(peer, App.ComponentUpdateText))
+                    if (AppInstance.MainWindow.Confirm(AppInstance.MainWindow, AppInstance.Core.ComponentUpdateText))
                     {
                         LaunchUpdater(UpdateMode.FFmpegUpdateOnly | UpdateMode.YoutubeDLUpdateOnly);
                         return;
@@ -625,10 +545,10 @@ namespace XDM.Core
                         return;
                     }
                 }
-                peer.ShowMessageBox(peer, TextResource.GetText("MSG_NO_UPDATE"));
+                AppInstance.MainWindow.ShowMessageBox(AppInstance.MainWindow, TextResource.GetText("MSG_NO_UPDATE"));
             };
 
-            peer.BrowserMonitoringButtonClicked += (s, e) =>
+            AppInstance.MainWindow.BrowserMonitoringButtonClicked += (s, e) =>
             {
                 if (Config.Instance.IsBrowserMonitoringEnabled)
                 {
@@ -639,58 +559,58 @@ namespace XDM.Core
                     Config.Instance.IsBrowserMonitoringEnabled = true;
                 }
                 Config.SaveConfig();
-                app.ApplyConfig();
-                peer.UpdateBrowserMonitorButton();
+                AppInstance.Core.ApplyConfig();
+                AppInstance.MainWindow.UpdateBrowserMonitorButton();
             };
 
-            peer.SupportPageClicked += (s, e) =>
+            AppInstance.MainWindow.SupportPageClicked += (s, e) =>
             {
                 Helpers.OpenBrowser("https://subhra74.github.io/xdm/redirect-support.html");
             };
 
-            peer.BugReportClicked += (s, e) =>
+            AppInstance.MainWindow.BugReportClicked += (s, e) =>
             {
                 Helpers.OpenBrowser("https://subhra74.github.io/xdm/redirect-issue.html");
             };
 
-            peer.CheckForUpdateClicked += (s, e) =>
+            AppInstance.MainWindow.CheckForUpdateClicked += (s, e) =>
             {
-                Helpers.OpenBrowser(app.UpdatePage);
+                Helpers.OpenBrowser(AppInstance.Core.UpdatePage);
             };
 
-            peer.SchedulerClicked += (s, e) =>
+            AppInstance.MainWindow.SchedulerClicked += (s, e) =>
             {
-                ShowQueueWindow(peer);
+                ShowQueueWindow(AppInstance.MainWindow);
             };
 
-            peer.WindowCreated += (s, e) =>
+            AppInstance.MainWindow.WindowCreated += (s, e) =>
             {
                 this.WindowLoaded?.Invoke(this, EventArgs.Empty);
             };
 
             AttachContextMenuEvents();
 
-            peer.InProgressContextMenuOpening += (_, _) => InProgressContextMenuOpening();
-            peer.FinishedContextMenuOpening += (_, _) => FinishedContextMenuOpening();
+            AppInstance.MainWindow.InProgressContextMenuOpening += (_, _) => InProgressContextMenuOpening();
+            AppInstance.MainWindow.FinishedContextMenuOpening += (_, _) => FinishedContextMenuOpening();
         }
 
         public void ShowQueueWindow(object window)
         {
-            QueueWindowManager.ShowWindow(window, peer.CreateQueuesAndSchedulerWindow(this), this.app);
+            QueueWindowManager.ShowWindow(window, AppInstance.MainWindow.CreateQueuesAndSchedulerWindow(this), AppInstance.Core);
         }
 
         private void LaunchUpdater(UpdateMode updateMode)
         {
-            var updateDlg = peer.CreateUpdateUIDialog(this);
-            var updates = App.Updates?.Where(u => u.IsExternal)?.ToList() ?? new List<UpdateInfo>(0);
+            var updateDlg = AppInstance.MainWindow.CreateUpdateUIDialog(this);
+            var updates = AppInstance.Core.Updates?.Where(u => u.IsExternal)?.ToList() ?? new List<UpdateInfo>(0);
             if (updates.Count == 0) return;
-            var commonUpdateUi = new ComponentUpdaterUI(updateDlg, app, updateMode);
+            var commonUpdateUi = new ComponentUpdaterUI(updateDlg, AppInstance.Core, updateMode);
             updateDlg.Load += (_, _) => commonUpdateUi.StartUpdate();
             updateDlg.Finished += (_, _) =>
             {
                 RunOnUiThread(() =>
                 {
-                    peer.ClearUpdateInformation();
+                    AppInstance.MainWindow.ClearUpdateInformation();
                 });
             };
             updateDlg.Show();
@@ -700,23 +620,23 @@ namespace XDM.Core
         {
             try
             {
-                peer.MenuItemMap["pause"].Clicked += (_, _) => UIActions.StopSelectedDownloads(peer, App);
-                peer.MenuItemMap["resume"].Clicked += (_, _) => UIActions.ResumeDownloads(peer, App);
-                peer.MenuItemMap["delete"].Clicked += (_, _) => DeleteDownloads();
-                peer.MenuItemMap["saveAs"].Clicked += (_, _) => UIActions.SaveAs(peer, App);
-                peer.MenuItemMap["refresh"].Clicked += (_, _) => UIActions.RefreshLink(peer, App);
-                peer.MenuItemMap["moveToQueue"].Clicked += (_, _) => UIActions.MoveToQueue(peer, this);
-                peer.MenuItemMap["showProgress"].Clicked += (_, _) => UIActions.ShowProgressWindow(peer, App);
-                peer.MenuItemMap["copyURL"].Clicked += (_, _) => UIActions.CopyURL1(peer, App);
-                peer.MenuItemMap["copyURL1"].Clicked += (_, _) => UIActions.CopyURL2(peer, App);
-                peer.MenuItemMap["properties"].Clicked += (_, _) => UIActions.ShowSeletectedItemProperties(peer, App);
-                peer.MenuItemMap["open"].Clicked += (_, _) => UIActions.OpenSelectedFile(peer);
-                peer.MenuItemMap["openFolder"].Clicked += (_, _) => UIActions.OpenSelectedFolder(peer);
-                peer.MenuItemMap["deleteDownloads"].Clicked += (_, _) => DeleteDownloads();
-                peer.MenuItemMap["copyFile"].Clicked += (_, _) => UIActions.CopyFile(peer);
-                peer.MenuItemMap["properties1"].Clicked += (_, _) => UIActions.ShowSeletectedItemProperties(peer, App);
-                peer.MenuItemMap["downloadAgain"].Clicked += (_, _) => UIActions.RestartDownload(peer, App);
-                peer.MenuItemMap["restart"].Clicked += (_, _) => UIActions.RestartDownload(peer, App);
+                AppInstance.MainWindow.MenuItemMap["pause"].Clicked += (_, _) => UIActions.StopSelectedDownloads(AppInstance.MainWindow, AppInstance.Core);
+                AppInstance.MainWindow.MenuItemMap["resume"].Clicked += (_, _) => UIActions.ResumeDownloads(AppInstance.MainWindow, AppInstance.Core);
+                AppInstance.MainWindow.MenuItemMap["delete"].Clicked += (_, _) => DeleteDownloads();
+                AppInstance.MainWindow.MenuItemMap["saveAs"].Clicked += (_, _) => UIActions.SaveAs(AppInstance.MainWindow, AppInstance.Core);
+                AppInstance.MainWindow.MenuItemMap["refresh"].Clicked += (_, _) => UIActions.RefreshLink(AppInstance.MainWindow, AppInstance.Core);
+                AppInstance.MainWindow.MenuItemMap["moveToQueue"].Clicked += (_, _) => UIActions.MoveToQueue(AppInstance.MainWindow, this);
+                AppInstance.MainWindow.MenuItemMap["showProgress"].Clicked += (_, _) => UIActions.ShowProgressWindow(AppInstance.MainWindow, AppInstance.Core);
+                AppInstance.MainWindow.MenuItemMap["copyURL"].Clicked += (_, _) => UIActions.CopyURL1(AppInstance.MainWindow, AppInstance.Core);
+                AppInstance.MainWindow.MenuItemMap["copyURL1"].Clicked += (_, _) => UIActions.CopyURL2(AppInstance.MainWindow, AppInstance.Core);
+                AppInstance.MainWindow.MenuItemMap["properties"].Clicked += (_, _) => UIActions.ShowSeletectedItemProperties(AppInstance.MainWindow, AppInstance.Core);
+                AppInstance.MainWindow.MenuItemMap["open"].Clicked += (_, _) => UIActions.OpenSelectedFile(AppInstance.MainWindow);
+                AppInstance.MainWindow.MenuItemMap["openFolder"].Clicked += (_, _) => UIActions.OpenSelectedFolder(AppInstance.MainWindow);
+                AppInstance.MainWindow.MenuItemMap["deleteDownloads"].Clicked += (_, _) => DeleteDownloads();
+                AppInstance.MainWindow.MenuItemMap["copyFile"].Clicked += (_, _) => UIActions.CopyFile(AppInstance.MainWindow);
+                AppInstance.MainWindow.MenuItemMap["properties1"].Clicked += (_, _) => UIActions.ShowSeletectedItemProperties(AppInstance.MainWindow, AppInstance.Core);
+                AppInstance.MainWindow.MenuItemMap["downloadAgain"].Clicked += (_, _) => UIActions.RestartDownload(AppInstance.MainWindow, AppInstance.Core);
+                AppInstance.MainWindow.MenuItemMap["restart"].Clicked += (_, _) => UIActions.RestartDownload(AppInstance.MainWindow, AppInstance.Core);
             }
             catch (Exception ex)
             {
@@ -726,60 +646,60 @@ namespace XDM.Core
 
         private void InProgressContextMenuOpening()
         {
-            foreach (var menu in peer.MenuItems)
+            foreach (var menu in AppInstance.MainWindow.MenuItems)
             {
                 menu.Enabled = false;
             }
-            peer.MenuItemMap["delete"].Enabled = true;
-            peer.MenuItemMap["schedule"].Enabled = true;
-            peer.MenuItemMap["moveToQueue"].Enabled = true;
-            var selectedRows = peer.SelectedInProgressRows;
+            AppInstance.MainWindow.MenuItemMap["delete"].Enabled = true;
+            AppInstance.MainWindow.MenuItemMap["schedule"].Enabled = true;
+            AppInstance.MainWindow.MenuItemMap["moveToQueue"].Enabled = true;
+            var selectedRows = AppInstance.MainWindow.SelectedInProgressRows;
             if (selectedRows.Count > 1)
             {
-                peer.MenuItemMap["pause"].Enabled = true;
-                peer.MenuItemMap["resume"].Enabled = true;
-                peer.MenuItemMap["showProgress"].Enabled = true;
+                AppInstance.MainWindow.MenuItemMap["pause"].Enabled = true;
+                AppInstance.MainWindow.MenuItemMap["resume"].Enabled = true;
+                AppInstance.MainWindow.MenuItemMap["showProgress"].Enabled = true;
             }
             else if (selectedRows.Count == 1)
             {
-                peer.MenuItemMap["showProgress"].Enabled = true;
-                peer.MenuItemMap["copyURL"].Enabled = true;
-                peer.MenuItemMap["saveAs"].Enabled = true;
-                peer.MenuItemMap["refresh"].Enabled = true;
-                peer.MenuItemMap["properties"].Enabled = true;
-                peer.MenuItemMap["saveAs"].Enabled = true;
-                peer.MenuItemMap["saveAs"].Enabled = true;
-                peer.MenuItemMap["copyURL"].Enabled = true;
+                AppInstance.MainWindow.MenuItemMap["showProgress"].Enabled = true;
+                AppInstance.MainWindow.MenuItemMap["copyURL"].Enabled = true;
+                AppInstance.MainWindow.MenuItemMap["saveAs"].Enabled = true;
+                AppInstance.MainWindow.MenuItemMap["refresh"].Enabled = true;
+                AppInstance.MainWindow.MenuItemMap["properties"].Enabled = true;
+                AppInstance.MainWindow.MenuItemMap["saveAs"].Enabled = true;
+                AppInstance.MainWindow.MenuItemMap["saveAs"].Enabled = true;
+                AppInstance.MainWindow.MenuItemMap["copyURL"].Enabled = true;
 
                 var ent = selectedRows[0].DownloadEntry;//selectedRows[0].Cells[1].Value as InProgressDownloadEntry;
                 if (ent == null) return;
-                var isActive = App.IsDownloadActive(ent.Id);
+                var isActive = AppInstance.Core.IsDownloadActive(ent.Id);
                 Log.Debug("Selected item active: " + isActive);
                 if (isActive)
                 {
-                    peer.MenuItemMap["pause"].Enabled = true;
+                    AppInstance.MainWindow.MenuItemMap["pause"].Enabled = true;
                 }
                 else
                 {
-                    peer.MenuItemMap["resume"].Enabled = true;
-                    peer.MenuItemMap["restart"].Enabled = true;
+                    AppInstance.MainWindow.MenuItemMap["resume"].Enabled = true;
+                    AppInstance.MainWindow.MenuItemMap["restart"].Enabled = true;
                 }
             }
         }
 
         private void FinishedContextMenuOpening()
         {
-            foreach (var menu in peer.MenuItems)
+            foreach (var menu in AppInstance.MainWindow.MenuItems)
             {
                 menu.Enabled = false;
             }
 
-            peer.MenuItemMap["deleteDownloads"].Enabled = true;
+            AppInstance.MainWindow.MenuItemMap["deleteDownloads"].Enabled = true;
 
-            var selectedRows = peer.SelectedFinishedRows;
+            var selectedRows = AppInstance.MainWindow.SelectedFinishedRows;
             if (selectedRows.Count == 1)
             {
-                foreach (var menu in peer.MenuItems)
+                foreach (var menu in AppInstance.MainWindow.MenuItems)
                 {
                     menu.Enabled = true;
                 }
@@ -800,18 +720,18 @@ namespace XDM.Core
         {
             RunOnUiThread(() =>
             {
-                peer.ShowDownloadSelectionWindow(this.App, this, mode, downloads);
+                AppInstance.MainWindow.ShowDownloadSelectionWindow(AppInstance.Core, this, mode, downloads);
             });
         }
 
         public IClipboardMonitor GetClipboardMonitor()
         {
-            return peer.GetClipboardMonitor();
+            return AppInstance.MainWindow.GetClipboardMonitor();
         }
 
         public void ShowFloatingVideoWidget()
         {
-            peer.ShowFloatingWidget();
+            AppInstance.MainWindow.ShowFloatingWidget();
         }
     }
 }

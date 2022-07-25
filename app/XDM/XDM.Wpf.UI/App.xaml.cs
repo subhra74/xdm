@@ -8,6 +8,7 @@ using XDM.Core.Util;
 using System.Windows.Interop;
 using XDM.Core.DataAccess;
 using System.IO;
+using XDMApp = XDM.Core.Application;
 
 namespace XDM.Wpf.UI
 {
@@ -20,7 +21,8 @@ namespace XDM.Wpf.UI
         private const string DontEnableSchUseStrongCryptoName = @"Switch.System.Net.DontEnableSchUseStrongCrypto";
 
         public static Skin Skin = ShouldSelectDarkTheme() ? Skin.Dark : Skin.Light;
-        private XDM.Core.ApplicationCore app;
+        private ApplicationCore core;
+        private XDMApp app;
         private MainWindow win;
 
         public App()
@@ -46,8 +48,8 @@ namespace XDM.Wpf.UI
             var debugMode = Environment.GetEnvironmentVariable("XDM_DEBUG_MODE");
             if (!string.IsNullOrEmpty(debugMode) && debugMode == "1")
             {
-                var logFile = System.IO.Path.Combine(Config.DataDir, "log.txt");
-                Log.InitFileBasedTrace(System.IO.Path.Combine(Config.DataDir, "log.txt"));
+                var logFile = Path.Combine(Config.DataDir, "log.txt");
+                Log.InitFileBasedTrace(Path.Combine(Config.DataDir, "log.txt"));
             }
             Log.Debug($"Application_Startup::args->: {string.Join(" ", Environment.GetCommandLineArgs())}");
 
@@ -55,12 +57,19 @@ namespace XDM.Wpf.UI
 
             AppDB.Instance.Init(Path.Combine(Config.DataDir, "downloads.db"));
 
-            app = new XDM.Core.ApplicationCore();
+            core = new ApplicationCore();
             win = new MainWindow();
+            app = new XDMApp();
+
+            AppInstance.Configurer()
+                .RegisterService(win)
+                .RegisterService(app)
+                .RegisterService(core)
+                .Configure();
 
             var args = Environment.GetCommandLineArgs();
             var commandOptions = ArgsProcessor.ParseArgs(args, 1);
-            app.Args = args.Skip(1).ToArray();
+            core.Args = args.Skip(1).ToArray();
 
             AppTrayIcon.AttachToSystemTray();
             AppTrayIcon.TrayClick += (_, _) =>
@@ -72,10 +81,9 @@ namespace XDM.Wpf.UI
                 }
                 win.Activate();
             };
-            app.AppUI = new XDM.Core.Application(win, app);
-            app.AppUI.WindowLoaded += (_, _) => app.StartClipboardMonitor();
-            app.StartScheduler();
-            app.StartNativeMessagingHost();
+            app.WindowLoaded += (_, _) => core.StartClipboardMonitor();
+            core.StartScheduler();
+            core.StartNativeMessagingHost();
             if (!commandOptions.ContainsKey("-m"))
             {
                 win.Show();
@@ -83,7 +91,7 @@ namespace XDM.Wpf.UI
                 {
                     Config.Instance.RunOnLogon = true;
                     Config.SaveConfig();
-                    win.ShowBrowserMonitoringDialog(app);
+                    win.ShowBrowserMonitoringDialog(core);
                 }
             }
         }

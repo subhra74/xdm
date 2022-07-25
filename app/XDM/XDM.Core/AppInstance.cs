@@ -13,7 +13,7 @@ namespace XDM.Core
 
         private static bool s_Init = false;
 
-        public static IApplicationCore ApplicationCore
+        public static IApplicationCore Core
         {
             get
             {
@@ -25,7 +25,7 @@ namespace XDM.Core
             }
         }
 
-        public static IApplication IApplication
+        public static IApplication Current
         {
             get
             {
@@ -37,7 +37,7 @@ namespace XDM.Core
             }
         }
 
-        public static IApplicationWindow MainView
+        public static IApplicationWindow MainWindow
         {
             get
             {
@@ -49,23 +49,28 @@ namespace XDM.Core
             }
         }
 
+        public static AppInstanceConfigurer Configurer()
+        {
+            return new AppInstanceConfigurer();
+        }
+
         public class AppInstanceConfigurer
         {
-            public AppInstanceConfigurer RegisterAppService(IApplicationCore service)
+            public AppInstanceConfigurer RegisterService(IApplicationCore service)
             {
                 s_ApplicationCore = service;
                 return this;
             }
 
-            public AppInstanceConfigurer RegisterAppController(IApplication controller)
+            public AppInstanceConfigurer RegisterService(IApplication service)
             {
-                s_IApplication = controller;
+                s_IApplication = service;
                 return this;
             }
 
-            public AppInstanceConfigurer RegisterMainView(IApplicationWindow view)
+            public AppInstanceConfigurer RegisterService(IApplicationWindow service)
             {
-                s_ApplicationWindow = view;
+                s_ApplicationWindow = service;
                 return this;
             }
 
