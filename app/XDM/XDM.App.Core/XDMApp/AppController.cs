@@ -14,7 +14,7 @@ using XDM.Core.Util;
 
 namespace XDMApp
 {
-    public class AppUIController : IAppUIController
+    public class AppController : IAppController
     {
         private IAppWinPeer peer;
         private IAppService app;
@@ -23,7 +23,7 @@ namespace XDMApp
         private long lastProgressUpdate = 0;
         public event EventHandler WindowLoaded;
 
-        public AppUIController(IAppWinPeer peer, IAppService app)
+        public AppController(IAppWinPeer peer, IAppService app)
         {
             this.peer = peer;
             this.app = app;

@@ -55,7 +55,7 @@ namespace XDMApp
 
         public int ActiveDownloadCount { get => liveDownloads.Count + queuedDownloads.Count; }
 
-        public IAppUIController AppUI { get; set; }
+        public IAppController AppUI { get; set; }
 
         public string HelpPage => "https://subhra74.github.io/xdm/redirect-support.html";
         public string UpdatePage => $"https://subhra74.github.io/xdm/update-checker.html?v={AppVerion}";

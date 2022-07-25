@@ -33,7 +33,7 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
             InitializeComponent();
         }
 
-        public void InitPage(IAppUIController appUi)
+        public void InitPage(IAppController appUi)
         {
 
         }

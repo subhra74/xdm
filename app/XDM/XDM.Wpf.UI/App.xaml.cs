@@ -72,7 +72,7 @@ namespace XDM.Wpf.UI
                 }
                 win.Activate();
             };
-            app.AppUI = new XDMApp.AppUIController(win, app);
+            app.AppUI = new XDMApp.AppController(win, app);
             app.AppUI.WindowLoaded += (_, _) => app.StartClipboardMonitor();
             app.StartScheduler();
             app.StartNativeMessagingHost();

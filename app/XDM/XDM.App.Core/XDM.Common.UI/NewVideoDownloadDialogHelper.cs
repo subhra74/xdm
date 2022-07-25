@@ -9,7 +9,7 @@ namespace XDM.Common.UI
 {
     public class NewVideoDownloadDialogHelper
     {
-        public static void ShowVideoDownloadDialog(IAppService app, IAppUIController appUi, INewVideoDownloadDialog window,
+        public static void ShowVideoDownloadDialog(IAppService app, IAppController appUi, INewVideoDownloadDialog window,
             string id, string name, long size, string? contentType)
         {
             window.SetFolderValues(CommonUtils.GetFolderValues());

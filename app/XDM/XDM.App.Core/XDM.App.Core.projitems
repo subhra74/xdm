@@ -90,7 +90,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Common\Exceptions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Common\GenericEventArgs.cs" />
     <Compile Include="..\XDM.App.Core\XDM.Core\Lib\Common\IAppService.cs" />
-    <Compile Include="..\XDM.App.Core\XDM.Core\Lib\Common\IAppUIController.cs" />
+    <Compile Include="..\XDM.App.Core\XDM.Core\Lib\Common\IAppController.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Common\IClipboardMonitor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Common\IDownloadCompleteDialog.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Common\IFileSelectable.cs" />
@@ -168,7 +168,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Util\SerializationHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Util\TimeHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Util\Win32NativeMethods.cs" />
-    <Compile Include="..\XDM.App.Core\XDMApp\AppUIController.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)XDMApp\AppController.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDMApp\CallbackActions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDMApp\ErrorMessages.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDMApp\IconResource.cs" />
