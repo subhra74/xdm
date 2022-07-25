@@ -11,7 +11,7 @@ namespace XDM.Common.UI
 {
     public class NewDownloadDialogHelper
     {
-        public static void CreateAndShowDialog(IApp app, IAppUI appUi,
+        public static void CreateAndShowDialog(IAppService app, IAppUIController appUi,
             INewDownloadDialogSkeleton window, Message? message = null,
             Action? destroyCallback = null)
         {
@@ -148,7 +148,7 @@ namespace XDM.Common.UI
         //    window.ShowWindow();
         //}
 
-        private static void OnDownloadClicked(IApp app, INewDownloadDialogSkeleton window,
+        private static void OnDownloadClicked(IAppService app, INewDownloadDialogSkeleton window,
             string fileName, string? selectedFolder, Message message, bool startImmediately, string? queueId = null)
         {
 

@@ -14,10 +14,10 @@ namespace BrowserMonitoring
 {
     public class IpcHttpHandler
     {
-        private IApp app;
+        private IAppService app;
         private NanoServer server;
 
-        public IpcHttpHandler(IApp app)
+        public IpcHttpHandler(IAppService app)
         {
             this.app = app;
             server = new NanoServer(IPAddress.Loopback, 9614);

@@ -9,7 +9,7 @@ using XDM.Core.Lib.Downloader;
 
 namespace XDM.Core.Lib.Common
 {
-    public interface IAppUI
+    public interface IAppUIController
     {
         /// <summary>
         /// 
@@ -181,7 +181,7 @@ namespace XDM.Core.Lib.Common
         /// <param name="file"></param>
         void RenameFileOnUI(string id, string folder, string file);
 
-        IApp App { get; set; }
+        IAppService App { get; set; }
 
         public AuthenticationInfo? PromtForCredentials(string message);
         //public void LoadDownloadsDB();

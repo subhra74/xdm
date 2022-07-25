@@ -27,7 +27,7 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
     /// </summary>
     public partial class ManageQueueDialog : Window, IDialog, IQueuesWindow
     {
-        private IAppUI appUI;
+        private IAppUIController appUI;
         private DownloadSchedule defaultSchedule;
 
         public event EventHandler<QueueListEventArgs>? QueuesModified;
@@ -38,7 +38,7 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
         private readonly ObservableCollection<DownloadQueue> queues = new();
         private readonly ObservableCollection<InProgressDownloadEntry> downloads = new();
 
-        public ManageQueueDialog(IAppUI appUI)
+        public ManageQueueDialog(IAppUIController appUI)
         {
             InitializeComponent();
 

@@ -45,7 +45,7 @@ namespace BrowserMonitoring
                                 || url.Contains("http://127.0.0.1:9614")));
         }
 
-        internal static void ProcessPostYtFormats(Message message, IApp app)
+        internal static void ProcessPostYtFormats(Message message, IAppService app)
         {
             //var file = message.File ?? Helpers.GetFileName(new Uri(message.Url));
             var manifest = DownloadManifest(message);
@@ -134,7 +134,7 @@ namespace BrowserMonitoring
             }
         }
 
-        internal static void ProcessDashVideo(Message message, IApp app)
+        internal static void ProcessDashVideo(Message message, IAppService app)
         {
             var file = message.File ?? Helpers.GetFileName(new Uri(message.Url));
             Log.Debug("Downloading MPD manifest: " + message.Url);
@@ -224,7 +224,7 @@ namespace BrowserMonitoring
             }
         }
 
-        private static void AddSingleItem(Representation item, Message message, IApp app, string prefix, bool audio, string file)
+        private static void AddSingleItem(Representation item, Message message, IAppService app, string prefix, bool audio, string file)
         {
             var fileExt = (item.MimeType + "").Contains("mp4") ? "mp4" : "mkv";
             var mediaItem = new SingleSourceHTTPDownloadInfo
@@ -279,7 +279,7 @@ namespace BrowserMonitoring
             return text.ToString();
         }
 
-        internal static void ProcessHLSVideo(Message message, IApp app)
+        internal static void ProcessHLSVideo(Message message, IAppService app)
         {
             Log.Debug("Downloading HLS manifest: " + message.Url);
 
@@ -349,7 +349,7 @@ namespace BrowserMonitoring
             }
         }
 
-        public static bool ProcessYtDashSegment(Message message, IApp app)
+        public static bool ProcessYtDashSegment(Message message, IAppService app)
         {
             try
             {
@@ -480,7 +480,7 @@ namespace BrowserMonitoring
             return false;
         }
 
-        private static void HandleDashAudio(DashInfo info, IApp app, Message message)
+        private static void HandleDashAudio(DashInfo info, IAppService app, Message message)
         {
             try
             {
@@ -536,7 +536,7 @@ namespace BrowserMonitoring
             };
         }
 
-        internal static void ProcessNormalVideo(Message message2, IApp app)
+        internal static void ProcessNormalVideo(Message message2, IAppService app)
         {
             if (IsMediaFragment(message2.GetRequestHeaderFirstValue("Referer")))
             {

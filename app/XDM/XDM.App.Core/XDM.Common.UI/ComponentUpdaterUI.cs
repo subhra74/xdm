@@ -12,7 +12,7 @@ namespace XDM.Common.UI
 {
     public class ComponentUpdaterUI
     {
-        private IApp app;
+        private IAppService app;
         private UpdateMode updateMode;
         private IUpdaterUI updaterUI;
         private IList<UpdateInfo>? updates;
@@ -22,7 +22,7 @@ namespace XDM.Common.UI
         private long size;
         private long downloaded;
 
-        public ComponentUpdaterUI(IUpdaterUI updaterUI, IApp app, UpdateMode updateMode)
+        public ComponentUpdaterUI(IUpdaterUI updaterUI, IAppService app, UpdateMode updateMode)
         {
             this.updaterUI = updaterUI;
             this.updateMode = updateMode;

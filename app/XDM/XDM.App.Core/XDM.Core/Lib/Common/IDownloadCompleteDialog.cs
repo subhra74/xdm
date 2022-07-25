@@ -8,7 +8,7 @@ namespace XDM.Core.Lib.Common
 {
     public interface IDownloadCompleteDialog
     {
-        public IApp? App { set; }
+        public IAppService? App { set; }
         public event EventHandler<DownloadCompleteDialogEventArgs>? FileOpenClicked;
         public event EventHandler<DownloadCompleteDialogEventArgs>? FolderOpenClicked;
         public event EventHandler? DontShowAgainClickd;

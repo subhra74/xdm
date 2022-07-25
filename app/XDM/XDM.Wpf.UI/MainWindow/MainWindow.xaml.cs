@@ -327,7 +327,7 @@ namespace XDM.Wpf.UI
             }
         }
 
-        public IDownloadCompleteDialog CreateDownloadCompleteDialog(IApp app)
+        public IDownloadCompleteDialog CreateDownloadCompleteDialog(IAppService app)
         {
             return new DownloadCompleteWindow { App = app };
         }
@@ -342,7 +342,7 @@ namespace XDM.Wpf.UI
             return new NewVideoDownloadWindow();
         }
 
-        public IProgressWindow CreateProgressWindow(string downloadId, IApp app, IAppUI appUI)
+        public IProgressWindow CreateProgressWindow(string downloadId, IAppService app, IAppUIController appUI)
         {
             return new DownloadProgressWindow
             {
@@ -440,7 +440,7 @@ namespace XDM.Wpf.UI
         {
             Dispatcher.Invoke(new Action(() =>
             {
-                if (window is IAppUI || window == this || window == null)
+                if (window is IAppUIController || window == this || window == null)
                 {
                     MessageBox.Show(this, message);
                 }
@@ -505,7 +505,7 @@ namespace XDM.Wpf.UI
             return null;
         }
 
-        public void ShowRefreshLinkDialog(InProgressDownloadEntry entry, IApp app)
+        public void ShowRefreshLinkDialog(InProgressDownloadEntry entry, IAppService app)
         {
             var dlg = new LinkRefreshWindow();
             var ret = LinkRefreshDialogHelper.RefreshLink(entry, app, dlg);
@@ -547,20 +547,20 @@ namespace XDM.Wpf.UI
             propertiesWindow.ShowDialog(this);
         }
 
-        public void ShowYoutubeDLDialog(IAppUI appUI, IApp app)
+        public void ShowYoutubeDLDialog(IAppUIController appUI, IAppService app)
         {
             var ydlWindow = new VideoDownloaderWindow(app, appUI) { Owner = this };
             var win = new VideoDownloaderController(ydlWindow, appUI, app);
             win.Run();
         }
 
-        public void ShowBatchDownloadWindow(IApp app, IAppUI appUi)
+        public void ShowBatchDownloadWindow(IAppService app, IAppUIController appUi)
         {
             var uvc = new BatchDownloadViewController(new BatchDownloadWindow { Owner = this }, app, appUi);
             uvc.Run();
         }
 
-        public void ShowSettingsDialog(IApp app, int page = 0)
+        public void ShowSettingsDialog(IAppService app, int page = 0)
         {
             var settings = new SettingsWindow(app) { Owner = this };
             settings.ShowDialog(this);
@@ -572,7 +572,7 @@ namespace XDM.Wpf.UI
                 "ri-toggle-fill" : "ri-toggle-line");
         }
 
-        public void ShowBrowserMonitoringDialog(IApp app)
+        public void ShowBrowserMonitoringDialog(IAppService app)
         {
             var settings = new SettingsWindow(app, 0) { Owner = this };
             settings.ShowDialog(this);
@@ -583,7 +583,7 @@ namespace XDM.Wpf.UI
 
         }
 
-        public IUpdaterUI CreateUpdateUIDialog(IAppUI ui)
+        public IUpdaterUI CreateUpdateUIDialog(IAppUIController ui)
         {
             return new UpdaterWindow(ui);
         }
@@ -593,7 +593,7 @@ namespace XDM.Wpf.UI
             ApplyFilter();
         }
 
-        public IQueuesWindow CreateQueuesAndSchedulerWindow(IAppUI appUi)
+        public IQueuesWindow CreateQueuesAndSchedulerWindow(IAppUIController appUi)
         {
             return new ManageQueueDialog(appUi)
             {
@@ -886,7 +886,7 @@ namespace XDM.Wpf.UI
             this.InProgressContextMenuOpening?.Invoke(sender, e);
         }
 
-        public void ShowDownloadSelectionWindow(IApp app, IAppUI appUI, FileNameFetchMode mode, IEnumerable<object> downloads)
+        public void ShowDownloadSelectionWindow(IAppService app, IAppUIController appUI, FileNameFetchMode mode, IEnumerable<object> downloads)
         {
             var dsvc = new DownloadSelectionViewController(new DownloadSelectionWindow(),
                     app, appUI, FileNameFetchMode.FileNameAndExtension, downloads);

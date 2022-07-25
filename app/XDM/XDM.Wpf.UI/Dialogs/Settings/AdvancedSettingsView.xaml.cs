@@ -23,7 +23,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
     /// </summary>
     public partial class AdvancedSettingsView : UserControl, ISettingsPage
     {
-        public IApp App { get; set; }
+        public IAppService App { get; set; }
         public AdvancedSettingsView()
         {
             InitializeComponent();

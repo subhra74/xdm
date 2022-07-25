@@ -14,11 +14,11 @@ namespace XDM.Common.UI
     public class BatchDownloadViewController
     {
         private IBatchDownloadView view;
-        public IAppUI AppUI { get; set; }
-        public IApp App { get; set; }
+        public IAppUIController AppUI { get; set; }
+        public IAppService App { get; set; }
         public int BatchSize { get; private set; } = 0;
 
-        public BatchDownloadViewController(IBatchDownloadView view, IApp app, IAppUI appUI)
+        public BatchDownloadViewController(IBatchDownloadView view, IAppService app, IAppUIController appUI)
         {
             this.view = view;
             this.AppUI = appUI;

@@ -28,7 +28,7 @@ using NetFX.Polyfill;
 
 namespace XDMApp
 {
-    public class XDMApp : IApp
+    public class AppService : IAppService
     {
         public Version AppVerion => new(8, 0, 0);
         private Dictionary<string, (IBaseDownloader Downloader, bool NonInteractive)> liveDownloads = new();
@@ -55,7 +55,7 @@ namespace XDMApp
 
         public int ActiveDownloadCount { get => liveDownloads.Count + queuedDownloads.Count; }
 
-        public IAppUI AppUI { get; set; }
+        public IAppUIController AppUI { get; set; }
 
         public string HelpPage => "https://subhra74.github.io/xdm/redirect-support.html";
         public string UpdatePage => $"https://subhra74.github.io/xdm/update-checker.html?v={AppVerion}";
@@ -67,7 +67,7 @@ namespace XDMApp
 
         public string[] Args { get; set; }
 
-        public XDMApp()
+        public AppService()
         {
             //var configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".xdman");
             //Directory.CreateDirectory(configPath);

@@ -25,7 +25,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
     /// </summary>
     public partial class BrowserMonitoringView : UserControl, ISettingsPage
     {
-        public IApp App
+        public IAppService App
         {
             get;
             set;

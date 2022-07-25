@@ -11,6 +11,6 @@ namespace XDM.Core.Lib.UI
         void PopulateUI();
         void UpdateConfig();
 
-        public IApp App { get; set; }
+        public IAppService App { get; set; }
     }
 }

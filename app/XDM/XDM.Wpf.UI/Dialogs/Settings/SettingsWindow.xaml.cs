@@ -25,9 +25,9 @@ namespace XDM.Wpf.UI.Dialogs.Settings
     public partial class SettingsWindow : Window, IDialog
     {
         private ISettingsPage[] pages;
-        private IApp app;
+        private IAppService app;
 
-        public SettingsWindow(IApp app, int selectedPageIndex)
+        public SettingsWindow(IAppService app, int selectedPageIndex)
         {
             InitializeComponent();
             this.app = app;
@@ -49,7 +49,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
             PasswordManagerView.Window = this;
         }
 
-        public SettingsWindow(IApp app) : this(app, 1) { }
+        public SettingsWindow(IAppService app) : this(app, 1) { }
 
         public bool Result { get; set; } = false;
 

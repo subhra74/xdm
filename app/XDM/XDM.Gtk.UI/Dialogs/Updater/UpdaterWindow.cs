@@ -20,10 +20,10 @@ namespace XDM.GtkUI.Dialogs.Updater
         [UI] private Label TxtHeading;
         [UI] private ProgressBar Prg;
         [UI] private Button BtnCancel;
-        private IAppUI AppUI;
+        private IAppUIController AppUI;
         private bool active = false;
 
-        private UpdaterWindow(Builder builder, IAppUI appUI) : base(builder.GetRawOwnedObject("window"))
+        private UpdaterWindow(Builder builder, IAppUIController appUI) : base(builder.GetRawOwnedObject("window"))
         {
             builder.Autoconnect(this);
             AppUI = appUI;
@@ -84,7 +84,7 @@ namespace XDM.GtkUI.Dialogs.Updater
         public event EventHandler? Finished;
         public event EventHandler? Load;
 
-        public static UpdaterWindow CreateFromGladeFile(IAppUI appUI)
+        public static UpdaterWindow CreateFromGladeFile(IAppUIController appUI)
         {
             var builder = new Builder();
             builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "updater-window.glade"));

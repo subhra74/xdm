@@ -24,7 +24,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
     /// </summary>
     public partial class GeneralSettingsView : UserControl, ISettingsPage
     {
-        public IApp App { get; set; }
+        public IAppService App { get; set; }
         public Window Window { get; set; }
 
         private ObservableCollection<Category> categories = new ObservableCollection<Category>();

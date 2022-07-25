@@ -23,7 +23,7 @@ namespace XDMApp
         }
 
         public static void DownloadFinished(string id, long finalFileSize, string filePath,
-            IAppWinPeer peer, IApp app, Action callback)
+            IAppWinPeer peer, IAppService app, Action callback)
         {
             Log.Debug("Final file name: " + filePath);
             var download = peer.FindInProgressItem(id);

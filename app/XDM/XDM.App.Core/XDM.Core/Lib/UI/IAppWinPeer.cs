@@ -51,13 +51,13 @@ namespace XDM.Core.Lib.UI
 
         void ConfirmDelete(string text, out bool approved, out bool deleteFiles);
 
-        IDownloadCompleteDialog CreateDownloadCompleteDialog(IApp app);
+        IDownloadCompleteDialog CreateDownloadCompleteDialog(IAppService app);
 
         INewDownloadDialogSkeleton CreateNewDownloadDialog(bool empty);
 
         INewVideoDownloadDialog CreateNewVideoDialog();
 
-        IProgressWindow CreateProgressWindow(string downloadId, IApp app, IAppUI appUI);
+        IProgressWindow CreateProgressWindow(string downloadId, IAppService app, IAppUIController appUI);
 
         void RunOnUIThread(Action action);
 
@@ -93,7 +93,7 @@ namespace XDM.Core.Lib.UI
 
         string? OpenFileDialog(string? initialPath, string? defaultExt, string? filter);
 
-        void ShowRefreshLinkDialog(InProgressDownloadEntry entry, IApp app);
+        void ShowRefreshLinkDialog(InProgressDownloadEntry entry, IAppService app);
 
         void SetClipboardText(string text);
 
@@ -101,27 +101,27 @@ namespace XDM.Core.Lib.UI
 
         void ShowPropertiesDialog(BaseDownloadEntry ent, ShortState? state);
 
-        void ShowYoutubeDLDialog(IAppUI appUI, IApp app);
+        void ShowYoutubeDLDialog(IAppUIController appUI, IAppService app);
 
-        void ShowBatchDownloadWindow(IApp app, IAppUI appUi);
+        void ShowBatchDownloadWindow(IAppService app, IAppUIController appUi);
 
-        void ShowSettingsDialog(IApp app, int page = 0);
+        void ShowSettingsDialog(IAppService app, int page = 0);
 
         void UpdateBrowserMonitorButton();
 
-        void ShowBrowserMonitoringDialog(IApp app);
+        void ShowBrowserMonitoringDialog(IAppService app);
 
         void UpdateParallalismLabel();
 
-        IUpdaterUI CreateUpdateUIDialog(IAppUI ui);
+        IUpdaterUI CreateUpdateUIDialog(IAppUIController ui);
 
         void ClearUpdateInformation();
 
-        IQueuesWindow CreateQueuesAndSchedulerWindow(IAppUI appUi);
+        IQueuesWindow CreateQueuesAndSchedulerWindow(IAppUIController appUi);
 
         IQueueSelectionDialog CreateQueueSelectionDialog();
 
-        void ShowDownloadSelectionWindow(IApp app, IAppUI appUI, FileNameFetchMode mode, IEnumerable<object> downloads);
+        void ShowDownloadSelectionWindow(IAppService app, IAppUIController appUI, FileNameFetchMode mode, IEnumerable<object> downloads);
 
         IClipboardMonitor GetClipboardMonitor();
 

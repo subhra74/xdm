@@ -54,13 +54,13 @@ namespace XDM.GtkUI.Dialogs.Settings
         private Notebook Tabs;
 
         private ListStore categoryStore, passwordStore;
-        private IApp app;
+        private IAppService app;
 
         private SettingsDialog(Builder builder,
             Window parent,
             WindowGroup group,
-            IAppUI ui,
-            IApp app) : base(builder.GetRawOwnedObject("dialog"))
+            IAppUIController ui,
+            IAppService app) : base(builder.GetRawOwnedObject("dialog"))
         {
             builder.Autoconnect(this);
 
@@ -707,7 +707,7 @@ namespace XDM.GtkUI.Dialogs.Settings
             Tabs.Page = page;
         }
 
-        public static SettingsDialog CreateFromGladeFile(Window parent, WindowGroup group, IAppUI ui, IApp app)
+        public static SettingsDialog CreateFromGladeFile(Window parent, WindowGroup group, IAppUIController ui, IAppService app)
         {
             var builder = new Builder();
             builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "settings-dialog.glade"));

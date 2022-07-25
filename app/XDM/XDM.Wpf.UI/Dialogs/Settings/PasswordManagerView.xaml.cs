@@ -23,7 +23,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
     /// </summary>
     public partial class PasswordManagerView : UserControl, ISettingsPage
     {
-        public IApp App { get; set; }
+        public IAppService App { get; set; }
         public Window Window { get; set; }
         private ObservableCollection<PasswordEntry> passwords = new();
 

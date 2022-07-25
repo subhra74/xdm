@@ -22,13 +22,13 @@ namespace BrowserMonitoring
         private List<NativeMessagingHostChannel> connectedChannels = new();
         //private List<NamedPipeServerStream> inPipes = new();
         //private Dictionary<NamedPipeServerStream, NamedPipeClientStream> inOutMap = new();
-        private readonly IApp app;
+        private readonly IAppService app;
         private static Mutex globalMutex;
         // private readonly BlockingCollection<byte[]> Messages = new();
         //private Thread WriterThread;
         private Thread listenerThread;
 
-        public static void EnsureSingleInstance(IApp app)
+        public static void EnsureSingleInstance(IAppService app)
         {
             try
             {
@@ -52,7 +52,7 @@ namespace BrowserMonitoring
             globalMutex = new Mutex(true, @"Global\XDM_Active_Instance");
         }
 
-        public NativeMessagingHostHandler(IApp app)
+        public NativeMessagingHostHandler(IAppService app)
         {
             this.app = app;
             EnsureSingleInstance(this.app);
@@ -312,7 +312,7 @@ namespace BrowserMonitoring
             //}
         }
 
-        private static byte[] GetSyncBytes(IApp app)
+        private static byte[] GetSyncBytes(IAppService app)
         {
             var msg = new SyncMessage()
             {

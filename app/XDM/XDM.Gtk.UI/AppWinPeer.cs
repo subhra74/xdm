@@ -1065,7 +1065,7 @@ namespace XDM.GtkUI
             return false;
         }
 
-        public IDownloadCompleteDialog CreateDownloadCompleteDialog(IApp app)
+        public IDownloadCompleteDialog CreateDownloadCompleteDialog(IAppService app)
         {
             var win = DownloadCompleteDialog.CreateFromGladeFile();
             win.App = app;
@@ -1085,7 +1085,7 @@ namespace XDM.GtkUI
             return window;
         }
 
-        public IProgressWindow CreateProgressWindow(string downloadId, IApp app, IAppUI appUI)
+        public IProgressWindow CreateProgressWindow(string downloadId, IAppService app, IAppUIController appUI)
         {
             var prgWin = DownloadProgressWindow.CreateFromGladeFile();
             prgWin.DownloadId = downloadId;
@@ -1198,7 +1198,7 @@ namespace XDM.GtkUI
             mainMenu.PopupAtWidget(this.btnMenu, Gdk.Gravity.SouthEast, Gdk.Gravity.NorthEast, null);
         }
 
-        public void ShowRefreshLinkDialog(InProgressDownloadEntry entry, IApp app)
+        public void ShowRefreshLinkDialog(InProgressDownloadEntry entry, IAppService app)
         {
             var dlg = LinkRefreshWindow.CreateFromGladeFile();
             var ret = LinkRefreshDialogHelper.RefreshLink(entry, app, dlg);
@@ -1241,13 +1241,13 @@ namespace XDM.GtkUI
             propWin.Dispose();
         }
 
-        public void ShowYoutubeDLDialog(IAppUI appUI, IApp app)
+        public void ShowYoutubeDLDialog(IAppUIController appUI, IAppService app)
         {
             var win = new VideoDownloaderController(VideoDownloaderWindow.CreateFromGladeFile(), appUI, app);
             win.Run();
         }
 
-        public void ShowBatchDownloadWindow(IApp app, IAppUI appUi)
+        public void ShowBatchDownloadWindow(IAppService app, IAppUIController appUi)
         {
             var uvc = new BatchDownloadViewController(BatchDownloadWindow.CreateFromGladeFile(this), app, appUi);
             uvc.Run();
@@ -1255,7 +1255,7 @@ namespace XDM.GtkUI
             //batWin.Show();
         }
 
-        public void ShowSettingsDialog(IApp app, int page = 0)
+        public void ShowSettingsDialog(IAppService app, int page = 0)
         {
             using var win = SettingsDialog.CreateFromGladeFile(this, windowGroup, app.AppUI, app);
             win.SetActivePage(page);
@@ -1269,7 +1269,7 @@ namespace XDM.GtkUI
             btnMonitoring.Active = Config.Instance.IsBrowserMonitoringEnabled;
         }
 
-        public void ShowBrowserMonitoringDialog(IApp app)
+        public void ShowBrowserMonitoringDialog(IAppService app)
         {
             ShowSettingsDialog(app, 0);
         }
@@ -1278,7 +1278,7 @@ namespace XDM.GtkUI
         {
         }
 
-        public IUpdaterUI CreateUpdateUIDialog(IAppUI ui)
+        public IUpdaterUI CreateUpdateUIDialog(IAppUIController ui)
         {
             return UpdaterWindow.CreateFromGladeFile(ui);
         }
@@ -1402,7 +1402,7 @@ namespace XDM.GtkUI
             return -1;
         }
 
-        public IQueuesWindow CreateQueuesAndSchedulerWindow(IAppUI appUi, IEnumerable<DownloadQueue> queues)
+        public IQueuesWindow CreateQueuesAndSchedulerWindow(IAppUIController appUi, IEnumerable<DownloadQueue> queues)
         {
             return QueueSchedulerDialog.CreateFromGladeFile(this, this.windowGroup, appUi);
         }
@@ -1441,12 +1441,12 @@ namespace XDM.GtkUI
             return GtkHelper.SelectFile(this);
         }
 
-        public IQueuesWindow CreateQueuesAndSchedulerWindow(IAppUI appUi)
+        public IQueuesWindow CreateQueuesAndSchedulerWindow(IAppUIController appUi)
         {
             return QueueSchedulerDialog.CreateFromGladeFile(this, this.windowGroup, appUi);
         }
 
-        public void ShowDownloadSelectionWindow(IApp app, IAppUI appUI, FileNameFetchMode mode, IEnumerable<object> downloads)
+        public void ShowDownloadSelectionWindow(IAppService app, IAppUIController appUI, FileNameFetchMode mode, IEnumerable<object> downloads)
         {
             var dsvc = new DownloadSelectionViewController(DownloadSelectionWindow.CreateFromGladeFile(),
                     app, appUI, FileNameFetchMode.FileNameAndExtension, downloads);

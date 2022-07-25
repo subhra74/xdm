@@ -19,11 +19,11 @@ namespace XDM.Common.UI
         private IDownloadSelectionView view;
         private FileNameFetchMode mode;
 
-        public IAppUI AppUI { get; set; }
-        public IApp App { get; set; }
+        public IAppUIController AppUI { get; set; }
+        public IAppService App { get; set; }
 
         public DownloadSelectionViewController(IDownloadSelectionView view,
-            IApp app, IAppUI appUI,
+            IAppService app, IAppUIController appUI,
             FileNameFetchMode mode, IEnumerable<object> downloads)
         {
             this.view = view;

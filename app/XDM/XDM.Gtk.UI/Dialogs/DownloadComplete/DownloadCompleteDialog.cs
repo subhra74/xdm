@@ -28,7 +28,7 @@ namespace XDM.GtkUI.Dialogs.DownloadComplete
             set => TxtLocation.Text = value;
         }
 
-        public IApp? App { get; set; }
+        public IAppService? App { get; set; }
         public event EventHandler<DownloadCompleteDialogEventArgs>? FileOpenClicked;
         public event EventHandler<DownloadCompleteDialogEventArgs>? FolderOpenClicked;
         public event EventHandler? DontShowAgainClickd;

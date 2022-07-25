@@ -92,8 +92,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Common\ErrorCode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Common\Exceptions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Common\GenericEventArgs.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Common\IApp.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Common\IAppUI.cs" />
+    <Compile Include="..\XDM.App.Core\XDM.Core\Lib\Common\IAppService.cs" />
+    <Compile Include="..\XDM.App.Core\XDM.Core\Lib\Common\IAppUIController.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Common\IClipboardMonitor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Common\IDownloadCompleteDialog.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Common\IFileSelectable.cs" />
@@ -171,7 +171,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Util\SerializationHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Util\TimeHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDM.Core\Lib\Util\Win32NativeMethods.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)XDMApp\AppWin.cs" />
+    <Compile Include="..\XDM.App.Core\XDMApp\AppUIController.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDMApp\CallbackActions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDMApp\ErrorMessages.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDMApp\IconResource.cs" />
@@ -182,7 +182,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)XDMApp\RemixIcon.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDMApp\Scheduler.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XDMApp\UIActions.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)XDMApp\XDMApp.cs" />
+    <Compile Include="..\XDM.App.Core\XDMApp\AppService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)YDLWrapper\Structs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)YDLWrapper\YDLOutputParser.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)YDLWrapper\YDLProcess.cs" />

@@ -10,10 +10,10 @@ using XDM.Core.Lib.UI;
 
 namespace XDM.Core.Lib.Common
 {
-    public interface IApp
+    public interface IAppService
     {
         public Version AppVerion { get; }
-        public IAppUI AppUI { get; set; }
+        public IAppUIController AppUI { get; set; }
         public string HelpPage { get; }
         public string UpdatePage { get; }
         public string IssuePage { get; }
