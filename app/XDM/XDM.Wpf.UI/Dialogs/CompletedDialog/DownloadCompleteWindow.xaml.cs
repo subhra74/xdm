@@ -13,6 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using XDM.Core;
 using XDM.Core.Util;
+using XDM.Core.UI;
 using XDM.Wpf.UI.Win32;
 
 namespace XDM.Wpf.UI.Dialogs.CompletedDialog

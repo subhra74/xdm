@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 
 
-namespace XDM.Core
+namespace XDM.Core.UI
 {
     public interface IDownloadCompleteDialog
     {

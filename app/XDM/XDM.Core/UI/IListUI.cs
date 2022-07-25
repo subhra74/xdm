@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 
 
-namespace XDM.Core
+namespace XDM.Core.UI
 {
     public interface IListUI
     {

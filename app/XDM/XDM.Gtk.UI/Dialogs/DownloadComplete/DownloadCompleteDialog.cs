@@ -11,6 +11,7 @@ using XDM.Core;
 using Translations;
 using UI = Gtk.Builder.ObjectAttribute;
 using XDM.GtkUI.Utils;
+using XDM.Core.UI;
 
 namespace XDM.GtkUI.Dialogs.DownloadComplete
 {
