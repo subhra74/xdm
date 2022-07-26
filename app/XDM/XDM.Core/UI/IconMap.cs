@@ -12,7 +12,7 @@ namespace XDM.Core.UI
             ["CAT_MUSIC"] = new HashSet<string> { ".mp3", ".aac", ".ac3", ".wma", ".m4a", ".ogg", ".mka" },
             ["CAT_VIDEOS"] = new HashSet<string> { ".mp4", ".mkv", ".ts", ".webm", ".avi", ".divx", ".mov", ".m4v" },
             ["CAT_DOCUMENTS"] = new HashSet<string> { ".docx", ".doc", ".pdf", ".txt", ".xlsx", ".xls", ".html" },
-            ["CAT_PROGRAMS"] = new HashSet<string> { ".exe", ".bin", ".appx", ".app", ".msi", ".rpm", ".deb" }
+            ["CAT_PROGRAMS"] = new HashSet<string> { ".exe", ".bin", ".appx", ".AppInstance.Core", ".msi", ".rpm", ".deb" }
         };
 
         public static string GetVectorNameForCategory(string categoryname)

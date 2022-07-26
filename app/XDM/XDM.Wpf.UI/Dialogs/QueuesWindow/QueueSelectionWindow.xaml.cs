@@ -6,6 +6,7 @@ using XDM.Core.UI;
 using XDM.Wpf.UI.Common;
 using XDM.Wpf.UI.Win32;
 using System.Linq;
+using XDM.Core;
 
 namespace XDM.Wpf.UI.Dialogs.QueuesWindow
 {
@@ -36,9 +37,9 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
             LbQueues.SelectedIndex = 0;
         }
 
-        public void ShowWindow(IApplicationWindow peer)
+        public void ShowWindow()
         {
-            NativeMethods.ShowDialog(this, (Window)peer);
+            NativeMethods.ShowDialog(this, (Window)AppInstance.MainWindow);
         }
 
         protected override void OnSourceInitialized(EventArgs e)

@@ -60,7 +60,6 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
         private ListStore queueListStore;
         private ListStore filesListStore;
         private bool suppressEvent;
-        private IApplication appUI;
         private byte[] bits;
         private readonly CheckButton[] checkboxes;
         private DownloadSchedule defaultSchedule;
@@ -71,7 +70,7 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
         public event EventHandler<DownloadListEventArgs>? QueueStopRequested;
         public event EventHandler? WindowClosing;
 
-        private QueueSchedulerDialog(Builder builder, Window parent, WindowGroup group, IApplication appUI) : base(builder.GetRawOwnedObject("dialog"))
+        private QueueSchedulerDialog(Builder builder, Window parent, WindowGroup group) : base(builder.GetRawOwnedObject("dialog"))
         {
             builder.Autoconnect(this);
             Modal = true;
@@ -84,8 +83,6 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
             Title = TextResource.GetText("DESC_Q_TITLE");
             SetDefaultSize(700, 500);
             LoadTexts();
-
-            this.appUI = appUI;
             queueListStore = new ListStore(typeof(string), typeof(DownloadQueue));
             LbQueues.Model = queueListStore;
 
@@ -303,7 +300,7 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
             var index = GtkHelper.GetSelectedIndex(LbQueues);
             if (index < 0) return;
 
-            var dlg = NewQueueDialog.CreateFromGladeFile(this, this.group, appUI, (queue, newQueue) =>
+            var dlg = NewQueueDialog.CreateFromGladeFile(this, this.group, (queue, newQueue) =>
             {
                 LoadQueueDetails(queue);
             }, GtkHelper.GetSelectedValue<DownloadQueue>(this.LbQueues, 1));
@@ -347,7 +344,7 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
 
         private void BtnNew_Clicked(object? sender, EventArgs e)
         {
-            var dlg = NewQueueDialog.CreateFromGladeFile(this, this.group, appUI, (queue, newQueue) =>
+            var dlg = NewQueueDialog.CreateFromGladeFile(this, this.group, (queue, newQueue) =>
             {
                 AddToQueueList(queue);
             }, null);
@@ -378,7 +375,7 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
             filesListStore.Clear();
             foreach (var id in queue.DownloadIds)
             {
-                var ent = appUI.GetInProgressDownloadEntry(id);
+                var ent = AppInstance.Current.GetInProgressDownloadEntry(id);
                 if (ent != null)
                 {
                     filesListStore.AppendValues(ent.Name, Helpers.FormatSize(ent.Size), ent.Status.ToString(), ent);
@@ -418,7 +415,7 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
                 {
                     foreach (var id in realQueue.DownloadIds)
                     {
-                        var ent = appUI.GetInProgressDownloadEntry(id);
+                        var ent = AppInstance.Current.GetInProgressDownloadEntry(id);
                         if (ent != null)
                         {
                             filesListStore.AppendValues(ent.Name, Helpers.FormatSize(ent.Size), ent.Status.ToString(), ent);
@@ -498,11 +495,11 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
         //    SetTime(value, CmbHour2, CmbMinute2, CmbAmPm2);
         //}
 
-        public static QueueSchedulerDialog CreateFromGladeFile(Window parent, WindowGroup group, IApplication appUI)
+        public static QueueSchedulerDialog CreateFromGladeFile(Window parent, WindowGroup group)
         {
             var builder = new Builder();
             builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "queue-manager-dialog.glade"));
-            return new QueueSchedulerDialog(builder, parent, group, appUI);
+            return new QueueSchedulerDialog(builder, parent, group);
         }
 
         private void LoadTexts()

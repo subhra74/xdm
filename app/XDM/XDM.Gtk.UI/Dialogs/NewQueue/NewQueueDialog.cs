@@ -36,7 +36,6 @@ namespace XDM.GtkUI.Dialogs.NewQueue
         private NewQueueDialog(Builder builder,
             Window parent,
             WindowGroup group,
-            IApplication ui,
             Action<DownloadQueue, bool> okAction,
             DownloadQueue? modifyingQueue) : base(builder.GetRawOwnedObject("dialog"))
         {
@@ -140,7 +139,7 @@ namespace XDM.GtkUI.Dialogs.NewQueue
                 }
             }
 
-            foreach (var ent in ui.GetAllInProgressDownloads().Select(x => new EntryWrapper { Entry = x }))
+            foreach (var ent in AppInstance.Current.GetAllInProgressDownloads().Select(x => new EntryWrapper { Entry = x }))
             {
                 if (!set.Contains(ent.Entry.Id))
                 {
@@ -232,13 +231,13 @@ namespace XDM.GtkUI.Dialogs.NewQueue
             BtnCancel.Label = TextResource.GetText("ND_CANCEL");
         }
 
-        public static NewQueueDialog CreateFromGladeFile(Window parent, WindowGroup group, IApplication ui,
+        public static NewQueueDialog CreateFromGladeFile(Window parent, WindowGroup group,
             Action<DownloadQueue, bool> okAction,
             DownloadQueue? modifyingQueue)
         {
             var builder = new Builder();
             builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "new-queue-dialog.glade"));
-            return new NewQueueDialog(builder, parent, group, ui, okAction, modifyingQueue);
+            return new NewQueueDialog(builder, parent, group, okAction, modifyingQueue);
         }
     }
 

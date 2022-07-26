@@ -571,7 +571,7 @@ namespace XDM.Core.Util
                 case PlatformID.Unix:
                     if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                     {
-                        const string macChromeExe = "/Applications/Google Chrome.app";
+                        const string macChromeExe = "/Applications/Google Chrome.AppInstance.Core";
                         if (File.Exists(macChromeExe))
                         {
                             return macChromeExe;
@@ -615,7 +615,7 @@ namespace XDM.Core.Util
                 case PlatformID.Unix:
                     if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                     {
-                        const string macFireFoxExe = "/Applications/Firefox.app";
+                        const string macFireFoxExe = "/Applications/Firefox.AppInstance.Core";
                         if (File.Exists(macFireFoxExe))
                         {
                             return macFireFoxExe;
@@ -712,7 +712,7 @@ namespace XDM.Core.Util
                     {
                         if (enable)
                         {
-                            var xdmExe = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-app.exe");
+                            var xdmExe = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-AppInstance.Core.exe");
                             hkcuRun.SetValue("XDM", $"\"{xdmExe}\" -m");
                         }
                         else
@@ -734,7 +734,7 @@ namespace XDM.Core.Util
                     {
                         Directory.CreateDirectory(autoStartDir);
                     }
-                    File.WriteAllText(Path.Combine(autoStartDir, "xdm-app.desktop"), GetLinuxDesktopFile());
+                    File.WriteAllText(Path.Combine(autoStartDir, "xdm-AppInstance.Core.desktop"), GetLinuxDesktopFile());
                     return true;
                 }
 #endif
@@ -758,7 +758,7 @@ namespace XDM.Core.Util
 
         public static string GetLinuxDesktopFile()
         {
-            var appPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-app");
+            var appPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-AppInstance.Core");
             var iconPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "svg-icons", "xdm-logo.svg");
 
             return "[Desktop Entry]\r\n" +
@@ -858,7 +858,7 @@ namespace XDM.Core.Util
                         var command = (string)hkcuRun.GetValue("XDM");
                         var path = GetFileNameFromQuote(command);
                         return !string.IsNullOrEmpty(path) &&
-                            path == Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-app.exe");
+                            path == Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-AppInstance.Core.exe");
                     }
                 }
 #if NET5_0_OR_GREATER
@@ -869,13 +869,13 @@ namespace XDM.Core.Util
                     {
                         return false;
                     }
-                    var file = Path.Combine(autoStartDir, "xdm-app.desktop");
+                    var file = Path.Combine(autoStartDir, "xdm-AppInstance.Core.desktop");
                     if (!File.Exists(file))
                     {
                         return false;
                     }
                     var text = File.ReadAllText(file);
-                    return text.Contains(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-app"));
+                    return text.Contains(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-AppInstance.Core"));
                 }
 #endif
             }
@@ -950,7 +950,7 @@ namespace XDM.Core.Util
                     }
                     if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                     {
-                        var cmd = "tell app \"System Events\" to shut down";
+                        var cmd = "tell AppInstance.Core \"System Events\" to shut down";
                         SpawnSubProcess("osascript", new string[] { "-e", $"\"{cmd}\"" });
                     }
                     break;

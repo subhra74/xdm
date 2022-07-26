@@ -22,8 +22,7 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
         private DownloadQueue? modifyingQueue;
         private Action<DownloadQueue, bool> okAction;
 
-        public NewQueueWindow(IApplication ui,
-            Action<DownloadQueue, bool> okAction,
+        public NewQueueWindow(Action<DownloadQueue, bool> okAction,
             DownloadQueue? modifyingQueue)
         {
             InitializeComponent();
@@ -50,7 +49,7 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
             }
 
             var list = new ObservableCollection<InProgressDownloadEntryWrapper>();
-            foreach (var ent in ui.GetAllInProgressDownloads())
+            foreach (var ent in AppInstance.Current.GetAllInProgressDownloads())
             {
                 if (!set.Contains(ent.Id))
                 {

@@ -25,12 +25,6 @@ namespace XDM.Wpf.UI.Dialogs.Settings
     /// </summary>
     public partial class BrowserMonitoringView : UserControl, ISettingsPage
     {
-        public IApplicationCore App
-        {
-            get;
-            set;
-        }
-
         public BrowserMonitoringView()
         {
             InitializeComponent();
@@ -75,7 +69,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchGoogleChrome(this.App.ChromeExtensionUrl);
+                BrowserLauncher.LaunchGoogleChrome(AppInstance.Core.ChromeExtensionUrl);
             }
             catch (Exception ex)
             {
@@ -99,7 +93,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchFirefox(App.FirefoxExtensionUrl);
+                BrowserLauncher.LaunchFirefox(AppInstance.Core.FirefoxExtensionUrl);
             }
             catch (Exception ex)
             {
@@ -123,7 +117,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchMicrosoftEdge(App.ChromeExtensionUrl);
+                BrowserLauncher.LaunchMicrosoftEdge(AppInstance.Core.ChromeExtensionUrl);
             }
             catch (Exception ex)
             {
@@ -147,7 +141,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchOperaBrowser(App.ChromeExtensionUrl);
+                BrowserLauncher.LaunchOperaBrowser(AppInstance.Core.ChromeExtensionUrl);
             }
             catch (Exception ex)
             {

@@ -6,6 +6,8 @@ using Translations;
 using XDM.Core;
 using XDM.Core.DataAccess;
 using XDM.Core;
+using XDMApp = XDM.Core.Application;
+using System.Linq;
 
 namespace XDM.GtkUI
 {
@@ -79,21 +81,39 @@ namespace XDM.GtkUI
             }
             Log.Debug("Application_Startup");
 
-            AppDB.Instance.Init(System.IO.Path.Combine(Config.DataDir, "downloads.db"));
-
             if (Config.Instance.AllowSystemDarkTheme)
             {
                 Gtk.Settings.Default.ThemeName = "Adwaita";
                 Gtk.Settings.Default.ApplicationPreferDarkTheme = true;
             }
-            var app = new XDM.Core.ApplicationCore();
 
-            var appWin = new AppWinPeer();
-            app.AppUI = new XDM.Core.Application(appWin, app);
-            appWin.Show();
-            app.AppUI.WindowLoaded += (_, _) => app.StartClipboardMonitor();
-            app.StartScheduler();
-            app.StartNativeMessagingHost();
+            var core = new ApplicationCore();
+            var app = new XDMApp();
+            var win = new AppWinPeer();
+
+            AppInstance.Configurer()
+                .RegisterService(win)
+                .RegisterService(app)
+                .RegisterService(core)
+                .Configure();
+
+            var commandOptions = ArgsProcessor.ParseArgs(args, 0);
+            core.Args = args.ToArray();
+
+            app.WindowLoaded += (_, _) => core.StartClipboardMonitor();
+            core.StartScheduler();
+            core.StartNativeMessagingHost();
+
+            if (!commandOptions.ContainsKey("-m"))
+            {
+                win.Show();
+                if (commandOptions.ContainsKey("-i"))
+                {
+                    Config.Instance.RunOnLogon = true;
+                    Config.SaveConfig();
+                    win.ShowBrowserMonitoringDialog();
+                }
+            }
 
             //var t = new System.Threading.Thread(() =>
             //  {

@@ -11,8 +11,7 @@ namespace XDM.Core.UI
 {
     public class NewDownloadDialogHelper
     {
-        public static void CreateAndShowDialog(IApplicationCore app, IApplication appUi,
-            INewDownloadDialogSkeleton window, Message? message = null,
+        public static void CreateAndShowDialog(INewDownloadDialogSkeleton window, Message? message = null,
             Action? destroyCallback = null)
         {
             window.DestroyEvent += (_, _) => destroyCallback?.Invoke();
@@ -58,7 +57,7 @@ namespace XDM.Core.UI
             }
             else
             {
-                var url = appUi.GetUrlFromClipboard();
+                var url = AppInstance.Current.GetUrlFromClipboard();
                 if (!string.IsNullOrEmpty(url))
                 {
                     window.Url = url;
@@ -87,30 +86,30 @@ namespace XDM.Core.UI
                     blockedHost.Add(url.Host);
                     Config.Instance.BlockedHosts = blockedHost.ToArray();
                     Config.SaveConfig();
-                    app.ApplyConfig();
+                    AppInstance.Core.ApplyConfig();
                     window.DisposeWindow();
                 }
             };
 
             window.DownloadClicked += (a, b) =>
             {
-                OnDownloadClicked(app, window, fileName, CommonUtils.SelectedFolderFromIndex(window.SeletedFolderIndex), message, true);
+                OnDownloadClicked(window, fileName, CommonUtils.SelectedFolderFromIndex(window.SeletedFolderIndex), message, true);
             };
 
             window.DownloadLaterClicked += (a, b) =>
             {
-                OnDownloadClicked(app, window, fileName, CommonUtils.SelectedFolderFromIndex(window.SeletedFolderIndex), message, false, b.QueueId);
+                OnDownloadClicked(window, fileName, CommonUtils.SelectedFolderFromIndex(window.SeletedFolderIndex), message, false, b.QueueId);
             };
 
             window.QueueSchedulerClicked += (s, e) =>
             {
-                appUi.ShowQueueWindow(s);
+                AppInstance.Current.ShowQueueWindow(s);
             };
 
             window.ShowWindow();
         }
 
-        //public static void CreateAndShowDialog(IApp app, IAppUI appUi, INewDownloadDialogSkeleton window)
+        //public static void CreateAndShowDialog(IApp AppInstance.Core, IAppUI appUi, INewDownloadDialogSkeleton window)
         //{
         //    window.FolderSelectionMode = Config.FolderSelectionMode;
         //    window.ConflictResolution = Config.FileConflictResolution;
@@ -142,13 +141,13 @@ namespace XDM.Core.UI
 
         //    window.DownloadClicked += (a, b) =>
         //    {
-        //        OnDownloadClicked(app, appUi, window, file, selectedFolder, null, true);
+        //        OnDownloadClicked(AppInstance.Core, appUi, window, file, selectedFolder, null, true);
         //    };
 
         //    window.ShowWindow();
         //}
 
-        private static void OnDownloadClicked(IApplicationCore app, INewDownloadDialogSkeleton window,
+        private static void OnDownloadClicked(INewDownloadDialogSkeleton window,
             string fileName, string? selectedFolder, Message message, bool startImmediately, string? queueId = null)
         {
 
@@ -174,7 +173,7 @@ namespace XDM.Core.UI
                 catch { }
             }
 
-            app.StartDownload(
+            AppInstance.Core.StartDownload(
                 new SingleSourceHTTPDownloadInfo
                 {
                     Uri = window.Url,
@@ -211,7 +210,7 @@ namespace XDM.Core.UI
             //    http.SetTargetDirectory(selectedFolder);
             //}
 
-            //app.StartDownload(http, startImmediately);
+            //AppInstance.Core.StartDownload(http, startImmediately);
 
             window.DisposeWindow();
         }

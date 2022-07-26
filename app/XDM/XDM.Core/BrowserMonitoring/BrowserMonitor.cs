@@ -4,15 +4,15 @@ namespace XDM.Core.BrowserMonitoring
 {
     public static class BrowserMonitor
     {
-        public static void RunHttpIpcHandler(IApplicationCore app)
+        public static void RunHttpIpcHandler()
         {
-            var handler = new IpcHttpHandler(app);
+            var handler = new IpcHttpHandler();
             handler.StartHttpIpcChannel();
         }
 
-        public static NativeMessagingHostHandler RunNativeHostHandler(IApplicationCore app)
+        public static NativeMessagingHostHandler RunNativeHostHandler()
         {
-            var handler = new NativeMessagingHostHandler(app);
+            var handler = new NativeMessagingHostHandler();
             handler.StartPipedChannel();
             return handler;
         }

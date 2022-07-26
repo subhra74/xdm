@@ -8,14 +8,14 @@ namespace XDM.Core
 {
     public static class ArgsProcessor
     {
-        public static void Process(IApplicationCore app, Dictionary<string, string?> args)
+        public static void Process(Dictionary<string, string?> args)
         {
             if (args.ContainsKey("-u"))
             {
                 var url = args["-u"];
                 if (!string.IsNullOrEmpty(url))
                 {
-                    app.AddDownload(new Message { Url = url! });
+                    AppInstance.Core.AddDownload(new Message { Url = url! });
                 }
             }
         }

@@ -15,6 +15,6 @@ namespace XDM.Core.UI
             IEnumerable<string> queueNames,
             IEnumerable<string> queueIds,
             IEnumerable<string> downloadIds);
-        void ShowWindow(IApplicationWindow peer);
+        void ShowWindow();
     }
 }

@@ -55,8 +55,6 @@ namespace XDM.Wpf.UI
 
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
-            AppDB.Instance.Init(Path.Combine(Config.DataDir, "downloads.db"));
-
             core = new ApplicationCore();
             win = new MainWindow();
             app = new XDMApp();
@@ -91,7 +89,7 @@ namespace XDM.Wpf.UI
                 {
                     Config.Instance.RunOnLogon = true;
                     Config.SaveConfig();
-                    win.ShowBrowserMonitoringDialog(core);
+                    win.ShowBrowserMonitoringDialog();
                 }
             }
         }

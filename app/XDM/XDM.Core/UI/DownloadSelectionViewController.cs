@@ -19,16 +19,10 @@ namespace XDM.Core.UI
         private IDownloadSelectionView view;
         private FileNameFetchMode mode;
 
-        public IApplication AppUI { get; set; }
-        public IApplicationCore App { get; set; }
-
         public DownloadSelectionViewController(IDownloadSelectionView view,
-            IApplicationCore app, IApplication appUI,
             FileNameFetchMode mode, IEnumerable<object> downloads)
         {
             this.view = view;
-            App = app;
-            AppUI = appUI;
             this.mode = mode;
 
             string? folder = null;
@@ -53,7 +47,7 @@ namespace XDM.Core.UI
             view.DownloadLaterClicked += View_DownloadLaterClicked;
             view.QueueSchedulerClicked += (s, e) =>
             {
-                appUI.ShowQueueWindow(view);
+                AppInstance.Current.ShowQueueWindow(view);
             };
         }
 
@@ -104,7 +98,7 @@ namespace XDM.Core.UI
 
         private void AddDownload(IDownloadEntryWrapper wrapper, bool startImmediately, string? queueId)
         {
-            App.SubmitDownload(
+            AppInstance.Core.SubmitDownload(
                         wrapper.DownloadEntry,
                         wrapper.Name,
                         mode,
@@ -123,12 +117,12 @@ namespace XDM.Core.UI
         {
             if (string.IsNullOrEmpty(view.DownloadLocation))
             {
-                AppUI.ShowMessageBox(view, TextResource.GetText("MSG_CAT_FOLDER_MISSING"));
+                AppInstance.Current.ShowMessageBox(view, TextResource.GetText("MSG_CAT_FOLDER_MISSING"));
                 return;
             }
             if (view.SelectedRowCount == 0)
             {
-                AppUI.ShowMessageBox(view, TextResource.GetText("BAT_SELECT_ITEMS"));
+                AppInstance.Current.ShowMessageBox(view, TextResource.GetText("BAT_SELECT_ITEMS"));
                 return;
             }
 

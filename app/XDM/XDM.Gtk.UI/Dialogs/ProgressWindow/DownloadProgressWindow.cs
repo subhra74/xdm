@@ -76,10 +76,6 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
             set => this.downloadId = value;
         }
 
-        public IApplicationCore App { get; set; }
-
-        public IApplication AppUI { get; set; }
-
         public void DestroyWindow()
         {
             Application.Invoke((a, b) =>
@@ -168,7 +164,7 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
                 BtnPause.Name = string.Empty;
                 //TxtSpeedLimit.Visible = false;
 
-                if (App.GetLiveDownloadSpeedLimit(downloadId, out bool enable, out int limit))
+                if (AppInstance.Core.GetLiveDownloadSpeedLimit(downloadId, out bool enable, out int limit))
                 {
                     SetSpeedLimitText(enable, limit);
                 }
@@ -210,7 +206,7 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
         {
             if (downloadId != null)
             {
-                App?.StopDownloads(new List<string> { downloadId }, close);
+                AppInstance.Core.StopDownloads(new List<string> { downloadId }, close);
             }
         }
 
@@ -227,7 +223,7 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
         {
             if (!string.IsNullOrEmpty(BtnPause.Name))
             {
-                AppUI.ResumeDownload(downloadId);
+                AppInstance.Current.ResumeDownload(downloadId);
                 BtnPause.Label = TextResource.GetText("MENU_PAUSE");
                 BtnPause.Name = string.Empty;
                 //TxtSpeedLimit.Visible = true;
@@ -243,61 +239,19 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
         private void BtnStop_Click(object? sender, EventArgs e)
         {
             StopDownload(true);
-            //Close();
-            //Dispose();
-            //Destroy();
         }
 
         private void BtnHide_Click(object? sender, EventArgs e)
         {
             DeleteEvent -= DownloadProgressWindow_DeleteEvent;
-            App.HideProgressWindow(downloadId);
-            //Close();
-            //Destroy();
-            //Dispose();
+            AppInstance.Core.HideProgressWindow(downloadId);
         }
-
-        //private void TxtSpeedLimit_Click(object sender, EventArgs e)
-        //{
-        //    if (speedLimiterDlg == null)
-        //    {
-        //        speedLimiterDlg = new SpeedLimiterWindow
-        //        {
-        //            Owner = this
-        //        };
-        //        if (App.GetLiveDownloadSpeedLimit(downloadId, out bool enable, out int limit))
-        //        {
-        //            speedLimiterDlg.EnableSpeedLimit = enable;
-        //            speedLimiterDlg.SpeedLimit = limit;
-        //        }
-        //        speedLimiterDlg.Closed += (_, _) =>
-        //        {
-        //            speedLimiterDlg = null;
-        //        };
-        //        speedLimiterDlg.OkClicked += (a, b) =>
-        //        {
-        //            var limit2 = speedLimiterDlg.SpeedLimit;
-        //            App.UpdateSpeedLimit(DownloadId, speedLimiterDlg.EnableSpeedLimit, limit2);
-        //            SetSpeedLimitText(speedLimiterDlg.EnableSpeedLimit, limit2);
-        //        };
-        //    }
-
-        //    if (!speedLimiterDlg.IsVisible)
-        //    {
-        //        speedLimiterDlg.Show();
-        //    }
-        //    else
-        //    {
-        //        speedLimiterDlg.Activate();
-        //    }
-        //}
 
         [UI] private Label TxtFileName;
         [UI] private Label TxtUrl;
         [UI] private Label TxtStatus;
         [UI] private Label TxtSpeed;
         [UI] private Label TxtETA;
-        //[UI] private LinkButton TxtSpeedLimit;
         [UI] private ProgressBar PrgProgress;
         [UI] private Button BtnHide;
         [UI] private Button BtnStop;

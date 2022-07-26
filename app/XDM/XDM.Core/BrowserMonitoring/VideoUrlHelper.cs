@@ -45,7 +45,7 @@ namespace XDM.Core.BrowserMonitoring
                                 || url.Contains("http://127.0.0.1:9614")));
         }
 
-        internal static void ProcessPostYtFormats(Message message, IApplicationCore app)
+        internal static void ProcessPostYtFormats(Message message)
         {
             //var file = message.File ?? Helpers.GetFileName(new Uri(message.Url));
             var manifest = DownloadManifest(message);
@@ -65,7 +65,7 @@ namespace XDM.Core.BrowserMonitoring
 
                 if (DualVideoItems != null && DualVideoItems.Count > 0)
                 {
-                    lock (app)
+                    lock (AppInstance.Core)
                     {
                         var list = new List<(DualSourceHTTPDownloadInfo Info, StreamingVideoDisplayInfo DisplayInfo)>();
                         foreach (var item in DualVideoItems)
@@ -92,14 +92,14 @@ namespace XDM.Core.BrowserMonitoring
 
                             //var displayText = $"[{fileExt.ToUpperInvariant()}] {size} {item.FormatDescription}";
                             list.Add((Info: mediaItem, DisplayInfo: displayInfo));
-                            //app.AddVideoNotification(displayText, mediaItem);
+                            //AppInstance.Core.AddVideoNotification(displayText, mediaItem);
                         }
-                        app.AddVideoNotifications(list);
+                        AppInstance.Core.AddVideoNotifications(list);
                     }
                 }
                 if (VideoItems != null && VideoItems.Count > 0)
                 {
-                    lock (app)
+                    lock (AppInstance.Core)
                     {
                         var list = new List<(SingleSourceHTTPDownloadInfo Info, StreamingVideoDisplayInfo DisplayInfo)>();
                         foreach (var item in VideoItems)
@@ -124,7 +124,7 @@ namespace XDM.Core.BrowserMonitoring
 
                             list.Add((Info: mediaItem, DisplayInfo: displayInfo));
                         }
-                        app.AddVideoNotifications(list);
+                        AppInstance.Core.AddVideoNotifications(list);
                     }
                 }
             }
@@ -134,7 +134,7 @@ namespace XDM.Core.BrowserMonitoring
             }
         }
 
-        internal static void ProcessDashVideo(Message message, IApplicationCore app)
+        internal static void ProcessDashVideo(Message message)
         {
             var file = message.File ?? Helpers.GetFileName(new Uri(message.Url));
             Log.Debug("Downloading MPD manifest: " + message.Url);
@@ -175,7 +175,7 @@ namespace XDM.Core.BrowserMonitoring
                             };
                             var displayText = $"[{fileExt.ToUpperInvariant()}] {GetQualityString(video, audio)}";
                             Log.Debug("Display text dash: " + displayText);
-                            app.AddVideoNotification(new StreamingVideoDisplayInfo
+                            AppInstance.Core.AddVideoNotification(new StreamingVideoDisplayInfo
                             {
                                 Quality = displayText,
                                 CreationTime = DateTime.Now
@@ -198,7 +198,7 @@ namespace XDM.Core.BrowserMonitoring
                             };
                             var displayText = $"[{fileExt.ToUpperInvariant()}] {GetQualityString(video, audio)}";
                             Log.Debug("Display text hls: " + displayText);
-                            app.AddVideoNotification(new StreamingVideoDisplayInfo
+                            AppInstance.Core.AddVideoNotification(new StreamingVideoDisplayInfo
                             {
                                 Quality = displayText,
                                 CreationTime = DateTime.Now
@@ -208,12 +208,12 @@ namespace XDM.Core.BrowserMonitoring
                     else if (video != null)
                     {
                         Log.Debug("DASH manifest contains no audio and 1 video, making it SingleSourceHTTPDownload");
-                        AddSingleItem(video, message, app, prefix, false, file);
+                        AddSingleItem(video, message, prefix, false, file);
                     }
                     else if (audio != null)
                     {
                         Log.Debug("DASH manifest contains 1 audio and no video, making it SingleSourceHTTPDownload");
-                        AddSingleItem(audio, message, app, prefix, true, file);
+                        AddSingleItem(audio, message, prefix, true, file);
                     }
                     else
                     {
@@ -224,7 +224,7 @@ namespace XDM.Core.BrowserMonitoring
             }
         }
 
-        private static void AddSingleItem(Representation item, Message message, IApplicationCore app, string prefix, bool audio, string file)
+        private static void AddSingleItem(Representation item, Message message, string prefix, bool audio, string file)
         {
             var fileExt = (item.MimeType + "").Contains("mp4") ? "mp4" : "mkv";
             var mediaItem = new SingleSourceHTTPDownloadInfo
@@ -237,7 +237,7 @@ namespace XDM.Core.BrowserMonitoring
             var quality = audio ? GetQualityString(null, item) : GetQualityString(item, null);
             var displayText = $"[{fileExt.ToUpperInvariant()}] {quality}";
             Log.Debug("Display text hls: " + displayText);
-            app.AddVideoNotification(new StreamingVideoDisplayInfo
+            AppInstance.Core.AddVideoNotification(new StreamingVideoDisplayInfo
             {
                 Quality = displayText,
                 CreationTime = DateTime.Now
@@ -279,7 +279,7 @@ namespace XDM.Core.BrowserMonitoring
             return text.ToString();
         }
 
-        internal static void ProcessHLSVideo(Message message, IApplicationCore app)
+        internal static void ProcessHLSVideo(Message message)
         {
             Log.Debug("Downloading HLS manifest: " + message.Url);
 
@@ -312,7 +312,7 @@ namespace XDM.Core.BrowserMonitoring
 
                             var displayText = $"{type} {plc.Quality}";
                             Log.Debug("Display text hls: " + plc.Quality);
-                            app.AddVideoNotification(new StreamingVideoDisplayInfo
+                            AppInstance.Core.AddVideoNotification(new StreamingVideoDisplayInfo
                             {
                                 Quality = displayText,
                                 CreationTime = DateTime.Now
@@ -340,7 +340,7 @@ namespace XDM.Core.BrowserMonitoring
                         Cookies = message.Cookies,
                     };
                     var displayText = $"[{container}]";
-                    app.AddVideoNotification(new StreamingVideoDisplayInfo
+                    AppInstance.Core.AddVideoNotification(new StreamingVideoDisplayInfo
                     {
                         Quality = displayText,
                         CreationTime = DateTime.Now
@@ -349,7 +349,7 @@ namespace XDM.Core.BrowserMonitoring
             }
         }
 
-        public static bool ProcessYtDashSegment(Message message, IApplicationCore app)
+        public static bool ProcessYtDashSegment(Message message)
         {
             try
             {
@@ -441,7 +441,7 @@ namespace XDM.Core.BrowserMonitoring
                 {
                     if (!info.IsVideo && mime.StartsWith("audio/"))
                     {
-                        HandleDashAudio(info, app, message);
+                        HandleDashAudio(info, message);
                     }
                     var di = GetDASHPair(info);
                     if (di == null)
@@ -466,7 +466,7 @@ namespace XDM.Core.BrowserMonitoring
                     var quality = Itags.GetValueOrDefault(info.IsVideo ? info.ITag : di.ITag, "MKV");
 
                     var displayText = $"[{quality}] {(size > 0 ? Helpers.FormatSize(size) : string.Empty)}";
-                    app.AddVideoNotification(new StreamingVideoDisplayInfo
+                    AppInstance.Core.AddVideoNotification(new StreamingVideoDisplayInfo
                     {
                         Quality = displayText,
                         Size = size,
@@ -480,7 +480,7 @@ namespace XDM.Core.BrowserMonitoring
             return false;
         }
 
-        private static void HandleDashAudio(DashInfo info, IApplicationCore app, Message message)
+        private static void HandleDashAudio(DashInfo info, Message message)
         {
             try
             {
@@ -507,7 +507,7 @@ namespace XDM.Core.BrowserMonitoring
                     ContentType = info.Mime
                 };
 
-                app.AddVideoNotification(new StreamingVideoDisplayInfo
+                AppInstance.Core.AddVideoNotification(new StreamingVideoDisplayInfo
                 {
                     Quality = displayText,
                     Size = size,
@@ -536,7 +536,7 @@ namespace XDM.Core.BrowserMonitoring
             };
         }
 
-        internal static void ProcessNormalVideo(Message message2, IApplicationCore app)
+        internal static void ProcessNormalVideo(Message message2)
         {
             if (IsMediaFragment(message2.GetRequestHeaderFirstValue("Referer")))
             {
@@ -596,7 +596,7 @@ namespace XDM.Core.BrowserMonitoring
 
             var size = long.Parse(message2.GetResponseHeaderFirstValue("Content-Length"));
             var displayText = $"[{ext.ToUpperInvariant()}] {(size > 0 ? Helpers.FormatSize(size) : string.Empty)}";
-            app.AddVideoNotification(new StreamingVideoDisplayInfo
+            AppInstance.Core.AddVideoNotification(new StreamingVideoDisplayInfo
             {
                 Quality = displayText,
                 Size = size,

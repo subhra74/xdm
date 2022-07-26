@@ -8,25 +8,24 @@ namespace XDM.Core
 {
     internal static class CallbackActions
     {
-        public static void DownloadStarted(string id, IApplicationWindow peer)
+        public static void DownloadStarted(string id)
         {
-            var download = peer.FindInProgressItem(id);
+            var download = AppInstance.MainWindow.FindInProgressItem(id);
             if (download == null) return;
             download.Status = DownloadStatus.Downloading;
         }
 
-        public static void DownloadFailed(string id, IApplicationWindow peer)
+        public static void DownloadFailed(string id)
         {
-            var download = peer.FindInProgressItem(id);
+            var download = AppInstance.MainWindow.FindInProgressItem(id);
             if (download == null) return;
             download.Status = DownloadStatus.Stopped;
         }
 
-        public static void DownloadFinished(string id, long finalFileSize, string filePath,
-            IApplicationWindow peer, IApplicationCore app, Action callback)
+        public static void DownloadFinished(string id, long finalFileSize, string filePath, Action callback)
         {
             Log.Debug("Final file name: " + filePath);
-            var download = peer.FindInProgressItem(id);
+            var download = AppInstance.MainWindow.FindInProgressItem(id);
             if (download == null) return;
             var downloadEntry = download.DownloadEntry;
             downloadEntry.Progress = 100;
@@ -44,15 +43,15 @@ namespace XDM.Core
                 Proxy = downloadEntry.Proxy
             };
 
-            peer.AddToTop(finishedEntry);
-            peer.Delete(download);
+            AppInstance.MainWindow.AddToTop(finishedEntry);
+            AppInstance.MainWindow.Delete(download);
 
             QueueManager.RemoveFinishedDownload(download.DownloadEntry.Id);
 
-            if (app.ActiveDownloadCount == 0 && peer.IsInProgressViewSelected)
+            if (AppInstance.Core.ActiveDownloadCount == 0 && AppInstance.MainWindow.IsInProgressViewSelected)
             {
                 Log.Debug("switching to finished listview");
-                peer.SwitchToFinishedView();
+                AppInstance.MainWindow.SwitchToFinishedView();
             }
 
             callback.Invoke();

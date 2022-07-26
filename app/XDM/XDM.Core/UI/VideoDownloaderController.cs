@@ -23,13 +23,9 @@ namespace XDM.Core.UI
         private List<YDLVideoEntry> videoItemList;
         private List<int> videoQualities;
         private IVideoDownloadView view;
-        private IApplication appUI;
-        private IApplicationCore app;
 
-        public VideoDownloaderController(IVideoDownloadView view, IApplication appUI, IApplicationCore app)
+        public VideoDownloaderController(IVideoDownloadView view)
         {
-            this.appUI = appUI;
-            this.app = app;
             this.view = view;
 
             var browsers = new Dictionary<string, string>
@@ -57,7 +53,7 @@ namespace XDM.Core.UI
                 if (Helpers.IsUriValid(url))
                 {
                     view.SwitchToProcessingPage();
-                    ProcessVideo(url, browser, result => appUI.RunOnUiThread(() =>
+                    ProcessVideo(url, browser, result => AppInstance.Current.RunOnUiThread(() =>
                     {
                         if (result != null)
                         {
@@ -72,7 +68,7 @@ namespace XDM.Core.UI
                 }
                 else
                 {
-                    appUI.ShowMessageBox(view, TextResource.GetText("MSG_INVALID_URL"));
+                    AppInstance.Current.ShowMessageBox(view, TextResource.GetText("MSG_INVALID_URL"));
                 }
             };
 
@@ -102,7 +98,7 @@ namespace XDM.Core.UI
             view.DownloadLaterClicked += View_DownloadLaterClicked;
             view.QueueSchedulerClicked += (s, e) =>
             {
-                appUI.ShowQueueWindow(s);
+                AppInstance.Current.ShowQueueWindow(s);
             };
         }
 
@@ -118,7 +114,7 @@ namespace XDM.Core.UI
 
         public void Run()
         {
-            var url = appUI.GetUrlFromClipboard();
+            var url = AppInstance.Current.GetUrlFromClipboard();
             if (url != null && Helpers.IsUriValid(url))
             {
                 view.Url = url;
@@ -207,12 +203,12 @@ namespace XDM.Core.UI
         {
             if (string.IsNullOrEmpty(view.DownloadLocation))
             {
-                appUI!.ShowMessageBox(view, TextResource.GetText("MSG_CAT_FOLDER_MISSING"));
+                AppInstance.Current!.ShowMessageBox(view, TextResource.GetText("MSG_CAT_FOLDER_MISSING"));
                 return;
             }
             if (this.view.SelectedItemCount == 0)
             {
-                appUI!.ShowMessageBox(view, TextResource.GetText("BAT_SELECT_ITEMS"));
+                AppInstance.Current!.ShowMessageBox(view, TextResource.GetText("BAT_SELECT_ITEMS"));
                 return;
             }
             var quality = -1;
@@ -326,7 +322,7 @@ namespace XDM.Core.UI
             };
             if (info != null)
             {
-                app!.SubmitDownload(
+                AppInstance.Core!.SubmitDownload(
                         info,
                         videoEntry.Title + "." + videoEntry.FileExt,
                         FileNameFetchMode.None,

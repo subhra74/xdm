@@ -14,15 +14,11 @@ namespace XDM.Core.UI
     public class BatchDownloadViewController
     {
         private IBatchDownloadView view;
-        public IApplication AppUI { get; set; }
-        public IApplicationCore App { get; set; }
         public int BatchSize { get; private set; } = 0;
 
-        public BatchDownloadViewController(IBatchDownloadView view, IApplicationCore app, IApplication appUI)
+        public BatchDownloadViewController(IBatchDownloadView view)
         {
             this.view = view;
-            this.AppUI = appUI;
-            this.App = app;
 
             var arr = new string[] { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
             this.view.SetStartLetterRange(arr);
@@ -55,15 +51,15 @@ namespace XDM.Core.UI
                 var links = GenerateBatchLink()?.Select(x => (object)new SingleSourceHTTPDownloadInfo { Uri = x.ToString() });
                 if (links == null || !links.Any())
                 {
-                    AppUI.ShowMessageBox(this.view, TextResource.GetText("BAT_SELECT_ITEMS"));
+                    AppInstance.Current.ShowMessageBox(this.view, TextResource.GetText("BAT_SELECT_ITEMS"));
                     return;
                 }
                 this.view.DestroyWindow();
-                AppUI.ShowDownloadSelectionWindow(FileNameFetchMode.FileNameAndExtension, links);
+                AppInstance.Current.ShowDownloadSelectionWindow(FileNameFetchMode.FileNameAndExtension, links);
                 //var dsvc = new DownloadSelectionViewController(this.view.CreateDownloadSelectionView(),
-                //    App, AppUI, FileNameFetchMode.FileNameAndExtension, links);
+                //    AppInstance.Core, AppUI, FileNameFetchMode.FileNameAndExtension, links);
                 //dsvc.Run();
-                //var window = new DownloadSelectionWindow(App, AppUI, Core.Lib.Downloader.FileNameFetchMode.FileNameAndExtension, links);
+                //var window = new DownloadSelectionWindow(AppInstance.Core, AppUI, Core.Lib.Downloader.FileNameFetchMode.FileNameAndExtension, links);
                 //this.Close();
                 //window.Show();
             }
@@ -98,7 +94,7 @@ namespace XDM.Core.UI
             }
             catch (UriFormatException)
             {
-                AppUI?.ShowMessageBox(this.view, TextResource.GetText("MSG_INVALID_URL"));
+                AppInstance.Current.ShowMessageBox(this.view, TextResource.GetText("MSG_INVALID_URL"));
             }
             catch (Exception ex)
             {

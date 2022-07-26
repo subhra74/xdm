@@ -10,13 +10,11 @@ namespace XDM.Core
     public class Scheduler : IDisposable
     {
         private Timer? timer;
-        private readonly IApplicationCore app;
         private HashSet<string> activeSchedules;
         //private Action callback;
 
-        public Scheduler(IApplicationCore app)
+        public Scheduler()
         {
-            this.app = app;
             this.activeSchedules = new HashSet<string>();
             //this.callback = new Action(() =>
             //{
@@ -59,7 +57,7 @@ namespace XDM.Core
 
             if (h1 == h2 && m1 == m2)
             {
-                app.StopDownloads(new List<string>(item.DownloadIds), true);
+                AppInstance.Core.StopDownloads(new List<string>(item.DownloadIds), true);
                 this.activeSchedules.Remove(item.ID);
                 return;
             }
@@ -74,13 +72,13 @@ namespace XDM.Core
                 var dict = new Dictionary<string, BaseDownloadEntry>();
                 foreach (var id in item.DownloadIds)
                 {
-                    var ent = AppDB.Instance.Downloads.GetDownloadById(id);// app.AppUI.GetInProgressDownloadEntry(id);
+                    var ent = AppDB.Instance.Downloads.GetDownloadById(id);// AppInstance.Core.AppUI.GetInProgressDownloadEntry(id);
                     if (ent != null)
                     {
                         dict[id] = ent;
                     }
                 }
-                app.ResumeDownload(dict, nonInteractive: true);
+                AppInstance.Core.ResumeDownload(dict, nonInteractive: true);
             }
         }
 
@@ -115,7 +113,7 @@ namespace XDM.Core
             {
                 ProcessScheduledItem(queue);
             }
-            //app.AppUI.RunOnUiThread(callback);
+            //AppInstance.Core.AppUI.RunOnUiThread(callback);
         }
     }
 }

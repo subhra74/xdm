@@ -27,7 +27,6 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
     /// </summary>
     public partial class ManageQueueDialog : Window, IDialog, IQueuesWindow
     {
-        private IApplication appUI;
         private DownloadSchedule defaultSchedule;
 
         public event EventHandler<QueueListEventArgs>? QueuesModified;
@@ -38,11 +37,9 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
         private readonly ObservableCollection<DownloadQueue> queues = new();
         private readonly ObservableCollection<InProgressDownloadEntry> downloads = new();
 
-        public ManageQueueDialog(IApplication appUI)
+        public ManageQueueDialog()
         {
             InitializeComponent();
-
-            this.appUI = appUI;
 
             this.defaultSchedule = new DownloadSchedule
             {
@@ -119,7 +116,7 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
 
         private void BtnNew_Click(object sender, RoutedEventArgs e)
         {
-            new NewQueueWindow(this.appUI, (queue, newQueue) =>
+            new NewQueueWindow((queue, newQueue) =>
             {
                 this.queues.Add(queue);
             }, null)
@@ -137,7 +134,7 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
                 {
                     foreach (var id in realQueue.DownloadIds)
                     {
-                        var entry = appUI.GetInProgressDownloadEntry(id);
+                        var entry = AppInstance.Current.GetInProgressDownloadEntry(id);
                         if (entry != null)
                         {
                             this.downloads.Add(entry);
@@ -178,7 +175,7 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
             ClearCollection(this.downloads);
             foreach (var id in queue.DownloadIds)
             {
-                var ent = appUI.GetInProgressDownloadEntry(id);
+                var ent = AppInstance.Current.GetInProgressDownloadEntry(id);
                 if (ent != null)
                 {
                     this.downloads.Add(ent);
@@ -266,7 +263,7 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
         private void BtnAdd_Click(object sender, RoutedEventArgs e)
         {
             if (LbQueues.SelectedIndex < 0) return;
-            var newQueueDialog = new NewQueueWindow(appUI, (queue, newQueue) =>
+            var newQueueDialog = new NewQueueWindow((queue, newQueue) =>
             {
                 LoadQueueDetails(queue);
             }, (DownloadQueue)LbQueues.SelectedItem)

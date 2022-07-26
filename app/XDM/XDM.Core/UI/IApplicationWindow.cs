@@ -51,13 +51,13 @@ namespace XDM.Core.UI
 
         void ConfirmDelete(string text, out bool approved, out bool deleteFiles);
 
-        IDownloadCompleteDialog CreateDownloadCompleteDialog(IApplicationCore app);
+        IDownloadCompleteDialog CreateDownloadCompleteDialog();
 
         INewDownloadDialogSkeleton CreateNewDownloadDialog(bool empty);
 
         INewVideoDownloadDialog CreateNewVideoDialog();
 
-        IProgressWindow CreateProgressWindow(string downloadId, IApplicationCore app, IApplication appUI);
+        IProgressWindow CreateProgressWindow(string downloadId);
 
         void RunOnUIThread(Action action);
 
@@ -93,7 +93,7 @@ namespace XDM.Core.UI
 
         string? OpenFileDialog(string? initialPath, string? defaultExt, string? filter);
 
-        void ShowRefreshLinkDialog(InProgressDownloadEntry entry, IApplicationCore app);
+        void ShowRefreshLinkDialog(InProgressDownloadEntry entry);
 
         void SetClipboardText(string text);
 
@@ -101,27 +101,27 @@ namespace XDM.Core.UI
 
         void ShowPropertiesDialog(BaseDownloadEntry ent, ShortState? state);
 
-        void ShowYoutubeDLDialog(IApplication appUI, IApplicationCore app);
+        void ShowYoutubeDLDialog();
 
-        void ShowBatchDownloadWindow(IApplicationCore app, IApplication appUi);
+        void ShowBatchDownloadWindow();
 
-        void ShowSettingsDialog(IApplicationCore app, int page = 0);
+        void ShowSettingsDialog(int page = 0);
 
         void UpdateBrowserMonitorButton();
 
-        void ShowBrowserMonitoringDialog(IApplicationCore app);
+        void ShowBrowserMonitoringDialog();
 
         void UpdateParallalismLabel();
 
-        IUpdaterUI CreateUpdateUIDialog(IApplication ui);
+        IUpdaterUI CreateUpdateUIDialog();
 
         void ClearUpdateInformation();
 
-        IQueuesWindow CreateQueuesAndSchedulerWindow(IApplication appUi);
+        IQueuesWindow CreateQueuesAndSchedulerWindow();
 
         IQueueSelectionDialog CreateQueueSelectionDialog();
 
-        void ShowDownloadSelectionWindow(IApplicationCore app, IApplication appUI, FileNameFetchMode mode, IEnumerable<object> downloads);
+        void ShowDownloadSelectionWindow(FileNameFetchMode mode, IEnumerable<object> downloads);
 
         IClipboardMonitor GetClipboardMonitor();
 

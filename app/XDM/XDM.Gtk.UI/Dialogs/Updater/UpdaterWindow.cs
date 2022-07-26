@@ -20,13 +20,11 @@ namespace XDM.GtkUI.Dialogs.Updater
         [UI] private Label TxtHeading;
         [UI] private ProgressBar Prg;
         [UI] private Button BtnCancel;
-        private IApplication AppUI;
         private bool active = false;
 
-        private UpdaterWindow(Builder builder, IApplication appUI) : base(builder.GetRawOwnedObject("window"))
+        private UpdaterWindow(Builder builder) : base(builder.GetRawOwnedObject("window"))
         {
             builder.Autoconnect(this);
-            AppUI = appUI;
             Title = TextResource.GetText("OPT_UPDATE_FFMPEG");
             SetPosition(WindowPosition.CenterAlways);
 
@@ -84,11 +82,11 @@ namespace XDM.GtkUI.Dialogs.Updater
         public event EventHandler? Finished;
         public event EventHandler? Load;
 
-        public static UpdaterWindow CreateFromGladeFile(IApplication appUI)
+        public static UpdaterWindow CreateFromGladeFile()
         {
             var builder = new Builder();
             builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "updater-window.glade"));
-            return new UpdaterWindow(builder, appUI);
+            return new UpdaterWindow(builder);
         }
 
         public void DownloadFailed(object? sender, DownloadFailedEventArgs e)

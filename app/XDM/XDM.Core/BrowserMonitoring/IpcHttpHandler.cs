@@ -14,12 +14,10 @@ namespace XDM.Core.BrowserMonitoring
 {
     public class IpcHttpHandler
     {
-        private IApplicationCore app;
         private NanoServer server;
 
-        public IpcHttpHandler(IApplicationCore app)
+        public IpcHttpHandler()
         {
-            this.app = app;
             server = new NanoServer(IPAddress.Loopback, 9614);
             server.RequestReceived += (sender, args) =>
             {
@@ -68,7 +66,7 @@ namespace XDM.Core.BrowserMonitoring
                             var message = Message.ParseMessage(text);
                             if (!(Helpers.IsBlockedHost(message.Url) || Helpers.IsCompressedJSorCSS(message.Url)))
                             {
-                                app.AddDownload(message);
+                                AppInstance.Core.AddDownload(message);
                             }
                             break;
                         }
@@ -80,13 +78,13 @@ namespace XDM.Core.BrowserMonitoring
                             var contentType = message2.GetResponseHeaderFirstValue("Content-Type")?.ToLowerInvariant() ?? string.Empty;
                             if (VideoUrlHelper.IsHLS(contentType))
                             {
-                                VideoUrlHelper.ProcessHLSVideo(message2, app);
+                                VideoUrlHelper.ProcessHLSVideo(message2);
                             }
                             if (VideoUrlHelper.IsDASH(contentType))
                             {
-                                VideoUrlHelper.ProcessDashVideo(message2, app);
+                                VideoUrlHelper.ProcessDashVideo(message2);
                             }
-                            if (!VideoUrlHelper.ProcessYtDashSegment(message2, app))
+                            if (!VideoUrlHelper.ProcessYtDashSegment(message2))
                             {
                                 if (contentType != null && !(contentType.Contains("f4f") ||
                                     contentType.Contains("m4s") ||
@@ -94,7 +92,7 @@ namespace XDM.Core.BrowserMonitoring
                                     message2.Url.Contains("f4x") || message2.Url.Contains(".fbcdn")
                                     || message2.Url.Contains("http://127.0.0.1:9614")))
                                 {
-                                    VideoUrlHelper.ProcessNormalVideo(message2, app);
+                                    VideoUrlHelper.ProcessNormalVideo(message2);
                                 }
                             }
                             break;
@@ -104,19 +102,19 @@ namespace XDM.Core.BrowserMonitoring
                             var text = Encoding.UTF8.GetString(context.RequestBody!);
                             Log.Debug(text);
                             var arr = text.Split(new string[] { "\r\n\r\n" }, StringSplitOptions.RemoveEmptyEntries);
-                            app.AddBatchLinks(arr.Select(str => Message.ParseMessage(str.Trim())).ToList());
+                            AppInstance.Core.AddBatchLinks(arr.Select(str => Message.ParseMessage(str.Trim())).ToList());
                             break;
                         }
                     case "/item":
                         {
                             foreach (var item in Encoding.UTF8.GetString(context.RequestBody!).Split(new char[] { '\r', '\n' }))
                             {
-                                app.AddVideoDownload(item);
+                                AppInstance.Core.AddVideoDownload(item);
                             }
                             break;
                         }
                     case "/clear":
-                        app.ClearVideoList();
+                        AppInstance.Core.ClearVideoList();
                         break;
                 }
             }
@@ -135,7 +133,7 @@ namespace XDM.Core.BrowserMonitoring
                 videoUrls = new string[0],
                 fileExts = Config.Instance.FileExtensions,
                 vidExts = Config.Instance.VideoExtensions,
-                vidList = app.GetVideoList().Select(a => new
+                vidList = AppInstance.Core.GetVideoList().Select(a => new
                 {
                     id = a.ID,
                     text = a.File,

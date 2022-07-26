@@ -12,7 +12,6 @@ namespace XDM.Core.UI
 {
     public class ComponentUpdaterUI
     {
-        private IApplicationCore app;
         private UpdateMode updateMode;
         private IUpdaterUI updaterUI;
         private IList<UpdateInfo>? updates;
@@ -22,11 +21,10 @@ namespace XDM.Core.UI
         private long size;
         private long downloaded;
 
-        public ComponentUpdaterUI(IUpdaterUI updaterUI, IApplicationCore app, UpdateMode updateMode)
+        public ComponentUpdaterUI(IUpdaterUI updaterUI, UpdateMode updateMode)
         {
             this.updaterUI = updaterUI;
             this.updateMode = updateMode;
-            this.app = app;
             try
             {
                 this.updaterUI.Cancelled += (s, e) =>
@@ -51,7 +49,7 @@ namespace XDM.Core.UI
                 try
                 {
                     updaterUI.Inderminate = true;
-                    if (!UpdateChecker.GetAppUpdates(app.AppVerion, out updates, out _, this.updateMode))
+                    if (!UpdateChecker.GetAppUpdates(AppInstance.Core.AppVerion, out updates, out _, this.updateMode))
                     {
                         updaterUI.DownloadFailed(this, new DownloadFailedEventArgs(ErrorCode.Generic));
                     }

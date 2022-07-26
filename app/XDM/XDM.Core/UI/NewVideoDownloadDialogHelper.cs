@@ -9,7 +9,7 @@ namespace XDM.Core.UI
 {
     public class NewVideoDownloadDialogHelper
     {
-        public static void ShowVideoDownloadDialog(IApplicationCore app, IApplication appUi, INewVideoDownloadDialog window,
+        public static void ShowVideoDownloadDialog(INewVideoDownloadDialog window,
             string id, string name, long size, string? contentType)
         {
             window.SetFolderValues(CommonUtils.GetFolderValues());
@@ -56,11 +56,11 @@ namespace XDM.Core.UI
                     window.ShowMessageBox(TextResource.GetText("MSG_NO_FILE"));
                     return;
                 }
-                if (app.IsFFmpegRequiredForDownload(id) && !IsFFmpegInstalled())
+                if (AppInstance.Core.IsFFmpegRequiredForDownload(id) && !IsFFmpegInstalled())
                 {
-                    if (appUi.Confirm(window, TextResource.GetText("MSG_DOWNLOAD_FFMPEG")))
+                    if (AppInstance.Current.Confirm(window, TextResource.GetText("MSG_DOWNLOAD_FFMPEG")))
                     {
-                        appUi.InstallLatestFFmpeg();
+                        AppInstance.Current.InstallLatestFFmpeg();
                     }
                     return;
                 }
@@ -69,7 +69,7 @@ namespace XDM.Core.UI
                 {
                     name = AddMp3Extension(name);
                 }
-                app.StartVideoDownload(id, name,
+                AppInstance.Core.StartVideoDownload(id, name,
                     CommonUtils.SelectedFolderFromIndex(window.SeletedFolderIndex),
                     true,
                     window.Authentication,
@@ -92,7 +92,7 @@ namespace XDM.Core.UI
                 {
                     name = AddMp3Extension(name);
                 }
-                app.StartVideoDownload(id, name,
+                AppInstance.Core.StartVideoDownload(id, name,
                     CommonUtils.SelectedFolderFromIndex(window.SeletedFolderIndex),
                     false,
                     window.Authentication,
@@ -110,7 +110,7 @@ namespace XDM.Core.UI
 
             window.QueueSchedulerClicked += (s, e) =>
             {
-                appUi.ShowQueueWindow(s);
+                AppInstance.Current.ShowQueueWindow(s);
             };
 
             window.ShowWindow();

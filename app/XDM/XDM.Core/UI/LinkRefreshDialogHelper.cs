@@ -13,7 +13,7 @@ namespace XDM.Core.UI
 {
     public static class LinkRefreshDialogHelper
     {
-        public static bool RefreshLink(BaseDownloadEntry item, IApplicationCore app, IRefreshLinkDialogSkeleton dialog)
+        public static bool RefreshLink(BaseDownloadEntry item, IRefreshLinkDialogSkeleton dialog)
         {
             try
             {
@@ -58,7 +58,7 @@ namespace XDM.Core.UI
                 {
                     dialog.WatchingStopped += (a, b) =>
                     {
-                        app.ClearRefreshLinkCandidate();
+                        AppInstance.Core.ClearRefreshLinkCandidate();
                     };
 
                     OpenBrowser(referer);
@@ -66,15 +66,15 @@ namespace XDM.Core.UI
                     {
                         var downloader = new SingleSourceHTTPDownloader(item.Id);
                         downloader.RestoreState();
-                        app.RefreshedLinkReceived += (_, _) => dialog.LinkReceived();
-                        app.WaitFromRefreshedLink(downloader);
+                        AppInstance.Core.RefreshedLinkReceived += (_, _) => dialog.LinkReceived();
+                        AppInstance.Core.WaitFromRefreshedLink(downloader);
                     }
                     else if (item.DownloadType == "Dash")
                     {
                         var downloader = new DualSourceHTTPDownloader(item.Id);
                         downloader.RestoreState();
-                        app.RefreshedLinkReceived += (_, _) => dialog.LinkReceived();
-                        app.WaitFromRefreshedLink(downloader);
+                        AppInstance.Core.RefreshedLinkReceived += (_, _) => dialog.LinkReceived();
+                        AppInstance.Core.WaitFromRefreshedLink(downloader);
                     }
 
                     dialog.ShowWindow();

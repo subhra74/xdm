@@ -25,12 +25,10 @@ namespace XDM.Wpf.UI.Dialogs.Settings
     public partial class SettingsWindow : Window, IDialog
     {
         private ISettingsPage[] pages;
-        private IApplicationCore app;
 
-        public SettingsWindow(IApplicationCore app, int selectedPageIndex)
+        public SettingsWindow(int selectedPageIndex)
         {
             InitializeComponent();
-            this.app = app;
             pages = new ISettingsPage[]
             {
                 BrowserMonitoringView,
@@ -42,14 +40,13 @@ namespace XDM.Wpf.UI.Dialogs.Settings
             LbTitles.SelectedIndex = selectedPageIndex;
             foreach (var page in pages)
             {
-                page.App = app;
                 page.PopulateUI();
             }
             GeneralSettingsView.Window = this;
             PasswordManagerView.Window = this;
         }
 
-        public SettingsWindow(IApplicationCore app) : this(app, 1) { }
+        public SettingsWindow() : this(1) { }
 
         public bool Result { get; set; } = false;
 
@@ -75,7 +72,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
                 page.UpdateConfig();
             }
             Config.SaveConfig();
-            app.ApplyConfig();
+            AppInstance.Core.ApplyConfig();
             Close();
             Helpers.RunGC();
         }

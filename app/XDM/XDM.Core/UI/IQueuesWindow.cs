@@ -14,7 +14,7 @@ namespace XDM.Core.UI
 
         void RefreshView();
         void SetData(IEnumerable<DownloadQueue> queues);
-        void ShowWindow(object peer);
+        void ShowWindow(object window);
 
     }
 }

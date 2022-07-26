@@ -9,21 +9,21 @@ namespace XDM.Core.BrowserMonitoring
 {
     internal static class BrowserMessageHandler
     {
-        internal static void Handle(IApplicationCore app, RawBrowserMessageEnvelop envelop)
+        internal static void Handle(RawBrowserMessageEnvelop envelop)
         {
             //Log.Debug("Type: " + envelop.MessageType);
             if (envelop.MessageType == "videoIds")
             {
                 foreach (var item in envelop.VideoIds)
                 {
-                    app.AddVideoDownload(item);
+                    AppInstance.Core.AddVideoDownload(item);
                 }
                 return;
             }
 
             if (envelop.MessageType == "clear")
             {
-                app.ClearVideoList();
+                AppInstance.Core.ClearVideoList();
                 return;
             }
 
@@ -35,7 +35,7 @@ namespace XDM.Core.BrowserMonitoring
             if (envelop.MessageType == "custom")
             {
                 var args = ArgsProcessor.ParseArgs(envelop.CustomData.Split('\r'));
-                ArgsProcessor.Process(app, args);
+                ArgsProcessor.Process(args);
                 return;
             }
 
@@ -53,7 +53,7 @@ namespace XDM.Core.BrowserMonitoring
                         var message = Parse(rawMessage);
                         if (!(Helpers.IsBlockedHost(message.Url) || Helpers.IsCompressedJSorCSS(message.Url)))
                         {
-                            app.AddDownload(message);
+                            AppInstance.Core.AddDownload(message);
                         }
                         break;
                     }
@@ -65,7 +65,7 @@ namespace XDM.Core.BrowserMonitoring
                             var message = Parse(msg);
                             messages.Add(message);
                         }
-                        app.AddBatchLinks(messages);
+                        AppInstance.Core.AddBatchLinks(messages);
                         break;
                     }
                 case "video":
@@ -75,29 +75,29 @@ namespace XDM.Core.BrowserMonitoring
 
                         if (VideoUrlHelper.IsYtFormat(contentType))
                         {
-                            VideoUrlHelper.ProcessPostYtFormats(message, app);
+                            VideoUrlHelper.ProcessPostYtFormats(message);
                         }
 
                         //if (VideoUrlHelper.IsFBFormat(contentType, message.Url))
                         //{
-                        //    VideoUrlHelper.ProcessPostFBFormats(message, app);
+                        //    VideoUrlHelper.ProcessPostFBFormats(message, AppInstance.Core);
                         //}
 
                         if (VideoUrlHelper.IsHLS(contentType))
                         {
-                            VideoUrlHelper.ProcessHLSVideo(message, app);
+                            VideoUrlHelper.ProcessHLSVideo(message);
                         }
 
                         if (VideoUrlHelper.IsDASH(contentType))
                         {
-                            VideoUrlHelper.ProcessDashVideo(message, app);
+                            VideoUrlHelper.ProcessDashVideo(message);
                         }
 
-                        if (!VideoUrlHelper.ProcessYtDashSegment(message, app))
+                        if (!VideoUrlHelper.ProcessYtDashSegment(message))
                         {
                             if (VideoUrlHelper.IsNormalVideo(contentType, message.Url, message.GetContentLength()))
                             {
-                                VideoUrlHelper.ProcessNormalVideo(message, app);
+                                VideoUrlHelper.ProcessNormalVideo(message);
                             }
                         }
                         break;

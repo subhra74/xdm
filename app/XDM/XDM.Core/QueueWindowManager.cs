@@ -9,7 +9,6 @@ namespace XDM.Core
     internal static class QueueWindowManager
     {
         private static IQueuesWindow? queueWindow;
-        private static IApplicationCore? app;
 
         internal static void RefreshView()
         {
@@ -19,18 +18,12 @@ namespace XDM.Core
             }
         }
 
-        internal static void ShowWindow(
-            object window,
-            IQueuesWindow qwin,
-            IApplicationCore a
-            )
+        internal static void ShowWindow(object window, IQueuesWindow qwin)
         {
             if (queueWindow != null)
             {
                 return;
             }
-
-            app = a;
 
             var queuesCopy = QueueManager.Queues.Select(q => new DownloadQueue(q.ID, q.Name)
             {
@@ -54,17 +47,16 @@ namespace XDM.Core
             queueWindow!.QueueStopRequested -= QueueWindow_QueueStopRequested;
             queueWindow!.WindowClosing -= QueueWindow_WindowClosing;
             queueWindow = null;
-            app = null;
         }
 
         private static void QueueWindow_QueueStopRequested(object? sender, DownloadListEventArgs e)
         {
-            app?.StopDownloads(e.Downloads, true);
+            AppInstance.Core?.StopDownloads(e.Downloads, true);
         }
 
         private static void QueueWindow_QueueStartRequested(object? sender, DownloadListEventArgs e)
         {
-            app?.ResumeNonInteractiveDownloads(e.Downloads);
+            AppInstance.Core?.ResumeNonInteractiveDownloads(e.Downloads);
         }
 
         private static void QueueWindow_QueuesModified(object? sender, QueueListEventArgs e)

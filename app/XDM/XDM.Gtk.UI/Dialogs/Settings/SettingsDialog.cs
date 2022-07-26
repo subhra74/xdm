@@ -54,13 +54,10 @@ namespace XDM.GtkUI.Dialogs.Settings
         private Notebook Tabs;
 
         private ListStore categoryStore, passwordStore;
-        private IApplicationCore app;
 
         private SettingsDialog(Builder builder,
             Window parent,
-            WindowGroup group,
-            IApplication ui,
-            IApplicationCore app) : base(builder.GetRawOwnedObject("dialog"))
+            WindowGroup group) : base(builder.GetRawOwnedObject("dialog"))
         {
             builder.Autoconnect(this);
 
@@ -70,7 +67,6 @@ namespace XDM.GtkUI.Dialogs.Settings
             TransientFor = parent;
             this.group = group;
             this.group.AddWindow(this);
-            this.app = app;
             GtkHelper.AttachSafeDispose(this);
 
             LoadTexts();
@@ -289,7 +285,7 @@ namespace XDM.GtkUI.Dialogs.Settings
             UpdatePasswordManagerConfig();
             UpdateAdvancedSettingsConfig();
             Config.SaveConfig();
-            app.ApplyConfig();
+            AppInstance.Core.ApplyConfig();
             Dispose();
             Helpers.RunGC();
         }
@@ -342,7 +338,7 @@ namespace XDM.GtkUI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchOperaBrowser(this.app.ChromeExtensionUrl);
+                BrowserLauncher.LaunchOperaBrowser(AppInstance.Core.ChromeExtensionUrl);
             }
             catch (Exception ex)
             {
@@ -366,7 +362,7 @@ namespace XDM.GtkUI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchMicrosoftEdge(this.app.ChromeExtensionUrl);
+                BrowserLauncher.LaunchMicrosoftEdge(AppInstance.Core.ChromeExtensionUrl);
             }
             catch (Exception ex)
             {
@@ -390,7 +386,7 @@ namespace XDM.GtkUI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchFirefox(this.app.FirefoxExtensionUrl);
+                BrowserLauncher.LaunchFirefox(AppInstance.Core.FirefoxExtensionUrl);
             }
             catch (Exception ex)
             {
@@ -414,7 +410,7 @@ namespace XDM.GtkUI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchGoogleChrome(this.app.ChromeExtensionUrl);
+                BrowserLauncher.LaunchGoogleChrome(AppInstance.Core.ChromeExtensionUrl);
             }
             catch (Exception ex)
             {
@@ -707,11 +703,11 @@ namespace XDM.GtkUI.Dialogs.Settings
             Tabs.Page = page;
         }
 
-        public static SettingsDialog CreateFromGladeFile(Window parent, WindowGroup group, IApplication ui, IApplicationCore app)
+        public static SettingsDialog CreateFromGladeFile(Window parent, WindowGroup group)
         {
             var builder = new Builder();
             builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "settings-dialog.glade"));
-            return new SettingsDialog(builder, parent, group, ui, app);
+            return new SettingsDialog(builder, parent, group);
         }
     }
 }

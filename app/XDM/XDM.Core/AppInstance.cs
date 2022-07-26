@@ -10,8 +10,9 @@ namespace XDM.Core
         private static IApplicationCore? s_ApplicationCore;
         private static IApplication? s_IApplication;
         private static IApplicationWindow? s_ApplicationWindow;
-
         private static bool s_Init = false;
+
+        public static event EventHandler? Initialized;
 
         public static IApplicationCore Core
         {
@@ -76,11 +77,12 @@ namespace XDM.Core
 
             public void Configure()
             {
-                if (s_ApplicationCore == null || s_IApplication == null)
+                if (s_ApplicationCore == null || s_IApplication == null || s_ApplicationWindow == null)
                 {
                     throw new Exception("Please configure service, controller and other dependecies");
                 }
                 s_Init = true;
+                Initialized?.Invoke(null, EventArgs.Empty);
             }
         }
     }

@@ -10,7 +10,5 @@ namespace XDM.Core.UI
     {
         void PopulateUI();
         void UpdateConfig();
-
-        public IApplicationCore App { get; set; }
     }
 }

@@ -22,9 +22,15 @@ namespace XDM.Core
 
         public Application()
         {
+            AppInstance.Initialized += AppInstance_Initialized;
             this.updateProgressAction = new Action<string, int, double, long>(this.UpdateProgressOnUI);
+        }
+
+        private void AppInstance_Initialized(object? sender, EventArgs e)
+        {
+            AppDB.Instance.Init(Path.Combine(Config.DataDir, "downloads.db"));
             AttachedEventHandler();
-            this.LoadDownloadList();
+            LoadDownloadList();
             UpdateToolbarButtonState();
         }
 
@@ -74,7 +80,7 @@ namespace XDM.Core
 
         public IDownloadCompleteDialog CreateDownloadCompleteDialog()
         {
-            return AppInstance.MainWindow.CreateDownloadCompleteDialog(AppInstance.Core);
+            return AppInstance.MainWindow.CreateDownloadCompleteDialog();
         }
 
         public INewDownloadDialogSkeleton CreateNewDownloadDialog(bool empty)
@@ -89,7 +95,7 @@ namespace XDM.Core
 
         public IProgressWindow CreateProgressWindow(string downloadId)
         {
-            return AppInstance.MainWindow.CreateProgressWindow(downloadId, AppInstance.Core, this);
+            return AppInstance.MainWindow.CreateProgressWindow(downloadId);
         }
 
         public void DownloadCanelled(string id)
@@ -102,7 +108,7 @@ namespace XDM.Core
             AppDB.Instance.Downloads.UpdateDownloadStatus(id, DownloadStatus.Stopped);
             RunOnUiThread(() =>
             {
-                CallbackActions.DownloadFailed(id, AppInstance.MainWindow);
+                CallbackActions.DownloadFailed(id);
                 UpdateToolbarButtonState();
             });
         }
@@ -157,7 +163,7 @@ namespace XDM.Core
         {
             RunOnUiThread(() =>
             {
-                CallbackActions.DownloadStarted(id, AppInstance.MainWindow);
+                CallbackActions.DownloadStarted(id);
                 UpdateToolbarButtonState();
             });
         }
@@ -246,7 +252,7 @@ namespace XDM.Core
         {
             RunOnUiThread(() =>
             {
-                DownloadCompleteDialogHelper.ShowDialog(AppInstance.Core, CreateDownloadCompleteDialog(), file, folder);
+                DownloadCompleteDialogHelper.ShowDialog(CreateDownloadCompleteDialog(), file, folder);
             });
         }
 
@@ -265,7 +271,7 @@ namespace XDM.Core
             AppInstance.MainWindow.RunOnUIThread(() =>
             {
                 NewDownloadPromptTracker.PromptOpen(url);
-                NewDownloadDialogHelper.CreateAndShowDialog(AppInstance.Core, this, this.CreateNewDownloadDialog(false), message,
+                NewDownloadDialogHelper.CreateAndShowDialog(this.CreateNewDownloadDialog(false), message,
                     () => NewDownloadPromptTracker.PromptClosed(url));
             });
         }
@@ -274,7 +280,7 @@ namespace XDM.Core
         {
             RunOnUiThread(() =>
             {
-                NewVideoDownloadDialogHelper.ShowVideoDownloadDialog(AppInstance.Core, this, this.CreateNewVideoDialog(),
+                NewVideoDownloadDialogHelper.ShowVideoDownloadDialog(this.CreateNewVideoDialog(),
                     videoId, name, size, contentType);
             });
         }
@@ -401,19 +407,7 @@ namespace XDM.Core
 
         private void DeleteDownloads()
         {
-            UIActions.DeleteDownloads(AppInstance.MainWindow.IsInProgressViewSelected,
-                AppInstance.MainWindow, AppInstance.Core, null);
-            //inProgress =>
-            //{
-            //    if (inProgress)
-            //    {
-            //        SaveInProgressList();
-            //    }
-            //    else
-            //    {
-            //        SaveFinishedList();
-            //    }
-            //});
+            UIActions.DeleteDownloads(AppInstance.MainWindow.IsInProgressViewSelected, null);
         }
 
         private void AttachedEventHandler()
@@ -422,18 +416,18 @@ namespace XDM.Core
             {
                 AppInstance.MainWindow.RunOnUIThread(() =>
                 {
-                    NewDownloadDialogHelper.CreateAndShowDialog(AppInstance.Core, this, CreateNewDownloadDialog(true));
+                    NewDownloadDialogHelper.CreateAndShowDialog(CreateNewDownloadDialog(true));
                 });
             };
 
             AppInstance.MainWindow.YoutubeDLDownloadClicked += (s, e) =>
             {
-                AppInstance.MainWindow.ShowYoutubeDLDialog(this, AppInstance.Core);
+                AppInstance.MainWindow.ShowYoutubeDLDialog();
             };
 
             AppInstance.MainWindow.BatchDownloadClicked += (s, e) =>
             {
-                AppInstance.MainWindow.ShowBatchDownloadWindow(AppInstance.Core, this);
+                AppInstance.MainWindow.ShowBatchDownloadWindow();
             };
 
             AppInstance.MainWindow.SelectionChanged += (s, e) =>
@@ -456,20 +450,20 @@ namespace XDM.Core
                 DeleteDownloads();
             };
 
-            AppInstance.MainWindow.DownloadListDoubleClicked += (a, b) => UIActions.OnDblClick(AppInstance.MainWindow, AppInstance.Core);
+            AppInstance.MainWindow.DownloadListDoubleClicked += (a, b) => UIActions.OnDblClick();
 
-            AppInstance.MainWindow.OpenFolderButton.Clicked += (a, b) => UIActions.OpenSelectedFolder(AppInstance.MainWindow);
+            AppInstance.MainWindow.OpenFolderButton.Clicked += (a, b) => UIActions.OpenSelectedFolder();
 
             AppInstance.MainWindow.OpenFileButton.Clicked += (a, b) =>
             {
-                UIActions.OpenSelectedFile(AppInstance.MainWindow);
+                UIActions.OpenSelectedFile();
             };
 
             AppInstance.MainWindow.PauseButton.Clicked += (a, b) =>
             {
                 if (AppInstance.MainWindow.IsInProgressViewSelected)
                 {
-                    UIActions.StopSelectedDownloads(AppInstance.MainWindow, AppInstance.Core);
+                    UIActions.StopSelectedDownloads();
                 }
             };
 
@@ -477,19 +471,19 @@ namespace XDM.Core
             {
                 if (AppInstance.MainWindow.IsInProgressViewSelected)
                 {
-                    UIActions.ResumeDownloads(AppInstance.MainWindow, AppInstance.Core);
+                    UIActions.ResumeDownloads();
                 }
             };
 
             AppInstance.MainWindow.SettingsClicked += (s, e) =>
             {
-                AppInstance.MainWindow.ShowSettingsDialog(AppInstance.Core, 1);
+                AppInstance.MainWindow.ShowSettingsDialog(1);
                 AppInstance.MainWindow.UpdateParallalismLabel();
             };
 
             AppInstance.MainWindow.BrowserMonitoringSettingsClicked += (s, e) =>
             {
-                AppInstance.MainWindow.ShowBrowserMonitoringDialog(AppInstance.Core);
+                AppInstance.MainWindow.ShowBrowserMonitoringDialog();
                 AppInstance.MainWindow.UpdateParallalismLabel();
             };
 
@@ -596,15 +590,15 @@ namespace XDM.Core
 
         public void ShowQueueWindow(object window)
         {
-            QueueWindowManager.ShowWindow(window, AppInstance.MainWindow.CreateQueuesAndSchedulerWindow(this), AppInstance.Core);
+            QueueWindowManager.ShowWindow(window, AppInstance.MainWindow.CreateQueuesAndSchedulerWindow());
         }
 
         private void LaunchUpdater(UpdateMode updateMode)
         {
-            var updateDlg = AppInstance.MainWindow.CreateUpdateUIDialog(this);
+            var updateDlg = AppInstance.MainWindow.CreateUpdateUIDialog();
             var updates = AppInstance.Core.Updates?.Where(u => u.IsExternal)?.ToList() ?? new List<UpdateInfo>(0);
             if (updates.Count == 0) return;
-            var commonUpdateUi = new ComponentUpdaterUI(updateDlg, AppInstance.Core, updateMode);
+            var commonUpdateUi = new ComponentUpdaterUI(updateDlg, updateMode);
             updateDlg.Load += (_, _) => commonUpdateUi.StartUpdate();
             updateDlg.Finished += (_, _) =>
             {
@@ -620,23 +614,23 @@ namespace XDM.Core
         {
             try
             {
-                AppInstance.MainWindow.MenuItemMap["pause"].Clicked += (_, _) => UIActions.StopSelectedDownloads(AppInstance.MainWindow, AppInstance.Core);
-                AppInstance.MainWindow.MenuItemMap["resume"].Clicked += (_, _) => UIActions.ResumeDownloads(AppInstance.MainWindow, AppInstance.Core);
+                AppInstance.MainWindow.MenuItemMap["pause"].Clicked += (_, _) => UIActions.StopSelectedDownloads();
+                AppInstance.MainWindow.MenuItemMap["resume"].Clicked += (_, _) => UIActions.ResumeDownloads();
                 AppInstance.MainWindow.MenuItemMap["delete"].Clicked += (_, _) => DeleteDownloads();
-                AppInstance.MainWindow.MenuItemMap["saveAs"].Clicked += (_, _) => UIActions.SaveAs(AppInstance.MainWindow, AppInstance.Core);
-                AppInstance.MainWindow.MenuItemMap["refresh"].Clicked += (_, _) => UIActions.RefreshLink(AppInstance.MainWindow, AppInstance.Core);
-                AppInstance.MainWindow.MenuItemMap["moveToQueue"].Clicked += (_, _) => UIActions.MoveToQueue(AppInstance.MainWindow, this);
-                AppInstance.MainWindow.MenuItemMap["showProgress"].Clicked += (_, _) => UIActions.ShowProgressWindow(AppInstance.MainWindow, AppInstance.Core);
-                AppInstance.MainWindow.MenuItemMap["copyURL"].Clicked += (_, _) => UIActions.CopyURL1(AppInstance.MainWindow, AppInstance.Core);
-                AppInstance.MainWindow.MenuItemMap["copyURL1"].Clicked += (_, _) => UIActions.CopyURL2(AppInstance.MainWindow, AppInstance.Core);
-                AppInstance.MainWindow.MenuItemMap["properties"].Clicked += (_, _) => UIActions.ShowSeletectedItemProperties(AppInstance.MainWindow, AppInstance.Core);
-                AppInstance.MainWindow.MenuItemMap["open"].Clicked += (_, _) => UIActions.OpenSelectedFile(AppInstance.MainWindow);
-                AppInstance.MainWindow.MenuItemMap["openFolder"].Clicked += (_, _) => UIActions.OpenSelectedFolder(AppInstance.MainWindow);
+                AppInstance.MainWindow.MenuItemMap["saveAs"].Clicked += (_, _) => UIActions.SaveAs();
+                AppInstance.MainWindow.MenuItemMap["refresh"].Clicked += (_, _) => UIActions.RefreshLink();
+                AppInstance.MainWindow.MenuItemMap["moveToQueue"].Clicked += (_, _) => UIActions.MoveToQueue();
+                AppInstance.MainWindow.MenuItemMap["showProgress"].Clicked += (_, _) => UIActions.ShowProgressWindow();
+                AppInstance.MainWindow.MenuItemMap["copyURL"].Clicked += (_, _) => UIActions.CopyURL1();
+                AppInstance.MainWindow.MenuItemMap["copyURL1"].Clicked += (_, _) => UIActions.CopyURL2();
+                AppInstance.MainWindow.MenuItemMap["properties"].Clicked += (_, _) => UIActions.ShowSeletectedItemProperties();
+                AppInstance.MainWindow.MenuItemMap["open"].Clicked += (_, _) => UIActions.OpenSelectedFile();
+                AppInstance.MainWindow.MenuItemMap["openFolder"].Clicked += (_, _) => UIActions.OpenSelectedFolder();
                 AppInstance.MainWindow.MenuItemMap["deleteDownloads"].Clicked += (_, _) => DeleteDownloads();
-                AppInstance.MainWindow.MenuItemMap["copyFile"].Clicked += (_, _) => UIActions.CopyFile(AppInstance.MainWindow);
-                AppInstance.MainWindow.MenuItemMap["properties1"].Clicked += (_, _) => UIActions.ShowSeletectedItemProperties(AppInstance.MainWindow, AppInstance.Core);
-                AppInstance.MainWindow.MenuItemMap["downloadAgain"].Clicked += (_, _) => UIActions.RestartDownload(AppInstance.MainWindow, AppInstance.Core);
-                AppInstance.MainWindow.MenuItemMap["restart"].Clicked += (_, _) => UIActions.RestartDownload(AppInstance.MainWindow, AppInstance.Core);
+                AppInstance.MainWindow.MenuItemMap["copyFile"].Clicked += (_, _) => UIActions.CopyFile();
+                AppInstance.MainWindow.MenuItemMap["properties1"].Clicked += (_, _) => UIActions.ShowSeletectedItemProperties();
+                AppInstance.MainWindow.MenuItemMap["downloadAgain"].Clicked += (_, _) => UIActions.RestartDownload();
+                AppInstance.MainWindow.MenuItemMap["restart"].Clicked += (_, _) => UIActions.RestartDownload();
             }
             catch (Exception ex)
             {
@@ -720,7 +714,7 @@ namespace XDM.Core
         {
             RunOnUiThread(() =>
             {
-                AppInstance.MainWindow.ShowDownloadSelectionWindow(AppInstance.Core, this, mode, downloads);
+                AppInstance.MainWindow.ShowDownloadSelectionWindow(mode, downloads);
             });
         }
 

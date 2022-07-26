@@ -20,15 +20,10 @@ namespace XDM.Core.BrowserMonitoring
         private int MaxPipeInstance = 254;
         private static readonly string PipeName = "XDM_Ipc_Browser_Monitoring_Pipe";
         private List<NativeMessagingHostChannel> connectedChannels = new();
-        //private List<NamedPipeServerStream> inPipes = new();
-        //private Dictionary<NamedPipeServerStream, NamedPipeClientStream> inOutMap = new();
-        private readonly IApplicationCore app;
         private static Mutex globalMutex;
-        // private readonly BlockingCollection<byte[]> Messages = new();
-        //private Thread WriterThread;
         private Thread listenerThread;
 
-        public static void EnsureSingleInstance(IApplicationCore app)
+        public static void EnsureSingleInstance()
         {
             try
             {
@@ -40,10 +35,10 @@ namespace XDM.Core.BrowserMonitoring
                 Log.Debug(ex, "Exception in NativeMessagingHostHandler ctor");
                 if (ex is InstanceAlreadyRunningException)
                 {
-                    if (app.Args != null && app.Args.Length > 0)
+                    if (AppInstance.Core.Args != null && AppInstance.Core.Args.Length > 0)
                     {
                         Log.Debug(ex, "Sending args to running instance");
-                        SendArgsToRunningInstance(app.Args);
+                        SendArgsToRunningInstance(AppInstance.Core.Args);
                         Environment.Exit(0);
                     }
                     throw;
@@ -52,15 +47,14 @@ namespace XDM.Core.BrowserMonitoring
             globalMutex = new Mutex(true, @"Global\XDM_Active_Instance");
         }
 
-        public NativeMessagingHostHandler(IApplicationCore app)
+        public NativeMessagingHostHandler()
         {
-            this.app = app;
-            EnsureSingleInstance(this.app);
+            EnsureSingleInstance();
         }
 
         public void BroadcastConfig()
         {
-            var bytes = GetSyncBytes(app);
+            var bytes = GetSyncBytes();
             lock (this)
             {
                 foreach (var channel in connectedChannels)
@@ -95,7 +89,7 @@ namespace XDM.Core.BrowserMonitoring
                       {
                           var channel = CreateChannel(pipe);
                           connectedChannels.Add(channel);
-                          channel.Start(GetSyncBytes(app));
+                          channel.Start(GetSyncBytes());
                       }
                   }
               });
@@ -111,7 +105,7 @@ namespace XDM.Core.BrowserMonitoring
                 {
                     using var br = new BinaryReader(new MemoryStream(args.Data));
                     var envelop = RawBrowserMessageEnvelop.Deserialize(br);
-                    BrowserMessageHandler.Handle(app, envelop);
+                    BrowserMessageHandler.Handle(envelop);
                 }
                 catch (Exception ex)
                 {
@@ -207,11 +201,11 @@ namespace XDM.Core.BrowserMonitoring
         //        Log.Debug("Initiate message handshake");
         //        var clientPipeName = Encoding.UTF8.GetString(NativeMessageSerializer.ReadMessageBytes(inPipe));
         //        Log.Debug("Client pipe: " + clientPipeName);
-        //        if (clientPipeName.StartsWith("XDM-APP-"))
+        //        if (clientPipeName.StartsWith("XDM-AppInstance.Core-"))
         //        {
         //            var command = NativeMessageSerializer.ReadMessageBytes(inPipe);
         //            var args = ArgsProcessor.ParseArgs(Encoding.UTF8.GetString(command).Split('\r'));
-        //            ArgsProcessor.Process(app, args);
+        //            ArgsProcessor.Process(AppInstance.Core, args);
         //            return;
         //        }
         //        var outPipe = new NamedPipeClientStream(".", clientPipeName, PipeDirection.Out);
@@ -226,7 +220,7 @@ namespace XDM.Core.BrowserMonitoring
         //            using var br = new BinaryReader(ms);
         //            // Log.Debug("{Text}", text);
         //            var envelop = RawBrowserMessageEnvelop.Deserialize(br);
-        //            BrowserMessageHandler.Handle(app, envelop);
+        //            BrowserMessageHandler.Handle(AppInstance.Core, envelop);
         //        }
         //    }
         //    finally
@@ -250,7 +244,7 @@ namespace XDM.Core.BrowserMonitoring
 
         //private void SendConfig(Stream pipe)
         //{
-        //    var bytes = GetSyncBytes(app);
+        //    var bytes = GetSyncBytes(AppInstance.Core);
         //    NativeMessageSerializer.WriteMessage(pipe, bytes);
         //}
 
@@ -312,7 +306,7 @@ namespace XDM.Core.BrowserMonitoring
             //}
         }
 
-        private static byte[] GetSyncBytes(IApplicationCore app)
+        private static byte[] GetSyncBytes()
         {
             var msg = new SyncMessage()
             {
@@ -321,7 +315,7 @@ namespace XDM.Core.BrowserMonitoring
                 VideoUrls = new string[0],
                 FileExts = Config.Instance.FileExtensions,
                 VidExts = Config.Instance.VideoExtensions,
-                VidList = app.GetVideoList(false).Select(a => new VideoItem
+                VidList = AppInstance.Core.GetVideoList(false).Select(a => new VideoItem
                 {
                     Id = a.ID,
                     Text = a.File,
