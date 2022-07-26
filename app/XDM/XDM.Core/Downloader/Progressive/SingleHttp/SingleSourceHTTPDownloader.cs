@@ -8,6 +8,7 @@ using XDM.Core;
 using TraceLog;
 using XDM.Core.Clients.Http;
 using XDM.Core.MediaProcessor;
+using XDM.Core.IO;
 
 namespace XDM.Core.Downloader.Progressive.SingleHttp
 {

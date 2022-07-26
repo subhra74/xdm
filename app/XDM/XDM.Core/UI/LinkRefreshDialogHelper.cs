@@ -7,6 +7,7 @@ using XDM.Core;
 using XDM.Core.Downloader;
 using XDM.Core.Downloader.Progressive.DualHttp;
 using XDM.Core.Downloader.Progressive.SingleHttp;
+using XDM.Core.IO;
 using XDM.Core.Util;
 
 namespace XDM.Core.UI

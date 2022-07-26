@@ -7,7 +7,7 @@ using TraceLog;
 using XDM.Core;
 using XDM.Core.Downloader;
 
-namespace XDM.Core.Util
+namespace XDM.Core.IO
 {
     internal static class SerializationHelper
     {

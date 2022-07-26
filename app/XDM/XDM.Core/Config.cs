@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using TraceLog;
+using XDM.Core.IO;
 using XDM.Core.Util;
 
 namespace XDM.Core

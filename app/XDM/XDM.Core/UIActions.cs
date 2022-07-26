@@ -8,6 +8,7 @@ using Translations;
 using XDM.Core;
 using XDM.Core.DataAccess;
 using XDM.Core.Downloader;
+using XDM.Core.IO;
 using XDM.Core.UI;
 using XDM.Core.Util;
 

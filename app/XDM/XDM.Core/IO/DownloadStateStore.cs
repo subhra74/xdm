@@ -14,7 +14,7 @@ using XDM.Messaging;
 using XDM.Compatibility;
 #endif
 
-namespace XDM.Core.Downloader
+namespace XDM.Core.IO
 {
     delegate void BinaryReaderStreamConsumer(BinaryReader r);
     delegate void BinaryWriterStreamConsumer(BinaryWriter w);

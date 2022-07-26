@@ -8,6 +8,7 @@ using XDM.Core;
 using XDM.Core.MediaProcessor;
 using XDM.Core.Util;
 using XDM.Core.Clients.Http;
+using XDM.Core.IO;
 #if NET35
 using XDM.Compatibility;
 #endif

@@ -7,6 +7,7 @@ using XDM.Core.Clients.Http;
 using XDM.Core;
 using XDM.Core.MediaProcessor;
 using XDM.Core.Util;
+using XDM.Core.IO;
 
 namespace XDM.Core.Downloader.Adaptive.Dash
 {

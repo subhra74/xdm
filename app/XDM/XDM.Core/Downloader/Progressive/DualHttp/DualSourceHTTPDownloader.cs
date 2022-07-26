@@ -6,6 +6,7 @@ using System.Threading;
 using TraceLog;
 using XDM.Core;
 using XDM.Core.Clients.Http;
+using XDM.Core.IO;
 using XDM.Core.MediaProcessor;
 using XDM.Core.Util;
 

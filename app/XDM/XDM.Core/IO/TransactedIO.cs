@@ -5,7 +5,7 @@ using System.Linq;
 using TraceLog;
 using XDM.Core.Util;
 
-namespace XDM.Core
+namespace XDM.Core.IO
 {
     public static class TransactedIO
     {
