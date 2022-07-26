@@ -10,11 +10,10 @@ namespace XDM.Core.BrowserMonitoring
             handler.StartHttpIpcChannel();
         }
 
-        public static NativeMessagingHostHandler RunNativeHostHandler()
+        public static void RunNativeHostHandler()
         {
             var handler = new NativeMessagingHostHandler();
             handler.StartPipedChannel();
-            return handler;
         }
     }
 }

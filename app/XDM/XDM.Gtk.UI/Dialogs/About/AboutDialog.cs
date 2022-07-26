@@ -41,7 +41,7 @@ namespace XDM.GtkUI.Dialogs.About
             TxtAppVersion.StyleContext.AddClass("medium-font");
             TxtCopyright.Text = "© 2013 Subhra Das Gupta";
             TxtWebsite.Label = "www.xtremedownloadmanager.com";
-            TxtWebsite.Uri = "https://xtremedownloadmanager.com/";
+            TxtWebsite.Uri = Links.HomePageUrl;
 
             Title = TextResource.GetText("MENU_ABOUT");
             SetDefaultSize(500, 450);

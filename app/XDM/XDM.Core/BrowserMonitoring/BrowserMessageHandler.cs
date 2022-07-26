@@ -16,14 +16,14 @@ namespace XDM.Core.BrowserMonitoring
             {
                 foreach (var item in envelop.VideoIds)
                 {
-                    ApplicationContext.CoreService.AddVideoDownload(item);
+                    ApplicationContext.VideoTracker.AddVideoDownload(item);
                 }
                 return;
             }
 
             if (envelop.MessageType == "clear")
             {
-                ApplicationContext.CoreService.ClearVideoList();
+                ApplicationContext.VideoTracker.ClearVideoList();
                 return;
             }
 

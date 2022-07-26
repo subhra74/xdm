@@ -69,7 +69,6 @@ namespace XDM.Core.BrowserMonitoring
                     }
                 }
             }
-            //Messages.Add(bytes);
         }
 
         public void StartPipedChannel()
@@ -94,6 +93,15 @@ namespace XDM.Core.BrowserMonitoring
                   }
               });
             listenerThread.Start();
+            ApplicationContext.ApplicationEvent += ApplicationContext_ApplicationEvent;
+        }
+
+        private void ApplicationContext_ApplicationEvent(object? sender, ApplicationEvent e)
+        {
+            if (e.EventType == "ConfigChanged")
+            {
+                BroadcastConfig();
+            }
         }
 
         private NativeMessagingHostChannel CreateChannel(NamedPipeServerStream pipe)
@@ -315,7 +323,7 @@ namespace XDM.Core.BrowserMonitoring
                 VideoUrls = new string[0],
                 FileExts = Config.Instance.FileExtensions,
                 VidExts = Config.Instance.VideoExtensions,
-                VidList = ApplicationContext.CoreService.GetVideoList(false).Select(a => new VideoItem
+                VidList = ApplicationContext.VideoTracker.GetVideoList(false).Select(a => new VideoItem
                 {
                     Id = a.ID,
                     Text = a.File,

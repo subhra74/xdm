@@ -338,7 +338,7 @@ namespace XDM.GtkUI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchOperaBrowser(ApplicationContext.CoreService.ChromeExtensionUrl);
+                BrowserLauncher.LaunchOperaBrowser(Links.ChromeExtensionUrl);
             }
             catch (Exception ex)
             {
@@ -362,7 +362,7 @@ namespace XDM.GtkUI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchMicrosoftEdge(ApplicationContext.CoreService.ChromeExtensionUrl);
+                BrowserLauncher.LaunchMicrosoftEdge(Links.ChromeExtensionUrl);
             }
             catch (Exception ex)
             {
@@ -386,7 +386,7 @@ namespace XDM.GtkUI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchFirefox(ApplicationContext.CoreService.FirefoxExtensionUrl);
+                BrowserLauncher.LaunchFirefox(Links.FirefoxExtensionUrl);
             }
             catch (Exception ex)
             {
@@ -410,7 +410,7 @@ namespace XDM.GtkUI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchGoogleChrome(ApplicationContext.CoreService.ChromeExtensionUrl);
+                BrowserLauncher.LaunchGoogleChrome(Links.ChromeExtensionUrl);
             }
             catch (Exception ex)
             {
@@ -421,7 +421,7 @@ namespace XDM.GtkUI.Dialogs.Settings
 
         private void VideoWikiLink_Clicked(object? sender, EventArgs e)
         {
-            Helpers.OpenBrowser("https://subhra74.github.io/xdm/redirect-support.html?path=video");
+            Helpers.OpenBrowser(Links.VideoDownloadTutorialUrl);
         }
 
         private void LoadTexts()
@@ -520,8 +520,8 @@ namespace XDM.GtkUI.Dialogs.Settings
         public void LoadConfig()
         {
             //Browser monitoring
-            TxtChromeWebStoreUrl.Text = Config.ChromeWebstoreUrl;
-            TxtFirefoxAMOUrl.Text = Config.FirefoxAMOUrl;
+            TxtChromeWebStoreUrl.Text = Links.ChromeExtensionUrl;
+            TxtFirefoxAMOUrl.Text = Links.FirefoxExtensionUrl;
             TxtDefaultFileTypes.Text = string.Join(",", Config.Instance.FileExtensions);
             TxtDefaultVideoFormats.Text = string.Join(",", Config.Instance.VideoExtensions);
             TxtExceptions.Text = string.Join(",", Config.Instance.BlockedHosts);

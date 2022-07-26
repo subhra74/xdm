@@ -287,7 +287,7 @@ namespace XDM.GtkUI.Dialogs.VideoDownloader
 
         private void BtnHelp_Clicked(object? sender, EventArgs e)
         {
-            Helpers.OpenBrowser("https://github.com/subhra74/xdm");
+            Helpers.OpenBrowser(Links.VideoDownloadTutorialUrl);
         }
 
         private void BtnGo_Clicked(object? sender, EventArgs e)

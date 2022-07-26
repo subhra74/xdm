@@ -33,8 +33,8 @@ namespace XDM.Wpf.UI.Dialogs.Settings
 
         public void PopulateUI()
         {
-            TxtChromeWebStoreUrl.Text = Config.ChromeWebstoreUrl;
-            TxtFirefoxAMOUrl.Text = Config.FirefoxAMOUrl;
+            TxtChromeWebStoreUrl.Text = Links.ChromeExtensionUrl;
+            TxtFirefoxAMOUrl.Text = Links.FirefoxExtensionUrl;
             TxtDefaultFileTypes.Text = string.Join(",", Config.Instance.FileExtensions);
             TxtDefaultVideoFormats.Text = string.Join(",", Config.Instance.VideoExtensions);
             TxtExceptions.Text = string.Join(",", Config.Instance.BlockedHosts);
@@ -69,7 +69,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchGoogleChrome(ApplicationContext.CoreService.ChromeExtensionUrl);
+                BrowserLauncher.LaunchGoogleChrome(Links.ChromeExtensionUrl);
             }
             catch (Exception ex)
             {
@@ -93,7 +93,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchFirefox(ApplicationContext.CoreService.FirefoxExtensionUrl);
+                BrowserLauncher.LaunchFirefox(Links.FirefoxExtensionUrl);
             }
             catch (Exception ex)
             {
@@ -117,7 +117,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchMicrosoftEdge(ApplicationContext.CoreService.ChromeExtensionUrl);
+                BrowserLauncher.LaunchMicrosoftEdge(Links.ChromeExtensionUrl);
             }
             catch (Exception ex)
             {
@@ -141,7 +141,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchOperaBrowser(ApplicationContext.CoreService.ChromeExtensionUrl);
+                BrowserLauncher.LaunchOperaBrowser(Links.ChromeExtensionUrl);
             }
             catch (Exception ex)
             {
@@ -177,7 +177,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
 
         private void VideoWikiLink_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            Helpers.OpenBrowser("https://subhra74.github.io/xdm/redirect-support.html?path=video");
+            Helpers.OpenBrowser(Links.VideoDownloadTutorialUrl);
         }
     }
 }

@@ -56,7 +56,7 @@ namespace XDM.Core.UI
                     window.ShowMessageBox(TextResource.GetText("MSG_NO_FILE"));
                     return;
                 }
-                if (ApplicationContext.CoreService.IsFFmpegRequiredForDownload(id) && !IsFFmpegInstalled())
+                if (ApplicationContext.VideoTracker.IsFFmpegRequiredForDownload(id) && !IsFFmpegInstalled())
                 {
                     if (ApplicationContext.Application.Confirm(window, TextResource.GetText("MSG_DOWNLOAD_FFMPEG")))
                     {
@@ -69,7 +69,7 @@ namespace XDM.Core.UI
                 {
                     name = AddMp3Extension(name);
                 }
-                ApplicationContext.CoreService.StartVideoDownload(id, name,
+                ApplicationContext.VideoTracker.StartVideoDownload(id, name,
                     CommonUtils.SelectedFolderFromIndex(window.SeletedFolderIndex),
                     true,
                     window.Authentication,
@@ -92,7 +92,7 @@ namespace XDM.Core.UI
                 {
                     name = AddMp3Extension(name);
                 }
-                ApplicationContext.CoreService.StartVideoDownload(id, name,
+                ApplicationContext.VideoTracker.StartVideoDownload(id, name,
                     CommonUtils.SelectedFolderFromIndex(window.SeletedFolderIndex),
                     false,
                     window.Authentication,

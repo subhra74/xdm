@@ -58,7 +58,7 @@ namespace XDM.Core.UI
                 {
                     dialog.WatchingStopped += (a, b) =>
                     {
-                        ApplicationContext.CoreService.ClearRefreshLinkCandidate();
+                        ApplicationContext.LinkRefresher.ClearWatchList();
                     };
 
                     OpenBrowser(referer);
@@ -66,15 +66,15 @@ namespace XDM.Core.UI
                     {
                         var downloader = new SingleSourceHTTPDownloader(item.Id);
                         downloader.RestoreState();
-                        ApplicationContext.CoreService.RefreshedLinkReceived += (_, _) => dialog.LinkReceived();
-                        ApplicationContext.CoreService.WaitFromRefreshedLink(downloader);
+                        ApplicationContext.LinkRefresher.RefreshedLinkReceived += (_, _) => dialog.LinkReceived();
+                        ApplicationContext.LinkRefresher.AddToWatchList(downloader);
                     }
                     else if (item.DownloadType == "Dash")
                     {
                         var downloader = new DualSourceHTTPDownloader(item.Id);
                         downloader.RestoreState();
-                        ApplicationContext.CoreService.RefreshedLinkReceived += (_, _) => dialog.LinkReceived();
-                        ApplicationContext.CoreService.WaitFromRefreshedLink(downloader);
+                        ApplicationContext.LinkRefresher.RefreshedLinkReceived += (_, _) => dialog.LinkReceived();
+                        ApplicationContext.LinkRefresher.AddToWatchList(downloader);
                     }
 
                     dialog.ShowWindow();

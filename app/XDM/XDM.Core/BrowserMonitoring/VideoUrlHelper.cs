@@ -94,7 +94,7 @@ namespace XDM.Core.BrowserMonitoring
                             list.Add((Info: mediaItem, DisplayInfo: displayInfo));
                             //ApplicationContext.Core.AddVideoNotification(displayText, mediaItem);
                         }
-                        ApplicationContext.CoreService.AddVideoNotifications(list);
+                        ApplicationContext.VideoTracker.AddVideoNotifications(list);
                     }
                 }
                 if (VideoItems != null && VideoItems.Count > 0)
@@ -124,7 +124,7 @@ namespace XDM.Core.BrowserMonitoring
 
                             list.Add((Info: mediaItem, DisplayInfo: displayInfo));
                         }
-                        ApplicationContext.CoreService.AddVideoNotifications(list);
+                        ApplicationContext.VideoTracker.AddVideoNotifications(list);
                     }
                 }
             }
@@ -175,7 +175,7 @@ namespace XDM.Core.BrowserMonitoring
                             };
                             var displayText = $"[{fileExt.ToUpperInvariant()}] {GetQualityString(video, audio)}";
                             Log.Debug("Display text dash: " + displayText);
-                            ApplicationContext.CoreService.AddVideoNotification(new StreamingVideoDisplayInfo
+                            ApplicationContext.VideoTracker.AddVideoNotification(new StreamingVideoDisplayInfo
                             {
                                 Quality = displayText,
                                 CreationTime = DateTime.Now
@@ -198,7 +198,7 @@ namespace XDM.Core.BrowserMonitoring
                             };
                             var displayText = $"[{fileExt.ToUpperInvariant()}] {GetQualityString(video, audio)}";
                             Log.Debug("Display text hls: " + displayText);
-                            ApplicationContext.CoreService.AddVideoNotification(new StreamingVideoDisplayInfo
+                            ApplicationContext.VideoTracker.AddVideoNotification(new StreamingVideoDisplayInfo
                             {
                                 Quality = displayText,
                                 CreationTime = DateTime.Now
@@ -237,7 +237,7 @@ namespace XDM.Core.BrowserMonitoring
             var quality = audio ? GetQualityString(null, item) : GetQualityString(item, null);
             var displayText = $"[{fileExt.ToUpperInvariant()}] {quality}";
             Log.Debug("Display text hls: " + displayText);
-            ApplicationContext.CoreService.AddVideoNotification(new StreamingVideoDisplayInfo
+            ApplicationContext.VideoTracker.AddVideoNotification(new StreamingVideoDisplayInfo
             {
                 Quality = displayText,
                 CreationTime = DateTime.Now
@@ -312,7 +312,7 @@ namespace XDM.Core.BrowserMonitoring
 
                             var displayText = $"{type} {plc.Quality}";
                             Log.Debug("Display text hls: " + plc.Quality);
-                            ApplicationContext.CoreService.AddVideoNotification(new StreamingVideoDisplayInfo
+                            ApplicationContext.VideoTracker.AddVideoNotification(new StreamingVideoDisplayInfo
                             {
                                 Quality = displayText,
                                 CreationTime = DateTime.Now
@@ -340,7 +340,7 @@ namespace XDM.Core.BrowserMonitoring
                         Cookies = message.Cookies,
                     };
                     var displayText = $"[{container}]";
-                    ApplicationContext.CoreService.AddVideoNotification(new StreamingVideoDisplayInfo
+                    ApplicationContext.VideoTracker.AddVideoNotification(new StreamingVideoDisplayInfo
                     {
                         Quality = displayText,
                         CreationTime = DateTime.Now
@@ -466,7 +466,7 @@ namespace XDM.Core.BrowserMonitoring
                     var quality = Itags.GetValueOrDefault(info.IsVideo ? info.ITag : di.ITag, "MKV");
 
                     var displayText = $"[{quality}] {(size > 0 ? Helpers.FormatSize(size) : string.Empty)}";
-                    ApplicationContext.CoreService.AddVideoNotification(new StreamingVideoDisplayInfo
+                    ApplicationContext.VideoTracker.AddVideoNotification(new StreamingVideoDisplayInfo
                     {
                         Quality = displayText,
                         Size = size,
@@ -507,7 +507,7 @@ namespace XDM.Core.BrowserMonitoring
                     ContentType = info.Mime
                 };
 
-                ApplicationContext.CoreService.AddVideoNotification(new StreamingVideoDisplayInfo
+                ApplicationContext.VideoTracker.AddVideoNotification(new StreamingVideoDisplayInfo
                 {
                     Quality = displayText,
                     Size = size,
@@ -596,7 +596,7 @@ namespace XDM.Core.BrowserMonitoring
 
             var size = long.Parse(message2.GetResponseHeaderFirstValue("Content-Length"));
             var displayText = $"[{ext.ToUpperInvariant()}] {(size > 0 ? Helpers.FormatSize(size) : string.Empty)}";
-            ApplicationContext.CoreService.AddVideoNotification(new StreamingVideoDisplayInfo
+            ApplicationContext.VideoTracker.AddVideoNotification(new StreamingVideoDisplayInfo
             {
                 Quality = displayText,
                 Size = size,

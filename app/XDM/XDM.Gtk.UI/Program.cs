@@ -92,9 +92,11 @@ namespace XDM.GtkUI
             var win = new AppWinPeer();
 
             ApplicationContext.Configurer()
-                .RegisterService(win)
-                .RegisterService(app)
-                .RegisterService(core)
+                .RegisterApplicationWindow(win)
+                .RegisterApplication(app)
+                .RegisterApplicationCore(core)
+                .RegisterCapturedVideoTracker(new VideoTracker())
+                .RegisterLinkRefresher(new LinkRefresher())
                 .Configure();
 
             var commandOptions = ArgsProcessor.ParseArgs(args, 0);

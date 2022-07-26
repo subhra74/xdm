@@ -11,6 +11,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using XDM.Core;
 using XDM.Core.Util;
 
 namespace XDM.Wpf.UI.Dialogs.VideoDownloader
@@ -27,7 +28,7 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            Helpers.OpenBrowser("https://github.com/subhra74/xdm");
+            Helpers.OpenBrowser(Links.VideoDownloadTutorialUrl);
         }
     }
 }

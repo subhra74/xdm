@@ -24,8 +24,6 @@ using XDM.Core.DataAccess;
 using XDM.Compatibility;
 #endif
 
-//using XDM.Core.Downloader.YT.Dash;
-
 namespace XDM.Core
 {
     public class ApplicationCore : IApplicationCore
@@ -33,15 +31,8 @@ namespace XDM.Core
         public Version AppVerion => new(8, 0, 0);
         private Dictionary<string, (IBaseDownloader Downloader, bool NonInteractive)> liveDownloads = new();
         private GenericOrderedDictionary<string, bool> queuedDownloads = new();
-        private GenericOrderedDictionary<string, (DualSourceHTTPDownloadInfo Info, StreamingVideoDisplayInfo DisplayInfo)> ytVideoList = new();
-        private GenericOrderedDictionary<string, (SingleSourceHTTPDownloadInfo Info, StreamingVideoDisplayInfo DisplayInfo)> videoList = new();
-        private GenericOrderedDictionary<string, (MultiSourceHLSDownloadInfo Info, StreamingVideoDisplayInfo DisplayInfo)> hlsVideoList = new();
-        private GenericOrderedDictionary<string, (MultiSourceDASHDownloadInfo Info, StreamingVideoDisplayInfo DisplayInfo)> dashVideoList = new();
         private GenericOrderedDictionary<string, IProgressWindow> activeProgressWindows = new();
-        private HTTPDownloaderBase refreshLinkCandidate;
         private Scheduler scheduler;
-        public event EventHandler RefreshedLinkReceived;
-        private NativeMessagingHostHandler nativeMessaging;
         private bool isClipboardMonitorActive = false;
         private string lastClipboardText;
         private Timer awakePingTimer;
@@ -52,16 +43,9 @@ namespace XDM.Core
         public bool IsAppUpdateAvailable => Updates?.Any(u => !u.IsExternal) ?? false;
         public bool IsComponentUpdateAvailable => Updates?.Any(u => u.IsExternal) ?? false;
         public string ComponentUpdateText => GetUpdateText();
-
         public int ActiveDownloadCount { get => liveDownloads.Count + queuedDownloads.Count; }
 
-        public string HelpPage => "https://subhra74.github.io/xdm/redirect-support.html";
         public string UpdatePage => $"https://subhra74.github.io/xdm/update-checker.html?v={AppVerion}";
-        public string IssuePage => "https://subhra74.github.io/xdm/redirect-issue.html";
-        public string ChromeExtensionUrl => "https://subhra74.github.io/xdm/redirect.html?target=chrome";
-        public string FirefoxExtensionUrl => "https://subhra74.github.io/xdm/redirect.html?target=firefox";
-        public string OperaExtensionUrl => "https://subhra74.github.io/xdm/redirect.html?target=opera";
-        public string EdgeExtensionUrl => "https://subhra74.github.io/xdm/redirect.html?target=edge";
 
         public string[] Args { get; set; }
 
@@ -118,7 +102,7 @@ namespace XDM.Core
 
         public void StartNativeMessagingHost()
         {
-            nativeMessaging = BrowserMonitor.RunNativeHostHandler();
+            BrowserMonitor.RunNativeHostHandler();
             BrowserMonitor.RunHttpIpcHandler();
         }
 
@@ -360,11 +344,8 @@ namespace XDM.Core
 
         public void AddDownload(Message message)
         {
-            if (refreshLinkCandidate != null && IsMatchingSingleSourceLink(message))
-            {
-                HandleSingleSourceLinkRefresh(message);
-                return;
-            }
+            if (ApplicationContext.LinkRefresher.LinkAccepted(message)) return;
+
             if (Config.Instance.StartDownloadAutomatically)
             {
                 var url = message.Url;
@@ -383,230 +364,12 @@ namespace XDM.Core
                     true,
                     null,
                     Config.Instance.Proxy,
-                    GetSpeedLimit(), null, false);
+                    Helpers.GetSpeedLimit(), null, false);
             }
             else
             {
                 Log.Debug("Adding download");
                 ApplicationContext.Application.ShowNewDownloadDialog(message);
-            }
-            //ApplicationContext.Current.InvokeForm(new Action(() =>
-            //{
-            //    NewDownloadDialog.CreateAndShowDialog(this, ApplicationContext.Current.CreateNewDownloadDialog(), message);
-            //}));
-        }
-
-        public void AddVideoDownload(string videoId)
-        {
-            var name = string.Empty;
-            var size = 0L;
-            var contentType = string.Empty;
-            var valid = false;
-            if (ytVideoList.ContainsKey(videoId))
-            {
-                if (refreshLinkCandidate != null &&
-                    IsMatchingDualSourceLink(ytVideoList[videoId].Info))
-                {
-                    HandleDualSourceLinkRefresh(ytVideoList[videoId].Info);
-                    return;
-                }
-                name = ytVideoList[videoId].Info.File;
-                size = ytVideoList[videoId].DisplayInfo.Size;
-                contentType = ytVideoList[videoId].Info.ContentType1;
-                valid = true;
-            }
-            else if (videoList.ContainsKey(videoId))
-            {
-                if (refreshLinkCandidate != null && IsMatchingSingleSourceLink(videoList[videoId].Info))
-                {
-                    HandleSingleSourceLinkRefresh(videoList[videoId].Info);
-                    return;
-                }
-                name = videoList[videoId].Info.File;
-                size = videoList[videoId].DisplayInfo.Size;
-                contentType = videoList[videoId].Info.ContentType;
-                valid = true;
-            }
-            else if (hlsVideoList.ContainsKey(videoId))
-            {
-                Log.Debug("Download HLS video added with id: " + videoId);
-                name = hlsVideoList[videoId].Info.File;
-                valid = true;
-                try
-                {
-                    contentType = hlsVideoList[videoId].Info.ContentType;
-                }
-                catch (Exception ex)
-                {
-                    Log.Debug(ex, ex.Message);
-                }
-            }
-            else if (dashVideoList.ContainsKey(videoId))
-            {
-                Log.Debug("Download DASH video added with id: " + videoId);
-                name = dashVideoList[videoId].Info.File;
-                contentType = dashVideoList[videoId].Info.ContentType;
-                valid = true;
-            }
-            if (valid)
-            {
-                if (Config.Instance.StartDownloadAutomatically)
-                {
-                    StartVideoDownload(
-                        videoId, Helpers.SanitizeFileName(name),
-                        null, true, null, Config.Instance.Proxy,
-                    GetSpeedLimit(), null);
-                }
-                else
-                {
-                    ApplicationContext.Application.ShowVideoDownloadDialog(videoId, name, size, contentType);
-                }
-            }
-        }
-
-        public void AddVideoNotifications(IEnumerable<(DualSourceHTTPDownloadInfo Info, StreamingVideoDisplayInfo DisplayInfo)> notifications)
-        {
-            lock (this)
-            {
-                foreach (var info in notifications)
-                {
-                    ytVideoList.Add(Guid.NewGuid().ToString(), info);
-                }
-                nativeMessaging.BroadcastConfig();
-            }
-        }
-
-        public void AddVideoNotifications(IEnumerable<(SingleSourceHTTPDownloadInfo Info, StreamingVideoDisplayInfo DisplayInfo)> notifications)
-        {
-            lock (this)
-            {
-                foreach (var info in notifications)
-                {
-                    videoList.Add(Guid.NewGuid().ToString(), info);
-                }
-                nativeMessaging.BroadcastConfig();
-            }
-        }
-
-        public void AddVideoNotifications(IEnumerable<(MultiSourceHLSDownloadInfo Info, StreamingVideoDisplayInfo DisplayInfo)> notifications)
-        {
-            lock (this)
-            {
-                foreach (var info in notifications)
-                {
-                    hlsVideoList.Add(Guid.NewGuid().ToString(), info);
-                }
-                nativeMessaging.BroadcastConfig();
-            }
-        }
-
-        public void AddVideoNotifications(IEnumerable<(MultiSourceDASHDownloadInfo Info, StreamingVideoDisplayInfo DisplayInfo)> notifications)
-        {
-            lock (this)
-            {
-                foreach (var info in notifications)
-                {
-                    dashVideoList.Add(Guid.NewGuid().ToString(), info);
-                }
-                nativeMessaging.BroadcastConfig();
-            }
-        }
-
-        public void AddVideoNotification(StreamingVideoDisplayInfo displayInfo, DualSourceHTTPDownloadInfo info)
-        {
-            lock (this)
-            {
-                ytVideoList.Add(Guid.NewGuid().ToString(), (info, displayInfo));
-                nativeMessaging.BroadcastConfig();
-            }
-        }
-
-        public void AddVideoNotification(StreamingVideoDisplayInfo displayInfo, SingleSourceHTTPDownloadInfo info)
-        {
-            lock (this)
-            {
-                videoList.Add(Guid.NewGuid().ToString(), (info, displayInfo));
-                nativeMessaging.BroadcastConfig();
-            }
-        }
-
-        public void AddVideoNotification(StreamingVideoDisplayInfo displayInfo, MultiSourceHLSDownloadInfo info)
-        {
-            lock (this)
-            {
-                var id = Guid.NewGuid().ToString();
-                Log.Debug("HLS video added with id: " + id);
-                hlsVideoList.Add(id, (info, displayInfo));
-                nativeMessaging.BroadcastConfig();
-            }
-        }
-
-        public void AddVideoNotification(StreamingVideoDisplayInfo displayInfo, MultiSourceDASHDownloadInfo info)
-        {
-            lock (this)
-            {
-                var id = Guid.NewGuid().ToString();
-                Log.Debug("DASH video added with id: " + id);
-                dashVideoList.Add(id, (info, displayInfo));
-                nativeMessaging.BroadcastConfig();
-            }
-        }
-
-        //public void DeleteDownloads(List<string> list)
-        //{
-        //    if (list.Count > 0)
-        //    {
-        //        if (ApplicationContext.Current.Confirm(null, $"Delete {list.Count} item{(list.Count > 1 ? "s" : "")}?"))
-        //        {
-        //            var itemsToDelete = new List<RowItem>();
-        //            list.ForEach(id =>
-        //            {
-        //                (var http, var nonInteractive) = liveDownloads.GetValueOrDefault(id);
-        //                if (http != null)
-        //                {
-        //                    http.Stop();
-        //                    liveDownloads.Remove(id);
-        //                    if (activeProgressWindows.ContainsKey(id))
-        //                    {
-        //                        activeProgressWindows[id].Destroy();
-        //                        activeProgressWindows.Remove(id);
-        //                    }
-        //                }
-        //                else
-        //                {
-        //                    if (queuedDownloads.ContainsKey(id))
-        //                    {
-        //                        queuedDownloads.Remove(id);
-        //                    }
-        //                }
-        //            });
-        //        }
-        //    }
-        //}
-
-        public List<(string ID, string File, string DisplayName, DateTime Time)> GetVideoList(bool encode = true)
-        {
-            lock (this)
-            {
-                var list = new List<(string ID, string File, string DisplayName, DateTime Time)>();
-                foreach (var e in ytVideoList)
-                {
-                    list.Add((e.Key, encode ? EncodeToCharCode(e.Value.Info.File) : e.Value.Info.File, e.Value.DisplayInfo.Quality, e.Value.DisplayInfo.CreationTime));
-                }
-                foreach (var e in videoList)
-                {
-                    list.Add((e.Key, encode ? EncodeToCharCode(e.Value.Info.File) : e.Value.Info.File, e.Value.DisplayInfo.Quality, e.Value.DisplayInfo.CreationTime));
-                }
-                foreach (var e in hlsVideoList)
-                {
-                    list.Add((e.Key, encode ? EncodeToCharCode(e.Value.Info.File) : e.Value.Info.File, e.Value.DisplayInfo.Quality, e.Value.DisplayInfo.CreationTime));
-                }
-                foreach (var e in dashVideoList)
-                {
-                    list.Add((e.Key, encode ? EncodeToCharCode(e.Value.Info.File) : e.Value.Info.File, e.Value.DisplayInfo.Quality, e.Value.DisplayInfo.CreationTime));
-                }
-                list.Sort((a, b) => a.Time.CompareTo(b.Time));
-                return list;
             }
         }
 
@@ -725,75 +488,6 @@ namespace XDM.Core
         {
         }
 
-        public void StartVideoDownload(string videoId,
-            string name,
-            string? folder,
-            bool startImmediately,
-            AuthenticationInfo? authentication,
-            ProxyInfo? proxyInfo,
-            int maxSpeedLimit,
-            string? queueId,
-            bool convertToMp3 = false //only applicable for dual source http downloads
-            )
-        {
-            //IBaseDownloader downloader = null;
-            if (ytVideoList.ContainsKey(videoId))
-            {
-                StartDownload(ytVideoList[videoId].Info, name, FileNameFetchMode.ExtensionOnly,
-                        folder, startImmediately, authentication, proxyInfo, GetSpeedLimit(), queueId);
-                //if (convertToMp3)
-                //{
-                //    var info = new SingleSourceHTTPDownloadInfo
-                //    {
-                //        Uri = ytVideoList[videoId].Info.Uri2,
-                //        Headers = ytVideoList[videoId].Info.Headers2,
-                //        Cookies = ytVideoList[videoId].Info.Cookies2,
-                //        ContentLength = ytVideoList[videoId].Info.ContentLength2,
-                //        File = name
-                //    };
-                //    StartDownload(info, name, FileNameFetchMode.None,
-                //        folder, startImmediately, authentication, proxyInfo, GetSpeedLimit(), queueId);
-                //}
-                //else
-                //{
-                //    StartDownload(ytVideoList[videoId].Info, name, FileNameFetchMode.ExtensionOnly,
-                //        folder, startImmediately, authentication, proxyInfo, GetSpeedLimit(), queueId);
-                //}
-                //downloader =
-                //    new DualSourceHTTPDownloader(ytVideoList[videoId].Info,
-                //    mediaProcessor: new FFmpegMediaProcessor());
-            }
-            else if (videoList.ContainsKey(videoId))
-            {
-                StartDownload(videoList[videoId].Info, name, convertToMp3 ? FileNameFetchMode.None : FileNameFetchMode.ExtensionOnly,
-                    folder, startImmediately, authentication, proxyInfo, GetSpeedLimit(), queueId, convertToMp3);
-                //downloader = new SingleSourceHTTPDownloader(videoList[videoId].Info);
-            }
-            else if (hlsVideoList.ContainsKey(videoId))
-            {
-                StartDownload(hlsVideoList[videoId].Info, name, FileNameFetchMode.ExtensionOnly,
-                    folder, startImmediately, authentication, proxyInfo, GetSpeedLimit(), queueId);
-                //Log.Debug("Download HLS video added with id: " + videoId);
-                //downloader = new MultiSourceHLSDownloader(hlsVideoList[videoId].Info,
-                //    mediaProcessor: new FFmpegMediaProcessor());
-            }
-            else if (dashVideoList.ContainsKey(videoId))
-            {
-                StartDownload(dashVideoList[videoId].Info, name, FileNameFetchMode.ExtensionOnly,
-                    folder, startImmediately, authentication, proxyInfo, GetSpeedLimit(), queueId);
-
-                //Log.Debug("Download DASH video added with id: " + videoId);
-                //downloader = new MultiSourceDASHDownloader(dashVideoList[videoId].Info,
-                //            mediaProcessor: new FFmpegMediaProcessor());
-            }
-            //if (downloader != null)
-            //{
-            //    downloader.SetFileName(name, FileNameFetchMode.ExtensionOnly);
-            //    downloader.SetTargetDirectory(folder);
-            //    StartDownload(downloader, startImmediately);
-            //}
-        }
-
         public void StopDownloads(IEnumerable<string> list, bool closeProgressWindow = false)
         {
             var ids = new List<string>(list);
@@ -845,7 +539,6 @@ namespace XDM.Core
             lock (this)
             {
                 var http = source as IBaseDownloader;
-                //ApplicationContext.Current.UpdateProgress(http.Id, args.Progress, args.DownloadSpeed, args.Eta);
                 if (activeProgressWindows.ContainsKey(http.Id))
                 {
                     var prgWin = activeProgressWindows[http.Id];
@@ -896,7 +589,6 @@ namespace XDM.Core
                 }
 
                 Helpers.RunGC();
-
                 ProcessNextQueuedItem();
             }
         }
@@ -914,10 +606,6 @@ namespace XDM.Core
                 {
                     var prgWin = activeProgressWindows[http.Id];
                     prgWin.DownloadFailed(new ErrorDetails { Message = ErrorMessages.GetLocalizedErrorMessage(args.ErrorCode) });
-                    //prgWin.DownloadETAText = "Download Failed";
-                    //activeProgressWindows.Remove(http.Id);
-                    //ApplicationContext.Current.ShowMessageBox("Download failed");
-                    //prgWin.Destroy();
                 }
 
                 Helpers.RunGC();
@@ -939,9 +627,6 @@ namespace XDM.Core
                 {
                     var prgWin = activeProgressWindows[http.Id];
                     prgWin.DownloadCancelled();
-                    //var prgWin = activeProgressWindows[http.Id];
-                    //activeProgressWindows.Remove(http.Id);
-                    //prgWin.Destroy();
                 }
 
                 Helpers.RunGC();
@@ -973,58 +658,6 @@ namespace XDM.Core
             }
         }
 
-        //public void LoadDownloadList()
-        //{
-        //    //var inprogresDownloadListFile = Path.Combine(
-        //    //            Config.DataDir,
-        //    //            "incomplete-downloads.json");
-        //    //if (File.Exists(inprogresDownloadListFile))
-        //    //{
-        //    //    ApplicationContext.Current.SetInProgressDownloadList(JsonConvert.DeserializeObject<List<InProgresDownloadEntry>>(
-        //    //        File.ReadAllText(inprogresDownloadListFile)));
-        //    //}
-        //    ////var finishedDownloadListFile = Path.Combine(
-        //    ////            Config.DataDir,
-        //    ////            "finished-downloads.json");
-        //    ////if (File.Exists(finishedDownloadListFile))
-        //    ////{
-        //    ////    ApplicationContext.Current.SetFinishedDownloadList(JsonConvert.DeserializeObject<List<FinishedDownloadEntry>>(
-        //    ////        File.ReadAllText(finishedDownloadListFile)));
-        //    ////}
-
-        //    //ApplicationContext.Current.LoadDownloadsDB();
-        //}
-
-        //public void SaveInProgressList(IEnumerable<InProgresDownloadEntry> list)
-        //{
-        //    lock (this)
-        //    {
-        //        File.WriteAllText(Path.Combine(Config.DataDir, "incomplete-downloads.json"), JsonConvert.SerializeObject(list));
-        //    }
-        //}
-
-        //public void SaveFinishedList(IEnumerable<FinishedDownloadEntry> list)
-        //{
-        //    //lock (this)
-        //    //{
-        //    //    File.WriteAllText(Path.Combine(Config.DataDir, "finished-downloads.json"), JsonConvert.SerializeObject(list));
-        //    //}
-        //}
-
-        private string EncodeToCharCode(string text)
-        {
-            var sb = new StringBuilder();
-            int count = 0;
-            foreach (char ch in text)
-            {
-                if (count > 0)
-                    sb.Append(",");
-                sb.Append((int)ch);
-                count++;
-            }
-            return sb.ToString();
-        }
-
         private IProgressWindow? GetProgressWindow(IBaseDownloader downloader)
         {
             IProgressWindow? prgWin = null;
@@ -1047,13 +680,8 @@ namespace XDM.Core
             else
             {
                 prgWin = CreateProgressWindow(downloader);
-                //prgWin.UrlText = ApplicationContext.Current.GetInProgressDownloadEntry(downloader.Id)?.PrimaryUrl;
                 activeProgressWindows[downloader.Id] = prgWin;
             }
-            //var prgWin = activeProgressWindows.ContainsKey(item.Key) ? activeProgressWindows[item.Key]
-            //    : ApplicationContext.Current.CreateProgressWindow(item.Key);
-            //prgWin.FileNameText = downloader.TargetFileName;
-            //prgWin.FileSizeText = $"Downloading {Helpers.FormatSize(0)} / {Helpers.FormatSize(downloader.FileSize)}";
             return prgWin;
         }
 
@@ -1065,15 +693,6 @@ namespace XDM.Core
             prgWin.DownloadETAText = "---";
             prgWin.FileSizeText = "---";
             return prgWin;
-        }
-
-        public void ClearVideoList()
-        {
-            ytVideoList.Clear();
-            hlsVideoList.Clear();
-            dashVideoList.Clear();
-            videoList.Clear();
-            nativeMessaging.BroadcastConfig();
         }
 
         public bool IsDownloadActive(string id)
@@ -1128,80 +747,6 @@ namespace XDM.Core
             ApplicationContext.Application.RenameFileOnUI(id, folder, file);
         }
 
-        private bool IsMatchingSingleSourceLink(Message message)
-        {
-            if (!(refreshLinkCandidate is SingleSourceHTTPDownloader)) return false;
-            var contentLength = 0L;
-            var header = message.ResponseHeaders.Keys.Where(key => key.Equals("content-length", StringComparison.InvariantCultureIgnoreCase));
-            if (header.Count() == 1)
-            {
-                contentLength = Int64.Parse(message.ResponseHeaders[header.First()][0]);
-            }
-            return refreshLinkCandidate.FileSize == contentLength && refreshLinkCandidate.FileSize > 0;
-        }
-
-        private bool IsMatchingSingleSourceLink(SingleSourceHTTPDownloadInfo info)
-        {
-            if (!(refreshLinkCandidate is SingleSourceHTTPDownloader)) return false;
-            var contentLength = info.ContentLength;
-            return refreshLinkCandidate.FileSize == contentLength && refreshLinkCandidate.FileSize > 0;
-        }
-
-        private void HandleSingleSourceLinkRefresh(Message message)
-        {
-            var info = new SingleSourceHTTPDownloadInfo
-            {
-                Uri = message.Url,
-                Headers = message?.RequestHeaders,
-                Cookies = message?.Cookies
-            };
-            ((SingleSourceHTTPDownloader)refreshLinkCandidate).SetDownloadInfo(info);
-            refreshLinkCandidate = null;
-            RefreshedLinkReceived?.Invoke(this, EventArgs.Empty);
-            ClearRefreshRecivedEvents();
-        }
-
-        private bool IsMatchingDualSourceLink(DualSourceHTTPDownloadInfo info)
-        {
-            if (!(refreshLinkCandidate is DualSourceHTTPDownloader)) return false;
-            return info.ContentLength > 0 &&
-                ((DualSourceHTTPDownloader)refreshLinkCandidate).FileSize == info.ContentLength;
-        }
-
-        private void HandleSingleSourceLinkRefresh(SingleSourceHTTPDownloadInfo info)
-        {
-            ((SingleSourceHTTPDownloader)refreshLinkCandidate).SetDownloadInfo(info);
-            refreshLinkCandidate = null;
-            RefreshedLinkReceived?.Invoke(this, EventArgs.Empty);
-            ClearRefreshRecivedEvents();
-        }
-
-        private void HandleDualSourceLinkRefresh(DualSourceHTTPDownloadInfo info)
-        {
-            ((DualSourceHTTPDownloader)refreshLinkCandidate).SetDownloadInfo(info);
-            refreshLinkCandidate = null;
-            RefreshedLinkReceived?.Invoke(this, EventArgs.Empty);
-            ClearRefreshRecivedEvents();
-        }
-
-        private void ClearRefreshRecivedEvents()
-        {
-            foreach (Delegate d in RefreshedLinkReceived?.GetInvocationList())
-            {
-                RefreshedLinkReceived -= (EventHandler)d;
-            }
-        }
-
-        public void WaitFromRefreshedLink(HTTPDownloaderBase downloader)
-        {
-            this.refreshLinkCandidate = downloader;
-        }
-
-        public void ClearRefreshLinkCandidate()
-        {
-            this.refreshLinkCandidate = null;
-        }
-
         private void DetachEventHandlers(IBaseDownloader download)
         {
             try
@@ -1227,7 +772,6 @@ namespace XDM.Core
             {
                 StopClipboardMonitor();
             }
-            nativeMessaging.BroadcastConfig();
         }
 
         private void Cm_ClipboardChanged(object? sender, EventArgs e)
@@ -1392,7 +936,7 @@ namespace XDM.Core
                         {
                             this.StartDownload(h1, entry.Name,
                                 FileNameFetchMode.FileNameAndExtension,
-                                entry.TargetDir, true, entry.Authentication, entry.Proxy, GetSpeedLimit(), null,
+                                entry.TargetDir, true, entry.Authentication, entry.Proxy, Helpers.GetSpeedLimit(), null,
                                 h1.ConvertToMp3);
                         }
                         break;
@@ -1402,7 +946,7 @@ namespace XDM.Core
                         {
                             this.StartDownload(h2, entry.Name,
                                 FileNameFetchMode.None,
-                                entry.TargetDir, true, entry.Authentication, entry.Proxy, GetSpeedLimit(), null);
+                                entry.TargetDir, true, entry.Authentication, entry.Proxy, Helpers.GetSpeedLimit(), null);
                         }
                         break;
                     case "Hls":
@@ -1411,7 +955,7 @@ namespace XDM.Core
                         {
                             this.StartDownload(hls, entry.Name,
                                 FileNameFetchMode.None,
-                                entry.TargetDir, true, entry.Authentication, entry.Proxy, GetSpeedLimit(), null);
+                                entry.TargetDir, true, entry.Authentication, entry.Proxy, Helpers.GetSpeedLimit(), null);
                         }
                         break;
                     case "Mpd-Dash":
@@ -1420,7 +964,7 @@ namespace XDM.Core
                         {
                             this.StartDownload(dash, entry.Name,
                                 FileNameFetchMode.None,
-                                entry.TargetDir, true, entry.Authentication, entry.Proxy, GetSpeedLimit(), null);
+                                entry.TargetDir, true, entry.Authentication, entry.Proxy, Helpers.GetSpeedLimit(), null);
                         }
                         break;
                     default:
@@ -1438,43 +982,6 @@ namespace XDM.Core
                 Log.Debug(ex, "Error restarting download");
             }
         }
-
-        private int GetSpeedLimit()
-        {
-            if (Config.Instance.EnableSpeedLimit)
-            {
-                return Config.Instance.DefaltDownloadSpeed;
-            }
-            return 0;
-        }
-
-        //private T? LoadInfo<T>(string id)
-        //{
-        //    try
-        //    {
-        //        return JsonConvert.DeserializeObject<T>(
-        //                File.ReadAllText(Path.Combine(Config.DataDir, id + ".info")));
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Log.Debug(ex, "Error");
-        //    }
-        //    return default(T?);
-        //}
-
-        //private T? LoadState<T>(string id)
-        //{
-        //    try
-        //    {
-        //        return JsonConvert.DeserializeObject<T>(
-        //                File.ReadAllText(Path.Combine(Config.DataDir, id + ".state")));
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Log.Debug(ex, "Error");
-        //    }
-        //    return default(T?);
-        //}
 
         private void CheckForUpdate()
         {
@@ -1519,11 +1026,6 @@ namespace XDM.Core
         {
             ImportExport.Import(path);
             ApplicationContext.Application.ShowMessageBox(null, TextResource.GetText("MSG_IMPORT_DONE"));
-        }
-
-        public bool IsFFmpegRequiredForDownload(string id)
-        {
-            return ytVideoList.ContainsKey(id) || dashVideoList.ContainsKey(id) || hlsVideoList.ContainsKey(id);
         }
 
         public void UpdateSpeedLimit(string id, bool enable, int limit)

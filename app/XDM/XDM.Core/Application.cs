@@ -517,7 +517,7 @@ namespace XDM.Core
 
             ApplicationContext.MainWindow.HelpClicked += (s, e) =>
             {
-                Helpers.OpenBrowser(ApplicationContext.CoreService.HelpPage);
+                Helpers.OpenBrowser(Links.SupportUrl);
             };
 
             ApplicationContext.MainWindow.UpdateClicked += (s, e) =>
@@ -559,12 +559,12 @@ namespace XDM.Core
 
             ApplicationContext.MainWindow.SupportPageClicked += (s, e) =>
             {
-                Helpers.OpenBrowser("https://subhra74.github.io/xdm/redirect-support.html");
+                Helpers.OpenBrowser(Links.SupportUrl);
             };
 
             ApplicationContext.MainWindow.BugReportClicked += (s, e) =>
             {
-                Helpers.OpenBrowser("https://subhra74.github.io/xdm/redirect-issue.html");
+                Helpers.OpenBrowser(Links.IssueUrl);
             };
 
             ApplicationContext.MainWindow.CheckForUpdateClicked += (s, e) =>

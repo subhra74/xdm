@@ -9,6 +9,7 @@ using System.Windows.Interop;
 using XDM.Core.DataAccess;
 using System.IO;
 using XDMApp = XDM.Core.Application;
+using XDM.Core.BrowserMonitoring;
 
 namespace XDM.Wpf.UI
 {
@@ -60,9 +61,11 @@ namespace XDM.Wpf.UI
             app = new XDMApp();
 
             ApplicationContext.Configurer()
-                .RegisterService(win)
-                .RegisterService(app)
-                .RegisterService(core)
+                .RegisterApplicationWindow(win)
+                .RegisterApplication(app)
+                .RegisterApplicationCore(core)
+                .RegisterCapturedVideoTracker(new VideoTracker())
+                .RegisterLinkRefresher(new LinkRefresher())
                 .Configure();
 
             var args = Environment.GetCommandLineArgs();

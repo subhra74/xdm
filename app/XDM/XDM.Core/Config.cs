@@ -35,9 +35,6 @@ namespace XDM.Core
             }
         }
 
-        public const string ChromeWebstoreUrl = "https://chrome.google.com/webstore/detail/xtreme-download-manager/dkckaoghoiffdbomfbbodbbgmhjblecj";
-        public const string FirefoxAMOUrl = "https://addons.mozilla.org/en-US/firefox/addon/xdm-browser-monitor/";
-
         public static string DataDir { get; set; }
 
         public bool IsBrowserMonitoringEnabled { get; set; } = true;

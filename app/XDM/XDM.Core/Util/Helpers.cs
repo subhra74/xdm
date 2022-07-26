@@ -1510,5 +1510,21 @@ namespace XDM.Core.Util
         }
 
         public static int ParseIntSafe(string text) { return Int32.TryParse(text, out int n) ? n : 0; }
+
+        public static int GetSpeedLimit() => Config.Instance.EnableSpeedLimit ? Config.Instance.DefaltDownloadSpeed : 0;
+
+        public static string EncodeToCharCode(string text)
+        {
+            var sb = new StringBuilder();
+            int count = 0;
+            foreach (char ch in text)
+            {
+                if (count > 0)
+                    sb.Append(",");
+                sb.Append((int)ch);
+                count++;
+            }
+            return sb.ToString();
+        }
     }
 }

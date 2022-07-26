@@ -109,12 +109,12 @@ namespace XDM.Core.BrowserMonitoring
                         {
                             foreach (var item in Encoding.UTF8.GetString(context.RequestBody!).Split(new char[] { '\r', '\n' }))
                             {
-                                ApplicationContext.CoreService.AddVideoDownload(item);
+                                ApplicationContext.VideoTracker.AddVideoDownload(item);
                             }
                             break;
                         }
                     case "/clear":
-                        ApplicationContext.CoreService.ClearVideoList();
+                        ApplicationContext.VideoTracker.ClearVideoList();
                         break;
                 }
             }
@@ -133,7 +133,7 @@ namespace XDM.Core.BrowserMonitoring
                 videoUrls = new string[0],
                 fileExts = Config.Instance.FileExtensions,
                 vidExts = Config.Instance.VideoExtensions,
-                vidList = ApplicationContext.CoreService.GetVideoList().Select(a => new
+                vidList = ApplicationContext.VideoTracker.GetVideoList().Select(a => new
                 {
                     id = a.ID,
                     text = a.File,

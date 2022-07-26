@@ -11,6 +11,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using XDM.Core;
 using XDM.Core.Util;
 using XDM.Wpf.UI.Common;
 using XDM.Wpf.UI.Win32;
@@ -49,7 +50,7 @@ namespace XDM.Wpf.UI.Dialogs.About
 
         private void TextBlock_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            Helpers.OpenBrowser("https://xtremedownloadmanager.com/");
+            Helpers.OpenBrowser(Links.HomePageUrl);
         }
     }
 }

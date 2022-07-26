@@ -9,6 +9,11 @@
     <Import_RootNamespace>XDM.Core</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\XDM.Core\BrowserMonitoring\VideoTracker.cs" />
+    <Compile Include="..\XDM.Core\IVideoTracker.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ILinkRefresher.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LinkRefresher.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Links.cs" />
     <Compile Include="..\XDM.Core\ApplicationContext.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\BrowserMessageHandler.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\BrowserMonitor.cs" />
@@ -103,7 +108,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)StreamingVideoDisplayInfo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TransactedIO.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Updater\UpdateChecker.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)UrlConstants.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DataAccess\AppDB.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DataAccess\DownloadList.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DataAccess\Extensions\DataReaderExtensions.cs" />
