@@ -117,7 +117,7 @@ namespace XDM.GtkUI
         private const int INPROGRESS_DATA_INDEX = 5;
 
         private Menu menuInProgress, menuFinished;
-        private IClipboardMonitor clipboarMonitor;
+        private IPlatformClipboardMonitor clipboarMonitor;
 
         public AppWinPeer() : base("Xtreme Download Manager")
         {
@@ -1443,14 +1443,14 @@ namespace XDM.GtkUI
             return QueueSchedulerDialog.CreateFromGladeFile(this, this.windowGroup);
         }
 
-        public void ShowDownloadSelectionWindow(FileNameFetchMode mode, IEnumerable<object> downloads)
+        public void ShowDownloadSelectionWindow(FileNameFetchMode mode, IEnumerable<IRequestData> downloads)
         {
             var dsvc = new DownloadSelectionViewController(DownloadSelectionWindow.CreateFromGladeFile(),
                 FileNameFetchMode.FileNameAndExtension, downloads);
             dsvc.Run();
         }
 
-        public IClipboardMonitor GetClipboardMonitor() => this.clipboarMonitor;
+        public IPlatformClipboardMonitor GetClipboardMonitor() => this.clipboarMonitor;
 
         public void ShowFloatingWidget()
         {

@@ -13,6 +13,7 @@ namespace XDM.Core
         private static IApplicationWindow? s_ApplicationWindow;
         private static ILinkRefresher? s_LinkRefresher;
         private static IVideoTracker? s_VideoTracker;
+        private static IClipboardMonitor? s_ClipboardMonitor;
         private static bool s_Init = false;
 
         public static event EventHandler? Initialized;
@@ -78,6 +79,18 @@ namespace XDM.Core
             }
         }
 
+        public static IClipboardMonitor ClipboardMonitor
+        {
+            get
+            {
+                if (!s_Init)
+                {
+                    throw new Exception("ApplicationContext is not initialized...");
+                }
+                return s_ClipboardMonitor!;
+            }
+        }
+
         public static void BroadcastConfigChange()
         {
             ApplicationEvent?.Invoke(null, new ApplicationEvent("ConfigChanged"));
@@ -120,11 +133,17 @@ namespace XDM.Core
                 return this;
             }
 
+            public AppInstanceConfigurer RegisterClipboardMonitor(IClipboardMonitor service)
+            {
+                s_ClipboardMonitor = service;
+                return this;
+            }
+
             public void Configure()
             {
                 if (s_ApplicationCore == null || s_IApplication == null
                     || s_ApplicationWindow == null || s_LinkRefresher == null
-                    || s_VideoTracker == null)
+                    || s_VideoTracker == null || s_ClipboardMonitor == null)
                 {
                     throw new Exception("Please configure all dependecies");
                 }

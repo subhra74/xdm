@@ -285,7 +285,7 @@ namespace XDM.GtkUI.Dialogs.Settings
             UpdatePasswordManagerConfig();
             UpdateAdvancedSettingsConfig();
             Config.SaveConfig();
-            ApplicationContext.CoreService.ApplyConfig();
+            ApplicationContext.BroadcastConfigChange();
             Dispose();
             Helpers.RunGC();
         }

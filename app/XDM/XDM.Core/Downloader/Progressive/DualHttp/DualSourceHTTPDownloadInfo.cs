@@ -3,7 +3,7 @@
 
 namespace XDM.Core.Downloader.Progressive.DualHttp
 {
-    public class DualSourceHTTPDownloadInfo
+    public class DualSourceHTTPDownloadInfo : IRequestData
     {
         public string Uri1 { get; set; }
         public string Uri2 { get; set; }

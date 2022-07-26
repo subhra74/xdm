@@ -72,8 +72,8 @@ namespace XDM.Wpf.UI.Dialogs.DownloadSelection
             this.Show();
         }
 
-        public void SetData(FileNameFetchMode mode, IEnumerable<object> downloads,
-            Func<object, IDownloadEntryWrapper, bool> populateEntryWrapper)
+        public void SetData(FileNameFetchMode mode, IEnumerable<IRequestData> downloads,
+            Func<IRequestData, IDownloadEntryWrapper, bool> populateEntryWrapper)
         {
             this.LbDownloadList.ItemsSource = new ObservableCollection<DownloadEntryWrapper>(
                 downloads.Select(o =>
@@ -197,7 +197,7 @@ namespace XDM.Wpf.UI.Dialogs.DownloadSelection
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("IsSelected"));
             }
         }
-        public object DownloadEntry { get; set; }
+        public IRequestData DownloadEntry { get; set; }
         public string EntryType { get; set; }
     }
 }

@@ -193,9 +193,9 @@ namespace XDM.Core
 
         void ShowQueueWindow(object window);
 
-        void ShowDownloadSelectionWindow(FileNameFetchMode mode, IEnumerable<object> downloads);
+        void ShowDownloadSelectionWindow(FileNameFetchMode mode, IEnumerable<IRequestData> downloads);
 
-        IClipboardMonitor GetClipboardMonitor();
+        IPlatformClipboardMonitor GetPlatformClipboardMonitor();
 
         void ShowFloatingVideoWidget();
 

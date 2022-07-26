@@ -830,7 +830,7 @@ namespace XDM.Core.Downloader.Adaptive
         public double Duration { get; set; }
     }
 
-    public abstract class MultiSourceDownloadInfo
+    public abstract class MultiSourceDownloadInfo : IRequestData
     {
         public Dictionary<string, string> Cookies { get; set; }
         public Dictionary<string, List<string>> Headers { get; set; }

@@ -5,7 +5,7 @@ using XDM.Core;
 
 namespace XDM.Wpf.UI
 {
-    public class Win32ClipboarMonitor : IClipboardMonitor
+    public class Win32ClipboarMonitor : IPlatformClipboardMonitor
     {
         private IntPtr hWndNextWindow, hWndCurrentWindow;
         public event EventHandler? ClipboardChanged;

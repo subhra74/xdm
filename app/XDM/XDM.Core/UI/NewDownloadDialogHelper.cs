@@ -86,7 +86,7 @@ namespace XDM.Core.UI
                     blockedHost.Add(url.Host);
                     Config.Instance.BlockedHosts = blockedHost.ToArray();
                     Config.SaveConfig();
-                    ApplicationContext.CoreService.ApplyConfig();
+                    ApplicationContext.BroadcastConfigChange();
                     window.DisposeWindow();
                 }
             };

@@ -35,10 +35,11 @@ namespace XDM.Core.BrowserMonitoring
                 Log.Debug(ex, "Exception in NativeMessagingHostHandler ctor");
                 if (ex is InstanceAlreadyRunningException)
                 {
-                    if (ApplicationContext.CoreService.Args != null && ApplicationContext.CoreService.Args.Length > 0)
+                    var args = Environment.GetCommandLineArgs().Skip(1);
+                    if (args.Count() > 0)
                     {
                         Log.Debug(ex, "Sending args to running instance");
-                        SendArgsToRunningInstance(ApplicationContext.CoreService.Args);
+                        SendArgsToRunningInstance(args);
                         Environment.Exit(0);
                     }
                     throw;
@@ -336,18 +337,17 @@ namespace XDM.Core.BrowserMonitoring
             return msg.Serialize();
         }
 
-        private static void SendArgsToRunningInstance(string[] args)
+        private static void SendArgsToRunningInstance(IEnumerable<string> args)
         {
-            if (args == null || args.Length < 1) return;
+            if (args == null || args.Count() < 1) return;
             try
             {
-                using var npc =
-                               new NamedPipeClientStream(".", PipeName, PipeDirection.Out);
+                using var npc = new NamedPipeClientStream(".", PipeName, PipeDirection.Out);
                 npc.Connect();
                 var b = new MemoryStream();
                 var wb = new BinaryWriter(b);
                 wb.Write(Int32.MaxValue);
-                wb.Write(string.Join("\r", args));
+                wb.Write(string.Join("\r", args.ToArray()));
                 wb.Close();
                 NativeMessageSerializer.WriteMessage(npc, b.ToArray());
                 npc.Flush();

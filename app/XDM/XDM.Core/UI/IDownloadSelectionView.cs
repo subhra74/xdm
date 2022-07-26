@@ -17,8 +17,8 @@ namespace XDM.Core.UI
         string? SelectFolder();
         void CloseWindow();
         void ShowWindow();
-        void SetData(FileNameFetchMode mode, IEnumerable<object> downloads,
-            Func<object, IDownloadEntryWrapper, bool> populateEntryWrapper);
+        void SetData(FileNameFetchMode mode, IEnumerable<IRequestData> downloads,
+            Func<IRequestData, IDownloadEntryWrapper, bool> populateEntryWrapper);
 
         string DownloadLocation { get; set; }
         AuthenticationInfo? Authentication { get; set; }
@@ -33,7 +33,7 @@ namespace XDM.Core.UI
     {
         public string Name { get; set; }
         public bool IsSelected { get; set; }
-        public object DownloadEntry { get; set; }
+        public IRequestData DownloadEntry { get; set; }
         public string EntryType { get; set; }
     }
 }

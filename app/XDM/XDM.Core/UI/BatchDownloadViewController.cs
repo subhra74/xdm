@@ -48,7 +48,7 @@ namespace XDM.Core.UI
         {
             if (this.view.IsBatchMode)
             {
-                var links = GenerateBatchLink()?.Select(x => (object)new SingleSourceHTTPDownloadInfo { Uri = x.ToString() });
+                var links = GenerateBatchLink()?.Select(x => (IRequestData)new SingleSourceHTTPDownloadInfo { Uri = x.ToString() });
                 if (links == null || !links.Any())
                 {
                     ApplicationContext.Application.ShowMessageBox(this.view, TextResource.GetText("BAT_SELECT_ITEMS"));

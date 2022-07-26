@@ -121,9 +121,9 @@ namespace XDM.Core.UI
 
         IQueueSelectionDialog CreateQueueSelectionDialog();
 
-        void ShowDownloadSelectionWindow(FileNameFetchMode mode, IEnumerable<object> downloads);
+        void ShowDownloadSelectionWindow(FileNameFetchMode mode, IEnumerable<IRequestData> downloads);
 
-        IClipboardMonitor GetClipboardMonitor();
+        IPlatformClipboardMonitor GetClipboardMonitor();
 
         void ShowFloatingWidget();
 

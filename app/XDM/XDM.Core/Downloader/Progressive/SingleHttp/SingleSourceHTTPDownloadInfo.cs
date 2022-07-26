@@ -3,7 +3,7 @@
 
 namespace XDM.Core.Downloader.Progressive.SingleHttp
 {
-    public class SingleSourceHTTPDownloadInfo
+    public class SingleSourceHTTPDownloadInfo: IRequestData
     {
         public string Uri { get; set; }
         public Dictionary<string, string> Cookies { get; set; }

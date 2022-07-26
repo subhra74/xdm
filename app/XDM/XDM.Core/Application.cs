@@ -32,6 +32,7 @@ namespace XDM.Core
             AttachedEventHandler();
             LoadDownloadList();
             UpdateToolbarButtonState();
+            AppUpdater.QueryNewVersion();
         }
 
         public void AddItemToTop(
@@ -522,14 +523,14 @@ namespace XDM.Core
 
             ApplicationContext.MainWindow.UpdateClicked += (s, e) =>
             {
-                if (ApplicationContext.CoreService.IsAppUpdateAvailable)
+                if (AppUpdater.IsAppUpdateAvailable)
                 {
-                    Helpers.OpenBrowser(ApplicationContext.CoreService.UpdatePage);
+                    Helpers.OpenBrowser(AppUpdater.UpdatePage);
                     return;
                 }
-                if (ApplicationContext.CoreService.IsComponentUpdateAvailable)
+                if (AppUpdater.IsComponentUpdateAvailable)
                 {
-                    if (ApplicationContext.MainWindow.Confirm(ApplicationContext.MainWindow, ApplicationContext.CoreService.ComponentUpdateText))
+                    if (ApplicationContext.MainWindow.Confirm(ApplicationContext.MainWindow, AppUpdater.ComponentUpdateText))
                     {
                         LaunchUpdater(UpdateMode.FFmpegUpdateOnly | UpdateMode.YoutubeDLUpdateOnly);
                         return;
@@ -553,7 +554,7 @@ namespace XDM.Core
                     Config.Instance.IsBrowserMonitoringEnabled = true;
                 }
                 Config.SaveConfig();
-                ApplicationContext.CoreService.ApplyConfig();
+                ApplicationContext.BroadcastConfigChange();
                 ApplicationContext.MainWindow.UpdateBrowserMonitorButton();
             };
 
@@ -569,7 +570,7 @@ namespace XDM.Core
 
             ApplicationContext.MainWindow.CheckForUpdateClicked += (s, e) =>
             {
-                Helpers.OpenBrowser(ApplicationContext.CoreService.UpdatePage);
+                Helpers.OpenBrowser(AppUpdater.UpdatePage);
             };
 
             ApplicationContext.MainWindow.SchedulerClicked += (s, e) =>
@@ -596,7 +597,7 @@ namespace XDM.Core
         private void LaunchUpdater(UpdateMode updateMode)
         {
             var updateDlg = ApplicationContext.MainWindow.CreateUpdateUIDialog();
-            var updates = ApplicationContext.CoreService.Updates?.Where(u => u.IsExternal)?.ToList() ?? new List<UpdateInfo>(0);
+            var updates = AppUpdater.Updates?.Where(u => u.IsExternal)?.ToList() ?? new List<UpdateInfo>(0);
             if (updates.Count == 0) return;
             var commonUpdateUi = new ComponentUpdaterUI(updateDlg, updateMode);
             updateDlg.Load += (_, _) => commonUpdateUi.StartUpdate();
@@ -710,7 +711,7 @@ namespace XDM.Core
             LaunchUpdater(UpdateMode.YoutubeDLUpdateOnly);
         }
 
-        public void ShowDownloadSelectionWindow(FileNameFetchMode mode, IEnumerable<object> downloads)
+        public void ShowDownloadSelectionWindow(FileNameFetchMode mode, IEnumerable<IRequestData> downloads)
         {
             RunOnUiThread(() =>
             {
@@ -718,7 +719,7 @@ namespace XDM.Core
             });
         }
 
-        public IClipboardMonitor GetClipboardMonitor()
+        public IPlatformClipboardMonitor GetPlatformClipboardMonitor()
         {
             return ApplicationContext.MainWindow.GetClipboardMonitor();
         }

@@ -10,7 +10,7 @@ using TraceLog;
 
 namespace XDM.GtkUI
 {
-    public class PollingClipboardMonitor : IClipboardMonitor
+    public class PollingClipboardMonitor : IPlatformClipboardMonitor
     {
         private Timer timer;
         private string lastText;

@@ -20,7 +20,7 @@ namespace XDM.Core.UI
         private FileNameFetchMode mode;
 
         public DownloadSelectionViewController(IDownloadSelectionView view,
-            FileNameFetchMode mode, IEnumerable<object> downloads)
+            FileNameFetchMode mode, IEnumerable<IRequestData> downloads)
         {
             this.view = view;
             this.mode = mode;
@@ -66,7 +66,7 @@ namespace XDM.Core.UI
             DownloadSelectedItems(true, null);
         }
 
-        private bool PopuplateEntryWrapper(object obj, IDownloadEntryWrapper entry)
+        private bool PopuplateEntryWrapper(IRequestData obj, IDownloadEntryWrapper entry)
         {
             if (obj is SingleSourceHTTPDownloadInfo shi)
             {
@@ -98,7 +98,7 @@ namespace XDM.Core.UI
 
         private void AddDownload(IDownloadEntryWrapper wrapper, bool startImmediately, string? queueId)
         {
-            ApplicationContext.CoreService.SubmitDownload(
+            ApplicationContext.CoreService.StartDownload(
                         wrapper.DownloadEntry,
                         wrapper.Name,
                         mode,
@@ -106,7 +106,6 @@ namespace XDM.Core.UI
                         startImmediately,
                         view.Authentication,
                         view.Proxy ?? Config.Instance.Proxy,
-                        view.EnableSpeedLimit,
                         view.EnableSpeedLimit ? view.SpeedLimit : 0,
                         queueId,
                         false

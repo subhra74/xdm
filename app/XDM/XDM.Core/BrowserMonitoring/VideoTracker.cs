@@ -48,7 +48,7 @@ namespace XDM.Core.BrowserMonitoring
             if (ytVideoList.ContainsKey(videoId))
             {
                 ApplicationContext.CoreService.StartDownload(ytVideoList[videoId].Info, name, FileNameFetchMode.ExtensionOnly,
-                        folder, startImmediately, authentication, proxyInfo, Helpers.GetSpeedLimit(), queueId);
+                        folder, startImmediately, authentication, proxyInfo, Helpers.GetSpeedLimit(), queueId, false);
             }
             else if (videoList.ContainsKey(videoId))
             {
@@ -58,12 +58,12 @@ namespace XDM.Core.BrowserMonitoring
             else if (hlsVideoList.ContainsKey(videoId))
             {
                 ApplicationContext.CoreService.StartDownload(hlsVideoList[videoId].Info, name, FileNameFetchMode.ExtensionOnly,
-                    folder, startImmediately, authentication, proxyInfo, Helpers.GetSpeedLimit(), queueId);
+                    folder, startImmediately, authentication, proxyInfo, Helpers.GetSpeedLimit(), queueId, false);
             }
             else if (dashVideoList.ContainsKey(videoId))
             {
                 ApplicationContext.CoreService.StartDownload(dashVideoList[videoId].Info, name, FileNameFetchMode.ExtensionOnly,
-                    folder, startImmediately, authentication, proxyInfo, Helpers.GetSpeedLimit(), queueId);
+                    folder, startImmediately, authentication, proxyInfo, Helpers.GetSpeedLimit(), queueId, false);
             }
         }
 

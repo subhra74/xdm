@@ -33,19 +33,8 @@ namespace XDM.Core
         private GenericOrderedDictionary<string, bool> queuedDownloads = new();
         private GenericOrderedDictionary<string, IProgressWindow> activeProgressWindows = new();
         private Scheduler scheduler;
-        private bool isClipboardMonitorActive = false;
-        private string lastClipboardText;
         private Timer awakePingTimer;
-        private System.Threading.Timer UpdateCheckTimer;
-
-        public IList<UpdateInfo>? Updates { get; private set; }
-        public bool ComponentsInstalled { get; private set; }
-        public bool IsAppUpdateAvailable => Updates?.Any(u => !u.IsExternal) ?? false;
-        public bool IsComponentUpdateAvailable => Updates?.Any(u => u.IsExternal) ?? false;
-        public string ComponentUpdateText => GetUpdateText();
         public int ActiveDownloadCount { get => liveDownloads.Count + queuedDownloads.Count; }
-
-        public string UpdatePage => $"https://subhra74.github.io/xdm/update-checker.html?v={AppVerion}";
 
         public string[] Args { get; set; }
 
@@ -62,12 +51,6 @@ namespace XDM.Core
             };
             awakePingTimer.Elapsed += (a, b) => Helpers.SendKeepAlivePing();
 
-            UpdateCheckTimer = new System.Threading.Timer(
-                callback: a => CheckForUpdate(),
-                state: null,
-                dueTime: TimeSpan.FromSeconds(5),
-                period: TimeSpan.FromHours(3));
-
             try
             {
                 QueueManager.Load();
@@ -78,97 +61,14 @@ namespace XDM.Core
             }
         }
 
-        public void StartClipboardMonitor()
-        {
-            Log.Debug("StartClipboardMonitor");
-            if (isClipboardMonitorActive) return;
-            var cm = ApplicationContext.Application.GetClipboardMonitor();
-            if (Config.Instance.MonitorClipboard)
-            {
-                cm.StartClipboardMonitoring();
-                isClipboardMonitorActive = true;
-                cm.ClipboardChanged += Cm_ClipboardChanged;
-            }
-        }
-
-        public void StopClipboardMonitor()
-        {
-            if (!isClipboardMonitorActive) return;
-            var cm = ApplicationContext.Application.GetClipboardMonitor();
-            cm.StopClipboardMonitoring();
-            isClipboardMonitorActive = false;
-            cm.ClipboardChanged -= Cm_ClipboardChanged;
-        }
-
-        public void StartNativeMessagingHost()
+        public void StartBrowserMonitoring()
         {
             BrowserMonitor.RunNativeHostHandler();
             BrowserMonitor.RunHttpIpcHandler();
         }
 
-        public void SubmitDownload(object downloadInfo,
-            string fileName,
-            FileNameFetchMode fileNameFetchMode,
-            string? targetFolder,
-            bool startImmediately,
-            AuthenticationInfo? authentication,
-            ProxyInfo? proxyInfo,
-            bool enableSpeedLimit,
-            int speedLimit,
-            string? queueId,
-            bool convertToMp3)
-        {
-
-            switch (downloadInfo)
-            {
-                case SingleSourceHTTPDownloadInfo info:
-                    this.StartDownload(
-                        info,
-                        fileName,
-                        fileNameFetchMode,
-                        targetFolder,
-                        startImmediately,
-                        authentication, proxyInfo ?? Config.Instance.Proxy,
-                        enableSpeedLimit ? speedLimit : 0, queueId, convertToMp3
-                    );
-                    break;
-                case DualSourceHTTPDownloadInfo info:
-                    this.StartDownload(
-                        info,
-                        fileName,
-                        fileNameFetchMode,
-                        targetFolder,
-                        startImmediately,
-                        authentication, proxyInfo ?? Config.Instance.Proxy,
-                        enableSpeedLimit ? speedLimit : 0, queueId
-                    );
-                    break;
-                case MultiSourceHLSDownloadInfo info:
-                    this.StartDownload(
-                        info,
-                        fileName,
-                        fileNameFetchMode,
-                        targetFolder,
-                        startImmediately,
-                        authentication, proxyInfo ?? Config.Instance.Proxy,
-                        enableSpeedLimit ? speedLimit : 0, queueId
-                    );
-                    break;
-                case MultiSourceDASHDownloadInfo info:
-                    this.StartDownload(
-                        info,
-                        fileName,
-                        fileNameFetchMode,
-                        targetFolder,
-                        startImmediately,
-                        authentication, proxyInfo ?? Config.Instance.Proxy,
-                        enableSpeedLimit ? speedLimit : 0, queueId
-                        );
-                    break;
-            }
-        }
-
-        public string StartDownload(SingleSourceHTTPDownloadInfo info,
+        public string? StartDownload(
+            IRequestData downloadInfo,
             string fileName,
             FileNameFetchMode fileNameFetchMode,
             string? targetFolder,
@@ -180,83 +80,41 @@ namespace XDM.Core
             bool convertToMp3)
         {
             Log.Debug($"Starting download: {fileName} {fileNameFetchMode} {convertToMp3}");
-            var http = new SingleSourceHTTPDownloader(info, authentication: authentication,
-                proxy: proxyInfo, speedLimit: maxSpeedLimit, mediaProcessor: new FFmpegMediaProcessor(),
-                convertToMp3: convertToMp3);
-            if (!string.IsNullOrEmpty(queueId))
-            {
-                QueueManager.AddDownloadsToQueue(queueId!, new string[] { http.Id });
-            }
-            Helpers.SaveDownloadInfo(http.Id, info);
-            http.SetFileName(Helpers.SanitizeFileName(fileName), fileNameFetchMode);
-            http.SetTargetDirectory(targetFolder);
-            StartDownload(http, startImmediately, authentication, proxyInfo, maxSpeedLimit);
-            return http.Id;
-        }
 
-        public string StartDownload(DualSourceHTTPDownloadInfo info,
-           string fileName,
-           FileNameFetchMode fileNameFetchMode,
-           string? targetFolder,
-           bool startImmediately,
-           AuthenticationInfo? authentication,
-           ProxyInfo? proxyInfo,
-           int maxSpeedLimit,
-           string? queueId)
-        {
-            var http = new DualSourceHTTPDownloader(info, mediaProcessor: new FFmpegMediaProcessor(),
-                authentication: authentication, proxy: proxyInfo, speedLimit: maxSpeedLimit);
-            if (!string.IsNullOrEmpty(queueId))
-            {
-                QueueManager.AddDownloadsToQueue(queueId!, new string[] { http.Id });
-            }
-            Helpers.SaveDownloadInfo(http.Id, info);
-            http.SetFileName(Helpers.SanitizeFileName(fileName), fileNameFetchMode);
-            http.SetTargetDirectory(targetFolder);
-            StartDownload(http, startImmediately, authentication, proxyInfo, maxSpeedLimit);
-            return http.Id;
-        }
+            IBaseDownloader? http;
 
-        public string StartDownload(MultiSourceHLSDownloadInfo info,
-           string fileName,
-           FileNameFetchMode fileNameFetchMode,
-           string? targetFolder,
-           bool startImmediately,
-           AuthenticationInfo? authentication,
-           ProxyInfo? proxyInfo,
-           int maxSpeedLimit,
-           string? queueId)
-        {
-            var http = new MultiSourceHLSDownloader(info, mediaProcessor: new FFmpegMediaProcessor(),
-                authentication: authentication, proxy: proxyInfo, speedLimit: maxSpeedLimit);
-            if (!string.IsNullOrEmpty(queueId))
+            switch (downloadInfo)
             {
-                QueueManager.AddDownloadsToQueue(queueId!, new string[] { http.Id });
+                case SingleSourceHTTPDownloadInfo info:
+                    http = new SingleSourceHTTPDownloader(info, authentication: authentication,
+                        proxy: proxyInfo, speedLimit: maxSpeedLimit, mediaProcessor: new FFmpegMediaProcessor(),
+                        convertToMp3: convertToMp3);
+                    Helpers.SaveDownloadInfo(http.Id!, info);
+                    break;
+                case DualSourceHTTPDownloadInfo info:
+                    http = new DualSourceHTTPDownloader(info, authentication: authentication,
+                        proxy: proxyInfo, speedLimit: maxSpeedLimit, mediaProcessor: new FFmpegMediaProcessor());
+                    Helpers.SaveDownloadInfo(http.Id!, info);
+                    break;
+                case MultiSourceHLSDownloadInfo info:
+                    http = new MultiSourceHLSDownloader(info, authentication: authentication,
+                        proxy: proxyInfo, speedLimit: maxSpeedLimit, mediaProcessor: new FFmpegMediaProcessor());
+                    Helpers.SaveDownloadInfo(http.Id!, info);
+                    break;
+                case MultiSourceDASHDownloadInfo info:
+                    http = new MultiSourceDASHDownloader(info, authentication: authentication,
+                        proxy: proxyInfo, speedLimit: maxSpeedLimit, mediaProcessor: new FFmpegMediaProcessor());
+                    Helpers.SaveDownloadInfo(http.Id!, info);
+                    break;
+                default:
+                    Log.Debug("Unknow request info :: skipping download");
+                    return null;
             }
-            Helpers.SaveDownloadInfo(http.Id, info);
-            http.SetFileName(Helpers.SanitizeFileName(fileName), fileNameFetchMode);
-            http.SetTargetDirectory(targetFolder);
-            StartDownload(http, startImmediately, authentication, proxyInfo, maxSpeedLimit);
-            return http.Id;
-        }
 
-        public string StartDownload(MultiSourceDASHDownloadInfo info,
-           string fileName,
-           FileNameFetchMode fileNameFetchMode,
-           string targetFolder,
-           bool startImmediately,
-           AuthenticationInfo? authentication,
-           ProxyInfo? proxyInfo,
-           int maxSpeedLimit,
-           string? queueId)
-        {
-            var http = new MultiSourceDASHDownloader(info, mediaProcessor: new FFmpegMediaProcessor(),
-                authentication: authentication, proxy: proxyInfo, speedLimit: maxSpeedLimit);
             if (!string.IsNullOrEmpty(queueId))
             {
-                QueueManager.AddDownloadsToQueue(queueId!, new string[] { http.Id });
+                QueueManager.AddDownloadsToQueue(queueId!, new string[] { http.Id! });
             }
-            Helpers.SaveDownloadInfo(http.Id, info);
             http.SetFileName(Helpers.SanitizeFileName(fileName), fileNameFetchMode);
             http.SetTargetDirectory(targetFolder);
             StartDownload(http, startImmediately, authentication, proxyInfo, maxSpeedLimit);
@@ -324,7 +182,7 @@ namespace XDM.Core
 
         public void AddBatchLinks(List<Message> messages)
         {
-            var list = new List<object>(messages.Count);
+            var list = new List<IRequestData>(messages.Count);
             foreach (var message in messages)
             {
                 var url = message.Url;
@@ -407,7 +265,7 @@ namespace XDM.Core
                     });
                     continue;
                 }
-                IBaseDownloader download = null;
+                IBaseDownloader? download = null;
                 switch (item.Value.DownloadType)
                 {
                     case "Http":
@@ -426,6 +284,8 @@ namespace XDM.Core
                         download = new MultiSourceDASHDownloader(item.Key,
                             mediaProcessor: new FFmpegMediaProcessor());
                         break;
+                    default:
+                        continue;
                 }
                 download.Started += HandleDownloadStart;
                 download.Probed += HandleProbeResult;
@@ -478,14 +338,6 @@ namespace XDM.Core
             {
                 Log.Debug(ex, "Error showing progress window");
             }
-        }
-
-        public void SaveState()
-        {
-        }
-
-        public void SetUI(IListUI listUI)
-        {
         }
 
         public void StopDownloads(IEnumerable<string> list, bool closeProgressWindow = false)
@@ -762,28 +614,6 @@ namespace XDM.Core
             catch { }
         }
 
-        public void ApplyConfig()
-        {
-            if (Config.Instance.MonitorClipboard)
-            {
-                StartClipboardMonitor();
-            }
-            else
-            {
-                StopClipboardMonitor();
-            }
-        }
-
-        private void Cm_ClipboardChanged(object? sender, EventArgs e)
-        {
-            var text = ApplicationContext.Application.GetClipboardMonitor().GetClipboardText();
-            if (!string.IsNullOrEmpty(text) && Helpers.IsUriValid(text) && text != lastClipboardText)
-            {
-                lastClipboardText = text;
-                AddDownload(new Message { Url = text });
-            }
-        }
-
         public AuthenticationInfo? PromptForCredential(string id, string message)
         {
             try
@@ -925,55 +755,37 @@ namespace XDM.Core
         public void RestartDownload(BaseDownloadEntry entry)
         {
             if (entry == null) return;
-            var validEntry = true;
+            var convertToMp3 = false;
+            IRequestData? request;
             try
             {
                 switch (entry.DownloadType)
                 {
                     case "Http":
-                        var h1 = Helpers.LoadSingleSourceHTTPDownloadInfo(entry.Id);
-                        if (h1 != null)
-                        {
-                            this.StartDownload(h1, entry.Name,
-                                FileNameFetchMode.FileNameAndExtension,
-                                entry.TargetDir, true, entry.Authentication, entry.Proxy, Helpers.GetSpeedLimit(), null,
-                                h1.ConvertToMp3);
-                        }
+                        var info = Helpers.LoadSingleSourceHTTPDownloadInfo(entry.Id);
+                        request = info;
+                        convertToMp3 = info?.ConvertToMp3 ?? false;
                         break;
                     case "Dash":
-                        var h2 = Helpers.LoadDualSourceHTTPDownloadInfo(entry.Id);
-                        if (h2 != null)
-                        {
-                            this.StartDownload(h2, entry.Name,
-                                FileNameFetchMode.None,
-                                entry.TargetDir, true, entry.Authentication, entry.Proxy, Helpers.GetSpeedLimit(), null);
-                        }
+                        request = Helpers.LoadDualSourceHTTPDownloadInfo(entry.Id);
                         break;
                     case "Hls":
-                        var hls = Helpers.LoadMultiSourceHLSDownloadInfo(entry.Id);
-                        if (hls != null)
-                        {
-                            this.StartDownload(hls, entry.Name,
-                                FileNameFetchMode.None,
-                                entry.TargetDir, true, entry.Authentication, entry.Proxy, Helpers.GetSpeedLimit(), null);
-                        }
+                        request = Helpers.LoadMultiSourceHLSDownloadInfo(entry.Id);
                         break;
                     case "Mpd-Dash":
-                        var dash = Helpers.LoadMultiSourceDASHDownloadInfo(entry.Id);
-                        if (dash != null)
-                        {
-                            this.StartDownload(dash, entry.Name,
-                                FileNameFetchMode.None,
-                                entry.TargetDir, true, entry.Authentication, entry.Proxy, Helpers.GetSpeedLimit(), null);
-                        }
+                        request = Helpers.LoadMultiSourceDASHDownloadInfo(entry.Id);
                         break;
                     default:
-                        validEntry = false;
+                        request = null;
                         break;
                 }
 
-                if (validEntry)
+                if (request != null)
                 {
+                    this.StartDownload(request, entry.Name,
+                                   FileNameFetchMode.FileNameAndExtension,
+                                   entry.TargetDir, true, entry.Authentication, entry.Proxy, Helpers.GetSpeedLimit(), null,
+                                   convertToMp3);
                     RemoveDownload(entry, false);
                 }
             }
@@ -981,40 +793,6 @@ namespace XDM.Core
             {
                 Log.Debug(ex, "Error restarting download");
             }
-        }
-
-        private void CheckForUpdate()
-        {
-            try
-            {
-                Log.Debug("Checking for updates...");
-                if (UpdateChecker.GetAppUpdates(AppVerion, out IList<UpdateInfo> updates, out bool firstUpdate))
-                {
-                    this.Updates = updates;
-                    this.ComponentsInstalled = !firstUpdate;
-                    ApplicationContext.Application.ShowUpdateAvailableNotification();
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "CheckForUpdate");
-            }
-        }
-
-        private string GetUpdateText()
-        {
-            if (Updates == null || Updates.Count < 1) return TextResource.GetText("MSG_NO_UPDATE");
-            var text = new StringBuilder();
-            var size = 0L;
-            text.Append((ComponentsInstalled ? "Update available: " : "XDM require FFmpeg and YoutubeDL to download streaming videos") + Environment.NewLine);
-            foreach (var update in Updates)
-            {
-                text.Append(update.Name + " " + update.TagName + Environment.NewLine);
-                size += update.Size;
-            }
-            text.Append(Environment.NewLine + "Total download: " + Helpers.FormatSize(size) + Environment.NewLine);
-            text.Append("Would you like to continue?");
-            return text.ToString();
         }
 
         public void Export(string path)

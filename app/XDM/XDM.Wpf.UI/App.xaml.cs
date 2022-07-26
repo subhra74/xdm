@@ -65,6 +65,7 @@ namespace XDM.Wpf.UI
                 .RegisterApplication(app)
                 .RegisterApplicationCore(core)
                 .RegisterCapturedVideoTracker(new VideoTracker())
+                .RegisterClipboardMonitor(new ClipboardMonitor())
                 .RegisterLinkRefresher(new LinkRefresher())
                 .Configure();
 
@@ -82,9 +83,9 @@ namespace XDM.Wpf.UI
                 }
                 win.Activate();
             };
-            app.WindowLoaded += (_, _) => core.StartClipboardMonitor();
+            app.WindowLoaded += (_, _) => ApplicationContext.ClipboardMonitor.Start();
             core.StartScheduler();
-            core.StartNativeMessagingHost();
+            core.StartBrowserMonitoring();
             if (!commandOptions.ContainsKey("-m"))
             {
                 win.Show();

@@ -8,6 +8,7 @@ using XDM.Core.DataAccess;
 using XDM.Core;
 using XDMApp = XDM.Core.Application;
 using System.Linq;
+using XDM.Core.BrowserMonitoring;
 
 namespace XDM.GtkUI
 {
@@ -96,15 +97,16 @@ namespace XDM.GtkUI
                 .RegisterApplication(app)
                 .RegisterApplicationCore(core)
                 .RegisterCapturedVideoTracker(new VideoTracker())
+                .RegisterClipboardMonitor(new ClipboardMonitor())
                 .RegisterLinkRefresher(new LinkRefresher())
                 .Configure();
 
             var commandOptions = ArgsProcessor.ParseArgs(args, 0);
             core.Args = args.ToArray();
 
-            app.WindowLoaded += (_, _) => core.StartClipboardMonitor();
+            app.WindowLoaded += (_, _) => ApplicationContext.ClipboardMonitor.Start();
             core.StartScheduler();
-            core.StartNativeMessagingHost();
+            core.StartBrowserMonitoring();
 
             if (!commandOptions.ContainsKey("-m"))
             {

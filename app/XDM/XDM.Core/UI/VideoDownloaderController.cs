@@ -295,7 +295,7 @@ namespace XDM.Core.UI
 
         private void AddDownload(YDLVideoFormatEntry videoEntry, bool startImmediately, string? queueId)
         {
-            object? info = videoEntry.YDLEntryType switch
+            IRequestData? info = videoEntry.YDLEntryType switch
             {
                 YDLEntryType.Http => new SingleSourceHTTPDownloadInfo
                 {
@@ -322,14 +322,14 @@ namespace XDM.Core.UI
             };
             if (info != null)
             {
-                ApplicationContext.CoreService!.SubmitDownload(
+                ApplicationContext.CoreService!.StartDownload(
                         info,
                         videoEntry.Title + "." + videoEntry.FileExt,
                         FileNameFetchMode.None,
                         view.DownloadLocation,
                         startImmediately,
-                        view.Authentication, view.Proxy ?? Config.Instance.Proxy,
-                        view.EnableSpeedLimit,
+                        view.Authentication, 
+                        view.Proxy ?? Config.Instance.Proxy,
                         view.EnableSpeedLimit ? view.SpeedLimit : 0, queueId,
                         false
                     );

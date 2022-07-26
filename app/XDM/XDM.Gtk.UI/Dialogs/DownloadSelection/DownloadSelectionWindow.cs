@@ -46,7 +46,7 @@ namespace XDM.GtkUI.Dialogs.DownloadSelection
             return GtkHelper.SelectFolder(this);
         }
 
-        public void SetData(FileNameFetchMode mode, IEnumerable<object> downloads, Func<object, IDownloadEntryWrapper, bool> populateEntryWrapper)
+        public void SetData(FileNameFetchMode mode, IEnumerable<IRequestData> downloads, Func<IRequestData, IDownloadEntryWrapper, bool> populateEntryWrapper)
         {
             foreach (IDownloadEntryWrapper entry in downloads.Select(o =>
              {
@@ -238,7 +238,7 @@ namespace XDM.GtkUI.Dialogs.DownloadSelection
     {
         public string Name { get; set; }
         public bool IsSelected { get; set; }
-        public object DownloadEntry { get; set; }
+        public IRequestData DownloadEntry { get; set; }
         public string EntryType { get; set; }
     }
 }

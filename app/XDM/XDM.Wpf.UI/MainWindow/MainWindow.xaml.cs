@@ -883,7 +883,7 @@ namespace XDM.Wpf.UI
             this.InProgressContextMenuOpening?.Invoke(sender, e);
         }
 
-        public void ShowDownloadSelectionWindow(FileNameFetchMode mode, IEnumerable<object> downloads)
+        public void ShowDownloadSelectionWindow(FileNameFetchMode mode, IEnumerable<IRequestData> downloads)
         {
             var dsvc = new DownloadSelectionViewController(new DownloadSelectionWindow(), FileNameFetchMode.FileNameAndExtension, downloads);
             dsvc.Run();
@@ -897,7 +897,7 @@ namespace XDM.Wpf.UI
             floatingWidget.Show();
         }
 
-        public IClipboardMonitor GetClipboardMonitor() => this.clipboarMonitor;
+        public IPlatformClipboardMonitor GetClipboardMonitor() => this.clipboarMonitor;
     }
 
     internal class DummyButton : IButton

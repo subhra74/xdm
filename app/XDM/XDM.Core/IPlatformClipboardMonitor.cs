@@ -6,7 +6,7 @@ using System.Text;
 
 namespace XDM.Core
 {
-    public interface IClipboardMonitor
+    public interface IPlatformClipboardMonitor
     {
         void StartClipboardMonitoring();
 

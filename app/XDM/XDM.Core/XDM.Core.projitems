@@ -9,6 +9,9 @@
     <Import_RootNamespace>XDM.Core</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)AppUpdater.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ClipboardMonitor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IRequestData.cs" />
     <Compile Include="..\XDM.Core\BrowserMonitoring\VideoTracker.cs" />
     <Compile Include="..\XDM.Core\IVideoTracker.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ILinkRefresher.cs" />
@@ -89,7 +92,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)GenericEventArgs.cs" />
     <Compile Include="..\XDM.Core\IApplicationCore.cs" />
     <Compile Include="..\XDM.Core\IApplication.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)IClipboardMonitor.cs" />
+    <Compile Include="..\XDM.Core\IPlatformClipboardMonitor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\IDownloadCompleteDialog.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\IFileSelectable.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\IListUI.cs" />
