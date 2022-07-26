@@ -237,7 +237,7 @@ namespace XDM.Core
                 switch (ent.DownloadType)
                 {
                     case "Http":
-                        var s = DownloadStateStore.LoadSingleSourceHTTPDownloaderState(ent.Id);
+                        var s = DownloadStateIO.LoadSingleSourceHTTPDownloaderState(ent.Id);
                         state = new()
                         {
                             Headers = s.Headers,
@@ -245,7 +245,7 @@ namespace XDM.Core
                         };
                         break;
                     case "Dash":
-                        var d = DownloadStateStore.LoadDualSourceHTTPDownloaderState(ent.Id);
+                        var d = DownloadStateIO.LoadDualSourceHTTPDownloaderState(ent.Id);
                         state = new()
                         {
                             Headers1 = d.Headers1,
@@ -255,7 +255,7 @@ namespace XDM.Core
                         };
                         break;
                     case "Hls":
-                        var h = DownloadStateStore.LoadMultiSourceHLSDownloadState(ent.Id);
+                        var h = DownloadStateIO.LoadMultiSourceHLSDownloadState(ent.Id);
                         state = new()
                         {
                             Headers = h.Headers,
@@ -263,7 +263,7 @@ namespace XDM.Core
                         };
                         break;
                     case "Mpd-Dash":
-                        var m = DownloadStateStore.LoadMultiSourceDASHDownloadState(ent.Id);
+                        var m = DownloadStateIO.LoadMultiSourceDASHDownloadState(ent.Id);
                         state = new()
                         {
                             Headers = m.Headers,

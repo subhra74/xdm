@@ -311,12 +311,12 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
 
         protected override void SaveState()
         {
-            DownloadStateStore.Save(state);// TransactedIO.WriteBytes(DownloadStateStore.Save(state), Id + ".state", Config.DataDir);
+            DownloadStateIO.Save(state);// TransactedIO.WriteBytes(DownloadStateStore.Save(state), Id + ".state", Config.DataDir);
         }
 
         public override void RestoreState()
         {
-            state = DownloadStateStore.LoadDualSourceHTTPDownloaderState(Id!);
+            state = DownloadStateIO.LoadDualSourceHTTPDownloaderState(Id!);
             //var bytes = TransactedIO.ReadBytes(Id + ".state", Config.DataDir);
             //if (bytes == null)
             //{

@@ -233,7 +233,7 @@ namespace XDM.Core
                 {
                     using var ms = new MemoryStream(bytes);
                     using var reader = new BinaryReader(ms);
-                    SerializationHelper.DeserializeConfig(instance, reader);
+                    ConfigIO.DeserializeConfig(instance, reader);
                 }
             }
             catch (Exception ex)
@@ -385,7 +385,7 @@ namespace XDM.Core
 
         public static void SaveConfig()
         {
-            SerializationHelper.SerializeConfig();
+            ConfigIO.SerializeConfig();
         }
 
         //public static void SaveConfig3()

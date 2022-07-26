@@ -158,7 +158,7 @@ namespace XDM.Core.Downloader.Adaptive.Dash
 
         protected override void RestoreState()
         {
-            var state = DownloadStateStore.LoadMultiSourceDASHDownloadState(Id!);
+            var state = DownloadStateIO.LoadMultiSourceDASHDownloadState(Id!);
             this._state = state;
 
             //var bytes = TransactedIO.ReadBytes(Id + ".state", Config.DataDir);
@@ -241,7 +241,7 @@ namespace XDM.Core.Downloader.Adaptive.Dash
 
         protected override void SaveState()
         {
-            DownloadStateStore.Save((MultiSourceDASHDownloadState)_state);
+            DownloadStateIO.Save((MultiSourceDASHDownloadState)_state);
             //TransactedIO.WriteBytes(DownloadStateStore.Save((MultiSourceDASHDownloadState)_state), Id + ".state", Config.DataDir);
             //TransactedIO.Write(JsonConvert.SerializeObject(_state as MultiSourceDASHDownloadState),
             //    Id + ".state", Config.DataDir);

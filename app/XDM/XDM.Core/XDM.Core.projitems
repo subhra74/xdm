@@ -136,7 +136,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Downloader\Chunk.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Downloader\CountdownLatch.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Downloader\DownloadFailedEventArgs.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)IO\DownloadStateStore.cs" />
+    <Compile Include="..\XDM.Core\IO\DownloadStateIO.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Downloader\DownloadTypes.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Downloader\FileNameFetchMode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Downloader\IBaseDownloader.cs" />
@@ -172,7 +172,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)UI\QueueSelectionEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Util\BrowserLauncher.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Util\Helpers.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)IO\SerializationHelper.cs" />
+    <Compile Include="..\XDM.Core\IO\ConfigIO.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Util\TimeHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Util\Win32NativeMethods.cs" />
     <Compile Include="..\XDM.Core\Application.cs" />

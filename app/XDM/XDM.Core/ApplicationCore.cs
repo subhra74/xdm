@@ -688,7 +688,7 @@ namespace XDM.Core
                 switch (entry.DownloadType)
                 {
                     case "Http":
-                        var h1 = DownloadStateStore.LoadSingleSourceHTTPDownloaderState(entry.Id);
+                        var h1 = DownloadStateIO.LoadSingleSourceHTTPDownloaderState(entry.Id);
                         if (h1 != null)
                         {
                             tempDir = h1.TempDir;
@@ -696,7 +696,7 @@ namespace XDM.Core
                         }
                         break;
                     case "Dash":
-                        var h2 = DownloadStateStore.LoadDualSourceHTTPDownloaderState(entry.Id);
+                        var h2 = DownloadStateIO.LoadDualSourceHTTPDownloaderState(entry.Id);
                         if (h2 != null)
                         {
                             tempDir = h2.TempDir;
@@ -704,7 +704,7 @@ namespace XDM.Core
                         }
                         break;
                     case "Hls":
-                        var hls = DownloadStateStore.LoadMultiSourceHLSDownloadState(entry.Id);
+                        var hls = DownloadStateIO.LoadMultiSourceHLSDownloadState(entry.Id);
                         if (hls != null)
                         {
                             tempDir = hls.TempDirectory;
@@ -712,7 +712,7 @@ namespace XDM.Core
                         }
                         break;
                     case "Mpd-Dash":
-                        var dash = DownloadStateStore.LoadMultiSourceDASHDownloadState(entry.Id);
+                        var dash = DownloadStateIO.LoadMultiSourceDASHDownloadState(entry.Id);
                         if (dash != null)
                         {
                             tempDir = dash.TempDirectory;

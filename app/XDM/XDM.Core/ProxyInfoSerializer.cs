@@ -12,7 +12,7 @@ namespace XDM.Core
     {
         public static void Serialize(ProxyInfo proxy, BinaryWriter w)
         {
-            SerializationHelper.SerializeProxyInfo(proxy, w);
+            ConfigIO.SerializeProxyInfo(proxy, w);
         }
 
         //public static ProxyInfo? Deserialize(BinaryReader reader)
@@ -34,7 +34,7 @@ namespace XDM.Core
         
         public static ProxyInfo Deserialize(BinaryReader r)
         {
-            return SerializationHelper.DeserializeProxyInfo(r);
+            return ConfigIO.DeserializeProxyInfo(r);
         }
     }
 }

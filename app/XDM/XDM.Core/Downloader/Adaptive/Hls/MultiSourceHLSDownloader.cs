@@ -360,7 +360,7 @@ namespace XDM.Core.Downloader.Adaptive.Hls
 
         protected override void RestoreState()
         {
-            var state = DownloadStateStore.LoadMultiSourceHLSDownloadState(Id!);
+            var state = DownloadStateIO.LoadMultiSourceHLSDownloadState(Id!);
             this._state = state;
 
             //var bytes = TransactedIO.ReadBytes(Id + ".state", Config.DataDir);
@@ -434,7 +434,7 @@ namespace XDM.Core.Downloader.Adaptive.Hls
 
         protected override void SaveState()
         {
-            DownloadStateStore.Save((MultiSourceHLSDownloadState)this._state);
+            DownloadStateIO.Save((MultiSourceHLSDownloadState)this._state);
             //TransactedIO.WriteBytes(DownloadStateStore.Save((MultiSourceHLSDownloadState)this._state), Id + ".state", Config.DataDir);
             //((TransactedIO.Write(JsonConvert.SerializeObject(_state as MultiSourceHLSDownloadState), Id + ".state", Config.DataDir);
             //File.WriteAllText(Path.Combine(Config.DataDir, Id + ".state"), JsonConvert.SerializeObject(_state as MultiSourceHLSDownloadState));

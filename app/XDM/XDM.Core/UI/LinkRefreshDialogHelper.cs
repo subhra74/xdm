@@ -26,7 +26,7 @@ namespace XDM.Core.UI
                 string? referer = null;
                 if (item.DownloadType == "Http")
                 {
-                    var state = DownloadStateStore.LoadSingleSourceHTTPDownloaderState(item.Id);
+                    var state = DownloadStateIO.LoadSingleSourceHTTPDownloaderState(item.Id);
                     referer = GetReferer(state.Headers);
                     //if (!TransactedIO.ReadStream(item.Id + ".state", Config.DataDir, s =>
                     //{
@@ -45,7 +45,7 @@ namespace XDM.Core.UI
                 }
                 else if (item.DownloadType == "Dash")
                 {
-                    var state = DownloadStateStore.LoadDualSourceHTTPDownloaderState(item.Id);
+                    var state = DownloadStateIO.LoadDualSourceHTTPDownloaderState(item.Id);
                     //JsonConvert.DeserializeObject<DualSourceHTTPDownloaderState>(
                     //    File.ReadAllText(Path.Combine(Config.DataDir, item.Id + ".state")));
                     referer = GetReferer(state.Headers1);

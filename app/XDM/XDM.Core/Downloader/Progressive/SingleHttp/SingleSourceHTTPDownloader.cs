@@ -168,14 +168,14 @@ namespace XDM.Core.Downloader.Progressive.SingleHttp
 
         protected override void SaveState()
         {
-            DownloadStateStore.Save(state!);
+            DownloadStateIO.Save(state!);
             //TransactedIO.WriteStream(Id + ".state", Config.DataDir, s => DownloadStateStore.StateToBytes(state!, s));
             //TransactedIO.WriteBytes(DownloadStateStore.StateToBytes(state), Id + ".state", Config.DataDir);
         }
 
         public override void RestoreState()
         {
-            state = DownloadStateStore.LoadSingleSourceHTTPDownloaderState(Id!);
+            state = DownloadStateIO.LoadSingleSourceHTTPDownloaderState(Id!);
             //if (!TransactedIO.ReadStream(Id + ".state", Config.DataDir, s =>
             //{
             //    state = DownloadStateStore.SingleSourceHTTPDownloaderStateFromBytes(s);
