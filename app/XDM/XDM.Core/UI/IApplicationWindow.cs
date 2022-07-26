@@ -75,7 +75,7 @@ namespace XDM.Core.UI
 
         void Delete(IEnumerable<IFinishedDownloadRow> rows);
 
-        string GetUrlFromClipboard();
+        string? GetUrlFromClipboard();
 
         AuthenticationInfo? PromtForCredentials(string message);
 

@@ -9,6 +9,7 @@ using XDM.Core.Downloader.Adaptive.Hls;
 using XDM.Core.Downloader.Progressive.DualHttp;
 using XDM.Core.Downloader.Progressive.SingleHttp;
 using XDM.Core.Util;
+using XDM.Messaging;
 #if NET35
 using XDM.Compatibility;
 #endif
@@ -78,7 +79,7 @@ namespace XDM.Core.Downloader
             var state = new SingleSourceHTTPDownloaderState
             {
                 Id = r.ReadString(),
-                TempDir = Helpers.ReadString(r),
+                TempDir = XDM.Messaging.StreamHelper.ReadString(r),
                 FileSize = r.ReadInt64(),
                 LastModified = DateTime.FromBinary(r.ReadInt64()),
                 SpeedLimit = r.ReadInt32(),
@@ -86,12 +87,12 @@ namespace XDM.Core.Downloader
             };
             if (r.ReadBoolean())
             {
-                Helpers.ReadStateHeaders(r, out Dictionary<string, List<string>> headers);
+                XDM.Messaging.StreamHelper.ReadStateHeaders(r, out Dictionary<string, List<string>> headers);
                 state.Headers = headers;
             }
             if (r.ReadBoolean())
             {
-                Helpers.ReadStateCookies(r, out Dictionary<string, string> cookies);
+                XDM.Messaging.StreamHelper.ReadStateCookies(r, out Dictionary<string, string> cookies);
                 state.Cookies = cookies;
             }
 
@@ -99,11 +100,11 @@ namespace XDM.Core.Downloader
             {
                 state.Proxy = new ProxyInfo
                 {
-                    Host = Helpers.ReadString(r),
+                    Host = XDM.Messaging.StreamHelper.ReadString(r),
                     Port = r.ReadInt32(),
                     ProxyType = (ProxyType)r.ReadInt32(),
-                    UserName = Helpers.ReadString(r),
-                    Password = Helpers.ReadString(r),
+                    UserName = XDM.Messaging.StreamHelper.ReadString(r),
+                    Password = XDM.Messaging.StreamHelper.ReadString(r),
                 };
             }
             state.ConvertToMp3 = r.ReadBoolean();
@@ -127,13 +128,13 @@ namespace XDM.Core.Downloader
             w.Write(hasHeaders);
             if (hasHeaders)
             {
-                Helpers.WriteStateHeaders(state.Headers, w);
+                XDM.Messaging.StreamHelper.WriteStateHeaders(state.Headers, w);
             }
             var hasCookies = state.Cookies != null;
             w.Write(hasCookies);
             if (hasCookies)
             {
-                Helpers.WriteStateCookies(state.Cookies, w);
+                XDM.Messaging.StreamHelper.WriteStateCookies(state.Cookies, w);
             }
             var hasProxy = state.Proxy.HasValue;
             w.Write(hasProxy);
@@ -167,7 +168,7 @@ namespace XDM.Core.Downloader
             var state = new DualSourceHTTPDownloaderState
             {
                 Id = r.ReadString(),
-                TempDir = Helpers.ReadString(r),
+                TempDir = XDM.Messaging.StreamHelper.ReadString(r),
                 FileSize = r.ReadInt64(),
                 LastModified = DateTime.FromBinary(r.ReadInt64()),
                 SpeedLimit = r.ReadInt32(),
@@ -178,33 +179,33 @@ namespace XDM.Core.Downloader
             };
             if (r.ReadBoolean())
             {
-                Helpers.ReadStateHeaders(r, out Dictionary<string, List<string>> headers);
+                XDM.Messaging.StreamHelper.ReadStateHeaders(r, out Dictionary<string, List<string>> headers);
                 state.Headers1 = headers;
             }
             if (r.ReadBoolean())
             {
-                Helpers.ReadStateHeaders(r, out Dictionary<string, List<string>> headers);
+                XDM.Messaging.StreamHelper.ReadStateHeaders(r, out Dictionary<string, List<string>> headers);
                 state.Headers2 = headers;
             }
             if (r.ReadBoolean())
             {
-                Helpers.ReadStateCookies(r, out Dictionary<string, string> cookies);
+                XDM.Messaging.StreamHelper.ReadStateCookies(r, out Dictionary<string, string> cookies);
                 state.Cookies1 = cookies;
             }
             if (r.ReadBoolean())
             {
-                Helpers.ReadStateCookies(r, out Dictionary<string, string> cookies);
+                XDM.Messaging.StreamHelper.ReadStateCookies(r, out Dictionary<string, string> cookies);
                 state.Cookies2 = cookies;
             }
             if (r.ReadBoolean())
             {
                 state.Proxy = new ProxyInfo
                 {
-                    Host = Helpers.ReadString(r),
+                    Host = XDM.Messaging.StreamHelper.ReadString(r),
                     Port = r.ReadInt32(),
                     ProxyType = (ProxyType)r.ReadInt32(),
-                    UserName = Helpers.ReadString(r),
-                    Password = Helpers.ReadString(r),
+                    UserName = XDM.Messaging.StreamHelper.ReadString(r),
+                    Password = XDM.Messaging.StreamHelper.ReadString(r),
                 };
             }
             return state;
@@ -230,25 +231,25 @@ namespace XDM.Core.Downloader
             w.Write(hasHeaders1);
             if (hasHeaders1)
             {
-                Helpers.WriteStateHeaders(state.Headers1, w);
+                XDM.Messaging.StreamHelper.WriteStateHeaders(state.Headers1, w);
             }
             var hasHeaders2 = state.Headers2 != null;
             w.Write(hasHeaders2);
             if (hasHeaders2)
             {
-                Helpers.WriteStateHeaders(state.Headers2, w);
+                XDM.Messaging.StreamHelper.WriteStateHeaders(state.Headers2, w);
             }
             var hasCookies1 = state.Cookies1 != null;
             w.Write(hasCookies1);
             if (hasCookies1)
             {
-                Helpers.WriteStateCookies(state.Cookies1, w);
+                XDM.Messaging.StreamHelper.WriteStateCookies(state.Cookies1, w);
             }
             var hasCookies2 = state.Cookies2 != null;
             w.Write(hasCookies2);
             if (hasCookies2)
             {
-                Helpers.WriteStateCookies(state.Cookies2, w);
+                XDM.Messaging.StreamHelper.WriteStateCookies(state.Cookies2, w);
             }
             var hasProxy = state.Proxy.HasValue;
             w.Write(hasProxy);
@@ -294,13 +295,13 @@ namespace XDM.Core.Downloader
             w.Write(hasHeaders);
             if (hasHeaders)
             {
-                Helpers.WriteStateHeaders(state.Headers, w);
+                XDM.Messaging.StreamHelper.WriteStateHeaders(state.Headers, w);
             }
             var hasCookies = state.Cookies != null;
             w.Write(hasCookies);
             if (hasCookies)
             {
-                Helpers.WriteStateCookies(state.Cookies, w);
+                XDM.Messaging.StreamHelper.WriteStateCookies(state.Cookies, w);
             }
             var hasProxy = state.Proxy.HasValue;
             w.Write(hasProxy);
@@ -333,16 +334,16 @@ namespace XDM.Core.Downloader
             var state = new MultiSourceDASHDownloadState
             {
                 Id = r.ReadString(),
-                TempDirectory = Helpers.ReadString(r),
+                TempDirectory = XDM.Messaging.StreamHelper.ReadString(r),
                 FileSize = r.ReadInt64(),
                 Demuxed = r.ReadBoolean(),
                 SpeedLimit = r.ReadInt32(),
                 AudioChunkCount = r.ReadInt32(),
-                AudioContainerFormat = Helpers.ReadString(r),
+                AudioContainerFormat = XDM.Messaging.StreamHelper.ReadString(r),
                 VideoChunkCount = r.ReadInt32(),
-                VideoContainerFormat = Helpers.ReadString(r),
+                VideoContainerFormat = XDM.Messaging.StreamHelper.ReadString(r),
                 Duration = r.ReadDouble(),
-                Url = Helpers.ReadString(r)
+                Url = XDM.Messaging.StreamHelper.ReadString(r)
             };
 
             var ac = r.ReadInt32();
@@ -367,23 +368,23 @@ namespace XDM.Core.Downloader
 
             if (r.ReadBoolean())
             {
-                Helpers.ReadStateHeaders(r, out Dictionary<string, List<string>> headers);
+                XDM.Messaging.StreamHelper.ReadStateHeaders(r, out Dictionary<string, List<string>> headers);
                 state.Headers = headers;
             }
             if (r.ReadBoolean())
             {
-                Helpers.ReadStateCookies(r, out Dictionary<string, string> cookies);
+                XDM.Messaging.StreamHelper.ReadStateCookies(r, out Dictionary<string, string> cookies);
                 state.Cookies = cookies;
             }
             if (r.ReadBoolean())
             {
                 state.Proxy = new ProxyInfo
                 {
-                    Host = Helpers.ReadString(r),
+                    Host = XDM.Messaging.StreamHelper.ReadString(r),
                     Port = r.ReadInt32(),
                     ProxyType = (ProxyType)r.ReadInt32(),
-                    UserName = Helpers.ReadString(r),
-                    Password = Helpers.ReadString(r),
+                    UserName = XDM.Messaging.StreamHelper.ReadString(r),
+                    Password = XDM.Messaging.StreamHelper.ReadString(r),
                 };
             }
             return state;
@@ -413,13 +414,13 @@ namespace XDM.Core.Downloader
             w.Write(hasHeaders);
             if (hasHeaders)
             {
-                Helpers.WriteStateHeaders(state.Headers, w);
+                XDM.Messaging.StreamHelper.WriteStateHeaders(state.Headers, w);
             }
             var hasCookies = state.Cookies != null;
             w.Write(hasCookies);
             if (hasCookies)
             {
-                Helpers.WriteStateCookies(state.Cookies, w);
+                XDM.Messaging.StreamHelper.WriteStateCookies(state.Cookies, w);
             }
             var hasProxy = state.Proxy.HasValue;
             w.Write(hasProxy);
@@ -452,20 +453,20 @@ namespace XDM.Core.Downloader
             var state = new MultiSourceHLSDownloadState
             {
                 Id = r.ReadString(),
-                TempDirectory = Helpers.ReadString(r),
+                TempDirectory = XDM.Messaging.StreamHelper.ReadString(r),
                 FileSize = r.ReadInt64(),
                 Demuxed = r.ReadBoolean(),
                 SpeedLimit = r.ReadInt32(),
                 AudioChunkCount = r.ReadInt32(),
-                AudioContainerFormat = Helpers.ReadString(r),
+                AudioContainerFormat = XDM.Messaging.StreamHelper.ReadString(r),
                 VideoChunkCount = r.ReadInt32(),
-                VideoContainerFormat = Helpers.ReadString(r),
+                VideoContainerFormat = XDM.Messaging.StreamHelper.ReadString(r),
                 Duration = r.ReadDouble()
             };
 
-            var muxedPlaylistUrl = Helpers.ReadString(r);
-            var nonMuxedAudioPlaylistUrl = Helpers.ReadString(r);
-            var nonMuxedVideoPlaylistUrl = Helpers.ReadString(r);
+            var muxedPlaylistUrl = XDM.Messaging.StreamHelper.ReadString(r);
+            var nonMuxedAudioPlaylistUrl = XDM.Messaging.StreamHelper.ReadString(r);
+            var nonMuxedVideoPlaylistUrl = XDM.Messaging.StreamHelper.ReadString(r);
 
             if (muxedPlaylistUrl != null)
             {
@@ -482,23 +483,23 @@ namespace XDM.Core.Downloader
 
             if (r.ReadBoolean())
             {
-                Helpers.ReadStateHeaders(r, out Dictionary<string, List<string>> headers);
+                XDM.Messaging.StreamHelper.ReadStateHeaders(r, out Dictionary<string, List<string>> headers);
                 state.Headers = headers;
             }
             if (r.ReadBoolean())
             {
-                Helpers.ReadStateCookies(r, out Dictionary<string, string> cookies);
+                XDM.Messaging.StreamHelper.ReadStateCookies(r, out Dictionary<string, string> cookies);
                 state.Cookies = cookies;
             }
             if (r.ReadBoolean())
             {
                 state.Proxy = new ProxyInfo
                 {
-                    Host = Helpers.ReadString(r),
+                    Host = XDM.Messaging.StreamHelper.ReadString(r),
                     Port = r.ReadInt32(),
                     ProxyType = (ProxyType)r.ReadInt32(),
-                    UserName = Helpers.ReadString(r),
-                    Password = Helpers.ReadString(r),
+                    UserName = XDM.Messaging.StreamHelper.ReadString(r),
+                    Password = XDM.Messaging.StreamHelper.ReadString(r),
                 };
             }
             return state;

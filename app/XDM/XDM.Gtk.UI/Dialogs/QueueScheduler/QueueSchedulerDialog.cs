@@ -245,7 +245,7 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
                 if (ent == null) return;
                 GtkHelper.RemoveAt(filesListStore, index);
                 filesListStore.InsertWithValues(indices[0], ent.Name,
-                    Helpers.FormatSize(ent.Size), ent.Status.ToString(), ent);
+                    FormattingHelper.FormatSize(ent.Size), ent.Status.ToString(), ent);
             }
         }
 
@@ -259,7 +259,7 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
                 var index = indices[indices.Length - 1];
                 GtkHelper.RemoveAt(filesListStore, indices[0] - 1);
                 filesListStore.InsertWithValues(index, ent.Name,
-                    Helpers.FormatSize(ent.Size), ent.Status.ToString(), ent);
+                    FormattingHelper.FormatSize(ent.Size), ent.Status.ToString(), ent);
             }
             //var indices = GtkHelper.getse lvFiles.GetSelectedIndices();
             //if (indices.Length > 0 && indices[0] > 0)
@@ -378,7 +378,7 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
                 var ent = ApplicationContext.Application.GetInProgressDownloadEntry(id);
                 if (ent != null)
                 {
-                    filesListStore.AppendValues(ent.Name, Helpers.FormatSize(ent.Size), ent.Status.ToString(), ent);
+                    filesListStore.AppendValues(ent.Name, FormattingHelper.FormatSize(ent.Size), ent.Status.ToString(), ent);
                 }
             }
 
@@ -418,7 +418,7 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
                         var ent = ApplicationContext.Application.GetInProgressDownloadEntry(id);
                         if (ent != null)
                         {
-                            filesListStore.AppendValues(ent.Name, Helpers.FormatSize(ent.Size), ent.Status.ToString(), ent);
+                            filesListStore.AppendValues(ent.Name, FormattingHelper.FormatSize(ent.Size), ent.Status.ToString(), ent);
                         }
                     }
                 }

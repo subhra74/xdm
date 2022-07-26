@@ -13,14 +13,14 @@ namespace XDM.Core.UI
             {
                 if (!string.IsNullOrEmpty(args.Path))
                 {
-                    Helpers.OpenFile(args.Path!);
+                    PlatformHelper.OpenFile(args.Path!);
                 }
             };
             dwnCmpldDlg.FolderOpenClicked += (sender, args) =>
             {
                 if (!string.IsNullOrEmpty(args.Path))
                 {
-                    Helpers.OpenFolder(args.Path!, args.FileName);
+                    PlatformHelper.OpenFolder(args.Path!, args.FileName);
                 }
             };
             dwnCmpldDlg.DontShowAgainClickd += (sender, args) =>

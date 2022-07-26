@@ -561,7 +561,7 @@ namespace XDM.Core.Downloader.Adaptive
             if (this._cancellationTokenSource.IsCancellationRequested) return;
             if (string.IsNullOrEmpty(this.TargetDir))
             {
-                this.TargetDir = Helpers.GetDownloadFolderByFileName(this.TargetFileName);
+                this.TargetDir = FileHelper.GetDownloadFolderByFileName(this.TargetFileName);
             }
 
             if (!Directory.Exists(this.TargetDir))
@@ -571,7 +571,7 @@ namespace XDM.Core.Downloader.Adaptive
 
             if (Config.Instance.FileConflictResolution == FileConflictResolution.AutoRename)
             {
-                this.TargetFileName = Helpers.GetUniqueFileName(this.TargetFileName, this.TargetDir);
+                this.TargetFileName = FileHelper.GetUniqueFileName(this.TargetFileName, this.TargetDir);
             }
 
             if (!_state.Demuxed)
@@ -606,7 +606,7 @@ namespace XDM.Core.Downloader.Adaptive
                 //try with matroska container
                 var name = Path.GetFileNameWithoutExtension(TargetFileName);
                 TargetFileName = name + ".mkv";
-                this.TargetFileName = Helpers.GetUniqueFileName(this.TargetFileName, this.TargetDir);
+                this.TargetFileName = FileHelper.GetUniqueFileName(this.TargetFileName, this.TargetDir);
                 if (mediaProcessor.MergeAudioVideStream(videoFile, audioFile, TargetFile,
                 this._cancellationTokenSource, out totalSize) != MediaProcessingResult.Success)
                 {
@@ -638,7 +638,7 @@ namespace XDM.Core.Downloader.Adaptive
 
         public void SetFileName(string name, FileNameFetchMode fileNameFetchMode)
         {
-            this.TargetFileName = Helpers.SanitizeFileName(name);
+            this.TargetFileName = FileHelper.SanitizeFileName(name);
             //this.fileNameFetchMode = fileNameFetchMode;
         }
 

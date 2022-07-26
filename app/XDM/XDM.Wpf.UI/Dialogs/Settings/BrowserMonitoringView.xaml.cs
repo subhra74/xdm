@@ -177,7 +177,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
 
         private void VideoWikiLink_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            Helpers.OpenBrowser(Links.VideoDownloadTutorialUrl);
+            PlatformHelper.OpenBrowser(Links.VideoDownloadTutorialUrl);
         }
     }
 }

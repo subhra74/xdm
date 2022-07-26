@@ -31,8 +31,8 @@ namespace XDM.Core.UI
                 }
             }
             //window.SeletedFolderIndex = Config.Instance.FolderSelectionMode == FolderSelectionMode.Auto ? 0 : 2;
-            window.SelectedFileName = Helpers.SanitizeFileName(name);
-            window.FileSize = Helpers.FormatSize(size);
+            window.SelectedFileName = FileHelper.SanitizeFileName(name);
+            window.FileSize = FormattingHelper.FormatSize(size);
 
             window.FileBrowsedEvent += CommonUtils.OnFileBrowsed;
             window.DropdownSelectionChangedEvent += CommonUtils.OnDropdownSelectionChanged;
@@ -64,7 +64,7 @@ namespace XDM.Core.UI
                     }
                     return;
                 }
-                var name = Helpers.SanitizeFileName(window.SelectedFileName);
+                var name = FileHelper.SanitizeFileName(window.SelectedFileName);
                 if (window.IsMp3CheckboxChecked)
                 {
                     name = AddMp3Extension(name);
@@ -87,7 +87,7 @@ namespace XDM.Core.UI
                     window.ShowMessageBox(TextResource.GetText("MSG_NO_FILE"));
                     return;
                 }
-                var name = Helpers.SanitizeFileName(window.SelectedFileName);
+                var name = FileHelper.SanitizeFileName(window.SelectedFileName);
                 if (window.IsMp3CheckboxChecked)
                 {
                     name = AddMp3Extension(name);

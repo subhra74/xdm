@@ -28,7 +28,7 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            Helpers.OpenBrowser(Links.VideoDownloadTutorialUrl);
+            PlatformHelper.OpenBrowser(Links.VideoDownloadTutorialUrl);
         }
     }
 }

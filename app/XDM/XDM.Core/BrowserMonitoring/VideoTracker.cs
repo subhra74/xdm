@@ -228,7 +228,7 @@ namespace XDM.Core.BrowserMonitoring
                 if (Config.Instance.StartDownloadAutomatically)
                 {
                     StartVideoDownload(
-                        videoId, Helpers.SanitizeFileName(name),
+                        videoId, FileHelper.SanitizeFileName(name),
                         null, true, null, Config.Instance.Proxy,
                     Helpers.GetSpeedLimit(), null);
                 }

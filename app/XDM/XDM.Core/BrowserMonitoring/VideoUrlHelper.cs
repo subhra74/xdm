@@ -47,7 +47,7 @@ namespace XDM.Core.BrowserMonitoring
 
         internal static void ProcessPostYtFormats(Message message)
         {
-            //var file = message.File ?? Helpers.GetFileName(new Uri(message.Url));
+            //var file = message.File ?? FileHelper.GetFileName(new Uri(message.Url));
             var manifest = DownloadManifest(message);
             if (manifest == null)
             {
@@ -77,12 +77,12 @@ namespace XDM.Core.BrowserMonitoring
                                 Uri2 = item.AudioUrl,
                                 Headers1 = message.RequestHeaders,
                                 Headers2 = message.RequestHeaders,
-                                File = Helpers.SanitizeFileName(item.Title) + "." + fileExt,
+                                File = FileHelper.SanitizeFileName(item.Title) + "." + fileExt,
                                 Cookies1 = message.Cookies,
                                 Cookies2 = message.Cookies
                             };
 
-                            var size = item.Size > 0 ? Helpers.FormatSize(item.Size) : string.Empty;
+                            var size = item.Size > 0 ? FormattingHelper.FormatSize(item.Size) : string.Empty;
                             var displayInfo = new StreamingVideoDisplayInfo
                             {
                                 Quality = $"[{fileExt.ToUpperInvariant()}] {size} {item.FormatDescription}",
@@ -109,10 +109,10 @@ namespace XDM.Core.BrowserMonitoring
                             {
                                 Uri = item.MediaUrl,
                                 Headers = message.RequestHeaders,
-                                File = Helpers.SanitizeFileName(item.Title) + "." + fileExt,
+                                File = FileHelper.SanitizeFileName(item.Title) + "." + fileExt,
                                 Cookies = message.Cookies
                             };
-                            var size = item.Size > 0 ? Helpers.FormatSize(item.Size) : string.Empty;
+                            var size = item.Size > 0 ? FormattingHelper.FormatSize(item.Size) : string.Empty;
                             var displayText = $"[{fileExt.ToUpperInvariant()}] {size} {item.FormatDescription}";
 
                             var displayInfo = new StreamingVideoDisplayInfo
@@ -136,7 +136,7 @@ namespace XDM.Core.BrowserMonitoring
 
         internal static void ProcessDashVideo(Message message)
         {
-            var file = message.File ?? Helpers.GetFileName(new Uri(message.Url));
+            var file = message.File ?? FileHelper.GetFileName(new Uri(message.Url));
             Log.Debug("Downloading MPD manifest: " + message.Url);
 
             AddToSkippedRefererList(message.GetRequestHeaderFirstValue("Referer"));
@@ -169,7 +169,7 @@ namespace XDM.Core.BrowserMonitoring
                                 Uri2 = audio.Segments[0].ToString(),
                                 Headers1 = message.RequestHeaders,
                                 Headers2 = message.RequestHeaders,
-                                File = prefix + Helpers.SanitizeFileName(file) + "." + fileExt,
+                                File = prefix + FileHelper.SanitizeFileName(file) + "." + fileExt,
                                 Cookies1 = message.Cookies,
                                 Cookies2 = message.Cookies
                             };
@@ -189,7 +189,7 @@ namespace XDM.Core.BrowserMonitoring
                                 VideoSegments = video.Segments,
                                 AudioSegments = audio.Segments,
                                 Headers = message.RequestHeaders,
-                                File = prefix + Helpers.SanitizeFileName(file) + "." + fileExt,
+                                File = prefix + FileHelper.SanitizeFileName(file) + "." + fileExt,
                                 Cookies = message.Cookies,
                                 Duration = Math.Max(video.Duration, audio.Duration),
                                 Url = message.Url,
@@ -231,7 +231,7 @@ namespace XDM.Core.BrowserMonitoring
             {
                 Uri = item.Segments[0].ToString(),
                 Headers = message.RequestHeaders,
-                File = prefix + Helpers.SanitizeFileName(file) + "." + fileExt,
+                File = prefix + FileHelper.SanitizeFileName(file) + "." + fileExt,
                 Cookies = message.Cookies
             };
             var quality = audio ? GetQualityString(null, item) : GetQualityString(item, null);
@@ -304,7 +304,7 @@ namespace XDM.Core.BrowserMonitoring
                                 VideoUri = plc.VideoPlaylist?.ToString(),
                                 AudioUri = plc.AudioPlaylist?.ToString(),
                                 Headers = message.RequestHeaders,
-                                File = Helpers.SanitizeFileName(message.File ?? (Helpers.GetFileName(new Uri(message.Url)))) +
+                                File = FileHelper.SanitizeFileName(message.File ?? (FileHelper.GetFileName(new Uri(message.Url)))) +
                                 (plc.AudioPlaylist != null && plc.VideoPlaylist != null ?
                                 "." + type.ToLowerInvariant() : "." + type.ToLowerInvariant()),
                                 Cookies = message.Cookies
@@ -330,13 +330,13 @@ namespace XDM.Core.BrowserMonitoring
                     Log.Debug("Not Master playlist");
                     var mediaPlaylist = HlsParser.ParseMediaSegments(manifestText.Split('\n'), message.Url);
                     if (mediaPlaylist == null) return;
-                    var file = Helpers.GetFileName(mediaPlaylist.MediaSegments.Last().Url);
-                    var container = Helpers.GuessContainerFormatFromSegmentExtension(Path.GetExtension(file));
+                    var file = FileHelper.GetFileName(mediaPlaylist.MediaSegments.Last().Url);
+                    var container = FileExtensionHelper.GuessContainerFormatFromSegmentExtension(Path.GetExtension(file));
                     var video = new MultiSourceHLSDownloadInfo
                     {
                         VideoUri = message.Url,
                         Headers = message.RequestHeaders,
-                        File = Helpers.SanitizeFileName(message.File ?? Helpers.GetFileName(new Uri(message.Url))) + ".ts",
+                        File = FileHelper.SanitizeFileName(message.File ?? FileHelper.GetFileName(new Uri(message.Url))) + ".ts",
                         Cookies = message.Cookies,
                     };
                     var displayText = $"[{container}]";
@@ -370,7 +370,7 @@ namespace XDM.Core.BrowserMonitoring
                 {
                     return false;
                 }
-                (var path, var query, _) = Helpers.ParseKeyValuePair(message.Url, '?');
+                (var path, var query, _) = ParsingHelper.ParseKeyValuePair(message.Url, '?');
 
                 string[] arr = query.Split('&');
                 var yt_url = new StringBuilder();
@@ -383,7 +383,7 @@ namespace XDM.Core.BrowserMonitoring
                 for (int i = 0; i < arr.Length; i++)
                 {
                     var str = arr[i];
-                    (var key, var val, var success) = Helpers.ParseKeyValuePair(str, '=');
+                    (var key, var val, var success) = ParsingHelper.ParseKeyValuePair(str, '=');
                     if (!success)
                     {
                         continue;
@@ -455,7 +455,7 @@ namespace XDM.Core.BrowserMonitoring
                     //    Uri2 = info.Url,
                     //    Headers1 = di.Headers,
                     //    Headers2 = info.Headers,
-                    //    File = Helpers.SanitizeFileName(message.File ?? Helpers.GetFileName(new Uri(message.Url))) + ".mkv",
+                    //    File = FileHelper.SanitizeFileName(message.File ?? FileHelper.GetFileName(new Uri(message.Url))) + ".mkv",
                     //    Cookies1 = di.Cookies,
                     //    Cookies2 = info.Cookies,
                     //    ContentLength = di.Length + info.Length
@@ -465,7 +465,7 @@ namespace XDM.Core.BrowserMonitoring
                     Log.Debug("Itag: " + info.ITag + " " + di.ITag);
                     var quality = Itags.GetValueOrDefault(info.IsVideo ? info.ITag : di.ITag, "MKV");
 
-                    var displayText = $"[{quality}] {(size > 0 ? Helpers.FormatSize(size) : string.Empty)}";
+                    var displayText = $"[{quality}] {(size > 0 ? FormattingHelper.FormatSize(size) : string.Empty)}";
                     ApplicationContext.VideoTracker.AddVideoNotification(new StreamingVideoDisplayInfo
                     {
                         Quality = displayText,
@@ -486,7 +486,7 @@ namespace XDM.Core.BrowserMonitoring
             {
                 var size = info.Length;
                 Log.Debug("Itag: " + info.ITag + " " + info.ITag);
-                var name = Helpers.GetFileName(new Uri(info.Url));
+                var name = FileHelper.GetFileName(new Uri(info.Url));
                 var ext = Path.GetExtension(name);
 
                 if (string.IsNullOrEmpty(ext))
@@ -495,13 +495,13 @@ namespace XDM.Core.BrowserMonitoring
                 }
 
                 var quality = ext.Substring(1)?.ToUpperInvariant();
-                var displayText = $"[{quality} AUDIO] {(size > 0 ? Helpers.FormatSize(size) : string.Empty)}";
+                var displayText = $"[{quality} AUDIO] {(size > 0 ? FormattingHelper.FormatSize(size) : string.Empty)}";
 
                 var video = new SingleSourceHTTPDownloadInfo
                 {
                     Uri = info.Url,
                     Headers = info.Headers,
-                    File = Helpers.SanitizeFileName(message.File ?? Helpers.GetFileName(new Uri(message.Url))) + ext,
+                    File = FileHelper.SanitizeFileName(message.File ?? FileHelper.GetFileName(new Uri(message.Url))) + ext,
                     Cookies = info.Cookies,
                     ContentLength = size,
                     ContentType = info.Mime
@@ -529,7 +529,7 @@ namespace XDM.Core.BrowserMonitoring
                 Uri2 = audio.Url,
                 Headers1 = video.Headers,
                 Headers2 = audio.Headers,
-                File = Helpers.SanitizeFileName(message.File ?? Helpers.GetFileName(new Uri(message.Url))) + ".mkv",
+                File = FileHelper.SanitizeFileName(message.File ?? FileHelper.GetFileName(new Uri(message.Url))) + ".mkv",
                 Cookies1 = video.Cookies,
                 Cookies2 = audio.Cookies,
                 ContentLength = video.Length + audio.Length
@@ -544,12 +544,12 @@ namespace XDM.Core.BrowserMonitoring
                 return;
             }
 
-            var file = (message2.File ?? Helpers.GetFileName(new Uri(message2.Url)));
+            var file = (message2.File ?? FileHelper.GetFileName(new Uri(message2.Url)));
             var type = message2.GetResponseHeaderFirstValue("Content-Type")?.ToLowerInvariant() ?? string.Empty;
             var len = message2.GetContentLength();
             if (string.IsNullOrEmpty(file))
             {
-                file = Helpers.GetFileName(new Uri(message2.Url));
+                file = FileHelper.GetFileName(new Uri(message2.Url));
             }
             string ext;
             if (type.Contains("video/mp4"))
@@ -589,13 +589,13 @@ namespace XDM.Core.BrowserMonitoring
             {
                 Uri = message2.Url,
                 Headers = message2.RequestHeaders,
-                File = Helpers.SanitizeFileName(file) + "." + ext,
+                File = FileHelper.SanitizeFileName(file) + "." + ext,
                 Cookies = message2.Cookies,
                 ContentLength = len
             };
 
             var size = long.Parse(message2.GetResponseHeaderFirstValue("Content-Length"));
-            var displayText = $"[{ext.ToUpperInvariant()}] {(size > 0 ? Helpers.FormatSize(size) : string.Empty)}";
+            var displayText = $"[{ext.ToUpperInvariant()}] {(size > 0 ? FormattingHelper.FormatSize(size) : string.Empty)}";
             ApplicationContext.VideoTracker.AddVideoNotification(new StreamingVideoDisplayInfo
             {
                 Quality = displayText,

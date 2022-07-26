@@ -11,7 +11,14 @@
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)AppUpdater.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ClipboardMonitor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IO\RequestDataIO.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)IRequestData.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Util\FileExtensionHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Util\FileHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Util\FormattingHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Util\MimeTypes.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Util\ParsingHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Util\PlatformHelper.cs" />
     <Compile Include="..\XDM.Core\BrowserMonitoring\VideoTracker.cs" />
     <Compile Include="..\XDM.Core\IVideoTracker.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ILinkRefresher.cs" />
@@ -109,7 +116,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)ProxyInfoSerializer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ShortState.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)StreamingVideoDisplayInfo.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)TransactedIO.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IO\TransactedIO.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Updater\UpdateChecker.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DataAccess\AppDB.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DataAccess\DownloadList.cs" />
@@ -129,7 +136,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Downloader\Chunk.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Downloader\CountdownLatch.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Downloader\DownloadFailedEventArgs.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Downloader\DownloadStateStore.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IO\DownloadStateStore.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Downloader\DownloadTypes.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Downloader\FileNameFetchMode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Downloader\IBaseDownloader.cs" />
@@ -165,7 +172,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)UI\QueueSelectionEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Util\BrowserLauncher.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Util\Helpers.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Util\SerializationHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IO\SerializationHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Util\TimeHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Util\Win32NativeMethods.cs" />
     <Compile Include="..\XDM.Core\Application.cs" />

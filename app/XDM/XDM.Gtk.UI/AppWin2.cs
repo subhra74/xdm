@@ -481,7 +481,7 @@
 //                     "Finished" ,
 //                    "121312323", 0, 0, "")
 //                    // TreeIter = store.AppendValues(/*"不能下载为自动选择清晰度模式下的视频"*/
-//                    //"hello"/*@"স্বাধীনভাবে সমান মর্যাদা"*/ /*ent.Name*/, ent.DateAdded.ToShortDateString(), ent.Progress, Helpers.FormatSize(ent.Size), "",
+//                    //"hello"/*@"স্বাধীনভাবে সমান মর্যাদা"*/ /*ent.Name*/, ent.DateAdded.ToShortDateString(), ent.Progress, FormattingHelper.FormatSize(ent.Size), "",
 //                    // ent.Status == DownloadStatus.Finished ? "Finished" : "Stopped",
 //                    // ent.Id, ent.DateAdded.Ticks, ent.Size, ent.DownloadType)
 //                };
@@ -780,7 +780,7 @@
 //                store.SetValue(iter, STATUS, "Finished");
 //                if ((long)store.GetValue(iter, SIZE_REAL) < 0 && size >= 0)
 //                {
-//                    store.SetValue(iter, SIZE, Helpers.FormatSize(size));
+//                    store.SetValue(iter, SIZE, FormattingHelper.FormatSize(size));
 //                    store.SetValue(iter, SIZE_REAL, size);
 //                }
 //                app.SaveState();
@@ -930,7 +930,7 @@
 //            lblFileSize.Text = "";
 //            txtUrl.Text = message.Url;
 
-//            var fileName = providedFileName ?? Helpers.SanitizeFileName(IoPath.GetFileName(new Uri(message.Url).LocalPath));
+//            var fileName = providedFileName ?? FileHelper.SanitizeFileName(IoPath.GetFileName(new Uri(message.Url).LocalPath));
 //            string downloadFolder = Helpers.GetDownloadFolderByFileName(fileName);
 //            Console.WriteLine(downloadFolder);
 
@@ -1000,7 +1000,7 @@
 //            //        downloadFolder = IoPath.GetDirectoryName(http.TargetFile);
 //            //        if (http.FileSize > 0)
 //            //        {
-//            //            lblFileSize.Text = Helpers.FormatSize(http.FileSize);
+//            //            lblFileSize.Text = FormattingHelper.FormatSize(http.FileSize);
 //            //        }
 //            //        else
 //            //        {
@@ -1112,7 +1112,7 @@
 //                    ent.Status == DownloadStatus.Finished ? "Finished" : "Stopped",
 //                    "121312323", 0, 0, "")
 //                    // TreeIter = store.AppendValues(/*"不能下载为自动选择清晰度模式下的视频"*/
-//                    //"hello"/*@"স্বাধীনভাবে সমান মর্যাদা"*/ /*ent.Name*/, ent.DateAdded.ToShortDateString(), ent.Progress, Helpers.FormatSize(ent.Size), "",
+//                    //"hello"/*@"স্বাধীনভাবে সমান মর্যাদা"*/ /*ent.Name*/, ent.DateAdded.ToShortDateString(), ent.Progress, FormattingHelper.FormatSize(ent.Size), "",
 //                    // ent.Status == DownloadStatus.Finished ? "Finished" : "Stopped",
 //                    // ent.Id, ent.DateAdded.Ticks, ent.Size, ent.DownloadType)
 //                };
@@ -1182,7 +1182,7 @@
 
 //            imgbox.Pixbuf = new Gdk.Pixbuf(IoPath.Combine(path, "images", "film-line.svg"), 48, 48, true);
 
-//            txtFile.Text = Helpers.SanitizeFileName(name);
+//            txtFile.Text = FileHelper.SanitizeFileName(name);
 
 //            var btnBrowse = (Button)builder.GetObject("btn-browse");
 //            var btnCancel = (Button)builder.GetObject("btn-cancel");

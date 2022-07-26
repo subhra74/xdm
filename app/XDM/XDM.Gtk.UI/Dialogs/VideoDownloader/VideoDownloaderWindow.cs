@@ -287,7 +287,7 @@ namespace XDM.GtkUI.Dialogs.VideoDownloader
 
         private void BtnHelp_Clicked(object? sender, EventArgs e)
         {
-            Helpers.OpenBrowser(Links.VideoDownloadTutorialUrl);
+            PlatformHelper.OpenBrowser(Links.VideoDownloadTutorialUrl);
         }
 
         private void BtnGo_Clicked(object? sender, EventArgs e)

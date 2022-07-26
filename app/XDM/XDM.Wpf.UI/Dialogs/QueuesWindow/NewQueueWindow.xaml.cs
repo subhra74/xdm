@@ -154,7 +154,7 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
             }
         }
         public string Name => entry.Name;
-        public string Size => Helpers.FormatSize(entry.Size);
+        public string Size => FormattingHelper.FormatSize(entry.Size);
         public string DateAdded => entry.DateAdded.ToShortDateString() + " " + entry.DateAdded.ToShortTimeString();
         public string Status => entry.Status.ToString();
         public string Id => entry.Id;

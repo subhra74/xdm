@@ -131,14 +131,14 @@ namespace XDM.Core
 
         public bool RunOnLogon
         {
-            get => Helpers.IsAutoStartEnabled();
-            set => Helpers.EnableAutoStart(value);
+            get => PlatformHelper.IsAutoStartEnabled();
+            set => PlatformHelper.EnableAutoStart(value);
         }
 
         public string UserSelectedDownloadFolder { get; set; }
 
         public string DefaultDownloadFolder { get; set; } =
-            Helpers.GetOsDefaultDownloadFolder();
+            PlatformHelper.GetOsDefaultDownloadFolder();
 
         public static IEnumerable<Category> DefaultCategories = new[]
         {
@@ -150,7 +150,7 @@ namespace XDM.Core
                 {
                     ".DOC", ".DOCX", ".PDF", ".MD", ".XLSX",".XLS", ".CBZ"
                 },
-                DefaultFolder=Path.Combine(Helpers.GetOsDefaultDownloadFolder(),
+                DefaultFolder=Path.Combine(PlatformHelper.GetOsDefaultDownloadFolder(),
                     "Documents"),
                 IsPredefined=true
             },
@@ -162,7 +162,7 @@ namespace XDM.Core
                 {
                     ".MP3", ".AAC",".MPA",".WMA",".MIDI"
                 },
-                DefaultFolder=Path.Combine(Helpers.GetOsDefaultDownloadFolder(),"Music"),
+                DefaultFolder=Path.Combine(PlatformHelper.GetOsDefaultDownloadFolder(),"Music"),
                 IsPredefined=true
             },
             new Category
@@ -174,7 +174,7 @@ namespace XDM.Core
                     ".MP4",  ".WEBM", ".OGG",  ".FLV", ".MKV", ".DIVX",
                     ".MOV", ".MPG", ".MPEG",".OPUS",".AVI",".WMV"
                 },
-                DefaultFolder=Path.Combine(Helpers.GetOsDefaultDownloadFolder(),"Video"),
+                DefaultFolder=Path.Combine(PlatformHelper.GetOsDefaultDownloadFolder(),"Video"),
                 IsPredefined=true
             },
             new Category
@@ -185,7 +185,7 @@ namespace XDM.Core
                 {
                     ".7Z", ".ZIP", ".RAR", ".BZ2", ".GZ",".XZ", ".TAR"
                 },
-                DefaultFolder=Path.Combine(Helpers.GetOsDefaultDownloadFolder(),"Compressed"),
+                DefaultFolder=Path.Combine(PlatformHelper.GetOsDefaultDownloadFolder(),"Compressed"),
                 IsPredefined=true
             },
             new Category
@@ -196,7 +196,7 @@ namespace XDM.Core
                 {
                     ".EXE", ".DEB", ".RPM", ".MSI"
                 },
-                DefaultFolder=Path.Combine(Helpers.GetOsDefaultDownloadFolder(),"Programs"),
+                DefaultFolder=Path.Combine(PlatformHelper.GetOsDefaultDownloadFolder(),"Programs"),
                 IsPredefined=true
             },
             //new Category
@@ -294,9 +294,9 @@ namespace XDM.Core
 
         //private static void PopulateConfig32(Config instance, BinaryReader r)
         //{
-        //    instance.AfterCompletionCommand = Helpers.ReadString(r);
-        //    instance.AntiVirusArgs = Helpers.ReadString(r);
-        //    instance.AntiVirusExecutable = Helpers.ReadString(r);
+        //    instance.AfterCompletionCommand = XDM.Messaging.StreamHelper.ReadString(r);
+        //    instance.AntiVirusArgs = XDM.Messaging.StreamHelper.ReadString(r);
+        //    instance.AntiVirusExecutable = XDM.Messaging.StreamHelper.ReadString(r);
         //    var count = r.ReadInt32();
         //    instance.BlockedHosts = new string[count];
         //    for (int i = 0; i < count; i++)
@@ -309,8 +309,8 @@ namespace XDM.Core
         //    {
         //        var category = new Category
         //        {
-        //            DefaultFolder = Helpers.ReadString(r),
-        //            DisplayName = Helpers.ReadString(r),
+        //            DefaultFolder = XDM.Messaging.StreamHelper.ReadString(r),
+        //            DisplayName = XDM.Messaging.StreamHelper.ReadString(r),
         //            FileExtensions = new HashSet<string>(),
         //        };
         //        var c2 = r.ReadInt32();
@@ -323,7 +323,7 @@ namespace XDM.Core
         //        list.Add(category);
         //    }
         //    instance.Categories = list;
-        //    instance.DefaultDownloadFolder = Helpers.ReadString(r);
+        //    instance.DefaultDownloadFolder = XDM.Messaging.StreamHelper.ReadString(r);
         //    instance.EnableSpeedLimit = r.ReadBoolean();
         //    instance.FetchServerTimeStamp = r.ReadBoolean();
         //    instance.FileConflictResolution = (FileConflictResolution)r.ReadInt32();
@@ -358,16 +358,16 @@ namespace XDM.Core
         //    instance.ShowProgressWindow = r.ReadBoolean();
         //    instance.ShutdownAfterAllFinished = r.ReadBoolean();
         //    instance.StartDownloadAutomatically = r.ReadBoolean();
-        //    instance.TempDir = Helpers.ReadString(r);
+        //    instance.TempDir = XDM.Messaging.StreamHelper.ReadString(r);
         //    count = r.ReadInt32();
         //    var list2 = new List<PasswordEntry>(count);
         //    for (int i = 0; i < count; i++)
         //    {
         //        var passwordEntry = new PasswordEntry
         //        {
-        //            Host = Helpers.ReadString(r),
-        //            User = Helpers.ReadString(r),
-        //            Password = Helpers.ReadString(r)
+        //            Host = XDM.Messaging.StreamHelper.ReadString(r),
+        //            User = XDM.Messaging.StreamHelper.ReadString(r),
+        //            Password = XDM.Messaging.StreamHelper.ReadString(r)
         //        };
         //        list2.Add(passwordEntry);
         //    }

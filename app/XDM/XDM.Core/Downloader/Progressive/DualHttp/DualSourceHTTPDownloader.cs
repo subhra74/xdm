@@ -48,7 +48,7 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
             }
 
             this.http = hc;
-            this.TargetFileName = Helpers.SanitizeFileName(info.File);
+            this.TargetFileName = FileHelper.SanitizeFileName(info.File);
             this.mediaProcessor = mediaProcessor;
         }
 
@@ -193,18 +193,18 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
                         case FileNameFetchMode.FileNameAndExtension:
                             if (result.AttachmentName != null)
                             {
-                                this.TargetFileName = Helpers.SanitizeFileName(result.AttachmentName);
+                                this.TargetFileName = FileHelper.SanitizeFileName(result.AttachmentName);
                             }
                             else
                             {
-                                this.TargetFileName = Helpers.SanitizeFileName(Helpers.GetFileName(
+                                this.TargetFileName = FileHelper.SanitizeFileName(FileHelper.GetFileName(
                                         result.FinalUri, result.ContentType));
                             }
                             break;
                         case FileNameFetchMode.ExtensionOnly:
                             if (state.Init1 || state.Init2)
                             {
-                                Helpers.AddFileExtension(this.TargetFileName, result.ContentType, out string name);
+                                FileHelper.AddFileExtension(this.TargetFileName, result.ContentType, out string name);
                                 var ext1 = Path.GetExtension(this.TargetFileName);
                                 var ext2 = Path.GetExtension(name);
                                 if (ext1 == ".mkv" || ext2 == ".mkv")
@@ -215,7 +215,7 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
                             else
                             {
                                 var name = string.Empty;
-                                if (Helpers.AddFileExtension(this.TargetFileName, result.ContentType, out name))
+                                if (FileHelper.AddFileExtension(this.TargetFileName, result.ContentType, out name))
                                 {
                                     this.TargetFileName = name;
                                 }
@@ -361,7 +361,7 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
                 {
                     if (string.IsNullOrEmpty(this.TargetDir))
                     {
-                        this.TargetDir = Helpers.GetDownloadFolderByFileName(this.TargetFileName);
+                        this.TargetDir = FileHelper.GetDownloadFolderByFileName(this.TargetFileName);
                     }
 
                     if (!Directory.Exists(this.TargetDir))
@@ -371,7 +371,7 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
 
                     if (Config.Instance.FileConflictResolution == FileConflictResolution.AutoRename)
                     {
-                        this.TargetFileName = Helpers.GetUniqueFileName(this.TargetFileName, this.TargetDir);
+                        this.TargetFileName = FileHelper.GetUniqueFileName(this.TargetFileName, this.TargetDir);
                     }
 
                     //check if required disk space is available

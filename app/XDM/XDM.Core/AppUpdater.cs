@@ -57,7 +57,7 @@ namespace XDM.Core
                 text.Append(update.Name + " " + update.TagName + Environment.NewLine);
                 size += update.Size;
             }
-            text.Append(Environment.NewLine + "Total download: " + Helpers.FormatSize(size) + Environment.NewLine);
+            text.Append(Environment.NewLine + "Total download: " + FormattingHelper.FormatSize(size) + Environment.NewLine);
             text.Append("Would you like to continue?");
             return text.ToString();
         }

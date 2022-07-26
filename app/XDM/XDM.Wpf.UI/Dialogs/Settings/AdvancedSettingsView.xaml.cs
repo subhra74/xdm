@@ -34,7 +34,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
             ChkKeepAwake.IsChecked = Config.Instance.KeepPCAwake;
             ChkRunCmd.IsChecked = Config.Instance.RunCommandAfterCompletion;
             ChkRunAntivirus.IsChecked = Config.Instance.ScanWithAntiVirus;
-            ChkAutoRun.IsChecked = Helpers.IsAutoStartEnabled();
+            ChkAutoRun.IsChecked = PlatformHelper.IsAutoStartEnabled();
 
             TxtCustomCmd.Text = Config.Instance.AfterCompletionCommand;
             TxtAntiVirusCmd.Text = Config.Instance.AntiVirusExecutable;
@@ -48,7 +48,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
             Config.Instance.KeepPCAwake = ChkKeepAwake.IsChecked ?? false;
             Config.Instance.RunCommandAfterCompletion = ChkRunCmd.IsChecked ?? false;
             Config.Instance.ScanWithAntiVirus = ChkRunAntivirus.IsChecked ?? false;
-            Helpers.EnableAutoStart(ChkAutoRun.IsChecked ?? false);
+            PlatformHelper.EnableAutoStart(ChkAutoRun.IsChecked ?? false);
 
             Config.Instance.AfterCompletionCommand = TxtCustomCmd.Text;
             Config.Instance.AntiVirusExecutable = TxtAntiVirusCmd.Text;

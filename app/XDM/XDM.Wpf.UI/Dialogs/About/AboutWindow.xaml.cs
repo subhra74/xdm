@@ -50,7 +50,7 @@ namespace XDM.Wpf.UI.Dialogs.About
 
         private void TextBlock_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            Helpers.OpenBrowser(Links.HomePageUrl);
+            PlatformHelper.OpenBrowser(Links.HomePageUrl);
         }
     }
 }

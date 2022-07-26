@@ -45,7 +45,7 @@ namespace XDM.GtkUI
             set
             {
                 this.DownloadEntry.Size = value;
-                store.SetValue(treeIter, 2, Helpers.FormatSize(value));
+                store.SetValue(treeIter, 2, FormattingHelper.FormatSize(value));
             }
         }
 

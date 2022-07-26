@@ -50,7 +50,7 @@ namespace XDM.Core.Downloader.Progressive.SingleHttp
                 this.state.Authentication = Helpers.GetAuthenticationInfoFromConfig(this.state.Url);
             }
 
-            this.TargetFileName = Helpers.SanitizeFileName(info.File);
+            this.TargetFileName = FileHelper.SanitizeFileName(info.File);
             this.http = hc;
             this.mediaProcessor = mediaProcessor;
         }
@@ -251,17 +251,17 @@ namespace XDM.Core.Downloader.Progressive.SingleHttp
                         case FileNameFetchMode.FileNameAndExtension:
                             if (result.AttachmentName != null)
                             {
-                                this.TargetFileName = Helpers.SanitizeFileName(result.AttachmentName);
+                                this.TargetFileName = FileHelper.SanitizeFileName(result.AttachmentName);
                             }
                             else
                             {
-                                this.TargetFileName = Helpers.GetFileName(
+                                this.TargetFileName = FileHelper.GetFileName(
                                         result.FinalUri, result.ContentType);
                             }
                             break;
                         case FileNameFetchMode.ExtensionOnly:
                             var name = string.Empty;
-                            if (Helpers.AddFileExtension(this.TargetFileName, result.ContentType, out name))
+                            if (FileHelper.AddFileExtension(this.TargetFileName, result.ContentType, out name))
                             {
                                 this.TargetFileName = name;
                             }
@@ -299,7 +299,7 @@ namespace XDM.Core.Downloader.Progressive.SingleHttp
             if (this.cancelFlag.IsCancellationRequested) return null;
             if (string.IsNullOrEmpty(this.TargetDir))
             {
-                this.TargetDir = Helpers.GetDownloadFolderByFileName(this.TargetFileName);
+                this.TargetDir = FileHelper.GetDownloadFolderByFileName(this.TargetFileName);
             }
             if (!Directory.Exists(this.TargetDir))
             {
@@ -307,7 +307,7 @@ namespace XDM.Core.Downloader.Progressive.SingleHttp
             }
             if (Config.Instance.FileConflictResolution == FileConflictResolution.AutoRename)
             {
-                this.TargetFileName = Helpers.GetUniqueFileName(this.TargetFileName, this.TargetDir);
+                this.TargetFileName = FileHelper.GetUniqueFileName(this.TargetFileName, this.TargetDir);
             }
 
             //check if required disk space is available

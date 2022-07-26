@@ -81,7 +81,7 @@ namespace XDM.Core
                 var row = selectedRows[0];
                 var ent = row.DownloadEntry;
                 //Log.Debug("Open folder: " + ent.TargetDir);
-                if (!Helpers.OpenFolder(ent.TargetDir, ent.Name))
+                if (!PlatformHelper.OpenFolder(ent.TargetDir, ent.Name))
                 {
                     ApplicationContext.MainWindow.ShowMessageBox(ApplicationContext.MainWindow, TextResource.GetText("ERR_MSG_FILE_NOT_FOUND_MSG"));
                 }
@@ -101,7 +101,7 @@ namespace XDM.Core
                 {
                     var file = Path.Combine(ent.TargetDir, ent.Name);
                     //Log.Debug("Open: " + file);
-                    if (!Helpers.OpenFile(file))
+                    if (!PlatformHelper.OpenFile(file))
                     {
                         ApplicationContext.MainWindow.ShowMessageBox(ApplicationContext.MainWindow, TextResource.GetText("ERR_MSG_FILE_NOT_FOUND_MSG"));
                     }
@@ -164,7 +164,7 @@ namespace XDM.Core
             var rows = ApplicationContext.MainWindow.SelectedInProgressRows;
             if (rows == null || rows.Count < 1) return;
             var item = rows[0].DownloadEntry;
-            var file = ApplicationContext.MainWindow.SaveFileDialog(Path.Combine(item.TargetDir ?? Helpers.GetDownloadFolderByFileName(item.Name), item.Name), null, null);
+            var file = ApplicationContext.MainWindow.SaveFileDialog(Path.Combine(item.TargetDir ?? FileHelper.GetDownloadFolderByFileName(item.Name), item.Name), null, null);
             if (file == null)
             {
                 return;

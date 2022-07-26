@@ -161,7 +161,7 @@ namespace XDM.Core.Downloader.Progressive
         {
             var folder = Path.GetDirectoryName(file);
             var name = Path.GetFileName(file);
-            this.TargetFileName = Helpers.SanitizeFileName(name);
+            this.TargetFileName = FileHelper.SanitizeFileName(name);
             this.TargetDir = folder;
             this.KeepProvidedFileName = true;
         }
@@ -173,7 +173,7 @@ namespace XDM.Core.Downloader.Progressive
         /// <param name="fetchExtension"></param>
         public virtual void SetFileName(string name, FileNameFetchMode fileNameFetchMode)
         {
-            this.TargetFileName = Helpers.SanitizeFileName(name);
+            this.TargetFileName = FileHelper.SanitizeFileName(name);
             this.fileNameFetchMode = fileNameFetchMode;
         }
 

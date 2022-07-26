@@ -40,7 +40,7 @@ namespace XDM.Core.UI
             if (message != null)
             {
                 window.Url = message.Url;
-                fileName = Helpers.SanitizeFileName(message.File ?? Helpers.GetFileName(new Uri(message.Url)));
+                fileName = FileHelper.SanitizeFileName(message.File ?? FileHelper.GetFileName(new Uri(message.Url)));
                 window.SelectedFileName = fileName;
 
                 var contentLength = 0L;
@@ -53,7 +53,7 @@ namespace XDM.Core.UI
                     }
                     catch { }
                 }
-                window.SetFileSizeText(contentLength > 0 ? Helpers.FormatSize(contentLength) : "---");
+                window.SetFileSizeText(contentLength > 0 ? FormattingHelper.FormatSize(contentLength) : "---");
             }
             else
             {
@@ -61,13 +61,13 @@ namespace XDM.Core.UI
                 if (!string.IsNullOrEmpty(url))
                 {
                     window.Url = url;
-                    window.SelectedFileName = Helpers.SanitizeFileName(Helpers.GetFileName(new Uri(url)));
+                    window.SelectedFileName = FileHelper.SanitizeFileName(FileHelper.GetFileName(new Uri(url)));
                 }
                 window.UrlChangedEvent += (sender, args) =>
                 {
                     if (Helpers.IsUriValid(window.Url))
                     {
-                        window.SelectedFileName = Helpers.SanitizeFileName(Helpers.GetFileName(new Uri(window.Url)));
+                        window.SelectedFileName = FileHelper.SanitizeFileName(FileHelper.GetFileName(new Uri(window.Url)));
                         fileName = window.SelectedFileName;
                     }
                 };
@@ -117,14 +117,14 @@ namespace XDM.Core.UI
         //    if (url != null)
         //    {
         //        window.Url = url;
-        //        window.File = Helpers.GetFileName(new Uri(url));
+        //        window.File = FileHelper.GetFileName(new Uri(url));
         //    }
         //    var file = string.Empty;
         //    window.UrlChangedEvent += (sender, args) =>
         //    {
         //        if (Helpers.IsUriValid(window.Url))
         //        {
-        //            window.File = Helpers.GetFileName(new Uri(window.Url));
+        //            window.File = FileHelper.GetFileName(new Uri(window.Url));
         //            file = window.File;
         //        }
         //    };
@@ -181,7 +181,7 @@ namespace XDM.Core.UI
                     Cookies = message?.Cookies,
                     ContentLength = contentLength
                 },
-                Helpers.SanitizeFileName(window.SelectedFileName),
+                FileHelper.SanitizeFileName(window.SelectedFileName),
                 window.SelectedFileName != fileName ? FileNameFetchMode.None : FileNameFetchMode.FileNameAndExtension,
                 selectedFolder,
                 startImmediately,
@@ -198,11 +198,11 @@ namespace XDM.Core.UI
 
             //if (window.File != fileName)
             //{
-            //    http.SetFileName(Helpers.SanitizeFileName(window.File), FileNameFetchMode.None);
+            //    http.SetFileName(FileHelper.SanitizeFileName(window.File), FileNameFetchMode.None);
             //}
             //else
             //{
-            //    http.SetFileName(Helpers.SanitizeFileName(window.File), FileNameFetchMode.FileNameAndExtension);
+            //    http.SetFileName(FileHelper.SanitizeFileName(window.File), FileNameFetchMode.FileNameAndExtension);
             //}
 
             //if (window.FolderSelectionMode == FolderSelectionMode.Manual)

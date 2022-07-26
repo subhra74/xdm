@@ -45,7 +45,7 @@ namespace XDM.Core.Downloader.Adaptive.Dash
             }
 
             this._state = state;
-            this.TargetFileName = Helpers.SanitizeFileName(info.File);
+            this.TargetFileName = FileHelper.SanitizeFileName(info.File);
 
             state.FileSize = -1;
             var i = 0;
@@ -59,9 +59,9 @@ namespace XDM.Core.Downloader.Adaptive.Dash
                 state.VideoSegments = info.VideoSegments;
 
                 state.Duration = info.Duration;
-                state.AudioContainerFormat = info.AudioFormat ?? Helpers.GetExtensionFromMimeType(info.AudioMimeType)
+                state.AudioContainerFormat = info.AudioFormat ?? FileExtensionHelper.GetExtensionFromMimeType(info.AudioMimeType)
                     ?? GuessContainerFormatFromPlaylist(info.AudioSegments);
-                state.VideoContainerFormat = info.VideoFormat ?? Helpers.GetExtensionFromMimeType(info.VideoMimeType)
+                state.VideoContainerFormat = info.VideoFormat ?? FileExtensionHelper.GetExtensionFromMimeType(info.VideoMimeType)
                     ?? GuessContainerFormatFromPlaylist(info.VideoSegments);
 
                 CreateChunks2(state, _chunks, _chunkStreamMap);
@@ -70,27 +70,27 @@ namespace XDM.Core.Downloader.Adaptive.Dash
                 //{
                 //    var chunk1 = CreateChunk(info.VideoSegments[i], 0);
                 //    _chunks.Add(chunk1);
-                //    _chunkStreamMap.StreamMap[chunk1.Id] = Path.Combine(_state.TempDirectory, "1_" + chunk1.Id + Helpers.GetFileName(chunk1.Uri));
+                //    _chunkStreamMap.StreamMap[chunk1.Id] = Path.Combine(_state.TempDirectory, "1_" + chunk1.Id + FileHelper.GetFileName(chunk1.Uri));
 
                 //    var chunk2 = CreateChunk(info.AudioSegments[i], 1);
                 //    _chunks.Add(chunk2);
-                //    _chunkStreamMap.StreamMap[chunk2.Id] = Path.Combine(_state.TempDirectory, "2_" + chunk2.Id + Helpers.GetFileName(chunk2.Uri));
+                //    _chunkStreamMap.StreamMap[chunk2.Id] = Path.Combine(_state.TempDirectory, "2_" + chunk2.Id + FileHelper.GetFileName(chunk2.Uri));
                 //}
                 //for (; i < this._state.VideoChunkCount; i++)
                 //{
                 //    var chunk = CreateChunk(info.VideoSegments[i], 0);
                 //    _chunks.Add(chunk);
-                //    _chunkStreamMap.StreamMap[chunk.Id] = Path.Combine(_state.TempDirectory, "1_" + chunk.Id + Helpers.GetFileName(chunk.Uri));
+                //    _chunkStreamMap.StreamMap[chunk.Id] = Path.Combine(_state.TempDirectory, "1_" + chunk.Id + FileHelper.GetFileName(chunk.Uri));
                 //}
                 //for (; i < this._state.AudioChunkCount; i++)
                 //{
                 //    var chunk = CreateChunk(info.AudioSegments[i], 1);
                 //    _chunks.Add(chunk);
-                //    _chunkStreamMap.StreamMap[chunk.Id] = Path.Combine(_state.TempDirectory, "2_" + chunk.Id + Helpers.GetFileName(chunk.Uri));
+                //    _chunkStreamMap.StreamMap[chunk.Id] = Path.Combine(_state.TempDirectory, "2_" + chunk.Id + FileHelper.GetFileName(chunk.Uri));
                 //}
 
-                var ext = Helpers.GetExtensionFromMimeType(info.VideoMimeType) ??
-                    Helpers.GuessContainerFormatFromSegmentExtension(state.VideoContainerFormat);
+                var ext = FileExtensionHelper.GetExtensionFromMimeType(info.VideoMimeType) ??
+                    FileExtensionHelper.GuessContainerFormatFromSegmentExtension(state.VideoContainerFormat);
 
                 //if (!(string.IsNullOrWhiteSpace(state.VideoContainerFormat) || state.VideoContainerFormat == "."))
                 //{
@@ -114,11 +114,11 @@ namespace XDM.Core.Downloader.Adaptive.Dash
                 //{
                 //    var chunk = CreateChunk(segments[i], 0);
                 //    _chunks.Add(chunk);
-                //    _chunkStreamMap.StreamMap[chunk.Id] = Path.Combine(_state.TempDirectory, "1_" + chunk.Id + Helpers.GetFileName(chunk.Uri));
+                //    _chunkStreamMap.StreamMap[chunk.Id] = Path.Combine(_state.TempDirectory, "1_" + chunk.Id + FileHelper.GetFileName(chunk.Uri));
                 //}
 
                 state.VideoContainerFormat = GuessContainerFormatFromPlaylist(segments);
-                var ext = Helpers.GuessContainerFormatFromSegmentExtension(
+                var ext = FileExtensionHelper.GuessContainerFormatFromSegmentExtension(
                             this._state.VideoContainerFormat.ToLowerInvariant());
                 TargetFileName = Path.GetFileNameWithoutExtension(TargetFileName ?? "video")
                             + ext;
@@ -203,7 +203,7 @@ namespace XDM.Core.Downloader.Adaptive.Dash
                 var streamMap = _chunks.Select(c => new
                 {
                     c.Id,
-                    TempFilePath = Path.Combine(dashDir, (c.StreamIndex == 0 ? "1_" : "2_") + c.Id + Helpers.GetFileName(c.Uri))
+                    TempFilePath = Path.Combine(dashDir, (c.StreamIndex == 0 ? "1_" : "2_") + c.Id + FileHelper.GetFileName(c.Uri))
                 }).ToDictionary(e => e.Id, e =>
                         e.TempFilePath);
                 _chunkStreamMap = new SimpleStreamMap { StreamMap = streamMap };
@@ -266,7 +266,7 @@ namespace XDM.Core.Downloader.Adaptive.Dash
 
         private static string GuessContainerFormatFromPlaylist(List<Uri> segments)
         {
-            var file = Helpers.GetFileName(segments.Last());
+            var file = FileHelper.GetFileName(segments.Last());
             return Path.GetExtension(file);
         }
 
@@ -279,23 +279,23 @@ namespace XDM.Core.Downloader.Adaptive.Dash
                 {
                     var chunk1 = CreateChunk(state.VideoSegments[i], 0);
                     chunks.Add(chunk1);
-                    chunkStreamMap.StreamMap[chunk1.Id] = Path.Combine(state.TempDirectory, "1_" + chunk1.Id + Helpers.GetFileName(chunk1.Uri));
+                    chunkStreamMap.StreamMap[chunk1.Id] = Path.Combine(state.TempDirectory, "1_" + chunk1.Id + FileHelper.GetFileName(chunk1.Uri));
 
                     var chunk2 = CreateChunk(state.AudioSegments[i], 1);
                     chunks.Add(chunk2);
-                    chunkStreamMap.StreamMap[chunk2.Id] = Path.Combine(state.TempDirectory, "2_" + chunk2.Id + Helpers.GetFileName(chunk2.Uri));
+                    chunkStreamMap.StreamMap[chunk2.Id] = Path.Combine(state.TempDirectory, "2_" + chunk2.Id + FileHelper.GetFileName(chunk2.Uri));
                 }
                 for (; i < state.VideoChunkCount; i++)
                 {
                     var chunk = CreateChunk(state.VideoSegments[i], 0);
                     chunks.Add(chunk);
-                    chunkStreamMap.StreamMap[chunk.Id] = Path.Combine(state.TempDirectory, "1_" + chunk.Id + Helpers.GetFileName(chunk.Uri));
+                    chunkStreamMap.StreamMap[chunk.Id] = Path.Combine(state.TempDirectory, "1_" + chunk.Id + FileHelper.GetFileName(chunk.Uri));
                 }
                 for (; i < state.AudioChunkCount; i++)
                 {
                     var chunk = CreateChunk(state.AudioSegments[i], 1);
                     chunks.Add(chunk);
-                    chunkStreamMap.StreamMap[chunk.Id] = Path.Combine(state.TempDirectory, "2_" + chunk.Id + Helpers.GetFileName(chunk.Uri));
+                    chunkStreamMap.StreamMap[chunk.Id] = Path.Combine(state.TempDirectory, "2_" + chunk.Id + FileHelper.GetFileName(chunk.Uri));
                 }
             }
         }
@@ -310,7 +310,7 @@ namespace XDM.Core.Downloader.Adaptive.Dash
                 {
                     var chunk = CreateChunk(segments[i], 0);
                     chunks.Add(chunk);
-                    chunkStreamMap.StreamMap[chunk.Id] = Path.Combine(state.TempDirectory, "1_" + chunk.Id + Helpers.GetFileName(chunk.Uri));
+                    chunkStreamMap.StreamMap[chunk.Id] = Path.Combine(state.TempDirectory, "1_" + chunk.Id + FileHelper.GetFileName(chunk.Uri));
                 }
             }
         }

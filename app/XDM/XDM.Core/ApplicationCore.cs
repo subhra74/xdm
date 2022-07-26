@@ -19,6 +19,7 @@ using XDM.Core.Downloader.Adaptive.Hls;
 using XDM.Core.Downloader.Adaptive.Dash;
 using XDM.Core.Downloader.Progressive;
 using XDM.Core.DataAccess;
+using XDM.Core.IO;
 
 #if !NET5_0_OR_GREATER
 using XDM.Compatibility;
@@ -49,7 +50,7 @@ namespace XDM.Core
             {
                 AutoReset = true
             };
-            awakePingTimer.Elapsed += (a, b) => Helpers.SendKeepAlivePing();
+            awakePingTimer.Elapsed += (a, b) => PlatformHelper.SendKeepAlivePing();
 
             try
             {
@@ -89,22 +90,22 @@ namespace XDM.Core
                     http = new SingleSourceHTTPDownloader(info, authentication: authentication,
                         proxy: proxyInfo, speedLimit: maxSpeedLimit, mediaProcessor: new FFmpegMediaProcessor(),
                         convertToMp3: convertToMp3);
-                    Helpers.SaveDownloadInfo(http.Id!, info);
+                    RequestDataIO.SaveDownloadInfo(http.Id!, info);
                     break;
                 case DualSourceHTTPDownloadInfo info:
                     http = new DualSourceHTTPDownloader(info, authentication: authentication,
                         proxy: proxyInfo, speedLimit: maxSpeedLimit, mediaProcessor: new FFmpegMediaProcessor());
-                    Helpers.SaveDownloadInfo(http.Id!, info);
+                    RequestDataIO.SaveDownloadInfo(http.Id!, info);
                     break;
                 case MultiSourceHLSDownloadInfo info:
                     http = new MultiSourceHLSDownloader(info, authentication: authentication,
                         proxy: proxyInfo, speedLimit: maxSpeedLimit, mediaProcessor: new FFmpegMediaProcessor());
-                    Helpers.SaveDownloadInfo(http.Id!, info);
+                    RequestDataIO.SaveDownloadInfo(http.Id!, info);
                     break;
                 case MultiSourceDASHDownloadInfo info:
                     http = new MultiSourceDASHDownloader(info, authentication: authentication,
                         proxy: proxyInfo, speedLimit: maxSpeedLimit, mediaProcessor: new FFmpegMediaProcessor());
-                    Helpers.SaveDownloadInfo(http.Id!, info);
+                    RequestDataIO.SaveDownloadInfo(http.Id!, info);
                     break;
                 default:
                     Log.Debug("Unknow request info :: skipping download");
@@ -115,7 +116,7 @@ namespace XDM.Core
             {
                 QueueManager.AddDownloadsToQueue(queueId!, new string[] { http.Id! });
             }
-            http.SetFileName(Helpers.SanitizeFileName(fileName), fileNameFetchMode);
+            http.SetFileName(FileHelper.SanitizeFileName(fileName), fileNameFetchMode);
             http.SetTargetDirectory(targetFolder);
             StartDownload(http, startImmediately, authentication, proxyInfo, maxSpeedLimit);
             return http.Id;
@@ -187,7 +188,7 @@ namespace XDM.Core
             {
                 var url = message.Url;
                 if (string.IsNullOrEmpty(url)) continue;
-                var file = Helpers.SanitizeFileName(message.File ?? Helpers.GetFileName(new Uri(message.Url)));
+                var file = FileHelper.SanitizeFileName(message.File ?? FileHelper.GetFileName(new Uri(message.Url)));
                 var si = new SingleSourceHTTPDownloadInfo
                 {
                     Uri = url,
@@ -207,7 +208,7 @@ namespace XDM.Core
             if (Config.Instance.StartDownloadAutomatically)
             {
                 var url = message.Url;
-                var file = Helpers.SanitizeFileName(message.File ?? Helpers.GetFileName(new Uri(message.Url)));
+                var file = FileHelper.SanitizeFileName(message.File ?? FileHelper.GetFileName(new Uri(message.Url)));
                 StartDownload(
                     new SingleSourceHTTPDownloadInfo
                     {
@@ -379,9 +380,9 @@ namespace XDM.Core
                 {
                     var prgWin = activeProgressWindows[http.Id];
                     prgWin.DownloadProgress = args.Progress;
-                    prgWin.FileSizeText = $"{TextResource.GetText("STAT_DOWNLOADING")} {Helpers.FormatSize(args.Downloaded)} / {Helpers.FormatSize(http.FileSize)}";
-                    prgWin.DownloadSpeedText = Helpers.FormatSize((long)args.DownloadSpeed) + "/s";
-                    prgWin.DownloadETAText = $"{TextResource.GetText("MSG_TIME_LEFT")}: {Helpers.ToHMS(args.Eta)}";
+                    prgWin.FileSizeText = $"{TextResource.GetText("STAT_DOWNLOADING")} {FormattingHelper.FormatSize(args.Downloaded)} / {FormattingHelper.FormatSize(http.FileSize)}";
+                    prgWin.DownloadSpeedText = FormattingHelper.FormatSize((long)args.DownloadSpeed) + "/s";
+                    prgWin.DownloadETAText = $"{TextResource.GetText("MSG_TIME_LEFT")}: {FormattingHelper.ToHMS(args.Eta)}";
                 }
             }
         }
@@ -395,7 +396,7 @@ namespace XDM.Core
                 {
                     var prgWin = activeProgressWindows[http.Id];
                     prgWin.DownloadProgress = args.Progress;
-                    prgWin.FileSizeText = $"{TextResource.GetText("STAT_ASSEMBLING")} {Helpers.FormatSize(args.Downloaded)} / {Helpers.FormatSize(http.FileSize)}";
+                    prgWin.FileSizeText = $"{TextResource.GetText("STAT_ASSEMBLING")} {FormattingHelper.FormatSize(args.Downloaded)} / {FormattingHelper.FormatSize(http.FileSize)}";
                     prgWin.DownloadSpeedText = "---";
                     prgWin.DownloadETAText = "---";
                 }
@@ -437,7 +438,7 @@ namespace XDM.Core
 
                 if (Config.Instance.ScanWithAntiVirus)
                 {
-                    Helpers.RunAntivirus(Config.Instance.AntiVirusExecutable, Config.Instance.AntiVirusArgs, http.TargetFile);
+                    PlatformHelper.RunAntivirus(Config.Instance.AntiVirusExecutable, Config.Instance.AntiVirusArgs, http.TargetFile);
                 }
 
                 Helpers.RunGC();
@@ -496,7 +497,8 @@ namespace XDM.Core
                 {
                     var prgWin = activeProgressWindows[http.Id];
                     prgWin.FileNameText = http.TargetFileName;
-                    prgWin.FileSizeText = $"{TextResource.GetText("STAT_DOWNLOADING")} {Helpers.FormatSize(0)} / {Helpers.FormatSize(http.FileSize)}";
+                    prgWin.FileSizeText = 
+                        $"{TextResource.GetText("STAT_DOWNLOADING")} {FormattingHelper.FormatSize(0)} / {FormattingHelper.FormatSize(http.FileSize)}";
                 }
             }
         }
@@ -568,7 +570,7 @@ namespace XDM.Core
             {
                 if (Config.Instance.ShutdownAfterAllFinished)
                 {
-                    Helpers.ShutDownPC();
+                    PlatformHelper.ShutDownPC();
                 }
                 if (awakePingTimer.Enabled)
                 {
@@ -577,7 +579,7 @@ namespace XDM.Core
                 }
                 if (Config.Instance.RunCommandAfterCompletion)
                 {
-                    Helpers.RunCommand(Config.Instance.AfterCompletionCommand);
+                    PlatformHelper.RunCommand(Config.Instance.AfterCompletionCommand);
                 }
             }
         }
@@ -644,28 +646,28 @@ namespace XDM.Core
             switch (entry.DownloadType)
             {
                 case "Http":
-                    var h1 = Helpers.LoadSingleSourceHTTPDownloadInfo(entry.Id);// LoadInfo<SingleSourceHTTPDownloadInfo>(entry.Id);
+                    var h1 = RequestDataIO.LoadSingleSourceHTTPDownloadInfo(entry.Id);// LoadInfo<SingleSourceHTTPDownloadInfo>(entry.Id);
                     if (h1 != null)
                     {
                         return h1.Uri;
                     }
                     break;
                 case "Dash":
-                    var h2 = Helpers.LoadDualSourceHTTPDownloadInfo(entry.Id);// LoadInfo<DualSourceHTTPDownloadInfo>(entry.Id);
+                    var h2 = RequestDataIO.LoadDualSourceHTTPDownloadInfo(entry.Id);// LoadInfo<DualSourceHTTPDownloadInfo>(entry.Id);
                     if (h2 != null)
                     {
                         return h2.Uri1;
                     }
                     break;
                 case "Hls":
-                    var hls = Helpers.LoadMultiSourceHLSDownloadInfo(entry.Id);// LoadInfo<MultiSourceHLSDownloadInfo>(entry.Id);
+                    var hls = RequestDataIO.LoadMultiSourceHLSDownloadInfo(entry.Id);// LoadInfo<MultiSourceHLSDownloadInfo>(entry.Id);
                     if (hls != null)
                     {
                         return hls.VideoUri;
                     }
                     break;
                 case "Mpd-Dash":
-                    var dash = Helpers.LoadMultiSourceDASHDownloadInfo(entry.Id); //LoadInfo<MultiSourceDASHDownloadInfo>(entry.Id);
+                    var dash = RequestDataIO.LoadMultiSourceDASHDownloadInfo(entry.Id); //LoadInfo<MultiSourceDASHDownloadInfo>(entry.Id);
                     if (dash != null)
                     {
                         return dash.Url;
@@ -762,18 +764,18 @@ namespace XDM.Core
                 switch (entry.DownloadType)
                 {
                     case "Http":
-                        var info = Helpers.LoadSingleSourceHTTPDownloadInfo(entry.Id);
+                        var info = RequestDataIO.LoadSingleSourceHTTPDownloadInfo(entry.Id);
                         request = info;
                         convertToMp3 = info?.ConvertToMp3 ?? false;
                         break;
                     case "Dash":
-                        request = Helpers.LoadDualSourceHTTPDownloadInfo(entry.Id);
+                        request = RequestDataIO.LoadDualSourceHTTPDownloadInfo(entry.Id);
                         break;
                     case "Hls":
-                        request = Helpers.LoadMultiSourceHLSDownloadInfo(entry.Id);
+                        request = RequestDataIO.LoadMultiSourceHLSDownloadInfo(entry.Id);
                         break;
                     case "Mpd-Dash":
-                        request = Helpers.LoadMultiSourceDASHDownloadInfo(entry.Id);
+                        request = RequestDataIO.LoadMultiSourceDASHDownloadInfo(entry.Id);
                         break;
                     default:
                         request = null;

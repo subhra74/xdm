@@ -122,7 +122,7 @@ namespace XDM.Wpf.UI.Dialogs.AdvancedDownloadOption
 
         private void BtnSystemProxy_Click(object sender, RoutedEventArgs e)
         {
-            Helpers.OpenWindowsProxySettings();
+            PlatformHelper.OpenWindowsProxySettings();
         }
 
         private void CmbProxyType_SelectionChanged(object sender, SelectionChangedEventArgs e)

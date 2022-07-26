@@ -20,11 +20,11 @@ namespace XDM.Core
         //    {
         //        return new ProxyInfo
         //        {
-        //            Host = Helpers.ReadString(reader),
+        //            Host = XDM.Messaging.StreamHelper.ReadString(reader),
         //            Port = reader.ReadInt32(),
         //            ProxyType = (ProxyType)reader.ReadInt32(),
-        //            UserName = Helpers.ReadString(reader),
-        //            Password = Helpers.ReadString(reader),
+        //            UserName = XDM.Messaging.StreamHelper.ReadString(reader),
+        //            Password = XDM.Messaging.StreamHelper.ReadString(reader),
         //        };
         //    }
         //    return null;

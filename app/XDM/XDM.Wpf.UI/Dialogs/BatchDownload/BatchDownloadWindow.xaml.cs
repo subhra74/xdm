@@ -32,9 +32,9 @@ namespace XDM.Wpf.UI.Dialogs.BatchDownload
         public string Url { get => TxtAddress.Text; set => TxtAddress.Text = value; }
         public char? StartLetter => CmbLetterFrom.SelectedIndex < 0 ? null : CmbLetterFrom.SelectedItem.ToString()[0];
         public char? EndLetter => CmbLetterTo.SelectedIndex < 0 ? null : CmbLetterTo.SelectedItem.ToString()[0];
-        public int StartNumber => Helpers.ParseIntSafe(TxtNumberFrom.Text);
-        public int EndNumber => Helpers.ParseIntSafe(TxtNumberTo.Text);
-        public int LeadingZeroCount => Helpers.ParseIntSafe(TxtLeadingZero.Text);
+        public int StartNumber => ParsingHelper.ParseIntSafe(TxtNumberFrom.Text);
+        public int EndNumber => ParsingHelper.ParseIntSafe(TxtNumberTo.Text);
+        public int LeadingZeroCount => ParsingHelper.ParseIntSafe(TxtLeadingZero.Text);
         public string BatchAddress1 { get => TxtFile1.Text; set => TxtFile1.Text = value; }
         public string BatchAddress2 { get => TxtFile2.Text; set => TxtFile2.Text = value; }
         public string BatchAddressN { get => TxtFileN.Text; set => TxtFileN.Text = value; }

@@ -111,15 +111,15 @@ namespace XDM.Core
     //            DateAdded = DateTime.FromBinary(reader.ReadInt64()),
     //            Size = reader.ReadInt64(),
     //            DownloadType = reader.ReadString(),
-    //            TargetDir = Helpers.ReadString(reader),
-    //            PrimaryUrl = Helpers.ReadString(reader),
+    //            TargetDir = XDM.Messaging.StreamHelper.ReadString(reader),
+    //            PrimaryUrl = XDM.Messaging.StreamHelper.ReadString(reader),
     //        };
     //        if (reader.ReadBoolean())
     //        {
     //            entry.Authentication = new AuthenticationInfo
     //            {
-    //                UserName = Helpers.ReadString(reader),
-    //                Password = Helpers.ReadString(reader)
+    //                UserName = XDM.Messaging.StreamHelper.ReadString(reader),
+    //                Password = XDM.Messaging.StreamHelper.ReadString(reader)
     //            };
     //        }
     //        ProxyInfoSerializer.Deserialize(reader);
@@ -165,16 +165,16 @@ namespace XDM.Core
     //            MaxSpeedLimitInKiB = reader.ReadInt32(),
     //            Progress = reader.ReadInt32(),
     //            Size = reader.ReadInt64(),
-    //            PrimaryUrl = Helpers.ReadString(reader),
-    //            TargetDir = Helpers.ReadString(reader),
-    //            RefererUrl = Helpers.ReadString(reader),
+    //            PrimaryUrl = XDM.Messaging.StreamHelper.ReadString(reader),
+    //            TargetDir = XDM.Messaging.StreamHelper.ReadString(reader),
+    //            RefererUrl = XDM.Messaging.StreamHelper.ReadString(reader),
     //        };
     //        if (reader.ReadBoolean())
     //        {
     //            entry.Authentication = new AuthenticationInfo
     //            {
-    //                UserName = Helpers.ReadString(reader),
-    //                Password = Helpers.ReadString(reader)
+    //                UserName = XDM.Messaging.StreamHelper.ReadString(reader),
+    //                Password = XDM.Messaging.StreamHelper.ReadString(reader)
     //            };
     //        }
     //        ProxyInfoSerializer.Deserialize(reader);

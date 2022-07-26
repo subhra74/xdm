@@ -146,7 +146,7 @@ namespace XDM.GtkUI.Dialogs.NewQueue
                     listStore.AppendValues(false,
                         ent.Entry.Name,
                         ent.Entry.DateAdded.ToShortDateString() + " " + ent.Entry.DateAdded.ToShortTimeString(),
-                        Helpers.FormatSize(ent.Entry.Size),
+                        FormattingHelper.FormatSize(ent.Entry.Size),
                         ent.Entry.Status.ToString(),
                         ent);
                 }

@@ -421,7 +421,7 @@ namespace XDM.GtkUI.Dialogs.Settings
 
         private void VideoWikiLink_Clicked(object? sender, EventArgs e)
         {
-            Helpers.OpenBrowser(Links.VideoDownloadTutorialUrl);
+            PlatformHelper.OpenBrowser(Links.VideoDownloadTutorialUrl);
         }
 
         private void LoadTexts()
@@ -569,7 +569,7 @@ namespace XDM.GtkUI.Dialogs.Settings
             ChkKeepAwake.Active = Config.Instance.KeepPCAwake;
             ChkRunCmd.Active = Config.Instance.RunCommandAfterCompletion;
             ChkRunAntivirus.Active = Config.Instance.ScanWithAntiVirus;
-            ChkAutoRun.Active = Helpers.IsAutoStartEnabled();
+            ChkAutoRun.Active = PlatformHelper.IsAutoStartEnabled();
 
             TxtCustomCmd.Text = Config.Instance.AfterCompletionCommand;
             TxtAntiVirusCmd.Text = Config.Instance.AntiVirusExecutable;
@@ -690,7 +690,7 @@ namespace XDM.GtkUI.Dialogs.Settings
             Config.Instance.KeepPCAwake = ChkKeepAwake.Active;
             Config.Instance.RunCommandAfterCompletion = ChkRunCmd.Active;
             Config.Instance.ScanWithAntiVirus = ChkRunAntivirus.Active;
-            Helpers.EnableAutoStart(ChkAutoRun.Active);
+            PlatformHelper.EnableAutoStart(ChkAutoRun.Active);
 
             Config.Instance.AfterCompletionCommand = TxtCustomCmd.Text;
             Config.Instance.AntiVirusExecutable = TxtAntiVirusCmd.Text;

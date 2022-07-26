@@ -32,11 +32,11 @@ namespace XDM.Core
             foreach (var line in text.Split('\r', '\n'))
             {
                 if (line == null) break;
-                (string key, string val, _) = Helpers.ParseKeyValuePair(line, '=');
+                (string key, string val, _) = ParsingHelper.ParseKeyValuePair(line, '=');
                 switch (key.ToLowerInvariant())
                 {
                     case "file":
-                        message.File = Helpers.SanitizeFileName(val);
+                        message.File = FileHelper.SanitizeFileName(val);
                         break;
                     case "url":
                         message.Url = val;
@@ -44,7 +44,7 @@ namespace XDM.Core
                     case "req":
                     case "res":
                     case "cookie":
-                        (string k1, string v1, _) = Helpers.ParseKeyValuePair(val, ':');
+                        (string k1, string v1, _) = ParsingHelper.ParseKeyValuePair(val, ':');
                         if (!string.IsNullOrEmpty(k1))
                         {
                             switch (key)

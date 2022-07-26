@@ -102,7 +102,7 @@ namespace XDM.Core.Clients.Http
                         var m = r.Match(contentDisposition);
                         if (m.Success && m.Groups.Count >= 2)
                         {
-                            return Helpers.SanitizeFileName(Uri.UnescapeDataString(m.Groups[1].Value));
+                            return FileHelper.SanitizeFileName(Uri.UnescapeDataString(m.Groups[1].Value));
                         }
                     }
                 }

@@ -308,8 +308,8 @@ namespace XDM.Core
             if (downloadEntry != null)
             {
                 downloadEntry.Progress = progress;
-                downloadEntry.DownloadSpeed = Helpers.FormatSize(speed) + "/s";
-                downloadEntry.ETA = Helpers.ToHMS(eta);
+                downloadEntry.DownloadSpeed = FormattingHelper.FormatSize(speed) + "/s";
+                downloadEntry.ETA = FormattingHelper.ToHMS(eta);
             }
         }
 
@@ -518,14 +518,14 @@ namespace XDM.Core
 
             ApplicationContext.MainWindow.HelpClicked += (s, e) =>
             {
-                Helpers.OpenBrowser(Links.SupportUrl);
+                PlatformHelper.OpenBrowser(Links.SupportUrl);
             };
 
             ApplicationContext.MainWindow.UpdateClicked += (s, e) =>
             {
                 if (AppUpdater.IsAppUpdateAvailable)
                 {
-                    Helpers.OpenBrowser(AppUpdater.UpdatePage);
+                    PlatformHelper.OpenBrowser(AppUpdater.UpdatePage);
                     return;
                 }
                 if (AppUpdater.IsComponentUpdateAvailable)
@@ -560,17 +560,17 @@ namespace XDM.Core
 
             ApplicationContext.MainWindow.SupportPageClicked += (s, e) =>
             {
-                Helpers.OpenBrowser(Links.SupportUrl);
+                PlatformHelper.OpenBrowser(Links.SupportUrl);
             };
 
             ApplicationContext.MainWindow.BugReportClicked += (s, e) =>
             {
-                Helpers.OpenBrowser(Links.IssueUrl);
+                PlatformHelper.OpenBrowser(Links.IssueUrl);
             };
 
             ApplicationContext.MainWindow.CheckForUpdateClicked += (s, e) =>
             {
-                Helpers.OpenBrowser(AppUpdater.UpdatePage);
+                PlatformHelper.OpenBrowser(AppUpdater.UpdatePage);
             };
 
             ApplicationContext.MainWindow.SchedulerClicked += (s, e) =>

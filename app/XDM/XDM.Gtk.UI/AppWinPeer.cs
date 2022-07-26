@@ -1009,7 +1009,7 @@ namespace XDM.GtkUI
             var iter = inprogressDownloadsStore.Insert(0);
             inprogressDownloadsStore.SetValue(iter, 0, entry.Name);
             inprogressDownloadsStore.SetValue(iter, 1, entry.DateAdded.ToShortDateString());
-            inprogressDownloadsStore.SetValue(iter, 2, Helpers.FormatSize(entry.Size));
+            inprogressDownloadsStore.SetValue(iter, 2, FormattingHelper.FormatSize(entry.Size));
             inprogressDownloadsStore.SetValue(iter, 3, entry.Progress);
             inprogressDownloadsStore.SetValue(iter, 4, entry.Status);
             inprogressDownloadsStore.SetValue(iter, 5, entry);
@@ -1020,7 +1020,7 @@ namespace XDM.GtkUI
             finishedDownloadsStore.AppendValues(
                 entry.Name,
                 entry.DateAdded.ToShortDateString(),
-                Helpers.FormatSize(entry.Size));
+                FormattingHelper.FormatSize(entry.Size));
         }
 
         public void SwitchToInProgressView()
@@ -1225,9 +1225,9 @@ namespace XDM.GtkUI
         {
             using var propWin = PropertiesDialog.CreateFromGladeFile(this, this.Group);
             propWin.FileName = ent.Name;
-            propWin.Folder = ent.TargetDir ?? Helpers.GetDownloadFolderByFileName(ent.Name);
+            propWin.Folder = ent.TargetDir ?? FileHelper.GetDownloadFolderByFileName(ent.Name);
             propWin.Address = ent.PrimaryUrl;
-            propWin.FileSize = Helpers.FormatSize(ent.Size);
+            propWin.FileSize = FormattingHelper.FormatSize(ent.Size);
             propWin.DateAdded = ent.DateAdded.ToLongDateString() + " " + ent.DateAdded.ToLongTimeString();
             propWin.DownloadType = ent.DownloadType;
             propWin.Referer = ent.RefererUrl;
@@ -1332,7 +1332,7 @@ namespace XDM.GtkUI
             {
                 finishedDownloadsStore.AppendValues(item.Name,
                     item.DateAdded.ToShortDateString(),
-                    Helpers.FormatSize(item.Size),
+                    FormattingHelper.FormatSize(item.Size),
                     item);
             }
         }
@@ -1344,7 +1344,7 @@ namespace XDM.GtkUI
             {
                 inprogressDownloadsStore.AppendValues(item.Name,
                     item.DateAdded.ToShortDateString(),
-                    Helpers.FormatSize(item.Size),
+                    FormattingHelper.FormatSize(item.Size),
                     item.Progress,
                     Helpers.GenerateStatusText(item),
                     item);

@@ -13,7 +13,7 @@ namespace XDM.Wpf.UI
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return Helpers.FormatSize((long)value);
+            return FormattingHelper.FormatSize((long)value);
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

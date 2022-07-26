@@ -433,7 +433,7 @@ namespace XDM.Wpf.UI
             });
         }
 
-        public void ShowMessageBox(object window, string message)
+        public void ShowMessageBox(object? window, string message)
         {
             Dispatcher.Invoke(new Action(() =>
             {
@@ -531,9 +531,9 @@ namespace XDM.Wpf.UI
             var propertiesWindow = new DownloadPropertiesWindow
             {
                 FileName = ent.Name,
-                Folder = ent.TargetDir ?? Helpers.GetDownloadFolderByFileName(ent.Name),
+                Folder = ent.TargetDir ?? FileHelper.GetDownloadFolderByFileName(ent.Name),
                 Address = ent.PrimaryUrl,
-                FileSize = Helpers.FormatSize(ent.Size),
+                FileSize = FormattingHelper.FormatSize(ent.Size),
                 DateAdded = ent.DateAdded.ToLongDateString() + " " + ent.DateAdded.ToLongTimeString(),
                 DownloadType = ent.DownloadType,
                 Referer = ent.RefererUrl,

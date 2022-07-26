@@ -97,7 +97,7 @@ namespace XDM.Core.UI
 
         private static void OpenBrowser(string url)
         {
-            Helpers.OpenBrowser(url);
+            PlatformHelper.OpenBrowser(url);
         }
     }
 }

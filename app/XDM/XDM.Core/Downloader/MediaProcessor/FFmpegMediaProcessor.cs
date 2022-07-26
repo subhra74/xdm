@@ -132,12 +132,12 @@ namespace XDM.Core.MediaProcessor
                             Log.Debug(line);
                             if (duration == 0.0)
                             {
-                                var md = Helpers.RxDuration.Match(line);
-                                var ret = Helpers.ParseTime(md);
+                                var md = ParsingHelper.RxDuration.Match(line);
+                                var ret = ParsingHelper.ParseTime(md);
                                 if (ret > 0) duration = ret;
                             }
-                            var mt = Helpers.RxTime.Match(line);
-                            var ret2 = Helpers.ParseTime(mt);
+                            var mt = ParsingHelper.RxTime.Match(line);
+                            var ret2 = ParsingHelper.ParseTime(mt);
                             if (ret2 > 0)
                             {
                                 time += ret2;
@@ -233,7 +233,7 @@ namespace XDM.Core.MediaProcessor
                         return path;
                     }
                 }
-                path = Helpers.FindExecutableFromSystemPath(executableName);
+                path = PlatformHelper.FindExecutableFromSystemPath(executableName);
                 if (path != null)
                 {
                     return path;

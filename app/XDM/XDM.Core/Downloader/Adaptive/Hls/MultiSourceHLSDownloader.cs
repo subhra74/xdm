@@ -67,7 +67,7 @@ namespace XDM.Core.Downloader.Adaptive.Hls
             }
 
             this._state = state;
-            this.TargetFileName = Helpers.SanitizeFileName(info.File);
+            this.TargetFileName = FileHelper.SanitizeFileName(info.File);
         }
 
         public MultiSourceHLSDownloader(string id, IHttpClient http = null, BaseMediaProcessor mediaProcessor = null) : base(id, http, mediaProcessor)
@@ -244,7 +244,7 @@ namespace XDM.Core.Downloader.Adaptive.Hls
                     this._state.VideoContainerFormat = GuessContainerFormatFromPlaylist(playlists["video"]);
                     this._state.AudioContainerFormat = GuessContainerFormatFromPlaylist(playlists["audio"]);
 
-                    var ext = Helpers.GuessContainerFormatFromSegmentExtension(
+                    var ext = FileExtensionHelper.GuessContainerFormatFromSegmentExtension(
                             this._state.VideoContainerFormat, this._state.AudioContainerFormat);
 
                     //if (!(string.IsNullOrWhiteSpace(this._state.VideoContainerFormat) || this._state.VideoContainerFormat == "."))
@@ -268,7 +268,7 @@ namespace XDM.Core.Downloader.Adaptive.Hls
                         state.MuxedPlaylistUrl.ToString());
                     _state.Duration = playlists["muxed"].TotalDuration;
                     this._state.VideoContainerFormat = GuessContainerFormatFromPlaylist(playlists["muxed"]);
-                    var ext = Helpers.GuessContainerFormatFromSegmentExtension(
+                    var ext = FileExtensionHelper.GuessContainerFormatFromSegmentExtension(
                             this._state.VideoContainerFormat.ToLowerInvariant());
                     TargetFileName = Path.GetFileNameWithoutExtension(TargetFileName ?? "video")
                                 + ext;
@@ -276,7 +276,7 @@ namespace XDM.Core.Downloader.Adaptive.Hls
 
                 if (string.IsNullOrEmpty(this.TargetDir))
                 {
-                    this.TargetDir = Helpers.GetDownloadFolderByFileName(this.TargetFileName);
+                    this.TargetDir = FileHelper.GetDownloadFolderByFileName(this.TargetFileName);
                 }
 
                 return playlists;
@@ -299,31 +299,31 @@ namespace XDM.Core.Downloader.Adaptive.Hls
                 this._state.AudioChunkCount = audio.MediaSegments.Count;
                 this._state.VideoChunkCount = video.MediaSegments.Count;
                 this._state.Duration = Math.Max(playlists["video"].TotalDuration, playlists["audio"].TotalDuration);
-                this._state.AudioContainerFormat = Path.GetExtension(Helpers.GetFileName(audio.MediaSegments.Last().Url));
-                this._state.VideoContainerFormat = Path.GetExtension(Helpers.GetFileName(video.MediaSegments.Last().Url));
+                this._state.AudioContainerFormat = Path.GetExtension(FileHelper.GetFileName(audio.MediaSegments.Last().Url));
+                this._state.VideoContainerFormat = Path.GetExtension(FileHelper.GetFileName(video.MediaSegments.Last().Url));
 
                 //even for byte range based playlists, we will create separate chunks
                 for (; i < Math.Min(this._state.AudioChunkCount, this._state.VideoChunkCount); i++)
                 {
                     var chunk1 = CreateChunk(video.MediaSegments[i], video.HasByteRange, 0);
                     _chunks.Add(chunk1);
-                    _chunkStreamMap.StreamMap[chunk1.Id] = Path.Combine(tempDir, "1_" + chunk1.Id + Helpers.GetFileName(chunk1.Uri));
+                    _chunkStreamMap.StreamMap[chunk1.Id] = Path.Combine(tempDir, "1_" + chunk1.Id + FileHelper.GetFileName(chunk1.Uri));
 
                     var chunk2 = CreateChunk(audio.MediaSegments[i], audio.HasByteRange, 1);
                     _chunks.Add(chunk2);
-                    _chunkStreamMap.StreamMap[chunk2.Id] = Path.Combine(tempDir, "2_" + chunk2.Id + Helpers.GetFileName(chunk2.Uri));
+                    _chunkStreamMap.StreamMap[chunk2.Id] = Path.Combine(tempDir, "2_" + chunk2.Id + FileHelper.GetFileName(chunk2.Uri));
                 }
                 for (; i < this._state.VideoChunkCount; i++)
                 {
                     var chunk = CreateChunk(video.MediaSegments[i], video.HasByteRange, 0);
                     _chunks.Add(chunk);
-                    _chunkStreamMap.StreamMap[chunk.Id] = Path.Combine(tempDir, "1_" + chunk.Id + Helpers.GetFileName(chunk.Uri));
+                    _chunkStreamMap.StreamMap[chunk.Id] = Path.Combine(tempDir, "1_" + chunk.Id + FileHelper.GetFileName(chunk.Uri));
                 }
                 for (; i < this._state.AudioChunkCount; i++)
                 {
                     var chunk = CreateChunk(audio.MediaSegments[i], audio.HasByteRange, 1);
                     _chunks.Add(chunk);
-                    _chunkStreamMap.StreamMap[chunk.Id] = Path.Combine(tempDir, "2_" + chunk.Id + Helpers.GetFileName(chunk.Uri));
+                    _chunkStreamMap.StreamMap[chunk.Id] = Path.Combine(tempDir, "2_" + chunk.Id + FileHelper.GetFileName(chunk.Uri));
                 }
             }
             else
@@ -337,7 +337,7 @@ namespace XDM.Core.Downloader.Adaptive.Hls
                 {
                     var chunk = CreateChunk(playlist.MediaSegments[i], playlist.HasByteRange, 0);
                     _chunks.Add(chunk);
-                    _chunkStreamMap.StreamMap[chunk.Id] = Path.Combine(tempDir, "1_" + chunk.Id + Helpers.GetFileName(chunk.Uri));
+                    _chunkStreamMap.StreamMap[chunk.Id] = Path.Combine(tempDir, "1_" + chunk.Id + FileHelper.GetFileName(chunk.Uri));
                 }
             }
         }
@@ -407,7 +407,7 @@ namespace XDM.Core.Downloader.Adaptive.Hls
                 var streamMap = _chunks.Select(c => new
                 {
                     c.Id,
-                    TempFilePath = Path.Combine(hlsDir, (c.StreamIndex == 0 ? "1_" : "2_") + c.Id + Helpers.GetFileName(c.Uri))
+                    TempFilePath = Path.Combine(hlsDir, (c.StreamIndex == 0 ? "1_" : "2_") + c.Id + FileHelper.GetFileName(c.Uri))
                 }).ToDictionary(e => e.Id, e => e.TempFilePath);
                 _chunkStreamMap = new SimpleStreamMap { StreamMap = streamMap };
 
@@ -473,7 +473,7 @@ namespace XDM.Core.Downloader.Adaptive.Hls
 
         private static string GuessContainerFormatFromPlaylist(HlsPlaylist playlist)
         {
-            var file = Helpers.GetFileName(playlist.MediaSegments.Last().Url);
+            var file = FileHelper.GetFileName(playlist.MediaSegments.Last().Url);
             return Path.GetExtension(file).ToLowerInvariant();
         }
     }
