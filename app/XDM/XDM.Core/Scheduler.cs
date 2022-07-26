@@ -57,7 +57,7 @@ namespace XDM.Core
 
             if (h1 == h2 && m1 == m2)
             {
-                AppInstance.Core.StopDownloads(new List<string>(item.DownloadIds), true);
+                ApplicationContext.CoreService.StopDownloads(new List<string>(item.DownloadIds), true);
                 this.activeSchedules.Remove(item.ID);
                 return;
             }
@@ -72,13 +72,13 @@ namespace XDM.Core
                 var dict = new Dictionary<string, BaseDownloadEntry>();
                 foreach (var id in item.DownloadIds)
                 {
-                    var ent = AppDB.Instance.Downloads.GetDownloadById(id);// AppInstance.Core.AppUI.GetInProgressDownloadEntry(id);
+                    var ent = AppDB.Instance.Downloads.GetDownloadById(id);// ApplicationContext.Core.AppUI.GetInProgressDownloadEntry(id);
                     if (ent != null)
                     {
                         dict[id] = ent;
                     }
                 }
-                AppInstance.Core.ResumeDownload(dict, nonInteractive: true);
+                ApplicationContext.CoreService.ResumeDownload(dict, nonInteractive: true);
             }
         }
 
@@ -113,7 +113,7 @@ namespace XDM.Core
             {
                 ProcessScheduledItem(queue);
             }
-            //AppInstance.Core.AppUI.RunOnUiThread(callback);
+            //ApplicationContext.Core.AppUI.RunOnUiThread(callback);
         }
     }
 }

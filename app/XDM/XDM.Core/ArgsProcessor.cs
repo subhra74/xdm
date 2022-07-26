@@ -15,7 +15,7 @@ namespace XDM.Core
                 var url = args["-u"];
                 if (!string.IsNullOrEmpty(url))
                 {
-                    AppInstance.Core.AddDownload(new Message { Url = url! });
+                    ApplicationContext.CoreService.AddDownload(new Message { Url = url! });
                 }
             }
         }

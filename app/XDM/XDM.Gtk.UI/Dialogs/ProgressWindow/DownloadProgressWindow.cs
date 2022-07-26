@@ -164,7 +164,7 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
                 BtnPause.Name = string.Empty;
                 //TxtSpeedLimit.Visible = false;
 
-                if (AppInstance.Core.GetLiveDownloadSpeedLimit(downloadId, out bool enable, out int limit))
+                if (ApplicationContext.CoreService.GetLiveDownloadSpeedLimit(downloadId, out bool enable, out int limit))
                 {
                     SetSpeedLimitText(enable, limit);
                 }
@@ -206,7 +206,7 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
         {
             if (downloadId != null)
             {
-                AppInstance.Core.StopDownloads(new List<string> { downloadId }, close);
+                ApplicationContext.CoreService.StopDownloads(new List<string> { downloadId }, close);
             }
         }
 
@@ -223,7 +223,7 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
         {
             if (!string.IsNullOrEmpty(BtnPause.Name))
             {
-                AppInstance.Current.ResumeDownload(downloadId);
+                ApplicationContext.Application.ResumeDownload(downloadId);
                 BtnPause.Label = TextResource.GetText("MENU_PAUSE");
                 BtnPause.Name = string.Empty;
                 //TxtSpeedLimit.Visible = true;
@@ -244,7 +244,7 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
         private void BtnHide_Click(object? sender, EventArgs e)
         {
             DeleteEvent -= DownloadProgressWindow_DeleteEvent;
-            AppInstance.Core.HideProgressWindow(downloadId);
+            ApplicationContext.CoreService.HideProgressWindow(downloadId);
         }
 
         [UI] private Label TxtFileName;

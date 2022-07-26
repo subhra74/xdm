@@ -375,7 +375,7 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
             filesListStore.Clear();
             foreach (var id in queue.DownloadIds)
             {
-                var ent = AppInstance.Current.GetInProgressDownloadEntry(id);
+                var ent = ApplicationContext.Application.GetInProgressDownloadEntry(id);
                 if (ent != null)
                 {
                     filesListStore.AppendValues(ent.Name, Helpers.FormatSize(ent.Size), ent.Status.ToString(), ent);
@@ -415,7 +415,7 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
                 {
                     foreach (var id in realQueue.DownloadIds)
                     {
-                        var ent = AppInstance.Current.GetInProgressDownloadEntry(id);
+                        var ent = ApplicationContext.Application.GetInProgressDownloadEntry(id);
                         if (ent != null)
                         {
                             filesListStore.AppendValues(ent.Name, Helpers.FormatSize(ent.Size), ent.Status.ToString(), ent);

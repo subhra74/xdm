@@ -139,7 +139,7 @@ namespace XDM.GtkUI.Dialogs.NewQueue
                 }
             }
 
-            foreach (var ent in AppInstance.Current.GetAllInProgressDownloads().Select(x => new EntryWrapper { Entry = x }))
+            foreach (var ent in ApplicationContext.Application.GetAllInProgressDownloads().Select(x => new EntryWrapper { Entry = x }))
             {
                 if (!set.Contains(ent.Entry.Id))
                 {

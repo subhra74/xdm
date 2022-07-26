@@ -39,7 +39,7 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
 
         public void ShowWindow()
         {
-            NativeMethods.ShowDialog(this, (Window)AppInstance.MainWindow);
+            NativeMethods.ShowDialog(this, (Window)ApplicationContext.MainWindow);
         }
 
         protected override void OnSourceInitialized(EventArgs e)

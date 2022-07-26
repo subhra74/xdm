@@ -49,7 +49,7 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
             }
 
             var list = new ObservableCollection<InProgressDownloadEntryWrapper>();
-            foreach (var ent in AppInstance.Current.GetAllInProgressDownloads())
+            foreach (var ent in ApplicationContext.Application.GetAllInProgressDownloads())
             {
                 if (!set.Contains(ent.Id))
                 {

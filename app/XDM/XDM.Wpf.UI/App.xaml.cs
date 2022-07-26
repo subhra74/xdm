@@ -59,7 +59,7 @@ namespace XDM.Wpf.UI
             win = new MainWindow();
             app = new XDMApp();
 
-            AppInstance.Configurer()
+            ApplicationContext.Configurer()
                 .RegisterService(win)
                 .RegisterService(app)
                 .RegisterService(core)

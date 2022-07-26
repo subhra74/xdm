@@ -53,7 +53,7 @@ namespace XDM.Core.UI
                 if (Helpers.IsUriValid(url))
                 {
                     view.SwitchToProcessingPage();
-                    ProcessVideo(url, browser, result => AppInstance.Current.RunOnUiThread(() =>
+                    ProcessVideo(url, browser, result => ApplicationContext.Application.RunOnUiThread(() =>
                     {
                         if (result != null)
                         {
@@ -68,7 +68,7 @@ namespace XDM.Core.UI
                 }
                 else
                 {
-                    AppInstance.Current.ShowMessageBox(view, TextResource.GetText("MSG_INVALID_URL"));
+                    ApplicationContext.Application.ShowMessageBox(view, TextResource.GetText("MSG_INVALID_URL"));
                 }
             };
 
@@ -98,7 +98,7 @@ namespace XDM.Core.UI
             view.DownloadLaterClicked += View_DownloadLaterClicked;
             view.QueueSchedulerClicked += (s, e) =>
             {
-                AppInstance.Current.ShowQueueWindow(s);
+                ApplicationContext.Application.ShowQueueWindow(s);
             };
         }
 
@@ -114,7 +114,7 @@ namespace XDM.Core.UI
 
         public void Run()
         {
-            var url = AppInstance.Current.GetUrlFromClipboard();
+            var url = ApplicationContext.Application.GetUrlFromClipboard();
             if (url != null && Helpers.IsUriValid(url))
             {
                 view.Url = url;
@@ -203,12 +203,12 @@ namespace XDM.Core.UI
         {
             if (string.IsNullOrEmpty(view.DownloadLocation))
             {
-                AppInstance.Current!.ShowMessageBox(view, TextResource.GetText("MSG_CAT_FOLDER_MISSING"));
+                ApplicationContext.Application!.ShowMessageBox(view, TextResource.GetText("MSG_CAT_FOLDER_MISSING"));
                 return;
             }
             if (this.view.SelectedItemCount == 0)
             {
-                AppInstance.Current!.ShowMessageBox(view, TextResource.GetText("BAT_SELECT_ITEMS"));
+                ApplicationContext.Application!.ShowMessageBox(view, TextResource.GetText("BAT_SELECT_ITEMS"));
                 return;
             }
             var quality = -1;
@@ -322,7 +322,7 @@ namespace XDM.Core.UI
             };
             if (info != null)
             {
-                AppInstance.Core!.SubmitDownload(
+                ApplicationContext.CoreService!.SubmitDownload(
                         info,
                         videoEntry.Title + "." + videoEntry.FileExt,
                         FileNameFetchMode.None,

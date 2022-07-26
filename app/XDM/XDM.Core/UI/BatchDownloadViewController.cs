@@ -51,15 +51,15 @@ namespace XDM.Core.UI
                 var links = GenerateBatchLink()?.Select(x => (object)new SingleSourceHTTPDownloadInfo { Uri = x.ToString() });
                 if (links == null || !links.Any())
                 {
-                    AppInstance.Current.ShowMessageBox(this.view, TextResource.GetText("BAT_SELECT_ITEMS"));
+                    ApplicationContext.Application.ShowMessageBox(this.view, TextResource.GetText("BAT_SELECT_ITEMS"));
                     return;
                 }
                 this.view.DestroyWindow();
-                AppInstance.Current.ShowDownloadSelectionWindow(FileNameFetchMode.FileNameAndExtension, links);
+                ApplicationContext.Application.ShowDownloadSelectionWindow(FileNameFetchMode.FileNameAndExtension, links);
                 //var dsvc = new DownloadSelectionViewController(this.view.CreateDownloadSelectionView(),
-                //    AppInstance.Core, AppUI, FileNameFetchMode.FileNameAndExtension, links);
+                //    ApplicationContext.Core, AppUI, FileNameFetchMode.FileNameAndExtension, links);
                 //dsvc.Run();
-                //var window = new DownloadSelectionWindow(AppInstance.Core, AppUI, Core.Lib.Downloader.FileNameFetchMode.FileNameAndExtension, links);
+                //var window = new DownloadSelectionWindow(ApplicationContext.Core, AppUI, Core.Lib.Downloader.FileNameFetchMode.FileNameAndExtension, links);
                 //this.Close();
                 //window.Show();
             }
@@ -94,7 +94,7 @@ namespace XDM.Core.UI
             }
             catch (UriFormatException)
             {
-                AppInstance.Current.ShowMessageBox(this.view, TextResource.GetText("MSG_INVALID_URL"));
+                ApplicationContext.Application.ShowMessageBox(this.view, TextResource.GetText("MSG_INVALID_URL"));
             }
             catch (Exception ex)
             {

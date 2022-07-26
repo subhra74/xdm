@@ -12,7 +12,7 @@ namespace XDM.Core
             ["Music"] = new HashSet<string> { ".mp3", ".aac", ".ac3", ".wma", ".m4a", ".ogg", ".mka" },
             ["Video"] = new HashSet<string> { ".mp4", ".mkv", ".ts", ".webm", ".avi", ".divx", ".mov", ".m4v" },
             ["Document"] = new HashSet<string> { ".docx", ".doc", ".pdf", ".txt", ".xlsx", ".xls", ".html" },
-            ["AppInstance.Core"] = new HashSet<string> { ".exe", ".bin", ".appx", ".AppInstance.Core", ".msi", ".rpm", ".deb" }
+            ["ApplicationContext.Core"] = new HashSet<string> { ".exe", ".bin", ".appx", ".ApplicationContext.Core", ".msi", ".rpm", ".deb" }
         };
 
         private static string GetFileType(string ext)
@@ -38,7 +38,7 @@ namespace XDM.Core
                 "Music" => RemixIcon.GetFontIcon(RemixIcon.MusicIcon),
                 "Video" => RemixIcon.GetFontIcon(RemixIcon.VideoIcon),
                 "Document" => RemixIcon.GetFontIcon(RemixIcon.DocumentIcon),
-                "AppInstance.Core" => RemixIcon.GetFontIcon(RemixIcon.AppIcon),
+                "ApplicationContext.Core" => RemixIcon.GetFontIcon(RemixIcon.AppIcon),
                 _ => RemixIcon.GetFontIcon(RemixIcon.OtherFileIcon),
             };
         }
@@ -53,7 +53,7 @@ namespace XDM.Core
                 "Music" => "file-music-line",
                 "Video" => "movie-line",
                 "Document" => "file-text-line",
-                "AppInstance.Core" => "function-line",
+                "ApplicationContext.Core" => "function-line",
                 _ => "file-line",
             };
         }

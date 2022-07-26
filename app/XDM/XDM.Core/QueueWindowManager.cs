@@ -51,12 +51,12 @@ namespace XDM.Core
 
         private static void QueueWindow_QueueStopRequested(object? sender, DownloadListEventArgs e)
         {
-            AppInstance.Core?.StopDownloads(e.Downloads, true);
+            ApplicationContext.CoreService?.StopDownloads(e.Downloads, true);
         }
 
         private static void QueueWindow_QueueStartRequested(object? sender, DownloadListEventArgs e)
         {
-            AppInstance.Core?.ResumeNonInteractiveDownloads(e.Downloads);
+            ApplicationContext.CoreService?.ResumeNonInteractiveDownloads(e.Downloads);
         }
 
         private static void QueueWindow_QueuesModified(object? sender, QueueListEventArgs e)

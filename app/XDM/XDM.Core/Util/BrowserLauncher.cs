@@ -31,7 +31,7 @@ namespace XDM.Core.Util
             else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
             {
                 paths = new string[]{
-                    "/Applications/Google Chrome.AppInstance.Core"
+                    "/Applications/Google Chrome.ApplicationContext.Core"
                 };
             }
 
@@ -70,7 +70,7 @@ namespace XDM.Core.Util
             else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
             {
                 paths = new string[]{
-                    "/Applications/Firefox.AppInstance.Core"
+                    "/Applications/Firefox.ApplicationContext.Core"
                 };
             }
 
@@ -109,7 +109,7 @@ namespace XDM.Core.Util
             else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
             {
                 paths = new string[]{
-                    "/Applications/Microsoft Edge.AppInstance.Core"
+                    "/Applications/Microsoft Edge.ApplicationContext.Core"
                 };
             }
 
@@ -148,7 +148,7 @@ namespace XDM.Core.Util
             else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
             {
                 paths = new string[]{
-                    "/Applications/Vivaldi.AppInstance.Core"
+                    "/Applications/Vivaldi.ApplicationContext.Core"
                 };
             }
 
@@ -188,7 +188,7 @@ namespace XDM.Core.Util
             else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
             {
                 paths = new string[]{
-                    "/Applications/Brave Browser.AppInstance.Core"
+                    "/Applications/Brave Browser.ApplicationContext.Core"
                 };
             }
 
@@ -227,7 +227,7 @@ namespace XDM.Core.Util
             else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
             {
                 paths = new string[]{
-                    "/Applications/Opera.AppInstance.Core"
+                    "/Applications/Opera.ApplicationContext.Core"
                 };
             }
 

@@ -72,7 +72,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
                 page.UpdateConfig();
             }
             Config.SaveConfig();
-            AppInstance.Core.ApplyConfig();
+            ApplicationContext.CoreService.ApplyConfig();
             Close();
             Helpers.RunGC();
         }

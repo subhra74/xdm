@@ -91,7 +91,7 @@ namespace XDM.GtkUI
             var app = new XDMApp();
             var win = new AppWinPeer();
 
-            AppInstance.Configurer()
+            ApplicationContext.Configurer()
                 .RegisterService(win)
                 .RegisterService(app)
                 .RegisterService(core)

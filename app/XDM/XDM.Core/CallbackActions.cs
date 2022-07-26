@@ -10,14 +10,14 @@ namespace XDM.Core
     {
         public static void DownloadStarted(string id)
         {
-            var download = AppInstance.MainWindow.FindInProgressItem(id);
+            var download = ApplicationContext.MainWindow.FindInProgressItem(id);
             if (download == null) return;
             download.Status = DownloadStatus.Downloading;
         }
 
         public static void DownloadFailed(string id)
         {
-            var download = AppInstance.MainWindow.FindInProgressItem(id);
+            var download = ApplicationContext.MainWindow.FindInProgressItem(id);
             if (download == null) return;
             download.Status = DownloadStatus.Stopped;
         }
@@ -25,7 +25,7 @@ namespace XDM.Core
         public static void DownloadFinished(string id, long finalFileSize, string filePath, Action callback)
         {
             Log.Debug("Final file name: " + filePath);
-            var download = AppInstance.MainWindow.FindInProgressItem(id);
+            var download = ApplicationContext.MainWindow.FindInProgressItem(id);
             if (download == null) return;
             var downloadEntry = download.DownloadEntry;
             downloadEntry.Progress = 100;
@@ -43,15 +43,15 @@ namespace XDM.Core
                 Proxy = downloadEntry.Proxy
             };
 
-            AppInstance.MainWindow.AddToTop(finishedEntry);
-            AppInstance.MainWindow.Delete(download);
+            ApplicationContext.MainWindow.AddToTop(finishedEntry);
+            ApplicationContext.MainWindow.Delete(download);
 
             QueueManager.RemoveFinishedDownload(download.DownloadEntry.Id);
 
-            if (AppInstance.Core.ActiveDownloadCount == 0 && AppInstance.MainWindow.IsInProgressViewSelected)
+            if (ApplicationContext.CoreService.ActiveDownloadCount == 0 && ApplicationContext.MainWindow.IsInProgressViewSelected)
             {
                 Log.Debug("switching to finished listview");
-                AppInstance.MainWindow.SwitchToFinishedView();
+                ApplicationContext.MainWindow.SwitchToFinishedView();
             }
 
             callback.Invoke();

@@ -49,7 +49,7 @@ namespace XDM.Core.UI
                 try
                 {
                     updaterUI.Inderminate = true;
-                    if (!UpdateChecker.GetAppUpdates(AppInstance.Core.AppVerion, out updates, out _, this.updateMode))
+                    if (!UpdateChecker.GetAppUpdates(ApplicationContext.CoreService.AppVerion, out updates, out _, this.updateMode))
                     {
                         updaterUI.DownloadFailed(this, new DownloadFailedEventArgs(ErrorCode.Generic));
                     }

@@ -57,7 +57,7 @@ namespace XDM.Core.UI
             }
             else
             {
-                var url = AppInstance.Current.GetUrlFromClipboard();
+                var url = ApplicationContext.Application.GetUrlFromClipboard();
                 if (!string.IsNullOrEmpty(url))
                 {
                     window.Url = url;
@@ -86,7 +86,7 @@ namespace XDM.Core.UI
                     blockedHost.Add(url.Host);
                     Config.Instance.BlockedHosts = blockedHost.ToArray();
                     Config.SaveConfig();
-                    AppInstance.Core.ApplyConfig();
+                    ApplicationContext.CoreService.ApplyConfig();
                     window.DisposeWindow();
                 }
             };
@@ -103,13 +103,13 @@ namespace XDM.Core.UI
 
             window.QueueSchedulerClicked += (s, e) =>
             {
-                AppInstance.Current.ShowQueueWindow(s);
+                ApplicationContext.Application.ShowQueueWindow(s);
             };
 
             window.ShowWindow();
         }
 
-        //public static void CreateAndShowDialog(IApp AppInstance.Core, IAppUI appUi, INewDownloadDialogSkeleton window)
+        //public static void CreateAndShowDialog(IApp ApplicationContext.Core, IAppUI appUi, INewDownloadDialogSkeleton window)
         //{
         //    window.FolderSelectionMode = Config.FolderSelectionMode;
         //    window.ConflictResolution = Config.FileConflictResolution;
@@ -141,7 +141,7 @@ namespace XDM.Core.UI
 
         //    window.DownloadClicked += (a, b) =>
         //    {
-        //        OnDownloadClicked(AppInstance.Core, appUi, window, file, selectedFolder, null, true);
+        //        OnDownloadClicked(ApplicationContext.Core, appUi, window, file, selectedFolder, null, true);
         //    };
 
         //    window.ShowWindow();
@@ -173,7 +173,7 @@ namespace XDM.Core.UI
                 catch { }
             }
 
-            AppInstance.Core.StartDownload(
+            ApplicationContext.CoreService.StartDownload(
                 new SingleSourceHTTPDownloadInfo
                 {
                     Uri = window.Url,
@@ -210,7 +210,7 @@ namespace XDM.Core.UI
             //    http.SetTargetDirectory(selectedFolder);
             //}
 
-            //AppInstance.Core.StartDownload(http, startImmediately);
+            //ApplicationContext.Core.StartDownload(http, startImmediately);
 
             window.DisposeWindow();
         }

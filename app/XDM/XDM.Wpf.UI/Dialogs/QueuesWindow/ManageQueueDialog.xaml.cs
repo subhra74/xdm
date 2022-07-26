@@ -134,7 +134,7 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
                 {
                     foreach (var id in realQueue.DownloadIds)
                     {
-                        var entry = AppInstance.Current.GetInProgressDownloadEntry(id);
+                        var entry = ApplicationContext.Application.GetInProgressDownloadEntry(id);
                         if (entry != null)
                         {
                             this.downloads.Add(entry);
@@ -175,7 +175,7 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
             ClearCollection(this.downloads);
             foreach (var id in queue.DownloadIds)
             {
-                var ent = AppInstance.Current.GetInProgressDownloadEntry(id);
+                var ent = ApplicationContext.Application.GetInProgressDownloadEntry(id);
                 if (ent != null)
                 {
                     this.downloads.Add(ent);

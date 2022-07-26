@@ -16,14 +16,14 @@ namespace XDM.Core.BrowserMonitoring
             {
                 foreach (var item in envelop.VideoIds)
                 {
-                    AppInstance.Core.AddVideoDownload(item);
+                    ApplicationContext.CoreService.AddVideoDownload(item);
                 }
                 return;
             }
 
             if (envelop.MessageType == "clear")
             {
-                AppInstance.Core.ClearVideoList();
+                ApplicationContext.CoreService.ClearVideoList();
                 return;
             }
 
@@ -53,7 +53,7 @@ namespace XDM.Core.BrowserMonitoring
                         var message = Parse(rawMessage);
                         if (!(Helpers.IsBlockedHost(message.Url) || Helpers.IsCompressedJSorCSS(message.Url)))
                         {
-                            AppInstance.Core.AddDownload(message);
+                            ApplicationContext.CoreService.AddDownload(message);
                         }
                         break;
                     }
@@ -65,7 +65,7 @@ namespace XDM.Core.BrowserMonitoring
                             var message = Parse(msg);
                             messages.Add(message);
                         }
-                        AppInstance.Core.AddBatchLinks(messages);
+                        ApplicationContext.CoreService.AddBatchLinks(messages);
                         break;
                     }
                 case "video":
@@ -80,7 +80,7 @@ namespace XDM.Core.BrowserMonitoring
 
                         //if (VideoUrlHelper.IsFBFormat(contentType, message.Url))
                         //{
-                        //    VideoUrlHelper.ProcessPostFBFormats(message, AppInstance.Core);
+                        //    VideoUrlHelper.ProcessPostFBFormats(message, ApplicationContext.Core);
                         //}
 
                         if (VideoUrlHelper.IsHLS(contentType))

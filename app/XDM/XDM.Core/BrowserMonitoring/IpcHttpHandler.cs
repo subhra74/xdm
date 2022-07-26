@@ -36,7 +36,7 @@ namespace XDM.Core.BrowserMonitoring
                 catch (Exception ex)
                 {
                     Log.Debug(ex.ToString());
-                    AppInstance.Current.ShowMessageBox(null, TextResource.GetText("MSG_ALREADY_RUNNING"));
+                    ApplicationContext.Application.ShowMessageBox(null, TextResource.GetText("MSG_ALREADY_RUNNING"));
                 }
             }).Start();
         }
@@ -66,7 +66,7 @@ namespace XDM.Core.BrowserMonitoring
                             var message = Message.ParseMessage(text);
                             if (!(Helpers.IsBlockedHost(message.Url) || Helpers.IsCompressedJSorCSS(message.Url)))
                             {
-                                AppInstance.Core.AddDownload(message);
+                                ApplicationContext.CoreService.AddDownload(message);
                             }
                             break;
                         }
@@ -102,19 +102,19 @@ namespace XDM.Core.BrowserMonitoring
                             var text = Encoding.UTF8.GetString(context.RequestBody!);
                             Log.Debug(text);
                             var arr = text.Split(new string[] { "\r\n\r\n" }, StringSplitOptions.RemoveEmptyEntries);
-                            AppInstance.Core.AddBatchLinks(arr.Select(str => Message.ParseMessage(str.Trim())).ToList());
+                            ApplicationContext.CoreService.AddBatchLinks(arr.Select(str => Message.ParseMessage(str.Trim())).ToList());
                             break;
                         }
                     case "/item":
                         {
                             foreach (var item in Encoding.UTF8.GetString(context.RequestBody!).Split(new char[] { '\r', '\n' }))
                             {
-                                AppInstance.Core.AddVideoDownload(item);
+                                ApplicationContext.CoreService.AddVideoDownload(item);
                             }
                             break;
                         }
                     case "/clear":
-                        AppInstance.Core.ClearVideoList();
+                        ApplicationContext.CoreService.ClearVideoList();
                         break;
                 }
             }
@@ -133,7 +133,7 @@ namespace XDM.Core.BrowserMonitoring
                 videoUrls = new string[0],
                 fileExts = Config.Instance.FileExtensions,
                 vidExts = Config.Instance.VideoExtensions,
-                vidList = AppInstance.Core.GetVideoList().Select(a => new
+                vidList = ApplicationContext.CoreService.GetVideoList().Select(a => new
                 {
                     id = a.ID,
                     text = a.File,

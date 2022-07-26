@@ -67,7 +67,7 @@ namespace XDM.Core
 
         public ApplicationCore()
         {
-            AppInstance.Initialized += AppInstance_Initialized;
+            ApplicationContext.Initialized += AppInstance_Initialized;
         }
 
         private void AppInstance_Initialized(object sender, EventArgs e)
@@ -98,7 +98,7 @@ namespace XDM.Core
         {
             Log.Debug("StartClipboardMonitor");
             if (isClipboardMonitorActive) return;
-            var cm = AppInstance.Current.GetClipboardMonitor();
+            var cm = ApplicationContext.Application.GetClipboardMonitor();
             if (Config.Instance.MonitorClipboard)
             {
                 cm.StartClipboardMonitoring();
@@ -110,7 +110,7 @@ namespace XDM.Core
         public void StopClipboardMonitor()
         {
             if (!isClipboardMonitorActive) return;
-            var cm = AppInstance.Current.GetClipboardMonitor();
+            var cm = ApplicationContext.Application.GetClipboardMonitor();
             cm.StopClipboardMonitoring();
             isClipboardMonitorActive = false;
             cm.ClipboardChanged -= Cm_ClipboardChanged;
@@ -303,7 +303,7 @@ namespace XDM.Core
                 queuedDownloads.Add(id, false);
             }
 
-            AppInstance.Current.AddItemToTop(id, download.TargetFileName, DateTime.Now,
+            ApplicationContext.Application.AddItemToTop(id, download.TargetFileName, DateTime.Now,
                 download.FileSize, download.Type, download.FileNameFetchMode,
                 download.PrimaryUrl?.ToString(), startType, authentication,
                 proxyInfo, maxSpeedLimit);
@@ -355,7 +355,7 @@ namespace XDM.Core
                 };
                 list.Add(si);
             }
-            AppInstance.Current.ShowDownloadSelectionWindow(FileNameFetchMode.FileNameAndExtension, list);
+            ApplicationContext.Application.ShowDownloadSelectionWindow(FileNameFetchMode.FileNameAndExtension, list);
         }
 
         public void AddDownload(Message message)
@@ -388,11 +388,11 @@ namespace XDM.Core
             else
             {
                 Log.Debug("Adding download");
-                AppInstance.Current.ShowNewDownloadDialog(message);
+                ApplicationContext.Application.ShowNewDownloadDialog(message);
             }
-            //AppInstance.Current.InvokeForm(new Action(() =>
+            //ApplicationContext.Current.InvokeForm(new Action(() =>
             //{
-            //    NewDownloadDialog.CreateAndShowDialog(this, AppInstance.Current.CreateNewDownloadDialog(), message);
+            //    NewDownloadDialog.CreateAndShowDialog(this, ApplicationContext.Current.CreateNewDownloadDialog(), message);
             //}));
         }
 
@@ -459,7 +459,7 @@ namespace XDM.Core
                 }
                 else
                 {
-                    AppInstance.Current.ShowVideoDownloadDialog(videoId, name, size, contentType);
+                    ApplicationContext.Application.ShowVideoDownloadDialog(videoId, name, size, contentType);
                 }
             }
         }
@@ -556,7 +556,7 @@ namespace XDM.Core
         //{
         //    if (list.Count > 0)
         //    {
-        //        if (AppInstance.Current.Confirm(null, $"Delete {list.Count} item{(list.Count > 1 ? "s" : "")}?"))
+        //        if (ApplicationContext.Current.Confirm(null, $"Delete {list.Count} item{(list.Count > 1 ? "s" : "")}?"))
         //        {
         //            var itemsToDelete = new List<RowItem>();
         //            list.ForEach(id =>
@@ -614,7 +614,7 @@ namespace XDM.Core
         {
             foreach (var id in idList)
             {
-                var entry = AppDB.Instance.Downloads.GetDownloadById(id);// AppInstance.Current.GetInProgressDownloadEntry(id);
+                var entry = AppDB.Instance.Downloads.GetDownloadById(id);// ApplicationContext.Current.GetInProgressDownloadEntry(id);
                 if (entry != null)
                 {
                     ResumeDownload(new Dictionary<string, BaseDownloadEntry> { [id] = entry }, true);
@@ -637,9 +637,9 @@ namespace XDM.Core
                 if (liveDownloads.Count >= Config.Instance.MaxParallelDownloads)
                 {
                     queuedDownloads.Add(item.Key, nonInteractive);
-                    AppInstance.Current.RunOnUiThread(() =>
+                    ApplicationContext.Application.RunOnUiThread(() =>
                     {
-                        AppInstance.Current.SetDownloadStatusWaiting(item.Key);
+                        ApplicationContext.Application.SetDownloadStatusWaiting(item.Key);
                         Log.Debug("Setting status waiting...");
                     });
                     continue;
@@ -679,7 +679,7 @@ namespace XDM.Core
                 if (showProgressWindow && !nonInteractive)
                 {
                     var prgWin = GetProgressWindow(download);// CreateOrGetProgressWindow(download);
-                    AppInstance.Current.RunOnUiThread(() =>
+                    ApplicationContext.Application.RunOnUiThread(() =>
                     {
                         if (prgWin == null)
                         {
@@ -828,7 +828,7 @@ namespace XDM.Core
             lock (this)
             {
                 var http = source as IBaseDownloader;
-                AppInstance.Current.UpdateProgress(http.Id, args.Progress, args.DownloadSpeed, args.Eta);
+                ApplicationContext.Application.UpdateProgress(http.Id, args.Progress, args.DownloadSpeed, args.Eta);
                 if (activeProgressWindows.ContainsKey(http.Id))
                 {
                     var prgWin = activeProgressWindows[http.Id];
@@ -845,7 +845,7 @@ namespace XDM.Core
             lock (this)
             {
                 var http = source as IBaseDownloader;
-                //AppInstance.Current.UpdateProgress(http.Id, args.Progress, args.DownloadSpeed, args.Eta);
+                //ApplicationContext.Current.UpdateProgress(http.Id, args.Progress, args.DownloadSpeed, args.Eta);
                 if (activeProgressWindows.ContainsKey(http.Id))
                 {
                     var prgWin = activeProgressWindows[http.Id];
@@ -863,7 +863,7 @@ namespace XDM.Core
             {
                 var http = source as IBaseDownloader;
                 DetachEventHandlers(http);
-                AppInstance.Current.DownloadFinished(http.Id, http.FileSize < 0 ? new FileInfo(http.TargetFile).Length : http.FileSize, http.TargetFile);
+                ApplicationContext.Application.DownloadFinished(http.Id, http.FileSize < 0 ? new FileInfo(http.TargetFile).Length : http.FileSize, http.TargetFile);
 
                 var showCompleteDialog = false;
                 if (liveDownloads.ContainsKey(http.Id))
@@ -887,7 +887,7 @@ namespace XDM.Core
 
                 if (showCompleteDialog)
                 {
-                    AppInstance.Current.ShowDownloadCompleteDialog(http.TargetFileName, Path.GetDirectoryName(http.TargetFile));
+                    ApplicationContext.Application.ShowDownloadCompleteDialog(http.TargetFileName, Path.GetDirectoryName(http.TargetFile));
                 }
 
                 if (Config.Instance.ScanWithAntiVirus)
@@ -909,14 +909,14 @@ namespace XDM.Core
                 var http = source as IBaseDownloader;
                 DetachEventHandlers(http);
                 liveDownloads.Remove(http.Id);
-                AppInstance.Current.DownloadFailed(http.Id);
+                ApplicationContext.Application.DownloadFailed(http.Id);
                 if (activeProgressWindows.ContainsKey(http.Id))
                 {
                     var prgWin = activeProgressWindows[http.Id];
                     prgWin.DownloadFailed(new ErrorDetails { Message = ErrorMessages.GetLocalizedErrorMessage(args.ErrorCode) });
                     //prgWin.DownloadETAText = "Download Failed";
                     //activeProgressWindows.Remove(http.Id);
-                    //AppInstance.Current.ShowMessageBox("Download failed");
+                    //ApplicationContext.Current.ShowMessageBox("Download failed");
                     //prgWin.Destroy();
                 }
 
@@ -933,7 +933,7 @@ namespace XDM.Core
                 var http = source as IBaseDownloader;
                 DetachEventHandlers(http);
                 liveDownloads.Remove(http.Id);
-                AppInstance.Current.DownloadCanelled(http.Id);
+                ApplicationContext.Application.DownloadCanelled(http.Id);
 
                 if (activeProgressWindows.ContainsKey(http.Id))
                 {
@@ -954,7 +954,7 @@ namespace XDM.Core
             lock (this)
             {
                 var http = source as IBaseDownloader;
-                AppInstance.Current.UpdateItem(http.Id, http.TargetFileName, http.FileSize > 0 ? http.FileSize : 0);
+                ApplicationContext.Application.UpdateItem(http.Id, http.TargetFileName, http.FileSize > 0 ? http.FileSize : 0);
                 if (activeProgressWindows.ContainsKey(http.Id))
                 {
                     var prgWin = activeProgressWindows[http.Id];
@@ -969,7 +969,7 @@ namespace XDM.Core
             lock (this)
             {
                 var http = source as IBaseDownloader;
-                AppInstance.Current.DownloadStarted(http.Id);
+                ApplicationContext.Application.DownloadStarted(http.Id);
             }
         }
 
@@ -980,7 +980,7 @@ namespace XDM.Core
         //    //            "incomplete-downloads.json");
         //    //if (File.Exists(inprogresDownloadListFile))
         //    //{
-        //    //    AppInstance.Current.SetInProgressDownloadList(JsonConvert.DeserializeObject<List<InProgresDownloadEntry>>(
+        //    //    ApplicationContext.Current.SetInProgressDownloadList(JsonConvert.DeserializeObject<List<InProgresDownloadEntry>>(
         //    //        File.ReadAllText(inprogresDownloadListFile)));
         //    //}
         //    ////var finishedDownloadListFile = Path.Combine(
@@ -988,11 +988,11 @@ namespace XDM.Core
         //    ////            "finished-downloads.json");
         //    ////if (File.Exists(finishedDownloadListFile))
         //    ////{
-        //    ////    AppInstance.Current.SetFinishedDownloadList(JsonConvert.DeserializeObject<List<FinishedDownloadEntry>>(
+        //    ////    ApplicationContext.Current.SetFinishedDownloadList(JsonConvert.DeserializeObject<List<FinishedDownloadEntry>>(
         //    ////        File.ReadAllText(finishedDownloadListFile)));
         //    ////}
 
-        //    //AppInstance.Current.LoadDownloadsDB();
+        //    //ApplicationContext.Current.LoadDownloadsDB();
         //}
 
         //public void SaveInProgressList(IEnumerable<InProgresDownloadEntry> list)
@@ -1047,11 +1047,11 @@ namespace XDM.Core
             else
             {
                 prgWin = CreateProgressWindow(downloader);
-                //prgWin.UrlText = AppInstance.Current.GetInProgressDownloadEntry(downloader.Id)?.PrimaryUrl;
+                //prgWin.UrlText = ApplicationContext.Current.GetInProgressDownloadEntry(downloader.Id)?.PrimaryUrl;
                 activeProgressWindows[downloader.Id] = prgWin;
             }
             //var prgWin = activeProgressWindows.ContainsKey(item.Key) ? activeProgressWindows[item.Key]
-            //    : AppInstance.Current.CreateProgressWindow(item.Key);
+            //    : ApplicationContext.Current.CreateProgressWindow(item.Key);
             //prgWin.FileNameText = downloader.TargetFileName;
             //prgWin.FileSizeText = $"Downloading {Helpers.FormatSize(0)} / {Helpers.FormatSize(downloader.FileSize)}";
             return prgWin;
@@ -1059,8 +1059,8 @@ namespace XDM.Core
 
         private IProgressWindow CreateProgressWindow(IBaseDownloader downloader)
         {
-            var prgWin = AppInstance.Current.CreateProgressWindow(downloader.Id);
-            prgWin.UrlText = AppInstance.Current.GetInProgressDownloadEntry(downloader.Id)?.PrimaryUrl;
+            var prgWin = ApplicationContext.Application.CreateProgressWindow(downloader.Id);
+            prgWin.UrlText = ApplicationContext.Application.GetInProgressDownloadEntry(downloader.Id)?.PrimaryUrl;
             prgWin.DownloadSpeedText = "---";
             prgWin.DownloadETAText = "---";
             prgWin.FileSizeText = "---";
@@ -1087,7 +1087,7 @@ namespace XDM.Core
             {
                 var kv = queuedDownloads.First();
                 queuedDownloads.Remove(kv.Key);
-                var entry = AppDB.Instance.Downloads.GetDownloadById(kv.Key);// AppInstance.Current.GetInProgressDownloadEntry(kv.Key);
+                var entry = AppDB.Instance.Downloads.GetDownloadById(kv.Key);// ApplicationContext.Current.GetInProgressDownloadEntry(kv.Key);
                 if (entry != null)
                 {
                     ResumeDownload(new Dictionary<string, BaseDownloadEntry> { [kv.Key] = entry }, kv.Value);
@@ -1125,7 +1125,7 @@ namespace XDM.Core
                 downloader.SetTargetDirectory(folder);
                 downloader.SetFileName(file, downloader.FileNameFetchMode);
             }
-            AppInstance.Current.RenameFileOnUI(id, folder, file);
+            ApplicationContext.Application.RenameFileOnUI(id, folder, file);
         }
 
         private bool IsMatchingSingleSourceLink(Message message)
@@ -1232,7 +1232,7 @@ namespace XDM.Core
 
         private void Cm_ClipboardChanged(object? sender, EventArgs e)
         {
-            var text = AppInstance.Current.GetClipboardMonitor().GetClipboardText();
+            var text = ApplicationContext.Application.GetClipboardMonitor().GetClipboardText();
             if (!string.IsNullOrEmpty(text) && Helpers.IsUriValid(text) && text != lastClipboardText)
             {
                 lastClipboardText = text;
@@ -1248,7 +1248,7 @@ namespace XDM.Core
                 {
                     return null;
                 }
-                return AppInstance.Current.PromtForCredentials(message);
+                return ApplicationContext.Application.PromtForCredentials(message);
             }
             catch { }
             return null;
@@ -1485,7 +1485,7 @@ namespace XDM.Core
                 {
                     this.Updates = updates;
                     this.ComponentsInstalled = !firstUpdate;
-                    AppInstance.Current.ShowUpdateAvailableNotification();
+                    ApplicationContext.Application.ShowUpdateAvailableNotification();
                 }
             }
             catch (Exception ex)
@@ -1518,7 +1518,7 @@ namespace XDM.Core
         public void Import(string path)
         {
             ImportExport.Import(path);
-            AppInstance.Current.ShowMessageBox(null, TextResource.GetText("MSG_IMPORT_DONE"));
+            ApplicationContext.Application.ShowMessageBox(null, TextResource.GetText("MSG_IMPORT_DONE"));
         }
 
         public bool IsFFmpegRequiredForDownload(string id)

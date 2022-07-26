@@ -47,7 +47,7 @@ namespace XDM.Core.UI
             view.DownloadLaterClicked += View_DownloadLaterClicked;
             view.QueueSchedulerClicked += (s, e) =>
             {
-                AppInstance.Current.ShowQueueWindow(view);
+                ApplicationContext.Application.ShowQueueWindow(view);
             };
         }
 
@@ -98,7 +98,7 @@ namespace XDM.Core.UI
 
         private void AddDownload(IDownloadEntryWrapper wrapper, bool startImmediately, string? queueId)
         {
-            AppInstance.Core.SubmitDownload(
+            ApplicationContext.CoreService.SubmitDownload(
                         wrapper.DownloadEntry,
                         wrapper.Name,
                         mode,
@@ -117,12 +117,12 @@ namespace XDM.Core.UI
         {
             if (string.IsNullOrEmpty(view.DownloadLocation))
             {
-                AppInstance.Current.ShowMessageBox(view, TextResource.GetText("MSG_CAT_FOLDER_MISSING"));
+                ApplicationContext.Application.ShowMessageBox(view, TextResource.GetText("MSG_CAT_FOLDER_MISSING"));
                 return;
             }
             if (view.SelectedRowCount == 0)
             {
-                AppInstance.Current.ShowMessageBox(view, TextResource.GetText("BAT_SELECT_ITEMS"));
+                ApplicationContext.Application.ShowMessageBox(view, TextResource.GetText("BAT_SELECT_ITEMS"));
                 return;
             }
 

@@ -285,7 +285,7 @@ namespace XDM.GtkUI.Dialogs.Settings
             UpdatePasswordManagerConfig();
             UpdateAdvancedSettingsConfig();
             Config.SaveConfig();
-            AppInstance.Core.ApplyConfig();
+            ApplicationContext.CoreService.ApplyConfig();
             Dispose();
             Helpers.RunGC();
         }
@@ -338,7 +338,7 @@ namespace XDM.GtkUI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchOperaBrowser(AppInstance.Core.ChromeExtensionUrl);
+                BrowserLauncher.LaunchOperaBrowser(ApplicationContext.CoreService.ChromeExtensionUrl);
             }
             catch (Exception ex)
             {
@@ -362,7 +362,7 @@ namespace XDM.GtkUI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchMicrosoftEdge(AppInstance.Core.ChromeExtensionUrl);
+                BrowserLauncher.LaunchMicrosoftEdge(ApplicationContext.CoreService.ChromeExtensionUrl);
             }
             catch (Exception ex)
             {
@@ -386,7 +386,7 @@ namespace XDM.GtkUI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchFirefox(AppInstance.Core.FirefoxExtensionUrl);
+                BrowserLauncher.LaunchFirefox(ApplicationContext.CoreService.FirefoxExtensionUrl);
             }
             catch (Exception ex)
             {
@@ -410,7 +410,7 @@ namespace XDM.GtkUI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchGoogleChrome(AppInstance.Core.ChromeExtensionUrl);
+                BrowserLauncher.LaunchGoogleChrome(ApplicationContext.CoreService.ChromeExtensionUrl);
             }
             catch (Exception ex)
             {

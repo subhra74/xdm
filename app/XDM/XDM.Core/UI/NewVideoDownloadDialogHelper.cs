@@ -56,11 +56,11 @@ namespace XDM.Core.UI
                     window.ShowMessageBox(TextResource.GetText("MSG_NO_FILE"));
                     return;
                 }
-                if (AppInstance.Core.IsFFmpegRequiredForDownload(id) && !IsFFmpegInstalled())
+                if (ApplicationContext.CoreService.IsFFmpegRequiredForDownload(id) && !IsFFmpegInstalled())
                 {
-                    if (AppInstance.Current.Confirm(window, TextResource.GetText("MSG_DOWNLOAD_FFMPEG")))
+                    if (ApplicationContext.Application.Confirm(window, TextResource.GetText("MSG_DOWNLOAD_FFMPEG")))
                     {
-                        AppInstance.Current.InstallLatestFFmpeg();
+                        ApplicationContext.Application.InstallLatestFFmpeg();
                     }
                     return;
                 }
@@ -69,7 +69,7 @@ namespace XDM.Core.UI
                 {
                     name = AddMp3Extension(name);
                 }
-                AppInstance.Core.StartVideoDownload(id, name,
+                ApplicationContext.CoreService.StartVideoDownload(id, name,
                     CommonUtils.SelectedFolderFromIndex(window.SeletedFolderIndex),
                     true,
                     window.Authentication,
@@ -92,7 +92,7 @@ namespace XDM.Core.UI
                 {
                     name = AddMp3Extension(name);
                 }
-                AppInstance.Core.StartVideoDownload(id, name,
+                ApplicationContext.CoreService.StartVideoDownload(id, name,
                     CommonUtils.SelectedFolderFromIndex(window.SeletedFolderIndex),
                     false,
                     window.Authentication,
@@ -110,7 +110,7 @@ namespace XDM.Core.UI
 
             window.QueueSchedulerClicked += (s, e) =>
             {
-                AppInstance.Current.ShowQueueWindow(s);
+                ApplicationContext.Application.ShowQueueWindow(s);
             };
 
             window.ShowWindow();

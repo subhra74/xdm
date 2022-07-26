@@ -9,7 +9,7 @@
     <Import_RootNamespace>XDM.Core</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)AppInstance.cs" />
+    <Compile Include="..\XDM.Core\ApplicationContext.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\BrowserMessageHandler.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\BrowserMonitor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\IpcHttpHandler.cs" />

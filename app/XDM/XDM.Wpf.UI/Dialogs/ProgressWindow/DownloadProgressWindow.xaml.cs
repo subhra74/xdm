@@ -160,7 +160,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
                 BtnPause.Tag = null;
                 //TxtSpeedLimit.Visibility = Visibility.Visible;
 
-                if (AppInstance.Core.GetLiveDownloadSpeedLimit(downloadId, out bool enable, out int limit))
+                if (ApplicationContext.CoreService.GetLiveDownloadSpeedLimit(downloadId, out bool enable, out int limit))
                 {
                     SetSpeedLimitText(enable, limit);
                 }
@@ -190,7 +190,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
         {
             if (downloadId != null)
             {
-                AppInstance.Core.StopDownloads(new List<string> { downloadId }, close);
+                ApplicationContext.CoreService.StopDownloads(new List<string> { downloadId }, close);
             }
         }
 
@@ -205,7 +205,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
         {
             if (BtnPause.Tag != null)
             {
-                AppInstance.Current.ResumeDownload(downloadId);
+                ApplicationContext.Application.ResumeDownload(downloadId);
                 BtnPause.Content = TextResource.GetText("MENU_PAUSE");
                 BtnPause.Tag = null;
                 //TxtSpeedLimit.Visibility = Visibility.Visible;
@@ -226,7 +226,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
         private void BtnHide_Click(object sender, RoutedEventArgs e)
         {
             Closing -= Window_Closing;
-            AppInstance.Core.HideProgressWindow(downloadId);
+            ApplicationContext.CoreService.HideProgressWindow(downloadId);
             //Close();
         }
 
@@ -238,7 +238,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
                 {
                     Owner = this
                 };
-                if (AppInstance.Core.GetLiveDownloadSpeedLimit(downloadId, out bool enable, out int limit))
+                if (ApplicationContext.CoreService.GetLiveDownloadSpeedLimit(downloadId, out bool enable, out int limit))
                 {
                     speedLimiterDlg.EnableSpeedLimit = enable;
                     speedLimiterDlg.SpeedLimit = limit;
@@ -250,7 +250,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
                 speedLimiterDlg.OkClicked += (a, b) =>
                 {
                     var limit2 = speedLimiterDlg.SpeedLimit;
-                    AppInstance.Core.UpdateSpeedLimit(DownloadId, speedLimiterDlg.EnableSpeedLimit, limit2);
+                    ApplicationContext.CoreService.UpdateSpeedLimit(DownloadId, speedLimiterDlg.EnableSpeedLimit, limit2);
                     SetSpeedLimitText(speedLimiterDlg.EnableSpeedLimit, limit2);
                 };
             }

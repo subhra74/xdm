@@ -5,7 +5,7 @@ using XDM.Core.UI;
 
 namespace XDM.Core
 {
-    public static class AppInstance
+    public static class ApplicationContext
     {
         private static IApplicationCore? s_ApplicationCore;
         private static IApplication? s_IApplication;
@@ -14,25 +14,25 @@ namespace XDM.Core
 
         public static event EventHandler? Initialized;
 
-        public static IApplicationCore Core
+        public static IApplicationCore CoreService
         {
             get
             {
                 if (!s_Init)
                 {
-                    throw new Exception("AppInstance is not initialized...");
+                    throw new Exception("ApplicationContext is not initialized...");
                 }
                 return s_ApplicationCore!;
             }
         }
 
-        public static IApplication Current
+        public static IApplication Application
         {
             get
             {
                 if (!s_Init)
                 {
-                    throw new Exception("AppInstance is not initialized...");
+                    throw new Exception("ApplicationContext is not initialized...");
                 }
                 return s_IApplication!;
             }
@@ -44,7 +44,7 @@ namespace XDM.Core
             {
                 if (!s_Init)
                 {
-                    throw new Exception("AppInstance is not initialized...");
+                    throw new Exception("ApplicationContext is not initialized...");
                 }
                 return s_ApplicationWindow!;
             }
