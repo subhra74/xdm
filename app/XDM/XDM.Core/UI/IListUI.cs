@@ -13,8 +13,8 @@ namespace XDM.Core.UI
         public void DownloadFinished(RowItem item, long size = -1);
         public void DownloadFailed(RowItem item);
         public void DownloadCanelled(RowItem item);
-        public List<InProgressDownloadEntry> GetListData();
-        public Dictionary<string, RowItem> SetListData(List<InProgressDownloadEntry> list);
+        public List<InProgressDownloadItem> GetListData();
+        public Dictionary<string, RowItem> SetListData(List<InProgressDownloadItem> list);
         public void ShowNewDownloadDialog(Message message, string providedFileName = null);
         public void DeleteDownload(List<RowItem> items);
         public bool ConfirmDelete(string message);

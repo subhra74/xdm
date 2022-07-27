@@ -11,22 +11,6 @@ namespace XDM.Core.UI
     {
         private static string AutoSelectText = TextResource.GetText("ND_AUTO_CAT");
         private static string BrowseText = TextResource.GetText("BTN_BROWSE");
-        //internal static void ProcessManualSelection(string selectedFile, IFileSelectable window, ref string? selectedFolder)
-        //{
-        //    var file = Path.GetFileName(selectedFile);
-        //    var folder = Path.GetDirectoryName(selectedFile);
-
-        //    window.SelectedFileName = file;
-        //    if (!Config.Instance.RecentFolders.Contains(folder!))
-        //    {
-        //        Config.Instance.RecentFolders.Insert(0, folder!);
-        //        selectedFolder = folder!;
-        //    }
-
-        //    Config.Instance.FolderSelectionMode = FolderSelectionMode.Manual;
-        //    Config.SaveConfig();
-        //    window.FolderSelectionMode = FolderSelectionMode.Manual;
-        //}
 
         internal static string[] GetFolderValues()
         {
@@ -77,8 +61,6 @@ namespace XDM.Core.UI
                     if (index > 1)
                     {
                         Config.Instance.UserSelectedDownloadFolder = args.SelectedFile;
-                        //Config.Instance.RecentFolders.Remove(args.SelectedFile);
-                        //Config.Instance.RecentFolders.Insert(0, args.SelectedFile);
                     }
                 }
                 Config.SaveConfig();

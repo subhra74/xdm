@@ -239,12 +239,12 @@ namespace XDM.Core
                 var entry = AppDB.Instance.Downloads.GetDownloadById(id);// ApplicationContext.Current.GetInProgressDownloadEntry(id);
                 if (entry != null)
                 {
-                    ResumeDownload(new Dictionary<string, BaseDownloadEntry> { [id] = entry }, true);
+                    ResumeDownload(new Dictionary<string, DownloadItemBase> { [id] = entry }, true);
                 }
             }
         }
 
-        public void ResumeDownload(Dictionary<string, BaseDownloadEntry> list,
+        public void ResumeDownload(Dictionary<string, DownloadItemBase> list,
             bool nonInteractive = false)
         {
             if (!awakePingTimer.Enabled)
@@ -563,7 +563,7 @@ namespace XDM.Core
                 var entry = AppDB.Instance.Downloads.GetDownloadById(kv.Key);// ApplicationContext.Current.GetInProgressDownloadEntry(kv.Key);
                 if (entry != null)
                 {
-                    ResumeDownload(new Dictionary<string, BaseDownloadEntry> { [kv.Key] = entry }, kv.Value);
+                    ResumeDownload(new Dictionary<string, DownloadItemBase> { [kv.Key] = entry }, kv.Value);
                 }
             }
             else
@@ -640,7 +640,7 @@ namespace XDM.Core
             }
         }
 
-        public string? GetPrimaryUrl(BaseDownloadEntry entry)
+        public string? GetPrimaryUrl(DownloadItemBase entry)
         {
             if (entry == null) return null;
             switch (entry.DownloadType)
@@ -678,7 +678,7 @@ namespace XDM.Core
             return null;
         }
 
-        public void RemoveDownload(BaseDownloadEntry entry, bool deleteDownloadedFile)
+        public void RemoveDownload(DownloadItemBase entry, bool deleteDownloadedFile)
         {
             try
             {
@@ -738,7 +738,7 @@ namespace XDM.Core
                         File.Delete(infoFile);
                     }
 
-                    if (entry is FinishedDownloadEntry && deleteDownloadedFile)
+                    if (entry is FinishedDownloadItem && deleteDownloadedFile)
                     {
                         var outFile = Path.Combine(entry.TargetDir, entry.Name);
                         if (File.Exists(outFile))
@@ -754,7 +754,7 @@ namespace XDM.Core
             }
         }
 
-        public void RestartDownload(BaseDownloadEntry entry)
+        public void RestartDownload(DownloadItemBase entry)
         {
             if (entry == null) return;
             var convertToMp3 = false;

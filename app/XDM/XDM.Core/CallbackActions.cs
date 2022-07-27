@@ -30,7 +30,7 @@ namespace XDM.Core
             var downloadEntry = download.DownloadEntry;
             downloadEntry.Progress = 100;
 
-            var finishedEntry = new FinishedDownloadEntry
+            var finishedEntry = new FinishedDownloadItem
             {
                 Name = Path.GetFileName(filePath),
                 Id = downloadEntry.Id,

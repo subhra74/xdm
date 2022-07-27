@@ -222,7 +222,7 @@ namespace XDM.Wpf.UI
         public event EventHandler? ClipboardChanged;
         public event EventHandler? WindowCreated;
 
-        public IEnumerable<FinishedDownloadEntry> FinishedDownloads
+        public IEnumerable<FinishedDownloadItem> FinishedDownloads
         {
             get => this.finishedList.Select(x => x.DownloadEntry);
             set
@@ -234,7 +234,7 @@ namespace XDM.Wpf.UI
             }
         }
 
-        public IEnumerable<InProgressDownloadEntry> InProgressDownloads
+        public IEnumerable<InProgressDownloadItem> InProgressDownloads
         {
             get => this.inProgressList.Select(x => x.DownloadEntry);
             set
@@ -278,12 +278,12 @@ namespace XDM.Wpf.UI
             this.lvFinished.Items.OfType<IFinishedDownloadRow>()
             .Where(x => x.DownloadEntry.Id == id).FirstOrDefault();
 
-        public void AddToTop(InProgressDownloadEntry entry)
+        public void AddToTop(InProgressDownloadItem entry)
         {
             this.inProgressList.Add(new InProgressDownloadEntryWrapper(entry));
         }
 
-        public void AddToTop(FinishedDownloadEntry entry)
+        public void AddToTop(FinishedDownloadItem entry)
         {
             this.finishedList.Add(new FinishedDownloadEntryWrapper(entry));
         }
@@ -502,7 +502,7 @@ namespace XDM.Wpf.UI
             return null;
         }
 
-        public void ShowRefreshLinkDialog(InProgressDownloadEntry entry)
+        public void ShowRefreshLinkDialog(InProgressDownloadItem entry)
         {
             var dlg = new LinkRefreshWindow();
             var ret = LinkRefreshDialogHelper.RefreshLink(entry, dlg);
@@ -526,7 +526,7 @@ namespace XDM.Wpf.UI
             Clipboard.SetFileDropList(sc);
         }
 
-        public void ShowPropertiesDialog(BaseDownloadEntry ent, ShortState? state)
+        public void ShowPropertiesDialog(DownloadItemBase ent, ShortState? state)
         {
             var propertiesWindow = new DownloadPropertiesWindow
             {
@@ -553,7 +553,7 @@ namespace XDM.Wpf.UI
 
         public void ShowBatchDownloadWindow()
         {
-            var uvc = new BatchDownloadViewController(new BatchDownloadWindow { Owner = this });
+            var uvc = new BatchDownloadUIController(new BatchDownloadWindow { Owner = this });
             uvc.Run();
         }
 

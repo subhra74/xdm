@@ -29,7 +29,7 @@ namespace XDM.Core
 
         public void StopDownloads(IEnumerable<string> list, bool closeProgressWindow = false);
 
-        public void ResumeDownload(Dictionary<string, BaseDownloadEntry> list, bool nonInteractive = false);
+        public void ResumeDownload(Dictionary<string, DownloadItemBase> list, bool nonInteractive = false);
 
         public void ResumeNonInteractiveDownloads(IEnumerable<string> idList);
 
@@ -41,11 +41,11 @@ namespace XDM.Core
 
         public AuthenticationInfo? PromptForCredential(string id, string message);
 
-        public void RestartDownload(BaseDownloadEntry entry);
+        public void RestartDownload(DownloadItemBase entry);
 
-        public string? GetPrimaryUrl(BaseDownloadEntry entry);
+        public string? GetPrimaryUrl(DownloadItemBase entry);
 
-        public void RemoveDownload(BaseDownloadEntry entry, bool deleteDownloadedFile);
+        public void RemoveDownload(DownloadItemBase entry, bool deleteDownloadedFile);
 
         public void ShowProgressWindow(string downloadId);
 

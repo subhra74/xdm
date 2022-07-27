@@ -98,7 +98,7 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
             LbQueues.AppendColumn(queueNameColumn);
             queueScroll.SetSizeRequest(150, 100);
 
-            filesListStore = new ListStore(typeof(string), typeof(string), typeof(string), typeof(InProgressDownloadEntry));
+            filesListStore = new ListStore(typeof(string), typeof(string), typeof(string), typeof(InProgressDownloadItem));
             lvFiles.Model = filesListStore;
 
             var k = 0;
@@ -204,7 +204,7 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
                 }
                 var downloadIds = new string[this.lvFiles.Selection.CountSelectedRows()];
                 index = 0;
-                foreach (InProgressDownloadEntry lvi in GtkHelper.GetSelectedValues<InProgressDownloadEntry>(lvFiles, 3))
+                foreach (InProgressDownloadItem lvi in GtkHelper.GetSelectedValues<InProgressDownloadItem>(lvFiles, 3))
                 {
                     downloadIds[index++] = lvi.Id;
                 }
@@ -241,7 +241,7 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
             if (indices.Length > 0 && indices[indices.Length - 1] < this.filesListStore.IterNChildren() - 1)
             {
                 var index = indices[indices.Length - 1] + 1;
-                var ent = GtkHelper.GetValueAt<InProgressDownloadEntry>(lvFiles, index, 3);
+                var ent = GtkHelper.GetValueAt<InProgressDownloadItem>(lvFiles, index, 3);
                 if (ent == null) return;
                 GtkHelper.RemoveAt(filesListStore, index);
                 filesListStore.InsertWithValues(indices[0], ent.Name,
@@ -254,7 +254,7 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
             var indices = GtkHelper.GetSelectedIndices(lvFiles);
             if (indices.Length > 0 && indices[0] > 0)
             {
-                var ent = GtkHelper.GetValueAt<InProgressDownloadEntry>(lvFiles, indices[0] - 1, 3);
+                var ent = GtkHelper.GetValueAt<InProgressDownloadItem>(lvFiles, indices[0] - 1, 3);
                 if (ent == null) return;
                 var index = indices[indices.Length - 1];
                 GtkHelper.RemoveAt(filesListStore, indices[0] - 1);
@@ -281,7 +281,7 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
             var selectedQueue = GtkHelper.GetSelectedValue<DownloadQueue>(LbQueues, 1);
             if (selectedQueue == null) return;
             var selectedIds = new List<string>();
-            foreach (var item in GtkHelper.GetSelectedValues<InProgressDownloadEntry>(lvFiles, 3))
+            foreach (var item in GtkHelper.GetSelectedValues<InProgressDownloadItem>(lvFiles, 3))
             {
                 if (item != null)
                 {

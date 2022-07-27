@@ -10,7 +10,7 @@ using XDM.Core.Downloader.Progressive.SingleHttp;
 
 namespace XDM.Core.UI
 {
-    public class ComponentUpdaterUI
+    public class ComponentUpdaterUIController
     {
         private UpdateMode updateMode;
         private IUpdaterUI updaterUI;
@@ -21,7 +21,7 @@ namespace XDM.Core.UI
         private long size;
         private long downloaded;
 
-        public ComponentUpdaterUI(IUpdaterUI updaterUI, UpdateMode updateMode)
+        public ComponentUpdaterUIController(IUpdaterUI updaterUI, UpdateMode updateMode)
         {
             this.updaterUI = updaterUI;
             this.updateMode = updateMode;

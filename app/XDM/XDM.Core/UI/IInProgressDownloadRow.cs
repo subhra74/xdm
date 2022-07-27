@@ -25,6 +25,6 @@ namespace XDM.Core.UI
 
         public string ETA { get; set; }
 
-        public InProgressDownloadEntry DownloadEntry { get; }
+        public InProgressDownloadItem DownloadEntry { get; }
     }
 }

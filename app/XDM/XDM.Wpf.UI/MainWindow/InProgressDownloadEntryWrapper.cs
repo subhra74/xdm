@@ -9,11 +9,11 @@ namespace XDM.Wpf.UI
 {
     internal class InProgressDownloadEntryWrapper : INotifyPropertyChanged, IInProgressDownloadRow
     {
-        private readonly InProgressDownloadEntry entry;
+        private readonly InProgressDownloadItem entry;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public InProgressDownloadEntryWrapper(InProgressDownloadEntry entry)
+        public InProgressDownloadEntryWrapper(InProgressDownloadItem entry)
         {
             this.entry = entry;
         }
@@ -62,7 +62,7 @@ namespace XDM.Wpf.UI
 
         public string StatusText => Helpers.GenerateStatusText(this.entry);
 
-        public InProgressDownloadEntry DownloadEntry => this.entry;
+        public InProgressDownloadItem DownloadEntry => this.entry;
 
         public string FileIconText => IconMap.GetVectorNameForFileType(entry.Name);
 

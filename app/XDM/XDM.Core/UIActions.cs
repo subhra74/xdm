@@ -123,7 +123,7 @@ namespace XDM.Core
 
         public static void ResumeDownloads()
         {
-            var idDict = new Dictionary<string, BaseDownloadEntry>();
+            var idDict = new Dictionary<string, DownloadItemBase>();
             var list = ApplicationContext.MainWindow.SelectedInProgressRows;
             foreach (var item in list)
             {
@@ -212,7 +212,7 @@ namespace XDM.Core
 
         public static void ShowSeletectedItemProperties()
         {
-            BaseDownloadEntry? ent = null;
+            DownloadItemBase? ent = null;
             if (ApplicationContext.MainWindow.IsInProgressViewSelected)
             {
                 var rows = ApplicationContext.MainWindow.SelectedInProgressRows;
@@ -294,7 +294,7 @@ namespace XDM.Core
 
         public static void RestartDownload()
         {
-            BaseDownloadEntry? ent = null;
+            DownloadItemBase? ent = null;
             if (ApplicationContext.MainWindow.IsInProgressViewSelected)
             {
                 var rows = ApplicationContext.MainWindow.SelectedInProgressRows;

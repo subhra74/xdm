@@ -16,7 +16,7 @@ namespace XDM.GtkUI
         private TreeIter treeIter;
         private ITreeModel store;
 
-        internal InProgressEntryWrapper(InProgressDownloadEntry downloadEntry,
+        internal InProgressEntryWrapper(InProgressDownloadItem downloadEntry,
             TreeIter treeIter,
             ITreeModel store)
         {
@@ -25,7 +25,7 @@ namespace XDM.GtkUI
             this.store = store;
         }
 
-        public InProgressDownloadEntry DownloadEntry { get; }
+        public InProgressDownloadItem DownloadEntry { get; }
 
         public string FileIconText => IconResource.GetSVGNameForFileType(DownloadEntry.Name);
 

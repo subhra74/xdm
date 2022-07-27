@@ -11,9 +11,9 @@ namespace XDM.Core.UI
 {
     public interface IApplicationWindow
     {
-        IEnumerable<FinishedDownloadEntry> FinishedDownloads { get; set; }
+        IEnumerable<FinishedDownloadItem> FinishedDownloads { get; set; }
 
-        IEnumerable<InProgressDownloadEntry> InProgressDownloads { get; set; }
+        IEnumerable<InProgressDownloadItem> InProgressDownloads { get; set; }
 
         IInProgressDownloadRow? FindInProgressItem(string id);
 
@@ -35,9 +35,9 @@ namespace XDM.Core.UI
 
         IButton OpenFolderButton { get; }
 
-        void AddToTop(InProgressDownloadEntry entry);
+        void AddToTop(InProgressDownloadItem entry);
 
-        void AddToTop(FinishedDownloadEntry entry);
+        void AddToTop(FinishedDownloadItem entry);
 
         void SwitchToInProgressView();
 
@@ -93,13 +93,13 @@ namespace XDM.Core.UI
 
         string? OpenFileDialog(string? initialPath, string? defaultExt, string? filter);
 
-        void ShowRefreshLinkDialog(InProgressDownloadEntry entry);
+        void ShowRefreshLinkDialog(InProgressDownloadItem entry);
 
         void SetClipboardText(string text);
 
         void SetClipboardFile(string file);
 
-        void ShowPropertiesDialog(BaseDownloadEntry ent, ShortState? state);
+        void ShowPropertiesDialog(DownloadItemBase ent, ShortState? state);
 
         void ShowYoutubeDLDialog();
 

@@ -52,9 +52,9 @@
     <Compile Include="$(MSBuildThisFileDirectory)MediaParser\YouTube\YoutubeDataFormatParser.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TraceLog\Log.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Translations\TextResource.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)UI\BatchDownloadViewController.cs" />
+    <Compile Include="..\XDM.Core\UI\BatchDownloadUIController.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\CommonUtils.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)UI\ComponentUpdaterUI.cs" />
+    <Compile Include="..\XDM.Core\UI\ComponentUpdaterUIController.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\DownloadCompleteDialogHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\DownloadSelectionViewController.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\IconMap.cs" />
@@ -83,8 +83,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Clients\Http\WinHttpSession.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Clients\Http\WinInetClient.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Clients\Http\WinInetProxyHelper.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Clients\Http\WinInetResponseStream.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Clients\Http\WinInetSession.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ArgsProcessor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)AuthenticationInfo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CancelFlag.cs" />

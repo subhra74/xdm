@@ -184,8 +184,8 @@ namespace XDM.Core.Util
                 name.ToLowerInvariant().Contains(searchKeyword?.ToLowerInvariant());
         }
 
-        public static IEnumerable<FinishedDownloadEntry> FilterByCategoryOrKeyword(
-            IEnumerable<FinishedDownloadEntry> finishedDownloads, string? searchKeyword, Category? category)
+        public static IEnumerable<FinishedDownloadItem> FilterByCategoryOrKeyword(
+            IEnumerable<FinishedDownloadItem> finishedDownloads, string? searchKeyword, Category? category)
         {
             return finishedDownloads.Where(d => IsOfCategoryOrMatchesKeyword(d.Name, searchKeyword, category));
         }
@@ -225,7 +225,7 @@ namespace XDM.Core.Util
             }
         }
 
-        public static string GenerateStatusText(InProgressDownloadEntry ent)
+        public static string GenerateStatusText(InProgressDownloadItem ent)
         {
             var text = string.Empty;
 

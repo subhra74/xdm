@@ -55,13 +55,13 @@ namespace XDM.GtkUI
         private Image helpImage;
         private Label helpLabel;
 
-        public IEnumerable<FinishedDownloadEntry> FinishedDownloads
+        public IEnumerable<FinishedDownloadItem> FinishedDownloads
         {
             get => GetAllFinishedDownloads();
             set => SetFinishedDownloads(value);
         }
 
-        public IEnumerable<InProgressDownloadEntry> InProgressDownloads
+        public IEnumerable<InProgressDownloadItem> InProgressDownloads
         {
             get => GetAllInProgressDownloads();
             set => SetInProgressDownloads(value);
@@ -626,7 +626,7 @@ namespace XDM.GtkUI
                 typeof(string),                                             // size
                 typeof(int),                                                // progress
                 typeof(string),                                             // status
-                typeof(InProgressDownloadEntry)                             // download type
+                typeof(InProgressDownloadItem)                             // download type
                 );
 
             inprogressDownloadFilter = new TreeModelFilter(inprogressDownloadsStore, null);
@@ -651,8 +651,8 @@ namespace XDM.GtkUI
 
             sortedStore.SetSortFunc(1, (model, iter1, iter2) =>
             {
-                var t1 = (InProgressDownloadEntry)model.GetValue(iter1, 5);
-                var t2 = (InProgressDownloadEntry)model.GetValue(iter2, 5);
+                var t1 = (InProgressDownloadItem)model.GetValue(iter1, 5);
+                var t2 = (InProgressDownloadItem)model.GetValue(iter2, 5);
                 if (t1 == null && t2 == null) return 0;
                 if (t1 == null) return 1;
                 if (t2 == null) return 2;
@@ -661,8 +661,8 @@ namespace XDM.GtkUI
 
             sortedStore.SetSortFunc(2, (model, iter1, iter2) =>
             {
-                var t1 = (InProgressDownloadEntry)model.GetValue(iter1, 5);
-                var t2 = (InProgressDownloadEntry)model.GetValue(iter2, 5);
+                var t1 = (InProgressDownloadItem)model.GetValue(iter1, 5);
+                var t2 = (InProgressDownloadItem)model.GetValue(iter2, 5);
                 if (t1 == null && t2 == null) return 0;
                 if (t1 == null) return 1;
                 if (t2 == null) return 2;
@@ -783,7 +783,7 @@ namespace XDM.GtkUI
             finishedDownloadsStore = new ListStore(typeof(string),          // file name
                 typeof(string),                                             // date modified
                 typeof(string),                                             // size
-                typeof(FinishedDownloadEntry)                               // download type
+                typeof(FinishedDownloadItem)                               // download type
                 );
 
             finishedDownloadFilter = new TreeModelFilter(finishedDownloadsStore, null);
@@ -810,8 +810,8 @@ namespace XDM.GtkUI
 
             sortedStore.SetSortFunc(1, (model, iter1, iter2) =>
             {
-                var t1 = (FinishedDownloadEntry)model.GetValue(iter1, 3);
-                var t2 = (FinishedDownloadEntry)model.GetValue(iter2, 3);
+                var t1 = (FinishedDownloadItem)model.GetValue(iter1, 3);
+                var t2 = (FinishedDownloadItem)model.GetValue(iter2, 3);
 
                 if (t1 == null && t2 == null) return 0;
                 if (t1 == null) return 1;
@@ -822,8 +822,8 @@ namespace XDM.GtkUI
 
             sortedStore.SetSortFunc(2, (model, iter1, iter2) =>
             {
-                var t1 = (FinishedDownloadEntry)model.GetValue(iter1, 3);
-                var t2 = (FinishedDownloadEntry)model.GetValue(iter2, 3);
+                var t1 = (FinishedDownloadItem)model.GetValue(iter1, 3);
+                var t2 = (FinishedDownloadItem)model.GetValue(iter2, 3);
 
                 if (t1 == null && t2 == null) return 0;
                 if (t1 == null) return 1;
@@ -940,7 +940,7 @@ namespace XDM.GtkUI
             }
             do
             {
-                var ent = (InProgressDownloadEntry)inprogressDownloadsStore.GetValue(iter, INPROGRESS_DATA_INDEX);
+                var ent = (InProgressDownloadItem)inprogressDownloadsStore.GetValue(iter, INPROGRESS_DATA_INDEX);
                 if (ent.Id == id)
                 {
                     return new InProgressEntryWrapper(ent, iter, inprogressDownloadsStore);
@@ -958,7 +958,7 @@ namespace XDM.GtkUI
             }
             do
             {
-                var ent = (InProgressDownloadEntry)inprogressDownloadsStore.GetValue(iter, INPROGRESS_DATA_INDEX);
+                var ent = (InProgressDownloadItem)inprogressDownloadsStore.GetValue(iter, INPROGRESS_DATA_INDEX);
                 if (ent.Id == id)
                 {
                     return iter;
@@ -976,7 +976,7 @@ namespace XDM.GtkUI
             }
             do
             {
-                var ent = (FinishedDownloadEntry)finishedDownloadsStore.GetValue(iter, FINISHED_DATA_INDEX);
+                var ent = (FinishedDownloadItem)finishedDownloadsStore.GetValue(iter, FINISHED_DATA_INDEX);
                 if (ent.Id == id)
                 {
                     return new FinishedEntryWrapper(ent, iter, finishedDownloadsStore);
@@ -994,7 +994,7 @@ namespace XDM.GtkUI
             }
             do
             {
-                var ent = (FinishedDownloadEntry)finishedDownloadsStore.GetValue(iter, FINISHED_DATA_INDEX);
+                var ent = (FinishedDownloadItem)finishedDownloadsStore.GetValue(iter, FINISHED_DATA_INDEX);
                 if (ent.Id == id)
                 {
                     return iter;
@@ -1004,7 +1004,7 @@ namespace XDM.GtkUI
             return null;
         }
 
-        public void AddToTop(InProgressDownloadEntry entry)
+        public void AddToTop(InProgressDownloadItem entry)
         {
             var iter = inprogressDownloadsStore.Insert(0);
             inprogressDownloadsStore.SetValue(iter, 0, entry.Name);
@@ -1015,7 +1015,7 @@ namespace XDM.GtkUI
             inprogressDownloadsStore.SetValue(iter, 5, entry);
         }
 
-        public void AddToTop(FinishedDownloadEntry entry)
+        public void AddToTop(FinishedDownloadItem entry)
         {
             finishedDownloadsStore.AppendValues(
                 entry.Name,
@@ -1195,7 +1195,7 @@ namespace XDM.GtkUI
             mainMenu.PopupAtWidget(this.btnMenu, Gdk.Gravity.SouthEast, Gdk.Gravity.NorthEast, null);
         }
 
-        public void ShowRefreshLinkDialog(InProgressDownloadEntry entry)
+        public void ShowRefreshLinkDialog(InProgressDownloadItem entry)
         {
             var dlg = LinkRefreshWindow.CreateFromGladeFile();
             var ret = LinkRefreshDialogHelper.RefreshLink(entry, dlg);
@@ -1221,7 +1221,7 @@ namespace XDM.GtkUI
             cbcp.Exec();
         }
 
-        public void ShowPropertiesDialog(BaseDownloadEntry ent, ShortState? state)
+        public void ShowPropertiesDialog(DownloadItemBase ent, ShortState? state)
         {
             using var propWin = PropertiesDialog.CreateFromGladeFile(this, this.Group);
             propWin.FileName = ent.Name;
@@ -1246,7 +1246,7 @@ namespace XDM.GtkUI
 
         public void ShowBatchDownloadWindow()
         {
-            var uvc = new BatchDownloadViewController(BatchDownloadWindow.CreateFromGladeFile(this));
+            var uvc = new BatchDownloadUIController(BatchDownloadWindow.CreateFromGladeFile(this));
             uvc.Run();
             //var batWin = BatchDownloadWindow.CreateFromGladeFile(this, app, appUi);// new BatchDownloadWindow(app, appUi) { Owner = this };
             //batWin.Show();
@@ -1299,33 +1299,33 @@ namespace XDM.GtkUI
             });
         }
 
-        private IEnumerable<FinishedDownloadEntry> GetAllFinishedDownloads()
+        private IEnumerable<FinishedDownloadItem> GetAllFinishedDownloads()
         {
             if (!finishedDownloadsStore!.GetIterFirst(out TreeIter iter))
             {
                 yield break;
             }
-            yield return (FinishedDownloadEntry)finishedDownloadsStore.GetValue(iter, FINISHED_DATA_INDEX);
+            yield return (FinishedDownloadItem)finishedDownloadsStore.GetValue(iter, FINISHED_DATA_INDEX);
             while (finishedDownloadsStore.IterNext(ref iter))
             {
-                yield return (FinishedDownloadEntry)finishedDownloadsStore.GetValue(iter, FINISHED_DATA_INDEX);
+                yield return (FinishedDownloadItem)finishedDownloadsStore.GetValue(iter, FINISHED_DATA_INDEX);
             }
         }
 
-        private IEnumerable<InProgressDownloadEntry> GetAllInProgressDownloads()
+        private IEnumerable<InProgressDownloadItem> GetAllInProgressDownloads()
         {
             if (!inprogressDownloadsStore!.GetIterFirst(out TreeIter iter))
             {
                 yield break;
             }
-            yield return (InProgressDownloadEntry)inprogressDownloadsStore.GetValue(iter, INPROGRESS_DATA_INDEX);
+            yield return (InProgressDownloadItem)inprogressDownloadsStore.GetValue(iter, INPROGRESS_DATA_INDEX);
             while (inprogressDownloadsStore.IterNext(ref iter))
             {
-                yield return (InProgressDownloadEntry)inprogressDownloadsStore.GetValue(iter, INPROGRESS_DATA_INDEX);
+                yield return (InProgressDownloadItem)inprogressDownloadsStore.GetValue(iter, INPROGRESS_DATA_INDEX);
             }
         }
 
-        private void SetFinishedDownloads(IEnumerable<FinishedDownloadEntry> finishedDownloads)
+        private void SetFinishedDownloads(IEnumerable<FinishedDownloadItem> finishedDownloads)
         {
             finishedDownloadsStore.Clear();
             foreach (var item in finishedDownloads)
@@ -1337,7 +1337,7 @@ namespace XDM.GtkUI
             }
         }
 
-        private void SetInProgressDownloads(IEnumerable<InProgressDownloadEntry> incompleteDownloads)
+        private void SetInProgressDownloads(IEnumerable<InProgressDownloadItem> incompleteDownloads)
         {
             inprogressDownloadsStore.Clear();
             foreach (var item in incompleteDownloads)
@@ -1362,7 +1362,7 @@ namespace XDM.GtkUI
                 {
                     if (model.GetIter(out TreeIter iter, row))
                     {
-                        var ent = (InProgressDownloadEntry)model.GetValue(iter, INPROGRESS_DATA_INDEX);
+                        var ent = (InProgressDownloadItem)model.GetValue(iter, INPROGRESS_DATA_INDEX);
                         list.Add(new InProgressEntryWrapper(ent, iter, model));
                     }
                 }
@@ -1381,7 +1381,7 @@ namespace XDM.GtkUI
                 {
                     if (model.GetIter(out TreeIter iter, row))
                     {
-                        var ent = (FinishedDownloadEntry)model.GetValue(iter, FINISHED_DATA_INDEX);
+                        var ent = (FinishedDownloadItem)model.GetValue(iter, FINISHED_DATA_INDEX);
                         list.Add(new FinishedEntryWrapper(ent, iter, model));
                     }
                 }

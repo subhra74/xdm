@@ -69,7 +69,7 @@ namespace XDM.Core
                     return;
                 }
                 this.activeSchedules.Add(item.ID);
-                var dict = new Dictionary<string, BaseDownloadEntry>();
+                var dict = new Dictionary<string, DownloadItemBase>();
                 foreach (var id in item.DownloadIds)
                 {
                     var ent = AppDB.Instance.Downloads.GetDownloadById(id);// ApplicationContext.Core.AppUI.GetInProgressDownloadEntry(id);

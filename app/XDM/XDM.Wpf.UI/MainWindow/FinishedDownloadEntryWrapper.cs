@@ -8,11 +8,11 @@ namespace XDM.Wpf.UI
 {
     internal class FinishedDownloadEntryWrapper : INotifyPropertyChanged, IFinishedDownloadRow
     {
-        private FinishedDownloadEntry entry;
+        private FinishedDownloadItem entry;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public FinishedDownloadEntryWrapper(FinishedDownloadEntry entry)
+        public FinishedDownloadEntryWrapper(FinishedDownloadItem entry)
         {
             this.entry = entry;
         }
@@ -55,7 +55,7 @@ namespace XDM.Wpf.UI
             OnPropertyChanged("Status");
         }
 
-        public FinishedDownloadEntry DownloadEntry => this.entry;
+        public FinishedDownloadItem DownloadEntry => this.entry;
 
         public string FileIconText => IconMap.GetVectorNameForFileType(entry.Name);
 

@@ -243,7 +243,7 @@ namespace XDM.GtkUI.Dialogs.NewQueue
 
     internal class EntryWrapper
     {
-        public InProgressDownloadEntry Entry { get; set; }
+        public InProgressDownloadItem Entry { get; set; }
         public bool Selected { get; set; }
     }
 }

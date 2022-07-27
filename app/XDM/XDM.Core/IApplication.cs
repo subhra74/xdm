@@ -142,7 +142,7 @@ namespace XDM.Core
         /// </summary>
         /// <param name="downloadId"></param>
         /// <returns></returns>
-        public InProgressDownloadEntry? GetInProgressDownloadEntry(string downloadId);
+        public InProgressDownloadItem? GetInProgressDownloadEntry(string downloadId);
 
         /// <summary>
         /// Execute the action on ui thread
@@ -160,7 +160,7 @@ namespace XDM.Core
         /// Warning: Must be called from UI thead only
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<InProgressDownloadEntry> GetAllInProgressDownloads();
+        public IEnumerable<InProgressDownloadItem> GetAllInProgressDownloads();
 
         /// <summary>
         /// 

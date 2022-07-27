@@ -35,7 +35,7 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
         public event EventHandler? WindowClosing;
 
         private readonly ObservableCollection<DownloadQueue> queues = new();
-        private readonly ObservableCollection<InProgressDownloadEntry> downloads = new();
+        private readonly ObservableCollection<InProgressDownloadItem> downloads = new();
 
         public ManageQueueDialog()
         {
@@ -127,7 +127,7 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
         {
             if (LbQueues.SelectedItem is DownloadQueue queue)
             {
-                ClearCollection<InProgressDownloadEntry>(this.downloads);
+                ClearCollection<InProgressDownloadItem>(this.downloads);
                 var realQueue = QueueManager.GetQueue(queue.ID);
 
                 if (realQueue != null)
@@ -275,7 +275,7 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
             var selectedQueue = (DownloadQueue)LbQueues.SelectedItem;
             if (selectedQueue == null) return;
             var selectedIds = new List<string>(lvFiles.SelectedItems?.Count ?? 0);
-            foreach (InProgressDownloadEntry item in lvFiles.SelectedItems!)
+            foreach (InProgressDownloadItem item in lvFiles.SelectedItems!)
             {
                 selectedIds.Add(item.Id);
             }
@@ -343,7 +343,7 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
                     }
                 }
                 var downloadIds = new List<string>();
-                foreach (InProgressDownloadEntry lvi in this.lvFiles.SelectedItems)
+                foreach (InProgressDownloadItem lvi in this.lvFiles.SelectedItems)
                 {
                     downloadIds.Add(lvi.Id);
                 }

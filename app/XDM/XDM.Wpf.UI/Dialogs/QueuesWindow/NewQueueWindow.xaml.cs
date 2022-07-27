@@ -136,10 +136,10 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
 
     internal class InProgressDownloadEntryWrapper : INotifyPropertyChanged
     {
-        private InProgressDownloadEntry entry;
+        private InProgressDownloadItem entry;
         private bool selected;
 
-        internal InProgressDownloadEntryWrapper(InProgressDownloadEntry entry)
+        internal InProgressDownloadEntryWrapper(InProgressDownloadItem entry)
         {
             this.entry = entry;
         }

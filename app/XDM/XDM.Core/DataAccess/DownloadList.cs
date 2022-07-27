@@ -25,13 +25,13 @@ namespace XDM.Core.DataAccess
             cmdInsertOne, cmdMarkFinished, cmdUpdateStatus, cmdUpdateNameAndSize, cmdUpdateNameAndFolder, cmdUpdateOne, cmdDelete;
 
         public bool LoadDownloads(
-            out List<InProgressDownloadEntry> inProgressDownloads,
-            out List<FinishedDownloadEntry> finishedDownloads, QueryMode queryMode = QueryMode.All)
+            out List<InProgressDownloadItem> inProgressDownloads,
+            out List<FinishedDownloadItem> finishedDownloads, QueryMode queryMode = QueryMode.All)
         {
             lock (db)
             {
-                inProgressDownloads = new List<InProgressDownloadEntry>();
-                finishedDownloads = new List<FinishedDownloadEntry>();
+                inProgressDownloads = new List<InProgressDownloadItem>();
+                finishedDownloads = new List<FinishedDownloadItem>();
                 try
                 {
                     SQLiteCommand sqlCommand;
@@ -57,7 +57,7 @@ namespace XDM.Core.DataAccess
                     {
                         var id = r.GetSafeString(0);
                         var inProgress = r.GetInt32(1) == 0;
-                        BaseDownloadEntry entry = r.GetInt32(1) == 0 ? new InProgressDownloadEntry() : new FinishedDownloadEntry();
+                        DownloadItemBase entry = r.GetInt32(1) == 0 ? new InProgressDownloadItem() : new FinishedDownloadItem();
                         entry.Id = id;
                         entry.Name = r.GetSafeString(2);
                         entry.DateAdded = DateTime.FromBinary(r.GetInt64(3));
@@ -91,14 +91,14 @@ namespace XDM.Core.DataAccess
 
                         if (inProgress)
                         {
-                            var inp = (InProgressDownloadEntry)entry;
+                            var inp = (InProgressDownloadItem)entry;
                             inp.Status = DownloadStatus.Stopped;
                             inp.Progress = r.GetInt32(6);
                             inProgressDownloads.Add(inp);
                         }
                         else
                         {
-                            finishedDownloads.Add((FinishedDownloadEntry)entry);
+                            finishedDownloads.Add((FinishedDownloadItem)entry);
                         }
                     }
                     return true;
@@ -111,7 +111,7 @@ namespace XDM.Core.DataAccess
             }
         }
 
-        public BaseDownloadEntry? GetDownloadById(string id)
+        public DownloadItemBase? GetDownloadById(string id)
         {
             lock (db)
             {
@@ -127,7 +127,7 @@ namespace XDM.Core.DataAccess
                     if (r.Read())
                     {
                         var inProgress = r.GetInt32(1) == 0;
-                        BaseDownloadEntry entry = r.GetInt32(1) == 0 ? new InProgressDownloadEntry() : new FinishedDownloadEntry();
+                        DownloadItemBase entry = r.GetInt32(1) == 0 ? new InProgressDownloadItem() : new FinishedDownloadItem();
                         entry.Id = id;
                         entry.Name = r.GetSafeString(2);
                         entry.DateAdded = DateTime.FromBinary(r.GetInt64(3));
@@ -161,7 +161,7 @@ namespace XDM.Core.DataAccess
 
                         if (inProgress)
                         {
-                            var inp = (InProgressDownloadEntry)entry;
+                            var inp = (InProgressDownloadItem)entry;
                             inp.Status = DownloadStatus.Stopped;
                             inp.Progress = r.GetInt32(6);
                         }
@@ -176,7 +176,7 @@ namespace XDM.Core.DataAccess
             }
         }
 
-        public bool AddNewDownload(InProgressDownloadEntry entry)
+        public bool AddNewDownload(InProgressDownloadItem entry)
         {
             lock (db)
             {
@@ -228,7 +228,7 @@ namespace XDM.Core.DataAccess
             }
         }
 
-        public bool UpdateDownloadEntry(FinishedDownloadEntry entry)
+        public bool UpdateDownloadEntry(FinishedDownloadItem entry)
         {
             lock (db)
             {

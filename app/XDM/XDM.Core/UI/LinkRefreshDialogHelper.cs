@@ -14,7 +14,7 @@ namespace XDM.Core.UI
 {
     public static class LinkRefreshDialogHelper
     {
-        public static bool RefreshLink(BaseDownloadEntry item, IRefreshLinkDialogSkeleton dialog)
+        public static bool RefreshLink(DownloadItemBase item, IRefreshLinkDialogSkeleton dialog)
         {
             try
             {

@@ -12,11 +12,11 @@ namespace XDM.GtkUI
 {
     internal class FinishedEntryWrapper : IFinishedDownloadRow
     {
-        private FinishedDownloadEntry entry;
+        private FinishedDownloadItem entry;
         private TreeIter treeIter;
         private ITreeModel store;
 
-        public FinishedEntryWrapper(FinishedDownloadEntry entry, TreeIter treeIter, ITreeModel store)
+        public FinishedEntryWrapper(FinishedDownloadItem entry, TreeIter treeIter, ITreeModel store)
         {
             this.entry = entry;
             this.treeIter = treeIter;
@@ -31,7 +31,7 @@ namespace XDM.GtkUI
 
         public DateTime DateAdded => entry.DateAdded;
 
-        public FinishedDownloadEntry DownloadEntry => entry;
+        public FinishedDownloadItem DownloadEntry => entry;
 
         internal TreeIter TreeIter => treeIter;
 

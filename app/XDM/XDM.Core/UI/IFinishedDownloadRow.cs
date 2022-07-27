@@ -17,6 +17,6 @@ namespace XDM.Core.UI
 
         public DateTime DateAdded { get; }
 
-        public FinishedDownloadEntry DownloadEntry { get; }
+        public FinishedDownloadItem DownloadEntry { get; }
     }
 }

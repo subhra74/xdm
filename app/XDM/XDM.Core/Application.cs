@@ -48,7 +48,7 @@ namespace XDM.Core
             ProxyInfo? proxyInfo,
             int maxSpeedLimit)
         {
-            var downloadEntry = new InProgressDownloadEntry
+            var downloadEntry = new InProgressDownloadItem
             {
                 Name = targetFileName,
                 DateAdded = date,
@@ -127,7 +127,7 @@ namespace XDM.Core
             var downloadEntry = AppDB.Instance.Downloads.GetDownloadById(id);
             if (downloadEntry != null)
             {
-                var finishedEntry = new FinishedDownloadEntry
+                var finishedEntry = new FinishedDownloadItem
                 {
                     Name = Path.GetFileName(filePath),
                     Id = downloadEntry.Id,
@@ -169,12 +169,12 @@ namespace XDM.Core
             });
         }
 
-        public IEnumerable<InProgressDownloadEntry> GetAllInProgressDownloads()
+        public IEnumerable<InProgressDownloadItem> GetAllInProgressDownloads()
         {
             return ApplicationContext.MainWindow.InProgressDownloads;
         }
 
-        public InProgressDownloadEntry? GetInProgressDownloadEntry(string downloadId)
+        public InProgressDownloadItem? GetInProgressDownloadEntry(string downloadId)
         {
             return ApplicationContext.MainWindow.FindInProgressItem(downloadId)?.DownloadEntry;
         }
@@ -218,7 +218,7 @@ namespace XDM.Core
 
         public void ResumeDownload(string downloadId)
         {
-            var idDict = new Dictionary<string, BaseDownloadEntry>();
+            var idDict = new Dictionary<string, DownloadItemBase>();
             var download = ApplicationContext.MainWindow.FindInProgressItem(downloadId);
             if (download == null) return;
             idDict[download.DownloadEntry.Id] = download.DownloadEntry;
@@ -599,7 +599,7 @@ namespace XDM.Core
             var updateDlg = ApplicationContext.MainWindow.CreateUpdateUIDialog();
             var updates = AppUpdater.Updates?.Where(u => u.IsExternal)?.ToList() ?? new List<UpdateInfo>(0);
             if (updates.Count == 0) return;
-            var commonUpdateUi = new ComponentUpdaterUI(updateDlg, updateMode);
+            var commonUpdateUi = new ComponentUpdaterUIController(updateDlg, updateMode);
             updateDlg.Load += (_, _) => commonUpdateUi.StartUpdate();
             updateDlg.Finished += (_, _) =>
             {
