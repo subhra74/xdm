@@ -17,7 +17,6 @@ namespace XDM.Core
     {
         private delegate void UpdateItemCallBack(string id, string targetFileName, long size);
         private Action<string, int, double, long> updateProgressAction;
-        private long lastProgressUpdate = 0;
         public event EventHandler WindowLoaded;
 
         public Application()
@@ -32,7 +31,8 @@ namespace XDM.Core
             AttachedEventHandler();
             LoadDownloadList();
             UpdateToolbarButtonState();
-            AppUpdater.QueryNewVersion();
+            AppUpdater.QueryNewVersion(); 
+            WindowLoaded += (_, _) => ApplicationContext.ClipboardMonitor.Start();
         }
 
         public void AddItemToTop(

@@ -8,7 +8,6 @@ using XDM.Core;
 using XDM.Core.Util;
 using XDM.Core.UI;
 using Translations;
-using XDM.Core.UI;
 using Menu = Gtk.Menu;
 using MenuItem = Gtk.MenuItem;
 using XDM.Core.Downloader;
@@ -31,7 +30,7 @@ using XDM.GtkUI.Dialogs.Updater;
 
 namespace XDM.GtkUI
 {
-    public class AppWinPeer : Window, IApplicationWindow
+    public class MainWindow : Window, IApplicationWindow
     {
         private TreeStore categoryTreeStore;
         private TreeView categoryTree;
@@ -54,6 +53,7 @@ namespace XDM.GtkUI
         private bool isUpdateAvailable;
         private Image helpImage;
         private Label helpLabel;
+        private StatusIcon statusIcon;
 
         public IEnumerable<FinishedDownloadItem> FinishedDownloads
         {
@@ -118,7 +118,7 @@ namespace XDM.GtkUI
         private Menu menuInProgress, menuFinished;
         private IPlatformClipboardMonitor clipboarMonitor;
 
-        public AppWinPeer() : base("Xtreme Download Manager")
+        public MainWindow() : base("Xtreme Download Manager")
         {
             SetDefaultIconFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "svg-icons", "xdm-logo.svg"));
             SetPosition(WindowPosition.CenterAlways);
@@ -141,6 +141,19 @@ namespace XDM.GtkUI
 
             clipboarMonitor = new PollingClipboardMonitor();
             clipboarMonitor.ClipboardChanged += (_, _) => this.ClipboardChanged?.Invoke(this, EventArgs.Empty);
+
+            statusIcon = new StatusIcon(GtkHelper.LoadSvg("xdm-logo", 128));
+            statusIcon.Activate += StatusIcon_Activate;
+        }
+
+        private void StatusIcon_Activate(object? sender, EventArgs e)
+        {
+            if (!this.Visible)
+            {
+                this.Show();
+            }
+            //this.Deiconify();
+            this.Present();
         }
 
         private void CreateMenu()
@@ -1267,7 +1280,7 @@ namespace XDM.GtkUI
 
         public void ShowBrowserMonitoringDialog()
         {
-            ShowSettingsDialog( 0);
+            ShowSettingsDialog(0);
         }
 
         public void UpdateParallalismLabel()

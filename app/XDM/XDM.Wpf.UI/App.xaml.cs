@@ -71,7 +71,6 @@ namespace XDM.Wpf.UI
 
             var args = Environment.GetCommandLineArgs();
             var commandOptions = ArgsProcessor.ParseArgs(args, 1);
-            core.Args = args.Skip(1).ToArray();
 
             AppTrayIcon.AttachToSystemTray();
             AppTrayIcon.TrayClick += (_, _) =>
@@ -83,9 +82,7 @@ namespace XDM.Wpf.UI
                 }
                 win.Activate();
             };
-            app.WindowLoaded += (_, _) => ApplicationContext.ClipboardMonitor.Start();
-            core.StartScheduler();
-            core.StartBrowserMonitoring();
+
             if (!commandOptions.ContainsKey("-m"))
             {
                 win.Show();

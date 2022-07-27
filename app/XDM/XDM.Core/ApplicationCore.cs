@@ -37,8 +37,6 @@ namespace XDM.Core
         private Timer awakePingTimer;
         public int ActiveDownloadCount { get => liveDownloads.Count + queuedDownloads.Count; }
 
-        public string[] Args { get; set; }
-
         public ApplicationCore()
         {
             ApplicationContext.Initialized += AppInstance_Initialized;
@@ -60,6 +58,9 @@ namespace XDM.Core
             {
                 Log.Debug(ex, ex.ToString());
             }
+
+            StartScheduler();
+            StartBrowserMonitoring();
         }
 
         public void StartBrowserMonitoring()

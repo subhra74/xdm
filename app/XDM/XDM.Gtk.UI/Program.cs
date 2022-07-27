@@ -5,7 +5,6 @@ using TraceLog;
 using Translations;
 using XDM.Core;
 using XDM.Core.DataAccess;
-using XDM.Core;
 using XDMApp = XDM.Core.Application;
 using System.Linq;
 using XDM.Core.BrowserMonitoring;
@@ -90,7 +89,7 @@ namespace XDM.GtkUI
 
             var core = new ApplicationCore();
             var app = new XDMApp();
-            var win = new AppWinPeer();
+            var win = new MainWindow();
 
             ApplicationContext.Configurer()
                 .RegisterApplicationWindow(win)
@@ -102,11 +101,6 @@ namespace XDM.GtkUI
                 .Configure();
 
             var commandOptions = ArgsProcessor.ParseArgs(args, 0);
-            core.Args = args.ToArray();
-
-            app.WindowLoaded += (_, _) => ApplicationContext.ClipboardMonitor.Start();
-            core.StartScheduler();
-            core.StartBrowserMonitoring();
 
             if (!commandOptions.ContainsKey("-m"))
             {
