@@ -21,7 +21,6 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
     internal class QueueSelectionDialog : Dialog, IQueueSelectionDialog
     {
         public event EventHandler<QueueSelectionEventArgs>? QueueSelected;
-        public event EventHandler? ManageQueuesClicked;
 
         [UI] private Button BtnOK = null;
         [UI] private Button BtnCancel = null;

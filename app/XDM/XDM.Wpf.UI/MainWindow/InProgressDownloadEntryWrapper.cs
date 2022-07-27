@@ -2,7 +2,6 @@
 using System.ComponentModel;
 using XDM.Core.UI;
 using XDM.Core;
-using XDM.Core.UI;
 using XDM.Core.Util;
 
 namespace XDM.Wpf.UI
@@ -79,7 +78,7 @@ namespace XDM.Wpf.UI
 
         public string DownloadSpeed
         {
-            get => entry.DownloadSpeed;
+            get => entry.DownloadSpeed ?? string.Empty;
             set
             {
                 entry.DownloadSpeed = value;
@@ -90,7 +89,7 @@ namespace XDM.Wpf.UI
 
         public string ETA
         {
-            get => entry.ETA;
+            get => entry.ETA ?? string.Empty;
             set
             {
                 entry.ETA = value;

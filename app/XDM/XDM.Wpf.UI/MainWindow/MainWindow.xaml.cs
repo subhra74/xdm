@@ -51,10 +51,10 @@ namespace XDM.Wpf.UI
             = new ObservableCollection<FinishedDownloadEntryWrapper>();
 
         private IButton newButton, deleteButton, pauseButton, resumeButton, openFileButton, openFolderButton;
-        private GridViewColumnHeader finishedListViewSortCol = null;
-        private SortAdorner finishedListViewSortAdorner = null;
-        private GridViewColumnHeader inProgressListViewSortCol = null;
-        private SortAdorner inProgressListViewSortAdorner = null;
+        private GridViewColumnHeader? finishedListViewSortCol = null;
+        private SortAdorner? finishedListViewSortAdorner = null;
+        private GridViewColumnHeader? inProgressListViewSortCol = null;
+        private SortAdorner? inProgressListViewSortAdorner = null;
         private MessageLoop messageLoop;
         private Win32ClipboarMonitor clipboarMonitor;
 
@@ -199,26 +199,25 @@ namespace XDM.Wpf.UI
         }
 
         public event EventHandler<CategoryChangedEventArgs> CategoryChanged;
-        public event EventHandler InProgressContextMenuOpening;
-        public event EventHandler FinishedContextMenuOpening;
-        public event EventHandler SelectionChanged;
-        public event EventHandler NewDownloadClicked;
-        public event EventHandler YoutubeDLDownloadClicked;
-        public event EventHandler BatchDownloadClicked;
-        public event EventHandler SettingsClicked;
-        public event EventHandler ClearAllFinishedClicked;
-        public event EventHandler ExportClicked;
-        public event EventHandler ImportClicked;
-        public event EventHandler BrowserMonitoringButtonClicked;
-        public event EventHandler BrowserMonitoringSettingsClicked;
-        public event EventHandler UpdateClicked;
-        public event EventHandler HelpClicked;
-        public event EventHandler SupportPageClicked;
-        public event EventHandler BugReportClicked;
-        public event EventHandler CheckForUpdateClicked;
-        public event EventHandler SchedulerClicked;
-        public event EventHandler MoveToQueueClicked;
-        public event EventHandler DownloadListDoubleClicked;
+        public event EventHandler? InProgressContextMenuOpening;
+        public event EventHandler? FinishedContextMenuOpening;
+        public event EventHandler? SelectionChanged;
+        public event EventHandler? NewDownloadClicked;
+        public event EventHandler? YoutubeDLDownloadClicked;
+        public event EventHandler? BatchDownloadClicked;
+        public event EventHandler? SettingsClicked;
+        public event EventHandler? ClearAllFinishedClicked;
+        public event EventHandler? ExportClicked;
+        public event EventHandler? ImportClicked;
+        public event EventHandler? BrowserMonitoringButtonClicked;
+        public event EventHandler? BrowserMonitoringSettingsClicked;
+        public event EventHandler? UpdateClicked;
+        public event EventHandler? HelpClicked;
+        public event EventHandler? SupportPageClicked;
+        public event EventHandler? BugReportClicked;
+        public event EventHandler? CheckForUpdateClicked;
+        public event EventHandler? SchedulerClicked;
+        public event EventHandler? DownloadListDoubleClicked;
         public event EventHandler? ClipboardChanged;
         public event EventHandler? WindowCreated;
 
@@ -642,7 +641,7 @@ namespace XDM.Wpf.UI
                 }
 
                 ListSortDirection newDir = ListSortDirection.Ascending;
-                if (finishedListViewSortCol == column && finishedListViewSortAdorner.Direction == newDir)
+                if (finishedListViewSortCol == column && finishedListViewSortAdorner?.Direction == newDir)
                     newDir = ListSortDirection.Descending;
 
                 finishedListViewSortCol = column;
@@ -759,7 +758,7 @@ namespace XDM.Wpf.UI
                 }
 
                 ListSortDirection newDir = ListSortDirection.Ascending;
-                if (inProgressListViewSortCol == column && inProgressListViewSortAdorner.Direction == newDir)
+                if (inProgressListViewSortCol == column && inProgressListViewSortAdorner?.Direction == newDir)
                     newDir = ListSortDirection.Descending;
 
                 inProgressListViewSortCol = column;
@@ -887,8 +886,6 @@ namespace XDM.Wpf.UI
         {
             var dsvc = new DownloadSelectionUIController(new DownloadSelectionWindow(), FileNameFetchMode.FileNameAndExtension, downloads);
             dsvc.Run();
-            //var window = new DownloadSelectionWindow(app, appUI, FileNameFetchMode.FileNameAndExtension, downloads);
-            //window.Show();
         }
 
         public void ShowFloatingWidget()
@@ -898,13 +895,5 @@ namespace XDM.Wpf.UI
         }
 
         public IPlatformClipboardMonitor GetClipboardMonitor() => this.clipboarMonitor;
-    }
-
-    internal class DummyButton : IButton
-    {
-        public bool Visible { get => true; set { } }
-        public bool Enable { get => true; set { } }
-
-        public event EventHandler Clicked;
     }
 }

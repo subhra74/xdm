@@ -7,8 +7,8 @@ namespace XDM.Core.UI
 {
     public class DownloadLaterEventArgs : EventArgs
     {
-        public string QueueId { get; }
-        public DownloadLaterEventArgs(string queueId)
+        public string? QueueId { get; }
+        public DownloadLaterEventArgs(string? queueId)
         {
             this.QueueId = queueId;
         }

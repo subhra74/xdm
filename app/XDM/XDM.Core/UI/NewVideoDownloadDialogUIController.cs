@@ -103,10 +103,10 @@ namespace XDM.Core.UI
                 window.DisposeWindow();
             };
 
-            window.CancelClicked += (a, b) =>
-            {
-                window.DisposeWindow();
-            };
+            //window.CancelClicked += (a, b) =>
+            //{
+            //    window.DisposeWindow();
+            //};
 
             window.QueueSchedulerClicked += (s, e) =>
             {

@@ -7,7 +7,7 @@ namespace XDM.Core.BrowserMonitoring
 {
     public struct RawBrowserMessageEnvelop
     {
-        public string MessageType { get; set; }
+        public string? MessageType { get; set; }
 
         public RawBrowserMessage Message { get; set; }
 
@@ -15,7 +15,7 @@ namespace XDM.Core.BrowserMonitoring
 
         public string[] VideoIds { get; set; }
 
-        public string CustomData { get; set; }
+        public string? CustomData { get; set; }
 
         public void Serialize(BinaryWriter w)
         {
@@ -43,7 +43,7 @@ namespace XDM.Core.BrowserMonitoring
         public static void Serialize(RawBrowserMessageEnvelop e, BinaryWriter w)
         {
             w.Write(1);
-            w.Write(e.MessageType);
+            w.Write(e.MessageType ?? string.Empty);
             w.Write(e.Message != null);
             if (e.Message != null)
             {

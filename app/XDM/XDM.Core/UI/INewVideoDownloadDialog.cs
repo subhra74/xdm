@@ -20,7 +20,7 @@ namespace XDM.Core.UI
         public bool ShowMp3Checkbox { get; set; }
         public bool IsMp3CheckboxChecked { get; set; }
 
-        event EventHandler DownloadClicked, CancelClicked, DestroyEvent, QueueSchedulerClicked, Mp3CheckChanged;
+        event EventHandler DownloadClicked, DestroyEvent, QueueSchedulerClicked, Mp3CheckChanged;
         event EventHandler<DownloadLaterEventArgs> DownloadLaterClicked;
     }
 }

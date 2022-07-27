@@ -46,7 +46,7 @@ namespace XDM.Wpf.UI.Dialogs.NewVideoDownload
 
         public event EventHandler DownloadClicked;
         public event EventHandler<DownloadLaterEventArgs> DownloadLaterClicked;
-        public event EventHandler CancelClicked, DestroyEvent, QueueSchedulerClicked, Mp3CheckChanged;
+        public event EventHandler DestroyEvent, QueueSchedulerClicked, Mp3CheckChanged;
         public event EventHandler<FileBrowsedEventArgs> DropdownSelectionChangedEvent;
         public event EventHandler<FileBrowsedEventArgs> FileBrowsedEvent;
 

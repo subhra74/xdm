@@ -28,7 +28,7 @@ namespace XDM.Core.Util
 {
     public static class Helpers
     {
-        
+
         public static bool GetFreeSpace(string path, out long free)
         {
             free = 0;
@@ -241,7 +241,7 @@ namespace XDM.Core.Util
                 }
                 else if (string.IsNullOrEmpty(ent.DownloadSpeed))
                 {
-                    text = ent.ETA;
+                    text = ent.ETA ?? string.Empty;
                 }
                 else
                 {

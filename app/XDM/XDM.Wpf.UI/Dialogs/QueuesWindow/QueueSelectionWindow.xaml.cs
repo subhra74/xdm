@@ -16,7 +16,6 @@ namespace XDM.Wpf.UI.Dialogs.QueuesWindow
     public partial class QueueSelectionWindow : Window, IDialog, IQueueSelectionDialog
     {
         public event EventHandler<QueueSelectionEventArgs>? QueueSelected;
-        public event EventHandler? ManageQueuesClicked;
         private IEnumerable<string> downloadIds;
         private IEnumerable<string> queueIds;
         public bool Result { get; set; } = false;

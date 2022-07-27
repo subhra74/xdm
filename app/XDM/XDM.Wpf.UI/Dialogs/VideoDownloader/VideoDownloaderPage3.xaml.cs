@@ -33,19 +33,16 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
     /// </summary>
     public partial class VideoDownloaderPage3 : UserControl
     {
-
-        private EventHandler? FormatChanged;
-        private List<int> videoQualities;
         public Window ParentWindow { get; set; }
         public Action DownloadNowClicked { get => downloadNowClicked; set => downloadNowClicked = value; }
         public Action DontAddToQueue { get => dontAddToQueue; set => dontAddToQueue = value; }
         public Action QueueAndScheduler { get => queueAndScheduler; set => queueAndScheduler = value; }
-        public Action<string> DownloadLaterClicked { get => downloadLaterClicked; set => downloadLaterClicked = value; }
+        public Action<string?> DownloadLaterClicked { get => downloadLaterClicked; set => downloadLaterClicked = value; }
 
         private Action downloadNowClicked;
         private Action dontAddToQueue;
         private Action queueAndScheduler;
-        private Action<string> downloadLaterClicked;
+        private Action<string?> downloadLaterClicked;
 
         public VideoDownloaderPage3()
         {
@@ -65,7 +62,6 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
         private void QueueAndSchedulerMenuItem_Click(object sender, RoutedEventArgs e)
         {
             QueueAndScheduler.Invoke();
-            //AppUI!.ShowQueueWindow(this.ParentWindow);
         }
 
         private void ShowQueuesContextMenu()

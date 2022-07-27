@@ -2,7 +2,6 @@
 using System.ComponentModel;
 using XDM.Core.UI;
 using XDM.Core;
-using XDM.Core.UI;
 
 namespace XDM.Wpf.UI
 {

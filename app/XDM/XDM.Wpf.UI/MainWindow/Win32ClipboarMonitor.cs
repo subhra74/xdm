@@ -46,7 +46,7 @@ namespace XDM.Wpf.UI
             ChangeClipboardChain(this.hWndCurrentWindow, hWndNextWindow);
         }
 
-        public string GetClipboardText()
+        public string? GetClipboardText()
         {
             try
             {

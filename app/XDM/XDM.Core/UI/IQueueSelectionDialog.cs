@@ -9,7 +9,6 @@ namespace XDM.Core.UI
     public interface IQueueSelectionDialog : IDisposable
     {
         event EventHandler<QueueSelectionEventArgs>? QueueSelected;
-        event EventHandler? ManageQueuesClicked;
 
         void SetData(
             IEnumerable<string> queueNames,

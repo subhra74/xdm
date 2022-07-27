@@ -146,10 +146,7 @@ namespace XDM.Core
             }
             using var queueSelectionDialog = ApplicationContext.MainWindow.CreateQueueSelectionDialog();
             queueSelectionDialog.SetData(QueueManager.Queues.Select(q => q.Name), QueueManager.Queues.Select(q => q.ID), selectedIds);
-            queueSelectionDialog.ManageQueuesClicked += (_, _) =>
-            {
-                ApplicationContext.Application.ShowQueueWindow(ApplicationContext.MainWindow);
-            };
+            
             queueSelectionDialog.QueueSelected += (s, e) =>
             {
                 //var index = e.SelectedQueueIndex;

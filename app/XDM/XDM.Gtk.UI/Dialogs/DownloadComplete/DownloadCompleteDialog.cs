@@ -63,7 +63,7 @@ namespace XDM.GtkUI.Dialogs.DownloadComplete
 
         private void TxtDontShowCompleteDialog_MouseDown(object? sender, EventArgs e)
         {
-
+            DontShowAgainClickd?.Invoke(this, EventArgs.Empty);
         }
 
         private void BtnOpen_Click(object? sender, EventArgs e)

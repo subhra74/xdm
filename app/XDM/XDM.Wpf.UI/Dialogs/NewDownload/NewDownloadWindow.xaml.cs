@@ -49,9 +49,7 @@ namespace XDM.Wpf.UI.Dialogs.NewDownload
         }
 
         public event EventHandler? DownloadClicked;
-        public event EventHandler? CancelClicked;
         public event EventHandler? DestroyEvent;
-        public event EventHandler? BlockHostEvent;
         public event EventHandler? UrlChangedEvent;
         public event EventHandler? UrlBlockedEvent;
         public event EventHandler? QueueSchedulerClicked;

@@ -46,7 +46,7 @@ namespace XDM.Wpf.UI.Dialogs.CompletedDialog
 
         private void TxtDontShowCompleteDialog_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            
+            DontShowAgainClickd?.Invoke(this, EventArgs.Empty);
         }
 
         private void BtnOpen_Click(object sender, RoutedEventArgs e)

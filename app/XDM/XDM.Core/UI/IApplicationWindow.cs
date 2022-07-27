@@ -167,8 +167,6 @@ namespace XDM.Core.UI
 
         event EventHandler SchedulerClicked;
 
-        event EventHandler MoveToQueueClicked;
-
         event EventHandler DownloadListDoubleClicked;
 
         event EventHandler WindowCreated;

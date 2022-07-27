@@ -18,8 +18,7 @@ namespace XDM.Core.UI
         ProxyInfo? Proxy { get; set; }
         int SpeedLimit { get; set; }
         bool EnableSpeedLimit { get; set; }
-        event EventHandler DownloadClicked,
-            CancelClicked, DestroyEvent, BlockHostEvent,
+        event EventHandler DownloadClicked, DestroyEvent,
             UrlChangedEvent, UrlBlockedEvent, QueueSchedulerClicked;
         event EventHandler<DownloadLaterEventArgs> DownloadLaterClicked;
     }

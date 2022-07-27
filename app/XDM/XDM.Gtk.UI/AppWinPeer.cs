@@ -109,7 +109,6 @@ namespace XDM.GtkUI
         public event EventHandler CheckForUpdateClicked;
         public event EventHandler<CategoryChangedEventArgs> CategoryChanged;
         public event EventHandler SchedulerClicked;
-        public event EventHandler MoveToQueueClicked;
         public event EventHandler DownloadListDoubleClicked;
         public event EventHandler WindowCreated;
 

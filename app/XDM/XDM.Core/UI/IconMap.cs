@@ -41,7 +41,7 @@ namespace XDM.Core.UI
             return "Other";
         }
 
-        public static string GetVectorNameForFileType(string file)
+        public static string GetVectorNameForFileType(string? file)
         {
             var ext = Path.GetExtension(file)?.ToLowerInvariant() ?? string.Empty;
             var fileType = GetFileType(ext);

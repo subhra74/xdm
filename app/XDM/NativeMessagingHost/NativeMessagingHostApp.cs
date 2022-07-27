@@ -23,7 +23,7 @@ namespace NativeHost
         static BlockingCollection<byte[]> receivedBrowserMessages = new();
         static BlockingCollection<byte[]> queuedBrowserMessages = new();
         static CamelCasePropertyNamesContractResolver cr = new();
-        //static StreamWriter log = new StreamWriter(new FileStream(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "native-host.log"), FileMode.Create));
+
         static void Main(string[] args)
         {
             try
@@ -50,10 +50,6 @@ namespace NativeHost
             {
                 var inputReader = Console.OpenStandardInput();
                 var outputWriter = Console.OpenStandardOutput();
-
-                //var msg = ReadMessageBytes(inputReader);
-                //var message = Encoding.UTF8.GetString(msg);
-                //Debug(message);
                 try
                 {
                     Debug("Trying to open mutex");
@@ -170,27 +166,14 @@ namespace NativeHost
 
             try
             {
-                //NamedPipeServerStream inPipe = null;
-                NamedPipeClientStream pipe = null;
-                // while (true)
+                NamedPipeClientStream? pipe = null;
                 {
                     try
                     {
-                        //var pipeName = Guid.NewGuid().ToString();
-                        //inPipe = new NamedPipeServerStream(pipeName, PipeDirection.In, 1, PipeTransmissionMode.Byte, PipeOptions.WriteThrough);
-
                         //start handshake with XDM
                         pipe = new NamedPipeClientStream(".", "XDM_Ipc_Browser_Monitoring_Pipe", PipeDirection.InOut, PipeOptions.Asynchronous);
                         Debug("start handshake with XDM");
                         pipe.Connect();
-                        //NativeMessageSerializer.WriteMessage(outPipe, pipeName);
-                        //Debug("pipename: " + pipeName);
-
-                        //inPipe.WaitForConnection();
-                        //var syncMsgBytes = NativeMessageSerializer.ReadMessageBytes(inPipe);
-                        //Debug("No task message size: " + syncMsgBytes.Length);
-
-                        //queuedBrowserMessages.Add(syncMsgBytes);
 
                         //handshake with XDM is complete
                         Debug("handshake with XDM is complete");
@@ -233,15 +216,13 @@ namespace NativeHost
                             {
                                 while (true)
                                 {
-                                    byte[] syncMsgBytes = null;
                                     Debug("Task2 reading messages queued by browser...");
-                                    syncMsgBytes = receivedBrowserMessages.Take();
+                                    byte[] syncMsgBytes = receivedBrowserMessages.Take();
                                     if (syncMsgBytes.Length == 2 && (char)syncMsgBytes[0] == '{' && (char)syncMsgBytes[1] == '}')
                                     {
                                         Debug("Task2 empty object received: " + syncMsgBytes.Length + " " + Encoding.UTF8.GetString(syncMsgBytes));
                                         throw new OperationCanceledException("Empty object");
                                     }
-                                    //Debug("Task2 message size fron browser stdin: " + syncMsgBytes.Length);
                                     Debug("Sending message to XDM...");
                                     NativeMessageSerializer.WriteMessage(pipe, syncMsgBytes);
                                     Debug("Sent message to XDM");
@@ -267,27 +248,16 @@ namespace NativeHost
                     {
                         Debug(ex.ToString(), ex);
                     }
-
-                    //try
-                    //{
-                    //    inPipe.Disconnect();
-                    //}
-                    //catch { }
                     try
                     {
-                        pipe.Close();
+                        pipe?.Close();
                     }
                     catch { }
                     try
                     {
-                        pipe.Dispose();
+                        pipe?.Dispose();
                     }
                     catch { }
-                    //try
-                    //{
-                    //    inPipe.Dispose();
-                    //}
-                    //catch { }
                 }
             }
             catch (Exception exxxx)
@@ -304,16 +274,6 @@ namespace NativeHost
                 Trace.WriteLine($"[xdm-native-messaging-host {DateTime.Now}] {ex2}");
             }
         }
-
-        //private static string ReadMessageString(Stream pipe)
-        //{
-        //    var b4 = new byte[4];
-        //    ReadFully(pipe, b4, 4);
-        //    var syncLength = BitConverter.ToInt32(b4, 0);
-        //    var bytes = new byte[syncLength];
-        //    ReadFully(pipe, bytes, syncLength);
-        //    return Encoding.UTF8.GetString(bytes);
-        //}
 
         private static byte[] JsonToBinary(byte[] input)
         {
