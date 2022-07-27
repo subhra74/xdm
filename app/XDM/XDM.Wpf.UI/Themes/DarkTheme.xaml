@@ -25,7 +25,7 @@
     <SolidColorBrush x:Key="ToolbarBordercolor" Color="#000000"/>
 
     <SolidColorBrush x:Key="SearchBorder" Color="#000000"/>
-    <SolidColorBrush x:Key="SearchBackcolor" Color="#1E1F21"/>
+    <SolidColorBrush x:Key="SearchBackcolor" Color="#232428"/>
 
     <SolidColorBrush x:Key="ControlBackcolor" Color="#1B1C1E"/>
     <SolidColorBrush x:Key="ControlBordercolor" Color="#000000"/>
@@ -38,7 +38,7 @@
     <SolidColorBrush x:Key="TextBorder" Color="#3C3C3C"/>
     <SolidColorBrush x:Key="TextFocusedBorder" Color="#114C7B"/>
 
-    <SolidColorBrush x:Key="ListViewBackcolor" Color="#1E1F21"/>
+    <SolidColorBrush x:Key="ListViewBackcolor" Color="#232428"/>
     <SolidColorBrush x:Key="ListViewForecolor" Color="#B5BCC9"/>
     <SolidColorBrush x:Key="ListViewMouseOverBackcolor" Color="#31363F"/>
     <SolidColorBrush x:Key="ListViewMouseOverForecolor" Color="#F0F0F0"/>
@@ -47,7 +47,7 @@
     <SolidColorBrush x:Key="ListViewIconForecolor" Color="#777D88"/>
     <SolidColorBrush x:Key="ListViewHeaderForecolor" Color="#777D88"/>
 
-    <SolidColorBrush x:Key="StatusbarBackcolor" Color="#1E1F21"/>
+    <SolidColorBrush x:Key="StatusbarBackcolor" Color="#232428"/>
     <SolidColorBrush x:Key="StatusbarIconcolor" Color="#777D88"/>
 
     <Thickness x:Key="CategoryListBorderThickness">0,0,1,0</Thickness>
