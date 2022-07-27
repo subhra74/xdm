@@ -253,7 +253,7 @@ namespace XDM.Core
         {
             RunOnUiThread(() =>
             {
-                DownloadCompleteDialogHelper.ShowDialog(CreateDownloadCompleteDialog(), file, folder);
+                DownloadCompleteUIController.ShowDialog(CreateDownloadCompleteDialog(), file, folder);
             });
         }
 

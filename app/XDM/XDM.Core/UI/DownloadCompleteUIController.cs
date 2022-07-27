@@ -3,7 +3,7 @@ using XDM.Core.Util;
 
 namespace XDM.Core.UI
 {
-    public static class DownloadCompleteDialogHelper
+    public static class DownloadCompleteUIController
     {
         public static void ShowDialog(IDownloadCompleteDialog dwnCmpldDlg, string file, string folder)
         {

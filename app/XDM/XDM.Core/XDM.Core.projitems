@@ -55,7 +55,7 @@
     <Compile Include="..\XDM.Core\UI\BatchDownloadUIController.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\CommonUtils.cs" />
     <Compile Include="..\XDM.Core\UI\ComponentUpdaterUIController.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)UI\DownloadCompleteDialogHelper.cs" />
+    <Compile Include="..\XDM.Core\UI\DownloadCompleteUIController.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\DownloadSelectionViewController.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\IconMap.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\LinkRefreshDialogHelper.cs" />
