@@ -331,7 +331,7 @@ namespace XDM.Wpf.UI
             return new DownloadCompleteWindow { };
         }
 
-        public INewDownloadDialogSkeleton CreateNewDownloadDialog(bool empty)
+        public INewDownloadDialog CreateNewDownloadDialog(bool empty)
         {
             return new NewDownloadWindow() { IsEmpty = empty };
         }
@@ -505,7 +505,7 @@ namespace XDM.Wpf.UI
         public void ShowRefreshLinkDialog(InProgressDownloadItem entry)
         {
             var dlg = new LinkRefreshWindow();
-            var ret = LinkRefreshDialogHelper.RefreshLink(entry, dlg);
+            var ret = LinkRefreshDialogUIController.RefreshLink(entry, dlg);
             if (!ret)
             {
                 ShowMessageBox(this, TextResource.GetText("NO_REFRESH_LINK"));
@@ -547,7 +547,7 @@ namespace XDM.Wpf.UI
         public void ShowYoutubeDLDialog()
         {
             var ydlWindow = new VideoDownloaderWindow() { Owner = this };
-            var win = new VideoDownloaderController(ydlWindow);
+            var win = new VideoDownloaderUIController(ydlWindow);
             win.Run();
         }
 
@@ -885,7 +885,7 @@ namespace XDM.Wpf.UI
 
         public void ShowDownloadSelectionWindow(FileNameFetchMode mode, IEnumerable<IRequestData> downloads)
         {
-            var dsvc = new DownloadSelectionViewController(new DownloadSelectionWindow(), FileNameFetchMode.FileNameAndExtension, downloads);
+            var dsvc = new DownloadSelectionUIController(new DownloadSelectionWindow(), FileNameFetchMode.FileNameAndExtension, downloads);
             dsvc.Run();
             //var window = new DownloadSelectionWindow(app, appUI, FileNameFetchMode.FileNameAndExtension, downloads);
             //window.Show();

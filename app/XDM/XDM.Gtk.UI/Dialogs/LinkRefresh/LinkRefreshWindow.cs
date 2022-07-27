@@ -14,7 +14,7 @@ using XDM.GtkUI.Utils;
 
 namespace XDM.GtkUI.Dialogs.LinkRefresh
 {
-    internal class LinkRefreshWindow : Window, IRefreshLinkDialogSkeleton
+    internal class LinkRefreshWindow : Window, IRefreshLinkDialog
     {
         [UI] private Label LblText;
         [UI] private Button BtnStop;

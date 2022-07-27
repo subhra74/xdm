@@ -84,7 +84,7 @@ namespace XDM.Core
             return ApplicationContext.MainWindow.CreateDownloadCompleteDialog();
         }
 
-        public INewDownloadDialogSkeleton CreateNewDownloadDialog(bool empty)
+        public INewDownloadDialog CreateNewDownloadDialog(bool empty)
         {
             return ApplicationContext.MainWindow.CreateNewDownloadDialog(empty);
         }
@@ -272,7 +272,7 @@ namespace XDM.Core
             ApplicationContext.MainWindow.RunOnUIThread(() =>
             {
                 NewDownloadPromptTracker.PromptOpen(url);
-                NewDownloadDialogHelper.CreateAndShowDialog(this.CreateNewDownloadDialog(false), message,
+                NewDownloadDialogUIController.CreateAndShowDialog(this.CreateNewDownloadDialog(false), message,
                     () => NewDownloadPromptTracker.PromptClosed(url));
             });
         }
@@ -281,7 +281,7 @@ namespace XDM.Core
         {
             RunOnUiThread(() =>
             {
-                NewVideoDownloadDialogHelper.ShowVideoDownloadDialog(this.CreateNewVideoDialog(),
+                NewVideoDownloadDialogUIController.ShowVideoDownloadDialog(this.CreateNewVideoDialog(),
                     videoId, name, size, contentType);
             });
         }
@@ -417,7 +417,7 @@ namespace XDM.Core
             {
                 ApplicationContext.MainWindow.RunOnUIThread(() =>
                 {
-                    NewDownloadDialogHelper.CreateAndShowDialog(CreateNewDownloadDialog(true));
+                    NewDownloadDialogUIController.CreateAndShowDialog(CreateNewDownloadDialog(true));
                 });
             };
 

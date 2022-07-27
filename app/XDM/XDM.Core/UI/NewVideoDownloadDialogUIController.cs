@@ -7,7 +7,7 @@ using XDM.Core.Util;
 
 namespace XDM.Core.UI
 {
-    public class NewVideoDownloadDialogHelper
+    public class NewVideoDownloadDialogUIController
     {
         public static void ShowVideoDownloadDialog(INewVideoDownloadDialog window,
             string id, string name, long size, string? contentType)

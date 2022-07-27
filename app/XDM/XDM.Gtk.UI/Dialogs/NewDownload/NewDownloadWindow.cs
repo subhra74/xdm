@@ -18,7 +18,7 @@ using UI = Gtk.Builder.ObjectAttribute;
 
 namespace XDM.GtkUI.Dialogs.NewDownload
 {
-    public class NewDownloadWindow : Window, INewDownloadDialogSkeleton
+    public class NewDownloadWindow : Window, INewDownloadDialog
     {
         private AuthenticationInfo? authentication;
         private ProxyInfo? proxy = Config.Instance.Proxy;

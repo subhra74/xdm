@@ -17,14 +17,14 @@ using YDLWrapper;
 
 namespace XDM.Core.UI
 {
-    public class VideoDownloaderController
+    public class VideoDownloaderUIController
     {
         private YDLProcess? ydl;
         private List<YDLVideoEntry> videoItemList;
         private List<int> videoQualities;
         private IVideoDownloadView view;
 
-        public VideoDownloaderController(IVideoDownloadView view)
+        public VideoDownloaderUIController(IVideoDownloadView view)
         {
             this.view = view;
 

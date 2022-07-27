@@ -6,7 +6,7 @@ using XDM.Core.UI;
 
 namespace XDM.Core.UI
 {
-    public interface INewDownloadDialogSkeleton : IFileSelectable
+    public interface INewDownloadDialog : IFileSelectable
     {
         void SetFileSizeText(string text);
         void DisposeWindow();

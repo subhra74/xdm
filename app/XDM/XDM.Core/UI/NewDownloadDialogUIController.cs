@@ -9,9 +9,9 @@ using XDM.Core.Util;
 
 namespace XDM.Core.UI
 {
-    public class NewDownloadDialogHelper
+    public class NewDownloadDialogUIController
     {
-        public static void CreateAndShowDialog(INewDownloadDialogSkeleton window, Message? message = null,
+        public static void CreateAndShowDialog(INewDownloadDialog window, Message? message = null,
             Action? destroyCallback = null)
         {
             window.DestroyEvent += (_, _) => destroyCallback?.Invoke();
@@ -147,7 +147,7 @@ namespace XDM.Core.UI
         //    window.ShowWindow();
         //}
 
-        private static void OnDownloadClicked(INewDownloadDialogSkeleton window,
+        private static void OnDownloadClicked(INewDownloadDialog window,
             string fileName, string? selectedFolder, Message message, bool startImmediately, string? queueId = null)
         {
 

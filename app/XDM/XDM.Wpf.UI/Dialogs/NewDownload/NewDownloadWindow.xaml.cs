@@ -16,7 +16,7 @@ namespace XDM.Wpf.UI.Dialogs.NewDownload
     /// <summary>
     /// Interaction logic for NewDownloadWindow.xaml
     /// </summary>
-    public partial class NewDownloadWindow : Window, INewDownloadDialogSkeleton
+    public partial class NewDownloadWindow : Window, INewDownloadDialog
     {
         private AuthenticationInfo? authentication;
         private ProxyInfo? proxy = Config.Instance.Proxy;

@@ -20,7 +20,7 @@ namespace XDM.Wpf.UI.Dialogs.RefreshLink
     /// <summary>
     /// Interaction logic for LinkRefreshWindow.xaml
     /// </summary>
-    public partial class LinkRefreshWindow : Window, IRefreshLinkDialogSkeleton
+    public partial class LinkRefreshWindow : Window, IRefreshLinkDialog
     {
         public LinkRefreshWindow()
         {

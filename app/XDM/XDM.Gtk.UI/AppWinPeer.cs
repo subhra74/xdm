@@ -1071,7 +1071,7 @@ namespace XDM.GtkUI
             return win;
         }
 
-        public INewDownloadDialogSkeleton CreateNewDownloadDialog(bool empty)
+        public INewDownloadDialog CreateNewDownloadDialog(bool empty)
         {
             var window = NewDownloadWindow.CreateFromGladeFile();
             window.IsEmpty = empty;
@@ -1198,7 +1198,7 @@ namespace XDM.GtkUI
         public void ShowRefreshLinkDialog(InProgressDownloadItem entry)
         {
             var dlg = LinkRefreshWindow.CreateFromGladeFile();
-            var ret = LinkRefreshDialogHelper.RefreshLink(entry, dlg);
+            var ret = LinkRefreshDialogUIController.RefreshLink(entry, dlg);
             if (!ret)
             {
                 GtkHelper.ShowMessageBox(this, TextResource.GetText("NO_REFRESH_LINK"));
@@ -1240,7 +1240,7 @@ namespace XDM.GtkUI
 
         public void ShowYoutubeDLDialog()
         {
-            var win = new VideoDownloaderController(VideoDownloaderWindow.CreateFromGladeFile());
+            var win = new VideoDownloaderUIController(VideoDownloaderWindow.CreateFromGladeFile());
             win.Run();
         }
 
@@ -1445,7 +1445,7 @@ namespace XDM.GtkUI
 
         public void ShowDownloadSelectionWindow(FileNameFetchMode mode, IEnumerable<IRequestData> downloads)
         {
-            var dsvc = new DownloadSelectionViewController(DownloadSelectionWindow.CreateFromGladeFile(),
+            var dsvc = new DownloadSelectionUIController(DownloadSelectionWindow.CreateFromGladeFile(),
                 FileNameFetchMode.FileNameAndExtension, downloads);
             dsvc.Run();
         }

@@ -63,7 +63,7 @@ namespace XDM.Core
         /// <param name="realSize"></param>
         void UpdateItem(string id, string targetFileName, long size);
 
-        INewDownloadDialogSkeleton CreateNewDownloadDialog(bool empty);
+        INewDownloadDialog CreateNewDownloadDialog(bool empty);
 
         INewVideoDownloadDialog CreateNewVideoDialog();
 

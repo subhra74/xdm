@@ -12,9 +12,9 @@ using XDM.Core.Util;
 
 namespace XDM.Core.UI
 {
-    public static class LinkRefreshDialogHelper
+    public static class LinkRefreshDialogUIController
     {
-        public static bool RefreshLink(DownloadItemBase item, IRefreshLinkDialogSkeleton dialog)
+        public static bool RefreshLink(DownloadItemBase item, IRefreshLinkDialog dialog)
         {
             try
             {
@@ -28,26 +28,10 @@ namespace XDM.Core.UI
                 {
                     var state = DownloadStateIO.LoadSingleSourceHTTPDownloaderState(item.Id);
                     referer = GetReferer(state.Headers);
-                    //if (!TransactedIO.ReadStream(item.Id + ".state", Config.DataDir, s =>
-                    //{
-                    //    var state = DownloadStateStore.SingleSourceHTTPDownloaderStateFromBytes(s);
-                    //    referer = GetReferer(state.Headers);
-                    //}))
-                    //{
-                    //    throw new FileNotFoundException(Path.Combine(Config.DataDir, item.Id + ".state"));
-                    //}
-
-                    //var state = DownloadStateStore.SingleSourceHTTPDownloaderStateFromBytes(
-                    //    File.ReadAllBytes(Path.Combine(Config.DataDir, item.Id + ".state")));
-                    ////JsonConvert.DeserializeObject<SingleSourceHTTPDownloaderState>(
-                    ////    File.ReadAllText(Path.Combine(Config.DataDir, item.Id + ".state")));
-                    //referer = GetReferer(state.Headers);
                 }
                 else if (item.DownloadType == "Dash")
                 {
                     var state = DownloadStateIO.LoadDualSourceHTTPDownloaderState(item.Id);
-                    //JsonConvert.DeserializeObject<DualSourceHTTPDownloaderState>(
-                    //    File.ReadAllText(Path.Combine(Config.DataDir, item.Id + ".state")));
                     referer = GetReferer(state.Headers1);
                 }
                 else

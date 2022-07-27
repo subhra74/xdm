@@ -14,12 +14,12 @@ using XDM.Core.Util;
 
 namespace XDM.Core.UI
 {
-    public class DownloadSelectionViewController
+    public class DownloadSelectionUIController
     {
         private IDownloadSelectionView view;
         private FileNameFetchMode mode;
 
-        public DownloadSelectionViewController(IDownloadSelectionView view,
+        public DownloadSelectionUIController(IDownloadSelectionView view,
             FileNameFetchMode mode, IEnumerable<IRequestData> downloads)
         {
             this.view = view;

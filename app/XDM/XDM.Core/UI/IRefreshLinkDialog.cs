@@ -6,7 +6,7 @@ using System.Text;
 
 namespace XDM.Core
 {
-    public interface IRefreshLinkDialogSkeleton
+    public interface IRefreshLinkDialog
     {
         event EventHandler? WatchingStopped;
 

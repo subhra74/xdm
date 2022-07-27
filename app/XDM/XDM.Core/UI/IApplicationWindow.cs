@@ -53,7 +53,7 @@ namespace XDM.Core.UI
 
         IDownloadCompleteDialog CreateDownloadCompleteDialog();
 
-        INewDownloadDialogSkeleton CreateNewDownloadDialog(bool empty);
+        INewDownloadDialog CreateNewDownloadDialog(bool empty);
 
         INewVideoDownloadDialog CreateNewVideoDialog();
 
