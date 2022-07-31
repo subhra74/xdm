@@ -18,12 +18,8 @@ namespace XDM.Core.Downloader.Progressive.SingleHttp
         private bool init;
         public override Uri? PrimaryUrl => this.state?.Url;
 
-        public override int SpeedLimit => this.state?.SpeedLimit ?? 0;
-
-        public override bool EnableSpeedLimit => this.state?.SpeedLimit > 0;
-
         public SingleSourceHTTPDownloader(SingleSourceHTTPDownloadInfo info, IHttpClient? hc = null,
-            AuthenticationInfo? authentication = null, ProxyInfo? proxy = null, int speedLimit = 0,
+            AuthenticationInfo? authentication = null, ProxyInfo? proxy = null,
             BaseMediaProcessor mediaProcessor = null, bool convertToMp3 = false)
         {
             Id = Guid.NewGuid().ToString();
@@ -37,7 +33,6 @@ namespace XDM.Core.Downloader.Progressive.SingleHttp
                 TempDir = Path.Combine(Config.Instance.TempDir, Id),
                 Authentication = authentication,
                 Proxy = proxy,
-                SpeedLimit = speedLimit,
                 ConvertToMp3 = convertToMp3
             };
 
@@ -85,7 +80,6 @@ namespace XDM.Core.Downloader.Progressive.SingleHttp
                 throw new InvalidOperationException("Temp dir should not be null");
             }
             Directory.CreateDirectory(state.TempDir);
-            downloadSizeAtResume = 0;
             ticksAtDownloadStartOrResume = Helpers.TickCount();
             var chunk = new Piece
             {
@@ -494,11 +488,6 @@ namespace XDM.Core.Downloader.Progressive.SingleHttp
             return this.state;
         }
 
-        public override void ThrottleIfNeeded()
-        {
-            base.ThrottleIfNeeded(this.state!);
-        }
-
         public override bool IsTextRedirectionAllowed() { return false; }
 
         public override bool IsFileChangedOnServer(StreamType streamType, long streamSize, DateTime? lastModified)
@@ -508,11 +497,6 @@ namespace XDM.Core.Downloader.Progressive.SingleHttp
                 return state!.FileSize != streamSize;
             }
             return false;
-        }
-
-        public override void UpdateSpeedLimit(bool enable, int limit)
-        {
-            base.UpdateSpeedLimit(this.state, enable, limit);
         }
 
         private void CreateDefaultHeaders()

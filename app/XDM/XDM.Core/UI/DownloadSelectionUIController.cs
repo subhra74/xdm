@@ -106,7 +106,6 @@ namespace XDM.Core.UI
                         startImmediately,
                         view.Authentication,
                         view.Proxy ?? Config.Instance.Proxy,
-                        view.EnableSpeedLimit ? view.SpeedLimit : 0,
                         queueId,
                         false
                     );

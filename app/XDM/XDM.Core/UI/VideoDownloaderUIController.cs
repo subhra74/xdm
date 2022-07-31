@@ -328,9 +328,9 @@ namespace XDM.Core.UI
                         FileNameFetchMode.None,
                         view.DownloadLocation,
                         startImmediately,
-                        view.Authentication, 
+                        view.Authentication,
                         view.Proxy ?? Config.Instance.Proxy,
-                        view.EnableSpeedLimit ? view.SpeedLimit : 0, queueId,
+                        queueId,
                         false
                     );
             }

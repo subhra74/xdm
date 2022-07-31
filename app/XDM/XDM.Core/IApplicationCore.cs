@@ -24,7 +24,7 @@ namespace XDM.Core
             bool startImmediately,
             AuthenticationInfo? authentication,
             ProxyInfo? proxyInfo,
-            int maxSpeedLimit, string? queueId,
+            string? queueId,
             bool convertToMp3);
 
         public void StopDownloads(IEnumerable<string> list, bool closeProgressWindow = false);
@@ -54,10 +54,6 @@ namespace XDM.Core
         public void Export(string path);
 
         public void Import(string path);
-
-        void UpdateSpeedLimit(string id, bool enable, int limit);
-
-        bool GetLiveDownloadSpeedLimit(string id, out bool enabled, out int limit);
 
         void AddBatchLinks(List<Message> messages);
     }

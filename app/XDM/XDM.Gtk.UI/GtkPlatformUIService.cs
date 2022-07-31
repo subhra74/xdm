@@ -56,7 +56,7 @@ namespace XDM.GtkUI
         public void ShowSpeedLimiterWindow()
         {
             var window = SpeedLimiterWindow.CreateFromGladeFile();
-            SpeedLimiterUIController.ShowGlobalSpeedLimiterWindow(window);
+            SpeedLimiterUIController.Run(window);
         }
 
         public string? SaveFileDialog(string? initialPath, string? defaultExt, string? filter)

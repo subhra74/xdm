@@ -185,8 +185,7 @@ namespace XDM.Core.UI
                 window.SelectedFileName != fileName ? FileNameFetchMode.None : FileNameFetchMode.FileNameAndExtension,
                 selectedFolder,
                 startImmediately,
-                window.Authentication, window.Proxy ?? Config.Instance.Proxy,
-                window.EnableSpeedLimit ? window.SpeedLimit : 0, queueId, false);
+                window.Authentication, window.Proxy ?? Config.Instance.Proxy, queueId, false);
 
             //var http = new SingleSourceHTTPDownloader(new SingleSourceHTTPDownloadInfo
             //{

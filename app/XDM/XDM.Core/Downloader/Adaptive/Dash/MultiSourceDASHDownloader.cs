@@ -24,8 +24,7 @@ namespace XDM.Core.Downloader.Adaptive.Dash
         }
         public MultiSourceDASHDownloader(MultiSourceDASHDownloadInfo info, IHttpClient http = null,
             BaseMediaProcessor mediaProcessor = null,
-            AuthenticationInfo? authentication = null, ProxyInfo? proxy = null,
-            int speedLimit = 0) : base(info, http, mediaProcessor)
+            AuthenticationInfo? authentication = null, ProxyInfo? proxy = null) : base(info, http, mediaProcessor)
         {
             var state = new MultiSourceDASHDownloadState
             {
@@ -36,8 +35,7 @@ namespace XDM.Core.Downloader.Adaptive.Dash
                 Url = info.Url,
                 Authentication = authentication,
                 Proxy = proxy,
-                TempDirectory = Path.Combine(Config.Instance.TempDir, Id),
-                SpeedLimit = speedLimit
+                TempDirectory = Path.Combine(Config.Instance.TempDir, Id)
             };
 
             if (state.Authentication == null)
@@ -226,14 +224,12 @@ namespace XDM.Core.Downloader.Adaptive.Dash
 
 
             var count = 0;
-            downloadedBytes = 0;
+            totalDownloadedBytes = 0;
             _chunks.ForEach(c =>
             {
                 if (c.ChunkState == ChunkState.Finished) count++;
-                if (c.Downloaded > 0) downloadedBytes += c.Downloaded;
+                if (c.Downloaded > 0) totalDownloadedBytes += c.Downloaded;
             });
-
-            this.downloadSizeAtResume = downloadedBytes;
             this.lastProgress = (count * 100) / _chunks.Count;
             ticksAtDownloadStartOrResume = Helpers.TickCount();
             Log.Debug("Already downloaded: " + count);

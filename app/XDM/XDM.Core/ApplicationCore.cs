@@ -77,7 +77,6 @@ namespace XDM.Core
             bool startImmediately,
             AuthenticationInfo? authentication,
             ProxyInfo? proxyInfo,
-            int maxSpeedLimit,
             string? queueId,
             bool convertToMp3)
         {
@@ -89,23 +88,23 @@ namespace XDM.Core
             {
                 case SingleSourceHTTPDownloadInfo info:
                     http = new SingleSourceHTTPDownloader(info, authentication: authentication,
-                        proxy: proxyInfo, speedLimit: maxSpeedLimit, mediaProcessor: new FFmpegMediaProcessor(),
+                        proxy: proxyInfo, mediaProcessor: new FFmpegMediaProcessor(),
                         convertToMp3: convertToMp3);
                     RequestDataIO.SaveDownloadInfo(http.Id!, info);
                     break;
                 case DualSourceHTTPDownloadInfo info:
                     http = new DualSourceHTTPDownloader(info, authentication: authentication,
-                        proxy: proxyInfo, speedLimit: maxSpeedLimit, mediaProcessor: new FFmpegMediaProcessor());
+                        proxy: proxyInfo, mediaProcessor: new FFmpegMediaProcessor());
                     RequestDataIO.SaveDownloadInfo(http.Id!, info);
                     break;
                 case MultiSourceHLSDownloadInfo info:
                     http = new MultiSourceHLSDownloader(info, authentication: authentication,
-                        proxy: proxyInfo, speedLimit: maxSpeedLimit, mediaProcessor: new FFmpegMediaProcessor());
+                        proxy: proxyInfo, mediaProcessor: new FFmpegMediaProcessor());
                     RequestDataIO.SaveDownloadInfo(http.Id!, info);
                     break;
                 case MultiSourceDASHDownloadInfo info:
                     http = new MultiSourceDASHDownloader(info, authentication: authentication,
-                        proxy: proxyInfo, speedLimit: maxSpeedLimit, mediaProcessor: new FFmpegMediaProcessor());
+                        proxy: proxyInfo, mediaProcessor: new FFmpegMediaProcessor());
                     RequestDataIO.SaveDownloadInfo(http.Id!, info);
                     break;
                 default:
@@ -119,15 +118,14 @@ namespace XDM.Core
             }
             http.SetFileName(FileHelper.SanitizeFileName(fileName), fileNameFetchMode);
             http.SetTargetDirectory(targetFolder);
-            StartDownload(http, startImmediately, authentication, proxyInfo, maxSpeedLimit);
+            StartDownload(http, startImmediately, authentication, proxyInfo);
             return http.Id;
         }
 
         private void StartDownload(IBaseDownloader download,
             bool startImmediately,
             AuthenticationInfo? authentication,
-            ProxyInfo? proxyInfo,
-            int maxSpeedLimit)
+            ProxyInfo? proxyInfo)
         {
             if (!awakePingTimer.Enabled)
             {
@@ -150,7 +148,7 @@ namespace XDM.Core
             ApplicationContext.Application.AddItemToTop(id, download.TargetFileName, DateTime.Now,
                 download.FileSize, download.Type, download.FileNameFetchMode,
                 download.PrimaryUrl?.ToString(), startType, authentication,
-                proxyInfo, maxSpeedLimit);
+                proxyInfo);
 
             if (startImmediately)
             {
@@ -223,8 +221,7 @@ namespace XDM.Core
                     null,
                     true,
                     null,
-                    Config.Instance.Proxy,
-                    Helpers.GetSpeedLimit(), null, false);
+                    Config.Instance.Proxy, null, false);
             }
             else
             {
@@ -351,13 +348,19 @@ namespace XDM.Core
                 if (http != null)
                 {
                     http.Stop();
-                    liveDownloads.Remove(id);
+                    //liveDownloads.Remove(id);
                 }
                 else
                 {
                     if (queuedDownloads.ContainsKey(id))
                     {
                         queuedDownloads.Remove(id);
+                        ApplicationContext.Application.DownloadCanelled(id);
+                        if (activeProgressWindows.ContainsKey(id))
+                        {
+                            var prgWin = activeProgressWindows[id];
+                            prgWin.DownloadCancelled();
+                        }
                     }
                 }
 
@@ -498,7 +501,7 @@ namespace XDM.Core
                 {
                     var prgWin = activeProgressWindows[http.Id];
                     prgWin.FileNameText = http.TargetFileName;
-                    prgWin.FileSizeText = 
+                    prgWin.FileSizeText =
                         $"{TextResource.GetText("STAT_DOWNLOADING")} {FormattingHelper.FormatSize(0)} / {FormattingHelper.FormatSize(http.FileSize)}";
                 }
             }
@@ -787,7 +790,7 @@ namespace XDM.Core
                 {
                     this.StartDownload(request, entry.Name,
                                    FileNameFetchMode.FileNameAndExtension,
-                                   entry.TargetDir, true, entry.Authentication, entry.Proxy, Helpers.GetSpeedLimit(), null,
+                                   entry.TargetDir, true, entry.Authentication, entry.Proxy, null,
                                    convertToMp3);
                     RemoveDownload(entry, false);
                 }
@@ -807,27 +810,6 @@ namespace XDM.Core
         {
             ImportExport.Import(path);
             ApplicationContext.Application.ShowMessageBox(null, TextResource.GetText("MSG_IMPORT_DONE"));
-        }
-
-        public void UpdateSpeedLimit(string id, bool enable, int limit)
-        {
-            if (liveDownloads.TryGetValue(id, out (IBaseDownloader Downloader, bool _) entry))
-            {
-                entry.Downloader.UpdateSpeedLimit(enable, limit);
-            }
-        }
-
-        public bool GetLiveDownloadSpeedLimit(string id, out bool enabled, out int limit)
-        {
-            enabled = false;
-            limit = 0;
-            if (liveDownloads.TryGetValue(id, out (IBaseDownloader Downloader, bool _) entry))
-            {
-                enabled = entry.Downloader.EnableSpeedLimit;
-                limit = entry.Downloader.SpeedLimit;
-                return true;
-            }
-            return false;
         }
     }
 }

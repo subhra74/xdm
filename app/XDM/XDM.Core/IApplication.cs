@@ -48,11 +48,10 @@ namespace XDM.Core
         /// <param name="startType"></param>
         /// <param name="authentication"></param>
         /// <param name="proxyInfo"></param>
-        /// <param name="maxSpeedLimit"></param>
         public void AddItemToTop(string id, string targetFileName, DateTime date,
             long fileSize, string type, FileNameFetchMode fileNameFetchMode,
             string primaryUrl, DownloadStartType startType,
-            AuthenticationInfo? authentication, ProxyInfo? proxyInfo, int maxSpeedLimit);
+            AuthenticationInfo? authentication, ProxyInfo? proxyInfo);
 
         /// <summary>
         /// 

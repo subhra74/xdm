@@ -29,12 +29,13 @@ namespace XDM.Core.Downloader.Progressive
         protected long lastProgressUpdatedAt = Helpers.TickCount();
         protected readonly ProgressResultEventArgs progressResult = new();
         //protected readonly CookieContainer cookieContainer = new();
-        protected long downloadedBytes = 0L;
-        protected long downloadSizeAtResume = 0L;
+        protected long totalDownloadedBytes = 0L;
         protected long lastDownloadedBytes = 0L;
         protected long ticksAtDownloadStartOrResume = 0L;
         protected SpeedLimiter speedLimiter = new();
         protected BaseMediaProcessor? mediaProcessor;
+        protected long downloadedBytesSinceStartOrResume = 0L;
+        private bool stopRequested = false;
 
         public FileNameFetchMode FileNameFetchMode
         {
@@ -62,10 +63,6 @@ namespace XDM.Core.Downloader.Progressive
         public bool KeepProvidedFileName { get; set; }
         public virtual string Type => "Http";
         public virtual Uri? PrimaryUrl { get; }
-
-        public abstract int SpeedLimit { get; }
-
-        public abstract bool EnableSpeedLimit { get; }
 
         public virtual event EventHandler? Started;
         public virtual event EventHandler? Finished;
@@ -105,37 +102,18 @@ namespace XDM.Core.Downloader.Progressive
 
         public abstract void RestoreState();
 
-        public abstract void UpdateSpeedLimit(bool enable, int limit);
-
-        public abstract void ThrottleIfNeeded();
-
-        protected void ThrottleIfNeeded(int speedLimit)
+        public void ThrottleIfNeeded()
         {
-            speedLimiter.ThrottleIfNeeded(this, speedLimit);
-        }
-
-        protected void ThrottleIfNeeded(BaseHTTPDownloaderState? state)
-        {
-            int speedLimit = 0;
-            lock (state!)
-            {
-                speedLimit = state.SpeedLimit;
-            }
-            lock (this)
-            {
-                //if (speedLimit < 1 && Config.Instance.EnableSpeedLimit && Config.Instance.DefaltDownloadSpeed > 0)
-                //{
-                //    speedLimit = Config.Instance.DefaltDownloadSpeed;
-                //}
-                if (speedLimit > 0)
-                {
-                    ThrottleIfNeeded(speedLimit);
-                }
-            }
+            speedLimiter.ThrottleIfNeeded(this);
         }
 
         public virtual void Stop()
         {
+            if (stopRequested)
+            {
+                return;
+            }
+            stopRequested = true;
             try
             {
                 this.cancelFlag.Cancel();
@@ -272,7 +250,8 @@ namespace XDM.Core.Downloader.Progressive
         {
             lock (this)
             {
-                downloadedBytes += bytes;
+                totalDownloadedBytes += bytes;
+                downloadedBytesSinceStartOrResume += bytes;
 
                 var pc = pieces[pieceId];
                 pc.Downloaded += bytes;
@@ -288,14 +267,14 @@ namespace XDM.Core.Downloader.Progressive
                 var ticksElapsed = ticks - ticksAtDownloadStartOrResume;
                 if (ticks - lastProgressUpdatedAt > 500 && ticksElapsed > 0)
                 {
-                    var instantSpeed = ((downloadedBytes - lastDownloadedBytes) * 1000) / (ticks - lastProgressUpdatedAt);
-                    var avgSpeed = ((downloadedBytes - downloadSizeAtResume) * 1000.0) / ticksElapsed;
+                    var instantSpeed = ((totalDownloadedBytes - lastDownloadedBytes) * 1000) / (ticks - lastProgressUpdatedAt);
+                    var avgSpeed = (downloadedBytesSinceStartOrResume * 1000.0) / ticksElapsed;
                     lastProgressUpdatedAt = ticks;
-                    lastDownloadedBytes = downloadedBytes;
-                    progressResult.DownloadSpeed = instantSpeed;//((downloadedBytes - downloadSizeAtResume) * 1000.0) / ticksElapsed;
-                    progressResult.Downloaded = downloadedBytes;
-                    progressResult.Progress = FileSize > 0 ? (int)(downloadedBytes * 100 / FileSize) : 0;
-                    progressResult.Eta = FileSize > 0 ? (long)Math.Ceiling((FileSize - downloadedBytes) / avgSpeed /*progressResult.DownloadSpeed*/) : 0;
+                    lastDownloadedBytes = totalDownloadedBytes;
+                    progressResult.DownloadSpeed = instantSpeed;
+                    progressResult.Downloaded = totalDownloadedBytes;
+                    progressResult.Progress = FileSize > 0 ? (int)(totalDownloadedBytes * 100 / FileSize) : 0;
+                    progressResult.Eta = FileSize > 0 ? (long)Math.Ceiling((FileSize - totalDownloadedBytes) / avgSpeed /*progressResult.DownloadSpeed*/) : 0;
                     ProgressChanged?.Invoke(this, progressResult);
                 }
             }
@@ -457,7 +436,7 @@ namespace XDM.Core.Downloader.Progressive
 
         protected virtual void OnFailed(ErrorCode error)
         {
-            if (error == ErrorCode.InvalidResponse && downloadedBytes > 0)
+            if (error == ErrorCode.InvalidResponse && totalDownloadedBytes > 0)
             {
                 this.Failed?.Invoke(this, new DownloadFailedEventArgs(ErrorCode.SessionExpired));
             }
@@ -477,15 +456,14 @@ namespace XDM.Core.Downloader.Progressive
         protected virtual void TicksAndSizeAtResume()
         {
             if (pieces == null) return;
-            downloadedBytes = 0;
+            totalDownloadedBytes = 0;
 
             ticksAtDownloadStartOrResume = Helpers.TickCount();
 
             foreach (var pk in pieces.Keys)
             {
-                downloadedBytes += pieces[pk].Downloaded;
+                totalDownloadedBytes += pieces[pk].Downloaded;
             }
-            downloadSizeAtResume = downloadedBytes;
         }
 
         private void Cleanup()
@@ -500,7 +478,9 @@ namespace XDM.Core.Downloader.Progressive
             }
         }
 
-        public long GetDownloaded() => this.downloadedBytes;
+        public long GetTotalDownloaded() => this.totalDownloadedBytes;
+
+        public long GetDownloaded() => this.downloadedBytesSinceStartOrResume;
 
         protected virtual void DeleteFileParts()
         {
@@ -576,20 +556,6 @@ namespace XDM.Core.Downloader.Progressive
             using var w = new BinaryWriter(stream, Encoding.UTF8, true);
             WriteChunkState(pieces, w);
 #endif
-        }
-
-        protected void UpdateSpeedLimit(BaseHTTPDownloaderState? state, bool enable, int limit)
-        {
-            if (state == null) return;
-            if (!enable)
-            {
-                limit = 0;
-            }
-            lock (state)
-            {
-                state.SpeedLimit = limit;
-                SaveState();
-            }
         }
     }
 

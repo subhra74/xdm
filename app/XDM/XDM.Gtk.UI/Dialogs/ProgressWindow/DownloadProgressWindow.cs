@@ -163,11 +163,6 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
                 BtnPause.Label = TextResource.GetText("MENU_PAUSE");
                 BtnPause.Name = string.Empty;
                 //TxtSpeedLimit.Visible = false;
-
-                if (ApplicationContext.CoreService.GetLiveDownloadSpeedLimit(downloadId, out bool enable, out int limit))
-                {
-                    SetSpeedLimitText(enable, limit);
-                }
             });
 
             //Dispatcher.Invoke(new Action(() =>
@@ -231,8 +226,8 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
             else
             {
                 StopDownload(false);
-                BtnPause.Label = TextResource.GetText("MENU_RESUME");
-                BtnPause.Name = "Paused";
+                //BtnPause.Label = TextResource.GetText("MENU_RESUME");
+                //BtnPause.Name = "Paused";
             }
         }
 

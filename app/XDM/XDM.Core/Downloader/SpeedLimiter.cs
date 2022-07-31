@@ -9,15 +9,41 @@ namespace XDM.Core.Downloader
     {
         private long lastTick, lastBytes;
         private ManualResetEvent sleepHandle = new ManualResetEvent(false);
+        private long lastChecked = Helpers.TickCount();
+        private int cachedSpeedLimit = -2;
 
         public void WakeIfSleeping()
         {
             this.sleepHandle.Set();
         }
 
-        public void ThrottleIfNeeded(IBaseDownloader downloader, int speedLimit)
+        private int GetCachedSpeedLimit()
         {
-            //Log.Debug("==========speed limit: " + speedLimit);
+            var now = Helpers.TickCount();
+            if (now - lastChecked > 3000 || cachedSpeedLimit == -2)
+            {
+                lastChecked = now;
+                cachedSpeedLimit = GetGlobalSpeedLimit();
+            }
+            return cachedSpeedLimit;
+        }
+
+        private int GetGlobalSpeedLimit()
+        {
+            int speedLimit = 0;
+            lock (Config.Instance)
+            {
+                if (Config.Instance.EnableSpeedLimit && Config.Instance.DefaltDownloadSpeed > 0)
+                {
+                    speedLimit = Config.Instance.DefaltDownloadSpeed;
+                }
+            }
+            return speedLimit;
+        }
+
+        public void ThrottleIfNeeded(IBaseDownloader downloader)
+        {
+            int speedLimit = GetCachedSpeedLimit();
             if (speedLimit < 1) return;
             if (lastBytes == 0 || lastTick == 0)
             {
@@ -34,7 +60,6 @@ namespace XDM.Core.Downloader
             lastBytes = bytes;
             lastTick = now;
             var expectedTimeSpent = diff / maxBytesPerMS;
-            //Log.Debug("==========expectedTimeSpent: " + expectedTimeSpent + " actualTimeSpent: " + actualTimeSpent);
 
             if (actualTimeSpent < expectedTimeSpent)
             {

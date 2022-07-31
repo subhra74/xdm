@@ -219,9 +219,9 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
             }
             else
             {
-                StopDownload(false);
-                BtnPause.Content = TextResource.GetText("MENU_RESUME");
-                BtnPause.Tag = new();
+                StopDownload(false); //cancel callback should update the label
+                //BtnPause.Content = TextResource.GetText("MENU_RESUME");
+                //BtnPause.Tag = new();
             }
         }
 

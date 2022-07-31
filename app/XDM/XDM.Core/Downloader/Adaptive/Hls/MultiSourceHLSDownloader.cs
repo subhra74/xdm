@@ -34,8 +34,7 @@ namespace XDM.Core.Downloader.Adaptive.Hls
         }
         public MultiSourceHLSDownloader(MultiSourceHLSDownloadInfo info, IHttpClient http = null,
             BaseMediaProcessor mediaProcessor = null,
-            AuthenticationInfo? authentication = null, ProxyInfo? proxy = null,
-            int speedLimit = 0) : base(info, http, mediaProcessor)
+            AuthenticationInfo? authentication = null, ProxyInfo? proxy = null) : base(info, http, mediaProcessor)
         {
             var state = new MultiSourceHLSDownloadState
             {
@@ -44,8 +43,7 @@ namespace XDM.Core.Downloader.Adaptive.Hls
                 Headers = info.Headers,
                 Authentication = authentication,
                 Proxy = proxy,
-                TempDirectory = Path.Combine(Config.Instance.TempDir, Id),
-                SpeedLimit = speedLimit
+                TempDirectory = Path.Combine(Config.Instance.TempDir, Id)
             };
 
             if (state.Authentication == null)
@@ -413,14 +411,12 @@ namespace XDM.Core.Downloader.Adaptive.Hls
                 _chunkStreamMap = new SimpleStreamMap { StreamMap = streamMap };
 
                 var count = 0;
-                downloadedBytes = 0;
+                totalDownloadedBytes = 0;
                 _chunks.ForEach(c =>
                 {
                     if (c.ChunkState == ChunkState.Finished) count++;
-                    if (c.Downloaded > 0) downloadedBytes += c.Downloaded;
+                    if (c.Downloaded > 0) totalDownloadedBytes += c.Downloaded;
                 });
-
-                this.downloadSizeAtResume = downloadedBytes;
                 ticksAtDownloadStartOrResume = Helpers.TickCount();
                 this.lastProgress = (count * 100) / _chunks.Count;
                 Log.Debug("Already downloaded: " + count);
@@ -435,41 +431,10 @@ namespace XDM.Core.Downloader.Adaptive.Hls
         protected override void SaveState()
         {
             DownloadStateIO.Save((MultiSourceHLSDownloadState)this._state);
-            //TransactedIO.WriteBytes(DownloadStateStore.Save((MultiSourceHLSDownloadState)this._state), Id + ".state", Config.DataDir);
-            //((TransactedIO.Write(JsonConvert.SerializeObject(_state as MultiSourceHLSDownloadState), Id + ".state", Config.DataDir);
-            //File.WriteAllText(Path.Combine(Config.DataDir, Id + ".state"), JsonConvert.SerializeObject(_state as MultiSourceHLSDownloadState));
         }
 
         protected override void OnContentTypeReceived(Chunk chunk, string contentType)
         {
-            //Log.Information(chunk.Uri + " => " + contentType);
-
-
-            //if (!string.IsNullOrWhiteSpace(this._state.VideoContainerFormat))
-            //{
-            //    lock (this)
-            //    {
-            //        this._state.VideoContainerFormat = GuessContainerFormatFromSegmentExtension(
-            //            this._state.VideoContainerFormat.ToLowerInvariant());
-            //        TargetFileName = Path.GetFileNameWithoutExtension(TargetFileName ?? "video")
-            //            + this._state.VideoContainerFormat;
-            //        SaveState();
-            //        OnProbe();
-            //    }
-            //}
-
-            //if (this._state.Demuxed && this._state.VideoContainerFormat != null
-            //    && this._state.AudioContainerFormat != null) return;
-            //if (this._state.VideoContainerFormat != null) return;
-            //var mediaChunk = chunk as MultiSourceChunk;
-            //if (mediaChunk.StreamIndex == 0)
-            //{
-            //    this._state.VideoContainerFormat = contentType;
-            //}
-            //else if (mediaChunk.StreamIndex == 1)
-            //{
-            //    this._state.AudioContainerFormat = contentType;
-            //}
         }
 
         private static string GuessContainerFormatFromPlaylist(HlsPlaylist playlist)

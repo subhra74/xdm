@@ -57,12 +57,12 @@ namespace XDM.Core.Downloader.Adaptive
         public virtual event EventHandler<DownloadFailedEventArgs> Failed;
         public virtual event EventHandler<ProgressResultEventArgs> AssembingProgressChanged;
         protected BaseMediaProcessor mediaProcessor;
-        protected long downloadedBytes = 0L;
+        protected long totalDownloadedBytes = 0L;
+        protected long downloadedBytesSinceStartOrResume = 0L;
         protected int lastProgress = 0;
         protected long lastDownloaded = 0;
-        //protected ManualResetEvent stateSaverSleepHandle = new ManualResetEvent(false);
-        protected long downloadSizeAtResume = 0L;
         protected long ticksAtDownloadStartOrResume = 0L;
+        private bool stopRequested = false;
 
         public MultiSourceDownloaderBase(MultiSourceDownloadInfo info,
             IHttpClient? http = null,
@@ -137,6 +137,11 @@ namespace XDM.Core.Downloader.Adaptive
 
         public virtual void Stop()
         {
+            if (stopRequested)
+            {
+                return;
+            }
+            stopRequested = true;
             _cancellationTokenSourceStateSaver.Cancel();
             _cancellationTokenSource.Cancel();
             _cancelRequestor?.CancelAll();
@@ -438,13 +443,14 @@ namespace XDM.Core.Downloader.Adaptive
             lock (this)
             {
                 long tick = Helpers.TickCount();
-                downloadedBytes += args.Downloaded;
+                totalDownloadedBytes += args.Downloaded;
+                downloadedBytesSinceStartOrResume += args.Downloaded;
                 var ticksElapsed = tick - lastUpdated;
                 if (ticksElapsed >= 2000)
                 {
                     var downloadedCount = _chunks.FindAll(c => c.ChunkState == ChunkState.Finished).Count;
                     progressResult.Progress = (int)(downloadedCount * 100 / this._chunks.Count);
-                    progressResult.Downloaded = downloadedBytes;
+                    progressResult.Downloaded = totalDownloadedBytes;
                     var prgDiff = progressResult.Progress - lastProgress;
                     lastProgress = progressResult.Progress;
                     if (prgDiff > 0)
@@ -452,26 +458,16 @@ namespace XDM.Core.Downloader.Adaptive
                         var eta = (ticksElapsed * (100 - progressResult.Progress) / 1000 * prgDiff);
                         progressResult.Eta = eta;
                     }
-                    var bytesDiff = downloadedBytes - downloadSizeAtResume;
                     var timeDiff = tick - ticksAtDownloadStartOrResume;
                     if (timeDiff > 0)
                     {
-                        progressResult.DownloadSpeed = (bytesDiff * 1000.0) / timeDiff;
+                        progressResult.DownloadSpeed = (downloadedBytesSinceStartOrResume * 1000.0) / timeDiff;
                     }
                     lastUpdated = tick;
                     ProgressChanged?.Invoke(this, progressResult);
                     SaveChunkState();
                 }
-
-                var speedLimit = _state.SpeedLimit;
-                //if (speedLimit < 1 && Config.Instance.EnableSpeedLimit && Config.Instance.DefaltDownloadSpeed > 0)
-                //{
-                //    speedLimit = Config.Instance.DefaltDownloadSpeed;
-                //}
-                if (speedLimit > 0)
-                {
-                    this.ThrottleIfNeeded(speedLimit);
-                }
+                this.ThrottleIfNeeded();
             }
         }
 
@@ -708,7 +704,7 @@ namespace XDM.Core.Downloader.Adaptive
 
         protected void OnFailed(DownloadFailedEventArgs args)
         {
-            if (args.ErrorCode == ErrorCode.InvalidResponse && downloadedBytes > 0)
+            if (args.ErrorCode == ErrorCode.InvalidResponse && totalDownloadedBytes > 0)
             {
                 Failed?.Invoke(this, new DownloadFailedEventArgs(ErrorCode.SessionExpired));
             }
@@ -737,11 +733,13 @@ namespace XDM.Core.Downloader.Adaptive
             }
         }
 
-        public long GetDownloaded() => this.downloadedBytes;
+        public long GetTotalDownloaded() => this.totalDownloadedBytes;
 
-        protected void ThrottleIfNeeded(int speedLimit)
+        public long GetDownloaded() => this.downloadedBytesSinceStartOrResume;
+
+        protected void ThrottleIfNeeded()
         {
-            speedLimiter.ThrottleIfNeeded(this, speedLimit);
+            speedLimiter.ThrottleIfNeeded(this);
         }
 
         protected static void WriteChunkState(List<MultiSourceChunk> chunks, BinaryWriter w)

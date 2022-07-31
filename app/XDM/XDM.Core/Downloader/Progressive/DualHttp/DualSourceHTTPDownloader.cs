@@ -17,11 +17,9 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
         private DualSourceHTTPDownloaderState state;
         public override string Type => "Dash";
         public override Uri PrimaryUrl => this.state?.Url1 ?? this.state?.Url2;
-        public override int SpeedLimit => this.state?.SpeedLimit ?? 0;
-        public override bool EnableSpeedLimit => this.state?.SpeedLimit > 0;
 
         public DualSourceHTTPDownloader(DualSourceHTTPDownloadInfo info, IHttpClient hc = null,
-            AuthenticationInfo? authentication = null, ProxyInfo? proxy = null, int speedLimit = 0,
+            AuthenticationInfo? authentication = null, ProxyInfo? proxy = null,
             BaseMediaProcessor mediaProcessor = null)
         {
             Id = Guid.NewGuid().ToString();
@@ -39,8 +37,7 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
                 Headers2 = info.Headers2,
                 TempDir = Path.Combine(Config.Instance.TempDir, Id),
                 Authentication = authentication,
-                Proxy = proxy,
-                SpeedLimit = speedLimit
+                Proxy = proxy
             };
 
             if (this.state.Authentication == null)
@@ -81,7 +78,6 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
         public void Start(bool start)
         {
             state.Init1 = state.Init2 = false;
-            downloadSizeAtResume = 0;
 
             ticksAtDownloadStartOrResume = Helpers.TickCount();
 
@@ -539,21 +535,11 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
             }
         }
 
-        public override void ThrottleIfNeeded()
-        {
-            base.ThrottleIfNeeded(this.state!);
-        }
-
         public override bool IsTextRedirectionAllowed() { return true; }
 
         public override bool IsFileChangedOnServer(StreamType streamType, long streamSize, DateTime? lastModified)
         {
             return false;
-        }
-
-        public override void UpdateSpeedLimit(bool enable, int limit)
-        {
-            base.UpdateSpeedLimit(this.state, enable, limit);
         }
     }
 

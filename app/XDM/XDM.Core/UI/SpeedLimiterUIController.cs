@@ -6,7 +6,7 @@ namespace XDM.Core.UI
 {
     public static class SpeedLimiterUIController
     {
-        public static void ShowGlobalSpeedLimiterWindow(ISpeedLimiterWindow window)
+        public static void Run(ISpeedLimiterWindow window)
         {
             window.OkClicked += Window_OkClicked;
             var speedLimitEnabled = Config.Instance.EnableSpeedLimit ? Config.Instance.DefaltDownloadSpeed > 0 : false;
@@ -23,9 +23,12 @@ namespace XDM.Core.UI
             window.OkClicked -= Window_OkClicked;
             var speedLimitEnabled = window.EnableSpeedLimit;
             var defaultSpeedLimit = window.SpeedLimit;
-            Config.Instance.EnableSpeedLimit = speedLimitEnabled ? defaultSpeedLimit > 0 : false;
-            Config.Instance.DefaltDownloadSpeed = defaultSpeedLimit > 0 ? defaultSpeedLimit : 0;
-            Config.SaveConfig();
+            lock (Config.Instance)
+            {
+                Config.Instance.EnableSpeedLimit = speedLimitEnabled ? defaultSpeedLimit > 0 : false;
+                Config.Instance.DefaltDownloadSpeed = defaultSpeedLimit > 0 ? defaultSpeedLimit : 0;
+                Config.SaveConfig();
+            }
             ApplicationContext.BroadcastConfigChange();
         }
     }

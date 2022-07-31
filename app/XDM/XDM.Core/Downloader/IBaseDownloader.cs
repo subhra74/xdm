@@ -29,9 +29,7 @@ namespace XDM.Core.Downloader
         public void SaveForLater();
         public void SetFileName(string name, FileNameFetchMode fileNameFetchMode);
         public void SetTargetDirectory(string? folder);
+        public long GetTotalDownloaded();
         public long GetDownloaded();
-        public void UpdateSpeedLimit(bool enable, int limit);
-        public int SpeedLimit { get; }
-        public bool EnableSpeedLimit { get; }
     }
 }

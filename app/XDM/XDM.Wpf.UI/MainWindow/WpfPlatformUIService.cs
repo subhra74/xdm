@@ -49,7 +49,7 @@ namespace XDM.Wpf.UI
         public void ShowSpeedLimiterWindow()
         {
             var window = new SpeedLimiterWindow();
-            SpeedLimiterUIController.ShowGlobalSpeedLimiterWindow(window);
+            SpeedLimiterUIController.Run(window);
         }
 
         public string? SaveFileDialog(string? initialPath, string? defaultExt, string? filter)

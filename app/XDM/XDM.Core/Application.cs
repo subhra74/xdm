@@ -45,8 +45,7 @@ namespace XDM.Core
             string primaryUrl,
             DownloadStartType startType,
             AuthenticationInfo? authentication,
-            ProxyInfo? proxyInfo,
-            int maxSpeedLimit)
+            ProxyInfo? proxyInfo)
         {
             var downloadEntry = new InProgressDownloadItem
             {
@@ -60,8 +59,7 @@ namespace XDM.Core
                 TargetDir = "",
                 PrimaryUrl = primaryUrl,
                 Authentication = authentication,
-                Proxy = proxyInfo,
-                MaxSpeedLimitInKiB = maxSpeedLimit,
+                Proxy = proxyInfo
             };
             AppDB.Instance.Downloads.AddNewDownload(downloadEntry);
 
