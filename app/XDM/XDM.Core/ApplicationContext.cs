@@ -14,6 +14,7 @@ namespace XDM.Core
         private static ILinkRefresher? s_LinkRefresher;
         private static IVideoTracker? s_VideoTracker;
         private static IClipboardMonitor? s_ClipboardMonitor;
+        private static IPlatformUIService? s_PlatformUIService;
         private static bool s_Init = false;
 
         public static event EventHandler? Initialized;
@@ -91,6 +92,18 @@ namespace XDM.Core
             }
         }
 
+        public static IPlatformUIService PlatformUIService
+        {
+            get
+            {
+                if (!s_Init)
+                {
+                    throw new Exception("ApplicationContext is not initialized...");
+                }
+                return s_PlatformUIService!;
+            }
+        }
+
         public static void BroadcastConfigChange()
         {
             ApplicationEvent?.Invoke(null, new ApplicationEvent("ConfigChanged"));
@@ -139,11 +152,18 @@ namespace XDM.Core
                 return this;
             }
 
+            public AppInstanceConfigurer RegisterPlatformUIService(IPlatformUIService service)
+            {
+                s_PlatformUIService = service;
+                return this;
+            }
+
             public void Configure()
             {
                 if (s_ApplicationCore == null || s_IApplication == null
                     || s_ApplicationWindow == null || s_LinkRefresher == null
-                    || s_VideoTracker == null || s_ClipboardMonitor == null)
+                    || s_VideoTracker == null || s_ClipboardMonitor == null
+                    || s_PlatformUIService == null)
                 {
                     throw new Exception("Please configure all dependecies");
                 }

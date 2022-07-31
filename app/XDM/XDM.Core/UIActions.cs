@@ -84,11 +84,11 @@ namespace XDM.Core
                 //Log.Debug("Open folder: " + ent.TargetDir);
                 if (!PlatformHelper.OpenFolder(ent.TargetDir, ent.Name))
                 {
-                    ApplicationContext.MainWindow.ShowMessageBox(ApplicationContext.MainWindow, TextResource.GetText("ERR_MSG_FILE_NOT_FOUND_MSG"));
+                    ApplicationContext.PlatformUIService.ShowMessageBox(ApplicationContext.MainWindow, TextResource.GetText("ERR_MSG_FILE_NOT_FOUND_MSG"));
                 }
                 return;
             }
-            ApplicationContext.MainWindow.ShowMessageBox(ApplicationContext.MainWindow, TextResource.GetText("NO_ITEM_SELECTED"));
+            ApplicationContext.PlatformUIService.ShowMessageBox(ApplicationContext.MainWindow, TextResource.GetText("NO_ITEM_SELECTED"));
         }
 
         public static void OpenSelectedFile()
@@ -104,7 +104,7 @@ namespace XDM.Core
                     //Log.Debug("Open: " + file);
                     if (!PlatformHelper.OpenFile(file))
                     {
-                        ApplicationContext.MainWindow.ShowMessageBox(ApplicationContext.MainWindow, TextResource.GetText("ERR_MSG_FILE_NOT_FOUND_MSG"));
+                        ApplicationContext.PlatformUIService.ShowMessageBox(ApplicationContext.MainWindow, TextResource.GetText("ERR_MSG_FILE_NOT_FOUND_MSG"));
                     }
                     return;
                 }
@@ -113,7 +113,7 @@ namespace XDM.Core
                     Log.Debug("Path is null");
                 }
             }
-            ApplicationContext.MainWindow.ShowMessageBox(ApplicationContext.MainWindow, TextResource.GetText("NO_ITEM_SELECTED"));
+            ApplicationContext.PlatformUIService.ShowMessageBox(ApplicationContext.MainWindow, TextResource.GetText("NO_ITEM_SELECTED"));
         }
 
         public static void StopSelectedDownloads()
@@ -144,7 +144,7 @@ namespace XDM.Core
             {
                 return;
             }
-            using var queueSelectionDialog = ApplicationContext.MainWindow.CreateQueueSelectionDialog();
+            using var queueSelectionDialog = ApplicationContext.PlatformUIService.CreateQueueSelectionDialog();
             queueSelectionDialog.SetData(QueueManager.Queues.Select(q => q.Name), QueueManager.Queues.Select(q => q.ID), selectedIds);
             
             queueSelectionDialog.QueueSelected += (s, e) =>
@@ -162,7 +162,7 @@ namespace XDM.Core
             var rows = ApplicationContext.MainWindow.SelectedInProgressRows;
             if (rows == null || rows.Count < 1) return;
             var item = rows[0].DownloadEntry;
-            var file = ApplicationContext.MainWindow.SaveFileDialog(Path.Combine(item.TargetDir ?? FileHelper.GetDownloadFolderByFileName(item.Name), item.Name), null, null);
+            var file = ApplicationContext.PlatformUIService.SaveFileDialog(Path.Combine(item.TargetDir ?? FileHelper.GetDownloadFolderByFileName(item.Name), item.Name), null, null);
             if (file == null)
             {
                 return;
@@ -175,7 +175,7 @@ namespace XDM.Core
         {
             var selected = ApplicationContext.MainWindow.SelectedInProgressRows;
             if (selected == null || selected.Count == 0) return;
-            ApplicationContext.MainWindow.ShowRefreshLinkDialog(selected[0].DownloadEntry);
+            ApplicationContext.PlatformUIService.ShowRefreshLinkDialog(selected[0].DownloadEntry);
         }
 
         public static void ShowProgressWindow()
@@ -270,7 +270,7 @@ namespace XDM.Core
                 }
             }
             catch { }
-            ApplicationContext.MainWindow.ShowPropertiesDialog(ent, state);
+            ApplicationContext.PlatformUIService.ShowPropertiesDialog(ent, state);
         }
 
         public static void CopyFile()
@@ -285,7 +285,7 @@ namespace XDM.Core
             }
             else
             {
-                ApplicationContext.MainWindow.ShowMessageBox(ApplicationContext.MainWindow, TextResource.GetText("ERR_MSG_FILE_NOT_FOUND_MSG"));
+                ApplicationContext.PlatformUIService.ShowMessageBox(ApplicationContext.MainWindow, TextResource.GetText("ERR_MSG_FILE_NOT_FOUND_MSG"));
             }
         }
 

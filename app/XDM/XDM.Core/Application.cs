@@ -31,7 +31,7 @@ namespace XDM.Core
             AttachedEventHandler();
             LoadDownloadList();
             UpdateToolbarButtonState();
-            AppUpdater.QueryNewVersion(); 
+            AppUpdater.QueryNewVersion();
             WindowLoaded += (_, _) => ApplicationContext.ClipboardMonitor.Start();
         }
 
@@ -81,22 +81,22 @@ namespace XDM.Core
 
         public IDownloadCompleteDialog CreateDownloadCompleteDialog()
         {
-            return ApplicationContext.MainWindow.CreateDownloadCompleteDialog();
+            return ApplicationContext.PlatformUIService.CreateDownloadCompleteDialog();
         }
 
         public INewDownloadDialog CreateNewDownloadDialog(bool empty)
         {
-            return ApplicationContext.MainWindow.CreateNewDownloadDialog(empty);
+            return ApplicationContext.PlatformUIService.CreateNewDownloadDialog(empty);
         }
 
         public INewVideoDownloadDialog CreateNewVideoDialog()
         {
-            return ApplicationContext.MainWindow.CreateNewVideoDialog();
+            return ApplicationContext.PlatformUIService.CreateNewVideoDialog();
         }
 
         public IProgressWindow CreateProgressWindow(string downloadId)
         {
-            return ApplicationContext.MainWindow.CreateProgressWindow(downloadId);
+            return ApplicationContext.PlatformUIService.CreateProgressWindow(downloadId);
         }
 
         public void DownloadCanelled(string id)
@@ -191,7 +191,7 @@ namespace XDM.Core
 
         public AuthenticationInfo? PromtForCredentials(string message)
         {
-            return ApplicationContext.MainWindow.PromtForCredentials(message);
+            return ApplicationContext.PlatformUIService.PromtForCredentials(ApplicationContext.MainWindow, message);
         }
 
         public void RenameFileOnUI(string id, string folder, string file)
@@ -259,7 +259,7 @@ namespace XDM.Core
 
         public void ShowMessageBox(object? window, string message)
         {
-            ApplicationContext.MainWindow.ShowMessageBox(window, message);
+            ApplicationContext.PlatformUIService.ShowMessageBox(window, message);
         }
 
         public void ShowNewDownloadDialog(Message message)
@@ -423,12 +423,12 @@ namespace XDM.Core
 
             ApplicationContext.MainWindow.YoutubeDLDownloadClicked += (s, e) =>
             {
-                ApplicationContext.MainWindow.ShowYoutubeDLDialog();
+                ApplicationContext.PlatformUIService.ShowYoutubeDLDialog();
             };
 
             ApplicationContext.MainWindow.BatchDownloadClicked += (s, e) =>
             {
-                ApplicationContext.MainWindow.ShowBatchDownloadWindow();
+                ApplicationContext.PlatformUIService.ShowBatchDownloadWindow();
             };
 
             ApplicationContext.MainWindow.SelectionChanged += (s, e) =>
@@ -478,14 +478,12 @@ namespace XDM.Core
 
             ApplicationContext.MainWindow.SettingsClicked += (s, e) =>
             {
-                ApplicationContext.MainWindow.ShowSettingsDialog(1);
-                ApplicationContext.MainWindow.UpdateParallalismLabel();
+                ApplicationContext.PlatformUIService.ShowSettingsDialog(1);
             };
 
             ApplicationContext.MainWindow.BrowserMonitoringSettingsClicked += (s, e) =>
             {
-                ApplicationContext.MainWindow.ShowBrowserMonitoringDialog();
-                ApplicationContext.MainWindow.UpdateParallalismLabel();
+                ApplicationContext.PlatformUIService.ShowBrowserMonitoringDialog();
             };
 
             ApplicationContext.MainWindow.ClearAllFinishedClicked += (s, e) =>
@@ -497,7 +495,7 @@ namespace XDM.Core
 
             ApplicationContext.MainWindow.ImportClicked += (s, e) =>
             {
-                var file = ApplicationContext.MainWindow.OpenFileDialog(null, "zip", null);
+                var file = ApplicationContext.PlatformUIService.OpenFileDialog(null, "zip", null);
                 if (!string.IsNullOrEmpty(file) && File.Exists(file))
                 {
                     Log.Debug("Exporting to: " + file);
@@ -508,7 +506,7 @@ namespace XDM.Core
 
             ApplicationContext.MainWindow.ExportClicked += (s, e) =>
             {
-                var file = ApplicationContext.MainWindow.SaveFileDialog("xdm-download-list.zip", "zip", "All files (*.*)|*.*");
+                var file = ApplicationContext.PlatformUIService.SaveFileDialog("xdm-download-list.zip", "zip", "All files (*.*)|*.*");
                 if (!string.IsNullOrEmpty(file))
                 {
                     Log.Debug("Exporting to: " + file);
@@ -540,7 +538,7 @@ namespace XDM.Core
                         return;
                     }
                 }
-                ApplicationContext.MainWindow.ShowMessageBox(ApplicationContext.MainWindow, TextResource.GetText("MSG_NO_UPDATE"));
+                ApplicationContext.PlatformUIService.ShowMessageBox(ApplicationContext.MainWindow, TextResource.GetText("MSG_NO_UPDATE"));
             };
 
             ApplicationContext.MainWindow.BrowserMonitoringButtonClicked += (s, e) =>
@@ -591,12 +589,12 @@ namespace XDM.Core
 
         public void ShowQueueWindow(object window)
         {
-            QueueWindowManager.ShowWindow(window, ApplicationContext.MainWindow.CreateQueuesAndSchedulerWindow());
+            QueueWindowManager.ShowWindow(window, ApplicationContext.PlatformUIService.CreateQueuesAndSchedulerWindow());
         }
 
         private void LaunchUpdater(UpdateMode updateMode)
         {
-            var updateDlg = ApplicationContext.MainWindow.CreateUpdateUIDialog();
+            var updateDlg = ApplicationContext.PlatformUIService.CreateUpdateUIDialog();
             var updates = AppUpdater.Updates?.Where(u => u.IsExternal)?.ToList() ?? new List<UpdateInfo>(0);
             if (updates.Count == 0) return;
             var commonUpdateUi = new ComponentUpdaterUIController(updateDlg, updateMode);
@@ -715,18 +713,13 @@ namespace XDM.Core
         {
             RunOnUiThread(() =>
             {
-                ApplicationContext.MainWindow.ShowDownloadSelectionWindow(mode, downloads);
+                ApplicationContext.PlatformUIService.ShowDownloadSelectionWindow(mode, downloads);
             });
         }
 
         public IPlatformClipboardMonitor GetPlatformClipboardMonitor()
         {
             return ApplicationContext.MainWindow.GetClipboardMonitor();
-        }
-
-        public void ShowFloatingVideoWidget()
-        {
-            ApplicationContext.MainWindow.ShowFloatingWidget();
         }
     }
 }

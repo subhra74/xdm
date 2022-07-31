@@ -325,29 +325,6 @@ namespace XDM.Wpf.UI
             }
         }
 
-        public IDownloadCompleteDialog CreateDownloadCompleteDialog()
-        {
-            return new DownloadCompleteWindow { };
-        }
-
-        public INewDownloadDialog CreateNewDownloadDialog(bool empty)
-        {
-            return new NewDownloadWindow() { IsEmpty = empty };
-        }
-
-        public INewVideoDownloadDialog CreateNewVideoDialog()
-        {
-            return new NewVideoDownloadWindow();
-        }
-
-        public IProgressWindow CreateProgressWindow(string downloadId)
-        {
-            return new DownloadProgressWindow
-            {
-                DownloadId = downloadId
-            };
-        }
-
         public void RunOnUIThread(Action action)
         {
             Dispatcher.BeginInvoke(action);
@@ -399,17 +376,6 @@ namespace XDM.Wpf.UI
             return Clipboard.GetText();
         }
 
-        public AuthenticationInfo? PromtForCredentials(string message)
-        {
-            var dlg = new CredentialsPromptDialog { PromptText = message ?? "Authentication required", Owner = this };
-            var ret = dlg.ShowDialog(this);
-            if (ret.HasValue && ret.Value)
-            {
-                return dlg.Credentials;
-            }
-            return null;
-        }
-
         public void ShowUpdateAvailableNotification()
         {
             RunOnUIThread(() =>
@@ -432,85 +398,12 @@ namespace XDM.Wpf.UI
             });
         }
 
-        public void ShowMessageBox(object? window, string message)
-        {
-            Dispatcher.Invoke(new Action(() =>
-            {
-                if (window is IApplication || window == this || window == null)
-                {
-                    MessageBox.Show(this, message);
-                }
-                else
-                {
-                    MessageBox.Show((Window)window, message);
-                }
-            }));
-        }
-
         public void OpenNewDownloadMenu()
         {
             var nctx = (ContextMenu)FindResource("newDownloadContextMenu");
             nctx.PlacementTarget = BtnNew;
             nctx.Placement = PlacementMode.Bottom;
             nctx.IsOpen = true;
-        }
-
-        public string? SaveFileDialog(string? initialPath, string? defaultExt, string? filter)
-        {
-            var fc = new SaveFileDialog();
-            if (!string.IsNullOrEmpty(initialPath))
-            {
-                fc.FileName = initialPath;
-            }
-            if (!string.IsNullOrEmpty(defaultExt))
-            {
-                fc.DefaultExt = defaultExt;
-            }
-            if (!string.IsNullOrEmpty(filter))
-            {
-                fc.Filter = filter;
-            }
-            var ret = fc.ShowDialog(this);
-            if (ret.HasValue && ret.Value)
-            {
-                return fc.FileName;
-            }
-            return null;
-        }
-
-        public string? OpenFileDialog(string? initialPath, string? defaultExt, string? filter)
-        {
-            var fc = new OpenFileDialog();
-            if (!string.IsNullOrEmpty(initialPath))
-            {
-                fc.FileName = initialPath;
-            }
-            if (!string.IsNullOrEmpty(defaultExt))
-            {
-                fc.DefaultExt = defaultExt;
-            }
-            if (!string.IsNullOrEmpty(filter))
-            {
-                fc.Filter = filter;
-            }
-            var ret = fc.ShowDialog(this);
-            if (ret.HasValue && ret.Value)
-            {
-                return fc.FileName;
-            }
-            return null;
-        }
-
-        public void ShowRefreshLinkDialog(InProgressDownloadItem entry)
-        {
-            var dlg = new LinkRefreshWindow();
-            var ret = LinkRefreshDialogUIController.RefreshLink(entry, dlg);
-            if (!ret)
-            {
-                ShowMessageBox(this, TextResource.GetText("NO_REFRESH_LINK"));
-                return;
-            }
-
         }
 
         public void SetClipboardText(string text)
@@ -525,85 +418,16 @@ namespace XDM.Wpf.UI
             Clipboard.SetFileDropList(sc);
         }
 
-        public void ShowPropertiesDialog(DownloadItemBase ent, ShortState? state)
-        {
-            var propertiesWindow = new DownloadPropertiesWindow
-            {
-                FileName = ent.Name,
-                Folder = ent.TargetDir ?? FileHelper.GetDownloadFolderByFileName(ent.Name),
-                Address = ent.PrimaryUrl,
-                FileSize = FormattingHelper.FormatSize(ent.Size),
-                DateAdded = ent.DateAdded.ToLongDateString() + " " + ent.DateAdded.ToLongTimeString(),
-                DownloadType = ent.DownloadType,
-                Referer = ent.RefererUrl,
-                Cookies = state?.Cookies ?? state?.Cookies1 ?? new Dictionary<string, string>(),
-                Headers = state?.Headers ?? state?.Headers1 ?? new Dictionary<string, List<string>>(),
-                Owner = this
-            };
-            propertiesWindow.ShowDialog(this);
-        }
-
-        public void ShowYoutubeDLDialog()
-        {
-            var ydlWindow = new VideoDownloaderWindow() { Owner = this };
-            var win = new VideoDownloaderUIController(ydlWindow);
-            win.Run();
-        }
-
-        public void ShowBatchDownloadWindow()
-        {
-            var uvc = new BatchDownloadUIController(new BatchDownloadWindow { Owner = this });
-            uvc.Run();
-        }
-
-        public void ShowSettingsDialog(int page = 0)
-        {
-            var settings = new SettingsWindow() { Owner = this };
-            settings.ShowDialog(this);
-        }
-
         public void UpdateBrowserMonitorButton()
         {
             this.MonitoringToggleIcon.Data = (Geometry)FindResource(Config.Instance.IsBrowserMonitoringEnabled ?
                 "ri-toggle-fill" : "ri-toggle-line");
         }
 
-        public void ShowBrowserMonitoringDialog()
-        {
-            var settings = new SettingsWindow(0) { Owner = this };
-            settings.ShowDialog(this);
-        }
-
-        public void UpdateParallalismLabel()
-        {
-
-        }
-
-        public IUpdaterUI CreateUpdateUIDialog()
-        {
-            return new UpdaterWindow();
-        }
-
         private void SearchButton_Click(object sender, RoutedEventArgs e)
         {
             ApplyFilter();
         }
-
-        public IQueuesWindow CreateQueuesAndSchedulerWindow()
-        {
-            return new ManageQueueDialog()
-            {
-                Owner = this
-            };
-            //qmDlg.ShowDialog(this);
-            //return this;
-        }
-
-        public IQueueSelectionDialog CreateQueueSelectionDialog()
-        {
-            return new QueueSelectionWindow() { Owner = this };
-        }
-
 
         protected override void OnSourceInitialized(EventArgs e)
         {
@@ -880,18 +704,6 @@ namespace XDM.Wpf.UI
         private void LvInProgressContextMenu_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
             this.InProgressContextMenuOpening?.Invoke(sender, e);
-        }
-
-        public void ShowDownloadSelectionWindow(FileNameFetchMode mode, IEnumerable<IRequestData> downloads)
-        {
-            var dsvc = new DownloadSelectionUIController(new DownloadSelectionWindow(), FileNameFetchMode.FileNameAndExtension, downloads);
-            dsvc.Run();
-        }
-
-        public void ShowFloatingWidget()
-        {
-            var floatingWidget = new FloatingWidget();
-            floatingWidget.Show();
         }
 
         public IPlatformClipboardMonitor GetClipboardMonitor() => this.clipboarMonitor;

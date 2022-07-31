@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:XDM.Wpf.UI.Dialogs.ProgressWindow"
         mc:Ignorable="d"
         Title="DownloadProgressWindow" Height="280" Width="450" Closing="Window_Closing"
-         WindowStartupLocation="CenterScreen">
+         WindowStartupLocation="CenterScreen" Loaded="Window_Loaded">
     <DockPanel>
         <Grid DockPanel.Dock="Bottom" Margin="10">
             <Grid.ColumnDefinitions>
@@ -54,10 +54,10 @@
                 <TextBlock Grid.Row="3" Grid.Column="2" x:Name="TxtSpeed" Text="---" Margin="10,5" HorizontalAlignment="Right" />
                 <ProgressBar Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" x:Name="PrgProgress" MinHeight="5" Margin="10,5"  />
                 <TextBlock Grid.Row="5" Grid.Column="1" x:Name="TxtETA" Text="" Margin="10,5" />
-                <!--<TextBlock Grid.Row="5" Grid.Column="2" x:Name="TxtSpeedLimit" Text="{StaticResource MSG_NO_SPEED_LIMIT}" 
+                <TextBlock Grid.Row="5" Grid.Column="2" x:Name="TxtSpeedLimit" Text="{StaticResource MSG_NO_SPEED_LIMIT}" 
                            Margin="10,5"  HorizontalAlignment="Right"
                            Foreground="{StaticResource HyperlinkForecolor}"
-                           Cursor="Hand" MouseDown="TxtSpeedLimit_MouseDown"/>-->
+                           Cursor="Hand" MouseDown="TxtSpeedLimit_MouseDown"/>
             </Grid>
         </Border>
     </DockPanel>

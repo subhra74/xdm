@@ -67,6 +67,7 @@ namespace XDM.Wpf.UI
                 .RegisterCapturedVideoTracker(new VideoTracker())
                 .RegisterClipboardMonitor(new ClipboardMonitor())
                 .RegisterLinkRefresher(new LinkRefresher())
+                .RegisterPlatformUIService(new WpfPlatformUIService())
                 .Configure();
 
             var args = Environment.GetCommandLineArgs();
@@ -90,7 +91,7 @@ namespace XDM.Wpf.UI
                 {
                     Config.Instance.RunOnLogon = true;
                     Config.SaveConfig();
-                    win.ShowBrowserMonitoringDialog();
+                    ApplicationContext.PlatformUIService.ShowBrowserMonitoringDialog();
                 }
             }
         }

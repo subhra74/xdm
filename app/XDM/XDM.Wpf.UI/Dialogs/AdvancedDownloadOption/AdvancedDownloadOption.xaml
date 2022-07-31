@@ -128,7 +128,7 @@
                     </StackPanel>
                 </Grid>
             </TabItem>
-            <TabItem Header="{StaticResource MENU_SPEED_LIMITER}">
+            <TabItem Header="{StaticResource MENU_SPEED_LIMITER}" Visibility="Collapsed">
                 <uc:SpeedLimiter x:Name="SpeedLimiter"/>
             </TabItem>
         </TabControl>

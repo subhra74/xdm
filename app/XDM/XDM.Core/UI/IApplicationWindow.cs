@@ -51,14 +51,6 @@ namespace XDM.Core.UI
 
         void ConfirmDelete(string text, out bool approved, out bool deleteFiles);
 
-        IDownloadCompleteDialog CreateDownloadCompleteDialog();
-
-        INewDownloadDialog CreateNewDownloadDialog(bool empty);
-
-        INewVideoDownloadDialog CreateNewVideoDialog();
-
-        IProgressWindow CreateProgressWindow(string downloadId);
-
         void RunOnUIThread(Action action);
 
         void RunOnUIThread(Action<string, int, double, long> action, string id, int progress, double speed, long eta);
@@ -77,11 +69,7 @@ namespace XDM.Core.UI
 
         string? GetUrlFromClipboard();
 
-        AuthenticationInfo? PromtForCredentials(string message);
-
         void ShowUpdateAvailableNotification();
-
-        void ShowMessageBox(object? window, string message);
 
         void OpenNewDownloadMenu();
 
@@ -89,45 +77,15 @@ namespace XDM.Core.UI
 
         Dictionary<string, IMenuItem> MenuItemMap { get; }
 
-        string? SaveFileDialog(string? initialPath, string? defaultExt, string? filter);
-
-        string? OpenFileDialog(string? initialPath, string? defaultExt, string? filter);
-
-        void ShowRefreshLinkDialog(InProgressDownloadItem entry);
-
         void SetClipboardText(string text);
 
         void SetClipboardFile(string file);
 
-        void ShowPropertiesDialog(DownloadItemBase ent, ShortState? state);
-
-        void ShowYoutubeDLDialog();
-
-        void ShowBatchDownloadWindow();
-
-        void ShowSettingsDialog(int page = 0);
-
         void UpdateBrowserMonitorButton();
-
-        void ShowBrowserMonitoringDialog();
-
-        void UpdateParallalismLabel();
-
-        IUpdaterUI CreateUpdateUIDialog();
 
         void ClearUpdateInformation();
 
-        IQueuesWindow CreateQueuesAndSchedulerWindow();
-
-        IQueueSelectionDialog CreateQueueSelectionDialog();
-
-        void ShowDownloadSelectionWindow(FileNameFetchMode mode, IEnumerable<IRequestData> downloads);
-
         IPlatformClipboardMonitor GetClipboardMonitor();
-
-        void ShowFloatingWidget();
-
-        //void RunOnNewThread(Action action);
 
         event EventHandler<CategoryChangedEventArgs> CategoryChanged;
 

@@ -11,6 +11,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using XDM.Core.UI;
 using XDM.Wpf.UI.Win32;
 
 namespace XDM.Wpf.UI.Dialogs.SpeedLimiter
@@ -18,7 +19,7 @@ namespace XDM.Wpf.UI.Dialogs.SpeedLimiter
     /// <summary>
     /// Interaction logic for SpeedLimiterWindow.xaml
     /// </summary>
-    public partial class SpeedLimiterWindow : Window
+    public partial class SpeedLimiterWindow : Window, ISpeedLimiterWindow
     {
         public event EventHandler? OkClicked;
 
@@ -41,7 +42,7 @@ namespace XDM.Wpf.UI.Dialogs.SpeedLimiter
 
         private void BtnOK_Click(object sender, RoutedEventArgs e)
         {
-            OkClicked?.Invoke(sender, EventArgs.Empty);
+            OkClicked?.Invoke(this, EventArgs.Empty);
             Close();
         }
 
@@ -63,6 +64,11 @@ namespace XDM.Wpf.UI.Dialogs.SpeedLimiter
                 DarkModeHelper.UseImmersiveDarkMode(helper.Handle, true);
             }
 #endif
+        }
+
+        public void ShowWindow()
+        {
+            this.Show();
         }
     }
 }

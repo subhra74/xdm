@@ -23,6 +23,8 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
             actEtaUpdate = value => this.TxtETA.Text = value;
             actStatusUpdate = value => this.TxtStatus.Text = value;
 
+            ApplicationContext.ApplicationEvent += ApplicationContext_ApplicationEvent;
+
 #if NET45_OR_GREATER
             this.TaskbarItemInfo = new System.Windows.Shell.TaskbarItemInfo
             {
@@ -42,6 +44,16 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
                 this.TaskbarItemInfo.ProgressValue = val / 100.0;
 #endif
             };
+        }
+
+        private void ApplicationContext_ApplicationEvent(object sender, ApplicationEvent e)
+        {
+            if (e.EventType == "ConfigChanged")
+            {
+                var speedLimitEnabled = Config.Instance.EnableSpeedLimit ? Config.Instance.DefaltDownloadSpeed > 0 : false;
+                var defaultSpeedLimit = Config.Instance.DefaltDownloadSpeed;
+                Dispatcher.BeginInvoke(new Action(() => SetSpeedLimitText(speedLimitEnabled, defaultSpeedLimit)));
+            }
         }
 
         public string FileNameText
@@ -169,14 +181,14 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
 
         private void SetSpeedLimitText(bool enable, int limit)
         {
-            //if (enable && limit > 0)
-            //{
-            //    TxtSpeedLimit.Text = $"{TextResource.GetText("SPEED_LIMIT_TITLE")} - {limit}K/S";
-            //}
-            //else
-            //{
-            //    TxtSpeedLimit.Text = TextResource.GetText("MSG_NO_SPEED_LIMIT");
-            //}
+            if (enable && limit > 0)
+            {
+                TxtSpeedLimit.Text = $"{TextResource.GetText("SPEED_LIMIT_TITLE")} - {limit}K/S";
+            }
+            else
+            {
+                TxtSpeedLimit.Text = TextResource.GetText("MSG_NO_SPEED_LIMIT");
+            }
         }
 
         private void SetFileText(string value)
@@ -232,37 +244,38 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
 
         private void TxtSpeedLimit_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (speedLimiterDlg == null)
-            {
-                speedLimiterDlg = new SpeedLimiterWindow
-                {
-                    Owner = this
-                };
-                if (ApplicationContext.CoreService.GetLiveDownloadSpeedLimit(downloadId, out bool enable, out int limit))
-                {
-                    speedLimiterDlg.EnableSpeedLimit = enable;
-                    speedLimiterDlg.SpeedLimit = limit;
-                }
-                speedLimiterDlg.Closed += (_, _) =>
-                {
-                    speedLimiterDlg = null;
-                };
-                speedLimiterDlg.OkClicked += (a, b) =>
-                {
-                    var limit2 = speedLimiterDlg.SpeedLimit;
-                    ApplicationContext.CoreService.UpdateSpeedLimit(DownloadId, speedLimiterDlg.EnableSpeedLimit, limit2);
-                    SetSpeedLimitText(speedLimiterDlg.EnableSpeedLimit, limit2);
-                };
-            }
+            ApplicationContext.PlatformUIService.ShowSpeedLimiterWindow();
+            //if (speedLimiterDlg == null)
+            //{
+            //    speedLimiterDlg = new SpeedLimiterWindow
+            //    {
+            //        Owner = this
+            //    };
+            //    if (ApplicationContext.CoreService.GetLiveDownloadSpeedLimit(downloadId, out bool enable, out int limit))
+            //    {
+            //        speedLimiterDlg.EnableSpeedLimit = enable;
+            //        speedLimiterDlg.SpeedLimit = limit;
+            //    }
+            //    speedLimiterDlg.Closed += (_, _) =>
+            //    {
+            //        speedLimiterDlg = null;
+            //    };
+            //    speedLimiterDlg.OkClicked += (a, b) =>
+            //    {
+            //        var limit2 = speedLimiterDlg.SpeedLimit;
+            //        ApplicationContext.CoreService.UpdateSpeedLimit(DownloadId, speedLimiterDlg.EnableSpeedLimit, limit2);
+            //        SetSpeedLimitText(speedLimiterDlg.EnableSpeedLimit, limit2);
+            //    };
+            //}
 
-            if (!speedLimiterDlg.IsVisible)
-            {
-                speedLimiterDlg.Show();
-            }
-            else
-            {
-                speedLimiterDlg.Activate();
-            }
+            //if (!speedLimiterDlg.IsVisible)
+            //{
+            //    speedLimiterDlg.Show();
+            //}
+            //else
+            //{
+            //    speedLimiterDlg.Activate();
+            //}
         }
 
         protected override void OnSourceInitialized(EventArgs e)
@@ -281,6 +294,14 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
         }
 
         private Action<int> actPrgUpdate;
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            var speedLimitEnabled = Config.Instance.EnableSpeedLimit ? Config.Instance.DefaltDownloadSpeed > 0 : false;
+            var defaultSpeedLimit = Config.Instance.DefaltDownloadSpeed;
+            SetSpeedLimitText(speedLimitEnabled, defaultSpeedLimit);
+        }
+
         private string downloadId = string.Empty;
         private SpeedLimiterWindow? speedLimiterDlg;
     }
