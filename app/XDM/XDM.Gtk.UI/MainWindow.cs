@@ -4,29 +4,14 @@ using Gtk;
 using Application = Gtk.Application;
 using IoPath = System.IO.Path;
 using XDM.Core;
-using XDM.Core;
 using XDM.Core.Util;
 using XDM.Core.UI;
 using Translations;
 using Menu = Gtk.Menu;
 using MenuItem = Gtk.MenuItem;
-using XDM.Core.Downloader;
-using XDM.GtkUI.Dialogs.NewDownload;
-using XDM.GtkUI.Dialogs.ProgressWindow;
 using XDM.GtkUI.Utils;
-using XDM.GtkUI.Dialogs.DownloadComplete;
-using XDM.GtkUI.Dialogs.NewVideoDownload;
-using XDM.GtkUI.Dialogs.VideoDownloader;
-using XDM.GtkUI.Dialogs;
 using XDM.GtkUI.Dialogs.DeleteConfirm;
-using XDM.GtkUI.Dialogs.QueueScheduler;
-using XDM.GtkUI.Dialogs.BatchWindow;
-using XDM.GtkUI.Dialogs.DownloadSelection;
-using XDM.GtkUI.Dialogs.LinkRefresh;
-using XDM.GtkUI.Dialogs.Properties;
-using XDM.GtkUI.Dialogs.Settings;
 using XDM.GtkUI.Dialogs.Language;
-using XDM.GtkUI.Dialogs.Updater;
 
 namespace XDM.GtkUI
 {
@@ -54,6 +39,8 @@ namespace XDM.GtkUI
         private Image helpImage;
         private Label helpLabel;
         private StatusIcon statusIcon;
+
+        internal WindowGroup GetWindowGroup() => this.windowGroup;
 
         public IEnumerable<FinishedDownloadItem> FinishedDownloads
         {
@@ -1077,32 +1064,6 @@ namespace XDM.GtkUI
             return false;
         }
 
-        public IDownloadCompleteDialog CreateDownloadCompleteDialog()
-        {
-            var win = DownloadCompleteDialog.CreateFromGladeFile();
-            return win;
-        }
-
-        public INewDownloadDialog CreateNewDownloadDialog(bool empty)
-        {
-            var window = NewDownloadWindow.CreateFromGladeFile();
-            window.IsEmpty = empty;
-            return window;
-        }
-
-        public INewVideoDownloadDialog CreateNewVideoDialog()
-        {
-            var window = NewVideoDownloadWindow.CreateFromGladeFile();
-            return window;
-        }
-
-        public IProgressWindow CreateProgressWindow(string downloadId)
-        {
-            var prgWin = DownloadProgressWindow.CreateFromGladeFile();
-            prgWin.DownloadId = downloadId;
-            return prgWin;
-        }
-
         public void RunOnUIThread(System.Action action)
         {
             Application.Invoke((a, b) => action.Invoke());
@@ -1176,27 +1137,6 @@ namespace XDM.GtkUI
             return cb.WaitForText();
         }
 
-        public AuthenticationInfo? PromtForCredentials(string message)
-        {
-            var dlg = CredentialsDialog.CreateFromGladeFile(this, windowGroup);
-            dlg.PromptText = message ?? "Authentication required";
-            dlg.Run();
-            if (dlg.Result)
-            {
-                return dlg.Credentials;
-            }
-            return null;
-        }
-
-        public void ShowMessageBox(object? window, string message)
-        {
-            if (window is not Window owner)
-            {
-                owner = this;
-            }
-            GtkHelper.ShowMessageBox(owner, message);
-        }
-
         public void OpenNewDownloadMenu()
         {
             newDownloadMenu.PopupAtWidget(this.btnNew, Gdk.Gravity.SouthWest, Gdk.Gravity.NorthWest, null);
@@ -1205,17 +1145,6 @@ namespace XDM.GtkUI
         private void OpenMainMenu()
         {
             mainMenu.PopupAtWidget(this.btnMenu, Gdk.Gravity.SouthEast, Gdk.Gravity.NorthEast, null);
-        }
-
-        public void ShowRefreshLinkDialog(InProgressDownloadItem entry)
-        {
-            var dlg = LinkRefreshWindow.CreateFromGladeFile();
-            var ret = LinkRefreshDialogUIController.RefreshLink(entry, dlg);
-            if (!ret)
-            {
-                GtkHelper.ShowMessageBox(this, TextResource.GetText("NO_REFRESH_LINK"));
-                return;
-            }
         }
 
         public void SetClipboardText(string text)
@@ -1233,63 +1162,9 @@ namespace XDM.GtkUI
             cbcp.Exec();
         }
 
-        public void ShowPropertiesDialog(DownloadItemBase ent, ShortState? state)
-        {
-            using var propWin = PropertiesDialog.CreateFromGladeFile(this, this.Group);
-            propWin.FileName = ent.Name;
-            propWin.Folder = ent.TargetDir ?? FileHelper.GetDownloadFolderByFileName(ent.Name);
-            propWin.Address = ent.PrimaryUrl;
-            propWin.FileSize = FormattingHelper.FormatSize(ent.Size);
-            propWin.DateAdded = ent.DateAdded.ToLongDateString() + " " + ent.DateAdded.ToLongTimeString();
-            propWin.DownloadType = ent.DownloadType;
-            propWin.Referer = ent.RefererUrl;
-            propWin.Cookies = state?.Cookies ?? state?.Cookies1 ?? new Dictionary<string, string>();
-            propWin.Headers = state?.Headers ?? state?.Headers1 ?? new Dictionary<string, List<string>>();
-            propWin.Run();
-            propWin.Destroy();
-            propWin.Dispose();
-        }
-
-        public void ShowYoutubeDLDialog()
-        {
-            var win = new VideoDownloaderUIController(VideoDownloaderWindow.CreateFromGladeFile());
-            win.Run();
-        }
-
-        public void ShowBatchDownloadWindow()
-        {
-            var uvc = new BatchDownloadUIController(BatchDownloadWindow.CreateFromGladeFile(this));
-            uvc.Run();
-            //var batWin = BatchDownloadWindow.CreateFromGladeFile(this, app, appUi);// new BatchDownloadWindow(app, appUi) { Owner = this };
-            //batWin.Show();
-        }
-
-        public void ShowSettingsDialog(int page = 0)
-        {
-            using var win = SettingsDialog.CreateFromGladeFile(this, windowGroup);
-            win.SetActivePage(page);
-            win.LoadConfig();
-            win.Run();
-            win.Destroy();
-        }
-
         public void UpdateBrowserMonitorButton()
         {
             btnMonitoring.Active = Config.Instance.IsBrowserMonitoringEnabled;
-        }
-
-        public void ShowBrowserMonitoringDialog()
-        {
-            ShowSettingsDialog(0);
-        }
-
-        public void UpdateParallalismLabel()
-        {
-        }
-
-        public IUpdaterUI CreateUpdateUIDialog()
-        {
-            return UpdaterWindow.CreateFromGladeFile();
         }
 
         public void ShowUpdateAvailableNotification()
@@ -1411,17 +1286,6 @@ namespace XDM.GtkUI
             return -1;
         }
 
-        public IQueuesWindow CreateQueuesAndSchedulerWindow(IEnumerable<DownloadQueue> queues)
-        {
-            return QueueSchedulerDialog.CreateFromGladeFile(this, this.windowGroup);
-        }
-
-        public IQueueSelectionDialog CreateQueueSelectionDialog()
-        {
-            var qsd = QueueSelectionDialog.CreateFromGladeFile(this, windowGroup);
-            return qsd;
-        }
-
         public void ConfirmDelete(string text, out bool approved, out bool deleteFiles)
         {
             approved = false;
@@ -1440,48 +1304,10 @@ namespace XDM.GtkUI
             dlg.Destroy();
         }
 
-        public string? SaveFileDialog(string? initialPath, string? defaultExt, string? filter)
-        {
-            return GtkHelper.SaveFile(this, initialPath);
-        }
-
-        public string? OpenFileDialog(string? initialPath, string? defaultExt, string? filter)
-        {
-            return GtkHelper.SelectFile(this);
-        }
-
-        public IQueuesWindow CreateQueuesAndSchedulerWindow()
-        {
-            return QueueSchedulerDialog.CreateFromGladeFile(this, this.windowGroup);
-        }
-
-        public void ShowDownloadSelectionWindow(FileNameFetchMode mode, IEnumerable<IRequestData> downloads)
-        {
-            var dsvc = new DownloadSelectionUIController(DownloadSelectionWindow.CreateFromGladeFile(),
-                FileNameFetchMode.FileNameAndExtension, downloads);
-            dsvc.Run();
-        }
-
         public IPlatformClipboardMonitor GetClipboardMonitor() => this.clipboarMonitor;
 
         public void ShowFloatingWidget()
         {
         }
-
-        //private ref InProgressEntryWrapper? FindInProgressDownloadById()
-        //{
-        //    if (!inprogressDownloadsStore!.GetIterFirst(out TreeIter iter))
-        //    {
-        //        return null;
-        //    }
-
-        //    var ent=(InProgressDownloadEntry)inprogressDownloadsStore.GetValue(iter, FINISHED_DATA_INDEX);
-        //    while (inprogressDownloadsStore.IterNext(ref iter))
-        //    {
-        //         return (InProgressDownloadEntry)inprogressDownloadsStore.GetValue(iter, FINISHED_DATA_INDEX);
-        //    }
-        //}
     }
-
-
 }

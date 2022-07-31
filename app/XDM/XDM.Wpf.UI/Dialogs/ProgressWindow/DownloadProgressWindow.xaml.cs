@@ -19,6 +19,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
         public DownloadProgressWindow()
         {
             InitializeComponent();
+            this.Closed += DownloadProgressWindow_Closed;
             actSpeedUpdate = value => this.TxtSpeed.Text = value;
             actEtaUpdate = value => this.TxtETA.Text = value;
             actStatusUpdate = value => this.TxtStatus.Text = value;
@@ -44,6 +45,11 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
                 this.TaskbarItemInfo.ProgressValue = val / 100.0;
 #endif
             };
+        }
+
+        private void DownloadProgressWindow_Closed(object sender, EventArgs e)
+        {
+            ApplicationContext.ApplicationEvent -= ApplicationContext_ApplicationEvent;
         }
 
         private void ApplicationContext_ApplicationEvent(object sender, ApplicationEvent e)
@@ -123,9 +129,6 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
                 try
                 {
                     Close();
-
-                    speedLimiterDlg?.Close();
-                    speedLimiterDlg = null;
                 }
                 catch { }
             }));
@@ -144,9 +147,6 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
                     BtnPause.Content = TextResource.GetText("MENU_RESUME");
                     BtnPause.Tag = new();
                     TxtETA.Text = string.Empty;
-                    //TxtSpeedLimit.Visibility = Visibility.Collapsed;
-                    speedLimiterDlg?.Close();
-                    speedLimiterDlg = null;
                 }), error);
         }
 
@@ -158,9 +158,6 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
                     TxtETA.Text = string.Empty;
                     BtnPause.Content = TextResource.GetText("MENU_RESUME");
                     BtnPause.Tag = new();
-                    //TxtSpeedLimit.Visibility = Visibility.Collapsed;
-                    speedLimiterDlg?.Close();
-                    speedLimiterDlg = null;
                 }));
         }
 
@@ -170,12 +167,10 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
             {
                 BtnPause.Content = TextResource.GetText("MENU_PAUSE");
                 BtnPause.Tag = null;
-                //TxtSpeedLimit.Visibility = Visibility.Visible;
-
-                if (ApplicationContext.CoreService.GetLiveDownloadSpeedLimit(downloadId, out bool enable, out int limit))
-                {
-                    SetSpeedLimitText(enable, limit);
-                }
+                //if (ApplicationContext.CoreService.GetLiveDownloadSpeedLimit(downloadId, out bool enable, out int limit))
+                //{
+                //    SetSpeedLimitText(enable, limit);
+                //}
             }));
         }
 
@@ -303,7 +298,6 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
         }
 
         private string downloadId = string.Empty;
-        private SpeedLimiterWindow? speedLimiterDlg;
     }
 }
 

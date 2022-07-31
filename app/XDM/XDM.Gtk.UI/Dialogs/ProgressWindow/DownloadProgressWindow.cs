@@ -185,14 +185,14 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
 
         private void SetSpeedLimitText(bool enable, int limit)
         {
-            //if (enable && limit > 0)
-            //{
-            //    TxtSpeedLimit.Label = $"{TextResource.GetText("SPEED_LIMIT_TITLE")} - {limit}K/S";
-            //}
-            //else
-            //{
-            //    TxtSpeedLimit.Label = TextResource.GetText("MSG_NO_SPEED_LIMIT");
-            //}
+            if (enable && limit > 0)
+            {
+                TxtSpeedLimit.Label = $"{TextResource.GetText("SPEED_LIMIT_TITLE")} - {limit}K/S";
+            }
+            else
+            {
+                TxtSpeedLimit.Label = TextResource.GetText("MSG_NO_SPEED_LIMIT");
+            }
         }
 
         private void SetFileText(string value)
@@ -257,6 +257,7 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
         [UI] private Button BtnStop;
         [UI] private Button BtnPause;
         [UI] private Image ImgIcon;
+        [UI] private LinkButton TxtSpeedLimit;
 
         private Action<string> actSpeedUpdate, actEtaUpdate, actStatusUpdate;
         private Action<int> actPrgUpdate;
@@ -292,7 +293,7 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
             this.BtnHide.Label = TextResource.GetText("DWN_HIDE");
             this.BtnStop.Label = TextResource.GetText("BTN_STOP_PROCESSING");
             this.BtnPause.Label = TextResource.GetText("MENU_PAUSE");
-            //this.TxtSpeedLimit.Label = TextResource.GetText("MSG_NO_SPEED_LIMIT");
+            this.TxtSpeedLimit.Label = TextResource.GetText("MSG_NO_SPEED_LIMIT");
             this.ImgIcon.Pixbuf = GtkHelper.LoadSvg("file-download-line", 48);
 
             this.BtnPause.Name = string.Empty;
@@ -301,7 +302,36 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
             TxtUrl.Ellipsize = Pango.EllipsizeMode.End;
             TxtFileName.Ellipsize = Pango.EllipsizeMode.End;
 
+            TxtSpeedLimit.Clicked += TxtSpeedLimit_Clicked;
+
             GtkHelper.AttachSafeDispose(this);
+
+            ApplicationContext.ApplicationEvent += ApplicationContext_ApplicationEvent;
+
+            var speedLimitEnabled = Config.Instance.EnableSpeedLimit ? Config.Instance.DefaltDownloadSpeed > 0 : false;
+            var defaultSpeedLimit = Config.Instance.DefaltDownloadSpeed;
+            SetSpeedLimitText(speedLimitEnabled, defaultSpeedLimit);
+            Destroyed += DownloadProgressWindow_Destroyed;
+        }
+
+        private void TxtSpeedLimit_Clicked(object? sender, EventArgs e)
+        {
+            ApplicationContext.PlatformUIService.ShowSpeedLimiterWindow();
+        }
+
+        private void DownloadProgressWindow_Destroyed(object? sender, EventArgs e)
+        {
+            ApplicationContext.ApplicationEvent -= ApplicationContext_ApplicationEvent;
+        }
+
+        private void ApplicationContext_ApplicationEvent(object? sender, ApplicationEvent e)
+        {
+            if (e.EventType == "ConfigChanged")
+            {
+                var speedLimitEnabled = Config.Instance.EnableSpeedLimit ? Config.Instance.DefaltDownloadSpeed > 0 : false;
+                var defaultSpeedLimit = Config.Instance.DefaltDownloadSpeed;
+                Application.Invoke((_, _) => SetSpeedLimitText(speedLimitEnabled, defaultSpeedLimit));
+            }
         }
 
         public static DownloadProgressWindow CreateFromGladeFile()

@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:XDM.Wpf.UI.Dialogs.SpeedLimiter"
         xmlns:uc="clr-namespace:XDM.Wpf.UI.Dialogs.SpeedLimiter"
         mc:Ignorable="d"
-        Title="{StaticResource MENU_SPEED_LIMITER}" Height="250" Width="400" WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+        Title="{StaticResource MENU_SPEED_LIMITER}" Height="250" Width="400" WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>

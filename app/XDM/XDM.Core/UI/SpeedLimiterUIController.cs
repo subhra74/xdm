@@ -9,6 +9,10 @@ namespace XDM.Core.UI
         public static void ShowGlobalSpeedLimiterWindow(ISpeedLimiterWindow window)
         {
             window.OkClicked += Window_OkClicked;
+            var speedLimitEnabled = Config.Instance.EnableSpeedLimit ? Config.Instance.DefaltDownloadSpeed > 0 : false;
+            var defaultSpeedLimit = Config.Instance.DefaltDownloadSpeed;
+            window.EnableSpeedLimit = speedLimitEnabled;
+            window.SpeedLimit = defaultSpeedLimit;
             window.ShowWindow();
         }
 

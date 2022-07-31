@@ -301,7 +301,6 @@
             <child>
               <!-- n-columns=2 n-rows=2 -->
               <object class="GtkGrid">
-                <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="margin-start">10</property>
                 <property name="margin-end">10</property>
@@ -353,7 +352,6 @@
             </child>
             <child type="tab">
               <object class="GtkLabel" id="tabPage3">
-                <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="label" translatable="yes">page 3</property>
               </object>

@@ -98,6 +98,7 @@ namespace XDM.GtkUI
                 .RegisterCapturedVideoTracker(new VideoTracker())
                 .RegisterClipboardMonitor(new ClipboardMonitor())
                 .RegisterLinkRefresher(new LinkRefresher())
+                .RegisterPlatformUIService(new GtkPlatformUIService())
                 .Configure();
 
             var commandOptions = ArgsProcessor.ParseArgs(args, 0);
@@ -109,7 +110,7 @@ namespace XDM.GtkUI
                 {
                     Config.Instance.RunOnLogon = true;
                     Config.SaveConfig();
-                    win.ShowBrowserMonitoringDialog();
+                    ApplicationContext.PlatformUIService.ShowBrowserMonitoringDialog();
                 }
             }
 

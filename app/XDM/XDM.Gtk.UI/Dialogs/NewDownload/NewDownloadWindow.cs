@@ -222,13 +222,11 @@ namespace XDM.GtkUI.Dialogs.NewDownload
 
         private void btnAdvanced_Click(object? sender, EventArgs e)
         {
-            var dlg = new AdvancedDownloadDialog(AdvancedDownloadDialog.LoadBuilder(), this, this.windowGroup)
-            {
-                Authentication = Authentication,
-                Proxy = Proxy,
-                EnableSpeedLimit = EnableSpeedLimit,
-                SpeedLimit = SpeedLimit,
-            };
+            using var dlg = AdvancedDownloadDialog.CreateFromGladeFile(this, this.windowGroup);
+            dlg.Authentication = Authentication;
+            dlg.Proxy = Proxy;
+            dlg.EnableSpeedLimit = EnableSpeedLimit;
+            dlg.SpeedLimit = SpeedLimit;
             dlg.Run();
             if (dlg.Result)
             {
