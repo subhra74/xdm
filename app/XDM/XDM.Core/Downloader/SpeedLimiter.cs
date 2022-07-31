@@ -12,6 +12,8 @@ namespace XDM.Core.Downloader
         private long lastChecked = Helpers.TickCount();
         private int cachedSpeedLimit = -2;
 
+        public int SpeedLimit => cachedSpeedLimit;
+
         public void WakeIfSleeping()
         {
             this.sleepHandle.Set();
@@ -51,23 +53,26 @@ namespace XDM.Core.Downloader
                 lastTick = Helpers.TickCount();
                 return;
             }
-            var maxBytesPerMS = (double)speedLimit * 1024 / 1000;
-            var now = Helpers.TickCount();
-            var actualTimeSpent = now - lastTick;
-            if (actualTimeSpent < 1) return;
-            var bytes = downloader.GetDownloaded();
-            var diff = bytes - lastBytes;
-            lastBytes = bytes;
-            lastTick = now;
-            var expectedTimeSpent = diff / maxBytesPerMS;
-
-            if (actualTimeSpent < expectedTimeSpent)
+            lock (downloader)
             {
-                try
+                var maxBytesPerMS = (double)speedLimit * 1024 / 1000;
+                var now = Helpers.TickCount();
+                var actualTimeSpent = now - lastTick;
+                if (actualTimeSpent < 1) return;
+                var bytes = downloader.GetDownloaded();
+                var diff = bytes - lastBytes;
+                lastBytes = bytes;
+                lastTick = now;
+                var expectedTimeSpent = diff / maxBytesPerMS;
+
+                if (actualTimeSpent < expectedTimeSpent)
                 {
-                    sleep((int)Math.Ceiling(expectedTimeSpent - actualTimeSpent));
+                    try
+                    {
+                        sleep((int)Math.Ceiling(expectedTimeSpent - actualTimeSpent));
+                    }
+                    catch (Exception ex) { Log.Debug(ex, "Exception while throttling"); }
                 }
-                catch (Exception ex) { Log.Debug(ex, "Exception while throttling"); }
             }
         }
 
