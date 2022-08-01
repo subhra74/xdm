@@ -1,0 +1,1 @@
+Please copy ffmpeg-x86.exe and youtube-dl.exe in this directory before running build-installer.bat

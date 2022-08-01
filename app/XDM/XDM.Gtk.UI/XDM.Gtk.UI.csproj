@@ -1,0 +1,163 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <PublishTrimmed>true</PublishTrimmed>
+    <AssemblyName>xdm-app</AssemblyName>
+    <!--<TrimMode>CopyUsed</TrimMode>-->
+    <!--<PublishTrimmed>true</PublishTrimmed>
+		<TrimMode>Link</TrimMode>-->
+    <RootNamespace>XDM.GtkUI</RootNamespace>
+    <!--RuntimeIdentifier>linux-x64</RuntimeIdentifier-->
+    <!--RuntimeIdentifier>win-x64</RuntimeIdentifier-->
+    <!--RuntimeIdentifier>win-x86</RuntimeIdentifier-->
+    <!--<Platforms>AnyCPU;x86</Platforms>-->
+    <Platforms>x64</Platforms>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <!--<ValidateExecutableReferencesMatchSelfContained>false</ValidateExecutableReferencesMatchSelfContained>-->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="GtkSharp" Version="3.24.24.38" />
+    <PackageReference Include="Microsoft.Windows.Compatibility" Version="5.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.116" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' != 'net3.5' ">
+    <PackageReference Include="System.Buffers" Version="4.5.1" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net4.5' or '$(TargetFramework)' == 'net4.7.2' or '$(TargetFramework)' == 'net5.0' or '$(TargetFramework)' == 'net6.0'">
+    <PackageReference Include="System.ValueTuple">
+      <Version>4.5.0</Version>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net3.5' ">
+    <PackageReference Include="DotNetZip" Version="1.12.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' != 'net3.5' ">
+    <PackageReference Include="System.IO.Compression" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--<Content Include="images\*.*">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>-->
+    <Content Include="glade\*.*">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="svg-icons\*.*">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Lang\*.*" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" LinkBase="Lang\" />
+  </ItemGroup>
+
+  <!--<ItemGroup>
+    <LangFiles Include="$(SolutionDir)\Lang\**" />
+  </ItemGroup>
+
+  <Target Name="Copy" AfterTargets="Build">
+    <Copy SourceFiles="@(LangFiles)" DestinationFolder="$(OutDir)\Lang" />
+  </Target>-->
+
+  <!--<ItemGroup>
+		<None Remove="glade\advanced-download-dialog.glade" />
+		<None Remove="glade\advanced-download-window.glade" />
+		<None Remove="glade\download-complete-window.glade" />
+		<None Remove="glade\download-progress-window.glade" />
+		<None Remove="glade\new-video-download-window.glade" />
+		<None Remove="glade\queue-manager-dialog.glade" />
+		<None Remove="glade\video-downloader-window.glade" />
+		<None Remove="images\add-line.svg" />
+		<None Remove="images\apps-line.svg" />
+		<None Remove="images\check-line.svg" />
+		<None Remove="images\delete-bin-line.svg" />
+		<None Remove="images\download-line.svg" />
+		<None Remove="images\file-4-line.svg" />
+		<None Remove="images\file-chart-2-line.svg" />
+		<None Remove="images\file-copy-line.svg" />
+		<None Remove="images\file-download-line.svg" />
+		<None Remove="images\file-line.svg" />
+		<None Remove="images\file-text-line.svg" />
+		<None Remove="images\file-zip-line.svg" />
+		<None Remove="images\film-line.svg" />
+		<None Remove="images\folder-download-line.svg" />
+		<None Remove="images\image-line.svg" />
+		<None Remove="images\menu-line.svg" />
+		<None Remove="images\music-2-line.svg" />
+		<None Remove="images\pause-line.svg" />
+		<None Remove="images\play-line.svg" />
+		<None Remove="images\search-line.svg" />
+		<None Remove="images\task-line.svg" />
+		<None Remove="images\time-line.svg" />
+		<None Remove="images\video-download-line.svg" />
+		<None Remove="svg-icons\download-complete-window.glade" />
+		<None Remove="svg-icons\list-settings-fill.svg" />
+		<None Remove="svg-icons\notification-3-fill.svg" />
+		<None Remove="svg-icons\question-line.svg" />
+	</ItemGroup>-->
+
+  <!--<ItemGroup>
+    <ProjectReference Include="..\BrowserMonitor\BrowserMonitor.csproj" />
+    <ProjectReference Include="..\NativeMessagingHost\NativeMessagingHost.csproj" />
+    <ProjectReference Include="..\Translations\Translations.csproj" />
+    <ProjectReference Include="..\XDM.Core.UI\XDM.Core.UI.csproj" />
+    <ProjectReference Include="..\XDM.Core\XDM.Core.csproj" />
+    <ProjectReference Include="..\XDM_CoreFx\XDM.Core.csproj" />
+    <ProjectReference Include="..\YoutubeDLHandler\YDLWrapper.csproj" />
+    <ProjectReference Include="..\TraceLog\TraceLog.csproj" />
+  </ItemGroup>-->
+
+  <ItemGroup>
+    <Reference Include="AtkSharp">
+      <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\AtkSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="CairoSharp">
+      <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\CairoSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="GdkSharp">
+      <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\GdkSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="GioSharp">
+      <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\GioSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="GLibSharp">
+      <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\GLibSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="GtkSharp">
+      <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\GtkSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="GtkSourceSharp">
+      <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\GtkSourceSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="PangoSharp">
+      <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\PangoSharp.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="source_pkg.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <Import Project="..\XDM.Core\XDM.Core.projitems" Label="Shared" />
+
+  <Import Project="..\XDM.Messaging\XDM.Messaging.projitems" Label="Shared" />
+
+  <Import Project="..\XDM.Compatibility\XDM.Compatibility.projitems" Label="Shared" />
+
+  <!--<ItemGroup>
+	  <Content Update="glade\download-complete-window.glade">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
+	</ItemGroup>-->
+
+
+</Project>
