@@ -164,12 +164,15 @@ namespace XDM.Core
                 var showProgress = Config.Instance.ShowProgressWindow;
                 if (showProgress)
                 {
-                    var prgWin = CreateProgressWindow(download);
-                    activeProgressWindows[download.Id] = prgWin;
-                    prgWin.FileNameText = download.TargetFileName;
-                    prgWin.FileSizeText = $"{TextResource.GetText("STAT_DOWNLOADING")} ...";
-                    prgWin.UrlText = download.PrimaryUrl?.ToString() ?? string.Empty;
-                    prgWin.ShowProgressWindow();
+                    ApplicationContext.Application.RunOnUiThread(() =>
+                    {
+                        var prgWin = CreateProgressWindow(download);
+                        activeProgressWindows[download.Id] = prgWin;
+                        prgWin.FileNameText = download.TargetFileName;
+                        prgWin.FileSizeText = $"{TextResource.GetText("STAT_DOWNLOADING")} ...";
+                        prgWin.UrlText = download.PrimaryUrl?.ToString() ?? string.Empty;
+                        prgWin.ShowProgressWindow();
+                    });
                 }
 
                 download.Start();

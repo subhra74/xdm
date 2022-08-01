@@ -173,7 +173,7 @@ namespace XDM.Core
                 FileExtensions=new HashSet<string>
                 {
                     ".MP4",  ".WEBM", ".OGG",  ".FLV", ".MKV", ".DIVX",
-                    ".MOV", ".MPG", ".MPEG",".OPUS",".AVI",".WMV"
+                    ".MOV", ".MPG", ".MPEG",".OPUS",".AVI",".WMV",".TS"
                 },
                 DefaultFolder=Path.Combine(PlatformHelper.GetOsDefaultDownloadFolder(),"Video"),
                 IsPredefined=true

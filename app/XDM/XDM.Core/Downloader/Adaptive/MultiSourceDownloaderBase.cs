@@ -180,14 +180,7 @@ namespace XDM.Core.Downloader.Adaptive
                     }
                     this._http ??= HttpClientFactory.NewHttpClient(_state.Proxy);
                     this._http.Timeout = TimeSpan.FromSeconds(Config.Instance.NetworkTimeout);
-                    //this._http.DefaultRequestVersion = HttpVersion.Version20;
-                    //this._http.Timeout = TimeSpan.FromSeconds(Config.Instance.NetworkTimeout);
-                    //SetHeaders(_http, _state.Headers);
-                    //SetCookies(_http, _state.Cookies);
-                    //if (_state.Authentication != null)
-                    //{
-                    //    SetAuthentication(_http, _state.Authentication);
-                    //}
+
                     DownloadChunks();
 
                     this._cancellationTokenSource.ThrowIfCancellationRequested();
@@ -334,9 +327,9 @@ namespace XDM.Core.Downloader.Adaptive
 
         private void DownloadChunks()
         {
-            //SaveStatePeriodic(_cancellationTokenSourceStateSaver.Token);
-            SaveChunkState();
             var unfinishedPieceCount = _chunks.Where(chunk => chunk.ChunkState != ChunkState.Finished).Count();
+            if (unfinishedPieceCount < 1) return;
+            SaveChunkState();
             this.countdownLatch = new(unfinishedPieceCount);
 
             Log.Debug("Downloading chunks: " + unfinishedPieceCount);
@@ -365,56 +358,12 @@ namespace XDM.Core.Downloader.Adaptive
                 DownloadChunkRange(startIndex, endIndex, countdownLatch);
             }
 
-
-            //this.semaphore = new(Config.Instance.MaxSegments, Config.Instance.MaxSegments);
-            //this.countdownLatch = new(_chunks.Where(chunk => chunk.ChunkState != ChunkState.Finished).Count());
-            //this.downloaders = new();
-            ////var downloadTasks = new List<Task>();
-
-            //SaveStatePeriodic(_cancellationTokenSourceStateSaver.Token);
-
-            //foreach (var chunk in _chunks)
-            //{
-            //    if (chunk.ChunkState == ChunkState.Finished) continue;
-            //    semaphore.WaitOne();
-            //    if (_cancellationTokenSource.Token.IsCancellationRequested) throw new OperationCanceledException();
-
-            //    //await semaphore.WaitAsync(_cancellationTokenSource.Token).ConfigureAwait(false);
-
-            //    //downloadTasks.Add(DownloadChunkAsync(chunk, this.semaphore, this.countdownLatch));
-            //    DownloadChunk(chunk, this.semaphore, this.countdownLatch, downloaders);
-            //}
-
             Log.Debug("Waiting for downloading all chunks");
             this.countdownLatch.Wait();
             SaveChunkState();
-            //await Task.WhenAll(downloadTasks).ConfigureAwait(false);
             _cancellationTokenSourceStateSaver.Cancel();
             Log.Debug("Countdown latch exited");
-            //stateSaverSleepHandle.Set();
         }
-
-        //private void SaveStatePeriodic(CancellationToken token)
-        //{
-        //    new Thread(() =>
-        //    {
-        //        while (!token.IsCancellationRequested)
-        //        {
-        //            //try
-        //            //{
-        //            //    stateSaverSleepHandle.WaitOne(5000);
-        //            //    //await Task.Delay(5000, token);
-        //            //}
-        //            //catch (TaskCanceledException)
-        //            //{
-        //            //    Console.WriteLine("Finished");
-        //            //    break;
-        //            //}
-        //            stateSaverSleepHandle.WaitOne(5000);
-        //            SaveChunkState();
-        //        }
-        //    }).Start();
-        //}
 
         private void DownloadChunk(Chunk chunk, CountdownLatch latch)
         {

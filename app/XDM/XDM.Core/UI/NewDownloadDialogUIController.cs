@@ -33,7 +33,6 @@ namespace XDM.Core.UI
                     window.SeletedFolderIndex = 0;
                 }
             }
-            //window.SeletedFolderIndex = Config.Instance.FolderSelectionMode == FolderSelectionMode.Auto ? 0 : 2;
 
             var fileName = string.Empty;
 

@@ -142,16 +142,6 @@ namespace XDM.Core.Downloader.Adaptive.Hls
                           initLatch.CountDown();
                       });
                     t2.Start();
-
-
-
-                    //var request1 = new HttpRequestMessage(HttpMethod.Get, state.NonMuxedVideoPlaylistUrl);
-                    //Log.Information("Downloading 1st url in HLS: " + request1);
-                    //tasks.Add(_http.SendAsync(request1, _cancellationTokenSource.Token));
-
-                    //var request2 = new HttpRequestMessage(HttpMethod.Get, state.NonMuxedAudioPlaylistUrl);
-                    //Log.Information("Downloading 2nd url in HLS: " + request2);
-                    //tasks.Add(_http.SendAsync(request2, _cancellationTokenSource.Token));
                 }
                 else
                 {
@@ -170,10 +160,6 @@ namespace XDM.Core.Downloader.Adaptive.Hls
                         }
                         initLatch.CountDown();
                     }).Start();
-
-                    //var request1 = new HttpRequestMessage(HttpMethod.Get, state.MuxedPlaylistUrl);
-                    //Log.Information("Downloading 1st url in HLS: " + request1);
-                    //tasks.Add(_http.SendAsync(request1, _cancellationTokenSource.Token));
                 }
 
                 initLatch.Wait();
@@ -205,64 +191,25 @@ namespace XDM.Core.Downloader.Adaptive.Hls
                     throw new Exception("Unable to download HLS manifest");
                 }
 
-                //if (status[0] != HttpStatusCode.OK || (state.Demuxed && status[1] != HttpStatusCode.OK))
-                //{
-                //    var statusCode = results[0].StatusCode != HttpStatusCode.OK ? results[0].StatusCode : results[1].StatusCode;
-                //    var failedResponse = results[0].StatusCode != HttpStatusCode.OK ? results[0] : results[1];
-                //    throw new Exception($"Invalid response code: {statusCode}",
-                //        new HttpException(failedResponse.ReasonPhrase, null, statusCode));
-                //}
-
                 var playlists = new Dictionary<string, HlsPlaylist>();
                 if (state.Demuxed)
                 {
                     playlists["video"] = HlsParser.ParseMediaSegments(results[0]!.Split('\n'), state.NonMuxedVideoPlaylistUrl.ToString());
                     playlists["audio"] = HlsParser.ParseMediaSegments(results[1]!.Split('\n'), state.NonMuxedAudioPlaylistUrl.ToString());
-                    //#if NET5_0_OR_GREATER
-                    //                    playlists["video"] = HlsParser.ParseMediaSegments(
-                    //                            (await results[0].Content.ReadAsStringAsync(this._cancellationTokenSource.Token).
-                    //                            ConfigureAwait(false)).Split('\n'),
-                    //                        state.NonMuxedVideoPlaylistUrl.ToString());
-
-                    //                    playlists["audio"] = HlsParser.ParseMediaSegments(
-                    //                            (await results[1].Content.ReadAsStringAsync(this._cancellationTokenSource.Token).
-                    //                            ConfigureAwait(false)).Split('\n'),
-                    //                        state.NonMuxedAudioPlaylistUrl.ToString());
-                    //#else
-                    //                playlists["video"] = HlsParser.ParseMediaSegments(
-                    //                        (await results[0].Content.ReadAsStringAsync().
-                    //                        ConfigureAwait(false)).Split('\n'),
-                    //                    state.NonMuxedVideoPlaylistUrl.ToString());
-
-                    //                playlists["audio"] = HlsParser.ParseMediaSegments(
-                    //                        (await results[1].Content.ReadAsStringAsync().
-                    //                        ConfigureAwait(false)).Split('\n'),
-                    //                    state.NonMuxedAudioPlaylistUrl.ToString());
-                    //#endif
 
                     this._state.VideoContainerFormat = GuessContainerFormatFromPlaylist(playlists["video"]);
                     this._state.AudioContainerFormat = GuessContainerFormatFromPlaylist(playlists["audio"]);
-
+                    
                     var ext = FileExtensionHelper.GuessContainerFormatFromSegmentExtension(
                             this._state.VideoContainerFormat, this._state.AudioContainerFormat);
-
-                    //if (!(string.IsNullOrWhiteSpace(this._state.VideoContainerFormat) || this._state.VideoContainerFormat == "."))
-                    //{
-                    //    ext = Helpers.GuessContainerFormatFromSegmentExtension(
-                    //        this._state.VideoContainerFormat.ToLowerInvariant(), true);
-                    //}
                     TargetFileName = Path.GetFileNameWithoutExtension(TargetFileName ?? "video")
                             + ext;
+
+                    Log.Debug($"Guessed Demuxed formats - VideoContainerFormat: {this._state.VideoContainerFormat} AudioContainerFormat: {this._state.AudioContainerFormat}");
+                    Log.Debug($"Guessed - ext: {ext} TargetFileName: {TargetFileName}");
                 }
                 else
                 {
-                    //#if NET5_0_OR_GREATER
-                    //                    var text = await results[0].Content.ReadAsStringAsync(this._cancellationTokenSource.Token).
-                    //                            ConfigureAwait(false);
-                    //#else
-                    //                var text = await results[0].Content.ReadAsStringAsync().
-                    //                        ConfigureAwait(false);
-                    //#endif
                     playlists["muxed"] = HlsParser.ParseMediaSegments(results[0]!.Split('\n'),
                         state.MuxedPlaylistUrl.ToString());
                     _state.Duration = playlists["muxed"].TotalDuration;
@@ -270,7 +217,10 @@ namespace XDM.Core.Downloader.Adaptive.Hls
                     var ext = FileExtensionHelper.GuessContainerFormatFromSegmentExtension(
                             this._state.VideoContainerFormat.ToLowerInvariant());
                     TargetFileName = Path.GetFileNameWithoutExtension(TargetFileName ?? "video")
-                                + ext;
+                                + ext; 
+                    
+                    Log.Debug($"Guessed Muxed format - VideoContainerFormat: {this._state.VideoContainerFormat}");
+                    Log.Debug($"Guessed - ext: {ext} TargetFileName: {TargetFileName}");
                 }
 
                 if (string.IsNullOrEmpty(this.TargetDir))
@@ -361,45 +311,17 @@ namespace XDM.Core.Downloader.Adaptive.Hls
             var state = DownloadStateIO.LoadMultiSourceHLSDownloadState(Id!);
             this._state = state;
 
-            //var bytes = TransactedIO.ReadBytes(Id + ".state", Config.DataDir);
-            //if (bytes == null)
-            //{
-            //    throw new FileNotFoundException(Path.Combine(Config.DataDir, Id + ".state"));
-            //}
-
-            //var state = DownloadStateStore.MultiSourceHLSDownloadStateFromBytes(bytes);
-            //this._state = state;
-
-
-            //var text = TransactedIO.Read(Id + ".state", Config.DataDir);
-            //if (text == null)
-            //{
-            //    throw new FileNotFoundException(Path.Combine(Config.DataDir, Id + ".state"));
-            //}
-
-            //var state = JsonConvert.DeserializeObject<MultiSourceHLSDownloadState>(
-            //                     text);
-            //this._state = state;
-
             try
             {
                 Log.Debug("Restoring chunks from: " + Path.Combine(state.TempDirectory, "chunks.db"));
 
                 if (!TransactedIO.ReadStream("chunks.db", state.TempDirectory, s =>
                 {
-                    _chunks = ChunkStateFromBytes(s);// pieces = ChunkStateFromBytes(s);
+                    _chunks = ChunkStateFromBytes(s);
                 }))
                 {
                     throw new FileNotFoundException(Path.Combine(state.TempDirectory, "chunks.db"));
                 }
-
-                //var bytes2 = TransactedIO.ReadBytes("chunks.db", _state.TempDirectory);
-                //if (bytes2 == null)
-                //{
-                //    throw new FileNotFoundException(Path.Combine(_state.TempDirectory, "chunks.json"));
-                //}
-
-                //_chunks = ChunkStateFromBytes(bytes2);
 
                 var hlsDir = state.TempDirectory;
 
@@ -419,7 +341,7 @@ namespace XDM.Core.Downloader.Adaptive.Hls
                 });
                 ticksAtDownloadStartOrResume = Helpers.TickCount();
                 this.lastProgress = (count * 100) / _chunks.Count;
-                Log.Debug("Already downloaded: " + count);
+                Log.Debug("Already downloaded: " + count + " Total: " + _chunks.Count);
             }
             catch
             {
