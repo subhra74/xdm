@@ -167,9 +167,10 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
 
         public override void PieceConnected(string pieceId, ProbeResult? result)
         {
-            lock (this)
+            if (this.cancelFlag.IsCancellationRequested) return;
+            try
             {
-                if (this.cancelFlag.IsCancellationRequested) return;
+                rwLock.EnterWriteLock();
                 var piece = this.pieces[pieceId];
                 if (result != null) //probe result is not null only for first request of each stream type, for subsequent requests its always null
                 {
@@ -261,9 +262,13 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
                         throw new AssembleFailedException(ErrorCode.DiskError);
                     }
                 }
-
-                CreatePiece();
             }
+            finally
+            {
+                rwLock.ExitWriteLock();
+            }
+
+            CreatePiece();
         }
 
         public override (
@@ -298,10 +303,15 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
 
         protected override void SaveChunkState()
         {
-            lock (this)
+            try
             {
+                rwLock.EnterWriteLock();
                 if (pieces.Count == 0) return;
                 TransactedIO.WriteStream("chunks.db", state!.TempDir!, base.ChunkStateToBytes);
+            }
+            finally
+            {
+                rwLock.ExitWriteLock();
             }
         }
 
@@ -313,12 +323,6 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
         public override void RestoreState()
         {
             state = DownloadStateIO.LoadDualSourceHTTPDownloaderState(Id!);
-            //var bytes = TransactedIO.ReadBytes(Id + ".state", Config.DataDir);
-            //if (bytes == null)
-            //{
-            //    throw new FileNotFoundException(Path.Combine(Config.DataDir, Id + ".state"));
-            //}
-            //state = DownloadStateStore.DualSourceHTTPDownloaderStateFromBytes(bytes);
             try
             {
                 if (!TransactedIO.ReadStream("chunks.db", state!.TempDir!, s =>
@@ -328,12 +332,6 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
                 {
                     throw new FileNotFoundException(Path.Combine(state.TempDir, "chunks.db"));
                 }
-                //var chunkBytes = TransactedIO.ReadBytes("chunks.db", state.TempDir);
-                //if (chunkBytes == null)
-                //{
-                //    throw new FileNotFoundException(Path.Combine(state.TempDir, "chunks.json"));
-                //}
-                //pieces = ChunkStateFromBytes(chunkBytes);
             }
             catch
             {
@@ -347,8 +345,9 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
         {
             Log.Debug("Assembling..." + this.Id);
 
-            lock (this)
+            try
             {
+                rwLock.EnterWriteLock();
 #if NET35
                 var buf = new byte[5 * 1024 * 1024];
 #else
@@ -462,6 +461,10 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
                     System.Buffers.ArrayPool<byte>.Shared.Return(buf);
 #endif
                 }
+            }
+            finally
+            {
+                rwLock.ExitWriteLock();
             }
         }
 

@@ -8,6 +8,7 @@ using XDM.Core.Util;
 using XDM.Core.Clients.Http;
 using XDM.Core.MediaProcessor;
 using System.Text;
+using System.Threading;
 
 #if !NET5_0_OR_GREATER
 using XDM.Compatibility;
@@ -35,6 +36,8 @@ namespace XDM.Core.Downloader.Progressive
         protected SpeedLimiter speedLimiter = new();
         protected BaseMediaProcessor? mediaProcessor;
         protected long downloadedBytesSinceStartOrResume = 0L;
+        protected ReaderWriterLockSlim rwLock = new(LockRecursionPolicy.SupportsRecursion);
+        public ReaderWriterLockSlim Lock => this.rwLock;
         private bool stopRequested = false;
 
         public FileNameFetchMode FileNameFetchMode
@@ -157,8 +160,9 @@ namespace XDM.Core.Downloader.Progressive
 
         public virtual bool ContinueAdjacentPiece(string pieceId, long maxByteRange)
         {
-            lock (this)
+            try
             {
+                rwLock.EnterWriteLock();
                 var chunk = pieces[pieceId];
                 var position = chunk.Offset + chunk.Length;
                 foreach (var key in this.pieces.Keys)
@@ -188,13 +192,22 @@ namespace XDM.Core.Downloader.Progressive
                 }
                 return false;
             }
+            finally
+            {
+                rwLock.ExitWriteLock();
+            }
         }
 
         public virtual Piece GetPiece(string pieceId)
         {
-            lock (this)
+            try
             {
+                rwLock.EnterReadLock();
                 return this.pieces[pieceId];
+            }
+            finally
+            {
+                rwLock.ExitReadLock();
             }
         }
 
@@ -214,9 +227,10 @@ namespace XDM.Core.Downloader.Progressive
 
         public void PieceDownloadFailed(string pieceId, ErrorCode error)
         {
-            lock (this)
+            if (this.cancelFlag.IsCancellationRequested) return;
+            try
             {
-                if (this.cancelFlag.IsCancellationRequested) return;
+                rwLock.EnterWriteLock();
                 grabberDict.Remove(pieceId);
                 this.SaveChunkState();
                 if (grabberDict.Count == 0)
@@ -224,13 +238,18 @@ namespace XDM.Core.Downloader.Progressive
                     OnFailed(error);
                 }
             }
+            finally
+            {
+                rwLock.ExitWriteLock();
+            }
         }
 
         public virtual void PieceDownloadFinished(string pieceId)
         {
-            lock (this)
+            if (this.cancelFlag.IsCancellationRequested) return;
+            try
             {
-                if (this.cancelFlag.IsCancellationRequested) return;
+                rwLock.EnterWriteLock();
                 var piece = this.pieces[pieceId];
                 piece.State = SegmentState.Finished;
                 grabberDict.Remove(pieceId);
@@ -243,13 +262,18 @@ namespace XDM.Core.Downloader.Progressive
                     return;
                 }
             }
+            finally
+            {
+                rwLock.ExitWriteLock();
+            }
             this.CreatePiece();
         }
 
         public virtual void UpdateDownloadedBytesCount(string pieceId, long bytes)
         {
-            lock (this)
+            try
             {
+                rwLock.EnterWriteLock();
                 totalDownloadedBytes += bytes;
                 downloadedBytesSinceStartOrResume += bytes;
 
@@ -274,16 +298,21 @@ namespace XDM.Core.Downloader.Progressive
                     progressResult.DownloadSpeed = instantSpeed;
                     progressResult.Downloaded = totalDownloadedBytes;
                     progressResult.Progress = FileSize > 0 ? (int)(totalDownloadedBytes * 100 / FileSize) : 0;
-                    progressResult.Eta = FileSize > 0 ? (long)Math.Ceiling((FileSize - totalDownloadedBytes) / avgSpeed /*progressResult.DownloadSpeed*/) : 0;
+                    progressResult.Eta = FileSize > 0 ? (long)Math.Ceiling((FileSize - totalDownloadedBytes) / avgSpeed) : 0;
                     ProgressChanged?.Invoke(this, progressResult);
                 }
+            }
+            finally
+            {
+                rwLock.ExitWriteLock();
             }
         }
 
         protected virtual void CreatePiece()
         {
-            lock (this)
+            try
             {
+                rwLock.EnterWriteLock();
                 if (this.cancelFlag.IsCancellationRequested) return;
                 if (this.grabberDict.Count == MAX_COUNT) return;
                 var rem = MAX_COUNT - this.grabberDict.Count;
@@ -300,24 +329,34 @@ namespace XDM.Core.Downloader.Progressive
                 }
                 SaveChunkState();
             }
+            finally
+            {
+                rwLock.ExitWriteLock();
+            }
         }
 
         protected virtual bool AllFinished()
         {
-            lock (this)
+            try
             {
+                rwLock.EnterReadLock();
                 foreach (var pi in this.pieces.Keys)
                 {
                     if (this.pieces[pi].State != SegmentState.Finished) return false;
                 }
                 return true;
             }
+            finally
+            {
+                rwLock.ExitReadLock();
+            }
         }
 
         protected int RetryFailedPieces(int max)
         {
-            lock (this)
+            try
             {
+                rwLock.EnterWriteLock();
                 var count = 0;
                 for (var chunkToRetry = Math.Min(GetInactiveChunkCount(), max); chunkToRetry > 0; chunkToRetry--)
                 {
@@ -329,21 +368,31 @@ namespace XDM.Core.Downloader.Progressive
                 }
                 return count;
             }
+            finally
+            {
+                rwLock.ExitWriteLock();
+            }
         }
 
         protected int GetInactiveChunkCount()
         {
-            lock (this)
+            try
             {
+                rwLock.EnterReadLock();
                 return pieces.Keys.Where(chunkId => !(grabberDict.ContainsKey(chunkId)
-                || pieces[chunkId].State == SegmentState.Finished)).Count();
+                 || pieces[chunkId].State == SegmentState.Finished)).Count();
+            }
+            finally
+            {
+                rwLock.ExitReadLock();
             }
         }
 
         protected string? GetInactivePiece()
         {
-            lock (this)
+            try
             {
+                rwLock.EnterReadLock();
                 foreach (var chunkId in pieces.Keys)
                 {
                     if (!(grabberDict.ContainsKey(chunkId) || pieces[chunkId].State == SegmentState.Finished
@@ -351,12 +400,17 @@ namespace XDM.Core.Downloader.Progressive
                 }
                 return null;
             }
+            finally
+            {
+                rwLock.ExitReadLock();
+            }
         }
 
         protected string? FindMaxChunk()
         {
-            lock (this)
+            try
             {
+                rwLock.EnterReadLock();
                 var max = -1L;
                 string? pid = null;
                 foreach (var pieceId in this.pieces.Keys)
@@ -371,12 +425,17 @@ namespace XDM.Core.Downloader.Progressive
                 }
                 return max > 256 * 1024 ? pid : null;
             }
+            finally
+            {
+                rwLock.ExitReadLock();
+            }
         }
 
         protected string? SplitPiece(string chunkId)
         {
-            lock (this)
+            try
             {
+                rwLock.EnterWriteLock();
                 if (chunkId != null && !this.cancelFlag.IsCancellationRequested)
                 {
                     var chunk = pieces[chunkId];
@@ -403,6 +462,10 @@ namespace XDM.Core.Downloader.Progressive
                     return newPieceId;
                 }
                 return null;
+            }
+            finally
+            {
+                rwLock.ExitWriteLock();
             }
         }
 

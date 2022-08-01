@@ -34,6 +34,8 @@ namespace XDM.Core.Downloader.Adaptive
         public string Id { get; private set; }
         public virtual long FileSize => this._state.FileSize;
         public virtual double Duration => this._state.Duration;
+        protected ReaderWriterLockSlim rwLock = new(LockRecursionPolicy.SupportsRecursion);
+        public ReaderWriterLockSlim Lock => this.rwLock;
         public FileNameFetchMode FileNameFetchMode
         {
             get { return _fileNameFetchMode; }
@@ -231,14 +233,14 @@ namespace XDM.Core.Downloader.Adaptive
         protected virtual void SaveChunkState()
         {
             if (_chunks == null) return;
-            lock (this)
+            try
             {
+                rwLock.EnterWriteLock();
                 TransactedIO.WriteStream("chunks.db", _state.TempDirectory, ChunkStateToBytes);
-                //TransactedIO.WriteBytes(ChunkStateToBytes(), "chunks.db", _state.TempDirectory);
-                //TransactedIO.Write(JsonConvert.SerializeObject(_chunks), "chunks.json", _state.TempDirectory);
-
-                //File.WriteAllText(Path.Combine(_state.TempDirectory, "chunks.json"),
-                //    JsonConvert.SerializeObject(_chunks));
+            }
+            finally
+            {
+                rwLock.ExitWriteLock();
             }
         }
 
@@ -440,8 +442,9 @@ namespace XDM.Core.Downloader.Adaptive
 
         private void ChunkDataReceived(object sender, ChunkDownloadedEventArgs args)
         {
-            lock (this)
+            try
             {
+                rwLock.EnterWriteLock();
                 long tick = Helpers.TickCount();
                 totalDownloadedBytes += args.Downloaded;
                 downloadedBytesSinceStartOrResume += args.Downloaded;
@@ -469,13 +472,22 @@ namespace XDM.Core.Downloader.Adaptive
                 }
                 this.ThrottleIfNeeded();
             }
+            finally
+            {
+                rwLock.ExitWriteLock();
+            }
         }
 
         private void MimeTypeReceived(object sender, MimeTypeReceivedEventArgs args)
         {
-            lock (this)
+            try
             {
+                rwLock.EnterWriteLock();
                 this.OnContentTypeReceived(args.Chunk, args.MimeType);
+            }
+            finally
+            {
+                rwLock.ExitWriteLock();
             }
         }
 
@@ -806,8 +818,9 @@ namespace XDM.Core.Downloader.Adaptive
 
         public void UpdateSpeedLimit(bool enable, int limit)
         {
-            lock (_state)
+            try
             {
+                rwLock.EnterWriteLock();
                 if (!enable)
                 {
                     limit = 0;
@@ -815,12 +828,11 @@ namespace XDM.Core.Downloader.Adaptive
                 _state.SpeedLimit = limit;
                 SaveState();
             }
+            finally
+            {
+                rwLock.ExitWriteLock();
+            }
         }
-
-        //protected static string GuessContainerFormatFromContentType(string contentType)
-        //{
-        //    return 
-        //}
     }
 
     public class MultiSourceChunk : Chunk

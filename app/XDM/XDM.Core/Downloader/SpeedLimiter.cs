@@ -53,8 +53,9 @@ namespace XDM.Core.Downloader
                 lastTick = Helpers.TickCount();
                 return;
             }
-            lock (downloader)
+            try
             {
+                downloader.Lock.EnterWriteLock();
                 var maxBytesPerMS = (double)speedLimit * 1024 / 1000;
                 var now = Helpers.TickCount();
                 var actualTimeSpent = now - lastTick;
@@ -73,6 +74,10 @@ namespace XDM.Core.Downloader
                     }
                     catch (Exception ex) { Log.Debug(ex, "Exception while throttling"); }
                 }
+            }
+            finally
+            {
+                downloader.Lock.ExitWriteLock();
             }
         }
 

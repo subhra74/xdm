@@ -152,11 +152,15 @@ namespace XDM.Core.Downloader.Progressive.SingleHttp
 
         protected override void SaveChunkState()
         {
-            lock (this)
+            try
             {
+                rwLock.EnterWriteLock();
                 if (pieces.Count == 0) return;
                 TransactedIO.WriteStream("chunks.db", state!.TempDir!, base.ChunkStateToBytes);
-                //TransactedIO.WriteBytes(ChunkStateToBytes(), "chunks.db", state.TempDir);
+            }
+            finally
+            {
+                rwLock.ExitWriteLock();
             }
         }
 
@@ -222,9 +226,10 @@ namespace XDM.Core.Downloader.Progressive.SingleHttp
 
         public override void PieceConnected(string pieceId, ProbeResult? result)
         {
-            lock (this)
+            if (this.cancelFlag.IsCancellationRequested) return;
+            try
             {
-                if (this.cancelFlag.IsCancellationRequested) return;
+                rwLock.EnterWriteLock();
                 if (result != null) //probe result is not null for first request only, for subsequent requests its always null
                 {
                     Log.Debug("connected: " + result.ResourceSize + " init...");
@@ -278,8 +283,12 @@ namespace XDM.Core.Downloader.Progressive.SingleHttp
                         throw new AssembleFailedException(ErrorCode.DiskError);
                     }
                 }
-                CreatePiece();
             }
+            finally
+            {
+                rwLock.ExitWriteLock();
+            }
+            CreatePiece();
         }
 
         private List<Piece> SortAndValidatePieces()
@@ -320,9 +329,9 @@ namespace XDM.Core.Downloader.Progressive.SingleHttp
         protected override void AssemblePieces()
         {
             Log.Debug("Assembling...");
-            lock (this)
+            try
             {
-
+                rwLock.EnterWriteLock();
                 try
                 {
                     var pieces = SortAndValidatePieces();
@@ -465,6 +474,10 @@ namespace XDM.Core.Downloader.Progressive.SingleHttp
                     Log.Debug(ex, "Error in AssemblePieces");
                     throw new AssembleFailedException(ex is DownloadException de ? de.ErrorCode : ErrorCode.Generic);
                 }
+            }
+            finally
+            {
+                rwLock.ExitWriteLock();
             }
         }
 

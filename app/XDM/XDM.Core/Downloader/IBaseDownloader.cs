@@ -1,5 +1,5 @@
 ﻿using System;
-
+using System.Threading;
 using XDM.Core;
 
 namespace XDM.Core.Downloader
@@ -14,6 +14,7 @@ namespace XDM.Core.Downloader
         public string Type { get; }
         public FileNameFetchMode FileNameFetchMode { get; }
         public Uri? PrimaryUrl { get; }
+        public ReaderWriterLockSlim Lock { get; }
 
         event EventHandler Probed;
         event EventHandler Finished;
