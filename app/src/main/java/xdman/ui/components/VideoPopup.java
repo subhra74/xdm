@@ -91,6 +91,7 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 			}
 			revalidate();
 			repaint();
+                        addToQueueIfInAutoDownloadMode(item);
 		}
 	}
 
@@ -464,4 +465,21 @@ public class VideoPopup extends JDialog implements ActionListener, Comparator<Vi
 
 		return false;
 	}
+        
+        private void createDownload(String fileName, HttpMetadata metadata) {
+            if (fileName.length() < 1) {
+                JOptionPane.showMessageDialog(this, StringResource.get("MSG_NO_URL"));
+                return;
+            }
+            Logger.log("file: " + fileName);
+            String file = XDMUtils.createSafeFileName(fileName);
+            XDMApp.getInstance().createDownload(file, Config.getInstance().getDownloadFolder(), metadata, true, "", 0, 0);
+            JOptionPane.showMessageDialog(this, "\"" + fileName + "\" " + StringResource.get("MSG_ADDED_TO_QUEUE"));
+        }        
+        
+        private void addToQueueIfInAutoDownloadMode(VideoPopupItem item) {
+            if (Config.getInstance().isAutoDownloadVideo()) {
+                createDownload(item.getFile(), item.getMetadata().derive());
+            }
+        }        
 }
