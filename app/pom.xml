@@ -9,7 +9,7 @@
 	<packaging>jar</packaging>
 
 	<name>xdman</name>
-	<url>http://maven.apache.org</url>
+	<url>https://maven.apache.org</url>
 
 
 	<properties>
@@ -70,7 +70,6 @@
 						<descriptorRef>jar-with-dependencies</descriptorRef>
 					</descriptorRefs>
 					<appendAssemblyId>false</appendAssemblyId>
-					<classifier></classifier>
 				</configuration>
 				<executions>
 					<execution>
