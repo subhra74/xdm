@@ -9,7 +9,7 @@
     <Import_RootNamespace>XDM.Core</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)AppUpdater.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Updater\AppUpdater.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ClipboardMonitor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)IO\RequestDataIO.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)IPlatformUIService.cs" />
@@ -108,7 +108,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)UI\IProgressWindow.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\IRefreshLinkDialog.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ITextResource.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)IUpdater.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Updater\IUpdater.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\IUpdaterUI.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Message.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)PasswordEntry.cs" />

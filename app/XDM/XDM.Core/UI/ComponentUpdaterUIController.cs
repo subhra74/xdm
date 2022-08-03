@@ -7,6 +7,7 @@ using TraceLog;
 using XDM.Core;
 using XDM.Core.Downloader;
 using XDM.Core.Downloader.Progressive.SingleHttp;
+using XDM.Core.Updater;
 
 namespace XDM.Core.UI
 {

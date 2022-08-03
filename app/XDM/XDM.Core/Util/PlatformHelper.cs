@@ -174,7 +174,7 @@ namespace XDM.Core.Util
                 case PlatformID.Unix:
                     if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                     {
-                        const string macChromeExe = "/Applications/Google Chrome.ApplicationContext.Core";
+                        const string macChromeExe = "/Applications/Google Chrome.app";
                         if (File.Exists(macChromeExe))
                         {
                             return macChromeExe;
@@ -218,7 +218,7 @@ namespace XDM.Core.Util
                 case PlatformID.Unix:
                     if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                     {
-                        const string macFireFoxExe = "/Applications/Firefox.ApplicationContext.Core";
+                        const string macFireFoxExe = "/Applications/Firefox.app";
                         if (File.Exists(macFireFoxExe))
                         {
                             return macFireFoxExe;
@@ -275,7 +275,7 @@ namespace XDM.Core.Util
                     {
                         if (enable)
                         {
-                            var xdmExe = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-ApplicationContext.Core.exe");
+                            var xdmExe = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-app.exe");
                             hkcuRun.SetValue("XDM", $"\"{xdmExe}\" -m");
                         }
                         else
@@ -297,7 +297,7 @@ namespace XDM.Core.Util
                     {
                         Directory.CreateDirectory(autoStartDir);
                     }
-                    File.WriteAllText(Path.Combine(autoStartDir, "xdm-ApplicationContext.Core.desktop"), GetLinuxDesktopFile());
+                    File.WriteAllText(Path.Combine(autoStartDir, "xdm-app.desktop"), GetLinuxDesktopFile());
                     return true;
                 }
 #endif
@@ -321,7 +321,7 @@ namespace XDM.Core.Util
 
         public static string GetLinuxDesktopFile()
         {
-            var appPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-ApplicationContext.Core");
+            var appPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-app");
             var iconPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "svg-icons", "xdm-logo.svg");
 
             return "[Desktop Entry]\r\n" +
@@ -408,6 +408,26 @@ namespace XDM.Core.Util
 
 #endif
 
+        public static string GetAppPlatform()
+        {
+            var os = Environment.OSVersion.Platform;
+            if (os == PlatformID.Win32NT)
+            {
+                return "Windows";
+            }
+#if NET5_0_OR_GREATER
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                return "Linux";
+            }
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                return "MacOSX";
+            }
+#endif
+            return "UnsupportedOS";
+        }
+
         public static bool IsAutoStartEnabled()
         {
             try
@@ -421,7 +441,7 @@ namespace XDM.Core.Util
                         var command = (string)hkcuRun.GetValue("XDM");
                         var path = FileHelper.GetFileNameFromQuote(command);
                         return !string.IsNullOrEmpty(path) &&
-                            path == Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-ApplicationContext.Core.exe");
+                            path == Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-app.exe");
                     }
                 }
 #if NET5_0_OR_GREATER
@@ -432,13 +452,13 @@ namespace XDM.Core.Util
                     {
                         return false;
                     }
-                    var file = Path.Combine(autoStartDir, "xdm-ApplicationContext.Core.desktop");
+                    var file = Path.Combine(autoStartDir, "xdm-app.desktop");
                     if (!File.Exists(file))
                     {
                         return false;
                     }
                     var text = File.ReadAllText(file);
-                    return text.Contains(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-ApplicationContext.Core"));
+                    return text.Contains(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-app"));
                 }
 #endif
             }
@@ -490,7 +510,7 @@ namespace XDM.Core.Util
                     }
                     if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                     {
-                        var cmd = "tell ApplicationContext.Core \"System Events\" to shut down";
+                        var cmd = "tell app \"System Events\" to shut down";
                         SpawnSubProcess("osascript", new string[] { "-e", $"\"{cmd}\"" });
                     }
                     break;

@@ -6,14 +6,14 @@
     <InvariantGlobalization>true</InvariantGlobalization>
     <PublishTrimmed>true</PublishTrimmed>
     <AssemblyName>xdm-app</AssemblyName>
-    <!--<TrimMode>CopyUsed</TrimMode>-->
-    <!--<PublishTrimmed>true</PublishTrimmed>
-		<TrimMode>Link</TrimMode>-->
+    <PublishTrimmed>true</PublishTrimmed>
+		<TrimMode>Link</TrimMode>
     <RootNamespace>XDM.GtkUI</RootNamespace>
     <!--RuntimeIdentifier>linux-x64</RuntimeIdentifier-->
     <!--RuntimeIdentifier>win-x64</RuntimeIdentifier-->
     <!--RuntimeIdentifier>win-x86</RuntimeIdentifier-->
     <!--<Platforms>AnyCPU;x86</Platforms>-->
+    <!--<TrimMode>CopyUsed</TrimMode>-->
     <Platforms>x64</Platforms>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
@@ -143,6 +143,9 @@
 
   <ItemGroup>
     <None Update="source_pkg.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="xdm-app.desktop">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

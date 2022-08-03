@@ -30,6 +30,8 @@ namespace XDM.Core
     public class ApplicationCore : IApplicationCore
     {
         public Version AppVerion => new(8, 0, 0);
+        public string AppPlatform => PlatformHelper.GetAppPlatform();
+
         private Dictionary<string, (IBaseDownloader Downloader, bool NonInteractive)> liveDownloads = new();
         private GenericOrderedDictionary<string, bool> queuedDownloads = new();
         private GenericOrderedDictionary<string, IProgressWindow> activeProgressWindows = new();

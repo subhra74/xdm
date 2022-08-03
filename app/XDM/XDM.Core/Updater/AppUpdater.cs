@@ -7,7 +7,7 @@ using TraceLog;
 using Translations;
 using XDM.Core.Util;
 
-namespace XDM.Core
+namespace XDM.Core.Updater
 {
     public static class AppUpdater
     {
@@ -17,7 +17,8 @@ namespace XDM.Core
         public static bool IsAppUpdateAvailable => Updates?.Any(u => !u.IsExternal) ?? false;
         public static bool IsComponentUpdateAvailable => Updates?.Any(u => u.IsExternal) ?? false;
         public static string ComponentUpdateText => GetUpdateText();
-        public static string UpdatePage => $"https://subhra74.github.io/xdm/update-checker.html?v={ApplicationContext.CoreService.AppVerion}";
+        public static string UpdatePage =>
+            $"{Links.AppUpdateCheckerUrl}?v={ApplicationContext.CoreService.AppVerion}&p={ApplicationContext.CoreService.AppPlatform}";
 
         public static void QueryNewVersion()
         {

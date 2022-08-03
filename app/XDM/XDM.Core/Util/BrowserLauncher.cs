@@ -31,7 +31,7 @@ namespace XDM.Core.Util
             else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
             {
                 paths = new string[]{
-                    "/Applications/Google Chrome.ApplicationContext.Core"
+                    "/Applications/Google Chrome.app"
                 };
             }
 
@@ -70,7 +70,7 @@ namespace XDM.Core.Util
             else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
             {
                 paths = new string[]{
-                    "/Applications/Firefox.ApplicationContext.Core"
+                    "/Applications/Firefox.app"
                 };
             }
 
@@ -109,7 +109,7 @@ namespace XDM.Core.Util
             else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
             {
                 paths = new string[]{
-                    "/Applications/Microsoft Edge.ApplicationContext.Core"
+                    "/Applications/Microsoft Edge.app"
                 };
             }
 
@@ -148,7 +148,7 @@ namespace XDM.Core.Util
             else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
             {
                 paths = new string[]{
-                    "/Applications/Vivaldi.ApplicationContext.Core"
+                    "/Applications/Vivaldi.app"
                 };
             }
 
@@ -188,7 +188,7 @@ namespace XDM.Core.Util
             else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
             {
                 paths = new string[]{
-                    "/Applications/Brave Browser.ApplicationContext.Core"
+                    "/Applications/Brave Browser.app"
                 };
             }
 
@@ -227,7 +227,7 @@ namespace XDM.Core.Util
             else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
             {
                 paths = new string[]{
-                    "/Applications/Opera.ApplicationContext.Core"
+                    "/Applications/Opera.app"
                 };
             }
 

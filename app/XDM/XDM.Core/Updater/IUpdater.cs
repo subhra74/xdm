@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using XDM.Core.Updater;
 
-
-namespace XDM.Core
+namespace XDM.Core.Updater
 {
     public interface IUpdater
     {
