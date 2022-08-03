@@ -9,7 +9,7 @@
 --enable-demuxer=mov,mp4,m4a,3gp,3g2,mj2,matroska,webm,mpegts
 --enable-libmp3lame
 --enable-encoder=libmp3lame
---enable-muxer=mp4,matroska,mpegts,mp3 
+--enable-muxer=mp4,matroska,mpegts,mp3,webm
 --enable-protocol=file,srt,concat 
 --enable-bsfs 
 --enable-filter=acopy,concat,copy

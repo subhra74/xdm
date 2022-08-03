@@ -6,7 +6,7 @@ using TraceLog;
 using XDM.Core;
 using XDM.Core.Clients.Http;
 
-namespace XDM.Core
+namespace XDM.Core.Updater
 {
     public class UpdateChecker
     {
@@ -161,15 +161,15 @@ namespace XDM.Core
         }
 
         private static UpdateInfo? FindNewYoutubeDLVersion(IHttpClient hc, DateTime lastUpdated) =>
-            FindNewRelease(hc, "https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest",
+            FindNewRelease(hc, Links.YtDlpReleaseGH,
                 GetYoutubeDLExecutableNameForCurrentOS(), r => r.PublishedAt > lastUpdated);
 
         private static UpdateInfo? FindNewFFmpegVersion(IHttpClient hc, DateTime lastUpdated) =>
-            FindNewRelease(hc, "https://api.github.com/repos/subhra74/xdm-ffmpeg-update/releases/latest",
+            FindNewRelease(hc, Links.FFmpegCustomReleaseGH,
                 GetFFmpegExecutableNameForCurrentOS(), r => r.PublishedAt > lastUpdated);
 
         private static UpdateInfo? FindNewAppVersion(IHttpClient hc, Version appVersion) =>
-            FindNewRelease(hc, "https://api.github.com/repos/subhra74/xdm/releases/latest",
+            FindNewRelease(hc, Links.AppLatestReleaseGH,
                 GetAppInstallerNameForCurrentOS(), r => ParseGitHubTag(r.TagName) > appVersion);
     }
 

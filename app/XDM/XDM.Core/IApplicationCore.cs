@@ -13,6 +13,7 @@ namespace XDM.Core
     public interface IApplicationCore
     {
         public Version AppVerion { get; }
+        public string AppPlatform { get; }
 
         public void AddDownload(Message message);
 
