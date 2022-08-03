@@ -40,9 +40,9 @@ name: .NET Core Desktop
 
 on:
   push:
-    branches: [ "wpf" ]
+    branches: [ "master" ]
   pull_request:
-    branches: [ "wpf" ]
+    branches: [ "master" ]
 
 jobs:
 
@@ -57,9 +57,9 @@ jobs:
 
     env:
       Solution_Name: XDM_CoreFx.sln                         # Replace with your solution name, i.e. MyWpfApp.sln.
-      Test_Project_Path: XDM_Tests\XDM.SystemTests.csproj                 # Replace with the path to your test project, i.e. MyWpfApp.Tests\MyWpfApp.Tests.csproj.
-      Wap_Project_Directory: XDM.Wpf.UI    # Replace with the Wap project directory relative to the solution, i.e. MyWpfApp.Package.
-      Wap_Project_Path: XDM.Wpf.UI\XDM.Wpf.UI.csproj                   # Replace with the path to your Wap project, i.e. MyWpf.App.Package\MyWpfApp.Package.wapproj.
+      #Test_Project_Path: XDM_Tests\XDM.SystemTests.csproj                 # Replace with the path to your test project, i.e. MyWpfApp.Tests\MyWpfApp.Tests.csproj.
+      #Wap_Project_Directory: XDM.Wpf.UI    # Replace with the Wap project directory relative to the solution, i.e. MyWpfApp.Package.
+      #Wap_Project_Path: XDM.Wpf.UI\XDM.Wpf.UI.csproj                   # Replace with the path to your Wap project, i.e. MyWpf.App.Package\MyWpfApp.Package.wapproj.
 
     steps:
     - name: Checkout
@@ -71,15 +71,15 @@ jobs:
     - name: Install .NET Core
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 5.0.x
+        dotnet-version: 6.0.x
 
     # Add  MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
     - name: Setup MSBuild.exe
       uses: microsoft/setup-msbuild@v1.0.2
 
     # Execute all unit tests in the solution
-    - name: Execute unit tests
-      run: dotnet test
+    #- name: Execute unit tests
+    #  run: dotnet test
 
     # Restore the application to populate the obj folder with RuntimeIdentifiers
     - name: Restore the application
