@@ -67,8 +67,7 @@ namespace XDM.Core
 
         public void StartBrowserMonitoring()
         {
-            BrowserMonitor.RunNativeHostHandler();
-            BrowserMonitor.RunHttpIpcHandler();
+            BrowserMonitor.Run();
         }
 
         public string? StartDownload(
@@ -120,11 +119,12 @@ namespace XDM.Core
             }
             http.SetFileName(FileHelper.SanitizeFileName(fileName), fileNameFetchMode);
             http.SetTargetDirectory(targetFolder);
-            StartDownload(http, startImmediately, authentication, proxyInfo);
+            StartDownload(http, targetFolder, startImmediately, authentication, proxyInfo);
             return http.Id;
         }
 
         private void StartDownload(IBaseDownloader download,
+            string? targetDir,
             bool startImmediately,
             AuthenticationInfo? authentication,
             ProxyInfo? proxyInfo)
@@ -147,7 +147,7 @@ namespace XDM.Core
                 queuedDownloads.Add(id, false);
             }
 
-            ApplicationContext.Application.AddItemToTop(id, download.TargetFileName, DateTime.Now,
+            ApplicationContext.Application.AddItemToTop(id, download.TargetFileName, targetDir, DateTime.Now,
                 download.FileSize, download.Type, download.FileNameFetchMode,
                 download.PrimaryUrl?.ToString(), startType, authentication,
                 proxyInfo);

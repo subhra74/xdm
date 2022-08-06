@@ -707,5 +707,15 @@ namespace XDM.Wpf.UI
         }
 
         public IPlatformClipboardMonitor GetClipboardMonitor() => this.clipboarMonitor;
+
+        public void ShowAndActivate()
+        {
+            this.Show();
+            if (this.WindowState == WindowState.Minimized)
+            {
+                this.WindowState = WindowState.Normal;
+            }
+            this.Activate();
+        }
     }
 }

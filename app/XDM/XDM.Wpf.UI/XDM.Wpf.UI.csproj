@@ -15,36 +15,14 @@
     <Description>Xtreme Download Manager</Description>
     <AssemblyTitle>Xtreme Download Manager</AssemblyTitle>
     <AssemblyVersion>8.0.1</AssemblyVersion>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net4.7.2|x86'">
-    <Optimize>true</Optimize>
-  </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net4.7.2|x64'">
-    <Optimize>true</Optimize>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net4.7.2|x86'">
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net4.7.2|x64'">
-    <DebugType>none</DebugType>
-    <DebugSymbols>false</DebugSymbols>
-  </PropertyGroup>
-
-  <!--<ItemGroup>
-    <ProjectReference Include="..\BrowserMonitor\BrowserMonitor.csproj" />
-    <ProjectReference Include="..\NativeMessagingHost\NativeMessagingHost.csproj" />
-    <ProjectReference Include="..\Translations\Translations.csproj" />
-    <ProjectReference Include="..\XDM.Core.UI\XDM.Core.UI.csproj" />
-    <ProjectReference Include="..\XDM.Core\XDM.Core.csproj" />
-    <ProjectReference Include="..\XDM_CoreFx\XDM.Core.csproj" />
-    <ProjectReference Include="..\YoutubeDLHandler\YDLWrapper.csproj" />
-    <ProjectReference Include="..\TraceLog\TraceLog.csproj" />
-  </ItemGroup>-->
 
   <ItemGroup>
     <Reference Include="PresentationFramework.Aero2" />
@@ -58,20 +36,12 @@
     <Folder Include="MainWindow\Resources\" />
   </ItemGroup>
 
-  <!--<ItemGroup>
-    <LangFiles Include="$(SolutionDir)\Lang\**" />
-  </ItemGroup>-->
-
   <ItemGroup>
     <None Update="xdm-logo.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
-  <!--<Target Name="Copy" AfterTargets="Build">
-    <Copy SourceFiles="@(LangFiles)" DestinationFolder="$(OutDir)\Lang" />
-  </Target>-->
-
+  
   <ItemGroup>
     <PackageReference Include="Microsoft.Windows.Compatibility" Version="5.0.2" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
@@ -95,10 +65,6 @@
   <ItemGroup Condition=" '$(TargetFramework)' != 'net3.5' ">
     <PackageReference Include="System.IO.Compression" Version="4.3.0" />
   </ItemGroup>
-
-  <!--<ItemGroup>
-    <ProjectReference Include="..\NativeMessagingHost\NativeMessagingHost.csproj" />
-  </ItemGroup>-->
 
   <Import Project="..\XDM.Core\XDM.Core.projitems" Label="Shared" />
 

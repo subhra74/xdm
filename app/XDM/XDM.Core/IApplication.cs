@@ -48,7 +48,8 @@ namespace XDM.Core
         /// <param name="startType"></param>
         /// <param name="authentication"></param>
         /// <param name="proxyInfo"></param>
-        public void AddItemToTop(string id, string targetFileName, DateTime date,
+        public void AddItemToTop(string id, string targetFileName,
+            string? targetDir, DateTime date,
             long fileSize, string type, FileNameFetchMode fileNameFetchMode,
             string primaryUrl, DownloadStartType startType,
             AuthenticationInfo? authentication, ProxyInfo? proxyInfo);

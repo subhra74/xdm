@@ -135,12 +135,7 @@ namespace XDM.GtkUI
 
         private void StatusIcon_Activate(object? sender, EventArgs e)
         {
-            if (!this.Visible)
-            {
-                this.Show();
-            }
-            //this.Deiconify();
-            this.Present();
+            ShowAndActivate();
         }
 
         private void CreateMenu()
@@ -1306,8 +1301,13 @@ namespace XDM.GtkUI
 
         public IPlatformClipboardMonitor GetClipboardMonitor() => this.clipboarMonitor;
 
-        public void ShowFloatingWidget()
+        public void ShowAndActivate()
         {
+            if (!this.Visible)
+            {
+                this.Show();
+            }
+            this.Present();
         }
     }
 }
