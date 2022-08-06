@@ -278,7 +278,7 @@ namespace XDM.Core.Util
         public static string FindYDLBinary()
         {
             //var executableName = Environment.OSVersion.Platform == PlatformID.Win32NT ? "youtube-dl.exe" : "youtube-dl";
-            var executableName = Environment.OSVersion.Platform == PlatformID.Win32NT ? "yt-dlp_x86.exe" : "yt-dlp";
+            var executableName = Environment.OSVersion.Platform == PlatformID.Win32NT ? "yt-dlp_x86.exe" : "yt-dlp_linux";
             var path = Path.Combine(Config.DataDir, executableName);
             if (File.Exists(path))
             {
