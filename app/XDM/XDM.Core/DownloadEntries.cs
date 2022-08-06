@@ -12,7 +12,7 @@ namespace XDM.Core
 
         public long Size { get; set; }
 
-        public string TargetDir { get; set; }
+        public string? TargetDir { get; set; }
 
         public DateTime DateAdded { get; set; }
 

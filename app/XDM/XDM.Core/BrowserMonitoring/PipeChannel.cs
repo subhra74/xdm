@@ -5,14 +5,14 @@ using TraceLog;
 
 namespace XDM.Core.BrowserMonitoring
 {
-    internal sealed class NativeMessagingHostChannel
+    internal sealed class PipeChannel
     {
         private NamedPipeServerStream pipe;
         internal event EventHandler<NativeMessageEventArgs>? MessageReceived;
         internal event EventHandler? Disconnected;
         private Thread readerThread;
 
-        internal NativeMessagingHostChannel(NamedPipeServerStream pipe)
+        internal PipeChannel(NamedPipeServerStream pipe)
         {
             this.pipe = pipe;
             readerThread = new Thread(() =>

@@ -167,6 +167,7 @@ namespace XDM.Core
                 {
                     throw new Exception("Please configure all dependecies");
                 }
+                SingleInstance.Ensure();
                 s_Init = true;
                 Initialized?.Invoke(null, EventArgs.Empty);
             }

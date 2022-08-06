@@ -8,8 +8,9 @@ namespace XDM.Core
 {
     public static class ArgsProcessor
     {
-        public static void Process(Dictionary<string, string?> args)
+        public static void Process(string[] commandArgs, int start = 0)
         {
+            Dictionary<string, string?> args = ParseArgs(commandArgs, start);
             if (args.ContainsKey("-u"))
             {
                 var url = args["-u"];
@@ -18,9 +19,28 @@ namespace XDM.Core
                     ApplicationContext.CoreService.AddDownload(new Message { Url = url! });
                 }
             }
+
+            if (args.ContainsKey("-i"))
+            {
+                Config.Instance.RunOnLogon = true;
+                Config.SaveConfig();
+                ApplicationContext.Application.RunOnUiThread(() =>
+                {
+                    ApplicationContext.MainWindow.ShowAndActivate();
+                    ApplicationContext.PlatformUIService.ShowBrowserMonitoringDialog();
+                });
+            }
+
+            if (args.Count == 0|| args.ContainsKey("-r"))
+            {
+                ApplicationContext.Application.RunOnUiThread(() =>
+                {
+                    ApplicationContext.MainWindow.ShowAndActivate();
+                });
+            }
         }
 
-        public static Dictionary<string, string?> ParseArgs(string[] args, int start = 0)
+        private static Dictionary<string, string?> ParseArgs(string[] args, int start = 0)
         {
             var options = new Dictionary<string, string?>();
             var key = string.Empty;

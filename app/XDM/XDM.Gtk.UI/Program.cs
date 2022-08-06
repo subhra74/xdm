@@ -101,18 +101,7 @@ namespace XDM.GtkUI
                 .RegisterPlatformUIService(new GtkPlatformUIService())
                 .Configure();
 
-            var commandOptions = ArgsProcessor.ParseArgs(args, 0);
-
-            if (!commandOptions.ContainsKey("-m"))
-            {
-                win.Show();
-                if (commandOptions.ContainsKey("-i"))
-                {
-                    Config.Instance.RunOnLogon = true;
-                    Config.SaveConfig();
-                    ApplicationContext.PlatformUIService.ShowBrowserMonitoringDialog();
-                }
-            }
+            ArgsProcessor.Process(args, 0);
 
             //var t = new System.Threading.Thread(() =>
             //  {

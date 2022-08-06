@@ -7,9 +7,9 @@ using XDM.Core.Util;
 
 namespace XDM.Core.BrowserMonitoring
 {
-    internal static class BrowserMessageHandler
+    internal static class IpcPipeMessageProcessor
     {
-        internal static void Handle(RawBrowserMessageEnvelop envelop)
+        internal static void Process(RawBrowserMessageEnvelop envelop)
         {
             //Log.Debug("Type: " + envelop.MessageType);
             if (envelop.MessageType == "videoIds")
@@ -32,10 +32,9 @@ namespace XDM.Core.BrowserMonitoring
                 return;
             }
 
-            if (envelop.MessageType == "custom")
+            if (envelop.MessageType == "custom" && envelop.CustomData != null)
             {
-                var args = ArgsProcessor.ParseArgs(envelop.CustomData.Split('\r'));
-                ArgsProcessor.Process(args);
+                ArgsProcessor.Process(envelop.CustomData.Split('\r'));
                 return;
             }
 

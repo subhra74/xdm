@@ -70,30 +70,13 @@ namespace XDM.Wpf.UI
                 .RegisterPlatformUIService(new WpfPlatformUIService())
                 .Configure();
 
-            var args = Environment.GetCommandLineArgs();
-            var commandOptions = ArgsProcessor.ParseArgs(args, 1);
+            ArgsProcessor.Process(Environment.GetCommandLineArgs(), 1);
 
             AppTrayIcon.AttachToSystemTray();
             AppTrayIcon.TrayClick += (_, _) =>
             {
-                win.Show();
-                if (win.WindowState == WindowState.Minimized)
-                {
-                    win.WindowState = WindowState.Normal;
-                }
-                win.Activate();
+                win.ShowAndActivate();
             };
-
-            if (!commandOptions.ContainsKey("-m"))
-            {
-                win.Show();
-                if (commandOptions.ContainsKey("-i"))
-                {
-                    Config.Instance.RunOnLogon = true;
-                    Config.SaveConfig();
-                    ApplicationContext.PlatformUIService.ShowBrowserMonitoringDialog();
-                }
-            }
         }
 
         private void Application_Exit(object sender, ExitEventArgs e)

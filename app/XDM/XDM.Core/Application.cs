@@ -39,6 +39,7 @@ namespace XDM.Core
         public void AddItemToTop(
             string id,
             string targetFileName,
+            string? targetDir,
             DateTime date,
             long fileSize,
             string type,
@@ -57,7 +58,7 @@ namespace XDM.Core
                 Progress = 0,
                 Size = fileSize,
                 Status = startType == DownloadStartType.Waiting ? DownloadStatus.Waiting : DownloadStatus.Stopped,
-                TargetDir = "",
+                TargetDir = targetDir,
                 PrimaryUrl = primaryUrl,
                 Authentication = authentication,
                 Proxy = proxyInfo

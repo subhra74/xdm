@@ -9,6 +9,7 @@
     <Import_RootNamespace>XDM.Core</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)SingleInstance.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Updater\AppUpdater.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ClipboardMonitor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)IO\RequestDataIO.cs" />
@@ -28,13 +29,13 @@
     <Compile Include="$(MSBuildThisFileDirectory)LinkRefresher.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Links.cs" />
     <Compile Include="..\XDM.Core\ApplicationContext.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\BrowserMessageHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\IpcPipeMessageProcessor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\BrowserMonitor.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\IpcHttpHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\IpcHttpMessageProcessor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\JsonMessageParser.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\NativeMessagingConfigurer.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\NativeMessagingHostChannel.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\NativeMessagingHostHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\PipeChannel.cs" />
+    <Compile Include="..\XDM.Core\BrowserMonitoring\IpcPipe.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\VideoUrlHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)HttpServer\HttpParser.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)HttpServer\HttpServer.cs" />

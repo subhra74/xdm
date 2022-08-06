@@ -87,6 +87,8 @@ namespace XDM.Core.UI
 
         IPlatformClipboardMonitor GetClipboardMonitor();
 
+        void ShowAndActivate();
+
         event EventHandler<CategoryChangedEventArgs> CategoryChanged;
 
         event EventHandler InProgressContextMenuOpening;

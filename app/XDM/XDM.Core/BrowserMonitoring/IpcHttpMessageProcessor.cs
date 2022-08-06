@@ -12,11 +12,11 @@ using Translations;
 
 namespace XDM.Core.BrowserMonitoring
 {
-    public class IpcHttpHandler
+    public class IpcHttpMessageProcessor
     {
         private NanoServer server;
 
-        public IpcHttpHandler()
+        public IpcHttpMessageProcessor()
         {
             server = new NanoServer(IPAddress.Loopback, 9614);
             server.RequestReceived += (sender, args) =>
@@ -25,7 +25,7 @@ namespace XDM.Core.BrowserMonitoring
             };
         }
 
-        public void StartHttpIpcChannel()
+        public void Run()
         {
             new Thread(() =>
             {
