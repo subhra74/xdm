@@ -8,6 +8,7 @@ using XDM.Core.Downloader.Adaptive.Dash;
 using XDM.Core.Downloader.Adaptive.Hls;
 using XDM.Core.Downloader.Progressive.DualHttp;
 using XDM.Core.Downloader.Progressive.SingleHttp;
+using XDM.Core.MediaProcessor;
 using XDM.Core.Util;
 
 namespace XDM.Core.BrowserMonitoring
@@ -225,7 +226,7 @@ namespace XDM.Core.BrowserMonitoring
             }
             if (valid)
             {
-                if (Config.Instance.StartDownloadAutomatically)
+                if (Config.Instance.StartDownloadAutomatically && IsFFmpegOK(videoId))
                 {
                     StartVideoDownload(
                         videoId, FileHelper.SanitizeFileName(name),
@@ -237,6 +238,12 @@ namespace XDM.Core.BrowserMonitoring
                     ApplicationContext.Application.ShowVideoDownloadDialog(videoId, name, size, contentType);
                 }
             }
+        }
+
+        public static bool IsFFmpegOK(string id)
+        {
+            if (!ApplicationContext.VideoTracker.IsFFmpegRequiredForDownload(id)) return true;
+            return FFmpegMediaProcessor.IsFFmpegInstalled();
         }
     }
 }

@@ -137,7 +137,7 @@ namespace XDM.Core.Updater
 
         //TODO: Handle MacOS
         private static string GetYoutubeDLExecutableNameForCurrentOS() =>
-            Environment.OSVersion.Platform == PlatformID.Win32NT ? "yt-dlp_x86.exe" : "yt-dlp_linux";
+            Environment.OSVersion.Platform == PlatformID.Win32NT ? "yt-dlp_x86.exe" : "yt-dlp";
 
         //TODO: Handle MacOS
         private static string GetFFmpegExecutableNameForCurrentOS() =>

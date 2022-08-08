@@ -274,31 +274,7 @@ namespace XDM.Core.Util
 
         [DllImport("kernel32.dll")]
         public static extern UInt64 GetTickCount64();
-
-        public static string FindYDLBinary()
-        {
-            //var executableName = Environment.OSVersion.Platform == PlatformID.Win32NT ? "youtube-dl.exe" : "youtube-dl";
-            var executableName = Environment.OSVersion.Platform == PlatformID.Win32NT ? "yt-dlp_x86.exe" : "yt-dlp_linux";
-            var path = Path.Combine(Config.DataDir, executableName);
-            if (File.Exists(path))
-            {
-                return path;
-            }
-            path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, executableName);
-            if (File.Exists(path))
-            {
-                return path;
-            }
-            var ydlPathEnvVar = Environment.GetEnvironmentVariable("YOUTUBEDL_HOME");
-            if (ydlPathEnvVar != null)
-            {
-                return Path.Combine(ydlPathEnvVar, executableName);
-            }
-            var ydlExec = PlatformHelper.FindExecutableFromSystemPath(executableName);
-            if (ydlExec != null) return ydlExec;
-            throw new FileNotFoundException("YoutubeDL executable not found");
-        }
-
+        
         public static string MakeCookieString(Dictionary<string, string> cookies)
         {
             var cookieBuf = new StringBuilder();

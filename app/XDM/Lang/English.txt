@@ -217,3 +217,5 @@ MSG_VIDEO_DOWNLOAD_HELP=Learn More
 MSG_READ_BROWSER_COOKIE=Read cookies from browser
 MSG_SELECT_FOLDER=Select
 MSG_IMPORT_DONE=Import complete
+MSG_HELPER_TOOLS_MISSING=XDM relies on open source application named YT-DLP ( or Youtube-DL if YT-DLP is not available ) for this functionality, but XDM could not find any of them. Would you like to learn about how to install it?
+MSG_FFMPEG_MISSING=XDM relies on open source multimedia framework named FFmpeg, but XDM could not find it. Would you like to learn about how to install it?

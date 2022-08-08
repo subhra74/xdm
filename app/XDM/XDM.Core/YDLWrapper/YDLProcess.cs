@@ -34,15 +34,22 @@ namespace YDLWrapper
 
         public void Start()
         {
-            var exec = Helpers.FindYDLBinary();
+            var exec = FindYDLBinary();
             var pb = new ProcessStartInfo
             {
-                FileName = exec,
+                FileName = exec.Path,
             };
 
+            var fetchCookieArgs = string.Empty;
+            if (exec.BinaryType == YtBinaryType.YtDlp && !string.IsNullOrEmpty(BrowserName))
+            {
+                fetchCookieArgs = $"--cookies-from-browser {BrowserName}";
+            }
+
             var sb = new StringBuilder();
-            foreach (var arg in new string[] { "--no-warnings", "-q", "-i", "-J",
-                string.IsNullOrEmpty(BrowserName)?string.Empty:$"--cookies-from-browser {BrowserName}",
+            foreach (var arg in new string[] {
+                "--no-warnings", "-q", "-i", "-J",
+                fetchCookieArgs,
                 Uri!.ToString() })
             {
                 sb.Append(" " + arg);
@@ -108,6 +115,68 @@ namespace YDLWrapper
                 ydlProc = null;
             }
         }
+
+        private static YtBinaryType GetYtBinaryType(string executableName)
+        {
+            if (executableName.StartsWith("yt-dlp"))
+            {
+                return YtBinaryType.YtDlp;
+            }
+            return YtBinaryType.Yt;
+        }
+
+        public static YtBinary FindYDLBinary()
+        {
+            //var executableName = Environment.OSVersion.Platform == PlatformID.Win32NT ? "youtube-dl.exe" : "youtube-dl";
+            var executableNames = Environment.OSVersion.Platform == PlatformID.Win32NT
+                ? new string[] { "yt-dlp_x86.exe", "youtube-dl.exe" }
+                : new string[] { "yt-dlp", "yt-dlp_linux", "youtube-dl" };
+            string? binPath = null;
+            string? execName = null;
+            var found = false;
+            foreach (var executableName in executableNames)
+            {
+                execName = executableName;
+                var path = Path.Combine(Config.DataDir, executableName);
+                if (File.Exists(path))
+                {
+                    found = true;
+                    binPath = path;
+                    break;
+                }
+                path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, executableName);
+                if (File.Exists(path))
+                {
+                    found = true;
+                    binPath = path;
+                    break;
+                }
+                var ydlPathEnvVar = Environment.GetEnvironmentVariable("YOUTUBEDL_HOME");
+                if (ydlPathEnvVar != null)
+                {
+                    path = Path.Combine(ydlPathEnvVar, executableName);
+                    if (File.Exists(path))
+                    {
+                        found = true;
+                        binPath = path;
+                        break;
+                    }
+                }
+                path = PlatformHelper.FindExecutableFromSystemPath(executableName);
+                if (path != null)
+                {
+                    found = true;
+                    binPath = path;
+                    break;
+                }
+            }
+            if (found)
+            {
+                return new YtBinary { BinaryType = GetYtBinaryType(execName!), Path = binPath! };
+            }
+            throw new FileNotFoundException("YoutubeDL executable not found");
+        }
+
 
         //private void ProcessJson()
         //{

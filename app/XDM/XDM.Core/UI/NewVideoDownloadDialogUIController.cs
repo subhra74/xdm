@@ -56,11 +56,11 @@ namespace XDM.Core.UI
                     window.ShowMessageBox(TextResource.GetText("MSG_NO_FILE"));
                     return;
                 }
-                if (ApplicationContext.VideoTracker.IsFFmpegRequiredForDownload(id) && !IsFFmpegInstalled())
+                if (ApplicationContext.VideoTracker.IsFFmpegRequiredForDownload(id) && !FFmpegMediaProcessor.IsFFmpegInstalled())
                 {
-                    if (ApplicationContext.Application.Confirm(window, TextResource.GetText("MSG_DOWNLOAD_FFMPEG")))
+                    if (ApplicationContext.Application.Confirm(window, TextResource.GetText("MSG_FFMPEG_MISSING")))
                     {
-                        ApplicationContext.Application.InstallLatestFFmpeg();
+                        PlatformHelper.OpenBrowser(Links.HelperToolsUrl);
                     }
                     return;
                 }
@@ -119,19 +119,6 @@ namespace XDM.Core.UI
         private static string AddMp3Extension(string name)
         {
             return $"{Path.GetFileNameWithoutExtension(name)}.mp3";
-        }
-
-        private static bool IsFFmpegInstalled()
-        {
-            try
-            {
-                FFmpegMediaProcessor.FindFFmpegBinary();
-            }
-            catch (FileNotFoundException)
-            {
-                return false;
-            }
-            return true;
         }
 
     }

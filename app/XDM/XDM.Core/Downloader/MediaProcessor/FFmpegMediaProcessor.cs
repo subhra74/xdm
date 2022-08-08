@@ -241,5 +241,18 @@ namespace XDM.Core.MediaProcessor
             }
             throw new FileNotFoundException("FFmpeg executable not found");
         }
+
+        public static bool IsFFmpegInstalled()
+        {
+            try
+            {
+                FindFFmpegBinary();
+            }
+            catch (FileNotFoundException)
+            {
+                return false;
+            }
+            return true;
+        }
     }
 }

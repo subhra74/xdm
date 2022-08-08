@@ -1,0 +1,55 @@
+#!/bin/bash
+
+VERSION=8.0.1
+SRC_DIR=binary-source
+
+rm -rf "xdman_gtk_${VERSION}_amd64"
+rm -f "xdman_gtk_${VERSION}_amd64.deb"
+
+mkdir -p "xdman_gtk_${VERSION}_amd64/DEBIAN"
+mkdir -p "xdman_gtk_${VERSION}_amd64/opt/xdman"
+mkdir -p "xdman_gtk_${VERSION}_amd64/usr/bin"
+mkdir -p "xdman_gtk_${VERSION}_amd64/usr/share/applications"
+
+touch "xdman_gtk_${VERSION}_amd64/DEBIAN/control"
+touch "xdman_gtk_${VERSION}_amd64/opt/xdman/xdman.desktop"
+touch "xdman_gtk_${VERSION}_amd64/usr/bin/xdman"
+
+cat <<EOF > "xdman_gtk_${VERSION}_amd64/DEBIAN/control"
+Package: xdman
+Version: 8.0.1
+Architecture: amd64
+Depends: libgtk-3-0 (>= 3.22.11), ffmpeg
+Maintainer: Subhra Das Gupta
+Description: Powerfull download accelerator and video downloader.
+ Powerfull open source download accelerator and video downloader.
+EOF
+
+cat <<EOF > "xdman_gtk_${VERSION}_amd64/opt/xdman/xdman.desktop"
+[Desktop Entry]
+Version=1.0
+Encoding=UTF-8
+Exec=/opt/xdman/xdm-app %U
+Type=Application
+Terminal=false
+Exec="/opt/xdman/xdm-app" -m
+Name=Xtreme Download Manager
+Comment=Xtreme Download Manager
+Categories=Network;
+Icon="/opt/xdman/xdm-logo.svg"
+EOF
+
+cat <<EOF > "xdman_gtk_${VERSION}_amd64/usr/bin/xdman"
+#!/bin/bash
+/opt/xdman/xdm-app \$@
+EOF
+
+cp "xdman_gtk_${VERSION}_amd64/opt/xdman/xdman.desktop" "xdman_gtk_${VERSION}_amd64/usr/share/applications"
+cp -r "${SRC_DIR}/." "xdman_gtk_${VERSION}_amd64/opt/xdman"
+
+chmod 777 "xdman_gtk_${VERSION}_amd64/usr/bin/xdman"
+chmod 777 "xdman_gtk_${VERSION}_amd64/opt/xdman/xdman.desktop"
+chmod 777 "xdman_gtk_${VERSION}_amd64/opt/xdman/xdm-app"
+chmod 777 "xdman_gtk_${VERSION}_amd64/opt/xdman/MessagingHost/xdm-messaging-host"
+
+dpkg-deb --build --root-owner-group "xdman_gtk_${VERSION}_amd64"

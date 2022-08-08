@@ -564,7 +564,7 @@ namespace XDM.Core.Util
         public static string? FindExecutableFromSystemPath(string executableName)
         {
             var values = Environment.GetEnvironmentVariable("PATH");
-            foreach (var spath in values?.Split(Path.PathSeparator) ?? new string[0])
+            foreach (var spath in values?.Split(Path.PathSeparator) ?? new string[] { string.Empty })
             {
                 var fullPath = Path.Combine(spath, executableName);
                 if (File.Exists(fullPath))
