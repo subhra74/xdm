@@ -38,6 +38,7 @@ namespace XDM.Core.Util
                         FileName = url,
                     };
                     psiShellEx.UseShellExecute = true;
+                    Log.Debug($"Shell execute: {url}");
                     Process.Start(psiShellEx);
                     break;
 #if NET5_0_OR_GREATER
@@ -47,6 +48,7 @@ namespace XDM.Core.Util
                         FileName = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "open" : "xdg-open"
                     };
                     psi.Arguments = "\"" + url + "\"";
+                    Log.Debug($"{psi.FileName} {psi.Arguments}");
                     Process.Start(psi);
                     break;
 #endif
@@ -70,6 +72,7 @@ namespace XDM.Core.Util
                             FileName = path,
                             UseShellExecute = true
                         };
+                        Log.Debug($"Shell execute: {path}");
                         Process.Start(psiShellEx);
                         return true;
 #if NET5_0_OR_GREATER
@@ -79,6 +82,7 @@ namespace XDM.Core.Util
                             FileName = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "open" : "xdg-open"
                         };
                         psi.Arguments = "\"" + path + "\"";
+                        Log.Debug($"{psi.FileName} {psi.Arguments}");
                         Process.Start(psi);
                         return true;
 #endif
@@ -103,22 +107,28 @@ namespace XDM.Core.Util
                         switch (os)
                         {
                             case PlatformID.Win32NT:
-                                var psiShellEx = new ProcessStartInfo
                                 {
-                                    FileName = "explorer",
-                                };
-                                psiShellEx.Arguments = $"/select, \"{Path.Combine(path, file)}\"";
-                                Process.Start(psiShellEx);
-                                return true;
+                                    var psi = new ProcessStartInfo
+                                    {
+                                        FileName = "explorer",
+                                    };
+                                    psi.Arguments = $"/select, \"{Path.Combine(path, file)}\"";
+                                    Log.Debug($"{psi.FileName} {psi.Arguments}");
+                                    Process.Start(psi);
+                                    return true;
+                                }
 #if NET5_0_OR_GREATER
                             case PlatformID.Unix:
-                                var psi = new ProcessStartInfo
                                 {
-                                    FileName = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "open" : "xdg-open"
-                                };
-                                psi.Arguments = $"\"{path}\"";
-                                Process.Start(psi);
-                                return true;
+                                    var psi = new ProcessStartInfo
+                                    {
+                                        FileName = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "open" : "xdg-open"
+                                    };
+                                    psi.Arguments = $"\"{path}\"";
+                                    Log.Debug($"{psi.FileName} {psi.Arguments}");
+                                    Process.Start(psi);
+                                    return true;
+                                }
 #endif
                         }
                     }
@@ -297,7 +307,9 @@ namespace XDM.Core.Util
                     {
                         Directory.CreateDirectory(autoStartDir);
                     }
-                    File.WriteAllText(Path.Combine(autoStartDir, "xdm-app.desktop"), GetLinuxDesktopFile());
+                    var desktopFile = Path.Combine(autoStartDir, "xdm-app.desktop");
+                    File.WriteAllText(desktopFile, GetLinuxDesktopFile());
+                    SetExecutable(desktopFile);
                     return true;
                 }
 #endif
@@ -322,7 +334,7 @@ namespace XDM.Core.Util
         public static string GetLinuxDesktopFile()
         {
             var appPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-app");
-            var iconPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "svg-icons", "xdm-logo.svg");
+            var iconPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-logo.svg");
 
             return "[Desktop Entry]\r\n" +
                 "Encoding=UTF-8\r\n" +
@@ -333,7 +345,7 @@ namespace XDM.Core.Util
                 "Name=Xtreme Download Manager\r\n" +
                 "Comment=Xtreme Download Manager\r\n" +
                 "Categories=Network;\r\n" +
-                $"Icon=\"{iconPath}\"";
+                $"Icon={iconPath}";
         }
 
         //     public static void addToStartup()
@@ -485,6 +497,7 @@ namespace XDM.Core.Util
             {
                 psi.Arguments = string.Join(" ", args);
             }
+            Log.Debug($"{psi.FileName} ${psi.Arguments}");
             Process.Start(psi);
         }
 
@@ -596,6 +609,15 @@ namespace XDM.Core.Util
             }
         }
 
+        public static bool SetExecutable(string path)
+        {
+            const int _0755 =
+            S_IRUSR | S_IXUSR | S_IWUSR
+            | S_IRGRP | S_IXGRP
+            | S_IROTH | S_IXOTH;
+            return (chmod(Path.GetFullPath(path), (int)_0755) == 0);
+        }
+
         [FlagsAttribute]
         public enum EXECUTION_STATE : uint
         {
@@ -609,5 +631,24 @@ namespace XDM.Core.Util
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern EXECUTION_STATE SetThreadExecutionState(EXECUTION_STATE esFlags);
+
+        // user permissions
+        const int S_IRUSR = 0x100;
+        const int S_IWUSR = 0x80;
+        const int S_IXUSR = 0x40;
+
+        // group permission
+        const int S_IRGRP = 0x20;
+        const int S_IWGRP = 0x10;
+        const int S_IXGRP = 0x8;
+
+        // other permissions
+        const int S_IROTH = 0x4;
+        const int S_IWOTH = 0x2;
+        const int S_IXOTH = 0x1;
+
+        [DllImport("libc", SetLastError = true)]
+        public static extern int chmod(string pathname, int mode);
+
     }
 }

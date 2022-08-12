@@ -2,12 +2,14 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading;
 using TraceLog;
 using XDM.Core;
 using XDM.Core.Downloader;
 using XDM.Core.Downloader.Progressive.SingleHttp;
 using XDM.Core.Updater;
+using XDM.Core.Util;
 
 namespace XDM.Core.UI
 {
@@ -126,7 +128,14 @@ namespace XDM.Core.UI
                 Log.Debug("Finished " + updates[count].Name);
                 downloaded += updates[count].Size;
                 count++;
-                files.Add(http!.TargetFile);
+                files.Add(http!.TargetFile!);
+
+#if NET5_0_OR_GREATER
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    PlatformHelper.SetExecutable(http!.TargetFile!);
+                }
+#endif
                 if (count == updates.Count)
                 {
                     foreach (var file in files)

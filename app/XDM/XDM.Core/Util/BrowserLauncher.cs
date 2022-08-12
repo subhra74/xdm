@@ -247,12 +247,15 @@ namespace XDM.Core.Util
 
         private static void Exec(string path, string args)
         {
+            Log.Debug($"{path} {args}");
+
             var psi = new ProcessStartInfo
             {
                 FileName = path,
                 UseShellExecute = false,
                 Arguments = args
             };
+
             Process.Start(psi);
         }
     }

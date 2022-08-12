@@ -51,9 +51,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!--<Content Include="images\*.*">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</Content>-->
     <Content Include="glade\*.*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -61,64 +58,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="..\Lang\*.*" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" LinkBase="Lang\" />
+    <Content Include="..\xdm-logo.svg" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
   </ItemGroup>
-
-  <!--<ItemGroup>
-    <LangFiles Include="$(SolutionDir)\Lang\**" />
-  </ItemGroup>
-
-  <Target Name="Copy" AfterTargets="Build">
-    <Copy SourceFiles="@(LangFiles)" DestinationFolder="$(OutDir)\Lang" />
-  </Target>-->
-
-  <!--<ItemGroup>
-		<None Remove="glade\advanced-download-dialog.glade" />
-		<None Remove="glade\advanced-download-window.glade" />
-		<None Remove="glade\download-complete-window.glade" />
-		<None Remove="glade\download-progress-window.glade" />
-		<None Remove="glade\new-video-download-window.glade" />
-		<None Remove="glade\queue-manager-dialog.glade" />
-		<None Remove="glade\video-downloader-window.glade" />
-		<None Remove="images\add-line.svg" />
-		<None Remove="images\apps-line.svg" />
-		<None Remove="images\check-line.svg" />
-		<None Remove="images\delete-bin-line.svg" />
-		<None Remove="images\download-line.svg" />
-		<None Remove="images\file-4-line.svg" />
-		<None Remove="images\file-chart-2-line.svg" />
-		<None Remove="images\file-copy-line.svg" />
-		<None Remove="images\file-download-line.svg" />
-		<None Remove="images\file-line.svg" />
-		<None Remove="images\file-text-line.svg" />
-		<None Remove="images\file-zip-line.svg" />
-		<None Remove="images\film-line.svg" />
-		<None Remove="images\folder-download-line.svg" />
-		<None Remove="images\image-line.svg" />
-		<None Remove="images\menu-line.svg" />
-		<None Remove="images\music-2-line.svg" />
-		<None Remove="images\pause-line.svg" />
-		<None Remove="images\play-line.svg" />
-		<None Remove="images\search-line.svg" />
-		<None Remove="images\task-line.svg" />
-		<None Remove="images\time-line.svg" />
-		<None Remove="images\video-download-line.svg" />
-		<None Remove="svg-icons\download-complete-window.glade" />
-		<None Remove="svg-icons\list-settings-fill.svg" />
-		<None Remove="svg-icons\notification-3-fill.svg" />
-		<None Remove="svg-icons\question-line.svg" />
-	</ItemGroup>-->
-
-  <!--<ItemGroup>
-    <ProjectReference Include="..\BrowserMonitor\BrowserMonitor.csproj" />
-    <ProjectReference Include="..\NativeMessagingHost\NativeMessagingHost.csproj" />
-    <ProjectReference Include="..\Translations\Translations.csproj" />
-    <ProjectReference Include="..\XDM.Core.UI\XDM.Core.UI.csproj" />
-    <ProjectReference Include="..\XDM.Core\XDM.Core.csproj" />
-    <ProjectReference Include="..\XDM_CoreFx\XDM.Core.csproj" />
-    <ProjectReference Include="..\YoutubeDLHandler\YDLWrapper.csproj" />
-    <ProjectReference Include="..\TraceLog\TraceLog.csproj" />
-  </ItemGroup>-->
-
+  
   <ItemGroup>
     <Reference Include="AtkSharp">
       <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\AtkSharp.dll</HintPath>
@@ -148,9 +90,6 @@
 
   <ItemGroup>
     <None Update="source_pkg.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="xdm-app.desktop">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

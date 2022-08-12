@@ -65,6 +65,9 @@ namespace YDLWrapper
             }
 
             pb.Arguments = sb.ToString();
+
+            Log.Debug($"{exec.Path} {pb.Arguments}");
+
             pb.RedirectStandardOutput = true;
             pb.CreateNoWindow = true;
             pb.UseShellExecute = false;
