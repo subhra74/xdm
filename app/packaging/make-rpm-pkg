@@ -1,0 +1,83 @@
+#!/bin/bash
+
+#Please place all the published files under ./binary-source directory
+
+VERSION=8.0.1
+SRC_DIR=binary-source
+SOURCE_NAME="xdman_gtk-${VERSION}"
+
+rm -rf "${SOURCE_NAME}"
+
+mkdir -p rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
+mkdir "${SOURCE_NAME}"
+
+mkdir -p "${SOURCE_NAME}/opt/xdman"
+mkdir -p "${SOURCE_NAME}/usr/bin"
+mkdir -p "${SOURCE_NAME}/usr/share/applications"
+
+cp -r "${SRC_DIR}/." "${SOURCE_NAME}/opt/xdman"
+
+touch "${SOURCE_NAME}/opt/xdman/xdm-app.desktop"
+touch "${SOURCE_NAME}/usr/bin/xdman"
+
+cat <<EOF > "${SOURCE_NAME}/opt/xdman/xdm-app.desktop"
+[Desktop Entry]
+Version=1.0
+Encoding=UTF-8
+Exec=/opt/xdman/xdm-app %U
+Type=Application
+Terminal=false
+Name=Xtreme Download Manager
+Comment=Xtreme Download Manager
+Categories=Network;
+Icon=/opt/xdman/xdm-logo.svg
+EOF
+
+cat <<EOF > "${SOURCE_NAME}/usr/bin/xdman"
+#!/bin/bash
+/opt/xdman/xdm-app \$@
+EOF
+
+cat <<EOF > "${SOURCE_NAME}/opt/xdman/source_pkg.txt"
+rpm
+EOF
+
+cp "${SOURCE_NAME}/opt/xdman/xdm-app.desktop" "${SOURCE_NAME}/usr/share/applications"
+
+chmod 755 "${SOURCE_NAME}/usr/bin/xdman"
+chmod 755 "${SOURCE_NAME}/opt/xdman/xdm-app"
+chmod 755 "${SOURCE_NAME}/opt/xdman/MessagingHost/xdm-messaging-host"
+chmod 755 "${SOURCE_NAME}/opt/xdman/yt-dlp"
+
+tar --create --file "${SOURCE_NAME}.tar.gz" "${SOURCE_NAME}"
+mv "${SOURCE_NAME}.tar.gz" "rpmbuild/SOURCES"
+
+cat <<EOF > "rpmbuild/SPECS/xdman_gtk.spec"
+Name:       	xdman_gtk
+Version:    	${VERSION}
+Release:    	1%{?dist}
+Summary:    	Xtreme Download Manager
+AutoReqProv: 	no
+Requires:   	gtk3 >= 3.22
+Requires:   	ffmpeg-free
+
+Group:      	System Environment/Base
+License:    	GPLv3+
+Source0:    	${SOURCE_NAME}.tar.gz
+
+%description
+Powerfull download accelerator and video downloader.
+
+%prep
+%setup -q
+
+%install
+cp -rfa * %{buildroot}
+
+%files
+/usr/bin/*
+/usr/share/applications/*
+/opt/xdman/*
+EOF
+
+rpmbuild --define "_topdir `pwd`/rpmbuild" -bb rpmbuild/SPECS/xdman_gtk.spec

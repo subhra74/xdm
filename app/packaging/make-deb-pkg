@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#Please place all the published files under ./binary-source directory
+
 VERSION=8.0.1
 SRC_DIR=binary-source
 
@@ -19,7 +21,7 @@ touch "xdman_gtk_${VERSION}_amd64/usr/bin/xdman"
 
 cat <<EOF > "xdman_gtk_${VERSION}_amd64/DEBIAN/control"
 Package: xdman
-Version: 8.0.1
+Version: ${VERSION}
 Architecture: amd64
 Depends: libgtk-3-0 (>= 3.22.11)
 Recommends: ffmpeg
@@ -46,11 +48,13 @@ cat <<EOF > "xdman_gtk_${VERSION}_amd64/usr/bin/xdman"
 /opt/xdman/xdm-app \$@
 EOF
 
+cat <<EOF > "xdman_gtk_${VERSION}_amd64/opt/xdman/source_pkg.txt"
+deb
+EOF
+
 cp "xdman_gtk_${VERSION}_amd64/opt/xdman/xdm-app.desktop" "xdman_gtk_${VERSION}_amd64/usr/share/applications"
 
 chmod 755 "xdman_gtk_${VERSION}_amd64/usr/bin/xdman"
-chmod 755 "xdman_gtk_${VERSION}_amd64/opt/xdman/xdm-app.desktop"
-chmod 755 "xdman_gtk_${VERSION}_amd64/usr/share/applications/xdm-app.desktop"
 chmod 755 "xdman_gtk_${VERSION}_amd64/opt/xdman/xdm-app"
 chmod 755 "xdman_gtk_${VERSION}_amd64/opt/xdman/MessagingHost/xdm-messaging-host"
 chmod 755 "xdman_gtk_${VERSION}_amd64/opt/xdman/yt-dlp"
