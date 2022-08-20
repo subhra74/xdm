@@ -107,7 +107,7 @@ namespace XDM.GtkUI
 
         public MainWindow() : base("Xtreme Download Manager")
         {
-            SetDefaultIconFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "svg-icons", "xdm-logo.svg"));
+            SetDefaultIconFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-logo-512.png"));
             SetPosition(WindowPosition.CenterAlways);
             DeleteEvent += AppWin1_DeleteEvent;
             this.windowGroup = new WindowGroup();

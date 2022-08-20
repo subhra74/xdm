@@ -179,5 +179,53 @@ namespace XDM.Wpf.UI.Dialogs.Settings
         {
             PlatformHelper.OpenBrowser(Links.VideoDownloadTutorialUrl);
         }
+
+        private void BtnBrave_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                NativeMessagingConfigurer.InstallNativeMessagingHost(Browser.Chrome);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error installing native host");
+                MessageBox.Show(TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
+                return;
+            }
+
+            try
+            {
+                BrowserLauncher.LaunchBraveBrowser(Links.ChromeExtensionUrl);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error Brave Browser");
+                MessageBox.Show($"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Brave browser");
+            }
+        }
+
+        private void BtnVivaldi_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                NativeMessagingConfigurer.InstallNativeMessagingHost(Browser.Chrome);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error installing native host");
+                MessageBox.Show(TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
+                return;
+            }
+
+            try
+            {
+                BrowserLauncher.LaunchVivaldi(Links.ChromeExtensionUrl);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error Vivaldi");
+                MessageBox.Show($"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Vivaldi");
+            }
+        }
     }
 }

@@ -18,7 +18,7 @@ namespace XDM.GtkUI
 
         static void Main(string[] args)
         {
-            Gtk.Application.Init();
+            Gtk.Application.Init("xdm-app", ref args);
             GLib.ExceptionManager.UnhandledException += ExceptionManager_UnhandledException;
             var globalStyleSheet = @"
                                     .large-font{ font-size: 16px; }
@@ -113,7 +113,6 @@ namespace XDM.GtkUI
             //      }
             //  });
             //t.Start();
-
             Gtk.Application.Run();
 
             //var app = new XDM.Core.XDM.Core();

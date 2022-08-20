@@ -10,238 +10,168 @@ namespace XDM.Core.Util
 {
     public static class BrowserLauncher
     {
+        public static void LaunchBrowser(string executableName, string args, IEnumerable<string> paths)
+        {
+            var pathsToCheck = new List<string>(paths);
+            var envPaths = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator);
+            if (envPaths != null)
+            {
+                pathsToCheck.AddRange(envPaths);
+            }
+
+            if (pathsToCheck != null && pathsToCheck.Count > 0)
+            {
+                foreach (var path in pathsToCheck)
+                {
+                    Log.Debug($"Finding {executableName} in path: {path}");
+                    var file = Path.Combine(path, executableName);
+                    if (File.Exists(file))
+                    {
+                        Exec(file, args);
+                        return;
+                    }
+                }
+            }
+
+            throw new FileNotFoundException("Could not launch browser as it is not found in the system");
+        }
+
         public static void LaunchGoogleChrome(string args)
         {
-            string[]? paths = null;
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
-                paths = new string[]{
-                    Path.Combine(Environment.GetEnvironmentVariable("ProgramW6432")!, @"Google\Chrome\Application\chrome.exe"),
-                    Path.Combine(Environment.GetEnvironmentVariable("LOCALAPPDATA")!, @"Google\Chrome\Application\chrome.exe"),
-                    Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES")!, @"Google\Chrome\Application\chrome.exe"),
-                    Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")!, @"Google\Chrome\Application\chrome.exe")
-                };
+                LaunchBrowser("chrome.exe", args, new string[]
+                {
+                    Path.Combine(Environment.GetEnvironmentVariable("ProgramW6432")!, @"Google\Chrome\Application"),
+                    Path.Combine(Environment.GetEnvironmentVariable("LOCALAPPDATA")!, @"Google\Chrome\Application"),
+                    Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES")!, @"Google\Chrome\Application"),
+                    Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")!, @"Google\Chrome\Application")
+                });
             }
             else if (Environment.OSVersion.Platform == PlatformID.Unix)
             {
-                paths = new string[]{
-                    "/usr/bin/google-chrome"
-                };
+                LaunchBrowser("google-chrome", args, new string[] { "/usr/bin" });
             }
             else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
             {
-                paths = new string[]{
-                    "/Applications/Google Chrome.app"
-                };
-            }
-
-            if (paths != null && paths.Length > 0)
-            {
-                foreach (var path in paths)
-                {
-                    Log.Debug($"Finding chrome in path: {path}");
-                    if (File.Exists(path))
-                    {
-                        Exec(path, args);
-                        break;
-                    }
-                }
+                LaunchBrowser("Google Chrome.app", args, new string[] { "/Applications" });
             }
         }
 
         public static void LaunchFirefox(string args)
         {
-            string[]? paths = null;
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
-                paths = new string[]{
-                    Path.Combine(Environment.GetEnvironmentVariable("ProgramW6432")!, @"Mozilla Firefox\firefox.exe"),
-                    Path.Combine(Environment.GetEnvironmentVariable("LOCALAPPDATA")!, @"Mozilla Firefox\firefox.exe"),
-                    Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES")!, @"Mozilla Firefox\firefox.exe"),
-                    Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")!, @"Mozilla Firefox\firefox.exe")
-                };
+                LaunchBrowser("firefox.exe", args, new string[]
+                {
+                    Path.Combine(Environment.GetEnvironmentVariable("ProgramW6432")!, @"Mozilla Firefox"),
+                    Path.Combine(Environment.GetEnvironmentVariable("LOCALAPPDATA")!, @"Mozilla Firefox"),
+                    Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES")!, @"Mozilla Firefox"),
+                    Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")!, @"Mozilla Firefox")
+                });
             }
             else if (Environment.OSVersion.Platform == PlatformID.Unix)
             {
-                paths = new string[]{
-                    "/usr/bin/firefox"
-                };
+                LaunchBrowser("firefox", args, new string[] { "/usr/bin" });
             }
             else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
             {
-                paths = new string[]{
-                    "/Applications/Firefox.app"
-                };
-            }
-
-            if (paths != null && paths.Length > 0)
-            {
-                foreach (var path in paths)
-                {
-                    Log.Debug($"Finding firefox in path: {path}");
-                    if (File.Exists(path))
-                    {
-                        Exec(path, args);
-                        break;
-                    }
-                }
+                LaunchBrowser("Firefox.app", args, new string[] { "/Applications" });
             }
         }
 
         public static void LaunchMicrosoftEdge(string args)
         {
-            string[]? paths = null;
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
-                paths = new string[]{
-                    Path.Combine(Environment.GetEnvironmentVariable("ProgramW6432")!, @"Microsoft\Edge\Application\msedge.exe"),
-                    Path.Combine(Environment.GetEnvironmentVariable("LOCALAPPDATA")!, @"Microsoft\Edge\Application\msedge.exe"),
-                    Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES")!, @"Microsoft\Edge\Application\msedge.exe"),
-                    Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")!, @"Microsoft\Edge\Application\msedge.exe")
-                };
+                LaunchBrowser("msedge.exe", args, new string[]
+                {
+                    Path.Combine(Environment.GetEnvironmentVariable("ProgramW6432")!, @"Microsoft\Edge\Application"),
+                    Path.Combine(Environment.GetEnvironmentVariable("LOCALAPPDATA")!, @"Microsoft\Edge\Application"),
+                    Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES")!, @"Microsoft\Edge\Application"),
+                    Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")!, @"Microsoft\Edge\Application")
+                });
             }
             else if (Environment.OSVersion.Platform == PlatformID.Unix)
             {
-                paths = new string[]{
-                    "/usr/bin/microsoft-edge"
-                };
+                LaunchBrowser("microsoft-edge", args, new string[] { "/usr/bin" });
             }
             else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
             {
-                paths = new string[]{
-                    "/Applications/Microsoft Edge.app"
-                };
-            }
-
-            if (paths != null && paths.Length > 0)
-            {
-                foreach (var path in paths)
-                {
-                    Log.Debug($"Finding edge in path: {path}");
-                    if (File.Exists(path))
-                    {
-                        Exec(path, args);
-                        break;
-                    }
-                }
+                LaunchBrowser("Microsoft Edge.app", args, new string[] { "/Applications" });
             }
         }
 
         public static void LaunchVivaldi(string args)
         {
-            string[]? paths = null;
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
-                paths = new string[]{
-                    Path.Combine(Environment.GetEnvironmentVariable("ProgramW6432")!, @"Vivaldi\Application\vivaldi.exe"),
-                    Path.Combine(Environment.GetEnvironmentVariable("LOCALAPPDATA")!, @"Vivaldi\Application\vivaldi.exe"),
-                    Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES")!, @"Vivaldi\Application\vivaldi.exe"),
-                    Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")!, @"Vivaldi\Application\vivaldi.exe")
-                };
+                LaunchBrowser("vivaldi.exe", args, new string[]
+                {
+                    Path.Combine(Environment.GetEnvironmentVariable("ProgramW6432")!, @"Vivaldi\Application"),
+                    Path.Combine(Environment.GetEnvironmentVariable("LOCALAPPDATA")!, @"Vivaldi\Application"),
+                    Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES")!, @"Vivaldi\Application"),
+                    Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")!, @"Vivaldi\Application")
+                });
             }
             else if (Environment.OSVersion.Platform == PlatformID.Unix)
             {
-                paths = new string[]{
-                    "/usr/bin/vivaldi"
-                };
+                LaunchBrowser("vivaldi", args, new string[] { "/usr/bin" });
             }
             else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
             {
-                paths = new string[]{
-                    "/Applications/Vivaldi.app"
-                };
-            }
-
-            if (paths != null && paths.Length > 0)
-            {
-                foreach (var path in paths)
-                {
-                    Log.Debug($"Finding Vivaldi in path: {path}");
-                    if (File.Exists(path))
-                    {
-                        Exec(path, args);
-                        break;
-                    }
-                }
+                LaunchBrowser("Vivaldi.app", args, new string[] { "/Applications" });
             }
         }
 
         public static void LaunchBraveBrowser(string args)
         {
-            string[]? paths = null;
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
-                paths = new string[]{
-                    Path.Combine(Environment.GetEnvironmentVariable("ProgramW6432")!, @"BraveSoftware\Brave-Browser\Application\brave.exe"),
-                    Path.Combine(Environment.GetEnvironmentVariable("LOCALAPPDATA")!, @"BraveSoftware\Brave-Browser\Application\brave.exe"),
-                    Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES")!, @"BraveSoftware\Brave-Browser\Application\brave.exe"),
-                    Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")!, @"BraveSoftware\Brave-Browser\Application\brave.exe")
-                };
+                LaunchBrowser("brave.exe", args, new string[]
+                {
+                    Path.Combine(Environment.GetEnvironmentVariable("ProgramW6432")!, @"BraveSoftware\Brave-Browser\Application"),
+                    Path.Combine(Environment.GetEnvironmentVariable("LOCALAPPDATA")!, @"BraveSoftware\Brave-Browser\Application"),
+                    Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES")!, @"BraveSoftware\Brave-Browser\Application"),
+                    Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")!, @"BraveSoftware\Brave-Browser\Application")
+                });
             }
             else if (Environment.OSVersion.Platform == PlatformID.Unix)
             {
-                paths = new string[]{
-                    "/usr/bin/brave",
-                    "/usr/bin/brave-browser"
-                };
+                try
+                {
+                    LaunchBrowser("brave", args, new string[] { "/usr/bin/brave" });
+                }
+                catch
+                {
+                    LaunchBrowser("brave-browser", args, new string[] { "/usr/bin/brave-browser" });
+                }
             }
             else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
             {
-                paths = new string[]{
-                    "/Applications/Brave Browser.app"
-                };
-            }
-
-            if (paths != null && paths.Length > 0)
-            {
-                foreach (var path in paths)
-                {
-                    Log.Debug($"Finding vivaldi in path: {path}");
-                    if (File.Exists(path))
-                    {
-                        Exec(path, args);
-                        break;
-                    }
-                }
+                LaunchBrowser("Brave Browser.app", args, new string[] { "/Applications" });
             }
         }
 
         public static void LaunchOperaBrowser(string args)
         {
-            string[]? paths = null;
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
-                paths = new string[]{
-                    Path.Combine(Environment.GetEnvironmentVariable("ProgramW6432")!, @"Programs\Opera\opera.exe"),
-                    Path.Combine(Environment.GetEnvironmentVariable("LOCALAPPDATA")!, @"Programs\Opera\opera.exe"),
-                    Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES")!, @"Programs\Opera\opera.exe"),
-                    Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")!, @"Programs\Opera\opera.exe")
-                };
+                LaunchBrowser("opera.exe", args, new string[]
+                {
+                    Path.Combine(Environment.GetEnvironmentVariable("ProgramW6432")!, @"Opera"),
+                    Path.Combine(Environment.GetEnvironmentVariable("LOCALAPPDATA")!, @"Programs\Opera"),
+                    Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES")!, @"Opera"),
+                    Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")!, @"Opera")
+                });
             }
             else if (Environment.OSVersion.Platform == PlatformID.Unix)
             {
-                paths = new string[]{
-                    "/usr/bin/opera"
-                };
+                LaunchBrowser("opera", args, new string[] { "/usr/bin" });
             }
             else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
             {
-                paths = new string[]{
-                    "/Applications/Opera.app"
-                };
-            }
-
-            if (paths != null && paths.Length > 0)
-            {
-                foreach (var path in paths)
-                {
-                    Log.Debug($"Finding vivaldi in path: {path}");
-                    if (File.Exists(path))
-                    {
-                        Exec(path, args);
-                        break;
-                    }
-                }
+                LaunchBrowser("Opera.app", args, new string[] { "/Applications" });
             }
         }
 

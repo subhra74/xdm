@@ -92,6 +92,9 @@
     <None Update="source_pkg.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="xdm-logo-512.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <Import Project="..\XDM.Core\XDM.Core.projitems" Label="Shared" />

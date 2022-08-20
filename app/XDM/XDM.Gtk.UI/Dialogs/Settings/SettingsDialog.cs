@@ -32,7 +32,7 @@ namespace XDM.GtkUI.Dialogs.Settings
         [UI]
         private LinkButton VideoWikiLink;
         [UI]
-        Button BtnChrome, BtnFirefox, BtnEdge, BtnOpera, BtnDefault1, BtnDefault2,
+        Button BtnChrome, BtnFirefox, BtnEdge, BtnOpera, BtnBrave, BtnVivaldi, BtnDefault1, BtnDefault2,
             BtnDefault3, CatAdd, CatEdit, CatDel, CatDef, AddPass, EditPass, DelPass, BtnUserAgentReset,
             BtnCopy1, BtnCopy2, BtnCancel, BtnOK, BtnDownloadFolderBrowse, BtnTempFolderBrowse, BtnBrowse;
         [UI]
@@ -91,6 +91,8 @@ namespace XDM.GtkUI.Dialogs.Settings
             BtnFirefox.Clicked += BtnFirefox_Clicked;
             BtnEdge.Clicked += BtnEdge_Clicked;
             BtnOpera.Clicked += BtnOpera_Clicked;
+            BtnBrave.Clicked += BtnBrave_Clicked;
+            BtnVivaldi.Clicked += BtnVivaldi_Clicked;
             BtnCopy1.Clicked += BtnCopy1_Clicked;
             BtnCopy2.Clicked += BtnCopy2_Clicked;
             BtnDefault1.Clicked += BtnDefault1_Clicked;
@@ -344,6 +346,54 @@ namespace XDM.GtkUI.Dialogs.Settings
             {
                 Log.Debug(ex, "Error launching Opera");
                 GtkHelper.ShowMessageBox(this, $"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Opera");
+            }
+        }
+
+        private void BtnBrave_Clicked(object? sender, EventArgs e)
+        {
+            try
+            {
+                NativeMessagingConfigurer.InstallNativeMessagingHost(Browser.Chrome);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error installing native host");
+                GtkHelper.ShowMessageBox(this, TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
+                return;
+            }
+
+            try
+            {
+                BrowserLauncher.LaunchBraveBrowser(Links.ChromeExtensionUrl);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error launching Brave");
+                GtkHelper.ShowMessageBox(this, $"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Brave Browser");
+            }
+        }
+
+        private void BtnVivaldi_Clicked(object? sender, EventArgs e)
+        {
+            try
+            {
+                NativeMessagingConfigurer.InstallNativeMessagingHost(Browser.Chrome);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error installing native host");
+                GtkHelper.ShowMessageBox(this, TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
+                return;
+            }
+
+            try
+            {
+                BrowserLauncher.LaunchVivaldi(Links.ChromeExtensionUrl);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error launching Vivaldi");
+                GtkHelper.ShowMessageBox(this, $"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Vivaldi");
             }
         }
 

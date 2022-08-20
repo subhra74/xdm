@@ -90,6 +90,11 @@
                             <TextBlock Text="Opera" Margin="10,0,0,0" VerticalAlignment="Center" FontSize="16" Foreground="{StaticResource ControlForecolor}"/>
                         </StackPanel>-->
                     </Button>
+                    <Button Name="BtnBrave" Margin="5" Grid.Column="0" Grid.Row="2" Click="BtnBrave_Click"
+                            Content="Brave Browser" FontSize="18" Foreground="{StaticResource ControlForecolor}" Padding="10"/>
+                    <Button Name="BtnVivaldi" Margin="5" Grid.Column="1" Grid.Row="2" Click="BtnVivaldi_Click"
+                            Content="Vivaldi Browser" FontSize="18" Foreground="{StaticResource ControlForecolor}" Padding="10"/>
+
                 </Grid>
                 <TextBlock Padding="10" TextWrapping="Wrap" Text="{StaticResource DESC_OTHER_BROWSERS}" Grid.Row="3" Grid.ColumnSpan="4" />
                 <TextBlock Padding="10" TextWrapping="Wrap" Text="{StaticResource DESC_CHROME}" Grid.Row="4" Grid.ColumnSpan="2" />
