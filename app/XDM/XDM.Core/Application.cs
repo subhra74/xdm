@@ -521,16 +521,20 @@ namespace XDM.Core
 
             ApplicationContext.MainWindow.UpdateClicked += (s, e) =>
             {
-                if (AppUpdater.IsComponentUpdateAvailable && !AppUpdater.IsAppUpdateAvailable)
+                if (AppUpdater.IsAppUpdateAvailable)
+                {
+                    PlatformHelper.OpenBrowser(AppUpdater.UpdatePage);
+                    return;
+                }
+                if (AppUpdater.IsComponentUpdateAvailable)
                 {
                     if (ApplicationContext.MainWindow.Confirm(ApplicationContext.MainWindow, AppUpdater.ComponentUpdateText))
                     {
                         LaunchUpdater(UpdateMode.FFmpegUpdateOnly | UpdateMode.YoutubeDLUpdateOnly);
-                        return;
                     }
+                    return;
                 }
-                PlatformHelper.OpenBrowser(AppUpdater.UpdatePage);
-                //ApplicationContext.PlatformUIService.ShowMessageBox(ApplicationContext.MainWindow, TextResource.GetText("MSG_NO_UPDATE"));
+                ApplicationContext.PlatformUIService.ShowMessageBox(ApplicationContext.MainWindow, TextResource.GetText("MSG_NO_UPDATE"));
             };
 
             ApplicationContext.MainWindow.BrowserMonitoringButtonClicked += (s, e) =>

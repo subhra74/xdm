@@ -26,8 +26,8 @@ Architecture: amd64
 Depends: libgtk-3-0 (>= 3.22.11)
 Recommends: ffmpeg
 Maintainer: Subhra Das Gupta
-Description: Powerfull download accelerator and video downloader.
- Powerfull open source download accelerator and video downloader.
+Description: Open source download accelerator and video downloader.
+ Open source download accelerator and video downloader.
 EOF
 
 cat <<EOF > "xdman_gtk_${VERSION}_amd64/opt/xdman/xdm-app.desktop"
@@ -49,7 +49,7 @@ cat <<EOF > "xdman_gtk_${VERSION}_amd64/usr/bin/xdman"
 EOF
 
 cat <<EOF > "xdman_gtk_${VERSION}_amd64/opt/xdman/source_pkg.txt"
-deb
+xdman_gtk|.deb
 EOF
 
 cp "xdman_gtk_${VERSION}_amd64/opt/xdman/xdm-app.desktop" "xdman_gtk_${VERSION}_amd64/usr/share/applications"

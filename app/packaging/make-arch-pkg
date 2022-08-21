@@ -4,12 +4,13 @@
 
 VERSION=8.0.1
 SRC_DIR=binary-source
-SOURCE_NAME="xdman_gtk-${VERSION}"
+SOURCE_NAME="src"
 
 rm -rf "${SOURCE_NAME}"
-
-mkdir -p rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
-mkdir "${SOURCE_NAME}"
+rm -rf pkg
+rm -rf src
+rm -f "${SOURCE_NAME}*pkg.tar.*"
+rm -f PKGBUILD
 
 mkdir -p "${SOURCE_NAME}/opt/xdman"
 mkdir -p "${SOURCE_NAME}/usr/bin"
@@ -38,8 +39,8 @@ cat <<EOF > "${SOURCE_NAME}/usr/bin/xdman"
 /opt/xdman/xdm-app \$@
 EOF
 
-cat <<EOF > "${SOURCE_NAME}/opt/xdman/source_pkg"
-xdman_gtk|.rpm
+cat <<EOF > "${SOURCE_NAME}/opt/xdman/source_pkg.txt"
+xdman_gtk|.pkg.tar.zst;.pkg.tar.xz;.pkg.tar.gz;.pkg.tar.bz2
 EOF
 
 cp "${SOURCE_NAME}/opt/xdman/xdm-app.desktop" "${SOURCE_NAME}/usr/share/applications"
@@ -49,35 +50,25 @@ chmod 755 "${SOURCE_NAME}/opt/xdman/xdm-app"
 chmod 755 "${SOURCE_NAME}/opt/xdman/MessagingHost/xdm-messaging-host"
 chmod 755 "${SOURCE_NAME}/opt/xdman/yt-dlp"
 
-tar --create --file "${SOURCE_NAME}.tar.gz" "${SOURCE_NAME}"
-mv "${SOURCE_NAME}.tar.gz" "rpmbuild/SOURCES"
+#tar --create --file "${SOURCE_NAME}.tar.gz" -C "${SOURCE_NAME}" .
 
-cat <<EOF > "rpmbuild/SPECS/xdman_gtk.spec"
-Name:       	xdman_gtk
-Version:    	${VERSION}
-Release:    	1%{?dist}
-Summary:    	Xtreme Download Manager
-AutoReqProv: 	no
-Requires:   	gtk3 >= 3.22
-Requires:   	ffmpeg-free
+cat <<EOF > "PKGBUILD"
+pkgname=xdman_gtk
+pkgver=${VERSION}
+pkgrel=1
+pkgdesc="Open source download accelerator and video downloader."
+arch=("x86_64")
+url="https://github.com/subhra74/xdm"
+license=('GPLv3')
+#source=("${SOURCE_NAME}.tar.gz")
+depends=('ffmpeg' 'gtk3>=3.22.0')
+#sha1sums=('SKIP')
 
-Group:      	System Environment/Base
-License:    	GPLv3+
-Source0:    	${SOURCE_NAME}.tar.gz
-
-%description
-Open source download accelerator and video downloader.
-
-%prep
-%setup -q
-
-%install
-cp -rfa * %{buildroot}
-
-%files
-/usr/bin/*
-/usr/share/applications/*
-/opt/xdman/*
+package() {
+	cp -r * \$pkgdir
+}
 EOF
 
-rpmbuild --define "_topdir `pwd`/rpmbuild" -bb rpmbuild/SPECS/xdman_gtk.spec
+cat PKGBUILD
+
+makepkg -d -f
