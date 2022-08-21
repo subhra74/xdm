@@ -277,7 +277,7 @@ namespace XDM.Wpf.UI.Dialogs.ProgressWindow
         {
             base.OnSourceInitialized(e);
 
-            NativeMethods.DisableMinMaxButton(this);
+            NativeMethods.DisableMaxButton(this);
 #if NET45_OR_GREATER
             if (XDM.Wpf.UI.App.Skin == Skin.Dark)
             {
