@@ -102,7 +102,7 @@ namespace XDM.GtkUI
             propWin.DateAdded = ent.DateAdded.ToLongDateString() + " " + ent.DateAdded.ToLongTimeString();
             propWin.DownloadType = ent.DownloadType;
             propWin.Referer = ent.RefererUrl;
-            propWin.Cookies = state?.Cookies ?? state?.Cookies1 ?? new Dictionary<string, string>();
+            propWin.Cookies = state?.Cookies ?? state?.Cookies1 ?? string.Empty;
             propWin.Headers = state?.Headers ?? state?.Headers1 ?? new Dictionary<string, List<string>>();
             propWin.Run();
             propWin.Destroy();

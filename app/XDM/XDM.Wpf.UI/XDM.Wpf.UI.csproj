@@ -2,7 +2,8 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFrameworks>net4.7.2;net3.5</TargetFrameworks>
+    <!--<TargetFrameworks>net4.7.2;net3.5</TargetFrameworks>-->
+    <TargetFramework>net4.7.2</TargetFramework>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <Platforms>x86</Platforms>
@@ -41,12 +42,19 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="Microsoft.Windows.Compatibility" Version="5.0.2" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.116" />
   </ItemGroup>
+
+  <PropertyGroup>
+    <ContentSQLiteInteropFiles>true</ContentSQLiteInteropFiles>
+    <CopySQLiteInteropFiles>false</CopySQLiteInteropFiles>
+    <CleanSQLiteInteropFiles>false</CleanSQLiteInteropFiles>
+    <CollectSQLiteInteropFiles>false</CollectSQLiteInteropFiles>
+  </PropertyGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' != 'net3.5' ">
     <PackageReference Include="System.Buffers" Version="4.5.1" />
@@ -71,5 +79,7 @@
   <Import Project="..\XDM.Messaging\XDM.Messaging.projitems" Label="Shared" />
 
   <Import Project="..\XDM.Compatibility\XDM.Compatibility.projitems" Label="Shared" />
+
+  <Import Project="..\NativeMessaging\NativeMessaging.projitems" Label="Shared" />
 
 </Project>

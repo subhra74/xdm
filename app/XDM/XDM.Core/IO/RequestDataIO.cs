@@ -103,7 +103,7 @@ namespace XDM.Core.IO
                 };
                 StreamHelper.ReadStateHeaders(r, out Dictionary<string, List<string>> headers);
                 info.Headers = headers;
-                StreamHelper.ReadStateCookies(r, out Dictionary<string, string> cookies);
+                StreamHelper.ReadStateCookies(r, out string? cookies);
                 info.Cookies = cookies;
                 return info;
             }
@@ -132,9 +132,9 @@ namespace XDM.Core.IO
                 info.Headers1 = headers1;
                 StreamHelper.ReadStateHeaders(r, out Dictionary<string, List<string>> headers2);
                 info.Headers2 = headers2;
-                StreamHelper.ReadStateCookies(r, out Dictionary<string, string> cookies1);
+                StreamHelper.ReadStateCookies(r, out string? cookies1);
                 info.Cookies1 = cookies1;
-                StreamHelper.ReadStateCookies(r, out Dictionary<string, string> cookies2);
+                StreamHelper.ReadStateCookies(r, out string? cookies2);
                 info.Cookies2 = cookies2;
                 return info;
             }
@@ -160,7 +160,7 @@ namespace XDM.Core.IO
                 };
                 StreamHelper.ReadStateHeaders(r, out Dictionary<string, List<string>> headers);
                 info.Headers = headers;
-                StreamHelper.ReadStateCookies(r, out Dictionary<string, string> cookies);
+                StreamHelper.ReadStateCookies(r, out string? cookies);
                 info.Cookies = cookies;
                 return info;
             }
@@ -190,7 +190,7 @@ namespace XDM.Core.IO
                 };
                 StreamHelper.ReadStateHeaders(r, out Dictionary<string, List<string>> headers);
                 info.Headers = headers;
-                StreamHelper.ReadStateCookies(r, out Dictionary<string, string> cookies);
+                StreamHelper.ReadStateCookies(r, out string? cookies);
                 info.Cookies = cookies;
 
                 var c1 = r.ReadInt32();

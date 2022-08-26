@@ -482,7 +482,7 @@ namespace XDM.Core.Downloader.Progressive.SingleHttp
         }
 
         public override (Dictionary<string, List<string>> Headers,
-            Dictionary<string, string> Cookies,
+            string Cookies,
             Uri Url, AuthenticationInfo? Authentication,
             ProxyInfo? Proxy)?
             GetHeaderUrlAndCookies(string pieceId)
@@ -530,7 +530,7 @@ namespace XDM.Core.Downloader.Progressive.SingleHttp
     {
         public Uri Url;
         public Dictionary<string, List<string>> Headers;
-        public Dictionary<string, string> Cookies;
+        public string Cookies;
         public bool ConvertToMp3;
     }
 }

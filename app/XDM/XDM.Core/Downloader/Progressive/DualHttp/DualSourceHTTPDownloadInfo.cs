@@ -7,8 +7,8 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
     {
         public string Uri1 { get; set; }
         public string Uri2 { get; set; }
-        public Dictionary<string, string> Cookies1 { get; set; }
-        public Dictionary<string, string> Cookies2 { get; set; }
+        public string? Cookies1 { get; set; }
+        public string? Cookies2 { get; set; }
         public Dictionary<string, List<string>> Headers1 { get; set; }
         public Dictionary<string, List<string>> Headers2 { get; set; }
         public string File { get; set; }

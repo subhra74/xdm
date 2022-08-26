@@ -12,7 +12,7 @@ namespace XDM.Core.Downloader.Progressive
         public Piece GetPiece(string pieceId);
         public (
             Dictionary<string, List<string>> Headers,
-            Dictionary<string, string> Cookies,
+            string Cookies,
             Uri Url, AuthenticationInfo? Authentication,
             ProxyInfo? Proxy)?
             GetHeaderUrlAndCookies(string pieceId);

@@ -92,7 +92,7 @@ namespace XDM.Core.IO
             }
             if (r.ReadBoolean())
             {
-                XDM.Messaging.StreamHelper.ReadStateCookies(r, out Dictionary<string, string> cookies);
+                XDM.Messaging.StreamHelper.ReadStateCookies(r, out string cookies);
                 state.Cookies = cookies;
             }
 
@@ -189,12 +189,12 @@ namespace XDM.Core.IO
             }
             if (r.ReadBoolean())
             {
-                XDM.Messaging.StreamHelper.ReadStateCookies(r, out Dictionary<string, string> cookies);
+                XDM.Messaging.StreamHelper.ReadStateCookies(r, out string? cookies);
                 state.Cookies1 = cookies;
             }
             if (r.ReadBoolean())
             {
-                XDM.Messaging.StreamHelper.ReadStateCookies(r, out Dictionary<string, string> cookies);
+                XDM.Messaging.StreamHelper.ReadStateCookies(r, out string? cookies);
                 state.Cookies2 = cookies;
             }
             if (r.ReadBoolean())
@@ -373,7 +373,7 @@ namespace XDM.Core.IO
             }
             if (r.ReadBoolean())
             {
-                XDM.Messaging.StreamHelper.ReadStateCookies(r, out Dictionary<string, string> cookies);
+                XDM.Messaging.StreamHelper.ReadStateCookies(r, out string? cookies);
                 state.Cookies = cookies;
             }
             if (r.ReadBoolean())
@@ -488,7 +488,7 @@ namespace XDM.Core.IO
             }
             if (r.ReadBoolean())
             {
-                XDM.Messaging.StreamHelper.ReadStateCookies(r, out Dictionary<string, string> cookies);
+                XDM.Messaging.StreamHelper.ReadStateCookies(r, out string? cookies);
                 state.Cookies = cookies;
             }
             if (r.ReadBoolean())

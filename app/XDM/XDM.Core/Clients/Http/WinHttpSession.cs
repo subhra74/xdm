@@ -25,13 +25,13 @@ namespace XDM.Core.Clients.Http
         private DateTime lastModified = DateTime.Now;
         private long rangeStart = -1, rangeEnd = -1;
         private Dictionary<string, List<string>>? headers = null;
-        private Dictionary<string, string>? cookies = null;
+        private string? cookies = null;
         private Stream responseStream;
         private IntPtr? postData;
         private int postDataSize;
 
         public Dictionary<string, List<string>>? Headers => this.headers;
-        public Dictionary<string, string>? Cookies => this.cookies;
+        public string? Cookies => this.cookies;
 
         public SafeWinHttpHandle ConnectHandle => hConnect;
         public SafeWinHttpHandle RequestHandle => hRequest;
@@ -43,7 +43,7 @@ namespace XDM.Core.Clients.Http
             SafeWinHttpHandle hConnect,
             SafeWinHttpHandle hRequest,
             Dictionary<string, List<string>>? headers,
-            Dictionary<string, string>? cookies,
+            string? cookies,
             byte[]? postData = null)
         {
             this.responseUri = responseUri;

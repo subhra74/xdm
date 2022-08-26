@@ -29,7 +29,7 @@ namespace XDM.Core.Clients.Http
 
         private HttpRequestMessage CreateRequest(Uri uri, HttpMethod method,
             Dictionary<string, List<string>>? headers = null,
-            Dictionary<string, string>? cookies = null,
+            string? cookies = null,
             AuthenticationInfo? authentication = null)
         {
             if (disposed)
@@ -83,17 +83,14 @@ namespace XDM.Core.Clients.Http
             }
             if (cookies != null)
             {
-                foreach (var e in cookies)
-                {
-                    SetHeader(http, e.Key, e.Value);
-                }
+                SetHeader(http, "Cookie", cookies);
             }
             return http;
         }
 
         public HttpRequest CreateGetRequest(Uri uri,
             Dictionary<string, List<string>>? headers = null,
-            Dictionary<string, string>? cookies = null,
+            string? cookies = null,
             AuthenticationInfo? authentication = null)
         {
             var req = this.CreateRequest(uri, HttpMethod.Get, headers, cookies, authentication);
@@ -102,7 +99,7 @@ namespace XDM.Core.Clients.Http
 
         public HttpRequest CreatePostRequest(Uri uri,
             Dictionary<string, List<string>>? headers = null,
-            Dictionary<string, string>? cookies = null,
+            string? cookies = null,
             AuthenticationInfo? authentication = null,
             byte[]? body = null)
         {

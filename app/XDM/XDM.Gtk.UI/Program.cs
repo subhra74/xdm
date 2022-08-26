@@ -101,7 +101,7 @@ namespace XDM.GtkUI
                 .RegisterPlatformUIService(new GtkPlatformUIService())
                 .Configure();
 
-            ArgsProcessor.Process(args, 0);
+            ArgsProcessor.Process(args);
 
             //var t = new System.Threading.Thread(() =>
             //  {

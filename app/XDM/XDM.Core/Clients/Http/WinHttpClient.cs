@@ -29,7 +29,7 @@ namespace XDM.Core.Clients.Http
             Uri uri,
             string method,
             Dictionary<string, List<string>>? headers = null,
-            Dictionary<string, string>? cookies = null,
+            string? cookies = null,
             AuthenticationInfo? authentication = null,
             byte[]? body = null)
         {
@@ -171,7 +171,7 @@ namespace XDM.Core.Clients.Http
         public HttpRequest CreateGetRequest(
             Uri uri,
             Dictionary<string, List<string>>? headers = null,
-            Dictionary<string, string>? cookies = null,
+            string? cookies = null,
             AuthenticationInfo? authentication = null)
         {
             return CreateRequest(uri, "GET", headers, cookies, authentication);
@@ -180,7 +180,7 @@ namespace XDM.Core.Clients.Http
         public HttpRequest CreatePostRequest(
             Uri uri,
             Dictionary<string, List<string>>? headers = null,
-            Dictionary<string, string>? cookies = null,
+            string? cookies = null,
             AuthenticationInfo? authentication = null,
             byte[]? body = null)
         {
@@ -283,7 +283,7 @@ namespace XDM.Core.Clients.Http
         }
 
         private StringBuilder PrepareHeaders(Dictionary<string, List<string>>? headers = null,
-            Dictionary<string, string>? cookies = null,
+            string? cookies = null,
             long rangeStart = -1, long rangeEnd = -1)
         {
             var buf = new StringBuilder();
@@ -294,17 +294,9 @@ namespace XDM.Core.Clients.Http
                     buf.Append(key).Append(": ").Append(string.Join(", ", headers[key].ToArray())).Append("\r\n");
                 }
             }
-            if (cookies != null && cookies.Count > 0)
+            if (cookies != null)
             {
-                buf.Append("Cookie: ");
-                var first = true;
-                foreach (var key in cookies.Keys)
-                {
-                    if (!first) buf.Append(", ");
-                    buf.Append(cookies[key]);
-                    first = false;
-                }
-                buf.Append("\r\n");
+                buf.Append($"Cookie: {cookies}\r\n");
             }
             if (rangeStart > 0 && rangeEnd > 0)
             {

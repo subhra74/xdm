@@ -3,26 +3,60 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using XDM.Core;
+using XDM.Core.Util;
 
 namespace XDM.Core
 {
     public static class ArgsProcessor
     {
-        public static void Process(string[] commandArgs, int start = 0)
+        public static string[] SingleSwitches = new string[] { "--background", "--first-run" };
+        public static void Process(IEnumerable<string> commandArgs)
         {
-            Dictionary<string, string?> args = ParseArgs(commandArgs, start);
-            if (args.ContainsKey("-u"))
+            Dictionary<string, List<string>> args = ParseArgs(commandArgs);
+            if (args.ContainsKey("--url") && args["--url"].Count == 1)
             {
-                var url = args["-u"];
-                if (!string.IsNullOrEmpty(url))
+                var url = args["--url"][0];
+                var message = new Message();
+                message.Url = url;
+                message.RequestHeaders = new();
+                if (args.ContainsKey("-H"))
                 {
-                    ApplicationContext.CoreService.AddDownload(new Message { Url = url! });
+                    PopulateHeaders("-H", message, args);
                 }
+                if (args.ContainsKey("--header"))
+                {
+                    PopulateHeaders("--header", message, args);
+                }
+                if (args.ContainsKey("--cookie"))
+                {
+                    message.Cookies = args["--cookie"][0];
+                }
+                if (args.ContainsKey("--output"))
+                {
+                    message.File = args["--output"][0];
+                }
+                if (args.ContainsKey("-o"))
+                {
+                    message.File = args["-o"][0];
+                }
+                if (args.ContainsKey("-C"))
+                {
+                    message.Cookies = args["-C"][0];
+                }
+                if (args.ContainsKey("--known-file-size"))
+                {
+                    message.ResponseHeaders["Content-Length"] = args["--known-file-size"];
+                }
+                if (args.ContainsKey("--known-mime-type"))
+                {
+                    message.ResponseHeaders["Content-Type"] = args["--known-mime-type"];
+                }
+                ApplicationContext.CoreService.AddDownload(message);
             }
 
-            if (args.ContainsKey("-i"))
+            if (args.ContainsKey("--first-run"))
             {
-                Config.Instance.RunOnLogon = true;
+                //Config.Instance.RunOnLogon = true;
                 Config.SaveConfig();
                 ApplicationContext.Application.RunOnUiThread(() =>
                 {
@@ -31,7 +65,7 @@ namespace XDM.Core
                 });
             }
 
-            if (args.Count == 0|| args.ContainsKey("-r"))
+            if (args.Count == 0 || args.ContainsKey("-r"))
             {
                 ApplicationContext.Application.RunOnUiThread(() =>
                 {
@@ -40,22 +74,57 @@ namespace XDM.Core
             }
         }
 
-        private static Dictionary<string, string?> ParseArgs(string[] args, int start = 0)
+        private static void PopulateHeaders(string headerArgName, Message message, Dictionary<string, List<string>> args)
         {
-            var options = new Dictionary<string, string?>();
-            var key = string.Empty;
-            for (int i = start; i < args.Length; i++)
+            var headers = args[headerArgName];
+            foreach (var header in headers)
             {
-                var arg = args[i];
-                if (key != string.Empty)
+                if (ParsingHelper.ParseKeyValuePair(header, ':', out var kv) && kv.HasValue)
                 {
-                    options[key] = arg;
-                    key = string.Empty;
+                    if (message.RequestHeaders.ContainsKey(kv.Value.Key))
+                    {
+                        message.RequestHeaders[kv.Value.Key].Add(kv.Value.Value);
+                    }
+                    else
+                    {
+                        message.RequestHeaders[kv.Value.Key] = new List<string> { kv.Value.Value };
+                    }
+                }
+            }
+        }
+
+        private static Dictionary<string, List<string>> ParseArgs(IEnumerable<string> args)
+        {
+            var options = new Dictionary<string, List<string>>();
+            var switchName = string.Empty;
+            foreach (var arg in args)
+            {
+                if (arg.StartsWith("-"))
+                {
+                    if (!options.ContainsKey(arg))
+                    {
+                        options[arg] = new List<string>();
+                    }
+                    if (SingleSwitches.Contains(arg))
+                    {
+                        switchName = string.Empty;
+                    }
+                    else
+                    {
+                        switchName = arg;
+                    }
                 }
                 else
                 {
-                    key = arg;
-                    options[key] = null;
+                    if (switchName == string.Empty)
+                    {
+                        options["--url"] = new List<string> { arg };
+                    }
+                    else
+                    {
+                        options[switchName].Add(arg);
+                        switchName = string.Empty;
+                    }
                 }
             }
             return options;

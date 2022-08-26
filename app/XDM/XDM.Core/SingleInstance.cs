@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NativeMessaging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -23,14 +24,28 @@ namespace XDM.Core
                 Log.Debug(ex, "Exception in NativeMessagingHostHandler ctor");
                 if (ex is InstanceAlreadyRunningException)
                 {
-                    var args = Environment.GetCommandLineArgs().Skip(1);
-                    Log.Debug(ex, "Sending args to running instance");
-                    //if no arguments, then restore ui of previously running process
-                    IpcPipe.SendArgsToRunningInstance(args.Count() == 0 ? new string[] { "-r" } : args);
+                    SendArgsToRunningInstance();
                     Environment.Exit(0);
                 }
             }
             GlobalMutex = new Mutex(true, @"Global\XDM_Active_Instance");
+        }
+
+        private static void SendArgsToRunningInstance()
+        {
+            try
+            {
+                var args = Environment.GetCommandLineArgs().Skip(1);
+                var ipcClient = new IpcClient();
+                ipcClient.Connect(8597);
+                //if no arguments, then restore ui of previously running process
+                ipcClient.Send(args.Count() == 0 ? new string[] { "--show-window" } : args);
+                ipcClient.Close();
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Failed sending args to running instance");
+            }
         }
     }
 

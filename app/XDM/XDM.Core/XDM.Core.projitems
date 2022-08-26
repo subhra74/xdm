@@ -9,6 +9,7 @@
     <Import_RootNamespace>XDM.Core</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\XDM.Core\Ipc\IpcServer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SingleInstance.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Updater\AppUpdater.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ClipboardMonitor.cs" />

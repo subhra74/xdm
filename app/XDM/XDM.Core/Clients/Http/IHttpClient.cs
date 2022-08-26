@@ -12,12 +12,12 @@ namespace XDM.Core.Clients.Http
 
         public HttpRequest CreateGetRequest(Uri uri,
             Dictionary<string, List<string>>? headers = null,
-            Dictionary<string, string>? cookies = null,
+            string? cookies = null,
             AuthenticationInfo? authentication = null);
 
         public HttpRequest CreatePostRequest(Uri uri,
             Dictionary<string, List<string>>? headers = null,
-            Dictionary<string, string>? cookies = null,
+            string? cookies = null,
             AuthenticationInfo? authentication = null,
             byte[]? body = null);
 

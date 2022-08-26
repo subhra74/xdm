@@ -273,7 +273,7 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
 
         public override (
             Dictionary<string, List<string>> Headers,
-            Dictionary<string, string> Cookies,
+            string Cookies,
             Uri Url,
             AuthenticationInfo? Authentication,
             ProxyInfo? Proxy)?
@@ -552,8 +552,8 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
         public Uri Url2;
         public Dictionary<string, List<string>> Headers1;
         public Dictionary<string, List<string>> Headers2;
-        public Dictionary<string, string> Cookies1;
-        public Dictionary<string, string> Cookies2;
+        public string? Cookies1;
+        public string? Cookies2;
         public bool Init1, Init2;
     }
 

@@ -53,7 +53,7 @@ namespace XDM.Core.Clients.Http
 
         public HttpRequest CreateGetRequest(Uri uri,
             Dictionary<string, List<string>>? headers = null,
-            Dictionary<string, string>? cookies = null,
+            string? cookies = null,
             AuthenticationInfo? authentication = null)
         {
             var req = this.CreateRequest(uri);
@@ -66,10 +66,7 @@ namespace XDM.Core.Clients.Http
             }
             if (cookies != null)
             {
-                foreach (var e in cookies)
-                {
-                    SetHeader(req, e.Key, e.Value);
-                }
+                SetHeader(req, "Cookie", cookies);
             }
             if (authentication != null && !string.IsNullOrEmpty(authentication.Value.UserName))
             {
@@ -81,7 +78,7 @@ namespace XDM.Core.Clients.Http
 
         public HttpRequest CreatePostRequest(Uri uri,
             Dictionary<string, List<string>>? headers = null,
-            Dictionary<string, string>? cookies = null,
+            string? cookies = null,
             AuthenticationInfo? authentication = null,
             byte[]? body = null)
         {
@@ -96,10 +93,7 @@ namespace XDM.Core.Clients.Http
             }
             if (cookies != null)
             {
-                foreach (var e in cookies)
-                {
-                    SetHeader(req, e.Key, e.Value);
-                }
+                SetHeader(req, "Cookie", cookies);
             }
             if (authentication != null && !string.IsNullOrEmpty(authentication.Value.UserName))
             {

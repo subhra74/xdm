@@ -70,7 +70,7 @@ namespace XDM.Wpf.UI
                 .RegisterPlatformUIService(new WpfPlatformUIService())
                 .Configure();
 
-            ArgsProcessor.Process(Environment.GetCommandLineArgs(), 1);
+            ArgsProcessor.Process(Environment.GetCommandLineArgs().Skip(1));
 
             AppTrayIcon.AttachToSystemTray();
             AppTrayIcon.TrayClick += (_, _) =>

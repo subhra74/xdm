@@ -1,5 +1,4 @@
-﻿using XDM.Core.BrowserMonitoring;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,6 +16,8 @@ using Translations;
 using XDM.Core;
 using XDM.Core.UI;
 using XDM.Core.Util;
+using NativeMessaging;
+using System.Diagnostics;
 
 namespace XDM.Wpf.UI.Dialogs.Settings
 {
@@ -58,7 +59,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
         {
             try
             {
-                NativeMessagingConfigurer.InstallNativeMessagingHost(Browser.Chrome);
+                LaunchNativeHostInstaller(Browser.Chrome);
             }
             catch (Exception ex)
             {
@@ -82,7 +83,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
         {
             try
             {
-                NativeMessagingConfigurer.InstallNativeMessagingHost(Browser.Firefox);
+                LaunchNativeHostInstaller(Browser.Firefox);
             }
             catch (Exception ex)
             {
@@ -106,7 +107,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
         {
             try
             {
-                NativeMessagingConfigurer.InstallNativeMessagingHost(Browser.Chrome);
+                LaunchNativeHostInstaller(Browser.Chrome);
             }
             catch (Exception ex)
             {
@@ -130,7 +131,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
         {
             try
             {
-                NativeMessagingConfigurer.InstallNativeMessagingHost(Browser.Chrome);
+                LaunchNativeHostInstaller(Browser.Chrome);
             }
             catch (Exception ex)
             {
@@ -184,7 +185,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
         {
             try
             {
-                NativeMessagingConfigurer.InstallNativeMessagingHost(Browser.Chrome);
+                LaunchNativeHostInstaller(Browser.Chrome);
             }
             catch (Exception ex)
             {
@@ -208,7 +209,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
         {
             try
             {
-                NativeMessagingConfigurer.InstallNativeMessagingHost(Browser.Chrome);
+                LaunchNativeHostInstaller(Browser.Chrome);
             }
             catch (Exception ex)
             {
@@ -226,6 +227,31 @@ namespace XDM.Wpf.UI.Dialogs.Settings
                 Log.Debug(ex, "Error Vivaldi");
                 MessageBox.Show($"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Vivaldi");
             }
+        }
+
+        private void LaunchNativeHostInstaller(Browser browser)
+        {
+            var browserName = "chome";
+            if (browser == Browser.Firefox)
+            {
+                browserName = "firefox";
+            }
+            if (browser == Browser.MSEdge)
+            {
+                browserName = "ms-edge";
+            }
+            string aliasPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) +
+                   @"\microsoft\windowsapps\xdm-app-host.exe";
+            ProcessStartInfo psi = new()
+            {
+                FileName = aliasPath,
+                UseShellExecute = true,
+                Verb = "runas",
+                Arguments = "--install-native-messaging-host " + browserName
+            };
+
+            Log.Debug("xdm-app-host instance creating...");
+            Process.Start(psi);
         }
     }
 }

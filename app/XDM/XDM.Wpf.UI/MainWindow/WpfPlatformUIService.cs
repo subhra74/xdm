@@ -120,7 +120,7 @@ namespace XDM.Wpf.UI
                 DateAdded = ent.DateAdded.ToLongDateString() + " " + ent.DateAdded.ToLongTimeString(),
                 DownloadType = ent.DownloadType,
                 Referer = ent.RefererUrl,
-                Cookies = state?.Cookies ?? state?.Cookies1 ?? new Dictionary<string, string>(),
+                Cookies = state?.Cookies ?? state?.Cookies1 ?? string.Empty,
                 Headers = state?.Headers ?? state?.Headers1 ?? new Dictionary<string, List<string>>(),
                 Owner = GetMainWindow()
             };

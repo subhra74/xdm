@@ -22,7 +22,7 @@ namespace XDM.Core.Downloader.Adaptive
         protected ChunkDownloadedEventArgs downloadedEventArgs;
         protected ManualResetEvent sleepHandle = new ManualResetEvent(false);
         protected Dictionary<string, List<string>> headers;
-        protected Dictionary<string, string> cookies;
+        protected string cookies;
         protected AuthenticationInfo? authentication;
 
         public event EventHandler<ChunkDownloadedEventArgs>? ChunkDataReceived;
@@ -32,7 +32,7 @@ namespace XDM.Core.Downloader.Adaptive
             Chunk chunk,
             IHttpClient http,
             Dictionary<string, List<string>> headers,
-            Dictionary<string, string> cookies,
+            string cookies,
             AuthenticationInfo? authentication,
             IChunkStreamMap chunkStreamMap,
             ICancelRequster cancelRequster)

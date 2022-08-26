@@ -8,6 +8,8 @@ using System.Diagnostics;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using XDM.Core.BrowserMonitoring;
+using Microsoft.Win32;
+using System.Windows.Forms;
 
 #if NET35
 using NetFX.Polyfill2;
@@ -26,6 +28,28 @@ namespace NativeHost
 
         static void Main(string[] args)
         {
+            if(args.Length==1&&(args[0]=="chrome"|| args[0] == "firefox" || args[0] == "edge"))
+            {
+                try
+                {
+                    var browser = Browser.Chrome;
+                    if (args[0] == "firefox")
+                    {
+                        browser = Browser.Firefox;
+                    }
+                    if (args[0] == "edge")
+                    {
+                        browser = Browser.MSEdge;
+                    }
+                    InstallNativeMessagingHost(browser);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.ToString());
+                }
+                return;
+            }
+            
             try
             {
                 var debugMode = Environment.GetEnvironmentVariable("XDM_DEBUG_MODE");
@@ -128,13 +152,23 @@ namespace NativeHost
                 var file = Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".."),
                          Environment.OSVersion.Platform == PlatformID.Win32NT ? "xdm-app.exe" : "xdm-app");
                 Debug("XDM instance creating...1 " + file);
-                if (isFirefox && Environment.OSVersion.Platform == PlatformID.Win32NT)
+                if (/*isFirefox &&*/ Environment.OSVersion.Platform == PlatformID.Win32NT)
                 {
-                    var args = minimized ? " -m" : "";
-                    if (!NativeProcess.Win32CreateProcess(file, $"\"{file}\"{args}"))
+                    MessageBox.Show("Launching XDM...");
+                    ProcessStartInfo psi = new()
                     {
-                        Debug("Win32 create process failed!");
-                    }
+                        FileName = "xdm-app://helo",
+                        UseShellExecute = true
+                    };
+
+                    Debug("XDM instance creating...");
+                    Process.Start(psi);
+
+                    //var args = minimized ? " -m" : "";
+                    //if (!NativeProcess.Win32CreateProcess(file, $"\"{file}\"{args}"))
+                    //{
+                    //    Debug("Win32 create process failed!");
+                    //}
                 }
                 else
                 {
@@ -299,6 +333,76 @@ namespace NativeHost
                 ContractResolver = cr
             });
             return Encoding.UTF8.GetBytes(json);
+        }
+
+        private static void CreateMessagingHostManifest(Browser browser, string appName, string manifestPath)
+        {
+            var allowedExtensions = browser == Browser.Firefox ? new[] {
+                        "browser-mon@xdman.sourceforge.net"
+                    } : new[] {
+                        "chrome-extension://danmljfachfhpbfikjgedlfifabhofcj/",
+                        "chrome-extension://dkckaoghoiffdbomfbbodbbgmhjblecj/",
+                        "chrome-extension://ejpbcmllmliidhlpkcgbphhmaodjihnc/",
+                        "chrome-extension://fogpiboapmefmkbodpmfnohfflonbgig/"
+                    };
+            var folder = Path.GetDirectoryName(manifestPath)!;
+            if (!Directory.Exists(folder))
+            {
+                try
+                {
+                    Directory.CreateDirectory(folder);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Unable to create required directory: " + ex.Message);
+                }
+            }
+            string aliasPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) +
+                @"\microsoft\windowsapps\xdm-messaging-host.exe";
+            using var stream = new FileStream(manifestPath, FileMode.Create);
+            using var textWriter = new StreamWriter(stream);
+            using var writer = new JsonTextWriter(textWriter);
+            writer.Formatting = Formatting.Indented;
+            writer.WriteStartObject();
+            writer.WritePropertyName("name");
+            writer.WriteValue(appName);
+            writer.WritePropertyName("description");
+            writer.WriteValue("Native messaging host for Xtreme Download Manager");
+            writer.WritePropertyName("path");
+            writer.WriteValue(aliasPath);
+            writer.WritePropertyName("type");
+            writer.WriteValue("stdio");
+            writer.WritePropertyName(browser == Browser.Firefox ? "allowed_extensions" : "allowed_origins");
+            writer.WriteStartArray();
+            foreach (var extension in allowedExtensions)
+            {
+                writer.WriteValue(extension);
+            }
+            writer.WriteEndArray();
+            writer.WriteEndObject();
+            writer.Close();
+        }
+
+        public static void InstallNativeMessagingHost(Browser browser)
+        {
+            var appName = browser == Browser.Firefox ? "xdmff.native_host" :
+                    "xdm_chrome.native_host";
+            var manifestPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), $"{appName}.json");
+            MessageBox.Show("Creating manifest file in: " + manifestPath);
+            CreateMessagingHostManifest(browser, appName, manifestPath);
+            var regPath = (browser == Browser.Firefox ?
+                @"Software\Mozilla\NativeMessagingHosts\" :
+                @"SOFTWARE\Google\Chrome\NativeMessagingHosts");
+            MessageBox.Show("Reg path: " + regPath);
+            using var regKey = Registry.LocalMachine.CreateSubKey(regPath);
+            using var key = regKey.CreateSubKey(appName, RegistryKeyPermissionCheck.ReadWriteSubTree);
+            key.SetValue(null, manifestPath);
+            MessageBox.Show("Installed successfully: " + manifestPath);
+        }
+
+        public enum Browser
+        {
+            Chrome, Firefox, MSEdge
         }
     }
 }

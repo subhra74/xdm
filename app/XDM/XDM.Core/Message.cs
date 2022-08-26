@@ -14,7 +14,7 @@ namespace XDM.Core
         public string Url { get; set; }
         public Dictionary<string, List<string>> RequestHeaders { get; set; }
         public Dictionary<string, List<string>> ResponseHeaders { get; set; }
-        public Dictionary<string, string> Cookies { get; set; }
+        public string? Cookies { get; set; }
         public string RequestMethod { get; set; }
         public string RequestBody { get; set; }
 
@@ -22,7 +22,6 @@ namespace XDM.Core
         {
             this.RequestHeaders = new Dictionary<string, List<string>>();
             this.ResponseHeaders = new Dictionary<string, List<string>>();
-            this.Cookies = new Dictionary<string, string>();
             this.RequestMethod = "GET";
         }
 
@@ -65,7 +64,7 @@ namespace XDM.Core
                                     message.ResponseHeaders[k1] = resHeaderValues;
                                     break;
                                 case "cookie":
-                                    message.Cookies.Add(k1, v1);
+                                    message.Cookies = v1;
                                     break;
                             }
                         }
