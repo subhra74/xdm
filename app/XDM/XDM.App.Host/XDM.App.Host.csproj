@@ -5,14 +5,12 @@
     <UseWindowsForms>true</UseWindowsForms>
     <TargetFramework>net4.7.2</TargetFramework>
     <!--<TargetFrameworks>net3.5;net4.7.2;net6.0</TargetFrameworks>-->
-    <InvariantGlobalization>true</InvariantGlobalization>
     <LangVersion>9.0</LangVersion>
     <Nullable>enable</Nullable>
     <Platforms>x86</Platforms>
     <!--<Platforms>x86;x64</Platforms>-->
     <AssemblyName>xdm-app-host</AssemblyName>
-    <PublishTrimmed>true</PublishTrimmed>
-    <TrimMode>Link</TrimMode>
+    <DefineConstants>WINDOWS</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

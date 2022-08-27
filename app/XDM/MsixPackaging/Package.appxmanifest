@@ -12,7 +12,7 @@
   <Identity
     Name="2e2588ec-737b-4fca-b3ac-15042c90c8e2"
     Publisher="CN=subhro"
-    Version="1.0.33.0" />
+    Version="8.0.41.0" />
 
   <Properties>
     <DisplayName>Xtreme Download Manager</DisplayName>
@@ -50,13 +50,6 @@
             Name="xdm+app"
             Parameters="%1" />
         </uap3:Extension>
-        <!--<uap3:Extension Category="windows.appExecutionAlias"
-                    Executable="NativeMessagingHostInstaller\NativeMessagingHostInstaller.exe"
-                    EntryPoint="Windows.FullTrustApplication">
-          <uap3:AppExecutionAlias>
-            <desktop:ExecutionAlias Alias="NativeMessagingHostInstaller.exe" />
-          </uap3:AppExecutionAlias>
-        </uap3:Extension>-->
         <uap3:Extension Category="windows.appExecutionAlias"
                     Executable="XDM.App.Host\xdm-app-host.exe"
                     EntryPoint="Windows.FullTrustApplication">

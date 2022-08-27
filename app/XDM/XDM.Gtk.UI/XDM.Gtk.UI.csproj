@@ -18,6 +18,7 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <!--<ValidateExecutableReferencesMatchSelfContained>false</ValidateExecutableReferencesMatchSelfContained>-->
+    <DefineConstants>LINUX</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Release'">

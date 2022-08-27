@@ -14,6 +14,7 @@ using XDM.Core;
 using XDM.Core.Util;
 using TraceLog;
 using XDM.Core.BrowserMonitoring;
+using NativeMessaging;
 
 namespace XDM.GtkUI.Dialogs.Settings
 {
@@ -329,7 +330,7 @@ namespace XDM.GtkUI.Dialogs.Settings
         {
             try
             {
-                NativeMessagingConfigurer.InstallNativeMessagingHost(Browser.Chrome);
+                NativeMessagingHostConfigurer.InstallNativeMessagingHostForLinux(Browser.Chrome);
             }
             catch (Exception ex)
             {
@@ -353,7 +354,7 @@ namespace XDM.GtkUI.Dialogs.Settings
         {
             try
             {
-                NativeMessagingConfigurer.InstallNativeMessagingHost(Browser.Chrome);
+                NativeMessagingHostConfigurer.InstallNativeMessagingHostForLinux(Browser.Chrome);
             }
             catch (Exception ex)
             {
@@ -377,7 +378,7 @@ namespace XDM.GtkUI.Dialogs.Settings
         {
             try
             {
-                NativeMessagingConfigurer.InstallNativeMessagingHost(Browser.Chrome);
+                NativeMessagingHostConfigurer.InstallNativeMessagingHostForLinux(Browser.Chrome);
             }
             catch (Exception ex)
             {
@@ -401,7 +402,7 @@ namespace XDM.GtkUI.Dialogs.Settings
         {
             try
             {
-                NativeMessagingConfigurer.InstallNativeMessagingHost(Browser.Chrome);
+                NativeMessagingHostConfigurer.InstallNativeMessagingHostForLinux(Browser.Chrome);
             }
             catch (Exception ex)
             {
@@ -425,7 +426,7 @@ namespace XDM.GtkUI.Dialogs.Settings
         {
             try
             {
-                NativeMessagingConfigurer.InstallNativeMessagingHost(Browser.Firefox);
+                NativeMessagingHostConfigurer.InstallNativeMessagingHostForLinux(Browser.Firefox);
             }
             catch (Exception ex)
             {
@@ -449,7 +450,7 @@ namespace XDM.GtkUI.Dialogs.Settings
         {
             try
             {
-                NativeMessagingConfigurer.InstallNativeMessagingHost(Browser.Chrome);
+                NativeMessagingHostConfigurer.InstallNativeMessagingHostForLinux(Browser.Chrome);
             }
             catch (Exception ex)
             {

@@ -99,6 +99,10 @@ namespace XDM.Core
             var switchName = string.Empty;
             foreach (var arg in args)
             {
+                if (arg.StartsWith("xdm+app://"))
+                {
+                    continue;
+                }
                 if (arg.StartsWith("-"))
                 {
                     if (!options.ContainsKey(arg))

@@ -9,39 +9,32 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using System.Windows.Forms;
 
 namespace XDM.App.Host
 {
     class Program
     {
-        static bool isFirefox = true;
         private static IpcClient? _ipcClient;
         private static Stream? stdin;
         private static Stream? stdout;
         static void Main(string[] args)
         {
+            Trace.WriteLine($"[xdm-native-messaging-host] startup");
             if (args.Length == 2 && args[0] == "--install-native-messaging-host")
             {
-                try
+                var browser = Browser.Chrome;
+                if (args[1] == "firefox")
                 {
-                    var browser = Browser.Chrome;
-                    if (args[1] == "firefox")
-                    {
-                        browser = Browser.Firefox;
-                    }
-                    if (args[1] == "ms-edge")
-                    {
-                        browser = Browser.MSEdge;
-                    }
-                    NativeMessagingHostConfigurer.InstallNativeMessagingHostForWindows(browser);
+                    browser = Browser.Firefox;
                 }
-                catch (Exception ex)
+                if (args[1] == "ms-edge")
                 {
-                    MessageBox.Show(ex.ToString());
+                    browser = Browser.MSEdge;
                 }
+                NativeMessagingHostConfigurer.InstallNativeMessagingHostForWindows(browser);
                 return;
             }
+
             var debugMode = Environment.GetEnvironmentVariable("XDM_DEBUG_MODE");
             if (!string.IsNullOrEmpty(debugMode) && debugMode == "1")
             {
@@ -49,11 +42,8 @@ namespace XDM.App.Host
                 Trace.Listeners.Add(new TextWriterTraceListener(logFile, "myListener"));
                 Trace.AutoFlush = true;
             }
+
             Debug("Application_Startup");
-            if (args.Length > 0 && args[0].StartsWith("chrome-extension:"))
-            {
-                isFirefox = false;
-            }
 
             stdin = Console.OpenStandardInput();
             stdout = Console.OpenStandardOutput();
@@ -211,7 +201,6 @@ namespace XDM.App.Host
         {
             try
             {
-                MessageBox.Show("Launching XDM...");
                 ProcessStartInfo psi = new()
                 {
                     FileName = "xdm+app://launch",
@@ -235,6 +224,8 @@ namespace XDM.App.Host
             {
                 Trace.WriteLine($"[xdm-native-messaging-host {DateTime.Now}] {ex2}");
             }
+            Console.Error.WriteLine(msg);
+            Console.Error.Flush();
         }
     }
 }
