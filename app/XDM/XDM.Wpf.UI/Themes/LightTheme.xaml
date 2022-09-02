@@ -81,16 +81,26 @@
         <Setter Property="Margin" Value="3,3"/>
     </Style>
 
-    <Style TargetType="{x:Type TextBox}">
+    <!--<Style TargetType="{x:Type TextBox}">
         <Setter Property="Padding" Value="3,5"/>
-    </Style>
+    </Style>-->
 
     <Style TargetType="{x:Type ComboBox}">
         <Setter Property="VerticalContentAlignment" Value="Center"/>
     </Style>
 
-    <!--<Style TargetType="{x:Type TextBlock}">
-        <Setter Property="Foreground"
-            Value="{StaticResource ControlForecolor}"/>
+    <Style TargetType="{x:Type TextBox}">
+        <Setter Property="Padding" Value="3,5"/>
+        <Setter Property="SnapsToDevicePixels"
+          Value="True" />
+        <Setter Property="OverridesDefaultStyle"
+          Value="False" />
+        <Setter Property="Background"
+          Value="{StaticResource TextBackcolor}" />
+    </Style>
+
+    <!--<Style TargetType="{x:Type TextBox}">
+        <Setter Property="Background"
+            Value="{StaticResource TextBackcolor}"/>
     </Style>-->
 </ResourceDictionary>
