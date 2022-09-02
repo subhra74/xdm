@@ -141,17 +141,17 @@ namespace XDM.Core.UI
                     foreach (var file in files)
                     {
                         var name = Path.GetFileName(file);
-                        var bakup = Path.Combine(Config.DataDir, name + ".bak");
-                        var target = Path.Combine(Config.DataDir, name);
+                        var bakup = Path.Combine(Config.AppDir, name + ".bak");
+                        var target = Path.Combine(Config.AppDir, name);
                         File.Move(file, bakup);
                         File.Delete(target);
                         File.Move(bakup, target);
                     }
 
-                    File.WriteAllText(Path.Combine(Config.DataDir, "update-info.json"),
+                    File.WriteAllText(Path.Combine(Config.AppDir, "ytdlp-update.json"),
                         JsonConvert.SerializeObject(new UpdateHistory
                         {
-                            FFmpegUpdateDate = DateTime.Now,
+                            //FFmpegUpdateDate = DateTime.Now,
                             YoutubeDLUpdateDate = DateTime.Now
                         }));
 

@@ -76,8 +76,8 @@ namespace XDM.GtkUI
             var debugMode = Environment.GetEnvironmentVariable("XDM_DEBUG_MODE");
             if (!string.IsNullOrEmpty(debugMode) && debugMode == "1")
             {
-                var logFile = System.IO.Path.Combine(Config.DataDir, "log.txt");
-                Log.InitFileBasedTrace(System.IO.Path.Combine(Config.DataDir, "log.txt"));
+                var logFile = System.IO.Path.Combine(Config.AppDir, "log.txt");
+                Log.InitFileBasedTrace(System.IO.Path.Combine(Config.AppDir, "log.txt"));
             }
             Log.Debug("Application_Startup");
 

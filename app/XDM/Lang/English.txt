@@ -219,3 +219,4 @@ MSG_SELECT_FOLDER=Select
 MSG_IMPORT_DONE=Import complete
 MSG_HELPER_TOOLS_MISSING=XDM relies on open source application named YT-DLP ( or Youtube-DL if YT-DLP is not available ) for this functionality, but XDM could not find any of them. Would you like to learn about how to install it?
 MSG_FFMPEG_MISSING=XDM relies on open source multimedia framework named FFmpeg, but XDM could not find it. Would you like to learn about how to install it?
+MSG_YTDLP_DOWNLOAD=XDM relies on open source application named yt-dlp for this functionality, download it from GitHub repository (https://github.com/yt-dlp/yt-dlp)?

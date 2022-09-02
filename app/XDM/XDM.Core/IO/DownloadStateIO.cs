@@ -36,7 +36,7 @@ namespace XDM.Core.IO
 #endif
             }))
             {
-                throw new IOException(Path.Combine(Config.DataDir, file));
+                throw new IOException(Path.Combine(folder, file));
             }
         }
 

@@ -59,7 +59,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
         {
             try
             {
-                LaunchNativeHostInstaller(Browser.Chrome);
+                InstallNativeMessagingHost(Browser.Chrome);
             }
             catch (Exception ex)
             {
@@ -83,7 +83,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
         {
             try
             {
-                LaunchNativeHostInstaller(Browser.Firefox);
+                InstallNativeMessagingHost(Browser.Firefox);
             }
             catch (Exception ex)
             {
@@ -107,7 +107,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
         {
             try
             {
-                LaunchNativeHostInstaller(Browser.Chrome);
+                InstallNativeMessagingHost(Browser.Chrome);
             }
             catch (Exception ex)
             {
@@ -131,7 +131,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
         {
             try
             {
-                LaunchNativeHostInstaller(Browser.Chrome);
+                InstallNativeMessagingHost(Browser.Chrome);
             }
             catch (Exception ex)
             {
@@ -185,7 +185,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
         {
             try
             {
-                LaunchNativeHostInstaller(Browser.Chrome);
+                InstallNativeMessagingHost(Browser.Chrome);
             }
             catch (Exception ex)
             {
@@ -209,7 +209,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
         {
             try
             {
-                LaunchNativeHostInstaller(Browser.Chrome);
+                InstallNativeMessagingHost(Browser.Chrome);
             }
             catch (Exception ex)
             {
@@ -229,29 +229,32 @@ namespace XDM.Wpf.UI.Dialogs.Settings
             }
         }
 
-        private void LaunchNativeHostInstaller(Browser browser)
+        private void InstallNativeMessagingHost(Browser browser)
         {
-            var browserName = "chome";
-            if (browser == Browser.Firefox)
-            {
-                browserName = "firefox";
-            }
-            if (browser == Browser.MSEdge)
-            {
-                browserName = "ms-edge";
-            }
-            string aliasPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) +
-                   @"\microsoft\windowsapps\xdm-app-host.exe";
-            ProcessStartInfo psi = new()
-            {
-                FileName = aliasPath,
-                UseShellExecute = true,
-                Verb = "runas",
-                Arguments = "--install-native-messaging-host " + browserName
-            };
+            //var browserName = "chome";
+            //if (browser == Browser.Firefox)
+            //{
+            //    browserName = "firefox";
+            //}
+            //if (browser == Browser.MSEdge)
+            //{
+            //    browserName = "ms-edge";
+            //}
 
-            Log.Debug("xdm-app-host instance creating...");
-            Process.Start(psi);
+            NativeMessagingHostConfigurer.InstallNativeMessagingHostForWindows(browser);
+
+            //string aliasPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) +
+            //       @"\microsoft\windowsapps\xdm-app-host.exe";
+            //ProcessStartInfo psi = new()
+            //{
+            //    FileName = aliasPath,
+            //    UseShellExecute = true,
+            //    Verb = "runas",
+            //    Arguments = "--install-native-messaging-host " + browserName
+            //};
+
+            //Log.Debug("xdm-app-host instance creating...");
+            //Process.Start(psi);
         }
     }
 }

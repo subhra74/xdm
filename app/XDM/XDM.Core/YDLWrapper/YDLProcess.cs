@@ -140,7 +140,7 @@ namespace YDLWrapper
             foreach (var executableName in executableNames)
             {
                 execName = executableName;
-                var path = Path.Combine(Config.DataDir, executableName);
+                var path = Path.Combine(Config.AppDir, executableName);
                 if (File.Exists(path))
                 {
                     found = true;

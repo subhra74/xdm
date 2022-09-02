@@ -49,8 +49,8 @@ namespace XDM.Wpf.UI
             var debugMode = Environment.GetEnvironmentVariable("XDM_DEBUG_MODE");
             if (!string.IsNullOrEmpty(debugMode) && debugMode == "1")
             {
-                var logFile = Path.Combine(Config.DataDir, "log.txt");
-                Log.InitFileBasedTrace(Path.Combine(Config.DataDir, "log.txt"));
+                var logFile = Path.Combine(Config.AppDir, "log.txt");
+                Log.InitFileBasedTrace(Path.Combine(Config.AppDir, "log.txt"));
             }
             Log.Debug($"Application_Startup::args->: {string.Join(" ", Environment.GetCommandLineArgs())}");
 

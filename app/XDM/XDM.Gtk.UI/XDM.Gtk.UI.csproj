@@ -90,6 +90,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="NativeMessaging\xdm_messaging_host.py">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="source_pkg.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

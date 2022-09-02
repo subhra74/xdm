@@ -199,7 +199,7 @@ namespace XDM.Core.MediaProcessor
                 new string[] { "ffmpeg-x86.exe", "ffmpeg.exe" } : new string[] { "ffmpeg" };
             foreach (var executableName in executableNames)
             {
-                var path = Path.Combine(Config.DataDir, executableName);
+                var path = Path.Combine(Config.AppDir, executableName);
                 if (File.Exists(path))
                 {
                     return path;

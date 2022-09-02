@@ -92,7 +92,7 @@ namespace XDM.GtkUI
             }
         }
 
-        public void ShowPropertiesDialog(DownloadItemBase ent, ShortState? state)
+        public void ShowPropertiesDialog(DownloadItemBase ent, string cookies, Dictionary<string, List<string>> headers)
         {
             using var propWin = PropertiesDialog.CreateFromGladeFile(GetMainWindow(), GetWindowGroup());
             propWin.FileName = ent.Name;
@@ -102,8 +102,8 @@ namespace XDM.GtkUI
             propWin.DateAdded = ent.DateAdded.ToLongDateString() + " " + ent.DateAdded.ToLongTimeString();
             propWin.DownloadType = ent.DownloadType;
             propWin.Referer = ent.RefererUrl;
-            propWin.Cookies = state?.Cookies ?? state?.Cookies1 ?? string.Empty;
-            propWin.Headers = state?.Headers ?? state?.Headers1 ?? new Dictionary<string, List<string>>();
+            propWin.Cookies = cookies;
+            propWin.Headers = headers;
             propWin.Run();
             propWin.Destroy();
             propWin.Dispose();

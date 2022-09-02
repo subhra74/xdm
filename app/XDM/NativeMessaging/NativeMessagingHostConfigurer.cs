@@ -12,13 +12,15 @@ namespace NativeMessaging
     {
         private static string GetExecutablePath()
         {
-#if NET472
-            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    @"microsoft\windowsapps\xdm-app-host.exe");
-#else
             return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "XDM.App.Host" + Path.DirectorySeparatorChar + "xdm-app-host" + (
                 Environment.OSVersion.Platform == PlatformID.Win32NT ? ".exe" : string.Empty));
-#endif
+            //#if NET472
+            //            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            //                    @"microsoft\windowsapps\xdm-app-host.exe");
+            //#else
+            //            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "XDM.App.Host" + Path.DirectorySeparatorChar + "xdm-app-host" + (
+            //                Environment.OSVersion.Platform == PlatformID.Win32NT ? ".exe" : string.Empty));
+            //#endif
         }
 
         private static string GetFirefoxBatchPath()
@@ -87,11 +89,12 @@ namespace NativeMessaging
             var regPath = (browser == Browser.Firefox ?
                 @"Software\Mozilla\NativeMessagingHosts\" :
                 @"SOFTWARE\Google\Chrome\NativeMessagingHosts");
-            using var regKey = Registry.LocalMachine.CreateSubKey(regPath);
+            using var regKey = Registry.CurrentUser.CreateSubKey(regPath);
             using var key = regKey.CreateSubKey(appName, RegistryKeyPermissionCheck.ReadWriteSubTree);
             key.SetValue(null, manifestPath);
         }
 #endif
+
 #if LINUX
         public static void InstallNativeMessagingHostForLinux(Browser browser)
         {
@@ -114,6 +117,7 @@ namespace NativeMessaging
             CreateMessagingHostManifest(browser, appName, manifestPath);
         }
 #endif
+
     }
 
     public enum Browser

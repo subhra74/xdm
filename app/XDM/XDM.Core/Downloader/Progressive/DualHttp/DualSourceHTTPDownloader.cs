@@ -78,6 +78,7 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
         public void Start(bool start)
         {
             state.Init1 = state.Init2 = false;
+            state.FileSize = -1;
 
             ticksAtDownloadStartOrResume = Helpers.TickCount();
 
@@ -337,6 +338,8 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
             {
                 // ignored
                 Log.Debug("Chunk restore failed");
+                state.FileSize = -1;
+                state.Init1 = state.Init2 = false;
             }
             TicksAndSizeAtResume();
         }

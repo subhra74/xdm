@@ -56,7 +56,7 @@ namespace XDM.Core
 
             if (args.ContainsKey("--first-run"))
             {
-                //Config.Instance.RunOnLogon = true;
+                Config.Instance.RunOnLogon = true;
                 Config.SaveConfig();
                 ApplicationContext.Application.RunOnUiThread(() =>
                 {

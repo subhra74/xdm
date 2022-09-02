@@ -12,6 +12,7 @@ using System.Threading;
 
 namespace XDM.App.Host
 {
+    //This will run on Windows only, for Linux there is a Python script...
     class Program
     {
         private static IpcClient? _ipcClient;
@@ -20,20 +21,11 @@ namespace XDM.App.Host
         static void Main(string[] args)
         {
             Trace.WriteLine($"[xdm-native-messaging-host] startup");
-            if (args.Length == 2 && args[0] == "--install-native-messaging-host")
-            {
-                var browser = Browser.Chrome;
-                if (args[1] == "firefox")
-                {
-                    browser = Browser.Firefox;
-                }
-                if (args[1] == "ms-edge")
-                {
-                    browser = Browser.MSEdge;
-                }
-                NativeMessagingHostConfigurer.InstallNativeMessagingHostForWindows(browser);
-                return;
-            }
+            //if (args.Length == 2 && args[0] == "--install-native-messaging-host")
+            //{
+            //    InstallNativeHost(args);
+            //    return;
+            //}
 
             var debugMode = Environment.GetEnvironmentVariable("XDM_DEBUG_MODE");
             if (!string.IsNullOrEmpty(debugMode) && debugMode == "1")
@@ -60,12 +52,14 @@ namespace XDM.App.Host
                 Debug("Mutex open failed, spawning xdm process...");
                 CreateXDMInstance();
             }
+            var connected = false;
             for (var i = 0; i < 5; i++)
             {
                 try
                 {
                     Debug("Trying to connect with XDM...");
                     ConnectWithXDM();
+                    connected = true;
                     break;
                 }
                 catch
@@ -73,12 +67,15 @@ namespace XDM.App.Host
                     Debug("Unable to connect to XDM retry in 1 sec...");
                     Thread.Sleep(1000);
                 }
+            }
+            if (!connected)
+            {
                 Debug("Unable to connect to XDM after 5 attempts, giving up...");
                 Environment.Exit(1);
             }
-            Debug("sending1....");
-            _ipcClient!.Send(new List<string>());
-            Debug("sending2....");
+            //Debug("sending1....");
+            //_ipcClient!.Send(new List<string>());
+            //Debug("sending2....");
             ReadConfigUpdateFromXDM();
             while (true)
             {
@@ -201,9 +198,11 @@ namespace XDM.App.Host
         {
             try
             {
+                var exe = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-app-host.exe");
+
                 ProcessStartInfo psi = new()
                 {
-                    FileName = "xdm+app://launch",
+                    FileName = exe,
                     UseShellExecute = true
                 };
 
@@ -216,7 +215,6 @@ namespace XDM.App.Host
             }
         }
 
-
         private static void Debug(string msg, Exception? ex2 = null)
         {
             Trace.WriteLine($"[xdm-native-messaging-host {DateTime.Now}] {msg}");
@@ -227,5 +225,19 @@ namespace XDM.App.Host
             Console.Error.WriteLine(msg);
             Console.Error.Flush();
         }
+
+        //private static void InstallNativeHost(string[] args)
+        //{
+        //    var browser = Browser.Chrome;
+        //    if (args[1] == "firefox")
+        //    {
+        //        browser = Browser.Firefox;
+        //    }
+        //    if (args[1] == "ms-edge")
+        //    {
+        //        browser = Browser.MSEdge;
+        //    }
+        //    NativeMessagingHostConfigurer.InstallNativeMessagingHostForWindows(browser);
+        //}
     }
 }

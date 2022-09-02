@@ -418,6 +418,7 @@ namespace XDM.Core
             {
                 var http = source as IBaseDownloader;
                 DetachEventHandlers(http);
+                RemoveStateFiles(http.Id, false);
                 ApplicationContext.Application.DownloadFinished(http.Id, http.FileSize < 0 ? new FileInfo(http.TargetFile).Length : http.FileSize, http.TargetFile);
 
                 var showCompleteDialog = false;
@@ -687,7 +688,41 @@ namespace XDM.Core
             return null;
         }
 
-        public void RemoveDownload(DownloadItemBase entry, bool deleteDownloadedFile)
+        private List<string> GetStateFiles(string id, bool deleteInfo)
+        {
+            var files = new List<string>();
+            if (deleteInfo)
+            {
+                files.Add(Path.Combine(Config.DataDir, id + ".info"));
+            }
+            files.Add(Path.Combine(Config.DataDir, id + ".state"));
+            files.Add(Path.Combine(Config.DataDir, id + ".state.1"));
+            files.Add(Path.Combine(Config.DataDir, id + ".state.2"));
+            files.AddRange(Directory.EnumerateFiles(Config.DataDir, id + ".state.3.*"));
+            return files;
+        }
+
+        private void RemoveStateFiles(string id, bool deleteInfo)
+        {
+            var stateFiles = GetStateFiles(id, deleteInfo);
+
+            foreach (var file in stateFiles)
+            {
+                if (File.Exists(file))
+                {
+                    try
+                    {
+                        File.Delete(file);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Debug(ex, ex.Message);
+                    }
+                }
+            }
+        }
+
+        public void RemoveDownload(DownloadItemBase entry, bool deleteDownloadedFile, bool removeInfo = true)
         {
             try
             {
@@ -732,34 +767,33 @@ namespace XDM.Core
 
                 if (validEntry)
                 {
-                    var infoFile = Path.Combine(Config.DataDir, entry.Id + ".info");
-                    var stateFile = Path.Combine(Config.DataDir, entry.Id + ".state");
-                    if (Directory.Exists(tempDir) && !string.IsNullOrEmpty(tempDir))
-                    {
-                        Directory.Delete(tempDir, true);
-                    }
-                    if (File.Exists(stateFile))
-                    {
-                        File.Delete(stateFile);
-                    }
-                    if (File.Exists(infoFile))
-                    {
-                        File.Delete(infoFile);
-                    }
+                    RemoveStateFiles(entry.Id, removeInfo);
 
                     if (entry is FinishedDownloadItem && deleteDownloadedFile)
                     {
-                        var outFile = Path.Combine(entry.TargetDir, entry.Name);
-                        if (File.Exists(outFile))
+                        var file = Path.Combine(entry.TargetDir, entry.Name);
+                        if (File.Exists(file))
                         {
-                            File.Delete(outFile);
+                            File.Delete(file);
                         }
+                    }
+
+                    try
+                    {
+                        if (Directory.Exists(tempDir) && !string.IsNullOrEmpty(tempDir))
+                        {
+                            Directory.Delete(tempDir, true);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Debug(ex, ex.Message);
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log.Debug(ex, "Error deleting temp folder");
+                Log.Debug(ex, ex.Message);
             }
         }
 
@@ -797,7 +831,7 @@ namespace XDM.Core
                                    FileNameFetchMode.FileNameAndExtension,
                                    entry.TargetDir, true, entry.Authentication, entry.Proxy, null,
                                    convertToMp3);
-                    RemoveDownload(entry, false);
+                    RemoveDownload(entry, false, false);
                 }
             }
             catch (Exception ex)

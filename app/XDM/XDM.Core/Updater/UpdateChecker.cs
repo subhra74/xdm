@@ -22,17 +22,22 @@ namespace XDM.Core.Updater
         {
             updates = new List<UpdateInfo>();
 
-            var lastYoutubeDLUpdate = DateTime.MinValue;
-            var lastFFmpegUpdate = DateTime.MinValue;
+            var lastYoutubeDLUpdate = DateTime.MaxValue;
+
+            if (updateMode != UpdateMode.All)
+            {
+                //this is being called for missing ytdlp/ffmpeg components, not the update which run at app startup
+                lastYoutubeDLUpdate = DateTime.MinValue;
+            }
+
             firstUpdate = true;
 
-            var updateHistoryFile = Path.Combine(Config.DataDir, "update-info.json");
+            var updateHistoryFile = Path.Combine(Config.AppDir, "ytdlp-update.json");
             try
             {
                 if (File.Exists(updateHistoryFile))
                 {
                     var hist = JsonConvert.DeserializeObject<UpdateHistory>(File.ReadAllText(updateHistoryFile));
-                    lastFFmpegUpdate = hist.FFmpegUpdateDate;
                     lastYoutubeDLUpdate = hist.YoutubeDLUpdateDate;
                     firstUpdate = false;
                 }
@@ -60,16 +65,16 @@ namespace XDM.Core.Updater
                     }
                 }
 
-                if ((updateMode & UpdateMode.FFmpegUpdateOnly) == UpdateMode.FFmpegUpdateOnly)
-                {
-                    var ffmpegUpdate = FindNewFFmpegVersion(hc, lastFFmpegUpdate);
-                    if (ffmpegUpdate != null)
-                    {
-                        updates.Add(ffmpegUpdate.Value);
-                    }
-                }
+                //if ((updateMode & UpdateMode.FFmpegUpdateOnly) == UpdateMode.FFmpegUpdateOnly)
+                //{
+                //    var ffmpegUpdate = FindNewFFmpegVersion(hc, lastFFmpegUpdate);
+                //    if (ffmpegUpdate != null)
+                //    {
+                //        updates.Add(ffmpegUpdate.Value);
+                //    }
+                //}
 
-                return updates.Count > 0;
+                return true;
             }
             catch (Exception ex)
             {
@@ -164,17 +169,17 @@ namespace XDM.Core.Updater
                 Extensions = new string[] { }
             };
 
-        //TODO: Handle MacOS
-        private static AssetPattern GetFFmpegExecutableNameForCurrentOS() =>
-            Environment.OSVersion.Platform == PlatformID.Win32NT ? new AssetPattern
-            {
-                Prefix = "ffmpeg-x86",
-                Extensions = new string[] { ".exe" }
-            } : new AssetPattern
-            {
-                Prefix = "ffmpeg",
-                Extensions = new string[] { }
-            };
+        ////TODO: Handle MacOS
+        //private static AssetPattern GetFFmpegExecutableNameForCurrentOS() =>
+        //    Environment.OSVersion.Platform == PlatformID.Win32NT ? new AssetPattern
+        //    {
+        //        Prefix = "ffmpeg-x86",
+        //        Extensions = new string[] { ".exe" }
+        //    } : new AssetPattern
+        //    {
+        //        Prefix = "ffmpeg",
+        //        Extensions = new string[] { }
+        //    };
 
         //TODO: Handle Linux and Mac
         private static AssetPattern? GetAppInstallerNameForCurrentOS()
@@ -201,9 +206,9 @@ namespace XDM.Core.Updater
             FindNewRelease(hc, Links.YtDlpReleaseGH, r => r.PublishedAt > lastUpdated,
                 GetYoutubeDLExecutableNameForCurrentOS());
 
-        private static UpdateInfo? FindNewFFmpegVersion(IHttpClient hc, DateTime lastUpdated) =>
-            FindNewRelease(hc, Links.FFmpegCustomReleaseGH, r => r.PublishedAt > lastUpdated,
-                GetFFmpegExecutableNameForCurrentOS());
+        //private static UpdateInfo? FindNewFFmpegVersion(IHttpClient hc, DateTime lastUpdated) =>
+        //    FindNewRelease(hc, Links.FFmpegCustomReleaseGH, r => r.PublishedAt > lastUpdated,
+        //        GetFFmpegExecutableNameForCurrentOS());
 
         private static UpdateInfo? FindNewAppVersion(IHttpClient hc, Version appVersion) =>
             FindNewRelease(hc, Links.AppLatestReleaseGH, r => ParseGitHubTag(r.TagName) > appVersion,
@@ -242,7 +247,6 @@ namespace XDM.Core.Updater
     public struct UpdateHistory
     {
         public DateTime YoutubeDLUpdateDate { get; set; }
-        public DateTime FFmpegUpdateDate { get; set; }
     }
 
     public struct AssetPattern
@@ -254,10 +258,10 @@ namespace XDM.Core.Updater
     [Flags]
     public enum UpdateMode
     {
-        AppUpdateOnly = 0,
-        FFmpegUpdateOnly = 1,
+        AppUpdateOnly = 4,
+        //FFmpegUpdateOnly = 1,
         YoutubeDLUpdateOnly = 2,
-        All = AppUpdateOnly | FFmpegUpdateOnly | YoutubeDLUpdateOnly
+        All = AppUpdateOnly /*| FFmpegUpdateOnly*/ | YoutubeDLUpdateOnly
     }
 }
 

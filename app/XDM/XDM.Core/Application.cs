@@ -11,6 +11,7 @@ using XDM.Core.DataAccess;
 using XDM.Core.Downloader;
 using XDM.Core.Util;
 using XDM.Core.Updater;
+using YDLWrapper;
 
 namespace XDM.Core
 {
@@ -28,7 +29,7 @@ namespace XDM.Core
 
         private void AppInstance_Initialized(object? sender, EventArgs e)
         {
-            AppDB.Instance.Init(Path.Combine(Config.DataDir, "downloads.db"));
+            AppDB.Instance.Init(Path.Combine(Config.AppDir, "downloads.db"));
             AttachedEventHandler();
             LoadDownloadList();
             UpdateToolbarButtonState();
@@ -423,6 +424,18 @@ namespace XDM.Core
 
             ApplicationContext.MainWindow.YoutubeDLDownloadClicked += (s, e) =>
             {
+                try
+                {
+                    var exec = YDLProcess.FindYDLBinary();
+                }
+                catch
+                {
+                    if (Confirm(ApplicationContext.MainWindow, TextResource.GetText("MSG_YTDLP_DOWNLOAD")))
+                    {
+                        InstallLatestYtDlp();
+                    }
+                    return;
+                }
                 ApplicationContext.PlatformUIService.ShowYoutubeDLDialog();
             };
 
@@ -530,7 +543,7 @@ namespace XDM.Core
                 {
                     if (ApplicationContext.MainWindow.Confirm(ApplicationContext.MainWindow, AppUpdater.ComponentUpdateText))
                     {
-                        LaunchUpdater(UpdateMode.FFmpegUpdateOnly | UpdateMode.YoutubeDLUpdateOnly);
+                        LaunchUpdater(/*UpdateMode.FFmpegUpdateOnly | */UpdateMode.YoutubeDLUpdateOnly);
                     }
                     return;
                 }
@@ -591,8 +604,8 @@ namespace XDM.Core
         private void LaunchUpdater(UpdateMode updateMode)
         {
             var updateDlg = ApplicationContext.PlatformUIService.CreateUpdateUIDialog();
-            var updates = AppUpdater.Updates?.Where(u => u.IsExternal)?.ToList() ?? new List<UpdateInfo>(0);
-            if (updates.Count == 0) return;
+            //var updates = AppUpdater.Updates?.Where(u => u.IsExternal)?.ToList() ?? new List<UpdateInfo>(0);
+            //if (updates.Count == 0) return;
             var commonUpdateUi = new ComponentUpdaterUIController(updateDlg, updateMode);
             updateDlg.Load += (_, _) => commonUpdateUi.StartUpdate();
             updateDlg.Finished += (_, _) =>
@@ -695,14 +708,9 @@ namespace XDM.Core
             }
         }
 
-        public void InstallLatestFFmpeg()
+        public void InstallLatestYtDlp()
         {
-            LaunchUpdater(UpdateMode.FFmpegUpdateOnly);
-        }
-
-        public void InstallLatestYoutubeDL()
-        {
-            LaunchUpdater(UpdateMode.YoutubeDLUpdateOnly);
+            LaunchUpdater(UpdateMode.YoutubeDLUpdateOnly /*| UpdateMode.FFmpegUpdateOnly*/);
         }
 
         public void ShowDownloadSelectionWindow(FileNameFetchMode mode, IEnumerable<IRequestData> downloads)

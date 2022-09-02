@@ -214,7 +214,8 @@ namespace XDM.Core.Downloader.Progressive.SingleHttp
             catch
             {
                 // ignored
-                Console.WriteLine("Chunk restore failed");
+                Log.Debug("Chunk restore failed");
+                state.FileSize = -1;
             }
             TicksAndSizeAtResume();
         }

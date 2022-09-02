@@ -37,6 +37,7 @@ namespace XDM.Core
         }
 
         public static string DataDir { get; set; }
+        public static string AppDir { get; set; }
 
         public bool IsBrowserMonitoringEnabled { get; set; } = true;
 
@@ -216,7 +217,10 @@ namespace XDM.Core
 
         public static void LoadConfig(string? path = null)
         {
-            DataDir = path ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".xdman");
+            DataDir = path ?? Path.Combine(
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "XtremeDownloadManager"), "Data");
+            AppDir = path ?? Path.Combine(
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "XtremeDownloadManager"));
             instance = new Config
             {
                 TempDir = Path.Combine(DataDir, "temp")
@@ -228,7 +232,7 @@ namespace XDM.Core
                     Directory.CreateDirectory(DataDir);
                 }
 
-                var bytes = TransactedIO.ReadBytes("settings.dat", DataDir);
+                var bytes = TransactedIO.ReadBytes("settings.dat", AppDir);
                 if (bytes != null)
                 {
                     using var ms = new MemoryStream(bytes);

@@ -26,7 +26,7 @@ namespace XDM.Core
 
         void ShowRefreshLinkDialog(InProgressDownloadItem entry);
 
-        void ShowPropertiesDialog(DownloadItemBase ent, ShortState? state);
+        void ShowPropertiesDialog(DownloadItemBase ent, string cookies, Dictionary<string, List<string>> headers);
 
         void ShowYoutubeDLDialog();
 

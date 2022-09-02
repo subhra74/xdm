@@ -402,7 +402,7 @@ namespace XDM.Core.IO
 
             w.Close();
             ms.Close();
-            TransactedIO.WriteBytes(ms.ToArray(), "settings.dat", Config.DataDir);
+            TransactedIO.WriteBytes(ms.ToArray(), "settings.dat", Config.AppDir);
         }
 
         public static void SerializeProxyInfo(ProxyInfo proxy, BinaryWriter w)

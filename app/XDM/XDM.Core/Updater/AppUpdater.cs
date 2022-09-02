@@ -36,7 +36,10 @@ namespace XDM.Core.Updater
                 if (UpdateChecker.GetAppUpdates(ApplicationContext.CoreService.AppVerion, out IList<UpdateInfo> upd, out bool firstUpdate))
                 {
                     Updates = upd;
-                    ApplicationContext.Application.ShowUpdateAvailableNotification();
+                    if (upd != null && upd.Count > 0)
+                    {
+                        ApplicationContext.Application.ShowUpdateAvailableNotification();
+                    }
                 }
             }
             catch (Exception ex)

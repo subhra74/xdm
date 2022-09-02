@@ -109,7 +109,7 @@ namespace XDM.Wpf.UI
             }
         }
 
-        public void ShowPropertiesDialog(DownloadItemBase ent, ShortState? state)
+        public void ShowPropertiesDialog(DownloadItemBase ent, string cookies, Dictionary<string, List<string>> headers)
         {
             var propertiesWindow = new DownloadPropertiesWindow
             {
@@ -120,8 +120,8 @@ namespace XDM.Wpf.UI
                 DateAdded = ent.DateAdded.ToLongDateString() + " " + ent.DateAdded.ToLongTimeString(),
                 DownloadType = ent.DownloadType,
                 Referer = ent.RefererUrl,
-                Cookies = state?.Cookies ?? state?.Cookies1 ?? string.Empty,
-                Headers = state?.Headers ?? state?.Headers1 ?? new Dictionary<string, List<string>>(),
+                Cookies = cookies,
+                Headers = headers,
                 Owner = GetMainWindow()
             };
             propertiesWindow.ShowDialog(GetMainWindow());
