@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?define ProductVersion = "8.0.1"?>
+<?define ProductVersion = "8.0.2"?>
 <?define ProductUpgradeCode="3E462F34-3D19-4247-AD64-1B74703555D6"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"  xmlns:ui="http://schemas.microsoft.com/wix/UIExtension">
   <Product Id="*" Name="Xtreme Download Manager" Codepage="utf-32" Language="1033" Version="$(var.ProductVersion)" Manufacturer="Subhra Das Gupta" UpgradeCode="$(var.ProductUpgradeCode)">
@@ -65,12 +65,12 @@
 
   <Fragment>
     <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
-	  <Component Id="YoutubeDL" Guid="9dc21cf0-cbed-46e0-8273-b4c9dbaa23ac" KeyPath="yes">
+	  <!--Component Id="YoutubeDL" Guid="9dc21cf0-cbed-46e0-8273-b4c9dbaa23ac" KeyPath="yes">
         <File Id="youtubedlexe" Source="youtube-dl.exe"></File>
-      </Component>
-	  <Component Id="FFmpeg" Guid="7220b8b0-04dd-4222-ba54-e3bb2323e420" KeyPath="yes">
+      </Component-->
+	  <!--Component Id="FFmpeg" Guid="7220b8b0-04dd-4222-ba54-e3bb2323e420" KeyPath="yes">
         <File Id="ffmpegexe" Source="ffmpeg-x86.exe"></File>
-      </Component>
+      </Component-->
 	  <Component Id="RegistryEntries" Guid="*">
         <RegistryKey Root="HKCU"
                      Key="Software\Microsoft\Windows\CurrentVersion\Run"
