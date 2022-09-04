@@ -80,12 +80,19 @@ namespace XDM.Core.Ipc
 
         public void SendConfig()
         {
-            lock (this)
+            try
             {
-                foreach (var client in _clients)
+                lock (this)
                 {
-                    SendConfig(client);
+                    foreach (var client in _clients)
+                    {
+                        SendConfig(client);
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, ex.Message);
             }
         }
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using TraceLog;
 using XDM.Core;
 using XDM.Core.Util;
 
@@ -9,7 +10,7 @@ namespace XDM.Core
 {
     public static class ArgsProcessor
     {
-        public static string[] SingleSwitches = new string[] { "--background", "--first-run" };
+        public static string[] SingleSwitches = new string[] { "--background", "--first-run", "--restore-window", "--quit" };
         public static void Process(IEnumerable<string> commandArgs)
         {
             Dictionary<string, List<string>> args = ParseArgs(commandArgs);
@@ -54,23 +55,31 @@ namespace XDM.Core
                 ApplicationContext.CoreService.AddDownload(message);
             }
 
-            if (args.ContainsKey("--first-run"))
+            if (args.ContainsKey("--quit"))
             {
-                Config.Instance.RunOnLogon = true;
-                Config.SaveConfig();
-                ApplicationContext.Application.RunOnUiThread(() =>
-                {
-                    ApplicationContext.MainWindow.ShowAndActivate();
-                    ApplicationContext.PlatformUIService.ShowBrowserMonitoringDialog();
-                });
+                Log.Debug("Received quit args, Exiting...");
+                Environment.Exit(0);
             }
 
-            if (args.Count == 0 || args.ContainsKey("-r"))
+            if (!args.ContainsKey("--background"))
             {
-                ApplicationContext.Application.RunOnUiThread(() =>
+                if (args.ContainsKey("--first-run"))
                 {
-                    ApplicationContext.MainWindow.ShowAndActivate();
-                });
+                    Config.Instance.RunOnLogon = true;
+                    Config.SaveConfig();
+                    ApplicationContext.Application.RunOnUiThread(() =>
+                    {
+                        ApplicationContext.MainWindow.ShowAndActivate();
+                        ApplicationContext.PlatformUIService.ShowBrowserMonitoringDialog();
+                    });
+                }
+                else
+                {
+                    ApplicationContext.Application.RunOnUiThread(() =>
+                    {
+                        ApplicationContext.MainWindow.ShowAndActivate();
+                    });
+                }
             }
         }
 

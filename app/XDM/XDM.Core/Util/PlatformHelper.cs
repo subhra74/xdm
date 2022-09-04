@@ -286,7 +286,7 @@ namespace XDM.Core.Util
                         if (enable)
                         {
                             var xdmExe = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-app.exe");
-                            hkcuRun.SetValue("XDM", $"\"{xdmExe}\" -m");
+                            hkcuRun.SetValue("XDM", $"\"{xdmExe}\" --background");
                         }
                         else
                         {
@@ -341,7 +341,7 @@ namespace XDM.Core.Util
                 "Version=1.0\r\n" +
                 "Type=Application\r\n" +
                 "Terminal=false\r\n" +
-                $"Exec=\"{appPath}\" -m\r\n" +
+                $"Exec=\"{appPath}\" --background\r\n" +
                 "Name=Xtreme Download Manager\r\n" +
                 "Comment=Xtreme Download Manager\r\n" +
                 "Categories=Network;\r\n" +

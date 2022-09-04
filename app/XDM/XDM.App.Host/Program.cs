@@ -198,12 +198,13 @@ namespace XDM.App.Host
         {
             try
             {
-                var exe = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-app-host.exe");
+                var exe = Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".."), "xdm-app.exe");
 
                 ProcessStartInfo psi = new()
                 {
                     FileName = exe,
-                    UseShellExecute = true
+                    UseShellExecute = true,
+                    Arguments = "--background"
                 };
 
                 Debug("XDM instance creating...");
