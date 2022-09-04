@@ -51,12 +51,10 @@ namespace XDM.Core.Ipc
                     while (true)
                     {
                         Log.Debug("Receiving from native-host");
-                        var args = IpcUtil.Receive(stream);
                         Log.Debug("Received from native-host");
-                        if (args.Count > 0)
-                        {
-                            ArgsProcessor.Process(args);
-                        }
+                        var args = IpcUtil.Receive(stream);
+                        args.Add("--background");
+                        ArgsProcessor.Process(args);
                     }
                 }
                 catch (Exception ex)
