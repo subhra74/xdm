@@ -10,11 +10,7 @@ namespace XDM.Core.Downloader.Progressive
         public bool IsFirstRequest(StreamType streamType);
         public bool IsFileChangedOnServer(StreamType streamType, long streamSize, DateTime? lastModified);
         public Piece GetPiece(string pieceId);
-        public (
-            Dictionary<string, List<string>> Headers,
-            string Cookies,
-            Uri Url, AuthenticationInfo? Authentication,
-            ProxyInfo? Proxy)?
+        public HeaderData?
             GetHeaderUrlAndCookies(string pieceId);
         public IHttpClient? GetSharedHttpClient(string pieceId);
         public void PieceConnected(string pieceId, ProbeResult? result);
@@ -25,5 +21,14 @@ namespace XDM.Core.Downloader.Progressive
         public void PieceDownloadFinished(string pieceId);
         public void ThrottleIfNeeded();
         public bool IsTextRedirectionAllowed();
+    }
+
+    public struct HeaderData
+    {
+        public Dictionary<string, List<string>> Headers { get; set; }
+        public string? Cookies { get; set; }
+        public Uri Url { get; set; }
+        public AuthenticationInfo? Authentication { get; set; }
+        public ProxyInfo? Proxy { get; set; }
     }
 }

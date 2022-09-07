@@ -32,7 +32,7 @@ namespace XDM.Core
         public Version AppVerion => new(8, 0, 0);
         public string AppPlatform => PlatformHelper.GetAppPlatform();
 
-        private Dictionary<string, (IBaseDownloader Downloader, bool NonInteractive)> liveDownloads = new();
+        private Dictionary<string, KeyValuePair<IBaseDownloader, bool>> liveDownloads = new();
         private GenericOrderedDictionary<string, bool> queuedDownloads = new();
         private GenericOrderedDictionary<string, IProgressWindow> activeProgressWindows = new();
         private Scheduler scheduler;
@@ -154,7 +154,7 @@ namespace XDM.Core
 
             if (startImmediately)
             {
-                this.liveDownloads.Add(download.Id, (Downloader: download, NonInteractive: false));
+                this.liveDownloads.Add(download.Id, new KeyValuePair<IBaseDownloader, bool>(download, false));
                 download.Started += HandleDownloadStart;
                 download.Probed += HandleProbeResult;
                 download.Finished += DownloadFinished;
@@ -300,7 +300,7 @@ namespace XDM.Core
                 download.Failed += DownloadFailed;
                 download.SetTargetDirectory(item.Value.TargetDir);
                 download.SetFileName(item.Value.Name, item.Value.FileNameFetchMode);
-                liveDownloads[item.Key] = (Downloader: download, NonInteractive: nonInteractive);
+                liveDownloads[item.Key] = new KeyValuePair<IBaseDownloader, bool>(download, nonInteractive);
 
                 var showProgressWindow = Config.Instance.ShowProgressWindow;
                 if (showProgressWindow && !nonInteractive)
@@ -319,7 +319,7 @@ namespace XDM.Core
                         prgWin.ShowProgressWindow();
                     });
                 }
-                liveDownloads[item.Key].Downloader.Resume();
+                liveDownloads[item.Key].Key.Resume();
             }
         }
 
@@ -332,7 +332,7 @@ namespace XDM.Core
                 {
                     return;
                 }
-                var downloader = liveDownloads[downloadId].Downloader;
+                var downloader = liveDownloads[downloadId].Key;
                 var prgWin = CreateOrGetProgressWindow(downloader);
                 prgWin.FileNameText = downloader.TargetFileName;
                 prgWin.FileSizeText = $"{TextResource.GetText("STAT_DOWNLOADING")} ...";
@@ -349,7 +349,7 @@ namespace XDM.Core
             var ids = new List<string>(list);
             foreach (var id in ids)
             {
-                (var http, _) = liveDownloads.GetValueOrDefault(id);
+                var http = liveDownloads.GetValueOrDefault(id).Key;
                 if (http != null)
                 {
                     http.Stop();
@@ -424,7 +424,7 @@ namespace XDM.Core
                 var showCompleteDialog = false;
                 if (liveDownloads.ContainsKey(http.Id))
                 {
-                    (_, bool nonInteractive) = liveDownloads[http.Id];
+                    var nonInteractive = liveDownloads[http.Id].Value;
                     liveDownloads.Remove(http.Id);
 
                     if (!nonInteractive && Config.Instance.ShowDownloadCompleteWindow)
@@ -604,7 +604,7 @@ namespace XDM.Core
         {
             if (liveDownloads.ContainsKey(id))
             {
-                var downloader = liveDownloads[id].Downloader;
+                var downloader = liveDownloads[id].Key;
                 downloader.SetTargetDirectory(folder);
                 downloader.SetFileName(file, downloader.FileNameFetchMode);
             }
@@ -630,7 +630,7 @@ namespace XDM.Core
         {
             try
             {
-                if (liveDownloads[id].NonInteractive)
+                if (liveDownloads[id].Value)
                 {
                     return null;
                 }

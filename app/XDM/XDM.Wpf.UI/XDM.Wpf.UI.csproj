@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <!--<TargetFrameworks>net4.7.2;net3.5</TargetFrameworks>-->
-    <TargetFramework>net4.7.2</TargetFramework>
+    <TargetFramework>net4.6.0</TargetFramework>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <Platforms>x86</Platforms>

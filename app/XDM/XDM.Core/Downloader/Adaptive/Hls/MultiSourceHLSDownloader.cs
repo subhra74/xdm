@@ -299,8 +299,8 @@ namespace XDM.Core.Downloader.Adaptive.Hls
                 Uri = mediaSegment.Url,
                 ChunkState = ChunkState.Ready,
                 Id = Guid.NewGuid().ToString(),
-                Offset = hasByteRange ? mediaSegment.ByteRange.start : 0,
-                Size = hasByteRange ? mediaSegment.ByteRange.end : -1,
+                Offset = hasByteRange ? mediaSegment.ByteRange.Key : 0,
+                Size = hasByteRange ? mediaSegment.ByteRange.Value : -1,
                 Duration = mediaSegment.Duration,
                 StreamIndex = streamIndex
             };

@@ -16,6 +16,7 @@ namespace XDM.Core.Util
         {
             if (fileName == null) return fileName;
             var file = fileName.Split('/').Last();
+            file = fileName.Split('\\').Last();
             return string.Join("_", file.Split(Path.GetInvalidFileNameChars()));
         }
 

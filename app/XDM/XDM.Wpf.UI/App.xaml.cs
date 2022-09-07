@@ -31,10 +31,10 @@ namespace XDM.Wpf.UI
             ServicePointManager.ServerCertificateValidationCallback += (a, b, c, d) => true;
             ServicePointManager.DefaultConnectionLimit = 100;
 
-#if NET45
+#if NET45_OR_GREATER
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
-#elif !NET35
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.SystemDefault;
+            //#elif !NET35
+            //            ServicePointManager.SecurityProtocol = SecurityProtocolType.SystemDefault;
 #endif
 #if NET46_OR_GREATER
 

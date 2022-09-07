@@ -1,0 +1,135 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <DirectoryRef Id="INSTALLFOLDER">
+            <Directory Id="dir23EEB6A7E0429F277985FA4BC5B2C64F" Name="Lang" />
+            <Directory Id="dir43FCCFA109FBF584D9155DCE31E452EB" Name="x64" />
+            <Directory Id="dir97F42FF68945B97AAE670945C4FDAE93" Name="x86" />
+            <Directory Id="dir581A49B5040D3CDF8EA353C58D34FBEE" Name="XDM.App.Host" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <ComponentGroup Id="NET460">
+            <Component Id="cmp9A67C55C3FC8E5905A5497F28DAACD33" Directory="INSTALLFOLDER" Guid="{39EF8E69-A33C-4EF2-81DC-FE1BA92DA00E}">
+                <File Id="fil3805CF0687ADB8D2668E229058AE1384" KeyPath="yes" Source="SourceDir\ffmpeg-x86.exe" />
+            </Component>
+            <Component Id="cmpBC4FC00A26E7D32479D42D3411317FC5" Directory="INSTALLFOLDER" Guid="{175886E5-3D07-4B4C-9271-DB4DCCD51E06}">
+                <File Id="fil90A8AAD9FC612906D405476D61CEA3F4" KeyPath="yes" Source="SourceDir\Newtonsoft.Json.dll" />
+            </Component>
+            <Component Id="cmpA748C45814948C0E47F0962CF5A9E2C5" Directory="INSTALLFOLDER" Guid="{00045C77-1F31-4ED9-AF60-6D270BDC4634}">
+                <File Id="filAF63FF48A59E0E5E7F49BFD1CBBB0CC3" KeyPath="yes" Source="SourceDir\System.Buffers.dll" />
+            </Component>
+            <Component Id="cmp6B7CE49F5F3A518047B74FB6AC2251C5" Directory="INSTALLFOLDER" Guid="{541FA69B-E147-4A27-85CE-34ECF7F3FBF1}">
+                <File Id="fil86030949C08D40073D1F77D572C14B0D" KeyPath="yes" Source="SourceDir\System.Data.SQLite.dll" />
+            </Component>
+            <Component Id="cmpC8D343DED6ECA227B78780388C7AA77C" Directory="INSTALLFOLDER" Guid="{3999061A-E68B-487A-BAE3-0177B1E194C7}">
+                <File Id="fil8C21BB6ED9A67550B3F3EE8EF35E5A89" KeyPath="yes" Source="SourceDir\System.IO.Compression.dll" />
+            </Component>
+            <Component Id="cmp8492AA35743AF7D1FE0E1073BDC3690C" Directory="INSTALLFOLDER" Guid="{126974A7-E0A7-4115-A18D-0185A7218323}">
+                <File Id="filDDF715835F59E54E2242D8F2A1F06D21" KeyPath="yes" Source="SourceDir\xdm-app.exe" />
+            </Component>
+            <Component Id="cmp107C972194DAC555B831433C1BE8A55E" Directory="INSTALLFOLDER" Guid="{B6561050-0739-4AA9-A6C6-7232B7D87F75}">
+                <File Id="fil9972EF0C3684120FF4F7910B0FE0713C" KeyPath="yes" Source="SourceDir\xdm-app.exe.config" />
+            </Component>
+            <Component Id="cmp7C78859AEC6DE38D8F2F26971835D172" Directory="INSTALLFOLDER" Guid="{5F55DA1F-D7C7-447A-B79C-DD80A64DA06A}">
+                <File Id="fil8F57C6D7E5A7EBFFEFAB56B377646C3F" KeyPath="yes" Source="SourceDir\xdm-logo.ico" />
+            </Component>
+            <Component Id="cmp9426BCE05D96E362CE2307030AD0B787" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{8C9BBC2D-2EC0-483B-8AB9-E10D59B98919}">
+                <File Id="fil3B509627F3579E5E798429B7AF50A89F" KeyPath="yes" Source="SourceDir\Lang\Arabic.txt" />
+            </Component>
+            <Component Id="cmp7B196C93DF1AC26A0F6261DD7D3E9F6F" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{4EB09615-B52C-4004-B328-DD30A90758F5}">
+                <File Id="fil157F89BAE67E3A9E11E73A71B0F1206A" KeyPath="yes" Source="SourceDir\Lang\Chinese simplified.txt" />
+            </Component>
+            <Component Id="cmp5DFF65F5D314309C73C3D061EDD2C177" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{0951900D-476D-484C-9CB5-08C68A97745B}">
+                <File Id="filE7265D5BBCF21F04A321C9A866BCA391" KeyPath="yes" Source="SourceDir\Lang\Chinese Traditional.txt" />
+            </Component>
+            <Component Id="cmpFB7FD44428565C0D8C2D0F19F6CCE37E" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{DD808720-CBE0-4033-9A7C-1F7EC95366C4}">
+                <File Id="fil84779F3FA1D0C0610A31D04BE6547FB7" KeyPath="yes" Source="SourceDir\Lang\Czech.txt" />
+            </Component>
+            <Component Id="cmpF6AAD20A7508C58E13E4323B6D0EA609" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{A6B208F5-6E50-4FDC-857D-7E412959357C}">
+                <File Id="filF4561622A7750461A403BF4D1377E957" KeyPath="yes" Source="SourceDir\Lang\English--.txt" />
+            </Component>
+            <Component Id="cmp7400F54F0576F49D68AC3954395E05AE" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{5E4AF899-98A7-40AC-8C00-12B0F9792AFD}">
+                <File Id="fil7A4FE2BF32A20196F904D6C009D9FB8C" KeyPath="yes" Source="SourceDir\Lang\English.txt" />
+            </Component>
+            <Component Id="cmpF342CB82DC8C9150C3A8FBA6BFFB1A41" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{3F1096FD-2263-46D6-B8AE-07DCB11F7D0D}">
+                <File Id="fil25EEDE6A5DCF776B313D0BBA9C0914C2" KeyPath="yes" Source="SourceDir\Lang\Farsi-Persian.txt" />
+            </Component>
+            <Component Id="cmp8233B5293700BF34AE39BFAF5EF0523B" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{FC17CBCB-7ACD-4B39-A898-F2448266D756}">
+                <File Id="filA4D0710917BEEC0841891CE399C7B1EC" KeyPath="yes" Source="SourceDir\Lang\French.txt" />
+            </Component>
+            <Component Id="cmp8566A7FD0AEE51D2D3EEFFCC020BE424" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{81150DC7-E414-48BF-AE88-9EF36676BECC}">
+                <File Id="fil965184AEB44A5FE11BB35459867D4C9C" KeyPath="yes" Source="SourceDir\Lang\German.txt" />
+            </Component>
+            <Component Id="cmp547750417005BF0B3DBAA64524748CD2" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{06FBAFC9-0DDC-44D5-A9F0-99DA5DAD49DE}">
+                <File Id="fil468608C1B037F5E412A6FA6FD130D11A" KeyPath="yes" Source="SourceDir\Lang\Hungarian.txt" />
+            </Component>
+            <Component Id="cmp0FC0C296CCAA630B2EE72A15B72C6F0D" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{DF56DEC0-B66A-496D-848E-5C608C05E9E7}">
+                <File Id="filFF8D5E5AF4D885290C12D7E1B3998D7D" KeyPath="yes" Source="SourceDir\Lang\index.txt" />
+            </Component>
+            <Component Id="cmp5CAA8F8305F46C5D55A72A860F79BEAC" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{73985C1F-9FD0-42FD-8AEB-86DCD46D50D3}">
+                <File Id="fil6617CADEB631275A14B147DA6FA50C62" KeyPath="yes" Source="SourceDir\Lang\Indonesian.txt" />
+            </Component>
+            <Component Id="cmp78CE6A1259C2075D6CAE21A5FBE6EDC0" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{ED5E5391-149C-404C-8E76-89F212DEB2B6}">
+                <File Id="fil47A1A104626B5B4FF4B7FA3E6BC125DF" KeyPath="yes" Source="SourceDir\Lang\Italian.txt" />
+            </Component>
+            <Component Id="cmp63F3E87FE6260082488A88212B113449" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{48C3CF67-AB6B-4C69-90A5-E12D0355DA17}">
+                <File Id="filB45BB61C1727323B0EBF315AF05DDF45" KeyPath="yes" Source="SourceDir\Lang\Korea.txt" />
+            </Component>
+            <Component Id="cmp1A43EBB73C94146D30F59D2618226CC9" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{BF4F6605-E7BA-4CC7-B5B6-77C4C24DA756}">
+                <File Id="fil9ABB230DD444E62F44281C2BAEB53DB2" KeyPath="yes" Source="SourceDir\Lang\Malayalam.txt" />
+            </Component>
+            <Component Id="cmp8F9540EB92821A553FF7EE5D8AAD6236" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{ED98FDB6-E104-4A28-AA16-C6BF3C65C080}">
+                <File Id="filC4AFAD3D8D71791392129A04FAAADBC7" KeyPath="yes" Source="SourceDir\Lang\Nepali.txt" />
+            </Component>
+            <Component Id="cmp60CBD8B73AF859E9DDB6F3383BC76475" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{0AB76A33-135D-435B-A536-88042B3D8AEF}">
+                <File Id="fil6011533B1CD6AFE69FD5137F8099047E" KeyPath="yes" Source="SourceDir\Lang\Polish.txt" />
+            </Component>
+            <Component Id="cmp1B6B22063AE975C2ADE5BE653B8903FF" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{03F67AD1-3F6A-43CE-B904-72AE66DE7D57}">
+                <File Id="filA467DF316C8EEB0106594ECF31D3310C" KeyPath="yes" Source="SourceDir\Lang\Portuguese Brazil.txt" />
+            </Component>
+            <Component Id="cmpD56571F9A6B137E66D6375464A4F0052" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{EB11815F-F96C-4A7D-BDA0-BCE7D14167CB}">
+                <File Id="filAB32EDF85F57EEB8649D9C72CBAA55D3" KeyPath="yes" Source="SourceDir\Lang\Romanian.txt" />
+            </Component>
+            <Component Id="cmp60A17340B160A98ECEF912524DD9D77C" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{D58AE716-6C84-4A7E-932D-FF9563D0BCB4}">
+                <File Id="filCBD34802CCD7D1DEAF744B64D2CB75A2" KeyPath="yes" Source="SourceDir\Lang\Russian.txt" />
+            </Component>
+            <Component Id="cmp46FBEBE54D8A4109223F21EB8D086FE8" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{91924041-6956-48BF-AF06-F91E688F839F}">
+                <File Id="fil09B6DCA0BFD8680DF85136C005AFE024" KeyPath="yes" Source="SourceDir\Lang\Serbian - Latin.txt" />
+            </Component>
+            <Component Id="cmpE88FC7FB91FFEBA9B34012C0066B0D60" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{257321E0-05A2-40D6-827F-4E7BB0C77321}">
+                <File Id="fil076997B80B46F2515BBA60EEE5CAFDED" KeyPath="yes" Source="SourceDir\Lang\Serbian Cyrillic.txt" />
+            </Component>
+            <Component Id="cmp3938EC8796821E332B87F52341C499F6" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{BD187595-F4DA-4FB2-97E6-D1527F62C0FD}">
+                <File Id="filB43E90AFC00E9F14144DC77EBC6AA261" KeyPath="yes" Source="SourceDir\Lang\Spanish.txt" />
+            </Component>
+            <Component Id="cmp29266283663E18C80529F748A6CB998A" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{E3D22197-92F5-48A6-9876-65D6A455F1ED}">
+                <File Id="filD2E0CCE0BCEA46557A7B571AF6C8203D" KeyPath="yes" Source="SourceDir\Lang\Traditional Chinese - Taiwan.txt" />
+            </Component>
+            <Component Id="cmpCC027386344B011B1601E96F1603344F" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{F6B571C3-6A3D-4382-A7C1-B079B9016473}">
+                <File Id="fil0699019E1FCF04A5F76E75AD342B7C15" KeyPath="yes" Source="SourceDir\Lang\Turkish.txt" />
+            </Component>
+            <Component Id="cmp41169E2708BB0596E0767D1B026A45F6" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{C365B0CA-DD30-4848-A765-B32D5F7BE875}">
+                <File Id="filA12094ABB9382C26B8648C36AD88B784" KeyPath="yes" Source="SourceDir\Lang\Ukrainian.txt" />
+            </Component>
+            <Component Id="cmp252782049908191663E5B9078A23532B" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{2FE35B29-9CFF-4583-BFB6-3D4BE9873921}">
+                <File Id="fil85ACDC35624353BFAE993844C52276AB" KeyPath="yes" Source="SourceDir\Lang\Vietnamese.txt" />
+            </Component>
+            <Component Id="cmp19F6DF8A2ABC78D782D76F1EEC9A5800" Directory="dir43FCCFA109FBF584D9155DCE31E452EB" Guid="{97C54048-64C2-45FF-A78E-C3050C72841F}">
+                <File Id="filC7EA62E1AC64247AFBE682E8631402B8" KeyPath="yes" Source="SourceDir\x64\SQLite.Interop.dll" />
+            </Component>
+            <Component Id="cmp77484AF39EF2F8BD64E876C33A1C3E49" Directory="dir97F42FF68945B97AAE670945C4FDAE93" Guid="{21EB5A20-3CF6-4963-8BE8-2161187EEE93}">
+                <File Id="filD2ACACD0EBAF09B1953E9C3793C13C69" KeyPath="yes" Source="SourceDir\x86\SQLite.Interop.dll" />
+            </Component>
+            <Component Id="cmp83C676128DA32AD53AC9AAF05173102A" Directory="dir581A49B5040D3CDF8EA353C58D34FBEE" Guid="{3DDCA971-B654-4541-9FAB-F9BA21EC8A8B}">
+                <File Id="filC09923B7C86A0D5449067879FEA2DE7D" KeyPath="yes" Source="SourceDir\XDM.App.Host\Newtonsoft.Json.dll" />
+            </Component>
+            <Component Id="cmp411DEC51439C2C0815A46E96C07CE3A9" Directory="dir581A49B5040D3CDF8EA353C58D34FBEE" Guid="{D3427DA6-FFA7-48DE-B399-3066E67AD313}">
+                <File Id="filA1DD8C00977EBDDB87A0291F938A7E0B" KeyPath="yes" Source="SourceDir\XDM.App.Host\xdm-app-host.exe" />
+            </Component>
+            <Component Id="cmpA9F7F8A96AC76AF59939052AFD6DD55F" Directory="dir581A49B5040D3CDF8EA353C58D34FBEE" Guid="{F8F8802C-AC87-4685-B223-2CACA4CCEF46}">
+                <File Id="filED4C518D478371541564A47E87BF905F" KeyPath="yes" Source="SourceDir\XDM.App.Host\xdm-app-host.exe.config" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+</Wix>

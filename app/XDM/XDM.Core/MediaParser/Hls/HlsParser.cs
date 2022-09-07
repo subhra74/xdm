@@ -61,7 +61,7 @@ namespace XDM.Core.MediaParser.Hls
                     var url = UrlResolver.Resolve(baseUrl, line);
                     mediaSegments.Add(new HlsMediaSegment(url)
                     {
-                        ByteRange = (start: startOffset, end: segmentLength),
+                        ByteRange = new KeyValuePair<long, long>(startOffset, segmentLength),
                         Duration = duration,
                         KeyUrl = keyUrl,
                         IV = iv
@@ -77,7 +77,9 @@ namespace XDM.Core.MediaParser.Hls
                 {
                     hasByteRange = true;
                     var attrList = line.Substring(EXT_X_BYTERANGE.Length).Trim();
-                    (long offset, long length) = ParseByteRange(attrList);
+                    var kv = ParseByteRange(attrList);
+                    long offset = kv.Key;
+                    long length = kv.Value;
                     if (offset > 0)
                     {
                         startOffset = offset;
@@ -125,7 +127,7 @@ namespace XDM.Core.MediaParser.Hls
                     {
                         mediaSegments.Add(new HlsMediaSegment(UrlResolver.Resolve(baseUrl, encAttrs["URI"]))
                         {
-                            ByteRange = encAttrs.ContainsKey("BYTERANGE") ? ParseByteRange(encAttrs["BYTERANGE"]) : (0, 0),
+                            ByteRange = encAttrs.ContainsKey("BYTERANGE") ? ParseByteRange(encAttrs["BYTERANGE"]) : new KeyValuePair<long, long>(0, 0),
                             Duration = 0,
                             KeyUrl = keyUrl,
                             IV = iv
@@ -252,7 +254,7 @@ namespace XDM.Core.MediaParser.Hls
             return dict;
         }
 
-        private static (long Offset, long Length) ParseByteRange(string str)
+        private static KeyValuePair<long, long> ParseByteRange(string str)
         {
             long offset = 0, length;
             var attrs = str.Split('@');
@@ -261,7 +263,7 @@ namespace XDM.Core.MediaParser.Hls
             {
                 offset = Int32.Parse(attrs[1]);
             }
-            return (offset, length);
+            return new KeyValuePair<long, long>(offset, length);
         }
     }
 }

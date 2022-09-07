@@ -37,6 +37,12 @@ namespace XDM.App.Host
 
             Debug("Application_Startup");
 
+            var isFirefox = true;
+            if (args.Length > 0 && args[0].StartsWith("chrome-extension:"))
+            {
+                isFirefox = false;
+            }
+
             stdin = Console.OpenStandardInput();
             stdout = Console.OpenStandardOutput();
 
@@ -50,7 +56,7 @@ namespace XDM.App.Host
             catch
             {
                 Debug("Mutex open failed, spawning xdm process...");
-                CreateXDMInstance();
+                CreateXDMInstance(isFirefox);
             }
             var connected = false;
             for (var i = 0; i < 5; i++)
@@ -194,21 +200,30 @@ namespace XDM.App.Host
             _ipcClient.Connect(8597);
         }
 
-        private static void CreateXDMInstance(bool minimized = true)
+        private static void CreateXDMInstance(bool isFirefox, bool minimized = true)
         {
             try
             {
                 var exe = Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".."), "xdm-app.exe");
-
-                ProcessStartInfo psi = new()
+                if (isFirefox)
                 {
-                    FileName = exe,
-                    UseShellExecute = true,
-                    Arguments = "--background"
-                };
+                    if (!Win32NativeProcess.Win32CreateProcess(exe, $"\"{exe}\" --background"))
+                    {
+                        Debug("Win32 create process failed!");
+                    }
+                }
+                else
+                {
+                    ProcessStartInfo psi = new()
+                    {
+                        FileName = exe,
+                        UseShellExecute = true,
+                        Arguments = "--background"
+                    };
 
-                Debug("XDM instance creating...");
-                Process.Start(psi);
+                    Debug("XDM instance creating...");
+                    Process.Start(psi);
+                }
             }
             catch (Exception ex)
             {

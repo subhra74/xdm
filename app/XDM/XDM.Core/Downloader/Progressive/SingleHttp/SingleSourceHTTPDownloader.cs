@@ -482,17 +482,20 @@ namespace XDM.Core.Downloader.Progressive.SingleHttp
             }
         }
 
-        public override (Dictionary<string, List<string>> Headers,
-            string Cookies,
-            Uri Url, AuthenticationInfo? Authentication,
-            ProxyInfo? Proxy)?
+        public override HeaderData?
             GetHeaderUrlAndCookies(string pieceId)
         {
             if (this.grabberDict.ContainsKey(pieceId) && pieces.ContainsKey(pieceId))
             {
-                return (this.state.Headers, this.state.Cookies, this.state.Url,
-                    this.state.Authentication
-                    , this.state.Proxy);
+                return
+                    new HeaderData
+                    {
+                        Headers = this.state!.Headers,
+                        Cookies = this.state!.Cookies,
+                        Url = this.state!.Url,
+                        Authentication = this.state!.Authentication,
+                        Proxy = this.state!.Proxy
+                    };
             }
             return null;
         }

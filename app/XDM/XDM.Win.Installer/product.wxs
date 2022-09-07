@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?define ProductVersion = "8.0.2"?>
+<?define ProductVersion = "8.0.5"?>
 <?define ProductUpgradeCode="3E462F34-3D19-4247-AD64-1B74703555D6"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"  xmlns:ui="http://schemas.microsoft.com/wix/UIExtension">
   <Product Id="*" Name="Xtreme Download Manager" Codepage="utf-32" Language="1033" Version="$(var.ProductVersion)" Manufacturer="Subhra Das Gupta" UpgradeCode="$(var.ProductUpgradeCode)">
@@ -40,7 +40,7 @@
 	
 	<Feature Id="ProductFeature" Title="XDM" Level="1">
       <ComponentGroupRef Id="ProductComponents" />
-	  <ComponentGroupRef Id="NET472" />
+	  <ComponentGroupRef Id="NET460" />
       <ComponentRef Id="StartMenuShortcut" />
       <ComponentRef Id="ProgramShortcut" />
       <ComponentRef Id="DesktopShortcut" />

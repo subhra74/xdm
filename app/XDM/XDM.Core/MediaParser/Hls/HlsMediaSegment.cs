@@ -12,7 +12,7 @@ namespace XDM.Core.MediaParser.Hls
             this.Url = url;
         }
         public Uri Url { get; set; }
-        public (long start, long end) ByteRange { get; set; }
+        public KeyValuePair<long, long> ByteRange { get; set; }
         public double Duration { get; set; }
         public Uri? KeyUrl { get; set; }
         public string? IV { get; set; }

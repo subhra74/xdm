@@ -272,22 +272,29 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
             CreatePiece();
         }
 
-        public override (
-            Dictionary<string, List<string>> Headers,
-            string Cookies,
-            Uri Url,
-            AuthenticationInfo? Authentication,
-            ProxyInfo? Proxy)?
+        public override HeaderData?
             GetHeaderUrlAndCookies(string pieceId)
         {
             if (this.grabberDict.ContainsKey(pieceId))
             {
                 var piece = pieces[pieceId];
                 return piece.StreamType == StreamType.Primary ?
-                    (Headers: this.state.Headers1, Cookies: this.state.Cookies1, Url: this.state.Url1,
-                    this.state.Authentication, this.state.Proxy) :
-                    (Headers: this.state.Headers2, Cookies: this.state.Cookies2, Url: this.state.Url2,
-                    this.state.Authentication, this.state.Proxy);
+                    new HeaderData
+                    {
+                        Headers = this.state.Headers1,
+                        Cookies = this.state.Cookies1,
+                        Url = this.state.Url1,
+                        Authentication = this.state.Authentication,
+                        Proxy = this.state.Proxy
+                    } :
+                    new HeaderData
+                    {
+                        Headers = this.state.Headers2,
+                        Cookies = this.state.Cookies2,
+                        Url = this.state.Url2,
+                        Authentication = this.state.Authentication,
+                        Proxy = this.state.Proxy
+                    };
             }
             return null;
         }

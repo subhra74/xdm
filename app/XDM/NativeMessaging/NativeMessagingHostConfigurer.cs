@@ -23,37 +23,34 @@ namespace NativeMessaging
             //#endif
         }
 
-        private static string GetFirefoxBatchPath()
-        {
-            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "xdm-app-host.bat");
-        }
+        //private static string GetFirefoxBatchPath()
+        //{
+        //    return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "xdm-app-host.bat");
+        //}
 
         private static void CreateMessagingHostManifest(Browser browser, string appName, string manifestPath)
         {
             var allowedExtensions = browser == Browser.Firefox ? new[] {
-                        "browser-mon@xdman.sourceforge.net"
+                        "xdm-integration-module@subhra74.github.io"
                     } : new[] {
-                        "chrome-extension://danmljfachfhpbfikjgedlfifabhofcj/",
-                        "chrome-extension://dkckaoghoiffdbomfbbodbbgmhjblecj/",
-                        "chrome-extension://ejpbcmllmliidhlpkcgbphhmaodjihnc/",
-                        "chrome-extension://fogpiboapmefmkbodpmfnohfflonbgig/"
+                        "chrome-extension://akdmdglbephckgfmdffcdebnpjgamofc/"
                     };
             var folder = Path.GetDirectoryName(manifestPath)!;
             if (!Directory.Exists(folder))
             {
                 Directory.CreateDirectory(folder);
             }
-            string aliasPath = GetExecutablePath();
+            string pathToExe = GetExecutablePath();
 
-#if WINDOWS
-            string? batchFilePath = null;
-            if (browser == Browser.Firefox)
-            {
-                batchFilePath = GetFirefoxBatchPath();
-                File.WriteAllText(batchFilePath, $"@echo off\r\n{aliasPath}");
-                aliasPath = batchFilePath;
-            }
-#endif
+//#if WINDOWS
+//            string? batchFilePath = null;
+//            if (browser == Browser.Firefox)
+//            {
+//                batchFilePath = GetFirefoxBatchPath();
+//                File.WriteAllText(batchFilePath, $"@echo off\r\n\"{aliasPath}\"");
+//                aliasPath = batchFilePath;
+//            }
+//#endif
 
             using var stream = new FileStream(manifestPath, FileMode.Create);
             using var textWriter = new StreamWriter(stream);
@@ -65,7 +62,7 @@ namespace NativeMessaging
             writer.WritePropertyName("description");
             writer.WriteValue("Native messaging host for Xtreme Download Manager");
             writer.WritePropertyName("path");
-            writer.WriteValue(aliasPath);
+            writer.WriteValue(pathToExe);
             writer.WritePropertyName("type");
             writer.WriteValue("stdio");
             writer.WritePropertyName(browser == Browser.Firefox ? "allowed_extensions" : "allowed_origins");

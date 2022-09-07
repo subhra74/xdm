@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <UseWindowsForms>true</UseWindowsForms>
-    <TargetFramework>net4.7.2</TargetFramework>
+    <TargetFramework>net4.6.0</TargetFramework>
     <!--<TargetFrameworks>net3.5;net4.7.2;net6.0</TargetFrameworks>-->
     <LangVersion>9.0</LangVersion>
     <Nullable>enable</Nullable>
