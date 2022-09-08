@@ -17,6 +17,15 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="xdmff.native_host.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="xdm_chrome.native_host.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
   <Import Project="..\NativeMessaging\NativeMessaging.projitems" Label="Shared" />
 
   <PropertyGroup Condition="'$(Configuration)'=='Release'">

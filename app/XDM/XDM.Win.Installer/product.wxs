@@ -46,7 +46,7 @@
       <ComponentRef Id="DesktopShortcut" />
     </Feature>
 
-    <CustomAction Id="LaunchXDM"  Directory="INSTALLFOLDER" ExeCommand='"[INSTALLFOLDER]xdm-app.exe" -i'  Return="asyncNoWait" Impersonate="yes"/>
+    <CustomAction Id="LaunchXDM"  Directory="INSTALLFOLDER" ExeCommand='"[INSTALLFOLDER]xdm-app.exe" --first-run'  Return="asyncNoWait" Impersonate="yes"/>
 
   </Product>
 
@@ -73,9 +73,20 @@
       </Component-->
 	  <Component Id="RegistryEntries" Guid="*">
         <RegistryKey Root="HKCU"
-                     Key="Software\Microsoft\Windows\CurrentVersion\Run"
-              Action="create">
-            <RegistryValue Type="string" Name="XDM" Value='"[INSTALLFOLDER]xdm-app.exe" -m'/>
+                     Key="Software\Microsoft\Windows\CurrentVersion\Run">
+            <RegistryValue Type="string" Name="XDM" Value='"[INSTALLFOLDER]xdm-app.exe" --background'/>
+        </RegistryKey>
+		<RegistryKey Root="HKCU"
+                     Key="Software\Google\Chrome\NativeMessagingHosts\xdm_chrome.native_host">
+            <RegistryValue Type="string" Value='[INSTALLFOLDER]XDM.App.Host\xdm_chrome.native_host.json'/>
+        </RegistryKey>
+		<RegistryKey Root="HKCU"
+                     Key="Software\Mozilla\NativeMessagingHosts\xdmff.native_host">
+            <RegistryValue Type="string" Value='[INSTALLFOLDER]XDM.App.Host\xdmff.native_host.json'/>
+        </RegistryKey>
+		<RegistryKey Root="HKLM"
+                     Key="SOFTWARE\Google\Chrome\Extensions\akdmdglbephckgfmdffcdebnpjgamofc">
+            <RegistryValue Type="string" Name="update_url" Value='https://clients2.google.com/service/update2/crx'/>
         </RegistryKey>
     </Component>
     </ComponentGroup>

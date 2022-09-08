@@ -42,15 +42,15 @@ namespace NativeMessaging
             }
             string pathToExe = GetExecutablePath();
 
-//#if WINDOWS
-//            string? batchFilePath = null;
-//            if (browser == Browser.Firefox)
-//            {
-//                batchFilePath = GetFirefoxBatchPath();
-//                File.WriteAllText(batchFilePath, $"@echo off\r\n\"{aliasPath}\"");
-//                aliasPath = batchFilePath;
-//            }
-//#endif
+            //#if WINDOWS
+            //            string? batchFilePath = null;
+            //            if (browser == Browser.Firefox)
+            //            {
+            //                batchFilePath = GetFirefoxBatchPath();
+            //                File.WriteAllText(batchFilePath, $"@echo off\r\n\"{aliasPath}\"");
+            //                aliasPath = batchFilePath;
+            //            }
+            //#endif
 
             using var stream = new FileStream(manifestPath, FileMode.Create);
             using var textWriter = new StreamWriter(stream);
@@ -77,15 +77,47 @@ namespace NativeMessaging
         }
 
 #if WINDOWS
+        private static bool IsMessagingHostAlreadyInstalledForChrome()
+        {
+            try
+            {
+                using var regKey = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Google\Chrome\NativeMessagingHosts\xdm_chrome.native_host");
+                var path = (string)regKey.GetValue(null);
+                if (path == Path.Combine(AppDomain.CurrentDomain.BaseDirectory, Path.Combine("XDM.App.Host", "xdm_chrome.native_host.json")))
+                {
+                    return true;
+                }
+            }
+            catch { }
+            return false;
+        }
+
+        private static bool IsMessagingHostAlreadyInstalledForFirefox()
+        {
+            try
+            {
+                using var regKey = Registry.CurrentUser.OpenSubKey(@"Software\Mozilla\NativeMessagingHosts\xdmff.native_host");
+                var path = (string)regKey.GetValue(null);
+                if (path == Path.Combine(AppDomain.CurrentDomain.BaseDirectory, Path.Combine("XDM.App.Host", "xdmff.native_host.json")))
+                {
+                    return true;
+                }
+            }
+            catch { }
+            return false;
+        }
+
         public static void InstallNativeMessagingHostForWindows(Browser browser)
         {
+            if (browser == Browser.Firefox && IsMessagingHostAlreadyInstalledForFirefox()) { return; }
+            if (browser == Browser.Chrome && IsMessagingHostAlreadyInstalledForChrome()) { return; }
             var appName = browser == Browser.Firefox ? "xdmff.native_host" :
                     "xdm_chrome.native_host";
             var manifestPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), $"{appName}.json");
             CreateMessagingHostManifest(browser, appName, manifestPath);
             var regPath = (browser == Browser.Firefox ?
                 @"Software\Mozilla\NativeMessagingHosts\" :
-                @"SOFTWARE\Google\Chrome\NativeMessagingHosts");
+                @"Software\Google\Chrome\NativeMessagingHosts");
             using var regKey = Registry.CurrentUser.CreateSubKey(regPath);
             using var key = regKey.CreateSubKey(appName, RegistryKeyPermissionCheck.ReadWriteSubTree);
             key.SetValue(null, manifestPath);

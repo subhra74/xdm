@@ -360,3 +360,5 @@ app/xdm-browser-monitor/extension-code.js
 *.rpm
 *.zst
 app/packaging/xdman_gtk-8.0.1.tar.gz
+app/XDM/XDM.Win.Installer/net4.6.0.wxs
+app/XDM/XDM.Win.Installer/net4.6.0.wxs
