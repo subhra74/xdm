@@ -25,6 +25,8 @@ namespace XDM.GtkUI.Dialogs.Settings
         [UI]
         private Label TabHeader1, TabHeader2, TabHeader3, TabHeader4, TabHeader5;
         [UI]
+        private Label PageHeader1, PageHeader2, PageHeader3, PageHeader4, PageHeader5;
+        [UI]
         private Label Label1, Label2, Label3, Label4, Label5, Label6, Label7,
             Label8, Label9, Label10, Label11, Label12, Label13, Label14, Label15,
             Label16, Label17, Label18, Label19, Label20, Label21,
@@ -54,6 +56,9 @@ namespace XDM.GtkUI.Dialogs.Settings
         [UI]
         private Notebook Tabs;
 
+        [UI]
+        private ListBox SideList;
+
         private ListStore categoryStore, passwordStore;
 
         private SettingsDialog(Builder builder,
@@ -71,6 +76,10 @@ namespace XDM.GtkUI.Dialogs.Settings
             GtkHelper.AttachSafeDispose(this);
 
             LoadTexts();
+
+            SideList.RowSelected += SideList_RowSelected;
+
+            Tabs.ShowTabs = false;
 
             Title = TextResource.GetText("TITLE_SETTINGS");
             GtkHelper.PopulateComboBoxGeneric<int>(CmbMinVidSize, new int[] { 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768 });
@@ -122,6 +131,12 @@ namespace XDM.GtkUI.Dialogs.Settings
 
             BtnBrowse.Clicked += BtnBrowse_Clicked;
             BtnUserAgentReset.Clicked += BtnUserAgentReset_Clicked;
+        }
+
+        private void SideList_RowSelected(object o, RowSelectedArgs args)
+        {
+            var index = args.Row.Index;
+            Tabs.Page = index;
         }
 
         private void BtnUserAgentReset_Clicked(object? sender, EventArgs e)
@@ -477,11 +492,11 @@ namespace XDM.GtkUI.Dialogs.Settings
 
         private void LoadTexts()
         {
-            TabHeader1.Text = TextResource.GetText("SETTINGS_MONITORING");
-            TabHeader2.Text = TextResource.GetText("SETTINGS_GENERAL");
-            TabHeader3.Text = TextResource.GetText("SETTINGS_NETWORK");
-            TabHeader4.Text = TextResource.GetText("SETTINGS_CRED");
-            TabHeader5.Text = TextResource.GetText("SETTINGS_ADV");
+            PageHeader1.Text = TextResource.GetText("SETTINGS_MONITORING");
+            PageHeader2.Text = TextResource.GetText("SETTINGS_GENERAL");
+            PageHeader3.Text = TextResource.GetText("SETTINGS_NETWORK");
+            PageHeader4.Text = TextResource.GetText("SETTINGS_CRED");
+            PageHeader5.Text = TextResource.GetText("SETTINGS_ADV");
 
             Label1.StyleContext.AddClass("medium-font");
 
@@ -752,6 +767,8 @@ namespace XDM.GtkUI.Dialogs.Settings
         public void SetActivePage(int page)
         {
             Tabs.Page = page;
+            var row = SideList.GetRowAtIndex(page);
+            SideList.SelectRow(row);
         }
 
         public static SettingsDialog CreateFromGladeFile(Window parent, WindowGroup group)

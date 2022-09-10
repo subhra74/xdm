@@ -204,6 +204,19 @@ namespace XDM.App.Host
         {
             try
             {
+
+#if NET6_0
+                var exe = Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".."), "xdm-app");
+                ProcessStartInfo psi = new()
+                {
+                    FileName = exe,
+                    UseShellExecute = true,
+                    Arguments = "--background"
+                };
+
+                Debug("XDM instance creating...");
+                Process.Start(psi);
+#else
                 var exe = Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".."), "xdm-app.exe");
                 if (isFirefox)
                 {
@@ -224,6 +237,7 @@ namespace XDM.App.Host
                     Debug("XDM instance creating...");
                     Process.Start(psi);
                 }
+#endif
             }
             catch (Exception ex)
             {

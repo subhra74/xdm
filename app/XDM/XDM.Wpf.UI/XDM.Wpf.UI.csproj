@@ -17,7 +17,7 @@
     <AssemblyTitle>Xtreme Download Manager</AssemblyTitle>
     <AssemblyVersion>8.0.1</AssemblyVersion>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
-    <DefineConstants>WINDOWS</DefineConstants>
+    <DefineConstants>TRACE;WINDOWS</DefineConstants>
   </PropertyGroup>
 
 

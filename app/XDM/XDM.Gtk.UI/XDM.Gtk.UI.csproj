@@ -5,9 +5,8 @@
     <TargetFramework>net6.0</TargetFramework>
     <InvariantGlobalization>true</InvariantGlobalization>
     <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>Link</TrimMode>
     <AssemblyName>xdm-app</AssemblyName>
-    <PublishTrimmed>true</PublishTrimmed>
-	<TrimMode>Link</TrimMode>
     <RootNamespace>XDM.GtkUI</RootNamespace>
     <!--RuntimeIdentifier>linux-x64</RuntimeIdentifier-->
     <!--RuntimeIdentifier>win-x64</RuntimeIdentifier-->
@@ -61,7 +60,7 @@
     <Content Include="..\Lang\*.*" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" LinkBase="Lang\" />
     <Content Include="..\xdm-logo.svg" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <Reference Include="AtkSharp">
       <HintPath>D:\gtksharp\GtkSharp-master\BuildOutput\Release\AtkSharp.dll</HintPath>

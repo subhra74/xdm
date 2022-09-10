@@ -18,6 +18,7 @@ namespace XDM.GtkUI
 
         static void Main(string[] args)
         {
+            Environment.SetEnvironmentVariable("GTK_USE_PORTAL", "1");
             Gtk.Application.Init("xdm-app", ref args);
             GLib.ExceptionManager.UnhandledException += ExceptionManager_UnhandledException;
             var globalStyleSheet = @"
