@@ -16,6 +16,8 @@ namespace XDM.Core.Clients.Http
 
         public string? ContentType { get; }
 
+        public bool Compressed { get; }
+
         public string? ContentDispositionFileName { get; }
 
         public long ContentLength { get; }

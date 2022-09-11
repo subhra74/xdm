@@ -16,6 +16,9 @@ namespace XDM.Core.Clients.Http
 
         public string ContentType => Response!.ContentType;
 
+        public bool Compressed => Utils.IsCompressed(Response!.GetResponseHeader("Transfer-Encoding"))
+            || Utils.IsCompressed(Response!.ContentEncoding);
+
         public string? ContentDispositionFileName => Response!.GetContentDispositionFileName();
 
         public long ContentLength => Response!.GetContentLength();

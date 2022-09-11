@@ -21,6 +21,8 @@ namespace XDM.Core.Clients.Http
         private long contentLength;
         private string contentRange;
         private string? contentType;
+        private string? transferEncoding;
+        private string? contentEncoding;
         private string? contentDispositionFileName;
         private DateTime lastModified = DateTime.Now;
         private long rangeStart = -1, rangeEnd = -1;
@@ -89,6 +91,9 @@ namespace XDM.Core.Clients.Http
         }
 
         public string? ContentType => this.contentType;
+
+        public bool Compressed => Utils.IsCompressed(transferEncoding)
+             || Utils.IsCompressed(contentEncoding);
 
         public string? ContentDispositionFileName => this.contentDispositionFileName;
 
@@ -205,6 +210,12 @@ namespace XDM.Core.Clients.Http
                             break;
                         case "content-type":
                             this.contentType = value;
+                            break;
+                        case "transfer-encoding":
+                            this.transferEncoding = value;
+                            break;
+                        case "content-encoding":
+                            this.contentEncoding = value;
                             break;
                         case "content-disposition":
                             this.contentDispositionFileName = WebRequestExtensions.GetContentDispositionFileName(value);

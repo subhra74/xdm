@@ -57,6 +57,11 @@ namespace XDM.Core.Clients.Http
             try
             {
                 if (response.ContentLength > 0) return response.ContentLength;
+                if (response.ContentEncoding != null &&
+                    response.ContentEncoding != "none" && response.ContentEncoding != "identity")
+                {
+                    return -1;
+                }
                 var contentRange = response.Headers.GetValues("Content-Range")?.First();
                 return ContentLengthFromContentRange(contentRange);
             }

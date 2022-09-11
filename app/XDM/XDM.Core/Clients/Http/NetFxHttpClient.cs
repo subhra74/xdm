@@ -36,7 +36,7 @@ namespace XDM.Core.Clients.Http
             }
             http.Timeout = http.ReadWriteTimeout = (int)Timeout.TotalMilliseconds;
             http.UseDefaultCredentials = true;
-            http.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
+            http.AutomaticDecompression =  DecompressionMethods.GZip | DecompressionMethods.Deflate;
             http.AllowAutoRedirect = true;
 
             http.ConnectionGroupName = this.connectionGroupName;

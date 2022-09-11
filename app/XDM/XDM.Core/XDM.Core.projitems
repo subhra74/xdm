@@ -10,6 +10,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)AppInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Clients\Http\Utils.cs" />
     <Compile Include="..\XDM.Core\Ipc\IpcServer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SingleInstance.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Updater\AppUpdater.cs" />

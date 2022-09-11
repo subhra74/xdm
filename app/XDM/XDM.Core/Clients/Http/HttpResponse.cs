@@ -13,11 +13,14 @@ namespace XDM.Core.Clients.Http
         internal IHttpSession? Session { get; set; }
         public void EnsureSuccessStatusCode() => Session!.EnsureSuccessStatusCode();
 
-        public string ContentType => Session!.ContentType;
+        public string? ContentType => Session!.ContentType;
+
+        public bool Compressed => Session!.Compressed;
 
         public HttpStatusCode StatusCode => Session!.StatusCode;
 
         public long ContentLength => Session!.ContentLength;
+
         public long ContentRangeLength => Session!.GetTotalLengthFromContentRange();
 
         public string ReadAsString(CancelFlag cancellationToken) => Session!.ReadAsString(cancellationToken);
