@@ -17,6 +17,7 @@ namespace XDM.Core
         public string? Cookies { get; set; }
         public string RequestMethod { get; set; }
         public string RequestBody { get; set; }
+        public string MediaSourceUrl { get; set; }
 
         public Message()
         {

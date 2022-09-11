@@ -17,5 +17,16 @@ namespace XDM.Core.BrowserMonitoring
         void AddVideoNotifications(IEnumerable<KeyValuePair<MultiSourceDASHDownloadInfo, StreamingVideoDisplayInfo>> notifications);
         void AddVideoNotifications(IEnumerable<KeyValuePair<MultiSourceHLSDownloadInfo, StreamingVideoDisplayInfo>> notifications);
         void AddVideoNotifications(IEnumerable<KeyValuePair<SingleSourceHTTPDownloadInfo, StreamingVideoDisplayInfo>> notifications);
+        bool IsFFmpegRequiredForDownload(string id);
+        void StartVideoDownload(string videoId,
+            string name,
+            string? folder,
+            bool startImmediately,
+            AuthenticationInfo? authentication,
+            ProxyInfo? proxyInfo,
+            int maxSpeedLimit,
+            string? queueId,
+            bool convertToMp3 = false //only applicable for dual source http downloads
+            );
     }
 }

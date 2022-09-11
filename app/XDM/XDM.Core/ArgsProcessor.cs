@@ -4,82 +4,102 @@ using System.Linq;
 using System.Text;
 using TraceLog;
 using XDM.Core;
+using XDM.Core.BrowserMonitoring;
 using XDM.Core.Util;
 
 namespace XDM.Core
 {
     public static class ArgsProcessor
     {
-        public static string[] SingleSwitches = new string[] { "--background", "--first-run", "--restore-window", "--quit" };
+        public static string[] SingleSwitches = new string[] { "--background", "--first-run", "--restore-window", "--quit", "--media" };
         public static void Process(IEnumerable<string> commandArgs)
         {
-            Dictionary<string, List<string>> args = ParseArgs(commandArgs);
-            if (args.ContainsKey("--url") && args["--url"].Count == 1)
+            try
             {
-                var url = args["--url"][0];
-                var message = new Message();
-                message.Url = url;
-                message.RequestHeaders = new();
-                if (args.ContainsKey("-H"))
+                Dictionary<string, List<string>> args = ParseArgs(commandArgs);
+                if (args.ContainsKey("--url") && args["--url"].Count == 1)
                 {
-                    PopulateHeaders("-H", message, args);
-                }
-                if (args.ContainsKey("--header"))
-                {
-                    PopulateHeaders("--header", message, args);
-                }
-                if (args.ContainsKey("--cookie"))
-                {
-                    message.Cookies = args["--cookie"][0];
-                }
-                if (args.ContainsKey("--output"))
-                {
-                    message.File = args["--output"][0];
-                }
-                if (args.ContainsKey("-o"))
-                {
-                    message.File = args["-o"][0];
-                }
-                if (args.ContainsKey("-C"))
-                {
-                    message.Cookies = args["-C"][0];
-                }
-                if (args.ContainsKey("--known-file-size"))
-                {
-                    message.ResponseHeaders["Content-Length"] = args["--known-file-size"];
-                }
-                if (args.ContainsKey("--known-mime-type"))
-                {
-                    message.ResponseHeaders["Content-Type"] = args["--known-mime-type"];
-                }
-                ApplicationContext.CoreService.AddDownload(message);
-            }
-
-            if (args.ContainsKey("--quit"))
-            {
-                Log.Debug("Received quit args, Exiting...");
-                Environment.Exit(0);
-            }
-
-            if (!args.ContainsKey("--background"))
-            {
-                if (args.ContainsKey("--first-run"))
-                {
-                    Config.Instance.RunOnLogon = true;
-                    Config.SaveConfig();
-                    ApplicationContext.Application.RunOnUiThread(() =>
+                    var url = args["--url"][0];
+                    var message = new Message();
+                    message.Url = url;
+                    message.RequestHeaders = new();
+                    if (args.ContainsKey("-H"))
                     {
-                        ApplicationContext.MainWindow.ShowAndActivate();
-                        ApplicationContext.PlatformUIService.ShowBrowserMonitoringDialog();
-                    });
-                }
-                else
-                {
-                    ApplicationContext.Application.RunOnUiThread(() =>
+                        PopulateHeaders("-H", message, args);
+                    }
+                    if (args.ContainsKey("--header"))
                     {
-                        ApplicationContext.MainWindow.ShowAndActivate();
-                    });
+                        PopulateHeaders("--header", message, args);
+                    }
+                    if (args.ContainsKey("--cookie"))
+                    {
+                        message.Cookies = args["--cookie"][0];
+                    }
+                    if (args.ContainsKey("--output"))
+                    {
+                        message.File = args["--output"][0];
+                    }
+                    if (args.ContainsKey("-o"))
+                    {
+                        message.File = args["-o"][0];
+                    }
+                    if (args.ContainsKey("-C"))
+                    {
+                        message.Cookies = args["-C"][0];
+                    }
+                    if (args.ContainsKey("--known-file-size"))
+                    {
+                        message.ResponseHeaders["Content-Length"] = args["--known-file-size"];
+                    }
+                    if (args.ContainsKey("--known-mime-type"))
+                    {
+                        message.ResponseHeaders["Content-Type"] = args["--known-mime-type"];
+                    }
+                    if (args.ContainsKey("--media-source-url"))
+                    {
+                        message.MediaSourceUrl = args["--media-source-url"][0];
+                    }
+
+                    if (!args.ContainsKey("--media"))
+                    {
+                        ApplicationContext.CoreService.AddDownload(message);
+                    }
+                    else
+                    {
+                        VideoUrlHelper.ProcessMediaMessage(message);
+                    }
                 }
+
+                if (args.ContainsKey("--quit"))
+                {
+                    Log.Debug("Received quit args, Exiting...");
+                    Environment.Exit(0);
+                }
+
+                if (!args.ContainsKey("--background"))
+                {
+                    if (args.ContainsKey("--first-run"))
+                    {
+                        Config.Instance.RunOnLogon = true;
+                        Config.SaveConfig();
+                        ApplicationContext.Application.RunOnUiThread(() =>
+                        {
+                            ApplicationContext.MainWindow.ShowAndActivate();
+                            ApplicationContext.PlatformUIService.ShowBrowserMonitoringDialog();
+                        });
+                    }
+                    else
+                    {
+                        ApplicationContext.Application.RunOnUiThread(() =>
+                        {
+                            ApplicationContext.MainWindow.ShowAndActivate();
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, ex.Message);
             }
         }
 

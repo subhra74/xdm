@@ -30,6 +30,34 @@ namespace XDM.Core.BrowserMonitoring
         private static Dictionary<string, DateTime> referersToSkip = new();  //Skip the video requests whose referer hash is present in below dict
                                                                              //as they were triggered by HLS or DASH 
 
+        public static void ProcessMediaMessage(Message message)
+        {
+            var contentType = message.GetResponseHeaderFirstValue("Content-Type");
+
+            if (VideoUrlHelper.IsYtFormat(contentType))
+            {
+                VideoUrlHelper.ProcessPostYtFormats(message);
+            }
+
+            if (VideoUrlHelper.IsHLS(contentType))
+            {
+                VideoUrlHelper.ProcessHLSVideo(message);
+            }
+
+            if (VideoUrlHelper.IsDASH(contentType))
+            {
+                VideoUrlHelper.ProcessDashVideo(message);
+            }
+
+            if (!VideoUrlHelper.ProcessYtDashSegment(message))
+            {
+                if (VideoUrlHelper.IsNormalVideo(contentType, message.Url, message.GetContentLength()))
+                {
+                    VideoUrlHelper.ProcessNormalVideo(message);
+                }
+            }
+        }
+
         internal static bool IsNormalVideo(string contentType, string url, long size)
         {
             if (size > 0 && size < Config.Instance.MinVideoSize * 1024)
@@ -57,16 +85,18 @@ namespace XDM.Core.BrowserMonitoring
 
             try
             {
-                var (DualVideoItems, VideoItems) = YoutubeDataFormatParser.GetFormats(manifest);
-                Log.Debug("DualVideoItems: " + DualVideoItems.Count + " VideoItems: " + VideoItems.Count);
+                var kv = YoutubeDataFormatParser.GetFormats(manifest);
+                var dualVideoItems = kv.Key;
+                var videoItems = kv.Value;
+                Log.Debug("DualVideoItems: " + dualVideoItems.Count + " VideoItems: " + videoItems.Count);
                 message.RequestHeaders.Remove("Content-Type");
 
-                if (DualVideoItems != null && DualVideoItems.Count > 0)
+                if (dualVideoItems != null && dualVideoItems.Count > 0)
                 {
                     lock (ApplicationContext.CoreService)
                     {
                         var list = new List<KeyValuePair<DualSourceHTTPDownloadInfo, StreamingVideoDisplayInfo>>();
-                        foreach (var item in DualVideoItems)
+                        foreach (var item in dualVideoItems)
                         {
                             var fileExt = item.MediaContainer;
                             var mediaItem = new DualSourceHTTPDownloadInfo
@@ -95,12 +125,12 @@ namespace XDM.Core.BrowserMonitoring
                         ApplicationContext.VideoTracker.AddVideoNotifications(list);
                     }
                 }
-                if (VideoItems != null && VideoItems.Count > 0)
+                if (videoItems != null && videoItems.Count > 0)
                 {
                     lock (ApplicationContext.CoreService)
                     {
                         var list = new List<KeyValuePair<SingleSourceHTTPDownloadInfo, StreamingVideoDisplayInfo>>();
-                        foreach (var item in VideoItems)
+                        foreach (var item in videoItems)
                         {
                             var fileExt = item.MediaContainer;
                             var mediaItem = new SingleSourceHTTPDownloadInfo
@@ -150,8 +180,10 @@ namespace XDM.Core.BrowserMonitoring
             var count = 0;
             foreach (var plc in mediaEntries)
             {
-                foreach ((Representation video, Representation audio) in plc)
+                foreach (var kv in plc)
                 {
+                    Representation? video = kv.Key;
+                    Representation? audio = kv.Value;
                     //prefix added for multi period
                     var prefix = (count == 0 ? "" : count.ToString() + " ");
 
@@ -525,7 +557,17 @@ namespace XDM.Core.BrowserMonitoring
 
         private static DualSourceHTTPDownloadInfo CreateDualSourceHTTPDownloadInfo(DashInfo info1, DashInfo info2, Message message)
         {
-            var (video, audio) = info1.IsVideo ? (info1, info2) : (info2, info1);
+            DashInfo video, audio;
+            if (info1.IsVideo)
+            {
+                video = info1;
+                audio = info2;
+            }
+            else
+            {
+                video = info2;
+                audio = info1;
+            }
             return new DualSourceHTTPDownloadInfo
             {
                 Uri1 = video.Url,
