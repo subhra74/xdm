@@ -38,6 +38,7 @@ namespace XDM.Core
                 var args = Environment.GetCommandLineArgs().Skip(1);
                 var ipcClient = new IpcClient();
                 ipcClient.Connect(8597);
+                ipcClient!.Receive();
                 //if no arguments, then restore ui of previously running process
                 ipcClient.Send(args.Count() == 0 ? new string[] { "--restore-window" } : args);
                 ipcClient.Close();

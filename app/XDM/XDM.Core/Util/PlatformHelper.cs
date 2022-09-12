@@ -341,7 +341,7 @@ namespace XDM.Core.Util
                 "Version=1.0\r\n" +
                 "Type=Application\r\n" +
                 "Terminal=false\r\n" +
-                $"Exec=\"{appPath}\" --background\r\n" +
+                $"Exec=env GTK_USE_PORTAL=1 \"{appPath}\" --background\r\n" +
                 "Name=Xtreme Download Manager\r\n" +
                 "Comment=Xtreme Download Manager\r\n" +
                 "Categories=Network;\r\n" +

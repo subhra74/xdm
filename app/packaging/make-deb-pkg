@@ -2,7 +2,7 @@
 
 #Please place all the published files under ./binary-source directory
 
-VERSION=8.0.1
+VERSION=8.0.7
 SRC_DIR=binary-source
 
 rm -rf "xdman_gtk_${VERSION}_amd64"
@@ -34,7 +34,7 @@ cat <<EOF > "xdman_gtk_${VERSION}_amd64/opt/xdman/xdm-app.desktop"
 [Desktop Entry]
 Version=1.0
 Encoding=UTF-8
-Exec=/opt/xdman/xdm-app %U
+Exec=env GTK_USE_PORTAL=1 /opt/xdman/xdm-app %U
 Type=Application
 Terminal=false
 Name=Xtreme Download Manager
@@ -45,6 +45,7 @@ EOF
 
 cat <<EOF > "xdman_gtk_${VERSION}_amd64/usr/bin/xdman"
 #!/bin/bash
+export GTK_USE_PORTAL=1
 /opt/xdman/xdm-app \$@
 EOF
 
@@ -56,7 +57,6 @@ cp "xdman_gtk_${VERSION}_amd64/opt/xdman/xdm-app.desktop" "xdman_gtk_${VERSION}_
 
 chmod 755 "xdman_gtk_${VERSION}_amd64/usr/bin/xdman"
 chmod 755 "xdman_gtk_${VERSION}_amd64/opt/xdman/xdm-app"
-chmod 755 "xdman_gtk_${VERSION}_amd64/opt/xdman/MessagingHost/xdm-messaging-host"
-chmod 755 "xdman_gtk_${VERSION}_amd64/opt/xdman/yt-dlp"
+chmod 755 "xdman_gtk_${VERSION}_amd64/opt/xdman/XDM.App.Host/xdm-app-host"
 
 dpkg-deb --build --root-owner-group "xdman_gtk_${VERSION}_amd64"

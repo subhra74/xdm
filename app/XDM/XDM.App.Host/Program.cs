@@ -213,6 +213,7 @@ namespace XDM.App.Host
                     UseShellExecute = true,
                     Arguments = "--background"
                 };
+                psi.EnvironmentVariables.Add("GTK_USE_PORTAL", "1");
 
                 Debug("XDM instance creating...");
                 Process.Start(psi);

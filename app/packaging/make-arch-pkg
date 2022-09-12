@@ -2,7 +2,7 @@
 
 #Please place all the published files under ./binary-source directory
 
-VERSION=8.0.1
+VERSION=8.0.7
 SRC_DIR=binary-source
 SOURCE_NAME="src"
 
@@ -12,11 +12,15 @@ rm -rf src
 rm -f "${SOURCE_NAME}*pkg.tar.*"
 rm -f PKGBUILD
 
+mkdir "${SOURCE_NAME}"
 mkdir -p "${SOURCE_NAME}/opt/xdman"
 mkdir -p "${SOURCE_NAME}/usr/bin"
 mkdir -p "${SOURCE_NAME}/usr/share/applications"
 
 cp -r "${SRC_DIR}/." "${SOURCE_NAME}/opt/xdman"
+
+find "${SOURCE_NAME}/opt/xdman" -type d -print0 | xargs -0 chmod 0755
+find "${SOURCE_NAME}/opt/xdman" -type f -print0 | xargs -0 chmod 0644
 
 touch "${SOURCE_NAME}/opt/xdman/xdm-app.desktop"
 touch "${SOURCE_NAME}/usr/bin/xdman"
@@ -25,7 +29,7 @@ cat <<EOF > "${SOURCE_NAME}/opt/xdman/xdm-app.desktop"
 [Desktop Entry]
 Version=1.0
 Encoding=UTF-8
-Exec=/opt/xdman/xdm-app %U
+Exec=env GTK_USE_PORTAL=1 /opt/xdman/xdm-app %U
 Type=Application
 Terminal=false
 Name=Xtreme Download Manager
@@ -36,6 +40,7 @@ EOF
 
 cat <<EOF > "${SOURCE_NAME}/usr/bin/xdman"
 #!/bin/bash
+export GTK_USE_PORTAL=1 
 /opt/xdman/xdm-app \$@
 EOF
 
@@ -47,8 +52,7 @@ cp "${SOURCE_NAME}/opt/xdman/xdm-app.desktop" "${SOURCE_NAME}/usr/share/applicat
 
 chmod 755 "${SOURCE_NAME}/usr/bin/xdman"
 chmod 755 "${SOURCE_NAME}/opt/xdman/xdm-app"
-chmod 755 "${SOURCE_NAME}/opt/xdman/MessagingHost/xdm-messaging-host"
-chmod 755 "${SOURCE_NAME}/opt/xdman/yt-dlp"
+chmod 755 "${SOURCE_NAME}/opt/xdman/XDM.App.Host/xdm-app-host"
 
 #tar --create --file "${SOURCE_NAME}.tar.gz" -C "${SOURCE_NAME}" .
 

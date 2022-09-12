@@ -2,7 +2,7 @@
 
 #Please place all the published files under ./binary-source directory
 
-VERSION=8.0.1
+VERSION=8.0.7
 SRC_DIR=binary-source
 SOURCE_NAME="xdman_gtk-${VERSION}"
 
@@ -24,7 +24,7 @@ cat <<EOF > "${SOURCE_NAME}/opt/xdman/xdm-app.desktop"
 [Desktop Entry]
 Version=1.0
 Encoding=UTF-8
-Exec=/opt/xdman/xdm-app %U
+Exec=env GTK_USE_PORTAL=1 /opt/xdman/xdm-app %U
 Type=Application
 Terminal=false
 Name=Xtreme Download Manager
@@ -35,6 +35,7 @@ EOF
 
 cat <<EOF > "${SOURCE_NAME}/usr/bin/xdman"
 #!/bin/bash
+export GTK_USE_PORTAL=1 
 /opt/xdman/xdm-app \$@
 EOF
 
@@ -46,8 +47,7 @@ cp "${SOURCE_NAME}/opt/xdman/xdm-app.desktop" "${SOURCE_NAME}/usr/share/applicat
 
 chmod 755 "${SOURCE_NAME}/usr/bin/xdman"
 chmod 755 "${SOURCE_NAME}/opt/xdman/xdm-app"
-chmod 755 "${SOURCE_NAME}/opt/xdman/MessagingHost/xdm-messaging-host"
-chmod 755 "${SOURCE_NAME}/opt/xdman/yt-dlp"
+chmod 755 "${SOURCE_NAME}/opt/xdman/XDM.App.Host/xdm-app-host"
 
 tar --create --file "${SOURCE_NAME}.tar.gz" "${SOURCE_NAME}"
 mv "${SOURCE_NAME}.tar.gz" "rpmbuild/SOURCES"
