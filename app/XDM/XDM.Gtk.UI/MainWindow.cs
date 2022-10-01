@@ -209,11 +209,12 @@ namespace XDM.GtkUI
 
             mainMenu = new Menu();
             var menuSettings = new MenuItem(TextResource.GetText("TITLE_SETTINGS"));
+            var menuBrowserMonitor = new MenuItem(TextResource.GetText("SETTINGS_MONITORING"));
+            var menuMediaGrabber = new MenuItem(TextResource.GetText("MSG_MEDIA_CAPTURE"));
             var menuClearFinished = new MenuItem(TextResource.GetText("MENU_DELETE_COMPLETED"));
             var menuExport = new MenuItem(TextResource.GetText("MENU_EXPORT"));
             var menuImport = new MenuItem(TextResource.GetText("MENU_IMPORT"));
             var menuLanguage = new MenuItem(TextResource.GetText("MENU_LANG"));
-            var menuBrowserMonitor = new MenuItem(TextResource.GetText("SETTINGS_MONITORING"));
             var menuHelpAndSupport = new MenuItem(TextResource.GetText("LBL_SUPPORT_PAGE"));
             var menuReportProblem = new MenuItem(TextResource.GetText("LBL_REPORT_PROBLEM"));
             var menuCheckForUpdate = new MenuItem(TextResource.GetText("MENU_UPDATE"));
@@ -230,18 +231,26 @@ namespace XDM.GtkUI
             menuCheckForUpdate.Activated += MenuCheckForUpdate_Activated;
             menuAbout.Activated += MenuAbout_Activated;
             menuExit.Activated += MenuExit_Activated;
+            menuMediaGrabber.Activated += MenuMediaGrabber_Activated;
             mainMenu.Append(menuSettings);
+            mainMenu.Append(menuBrowserMonitor);
+            mainMenu.Append(menuMediaGrabber);
             mainMenu.Append(menuClearFinished);
             mainMenu.Append(menuExport);
             mainMenu.Append(menuImport);
             mainMenu.Append(menuLanguage);
-            mainMenu.Append(menuBrowserMonitor);
             mainMenu.Append(menuHelpAndSupport);
             mainMenu.Append(menuReportProblem);
             mainMenu.Append(menuCheckForUpdate);
             mainMenu.Append(menuAbout);
             mainMenu.Append(menuExit);
             mainMenu.ShowAll();
+        }
+
+        private void MenuMediaGrabber_Activated(object? sender, EventArgs e)
+        {
+            var win = XDM.GtkUI.Dialogs.MediaGrabber.MediaGrabberWindow.CreateFromGladeFile();
+            win.Show();
         }
 
         private void MenuExit_Activated(object? sender, EventArgs e)

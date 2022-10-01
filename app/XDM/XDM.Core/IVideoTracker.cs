@@ -28,5 +28,12 @@ namespace XDM.Core.BrowserMonitoring
             string? queueId,
             bool convertToMp3 = false //only applicable for dual source http downloads
             );
+
+        event EventHandler<MediaInfoEventArgs> MediaAdded;
+        event EventHandler<MediaInfoEventArgs> MediaUpdated;
+        void ClearVideoList();
+        void AddVideoDownload(string videoId);
+        List<MediaInfo> GetVideoList();
+        void UpdateMediaTitle(string tabUrl, string tabTitle);
     }
 }

@@ -21,5 +21,6 @@ namespace XDM.Core
         public const string AppLatestReleaseGH = "https://api.github.com/repos/subhra74/xdm/releases/latest";
         public const string AppUpdateCheckerUrl = "https://subhra74.github.io/xdm/update-checker.html";
         public const string HelperToolsUrl = "https://subhra74.github.io/xdm/redirect.html?target=helpers";
+        public const string MediaGrabberHowToUrl = "https://subhra74.github.io/xdm/redirect.html?target=mg";
     }
 }

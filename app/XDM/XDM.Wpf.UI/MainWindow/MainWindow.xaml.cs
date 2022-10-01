@@ -37,6 +37,7 @@ using XDM.Wpf.UI.Dialogs.Updater;
 using XDM.Wpf.UI.Dialogs.VideoDownloader;
 using XDM.Wpf.UI.Dialogs.Widget;
 using XDM.Wpf.UI.Win32;
+using XDM.Wpf.UI.Dialogs.MediaCapture;
 
 namespace XDM.Wpf.UI
 {
@@ -689,6 +690,13 @@ namespace XDM.Wpf.UI
         private void MenuVideoDownload_Click(object sender, RoutedEventArgs e)
         {
             this.YoutubeDLDownloadClicked?.Invoke(sender, e);
+        }
+
+        private void menuMediaGrabber_Click(object sender, RoutedEventArgs e)
+        {
+            var mediaGrabber = new MediaCaptureWindow(ApplicationContext.VideoTracker);
+            mediaGrabber.ShowActivated = true;
+            mediaGrabber.Show();
         }
 
         private void MenuBatchDownload_Click(object sender, RoutedEventArgs e)

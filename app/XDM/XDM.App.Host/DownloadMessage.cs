@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,7 +13,37 @@ namespace XDM.App.Host
         public string? Cookie { get; set; }
         public string[]? Headers { get; set; }
         public string? FileName { get; set; }
-        public long FileSize { get; set; }
+        public long? FileSize { get; set; }
         public string? MimeType { get; set; }
+        [JsonProperty(PropertyName = "download_headers")]
+        public RequestData? RequestData { get; set; }
+        [JsonProperty(PropertyName = "tab_update")]
+        public TabInfo? TabUpdate { get; set; }
+        //[JsonProperty(PropertyName = "download_data")]
+        //public DownloadRequestData downloadData;
     }
+
+    public class RequestData
+    {
+        public string Url { get; set; }
+        public string File { get; set; }
+        public string Method { get; set; }
+        public string UserAgent { get; set; }
+        public string TabUrl { get; set; }
+        public Dictionary<string, List<string>> RequestHeaders { get; set; }
+        public Dictionary<string, List<string>> ResponseHeaders { get; set; }
+    }
+
+    public class TabInfo
+    {
+        public string Url { get; set; }
+        public string Title { get; set; }
+    }
+
+    //public class DownloadRequestData
+    //{
+    //    public string Url { get; set; }
+    //    public string FileName { get; set; }
+    //    public string Referer { get; set; }
+    //}
 }

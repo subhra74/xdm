@@ -17,6 +17,13 @@ namespace XDM.Core
             try
             {
                 Dictionary<string, List<string>> args = ParseArgs(commandArgs);
+                if (args.ContainsKey("--media-tab-url"))
+                {
+                    var url = args["--media-tab-url"][0];
+                    var title = args["--media-tab-title"][0];
+                    ApplicationContext.VideoTracker.UpdateMediaTitle(url, title);
+                    return;
+                }
                 if (args.ContainsKey("--url") && args["--url"].Count == 1)
                 {
                     var url = args["--url"][0];
@@ -58,6 +65,10 @@ namespace XDM.Core
                     if (args.ContainsKey("--media-source-url"))
                     {
                         message.MediaSourceUrl = args["--media-source-url"][0];
+                    }
+                    if (args.ContainsKey("--tab-url"))
+                    {
+                        message.TabUrl = args["--tab-url"][0];
                     }
 
                     if (!args.ContainsKey("--media"))

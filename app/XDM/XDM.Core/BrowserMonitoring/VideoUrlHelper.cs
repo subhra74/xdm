@@ -33,6 +33,10 @@ namespace XDM.Core.BrowserMonitoring
         public static void ProcessMediaMessage(Message message)
         {
             var contentType = message.GetResponseHeaderFirstValue("Content-Type");
+            if (contentType == null)
+            {
+                return;
+            }
 
             if (VideoUrlHelper.IsYtFormat(contentType))
             {
@@ -384,7 +388,7 @@ namespace XDM.Core.BrowserMonitoring
             try
             {
                 var url = new Uri(message.Url);
-                if (!(url.Host.Contains("youtube.com") || url.Host.Contains("googlevideo.com")))
+                if (!(url.Host.Contains(".youtube.") || url.Host.Contains(".googlevideo.")))
                 {
                     return false;
                 }
@@ -505,7 +509,8 @@ namespace XDM.Core.BrowserMonitoring
                     {
                         Quality = displayText,
                         Size = size,
-                        CreationTime = DateTime.Now
+                        CreationTime = DateTime.Now,
+                        TabUrl = message.TabUrl
                     }, video);
                 }
 
@@ -546,7 +551,8 @@ namespace XDM.Core.BrowserMonitoring
                 {
                     Quality = displayText,
                     Size = size,
-                    CreationTime = DateTime.Now
+                    CreationTime = DateTime.Now,
+                    TabUrl=message.TabUrl
                 }, video);
             }
             catch (Exception ex)
@@ -692,11 +698,12 @@ namespace XDM.Core.BrowserMonitoring
             return false;
         }
 
-        internal static bool IsYtFormat(string contentType)
+        internal static bool IsYtFormat(string? contentType)
         {
+            if (string.IsNullOrEmpty(contentType)) return false;
             foreach (var key in new string[] { "application/json" })
             {
-                if (contentType.ToLowerInvariant().Contains(key))
+                if (contentType!.ToLowerInvariant().Contains(key))
                 {
                     return true;
                 }

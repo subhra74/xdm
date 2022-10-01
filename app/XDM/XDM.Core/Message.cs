@@ -18,6 +18,7 @@ namespace XDM.Core
         public string RequestMethod { get; set; }
         public string RequestBody { get; set; }
         public string MediaSourceUrl { get; set; }
+        public string TabUrl { get; set; }
 
         public Message()
         {
@@ -109,14 +110,14 @@ namespace XDM.Core
             return GetHeaderValue(ResponseHeaders, key);
         }
 
-        public string GetRequestHeaderFirstValue(string key)
+        public string? GetRequestHeaderFirstValue(string key)
         {
             var headers = GetHeaderValue(RequestHeaders, key);
             if (headers != null && headers.Count > 0) return headers[0];
             return null;
         }
 
-        public string GetResponseHeaderFirstValue(string key)
+        public string? GetResponseHeaderFirstValue(string key)
         {
             var headers = GetHeaderValue(ResponseHeaders, key);
             if (headers != null && headers.Count > 0) return headers[0];

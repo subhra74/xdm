@@ -82,25 +82,49 @@ namespace XDM.App.Host
             //Debug("sending1....");
             //_ipcClient!.Send(new List<string>());
             //Debug("sending2....");
-            ReadConfigUpdateFromXDM();
-            while (true)
+            try
             {
-                var bytesFromBrowser = ReadMessageBytes(stdin);
-                var msg = JsonConvert.DeserializeObject<DownloadMessage>
-                (
-                    Encoding.UTF8.GetString(bytesFromBrowser),
-                    new JsonSerializerSettings
-                    {
-                        MissingMemberHandling = MissingMemberHandling.Ignore
-                    }
-                );
-                SendArgsToXDM(msg);
+                ReadConfigUpdateFromXDM();
+                while (true)
+                {
+                    var bytesFromBrowser = ReadMessageBytes(stdin);
+                    var text = Encoding.UTF8.GetString(bytesFromBrowser);
+                    Debug(text);
+                    var msg = JsonConvert.DeserializeObject<DownloadMessage>
+                    (
+                        text,
+                        new JsonSerializerSettings
+                        {
+                            MissingMemberHandling = MissingMemberHandling.Ignore
+                        }
+                    );
+                    SendArgsToXDM(msg);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug(ex.Message, ex);
+                throw;
             }
         }
 
         public static void SendArgsToXDM(DownloadMessage? msg)
         {
-            if (msg == null || msg.Url == null)
+            if (msg == null)
+            {
+                return;
+            }
+            if (msg.TabUpdate != null)
+            {
+                SendTabUpdate(msg.TabUpdate);
+                return;
+            }
+            if (msg.RequestData != null)
+            {
+                SendHeaderData(msg.RequestData);
+                return;
+            }
+            if (msg.Url == null)
             {
                 return;
             }
@@ -134,6 +158,73 @@ namespace XDM.App.Host
                 arguments.Add(msg.FileName!);
             }
             arguments.Add(msg.Url);
+            _ipcClient!.Send(arguments);
+        }
+
+        private static void SendHeaderData(RequestData data)
+        {
+            Debug("Going to send media...");
+            if (data.Url == null)
+            {
+                return;
+            }
+            var arguments = new List<string>();
+            arguments.Add("--media");
+            if (data.RequestHeaders != null)
+            {
+                foreach (var header in data.RequestHeaders)
+                {
+                    foreach (var value in header.Value)
+                    {
+                        arguments.Add("-H");
+                        arguments.Add(header.Key + ":" + value);
+                    }
+                }
+            }
+            if (data.ResponseHeaders != null)
+            {
+                var fileSize = GetFileSize(data.ResponseHeaders);
+                var mimeType = GetMediaType(data.ResponseHeaders);
+                Debug("Mime: " + mimeType);
+                if (fileSize > 0)
+                {
+                    arguments.Add("--known-file-size");
+                    arguments.Add(fileSize + "");
+                }
+                if (!string.IsNullOrEmpty(mimeType))
+                {
+                    arguments.Add("--known-mime-type");
+                    arguments.Add(mimeType!);
+                }
+            }
+            if (!string.IsNullOrEmpty(data.File))
+            {
+                arguments.Add("--output");
+                arguments.Add(data.File);
+            }
+            if (!string.IsNullOrEmpty(data.TabUrl))
+            {
+                arguments.Add("--tab-url");
+                arguments.Add(data.TabUrl);
+            }
+            arguments.Add(data.Url);
+            Debug(string.Join(",", arguments));
+            _ipcClient!.Send(arguments);
+        }
+
+        private static void SendTabUpdate(TabInfo tab)
+        {
+            Debug("########Going to send tab update...");
+            if (tab.Url == null || tab.Title == null)
+            {
+                return;
+            }
+            var arguments = new List<string>();
+            arguments.Add("--media-tab-url");
+            arguments.Add(tab.Url);
+            arguments.Add("--media-tab-title");
+            arguments.Add(tab.Title);
+            Debug(string.Join(",", arguments));
             _ipcClient!.Send(arguments);
         }
 
@@ -270,5 +361,65 @@ namespace XDM.App.Host
         //    }
         //    NativeMessagingHostConfigurer.InstallNativeMessagingHostForWindows(browser);
         //}
+
+        private static long GetFileSize(Dictionary<string, List<string>> headers)
+        {
+            if (headers == null) return -1;
+            try
+            {
+                foreach (var key in headers.Keys)
+                {
+                    if (key.ToUpperInvariant() == "CONTENT-LENGTH")
+                    {
+                        return headers[key].Count > 0 ? Int64.Parse(headers[key][0].Trim()) : -1;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug(ex.Message, ex);
+            }
+            return -1;
+        }
+
+        private static string? GetMediaType(Dictionary<string, List<string>> headers)
+        {
+            if (headers == null) return null;
+            try
+            {
+                foreach (var key in headers.Keys)
+                {
+                    if (key.ToUpperInvariant() == "CONTENT-TYPE")
+                    {
+                        return headers[key].Count > 0 ? headers[key][0].Trim() : null;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug(ex.Message, ex);
+            }
+            return null;
+        }
+
+        private static string? GetReferer(Dictionary<string, string>? headers)
+        {
+            if (headers == null) return null;
+            try
+            {
+                foreach (var key in headers.Keys)
+                {
+                    if (key.ToUpperInvariant() == "REFERER")
+                    {
+                        return headers[key].Trim();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug(ex.Message, ex);
+            }
+            return null;
+        }
     }
 }

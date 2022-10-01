@@ -57,6 +57,7 @@ namespace XDM.Core.Ipc
                         {
                             args.Add("--background");
                         }
+                        Log.Debug(string.Join(",", args));
                         ArgsProcessor.Process(args);
                     }
                 }
@@ -106,9 +107,12 @@ namespace XDM.Core.Ipc
                 using var writer = new JsonTextWriter(w);
                 writer.CloseOutput = false;
                 writer.Formatting = Formatting.None;
+
                 writer.WriteStartObject();
+
                 writer.WritePropertyName("enabled");
                 writer.WriteValue(Config.Instance.IsBrowserMonitoringEnabled);
+
                 writer.WritePropertyName("fileExts");
                 writer.WriteStartArray();
                 foreach (var ext in Config.Instance.FileExtensions)
@@ -116,6 +120,7 @@ namespace XDM.Core.Ipc
                     writer.WriteValue(ext);
                 }
                 writer.WriteEndArray();
+
                 writer.WritePropertyName("blockedHosts");
                 writer.WriteStartArray();
                 foreach (var host in Config.Instance.BlockedHosts)
@@ -123,6 +128,31 @@ namespace XDM.Core.Ipc
                     writer.WriteValue(host);
                 }
                 writer.WriteEndArray();
+
+                writer.WritePropertyName("requestFileExts");
+                writer.WriteStartArray();
+                foreach (var ext in Config.Instance.VideoExtensions)
+                {
+                    writer.WriteValue(ext);
+                }
+                writer.WriteEndArray();
+
+                writer.WritePropertyName("mediaTypes");
+                writer.WriteStartArray();
+                foreach (var ext in new string[] { "audio/", "video/" })
+                {
+                    writer.WriteValue(ext);
+                }
+                writer.WriteEndArray();
+
+                writer.WritePropertyName("tabsWatcher");
+                writer.WriteStartArray();
+                foreach (var ext in new string[] { ".youtube.", "/watch?v=" })
+                {
+                    writer.WriteValue(ext);
+                }
+                writer.WriteEndArray();
+
                 writer.WriteEndObject();
                 writer.Close();
                 var str = w.ToString();
