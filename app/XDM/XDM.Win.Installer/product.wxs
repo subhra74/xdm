@@ -76,7 +76,7 @@
                      Key="Software\Microsoft\Windows\CurrentVersion\Run">
             <RegistryValue Type="string" Name="XDM" Value='"[INSTALLFOLDER]xdm-app.exe" --background'/>
         </RegistryKey>
-		<RegistryKey Root="HKCU"
+		<!--<RegistryKey Root="HKCU"
                      Key="Software\Google\Chrome\NativeMessagingHosts\xdm_chrome.native_host">
             <RegistryValue Type="string" Value='[INSTALLFOLDER]XDM.App.Host\xdm_chrome.native_host.json'/>
         </RegistryKey>
@@ -87,7 +87,7 @@
 		<RegistryKey Root="HKLM"
                      Key="SOFTWARE\Google\Chrome\Extensions\akdmdglbephckgfmdffcdebnpjgamofc">
             <RegistryValue Type="string" Name="update_url" Value='https://clients2.google.com/service/update2/crx'/>
-        </RegistryKey>
+        </RegistryKey>-->
     </Component>
     </ComponentGroup>
   </Fragment>

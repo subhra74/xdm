@@ -35,12 +35,16 @@ namespace XDM.Core
         {
             try
             {
+                Log.Debug("Sending to running instance...");
                 var args = Environment.GetCommandLineArgs().Skip(1);
                 var ipcClient = new IpcClient();
                 ipcClient.Connect(8597);
+                Log.Debug("Receiving...");
                 ipcClient!.Receive();
+                Log.Debug("Sending...");
                 //if no arguments, then restore ui of previously running process
                 ipcClient.Send(args.Count() == 0 ? new string[] { "--restore-window" } : args);
+                Log.Debug("Sent...");
                 ipcClient.Close();
             }
             catch (Exception ex)

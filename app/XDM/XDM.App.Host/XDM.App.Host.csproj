@@ -28,6 +28,8 @@
 
   <Import Project="..\NativeMessaging\NativeMessaging.projitems" Label="Shared" />
 
+  <Import Project="..\XDM.Messaging\XDM.Messaging.projitems" Label="Shared" />
+
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>

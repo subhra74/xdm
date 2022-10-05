@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NativeMessaging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,6 +17,13 @@ namespace XDM.Core
         {
             try
             {
+                if (IsExtensionRegistration(commandArgs))
+                {
+                    RegisterExtension(commandArgs);
+                    ApplicationContext.ExtensionRegistered();
+                    return;
+                }
+
                 Dictionary<string, List<string>> args = ParseArgs(commandArgs);
                 if (args.ContainsKey("--media-tab-url"))
                 {
@@ -172,6 +180,25 @@ namespace XDM.Core
                 }
             }
             return options;
+        }
+
+        private static bool IsExtensionRegistration(IEnumerable<string> args)
+        {
+            if (args.Count() > 0)
+            {
+                return args.Where(arg => arg.StartsWith("xdm-app:chrome-extension://")).Count() == 1;
+            }
+            return false;
+        }
+
+        private static void RegisterExtension(IEnumerable<string> args)
+        {
+            ExtensionRegistrationHelper.AddExtension(args.Where(arg => arg.StartsWith("xdm-app:chrome-extension://")).First().Substring("xdm-app:".Length));
+#if WINDOWS
+            NativeMessagingHostConfigurer.InstallNativeMessagingHostForWindows(Browser.Chrome);
+#elif LINUX
+            NativeMessagingHostConfigurer.InstallNativeMessagingHostForLinux(Browser.Chrome);
+#endif
         }
     }
 }

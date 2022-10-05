@@ -348,20 +348,6 @@ namespace XDM.App.Host
             Console.Error.Flush();
         }
 
-        //private static void InstallNativeHost(string[] args)
-        //{
-        //    var browser = Browser.Chrome;
-        //    if (args[1] == "firefox")
-        //    {
-        //        browser = Browser.Firefox;
-        //    }
-        //    if (args[1] == "ms-edge")
-        //    {
-        //        browser = Browser.MSEdge;
-        //    }
-        //    NativeMessagingHostConfigurer.InstallNativeMessagingHostForWindows(browser);
-        //}
-
         private static long GetFileSize(Dictionary<string, List<string>> headers)
         {
             if (headers == null) return -1;

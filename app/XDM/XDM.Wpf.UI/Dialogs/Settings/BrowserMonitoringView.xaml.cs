@@ -18,6 +18,8 @@ using XDM.Core.UI;
 using XDM.Core.Util;
 using NativeMessaging;
 using System.Diagnostics;
+using XDM.Core.BrowserMonitoring;
+using XDM.Wpf.UI.Dialogs.ChromeIntegrator;
 
 namespace XDM.Wpf.UI.Dialogs.Settings
 {
@@ -70,7 +72,9 @@ namespace XDM.Wpf.UI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchGoogleChrome(Links.ChromeExtensionUrl);
+                BrowserLauncher.LaunchGoogleChrome("chrome://extensions");
+                var wnd = new IntegrationWindow();
+                wnd.Show();
             }
             catch (Exception ex)
             {
@@ -142,7 +146,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchOperaBrowser(Links.ChromeExtensionUrl);
+                BrowserLauncher.LaunchOperaBrowser(Links.ManualExtensionInstallGuideUrl);
             }
             catch (Exception ex)
             {
@@ -196,7 +200,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchBraveBrowser(Links.ChromeExtensionUrl);
+                BrowserLauncher.LaunchBraveBrowser(Links.ManualExtensionInstallGuideUrl);
             }
             catch (Exception ex)
             {
@@ -220,7 +224,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchVivaldi(Links.ChromeExtensionUrl);
+                BrowserLauncher.LaunchVivaldi(Links.ManualExtensionInstallGuideUrl);
             }
             catch (Exception ex)
             {

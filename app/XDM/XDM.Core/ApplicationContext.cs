@@ -109,6 +109,11 @@ namespace XDM.Core
             ApplicationEvent?.Invoke(null, new ApplicationEvent("ConfigChanged"));
         }
 
+        public static void ExtensionRegistered()
+        {
+            ApplicationEvent?.Invoke(null, new ApplicationEvent("ExtensionRegistered"));
+        }
+
         public static AppInstanceConfigurer Configurer()
         {
             return new AppInstanceConfigurer();

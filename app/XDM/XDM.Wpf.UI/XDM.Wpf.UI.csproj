@@ -39,6 +39,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="extension-page.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="xdm-logo.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

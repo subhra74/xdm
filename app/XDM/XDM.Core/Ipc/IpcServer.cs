@@ -51,8 +51,8 @@ namespace XDM.Core.Ipc
                     while (true)
                     {
                         Log.Debug("Receiving from native-host");
-                        Log.Debug("Received from native-host");
                         var args = IpcUtil.Receive(stream);
+                        Log.Debug("Received from native-host");
                         if (!args.Contains("--restore-window"))
                         {
                             args.Add("--background");

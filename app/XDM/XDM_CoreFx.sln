@@ -43,6 +43,7 @@ Global
 		XDM.Core\XDM.Core.projitems*{71ad2923-e0de-4691-ad8d-279457ec4091}*SharedItemsImports = 5
 		XDM.Messaging\XDM.Messaging.projitems*{71ad2923-e0de-4691-ad8d-279457ec4091}*SharedItemsImports = 5
 		NativeMessaging\NativeMessaging.projitems*{8a71b79e-dd0e-4bd1-a45d-fcf247149b70}*SharedItemsImports = 5
+		XDM.Messaging\XDM.Messaging.projitems*{8a71b79e-dd0e-4bd1-a45d-fcf247149b70}*SharedItemsImports = 5
 		NativeMessaging\NativeMessaging.projitems*{957eea56-e3b8-48e5-81bb-93a6e59b155c}*SharedItemsImports = 5
 		XDM.Compatibility\XDM.Compatibility.projitems*{957eea56-e3b8-48e5-81bb-93a6e59b155c}*SharedItemsImports = 5
 		XDM.Core\XDM.Core.projitems*{957eea56-e3b8-48e5-81bb-93a6e59b155c}*SharedItemsImports = 5

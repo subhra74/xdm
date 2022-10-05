@@ -694,7 +694,7 @@ namespace XDM.Wpf.UI
 
         private void menuMediaGrabber_Click(object sender, RoutedEventArgs e)
         {
-            var mediaGrabber = new MediaCaptureWindow(ApplicationContext.VideoTracker);
+            var mediaGrabber = new MediaCaptureWindow();
             mediaGrabber.ShowActivated = true;
             mediaGrabber.Show();
         }
