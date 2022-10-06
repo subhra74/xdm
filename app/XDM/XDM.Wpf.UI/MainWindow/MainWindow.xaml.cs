@@ -694,9 +694,12 @@ namespace XDM.Wpf.UI
 
         private void menuMediaGrabber_Click(object sender, RoutedEventArgs e)
         {
-            var mediaGrabber = new MediaCaptureWindow();
-            mediaGrabber.ShowActivated = true;
-            mediaGrabber.Show();
+            ApplicationContext.PlatformUIService.CreateAndShowMediaGrabber();
+        }
+
+        private void extRegister_Click(object sender, RoutedEventArgs e)
+        {
+            ApplicationContext.PlatformUIService.ShowExtensionRegistrationWindow();
         }
 
         private void MenuBatchDownload_Click(object sender, RoutedEventArgs e)

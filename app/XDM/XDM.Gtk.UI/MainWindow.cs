@@ -215,6 +215,7 @@ namespace XDM.GtkUI
             var menuExport = new MenuItem(TextResource.GetText("MENU_EXPORT"));
             var menuImport = new MenuItem(TextResource.GetText("MENU_IMPORT"));
             var menuLanguage = new MenuItem(TextResource.GetText("MENU_LANG"));
+            var menuRegExt = new MenuItem(TextResource.GetText("MSG_REGISTER_EXT"));
             var menuHelpAndSupport = new MenuItem(TextResource.GetText("LBL_SUPPORT_PAGE"));
             var menuReportProblem = new MenuItem(TextResource.GetText("LBL_REPORT_PROBLEM"));
             var menuCheckForUpdate = new MenuItem(TextResource.GetText("MENU_UPDATE"));
@@ -225,6 +226,7 @@ namespace XDM.GtkUI
             menuExport.Activated += MenuExport_Activated;
             menuImport.Activated += MenuImport_Activated;
             menuLanguage.Activated += MenuLanguage_Activated;
+            menuRegExt.Activated += MenuRegExt_Activated;
             menuBrowserMonitor.Activated += MenuBrowserMonitor_Activated;
             menuHelpAndSupport.Activated += MenuHelpAndSupport_Activated;
             menuReportProblem.Activated += MenuReportProblem_Activated;
@@ -239,6 +241,7 @@ namespace XDM.GtkUI
             mainMenu.Append(menuExport);
             mainMenu.Append(menuImport);
             mainMenu.Append(menuLanguage);
+            mainMenu.Append(menuRegExt);
             mainMenu.Append(menuHelpAndSupport);
             mainMenu.Append(menuReportProblem);
             mainMenu.Append(menuCheckForUpdate);
@@ -247,10 +250,14 @@ namespace XDM.GtkUI
             mainMenu.ShowAll();
         }
 
+        private void MenuRegExt_Activated(object? sender, EventArgs e)
+        {
+            ApplicationContext.PlatformUIService.ShowExtensionRegistrationWindow();
+        }
+
         private void MenuMediaGrabber_Activated(object? sender, EventArgs e)
         {
-            var win = XDM.GtkUI.Dialogs.MediaGrabber.MediaGrabberWindow.CreateFromGladeFile();
-            win.Show();
+            ApplicationContext.PlatformUIService.CreateAndShowMediaGrabber();
         }
 
         private void MenuExit_Activated(object? sender, EventArgs e)

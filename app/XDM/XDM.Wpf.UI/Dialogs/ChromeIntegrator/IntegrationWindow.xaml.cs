@@ -14,6 +14,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using Translations;
 using XDM.Core;
+using XDM.Core.Util;
 using XDM.Wpf.UI.Win32;
 
 namespace XDM.Wpf.UI.Dialogs.ChromeIntegrator
@@ -86,6 +87,11 @@ namespace XDM.Wpf.UI.Dialogs.ChromeIntegrator
         private void Window_Closed(object sender, EventArgs e)
         {
             ApplicationContext.ApplicationEvent -= ApplicationContext_ApplicationEvent;
+        }
+
+        private void BtnHelp_Click(object sender, RoutedEventArgs e)
+        {
+            PlatformHelper.OpenBrowser(Links.ManualExtensionInstallGuideUrl);
         }
     }
 }

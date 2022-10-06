@@ -140,6 +140,10 @@ namespace XDM.Core.BrowserMonitoring
                     "xdm_chrome.native_host";
             string manifestPath;
             var home = Environment.GetEnvironmentVariable("HOME")!;
+            if (home == null)
+            {
+                home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            }
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 manifestPath = Path.Combine(home, browser == Browser.Firefox ?

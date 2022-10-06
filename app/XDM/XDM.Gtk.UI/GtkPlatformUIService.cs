@@ -11,6 +11,7 @@ using XDM.Core.UI;
 using XDM.Core.Util;
 using XDM.GtkUI.Dialogs;
 using XDM.GtkUI.Dialogs.BatchWindow;
+using XDM.GtkUI.Dialogs.ChromeIntegrator;
 using XDM.GtkUI.Dialogs.DownloadComplete;
 using XDM.GtkUI.Dialogs.DownloadSelection;
 using XDM.GtkUI.Dialogs.LinkRefresh;
@@ -200,6 +201,23 @@ namespace XDM.GtkUI
         public AuthenticationInfo? PromtForCredentials(object window, string message)
         {
             throw new NotImplementedException();
+        }
+
+        public void ShowMediaNotification()
+        {
+            //AppTrayIcon.ShowNotification();
+        }
+
+        public void CreateAndShowMediaGrabber()
+        {
+            var win = XDM.GtkUI.Dialogs.MediaGrabber.MediaGrabberWindow.CreateFromGladeFile();
+            win.Show();
+        }
+
+        public void ShowExtensionRegistrationWindow()
+        {
+            var win = RegisterExtensionWindow.CreateFromGladeFile();
+            win.Show();
         }
     }
 }

@@ -20,7 +20,7 @@
         <local:Page1 Grid.ColumnSpan="4" x:Name="Page1"/>
         <local:Page2 Grid.ColumnSpan="4" x:Name="Page2"/>
         <local:Page3 Grid.ColumnSpan="4" x:Name="Page3"/>
-        <Button Content="{StaticResource MSG_HELP}" Grid.Column="0" Grid.Row="1" Margin="10" Name="BtnHelp"/>
+        <Button Content="{StaticResource MSG_HELP}" Grid.Column="0" Grid.Row="1" Margin="10" Name="BtnHelp" Click="BtnHelp_Click"/>
         <Button Content="{StaticResource MSG_BACK}" Grid.Column="2" Grid.Row="1" Margin="0,10" Name="BtnBack" Click="BtnBack_Click"/>
         <Button Content="{StaticResource MSG_NEXT}" Grid.Column="3" Grid.Row="1" Margin="10" Name="BtnNext" Click="BtnNext_Click"/>
     </Grid>

@@ -165,6 +165,7 @@ namespace XDM.Core.BrowserMonitoring
                         MediaInfo = new MediaInfo(id, info.Key.File, info.Value.DescriptionText, DateTime.Now)
                     });
                 }
+                ApplicationContext.PlatformUIService.ShowMediaNotification();
                 //ApplicationContext.BroadcastConfigChange();
             }
         }
@@ -183,6 +184,7 @@ namespace XDM.Core.BrowserMonitoring
                         MediaInfo = new MediaInfo(id, info.Key.File, info.Value.DescriptionText, DateTime.Now)
                     });
                 }
+                ApplicationContext.PlatformUIService.ShowMediaNotification();
                 //ApplicationContext.BroadcastConfigChange();
             }
         }
@@ -202,6 +204,7 @@ namespace XDM.Core.BrowserMonitoring
                         MediaInfo = new MediaInfo(id, info.Key.File, info.Value.DescriptionText, DateTime.Now)
                     });
                 }
+                ApplicationContext.PlatformUIService.ShowMediaNotification();
                 //ApplicationContext.BroadcastConfigChange();
             }
         }
@@ -220,6 +223,7 @@ namespace XDM.Core.BrowserMonitoring
                         MediaInfo = new MediaInfo(id, info.Key.File, info.Value.DescriptionText, DateTime.Now)
                     });
                 }
+                ApplicationContext.PlatformUIService.ShowMediaNotification();
                 //ApplicationContext.BroadcastConfigChange();
             }
         }
@@ -236,6 +240,7 @@ namespace XDM.Core.BrowserMonitoring
                 {
                     MediaInfo = new MediaInfo(id, info.File, displayInfo.DescriptionText, DateTime.Now)
                 });
+                ApplicationContext.PlatformUIService.ShowMediaNotification();
                 //ApplicationContext.BroadcastConfigChange();
             }
         }
@@ -251,6 +256,7 @@ namespace XDM.Core.BrowserMonitoring
                 {
                     MediaInfo = new MediaInfo(id, info.File, displayInfo.DescriptionText, DateTime.Now)
                 });
+                ApplicationContext.PlatformUIService.ShowMediaNotification();
                 //ApplicationContext.BroadcastConfigChange();
             }
         }
@@ -267,6 +273,7 @@ namespace XDM.Core.BrowserMonitoring
                 {
                     MediaInfo = new MediaInfo(id, info.File, displayInfo.DescriptionText, DateTime.Now)
                 });
+                ApplicationContext.PlatformUIService.ShowMediaNotification();
                 //ApplicationContext.BroadcastConfigChange();
             }
         }
@@ -283,6 +290,7 @@ namespace XDM.Core.BrowserMonitoring
                 {
                     MediaInfo = new MediaInfo(id, info.File, displayInfo.DescriptionText, DateTime.Now)
                 });
+                ApplicationContext.PlatformUIService.ShowMediaNotification();
                 //ApplicationContext.BroadcastConfigChange();
             }
         }

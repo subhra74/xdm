@@ -80,6 +80,12 @@ namespace XDM.Core.IO
                 var fieldType = r.ReadByte();
                 switch (fieldName)
                 {
+                    case "NotificationTimeOut":
+                        instance.NotificationTimeOut = r.ReadInt32();
+                        break;
+                    case "ShowNotification":
+                        instance.ShowNotification = r.ReadBoolean();
+                        break;
                     case "AfterCompletionCommand":
                         instance.AfterCompletionCommand = r.ReadString();
                         break;
@@ -365,6 +371,9 @@ namespace XDM.Core.IO
             WriteInt32(w, instance.MinVideoSize, "MinVideoSize");
             WriteInt32(w, instance.NetworkTimeout, "NetworkTimeout");
             WriteInt32(w, instance.RetryDelay, "RetryDelay");
+
+            WriteInt32(w, instance.NotificationTimeOut, "NotificationTimeOut");
+            WriteBoolean(w, instance.ShowNotification, "ShowNotification");
 
             WriteStringArray(w, instance.BlockedHosts, "BlockedHosts", instance.BlockedHosts.Length);
             WriteStringArray(w, instance.FileExtensions, "FileExtensions", instance.FileExtensions.Length);

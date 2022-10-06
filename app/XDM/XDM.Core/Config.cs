@@ -39,7 +39,15 @@ namespace XDM.Core
         public static string DataDir { get; set; }
         public static string AppDir { get; set; }
 
+        public static int DefaultNotificationTimeOut => 30000;
+
+        public int NotificationTimeOut { get; set; }
+
         public bool IsBrowserMonitoringEnabled { get; set; } = true;
+
+        public static bool DefaultShowNotification => true;
+
+        public bool ShowNotification { get; set; } = true;
 
         public static string DefaultFallbackUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36";
 

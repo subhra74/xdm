@@ -15,6 +15,7 @@ using XDM.Core.Util;
 using TraceLog;
 using XDM.Core.BrowserMonitoring;
 using NativeMessaging;
+using XDM.GtkUI.Dialogs.ChromeIntegrator;
 
 namespace XDM.GtkUI.Dialogs.Settings
 {
@@ -356,7 +357,8 @@ namespace XDM.GtkUI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchOperaBrowser(Links.ChromeExtensionUrl);
+                BrowserLauncher.LaunchOperaBrowser(Links.ManualExtensionInstallGuideUrl);
+                ShowIntegrationWindow();
             }
             catch (Exception ex)
             {
@@ -380,7 +382,8 @@ namespace XDM.GtkUI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchBraveBrowser(Links.ChromeExtensionUrl);
+                BrowserLauncher.LaunchBraveBrowser(Links.ManualExtensionInstallGuideUrl);
+                ShowIntegrationWindow();
             }
             catch (Exception ex)
             {
@@ -404,7 +407,8 @@ namespace XDM.GtkUI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchVivaldi(Links.ChromeExtensionUrl);
+                BrowserLauncher.LaunchVivaldi(Links.ManualExtensionInstallGuideUrl);
+                ShowIntegrationWindow();
             }
             catch (Exception ex)
             {
@@ -461,6 +465,12 @@ namespace XDM.GtkUI.Dialogs.Settings
             }
         }
 
+        private void ShowIntegrationWindow()
+        {
+            var wnd = ChromeIntegratorWindow.CreateFromGladeFile();
+            wnd.Show();
+        }
+
         private void BtnChrome_Clicked(object? sender, EventArgs e)
         {
             try
@@ -476,7 +486,8 @@ namespace XDM.GtkUI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchGoogleChrome(Links.ChromeExtensionUrl);
+                BrowserLauncher.LaunchGoogleChrome(Links.ManualExtensionInstallGuideUrl);
+                ShowIntegrationWindow();
             }
             catch (Exception ex)
             {

@@ -45,5 +45,11 @@ namespace XDM.Core
         void ShowDownloadSelectionWindow(FileNameFetchMode mode, IEnumerable<IRequestData> downloads);
 
         void ShowSpeedLimiterWindow();
+
+        void ShowMediaNotification();
+
+        void CreateAndShowMediaGrabber();
+
+        void ShowExtensionRegistrationWindow();
     }
 }
