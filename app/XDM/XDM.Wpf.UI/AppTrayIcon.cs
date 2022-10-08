@@ -22,7 +22,8 @@ namespace XDM.Wpf.UI
             {
                 if (notifyIcon != null && Config.Instance.ShowNotification)
                 {
-                    notifyIcon.ShowBalloonTip(10000, "Download Video", "Please click here to download streaming video", ToolTipIcon.Info);
+                    notifyIcon.ShowBalloonTip(10000, TextResource.GetText("MSG_DOWNLOAD_VIDEO"),
+                        TextResource.GetText("MSG_DWN_VID_DESC"), ToolTipIcon.Info);
                     notifyIcon.BalloonTipClicked += NotifyIcon_BalloonTipClicked;
                 }
             }

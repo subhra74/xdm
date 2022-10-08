@@ -250,3 +250,6 @@ MSG_LINUX_EXT4=- Click on "Load unpacked" button
 MSG_LINUX_EXT5=- Folder selection window will appear, please select following folder 
 MSG_LINUX_EXT6=- A message will be shown at XDM app that extension has been registered. If for some reason this does not work, please register the extension manually by copying the extension id from chrome extension page and pasting it to XDM Menu -> "Register extension"
 MSG_FIELD_BLANK=The field is blank
+MSG_DOWNLOAD_VIDEO=Download Video
+MSG_DWN_VID_DESC=Please click here to download streaming video
+MSG_VID_CAP=Streaming video detected, please open Media Grabber

@@ -205,7 +205,14 @@ namespace XDM.GtkUI
 
         public void ShowMediaNotification()
         {
-            //AppTrayIcon.ShowNotification();
+            try
+            {
+                PlatformHelper.SpawnSubProcess("notify-send", new string[] { TextResource.GetText("MSG_VID_CAP") });
+            }
+            catch
+            {
+
+            }
         }
 
         public void CreateAndShowMediaGrabber()
