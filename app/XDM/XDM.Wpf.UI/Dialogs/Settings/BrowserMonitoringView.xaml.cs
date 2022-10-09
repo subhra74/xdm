@@ -61,6 +61,8 @@ namespace XDM.Wpf.UI.Dialogs.Settings
 
         private void BtnChrome_Click(object sender, RoutedEventArgs e)
         {
+            //MessageBox.Show(TextResource.GetText("MSG_KILL_BROWSER"));
+            //PlatformHelper.KillAll("chrome");
             try
             {
                 InstallNativeMessagingHost(Browser.Chrome);

@@ -11,6 +11,34 @@ namespace XDM.Core.Util
 {
     public static class PlatformHelper
     {
+        public static bool KillAll(string processName)
+        {
+            try
+            {
+                var processes = Process.GetProcessesByName(processName);
+                if (processes != null)
+                {
+                    foreach (var proc in processes)
+                    {
+                        try
+                        {
+                            proc.Kill();
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Debug(ex, ex.Message);
+                        }
+                    }
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, ex.Message);
+            }
+            return false;
+        }
+
         public static string GetOsDefaultDownloadFolder()
         {
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)

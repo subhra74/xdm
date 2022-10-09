@@ -209,10 +209,7 @@ namespace XDM.GtkUI
             {
                 PlatformHelper.SpawnSubProcess("notify-send", new string[] { TextResource.GetText("MSG_VID_CAP") });
             }
-            catch
-            {
-
-            }
+            catch { }
         }
 
         public void CreateAndShowMediaGrabber()
