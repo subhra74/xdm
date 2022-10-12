@@ -10,6 +10,8 @@
 
 ### [XDM Homepage](https://xtremedownloadmanager.com/ "XDM Homepage") ###
 
+[New Experimental Beta version is out](https://github.com/subhra74/xdm-experimental-binaries/tags)
+
 [News about new version](https://github.com/subhra74/xdm/discussions/768)
 
 **X**treme **D**ownload **M**anager (XDM) is a powerful tool to increase download speeds up to 500%, save videos from popular video streaming websites, resume broken/dead downloads, schedule and convert downloads.<br>
