@@ -2,7 +2,7 @@
 
 #Please place all the published files under ./binary-source directory
 
-VERSION=8.0.7
+VERSION=8.0.9
 SRC_DIR=binary-source
 SOURCE_NAME="src"
 
@@ -19,8 +19,8 @@ mkdir -p "${SOURCE_NAME}/usr/share/applications"
 
 cp -r "${SRC_DIR}/." "${SOURCE_NAME}/opt/xdman"
 
-find "${SOURCE_NAME}/opt/xdman" -type d -print0 | xargs -0 chmod 0755
-find "${SOURCE_NAME}/opt/xdman" -type f -print0 | xargs -0 chmod 0644
+find "${SOURCE_NAME}/" -type d -print0 | xargs -0 chmod 0755
+find "${SOURCE_NAME}/" -type f -print0 | xargs -0 chmod 0644
 
 touch "${SOURCE_NAME}/opt/xdman/xdm-app.desktop"
 touch "${SOURCE_NAME}/usr/bin/xdman"
@@ -36,6 +36,8 @@ Name=Xtreme Download Manager
 Comment=Xtreme Download Manager
 Categories=Network;
 Icon=/opt/xdman/xdm-logo.svg
+MimeType=application/xdm-app;x-scheme-handler/xdm-app;
+StartupNotify=true
 EOF
 
 cat <<EOF > "${SOURCE_NAME}/usr/bin/xdman"

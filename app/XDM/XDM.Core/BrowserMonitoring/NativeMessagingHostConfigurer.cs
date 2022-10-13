@@ -5,12 +5,44 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using TraceLog;
 using XDM.Core;
 
 namespace XDM.Core.BrowserMonitoring
 {
     public static class NativeMessagingHostConfigurer
     {
+        private static string CalculateExtensionId(string path)
+        {
+#if WINDOWS
+            if (path[0] >= 'a' && path[1] <= 'z' && path[1] == ':')
+            {
+                path = path[0].ToString().ToUpper() + path.Substring(1);
+            }
+#endif
+            var text = path;
+            var crypt = System.Security.Cryptography.SHA256.Create();
+            string hash = string.Empty;
+#if WINDOWS
+            byte[] crypto = crypt.ComputeHash(Encoding.Unicode.GetBytes(text));
+#else
+            byte[] crypto = crypt.ComputeHash(Encoding.UTF8.GetBytes(text));
+#endif
+            foreach (byte theByte in crypto)
+            {
+                var hex = theByte.ToString("x2");
+                hash += hex;
+            }
+            var ext = string.Empty;
+            foreach (var ch in hash)
+            {
+                var x = System.Convert.ToInt32(ch.ToString(), 16);
+                char c = (char)(x + 97);
+                ext += c;// theByte.ToString("x2");
+            }
+            return ext.Substring(0, 32);
+        }
+
         private static string GetExecutablePath()
         {
             return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "XDM.App.Host" + Path.DirectorySeparatorChar + "xdm-app-host" + (
@@ -31,13 +63,22 @@ namespace XDM.Core.BrowserMonitoring
 
         private static void CreateMessagingHostManifest(Browser browser, string appName, string manifestPath)
         {
-            var extensions = new List<string> { browser == Browser.Firefox ? "xdm-integration-module@subhra74.github.io" : "chrome-extension://akdmdglbephckgfmdffcdebnpjgamofc/" };
+            var extensions = new HashSet<string> { browser == Browser.Firefox ? "xdm-integration-module@subhra74.github.io" : "chrome-extension://akdmdglbephckgfmdffcdebnpjgamofc/" };
+            if (browser == Browser.Chrome)
+            {
+                var extId = CalculateExtensionId(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "chrome-extension"));
+                Log.Debug("ExtensionId: " + extId);
+                extensions.Add($"chrome-extension://{extId}/");
+            }
             try
             {
                 var file = Path.Combine(Config.AppDir, "extension.txt");
                 if (File.Exists(file))
                 {
-                    extensions.AddRange(File.ReadAllLines(file));
+                    foreach (var line in File.ReadAllLines(file))
+                    {
+                        extensions.Add(line);
+                    }
                 }
             }
             catch { }
@@ -160,10 +201,32 @@ namespace XDM.Core.BrowserMonitoring
         }
 #endif
 
+        public static IEnumerable<string> GetBrowserExecutableName(Browser browser)
+        {
+            switch (browser)
+            {
+                case Browser.Chrome:
+                    return new string[] { "chrome", "google-chrome", "google-chrome-stable" };
+                case Browser.Firefox:
+                    return new string[] { "firefox" };
+                case Browser.MSEdge:
+                    return new string[] { "msedge" };
+                case Browser.Brave:
+                    return new string[] { "brave", "brave-browser", "brave-browser-stable" };
+                case Browser.Vivaldi:
+                    return new string[] { "vivaldi", "vivaldi-browser", "vivaldi-browser-stable" };
+                case Browser.Opera:
+                    return new string[] { "opera", "opera-browser", "opera-browser-stable" };
+                default:
+                    break;
+            }
+            return new string[0];
+        }
+
     }
 
     public enum Browser
     {
-        Chrome, Firefox, MSEdge
+        Chrome, Firefox, MSEdge, Brave, Vivaldi, Opera
     }
 }

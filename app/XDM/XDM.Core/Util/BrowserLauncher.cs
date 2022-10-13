@@ -5,14 +5,15 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using TraceLog;
+using XDM.Core.BrowserMonitoring;
 
 namespace XDM.Core.Util
 {
     public static class BrowserLauncher
     {
-        public static void LaunchBrowser(string executableName, string args, IEnumerable<string> paths)
+        public static bool LaunchBrowser(string executableName, string args, IEnumerable<string?> paths)
         {
-            var pathsToCheck = new List<string>(paths);
+            var pathsToCheck = new List<string?>(paths);
             var envPaths = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator);
             if (envPaths != null)
             {
@@ -23,12 +24,16 @@ namespace XDM.Core.Util
             {
                 foreach (var path in pathsToCheck)
                 {
+                    if (string.IsNullOrEmpty(path))
+                    {
+                        continue;
+                    }
                     Log.Debug($"Finding {executableName} in path: {path}");
                     var file = Path.Combine(path, executableName);
                     if (File.Exists(file))
                     {
                         Exec(file, args);
-                        return;
+                        return true;
                     }
                 }
             }
@@ -36,12 +41,33 @@ namespace XDM.Core.Util
             throw new FileNotFoundException("Could not launch browser as it is not found in the system");
         }
 
-        public static void LaunchGoogleChrome(string args)
+        public static bool LaunchBrowser(Browser browser, string args, string? executableLocation)
+        {
+            switch (browser)
+            {
+                case Browser.Chrome:
+                    return LaunchGoogleChrome(args, executableLocation);
+                case Browser.Firefox:
+                    return LaunchFirefox(args, executableLocation);
+                case Browser.MSEdge:
+                    return LaunchMicrosoftEdge(args, executableLocation);
+                case Browser.Brave:
+                    return LaunchBraveBrowser(args, executableLocation);
+                case Browser.Vivaldi:
+                    return LaunchVivaldi(args, executableLocation);
+                case Browser.Opera:
+                    return LaunchOperaBrowser(args, executableLocation);
+            }
+            return false;
+        }
+
+        public static bool LaunchGoogleChrome(string args, string? executableLocation)
         {
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
-                LaunchBrowser("chrome.exe", args, new string[]
+                return LaunchBrowser("chrome.exe", args, new string?[]
                 {
+                    executableLocation,
                     Path.Combine(Environment.GetEnvironmentVariable("ProgramW6432")!, @"Google\Chrome\Application"),
                     Path.Combine(Environment.GetEnvironmentVariable("LOCALAPPDATA")!, @"Google\Chrome\Application"),
                     Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES")!, @"Google\Chrome\Application"),
@@ -50,20 +76,28 @@ namespace XDM.Core.Util
             }
             else if (Environment.OSVersion.Platform == PlatformID.Unix)
             {
-                LaunchBrowser("google-chrome", args, new string[] { "/usr/bin" });
+                foreach (var exe in NativeMessagingHostConfigurer.GetBrowserExecutableName(Browser.Chrome))
+                {
+                    if (LaunchBrowser(exe, args, new string?[] { executableLocation, "/usr/bin" }))
+                    {
+                        return true;
+                    }
+                }
             }
             else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
             {
-                LaunchBrowser("Google Chrome.app", args, new string[] { "/Applications" });
+                return LaunchBrowser("Google Chrome.app", args, new string?[] { executableLocation, "/Applications" });
             }
+            return false;
         }
 
-        public static void LaunchFirefox(string args)
+        public static bool LaunchFirefox(string args, string? executableLocation)
         {
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
-                LaunchBrowser("firefox.exe", args, new string[]
+                return LaunchBrowser("firefox.exe", args, new string?[]
                 {
+                    executableLocation,
                     Path.Combine(Environment.GetEnvironmentVariable("ProgramW6432")!, @"Mozilla Firefox"),
                     Path.Combine(Environment.GetEnvironmentVariable("LOCALAPPDATA")!, @"Mozilla Firefox"),
                     Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES")!, @"Mozilla Firefox"),
@@ -72,20 +106,28 @@ namespace XDM.Core.Util
             }
             else if (Environment.OSVersion.Platform == PlatformID.Unix)
             {
-                LaunchBrowser("firefox", args, new string[] { "/usr/bin" });
+                foreach (var exe in NativeMessagingHostConfigurer.GetBrowserExecutableName(Browser.Firefox))
+                {
+                    if (LaunchBrowser(exe, args, new string?[] { executableLocation, "/usr/bin" }))
+                    {
+                        return true;
+                    }
+                }
             }
             else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
             {
-                LaunchBrowser("Firefox.app", args, new string[] { "/Applications" });
+                return LaunchBrowser("Firefox.app", args, new string?[] { executableLocation, "/Applications" });
             }
+            return false;
         }
 
-        public static void LaunchMicrosoftEdge(string args)
+        public static bool LaunchMicrosoftEdge(string args, string? executableLocation)
         {
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
-                LaunchBrowser("msedge.exe", args, new string[]
+                return LaunchBrowser("msedge.exe", args, new string?[]
                 {
+                    executableLocation,
                     Path.Combine(Environment.GetEnvironmentVariable("ProgramW6432")!, @"Microsoft\Edge\Application"),
                     Path.Combine(Environment.GetEnvironmentVariable("LOCALAPPDATA")!, @"Microsoft\Edge\Application"),
                     Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES")!, @"Microsoft\Edge\Application"),
@@ -94,20 +136,28 @@ namespace XDM.Core.Util
             }
             else if (Environment.OSVersion.Platform == PlatformID.Unix)
             {
-                LaunchBrowser("microsoft-edge", args, new string[] { "/usr/bin" });
+                foreach (var exe in NativeMessagingHostConfigurer.GetBrowserExecutableName(Browser.MSEdge))
+                {
+                    if (LaunchBrowser(exe, args, new string?[] { executableLocation, "/usr/bin" }))
+                    {
+                        return true;
+                    }
+                }
             }
             else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
             {
-                LaunchBrowser("Microsoft Edge.app", args, new string[] { "/Applications" });
+                return LaunchBrowser("Microsoft Edge.app", args, new string?[] { executableLocation, "/Applications" });
             }
+            return false;
         }
 
-        public static void LaunchVivaldi(string args)
+        public static bool LaunchVivaldi(string args, string? executableLocation)
         {
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
-                LaunchBrowser("vivaldi.exe", args, new string[]
+                return LaunchBrowser("vivaldi.exe", args, new string?[]
                 {
+                    executableLocation,
                     Path.Combine(Environment.GetEnvironmentVariable("ProgramW6432")!, @"Vivaldi\Application"),
                     Path.Combine(Environment.GetEnvironmentVariable("LOCALAPPDATA")!, @"Vivaldi\Application"),
                     Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES")!, @"Vivaldi\Application"),
@@ -116,20 +166,29 @@ namespace XDM.Core.Util
             }
             else if (Environment.OSVersion.Platform == PlatformID.Unix)
             {
-                LaunchBrowser("vivaldi", args, new string[] { "/usr/bin" });
+                foreach (var exe in NativeMessagingHostConfigurer.GetBrowserExecutableName(Browser.Vivaldi))
+                {
+                    if (LaunchBrowser(exe, args, new string?[] { executableLocation, "/usr/bin" }))
+                    {
+                        return true;
+                    }
+                }
             }
             else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
             {
-                LaunchBrowser("Vivaldi.app", args, new string[] { "/Applications" });
+                return LaunchBrowser("Vivaldi.app", args, new string?[] { executableLocation, "/Applications" });
             }
+
+            return false;
         }
 
-        public static void LaunchBraveBrowser(string args)
+        public static bool LaunchBraveBrowser(string args, string? executableLocation)
         {
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
-                LaunchBrowser("brave.exe", args, new string[]
+                return LaunchBrowser("brave.exe", args, new string?[]
                 {
+                    executableLocation,
                     Path.Combine(Environment.GetEnvironmentVariable("ProgramW6432")!, @"BraveSoftware\Brave-Browser\Application"),
                     Path.Combine(Environment.GetEnvironmentVariable("LOCALAPPDATA")!, @"BraveSoftware\Brave-Browser\Application"),
                     Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES")!, @"BraveSoftware\Brave-Browser\Application"),
@@ -138,27 +197,28 @@ namespace XDM.Core.Util
             }
             else if (Environment.OSVersion.Platform == PlatformID.Unix)
             {
-                try
+                foreach (var exe in NativeMessagingHostConfigurer.GetBrowserExecutableName(Browser.Brave))
                 {
-                    LaunchBrowser("brave", args, new string[] { "/usr/bin/brave" });
-                }
-                catch
-                {
-                    LaunchBrowser("brave-browser", args, new string[] { "/usr/bin/brave-browser" });
+                    if (LaunchBrowser(exe, args, new string?[] { executableLocation, "/usr/bin" }))
+                    {
+                        return true;
+                    }
                 }
             }
             else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
             {
-                LaunchBrowser("Brave Browser.app", args, new string[] { "/Applications" });
+                return LaunchBrowser("Brave Browser.app", args, new string?[] { executableLocation, "/Applications" });
             }
+            return false;
         }
 
-        public static void LaunchOperaBrowser(string args)
+        public static bool LaunchOperaBrowser(string args, string? executableLocation)
         {
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
-                LaunchBrowser("opera.exe", args, new string[]
+                return LaunchBrowser("opera.exe", args, new string?[]
                 {
+                    executableLocation,
                     Path.Combine(Environment.GetEnvironmentVariable("ProgramW6432")!, @"Opera"),
                     Path.Combine(Environment.GetEnvironmentVariable("LOCALAPPDATA")!, @"Programs\Opera"),
                     Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES")!, @"Opera"),
@@ -167,12 +227,19 @@ namespace XDM.Core.Util
             }
             else if (Environment.OSVersion.Platform == PlatformID.Unix)
             {
-                LaunchBrowser("opera", args, new string[] { "/usr/bin" });
+                foreach (var exe in NativeMessagingHostConfigurer.GetBrowserExecutableName(Browser.Opera))
+                {
+                    if (LaunchBrowser(exe, args, new string?[] { executableLocation, "/usr/bin" }))
+                    {
+                        return true;
+                    }
+                }
             }
             else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
             {
-                LaunchBrowser("Opera.app", args, new string[] { "/Applications" });
+                return LaunchBrowser("Opera.app", args, new string?[] { executableLocation, "/Applications" });
             }
+            return false;
         }
 
         private static void Exec(string path, string args)

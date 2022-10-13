@@ -14,6 +14,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using Translations;
 using XDM.Core;
+using XDM.Core.BrowserMonitoring;
 using XDM.Core.Util;
 using XDM.Wpf.UI.Win32;
 
@@ -25,10 +26,14 @@ namespace XDM.Wpf.UI.Dialogs.ChromeIntegrator
     public partial class IntegrationWindow : Window
     {
         private int page = 0;
-        public IntegrationWindow()
+        public IntegrationWindow(Browser browser, bool browserLaunched)
         {
             InitializeComponent();
             ApplicationContext.ApplicationEvent += ApplicationContext_ApplicationEvent;
+            if (browserLaunched)
+            {
+                page = 1;
+            }
             RenderPage();
         }
 

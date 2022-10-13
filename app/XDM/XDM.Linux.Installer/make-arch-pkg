@@ -2,20 +2,25 @@
 
 #Please place all the published files under ./binary-source directory
 
-VERSION=8.0.9
+VERSION=8.0.10
 SRC_DIR=binary-source
-SOURCE_NAME="xdman_gtk-${VERSION}"
+SOURCE_NAME="src"
 
 rm -rf "${SOURCE_NAME}"
+rm -rf pkg
+rm -rf src
+rm -f "${SOURCE_NAME}*pkg.tar.*"
+rm -f PKGBUILD
 
-mkdir -p rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
 mkdir "${SOURCE_NAME}"
-
 mkdir -p "${SOURCE_NAME}/opt/xdman"
 mkdir -p "${SOURCE_NAME}/usr/bin"
 mkdir -p "${SOURCE_NAME}/usr/share/applications"
 
 cp -r "${SRC_DIR}/." "${SOURCE_NAME}/opt/xdman"
+
+find "${SOURCE_NAME}/" -type d -print0 | xargs -0 chmod 0755
+find "${SOURCE_NAME}/" -type f -print0 | xargs -0 chmod 0644
 
 touch "${SOURCE_NAME}/opt/xdman/xdm-app.desktop"
 touch "${SOURCE_NAME}/usr/bin/xdman"
@@ -41,8 +46,8 @@ export GTK_USE_PORTAL=1
 /opt/xdman/xdm-app \$@
 EOF
 
-cat <<EOF > "${SOURCE_NAME}/opt/xdman/source_pkg"
-xdman_gtk|.rpm
+cat <<EOF > "${SOURCE_NAME}/opt/xdman/source_pkg.txt"
+xdman_gtk|.pkg.tar.zst;.pkg.tar.xz;.pkg.tar.gz;.pkg.tar.bz2
 EOF
 
 cp "${SOURCE_NAME}/opt/xdman/xdm-app.desktop" "${SOURCE_NAME}/usr/share/applications"
@@ -51,35 +56,25 @@ chmod 755 "${SOURCE_NAME}/usr/bin/xdman"
 chmod 755 "${SOURCE_NAME}/opt/xdman/xdm-app"
 chmod 755 "${SOURCE_NAME}/opt/xdman/XDM.App.Host/xdm-app-host"
 
-tar --create --file "${SOURCE_NAME}.tar.gz" "${SOURCE_NAME}"
-mv "${SOURCE_NAME}.tar.gz" "rpmbuild/SOURCES"
+#tar --create --file "${SOURCE_NAME}.tar.gz" -C "${SOURCE_NAME}" .
 
-cat <<EOF > "rpmbuild/SPECS/xdman_gtk.spec"
-Name:       	xdman_gtk
-Version:    	${VERSION}
-Release:    	1%{?dist}
-Summary:    	Xtreme Download Manager
-AutoReqProv: 	no
-Requires:   	gtk3 >= 3.22
-Requires:   	ffmpeg-free
+cat <<EOF > "PKGBUILD"
+pkgname=xdman_gtk
+pkgver=${VERSION}
+pkgrel=1
+pkgdesc="Open source download accelerator and video downloader."
+arch=("x86_64")
+url="https://github.com/subhra74/xdm"
+license=('GPLv3')
+#source=("${SOURCE_NAME}.tar.gz")
+depends=('ffmpeg' 'gtk3>=3.22.0')
+#sha1sums=('SKIP')
 
-Group:      	System Environment/Base
-License:    	GPLv3+
-Source0:    	${SOURCE_NAME}.tar.gz
-
-%description
-Open source download accelerator and video downloader.
-
-%prep
-%setup -q
-
-%install
-cp -rfa * %{buildroot}
-
-%files
-/usr/bin/*
-/usr/share/applications/*
-/opt/xdman/*
+package() {
+	cp -r * \$pkgdir
+}
 EOF
 
-rpmbuild --define "_topdir `pwd`/rpmbuild" -bb rpmbuild/SPECS/xdman_gtk.spec
+cat PKGBUILD
+
+makepkg -d -f

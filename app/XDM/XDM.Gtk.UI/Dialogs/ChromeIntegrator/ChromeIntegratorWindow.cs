@@ -56,12 +56,13 @@ namespace XDM.GtkUI.Dialogs.ChromeIntegrator
             this.BtnClose.Label = TextResource.GetText("MSG_CLOSE");
             this.BtnHelp.Label = TextResource.GetText("MSG_HELP");
             var buffer = this.TxtGuide.Buffer;
-            buffer.Text = TextResource.GetText("MSG_LINUX_EXT1") +
+            buffer.Text = $"{TextResource.GetText("MSG_LINUX_EXT1")} Chrome" +
                 "\n" + TextResource.GetText("MSG_LINUX_EXT2") +
                 "\n" + TextResource.GetText("MSG_LINUX_EXT3") +
                 "\n" + TextResource.GetText("MSG_LINUX_EXT4") +
-                "\n" + TextResource.GetText("MSG_LINUX_EXT5") +
-                "\n" + TextResource.GetText("MSG_LINUX_EXT6");
+                "\n" + TextResource.GetText("MSG_LINUX_EXT5") + System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "chrome-extension") +
+                "\n" + TextResource.GetText("MSG_LINUX_EXT6") +
+                "\n" + TextResource.GetText("MSG_LINUX_EXT7") + Links.ManualExtensionInstallGuideUrl;
         }
 
         private void ChromeIntegratorWindow_Destroyed(object? sender, EventArgs e)

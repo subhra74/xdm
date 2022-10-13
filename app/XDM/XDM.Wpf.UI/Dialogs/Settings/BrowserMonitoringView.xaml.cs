@@ -36,7 +36,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
 
         public void PopulateUI()
         {
-            TxtChromeWebStoreUrl.Text = Links.ChromeExtensionUrl;
+            TxtChromeWebStoreUrl.Text = Links.ManualExtensionInstallGuideUrl;
             TxtFirefoxAMOUrl.Text = Links.FirefoxExtensionUrl;
             TxtDefaultFileTypes.Text = string.Join(",", Config.Instance.FileExtensions);
             TxtDefaultVideoFormats.Text = string.Join(",", Config.Instance.VideoExtensions);
@@ -59,13 +59,26 @@ namespace XDM.Wpf.UI.Dialogs.Settings
             Config.Instance.ShowNotification = ChkShowMediaNotification.IsChecked.HasValue ? ChkShowMediaNotification.IsChecked.Value : false;
         }
 
-        private void BtnChrome_Click(object sender, RoutedEventArgs e)
+        private void KillExistingSessions(Browser browser, out string? exeLocation)
         {
-            //MessageBox.Show(TextResource.GetText("MSG_KILL_BROWSER"));
-            //PlatformHelper.KillAll("chrome");
+            exeLocation = null;
+            if (MessageBox.Show(TextResource.GetText("MSG_KILL_BROWSER"), "XDM", MessageBoxButton.YesNo) != MessageBoxResult.Yes)
+            {
+                return;
+            }
+            foreach (var exeName in NativeMessagingHostConfigurer.GetBrowserExecutableName(browser))
+            {
+                PlatformHelper.KillAll($"{exeName}", out exeLocation);
+            }
+        }
+
+        private void BrowserButtonClick(Browser browser)
+        {
+            KillExistingSessions(browser, out string? exeLocation);
+
             try
             {
-                InstallNativeMessagingHost(Browser.Chrome);
+                InstallNativeMessagingHost(browser);
             }
             catch (Exception ex)
             {
@@ -76,87 +89,54 @@ namespace XDM.Wpf.UI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchGoogleChrome("chrome://extensions");
-                var wnd = new IntegrationWindow();
+                var args = "chrome://extensions/";
+                var extLoaderPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ext-loader");
+                var extensionLoadRequest = false;
+                if (System.IO.Directory.Exists(extLoaderPath))
+                {
+                    args = $"--load-extension=\"{extLoaderPath}\"";
+                    extensionLoadRequest = true;
+                }
+                var sucess = BrowserLauncher.LaunchBrowser(browser, args, exeLocation);
+                var wnd = new IntegrationWindow(browser, sucess && extensionLoadRequest);
                 wnd.Show();
             }
             catch (Exception ex)
             {
-                Log.Debug(ex, "Error launching Google Chrome");
-                MessageBox.Show($"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Google Chrome");
+                Log.Debug(ex, "Error launching " + browser);
+                MessageBox.Show($"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} {browser}");
             }
+        }
+
+
+        private void BtnChrome_Click(object sender, RoutedEventArgs e)
+        {
+            BrowserButtonClick(Browser.Chrome);
         }
 
         private void BtnFirefox_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                InstallNativeMessagingHost(Browser.Firefox);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error installing native host");
-                MessageBox.Show(TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
-                return;
-            }
-
-            try
-            {
-                BrowserLauncher.LaunchFirefox(Links.FirefoxExtensionUrl);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error launching Firefox");
-                MessageBox.Show($"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Firefox");
-            }
+            BrowserButtonClick(Browser.Firefox);
         }
 
         private void BtnEdge_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                InstallNativeMessagingHost(Browser.Chrome);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error installing native host");
-                MessageBox.Show(TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
-                return;
-            }
-
-            try
-            {
-                BrowserLauncher.LaunchMicrosoftEdge(Links.ChromeExtensionUrl);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error Microsoft Edge");
-                MessageBox.Show($"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Microsoft Edge");
-            }
+            BrowserButtonClick(Browser.MSEdge);
         }
 
         private void BtnOpera_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                InstallNativeMessagingHost(Browser.Chrome);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error installing native host");
-                MessageBox.Show(TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
-                return;
-            }
+            BrowserButtonClick(Browser.Opera);
+        }
 
-            try
-            {
-                BrowserLauncher.LaunchOperaBrowser(Links.ManualExtensionInstallGuideUrl);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error launching Opera");
-                MessageBox.Show($"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Opera");
-            }
+        private void BtnBrave_Click(object sender, RoutedEventArgs e)
+        {
+            BrowserButtonClick(Browser.Brave);
+        }
+
+        private void BtnVivaldi_Click(object sender, RoutedEventArgs e)
+        {
+            BrowserButtonClick(Browser.Vivaldi);
         }
 
         private void BtnCopy1_Click(object sender, RoutedEventArgs e)
@@ -189,56 +169,9 @@ namespace XDM.Wpf.UI.Dialogs.Settings
             PlatformHelper.OpenBrowser(Links.VideoDownloadTutorialUrl);
         }
 
-        private void BtnBrave_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                InstallNativeMessagingHost(Browser.Chrome);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error installing native host");
-                MessageBox.Show(TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
-                return;
-            }
-
-            try
-            {
-                BrowserLauncher.LaunchBraveBrowser(Links.ManualExtensionInstallGuideUrl);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error Brave Browser");
-                MessageBox.Show($"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Brave browser");
-            }
-        }
-
-        private void BtnVivaldi_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                InstallNativeMessagingHost(Browser.Chrome);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error installing native host");
-                MessageBox.Show(TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
-                return;
-            }
-
-            try
-            {
-                BrowserLauncher.LaunchVivaldi(Links.ManualExtensionInstallGuideUrl);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error Vivaldi");
-                MessageBox.Show($"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Vivaldi");
-            }
-        }
-
         private void InstallNativeMessagingHost(Browser browser)
         {
+            NativeMessagingHostConfigurer.InstallNativeMessagingHostForWindows(browser);
             //var browserName = "chome";
             //if (browser == Browser.Firefox)
             //{
@@ -248,8 +181,6 @@ namespace XDM.Wpf.UI.Dialogs.Settings
             //{
             //    browserName = "ms-edge";
             //}
-
-            NativeMessagingHostConfigurer.InstallNativeMessagingHostForWindows(browser);
 
             //string aliasPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) +
             //       @"\microsoft\windowsapps\xdm-app-host.exe";

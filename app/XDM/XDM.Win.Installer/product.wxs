@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?define ProductVersion = "8.0.6"?>
+<?define ProductVersion = "$(env.BUILD_VER)"?>
 <?define ProductUpgradeCode="3E462F34-3D19-4247-AD64-1B74703555D6"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"  xmlns:ui="http://schemas.microsoft.com/wix/UIExtension">
   <Product Id="*" Name="Xtreme Download Manager" Codepage="utf-32" Language="1033" Version="$(var.ProductVersion)" Manufacturer="Subhra Das Gupta" UpgradeCode="$(var.ProductUpgradeCode)">
@@ -75,6 +75,15 @@
         <RegistryKey Root="HKCU"
                      Key="Software\Microsoft\Windows\CurrentVersion\Run">
             <RegistryValue Type="string" Name="XDM" Value='"[INSTALLFOLDER]xdm-app.exe" --background'/>
+        </RegistryKey>
+		<RegistryKey Root="HKCR"
+                     Key="xdm-app">
+            <RegistryValue Type="string" Value='URL:Xtreme Download Manger'/>
+			<RegistryValue Type="string" Name='URL Protocol' Value='' />
+        </RegistryKey>
+		<RegistryKey Root="HKCR"
+                     Key="xdm-app\shell\open\command">
+            <RegistryValue Type="string" Value='"[INSTALLFOLDER]xdm-app.exe" "%1"'/>
         </RegistryKey>
 		<!--<RegistryKey Root="HKCU"
                      Key="Software\Google\Chrome\NativeMessagingHosts\xdm_chrome.native_host">

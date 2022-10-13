@@ -11,8 +11,9 @@ namespace XDM.Core.Util
 {
     public static class PlatformHelper
     {
-        public static bool KillAll(string processName)
+        public static bool KillAll(string processName, out string? processExecutable)
         {
+            processExecutable = null;
             try
             {
                 var processes = Process.GetProcessesByName(processName);
@@ -22,11 +23,24 @@ namespace XDM.Core.Util
                     {
                         try
                         {
+                            if (processExecutable == null)
+                            {
+                                processExecutable = proc.MainModule?.FileName;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Debug(ex, ex.Message);
+                        }
+
+                        try
+                        {
                             proc.Kill();
                         }
                         catch (Exception ex)
                         {
                             Log.Debug(ex, ex.Message);
+                            return false;
                         }
                     }
                 }

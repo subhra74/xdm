@@ -612,9 +612,9 @@ namespace XDM.GtkUI
                     swFinished.ShowAll();
                     swInProgress.Hide();
                     category = null;
-                    finishedDownloadFilter.Refilter();
                     btnOpenFile.Visible = btnOpenFolder.Visible = true;
                     btnPause.Visible = btnResume.Visible = false;
+                    finishedDownloadFilter.Refilter();
                 }
             }
             else
@@ -807,7 +807,6 @@ namespace XDM.GtkUI
 
             sortedStore.SetSortFunc(0, (model, iter1, iter2) =>
             {
-                Console.WriteLine("called");
                 var t1 = (string)model.GetValue(iter1, 0);
                 var t2 = (string)model.GetValue(iter2, 0);
 
@@ -1021,7 +1020,7 @@ namespace XDM.GtkUI
             inprogressDownloadsStore.SetValue(iter, 1, entry.DateAdded.ToShortDateString());
             inprogressDownloadsStore.SetValue(iter, 2, FormattingHelper.FormatSize(entry.Size));
             inprogressDownloadsStore.SetValue(iter, 3, entry.Progress);
-            inprogressDownloadsStore.SetValue(iter, 4, entry.Status);
+            inprogressDownloadsStore.SetValue(iter, 4, entry.Status.ToString());
             inprogressDownloadsStore.SetValue(iter, 5, entry);
         }
 
@@ -1030,7 +1029,11 @@ namespace XDM.GtkUI
             finishedDownloadsStore.AppendValues(
                 entry.Name,
                 entry.DateAdded.ToShortDateString(),
-                FormattingHelper.FormatSize(entry.Size));
+                FormattingHelper.FormatSize(entry.Size),
+                entry);
+            finishedDownloadFilter.Refilter();
+            //finishedDownloadsStoreSorted.AppendValues()
+            //sortedStore.SetSortColumnId(1, SortType.Descending);
         }
 
         public void SwitchToInProgressView()

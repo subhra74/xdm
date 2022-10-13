@@ -9,6 +9,10 @@ namespace XDM.Core.Util
     {
         public static void AddExtension(string extension)
         {
+            if (!extension.EndsWith("/"))
+            {
+                extension += "/";
+            }
             var file = Path.Combine(Config.AppDir, "extension.txt");
             var extensions = new List<string>();
             if (File.Exists(file))
@@ -16,7 +20,8 @@ namespace XDM.Core.Util
                 extensions.AddRange(File.ReadAllLines(file));
             }
             extensions.Add(extension);
-            File.WriteAllLines(file, extensions);
+            var set = new HashSet<string>(extensions);
+            File.WriteAllLines(file, set);
         }
     }
 }
