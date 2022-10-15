@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using XDM.Core.BrowserMonitoring;
 
 namespace XDM.Wpf.UI.Dialogs.ChromeIntegrator
 {
@@ -20,6 +21,7 @@ namespace XDM.Wpf.UI.Dialogs.ChromeIntegrator
     /// </summary>
     public partial class Page1 : UserControl
     {
+        public Browser Browser { get; set; }
         public Page1()
         {
             InitializeComponent();
@@ -30,9 +32,19 @@ namespace XDM.Wpf.UI.Dialogs.ChromeIntegrator
             //MessageBox.Show("ss");
             if (e.LeftButton == MouseButtonState.Pressed)
             {
+                var browser = "chrome://extensions";
+                switch (this.Browser)
+                {
+                    case Browser.Brave:
+                        browser = "brave://extensions";
+                        break;
+                    case Browser.Vivaldi:
+                        browser = "vivaldi://extensions";
+                        break;
+                }
                 // MessageBox.Show("asda");
                 var data = new DataObject();
-                data.SetData(DataFormats.Text, "chrome://extensions");
+                data.SetData(DataFormats.Text, browser);
 
                 // Initiate the drag-and-drop operation.
                 DragDrop.DoDragDrop(this.DragBorder, data, DragDropEffects.Copy | DragDropEffects.Move);

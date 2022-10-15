@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using XDM.Core.BrowserMonitoring;
 
 namespace XDM.Wpf.UI.Dialogs.ChromeIntegrator
 {
@@ -20,10 +21,20 @@ namespace XDM.Wpf.UI.Dialogs.ChromeIntegrator
     /// </summary>
     public partial class Page2 : UserControl
     {
+        public Browser Browser
+        {
+            set
+            {
+                this.Img.Source = new BitmapImage(
+                    new Uri(
+                    System.IO.Path.Combine(
+                    System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "images"),
+                    $"{value}.jpg")));
+            }
+        }
         public Page2()
         {
             InitializeComponent();
-            this.Img.Source = new BitmapImage(new Uri(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "extension-page.png")));
         }
     }
 }
