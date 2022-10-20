@@ -21,7 +21,7 @@
         </Grid.ColumnDefinitions>
         <TextBlock Grid.Row="0" Text="{StaticResource MSG_PAGE3_TITLE}" FontSize="14" Grid.ColumnSpan="4" Margin="10" TextWrapping="Wrap" TextAlignment="Center"/>
         <TextBlock Grid.Row="1" Text="{StaticResource MSG_PAGE3_TEXT1}" Grid.ColumnSpan="4" Margin="10" TextWrapping="Wrap" TextAlignment="Center" />
-        <Border Grid.Row="2" MouseMove="DragBorder_MouseMove" x:Name="DragBorder" Cursor="Hand" Padding="20" Grid.ColumnSpan="4" >
+        <Border Grid.Row="2" MouseMove="DragBorder_MouseMove" x:Name="DragBorder" Cursor="SizeAll" Padding="20" Grid.ColumnSpan="4" >
             <Canvas Width="128" Height="128" Background="#2471A3">
                 <Canvas.Clip>
                     <RectangleGeometry Rect="0,0,128,128" />

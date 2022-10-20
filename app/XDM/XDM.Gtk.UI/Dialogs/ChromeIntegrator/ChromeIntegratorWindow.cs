@@ -19,7 +19,7 @@ namespace XDM.GtkUI.Dialogs.ChromeIntegrator
         [UI] private TextView TxtGuide;
         [UI] private Button BtnClose;
         [UI] private Button BtnHelp;
-
+        [UI] private Label Label1;
 
         private WindowGroup windowGroup;
 
@@ -38,6 +38,18 @@ namespace XDM.GtkUI.Dialogs.ChromeIntegrator
             BtnHelp!.Clicked += BtnHelp_Clicked;
             BtnClose!.Clicked += BtnClose_Clicked;
             TxtGuide!.WrapMode = WrapMode.Word;
+
+            Drag.SourceSet(Label1, Gdk.ModifierType.Button1Mask,
+                new TargetEntry[] { new TargetEntry("text/uri-list", (TargetFlags)0, 1) }, Gdk.DragAction.Copy);
+            Label1!.DragDataGet += Label1_DragDataGet;
+        }
+
+        private void Label1_DragDataGet(object o, DragDataGetArgs args)
+        {
+            if (args.Info == 1)
+            {
+                args.SelectionData.SetUris(new string[] { "file://var" });
+            }
         }
 
         private void BtnClose_Clicked(object? sender, EventArgs e)

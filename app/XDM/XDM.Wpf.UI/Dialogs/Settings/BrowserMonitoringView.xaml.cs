@@ -116,7 +116,25 @@ namespace XDM.Wpf.UI.Dialogs.Settings
 
         private void BtnFirefox_Click(object sender, RoutedEventArgs e)
         {
-            BrowserButtonClick(Browser.Firefox);
+            try
+            {
+                InstallNativeMessagingHost(Browser.Firefox);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error installing native host");
+                MessageBox.Show(TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
+                return;
+            }
+            try
+            {
+                BrowserLauncher.LaunchFirefox(Links.FirefoxExtensionUrl, null);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error launching Firefox");
+                MessageBox.Show($"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Firefox");
+            }
         }
 
         private void BtnEdge_Click(object sender, RoutedEventArgs e)

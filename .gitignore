@@ -364,3 +364,5 @@ app/XDM/XDM.Win.Installer/net4.6.0.wxs
 app/XDM/XDM.Win.Installer/net4.6.0.wxs
 app/packaging/publish.zip
 app/XDM/XDM.Linux.Installer/BIN.zip
+app/XDM/XDM.Win.Installer/xdm-helper-chrome/
+app/XDM/XDM.Linux.Installer/xdm-helper-chrome/

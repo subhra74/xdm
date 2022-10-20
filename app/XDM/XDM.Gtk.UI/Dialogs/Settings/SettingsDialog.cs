@@ -344,101 +344,22 @@ namespace XDM.GtkUI.Dialogs.Settings
 
         private void BtnOpera_Clicked(object? sender, EventArgs e)
         {
-            try
-            {
-                NativeMessagingHostConfigurer.InstallNativeMessagingHostForLinux(Browser.Chrome);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error installing native host");
-                GtkHelper.ShowMessageBox(this, TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
-                return;
-            }
-
-            try
-            {
-                BrowserLauncher.LaunchOperaBrowser(Links.ManualExtensionInstallGuideUrl);
-                ShowIntegrationWindow();
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error launching Opera");
-                GtkHelper.ShowMessageBox(this, $"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Opera");
-            }
+            BrowserButtonClick(Browser.Opera);
         }
 
         private void BtnBrave_Clicked(object? sender, EventArgs e)
         {
-            try
-            {
-                NativeMessagingHostConfigurer.InstallNativeMessagingHostForLinux(Browser.Chrome);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error installing native host");
-                GtkHelper.ShowMessageBox(this, TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
-                return;
-            }
-
-            try
-            {
-                BrowserLauncher.LaunchBraveBrowser(Links.ManualExtensionInstallGuideUrl);
-                ShowIntegrationWindow();
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error launching Brave");
-                GtkHelper.ShowMessageBox(this, $"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Brave Browser");
-            }
+            BrowserButtonClick(Browser.Brave);
         }
 
         private void BtnVivaldi_Clicked(object? sender, EventArgs e)
         {
-            try
-            {
-                NativeMessagingHostConfigurer.InstallNativeMessagingHostForLinux(Browser.Chrome);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error installing native host");
-                GtkHelper.ShowMessageBox(this, TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
-                return;
-            }
-
-            try
-            {
-                BrowserLauncher.LaunchVivaldi(Links.ManualExtensionInstallGuideUrl);
-                ShowIntegrationWindow();
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error launching Vivaldi");
-                GtkHelper.ShowMessageBox(this, $"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Vivaldi");
-            }
+            BrowserButtonClick(Browser.Vivaldi);
         }
 
         private void BtnEdge_Clicked(object? sender, EventArgs e)
         {
-            try
-            {
-                NativeMessagingHostConfigurer.InstallNativeMessagingHostForLinux(Browser.Chrome);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error installing native host");
-                GtkHelper.ShowMessageBox(this, TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
-                return;
-            }
-
-            try
-            {
-                BrowserLauncher.LaunchMicrosoftEdge(Links.ChromeExtensionUrl);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error Microsoft Edge");
-                GtkHelper.ShowMessageBox(this, $"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Microsoft Edge");
-            }
+            BrowserButtonClick(Browser.MSEdge);
         }
 
         private void BtnFirefox_Clicked(object? sender, EventArgs e)
@@ -456,7 +377,7 @@ namespace XDM.GtkUI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchFirefox(Links.FirefoxExtensionUrl);
+                BrowserLauncher.LaunchFirefox(Links.FirefoxExtensionUrl, null);
             }
             catch (Exception ex)
             {
@@ -471,34 +392,65 @@ namespace XDM.GtkUI.Dialogs.Settings
             wnd.Show();
         }
 
-        private void BtnChrome_Clicked(object? sender, EventArgs e)
+        private void KillExistingSessions(Browser browser, out string? exeLocation)
         {
+            exeLocation = null;
+            if (!GtkHelper.ShowConfirmMessageBox(this, TextResource.GetText("MSG_KILL_BROWSER"), "XDM"))
+            {
+                return;
+            }
+            foreach (var exeName in NativeMessagingHostConfigurer.GetBrowserExecutableName(browser))
+            {
+                PlatformHelper.KillAll($"{exeName}", out exeLocation);
+            }
+        }
+
+        private void BrowserButtonClick(Browser browser)
+        {
+            //KillExistingSessions(browser, out string? exeLocation);
+
             try
             {
-                NativeMessagingHostConfigurer.InstallNativeMessagingHostForLinux(Browser.Chrome);
+                NativeMessagingHostConfigurer.InstallNativeMessagingHostForLinux(browser);
             }
             catch (Exception ex)
             {
                 Log.Debug(ex, "Error installing native host");
                 GtkHelper.ShowMessageBox(this, TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
                 return;
+
             }
 
             try
             {
-                BrowserLauncher.LaunchGoogleChrome(Links.ManualExtensionInstallGuideUrl);
-                ShowIntegrationWindow();
+                BrowserLauncher.LaunchBrowser(browser, Links.ManualExtensionInstallGuideUrl, null);
+                //var args = "chrome://extensions/";
+                //var extLoaderPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ext-loader");
+                //var extensionLoadRequest = false;
+                //if (System.IO.Directory.Exists(extLoaderPath))
+                //{
+                //    args = $"--load-extension=\"{extLoaderPath}\"";
+                //    extensionLoadRequest = true;
+                //}
+                //var sucess = BrowserLauncher.LaunchBrowser(browser, args, exeLocation);
+                //var wnd = ChromeIntegratorWindow.CreateFromGladeFile();// new IntegrationWindow(browser, sucess && extensionLoadRequest);
+                //wnd.Show();
             }
             catch (Exception ex)
             {
-                Log.Debug(ex, "Error launching Google Chrome");
-                GtkHelper.ShowMessageBox(this, $"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Google Chrome");
+                Log.Debug(ex, "Error launching " + browser);
+                GtkHelper.ShowMessageBox(this, $"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} {browser}");
             }
+        }
+
+        private void BtnChrome_Clicked(object? sender, EventArgs e)
+        {
+            BrowserButtonClick(Browser.Chrome);
         }
 
         private void VideoWikiLink_Clicked(object? sender, EventArgs e)
         {
-            PlatformHelper.OpenBrowser(Links.VideoDownloadTutorialUrl);
+            BrowserButtonClick(Browser.Vivaldi);
         }
 
         private void LoadTexts()
