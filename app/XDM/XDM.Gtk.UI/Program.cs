@@ -72,7 +72,7 @@ namespace XDM.GtkUI
             AppContext.SetSwitch(DisableCachingName, true);
             AppContext.SetSwitch(DontEnableSchUseStrongCryptoName, true);
 
-            TextResource.Load(Config.Instance.Language);
+            LoadLanguageTexts();
 
             var debugMode = Environment.GetEnvironmentVariable("XDM_DEBUG_MODE");
             if (!string.IsNullOrEmpty(debugMode) && debugMode == "1")
@@ -144,6 +144,29 @@ namespace XDM.GtkUI
         {
             Log.Debug("GLib ExceptionManager_UnhandledException: " + args.ExceptionObject);
             args.ExitApplication = false;
+        }
+
+        private static void LoadLanguageTexts()
+        {
+            var indexFile = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Lang\index.txt");
+            if (System.IO.File.Exists(indexFile))
+            {
+                var lines = System.IO.File.ReadAllLines(indexFile);
+                foreach (var line in lines)
+                {
+                    var index = line.IndexOf("=");
+                    if (index > 0)
+                    {
+                        var name = line.Substring(0, index);
+                        var value = line.Substring(index + 1);
+                        if (name == Config.Instance.Language)
+                        {
+                            TextResource.Load(value);
+                            break;
+                        }
+                    }
+                }
+            }
         }
     }
 }
