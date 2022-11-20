@@ -225,6 +225,7 @@ namespace XDM.Core
 
         public static void LoadConfig(string? path = null)
         {
+            Log.Debug("Loading config...");
             DataDir = path ?? Path.Combine(
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "XtremeDownloadManager"), "Data");
             AppDir = path ?? Path.Combine(

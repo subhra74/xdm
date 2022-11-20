@@ -12,7 +12,7 @@ namespace XDM.Core
 {
     public static class ArgsProcessor
     {
-        public static string[] SingleSwitches = new string[] { "--background", "--first-run", "--restore-window", "--quit", "--media" };
+        public static string[] SingleSwitches = new string[] { "--background", "--first-run", "--restore-window", "--quit", "--media", "--media-clear" };
         public static void Process(IEnumerable<string> commandArgs)
         {
             try
@@ -30,6 +30,17 @@ namespace XDM.Core
                     var url = args["--media-tab-url"][0];
                     var title = args["--media-tab-title"][0];
                     ApplicationContext.VideoTracker.UpdateMediaTitle(url, title);
+                    return;
+                }
+                if (args.ContainsKey("--media-vid"))
+                {
+                    var vid = args["--media-vid"][0];
+                    ApplicationContext.VideoTracker.AddVideoDownload(vid);
+                    return;
+                }
+                if (args.ContainsKey("--media-clear"))
+                {
+                    ApplicationContext.VideoTracker.ClearVideoList();
                     return;
                 }
                 if (args.ContainsKey("--url") && args["--url"].Count == 1)

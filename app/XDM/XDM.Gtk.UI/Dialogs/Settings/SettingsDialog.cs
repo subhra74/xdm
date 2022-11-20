@@ -36,7 +36,7 @@ namespace XDM.GtkUI.Dialogs.Settings
         [UI]
         private LinkButton VideoWikiLink;
         [UI]
-        Button BtnChrome, BtnFirefox, BtnEdge, BtnOpera, BtnBrave, BtnVivaldi, BtnDefault1, BtnDefault2,
+        Button BtnChrome, BtnFirefox, BtnEdge, BtnOpera, BtnBrave, BtnVivaldi, BtnChromium, BtnYandex, BtnDefault1, BtnDefault2,
             BtnDefault3, CatAdd, CatEdit, CatDel, CatDef, AddPass, EditPass, DelPass, BtnUserAgentReset,
             BtnCopy1, BtnCopy2, BtnCancel, BtnOK, BtnDownloadFolderBrowse, BtnTempFolderBrowse, BtnBrowse;
         [UI]
@@ -418,7 +418,6 @@ namespace XDM.GtkUI.Dialogs.Settings
                 Log.Debug(ex, "Error installing native host");
                 GtkHelper.ShowMessageBox(this, TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
                 return;
-
             }
 
             try

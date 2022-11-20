@@ -334,7 +334,7 @@
                               </packing>
                             </child>
                             <child>
-                              <!-- n-columns=2 n-rows=3 -->
+                              <!-- n-columns=2 n-rows=4 -->
                               <object class="GtkGrid">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
@@ -414,6 +414,30 @@
                                   <packing>
                                     <property name="left-attach">1</property>
                                     <property name="top-attach">2</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkButton" id="BtnChromium">
+                                    <property name="label" translatable="yes">Chromium</property>
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">True</property>
+                                    <property name="receives-default">True</property>
+                                  </object>
+                                  <packing>
+                                    <property name="left-attach">0</property>
+                                    <property name="top-attach">3</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkButton" id="BtnYandex">
+                                    <property name="label" translatable="yes">Yandex</property>
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">True</property>
+                                    <property name="receives-default">True</property>
+                                  </object>
+                                  <packing>
+                                    <property name="left-attach">1</property>
+                                    <property name="top-attach">3</property>
                                   </packing>
                                 </child>
                               </object>

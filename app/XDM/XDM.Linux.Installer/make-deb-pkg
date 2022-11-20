@@ -2,7 +2,7 @@
 
 #Please place all the published files under ./binary-source directory
 
-VERSION=8.0.10
+VERSION=8.0.12
 SRC_DIR=binary-source
 
 rm -rf "xdman_gtk_${VERSION}_amd64"

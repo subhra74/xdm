@@ -195,9 +195,31 @@ namespace XDM.Core.BrowserMonitoring
             {
                 manifestPath = Path.Combine(home, browser == Browser.Firefox ?
                         $".mozilla/native-messaging-hosts/{appName}.json" :
-                        $".config/google-chrome/NativeMessagingHosts/{appName}.json");
+                        $"{GetLinuxBrowserExecutablePath(browser)}/{appName}.json");
             }
             CreateMessagingHostManifest(browser, appName, manifestPath);
+        }
+
+        public static string? GetLinuxBrowserExecutablePath(Browser browser)
+        {
+            switch (browser)
+            {
+                case Browser.Chrome:
+                    return ".config/google-chrome/NativeMessagingHosts";
+                case Browser.Chromium:
+                    return ".config/chromium/NativeMessagingHosts";
+                case Browser.MSEdge:
+                    return ".config/microsoft-edge/NativeMessagingHosts";
+                case Browser.Brave:
+                    return ".config/BraveSoftware/Brave-Browser/NativeMessagingHosts";
+                case Browser.Vivaldi:
+                    return ".config/vivaldi/NativeMessagingHosts";
+                case Browser.Opera:
+                    return ".config/opera/NativeMessagingHosts";
+                default:
+                    break;
+            }
+            return null;
         }
 #endif
 
@@ -227,6 +249,6 @@ namespace XDM.Core.BrowserMonitoring
 
     public enum Browser
     {
-        Chrome, Firefox, MSEdge, Brave, Vivaldi, Opera
+        Chrome, Firefox, MSEdge, Brave, Vivaldi, Opera, Chromium
     }
 }

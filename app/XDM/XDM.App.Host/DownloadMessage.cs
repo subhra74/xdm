@@ -19,6 +19,8 @@ namespace XDM.App.Host
         public RequestData? RequestData { get; set; }
         [JsonProperty(PropertyName = "tab_update")]
         public TabInfo? TabUpdate { get; set; }
+        public string? Vid { get; set; }
+        public bool? Clear { get; set; }
         //[JsonProperty(PropertyName = "download_data")]
         //public DownloadRequestData downloadData;
     }

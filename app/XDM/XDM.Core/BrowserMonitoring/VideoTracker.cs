@@ -30,7 +30,7 @@ namespace XDM.Core.BrowserMonitoring
             hlsVideoList.Clear();
             dashVideoList.Clear();
             videoList.Clear();
-            //ApplicationContext.BroadcastConfigChange();
+            ApplicationContext.BroadcastConfigChange();
         }
 
         private string GenerateUpdatedFileName(string oldFile, string newName)
@@ -166,7 +166,7 @@ namespace XDM.Core.BrowserMonitoring
                     });
                 }
                 ApplicationContext.PlatformUIService.ShowMediaNotification();
-                //ApplicationContext.BroadcastConfigChange();
+                ApplicationContext.BroadcastConfigChange();
             }
         }
 
@@ -185,7 +185,7 @@ namespace XDM.Core.BrowserMonitoring
                     });
                 }
                 ApplicationContext.PlatformUIService.ShowMediaNotification();
-                //ApplicationContext.BroadcastConfigChange();
+                ApplicationContext.BroadcastConfigChange();
             }
         }
 
@@ -205,7 +205,7 @@ namespace XDM.Core.BrowserMonitoring
                     });
                 }
                 ApplicationContext.PlatformUIService.ShowMediaNotification();
-                //ApplicationContext.BroadcastConfigChange();
+                ApplicationContext.BroadcastConfigChange();
             }
         }
 
@@ -224,7 +224,7 @@ namespace XDM.Core.BrowserMonitoring
                     });
                 }
                 ApplicationContext.PlatformUIService.ShowMediaNotification();
-                //ApplicationContext.BroadcastConfigChange();
+                ApplicationContext.BroadcastConfigChange();
             }
         }
 
@@ -241,7 +241,7 @@ namespace XDM.Core.BrowserMonitoring
                     MediaInfo = new MediaInfo(id, info.File, displayInfo.DescriptionText, DateTime.Now)
                 });
                 ApplicationContext.PlatformUIService.ShowMediaNotification();
-                //ApplicationContext.BroadcastConfigChange();
+                ApplicationContext.BroadcastConfigChange();
             }
         }
 
@@ -257,7 +257,7 @@ namespace XDM.Core.BrowserMonitoring
                     MediaInfo = new MediaInfo(id, info.File, displayInfo.DescriptionText, DateTime.Now)
                 });
                 ApplicationContext.PlatformUIService.ShowMediaNotification();
-                //ApplicationContext.BroadcastConfigChange();
+                ApplicationContext.BroadcastConfigChange();
             }
         }
 
@@ -274,7 +274,7 @@ namespace XDM.Core.BrowserMonitoring
                     MediaInfo = new MediaInfo(id, info.File, displayInfo.DescriptionText, DateTime.Now)
                 });
                 ApplicationContext.PlatformUIService.ShowMediaNotification();
-                //ApplicationContext.BroadcastConfigChange();
+                ApplicationContext.BroadcastConfigChange();
             }
         }
 
@@ -291,7 +291,7 @@ namespace XDM.Core.BrowserMonitoring
                     MediaInfo = new MediaInfo(id, info.File, displayInfo.DescriptionText, DateTime.Now)
                 });
                 ApplicationContext.PlatformUIService.ShowMediaNotification();
-                //ApplicationContext.BroadcastConfigChange();
+                ApplicationContext.BroadcastConfigChange();
             }
         }
 

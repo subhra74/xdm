@@ -114,6 +114,16 @@ namespace XDM.App.Host
             {
                 return;
             }
+            if (msg.Vid != null)
+            {
+                SendVideoId(msg.Vid);
+                return;
+            }
+            if (msg.Clear.HasValue && msg.Clear.Value)
+            {
+                SendClearCmd();
+                return;
+            }
             if (msg.TabUpdate != null)
             {
                 SendTabUpdate(msg.TabUpdate);
@@ -208,6 +218,29 @@ namespace XDM.App.Host
                 arguments.Add(data.TabUrl);
             }
             arguments.Add(data.Url);
+            Debug(string.Join(",", arguments));
+            _ipcClient!.Send(arguments);
+        }
+
+        private static void SendVideoId(string vid)
+        {
+            Debug("########Going to send vid id...");
+            if (string.IsNullOrEmpty(vid))
+            {
+                return;
+            }
+            var arguments = new List<string>();
+            arguments.Add("--media-vid");
+            arguments.Add(vid);
+            Debug(string.Join(",", arguments));
+            _ipcClient!.Send(arguments);
+        }
+
+        private static void SendClearCmd()
+        {
+            Debug("########Going to send clear command...");
+            var arguments = new List<string>();
+            arguments.Add("--media-clear");
             Debug(string.Join(",", arguments));
             _ipcClient!.Send(arguments);
         }

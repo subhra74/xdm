@@ -27,6 +27,8 @@ namespace XDM.Core.Ipc
 
         public void Start()
         {
+            ApplicationContext.VideoTracker.MediaAdded += VideoTracker_MediaAdded;
+            ApplicationContext.VideoTracker.MediaUpdated += VideoTracker_MediaUpdated;
             this._listener = new TcpListener(IPAddress.Loopback, _port);
             this._listener.Start();
             new Thread(() =>
@@ -38,6 +40,16 @@ namespace XDM.Core.Ipc
                     ProcessRequest(tcp);
                 }
             }).Start();
+        }
+
+        private void VideoTracker_MediaUpdated(object sender, BrowserMonitoring.MediaInfoEventArgs e)
+        {
+            SendConfig();
+        }
+
+        private void VideoTracker_MediaAdded(object sender, BrowserMonitoring.MediaInfoEventArgs e)
+        {
+            SendConfig();
         }
 
         private void ProcessRequest(TcpClient tcp)
@@ -150,6 +162,27 @@ namespace XDM.Core.Ipc
                 foreach (var ext in new string[] { ".youtube.", "/watch?v=" })
                 {
                     writer.WriteValue(ext);
+                }
+                writer.WriteEndArray();
+
+                var videoList = ApplicationContext.VideoTracker.GetVideoList();
+
+                writer.WritePropertyName("videoList");
+                writer.WriteStartArray();
+                foreach (var video in videoList)
+                {
+                    writer.WriteStartObject();
+
+                    writer.WritePropertyName("id");
+                    writer.WriteValue(video.ID);
+
+                    writer.WritePropertyName("text");
+                    writer.WriteValue(video.Name);
+
+                    writer.WritePropertyName("info");
+                    writer.WriteValue(video.Description);
+
+                    writer.WriteEndObject();
                 }
                 writer.WriteEndArray();
 

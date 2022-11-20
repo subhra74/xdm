@@ -25,7 +25,7 @@ namespace XDM.Core.BrowserMonitoring
 
         private static void ApplicationContext_ApplicationEvent(object? sender, ApplicationEvent e)
         {
-            if (e.EventType == "ConfigChanged")
+            if (e.EventType == "ConfigChanged" || e.EventType == "MediaUpdate")
             {
                 ipcServer.SendConfig();
             }

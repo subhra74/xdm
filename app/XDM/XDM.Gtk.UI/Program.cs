@@ -18,6 +18,14 @@ namespace XDM.GtkUI
 
         static void Main(string[] args)
         {
+            Config.LoadConfig();
+            var debugMode = Environment.GetEnvironmentVariable("XDM_DEBUG_MODE");
+            if (!string.IsNullOrEmpty(debugMode) && debugMode == "1")
+            {
+                var logFile = System.IO.Path.Combine(Config.AppDir, "log.txt");
+                Log.InitFileBasedTrace(System.IO.Path.Combine(Config.AppDir, "log.txt"));
+            }
+            Log.Debug("Application_Startup");
             Environment.SetEnvironmentVariable("GTK_USE_PORTAL", "1");
             Gtk.Application.Init("xdm-app", ref args);
             GLib.ExceptionManager.UnhandledException += ExceptionManager_UnhandledException;
@@ -72,15 +80,9 @@ namespace XDM.GtkUI
             AppContext.SetSwitch(DisableCachingName, true);
             AppContext.SetSwitch(DontEnableSchUseStrongCryptoName, true);
 
-            LoadLanguageTexts();
+            Log.Debug("Loading languages...");
 
-            var debugMode = Environment.GetEnvironmentVariable("XDM_DEBUG_MODE");
-            if (!string.IsNullOrEmpty(debugMode) && debugMode == "1")
-            {
-                var logFile = System.IO.Path.Combine(Config.AppDir, "log.txt");
-                Log.InitFileBasedTrace(System.IO.Path.Combine(Config.AppDir, "log.txt"));
-            }
-            Log.Debug("Application_Startup");
+            LoadLanguageTexts();
 
             if (Config.Instance.AllowSystemDarkTheme)
             {
@@ -92,6 +94,8 @@ namespace XDM.GtkUI
             var app = new XDMApp();
             var win = new MainWindow();
 
+            Log.Debug("Configuring app context...");
+
             ApplicationContext.Configurer()
                 .RegisterApplicationWindow(win)
                 .RegisterApplication(app)
@@ -102,42 +106,13 @@ namespace XDM.GtkUI
                 .RegisterPlatformUIService(new GtkPlatformUIService())
                 .Configure();
 
+            Log.Debug("Processing arguments...");
+
             ArgsProcessor.Process(args);
 
-            //var t = new System.Threading.Thread(() =>
-            //  {
-            //      while (true)
-            //      {
-            //          System.Threading.Thread.Sleep(5000);
-            //          Console.WriteLine("Trigger GC");
-            //          GC.Collect();
-            //      }
-            //  });
-            //t.Start();
+            Log.Debug("Gtk Run...");
+
             Gtk.Application.Run();
-
-            //var app = new XDM.Core.XDM.Core();
-            //var appWin = new AppWinPeer(app);
-            //appWin.ShowAll();
-            //Application.Run();
-
-
-            //            Environment.SetEnvironmentVariable("PANGOCAIRO_BACKEND", "fc", EnvironmentVariableTarget.User);
-            //            //Console.WriteLine(Environment.GetEnvironmentVariable("PANGOCAIRO_BACKEND"));
-            //            //var arr = new string[] {  "PANGOCAIRO_BACKEND=fc" };
-            //            Application.Init();// "app", ref arr);
-            //            Gtk.Settings.Default.ThemeName = "Adwaita";
-            //            Gtk.Settings.Default.ApplicationPreferDarkTheme = true;
-
-            //            App app = new App();
-
-
-
-            //            var appWin = new AppWin();
-            //            Console.WriteLine("Starting show all");
-            //            appWin.Show();
-            //            Console.WriteLine("Finished show all");
-            //            Application.Run();
         }
 
         private static void ExceptionManager_UnhandledException(GLib.UnhandledExceptionArgs args)
@@ -148,24 +123,33 @@ namespace XDM.GtkUI
 
         private static void LoadLanguageTexts()
         {
-            var indexFile = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Lang\index.txt");
-            if (System.IO.File.Exists(indexFile))
+            Log.Debug("Language loading ...");
+            try
             {
-                var lines = System.IO.File.ReadAllLines(indexFile);
-                foreach (var line in lines)
+                var indexFile = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Lang\index.txt");
+                if (System.IO.File.Exists(indexFile))
                 {
-                    var index = line.IndexOf("=");
-                    if (index > 0)
+                    var lines = System.IO.File.ReadAllLines(indexFile);
+                    foreach (var line in lines)
                     {
-                        var name = line.Substring(0, index);
-                        var value = line.Substring(index + 1);
-                        if (name == Config.Instance.Language)
+                        var index = line.IndexOf("=");
+                        if (index > 0)
                         {
-                            TextResource.Load(value);
-                            break;
+                            var name = line.Substring(0, index);
+                            var value = line.Substring(index + 1);
+                            if (name == Config.Instance.Language)
+                            {
+                                TextResource.Load(value);
+                                break;
+                            }
                         }
                     }
                 }
+                Log.Debug("Language loaded.");
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, ex.Message);
             }
         }
     }

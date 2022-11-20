@@ -38,7 +38,7 @@ namespace XDM.Core.Util
                 }
             }
 
-            throw new FileNotFoundException("Could not launch browser as it is not found in the system");
+            return false;
         }
 
         public static bool LaunchBrowser(Browser browser, string args, string? executableLocation)
