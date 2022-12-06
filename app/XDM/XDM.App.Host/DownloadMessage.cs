@@ -1,9 +1,5 @@
 ﻿using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace XDM.App.Host
 {
@@ -21,8 +17,6 @@ namespace XDM.App.Host
         public TabInfo? TabUpdate { get; set; }
         public string? Vid { get; set; }
         public bool? Clear { get; set; }
-        //[JsonProperty(PropertyName = "download_data")]
-        //public DownloadRequestData downloadData;
     }
 
     public class RequestData
@@ -41,11 +35,4 @@ namespace XDM.App.Host
         public string Url { get; set; }
         public string Title { get; set; }
     }
-
-    //public class DownloadRequestData
-    //{
-    //    public string Url { get; set; }
-    //    public string FileName { get; set; }
-    //    public string Referer { get; set; }
-    //}
 }

@@ -1,12 +1,9 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using TraceLog;
 using Translations;
 using XDM.Core.UI;
-using XDM.Core;
 using XDM.Core.DataAccess;
 using XDM.Core.Downloader;
 using XDM.Core.Util;

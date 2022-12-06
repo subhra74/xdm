@@ -70,6 +70,8 @@ namespace XDM.Wpf.UI.Dialogs.ChromeIntegrator
             this.Page1.Visibility = page == 0 ? Visibility.Visible : Visibility.Collapsed;
             this.Page2.Visibility = page == 1 ? Visibility.Visible : Visibility.Collapsed;
             this.Page3.Visibility = page == 2 ? Visibility.Visible : Visibility.Collapsed;
+            this.BtnNext.Visibility = page == 2 ? Visibility.Collapsed : Visibility.Visible;
+            this.BtnBack.Visibility = page == 0 ? Visibility.Collapsed : Visibility.Visible;
         }
 
         private void BtnNext_Click(object sender, RoutedEventArgs e)

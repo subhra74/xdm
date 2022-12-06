@@ -21,11 +21,6 @@ namespace XDM.App.Host
         static void Main(string[] args)
         {
             Trace.WriteLine($"[xdm-native-messaging-host] startup");
-            //if (args.Length == 2 && args[0] == "--install-native-messaging-host")
-            //{
-            //    InstallNativeHost(args);
-            //    return;
-            //}
 
             var debugMode = Environment.GetEnvironmentVariable("XDM_DEBUG_MODE");
             if (!string.IsNullOrEmpty(debugMode) && debugMode == "1")
@@ -58,6 +53,7 @@ namespace XDM.App.Host
                 Debug("Mutex open failed, spawning xdm process...");
                 CreateXDMInstance(isFirefox);
             }
+
             var connected = false;
             for (var i = 0; i < 5; i++)
             {
@@ -74,14 +70,13 @@ namespace XDM.App.Host
                     Thread.Sleep(1000);
                 }
             }
+
             if (!connected)
             {
                 Debug("Unable to connect to XDM after 5 attempts, giving up...");
                 Environment.Exit(1);
             }
-            //Debug("sending1....");
-            //_ipcClient!.Send(new List<string>());
-            //Debug("sending2....");
+
             try
             {
                 ReadConfigUpdateFromXDM();
@@ -110,40 +105,50 @@ namespace XDM.App.Host
 
         public static void SendArgsToXDM(DownloadMessage? msg)
         {
+            Debug("SendArgsToXDM...");
+
             if (msg == null)
             {
                 return;
             }
+
             if (msg.Vid != null)
             {
+                Debug($"vid: {msg.Vid}");
                 SendVideoId(msg.Vid);
                 return;
             }
+
             if (msg.Clear.HasValue && msg.Clear.Value)
             {
                 SendClearCmd();
                 return;
             }
+
             if (msg.TabUpdate != null)
             {
                 SendTabUpdate(msg.TabUpdate);
                 return;
             }
+
             if (msg.RequestData != null)
             {
                 SendHeaderData(msg.RequestData);
                 return;
             }
+
             if (msg.Url == null)
             {
                 return;
             }
+
             var arguments = new List<string>();
             if (msg.Cookie != null)
             {
                 arguments.Add("--cookie");
                 arguments.Add(msg.Cookie);
             }
+
             if (msg.Headers != null)
             {
                 foreach (var header in msg.Headers)
@@ -152,16 +157,19 @@ namespace XDM.App.Host
                     arguments.Add(header);
                 }
             }
+
             if (msg.FileSize > 0)
             {
                 arguments.Add("--known-file-size");
                 arguments.Add(msg.FileSize + "");
             }
+
             if (!string.IsNullOrEmpty(msg.MimeType))
             {
                 arguments.Add("--known-mime-type");
                 arguments.Add(msg.MimeType!);
             }
+
             if (!string.IsNullOrEmpty(msg.FileName))
             {
                 arguments.Add("--output");
