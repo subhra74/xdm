@@ -60,6 +60,14 @@ namespace XDM.Core.Ipc
                 {
                     var stream = tcp.GetStream();
                     SendConfig(tcp);
+                    try
+                    {
+                        ApplicationContext.ExtensionRegistered();
+                    }
+                    catch(Exception ex)
+                    {
+                        Log.Debug(ex, ex.Message);
+                    }
                     while (true)
                     {
                         Log.Debug("Receiving from native-host");

@@ -61,7 +61,7 @@ Release:    	1%{?dist}
 Summary:    	Xtreme Download Manager
 AutoReqProv: 	no
 Requires:   	gtk3 >= 3.22
-Requires:   	ffmpeg-free
+Requires:   	(ffmpeg-free or ffmpeg)
 
 Group:      	System Environment/Base
 License:    	GPLv3+

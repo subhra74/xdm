@@ -74,7 +74,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
 
         private void BrowserButtonClick(Browser browser)
         {
-            KillExistingSessions(browser, out string? exeLocation);
+            //KillExistingSessions(browser, out string? exeLocation);
 
             try
             {
@@ -89,16 +89,16 @@ namespace XDM.Wpf.UI.Dialogs.Settings
 
             try
             {
-                var args = "chrome://extensions/";
-                var extLoaderPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ext-loader");
-                var extensionLoadRequest = false;
-                if (System.IO.Directory.Exists(extLoaderPath))
-                {
-                    args = $"--load-extension=\"{extLoaderPath}\"";
-                    extensionLoadRequest = true;
-                }
-                var sucess = BrowserLauncher.LaunchBrowser(browser, args, exeLocation);
-                var wnd = new IntegrationWindow(browser, sucess && extensionLoadRequest);
+                //var args = "chrome://extensions/";
+                //var extLoaderPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ext-loader");
+                //var extensionLoadRequest = false;
+                //if (System.IO.Directory.Exists(extLoaderPath))
+                //{
+                //    args = $"--load-extension=\"{extLoaderPath}\"";
+                //    extensionLoadRequest = true;
+                //}
+                //var sucess = BrowserLauncher.LaunchBrowser(browser, args, exeLocation);
+                var wnd = new IntegrationWindow(browser,false /*sucess && extensionLoadRequest*/);
                 wnd.Show();
             }
             catch (Exception ex)

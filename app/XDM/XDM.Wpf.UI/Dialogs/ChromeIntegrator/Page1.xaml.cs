@@ -25,33 +25,38 @@ namespace XDM.Wpf.UI.Dialogs.ChromeIntegrator
         public Page1()
         {
             InitializeComponent();
+            this.Img.Source = new BitmapImage(
+                    new Uri(
+                    System.IO.Path.Combine(
+                    System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "images"),
+                    "chrome-addressbar.jpg")));
         }
 
-        private void Viewbox_MouseMove(object sender, MouseEventArgs e)
-        {
-            //MessageBox.Show("ss");
-            if (e.LeftButton == MouseButtonState.Pressed)
-            {
-                var browser = "chrome://extensions";
-                switch (this.Browser)
-                {
-                    case Browser.Brave:
-                        browser = "brave://extensions";
-                        break;
-                    case Browser.Vivaldi:
-                        browser = "vivaldi://extensions";
-                        break;
-                }
-                // MessageBox.Show("asda");
-                var data = new DataObject();
-                data.SetData(DataFormats.Text, browser);
+        //private void Viewbox_MouseMove(object sender, MouseEventArgs e)
+        //{
+        //    //MessageBox.Show("ss");
+        //    if (e.LeftButton == MouseButtonState.Pressed)
+        //    {
+        //        var browser = "chrome://extensions";
+        //        switch (this.Browser)
+        //        {
+        //            case Browser.Brave:
+        //                browser = "brave://extensions";
+        //                break;
+        //            case Browser.Vivaldi:
+        //                browser = "vivaldi://extensions";
+        //                break;
+        //        }
+        //        // MessageBox.Show("asda");
+        //        var data = new DataObject();
+        //        data.SetData(DataFormats.Text, browser);
 
-                // Initiate the drag-and-drop operation.
-                DragDrop.DoDragDrop(this.DragBorder, data, DragDropEffects.Copy | DragDropEffects.Move);
-                //DragDrop.DoDragDrop(vb,
-                //                     "chrome://extensions",
-                //                     DragDropEffects.Copy);
-            }
-        }
+        //        // Initiate the drag-and-drop operation.
+        //        DragDrop.DoDragDrop(this.DragBorder, data, DragDropEffects.Copy | DragDropEffects.Move);
+        //        //DragDrop.DoDragDrop(vb,
+        //        //                     "chrome://extensions",
+        //        //                     DragDropEffects.Copy);
+        //    }
+        //}
     }
 }

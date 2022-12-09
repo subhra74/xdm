@@ -10,10 +10,8 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <TextBlock Grid.Row="0" Text="{StaticResource MSG_PAGE2_TITLE}" FontSize="14" Margin="10" TextWrapping="Wrap" TextAlignment="Center"/>
-        <TextBlock Grid.Row="1" Text="{StaticResource MSG_PAGE2_TEXT1}" Margin="10" TextWrapping="Wrap" TextAlignment="Center" />
-        <Image Name="Img" Grid.Row="3"/>
+        <TextBlock Grid.Row="0" Text="{StaticResource MSG_PAGE2_TEXT1}" Margin="10" TextWrapping="Wrap" TextAlignment="Center" />
+        <Image Name="Img" Grid.Row="1"/>
     </Grid>
 </UserControl>

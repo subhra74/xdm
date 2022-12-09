@@ -24,7 +24,7 @@ namespace XDM.Wpf.UI.Dialogs.ChromeIntegrator
         public Page3()
         {
             InitializeComponent();
-            TxtLocation.Text = $"{TextResource.GetText("MSG_PAGE3_TEXT2")} {System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory)}";
+            TxtLocation.Text = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "chrome-extension");
         }
 
         private void DragBorder_MouseMove(object sender, MouseEventArgs e)
@@ -36,7 +36,7 @@ namespace XDM.Wpf.UI.Dialogs.ChromeIntegrator
                 data.SetData(DataFormats.FileDrop, new string[] { System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "chrome-extension") });
 
                 // Initiate the drag-and-drop operation.
-                DragDrop.DoDragDrop(this.DragBorder, data, DragDropEffects.Copy );
+                DragDrop.DoDragDrop(this.DragBorder, data, DragDropEffects.Copy);
                 //DragDrop.DoDragDrop(vb,
                 //                     "chrome://extensions",
                 //                     DragDropEffects.Copy);

@@ -552,7 +552,7 @@ namespace XDM.Core.BrowserMonitoring
                     Quality = displayText,
                     Size = size,
                     CreationTime = DateTime.Now,
-                    TabUrl=message.TabUrl
+                    TabUrl = message.TabUrl
                 }, video);
             }
             catch (Exception ex)
@@ -785,16 +785,16 @@ namespace XDM.Core.BrowserMonitoring
 
                 foreach (var header in message.RequestHeaders)
                 {
-                    headers.Add(header.Key, header.Value);
+                    headers[header.Key] = header.Value;
                     if (header.Key.ToLowerInvariant() == "accept")
                     {
                         acceptHeaderAdded = true;
                     }
                 }
 
-                if (acceptHeaderAdded)
+                if (!acceptHeaderAdded)
                 {
-                    headers.Add("Accept", new List<string> { "*/*" });
+                    headers["Accept"] = new List<string> { "*/*" };
                 }
 
                 byte[]? body = null;
