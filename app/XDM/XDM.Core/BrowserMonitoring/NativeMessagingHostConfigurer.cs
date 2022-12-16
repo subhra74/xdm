@@ -69,19 +69,19 @@ namespace XDM.Core.BrowserMonitoring
                 var extId = CalculateExtensionId(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "chrome-extension"));
                 Log.Debug("ExtensionId: " + extId);
                 extensions.Add($"chrome-extension://{extId}/");
-            }
-            try
-            {
-                var file = Path.Combine(Config.AppDir, "extension.txt");
-                if (File.Exists(file))
+                try
                 {
-                    foreach (var line in File.ReadAllLines(file))
+                    var file = Path.Combine(Config.AppDir, "extension.txt");
+                    if (File.Exists(file))
                     {
-                        extensions.Add(line);
+                        foreach (var line in File.ReadAllLines(file))
+                        {
+                            extensions.Add(line);
+                        }
                     }
                 }
+                catch { }
             }
-            catch { }
             var folder = Path.GetDirectoryName(manifestPath)!;
             if (!Directory.Exists(folder))
             {
