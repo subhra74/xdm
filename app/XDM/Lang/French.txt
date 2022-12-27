@@ -46,5 +46,5 @@ LBL_SUPPORT_PAGE=Page de support
 LBL_SHOW_PROGRESS=Afficher la progression
 SORT_STATUS=Status
 LBL_SEARCH=Search
-LBL_VIDEO_DOWNLOAD=Video download
-LBL_NEW_DOWNLOAD=New download
+LBL_VIDEO_DOWNLOAD=Video téléchargé
+LBL_NEW_DOWNLOAD=Nouveau téléchargement
