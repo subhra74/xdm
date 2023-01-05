@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -46,6 +47,7 @@ namespace XDM.Wpf.UI.Dialogs.ChromeIntegrator
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
                     Page4.SuccessResult = true;
+                    File.AppendAllText(System.IO.Path.Combine(Config.AppDir, "browser-integration-attempted"), "");
                     //MessageBox.Show(this, TextResource.GetText("MSG_PAGE3_TEXT3") + "\r\n" + TextResource.GetText("MSG_PAGE3_TEXT4"));
                     //this.Close();
                 }));

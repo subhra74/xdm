@@ -1,6 +1,7 @@
 ﻿using NativeMessaging;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using TraceLog;
@@ -115,7 +116,10 @@ namespace XDM.Core
                         ApplicationContext.Application.RunOnUiThread(() =>
                         {
                             ApplicationContext.MainWindow.ShowAndActivate();
-                            ApplicationContext.PlatformUIService.ShowBrowserMonitoringDialog();
+                            if(!File.Exists(Path.Combine(Config.AppDir, "browser-integration-attempted")))
+                            {
+                                ApplicationContext.PlatformUIService.ShowBrowserMonitoringDialog();
+                            }
                         });
                     }
                     else
