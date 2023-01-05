@@ -14,7 +14,7 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-        <TextBlock Grid.Row="0" Text="{StaticResource MSG_PASTE_EXT_URL}" Margin="10" TextWrapping="Wrap" TextAlignment="Center" />
+        <TextBlock Grid.Row="0" Text="{StaticResource MSG_PAGE1_TEXT1}" Margin="10" TextWrapping="Wrap" TextAlignment="Center" />
         <Image Grid.Row="1" Name="Img" />
     </Grid>
 </UserControl>

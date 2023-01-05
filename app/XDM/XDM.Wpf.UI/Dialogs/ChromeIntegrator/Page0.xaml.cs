@@ -24,6 +24,11 @@ namespace XDM.Wpf.UI.Dialogs.ChromeIntegrator
         {
             InitializeComponent();
             TxtURL.Text = "chrome://extensions/";
+            this.Img.Source = new BitmapImage(
+                    new Uri(
+                    System.IO.Path.Combine(
+                    System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "images"),
+                    "chrome-addressbar.jpg")));
         }
 
         private void BtnCopyURL_Click(object sender, RoutedEventArgs e)

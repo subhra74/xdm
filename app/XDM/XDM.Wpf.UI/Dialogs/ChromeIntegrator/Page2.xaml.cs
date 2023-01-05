@@ -29,7 +29,7 @@ namespace XDM.Wpf.UI.Dialogs.ChromeIntegrator
                     new Uri(
                     System.IO.Path.Combine(
                     System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "images"),
-                    $"{value}.jpg")));
+                    $"load_unpacked.jpg")));
             }
         }
         public Page2()

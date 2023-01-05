@@ -21,15 +21,21 @@ namespace XDM.Wpf.UI.Dialogs.ChromeIntegrator
     /// </summary>
     public partial class Page1 : UserControl
     {
-        public Browser Browser { get; set; }
         public Page1()
         {
             InitializeComponent();
-            this.Img.Source = new BitmapImage(
+        }
+
+        public Browser Browser
+        {
+            set
+            {
+                this.Img.Source = new BitmapImage(
                     new Uri(
                     System.IO.Path.Combine(
                     System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "images"),
-                    "chrome-addressbar.jpg")));
+                    $"{value}.jpg")));
+            }
         }
 
         //private void Viewbox_MouseMove(object sender, MouseEventArgs e)

@@ -24,23 +24,33 @@ namespace XDM.Wpf.UI.Dialogs.ChromeIntegrator
         public Page3()
         {
             InitializeComponent();
-            TxtLocation.Text = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "chrome-extension");
+            TxtFolder.Text = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "chrome-extension");
+            this.Img.Source = new BitmapImage(
+                    new Uri(
+                    System.IO.Path.Combine(
+                    System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "images"),
+                    "extension-folder.jpg")));
         }
 
-        private void DragBorder_MouseMove(object sender, MouseEventArgs e)
+        private void BtnCopy_Click(object sender, RoutedEventArgs e)
         {
-            if (e.LeftButton == MouseButtonState.Pressed)
-            {
-                // MessageBox.Show("asda");
-                var data = new DataObject();
-                data.SetData(DataFormats.FileDrop, new string[] { System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "chrome-extension") });
-
-                // Initiate the drag-and-drop operation.
-                DragDrop.DoDragDrop(this.DragBorder, data, DragDropEffects.Copy);
-                //DragDrop.DoDragDrop(vb,
-                //                     "chrome://extensions",
-                //                     DragDropEffects.Copy);
-            }
+            Clipboard.SetText(TxtFolder.Text);
         }
+
+        //private void DragBorder_MouseMove(object sender, MouseEventArgs e)
+        //{
+        //    if (e.LeftButton == MouseButtonState.Pressed)
+        //    {
+        //        // MessageBox.Show("asda");
+        //        var data = new DataObject();
+        //        data.SetData(DataFormats.FileDrop, new string[] { System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "chrome-extension") });
+
+        //        // Initiate the drag-and-drop operation.
+        //        DragDrop.DoDragDrop(this.DragBorder, data, DragDropEffects.Copy);
+        //        //DragDrop.DoDragDrop(vb,
+        //        //                     "chrome://extensions",
+        //        //                     DragDropEffects.Copy);
+        //    }
+        //}
     }
 }

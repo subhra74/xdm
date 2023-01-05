@@ -19,8 +19,9 @@
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
-        <TextBlock Grid.Row="0" Grid.ColumnSpan="4" Text="{StaticResource MSG_COPY_EXT_URL}"  Margin="10" TextWrapping="Wrap" />
+        <TextBlock Grid.Row="0" Grid.ColumnSpan="4" Text="{StaticResource MSG_COPY_PASTE_EXT_URL}"  Margin="10" TextWrapping="Wrap" />
         <TextBox Name="TxtURL" Grid.Row="1" Grid.ColumnSpan="3" Margin="10,0" IsReadOnly="True"/>
-        <Button Name="BtnCopyURL" Grid.Row="1" Grid.Column="3" Content="{StaticResource CTX_COPY_URL}" Margin="0,0,10,0" Click="BtnCopyURL_Click"/>
+        <Button Name="BtnCopyURL" Grid.Row="1" Grid.Column="3" Content="{StaticResource MSG_COPY}" Margin="0,0,10,0" Click="BtnCopyURL_Click"/>
+        <Image Grid.Row="2" Name="Img" Grid.ColumnSpan="4" />
     </Grid>
 </UserControl>

@@ -48,6 +48,12 @@
     <None Update="images\Chrome.jpg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="images\extension-folder.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="images\load_unpacked.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="images\MSEdge.jpg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
