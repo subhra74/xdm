@@ -61,6 +61,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="..\Lang\*.*" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" LinkBase="Lang\" />
+    <None Remove="images\extension-folder.jpg" />
     <Content Include="..\xdm-logo.svg" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
   </ItemGroup>
 

@@ -44,11 +44,31 @@ namespace XDM.GtkUI.Dialogs.ChromeIntegrator
             BtnNext.Clicked += BtnNext_Clicked;
             BtnBack.Clicked += BtnBack_Clicked;
             BtnHelp.Clicked += BtnHelp_Clicked;
+            BtnCopyURL.Clicked += BtnCopyURL_Clicked;
+            BtnCopy.Clicked += BtnCopy_Clicked;
             this.LoadTexts();
             TxtURL.Text = "chrome://extensions/";
             TxtFolder.Text = IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "chrome-extension");
             LoadImages();
             RenderPage();
+        }
+
+        private void BtnCopy_Clicked(object? sender, EventArgs e)
+        {
+            var cb = Clipboard.Get(Gdk.Selection.Clipboard);
+            if (cb != null)
+            {
+                cb.Text = TxtFolder.Text;
+            }
+        }
+
+        private void BtnCopyURL_Clicked(object? sender, EventArgs e)
+        {
+            var cb = Clipboard.Get(Gdk.Selection.Clipboard);
+            if (cb != null)
+            {
+                cb.Text = TxtURL.Text;
+            }
         }
 
         private void BtnHelp_Clicked(object? sender, EventArgs e)

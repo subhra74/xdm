@@ -1,4 +1,4 @@
-set BUILD_VER=8.0.11
+set BUILD_VER=8.0.18
 
 RMDIR /S /Q BIN
 RMDIR /S /Q xdm-helper-chrome
