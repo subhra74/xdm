@@ -24,6 +24,7 @@
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="orientation">vertical</property>
+                <property name="spacing">10</property>
                 <child>
                   <object class="GtkLabel" id="Page0Lbl1">
                     <property name="visible">True</property>
@@ -98,6 +99,7 @@
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="orientation">vertical</property>
+                <property name="spacing">10</property>
                 <child>
                   <object class="GtkLabel" id="Page1Lbl1">
                     <property name="visible">True</property>
@@ -134,6 +136,7 @@
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="orientation">vertical</property>
+                <property name="spacing">10</property>
                 <child>
                   <object class="GtkLabel" id="Page2Lbl1">
                     <property name="visible">True</property>
@@ -170,6 +173,7 @@
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="orientation">vertical</property>
+                <property name="spacing">10</property>
                 <child>
                   <object class="GtkLabel" id="Page3Lbl1">
                     <property name="visible">True</property>
@@ -244,6 +248,7 @@
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="orientation">vertical</property>
+                <property name="spacing">10</property>
                 <child>
                   <object class="GtkLabel" id="MsgSuccess">
                     <property name="visible">True</property>

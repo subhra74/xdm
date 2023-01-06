@@ -48,8 +48,7 @@ namespace XDM.Wpf.UI.Dialogs.ChromeIntegrator
                 {
                     Page4.SuccessResult = true;
                     File.AppendAllText(System.IO.Path.Combine(Config.AppDir, "browser-integration-attempted"), "");
-                    //MessageBox.Show(this, TextResource.GetText("MSG_PAGE3_TEXT3") + "\r\n" + TextResource.GetText("MSG_PAGE3_TEXT4"));
-                    //this.Close();
+                    BtnBack.Visibility = Visibility.Collapsed;
                 }));
             }
         }

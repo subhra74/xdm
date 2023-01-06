@@ -386,9 +386,9 @@ namespace XDM.GtkUI.Dialogs.Settings
             }
         }
 
-        private void ShowIntegrationWindow()
+        private void ShowIntegrationWindow(Browser browser)
         {
-            var wnd = ChromeIntegratorWindow.CreateFromGladeFile();
+            var wnd = ChromeIntegratorWindow.CreateFromGladeFile(browser);
             wnd.Show();
         }
 
@@ -422,7 +422,7 @@ namespace XDM.GtkUI.Dialogs.Settings
 
             try
             {
-                ShowIntegrationWindow();
+                ShowIntegrationWindow(browser);
                 //BrowserLauncher.LaunchBrowser(browser, Links.ManualExtensionInstallGuideUrl, null);
                 //var args = "chrome://extensions/";
                 //var extLoaderPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ext-loader");

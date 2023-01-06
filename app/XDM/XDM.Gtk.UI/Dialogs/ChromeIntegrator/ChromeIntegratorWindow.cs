@@ -11,21 +11,28 @@ using XDM.Core;
 using Application = Gtk.Application;
 using Translations;
 using XDM.Core.Util;
+using XDM.Core.BrowserMonitoring;
 
 namespace XDM.GtkUI.Dialogs.ChromeIntegrator
 {
     public class ChromeIntegratorWindow : Window
     {
         private int page = 0;
+
         [UI] private Button BtnNext, BtnBack, BtnHelp, BtnCopyURL, BtnCopy;
         [UI] private Label Page0Lbl1, Page1Lbl1, Page2Lbl1, Page3Lbl1, MsgSuccess, MsgFail, MsgInfo;
         [UI] private Box Page0, Page1, Page2, Page3, Page4;
+        [UI] private Image Img1, Img2, Img3, Img4, Img5;
+        [UI] private Entry TxtURL, TxtFolder;
 
         private WindowGroup windowGroup;
+        private Browser browser;
+        private bool successResult;
 
-        private ChromeIntegratorWindow(Builder builder) : base(builder.GetRawOwnedObject("window"))
+        private ChromeIntegratorWindow(Builder builder, Browser browser) : base(builder.GetRawOwnedObject("window"))
         {
             builder.Autoconnect(this);
+            this.browser = browser;
             SetPosition(WindowPosition.CenterAlways);
             SetDefaultSize(640, 480);
             windowGroup = new WindowGroup();
@@ -38,13 +45,9 @@ namespace XDM.GtkUI.Dialogs.ChromeIntegrator
             BtnBack.Clicked += BtnBack_Clicked;
             BtnHelp.Clicked += BtnHelp_Clicked;
             this.LoadTexts();
-            //BtnHelp!.Clicked += BtnHelp_Clicked;
-            //BtnClose!.Clicked += BtnClose_Clicked;
-            //TxtGuide!.WrapMode = WrapMode.Word;
-
-            //Drag.SourceSet(Label1, Gdk.ModifierType.Button1Mask,
-            //    new TargetEntry[] { new TargetEntry("text/uri-list", (TargetFlags)0, 1) }, Gdk.DragAction.Copy);
-            //Label1!.DragDataGet += Label1_DragDataGet;
+            TxtURL.Text = "chrome://extensions/";
+            TxtFolder.Text = IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "chrome-extension");
+            LoadImages();
             RenderPage();
         }
 
@@ -71,19 +74,6 @@ namespace XDM.GtkUI.Dialogs.ChromeIntegrator
             RenderPage();
         }
 
-        private void Label1_DragDataGet(object o, DragDataGetArgs args)
-        {
-            if (args.Info == 1)
-            {
-                args.SelectionData.SetUris(new string[] { "file://var" });
-            }
-        }
-
-        private void BtnClose_Clicked(object? sender, EventArgs e)
-        {
-            this.Close();
-        }
-
         private void LoadTexts()
         {
             this.Title = TextResource.GetText("MSG_CHROME_INT");
@@ -102,14 +92,35 @@ namespace XDM.GtkUI.Dialogs.ChromeIntegrator
             this.MsgFail.Text = TextResource.GetText("MSG_EXT_INSTALL_FAIL");
             this.MsgInfo.Text = TextResource.GetText("MSG_EXT_PIN");
 
-            //var buffer = this.TxtGuide.Buffer;
-            //buffer.Text = $"{TextResource.GetText("MSG_LINUX_EXT1")} Chrome" +
-            //    "\n" + TextResource.GetText("MSG_LINUX_EXT2") +
-            //    "\n" + TextResource.GetText("MSG_LINUX_EXT3") +
-            //    "\n" + TextResource.GetText("MSG_LINUX_EXT4") +
-            //    "\n" + TextResource.GetText("MSG_LINUX_EXT5") + System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "chrome-extension") +
-            //    "\n" + TextResource.GetText("MSG_LINUX_EXT6") +
-            //    "\n" + TextResource.GetText("MSG_LINUX_EXT7") + Links.ManualExtensionInstallGuideUrl;
+            this.Img5.Visible = this.MsgInfo.Visible = this.MsgSuccess.Visible = false;
+        }
+
+        private void LoadImages()
+        {
+            var img0 = System.IO.Path.Combine(
+                    System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "images"),
+                    "chrome-addressbar.jpg");
+            Img1.File = img0;
+
+            var img1 = System.IO.Path.Combine(
+                    System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "images"),
+                    $"{browser}.jpg");
+            Img2.File = img1;
+
+            var img2 = System.IO.Path.Combine(
+                    System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "images"),
+                    "load_unpacked.jpg");
+            Img3.File = img2;
+
+            var img3 = System.IO.Path.Combine(
+                    System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "images"),
+                    "extension-folder.jpg");
+            Img4.File = img3;
+
+            var img4 = System.IO.Path.Combine(
+                    System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "images"),
+                    "pin-ext.jpg");
+            Img5.File = img4;
         }
 
         private void ChromeIntegratorWindow_Destroyed(object? sender, EventArgs e)
@@ -123,17 +134,21 @@ namespace XDM.GtkUI.Dialogs.ChromeIntegrator
             {
                 Application.Invoke((_, _) =>
                 {
-                    GtkHelper.ShowMessageBox(this, TextResource.GetText("MSG_PAGE3_TEXT3") + "\r\n" + TextResource.GetText("MSG_PAGE3_TEXT4"));
-                    this.Close();
+                    successResult = true;
+                    MsgFail.Visible = false;
+                    MsgSuccess.Visible = true;
+                    MsgInfo.Visible = true;
+                    Img5.Visible = true;
+                    BtnBack.Visible = false;
                 });
             }
         }
 
-        public static ChromeIntegratorWindow CreateFromGladeFile()
+        public static ChromeIntegratorWindow CreateFromGladeFile(Browser browser)
         {
             var builder = new Builder();
             builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "chrome-integration.glade"));
-            return new ChromeIntegratorWindow(builder);
+            return new ChromeIntegratorWindow(builder, browser);
         }
 
         private void RenderPage()
