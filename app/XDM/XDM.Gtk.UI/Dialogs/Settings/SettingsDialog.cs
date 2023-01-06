@@ -422,7 +422,8 @@ namespace XDM.GtkUI.Dialogs.Settings
 
             try
             {
-                BrowserLauncher.LaunchBrowser(browser, Links.ManualExtensionInstallGuideUrl, null);
+                ShowIntegrationWindow();
+                //BrowserLauncher.LaunchBrowser(browser, Links.ManualExtensionInstallGuideUrl, null);
                 //var args = "chrome://extensions/";
                 //var extLoaderPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ext-loader");
                 //var extensionLoadRequest = false;
