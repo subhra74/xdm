@@ -41,7 +41,7 @@
     <SolidColorBrush x:Key="ListViewForecolor" Color="#696969"/>
     <SolidColorBrush x:Key="ListViewSelectedForecolor" Color="Black"/>
     <SolidColorBrush x:Key="ListViewSelectedBackcolor" Color="#E6E6E6"/>
-    <SolidColorBrush x:Key="ListViewIconForecolor" Color="DodgerBlue"/>
+    <SolidColorBrush x:Key="ListViewIconForecolor" Color="Silver"/>
     <SolidColorBrush x:Key="ListViewMouseOverBackcolor" Color="#F5F5F5"/>
     <SolidColorBrush x:Key="ListViewMouseOverForecolor" Color="#3C3C3C"/>
     <SolidColorBrush x:Key="ListViewHeaderForecolor" Color="#A0A0A0"/>

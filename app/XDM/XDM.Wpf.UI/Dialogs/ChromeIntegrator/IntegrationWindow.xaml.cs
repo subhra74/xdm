@@ -35,6 +35,7 @@ namespace XDM.Wpf.UI.Dialogs.ChromeIntegrator
             {
                 page = 1;
             }
+            Page0.Browser = browser;
             Page2.Browser = browser;
             Page1.Browser = browser;
             RenderPage();

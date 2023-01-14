@@ -12,6 +12,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Translations;
+using XDM.Core.BrowserMonitoring;
 
 namespace XDM.Wpf.UI.Dialogs.ChromeIntegrator
 {
@@ -20,6 +22,13 @@ namespace XDM.Wpf.UI.Dialogs.ChromeIntegrator
     /// </summary>
     public partial class Page0 : UserControl
     {
+        public Browser Browser
+        {
+            set
+            {
+                Lbl.Text = String.Format(TextResource.GetText("MSG_COPY_PASTE_EXT_URL"), value);
+            }
+        }
         public Page0()
         {
             InitializeComponent();

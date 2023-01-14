@@ -103,7 +103,7 @@ namespace XDM.GtkUI.Dialogs.ChromeIntegrator
             this.BtnCopyURL.Label = TextResource.GetText("MSG_COPY");
             this.BtnCopy.Label = TextResource.GetText("MSG_COPY");
 
-            this.Page0Lbl1.Text = TextResource.GetText("MSG_COPY_PASTE_EXT_URL");
+            this.Page0Lbl1.Text = String.Format(TextResource.GetText("MSG_COPY_PASTE_EXT_URL"), browser);
             this.Page1Lbl1.Text = TextResource.GetText("MSG_PAGE1_TEXT1");
             this.Page2Lbl1.Text = TextResource.GetText("MSG_PAGE2_TEXT1");
             this.Page3Lbl1.Text = TextResource.GetText("MSG_PAGE3_TEXT1");
