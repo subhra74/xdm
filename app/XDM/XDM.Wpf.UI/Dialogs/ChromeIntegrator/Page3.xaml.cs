@@ -24,7 +24,9 @@ namespace XDM.Wpf.UI.Dialogs.ChromeIntegrator
         public Page3()
         {
             InitializeComponent();
-            TxtFolder.Text = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "chrome-extension");
+            TxtFolder.Text = System.IO.Path.Combine(
+                MsixHelper.IsAppContainer ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) :
+                AppDomain.CurrentDomain.BaseDirectory, "chrome-extension");
             this.Img.Source = new BitmapImage(
                     new Uri(
                     System.IO.Path.Combine(

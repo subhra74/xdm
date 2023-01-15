@@ -350,7 +350,9 @@ namespace XDM.App.Host
                 Debug("XDM instance creating...");
                 Process.Start(psi);
 #else
-                var exe = Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".."), "xdm-app.exe");
+                var exe = Path.GetFullPath(
+                    new Uri(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "XDM.Wpf.UI", "xdm-app.exe")).LocalPath);
+                Debug(exe);
                 if (isFirefox)
                 {
                     if (!Win32NativeProcess.Win32CreateProcess(exe, $"\"{exe}\" --background"))

@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <!--<TargetFramework>net4.6.0</TargetFramework>-->
-    <TargetFrameworks>net4.6.0;net6.0</TargetFrameworks>
+    <TargetFramework>net4.7.2</TargetFramework>
+    <!--<TargetFrameworks>net4.6.0;net6.0</TargetFrameworks>-->
     <PublishTrimmed>true</PublishTrimmed>
     <TrimMode>Link</TrimMode>
     <LangVersion>9.0</LangVersion>

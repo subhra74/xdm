@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <!--<TargetFrameworks>net4.7.2;net3.5</TargetFrameworks>-->
-    <TargetFramework>net4.6.0</TargetFramework>
+    <TargetFramework>net4.7.2</TargetFramework>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <Platforms>x86</Platforms>
@@ -32,6 +32,14 @@
 
   <ItemGroup>
     <Content Include="..\Lang\**" CopyToOutputDirectory="Always" LinkBase="Lang\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\chrome-extension\**" CopyToOutputDirectory="Always" LinkBase="chrome-extension\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\XDM.Win.Installer\binary-deps\**" CopyToOutputDirectory="Always" />
   </ItemGroup>
 
   <ItemGroup>

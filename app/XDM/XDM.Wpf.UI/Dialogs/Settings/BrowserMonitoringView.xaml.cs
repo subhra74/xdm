@@ -98,7 +98,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
                 //    extensionLoadRequest = true;
                 //}
                 //var sucess = BrowserLauncher.LaunchBrowser(browser, args, exeLocation);
-                var wnd = new IntegrationWindow(browser,false /*sucess && extensionLoadRequest*/);
+                var wnd = new IntegrationWindow(browser, false /*sucess && extensionLoadRequest*/);
                 wnd.Show();
             }
             catch (Exception ex)
@@ -189,6 +189,20 @@ namespace XDM.Wpf.UI.Dialogs.Settings
 
         private void InstallNativeMessagingHost(Browser browser)
         {
+            if (MsixHelper.IsAppContainer)
+            {
+                var exe = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-app.exe");
+                ProcessStartInfo psi = new()
+                {
+                    FileName = exe,
+                    UseShellExecute = true,
+                    Verb = "runas",
+                    Arguments = browser == Browser.Firefox ? "b:firefox" : "b:chrome"
+                };
+                Log.Debug("xdm-app-host instance creating...");
+                Process.Start(psi);
+                return;
+            }
             NativeMessagingHostConfigurer.InstallNativeMessagingHostForWindows(browser);
             //var browserName = "chome";
             //if (browser == Browser.Firefox)

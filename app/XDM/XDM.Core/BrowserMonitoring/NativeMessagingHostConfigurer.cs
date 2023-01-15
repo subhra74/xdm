@@ -43,8 +43,13 @@ namespace XDM.Core.BrowserMonitoring
             return ext.Substring(0, 32);
         }
 
-        private static string GetExecutablePath()
+        private static string GetExecutablePath(bool msix = false)
         {
+            if (msix)
+            {
+                return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                        @"microsoft\windowsapps\xdm-app-host.exe");
+            }
             return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "XDM.App.Host" + Path.DirectorySeparatorChar + "xdm-app-host" + (
                 Environment.OSVersion.Platform == PlatformID.Win32NT ? ".exe" : string.Empty));
             //#if NET472
@@ -56,17 +61,24 @@ namespace XDM.Core.BrowserMonitoring
             //#endif
         }
 
-        //private static string GetFirefoxBatchPath()
-        //{
-        //    return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "xdm-app-host.bat");
-        //}
-
-        private static void CreateMessagingHostManifest(Browser browser, string appName, string manifestPath)
+        private static string GetFirefoxBatchPath()
         {
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "xdm-app-host.bat");
+        }
+
+        private static void CreateMessagingHostManifest(Browser browser, string appName,
+            string manifestPath, bool msix = false)
+        {
+            Log.Debug("msix: " + msix);
+            Log.Debug("Manifest path: " + manifestPath);
             var extensions = new HashSet<string> { browser == Browser.Firefox ? "xdm-integration-module@subhra74.github.io" : "chrome-extension://akdmdglbephckgfmdffcdebnpjgamofc/" };
             if (browser == Browser.Chrome)
             {
-                var extId = CalculateExtensionId(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "chrome-extension"));
+                Log.Debug("Configuring for chrome");
+                var extId = CalculateExtensionId(Path.Combine(
+                    msix ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) :
+                    AppDomain.CurrentDomain.BaseDirectory
+                    , "chrome-extension"));
                 Log.Debug("ExtensionId: " + extId);
                 extensions.Add($"chrome-extension://{extId}/");
                 try
@@ -87,18 +99,20 @@ namespace XDM.Core.BrowserMonitoring
             {
                 Directory.CreateDirectory(folder);
             }
-            string pathToExe = GetExecutablePath();
+            string pathToExe = GetExecutablePath(msix);
+            Log.Debug(pathToExe);
 
-            //#if WINDOWS
-            //            string? batchFilePath = null;
-            //            if (browser == Browser.Firefox)
-            //            {
-            //                batchFilePath = GetFirefoxBatchPath();
-            //                File.WriteAllText(batchFilePath, $"@echo off\r\n\"{aliasPath}\"");
-            //                aliasPath = batchFilePath;
-            //            }
-            //#endif
+            if (msix)
+            {
+                string? batchFilePath = null;
+                if (browser == Browser.Firefox)
+                {
+                    batchFilePath = GetFirefoxBatchPath();
+                    File.WriteAllText(batchFilePath, $"@echo off\r\n\"{pathToExe}\"");
+                    pathToExe = batchFilePath;
+                }
 
+            }
             using var stream = new FileStream(manifestPath, FileMode.Create);
             using var textWriter = new StreamWriter(stream);
             using var writer = new JsonTextWriter(textWriter);
@@ -157,18 +171,18 @@ namespace XDM.Core.BrowserMonitoring
             return false;
         }
 
-        public static void InstallNativeMessagingHostForWindows(Browser browser)
+        public static void InstallNativeMessagingHostForWindows(Browser browser, bool msix = false)
         {
-            //if (browser == Browser.Firefox && IsMessagingHostAlreadyInstalledForFirefox()) { return; }
-            //if (browser == Browser.Chrome && IsMessagingHostAlreadyInstalledForChrome()) { return; }
             var appName = browser == Browser.Firefox ? "xdmff.native_host" :
                     "xdm_chrome.native_host";
-            var manifestPath = Path.Combine(Config.AppDir, $"{appName}.json");
-            CreateMessagingHostManifest(browser, appName, manifestPath);
-            var regPath = (browser == Browser.Firefox ?
+            var manifestPath = msix ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                $"{appName}.json") : Path.Combine(Config.AppDir, $"{appName}.json");
+            CreateMessagingHostManifest(browser, appName, manifestPath, msix);
+            var regPath = browser == Browser.Firefox ?
                 @"Software\Mozilla\NativeMessagingHosts\" :
-                @"Software\Google\Chrome\NativeMessagingHosts");
-            using var regKey = Registry.CurrentUser.CreateSubKey(regPath);
+                @"Software\Google\Chrome\NativeMessagingHosts";
+            using var hive = msix ? Registry.LocalMachine : Registry.CurrentUser;
+            using var regKey = hive.CreateSubKey(regPath);
             using var key = regKey.CreateSubKey(appName, RegistryKeyPermissionCheck.ReadWriteSubTree);
             key.SetValue(null, manifestPath);
         }

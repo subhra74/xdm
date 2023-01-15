@@ -54,6 +54,22 @@ namespace XDM.Wpf.UI
             }
             Log.Debug($"Application_Startup::args->: {string.Join(" ", Environment.GetCommandLineArgs())}");
 
+            if (MsixHelper.IsAppContainer)
+            {
+                if (Environment.GetCommandLineArgs().Length == 2 && Environment.GetCommandLineArgs()[1].StartsWith("b:"))
+                {
+                    if (Environment.GetCommandLineArgs()[1].StartsWith("b:chrome"))
+                    {
+                        NativeMessagingHostConfigurer.InstallNativeMessagingHostForWindows(Browser.Chrome, true);
+                    }
+                    else if (Environment.GetCommandLineArgs()[1].StartsWith("b:firefox"))
+                    {
+                        NativeMessagingHostConfigurer.InstallNativeMessagingHostForWindows(Browser.Firefox, true);
+                    }
+                    Environment.Exit(0);
+                }
+            }
+
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
             core = new ApplicationCore();
@@ -77,6 +93,13 @@ namespace XDM.Wpf.UI
             {
                 win.ShowAndActivate();
             };
+
+            if (MsixHelper.IsAppContainer)
+            {
+                MsixHelper.FirstRunAppInit();
+
+
+            }
         }
 
         private void Application_Exit(object sender, ExitEventArgs e)

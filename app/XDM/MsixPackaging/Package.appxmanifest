@@ -3,20 +3,21 @@
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   xmlns:iot="http://schemas.microsoft.com/appx/manifest/iot/windows10"
   xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
   xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
-  IgnorableNamespaces="uap rescap iot uap3">
+  IgnorableNamespaces="uap rescap iot uap3 desktop">
 
   <Identity
-    Name="2e2588ec-737b-4fca-b3ac-15042c90c8e2"
-    Publisher="CN=subhro"
-    Version="8.0.41.0" />
+    Name="56617subhra74.XtremeDownloadManager-XDM"
+    Publisher="CN=CE459F77-0688-4F4F-B36F-5657C1A1A02C"
+    Version="8.0.75.0" />
 
   <Properties>
-    <DisplayName>Xtreme Download Manager</DisplayName>
-    <PublisherDisplayName>subhro</PublisherDisplayName>
+    <DisplayName>Xtreme Download Manager - XDM</DisplayName>
+    <PublisherDisplayName>Subhra Das Gupta</PublisherDisplayName>
     <Logo>Images\StoreLogo.png</Logo>
   </Properties>
 
@@ -34,7 +35,7 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="Xtreme Download Manager"
+        DisplayName="Xtreme Download Manager - XDM"
         Description="XDMMsixPackaging"
         BackgroundColor="transparent"
         Square150x150Logo="Images\Square150x150Logo.png"
@@ -57,13 +58,22 @@
             <desktop:ExecutionAlias Alias="xdm-app-host.exe" />
           </uap3:AppExecutionAlias>
         </uap3:Extension>
+        <!--<desktop:Extension
+          Category="windows.startupTask"
+          Executable="$targetnametoken$.exe"
+          EntryPoint="Windows.FullTrustApplication">
+          <desktop:StartupTask
+            TaskId="XDMStartupTask"
+            Enabled="true"
+            DisplayName="Xtreme Download Manager" />
+        </desktop:Extension>-->
       </Extensions>
     </Application>
   </Applications>
 
   <Capabilities>
-    <Capability Name="internetClient" />
     <rescap:Capability Name="runFullTrust" />
+    <Capability Name="internetClient" />
     <iot:Capability Name="systemManagement"/>
     <uap:Capability Name="removableStorage"/>
     <uap:Capability Name="picturesLibrary"/>
