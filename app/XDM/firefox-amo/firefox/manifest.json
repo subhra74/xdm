@@ -1,0 +1,28 @@
+{
+    "name": "XDM Integration Module",
+    "browser_action": {},
+    "manifest_version": 2,
+    "version": "1.3",
+    "description": "Download files with XDM application",
+    "permissions": [
+        "downloads",
+        "tabs",
+        "nativeMessaging",
+        "cookies",
+        "webRequest",
+        "*://*/*"
+    ],
+    "background": {
+        "page": "main.html"
+    },
+    "icons": {
+        "16": "icon16.png",
+        "48": "icon48.png",
+        "128": "icon128.png"
+    },
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "xdm-integration-module@subhra74.github.io"
+        }
+    }
+}

@@ -588,13 +588,6 @@
                           Grid.Column="0" Grid.Row="0"
                           VirtualizingStackPanel.VirtualizationMode="Recycling"
                           GridViewColumnHeader.Click="lvInProgress_Click">
-                        <!--<ListView.Resources>
-                            <ResourceDictionary>
-                                <ResourceDictionary.MergedDictionaries>
-                                    <ResourceDictionary Source="Resources/MainListViewStyles.xaml"/>
-                                </ResourceDictionary.MergedDictionaries>
-                            </ResourceDictionary>
-                        </ListView.Resources>-->
                         <ListView.View>
                             <GridView>
                                 <GridViewColumn Width="200">
