@@ -194,6 +194,14 @@ namespace XDM.Core.Ipc
                 }
                 writer.WriteEndArray();
 
+                writer.WritePropertyName("matchingHosts");
+                writer.WriteStartArray();
+                foreach (var ext in new string[] { "googlevideo"})
+                {
+                    writer.WriteValue(ext);
+                }
+                writer.WriteEndArray();
+
                 writer.WriteEndObject();
                 writer.Close();
                 var str = w.ToString();

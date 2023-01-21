@@ -127,11 +127,18 @@ export default class App {
         );
         chrome.runtime.onMessage.addListener(this.onPopupMessage.bind(this));
         this.requestWatcher.register();
+        this.attachContextMenu();
+    }
+
+    isSupportedProtocol(url) {
+        if (!url) return false;
+        let u = new URL(url);
+        return u.protocol === 'http:' || u.protocol === 'https:';
     }
 
     shouldTakeOver(url, file) {
         let u = new URL(url);
-        if (!(u.protocol === 'http:' || u.protocol === 'https:')) {
+        if (!isSupportedProtocol(url)) {
             return false;
         }
         let hostName = u.host;
@@ -239,5 +246,57 @@ export default class App {
                 clear: true
             });
         }
+    }
+
+    sendLinkToXDM(info, tab) {
+        let url = info.linkUrl;
+        if (!this.isSupportedProtocol(url)) {
+            url = info.srcUrl;
+        }
+        if (!this.isSupportedProtocol(url)) {
+            url = info.pageUrl;
+        }
+        if (!this.isSupportedProtocol(url)) {
+            return;
+        }
+        this.triggerDownload(url, null, info.pageUrl, null, null);
+    }
+
+    sendImageToXDM(info, tab) {
+        let url = info.srcUrl;
+        if (!this.isSupportedProtocol(url))
+            url = info.linkUrl;
+        if (!this.isSupportedProtocol(url)) {
+            url = info.pageUrl;
+        }
+        if (!this.isSupportedProtocol(url)) {
+            return;
+        }
+        this.triggerDownload(url, null, info.pageUrl, null, null);
+    }
+
+    onMenuClicked(info, tab) {
+        if (info.menuItemId == "download-any-link") {
+            this.sendLinkToXDM(info, tab);
+        }
+        if (info.menuItemId == "download-image-link") {
+            this.sendImageToXDM(info, tab);
+        }
+    }
+
+    attachContextMenu() {
+        chrome.contextMenus.create({
+            id: 'download-any-link',
+            title: "Download with XDM",
+            contexts: ["link", "video", "audio", "all"]
+        });
+
+        chrome.contextMenus.create({
+            id: 'download-image-link',
+            title: "Download Image with XDM",
+            contexts: ["image"]
+        });
+
+        chrome.contextMenus.onClicked.addListener(this.onMenuClicked.bind(this));
     }
 }

@@ -191,6 +191,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
         {
             if (MsixHelper.IsAppContainer)
             {
+                MsixHelper.CopyExtension();
                 var exe = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-app.exe");
                 ProcessStartInfo psi = new()
                 {

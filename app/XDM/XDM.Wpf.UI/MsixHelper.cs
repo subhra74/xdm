@@ -40,8 +40,7 @@ namespace XDM.Wpf.UI
             if (!File.Exists(frFile))
             {
                 File.WriteAllText(frFile, "");
-                CopyFilesRecursively(AppDomain.CurrentDomain.BaseDirectory,
-                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "chrome-extension");
+                CopyExtension();
                 Config.Instance.RunOnLogon = true;
                 Config.SaveConfig();
                 ApplicationContext.Application.RunOnUiThread(() =>
@@ -53,6 +52,12 @@ namespace XDM.Wpf.UI
                     }
                 });
             }
+        }
+
+        public static void CopyExtension()
+        {
+            CopyFilesRecursively(AppDomain.CurrentDomain.BaseDirectory,
+                        Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "chrome-extension");
         }
 
         private static void CopyFilesRecursively(string sourcePath, string targetPath, string basePath)

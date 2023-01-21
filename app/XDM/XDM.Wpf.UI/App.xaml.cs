@@ -97,8 +97,6 @@ namespace XDM.Wpf.UI
             if (MsixHelper.IsAppContainer)
             {
                 MsixHelper.FirstRunAppInit();
-
-
             }
         }
 
