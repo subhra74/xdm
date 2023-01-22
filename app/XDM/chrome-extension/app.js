@@ -138,7 +138,7 @@ export default class App {
 
     shouldTakeOver(url, file) {
         let u = new URL(url);
-        if (!isSupportedProtocol(url)) {
+        if (!this.isSupportedProtocol(url)) {
             return false;
         }
         let hostName = u.host;
