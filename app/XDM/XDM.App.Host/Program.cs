@@ -225,6 +225,11 @@ namespace XDM.App.Host
                 arguments.Add("--tab-url");
                 arguments.Add(data.TabUrl);
             }
+            if (!string.IsNullOrEmpty(data.TabId))
+            {
+                arguments.Add("--tab-id");
+                arguments.Add(data.TabId);
+            }
             arguments.Add(data.Url);
             Debug(string.Join(",", arguments));
             _ipcClient!.Send(arguments);

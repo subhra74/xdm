@@ -190,6 +190,9 @@ namespace XDM.Core.Ipc
                     writer.WritePropertyName("info");
                     writer.WriteValue(video.Description);
 
+                    writer.WritePropertyName("tabId");
+                    writer.WriteValue(video.TabId);
+
                     writer.WriteEndObject();
                 }
                 writer.WriteEndArray();

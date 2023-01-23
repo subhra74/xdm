@@ -13,6 +13,8 @@ export default class RequestWatcher {
         this.onSendHeadersEventCallback = this.onSendHeadersEvent.bind(this);
         this.onHeadersReceivedEventCallback = this.onHeadersReceivedEvent.bind(this);
         this.onErrorOccurredEventCallback = this.onErrorOccurredEvent.bind(this);
+        this.urlPatterns = [];
+        this.requestFileExts = [];
     }
 
     updateConfig(config) {
@@ -27,6 +29,16 @@ export default class RequestWatcher {
         }
         if (config.mediaTypes) {
             this.mediaTypes = config.mediaTypes
+        }
+        if (config.requestFileExts) {
+            this.requestFileExts = config.requestFileExts
+        }
+        if (config.urlPatterns) {
+            this.urlPatterns = config.urlPatterns.map(pattern => {
+                try {
+                    return new RegExp(pattern, "i");
+                } catch { }
+            }).filter(item => item || false);
         }
     }
 
@@ -43,6 +55,16 @@ export default class RequestWatcher {
         if (this.fileExts.find(e => upath.endsWith(e))) {
             return true;
         }
+
+        if (this.requestFileExts.find(e => upath.endsWith(e))) {
+            return true;
+        }
+
+        try {
+            if (this.urlPatterns.find(re => re.test(res.url))) {
+                return true;
+            }
+        } catch { }
 
         let mediaType = res.responseHeaders.find(h => h["name"].toUpperCase() === "CONTENT-TYPE");
         if (mediaType && this.mediaTypes.find(m => mediaType["value"].indexOf(m) >= 0)) {
@@ -72,11 +94,11 @@ export default class RequestWatcher {
                     chrome.tabs.get(
                         req.tabId,
                         tab => {
-                            this.callback(this.createRequestData(req, res, tab.title, tab.url));
+                            this.callback(this.createRequestData(req, res, tab.title, tab.url, req.tabId));
                         }
                     );
                 } else {
-                    this.callback(this.createRequestData(req, res, null, null));
+                    this.callback(this.createRequestData(req, res, null, null, req.tabId));
                 }
             }
         }
@@ -112,7 +134,7 @@ export default class RequestWatcher {
         chrome.webRequest.onErrorOccurred.removeListener(this.onErrorOccurredEventCallback);
     }
 
-    createRequestData(req, res, title, tabUrl) {
+    createRequestData(req, res, title, tabUrl, tabId) {
         var data = {
             url: res.url,
             file: title,
@@ -121,7 +143,8 @@ export default class RequestWatcher {
             cookies: {},
             method: req.method,
             userAgent: navigator.userAgent,
-            tabUrl: tabUrl
+            tabUrl: tabUrl,
+            tabId: tabId
         };
 
         if (req.extraHeaders) {

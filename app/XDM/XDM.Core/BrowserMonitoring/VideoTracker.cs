@@ -60,7 +60,9 @@ namespace XDM.Core.BrowserMonitoring
                         this,
                         new MediaInfoEventArgs
                         {
-                            MediaInfo = new MediaInfo(e.Key, e.Value.Key.File, e.Value.Value.DescriptionText, e.Value.Value.CreationTime)
+                            MediaInfo = new MediaInfo(e.Key, e.Value.Key.File,
+                            e.Value.Value.DescriptionText, e.Value.Value.CreationTime,
+                            e.Value.Value.TabId)
                         });
                 }
             }
@@ -79,7 +81,8 @@ namespace XDM.Core.BrowserMonitoring
                         this,
                         new MediaInfoEventArgs
                         {
-                            MediaInfo = new MediaInfo(e.Key, e.Value.Key.File, e.Value.Value.DescriptionText, e.Value.Value.CreationTime)
+                            MediaInfo = new MediaInfo(e.Key, e.Value.Key.File, e.Value.Value.DescriptionText,
+                            e.Value.Value.CreationTime, e.Value.Value.TabId)
                         });
                 }
             }
@@ -131,19 +134,23 @@ namespace XDM.Core.BrowserMonitoring
                 var list = new List<MediaInfo>();
                 foreach (var e in ytVideoList)
                 {
-                    list.Add(new MediaInfo(e.Key, e.Value.Key.File, e.Value.Value.DescriptionText, e.Value.Value.CreationTime));
+                    list.Add(new MediaInfo(e.Key, e.Value.Key.File, e.Value.Value.DescriptionText,
+                        e.Value.Value.CreationTime, e.Value.Value.TabId));
                 }
                 foreach (var e in videoList)
                 {
-                    list.Add(new MediaInfo(e.Key, e.Value.Key.File, e.Value.Value.DescriptionText, e.Value.Value.CreationTime));
+                    list.Add(new MediaInfo(e.Key, e.Value.Key.File, e.Value.Value.DescriptionText,
+                        e.Value.Value.CreationTime, e.Value.Value.TabId));
                 }
                 foreach (var e in hlsVideoList)
                 {
-                    list.Add(new MediaInfo(e.Key, e.Value.Key.File, e.Value.Value.DescriptionText, e.Value.Value.CreationTime));
+                    list.Add(new MediaInfo(e.Key, e.Value.Key.File, e.Value.Value.DescriptionText,
+                        e.Value.Value.CreationTime, e.Value.Value.TabId));
                 }
                 foreach (var e in dashVideoList)
                 {
-                    list.Add(new MediaInfo(e.Key, e.Value.Key.File, e.Value.Value.DescriptionText, e.Value.Value.CreationTime));
+                    list.Add(new MediaInfo(e.Key, e.Value.Key.File, e.Value.Value.DescriptionText,
+                        e.Value.Value.CreationTime, e.Value.Value.TabId));
                 }
                 list.Sort((a, b) => a.DateAdded.CompareTo(b.DateAdded));
                 return list;
@@ -162,7 +169,8 @@ namespace XDM.Core.BrowserMonitoring
                     Log.Debug("Video url2: " + info.Key.Uri2);
                     this.MediaAdded?.Invoke(this, new MediaInfoEventArgs
                     {
-                        MediaInfo = new MediaInfo(id, info.Key.File, info.Value.DescriptionText, DateTime.Now)
+                        MediaInfo = new MediaInfo(id, info.Key.File, info.Value.DescriptionText,
+                        DateTime.Now, info.Value.TabId)
                     });
                 }
                 ApplicationContext.PlatformUIService.ShowMediaNotification();
@@ -181,7 +189,8 @@ namespace XDM.Core.BrowserMonitoring
                     Log.Debug("Video url1: " + info.Key.Uri);
                     this.MediaAdded?.Invoke(this, new MediaInfoEventArgs
                     {
-                        MediaInfo = new MediaInfo(id, info.Key.File, info.Value.DescriptionText, DateTime.Now)
+                        MediaInfo = new MediaInfo(id, info.Key.File, info.Value.DescriptionText,
+                        DateTime.Now, info.Value.TabId)
                     });
                 }
                 ApplicationContext.PlatformUIService.ShowMediaNotification();
@@ -201,7 +210,8 @@ namespace XDM.Core.BrowserMonitoring
                     Log.Debug("Video url2: " + info.Key.AudioUri);
                     this.MediaAdded?.Invoke(this, new MediaInfoEventArgs
                     {
-                        MediaInfo = new MediaInfo(id, info.Key.File, info.Value.DescriptionText, DateTime.Now)
+                        MediaInfo = new MediaInfo(id, info.Key.File, info.Value.DescriptionText,
+                        DateTime.Now, info.Value.TabId)
                     });
                 }
                 ApplicationContext.PlatformUIService.ShowMediaNotification();
@@ -220,7 +230,8 @@ namespace XDM.Core.BrowserMonitoring
                     Log.Debug("Video url1: " + info.Key.Url);
                     this.MediaAdded?.Invoke(this, new MediaInfoEventArgs
                     {
-                        MediaInfo = new MediaInfo(id, info.Key.File, info.Value.DescriptionText, DateTime.Now)
+                        MediaInfo = new MediaInfo(id, info.Key.File, info.Value.DescriptionText,
+                        DateTime.Now, info.Value.TabId)
                     });
                 }
                 ApplicationContext.PlatformUIService.ShowMediaNotification();
@@ -238,7 +249,8 @@ namespace XDM.Core.BrowserMonitoring
                 Log.Debug("Video url2: " + info.Uri2);
                 this.MediaAdded?.Invoke(this, new MediaInfoEventArgs
                 {
-                    MediaInfo = new MediaInfo(id, info.File, displayInfo.DescriptionText, DateTime.Now)
+                    MediaInfo = new MediaInfo(id, info.File, displayInfo.DescriptionText,
+                    DateTime.Now, displayInfo.TabId)
                 });
                 ApplicationContext.PlatformUIService.ShowMediaNotification();
                 ApplicationContext.BroadcastConfigChange();
@@ -254,7 +266,8 @@ namespace XDM.Core.BrowserMonitoring
                 Log.Debug("Video url1: " + info.Uri);
                 this.MediaAdded?.Invoke(this, new MediaInfoEventArgs
                 {
-                    MediaInfo = new MediaInfo(id, info.File, displayInfo.DescriptionText, DateTime.Now)
+                    MediaInfo = new MediaInfo(id, info.File, displayInfo.DescriptionText,
+                    DateTime.Now, displayInfo.TabId)
                 });
                 ApplicationContext.PlatformUIService.ShowMediaNotification();
                 ApplicationContext.BroadcastConfigChange();
@@ -271,7 +284,8 @@ namespace XDM.Core.BrowserMonitoring
                 Log.Debug("Video url2: " + info.AudioUri);
                 this.MediaAdded?.Invoke(this, new MediaInfoEventArgs
                 {
-                    MediaInfo = new MediaInfo(id, info.File, displayInfo.DescriptionText, DateTime.Now)
+                    MediaInfo = new MediaInfo(id, info.File, displayInfo.DescriptionText,
+                    DateTime.Now, displayInfo.TabId)
                 });
                 ApplicationContext.PlatformUIService.ShowMediaNotification();
                 ApplicationContext.BroadcastConfigChange();
@@ -288,7 +302,8 @@ namespace XDM.Core.BrowserMonitoring
                 Log.Debug("Video url1: " + info.Url);
                 this.MediaAdded?.Invoke(this, new MediaInfoEventArgs
                 {
-                    MediaInfo = new MediaInfo(id, info.File, displayInfo.DescriptionText, DateTime.Now)
+                    MediaInfo = new MediaInfo(id, info.File, displayInfo.DescriptionText,
+                    DateTime.Now, displayInfo.TabId)
                 });
                 ApplicationContext.PlatformUIService.ShowMediaNotification();
                 ApplicationContext.BroadcastConfigChange();
@@ -363,18 +378,21 @@ namespace XDM.Core.BrowserMonitoring
 
     public class MediaInfo
     {
-        public MediaInfo(string id, string name, string description, DateTime date)
+        public MediaInfo(string id, string name, string description,
+            DateTime date, string tabId)
         {
             this.ID = id;
             this.Name = name;
             this.Description = description;
             this.DateAdded = date;
+            this.TabId = tabId;
         }
 
         public string ID { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
         public DateTime DateAdded { get; set; }
+        public string TabId { get; set; }
     }
 
     public class MediaInfoEventArgs

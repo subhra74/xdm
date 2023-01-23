@@ -13,6 +13,7 @@ namespace XDM.Core
         public long Duration { get; set; }
         public DateTime CreationTime { get; set; }
         public string TabUrl { get; set; }
+        public string TabId { get; set; }
 
         public string DescriptionText
         {

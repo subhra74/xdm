@@ -26,6 +26,7 @@ namespace XDM.App.Host
         public string Method { get; set; }
         public string UserAgent { get; set; }
         public string TabUrl { get; set; }
+        public string TabId { get; set; }
         public Dictionary<string, List<string>> RequestHeaders { get; set; }
         public Dictionary<string, List<string>> ResponseHeaders { get; set; }
     }

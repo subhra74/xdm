@@ -56,7 +56,7 @@ namespace XDM.Core
         public static string[] DefaultVideoExtensions => new string[]
             {
                 "MP4", "M3U8", "F4M", "WEBM", "OGG", "MP3", "AAC", "FLV", "MKV", "DIVX",
-                "MOV", "MPG", "MPEG","OPUS"
+                "MOV", "MPG", "MPEG","OPUS", "MPD"
             };
 
         public string[] VideoExtensions { get; set; }

@@ -90,6 +90,10 @@ namespace XDM.Core
                     {
                         message.TabUrl = args["--tab-url"][0];
                     }
+                    if (args.ContainsKey("--tab-id"))
+                    {
+                        message.TabId = args["--tab-id"][0];
+                    }
 
                     if (!args.ContainsKey("--media"))
                     {

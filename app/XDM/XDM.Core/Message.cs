@@ -19,6 +19,7 @@ namespace XDM.Core
         public string RequestBody { get; set; }
         public string MediaSourceUrl { get; set; }
         public string TabUrl { get; set; }
+        public string TabId { get; set; }
 
         public Message()
         {

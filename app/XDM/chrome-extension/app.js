@@ -17,6 +17,7 @@ export default class App {
         this.onDownloadCreatedCallback = this.onDownloadCreated.bind(this);
         this.onDeterminingFilenameCallback = this.onDeterminingFilename.bind(this);
         this.onTabUpdateCallback = this.onTabUpdate.bind(this);
+        this.activeTabId = -1;
     }
 
     start() {
@@ -33,6 +34,7 @@ export default class App {
     }
 
     onMessage(msg) {
+        this.logger.log("message from XDM");
         this.logger.log(msg);
         this.registered = true;
         this.appEnabled = msg.enabled === true;
@@ -128,6 +130,7 @@ export default class App {
         chrome.runtime.onMessage.addListener(this.onPopupMessage.bind(this));
         this.requestWatcher.register();
         this.attachContextMenu();
+        chrome.tabs.onActivated.addListener(this.onTabActivated.bind(this));
     }
 
     isSupportedProtocol(url) {
@@ -155,10 +158,22 @@ export default class App {
 
     updateActionIcon() {
         chrome.action.setIcon({ path: this.getActionIcon() });
-        chrome.action.setBadgeText({ text: "" });
+        let vc = "";
         if (this.videoList && this.videoList.length > 0) {
-            chrome.action.setBadgeText({ text: this.videoList.length + "" });
+            let len = this.videoList.filter(vid => {
+                if (!vid.tabId) {
+                    return true;
+                }
+                if (vid.tabId == '-1') {
+                    return true;
+                }
+                return (vid.tabId == this.activeTabId);
+            }).length;
+            if (len > 0) {
+                vc = len + "";
+            }
         }
+        chrome.action.setBadgeText({ text: vc });
         if (!this.registered) {
             this.logger.log("not registered")
             chrome.action.setPopup({ popup: "./error.html" });
@@ -169,9 +184,9 @@ export default class App {
         }
         else {
             chrome.action.setPopup({ popup: "./popup.html" });
-            if (this.videoList && this.videoList.length > 0) {
-                chrome.action.setBadgeText({ text: this.videoList.length + "" });
-            }
+            // if (this.videoList && this.videoList.length > 0) {
+            //     chrome.action.setBadgeText({ text: this.videoList.length + "" });
+            // }
         }
     }
 
@@ -221,7 +236,12 @@ export default class App {
         if (request.type === "stat") {
             let resp = {
                 enabled: this.isMonitoringEnabled(),
-                list: this.videoList
+                list: this.videoList.filter(vid => {
+                    if (!vid.tabId) {
+                        return true;
+                    }
+                    return (vid.tabId == this.activeTabId);
+                })
             };
             sendResponse(resp);
         }
@@ -298,5 +318,11 @@ export default class App {
         });
 
         chrome.contextMenus.onClicked.addListener(this.onMenuClicked.bind(this));
+    }
+
+    onTabActivated(activeInfo) {
+        this.activeTabId = activeInfo.tabId + "";
+        this.logger.log("Active tab: " + this.activeTabId);
+        this.updateActionIcon();
     }
 }

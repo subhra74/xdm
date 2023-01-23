@@ -29,6 +29,7 @@ namespace XDM.Core.BrowserMonitoring
         private static List<DashInfo> audioQueue = new();
         private static Dictionary<string, DateTime> referersToSkip = new();  //Skip the video requests whose referer hash is present in below dict
                                                                              //as they were triggered by HLS or DASH 
+        private static HashSet<string> m3u8MpdTabs = new(); //Keep track of tab id which triggered m3u8 or mpd manifest
 
         public static void ProcessMediaMessage(Message message)
         {
@@ -43,34 +44,37 @@ namespace XDM.Core.BrowserMonitoring
                 VideoUrlHelper.ProcessPostYtFormats(message);
             }
 
-            if (VideoUrlHelper.IsHLS(contentType))
+            if (VideoUrlHelper.IsHLS(contentType) || VideoUrlHelper.IsHLSUrl(message.Url))
             {
                 VideoUrlHelper.ProcessHLSVideo(message);
             }
 
-            if (VideoUrlHelper.IsDASH(contentType))
+            if (VideoUrlHelper.IsDASH(contentType) || VideoUrlHelper.IsDASHUrl(message.Url))
             {
                 VideoUrlHelper.ProcessDashVideo(message);
             }
 
             if (!VideoUrlHelper.ProcessYtDashSegment(message))
             {
-                if (VideoUrlHelper.IsNormalVideo(contentType, message.Url, message.GetContentLength()))
+                if (VideoUrlHelper.IsNormalVideo(contentType, message.Url, message.GetContentLength(), message.TabId))
                 {
                     VideoUrlHelper.ProcessNormalVideo(message);
                 }
             }
         }
 
-        internal static bool IsNormalVideo(string contentType, string url, long size)
+        internal static bool IsNormalVideo(string contentType, string url, long size, string tabId)
         {
             if (size > 0 && size < Config.Instance.MinVideoSize * 1024)
             {
                 return false;
             }
+            if (!string.IsNullOrEmpty(tabId) && m3u8MpdTabs.Contains(tabId))
+            {
+                return false;
+            }
             return (contentType != null && !(contentType.Contains("f4f") ||
-                                contentType.Contains("m4s") ||
-                                contentType.Contains("mp2t") || url.Contains("abst") ||
+                                contentType.Contains("m4s") || url.Contains("abst") ||
                                 url.Contains("f4x") || url.Contains(".fbcdn")
                                 || url.Contains("http://127.0.0.1:9614")));
         }
@@ -170,7 +174,10 @@ namespace XDM.Core.BrowserMonitoring
         {
             var file = message.File ?? FileHelper.GetFileName(new Uri(message.Url));
             Log.Debug("Downloading MPD manifest: " + message.Url);
-
+            if (!string.IsNullOrEmpty(message.TabId))
+            {
+                m3u8MpdTabs.Add(message.TabId);
+            }
             AddToSkippedRefererList(message.GetRequestHeaderFirstValue("Referer"));
 
             var manifest = DownloadManifest(message);
@@ -317,6 +324,10 @@ namespace XDM.Core.BrowserMonitoring
         {
             Log.Debug("Downloading HLS manifest: " + message.Url);
 
+            if (!string.IsNullOrEmpty(message.TabId))
+            {
+                m3u8MpdTabs.Add(message.TabId);
+            }
             AddToSkippedRefererList(message.GetRequestHeaderFirstValue("Referer"));
 
             var manifest = DownloadManifest(message);
@@ -349,7 +360,8 @@ namespace XDM.Core.BrowserMonitoring
                             ApplicationContext.VideoTracker.AddVideoNotification(new StreamingVideoDisplayInfo
                             {
                                 Quality = displayText,
-                                CreationTime = DateTime.Now
+                                CreationTime = DateTime.Now,
+                                TabId = message.TabId
                             }, video);
                         }
                     }
@@ -377,7 +389,8 @@ namespace XDM.Core.BrowserMonitoring
                     ApplicationContext.VideoTracker.AddVideoNotification(new StreamingVideoDisplayInfo
                     {
                         Quality = displayText,
-                        CreationTime = DateTime.Now
+                        CreationTime = DateTime.Now,
+                        TabId = message.TabId
                     }, video);
                 }
             }
@@ -510,7 +523,8 @@ namespace XDM.Core.BrowserMonitoring
                         Quality = displayText,
                         Size = size,
                         CreationTime = DateTime.Now,
-                        TabUrl = message.TabUrl
+                        TabUrl = message.TabUrl,
+                        TabId = message.TabId
                     }, video);
                 }
 
@@ -552,7 +566,8 @@ namespace XDM.Core.BrowserMonitoring
                     Quality = displayText,
                     Size = size,
                     CreationTime = DateTime.Now,
-                    TabUrl = message.TabUrl
+                    TabUrl = message.TabUrl,
+                    TabId = message.TabId
                 }, video);
             }
             catch (Exception ex)
@@ -587,20 +602,21 @@ namespace XDM.Core.BrowserMonitoring
             };
         }
 
-        internal static void ProcessNormalVideo(Message message2)
+        internal static void ProcessNormalVideo(Message message)
         {
-            if (IsMediaFragment(message2.GetRequestHeaderFirstValue("Referer")))
+            if (IsMediaFragment(message.GetRequestHeaderFirstValue("Referer")))
             {
-                Log.Debug($"Skipping url:{message2.Url} as it seems a media fragment");
+                Log.Debug($"Skipping url:{message.Url} as it seems a media fragment");
                 return;
             }
 
-            var file = (message2.File ?? FileHelper.GetFileName(new Uri(message2.Url)));
-            var type = message2.GetResponseHeaderFirstValue("Content-Type")?.ToLowerInvariant() ?? string.Empty;
-            var len = message2.GetContentLength();
+            var file = (message.File ?? FileHelper.GetFileName(new Uri(message.Url)));
+            var type = message.GetResponseHeaderFirstValue("Content-Type")?.ToLowerInvariant() ?? string.Empty;
+            var len = message.GetContentLength();
+            var url = message.Url.ToLowerInvariant();
             if (string.IsNullOrEmpty(file))
             {
-                file = FileHelper.GetFileName(new Uri(message2.Url));
+                file = FileHelper.GetFileName(new Uri(message.Url));
             }
             string ext;
             if (type.Contains("video/mp4"))
@@ -631,6 +647,18 @@ namespace XDM.Core.BrowserMonitoring
             {
                 ext = "m4a";
             }
+            else if (url.Contains(".mp4"))
+            {
+                ext = "mp4";
+            }
+            else if (url.Contains(".mkv"))
+            {
+                ext = "mkv";
+            }
+            else if (url.Contains(".ts"))
+            {
+                ext = "ts";
+            }
             else
             {
                 return;
@@ -638,20 +666,21 @@ namespace XDM.Core.BrowserMonitoring
 
             var video = new SingleSourceHTTPDownloadInfo
             {
-                Uri = message2.Url,
-                Headers = message2.RequestHeaders,
+                Uri = message.Url,
+                Headers = message.RequestHeaders,
                 File = FileHelper.SanitizeFileName(file) + "." + ext,
-                Cookies = message2.Cookies,
+                Cookies = message.Cookies,
                 ContentLength = len
             };
 
-            var size = long.Parse(message2.GetResponseHeaderFirstValue("Content-Length"));
+            var size = long.Parse(message.GetResponseHeaderFirstValue("Content-Length"));
             var displayText = $"[{ext.ToUpperInvariant()}] {(size > 0 ? FormattingHelper.FormatSize(size) : string.Empty)}";
             ApplicationContext.VideoTracker.AddVideoNotification(new StreamingVideoDisplayInfo
             {
                 Quality = displayText,
                 Size = size,
-                CreationTime = DateTime.Now
+                CreationTime = DateTime.Now,
+                TabId = message.TabId
             }, video); ;
         }
 
@@ -686,6 +715,11 @@ namespace XDM.Core.BrowserMonitoring
             return false;
         }
 
+        internal static bool IsHLSUrl(string url)
+        {
+            return url?.ToLowerInvariant().Contains(".m3u8") ?? false;
+        }
+
         internal static bool IsDASH(string contentType)
         {
             foreach (var key in new string[] { "dash" })
@@ -696,6 +730,11 @@ namespace XDM.Core.BrowserMonitoring
                 }
             }
             return false;
+        }
+
+        internal static bool IsDASHUrl(string url)
+        {
+            return url?.ToLowerInvariant().Contains(".mpd") ?? false;
         }
 
         internal static bool IsYtFormat(string? contentType)
@@ -836,12 +875,12 @@ namespace XDM.Core.BrowserMonitoring
             return false;
         }
 
-        private static void AddToSkippedRefererList(string referer)
+        private static void AddToSkippedRefererList(string? referer)
         {
             if (string.IsNullOrEmpty(referer)) return;
             lock (referersToSkip)
             {
-                referersToSkip[ComputeHash(referer)] = DateTime.Now;
+                referersToSkip[ComputeHash(referer!)] = DateTime.Now;
             }
         }
 
