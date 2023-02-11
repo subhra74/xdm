@@ -140,11 +140,11 @@ export default class RequestWatcher {
             file: title,
             requestHeaders: {},
             responseHeaders: {},
-            cookies: {},
+            cookie: undefined,
             method: req.method,
             userAgent: navigator.userAgent,
             tabUrl: tabUrl,
-            tabId: tabId
+            tabId: tabId + ""
         };
 
         if (req.extraHeaders) {

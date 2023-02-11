@@ -110,8 +110,6 @@
 
   <Import Project="..\XDM.Compatibility\XDM.Compatibility.projitems" Label="Shared" />
 
-  <Import Project="..\NativeMessaging\NativeMessaging.projitems" Label="Shared" />
-
   <!--<ItemGroup>
 	  <Content Update="glade\download-complete-window.glade">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>

@@ -34,25 +34,25 @@ namespace XDM.Wpf.UI
             }
         }
 
-        public static void FirstRunAppInit()
-        {
-            var frFile = Path.Combine(Config.AppDir, AppInfo.APP_VERSION + ".firstrunfile");
-            if (!File.Exists(frFile))
-            {
-                File.WriteAllText(frFile, "");
-                CopyExtension();
-                Config.Instance.RunOnLogon = true;
-                Config.SaveConfig();
-                ApplicationContext.Application.RunOnUiThread(() =>
-                {
-                    ApplicationContext.MainWindow.ShowAndActivate();
-                    if (!File.Exists(Path.Combine(Config.AppDir, "browser-integration-attempted")))
-                    {
-                        ApplicationContext.PlatformUIService.ShowBrowserMonitoringDialog();
-                    }
-                });
-            }
-        }
+        //public static void FirstRunAppInit()
+        //{
+        //    var frFile = Path.Combine(Config.AppDir, AppInfo.APP_VERSION + ".firstrunfile");
+        //    if (!File.Exists(frFile))
+        //    {
+        //        File.WriteAllText(frFile, "");
+        //        CopyExtension();
+        //        Config.Instance.RunOnLogon = true;
+        //        Config.SaveConfig();
+        //        ApplicationContext.Application.RunOnUiThread(() =>
+        //        {
+        //            ApplicationContext.MainWindow.ShowAndActivate();
+        //            if (!File.Exists(Path.Combine(Config.AppDir, "browser-integration-attempted")))
+        //            {
+        //                ApplicationContext.PlatformUIService.ShowBrowserMonitoringDialog();
+        //            }
+        //        });
+        //    }
+        //}
 
         public static void CopyExtension()
         {

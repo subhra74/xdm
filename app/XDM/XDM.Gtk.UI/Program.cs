@@ -8,6 +8,7 @@ using XDM.Core.DataAccess;
 using XDMApp = XDM.Core.Application;
 using System.Linq;
 using XDM.Core.BrowserMonitoring;
+using XDM.Core.Util;
 
 namespace XDM.GtkUI
 {
@@ -96,6 +97,7 @@ namespace XDM.GtkUI
 
             Log.Debug("Configuring app context...");
 
+            ApplicationContext.FirstRunCallback += ApplicationContext_FirstRunCallback;
             ApplicationContext.Configurer()
                 .RegisterApplicationWindow(win)
                 .RegisterApplication(app)
@@ -113,6 +115,11 @@ namespace XDM.GtkUI
             Log.Debug("Gtk Run...");
 
             Gtk.Application.Run();
+        }
+
+        private static void ApplicationContext_FirstRunCallback(object? sender, EventArgs e)
+        {
+            PlatformHelper.EnableAutoStart(true);
         }
 
         private static void ExceptionManager_UnhandledException(GLib.UnhandledExceptionArgs args)

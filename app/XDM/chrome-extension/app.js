@@ -1,6 +1,7 @@
 "use strict";
 import Logger from './logger.js';
 import RequestWatcher from './request-watcher.js';
+import Connector from './connector.js';
 
 export default class App {
     constructor() {
@@ -8,35 +9,31 @@ export default class App {
         this.videoList = [];
         this.blockedHosts = [];
         this.fileExts = [];
-        this.port = undefined;
         this.requestWatcher = new RequestWatcher(this.onRequestDataReceived.bind(this));
         this.tabsWatcher = [];
-        this.registered = false;
-        this.enabled = true;
+        this.userDisabled = false;
         this.appEnabled = false;
         this.onDownloadCreatedCallback = this.onDownloadCreated.bind(this);
         this.onDeterminingFilenameCallback = this.onDeterminingFilename.bind(this);
         this.onTabUpdateCallback = this.onTabUpdate.bind(this);
         this.activeTabId = -1;
+        this.connector = new Connector(this.onMessage.bind(this), this.onDisconnect.bind(this));
     }
 
     start() {
         this.logger.log("starting...");
-        this.startNativeHost();
+        this.starAppConnector();
         this.register();
         this.logger.log("started.");
     }
 
-    startNativeHost() {
-        this.port = chrome.runtime.connectNative("xdm_chrome.native_host");
-        this.port.onMessage.addListener(this.onMessage.bind(this));
-        this.port.onDisconnect.addListener(this.onDisconnect.bind(this));
+    starAppConnector() {
+        this.connector.connect();
     }
 
     onMessage(msg) {
         this.logger.log("message from XDM");
         this.logger.log(msg);
-        this.registered = true;
         this.appEnabled = msg.enabled === true;
         this.fileExts = msg.fileExts;
         this.blockedHosts = msg.blockedHosts;
@@ -51,24 +48,22 @@ export default class App {
         this.updateActionIcon();
     }
 
-    onDisconnect(p) {
+    onDisconnect() {
         this.logger.log("Disconnected from native host!");
-        this.logger.log(p);
-        this.enabled = false;
-        this.port = undefined;
+        console.log("Disconnected...");
         this.updateActionIcon();
     }
 
     isMonitoringEnabled() {
-        this.logger.log(this.registered + " " + this.appEnabled + " " + this.enabled);
-        return this.registered === true && this.appEnabled === true && this.enabled === true;
+        this.logger.log(this.appEnabled + " " + this.userDisabled);
+        return this.appEnabled === true && this.userDisabled === false && this.connector.isConnected();
     }
 
     onRequestDataReceived(data) {
         //Streaming video data received, send to native messaging application
         this.logger.log("onRequestDataReceived");
         this.logger.log(data);
-        this.isMonitoringEnabled() && this.port && this.port.postMessage({ download_headers: data });
+        this.isMonitoringEnabled() && this.connector.isConnected() && this.connector.postMessage("/media", data);
     }
 
     onDeterminingFilename(download, suggest) {
@@ -98,17 +93,14 @@ export default class App {
         if (!this.isMonitoringEnabled()) {
             return;
         }
-        let nativePort = this.port;
         if (changeInfo.title) {
             if (this.tabsWatcher &&
                 this.tabsWatcher.find(t => tab.url.indexOf(t) > 0)) {
                 this.logger.log("Tab changed: " + changeInfo.title + " => " + tab.url);
                 try {
-                    nativePort.postMessage({
-                        tab_update: {
-                            url: tab.url,
-                            title: changeInfo.title
-                        }
+                    this.connector.postMessage("/tab-update", {
+                        tabUrl: tab.url,
+                        tabTitle: changeInfo.title
                     });
                 } catch (ex) {
                     console.log(ex);
@@ -174,16 +166,18 @@ export default class App {
             }
         }
         chrome.action.setBadgeText({ text: vc });
-        if (!this.registered) {
-            this.logger.log("not registered")
+        if (!this.connector.isConnected()) {
+            console.log("Not connected...");
             chrome.action.setPopup({ popup: "./error.html" });
             return;
         }
         if (!this.appEnabled) {
             chrome.action.setPopup({ popup: "./disabled.html" });
+            return;
         }
         else {
             chrome.action.setPopup({ popup: "./popup.html" });
+            return;
             // if (this.videoList && this.videoList.length > 0) {
             //     chrome.action.setBadgeText({ text: this.videoList.length + "" });
             // }
@@ -203,31 +197,40 @@ export default class App {
     }
 
     triggerDownload(url, file, referer, size, mime) {
-        let nativePort = this.port;
         chrome.cookies.getAll({ "url": url }, cookies => {
+            let cookieStr = undefined;
             if (cookies) {
-                let cookieStr = cookies.map(cookie => cookie.name + "=" + cookie.value).join("; ");
-                let headers = ["User-Agent: " + navigator.userAgent];
-                if (referer) {
-                    headers.push("Referer: " + referer);
-                }
-                let data = {
-                    url: url,
-                    cookie: cookieStr,
-                    headers: headers,
-                    filename: file,
-                    fileSize: size,
-                    mimeType: mime,
-                    type: "download_data"
-                };
-                this.logger.log(data);
-                nativePort.postMessage(data);
+                cookieStr = cookies.map(cookie => cookie.name + "=" + cookie.value).join("; ");
             }
+            let requestHeaders = { "User-Agent": [navigator.userAgent] };
+            if (referer) {
+                requestHeaders["Referer"] = [referer];
+            }
+            let responseHeaders = {};
+            if (size) {
+                let fz = +size;
+                if (fz > 0) {
+                    responseHeaders["Content-Length"] = [fz];
+                }
+            }
+            if (mime) {
+                responseHeaders["Content-Type"] = [mime];
+            }
+            let data = {
+                url: url,
+                cookie: cookieStr,
+                requestHeaders: requestHeaders,
+                responseHeaders: responseHeaders,
+                filename: file,
+                fileSize: size,
+                mimeType: mime
+            };
+            this.logger.log(data);
+            this.connector.postMessage("/download", data);
         });
     }
 
     diconnect() {
-        this.port && this.port.disconnect();
         this.onDisconnect();
     }
 
@@ -246,25 +249,22 @@ export default class App {
             sendResponse(resp);
         }
         else if (request.type === "cmd") {
-            this.enabled = request.enabled;
+            this.userDisabled = request.enabled === false;
             this.logger.log("request.enabled:" + request.enabled);
-            if (this.enabled && !this.port) {
-                this.startNativeHost();
+            if (request.enabled && !this.connector.isConnected()) {
+                this.connector.launchApp();
                 return;
             }
             this.updateActionIcon();
         }
         else if (request.type === "vid") {
             let vid = request.itemId;
-            this.port.postMessage({
+            this.connector.postMessage("/vid", {
                 vid: vid + "",
-                type: 'vid'
             });
         }
         else if (request.type === "clear") {
-            this.port.postMessage({
-                clear: true
-            });
+            this.connector.postMessage("/clear", {});
         }
     }
 

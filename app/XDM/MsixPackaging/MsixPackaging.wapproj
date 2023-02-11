@@ -144,7 +144,7 @@
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.19041.8" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\XDM.App.Host\XDM.App.Host.csproj" />
+    <ProjectReference Include="..\XDM.Msix.AutoLaunch\XDM.Msix.AutoLaunch.csproj" />
     <ProjectReference Include="..\XDM.Wpf.UI\XDM.Wpf.UI.csproj" />
   </ItemGroup>
 </Project>

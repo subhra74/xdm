@@ -1,4 +1,4 @@
-﻿using NativeMessaging;
+﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,8 +38,8 @@ namespace XDM.Core
             {
                 Log.Debug("Sending to running instance...");
                 var args = Environment.GetCommandLineArgs().Skip(1);
-                var request = WebRequest.CreateHttp("http://127.0.0.1:20002/args");
-                var postData = "[" + string.Join(",", args.Count() == 0 ? new string[] { "--restore-window" } : args) + "]";
+                var request = WebRequest.CreateHttp("http://127.0.0.1:8597/args");
+                var postData = JsonConvert.SerializeObject(args.Count() == 0 ? new string[] { "--restore-window" } : args);
                 Log.Debug("Sending...");
                 var data = Encoding.UTF8.GetBytes(postData);
                 request.Method = "POST";

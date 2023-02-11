@@ -21,7 +21,7 @@ namespace XDM.Core.BrowserMonitoring
 
         public IpcHttpMessageProcessor()
         {
-            server = new NanoServer(IPAddress.Loopback, 20002);
+            server = new NanoServer(IPAddress.Loopback, 8597);
             server.RequestReceived += (sender, args) =>
             {
                 HandleRequest(args.RequestContext);
@@ -51,7 +51,6 @@ namespace XDM.Core.BrowserMonitoring
                 switch (context.RequestPath)
                 {
                     case "/sync":
-                        OnSyncMessage(context);
                         break;
                     case "/download":
                         OnDownloadMessage(context);
@@ -74,11 +73,15 @@ namespace XDM.Core.BrowserMonitoring
                     case "/args":
                         OnArgsMessage(context);
                         break;
+                    default:
+                        throw new ArgumentException("Unsupported request: " + context.RequestPath);
                 }
+                OnSyncMessage(context);
             }
             catch (Exception ex)
             {
                 Log.Debug(ex.ToString());
+                throw;
             }
         }
 
@@ -121,6 +124,7 @@ namespace XDM.Core.BrowserMonitoring
             }
             var dmsg = new Message();
             dmsg.Url = msg.Url;
+            dmsg.RequestMethod = msg.Method;
             dmsg.RequestHeaders = msg.RequestHeaders;
             dmsg.ResponseHeaders = msg.ResponseHeaders;
             dmsg.Cookies = msg.Cookie;
@@ -140,6 +144,7 @@ namespace XDM.Core.BrowserMonitoring
             }
             var dmsg = new Message();
             dmsg.Url = msg.Url;
+            dmsg.RequestMethod = msg.Method;
             dmsg.RequestHeaders = msg.RequestHeaders;
             dmsg.ResponseHeaders = msg.ResponseHeaders;
             dmsg.Cookies = msg.Cookie;
@@ -161,6 +166,7 @@ namespace XDM.Core.BrowserMonitoring
             {
                 var dmsg = new Message();
                 dmsg.Url = msg.Url;
+                dmsg.RequestMethod = msg.Method;
                 dmsg.RequestHeaders = msg.RequestHeaders;
                 dmsg.ResponseHeaders = msg.ResponseHeaders;
                 dmsg.Cookies = msg.Cookie;
@@ -257,6 +263,7 @@ namespace XDM.Core.BrowserMonitoring
 
         private void OnSyncMessage(RequestContext context)
         {
+            Log.Debug("Sync...");
             var json = CreateConfigJson();
             context.ResponseStatus = new ResponseStatus
             {

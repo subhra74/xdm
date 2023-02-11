@@ -54,28 +54,13 @@ namespace XDM.Wpf.UI
             }
             Log.Debug($"Application_Startup::args->: {string.Join(" ", Environment.GetCommandLineArgs())}");
 
-            if (MsixHelper.IsAppContainer)
-            {
-                if (Environment.GetCommandLineArgs().Length == 2 && Environment.GetCommandLineArgs()[1].StartsWith("b:"))
-                {
-                    if (Environment.GetCommandLineArgs()[1].StartsWith("b:chrome"))
-                    {
-                        NativeMessagingHostConfigurer.InstallNativeMessagingHostForWindows(Browser.Chrome, true);
-                    }
-                    else if (Environment.GetCommandLineArgs()[1].StartsWith("b:firefox"))
-                    {
-                        NativeMessagingHostConfigurer.InstallNativeMessagingHostForWindows(Browser.Firefox, true);
-                    }
-                    Environment.Exit(0);
-                }
-            }
-
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
             core = new ApplicationCore();
             win = new MainWindow();
             app = new XDMApp();
 
+            ApplicationContext.FirstRunCallback += ApplicationContext_FirstRunCallback;
             ApplicationContext.Configurer()
                 .RegisterApplicationWindow(win)
                 .RegisterApplication(app)
@@ -93,11 +78,23 @@ namespace XDM.Wpf.UI
             {
                 win.ShowAndActivate();
             };
+        }
 
+        private void ApplicationContext_FirstRunCallback(object sender, EventArgs e)
+        {
             if (MsixHelper.IsAppContainer)
             {
-                MsixHelper.FirstRunAppInit();
+                MsixHelper.CopyExtension();
             }
+            else
+            {
+                Config.Instance.RunOnLogon = true;
+            }
+            ApplicationContext.Application.RunOnUiThread(() =>
+            {
+                ApplicationContext.MainWindow.ShowAndActivate(); 
+                ApplicationContext.PlatformUIService.ShowBrowserMonitoringDialog();
+            });
         }
 
         private void Application_Exit(object sender, ExitEventArgs e)

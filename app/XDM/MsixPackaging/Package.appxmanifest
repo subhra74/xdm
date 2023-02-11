@@ -13,7 +13,7 @@
   <Identity
     Name="56617subhra74.XtremeDownloadManager-XDM"
     Publisher="CN=CE459F77-0688-4F4F-B36F-5657C1A1A02C"
-    Version="8.0.79.0" />
+    Version="8.0.82.0" />
 
   <Properties>
     <DisplayName>Xtreme Download Manager - XDM</DisplayName>
@@ -52,21 +52,21 @@
             Parameters="%1" />
         </uap3:Extension>
         <uap3:Extension Category="windows.appExecutionAlias"
-                    Executable="XDM.App.Host\xdm-app-host.exe"
+                    Executable="XDM.Wpf.UI\xdm-app.exe"
                     EntryPoint="Windows.FullTrustApplication">
           <uap3:AppExecutionAlias>
-            <desktop:ExecutionAlias Alias="xdm-app-host.exe" />
+            <desktop:ExecutionAlias Alias="xdm-app.exe" />
           </uap3:AppExecutionAlias>
         </uap3:Extension>
-        <!--<desktop:Extension
+        <desktop:Extension
           Category="windows.startupTask"
-          Executable="$targetnametoken$.exe"
+          Executable="XDM.Msix.AutoLaunch\xdm-launcher.exe"
           EntryPoint="Windows.FullTrustApplication">
           <desktop:StartupTask
             TaskId="XDMStartupTask"
             Enabled="true"
             DisplayName="Xtreme Download Manager" />
-        </desktop:Extension>-->
+        </desktop:Extension>
       </Extensions>
     </Application>
   </Applications>

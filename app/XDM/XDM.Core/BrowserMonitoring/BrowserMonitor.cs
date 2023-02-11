@@ -1,7 +1,6 @@
 ﻿using System;
 using TraceLog;
 using XDM.Core;
-using XDM.Core.Ipc;
 
 namespace XDM.Core.BrowserMonitoring
 {

@@ -11,6 +11,21 @@ namespace XDM.Core.Util
 {
     public static class PlatformHelper
     {
+        public static bool IsFirstRun()
+        {
+            var firstRunFile = Path.Combine(Config.AppDir, "xdm-" + AppInfo.APP_VERSION + ".first-run");
+            if (!File.Exists(firstRunFile))
+            {
+                try
+                {
+                    File.Create(firstRunFile).Close();
+                }
+                catch { }
+                return true;
+            }
+            return false;
+        }
+
         public static bool KillAll(string processName, out string? processExecutable)
         {
             processExecutable = null;
