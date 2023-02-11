@@ -10,6 +10,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)AppInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\ExtensionData.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\NativeMessagingHostConfigurer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Clients\Http\Utils.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Util\ExtensionRegistrationHelper.cs" />

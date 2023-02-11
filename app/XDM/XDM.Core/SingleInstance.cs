@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading;
 using TraceLog;
@@ -37,15 +38,19 @@ namespace XDM.Core
             {
                 Log.Debug("Sending to running instance...");
                 var args = Environment.GetCommandLineArgs().Skip(1);
-                var ipcClient = new IpcClient();
-                ipcClient.Connect(8597);
-                Log.Debug("Receiving...");
-                ipcClient!.Receive();
+                var request = WebRequest.CreateHttp("http://127.0.0.1:20002/args");
+                var postData = "[" + string.Join(",", args.Count() == 0 ? new string[] { "--restore-window" } : args) + "]";
                 Log.Debug("Sending...");
-                //if no arguments, then restore ui of previously running process
-                ipcClient.Send(args.Count() == 0 ? new string[] { "--restore-window" } : args);
+                var data = Encoding.UTF8.GetBytes(postData);
+                request.Method = "POST";
+                request.ContentType = "application/json";
+                request.ContentLength = data.Length;
+                using (var stream = request.GetRequestStream())
+                {
+                    stream.Write(data, 0, data.Length);
+                }
+                var response = request.GetResponse();
                 Log.Debug("Sent...");
-                ipcClient.Close();
             }
             catch (Exception ex)
             {
