@@ -126,13 +126,13 @@ export default class RequestWatcher {
         chrome.webRequest.onSendHeaders.addListener(
             this.onSendHeadersEventCallback,
             { urls: ["http://*/*", "https://*/*"] },
-            navigator.userAgent.indexOf("Firefox") ? ["requestHeaders"] : ["requestHeaders", "extraHeaders"]
+            ["extraHeaders", "requestHeaders"]
         );
 
         chrome.webRequest.onHeadersReceived.addListener(
             this.onHeadersReceivedEventCallback,
             { urls: ["http://*/*", "https://*/*"] },
-            ["responseHeaders"]
+            ["extraHeaders", "responseHeaders"]
         );
 
         chrome.webRequest.onErrorOccurred.addListener(
@@ -148,7 +148,7 @@ export default class RequestWatcher {
     }
 
     createRequestData(req, res, title, tabUrl, tabId) {
-        var data = {
+        let data = {
             url: res.url,
             file: title,
             requestHeaders: {},
@@ -160,13 +160,21 @@ export default class RequestWatcher {
             tabId: tabId + ""
         };
 
+        let cookies = [];
+
         if (req.extraHeaders) {
             req.extraHeaders.forEach(h => {
+                if (h.name === 'Cookie' || h.name === 'cookie') {
+                    cookies.push(h.value);
+                }
                 this.addToDict(data.requestHeaders, h.name, h.value);
             });
         }
         if (req.requestHeaders) {
             req.requestHeaders.forEach(h => {
+                if (h.name === 'Cookie' || h.name === 'cookie') {
+                    cookies.push(h.value);
+                }
                 this.addToDict(data.requestHeaders, h.name, h.value);
             });
         }
@@ -175,11 +183,14 @@ export default class RequestWatcher {
                 this.addToDict(data.responseHeaders, h.name, h.value);
             });
         }
+        if (cookies.length > 0) {
+            data.cookie = cookies.join(";");
+        }
         return data;
     }
 
     addToDict(dict, key, value) {
-        var values = dict[key];
+        let values = dict[key];
         if (values) {
             values.push(value);
         } else {

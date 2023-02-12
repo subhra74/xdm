@@ -77,7 +77,7 @@ export default class App {
         if (this.isMonitoringEnabled() && this.shouldTakeOver(url, download.filename)) {
             chrome.downloads.cancel(
                 download.id,
-                () => chrome.downloads.erase(download.id)
+                () => chrome.downloads.erase({ id: download.id })
             );
             this.triggerDownload(url, download.filename,
                 download.referrer, download.fileSize, download.mime);
