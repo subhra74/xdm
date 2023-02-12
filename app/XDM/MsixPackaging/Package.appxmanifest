@@ -13,7 +13,7 @@
   <Identity
     Name="56617subhra74.XtremeDownloadManager-XDM"
     Publisher="CN=CE459F77-0688-4F4F-B36F-5657C1A1A02C"
-    Version="8.0.82.0" />
+    Version="8.0.83.0" />
 
   <Properties>
     <DisplayName>Xtreme Download Manager - XDM</DisplayName>

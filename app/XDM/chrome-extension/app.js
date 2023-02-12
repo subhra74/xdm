@@ -79,8 +79,12 @@ export default class App {
                 download.id,
                 () => chrome.downloads.erase({ id: download.id })
             );
+            let referrer = download.referrer;
+            if (!referrer && download.finalUrl !== download.url) {
+                referrer = download.url;
+            }
             this.triggerDownload(url, download.filename,
-                download.referrer, download.fileSize, download.mime);
+                referrer, download.fileSize, download.mime);
         }
     }
 
