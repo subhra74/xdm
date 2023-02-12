@@ -27,7 +27,7 @@ namespace XDM.GtkUI.Dialogs.ChromeIntegrator
 
         private WindowGroup windowGroup;
         private Browser browser;
-        private bool successResult;
+        private bool successResult = true;
 
         private ChromeIntegratorWindow(Builder builder, Browser browser) : base(builder.GetRawOwnedObject("window"))
         {

@@ -30,6 +30,7 @@ namespace XDM.Core.BrowserMonitoring
         private static Dictionary<string, DateTime> referersToSkip = new();  //Skip the video requests whose referer hash is present in below dict
                                                                              //as they were triggered by HLS or DASH 
         private static HashSet<string> m3u8MpdTabs = new(); //Keep track of tab id which triggered m3u8 or mpd manifest
+        private static HashSet<string> suspectedMp4Fragments = new();
 
         public static void ProcessMediaMessage(Message message)
         {
@@ -70,6 +71,15 @@ namespace XDM.Core.BrowserMonitoring
                 return false;
             }
             if (!string.IsNullOrEmpty(tabId) && m3u8MpdTabs.Contains(tabId))
+            {
+                return false;
+            }
+            if (url.ToLowerInvariant().Contains("init.mp4"))
+            {
+                suspectedMp4Fragments.Add(new Uri(new Uri(url), ".").AbsoluteUri);
+                return false;
+            }
+            if (suspectedMp4Fragments.Contains(new Uri(new Uri(url), ".").AbsoluteUri))
             {
                 return false;
             }

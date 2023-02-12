@@ -17,7 +17,7 @@ namespace XDM.Core.BrowserMonitoring
         public string TabId { get; set; }
         public string TabTitle { get; set; }
         public string Referer { get; set; }
-        public long FileSize { get; set; }
+        public long? FileSize { get; set; }
         public string MimeType { get; set; }
         public string Vid { get; set; }
     }

@@ -26,9 +26,6 @@ export default class Connector {
     }
 
     disconnect() {
-        if (this.connected === false) {
-            return;
-        }
         this.connected = false;
         this.onDisconnect();
     }
@@ -38,9 +35,6 @@ export default class Connector {
     }
 
     onResponse(res) {
-        if (this.connected === true) {
-            return;
-        }
         this.connected = true;
         res.json().then(json => this.onMessage(json)).catch(err => this.disconnect());
     }

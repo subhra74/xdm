@@ -263,7 +263,6 @@ namespace XDM.Core.BrowserMonitoring
 
         private void OnSyncMessage(RequestContext context)
         {
-            Log.Debug("Sync...");
             var json = CreateConfigJson();
             context.ResponseStatus = new ResponseStatus
             {
@@ -280,7 +279,6 @@ namespace XDM.Core.BrowserMonitoring
         {
             try
             {
-                Log.Debug("Creating config JSON");
                 var w = new StringWriter();
                 using var writer = new JsonTextWriter(w);
                 writer.CloseOutput = false;

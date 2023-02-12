@@ -9,7 +9,6 @@
     ],
     "permissions": [
         "downloads",
-        "nativeMessaging",
         "cookies",
         "webRequest",
         "tabs",

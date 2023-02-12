@@ -24,7 +24,6 @@ namespace XDM.Core.HttpServer
             while (true)
             {
                 var tcp = listener.AcceptTcpClient();
-                Log.Debug("New request...");
                 ProcessRequest(tcp);
             }
         }
@@ -46,7 +45,6 @@ namespace XDM.Core.HttpServer
                 {
                     while (true)
                     {
-                        Log.Debug("Tcp stream id: " + tcp.GetHashCode());
                         var ctx = HttpParser.ParseContext(tcp);
                         this.RequestReceived?.Invoke(this, new RequestContextEventArgs(ctx));
                         if (!ctx.KeepAlive)

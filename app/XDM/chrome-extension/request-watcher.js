@@ -5,6 +5,7 @@ export default class RequestWatcher {
     constructor(callback) {
         this.logger = new Logger();
         this.blockedHosts = [];
+        this.mediaExts = [];
         this.fileExts = [];
         this.requestMap = new Map();
         this.callback = callback;
@@ -23,6 +24,9 @@ export default class RequestWatcher {
         }
         if (config.fileExts) {
             this.fileExts = config.fileExts
+        }
+        if (config.mediaExts) {
+            this.mediaExts = config.mediaExts
         }
         if (config.matchingHosts) {
             this.matchingHosts = config.matchingHosts
@@ -52,7 +56,7 @@ export default class RequestWatcher {
 
         let path = u.pathname;
         let upath = path.toUpperCase();
-        if (this.fileExts.find(e => upath.endsWith(e))) {
+        if (this.mediaExts.find(e => upath.endsWith(e))) {
             return true;
         }
 
@@ -68,6 +72,15 @@ export default class RequestWatcher {
 
         let mediaType = res.responseHeaders.find(h => h["name"].toUpperCase() === "CONTENT-TYPE");
         if (mediaType && this.mediaTypes.find(m => mediaType["value"].indexOf(m) >= 0)) {
+            return true;
+        }
+
+        if (this.fileExts.find(e => upath.endsWith("." + e))) {
+            return true;
+        }
+
+        let contentDisposition = res.responseHeaders.find(h => h["name"].toUpperCase() === "CONTENT-DISPOSITION");
+        if (contentDisposition && this.fileExts.find(ext => contentDisposition["value"].toUpperCase().indexOf("." + ext) >= 0)) {
             return true;
         }
 

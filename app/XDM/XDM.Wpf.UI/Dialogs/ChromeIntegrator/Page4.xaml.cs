@@ -28,7 +28,7 @@ namespace XDM.Wpf.UI.Dialogs.ChromeIntegrator
                     System.IO.Path.Combine(
                     System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "images"),
                     "pin-ext.jpg")));
-            this.SuccessResult = false;
+            this.SuccessResult = true;
         }
 
         public bool SuccessResult
