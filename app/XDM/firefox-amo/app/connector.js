@@ -1,9 +1,8 @@
 "use strict";
-import Logger from './logger.js';
 
 const APP_BASE_URL = "http://127.0.0.1:8597";
 
-export default class Connector {
+class Connector {
     constructor(onMessage, onDisconnect) {
         this.logger = new Logger();
         this.onMessage = onMessage;
@@ -12,13 +11,8 @@ export default class Connector {
     }
 
     connect() {
-        for (let i = 0; i < 12; i++) {
-            chrome.alarms.create("alerm-" + i, {
-                periodInMinutes: 1,
-                when: Date.now() + 1000 + ((i + 1) * 5000)
-            });
-        }
-        chrome.alarms.onAlarm.addListener(this.onTimer.bind(this));
+        //This will be replaced with websocket in future versions
+        setInterval(this.onTimer.bind(this), 5000);
     }
 
     onTimer() {

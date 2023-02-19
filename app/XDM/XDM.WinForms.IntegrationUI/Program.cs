@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace XDM.Winform.BrowserIntGuide
+namespace XDM.WinForms.IntegrationUI
 {
     static class Program
     {

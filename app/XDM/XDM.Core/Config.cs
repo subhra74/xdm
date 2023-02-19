@@ -227,9 +227,9 @@ namespace XDM.Core
         {
             Log.Debug("Loading config...");
             DataDir = path ?? Path.Combine(
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "XtremeDownloadManager"), "Data");
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".xdm-app-data"), "Data");
             AppDir = path ?? Path.Combine(
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "XtremeDownloadManager"));
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".xdm-app-data"));
             instance = new Config
             {
                 TempDir = Path.Combine(DataDir, "temp")

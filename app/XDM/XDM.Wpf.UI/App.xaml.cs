@@ -82,17 +82,15 @@ namespace XDM.Wpf.UI
 
         private void ApplicationContext_FirstRunCallback(object sender, EventArgs e)
         {
-            if (MsixHelper.IsAppContainer)
+            MsixHelper.CopyExtension();
+            if (!MsixHelper.IsAppContainer)
             {
-                MsixHelper.CopyExtension();
-            }
-            else
-            {
+                Log.Debug("Not running inside app container");
                 Config.Instance.RunOnLogon = true;
             }
             ApplicationContext.Application.RunOnUiThread(() =>
             {
-                ApplicationContext.MainWindow.ShowAndActivate(); 
+                ApplicationContext.MainWindow.ShowAndActivate();
                 ApplicationContext.PlatformUIService.ShowBrowserMonitoringDialog();
             });
         }

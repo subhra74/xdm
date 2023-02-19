@@ -56,8 +56,10 @@ namespace XDM.Wpf.UI
 
         public static void CopyExtension()
         {
+            //CopyFilesRecursively(AppDomain.CurrentDomain.BaseDirectory,
+            //            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "chrome-extension");
             CopyFilesRecursively(AppDomain.CurrentDomain.BaseDirectory,
-                        Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "chrome-extension");
+                        Config.AppDir, "chrome-extension");
         }
 
         private static void CopyFilesRecursively(string sourcePath, string targetPath, string basePath)

@@ -1,9 +1,0 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net4.6.0</TargetFramework>
-    <UseWindowsForms>true</UseWindowsForms>
-  </PropertyGroup>
-
-</Project>

@@ -1,15 +1,17 @@
 {
-    "name": "XDM Integration Module",
+    "name": "XDM v8+ Browser Helper",
     "browser_action": {},
     "manifest_version": 2,
-    "version": "1.3",
-    "description": "Download files with XDM application",
+    "version": "1.4",
+    "description": "Download files with XDM v8+",
     "permissions": [
-        "downloads",
         "tabs",
-        "nativeMessaging",
         "cookies",
+        "contextMenus",
+        "menus",
+        "activeTab",
         "webRequest",
+        "webRequestBlocking",
         "*://*/*"
     ],
     "background": {
@@ -22,7 +24,7 @@
     },
     "browser_specific_settings": {
         "gecko": {
-            "id": "xdm-integration-module@subhra74.github.io"
+            "id": "xdm-v8-browser-helper@subhra74.github.io"
         }
     }
 }

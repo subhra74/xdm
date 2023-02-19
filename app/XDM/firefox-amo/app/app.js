@@ -1,20 +1,16 @@
 "use strict";
-import Logger from './logger.js';
-import RequestWatcher from './request-watcher.js';
-import Connector from './connector.js';
 
-export default class App {
+class App {
+
     constructor() {
         this.logger = new Logger();
         this.videoList = [];
         this.blockedHosts = [];
         this.fileExts = [];
-        this.requestWatcher = new RequestWatcher(this.onRequestDataReceived.bind(this));
+        this.requestWatcher = new RequestWatcher(this.onRequestDataReceived.bind(this), this.isMonitoringEnabled.bind(this));
         this.tabsWatcher = [];
         this.userDisabled = false;
         this.appEnabled = false;
-        this.onDownloadCreatedCallback = this.onDownloadCreated.bind(this);
-        this.onDeterminingFilenameCallback = this.onDeterminingFilename.bind(this);
         this.onTabUpdateCallback = this.onTabUpdate.bind(this);
         this.activeTabId = -1;
         this.connector = new Connector(this.onMessage.bind(this), this.onDisconnect.bind(this));
@@ -40,8 +36,9 @@ export default class App {
         this.tabsWatcher = msg.tabsWatcher;
         this.videoList = msg.videoList;
         this.requestWatcher.updateConfig({
-            fileExts: msg.requestFileExts,
             blockedHosts: msg.blockedHosts,
+            fileExts: msg.fileExts,
+            mediaExts: msg.requestFileExts,
             matchingHosts: msg.matchingHosts,
             mediaTypes: msg.mediaTypes
         });
@@ -63,34 +60,13 @@ export default class App {
         //Streaming video data received, send to native messaging application
         this.logger.log("onRequestDataReceived");
         this.logger.log(data);
-        this.isMonitoringEnabled() && this.connector.isConnected() && this.connector.postMessage("/media", data);
-    }
-
-    onDeterminingFilename(download, suggest) {
-        this.logger.log("onDeterminingFilename");
-        if (!this.isMonitoringEnabled()) {
-            return;
-        }
-        this.logger.log(download);
-        let url = download.finalUrl || download.url;
-        this.logger.log(url);
-        if (this.isMonitoringEnabled() && this.shouldTakeOver(url, download.filename)) {
-            chrome.downloads.cancel(
-                download.id,
-                () => chrome.downloads.erase({ id: download.id })
-            );
-            let referrer = download.referrer;
-            if (!referrer && download.finalUrl !== download.url) {
-                referrer = download.url;
+        if (this.isMonitoringEnabled() && this.connector.isConnected()) {
+            if (data.download) {
+                this.connector.postMessage("/download", data);
+            } else {
+                this.connector.postMessage("/media", data);
             }
-            this.triggerDownload(url, download.filename,
-                referrer, download.fileSize, download.mime);
         }
-    }
-
-    onDownloadCreated(download) {
-        this.logger.log("onDownloadCreated");
-        this.logger.log(download);
     }
 
     onTabUpdate(tabId, changeInfo, tab) {
@@ -114,12 +90,6 @@ export default class App {
     }
 
     register() {
-        chrome.downloads.onCreated.addListener(
-            this.onDownloadCreatedCallback
-        );
-        chrome.downloads.onDeterminingFilename.addListener(
-            this.onDeterminingFilenameCallback
-        );
         chrome.tabs.onUpdated.addListener(
             this.onTabUpdateCallback
         );
@@ -128,32 +98,15 @@ export default class App {
         this.attachContextMenu();
         chrome.tabs.onActivated.addListener(this.onTabActivated.bind(this));
     }
-
+    
     isSupportedProtocol(url) {
         if (!url) return false;
         let u = new URL(url);
         return u.protocol === 'http:' || u.protocol === 'https:';
     }
 
-    shouldTakeOver(url, file) {
-        let u = new URL(url);
-        if (!this.isSupportedProtocol(url)) {
-            return false;
-        }
-        let hostName = u.host;
-        if (this.blockedHosts.find(item => hostName.indexOf(item) >= 0)) {
-            return false;
-        }
-        let path = file || u.pathname;
-        let upath = path.toUpperCase();
-        if (this.fileExts.find(ext => upath.endsWith(ext))) {
-            return true;
-        }
-        return false;
-    }
-
     updateActionIcon() {
-        chrome.action.setIcon({ path: this.getActionIcon() });
+        chrome.browserAction.setIcon({ path: this.getActionIcon() });
         let vc = "";
         if (this.videoList && this.videoList.length > 0) {
             let len = this.videoList.filter(vid => {
@@ -169,21 +122,21 @@ export default class App {
                 vc = len + "";
             }
         }
-        chrome.action.setBadgeText({ text: vc });
+        chrome.browserAction.setBadgeText({ text: vc });
         if (!this.connector.isConnected()) {
             this.logger.log("Not connected...");
-            chrome.action.setPopup({ popup: "./error.html" });
+            chrome.browserAction.setPopup({ popup: "./app/error.html" });
             return;
         }
         if (!this.appEnabled) {
-            chrome.action.setPopup({ popup: "./disabled.html" });
+            chrome.browserAction.setPopup({ popup: "./app/disabled.html" });
             return;
         }
         else {
-            chrome.action.setPopup({ popup: "./popup.html" });
+            chrome.browserAction.setPopup({ popup: "./app/popup.html" });
             return;
             // if (this.videoList && this.videoList.length > 0) {
-            //     chrome.action.setBadgeText({ text: this.videoList.length + "" });
+            //     chrome.browserAction.setBadgeText({ text: this.videoList.length + "" });
             // }
         }
     }
@@ -233,7 +186,6 @@ export default class App {
             this.connector.postMessage("/download", data);
         });
     }
-
     diconnect() {
         this.onDisconnect();
     }
@@ -309,19 +261,19 @@ export default class App {
     }
 
     attachContextMenu() {
-        chrome.contextMenus.create({
+        browser.menus.create({
             id: 'download-any-link',
             title: "Download with XDM",
             contexts: ["link", "video", "audio", "all"]
         });
 
-        chrome.contextMenus.create({
+        browser.menus.create({
             id: 'download-image-link',
             title: "Download Image with XDM",
             contexts: ["image"]
         });
 
-        chrome.contextMenus.onClicked.addListener(this.onMenuClicked.bind(this));
+        browser.menus.onClicked.addListener(this.onMenuClicked.bind(this));
     }
 
     onTabActivated(activeInfo) {
