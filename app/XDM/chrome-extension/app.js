@@ -40,7 +40,7 @@ export default class App {
         this.tabsWatcher = msg.tabsWatcher;
         this.videoList = msg.videoList;
         this.requestWatcher.updateConfig({
-            fileExts: msg.requestFileExts,
+            mediaExts: msg.requestFileExts,
             blockedHosts: msg.blockedHosts,
             matchingHosts: msg.matchingHosts,
             mediaTypes: msg.mediaTypes
