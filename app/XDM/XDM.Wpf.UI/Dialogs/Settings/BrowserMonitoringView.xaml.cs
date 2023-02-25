@@ -58,52 +58,15 @@ namespace XDM.Wpf.UI.Dialogs.Settings
             Config.Instance.ShowNotification = ChkShowMediaNotification.IsChecked.HasValue ? ChkShowMediaNotification.IsChecked.Value : false;
         }
 
-        //private void KillExistingSessions(Browser browser, out string? exeLocation)
-        //{
-        //    exeLocation = null;
-        //    if (MessageBox.Show(TextResource.GetText("MSG_KILL_BROWSER"), "XDM", MessageBoxButton.YesNo) != MessageBoxResult.Yes)
-        //    {
-        //        return;
-        //    }
-        //    foreach (var exeName in NativeMessagingHostConfigurer.GetBrowserExecutableName(browser))
-        //    {
-        //        PlatformHelper.KillAll($"{exeName}", out exeLocation);
-        //    }
-        //}
-
         private void BrowserButtonClick(Browser browser)
         {
-            //KillExistingSessions(browser, out string? exeLocation);
-
-            //try
-            //{
-            //    InstallNativeMessagingHost(browser);
-            //}
-            //catch (Exception ex)
-            //{
-            //    Log.Debug(ex, "Error installing native host");
-            //    MessageBox.Show(TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
-            //    return;
-            //}
-
             try
             {
-                //var args = "chrome://extensions/";
-                //var extLoaderPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ext-loader");
-                //var extensionLoadRequest = false;
-                //if (System.IO.Directory.Exists(extLoaderPath))
-                //{
-                //    args = $"--load-extension=\"{extLoaderPath}\"";
-                //    extensionLoadRequest = true;
-                //}
-                //var sucess = BrowserLauncher.LaunchBrowser(browser, args, exeLocation);
-
                 if (MsixHelper.IsAppContainer)
                 {
                     MsixHelper.CopyExtension();
                 }
-                var wnd = new IntegrationWindow(browser, false /*sucess && extensionLoadRequest*/);
-                wnd.Show();
+                LaunchGuide(MsixHelper.IsAppContainer, browser);
             }
             catch (Exception ex)
             {
@@ -120,16 +83,6 @@ namespace XDM.Wpf.UI.Dialogs.Settings
 
         private void BtnFirefox_Click(object sender, RoutedEventArgs e)
         {
-            //try
-            //{
-            //    InstallNativeMessagingHost(Browser.Firefox);
-            //}
-            //catch (Exception ex)
-            //{
-            //    Log.Debug(ex, "Error installing native host");
-            //    MessageBox.Show(TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
-            //    return;
-            //}
             if (MsixHelper.IsAppContainer)
             {
                 MsixHelper.CopyExtension();
@@ -143,6 +96,22 @@ namespace XDM.Wpf.UI.Dialogs.Settings
                 Log.Debug(ex, "Error launching Firefox");
                 MessageBox.Show($"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Firefox");
             }
+        }
+
+        private void LaunchGuide(bool isAppContainer, Browser browser)
+        {
+            var exe = isAppContainer ? System.IO.Path.Combine(System.IO.Path.Combine(
+                System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".."),
+                "XDM.WinForms.IntegrationUI"), "xdm-guide.exe") :
+                System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-guide.exe");
+            ProcessStartInfo psi = new()
+            {
+                FileName = exe,
+                UseShellExecute = true,
+                Arguments = browser.ToString()
+            };
+            Log.Debug("Launching " + exe);
+            Process.Start(psi);
         }
 
         private void BtnEdge_Click(object sender, RoutedEventArgs e)
@@ -194,47 +163,5 @@ namespace XDM.Wpf.UI.Dialogs.Settings
         {
             PlatformHelper.OpenBrowser(Links.VideoDownloadTutorialUrl);
         }
-
-        //private void InstallNativeMessagingHost(Browser browser)
-        //{
-        //    if (MsixHelper.IsAppContainer)
-        //    {
-        //        MsixHelper.CopyExtension();
-        //        var exe = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-app.exe");
-        //        ProcessStartInfo psi = new()
-        //        {
-        //            FileName = exe,
-        //            UseShellExecute = true,
-        //            Verb = "runas",
-        //            Arguments = browser == Browser.Firefox ? "b:firefox" : "b:chrome"
-        //        };
-        //        Log.Debug("xdm-app-host instance creating...");
-        //        Process.Start(psi);
-        //        return;
-        //    }
-        //    NativeMessagingHostConfigurer.InstallNativeMessagingHostForWindows(browser);
-        //    //var browserName = "chome";
-        //    //if (browser == Browser.Firefox)
-        //    //{
-        //    //    browserName = "firefox";
-        //    //}
-        //    //if (browser == Browser.MSEdge)
-        //    //{
-        //    //    browserName = "ms-edge";
-        //    //}
-
-        //    //string aliasPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) +
-        //    //       @"\microsoft\windowsapps\xdm-app-host.exe";
-        //    //ProcessStartInfo psi = new()
-        //    //{
-        //    //    FileName = aliasPath,
-        //    //    UseShellExecute = true,
-        //    //    Verb = "runas",
-        //    //    Arguments = "--install-native-messaging-host " + browserName
-        //    //};
-
-        //    //Log.Debug("xdm-app-host instance creating...");
-        //    //Process.Start(psi);
-        //}
     }
 }

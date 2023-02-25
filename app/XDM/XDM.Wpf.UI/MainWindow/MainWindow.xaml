@@ -715,6 +715,28 @@
                             </Style>
                         </ListView.ItemContainerStyle>
                     </ListView>
+                    <!--<Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <Path Grid.Row="1"
+                                Height="96"
+                                Width="96"
+                                Margin="5,0"
+                                VerticalAlignment="Center" 
+                                StrokeThickness="0"
+                                Stretch="Fill" 
+                                Fill="{StaticResource ControlBackcolor}"
+                                Stroke="{StaticResource ControlBackcolor}" 
+                                Data="{StaticResource ri-folder-download-line}"
+                                SnapsToDevicePixels="True"/>
+                        <TextBlock FontSize="36" Grid.Row="2" TextAlignment="Center" Margin="10" 
+                                   Foreground="{StaticResource ControlBackcolor}">No Downloads</TextBlock>
+                    </Grid>-->
                 </Grid>
             </DockPanel>
         </Grid>

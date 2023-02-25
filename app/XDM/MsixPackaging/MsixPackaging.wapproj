@@ -145,6 +145,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\XDM.Msix.AutoLaunch\XDM.Msix.AutoLaunch.csproj" />
+    <ProjectReference Include="..\XDM.WinForms.IntegrationUI\XDM.WinForms.IntegrationUI.csproj" />
     <ProjectReference Include="..\XDM.Wpf.UI\XDM.Wpf.UI.csproj" />
   </ItemGroup>
 </Project>

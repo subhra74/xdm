@@ -17,6 +17,7 @@ namespace XDM.WinForms.IntegrationUI
         private PrivateFontCollection fc;
         private string folderPath;
         private int index;
+        private string browser;
         public Form1()
         {
             InitializeComponent();
@@ -30,6 +31,12 @@ namespace XDM.WinForms.IntegrationUI
             folderPath = Path.Combine(
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".xdm-app-data"),
                 "chrome-extension");
+            browser = "Chrome";
+            if (Environment.GetCommandLineArgs().Length == 2)
+            {
+                browser = Environment.GetCommandLineArgs()[1];
+            }
+            TopMost = true;
         }
 
         private void UpdateControls()
@@ -42,7 +49,7 @@ namespace XDM.WinForms.IntegrationUI
                 label4.Visible = true;
                 textBox2.Visible = button4.Visible = true;
                 label1.Visible = label5.Visible = panel1.Visible = label3.Visible = textBox1.Visible = button1.Visible = false;
-                pictureBox1.Image = Image.FromFile(Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Gif"), "eAhSOC7YHB.gif"));
+                LoadImage(1);
             }
             if (index == 1)
             {
@@ -52,7 +59,7 @@ namespace XDM.WinForms.IntegrationUI
                 label4.Visible = label5.Visible = false;
                 textBox2.Visible = button4.Visible = false;
                 label1.Visible = panel1.Visible = label3.Visible = textBox1.Visible = button1.Visible = true;
-                pictureBox1.Image = Image.FromFile(Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Gif"), "gcQQ9kjvEs.gif"));
+                LoadImage(2);
             }
             if (index == 2)
             {
@@ -61,8 +68,18 @@ namespace XDM.WinForms.IntegrationUI
                 button2.Enabled = true;
                 label5.Visible = true;
                 label4.Visible = textBox2.Visible = button4.Visible = label1.Visible = panel1.Visible = label3.Visible = textBox1.Visible = button1.Visible = false;
-                pictureBox1.Image = Image.FromFile(Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Gif"), "5DWggkFnNW.gif"));
+                LoadImage(3);
             }
+        }
+
+        private void LoadImage(int page)
+        {
+            try
+            {
+                pictureBox1.Image = Image.FromFile(
+                        Path.Combine(Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Gif"), browser), $"img-{page}.gif"));
+            }
+            catch { }
         }
 
         private void Label2_MouseDown(object sender, MouseEventArgs e)
@@ -91,6 +108,16 @@ namespace XDM.WinForms.IntegrationUI
         {
             index--;
             UpdateControls();
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            Clipboard.SetText(textBox2.Text);
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            Clipboard.SetText(textBox1.Text);
         }
     }
 }

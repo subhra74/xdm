@@ -112,7 +112,8 @@ namespace XDM.GtkUI.Dialogs.ChromeIntegrator
             this.MsgFail.Text = TextResource.GetText("MSG_EXT_INSTALL_FAIL");
             this.MsgInfo.Text = TextResource.GetText("MSG_EXT_PIN");
 
-            this.Img5.Visible = this.MsgInfo.Visible = this.MsgSuccess.Visible = false;
+            this.Img5.Visible = this.MsgInfo.Visible = this.MsgSuccess.Visible = true;
+            this.MsgFail.Visible = false; 
         }
 
         private void LoadImages()
@@ -180,6 +181,7 @@ namespace XDM.GtkUI.Dialogs.ChromeIntegrator
             this.Page4.Visible = page == 4;
             this.BtnNext.Visible = page != 4;
             this.BtnBack.Visible = page != 0;
+            
         }
     }
 }

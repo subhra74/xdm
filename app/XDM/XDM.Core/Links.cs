@@ -11,7 +11,7 @@ namespace XDM.Core
         public const string SupportUrl = "https://subhra74.github.io/xdm/redirect.html?target=support";
         public const string IssueUrl = "https://subhra74.github.io/xdm/redirect.html?target=issue";
         public const string ChromeExtensionUrl = "https://subhra74.github.io/xdm/redirect.html?target=chrome&version=8.0";
-        public const string FirefoxExtensionUrl = "https://subhra74.github.io/xdm/redirect.html?target=firefox&version=8.0";
+        public const string FirefoxExtensionUrl = "https://subhra74.github.io/xdm/redirect.html?target=mzfirefox&version=8.0";
         public const string OperaExtensionUrl = "https://subhra74.github.io/xdm/redirect.html?target=opera&version=8.0";
         public const string EdgeExtensionUrl = "https://subhra74.github.io/xdm/redirect.html?target=edge&version=8.0";
         public const string VideoDownloadTutorialUrl = "https://subhra74.github.io/xdm/redirect.html?target=video";
