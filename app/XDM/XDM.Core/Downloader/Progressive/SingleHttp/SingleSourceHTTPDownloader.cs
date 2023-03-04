@@ -97,7 +97,7 @@ namespace XDM.Core.Downloader.Progressive.SingleHttp
             {
                 Log.Debug("SingleSourceHTTPDownloader start");
                 OnStarted();
-                this.http ??= http = HttpClientFactory.NewHttpClient(state.Proxy);
+                this.http ??= http = HttpClientFactory.NewHttpClient(Config.Instance.Proxy);
                 http.Timeout = TimeSpan.FromSeconds(Config.Instance.NetworkTimeout);
                 grabberDict[chunk.Id].Download();
             }
@@ -130,7 +130,7 @@ namespace XDM.Core.Downloader.Progressive.SingleHttp
                         }
                         else
                         {
-                            this.http ??= HttpClientFactory.NewHttpClient(state.Proxy);
+                            this.http ??= HttpClientFactory.NewHttpClient(Config.Instance.Proxy);
                             http.Timeout = TimeSpan.FromSeconds(Config.Instance.NetworkTimeout);
                             init = true;
                             CreatePiece();

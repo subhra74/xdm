@@ -178,7 +178,7 @@ namespace XDM.Core.Downloader.Adaptive
                         Download();
                         return;
                     }
-                    this._http ??= HttpClientFactory.NewHttpClient(_state.Proxy);
+                    this._http ??= HttpClientFactory.NewHttpClient(Config.Instance.Proxy);
                     this._http.Timeout = TimeSpan.FromSeconds(Config.Instance.NetworkTimeout);
 
                     DownloadChunks();
@@ -241,7 +241,7 @@ namespace XDM.Core.Downloader.Adaptive
         {
             try
             {
-                this._http ??= HttpClientFactory.NewHttpClient(_state.Proxy);
+                this._http ??= HttpClientFactory.NewHttpClient(Config.Instance.Proxy);
                 this._http.Timeout = TimeSpan.FromSeconds(Config.Instance.NetworkTimeout);
                 //this._http.DefaultRequestVersion = HttpVersion.Version20;
                 //this._http.Timeout = TimeSpan.FromSeconds(Config.Instance.NetworkTimeout);

@@ -112,7 +112,7 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
                 Log.Debug("DualSourceHTTPDownloader start");
 
                 OnStarted();
-                this.http ??= http = HttpClientFactory.NewHttpClient(state.Proxy);
+                this.http ??= http = HttpClientFactory.NewHttpClient(Config.Instance.Proxy);
                 http.Timeout = TimeSpan.FromSeconds(Config.Instance.NetworkTimeout);
                 grabberDict[chunk1.Id].Download();
             }
@@ -147,7 +147,7 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
                          }
                          else
                          {
-                             this.http ??= HttpClientFactory.NewHttpClient(state.Proxy);
+                             this.http ??= HttpClientFactory.NewHttpClient(Config.Instance.Proxy);
                              http.Timeout = TimeSpan.FromSeconds(Config.Instance.NetworkTimeout);
                              CreatePiece();
                          }
@@ -285,7 +285,7 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
                         Cookies = this.state.Cookies1,
                         Url = this.state.Url1,
                         Authentication = this.state.Authentication,
-                        Proxy = this.state.Proxy
+                        Proxy = Config.Instance.Proxy
                     } :
                     new HeaderData
                     {
@@ -293,7 +293,7 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
                         Cookies = this.state.Cookies2,
                         Url = this.state.Url2,
                         Authentication = this.state.Authentication,
-                        Proxy = this.state.Proxy
+                        Proxy = Config.Instance.Proxy
                     };
             }
             return null;

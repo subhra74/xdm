@@ -97,7 +97,7 @@ namespace XDM.Core
 
         public int RetryDelay { get; set; } = 10;
 
-        public int MaxParallelDownloads { get; set; } = 1;
+        public int MaxParallelDownloads { get; set; } = 3;
 
         public bool ShowProgressWindow { get; set; } = true;
 
