@@ -72,8 +72,8 @@
                       Foreground="{StaticResource ControlForecolor}"/>
             <MenuItem Name="menuLanguage" Header="{StaticResource MENU_LANG}" 
                       Foreground="{StaticResource ControlForecolor}" Click="menuLanguage_Click"/>
-            <MenuItem Name="extRegister" Header="{StaticResource MSG_REGISTER_EXT}" Click="extRegister_Click"
-                      Foreground="{StaticResource ControlForecolor}"/>
+            <!--<MenuItem Name="extRegister" Header="{StaticResource MSG_REGISTER_EXT}" Click="extRegister_Click"
+                      Foreground="{StaticResource ControlForecolor}"/>-->
             <MenuItem Name="menuHelpAndSupport" Header="{StaticResource LBL_SUPPORT_PAGE}" Click="menuHelpAndSupport_Click"
                       Foreground="{StaticResource ControlForecolor}"/>
             <MenuItem Name="menuReportProblem" Header="{StaticResource LBL_REPORT_PROBLEM}" Click="menuReportProblem_Click"

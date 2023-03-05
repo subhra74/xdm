@@ -76,7 +76,7 @@ namespace XDM.Core.Util
             }
             else if (Environment.OSVersion.Platform == PlatformID.Unix)
             {
-                foreach (var exe in NativeMessagingHostConfigurer.GetBrowserExecutableName(Browser.Chrome))
+                foreach (var exe in GetBrowserExecutableName(Browser.Chrome))
                 {
                     if (LaunchBrowser(exe, args, new string?[] { executableLocation, "/usr/bin" }))
                     {
@@ -106,7 +106,7 @@ namespace XDM.Core.Util
             }
             else if (Environment.OSVersion.Platform == PlatformID.Unix)
             {
-                foreach (var exe in NativeMessagingHostConfigurer.GetBrowserExecutableName(Browser.Firefox))
+                foreach (var exe in GetBrowserExecutableName(Browser.Firefox))
                 {
                     if (LaunchBrowser(exe, args, new string?[] { executableLocation, "/usr/bin" }))
                     {
@@ -136,7 +136,7 @@ namespace XDM.Core.Util
             }
             else if (Environment.OSVersion.Platform == PlatformID.Unix)
             {
-                foreach (var exe in NativeMessagingHostConfigurer.GetBrowserExecutableName(Browser.MSEdge))
+                foreach (var exe in GetBrowserExecutableName(Browser.MSEdge))
                 {
                     if (LaunchBrowser(exe, args, new string?[] { executableLocation, "/usr/bin" }))
                     {
@@ -166,7 +166,7 @@ namespace XDM.Core.Util
             }
             else if (Environment.OSVersion.Platform == PlatformID.Unix)
             {
-                foreach (var exe in NativeMessagingHostConfigurer.GetBrowserExecutableName(Browser.Vivaldi))
+                foreach (var exe in GetBrowserExecutableName(Browser.Vivaldi))
                 {
                     if (LaunchBrowser(exe, args, new string?[] { executableLocation, "/usr/bin" }))
                     {
@@ -197,7 +197,7 @@ namespace XDM.Core.Util
             }
             else if (Environment.OSVersion.Platform == PlatformID.Unix)
             {
-                foreach (var exe in NativeMessagingHostConfigurer.GetBrowserExecutableName(Browser.Brave))
+                foreach (var exe in GetBrowserExecutableName(Browser.Brave))
                 {
                     if (LaunchBrowser(exe, args, new string?[] { executableLocation, "/usr/bin" }))
                     {
@@ -227,7 +227,7 @@ namespace XDM.Core.Util
             }
             else if (Environment.OSVersion.Platform == PlatformID.Unix)
             {
-                foreach (var exe in NativeMessagingHostConfigurer.GetBrowserExecutableName(Browser.Opera))
+                foreach (var exe in GetBrowserExecutableName(Browser.Opera))
                 {
                     if (LaunchBrowser(exe, args, new string?[] { executableLocation, "/usr/bin" }))
                     {
@@ -254,6 +254,28 @@ namespace XDM.Core.Util
             };
 
             Process.Start(psi);
+        }
+
+        public static IEnumerable<string> GetBrowserExecutableName(Browser browser)
+        {
+            switch (browser)
+            {
+                case Browser.Chrome:
+                    return new string[] { "chrome", "google-chrome", "google-chrome-stable" };
+                case Browser.Firefox:
+                    return new string[] { "firefox" };
+                case Browser.MSEdge:
+                    return new string[] { "msedge" };
+                case Browser.Brave:
+                    return new string[] { "brave", "brave-browser", "brave-browser-stable" };
+                case Browser.Vivaldi:
+                    return new string[] { "vivaldi", "vivaldi-browser", "vivaldi-browser-stable" };
+                case Browser.Opera:
+                    return new string[] { "opera", "opera-browser", "opera-browser-stable" };
+                default:
+                    break;
+            }
+            return new string[0];
         }
     }
 }

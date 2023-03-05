@@ -10,6 +10,7 @@ using XDM.Core.DataAccess;
 using System.IO;
 using XDMApp = XDM.Core.Application;
 using XDM.Core.BrowserMonitoring;
+using System.Diagnostics;
 
 namespace XDM.Wpf.UI
 {
@@ -45,6 +46,7 @@ namespace XDM.Wpf.UI
 
         private void Application_Startup(object sender, StartupEventArgs e)
         {
+            Trace.WriteLine("XDM app start");
             //Only if user has chosen to generate log
             var debugMode = Environment.GetEnvironmentVariable("XDM_DEBUG_MODE");
             if (!string.IsNullOrEmpty(debugMode) && debugMode == "1")

@@ -226,10 +226,19 @@ namespace XDM.Core
         public static void LoadConfig(string? path = null)
         {
             Log.Debug("Loading config...");
+
+#if NET35
+            DataDir = path ?? Path.Combine(
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), ".xdm-app-data"), "Data");
+            AppDir = path ??
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), ".xdm-app-data");
+#else
+
             DataDir = path ?? Path.Combine(
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".xdm-app-data"), "Data");
             AppDir = path ?? Path.Combine(
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".xdm-app-data"));
+#endif
             instance = new Config
             {
                 TempDir = Path.Combine(DataDir, "temp")

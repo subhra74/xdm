@@ -697,10 +697,10 @@ namespace XDM.Wpf.UI
             ApplicationContext.PlatformUIService.CreateAndShowMediaGrabber();
         }
 
-        private void extRegister_Click(object sender, RoutedEventArgs e)
-        {
-            ApplicationContext.PlatformUIService.ShowExtensionRegistrationWindow();
-        }
+        //private void extRegister_Click(object sender, RoutedEventArgs e)
+        //{
+        //    ApplicationContext.PlatformUIService.ShowExtensionRegistrationWindow();
+        //}
 
         private void MenuBatchDownload_Click(object sender, RoutedEventArgs e)
         {

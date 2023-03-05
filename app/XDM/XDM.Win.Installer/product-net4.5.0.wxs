@@ -14,9 +14,9 @@
       NOT NEWERVERSIONDETECTED
     </Condition>
 	
-	<Condition Message="This setup is only supported on Windows 10 or higher. To install XDM on Win7 or Win8 please install the appropriate installer from https://xtremedownloadmanager.com">
+	<!--Condition Message="This setup is only supported on Windows 10 or higher. To install XDM on Win7 or Win8 please install the appropriate installer from https://xtremedownloadmanager.com">
 		<![CDATA[Installed OR (VersionNT > 602)]]>
-	</Condition>
+	</Condition-->
 	
 	<Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Open Xtreme Download Manager" />
 	<Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1"/>

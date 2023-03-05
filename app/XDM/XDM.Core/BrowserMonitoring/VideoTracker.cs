@@ -395,7 +395,7 @@ namespace XDM.Core.BrowserMonitoring
         public string TabId { get; set; }
     }
 
-    public class MediaInfoEventArgs
+    public class MediaInfoEventArgs :EventArgs
     {
         public MediaInfo MediaInfo { get; set; }
     }

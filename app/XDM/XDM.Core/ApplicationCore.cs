@@ -698,7 +698,7 @@ namespace XDM.Core
             files.Add(Path.Combine(Config.DataDir, id + ".state"));
             files.Add(Path.Combine(Config.DataDir, id + ".state.1"));
             files.Add(Path.Combine(Config.DataDir, id + ".state.2"));
-            files.AddRange(Directory.EnumerateFiles(Config.DataDir, id + ".state.3.*"));
+            files.AddRange(Directory.GetFiles(Config.DataDir, id + ".state.3.*"));
             return files;
         }
 
