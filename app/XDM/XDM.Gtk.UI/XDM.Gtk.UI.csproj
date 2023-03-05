@@ -93,9 +93,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="NativeMessaging\xdm_messaging_host.py">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="source_pkg.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -109,6 +106,12 @@
   <Import Project="..\XDM.Messaging\XDM.Messaging.projitems" Label="Shared" />
 
   <Import Project="..\XDM.Compatibility\XDM.Compatibility.projitems" Label="Shared" />
+
+
+  <ItemGroup>
+    <Content Include="..\chrome-extension\**" CopyToOutputDirectory="Always" LinkBase="chrome-extension\" />
+  </ItemGroup>
+
 
   <!--<ItemGroup>
 	  <Content Update="glade\download-complete-window.glade">

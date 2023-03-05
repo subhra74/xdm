@@ -85,6 +85,10 @@ namespace XDM.Core
             VideoExtensions = DefaultVideoExtensions;
             FileExtensions = DefaultFileExtensions;
             BlockedHosts = DefaultBlockedHosts;
+            if(Environment.OSVersion.Platform == PlatformID.Win32NT)
+            {
+                AllowSystemDarkTheme = Environment.OSVersion.Version.Major >= 10;
+            }
         }
 
         public List<string> RecentFolders { get; set; } = new List<string>();

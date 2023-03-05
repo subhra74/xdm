@@ -2,7 +2,7 @@
 
 #Please place all the published files under ./binary-source directory
 
-VERSION=8.0.18
+VERSION=8.0.25
 SRC_DIR=binary-source
 SOURCE_NAME="src"
 
@@ -54,7 +54,6 @@ cp "${SOURCE_NAME}/opt/xdman/xdm-app.desktop" "${SOURCE_NAME}/usr/share/applicat
 
 chmod 755 "${SOURCE_NAME}/usr/bin/xdman"
 chmod 755 "${SOURCE_NAME}/opt/xdman/xdm-app"
-chmod 755 "${SOURCE_NAME}/opt/xdman/XDM.App.Host/xdm-app-host"
 
 #tar --create --file "${SOURCE_NAME}.tar.gz" -C "${SOURCE_NAME}" .
 

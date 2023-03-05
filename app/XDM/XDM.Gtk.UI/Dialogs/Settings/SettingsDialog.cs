@@ -362,16 +362,16 @@ namespace XDM.GtkUI.Dialogs.Settings
 
         private void BtnFirefox_Clicked(object? sender, EventArgs e)
         {
-            try
-            {
-                NativeMessagingHostConfigurer.InstallNativeMessagingHostForLinux(Browser.Firefox);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error installing native host");
-                GtkHelper.ShowMessageBox(this, TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
-                return;
-            }
+            //try
+            //{
+            //    NativeMessagingHostConfigurer.InstallNativeMessagingHostForLinux(Browser.Firefox);
+            //}
+            //catch (Exception ex)
+            //{
+            //    Log.Debug(ex, "Error installing native host");
+            //    GtkHelper.ShowMessageBox(this, TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
+            //    return;
+            //}
 
             try
             {
@@ -393,30 +393,30 @@ namespace XDM.GtkUI.Dialogs.Settings
         private void KillExistingSessions(Browser browser, out string? exeLocation)
         {
             exeLocation = null;
-            if (!GtkHelper.ShowConfirmMessageBox(this, TextResource.GetText("MSG_KILL_BROWSER"), "XDM"))
-            {
-                return;
-            }
-            foreach (var exeName in NativeMessagingHostConfigurer.GetBrowserExecutableName(browser))
-            {
-                PlatformHelper.KillAll($"{exeName}", out exeLocation);
-            }
+            //if (!GtkHelper.ShowConfirmMessageBox(this, TextResource.GetText("MSG_KILL_BROWSER"), "XDM"))
+            //{
+            //    return;
+            //}
+            //foreach (var exeName in NativeMessagingHostConfigurer.GetBrowserExecutableName(browser))
+            //{
+            //    PlatformHelper.KillAll($"{exeName}", out exeLocation);
+            //}
         }
 
         private void BrowserButtonClick(Browser browser)
         {
             //KillExistingSessions(browser, out string? exeLocation);
 
-            try
-            {
-                NativeMessagingHostConfigurer.InstallNativeMessagingHostForLinux(browser);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error installing native host");
-                GtkHelper.ShowMessageBox(this, TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
-                return;
-            }
+            //try
+            //{
+            //    NativeMessagingHostConfigurer.InstallNativeMessagingHostForLinux(browser);
+            //}
+            //catch (Exception ex)
+            //{
+            //    Log.Debug(ex, "Error installing native host");
+            //    GtkHelper.ShowMessageBox(this, TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
+            //    return;
+            //}
 
             try
             {

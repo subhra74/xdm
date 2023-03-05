@@ -95,14 +95,21 @@ namespace XDM.Core.Util
         {
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
-                return LaunchBrowser("firefox.exe", args, new string?[]
+                var list = new List<string>();
+                if (!string.IsNullOrEmpty(executableLocation))
                 {
-                    executableLocation,
-                    Path.Combine(Environment.GetEnvironmentVariable("ProgramW6432")!, @"Mozilla Firefox"),
-                    Path.Combine(Environment.GetEnvironmentVariable("LOCALAPPDATA")!, @"Mozilla Firefox"),
-                    Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES")!, @"Mozilla Firefox"),
-                    Path.Combine(Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")!, @"Mozilla Firefox")
-                });
+                    list.Add(executableLocation);
+                }
+                foreach (var env in new string[] { "ProgramW6432", "LOCALAPPDATA", "PROGRAMFILES", "PROGRAMFILES(X86)" })
+                {
+                    var value = Environment.GetEnvironmentVariable(env);
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        list.Add(Path.Combine(value, "Mozilla Firefox"));
+                    }
+                }
+
+                return LaunchBrowser("firefox.exe", args, list);
             }
             else if (Environment.OSVersion.Platform == PlatformID.Unix)
             {

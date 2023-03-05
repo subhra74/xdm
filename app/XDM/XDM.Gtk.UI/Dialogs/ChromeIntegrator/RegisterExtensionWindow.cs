@@ -44,8 +44,8 @@ namespace XDM.GtkUI.Dialogs.ChromeIntegrator
                 GtkHelper.ShowMessageBox(this, TextResource.GetText("MSG_FIELD_BLANK"));
                 return;
             }
-            ExtensionRegistrationHelper.AddExtension("chrome-extension://" + TxtExtID.Text);
-            NativeMessagingHostConfigurer.InstallNativeMessagingHostForLinux(Browser.Chrome);
+            //ExtensionRegistrationHelper.AddExtension("chrome-extension://" + TxtExtID.Text);
+            //NativeMessagingHostConfigurer.InstallNativeMessagingHostForLinux(Browser.Chrome);
             Close();
         }
 

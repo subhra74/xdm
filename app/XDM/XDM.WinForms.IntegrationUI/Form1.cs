@@ -21,6 +21,7 @@ namespace XDM.WinForms.IntegrationUI
         public Form1()
         {
             InitializeComponent();
+            Icon = new Icon(Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Icon"), "xdm-logo.ico"));
             fc = new PrivateFontCollection();
             fc.AddFontFile(Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Font"),
                 "fontawesome-webfont.ttf"));

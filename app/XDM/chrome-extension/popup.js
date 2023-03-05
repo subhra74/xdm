@@ -46,25 +46,23 @@ class VideoPopup {
             let div = document.createElement('div');
             div.setAttribute("style", "padding: 10px; display: flex; flex-direction: column;" + border);
 
-            let p1 = document.createElement('span');
-            p1.id = listItem.id;
-            p1.setAttribute("style", "font-family:helvetica,arial,courier; font-size: 14px; cursor: pointer;");
-            let node = document.createTextNode(text);
-            p1.appendChild(node);
+            let button = document.createElement('button');
+            button.setAttribute("style", "font-family:helvetica,arial,courier; font-size: 14px; cursor: pointer; text-align: left; border: none; background: rgba(0,0,0,0); padding: 0px; padding-bottom: 5px; padding-top: 5px;");
+            button.innerText = text;
+            button.id = listItem.id;
 
             let p2 = document.createElement('span');
             p2.setAttribute("style", "font-family:helvetica,arial,courier; font-size: 12px;");
-            node = document.createTextNode(info);
+            let node = document.createTextNode(info);
             p2.appendChild(node);
 
-            div.appendChild(p1);
+            div.appendChild(button);
             div.appendChild(p2);
 
             cell.appendChild(div);
 
-            div.addEventListener('click', e => {
+            button.addEventListener('click', e => {
                 chrome.runtime.sendMessage({ type: "vid", itemId: e.target.id });
-                window.close();
             });
         });
     }
