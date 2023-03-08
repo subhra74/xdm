@@ -7,9 +7,9 @@ function TextInput(props) {
     return (
         <div className="TextInput">
             <form>
-                <label htmlFor={props.text}>{props.englishText}</label>
-                <input className='form-control' type="text" value={props.text} onChange={handleChange} id={props.text}
-                    placeholder={`Translated text for ${props.englishText}`} />
+                <label style={{ padding: "10px" }} htmlFor={props.text}>{props.englishText}</label>
+                <input className={'form-control ' + (props.text && props.text.length > 0 ? 'is-valid' : 'is-invalid')} type="text" value={props.text} onChange={handleChange} id={props.text}
+                    placeholder={`Translation for ${props.englishText}`} />
             </form>
         </div>
     );

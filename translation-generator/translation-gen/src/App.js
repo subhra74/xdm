@@ -5,6 +5,7 @@ import './App.css';
 function App() {
   const [mappings, setMappings] = useState({});
   const [language, setLanguage] = useState("");
+  const [realname, setRealName] = useState("");
   useEffect(() => {
     async function loaded() {
       console.log("Loading...");
@@ -19,7 +20,7 @@ function App() {
     setMappings(mappingsCopy);
   }
   async function loadEnglishTranslation() {
-    const response = await fetch("https://raw.githubusercontent.com/subhra74/xdm/wpf/app/XDM/Lang/English.txt");
+    const response = await fetch("https://raw.githubusercontent.com/subhra74/xdm/master/app/XDM/Lang/English.txt");
     const text = await response.text();
     console.log(text);
     let lines = text.split('\n');
@@ -32,17 +33,26 @@ function App() {
     setMappings(dict);
   }
   function generateTranslation() {
-    if(!language||language.length<1){
+    if (!language || language.trim().length < 1) {
       alert("Please enter valid file name");
       return;
     }
-    const text = Object.keys(mappings).map(keyName => keyName + "=" + mappings[keyName].text).join("\r\n");
+    if (!realname || realname.trim().length < 1) {
+      alert("Please enter valid language name");
+      return;
+    }
+    let count = Object.keys(mappings).filter(keyName => mappings[keyName].text && mappings[keyName].text.trim().length > 0).length;
+    if (Object.keys(mappings).length !== count) {
+      alert("Please enter translation for all fields");
+      return;
+    }
+    const text = "LANG=" + realname.trim() + "\r\n" + Object.keys(mappings).map(keyName => keyName + "=" + mappings[keyName].text.trim()).join("\r\n");
     var MIME_TYPE = "application/octet-stream";
     var blob = new Blob([text], { type: MIME_TYPE });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = language + ".txt";
+    a.download = language.trim() + ".txt";
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -50,14 +60,18 @@ function App() {
   return (
     <div className="App">
       <nav className="navbar fixed-top navbar-dark bg-dark">
-        <div className="navbar-brand" style={{padding: "10px"}}>XDM translation generator</div>
+        <div className="navbar-brand" style={{ padding: "10px" }}>XDM translation generator</div>
       </nav>
       <div style={{ paddingTop: '100px', paddingBottom: '20px' }}>
-        <label htmlFor='txtname'>Translating to </label>
-        <input className='form-control' type="text" value={language} onChange={(e) => setLanguage(e.target.value)} id="txtname" />
+        <label htmlFor='txtname'>Language name in English</label>
+        <input className='form-control' type="text" value={language} onChange={(e) => setLanguage(e.target.value)} id="txtname" placeholder='Language name in English ex. Arabic' />
+      </div>
+      <div style={{ paddingTop: '10px', paddingBottom: '20px' }}>
+        <label htmlFor='txtrealname'>Language name in target language</label>
+        <input className='form-control' type="text" value={realname} onChange={(e) => setRealName(e.target.value)} id="txtrealname" placeholder='Actual Language name ex. العربية' />
       </div>
       <div className="alert-info" style={{ padding: "20px", margin: "10px 0px", borderRadius: "5px" }}>
-        Please enter translated text for the specified english text below
+        Translation for english text below
       </div>
       <div style={{ paddingBottom: '100px' }}>
         {Object.keys(mappings).map(keyName => (
