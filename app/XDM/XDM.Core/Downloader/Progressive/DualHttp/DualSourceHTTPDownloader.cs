@@ -78,6 +78,7 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
         public void Start(bool start)
         {
             state.Init1 = state.Init2 = false;
+            state.FileSize = -1;
 
             ticksAtDownloadStartOrResume = Helpers.TickCount();
 
@@ -111,7 +112,7 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
                 Log.Debug("DualSourceHTTPDownloader start");
 
                 OnStarted();
-                this.http ??= http = HttpClientFactory.NewHttpClient(state.Proxy);
+                this.http ??= http = HttpClientFactory.NewHttpClient(Config.Instance.Proxy);
                 http.Timeout = TimeSpan.FromSeconds(Config.Instance.NetworkTimeout);
                 grabberDict[chunk1.Id].Download();
             }
@@ -146,7 +147,7 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
                          }
                          else
                          {
-                             this.http ??= HttpClientFactory.NewHttpClient(state.Proxy);
+                             this.http ??= HttpClientFactory.NewHttpClient(Config.Instance.Proxy);
                              http.Timeout = TimeSpan.FromSeconds(Config.Instance.NetworkTimeout);
                              CreatePiece();
                          }
@@ -271,22 +272,29 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
             CreatePiece();
         }
 
-        public override (
-            Dictionary<string, List<string>> Headers,
-            Dictionary<string, string> Cookies,
-            Uri Url,
-            AuthenticationInfo? Authentication,
-            ProxyInfo? Proxy)?
+        public override HeaderData?
             GetHeaderUrlAndCookies(string pieceId)
         {
             if (this.grabberDict.ContainsKey(pieceId))
             {
                 var piece = pieces[pieceId];
                 return piece.StreamType == StreamType.Primary ?
-                    (Headers: this.state.Headers1, Cookies: this.state.Cookies1, Url: this.state.Url1,
-                    this.state.Authentication, this.state.Proxy) :
-                    (Headers: this.state.Headers2, Cookies: this.state.Cookies2, Url: this.state.Url2,
-                    this.state.Authentication, this.state.Proxy);
+                    new HeaderData
+                    {
+                        Headers = this.state.Headers1,
+                        Cookies = this.state.Cookies1,
+                        Url = this.state.Url1,
+                        Authentication = this.state.Authentication,
+                        Proxy = Config.Instance.Proxy
+                    } :
+                    new HeaderData
+                    {
+                        Headers = this.state.Headers2,
+                        Cookies = this.state.Cookies2,
+                        Url = this.state.Url2,
+                        Authentication = this.state.Authentication,
+                        Proxy = Config.Instance.Proxy
+                    };
             }
             return null;
         }
@@ -337,6 +345,8 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
             {
                 // ignored
                 Log.Debug("Chunk restore failed");
+                state.FileSize = -1;
+                state.Init1 = state.Init2 = false;
             }
             TicksAndSizeAtResume();
         }
@@ -552,8 +562,8 @@ namespace XDM.Core.Downloader.Progressive.DualHttp
         public Uri Url2;
         public Dictionary<string, List<string>> Headers1;
         public Dictionary<string, List<string>> Headers2;
-        public Dictionary<string, string> Cookies1;
-        public Dictionary<string, string> Cookies2;
+        public string? Cookies1;
+        public string? Cookies2;
         public bool Init1, Init2;
     }
 

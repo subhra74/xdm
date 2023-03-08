@@ -51,6 +51,7 @@ namespace XDM.Wpf.UI.Win32
             var value = GetWindowLong(hwnd, GWL_STYLE);
             SetWindowLong(hwnd, GWL_STYLE, (int)(value & ~WS_MAXIMIZEBOX));
         }
+
         public static void DisableMinMaxButton(Window window)
         {
             var hwnd = new WindowInteropHelper(window).Handle;

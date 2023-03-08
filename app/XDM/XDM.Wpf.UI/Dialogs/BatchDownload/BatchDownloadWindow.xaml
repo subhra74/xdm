@@ -78,7 +78,7 @@
                         <RowDefinition/>
                     </Grid.RowDefinitions>
                     <TextBlock Text="{StaticResource BAT_PASTE_LINK}" Margin="0,0,0,10"/>
-                    <TextBox x:Name="TxtDownloadLinks" Grid.Row="1" TextWrapping="NoWrap"/>
+                    <TextBox x:Name="TxtDownloadLinks" Grid.Row="1" TextWrapping="NoWrap" AcceptsReturn="True"/>
                 </Grid>
             </TabItem>
         </TabControl>

@@ -1,7 +1,0 @@
-<svg width="800" height="800" xmlns="http://www.w3.org/2000/svg">
-<rect xmlns="http://www.w3.org/2000/svg" id="ee-background" x="0" y="0" width="800" height="800" style="fill: rgb(147, 170, 82); fill-opacity: 1; pointer-events: none;"/>
- <g>
-  <title>Layer 1</title>
-  <path transform="rotate(180 400 400)" stroke="#e5e5e5" id="svg_2" d="m127,399.43478l273,-234.93475l273,234.93475l-136.50001,0l0,236.06521l-272.99998,0l0,-236.06521l-136.50001,0z" fill="#ffffff"/>
- </g>
-</svg>

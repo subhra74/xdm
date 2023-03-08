@@ -26,6 +26,10 @@ namespace XDM.Wpf.UI.Dialogs.Settings
         public AdvancedSettingsView()
         {
             InitializeComponent();
+            if (MsixHelper.IsAppContainer)
+            {
+                ChkAutoRun.Visibility = Visibility.Collapsed;
+            }
         }
 
         public void PopulateUI()

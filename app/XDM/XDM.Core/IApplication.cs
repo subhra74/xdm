@@ -185,9 +185,7 @@ namespace XDM.Core
         //public void LoadDownloadsDB();
         public void ShowUpdateAvailableNotification();
 
-        public void InstallLatestFFmpeg();
-
-        public void InstallLatestYoutubeDL();
+        public void InstallLatestYtDlp();
 
         // public void MoveToQueue(string[] selectedIds, bool prompt = false, Action? callback = null);
 

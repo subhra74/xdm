@@ -28,10 +28,9 @@ namespace XDM.Core
                     {
                         if (item != null)
                         {
-                            ApplicationContext.MainWindow.Delete(item);
                             ApplicationContext.CoreService.RemoveDownload(item.DownloadEntry, false);
+                            ApplicationContext.MainWindow.Delete(item);
                             AppDB.Instance.Downloads.RemoveDownloadById(item.DownloadEntry.Id);
-
                         }
                     }
                     callback?.Invoke(true);
@@ -146,7 +145,7 @@ namespace XDM.Core
             }
             using var queueSelectionDialog = ApplicationContext.PlatformUIService.CreateQueueSelectionDialog();
             queueSelectionDialog.SetData(QueueManager.Queues.Select(q => q.Name), QueueManager.Queues.Select(q => q.ID), selectedIds);
-            
+
             queueSelectionDialog.QueueSelected += (s, e) =>
             {
                 //var index = e.SelectedQueueIndex;
@@ -228,49 +227,47 @@ namespace XDM.Core
             }
             if (ent == null) return;
 
-            ShortState? state = null;
+            var emptyCookie = string.Empty;
+            var emptyHeaders = new Dictionary<string, List<string>>();
+
+            var cookies = emptyCookie;
+            var headers = emptyHeaders;
             try
             {
                 switch (ent.DownloadType)
                 {
                     case "Http":
-                        var s = DownloadStateIO.LoadSingleSourceHTTPDownloaderState(ent.Id);
-                        state = new()
                         {
-                            Headers = s.Headers,
-                            Cookies = s.Cookies
-                        };
-                        break;
+                            var info = RequestDataIO.LoadSingleSourceHTTPDownloadInfo(ent.Id);
+                            cookies = info?.Cookies ?? emptyCookie;
+                            headers = info?.Headers ?? emptyHeaders;
+                            break;
+                        }
                     case "Dash":
-                        var d = DownloadStateIO.LoadDualSourceHTTPDownloaderState(ent.Id);
-                        state = new()
                         {
-                            Headers1 = d.Headers1,
-                            Headers2 = d.Headers2,
-                            Cookies2 = d.Cookies2,
-                            Cookies1 = d.Cookies1
-                        };
-                        break;
+                            var info = RequestDataIO.LoadDualSourceHTTPDownloadInfo(ent.Id);
+                            cookies = info?.Cookies1 ?? emptyCookie;
+                            headers = info?.Headers1 ?? emptyHeaders;
+                            break;
+                        }
                     case "Hls":
-                        var h = DownloadStateIO.LoadMultiSourceHLSDownloadState(ent.Id);
-                        state = new()
                         {
-                            Headers = h.Headers,
-                            Cookies = h.Cookies
-                        };
-                        break;
+                            var info = RequestDataIO.LoadMultiSourceHLSDownloadInfo(ent.Id);
+                            cookies = info?.Cookies ?? emptyCookie;
+                            headers = info?.Headers ?? emptyHeaders;
+                            break;
+                        }
                     case "Mpd-Dash":
-                        var m = DownloadStateIO.LoadMultiSourceDASHDownloadState(ent.Id);
-                        state = new()
                         {
-                            Headers = m.Headers,
-                            Cookies = m.Cookies
-                        };
-                        break;
+                            var info = RequestDataIO.LoadMultiSourceDASHDownloadInfo(ent.Id);
+                            cookies = info?.Cookies ?? emptyCookie;
+                            headers = info?.Headers ?? emptyHeaders;
+                            break;
+                        }
                 }
             }
             catch { }
-            ApplicationContext.PlatformUIService.ShowPropertiesDialog(ent, state);
+            ApplicationContext.PlatformUIService.ShowPropertiesDialog(ent, cookies, headers);
         }
 
         public static void CopyFile()
@@ -292,12 +289,14 @@ namespace XDM.Core
         public static void RestartDownload()
         {
             DownloadItemBase? ent = null;
+            IInProgressDownloadRow? iRow = null;
             if (ApplicationContext.MainWindow.IsInProgressViewSelected)
             {
                 var rows = ApplicationContext.MainWindow.SelectedInProgressRows;
                 if (rows.Count > 0)
                 {
                     ent = rows[0].DownloadEntry;
+                    iRow = rows[0];
                 }
             }
             else
@@ -310,6 +309,11 @@ namespace XDM.Core
             }
             if (ent == null) return;
             ApplicationContext.CoreService.RestartDownload(ent);
+            if (iRow != null)
+            {
+                ApplicationContext.MainWindow.Delete(iRow);
+                AppDB.Instance.Downloads.RemoveDownloadById(ent.Id);
+            }
         }
     }
 }

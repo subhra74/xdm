@@ -20,6 +20,12 @@
             <TextBlock Name="TxtCopyright"  Padding="10,0" HorizontalAlignment="Center"/>
             <TextBlock Name="TxtWebsite"  Cursor="Hand" Foreground="DeepSkyBlue" 
                        Padding="10" FontSize="14" HorizontalAlignment="Center" MouseDown="TextBlock_MouseDown"/>
+            <TextBlock Name="TxtOSInfo"
+                       Padding="0,10,0,3" HorizontalAlignment="Center"/>
+            <TextBlock Name="TxtNetFxInfo"
+                       Padding="3" HorizontalAlignment="Center"/>
+            <TextBlock Name="TxtMSIXInfo"
+                       Padding="3" HorizontalAlignment="Center"/>
         </StackPanel>
     </Grid>
 </Window>

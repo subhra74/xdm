@@ -13,7 +13,6 @@ namespace XDM.Core.Updater
     {
         private static Timer UpdateCheckTimer;
         public static IList<UpdateInfo>? Updates { get; private set; }
-        public static bool ComponentsInstalled { get; private set; }
         public static bool IsAppUpdateAvailable => Updates?.Any(u => !u.IsExternal) ?? false;
         public static bool IsComponentUpdateAvailable => Updates?.Any(u => u.IsExternal) ?? false;
         public static string ComponentUpdateText => GetUpdateText();
@@ -37,8 +36,10 @@ namespace XDM.Core.Updater
                 if (UpdateChecker.GetAppUpdates(ApplicationContext.CoreService.AppVerion, out IList<UpdateInfo> upd, out bool firstUpdate))
                 {
                     Updates = upd;
-                    ComponentsInstalled = !firstUpdate;
-                    ApplicationContext.Application.ShowUpdateAvailableNotification();
+                    if (upd != null && upd.Count > 0)
+                    {
+                        ApplicationContext.Application.ShowUpdateAvailableNotification();
+                    }
                 }
             }
             catch (Exception ex)
@@ -52,13 +53,13 @@ namespace XDM.Core.Updater
             if (Updates == null || Updates.Count < 1) return TextResource.GetText("MSG_NO_UPDATE");
             var text = new StringBuilder();
             var size = 0L;
-            text.Append((ComponentsInstalled ? "Update available: " : "XDM require FFmpeg and YoutubeDL to download streaming videos") + Environment.NewLine);
+            text.Append("Update(s) available: " + Environment.NewLine);
             foreach (var update in Updates)
             {
                 text.Append(update.Name + " " + update.TagName + Environment.NewLine);
                 size += update.Size;
             }
-            text.Append(Environment.NewLine + "Total download: " + FormattingHelper.FormatSize(size) + Environment.NewLine);
+            text.Append(Environment.NewLine + "Total download: " + FormattingHelper.FormatSize(size) + Environment.NewLine + Environment.NewLine);
             text.Append("Would you like to continue?");
             return text.ToString();
         }

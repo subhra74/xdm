@@ -11,6 +11,63 @@ namespace XDM.Core.Util
 {
     public static class PlatformHelper
     {
+        public static bool IsFirstRun()
+        {
+            var firstRunFile = Path.Combine(Config.AppDir, "xdm-" + AppInfo.APP_VERSION + ".first-run");
+            if (!File.Exists(firstRunFile))
+            {
+                try
+                {
+                    File.Create(firstRunFile).Close();
+                }
+                catch { }
+                return true;
+            }
+            return false;
+        }
+
+        public static bool KillAll(string processName, out string? processExecutable)
+        {
+            processExecutable = null;
+            try
+            {
+                var processes = Process.GetProcessesByName(processName);
+                if (processes != null)
+                {
+                    foreach (var proc in processes)
+                    {
+                        try
+                        {
+                            if (processExecutable == null)
+                            {
+                                processExecutable = proc.MainModule?.FileName;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Debug(ex, ex.Message);
+                        }
+
+                        try
+                        {
+                            proc.Kill();
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Debug(ex, ex.Message);
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, ex.Message);
+            }
+            return false;
+        }
+
         public static string GetOsDefaultDownloadFolder()
         {
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
@@ -38,6 +95,7 @@ namespace XDM.Core.Util
                         FileName = url,
                     };
                     psiShellEx.UseShellExecute = true;
+                    Log.Debug($"Shell execute: {url}");
                     Process.Start(psiShellEx);
                     break;
 #if NET5_0_OR_GREATER
@@ -47,6 +105,7 @@ namespace XDM.Core.Util
                         FileName = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "open" : "xdg-open"
                     };
                     psi.Arguments = "\"" + url + "\"";
+                    Log.Debug($"{psi.FileName} {psi.Arguments}");
                     Process.Start(psi);
                     break;
 #endif
@@ -70,6 +129,7 @@ namespace XDM.Core.Util
                             FileName = path,
                             UseShellExecute = true
                         };
+                        Log.Debug($"Shell execute: {path}");
                         Process.Start(psiShellEx);
                         return true;
 #if NET5_0_OR_GREATER
@@ -79,6 +139,7 @@ namespace XDM.Core.Util
                             FileName = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "open" : "xdg-open"
                         };
                         psi.Arguments = "\"" + path + "\"";
+                        Log.Debug($"{psi.FileName} {psi.Arguments}");
                         Process.Start(psi);
                         return true;
 #endif
@@ -103,22 +164,28 @@ namespace XDM.Core.Util
                         switch (os)
                         {
                             case PlatformID.Win32NT:
-                                var psiShellEx = new ProcessStartInfo
                                 {
-                                    FileName = "explorer",
-                                };
-                                psiShellEx.Arguments = $"/select, \"{Path.Combine(path, file)}\"";
-                                Process.Start(psiShellEx);
-                                return true;
+                                    var psi = new ProcessStartInfo
+                                    {
+                                        FileName = "explorer",
+                                    };
+                                    psi.Arguments = $"/select, \"{Path.Combine(path, file)}\"";
+                                    Log.Debug($"{psi.FileName} {psi.Arguments}");
+                                    Process.Start(psi);
+                                    return true;
+                                }
 #if NET5_0_OR_GREATER
                             case PlatformID.Unix:
-                                var psi = new ProcessStartInfo
                                 {
-                                    FileName = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "open" : "xdg-open"
-                                };
-                                psi.Arguments = $"\"{path}\"";
-                                Process.Start(psi);
-                                return true;
+                                    var psi = new ProcessStartInfo
+                                    {
+                                        FileName = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "open" : "xdg-open"
+                                    };
+                                    psi.Arguments = $"\"{path}\"";
+                                    Log.Debug($"{psi.FileName} {psi.Arguments}");
+                                    Process.Start(psi);
+                                    return true;
+                                }
 #endif
                         }
                     }
@@ -276,7 +343,7 @@ namespace XDM.Core.Util
                         if (enable)
                         {
                             var xdmExe = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-app.exe");
-                            hkcuRun.SetValue("XDM", $"\"{xdmExe}\" -m");
+                            hkcuRun.SetValue("XDM", $"\"{xdmExe}\" --background");
                         }
                         else
                         {
@@ -297,7 +364,9 @@ namespace XDM.Core.Util
                     {
                         Directory.CreateDirectory(autoStartDir);
                     }
-                    File.WriteAllText(Path.Combine(autoStartDir, "xdm-app.desktop"), GetLinuxDesktopFile());
+                    var desktopFile = Path.Combine(autoStartDir, "xdm-app.desktop");
+                    File.WriteAllText(desktopFile, GetLinuxDesktopFile());
+                    SetExecutable(desktopFile);
                     return true;
                 }
 #endif
@@ -322,18 +391,18 @@ namespace XDM.Core.Util
         public static string GetLinuxDesktopFile()
         {
             var appPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-app");
-            var iconPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "svg-icons", "xdm-logo.svg");
+            var iconPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-logo.svg");
 
             return "[Desktop Entry]\r\n" +
                 "Encoding=UTF-8\r\n" +
                 "Version=1.0\r\n" +
                 "Type=Application\r\n" +
                 "Terminal=false\r\n" +
-                $"Exec=\"{appPath}\" -m\r\n" +
+                $"Exec=env GTK_USE_PORTAL=1 \"{appPath}\" --background\r\n" +
                 "Name=Xtreme Download Manager\r\n" +
                 "Comment=Xtreme Download Manager\r\n" +
                 "Categories=Network;\r\n" +
-                $"Icon=\"{iconPath}\"";
+                $"Icon={iconPath}";
         }
 
         //     public static void addToStartup()
@@ -485,6 +554,7 @@ namespace XDM.Core.Util
             {
                 psi.Arguments = string.Join(" ", args);
             }
+            Log.Debug($"{psi.FileName} ${psi.Arguments}");
             Process.Start(psi);
         }
 
@@ -564,7 +634,7 @@ namespace XDM.Core.Util
         public static string? FindExecutableFromSystemPath(string executableName)
         {
             var values = Environment.GetEnvironmentVariable("PATH");
-            foreach (var spath in values?.Split(Path.PathSeparator) ?? new string[0])
+            foreach (var spath in values?.Split(Path.PathSeparator) ?? new string[] { string.Empty })
             {
                 var fullPath = Path.Combine(spath, executableName);
                 if (File.Exists(fullPath))
@@ -596,6 +666,15 @@ namespace XDM.Core.Util
             }
         }
 
+        public static bool SetExecutable(string path)
+        {
+            const int _0755 =
+            S_IRUSR | S_IXUSR | S_IWUSR
+            | S_IRGRP | S_IXGRP
+            | S_IROTH | S_IXOTH;
+            return (chmod(Path.GetFullPath(path), (int)_0755) == 0);
+        }
+
         [FlagsAttribute]
         public enum EXECUTION_STATE : uint
         {
@@ -609,5 +688,24 @@ namespace XDM.Core.Util
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern EXECUTION_STATE SetThreadExecutionState(EXECUTION_STATE esFlags);
+
+        // user permissions
+        const int S_IRUSR = 0x100;
+        const int S_IWUSR = 0x80;
+        const int S_IXUSR = 0x40;
+
+        // group permission
+        const int S_IRGRP = 0x20;
+        const int S_IWGRP = 0x10;
+        const int S_IXGRP = 0x8;
+
+        // other permissions
+        const int S_IROTH = 0x4;
+        const int S_IWOTH = 0x2;
+        const int S_IXOTH = 0x1;
+
+        [DllImport("libc", SetLastError = true)]
+        public static extern int chmod(string pathname, int mode);
+
     }
 }

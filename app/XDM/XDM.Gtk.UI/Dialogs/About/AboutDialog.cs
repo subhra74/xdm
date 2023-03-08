@@ -37,10 +37,10 @@ namespace XDM.GtkUI.Dialogs.About
             GtkHelper.AttachSafeDispose(this);
 
             AppLogo.Pixbuf = GtkHelper.LoadSvg("xdm-logo", 128);
-            TxtAppVersion.Text = "Xtreme Download Manager 8.0.1 BETA";
+            TxtAppVersion.Text = AppInfo.APP_VERSION_TEXT;
             TxtAppVersion.StyleContext.AddClass("medium-font");
-            TxtCopyright.Text = "© 2013 Subhra Das Gupta";
-            TxtWebsite.Label = "www.xtremedownloadmanager.com";
+            TxtCopyright.Text = AppInfo.APP_COPYRIGHT_TEXT;
+            TxtWebsite.Label = AppInfo.APP_HOMEPAGE_TEXT;
             TxtWebsite.Uri = Links.HomePageUrl;
 
             Title = TextResource.GetText("MENU_ABOUT");

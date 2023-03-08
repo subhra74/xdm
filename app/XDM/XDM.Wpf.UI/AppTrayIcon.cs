@@ -4,7 +4,9 @@ using System.Drawing;
 using System.IO;
 using System.Text;
 using System.Windows.Forms;
+using TraceLog;
 using Translations;
+using XDM.Core;
 
 namespace XDM.Wpf.UI
 {
@@ -14,9 +16,31 @@ namespace XDM.Wpf.UI
 
         public static event EventHandler? TrayClick;
 
+        public static void ShowNotification()
+        {
+            try
+            {
+                if (notifyIcon != null && Config.Instance.ShowNotification)
+                {
+                    notifyIcon.ShowBalloonTip(30000, TextResource.GetText("MSG_DOWNLOAD_VIDEO"),
+                        TextResource.GetText("MSG_DWN_VID_DESC"), ToolTipIcon.Info);
+                    notifyIcon.BalloonTipClicked += NotifyIcon_BalloonTipClicked;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, ex.Message);
+            }
+        }
+
+        private static void NotifyIcon_BalloonTipClicked(object sender, EventArgs e)
+        {
+            XDM.Core.ApplicationContext.PlatformUIService.CreateAndShowMediaGrabber();
+        }
+
         public static void AttachToSystemTray()
         {
-            
+
             var ctx = new ContextMenu();
 
             var menuExit = new MenuItem
@@ -56,6 +80,7 @@ namespace XDM.Wpf.UI
         public static void DetachFromSystemTray()
         {
             notifyIcon?.Dispose();
+            notifyIcon = null;
         }
     }
 }

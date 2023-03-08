@@ -4,5 +4,8 @@ using System.Text;
 
 namespace XDM.Core
 {
-    public interface IRequestData { }
+    public interface IRequestData
+    {
+        public string File { get; set; }
+    }
 }

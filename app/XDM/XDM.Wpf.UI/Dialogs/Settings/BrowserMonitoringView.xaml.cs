@@ -1,5 +1,4 @@
-﻿using XDM.Core.BrowserMonitoring;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,6 +16,9 @@ using Translations;
 using XDM.Core;
 using XDM.Core.UI;
 using XDM.Core.Util;
+using System.Diagnostics;
+using XDM.Core.BrowserMonitoring;
+using XDM.Wpf.UI.Dialogs.ChromeIntegrator;
 
 namespace XDM.Wpf.UI.Dialogs.Settings
 {
@@ -33,7 +35,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
 
         public void PopulateUI()
         {
-            TxtChromeWebStoreUrl.Text = Links.ChromeExtensionUrl;
+            TxtChromeWebStoreUrl.Text = Links.ManualExtensionInstallGuideUrl;
             TxtFirefoxAMOUrl.Text = Links.FirefoxExtensionUrl;
             TxtDefaultFileTypes.Text = string.Join(",", Config.Instance.FileExtensions);
             TxtDefaultVideoFormats.Text = string.Join(",", Config.Instance.VideoExtensions);
@@ -41,6 +43,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
             CmbMinVidSize.SelectedItem = Config.Instance.MinVideoSize;
             ChkMonitorClipboard.IsChecked = Config.Instance.MonitorClipboard;
             ChkTimestamp.IsChecked = Config.Instance.FetchServerTimeStamp;
+            ChkShowMediaNotification.IsChecked = Config.Instance.ShowNotification;
         }
 
         public void UpdateConfig()
@@ -52,48 +55,41 @@ namespace XDM.Wpf.UI.Dialogs.Settings
             Config.Instance.FetchServerTimeStamp = ChkTimestamp.IsChecked.HasValue ? ChkTimestamp.IsChecked.Value : false;
             Config.Instance.MonitorClipboard = ChkMonitorClipboard.IsChecked.HasValue ? ChkMonitorClipboard.IsChecked.Value : false;
             Config.Instance.MinVideoSize = (int)CmbMinVidSize.SelectedItem;
+            Config.Instance.ShowNotification = ChkShowMediaNotification.IsChecked.HasValue ? ChkShowMediaNotification.IsChecked.Value : false;
         }
 
-        private void BtnChrome_Click(object sender, RoutedEventArgs e)
+        private void BrowserButtonClick(Browser browser)
         {
             try
             {
-                NativeMessagingConfigurer.InstallNativeMessagingHost(Browser.Chrome);
+                if (MsixHelper.IsAppContainer)
+                {
+                    MsixHelper.CopyExtension();
+                }
+                LaunchGuide(MsixHelper.IsAppContainer, browser);
             }
             catch (Exception ex)
             {
-                Log.Debug(ex, "Error installing native host");
-                MessageBox.Show(TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
-                return;
+                Log.Debug(ex, "Error launching " + browser);
+                MessageBox.Show($"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} {browser}");
             }
+        }
 
-            try
-            {
-                BrowserLauncher.LaunchGoogleChrome(Links.ChromeExtensionUrl);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error launching Google Chrome");
-                MessageBox.Show($"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Google Chrome");
-            }
+
+        private void BtnChrome_Click(object sender, RoutedEventArgs e)
+        {
+            BrowserButtonClick(Browser.Chrome);
         }
 
         private void BtnFirefox_Click(object sender, RoutedEventArgs e)
         {
+            if (MsixHelper.IsAppContainer)
+            {
+                MsixHelper.CopyExtension();
+            }
             try
             {
-                NativeMessagingConfigurer.InstallNativeMessagingHost(Browser.Firefox);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error installing native host");
-                MessageBox.Show(TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
-                return;
-            }
-
-            try
-            {
-                BrowserLauncher.LaunchFirefox(Links.FirefoxExtensionUrl);
+                BrowserLauncher.LaunchFirefox(Links.FirefoxExtensionUrl, null);
             }
             catch (Exception ex)
             {
@@ -102,52 +98,40 @@ namespace XDM.Wpf.UI.Dialogs.Settings
             }
         }
 
+        private void LaunchGuide(bool isAppContainer, Browser browser)
+        {
+            var exe = isAppContainer ? System.IO.Path.Combine(System.IO.Path.Combine(
+                System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".."),
+                "XDM.WinForms.IntegrationUI"), "xdm-guide.exe") :
+                System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-guide.exe");
+            ProcessStartInfo psi = new()
+            {
+                FileName = exe,
+                UseShellExecute = true,
+                Arguments = browser.ToString()
+            };
+            Log.Debug("Launching " + exe);
+            Process.Start(psi);
+        }
+
         private void BtnEdge_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                NativeMessagingConfigurer.InstallNativeMessagingHost(Browser.Chrome);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error installing native host");
-                MessageBox.Show(TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
-                return;
-            }
-
-            try
-            {
-                BrowserLauncher.LaunchMicrosoftEdge(Links.ChromeExtensionUrl);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error Microsoft Edge");
-                MessageBox.Show($"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Microsoft Edge");
-            }
+            BrowserButtonClick(Browser.MSEdge);
         }
 
         private void BtnOpera_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                NativeMessagingConfigurer.InstallNativeMessagingHost(Browser.Chrome);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error installing native host");
-                MessageBox.Show(TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
-                return;
-            }
+            BrowserButtonClick(Browser.Opera);
+        }
 
-            try
-            {
-                BrowserLauncher.LaunchOperaBrowser(Links.ChromeExtensionUrl);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error launching Opera");
-                MessageBox.Show($"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Opera");
-            }
+        private void BtnBrave_Click(object sender, RoutedEventArgs e)
+        {
+            BrowserButtonClick(Browser.Brave);
+        }
+
+        private void BtnVivaldi_Click(object sender, RoutedEventArgs e)
+        {
+            BrowserButtonClick(Browser.Vivaldi);
         }
 
         private void BtnCopy1_Click(object sender, RoutedEventArgs e)

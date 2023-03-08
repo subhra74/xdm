@@ -19,7 +19,7 @@ namespace XDM.Core.MediaParser.Hls
                     var keyValuePair = ParseKeyValuePair(pairBuf.ToString());
                     if (keyValuePair.HasValue)
                     {
-                        dict[keyValuePair.Value.key] = keyValuePair.Value.value;
+                        dict[keyValuePair.Value.Key] = keyValuePair.Value.Value;
                     }
                     pairBuf = new StringBuilder();
                     continue;
@@ -32,17 +32,17 @@ namespace XDM.Core.MediaParser.Hls
                 var keyValuePair = ParseKeyValuePair(pairBuf.ToString());
                 if (keyValuePair.HasValue)
                 {
-                    dict[keyValuePair.Value.key] = keyValuePair.Value.value;
+                    dict[keyValuePair.Value.Key] = keyValuePair.Value.Value;
                 }
             }
             return dict;
         }
 
-        public static (string key, string value)? ParseKeyValuePair(string pair)
+        public static KeyValuePair<string,string>? ParseKeyValuePair(string pair)
         {
             var index = pair.IndexOf('=');
             if (index == -1) return null;
-            return (key: pair.Substring(0, index), value: pair.Substring(index + 1).Trim('"', '\'', ' '));
+            return new KeyValuePair<string, string>(key: pair.Substring(0, index), value: pair.Substring(index + 1).Trim('"', '\'', ' '));
         }
     }
 }

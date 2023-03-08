@@ -2,9 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using XDM.Core;
 using XDM.Core.Util;
-//using XDM.Core.Downloader.YT.Dash;
 using System.IO;
 using XDM.Core.MediaParser.Hls;
 using XDM.Core.MediaParser.Dash;
@@ -31,16 +29,62 @@ namespace XDM.Core.BrowserMonitoring
         private static List<DashInfo> audioQueue = new();
         private static Dictionary<string, DateTime> referersToSkip = new();  //Skip the video requests whose referer hash is present in below dict
                                                                              //as they were triggered by HLS or DASH 
+        private static HashSet<string> m3u8MpdTabs = new(); //Keep track of tab id which triggered m3u8 or mpd manifest
+        private static HashSet<string> suspectedMp4Fragments = new();
 
-        internal static bool IsNormalVideo(string contentType, string url, long size)
+        public static void ProcessMediaMessage(Message message)
+        {
+            var contentType = message.GetResponseHeaderFirstValue("Content-Type");
+            if (contentType == null)
+            {
+                return;
+            }
+
+            if (VideoUrlHelper.IsYtFormat(contentType))
+            {
+                VideoUrlHelper.ProcessPostYtFormats(message);
+            }
+
+            if (VideoUrlHelper.IsHLS(contentType) || VideoUrlHelper.IsHLSUrl(message.Url))
+            {
+                VideoUrlHelper.ProcessHLSVideo(message);
+            }
+
+            if (VideoUrlHelper.IsDASH(contentType) || VideoUrlHelper.IsDASHUrl(message.Url))
+            {
+                VideoUrlHelper.ProcessDashVideo(message);
+            }
+
+            if (!VideoUrlHelper.ProcessYtDashSegment(message))
+            {
+                if (VideoUrlHelper.IsNormalVideo(contentType, message.Url, message.GetContentLength(), message.TabId))
+                {
+                    VideoUrlHelper.ProcessNormalVideo(message);
+                }
+            }
+        }
+
+        internal static bool IsNormalVideo(string contentType, string url, long size, string tabId)
         {
             if (size > 0 && size < Config.Instance.MinVideoSize * 1024)
             {
                 return false;
             }
+            if (!string.IsNullOrEmpty(tabId) && m3u8MpdTabs.Contains(tabId))
+            {
+                return false;
+            }
+            if (url.ToLowerInvariant().Contains("init.mp4"))
+            {
+                suspectedMp4Fragments.Add(new Uri(new Uri(url), ".").AbsoluteUri);
+                return false;
+            }
+            if (suspectedMp4Fragments.Contains(new Uri(new Uri(url), ".").AbsoluteUri))
+            {
+                return false;
+            }
             return (contentType != null && !(contentType.Contains("f4f") ||
-                                contentType.Contains("m4s") ||
-                                contentType.Contains("mp2t") || url.Contains("abst") ||
+                                contentType.Contains("m4s") || url.Contains("abst") ||
                                 url.Contains("f4x") || url.Contains(".fbcdn")
                                 || url.Contains("http://127.0.0.1:9614")));
         }
@@ -59,16 +103,18 @@ namespace XDM.Core.BrowserMonitoring
 
             try
             {
-                var (DualVideoItems, VideoItems) = YoutubeDataFormatParser.GetFormats(manifest);
-                Log.Debug("DualVideoItems: " + DualVideoItems.Count + " VideoItems: " + VideoItems.Count);
+                var kv = YoutubeDataFormatParser.GetFormats(manifest);
+                var dualVideoItems = kv.Key;
+                var videoItems = kv.Value;
+                Log.Debug("DualVideoItems: " + dualVideoItems.Count + " VideoItems: " + videoItems.Count);
                 message.RequestHeaders.Remove("Content-Type");
 
-                if (DualVideoItems != null && DualVideoItems.Count > 0)
+                if (dualVideoItems != null && dualVideoItems.Count > 0)
                 {
                     lock (ApplicationContext.CoreService)
                     {
-                        var list = new List<(DualSourceHTTPDownloadInfo Info, StreamingVideoDisplayInfo DisplayInfo)>();
-                        foreach (var item in DualVideoItems)
+                        var list = new List<KeyValuePair<DualSourceHTTPDownloadInfo, StreamingVideoDisplayInfo>>();
+                        foreach (var item in dualVideoItems)
                         {
                             var fileExt = item.MediaContainer;
                             var mediaItem = new DualSourceHTTPDownloadInfo
@@ -91,18 +137,18 @@ namespace XDM.Core.BrowserMonitoring
                             };
 
                             //var displayText = $"[{fileExt.ToUpperInvariant()}] {size} {item.FormatDescription}";
-                            list.Add((Info: mediaItem, DisplayInfo: displayInfo));
+                            list.Add(new KeyValuePair<DualSourceHTTPDownloadInfo, StreamingVideoDisplayInfo>(mediaItem, displayInfo));
                             //ApplicationContext.Core.AddVideoNotification(displayText, mediaItem);
                         }
                         ApplicationContext.VideoTracker.AddVideoNotifications(list);
                     }
                 }
-                if (VideoItems != null && VideoItems.Count > 0)
+                if (videoItems != null && videoItems.Count > 0)
                 {
                     lock (ApplicationContext.CoreService)
                     {
-                        var list = new List<(SingleSourceHTTPDownloadInfo Info, StreamingVideoDisplayInfo DisplayInfo)>();
-                        foreach (var item in VideoItems)
+                        var list = new List<KeyValuePair<SingleSourceHTTPDownloadInfo, StreamingVideoDisplayInfo>>();
+                        foreach (var item in videoItems)
                         {
                             var fileExt = item.MediaContainer;
                             var mediaItem = new SingleSourceHTTPDownloadInfo
@@ -122,7 +168,7 @@ namespace XDM.Core.BrowserMonitoring
                                 CreationTime = DateTime.Now
                             };
 
-                            list.Add((Info: mediaItem, DisplayInfo: displayInfo));
+                            list.Add(new KeyValuePair<SingleSourceHTTPDownloadInfo, StreamingVideoDisplayInfo>(mediaItem, displayInfo));
                         }
                         ApplicationContext.VideoTracker.AddVideoNotifications(list);
                     }
@@ -138,7 +184,10 @@ namespace XDM.Core.BrowserMonitoring
         {
             var file = message.File ?? FileHelper.GetFileName(new Uri(message.Url));
             Log.Debug("Downloading MPD manifest: " + message.Url);
-
+            if (!string.IsNullOrEmpty(message.TabId))
+            {
+                m3u8MpdTabs.Add(message.TabId);
+            }
             AddToSkippedRefererList(message.GetRequestHeaderFirstValue("Referer"));
 
             var manifest = DownloadManifest(message);
@@ -152,8 +201,10 @@ namespace XDM.Core.BrowserMonitoring
             var count = 0;
             foreach (var plc in mediaEntries)
             {
-                foreach ((Representation video, Representation audio) in plc)
+                foreach (var kv in plc)
                 {
+                    Representation? video = kv.Key;
+                    Representation? audio = kv.Value;
                     //prefix added for multi period
                     var prefix = (count == 0 ? "" : count.ToString() + " ");
 
@@ -283,6 +334,10 @@ namespace XDM.Core.BrowserMonitoring
         {
             Log.Debug("Downloading HLS manifest: " + message.Url);
 
+            if (!string.IsNullOrEmpty(message.TabId))
+            {
+                m3u8MpdTabs.Add(message.TabId);
+            }
             AddToSkippedRefererList(message.GetRequestHeaderFirstValue("Referer"));
 
             var manifest = DownloadManifest(message);
@@ -315,7 +370,8 @@ namespace XDM.Core.BrowserMonitoring
                             ApplicationContext.VideoTracker.AddVideoNotification(new StreamingVideoDisplayInfo
                             {
                                 Quality = displayText,
-                                CreationTime = DateTime.Now
+                                CreationTime = DateTime.Now,
+                                TabId = message.TabId
                             }, video);
                         }
                     }
@@ -343,7 +399,8 @@ namespace XDM.Core.BrowserMonitoring
                     ApplicationContext.VideoTracker.AddVideoNotification(new StreamingVideoDisplayInfo
                     {
                         Quality = displayText,
-                        CreationTime = DateTime.Now
+                        CreationTime = DateTime.Now,
+                        TabId = message.TabId
                     }, video);
                 }
             }
@@ -354,7 +411,7 @@ namespace XDM.Core.BrowserMonitoring
             try
             {
                 var url = new Uri(message.Url);
-                if (!(url.Host.Contains("youtube.com") || url.Host.Contains("googlevideo.com")))
+                if (!(url.Host.Contains(".youtube.") || url.Host.Contains(".googlevideo.")))
                 {
                     return false;
                 }
@@ -370,7 +427,9 @@ namespace XDM.Core.BrowserMonitoring
                 {
                     return false;
                 }
-                (var path, var query, _) = ParsingHelper.ParseKeyValuePair(message.Url, '?');
+                var kv = ParsingHelper.ParseKeyValuePair(message.Url, '?');
+                var path = kv.Key;
+                var query = kv.Value;
 
                 string[] arr = query.Split('&');
                 var yt_url = new StringBuilder();
@@ -383,7 +442,10 @@ namespace XDM.Core.BrowserMonitoring
                 for (int i = 0; i < arr.Length; i++)
                 {
                     var str = arr[i];
-                    (var key, var val, var success) = ParsingHelper.ParseKeyValuePair(str, '=');
+                    var kv1 = ParsingHelper.ParseKeyValuePair(str, '=');
+                    var success = !string.IsNullOrEmpty(kv1.Key);
+                    var key = kv1.Key;
+                    var val = kv1.Value;
                     if (!success)
                     {
                         continue;
@@ -470,7 +532,9 @@ namespace XDM.Core.BrowserMonitoring
                     {
                         Quality = displayText,
                         Size = size,
-                        CreationTime = DateTime.Now
+                        CreationTime = DateTime.Now,
+                        TabUrl = message.TabUrl,
+                        TabId = message.TabId
                     }, video);
                 }
 
@@ -511,7 +575,9 @@ namespace XDM.Core.BrowserMonitoring
                 {
                     Quality = displayText,
                     Size = size,
-                    CreationTime = DateTime.Now
+                    CreationTime = DateTime.Now,
+                    TabUrl = message.TabUrl,
+                    TabId = message.TabId
                 }, video);
             }
             catch (Exception ex)
@@ -522,7 +588,17 @@ namespace XDM.Core.BrowserMonitoring
 
         private static DualSourceHTTPDownloadInfo CreateDualSourceHTTPDownloadInfo(DashInfo info1, DashInfo info2, Message message)
         {
-            var (video, audio) = info1.IsVideo ? (info1, info2) : (info2, info1);
+            DashInfo video, audio;
+            if (info1.IsVideo)
+            {
+                video = info1;
+                audio = info2;
+            }
+            else
+            {
+                video = info2;
+                audio = info1;
+            }
             return new DualSourceHTTPDownloadInfo
             {
                 Uri1 = video.Url,
@@ -536,20 +612,21 @@ namespace XDM.Core.BrowserMonitoring
             };
         }
 
-        internal static void ProcessNormalVideo(Message message2)
+        internal static void ProcessNormalVideo(Message message)
         {
-            if (IsMediaFragment(message2.GetRequestHeaderFirstValue("Referer")))
+            if (IsMediaFragment(message.GetRequestHeaderFirstValue("Referer")))
             {
-                Log.Debug($"Skipping url:{message2.Url} as it seems a media fragment");
+                Log.Debug($"Skipping url:{message.Url} as it seems a media fragment");
                 return;
             }
 
-            var file = (message2.File ?? FileHelper.GetFileName(new Uri(message2.Url)));
-            var type = message2.GetResponseHeaderFirstValue("Content-Type")?.ToLowerInvariant() ?? string.Empty;
-            var len = message2.GetContentLength();
+            var file = (message.File ?? FileHelper.GetFileName(new Uri(message.Url)));
+            var type = message.GetResponseHeaderFirstValue("Content-Type")?.ToLowerInvariant() ?? string.Empty;
+            var len = message.GetContentLength();
+            var url = message.Url.ToLowerInvariant();
             if (string.IsNullOrEmpty(file))
             {
-                file = FileHelper.GetFileName(new Uri(message2.Url));
+                file = FileHelper.GetFileName(new Uri(message.Url));
             }
             string ext;
             if (type.Contains("video/mp4"))
@@ -580,6 +657,18 @@ namespace XDM.Core.BrowserMonitoring
             {
                 ext = "m4a";
             }
+            else if (url.Contains(".mp4"))
+            {
+                ext = "mp4";
+            }
+            else if (url.Contains(".mkv"))
+            {
+                ext = "mkv";
+            }
+            else if (url.Contains(".ts"))
+            {
+                ext = "ts";
+            }
             else
             {
                 return;
@@ -587,20 +676,21 @@ namespace XDM.Core.BrowserMonitoring
 
             var video = new SingleSourceHTTPDownloadInfo
             {
-                Uri = message2.Url,
-                Headers = message2.RequestHeaders,
+                Uri = message.Url,
+                Headers = message.RequestHeaders,
                 File = FileHelper.SanitizeFileName(file) + "." + ext,
-                Cookies = message2.Cookies,
+                Cookies = message.Cookies,
                 ContentLength = len
             };
 
-            var size = long.Parse(message2.GetResponseHeaderFirstValue("Content-Length"));
+            var size = long.Parse(message.GetResponseHeaderFirstValue("Content-Length"));
             var displayText = $"[{ext.ToUpperInvariant()}] {(size > 0 ? FormattingHelper.FormatSize(size) : string.Empty)}";
             ApplicationContext.VideoTracker.AddVideoNotification(new StreamingVideoDisplayInfo
             {
                 Quality = displayText,
                 Size = size,
-                CreationTime = DateTime.Now
+                CreationTime = DateTime.Now,
+                TabId = message.TabId
             }, video); ;
         }
 
@@ -635,6 +725,11 @@ namespace XDM.Core.BrowserMonitoring
             return false;
         }
 
+        internal static bool IsHLSUrl(string url)
+        {
+            return url?.ToLowerInvariant().Contains(".m3u8") ?? false;
+        }
+
         internal static bool IsDASH(string contentType)
         {
             foreach (var key in new string[] { "dash" })
@@ -647,11 +742,17 @@ namespace XDM.Core.BrowserMonitoring
             return false;
         }
 
-        internal static bool IsYtFormat(string contentType)
+        internal static bool IsDASHUrl(string url)
         {
+            return url?.ToLowerInvariant().Contains(".mpd") ?? false;
+        }
+
+        internal static bool IsYtFormat(string? contentType)
+        {
+            if (string.IsNullOrEmpty(contentType)) return false;
             foreach (var key in new string[] { "application/json" })
             {
-                if (contentType.ToLowerInvariant().Contains(key))
+                if (contentType!.ToLowerInvariant().Contains(key))
                 {
                     return true;
                 }
@@ -730,25 +831,19 @@ namespace XDM.Core.BrowserMonitoring
 
                 var acceptHeaderAdded = false;
                 var headers = new Dictionary<string, List<string>>();
-                var cookies = new Dictionary<string, string>();
 
                 foreach (var header in message.RequestHeaders)
                 {
-                    headers.Add(header.Key, header.Value);
+                    headers[header.Key] = header.Value;
                     if (header.Key.ToLowerInvariant() == "accept")
                     {
                         acceptHeaderAdded = true;
                     }
                 }
 
-                if (acceptHeaderAdded)
+                if (!acceptHeaderAdded)
                 {
-                    headers.Add("Accept", new List<string> { "*/*" });
-                }
-
-                foreach (var cookie in message.Cookies)
-                {
-                    cookies.Add(cookie.Key, cookie.Value);
+                    headers["Accept"] = new List<string> { "*/*" };
                 }
 
                 byte[]? body = null;
@@ -758,8 +853,8 @@ namespace XDM.Core.BrowserMonitoring
                 }
 
                 var request = "POST" == message.RequestMethod ?
-                    http.CreatePostRequest(new Uri(message.Url), headers, cookies, null, body) :
-                    http.CreateGetRequest(new Uri(message.Url), headers, cookies, null);
+                    http.CreatePostRequest(new Uri(message.Url), headers, message.Cookies, null, body) :
+                    http.CreateGetRequest(new Uri(message.Url), headers, message.Cookies, null);
 
                 using var response = http.Send(request);
                 Log.Debug("Downloading manifest response: " + response.StatusCode);
@@ -790,12 +885,12 @@ namespace XDM.Core.BrowserMonitoring
             return false;
         }
 
-        private static void AddToSkippedRefererList(string referer)
+        private static void AddToSkippedRefererList(string? referer)
         {
             if (string.IsNullOrEmpty(referer)) return;
             lock (referersToSkip)
             {
-                referersToSkip[ComputeHash(referer)] = DateTime.Now;
+                referersToSkip[ComputeHash(referer!)] = DateTime.Now;
             }
         }
 
@@ -880,6 +975,6 @@ namespace XDM.Core.BrowserMonitoring
         public int ITag;
         public string Mime;
         public Dictionary<string, List<string>> Headers;
-        public Dictionary<string, string> Cookies;
+        public string? Cookies;
     }
 }

@@ -56,14 +56,13 @@ namespace XDM.GtkUI.Dialogs.Properties
         public string DownloadType { set => TxtType.Text = value; }
         public string Referer { set => TxtReferer.Text = value; }
 
-        public Dictionary<string, string> Cookies
+        public string Cookies
         {
             set
             {
                 if (value != null)
                 {
-                    var list = new List<string>(value.Values);
-                    TxtCookie.Text = string.Join(";", list.ToArray());
+                    TxtCookie.Text = value;
                 }
             }
         }

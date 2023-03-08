@@ -41,7 +41,7 @@
     <SolidColorBrush x:Key="ListViewForecolor" Color="#696969"/>
     <SolidColorBrush x:Key="ListViewSelectedForecolor" Color="Black"/>
     <SolidColorBrush x:Key="ListViewSelectedBackcolor" Color="#E6E6E6"/>
-    <SolidColorBrush x:Key="ListViewIconForecolor" Color="DodgerBlue"/>
+    <SolidColorBrush x:Key="ListViewIconForecolor" Color="Silver"/>
     <SolidColorBrush x:Key="ListViewMouseOverBackcolor" Color="#F5F5F5"/>
     <SolidColorBrush x:Key="ListViewMouseOverForecolor" Color="#3C3C3C"/>
     <SolidColorBrush x:Key="ListViewHeaderForecolor" Color="#A0A0A0"/>
@@ -81,16 +81,26 @@
         <Setter Property="Margin" Value="3,3"/>
     </Style>
 
-    <Style TargetType="{x:Type TextBox}">
+    <!--<Style TargetType="{x:Type TextBox}">
         <Setter Property="Padding" Value="3,5"/>
-    </Style>
+    </Style>-->
 
     <Style TargetType="{x:Type ComboBox}">
         <Setter Property="VerticalContentAlignment" Value="Center"/>
     </Style>
 
-    <!--<Style TargetType="{x:Type TextBlock}">
-        <Setter Property="Foreground"
-            Value="{StaticResource ControlForecolor}"/>
+    <Style TargetType="{x:Type TextBox}">
+        <Setter Property="Padding" Value="3,5"/>
+        <Setter Property="SnapsToDevicePixels"
+          Value="True" />
+        <Setter Property="OverridesDefaultStyle"
+          Value="False" />
+        <Setter Property="Background"
+          Value="{StaticResource TextBackcolor}" />
+    </Style>
+
+    <!--<Style TargetType="{x:Type TextBox}">
+        <Setter Property="Background"
+            Value="{StaticResource TextBackcolor}"/>
     </Style>-->
 </ResourceDictionary>

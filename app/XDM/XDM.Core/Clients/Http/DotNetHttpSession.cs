@@ -24,6 +24,9 @@ namespace XDM.Core.Clients.Http
 
         public string? ContentType => Response?.Content?.Headers?.ContentType?.MediaType;
 
+        public bool Compressed => Utils.IsCompressed(Response!.Content.Headers.ContentEncoding.FirstOrDefault(string.Empty))
+            || Utils.IsCompressed(Response!.Headers.TransferEncoding.FirstOrDefault()?.Value);
+
         public string? ContentDispositionFileName => GetContentDisposition();
 
         public long ContentLength => Response?.Content?.Headers?.ContentLength ?? Response?.Content?.Headers?.ContentRange?.Length ?? -1;

@@ -145,6 +145,15 @@
                     <Geometry x:Key="ri-close-fill">
                         M12 10.586l4.95-4.95 1.414 1.414-4.95 4.95 4.95 4.95-1.414 1.414-4.95-4.95-4.95 4.95-1.414-1.414 4.95-4.95-4.95-4.95L7.05 5.636z
                     </Geometry>
+                    <Geometry x:Key="ri-folder-fill">
+                        M12.414 5H21a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h7.414l2 2z
+                    </Geometry>
+                    <Geometry x:Key="ri-folder-download-line">
+                        M12.414 5H21a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h7.414l2 2zM4 5v14h16V7h-8.414l-2-2H4zm9 8h3l-4 4-4-4h3V9h2v4z
+                    </Geometry>
+                    <Geometry x:Key="ri-folder-download-fill">
+                        M12.414 5H21a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h7.414l2 2zM13 13V9h-2v4H8l4 4 4-4h-3z
+                    </Geometry>
                     <BooleanToVisibilityConverter x:Key="BoolToVis"/>
                     <local:FileExtensionToVectorImageConverter x:Key="FileExtensionToVectorImageConverter"></local:FileExtensionToVectorImageConverter>
                     <local:FileExtensionToColorConverter x:Key="FileExtensionToColorConverter"></local:FileExtensionToColorConverter>

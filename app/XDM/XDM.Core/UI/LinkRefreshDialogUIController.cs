@@ -18,7 +18,6 @@ namespace XDM.Core.UI
         {
             try
             {
-
                 if (item.DownloadType != "Http" && item.DownloadType != "Dash")
                 {
                     return false;
@@ -39,32 +38,33 @@ namespace XDM.Core.UI
                     return false;
                 }
                 Log.Debug("Referer: " + referer);
+
+                dialog.WatchingStopped += (a, b) =>
+                {
+                    ApplicationContext.LinkRefresher.ClearWatchList();
+                };
+
                 if (referer != null)
                 {
-                    dialog.WatchingStopped += (a, b) =>
-                    {
-                        ApplicationContext.LinkRefresher.ClearWatchList();
-                    };
-
                     OpenBrowser(referer);
-                    if (item.DownloadType == "Http")
-                    {
-                        var downloader = new SingleSourceHTTPDownloader(item.Id);
-                        downloader.RestoreState();
-                        ApplicationContext.LinkRefresher.RefreshedLinkReceived += (_, _) => dialog.LinkReceived();
-                        ApplicationContext.LinkRefresher.AddToWatchList(downloader);
-                    }
-                    else if (item.DownloadType == "Dash")
-                    {
-                        var downloader = new DualSourceHTTPDownloader(item.Id);
-                        downloader.RestoreState();
-                        ApplicationContext.LinkRefresher.RefreshedLinkReceived += (_, _) => dialog.LinkReceived();
-                        ApplicationContext.LinkRefresher.AddToWatchList(downloader);
-                    }
-
-                    dialog.ShowWindow();
-                    return true;
                 }
+                if (item.DownloadType == "Http")
+                {
+                    var downloader = new SingleSourceHTTPDownloader(item.Id);
+                    downloader.RestoreState();
+                    ApplicationContext.LinkRefresher.RefreshedLinkReceived += (_, _) => dialog.LinkReceived();
+                    ApplicationContext.LinkRefresher.AddToWatchList(downloader);
+                }
+                else if (item.DownloadType == "Dash")
+                {
+                    var downloader = new DualSourceHTTPDownloader(item.Id);
+                    downloader.RestoreState();
+                    ApplicationContext.LinkRefresher.RefreshedLinkReceived += (_, _) => dialog.LinkReceived();
+                    ApplicationContext.LinkRefresher.AddToWatchList(downloader);
+                }
+
+                dialog.ShowWindow();
+                return true;
             }
             catch (Exception e)
             {

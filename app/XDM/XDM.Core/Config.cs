@@ -37,8 +37,17 @@ namespace XDM.Core
         }
 
         public static string DataDir { get; set; }
+        public static string AppDir { get; set; }
+
+        public static int DefaultNotificationTimeOut => 30000;
+
+        public int NotificationTimeOut { get; set; }
 
         public bool IsBrowserMonitoringEnabled { get; set; } = true;
+
+        public static bool DefaultShowNotification => true;
+
+        public bool ShowNotification { get; set; } = true;
 
         public static string DefaultFallbackUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36";
 
@@ -47,7 +56,7 @@ namespace XDM.Core
         public static string[] DefaultVideoExtensions => new string[]
             {
                 "MP4", "M3U8", "F4M", "WEBM", "OGG", "MP3", "AAC", "FLV", "MKV", "DIVX",
-                "MOV", "MPG", "MPEG","OPUS"
+                "MOV", "MPG", "MPEG","OPUS", "MPD"
             };
 
         public string[] VideoExtensions { get; set; }
@@ -69,13 +78,17 @@ namespace XDM.Core
 
         public string Language { get; set; } = "English";
 
-        public bool AllowSystemDarkTheme { get; set; } = false;
+        public bool AllowSystemDarkTheme { get; set; } = true;
 
         private Config()
         {
             VideoExtensions = DefaultVideoExtensions;
             FileExtensions = DefaultFileExtensions;
             BlockedHosts = DefaultBlockedHosts;
+            if(Environment.OSVersion.Platform == PlatformID.Win32NT)
+            {
+                AllowSystemDarkTheme = Environment.OSVersion.Version.Major >= 10;
+            }
         }
 
         public List<string> RecentFolders { get; set; } = new List<string>();
@@ -88,7 +101,7 @@ namespace XDM.Core
 
         public int RetryDelay { get; set; } = 10;
 
-        public int MaxParallelDownloads { get; set; } = 1;
+        public int MaxParallelDownloads { get; set; } = 3;
 
         public bool ShowProgressWindow { get; set; } = true;
 
@@ -216,7 +229,20 @@ namespace XDM.Core
 
         public static void LoadConfig(string? path = null)
         {
-            DataDir = path ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".xdman");
+            Log.Debug("Loading config...");
+
+#if NET35
+            DataDir = path ?? Path.Combine(
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), ".xdm-app-data"), "Data");
+            AppDir = path ??
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), ".xdm-app-data");
+#else
+
+            DataDir = path ?? Path.Combine(
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".xdm-app-data"), "Data");
+            AppDir = path ?? Path.Combine(
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".xdm-app-data"));
+#endif
             instance = new Config
             {
                 TempDir = Path.Combine(DataDir, "temp")
@@ -228,7 +254,7 @@ namespace XDM.Core
                     Directory.CreateDirectory(DataDir);
                 }
 
-                var bytes = TransactedIO.ReadBytes("settings.dat", DataDir);
+                var bytes = TransactedIO.ReadBytes("settings.dat", AppDir);
                 if (bytes != null)
                 {
                     using var ms = new MemoryStream(bytes);

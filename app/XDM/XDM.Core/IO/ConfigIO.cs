@@ -80,6 +80,12 @@ namespace XDM.Core.IO
                 var fieldType = r.ReadByte();
                 switch (fieldName)
                 {
+                    case "NotificationTimeOut":
+                        instance.NotificationTimeOut = r.ReadInt32();
+                        break;
+                    case "ShowNotification":
+                        instance.ShowNotification = r.ReadBoolean();
+                        break;
                     case "AfterCompletionCommand":
                         instance.AfterCompletionCommand = r.ReadString();
                         break;
@@ -276,7 +282,7 @@ namespace XDM.Core.IO
                         }
                         break;
                     case "Proxy":
-                        instance.Proxy = ProxyInfoSerializer.Deserialize(r);
+                        instance.Proxy = ConfigIO.DeserializeProxyInfo(r);
                         break;
                     default:
                         SkipUnknownField(fieldType, fieldName, r);
@@ -330,48 +336,88 @@ namespace XDM.Core.IO
             using var ms = new MemoryStream();
             using var w = new BinaryWriter(ms);
 
-            w.Write((short)(instance.Proxy.HasValue ? 36 : 35)); //total fields
+            var count = 0;
+            w.Write((short)0); //total fields
 
             WriteString(w, instance.AfterCompletionCommand, "AfterCompletionCommand");
+            count++;
             WriteString(w, instance.UserSelectedDownloadFolder, "UserSelectedDownloadFolder");
+            count++;
             WriteString(w, instance.AntiVirusArgs, "AntiVirusArgs");
+            count++;
             WriteString(w, instance.AntiVirusExecutable, "AntiVirusExecutable");
+            count++;
             WriteString(w, instance.DefaultDownloadFolder, "DefaultDownloadFolder");
+            count++;
             WriteString(w, instance.Language, "Language");
+            count++;
             WriteString(w, instance.TempDir, "TempDir");
+            count++;
 
             WriteBoolean(w, instance.EnableSpeedLimit, "EnableSpeedLimit");
+            count++;
             WriteBoolean(w, instance.FetchServerTimeStamp, "FetchServerTimeStamp");
+            count++;
             WriteBoolean(w, instance.IsBrowserMonitoringEnabled, "IsBrowserMonitoringEnabled");
+            count++;
             WriteBoolean(w, instance.KeepPCAwake, "KeepPCAwake");
+            count++;
             WriteBoolean(w, instance.MonitorClipboard, "MonitorClipboard");
+            count++;
             WriteBoolean(w, instance.RunCommandAfterCompletion, "RunCommandAfterCompletion");
+            count++;
             //WriteBoolean(w, instance.RunOnLogon, "RunOnLogon");
             WriteBoolean(w, instance.ScanWithAntiVirus, "ScanWithAntiVirus");
+            count++;
             WriteBoolean(w, instance.ShowDownloadCompleteWindow, "ShowDownloadCompleteWindow");
+            count++;
             WriteBoolean(w, instance.ShowProgressWindow, "ShowProgressWindow");
+            count++;
             WriteBoolean(w, instance.ShutdownAfterAllFinished, "ShutdownAfterAllFinished");
+            count++;
             WriteBoolean(w, instance.StartDownloadAutomatically, "StartDownloadAutomatically");
+            count++;
             WriteBoolean(w, instance.AllowSystemDarkTheme, "AllowSystemDarkTheme");
+            count++;
             WriteBoolean(w, instance.DoubleClickOpenFile, "DoubleClickOpenFile");
+            count++;
 
             WriteInt32(w, (int)instance.FileConflictResolution, "FileConflictResolution");
+            count++;
             WriteInt32(w, (int)instance.FolderSelectionMode, "FolderSelectionMode");
+            count++;
 
             WriteInt32(w, instance.DefaltDownloadSpeed, "DefaltDownloadSpeed");
+            count++;
             WriteInt32(w, instance.MaxParallelDownloads, "MaxParallelDownloads");
+            count++;
             WriteInt32(w, instance.MaxRetry, "MaxRetry");
+            count++;
             WriteInt32(w, instance.MaxSegments, "MaxSegments");
+            count++;
             WriteInt32(w, instance.MinVideoSize, "MinVideoSize");
+            count++;
             WriteInt32(w, instance.NetworkTimeout, "NetworkTimeout");
+            count++;
             WriteInt32(w, instance.RetryDelay, "RetryDelay");
+            count++;
+
+            WriteInt32(w, instance.NotificationTimeOut, "NotificationTimeOut");
+            count++;
+            WriteBoolean(w, instance.ShowNotification, "ShowNotification");
+            count++;
 
             WriteStringArray(w, instance.BlockedHosts, "BlockedHosts", instance.BlockedHosts.Length);
+            count++;
             WriteStringArray(w, instance.FileExtensions, "FileExtensions", instance.FileExtensions.Length);
+            count++;
             WriteStringArray(w, instance.RecentFolders, "RecentFolders", instance.RecentFolders.Count);
+            count++;
             WriteStringArray(w, instance.VideoExtensions, "VideoExtensions", instance.VideoExtensions.Length);
+            count++;
 
             w.Write("Categories");
+            count++;
             w.Write(OBJECT_ARRAY);
             w.Write((short)instance.Categories.Count());
             w.Write((short)5); //no of fields in Category class
@@ -385,6 +431,7 @@ namespace XDM.Core.IO
             }
 
             w.Write("UserCredentials");
+            count++;
             w.Write(OBJECT_ARRAY);
             w.Write((short)instance.UserCredentials.Count());
             w.Write((short)3); //no of fields in Category class
@@ -397,12 +444,16 @@ namespace XDM.Core.IO
 
             if (instance.Proxy.HasValue)
             {
-                ProxyInfoSerializer.Serialize(instance.Proxy.Value, w);
+                ConfigIO.SerializeProxyInfo(instance.Proxy.Value, w);
+                count++;
             }
+
+            w.Seek(0, SeekOrigin.Begin);
+            w.Write((short)count); //total fields
 
             w.Close();
             ms.Close();
-            TransactedIO.WriteBytes(ms.ToArray(), "settings.dat", Config.DataDir);
+            TransactedIO.WriteBytes(ms.ToArray(), "settings.dat", Config.AppDir);
         }
 
         public static void SerializeProxyInfo(ProxyInfo proxy, BinaryWriter w)

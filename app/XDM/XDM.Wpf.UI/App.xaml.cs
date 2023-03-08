@@ -10,6 +10,7 @@ using XDM.Core.DataAccess;
 using System.IO;
 using XDMApp = XDM.Core.Application;
 using XDM.Core.BrowserMonitoring;
+using System.Diagnostics;
 
 namespace XDM.Wpf.UI
 {
@@ -31,10 +32,10 @@ namespace XDM.Wpf.UI
             ServicePointManager.ServerCertificateValidationCallback += (a, b, c, d) => true;
             ServicePointManager.DefaultConnectionLimit = 100;
 
-#if NET45
+#if NET45_OR_GREATER
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
-#elif !NET35
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.SystemDefault;
+            //#elif !NET35
+            //            ServicePointManager.SecurityProtocol = SecurityProtocolType.SystemDefault;
 #endif
 #if NET46_OR_GREATER
 
@@ -45,12 +46,13 @@ namespace XDM.Wpf.UI
 
         private void Application_Startup(object sender, StartupEventArgs e)
         {
+            Trace.WriteLine("XDM app start");
             //Only if user has chosen to generate log
             var debugMode = Environment.GetEnvironmentVariable("XDM_DEBUG_MODE");
             if (!string.IsNullOrEmpty(debugMode) && debugMode == "1")
             {
-                var logFile = Path.Combine(Config.DataDir, "log.txt");
-                Log.InitFileBasedTrace(Path.Combine(Config.DataDir, "log.txt"));
+                var logFile = Path.Combine(Config.AppDir, "log.txt");
+                Log.InitFileBasedTrace(Path.Combine(Config.AppDir, "log.txt"));
             }
             Log.Debug($"Application_Startup::args->: {string.Join(" ", Environment.GetCommandLineArgs())}");
 
@@ -60,6 +62,7 @@ namespace XDM.Wpf.UI
             win = new MainWindow();
             app = new XDMApp();
 
+            ApplicationContext.FirstRunCallback += ApplicationContext_FirstRunCallback;
             ApplicationContext.Configurer()
                 .RegisterApplicationWindow(win)
                 .RegisterApplication(app)
@@ -70,13 +73,28 @@ namespace XDM.Wpf.UI
                 .RegisterPlatformUIService(new WpfPlatformUIService())
                 .Configure();
 
-            ArgsProcessor.Process(Environment.GetCommandLineArgs(), 1);
+            ArgsProcessor.Process(Environment.GetCommandLineArgs().Skip(1));
 
             AppTrayIcon.AttachToSystemTray();
             AppTrayIcon.TrayClick += (_, _) =>
             {
                 win.ShowAndActivate();
             };
+        }
+
+        private void ApplicationContext_FirstRunCallback(object sender, EventArgs e)
+        {
+            MsixHelper.CopyExtension();
+            if (!MsixHelper.IsAppContainer)
+            {
+                Log.Debug("Not running inside app container");
+                Config.Instance.RunOnLogon = true;
+            }
+            ApplicationContext.Application.RunOnUiThread(() =>
+            {
+                ApplicationContext.MainWindow.ShowAndActivate();
+                ApplicationContext.PlatformUIService.ShowBrowserMonitoringDialog();
+            });
         }
 
         private void Application_Exit(object sender, ExitEventArgs e)

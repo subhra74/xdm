@@ -1,0 +1,29 @@
+﻿<Window x:Class="XDM.Wpf.UI.Dialogs.ChromeIntegrator.IntegrationWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:XDM.Wpf.UI.Dialogs.ChromeIntegrator"
+        mc:Ignorable="d" Topmost="True"
+        Title="{StaticResource MSG_CHROME_INT}" Height="450" Width="640" WindowStartupLocation="CenterScreen" Closed="Window_Closed">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <local:Page0 Grid.ColumnSpan="4" x:Name="Page0"/>
+        <local:Page1 Grid.ColumnSpan="4" x:Name="Page1"/>
+        <local:Page2 Grid.ColumnSpan="4" x:Name="Page2"/>
+        <local:Page3 Grid.ColumnSpan="4" x:Name="Page3"/>
+        <local:Page4 Grid.ColumnSpan="4" x:Name="Page4"/>
+        <Button Content="{StaticResource MSG_HELP}" Grid.Column="0" Grid.Row="1" Margin="10" Name="BtnHelp" Click="BtnHelp_Click"/>
+        <Button Content="{StaticResource MSG_BACK}" Grid.Column="2" Grid.Row="1" Margin="10,10" Name="BtnBack" Click="BtnBack_Click"/>
+        <Button Content="{StaticResource MSG_NEXT}" Grid.Column="3" Grid.Row="1" Margin="0,10,10,10" Name="BtnNext" Click="BtnNext_Click"/>
+    </Grid>
+</Window>

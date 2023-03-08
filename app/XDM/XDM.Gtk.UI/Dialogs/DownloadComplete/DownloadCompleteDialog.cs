@@ -65,6 +65,7 @@ namespace XDM.GtkUI.Dialogs.DownloadComplete
         {
             args.RetVal = true;
             DontShowAgainClickd?.Invoke(this, EventArgs.Empty);
+            Close();
         }
 
         private void BtnOpen_Click(object? sender, EventArgs e)

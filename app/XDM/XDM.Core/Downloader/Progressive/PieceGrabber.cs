@@ -176,16 +176,27 @@ namespace XDM.Core.Downloader.Progressive
                 CancellationToken.ThrowIfCancellationRequested();
                 response.EnsureSuccessStatusCode();
 
+                var status = response.StatusCode;
+                var contentLength = response.ContentLength;
+                if (response.Compressed)
+                {
+                    contentLength = -1;
+                    if (response.StatusCode == HttpStatusCode.PartialContent)
+                    {
+                        status = HttpStatusCode.OK;
+                    }
+                }
+
                 if (firstRequest && response.ContentType == "text/plain" && this.callback.IsTextRedirectionAllowed())
                 {
                     throw new TextRedirectException(new Uri(response.ReadAsString(CancellationToken).Trim()));
                 }
-                if (!firstRequest && response.StatusCode != HttpStatusCode.PartialContent)
+                if (!firstRequest && status != HttpStatusCode.PartialContent)
                 {
                     throw new NonRetriableException(ErrorCode.InvalidResponse, "Resume not supported :: " + piece.Id);
                 }
-                var contentLength = response?.ContentLength ?? 0;
-                if (!firstRequest && response!.ContentRangeLength > 0 && this.callback.IsFileChangedOnServer(piece.StreamType, response!.ContentRangeLength, null))
+                if (!firstRequest && contentLength > 0
+                    && this.callback.IsFileChangedOnServer(piece.StreamType, response!.ContentRangeLength, null))
                 {
                     throw new NonRetriableException(ErrorCode.InvalidResponse, "Content length mismatch :: " + piece.Id);
                 }
@@ -219,7 +230,8 @@ namespace XDM.Core.Downloader.Progressive
             //#endif
             try
             {
-                using var targetStream = new FileStream(this.callback.GetPieceFile(this.pieceId), FileMode.OpenOrCreate, FileAccess.Write);
+                using var targetStream = new FileStream(this.callback.GetPieceFile(this.pieceId), 
+                    FileMode.OpenOrCreate, FileAccess.Write);
                 this.fileWriterStream = targetStream;
                 targetStream.Seek(piece.Downloaded, SeekOrigin.Begin);
                 if (piece.Length > 0)
@@ -230,6 +242,11 @@ namespace XDM.Core.Downloader.Progressive
                 {
                     CopyWithUnknownLength(piece, sourceStream, targetStream);
                 }
+                try
+                {
+                    targetStream.Close();
+                }
+                catch { }
             }
             finally
             {
@@ -420,8 +437,8 @@ namespace XDM.Core.Downloader.Progressive
         {
             return new ProbeResult
             {
-                ResourceSize = response.ContentLength,
-                Resumable = response.StatusCode == HttpStatusCode.PartialContent,
+                ResourceSize = response.Compressed ? -1 : response.ContentLength,
+                Resumable = response.Compressed ? false : response.StatusCode == HttpStatusCode.PartialContent,
                 FinalUri = redirectUri ?? response.ResponseUri,
                 AttachmentName = response.ContentDispositionFileName,
                 ContentType = response.ContentType,

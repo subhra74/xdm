@@ -11,8 +11,10 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Translations;
 using XDM.Core;
 using XDM.Core.Util;
+using YDLWrapper;
 
 namespace XDM.Wpf.UI.Dialogs.VideoDownloader
 {
@@ -27,15 +29,30 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
         public bool UseCredentials => ChkAuth.IsChecked.HasValue ? ChkAuth.IsChecked.Value : false;
 
         public EventHandler? SearchClicked;
+        public Window ParentWindow { get; set; }
 
         public VideoDownloaderPage1()
         {
             InitializeComponent();
         }
 
-        public void InitPage()
+        public void InitPage(Window parentWindow)
         {
-
+            this.ParentWindow = parentWindow;
+            try
+            {
+                var exec = YDLProcess.FindYDLBinary();
+                ChkReadCookie.Visibility = CmbBrowser.Visibility = exec.BinaryType == YtBinaryType.YtDlp
+                    ? Visibility.Visible : Visibility.Collapsed;
+            }
+            catch
+            {
+                if (MessageBox.Show(ParentWindow, TextResource.GetText("MSG_HELPER_TOOLS_MISSING"), "XDM", MessageBoxButton.YesNo)
+                    == MessageBoxResult.Yes)
+                {
+                    PlatformHelper.OpenBrowser(Links.HelperToolsUrl);
+                }
+            }
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
