@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFrameworks>net4.6;net4.5</TargetFrameworks>
-    <!--<TargetFramework>net4.7.2</TargetFramework>-->
+    <!--<TargetFrameworks>net4.6;net4.5</TargetFrameworks>-->
+    <TargetFramework>net4.7.2</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>xdm-guide</AssemblyName>
