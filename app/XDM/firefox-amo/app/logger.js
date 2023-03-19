@@ -1,7 +1,7 @@
 "use strict";
 class Logger {
     constructor() {
-        this.loggingEnabled = false;
+        this.loggingEnabled = true;
     }
 
     log(content) {

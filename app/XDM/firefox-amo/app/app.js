@@ -28,8 +28,6 @@ class App {
     }
 
     onMessage(msg) {
-        this.logger.log("message from XDM");
-        this.logger.log(msg);
         this.appEnabled = msg.enabled === true;
         this.fileExts = msg.fileExts;
         this.blockedHosts = msg.blockedHosts;
@@ -52,7 +50,6 @@ class App {
     }
 
     isMonitoringEnabled() {
-        this.logger.log(this.appEnabled + " " + this.userDisabled);
         return this.appEnabled === true && this.userDisabled === false && this.connector.isConnected();
     }
 
@@ -98,7 +95,7 @@ class App {
         this.attachContextMenu();
         chrome.tabs.onActivated.addListener(this.onTabActivated.bind(this));
     }
-    
+
     isSupportedProtocol(url) {
         if (!url) return false;
         let u = new URL(url);
@@ -222,6 +219,9 @@ class App {
         else if (request.type === "clear") {
             this.connector.postMessage("/clear", {});
         }
+        else if (request.type === "links") {
+            this.sendLinksToXDM(request.links, request.pageUrl);
+        }
     }
 
     sendLinkToXDM(info, tab) {
@@ -251,12 +251,29 @@ class App {
         this.triggerDownload(url, null, info.pageUrl, null, null);
     }
 
+    getAllLinks(info, tab, image) {
+        browser.tabs.executeScript(tab.id, {
+            file: image === true ? "/app/get-images.js" : "/app/get-links.js",
+            allFrames: true
+        }).then(() => {
+            this.logger.log("script injected in all frames")
+        }).catch(error => {
+            this.logger.log(error);
+        });
+    }
+
     onMenuClicked(info, tab) {
         if (info.menuItemId == "download-any-link") {
             this.sendLinkToXDM(info, tab);
         }
         if (info.menuItemId == "download-image-link") {
             this.sendImageToXDM(info, tab);
+        }
+        if (info.menuItemId == "download-all-links") {
+            this.getAllLinks(info, tab, false);
+        }
+        if (info.menuItemId == "download-all-images") {
+            this.getAllLinks(info, tab, true);
         }
     }
 
@@ -273,6 +290,18 @@ class App {
             contexts: ["image"]
         });
 
+        browser.menus.create({
+            id: 'download-all-links',
+            title: "Download All links with XDM",
+            contexts: ["all"]
+        });
+
+        browser.menus.create({
+            id: 'download-all-images',
+            title: "Download All images with XDM",
+            contexts: ["all"]
+        });
+
         browser.menus.onClicked.addListener(this.onMenuClicked.bind(this));
     }
 
@@ -280,5 +309,46 @@ class App {
         this.activeTabId = activeInfo.tabId + "";
         this.logger.log("Active tab: " + this.activeTabId);
         this.updateActionIcon();
+    }
+
+    sendLinksToXDM(links, pageUrl) {
+        this.fetchAllCookiesForUrls(links).then(cookieMap => {
+            this.logger.log(cookieMap);
+            const data = [];
+            for (const url of cookieMap.keys()) {
+                data.push({
+                    url: url,
+                    cookie: cookieMap.get(url),
+                    requestHeaders: {
+                        "User-Agent": [navigator.userAgent],
+                        "Referer": [pageUrl]
+                    },
+                    responseHeaders: {}
+                });
+            }
+            this.logger.log(data);
+            this.connector.postMessage("/link", data);
+        });
+    }
+
+    fetchAllCookiesForUrls(links) {
+        return new Promise((resolve, reject) => {
+            this.fetchCookiesForUrls(links, 0, new Map(), resolve);
+        });
+    }
+
+    fetchCookiesForUrls(links, index, cookieMap, resolve) {
+        if (index === links.length) {
+            resolve(cookieMap);
+            return;
+        }
+        const url = links[index];
+        chrome.cookies.getAll({ "url": url }, cookies => {
+            if (cookies) {
+                const cookieStr = cookies.map(cookie => cookie.name + "=" + cookie.value).join("; ");
+                cookieMap.set(url, cookieStr);
+            }
+            this.fetchCookiesForUrls(links, index + 1, cookieMap, resolve);
+        });
     }
 }

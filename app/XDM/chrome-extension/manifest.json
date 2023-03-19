@@ -2,7 +2,7 @@
     "name": "XDM Integration Module",
     "action": {},
     "manifest_version": 3,
-    "version": "3.3",
+    "version": "3.4",
     "description": "Download with Xtreme Download Manager.",
     "host_permissions": [
         "*://*/*"
@@ -14,7 +14,9 @@
         "tabs",
         "storage",
         "contextMenus",
-        "alarms"
+        "alarms",
+        "scripting", 
+        "activeTab"
     ],
     "background": {
         "service_worker": "main.js",

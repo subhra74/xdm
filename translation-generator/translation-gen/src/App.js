@@ -87,10 +87,11 @@ function App() {
         position: 'fixed', left: '0px', bottom: '0px',
         right: '0px', padding: '10px',
         display: 'flex',
-        justifyContent: 'flex-end',
+        justifyContent: 'space-between',
         background: 'white',
         borderTop: '1px solid gray'
       }} >
+        <div>After the translation file is generated, please submit the file <a href="https://github.com/subhra74/xdm/issues">here</a></div>
         <button type="button" className="btn btn-primary btn-lg" style={{ padding: '10px', paddingLeft: '20px', paddingRight: '20px' }}
           onClick={generateTranslation}>Generate translation</button>
       </div>

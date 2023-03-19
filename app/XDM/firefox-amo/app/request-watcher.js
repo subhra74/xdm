@@ -109,12 +109,7 @@ class RequestWatcher {
             if (res.url.indexOf("127.0.0.1") >= 0) {
                 return;
             }
-            console.log("analyzing req: ");
-            console.log(req);
-            console.log(res);
-            console.log(this.callback + " " + this.isMatchingRequest(res) + "" + this.statusCallback())
             if (this.callback && this.isMatchingRequest(res) && this.statusCallback()) {
-                console.log("matching req");
                 let intercept = this.shouldIntercept(res);
                 if (req.tabId !== -1) {
                     chrome.tabs.get(
