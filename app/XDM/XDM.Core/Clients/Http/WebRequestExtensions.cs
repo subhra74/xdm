@@ -12,6 +12,7 @@ namespace XDM.Core.Clients.Http
 {
     public static class WebRequestExtensions
     {
+        private static readonly char[] QuoteChars = new char[] { '"' };
         public static void EnsureSuccessStatusCode(this HttpWebResponse response)
         {
             if (response.StatusCode != HttpStatusCode.OK && response.StatusCode != HttpStatusCode.PartialContent)
@@ -92,28 +93,31 @@ namespace XDM.Core.Clients.Http
 
         public static string? GetContentDispositionFileName(string contentDisposition)
         {
+            //var contentDisposition = response.Headers.Get("Content-Disposition");
+            if (string.IsNullOrEmpty(contentDisposition))
+            {
+                return null;
+            }
+
+            Log.Debug("Trying to get filename from: " + contentDisposition);
             try
             {
-                var r1 = new Regex(@"\s*filename\*\s*=\s*[^']*\'\s*\'(.*)");
-                var r2 = new Regex("\\s*filename\\s*=\\s*\"([^\"]*)\"");
-                var r3 = new Regex("filename\\s*=\\s*([^\"]+)");
+                var headerValue = System.Net.Http.Headers.ContentDispositionHeaderValue.Parse(contentDisposition);
 
-                //var contentDisposition = response.Headers.Get("Content-Disposition");
-                if (contentDisposition != null)
+                if (headerValue.FileNameStar != null)
                 {
-                    Log.Debug("Trying to get filename from: " + contentDisposition);
-                    foreach (var r in new Regex[] { r1, r2, r3 })
-                    {
-                        var m = r.Match(contentDisposition);
-                        if (m.Success && m.Groups.Count >= 2)
-                        {
-                            return FileHelper.SanitizeFileName(Uri.UnescapeDataString(m.Groups[1].Value));
-                        }
-                    }
+                    return FileHelper.SanitizeFileName(Uri.UnescapeDataString(headerValue.FileNameStar));
+                }
+                else if (headerValue.FileName != null)
+                {
+                    // https://github.com/dotnet/runtime/issues/32765#issuecomment-766768351
+                    // response.Content.Headers.ContentDisposition.FileName contains quotes #32765
+                    return FileHelper.SanitizeFileName(headerValue.FileName.Trim(QuoteChars));
                 }
             }
-            catch (Exception ex)
+            catch (FormatException ex)
             {
+                // Invalid Content-Disposition header format
                 Log.Debug(ex, ex.Message);
             }
 
