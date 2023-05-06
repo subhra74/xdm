@@ -1,16 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Reflection;
+using System.Runtime.Versioning;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Interop;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using XDM.Core;
 using XDM.Core.Util;
 using XDM.Wpf.UI.Common;
@@ -26,12 +20,33 @@ namespace XDM.Wpf.UI.Dialogs.About
         public AboutWindow()
         {
             InitializeComponent();
-            this.TxtAppVersion.Text = "Xtreme Download Manager 8.0.1 BETA";
-            this.TxtCopyright.Text = "© 2013 Subhra Das Gupta";
-            this.TxtWebsite.Text = "www.xtremedownloadmanager.com";
+            this.TxtAppVersion.Text = AppInfo.APP_VERSION_TEXT;
+            this.TxtCopyright.Text = AppInfo.APP_COPYRIGHT_TEXT;
+            this.TxtWebsite.Text = AppInfo.APP_HOMEPAGE_TEXT;
+            this.TxtOSInfo.Text = Environment.OSVersion.ToString();
+            this.TxtNetFxInfo.Text = GetNetImageVersion();
+            this.TxtMSIXInfo.Text = "App container: " + MsixHelper.IsAppContainer;
         }
 
         public bool Result { get; set; }
+
+        private string GetNetImageVersion()
+        {
+            try
+            {
+#if NET35
+                return Environment.Version.ToString();
+#else
+            return Assembly.GetExecutingAssembly()
+                .GetCustomAttributes(true).OfType<TargetFrameworkAttribute>().First().FrameworkDisplayName;
+#endif
+            }
+            catch
+            {
+                return Environment.Version.ToString();
+            }
+
+        }
 
         protected override void OnSourceInitialized(EventArgs e)
         {

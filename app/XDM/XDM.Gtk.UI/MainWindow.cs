@@ -107,7 +107,7 @@ namespace XDM.GtkUI
 
         public MainWindow() : base("Xtreme Download Manager")
         {
-            SetDefaultIconFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "svg-icons", "xdm-logo.svg"));
+            SetDefaultIconFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "xdm-logo-512.png"));
             SetPosition(WindowPosition.CenterAlways);
             DeleteEvent += AppWin1_DeleteEvent;
             this.windowGroup = new WindowGroup();
@@ -209,11 +209,12 @@ namespace XDM.GtkUI
 
             mainMenu = new Menu();
             var menuSettings = new MenuItem(TextResource.GetText("TITLE_SETTINGS"));
+            var menuBrowserMonitor = new MenuItem(TextResource.GetText("SETTINGS_MONITORING"));
+            var menuMediaGrabber = new MenuItem(TextResource.GetText("MSG_MEDIA_CAPTURE"));
             var menuClearFinished = new MenuItem(TextResource.GetText("MENU_DELETE_COMPLETED"));
             var menuExport = new MenuItem(TextResource.GetText("MENU_EXPORT"));
             var menuImport = new MenuItem(TextResource.GetText("MENU_IMPORT"));
             var menuLanguage = new MenuItem(TextResource.GetText("MENU_LANG"));
-            var menuBrowserMonitor = new MenuItem(TextResource.GetText("SETTINGS_MONITORING"));
             var menuHelpAndSupport = new MenuItem(TextResource.GetText("LBL_SUPPORT_PAGE"));
             var menuReportProblem = new MenuItem(TextResource.GetText("LBL_REPORT_PROBLEM"));
             var menuCheckForUpdate = new MenuItem(TextResource.GetText("MENU_UPDATE"));
@@ -230,18 +231,25 @@ namespace XDM.GtkUI
             menuCheckForUpdate.Activated += MenuCheckForUpdate_Activated;
             menuAbout.Activated += MenuAbout_Activated;
             menuExit.Activated += MenuExit_Activated;
+            menuMediaGrabber.Activated += MenuMediaGrabber_Activated;
             mainMenu.Append(menuSettings);
+            mainMenu.Append(menuBrowserMonitor);
+            mainMenu.Append(menuMediaGrabber);
             mainMenu.Append(menuClearFinished);
             mainMenu.Append(menuExport);
             mainMenu.Append(menuImport);
             mainMenu.Append(menuLanguage);
-            mainMenu.Append(menuBrowserMonitor);
             mainMenu.Append(menuHelpAndSupport);
             mainMenu.Append(menuReportProblem);
             mainMenu.Append(menuCheckForUpdate);
             mainMenu.Append(menuAbout);
             mainMenu.Append(menuExit);
             mainMenu.ShowAll();
+        }
+
+        private void MenuMediaGrabber_Activated(object? sender, EventArgs e)
+        {
+            ApplicationContext.PlatformUIService.CreateAndShowMediaGrabber();
         }
 
         private void MenuExit_Activated(object? sender, EventArgs e)
@@ -596,9 +604,9 @@ namespace XDM.GtkUI
                     swFinished.ShowAll();
                     swInProgress.Hide();
                     category = null;
-                    finishedDownloadFilter.Refilter();
                     btnOpenFile.Visible = btnOpenFolder.Visible = true;
                     btnPause.Visible = btnResume.Visible = false;
+                    finishedDownloadFilter.Refilter();
                 }
             }
             else
@@ -791,7 +799,6 @@ namespace XDM.GtkUI
 
             sortedStore.SetSortFunc(0, (model, iter1, iter2) =>
             {
-                Console.WriteLine("called");
                 var t1 = (string)model.GetValue(iter1, 0);
                 var t2 = (string)model.GetValue(iter2, 0);
 
@@ -1005,7 +1012,7 @@ namespace XDM.GtkUI
             inprogressDownloadsStore.SetValue(iter, 1, entry.DateAdded.ToShortDateString());
             inprogressDownloadsStore.SetValue(iter, 2, FormattingHelper.FormatSize(entry.Size));
             inprogressDownloadsStore.SetValue(iter, 3, entry.Progress);
-            inprogressDownloadsStore.SetValue(iter, 4, entry.Status);
+            inprogressDownloadsStore.SetValue(iter, 4, entry.Status.ToString());
             inprogressDownloadsStore.SetValue(iter, 5, entry);
         }
 
@@ -1014,7 +1021,11 @@ namespace XDM.GtkUI
             finishedDownloadsStore.AppendValues(
                 entry.Name,
                 entry.DateAdded.ToShortDateString(),
-                FormattingHelper.FormatSize(entry.Size));
+                FormattingHelper.FormatSize(entry.Size),
+                entry);
+            finishedDownloadFilter.Refilter();
+            //finishedDownloadsStoreSorted.AppendValues()
+            //sortedStore.SetSortColumnId(1, SortType.Descending);
         }
 
         public void SwitchToInProgressView()

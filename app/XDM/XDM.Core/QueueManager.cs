@@ -25,7 +25,7 @@ namespace XDM.Core
         {
             lock (queues)
             {
-                var queueFile = Path.Combine(Config.DataDir, "queues.db");
+                var queueFile = Path.Combine(Config.AppDir, "queues.db");
                 if (File.Exists(queueFile))
                 {
                     using var reader = new BinaryReader(new FileStream(queueFile, FileMode.Open));
@@ -61,7 +61,7 @@ namespace XDM.Core
             lock (queues)
             {
                 var count = queues.Count;
-                using var writer = new BinaryWriter(new FileStream(Path.Combine(Config.DataDir, "queues.db"), FileMode.Create));
+                using var writer = new BinaryWriter(new FileStream(Path.Combine(Config.AppDir, "queues.db"), FileMode.Create));
                 writer.Write(QueueAutoNumber);
                 writer.Write(count);
                 foreach (var queue in queues)

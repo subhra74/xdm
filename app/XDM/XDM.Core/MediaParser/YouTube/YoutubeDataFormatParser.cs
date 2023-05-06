@@ -10,7 +10,7 @@ namespace XDM.Core.MediaParser.YouTube
 {
     public class YoutubeDataFormatParser
     {
-        public static (List<ParsedDualUrlVideoFormat> DualVideoItems, List<ParsedUrlVideoFormat> VideoItems)
+        public static KeyValuePair<List<ParsedDualUrlVideoFormat>, List<ParsedUrlVideoFormat>>
             GetFormats(string file)
         {
             var items = JsonConvert.DeserializeObject<VideoFormatData>(File.ReadAllText(file),
@@ -119,7 +119,7 @@ namespace XDM.Core.MediaParser.YouTube
                                 item.ContentLength)));
             }
 
-            return (dualVideoItems, videoItems);
+            return new KeyValuePair<List<ParsedDualUrlVideoFormat>, List<ParsedUrlVideoFormat>>(dualVideoItems, videoItems);
         }
 
         private static VideoFormat BestAudioFormat(string mime, List<VideoFormat> audioList)

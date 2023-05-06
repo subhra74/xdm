@@ -82,11 +82,7 @@ namespace XDM.Core.Downloader.Progressive
         public abstract void Resume();
         public abstract bool IsTextRedirectionAllowed();
 
-        public abstract (
-            Dictionary<string, List<string>> Headers,
-            Dictionary<string, string> Cookies,
-            Uri Url, AuthenticationInfo? Authentication,
-            ProxyInfo? Proxy)?
+        public abstract HeaderData?
             GetHeaderUrlAndCookies(string pieceId);
 
         public abstract void PieceConnected(string pieceId, ProbeResult? result);

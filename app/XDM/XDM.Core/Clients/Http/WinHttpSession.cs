@@ -21,17 +21,19 @@ namespace XDM.Core.Clients.Http
         private long contentLength;
         private string contentRange;
         private string? contentType;
+        private string? transferEncoding;
+        private string? contentEncoding;
         private string? contentDispositionFileName;
         private DateTime lastModified = DateTime.Now;
         private long rangeStart = -1, rangeEnd = -1;
         private Dictionary<string, List<string>>? headers = null;
-        private Dictionary<string, string>? cookies = null;
+        private string? cookies = null;
         private Stream responseStream;
         private IntPtr? postData;
         private int postDataSize;
 
         public Dictionary<string, List<string>>? Headers => this.headers;
-        public Dictionary<string, string>? Cookies => this.cookies;
+        public string? Cookies => this.cookies;
 
         public SafeWinHttpHandle ConnectHandle => hConnect;
         public SafeWinHttpHandle RequestHandle => hRequest;
@@ -43,7 +45,7 @@ namespace XDM.Core.Clients.Http
             SafeWinHttpHandle hConnect,
             SafeWinHttpHandle hRequest,
             Dictionary<string, List<string>>? headers,
-            Dictionary<string, string>? cookies,
+            string? cookies,
             byte[]? postData = null)
         {
             this.responseUri = responseUri;
@@ -89,6 +91,9 @@ namespace XDM.Core.Clients.Http
         }
 
         public string? ContentType => this.contentType;
+
+        public bool Compressed => Utils.IsCompressed(transferEncoding)
+             || Utils.IsCompressed(contentEncoding);
 
         public string? ContentDispositionFileName => this.contentDispositionFileName;
 
@@ -205,6 +210,12 @@ namespace XDM.Core.Clients.Http
                             break;
                         case "content-type":
                             this.contentType = value;
+                            break;
+                        case "transfer-encoding":
+                            this.transferEncoding = value;
+                            break;
+                        case "content-encoding":
+                            this.contentEncoding = value;
                             break;
                         case "content-disposition":
                             this.contentDispositionFileName = WebRequestExtensions.GetContentDispositionFileName(value);

@@ -1,0 +1,9 @@
+{
+  "name": "xdm_chrome.native_host",
+  "description": "Native messaging host for Xtreme Download Manager",
+  "path": "xdm-app-host.exe",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://akdmdglbephckgfmdffcdebnpjgamofc/"
+  ]
+}

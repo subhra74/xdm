@@ -278,6 +278,19 @@ namespace XDM.GtkUI.Dialogs.VideoDownloader
             PrepareMenu();
 
             GtkHelper.AttachSafeDispose(this);
+
+            try
+            {
+                var exec = YDLProcess.FindYDLBinary();
+                ChkReadCookie.Visible = CmbBrowser.Visible = exec.BinaryType == YtBinaryType.YtDlp;
+            }
+            catch
+            {
+                if (GtkHelper.ShowConfirmMessageBox(this, TextResource.GetText("MSG_HELPER_TOOLS_MISSING"), "XDM"))
+                {
+                    PlatformHelper.OpenBrowser(Links.HelperToolsUrl);
+                }
+            }
         }
 
         private void ChkReadCookie_Toggled(object? sender, EventArgs e)

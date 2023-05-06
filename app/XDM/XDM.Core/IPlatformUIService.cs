@@ -26,7 +26,7 @@ namespace XDM.Core
 
         void ShowRefreshLinkDialog(InProgressDownloadItem entry);
 
-        void ShowPropertiesDialog(DownloadItemBase ent, ShortState? state);
+        void ShowPropertiesDialog(DownloadItemBase ent, string cookies, Dictionary<string, List<string>> headers);
 
         void ShowYoutubeDLDialog();
 
@@ -45,5 +45,11 @@ namespace XDM.Core
         void ShowDownloadSelectionWindow(FileNameFetchMode mode, IEnumerable<IRequestData> downloads);
 
         void ShowSpeedLimiterWindow();
+
+        void ShowMediaNotification();
+
+        void CreateAndShowMediaGrabber();
+
+        void ShowExtensionRegistrationWindow();
     }
 }

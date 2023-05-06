@@ -14,15 +14,17 @@ namespace XDM.Core
         public string Url { get; set; }
         public Dictionary<string, List<string>> RequestHeaders { get; set; }
         public Dictionary<string, List<string>> ResponseHeaders { get; set; }
-        public Dictionary<string, string> Cookies { get; set; }
+        public string? Cookies { get; set; }
         public string RequestMethod { get; set; }
         public string RequestBody { get; set; }
+        public string MediaSourceUrl { get; set; }
+        public string TabUrl { get; set; }
+        public string TabId { get; set; }
 
         public Message()
         {
             this.RequestHeaders = new Dictionary<string, List<string>>();
             this.ResponseHeaders = new Dictionary<string, List<string>>();
-            this.Cookies = new Dictionary<string, string>();
             this.RequestMethod = "GET";
         }
 
@@ -32,40 +34,40 @@ namespace XDM.Core
             foreach (var line in text.Split('\r', '\n'))
             {
                 if (line == null) break;
-                (string key, string val, _) = ParsingHelper.ParseKeyValuePair(line, '=');
-                switch (key.ToLowerInvariant())
+                var kv = ParsingHelper.ParseKeyValuePair(line, '=');
+                switch (kv.Key.ToLowerInvariant())
                 {
                     case "file":
-                        message.File = FileHelper.SanitizeFileName(val);
+                        message.File = FileHelper.SanitizeFileName(kv.Value);
                         break;
                     case "url":
-                        message.Url = val;
+                        message.Url = kv.Value;
                         break;
                     case "req":
                     case "res":
                     case "cookie":
-                        (string k1, string v1, _) = ParsingHelper.ParseKeyValuePair(val, ':');
-                        if (!string.IsNullOrEmpty(k1))
+                        var kv1 = ParsingHelper.ParseKeyValuePair(kv.Value, ':');
+                        if (!string.IsNullOrEmpty(kv1.Key))
                         {
-                            switch (key)
+                            switch (kv.Key)
                             {
                                 case "req":
-                                    var reqHeaderValues = message.RequestHeaders.GetValueOrDefault(k1, new List<string>());
-                                    var keyItem = k1.ToLowerInvariant();
+                                    var reqHeaderValues = message.RequestHeaders.GetValueOrDefault(kv1.Key, new List<string>());
+                                    var keyItem = kv1.Key.ToLowerInvariant();
                                     if (IsBlockedHeader(keyItem))
                                     {
                                         continue;
                                     }
-                                    reqHeaderValues.Add(v1);
-                                    message.RequestHeaders[k1] = reqHeaderValues;
+                                    reqHeaderValues.Add(kv1.Value);
+                                    message.RequestHeaders[kv1.Key] = reqHeaderValues;
                                     break;
                                 case "res":
-                                    var resHeaderValues = message.ResponseHeaders.GetValueOrDefault(k1, new List<string>());
-                                    resHeaderValues.Add(v1);
-                                    message.ResponseHeaders[k1] = resHeaderValues;
+                                    var resHeaderValues = message.ResponseHeaders.GetValueOrDefault(kv1.Key, new List<string>());
+                                    resHeaderValues.Add(kv1.Value);
+                                    message.ResponseHeaders[kv1.Key] = resHeaderValues;
                                     break;
                                 case "cookie":
-                                    message.Cookies.Add(k1, v1);
+                                    message.Cookies = kv1.Value;
                                     break;
                             }
                         }
@@ -109,14 +111,14 @@ namespace XDM.Core
             return GetHeaderValue(ResponseHeaders, key);
         }
 
-        public string GetRequestHeaderFirstValue(string key)
+        public string? GetRequestHeaderFirstValue(string key)
         {
             var headers = GetHeaderValue(RequestHeaders, key);
             if (headers != null && headers.Count > 0) return headers[0];
             return null;
         }
 
-        public string GetResponseHeaderFirstValue(string key)
+        public string? GetResponseHeaderFirstValue(string key)
         {
             var headers = GetHeaderValue(ResponseHeaders, key);
             if (headers != null && headers.Count > 0) return headers[0];

@@ -11,6 +11,7 @@ using XDM.Core.UI;
 using XDM.Core.Util;
 using XDM.GtkUI.Dialogs;
 using XDM.GtkUI.Dialogs.BatchWindow;
+using XDM.GtkUI.Dialogs.ChromeIntegrator;
 using XDM.GtkUI.Dialogs.DownloadComplete;
 using XDM.GtkUI.Dialogs.DownloadSelection;
 using XDM.GtkUI.Dialogs.LinkRefresh;
@@ -92,7 +93,7 @@ namespace XDM.GtkUI
             }
         }
 
-        public void ShowPropertiesDialog(DownloadItemBase ent, ShortState? state)
+        public void ShowPropertiesDialog(DownloadItemBase ent, string cookies, Dictionary<string, List<string>> headers)
         {
             using var propWin = PropertiesDialog.CreateFromGladeFile(GetMainWindow(), GetWindowGroup());
             propWin.FileName = ent.Name;
@@ -102,8 +103,8 @@ namespace XDM.GtkUI
             propWin.DateAdded = ent.DateAdded.ToLongDateString() + " " + ent.DateAdded.ToLongTimeString();
             propWin.DownloadType = ent.DownloadType;
             propWin.Referer = ent.RefererUrl;
-            propWin.Cookies = state?.Cookies ?? state?.Cookies1 ?? new Dictionary<string, string>();
-            propWin.Headers = state?.Headers ?? state?.Headers1 ?? new Dictionary<string, List<string>>();
+            propWin.Cookies = cookies;
+            propWin.Headers = headers;
             propWin.Run();
             propWin.Destroy();
             propWin.Dispose();
@@ -200,6 +201,27 @@ namespace XDM.GtkUI
         public AuthenticationInfo? PromtForCredentials(object window, string message)
         {
             throw new NotImplementedException();
+        }
+
+        public void ShowMediaNotification()
+        {
+            try
+            {
+                PlatformHelper.SpawnSubProcess("notify-send", new string[] { TextResource.GetText("MSG_VID_CAP") });
+            }
+            catch { }
+        }
+
+        public void CreateAndShowMediaGrabber()
+        {
+            var win = XDM.GtkUI.Dialogs.MediaGrabber.MediaGrabberWindow.CreateFromGladeFile();
+            win.Show();
+        }
+
+        public void ShowExtensionRegistrationWindow()
+        {
+            var win = RegisterExtensionWindow.CreateFromGladeFile();
+            win.Show();
         }
     }
 }

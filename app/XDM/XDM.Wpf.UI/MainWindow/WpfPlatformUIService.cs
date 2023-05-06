@@ -10,9 +10,11 @@ using XDM.Core.Downloader;
 using XDM.Core.UI;
 using XDM.Core.Util;
 using XDM.Wpf.UI.Dialogs.BatchDownload;
+using XDM.Wpf.UI.Dialogs.ChromeIntegrator;
 using XDM.Wpf.UI.Dialogs.CompletedDialog;
 using XDM.Wpf.UI.Dialogs.CredentialDialog;
 using XDM.Wpf.UI.Dialogs.DownloadSelection;
+using XDM.Wpf.UI.Dialogs.MediaCapture;
 using XDM.Wpf.UI.Dialogs.NewDownload;
 using XDM.Wpf.UI.Dialogs.NewVideoDownload;
 using XDM.Wpf.UI.Dialogs.ProgressWindow;
@@ -30,6 +32,8 @@ namespace XDM.Wpf.UI
     public class WpfPlatformUIService : IPlatformUIService
     {
         private Window? window;
+
+        private Window? mediaGrabberWindow;
 
         public WpfPlatformUIService()
         {
@@ -109,7 +113,7 @@ namespace XDM.Wpf.UI
             }
         }
 
-        public void ShowPropertiesDialog(DownloadItemBase ent, ShortState? state)
+        public void ShowPropertiesDialog(DownloadItemBase ent, string cookies, Dictionary<string, List<string>> headers)
         {
             var propertiesWindow = new DownloadPropertiesWindow
             {
@@ -120,8 +124,8 @@ namespace XDM.Wpf.UI
                 DateAdded = ent.DateAdded.ToLongDateString() + " " + ent.DateAdded.ToLongTimeString(),
                 DownloadType = ent.DownloadType,
                 Referer = ent.RefererUrl,
-                Cookies = state?.Cookies ?? state?.Cookies1 ?? new Dictionary<string, string>(),
-                Headers = state?.Headers ?? state?.Headers1 ?? new Dictionary<string, List<string>>(),
+                Cookies = cookies,
+                Headers = headers,
                 Owner = GetMainWindow()
             };
             propertiesWindow.ShowDialog(GetMainWindow());
@@ -218,6 +222,35 @@ namespace XDM.Wpf.UI
             {
                 DownloadId = downloadId
             };
+        }
+
+        public void ShowMediaNotification()
+        {
+            AppTrayIcon.ShowNotification();
+        }
+
+        public void CreateAndShowMediaGrabber()
+        {
+            if (this.mediaGrabberWindow == null)
+            {
+                var mediaGrabber = new MediaCaptureWindow();
+                this.mediaGrabberWindow = mediaGrabber;
+                this.mediaGrabberWindow.Closing += MediaGrabberWindow_Closing;
+            }
+            this.mediaGrabberWindow.ShowActivated = true;
+            this.mediaGrabberWindow.Show();
+        }
+
+        private void MediaGrabberWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            this.mediaGrabberWindow!.Closing -= MediaGrabberWindow_Closing;
+            this.mediaGrabberWindow = null;
+        }
+
+        public void ShowExtensionRegistrationWindow()
+        {
+            var wnd = new ExtensionRegistration();
+            wnd.Show();
         }
     }
 }

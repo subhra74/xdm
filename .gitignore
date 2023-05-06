@@ -356,3 +356,16 @@ app/XDM/XDM.Win.Installer/*.msi
 *.wixpdb
 app/XDM/XDM.Win.Installer/*.exe
 app/xdm-browser-monitor/extension-code.js
+*.deb
+*.rpm
+*.zst
+app/packaging/xdman_gtk-8.0.1.tar.gz
+app/XDM/XDM.Win.Installer/net4.6.0.wxs
+app/XDM/XDM.Win.Installer/net4.6.0.wxs
+app/packaging/publish.zip
+app/XDM/XDM.Linux.Installer/BIN.zip
+app/XDM/XDM.Win.Installer/xdm-helper-chrome/
+app/XDM/XDM.Linux.Installer/xdm-helper-chrome/
+app/XDM/XDM.Win.Installer/binary-deps/ffmpeg-x86.exe
+app/XDM/XDM.Win.Installer/binary-deps/yt-dlp_x86.exe
+app/XDM/firefox-amo/xdm-v8-browser-helper.zip

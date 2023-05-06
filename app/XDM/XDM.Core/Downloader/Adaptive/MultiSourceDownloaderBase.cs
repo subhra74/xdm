@@ -178,7 +178,7 @@ namespace XDM.Core.Downloader.Adaptive
                         Download();
                         return;
                     }
-                    this._http ??= HttpClientFactory.NewHttpClient(_state.Proxy);
+                    this._http ??= HttpClientFactory.NewHttpClient(Config.Instance.Proxy);
                     this._http.Timeout = TimeSpan.FromSeconds(Config.Instance.NetworkTimeout);
 
                     DownloadChunks();
@@ -241,7 +241,7 @@ namespace XDM.Core.Downloader.Adaptive
         {
             try
             {
-                this._http ??= HttpClientFactory.NewHttpClient(_state.Proxy);
+                this._http ??= HttpClientFactory.NewHttpClient(Config.Instance.Proxy);
                 this._http.Timeout = TimeSpan.FromSeconds(Config.Instance.NetworkTimeout);
                 //this._http.DefaultRequestVersion = HttpVersion.Version20;
                 //this._http.Timeout = TimeSpan.FromSeconds(Config.Instance.NetworkTimeout);
@@ -792,7 +792,7 @@ namespace XDM.Core.Downloader.Adaptive
 
     public abstract class MultiSourceDownloadInfo : IRequestData
     {
-        public Dictionary<string, string> Cookies { get; set; }
+        public string? Cookies { get; set; }
         public Dictionary<string, List<string>> Headers { get; set; }
         public string File { get; set; }
         public string ContentType { get; set; }
@@ -802,7 +802,7 @@ namespace XDM.Core.Downloader.Adaptive
     {
         public string Id;
         public Dictionary<string, List<string>> Headers;
-        public Dictionary<string, string> Cookies;
+        public string? Cookies;
         public long FileSize = -1;
         public double Duration;
         public string TempDirectory;

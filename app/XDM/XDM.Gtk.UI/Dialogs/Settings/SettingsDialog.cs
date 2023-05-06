@@ -10,10 +10,10 @@ using XDM.Core;
 using Translations;
 using UI = Gtk.Builder.ObjectAttribute;
 using XDM.GtkUI.Utils;
-using XDM.Core;
 using XDM.Core.Util;
 using TraceLog;
 using XDM.Core.BrowserMonitoring;
+using XDM.GtkUI.Dialogs.ChromeIntegrator;
 
 namespace XDM.GtkUI.Dialogs.Settings
 {
@@ -24,6 +24,8 @@ namespace XDM.GtkUI.Dialogs.Settings
         [UI]
         private Label TabHeader1, TabHeader2, TabHeader3, TabHeader4, TabHeader5;
         [UI]
+        private Label PageHeader1, PageHeader2, PageHeader3, PageHeader4, PageHeader5;
+        [UI]
         private Label Label1, Label2, Label3, Label4, Label5, Label6, Label7,
             Label8, Label9, Label10, Label11, Label12, Label13, Label14, Label15,
             Label16, Label17, Label18, Label19, Label20, Label21,
@@ -32,7 +34,7 @@ namespace XDM.GtkUI.Dialogs.Settings
         [UI]
         private LinkButton VideoWikiLink;
         [UI]
-        Button BtnChrome, BtnFirefox, BtnEdge, BtnOpera, BtnDefault1, BtnDefault2,
+        Button BtnChrome, BtnFirefox, BtnEdge, BtnOpera, BtnBrave, BtnVivaldi, BtnChromium, BtnYandex, BtnDefault1, BtnDefault2,
             BtnDefault3, CatAdd, CatEdit, CatDel, CatDef, AddPass, EditPass, DelPass, BtnUserAgentReset,
             BtnCopy1, BtnCopy2, BtnCancel, BtnOK, BtnDownloadFolderBrowse, BtnTempFolderBrowse, BtnBrowse;
         [UI]
@@ -53,6 +55,9 @@ namespace XDM.GtkUI.Dialogs.Settings
         [UI]
         private Notebook Tabs;
 
+        [UI]
+        private ListBox SideList;
+
         private ListStore categoryStore, passwordStore;
 
         private SettingsDialog(Builder builder,
@@ -70,6 +75,10 @@ namespace XDM.GtkUI.Dialogs.Settings
             GtkHelper.AttachSafeDispose(this);
 
             LoadTexts();
+
+            SideList.RowSelected += SideList_RowSelected;
+
+            Tabs.ShowTabs = false;
 
             Title = TextResource.GetText("TITLE_SETTINGS");
             GtkHelper.PopulateComboBoxGeneric<int>(CmbMinVidSize, new int[] { 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768 });
@@ -91,6 +100,8 @@ namespace XDM.GtkUI.Dialogs.Settings
             BtnFirefox.Clicked += BtnFirefox_Clicked;
             BtnEdge.Clicked += BtnEdge_Clicked;
             BtnOpera.Clicked += BtnOpera_Clicked;
+            BtnBrave.Clicked += BtnBrave_Clicked;
+            BtnVivaldi.Clicked += BtnVivaldi_Clicked;
             BtnCopy1.Clicked += BtnCopy1_Clicked;
             BtnCopy2.Clicked += BtnCopy2_Clicked;
             BtnDefault1.Clicked += BtnDefault1_Clicked;
@@ -119,6 +130,12 @@ namespace XDM.GtkUI.Dialogs.Settings
 
             BtnBrowse.Clicked += BtnBrowse_Clicked;
             BtnUserAgentReset.Clicked += BtnUserAgentReset_Clicked;
+        }
+
+        private void SideList_RowSelected(object o, RowSelectedArgs args)
+        {
+            var index = args.Row.Index;
+            Tabs.Page = index;
         }
 
         private void BtnUserAgentReset_Clicked(object? sender, EventArgs e)
@@ -325,68 +342,40 @@ namespace XDM.GtkUI.Dialogs.Settings
 
         private void BtnOpera_Clicked(object? sender, EventArgs e)
         {
-            try
-            {
-                NativeMessagingConfigurer.InstallNativeMessagingHost(Browser.Chrome);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error installing native host");
-                GtkHelper.ShowMessageBox(this, TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
-                return;
-            }
+            BrowserButtonClick(Browser.Opera);
+        }
 
-            try
-            {
-                BrowserLauncher.LaunchOperaBrowser(Links.ChromeExtensionUrl);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error launching Opera");
-                GtkHelper.ShowMessageBox(this, $"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Opera");
-            }
+        private void BtnBrave_Clicked(object? sender, EventArgs e)
+        {
+            BrowserButtonClick(Browser.Brave);
+        }
+
+        private void BtnVivaldi_Clicked(object? sender, EventArgs e)
+        {
+            BrowserButtonClick(Browser.Vivaldi);
         }
 
         private void BtnEdge_Clicked(object? sender, EventArgs e)
         {
-            try
-            {
-                NativeMessagingConfigurer.InstallNativeMessagingHost(Browser.Chrome);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error installing native host");
-                GtkHelper.ShowMessageBox(this, TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
-                return;
-            }
-
-            try
-            {
-                BrowserLauncher.LaunchMicrosoftEdge(Links.ChromeExtensionUrl);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error Microsoft Edge");
-                GtkHelper.ShowMessageBox(this, $"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Microsoft Edge");
-            }
+            BrowserButtonClick(Browser.MSEdge);
         }
 
         private void BtnFirefox_Clicked(object? sender, EventArgs e)
         {
-            try
-            {
-                NativeMessagingConfigurer.InstallNativeMessagingHost(Browser.Firefox);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error installing native host");
-                GtkHelper.ShowMessageBox(this, TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
-                return;
-            }
+            //try
+            //{
+            //    NativeMessagingHostConfigurer.InstallNativeMessagingHostForLinux(Browser.Firefox);
+            //}
+            //catch (Exception ex)
+            //{
+            //    Log.Debug(ex, "Error installing native host");
+            //    GtkHelper.ShowMessageBox(this, TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
+            //    return;
+            //}
 
             try
             {
-                BrowserLauncher.LaunchFirefox(Links.FirefoxExtensionUrl);
+                BrowserLauncher.LaunchFirefox(Links.FirefoxExtensionUrl, null);
             }
             catch (Exception ex)
             {
@@ -395,42 +384,80 @@ namespace XDM.GtkUI.Dialogs.Settings
             }
         }
 
-        private void BtnChrome_Clicked(object? sender, EventArgs e)
+        private void ShowIntegrationWindow(Browser browser)
         {
-            try
-            {
-                NativeMessagingConfigurer.InstallNativeMessagingHost(Browser.Chrome);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error installing native host");
-                GtkHelper.ShowMessageBox(this, TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
-                return;
-            }
+            var wnd = ChromeIntegratorWindow.CreateFromGladeFile(browser);
+            wnd.Show();
+        }
+
+        private void KillExistingSessions(Browser browser, out string? exeLocation)
+        {
+            exeLocation = null;
+            //if (!GtkHelper.ShowConfirmMessageBox(this, TextResource.GetText("MSG_KILL_BROWSER"), "XDM"))
+            //{
+            //    return;
+            //}
+            //foreach (var exeName in NativeMessagingHostConfigurer.GetBrowserExecutableName(browser))
+            //{
+            //    PlatformHelper.KillAll($"{exeName}", out exeLocation);
+            //}
+        }
+
+        private void BrowserButtonClick(Browser browser)
+        {
+            //KillExistingSessions(browser, out string? exeLocation);
+
+            //try
+            //{
+            //    NativeMessagingHostConfigurer.InstallNativeMessagingHostForLinux(browser);
+            //}
+            //catch (Exception ex)
+            //{
+            //    Log.Debug(ex, "Error installing native host");
+            //    GtkHelper.ShowMessageBox(this, TextResource.GetText("MSG_NATIVE_HOST_FAILED"));
+            //    return;
+            //}
 
             try
             {
-                BrowserLauncher.LaunchGoogleChrome(Links.ChromeExtensionUrl);
+                ShowIntegrationWindow(browser);
+                //BrowserLauncher.LaunchBrowser(browser, Links.ManualExtensionInstallGuideUrl, null);
+                //var args = "chrome://extensions/";
+                //var extLoaderPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ext-loader");
+                //var extensionLoadRequest = false;
+                //if (System.IO.Directory.Exists(extLoaderPath))
+                //{
+                //    args = $"--load-extension=\"{extLoaderPath}\"";
+                //    extensionLoadRequest = true;
+                //}
+                //var sucess = BrowserLauncher.LaunchBrowser(browser, args, exeLocation);
+                //var wnd = ChromeIntegratorWindow.CreateFromGladeFile();// new IntegrationWindow(browser, sucess && extensionLoadRequest);
+                //wnd.Show();
             }
             catch (Exception ex)
             {
-                Log.Debug(ex, "Error launching Google Chrome");
-                GtkHelper.ShowMessageBox(this, $"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} Google Chrome");
+                Log.Debug(ex, "Error launching " + browser);
+                GtkHelper.ShowMessageBox(this, $"{TextResource.GetText("MSG_BROWSER_LAUNCH_FAILED")} {browser}");
             }
+        }
+
+        private void BtnChrome_Clicked(object? sender, EventArgs e)
+        {
+            BrowserButtonClick(Browser.Chrome);
         }
 
         private void VideoWikiLink_Clicked(object? sender, EventArgs e)
         {
-            PlatformHelper.OpenBrowser(Links.VideoDownloadTutorialUrl);
+            BrowserButtonClick(Browser.Vivaldi);
         }
 
         private void LoadTexts()
         {
-            TabHeader1.Text = TextResource.GetText("SETTINGS_MONITORING");
-            TabHeader2.Text = TextResource.GetText("SETTINGS_GENERAL");
-            TabHeader3.Text = TextResource.GetText("SETTINGS_NETWORK");
-            TabHeader4.Text = TextResource.GetText("SETTINGS_CRED");
-            TabHeader5.Text = TextResource.GetText("SETTINGS_ADV");
+            PageHeader1.Text = TextResource.GetText("SETTINGS_MONITORING");
+            PageHeader2.Text = TextResource.GetText("SETTINGS_GENERAL");
+            PageHeader3.Text = TextResource.GetText("SETTINGS_NETWORK");
+            PageHeader4.Text = TextResource.GetText("SETTINGS_CRED");
+            PageHeader5.Text = TextResource.GetText("SETTINGS_ADV");
 
             Label1.StyleContext.AddClass("medium-font");
 
@@ -701,6 +728,8 @@ namespace XDM.GtkUI.Dialogs.Settings
         public void SetActivePage(int page)
         {
             Tabs.Page = page;
+            var row = SideList.GetRowAtIndex(page);
+            SideList.SelectRow(row);
         }
 
         public static SettingsDialog CreateFromGladeFile(Window parent, WindowGroup group)

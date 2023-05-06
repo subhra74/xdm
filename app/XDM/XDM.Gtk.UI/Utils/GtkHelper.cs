@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Translations;
 
 namespace XDM.GtkUI.Utils
 {
@@ -301,92 +302,122 @@ namespace XDM.GtkUI.Utils
 
         public static string? SelectFolder(Window parent)
         {
-            using var fc = new FileChooserDialog("XDM", parent, FileChooserAction.SelectFolder);
-            try
+            using var fc = new FileChooserNative("XDM", parent, FileChooserAction.SelectFolder, 
+                TextResource.GetText("MSG_SELECT_FOLDER"), TextResource.GetText("ND_CANCEL"));
+            if (fc.Run() == (int)ResponseType.Accept)
             {
-                if (parent.Group != null)
-                {
-                    parent.Group.AddWindow(fc);
-                }
-                fc.AddButton(Stock.Save, ResponseType.Accept);
-                fc.AddButton(Stock.Cancel, ResponseType.Cancel);
-                if (fc.Run() == (int)ResponseType.Accept)
-                {
-                    return fc.Filename;
-                }
-                return null;
+                return fc.Filename;
             }
-            finally
-            {
-                if (parent.Group != null)
-                {
-                    parent.Group.RemoveWindow(fc);
-                }
-                fc.Destroy();
-                fc.Dispose();
-            }
+            return null;
+
+            //using var fc = new FileChooserDialog("XDM", parent, FileChooserAction.SelectFolder);
+            //try
+            //{
+            //    if (parent.Group != null)
+            //    {
+            //        parent.Group.AddWindow(fc);
+            //    }
+            //    fc.AddButton(Stock.Save, ResponseType.Accept);
+            //    fc.AddButton(Stock.Cancel, ResponseType.Cancel);
+            //    if (fc.Run() == (int)ResponseType.Accept)
+            //    {
+            //        return fc.Filename;
+            //    }
+            //    return null;
+            //}
+            //finally
+            //{
+            //    if (parent.Group != null)
+            //    {
+            //        parent.Group.RemoveWindow(fc);
+            //    }
+            //    fc.Destroy();
+            //    fc.Dispose();
+            //}
         }
 
         public static string? SelectFile(Window parent)
         {
-            using var fc = new FileChooserDialog("XDM", parent, FileChooserAction.Open);
-            try
+            using var fc = new FileChooserNative("XDM", parent, FileChooserAction.Open,
+                TextResource.GetText("MSG_SELECT_FOLDER"), TextResource.GetText("ND_CANCEL"));
+            if (fc.Run() == (int)ResponseType.Accept)
             {
-                if (parent.Group != null)
-                {
-                    parent.Group.AddWindow(fc);
-                }
-                fc.AddButton(Stock.Save, ResponseType.Accept);
-                fc.AddButton(Stock.Cancel, ResponseType.Cancel);
-                if (fc.Run() == (int)ResponseType.Accept)
-                {
-                    return fc.Filename;
-                }
-                return null;
+                return fc.Filename;
             }
-            finally
-            {
-                if (parent.Group != null)
-                {
-                    parent.Group.RemoveWindow(fc);
-                }
-                fc.Destroy();
-                fc.Dispose();
-            }
+            return null;
+
+            //using var fc = new FileChooserDialog("XDM", parent, FileChooserAction.Open);
+            //try
+            //{
+            //    if (parent.Group != null)
+            //    {
+            //        parent.Group.AddWindow(fc);
+            //    }
+            //    fc.AddButton(Stock.Save, ResponseType.Accept);
+            //    fc.AddButton(Stock.Cancel, ResponseType.Cancel);
+            //    if (fc.Run() == (int)ResponseType.Accept)
+            //    {
+            //        return fc.Filename;
+            //    }
+            //    return null;
+            //}
+            //finally
+            //{
+            //    if (parent.Group != null)
+            //    {
+            //        parent.Group.RemoveWindow(fc);
+            //    }
+            //    fc.Destroy();
+            //    fc.Dispose();
+            //}
         }
 
         public static string? SaveFile(Window parent, string? path)
         {
-            using var fc = new FileChooserDialog("XDM", parent, FileChooserAction.Save);
+            using var fc = new FileChooserNative("XDM", parent, FileChooserAction.Save,
+                TextResource.GetText("DESC_SAVE_Q"), TextResource.GetText("ND_CANCEL"));
             if (!string.IsNullOrEmpty(path))
             {
                 var dir = Path.GetDirectoryName(path);
                 fc.SetFilename(Path.GetFileName(path));
                 fc.SetCurrentFolderFile(GLib.FileFactory.NewForPath(dir));
             }
-            try
+            if (fc.Run() == (int)ResponseType.Accept)
             {
-                if (parent.Group != null)
-                {
-                    parent.Group.AddWindow(fc);
-                }
-                fc.AddButton(Stock.Save, ResponseType.Accept);
-                fc.AddButton(Stock.Cancel, ResponseType.Cancel);
-                if (fc.Run() == (int)ResponseType.Accept)
-                {
-                    return fc.Filename;
-                }
-                return null;
+                return fc.Filename;
             }
-            finally
-            {
-                if (parent.Group != null)
-                {
-                    parent.Group.RemoveWindow(fc);
-                }
-                fc.Destroy();
-                fc.Dispose();
-            }
+            return null;
+
+            //using var fc = new FileChooserDialog("XDM", parent, FileChooserAction.Save);
+            //if (!string.IsNullOrEmpty(path))
+            //{
+            //    var dir = Path.GetDirectoryName(path);
+            //    fc.SetFilename(Path.GetFileName(path));
+            //    fc.SetCurrentFolderFile(GLib.FileFactory.NewForPath(dir));
+            //}
+            //try
+            //{
+            //    if (parent.Group != null)
+            //    {
+            //        parent.Group.AddWindow(fc);
+            //    }
+            //    fc.AddButton(Stock.Save, ResponseType.Accept);
+            //    fc.AddButton(Stock.Cancel, ResponseType.Cancel);
+            //    if (fc.Run() == (int)ResponseType.Accept)
+            //    {
+            //        return fc.Filename;
+            //    }
+            //    return null;
+            //}
+            //finally
+            //{
+            //    if (parent.Group != null)
+            //    {
+            //        parent.Group.RemoveWindow(fc);
+            //    }
+            //    fc.Destroy();
+            //    fc.Dispose();
+            //}
         }
 
         public static void AttachSafeDispose(Window window)

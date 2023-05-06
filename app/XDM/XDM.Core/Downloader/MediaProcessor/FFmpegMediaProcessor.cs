@@ -77,12 +77,13 @@ namespace XDM.Core.MediaProcessor
         {
             try
             {
-                Log.Debug("FFmpeg args: " + string.Join(" ", args));
 
                 var duration = 0L;
                 var time = 0L;
                 var file = FindFFmpegBinary();
-                Log.Debug("FFmpeg binary: " + file);
+
+                Log.Debug($"{file} {string.Join(" ", args)}");
+
                 var lastTick = Helpers.TickCount();
                 var pb = new ProcessStartInfo
                 {
@@ -99,21 +100,6 @@ namespace XDM.Core.MediaProcessor
 #else
                 pb.Arguments = XDM.Compatibility.ProcessStartInfoHelper.ArgumentListToArgsString(args);
 #endif
-                //#if NET5_0_OR_GREATER
-                //            foreach (var arg in args)
-                //            {
-                //                pb.ArgumentList.Add(arg);
-                //            }
-                //#else
-                //            pb.Arguments = CoreFx.Polyfill.ProcessStartInfoHelper.ArgumentListToArgsString(args);
-                //#endif
-                //var sb = new StringBuilder();
-                //foreach (var arg in args)
-                //{
-                //    sb.Append(arg.Contains(' ') ? "\"" + arg + "\"" : arg);
-                //}
-
-                //pb.Arguments = sb.ToString();
                 pb.RedirectStandardOutput = true;
 
                 using var proc = Process.Start(pb);
@@ -213,7 +199,7 @@ namespace XDM.Core.MediaProcessor
                 new string[] { "ffmpeg-x86.exe", "ffmpeg.exe" } : new string[] { "ffmpeg" };
             foreach (var executableName in executableNames)
             {
-                var path = Path.Combine(Config.DataDir, executableName);
+                var path = Path.Combine(Config.AppDir, executableName);
                 if (File.Exists(path))
                 {
                     return path;
@@ -240,6 +226,19 @@ namespace XDM.Core.MediaProcessor
                 }
             }
             throw new FileNotFoundException("FFmpeg executable not found");
+        }
+
+        public static bool IsFFmpegInstalled()
+        {
+            try
+            {
+                FindFFmpegBinary();
+            }
+            catch (FileNotFoundException)
+            {
+                return false;
+            }
+            return true;
         }
     }
 }

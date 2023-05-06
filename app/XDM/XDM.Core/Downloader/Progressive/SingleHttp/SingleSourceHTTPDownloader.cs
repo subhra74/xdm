@@ -97,7 +97,7 @@ namespace XDM.Core.Downloader.Progressive.SingleHttp
             {
                 Log.Debug("SingleSourceHTTPDownloader start");
                 OnStarted();
-                this.http ??= http = HttpClientFactory.NewHttpClient(state.Proxy);
+                this.http ??= http = HttpClientFactory.NewHttpClient(Config.Instance.Proxy);
                 http.Timeout = TimeSpan.FromSeconds(Config.Instance.NetworkTimeout);
                 grabberDict[chunk.Id].Download();
             }
@@ -130,7 +130,7 @@ namespace XDM.Core.Downloader.Progressive.SingleHttp
                         }
                         else
                         {
-                            this.http ??= HttpClientFactory.NewHttpClient(state.Proxy);
+                            this.http ??= HttpClientFactory.NewHttpClient(Config.Instance.Proxy);
                             http.Timeout = TimeSpan.FromSeconds(Config.Instance.NetworkTimeout);
                             init = true;
                             CreatePiece();
@@ -214,7 +214,8 @@ namespace XDM.Core.Downloader.Progressive.SingleHttp
             catch
             {
                 // ignored
-                Console.WriteLine("Chunk restore failed");
+                Log.Debug("Chunk restore failed");
+                state.FileSize = -1;
             }
             TicksAndSizeAtResume();
         }
@@ -481,17 +482,20 @@ namespace XDM.Core.Downloader.Progressive.SingleHttp
             }
         }
 
-        public override (Dictionary<string, List<string>> Headers,
-            Dictionary<string, string> Cookies,
-            Uri Url, AuthenticationInfo? Authentication,
-            ProxyInfo? Proxy)?
+        public override HeaderData?
             GetHeaderUrlAndCookies(string pieceId)
         {
             if (this.grabberDict.ContainsKey(pieceId) && pieces.ContainsKey(pieceId))
             {
-                return (this.state.Headers, this.state.Cookies, this.state.Url,
-                    this.state.Authentication
-                    , this.state.Proxy);
+                return
+                    new HeaderData
+                    {
+                        Headers = this.state!.Headers,
+                        Cookies = this.state!.Cookies,
+                        Url = this.state!.Url,
+                        Authentication = this.state!.Authentication,
+                        Proxy = this.state!.Proxy
+                    };
             }
             return null;
         }
@@ -530,7 +534,7 @@ namespace XDM.Core.Downloader.Progressive.SingleHttp
     {
         public Uri Url;
         public Dictionary<string, List<string>> Headers;
-        public Dictionary<string, string> Cookies;
+        public string Cookies;
         public bool ConvertToMp3;
     }
 }

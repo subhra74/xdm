@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using XDM.Core.BrowserMonitoring;
 using XDM.Core.UI;
+using XDM.Core.Util;
 
 namespace XDM.Core
 {
@@ -19,6 +20,7 @@ namespace XDM.Core
 
         public static event EventHandler? Initialized;
         public static event EventHandler<ApplicationEvent>? ApplicationEvent;
+        public static event EventHandler? FirstRunCallback;
 
         public static IApplicationCore CoreService
         {
@@ -109,6 +111,11 @@ namespace XDM.Core
             ApplicationEvent?.Invoke(null, new ApplicationEvent("ConfigChanged"));
         }
 
+        public static void ExtensionRegistered()
+        {
+            ApplicationEvent?.Invoke(null, new ApplicationEvent("ExtensionRegistered"));
+        }
+
         public static AppInstanceConfigurer Configurer()
         {
             return new AppInstanceConfigurer();
@@ -170,6 +177,10 @@ namespace XDM.Core
                 SingleInstance.Ensure();
                 s_Init = true;
                 Initialized?.Invoke(null, EventArgs.Empty);
+                if (PlatformHelper.IsFirstRun())
+                {
+                    FirstRunCallback?.Invoke(null, EventArgs.Empty);
+                }
             }
         }
     }

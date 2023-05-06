@@ -46,7 +46,7 @@ namespace XDM.Core
 
         public string? GetPrimaryUrl(DownloadItemBase entry);
 
-        public void RemoveDownload(DownloadItemBase entry, bool deleteDownloadedFile);
+        public void RemoveDownload(DownloadItemBase entry, bool deleteDownloadedFile, bool removeInfo = true);
 
         public void ShowProgressWindow(string downloadId);
 

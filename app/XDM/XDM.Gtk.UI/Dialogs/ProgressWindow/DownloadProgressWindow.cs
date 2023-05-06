@@ -292,7 +292,7 @@ namespace XDM.GtkUI.Dialogs.ProgressWindow
             this.ImgIcon.Pixbuf = GtkHelper.LoadSvg("file-download-line", 48);
 
             this.BtnPause.Name = string.Empty;
-            this.TxtFileName.StyleContext.AddClass("medium-font");
+            this.TxtFileName.StyleContext.AddClass("large-font");
 
             TxtUrl.Ellipsize = Pango.EllipsizeMode.End;
             TxtFileName.Ellipsize = Pango.EllipsizeMode.End;

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using TraceLog;
 using XDM.Core.Collections;
@@ -8,16 +9,20 @@ using XDM.Core.Downloader.Adaptive.Dash;
 using XDM.Core.Downloader.Adaptive.Hls;
 using XDM.Core.Downloader.Progressive.DualHttp;
 using XDM.Core.Downloader.Progressive.SingleHttp;
+using XDM.Core.MediaProcessor;
 using XDM.Core.Util;
 
 namespace XDM.Core.BrowserMonitoring
 {
     public class VideoTracker : IVideoTracker
     {
-        private GenericOrderedDictionary<string, (DualSourceHTTPDownloadInfo Info, StreamingVideoDisplayInfo DisplayInfo)> ytVideoList = new();
-        private GenericOrderedDictionary<string, (SingleSourceHTTPDownloadInfo Info, StreamingVideoDisplayInfo DisplayInfo)> videoList = new();
-        private GenericOrderedDictionary<string, (MultiSourceHLSDownloadInfo Info, StreamingVideoDisplayInfo DisplayInfo)> hlsVideoList = new();
-        private GenericOrderedDictionary<string, (MultiSourceDASHDownloadInfo Info, StreamingVideoDisplayInfo DisplayInfo)> dashVideoList = new();
+        private GenericOrderedDictionary<string, KeyValuePair<DualSourceHTTPDownloadInfo, StreamingVideoDisplayInfo>> ytVideoList = new();
+        private GenericOrderedDictionary<string, KeyValuePair<SingleSourceHTTPDownloadInfo, StreamingVideoDisplayInfo>> videoList = new();
+        private GenericOrderedDictionary<string, KeyValuePair<MultiSourceHLSDownloadInfo, StreamingVideoDisplayInfo>> hlsVideoList = new();
+        private GenericOrderedDictionary<string, KeyValuePair<MultiSourceDASHDownloadInfo, StreamingVideoDisplayInfo>> dashVideoList = new();
+
+        public event EventHandler<MediaInfoEventArgs> MediaAdded;
+        public event EventHandler<MediaInfoEventArgs> MediaUpdated;
 
         public void ClearVideoList()
         {
@@ -26,6 +31,61 @@ namespace XDM.Core.BrowserMonitoring
             dashVideoList.Clear();
             videoList.Clear();
             ApplicationContext.BroadcastConfigChange();
+        }
+
+        private string GenerateUpdatedFileName(string oldFile, string newName)
+        {
+            var ext = Path.GetExtension(oldFile);
+            var file = FileHelper.SanitizeFileName(newName);
+            if (!string.IsNullOrEmpty(ext))
+            {
+                file += ext;
+            }
+            return file!;
+        }
+
+        public void UpdateMediaTitle(string tabUrl, string tabTitle)
+        {
+            foreach (var e in ytVideoList)
+            {
+                var u = e.Value.Value.TabUrl;
+                if (string.IsNullOrEmpty(u))
+                {
+                    continue;
+                }
+                if (u == tabUrl)
+                {
+                    e.Value.Key.File = GenerateUpdatedFileName(e.Value.Key.File, tabTitle);
+                    this.MediaUpdated?.Invoke(
+                        this,
+                        new MediaInfoEventArgs
+                        {
+                            MediaInfo = new MediaInfo(e.Key, e.Value.Key.File,
+                            e.Value.Value.DescriptionText, e.Value.Value.CreationTime,
+                            e.Value.Value.TabId)
+                        });
+                }
+            }
+
+            foreach (var e in videoList)
+            {
+                var u = e.Value.Value.TabUrl;
+                if (string.IsNullOrEmpty(u))
+                {
+                    continue;
+                }
+                if (u == tabUrl)
+                {
+                    e.Value.Key.File = GenerateUpdatedFileName(e.Value.Key.File, tabTitle);
+                    this.MediaUpdated?.Invoke(
+                        this,
+                        new MediaInfoEventArgs
+                        {
+                            MediaInfo = new MediaInfo(e.Key, e.Value.Key.File, e.Value.Value.DescriptionText,
+                            e.Value.Value.CreationTime, e.Value.Value.TabId)
+                        });
+                }
+            }
         }
 
         public bool IsFFmpegRequiredForDownload(string id)
@@ -47,96 +107,134 @@ namespace XDM.Core.BrowserMonitoring
             //IBaseDownloader downloader = null;
             if (ytVideoList.ContainsKey(videoId))
             {
-                ApplicationContext.CoreService.StartDownload(ytVideoList[videoId].Info, name, FileNameFetchMode.ExtensionOnly,
+                ApplicationContext.CoreService.StartDownload(ytVideoList[videoId].Key, name, FileNameFetchMode.ExtensionOnly,
                         folder, startImmediately, authentication, proxyInfo, queueId, false);
             }
             else if (videoList.ContainsKey(videoId))
             {
-                ApplicationContext.CoreService.StartDownload(videoList[videoId].Info, name, convertToMp3 ? FileNameFetchMode.None : FileNameFetchMode.ExtensionOnly,
+                ApplicationContext.CoreService.StartDownload(videoList[videoId].Key, name, convertToMp3 ? FileNameFetchMode.None : FileNameFetchMode.ExtensionOnly,
                     folder, startImmediately, authentication, proxyInfo, queueId, convertToMp3);
             }
             else if (hlsVideoList.ContainsKey(videoId))
             {
-                ApplicationContext.CoreService.StartDownload(hlsVideoList[videoId].Info, name, FileNameFetchMode.ExtensionOnly,
+                ApplicationContext.CoreService.StartDownload(hlsVideoList[videoId].Key, name, FileNameFetchMode.ExtensionOnly,
                     folder, startImmediately, authentication, proxyInfo, queueId, false);
             }
             else if (dashVideoList.ContainsKey(videoId))
             {
-                ApplicationContext.CoreService.StartDownload(dashVideoList[videoId].Info, name, FileNameFetchMode.ExtensionOnly,
+                ApplicationContext.CoreService.StartDownload(dashVideoList[videoId].Key, name, FileNameFetchMode.ExtensionOnly,
                     folder, startImmediately, authentication, proxyInfo, queueId, false);
             }
         }
 
-        public List<(string ID, string File, string DisplayName, DateTime Time)> GetVideoList(bool encode = true)
+        public List<MediaInfo> GetVideoList()
         {
             lock (this)
             {
-                var list = new List<(string ID, string File, string DisplayName, DateTime Time)>();
+                var list = new List<MediaInfo>();
                 foreach (var e in ytVideoList)
                 {
-                    list.Add((e.Key, encode ? Helpers.EncodeToCharCode(e.Value.Info.File) : e.Value.Info.File, e.Value.DisplayInfo.Quality, e.Value.DisplayInfo.CreationTime));
+                    list.Add(new MediaInfo(e.Key, e.Value.Key.File, e.Value.Value.DescriptionText,
+                        e.Value.Value.CreationTime, e.Value.Value.TabId));
                 }
                 foreach (var e in videoList)
                 {
-                    list.Add((e.Key, encode ? Helpers.EncodeToCharCode(e.Value.Info.File) : e.Value.Info.File, e.Value.DisplayInfo.Quality, e.Value.DisplayInfo.CreationTime));
+                    list.Add(new MediaInfo(e.Key, e.Value.Key.File, e.Value.Value.DescriptionText,
+                        e.Value.Value.CreationTime, e.Value.Value.TabId));
                 }
                 foreach (var e in hlsVideoList)
                 {
-                    list.Add((e.Key, encode ? Helpers.EncodeToCharCode(e.Value.Info.File) : e.Value.Info.File, e.Value.DisplayInfo.Quality, e.Value.DisplayInfo.CreationTime));
+                    list.Add(new MediaInfo(e.Key, e.Value.Key.File, e.Value.Value.DescriptionText,
+                        e.Value.Value.CreationTime, e.Value.Value.TabId));
                 }
                 foreach (var e in dashVideoList)
                 {
-                    list.Add((e.Key, encode ? Helpers.EncodeToCharCode(e.Value.Info.File) : e.Value.Info.File, e.Value.DisplayInfo.Quality, e.Value.DisplayInfo.CreationTime));
+                    list.Add(new MediaInfo(e.Key, e.Value.Key.File, e.Value.Value.DescriptionText,
+                        e.Value.Value.CreationTime, e.Value.Value.TabId));
                 }
-                list.Sort((a, b) => a.Time.CompareTo(b.Time));
+                list.Sort((a, b) => a.DateAdded.CompareTo(b.DateAdded));
                 return list;
             }
         }
 
-        public void AddVideoNotifications(IEnumerable<(DualSourceHTTPDownloadInfo Info, StreamingVideoDisplayInfo DisplayInfo)> notifications)
+        public void AddVideoNotifications(IEnumerable<KeyValuePair<DualSourceHTTPDownloadInfo, StreamingVideoDisplayInfo>> notifications)
         {
             lock (this)
             {
                 foreach (var info in notifications)
                 {
-                    ytVideoList.Add(Guid.NewGuid().ToString(), info);
+                    var id = Guid.NewGuid().ToString();
+                    ytVideoList.Add(id, info);
+                    Log.Debug("Video url1: " + info.Key.Uri1);
+                    Log.Debug("Video url2: " + info.Key.Uri2);
+                    this.MediaAdded?.Invoke(this, new MediaInfoEventArgs
+                    {
+                        MediaInfo = new MediaInfo(id, info.Key.File, info.Value.DescriptionText,
+                        DateTime.Now, info.Value.TabId)
+                    });
                 }
+                ApplicationContext.PlatformUIService.ShowMediaNotification();
                 ApplicationContext.BroadcastConfigChange();
             }
         }
 
-        public void AddVideoNotifications(IEnumerable<(SingleSourceHTTPDownloadInfo Info, StreamingVideoDisplayInfo DisplayInfo)> notifications)
+        public void AddVideoNotifications(IEnumerable<KeyValuePair<SingleSourceHTTPDownloadInfo, StreamingVideoDisplayInfo>> notifications)
         {
             lock (this)
             {
                 foreach (var info in notifications)
                 {
-                    videoList.Add(Guid.NewGuid().ToString(), info);
+                    var id = Guid.NewGuid().ToString();
+                    videoList.Add(id, info);
+                    Log.Debug("Video url1: " + info.Key.Uri);
+                    this.MediaAdded?.Invoke(this, new MediaInfoEventArgs
+                    {
+                        MediaInfo = new MediaInfo(id, info.Key.File, info.Value.DescriptionText,
+                        DateTime.Now, info.Value.TabId)
+                    });
                 }
+                ApplicationContext.PlatformUIService.ShowMediaNotification();
                 ApplicationContext.BroadcastConfigChange();
             }
         }
 
-        public void AddVideoNotifications(IEnumerable<(MultiSourceHLSDownloadInfo Info, StreamingVideoDisplayInfo DisplayInfo)> notifications)
+        public void AddVideoNotifications(IEnumerable<KeyValuePair<MultiSourceHLSDownloadInfo, StreamingVideoDisplayInfo>> notifications)
         {
             lock (this)
             {
                 foreach (var info in notifications)
                 {
-                    hlsVideoList.Add(Guid.NewGuid().ToString(), info);
+                    var id = Guid.NewGuid().ToString();
+                    hlsVideoList.Add(id, info);
+                    Log.Debug("Video url1: " + info.Key.VideoUri);
+                    Log.Debug("Video url2: " + info.Key.AudioUri);
+                    this.MediaAdded?.Invoke(this, new MediaInfoEventArgs
+                    {
+                        MediaInfo = new MediaInfo(id, info.Key.File, info.Value.DescriptionText,
+                        DateTime.Now, info.Value.TabId)
+                    });
                 }
+                ApplicationContext.PlatformUIService.ShowMediaNotification();
                 ApplicationContext.BroadcastConfigChange();
             }
         }
 
-        public void AddVideoNotifications(IEnumerable<(MultiSourceDASHDownloadInfo Info, StreamingVideoDisplayInfo DisplayInfo)> notifications)
+        public void AddVideoNotifications(IEnumerable<KeyValuePair<MultiSourceDASHDownloadInfo, StreamingVideoDisplayInfo>> notifications)
         {
             lock (this)
             {
                 foreach (var info in notifications)
                 {
-                    dashVideoList.Add(Guid.NewGuid().ToString(), info);
+                    var id = Guid.NewGuid().ToString();
+                    dashVideoList.Add(id, info);
+                    Log.Debug("Video url1: " + info.Key.Url);
+                    this.MediaAdded?.Invoke(this, new MediaInfoEventArgs
+                    {
+                        MediaInfo = new MediaInfo(id, info.Key.File, info.Value.DescriptionText,
+                        DateTime.Now, info.Value.TabId)
+                    });
                 }
+                ApplicationContext.PlatformUIService.ShowMediaNotification();
                 ApplicationContext.BroadcastConfigChange();
             }
         }
@@ -145,7 +243,16 @@ namespace XDM.Core.BrowserMonitoring
         {
             lock (this)
             {
-                ytVideoList.Add(Guid.NewGuid().ToString(), (info, displayInfo));
+                var id = Guid.NewGuid().ToString();
+                ytVideoList.Add(id, new KeyValuePair<DualSourceHTTPDownloadInfo, StreamingVideoDisplayInfo>(info, displayInfo));
+                Log.Debug("Video url1: " + info.Uri1);
+                Log.Debug("Video url2: " + info.Uri2);
+                this.MediaAdded?.Invoke(this, new MediaInfoEventArgs
+                {
+                    MediaInfo = new MediaInfo(id, info.File, displayInfo.DescriptionText,
+                    DateTime.Now, displayInfo.TabId)
+                });
+                ApplicationContext.PlatformUIService.ShowMediaNotification();
                 ApplicationContext.BroadcastConfigChange();
             }
         }
@@ -154,7 +261,15 @@ namespace XDM.Core.BrowserMonitoring
         {
             lock (this)
             {
-                videoList.Add(Guid.NewGuid().ToString(), (info, displayInfo));
+                var id = Guid.NewGuid().ToString();
+                videoList.Add(id, new KeyValuePair<SingleSourceHTTPDownloadInfo, StreamingVideoDisplayInfo>(info, displayInfo));
+                Log.Debug("Video url1: " + info.Uri);
+                this.MediaAdded?.Invoke(this, new MediaInfoEventArgs
+                {
+                    MediaInfo = new MediaInfo(id, info.File, displayInfo.DescriptionText,
+                    DateTime.Now, displayInfo.TabId)
+                });
+                ApplicationContext.PlatformUIService.ShowMediaNotification();
                 ApplicationContext.BroadcastConfigChange();
             }
         }
@@ -164,7 +279,15 @@ namespace XDM.Core.BrowserMonitoring
             lock (this)
             {
                 var id = Guid.NewGuid().ToString();
-                hlsVideoList.Add(id, (info, displayInfo));
+                hlsVideoList.Add(id, new KeyValuePair<MultiSourceHLSDownloadInfo, StreamingVideoDisplayInfo>(info, displayInfo));
+                Log.Debug("Video url1: " + info.VideoUri);
+                Log.Debug("Video url2: " + info.AudioUri);
+                this.MediaAdded?.Invoke(this, new MediaInfoEventArgs
+                {
+                    MediaInfo = new MediaInfo(id, info.File, displayInfo.DescriptionText,
+                    DateTime.Now, displayInfo.TabId)
+                });
+                ApplicationContext.PlatformUIService.ShowMediaNotification();
                 ApplicationContext.BroadcastConfigChange();
             }
         }
@@ -175,7 +298,14 @@ namespace XDM.Core.BrowserMonitoring
             {
                 var id = Guid.NewGuid().ToString();
                 Log.Debug("DASH video added with id: " + id);
-                dashVideoList.Add(id, (info, displayInfo));
+                dashVideoList.Add(id, new KeyValuePair<MultiSourceDASHDownloadInfo, StreamingVideoDisplayInfo>(info, displayInfo));
+                Log.Debug("Video url1: " + info.Url);
+                this.MediaAdded?.Invoke(this, new MediaInfoEventArgs
+                {
+                    MediaInfo = new MediaInfo(id, info.File, displayInfo.DescriptionText,
+                    DateTime.Now, displayInfo.TabId)
+                });
+                ApplicationContext.PlatformUIService.ShowMediaNotification();
                 ApplicationContext.BroadcastConfigChange();
             }
         }
@@ -188,28 +318,28 @@ namespace XDM.Core.BrowserMonitoring
             var valid = false;
             if (ytVideoList.ContainsKey(videoId))
             {
-                if (ApplicationContext.LinkRefresher.LinkAccepted(ytVideoList[videoId].Info)) return;
-                name = ytVideoList[videoId].Info.File;
-                size = ytVideoList[videoId].DisplayInfo.Size;
-                contentType = ytVideoList[videoId].Info.ContentType1;
+                if (ApplicationContext.LinkRefresher.LinkAccepted(ytVideoList[videoId].Key)) return;
+                name = ytVideoList[videoId].Key.File;
+                size = ytVideoList[videoId].Value.Size;
+                contentType = ytVideoList[videoId].Key.ContentType1;
                 valid = true;
             }
             else if (videoList.ContainsKey(videoId))
             {
-                if (ApplicationContext.LinkRefresher.LinkAccepted(videoList[videoId].Info)) return;
-                name = videoList[videoId].Info.File;
-                size = videoList[videoId].DisplayInfo.Size;
-                contentType = videoList[videoId].Info.ContentType;
+                if (ApplicationContext.LinkRefresher.LinkAccepted(videoList[videoId].Key)) return;
+                name = videoList[videoId].Key.File;
+                size = videoList[videoId].Value.Size;
+                contentType = videoList[videoId].Key.ContentType;
                 valid = true;
             }
             else if (hlsVideoList.ContainsKey(videoId))
             {
                 Log.Debug("Download HLS video added with id: " + videoId);
-                name = hlsVideoList[videoId].Info.File;
+                name = hlsVideoList[videoId].Key.File;
                 valid = true;
                 try
                 {
-                    contentType = hlsVideoList[videoId].Info.ContentType;
+                    contentType = hlsVideoList[videoId].Key.ContentType;
                 }
                 catch (Exception ex)
                 {
@@ -219,13 +349,13 @@ namespace XDM.Core.BrowserMonitoring
             else if (dashVideoList.ContainsKey(videoId))
             {
                 Log.Debug("Download DASH video added with id: " + videoId);
-                name = dashVideoList[videoId].Info.File;
-                contentType = dashVideoList[videoId].Info.ContentType;
+                name = dashVideoList[videoId].Key.File;
+                contentType = dashVideoList[videoId].Key.ContentType;
                 valid = true;
             }
             if (valid)
             {
-                if (Config.Instance.StartDownloadAutomatically)
+                if (Config.Instance.StartDownloadAutomatically && IsFFmpegOK(videoId))
                 {
                     StartVideoDownload(
                         videoId, FileHelper.SanitizeFileName(name),
@@ -238,5 +368,35 @@ namespace XDM.Core.BrowserMonitoring
                 }
             }
         }
+
+        public static bool IsFFmpegOK(string id)
+        {
+            if (!ApplicationContext.VideoTracker.IsFFmpegRequiredForDownload(id)) return true;
+            return FFmpegMediaProcessor.IsFFmpegInstalled();
+        }
+    }
+
+    public class MediaInfo
+    {
+        public MediaInfo(string id, string name, string description,
+            DateTime date, string tabId)
+        {
+            this.ID = id;
+            this.Name = name;
+            this.Description = description;
+            this.DateAdded = date;
+            this.TabId = tabId;
+        }
+
+        public string ID { get; set; }
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public DateTime DateAdded { get; set; }
+        public string TabId { get; set; }
+    }
+
+    public class MediaInfoEventArgs :EventArgs
+    {
+        public MediaInfo MediaInfo { get; set; }
     }
 }

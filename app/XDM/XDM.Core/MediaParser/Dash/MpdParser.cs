@@ -18,7 +18,7 @@ namespace XDM.Core.MediaParser.Dash
         private static readonly Regex TemplatePattern =
             new Regex(@"\$(RepresentationID|Time|Time%0(?<time_digits>[\d]+)(?<time_dx>[dx])?|Number|Number%0(?<num_digits>[\d]+)(?<num_dx>[dx])?|Bandwidth)\$");
         //@"\$(RepresentationID|Time|Time(%0([\d]+)([dx])?)?|Number|Number(%0([\d]+)([dx])?)?|Bandwidth)\$");
-        public static IList<IList<(Representation Video, Representation Audio)>> Parse(
+        public static IList<IList<KeyValuePair<Representation?, Representation?>>> Parse(
             string[] manifestLines,
             string playlistUrl)
         {
@@ -36,7 +36,7 @@ namespace XDM.Core.MediaParser.Dash
             if (xmldoc.DocumentElement.SelectSingleNode("descendant::ContentProtection") != null)
                 throw new Exception("Encrypted manifest");
 
-            var mediaList = new List<IList<(Representation Video, Representation Audio)>>();
+            var mediaList = new List<IList<KeyValuePair<Representation?, Representation?>>>();
 
             var mediaPresentationDuration =
                 DashUtil.ParseXsDuration(xmldoc.DocumentElement.Attributes["mediaPresentationDuration"]?.Value ?? "0");
@@ -66,7 +66,7 @@ namespace XDM.Core.MediaParser.Dash
             return mediaList;
         }
 
-        private static IList<(Representation Video, Representation Audio)> ParsePeriod(XmlNode period, Uri baseUrl, long mediaPresentationDuration)
+        private static IList<KeyValuePair<Representation?, Representation?>> ParsePeriod(XmlNode period, Uri baseUrl, long mediaPresentationDuration)
         {
             var periodDuration = mediaPresentationDuration;
             if (period.Attributes?["duration"] != null)
@@ -98,7 +98,7 @@ namespace XDM.Core.MediaParser.Dash
                 }
             }
 
-            var mediaList = new List<(Representation? Video, Representation? Audio)>();
+            var mediaList = new List<KeyValuePair<Representation?, Representation?>>();
 
             if (videoList.Count > 0 && audioList.Count > 0)
             {
@@ -106,7 +106,7 @@ namespace XDM.Core.MediaParser.Dash
                 {
                     foreach (var audio in audioList)
                     {
-                        mediaList.Add((Video: video, Audio: audio));
+                        mediaList.Add(new KeyValuePair<Representation?, Representation?>(video, audio));
                     }
                 }
             }
@@ -114,14 +114,14 @@ namespace XDM.Core.MediaParser.Dash
             {
                 foreach (var video in videoList)
                 {
-                    mediaList.Add((Video: video, Audio: null));
+                    mediaList.Add(new KeyValuePair<Representation?, Representation?>(video, null));
                 }
             }
             else if (audioList.Count > 0)
             {
                 foreach (var audio in audioList)
                 {
-                    mediaList.Add((Video: null, Audio: audio));
+                    mediaList.Add(new KeyValuePair<Representation?, Representation?>(null, audio));
                 }
             }
             return mediaList;

@@ -1,16 +1,14 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using TraceLog;
 using Translations;
 using XDM.Core.UI;
-using XDM.Core;
 using XDM.Core.DataAccess;
 using XDM.Core.Downloader;
 using XDM.Core.Util;
 using XDM.Core.Updater;
+using YDLWrapper;
 
 namespace XDM.Core
 {
@@ -28,7 +26,7 @@ namespace XDM.Core
 
         private void AppInstance_Initialized(object? sender, EventArgs e)
         {
-            AppDB.Instance.Init(Path.Combine(Config.DataDir, "downloads.db"));
+            AppDB.Instance.Init(Path.Combine(Config.AppDir, "downloads.db"));
             AttachedEventHandler();
             LoadDownloadList();
             UpdateToolbarButtonState();
@@ -423,6 +421,18 @@ namespace XDM.Core
 
             ApplicationContext.MainWindow.YoutubeDLDownloadClicked += (s, e) =>
             {
+                try
+                {
+                    var exec = YDLProcess.FindYDLBinary();
+                }
+                catch
+                {
+                    if (Confirm(ApplicationContext.MainWindow, TextResource.GetText("MSG_YTDLP_DOWNLOAD")))
+                    {
+                        InstallLatestYtDlp();
+                    }
+                    return;
+                }
                 ApplicationContext.PlatformUIService.ShowYoutubeDLDialog();
             };
 
@@ -521,16 +531,20 @@ namespace XDM.Core
 
             ApplicationContext.MainWindow.UpdateClicked += (s, e) =>
             {
-                if (AppUpdater.IsComponentUpdateAvailable && !AppUpdater.IsAppUpdateAvailable)
+                if (AppUpdater.IsAppUpdateAvailable)
+                {
+                    PlatformHelper.OpenBrowser(AppUpdater.UpdatePage);
+                    return;
+                }
+                if (AppUpdater.IsComponentUpdateAvailable)
                 {
                     if (ApplicationContext.MainWindow.Confirm(ApplicationContext.MainWindow, AppUpdater.ComponentUpdateText))
                     {
-                        LaunchUpdater(UpdateMode.FFmpegUpdateOnly | UpdateMode.YoutubeDLUpdateOnly);
-                        return;
+                        LaunchUpdater(/*UpdateMode.FFmpegUpdateOnly | */UpdateMode.YoutubeDLUpdateOnly);
                     }
+                    return;
                 }
-                PlatformHelper.OpenBrowser(AppUpdater.UpdatePage);
-                //ApplicationContext.PlatformUIService.ShowMessageBox(ApplicationContext.MainWindow, TextResource.GetText("MSG_NO_UPDATE"));
+                ApplicationContext.PlatformUIService.ShowMessageBox(ApplicationContext.MainWindow, TextResource.GetText("MSG_NO_UPDATE"));
             };
 
             ApplicationContext.MainWindow.BrowserMonitoringButtonClicked += (s, e) =>
@@ -587,8 +601,8 @@ namespace XDM.Core
         private void LaunchUpdater(UpdateMode updateMode)
         {
             var updateDlg = ApplicationContext.PlatformUIService.CreateUpdateUIDialog();
-            var updates = AppUpdater.Updates?.Where(u => u.IsExternal)?.ToList() ?? new List<UpdateInfo>(0);
-            if (updates.Count == 0) return;
+            //var updates = AppUpdater.Updates?.Where(u => u.IsExternal)?.ToList() ?? new List<UpdateInfo>(0);
+            //if (updates.Count == 0) return;
             var commonUpdateUi = new ComponentUpdaterUIController(updateDlg, updateMode);
             updateDlg.Load += (_, _) => commonUpdateUi.StartUpdate();
             updateDlg.Finished += (_, _) =>
@@ -691,14 +705,9 @@ namespace XDM.Core
             }
         }
 
-        public void InstallLatestFFmpeg()
+        public void InstallLatestYtDlp()
         {
-            LaunchUpdater(UpdateMode.FFmpegUpdateOnly);
-        }
-
-        public void InstallLatestYoutubeDL()
-        {
-            LaunchUpdater(UpdateMode.YoutubeDLUpdateOnly);
+            LaunchUpdater(UpdateMode.YoutubeDLUpdateOnly /*| UpdateMode.FFmpegUpdateOnly*/);
         }
 
         public void ShowDownloadSelectionWindow(FileNameFetchMode mode, IEnumerable<IRequestData> downloads)

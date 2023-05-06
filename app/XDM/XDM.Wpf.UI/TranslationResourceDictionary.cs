@@ -30,11 +30,11 @@ namespace XDM.Wpf.UI
                             {
                                 Add(key, TextResource.GetText(key));
                             }
+                            break;
                         }
                     }
                 }
             }
-
         }
     }
 }

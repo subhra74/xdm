@@ -52,27 +52,14 @@ namespace XDM.Messaging
             }
         }
 
-        public static void WriteStateCookies(Dictionary<string, string>? cookies, BinaryWriter w)
+        public static void WriteStateCookies(string? cookies, BinaryWriter w)
         {
-            w.Write(cookies == null ? 0 : cookies.Count);
-            if (cookies != null && cookies.Count > 0)
-            {
-                foreach (var key in cookies.Keys)
-                {
-                    w.Write(key);
-                    w.Write(cookies[key]);
-                }
-            }
+            w.Write(cookies == null ? string.Empty : cookies);
         }
 
-        public static void ReadStateCookies(BinaryReader r, out Dictionary<string, string> cookies)
+        public static void ReadStateCookies(BinaryReader r, out string? cookies)
         {
-            cookies = new Dictionary<string, string>();
-            var count = r.ReadInt32();
-            for (var i = 0; i < count; i++)
-            {
-                cookies[r.ReadString()] = r.ReadString();
-            }
+            cookies = ReadString(r);
         }
     }
 }

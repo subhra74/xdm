@@ -132,7 +132,7 @@ namespace XDM.Wpf.UI.Dialogs.VideoDownloader
         public VideoDownloaderWindow()
         {
             InitializeComponent();
-            Page1.InitPage();
+            Page1.InitPage(this);
 
             Page3.ParentWindow = this;
             Page3.BtnMore.Click += BtnMore_Click;
