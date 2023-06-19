@@ -6,6 +6,7 @@ Czech=Czech.txt
 Farsi - Persian (فارسی)=Farsi-Persian.txt
 French(Français)=French.txt
 German(Deutsch)=German.txt
+Hindi=Hindi.txt
 Hungarian=Hungarian.txt
 Indonesian (Bahasa Indonesia)=Indonesian.txt
 Italian=Italian.txt

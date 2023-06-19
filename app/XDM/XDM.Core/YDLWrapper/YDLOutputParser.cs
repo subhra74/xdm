@@ -183,7 +183,7 @@ namespace YDLWrapper
 
         private static bool HasFragments(YDLFormat format)
         {
-            return format.Fragments != null && format.Fragments.Count > 0;
+            return format.Fragments != null && format.Fragments.Count > 1;
         }
 
         private static string? GetStringValue(string text)
