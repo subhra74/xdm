@@ -8,11 +8,14 @@
 	<a href="https://camo.githubusercontent.com/278e057571a0481121b2d60490ff656fb8736a20/68747470733a2f2f696d672e736869656c64732e696f2f6769746875622f646f776e6c6f6164732f73756268726137342f78646d2f746f74616c2e737667"><img src="https://img.shields.io/github/downloads/subhra74/xdm/total.svg" alt="Github All Releases" /></a>
 </p>
 
-[XDM Homepage](https://xtremedownloadmanager.com/ "XDM Homepage")
+### [XDM Homepage](https://xtremedownloadmanager.com/ "XDM Homepage") ###
 
-**X**treme **D**ownload **M**anager (XDM) is a powerful tool to increase download speeds up to 500%, save streaming videos from YouTube, DailyMotion, Facebook, Vimeo, Google Video and 1000+ other websites, resume broken/dead downloads, schedule and convert downloads.<br>
+[New Experimental Beta version is out](https://github.com/subhra74/xdm-experimental-binaries/tags)
+
+[News about new version](https://github.com/subhra74/xdm/discussions/768)
+
+**X**treme **D**ownload **M**anager (XDM) is a powerful tool to increase download speeds up to 500%, save videos from popular video streaming websites, resume broken/dead downloads, schedule and convert downloads.<br>
 XDM seamlessly integrates with Google Chrome, Mozilla Firefox Quantum, Opera, Vivaldi and other Chroumium and Firefox based browsers, to take over downloads and saving streaming videos from web. XDM has a built in video converter which lets you convert your downloaded videos to different formats so that you can watch them on your mobile or TV (100+ devices are supported)
-
 
 [![name](https://subhra74.github.io/xdm/download.png)](https://xtremedownloadmanager.com/#downloads)
 
@@ -20,13 +23,13 @@ XDM seamlessly integrates with Google Chrome, Mozilla Firefox Quantum, Opera, Vi
 
 | ![xdm_1][01] | ![xdm_5][05] | ![xdm_3][03] |
 | --- | --- | --- |
-| ![xdm_7][07] | ![xdm_8][08] | ![xdm_9][09] |
-| ![xdm_4][04] | ![xdm_2][02] | ![xdm_6][06] |
+| ![xdm_7][07] | ![xdm_6][06] | ![xdm_9][09] |
+| ![xdm_4][04] | ![xdm_2][02] |  |
 
 
 ## Features
 - Download files at maximum possible speed (5-6 times faster than conventional downloaders).
-- XDM can save video from YouTube, Dailymotion, Vimeo, Facebook and thousands of popular video sharing sites.
+- XDM can save video from numerous video streaming sites.
 - Works with all modern browsers on Windows, Linux and Mac OS X. XDM supports [Google Chrome][18], [Chromium][18], [Firefox Quantum][19], [Vivaldi][20], [Edge][21] and many other popular browsers.
 - XDM has built in video converter, which lets you convert downloaded video to MP3 and MP4 formats.
 - Supports `HTTP`, `HTTPS`, `FTP` as well as video streaming protocols like `MPEG-DASH`, `Apple HLS`, and `Adobe HDS`.
