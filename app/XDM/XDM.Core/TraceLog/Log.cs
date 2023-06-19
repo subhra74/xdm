@@ -23,12 +23,14 @@ namespace TraceLog
 
         public static void Debug(object obj, string message)
         {
+            Console.WriteLine($"[xdm-{DateTime.Now.ToLongTimeString()}] {message} : {obj}");
             Trace.WriteLine($"[xdm-{DateTime.Now.ToLongTimeString()}] {message} : {obj}");
             //Trace.Flush();
         }
 
         public static void Debug(string message)
         {
+            Console.WriteLine($"[xdm-{DateTime.Now.ToLongTimeString()}] {message}");
             Trace.WriteLine($"[xdm-{DateTime.Now.ToLongTimeString()}] {message}");
             //Trace.Flush();
         }

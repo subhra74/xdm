@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using TraceLog;
 
 namespace Translations
 {
@@ -16,6 +17,7 @@ namespace Translations
         public static void Load(string language)
         {
             var file = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, Path.Combine("Lang", $"{language}"));
+            Log.Debug($"Loading lang files from: {file}");
             if (File.Exists(file))
             {
                 LoadTexts(file);

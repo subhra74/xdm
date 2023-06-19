@@ -8,6 +8,7 @@
 --enable-small
 --enable-demuxer=mov,mp4,m4a,3gp,3g2,mj2,matroska,webm,mpegts
 --enable-libmp3lame
+--enable-mp3
 --enable-encoder=libmp3lame
 --enable-muxer=mp4,matroska,mpegts,mp3,webm
 --enable-protocol=file,srt,concat 

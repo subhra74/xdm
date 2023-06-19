@@ -1,4 +1,4 @@
-set BUILD_VER=8.0.25
+set BUILD_VER=8.0.26
 
 DEL /s /q *.wixobj
 DEL /s /q net4.5.0.wxs

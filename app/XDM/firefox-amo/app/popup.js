@@ -31,7 +31,6 @@ class VideoPopup {
 
     renderList(arr) {
         let table = document.getElementById("table");
-        console.log("total element: " + arr.length);
         arr.forEach(listItem => {
             let text = listItem.text;
 

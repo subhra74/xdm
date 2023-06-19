@@ -415,13 +415,6 @@ namespace XDM.Core.BrowserMonitoring
                 {
                     return false;
                 }
-                var contentType = message.GetResponseHeaderValue("Content-Type")?[0]?.ToLowerInvariant();
-                if (!(contentType != null && (contentType.Contains("audio/") ||
-                    contentType.Contains("video/") ||
-                    contentType.Contains("application/octet"))))
-                {
-                    return false;
-                }
                 var lowUrl = message.Url.ToLowerInvariant();
                 if (!(lowUrl.Contains("videoplayback") && lowUrl.Contains("itag")))
                 {
@@ -436,8 +429,8 @@ namespace XDM.Core.BrowserMonitoring
                 yt_url.Append(path + "?");
                 int itag = 0;
                 long clen = 0;
-                String id = "";
-                String mime = "";
+                string id = "";
+                string mime = "";
 
                 for (int i = 0; i < arr.Length; i++)
                 {
@@ -451,7 +444,7 @@ namespace XDM.Core.BrowserMonitoring
                         continue;
                     }
 
-                    if (key.StartsWith("range"))
+                    if (key.StartsWith("range") || key == "srfvp" || key == "ump" || key == "rbuf" || key == "rn")
                     {
                         continue;
                     }
@@ -482,9 +475,20 @@ namespace XDM.Core.BrowserMonitoring
                         yt_url.Append('&');
                     }
                 }
+
                 if (itag != 0 && IsNormalVideo(itag))
                 {
                     return false;
+                }
+
+                var contentType = message.GetResponseHeaderValue("Content-Type")?[0]?.ToLowerInvariant();
+                if (!IsValidYTContentType(contentType))
+                {
+                    contentType = mime;
+                    if (!IsValidYTContentType(contentType))
+                    {
+                        return false;
+                    }
                 }
 
                 var info = new DashInfo()
@@ -511,17 +515,6 @@ namespace XDM.Core.BrowserMonitoring
                         return true;
                     }
                     var video = CreateDualSourceHTTPDownloadInfo(di, info, message);
-                    //    new DualSourceHTTPDownloadInfo
-                    //{
-                    //    Uri1 = di.Url,
-                    //    Uri2 = info.Url,
-                    //    Headers1 = di.Headers,
-                    //    Headers2 = info.Headers,
-                    //    File = FileHelper.SanitizeFileName(message.File ?? FileHelper.GetFileName(new Uri(message.Url))) + ".mkv",
-                    //    Cookies1 = di.Cookies,
-                    //    Cookies2 = info.Cookies,
-                    //    ContentLength = di.Length + info.Length
-                    //};
 
                     var size = di.Length + info.Length;
                     Log.Debug("Itag: " + info.ITag + " " + di.ITag);
@@ -542,6 +535,13 @@ namespace XDM.Core.BrowserMonitoring
             }
             catch { }
             return false;
+        }
+
+        private static bool IsValidYTContentType(string? contentType)
+        {
+            return contentType != null && (contentType.Contains("audio/") ||
+                    contentType.Contains("video/") ||
+                    contentType.Contains("application/octet"));
         }
 
         private static void HandleDashAudio(DashInfo info, Message message)

@@ -48,7 +48,7 @@ namespace XDM.GtkUI.Dialogs.Language
             Title = TextResource.GetText("MENU_LANG");
             SetDefaultSize(400, 200);
 
-            var indexFile = IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Lang\index.txt");
+            var indexFile = IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, IoPath.Combine("Lang", "index.txt"));
             var items = new List<string>();
             var n = 0;
             var c = 0;

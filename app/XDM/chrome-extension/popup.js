@@ -11,10 +11,7 @@ class VideoPopup {
             chrome.runtime.sendMessage({ type: "cmd", enabled: document.getElementById("chk").checked });
             window.close();
         });
-    }
 
-    onMsg(response) {
-        document.getElementById("chk").checked = response.enabled;
         let button = document.getElementById('clear');
         button.addEventListener('click', e => {
             chrome.runtime.sendMessage({ type: "clear" });
@@ -23,6 +20,10 @@ class VideoPopup {
         document.getElementById('format').addEventListener('click', e => {
             alert("Please play the video in desired format in web player")
         });
+    }
+
+    onMsg(response) {
+        document.getElementById("chk").checked = response.enabled;
         if (response.list.length > 0) {
             document.getElementById('content').style.display = 'block';
         }

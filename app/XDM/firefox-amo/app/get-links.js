@@ -1,6 +1,5 @@
 "use strict";
 (function () {
-    console.log("Injected...");
     let arr = [], l = document.links;
     for (let i = 0; i < l.length; i++) {
         if (l[i].href && l[i].href.indexOf("http") === 0) {
