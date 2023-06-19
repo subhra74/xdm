@@ -15,7 +15,7 @@
 [News about new version](https://github.com/subhra74/xdm/discussions/768)
 
 **X**treme **D**ownload **M**anager (XDM) is a powerful tool to increase download speeds up to 500%, save videos from popular video streaming websites, resume broken/dead downloads, schedule and convert downloads.<br>
-XDM seamlessly integrates with Google Chrome, Mozilla Firefox Quantum, Opera, Vivaldi and other Chroumium and Firefox based browsers, to take over downloads and saving streaming videos from web. XDM has a built in video converter which lets you convert your downloaded videos to different formats so that you can watch them on your mobile or TV (100+ devices are supported)
+XDM seamlessly integrates with Google Chrome, Mozilla Firefox Quantum, Opera, Vivaldi and other Chromium and Firefox based browsers, to take over downloads and saving streaming videos from web. XDM has a built-in video converter which lets you convert your downloaded videos to different formats so that you can watch them on your mobile or TV (100+ devices are supported)
 
 [![name](https://subhra74.github.io/xdm/download.png)](https://xtremedownloadmanager.com/#downloads)
 
