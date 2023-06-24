@@ -155,26 +155,26 @@ export default class App {
     updateActionIcon() {
         chrome.action.setIcon({ path: this.getActionIcon() });
         let vc = "";
-        if (this.videoList && this.videoList.length > 0) {
-            let len = this.videoList.length;
-            if (len > 0) {
-                vc = len + "";
-            }
-        }
         // if (this.videoList && this.videoList.length > 0) {
-        //     let len = this.videoList.filter(vid => {
-        //         if (!vid.tabId) {
-        //             return true;
-        //         }
-        //         if (vid.tabId == '-1') {
-        //             return true;
-        //         }
-        //         return (vid.tabId == this.activeTabId);
-        //     }).length;
+        //     let len = this.videoList.length;
         //     if (len > 0) {
         //         vc = len + "";
         //     }
         // }
+        if (this.videoList && this.videoList.length > 0) {
+            let len = this.videoList.filter(vid => {
+                if (!vid.tabId) {
+                    return true;
+                }
+                if (vid.tabId == '-1' || vid.tabId == '0') {
+                    return true;
+                }
+                return (vid.tabId == this.activeTabId);
+            }).length;
+            if (len > 0) {
+                vc = len + "";
+            }
+        }
         chrome.action.setBadgeText({ text: vc });
         if (!this.connector.isConnected()) {
             this.logger.log("Not connected...");
@@ -249,13 +249,16 @@ export default class App {
         if (request.type === "stat") {
             let resp = {
                 enabled: this.isMonitoringEnabled(),
-                list: this.videoList
-                // list: this.videoList.filter(vid => {
-                //     if (!vid.tabId) {
-                //         return true;
-                //     }
-                //     return (vid.tabId == this.activeTabId);
-                // })
+                //list: this.videoList
+                list: this.videoList.filter(vid => {
+                    if (!vid.tabId) {
+                        return true;
+                    }
+                    if (vid.tabId == '-1' || vid.tabId == '0') {
+                        return true;
+                    }
+                    return (vid.tabId == this.activeTabId);
+                })
             };
             sendResponse(resp);
         }

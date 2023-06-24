@@ -14,8 +14,10 @@ class VideoPopup {
 
         let button = document.getElementById('clear');
         button.addEventListener('click', e => {
-            chrome.runtime.sendMessage({ type: "clear" });
-            window.close();
+            if (confirm("Are you sure?") === true) {
+                chrome.runtime.sendMessage({ type: "clear" });
+                window.close();
+            }
         });
         document.getElementById('format').addEventListener('click', e => {
             alert("Please play the video in desired format in web player")
@@ -42,15 +44,20 @@ class VideoPopup {
             let row = table.insertRow(0);
             let cell = row.insertCell(0);
 
-            let border = "";
+            let divRow = document.createElement('div');
+            divRow.setAttribute("style", "padding: 5px; display: flex; flex-direction: row;");
+
+            let iconImage = document.createElement('img');
+            iconImage.setAttribute('src', listItem.audioOnly === true ? './audio.png' : './video.png');
+            iconImage.setAttribute('style', "width: 48px; height: 48px; align-self: center;");
 
             let div = document.createElement('div');
-            div.setAttribute("style", "padding: 10px; display: flex; flex-direction: column;" + border);
+            div.setAttribute("style", "padding: 5px; display: flex; flex-direction: column; flex: 1;");
 
             let button = document.createElement('button');
-            button.setAttribute("style", "font-family:helvetica,arial,courier; font-size: 14px; cursor: pointer; text-align: left; border: none; background: rgba(0,0,0,0); padding: 0px; padding-bottom: 5px; padding-top: 5px;");
+            button.setAttribute("style", "font-family:helvetica,arial,courier; font-size: 14px; cursor: pointer; text-align: left; border: none; background: rgba(0,0,0,0); padding: 0px; padding-bottom: 5px;");
             button.innerText = text;
-            button.id = listItem.id;
+            button.id = id;
 
             let p2 = document.createElement('span');
             p2.setAttribute("style", "font-family:helvetica,arial,courier; font-size: 12px;");
@@ -60,10 +67,21 @@ class VideoPopup {
             div.appendChild(button);
             div.appendChild(p2);
 
-            cell.appendChild(div);
+            divRow.appendChild(iconImage);
+            divRow.appendChild(div);
+
+            cell.appendChild(divRow);
 
             button.addEventListener('click', e => {
-                chrome.runtime.sendMessage({ type: "vid", itemId: e.target.id });
+                chrome.runtime.sendMessage({ type: "vid", itemId: id });
+            });
+
+            iconImage.addEventListener('click', e => {
+                chrome.runtime.sendMessage({ type: "vid", itemId: id });
+            });
+
+            node.addEventListener('click', e => {
+                chrome.runtime.sendMessage({ type: "vid", itemId: id });
             });
         });
     }

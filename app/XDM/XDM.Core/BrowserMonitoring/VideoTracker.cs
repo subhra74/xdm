@@ -139,8 +139,10 @@ namespace XDM.Core.BrowserMonitoring
                 }
                 foreach (var e in videoList)
                 {
-                    list.Add(new MediaInfo(e.Key, e.Value.Key.File, e.Value.Value.DescriptionText,
-                        e.Value.Value.CreationTime, e.Value.Value.TabId));
+                    var mediaInfo = new MediaInfo(e.Key, e.Value.Key.File, e.Value.Value.DescriptionText,
+                        e.Value.Value.CreationTime, e.Value.Value.TabId);
+                    mediaInfo.AudioOnly = e.Value.Key.ContentType != null && e.Value.Key.ContentType.ToLowerInvariant().Contains("audio/");
+                    list.Add(mediaInfo);
                 }
                 foreach (var e in hlsVideoList)
                 {
@@ -393,9 +395,10 @@ namespace XDM.Core.BrowserMonitoring
         public string Description { get; set; }
         public DateTime DateAdded { get; set; }
         public string TabId { get; set; }
+        public bool AudioOnly { get; set; }
     }
 
-    public class MediaInfoEventArgs :EventArgs
+    public class MediaInfoEventArgs : EventArgs
     {
         public MediaInfo MediaInfo { get; set; }
     }

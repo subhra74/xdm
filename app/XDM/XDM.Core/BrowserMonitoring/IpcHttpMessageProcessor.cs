@@ -349,6 +349,9 @@ namespace XDM.Core.BrowserMonitoring
                     writer.WritePropertyName("tabId");
                     writer.WriteValue(video.TabId);
 
+                    writer.WritePropertyName("audioOnly");
+                    writer.WriteValue(video.AudioOnly);
+
                     writer.WriteEndObject();
                 }
                 writer.WriteEndArray();
