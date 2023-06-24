@@ -1,7 +1,0 @@
-Package: xdman
-Version: 8.0.1
-Architecture: amd64
-Depends: libgtk-3-0 (>= 3.22.11), ffmpeg
-Maintainer: Subhra Das Gupta
-Description: Powerfull download accelerator and video downloader.
- Powerfull open source download accelerator and video downloader.
