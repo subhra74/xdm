@@ -94,6 +94,13 @@ export default class App {
     }
 
     onTabUpdate(tabId, changeInfo, tab) {
+        if (changeInfo.url && changeInfo.url.indexOf("chrome:") === 0) {
+            return;
+        }
+        chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ["ping.js"],
+        }).then(() => this.logger.log("script injected"));
         if (!this.isMonitoringEnabled()) {
             return;
         }
@@ -114,6 +121,7 @@ export default class App {
     }
 
     register() {
+        this.keepAwake();
         chrome.downloads.onCreated.addListener(
             this.onDownloadCreatedCallback
         );
@@ -408,5 +416,30 @@ export default class App {
             }
             this.fetchCookiesForUrls(links, index + 1, cookieMap, resolve);
         });
+    }
+
+    keepAwake() {
+        chrome.runtime.onConnect.addListener(port => {
+            if (port.name !== 'keep-alive-ping') return;
+            port.onMessage.addListener(this.onKeepAliveMessage.bind(this));
+            port.onDisconnect.addListener(this.deleteTimer.bind(this));
+            port._timer = setTimeout(this.forceReconnect.bind(this), 250e3, port);
+        });
+    }
+
+    forceReconnect(port) {
+        this.deleteTimer(port);
+        port.disconnect();
+    }
+
+    onKeepAliveMessage(msg, port) {
+        console.log('received', msg, 'from', port.sender);
+    }
+
+    deleteTimer(port) {
+        if (port._timer) {
+            clearTimeout(port._timer);
+            delete port._timer;
+        }
     }
 }
