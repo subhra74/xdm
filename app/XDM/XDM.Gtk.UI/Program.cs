@@ -133,7 +133,7 @@ namespace XDM.GtkUI
             Log.Debug("Language loading ...");
             try
             {
-                var indexFile = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Lang\index.txt");
+                var indexFile = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, System.IO.Path.Combine("Lang", "index.txt"));
                 if (System.IO.File.Exists(indexFile))
                 {
                     var lines = System.IO.File.ReadAllLines(indexFile);

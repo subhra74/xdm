@@ -14,10 +14,8 @@ class VideoPopup {
 
         let button = document.getElementById('clear');
         button.addEventListener('click', e => {
-            if (confirm("Are you sure?") === true) {
-                chrome.runtime.sendMessage({ type: "clear" });
-                window.close();
-            }
+            chrome.runtime.sendMessage({ type: "clear" });
+            window.setTimeout(() => window.close(), 1000);
         });
         document.getElementById('format').addEventListener('click', e => {
             alert("Please play the video in desired format in web player")
