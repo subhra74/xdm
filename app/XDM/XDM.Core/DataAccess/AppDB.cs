@@ -1,13 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Data.Common;
-using System.Data.SQLite;
-using System.IO;
-using System.Linq;
-using System.Text;
 using TraceLog;
-using XDM.Core;
-using XDM.Core.Downloader;
 
 namespace XDM.Core.DataAccess
 {
@@ -15,10 +7,10 @@ namespace XDM.Core.DataAccess
     {
         private static object lockObj = new();
         private bool init = false;
-        private SQLiteConnection db;
+        private SqliteWrapper db;
         private AppDB() { }
-        private DownloadList downloadsDB;
-        public DownloadList Downloads => downloadsDB;
+        private DownloadDatabase downloadsDB;
+        public DownloadDatabase Downloads => downloadsDB;
         private static AppDB instance;
         public static AppDB Instance
         {
@@ -41,15 +33,9 @@ namespace XDM.Core.DataAccess
             {
                 try
                 {
-                    string cs = $"URI=file:{file}";
-                    if (!File.Exists(file))
-                    {
-                        SQLiteConnection.CreateFile(file);
-                    }
-                    db = new SQLiteConnection(cs);
-                    db.Open();
+                    db = new SqliteWrapper(file);
                     SchemaInitializer.Init(db);
-                    this.downloadsDB = new DownloadList(db);
+                    this.downloadsDB = new DownloadDatabase(db);
                     init = true;
                     return true;
                 }
@@ -61,26 +47,26 @@ namespace XDM.Core.DataAccess
             }
         }
 
-        public bool Export(string file)
-        {
-            try
-            {
-                DataImportExport.CopyToFile(db, file);
-                return true;
-            }
-            catch (Exception e)
-            {
-                Log.Debug(e, e.Message);
-                return false;
-                throw;
-            }
-        }
+        //public bool Export(string file)
+        //{
+        //    try
+        //    {
+        //        DataImportExport.CopyToFile(db.Connection, file);
+        //        return true;
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        Log.Debug(e, e.Message);
+        //        return false;
+        //        throw;
+        //    }
+        //}
 
         public bool Import(string file)
         {
             try
             {
-                DataImportExport.CopyFromFile(db, file);
+                DataImportExport.CopyFromFile(db.Connection, file);
                 return true;
             }
             catch (Exception e)

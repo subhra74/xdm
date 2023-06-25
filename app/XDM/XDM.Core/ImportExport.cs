@@ -51,7 +51,8 @@ namespace XDM.Core
             var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             Directory.CreateDirectory(tempDir);
             var dbFile = Path.Combine(tempDir, "downloads-export.db");
-            AppDB.Instance.Export(dbFile);
+            File.Copy(Path.Combine(Config.AppDir, "downloads.db"), dbFile);
+            //AppDB.Instance.Export(dbFile);
             filesToAdd.Add(dbFile);
             filesToAdd.AddRange(dir.GetFiles("*.state").Select(x => x.FullName));
             filesToAdd.AddRange(dir.GetFiles("*.info").Select(x => x.FullName));

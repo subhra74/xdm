@@ -2,7 +2,7 @@
     "name": "XDM Integration Module",
     "action": {},
     "manifest_version": 3,
-    "version": "3.4",
+    "version": "3.5",
     "description": "Download with Xtreme Download Manager.",
     "host_permissions": [
         "*://*/*"

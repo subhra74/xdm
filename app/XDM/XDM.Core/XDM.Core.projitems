@@ -14,6 +14,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\ExtensionData.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)BrowserMonitoring\NativeMessagingHostConfigurer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Clients\Http\Utils.cs" />
+    <Compile Include="..\XDM.Core\DataAccess\SqliteWrapper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Util\ExtensionRegistrationHelper.cs" />
     <Compile Include="..\XDM.Core\Ipc\IpcServer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SingleInstance.cs" />
@@ -128,7 +129,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)IO\TransactedIO.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Updater\UpdateChecker.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DataAccess\AppDB.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)DataAccess\DownloadList.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DataAccess\DownloadDatabase.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DataAccess\Extensions\DataReaderExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DataAccess\DataImportExport.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DataAccess\SchemaInitializer.cs" />

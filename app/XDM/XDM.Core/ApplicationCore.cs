@@ -728,67 +728,74 @@ namespace XDM.Core
             {
                 if (entry == null) return;
                 string? tempDir = null;
-                var validEntry = false;
-                switch (entry.DownloadType)
+                try
                 {
-                    case "Http":
-                        var h1 = DownloadStateIO.LoadSingleSourceHTTPDownloaderState(entry.Id);
-                        if (h1 != null)
-                        {
-                            tempDir = h1.TempDir;
-                            validEntry = true;
-                        }
-                        break;
-                    case "Dash":
-                        var h2 = DownloadStateIO.LoadDualSourceHTTPDownloaderState(entry.Id);
-                        if (h2 != null)
-                        {
-                            tempDir = h2.TempDir;
-                            validEntry = true;
-                        }
-                        break;
-                    case "Hls":
-                        var hls = DownloadStateIO.LoadMultiSourceHLSDownloadState(entry.Id);
-                        if (hls != null)
-                        {
-                            tempDir = hls.TempDirectory;
-                            validEntry = true;
-                        }
-                        break;
-                    case "Mpd-Dash":
-                        var dash = DownloadStateIO.LoadMultiSourceDASHDownloadState(entry.Id);
-                        if (dash != null)
-                        {
-                            tempDir = dash.TempDirectory;
-                            validEntry = true;
-                        }
-                        break;
-                }
 
-                if (validEntry)
-                {
-                    RemoveStateFiles(entry.Id, removeInfo);
-
-                    if (entry is FinishedDownloadItem && deleteDownloadedFile)
+                    switch (entry.DownloadType)
                     {
-                        var file = Path.Combine(entry.TargetDir, entry.Name);
-                        if (File.Exists(file))
-                        {
-                            File.Delete(file);
-                        }
+                        case "Http":
+                            var h1 = DownloadStateIO.LoadSingleSourceHTTPDownloaderState(entry.Id);
+                            if (h1 != null)
+                            {
+                                tempDir = h1.TempDir;
+                            }
+                            break;
+                        case "Dash":
+                            var h2 = DownloadStateIO.LoadDualSourceHTTPDownloaderState(entry.Id);
+                            if (h2 != null)
+                            {
+                                tempDir = h2.TempDir;
+                            }
+                            break;
+                        case "Hls":
+                            var hls = DownloadStateIO.LoadMultiSourceHLSDownloadState(entry.Id);
+                            if (hls != null)
+                            {
+                                tempDir = hls.TempDirectory;
+                            }
+                            break;
+                        case "Mpd-Dash":
+                            var dash = DownloadStateIO.LoadMultiSourceDASHDownloadState(entry.Id);
+                            if (dash != null)
+                            {
+                                tempDir = dash.TempDirectory;
+                            }
+                            break;
                     }
+                }
+                catch { }
 
+                RemoveStateFiles(entry.Id, removeInfo);
+
+                if (entry is FinishedDownloadItem && deleteDownloadedFile)
+                {
                     try
                     {
-                        if (Directory.Exists(tempDir) && !string.IsNullOrEmpty(tempDir))
+                        if (!string.IsNullOrEmpty(entry.TargetDir))
                         {
-                            Directory.Delete(tempDir, true);
+                            var file = Path.Combine(entry.TargetDir, entry.Name);
+                            if (File.Exists(file))
+                            {
+                                File.Delete(file);
+                            }
                         }
                     }
-                    catch (Exception ex)
+                    catch(Exception ex)
                     {
                         Log.Debug(ex, ex.Message);
                     }
+                }
+
+                try
+                {
+                    if (!string.IsNullOrEmpty(tempDir) && Directory.Exists(tempDir))
+                    {
+                        Directory.Delete(tempDir, true);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex, ex.Message);
                 }
             }
             catch (Exception ex)
