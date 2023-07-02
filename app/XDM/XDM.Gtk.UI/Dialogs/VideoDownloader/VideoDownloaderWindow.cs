@@ -517,9 +517,7 @@ namespace XDM.GtkUI.Dialogs.VideoDownloader
 
         public static VideoDownloaderWindow CreateFromGladeFile()
         {
-            var builder = new Builder();
-            builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "video-downloader-window.glade"));
-            return new VideoDownloaderWindow(builder);
+            return new VideoDownloaderWindow(GtkHelper.GetBuilder("video-downloader-window"));
         }
     }
 }

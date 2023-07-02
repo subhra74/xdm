@@ -226,9 +226,7 @@ namespace XDM.GtkUI.Dialogs.DownloadSelection
 
         public static DownloadSelectionWindow CreateFromGladeFile()
         {
-            var builder = new Builder();
-            builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "download-selection-window.glade"));
-            return new DownloadSelectionWindow(builder);
+            return new DownloadSelectionWindow(GtkHelper.GetBuilder("download-selection-window"));
         }
     }
 

@@ -23,9 +23,7 @@ namespace XDM.GtkUI.Dialogs.SpeedLimiter
 
         public static SpeedLimiterWindow CreateFromGladeFile()
         {
-            var builder = new Builder();
-            builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "speed-limiter-dialog.glade"));
-            return new SpeedLimiterWindow(builder);
+            return new SpeedLimiterWindow(GtkHelper.GetBuilder("speed-limiter-dialog"));
         }
 
         public SpeedLimiterWindow(Builder builder) : base(builder.GetRawOwnedObject("window"))

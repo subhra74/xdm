@@ -81,9 +81,7 @@ namespace XDM.GtkUI.Dialogs.ChromeIntegrator
 
         public static RegisterExtensionWindow CreateFromGladeFile()
         {
-            var builder = new Builder();
-            builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "register-extension.glade"));
-            return new RegisterExtensionWindow(builder);
+            return new RegisterExtensionWindow(GtkHelper.GetBuilder("register-extension"));
         }
     }
 }

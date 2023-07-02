@@ -57,9 +57,7 @@ namespace XDM.GtkUI.Dialogs.NewVideoDownload
 
         public static NewVideoDownloadWindow CreateFromGladeFile()
         {
-            var builder = new Builder();
-            builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "new-video-download-window.glade"));
-            return new NewVideoDownloadWindow(builder);
+            return new NewVideoDownloadWindow(GtkHelper.GetBuilder("new-video-download-window"));
         }
 
         private NewVideoDownloadWindow(Builder builder) : base(builder.GetRawOwnedObject("window"))

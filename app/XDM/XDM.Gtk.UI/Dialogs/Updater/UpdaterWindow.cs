@@ -84,9 +84,7 @@ namespace XDM.GtkUI.Dialogs.Updater
 
         public static UpdaterWindow CreateFromGladeFile()
         {
-            var builder = new Builder();
-            builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "updater-window.glade"));
-            return new UpdaterWindow(builder);
+            return new UpdaterWindow(GtkHelper.GetBuilder("updater-window"));
         }
 
         public void DownloadFailed(object? sender, DownloadFailedEventArgs e)

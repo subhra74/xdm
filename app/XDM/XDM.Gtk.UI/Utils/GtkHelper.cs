@@ -467,5 +467,11 @@ namespace XDM.GtkUI.Utils
             var iter1 = sortedModel.ConvertIterToChildIter(iter);
             return filterModel.ConvertIterToChildIter(iter1);
         }
+
+        public static Builder GetBuilder(string fileName){
+            var builder = new Builder();
+            builder.AddFromFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", $"{fileName}.glade"));
+            return builder;
+        }
     }
 }

@@ -369,3 +369,4 @@ app/XDM/XDM.Linux.Installer/xdm-helper-chrome/
 app/XDM/XDM.Win.Installer/binary-deps/ffmpeg-x86.exe
 app/XDM/XDM.Win.Installer/binary-deps/yt-dlp_x86.exe
 app/XDM/firefox-amo/xdm-v8-browser-helper.zip
+.DS_Store

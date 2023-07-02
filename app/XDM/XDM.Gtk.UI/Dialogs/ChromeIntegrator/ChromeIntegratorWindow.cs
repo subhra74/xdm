@@ -167,9 +167,7 @@ namespace XDM.GtkUI.Dialogs.ChromeIntegrator
 
         public static ChromeIntegratorWindow CreateFromGladeFile(Browser browser)
         {
-            var builder = new Builder();
-            builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "chrome-integration.glade"));
-            return new ChromeIntegratorWindow(builder, browser);
+            return new ChromeIntegratorWindow(GtkHelper.GetBuilder("chrome-integration"), browser);
         }
 
         private void RenderPage()

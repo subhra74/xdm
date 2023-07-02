@@ -203,9 +203,7 @@ namespace XDM.GtkUI.Dialogs.BatchWindow
 
         public static BatchDownloadWindow CreateFromGladeFile(Window parent)
         {
-            var builder = new Builder();
-            builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "batch-download-dialog.glade"));
-            return new BatchDownloadWindow(builder, parent);
+            return new BatchDownloadWindow(GtkHelper.GetBuilder("batch-download-dialog"), parent);
         }
     }
 }
