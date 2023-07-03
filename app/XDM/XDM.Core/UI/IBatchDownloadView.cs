@@ -24,6 +24,8 @@ namespace XDM.Core.UI
         string BatchAddress2 { get; set; }
         string BatchAddressN { get; set; }
         bool IsBatchMode { get; }
+        string UrlListText { get; set; }
+
 
         event EventHandler? PatternChanged;
         event EventHandler? OkClicked;

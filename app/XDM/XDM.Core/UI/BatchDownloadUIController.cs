@@ -46,23 +46,17 @@ namespace XDM.Core.UI
 
         private void OnOKClicked()
         {
-            if (this.view.IsBatchMode)
+            var links = this.view.IsBatchMode? GenerateBatchLink()?.Select(
+                    x => (IRequestData)new SingleSourceHTTPDownloadInfo { Uri = x.ToString() }):
+                    this.view.UrlListText.Split('\r','\n').Select(x => (IRequestData)new SingleSourceHTTPDownloadInfo { Uri = x });
+
+            if (links == null || !links.Any())
             {
-                var links = GenerateBatchLink()?.Select(x => (IRequestData)new SingleSourceHTTPDownloadInfo { Uri = x.ToString() });
-                if (links == null || !links.Any())
-                {
-                    ApplicationContext.Application.ShowMessageBox(this.view, TextResource.GetText("BAT_SELECT_ITEMS"));
-                    return;
-                }
-                this.view.DestroyWindow();
-                ApplicationContext.Application.ShowDownloadSelectionWindow(FileNameFetchMode.FileNameAndExtension, links);
-                //var dsvc = new DownloadSelectionViewController(this.view.CreateDownloadSelectionView(),
-                //    ApplicationContext.Core, AppUI, FileNameFetchMode.FileNameAndExtension, links);
-                //dsvc.Run();
-                //var window = new DownloadSelectionWindow(ApplicationContext.Core, AppUI, Core.Lib.Downloader.FileNameFetchMode.FileNameAndExtension, links);
-                //this.Close();
-                //window.Show();
+                ApplicationContext.Application.ShowMessageBox(this.view, TextResource.GetText("BAT_SELECT_ITEMS"));
+                return;
             }
+            this.view.DestroyWindow();
+            ApplicationContext.Application.ShowDownloadSelectionWindow(FileNameFetchMode.FileNameAndExtension, links);
         }
 
         private void OnBatchPatternChange()

@@ -209,9 +209,10 @@ namespace XDM.GtkUI.Dialogs.DownloadSelection
             TreeIter iter;
             if (store.GetIter(out iter, new TreePath(args.Path)))
             {
-                store.SetValue(iter, 0, !(bool)store.GetValue(iter, 0));
+                var value=!(bool)store.GetValue(iter, 0);
+                store.SetValue(iter, 0, value);
                 var ent = (IDownloadEntryWrapper)store.GetValue(iter, 2);
-                ent.IsSelected = true;
+                ent.IsSelected = value;
             }
         }
 
