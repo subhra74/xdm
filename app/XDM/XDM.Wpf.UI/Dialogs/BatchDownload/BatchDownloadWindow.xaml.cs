@@ -39,6 +39,7 @@ namespace XDM.Wpf.UI.Dialogs.BatchDownload
         public string BatchAddress2 { get => TxtFile2.Text; set => TxtFile2.Text = value; }
         public string BatchAddressN { get => TxtFileN.Text; set => TxtFileN.Text = value; }
         public bool IsBatchMode => this.TabControl.SelectedIndex == 0;
+        public string UrlListText { get => TxtDownloadLinks.Text; set => TxtDownloadLinks.Text = value; }
 
         public event EventHandler? PatternChanged;
         public event EventHandler? OkClicked;
