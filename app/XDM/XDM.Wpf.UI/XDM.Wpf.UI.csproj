@@ -16,7 +16,7 @@
     <StartupObject>XDM.Wpf.UI.App</StartupObject>
     <Description>Xtreme Download Manager</Description>
     <AssemblyTitle>Xtreme Download Manager</AssemblyTitle>
-    <AssemblyVersion>8.0.1</AssemblyVersion>
+    <AssemblyVersion>8.0.29</AssemblyVersion>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <DefineConstants>TRACE;WINDOWS</DefineConstants>
   </PropertyGroup>
