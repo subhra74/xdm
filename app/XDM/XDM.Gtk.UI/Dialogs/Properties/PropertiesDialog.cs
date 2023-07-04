@@ -101,9 +101,7 @@ namespace XDM.GtkUI.Dialogs.Properties
 
         public static PropertiesDialog CreateFromGladeFile(Window parent, WindowGroup group)
         {
-            var builder = new Builder();
-            builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "properties-dialog.glade"));
-            return new PropertiesDialog(builder, parent, group);
+            return new PropertiesDialog(GtkHelper.GetBuilder("properties-dialog"), parent, group);
         }
     }
 }

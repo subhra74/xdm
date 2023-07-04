@@ -734,9 +734,7 @@ namespace XDM.GtkUI.Dialogs.Settings
 
         public static SettingsDialog CreateFromGladeFile(Window parent, WindowGroup group)
         {
-            var builder = new Builder();
-            builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "settings-dialog.glade"));
-            return new SettingsDialog(builder, parent, group);
+            return new SettingsDialog(GtkHelper.GetBuilder("settings-dialog"), parent, group);
         }
     }
 }

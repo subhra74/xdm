@@ -95,9 +95,7 @@ namespace XDM.GtkUI.Dialogs.DownloadComplete
 
         public static DownloadCompleteDialog CreateFromGladeFile()
         {
-            var builder = new Builder();
-            builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "download-complete-window.glade"));
-            return new DownloadCompleteDialog(builder);
+            return new DownloadCompleteDialog(GtkHelper.GetBuilder("download-complete-window"));
         }
     }
 }

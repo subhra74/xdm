@@ -47,25 +47,9 @@ namespace XDM.GtkUI.Dialogs.AdvancedDownload
 
         private WindowGroup group;
 
-        //private static Builder builder = new Builder();
-
-        //static AdvancedDownloadDialog()
-        //{
-        //    builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "advanced-download-dialog.glade"));
-        //}
-
-        //public static Builder LoadBuilder()
-        //{
-        //    var builder = new Builder();
-        //    builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "advanced-download-dialog.glade"));
-        //    return builder;
-        //}
-
         public static AdvancedDownloadDialog CreateFromGladeFile(Window parent, WindowGroup group)
         {
-            var builder = new Builder();
-            builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "advanced-download-dialog.glade"));
-            return new AdvancedDownloadDialog(builder, parent, group);
+            return new AdvancedDownloadDialog(GtkHelper.GetBuilder("advanced-download-dialog"), parent, group);
         }
 
         public AdvancedDownloadDialog(Builder builder, Window parent, WindowGroup group) : base(builder.GetRawOwnedObject("dialog"))// base(TextResource.GetText("DESC_ADV_TITLE"), parent, DialogFlags.Modal)

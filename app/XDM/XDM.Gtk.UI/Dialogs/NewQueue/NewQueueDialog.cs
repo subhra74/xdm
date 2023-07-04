@@ -235,9 +235,7 @@ namespace XDM.GtkUI.Dialogs.NewQueue
             Action<DownloadQueue, bool> okAction,
             DownloadQueue? modifyingQueue)
         {
-            var builder = new Builder();
-            builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "new-queue-dialog.glade"));
-            return new NewQueueDialog(builder, parent, group, okAction, modifyingQueue);
+            return new NewQueueDialog(GtkHelper.GetBuilder("new-queue-dialog"), parent, group, okAction, modifyingQueue);
         }
     }
 

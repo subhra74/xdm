@@ -497,9 +497,7 @@ namespace XDM.GtkUI.Dialogs.QueueScheduler
 
         public static QueueSchedulerDialog CreateFromGladeFile(Window parent, WindowGroup group)
         {
-            var builder = new Builder();
-            builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "queue-manager-dialog.glade"));
-            return new QueueSchedulerDialog(builder, parent, group);
+            return new QueueSchedulerDialog(GtkHelper.GetBuilder("queue-manager-dialog"), parent, group);
         }
 
         private void LoadTexts()

@@ -76,9 +76,7 @@ namespace XDM.GtkUI.Dialogs.DeleteConfirm
 
         public static DeleteConfirmDialog CreateFromGladeFile(Window parent, WindowGroup group)
         {
-            var builder = new Builder();
-            builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "delete-confirm-dialog.glade"));
-            return new DeleteConfirmDialog(builder, parent, group);
+            return new DeleteConfirmDialog(GtkHelper.GetBuilder("delete-confirm-dialog"), parent, group);
         }
     }
 }

@@ -72,21 +72,25 @@ namespace XDM.Core.UI
             {
                 entry.EntryType = "Http";
                 entry.Name = shi.File ?? FileHelper.GetFileName(new Uri(shi.Uri));
+                entry.IsSelected = true;
             }
             else if (obj is DualSourceHTTPDownloadInfo dhi)
             {
                 entry.EntryType = "Dash";
                 entry.Name = dhi.File ?? FileHelper.GetFileName(new Uri(dhi.Uri1));
+                entry.IsSelected = true;
             }
             else if (obj is MultiSourceHLSDownloadInfo mhi)
             {
                 entry.EntryType = "Hls";
                 entry.Name = mhi.File ?? FileHelper.GetFileName(new Uri(mhi.VideoUri));
+                entry.IsSelected = true;
             }
             else if (obj is MultiSourceDASHDownloadInfo mdi)
             {
                 entry.EntryType = "MpegDash";
                 entry.Name = mdi.File ?? FileHelper.GetFileName(new Uri(mdi.Url));
+                entry.IsSelected = true;
             }
             else
             {

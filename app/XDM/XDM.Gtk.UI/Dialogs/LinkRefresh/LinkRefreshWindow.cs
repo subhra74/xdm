@@ -78,9 +78,7 @@ namespace XDM.GtkUI.Dialogs.LinkRefresh
 
         public static LinkRefreshWindow CreateFromGladeFile()
         {
-            var builder = new Builder();
-            builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "link-refresh-window.glade"));
-            return new LinkRefreshWindow(builder);
+            return new LinkRefreshWindow(GtkHelper.GetBuilder("link-refresh-window"));
         }
     }
 }

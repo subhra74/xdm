@@ -28,7 +28,13 @@ namespace XDM.GtkUI
             }
             Log.Debug("Application_Startup");
             Environment.SetEnvironmentVariable("GTK_USE_PORTAL", "1");
-            Gtk.Application.Init("xdm-app", ref args);
+            Gtk.Application.Init();
+
+            var gtkApp = new Gtk.Application("xdm.pp", GLib.ApplicationFlags.None);
+            gtkApp.Register(GLib.Cancellable.Current);
+
+
+            //Application.Init("xdm-app", ref args);
             GLib.ExceptionManager.UnhandledException += ExceptionManager_UnhandledException;
             var globalStyleSheet = @"
                                     .large-font{ font-size: 16px; }
@@ -39,39 +45,6 @@ namespace XDM.GtkUI
             var provider = new CssProvider();
             provider.LoadFromData(globalStyleSheet);
             Gtk.StyleContext.AddProviderForScreen(screen, provider, 800);
-            //var screen = Gdk.Screen.Default;
-            //var provider = new CssProvider();
-            //provider.LoadFromData(@".dark 
-            //                                    {
-            //                                        color: gray;
-            //                                        background: rgb(36,41,46);
-            //                                    }
-
-            //                                    treeview.view :selected 
-            //                                    {
-            //                                        background-color: rgb(10,106,182);
-            //                                        color: white;
-            //                                    }
-            //.listt
-            //{
-            //font-family: Segoe UI;
-            //}
-            //                                    .dark2
-            //                                    {
-            //                                        color: gray;
-            //                                        background: rgb(35,35,35);
-            //                                        /*background: rgb(36,41,46);*/
-            //                                    }
-            //                                    .toolbar-border-dark
-            //                                    {  
-            //                                        border-bottom: 1px solid rgb(20,20,20);
-            //                                    }
-            //                                    .toolbar-border-light
-            //                                    {  
-            //                                        border-bottom: 2px solid rgb(240,240,240);
-            //                                    }
-            //                                  ");
-            //Gtk.StyleContext.AddProviderForScreen(screen, provider, 800);
 
             ServicePointManager.ServerCertificateValidationCallback += (a, b, c, d) => true;
             ServicePointManager.DefaultConnectionLimit = 100;
@@ -95,6 +68,10 @@ namespace XDM.GtkUI
             var app = new XDMApp();
             var win = new MainWindow();
 
+
+            //gtkApp.AddSignalHandler("NSApplicationWillTerminate",ApplicationContext_Quit);
+
+            gtkApp.AddWindow(win);
             Log.Debug("Configuring app context...");
 
             ApplicationContext.FirstRunCallback += ApplicationContext_FirstRunCallback;
@@ -116,6 +93,12 @@ namespace XDM.GtkUI
 
             Gtk.Application.Run();
         }
+
+        private static void ApplicationContext_Quit(object? sender, EventArgs e)
+        {
+            Console.WriteLine("Quit");
+        }
+
 
         private static void ApplicationContext_FirstRunCallback(object? sender, EventArgs e)
         {

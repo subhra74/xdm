@@ -48,14 +48,13 @@ namespace XDM.GtkUI.Dialogs.NewDownload
 
         public static NewDownloadWindow CreateFromGladeFile()
         {
-            var builder = new Builder();
-            builder.AddFromFile(IoPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "glade", "new-download-window.glade"));
-            return new NewDownloadWindow(builder);
+            return new NewDownloadWindow(GtkHelper.GetBuilder("new-download-window"));
         }
 
         private NewDownloadWindow(Builder builder) : base(builder.GetRawOwnedObject("window"))
         {
             builder.Autoconnect(this);
+            this.lblFileSize.Text = "---";
             SetDefaultSize(500, 300);
             KeepAbove = true;
 
