@@ -30,12 +30,13 @@ namespace XDM.GtkUI
             Environment.SetEnvironmentVariable("GTK_USE_PORTAL", "1");
             Gtk.Application.Init();
 
-            var gtkApp = new Gtk.Application("xdm.pp", GLib.ApplicationFlags.None);
+            var gtkApp = new Gtk.Application("xdm.app", GLib.ApplicationFlags.None);
             gtkApp.Register(GLib.Cancellable.Current);
 
 
             //Application.Init("xdm-app", ref args);
             GLib.ExceptionManager.UnhandledException += ExceptionManager_UnhandledException;
+            
             var globalStyleSheet = @"
                                     .large-font{ font-size: 16px; }
                                     .medium-font{ font-size: 14px; }
@@ -72,6 +73,7 @@ namespace XDM.GtkUI
             //gtkApp.AddSignalHandler("NSApplicationWillTerminate",ApplicationContext_Quit);
 
             gtkApp.AddWindow(win);
+			
             Log.Debug("Configuring app context...");
 
             ApplicationContext.FirstRunCallback += ApplicationContext_FirstRunCallback;

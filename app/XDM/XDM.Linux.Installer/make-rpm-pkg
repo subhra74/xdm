@@ -60,7 +60,6 @@ Release:    	1%{?dist}
 Summary:    	Xtreme Download Manager
 AutoReqProv: 	no
 Requires:   	gtk3 >= 3.22
-Requires:   	sqlite3
 Requires:   	(ffmpeg-free or ffmpeg)
 
 Group:      	System Environment/Base

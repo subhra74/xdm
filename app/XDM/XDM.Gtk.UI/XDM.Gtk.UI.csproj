@@ -27,8 +27,9 @@
 
   <ItemGroup>
     <PackageReference Include="GtkSharp" Version="3.24.24.95" />
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.8" />
+    <!--<PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.8" />-->
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.116" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' != 'net3.5' ">

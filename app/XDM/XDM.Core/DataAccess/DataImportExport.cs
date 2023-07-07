@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using TraceLog;
-#if NET5_0_OR_GREATER
+#if OSX
 using Microsoft.Data.Sqlite;
 #else
 using System.Data.SQLite;
@@ -52,7 +52,7 @@ namespace XDM.Core.DataAccess
 //        }
 
         public static bool CopyFromFile(
-#if NET5_0_OR_GREATER
+#if OSX
             SqliteConnection sql,
 #else
             SQLiteConnection sql,
@@ -62,7 +62,7 @@ namespace XDM.Core.DataAccess
             try
             {
                 using var attachCmd = new
-#if NET5_0_OR_GREATER
+#if OSX
             SqliteCommand
 #else
             SQLiteCommand
@@ -73,7 +73,7 @@ namespace XDM.Core.DataAccess
                 try
                 {
                     using var mergeCmd = new
-#if NET5_0_OR_GREATER
+#if OSX
             SqliteCommand
 #else
             SQLiteCommand
@@ -89,7 +89,7 @@ namespace XDM.Core.DataAccess
                     Log.Debug(ex, ex.Message);
                 }
                 using var detachCmd = new
-#if NET5_0_OR_GREATER
+#if OSX
             SqliteCommand
 #else
             SQLiteCommand

@@ -23,7 +23,7 @@ cat <<EOF > "xdman_gtk_${VERSION}_amd64/DEBIAN/control"
 Package: xdman
 Version: ${VERSION}
 Architecture: amd64
-Depends: libgtk-3-0 (>= 3.22.11), sqlite3
+Depends: libgtk-3-0 (>= 3.22.11)
 Recommends: ffmpeg
 Maintainer: Subhra Das Gupta
 Description: Open source download accelerator and video downloader.

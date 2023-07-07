@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
-#if NET5_0_OR_GREATER
+using TraceLog;
+#if OSX
 using Microsoft.Data.Sqlite;
 #else
 using System.Data.SQLite;
@@ -25,7 +26,7 @@ namespace XDM.Core.DataAccess
         bool Read();
     }
 
-#if NET5_0_OR_GREATER
+#if OSX
     internal class SQLiteDataReaderWrapper : ISQLiteDataReaderWrapper
     {
         private SqliteDataReader _reader;
@@ -177,7 +178,7 @@ namespace XDM.Core.DataAccess
 
     internal class SqliteWrapper
     {
-#if NET5_0_OR_GREATER
+#if OSX
         private SqliteConnection _connection;
         public SqliteConnection Connection => _connection;
 #else
@@ -188,7 +189,8 @@ namespace XDM.Core.DataAccess
 
         public SqliteWrapper(string file)
         {
-#if NET5_0_OR_GREATER
+            Log.Debug($"Initialize SQLite from '{file}'...");
+#if OSX
             string cs = $"Data Source={file}";
             _connection = new SqliteConnection(cs);
             _connection.Open();
@@ -201,11 +203,12 @@ namespace XDM.Core.DataAccess
             _connection = new SQLiteConnection(cs);
             _connection.Open();
 #endif
+            Log.Debug("Initialize SQLite DONE.");
         }
 
         public ISQLiteCommandWrapper CreateCommand(string sql)
         {
-#if NET5_0_OR_GREATER
+#if OSX
             return new SQLiteCommandWrapper(new SqliteCommand(sql, _connection));
 #else
             return new SQLiteCommandWrapper(new SQLiteCommand(sql, _connection));
