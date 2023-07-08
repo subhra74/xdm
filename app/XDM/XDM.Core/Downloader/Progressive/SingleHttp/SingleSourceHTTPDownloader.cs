@@ -346,7 +346,6 @@ namespace XDM.Core.Downloader.Progressive.SingleHttp
                     var buf = System.Buffers.ArrayPool<byte>.Shared.Rent(5 * 1024 * 1024);
 #endif
 
-
                     var outFile = state!.ConvertToMp3 ? Path.Combine(this.GetState().TempDir!, Guid.NewGuid().ToString())
                         : this.TargetFile;
                     using var outfs = new FileStream(outFile!, FileMode.Create, FileAccess.Write);
@@ -408,6 +407,7 @@ namespace XDM.Core.Downloader.Progressive.SingleHttp
                         }
 
                         if (this.cancelFlag.IsCancellationRequested) return;
+                        outfs.Close();
 
                         if (state!.ConvertToMp3)
                         {

@@ -30,6 +30,7 @@ namespace XDM.GtkUI.Dialogs.NewVideoDownload
         [UI] private Button btnMore;
         [UI] private Gtk.Menu menu1;
         [UI] private Image ImgFileIcon;
+        [UI] private CheckButton ChkMp3;
 
         private WindowGroup windowGroup;
 
@@ -79,12 +80,14 @@ namespace XDM.GtkUI.Dialogs.NewVideoDownload
             btnDownloadNow.Label = TextResource.GetText("ND_DOWNLOAD_NOW");
             btnDownloadLater.Label = TextResource.GetText("ND_DOWNLOAD_LATER");
             btnMore.Label = TextResource.GetText("ND_MORE");
+            ChkMp3.Label = TextResource.GetText("MSG_SAVE_AS_MP3");
 
             CmbLocation.Changed += CmbLocation_Changed;
             this.Destroyed += Window_Closed;
             btnDownloadNow.Clicked += btnDownload_Click;
             //btnDownloadLater.Clicked += btnDownloadLater_Click;
             btnMore.Clicked += btnAdvanced_Click;
+            ChkMp3.Toggled += ChkMp3_Toggled;
 
             dropdownItems = GtkHelper.PopulateComboBox(CmbLocation);
 
@@ -98,6 +101,11 @@ namespace XDM.GtkUI.Dialogs.NewVideoDownload
             this.ShowAll();
 
             GtkHelper.AttachSafeDispose(this);
+        }
+
+        private void ChkMp3_Toggled(object? sender, EventArgs e)
+        {
+            Mp3CheckChanged?.Invoke(this, EventArgs.Empty);
         }
 
         private void CmbLocation_Changed(object? sender, EventArgs e)
@@ -192,12 +200,12 @@ namespace XDM.GtkUI.Dialogs.NewVideoDownload
 
         public bool ShowMp3Checkbox
         {
-            get; set;
-            //get => ChkMp3.Visibility == Visibility.Visible;
-            //set => ChkMp3.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
+            //get; set;
+            get => ChkMp3.Visible;
+            set => ChkMp3.Visible = value;
         }
-
-        public bool IsMp3CheckboxChecked { get; set; }/*{ get => ChkMp3.IsChecked ?? false; set => ChkMp3.IsChecked = value; }*/
+        
+        public bool IsMp3CheckboxChecked /*{ get; set; }*/{ get => ChkMp3.Active ; set => ChkMp3.Active = value; }
 
         public void DisposeWindow()
         {

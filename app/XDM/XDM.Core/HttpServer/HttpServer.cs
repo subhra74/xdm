@@ -55,7 +55,7 @@ namespace XDM.Core.HttpServer
                 }
                 catch (Exception ex)
                 {
-                    Log.Debug(ex, ex.Message);
+                    //Log.Debug(ex, ex.Message);
                 }
                 finally
                 {

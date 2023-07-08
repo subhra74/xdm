@@ -543,14 +543,19 @@ namespace XDM.Core.Downloader.Progressive
 
         protected virtual void DeleteFileParts()
         {
-            try
+            for(var i = 0; i < 10; i++)
             {
-                Log.Debug("Deleting temp files in: " + this.GetState().TempDir);
-                Directory.Delete(this.GetState().TempDir, true);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "DeleteFileParts");
+                try
+                {
+                    Log.Debug("Deleting temp files in: " + this.GetState().TempDir);
+                    Directory.Delete(this.GetState().TempDir, true);
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex, "DeleteFileParts");
+                }
+                Thread.Sleep(500);
             }
         }
 
