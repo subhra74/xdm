@@ -18,6 +18,7 @@ Romanian (ROMÂNĂ)=Romanian.txt
 Russian(Rусский)=Russian.txt
 Serbian - Latin (Srpski (latinica))=Serbian - Latin.txt
 Serbian Cyrillic (Српски (ћирилица))=Serbian Cyrillic.txt
+Sinhala (සිංහල)=Sinhala.txt
 Spanish (Español)=Spanish.txt
 Traditional Chinese - Taiwan (繁體中文(台灣))=Traditional Chinese - Taiwan.txt
 Turkish(Türkçe)=Turkish.txt
