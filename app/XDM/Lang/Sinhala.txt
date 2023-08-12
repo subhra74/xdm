@@ -1,4 +1,3 @@
-LANG=සිංහල
 DESC_NEW=නව
 DESC_DEL=මකන්න
 MENU_PAUSE=විරාමයක්
