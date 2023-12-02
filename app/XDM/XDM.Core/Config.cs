@@ -71,7 +71,7 @@ namespace XDM.Core
 
         public static string[] DefaultBlockedHosts => new string[]
             {
-                "update.microsoft.com","windowsupdate.com","thwawte.com"
+                "update.microsoft.com","windowsupdate.com","thawte.com"
             };
 
         public string[] BlockedHosts { get; set; }
