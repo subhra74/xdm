@@ -60,7 +60,7 @@ public class AppWindow extends JFrame implements ActionListener {
     var panel = new JPanel(new BorderLayout(10, 0));
     panel.add(toolbar.getComponent(), BorderLayout.NORTH);
     panel.add(listView.getComponent());
-    panel.setBorder(new EmptyBorder(10, 0, 0, 0));
+    panel.setBorder(new EmptyBorder(7, 0, 0, 0));
     var splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
     splitPane.setBorder(new MatteBorder(1, 0, 0, 0, Color.BLACK));
     splitPane.setDividerLocation(180);

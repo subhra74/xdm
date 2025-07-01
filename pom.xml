@@ -8,7 +8,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>xdm-core</module>
-        <module>xdm-app2</module>
+        <!--        <module>xdm-app2</module>-->
         <module>xdm-app</module>
     </modules>
 </project>
