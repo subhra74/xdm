@@ -1,0 +1,13 @@
+package xdm.core.constants;
+
+public enum ErrorCode {
+  ERR_INVALID_RESP,
+  ERR_CONN_FAILED,
+  ERR_SESSION_EXPIRED,
+  ERR_NO_RESUME,
+  ERR_ASM_FAILED,
+  DISK_FAILURE,
+  RESUME_FAILED,
+  INTERNAL_ERROR,
+  FFMPEG_FAILED,
+}

@@ -1,0 +1,331 @@
+package xdm.app.service.impl;
+
+import xdm.app.AppContext;
+import xdm.app.constants.DownloadEntryState;
+import xdm.app.misc.SleepBlocker;
+import xdm.app.models.DownloadEntry;
+import xdm.app.models.DownloaderHolder;
+import xdm.app.service.DownloadsControllerService;
+import xdm.core.DownloadProgressListener;
+import xdm.core.constants.ErrorCode;
+import xdm.core.downloaders.AbstractDownloader;
+import xdm.core.downloaders.Metadata;
+import xdm.core.downloaders.http.HttpDownloader;
+import xdm.core.downloaders.http.HttpMetadata;
+import xdm.core.util.FileUtils;
+import xdm.core.util.MetadataStore;
+import xdman.ui.res.StringResource;
+import xdman.util.Logger;
+
+import java.io.File;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
+public class DownloadsControllerServiceImpl implements DownloadsControllerService {
+  private static final Logger logger = Logger.getLogger(DownloadsControllerServiceImpl.class);
+  private final Map<Long, DownloaderHolder> activeDownloads = new ConcurrentHashMap<>();
+  private final Map<Long, Boolean> pendingDownloads =
+      Collections.synchronizedMap(new LinkedHashMap<>());
+  private final DownloadProgressListener listener;
+  private final SleepBlocker sleepBlocker = new SleepBlocker();
+
+  public DownloadsControllerServiceImpl() {
+    this.listener =
+        new DownloadProgressListener() {
+          @Override
+          public void downloadFinished(long id) {
+            logger.info("Download finished...");
+            onDownloadFinished(id);
+          }
+
+          @Override
+          public void downloadFailed(long id, ErrorCode errorCode) {
+            onDownloadFailed(id, errorCode);
+          }
+
+          @Override
+          public void downloadStopped(long id) {
+            onDownloadStopped(id);
+          }
+
+          @Override
+          public void downloadConfirmed(long id) {
+            onDownloadConfirmed(id);
+          }
+
+          @Override
+          public void downloadUpdated(long id) {
+            onDownloadUpdate(id);
+          }
+
+          @Override
+          public String getOutputFolder(long id) {
+            return getDownloadFolder(id);
+          }
+
+          @Override
+          public String getOutputFileName(long id) {
+            return getTargetFileName(id);
+          }
+        };
+  }
+
+  public void startDownload(Metadata metadata, boolean startNow, long queueId) {
+    MetadataStore.save(metadata);
+    var id = metadata.getId();
+    final AbstractDownloader downloader = createDownloader(metadata);
+    if (downloader == null) {
+      return;
+    }
+    if (queueId != -1) {
+      AppContext.INSTANCE.getQueueService().attachToQueue(queueId, List.of(id));
+    }
+    var ent =
+        DownloadEntry.builder()
+            .id(id)
+            .state(startNow ? DownloadEntryState.DOWNLOADING : DownloadEntryState.PAUSED)
+            .fileName(metadata.getFileName())
+            .dateEpoch(System.currentTimeMillis())
+            .build();
+    if (startNow
+        && activeDownloads.size()
+            >= AppContext.INSTANCE.getConfigService().getMaxParallelDownloads()) {
+      startNow = false;
+      pendingDownloads.put(id, false);
+    }
+
+    AppContext.INSTANCE.getDownloadsDbService().add(ent);
+    AppContext.INSTANCE.getDownloadsDbService().save();
+    AppContext.INSTANCE.getAppControllerService().addDownloadInView(id);
+
+    if (startNow) {
+      this.activeDownloads.put(
+          id, DownloaderHolder.builder().downloader(downloader).isNonInteractive(false).build());
+      if (AppContext.INSTANCE.getConfigService().shouldShowDownloadProgressWindow()) {
+        AppContext.INSTANCE.getAppControllerService().showDownloadProgressWindow(id);
+      }
+      downloader.start();
+    }
+  }
+
+  private synchronized void onDownloadFinished(long id) {
+    try {
+      var value = activeDownloads.remove(id);
+      if (value == null) {
+        return;
+      }
+      var nonInteractive = value.isNonInteractive();
+      var downloader = value.getDownloader();
+
+      AppContext.INSTANCE.getAppControllerService().hideDownloadProgressWindow(id);
+
+      var ent = AppContext.INSTANCE.getDownloadsDbService().getById(id);
+      ent.setState(DownloadEntryState.FINISHED);
+      if (downloader != null && downloader.getSize() < 0) {
+        ent.setSize(downloader.getDownloaded());
+        ent.setFileName(downloader.getMetadata().getFileName());
+      }
+      AppContext.INSTANCE.getDownloadsDbService().save();
+
+      AppContext.INSTANCE.getAppControllerService().updateDownloadInView(id);
+
+      var metadata = MetadataStore.get(id);
+      if (metadata == null) {
+        return;
+      }
+
+      var finalFolder = AppContext.INSTANCE.getConfigService().getFolderForDownload(metadata);
+      var finalFileName = metadata.getFileName();
+      var finalFilePath = new File(finalFolder, finalFileName).getAbsolutePath();
+
+      if (Boolean.FALSE.equals(nonInteractive)
+          && AppContext.INSTANCE.getConfigService().shouldShowDownloadCompleteWindow()) {
+        AppContext.INSTANCE
+            .getAppControllerService()
+            .showDownloadCompleteWindow(id, finalFolder, finalFileName);
+      }
+      if (AppContext.INSTANCE.getConfigService().shouldRunVirusScan()) {
+        AppContext.INSTANCE.getPlatformService().runVirusScan(finalFilePath);
+      }
+      if (AppContext.INSTANCE.getConfigService().shouldRunCommand()) {
+        AppContext.INSTANCE.getPlatformService().runCustomCommand(finalFilePath);
+      }
+      if (isInactive() && AppContext.INSTANCE.getConfigService().shouldShutdownAfterAllDone()) {
+        AppContext.INSTANCE.getPlatformService().shutdownPC();
+      }
+    } finally {
+      processNextDownload();
+    }
+  }
+
+  private synchronized void onDownloadFailed(long id, ErrorCode errorCode) {
+    activeDownloads.remove(id);
+    var ent = AppContext.INSTANCE.getDownloadsDbService().getById(id);
+    ent.setState(DownloadEntryState.ERROR);
+    AppContext.INSTANCE.getDownloadsDbService().save();
+    AppContext.INSTANCE.getAppControllerService().updateDownloadInView(id);
+    AppContext.INSTANCE
+        .getAppControllerService()
+        .showErrorInProgressWindow(id, StringResource.get("ERR_MSG_" + errorCode));
+    processNextDownload();
+  }
+
+  private synchronized void onDownloadStopped(long id) {
+    activeDownloads.remove(id);
+    var ent = AppContext.INSTANCE.getDownloadsDbService().getById(id);
+    ent.setState(DownloadEntryState.PAUSED);
+    AppContext.INSTANCE.getDownloadsDbService().save();
+    AppContext.INSTANCE.getAppControllerService().updateDownloadInView(id);
+    AppContext.INSTANCE.getAppControllerService().hideDownloadProgressWindow(id);
+    processNextDownload();
+  }
+
+  private void onDownloadUpdate(long id) {
+    var downloader = activeDownloads.get(id);
+    if (downloader != null) {
+      var ent = AppContext.INSTANCE.getDownloadsDbService().getById(id);
+      ent.setDownloaded(downloader.getDownloader().getDownloaded());
+      ent.setProgress(downloader.getDownloader().getProgress().get());
+      ent.setSpeed(downloader.getDownloader().getDownloadSpeed());
+      ent.setEta(downloader.getDownloader().getEta());
+      AppContext.INSTANCE.getAppControllerService().updateDownloadInView(id);
+      AppContext.INSTANCE
+          .getAppControllerService()
+          .updateProgressWindow(id, downloader.getDownloader());
+    }
+  }
+
+  private void onDownloadConfirmed(long id) {
+    var downloader = activeDownloads.get(id);
+    if (downloader != null) {
+      var ent = AppContext.INSTANCE.getDownloadsDbService().getById(id);
+      ent.setFileName(downloader.getDownloader().getMetadata().getFileName());
+      ent.setSize(downloader.getDownloader().getSize());
+      AppContext.INSTANCE.getDownloadsDbService().save();
+      AppContext.INSTANCE.getAppControllerService().updateDownloadInView(id);
+      AppContext.INSTANCE
+          .getAppControllerService()
+          .updateProgressWindow(id, downloader.getDownloader());
+    }
+  }
+
+  private String getDownloadFolder(long id) {
+    var downloader = activeDownloads.get(id);
+    if (downloader == null) {
+      logger.info("Downloader expected, found none");
+      return AppContext.INSTANCE.getConfigService().getDefaultDownloadFolder();
+    }
+    return AppContext.INSTANCE
+        .getConfigService()
+        .getFolderForDownload(downloader.getDownloader().getMetadata());
+  }
+
+  private String getTargetFileName(long id) {
+    var downloader = activeDownloads.get(id);
+    if (downloader == null) {
+      logger.info("Downloader expected, found none");
+      return "File";
+    }
+    if (AppContext.INSTANCE.getConfigService().shouldAutoRenameOnConflict()) {
+      return FileUtils.getUniqueFileName(
+          AppContext.INSTANCE
+              .getConfigService()
+              .getFolderForDownload(downloader.getDownloader().getMetadata()),
+          downloader.getDownloader().getMetadata().getFileName());
+    }
+    return downloader.getDownloader().getMetadata().getFileName();
+  }
+
+  private synchronized void processNextDownload() {
+    if (!pendingDownloads.isEmpty()) {
+      var nextItem = pendingDownloads.entrySet().iterator().next();
+      pendingDownloads.remove(nextItem.getKey());
+      resumeDownload(List.of(nextItem.getKey()), nextItem.getValue());
+      return;
+    }
+    if (isInactive() && sleepBlocker.isActive()) {
+      sleepBlocker.stop();
+    }
+  }
+
+  public void resumeDownload(List<Long> idList, boolean nonInteractive) {
+    if (!sleepBlocker.isActive()) {
+      sleepBlocker.start();
+    }
+    for (var id : idList) {
+      var ent = AppContext.INSTANCE.getDownloadsDbService().getById(id);
+      if (ent == null || activeDownloads.containsKey(id) || pendingDownloads.containsKey(id)) {
+        continue;
+      }
+      if (activeDownloads.size()
+          > AppContext.INSTANCE.getConfigService().getMaxParallelDownloads()) {
+        ent.setState(DownloadEntryState.READY);
+        pendingDownloads.put(id, nonInteractive);
+        AppContext.INSTANCE.getAppControllerService().updateDownloadInView(id);
+        continue;
+      }
+      var metadata = MetadataStore.get(id);
+      if (metadata == null) {
+        logger.info("Metadata not found");
+        ent.setState(DownloadEntryState.ERROR);
+        AppContext.INSTANCE.getAppControllerService().updateDownloadInView(id);
+        continue;
+      }
+      final var downloader = createDownloader(metadata);
+      if (downloader == null) {
+        continue;
+      }
+      activeDownloads.put(
+          id,
+          DownloaderHolder.builder()
+              .downloader(downloader)
+              .isNonInteractive(nonInteractive)
+              .build());
+      if (AppContext.INSTANCE.getConfigService().shouldShowDownloadProgressWindow()
+          && !nonInteractive) {
+        AppContext.INSTANCE.getAppControllerService().showDownloadProgressWindow(id);
+        downloader.resume();
+      }
+    }
+  }
+
+  public void stopDownloads(List<Long> idList) {
+    var count = 0;
+    for (var id : idList) {
+      var downloader = activeDownloads.remove(id);
+      if (downloader != null) {
+        downloader.getDownloader().stop();
+      } else {
+        if (pendingDownloads.remove(id) != null) {
+          count++;
+        }
+        var ent = AppContext.INSTANCE.getDownloadsDbService().getById(id);
+        if (ent != null) {
+          ent.setState(DownloadEntryState.PAUSED);
+          AppContext.INSTANCE.getAppControllerService().updateDownloadInView(id);
+          AppContext.INSTANCE.getAppControllerService().hideDownloadProgressWindow(id);
+        }
+      }
+    }
+    if (count > 0) {
+      processNextDownload();
+    }
+  }
+
+  private AbstractDownloader createDownloader(Metadata metadata) {
+    if (metadata instanceof HttpMetadata httpMetadata) {
+      return new HttpDownloader(
+          metadata.getId(),
+          AppContext.INSTANCE.getConfigService().getTempFolder(),
+          httpMetadata,
+          this.listener,
+          null);
+    }
+    logger.info("Invalid metadata");
+    return null;
+  }
+
+  private boolean isInactive() {
+    return activeDownloads.isEmpty() && pendingDownloads.isEmpty();
+  }
+}

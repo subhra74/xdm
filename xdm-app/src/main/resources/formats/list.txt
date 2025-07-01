@@ -1,0 +1,18 @@
+#Format|size|vcodec|vbr|fr|vextra|acodec|abr|samplerate|aextra|desc|onlyaudio
+3GP|176x144|h263|64k|15||amr_nb|12.2k|8000|-ac 1|144p Old Mobile phone/Player|0
+3G2|176x144|h263|64k|15||amr_nb|12.2k|8000|-ac 1|144p Old Mobile phone/Player|0
+MP4|176x144|mpeg4|128k|15||aac|64k|11025|-ac 2|144p Old Mobile phone/Player|0
+MP4|320x176|mpeg4|128k|15||aac|64k|24000|-ac 2|176p Old Mobile phone/Player|0
+MP4|320x240|mpeg4|512k|24||aac|64k|44100|-ac 2|240p Old Mobile phone/Player|0
+MP4|176x144|h264|56k|12|-profile:v baseline|aac|24k|44100|-ac 2|144p Android Low|0
+MP4|480x360|h264|500k|25|-profile:v baseline|aac|128k|44100|-ac 2|360p Android/iPhone SD|0
+MP4|1280x720|h264|1200k|25|-profile:v baseline|aac|128k|44100|-ac 2|720p Android/iPhone HD|0
+MP4||h264|||-profile:v baseline|aac||||PC/Smartphone/Xbox|0
+MP4||h264|||-profile:v main -crf 18|aac||||HQ (x264 Main profile)|0
+MP4||h264|||-profile:v high -crf 18|aac||||HQ (x264 High profile)|0
+MP4||h264|||-profile:v high422 -crf 18|aac||||HQ Better Quality(x264 Hi422P)|0
+MP4||h264|||-profile:v high444 -crf 18|aac||||HQ Best Quality(x264 Hi444PP)|0
+MP4||libx265|||-crf 18|aac||||HQ HEVC|0
+MP3||||||libmp3lame|320k|44100||320 kbps|1
+MP3||||||libmp3lame|256k|44100||256 kbps|1
+MP3||||||libmp3lame|128k|44100||128 kbps|1

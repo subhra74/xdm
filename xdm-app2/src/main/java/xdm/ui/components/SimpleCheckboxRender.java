@@ -1,0 +1,44 @@
+package xdm.ui.components;
+
+import static xdm.core.util.XDMUtils.getScaledInt;
+
+import java.awt.*;
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import xdm.ui.res.ColorResource;
+import xdm.ui.res.FontResource;
+import xdm.ui.res.ImageResource;
+
+public class SimpleCheckboxRender extends JCheckBox implements ListCellRenderer<Object> {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 2719764994839662332L;
+
+	public SimpleCheckboxRender() {
+		setForeground(Color.WHITE);
+		setFont(FontResource.getNormalFont());
+		setOpaque(true);
+		setPreferredSize(new Dimension(getScaledInt(100), getScaledInt(30)));
+		setBorder(new EmptyBorder(getScaledInt(0), getScaledInt(5), 0, 0));
+		setIcon(ImageResource.getIcon("unchecked.png",16,16));
+		setSelectedIcon(ImageResource.getIcon("checked.png",16,16));
+	}
+
+	@Override
+	public Component getListCellRendererComponent(JList<? extends Object> list, Object value, int index,
+			boolean isSelected, boolean cellHasFocus) {
+		if (isSelected) {
+			setBackground(ColorResource.getSelectionColor());
+		} else {
+			setBackground(ColorResource.getDarkerBgColor());
+		}
+		if (value != null) {
+			setSelected(((BatchItem) value).selected);
+			setText(value == null ? "" : value.toString());
+		}
+		return this;
+	}
+
+}
