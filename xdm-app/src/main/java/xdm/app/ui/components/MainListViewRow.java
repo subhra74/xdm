@@ -32,13 +32,12 @@ public class MainListViewRow implements TableCellRenderer, TableCellEditor {
   private Icon icoChecked;
   private Icon icoFile;
 
-  public MainListViewRow(JTable table, MainTableModel model) {
+  public MainListViewRow(JTable table, MainListViewModel model) {
     if (model != null) { // Update when cell editor is active
       model.addTableModelListener(
           e -> {
             var r = e.getFirstRow();
-            System.out.println("r: "+r+" row count: "+table.getRowCount());
-            if(r>=table.getRowCount()){
+            if (r >= table.getRowCount()) {
               return;
             }
             var vr = table.convertRowIndexToView(r);

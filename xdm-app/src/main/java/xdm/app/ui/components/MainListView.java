@@ -1,6 +1,7 @@
 package xdm.app.ui.components;
 
-import xdm.app.models.DownloadEntry;
+import xdm.app.ui.screens.AppWindow;
+import xdman.util.XDMUtils;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -13,13 +14,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainListView {
-  private final MainTableModel model;
+  private final MainListViewModel model;
   private final JTable table;
   private final JScrollPane jsp;
   private int editingRow = -1;
 
   public MainListView() {
-    this.model = new MainTableModel();
+    this.model = new MainListViewModel();
     this.table = new JTable(model);
     table.addMouseMotionListener(
         new MouseAdapter() {

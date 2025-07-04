@@ -6,7 +6,7 @@ import xdm.app.models.DownloadEntry;
 import xdman.ListChangeListener;
 import xdman.util.Logger;
 
-public class MainTableModel extends AbstractTableModel implements ListChangeListener {
+public class MainListViewModel extends AbstractTableModel implements ListChangeListener {
 
   @Override
   public int getColumnCount() {
