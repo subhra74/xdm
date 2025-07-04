@@ -117,7 +117,7 @@ public class AppWindow extends JFrame implements ActionListener {
         AppMenuHandler.stopQueue(name);
       } else if (name.startsWith("START")) {
         AppMenuHandler.startQueue(name);
-      } else if ("ADD_URL".equals(name) || "MENU_ADD_URL".equals(name)) {
+      } else if ("TOOL_DOWNLOAD".equals(name) || "MENU_ADD_URL".equals(name)) {
         AppContext.INSTANCE.getAppControllerService().showNewDownloadWindow(null);
       } else if ("PAUSE".equals(name) || "MENU_PAUSE".equals(name)) {
         AppMenuHandler.pauseDownloads(this);

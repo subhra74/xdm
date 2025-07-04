@@ -37,6 +37,10 @@ public class MainListViewRow implements TableCellRenderer, TableCellEditor {
       model.addTableModelListener(
           e -> {
             var r = e.getFirstRow();
+            System.out.println("r: "+r+" row count: "+table.getRowCount());
+            if(r>=table.getRowCount()){
+              return;
+            }
             var vr = table.convertRowIndexToView(r);
             if (vr == viewRow && viewRow != -1) {
               var ent = (DownloadEntry) model.getValueAt(r, 0);
