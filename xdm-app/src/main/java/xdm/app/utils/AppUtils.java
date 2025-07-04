@@ -1,6 +1,8 @@
 package xdm.app.utils;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+
+import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
 
@@ -37,5 +39,14 @@ public class AppUtils {
     var dim = new Dimension(maxW, maxH);
     c1.setPreferredSize(dim);
     c2.setPreferredSize(dim);
+  }
+
+  public static void showMenu(Component target, JPopupMenu menu) {
+    menu.pack();
+    var menuWidth = menu.getPreferredSize().width;
+    var targetWidth = target.getPreferredSize().width;
+    var x = targetWidth - menuWidth;
+    menu.setInvoker(target);
+    menu.show(target, x, target.getHeight());
   }
 }

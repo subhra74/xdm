@@ -1,6 +1,8 @@
 package xdm.app.ui.components;
 
+import xdm.app.models.DownloadEntry;
 import xdm.app.ui.screens.AppWindow;
+import xdm.app.utils.AppUtils;
 import xdman.util.XDMUtils;
 
 import javax.swing.*;
@@ -18,6 +20,7 @@ public class MainListView {
   private final JTable table;
   private final JScrollPane jsp;
   private int editingRow = -1;
+  private JPopupMenu contextMenu;
 
   public MainListView() {
     this.model = new MainListViewModel();
@@ -37,8 +40,9 @@ public class MainListView {
             }
           }
         });
-    var renderer = new MainListViewRow(table, null);
+    var renderer = new MainListViewRow(table);
     var editor = new MainListViewRow(table, model);
+    editor.setOnMenuClick(entry -> showMenu(entry, editor));
 
     table.setTableHeader(null);
     table.setRowHeight(renderer.getHeight());
@@ -62,6 +66,19 @@ public class MainListView {
     jsp.setAutoscrolls(true);
   }
 
+  public void installPopupMenu(JPopupMenu popupMenu) {
+    this.contextMenu = popupMenu;
+  }
+
+  private void showMenu(DownloadEntry entry, MainListViewRow editor) {
+    if (this.contextMenu != null) {
+      prepareMenu(this.contextMenu);
+      editor.showMenu(this.contextMenu);
+    }
+  }
+
+  private void prepareMenu(JPopupMenu contextMenu) {}
+
   public void rowUpdated(int index) {
     model.fireTableRowsUpdated(index, index);
   }
@@ -72,5 +89,24 @@ public class MainListView {
 
   public Component getComponent() {
     return jsp;
+  }
+
+  public void installPopupMenu(JPopupMenu popupMenu, AppWindow window) {
+    table.addMouseListener(
+        new MouseAdapter() {
+
+          @Override
+          public void mouseReleased(MouseEvent me) {
+            if (me.getButton() == MouseEvent.BUTTON3
+                || SwingUtilities.isRightMouseButton(me)
+                || me.isPopupTrigger()
+                || XDMUtils.isMacPopupTrigger(me)) {
+              if (table.getRowCount() < 1) return;
+              if (table.getSelectedRows().length > 0) {
+                popupMenu.show(table, me.getX(), me.getY());
+              }
+            }
+          }
+        });
   }
 }

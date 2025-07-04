@@ -1,6 +1,7 @@
 package xdm.app.ui.components;
 
 import com.formdev.flatlaf.FlatClientProperties;
+import lombok.Setter;
 import xdm.app.constants.DownloadEntryState;
 import xdm.app.models.DownloadEntry;
 import xdm.app.utils.AppUtils;
@@ -10,12 +11,16 @@ import xdman.ui.res.StringResource;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.CellEditorListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.EventObject;
+import java.util.function.Consumer;
 
 public class MainListViewRow implements TableCellRenderer, TableCellEditor {
   private JPanel panel;
@@ -31,8 +36,34 @@ public class MainListViewRow implements TableCellRenderer, TableCellEditor {
   private Icon icoUnchecked;
   private Icon icoChecked;
   private Icon icoFile;
+  @Setter private Consumer<DownloadEntry> onPauseClick;
+  @Setter private Consumer<DownloadEntry> onResumeClick;
+  @Setter private Consumer<DownloadEntry> onOpenFileClick;
+  @Setter private Consumer<DownloadEntry> onOpenFolderClick;
+  @Setter private Consumer<DownloadEntry> onDeleteClick;
+  @Setter private Consumer<DownloadEntry> onMenuClick;
+  private JButton btnOpenFile;
+  private JButton btnOpenFolder;
+  private JButton btnPause;
+  private JButton btnResume;
+  private JButton btnDelete;
+  private JButton btnMenu;
+  private Component pauseGap;
+  private Component resumeGap;
+  private Component openFileGap;
+  private Component openFolderGap;
+  private Component buttonContainer;
+  private JTable table;
+  private MainListViewModel model;
+  private int prevSelectionCount;
+
+  public MainListViewRow(JTable table) {
+    this(table, null);
+  }
 
   public MainListViewRow(JTable table, MainListViewModel model) {
+    this.table = table;
+    this.model = model;
     if (model != null) { // Update when cell editor is active
       model.addTableModelListener(
           e -> {
@@ -44,11 +75,12 @@ public class MainListViewRow implements TableCellRenderer, TableCellEditor {
             if (vr == viewRow && viewRow != -1) {
               var ent = (DownloadEntry) model.getValueAt(r, 0);
               if (ent != null) {
-                updateLabelText(ent);
+                updateLabelText(ent, table.isRowSelected(vr));
               }
             }
           });
     }
+
     panel = new JPanel(new BorderLayout(8, 5));
     var p4 = new JPanel(new FlowLayout());
     p4.setOpaque(false);
@@ -60,51 +92,53 @@ public class MainListViewRow implements TableCellRenderer, TableCellEditor {
     icoFile = AppUtils.createSVGIcon("file-zip-fill.svg", 16, Color.WHITE);
     icon = new JLabel(icoFile);
     icon.setBorder(new EmptyBorder(7, 7, 7, 7));
-    icon.addMouseMotionListener(
-        new MouseAdapter() {
-          @Override
-          public void mouseMoved(MouseEvent e) {
-            if (editEntry != null && editEntry.isSelected()) {
-              return;
-            }
-            icon.setIcon(icoUnchecked);
-            //            var dim = icon.getSize();
-            //            var r = new Rectangle(dim.width / 2 - 7, dim.height / 2 - 7, 14, 14);
-            //            if (r.contains(e.getPoint())) {
-            //              icon.setIcon(icoChecked);
-            //            } else {
-            //              icon.setIcon(icoUnchecked);
-            //            }
-          }
-        });
+    //    icon.addMouseMotionListener(
+    //        new MouseAdapter() {
+    //          @Override
+    //          public void mouseMoved(MouseEvent e) {
+    //            if (editEntry != null && editEntry.isSelected()) {
+    //              return;
+    //            }
+    //            icon.setIcon(icoUnchecked);
+    //            //            var dim = icon.getSize();
+    //            //            var r = new Rectangle(dim.width / 2 - 7, dim.height / 2 - 7, 14,
+    // 14);
+    //            //            if (r.contains(e.getPoint())) {
+    //            //              icon.setIcon(icoChecked);
+    //            //            } else {
+    //            //              icon.setIcon(icoUnchecked);
+    //            //            }
+    //          }
+    //        });
     icon.addMouseListener(
         new MouseAdapter() {
           @Override
           public void mouseEntered(MouseEvent e) {
-            if (editEntry != null && editEntry.isSelected()) {
-              return;
-            }
-            icon.setIcon(icoUnchecked);
+            icon.setIcon(table.isRowSelected(viewRow) ? icoChecked : icoUnchecked);
           }
 
           @Override
           public void mouseExited(MouseEvent e) {
-            if (editEntry != null && editEntry.isSelected()) {
-              return;
-            }
-            icon.setIcon(icoFile);
+            var isSelectionMode = table.getSelectedRowCount() > 0;
+            icon.setIcon(
+                table.isRowSelected(viewRow)
+                    ? icoChecked
+                    : isSelectionMode ? icoUnchecked : icoFile);
           }
 
           @Override
           public void mouseClicked(MouseEvent e) {
-            if (editEntry == null) {
+            if (viewRow == -1) {
               return;
             }
-            editEntry.setSelected(!editEntry.isSelected());
-            if (editEntry.isSelected()) {
-              icon.setIcon(icoChecked);
-            } else {
-              icon.setIcon(icoUnchecked);
+            var wasInSelectionMode = table.getSelectedRowCount() > 0;
+            table.changeSelection(viewRow, 0, true, false);
+            var isInSelectionMode = table.getSelectedRowCount() > 0;
+            icon.setIcon(table.isRowSelected(viewRow) ? icoChecked : icoUnchecked);
+            updateLabelText(editEntry, table.isRowSelected(viewRow));
+            if (wasInSelectionMode != isInSelectionMode && model != null) {
+              table.revalidate();
+              table.repaint();
             }
           }
         });
@@ -136,8 +170,9 @@ public class MainListViewRow implements TableCellRenderer, TableCellEditor {
     content.add(lblTitle);
     content.add(lblInfo);
 
-    var p1 = new JPanel(new BorderLayout(10, 0));
+    var p1 = new JPanel(new BorderLayout(0, 0));
     panDetails = new JPanel(new BorderLayout());
+    panDetails.setBorder(new EmptyBorder(0, 0, 0, 10));
     prg = new JProgressBar();
     prg.setPreferredSize(new Dimension(50, 10));
     prg.setAlignmentY(Component.TOP_ALIGNMENT);
@@ -148,24 +183,81 @@ public class MainListViewRow implements TableCellRenderer, TableCellEditor {
     p1.add(panDetails);
     prg.setBorder(new EmptyBorder(0, 0, 5, 0));
 
-    var actions = Box.createHorizontalBox();
-    actions.setBorder(new EmptyBorder(10, 10, 10, 10));
-    var b1 = new JButton(AppUtils.createSVGIcon("pause-circle-line.svg", 16, Color.GRAY));
-    b1.putClientProperty("JButton.buttonType", "toolBarButton");
-    b1.addActionListener(
-        e -> {
-          System.out.println("Clicked: " + viewRow);
-        });
-    var b2 = new JButton(AppUtils.createSVGIcon("delete-bin-line.svg", 16, Color.GRAY));
-    b2.putClientProperty("JButton.buttonType", "toolBarButton");
-    actions.add(
-        b1); // new JLabel(AppUtils.createSVGIcon("pause-circle-line.svg", 16, Color.GRAY)));
-    actions.add(Box.createRigidArea(new Dimension(10, 10)));
-    actions.add(b2); // new JLabel(AppUtils.createSVGIcon("delete-bin-line.svg", 16, Color.GRAY)));
-    actions.add(Box.createRigidArea(new Dimension(5, 10)));
-    // actions.add(new JLabel(AppUtils.createSVGIcon("more-2-fill.svg", 20, Color.GRAY)));
+    var buttonContainer = Box.createHorizontalBox();
+    buttonContainer.setBorder(new EmptyBorder(10, 0, 10, 0));
 
-    p1.add(actions, BorderLayout.EAST);
+    btnPause =
+        createButton(
+            "pause-circle-line.svg",
+            e -> {
+              if (onPauseClick != null) {
+                onPauseClick.accept(editEntry);
+              }
+            });
+
+    btnResume =
+        createButton(
+            "play-circle-line.svg",
+            e -> {
+              if (onResumeClick != null) {
+                onResumeClick.accept(editEntry);
+              }
+            });
+
+    btnDelete =
+        createButton(
+            "delete-bin-line.svg",
+            e -> {
+              if (onDeleteClick != null) {
+                onDeleteClick.accept(editEntry);
+              }
+            });
+
+    btnMenu =
+        createButton(
+            "more-2-fill.svg",
+            e -> {
+              if (onMenuClick != null) {
+                onMenuClick.accept(editEntry);
+              }
+            });
+
+    btnOpenFile =
+        createButton(
+            "share-box-line.svg",
+            e -> {
+              if (onOpenFileClick != null) {
+                onOpenFileClick.accept(editEntry);
+              }
+            });
+
+    btnOpenFolder =
+        createButton(
+            "folder-6-line.svg",
+            e -> {
+              if (onOpenFolderClick != null) {
+                onOpenFolderClick.accept(editEntry);
+              }
+            });
+
+    pauseGap = Box.createRigidArea(new Dimension(5, 10));
+    resumeGap = Box.createRigidArea(new Dimension(5, 10));
+    openFileGap = Box.createRigidArea(new Dimension(5, 10));
+    openFolderGap = Box.createRigidArea(new Dimension(5, 10));
+
+    buttonContainer.add(btnPause);
+    buttonContainer.add(pauseGap);
+    buttonContainer.add(btnResume);
+    buttonContainer.add(resumeGap);
+    buttonContainer.add(btnOpenFolder);
+    buttonContainer.add(openFolderGap);
+    buttonContainer.add(btnOpenFile);
+    buttonContainer.add(openFileGap);
+    buttonContainer.add(btnDelete);
+    buttonContainer.add(Box.createRigidArea(new Dimension(2, 10)));
+    buttonContainer.add(btnMenu);
+
+    p1.add(buttonContainer, BorderLayout.EAST);
     p1.add(panDetails);
     p1.setOpaque(false);
     p4.setOpaque(false);
@@ -173,27 +265,40 @@ public class MainListViewRow implements TableCellRenderer, TableCellEditor {
     panel.add(p4, BorderLayout.WEST);
     panel.add(content);
     panel.add(p1, BorderLayout.EAST);
-    panel.setBorder(new EmptyBorder(0, 5, 5, 0));
+    panel.setBorder(new EmptyBorder(0, 5, 5, 5));
+
+    this.buttonContainer = buttonContainer;
+  }
+
+  private JButton createButton(String iconName, ActionListener e) {
+    var btn = new JButton(AppUtils.createSVGIcon(iconName, 16, Color.GRAY));
+    btn.putClientProperty("JButton.buttonType", "toolBarButton");
+    btn.addActionListener(e);
+    return btn;
   }
 
   public int getHeight() {
     return panel.getPreferredSize().height;
   }
 
-  //  private JLabel createStatusLabel(String iconName, String text, Font font) {
-  //    var l1 = new JLabel(AppUtils.createSVGIcon(iconName, 12, Color.GRAY));
-  //    l1.setFont(font);
-  //    l1.setForeground(Color.GRAY);
-  //    l1.setText(text);
-  //    return l1;
-  //  }
+  public void showMenu(JPopupMenu menu) {
+    AppUtils.showMenu(btnMenu, menu);
+  }
 
-  private void updateLabelText(DownloadEntry ent) {
-    if (ent.isSelected()) {
-      icon.setIcon(icoChecked);
-    } else {
-      icon.setIcon(icoFile);
-    }
+  private void updateLabelText(DownloadEntry ent, boolean isSelected) {
+    icon.setIcon(
+        isSelected ? icoChecked : table.getSelectedRowCount() > 0 ? icoUnchecked : icoFile);
+    buttonContainer.setVisible(this.table.getSelectedRowCount() == 0);
+    btnOpenFile.setVisible(ent.getState() == DownloadEntryState.FINISHED);
+    openFileGap.setVisible(btnOpenFile.isVisible());
+    btnOpenFolder.setVisible(ent.getState() == DownloadEntryState.FINISHED);
+    openFolderGap.setVisible(btnOpenFolder.isVisible());
+    btnPause.setVisible(ent.getState() == DownloadEntryState.DOWNLOADING);
+    pauseGap.setVisible(btnPause.isVisible());
+    btnResume.setVisible(
+        ent.getState() != DownloadEntryState.FINISHED
+            && ent.getState() != DownloadEntryState.DOWNLOADING);
+    resumeGap.setVisible(btnResume.isVisible());
     if (ent.getState() == DownloadEntryState.FINISHED) {
       lblInfo.setText(
           FormatUtilities.formatDateShort(ent.getDateEpoch())
@@ -236,8 +341,8 @@ public class MainListViewRow implements TableCellRenderer, TableCellEditor {
     }
   }
 
-  private Component getComp(JTable table, DownloadEntry value) {
-    updateLabelText(value);
+  private Component getComp(JTable table, DownloadEntry value, boolean isSelected) {
+    updateLabelText(value, isSelected);
     if (table != null) {
       panel.setBackground(table.getBackground());
     }
@@ -249,7 +354,7 @@ public class MainListViewRow implements TableCellRenderer, TableCellEditor {
       JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
     this.editEntry = null;
     this.viewRow = -1;
-    return getComp(table, (DownloadEntry) value);
+    return getComp(table, (DownloadEntry) value, isSelected);
   }
 
   @Override
@@ -257,7 +362,7 @@ public class MainListViewRow implements TableCellRenderer, TableCellEditor {
       JTable table, Object value, boolean isSelected, int row, int column) {
     this.editEntry = (DownloadEntry) value;
     this.viewRow = row;
-    return getComp(table, (DownloadEntry) value);
+    return getComp(table, (DownloadEntry) value, isSelected);
   }
 
   @Override

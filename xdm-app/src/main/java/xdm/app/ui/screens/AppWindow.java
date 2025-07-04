@@ -45,6 +45,8 @@ public class AppWindow extends JFrame implements ActionListener {
 
   private void initWindow() {
     this.listView = new MainListView();
+    this.createPopupMenu();
+    this.listView.installPopupMenu(this.popupCtx);
     var filterPanel = new FilterListPanel();
     var toolbar = new AppToolBar(s -> {}, this);
     toolbar.updateButtons(Collections.emptyList());
@@ -68,7 +70,7 @@ public class AppWindow extends JFrame implements ActionListener {
     splitPane.setRightComponent(panel);
     add(splitPane);
 
-    createPopupMenu();
+    // createPopupMenu();
 
     ToolTipManager.sharedInstance().setInitialDelay(500);
 
@@ -341,8 +343,8 @@ public class AppWindow extends JFrame implements ActionListener {
     addMenuItem("CTX_COPY_URL", popupCtx);
     addMenuItem("CTX_COPY_FILE", popupCtx);
     addMenuItem("MENU_PROPERTIES", popupCtx);
-    popupCtx.setInvoker(listView.getComponent());
-    // listView.installPopupMenu(popupCtx, this);
+    //    popupCtx.setInvoker(listView.getComponent());
+    //    listView.installPopupMenu(popupCtx, this);
   }
 
   public List<DownloadEntry> getSelectedDownloads() {
