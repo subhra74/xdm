@@ -1,8 +1,9 @@
 package xdm.app.ui.components;
 
+import lombok.Setter;
+import xdm.app.constants.DownloadEntryState;
 import xdm.app.models.DownloadEntry;
-import xdm.app.ui.screens.AppWindow;
-import xdm.app.utils.AppUtils;
+import xdman.ui.res.StringResource;
 import xdman.util.XDMUtils;
 
 import javax.swing.*;
@@ -10,21 +11,31 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class MainListView {
   private final MainListViewModel model;
   private final JTable table;
   private final JScrollPane jsp;
   private int editingRow = -1;
-  private JPopupMenu contextMenu;
+  private final JPopupMenu contextMenu;
+  private JMenuItem mSaveAs;
+  private JMenuItem mRefresh;
+  private JMenuItem mProgress;
+  private JMenuItem mCopyUrl;
+  private JMenuItem mCopyFile;
+  private JMenuItem mProperty;
+  @Setter private Consumer<Boolean> selectModeCallback;
 
   public MainListView() {
     this.model = new MainListViewModel();
     this.table = new JTable(model);
+    this.contextMenu = createContextMenu(this.table);
     table.addMouseMotionListener(
         new MouseAdapter() {
           @Override
@@ -64,20 +75,30 @@ public class MainListView {
     jsp.setViewportBorder(new EmptyBorder(5, 0, 0, 0));
     jsp.setBorder(new EmptyBorder(0, 0, 0, 0));
     jsp.setAutoscrolls(true);
-  }
 
-  public void installPopupMenu(JPopupMenu popupMenu) {
-    this.contextMenu = popupMenu;
+    table
+        .getSelectionModel()
+        .addListSelectionListener(
+            e -> {
+              if (!e.getValueIsAdjusting() && selectModeCallback != null) {
+                selectModeCallback.accept(table.getSelectedRowCount() > 0);
+              }
+            });
+
+    editor.setOnOpenFileClick(
+        e -> AppMenuHandler.openFile(e, SwingUtilities.windowForComponent(jsp)));
+    editor.setOnOpenFolderClick(
+        e -> AppMenuHandler.openFolder(e, SwingUtilities.windowForComponent(jsp)));
+    editor.setOnPauseClick(AppMenuHandler::pauseDownload);
+    editor.setOnResumeClick(AppMenuHandler::resumeDownload);
+    editor.setOnDeleteClick(
+        e -> AppMenuHandler.deleteDownload(e, SwingUtilities.windowForComponent(jsp)));
   }
 
   private void showMenu(DownloadEntry entry, MainListViewRow editor) {
-    if (this.contextMenu != null) {
-      prepareMenu(this.contextMenu);
-      editor.showMenu(this.contextMenu);
-    }
+    prepareMenu(this.contextMenu, entry);
+    editor.showMenu(this.contextMenu);
   }
-
-  private void prepareMenu(JPopupMenu contextMenu) {}
 
   public void rowUpdated(int index) {
     model.fireTableRowsUpdated(index, index);
@@ -91,10 +112,44 @@ public class MainListView {
     return jsp;
   }
 
-  public void installPopupMenu(JPopupMenu popupMenu, AppWindow window) {
+  private ActionListener createMenuListener() {
+    return e -> {
+      if (e.getSource() instanceof JComponent c) {
+        var name = c.getName();
+        if (name == null) {
+          return;
+        }
+        var ent = (DownloadEntry) contextMenu.getClientProperty("menu.context");
+        switch (name) {
+          case "CTX_SAVE_AS":
+            break;
+          case "MENU_REFRESH_LINK":
+            break;
+          case "LBL_SHOW_PROGRESS":
+            break;
+          case "CTX_COPY_URL":
+            break;
+          case "CTX_COPY_FILE":
+            break;
+          case "MENU_PROPERTIES":
+            break;
+        }
+      }
+    };
+  }
+
+  private JPopupMenu createContextMenu(JTable table) {
+    ActionListener a = createMenuListener();
+
+    var ctx = new JPopupMenu();
+    mSaveAs = addMenuItem("CTX_SAVE_AS", ctx, a);
+    mRefresh = addMenuItem("MENU_REFRESH_LINK", ctx, a);
+    mProgress = addMenuItem("LBL_SHOW_PROGRESS", ctx, a);
+    mCopyUrl = addMenuItem("CTX_COPY_URL", ctx, a);
+    mCopyFile = addMenuItem("CTX_COPY_FILE", ctx, a);
+    mProperty = addMenuItem("MENU_PROPERTIES", ctx, a);
     table.addMouseListener(
         new MouseAdapter() {
-
           @Override
           public void mouseReleased(MouseEvent me) {
             if (me.getButton() == MouseEvent.BUTTON3
@@ -103,10 +158,27 @@ public class MainListView {
                 || XDMUtils.isMacPopupTrigger(me)) {
               if (table.getRowCount() < 1) return;
               if (table.getSelectedRows().length > 0) {
-                popupMenu.show(table, me.getX(), me.getY());
+                ctx.show(table, me.getX(), me.getY());
               }
             }
           }
         });
+    return ctx;
+  }
+
+  private void prepareMenu(JPopupMenu contextMenu, DownloadEntry entry) {
+    mSaveAs.setVisible(entry.getState() != DownloadEntryState.FINISHED);
+    mRefresh.setVisible(entry.getState() == DownloadEntryState.PAUSED);
+    mProgress.setVisible(entry.getState() == DownloadEntryState.DOWNLOADING);
+    mCopyFile.setVisible(entry.getState() == DownloadEntryState.FINISHED);
+    contextMenu.putClientProperty("menu.context", entry);
+  }
+
+  private JMenuItem addMenuItem(String id, JComponent menu, ActionListener a) {
+    var mItem = new JMenuItem(StringResource.get(id));
+    mItem.setName(id);
+    mItem.addActionListener(a);
+    menu.add(mItem);
+    return mItem;
   }
 }

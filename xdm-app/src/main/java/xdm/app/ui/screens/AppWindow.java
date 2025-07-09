@@ -45,11 +45,12 @@ public class AppWindow extends JFrame implements ActionListener {
 
   private void initWindow() {
     this.listView = new MainListView();
-    this.createPopupMenu();
-    this.listView.installPopupMenu(this.popupCtx);
+    //    this.createPopupMenu();
+    //    this.listView.installPopupMenu(this.popupCtx);
     var filterPanel = new FilterListPanel();
     var toolbar = new AppToolBar(s -> {}, this);
-    toolbar.updateButtons(Collections.emptyList());
+    toolbar.setMultiSelectView(false);
+    listView.setSelectModeCallback(toolbar::setMultiSelectView);
     //    var filterPanel =
     //        new FilterPanel(
     //            f -> {
@@ -110,11 +111,18 @@ public class AppWindow extends JFrame implements ActionListener {
 
   @Override
   public void actionPerformed(ActionEvent e) {
-    if (e.getSource() instanceof JComponent) {
-      String name = ((JComponent) e.getSource()).getName();
+    if (e.getSource() instanceof JComponent c) {
+      var name = c.getName();
       if (name == null) {
         return;
       }
+
+      switch (name) {
+        case "TOOL_DOWNLOAD":
+          AppContext.INSTANCE.getAppControllerService().showNewDownloadWindow(null);
+          return;
+      }
+
       if (name.startsWith("STOP")) {
         AppMenuHandler.stopQueue(name);
       } else if (name.startsWith("START")) {
@@ -122,19 +130,19 @@ public class AppWindow extends JFrame implements ActionListener {
       } else if ("TOOL_DOWNLOAD".equals(name) || "MENU_ADD_URL".equals(name)) {
         AppContext.INSTANCE.getAppControllerService().showNewDownloadWindow(null);
       } else if ("PAUSE".equals(name) || "MENU_PAUSE".equals(name)) {
-        AppMenuHandler.pauseDownloads(this);
+        // AppMenuHandler.pauseDownloads(this);
       } else if ("CTX_COPY_URL".equals(name)) {
         AppMenuHandler.copyUrl(this);
       } else if ("LBL_SHOW_PROGRESS".equals(name)) {
         AppMenuHandler.showProgressWindow(this);
       } else if ("MENU_RESTART".equals(name)) {
-        AppMenuHandler.restartDownloads(this);
+        //        AppMenuHandler.restartDownloads(this);
       } else if ("RESUME".equals(name) || "MENU_RESUME".equals(name)) {
-        AppMenuHandler.resumeDownloads(this);
+        //        AppMenuHandler.resumeDownloads(this);
       } else if ("CTX_OPEN_FILE".equals(name)) {
         AppMenuHandler.openFile(this);
       } else if ("CTX_OPEN_FOLDER".equals(name)) {
-        AppMenuHandler.openFolder(this);
+        //        AppMenuHandler.openFolder(this);
       } else if ("MENU_EXIT".equals(name)) {
         XDMApp.getInstance().exit();
       } else if ("MENU_OPTIONS".equals(name) || "OPTIONS".equals(name)) {
@@ -155,7 +163,7 @@ public class AppWindow extends JFrame implements ActionListener {
       } else if ("MENU_DELETE_DWN".equals(name)
           || "DELETE".equals(name)
           || "DESC_DEL".equals(name)) {
-        AppMenuHandler.deleteDownloads(this);
+        //        AppMenuHandler.deleteDownloads(this);
       } else if ("MENU_DELETE_COMPLETED".equals(name)) {
         AppMenuHandler.deleteCompleted(this);
       } else if ("MENU_ABOUT".equals(name)) {

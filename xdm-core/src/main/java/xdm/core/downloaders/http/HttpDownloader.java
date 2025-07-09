@@ -9,13 +9,18 @@ import xdm.core.downloaders.AbstractChunkRetriever;
 import xdm.core.downloaders.AbstractSegmentedDownloader;
 import xdm.core.downloaders.Chunk;
 import xdm.core.downloaders.DownloaderType;
+import xdm.core.network.http.HeaderCollection;
+import xdm.core.network.http.HttpHeader;
 import xdm.core.network.http.PoolingHttpClient;
 import xdm.core.network.http.impl.PoolingHttpClientImpl;
 import xdm.core.util.*;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 public class HttpDownloader extends AbstractSegmentedDownloader {
   private final HttpMetadata metadata;
   private final PoolingHttpClient httpClient;
+  private final HttpState state;
   private static final Logger logger = LoggerFactory.getLogger(HttpDownloader.class);
 
   public HttpDownloader(
@@ -26,6 +31,18 @@ public class HttpDownloader extends AbstractSegmentedDownloader {
       InteractiveCredentialProvider credentialProvider) {
     super(DownloaderType.Http, id, tempFolder, listener, credentialProvider);
     this.metadata = metadata;
+    this.state =
+        HttpState.builder()
+            .id(id)
+            .url(metadata.getUrl())
+            .cookie(metadata.getCookies())
+            .fileName(metadata.getFileName())
+            .folder(metadata.getFolder())
+            .autoSelectFolder(metadata.isAutoSelectFolder())
+            .downloaded(new AtomicLong(0))
+            .fileSize(new AtomicLong(-1))
+            .tempFolder(tempFolder)
+            .build();
     this.httpClient = new PoolingHttpClientImpl(100);
   }
 
@@ -83,12 +100,19 @@ public class HttpDownloader extends AbstractSegmentedDownloader {
         }
       }
     } finally {
-      MetadataIO.save(metadata);
+      MetadataStore.save(metadata);
     }
   }
 
   @Override
   public HttpMetadata getMetadata() {
     return this.metadata;
+  }
+
+  @Override
+  protected void updateStateFinal(String fileName, String folder, long totalBytes) {
+    this.state.setFileName(fileName);
+    this.state.setFolder(folder);
+    this.state.getFileSize().set(totalBytes);
   }
 }

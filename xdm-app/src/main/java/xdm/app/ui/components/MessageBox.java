@@ -3,10 +3,11 @@ package xdm.app.ui.components;
 import xdman.constants.MessageBoxResult;
 
 import javax.swing.*;
+import java.awt.*;
 
 public class MessageBox {
   public static MessageBoxResult confirmWithCheckBox(
-      JFrame window, String title, String message, String chkMessage) {
+      Window window, String title, String message, String chkMessage) {
     var chk = new JCheckBox(chkMessage);
     if (JOptionPane.showOptionDialog(
             window,
@@ -28,7 +29,7 @@ public class MessageBox {
         == JOptionPane.YES_OPTION;
   }
 
-  public static void show(JFrame window, String title, String message) {
+  public static void show(Window window, String title, String message) {
     JOptionPane.showMessageDialog(window, message, title, JOptionPane.INFORMATION_MESSAGE);
   }
 }

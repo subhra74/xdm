@@ -1,14 +1,16 @@
 package xdm.app.ui.components;
 
+import xdm.app.AppContext;
+import xdm.app.constants.DownloadEntryState;
+import xdm.app.models.DownloadEntry;
 import xdm.app.ui.screens.AppWindow;
+import xdm.core.util.MetadataStore;
 import xdman.*;
 import xdman.constants.MessageBoxResult;
 // import xdman.downloaders.metadata.DashMetadata;
 // import xdman.downloaders.metadata.HdsMetadata;
 // import xdman.downloaders.metadata.HlsMetadata;
 // import xdman.downloaders.metadata.HttpMetadata;
-import xdman.network.http.HeaderCollection;
-import xdman.network.http.HttpHeader;
 import xdman.ui.components.BatchDownloadWnd;
 import xdman.ui.components.BatchPatternDialog;
 import xdman.ui.res.StringResource;
@@ -16,12 +18,80 @@ import xdman.util.Logger;
 import xdman.util.XDMUtils;
 
 import javax.swing.*;
+import java.awt.*;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
 
 public class AppMenuHandler {
+  public static void openFile(DownloadEntry ent, Window window) {
+    if (ent != null && ent.getState() == DownloadEntryState.FINISHED) {
+      Logger.log("Opening file for id: " + ent.getId());
+      var md = MetadataStore.get(ent.getId());
+      if (md != null) {
+        try {
+          XDMUtils.openFile(md.getFileName(), md.getFolder());
+        } catch (FileNotFoundException e) {
+          Logger.log(e);
+          MessageBox.show(
+              window,
+              StringResource.get("ERR_MSG_FILE_NOT_FOUND"),
+              StringResource.get("ERR_MSG_FILE_NOT_FOUND_MSG"));
+        } catch (Exception e) {
+          Logger.log(e);
+        }
+      }
+    }
+  }
+
+  public static void openFolder(DownloadEntry ent, Window window) {
+    if (ent.getState() == DownloadEntryState.FINISHED) {
+      Logger.log("Opening folder for id: " + ent.getId());
+      var md = MetadataStore.get(ent.getId());
+      if (md != null) {
+        try {
+          XDMUtils.openFolder(md.getFileName(), md.getFolder());
+        } catch (FileNotFoundException e) {
+          Logger.log(e);
+          MessageBox.show(
+              window,
+              StringResource.get("ERR_MSG_FILE_NOT_FOUND"),
+              StringResource.get("ERR_MSG_FILE_NOT_FOUND_MSG"));
+        } catch (Exception e) {
+          Logger.log(e);
+        }
+      }
+    }
+  }
+
+  public static void restartDownload(DownloadEntry ent) {
+    AppContext.INSTANCE.getDownloadsControllerService().restartDownload(ent.getId());
+  }
+
+  public static void resumeDownload(DownloadEntry ent) {
+    AppContext.INSTANCE.getDownloadsControllerService().resumeDownload(ent.getId(), false);
+  }
+
+  public static void pauseDownload(DownloadEntry ent) {
+    AppContext.INSTANCE.getDownloadsControllerService().pauseDownload(ent.getId());
+  }
+
+  public static void deleteDownload(DownloadEntry ent, Window window) {
+    var ret =
+        MessageBox.confirmWithCheckBox(
+            window,
+            StringResource.get("DEL_TITLE"),
+            StringResource.get("DEL_SEL_TEXT"),
+            StringResource.get("LBL_DELETE_FILE"));
+    if (ret != MessageBoxResult.CANCEL) {
+      //      XDMApp.getInstance()
+      //          .deleteDownloads(
+      //              items.stream().map(DownloadEntry::getId).collect(Collectors.toList()),
+      //              ret == MessageBoxResult.YES_WITH_SELECTION);
+    }
+  }
+
   public static void stopQueue(String name) {
     String queueId = "";
     String[] arr = name.split(":");
@@ -123,74 +193,11 @@ public class AppMenuHandler {
     }
   }
 
-//  public static void openFile(DownloadEntry ent, AppWindow window) {
-//    if (ent != null && ent.getState() == XDMConstants.FINISHED) {
-//      try {
-//        XDMUtils.openFile(ent.getFile(), XDMApp.getInstance().getFolder(ent));
-//      } catch (FileNotFoundException e) {
-//        Logger.log(e);
-//        xdm.app.ui.components.MessageBox.show(
-//            window,
-//            StringResource.get("ERR_MSG_FILE_NOT_FOUND"),
-//            StringResource.get("ERR_MSG_FILE_NOT_FOUND_MSG"));
-//      } catch (Exception e) {
-//        Logger.log(e);
-//      }
-//    }
-//  }
-
   public static void openFile(AppWindow window) {
-//    var items = window.getSelectedDownloads();
-//    if (!items.isEmpty()) {
-//      openFile(items.get(0), window);
-//    }
-  }
-
-  public static void pauseDownloads(AppWindow window) {
-//    var items = window.getSelectedDownloads();
-//    var queues = new HashSet<String>();
-//    for (var ent : items) {
-//      String qid = ent.getQueueId();
-//      queues.add(qid);
-//    }
-//
-//    Iterator<String> qit = queues.iterator();
-//    boolean qRunning = false;
-//    while (qit.hasNext()) {
-//      String qid = qit.next();
-//      if (qid != null) {
-//        DownloadQueue q = XDMApp.getInstance().getQueueById(qid);
-//        if (q != null) {
-//          if (q.isRunning()) {
-//            qRunning = true;
-//            break;
-//          }
-//        }
-//      }
-//    }
-//
-//    if (qRunning
-//        && (xdm.app.ui.components.MessageBox.confirm(
-//            window,
-//            StringResource.get("MSG_REF_LINK_CONFIRM"),
-//            StringResource.get("LBL_STOP_Q")))) {
-//      qit = queues.iterator();
-//      while (qit.hasNext()) {
-//        String qid = qit.next();
-//        if (qid != null) {
-//          DownloadQueue q = XDMApp.getInstance().getQueueById(qid);
-//          if (q != null) {
-//            if (q.isRunning()) {
-//              q.stop();
-//            }
-//          }
-//        }
-//      }
-//    } else {
-//      for (var ent : items) {
-//        XDMApp.getInstance().pauseDownload(ent.getId());
-//      }
-//    }
+    //    var items = window.getSelectedDownloads();
+    //    if (!items.isEmpty()) {
+    //      openFile(items.get(0), window);
+    //    }
   }
 
   public static void showLanguageDlg(AppWindow window) {
@@ -257,68 +264,47 @@ public class AppMenuHandler {
   }
 
   public static void changeFile(AppWindow window) {
-//    var items = window.getSelectedDownloads();
-//    if (items == null || items.isEmpty()) {
-//      return;
-//    }
-//    var ent = items.get(0);
-//    if (ent.getState() == XDMConstants.FINISHED) {
-//      return;
-//    }
-//    JFileChooser jfc = new JFileChooser();
-//    jfc.setSelectedFile(
-//        new File(
-//            XDMApp.getInstance().getOutputFolder(ent.getId()),
-//            XDMApp.getInstance().getOutputFile(ent.getId(), false)));
-//    if (jfc.showSaveDialog(window) == JFileChooser.APPROVE_OPTION) {
-//      File f = jfc.getSelectedFile();
-//      ent.setFolder(f.getParent());
-//      ent.setFile(f.getName());
-//      XDMApp.getInstance().fileNameChanged(ent.getId());
-//    }
-  }
-
-  public static void openFolder(AppWindow window) {
-//    var items = window.getSelectedDownloads();
-//    if (items == null || items.isEmpty()) {
-//      return;
-//    }
-//    var ent = items.get(0);
-//    if (ent.getState() == XDMConstants.FINISHED) {
-//      try {
-//        XDMUtils.openFolder(ent.getFile(), XDMApp.getInstance().getFolder(ent));
-//      } catch (FileNotFoundException e) {
-//        Logger.log(e);
-//        xdm.app.ui.components.MessageBox.show(
-//            window,
-//            StringResource.get("ERR_MSG_FILE_NOT_FOUND"),
-//            StringResource.get("ERR_MSG_FILE_NOT_FOUND_MSG"));
-//      } catch (Exception e) {
-//        Logger.log(e);
-//      }
-//    }
+    //    var items = window.getSelectedDownloads();
+    //    if (items == null || items.isEmpty()) {
+    //      return;
+    //    }
+    //    var ent = items.get(0);
+    //    if (ent.getState() == XDMConstants.FINISHED) {
+    //      return;
+    //    }
+    //    JFileChooser jfc = new JFileChooser();
+    //    jfc.setSelectedFile(
+    //        new File(
+    //            XDMApp.getInstance().getOutputFolder(ent.getId()),
+    //            XDMApp.getInstance().getOutputFile(ent.getId(), false)));
+    //    if (jfc.showSaveDialog(window) == JFileChooser.APPROVE_OPTION) {
+    //      File f = jfc.getSelectedFile();
+    //      ent.setFolder(f.getParent());
+    //      ent.setFile(f.getName());
+    //      XDMApp.getInstance().fileNameChanged(ent.getId());
+    //    }
   }
 
   public static void openRefreshPage(AppWindow window) {
-//    var items = window.getSelectedDownloads();
-//    if (items == null || items.isEmpty()) {
-//      return;
-//    }
-//    DownloadEntry ent = items.get(0);
-//    if (ent == null) {
-//      return;
-//    }
-//    if (!(ent.getState() == XDMConstants.PAUSED || ent.getState() == XDMConstants.FAILED)) {
-//      return;
-//    }
-//    try {
-//      //      HttpMetadata md = HttpMetadata.load(ent.getId());
-//      //				RefreshUrlPage rp = RefreshUrlPage.getPage(this);
-//      //				rp.setDetails(md);
-//      //				rp.showPanel();
-//    } catch (Exception e2) {
-//      Logger.log(e2);
-//    }
+    //    var items = window.getSelectedDownloads();
+    //    if (items == null || items.isEmpty()) {
+    //      return;
+    //    }
+    //    DownloadEntry ent = items.get(0);
+    //    if (ent == null) {
+    //      return;
+    //    }
+    //    if (!(ent.getState() == XDMConstants.PAUSED || ent.getState() == XDMConstants.FAILED)) {
+    //      return;
+    //    }
+    //    try {
+    //      //      HttpMetadata md = HttpMetadata.load(ent.getId());
+    //      //				RefreshUrlPage rp = RefreshUrlPage.getPage(this);
+    //      //				rp.setDetails(md);
+    //      //				rp.showPanel();
+    //    } catch (Exception e2) {
+    //      Logger.log(e2);
+    //    }
   }
 
   public static void showProperties(AppWindow window) {
@@ -369,66 +355,27 @@ public class AppMenuHandler {
   }
 
   public static void copyUrl(AppWindow window) {
-//    var items = window.getSelectedDownloads();
-//    if (items == null || items.isEmpty()) {
-//      return;
-//    }
-//    DownloadEntry ent = items.get(0);
-//    XDMUtils.copyURL(XDMApp.getInstance().getURL(ent.getId()));
+    //    var items = window.getSelectedDownloads();
+    //    if (items == null || items.isEmpty()) {
+    //      return;
+    //    }
+    //    DownloadEntry ent = items.get(0);
+    //    XDMUtils.copyURL(XDMApp.getInstance().getURL(ent.getId()));
   }
 
   public static void showProgressWindow(AppWindow window) {
-//    var items = window.getSelectedDownloads();
-//    if (items == null || items.isEmpty()) {
-//      return;
-//    }
-//    DownloadEntry ent = items.get(0);
-//    XDMApp.getInstance().showPrgWnd(ent.getId());
-  }
-
-  public static void restartDownloads(AppWindow window) {
-    var items = window.getSelectedDownloads();
-    if (items == null || items.isEmpty()) {
-      return;
-    }
-    for (var item : items) {
-      XDMApp.getInstance().resumeDownload(item.getId(), true);
-    }
-  }
-
-  public static void resumeDownloads(AppWindow window) {
-    var items = window.getSelectedDownloads();
-    if (items == null || items.isEmpty()) {
-      return;
-    }
-    for (var item : items) {
-      XDMApp.getInstance().resumeDownload(item.getId(), true);
-    }
-  }
-
-  public static void deleteDownloads(AppWindow window) {
-    var items = window.getSelectedDownloads();
-    if (items == null || items.isEmpty()) {
-      return;
-    }
-    var ret =
-        xdm.app.ui.components.MessageBox.confirmWithCheckBox(
-            window,
-            StringResource.get("DEL_TITLE"),
-            StringResource.get("DEL_SEL_TEXT"),
-            StringResource.get("LBL_DELETE_FILE"));
-    if (ret != MessageBoxResult.CANCEL) {
-//      XDMApp.getInstance()
-//          .deleteDownloads(
-//              items.stream().map(DownloadEntry::getId).collect(Collectors.toList()),
-//              ret == MessageBoxResult.YES_WITH_SELECTION);
-    }
+    //    var items = window.getSelectedDownloads();
+    //    if (items == null || items.isEmpty()) {
+    //      return;
+    //    }
+    //    DownloadEntry ent = items.get(0);
+    //    XDMApp.getInstance().showPrgWnd(ent.getId());
   }
 
   public static void deleteCompleted(AppWindow window) {
-//    if (xdm.app.ui.components.MessageBox.confirm(
-//        window, StringResource.get("DEL_TITLE"), StringResource.get("DEL_FINISHED_TEXT"))) {
-//      XDMApp.getInstance().deleteCompleted();
-//    }
+    //    if (xdm.app.ui.components.MessageBox.confirm(
+    //        window, StringResource.get("DEL_TITLE"), StringResource.get("DEL_FINISHED_TEXT"))) {
+    //      XDMApp.getInstance().deleteCompleted();
+    //    }
   }
 }

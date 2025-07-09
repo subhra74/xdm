@@ -108,6 +108,19 @@ public class DownloadsControllerServiceImpl implements DownloadsControllerServic
     }
   }
 
+  @Override
+  public void pauseDownload(long id) {
+    new Thread(() -> stopDownloads(List.of(id))).start();
+  }
+
+  @Override
+  public void resumeDownload(long id, boolean nonInteractive) {
+    new Thread(() -> resumeDownload(List.of(id), nonInteractive)).start();
+  }
+
+  @Override
+  public void restartDownload(long id) {}
+
   private synchronized void onDownloadFinished(long id) {
     try {
       var value = activeDownloads.remove(id);

@@ -1,10 +1,23 @@
 package xdm.core.util;
 
+import xdm.core.constants.AppConstants;
+
 import java.io.File;
 import java.net.URISyntaxException;
 
 public final class PlatformUtils {
   private PlatformUtils() {}
+
+  public static String getConfigDir() {
+    return new File(System.getProperty("user.home"), AppConstants.CONFIG_DIR).getAbsolutePath();
+  }
+
+  public static String getMetaDir() {
+    return new File(
+            System.getProperty("user.home"),
+            AppConstants.CONFIG_DIR + File.separator + AppConstants.META_DIR)
+        .getAbsolutePath();
+  }
 
   public static String getExecutableFromSystemPath(String executable) {
     String path = System.getenv("PATH");

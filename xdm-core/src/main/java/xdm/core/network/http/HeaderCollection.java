@@ -22,6 +22,10 @@ public class HeaderCollection {
     return null;
   }
 
+  public int size() {
+    return headers.size();
+  }
+
   public boolean containsHeader(String name) {
     for (int i = 0; i < headers.size(); i++) {
       HttpHeader header = headers.get(i);
@@ -96,6 +100,21 @@ public class HeaderCollection {
         HttpHeader header = new HttpHeader(key, value);
         headers.add(header);
       }
+    }
+  }
+
+  public synchronized void writeTo(DataOutputStream outputStream) throws IOException {
+    outputStream.writeInt(this.headers.size());
+    for (HttpHeader header : this.headers) {
+      outputStream.writeUTF(header.getName());
+      outputStream.writeUTF(header.getValue());
+    }
+  }
+
+  public synchronized void readFrom(DataInputStream inputStream) throws IOException {
+    int c = inputStream.readInt();
+    for (int i = 0; i < c; i++) {
+      this.addHeader(inputStream.readUTF(), inputStream.readUTF());
     }
   }
 }

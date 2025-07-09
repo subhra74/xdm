@@ -2,7 +2,6 @@ package xdm.core.downloaders;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
@@ -15,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import xdm.core.Config;
 import xdm.core.DownloadProgressListener;
 import xdm.core.InteractiveCredentialProvider;
-import xdm.core.XDMConstants;
 import xdm.core.constants.ErrorCode;
 import xdm.core.downloaders.http.HttpChunkRetriever;
 import xdm.core.util.CollectionUtils;
@@ -424,6 +422,8 @@ public abstract class AbstractSegmentedDownloader extends AbstractDownloader
       renameTo(outFile, realFile);
       setLastModifiedDate(outFile);
 
+      updateStateFinal(outFileName, outputFolder, totalAssembled);
+
       assembleFinished.set(true);
     } catch (Exception e) {
       throw new IOException(e);
@@ -434,6 +434,8 @@ public abstract class AbstractSegmentedDownloader extends AbstractDownloader
       }
     }
   }
+
+  protected abstract void updateStateFinal(String fileName, String folder, long totalBytes);
 
   private void delete(File file) {
     if (file != null) {
@@ -461,34 +463,34 @@ public abstract class AbstractSegmentedDownloader extends AbstractDownloader
     listener.downloadStopped(id);
   }
 
-  private void saveState() {
-    if (length.get() < 0) return;
-    StringBuilder sb = new StringBuilder();
-    sb.append(this.length + "\n");
-    sb.append(downloaded + "\n");
-    sb.append(chunks.size() + "\n");
-    for (int i = 0; i < chunks.size(); i++) {
-      Chunk seg = chunks.get(i);
-      sb.append(seg.getId() + "\n");
-      sb.append(seg.getLength() + "\n");
-      sb.append(seg.getStartOffset() + "\n");
-      sb.append(seg.getDownloaded() + "\n");
-    }
-    if (!StringUtils.isNullOrEmptyOrBlank(lastModified)) {
-      sb.append(this.lastModified + "\n");
-    }
-    try {
-      File tmp = new File(folder, System.currentTimeMillis() + ".tmp");
-      File out = new File(folder, "state.txt");
-      try (FileOutputStream fs = new FileOutputStream(tmp)) {
-        fs.write(sb.toString().getBytes());
-      }
-      delete(out);
-      renameTo(tmp, out);
-    } catch (Exception e) {
-      logger.error(e.getMessage(), e);
-    }
-  }
+//  private void saveState() {
+//    if (length.get() < 0) return;
+//    StringBuilder sb = new StringBuilder();
+//    sb.append(this.length + "\n");
+//    sb.append(downloaded + "\n");
+//    sb.append(chunks.size() + "\n");
+//    for (int i = 0; i < chunks.size(); i++) {
+//      Chunk seg = chunks.get(i);
+//      sb.append(seg.getId() + "\n");
+//      sb.append(seg.getLength() + "\n");
+//      sb.append(seg.getStartOffset() + "\n");
+//      sb.append(seg.getDownloaded() + "\n");
+//    }
+//    if (!StringUtils.isNullOrEmptyOrBlank(lastModified)) {
+//      sb.append(this.lastModified + "\n");
+//    }
+//    try {
+//      File tmp = new File(folder, System.currentTimeMillis() + ".tmp");
+//      File out = new File(folder, "state.txt");
+//      try (FileOutputStream fs = new FileOutputStream(tmp)) {
+//        fs.write(sb.toString().getBytes());
+//      }
+//      delete(out);
+//      renameTo(tmp, out);
+//    } catch (Exception e) {
+//      logger.error(e.getMessage(), e);
+//    }
+//  }
 
   private boolean restoreState() {
     chunks = new ArrayList<Chunk>();
