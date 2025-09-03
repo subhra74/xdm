@@ -9,7 +9,7 @@ import xdm.core.downloaders.Metadata;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class HlsMetadata extends Metadata {
+public class HlsSource extends Metadata {
   private String audioUrl;
   private String url;
 

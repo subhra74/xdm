@@ -14,11 +14,11 @@ import static xdm.core.util.SerializationUtils.writeNullable;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
-public class HttpMetadata extends Metadata {
+public class HttpSource extends Metadata {
   private String url;
 
   @Builder
-  public HttpMetadata(
+  public HttpSource(
       long id,
       String cookies,
       HeaderCollection headers,
@@ -29,7 +29,8 @@ public class HttpMetadata extends Metadata {
       long dateAdded,
       String originPage,
       String url,
-      boolean keepFileName) {
+      boolean keepFileName,
+      long fileSize) {
     super(
         id,
         cookies,
@@ -40,7 +41,8 @@ public class HttpMetadata extends Metadata {
         folder,
         dateAdded,
         originPage,
-        keepFileName);
+        keepFileName,
+        fileSize);
     this.url = url;
   }
 

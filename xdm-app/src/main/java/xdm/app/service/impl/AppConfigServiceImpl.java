@@ -15,13 +15,18 @@ public class AppConfigServiceImpl implements AppConfigService {
   @Getter @Setter private int folderIndex;
   @Getter @Setter private SortKey sortKey = SortKey.DATE;
   @Getter @Setter private boolean sortAscending = false;
+  @Getter @Setter private long minVideoSize = 1024;
 
   @Override
   public void load() {}
 
   @Override
   public String getFolderForDownload(Metadata metadata) {
-    return new File(System.getProperty("user.home", "Downloads")).getAbsolutePath();
+    if (metadata.isAutoSelectFolder()) {
+      return new File(System.getProperty("user.home", "Downloads")).getAbsolutePath();
+    } else {
+      return metadata.getFolder();
+    }
   }
 
   @Override

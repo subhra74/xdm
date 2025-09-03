@@ -17,7 +17,7 @@ public final class TrayUtils {
     // final var image = AppUtils.createSVGIcon("xdm-logo.svg", 32);
     final TrayIcon trayIcon = new TrayIcon(image);
     trayIcon.setImageAutoSize(true);
-    trayIcon.addActionListener(e -> AppContext.INSTANCE.getAppControllerService().showAppWindow());
+    trayIcon.addActionListener(e -> AppContext.INSTANCE.getApp().showAppWindow());
     final SystemTray tray = SystemTray.getSystemTray();
     try {
       tray.add(trayIcon);

@@ -20,7 +20,7 @@ public class HttpDateParser {
 		try {
 			return fmt.parse(lastModified);
 		} catch (ParseException e) {
-			Logger.log(e);
+			Logger.info(e);
 		}
 		return null;
 	}

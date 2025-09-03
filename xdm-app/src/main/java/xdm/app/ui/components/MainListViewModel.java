@@ -15,7 +15,7 @@ public class MainListViewModel extends AbstractTableModel implements ListChangeL
 
   @Override
   public int getRowCount() {
-    return AppContext.INSTANCE.getDownloadsDbService().size();
+    return AppContext.INSTANCE.getDb().size();
   }
 
   @Override
@@ -37,14 +37,14 @@ public class MainListViewModel extends AbstractTableModel implements ListChangeL
   @Override
   public void listItemUpdated(long id) {
     Logger.log("List updated");
-    Integer index = AppContext.INSTANCE.getDownloadsDbService().indexById(id);
+    Integer index = AppContext.INSTANCE.getDb().indexById(id);
     if (index != null) {
       fireTableRowsUpdated(index, index);
     }
   }
 
   public DownloadEntry getItemAt(int index) {
-    return AppContext.INSTANCE.getDownloadsDbService().getByIndex(index);
+    return AppContext.INSTANCE.getDb().getByIndex(index);
   }
 
   @Override

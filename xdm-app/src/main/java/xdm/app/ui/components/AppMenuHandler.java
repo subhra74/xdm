@@ -51,6 +51,7 @@ public class AppMenuHandler {
       var md = MetadataStore.get(ent.getId());
       if (md != null) {
         try {
+          Logger.log("Folder: " + md.getFolder() + " File: " + md.getFileName());
           XDMUtils.openFolder(md.getFileName(), md.getFolder());
         } catch (FileNotFoundException e) {
           Logger.log(e);
@@ -66,15 +67,15 @@ public class AppMenuHandler {
   }
 
   public static void restartDownload(DownloadEntry ent) {
-    AppContext.INSTANCE.getDownloadsControllerService().restartDownload(ent.getId());
+    AppContext.INSTANCE.getDownloader().restartDownload(ent.getId());
   }
 
   public static void resumeDownload(DownloadEntry ent) {
-    AppContext.INSTANCE.getDownloadsControllerService().resumeDownload(ent.getId(), false);
+    AppContext.INSTANCE.getDownloader().resumeDownload(ent.getId(), false);
   }
 
   public static void pauseDownload(DownloadEntry ent) {
-    AppContext.INSTANCE.getDownloadsControllerService().pauseDownload(ent.getId());
+    AppContext.INSTANCE.getDownloader().pauseDownload(ent.getId());
   }
 
   public static void deleteDownload(DownloadEntry ent, Window window) {

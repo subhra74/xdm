@@ -3,7 +3,7 @@ package xdman;
 import java.net.URL;
 
 // import xdman.downloaders.metadata.HttpMetadata;
-import xdm.core.downloaders.http.HttpMetadata;
+import xdm.core.downloaders.http.HttpSource;
 import xdm.core.util.UniqueID;
 import xdman.util.Logger;
 import xdman.util.StringUtils;
@@ -65,7 +65,7 @@ public class ClipboardMonitor implements Runnable {
               ext = ext.toUpperCase().replace(".", "");
             }
             var md =
-                HttpMetadata.builder()
+                HttpSource.builder()
                     .id(UniqueID.get())
                     .url(url.toString())
                     .fileName(file)

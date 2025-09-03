@@ -12,9 +12,7 @@ import org.slf4j.LoggerFactory;
 import xdm.core.Config;
 import xdm.core.DownloadProgressListener;
 import xdm.core.InteractiveCredentialProvider;
-import xdm.core.XDMConstants;
 import xdm.core.constants.ErrorCode;
-import xdm.core.downloaders.http.HttpMetadata;
 import xdm.core.media.muxer.Muxer;
 import xdm.core.media.muxer.impl.FFmpegMuxer;
 import xdm.core.network.http.impl.PoolingHttpClientImpl;
@@ -74,6 +72,7 @@ public abstract class AbstractMultiSourceDownloader extends AbstractDownloader {
       if (!this.init.get()) {
         this.initDownload();
         this.init.set(true);
+        this.getMetadata().setFileName(fixExtension(this.getMetadata().getFileName()));
         this.saveState();
         this.listener.downloadConfirmed(id);
       }
@@ -86,6 +85,8 @@ public abstract class AbstractMultiSourceDownloader extends AbstractDownloader {
       this.listener.downloadFailed(id, ErrorCode.RESUME_FAILED);
     }
   }
+
+  protected abstract String fixExtension(String fileName);
 
   private void assemble() {
     this.assembling = true;

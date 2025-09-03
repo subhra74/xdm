@@ -9,8 +9,8 @@ public class DownloadSorter implements Comparator<DownloadEntry> {
 
   @Override
   public int compare(DownloadEntry o1, DownloadEntry o2) {
-    var sortKey = AppContext.INSTANCE.getConfigService().getSortKey();
-    var ascending = AppContext.INSTANCE.getConfigService().isSortAscending();
+    var sortKey = AppContext.INSTANCE.getConfig().getSortKey();
+    var ascending = AppContext.INSTANCE.getConfig().isSortAscending();
     int res = 0;
     switch (sortKey) {
       case NAME: // sort by name

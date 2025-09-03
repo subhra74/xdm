@@ -56,7 +56,7 @@ public final class FileUtils {
       if (path.equals("/")) return "FILE";
       return sanitizeFileName(path);
     } catch (Exception e) {
-      Logger.log(e);
+      Logger.info(e);
       return "FILE";
     }
   }

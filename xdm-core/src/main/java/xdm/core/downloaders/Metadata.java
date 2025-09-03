@@ -25,6 +25,7 @@ public abstract class Metadata {
   private String originPage;
   private boolean
       keepFileName; // Change file extension in case of redirection but keep file name same
+  protected long fileSize;
 
   public abstract String getPrimaryUrl();
 
@@ -38,6 +39,7 @@ public abstract class Metadata {
     writeNullable(dateAdded, outputStream);
     writeNullable(originPage, outputStream);
     writeNullable(keepFileName, outputStream);
+    writeNullable(fileSize, outputStream);
     outputStream.writeBoolean(headers != null);
     if (headers != null) {
       headers.writeTo(outputStream);
@@ -54,6 +56,7 @@ public abstract class Metadata {
     this.dateAdded = readLong(inputStream, -1);
     this.originPage = readStr(inputStream);
     this.keepFileName = readBoolean(inputStream, false);
+    this.fileSize = readLong(inputStream, -1);
     if (inputStream.readBoolean()) {
       this.headers = new HeaderCollection();
       this.headers.readFrom(inputStream);

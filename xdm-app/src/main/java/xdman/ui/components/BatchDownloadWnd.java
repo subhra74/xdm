@@ -31,7 +31,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.border.LineBorder;
 
-import xdm.core.downloaders.http.HttpMetadata;
+import xdm.core.downloaders.http.HttpSource;
 import xdman.Config;
 import xdman.DownloadQueue;
 import xdman.QueueManager;
@@ -78,7 +78,7 @@ public class BatchDownloadWnd extends JFrame implements ActionListener {
     return urls;
   }
 
-  public BatchDownloadWnd(List<HttpMetadata> mdList) {
+  public BatchDownloadWnd(List<HttpSource> mdList) {
     fileExts = new HashSet<>();
     items = new BatchItem[mdList.size()];
     initUI();
@@ -141,7 +141,7 @@ public class BatchDownloadWnd extends JFrame implements ActionListener {
       BatchItem item = model.getElementAt(i);
       if (item.selected) {
         String file = item.file;
-        HttpMetadata metadata = item.metadata;
+        HttpSource metadata = item.metadata;
         folder = txtFile.getText();
         XDMApp.getInstance()
             .createDownload(file, folder, metadata, false, q == null ? "" : q.getQueueId(), 0, 0);
@@ -388,7 +388,7 @@ public class BatchDownloadWnd extends JFrame implements ActionListener {
 class BatchItem {
   String file;
   boolean selected;
-  HttpMetadata metadata;
+  HttpSource metadata;
 
   @Override
   public String toString() {

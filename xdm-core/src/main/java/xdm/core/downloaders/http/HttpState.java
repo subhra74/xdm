@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 import xdm.core.network.http.HeaderCollection;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Getter

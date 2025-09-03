@@ -11,7 +11,7 @@ import xdm.core.constants.ErrorCode;
 import xdm.core.downloaders.AbstractDownloader;
 import xdm.core.downloaders.Metadata;
 import xdm.core.downloaders.http.HttpDownloader;
-import xdm.core.downloaders.http.HttpMetadata;
+import xdm.core.downloaders.http.HttpSource;
 import xdm.core.util.FileUtils;
 import xdm.core.util.MetadataStore;
 import xdman.ui.res.StringResource;
@@ -78,7 +78,7 @@ public class DownloadsControllerServiceImpl implements DownloadsControllerServic
       return;
     }
     if (queueId != -1) {
-      AppContext.INSTANCE.getQueueService().attachToQueue(queueId, List.of(id));
+      AppContext.INSTANCE.getQueue().attachToQueue(queueId, List.of(id));
     }
     var ent =
         DownloadEntry.builder()
@@ -88,21 +88,20 @@ public class DownloadsControllerServiceImpl implements DownloadsControllerServic
             .dateEpoch(System.currentTimeMillis())
             .build();
     if (startNow
-        && activeDownloads.size()
-            >= AppContext.INSTANCE.getConfigService().getMaxParallelDownloads()) {
+        && activeDownloads.size() >= AppContext.INSTANCE.getConfig().getMaxParallelDownloads()) {
       startNow = false;
       pendingDownloads.put(id, false);
     }
 
-    AppContext.INSTANCE.getDownloadsDbService().add(ent);
-    AppContext.INSTANCE.getDownloadsDbService().save();
-    AppContext.INSTANCE.getAppControllerService().addDownloadInView(id);
+    AppContext.INSTANCE.getDb().add(ent);
+    AppContext.INSTANCE.getDb().save();
+    AppContext.INSTANCE.getApp().addDownloadInView(id);
 
     if (startNow) {
       this.activeDownloads.put(
           id, DownloaderHolder.builder().downloader(downloader).isNonInteractive(false).build());
-      if (AppContext.INSTANCE.getConfigService().shouldShowDownloadProgressWindow()) {
-        AppContext.INSTANCE.getAppControllerService().showDownloadProgressWindow(id);
+      if (AppContext.INSTANCE.getConfig().shouldShowDownloadProgressWindow()) {
+        AppContext.INSTANCE.getApp().showDownloadProgressWindow(id);
       }
       downloader.start();
     }
@@ -121,6 +120,9 @@ public class DownloadsControllerServiceImpl implements DownloadsControllerServic
   @Override
   public void restartDownload(long id) {}
 
+  @Override
+  public void deleteDownload(List<Long> id) {}
+
   private synchronized void onDownloadFinished(long id) {
     try {
       var value = activeDownloads.remove(id);
@@ -130,41 +132,39 @@ public class DownloadsControllerServiceImpl implements DownloadsControllerServic
       var nonInteractive = value.isNonInteractive();
       var downloader = value.getDownloader();
 
-      AppContext.INSTANCE.getAppControllerService().hideDownloadProgressWindow(id);
+      AppContext.INSTANCE.getApp().hideDownloadProgressWindow(id);
 
-      var ent = AppContext.INSTANCE.getDownloadsDbService().getById(id);
+      var ent = AppContext.INSTANCE.getDb().getById(id);
       ent.setState(DownloadEntryState.FINISHED);
       if (downloader != null && downloader.getSize() < 0) {
         ent.setSize(downloader.getDownloaded());
         ent.setFileName(downloader.getMetadata().getFileName());
       }
-      AppContext.INSTANCE.getDownloadsDbService().save();
+      AppContext.INSTANCE.getDb().save();
 
-      AppContext.INSTANCE.getAppControllerService().updateDownloadInView(id);
+      AppContext.INSTANCE.getApp().updateDownloadInView(id);
 
       var metadata = MetadataStore.get(id);
       if (metadata == null) {
         return;
       }
 
-      var finalFolder = AppContext.INSTANCE.getConfigService().getFolderForDownload(metadata);
+      var finalFolder = AppContext.INSTANCE.getConfig().getFolderForDownload(metadata);
       var finalFileName = metadata.getFileName();
       var finalFilePath = new File(finalFolder, finalFileName).getAbsolutePath();
 
       if (Boolean.FALSE.equals(nonInteractive)
-          && AppContext.INSTANCE.getConfigService().shouldShowDownloadCompleteWindow()) {
-        AppContext.INSTANCE
-            .getAppControllerService()
-            .showDownloadCompleteWindow(id, finalFolder, finalFileName);
+          && AppContext.INSTANCE.getConfig().shouldShowDownloadCompleteWindow()) {
+        AppContext.INSTANCE.getApp().showDownloadCompleteWindow(id, finalFolder, finalFileName);
       }
-      if (AppContext.INSTANCE.getConfigService().shouldRunVirusScan()) {
-        AppContext.INSTANCE.getPlatformService().runVirusScan(finalFilePath);
+      if (AppContext.INSTANCE.getConfig().shouldRunVirusScan()) {
+        AppContext.INSTANCE.getPlatform().runVirusScan(finalFilePath);
       }
-      if (AppContext.INSTANCE.getConfigService().shouldRunCommand()) {
-        AppContext.INSTANCE.getPlatformService().runCustomCommand(finalFilePath);
+      if (AppContext.INSTANCE.getConfig().shouldRunCommand()) {
+        AppContext.INSTANCE.getPlatform().runCustomCommand(finalFilePath);
       }
-      if (isInactive() && AppContext.INSTANCE.getConfigService().shouldShutdownAfterAllDone()) {
-        AppContext.INSTANCE.getPlatformService().shutdownPC();
+      if (isInactive() && AppContext.INSTANCE.getConfig().shouldShutdownAfterAllDone()) {
+        AppContext.INSTANCE.getPlatform().shutdownPC();
       }
     } finally {
       processNextDownload();
@@ -173,52 +173,48 @@ public class DownloadsControllerServiceImpl implements DownloadsControllerServic
 
   private synchronized void onDownloadFailed(long id, ErrorCode errorCode) {
     activeDownloads.remove(id);
-    var ent = AppContext.INSTANCE.getDownloadsDbService().getById(id);
+    var ent = AppContext.INSTANCE.getDb().getById(id);
     ent.setState(DownloadEntryState.ERROR);
-    AppContext.INSTANCE.getDownloadsDbService().save();
-    AppContext.INSTANCE.getAppControllerService().updateDownloadInView(id);
+    AppContext.INSTANCE.getDb().save();
+    AppContext.INSTANCE.getApp().updateDownloadInView(id);
     AppContext.INSTANCE
-        .getAppControllerService()
+        .getApp()
         .showErrorInProgressWindow(id, StringResource.get("ERR_MSG_" + errorCode));
     processNextDownload();
   }
 
   private synchronized void onDownloadStopped(long id) {
     activeDownloads.remove(id);
-    var ent = AppContext.INSTANCE.getDownloadsDbService().getById(id);
+    var ent = AppContext.INSTANCE.getDb().getById(id);
     ent.setState(DownloadEntryState.PAUSED);
-    AppContext.INSTANCE.getDownloadsDbService().save();
-    AppContext.INSTANCE.getAppControllerService().updateDownloadInView(id);
-    AppContext.INSTANCE.getAppControllerService().hideDownloadProgressWindow(id);
+    AppContext.INSTANCE.getDb().save();
+    AppContext.INSTANCE.getApp().updateDownloadInView(id);
+    AppContext.INSTANCE.getApp().hideDownloadProgressWindow(id);
     processNextDownload();
   }
 
   private void onDownloadUpdate(long id) {
     var downloader = activeDownloads.get(id);
     if (downloader != null) {
-      var ent = AppContext.INSTANCE.getDownloadsDbService().getById(id);
+      var ent = AppContext.INSTANCE.getDb().getById(id);
       ent.setDownloaded(downloader.getDownloader().getDownloaded());
       ent.setProgress(downloader.getDownloader().getProgress().get());
       ent.setSpeed(downloader.getDownloader().getDownloadSpeed());
       ent.setEta(downloader.getDownloader().getEta());
-      AppContext.INSTANCE.getAppControllerService().updateDownloadInView(id);
-      AppContext.INSTANCE
-          .getAppControllerService()
-          .updateProgressWindow(id, downloader.getDownloader());
+      AppContext.INSTANCE.getApp().updateDownloadInView(id);
+      AppContext.INSTANCE.getApp().updateProgressWindow(id, downloader.getDownloader());
     }
   }
 
   private void onDownloadConfirmed(long id) {
     var downloader = activeDownloads.get(id);
     if (downloader != null) {
-      var ent = AppContext.INSTANCE.getDownloadsDbService().getById(id);
+      var ent = AppContext.INSTANCE.getDb().getById(id);
       ent.setFileName(downloader.getDownloader().getMetadata().getFileName());
       ent.setSize(downloader.getDownloader().getSize());
-      AppContext.INSTANCE.getDownloadsDbService().save();
-      AppContext.INSTANCE.getAppControllerService().updateDownloadInView(id);
-      AppContext.INSTANCE
-          .getAppControllerService()
-          .updateProgressWindow(id, downloader.getDownloader());
+      AppContext.INSTANCE.getDb().save();
+      AppContext.INSTANCE.getApp().updateDownloadInView(id);
+      AppContext.INSTANCE.getApp().updateProgressWindow(id, downloader.getDownloader());
     }
   }
 
@@ -226,11 +222,13 @@ public class DownloadsControllerServiceImpl implements DownloadsControllerServic
     var downloader = activeDownloads.get(id);
     if (downloader == null) {
       logger.info("Downloader expected, found none");
-      return AppContext.INSTANCE.getConfigService().getDefaultDownloadFolder();
+      return AppContext.INSTANCE.getConfig().getDefaultDownloadFolder();
     }
-    return AppContext.INSTANCE
-        .getConfigService()
-        .getFolderForDownload(downloader.getDownloader().getMetadata());
+    return downloader.getDownloader().getMetadata().isAutoSelectFolder()
+        ? AppContext.INSTANCE
+            .getConfig()
+            .getFolderForDownload(downloader.getDownloader().getMetadata())
+        : downloader.getDownloader().getMetadata().getFolder();
   }
 
   private String getTargetFileName(long id) {
@@ -239,12 +237,10 @@ public class DownloadsControllerServiceImpl implements DownloadsControllerServic
       logger.info("Downloader expected, found none");
       return "File";
     }
-    if (AppContext.INSTANCE.getConfigService().shouldAutoRenameOnConflict()) {
+    var folder = getDownloadFolder(id);
+    if (AppContext.INSTANCE.getConfig().shouldAutoRenameOnConflict()) {
       return FileUtils.getUniqueFileName(
-          AppContext.INSTANCE
-              .getConfigService()
-              .getFolderForDownload(downloader.getDownloader().getMetadata()),
-          downloader.getDownloader().getMetadata().getFileName());
+          folder, downloader.getDownloader().getMetadata().getFileName());
     }
     return downloader.getDownloader().getMetadata().getFileName();
   }
@@ -266,22 +262,21 @@ public class DownloadsControllerServiceImpl implements DownloadsControllerServic
       sleepBlocker.start();
     }
     for (var id : idList) {
-      var ent = AppContext.INSTANCE.getDownloadsDbService().getById(id);
+      var ent = AppContext.INSTANCE.getDb().getById(id);
       if (ent == null || activeDownloads.containsKey(id) || pendingDownloads.containsKey(id)) {
         continue;
       }
-      if (activeDownloads.size()
-          > AppContext.INSTANCE.getConfigService().getMaxParallelDownloads()) {
+      if (activeDownloads.size() > AppContext.INSTANCE.getConfig().getMaxParallelDownloads()) {
         ent.setState(DownloadEntryState.READY);
         pendingDownloads.put(id, nonInteractive);
-        AppContext.INSTANCE.getAppControllerService().updateDownloadInView(id);
+        AppContext.INSTANCE.getApp().updateDownloadInView(id);
         continue;
       }
       var metadata = MetadataStore.get(id);
       if (metadata == null) {
         logger.info("Metadata not found");
         ent.setState(DownloadEntryState.ERROR);
-        AppContext.INSTANCE.getAppControllerService().updateDownloadInView(id);
+        AppContext.INSTANCE.getApp().updateDownloadInView(id);
         continue;
       }
       final var downloader = createDownloader(metadata);
@@ -294,9 +289,8 @@ public class DownloadsControllerServiceImpl implements DownloadsControllerServic
               .downloader(downloader)
               .isNonInteractive(nonInteractive)
               .build());
-      if (AppContext.INSTANCE.getConfigService().shouldShowDownloadProgressWindow()
-          && !nonInteractive) {
-        AppContext.INSTANCE.getAppControllerService().showDownloadProgressWindow(id);
+      if (AppContext.INSTANCE.getConfig().shouldShowDownloadProgressWindow() && !nonInteractive) {
+        AppContext.INSTANCE.getApp().showDownloadProgressWindow(id);
         downloader.resume();
       }
     }
@@ -312,11 +306,11 @@ public class DownloadsControllerServiceImpl implements DownloadsControllerServic
         if (pendingDownloads.remove(id) != null) {
           count++;
         }
-        var ent = AppContext.INSTANCE.getDownloadsDbService().getById(id);
+        var ent = AppContext.INSTANCE.getDb().getById(id);
         if (ent != null) {
           ent.setState(DownloadEntryState.PAUSED);
-          AppContext.INSTANCE.getAppControllerService().updateDownloadInView(id);
-          AppContext.INSTANCE.getAppControllerService().hideDownloadProgressWindow(id);
+          AppContext.INSTANCE.getApp().updateDownloadInView(id);
+          AppContext.INSTANCE.getApp().hideDownloadProgressWindow(id);
         }
       }
     }
@@ -326,11 +320,11 @@ public class DownloadsControllerServiceImpl implements DownloadsControllerServic
   }
 
   private AbstractDownloader createDownloader(Metadata metadata) {
-    if (metadata instanceof HttpMetadata httpMetadata) {
+    if (metadata instanceof HttpSource httpSource) {
       return new HttpDownloader(
           metadata.getId(),
-          AppContext.INSTANCE.getConfigService().getTempFolder(),
-          httpMetadata,
+          AppContext.INSTANCE.getConfig().getTempFolder(),
+          httpSource,
           this.listener,
           null);
     }

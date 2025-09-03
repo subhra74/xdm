@@ -5,51 +5,39 @@ import org.slf4j.LoggerFactory;
 import xdm.core.DownloadProgressListener;
 import xdm.core.InteractiveCredentialProvider;
 import xdm.core.XDMConstants;
-import xdm.core.downloaders.AbstractChunkRetriever;
-import xdm.core.downloaders.AbstractSegmentedDownloader;
-import xdm.core.downloaders.Chunk;
-import xdm.core.downloaders.DownloaderType;
-import xdm.core.network.http.HeaderCollection;
-import xdm.core.network.http.HttpHeader;
+import xdm.core.downloaders.*;
+import xdm.core.net.HttpUtilsKt;
 import xdm.core.network.http.PoolingHttpClient;
 import xdm.core.network.http.impl.PoolingHttpClientImpl;
 import xdm.core.util.*;
 
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.ArrayList;
 
 public class HttpDownloader extends AbstractSegmentedDownloader {
-  private final HttpMetadata metadata;
+  private final HttpSource metadata;
   private final PoolingHttpClient httpClient;
-  private final HttpState state;
   private static final Logger logger = LoggerFactory.getLogger(HttpDownloader.class);
 
   public HttpDownloader(
       long id,
       String tempFolder,
-      HttpMetadata metadata,
+      HttpSource metadata,
       DownloadProgressListener listener,
       InteractiveCredentialProvider credentialProvider) {
     super(DownloaderType.Http, id, tempFolder, listener, credentialProvider);
     this.metadata = metadata;
-    this.state =
-        HttpState.builder()
-            .id(id)
-            .url(metadata.getUrl())
-            .cookie(metadata.getCookies())
-            .fileName(metadata.getFileName())
-            .folder(metadata.getFolder())
-            .autoSelectFolder(metadata.isAutoSelectFolder())
-            .downloaded(new AtomicLong(0))
-            .fileSize(new AtomicLong(-1))
-            .tempFolder(tempFolder)
-            .build();
     this.httpClient = new PoolingHttpClientImpl(100);
   }
 
   @Override
   public synchronized AbstractChunkRetriever createChannel(Chunk chunk) {
     return new HttpChunkRetriever(
-        chunk, metadata.getUrl(), metadata.getHeaders(), length.get(), this.httpClient);
+        chunk,
+        metadata.getUrl(),
+        metadata.getHeaders(),
+        metadata.getCookies(),
+        length.get(),
+        this.httpClient);
   }
 
   @Override
@@ -66,53 +54,92 @@ public class HttpDownloader extends AbstractSegmentedDownloader {
       // If the download
       // has video conversion option, then conversion format will be removed.
       // in case of having an attachment, attachment extension will be used
-      String fileName = getOutputFileName();
+
       HttpChunkRetriever hc = (HttpChunkRetriever) c.getChunkRetriever();
       super.getLastModifiedDate(c);
       if (hc.isRedirected()) {
         metadata.setUrl(hc.getRedirectUrl());
       }
 
-      String contentDispositionHeader = hc.getHeader("content-disposition");
+      String url = metadata.getUrl();
+      String contentDisposition = hc.getHeader("content-disposition");
       String contentType = hc.getHeader("content-type");
 
-      if (contentDispositionHeader == null
-          && StringUtils.containsIgnoreCase(contentType, "text/html")) {
-        metadata.setFileName(XDMUtils.getFileNameWithoutExtension(fileName) + ".html");
-        outputFormat = 0;
-      }
-
-      boolean nameSet = false;
-      if (contentDispositionHeader != null && outputFormat == 0) {
-        String name = NetUtils.getNameFromContentDisposition(contentDispositionHeader);
-        if (name != null) {
-          metadata.setFileName(name);
-          nameSet = true;
-        }
-      }
-      if (!nameSet) {
-        String ext = XDMUtils.getExtension(fileName);
-        if (StringUtils.isNullOrEmptyOrBlank(ext)) {
-          String newExt = MimeUtil.getFileExt(contentType);
-          if (newExt != null) {
-            metadata.setFileName(fileName + "." + newExt);
-          }
-        }
-      }
+      metadata.setFileName(
+          HttpUtilsKt.getFileName(
+              metadata.getFileName(),
+              metadata.isKeepFileName(),
+              url,
+              contentDisposition,
+              contentType));
     } finally {
       MetadataStore.save(metadata);
     }
   }
 
   @Override
-  public HttpMetadata getMetadata() {
+  public HttpSource getMetadata() {
     return this.metadata;
   }
 
   @Override
-  protected void updateStateFinal(String fileName, String folder, long totalBytes) {
-    this.state.setFileName(fileName);
-    this.state.setFolder(folder);
-    this.state.getFileSize().set(totalBytes);
+  protected void updateMetadataFinal(String fileName, String folder, long totalBytes) {
+    this.metadata.setFileName(fileName);
+    this.metadata.setFolder(folder);
+    this.metadata.setFileSize(totalBytes);
+    MetadataStore.save(this.metadata);
+  }
+
+  @Override
+  protected void saveState() {
+    if (length.get() < 0) return;
+    TransactedIO.write(
+        folder,
+        "state.txt",
+        fs -> {
+          fs.writeLong(this.length.get());
+          fs.writeLong(this.downloaded.get());
+          fs.writeInt(this.chunks.size());
+          for (int i = 0; i < chunks.size(); i++) {
+            Chunk seg = chunks.get(i);
+            fs.writeLong(seg.getId());
+            fs.writeLong(seg.getLength());
+            fs.writeLong(seg.getStartOffset());
+            fs.writeLong(seg.getDownloaded());
+          }
+          SerializationUtils.writeNullable(this.lastModified, fs);
+        },
+        e -> logger.error(e.getMessage(), e));
+  }
+
+  @Override
+  protected boolean restoreState() {
+    chunks = new ArrayList<>();
+    return TransactedIO.read(
+        folder,
+        "state.txt",
+        reader -> {
+          this.length.set(reader.readLong());
+          this.downloaded.set(reader.readLong());
+          int chunkCount = reader.readInt();
+          for (int i = 0; i < chunkCount; i++) {
+            long cid = reader.readLong();
+            long len = reader.readLong();
+            long off = reader.readLong();
+            long dwn = reader.readLong();
+            Chunk seg = new ChunkImpl(folder, cid, off, len, dwn);
+
+            logger.info(
+                "id: {} length: {} offset: {} download: {}",
+                seg.getId(),
+                seg.getLength(),
+                seg.getStartOffset(),
+                seg.getDownloaded());
+
+            chunks.add(seg);
+          }
+          this.lastModified = SerializationUtils.readStr(reader);
+        },
+        e -> logger.error(e.getMessage(), e));
   }
 }

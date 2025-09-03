@@ -1,8 +1,6 @@
 package xdm.app.service.impl;
 
-import xdm.app.AppContext;
 import xdm.app.constants.DownloadEntryState;
-import xdm.app.constants.SortKey;
 import xdm.app.models.DownloadEntry;
 import xdm.app.service.DownloadsDBService;
 import xdman.Config;
@@ -162,8 +160,8 @@ public class DownloadsDBServiceImpl implements DownloadsDBService {
 //
 //    @Override
 //    public int compare(DownloadEntry o1, DownloadEntry o2) {
-//      var sortKey = AppContext.INSTANCE.getConfigService().getSortKey();
-//      var ascending = AppContext.INSTANCE.getConfigService().isSortAscending();
+//      var sortKey = AppContext.INSTANCE.getConfig().getSortKey();
+//      var ascending = AppContext.INSTANCE.getConfig().isSortAscending();
 //      int res = 0;
 //      switch (sortKey) {
 //        case NAME: // sort by name

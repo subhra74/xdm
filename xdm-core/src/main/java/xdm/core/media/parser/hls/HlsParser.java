@@ -2,6 +2,8 @@ package xdm.core.media.parser.hls;
 
 import java.net.URI;
 import java.util.*;
+import java.util.stream.StreamSupport;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import xdm.core.media.parser.util.UrlResolver;
@@ -23,6 +25,11 @@ public class HlsParser {
   public static final String METHOD = "METHOD";
 
   private HlsParser() {}
+
+  public static boolean isMasterPlaylist(List<String> manifestLines) {
+    return manifestLines.stream()
+        .anyMatch(s -> StringUtils.containsIgnoreCase(s, EXT_X_STREAM_INF));
+  }
 
   public static HlsMediaPlaylist parseMediaSegments(
       Iterable<String> manifestLines, String playlistUrl) throws Exception {
@@ -155,7 +162,7 @@ public class HlsParser {
   }
 
   public static List<HlsMasterPlaylist> parseMasterPlaylist(
-      Iterable<String> manifestLines, String playlistUrl) throws Exception {
+      List<String> manifestLines, String playlistUrl) throws Exception {
     List<Map<String, String>> mapExtStreamInf = new ArrayList<>();
     List<Map<String, String>> mapExtMedia = new ArrayList<>();
     List<HlsMasterPlaylist> containers = new ArrayList<>();

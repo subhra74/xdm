@@ -45,4 +45,7 @@ public interface AppConfigService {
   boolean isSortAscending();
 
   void setSortAscending(boolean ascending);
+
+  long getMinVideoSize();
+  void setMinVideoSize(long value);
 }

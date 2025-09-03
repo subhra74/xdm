@@ -1,13 +1,12 @@
 package xdm.app.ui.screens;
 
 import xdm.app.AppContext;
+import xdm.app.models.BrowserDownloadInfo;
 import xdm.app.utils.AppUtils;
 import xdm.app.utils.PlatformUtils;
-import xdm.core.downloaders.Metadata;
-import xdm.core.downloaders.http.HttpMetadata;
-import xdm.core.util.FileUtils;
-import xdm.core.util.StringUtils;
-import xdm.core.util.XDMUtils;
+import xdm.core.downloaders.http.HttpSource;
+import xdm.core.network.http.HeaderCollection;
+import xdm.core.util.*;
 import xdman.ui.res.StringResource;
 import xdman.util.Logger;
 
@@ -25,11 +24,14 @@ public class NewDownloadWindow extends JDialog {
   private JComboBox<String> cmbSaveIn;
   private JButton btnDownload;
   private DefaultComboBoxModel<String> modelSaveIn;
-  private Metadata metadata;
+  private JLabel lblFileInfo;
+  private BrowserDownloadInfo downloadInfo;
+  private String originalFileName;
 
   public NewDownloadWindow() {
     initUI();
     attachUrlChangeListener();
+    setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
   }
 
   private void initUI() {
@@ -82,8 +84,8 @@ public class NewDownloadWindow extends JDialog {
     getContentPane().add(txtFileName, gbcTxtFileName);
     txtFileName.setColumns(10);
 
-    JLabel lblFileInfo = new JLabel();
-    lblFileInfo.setIcon(AppUtils.createSVGIcon("file-line.svg", 48, Color.GRAY));
+    lblFileInfo = new JLabel();
+    lblFileInfo.setIcon(AppUtils.createSVGIcon("file-line.svg", 36, Color.GRAY));
     lblFileInfo.setVerticalTextPosition(SwingConstants.BOTTOM);
     lblFileInfo.setHorizontalTextPosition(SwingConstants.CENTER);
     lblFileInfo.setHorizontalAlignment(SwingConstants.CENTER);
@@ -93,7 +95,7 @@ public class NewDownloadWindow extends JDialog {
         new Dimension(
             lblFileInfo.getPreferredSize().width + 30, lblFileInfo.getPreferredSize().height));
     GridBagConstraints gbcLblFileInfo = new GridBagConstraints();
-    gbcLblFileInfo.insets = new Insets(10, 0, 5, 5);
+    gbcLblFileInfo.insets = new Insets(20, 5, 5, 10);
     gbcLblFileInfo.gridheight = 3;
     gbcLblFileInfo.gridx = 5;
     gbcLblFileInfo.gridy = 0;
@@ -157,6 +159,7 @@ public class NewDownloadWindow extends JDialog {
     panel.add(rigidArea1);
 
     JButton btnCancel = new JButton(StringResource.get("ND_CANCEL"));
+    btnCancel.addActionListener(e -> dispose());
     panel.add(btnCancel);
 
     Component rigidArea = Box.createRigidArea(new Dimension(10, 20));
@@ -194,10 +197,28 @@ public class NewDownloadWindow extends JDialog {
       JOptionPane.showMessageDialog(this, StringResource.get("MSG_NO_FILE"));
       return;
     }
-    if (this.metadata == null) {
-      this.metadata = HttpMetadata.builder().url(url).fileName(file).autoSelectFolder(true).build();
+    var keepFileName = !StringUtils.equalsIgnoreCase(txtFileName.getText(), originalFileName);
+    HttpSource source =
+        HttpSource.builder()
+            .id(UniqueID.get())
+            .url(url)
+            .fileName(file)
+            .autoSelectFolder(cmbSaveIn.getSelectedIndex() == 0)
+            .keepFileName(keepFileName)
+            .folder(
+                cmbSaveIn.getSelectedIndex() > 0
+                    ? cmbSaveIn.getItemAt(cmbSaveIn.getSelectedIndex())
+                    : null)
+            .build();
+    if (downloadInfo != null) {
+      if (downloadInfo.getRequestHeaders() != null) {
+        source.setHeaders(new HeaderCollection(downloadInfo.getRequestHeaders()));
+      }
+      if (downloadInfo.getCookie() != null) {
+        source.setCookies(downloadInfo.getCookie());
+      }
     }
-    AppContext.INSTANCE.getDownloadsControllerService().startDownload(metadata, true, -1);
+    AppContext.INSTANCE.getDownloader().startDownload(source, true, -1);
     dispose();
   }
 
@@ -207,22 +228,52 @@ public class NewDownloadWindow extends JDialog {
     setSize(dim);
   }
 
-  public void showWindow(final HttpMetadata metadata) {
+  //  public void showWindow(final HttpMetadata metadata) {
+  //    this.adjustSize();
+  //    this.setLocationRelativeTo(null);
+  //    modelSaveIn.addAll(AppContext.INSTANCE.getConfig().getRecentFolders());
+  //    if (AppContext.INSTANCE.getConfig().isAutoSelectFolder()) {
+  //      cmbSaveIn.setSelectedIndex(0);
+  //    } else {
+  //      cmbSaveIn.setSelectedIndex(AppContext.INSTANCE.getConfig().getFolderIndex() + 1);
+  //    }
+  //    if (metadata == null) {
+  //      var url = PlatformUtils.getClipBoardText();
+  //      if (!StringUtils.isNullOrEmptyOrBlank(url)) {
+  //        txtUrl.setText(url);
+  //      }
+  //    } else {
+  //      this.metadata = metadata;
+  //    }
+  //    this.setVisible(true);
+  //  }
+
+  public void showWindow(final BrowserDownloadInfo downloadInfo) {
     this.adjustSize();
     this.setLocationRelativeTo(null);
-    modelSaveIn.addAll(AppContext.INSTANCE.getConfigService().getRecentFolders());
-    if (AppContext.INSTANCE.getConfigService().isAutoSelectFolder()) {
+    modelSaveIn.removeAllElements();
+    modelSaveIn.addAll(AppContext.INSTANCE.getConfig().getRecentFolders());
+    if (AppContext.INSTANCE.getConfig().isAutoSelectFolder()) {
       cmbSaveIn.setSelectedIndex(0);
     } else {
-      cmbSaveIn.setSelectedIndex(AppContext.INSTANCE.getConfigService().getFolderIndex() + 1);
+      cmbSaveIn.setSelectedIndex(AppContext.INSTANCE.getConfig().getFolderIndex() + 1);
     }
-    if (metadata == null) {
+    if (downloadInfo == null) {
       var url = PlatformUtils.getClipBoardText();
-      if (!StringUtils.isNullOrEmptyOrBlank(url)) {
+      if (url != null && XDMUtils.validateURL(url)) {
         txtUrl.setText(url);
       }
     } else {
-      this.metadata = metadata;
+      this.downloadInfo = downloadInfo;
+      this.txtUrl.setText(downloadInfo.getUrl());
+      this.txtFileName.setText(downloadInfo.getFileName());
+      if (this.downloadInfo.getFileName() != null) {
+        this.originalFileName = downloadInfo.getFileName();
+      }
+      var sz = downloadInfo.getFileSize();
+      if (sz != null) {
+        this.lblFileInfo.setText(FormatUtilities.formatSize(sz));
+      }
     }
     this.setVisible(true);
   }
@@ -233,6 +284,7 @@ public class NewDownloadWindow extends JDialog {
       var len = doc.getLength();
       var text = doc.getText(0, len);
       txtFileName.setText(FileUtils.getFileName(text));
+      originalFileName = txtFileName.getText();
     } catch (Exception err) {
       Logger.log(err);
     }

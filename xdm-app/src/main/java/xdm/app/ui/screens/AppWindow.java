@@ -119,7 +119,7 @@ public class AppWindow extends JFrame implements ActionListener {
 
       switch (name) {
         case "TOOL_DOWNLOAD":
-          AppContext.INSTANCE.getAppControllerService().showNewDownloadWindow(null);
+          AppContext.INSTANCE.getApp().addDownload(null);
           return;
       }
 
@@ -128,7 +128,7 @@ public class AppWindow extends JFrame implements ActionListener {
       } else if (name.startsWith("START")) {
         AppMenuHandler.startQueue(name);
       } else if ("TOOL_DOWNLOAD".equals(name) || "MENU_ADD_URL".equals(name)) {
-        AppContext.INSTANCE.getAppControllerService().showNewDownloadWindow(null);
+        AppContext.INSTANCE.getApp().addDownload(null);
       } else if ("PAUSE".equals(name) || "MENU_PAUSE".equals(name)) {
         // AppMenuHandler.pauseDownloads(this);
       } else if ("CTX_COPY_URL".equals(name)) {
@@ -377,7 +377,7 @@ public class AppWindow extends JFrame implements ActionListener {
       Desktop.getDesktop()
           .addAppEventListener(
               (AppReopenedListener)
-                  e -> AppContext.INSTANCE.getAppControllerService().showAppWindow());
+                  e -> AppContext.INSTANCE.getApp().showAppWindow());
     } catch (Exception ex) {
       // Nothing to do
     }

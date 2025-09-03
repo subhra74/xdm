@@ -22,7 +22,7 @@ import xdm.core.constants.ErrorCode;
 import xdm.core.downloaders.AbstractDownloader;
 import xdm.core.downloaders.Metadata;
 import xdm.core.downloaders.http.HttpDownloader;
-import xdm.core.downloaders.http.HttpMetadata;
+import xdm.core.downloaders.http.HttpSource;
 import xdman.monitoring.BrowserMonitor;
 import xdman.network.http.HttpContext;
 import xdman.ui.components.DownloadWindow;
@@ -225,7 +225,7 @@ public class XDMApp implements DownloadProgressListener, DownloadWindowListener 
   @Override
   public void downloadFinished(long id) {
     //    DownloadEntry ent = downloads.get(id);
-    var ent = AppContext.INSTANCE.getDownloadsDbService().getById(id);
+    var ent = AppContext.INSTANCE.getDb().getById(id);
     ent.setState(DownloadEntryState.FINISHED); // XDMConstants.FINISHED);
     var d = downloaders.remove(id);
     if (d != null && d.getSize() < 0) {
@@ -274,7 +274,7 @@ public class XDMApp implements DownloadProgressListener, DownloadWindowListener 
     } else {
       Logger.log("Wnd is null!!!");
     }
-    var ent = AppContext.INSTANCE.getDownloadsDbService().getById(id);
+    var ent = AppContext.INSTANCE.getDb().getById(id);
     ent.setState(DownloadEntryState.PAUSED);
     notifyListeners(id);
     saveDownloadList();
@@ -290,7 +290,7 @@ public class XDMApp implements DownloadProgressListener, DownloadWindowListener 
       wnd.close(XDMConstants.PAUSED, 0);
       downloadWindows.remove(id);
     }
-    var ent = AppContext.INSTANCE.getDownloadsDbService().getById(id);
+    var ent = AppContext.INSTANCE.getDb().getById(id);
     ent.setState(DownloadEntryState.PAUSED);
     notifyListeners(id);
     saveDownloadList();
@@ -301,7 +301,7 @@ public class XDMApp implements DownloadProgressListener, DownloadWindowListener 
   public void downloadConfirmed(long id) {
     Logger.log("confirmed " + id);
     var d = downloaders.get(id);
-    var ent = AppContext.INSTANCE.getDownloadsDbService().getById(id);
+    var ent = AppContext.INSTANCE.getDb().getById(id);
     ent.setSize(d.getSize());
 
     // if (isSameFile(ent.getFolder(),
@@ -327,7 +327,7 @@ public class XDMApp implements DownloadProgressListener, DownloadWindowListener 
   @Override
   public void downloadUpdated(long id) {
     try {
-      var ent = AppContext.INSTANCE.getDownloadsDbService().getById(id);
+      var ent = AppContext.INSTANCE.getDb().getById(id);
       var d = downloaders.get(id);
       if (d == null) {
         Logger.log("################# sync error ##############");
@@ -429,7 +429,7 @@ public class XDMApp implements DownloadProgressListener, DownloadWindowListener 
         });
   }
 
-  public void addDownload(final HttpMetadata metadata, final String file) {
+  public void addDownload(final HttpSource metadata, final String file) {
     // if (refreshCallback != null) {
     //      if (refreshCallback.isValidLink(metadata)) {
     //        return;
@@ -566,7 +566,7 @@ public class XDMApp implements DownloadProgressListener, DownloadWindowListener 
   public void createDownload(
       String file,
       String folder,
-      xdm.core.downloaders.http.HttpMetadata metadata,
+      HttpSource metadata,
       boolean now,
       String queueId,
       int formatIndex,
@@ -590,7 +590,7 @@ public class XDMApp implements DownloadProgressListener, DownloadWindowListener 
     // putInQueue(queueId, ent);
     // ent.setStartedByUser(now);
     // downloads.put(metadata.getId(), ent);
-    AppContext.INSTANCE.getDownloadsDbService().add(ent);
+    AppContext.INSTANCE.getDb().add(ent);
     saveDownloadList();
     if (!now) {
       DownloadQueue q = qMgr.getQueueById(queueId);
@@ -607,7 +607,7 @@ public class XDMApp implements DownloadProgressListener, DownloadWindowListener 
 
   // could be new or resume
   private void startDownload(
-      long id, HttpMetadata metadata, xdm.app.models.DownloadEntry ent, int streams) {
+          long id, HttpSource metadata, xdm.app.models.DownloadEntry ent, int streams) {
     // if (!checkAndBufferRequests(id)) {
     //      Logger.log(
     //          "starting "
@@ -822,7 +822,7 @@ public class XDMApp implements DownloadProgressListener, DownloadWindowListener 
 
   @Override
   public String getOutputFileName(long id) {
-    var ent = AppContext.INSTANCE.getDownloadsDbService().getById(id);
+    var ent = AppContext.INSTANCE.getDb().getById(id);
     //    if (update) {
     //      updateFileName(ent);
     //    }
@@ -858,7 +858,7 @@ public class XDMApp implements DownloadProgressListener, DownloadWindowListener 
   }
 
   private void loadDownloadList() {
-    AppContext.INSTANCE.getDownloadsDbService().load();
+    AppContext.INSTANCE.getDb().load();
     //    File file = new File(Config.getInstance().getDataFolder(), "downloads.txt");
     //    loadDownloadList(file);
   }
@@ -942,7 +942,7 @@ public class XDMApp implements DownloadProgressListener, DownloadWindowListener 
   private void saveDownloadList() {
     //    File file = new File(Config.getInstance().getDataFolder(), "downloads.txt");
     //    saveDownloadList(file);
-    AppContext.INSTANCE.getDownloadsDbService().save();
+    AppContext.INSTANCE.getDb().save();
   }
 
   //  public void saveDownloadList(File file) {

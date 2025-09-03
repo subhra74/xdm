@@ -1,26 +1,7 @@
 package xdman.monitoring;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
-
-import xdm.app.AppContext;
-import xdman.Config;
-import xdman.XDMApp;
 // import xdman.ui.components.VideoPopupItem;
-import xdman.util.Base64;
-import xdman.util.Logger;
+
 
 public class BrowserMonitor implements Runnable {
   private static BrowserMonitor _this;
@@ -196,7 +177,7 @@ public class BrowserMonitor implements Runnable {
 //      serverSock = new ServerSocket();
 //      serverSock.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 9614));
 //      //      XDMApp.instanceStarted();
-//      AppContext.INSTANCE.getAppControllerService().run(new String[] {});
+//      AppContext.INSTANCE.getApp().run(new String[] {});
 //      // acquireGlobalLock();
 //      while (true) {
 //        Socket sock = serverSock.accept();

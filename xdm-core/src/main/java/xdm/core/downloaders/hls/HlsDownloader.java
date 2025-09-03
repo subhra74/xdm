@@ -17,22 +17,27 @@ import xdm.core.downloaders.*;
 import xdm.core.media.parser.hls.HlsMediaPlaylist;
 import xdm.core.media.parser.hls.HlsMediaSegment;
 import xdm.core.media.parser.hls.HlsParser;
-import xdm.core.network.http.HttpResponse;
+import xdm.core.util.ManifestUtils;
 
 public class HlsDownloader extends AbstractMultiSourceDownloader {
   private static final Logger logger = LoggerFactory.getLogger(HlsDownloader.class);
-  private final HlsMetadata metadata;
+  private final HlsSource metadata;
   private final Map<String, byte[]> keyCache = new ConcurrentHashMap<>();
   private final AtomicInteger pieceCompletedCount = new AtomicInteger(0);
 
   public HlsDownloader(
       long id,
       String folder,
-      HlsMetadata hlsRequestDetails,
+      HlsSource hlsRequestDetails,
       DownloadProgressListener listener,
       InteractiveCredentialProvider credentialProvider) {
     super(DownloaderType.Hls, id, folder, listener, credentialProvider);
     this.metadata = hlsRequestDetails;
+  }
+
+  @Override
+  protected String fixExtension(String fileName) {
+    throw new RuntimeException("Not implemented");
   }
 
   @Override
@@ -48,7 +53,13 @@ public class HlsDownloader extends AbstractMultiSourceDownloader {
     executorService.submit(
         () -> {
           try {
-            byte[] bytes = downloadManifest(this.metadata.getUrl().toString());
+            byte[] bytes =
+                ManifestUtils.INSTANCE.downloadManifestBytes(
+                    httpClient,
+                    this.metadata.getUrl(),
+                    metadata.getHeaders(),
+                    metadata.getCookies(),
+                    stopFlag);
             if (bytes == null) {
               error.set(true);
               return;
@@ -66,7 +77,13 @@ public class HlsDownloader extends AbstractMultiSourceDownloader {
       executorService.submit(
           () -> {
             try {
-              byte[] bytes = downloadManifest(this.metadata.getAudioUrl().toString());
+              byte[] bytes =
+                  ManifestUtils.INSTANCE.downloadManifestBytes(
+                      httpClient,
+                      this.metadata.getAudioUrl(),
+                      metadata.getHeaders(),
+                      metadata.getCookies(),
+                      stopFlag);
               if (bytes == null) {
                 error.set(true);
                 return;
@@ -224,7 +241,9 @@ public class HlsDownloader extends AbstractMultiSourceDownloader {
               if (error.get() || stopFlag.get()) {
                 return;
               }
-              byte[] data = downloadManifest(keyUrl);
+              byte[] data =
+                  ManifestUtils.INSTANCE.downloadManifestBytes(
+                      httpClient, keyUrl, metadata.getHeaders(), metadata.getCookies(), stopFlag);
               if (data == null) {
                 error.set(true);
                 return;
@@ -240,41 +259,41 @@ public class HlsDownloader extends AbstractMultiSourceDownloader {
     }
   }
 
-  private byte[] downloadManifest(String url) {
-    try {
-      while (!stopFlag.get()) {
-        try (HttpResponse response =
-            this.httpClient.get(
-                url, this.metadata.getHeaders(), this.metadata.getCookies(), null)) {
-          if (stopFlag.get()) return null;
-          int code = response.getStatusCode();
-          if (code != 200 && code != 206) {
-            logger.error("Manifest download failed");
-            return null;
-          }
-          ByteArrayOutputStream bout = new ByteArrayOutputStream();
-          byte[] b = new byte[8192];
-          try (InputStream inputStream = response.getInputStream()) {
-            while (!stopFlag.get()) {
-              int x = inputStream.read(b);
-              if (x == -1) break;
-              bout.write(b, 0, x);
-            }
-            return bout.toByteArray();
-          }
-        } catch (IOException ex) {
-          logger.error("Error downloading manifest", ex);
-          Thread.sleep(3000);
-        }
-      }
-    } catch (InterruptedException ex) {
-      logger.error("Thread interrupted", ex);
-      Thread.currentThread().interrupt();
-    } catch (Exception ex) {
-      logger.error("Error downloading manifest", ex);
-    }
-    return null;
-  }
+  //  private byte[] downloadManifest(String url) {
+  //    try {
+  //      while (!stopFlag.get()) {
+  //        try (HttpResponse response =
+  //            this.httpClient.get(
+  //                url, this.metadata.getHeaders(), this.metadata.getCookies(), null)) {
+  //          if (stopFlag.get()) return null;
+  //          int code = response.getStatusCode();
+  //          if (code != 200 && code != 206) {
+  //            logger.error("Manifest download failed");
+  //            return null;
+  //          }
+  //          ByteArrayOutputStream bout = new ByteArrayOutputStream();
+  //          byte[] b = new byte[8192];
+  //          try (InputStream inputStream = response.getInputStream()) {
+  //            while (!stopFlag.get()) {
+  //              int x = inputStream.read(b);
+  //              if (x == -1) break;
+  //              bout.write(b, 0, x);
+  //            }
+  //            return bout.toByteArray();
+  //          }
+  //        } catch (IOException ex) {
+  //          logger.error("Error downloading manifest", ex);
+  //          Thread.sleep(3000);
+  //        }
+  //      }
+  //    } catch (InterruptedException ex) {
+  //      logger.error("Thread interrupted", ex);
+  //      Thread.currentThread().interrupt();
+  //    } catch (Exception ex) {
+  //      logger.error("Error downloading manifest", ex);
+  //    }
+  //    return null;
+  //  }
 
   @Override
   protected boolean restoreState() {

@@ -28,7 +28,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.text.Document;
 
 import xdm.core.downloaders.Metadata;
-import xdm.core.downloaders.http.HttpMetadata;
+import xdm.core.downloaders.http.HttpSource;
 import xdman.Config;
 import xdman.DownloadQueue;
 import xdman.XDMApp;
@@ -162,7 +162,7 @@ public class NewDownloadWindow extends JDialog implements ActionListener, Docume
     String file = XDMUtils.createSafeFileName(filePane.getFileName());
 
     var metadata =
-        HttpMetadata.builder()
+        HttpSource.builder()
             .url(urlStr)
             .fileName(file)
             .dateAdded(System.currentTimeMillis())

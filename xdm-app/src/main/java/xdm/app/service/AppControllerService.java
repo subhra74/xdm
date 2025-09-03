@@ -1,8 +1,8 @@
 package xdm.app.service;
 
+import xdm.app.models.BrowserDownloadInfo;
 import xdm.app.models.DownloadEntry;
 import xdm.core.downloaders.AbstractDownloader;
-import xdm.core.downloaders.http.HttpMetadata;
 
 public interface AppControllerService {
   void run(String[] args);
@@ -27,5 +27,5 @@ public interface AppControllerService {
 
   void showErrorInProgressWindow(long id, String errorMessage);
 
-  void showNewDownloadWindow(final HttpMetadata metadata);
+  void addDownload(final BrowserDownloadInfo metadata);
 }

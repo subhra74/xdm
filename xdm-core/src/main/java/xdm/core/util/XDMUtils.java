@@ -9,7 +9,6 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 public class XDMUtils {
   // private static float dpiScale;
@@ -86,7 +85,7 @@ public class XDMUtils {
       if (path.equals("/")) return "FILE";
       return createSafeFileName(path);
     } catch (Exception e) {
-      Logger.log(e);
+      Logger.info(e);
       return "FILE";
     }
   }

@@ -26,16 +26,19 @@ public class HttpChunkRetriever extends AbstractChunkRetriever {
   private PoolingHttpClient httpClient;
   private HttpResponse response;
   private long actualRange;
+  private final String cookie;
 
   public HttpChunkRetriever(
       Chunk chunk,
       String url,
       HeaderCollection headers,
+      String cookie,
       long totalLength,
       PoolingHttpClient httpClient) {
     super(chunk);
     this.url = url;
     this.headers = headers;
+    this.cookie = cookie;
     this.totalLength = totalLength;
     this.httpClient = httpClient;
   }
@@ -145,7 +148,7 @@ public class HttpChunkRetriever extends AbstractChunkRetriever {
           return false;
         }
         Range range = makeRange(length, expectedLength, startOff, endOff);
-        this.response = this.httpClient.get(this.url, this.headers, null, range);
+        this.response = this.httpClient.get(this.url, this.headers, this.cookie, range);
         if (stop.get()) {
           return false;
         }

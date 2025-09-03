@@ -12,6 +12,18 @@ public class HeaderCollection {
     headers = new ArrayList<>();
   }
 
+  public HeaderCollection(Map<String, List<String>> headers) {
+    this();
+    if (headers == null) return;
+    for (String key : headers.keySet()) {
+      List<String> value = headers.get(key);
+      for (String val : value) {
+        HttpHeader header = new HttpHeader(key, val);
+        this.headers.add(header);
+      }
+    }
+  }
+
   public String getValue(String name) {
     for (int i = 0; i < headers.size(); i++) {
       HttpHeader header = headers.get(i);
