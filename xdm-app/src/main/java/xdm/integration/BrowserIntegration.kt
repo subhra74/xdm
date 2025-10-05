@@ -52,6 +52,7 @@ object BrowserIntegration {
     }
 
     private fun handleRequest(context: RequestContext) {
+        Logger.info(BrowserIntegration.javaClass.name, context.requestPath)
         when (context.requestPath) {
             "/download" -> onDownloadMessage(context)
             "/media" -> onMediaMessage(context)

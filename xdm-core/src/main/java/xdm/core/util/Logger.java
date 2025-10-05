@@ -11,6 +11,21 @@ public class Logger {
     return System.err;
   }
 
+  public static void info(String tag, String msg) {
+    getLogStream().println("[ " + tag + " ] " + msg);
+  }
+
+  public static void error(String tag, String msg) {
+    error(tag, msg, null);
+  }
+
+  public static void error(String tag, String msg, Throwable ex) {
+    getErrorStream().println("[ " + tag + " ] " + msg);
+    if (ex != null) {
+      ex.printStackTrace(getErrorStream());
+    }
+  }
+
   public static void info(Object obj) {
     if (obj instanceof Throwable) {
       getErrorStream().print("[ " + Thread.currentThread().getName() + " ] ");

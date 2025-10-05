@@ -17,6 +17,7 @@ import java.security.MessageDigest
 import java.time.LocalDateTime
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.concurrent.thread
 
 
 object VideoHelper {
@@ -66,13 +67,15 @@ object VideoHelper {
         val contentLength = getHeader(CONTENT_LENGTH, responseHeaders)?.toLong()
         msg.url ?: return
         if (isHLS(contentType) || isHLSUrl(msg.url)) {
-            processHLSVideo(msg)
+            thread { processHLSVideo(msg) }
+            return
         }
         if (isHttpVideo(
                 msg.url, contentType, contentLength, msg.tabId
             )
         ) {
             processHttpVideo(msg, contentType, contentLength ?: -1L)
+            return
         }
     }
 

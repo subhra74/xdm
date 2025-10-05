@@ -20,8 +20,8 @@ public class FilterListRenderer implements ListCellRenderer<FilterListItem> {
         new CompoundBorder(
             new EmptyBorder(7, 0, 7, 0),
             new CompoundBorder(
-                new MatteBorder(0, 5, 0, 0, new Color(30, 144, 255)),
-                new EmptyBorder(0, 15, 0, 15)));
+                new MatteBorder(0, 3, 0, 0, new Color(30, 144, 255)),
+                new EmptyBorder(0, 17, 0, 15)));
     label = new JLabel();
     label.setIcon(AppUtils.createSVGIcon("arrow-up-down-fill.svg", 20, Color.GRAY));
     label.setIconTextGap(10);

@@ -10,6 +10,8 @@ import xdm.core.DownloadProgressListener;
 import xdm.core.constants.ErrorCode;
 import xdm.core.downloaders.AbstractDownloader;
 import xdm.core.downloaders.Metadata;
+import xdm.core.downloaders.hls.HlsDownloader;
+import xdm.core.downloaders.hls.HlsSource;
 import xdm.core.downloaders.http.HttpDownloader;
 import xdm.core.downloaders.http.HttpSource;
 import xdm.core.util.FileUtils;
@@ -325,6 +327,14 @@ public class DownloadsControllerServiceImpl implements DownloadsControllerServic
           metadata.getId(),
           AppContext.INSTANCE.getConfig().getTempFolder(),
           httpSource,
+          this.listener,
+          null);
+    }
+    if (metadata instanceof HlsSource hlsSource) {
+      return new HlsDownloader(
+          metadata.getId(),
+          AppContext.INSTANCE.getConfig().getTempFolder(),
+          hlsSource,
           this.listener,
           null);
     }

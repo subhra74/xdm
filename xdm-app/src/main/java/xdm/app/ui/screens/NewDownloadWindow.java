@@ -4,6 +4,7 @@ import xdm.app.AppContext;
 import xdm.app.models.BrowserDownloadInfo;
 import xdm.app.utils.AppUtils;
 import xdm.app.utils.PlatformUtils;
+import xdm.core.downloaders.Metadata;
 import xdm.core.downloaders.http.HttpSource;
 import xdm.core.network.http.HeaderCollection;
 import xdm.core.util.*;
@@ -26,7 +27,9 @@ public class NewDownloadWindow extends JDialog {
   private DefaultComboBoxModel<String> modelSaveIn;
   private JLabel lblFileInfo;
   private BrowserDownloadInfo downloadInfo;
+  private Metadata metadata;
   private String originalFileName;
+  private JLabel lbAddress;
 
   public NewDownloadWindow() {
     initUI();
@@ -45,7 +48,7 @@ public class NewDownloadWindow extends JDialog {
     getContentPane().setLayout(gridBagLayout);
     getContentPane().setBackground(UIManager.getColor("Table.background"));
 
-    JLabel lbAddress = new JLabel(StringResource.get("ND_ADDRESS"));
+    lbAddress = new JLabel(StringResource.get("ND_ADDRESS"));
     lbAddress.setHorizontalAlignment(SwingConstants.RIGHT);
     GridBagConstraints gbcLbAddress = new GridBagConstraints();
     gbcLbAddress.anchor = GridBagConstraints.EAST;
@@ -272,6 +275,36 @@ public class NewDownloadWindow extends JDialog {
       }
       var sz = downloadInfo.getFileSize();
       if (sz != null) {
+        this.lblFileInfo.setText(FormatUtilities.formatSize(sz));
+      }
+    }
+    this.setVisible(true);
+  }
+
+  public void showWindow(final Metadata metadata) {
+    this.adjustSize();
+    this.setLocationRelativeTo(null);
+    modelSaveIn.removeAllElements();
+    modelSaveIn.addAll(AppContext.INSTANCE.getConfig().getRecentFolders());
+    if (AppContext.INSTANCE.getConfig().isAutoSelectFolder()) {
+      cmbSaveIn.setSelectedIndex(0);
+    } else {
+      cmbSaveIn.setSelectedIndex(AppContext.INSTANCE.getConfig().getFolderIndex() + 1);
+    }
+    if (metadata == null) {
+      var url = PlatformUtils.getClipBoardText();
+      if (url != null && XDMUtils.validateURL(url)) {
+        txtUrl.setText(url);
+      }
+    } else {
+      this.metadata = metadata;
+      this.txtUrl.setText(metadata.getPrimaryUrl());
+      this.txtFileName.setText(metadata.getFileName());
+      if (this.metadata.getFileName() != null) {
+        this.originalFileName = metadata.getFileName();
+      }
+      var sz = metadata.getFileSize();
+      if (sz > 0) {
         this.lblFileInfo.setText(FormatUtilities.formatSize(sz));
       }
     }
