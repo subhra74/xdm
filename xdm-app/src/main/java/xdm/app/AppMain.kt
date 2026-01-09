@@ -20,6 +20,7 @@ object AppMain {
 
     @JvmStatic
     fun main(args: Array<String>) {
+        Logger.log("Use OKHttp..")
         Logger.log("loading...")
         Logger.log(System.getProperty("java.version") + " " + System.getProperty("os.version"))
 

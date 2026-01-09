@@ -45,6 +45,8 @@ public abstract class AbstractSegmentedDownloader extends AbstractDownloader
     this.downloadProgressData = new DownloadProgressData(this, 0);
   }
 
+  protected abstract void cleanupConnections();
+
   public void start() {
     logger.info("creating folder {}", folder);
     new File(folder).mkdirs();
@@ -203,6 +205,8 @@ public abstract class AbstractSegmentedDownloader extends AbstractDownloader
         logger.error(e.getMessage(), e);
         listener.downloadFailed(this.id, ErrorCode.ERR_ASM_FAILED);
       }
+    } finally {
+      cleanupConnections();
     }
   }
 
@@ -448,6 +452,7 @@ public abstract class AbstractSegmentedDownloader extends AbstractDownloader
       chunk.stop();
     }
     listener.downloadStopped(id);
+    cleanupConnections();
   }
 
   protected abstract void saveState();
@@ -554,6 +559,7 @@ public abstract class AbstractSegmentedDownloader extends AbstractDownloader
       return;
     }
     this.listener.downloadFailed(this.id, getFinalError(err));
+    cleanupConnections();
     logger.error("failed");
   }
 

@@ -8,22 +8,8 @@ import lombok.Builder;
 import lombok.Getter;
 import xdm.core.network.http.HttpResponse;
 
-@Getter
-@Builder
-public class HttpResponseImpl implements HttpResponse {
 
-  //  public HttpResponseImpl(ClassicHttpResponse response, HttpClientContext context) {
-  //    this.response = response;
-  //    this.responseEntity = response.getEntity();
-  //    this.inputStream=responseEntity.getContent();
-  //    RedirectLocations locations = context.getRedirectLocations();
-  //    if (locations.size() > 0) {
-  //      this.finalUrl = locations.get(locations.size() - 1);
-  //      this.isRedirected = true;
-  //    } else {
-  //      finalUrl = null;
-  //    }
-  //  }
+public class HttpResponseImpl implements HttpResponse {
 
   @Override
   public void close() {
@@ -46,4 +32,101 @@ public class HttpResponseImpl implements HttpResponse {
   private InputStream inputStream;
   private URI finalUrl;
   private boolean isRedirected;
+
+  public Runnable getCloseCallback() {
+    return closeCallback;
+  }
+
+  public void setCloseCallback(Runnable closeCallback) {
+    this.closeCallback = closeCallback;
+  }
+
+  @Override
+  public String getContentDisposition() {
+    return contentDisposition;
+  }
+
+  public void setContentDisposition(String contentDisposition) {
+    this.contentDisposition = contentDisposition;
+  }
+
+  @Override
+  public long getContentLength() {
+    return contentLength;
+  }
+
+  public void setContentLength(long contentLength) {
+    this.contentLength = contentLength;
+  }
+
+  @Override
+  public String getContentType() {
+    return contentType;
+  }
+
+  public void setContentType(String contentType) {
+    this.contentType = contentType;
+  }
+
+  @Override
+  public URI getFinalUrl() {
+    return finalUrl;
+  }
+
+  public void setFinalUrl(URI finalUrl) {
+    this.finalUrl = finalUrl;
+  }
+
+  public Function<String, String> getHeaderCallback() {
+    return headerCallback;
+  }
+
+  public void setHeaderCallback(Function<String, String> headerCallback) {
+    this.headerCallback = headerCallback;
+  }
+
+  @Override
+  public InputStream getInputStream() {
+    return inputStream;
+  }
+
+  public void setInputStream(InputStream inputStream) {
+    this.inputStream = inputStream;
+  }
+
+  @Override
+  public boolean isRedirected() {
+    return isRedirected;
+  }
+
+  public void setRedirected(boolean redirected) {
+    isRedirected = redirected;
+  }
+
+  @Override
+  public LocalDateTime getLastModified() {
+    return lastModified;
+  }
+
+  public void setLastModified(LocalDateTime lastModified) {
+    this.lastModified = lastModified;
+  }
+
+  @Override
+  public int getStatusCode() {
+    return statusCode;
+  }
+
+  public void setStatusCode(int statusCode) {
+    this.statusCode = statusCode;
+  }
+
+  @Override
+  public String getStatusMessage() {
+    return statusMessage;
+  }
+
+  public void setStatusMessage(String statusMessage) {
+    this.statusMessage = statusMessage;
+  }
 }

@@ -12,6 +12,7 @@ import org.apache.hc.client5.http.config.ConnectionConfig;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
 import org.apache.hc.client5.http.protocol.HttpClientContext;
 import org.apache.hc.client5.http.protocol.RedirectLocations;
@@ -24,20 +25,22 @@ import xdm.core.util.StringUtils;
 
 public class PoolingHttpClientImpl implements PoolingHttpClient {
   private final CloseableHttpClient hc;
+  private final PoolingHttpClientConnectionManager cm;
 
   public PoolingHttpClientImpl(int poolSize) {
+    this.cm =
+        PoolingHttpClientConnectionManagerBuilder.create()
+            .setMaxConnPerRoute(poolSize)
+            .setMaxConnTotal(2 * poolSize)
+            .setDefaultConnectionConfig(
+                ConnectionConfig.custom()
+                    .setSocketTimeout(30, TimeUnit.SECONDS)
+                    .setConnectTimeout(30, TimeUnit.SECONDS)
+                    .build())
+            .build();
     this.hc =
         HttpClients.custom()
-            .setConnectionManager(
-                PoolingHttpClientConnectionManagerBuilder.create()
-                    .setMaxConnPerRoute(poolSize)
-                    .setMaxConnTotal(2 * poolSize)
-                    .setDefaultConnectionConfig(
-                        ConnectionConfig.custom()
-                            .setSocketTimeout(30, TimeUnit.SECONDS)
-                            .setConnectTimeout(30, TimeUnit.SECONDS)
-                            .build())
-                    .build())
+            .setConnectionManager(cm)
             .disableAutomaticRetries()
             .disableContentCompression()
             .evictExpiredConnections()
@@ -54,10 +57,11 @@ public class PoolingHttpClientImpl implements PoolingHttpClient {
   @Override
   public void close() {
     this.hc.close(CloseMode.IMMEDIATE);
+    this.cm.close(CloseMode.IMMEDIATE);
   }
 
   @Override
-  public HttpResponse get(String url, HeaderCollection headers, String cookie, Range range)
+  public HttpResponse getResponse(String url, HeaderCollection headers, String cookie, Range range)
       throws IOException {
     HttpGet httpGet = new HttpGet(url);
     HttpClientContext context = new HttpClientContext();
@@ -103,44 +107,45 @@ public class PoolingHttpClientImpl implements PoolingHttpClient {
       finalUrl = locations.get(locations.size() - 1);
       isRedirected = true;
     }
-    return HttpResponseImpl.builder()
-        .statusCode(response.getCode())
-        .statusMessage(response.getReasonPhrase())
-        .contentLength(
-            Optional.ofNullable(responseEntity).map(EntityDetails::getContentLength).orElse(-1L))
-        .contentType(
-            Optional.ofNullable(responseEntity).map(EntityDetails::getContentType).orElse(null))
-        .contentDisposition(
-            Optional.ofNullable(response.getFirstHeader(HttpHeaders.CONTENT_DISPOSITION))
-                .map(NameValuePair::getValue)
-                .orElse(null))
-        .lastModified(LocalDateTime.now())
-        .inputStream(inputStream)
-        .finalUrl(finalUrl)
-        .isRedirected(isRedirected)
-        .closeCallback(
-            () -> {
-              try {
-                inputStream.close();
-              } catch (Exception ex) {
-                // Swallow error
-              }
-              try {
-                responseEntity.close();
-              } catch (Exception ex) {
-                // Swallow error
-              }
-              try {
-                response.close();
-              } catch (Exception ex) {
-                // Swallow error
-              }
-            })
-        .headerCallback(
-            name ->
-                Optional.ofNullable(response.getFirstHeader(name))
-                    .map(NameValuePair::getValue)
-                    .orElse(null))
-        .build();
+//    return HttpResponseImpl.builder()
+//        .statusCode(response.getCode())
+//        .statusMessage(response.getReasonPhrase())
+//        .contentLength(
+//            Optional.ofNullable(responseEntity).map(EntityDetails::getContentLength).orElse(-1L))
+//        .contentType(
+//            Optional.ofNullable(responseEntity).map(EntityDetails::getContentType).orElse(null))
+//        .contentDisposition(
+//            Optional.ofNullable(response.getFirstHeader(HttpHeaders.CONTENT_DISPOSITION))
+//                .map(NameValuePair::getValue)
+//                .orElse(null))
+//        .lastModified(LocalDateTime.now())
+//        .inputStream(inputStream)
+//        .finalUrl(finalUrl)
+//        .isRedirected(isRedirected)
+//        .closeCallback(
+//            () -> {
+//              try {
+//                inputStream.close();
+//              } catch (Exception ex) {
+//                // Swallow error
+//              }
+//              try {
+//                responseEntity.close();
+//              } catch (Exception ex) {
+//                // Swallow error
+//              }
+//              try {
+//                response.close();
+//              } catch (Exception ex) {
+//                // Swallow error
+//              }
+//            })
+//        .headerCallback(
+//            name ->
+//                Optional.ofNullable(response.getFirstHeader(name))
+//                    .map(NameValuePair::getValue)
+//                    .orElse(null))
+//        .build();
+    return null;
   }
 }

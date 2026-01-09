@@ -60,6 +60,14 @@ object VideoHelper {
 
     private fun isHLSUrl(url: String?): Boolean = StringUtils.containsIgnoreCase(url, "m3u8")
 
+    fun processVideoDownloadMessage(msg: ExtensionMessage) {
+        val vid=msg.vid
+        val name:String
+        val type: String
+        val contentType: String
+
+    }
+
     fun processMediaMessage(msg: ExtensionMessage) {
         val responseHeaders =
             msg.responseHeaders?.map { entry -> entry.key to entry.value.map { it.value } }?.associate { it }

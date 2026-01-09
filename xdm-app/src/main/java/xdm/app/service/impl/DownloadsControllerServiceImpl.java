@@ -38,16 +38,19 @@ public class DownloadsControllerServiceImpl implements DownloadsControllerServic
           public void downloadFinished(long id) {
             logger.info("Download finished...");
             onDownloadFinished(id);
+            System.gc();
           }
 
           @Override
           public void downloadFailed(long id, ErrorCode errorCode) {
             onDownloadFailed(id, errorCode);
+            System.gc();
           }
 
           @Override
           public void downloadStopped(long id) {
             onDownloadStopped(id);
+            System.gc();
           }
 
           @Override
@@ -108,6 +111,8 @@ public class DownloadsControllerServiceImpl implements DownloadsControllerServic
       downloader.start();
     }
   }
+
+  public void startDownload(String videoId, String name, String folder) {}
 
   @Override
   public void pauseDownload(long id) {

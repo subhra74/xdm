@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import xdm.core.XDMConstants;
 import xdm.core.constants.ErrorCode;
 import xdm.core.downloaders.AbstractChunkRetriever;
 import xdm.core.downloaders.Chunk;
@@ -85,7 +84,7 @@ public class HttpChunkRetriever extends AbstractChunkRetriever {
   private Range makeRange(long length, long expectedLength, long startOff, long endOff) {
     if (length > 0 && expectedLength > 0) {
       logger.info("{} requesting:- Range: bytes={}-{}", chunk, startOff, (endOff - 1));
-      return Range.builder().start(startOff).end(endOff - 1).build();
+      return new Range(startOff,endOff - 1);
     }
     return null;
   }
@@ -148,7 +147,7 @@ public class HttpChunkRetriever extends AbstractChunkRetriever {
           return false;
         }
         Range range = makeRange(length, expectedLength, startOff, endOff);
-        this.response = this.httpClient.get(this.url, this.headers, this.cookie, range);
+        this.response = this.httpClient.getResponse(this.url, this.headers, this.cookie, range);
         if (stop.get()) {
           return false;
         }

@@ -47,31 +47,27 @@ public class PieceGrabber implements Runnable {
         SimpleEntry<Long, Long> range = piece.getByteRange();
         Range realRange;
         if (range != null && !range.getKey().equals(range.getValue()) && range.getValue() != 0) {
-          realRange =
-              Range.builder()
-                  .start(range.getKey() + this.piece.getDownloaded())
-                  .end(range.getValue())
-                  .build();
+          realRange = new Range(range.getKey() + this.piece.getDownloaded(), range.getValue());
         } else {
-          realRange = Range.builder().start(this.piece.getDownloaded()).build();
+          realRange = new Range(this.piece.getDownloaded(), null);
         }
         logger.info("Connecting to: {}", piece.getUrl());
         try (HttpResponse response =
-            this.httpClient.get(
+            this.httpClient.getResponse(
                 piece.getUrl().toString(),
                 this.metadata.getHeaders(),
                 this.metadata.getCookies(),
                 realRange)) {
           if (stopFlag.get()) return;
           int code = response.getStatusCode();
-          if (realRange != null && code != 206) {
+          if (realRange.getStart() >0 && code != 206) {
             logger.error("Chunk download failed - serve does not support resume: {}", code);
-            this.piece.setStatus(PieceStatus.Error);
+            this.piece.setStatus(PieceStatus.NoResume);
             return;
           }
           if (code != 206 && code != 200) {
             logger.error("Chunk download failed - invalid response: {}", code);
-            this.piece.setStatus(PieceStatus.Error);
+            this.piece.setStatus(PieceStatus.ServerError);
             return;
           }
           this.piece.setLength(response.getContentLength());

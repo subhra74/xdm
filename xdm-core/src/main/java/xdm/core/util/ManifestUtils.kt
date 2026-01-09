@@ -39,7 +39,7 @@ object ManifestUtils {
         try {
             while (!stopFlag.get()) {
                 try {
-                    httpClient.get(
+                    httpClient.getResponse(
                         url, headers, cookie, null
                     ).use { response ->
                         if (stopFlag.get()) return null

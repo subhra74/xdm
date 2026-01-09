@@ -28,4 +28,6 @@ public interface AppControllerService {
   void showErrorInProgressWindow(long id, String errorMessage);
 
   void addDownload(final BrowserDownloadInfo metadata);
+
+  void addVideoDownload(long vid, String fileName, long fileSize, String fileType);
 }

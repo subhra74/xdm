@@ -8,7 +8,8 @@ import xdm.core.XDMConstants;
 import xdm.core.downloaders.*;
 import xdm.core.net.HttpUtilsKt;
 import xdm.core.network.http.PoolingHttpClient;
-import xdm.core.network.http.impl.PoolingHttpClientImpl;
+import xdm.core.network.http.impl.HttpClientImpl;
+import xdm.core.network.http.impl.HttpClientImpl2;
 import xdm.core.util.*;
 
 import java.util.ArrayList;
@@ -26,7 +27,7 @@ public class HttpDownloader extends AbstractSegmentedDownloader {
       InteractiveCredentialProvider credentialProvider) {
     super(DownloaderType.Http, id, tempFolder, listener, credentialProvider);
     this.metadata = metadata;
-    this.httpClient = new PoolingHttpClientImpl(100);
+    this.httpClient = new HttpClientImpl2(100); // new PoolingHttpClientImpl(100);
   }
 
   @Override
@@ -80,6 +81,12 @@ public class HttpDownloader extends AbstractSegmentedDownloader {
   @Override
   public HttpSource getMetadata() {
     return this.metadata;
+  }
+
+  @Override
+  protected void cleanupConnections() {
+    xdm.core.util.Logger.info("XDM","Cleanup done..");
+    this.httpClient.close();
   }
 
   @Override

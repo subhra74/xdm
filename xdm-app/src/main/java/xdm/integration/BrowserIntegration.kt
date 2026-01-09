@@ -12,9 +12,11 @@ import xdm.app.models.BrowserDownloadInfo
 import xdm.core.CONTENT_TYPE
 import xdm.core.REFERER
 import xdm.core.USER_AGENT
+import xdm.core.downloaders.http.HttpSource
 import xdm.core.net.getContentLength
 import xdm.core.net.getHeader
 import xdm.core.net.getModifiedDate
+import xdm.core.network.http.HeaderCollection
 import xdm.core.util.FileUtils
 import xdm.core.util.Logger
 import xdm.core.util.UniqueID
@@ -52,12 +54,27 @@ object BrowserIntegration {
     }
 
     private fun handleRequest(context: RequestContext) {
-        Logger.info(BrowserIntegration.javaClass.name, context.requestPath)
+        //Logger.info(BrowserIntegration.javaClass.name, context.requestPath)
         when (context.requestPath) {
             "/download" -> onDownloadMessage(context)
             "/media" -> onMediaMessage(context)
+            "/vid" -> onVideoDownloadMessage(context)
         }
         onSyncMessage(context)
+    }
+
+    private fun onVideoDownloadMessage(context: RequestContext) {
+        Logger.info("Received video download message..")
+        context.requestBody?.let { content ->
+            val str = content.toString(StandardCharsets.UTF_8)
+            Logger.info(str)
+            val extMsg: ExtensionMessage
+            synchronized(json) {
+                extMsg = json.decodeFromString<ExtensionMessage>(str)
+            }
+            removeBlockedHeaders(extMsg)
+            extMsg.vid?.let { AppContext.videoTracker.addVideoDownload(it) }
+        }
     }
 
     private fun onMediaMessage(context: RequestContext) {
@@ -128,6 +145,23 @@ object BrowserIntegration {
         msg.requestHeaders.putAll(filteredHeaders)
     }
 
+    @JvmStatic
+    fun toHttpSource(msg: BrowserDownloadInfo?): HttpSource? {
+        if (msg == null) return null
+        val source = HttpSource()
+        with(source) {
+            id = UniqueID.get()
+            url = msg.url
+            fileName = FileUtils.sanitizeFileName(msg.fileName ?: FileUtils.getFileName(msg.url))
+            isAutoSelectFolder = true
+            isKeepFileName = true
+            cookies = msg.cookie
+            headers = HeaderCollection(msg.requestHeaders)
+            fileSize = msg.fileSize ?: -1
+        }
+        return source
+    }
+
     private fun toBrowserDownloadInfo(msg: ExtensionMessage): BrowserDownloadInfo {
         return BrowserDownloadInfo(UniqueID.get(), msg.url!!).apply {
             fileName = FileUtils.sanitizeFileName(msg.file ?: FileUtils.getFileName(msg.url))
@@ -176,7 +210,7 @@ data class ExtensionMessage(
     val referer: String? = null,
     val fileSize: Long? = null,
     val mimeType: String? = null,
-    val vid: String? = null,
+    val vid: Long? = null,
 )
 
 @Serializable

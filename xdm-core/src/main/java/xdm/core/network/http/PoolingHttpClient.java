@@ -5,5 +5,5 @@ import java.io.IOException;
 public interface PoolingHttpClient {
   void close();
 
-  HttpResponse get(String url, HeaderCollection headers, String cookie, Range range) throws IOException;
+  HttpResponse getResponse(String url, HeaderCollection headers, String cookie, Range range) throws IOException;
 }

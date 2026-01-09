@@ -1,5 +1,6 @@
 package xdm.app.service.impl
 
+import xdm.app.AppContext
 import xdm.app.models.DetectedVideoInfo
 import xdm.app.models.StreamingVideoDisplayInfo
 import xdm.app.service.VideoTracker
@@ -10,6 +11,21 @@ import xdm.core.util.XDMUtils
 import java.util.stream.Stream
 
 class VideoTrackerImpl : VideoTracker {
+    override fun addVideoDownload(videoId: Long) {
+        var name: String?
+        var size: Long
+        var contentType: String?
+        httpVideoList[videoId]?.let {
+            //TODO: Check for link refresh
+            val (source, _) = it
+            name = source.fileName
+            size = source.fileSize
+            contentType = source.contentType
+            AppContext.app.addVideoDownload(videoId, name, size, contentType)
+        }
+    }
+
+
     override fun addVideoHls(items: List<Pair<HlsSource, StreamingVideoDisplayInfo>>) {
         synchronized(this) {
             for (item in items) {
@@ -54,6 +70,15 @@ class VideoTrackerImpl : VideoTracker {
                 }
             }
         }
+    }
+
+    override fun getHttpVideo(videoId: Long): HttpSource? {
+        synchronized(this) {
+            this.httpVideoList[videoId]?.let {
+                return it.first
+            }
+        }
+        return null
     }
 
     private val hlsVideoList = LinkedHashMap<Long, Pair<HlsSource, StreamingVideoDisplayInfo>>()

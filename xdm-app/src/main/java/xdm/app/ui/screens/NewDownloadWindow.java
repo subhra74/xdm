@@ -165,7 +165,7 @@ public class NewDownloadWindow extends JDialog {
     btnCancel.addActionListener(e -> dispose());
     panel.add(btnCancel);
 
-    Component rigidArea = Box.createRigidArea(new Dimension(10, 20));
+    Component rigidArea = Box.createRigidArea(new Dimension(10, 30));
     panel.add(rigidArea);
 
     btnDownload = new JButton(StringResource.get("ND_DOWNLOAD"));
@@ -182,46 +182,89 @@ public class NewDownloadWindow extends JDialog {
           public void windowActivated(WindowEvent e) {
             btnDownload.requestFocusInWindow();
           }
+
+          @Override
+          public void windowClosed(WindowEvent e) {
+            System.gc();
+          }
         });
   }
+
+  //  private void downloadNow() {
+  //    var url = txtUrl.getText();
+  //    var file = txtFileName.getText();
+  //    if (StringUtils.isNullOrEmptyOrBlank(url)) {
+  //      JOptionPane.showMessageDialog(this, StringResource.get("MSG_NO_URL"));
+  //      return;
+  //    }
+  //    if (!XDMUtils.validateURL(url)) {
+  //      JOptionPane.showMessageDialog(this, StringResource.get("MSG_INVALID_URL"));
+  //      return;
+  //    }
+  //    if (StringUtils.isNullOrEmptyOrBlank(file)) {
+  //      JOptionPane.showMessageDialog(this, StringResource.get("MSG_NO_FILE"));
+  //      return;
+  //    }
+  //    var keepFileName = !StringUtils.equalsIgnoreCase(txtFileName.getText(), originalFileName);
+  //    HttpSource source =
+  //        HttpSource.builder()
+  //            .id(UniqueID.get())
+  //            .url(url)
+  //            .fileName(file)
+  //            .autoSelectFolder(cmbSaveIn.getSelectedIndex() == 0)
+  //            .keepFileName(keepFileName)
+  //            .folder(
+  //                cmbSaveIn.getSelectedIndex() > 0
+  //                    ? cmbSaveIn.getItemAt(cmbSaveIn.getSelectedIndex())
+  //                    : null)
+  //            .build();
+  //    if (downloadInfo != null) {
+  //      if (downloadInfo.getRequestHeaders() != null) {
+  //        source.setHeaders(new HeaderCollection(downloadInfo.getRequestHeaders()));
+  //      }
+  //      if (downloadInfo.getCookie() != null) {
+  //        source.setCookies(downloadInfo.getCookie());
+  //      }
+  //    }
+  //    AppContext.INSTANCE.getDownloader().startDownload(source, true, -1);
+  //    dispose();
+  //  }
 
   private void downloadNow() {
     var url = txtUrl.getText();
     var file = txtFileName.getText();
-    if (StringUtils.isNullOrEmptyOrBlank(url)) {
-      JOptionPane.showMessageDialog(this, StringResource.get("MSG_NO_URL"));
-      return;
+    var isHttp = this.metadata instanceof HttpSource;
+    if (isHttp) {
+      if (StringUtils.isNullOrEmptyOrBlank(url)) {
+        JOptionPane.showMessageDialog(this, StringResource.get("MSG_NO_URL"));
+        return;
+      }
+      if (!XDMUtils.validateURL(url)) {
+        JOptionPane.showMessageDialog(this, StringResource.get("MSG_INVALID_URL"));
+        return;
+      }
     }
-    if (!XDMUtils.validateURL(url)) {
-      JOptionPane.showMessageDialog(this, StringResource.get("MSG_INVALID_URL"));
-      return;
-    }
+
     if (StringUtils.isNullOrEmptyOrBlank(file)) {
       JOptionPane.showMessageDialog(this, StringResource.get("MSG_NO_FILE"));
       return;
     }
+
     var keepFileName = !StringUtils.equalsIgnoreCase(txtFileName.getText(), originalFileName);
-    HttpSource source =
-        HttpSource.builder()
-            .id(UniqueID.get())
-            .url(url)
-            .fileName(file)
-            .autoSelectFolder(cmbSaveIn.getSelectedIndex() == 0)
-            .keepFileName(keepFileName)
-            .folder(
-                cmbSaveIn.getSelectedIndex() > 0
-                    ? cmbSaveIn.getItemAt(cmbSaveIn.getSelectedIndex())
-                    : null)
-            .build();
-    if (downloadInfo != null) {
-      if (downloadInfo.getRequestHeaders() != null) {
-        source.setHeaders(new HeaderCollection(downloadInfo.getRequestHeaders()));
-      }
-      if (downloadInfo.getCookie() != null) {
-        source.setCookies(downloadInfo.getCookie());
-      }
+
+    if (isHttp) {
+      ((HttpSource) this.metadata).setUrl(url);
     }
-    AppContext.INSTANCE.getDownloader().startDownload(source, true, -1);
+
+    this.metadata.setId(UniqueID.get());
+    this.metadata.setFileName(file);
+    this.metadata.setAutoSelectFolder(cmbSaveIn.getSelectedIndex() == 0);
+    this.metadata.setKeepFileName(keepFileName);
+    this.metadata.setFolder(
+        cmbSaveIn.getSelectedIndex() > 0
+            ? cmbSaveIn.getItemAt(cmbSaveIn.getSelectedIndex())
+            : null);
+    AppContext.INSTANCE.getDownloader().startDownload(this.metadata, true, -1);
     dispose();
   }
 
@@ -251,35 +294,35 @@ public class NewDownloadWindow extends JDialog {
   //    this.setVisible(true);
   //  }
 
-  public void showWindow(final BrowserDownloadInfo downloadInfo) {
-    this.adjustSize();
-    this.setLocationRelativeTo(null);
-    modelSaveIn.removeAllElements();
-    modelSaveIn.addAll(AppContext.INSTANCE.getConfig().getRecentFolders());
-    if (AppContext.INSTANCE.getConfig().isAutoSelectFolder()) {
-      cmbSaveIn.setSelectedIndex(0);
-    } else {
-      cmbSaveIn.setSelectedIndex(AppContext.INSTANCE.getConfig().getFolderIndex() + 1);
-    }
-    if (downloadInfo == null) {
-      var url = PlatformUtils.getClipBoardText();
-      if (url != null && XDMUtils.validateURL(url)) {
-        txtUrl.setText(url);
-      }
-    } else {
-      this.downloadInfo = downloadInfo;
-      this.txtUrl.setText(downloadInfo.getUrl());
-      this.txtFileName.setText(downloadInfo.getFileName());
-      if (this.downloadInfo.getFileName() != null) {
-        this.originalFileName = downloadInfo.getFileName();
-      }
-      var sz = downloadInfo.getFileSize();
-      if (sz != null) {
-        this.lblFileInfo.setText(FormatUtilities.formatSize(sz));
-      }
-    }
-    this.setVisible(true);
-  }
+  //  public void showWindow(final BrowserDownloadInfo downloadInfo) {
+  //    this.adjustSize();
+  //    this.setLocationRelativeTo(null);
+  //    modelSaveIn.removeAllElements();
+  //    modelSaveIn.addAll(AppContext.INSTANCE.getConfig().getRecentFolders());
+  //    if (AppContext.INSTANCE.getConfig().isAutoSelectFolder()) {
+  //      cmbSaveIn.setSelectedIndex(0);
+  //    } else {
+  //      cmbSaveIn.setSelectedIndex(AppContext.INSTANCE.getConfig().getFolderIndex() + 1);
+  //    }
+  //    if (downloadInfo == null) {
+  //      var url = PlatformUtils.getClipBoardText();
+  //      if (url != null && XDMUtils.validateURL(url)) {
+  //        txtUrl.setText(url);
+  //      }
+  //    } else {
+  //      this.downloadInfo = downloadInfo;
+  //      this.txtUrl.setText(downloadInfo.getUrl());
+  //      this.txtFileName.setText(downloadInfo.getFileName());
+  //      if (this.downloadInfo.getFileName() != null) {
+  //        this.originalFileName = downloadInfo.getFileName();
+  //      }
+  //      var sz = downloadInfo.getFileSize();
+  //      if (sz != null) {
+  //        this.lblFileInfo.setText(FormatUtilities.formatSize(sz));
+  //      }
+  //    }
+  //    this.setVisible(true);
+  //  }
 
   public void showWindow(final Metadata metadata) {
     this.adjustSize();
@@ -296,6 +339,7 @@ public class NewDownloadWindow extends JDialog {
       if (url != null && XDMUtils.validateURL(url)) {
         txtUrl.setText(url);
       }
+      this.metadata = HttpSource.builder().build();
     } else {
       this.metadata = metadata;
       this.txtUrl.setText(metadata.getPrimaryUrl());
@@ -308,6 +352,7 @@ public class NewDownloadWindow extends JDialog {
         this.lblFileInfo.setText(FormatUtilities.formatSize(sz));
       }
     }
+    this.txtUrl.setEditable(this.metadata instanceof HttpSource);
     this.setVisible(true);
   }
 
