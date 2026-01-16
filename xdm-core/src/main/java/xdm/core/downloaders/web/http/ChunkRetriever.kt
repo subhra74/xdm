@@ -1,6 +1,5 @@
 package xdm.core.downloaders.web.http
 
-import okio.Buffer
 import xdm.core.downloaders.web.DownloadError
 import xdm.core.network.http.HttpResponse
 import xdm.core.network.http.Range
@@ -222,7 +221,6 @@ class ChunkRetriever(
             return CopyResult.Cancel
         }
         val buf = ByteArray(256 * 1024)
-        //val okBuf = Buffer()
         var rem: Long = 0
 
         var fileHandle: RandomAccessFile? = null
