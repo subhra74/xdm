@@ -1,14 +1,15 @@
 package xdm.core.downloaders.web.http
 
 import xdm.core.network.http.impl.HttpClientImpl
+import xdm.core.util.CoreUtils
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
 class HttpDownloadTask {
     fun start() {
-        val url = "https://cache-redirector.jetbrains.com/intellij-jbr/jbr_jcef-25.0.1-windows-x64-b268.52.zip"
-//        val url = "http://localhost:8080/Cyberduck-8.6.0.39818.zip"//"http://localhost:8080/dahliaOS-201215-efi.zip"
+//        val url = "https://cache-redirector.jetbrains.com/intellij-jbr/jbr_jcef-25.0.1-windows-x64-b268.52.zip"
+        val url = "http://localhost:8080/Cyberduck-8.6.0.39818.zip"//"http://localhost:8080/dahliaOS-201215-efi.zip"
         val context = HttpTaskContext(
             chunks = ConcurrentHashMap<Long, Chunk>(),
             init = AtomicBoolean(false),
@@ -22,7 +23,9 @@ class HttpDownloadTask {
             completed = AtomicBoolean(false),
             errorCallback = {},
             outputFolder = AtomicReference({ "/Users/subhro/Desktop/tmp" }),
-            finalFileName = AtomicReference({ "out.zip" })
+            finalFileName = AtomicReference({ "out.zip" }),
+            tempFileCreated = AtomicBoolean(false),
+            tempFileName = "${CoreUtils.uniqueId()}.part"
         )
         val controller = HttpChunkController(
             "/Users/subhro/Desktop/tmp",

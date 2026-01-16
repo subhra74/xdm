@@ -53,38 +53,39 @@ class HttpChunkController(
         context.write {
             if (context.chunks.values.any { it.status.get() != ChunkStatus.Finished }) return false
             Logger.info("XDM", "All chunks downloaded")
-            val outputFileName = context.finalFileName.get().invoke()
-            val outFolder = context.outputFolder.get().invoke()
-            val outPath = Paths.get(outFolder, outputFileName)
-            if (context.stopFlag.get()) return false
-            try {
-                val chunks = context.chunks.values.sortedBy { it.offset.get() }
-                FileChannel.open(
-                    outPath,
-                    CollectionUtils.setOf(
-                        StandardOpenOption.CREATE,
-                        StandardOpenOption.WRITE,
-                        StandardOpenOption.TRUNCATE_EXISTING
-                    )
-                ).use { outChannel ->
-                    for (chunk in chunks) {
-                        FileChannel.open(
-                            File(tempDir, "${chunk.id}.part").toPath(), StandardOpenOption.READ
-                        ).use { inChannel ->
-                            copyBytes(inChannel, outChannel, chunk.length.get())
-                        }
-                        if (context.stopFlag.get()) {
-                            return false
-                        }
-                    }
-                }
-                for (chunk in chunks) {
-                    val file = File(tempDir, "${chunk.id}.part")
-                    Logger.info("XDM", "Delete file: ${file.absolutePath} - ${file.delete()}")
-                }
-            } catch (error: Exception) {
-                Logger.error("XDM", "Assembling error", error)
-            }
+            return true
+//            val outputFileName = context.finalFileName.get().invoke()
+//            val outFolder = context.outputFolder.get().invoke()
+//            val outPath = Paths.get(outFolder, outputFileName)
+//            if (context.stopFlag.get()) return false
+//            try {
+//                val chunks = context.chunks.values.sortedBy { it.offset.get() }
+//                FileChannel.open(
+//                    outPath,
+//                    CollectionUtils.setOf(
+//                        StandardOpenOption.CREATE,
+//                        StandardOpenOption.WRITE,
+//                        StandardOpenOption.TRUNCATE_EXISTING
+//                    )
+//                ).use { outChannel ->
+//                    for (chunk in chunks) {
+//                        FileChannel.open(
+//                            File(tempDir, "${chunk.id}.part").toPath(), StandardOpenOption.READ
+//                        ).use { inChannel ->
+//                            copyBytes(inChannel, outChannel, chunk.length.get())
+//                        }
+//                        if (context.stopFlag.get()) {
+//                            return false
+//                        }
+//                    }
+//                }
+//                for (chunk in chunks) {
+//                    val file = File(tempDir, "${chunk.id}.part")
+//                    Logger.info("XDM", "Delete file: ${file.absolutePath} - ${file.delete()}")
+//                }
+//            } catch (error: Exception) {
+//                Logger.error("XDM", "Assembling error", error)
+//            }
         }
         return true
     }

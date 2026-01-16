@@ -63,6 +63,7 @@ class HttpClientImpl(poolSize: Int) : PoolingHttpClient {
                 throw IOException("Body missing")
             }
             val inputStreamBody = body.byteStream()
+            val inputSource = body.source()
 
             val finalUrl = response.request.url.toUri().toASCIIString()
             val redirected = response.priorResponse?.isRedirect ?: false

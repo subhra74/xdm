@@ -24,6 +24,8 @@ class HttpTaskContext(
     val errorCallback: (error: DownloadError) -> Unit,
     val outputFolder: AtomicReference<() -> String>,
     val finalFileName: AtomicReference<() -> String>,
+    val tempFileName: String,
+    val tempFileCreated: AtomicBoolean,
     val lock: ReadWriteLock = ReentrantReadWriteLock(),
 ) {
     inline fun read(r: () -> Unit) {

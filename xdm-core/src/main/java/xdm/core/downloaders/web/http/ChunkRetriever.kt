@@ -1,5 +1,6 @@
 package xdm.core.downloaders.web.http
 
+import okio.Buffer
 import xdm.core.downloaders.web.DownloadError
 import xdm.core.network.http.HttpResponse
 import xdm.core.network.http.Range
@@ -221,6 +222,7 @@ class ChunkRetriever(
             return CopyResult.Cancel
         }
         val buf = ByteArray(256 * 1024)
+        //val okBuf = Buffer()
         var rem: Long = 0
 
         var fileHandle: RandomAccessFile? = null
@@ -388,8 +390,17 @@ class ChunkRetriever(
             val chunk = context.chunks[id] ?: return null
             var fs: RandomAccessFile? = null
             try {
-                fs = RandomAccessFile(File(controller.tempDir, "${chunk.id}.part"), "rw")
-                fs.seek(chunk.downloaded.get())
+                fs = RandomAccessFile(File(controller.tempDir, context.tempFileName), "rw")
+                context.totalSize?.let { len ->
+                    if (!context.tempFileCreated.get()) {
+                        fs.setLength(len)
+                        context.tempFileCreated.set(true)
+                        Logger.info("XDM", "Temp file created with size $len")
+                    } else {
+                        Logger.info("XDM", "Temp file created already")
+                    }
+                }
+                fs.seek(chunk.offset.get() + chunk.downloaded.get())
                 chunk.fileHandle.set(fs)
                 return fs
             } catch (ex: Exception) {
