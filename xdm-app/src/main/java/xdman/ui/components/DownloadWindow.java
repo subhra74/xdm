@@ -111,17 +111,17 @@ public class DownloadWindow extends JFrame implements ActionListener {
             + " "
             + FormatUtilities.formatSize(d.getDownloaded())
             + " "
-            + ((d.getType() == XDMConstants.HTTP || d.getType() == XDMConstants.DASH)
+            + ((d.type == XDMConstants.HTTP || d.type == XDMConstants.DASH)
                 ? "/ " + FormatUtilities.formatSize(d.getSize())
                 : "( " + d.getProgress() + " % )"));
     lblSpeed.setText(FormatUtilities.formatSize(d.getDownloadSpeed()) + "/s");
     lblETA.setText("ETA " + d.getEta());
     prgCircle.setValue(d.getProgress().get());
-    SegmentDetails segDet = d.getSegmentDetails();
+    SegmentDetails segDet = d.segmentDetails;
     long sz =
-        ((d.getType() == XDMConstants.HTTP
-                || d.getType() == XDMConstants.FTP
-                || d.getType() == XDMConstants.DASH)
+        ((d.type == XDMConstants.HTTP
+                || d.type == XDMConstants.FTP
+                || d.type == XDMConstants.DASH)
             ? d.getSize()
             : 100);
     segProgress.setValues(segDet, sz);

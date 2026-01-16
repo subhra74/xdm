@@ -4,17 +4,12 @@ import okhttp3.ConnectionPool
 import okhttp3.Dispatcher
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import org.apache.hc.core5.http.HttpHeaders
-import xdm.core.network.http.HeaderCollection
-import xdm.core.network.http.HttpResponse
-import xdm.core.network.http.PoolingHttpClient
-import xdm.core.network.http.Range
+import xdm.core.network.http.*
 import java.io.IOException
 import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
-import java.util.function.Function
 
-public class HttpClientImpl(poolSize: Int) : PoolingHttpClient {
+class HttpClientImpl(poolSize: Int) : PoolingHttpClient {
     private val dispatcher: Dispatcher = Dispatcher().apply {
         maxRequests = poolSize
         maxRequestsPerHost = poolSize
@@ -32,78 +27,77 @@ public class HttpClientImpl(poolSize: Int) : PoolingHttpClient {
         connectionPool.evictAll()
     }
 
-    override fun getResponse(url: String, headers: HeaderCollection?, cookie: String?, range: Range?): HttpResponse {
+    override fun getResponse(url: String, headers: HeaderMap?, cookie: String?, range: Range): Result<HttpResponse> {
         val requestBuilder = Request.Builder().url(url).get()
         val cookies: MutableSet<String> = LinkedHashSet()
 
-        headers?.all?.forEach {
-            if (it.name.lowercase() == "cookie") {
-                cookies.add(it.value)
+        headers?.forEach { (name, value) ->
+            if (name.lowercase() == "cookie" && value.isNotEmpty()) {
+                cookies.add(value.first())
             } else {
-                requestBuilder.addHeader(it.name, it.value)
+                for (headerValue in value) {
+                    requestBuilder.addHeader(name, headerValue)
+                }
             }
         }
 
-        if (range != null) {
-            if (range.end!! <= 0) {
-                requestBuilder.addHeader(HttpHeaders.RANGE, String.format("bytes=%d-", range.start))
-            } else {
-                requestBuilder.addHeader(
-                    HttpHeaders.RANGE, String.format("bytes=%d-%d", range.start, range.end)
-                )
-            }
+        val end = range.end ?: 0
+        if (end <= 0) {
+            requestBuilder.addHeader("Range", String.format("bytes=%d-", range.start))
         } else {
-            requestBuilder.addHeader(HttpHeaders.RANGE, "bytes=0-")
+            requestBuilder.addHeader(
+                "Range", String.format("bytes=%d-%d", range.start, range.end)
+            )
         }
 
         cookie?.let { cookies.add(it) }
-
         if (cookies.isNotEmpty()) {
-            requestBuilder.addHeader(HttpHeaders.COOKIE, cookies.joinToString(";"))
+            requestBuilder.addHeader("Cookie", cookies.joinToString(";"))
         }
-        val request = requestBuilder.build()
-        val response = client.newCall(request).execute()
-        val body = response.body ?: run {
-            response.close()
-            throw IOException("Body missing")
-        }
-        val inputStreamBody = body.byteStream()
 
-        val finalUrl = response.request.url.toUri()
-        val isRedirected = response.priorResponse?.isRedirect ?: false
+        return kotlin.runCatching {
+            val request = requestBuilder.build()
+            val response = client.newCall(request).execute()
+            val body = response.body ?: run {
+                response.close()
+                throw IOException("Body missing")
+            }
+            val inputStreamBody = body.byteStream()
 
-        return HttpResponseImpl().apply {
-            statusCode = response.code
-            statusMessage = response.message
-            contentLength = body.contentLength()
-            contentType = body.contentType()?.type
-            contentDisposition = HttpHeaders.CONTENT_DISPOSITION
-            lastModified = LocalDateTime.now()
-            this.inputStream = inputStreamBody
-            this.isRedirected = isRedirected
-            this.finalUrl = finalUrl
-            closeCallback = Runnable {
-                try {
-                    inputStream.close()
-                } catch (ex: Exception) {
-                    // Swallow error
+            val finalUrl = response.request.url.toUri().toASCIIString()
+            val redirected = response.priorResponse?.isRedirect ?: false
+
+            HttpResponseImpl(
+                contentDisposition =
+                    response.headers.get("Content-Disposition"),
+                statusCode = response.code,
+                statusMessage = response.message,
+                contentLength = body.contentLength(),
+                contentType = body.contentType()?.type,
+                lastModified = LocalDateTime.now(),
+                inputStream = inputStreamBody,
+                isRedirected = redirected,
+                finalUrl = finalUrl,
+                closeCallback = {
+                    try {
+                        inputStreamBody.close()
+                    } catch (ex: Exception) {// Swallow error
+                    }
+                    try {
+                        body.close()
+                    } catch (ex: Exception) {// Swallow error
+                    }
+                    try {
+                        response.close()
+                    } catch (ex: Exception) {// Swallow error
+                    }
+                },
+                headerCallback = {
+                    response.header(
+                        it
+                    )
                 }
-                try {
-                    body.close()
-                } catch (ex: Exception) {
-                    // Swallow error
-                }
-                try {
-                    response.close()
-                } catch (ex: Exception) {
-                    // Swallow error
-                }
-            }
-            headerCallback = Function { name: String ->
-                response.header(
-                    name
-                )
-            }
+            )
         }
     }
 }

@@ -10,7 +10,7 @@ import xdm.core.DownloadProgressListener;
 import xdm.core.constants.ErrorCode;
 import xdm.core.downloaders.AbstractDownloader;
 import xdm.core.downloaders.Metadata;
-import xdm.core.downloaders.hls.HlsDownloader;
+//import xdm.core.downloaders.hls.HlsDownloader;
 import xdm.core.downloaders.hls.HlsSource;
 import xdm.core.downloaders.http.HttpDownloader;
 import xdm.core.downloaders.http.HttpSource;
@@ -145,7 +145,7 @@ public class DownloadsControllerServiceImpl implements DownloadsControllerServic
       ent.setState(DownloadEntryState.FINISHED);
       if (downloader != null && downloader.getSize() < 0) {
         ent.setSize(downloader.getDownloaded());
-        ent.setFileName(downloader.getMetadata().getFileName());
+        ent.setFileName(downloader.metadata.getFileName());
       }
       AppContext.INSTANCE.getDb().save();
 
@@ -217,7 +217,7 @@ public class DownloadsControllerServiceImpl implements DownloadsControllerServic
     var downloader = activeDownloads.get(id);
     if (downloader != null) {
       var ent = AppContext.INSTANCE.getDb().getById(id);
-      ent.setFileName(downloader.getDownloader().getMetadata().getFileName());
+      ent.setFileName(downloader.getDownloader().metadata.getFileName());
       ent.setSize(downloader.getDownloader().getSize());
       AppContext.INSTANCE.getDb().save();
       AppContext.INSTANCE.getApp().updateDownloadInView(id);
@@ -231,11 +231,11 @@ public class DownloadsControllerServiceImpl implements DownloadsControllerServic
       logger.info("Downloader expected, found none");
       return AppContext.INSTANCE.getConfig().getDefaultDownloadFolder();
     }
-    return downloader.getDownloader().getMetadata().isAutoSelectFolder()
+    return downloader.getDownloader().metadata.isAutoSelectFolder()
         ? AppContext.INSTANCE
             .getConfig()
-            .getFolderForDownload(downloader.getDownloader().getMetadata())
-        : downloader.getDownloader().getMetadata().getFolder();
+            .getFolderForDownload(downloader.getDownloader().metadata)
+        : downloader.getDownloader().metadata.getFolder();
   }
 
   private String getTargetFileName(long id) {
@@ -247,9 +247,9 @@ public class DownloadsControllerServiceImpl implements DownloadsControllerServic
     var folder = getDownloadFolder(id);
     if (AppContext.INSTANCE.getConfig().shouldAutoRenameOnConflict()) {
       return FileUtils.getUniqueFileName(
-          folder, downloader.getDownloader().getMetadata().getFileName());
+          folder, downloader.getDownloader().metadata.getFileName());
     }
-    return downloader.getDownloader().getMetadata().getFileName();
+    return downloader.getDownloader().metadata.getFileName();
   }
 
   private synchronized void processNextDownload() {
@@ -336,12 +336,12 @@ public class DownloadsControllerServiceImpl implements DownloadsControllerServic
           null);
     }
     if (metadata instanceof HlsSource hlsSource) {
-      return new HlsDownloader(
-          metadata.getId(),
-          AppContext.INSTANCE.getConfig().getTempFolder(),
-          hlsSource,
-          this.listener,
-          null);
+//      return new HlsDownloader(
+//          metadata.getId(),
+//          AppContext.INSTANCE.getConfig().getTempFolder(),
+//          hlsSource,
+//          this.listener,
+//          null);
     }
     logger.info("Invalid metadata");
     return null;

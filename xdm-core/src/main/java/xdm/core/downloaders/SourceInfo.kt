@@ -1,7 +1,7 @@
 package xdm.core.downloaders
 
-sealed interface DownloadSource {
-    data class HttpSource(
+sealed interface SourceInfo {
+    data class HttpSourceInfo(
         val id: Long,
         val url: String,
         val fileName: String,
@@ -12,11 +12,11 @@ sealed interface DownloadSource {
         val folder: String,
         val dateAdded: Long,
         val originPage: String?,
-        val keepFileName: Boolean, // Change file extension in case of redirection but keep file name same
+        val autoSelectExt: Boolean, // Change file extension in case of redirection but keep file name same
         val fileSize: Long?,
-    ) : DownloadSource
+    ) : SourceInfo
 
-    data class HlsSource(
+    data class HlsSourceInfo(
         val id: Long,
         val url: String,
         val fileName: String,
@@ -27,9 +27,9 @@ sealed interface DownloadSource {
         val folder: String,
         val dateAdded: Long,
         val originPage: String?,
-        val keepFileName: Boolean, // Change file extension in case of redirection but keep file name same
+        val autoSelectExt: Boolean, // Change file extension in case of redirection but keep file name same
         val fileSize: Long?,
         val audioUrl: String?,
-    ) : DownloadSource
+    ) : SourceInfo
 }
 
