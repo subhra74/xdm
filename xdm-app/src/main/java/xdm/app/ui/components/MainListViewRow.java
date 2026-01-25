@@ -2,17 +2,16 @@ package xdm.app.ui.components;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import lombok.Setter;
-import xdm.app.constants.DownloadEntryState;
-import xdm.app.models.DownloadEntry;
+import xdm.app.data.DbRecord;
+import xdm.app.data.RecordStatus;
 import xdm.app.utils.AppUtils;
 import xdm.core.util.FormatUtilities;
+import xdm.core.util.Logger;
 import xdman.ui.res.StringResource;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.CellEditorListener;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
@@ -31,17 +30,17 @@ public class MainListViewRow implements TableCellRenderer, TableCellEditor {
   private JPanel panDetails;
   private JProgressBar prg;
   private int viewRow = -1;
-  private DownloadEntry editEntry;
+  private DbRecord editEntry;
   private final String GAP = "  -  ";
   private Icon icoUnchecked;
   private Icon icoChecked;
   private Icon icoFile;
-  @Setter private Consumer<DownloadEntry> onPauseClick;
-  @Setter private Consumer<DownloadEntry> onResumeClick;
-  @Setter private Consumer<DownloadEntry> onOpenFileClick;
-  @Setter private Consumer<DownloadEntry> onOpenFolderClick;
-  @Setter private Consumer<DownloadEntry> onDeleteClick;
-  @Setter private Consumer<DownloadEntry> onMenuClick;
+  @Setter private Consumer<DbRecord> onPauseClick;
+  @Setter private Consumer<DbRecord> onResumeClick;
+  @Setter private Consumer<DbRecord> onOpenFileClick;
+  @Setter private Consumer<DbRecord> onOpenFolderClick;
+  @Setter private Consumer<DbRecord> onDeleteClick;
+  @Setter private Consumer<DbRecord> onMenuClick;
   private JButton btnOpenFile;
   private JButton btnOpenFolder;
   private JButton btnPause;
@@ -67,14 +66,16 @@ public class MainListViewRow implements TableCellRenderer, TableCellEditor {
     if (model != null) { // Update when cell editor is active
       model.addTableModelListener(
           e -> {
+            Logger.info("XDM", "Updating editor state");
             var r = e.getFirstRow();
             if (r >= table.getRowCount()) {
               return;
             }
             var vr = table.convertRowIndexToView(r);
             if (vr == viewRow && viewRow != -1) {
-              var ent = (DownloadEntry) model.getValueAt(r, 0);
+              var ent = (DbRecord) model.getValueAt(r, 0);
               if (ent != null) {
+                Logger.info("XDM", "state " + ent);
                 updateLabelText(ent, table.isRowSelected(vr));
               }
             }
@@ -191,6 +192,7 @@ public class MainListViewRow implements TableCellRenderer, TableCellEditor {
             "pause-circle-line.svg",
             e -> {
               if (onPauseClick != null) {
+                Logger.info(editEntry);
                 onPauseClick.accept(editEntry);
               }
             });
@@ -200,6 +202,7 @@ public class MainListViewRow implements TableCellRenderer, TableCellEditor {
             "play-circle-line.svg",
             e -> {
               if (onResumeClick != null) {
+                Logger.info(editEntry);
                 onResumeClick.accept(editEntry);
               }
             });
@@ -251,7 +254,7 @@ public class MainListViewRow implements TableCellRenderer, TableCellEditor {
     buttonContainer.add(resumeGap);
     buttonContainer.add(btnOpenFolder);
     buttonContainer.add(openFolderGap);
-    buttonContainer.add(btnOpenFile);
+    // buttonContainer.add(btnOpenFile);
     buttonContainer.add(openFileGap);
     buttonContainer.add(btnDelete);
     buttonContainer.add(Box.createRigidArea(new Dimension(2, 10)));
@@ -285,23 +288,25 @@ public class MainListViewRow implements TableCellRenderer, TableCellEditor {
     AppUtils.showMenu(btnMenu, menu);
   }
 
-  private void updateLabelText(DownloadEntry ent, boolean isSelected) {
+  private void updateLabelText(DbRecord ent, boolean isSelected) {
     icon.setIcon(
         isSelected ? icoChecked : table.getSelectedRowCount() > 0 ? icoUnchecked : icoFile);
     buttonContainer.setVisible(this.table.getSelectedRowCount() == 0);
-    btnOpenFile.setVisible(ent.getState() == DownloadEntryState.FINISHED);
+    btnOpenFile.setVisible(ent.getStatus() == RecordStatus.FINISHED);
     openFileGap.setVisible(btnOpenFile.isVisible());
-    btnOpenFolder.setVisible(ent.getState() == DownloadEntryState.FINISHED);
+    btnOpenFolder.setVisible(ent.getStatus() == RecordStatus.FINISHED);
     openFolderGap.setVisible(btnOpenFolder.isVisible());
-    btnPause.setVisible(ent.getState() == DownloadEntryState.DOWNLOADING);
+    btnPause.setVisible(
+        ent.getStatus() == RecordStatus.DOWNLOADING || ent.getStatus() == RecordStatus.READY);
     pauseGap.setVisible(btnPause.isVisible());
     btnResume.setVisible(
-        ent.getState() != DownloadEntryState.FINISHED
-            && ent.getState() != DownloadEntryState.DOWNLOADING);
+        ent.getStatus() != RecordStatus.FINISHED
+            && ent.getStatus() != RecordStatus.DOWNLOADING
+            && ent.getStatus() != RecordStatus.READY);
     resumeGap.setVisible(btnResume.isVisible());
-    if (ent.getState() == DownloadEntryState.FINISHED) {
+    if (ent.getStatus() == RecordStatus.FINISHED) {
       lblInfo.setText(
-          FormatUtilities.formatDateShort(ent.getDateEpoch())
+          FormatUtilities.formatDateShort(ent.getDate())
               + GAP
               + FormatUtilities.formatSize(ent.getSize()));
       lblTitle.setText(ent.getFileName());
@@ -309,7 +314,7 @@ public class MainListViewRow implements TableCellRenderer, TableCellEditor {
       lblProgress.setText("");
     } else {
       var text = new StringBuilder(80);
-      text.append(FormatUtilities.formatDateShort(ent.getDateEpoch()));
+      text.append(FormatUtilities.formatDateShort(ent.getDate()));
       if (ent.getDownloaded() > 0) {
         text.append(GAP).append(FormatUtilities.formatSize(ent.getDownloaded()));
       }
@@ -327,21 +332,21 @@ public class MainListViewRow implements TableCellRenderer, TableCellEditor {
       prg.setVisible(true);
       prg.setValue(ent.getProgress());
       var prgText = StringResource.get("STAT_DOWNLOADING");
-      if (ent.getState() == DownloadEntryState.DOWNLOADING) {
+      if (ent.getStatus() == RecordStatus.DOWNLOADING) {
         prgText =
             String.format(
                 "%s %d%s", StringResource.get("STAT_DOWNLOADING"), ent.getProgress(), "%");
-      } else if (ent.getState() == DownloadEntryState.PAUSED) {
+      } else if (ent.getStatus() == RecordStatus.PAUSED) {
         prgText =
             String.format("%s %d%s", StringResource.get("STAT_PAUSED"), ent.getProgress(), "%");
-      } else if (ent.getState() == DownloadEntryState.ASSEMBLING) {
+      } else if (ent.getStatus() == RecordStatus.ASSEMBLING) {
         prgText = StringResource.get("STAT_ASSEMBLING");
       }
       lblProgress.setText(prgText);
     }
   }
 
-  private Component getComp(JTable table, DownloadEntry value, boolean isSelected) {
+  private Component getComp(JTable table, DbRecord value, boolean isSelected) {
     updateLabelText(value, isSelected);
     if (table != null) {
       panel.setBackground(table.getBackground());
@@ -354,15 +359,15 @@ public class MainListViewRow implements TableCellRenderer, TableCellEditor {
       JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
     this.editEntry = null;
     this.viewRow = -1;
-    return getComp(table, (DownloadEntry) value, isSelected);
+    return getComp(table, (DbRecord) value, isSelected);
   }
 
   @Override
   public Component getTableCellEditorComponent(
       JTable table, Object value, boolean isSelected, int row, int column) {
-    this.editEntry = (DownloadEntry) value;
+    this.editEntry = (DbRecord) value;
     this.viewRow = row;
-    return getComp(table, (DownloadEntry) value, isSelected);
+    return getComp(table, (DbRecord) value, isSelected);
   }
 
   @Override

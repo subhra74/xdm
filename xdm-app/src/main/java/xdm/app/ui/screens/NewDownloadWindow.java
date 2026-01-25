@@ -4,9 +4,9 @@ import xdm.app.AppContext;
 import xdm.app.models.BrowserDownloadInfo;
 import xdm.app.utils.AppUtils;
 import xdm.app.utils.PlatformUtils;
+import xdm.core.downloaders.HttpDownloadTaskInfo;
 import xdm.core.downloaders.Metadata;
 import xdm.core.downloaders.http.HttpSource;
-import xdm.core.network.http.HeaderCollection;
 import xdm.core.util.*;
 import xdman.ui.res.StringResource;
 import xdman.util.Logger;
@@ -27,7 +27,7 @@ public class NewDownloadWindow extends JDialog {
   private DefaultComboBoxModel<String> modelSaveIn;
   private JLabel lblFileInfo;
   private BrowserDownloadInfo downloadInfo;
-  private Metadata metadata;
+  private HttpDownloadTaskInfo metadata;
   private String originalFileName;
   private JLabel lbAddress;
 
@@ -233,16 +233,13 @@ public class NewDownloadWindow extends JDialog {
   private void downloadNow() {
     var url = txtUrl.getText();
     var file = txtFileName.getText();
-    var isHttp = this.metadata instanceof HttpSource;
-    if (isHttp) {
-      if (StringUtils.isNullOrEmptyOrBlank(url)) {
-        JOptionPane.showMessageDialog(this, StringResource.get("MSG_NO_URL"));
-        return;
-      }
-      if (!XDMUtils.validateURL(url)) {
-        JOptionPane.showMessageDialog(this, StringResource.get("MSG_INVALID_URL"));
-        return;
-      }
+    if (StringUtils.isNullOrEmptyOrBlank(url)) {
+      JOptionPane.showMessageDialog(this, StringResource.get("MSG_NO_URL"));
+      return;
+    }
+    if (!XDMUtils.validateURL(url)) {
+      JOptionPane.showMessageDialog(this, StringResource.get("MSG_INVALID_URL"));
+      return;
     }
 
     if (StringUtils.isNullOrEmptyOrBlank(file)) {
@@ -251,20 +248,29 @@ public class NewDownloadWindow extends JDialog {
     }
 
     var keepFileName = !StringUtils.equalsIgnoreCase(txtFileName.getText(), originalFileName);
-
-    if (isHttp) {
-      ((HttpSource) this.metadata).setUrl(url);
+    if (metadata == null) {
+      metadata =
+          new HttpDownloadTaskInfo(
+              CoreUtils.INSTANCE.uniqueId(),
+              url,
+              file,
+              false,
+              null,
+              null,
+              null,
+              false,
+              AppContext.defaultDownloadFolder,
+              null,
+              8,
+              null);
     }
-
-    this.metadata.setId(UniqueID.get());
-    this.metadata.setFileName(file);
-    this.metadata.setAutoSelectFolder(cmbSaveIn.getSelectedIndex() == 0);
-    this.metadata.setKeepFileName(keepFileName);
-    this.metadata.setFolder(
+    metadata.setUrl(url);
+    metadata.setId(CoreUtils.INSTANCE.uniqueId());
+    metadata.setDefaultDownloadFolder(
         cmbSaveIn.getSelectedIndex() > 0
             ? cmbSaveIn.getItemAt(cmbSaveIn.getSelectedIndex())
-            : null);
-    AppContext.INSTANCE.getDownloader().startDownload(this.metadata, true, -1);
+            : AppContext.defaultDownloadFolder);
+    AppContext.INSTANCE.getDownloader().addHttpDownload(metadata);
     dispose();
   }
 
@@ -324,7 +330,7 @@ public class NewDownloadWindow extends JDialog {
   //    this.setVisible(true);
   //  }
 
-  public void showWindow(final Metadata metadata) {
+  public void showWindow(final HttpDownloadTaskInfo metadata) {
     this.adjustSize();
     this.setLocationRelativeTo(null);
     modelSaveIn.removeAllElements();
@@ -339,20 +345,20 @@ public class NewDownloadWindow extends JDialog {
       if (url != null && XDMUtils.validateURL(url)) {
         txtUrl.setText(url);
       }
-      this.metadata = HttpSource.builder().build();
+      this.metadata = null; // HttpSource.builder().build();
     } else {
       this.metadata = metadata;
-      this.txtUrl.setText(metadata.getPrimaryUrl());
+      this.txtUrl.setText(metadata.getUrl());
       this.txtFileName.setText(metadata.getFileName());
       if (this.metadata.getFileName() != null) {
         this.originalFileName = metadata.getFileName();
       }
-      var sz = metadata.getFileSize();
-      if (sz > 0) {
-        this.lblFileInfo.setText(FormatUtilities.formatSize(sz));
-      }
+      //      var sz = metadata.get;
+      //      if (sz > 0) {
+      //        this.lblFileInfo.setText(FormatUtilities.formatSize(sz));
+      //      }
     }
-    this.txtUrl.setEditable(this.metadata instanceof HttpSource);
+    // this.txtUrl.setEditable(this.metadata instanceof HttpSource);
     this.setVisible(true);
   }
 

@@ -1,0 +1,213 @@
+package xdm.app.controllers
+
+import xdm.app.AppContext
+import xdm.app.data.AppDB
+import xdm.app.data.DbRecord
+import xdm.app.data.RecordStatus
+import xdm.core.downloaders.*
+import xdm.core.downloaders.web.http.Chunk
+import xdm.core.downloaders.web.http.HttpChunkController
+import xdm.core.downloaders.web.http.HttpTaskContext
+import xdm.core.network.http.impl.HttpClientImpl
+import xdm.core.util.CoreUtils
+import xdm.core.util.FileUtils
+import xdm.core.util.Logger
+import xdm.core.util.getFileName
+import java.io.File
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
+
+class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val configDir: String) {
+    private val activeSessions = ConcurrentHashMap<Long, HttpChunkController>()
+    private val downloadHost = object : DownloadHost {
+        override fun onDownloadStart(id: Long) {
+            // "Not yet implemented"
+        }
+
+        override fun onDownloadInit(data: DownloadStatusInfo.InitInfo) {
+            activeSessions[data.id]?.let {
+                synchronized(appDB) {
+                    appDB.getById(data.id)?.let { e ->
+                        taskInfoDB.getHttpTask(data.id)?.let { t ->
+                            val newFileName =
+                                getFileName(
+                                    t.fileName,
+                                    t.respectFileName,
+                                    data.url,
+                                    data.contentDisposition,
+                                    data.contentType
+                                )
+                            //TODO: Check if only ext to be updated
+                            e.fileName = newFileName
+                            t.fileName = newFileName
+                            data.fileSize?.let { e.size = it }
+                            appDB.saveActiveRecords()
+                            taskInfoDB.saveHttpTask(t)
+                        }
+                    }
+                }
+                AppContext.app.updateDownloadInView(data.id)
+            }
+        }
+
+        override fun onDownloadProgress(event: DownloadStatusInfo.ProgressInfo) {
+            activeSessions[event.id]?.let {
+                synchronized(appDB) {
+                    appDB.getById(event.id)?.let {
+                        it.downloaded = event.downloaded
+                        it.progress = event.progress
+                        it.speed = event.speed
+                        it.eta = event.eta
+                    }
+                }
+                AppContext.app.updateDownloadInView(event.id)
+            }
+        }
+
+        override fun onAssembleStart(id: Long) {
+            TODO("Not yet implemented")
+        }
+
+        override fun onAssembleProgress(event: DownloadStatusInfo.AssembleInfo) {
+            TODO("Not yet implemented")
+        }
+
+        override fun onDownloadSuccess(event: DownloadStatusInfo.FinalInfo) {
+            activeSessions.remove(event.id)?.let {
+                synchronized(appDB) {
+                    appDB.getById(event.id)?.let { e ->
+                        e.status = RecordStatus.FINISHED
+                        e.fileName = event.finalFileName
+                        e.size = event.fileSize
+                        appDB.saveActiveRecords()
+                        appDB.saveFinishedRecords()
+                    }
+                }
+                AppContext.app.updateDownloadInView(event.id)
+            }
+        }
+
+        override fun onDownloadFailed(id: Long, error: DownloadError) {
+            activeSessions.remove(id)?.let {
+                synchronized(appDB) {
+                    appDB.getById(id)?.let { e ->
+                        e.status = RecordStatus.PAUSED
+                        appDB.saveActiveRecords()
+                        appDB.savePausedRecords()
+                    }
+                }
+                AppContext.app.updateDownloadInView(id)
+            }
+        }
+
+        override fun onDownloadPaused(id: Long, event: PauseEvent) {
+            Logger.info("Download paused $id")
+            activeSessions.remove(id)?.let {
+                synchronized(appDB) {
+                    appDB.getById(id)?.let { e ->
+                        e.status = RecordStatus.PAUSED
+                        appDB.saveActiveRecords()
+                        appDB.savePausedRecords()
+                    }
+                }
+                AppContext.app.updateDownloadInView(id)
+            }
+        }
+
+        override fun getTempDir(id: Long, url: String, contentType: String?, contentDisposition: String?): String {
+            taskInfoDB.getHttpTask(id)?.let { t ->
+                return t.defaultDownloadFolder
+            }
+            return AppContext.defaultDownloadFolder
+        }
+
+        override fun commitOutputFile(id: Long, tmpFilePath: String): CommitResult {
+            taskInfoDB.getHttpTask(id)?.let { t ->
+                val fileName = t.fileName
+                val folder = t.defaultDownloadFolder
+                val finalName = FileUtils.getUniqueFileName(folder, fileName)
+                val outFile = File(folder, finalName)
+                val tmpFile = File(tmpFilePath)
+                return if (tmpFile.renameTo(outFile)) {
+                    Logger.info("Success renaming file")
+                    t.fileName = finalName
+                    t.defaultDownloadFolder = folder
+                    taskInfoDB.saveHttpTask(t)
+                    CommitResult.Success(fileName = finalName, outputDir = folder)
+                } else {
+                    Logger.info("Failed renaming file")
+                    CommitResult.Failed
+                }
+            }
+            Logger.info("Task not found!")
+            return CommitResult.Failed
+        }
+
+    }
+
+    fun stopDownload(id: Long) {
+        activeSessions[id]?.stop()
+    }
+
+    fun resumeDownload(id: Long) {
+        try {
+            appDB.getById(id)?.let {
+                val controller = HttpChunkController(
+                    id, configDir, HttpClientImpl(100), downloadHost,
+                )
+                activeSessions[id] = controller
+                it.status = RecordStatus.DOWNLOADING
+                appDB.savePausedRecords()
+                appDB.saveActiveRecords()
+                controller.resume()
+            }
+        } catch (error: Exception) {
+            Logger.error("XDM", "Error while resume", error)
+        }
+    }
+
+    fun addHttpDownload(task: HttpDownloadTaskInfo) {
+        val context = HttpTaskContext(
+            id = task.id,
+            chunks = ConcurrentHashMap<Long, Chunk>(),
+            init = AtomicBoolean(false),
+            totalSize = null,
+            downloaded = AtomicLong(0),
+            url = task.url,
+            contentType = null,
+            headers = task.headers,
+            cookie = task.cookie,
+            httpClient = HttpClientImpl(100),
+            stopFlag = AtomicBoolean(false),
+            completed = AtomicBoolean(false),
+            tempFileCreated = AtomicBoolean(false),
+            tempFileName = "${CoreUtils.uniqueId()}.tmp",
+            diskError = AtomicBoolean(false),
+            downloadHost = downloadHost,
+            tempFolder = task.defaultDownloadFolder
+        )
+        taskInfoDB.saveHttpTask(task)
+        val controller = HttpChunkController(
+            context,
+            configDir
+        )
+        activeSessions[task.id] = controller
+        appDB.addActive(
+            DbRecord(
+                id = task.id,
+                size = 0,
+                downloaded = 0,
+                progress = 0,
+                date = System.currentTimeMillis(),
+                fileName = task.fileName,
+                eta = 0, speed = 0.0f,
+                status = RecordStatus.READY,
+                selected = false
+            )
+        )
+        appDB.saveActiveRecords()
+        AppContext.app.addDownloadInView(task.id);
+        controller.start()
+    }
+}

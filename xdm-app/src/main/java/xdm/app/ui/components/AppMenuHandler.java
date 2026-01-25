@@ -2,7 +2,9 @@ package xdm.app.ui.components;
 
 import xdm.app.AppContext;
 import xdm.app.constants.DownloadEntryState;
-import xdm.app.models.DownloadEntry;
+// import xdm.app.models.DownloadEntry;
+import xdm.app.data.DbRecord;
+import xdm.app.data.RecordStatus;
 import xdm.app.ui.screens.AppWindow;
 import xdm.core.util.MetadataStore;
 import xdman.*;
@@ -11,7 +13,7 @@ import xdman.constants.MessageBoxResult;
 // import xdman.downloaders.metadata.HdsMetadata;
 // import xdman.downloaders.metadata.HlsMetadata;
 // import xdman.downloaders.metadata.HttpMetadata;
-import xdman.ui.components.BatchDownloadWnd;
+// import xdman.ui.components.BatchDownloadWnd;
 import xdman.ui.components.BatchPatternDialog;
 import xdman.ui.res.StringResource;
 import xdman.util.Logger;
@@ -25,8 +27,8 @@ import java.util.*;
 import java.util.List;
 
 public class AppMenuHandler {
-  public static void openFile(DownloadEntry ent, Window window) {
-    if (ent != null && ent.getState() == DownloadEntryState.FINISHED) {
+  public static void openFile(DbRecord ent, Window window) {
+    if (ent != null && ent.getStatus() == RecordStatus.FINISHED) {
       Logger.log("Opening file for id: " + ent.getId());
       var md = MetadataStore.get(ent.getId());
       if (md != null) {
@@ -45,14 +47,20 @@ public class AppMenuHandler {
     }
   }
 
-  public static void openFolder(DownloadEntry ent, Window window) {
-    if (ent.getState() == DownloadEntryState.FINISHED) {
+  public static void openFolder(DbRecord ent, Window window) {
+    if (ent.getStatus() == RecordStatus.FINISHED) {
       Logger.log("Opening folder for id: " + ent.getId());
-      var md = MetadataStore.get(ent.getId());
+      var md =
+          AppContext.INSTANCE
+              .getTaskInfoDB()
+              .getHttpTask(ent.getId()); // MetadataStore.get(ent.getId());
       if (md != null) {
         try {
-          Logger.log("Folder: " + md.getFolder() + " File: " + md.getFileName());
-          XDMUtils.openFolder(md.getFileName(), md.getFolder());
+          String folder =
+              Optional.ofNullable(md.getUserSelectedDownloadFolder())
+                  .orElse(md.getDefaultDownloadFolder());
+          Logger.log("Folder: " + folder + " File: " + md.getFileName());
+          XDMUtils.openFolder(md.getFileName(), folder);
         } catch (FileNotFoundException e) {
           Logger.log(e);
           MessageBox.show(
@@ -66,19 +74,19 @@ public class AppMenuHandler {
     }
   }
 
-  public static void restartDownload(DownloadEntry ent) {
-    AppContext.INSTANCE.getDownloader().restartDownload(ent.getId());
+  public static void restartDownload(DbRecord ent) {
+    //    AppContext.INSTANCE.getDownloader().restartDownload(ent.getId());
   }
 
-  public static void resumeDownload(DownloadEntry ent) {
-    AppContext.INSTANCE.getDownloader().resumeDownload(ent.getId(), false);
+  public static void resumeDownload(DbRecord ent) {
+    AppContext.INSTANCE.getDownloader().resumeDownload(ent.getId());
   }
 
-  public static void pauseDownload(DownloadEntry ent) {
-    AppContext.INSTANCE.getDownloader().pauseDownload(ent.getId());
+  public static void pauseDownload(DbRecord ent) {
+    AppContext.INSTANCE.getDownloader().stopDownload(ent.getId());
   }
 
-  public static void deleteDownload(DownloadEntry ent, Window window) {
+  public static void deleteDownload(DbRecord ent, Window window) {
     var ret =
         MessageBox.confirmWithCheckBox(
             window,
@@ -94,15 +102,15 @@ public class AppMenuHandler {
   }
 
   public static void stopQueue(String name) {
-    String queueId = "";
-    String[] arr = name.split(":");
-    if (arr.length > 1) {
-      queueId = arr[1].trim();
-    }
-    DownloadQueue q = XDMApp.getInstance().getQueueById(queueId);
-    if (q != null) {
-      q.stop();
-    }
+    //    String queueId = "";
+    //    String[] arr = name.split(":");
+    //    if (arr.length > 1) {
+    //      queueId = arr[1].trim();
+    //    }
+    //    DownloadQueue q = XDMApp.getInstance().getQueueById(queueId);
+    //    if (q != null) {
+    //      q.stop();
+    //    }
   }
 
   public static void showBatchPatternDialog() {
@@ -182,16 +190,16 @@ public class AppMenuHandler {
   }
 
   public static void showBatchDialog(AppWindow window) {
-    window.restoreWindowIfNeeded();
-    List<String> urlList = BatchDownloadWnd.getUrls();
-    if (!urlList.isEmpty()) {
-      // new BatchDownloadWnd(XDMUtils.toMetadata(urlList)).setVisible(true);
-    } else {
-      xdm.app.ui.components.MessageBox.show(
-          window,
-          StringResource.get("MENU_BATCH_DOWNLOAD"),
-          StringResource.get("LBL_BATCH_EMPTY_CLIPBOARD"));
-    }
+    //    window.restoreWindowIfNeeded();
+    //    List<String> urlList = BatchDownloadWnd.getUrls();
+    //    if (!urlList.isEmpty()) {
+    //      // new BatchDownloadWnd(XDMUtils.toMetadata(urlList)).setVisible(true);
+    //    } else {
+    //      xdm.app.ui.components.MessageBox.show(
+    //          window,
+    //          StringResource.get("MENU_BATCH_DOWNLOAD"),
+    //          StringResource.get("LBL_BATCH_EMPTY_CLIPBOARD"));
+    //    }
   }
 
   public static void openFile(AppWindow window) {
@@ -344,15 +352,15 @@ public class AppMenuHandler {
   }
 
   public static void startQueue(String name) {
-    String queueId = "";
-    String[] arr = name.split(":");
-    if (arr.length > 1) {
-      queueId = arr[1].trim();
-    }
-    DownloadQueue q = XDMApp.getInstance().getQueueById(queueId);
-    if (q != null) {
-      q.start();
-    }
+    //    String queueId = "";
+    //    String[] arr = name.split(":");
+    //    if (arr.length > 1) {
+    //      queueId = arr[1].trim();
+    //    }
+    //    DownloadQueue q = XDMApp.getInstance().getQueueById(queueId);
+    //    if (q != null) {
+    //      q.start();
+    //    }
   }
 
   public static void copyUrl(AppWindow window) {

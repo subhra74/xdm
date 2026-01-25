@@ -12,14 +12,10 @@ import xdm.app.models.BrowserDownloadInfo
 import xdm.core.CONTENT_TYPE
 import xdm.core.REFERER
 import xdm.core.USER_AGENT
+import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.downloaders.http.HttpSource
-import xdm.core.net.getContentLength
-import xdm.core.net.getHeader
-import xdm.core.net.getModifiedDate
 import xdm.core.network.http.HeaderCollection
-import xdm.core.util.FileUtils
-import xdm.core.util.Logger
-import xdm.core.util.UniqueID
+import xdm.core.util.*
 import java.nio.charset.StandardCharsets
 import java.util.*
 
@@ -79,16 +75,16 @@ object BrowserIntegration {
 
     private fun onMediaMessage(context: RequestContext) {
         Logger.info("Received media message..")
-        context.requestBody?.let { content ->
-            val str = content.toString(StandardCharsets.UTF_8)
-            Logger.info(str)
-            val extMsg: ExtensionMessage
-            synchronized(json) {
-                extMsg = json.decodeFromString<ExtensionMessage>(str)
-            }
-            removeBlockedHeaders(extMsg)
-            VideoHelper.processMediaMessage(extMsg)
-        }
+//        context.requestBody?.let { content ->
+//            val str = content.toString(StandardCharsets.UTF_8)
+//            Logger.info(str)
+//            val extMsg: ExtensionMessage
+//            synchronized(json) {
+//                extMsg = json.decodeFromString<ExtensionMessage>(str)
+//            }
+//            removeBlockedHeaders(extMsg)
+//            VideoHelper.processMediaMessage(extMsg)
+//        }
     }
 
     private fun onDownloadMessage(context: RequestContext) {
@@ -146,20 +142,22 @@ object BrowserIntegration {
     }
 
     @JvmStatic
-    fun toHttpSource(msg: BrowserDownloadInfo?): HttpSource? {
+    fun toHttpSource(msg: BrowserDownloadInfo?): HttpDownloadTaskInfo? {
         if (msg == null) return null
-        val source = HttpSource()
-        with(source) {
-            id = UniqueID.get()
-            url = msg.url
-            fileName = FileUtils.sanitizeFileName(msg.fileName ?: FileUtils.getFileName(msg.url))
-            isAutoSelectFolder = true
-            isKeepFileName = true
-            cookies = msg.cookie
-            headers = HeaderCollection(msg.requestHeaders)
-            fileSize = msg.fileSize ?: -1
-        }
-        return source
+        return HttpDownloadTaskInfo(
+            id = CoreUtils.uniqueId(),
+            url = msg.url,
+            fileName = FileUtils.sanitizeFileName(msg.fileName ?: FileUtils.getFileName(msg.url)),
+            respectFileName = false,
+            cookie = msg.cookie,
+            headers = msg.requestHeaders,
+            origin = null,
+            autoCategorize = false,
+            defaultDownloadFolder = AppContext.defaultDownloadFolder,
+            userSelectedDownloadFolder = null,
+            maxPiece = 8,
+            authInfo = null
+        )
     }
 
     private fun toBrowserDownloadInfo(msg: ExtensionMessage): BrowserDownloadInfo {

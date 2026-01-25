@@ -1,7 +1,9 @@
 package xdm.app.ui.components;
 
 import xdm.app.constants.DownloadEntryState;
-import xdm.app.models.DownloadEntry;
+// import xdm.app.models.DownloadEntry;
+import xdm.app.data.DbRecord;
+import xdm.app.data.RecordStatus;
 import xdm.app.utils.AppUtils;
 import xdman.ui.res.StringResource;
 
@@ -60,7 +62,7 @@ public class DownloadTableRenderer implements TableCellRenderer {
   @Override
   public Component getTableCellRendererComponent(
       JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-    var ent = (DownloadEntry) value;
+    var ent = (DbRecord) value;
     var label = column == 0 ? lblIconText : lblTextOnly;
     String text;
     switch (column) {
@@ -71,13 +73,13 @@ public class DownloadTableRenderer implements TableCellRenderer {
         text = formatSize(ent.getSize());
         break;
       case 2:
-        var date = new Date(ent.getDateEpoch());
+        var date = new Date(ent.getDate());
         text = date.before(oneYearAgo) ? formatLong.format(date) : formatShort.format(date);
         break;
       case 3:
-        if (ent.getState() == DownloadEntryState.FINISHED) {
+        if (ent.getStatus() == RecordStatus.FINISHED) {
           text = StringResource.get("STAT_FINISHED");
-        } else if (ent.getState() == DownloadEntryState.DOWNLOADING) {
+        } else if (ent.getStatus() == RecordStatus.DOWNLOADING) {
           lblProgress.setText(
               String.format(
                   "%s %d%s", StringResource.get("STAT_DOWNLOADING"), ent.getProgress(), "%"));
@@ -85,10 +87,10 @@ public class DownloadTableRenderer implements TableCellRenderer {
           panProgress.setBackground(
               isSelected ? table.getSelectionBackground() : table.getBackground());
           return panProgress;
-        } else if (ent.getState() == DownloadEntryState.PAUSED) {
+        } else if (ent.getStatus() == RecordStatus.PAUSED) {
           text =
               String.format("%s %d%s", StringResource.get("STAT_PAUSED"), ent.getProgress(), "%");
-        } else if (ent.getState() == DownloadEntryState.ASSEMBLING) {
+        } else if (ent.getStatus() == RecordStatus.ASSEMBLING) {
           text = StringResource.get("STAT_ASSEMBLING");
         } else {
           text = StringResource.get("STAT_DOWNLOADING");

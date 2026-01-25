@@ -2,26 +2,34 @@ package xdm.app
 
 
 import kotlinx.serialization.json.Json
+import xdm.app.controllers.DownloadHostController
+import xdm.app.data.AppDB
 import xdm.app.service.*
+import xdm.core.downloaders.TaskInfoDB
 import xdm.core.util.Logger
 import xdm.integration.BrowserIntegration
+import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
 import kotlin.io.path.exists
 
 object AppContext {
 
-    lateinit var db: DownloadsDBService
+    lateinit var db: AppDB
     lateinit var app: AppControllerService
-    lateinit var downloader: DownloadsControllerService
+    lateinit var downloader: DownloadHostController
     lateinit var config: AppConfigService
     lateinit var platform: PlatformService
     lateinit var queue: QueueService
     lateinit var appConfig: AppConfig
     lateinit var videoTracker: VideoTracker
+    lateinit var defaultDownloadFolder: String
+    lateinit var taskInfoDB: TaskInfoDB
 
-    fun init(args: Array<String>) {
-        appConfig = loadConfig()
+    fun init(args: Array<String>, configDir: String) {
+        val f = File(System.getProperty("user.home"), "Downloads")
+        defaultDownloadFolder = if (f.exists()) f.absolutePath else System.getProperty("user.home")
+        appConfig = loadConfig(configDir)
         if (::db.isInitialized
             && ::app.isInitialized
             && ::downloader.isInitialized
@@ -33,7 +41,7 @@ object AppContext {
             config.load()
             BrowserIntegration.start(
                 {
-                    db.load()
+                    db.loadRecords()
                     app.run(args)
                 },
                 {
@@ -44,12 +52,8 @@ object AppContext {
         throw IllegalStateException("All services are not initialized properly")
     }
 
-    private fun loadConfig(): AppConfig {
-        val configDir = Paths.get(System.getProperty("user.home"), CONFIG_DIR)
-        val configFile = configDir.resolve(CONFIG_FILE)
-        if (!configDir.exists()) {
-            Files.createDirectories(configDir)
-        }
+    private fun loadConfig(configDir: String): AppConfig {
+        val configFile = Paths.get(configDir).resolve(CONFIG_FILE)
         var config: AppConfig? = null
         if (configFile.exists()) {
             try {

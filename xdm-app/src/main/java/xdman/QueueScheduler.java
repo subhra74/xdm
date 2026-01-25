@@ -6,7 +6,7 @@ import java.util.Date;
 
 import xdman.util.DateTimeUtils;
 import xdman.util.Logger;
-import xdman.util.UpdateChecker;
+//import xdman.util.UpdateChecker;
 import xdman.util.XDMUtils;
 
 public class QueueScheduler implements Runnable {
@@ -41,10 +41,10 @@ public class QueueScheduler implements Runnable {
 				try {
 					long currentTime = System.currentTimeMillis();
 					if (currentTime - lastKeepAwakePing > 3000) {
-						if (!XDMApp.getInstance().isAllFinished()) {
-							XDMUtils.keepAwakePing();
-							lastKeepAwakePing = currentTime;
-						}
+//						if (!XDMApp.getInstance().isAllFinished()) {
+//							XDMUtils.keepAwakePing();
+//							lastKeepAwakePing = currentTime;
+//						}
 					}
 
 					ArrayList<DownloadQueue> queues = QueueManager.getInstance().getQueueList();
@@ -111,20 +111,20 @@ public class QueueScheduler implements Runnable {
 
 				long now = System.currentTimeMillis();
 				if (now - lastUpdateChecked > 3600 * 1000) {
-					int stat = UpdateChecker.getUpdateStat();
-					switch (stat) {
-					case UpdateChecker.NO_UPDATE_AVAILABLE:
-						break;
-					case UpdateChecker.APP_UPDATE_AVAILABLE:
-						XDMApp.getInstance().notifyAppUpdate();
-						break;
-					case UpdateChecker.COMP_NOT_INSTALLED:
-						XDMApp.getInstance().notifyComponentInstall();
-						break;
-					case UpdateChecker.COMP_UPDATE_AVAILABLE:
-						XDMApp.getInstance().notifyComponentUpdate();
-						break;
-					}
+//					int stat = UpdateChecker.getUpdateStat();
+//					switch (stat) {
+//					case UpdateChecker.NO_UPDATE_AVAILABLE:
+//						break;
+//					case UpdateChecker.APP_UPDATE_AVAILABLE:
+//						XDMApp.getInstance().notifyAppUpdate();
+//						break;
+//					case UpdateChecker.COMP_NOT_INSTALLED:
+//						XDMApp.getInstance().notifyComponentInstall();
+//						break;
+//					case UpdateChecker.COMP_UPDATE_AVAILABLE:
+//						XDMApp.getInstance().notifyComponentUpdate();
+//						break;
+//					}
 				}
 				lastUpdateChecked = now;
 			}

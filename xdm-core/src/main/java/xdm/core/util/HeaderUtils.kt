@@ -1,6 +1,5 @@
-package xdm.core.net
+package xdm.core.util
 
-import xdm.core.util.*
 import java.text.SimpleDateFormat
 import java.util.*
 

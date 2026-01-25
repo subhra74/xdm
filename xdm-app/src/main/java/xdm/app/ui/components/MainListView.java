@@ -2,8 +2,11 @@ package xdm.app.ui.components;
 
 import lombok.Setter;
 import xdm.app.constants.DownloadEntryState;
-import xdm.app.models.DownloadEntry;
+// import xdm.app.models.DownloadEntry;
+import xdm.app.data.DbRecord;
+import xdm.app.data.RecordStatus;
 import xdman.ui.res.StringResource;
+import xdman.util.Logger;
 import xdman.util.XDMUtils;
 
 import javax.swing.*;
@@ -95,16 +98,20 @@ public class MainListView {
         e -> AppMenuHandler.deleteDownload(e, SwingUtilities.windowForComponent(jsp)));
   }
 
-  private void showMenu(DownloadEntry entry, MainListViewRow editor) {
+  private void showMenu(DbRecord entry, MainListViewRow editor) {
     prepareMenu(this.contextMenu, entry);
     editor.showMenu(this.contextMenu);
   }
 
   public void rowUpdated(int index) {
+    Logger.log("Model size: " + model.getRowCount() + " index: " + index);
     model.fireTableRowsUpdated(index, index);
   }
 
   public void rowAdded(int index) {
+    if (table.isEditing()) {
+      table.getCellEditor().cancelCellEditing();
+    }
     model.fireTableRowsInserted(index, index);
   }
 
@@ -119,7 +126,7 @@ public class MainListView {
         if (name == null) {
           return;
         }
-        var ent = (DownloadEntry) contextMenu.getClientProperty("menu.context");
+        var ent = (DbRecord) contextMenu.getClientProperty("menu.context");
         switch (name) {
           case "CTX_SAVE_AS":
             break;
@@ -166,11 +173,11 @@ public class MainListView {
     return ctx;
   }
 
-  private void prepareMenu(JPopupMenu contextMenu, DownloadEntry entry) {
-    mSaveAs.setVisible(entry.getState() != DownloadEntryState.FINISHED);
-    mRefresh.setVisible(entry.getState() == DownloadEntryState.PAUSED);
-    mProgress.setVisible(entry.getState() == DownloadEntryState.DOWNLOADING);
-    mCopyFile.setVisible(entry.getState() == DownloadEntryState.FINISHED);
+  private void prepareMenu(JPopupMenu contextMenu, DbRecord entry) {
+    mSaveAs.setVisible(entry.getStatus() != RecordStatus.FINISHED);
+    mRefresh.setVisible(entry.getStatus() == RecordStatus.PAUSED);
+    mProgress.setVisible(entry.getStatus() == RecordStatus.DOWNLOADING);
+    mCopyFile.setVisible(entry.getStatus() == RecordStatus.FINISHED);
     contextMenu.putClientProperty("menu.context", entry);
   }
 

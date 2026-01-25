@@ -109,6 +109,7 @@ public class XDMUtils {
       }
       return false;
     } catch (Exception e) {
+      e.printStackTrace();
       return false;
     }
   }

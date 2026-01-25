@@ -109,7 +109,7 @@ public class Config {
 			fw.write("keepAwake:" + this.keepAwake + newLine);
 			fw.write("execCmd:" + this.execCmd + newLine);
 			fw.write("execAntivir:" + this.execAntivir + newLine);
-			fw.write("version:" + XDMApp.APP_VERSION + newLine);
+//			fw.write("version:" + XDMApp.APP_VERSION + newLine);
 			fw.write("autoStart:" + this.autoStart + newLine);
 			fw.write("language:" + this.language + newLine);
 			fw.write("downloadAutoStart:" + this.downloadAutoStart + newLine);
@@ -245,7 +245,7 @@ public class Config {
 				} else if (key.equals("autoShutdown")) {
 					this.autoShutdown = "true".equals(val);
 				} else if (key.equals("version")) {
-					this.firstRun = !XDMApp.APP_VERSION.equals(val);
+//					this.firstRun = !XDMApp.APP_VERSION.equals(val);
 				} else if (key.equals("language")) {
 					this.language = val;
 				} else if (key.equals("monitorClipboard")) {

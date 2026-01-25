@@ -45,6 +45,7 @@ public class AppToolBar {
     this.btnSettingsGap = Box.createRigidArea(new Dimension(5, 0));
 
     this.btnMenu = createToolButton("menu-line.svg");
+    this.btnMenu.addActionListener(e->System.exit(0));
 
     toolbar.add(this.btnNew);
     toolbar.add(this.btnNewGap);

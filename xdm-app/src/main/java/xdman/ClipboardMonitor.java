@@ -81,7 +81,7 @@ public class ClipboardMonitor implements Runnable {
               }
             }
             if (found) {
-              XDMApp.getInstance().addDownload(md, file);
+//              XDMApp.getInstance().addDownload(md, file);
             }
           } catch (Exception e) {
           }

@@ -37,6 +37,6 @@ public class Main {
     //		UIManager.put("Tree.selectionArc", 10);
     UIManager.put("SplitPane.dividerSize", 8);
 
-    XDMApp.start(args);
+//    XDMApp.start(args);
   }
 }

@@ -1,15 +1,15 @@
 package xdm.app.service.impl;
 
 import xdm.app.AppContext;
+import xdm.app.data.DbRecord;
 import xdm.app.models.BrowserDownloadInfo;
-import xdm.app.models.DownloadEntry;
+//import xdm.app.models.DownloadEntry;
 import xdm.app.service.AppControllerService;
 import xdm.app.ui.screens.AppWindow;
 import xdm.app.ui.screens.NewDownloadWindow;
-import xdm.app.ui.screens.NewVideoDownloadWindow;
 import xdm.app.utils.AppUtils;
 import xdm.app.utils.TrayUtils;
-import xdm.core.downloaders.AbstractDownloader;
+import xdm.core.downloaders.HttpDownloadTaskInfo;
 import xdm.core.downloaders.Metadata;
 import xdm.integration.BrowserIntegration;
 
@@ -53,21 +53,22 @@ public class AppControllerServiceImpl implements AppControllerService {
   }
 
   @Override
-  public void updateDownloadInView(DownloadEntry entry) {}
+  public void updateDownloadInView(DbRecord entry) {}
 
   @Override
   public void addDownloadInView(long id) {
     var index = AppContext.INSTANCE.getDb().indexById(id);
     if (index != null) {
+
       SwingUtilities.invokeLater(() -> appWindow.addDownloadInView(index));
     }
   }
 
   @Override
-  public void addDownloadInView(DownloadEntry entry) {}
+  public void addDownloadInView(DbRecord entry) {}
 
-  @Override
-  public void updateProgressWindow(long id, AbstractDownloader downloader) {}
+  //  @Override
+  //  public void updateProgressWindow(long id, AbstractDownloader downloader) {}
 
   @Override
   public void showErrorInProgressWindow(long id, String errorMessage) {}
@@ -89,14 +90,14 @@ public class AppControllerServiceImpl implements AppControllerService {
         });
   }
 
-  private void showNewDownloadWindowInternal(final Metadata downloadInfo) {
+  private void showNewDownloadWindowInternal(final HttpDownloadTaskInfo downloadInfo) {
     var dlg = new NewDownloadWindow();
     dlg.showWindow(downloadInfo);
   }
 
   private void showNewVideoDownloadWindowInternal(
       long vid, String fileName, long fileSize, String contentType) {
-    var dlg = new NewVideoDownloadWindow();
-    dlg.showWindow(vid, fileName, fileSize, contentType);
+    //    var dlg = new NewVideoDownloadWindow();
+    //    dlg.showWindow(vid, fileName, fileSize, contentType);
   }
 }

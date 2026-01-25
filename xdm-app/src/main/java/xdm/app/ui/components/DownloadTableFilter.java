@@ -2,7 +2,9 @@ package xdm.app.ui.components;
 
 import lombok.Setter;
 import xdm.app.constants.DownloadEntryState;
-import xdm.app.models.DownloadEntry;
+// import xdm.app.models.DownloadEntry;
+import xdm.app.data.DbRecord;
+import xdm.app.data.RecordStatus;
 import xdm.app.models.FilterItem;
 import xdm.app.utils.StringUtils;
 import xdman.XDMConstants;
@@ -24,23 +26,23 @@ public class DownloadTableFilter extends RowFilter<DownloadTableModel, Integer> 
     if (filterItem == null) {
       return true;
     }
-    var ent = (DownloadEntry) model.getValueAt(index, 0);
+    var ent = (DbRecord) model.getValueAt(index, 0);
     boolean matched;
     switch (filterItem.getItemType()) {
       case ALL:
         matched = true;
         break;
       case FINISHED:
-        matched = ent.getState() == DownloadEntryState.FINISHED;
+        matched = ent.getStatus() == RecordStatus.FINISHED;
         break;
       case UNFINISHED:
-        matched = ent.getState() != DownloadEntryState.FINISHED;
+        matched = ent.getStatus() != RecordStatus.FINISHED;
         break;
       case CATEGORY_FINISHED:
-        matched = ent.getState() == DownloadEntryState.FINISHED && matchCategory(filterItem, ent);
+        matched = ent.getStatus() == RecordStatus.FINISHED && matchCategory(filterItem, ent);
         break;
       case CATEGORY_UNFINISHED:
-        matched = ent.getState() != DownloadEntryState.FINISHED && matchCategory(filterItem, ent);
+        matched = ent.getStatus() != RecordStatus.FINISHED && matchCategory(filterItem, ent);
         break;
       default:
         matched = false;
@@ -57,7 +59,7 @@ public class DownloadTableFilter extends RowFilter<DownloadTableModel, Integer> 
     return true;
   }
 
-  private boolean matchCategory(FilterItem item, DownloadEntry entry) {
+  private boolean matchCategory(FilterItem item, DbRecord entry) {
     // dummy impl
     return true;
   }

@@ -1,0 +1,37 @@
+package xdm.core.downloaders
+
+import xdm.core.util.AtomicIO
+
+class TaskInfoDB(private val configDir: String) {
+    fun getHttpTask(id: Long): HttpDownloadTaskInfo? {
+        AtomicIO.readTransacted("task-$id.info", configDir) { r ->
+            return HttpDownloadTaskInfo(
+                id = r.readLong(),
+                url = r.readUTF(),
+                fileName = r.readUTF(),
+                respectFileName = r.readBoolean(),
+                cookie = null,
+                headers = null,
+                origin = null,
+                autoCategorize = r.readBoolean(),
+                defaultDownloadFolder = r.readUTF(),
+                userSelectedDownloadFolder = null,
+                maxPiece = r.readInt(),
+                authInfo = null
+            )
+        }
+        return null
+    }
+
+    fun saveHttpTask(task: HttpDownloadTaskInfo) {
+        AtomicIO.writeTransacted("task-${task.id}.info", configDir) { w ->
+            w.writeLong(task.id)
+            w.writeUTF(task.url)
+            w.writeUTF(task.fileName)
+            w.writeBoolean(task.respectFileName)
+            w.writeBoolean(task.autoCategorize)
+            w.writeUTF(task.defaultDownloadFolder)
+            w.writeInt(task.maxPiece)
+        }
+    }
+}

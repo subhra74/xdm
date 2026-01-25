@@ -1,22 +1,16 @@
 package xdm.core.downloaders.web.http
 
-import xdm.core.downloaders.web.DownloadError
+import xdm.core.downloaders.*
+import xdm.core.downloaders.web.ProgressTracker
 import xdm.core.network.http.PoolingHttpClient
-import xdm.core.network.http.impl.HttpClientImpl
-import xdm.core.util.CollectionUtils
 import xdm.core.util.Logger
 import xdm.core.util.CoreUtils
 import java.io.File
 import java.io.IOException
-import java.nio.channels.FileChannel
-import java.nio.file.Paths
-import java.nio.file.StandardOpenOption
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.math.min
 
+const val MAX_CHUNK = 8
 
 interface ChunkController {
     fun onChunkConnected(id: Long, data: ChunkConfirmedData?)
@@ -25,75 +19,118 @@ interface ChunkController {
     fun onChunkFinished(id: Long)
     fun throttleIfNeeded(id: Long)
     fun takeOverChunk(chunkId: Long, maxByteRange: Long): Boolean
-    val tempDir: String
+    fun start()
+    fun stop()
+    fun resume()
 }
 
 class HttpChunkController(
-    override val tempDir: String,
-    private val context: HttpTaskContext,
-    private val onComplete: () -> Unit,
-    private var time: Long,
+    val context: HttpTaskContext,
+    private val configDir: String,
 ) : ChunkController {
+
+    constructor(
+        id: Long,
+        configDir: String,
+        httpClient: PoolingHttpClient,
+        host: DownloadHost
+    ) : this(loadState(id = id, configDir = configDir, http = httpClient, host = host).getOrThrow(), configDir)
+
+    private var lastUpdate: Long = 0
+    private val progressTracker = ProgressTracker()
+    private val time = System.currentTimeMillis()
+    private val prgInfo = DownloadStatusInfo.ProgressInfo(id = context.id)
+
+    override fun start() {
+        val id = CoreUtils.uniqueId()
+        val chunk1 = Chunk(
+            id = id,
+            offset = 0,
+            length = AtomicLong(0),
+            downloaded = AtomicLong(0),
+            status = AtomicReference(ChunkStatus.Ready),
+            fileHandle = AtomicReference(null),
+            lastTakeOver = AtomicLong(0)
+        )
+        context.chunks[id] = chunk1
+        saveState(context, configDir)
+        startChunk(id)
+    }
+
+    override fun resume() {
+        progressTracker.totalDownloadedBytes = context.downloaded.get()
+        Thread {
+            if (context.completed.get() || context.chunks.values.all { it.status.get() == ChunkStatus.Finished }) {
+                finishDownload()
+            } else {
+                startChunks()
+            }
+        }.start()
+    }
+
+    override fun stop() {
+        context.write {
+            context.stopFlag.set(true)
+            context.chunks.values.forEach {
+                try {
+                    it.fileHandle.get()?.close()
+                } catch (error: IOException) {
+                    Logger.error("XDM", "Unable to close file", error)
+                }
+            }
+            saveState(context, configDir)
+            context.downloadHost.onDownloadPaused(context.id, PauseEvent.PausedByUser)
+        }
+    }
+
     override fun onChunkFinished(id: Long) {
         if (!context.completed.get()) {
-            if (assembleIfDone()) {
-                val now = System.currentTimeMillis();
-                Logger.info("Time taken ${(now - time) / 1000.0f} sec")
+            context.write {
+                if (context.chunks.values.any { it.status.get() != ChunkStatus.Finished }) return
                 context.completed.set(true)
-                onComplete()
+                Logger.info("XDM", "All chunks downloaded")
+                saveState(context, configDir)
+                val tmpFile = File(context.tempFolder, context.tempFileName)
+                val totalFileSize = context.totalSize ?: tmpFile.length()
+                val res =
+                    context.downloadHost.commitOutputFile(context.id, tmpFile.absolutePath)
+                Logger.info("XDM", "Move file success: - $res")
+                val now = System.currentTimeMillis()
+                when (res) {
+                    is CommitResult.Failed -> {
+                        if (context.stopFlag.get()) return
+                        context.diskError.set(true)
+                        onChunkFailed(id, DownloadError.DiskSpaceError)
+                    }
+
+                    is CommitResult.Success -> {
+                        Logger.info("Time taken ${(now - time) / 1000.0f} sec")
+                        context.downloadHost.onDownloadSuccess(
+                            DownloadStatusInfo.FinalInfo(
+                                context.id,
+                                totalFileSize,
+                                res.fileName,
+                                res.outputDir
+                            )
+                        )
+                    }
+                }
             }
         }
+        return
     }
 
     override fun throttleIfNeeded(id: Long) {
         TODO("Not yet implemented")
     }
 
-    private fun assembleIfDone(): Boolean {
-        context.write {
-            if (context.chunks.values.any { it.status.get() != ChunkStatus.Finished }) return false
-            Logger.info("XDM", "All chunks downloaded")
-            return true
-//            val outputFileName = context.finalFileName.get().invoke()
-//            val outFolder = context.outputFolder.get().invoke()
-//            val outPath = Paths.get(outFolder, outputFileName)
-//            if (context.stopFlag.get()) return false
-//            try {
-//                val chunks = context.chunks.values.sortedBy { it.offset.get() }
-//                FileChannel.open(
-//                    outPath,
-//                    CollectionUtils.setOf(
-//                        StandardOpenOption.CREATE,
-//                        StandardOpenOption.WRITE,
-//                        StandardOpenOption.TRUNCATE_EXISTING
-//                    )
-//                ).use { outChannel ->
-//                    for (chunk in chunks) {
-//                        FileChannel.open(
-//                            File(tempDir, "${chunk.id}.part").toPath(), StandardOpenOption.READ
-//                        ).use { inChannel ->
-//                            copyBytes(inChannel, outChannel, chunk.length.get())
-//                        }
-//                        if (context.stopFlag.get()) {
-//                            return false
-//                        }
-//                    }
-//                }
-//                for (chunk in chunks) {
-//                    val file = File(tempDir, "${chunk.id}.part")
-//                    Logger.info("XDM", "Delete file: ${file.absolutePath} - ${file.delete()}")
-//                }
-//            } catch (error: Exception) {
-//                Logger.error("XDM", "Assembling error", error)
-//            }
-        }
-        return true
-    }
-
     override fun onChunkFailed(id: Long, error: DownloadError) {
         if (isAllError()) {
             Logger.error("XDM", "All chunks failed, stopping download - error: $error")
-            context.errorCallback(error)
+            context.downloadHost.onDownloadFailed(context.id, error)
+            context.write {
+                saveState(context, configDir)
+            }
         }
     }
 
@@ -106,13 +143,30 @@ class HttpChunkController(
                 }
                 data.finalUrl?.let { context.url = it }
                 context.contentType = data.contentType
-                //context.fileName = CoreUtils.deriveFileName(context.url, data.contentType, data.contentDisposition)
+                context.tempFolder = context.downloadHost.getTempDir(
+                    context.id,
+                    url = context.url,
+                    contentType = data.contentType,
+                    contentDisposition = data.contentDisposition
+                )
                 context.init.set(true)
-                //TODO: notify watcher
+                context.downloadHost.onDownloadInit(
+                    DownloadStatusInfo.InitInfo(
+                        id = context.id,
+                        url = data.finalUrl ?: context.url,
+                        isRedirect = data.isRedirect,
+                        fileSize = data.contentLength,
+                        contentDisposition = data.contentDisposition,
+                        contentType = data.contentType
+                    )
+                )
+                splitChuck(context.chunks)
+                saveState(context, configDir)
             }
-        }
-        context.write {
-            splitChuck(context.chunks)
+        } else {
+            context.write {
+                splitChuck(context.chunks)
+            }
         }
     }
 
@@ -130,6 +184,16 @@ class HttpChunkController(
             }
         }
         return count
+    }
+
+    private fun startChunks() {
+        val chunks = context.chunks.values.filter { it.status.get() != ChunkStatus.Finished }.map { it.id }
+        for (chunk in chunks) {
+            context.chunks[chunk]?.let {
+                it.status.set(ChunkStatus.Downloading)
+                startChunk(chunk)
+            }
+        }
     }
 
     private fun findMaxChunk(): Long? {
@@ -157,15 +221,14 @@ class HttpChunkController(
     }
 
     private fun splitChuck(chunks: MutableMap<Long, Chunk>) {
-        var max = 0L
         val activeChunks = getActiveCount(chunks)
-        if (activeChunks >= 8) return
-        var rem = 8 - activeChunks
-        if (rem < 1) return
-        rem -= retryFailedChunk(rem)
-        if (rem < 1) return
+        if (activeChunks >= MAX_CHUNK) return
+        var rc = MAX_CHUNK - activeChunks
+        if (rc < 1) return
+        rc -= retryFailedChunk(rc)
+        if (rc < 1) return
         findMaxChunk()?.let {
-            max = it
+            val max = it
             chunks[max]?.let { c ->
                 if (c.length.get() < 256 * 1024) {
                     Logger.info("XDM", "Chunk ${c.id} is to small to split")
@@ -176,14 +239,14 @@ class HttpChunkController(
                     Logger.info("XDM", "Chunk ${c.id} is to small to split")
                     return
                 }
-                val offset = c.offset.get() + c.length.get() - rem / 2
+                val offset = c.offset + c.length.get() - rem / 2
                 val len = rem / 2
                 Logger.info("XDM", "Splitting chunk ${c.id} into $offset and $len")
                 c.length.addAndGet(-len)
                 val id = CoreUtils.uniqueId()
                 val chunk = Chunk(
                     id = id,
-                    offset = AtomicLong(offset),
+                    offset = offset,
                     length = AtomicLong(len),
                     downloaded = AtomicLong(0),
                     status = AtomicReference(ChunkStatus.Ready),
@@ -191,6 +254,7 @@ class HttpChunkController(
                     lastTakeOver = AtomicLong(0)
                 )
                 chunks[id] = chunk
+                saveState(context, configDir)
                 startChunk(id)
             }
         }
@@ -204,12 +268,12 @@ class HttpChunkController(
                 return false
             }
             val chunk = context.chunks[chunkId] ?: return false
-            val position = chunk.offset.get() + chunk.length.get()
+            val position = chunk.offset + chunk.length.get()
 
             for (nextChunk in context.chunks.values) {
                 if (nextChunk.downloaded.get() == 0L
-                    && nextChunk.offset.get() == position
-                    && nextChunk.length.get() + nextChunk.offset.get() <= maxByteRange
+                    && nextChunk.offset == position
+                    && nextChunk.length.get() + nextChunk.offset <= maxByteRange
                 ) {
                     nextChunkId = nextChunk.id
                     Logger.info("XDM", "Chunk found for takeover: $nextChunkId")
@@ -226,10 +290,11 @@ class HttpChunkController(
                     context.chunks.remove(nextChunkId)
                     Logger.info("XDM", "Chunk $nextChunkId removed with len $len")
                 }
-                context.chunks[chunkId]?.let { chunk ->
-                    chunk.lastTakeOver.set(System.currentTimeMillis())
-                    chunk.length.addAndGet(len)
+                context.chunks[chunkId]?.let { c ->
+                    c.lastTakeOver.set(System.currentTimeMillis())
+                    c.length.addAndGet(len)
                     splitChuck(context.chunks)
+                    saveState(context, configDir)
                     return true
                 }
             }
@@ -240,6 +305,7 @@ class HttpChunkController(
 
     private fun isAllError(): Boolean {
         if (context.stopFlag.get()) return false
+        if (context.diskError.get()) return true
         context.read {
             if (context.chunks.isEmpty()) return false
             if (context.chunks.values.any { it.status.get() != ChunkStatus.Failed }) return false
@@ -258,50 +324,68 @@ class HttpChunkController(
     private fun getActiveCount(chunks: Map<Long, Chunk>): Int =
         chunks.values.count { it.status.get() != ChunkStatus.Finished && it.status.get() != ChunkStatus.Failed }
 
-    private fun copyBytes(inChannel: FileChannel, outChannel: FileChannel, limit: Long) {
-        val block1M: Long = 1048576
-        var pos: Long = 0
-        var rem = if (limit > 0) limit else inChannel.size()
-        while (!context.stopFlag.get() && rem > 0) {
-            val x = inChannel.transferTo(pos, min(block1M.toDouble(), rem.toDouble()).toLong(), outChannel)
-            rem -= x
-            pos += x
-            //totalAssembled += x
-//            val now = System.currentTimeMillis()
-//            if (now - lastUpdated > 3000) {
-//                updateStatus(0)
-//                lastUpdated = now
-//            }
-        }
-        if (!context.stopFlag.get() && limit > 0 && pos != limit) {
-            Logger.error("Chunk file is shorter than chunk size, possible file corruption")
-            throw IllegalArgumentException("Assemble EOF")
-        }
-    }
-
-    fun start() {
-        val id = CoreUtils.uniqueId()
-        val chunk1 = Chunk(
-            id = id,
-            offset = AtomicLong(0),
-            length = AtomicLong(0),
-            downloaded = AtomicLong(0),
-            status = AtomicReference(ChunkStatus.Ready),
-            fileHandle = AtomicReference(null),
-            lastTakeOver = AtomicLong(0)
-        )
-        context.chunks[id] = chunk1
-        startChunk(id)
-    }
-
     private fun startChunk(id: Long) {
-        Thread({
+        Thread {
             val retriever = ChunkRetriever(id, context, this)
             retriever.retrieveChunk()
-        }).start()
+        }.start()
     }
 
     override fun updateBytesDownloaded(id: Long, downloaded: Long) {
+        var update = false
+        context.read {
+            update = progressTracker.update(
+                downloadedBytes = downloaded,
+                totalSize = context.totalSize,
+                chunks = context.chunks,
+                singleFile = true
+            )
+            prgInfo.apply {
+                this.progress = progressTracker.progress
+                this.downloaded = progressTracker.totalDownloadedBytes
+                this.eta = progressTracker.eta
+                this.speed = progressTracker.downloadSpeed
+            }
+        }
+        context.downloaded.addAndGet(downloaded)
+        if (update) {
+            context.downloadHost.onDownloadProgress(prgInfo)
+        }
+        val now = System.currentTimeMillis()
+        if (now - lastUpdate > 5000) {
+            context.read {
+                saveState(context, configDir)
+            }
+            lastUpdate = now
+        }
+    }
 
+    private fun finishDownload() {
+        context.completed.set(true)
+        Logger.info("XDM", "Resume: All chunks downloaded")
+        val tmpFile = File(context.tempFolder, context.tempFileName)
+        val totalFileSize = context.totalSize ?: tmpFile.length()
+        val res = context.downloadHost.commitOutputFile(context.id, tmpFile.absolutePath)
+        Logger.info("XDM", "Move file success: - $res")
+        when (res) {
+            is CommitResult.Failed -> {
+                if (context.stopFlag.get()) return
+                context.diskError.set(true)
+                saveState(context, configDir)
+                context.downloadHost.onDownloadFailed(context.id, DownloadError.DiskSpaceError)
+            }
+
+            is CommitResult.Success -> {
+                saveState(context, configDir)
+                context.downloadHost.onDownloadSuccess(
+                    DownloadStatusInfo.FinalInfo(
+                        context.id,
+                        totalFileSize,
+                        res.fileName,
+                        res.outputDir
+                    )
+                )
+            }
+        }
     }
 }

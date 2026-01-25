@@ -1,14 +1,15 @@
 package xdm.app.ui.components;
 
 import xdm.app.AppContext;
-import xdm.app.models.DownloadEntry;
+import xdm.app.data.DbRecord;
+// import xdm.app.models.DownloadEntry;
 
 import java.util.Comparator;
 
-public class DownloadSorter implements Comparator<DownloadEntry> {
+public class DownloadSorter implements Comparator<DbRecord> {
 
   @Override
-  public int compare(DownloadEntry o1, DownloadEntry o2) {
+  public int compare(DbRecord o1, DbRecord o2) {
     var sortKey = AppContext.INSTANCE.getConfig().getSortKey();
     var ascending = AppContext.INSTANCE.getConfig().isSortAscending();
     int res = 0;
@@ -20,10 +21,10 @@ public class DownloadSorter implements Comparator<DownloadEntry> {
         res = Long.compare(o1.getSize(), o2.getSize());
         break;
       case DATE: // sort by date
-        res = Long.compare(o1.getDateEpoch(), o2.getDateEpoch());
+        res = Long.compare(o1.getDate(), o2.getDate());
         break;
       case TYPE: // sort by type
-        res = o1.getState().compareTo(o2.getState());
+        res = o1.getStatus().compareTo(o2.getStatus());
         break;
       default:
         break;

@@ -14,10 +14,11 @@ import javax.swing.event.*;
 import com.formdev.flatlaf.util.SystemInfo;
 import xdm.app.AppContext;
 import xdm.app.constants.AppConstants;
-import xdm.app.models.DownloadEntry;
+//import xdm.app.models.DownloadEntry;
+import xdm.app.data.DbRecord;
 import xdm.app.ui.components.*;
 import xdman.Config;
-import xdman.XDMApp;
+// import xdman.XDMApp;
 import xdman.ui.res.*;
 import xdman.util.*;
 
@@ -144,7 +145,7 @@ public class AppWindow extends JFrame implements ActionListener {
       } else if ("CTX_OPEN_FOLDER".equals(name)) {
         //        AppMenuHandler.openFolder(this);
       } else if ("MENU_EXIT".equals(name)) {
-        XDMApp.getInstance().exit();
+        // XDMApp.getInstance().exit();
       } else if ("MENU_OPTIONS".equals(name) || "OPTIONS".equals(name)) {
         // SettingsPage.getInstance().showPanel(this, "PG_SETTINGS");
       } else if ("MENU_REFRESH_LINK".equals(name)) {
@@ -184,11 +185,11 @@ public class AppWindow extends JFrame implements ActionListener {
         //          XDMApp.getInstance().saveDownloadList(file);
         //        }
       } else if ("MENU_CONTENTS".equals(name)) {
-        XDMUtils.browseURL(XDMApp.APP_WIKI_URL);
+        //        XDMUtils.browseURL(XDMApp.APP_WIKI_URL);
       } else if ("MENU_HOME_PAGE".equals(name)) {
-        XDMUtils.browseURL(XDMApp.APP_HOME_URL);
+        //        XDMUtils.browseURL(XDMApp.APP_HOME_URL);
       } else if ("MENU_UPDATE".equals(name)) {
-        XDMUtils.browseURL(XDMApp.APP_UPDATE_CHK_URL + XDMApp.APP_VERSION);
+        //        XDMUtils.browseURL(XDMApp.APP_UPDATE_CHK_URL + XDMApp.APP_VERSION);
       } else if ("MENU_LANG".equals(name)) {
         AppMenuHandler.showLanguageDlg(this);
       } else if ("MENU_BATCH_DOWNLOAD".equals(name)) {
@@ -355,7 +356,7 @@ public class AppWindow extends JFrame implements ActionListener {
     //    listView.installPopupMenu(popupCtx, this);
   }
 
-  public List<DownloadEntry> getSelectedDownloads() {
+  public List<DbRecord> getSelectedDownloads() {
     return Collections.emptyList(); // listView.getSelectedItems();
   }
 
@@ -376,8 +377,7 @@ public class AppWindow extends JFrame implements ActionListener {
     try {
       Desktop.getDesktop()
           .addAppEventListener(
-              (AppReopenedListener)
-                  e -> AppContext.INSTANCE.getApp().showAppWindow());
+              (AppReopenedListener) e -> AppContext.INSTANCE.getApp().showAppWindow());
     } catch (Exception ex) {
       // Nothing to do
     }

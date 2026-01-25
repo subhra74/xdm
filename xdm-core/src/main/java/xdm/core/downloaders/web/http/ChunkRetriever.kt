@@ -1,50 +1,15 @@
 package xdm.core.downloaders.web.http
 
-import xdm.core.downloaders.web.DownloadError
+import xdm.core.downloaders.DownloadError
 import xdm.core.network.http.HttpResponse
 import xdm.core.network.http.Range
 import xdm.core.util.Logger
 import java.io.File
 import java.io.IOException
 import java.io.RandomAccessFile
-import java.time.LocalDateTime
-import java.util.concurrent.atomic.AtomicLong
-import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.min
 
-data class ChunkConfirmedData(
-    val resumeSupport: Boolean,
-    val contentLength: Long?,
-    val finalUrl: String?,
-    val contentDisposition: String?,
-    val contentType: String?,
-    val lastModified: LocalDateTime?
-)
-
-enum class ChunkStatus {
-    NotStarted, Finished, Downloading, Failed, Cancelled, Ready
-}
-
-sealed interface ConnectResult {
-    data class Connected(val response: HttpResponse) : ConnectResult
-    data object Retry : ConnectResult
-    data object InvalidResponse : ConnectResult
-    data object NoResume : ConnectResult
-}
-
-enum class CopyResult {
-    Done, Retry, Cancel, DiskError, Eof
-}
-
-data class Chunk(
-    var id: Long,
-    var offset: AtomicLong,
-    var length: AtomicLong,
-    var downloaded: AtomicLong,
-    var status: AtomicReference<ChunkStatus>,
-    var fileHandle: AtomicReference<RandomAccessFile?>,
-    val lastTakeOver: AtomicLong,
-)
+const val MAX_RETRY = 10
 
 class ChunkRetriever(
     private val id: Long,
@@ -52,165 +17,150 @@ class ChunkRetriever(
     private val controller: ChunkController
 ) {
     fun retrieveChunk() {
-        val MAX_RETRY = 10
         var retryCount = 0
         var maxByteRange: Long? = null
 
         while (!isCancelled()) {
-            run {
-                val data = getRequestData() ?: return
-                val (startOffset, endOffset) = makeRange(data)
-                when (val connectResult = connect(startOffset, endOffset)) {
-                    is ConnectResult.Connected -> {
+            // Check if already completed in case of resume
+            if (isAlreadyDone()) return
+
+            val data = getRequestData() ?: return
+            Logger.info(data)
+            val (startOffset, endOffset) = makeRange(data)
+            Logger.info("start: $startOffset, end: $endOffset")
+            val shouldRetry = when (val connectResult = connect(startOffset, endOffset)) {
+                is ConnectResult.Connected -> {
+                    if (isCancelled()) return
+                    connectResult.response.use { res ->
+                        val len = res.contentLength ?: -1L
+                        if (len > 0) maxByteRange = data.offset + len
+                        Logger.info("XDM", "Chunk connected $id")
+                        controller.onChunkConnected(
+                            id,
+                            if (!context.init.get()) ChunkConfirmedData(
+                                resumeSupport = res.statusCode == 206,
+                                contentLength = res.contentLength,
+                                finalUrl = res.finalUrl,
+                                contentDisposition = res.contentDisposition,
+                                contentType = res.contentType,
+                                lastModified = res.lastModified,
+                                isRedirect = res.isRedirected
+                            ) else null
+                        )
                         if (isCancelled()) return
-                        val res = connectResult.response
-                        res.use {
-                            val len = res.contentLength ?: -1L
-                            if (len > 0) {
-                                maxByteRange = data.offset + len
-                            }
-                            Logger.info("XDM", "Chunk connected $id")
-                            controller.onChunkConnected(
-                                id,
-                                if (!context.init.get()) ChunkConfirmedData(
-                                    resumeSupport = res.statusCode == 206,
-                                    contentLength = res.contentLength,
-                                    finalUrl = res.finalUrl,
-                                    contentDisposition = res.contentDisposition,
-                                    contentType = res.contentType,
-                                    lastModified = res.lastModified,
-                                ) else null
-                            )
-                            if (isCancelled()) return
-                            val copyResult =
-                                if (res.contentLength != null) {
-                                    copyDataWithLength(res, maxByteRange!!)
-                                } else {
-                                    copyDataWithoutLength(
-                                        res
-                                    )
-                                }
-                            when (copyResult) {
-                                CopyResult.Done -> {
-                                    Logger.info("XDM", "Chunk $id copy_data done")
-                                    context.write {
-                                        context.chunks[id]?.apply {
-                                            status.set(ChunkStatus.Finished)
-                                            controller.onChunkFinished(id)
-                                        }
-                                    }
-                                    return
-                                }
-
-                                CopyResult.Retry -> {
-                                    if (res.contentLength == null) {
-                                        chunkFailed(DownloadError.NetworkError)
-                                    }
-                                    Logger.info("XDM", "Retrying download for chunk $id from copy data")
-                                    return@run
-                                }
-
-                                CopyResult.Cancel -> {
-                                    Logger.info("XDM", "Chunk $id cancelled during copy_data")
-                                    return
-                                }
-
-                                CopyResult.DiskError -> {
-                                    Logger.info("XDM", "Chunk $id failed during copy_data - disk error")
-                                    chunkFailed(DownloadError.DiskSpaceError)
-                                    return
-                                }
-
-                                CopyResult.Eof -> {
-                                    Logger.info("XDM", "Chunk $id failed during copy_data - eof error")
-                                    chunkFailed(DownloadError.InvalidResponse)
-                                    return
-                                }
-                            }
-                        }
+                        copyDataOrRetry(res, maxByteRange)
                     }
+                }
 
-                    ConnectResult.InvalidResponse -> {
-                        Logger.info("XDM", "Chunk $id failed during connect")
-                        chunkFailed(DownloadError.InvalidResponse)
-                        return
-                    }
+                ConnectResult.InvalidResponse -> {
+                    Logger.info("XDM", "Chunk $id failed during connect")
+                    chunkFailed(DownloadError.InvalidResponse)
+                    false
+                }
 
-                    ConnectResult.NoResume -> {
-                        Logger.info("XDM", "Chunk $id failed during connect due to no resume")
-                        chunkFailed(DownloadError.ResumeNotSupported)
-                        return
-                    }
+                ConnectResult.NoResume -> {
+                    Logger.info("XDM", "Chunk $id failed during connect due to no resume")
+                    chunkFailed(DownloadError.ResumeNotSupported)
+                    false
+                }
 
-                    ConnectResult.Retry -> {
-                        if (isCancelled()) {
-                            Logger.info("XDM", "Chunk $id cancelled during retry")
-                            return
-                        }
+                ConnectResult.Retry -> {
+                    if (isCancelled()) {
+                        Logger.info("XDM", "Chunk $id cancelled during retry")
+                        false
+                    } else {
                         retryCount += 1
-                        if (retryCount > MAX_RETRY) {
-                            Logger.info("XDM", "Max retries reached for chunk $id")
-                            chunkFailed(DownloadError.NetworkError)
-                            return
-                        }
-                        Logger.info("XDM", "Retry after sleep $id")
-                        Thread.sleep(5000)
-                        return@run
+                        onRetry(retryCount)
                     }
                 }
             }
+            if (isCancelled() || !shouldRetry) return
+            Thread.sleep(5000)
         }
     }
 
-    private fun copyDataWithoutLength(response: HttpResponse): CopyResult {
-        if (isCancelled()) return CopyResult.Cancel
-        val buf = ByteArray(256 * 1024)
-
-        var fileHandle: RandomAccessFile? = null
-
-        try {
-            fileHandle = openFileHandle() ?: run { return CopyResult.Cancel }
-        } catch (ioError: IOException) {
-            return CopyResult.DiskError
-        } finally {
-            closeFileHandle(fileHandle)
-        }
-
-        try {
-            while (true) {
-                if (!isCancelled()) return CopyResult.Cancel
-                val read: Int
-                try {
-                    read = response.inputStream.read(buf, 0, buf.size)
-                } catch (ioError: IOException) {
-                    Logger.info("XDM", "Error reading data for chunk  $id")
-                    return CopyResult.Retry
-                }
-
-                if (isCancelled()) {
-                    return CopyResult.Cancel
-                }
-                if (read == -1) {
-                    Logger.info("XDM", "EOF reached $id")
-                    return CopyResult.Done
-                }
-
-                try {
-                    fileHandle?.write(buf, 0, read)
-                } catch (ioError: IOException) {
-                    Logger.error("XDM", "Error writing to file for chunk $id", ioError)
-                    return CopyResult.DiskError
-                }
-
-                context.write {
-                    val d = context.chunks[id]?.downloaded?.get() ?: return CopyResult.Cancel
-                    context.chunks[id]?.downloaded?.set(d + read)
-                }
-
-                controller.updateBytesDownloaded(id, read.toLong())
+    private fun connect(startRange: Long, endRange: Long?): ConnectResult {
+        Logger.info("XDM", "Chunk: $id - Connecting to url ${context.url}")
+        val range = if (endRange != null) Range(startRange, endRange - 1) else Range(startRange)
+        Logger.info(range)
+        val response = context.httpClient.getResponse(context.url, context.headers, context.cookie, range)
+        response.onSuccess { r ->
+            if (isFatalStatus(r.statusCode, startRange, !context.init.get())) {
+                r.close()
+                return ConnectResult.InvalidResponse
             }
-        } finally {
-            closeFileHandle(fileHandle)
+            if (r.statusCode == 200 || r.statusCode == 206) {
+                r.contentLength?.let { contentLength ->
+                    endRange?.let { end ->
+                        if (contentLength != end - startRange) {
+                            Logger.info(
+                                "XDM",
+                                "Chunk: $id, Content length mismatch - expected ${end - startRange} got $contentLength"
+                            )
+                            r.close()
+                            return ConnectResult.NoResume
+                        }
+                    }
+                }
+                return ConnectResult.Connected(r)
+            } else {
+                r.close()
+                return ConnectResult.Retry
+            }
+        }
+        response.onFailure { t -> Logger.error("XDM", "Connect error", t) }
+        return ConnectResult.Retry
+    }
+
+    private fun copyDataOrRetry(res: HttpResponse, maxByteRange: Long?): Boolean {
+        //Return true if retry is needed else false
+        val copyResult =
+            if (res.contentLength != null) {
+                copyDataWithLength(res, maxByteRange!!)
+            } else {
+                copyDataWithoutLength(
+                    res
+                )
+            }
+        return when (copyResult) {
+            CopyResult.Done -> {
+                Logger.info("XDM", "Chunk $id copy_data done")
+                context.write {
+                    context.chunks[id]?.apply {
+                        status.set(ChunkStatus.Finished)
+                        controller.onChunkFinished(id)
+                    }
+                }
+                false
+            }
+
+            CopyResult.Retry -> {
+                if (res.contentLength == null) {
+                    // No point in retry if content length is absent as download is most likely resume is not supported
+                    chunkFailed(DownloadError.NetworkError)
+                    false
+                } else {
+                    Logger.info("XDM", "Retrying download for chunk $id from copy data")
+                    true
+                }
+            }
+
+            CopyResult.Cancel -> {
+                Logger.info("XDM", "Chunk $id cancelled during copy_data")
+                false
+            }
+
+            CopyResult.DiskError -> {
+                Logger.info("XDM", "Chunk $id failed during copy_data - disk error")
+                chunkFailed(DownloadError.DiskSpaceError)
+                false
+            }
+
+            CopyResult.Eof -> {
+                Logger.info("XDM", "Chunk $id failed during copy_data - eof error")
+                chunkFailed(DownloadError.InvalidResponse)
+                false
+            }
         }
     }
 
@@ -299,33 +249,66 @@ class ChunkRetriever(
         }
     }
 
-    private fun connect(startRange: Long, endRange: Long?): ConnectResult {
-        Logger.info("XDM", "Chunk: $id - Connecting to url ${context.url}")
-        val range = if (endRange != null) Range(startRange, endRange - 1) else Range(startRange)
-        val response = context.httpClient.getResponse(context.url, context.headers, context.cookie, range)
-        response.onSuccess { r ->
-            if (isFatalStatus(r.statusCode, startRange, !context.init.get())) {
-                return ConnectResult.InvalidResponse
-            }
-            if (r.statusCode == 200 || r.statusCode == 206) {
-                r.contentLength?.let { contentLength ->
-                    endRange?.let { end ->
-                        if (contentLength != end - startRange) {
-                            Logger.info(
-                                "XDM",
-                                "Chunk: $id, Content length mismatch - expected ${end - startRange} got $contentLength"
-                            )
-                            return ConnectResult.NoResume
-                        }
-                    }
-                }
-                return ConnectResult.Connected(r)
-            } else {
-                return ConnectResult.Retry
-            }
+    private fun onRetry(retryCount: Int): Boolean {
+        if (retryCount > MAX_RETRY) {
+            Logger.info("XDM", "Max retries reached for chunk $id")
+            chunkFailed(DownloadError.NetworkError)
+            return false
         }
-        response.onFailure { t -> Logger.error("XDM", "Connect error", t) }
-        return ConnectResult.Retry
+        Logger.info("XDM", "Retry after sleep $id")
+        return true
+    }
+
+    private fun copyDataWithoutLength(response: HttpResponse): CopyResult {
+        if (isCancelled()) return CopyResult.Cancel
+        val buf = ByteArray(256 * 1024)
+
+        var fileHandle: RandomAccessFile? = null
+
+        try {
+            fileHandle = openFileHandle() ?: run { return CopyResult.Cancel }
+        } catch (ioError: IOException) {
+            return CopyResult.DiskError
+        } finally {
+            closeFileHandle(fileHandle)
+        }
+
+        try {
+            while (true) {
+                if (!isCancelled()) return CopyResult.Cancel
+                val read: Int
+                try {
+                    read = response.inputStream.read(buf, 0, buf.size)
+                } catch (ioError: IOException) {
+                    Logger.info("XDM", "Error reading data for chunk  $id")
+                    return CopyResult.Retry
+                }
+
+                if (isCancelled()) {
+                    return CopyResult.Cancel
+                }
+                if (read == -1) {
+                    Logger.info("XDM", "EOF reached $id")
+                    return CopyResult.Done
+                }
+
+                try {
+                    fileHandle?.write(buf, 0, read)
+                } catch (ioError: IOException) {
+                    Logger.error("XDM", "Error writing to file for chunk $id", ioError)
+                    return CopyResult.DiskError
+                }
+
+                context.write {
+                    val d = context.chunks[id]?.downloaded?.get() ?: return CopyResult.Cancel
+                    context.chunks[id]?.downloaded?.set(d + read)
+                }
+
+                controller.updateBytesDownloaded(id, read.toLong())
+            }
+        } finally {
+            closeFileHandle(fileHandle)
+        }
     }
 
     private fun isFatalStatus(code: Int, startRange: Long, firstRequest: Boolean): Boolean {
@@ -343,7 +326,7 @@ class ChunkRetriever(
         }
         if (!firstRequest && startRange > 0 && code == 200) {
             Logger.error("XDM", "Invalid status code for range request: $code")
-            return true;
+            return false //Allow
         }
         return false
     }
@@ -354,7 +337,7 @@ class ChunkRetriever(
             return Pair(data.offset, null)
         }
         val startOffset = data.offset + data.downloaded
-        val endOffset = data.offset + data.length - data.downloaded
+        val endOffset = data.offset + data.length // - data.downloaded
         return Pair(startOffset, endOffset)
     }
 
@@ -363,7 +346,7 @@ class ChunkRetriever(
             context.chunks[id]?.let {
                 return RequestData(
                     context.url,
-                    it.offset.get(),
+                    it.offset,
                     it.downloaded.get(),
                     it.length.get(),
                     !context.init.get()
@@ -388,17 +371,17 @@ class ChunkRetriever(
             val chunk = context.chunks[id] ?: return null
             var fs: RandomAccessFile? = null
             try {
-                fs = RandomAccessFile(File(controller.tempDir, context.tempFileName), "rw")
+                fs = RandomAccessFile(File(context.tempFolder, context.tempFileName), "rw")
                 context.totalSize?.let { len ->
                     if (!context.tempFileCreated.get()) {
                         fs.setLength(len)
-                        context.tempFileCreated.set(true)
                         Logger.info("XDM", "Temp file created with size $len")
                     } else {
                         Logger.info("XDM", "Temp file created already")
                     }
                 }
-                fs.seek(chunk.offset.get() + chunk.downloaded.get())
+                context.tempFileCreated.set(true)
+                fs.seek(chunk.offset + chunk.downloaded.get())
                 chunk.fileHandle.set(fs)
                 return fs
             } catch (ex: Exception) {
@@ -416,9 +399,7 @@ class ChunkRetriever(
         } catch (e: Exception) {//No op
         }
         context.write {
-            context.chunks[id]?.let {
-                it.fileHandle.set(null)
-            }
+            context.chunks[id]?.fileHandle?.set(null)
         }
     }
 
@@ -430,12 +411,18 @@ class ChunkRetriever(
         }
         controller.onChunkFailed(id, downloadError)
     }
-}
 
-data class RequestData(
-    val url: String,
-    val offset: Long,
-    val downloaded: Long,
-    val length: Long,
-    val firstRequest: Boolean
-)
+    private fun isAlreadyDone(): Boolean {
+        context.read {
+            val chunk = context.chunks[id] ?: return true
+            if (chunk.status.get() == ChunkStatus.Finished) return true
+            val len = chunk.length.get()
+            val downloaded = chunk.downloaded.get()
+            if (context.init.get() && len > 0 && len - downloaded <= 0) {
+                controller.onChunkFinished(id)
+                return true
+            }
+        }
+        return false
+    }
+}

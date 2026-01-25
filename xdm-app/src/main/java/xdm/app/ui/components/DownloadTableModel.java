@@ -3,7 +3,7 @@ package xdm.app.ui.components;
 import javax.swing.table.*;
 
 import xdm.app.AppContext;
-import xdm.app.models.DownloadEntry;
+import xdm.app.data.DbRecord;
 import xdman.ListChangeListener;
 import xdman.util.Logger;
 
@@ -26,7 +26,7 @@ public class DownloadTableModel extends AbstractTableModel implements ListChange
 
   @Override
   public int getRowCount() {
-    return AppContext.INSTANCE.getDb().size();
+    return AppContext.INSTANCE.getDb().getSize();
   }
 
   @Override
@@ -36,7 +36,7 @@ public class DownloadTableModel extends AbstractTableModel implements ListChange
 
   @Override
   public Class<?> getColumnClass(int c) {
-    return DownloadEntry.class;
+    return DbRecord.class;
   }
 
   @Override
@@ -66,7 +66,7 @@ public class DownloadTableModel extends AbstractTableModel implements ListChange
   //    }
   //  }
 
-  public DownloadEntry getItemAt(int index) {
+  public DbRecord getItemAt(int index) {
     return AppContext.INSTANCE.getDb().getByIndex(index);
   }
 }
