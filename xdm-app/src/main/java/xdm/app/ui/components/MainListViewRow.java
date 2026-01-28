@@ -66,7 +66,7 @@ public class MainListViewRow implements TableCellRenderer, TableCellEditor {
     if (model != null) { // Update when cell editor is active
       model.addTableModelListener(
           e -> {
-            Logger.info("XDM", "Updating editor state");
+//            Logger.info("XDM", "Updating editor state");
             var r = e.getFirstRow();
             if (r >= table.getRowCount()) {
               return;

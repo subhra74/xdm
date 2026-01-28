@@ -104,7 +104,7 @@ public class MainListView {
   }
 
   public void rowUpdated(int index) {
-    Logger.log("Model size: " + model.getRowCount() + " index: " + index);
+//    Logger.log("Model size: " + model.getRowCount() + " index: " + index);
     model.fireTableRowsUpdated(index, index);
   }
 

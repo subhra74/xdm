@@ -1,6 +1,7 @@
 package xdm.core.downloaders.web
 
 import xdm.core.downloaders.web.http.Chunk
+import xdm.core.downloaders.web.streaming.downloader.StreamingChunk
 import xdm.core.util.FormatUtilities
 import java.util.*
 
@@ -24,13 +25,15 @@ class ProgressTracker {
     private val segments = ArrayList<SegmentProgress>()
     private val sortedSegments = sortedSetOf(offsetComparator)
 
-    @Synchronized
-    fun update(downloadedBytes: Long, totalSize: Long?, chunks: Map<Long, Chunk>, singleFile: Boolean): Boolean {
-        val ticks = System.currentTimeMillis()
+    private fun update(
+        ticks: Long,
+        ticksElapsed: Long,
+        downloadedBytes: Long,
+        totalSize: Long?,
+        prg: Float?
+    ) {
         this.totalDownloadedBytes += downloadedBytes
         this.downloadedBytesSinceStartOrResume += downloadedBytes
-        val prg = if (totalSize != null) totalDownloadedBytes * 100.0f / totalSize else null
-        val ticksElapsed = ticks - this.ticksAtDownloadStartOrResume
         if (ticks - this.lastProgressUpdatedAt > 500 && ticksElapsed > 0) {
             val instantSpeed =
                 (((this.totalDownloadedBytes - this.lastDownloadedBytes) * 1000f) / (ticks - this.lastProgressUpdatedAt))
@@ -44,9 +47,9 @@ class ProgressTracker {
             this.lastProgressUpdatedAt = ticks
             this.lastDownloadedBytes = this.totalDownloadedBytes
             this.downloadSpeed = instanceSpeedBounded.toFloat()
-            if (prg != null && totalSize != null) {
+            if (prg != null) {
                 this.progress = prg.toInt()
-                if (singleFile) {
+                if (totalSize != null) {
                     this.eta = FormatUtilities.getEtaAsSec(
                         totalSize.toDouble() - totalDownloadedBytes, avgSpeed
                     )
@@ -59,12 +62,30 @@ class ProgressTracker {
                 }
             }
         }
+    }
+
+    @Synchronized
+    fun update(downloadedBytes: Long, totalSize: Long?, chunks: Map<Long, Chunk>): Boolean {
+        val prg = if (totalSize != null) (totalDownloadedBytes + downloadedBytes) * 100.0f / totalSize else null
+        val ticks = System.currentTimeMillis()
+        val ticksElapsed = ticks - this.ticksAtDownloadStartOrResume
+        update(ticks, ticksElapsed, downloadedBytes, totalSize, prg)
         if (ticks - this.lastChunkStatsUpdated > 1000 && ticksElapsed > 0) {
-            if (singleFile) {
-                updateChunkProgressDataSingleFile(chunks)
-            } else {
-                updateChunkProgressData(chunks)
-            }
+            updateChunkProgressDataSingleFile(chunks)
+            this.lastChunkStatsUpdated = ticks
+            return true
+        }
+        return false
+    }
+
+    @Synchronized
+    fun update(downloadedBytes: Long, totalSize: Long?, chunks: List<StreamingChunk>, completed: Int): Boolean {
+        val prg = completed * 100.0f / chunks.size
+        val ticks = System.currentTimeMillis()
+        val ticksElapsed = ticks - this.ticksAtDownloadStartOrResume
+        update(ticks, ticksElapsed, downloadedBytes, totalSize, prg)
+        if (ticks - this.lastChunkStatsUpdated > 1000 && ticksElapsed > 0) {
+            updateChunkProgressData(chunks)
             this.lastChunkStatsUpdated = ticks
             return true
         }
@@ -105,17 +126,21 @@ class ProgressTracker {
         }
     }
 
-    private fun updateChunkProgressData(chunks: Map<Long, Chunk>) {
+    private fun updateChunkProgressData(chunks: List<StreamingChunk>) {
         if (segments.size < chunks.size) {
             for (n in 0 until chunks.size - segments.size) {
                 segments.add(SegmentProgress())
             }
         }
-        for ((index, chunk) in chunks.values.withIndex()) {
+        for ((index, chunk) in chunks.withIndex()) {
+            val len = chunk.length.get()
+            val chunkPercent = if (len > 0) {
+                (chunk.downloaded.get() / len) / chunks.size
+            } else 0
             val s = segments[index]
-            s.length = chunk.length.get()
-            s.start = chunk.offset
-            s.downloaded = chunk.downloaded.get()
+            s.length = 100
+            s.start = index * 10L
+            s.downloaded = chunkPercent
             segments[index] = s
         }
     }

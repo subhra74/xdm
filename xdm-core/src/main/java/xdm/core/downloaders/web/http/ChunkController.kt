@@ -12,16 +12,13 @@ import java.util.concurrent.atomic.AtomicReference
 
 const val MAX_CHUNK = 8
 
-interface ChunkController {
+interface ChunkController : DownloaderTask {
     fun onChunkConnected(id: Long, data: ChunkConfirmedData?)
     fun updateBytesDownloaded(id: Long, downloaded: Long)
     fun onChunkFailed(id: Long, error: DownloadError)
     fun onChunkFinished(id: Long)
     fun throttleIfNeeded(id: Long)
     fun takeOverChunk(chunkId: Long, maxByteRange: Long): Boolean
-    fun start()
-    fun stop()
-    fun resume()
 }
 
 class HttpChunkController(
@@ -69,18 +66,20 @@ class HttpChunkController(
     }
 
     override fun stop() {
-        context.write {
-            context.stopFlag.set(true)
-            context.chunks.values.forEach {
-                try {
-                    it.fileHandle.get()?.close()
-                } catch (error: IOException) {
-                    Logger.error("XDM", "Unable to close file", error)
+        Thread {
+            context.write {
+                context.stopFlag.set(true)
+                context.chunks.values.forEach {
+                    try {
+                        it.fileHandle.get()?.close()
+                    } catch (error: IOException) {
+                        Logger.error("XDM", "Unable to close file", error)
+                    }
                 }
+                saveState(context, configDir)
+                context.downloadHost.onDownloadPaused(context.id, PauseEvent.PausedByUser)
             }
-            saveState(context, configDir)
-            context.downloadHost.onDownloadPaused(context.id, PauseEvent.PausedByUser)
-        }
+        }.start()
     }
 
     override fun onChunkFinished(id: Long) {
@@ -88,32 +87,36 @@ class HttpChunkController(
             context.write {
                 if (context.chunks.values.any { it.status.get() != ChunkStatus.Finished }) return
                 context.completed.set(true)
-                Logger.info("XDM", "All chunks downloaded")
-                saveState(context, configDir)
-                val tmpFile = File(context.tempFolder, context.tempFileName)
-                val totalFileSize = context.totalSize ?: tmpFile.length()
-                val res =
-                    context.downloadHost.commitOutputFile(context.id, tmpFile.absolutePath)
-                Logger.info("XDM", "Move file success: - $res")
-                val now = System.currentTimeMillis()
-                when (res) {
-                    is CommitResult.Failed -> {
-                        if (context.stopFlag.get()) return
-                        context.diskError.set(true)
-                        onChunkFailed(id, DownloadError.DiskSpaceError)
-                    }
+                try {
+                    Logger.info("XDM", "All chunks downloaded")
+                    saveState(context, configDir)
+                    val tmpFile = File(context.tempFolder, context.tempFileName)
+                    val totalFileSize = context.totalSize ?: tmpFile.length()
+                    val res =
+                        context.downloadHost.commitOutputFile(context.id, tmpFile.absolutePath)
+                    Logger.info("XDM", "Move file success: - $res")
+                    val now = System.currentTimeMillis()
+                    when (res) {
+                        is CommitResult.Failed -> {
+                            if (context.stopFlag.get()) return
+                            context.diskError.set(true)
+                            onChunkFailed(id, DownloadError.DiskSpaceError)
+                        }
 
-                    is CommitResult.Success -> {
-                        Logger.info("Time taken ${(now - time) / 1000.0f} sec")
-                        context.downloadHost.onDownloadSuccess(
-                            DownloadStatusInfo.FinalInfo(
-                                context.id,
-                                totalFileSize,
-                                res.fileName,
-                                res.outputDir
+                        is CommitResult.Success -> {
+                            Logger.info("Time taken ${(now - time) / 1000.0f} sec")
+                            context.downloadHost.onDownloadSuccess(
+                                DownloadStatusInfo.FinalInfo(
+                                    context.id,
+                                    totalFileSize,
+                                    res.fileName,
+                                    res.outputDir
+                                )
                             )
-                        )
+                        }
                     }
+                } finally {
+                    context.httpClient.close()
                 }
             }
         }
@@ -338,7 +341,6 @@ class HttpChunkController(
                 downloadedBytes = downloaded,
                 totalSize = context.totalSize,
                 chunks = context.chunks,
-                singleFile = true
             )
             prgInfo.apply {
                 this.progress = progressTracker.progress

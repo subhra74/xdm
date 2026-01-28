@@ -8,6 +8,8 @@ import xdm.core.downloaders.*
 import xdm.core.downloaders.web.http.Chunk
 import xdm.core.downloaders.web.http.HttpChunkController
 import xdm.core.downloaders.web.http.HttpTaskContext
+import xdm.core.downloaders.web.streaming.downloader.hls.HlsDownloader
+import xdm.core.media.muxer.impl.FFmpegMuxer
 import xdm.core.network.http.impl.HttpClientImpl
 import xdm.core.util.CoreUtils
 import xdm.core.util.FileUtils
@@ -19,7 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
 class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val configDir: String) {
-    private val activeSessions = ConcurrentHashMap<Long, HttpChunkController>()
+    private val activeSessions = ConcurrentHashMap<Long, DownloaderTask>()
     private val downloadHost = object : DownloadHost {
         override fun onDownloadStart(id: Long) {
             // "Not yet implemented"
@@ -30,7 +32,9 @@ class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, priva
                 synchronized(appDB) {
                     appDB.getById(data.id)?.let { e ->
                         taskInfoDB.getHttpTask(data.id)?.let { t ->
-                            val newFileName =
+                            val newFileName = if (data.videoExt != null) {
+                                t.fileName + data.videoExt
+                            } else {
                                 getFileName(
                                     t.fileName,
                                     t.respectFileName,
@@ -38,13 +42,14 @@ class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, priva
                                     data.contentDisposition,
                                     data.contentType
                                 )
+                            }
                             //TODO: Check if only ext to be updated
                             e.fileName = newFileName
                             t.fileName = newFileName
                             data.fileSize?.let { e.size = it }
-                            appDB.saveActiveRecords()
                             taskInfoDB.saveHttpTask(t)
                         }
+                        appDB.saveActiveRecords()
                     }
                 }
                 AppContext.app.updateDownloadInView(data.id)
@@ -66,11 +71,11 @@ class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, priva
         }
 
         override fun onAssembleStart(id: Long) {
-            TODO("Not yet implemented")
+            //TODO("Not yet implemented")
         }
 
         override fun onAssembleProgress(event: DownloadStatusInfo.AssembleInfo) {
-            TODO("Not yet implemented")
+            //TODO("Not yet implemented")
         }
 
         override fun onDownloadSuccess(event: DownloadStatusInfo.FinalInfo) {
@@ -191,6 +196,50 @@ class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, priva
         val controller = HttpChunkController(
             context,
             configDir
+        )
+        activeSessions[task.id] = controller
+        appDB.addActive(
+            DbRecord(
+                id = task.id,
+                size = 0,
+                downloaded = 0,
+                progress = 0,
+                date = System.currentTimeMillis(),
+                fileName = task.fileName,
+                eta = 0, speed = 0.0f,
+                status = RecordStatus.READY,
+                selected = false
+            )
+        )
+        appDB.saveActiveRecords()
+        AppContext.app.addDownloadInView(task.id);
+        controller.start()
+    }
+
+    fun addVideoDownload(videoId: Long, fileName: String, folder: String?, autoSelectFolder: Boolean) {
+        AppContext.videoTracker.getHttpVideo(videoId)?.let { source ->
+            source.fileName = fileName
+            source.isAutoSelectFolder = (folder == null)
+            source.folder = folder
+            //downloader.startDownload(source, true, -1)
+        }
+
+        AppContext.videoTracker.getHlsVideo(videoId)?.let { source ->
+            Logger.info(source)
+            source.fileName = fileName
+            source.autoCategorize = (folder == null)
+            source.userSelectedDownloadFolder = folder
+            addHlsDownload(source)
+        }
+    }
+
+    private fun addHlsDownload(task: HlsDownloadTaskInfo) {
+        taskInfoDB.saveHlsTask(task)
+        val controller = HlsDownloader(
+            taskInfo = task,
+            http = HttpClientImpl(100),
+            muxer = FFmpegMuxer(),
+            host = downloadHost
         )
         activeSessions[task.id] = controller
         appDB.addActive(

@@ -26,10 +26,10 @@ object AppContext {
     lateinit var defaultDownloadFolder: String
     lateinit var taskInfoDB: TaskInfoDB
 
-    fun init(args: Array<String>, configDir: String) {
+    fun init(args: Array<String>, configDir: String, tempDir: String) {
         val f = File(System.getProperty("user.home"), "Downloads")
         defaultDownloadFolder = if (f.exists()) f.absolutePath else System.getProperty("user.home")
-        appConfig = loadConfig(configDir)
+        appConfig = loadConfig(configDir, tempDir)
         if (::db.isInitialized
             && ::app.isInitialized
             && ::downloader.isInitialized
@@ -52,7 +52,7 @@ object AppContext {
         throw IllegalStateException("All services are not initialized properly")
     }
 
-    private fun loadConfig(configDir: String): AppConfig {
+    private fun loadConfig(configDir: String, tempDir: String): AppConfig {
         val configFile = Paths.get(configDir).resolve(CONFIG_FILE)
         var config: AppConfig? = null
         if (configFile.exists()) {
@@ -66,7 +66,7 @@ object AppContext {
         }
         if (config == null) {
             Logger.info("Using default config")
-            config = AppConfig()
+            config = AppConfig(tempDir)
             try {
                 Files.writeString(configFile, Json.encodeToString(config))
             } catch (ex: Exception) {

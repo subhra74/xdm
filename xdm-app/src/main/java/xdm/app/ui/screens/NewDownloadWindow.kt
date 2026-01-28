@@ -2,8 +2,6 @@ package xdm.app.ui.screens
 
 import com.formdev.flatlaf.util.SystemFileChooser
 import xdm.app.AppContext
-import xdm.app.AppContext.config
-import xdm.app.AppContext.downloader
 import xdm.app.utils.AppUtils
 import xdm.app.utils.PlatformUtils
 import xdm.core.downloaders.HttpDownloadTaskInfo
@@ -310,7 +308,7 @@ class NewDownloadWindow : JDialog() {
 //                AppContext.defaultDownloadFolder
 //        }
 
-        downloader.addHttpDownload(task)
+        AppContext.downloader.addHttpDownload(task)
         dispose()
     }
 

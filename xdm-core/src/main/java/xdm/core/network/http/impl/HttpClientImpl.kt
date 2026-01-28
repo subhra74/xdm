@@ -5,6 +5,7 @@ import okhttp3.Dispatcher
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import xdm.core.network.http.*
+import xdm.core.util.Logger
 import java.io.IOException
 import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
@@ -25,6 +26,12 @@ class HttpClientImpl(poolSize: Int) : PoolingHttpClient {
         client.dispatcher.cancelAll()
         dispatcher.executorService.shutdownNow()
         connectionPool.evictAll()
+        Thread {
+            Logger.info("XDM", "Trying connection pool clean up..")
+            dispatcher.executorService.awaitTermination(Int.MAX_VALUE.toLong(), TimeUnit.HOURS)
+            Logger.info("XDM", "Connection pool clean up.. triggering GC")
+            System.gc()
+        }.start()
     }
 
     override fun getResponse(url: String, headers: HeaderMap?, cookie: String?, range: Range): Result<HttpResponse> {
@@ -63,7 +70,7 @@ class HttpClientImpl(poolSize: Int) : PoolingHttpClient {
                 throw IOException("Body missing")
             }
             val inputStreamBody = body.byteStream()
-            val inputSource = body.source()
+//            val inputSource = body.source()
 
             val finalUrl = response.request.url.toUri().toASCIIString()
             val redirected = response.priorResponse?.isRedirect ?: false

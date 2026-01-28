@@ -75,16 +75,16 @@ object BrowserIntegration {
 
     private fun onMediaMessage(context: RequestContext) {
         Logger.info("Received media message..")
-//        context.requestBody?.let { content ->
-//            val str = content.toString(StandardCharsets.UTF_8)
-//            Logger.info(str)
-//            val extMsg: ExtensionMessage
-//            synchronized(json) {
-//                extMsg = json.decodeFromString<ExtensionMessage>(str)
-//            }
-//            removeBlockedHeaders(extMsg)
-//            VideoHelper.processMediaMessage(extMsg)
-//        }
+        context.requestBody?.let { content ->
+            val str = content.toString(StandardCharsets.UTF_8)
+            Logger.info(str)
+            val extMsg: ExtensionMessage
+            synchronized(json) {
+                extMsg = json.decodeFromString<ExtensionMessage>(str)
+            }
+            removeBlockedHeaders(extMsg)
+            VideoHelper.processMediaMessage(extMsg)
+        }
     }
 
     private fun onDownloadMessage(context: RequestContext) {

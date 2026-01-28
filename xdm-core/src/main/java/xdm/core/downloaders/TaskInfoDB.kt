@@ -1,6 +1,7 @@
 package xdm.core.downloaders
 
 import xdm.core.util.AtomicIO
+import xdm.core.util.Logger
 
 class TaskInfoDB(private val configDir: String) {
     fun getHttpTask(id: Long): HttpDownloadTaskInfo? {
@@ -33,5 +34,9 @@ class TaskInfoDB(private val configDir: String) {
             w.writeUTF(task.defaultDownloadFolder)
             w.writeInt(task.maxPiece)
         }
+    }
+
+    fun saveHlsTask(task: HlsDownloadTaskInfo) {
+        Logger.info("HLS task save to be implemented")
     }
 }

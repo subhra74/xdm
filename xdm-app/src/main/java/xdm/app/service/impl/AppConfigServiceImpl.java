@@ -51,12 +51,12 @@ public class AppConfigServiceImpl implements AppConfigService {
 
   @Override
   public String getDefaultDownloadFolder() {
-    return new File(System.getProperty("user.home", "Downloads")).getAbsolutePath();
+    return new File(System.getProperty("user.home"), "Downloads").getAbsolutePath();
   }
 
   @Override
   public String getTempFolder() {
-    return new File(System.getProperty("user.home", ".temp")).getAbsolutePath();
+    return new File(System.getProperty("user.home"), ".temp").getAbsolutePath();
   }
 
   @Override

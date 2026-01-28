@@ -5,7 +5,7 @@ import xdm.app.controllers.DownloadHostController
 import xdm.app.data.AppDB
 import xdm.app.service.impl.*
 import xdm.core.downloaders.TaskInfoDB
-import xdman.util.Logger
+import xdm.core.util.Logger
 import java.awt.Insets
 import java.io.File
 import javax.swing.UIManager
@@ -28,9 +28,9 @@ object AppMain {
 
     @JvmStatic
     fun main(args: Array<String>) {
-        Logger.log("Use OKHttp..")
-        Logger.log("loading...")
-        Logger.log(System.getProperty("java.version") + " " + System.getProperty("os.version"))
+        Logger.info("Use OKHttp..")
+        Logger.info("loading...")
+        Logger.info(System.getProperty("java.version") + " " + System.getProperty("os.version"))
 
         System.setProperty("apple.awt.application.appearance", "system")
         System.setProperty("apple.laf.useScreenMenuBar", "true")
@@ -43,12 +43,25 @@ object AppMain {
 
         val homeDir = System.getProperty("user.home")
         val configDir = "$homeDir${File.separatorChar}.xdm-app"
+        val tempDir = "$configDir${File.separatorChar}tmp"
 
+        Logger.info("Creating dir: $configDir")
         val f = File(configDir)
         f.mkdirs()
 
+        Logger.info("Creating dir: $tempDir")
+        File(tempDir).mkdirs()
+
         val appDB = AppDB(configDir)
         val taskDB = TaskInfoDB(configDir)
+
+        Thread {
+            while (true) {
+                Thread.sleep(15000)
+                //Logger.info("XDM", "Triggering GC")
+                System.gc()
+            }
+        }.start()
 
         AppContext.apply {
             db = appDB
@@ -59,6 +72,6 @@ object AppMain {
             downloader = DownloadHostController(appDB = appDB, taskInfoDB = taskDB, configDir = configDir)
             videoTracker = VideoTrackerImpl()
             taskInfoDB = taskDB
-        }.init(args, configDir)
+        }.init(args, configDir, tempDir)
     }
 }

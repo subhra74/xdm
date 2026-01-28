@@ -7,6 +7,7 @@ import xdm.app.models.BrowserDownloadInfo;
 import xdm.app.service.AppControllerService;
 import xdm.app.ui.screens.AppWindow;
 import xdm.app.ui.screens.NewDownloadWindow;
+import xdm.app.ui.screens.NewVideoDownloadWindow;
 import xdm.app.utils.AppUtils;
 import xdm.app.utils.TrayUtils;
 import xdm.core.downloaders.HttpDownloadTaskInfo;
@@ -97,7 +98,7 @@ public class AppControllerServiceImpl implements AppControllerService {
 
   private void showNewVideoDownloadWindowInternal(
       long vid, String fileName, long fileSize, String contentType) {
-    //    var dlg = new NewVideoDownloadWindow();
-    //    dlg.showWindow(vid, fileName, fileSize, contentType);
+        var dlg = new NewVideoDownloadWindow();
+        dlg.showWindow(vid, fileName, fileSize, contentType);
   }
 }
