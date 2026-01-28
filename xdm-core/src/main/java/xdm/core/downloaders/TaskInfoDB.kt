@@ -24,6 +24,29 @@ class TaskInfoDB(private val configDir: String) {
         return null
     }
 
+    fun getHlsTask(id: Long): HlsDownloadTaskInfo? {
+        AtomicIO.readTransacted("task-$id.info", configDir) { r ->
+            return HlsDownloadTaskInfo(
+                id = r.readLong(),
+                url = r.readUTF(),
+                audioUrl = if (r.readBoolean()) r.readUTF() else null,
+                fileName = r.readUTF(),
+                respectFileName = r.readBoolean(),
+                cookie = null,
+                headers = null,
+                origin = null,
+                autoCategorize = r.readBoolean(),
+                defaultDownloadFolder = r.readUTF(),
+                userSelectedDownloadFolder = null,
+                maxPiece = r.readInt(),
+                authInfo = null,
+                audioOnly = r.readBoolean(),
+                tempDir = r.readUTF(),
+            )
+        }
+        return null
+    }
+
     fun saveHttpTask(task: HttpDownloadTaskInfo) {
         AtomicIO.writeTransacted("task-${task.id}.info", configDir) { w ->
             w.writeLong(task.id)
@@ -37,6 +60,18 @@ class TaskInfoDB(private val configDir: String) {
     }
 
     fun saveHlsTask(task: HlsDownloadTaskInfo) {
-        Logger.info("HLS task save to be implemented")
+        AtomicIO.writeTransacted("task-${task.id}.info", configDir) { w ->
+            w.writeLong(task.id)
+            w.writeUTF(task.url)
+            w.writeBoolean(task.audioUrl != null)
+            task.audioUrl?.let { w.writeUTF(it) }
+            w.writeUTF(task.fileName)
+            w.writeBoolean(task.respectFileName)
+            w.writeBoolean(task.autoCategorize)
+            w.writeUTF(task.defaultDownloadFolder)
+            w.writeInt(task.maxPiece)
+            w.writeBoolean(task.audioOnly)
+            w.writeUTF(task.tempDir)
+        }
     }
 }

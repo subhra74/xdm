@@ -6,12 +6,12 @@ interface FileProvider {
     fun getTempDir(id: Long, url: String, contentType: String?, contentDisposition: String?): String
 
     /** Rename or copy temp file to final output file */
-    fun commitOutputFile(id: Long, tmpFilePath: String): CommitResult
+    fun commitOutputFile(id: Long, tmpFilePath: String, downloadType: DownloadType): CommitResult
 }
 
 interface DownloadHost : FileProvider {
     fun onDownloadStart(id: Long)
-    fun onDownloadInit(data: DownloadStatusInfo.InitInfo)
+    fun onDownloadInit(data: DownloadStatusInfo.InitInfo, downloadType: DownloadType)
     fun onDownloadProgress(event: DownloadStatusInfo.ProgressInfo)
     fun onAssembleStart(id: Long)
     fun onAssembleProgress(event: DownloadStatusInfo.AssembleInfo)

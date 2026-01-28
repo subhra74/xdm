@@ -1,14 +1,12 @@
 package xdm.core.downloaders.web.streaming.downloader
 
-import xdm.core.downloaders.CommitResult
-import xdm.core.downloaders.DownloadError
-import xdm.core.downloaders.DownloadStatusInfo
-import xdm.core.downloaders.DownloaderTask
+import xdm.core.downloaders.*
 import xdm.core.downloaders.web.ProgressTracker
 import xdm.core.downloaders.web.http.ChunkStatus
 import xdm.core.media.muxer.Muxer
 import xdm.core.util.Logger
 import xdm.core.util.ManifestUtils.downloadManifestAsFile
+import xdm.core.util.getFileExtFromUrl
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
@@ -66,7 +64,7 @@ abstract class StreamingDownloader(
                 }
                 context.init.set(true)
                 saveState()
-                context.downloadHost.onDownloadInit(initInfo)
+                context.downloadHost.onDownloadInit(initInfo, downloadType())
             }
             downloadChunks()
         } catch (ex: Exception) {
@@ -78,6 +76,7 @@ abstract class StreamingDownloader(
     abstract fun initDownload(): DownloadStatusInfo.InitInfo?
 
     abstract fun fileExt(): String
+    abstract fun downloadType(): DownloadType
 
     private fun downloadChunks() {
         if (context.stopFlag.get()) return
@@ -118,9 +117,11 @@ abstract class StreamingDownloader(
             context.downloadHost.onDownloadFailed(context.id, DownloadError.MuxError)
             return
         }
-        when (val res = context.downloadHost.commitOutputFile(context.id, tmpFile.absolutePath)) {
+        Logger.info("Committing to final file")
+        when (val res = context.downloadHost.commitOutputFile(context.id, tmpFile.absolutePath, downloadType())) {
             is CommitResult.Failed -> {
                 if (context.stopFlag.get()) return
+                Logger.info("Committing to final file - Failed!!")
                 context.diskError.set(true)
                 saveState()
                 context.downloadHost.onDownloadFailed(context.id, DownloadError.DiskSpaceError)
@@ -128,12 +129,11 @@ abstract class StreamingDownloader(
 
             is CommitResult.Success -> {
                 saveState()
+                cleanup()
+                Logger.info("Committing to final file - Success --> ${res.outputDir} ${res.fileName}")
                 context.downloadHost.onDownloadSuccess(
                     DownloadStatusInfo.FinalInfo(
-                        context.id,
-                        File(res.outputDir, res.fileName).length(),
-                        res.fileName,
-                        res.outputDir
+                        context.id, File(res.outputDir, res.fileName).length(), res.fileName, res.outputDir
                     )
                 )
             }
@@ -143,13 +143,10 @@ abstract class StreamingDownloader(
     private fun assembleStreams(outFile: String): Boolean {
         try {
             Logger.info("Mux multiple streams to $outFile")
-            val audioChunks = context.chunks.filter { it.tag == "AUDIO" }
-                .map { Paths.get(context.tempFolder, "temp-${it.id}.tmp").toAbsolutePath().toString() }
-            val videoChunks = context.chunks.filter { it.tag == "VIDEO" }
-                .map { Paths.get(context.tempFolder, "temp-${it.id}.tmp").toAbsolutePath().toString() }
+            val audioChunks = context.chunks.filter { it.tag == "AUDIO" }.map { getChunkTempFileName(it) }
+            val videoChunks = context.chunks.filter { it.tag == "VIDEO" }.map { getChunkTempFileName(it) }
             if (muxer.mux(audioChunks, videoChunks, outFile, {}, context.tempFolder)) {
                 context.completed.set(true)
-                cleanup()
                 return true
             }
         } catch (e: Exception) {
@@ -158,14 +155,19 @@ abstract class StreamingDownloader(
         return false
     }
 
+    private fun getChunkTempFileName(chunk: StreamingChunk): String {
+        val ext = getFileExtFromUrl(chunk.url) ?: ""
+        return Paths.get(context.tempFolder, "temp-${chunk.id}.tmp.$ext").toAbsolutePath().toString()
+    }
+
     private fun assembleSingle(outFile: String): Boolean {
         try {
             Logger.info("Mux single stream to $outFile")
-            val tempFiles =
-                context.chunks.map { Paths.get(context.tempFolder, "temp-${it.id}.tmp").toAbsolutePath().toString() }
+            val tempFiles = context.chunks.map {
+                getChunkTempFileName(it)
+            }
             if (muxer.mux(tempFiles, outFile, {}, context.tempFolder)) {
                 context.completed.set(true)
-                cleanup()
                 return true
             }
         } catch (e: Exception) {

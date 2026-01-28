@@ -27,27 +27,36 @@ class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, priva
             // "Not yet implemented"
         }
 
-        override fun onDownloadInit(data: DownloadStatusInfo.InitInfo) {
+        override fun onDownloadInit(data: DownloadStatusInfo.InitInfo, downloadType: DownloadType) {
             activeSessions[data.id]?.let {
                 synchronized(appDB) {
                     appDB.getById(data.id)?.let { e ->
-                        taskInfoDB.getHttpTask(data.id)?.let { t ->
-                            val newFileName = if (data.videoExt != null) {
-                                t.fileName + data.videoExt
-                            } else {
-                                getFileName(
-                                    t.fileName,
-                                    t.respectFileName,
-                                    data.url,
-                                    data.contentDisposition,
-                                    data.contentType
-                                )
-                            }
-                            //TODO: Check if only ext to be updated
-                            e.fileName = newFileName
-                            t.fileName = newFileName
-                            data.fileSize?.let { e.size = it }
-                            taskInfoDB.saveHttpTask(t)
+                        when (downloadType) {
+                            DownloadType.Http ->
+                                taskInfoDB.getHttpTask(data.id)?.let { t ->
+                                    val newFileName = if (data.videoExt != null) {
+                                        t.fileName + data.videoExt
+                                    } else {
+                                        getFileName(
+                                            t.fileName,
+                                            t.respectFileName,
+                                            data.url,
+                                            data.contentDisposition,
+                                            data.contentType
+                                        )
+                                    }
+                                    //TODO: Check if only ext to be updated
+                                    e.fileName = newFileName
+                                    t.fileName = newFileName
+                                    data.fileSize?.let { e.size = it }
+                                    taskInfoDB.saveHttpTask(t)
+                                }
+
+                            DownloadType.Hls -> {}
+                            DownloadType.Dash -> TODO()
+                            DownloadType.Hds -> TODO()
+                            DownloadType.Hss -> TODO()
+                            DownloadType.Torrent -> TODO()
                         }
                         appDB.saveActiveRecords()
                     }
@@ -127,25 +136,51 @@ class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, priva
             return AppContext.defaultDownloadFolder
         }
 
-        override fun commitOutputFile(id: Long, tmpFilePath: String): CommitResult {
-            taskInfoDB.getHttpTask(id)?.let { t ->
-                val fileName = t.fileName
-                val folder = t.defaultDownloadFolder
-                val finalName = FileUtils.getUniqueFileName(folder, fileName)
-                val outFile = File(folder, finalName)
-                val tmpFile = File(tmpFilePath)
-                return if (tmpFile.renameTo(outFile)) {
-                    Logger.info("Success renaming file")
-                    t.fileName = finalName
-                    t.defaultDownloadFolder = folder
-                    taskInfoDB.saveHttpTask(t)
-                    CommitResult.Success(fileName = finalName, outputDir = folder)
-                } else {
-                    Logger.info("Failed renaming file")
-                    CommitResult.Failed
+        override fun commitOutputFile(id: Long, tmpFilePath: String, downloadType: DownloadType): CommitResult {
+            when (downloadType) {
+                DownloadType.Http -> taskInfoDB.getHttpTask(id)?.let { t ->
+                    val fileName = t.fileName
+                    val folder = t.defaultDownloadFolder
+                    val finalName = FileUtils.getUniqueFileName(folder, fileName)
+                    val outFile = File(folder, finalName)
+                    val tmpFile = File(tmpFilePath)
+                    return if (tmpFile.renameTo(outFile)) {
+                        Logger.info("Success renaming file")
+                        t.fileName = finalName
+                        t.defaultDownloadFolder = folder
+                        taskInfoDB.saveHttpTask(t)
+                        CommitResult.Success(fileName = finalName, outputDir = folder)
+                    } else {
+                        Logger.info("Failed renaming file")
+                        CommitResult.Failed
+                    }
                 }
+
+                DownloadType.Hls -> taskInfoDB.getHlsTask(id)?.let { t ->
+                    val fileName = t.fileName
+                    val folder = t.defaultDownloadFolder
+                    val finalName = FileUtils.getUniqueFileName(folder, fileName)
+                    val outFile = File(folder, finalName)
+                    val tmpFile = File(tmpFilePath)
+                    return if (tmpFile.renameTo(outFile)) {
+                        Logger.info("Success renaming file")
+                        t.fileName = finalName
+                        t.defaultDownloadFolder = folder
+                        taskInfoDB.saveHlsTask(t)
+                        CommitResult.Success(fileName = finalName, outputDir = folder)
+                    } else {
+                        Logger.info("Failed renaming file")
+                        CommitResult.Failed
+                    }
+                }
+
+                DownloadType.Dash -> TODO()
+                DownloadType.Hds -> TODO()
+                DownloadType.Hss -> TODO()
+                DownloadType.Torrent -> TODO()
             }
-            Logger.info("Task not found!")
+
+            Logger.error("Task not found!")
             return CommitResult.Failed
         }
 

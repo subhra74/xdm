@@ -1,9 +1,6 @@
 package xdm.core.downloaders.web.streaming.downloader.hls
 
-import xdm.core.downloaders.DownloadHost
-import xdm.core.downloaders.DownloadStatusInfo
-import xdm.core.downloaders.HlsDownloadTaskInfo
-import xdm.core.downloaders.StreamingDownloadTaskInfo
+import xdm.core.downloaders.*
 import xdm.core.downloaders.web.http.ChunkStatus
 import xdm.core.downloaders.web.streaming.downloader.HlsTaskContext
 import xdm.core.downloaders.web.streaming.downloader.StreamingChunk
@@ -103,6 +100,8 @@ class HlsDownloader(
     }
 
     override fun fileExt(): String = ".mp4"
+
+    override fun downloadType(): DownloadType = DownloadType.Hls
 
     private fun parseManifest(
         videoManifestContent: AtomicReference<Iterator<String>>, audioManifestContent: AtomicReference<Iterator<String>>

@@ -5,7 +5,10 @@ import xdm.core.downloaders.web.http.ChunkStatus
 import xdm.core.network.http.HeaderMap
 import xdm.core.network.http.PoolingHttpClient
 import xdm.core.network.http.Range
+import xdm.core.util.FileUtils
 import xdm.core.util.Logger
+import xdm.core.util.XDMUtils
+import xdm.core.util.getFileExtFromUrl
 import java.io.File
 import java.io.IOException
 import java.io.RandomAccessFile
@@ -66,7 +69,8 @@ class PieceGrabber(
                         }
 
                         Logger.info("Connected to: ${piece.url}")
-                        val tempFile = File(tempDir, "temp-${piece.id}.tmp")
+                        val ext = getFileExtFromUrl(piece.url) ?: ""
+                        val tempFile = File(tempDir, "temp-${piece.id}.tmp.$ext")
                         Logger.info("XDM", "Opening tem file: ${tempFile.absolutePath}")
                         RandomAccessFile(tempFile, "rw").use { raf ->
                             this.piece.fileHandle.set(raf)

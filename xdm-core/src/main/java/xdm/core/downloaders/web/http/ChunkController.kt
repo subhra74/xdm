@@ -93,7 +93,7 @@ class HttpChunkController(
                     val tmpFile = File(context.tempFolder, context.tempFileName)
                     val totalFileSize = context.totalSize ?: tmpFile.length()
                     val res =
-                        context.downloadHost.commitOutputFile(context.id, tmpFile.absolutePath)
+                        context.downloadHost.commitOutputFile(context.id, tmpFile.absolutePath, DownloadType.Http)
                     Logger.info("XDM", "Move file success: - $res")
                     val now = System.currentTimeMillis()
                     when (res) {
@@ -161,7 +161,8 @@ class HttpChunkController(
                         fileSize = data.contentLength,
                         contentDisposition = data.contentDisposition,
                         contentType = data.contentType
-                    )
+                    ),
+                    DownloadType.Http
                 )
                 splitChuck(context.chunks)
                 saveState(context, configDir)
@@ -367,7 +368,7 @@ class HttpChunkController(
         Logger.info("XDM", "Resume: All chunks downloaded")
         val tmpFile = File(context.tempFolder, context.tempFileName)
         val totalFileSize = context.totalSize ?: tmpFile.length()
-        val res = context.downloadHost.commitOutputFile(context.id, tmpFile.absolutePath)
+        val res = context.downloadHost.commitOutputFile(context.id, tmpFile.absolutePath, DownloadType.Http)
         Logger.info("XDM", "Move file success: - $res")
         when (res) {
             is CommitResult.Failed -> {

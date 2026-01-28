@@ -223,7 +223,7 @@ object VideoHelper {
     ): HlsDownloadTaskInfo {
         return HlsDownloadTaskInfo(
             id = CoreUtils.uniqueId(),
-            fileName = getFileName(msg),
+            fileName = getFileName(msg) + ".mp4",
             tempDir = AppContext.appConfig.tempDir,
             respectFileName = true,
             cookie = msg.cookie,

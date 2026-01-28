@@ -2,6 +2,10 @@ package xdm.core.downloaders
 
 import xdm.core.network.http.HeaderMap
 
+enum class DownloadType {
+    Http, Hls, Dash, Hds, Hss, Torrent
+}
+
 enum class DownloadError {
     NetworkError,
     InvalidResponse,

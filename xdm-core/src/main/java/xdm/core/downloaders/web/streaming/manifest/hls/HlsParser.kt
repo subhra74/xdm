@@ -187,53 +187,39 @@ object HlsParser {
 
             for ((index, url) in urls.withIndex()) {
                 val extStreamInf = mapExtStreamInf[index]
-                val codecs = extStreamInf["CODECS"]
-                if (!StringUtils.isNullOrEmpty(codecs)) {
-                    val hasVideo = CodecMap.containsVideoCodec(codecs)
-                    val hasAudio = CodecMap.containsAudioCodec(codecs)
-                    if (hasAudio && hasVideo) {
-                        containers.add(
-                            HlsMasterPlaylist(videoPlaylist = url, attributes = extStreamInf)
-                        )
-                        continue
-                    }
-                    if (hasVideo) {
-                        var audioFound = false
-                        extStreamInf[AUDIO]?.let { groupId ->
-                            audioFound = true
-                            containers.addAll(mapExtMedia.filter { media -> groupId == media["GROUP-ID"] && AUDIO == media["TYPE"] }
-                                .map { media ->
-                                    HlsMasterPlaylist(
-                                        videoPlaylist = url,
-                                        audioPlaylist = media["URI"]?.let { resolveUri(baseUrl, it) },
-                                        attributes = extStreamInf + media
-                                    )
-                                })
-                        }
-                        if (!audioFound) {
-                            Logger.info("Video only stream found!")
-                            containers.add(HlsMasterPlaylist(videoPlaylist = url, attributes = extStreamInf))
-                        }
-                    }
-                    if (hasAudio) {
-                        var videoFound = false
-                        extStreamInf[VIDEO]?.let { groupId ->
-                            videoFound = true
-                            containers.addAll(mapExtMedia.filter { media -> groupId == media["GROUP-ID"] && VIDEO == media["TYPE"] }
-                                .map { media ->
-                                    HlsMasterPlaylist(
-                                        videoPlaylist = media["URI"]?.let { resolveUri(baseUrl, it) },
-                                        audioPlaylist = url,
-                                        attributes = extStreamInf + media
-                                    )
-                                })
-                        }
-                        if (!videoFound) {
-                            Logger.info("Video only stream found!")
-                            containers.add(HlsMasterPlaylist(videoPlaylist = url, attributes = extStreamInf))
-                        }
-                    }
+                var alternateAudioFound = false
+                extStreamInf[AUDIO]?.let { groupId ->
+                    alternateAudioFound = true
+                    containers.addAll(mapExtMedia.filter { media -> groupId == media["GROUP-ID"] && AUDIO == media["TYPE"] }
+                        .map { media ->
+                            HlsMasterPlaylist(
+                                videoPlaylist = url,
+                                audioPlaylist = media["URI"]?.let { resolveUri(baseUrl, it) },
+                                attributes = extStreamInf + media
+                            )
+                        })
                 }
+                if (alternateAudioFound) {
+                    continue
+                }
+
+                var alternateVideoFound = false
+                extStreamInf[VIDEO]?.let { groupId ->
+                    alternateVideoFound = true
+                    containers.addAll(mapExtMedia.filter { media -> groupId == media["GROUP-ID"] && VIDEO == media["TYPE"] }
+                        .map { media ->
+                            HlsMasterPlaylist(
+                                videoPlaylist = media["URI"]?.let { resolveUri(baseUrl, it) },
+                                audioPlaylist = url,
+                                attributes = extStreamInf + media
+                            )
+                        })
+                }
+                if (alternateVideoFound) {
+                    continue
+                }
+                Logger.info("Playlist without alternative rendering found!")
+                containers.add(HlsMasterPlaylist(videoPlaylist = url, attributes = extStreamInf))
             }
             containers
         }
