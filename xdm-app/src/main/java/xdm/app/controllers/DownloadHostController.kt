@@ -193,9 +193,26 @@ class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, priva
     fun resumeDownload(id: Long) {
         try {
             appDB.getById(id)?.let {
-                val controller = HttpChunkController(
-                    id, configDir, HttpClientImpl(100), downloadHost,
-                )
+                val controller: DownloaderTask
+                when (it.downloadType) {
+                    DownloadType.Http -> controller = HttpChunkController(
+                        id, configDir, HttpClientImpl(100), downloadHost,
+                    )
+
+                    DownloadType.Hls -> controller = HlsDownloader(
+                        id = id,
+                        configDir = AppContext.configDir,
+                        http = HttpClientImpl(100),
+                        host = downloadHost,
+                        muxer = FFmpegMuxer()
+                    )
+
+                    DownloadType.Dash -> TODO()
+                    DownloadType.Hds -> TODO()
+                    DownloadType.Hss -> TODO()
+                    DownloadType.Torrent -> TODO()
+                }
+
                 activeSessions[id] = controller
                 it.status = RecordStatus.DOWNLOADING
                 appDB.savePausedRecords()
@@ -243,7 +260,8 @@ class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, priva
                 fileName = task.fileName,
                 eta = 0, speed = 0.0f,
                 status = RecordStatus.READY,
-                selected = false
+                selected = false,
+                downloadType = DownloadType.Http
             )
         )
         appDB.saveActiveRecords()
@@ -274,7 +292,8 @@ class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, priva
             taskInfo = task,
             http = HttpClientImpl(100),
             muxer = FFmpegMuxer(),
-            host = downloadHost
+            host = downloadHost,
+            configDir = AppContext.configDir,
         )
         activeSessions[task.id] = controller
         appDB.addActive(
@@ -287,7 +306,8 @@ class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, priva
                 fileName = task.fileName,
                 eta = 0, speed = 0.0f,
                 status = RecordStatus.READY,
-                selected = false
+                selected = false,
+                downloadType = DownloadType.Hls
             )
         )
         appDB.saveActiveRecords()

@@ -2,7 +2,6 @@ package xdm.core.downloaders.web.streaming.downloader
 
 import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.DownloadHost
-import xdm.core.downloaders.web.http.Chunk
 import xdm.core.downloaders.web.http.ChunkStatus
 import xdm.core.network.http.HeaderMap
 import xdm.core.network.http.PoolingHttpClient
@@ -68,4 +67,7 @@ data class HlsTaskContext(
     override var hasSeparateStreams: Boolean = false,
     override val pieceCompletedCount: AtomicInteger = AtomicInteger(0),
     override val assembling: AtomicBoolean = AtomicBoolean(false),
+    var url: String,
+    var audioUrl: String?,
+    var audioOnly: Boolean = false,
 ) : StreamingTaskContext

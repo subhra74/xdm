@@ -1,5 +1,6 @@
 package xdm.app.data
 
+import xdm.core.downloaders.DownloadType
 import xdm.core.util.AtomicIO
 import java.io.DataInputStream
 import java.io.DataOutputStream
@@ -26,6 +27,7 @@ data class DbRecord(
     var speed: Float,
     var selected: Boolean,
     var status: RecordStatus,
+    val downloadType: DownloadType,
 )
 
 class AppDB(private val configDir: String) {
@@ -154,6 +156,7 @@ class AppDB(private val configDir: String) {
         writer.writeInt(rec.progress)
         writer.writeLong(rec.date)
         writer.writeUTF(rec.fileName)
+        writer.writeUTF(rec.downloadType.toString())
     }
 
     private fun readRecord(r: DataInputStream, paused: Boolean = true): DbRecord {
@@ -167,7 +170,8 @@ class AppDB(private val configDir: String) {
             eta = 0,
             speed = 0.0f,
             selected = false,
-            status = if (paused) RecordStatus.PAUSED else RecordStatus.FINISHED
+            status = if (paused) RecordStatus.PAUSED else RecordStatus.FINISHED,
+            downloadType = DownloadType.valueOf(r.readUTF()),
         )
     }
 }

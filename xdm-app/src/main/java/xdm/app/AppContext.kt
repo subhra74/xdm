@@ -25,8 +25,10 @@ object AppContext {
     lateinit var videoTracker: VideoTracker
     lateinit var defaultDownloadFolder: String
     lateinit var taskInfoDB: TaskInfoDB
+    lateinit var configDir: String
 
     fun init(args: Array<String>, configDir: String, tempDir: String) {
+        this.configDir = configDir
         val f = File(System.getProperty("user.home"), "Downloads")
         defaultDownloadFolder = if (f.exists()) f.absolutePath else System.getProperty("user.home")
         appConfig = loadConfig(configDir, tempDir)

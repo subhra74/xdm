@@ -2,6 +2,8 @@ package xdm.core.downloaders.web.streaming.downloader.hls
 
 import xdm.core.downloaders.*
 import xdm.core.downloaders.web.http.ChunkStatus
+import xdm.core.downloaders.web.http.loadHlsState
+import xdm.core.downloaders.web.http.saveState
 import xdm.core.downloaders.web.streaming.downloader.HlsTaskContext
 import xdm.core.downloaders.web.streaming.downloader.StreamingChunk
 import xdm.core.downloaders.web.streaming.downloader.StreamingDownloader
@@ -19,33 +21,56 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
 fun makeContext(
-    taskInfo: StreamingDownloadTaskInfo, http: PoolingHttpClient, host: DownloadHost
+    taskInfo: HlsDownloadTaskInfo, http: PoolingHttpClient, host: DownloadHost
 ) = HlsTaskContext(
     id = taskInfo.id,
     chunks = ArrayList(),
     httpClient = http,
     downloadHost = host,
     tempFolder = taskInfo.tempDir,
-    tempFileName = "${taskInfo.id}.mp4"
+    tempFileName = "${taskInfo.id}.mp4",
+    url = taskInfo.url,
+    audioUrl = taskInfo.audioUrl,
+    audioOnly = taskInfo.audioOnly,
 )
 
-class HlsDownloader(
-    private val taskInfo: HlsDownloadTaskInfo,
+fun loadContext(
+    id: Long,
+    configDir: String,
     http: PoolingHttpClient,
-    muxer: Muxer,
     host: DownloadHost,
-) : StreamingDownloader(makeContext(taskInfo, http, host), muxer) {
+) = loadHlsState(id = id, configDir = configDir, http = http, host = host).getOrThrow()
+
+class HlsDownloader : StreamingDownloader {
+
+    constructor(
+        id: Long,
+        configDir: String,
+        http: PoolingHttpClient,
+        host: DownloadHost,
+        muxer: Muxer,
+    ) : super(loadContext(id, configDir, http, host), configDir, muxer)
+
+    constructor(
+        taskInfo: HlsDownloadTaskInfo,
+        http: PoolingHttpClient,
+        muxer: Muxer,
+        host: DownloadHost,
+        configDir: String,
+    ) : super(makeContext(taskInfo, http, host), configDir, muxer)
+
     private val keyCache = ConcurrentHashMap<String, ByteArray>()
 
     override fun initDownload(): DownloadStatusInfo.InitInfo? {
-        context.hasSeparateStreams = taskInfo.audioUrl != null
+        val hlsContext = context as HlsTaskContext
+        context.hasSeparateStreams = hlsContext.audioUrl != null
         val latch = CountDownLatch(if (context.hasSeparateStreams) 2 else 1)
         val videoManifestContent = AtomicReference<Iterator<String>>()
         val audioManifestContent = AtomicReference<Iterator<String>>()
         val error = AtomicBoolean(false)
-        loadManifest(taskInfo.url, videoManifestContent, latch, error)
+        loadManifest(hlsContext.url, videoManifestContent, latch, error)
         if (context.hasSeparateStreams) {
-            loadManifest(taskInfo.audioUrl!!, audioManifestContent, latch, error)
+            loadManifest(hlsContext.audioUrl!!, audioManifestContent, latch, error)
         }
         try {
             latch.await()
@@ -85,7 +110,7 @@ class HlsDownloader(
             }
             return DownloadStatusInfo.InitInfo(
                 id = context.id,
-                url = taskInfo.url,
+                url = context.url,
                 isRedirect = false,
                 fileSize = null,
                 contentDisposition = null,
@@ -102,13 +127,17 @@ class HlsDownloader(
     override fun fileExt(): String = ".mp4"
 
     override fun downloadType(): DownloadType = DownloadType.Hls
+    override fun saveContext() {
+        saveState(context as HlsTaskContext, configDir)
+    }
 
     private fun parseManifest(
         videoManifestContent: AtomicReference<Iterator<String>>, audioManifestContent: AtomicReference<Iterator<String>>
     ): Pair<HlsPlaylist, HlsPlaylist?> {
-        val videoPlaylist = HlsParser.parseMediaSegments(videoManifestContent.get(), taskInfo.url).getOrThrow()
+        val videoPlaylist =
+            HlsParser.parseMediaSegments(videoManifestContent.get(), (context as HlsTaskContext).url).getOrThrow()
         var audioPlaylist: HlsPlaylist? = null
-        taskInfo.audioUrl?.let {
+        (context as HlsTaskContext).audioUrl?.let {
             audioPlaylist = HlsParser.parseMediaSegments(audioManifestContent.get(), it).getOrThrow()
         }
         return Pair(videoPlaylist, audioPlaylist)
@@ -117,6 +146,7 @@ class HlsDownloader(
     private fun retrieveKeys(
         videoPlayList: HlsPlaylist, audioPlayList: HlsPlaylist?
     ) {
+        val hlsContext = context as HlsTaskContext
         val error = AtomicBoolean(false)
         val keyUrls = HashSet<String>()
         if (videoPlayList.encrypted) {
@@ -135,7 +165,7 @@ class HlsDownloader(
                 try {
                     if (!error.get() && !context.stopFlag.get()) {
                         downloadManifestBytes(
-                            context.httpClient, keyUrl, taskInfo.headers, taskInfo.cookie, context.stopFlag
+                            context.httpClient, keyUrl, hlsContext.headers, hlsContext.cookie, context.stopFlag
                         )?.let { keyCache[keyUrl] = it }
                     }
                 } catch (e: Exception) {

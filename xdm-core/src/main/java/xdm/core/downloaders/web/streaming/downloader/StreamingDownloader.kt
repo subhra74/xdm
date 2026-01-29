@@ -20,12 +20,18 @@ import java.util.concurrent.atomic.AtomicReference
 
 abstract class StreamingDownloader(
     protected val context: StreamingTaskContext,
+    protected val configDir: String,
     private val muxer: Muxer,
 ) : DownloaderTask {
     protected val executorService: ExecutorService = Executors.newFixedThreadPool(8)
     private val progressTracker = ProgressTracker()
     private val prgInfo = DownloadStatusInfo.ProgressInfo(id = context.id)
     private var lastUpdate: Long = 0
+
+    abstract fun initDownload(): DownloadStatusInfo.InitInfo?
+    abstract fun fileExt(): String
+    abstract fun downloadType(): DownloadType
+    abstract fun saveContext()
 
     override fun start() {
         Thread {
@@ -50,7 +56,7 @@ abstract class StreamingDownloader(
     }
 
     override fun resume() {
-        TODO("Not yet implemented")
+        start()
     }
 
     private fun download() {
@@ -63,7 +69,7 @@ abstract class StreamingDownloader(
                     return
                 }
                 context.init.set(true)
-                saveState()
+                saveContext()
                 context.downloadHost.onDownloadInit(initInfo, downloadType())
             }
             downloadChunks()
@@ -72,11 +78,6 @@ abstract class StreamingDownloader(
             context.downloadHost.onDownloadFailed(context.id, DownloadError.InternalError)
         }
     }
-
-    abstract fun initDownload(): DownloadStatusInfo.InitInfo?
-
-    abstract fun fileExt(): String
-    abstract fun downloadType(): DownloadType
 
     private fun downloadChunks() {
         if (context.stopFlag.get()) return
@@ -88,7 +89,7 @@ abstract class StreamingDownloader(
         }
         try {
             latch.await()
-            saveState()
+            saveContext()
             if (context.stopFlag.get()) return
             context.chunks.find { it.status.get() != ChunkStatus.Finished }?.let {
                 Logger.error("XDM", "Not all chunks downloaded successfully")
@@ -123,12 +124,12 @@ abstract class StreamingDownloader(
                 if (context.stopFlag.get()) return
                 Logger.info("Committing to final file - Failed!!")
                 context.diskError.set(true)
-                saveState()
+                saveContext()
                 context.downloadHost.onDownloadFailed(context.id, DownloadError.DiskSpaceError)
             }
 
             is CommitResult.Success -> {
-                saveState()
+                saveContext()
                 cleanup()
                 Logger.info("Committing to final file - Success --> ${res.outputDir} ${res.fileName}")
                 context.downloadHost.onDownloadSuccess(
@@ -217,9 +218,6 @@ abstract class StreamingDownloader(
         }
     }
 
-    private fun saveState() {}
-
-
     private fun onChunkProgress(pc: StreamingChunk, downloaded: Long) {
         synchronized(this) {
             val update = progressTracker.update(
@@ -241,7 +239,7 @@ abstract class StreamingDownloader(
             }
             val now = System.currentTimeMillis()
             if (now - lastUpdate > 5000) {
-                saveState()
+                saveContext()
                 lastUpdate = now
             }
         }
@@ -263,7 +261,7 @@ abstract class StreamingDownloader(
             } else {
                 Logger.info("Chunk failed")
             }
-            saveState()
+            saveContext()
         }
     }
 
