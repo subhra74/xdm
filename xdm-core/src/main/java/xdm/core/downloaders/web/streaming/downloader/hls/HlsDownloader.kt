@@ -128,7 +128,9 @@ class HlsDownloader : StreamingDownloader {
 
     override fun downloadType(): DownloadType = DownloadType.Hls
     override fun saveContext() {
-        saveState(context as HlsTaskContext, configDir)
+        synchronized(this){
+            saveState(context as HlsTaskContext, configDir)
+        }
     }
 
     private fun parseManifest(
@@ -137,7 +139,7 @@ class HlsDownloader : StreamingDownloader {
         val videoPlaylist =
             HlsParser.parseMediaSegments(videoManifestContent.get(), (context as HlsTaskContext).url).getOrThrow()
         var audioPlaylist: HlsPlaylist? = null
-        (context as HlsTaskContext).audioUrl?.let {
+        context.audioUrl?.let {
             audioPlaylist = HlsParser.parseMediaSegments(audioManifestContent.get(), it).getOrThrow()
         }
         return Pair(videoPlaylist, audioPlaylist)

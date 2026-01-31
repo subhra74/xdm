@@ -10,15 +10,13 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import xdm.core.Config;
 import xdm.core.media.muxer.Muxer;
+import xdm.core.util.Logger;
 import xdm.core.util.PlatformUtils;
 import xdm.core.util.StringUtils;
 
 public class FFmpegMuxer implements Muxer {
-  private static final Logger logger = LoggerFactory.getLogger(FFmpegMuxer.class);
   private static final Pattern rxDuration =
       Pattern.compile("Duration:\\s+(\\d\\d):(\\d\\d):(\\d\\d)\\.\\d\\d,\\s");
   private static final Pattern rxTime =
@@ -31,6 +29,7 @@ public class FFmpegMuxer implements Muxer {
   @Override
   public boolean mux(
       List<String> segments, String outputFile, IntConsumer progressCallback, String tempDir) {
+    Logger.info("Merging segments");
     File contatFile = new File(tempDir, UUID.randomUUID() + ".txt");
     try {
       try (FileWriter writer = new FileWriter(contatFile)) {
@@ -56,11 +55,12 @@ public class FFmpegMuxer implements Muxer {
           "copy",
           outputFile,
           "-y");
+      Logger.info("Merging success, file: " + outputFile);
       return true;
     } catch (Exception ex) {
-      logger.error("FFmpeg merging failed", ex);
+      Logger.error("XDM", "FFmpeg merging failed", ex);
     } finally {
-      contatFile.delete();
+//      contatFile.delete();
     }
     return false;
   }
@@ -82,14 +82,15 @@ public class FFmpegMuxer implements Muxer {
           "-vcodec",
           "copy",
           "-map",
-          "0",
+          "0?",
           "-map",
-          "1",
+          "1?",
           outputFile,
           "-y");
+      Logger.info("FFmpeg merge success!");
       return true;
     } catch (Exception ex) {
-      logger.error("FFmpeg merging failed", ex);
+      Logger.error("FFmpeg merging failed", ex);
     }
     return false;
   }
@@ -101,7 +102,6 @@ public class FFmpegMuxer implements Muxer {
       String outputFile,
       IntConsumer progressCallback,
       String tempDir) {
-
     final AtomicInteger totalProgress = new AtomicInteger(0);
     IntConsumer callback =
         prg -> {
@@ -120,8 +120,8 @@ public class FFmpegMuxer implements Muxer {
       return this.mux(
           videoPart.getAbsolutePath(), audioPart.getAbsolutePath(), outputFile, callback, tempDir);
     } finally {
-      audioPart.delete();
-      videoPart.delete();
+//      audioPart.delete();
+//      videoPart.delete();
     }
   }
 
@@ -167,6 +167,7 @@ public class FFmpegMuxer implements Muxer {
   }
 
   private void spawnFFmpeg(IntConsumer progressCallback, String... args) throws IOException {
+    Logger.info(Arrays.asList(args));
     ProcessBuilder pb = new ProcessBuilder(args);
     pb.redirectErrorStream(true);
     Process proc = pb.start();
@@ -179,7 +180,7 @@ public class FFmpegMuxer implements Muxer {
           break;
         }
         String text = ln.trim();
-        //logger.info(text);
+        Logger.info(text);
         processOutput(text, progressCallback);
       }
       int exitCode = proc.waitFor();
@@ -214,7 +215,7 @@ public class FFmpegMuxer implements Muxer {
         }
       }
     } catch (Exception e) {
-      logger.warn("Unable to parse ffmpeg output: {}", text);
+      Logger.info("Unable to parse ffmpeg output: {}", text);
     }
   }
 

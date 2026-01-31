@@ -7,19 +7,41 @@ import okhttp3.Request
 import xdm.core.network.http.*
 import xdm.core.util.Logger
 import java.io.IOException
+import java.security.SecureRandom
+import java.security.cert.X509Certificate
 import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
 
 class HttpClientImpl(poolSize: Int) : PoolingHttpClient {
     private val dispatcher: Dispatcher = Dispatcher().apply {
         maxRequests = poolSize
         maxRequestsPerHost = poolSize
     }
+
+    var trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
+        override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {
+        }
+
+        override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {
+        }
+
+        override fun getAcceptedIssuers(): Array<X509Certificate> {
+            return arrayOf()
+        }
+    })
+
+    val sslContext = SSLContext.getInstance("SSL").apply {
+        init(null, trustAllCerts, SecureRandom())
+    }
+
     private val connectionPool: ConnectionPool = ConnectionPool(poolSize, 5, TimeUnit.SECONDS)
     private val client: OkHttpClient = OkHttpClient.Builder().dispatcher(dispatcher).connectionPool(connectionPool)
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(0, TimeUnit.SECONDS)
-        .retryOnConnectionFailure(false)
+        .connectTimeout(30, TimeUnit.SECONDS).readTimeout(0, TimeUnit.SECONDS).retryOnConnectionFailure(false)
+        .sslSocketFactory(sslContext.socketFactory, trustAllCerts[0] as X509TrustManager)
+        .hostnameVerifier({ a, b -> true })
         .build()
 
     override fun close() {
@@ -76,8 +98,7 @@ class HttpClientImpl(poolSize: Int) : PoolingHttpClient {
             val redirected = response.priorResponse?.isRedirect ?: false
 
             HttpResponseImpl(
-                contentDisposition =
-                    response.headers.get("Content-Disposition"),
+                contentDisposition = response.headers.get("Content-Disposition"),
                 statusCode = response.code,
                 statusMessage = response.message,
                 contentLength = body.contentLength(),
@@ -104,8 +125,7 @@ class HttpClientImpl(poolSize: Int) : PoolingHttpClient {
                     response.header(
                         it
                     )
-                }
-            )
+                })
         }
     }
 }

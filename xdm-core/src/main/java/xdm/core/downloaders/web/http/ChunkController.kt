@@ -50,7 +50,7 @@ class HttpChunkController(
             lastTakeOver = AtomicLong(0)
         )
         context.chunks[id] = chunk1
-        saveState(context, configDir)
+        saveState()
         startChunk(id)
     }
 
@@ -76,7 +76,7 @@ class HttpChunkController(
                         Logger.error("XDM", "Unable to close file", error)
                     }
                 }
-                saveState(context, configDir)
+                saveState()
                 context.downloadHost.onDownloadPaused(context.id, PauseEvent.PausedByUser)
             }
         }.start()
@@ -89,7 +89,7 @@ class HttpChunkController(
                 context.completed.set(true)
                 try {
                     Logger.info("XDM", "All chunks downloaded")
-                    saveState(context, configDir)
+                    saveState()
                     val tmpFile = File(context.tempFolder, context.tempFileName)
                     val totalFileSize = context.totalSize ?: tmpFile.length()
                     val res =
@@ -132,7 +132,7 @@ class HttpChunkController(
             Logger.error("XDM", "All chunks failed, stopping download - error: $error")
             context.downloadHost.onDownloadFailed(context.id, error)
             context.write {
-                saveState(context, configDir)
+                saveState()
             }
         }
     }
@@ -165,7 +165,7 @@ class HttpChunkController(
                     DownloadType.Http
                 )
                 splitChuck(context.chunks)
-                saveState(context, configDir)
+                saveState()
             }
         } else {
             context.write {
@@ -258,7 +258,7 @@ class HttpChunkController(
                     lastTakeOver = AtomicLong(0)
                 )
                 chunks[id] = chunk
-                saveState(context, configDir)
+                saveState()
                 startChunk(id)
             }
         }
@@ -298,7 +298,7 @@ class HttpChunkController(
                     c.lastTakeOver.set(System.currentTimeMillis())
                     c.length.addAndGet(len)
                     splitChuck(context.chunks)
-                    saveState(context, configDir)
+                    saveState()
                     return true
                 }
             }
@@ -357,7 +357,7 @@ class HttpChunkController(
         val now = System.currentTimeMillis()
         if (now - lastUpdate > 5000) {
             context.read {
-                saveState(context, configDir)
+                saveState()
             }
             lastUpdate = now
         }
@@ -374,12 +374,12 @@ class HttpChunkController(
             is CommitResult.Failed -> {
                 if (context.stopFlag.get()) return
                 context.diskError.set(true)
-                saveState(context, configDir)
+                saveState()
                 context.downloadHost.onDownloadFailed(context.id, DownloadError.DiskSpaceError)
             }
 
             is CommitResult.Success -> {
-                saveState(context, configDir)
+                saveState()
                 context.downloadHost.onDownloadSuccess(
                     DownloadStatusInfo.FinalInfo(
                         context.id,
@@ -390,5 +390,10 @@ class HttpChunkController(
                 )
             }
         }
+    }
+
+    @Synchronized
+    private fun saveState(){
+        saveState(context, configDir)
     }
 }

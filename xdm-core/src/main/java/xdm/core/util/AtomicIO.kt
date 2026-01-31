@@ -41,8 +41,9 @@ object AtomicIO {
     ): Result<T> {
         val tmp1 = File(folder, "$fileName.bak1")
         val finalFile = File(folder, fileName)
+        val tmp3 = File(folder, "$fileName.bak2")
         return runCatching {
-            val fileToRead = if (tmp1.exists()) tmp1 else finalFile
+            val fileToRead = if (tmp1.exists()) tmp1 else if (finalFile.exists()) finalFile else tmp3
             DataInputStream(FileInputStream(fileToRead)).use(reader)
         }
     }

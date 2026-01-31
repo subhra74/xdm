@@ -241,6 +241,7 @@ private fun readHlsContext(r: DataInputStream, http: PoolingHttpClient, host: Do
     ).apply { Logger.info(this) }
 }
 
+@Synchronized
 fun saveState(context: HttpTaskContext, configDir: String) {
     Logger.info(context)
     AtomicIO.writeTransacted("${context.id}.state", configDir) { fs ->
@@ -248,6 +249,7 @@ fun saveState(context: HttpTaskContext, configDir: String) {
     }.onFailure { Logger.error("XDM", "Error saving state", it) }
 }
 
+@Synchronized
 fun saveState(context: HlsTaskContext, configDir: String) {
     Logger.info(context)
     AtomicIO.writeTransacted("${context.id}.state", configDir) { fs ->
@@ -255,12 +257,14 @@ fun saveState(context: HlsTaskContext, configDir: String) {
     }.onFailure { Logger.error("XDM", "Error saving state", it) }
 }
 
+@Synchronized
 fun loadState(id: Long, configDir: String, http: PoolingHttpClient, host: DownloadHost): Result<HttpTaskContext> {
     return AtomicIO.readTransacted<HttpTaskContext>("$id.state", configDir) { fs ->
         return Result.success(readContext(fs, http, host))
     }
 }
 
+@Synchronized
 fun loadHlsState(id: Long, configDir: String, http: PoolingHttpClient, host: DownloadHost): Result<HlsTaskContext> {
     return AtomicIO.readTransacted<HlsTaskContext>("$id.state", configDir) { fs ->
         return Result.success(readHlsContext(fs, http, host))
