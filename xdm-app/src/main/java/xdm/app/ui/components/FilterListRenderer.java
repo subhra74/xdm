@@ -37,7 +37,7 @@ public class FilterListRenderer implements ListCellRenderer<FilterListItem> {
       boolean cellHasFocus) {
     label.setText(value.getText());
     label.setForeground(isSelected ? list.getSelectionForeground() : list.getForeground());
-    label.setIcon(value.getIcon());
+    label.setIcon(isSelected ? value.getSelectedIcon() : value.getIcon());
     label.setBorder(isSelected ? selectedBorder : border);
     return label;
   }

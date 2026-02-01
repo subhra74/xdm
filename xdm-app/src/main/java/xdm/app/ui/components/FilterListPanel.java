@@ -16,25 +16,30 @@ public class FilterListPanel {
   public FilterListPanel() {
     var box = Box.createVerticalBox();
     var stateFilterModel = new DefaultListModel<FilterListItem>();
+    var stateFilterList = new JList<>(stateFilterModel);
     stateFilterModel.addElement(
         FilterListItem.builder()
             .itemType(FilterItemType.ALL)
             .text(StringResource.get("CAT_ALL"))
-            .icon(makeIcon("arrow-down-circle-fill.svg"))
+            .icon(makeIcon("arrow-down-circle-fill.svg", Color.GRAY))
+            .selectedIcon(
+                makeIcon("arrow-down-circle-fill.svg", stateFilterList.getSelectionForeground()))
             .build());
     stateFilterModel.addElement(
         FilterListItem.builder()
             .itemType(FilterItemType.UNFINISHED)
             .text(StringResource.get("CAT_INCOMPLETE"))
-            .icon(makeIcon("progress-2-fill.svg"))
+            .icon(makeIcon("progress-2-fill.svg", Color.GRAY))
+            .selectedIcon(makeIcon("progress-2-fill.svg", stateFilterList.getSelectionForeground()))
             .build());
     stateFilterModel.addElement(
         FilterListItem.builder()
             .itemType(FilterItemType.FINISHED)
             .text(StringResource.get("CAT_FINISHED"))
-            .icon(makeIcon("checkbox-circle-fill.svg"))
+            .icon(makeIcon("checkbox-circle-fill.svg", Color.GRAY))
+            .selectedIcon(
+                makeIcon("checkbox-circle-fill.svg", stateFilterList.getSelectionForeground()))
             .build());
-    var stateFilterList = new JList<>(stateFilterModel);
     stateFilterList.setOpaque(false);
     stateFilterList.setCellRenderer(new FilterListRenderer());
     stateFilterList.setAlignmentX(0);
@@ -45,37 +50,44 @@ public class FilterListPanel {
         FilterListItem.builder()
             .itemType(FilterItemType.CAT_ALL_TYPES)
             .text(StringResource.get("CAT_ALL_TYPES"))
-            .icon(makeIcon("archive-2-fill.svg"))
+            .icon(makeIcon("archive-2-fill.svg", Color.GRAY))
+            .selectedIcon(makeIcon("archive-2-fill.svg", stateFilterList.getSelectionForeground()))
             .build());
     catFilterModel.addElement(
         FilterListItem.builder()
             .itemType(FilterItemType.CAT_DOCUMENTS)
             .text(StringResource.get("CAT_DOCUMENTS"))
-            .icon(makeIcon("file-list-2-fill.svg"))
+            .icon(makeIcon("file-list-2-fill.svg", Color.GRAY))
+            .selectedIcon(
+                makeIcon("file-list-2-fill.svg", stateFilterList.getSelectionForeground()))
             .build());
     catFilterModel.addElement(
         FilterListItem.builder()
             .itemType(FilterItemType.CAT_COMPRESSED)
             .text(StringResource.get("CAT_COMPRESSED"))
-            .icon(makeIcon("file-zip-fill.svg"))
+            .icon(makeIcon("file-zip-fill.svg", Color.GRAY))
+            .selectedIcon(makeIcon("file-zip-fill.svg", stateFilterList.getSelectionForeground()))
             .build());
     catFilterModel.addElement(
         FilterListItem.builder()
             .itemType(FilterItemType.CAT_MUSIC)
             .text(StringResource.get("CAT_MUSIC"))
-            .icon(makeIcon("mv-fill.svg"))
+            .icon(makeIcon("mv-fill.svg", Color.GRAY))
+            .selectedIcon(makeIcon("mv-fill.svg", stateFilterList.getSelectionForeground()))
             .build());
     catFilterModel.addElement(
         FilterListItem.builder()
             .itemType(FilterItemType.CAT_VIDEOS)
             .text(StringResource.get("CAT_VIDEOS"))
-            .icon(makeIcon("movie-fill.svg"))
+            .icon(makeIcon("movie-fill.svg", Color.GRAY))
+            .selectedIcon(makeIcon("movie-fill.svg", stateFilterList.getSelectionForeground()))
             .build());
     catFilterModel.addElement(
         FilterListItem.builder()
             .itemType(FilterItemType.CAT_PROGRAMS)
             .text(StringResource.get("CAT_PROGRAMS"))
-            .icon(makeIcon("microsoft-fill.svg"))
+            .icon(makeIcon("microsoft-fill.svg", Color.GRAY))
+            .selectedIcon(makeIcon("microsoft-fill.svg", stateFilterList.getSelectionForeground()))
             .build());
 
     var catFilterList = new JList<>(catFilterModel);
@@ -93,8 +105,8 @@ public class FilterListPanel {
     jsp.setOpaque(false);
   }
 
-  private Icon makeIcon(String icon) {
-    return AppUtils.createSVGIcon(icon, 20, Color.GRAY);
+  private Icon makeIcon(String icon, Color color) {
+    return AppUtils.createSVGIcon(icon, 20, color);
   }
 
   public Component getComponent() {

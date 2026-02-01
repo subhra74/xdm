@@ -99,7 +99,7 @@ public class AppToolBar {
   private static JButton createToolButton(String icon, ActionListener buttonCallback, String key) {
     var btnNew = new JButton(StringResource.get(key));
     btnNew.setName(key);
-    btnNew.setIconTextGap(8);
+    btnNew.setIconTextGap(10);
     btnNew.setIcon(AppUtils.createSVGIcon(icon, 16, Color.GRAY));
     btnNew.setForeground(Color.GRAY);
     btnNew.setMargin(new Insets(5, 5, 5, 5));

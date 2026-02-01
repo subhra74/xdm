@@ -287,6 +287,7 @@ class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, priva
     }
 
     private fun addHlsDownload(task: HlsDownloadTaskInfo) {
+        task.defaultDownloadFolder = AppContext.defaultDownloadFolder + File.separator + task.id
         taskInfoDB.saveHlsTask(task)
         val controller = HlsDownloader(
             taskInfo = task,

@@ -12,4 +12,5 @@ public class FilterListItem {
   private FilterItemType itemType;
   private String text;
   private Icon icon;
+  private Icon selectedIcon;
 }
