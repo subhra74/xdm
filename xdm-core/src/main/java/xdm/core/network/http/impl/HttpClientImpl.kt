@@ -4,6 +4,7 @@ import okhttp3.ConnectionPool
 import okhttp3.Dispatcher
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okio.Buffer
 import xdm.core.network.http.*
 import xdm.core.util.Logger
 import java.io.IOException
@@ -92,7 +93,6 @@ class HttpClientImpl(poolSize: Int) : PoolingHttpClient {
                 throw IOException("Body missing")
             }
             val inputStreamBody = body.byteStream()
-//            val inputSource = body.source()
 
             val finalUrl = response.request.url.toUri().toASCIIString()
             val redirected = response.priorResponse?.isRedirect ?: false

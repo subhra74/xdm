@@ -3,10 +3,13 @@ package xdm.core.downloaders.web.http
 import xdm.core.downloaders.*
 import xdm.core.downloaders.web.ProgressTracker
 import xdm.core.network.http.PoolingHttpClient
+import xdm.core.network.http.impl.HttpClientImpl
 import xdm.core.util.Logger
 import xdm.core.util.CoreUtils
 import java.io.File
 import java.io.IOException
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 
@@ -21,22 +24,51 @@ interface ChunkController : DownloaderTask {
     fun takeOverChunk(chunkId: Long, maxByteRange: Long): Boolean
 }
 
-class HttpChunkController(
-    val context: HttpTaskContext,
-    private val configDir: String,
-) : ChunkController {
+fun makeContext(task: HttpDownloadTaskInfo, host: DownloadHost): HttpTaskContext = HttpTaskContext(
+    id = task.id,
+    chunks = ConcurrentHashMap<Long, Chunk>(),
+    init = AtomicBoolean(false),
+    totalSize = null,
+    downloaded = AtomicLong(0),
+    url = task.url,
+    contentType = null,
+    headers = task.headers,
+    cookie = task.cookie,
+    httpClient = HttpClientImpl(100),
+    stopFlag = AtomicBoolean(false),
+    completed = AtomicBoolean(false),
+    tempFileCreated = AtomicBoolean(false),
+    tempFileName = "${CoreUtils.uniqueId()}.tmp",
+    diskError = AtomicBoolean(false),
+    downloadHost = host,
+    tempFolder = task.defaultDownloadFolder
+)
+
+class HttpChunkController : ChunkController {
+    private val context: HttpTaskContext
+    private val configDir: String
+    private val prgInfo: DownloadStatusInfo.ProgressInfo
+
+    constructor(task: HttpDownloadTaskInfo, host: DownloadHost, configDir: String) {
+        this.context = makeContext(task, host)
+        this.configDir = configDir
+        this.prgInfo = DownloadStatusInfo.ProgressInfo(id = context.id)
+    }
 
     constructor(
         id: Long,
         configDir: String,
         httpClient: PoolingHttpClient,
         host: DownloadHost
-    ) : this(loadState(id = id, configDir = configDir, http = httpClient, host = host).getOrThrow(), configDir)
+    ) {
+        this.context = loadState(id = id, configDir = configDir, http = httpClient, host = host).getOrThrow()
+        this.configDir = configDir
+        this.prgInfo = DownloadStatusInfo.ProgressInfo(id = context.id)
+    }
 
     private var lastUpdate: Long = 0
     private val progressTracker = ProgressTracker()
     private val time = System.currentTimeMillis()
-    private val prgInfo = DownloadStatusInfo.ProgressInfo(id = context.id)
 
     override fun start() {
         val id = CoreUtils.uniqueId()
@@ -393,7 +425,7 @@ class HttpChunkController(
     }
 
     @Synchronized
-    private fun saveState(){
+    private fun saveState() {
         saveState(context, configDir)
     }
 }
