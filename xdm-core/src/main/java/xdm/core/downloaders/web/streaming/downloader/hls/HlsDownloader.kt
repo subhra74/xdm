@@ -30,8 +30,11 @@ fun makeContext(
     tempFolder = taskInfo.tempDir,
     tempFileName = "${taskInfo.id}.mp4",
     url = taskInfo.url,
+    headers = taskInfo.headers,
+    cookie = taskInfo.cookie,
     audioUrl = taskInfo.audioUrl,
     audioOnly = taskInfo.audioOnly,
+    independent = taskInfo.independent,
 )
 
 fun loadContext(
@@ -64,6 +67,7 @@ class HlsDownloader : StreamingDownloader {
     override fun initDownload(): DownloadStatusInfo.InitInfo? {
         val hlsContext = context as HlsTaskContext
         context.hasSeparateStreams = hlsContext.audioUrl != null
+        //val independent = context.independent //In case master playlist contain #EXT-X-INDEPENDENT-SEGMENTS
         val latch = CountDownLatch(if (context.hasSeparateStreams) 2 else 1)
         val videoManifestContent = AtomicReference<Iterator<String>>()
         val audioManifestContent = AtomicReference<Iterator<String>>()
@@ -75,6 +79,9 @@ class HlsDownloader : StreamingDownloader {
         try {
             latch.await()
             val (videoPlaylist, audioPlaylist) = parseManifest(videoManifestContent, audioManifestContent)
+            if (!context.independent) {
+                context.independent = videoPlaylist.independent
+            }
             retrieveKeys(videoPlaylist, audioPlaylist)
             context.chunks.ensureCapacity(videoPlaylist.mediaSegments.size + (audioPlaylist?.mediaSegments?.size ?: 0))
             context.chunks.addAll(videoPlaylist.mediaSegments.mapIndexed { index, ms ->
@@ -128,10 +135,12 @@ class HlsDownloader : StreamingDownloader {
 
     override fun downloadType(): DownloadType = DownloadType.Hls
     override fun saveContext() {
-        synchronized(this){
+        synchronized(this) {
             saveState(context as HlsTaskContext, configDir)
         }
     }
+
+    override fun isIndependentSegment() = (context as HlsTaskContext).independent
 
     private fun parseManifest(
         videoManifestContent: AtomicReference<Iterator<String>>, audioManifestContent: AtomicReference<Iterator<String>>

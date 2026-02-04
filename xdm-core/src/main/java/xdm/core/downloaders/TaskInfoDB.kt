@@ -42,6 +42,7 @@ class TaskInfoDB(private val configDir: String) {
                 authInfo = null,
                 audioOnly = r.readBoolean(),
                 tempDir = r.readUTF(),
+                independent = r.readBoolean(),
             )
         }
         return null
@@ -72,6 +73,7 @@ class TaskInfoDB(private val configDir: String) {
             w.writeInt(task.maxPiece)
             w.writeBoolean(task.audioOnly)
             w.writeUTF(task.tempDir)
+            w.writeBoolean(task.independent)
         }
     }
 }

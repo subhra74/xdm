@@ -16,6 +16,7 @@ import xdm.core.util.FileUtils
 import xdm.core.util.Logger
 import xdm.core.util.getFileName
 import java.io.File
+import java.nio.file.Files
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
@@ -136,41 +137,52 @@ class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, priva
             return AppContext.defaultDownloadFolder
         }
 
+        private fun renameFile(
+            fileName: String,
+            folderPath: String,
+            tmpFilePath: String,
+            callback: (
+                finalName: String,
+                folder: String
+            ) -> Unit
+        ): CommitResult {
+            val folder = File(folderPath)
+            if (!folder.exists() && !folder.mkdirs()) {
+                Logger.info("Unable to create output dir: ${folderPath}")
+                return CommitResult.Failed
+            }
+
+            val finalName = FileUtils.getUniqueFileName(folder.absolutePath, fileName)
+            val outFile = File(folder, finalName)
+            val tmpFile = File(tmpFilePath)
+
+            return if (tmpFile.renameTo(outFile)) {
+                Logger.info("Success renaming file: $tmpFile -> ${outFile.absolutePath}")
+                callback(finalName, folder.absolutePath)
+                CommitResult.Success(fileName = finalName, outputDir = folder.absolutePath)
+            } else {
+                Logger.info("Failed renaming file")
+                CommitResult.Failed
+            }
+        }
+
         override fun commitOutputFile(id: Long, tmpFilePath: String, downloadType: DownloadType): CommitResult {
             when (downloadType) {
                 DownloadType.Http -> taskInfoDB.getHttpTask(id)?.let { t ->
-                    val fileName = t.fileName
-                    val folder = t.defaultDownloadFolder
-                    val finalName = FileUtils.getUniqueFileName(folder, fileName)
-                    val outFile = File(folder, finalName)
-                    val tmpFile = File(tmpFilePath)
-                    return if (tmpFile.renameTo(outFile)) {
+                    return renameFile(t.fileName, t.defaultDownloadFolder, tmpFilePath) { finalName, finalFolder ->
                         Logger.info("Success renaming file")
                         t.fileName = finalName
-                        t.defaultDownloadFolder = folder
+                        t.defaultDownloadFolder = finalFolder
                         taskInfoDB.saveHttpTask(t)
-                        CommitResult.Success(fileName = finalName, outputDir = folder)
-                    } else {
-                        Logger.info("Failed renaming file")
-                        CommitResult.Failed
                     }
                 }
 
                 DownloadType.Hls -> taskInfoDB.getHlsTask(id)?.let { t ->
-                    val fileName = t.fileName
-                    val folder = t.defaultDownloadFolder
-                    val finalName = FileUtils.getUniqueFileName(folder, fileName)
-                    val outFile = File(folder, finalName)
-                    val tmpFile = File(tmpFilePath)
-                    return if (tmpFile.renameTo(outFile)) {
+                    return renameFile(t.fileName, t.defaultDownloadFolder, tmpFilePath) { finalName, finalFolder ->
                         Logger.info("Success renaming file")
                         t.fileName = finalName
-                        t.defaultDownloadFolder = folder
+                        t.defaultDownloadFolder = finalFolder
                         taskInfoDB.saveHlsTask(t)
-                        CommitResult.Success(fileName = finalName, outputDir = folder)
-                    } else {
-                        Logger.info("Failed renaming file")
-                        CommitResult.Failed
                     }
                 }
 
@@ -268,7 +280,7 @@ class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, priva
     }
 
     private fun addHlsDownload(task: HlsDownloadTaskInfo) {
-        task.defaultDownloadFolder = AppContext.defaultDownloadFolder + File.separator + task.id
+        task.tempDir = AppContext.appConfig.tempDir + File.separator + task.id
         taskInfoDB.saveHlsTask(task)
         val controller = HlsDownloader(
             taskInfo = task,

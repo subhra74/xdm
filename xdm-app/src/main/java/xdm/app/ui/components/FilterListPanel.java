@@ -103,6 +103,9 @@ public class FilterListPanel {
     jsp = new JScrollPane(box);
     jsp.setBorder(new MatteBorder(0, 0, 0, 1, Color.BLACK));
     jsp.setOpaque(false);
+
+    stateFilterList.setSelectedIndex(0);
+    catFilterList.setSelectedIndex(0);
   }
 
   private Icon makeIcon(String icon, Color color) {

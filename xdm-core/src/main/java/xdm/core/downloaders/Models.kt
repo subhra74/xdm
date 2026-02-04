@@ -73,6 +73,7 @@ data class HlsDownloadTaskInfo(
     var url: String,
     var audioUrl: String?,
     var audioOnly: Boolean = false,
+    var independent: Boolean,
 ) : StreamingDownloadTaskInfo(
     id,
     fileName,

@@ -1,7 +1,7 @@
 <svg width="800" height="800" xmlns="http://www.w3.org/2000/svg" stroke="null">
     <defs>
 <clipPath id="pad" clipPathUnits="objectBoundingBox">
-  <rect x="0.22" y="0.26" width="0.56" height="0.67" rx="0.11" ry="0.11" />
+  <rect x="0.22" y="0.26" width="0.56" height="0.67" rx="0.09" ry="0.09" />
 </clipPath>
   </defs>
  <g id="Layer_1" clip-path="url(#pad)">

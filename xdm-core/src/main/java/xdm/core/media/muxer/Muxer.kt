@@ -3,7 +3,9 @@ package xdm.core.media.muxer
 
 interface Muxer {
     fun mux(
-        segments: List<String>, outputFile: String, progressCallback: (Int) -> Unit, tempDir: String
+        segments: List<String>, outputFile: String, progressCallback: (Int) -> Unit, tempDir: String,
+        independentSegement: Boolean,
+        isMp4: Boolean,
     ): Boolean
 
     fun mux(
@@ -15,7 +17,9 @@ interface Muxer {
         videoSegments: List<String>,
         outputFile: String,
         progressCallback: (Int) -> Unit,
-        tempDir: String
+        tempDir: String,
+        independentSegement: Boolean,
+        isMp4: Boolean,
     ): Boolean
 
     fun stop()

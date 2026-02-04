@@ -22,8 +22,20 @@ class FFmpegMuxer : Muxer {
     private val ffmpegProcess = AtomicReference<Process?>()
     private val stopFlag = AtomicBoolean(false)
 
-    private fun isMp4Fragments(segments: List<String>) =
-        segments.size > 2 && segments[0].endsWith(".mp4") && segments[1].endsWith(".m4s")
+    private fun shouldAppend(segments: List<String>, independentSegement: Boolean, isMp4: Boolean): Boolean {
+        if (independentSegement) {
+            return false
+        }
+
+        if (isMp4 || segments.any { it.endsWith(".mp4") || it.endsWith(".m4s") }) {
+            if (segments.size > 2 && segments[0].endsWith(".mp4") && segments[1].endsWith(".m4s")) {
+                return true
+            }
+            return false
+        }
+
+        return true
+    }
 
     private fun concatM4sFiles(
         segments: List<String>, outputFile: String, progressCallback: (Int) -> Unit, tempDir: String
@@ -50,9 +62,14 @@ class FFmpegMuxer : Muxer {
     }
 
     override fun mux(
-        segments: List<String>, outputFile: String, progressCallback: (Int) -> Unit, tempDir: String
+        segments: List<String>,
+        outputFile: String,
+        progressCallback: (Int) -> Unit,
+        tempDir: String,
+        independentSegement: Boolean,
+        isMp4: Boolean,
     ): Boolean {
-        if (isMp4Fragments(segments)) {
+        if (shouldAppend(segments, independentSegement, isMp4)) {
             Logger.info("Concat fmp4 segments")
             return concatM4sFiles(segments, outputFile, progressCallback, tempDir)
         }
@@ -134,7 +151,9 @@ class FFmpegMuxer : Muxer {
         videoSegments: List<String>,
         outputFile: String,
         progressCallback: (Int) -> Unit,
-        tempDir: String
+        tempDir: String,
+        independentSegement: Boolean,
+        isMp4: Boolean,
     ): Boolean {
         val totalProgress = AtomicInteger(0)
         val callback = { prg: Int ->
@@ -144,10 +163,10 @@ class FFmpegMuxer : Muxer {
         val audioPart = File(tempDir, UUID.randomUUID().toString() + ".mp4")
         val videoPart = File(tempDir, UUID.randomUUID().toString() + ".mp4")
         try {
-            if (!this.mux(audioSegments, audioPart.absolutePath, callback, tempDir)) {
+            if (!this.mux(audioSegments, audioPart.absolutePath, callback, tempDir, independentSegement, isMp4)) {
                 return false
             }
-            if (!this.mux(videoSegments, videoPart.absolutePath, callback, tempDir)) {
+            if (!this.mux(videoSegments, videoPart.absolutePath, callback, tempDir, independentSegement, isMp4)) {
                 return false
             }
             return this.mux(

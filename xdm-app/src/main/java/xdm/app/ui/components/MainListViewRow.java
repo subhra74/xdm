@@ -255,9 +255,9 @@ public class MainListViewRow implements TableCellRenderer, TableCellEditor {
     buttonContainer.add(btnOpenFolder);
     buttonContainer.add(openFolderGap);
     // buttonContainer.add(btnOpenFile);
-    buttonContainer.add(openFileGap);
+//    buttonContainer.add(openFileGap);
     buttonContainer.add(btnDelete);
-    buttonContainer.add(Box.createRigidArea(new Dimension(2, 10)));
+//    buttonContainer.add(Box.createRigidArea(new Dimension(1, 10)));
     buttonContainer.add(btnMenu);
 
     p1.add(buttonContainer, BorderLayout.EAST);

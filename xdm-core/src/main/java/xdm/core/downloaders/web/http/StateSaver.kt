@@ -192,6 +192,7 @@ private fun writeHlsContext(context: HlsTaskContext, out: DataOutputStream) {
         out.writeBoolean(audioUrl != null)
         audioUrl?.let { out.writeUTF(it) }
         out.writeBoolean(audioOnly)
+        out.writeBoolean(independent)
     }
 }
 
@@ -238,6 +239,7 @@ private fun readHlsContext(r: DataInputStream, http: PoolingHttpClient, host: Do
         audioUrl = if (r.readBoolean()) r.readUTF() else null,
         audioOnly = r.readBoolean(),
         downloadHost = host,
+        independent = r.readBoolean(),
     ).apply { Logger.info(this) }
 }
 

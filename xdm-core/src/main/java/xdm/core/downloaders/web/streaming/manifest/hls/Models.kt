@@ -10,13 +10,15 @@ data class HlsPlaylist(
     val totalDuration: Double = 0.0,
     val keyFrameOnly: Boolean = false,
     val hasInitSection: Boolean = false,
-    val version: Int = 0
+    val version: Int = 0,
+    val independent: Boolean = false,
 )
 
 data class HlsMasterPlaylist(
     val videoPlaylist: URI? = null,
     val audioPlaylist: URI? = null,
-    val attributes: Map<String, String>
+    val attributes: Map<String, String>,
+    val independent: Boolean = false,
 )
 
 data class HlsMediaSegment(

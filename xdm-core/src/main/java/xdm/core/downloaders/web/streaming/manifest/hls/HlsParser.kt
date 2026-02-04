@@ -17,6 +17,7 @@ const val EXT_X_KEY = "#EXT-X-KEY:"
 const val EXT_X_MAP = "#EXT-X-MAP:"
 const val EXT_X_VERSION = "#EXT-X-VERSION:"
 const val EXT_X_I_FRAMES_ONLY = "#EXT-X-I-FRAMES-ONLY:"
+const val EXT_X_INDEPENDENT_SEGMENTS = "#EXT-X-INDEPENDENT-SEGMENTS:"
 const val METHOD = "METHOD"
 
 object HlsParser {
@@ -34,123 +35,138 @@ object HlsParser {
         manifestLines: Iterator<String>, playlistUrl: String
     ): Result<HlsPlaylist> {
         return runCatching {
-            val mediaSegments = ArrayList<HlsMediaSegment>()
-            var mediaSequence: Long = 0
-            var startOffset: Long = 0
-            var segmentLength: Long = 0
-            var segmentEndOffset: Long = 0
-            var duration = 0.0
-            var totalDuration = 0.0
-            var hasByteRange = false
-            var isEncrypted = false
-            var hasInitMap = false
-            val baseUrl = URI.create(playlistUrl)
-            var keyFrameOnly = false
-            var missingIv = true
-            var version = -1
+            try {
+                val mediaSegments = ArrayList<HlsMediaSegment>()
+                var mediaSequence: Long = 0
+                var startOffset: Long = 0
+                var segmentLength: Long = 0
+                var segmentEndOffset: Long = 0
+                var duration = 0.0
+                var totalDuration = 0.0
+                var hasByteRange = false
+                var isEncrypted = false
+                var hasInitMap = false
+                val baseUrl = URI.create(playlistUrl)
+                var keyFrameOnly = false
+                var missingIv = true
+                var version = -1
 
-            var keyUrl: URI? = null
-            var iv: String? = null
+                var keyUrl: URI? = null
+                var iv: String? = null
+                var isIndependent = false
 
-            if (!findSig(manifestLines)) {
-                throw Exception("Invalid HLS manifest, header signature not found !")
-            }
+                if (!findSig(manifestLines)) {
+                    val msg = "Invalid HLS manifest, header signature not found !"
+                    Logger.error(msg)
+                    throw Exception(msg)
+                }
 
-            for (lineText in manifestLines) {
-                val line = lineText.trim()
-                if (line.isEmpty()) continue
+                for (lineText in manifestLines) {
+                    val line = lineText.trim()
+                    if (line.isEmpty()) continue
 
-                if (line[0] != '#') {
-                    if (isEncrypted && missingIv) {
-                        iv = toBigEndian128BitHex(mediaSequence)
-                    }
-                    val segment = HlsMediaSegment(
-                        url = resolveUri(baseUrl, line).toString(),
-                        byteRange = if (hasByteRange) Pair(startOffset, segmentLength) else null,
-                        duration,
-                        keyUrl,
-                        iv
-                    )
-                    mediaSegments.add(segment)
-                    mediaSequence++
-                    totalDuration += duration
-                } else if (line.startsWith(EXT_X_I_FRAMES_ONLY)) {
-                    keyFrameOnly = true
-                } else if (line.startsWith(EXT_X_VERSION)) {
-                    version = line.substring(EXT_X_VERSION.length).trim().toInt()
-                } else if (line.startsWith(EXT_X_BYTERANGE)) {
-                    hasByteRange = true
-                    val attrList = line.substring(EXT_X_BYTERANGE.length).trim()
-                    parseByteRange(attrList)?.let {
-                        val (offset, length) = it
-                        startOffset = if (offset > 0) {
-                            offset
-                        } else {
-                            segmentEndOffset
+                    if (line[0] != '#') {
+                        if (isEncrypted && missingIv) {
+                            iv = toBigEndian128BitHex(mediaSequence)
                         }
-                        segmentLength = length
-                        segmentEndOffset += segmentLength
-                    }
-                } else if (line.startsWith(EXTINF)) {
-                    val attrs = line.substring(EXTINF.length).trim()
-                    if (attrs.isNotEmpty()) {
-                        duration = attrs.split(",")[0].toDouble()
-                    }
-                } else if (line.startsWith(EXT_X_MEDIA_SEQUENCE)) {
-                    mediaSequence =
-                        line.substring(EXT_X_MEDIA_SEQUENCE.length).trim().toLong()
-                } else if (line.startsWith(EXT_X_KEY)) {
-                    isEncrypted = true
-                    val attributes =
-                        parseAttributes(line.substring(EXT_X_KEY.length))
-                    if (attributes.containsKey(METHOD)) {
-                        if (StringUtils.equalsIgnoreCase("NONE", attributes[METHOD])) {
-                            isEncrypted = false
-                            continue
-                        }
-                        if (StringUtils.equalsIgnoreCase("AES-128", attributes[METHOD])
-                            && StringUtils.equalsIgnoreCase("identity", attributes["KEYFORMAT"])
-                        ) {
-                            keyUrl = resolveUri(baseUrl, attributes["URI"]!!)
-                            if (!attributes.containsKey("IV")) {
-                                iv = null
-                                missingIv = true
+                        val segment = HlsMediaSegment(
+                            url = resolveUri(baseUrl, line).toString(),
+                            byteRange = if (hasByteRange) Pair(startOffset, segmentLength) else null,
+                            duration,
+                            keyUrl,
+                            iv
+                        )
+                        mediaSegments.add(segment)
+                        mediaSequence++
+                        totalDuration += duration
+                    } else if (line.startsWith(EXT_X_I_FRAMES_ONLY)) {
+                        keyFrameOnly = true
+                    } else if (line.startsWith(EXT_X_VERSION)) {
+                        version = line.substring(EXT_X_VERSION.length).trim().toInt()
+                    } else if (line.startsWith(EXT_X_BYTERANGE)) {
+                        hasByteRange = true
+                        val attrList = line.substring(EXT_X_BYTERANGE.length).trim()
+                        parseByteRange(attrList)?.let {
+                            val (offset, length) = it
+                            startOffset = if (offset > 0) {
+                                offset
                             } else {
-                                iv = attributes["IV"]
-                                missingIv = false
+                                segmentEndOffset
+                            }
+                            segmentLength = length
+                            segmentEndOffset += segmentLength
+                        }
+                    } else if (line.startsWith(EXTINF)) {
+                        val attrs = line.substring(EXTINF.length).trim()
+                        if (attrs.isNotEmpty()) {
+                            duration = attrs.split(",")[0].toDouble()
+                        }
+                    } else if (line.startsWith(EXT_X_MEDIA_SEQUENCE)) {
+                        mediaSequence =
+                            line.substring(EXT_X_MEDIA_SEQUENCE.length).trim().toLong()
+                    } else if (line.startsWith(EXT_X_KEY)) {
+                        isEncrypted = true
+                        val attributes =
+                            parseAttributes(line.substring(EXT_X_KEY.length))
+                        if (attributes.containsKey(METHOD)) {
+                            if (StringUtils.equalsIgnoreCase("NONE", attributes[METHOD])) {
+                                isEncrypted = false
+                                continue
+                            }
+                            if (StringUtils.equalsIgnoreCase("AES-128", attributes[METHOD])
+                                && StringUtils.equalsIgnoreCase("identity", attributes["KEYFORMAT"])
+                            ) {
+                                keyUrl = resolveUri(baseUrl, attributes["URI"]!!)
+                                if (!attributes.containsKey("IV")) {
+                                    iv = null
+                                    missingIv = true
+                                } else {
+                                    iv = attributes["IV"]
+                                    missingIv = false
+                                }
                             }
                         }
-                    }
-                } else if (line.startsWith(EXT_X_MAP)) {
-                    val attributes =
-                        parseAttributes(line.substring(EXT_X_MAP.length))
-                    attributes["URI"]?.let { uri ->
-                        hasInitMap = true
-                        val segment =
-                            HlsMediaSegment(
-                                url = resolveUri(baseUrl, uri).toString(),
-                                byteRange = parseByteRange(
-                                    attributes["BYTERANGE"]
-                                ),
-                                duration = 0.0,
-                                keyUrl,
-                                iv,
-                            )
-                        mediaSegments.add(segment)
+                    } else if (line.startsWith(EXT_X_MAP)) {
+                        val attributes =
+                            parseAttributes(line.substring(EXT_X_MAP.length))
+                        attributes["URI"]?.let { uri ->
+                            hasInitMap = true
+                            val segment =
+                                HlsMediaSegment(
+                                    url = resolveUri(baseUrl, uri).toString(),
+                                    byteRange = parseByteRange(
+                                        attributes["BYTERANGE"]
+                                    ),
+                                    duration = 0.0,
+                                    keyUrl,
+                                    iv,
+                                )
+                            mediaSegments.add(segment)
+                        }
+                    } else if (line.startsWith(EXT_X_INDEPENDENT_SEGMENTS)) {
+                        isIndependent = true
                     }
                 }
-            }
 
-            if (mediaSegments.isEmpty()) throw Exception("No media segment in playlist")
-            HlsPlaylist(
-                mediaSegments,
-                encrypted = isEncrypted,
-                hasByteRange,
-                totalDuration,
-                keyFrameOnly,
-                hasInitSection = hasInitMap,
-                version
-            )
+                if (mediaSegments.isEmpty()) {
+                    val msg = "No media segment in playlist"
+                    Logger.error(msg)
+                    throw Exception("No media segment in playlist")
+                }
+                HlsPlaylist(
+                    mediaSegments,
+                    encrypted = isEncrypted,
+                    hasByteRange,
+                    totalDuration,
+                    keyFrameOnly,
+                    hasInitSection = hasInitMap,
+                    version,
+                    isIndependent,
+                )
+            } catch (e: Exception) {
+                Logger.error("Error parsing manifest", e)
+                throw e
+            }
         }
     }
 
@@ -163,6 +179,7 @@ object HlsParser {
             val containers = ArrayList<HlsMasterPlaylist>()
             val baseUrl = URI.create(playlistUrl)
             val urls = ArrayList<URI>()
+            var isIndependent = false
 
             if (!findSig(manifestLines)) {
                 throw Exception("Invalid HLS manifest, header signature not found !")
@@ -178,6 +195,8 @@ object HlsParser {
                     mapExtStreamInf.add(parseAttributes(line.substring(EXT_X_STREAM_INF.length)))
                 } else if (line.startsWith(EXT_X_MEDIA)) {
                     mapExtMedia.add(parseAttributes(line.substring(EXT_X_MEDIA.length)))
+                } else if (line.startsWith(EXT_X_INDEPENDENT_SEGMENTS)) {
+                    isIndependent = true
                 }
             }
 
@@ -195,7 +214,8 @@ object HlsParser {
                             HlsMasterPlaylist(
                                 videoPlaylist = url,
                                 audioPlaylist = media["URI"]?.let { resolveUri(baseUrl, it) },
-                                attributes = extStreamInf + media
+                                attributes = extStreamInf + media,
+                                isIndependent,
                             )
                         })
                 }
@@ -211,7 +231,8 @@ object HlsParser {
                             HlsMasterPlaylist(
                                 videoPlaylist = media["URI"]?.let { resolveUri(baseUrl, it) },
                                 audioPlaylist = url,
-                                attributes = extStreamInf + media
+                                attributes = extStreamInf + media,
+                                isIndependent,
                             )
                         })
                 }
@@ -219,7 +240,12 @@ object HlsParser {
                     continue
                 }
                 Logger.info("Playlist without alternative rendering found!")
-                containers.add(HlsMasterPlaylist(videoPlaylist = url, attributes = extStreamInf))
+                containers.add(
+                    HlsMasterPlaylist(
+                        videoPlaylist = url, attributes = extStreamInf,
+                        independent = isIndependent,
+                    )
+                )
             }
             containers
         }

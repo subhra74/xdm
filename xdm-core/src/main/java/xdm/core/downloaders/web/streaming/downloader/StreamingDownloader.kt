@@ -32,6 +32,7 @@ abstract class StreamingDownloader(
     abstract fun fileExt(): String
     abstract fun downloadType(): DownloadType
     abstract fun saveContext()
+    abstract fun isIndependentSegment(): Boolean
 
     override fun start() {
         Thread {
@@ -141,12 +142,24 @@ abstract class StreamingDownloader(
         }
     }
 
+    private fun isMp4(): Boolean {
+        return context.chunks.any {
+            it.contentType?.let { t ->
+                if (t.contains("mp4")) return true
+            }
+            getFileExtFromUrl(it.url)?.let { e ->
+                return e.endsWith(".mp4") || e.endsWith(".m4s") || e.endsWith(".m4v") || e.endsWith(".fmp4")
+            }
+            return false
+        }
+    }
+
     private fun assembleStreams(outFile: String): Boolean {
         try {
             Logger.info("Mux multiple streams to $outFile")
             val audioChunks = context.chunks.filter { it.tag == "AUDIO" }.map { getChunkTempFileName(it) }
             val videoChunks = context.chunks.filter { it.tag == "VIDEO" }.map { getChunkTempFileName(it) }
-            if (muxer.mux(audioChunks, videoChunks, outFile, {}, context.tempFolder)) {
+            if (muxer.mux(audioChunks, videoChunks, outFile, {}, context.tempFolder, isIndependentSegment(), isMp4())) {
                 context.completed.set(true)
                 return true
             }
@@ -167,7 +180,7 @@ abstract class StreamingDownloader(
             val tempFiles = context.chunks.map {
                 getChunkTempFileName(it)
             }
-            if (muxer.mux(tempFiles, outFile, {}, context.tempFolder)) {
+            if (muxer.mux(tempFiles, outFile, {}, context.tempFolder, isIndependentSegment(), isMp4())) {
                 context.completed.set(true)
                 return true
             }

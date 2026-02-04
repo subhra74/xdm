@@ -169,7 +169,7 @@ object VideoHelper {
                 val audioOnly = videoUrl == null
                 val primaryUrl = videoUrl ?: audioUrl!!
                 val secondaryUrl = if (audioOnly) null else audioUrl
-                val hlsSource = toHlsSource(msg, secondaryUrl, primaryUrl, audioOnly)
+                val hlsSource = toHlsSource(msg, secondaryUrl, primaryUrl, audioOnly, playlist.independent)
                 AppContext.videoTracker.addVideoHls(
                     listOf(
                         Pair(
@@ -189,7 +189,7 @@ object VideoHelper {
             if (playlist.mediaSegments.isEmpty()) {
                 return
             }
-            val hlsSource = toHlsSource(msg, null, msg.url, false)
+            val hlsSource = toHlsSource(msg, null, msg.url, false, playlist.independent)
             AppContext.videoTracker.addVideoHls(
                 listOf(
                     Pair(
@@ -219,7 +219,8 @@ object VideoHelper {
         msg: ExtensionMessage,
         audioUrl: String?,
         videoUrl: String,
-        audioOnly: Boolean
+        audioOnly: Boolean,
+        independent: Boolean,
     ): HlsDownloadTaskInfo {
         return HlsDownloadTaskInfo(
             id = CoreUtils.uniqueId(),
@@ -236,7 +237,8 @@ object VideoHelper {
             authInfo = null,
             url = videoUrl,
             audioUrl = audioUrl,
-            audioOnly = audioOnly
+            audioOnly = audioOnly,
+            independent,
         )
     }
 }

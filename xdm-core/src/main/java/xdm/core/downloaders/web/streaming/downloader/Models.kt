@@ -70,4 +70,5 @@ data class HlsTaskContext(
     var url: String,
     var audioUrl: String?,
     var audioOnly: Boolean = false,
+    var independent: Boolean,
 ) : StreamingTaskContext

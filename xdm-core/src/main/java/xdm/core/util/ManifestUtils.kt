@@ -51,6 +51,7 @@ object ManifestUtils {
                 it.use { response ->
                     if (stopFlag.get()) return null
                     val code: Int = response.statusCode
+                    Logger.info("Manifest download", "Return code: $code")
                     if (code != 200 && code != 206) {
                         Logger.error("Manifest download failed")
                         return null
