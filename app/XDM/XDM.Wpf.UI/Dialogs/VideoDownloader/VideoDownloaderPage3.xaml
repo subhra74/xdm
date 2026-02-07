@@ -1,0 +1,82 @@
+﻿<UserControl x:Class="XDM.Wpf.UI.Dialogs.VideoDownloader.VideoDownloaderPage3"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:XDM.Wpf.UI.Dialogs.VideoDownloader"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <ContextMenu x:Key="DownloadLaterContextMenu"></ContextMenu>
+        <MenuItem x:Name="DontAddToQueueMenuItem" x:Key="DontAddToQueueMenuItem" Header="{StaticResource LBL_QUEUE_OPT3}" Click="DontAddToQueueMenuItem_Click"/>
+        <MenuItem x:Name="QueueAndSchedulerMenuItem" x:Key="QueueAndSchedulerMenuItem" Header="{StaticResource DESC_Q_TITLE}" Click="QueueAndSchedulerMenuItem_Click"/>
+    </UserControl.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition />
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <CheckBox Name="ChkSelectAll" Content="{StaticResource VID_CHK}" Grid.ColumnSpan="5" Margin="5,0,0,10" />
+        <ListBox Name="LvVideoList" Grid.Row="1" Grid.ColumnSpan="3" Margin="0,0,10,0" BorderThickness="1" 
+                  BorderBrush="{StaticResource ControlBordercolor}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <CheckBox IsChecked="{Binding IsSelected, NotifyOnSourceUpdated=True,Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Name="MycheckBox" Content="{Binding Name}"/>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <!--<ListView Name="LvVideoList" Grid.Row="1" Grid.ColumnSpan="3" Margin="0,0,10,0" BorderThickness="1" 
+                  BorderBrush="{StaticResource ControlBordercolor}">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="{StaticResource SORT_NAME}" Width="400">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox IsChecked="{Binding IsSelected, NotifyOnSourceUpdated=True,Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Name="MycheckBox" Content="{Binding Name}"></CheckBox>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                </GridView>
+            </ListView.View>
+        </ListView>-->
+        <TextBlock Grid.Row="2" Text="{StaticResource LBL_SAVE_IN}" VerticalAlignment="Center" Margin="0,10" />
+        <TextBox Name="TxtSaveIn" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3" Margin="0,10" Padding="3"/>
+        <Button Name="BtnBrowse" Grid.Row="2" Grid.Column="4" Content="..." Margin="5,10,0,10" Padding="0" />
+        <Button Name="BtnMore" Grid.Row="3" Content="{StaticResource ND_MORE}" Margin="0,10,0,0" Padding="15,3"/>
+        <Button Name="BtnDownloadLater" Grid.Row="3" Grid.Column="2" Content="{StaticResource ND_DOWNLOAD_LATER}" Margin="0,10,0,0" Padding="15,3"
+                Click="BtnDownloadLater_Click"/>
+        <Button Name="BtnDownloadNow" Grid.Row="3"  Grid.Column="3" Grid.ColumnSpan="2" Content="{StaticResource ND_DOWNLOAD_NOW}" Margin="10,10,0,0" 
+                Padding="15,3" Click="BtnDownloadNow_Click"/>
+        <Grid Grid.Row="1" Grid.Column="3" Grid.ColumnSpan="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <TextBlock Grid.Row="0" Text="{StaticResource O_VID_FMT}" Margin="0,0,0,5" Visibility="Collapsed"/>
+            <ListBox Name="LbFormat" Grid.Row="1" MinWidth="60" BorderThickness="1" MinHeight="60"
+                  BorderBrush="{StaticResource ControlBordercolor}" Visibility="Collapsed">
+                <ListBoxItem>
+                    <TextBlock Text="{StaticResource CAT_VIDEOS}"/>
+                </ListBoxItem>
+                <ListBoxItem>
+                    <TextBlock Text="{StaticResource MSG_MP3}"/>
+                </ListBoxItem>
+            </ListBox>
+            <TextBlock Grid.Row="2" Text="{StaticResource MSG_QUALITY}" Margin="0,0,0,5" Visibility="Collapsed"/>
+            <ListBox Name="LbQuality" Grid.Row="3" MinWidth="60" BorderThickness="1" 
+                  BorderBrush="{StaticResource ControlBordercolor}">
+            </ListBox>
+        </Grid>
+    </Grid>
+</UserControl>

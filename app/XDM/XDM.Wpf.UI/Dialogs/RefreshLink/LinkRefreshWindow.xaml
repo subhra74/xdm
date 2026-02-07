@@ -1,0 +1,18 @@
+﻿<Window x:Class="XDM.Wpf.UI.Dialogs.RefreshLink.LinkRefreshWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:XDM.Wpf.UI.Dialogs.RefreshLink"
+        mc:Ignorable="d"
+        Title="{StaticResource MENU_REFRESH_LINK}" Height="200" Width="300" ShowInTaskbar="False" 
+        WindowStartupLocation="CenterScreen" Topmost="True" Closing="Window_Closing">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Text="{StaticResource REF_WAITING_FOR_LINK}" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+        <Button Name="BtnStop" Grid.Row="1" HorizontalAlignment="Right" Content="{StaticResource BTN_STOP_PROCESSING}" Margin="5" Padding="10,5" Click="BtnStop_Click"/>
+    </Grid>
+</Window>

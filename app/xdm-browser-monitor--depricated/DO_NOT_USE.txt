@@ -1,0 +1,1 @@
+Code for chrome-extension now resides in xdm/app/XDM/chrome-extension folder

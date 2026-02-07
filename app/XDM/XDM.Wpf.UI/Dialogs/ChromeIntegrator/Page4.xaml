@@ -1,0 +1,20 @@
+﻿<UserControl x:Class="XDM.Wpf.UI.Dialogs.ChromeIntegrator.Page4"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:XDM.Wpf.UI.Dialogs.ChromeIntegrator"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <TextBlock Name="MsgSuccess" Grid.Row="0" Text="{StaticResource MSG_EXT_INSTALL_SUCCESS}" Margin="10,20" TextWrapping="Wrap" TextAlignment="Center" FontSize="20" Foreground="DodgerBlue"/>
+        <TextBlock Name="MsgFail" Grid.Row="0" Text="{StaticResource MSG_EXT_INSTALL_FAIL}" Margin="10,20" TextWrapping="Wrap" TextAlignment="Center" FontSize="20" Foreground="RosyBrown" />
+        <TextBlock Name="MsgInfo" Grid.Row="1" Text="{StaticResource MSG_EXT_PIN}" Margin="10" TextWrapping="Wrap" TextAlignment="Center" />
+        <Image Name="Img" Grid.Row="2"/>
+    </Grid>
+</UserControl>

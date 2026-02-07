@@ -1,0 +1,9 @@
+{
+  "name": "xdmff.native_host",
+  "description": "Native messaging host for Xtreme Download Manager",
+  "path": "xdm-app-host.exe",
+  "type": "stdio",
+  "allowed_extensions": [
+    "xdm-integration-module@subhra74.github.io"
+  ]
+}

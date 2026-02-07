@@ -1,0 +1,26 @@
+﻿<UserControl x:Class="XDM.Wpf.UI.Dialogs.Scheduler.TimePicker"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:XDM.Wpf.UI.Dialogs.Scheduler"
+             mc:Ignorable="d" 
+             d:DesignHeight="40" d:DesignWidth="120" >
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <ComboBox Name="CmbHour" HorizontalAlignment="Stretch" MinWidth="30" Width="50"/>
+        <TextBlock Text=":" Margin="2" Grid.Column="1"/>
+        <ComboBox Name="CmbMinute" Grid.Column="2" HorizontalAlignment="Stretch" MinWidth="30"  Width="50" ItemStringFormat="D2"/>
+        <TextBlock Text=":" Margin="2" Grid.Column="3"/>
+        <ComboBox Name="CmbAmPm"  Grid.Column="4" HorizontalAlignment="Stretch" MinWidth="30"  Width="50">
+            <ComboBoxItem>AM</ComboBoxItem>
+            <ComboBoxItem>PM</ComboBoxItem>
+        </ComboBox>
+    </Grid>
+</UserControl>

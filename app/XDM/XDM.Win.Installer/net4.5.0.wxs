@@ -1,0 +1,308 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <DirectoryRef Id="INSTALLFOLDER">
+            <Directory Id="dirBF3D113703D42F574ADF4BBE5ED52987" Name="chrome-extension" />
+            <Directory Id="dir608A8623D72D87D1C5E4AC92CD734AE7" Name="Font" />
+            <Directory Id="dir2C30837F199608069250DAE97D32664D" Name="Gif" />
+            <Directory Id="dirD85DFB9E13E3BB16E2E86BCC971BA2A0" Name="Icon" />
+            <Directory Id="dirCD473A616A87647470947DF4695A6803" Name="images" />
+            <Directory Id="dir23EEB6A7E0429F277985FA4BC5B2C64F" Name="Lang" />
+            <Directory Id="dir43FCCFA109FBF584D9155DCE31E452EB" Name="x64" />
+            <Directory Id="dir97F42FF68945B97AAE670945C4FDAE93" Name="x86" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <ComponentGroup Id="NET4">
+            <Component Id="cmp9A67C55C3FC8E5905A5497F28DAACD33" Directory="INSTALLFOLDER" Guid="{8BD1538A-D08B-424C-A01D-7329A7234C4F}">
+                <File Id="fil3805CF0687ADB8D2668E229058AE1384" KeyPath="yes" Source="SourceDir\ffmpeg-x86.exe" />
+            </Component>
+            <Component Id="cmpBC4FC00A26E7D32479D42D3411317FC5" Directory="INSTALLFOLDER" Guid="{5500C38A-DE93-4DFF-B4CA-47D9D8F6959D}">
+                <File Id="fil90A8AAD9FC612906D405476D61CEA3F4" KeyPath="yes" Source="SourceDir\Newtonsoft.Json.dll" />
+            </Component>
+            <Component Id="cmpA748C45814948C0E47F0962CF5A9E2C5" Directory="INSTALLFOLDER" Guid="{573662FA-60D0-41A4-B0BB-0F921BC6C6C7}">
+                <File Id="filAF63FF48A59E0E5E7F49BFD1CBBB0CC3" KeyPath="yes" Source="SourceDir\System.Buffers.dll" />
+            </Component>
+            <Component Id="cmp6B7CE49F5F3A518047B74FB6AC2251C5" Directory="INSTALLFOLDER" Guid="{73DE2DC6-9896-42D5-ADED-591B284786AE}">
+                <File Id="fil86030949C08D40073D1F77D572C14B0D" KeyPath="yes" Source="SourceDir\System.Data.SQLite.dll" />
+            </Component>
+            <Component Id="cmp3A99A623A71A716A198559E0C9D59400" Directory="INSTALLFOLDER" Guid="{D6B46852-8F55-49A3-8D7B-26C3CDD3335B}">
+                <File Id="filE6242AE03AF2509440ADF395C76688A4" KeyPath="yes" Source="SourceDir\System.ValueTuple.dll" />
+            </Component>
+            <Component Id="cmp8492AA35743AF7D1FE0E1073BDC3690C" Directory="INSTALLFOLDER" Guid="{367A5EE4-6773-437C-ADB4-B827CE7128C5}">
+                <File Id="filDDF715835F59E54E2242D8F2A1F06D21" KeyPath="yes" Source="SourceDir\xdm-app.exe" />
+            </Component>
+            <Component Id="cmp107C972194DAC555B831433C1BE8A55E" Directory="INSTALLFOLDER" Guid="{9C282BAA-33E7-45FD-A076-DD2F55DFBE12}">
+                <File Id="fil9972EF0C3684120FF4F7910B0FE0713C" KeyPath="yes" Source="SourceDir\xdm-app.exe.config" />
+            </Component>
+            <Component Id="cmpEDB3311E58D8AD3B51A526528F583A0B" Directory="INSTALLFOLDER" Guid="{A21FFD66-88A0-44F5-B316-CF0427E6123B}">
+                <File Id="fil9D0798D34AE801950C4CD3C10E354895" KeyPath="yes" Source="SourceDir\xdm-guide.exe" />
+            </Component>
+            <Component Id="cmp68AAA0E8E86F9EEE8F2990A4D6AB17E1" Directory="INSTALLFOLDER" Guid="{243C6CD5-BF24-4B9A-8C1B-93DB9C707BD6}">
+                <File Id="fil547B84EA588933D957CD8D1D49AB4CF9" KeyPath="yes" Source="SourceDir\xdm-guide.exe.config" />
+            </Component>
+            <Component Id="cmp0E97A91D5C8874D8F718D465F73EC003" Directory="INSTALLFOLDER" Guid="{962178FA-C6EF-4643-B884-64223E53C3A3}">
+                <File Id="fil2029A3C769030E81AC9DAAEF6401AAE2" KeyPath="yes" Source="SourceDir\xdm-guide.pdb" />
+            </Component>
+            <Component Id="cmp7C78859AEC6DE38D8F2F26971835D172" Directory="INSTALLFOLDER" Guid="{7AF23643-17FF-4B0C-B7C7-F12D3ABA47FB}">
+                <File Id="fil8F57C6D7E5A7EBFFEFAB56B377646C3F" KeyPath="yes" Source="SourceDir\xdm-logo.ico" />
+            </Component>
+            <Component Id="cmp712487B6AE16D3E4D52978A91717EF5C" Directory="INSTALLFOLDER" Guid="{8D255842-FE30-4EF9-860E-971E5B0F5363}">
+                <File Id="fil14B92D34DA0B15128DC737EE6DDF9E24" KeyPath="yes" Source="SourceDir\yt-dlp_x86.exe" />
+            </Component>
+            <Component Id="cmp7DB6EF07C60F05B346F452511E5254D4" Directory="dirBF3D113703D42F574ADF4BBE5ED52987" Guid="{6E99D849-0F57-484B-AF33-AC5CC9DF5D42}">
+                <File Id="filB0194205BF5549E086349875DA72CEB6" KeyPath="yes" Source="SourceDir\chrome-extension\app.js" />
+            </Component>
+            <Component Id="cmpEC72FDE30B80A1E212158972EF727FD3" Directory="dirBF3D113703D42F574ADF4BBE5ED52987" Guid="{B70E3E56-0E70-40A6-ACCC-5503238B0B83}">
+                <File Id="fil5E1639403957D8D5F9E05761D888ACD5" KeyPath="yes" Source="SourceDir\chrome-extension\connector.js" />
+            </Component>
+            <Component Id="cmpF34F4646967D1A07ECC4CB4692D953A8" Directory="dirBF3D113703D42F574ADF4BBE5ED52987" Guid="{C0341362-9D8E-44FE-A390-8D4A44DCDE35}">
+                <File Id="filC107182660A215E0B760F7741DB0D28E" KeyPath="yes" Source="SourceDir\chrome-extension\disabled.html" />
+            </Component>
+            <Component Id="cmp7D8D5075AADD8499B81215CC3CFDF86F" Directory="dirBF3D113703D42F574ADF4BBE5ED52987" Guid="{7FF1AB1E-B5A0-46C4-9620-1C3AD0E462CF}">
+                <File Id="filCAFB2FA5AE6FC935DB08B0F1C1F632F1" KeyPath="yes" Source="SourceDir\chrome-extension\error.html" />
+            </Component>
+            <Component Id="cmpF931707D672E080F9A8F727051CB21D5" Directory="dirBF3D113703D42F574ADF4BBE5ED52987" Guid="{D0A0AD98-BC89-4CF9-A80C-1463CBAAB833}">
+                <File Id="fil90C0C2976667770AA3D80449F6F14DE8" KeyPath="yes" Source="SourceDir\chrome-extension\error.js" />
+            </Component>
+            <Component Id="cmp5A991C4FE35C87CA23E682E82EFB35BA" Directory="dirBF3D113703D42F574ADF4BBE5ED52987" Guid="{A3E641CB-E807-4755-8CE1-B92B40F11CFD}">
+                <File Id="fil06247F3B1497FEAB25EB8EDBAA29AF6D" KeyPath="yes" Source="SourceDir\chrome-extension\icon128-mono.png" />
+            </Component>
+            <Component Id="cmpBB12D3C89E601D97835099415A240F1A" Directory="dirBF3D113703D42F574ADF4BBE5ED52987" Guid="{C6A6AD2A-2107-4B48-8140-A6A7B28850C0}">
+                <File Id="fil8F1D432D141AF1D9CD753EE0D8B17B4A" KeyPath="yes" Source="SourceDir\chrome-extension\icon128.png" />
+            </Component>
+            <Component Id="cmp225833D5E0F08248458EF023E7CB60D2" Directory="dirBF3D113703D42F574ADF4BBE5ED52987" Guid="{14EC58D7-2EBB-47E9-A965-3F98C8BFC5F8}">
+                <File Id="filC117E0F5039DE0E4738E765B246CEF98" KeyPath="yes" Source="SourceDir\chrome-extension\icon16-mono.png" />
+            </Component>
+            <Component Id="cmp8A5DF5FE9AEB2F120515FFA73BED64D4" Directory="dirBF3D113703D42F574ADF4BBE5ED52987" Guid="{2610004A-FAA8-4711-8861-E722FA473FD2}">
+                <File Id="fil69021F6F1191CFBD7E46883B5531C20F" KeyPath="yes" Source="SourceDir\chrome-extension\icon16.png" />
+            </Component>
+            <Component Id="cmpA3A77A3B8918C6CB347F04B85DB91A8C" Directory="dirBF3D113703D42F574ADF4BBE5ED52987" Guid="{2CBBAAB2-55F1-404D-A03B-0F5FC41EDACC}">
+                <File Id="fil058072848B001401935440AAA8C5F32E" KeyPath="yes" Source="SourceDir\chrome-extension\icon48-mono.png" />
+            </Component>
+            <Component Id="cmpE89DEC03BA7E4F7898B30F31EF26A1D3" Directory="dirBF3D113703D42F574ADF4BBE5ED52987" Guid="{F823E543-4C89-47BD-A732-F6C4ACC3B37E}">
+                <File Id="fil3724D216A3746A5EC182C04021592CF0" KeyPath="yes" Source="SourceDir\chrome-extension\icon48.png" />
+            </Component>
+            <Component Id="cmpC4083B56D3743D0882A422184A963D5F" Directory="dirBF3D113703D42F574ADF4BBE5ED52987" Guid="{2F082094-ED46-43A5-95F0-484B50581986}">
+                <File Id="filE85DEFAF50C8DCD18B24517031BA211D" KeyPath="yes" Source="SourceDir\chrome-extension\logger.js" />
+            </Component>
+            <Component Id="cmpB782330ACB88158225E242DC43EFC74A" Directory="dirBF3D113703D42F574ADF4BBE5ED52987" Guid="{BD698BCD-80F0-4172-AC16-7203A7174A90}">
+                <File Id="fil2AA87A01CE2E18F7BF947EBB25AB0B68" KeyPath="yes" Source="SourceDir\chrome-extension\main.js" />
+            </Component>
+            <Component Id="cmp6E367CDAA7EBDE1C02D449D8F72F73E3" Directory="dirBF3D113703D42F574ADF4BBE5ED52987" Guid="{86109DB5-F722-4193-8B80-ACA60340E755}">
+                <File Id="filEB59C441E0F901514DAEA83E1FDDB45C" KeyPath="yes" Source="SourceDir\chrome-extension\manifest.json" />
+            </Component>
+            <Component Id="cmpD20E4F908D43D395EBE7935076B53158" Directory="dirBF3D113703D42F574ADF4BBE5ED52987" Guid="{8F57E42D-9E72-432F-89A3-FC9F20F3D0CF}">
+                <File Id="fil06E4180BE23E45FAA01B74B1E64663A7" KeyPath="yes" Source="SourceDir\chrome-extension\popup.html" />
+            </Component>
+            <Component Id="cmpEB100E748F7C407ACCC97A1E5E855E4F" Directory="dirBF3D113703D42F574ADF4BBE5ED52987" Guid="{27FB5AA2-6150-4450-8D4E-40156EDFFA95}">
+                <File Id="fil62E5CE472B8E41E6BED83A4AA94E3965" KeyPath="yes" Source="SourceDir\chrome-extension\popup.js" />
+            </Component>
+            <Component Id="cmp5BF4DC6AB75C20AC5D15F3FEBC24D334" Directory="dirBF3D113703D42F574ADF4BBE5ED52987" Guid="{32311EBC-590E-48BD-A0DB-120F1DC03F0B}">
+                <File Id="filE70C482B2827BFB220D67A884490CB74" KeyPath="yes" Source="SourceDir\chrome-extension\register.html" />
+            </Component>
+            <Component Id="cmp302E36F37B387FA7B2C0767967703DC0" Directory="dirBF3D113703D42F574ADF4BBE5ED52987" Guid="{AC9B5D71-5D81-4ACB-B238-143F2FF0EB70}">
+                <File Id="fil4BD04D32CEFC6837B7F1B26DB9D77B5D" KeyPath="yes" Source="SourceDir\chrome-extension\register.js" />
+            </Component>
+            <Component Id="cmp2DFA49AF6CCE5FE1DE57F45A3EFF1132" Directory="dirBF3D113703D42F574ADF4BBE5ED52987" Guid="{08090B0D-05D6-4850-B9F6-BA88F1360CC2}">
+                <File Id="fil723A59961806C307040DB6284A94F4B8" KeyPath="yes" Source="SourceDir\chrome-extension\request-watcher.js" />
+            </Component>
+            <Component Id="cmpCC196ACB081FF76F6A87940C4D7866BE" Directory="dirBF3D113703D42F574ADF4BBE5ED52987" Guid="{9157FACB-6978-4535-97F4-FE5301CD26A0}">
+                <File Id="filE5BB1526AC7D363B19E421AE2EBAEC09" KeyPath="yes" Source="SourceDir\chrome-extension\styles.css" />
+            </Component>
+            <Component Id="cmp59D03F7F7F21B4FC298836939F8AF29D" Directory="dirBF3D113703D42F574ADF4BBE5ED52987" Guid="{4C69289C-5089-4354-985D-D9777CA7D6AD}">
+                <File Id="filCA1DBDE259BAEB5E1F10C009AFB29E53" KeyPath="yes" Source="SourceDir\chrome-extension\xdm-logo-orange.png" />
+            </Component>
+            <Component Id="cmpF8087CBCEDD0952B763E6D5AC00B415C" Directory="dir608A8623D72D87D1C5E4AC92CD734AE7" Guid="{17DC0931-527D-4C63-AC18-76F289C76BF5}">
+                <File Id="filB6667F5A1CCDA5EA7423D1BD866964B4" KeyPath="yes" Source="SourceDir\Font\fontawesome-webfont.ttf" />
+            </Component>
+            <Component Id="cmpD99698CC185EA6AE2F9467A1D67149ED" Directory="dirCC25003E8E3E023F4ED9D82E8637179C" Guid="{FB205272-2C76-4298-810D-907C8CDD2FD2}">
+                <File Id="filE0CD6B51246D714B3407550C1486716B" KeyPath="yes" Source="SourceDir\Gif\Brave\img-1.gif" />
+            </Component>
+            <Component Id="cmpF3E9BF526F17B02854EB1C5D15A1F3FF" Directory="dirCC25003E8E3E023F4ED9D82E8637179C" Guid="{E48DB93E-7A5D-4483-A89C-5D71EB3DD0E9}">
+                <File Id="fil9CD957F21987A3C09504BF85C7379DBC" KeyPath="yes" Source="SourceDir\Gif\Brave\img-2.gif" />
+            </Component>
+            <Component Id="cmpE05CD1196761D06BB658E2A9F8323898" Directory="dirCC25003E8E3E023F4ED9D82E8637179C" Guid="{80A9FDDE-D608-40FD-9C68-49E6BB06197B}">
+                <File Id="fil1A4E37F266F411A0BE6A73E5761607D2" KeyPath="yes" Source="SourceDir\Gif\Brave\img-3.gif" />
+            </Component>
+            <Component Id="cmp059EF838F88E060ED3F0DE583F399B1C" Directory="dir7CF9BC5357EDB697CB1A41F8EC77E8A3" Guid="{0A22B308-1191-4721-84A9-545146D02854}">
+                <File Id="fil0DB3441BEFEE4A258E11B5756C4ED762" KeyPath="yes" Source="SourceDir\Gif\Chrome\img-1.gif" />
+            </Component>
+            <Component Id="cmpD33F073FA61566E132A62259F13CE386" Directory="dir7CF9BC5357EDB697CB1A41F8EC77E8A3" Guid="{D6BF543E-7515-42BB-B0D3-47755C1E94EB}">
+                <File Id="fil7F5D5AFFFA6F3415F425BECB4E429944" KeyPath="yes" Source="SourceDir\Gif\Chrome\img-2.gif" />
+            </Component>
+            <Component Id="cmp8CE7BB08B1C3140DF60D70979811D2C6" Directory="dir7CF9BC5357EDB697CB1A41F8EC77E8A3" Guid="{3679A3A4-E46D-41F5-809F-B2DF0F6CDA25}">
+                <File Id="fil68AFC6817B8A7AC068DEC8159A1F7D45" KeyPath="yes" Source="SourceDir\Gif\Chrome\img-3.gif" />
+            </Component>
+            <Component Id="cmpB5623FBD27DF729051C55C97E1BA5657" Directory="dir709CCA1D3FE6F5FF1DD42267C56E89E4" Guid="{7FF6EFD5-5F91-4A5F-B8A7-30404796903A}">
+                <File Id="filBAE7FC5E4ECEB5AC71EA28848A73D79F" KeyPath="yes" Source="SourceDir\Gif\MSEdge\img-1.gif" />
+            </Component>
+            <Component Id="cmp3D22CADD80A6A569B4B1618B3EF27F7E" Directory="dir709CCA1D3FE6F5FF1DD42267C56E89E4" Guid="{CB38B624-FA5F-4BDB-A99B-63669CB925B0}">
+                <File Id="fil8F9DE94CEFC58364B945657660561C8C" KeyPath="yes" Source="SourceDir\Gif\MSEdge\img-2.gif" />
+            </Component>
+            <Component Id="cmpA1D916AAD84C2ACC749B98486646DB09" Directory="dir709CCA1D3FE6F5FF1DD42267C56E89E4" Guid="{ACA5E427-27DA-4BB1-85BA-B87B054DEAA5}">
+                <File Id="filCB21B831E3B0CC4BC720E16CC6BD6EBC" KeyPath="yes" Source="SourceDir\Gif\MSEdge\img-3.gif" />
+            </Component>
+            <Component Id="cmp0C94327093BEB57466EEF44203834740" Directory="dirCEB1CC3F3211FB3FE9FDB7803C7E0F82" Guid="{D38AB404-71DA-4334-9BC9-D6F111C53BCE}">
+                <File Id="fil52C2A58018C7114E13A5111EF4FBC7C0" KeyPath="yes" Source="SourceDir\Gif\Opera\img-1.gif" />
+            </Component>
+            <Component Id="cmp0CA2E8248CF59049BB597F78B62DC3E5" Directory="dirCEB1CC3F3211FB3FE9FDB7803C7E0F82" Guid="{D3E316D2-2EC0-4FBA-B209-07B0998E0C74}">
+                <File Id="filAFA9BB27640FF6D551A59A8B4E15A0A9" KeyPath="yes" Source="SourceDir\Gif\Opera\img-2.gif" />
+            </Component>
+            <Component Id="cmp341E9B4326F24C25BAEE9ED283ACC307" Directory="dirCEB1CC3F3211FB3FE9FDB7803C7E0F82" Guid="{D2596578-09E2-4257-B09C-977F69B81BE7}">
+                <File Id="fil558B4F11EADB694680B3EDC5BDB1E859" KeyPath="yes" Source="SourceDir\Gif\Opera\img-3.gif" />
+            </Component>
+            <Component Id="cmp9536CE1A91D21833C5CA0EEEA32598CA" Directory="dir406B2E24FC3BD0A1841D771864BA109D" Guid="{7087B0D2-5451-4AC4-8AA6-D6B92E7F5BC2}">
+                <File Id="fil8D053AEF8AE28D27031C6003CDEC8E72" KeyPath="yes" Source="SourceDir\Gif\Vivaldi\img-1.gif" />
+            </Component>
+            <Component Id="cmp45E8E84F81BB8EF6C0497292856A9EC2" Directory="dir406B2E24FC3BD0A1841D771864BA109D" Guid="{B4F23ED5-094D-40B3-B98C-A4920B0D4032}">
+                <File Id="fil44EB08C241EAC5FC78A5A6940AE05727" KeyPath="yes" Source="SourceDir\Gif\Vivaldi\img-2.gif" />
+            </Component>
+            <Component Id="cmp8BB0EC4464E104088DC33F534B7B3932" Directory="dir406B2E24FC3BD0A1841D771864BA109D" Guid="{D44ED42F-1D3D-42E7-92BB-7F922967A084}">
+                <File Id="fil699EC4BD0CACBA271D24623E42AF95F6" KeyPath="yes" Source="SourceDir\Gif\Vivaldi\img-3.gif" />
+            </Component>
+            <Component Id="cmp2FF3EFAB38FFB2D580FAEE404819870A" Directory="dirD85DFB9E13E3BB16E2E86BCC971BA2A0" Guid="{2546C2D2-6DC3-4540-8A0D-614FD10185AB}">
+                <File Id="filC2A23CDDD567866F413ECBDC2F31FB78" KeyPath="yes" Source="SourceDir\Icon\xdm-logo.ico" />
+            </Component>
+            <Component Id="cmpEC31C0560D4940D187E6F6241CD98DA3" Directory="dirCD473A616A87647470947DF4695A6803" Guid="{B53BE14D-F989-481C-9C59-3934DA072277}">
+                <File Id="fil2628001A638D409D479133633A4BAA38" KeyPath="yes" Source="SourceDir\images\Brave.jpg" />
+            </Component>
+            <Component Id="cmp1CA72D133E0AA516E760B76C3A558A05" Directory="dirCD473A616A87647470947DF4695A6803" Guid="{4B808047-4CDD-4F31-B274-21063D6495CB}">
+                <File Id="fil81D48EFC29F7B6C0F1EDFDEB9A0E9290" KeyPath="yes" Source="SourceDir\images\chrome-addressbar.jpg" />
+            </Component>
+            <Component Id="cmpCE956EC98FAC105C6AB44272CCFAED0C" Directory="dirCD473A616A87647470947DF4695A6803" Guid="{98EBB7D8-37FE-49EB-8FE4-46B4542AEFF1}">
+                <File Id="filBB9107D40069B505BF018F85FA5D60FD" KeyPath="yes" Source="SourceDir\images\Chrome.jpg" />
+            </Component>
+            <Component Id="cmp0CC26BAEA0F160DC476F75EB945F6602" Directory="dirCD473A616A87647470947DF4695A6803" Guid="{3538E080-9949-47EA-9CDC-E9E88D61C1AC}">
+                <File Id="fil9C8EC0302BDCBF90657631C04961AD91" KeyPath="yes" Source="SourceDir\images\extension-folder.jpg" />
+            </Component>
+            <Component Id="cmp7482D8A2C0438F77DDAEF83A1C242E39" Directory="dirCD473A616A87647470947DF4695A6803" Guid="{A966A552-DE00-44C0-8BB3-5AF464D04E36}">
+                <File Id="fil406FEE81DDC31CB7FD6B9716AEC9A283" KeyPath="yes" Source="SourceDir\images\load_unpacked.jpg" />
+            </Component>
+            <Component Id="cmp8D446F6E187D4B4211435CDC775ABDBD" Directory="dirCD473A616A87647470947DF4695A6803" Guid="{45CA1503-3A38-45A5-B2B0-1AA649EAF478}">
+                <File Id="filE2D4FEA87B7C44E7630C05D6154FACD8" KeyPath="yes" Source="SourceDir\images\MSEdge.jpg" />
+            </Component>
+            <Component Id="cmp7CEDE7344BC7C4FAD27C33AA5B53A018" Directory="dirCD473A616A87647470947DF4695A6803" Guid="{0392D39D-284D-4461-94C6-C36613D20A28}">
+                <File Id="fil3E9457CE3FA59DE24FE9EC5BF0DF2F68" KeyPath="yes" Source="SourceDir\images\Opera.jpg" />
+            </Component>
+            <Component Id="cmp36A1C9DC2A483CE771B8A033912E993F" Directory="dirCD473A616A87647470947DF4695A6803" Guid="{BA1A8C63-AF2A-46EA-9F49-D1DBBA7C35E2}">
+                <File Id="fil00B12AF533C51153819A6857A2818D05" KeyPath="yes" Source="SourceDir\images\pin-ext.jpg" />
+            </Component>
+            <Component Id="cmp1D33A1AA5A7B3A9EE1770D17ADBFA245" Directory="dirCD473A616A87647470947DF4695A6803" Guid="{078D33E7-E5E5-456B-BF36-9CFC20564AB8}">
+                <File Id="fil01A91F771305A3DEFA49229C1FFDEAFE" KeyPath="yes" Source="SourceDir\images\Vivaldi.jpg" />
+            </Component>
+            <Component Id="cmp9426BCE05D96E362CE2307030AD0B787" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{7E73543A-CB53-4245-8B1E-1F03D45723C3}">
+                <File Id="fil3B509627F3579E5E798429B7AF50A89F" KeyPath="yes" Source="SourceDir\Lang\Arabic.txt" />
+            </Component>
+            <Component Id="cmp7B196C93DF1AC26A0F6261DD7D3E9F6F" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{40842610-D9FD-480E-8557-9E230FB6AE62}">
+                <File Id="fil157F89BAE67E3A9E11E73A71B0F1206A" KeyPath="yes" Source="SourceDir\Lang\Chinese simplified.txt" />
+            </Component>
+            <Component Id="cmp5DFF65F5D314309C73C3D061EDD2C177" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{BB294EDA-E03B-4113-94E0-CF76BD49F4DC}">
+                <File Id="filE7265D5BBCF21F04A321C9A866BCA391" KeyPath="yes" Source="SourceDir\Lang\Chinese Traditional.txt" />
+            </Component>
+            <Component Id="cmpFB7FD44428565C0D8C2D0F19F6CCE37E" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{47BFF0C6-0953-4AE7-A8CD-739166D8B9B0}">
+                <File Id="fil84779F3FA1D0C0610A31D04BE6547FB7" KeyPath="yes" Source="SourceDir\Lang\Czech.txt" />
+            </Component>
+            <Component Id="cmpF6AAD20A7508C58E13E4323B6D0EA609" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{FFE44FA6-4CDF-48E2-9B17-FBE96224D1E2}">
+                <File Id="filF4561622A7750461A403BF4D1377E957" KeyPath="yes" Source="SourceDir\Lang\English--.txt" />
+            </Component>
+            <Component Id="cmp7400F54F0576F49D68AC3954395E05AE" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{13C0515A-D226-4459-AB72-49435B167216}">
+                <File Id="fil7A4FE2BF32A20196F904D6C009D9FB8C" KeyPath="yes" Source="SourceDir\Lang\English.txt" />
+            </Component>
+            <Component Id="cmpF342CB82DC8C9150C3A8FBA6BFFB1A41" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{5E02DD4E-8762-4492-BA7A-8428BA5CC3EB}">
+                <File Id="fil25EEDE6A5DCF776B313D0BBA9C0914C2" KeyPath="yes" Source="SourceDir\Lang\Farsi-Persian.txt" />
+            </Component>
+            <Component Id="cmp8233B5293700BF34AE39BFAF5EF0523B" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{1F62689E-51CE-4B10-9D79-76F47F679218}">
+                <File Id="filA4D0710917BEEC0841891CE399C7B1EC" KeyPath="yes" Source="SourceDir\Lang\French.txt" />
+            </Component>
+            <Component Id="cmp8566A7FD0AEE51D2D3EEFFCC020BE424" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{0DE07BFA-38B0-48D8-A690-EF427D81F3A4}">
+                <File Id="fil965184AEB44A5FE11BB35459867D4C9C" KeyPath="yes" Source="SourceDir\Lang\German.txt" />
+            </Component>
+            <Component Id="cmp547750417005BF0B3DBAA64524748CD2" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{89F97FD4-AA82-42DE-9F5C-BD616D4D0C6F}">
+                <File Id="fil468608C1B037F5E412A6FA6FD130D11A" KeyPath="yes" Source="SourceDir\Lang\Hungarian.txt" />
+            </Component>
+            <Component Id="cmp0FC0C296CCAA630B2EE72A15B72C6F0D" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{911DCE82-6457-408A-8F5C-1212290E648D}">
+                <File Id="filFF8D5E5AF4D885290C12D7E1B3998D7D" KeyPath="yes" Source="SourceDir\Lang\index.txt" />
+            </Component>
+            <Component Id="cmp5CAA8F8305F46C5D55A72A860F79BEAC" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{0A4B6BDD-3FEA-4E46-8807-C83B10946F42}">
+                <File Id="fil6617CADEB631275A14B147DA6FA50C62" KeyPath="yes" Source="SourceDir\Lang\Indonesian.txt" />
+            </Component>
+            <Component Id="cmp78CE6A1259C2075D6CAE21A5FBE6EDC0" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{7BFAEFBC-B913-42B6-9564-748BA29C83BD}">
+                <File Id="fil47A1A104626B5B4FF4B7FA3E6BC125DF" KeyPath="yes" Source="SourceDir\Lang\Italian.txt" />
+            </Component>
+            <Component Id="cmp63F3E87FE6260082488A88212B113449" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{3495147D-8A48-4C71-9CEE-DE48E1544184}">
+                <File Id="filB45BB61C1727323B0EBF315AF05DDF45" KeyPath="yes" Source="SourceDir\Lang\Korea.txt" />
+            </Component>
+            <Component Id="cmp1A43EBB73C94146D30F59D2618226CC9" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{0B53AE9E-6A67-41BF-A875-8F75717928F3}">
+                <File Id="fil9ABB230DD444E62F44281C2BAEB53DB2" KeyPath="yes" Source="SourceDir\Lang\Malayalam.txt" />
+            </Component>
+            <Component Id="cmp8F9540EB92821A553FF7EE5D8AAD6236" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{BC129076-5937-4099-B688-6CE555AC1E40}">
+                <File Id="filC4AFAD3D8D71791392129A04FAAADBC7" KeyPath="yes" Source="SourceDir\Lang\Nepali.txt" />
+            </Component>
+            <Component Id="cmp60CBD8B73AF859E9DDB6F3383BC76475" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{0150A1D5-6284-4813-896C-7E6CE2A6ADD1}">
+                <File Id="fil6011533B1CD6AFE69FD5137F8099047E" KeyPath="yes" Source="SourceDir\Lang\Polish.txt" />
+            </Component>
+            <Component Id="cmp1B6B22063AE975C2ADE5BE653B8903FF" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{9B6437EA-EFE9-4B09-9512-0D9CF344B70B}">
+                <File Id="filA467DF316C8EEB0106594ECF31D3310C" KeyPath="yes" Source="SourceDir\Lang\Portuguese Brazil.txt" />
+            </Component>
+            <Component Id="cmpD56571F9A6B137E66D6375464A4F0052" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{16C672AF-CCCA-416F-8C2D-FC2B893A2906}">
+                <File Id="filAB32EDF85F57EEB8649D9C72CBAA55D3" KeyPath="yes" Source="SourceDir\Lang\Romanian.txt" />
+            </Component>
+            <Component Id="cmp60A17340B160A98ECEF912524DD9D77C" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{690CF0FB-FFD2-45DC-BB55-89FA1C8B48E4}">
+                <File Id="filCBD34802CCD7D1DEAF744B64D2CB75A2" KeyPath="yes" Source="SourceDir\Lang\Russian.txt" />
+            </Component>
+            <Component Id="cmp46FBEBE54D8A4109223F21EB8D086FE8" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{F10F5BD0-D582-465A-9C20-46E37B4AEBDD}">
+                <File Id="fil09B6DCA0BFD8680DF85136C005AFE024" KeyPath="yes" Source="SourceDir\Lang\Serbian - Latin.txt" />
+            </Component>
+            <Component Id="cmpE88FC7FB91FFEBA9B34012C0066B0D60" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{4C55466F-A286-4DBC-8FEB-DE75C3CB5DC6}">
+                <File Id="fil076997B80B46F2515BBA60EEE5CAFDED" KeyPath="yes" Source="SourceDir\Lang\Serbian Cyrillic.txt" />
+            </Component>
+            <Component Id="cmp3938EC8796821E332B87F52341C499F6" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{AD22ECF3-830F-4895-8122-6AA4BB6D2050}">
+                <File Id="filB43E90AFC00E9F14144DC77EBC6AA261" KeyPath="yes" Source="SourceDir\Lang\Spanish.txt" />
+            </Component>
+            <Component Id="cmp29266283663E18C80529F748A6CB998A" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{37CA97EC-1AAD-4F3C-A071-8AA6D9357053}">
+                <File Id="filD2E0CCE0BCEA46557A7B571AF6C8203D" KeyPath="yes" Source="SourceDir\Lang\Traditional Chinese - Taiwan.txt" />
+            </Component>
+            <Component Id="cmpCC027386344B011B1601E96F1603344F" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{EBE99E69-95B2-4802-B4C5-B70E8B6B9DE7}">
+                <File Id="fil0699019E1FCF04A5F76E75AD342B7C15" KeyPath="yes" Source="SourceDir\Lang\Turkish.txt" />
+            </Component>
+            <Component Id="cmp41169E2708BB0596E0767D1B026A45F6" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{5548DF73-6844-43DB-9CB4-B8DE0660D9EA}">
+                <File Id="filA12094ABB9382C26B8648C36AD88B784" KeyPath="yes" Source="SourceDir\Lang\Ukrainian.txt" />
+            </Component>
+            <Component Id="cmp252782049908191663E5B9078A23532B" Directory="dir23EEB6A7E0429F277985FA4BC5B2C64F" Guid="{0FB1B383-2775-4A6C-8461-866D189F066E}">
+                <File Id="fil85ACDC35624353BFAE993844C52276AB" KeyPath="yes" Source="SourceDir\Lang\Vietnamese.txt" />
+            </Component>
+            <Component Id="cmp19F6DF8A2ABC78D782D76F1EEC9A5800" Directory="dir43FCCFA109FBF584D9155DCE31E452EB" Guid="{39295261-634A-498C-879C-266D29F1E813}">
+                <File Id="filC7EA62E1AC64247AFBE682E8631402B8" KeyPath="yes" Source="SourceDir\x64\SQLite.Interop.dll" />
+            </Component>
+            <Component Id="cmp77484AF39EF2F8BD64E876C33A1C3E49" Directory="dir97F42FF68945B97AAE670945C4FDAE93" Guid="{DB65E90E-C8CD-4C21-A3D4-59260E639C67}">
+                <File Id="filD2ACACD0EBAF09B1953E9C3793C13C69" KeyPath="yes" Source="SourceDir\x86\SQLite.Interop.dll" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir2C30837F199608069250DAE97D32664D">
+            <Directory Id="dir406B2E24FC3BD0A1841D771864BA109D" Name="Vivaldi" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir2C30837F199608069250DAE97D32664D">
+            <Directory Id="dir709CCA1D3FE6F5FF1DD42267C56E89E4" Name="MSEdge" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir2C30837F199608069250DAE97D32664D">
+            <Directory Id="dir7CF9BC5357EDB697CB1A41F8EC77E8A3" Name="Chrome" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir2C30837F199608069250DAE97D32664D">
+            <Directory Id="dirCC25003E8E3E023F4ED9D82E8637179C" Name="Brave" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir2C30837F199608069250DAE97D32664D">
+            <Directory Id="dirCEB1CC3F3211FB3FE9FDB7803C7E0F82" Name="Opera" />
+        </DirectoryRef>
+    </Fragment>
+</Wix>

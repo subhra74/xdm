@@ -1,0 +1,4 @@
+1. Create a directory named XDM.App.Host at the same level as xdm-app executable
+2. Copy binary of XDM.App.Host to that directory
+3. Linux only - create a file named source_pkg at the same level as xdm-app executable and set its content to deb/rpm/tar.xz for Ubuntu/Fedora/Arch
+4. Linux only - copy xdm-logo.svg to the same level as xdm-app executable

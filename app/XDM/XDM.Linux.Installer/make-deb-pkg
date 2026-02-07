@@ -1,0 +1,63 @@
+#!/bin/bash
+
+#Please place all the published files under ./binary-source directory
+
+VERSION=8.0.25
+SRC_DIR=binary-source
+
+rm -rf "xdman_gtk_${VERSION}_amd64"
+rm -f "xdman_gtk_${VERSION}_amd64.deb"
+
+mkdir -p "xdman_gtk_${VERSION}_amd64/DEBIAN"
+mkdir -p "xdman_gtk_${VERSION}_amd64/opt/xdman"
+mkdir -p "xdman_gtk_${VERSION}_amd64/usr/bin"
+mkdir -p "xdman_gtk_${VERSION}_amd64/usr/share/applications"
+
+cp -r "${SRC_DIR}/." "xdman_gtk_${VERSION}_amd64/opt/xdman"
+
+touch "xdman_gtk_${VERSION}_amd64/DEBIAN/control"
+touch "xdman_gtk_${VERSION}_amd64/opt/xdman/xdm-app.desktop"
+touch "xdman_gtk_${VERSION}_amd64/usr/bin/xdman"
+
+cat <<EOF > "xdman_gtk_${VERSION}_amd64/DEBIAN/control"
+Package: xdman
+Version: ${VERSION}
+Architecture: amd64
+Depends: libgtk-3-0 (>= 3.22.11)
+Recommends: ffmpeg
+Maintainer: Subhra Das Gupta
+Description: Open source download accelerator and video downloader.
+ Open source download accelerator and video downloader.
+EOF
+
+cat <<EOF > "xdman_gtk_${VERSION}_amd64/opt/xdman/xdm-app.desktop"
+[Desktop Entry]
+Version=1.0
+Encoding=UTF-8
+Exec=env GTK_USE_PORTAL=1 /opt/xdman/xdm-app %U
+Type=Application
+Terminal=false
+Name=Xtreme Download Manager
+Comment=Xtreme Download Manager
+Categories=Network;
+Icon=/opt/xdman/xdm-logo.svg
+MimeType=application/xdm-app;x-scheme-handler/xdm-app;
+StartupNotify=true
+EOF
+
+cat <<EOF > "xdman_gtk_${VERSION}_amd64/usr/bin/xdman"
+#!/bin/bash
+export GTK_USE_PORTAL=1
+/opt/xdman/xdm-app \$@
+EOF
+
+cat <<EOF > "xdman_gtk_${VERSION}_amd64/opt/xdman/source_pkg.txt"
+xdman_gtk|.deb
+EOF
+
+cp "xdman_gtk_${VERSION}_amd64/opt/xdman/xdm-app.desktop" "xdman_gtk_${VERSION}_amd64/usr/share/applications"
+
+chmod 755 "xdman_gtk_${VERSION}_amd64/usr/bin/xdman"
+chmod 755 "xdman_gtk_${VERSION}_amd64/opt/xdman/xdm-app"
+
+dpkg-deb --build --root-owner-group -Z xz "xdman_gtk_${VERSION}_amd64"

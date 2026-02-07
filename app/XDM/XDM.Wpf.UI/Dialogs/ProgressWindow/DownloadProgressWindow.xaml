@@ -1,0 +1,64 @@
+﻿<Window x:Class="XDM.Wpf.UI.Dialogs.ProgressWindow.DownloadProgressWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:XDM.Wpf.UI.Dialogs.ProgressWindow"
+        mc:Ignorable="d"
+        Title="DownloadProgressWindow" Height="280" Width="450" Closing="Window_Closing"
+         WindowStartupLocation="CenterScreen" Loaded="Window_Loaded">
+    <DockPanel>
+        <Grid DockPanel.Dock="Bottom" Margin="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition Width="auto"/>
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="0" Name="BtnHide" Margin="0" Padding="20,5" Content="{StaticResource DWN_HIDE}" Click="BtnHide_Click"/>
+            <Button Grid.Column="2" Name="BtnStop" Margin="0" Padding="20,5" Content="{StaticResource BTN_STOP_PROCESSING}" Click="BtnStop_Click"/>
+            <Button Grid.Column="3" Name="BtnPause" Margin="10,0,0,0" Padding="15,5" Content="{StaticResource MENU_PAUSE}" Click="BtnPause_Click"/>
+        </Grid>
+        <Border Background="{StaticResource ListViewBackcolor}" Padding="10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Path Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" 
+                  VerticalAlignment="Center" 
+                  Margin="10" 
+                  StrokeThickness="0" 
+                  Stretch="Uniform" 
+                  Fill="{StaticResource ToolButtonMouseDisabledForecolor}"
+                  Width="32" Height="32"  
+                  Stroke="{StaticResource ToolButtonMouseDisabledForecolor}"
+                  Data="{StaticResource ri-file-download-line}"
+                  SnapsToDevicePixels="True"/>
+                <TextBlock Grid.Row="0" Grid.Column="1" x:Name="TxtFileName" Grid.ColumnSpan="3"
+                           Text="" Margin="10,10,0,0" 
+                           FontSize="16" TextTrimming="CharacterEllipsis"/>
+                <TextBlock Grid.Row="1" Grid.Column="1" x:Name="TxtUrl" Text="---" Margin="10,0" Grid.ColumnSpan="3"
+                           Foreground="{StaticResource ToolButtonMouseDisabledForecolor}" TextTrimming="CharacterEllipsis"/>
+                <TextBlock Grid.Row="3" Grid.Column="1" x:Name="TxtStatus" Text="---" Margin="10,5" />
+                <TextBlock Grid.Row="3" Grid.Column="2" x:Name="TxtSpeed" Text="---" Margin="10,5" HorizontalAlignment="Right" />
+                <ProgressBar Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" x:Name="PrgProgress" MinHeight="5" Margin="10,5"  />
+                <TextBlock Grid.Row="5" Grid.Column="1" x:Name="TxtETA" Text="" Margin="10,5" />
+                <TextBlock Grid.Row="5" Grid.Column="2" x:Name="TxtSpeedLimit" Text="{StaticResource MSG_NO_SPEED_LIMIT}" 
+                           Margin="10,5"  HorizontalAlignment="Right"
+                           Foreground="{StaticResource HyperlinkForecolor}"
+                           Cursor="Hand" MouseDown="TxtSpeedLimit_MouseDown"/>
+            </Grid>
+        </Border>
+    </DockPanel>
+</Window>

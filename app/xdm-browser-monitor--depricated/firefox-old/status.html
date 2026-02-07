@@ -1,0 +1,52 @@
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <script src="popup.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body style="min-width: 400px; font-family:helvetica,arial,courier; z-index: 100;">
+  <div style="font-size: 18px; border-bottom: 1px solid lightgray; padding: 15px; ">
+    XDM Browser Monitor
+  </div>
+  <div>
+    <div id="content">
+      <div id="list" style="min-height: 200px; max-height: 400px; overflow: hidden; overflow-y: auto;">
+
+        <table id="table"
+          style="overflow-y: auto;background: white; margin: 0px; padding: 0px;font-family:helvetica,arial,courier;">
+
+        </table>
+
+      </div>
+      <div style="padding: 5px; display: flex;">
+        <button id="format" style="flex: 1;" class="flat-button">More formats</button>
+        <div style="padding: 5px;">
+          <div style="width: 1px; background: rgb(230,230,230); height: 20px;">
+
+          </div>
+        </div>
+        <button id="clear" style="flex: 1;" class="flat-button">Clear items</button>
+      </div>
+    </div>
+  </div>
+  <div
+    style="font-size: 14px; padding-top: 5px; background-color: rgb(240,240,240);border-top: 1px solid rgb(200,200,200);">
+    <div>
+      <div
+        style="display: flex; justify-content: space-between; padding: 20px; padding-top: 10px; padding-bottom: 10px;">
+        <!--span>Browser monitoring</span-->
+
+        <label class="container">Browser monitoring
+          <input type="checkbox" id="chk">
+          <span class="checkmark"></span>
+        </label>
+
+        <!--input type="checkbox" id="chk" /-->
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

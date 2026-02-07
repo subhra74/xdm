@@ -1,0 +1,73 @@
+<html>
+
+<head>
+    <script>
+        var RELEASE_URL="https://github.com/subhra74/xdm";
+        var currentVersion = undefined
+        var rx = /\?v=(\d+\.\d+\.\d+)/;
+        var str = window.location.search;
+        var match = rx.exec(str);
+        if (match != null) {
+            currentVersion = match[1];
+        }
+        
+        var xmlhttp = new XMLHttpRequest();
+        var url = "https://api.github.com/repos/subhra74/xdm/releases/latest";
+
+        xmlhttp.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                var obj = JSON.parse(this.responseText);
+                checkVersion(obj);
+            }
+        };
+        xmlhttp.open("GET", url, true);
+        xmlhttp.send();
+
+        function checkVersion(obj) {
+            console.log(obj.tag_name+" "+currentVersion);
+            var arr1 = obj.tag_name.split(/\./)
+            var arr2 = currentVersion.split(/\./)
+
+            console.log(JSON.stringify(arr1)+" "+JSON.stringify(arr2));
+
+            var major1 = parseInt(arr1[0],10);
+            var major2 = parseInt(arr2[0],10);
+
+            var minor1 = parseInt(arr1[1],10);
+            var minor2 = parseInt(arr2[1],10);
+
+            var build1 = parseInt(arr1[2],10);
+            var build2 = parseInt(arr2[2],10);
+
+            console.log(major1+" "+minor1+" "+build1);
+            console.log(major2+" "+minor2+" "+build2);
+
+            var hasNewVersion = false
+
+            if (major1 === major2) {
+                if (minor1 === minor2) {
+                    if (build1 > build2) {
+                        hasNewVersion = true
+                    }
+                } else if (minor1 > minor2) {
+                    hasNewVersion = true
+                }
+            } else if (major1 > major2) {
+                hasNewVersion = true
+            }
+
+            if(!hasNewVersion){
+                document.getElementById("ver").innerHTML = "App is up to date";
+            }else{
+                document.getElementById("ver").innerHTML = "A newer version is available, download it <a href='" + RELEASE_URL + "'>here</a>";;
+            }
+        }
+
+    </script>
+</head>
+
+<body>
+    <div id="ver"></div>
+</body>
+
+</html>

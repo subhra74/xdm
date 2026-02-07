@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Encoding=UTF-8
+Exec=/opt/xdman/xdm-app %U
+Type=Application
+Terminal=false
+Exec="/opt/xdman/xdm-app" -m
+Name=Xtreme Download Manager
+Comment=Xtreme Download Manager
+Categories=Network;
+Icon="/opt/xdman/xdm-logo.svg"

@@ -1,0 +1,40 @@
+{
+  "manifest_version": 2,
+  "minimum_chrome_version": "18.0",
+  "name": "XDM Browser Monitor",
+  "description": "XDM integration module for Firefox Quantum",
+  "version": "2.2",
+  "icons": {
+    "48": "icon.png"
+  },
+  "background": {
+    "page": "background.html"
+  },
+  "browser_action": {
+    "default_icon": "icon.png"
+  },
+  "permissions": [
+    "tabs",
+    "cookies",
+    "contextMenus",
+    "activeTab",
+    "webRequest",
+    "webRequestBlocking",
+    "nativeMessaging",
+    "*://*/*"
+  ],
+  "applications": {
+    "gecko": {
+      "id": "browser-mon@xdman.sourceforge.net"
+    }
+  },
+  "commands": {
+    "toggle-monitoring": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+E",
+        "mac": "Command+Shift+E"
+      },
+      "description": "Toggle monitoring"
+    }
+  }
+}
