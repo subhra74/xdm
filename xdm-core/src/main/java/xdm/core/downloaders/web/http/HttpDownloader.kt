@@ -44,7 +44,7 @@ fun makeContext(task: HttpDownloadTaskInfo, host: DownloadHost): HttpTaskContext
     tempFolder = task.defaultDownloadFolder
 )
 
-class HttpChunkController : ChunkController {
+class HttpDownloaderTask : ChunkController {
     private val context: HttpTaskContext
     private val configDir: String
     private val prgInfo: DownloadStatusInfo.ProgressInfo
@@ -362,7 +362,7 @@ class HttpChunkController : ChunkController {
 
     private fun startChunk(id: Long) {
         Thread {
-            val retriever = ChunkRetriever(id, context, this)
+            val retriever = HttpChunkRetriever(id, context, this)
             retriever.retrieveChunk()
         }.start()
     }

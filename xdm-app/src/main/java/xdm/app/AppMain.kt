@@ -55,13 +55,16 @@ object AppMain {
         val appDB = AppDB(configDir)
         val taskDB = TaskInfoDB(configDir)
 
-        Thread {
-            while (true) {
-                Thread.sleep(15000)
-                //Logger.info("XDM", "Triggering GC")
-                System.gc()
-            }
-        }.start()
+        if(!args.contains("--no-gc")){
+            Logger.info("Registering periodic GC")
+            Thread {
+                while (true) {
+                    Thread.sleep(15000)
+                    //Logger.info("XDM", "Triggering GC")
+                    System.gc()
+                }
+            }.start()
+        }
 
         AppContext.apply {
             db = appDB

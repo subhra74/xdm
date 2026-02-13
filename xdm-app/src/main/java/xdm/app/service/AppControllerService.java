@@ -2,6 +2,7 @@ package xdm.app.service;
 
 import xdm.app.data.DbRecord;
 import xdm.app.models.BrowserDownloadInfo;
+import xdm.core.downloaders.HttpDownloadTaskInfo;
 
 public interface AppControllerService {
   void run(String[] args);
@@ -26,7 +27,7 @@ public interface AppControllerService {
 
   void showErrorInProgressWindow(long id, String errorMessage);
 
-  void addDownload(final BrowserDownloadInfo metadata);
+  void addDownload(final HttpDownloadTaskInfo metadata);
 
   void addVideoDownload(long vid, String fileName, long fileSize, String fileType);
 }

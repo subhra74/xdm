@@ -6,7 +6,8 @@ import xdm.app.constants.DownloadEntryState;
 import xdm.app.data.DbRecord;
 import xdm.app.data.RecordStatus;
 import xdm.app.ui.screens.AppWindow;
-import xdm.core.util.MetadataStore;
+// import xdm.core.util.MetadataStore;
+import xdm.core.downloaders.DownloadType;
 import xdman.*;
 import xdman.constants.MessageBoxResult;
 // import xdman.downloaders.metadata.DashMetadata;
@@ -28,39 +29,47 @@ import java.util.List;
 
 public class AppMenuHandler {
   public static void openFile(DbRecord ent, Window window) {
-    if (ent != null && ent.getStatus() == RecordStatus.FINISHED) {
-      Logger.log("Opening file for id: " + ent.getId());
-      var md = MetadataStore.get(ent.getId());
-      if (md != null) {
-        try {
-          XDMUtils.openFile(md.getFileName(), md.getFolder());
-        } catch (FileNotFoundException e) {
-          Logger.log(e);
-          MessageBox.show(
-              window,
-              StringResource.get("ERR_MSG_FILE_NOT_FOUND"),
-              StringResource.get("ERR_MSG_FILE_NOT_FOUND_MSG"));
-        } catch (Exception e) {
-          Logger.log(e);
-        }
-      }
-    }
+    //    if (ent != null && ent.getStatus() == RecordStatus.FINISHED) {
+    //      Logger.log("Opening file for id: " + ent.getId());
+    //      var md = MetadataStore.get(ent.getId());
+    //      if (md != null) {
+    //        try {
+    //          XDMUtils.openFile(md.getFileName(), md.getFolder());
+    //        } catch (FileNotFoundException e) {
+    //          Logger.log(e);
+    //          MessageBox.show(
+    //              window,
+    //              StringResource.get("ERR_MSG_FILE_NOT_FOUND"),
+    //              StringResource.get("ERR_MSG_FILE_NOT_FOUND_MSG"));
+    //        } catch (Exception e) {
+    //          Logger.log(e);
+    //        }
+    //      }
+    //    }
   }
 
   public static void openFolder(DbRecord ent, Window window) {
     if (ent.getStatus() == RecordStatus.FINISHED) {
       Logger.log("Opening folder for id: " + ent.getId());
-      var md =
-          AppContext.INSTANCE
-              .getTaskInfoDB()
-              .getHttpTask(ent.getId()); // MetadataStore.get(ent.getId());
-      if (md != null) {
+      String folder = null;
+      String fileName = null;
+      if (ent.getDownloadType() == DownloadType.Http) {
+        var md = AppContext.INSTANCE.getTaskInfoDB().getHttpTask(ent.getId());
+        folder =
+            Optional.ofNullable(md.getUserSelectedDownloadFolder())
+                .orElse(md.getDefaultDownloadFolder());
+        fileName = md.getFileName();
+      } else if (ent.getDownloadType() == DownloadType.Hls) {
+        var md = AppContext.INSTANCE.getTaskInfoDB().getHlsTask(ent.getId());
+        folder =
+            Optional.ofNullable(md.getUserSelectedDownloadFolder())
+                .orElse(md.getDefaultDownloadFolder());
+        fileName = md.getFileName();
+      }
+      if (folder != null) {
         try {
-          String folder =
-              Optional.ofNullable(md.getUserSelectedDownloadFolder())
-                  .orElse(md.getDefaultDownloadFolder());
-          Logger.log("Folder: " + folder + " File: " + md.getFileName());
-          XDMUtils.openFolder(md.getFileName(), folder);
+          Logger.log("Folder: " + folder + " File: " + fileName);
+          XDMUtils.openFolder(fileName, folder);
         } catch (FileNotFoundException e) {
           Logger.log(e);
           MessageBox.show(

@@ -5,12 +5,11 @@ import xdm.app.models.DetectedVideoInfo
 import xdm.app.models.StreamingVideoDisplayInfo
 import xdm.app.service.VideoTracker
 import xdm.core.downloaders.HlsDownloadTaskInfo
-import xdm.core.downloaders.hls.HlsSource
-import xdm.core.downloaders.http.HttpSource
+import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.util.FileUtils
 import xdm.core.util.XDMUtils
-import java.time.LocalDateTime
-import java.util.stream.Stream
+import xdm.core.util.getContentLength
+import xdm.core.util.getHeader
 
 class VideoTrackerImpl : VideoTracker {
     override fun addVideoDownload(videoId: Long) {
@@ -20,10 +19,9 @@ class VideoTrackerImpl : VideoTracker {
         httpVideoList[videoId]?.let {
             //TODO: Check for link refresh
             val (source, _) = it
-            name = source.fileName
-            size = source.fileSize
-            contentType = source.contentType
-            AppContext.app.addVideoDownload(videoId, name, size, contentType)
+            size = getContentLength(source.headers) ?: -1
+            contentType = getHeader("Content-Type", source.headers)
+            AppContext.app.addVideoDownload(videoId, source.fileName, size, contentType)
             return
         }
 
@@ -46,7 +44,7 @@ class VideoTrackerImpl : VideoTracker {
         }
     }
 
-    override fun addVideoHttp(items: List<Pair<HttpSource, StreamingVideoDisplayInfo>>) {
+    override fun addVideoHttp(items: List<Pair<HttpDownloadTaskInfo, StreamingVideoDisplayInfo>>) {
         synchronized(this) {
             for (item in items) {
                 httpVideoList[item.first.id] = item
@@ -95,7 +93,7 @@ class VideoTrackerImpl : VideoTracker {
         }
     }
 
-    override fun getHttpVideo(videoId: Long): HttpSource? {
+    override fun getHttpVideo(videoId: Long): HttpDownloadTaskInfo? {
         synchronized(this) {
             this.httpVideoList[videoId]?.let {
                 return it.first
@@ -114,7 +112,7 @@ class VideoTrackerImpl : VideoTracker {
     }
 
     private val hlsVideoList = LinkedHashMap<Long, Pair<HlsDownloadTaskInfo, StreamingVideoDisplayInfo>>()
-    private val httpVideoList = LinkedHashMap<Long, Pair<HttpSource, StreamingVideoDisplayInfo>>()
+    private val httpVideoList = LinkedHashMap<Long, Pair<HttpDownloadTaskInfo, StreamingVideoDisplayInfo>>()
     private fun generateUpdatedFileName(oldName: String, newName: String): String {
         val ext: String? = XDMUtils.getExtension(oldName)
         var newFileName = FileUtils.sanitizeFileName(newName)

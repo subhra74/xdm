@@ -47,7 +47,7 @@ class NewDownloadWindow : JDialog() {
             rowWeights = doubleArrayOf(0.0, 0.0, 0.0, 1.0, 0.0, Double.MIN_VALUE)
         }
         contentPane.layout = gridBagLayout
-        contentPane.background = UIManager.getColor("Table.background")
+        //contentPane.background = UIManager.getColor("Table.background")
 
         lbAddress = JLabel(StringResource.get("ND_ADDRESS"))
         lbAddress.horizontalAlignment = SwingConstants.RIGHT
@@ -156,6 +156,7 @@ class NewDownloadWindow : JDialog() {
         contentPane.add(lblIgnore, gbcLblIgnore)
 
         val panel = JPanel()
+        panel.background = UIManager.getColor("Table.background")
         panel.border = EmptyBorder(10, 15, 10, 15)
         val gcPanel = GridBagConstraints().apply {
             weightx = 1.0
@@ -280,7 +281,8 @@ class NewDownloadWindow : JDialog() {
             defaultDownloadFolder = cmbSaveIn.selectedItem?.toString() ?: AppContext.defaultDownloadFolder,
             userSelectedDownloadFolder = null,
             maxPiece = 8,
-            authInfo = null
+            authInfo = null,
+            knownFileSize = taskInfo?.knownFileSize
         )
 //        if (taskInfo == null) {
 //            taskInfo =
@@ -393,7 +395,7 @@ class NewDownloadWindow : JDialog() {
             this.txtUrl.text = taskInfo.url
             this.txtFileName.text = taskInfo.fileName
             this.originalFileName = taskInfo.fileName
-            this.lblFileInfo.text = getContentLength(taskInfo.headers)?.let {
+            this.lblFileInfo.text = taskInfo.knownFileSize?.let {
                 FormatUtilities.formatSize(it.toDouble())
             } ?: "---"
         }

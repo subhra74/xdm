@@ -74,12 +74,12 @@ public class AppControllerServiceImpl implements AppControllerService {
   @Override
   public void showErrorInProgressWindow(long id, String errorMessage) {}
 
-  public void addDownload(final BrowserDownloadInfo downloadInfo) {
+  public void addDownload(final HttpDownloadTaskInfo downloadInfo) {
     // TODO: Check if link refresh is searching for download
     // TODO: Check if download window needs to be shown, or directly start the download
     SwingUtilities.invokeLater(
         () -> {
-          showNewDownloadWindowInternal(BrowserIntegration.toHttpSource(downloadInfo));
+          showNewDownloadWindowInternal(downloadInfo);
         });
   }
 

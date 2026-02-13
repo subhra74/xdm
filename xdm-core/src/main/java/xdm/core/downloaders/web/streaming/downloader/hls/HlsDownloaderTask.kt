@@ -6,7 +6,7 @@ import xdm.core.downloaders.web.http.loadHlsState
 import xdm.core.downloaders.web.http.saveState
 import xdm.core.downloaders.web.streaming.downloader.HlsTaskContext
 import xdm.core.downloaders.web.streaming.downloader.StreamingChunk
-import xdm.core.downloaders.web.streaming.downloader.StreamingDownloader
+import xdm.core.downloaders.web.streaming.downloader.StreamingDownloaderTask
 import xdm.core.downloaders.web.streaming.manifest.hls.HlsParser
 import xdm.core.downloaders.web.streaming.manifest.hls.HlsPlaylist
 import xdm.core.media.muxer.Muxer
@@ -44,7 +44,7 @@ fun loadContext(
     host: DownloadHost,
 ) = loadHlsState(id = id, configDir = configDir, http = http, host = host).getOrThrow()
 
-class HlsDownloader : StreamingDownloader {
+class HlsDownloaderTask : StreamingDownloaderTask {
 
     constructor(
         id: Long,

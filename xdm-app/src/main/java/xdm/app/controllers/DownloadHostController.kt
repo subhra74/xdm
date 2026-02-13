@@ -5,21 +5,15 @@ import xdm.app.data.AppDB
 import xdm.app.data.DbRecord
 import xdm.app.data.RecordStatus
 import xdm.core.downloaders.*
-import xdm.core.downloaders.web.http.Chunk
-import xdm.core.downloaders.web.http.HttpChunkController
-import xdm.core.downloaders.web.http.HttpTaskContext
-import xdm.core.downloaders.web.streaming.downloader.hls.HlsDownloader
+import xdm.core.downloaders.web.http.HttpDownloaderTask
+import xdm.core.downloaders.web.streaming.downloader.hls.HlsDownloaderTask
 import xdm.core.media.muxer.impl.FFmpegMuxer
 import xdm.core.network.http.impl.HttpClientImpl
-import xdm.core.util.CoreUtils
 import xdm.core.util.FileUtils
 import xdm.core.util.Logger
 import xdm.core.util.getFileName
 import java.io.File
-import java.nio.file.Files
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicLong
 
 class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val configDir: String) {
     private val activeSessions = ConcurrentHashMap<Long, DownloaderTask>()
@@ -207,11 +201,11 @@ class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, priva
             appDB.getById(id)?.let {
                 val controller: DownloaderTask
                 when (it.downloadType) {
-                    DownloadType.Http -> controller = HttpChunkController(
+                    DownloadType.Http -> controller = HttpDownloaderTask(
                         id, configDir, HttpClientImpl(100), downloadHost,
                     )
 
-                    DownloadType.Hls -> controller = HlsDownloader(
+                    DownloadType.Hls -> controller = HlsDownloaderTask(
                         id = id,
                         configDir = AppContext.configDir,
                         http = HttpClientImpl(100),
@@ -238,7 +232,7 @@ class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, priva
 
     fun addHttpDownload(task: HttpDownloadTaskInfo) {
         taskInfoDB.saveHttpTask(task)
-        val controller = HttpChunkController(
+        val controller = HttpDownloaderTask(
             task, downloadHost,
             configDir
         )
@@ -265,9 +259,9 @@ class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, priva
     fun addVideoDownload(videoId: Long, fileName: String, folder: String?, autoSelectFolder: Boolean) {
         AppContext.videoTracker.getHttpVideo(videoId)?.let { source ->
             source.fileName = fileName
-            source.isAutoSelectFolder = (folder == null)
-            source.folder = folder
-            //downloader.startDownload(source, true, -1)
+            source.autoCategorize = (folder == null)
+            source.userSelectedDownloadFolder = folder
+            addHttpDownload(source);
         }
 
         AppContext.videoTracker.getHlsVideo(videoId)?.let { source ->
@@ -282,7 +276,7 @@ class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, priva
     private fun addHlsDownload(task: HlsDownloadTaskInfo) {
         task.tempDir = AppContext.appConfig.tempDir + File.separator + task.id
         taskInfoDB.saveHlsTask(task)
-        val controller = HlsDownloader(
+        val controller = HlsDownloaderTask(
             taskInfo = task,
             http = HttpClientImpl(100),
             muxer = FFmpegMuxer(),

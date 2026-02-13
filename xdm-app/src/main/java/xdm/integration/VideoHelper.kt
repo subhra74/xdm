@@ -104,14 +104,25 @@ object VideoHelper {
                 return
             }
         }
-        val http = HttpSource().apply {
-            this.id = UniqueID.get()
-            this.url = msg.url
-            this.headers = HeaderCollection(msg.requestHeaders)
-            this.fileName = getFileName(msg)
-            this.cookies = msg.cookie
-            this.fileSize = len
-        }
+
+        val respHeaders =
+            msg.responseHeaders?.map { entry -> entry.key to entry.value.map { it.value } }?.associate { it }
+        val http = HttpDownloadTaskInfo(
+            id = UniqueID.get(),
+            url = msg.url,
+            fileName = getFileName(msg),
+            respectFileName = true,
+            cookie = msg.cookie,
+            headers = msg.requestHeaders,
+            origin = getHeader("Referer", msg.requestHeaders),
+            autoCategorize = true,
+            defaultDownloadFolder = AppContext.defaultDownloadFolder,
+            maxPiece = 8,
+            userSelectedDownloadFolder = null,
+            authInfo = null,
+            knownFileSize = msg.fileSize ?: getContentLength(respHeaders)
+        )
+
         AppContext.videoTracker.addVideoHttp(
             listOf(
                 Pair(

@@ -18,7 +18,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
-abstract class StreamingDownloader(
+abstract class StreamingDownloaderTask(
     protected val context: StreamingTaskContext,
     protected val configDir: String,
     private val muxer: Muxer,
@@ -278,7 +278,7 @@ abstract class StreamingDownloader(
         }
     }
 
-    private fun createPieceGrabber(pc: StreamingChunk, latch: CountDownLatch) = PieceGrabber(
+    private fun createPieceGrabber(pc: StreamingChunk, latch: CountDownLatch) = StreamingChunkRetriever(
         piece = pc,
         httpClient = context.httpClient,
         stopFlag = context.stopFlag,

@@ -11,11 +11,18 @@ import kotlin.math.min
 
 const val MAX_RETRY = 10
 
-class ChunkRetriever(
+class HttpChunkRetriever(
     private val id: Long,
     private val context: HttpTaskContext,
     private val controller: ChunkController
 ) {
+    val buf: ByteArray
+
+    init {
+        Logger.info("$id Allocating buffer")
+        buf = ByteArray(256 * 1024)
+    }
+
     fun retrieveChunk() {
         var retryCount = 0
         var maxByteRange: Long? = null
@@ -115,12 +122,10 @@ class ChunkRetriever(
     private fun copyDataOrRetry(res: HttpResponse, maxByteRange: Long?): Boolean {
         //Return true if retry is needed else false
         val copyResult =
-            if (res.contentLength != null) {
+            if (res.contentLength != null && res.contentLength!! > 0) {
                 copyDataWithLength(res, maxByteRange!!)
             } else {
-                copyDataWithoutLength(
-                    res
-                )
+                copyDataWithoutLength(res)
             }
         return when (copyResult) {
             CopyResult.Done -> {
@@ -137,7 +142,7 @@ class ChunkRetriever(
             CopyResult.Retry -> {
                 if (res.contentLength == null) {
                     // No point in retry if content length is absent as download is most likely resume is not supported
-                    chunkFailed(DownloadError.NetworkError)
+                    chunkFailed(DownloadError.ResumeNotSupported)
                     false
                 } else {
                     Logger.info("XDM", "Retrying download for chunk $id from copy data")
@@ -170,10 +175,8 @@ class ChunkRetriever(
             Logger.info("Chunk cancelled: $id")
             return CopyResult.Cancel
         }
-        val buf = ByteArray(256 * 1024)
         var rem: Long = 0
-
-        var fileHandle: RandomAccessFile? = null
+        val fileHandle: RandomAccessFile?
 
         try {
             fileHandle = openFileHandle() ?: run {

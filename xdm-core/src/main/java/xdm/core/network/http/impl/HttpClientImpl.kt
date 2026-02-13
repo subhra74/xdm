@@ -1,9 +1,6 @@
 package xdm.core.network.http.impl
 
-import okhttp3.ConnectionPool
-import okhttp3.Dispatcher
-import okhttp3.OkHttpClient
-import okhttp3.Request
+import okhttp3.*
 import okio.Buffer
 import xdm.core.network.http.*
 import xdm.core.util.Logger
@@ -39,11 +36,13 @@ class HttpClientImpl(poolSize: Int) : PoolingHttpClient {
     }
 
     private val connectionPool: ConnectionPool = ConnectionPool(poolSize, 5, TimeUnit.SECONDS)
-    private val client: OkHttpClient = OkHttpClient.Builder().dispatcher(dispatcher).connectionPool(connectionPool)
-        .connectTimeout(30, TimeUnit.SECONDS).readTimeout(0, TimeUnit.SECONDS).retryOnConnectionFailure(false)
-        .sslSocketFactory(sslContext.socketFactory, trustAllCerts[0] as X509TrustManager)
-        .hostnameVerifier({ a, b -> true })
-        .build()
+    private val client: OkHttpClient =
+        OkHttpClient.Builder().dispatcher(dispatcher).connectionPool(connectionPool)
+            .protocols(listOf(Protocol.HTTP_1_1))
+            .connectTimeout(30, TimeUnit.SECONDS).readTimeout(0, TimeUnit.SECONDS).retryOnConnectionFailure(false)
+            .sslSocketFactory(sslContext.socketFactory, trustAllCerts[0] as X509TrustManager)
+            .hostnameVerifier({ a, b -> true })
+            .build()
 
     override fun close() {
         client.dispatcher.cancelAll()
@@ -101,7 +100,7 @@ class HttpClientImpl(poolSize: Int) : PoolingHttpClient {
                 contentDisposition = response.headers.get("Content-Disposition"),
                 statusCode = response.code,
                 statusMessage = response.message,
-                contentLength = body.contentLength(),
+                contentLength = if (body.contentLength() > 0) body.contentLength() else null,
                 contentType = body.contentType()?.type,
                 lastModified = LocalDateTime.now(),
                 inputStream = inputStreamBody,

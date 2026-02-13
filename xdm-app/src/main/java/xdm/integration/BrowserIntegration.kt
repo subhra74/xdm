@@ -13,8 +13,6 @@ import xdm.core.CONTENT_TYPE
 import xdm.core.REFERER
 import xdm.core.USER_AGENT
 import xdm.core.downloaders.HttpDownloadTaskInfo
-import xdm.core.downloaders.http.HttpSource
-import xdm.core.network.http.HeaderCollection
 import xdm.core.util.*
 import java.nio.charset.StandardCharsets
 import java.util.*
@@ -98,7 +96,7 @@ object BrowserIntegration {
             }
             removeBlockedHeaders(extMsg)
             extMsg.url?.let {
-                AppContext.app.addDownload(toBrowserDownloadInfo(extMsg))
+                AppContext.app.addDownload(toHttpSource(extMsg))
             }
         }
     }
@@ -141,13 +139,13 @@ object BrowserIntegration {
         msg.requestHeaders.putAll(filteredHeaders)
     }
 
-    @JvmStatic
-    fun toHttpSource(msg: BrowserDownloadInfo?): HttpDownloadTaskInfo? {
-        if (msg == null) return null
+    private fun toHttpSource(msg: ExtensionMessage): HttpDownloadTaskInfo {
+        val respHeaders =
+            msg.responseHeaders?.map { entry -> entry.key to entry.value.map { it.value } }?.associate { it }
         return HttpDownloadTaskInfo(
             id = CoreUtils.uniqueId(),
-            url = msg.url,
-            fileName = FileUtils.sanitizeFileName(msg.fileName ?: FileUtils.getFileName(msg.url)),
+            url = msg.url!!,
+            fileName = FileUtils.sanitizeFileName(msg.file ?: FileUtils.getFileName(msg.url)),
             respectFileName = false,
             cookie = msg.cookie,
             headers = msg.requestHeaders,
@@ -156,27 +154,47 @@ object BrowserIntegration {
             defaultDownloadFolder = AppContext.defaultDownloadFolder,
             userSelectedDownloadFolder = null,
             maxPiece = 8,
-            authInfo = null
+            authInfo = null,
+            knownFileSize = msg.fileSize ?: getContentLength(respHeaders)
         )
     }
 
-    private fun toBrowserDownloadInfo(msg: ExtensionMessage): BrowserDownloadInfo {
-        return BrowserDownloadInfo(UniqueID.get(), msg.url!!).apply {
-            fileName = FileUtils.sanitizeFileName(msg.file ?: FileUtils.getFileName(msg.url))
-            requestHeaders = msg.requestHeaders
-            responseHeaders =
-                msg.responseHeaders?.map { entry -> entry.key to entry.value.map { it.value } }?.associate { it }
-            fileName = msg.file
-            cookie = msg.cookie
-            fileSize = msg.fileSize ?: getContentLength(responseHeaders)
-            httpMethod = msg.method
-            userAgent = msg.userAgent ?: getHeader(USER_AGENT, requestHeaders)
-            tabUrl = msg.tabUrl
-            referer = msg.referer ?: getHeader(REFERER, requestHeaders)
-            mimeType = msg.mimeType ?: getHeader(CONTENT_TYPE, responseHeaders)
-            modifiedDate = getModifiedDate(responseHeaders)
-        }
-    }
+//    @JvmStatic
+//    fun toHttpSource(msg: BrowserDownloadInfo?): HttpDownloadTaskInfo? {
+//        if (msg == null) return null
+//        return HttpDownloadTaskInfo(
+//            id = CoreUtils.uniqueId(),
+//            url = msg.url,
+//            fileName = FileUtils.sanitizeFileName(msg.fileName ?: FileUtils.getFileName(msg.url)),
+//            respectFileName = false,
+//            cookie = msg.cookie,
+//            headers = msg.requestHeaders,
+//            origin = null,
+//            autoCategorize = false,
+//            defaultDownloadFolder = AppContext.defaultDownloadFolder,
+//            userSelectedDownloadFolder = null,
+//            maxPiece = 8,
+//            authInfo = null
+//        )
+//    }
+//
+//    private fun toBrowserDownloadInfo(msg: ExtensionMessage): BrowserDownloadInfo {
+//        return BrowserDownloadInfo(UniqueID.get(), msg.url!!).apply {
+//            fileName = FileUtils.sanitizeFileName(msg.file ?: FileUtils.getFileName(msg.url))
+//            requestHeaders = msg.requestHeaders
+//            responseHeaders =
+//                msg.responseHeaders?.map { entry -> entry.key to entry.value.map { it.value } }?.associate { it }
+//            fileName = msg.file
+//            cookie = msg.cookie
+//            fileSize = msg.fileSize ?: getContentLength(responseHeaders)
+//            httpMethod = msg.method
+//            userAgent = msg.userAgent ?: getHeader(USER_AGENT, requestHeaders)
+//            tabUrl = msg.tabUrl
+//            referer = msg.referer ?: getHeader(REFERER, requestHeaders)
+//            mimeType = msg.mimeType ?: getHeader(CONTENT_TYPE, responseHeaders)
+//            modifiedDate = getModifiedDate(responseHeaders)
+//        }
+//    }
 }
 
 @Serializable

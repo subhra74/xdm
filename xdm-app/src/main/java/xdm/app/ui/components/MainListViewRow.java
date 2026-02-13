@@ -66,7 +66,7 @@ public class MainListViewRow implements TableCellRenderer, TableCellEditor {
     if (model != null) { // Update when cell editor is active
       model.addTableModelListener(
           e -> {
-//            Logger.info("XDM", "Updating editor state");
+            //            Logger.info("XDM", "Updating editor state");
             var r = e.getFirstRow();
             if (r >= table.getRowCount()) {
               return;
@@ -175,10 +175,11 @@ public class MainListViewRow implements TableCellRenderer, TableCellEditor {
     panDetails = new JPanel(new BorderLayout());
     panDetails.setBorder(new EmptyBorder(0, 0, 0, 10));
     prg = new JProgressBar();
-    prg.setPreferredSize(new Dimension(50, 10));
+    prg.setPreferredSize(new Dimension(60, 10));
     prg.setAlignmentY(Component.TOP_ALIGNMENT);
-    lblProgress = new JLabel("Sample text");
+    lblProgress = new JLabel("Downloading 100 %");
     lblProgress.setFont(fnt);
+    //prg.setPreferredSize(new Dimension(lblProgress.getPreferredSize().width + 5, 10));
     panDetails.add(lblProgress);
     panDetails.add(prg, BorderLayout.SOUTH);
     p1.add(panDetails);
@@ -255,10 +256,11 @@ public class MainListViewRow implements TableCellRenderer, TableCellEditor {
     buttonContainer.add(btnOpenFolder);
     buttonContainer.add(openFolderGap);
     // buttonContainer.add(btnOpenFile);
-//    buttonContainer.add(openFileGap);
+    //    buttonContainer.add(openFileGap);
     buttonContainer.add(btnDelete);
-//    buttonContainer.add(Box.createRigidArea(new Dimension(1, 10)));
+    //    buttonContainer.add(Box.createRigidArea(new Dimension(1, 10)));
     buttonContainer.add(btnMenu);
+    // buttonContainer.add(Box.createRigidArea(new Dimension(5, 10)));
 
     p1.add(buttonContainer, BorderLayout.EAST);
     p1.add(panDetails);

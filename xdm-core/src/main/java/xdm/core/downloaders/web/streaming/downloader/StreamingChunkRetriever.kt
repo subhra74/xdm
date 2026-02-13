@@ -5,9 +5,7 @@ import xdm.core.downloaders.web.http.ChunkStatus
 import xdm.core.network.http.HeaderMap
 import xdm.core.network.http.PoolingHttpClient
 import xdm.core.network.http.Range
-import xdm.core.util.FileUtils
 import xdm.core.util.Logger
-import xdm.core.util.XDMUtils
 import xdm.core.util.getFileExtFromUrl
 import java.io.File
 import java.io.IOException
@@ -15,7 +13,7 @@ import java.io.RandomAccessFile
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
-class PieceGrabber(
+class StreamingChunkRetriever(
     private val piece: StreamingChunk,
     private val httpClient: PoolingHttpClient,
     private val stopFlag: AtomicBoolean,

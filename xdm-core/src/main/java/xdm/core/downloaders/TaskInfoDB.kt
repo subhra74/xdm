@@ -18,7 +18,10 @@ class TaskInfoDB(private val configDir: String) {
                 defaultDownloadFolder = r.readUTF(),
                 userSelectedDownloadFolder = null,
                 maxPiece = r.readInt(),
-                authInfo = null
+                authInfo = null,
+                knownFileSize = if (r.readBoolean()) {
+                    r.readLong()
+                } else null,
             )
         }
         return null
@@ -57,6 +60,8 @@ class TaskInfoDB(private val configDir: String) {
             w.writeBoolean(task.autoCategorize)
             w.writeUTF(task.defaultDownloadFolder)
             w.writeInt(task.maxPiece)
+            w.writeBoolean(task.knownFileSize != null)
+            task.knownFileSize?.let { w.writeLong(it) }
         }
     }
 

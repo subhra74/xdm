@@ -40,6 +40,7 @@ data class HttpDownloadTaskInfo(
     var userSelectedDownloadFolder: String?,
     var maxPiece: Int,
     var authInfo: AuthInfo?,
+    val knownFileSize: Long?,
 )
 
 abstract class StreamingDownloadTaskInfo(
