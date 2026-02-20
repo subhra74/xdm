@@ -51,6 +51,31 @@ class TaskInfoDB(private val configDir: String) {
         return null
     }
 
+    fun getDashTask(id: Long): DashDownloadTaskInfo? {
+        AtomicIO.readTransacted("task-$id.info", configDir) { r ->
+            return DashDownloadTaskInfo(
+                id = r.readLong(),
+                url = r.readUTF(),
+                fileName = r.readUTF(),
+                respectFileName = r.readBoolean(),
+                cookie = null,
+                headers = null,
+                origin = null,
+                autoCategorize = r.readBoolean(),
+                defaultDownloadFolder = r.readUTF(),
+                userSelectedDownloadFolder = null,
+                maxPiece = r.readInt(),
+                authInfo = null,
+                tempDir = r.readUTF(),
+                audioSegments = (0..<r.readInt()).map { r.readUTF() }.toList(),
+                videoSegments = (0..<r.readInt()).map { r.readUTF() }.toList(),
+                audioMime = r.readUTF(),
+                videoMime = r.readUTF(),
+            )
+        }
+        return null
+    }
+
     fun saveHttpTask(task: HttpDownloadTaskInfo) {
         AtomicIO.writeTransacted("task-${task.id}.info", configDir) { w ->
             w.writeLong(task.id)
@@ -79,6 +104,29 @@ class TaskInfoDB(private val configDir: String) {
             w.writeBoolean(task.audioOnly)
             w.writeUTF(task.tempDir)
             w.writeBoolean(task.independent)
+        }
+    }
+
+    fun saveDashTask(task: DashDownloadTaskInfo) {
+        AtomicIO.writeTransacted("task-${task.id}.info", configDir) { w ->
+            w.writeLong(task.id)
+            w.writeUTF(task.url)
+            w.writeUTF(task.fileName)
+            w.writeBoolean(task.respectFileName)
+            w.writeBoolean(task.autoCategorize)
+            w.writeUTF(task.defaultDownloadFolder)
+            w.writeInt(task.maxPiece)
+            w.writeUTF(task.tempDir)
+            w.writeInt(task.audioSegments.size)
+            for (seg in task.audioSegments) {
+                w.writeUTF(seg)
+            }
+            w.writeInt(task.videoSegments.size)
+            for (seg in task.videoSegments) {
+                w.writeUTF(seg)
+            }
+            w.writeUTF(task.audioMime)
+            w.writeUTF(task.videoMime)
         }
     }
 }

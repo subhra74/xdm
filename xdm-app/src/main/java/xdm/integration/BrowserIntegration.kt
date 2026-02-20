@@ -23,7 +23,7 @@ object BrowserIntegration {
     private val blockedHeaders = setOf(
         "accept",
         "if",
-        "authorization",
+//        "authorization",
         "proxy",
         "connection",
         "expect",
@@ -48,7 +48,6 @@ object BrowserIntegration {
     }
 
     private fun handleRequest(context: RequestContext) {
-        //Logger.info(BrowserIntegration.javaClass.name, context.requestPath)
         when (context.requestPath) {
             "/download" -> onDownloadMessage(context)
             "/media" -> onMediaMessage(context)

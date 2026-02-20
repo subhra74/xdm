@@ -90,6 +90,39 @@ data class HlsDownloadTaskInfo(
     authInfo
 )
 
+data class DashDownloadTaskInfo(
+    override val id: Long,
+    override var fileName: String,
+    override var tempDir: String,
+    override var respectFileName: Boolean,
+    override var cookie: String?,
+    override var headers: HeaderMap?,
+    override var origin: String?,
+    override var autoCategorize: Boolean,
+    override var defaultDownloadFolder: String,
+    override var userSelectedDownloadFolder: String?,
+    override var maxPiece: Int,
+    override var authInfo: AuthInfo?,
+    var videoSegments: List<String>,
+    var audioSegments: List<String>,
+    var url: String,
+    val audioMime:String,
+    val videoMime:String,
+) : StreamingDownloadTaskInfo(
+    id,
+    fileName,
+    tempDir,
+    respectFileName,
+    cookie,
+    headers,
+    origin,
+    autoCategorize,
+    defaultDownloadFolder,
+    userSelectedDownloadFolder,
+    maxPiece,
+    authInfo
+)
+
 sealed interface DownloadStatusInfo {
     data class InitInfo(
         val id: Long,

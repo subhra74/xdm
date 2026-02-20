@@ -3,10 +3,10 @@ package xdm.core.downloaders.web.streaming.manifest.dash
 import java.util.regex.Matcher
 
 class MatcherResult private constructor() {
-    private var groups: List<String> = ArrayList()
-    private var namedGroups: Map<String, String> = HashMap()
+    private var groups: List<String?> = ArrayList()
+    private var namedGroups: Map<String, String?> = HashMap()
 
-    fun group(index: Int): String {
+    fun group(index: Int): String? {
         return groups[index]
     }
 
@@ -16,10 +16,11 @@ class MatcherResult private constructor() {
 
     companion object {
         fun toMatcherResult(matcher: Matcher): MatcherResult {
-            val groups: MutableList<String> = ArrayList()
-            val namedGroups: MutableMap<String, String> = HashMap()
+            val groups: MutableList<String?> = ArrayList()
+            val namedGroups: MutableMap<String, String?> = HashMap()
             for (i in 0..<matcher.groupCount()) {
-                groups.add(matcher.group(i))
+                val group = matcher.group(i)
+                groups.add(group)
             }
             namedGroups["timedx"] = matcher.group("timedx")
             namedGroups["timedigits"] = matcher.group("timedigits")

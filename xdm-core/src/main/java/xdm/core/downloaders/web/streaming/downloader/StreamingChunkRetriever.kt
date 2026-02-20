@@ -21,6 +21,7 @@ class StreamingChunkRetriever(
     private val cookie: String?,
     private val tempDir: String,
     private val progressCallback: (StreamingChunk, Long) -> Unit,
+    private val fileNameCallback: (StreamingChunk) -> String,
     private val completionCallback: (StreamingChunk) -> Unit,
 ) : Runnable {
     private var fileHandle = AtomicReference<RandomAccessFile?>()
@@ -67,8 +68,7 @@ class StreamingChunkRetriever(
                         }
 
                         Logger.info("Connected to: ${piece.url}")
-                        val ext = getFileExtFromUrl(piece.url) ?: ""
-                        val tempFile = File(tempDir, "temp-${piece.id}.tmp.$ext")
+                        val tempFile = File(fileNameCallback(piece))
                         Logger.info("XDM", "Opening tem file: ${tempFile.absolutePath}")
                         RandomAccessFile(tempFile, "rw").use { raf ->
                             this.piece.fileHandle.set(raf)

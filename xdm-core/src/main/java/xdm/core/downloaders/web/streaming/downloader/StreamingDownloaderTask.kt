@@ -33,6 +33,7 @@ abstract class StreamingDownloaderTask(
     abstract fun downloadType(): DownloadType
     abstract fun saveContext()
     abstract fun isIndependentSegment(): Boolean
+    abstract fun postProcessChunks()
 
     override fun start() {
         Thread {
@@ -108,6 +109,7 @@ abstract class StreamingDownloaderTask(
         if (context.stopFlag.get()) return
         context.assembling.set(true)
         context.downloadHost.onAssembleStart(context.id)
+        postProcessChunks()
         val tmpFile = File(context.tempFolder, context.tempFileName + fileExt())
         val ret = if (context.hasSeparateStreams) {
             assembleStreams(tmpFile.absolutePath)
@@ -169,9 +171,10 @@ abstract class StreamingDownloaderTask(
         return false
     }
 
-    private fun getChunkTempFileName(chunk: StreamingChunk): String {
+    fun getChunkTempFileName(chunk: StreamingChunk): String {
         val ext = getFileExtFromUrl(chunk.url) ?: ""
-        return Paths.get(context.tempFolder, "temp-${chunk.id}.tmp.$ext").toAbsolutePath().toString()
+        val suffix = if (chunk.encrypted) ".enc" else ""
+        return Paths.get(context.tempFolder, "temp-${chunk.id}.tmp.$ext$suffix").toAbsolutePath().toString()
     }
 
     private fun assembleSingle(outFile: String): Boolean {
@@ -285,7 +288,8 @@ abstract class StreamingDownloaderTask(
         headers = context.headers,
         cookie = context.cookie,
         tempDir = context.tempFolder,
-        progressCallback = this::onChunkProgress
+        progressCallback = this::onChunkProgress,
+        fileNameCallback = this::getChunkTempFileName,
     ) { p ->
         onChunkComplete(p, latch)
     }

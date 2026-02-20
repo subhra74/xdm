@@ -4,6 +4,8 @@ package xdm.core.downloaders.web.streaming.manifest.hls
 import xdm.core.downloaders.web.streaming.manifest.common.resolveUri
 import xdm.core.util.Logger
 import xdm.core.util.StringUtils
+import xdm.core.util.appendQuery
+import xdm.core.util.getQuery
 import java.net.URI
 
 const val EXT_X_STREAM_INF = "#EXT-X-STREAM-INF:"
@@ -34,8 +36,10 @@ object HlsParser {
     fun parseMediaSegments(
         manifestLines: Iterator<String>, playlistUrl: String
     ): Result<HlsPlaylist> {
+        Logger.info("XDM", "Parsing manifest")
         return runCatching {
             try {
+                val query = getQuery(playlistUrl) ?: ""
                 val mediaSegments = ArrayList<HlsMediaSegment>()
                 var mediaSequence: Long = 0
                 var startOffset: Long = 0
@@ -64,17 +68,18 @@ object HlsParser {
                 for (lineText in manifestLines) {
                     val line = lineText.trim()
                     if (line.isEmpty()) continue
-
+                    Logger.info("XDM", line)
                     if (line[0] != '#') {
                         if (isEncrypted && missingIv) {
                             iv = toBigEndian128BitHex(mediaSequence)
                         }
                         val segment = HlsMediaSegment(
-                            url = resolveUri(baseUrl, line).toString(),
+                            url = appendQuery(resolveUri(baseUrl, line).toString(), query),
                             byteRange = if (hasByteRange) Pair(startOffset, segmentLength) else null,
                             duration,
-                            keyUrl,
-                            iv
+                            keyUrl?.let { appendQuery(it.toString(), query) },
+                            iv,
+                            isEncrypted
                         )
                         mediaSegments.add(segment)
                         mediaSequence++
@@ -106,15 +111,17 @@ object HlsParser {
                             line.substring(EXT_X_MEDIA_SEQUENCE.length).trim().toLong()
                     } else if (line.startsWith(EXT_X_KEY)) {
                         isEncrypted = true
-                        val attributes =
-                            parseAttributes(line.substring(EXT_X_KEY.length))
+                        val attributes = parseAttributes(line.substring(EXT_X_KEY.length))
                         if (attributes.containsKey(METHOD)) {
                             if (StringUtils.equalsIgnoreCase("NONE", attributes[METHOD])) {
                                 isEncrypted = false
                                 continue
                             }
                             if (StringUtils.equalsIgnoreCase("AES-128", attributes[METHOD])
-                                && StringUtils.equalsIgnoreCase("identity", attributes["KEYFORMAT"])
+                                && StringUtils.equalsIgnoreCase(
+                                    "identity",
+                                    attributes.getOrDefault("KEYFORMAT", "identity")
+                                )
                             ) {
                                 keyUrl = resolveUri(baseUrl, attributes["URI"]!!)
                                 if (!attributes.containsKey("IV")) {
@@ -124,6 +131,9 @@ object HlsParser {
                                     iv = attributes["IV"]
                                     missingIv = false
                                 }
+                            } else {
+                                Logger.error("XDM", "Unsupported key format or encryption method")
+                                throw Exception("Unsupported encryption")
                             }
                         }
                     } else if (line.startsWith(EXT_X_MAP)) {
@@ -133,13 +143,14 @@ object HlsParser {
                             hasInitMap = true
                             val segment =
                                 HlsMediaSegment(
-                                    url = resolveUri(baseUrl, uri).toString(),
+                                    url = appendQuery(resolveUri(baseUrl, uri).toString(), query),
                                     byteRange = parseByteRange(
                                         attributes["BYTERANGE"]
                                     ),
                                     duration = 0.0,
-                                    keyUrl,
+                                    keyUrl?.let { appendQuery(it.toString(), query) },
                                     iv,
+                                    isEncrypted
                                 )
                             mediaSegments.add(segment)
                         }
@@ -251,8 +262,8 @@ object HlsParser {
         }
     }
 
-    fun isMasterPlaylist(manifestLines: List<String>): Boolean {
-        return manifestLines.any { s -> StringUtils.containsIgnoreCase(s, EXT_X_STREAM_INF) }
+    fun isMasterPlaylist(manifestLines: Iterator<String>): Boolean {
+        return manifestLines.asSequence().any { s -> StringUtils.containsIgnoreCase(s, EXT_X_STREAM_INF) }
     }
 
     private fun parseByteRange(str: String?): Pair<Long, Long>? {

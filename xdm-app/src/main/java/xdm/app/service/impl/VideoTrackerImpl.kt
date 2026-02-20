@@ -4,6 +4,7 @@ import xdm.app.AppContext
 import xdm.app.models.DetectedVideoInfo
 import xdm.app.models.StreamingVideoDisplayInfo
 import xdm.app.service.VideoTracker
+import xdm.core.downloaders.DashDownloadTaskInfo
 import xdm.core.downloaders.HlsDownloadTaskInfo
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.util.FileUtils
@@ -33,6 +34,15 @@ class VideoTrackerImpl : VideoTracker {
             AppContext.app.addVideoDownload(videoId, name, -1, contentType)
             return
         }
+
+        dashVideoList[videoId]?.let {
+            //TODO: Check for link refresh
+            val (source, _) = it
+            name = source.fileName
+            contentType = "application/x-mpegURL"
+            AppContext.app.addVideoDownload(videoId, name, -1, contentType)
+            return
+        }
     }
 
 
@@ -40,6 +50,14 @@ class VideoTrackerImpl : VideoTracker {
         synchronized(this) {
             for (item in items) {
                 hlsVideoList[item.first.id] = item
+            }
+        }
+    }
+
+    override fun addVideoDash(items: List<Pair<DashDownloadTaskInfo, StreamingVideoDisplayInfo>>) {
+        synchronized(this) {
+            for (item in items) {
+                dashVideoList[item.first.id] = item
             }
         }
     }
@@ -56,6 +74,15 @@ class VideoTrackerImpl : VideoTracker {
         get() {
             synchronized(this) {
                 val list = ArrayList<DetectedVideoInfo>(hlsVideoList.size + httpVideoList.size)
+                list.addAll(dashVideoList.values.map { (t, s) ->
+                    DetectedVideoInfo(
+                        id = t.id,
+                        name = t.fileName,
+                        description = s.descriptionText,
+                        date = s.dateTime,
+                        tabId = s.tabId
+                    )
+                })
                 list.addAll(hlsVideoList.values.map { (t, s) ->
                     DetectedVideoInfo(
                         id = t.id,
@@ -111,7 +138,17 @@ class VideoTrackerImpl : VideoTracker {
         return null
     }
 
+    override fun getDashVideo(videoId: Long): DashDownloadTaskInfo? {
+        synchronized(this) {
+            this.dashVideoList[videoId]?.let {
+                return it.first
+            }
+        }
+        return null
+    }
+
     private val hlsVideoList = LinkedHashMap<Long, Pair<HlsDownloadTaskInfo, StreamingVideoDisplayInfo>>()
+    private val dashVideoList = LinkedHashMap<Long, Pair<DashDownloadTaskInfo, StreamingVideoDisplayInfo>>()
     private val httpVideoList = LinkedHashMap<Long, Pair<HttpDownloadTaskInfo, StreamingVideoDisplayInfo>>()
     private fun generateUpdatedFileName(oldName: String, newName: String): String {
         val ext: String? = XDMUtils.getExtension(oldName)

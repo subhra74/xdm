@@ -25,6 +25,7 @@ data class HlsMediaSegment(
     val url: String,
     val byteRange: Pair<Long, Long>? = null,
     val duration: Double = 0.0,
-    val keyUrl: URI? = null,
-    val iv: String? = null
+    val keyUrl: String? = null,
+    val iv: String? = null,
+    val encrypted: Boolean,
 )

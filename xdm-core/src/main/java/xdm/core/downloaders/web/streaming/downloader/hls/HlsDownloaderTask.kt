@@ -2,8 +2,8 @@ package xdm.core.downloaders.web.streaming.downloader.hls
 
 import xdm.core.downloaders.*
 import xdm.core.downloaders.web.http.ChunkStatus
-import xdm.core.downloaders.web.http.loadHlsState
-import xdm.core.downloaders.web.http.saveState
+import xdm.core.downloaders.web.loadHlsState
+import xdm.core.downloaders.web.saveState
 import xdm.core.downloaders.web.streaming.downloader.HlsTaskContext
 import xdm.core.downloaders.web.streaming.downloader.StreamingChunk
 import xdm.core.downloaders.web.streaming.downloader.StreamingDownloaderTask
@@ -14,11 +14,20 @@ import xdm.core.network.http.PoolingHttpClient
 import xdm.core.util.CoreUtils
 import xdm.core.util.Logger
 import xdm.core.util.ManifestUtils.downloadManifestBytes
+import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.io.IOException
+import java.io.InputStream
+import java.math.BigInteger
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
+import javax.crypto.Cipher
+import javax.crypto.CipherInputStream
+import javax.crypto.spec.IvParameterSpec
+import javax.crypto.spec.SecretKeySpec
 
 fun makeContext(
     taskInfo: HlsDownloadTaskInfo, http: PoolingHttpClient, host: DownloadHost
@@ -35,6 +44,7 @@ fun makeContext(
     audioUrl = taskInfo.audioUrl,
     audioOnly = taskInfo.audioOnly,
     independent = taskInfo.independent,
+    encrypted = false
 )
 
 fun loadContext(
@@ -63,6 +73,7 @@ class HlsDownloaderTask : StreamingDownloaderTask {
     ) : super(makeContext(taskInfo, http, host), configDir, muxer)
 
     private val keyCache = ConcurrentHashMap<String, ByteArray>()
+    private val decryptBuffer = ByteArray(256 * 1024)
 
     override fun initDownload(): DownloadStatusInfo.InitInfo? {
         val hlsContext = context as HlsTaskContext
@@ -83,6 +94,9 @@ class HlsDownloaderTask : StreamingDownloaderTask {
                 context.independent = videoPlaylist.independent
             }
             retrieveKeys(videoPlaylist, audioPlaylist)
+            if (videoPlaylist.encrypted) {
+                context.encrypted = true
+            }
             context.chunks.ensureCapacity(videoPlaylist.mediaSegments.size + (audioPlaylist?.mediaSegments?.size ?: 0))
             context.chunks.addAll(videoPlaylist.mediaSegments.mapIndexed { index, ms ->
                 StreamingChunk(
@@ -95,7 +109,8 @@ class HlsDownloaderTask : StreamingDownloaderTask {
                     byteRange = ms.byteRange,
                     tag = "VIDEO",
                     error = AtomicReference(null),
-                    fileHandle = AtomicReference(null)
+                    fileHandle = AtomicReference(null),
+                    encrypted = ms.encrypted
                 )
             })
             val count = videoPlaylist.mediaSegments.size
@@ -111,7 +126,8 @@ class HlsDownloaderTask : StreamingDownloaderTask {
                         byteRange = ms.byteRange,
                         tag = "AUDIO",
                         error = AtomicReference(null),
-                        fileHandle = AtomicReference(null)
+                        fileHandle = AtomicReference(null),
+                        encrypted = ms.encrypted
                     )
                 })
             }
@@ -161,10 +177,10 @@ class HlsDownloaderTask : StreamingDownloaderTask {
         val error = AtomicBoolean(false)
         val keyUrls = HashSet<String>()
         if (videoPlayList.encrypted) {
-            keyUrls.addAll(videoPlayList.mediaSegments.map { it.url })
+            keyUrls.addAll(videoPlayList.mediaSegments.map { it.keyUrl!!.toString() })
         }
         if (audioPlayList != null && audioPlayList.encrypted) {
-            keyUrls.addAll(audioPlayList.mediaSegments.map { it.url })
+            keyUrls.addAll(audioPlayList.mediaSegments.map { it.keyUrl!!.toString() })
         }
         if (context.stopFlag.get()) {
             return
@@ -172,12 +188,20 @@ class HlsDownloaderTask : StreamingDownloaderTask {
         if (keyUrls.isEmpty()) return
         val counter = CountDownLatch(keyUrls.size)
         for (keyUrl in keyUrls) {
+            Logger.info("Downloading key: $keyUrl")
             executorService.submit {
                 try {
                     if (!error.get() && !context.stopFlag.get()) {
-                        downloadManifestBytes(
+                        Logger.info("Headers: ${hlsContext.headers}")
+                        val bytes = downloadManifestBytes(
                             context.httpClient, keyUrl, hlsContext.headers, hlsContext.cookie, context.stopFlag
-                        )?.let { keyCache[keyUrl] = it }
+                        )
+                        if (bytes != null) {
+                            keyCache[keyUrl] = bytes
+                            if (bytes.size != 16) {
+                                throw Exception("Invalid key size")
+                            }
+                        }
                     }
                 } catch (e: Exception) {
                     Logger.error("XDM", "Error downloading keys", e)
@@ -187,8 +211,70 @@ class HlsDownloaderTask : StreamingDownloaderTask {
                 }
             }
         }
+        counter.await()
         if (error.get()) {
             throw IOException("Unable to get keys")
         }
     }
+
+    override fun postProcessChunks() {
+        val context = context as HlsTaskContext
+        if (context.encrypted) {
+            for (chunk in context.chunks) {
+                if (context.stopFlag.get()) break
+                decryptChunk(chunk)
+            }
+        }
+    }
+
+    private fun decryptChunk(chunk: StreamingChunk) {
+        if (!chunk.encrypted) {
+            return
+        }
+        val encChunkFile = getChunkTempFileName(chunk)
+        val decChunkFile = encChunkFile.replace(".enc", "")
+        Logger.info("XDM", "Decrypting chunk: $encChunkFile -> $decChunkFile")
+        val key = keyCache[chunk.keyUrl] ?: throw Exception("Key missing")
+        val iv = chunk.iv
+        Logger.info("XDM", "Key: $key id: $iv")
+        FileOutputStream(decChunkFile).use { output ->
+            FileInputStream(encChunkFile).use { input ->
+                getCypherStream(input, key, strToIvBytes(chunk.iv!!)).use { cypherIn ->
+                    while (!context.stopFlag.get()) {
+                        val x = cypherIn.read(decryptBuffer)
+                        if (x == -1) break
+                        output.write(decryptBuffer, 0, x)
+                    }
+                }
+            }
+        }
+        if (!context.stopFlag.get()) {
+            chunk.encrypted = false
+        }
+    }
+
+
+    private fun getCypherStream(input: InputStream, key: ByteArray, iv: ByteArray): InputStream {
+        val cipher: Cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+        val cipherKey = SecretKeySpec(key, "AES")
+        val cipherIV = IvParameterSpec(iv)
+        cipher.init(Cipher.DECRYPT_MODE, cipherKey, cipherIV)
+        return CipherInputStream(input, cipher)
+    }
+
+    private fun strToIvBytes(str: String): ByteArray {
+        var str = str
+        if (str.lowercase(Locale.getDefault()).startsWith("0x")) {
+            str = str.substring(2)
+        }
+        val ivData: ByteArray = BigInteger(str, 16).toByteArray()
+        val ivDataWithPadding = ByteArray(16)
+        val offset = if (ivData.size > 16) ivData.size - 16 else 0
+        System.arraycopy(
+            ivData, offset, ivDataWithPadding, ivDataWithPadding.size - ivData.size + offset,
+            ivData.size - offset
+        )
+        return ivDataWithPadding
+    }
+
 }

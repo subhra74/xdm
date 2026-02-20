@@ -65,6 +65,12 @@ public class AppMenuHandler {
             Optional.ofNullable(md.getUserSelectedDownloadFolder())
                 .orElse(md.getDefaultDownloadFolder());
         fileName = md.getFileName();
+      } else if (ent.getDownloadType() == DownloadType.Dash) {
+        var md = AppContext.INSTANCE.getTaskInfoDB().getDashTask(ent.getId());
+        folder =
+            Optional.ofNullable(md.getUserSelectedDownloadFolder())
+                .orElse(md.getDefaultDownloadFolder());
+        fileName = md.getFileName();
       }
       if (folder != null) {
         try {

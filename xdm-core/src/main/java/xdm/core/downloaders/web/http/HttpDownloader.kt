@@ -2,6 +2,7 @@ package xdm.core.downloaders.web.http
 
 import xdm.core.downloaders.*
 import xdm.core.downloaders.web.ProgressTracker
+import xdm.core.downloaders.web.loadState
 import xdm.core.network.http.PoolingHttpClient
 import xdm.core.network.http.impl.HttpClientImpl
 import xdm.core.util.Logger
@@ -426,6 +427,6 @@ class HttpDownloaderTask : ChunkController {
 
     @Synchronized
     private fun saveState() {
-        saveState(context, configDir)
+        xdm.core.downloaders.web.saveState(context, configDir)
     }
 }

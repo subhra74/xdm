@@ -25,11 +25,12 @@ data class StreamingChunk(
     var iv: String? = null,
     val tag: String,
     val fileHandle: AtomicReference<RandomAccessFile?>,
+    var encrypted: Boolean,
 )
 
 interface StreamingTaskContext {
     val id: Long
-    val chunks: ArrayList<StreamingChunk>
+    val chunks: List<StreamingChunk>
     val init: AtomicBoolean
     var totalSize: Long?
     var downloaded: AtomicLong
@@ -71,4 +72,29 @@ data class HlsTaskContext(
     var audioUrl: String?,
     var audioOnly: Boolean = false,
     var independent: Boolean,
+    var encrypted: Boolean,
+) : StreamingTaskContext
+
+data class DashTaskContext(
+    override val id: Long,
+    override val chunks: List<StreamingChunk>,
+    override val init: AtomicBoolean = AtomicBoolean(false),
+    override var totalSize: Long? = null,
+    override var downloaded: AtomicLong = AtomicLong(0),
+    override var contentType: String? = null,
+    override var headers: HeaderMap? = null,
+    override var cookie: String? = null,
+    override val httpClient: PoolingHttpClient,
+    override val stopFlag: AtomicBoolean = AtomicBoolean(false),
+    override val completed: AtomicBoolean = AtomicBoolean(false),
+    override val diskError: AtomicBoolean = AtomicBoolean(false),
+    override val downloadHost: DownloadHost,
+    override val tempFileName: String,
+    override var tempFolder: String,
+    override var hasSeparateStreams: Boolean = false,
+    override val pieceCompletedCount: AtomicInteger = AtomicInteger(0),
+    override val assembling: AtomicBoolean = AtomicBoolean(false),
+    var url: String,
+    val audioMime: String,
+    val videoMime: String,
 ) : StreamingTaskContext

@@ -6,6 +6,7 @@ import xdm.app.data.DbRecord
 import xdm.app.data.RecordStatus
 import xdm.core.downloaders.*
 import xdm.core.downloaders.web.http.HttpDownloaderTask
+import xdm.core.downloaders.web.streaming.downloader.dash.DashDownloaderTask
 import xdm.core.downloaders.web.streaming.downloader.hls.HlsDownloaderTask
 import xdm.core.media.muxer.impl.FFmpegMuxer
 import xdm.core.network.http.impl.HttpClientImpl
@@ -48,7 +49,7 @@ class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, priva
                                 }
 
                             DownloadType.Hls -> {}
-                            DownloadType.Dash -> TODO()
+                            DownloadType.Dash -> {}
                             DownloadType.Hds -> TODO()
                             DownloadType.Hss -> TODO()
                             DownloadType.Torrent -> TODO()
@@ -180,7 +181,15 @@ class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, priva
                     }
                 }
 
-                DownloadType.Dash -> TODO()
+                DownloadType.Dash -> taskInfoDB.getDashTask(id)?.let { t ->
+                    return renameFile(t.fileName, t.defaultDownloadFolder, tmpFilePath) { finalName, finalFolder ->
+                        Logger.info("Success renaming file")
+                        t.fileName = finalName
+                        t.defaultDownloadFolder = finalFolder
+                        taskInfoDB.saveDashTask(t)
+                    }
+                }
+
                 DownloadType.Hds -> TODO()
                 DownloadType.Hss -> TODO()
                 DownloadType.Torrent -> TODO()
@@ -213,7 +222,14 @@ class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, priva
                         muxer = FFmpegMuxer()
                     )
 
-                    DownloadType.Dash -> TODO()
+                    DownloadType.Dash -> controller = DashDownloaderTask(
+                        id = id,
+                        configDir = AppContext.configDir,
+                        http = HttpClientImpl(100),
+                        host = downloadHost,
+                        muxer = FFmpegMuxer()
+                    )
+
                     DownloadType.Hds -> TODO()
                     DownloadType.Hss -> TODO()
                     DownloadType.Torrent -> TODO()
@@ -271,6 +287,14 @@ class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, priva
             source.userSelectedDownloadFolder = folder
             addHlsDownload(source)
         }
+
+        AppContext.videoTracker.getDashVideo(videoId)?.let { source ->
+            Logger.info(source)
+            source.fileName = fileName
+            source.autoCategorize = (folder == null)
+            source.userSelectedDownloadFolder = folder
+            addDashDownload(source)
+        }
     }
 
     private fun addHlsDownload(task: HlsDownloadTaskInfo) {
@@ -296,6 +320,37 @@ class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, priva
                 status = RecordStatus.READY,
                 selected = false,
                 downloadType = DownloadType.Hls
+            )
+        )
+        appDB.saveActiveRecords()
+        AppContext.app.addDownloadInView(task.id);
+        controller.start()
+    }
+
+    private fun addDashDownload(task: DashDownloadTaskInfo) {
+        println("Not implemented yet")
+        task.tempDir = AppContext.appConfig.tempDir + File.separator + task.id
+        taskInfoDB.saveDashTask(task)
+        val controller = DashDownloaderTask(
+            taskInfo = task,
+            http = HttpClientImpl(100),
+            muxer = FFmpegMuxer(),
+            host = downloadHost,
+            configDir = AppContext.configDir,
+        )
+        activeSessions[task.id] = controller
+        appDB.addActive(
+            DbRecord(
+                id = task.id,
+                size = 0,
+                downloaded = 0,
+                progress = 0,
+                date = System.currentTimeMillis(),
+                fileName = task.fileName,
+                eta = 0, speed = 0.0f,
+                status = RecordStatus.READY,
+                selected = false,
+                downloadType = DownloadType.Dash
             )
         )
         appDB.saveActiveRecords()

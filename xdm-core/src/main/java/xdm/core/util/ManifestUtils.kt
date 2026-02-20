@@ -45,6 +45,7 @@ object ManifestUtils {
         stopFlag: AtomicBoolean
     ): String? {
         try {
+            Logger.info("XDM","Downloading manifest: $url")
             httpClient.getResponse(
                 url, headers, cookie, Range(start = 0)
             ).onSuccess {

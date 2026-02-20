@@ -1,6 +1,10 @@
-package xdm.core.downloaders.web.http
+package xdm.core.downloaders.web
 
 import xdm.core.downloaders.DownloadHost
+import xdm.core.downloaders.web.http.Chunk
+import xdm.core.downloaders.web.http.ChunkStatus
+import xdm.core.downloaders.web.http.HttpTaskContext
+import xdm.core.downloaders.web.streaming.downloader.DashTaskContext
 import xdm.core.downloaders.web.streaming.downloader.HlsTaskContext
 import xdm.core.downloaders.web.streaming.downloader.StreamingChunk
 import xdm.core.network.http.HeaderMap
@@ -59,6 +63,7 @@ private fun writeHlsChunk(chunk: StreamingChunk, w: DataOutputStream) {
         w.writeBoolean(iv != null)
         iv?.let { w.writeUTF(it) }
         w.writeUTF(tag)
+        w.writeBoolean(encrypted)
     }
 }
 
@@ -80,11 +85,12 @@ private fun readHlsChunk(r: DataInputStream): StreamingChunk {
         iv = if (r.readBoolean()) r.readUTF() else null,
         tag = r.readUTF(),
         fileHandle = AtomicReference(null),
-        error = AtomicReference(null)
+        error = AtomicReference(null),
+        encrypted = r.readBoolean(),
     )
 }
 
-private fun readHlsChunks(r: DataInputStream): ArrayList<StreamingChunk> {
+private fun readStreamingChunks(r: DataInputStream): ArrayList<StreamingChunk> {
     val count = r.readInt()
     val chunkMap = ArrayList<StreamingChunk>()
     for (i in 0..<count) {
@@ -193,6 +199,32 @@ private fun writeHlsContext(context: HlsTaskContext, out: DataOutputStream) {
         audioUrl?.let { out.writeUTF(it) }
         out.writeBoolean(audioOnly)
         out.writeBoolean(independent)
+        out.writeBoolean(encrypted)
+    }
+}
+
+private fun writeDashContext(context: DashTaskContext, out: DataOutputStream) {
+    context.apply {
+        out.writeLong(id)
+        writeChunks(chunks, out)
+        out.writeBoolean(init.get())
+        out.writeBoolean(totalSize != null)
+        totalSize?.let { out.writeLong(it) }
+        out.writeLong(downloaded.get())
+        out.writeBoolean(contentType != null)
+        contentType?.let { out.writeUTF(it) }
+        out.writeBoolean(headers != null)
+        headers?.let { writeHeaders(it, out) }
+        out.writeBoolean(cookie != null)
+        cookie?.let { out.writeUTF(it) }
+        out.writeBoolean(completed.get())
+        out.writeUTF(tempFileName)
+        out.writeUTF(tempFolder)
+        out.writeBoolean(hasSeparateStreams)
+        out.writeInt(pieceCompletedCount.get())
+        out.writeUTF(url)
+        out.writeUTF(audioMime)
+        out.writeUTF(videoMime)
     }
 }
 
@@ -221,7 +253,7 @@ private fun readContext(r: DataInputStream, http: PoolingHttpClient, host: Downl
 private fun readHlsContext(r: DataInputStream, http: PoolingHttpClient, host: DownloadHost): HlsTaskContext {
     return HlsTaskContext(
         id = r.readLong(),
-        chunks = readHlsChunks(r),
+        chunks = readStreamingChunks(r),
         init = AtomicBoolean(r.readBoolean()),
         totalSize = if (r.readBoolean()) r.readLong() else null,
         downloaded = AtomicLong(r.readLong()),
@@ -240,12 +272,37 @@ private fun readHlsContext(r: DataInputStream, http: PoolingHttpClient, host: Do
         audioOnly = r.readBoolean(),
         downloadHost = host,
         independent = r.readBoolean(),
+        encrypted = r.readBoolean(),
+    ).apply { Logger.info(this) }
+}
+
+private fun readDashContext(r: DataInputStream, http: PoolingHttpClient, host: DownloadHost): DashTaskContext {
+    return DashTaskContext(
+        id = r.readLong(),
+        chunks = readStreamingChunks(r),
+        init = AtomicBoolean(r.readBoolean()),
+        totalSize = if (r.readBoolean()) r.readLong() else null,
+        downloaded = AtomicLong(r.readLong()),
+        contentType = if (r.readBoolean()) r.readUTF() else null,
+        headers = readHeaders(r),
+        cookie = if (r.readBoolean()) r.readUTF() else null,
+        httpClient = http,
+        stopFlag = AtomicBoolean(false),
+        completed = AtomicBoolean(r.readBoolean()),
+        tempFileName = r.readUTF(),
+        tempFolder = r.readUTF(),
+        hasSeparateStreams = r.readBoolean(),
+        pieceCompletedCount = AtomicInteger(r.readInt()),
+        url = r.readUTF(),
+        audioMime = r.readUTF(),
+        videoMime = r.readUTF(),
+        downloadHost = host,
     ).apply { Logger.info(this) }
 }
 
 @Synchronized
 fun saveState(context: HttpTaskContext, configDir: String) {
-    Logger.info(context)
+    //Logger.info(context)
     AtomicIO.writeTransacted("${context.id}.state", configDir) { fs ->
         writeContext(context, fs)
     }.onFailure { Logger.error("XDM", "Error saving state", it) }
@@ -253,9 +310,17 @@ fun saveState(context: HttpTaskContext, configDir: String) {
 
 @Synchronized
 fun saveState(context: HlsTaskContext, configDir: String) {
-    Logger.info(context)
+    //Logger.info(context)
     AtomicIO.writeTransacted("${context.id}.state", configDir) { fs ->
         writeHlsContext(context, fs)
+    }.onFailure { Logger.error("XDM", "Error saving state", it) }
+}
+
+@Synchronized
+fun saveState(context: DashTaskContext, configDir: String) {
+    //Logger.info(context)
+    AtomicIO.writeTransacted("${context.id}.state", configDir) { fs ->
+        writeDashContext(context, fs)
     }.onFailure { Logger.error("XDM", "Error saving state", it) }
 }
 
@@ -270,5 +335,12 @@ fun loadState(id: Long, configDir: String, http: PoolingHttpClient, host: Downlo
 fun loadHlsState(id: Long, configDir: String, http: PoolingHttpClient, host: DownloadHost): Result<HlsTaskContext> {
     return AtomicIO.readTransacted<HlsTaskContext>("$id.state", configDir) { fs ->
         return Result.success(readHlsContext(fs, http, host))
+    }
+}
+
+@Synchronized
+fun loadDashState(id: Long, configDir: String, http: PoolingHttpClient, host: DownloadHost): Result<DashTaskContext> {
+    return AtomicIO.readTransacted<DashTaskContext>("$id.state", configDir) { fs ->
+        return Result.success(readDashContext(fs, http, host))
     }
 }

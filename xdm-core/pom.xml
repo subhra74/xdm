@@ -86,6 +86,13 @@
             <artifactId>okhttp</artifactId>
             <version>4.12.0</version>
         </dependency>
+        <!-- Source: https://mvnrepository.com/artifact/commons-httpclient/commons-httpclient -->
+<!--        <dependency>-->
+<!--            <groupId>commons-httpclient</groupId>-->
+<!--            <artifactId>commons-httpclient</artifactId>-->
+<!--            <version>3.1</version>-->
+<!--&lt;!&ndash;            <scope>compile</scope>&ndash;&gt;-->
+<!--        </dependency>-->
         <!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
 <!--        <dependency>-->
 <!--            <groupId>org.apache.httpcomponents</groupId>-->
