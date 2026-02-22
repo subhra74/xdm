@@ -108,7 +108,7 @@ class DashDownloaderTask : StreamingDownloaderTask {
         }
     }
 
-    override fun isIndependentSegment() = true
+    override fun isIndependentSegment() = false
 
     override fun postProcessChunks() {
         //NO op
