@@ -19,8 +19,15 @@ import java.util.concurrent.ConcurrentHashMap
 class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val configDir: String) {
     private val activeSessions = ConcurrentHashMap<Long, DownloaderTask>()
     private val downloadHost = object : DownloadHost {
-        override fun onDownloadStart(id: Long) {
-            // "Not yet implemented"
+        override fun onDownloadActivated(id: Long) {
+            activeSessions[id]?.let {
+                synchronized(appDB) {
+                    appDB.getById(id)?.let { e ->
+                        e.status = RecordStatus.DOWNLOADING
+                    }
+                }
+                AppContext.app.updateDownloadInView(id)
+            }
         }
 
         override fun onDownloadInit(data: DownloadStatusInfo.InitInfo, downloadType: DownloadType) {

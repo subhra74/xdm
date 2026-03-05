@@ -72,24 +72,28 @@ class HttpDownloaderTask : ChunkController {
     private val time = System.currentTimeMillis()
 
     override fun start() {
-        val id = CoreUtils.uniqueId()
-        val chunk1 = Chunk(
-            id = id,
-            offset = 0,
-            length = AtomicLong(0),
-            downloaded = AtomicLong(0),
-            status = AtomicReference(ChunkStatus.Ready),
-            fileHandle = AtomicReference(null),
-            lastTakeOver = AtomicLong(0)
-        )
-        context.chunks[id] = chunk1
-        saveState()
-        startChunk(id)
+        Thread {
+            context.downloadHost.onDownloadActivated(context.id)
+            val id = CoreUtils.uniqueId()
+            val chunk1 = Chunk(
+                id = id,
+                offset = 0,
+                length = AtomicLong(0),
+                downloaded = AtomicLong(0),
+                status = AtomicReference(ChunkStatus.Ready),
+                fileHandle = AtomicReference(null),
+                lastTakeOver = AtomicLong(0)
+            )
+            context.chunks[id] = chunk1
+            saveState()
+            startChunk(id)
+        }.start()
     }
 
     override fun resume() {
-        progressTracker.totalDownloadedBytes = context.downloaded.get()
         Thread {
+            context.downloadHost.onDownloadActivated(context.id)
+            progressTracker.totalDownloadedBytes = context.downloaded.get()
             if (context.completed.get() || context.chunks.values.all { it.status.get() == ChunkStatus.Finished }) {
                 finishDownload()
             } else {

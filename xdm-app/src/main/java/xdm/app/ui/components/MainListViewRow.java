@@ -179,7 +179,7 @@ public class MainListViewRow implements TableCellRenderer, TableCellEditor {
     prg.setAlignmentY(Component.TOP_ALIGNMENT);
     lblProgress = new JLabel("Downloading 100 %");
     lblProgress.setFont(fnt);
-    //prg.setPreferredSize(new Dimension(lblProgress.getPreferredSize().width + 5, 10));
+    // prg.setPreferredSize(new Dimension(lblProgress.getPreferredSize().width + 5, 10));
     panDetails.add(lblProgress);
     panDetails.add(prg, BorderLayout.SOUTH);
     p1.add(panDetails);
@@ -323,26 +323,34 @@ public class MainListViewRow implements TableCellRenderer, TableCellEditor {
       if (ent.getSize() > 0) {
         text.append(" / ").append(FormatUtilities.formatSize(ent.getSize()));
       }
-      if (ent.getSpeed() > 0) {
+      if (ent.getSpeed() > 0 && ent.getStatus() == RecordStatus.DOWNLOADING) {
         text.append(" (").append(FormatUtilities.formatSize(ent.getSpeed())).append("/s)");
       }
-      if (ent.getEta() > 0) {
+      if (ent.getEta() > 0 && ent.getStatus() == RecordStatus.DOWNLOADING) {
         text.append(GAP).append(FormatUtilities.toLongEta(ent.getEta())).append(" left");
       }
       lblInfo.setText(text.toString());
       lblTitle.setText(ent.getFileName());
-      prg.setVisible(true);
       prg.setValue(ent.getProgress());
       var prgText = StringResource.get("STAT_DOWNLOADING");
       if (ent.getStatus() == RecordStatus.DOWNLOADING) {
-        prgText =
-            String.format(
-                "%s %d%s", StringResource.get("STAT_DOWNLOADING"), ent.getProgress(), "%");
+        if (ent.getProgress() > 0) {
+          prgText =
+              String.format(
+                  "%s %d%s", StringResource.get("STAT_DOWNLOADING"), ent.getProgress(), "%");
+        }
+        prg.setVisible(true);
       } else if (ent.getStatus() == RecordStatus.PAUSED) {
-        prgText =
-            String.format("%s %d%s", StringResource.get("STAT_PAUSED"), ent.getProgress(), "%");
+        if (ent.getProgress() > 0) {
+          prgText =
+              String.format("%s %d%s", StringResource.get("STAT_PAUSED"), ent.getProgress(), "%");
+        } else {
+          prgText = StringResource.get("STAT_PAUSED");
+        }
+        prg.setVisible(false);
       } else if (ent.getStatus() == RecordStatus.ASSEMBLING) {
         prgText = StringResource.get("STAT_ASSEMBLING");
+        prg.setVisible(false);
       }
       lblProgress.setText(prgText);
     }

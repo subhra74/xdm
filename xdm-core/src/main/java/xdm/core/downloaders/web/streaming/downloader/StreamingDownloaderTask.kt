@@ -43,18 +43,22 @@ abstract class StreamingDownloaderTask(
     }
 
     override fun stop() {
-        context.stopFlag.set(true)
-        muxer.stop()
-        executorService.shutdownNow()
-        synchronized(this) {
-            context.chunks.filter { it.status.get() != ChunkStatus.Finished }.forEach {
-                try {
-                    it.fileHandle.get()?.close()
-                } catch (e: Exception) {
-                    //
+        Thread {
+            context.stopFlag.set(true)
+            muxer.stop()
+            executorService.shutdownNow()
+            synchronized(this) {
+                context.chunks.filter { it.status.get() != ChunkStatus.Finished }.forEach {
+                    try {
+                        it.fileHandle.get()?.close()
+                    } catch (e: Exception) {
+                        //
+                    }
                 }
             }
-        }
+            saveContext()
+            context.downloadHost.onDownloadPaused(context.id, PauseEvent.PausedByUser)
+        }.start()
     }
 
     override fun resume() {
@@ -63,6 +67,7 @@ abstract class StreamingDownloaderTask(
 
     private fun download() {
         try {
+            context.downloadHost.onDownloadActivated(context.id)
             if (!context.init.get()) {
                 val initInfo = initDownload()
                 if (initInfo == null) {

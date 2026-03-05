@@ -8,7 +8,7 @@ import java.nio.file.Paths
 class AppTest : TestCase() {
     fun testApp() {
         val lines = Files.lines(Paths.get(javaClass.getResource("/master.m3u8")?.toURI() ?: null)).toList()
-        println(HlsParser.isMasterPlaylist(lines))
+        println(HlsParser.isMasterPlaylist(lines.iterator()))
         HlsParser.parseMasterPlaylist(
             lines.iterator(),
             "http://playlist"

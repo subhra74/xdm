@@ -10,7 +10,7 @@ interface FileProvider {
 }
 
 interface DownloadHost : FileProvider {
-    fun onDownloadStart(id: Long)
+    fun onDownloadActivated(id: Long)
     fun onDownloadInit(data: DownloadStatusInfo.InitInfo, downloadType: DownloadType)
     fun onDownloadProgress(event: DownloadStatusInfo.ProgressInfo)
     fun onAssembleStart(id: Long)
