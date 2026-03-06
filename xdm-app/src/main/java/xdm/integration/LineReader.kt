@@ -4,8 +4,6 @@ import java.io.IOException
 import java.io.InputStream
 
 object LineReader {
-    @JvmStatic
-    @Throws(IOException::class)
     fun readLine(source: InputStream): String {
         val buffer = StringBuilder()
         while (true) {

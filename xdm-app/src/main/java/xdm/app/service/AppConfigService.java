@@ -8,8 +8,6 @@ import java.util.List;
 public interface AppConfigService {
   void load();
 
-  String getFolderForDownload(Metadata metadata);
-
   boolean shouldShowDownloadCompleteWindow();
 
   boolean shouldRunVirusScan();

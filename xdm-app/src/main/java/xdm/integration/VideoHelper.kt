@@ -1,14 +1,11 @@
 package xdm.integration
 
 import xdm.app.AppContext
-import xdm.app.models.BrowserDownloadInfo
 import xdm.app.models.StreamingVideoDisplayInfo
 import xdm.core.*
 import xdm.core.downloaders.DashDownloadTaskInfo
 import xdm.core.downloaders.HlsDownloadTaskInfo
 import xdm.core.downloaders.HttpDownloadTaskInfo
-import xdm.core.downloaders.hls.*
-import xdm.core.downloaders.http.*
 import xdm.core.downloaders.web.streaming.manifest.dash.Representation
 import xdm.core.downloaders.web.streaming.manifest.dash.parseMpdManifest
 import xdm.core.downloaders.web.streaming.manifest.hls.HlsMasterPlaylist
@@ -18,7 +15,6 @@ import xdm.core.network.http.*
 import xdm.core.network.http.impl.*
 import xdm.core.util.*
 import java.io.FileInputStream
-import java.lang.StringBuilder
 import java.net.URI
 import java.nio.*
 import java.nio.file.*

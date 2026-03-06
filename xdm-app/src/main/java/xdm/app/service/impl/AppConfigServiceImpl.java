@@ -21,15 +21,6 @@ public class AppConfigServiceImpl implements AppConfigService {
   public void load() {}
 
   @Override
-  public String getFolderForDownload(Metadata metadata) {
-    if (metadata.isAutoSelectFolder()) {
-      return new File(System.getProperty("user.home", "Downloads")).getAbsolutePath();
-    } else {
-      return metadata.getFolder();
-    }
-  }
-
-  @Override
   public boolean shouldShowDownloadCompleteWindow() {
     return true;
   }
