@@ -27,7 +27,6 @@ public class AppWindow extends JFrame implements ActionListener {
   private JTextField txtSearch;
   private JPopupMenu popupCtx;
   private JMenu startQMenu, stopQMenu;
-  private int windowState;
 
   public AppWindow(Image image) {
     if (SystemInfo.isWindows) {
@@ -76,21 +75,6 @@ public class AppWindow extends JFrame implements ActionListener {
 
     ToolTipManager.sharedInstance().setInitialDelay(500);
 
-    addWindowListener(
-        new WindowAdapter() {
-          @Override
-          public void windowOpened(WindowEvent e) {
-            // listView.focus();
-            windowState = AppWindow.this.getExtendedState();
-          }
-
-          @Override
-          public void windowStateChanged(WindowEvent e) {
-            if (AppWindow.this.getExtendedState() != JFrame.ICONIFIED) {
-              windowState = AppWindow.this.getExtendedState();
-            }
-          }
-        });
   }
 
   public void updateDownloadInView(int index) {
@@ -101,14 +85,6 @@ public class AppWindow extends JFrame implements ActionListener {
     this.listView.rowAdded(index);
   }
 
-  public void restoreWindowIfNeeded() {
-    //    if (this.getExtendedState() == JFrame.ICONIFIED) {
-    //      this.setExtendedState(this.windowState);
-    //    }
-    if (!this.isVisible()) {
-      setVisible(true);
-    }
-  }
 
   @Override
   public void actionPerformed(ActionEvent e) {
