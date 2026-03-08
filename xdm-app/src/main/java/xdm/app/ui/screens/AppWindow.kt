@@ -1,0 +1,313 @@
+package xdm.app.ui.screens
+
+import xdm.app.AppContext.app
+import xdm.app.constants.AppConstants
+import xdm.app.data.DbRecord
+import xdm.app.ui.components.AppMenuHandler
+import xdm.app.ui.components.AppToolBar
+import xdm.app.ui.components.FilterListPanel
+import xdm.app.ui.components.MainListView
+import xdm.app.utils.applyMacOSWindowCustomizations
+import xdman.Config
+import xdman.ui.res.StringResource
+import java.awt.*
+import java.awt.event.ActionEvent
+import java.awt.event.ActionListener
+import javax.swing.*
+import javax.swing.border.EmptyBorder
+import javax.swing.border.MatteBorder
+import javax.swing.event.PopupMenuEvent
+import javax.swing.event.PopupMenuListener
+
+class AppWindow(image: Image) : JFrame(), ActionListener {
+    private val listView = MainListView()
+
+    init {
+        title = AppConstants.XDM_WINDOW_TITLE
+        iconImage = image
+        System.getProperty("os.name")?.let { osName ->
+            if (osName.contains("windows", ignoreCase = true)) {
+                getRootPane().putClientProperty("JRootPane.titleBarBackground", UIManager.getColor("Table.background"))
+            }
+            if (osName.contains("mac os", ignoreCase = true)) {
+                applyMacOSWindowCustomizations(image)
+            }
+        }
+
+        setWindowSizeAndPosition()
+        initWindow()
+    }
+
+    private fun initWindow() {
+        val filterPanel = FilterListPanel()
+        val toolbar = AppToolBar({ s: String? -> }, this)
+        toolbar.setMultiSelectView(false)
+        listView.selectModeCallback = { toolbar.setMultiSelectView(it) }
+
+        val panel = JPanel(BorderLayout(10, 0)).apply {
+            add(toolbar.component, BorderLayout.NORTH)
+            add(listView.component)
+            border = EmptyBorder(7, 0, 0, 0)
+        }
+
+        val splitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT).apply {
+            border = MatteBorder(1, 0, 0, 0, Color.BLACK)
+            dividerLocation = 180
+            leftComponent = filterPanel.component
+            rightComponent = panel
+        }
+        add(splitPane)
+
+        ToolTipManager.sharedInstance().initialDelay = 500
+    }
+
+    fun updateDownloadInView(index: Int) {
+        listView.rowUpdated(index)
+    }
+
+    fun addDownloadInView(index: Int) {
+        listView.rowAdded(index)
+    }
+
+
+    override fun actionPerformed(e: ActionEvent) {
+        if (e.source is JComponent) {
+            val name: String = (e.source as JComponent).name ?: return
+
+            when (name) {
+                "TOOL_DOWNLOAD" -> {
+                    app.addDownload(null)
+                    return
+                }
+            }
+
+            if (name.startsWith("STOP")) {
+                AppMenuHandler.stopQueue(name)
+            } else if (name.startsWith("START")) {
+                AppMenuHandler.startQueue(name)
+            } else if ("TOOL_DOWNLOAD" == name || "MENU_ADD_URL" == name) {
+                app.addDownload(null)
+            } else if ("PAUSE" == name || "MENU_PAUSE" == name) {
+                // AppMenuHandler.pauseDownloads(this);
+            } else if ("CTX_COPY_URL" == name) {
+                AppMenuHandler.copyUrl(this)
+            } else if ("LBL_SHOW_PROGRESS" == name) {
+                AppMenuHandler.showProgressWindow(this)
+            } else if ("MENU_RESTART" == name) {
+                //        AppMenuHandler.restartDownloads(this);
+            } else if ("RESUME" == name || "MENU_RESUME" == name) {
+                //        AppMenuHandler.resumeDownloads(this);
+            } else if ("CTX_OPEN_FILE" == name) {
+                AppMenuHandler.openFile(this)
+            } else if ("CTX_OPEN_FOLDER" == name) {
+                //        AppMenuHandler.openFolder(this);
+            } else if ("MENU_EXIT" == name) {
+                // XDMApp.getInstance().exit();
+            } else if ("MENU_OPTIONS" == name || "OPTIONS" == name) {
+                // SettingsPage.getInstance().showPanel(this, "PG_SETTINGS");
+            } else if ("MENU_REFRESH_LINK" == name) {
+                AppMenuHandler.openRefreshPage(this)
+            } else if ("MENU_PROPERTIES" == name) {
+                AppMenuHandler.showProperties(this)
+            } else if ("MENU_BROWSER_INT" == name) {
+                // SettingsPage.getInstance().showPanel(this, "BTN_MONITORING");
+            } else if ("MENU_SPEED_LIMITER" == name) {
+                //        int ret = SpeedLimiter.getSpeedLimit();
+                //        if (ret >= 0) {
+                //          Config.getInstance().setSpeedLimit(ret);
+                //        }
+            } else if ("DESC_Q_TITLE" == name) {
+                // SettingsPage.getInstance().showPanel(this, "Q_MAN");
+            } else if ("MENU_DELETE_DWN" == name
+                || "DELETE" == name
+                || "DESC_DEL" == name
+            ) {
+                //        AppMenuHandler.deleteDownloads(this);
+            } else if ("MENU_DELETE_COMPLETED" == name) {
+                AppMenuHandler.deleteCompleted(this)
+            } else if ("MENU_ABOUT" == name) {
+                //				AboutPage aboutPage = new AboutPage(this);
+                //				aboutPage.showPanel();
+            } else if ("CTX_SAVE_AS" == name) {
+                AppMenuHandler.changeFile(this)
+            } else if ("MENU_IMPORT" == name) {
+                //        JFileChooser jfc = new JFileChooser();
+                //        if (jfc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+                //          File file = jfc.getSelectedFile();
+                //          XDMApp.getInstance().loadDownloadList(file);
+                //        }
+            } else if ("MENU_EXPORT" == name) {
+                //        JFileChooser jfc = new JFileChooser();
+                //        if (jfc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+                //          File file = jfc.getSelectedFile();
+                //          XDMApp.getInstance().saveDownloadList(file);
+                //        }
+            } else if ("MENU_CONTENTS" == name) {
+                //        XDMUtils.browseURL(XDMApp.APP_WIKI_URL);
+            } else if ("MENU_HOME_PAGE" == name) {
+                //        XDMUtils.browseURL(XDMApp.APP_HOME_URL);
+            } else if ("MENU_UPDATE" == name) {
+                //        XDMUtils.browseURL(XDMApp.APP_UPDATE_CHK_URL + XDMApp.APP_VERSION);
+            } else if ("MENU_LANG" == name) {
+                AppMenuHandler.showLanguageDlg(this)
+            } else if ("MENU_BATCH_DOWNLOAD" == name) {
+                AppMenuHandler.showBatchPatternDialog()
+            } else if ("MENU_CLIP_ADD_MENU" == name) {
+                AppMenuHandler.showBatchDialog(this)
+            } else if ("LBL_OPTIMIZE_NETWORK" == name) {
+                AppMenuHandler.optimizeRWin()
+            } else if ("LBL_TRANSLATE" == name) {
+                AppMenuHandler.openTranslationPage()
+            } else if ("LBL_SUPPORT_PAGE" == name) {
+                AppMenuHandler.openSupportPage()
+            } else if ("LBL_REPORT_PROBLEM" == name) {
+                AppMenuHandler.openBugReportPage()
+            }
+        }
+    }
+
+    private fun createMainMenu() {
+        val bar = JMenuBar()
+
+        val file = JMenu(StringResource.get("MENU_FILE"))
+
+        addMenuItem("MENU_ADD_URL", file)
+        addMenuItem("MENU_VIDEO_DWN", file)
+        addMenuItem("MENU_CLIP_ADD_MENU", file)
+        addMenuItem("MENU_BATCH_DOWNLOAD", file)
+        addMenuItem("MENU_DELETE_DWN", file)
+        addMenuItem("MENU_DELETE_COMPLETED", file)
+        addMenuItem("MENU_EXPORT", file)
+        addMenuItem("MENU_IMPORT", file)
+        addMenuItem("MENU_EXIT", file)
+
+        val dwn = JMenu(StringResource.get("MENU_DOWNLOAD"))
+
+        addMenuItem("MENU_PAUSE", dwn)
+        addMenuItem("MENU_RESUME", dwn)
+        addMenuItem("MENU_RESTART", dwn)
+        addMenuItem("DESC_Q_TITLE", dwn)
+
+        val popupListener: PopupMenuListener =
+            object : PopupMenuListener {
+                override fun popupMenuWillBecomeVisible(e: PopupMenuEvent) {
+//                    loadQueueMenu(startQMenu!!)
+//                    loadQueueMenu(stopQMenu!!)
+                }
+
+                override fun popupMenuWillBecomeInvisible(e: PopupMenuEvent) {}
+
+                override fun popupMenuCanceled(e: PopupMenuEvent) {}
+            }
+
+//        startQMenu = addSubMenu("MENU_START_Q", dwn, popupListener)
+//        stopQMenu = addSubMenu("MENU_STOP_Q", dwn, popupListener)
+
+        val tools = JMenu(StringResource.get("MENU_TOOLS"))
+
+        addMenuItem("MENU_OPTIONS", tools)
+        addMenuItem("MENU_REFRESH_LINK", tools)
+        addMenuItem("MENU_PROPERTIES", tools)
+        addMenuItem("MENU_SPEED_LIMITER", tools)
+        addMenuItem("MENU_LANG", tools)
+        addMenuItem("MENU_MEDIA_CONVERTER", tools)
+        addMenuItem("LBL_OPTIMIZE_NETWORK", tools)
+        addMenuItem("MENU_BROWSER_INT", tools)
+
+        val help = JMenu(StringResource.get("MENU_HELP"))
+        addMenuItem("MENU_CONTENTS", help)
+        addMenuItem("MENU_HOME_PAGE", help)
+        addMenuItem("LBL_SUPPORT_PAGE", help)
+        addMenuItem("LBL_REPORT_PROBLEM", help)
+        addMenuItem("LBL_TRANSLATE", help)
+        addMenuItem("MENU_UPDATE", help)
+        addMenuItem("MENU_ABOUT", help)
+
+        bar.add(file)
+        bar.add(dwn)
+        bar.add(tools)
+        bar.add(help)
+
+        jMenuBar = bar
+    }
+
+    private fun addMenuItem(id: String, menu: JComponent) {
+        val mItem = JMenuItem(StringResource.get(id))
+        mItem.name = id
+        mItem.addActionListener(this)
+        menu.add(mItem)
+    }
+
+    private fun addSubMenu(id: String, parentMenu: JMenu, popupListener: PopupMenuListener): JMenu {
+        val menu = JMenu(StringResource.get(id))
+        menu.name = id
+        menu.addActionListener(this)
+        menu.popupMenu.addPopupMenuListener(popupListener)
+        parentMenu.add(menu)
+        return menu
+    }
+
+    private fun setWindowSizeAndPosition() {
+        if (Config.getInstance().width < 0 || Config.getInstance().height < 0) setSize(800, 500)
+        if (Config.getInstance().x < 0 || Config.getInstance().y < 0) setLocationRelativeTo(null)
+    }
+
+    private fun loadQueueMenu(menu: JMenu) {
+        if (menu.name == "MENU_START_Q") {
+            loadStartQueueMenu(menu)
+        } else if (menu.name == "MENU_STOP_Q") {
+            loadStopQueueMenu(menu)
+        }
+    }
+
+    private fun loadStopQueueMenu(menu: JMenu) {
+        //    menu.removeAll();
+        //    ArrayList<DownloadQueue> queues = XDMApp.getInstance().getQueueList();
+        //    for (int i = 0; i < queues.size(); i++) {
+        //      DownloadQueue q = queues.get(i);
+        //      if (q.isRunning()) {
+        //        JMenuItem mitem = new JMenuItem(q.getName());
+        //        mitem.setForeground(ColorResource.getLightFontColor());
+        //        mitem.setName("STOP:" + q.getQueueId());
+        //        mitem.addActionListener(this);
+        //        menu.add(mitem);
+        //      }
+        //    }
+    }
+
+    private fun loadStartQueueMenu(menu: JMenu) {
+        //    menu.removeAll();
+        //    ArrayList<DownloadQueue> queues = XDMApp.getInstance().getQueueList();
+        //    for (int i = 0; i < queues.size(); i++) {
+        //      DownloadQueue q = queues.get(i);
+        //      if (!q.isRunning()) {
+        //        JMenuItem mitem = new JMenuItem(q.getName());
+        //        mitem.setForeground(ColorResource.getLightFontColor());
+        //        mitem.setName("START:" + q.getQueueId());
+        //        mitem.addActionListener(this);
+        //        menu.add(mitem);
+        //      }
+        //    }
+    }
+
+    private fun createPopupMenu() {
+//        popupCtx = JPopupMenu()
+//        addMenuItem("CTX_OPEN_FILE", popupCtx!!)
+//        addMenuItem("CTX_OPEN_FOLDER", popupCtx!!)
+//        addMenuItem("CTX_SAVE_AS", popupCtx!!)
+//        addMenuItem("MENU_PAUSE", popupCtx!!)
+//        addMenuItem("MENU_RESUME", popupCtx!!)
+//        addMenuItem("MENU_DELETE_DWN", popupCtx!!)
+//        addMenuItem("MENU_REFRESH_LINK", popupCtx!!)
+//        addMenuItem("LBL_SHOW_PROGRESS", popupCtx!!)
+//        addMenuItem("CTX_COPY_URL", popupCtx!!)
+//        addMenuItem("CTX_COPY_FILE", popupCtx!!)
+//        addMenuItem("MENU_PROPERTIES", popupCtx!!)
+        //    popupCtx.setInvoker(listView.getComponent());
+        //    listView.installPopupMenu(popupCtx, this);
+    }
+
+    val selectedDownloads: List<DbRecord>
+        get() = emptyList() // listView.getSelectedItems();
+
+}
