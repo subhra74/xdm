@@ -12,8 +12,17 @@ import xdm.core.util.getFileName
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
-class DownloadsControllerImpl(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val configDir: String) :
-    DownloadsController {
+interface IDownloadManager {
+    fun stopDownload(id: Long)
+    fun resumeDownload(id: Long)
+    fun addHttpDownload(task: HttpDownloadTaskInfo)
+    fun addVideoDownload(videoId: Long, fileName: String, folder: String?, autoSelectFolder: Boolean)
+    fun addHlsDownload(task: HlsDownloadTaskInfo)
+    fun addDashDownload(task: DashDownloadTaskInfo)
+}
+
+class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val configDir: String) :
+    IDownloadManager {
     private val activeSessions = ConcurrentHashMap<Long, DownloaderTask>()
     private val downloadHost = object : DownloadHost {
         override fun onDownloadActivated(id: Long) {

@@ -1,9 +1,5 @@
-package xdm.app.service.impl
+package xdm.app
 
-import xdm.app.AppContext
-import xdm.app.models.DetectedVideoInfo
-import xdm.app.models.StreamingVideoDisplayInfo
-import xdm.app.service.VideoTracker
 import xdm.core.downloaders.DashDownloadTaskInfo
 import xdm.core.downloaders.HlsDownloadTaskInfo
 import xdm.core.downloaders.HttpDownloadTaskInfo
@@ -11,8 +7,22 @@ import xdm.core.util.FileUtils
 import xdm.core.util.XDMUtils
 import xdm.core.util.getContentLength
 import xdm.core.util.getHeader
+import xdm.integration.DetectedVideoInfo
+import xdm.integration.StreamingVideoDisplayInfo
 
-class VideoTrackerImpl : VideoTracker {
+interface ICapturedVideoTracker {
+    fun addVideoDownload(videoId: Long)
+    fun addVideoHls(items: List<Pair<HlsDownloadTaskInfo, StreamingVideoDisplayInfo>>)
+    fun addVideoDash(items: List<Pair<DashDownloadTaskInfo, StreamingVideoDisplayInfo>>)
+    fun addVideoHttp(items: List<Pair<HttpDownloadTaskInfo, StreamingVideoDisplayInfo>>)
+    fun updateMediaTitle(tabUrl: String, tabTitle: String)
+    fun getHttpVideo(videoId: Long): HttpDownloadTaskInfo?
+    fun getHlsVideo(videoId: Long): HlsDownloadTaskInfo?
+    fun getDashVideo(videoId: Long): DashDownloadTaskInfo?
+    val videoList: List<DetectedVideoInfo>
+}
+
+class CapturedVideoTracker : ICapturedVideoTracker {
     override fun addVideoDownload(videoId: Long) {
         var name: String?
         var size: Long
@@ -29,18 +39,14 @@ class VideoTrackerImpl : VideoTracker {
         hlsVideoList[videoId]?.let {
             //TODO: Check for link refresh
             val (source, _) = it
-            name = source.fileName
-            contentType = "application/x-mpegURL"
-            AppContext.app.addVideoDownload(videoId, name, -1, contentType)
+            AppContext.app.addVideoDownload(videoId, source.fileName, -1, "application/x-mpegURL")
             return
         }
 
         dashVideoList[videoId]?.let {
             //TODO: Check for link refresh
             val (source, _) = it
-            name = source.fileName
-            contentType = "application/x-mpegURL"
-            AppContext.app.addVideoDownload(videoId, name, -1, contentType)
+            AppContext.app.addVideoDownload(videoId, source.fileName, -1, "application/dash+xml")
             return
         }
     }

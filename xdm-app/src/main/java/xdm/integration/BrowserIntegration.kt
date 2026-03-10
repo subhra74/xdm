@@ -8,10 +8,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.*
 import xdm.app.AppContext
-import xdm.app.models.BrowserDownloadInfo
-import xdm.core.CONTENT_TYPE
-import xdm.core.REFERER
-import xdm.core.USER_AGENT
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.util.*
 import java.nio.charset.StandardCharsets
@@ -157,43 +153,6 @@ object BrowserIntegration {
             knownFileSize = msg.fileSize ?: getContentLength(respHeaders)
         )
     }
-
-//    @JvmStatic
-//    fun toHttpSource(msg: BrowserDownloadInfo?): HttpDownloadTaskInfo? {
-//        if (msg == null) return null
-//        return HttpDownloadTaskInfo(
-//            id = CoreUtils.uniqueId(),
-//            url = msg.url,
-//            fileName = FileUtils.sanitizeFileName(msg.fileName ?: FileUtils.getFileName(msg.url)),
-//            respectFileName = false,
-//            cookie = msg.cookie,
-//            headers = msg.requestHeaders,
-//            origin = null,
-//            autoCategorize = false,
-//            defaultDownloadFolder = AppContext.defaultDownloadFolder,
-//            userSelectedDownloadFolder = null,
-//            maxPiece = 8,
-//            authInfo = null
-//        )
-//    }
-//
-//    private fun toBrowserDownloadInfo(msg: ExtensionMessage): BrowserDownloadInfo {
-//        return BrowserDownloadInfo(UniqueID.get(), msg.url!!).apply {
-//            fileName = FileUtils.sanitizeFileName(msg.file ?: FileUtils.getFileName(msg.url))
-//            requestHeaders = msg.requestHeaders
-//            responseHeaders =
-//                msg.responseHeaders?.map { entry -> entry.key to entry.value.map { it.value } }?.associate { it }
-//            fileName = msg.file
-//            cookie = msg.cookie
-//            fileSize = msg.fileSize ?: getContentLength(responseHeaders)
-//            httpMethod = msg.method
-//            userAgent = msg.userAgent ?: getHeader(USER_AGENT, requestHeaders)
-//            tabUrl = msg.tabUrl
-//            referer = msg.referer ?: getHeader(REFERER, requestHeaders)
-//            mimeType = msg.mimeType ?: getHeader(CONTENT_TYPE, responseHeaders)
-//            modifiedDate = getModifiedDate(responseHeaders)
-//        }
-//    }
 }
 
 @Serializable

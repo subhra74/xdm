@@ -1,7 +1,6 @@
 package xdm.app
 
 import com.formdev.flatlaf.themes.FlatMacDarkLaf
-import xdm.app.service.impl.*
 import xdm.core.downloaders.TaskInfoDB
 import xdm.core.util.Logger
 import java.awt.Insets
@@ -66,12 +65,12 @@ object AppMain {
 
         AppContext.apply {
             db = appDB
-            app = AppControllerServiceImpl()
-            config = AppConfigServiceImpl()
-            queue = QueueServiceImpl()
-            platform = PlatformServiceImpl()
-            downloader = DownloadsControllerImpl(appDB = appDB, taskInfoDB = taskDB, configDir = configDir)
-            videoTracker = VideoTrackerImpl()
+            app = AppInstance()
+            config = AppConfig()
+            queue = QueueManager()
+            platform = PlatformInvoke()
+            downloader = DownloadManager(appDB = appDB, taskInfoDB = taskDB, configDir = configDir)
+            videoTracker = CapturedVideoTracker()
             taskInfoDB = taskDB
         }.init(args, configDir, tempDir)
     }

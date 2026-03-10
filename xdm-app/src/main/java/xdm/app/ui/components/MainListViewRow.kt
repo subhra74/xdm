@@ -3,7 +3,8 @@ package xdm.app.ui.components
 import com.formdev.flatlaf.FlatClientProperties
 import xdm.app.DbRecord
 import xdm.app.RecordStatus
-import xdm.app.utils.UiHelper
+import xdm.app.utils.createSVGIcon
+import xdm.app.utils.showMenu
 import xdm.core.util.FormatUtilities
 import xdm.core.util.Logger
 import xdman.ui.res.StringResource
@@ -78,9 +79,9 @@ class MainListViewRow(
         val p3 = JPanel(BorderLayout())
         p3.background = Color(30, 144, 255)
 
-        icoUnchecked = UiHelper.createSVGIcon("checkbox-blank-line.svg", 16, Color.WHITE)
-        icoChecked = UiHelper.createSVGIcon("checkbox-line.svg", 16, Color.WHITE)
-        icoFile = UiHelper.createSVGIcon("file-zip-fill.svg", 16, Color.WHITE)
+        icoUnchecked = createSVGIcon("checkbox-blank-line.svg", 16, Color.WHITE)
+        icoChecked = createSVGIcon("checkbox-line.svg", 16, Color.WHITE)
+        icoFile = createSVGIcon("file-zip-fill.svg", 16, Color.WHITE)
         icon = JLabel(icoFile)
         icon.border = EmptyBorder(7, 7, 7, 7)
         //    icon.addMouseMotionListener(
@@ -258,7 +259,7 @@ class MainListViewRow(
     }
 
     private fun createButton(iconName: String, e: ActionListener): JButton {
-        val btn = JButton(UiHelper.createSVGIcon(iconName, 16, Color.GRAY))
+        val btn = JButton(createSVGIcon(iconName, 16, Color.GRAY))
         btn.putClientProperty("JButton.buttonType", "toolBarButton")
         btn.addActionListener(e)
         return btn
@@ -267,8 +268,8 @@ class MainListViewRow(
     val height: Int
         get() = panel.preferredSize.height
 
-    fun showMenu(menu: JPopupMenu) {
-        UiHelper.showMenu(btnMenu, menu)
+    fun showPopupMenu(menu: JPopupMenu) {
+        showMenu(btnMenu, menu)
     }
 
     private fun getStatusText(ent: DbRecord): String {

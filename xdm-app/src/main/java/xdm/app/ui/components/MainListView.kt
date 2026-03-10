@@ -94,7 +94,7 @@ class MainListView {
 
     private fun showMenu(entry: DbRecord, editor: MainListViewRow) {
         prepareMenu(this.contextMenu, entry)
-        editor.showMenu(this.contextMenu)
+        editor.showPopupMenu(this.contextMenu)
     }
 
     fun rowUpdated(index: Int) {

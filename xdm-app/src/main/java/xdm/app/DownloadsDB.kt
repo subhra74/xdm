@@ -44,7 +44,7 @@ class AppDB(private val configDir: String) {
     fun indexById(id: Long): Int? = indexMap[id]
 
     @Synchronized
-    fun getByIndex(index: Int): DbRecord? = records[index]
+    fun getByIndex(index: Int): DbRecord = records[index]
 
     val size: Int
         get() = records.size

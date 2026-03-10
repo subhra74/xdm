@@ -1,7 +1,6 @@
 package xdm.integration
 
 import xdm.app.AppContext
-import xdm.app.models.StreamingVideoDisplayInfo
 import xdm.core.*
 import xdm.core.downloaders.DashDownloadTaskInfo
 import xdm.core.downloaders.HlsDownloadTaskInfo

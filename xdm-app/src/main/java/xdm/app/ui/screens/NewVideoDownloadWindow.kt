@@ -2,7 +2,8 @@ package xdm.app.ui.screens
 
 import xdm.app.AppContext
 import xdm.app.AppContext.config
-import xdm.app.utils.UiHelper
+import xdm.app.utils.createSVGIcon
+import xdm.app.utils.sameWidth
 import xdm.core.downloaders.StreamingDownloadTaskInfo
 import xdm.core.util.*
 import xdman.ui.res.StringResource
@@ -68,7 +69,7 @@ class NewVideoDownloadWindow : JDialog() {
         txtFileName.columns = 10
 
         lblFileInfo = JLabel().apply {
-            icon = UiHelper.createSVGIcon("file-line.svg", 36, Color.GRAY)
+            icon = createSVGIcon("file-line.svg", 36, Color.GRAY)
             verticalTextPosition = SwingConstants.BOTTOM
             horizontalTextPosition = SwingConstants.CENTER
             horizontalAlignment = SwingConstants.CENTER
@@ -110,7 +111,7 @@ class NewVideoDownloadWindow : JDialog() {
         }
         contentPane.add(cmbSaveIn, gbcCmbSaveIn)
 
-        val btnBrowse = JButton(UiHelper.createSVGIcon("folder-fill.svg", 16, Color.GRAY))
+        val btnBrowse = JButton(createSVGIcon("folder-fill.svg", 16, Color.GRAY))
         val gbcBtnBrowse = GridBagConstraints().apply {
             insets = Insets(5, 0, 5, 5)
             gridx = 4
@@ -163,7 +164,7 @@ class NewVideoDownloadWindow : JDialog() {
 
         getRootPane().defaultButton = btnDownload
 
-        UiHelper.sameWidth(btnDownload, btnCancel)
+        sameWidth(btnDownload, btnCancel)
 
         addWindowListener(
             object : WindowAdapter() {

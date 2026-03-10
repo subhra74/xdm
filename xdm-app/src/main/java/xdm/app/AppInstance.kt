@@ -1,16 +1,28 @@
-package xdm.app.service.impl
+package xdm.app
 
 import xdm.app.AppContext.db
-import xdm.app.service.AppControllerService
 import xdm.app.ui.screens.AppWindow
 import xdm.app.ui.screens.NewDownloadWindow
 import xdm.app.ui.screens.NewVideoDownloadWindow
-import xdm.app.utils.UiHelper.createSVGIcon
+import xdm.app.utils.createSVGIcon
 import xdm.app.utils.createTray
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import javax.swing.SwingUtilities
 
-class AppControllerServiceImpl : AppControllerService {
+interface IAppInstance {
+    fun run(args: Array<String>)
+    fun showAppWindow()
+    fun hideDownloadProgressWindow(id: Long)
+    fun showDownloadProgressWindow(id: Long)
+    fun showDownloadCompleteWindow(id: Long, folder: String, fileName: String)
+    fun updateDownloadInView(id: Long)
+    fun addDownloadInView(id: Long)
+    fun showErrorInProgressWindow(id: Long, errorMessage: String)
+    fun addDownload(metadata: HttpDownloadTaskInfo?)
+    fun addVideoDownload(vid: Long, fileName: String, fileSize: Long?, fileType: String?)
+}
+
+class AppInstance : IAppInstance {
     private lateinit var appWindow: AppWindow
 
     override fun run(args: Array<String>) {

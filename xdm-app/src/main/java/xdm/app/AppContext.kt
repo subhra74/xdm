@@ -2,7 +2,6 @@ package xdm.app
 
 
 import kotlinx.serialization.json.Json
-import xdm.app.service.*
 import xdm.core.downloaders.TaskInfoDB
 import xdm.core.util.Logger
 import xdm.integration.BrowserIntegration
@@ -14,13 +13,13 @@ import kotlin.io.path.exists
 object AppContext {
 
     lateinit var db: AppDB
-    lateinit var app: AppControllerService
-    lateinit var downloader: DownloadsControllerImpl
-    lateinit var config: AppConfigService
-    lateinit var platform: PlatformService
-    lateinit var queue: QueueService
-    lateinit var appConfig: AppConfig
-    lateinit var videoTracker: VideoTracker
+    lateinit var app: IAppInstance
+    lateinit var downloader: DownloadManager
+    lateinit var config: IAppConfig
+    lateinit var platform: IPlatformInvoke
+    lateinit var queue: IQueueManager
+    lateinit var appConfig: AppConfigData
+    lateinit var videoTracker: ICapturedVideoTracker
     lateinit var defaultDownloadFolder: String
     lateinit var taskInfoDB: TaskInfoDB
     lateinit var configDir: String
@@ -52,9 +51,9 @@ object AppContext {
         throw IllegalStateException("All services are not initialized properly")
     }
 
-    private fun loadConfig(configDir: String, tempDir: String): AppConfig {
+    private fun loadConfig(configDir: String, tempDir: String): AppConfigData {
         val configFile = Paths.get(configDir).resolve(CONFIG_FILE)
-        var config: AppConfig? = null
+        var config: AppConfigData? = null
         if (configFile.exists()) {
             try {
                 Logger.info("Loading config from file")
@@ -66,7 +65,7 @@ object AppContext {
         }
         if (config == null) {
             Logger.info("Using default config")
-            config = AppConfig(tempDir)
+            config = AppConfigData(tempDir)
             try {
                 Files.writeString(configFile, Json.encodeToString(config))
             } catch (ex: Exception) {
