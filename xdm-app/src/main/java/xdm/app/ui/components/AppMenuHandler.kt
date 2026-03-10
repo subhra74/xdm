@@ -1,8 +1,8 @@
 package xdm.app.ui.components
 
 import xdm.app.AppContext.downloader
-import xdm.app.data.DbRecord
-import xdm.app.data.RecordStatus
+import xdm.app.DbRecord
+import xdm.app.RecordStatus
 import xdm.app.ui.screens.AppWindow
 import xdm.app.utils.getFileFolder
 import xdman.Config

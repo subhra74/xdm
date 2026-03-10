@@ -1,8 +1,8 @@
 package xdm.app.ui.components
 
 
-import xdm.app.data.DbRecord
-import xdm.app.data.RecordStatus
+import xdm.app.DbRecord
+import xdm.app.RecordStatus
 import xdman.ui.res.StringResource
 import xdman.util.XDMUtils
 import java.awt.Component

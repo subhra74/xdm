@@ -1,7 +1,7 @@
 package xdm.app.ui.components
 
 import xdm.app.AppContext.db
-import xdm.app.data.DbRecord
+import xdm.app.DbRecord
 import xdman.ListChangeListener
 import xdman.util.Logger
 import javax.swing.table.AbstractTableModel

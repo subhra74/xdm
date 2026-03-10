@@ -1,7 +1,7 @@
 package xdm.app.utils
 
 import xdm.app.AppContext.taskInfoDB
-import xdm.app.data.DbRecord
+import xdm.app.DbRecord
 import xdm.core.downloaders.DownloadType
 import java.util.*
 
