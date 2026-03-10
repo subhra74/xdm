@@ -1,9 +1,5 @@
-package xdm.app.controllers
+package xdm.app
 
-import xdm.app.AppContext
-import xdm.app.data.AppDB
-import xdm.app.data.DbRecord
-import xdm.app.data.RecordStatus
 import xdm.core.downloaders.*
 import xdm.core.downloaders.web.http.HttpDownloaderTask
 import xdm.core.downloaders.web.streaming.downloader.dash.DashDownloaderTask
@@ -16,7 +12,8 @@ import xdm.core.util.getFileName
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
-class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val configDir: String) {
+class DownloadsControllerImpl(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val configDir: String) :
+    DownloadsController {
     private val activeSessions = ConcurrentHashMap<Long, DownloaderTask>()
     private val downloadHost = object : DownloadHost {
         override fun onDownloadActivated(id: Long) {
@@ -208,11 +205,11 @@ class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, priva
 
     }
 
-    fun stopDownload(id: Long) {
+    override fun stopDownload(id: Long) {
         activeSessions[id]?.stop()
     }
 
-    fun resumeDownload(id: Long) {
+    override fun resumeDownload(id: Long) {
         try {
             appDB.getById(id)?.let {
                 val controller: DownloaderTask
@@ -253,7 +250,7 @@ class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, priva
         }
     }
 
-    fun addHttpDownload(task: HttpDownloadTaskInfo) {
+    override fun addHttpDownload(task: HttpDownloadTaskInfo) {
         taskInfoDB.saveHttpTask(task)
         val controller = HttpDownloaderTask(
             task, downloadHost,
@@ -279,7 +276,7 @@ class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, priva
         controller.start()
     }
 
-    fun addVideoDownload(videoId: Long, fileName: String, folder: String?, autoSelectFolder: Boolean) {
+    override fun addVideoDownload(videoId: Long, fileName: String, folder: String?, autoSelectFolder: Boolean) {
         AppContext.videoTracker.getHttpVideo(videoId)?.let { source ->
             source.fileName = fileName
             source.autoCategorize = (folder == null)
@@ -304,7 +301,7 @@ class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, priva
         }
     }
 
-    private fun addHlsDownload(task: HlsDownloadTaskInfo) {
+    override fun addHlsDownload(task: HlsDownloadTaskInfo) {
         task.tempDir = AppContext.appConfig.tempDir + File.separator + task.id
         taskInfoDB.saveHlsTask(task)
         val controller = HlsDownloaderTask(
@@ -334,7 +331,7 @@ class DownloadHostController(val appDB: AppDB, val taskInfoDB: TaskInfoDB, priva
         controller.start()
     }
 
-    private fun addDashDownload(task: DashDownloadTaskInfo) {
+    override fun addDashDownload(task: DashDownloadTaskInfo) {
         println("Not implemented yet")
         task.tempDir = AppContext.appConfig.tempDir + File.separator + task.id
         taskInfoDB.saveDashTask(task)

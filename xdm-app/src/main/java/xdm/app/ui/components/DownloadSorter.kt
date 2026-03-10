@@ -1,13 +1,12 @@
 package xdm.app.ui.components
 
 import xdm.app.AppContext.config
-import xdm.app.constants.SortKey
-import xdm.app.data.DbRecord
+import xdm.app.DbRecord
 
 class DownloadSorter : Comparator<DbRecord> {
     override fun compare(o1: DbRecord, o2: DbRecord): Int {
         val sortKey = config.sortKey
-        val ascending = config.isSortAscending
+        val ascending = config.sortAscending
         var res = 0
         when (sortKey) {
             SortKey.NAME -> res = o1.fileName.compareTo(o2.fileName)

@@ -2,7 +2,7 @@ package xdm.app.ui.screens
 
 import xdm.app.AppContext
 import xdm.app.AppContext.config
-import xdm.app.utils.AppUtils
+import xdm.app.utils.UiHelper
 import xdm.core.downloaders.StreamingDownloadTaskInfo
 import xdm.core.util.*
 import xdman.ui.res.StringResource
@@ -68,7 +68,7 @@ class NewVideoDownloadWindow : JDialog() {
         txtFileName.columns = 10
 
         lblFileInfo = JLabel().apply {
-            icon = AppUtils.createSVGIcon("file-line.svg", 36, Color.GRAY)
+            icon = UiHelper.createSVGIcon("file-line.svg", 36, Color.GRAY)
             verticalTextPosition = SwingConstants.BOTTOM
             horizontalTextPosition = SwingConstants.CENTER
             horizontalAlignment = SwingConstants.CENTER
@@ -110,7 +110,7 @@ class NewVideoDownloadWindow : JDialog() {
         }
         contentPane.add(cmbSaveIn, gbcCmbSaveIn)
 
-        val btnBrowse = JButton(AppUtils.createSVGIcon("folder-fill.svg", 16, Color.GRAY))
+        val btnBrowse = JButton(UiHelper.createSVGIcon("folder-fill.svg", 16, Color.GRAY))
         val gbcBtnBrowse = GridBagConstraints().apply {
             insets = Insets(5, 0, 5, 5)
             gridx = 4
@@ -163,7 +163,7 @@ class NewVideoDownloadWindow : JDialog() {
 
         getRootPane().defaultButton = btnDownload
 
-        AppUtils.sameWidth(btnDownload, btnCancel)
+        UiHelper.sameWidth(btnDownload, btnCancel)
 
         addWindowListener(
             object : WindowAdapter() {
@@ -212,7 +212,7 @@ class NewVideoDownloadWindow : JDialog() {
         this.setLocationRelativeTo(null)
         modelSaveIn.removeAllElements()
         modelSaveIn.addAll(config.recentFolders)
-        if (config.isAutoSelectFolder) {
+        if (config.autoSelectFolder) {
             cmbSaveIn.setSelectedIndex(0)
         } else {
             cmbSaveIn.setSelectedIndex(config.folderIndex + 1)

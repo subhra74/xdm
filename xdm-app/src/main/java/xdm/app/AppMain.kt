@@ -1,8 +1,6 @@
 package xdm.app
 
 import com.formdev.flatlaf.themes.FlatMacDarkLaf
-import xdm.app.controllers.DownloadHostController
-import xdm.app.data.AppDB
 import xdm.app.service.impl.*
 import xdm.core.downloaders.TaskInfoDB
 import xdm.core.util.Logger
@@ -72,7 +70,7 @@ object AppMain {
             config = AppConfigServiceImpl()
             queue = QueueServiceImpl()
             platform = PlatformServiceImpl()
-            downloader = DownloadHostController(appDB = appDB, taskInfoDB = taskDB, configDir = configDir)
+            downloader = DownloadsControllerImpl(appDB = appDB, taskInfoDB = taskDB, configDir = configDir)
             videoTracker = VideoTrackerImpl()
             taskInfoDB = taskDB
         }.init(args, configDir, tempDir)

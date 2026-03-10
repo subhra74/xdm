@@ -2,6 +2,13 @@ package xdm.app.ui.components
 
 import javax.swing.Icon
 
+enum class SortKey {
+    NAME,
+    SIZE,
+    TYPE,
+    DATE,
+}
+
 data class FilterListItem(val itemType: FilterItemType, val text: String, val icon: Icon, val selectedIcon: Icon)
 
 enum class FilterItemType {

@@ -1,6 +1,6 @@
 package xdm.app.ui.components
 
-import xdm.app.utils.AppUtils
+import xdm.app.utils.UiHelper
 import java.awt.Color
 import java.awt.Component
 import javax.swing.JLabel
@@ -27,7 +27,7 @@ class FilterListRenderer : ListCellRenderer<FilterListItem> {
                 )
             )
         label = JLabel().apply {
-            icon = AppUtils.createSVGIcon("arrow-up-down-fill.svg", 20, Color.GRAY)
+            icon = UiHelper.createSVGIcon("arrow-up-down-fill.svg", 20, Color.GRAY)
             iconTextGap = 10
             border = defaultBorder
         }

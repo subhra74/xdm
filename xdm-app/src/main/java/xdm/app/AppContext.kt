@@ -2,8 +2,6 @@ package xdm.app
 
 
 import kotlinx.serialization.json.Json
-import xdm.app.controllers.DownloadHostController
-import xdm.app.data.AppDB
 import xdm.app.service.*
 import xdm.core.downloaders.TaskInfoDB
 import xdm.core.util.Logger
@@ -17,7 +15,7 @@ object AppContext {
 
     lateinit var db: AppDB
     lateinit var app: AppControllerService
-    lateinit var downloader: DownloadHostController
+    lateinit var downloader: DownloadsControllerImpl
     lateinit var config: AppConfigService
     lateinit var platform: PlatformService
     lateinit var queue: QueueService

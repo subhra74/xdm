@@ -1,7 +1,7 @@
 package xdm.app.ui.components
 
 import com.formdev.flatlaf.FlatClientProperties
-import xdm.app.utils.AppUtils
+import xdm.app.utils.UiHelper
 import xdman.ui.res.StringResource
 import java.awt.Color
 import java.awt.Component
@@ -68,7 +68,7 @@ class AppToolBar(searchCallback: (String) -> Unit, buttonCallback: ActionListene
             putClientProperty(FlatClientProperties.STYLE, "arc: 10")
             putClientProperty("JTextField.placeholderText", "Search")
             putClientProperty(
-                "JTextField.trailingIcon", AppUtils.createSVGIcon("search-line.svg", 16, Color.GRAY)
+                "JTextField.trailingIcon", UiHelper.createSVGIcon("search-line.svg", 16, Color.GRAY)
             )
         }
         val d = txtSearch.preferredSize
@@ -102,7 +102,7 @@ class AppToolBar(searchCallback: (String) -> Unit, buttonCallback: ActionListene
         return JButton(StringResource.get(key)).apply {
             name = key
             iconTextGap = 10
-            icon = AppUtils.createSVGIcon(iconName, 16, Color.GRAY)
+            icon = UiHelper.createSVGIcon(iconName, 16, Color.GRAY)
             foreground = Color.GRAY
             margin = Insets(5, 5, 5, 5)
             addActionListener(callback)
@@ -111,7 +111,7 @@ class AppToolBar(searchCallback: (String) -> Unit, buttonCallback: ActionListene
 
     private fun createToolButton(iconName: String): JButton {
         return JButton().apply {
-            icon = AppUtils.createSVGIcon(iconName, 16, Color.GRAY)
+            icon = UiHelper.createSVGIcon(iconName, 16, Color.GRAY)
             foreground = Color.GRAY
             margin = Insets(5, 5, 5, 5)
         }

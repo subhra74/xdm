@@ -1,6 +1,6 @@
 package xdm.app.ui.components
 
-import xdm.app.utils.AppUtils
+import xdm.app.utils.UiHelper
 import xdman.ui.res.StringResource
 import java.awt.Color
 import java.awt.Component
@@ -86,7 +86,7 @@ class FilterListPanel {
     }
 
     private fun makeIcon(icon: String, color: Color): Icon {
-        return AppUtils.createSVGIcon(icon, 20, color)
+        return UiHelper.createSVGIcon(icon, 20, color)
     }
 
     val component: Component

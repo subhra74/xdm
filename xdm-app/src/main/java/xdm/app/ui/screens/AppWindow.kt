@@ -1,8 +1,8 @@
 package xdm.app.ui.screens
 
 import xdm.app.AppContext.app
-import xdm.app.constants.AppConstants
-import xdm.app.data.DbRecord
+import xdm.app.XDM_WINDOW_TITLE
+import xdm.app.DbRecord
 import xdm.app.ui.components.AppMenuHandler
 import xdm.app.ui.components.AppToolBar
 import xdm.app.ui.components.FilterListPanel
@@ -23,7 +23,7 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
     private val listView = MainListView()
 
     init {
-        title = AppConstants.XDM_WINDOW_TITLE
+        title = XDM_WINDOW_TITLE
         iconImage = image
         System.getProperty("os.name")?.let { osName ->
             if (osName.contains("windows", ignoreCase = true)) {
