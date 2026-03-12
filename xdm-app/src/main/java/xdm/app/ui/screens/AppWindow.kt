@@ -3,13 +3,14 @@ package xdm.app.ui.screens
 import xdm.app.AppContext.app
 import xdm.app.XDM_WINDOW_TITLE
 import xdm.app.DbRecord
+import xdm.app.I8N.text
+import xdm.app.OS
 import xdm.app.ui.components.AppMenuHandler
 import xdm.app.ui.components.AppToolBar
 import xdm.app.ui.components.FilterListPanel
 import xdm.app.ui.components.MainListView
 import xdm.app.utils.applyMacOSWindowCustomizations
-import xdman.Config
-import xdman.ui.res.StringResource
+import xdm.app.utils.detectOS
 import java.awt.*
 import java.awt.event.ActionEvent
 import java.awt.event.ActionListener
@@ -25,13 +26,11 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
     init {
         title = XDM_WINDOW_TITLE
         iconImage = image
-        System.getProperty("os.name")?.let { osName ->
-            if (osName.contains("windows", ignoreCase = true)) {
-                getRootPane().putClientProperty("JRootPane.titleBarBackground", UIManager.getColor("Table.background"))
-            }
-            if (osName.contains("mac os", ignoreCase = true)) {
-                applyMacOSWindowCustomizations(image)
-            }
+        val os = detectOS()
+        if (os == OS.Windows) {
+            getRootPane().putClientProperty("JRootPane.titleBarBackground", UIManager.getColor("Table.background"))
+        } else if (os == OS.MacOS) {
+            applyMacOSWindowCustomizations(image)
         }
 
         setWindowSizeAndPosition()
@@ -169,7 +168,7 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
     private fun createMainMenu() {
         val bar = JMenuBar()
 
-        val file = JMenu(StringResource.get("MENU_FILE"))
+        val file = JMenu(text("MENU_FILE"))
 
         addMenuItem("MENU_ADD_URL", file)
         addMenuItem("MENU_VIDEO_DWN", file)
@@ -181,7 +180,7 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
         addMenuItem("MENU_IMPORT", file)
         addMenuItem("MENU_EXIT", file)
 
-        val dwn = JMenu(StringResource.get("MENU_DOWNLOAD"))
+        val dwn = JMenu(text("MENU_DOWNLOAD"))
 
         addMenuItem("MENU_PAUSE", dwn)
         addMenuItem("MENU_RESUME", dwn)
@@ -203,7 +202,7 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
 //        startQMenu = addSubMenu("MENU_START_Q", dwn, popupListener)
 //        stopQMenu = addSubMenu("MENU_STOP_Q", dwn, popupListener)
 
-        val tools = JMenu(StringResource.get("MENU_TOOLS"))
+        val tools = JMenu(text("MENU_TOOLS"))
 
         addMenuItem("MENU_OPTIONS", tools)
         addMenuItem("MENU_REFRESH_LINK", tools)
@@ -214,7 +213,7 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
         addMenuItem("LBL_OPTIMIZE_NETWORK", tools)
         addMenuItem("MENU_BROWSER_INT", tools)
 
-        val help = JMenu(StringResource.get("MENU_HELP"))
+        val help = JMenu(text("MENU_HELP"))
         addMenuItem("MENU_CONTENTS", help)
         addMenuItem("MENU_HOME_PAGE", help)
         addMenuItem("LBL_SUPPORT_PAGE", help)
@@ -232,14 +231,14 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
     }
 
     private fun addMenuItem(id: String, menu: JComponent) {
-        val mItem = JMenuItem(StringResource.get(id))
+        val mItem = JMenuItem(text(id))
         mItem.name = id
         mItem.addActionListener(this)
         menu.add(mItem)
     }
 
     private fun addSubMenu(id: String, parentMenu: JMenu, popupListener: PopupMenuListener): JMenu {
-        val menu = JMenu(StringResource.get(id))
+        val menu = JMenu(text(id))
         menu.name = id
         menu.addActionListener(this)
         menu.popupMenu.addPopupMenuListener(popupListener)
@@ -248,8 +247,10 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
     }
 
     private fun setWindowSizeAndPosition() {
-        if (Config.getInstance().width < 0 || Config.getInstance().height < 0) setSize(800, 500)
-        if (Config.getInstance().x < 0 || Config.getInstance().y < 0) setLocationRelativeTo(null)
+        setSize(800, 500)
+        setLocationRelativeTo(null)
+//        if (Config.getInstance().width < 0 || Config.getInstance().height < 0) setSize(800, 500)
+//        if (Config.getInstance().x < 0 || Config.getInstance().y < 0) setLocationRelativeTo(null)
     }
 
     private fun loadQueueMenu(menu: JMenu) {

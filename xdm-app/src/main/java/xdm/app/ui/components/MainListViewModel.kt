@@ -2,8 +2,8 @@ package xdm.app.ui.components
 
 import xdm.app.AppContext.db
 import xdm.app.DbRecord
-import xdman.ListChangeListener
-import xdman.util.Logger
+import xdm.app.ListChangeListener
+import xdm.core.util.Logger
 import javax.swing.table.AbstractTableModel
 
 class MainListViewModel : AbstractTableModel(), ListChangeListener {
@@ -24,12 +24,12 @@ class MainListViewModel : AbstractTableModel(), ListChangeListener {
     }
 
     override fun listChanged() {
-        Logger.log("List changed")
+        Logger.info("List changed")
         fireTableDataChanged()
     }
 
     override fun listItemUpdated(id: Long) {
-        Logger.log("List updated")
+        Logger.info("List updated")
         val index = db.indexById(id)
         if (index != null) {
             fireTableRowsUpdated(index, index)

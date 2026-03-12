@@ -1,8 +1,8 @@
 package xdm.app.ui.components
 
 
+import xdm.app.I8N.text
 import xdm.app.utils.createSVGIcon
-import xdman.ui.res.StringResource
 import java.awt.Color
 import java.awt.Component
 import javax.swing.*
@@ -17,7 +17,7 @@ class FilterListPanel {
         val stateFilterList = JList(stateFilterModel)
         stateFilterModel.addElement(
             FilterListItem(
-                FilterItemType.ALL, StringResource.get("CAT_ALL"),
+                FilterItemType.ALL, text("CAT_ALL"),
                 makeIcon("arrow-down-circle-fill.svg", Color.GRAY),
                 makeIcon("arrow-down-circle-fill.svg", stateFilterList.selectionForeground)
             )
@@ -25,7 +25,7 @@ class FilterListPanel {
         stateFilterModel.addElement(
             FilterListItem(
                 FilterItemType.UNFINISHED,
-                StringResource.get("CAT_INCOMPLETE"),
+                text("CAT_INCOMPLETE"),
                 makeIcon("progress-2-fill.svg", Color.GRAY),
                 makeIcon("progress-2-fill.svg", stateFilterList.selectionForeground)
             )
@@ -33,7 +33,7 @@ class FilterListPanel {
         stateFilterModel.addElement(
             FilterListItem(
                 FilterItemType.FINISHED,
-                StringResource.get("CAT_FINISHED"),
+                text("CAT_FINISHED"),
                 makeIcon("checkbox-circle-fill.svg", Color.GRAY),
                 makeIcon("checkbox-circle-fill.svg", stateFilterList.selectionForeground)
             )
@@ -54,7 +54,7 @@ class FilterListPanel {
             catFilterModel.addElement(
                 FilterListItem(
                     type,
-                    StringResource.get(type.toString()),
+                    text(type.toString()),
                     makeIcon(iconName, Color.GRAY),
                     makeIcon(iconName, stateFilterList.selectionForeground)
                 )

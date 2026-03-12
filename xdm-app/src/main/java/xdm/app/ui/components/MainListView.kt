@@ -2,9 +2,9 @@ package xdm.app.ui.components
 
 
 import xdm.app.DbRecord
+import xdm.app.I8N.text
 import xdm.app.RecordStatus
-import xdman.ui.res.StringResource
-import xdman.util.XDMUtils
+import xdm.app.utils.isMacPopupTrigger
 import java.awt.Component
 import java.awt.event.ActionEvent
 import java.awt.event.ActionListener
@@ -141,7 +141,7 @@ class MainListView {
                 override fun mouseReleased(me: MouseEvent) {
                     if (me.button == MouseEvent.BUTTON3 || SwingUtilities.isRightMouseButton(me)
                         || me.isPopupTrigger
-                        || XDMUtils.isMacPopupTrigger(me)
+                        || isMacPopupTrigger(me)
                     ) {
                         if (table.rowCount < 1) return
                         if (table.selectedRows.isNotEmpty()) {
@@ -162,7 +162,7 @@ class MainListView {
     }
 
     private fun addMenuItem(id: String, menu: JComponent, a: ActionListener): JMenuItem {
-        val mItem = JMenuItem(StringResource.get(id)).apply {
+        val mItem = JMenuItem(text(id)).apply {
             name = id
             addActionListener(a)
         }

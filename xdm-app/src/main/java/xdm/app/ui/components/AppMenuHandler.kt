@@ -2,15 +2,17 @@ package xdm.app.ui.components
 
 import xdm.app.AppContext.downloader
 import xdm.app.DbRecord
+import xdm.app.I8N.text
+import xdm.app.MessageBoxResult
 import xdm.app.RecordStatus
 import xdm.app.ui.screens.AppWindow
 import xdm.app.utils.getFileFolder
-import xdman.Config
-import xdman.constants.MessageBoxResult
-import xdman.ui.components.BatchPatternDialog
-import xdman.ui.res.StringResource
-import xdman.util.Logger
-import xdman.util.XDMUtils
+import xdm.app.utils.openFileExternal
+import xdm.app.utils.openFolderExternal
+import xdm.core.util.Logger
+//import xdman.Config
+//import xdman.constants.MessageBoxResult
+//import xdman.ui.components.BatchPatternDialog
 import java.awt.Window
 import java.io.FileInputStream
 import java.io.FileNotFoundException
@@ -25,20 +27,20 @@ object AppMenuHandler {
     fun openFile(ent: DbRecord?, window: Window?) {
         if (ent == null) return
         if (ent.status == RecordStatus.FINISHED) {
-            Logger.log("Opening file for id: " + ent.id)
+            Logger.info("Opening file for id: " + ent.id)
             val (fileName: String?, folder: String?) = getFileFolder(ent) ?: return
             if (fileName != null && folder != null) {
                 try {
-                    XDMUtils.openFile(fileName, folder);
+                    openFileExternal(fileName, folder);
                 } catch (e: FileNotFoundException) {
-                    Logger.log(e);
+                    Logger.info(e);
                     MessageBox.show(
                         window,
-                        StringResource.get("ERR_MSG_FILE_NOT_FOUND"),
-                        StringResource.get("ERR_MSG_FILE_NOT_FOUND_MSG")
+                        text("ERR_MSG_FILE_NOT_FOUND"),
+                        text("ERR_MSG_FILE_NOT_FOUND_MSG")
                     );
                 } catch (e: Exception) {
-                    Logger.log(e);
+                    Logger.error(e);
                 }
             }
         }
@@ -48,21 +50,21 @@ object AppMenuHandler {
     fun openFolder(ent: DbRecord?, window: Window?) {
         if (ent == null) return
         if (ent.status == RecordStatus.FINISHED) {
-            Logger.log("Opening folder for id: " + ent.id)
+            Logger.error("Opening folder for id: " + ent.id)
             val (fileName: String?, folder: String?) = getFileFolder(ent) ?: return
             if (folder != null) {
                 try {
-                    Logger.log("Folder: $folder File: $fileName")
-                    XDMUtils.openFolder(fileName, folder)
+                    Logger.info("Folder: $folder File: $fileName")
+                    openFolderExternal(fileName, folder)
                 } catch (e: FileNotFoundException) {
-                    Logger.log(e)
+                    Logger.error(e)
                     MessageBox.show(
                         window,
-                        StringResource.get("ERR_MSG_FILE_NOT_FOUND"),
-                        StringResource.get("ERR_MSG_FILE_NOT_FOUND_MSG")
+                        text("ERR_MSG_FILE_NOT_FOUND"),
+                        text("ERR_MSG_FILE_NOT_FOUND_MSG")
                     )
                 } catch (e: Exception) {
-                    Logger.log(e)
+                    Logger.error(e)
                 }
             }
         }
@@ -86,9 +88,9 @@ object AppMenuHandler {
         val ret =
             MessageBox.confirmWithCheckBox(
                 window,
-                StringResource.get("DEL_TITLE"),
-                StringResource.get("DEL_SEL_TEXT"),
-                StringResource.get("LBL_DELETE_FILE")
+                text("DEL_TITLE"),
+                text("DEL_SEL_TEXT"),
+                text("LBL_DELETE_FILE")
             )
         if (ret != MessageBoxResult.CANCEL) {
             //      XDMApp.getInstance()
@@ -111,68 +113,68 @@ object AppMenuHandler {
     }
 
     fun showBatchPatternDialog() {
-        BatchPatternDialog().isVisible = true
+        //BatchPatternDialog().isVisible = true
     }
 
     fun openTranslationPage() {
-        XDMUtils.browseURL("https://github.com/subhra74/xdm/wiki/Submitting-translations-for-XDM")
+        //XDMUtils.browseURL("https://github.com/subhra74/xdm/wiki/Submitting-translations-for-XDM")
     }
 
     fun openSupportPage() {
-        XDMUtils.browseURL("https://github.com/subhra74/xdm/wiki")
+        //XDMUtils.browseURL("https://github.com/subhra74/xdm/wiki")
     }
 
     fun openBugReportPage() {
-        XDMUtils.browseURL("https://github.com/subhra74/xdm/issues")
+        //XDMUtils.browseURL("https://github.com/subhra74/xdm/issues")
     }
 
     fun optimizeRWin() {
-        val cmbLang =
-            JComboBox(
-                arrayOf(
-                    StringResource.get("LBL_NET_OPT_DEF"),
-                    StringResource.get("LBL_NET_OPT_64"),
-                    StringResource.get("LBL_NET_OPT_128"),
-                    StringResource.get("LBL_NET_OPT_256")
-                )
-            )
-        cmbLang.selectedIndex = 0
-
-        val prompt = StringResource.get("LBL_NET_OPT_MSG")
-
-        val obj = arrayOfNulls<Any>(2)
-        obj[0] = prompt
-        obj[1] = cmbLang
-
-        when (Config.getInstance().tcpWindowSize) {
-            64 -> cmbLang.setSelectedIndex(1)
-            128 -> cmbLang.setSelectedIndex(2)
-            256 -> cmbLang.setSelectedIndex(3)
-            else -> cmbLang.setSelectedIndex(0)
-        }
-
-        if (JOptionPane.showOptionDialog(
-                null,
-                obj,
-                StringResource.get("LBL_OPTIMIZE_NETWORK"),
-                JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.PLAIN_MESSAGE,
-                null,
-                null,
-                null
-            )
-            == JOptionPane.OK_OPTION
-        ) {
-            val index = cmbLang.selectedIndex
-            if (index != -1) {
-                when (index) {
-                    1 -> Config.getInstance().tcpWindowSize = 64
-                    2 -> Config.getInstance().tcpWindowSize = 128
-                    3 -> Config.getInstance().tcpWindowSize = 256
-                    else -> Config.getInstance().tcpWindowSize = 0
-                }
-            }
-        }
+//        val cmbLang =
+//            JComboBox(
+//                arrayOf(
+//                    text("LBL_NET_OPT_DEF"),
+//                    text("LBL_NET_OPT_64"),
+//                    text("LBL_NET_OPT_128"),
+//                    text("LBL_NET_OPT_256")
+//                )
+//            )
+//        cmbLang.selectedIndex = 0
+//
+//        val prompt = text("LBL_NET_OPT_MSG")
+//
+//        val obj = arrayOfNulls<Any>(2)
+//        obj[0] = prompt
+//        obj[1] = cmbLang
+//
+//        when (Config.getInstance().tcpWindowSize) {
+//            64 -> cmbLang.setSelectedIndex(1)
+//            128 -> cmbLang.setSelectedIndex(2)
+//            256 -> cmbLang.setSelectedIndex(3)
+//            else -> cmbLang.setSelectedIndex(0)
+//        }
+//
+//        if (JOptionPane.showOptionDialog(
+//                null,
+//                obj,
+//                text("LBL_OPTIMIZE_NETWORK"),
+//                JOptionPane.OK_CANCEL_OPTION,
+//                JOptionPane.PLAIN_MESSAGE,
+//                null,
+//                null,
+//                null
+//            )
+//            == JOptionPane.OK_OPTION
+//        ) {
+//            val index = cmbLang.selectedIndex
+//            if (index != -1) {
+//                when (index) {
+//                    1 -> Config.getInstance().tcpWindowSize = 64
+//                    2 -> Config.getInstance().tcpWindowSize = 128
+//                    3 -> Config.getInstance().tcpWindowSize = 256
+//                    else -> Config.getInstance().tcpWindowSize = 0
+//                }
+//            }
+//        }
     }
 
     fun showBatchDialog(window: AppWindow?) {
@@ -183,8 +185,8 @@ object AppMenuHandler {
         //    } else {
         //      xdm.app.ui.components.MessageBox.show(
         //          window,
-        //          StringResource.get("MENU_BATCH_DOWNLOAD"),
-        //          StringResource.get("LBL_BATCH_EMPTY_CLIPBOARD"));
+        //          text("MENU_BATCH_DOWNLOAD"),
+        //          text("LBL_BATCH_EMPTY_CLIPBOARD"));
         //    }
     }
 
@@ -196,68 +198,68 @@ object AppMenuHandler {
     }
 
     fun showLanguageDlg(window: AppWindow?) {
-        val langMap = Properties()
-        var `in`: InputStream? = null
-        try {
-            `in` = StringResource::class.java.getResourceAsStream("/lang/map")
-            if (`in` == null) {
-                `in` = FileInputStream("lang/map")
-            }
-            langMap.load(InputStreamReader(`in`, Charset.forName("utf-8")))
-        } catch (e: Exception) {
-            Logger.log(e)
-        } finally {
-            if (`in` != null) {
-                try {
-                    `in`.close()
-                } catch (e2: Exception) {
-                }
-            }
-        }
-
-        var index = 0
-
-        val keyList = ArrayList(langMap.stringPropertyNames())
-        val valList = Vector<String>()
-
-        for (i in keyList.indices) {
-            val name = keyList[i]
-            val `val` = langMap.getProperty(name)
-            valList.add(`val`)
-            if (name == Config.getInstance().language) {
-                index = i
-            }
-        }
-
-        val cmbLang = JComboBox(valList)
-        cmbLang.selectedIndex = index
-
-        val prompt = StringResource.get("MSG_LANG1")
-
-        val obj = arrayOfNulls<Any>(3)
-        obj[0] = prompt
-        obj[1] = cmbLang
-        obj[2] = StringResource.get("MSG_LANG2")
-
-        if (JOptionPane.showOptionDialog(
-                window,
-                obj,
-                StringResource.get("MSG_LANG1"),
-                JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.PLAIN_MESSAGE,
-                null,
-                null,
-                null
-            )
-            == JOptionPane.OK_OPTION
-        ) {
-            index = cmbLang.selectedIndex
-            if (index != -1) {
-                Config.getInstance().language = keyList[index]
-            }
-            val lang = langMap.getProperty(cmbLang.selectedItem.toString() + "")
-            if (lang != null) Config.getInstance().language = lang
-        }
+//        val langMap = Properties()
+//        var `in`: InputStream? = null
+//        try {
+//            `in` = AppMenuHandler::class.java.getResourceAsStream("/lang/map")
+//            if (`in` == null) {
+//                `in` = FileInputStream("lang/map")
+//            }
+//            langMap.load(InputStreamReader(`in`, Charset.forName("utf-8")))
+//        } catch (e: Exception) {
+//            Logger.error(e)
+//        } finally {
+//            if (`in` != null) {
+//                try {
+//                    `in`.close()
+//                } catch (e2: Exception) {
+//                }
+//            }
+//        }
+//
+//        var index = 0
+//
+//        val keyList = ArrayList(langMap.stringPropertyNames())
+//        val valList = Vector<String>()
+//
+//        for (i in keyList.indices) {
+//            val name = keyList[i]
+//            val `val` = langMap.getProperty(name)
+//            valList.add(`val`)
+//            if (name == Config.getInstance().language) {
+//                index = i
+//            }
+//        }
+//
+//        val cmbLang = JComboBox(valList)
+//        cmbLang.selectedIndex = index
+//
+//        val prompt = text("MSG_LANG1")
+//
+//        val obj = arrayOfNulls<Any>(3)
+//        obj[0] = prompt
+//        obj[1] = cmbLang
+//        obj[2] = text("MSG_LANG2")
+//
+//        if (JOptionPane.showOptionDialog(
+//                window,
+//                obj,
+//                text("MSG_LANG1"),
+//                JOptionPane.OK_CANCEL_OPTION,
+//                JOptionPane.PLAIN_MESSAGE,
+//                null,
+//                null,
+//                null
+//            )
+//            == JOptionPane.OK_OPTION
+//        ) {
+//            index = cmbLang.selectedIndex
+//            if (index != -1) {
+//                Config.getInstance().language = keyList[index]
+//            }
+//            val lang = langMap.getProperty(cmbLang.selectedItem.toString() + "")
+//            if (lang != null) Config.getInstance().language = lang
+//        }
     }
 
     fun changeFile(window: AppWindow?) {
@@ -371,7 +373,7 @@ object AppMenuHandler {
 
     fun deleteCompleted(window: AppWindow?) {
         //    if (xdm.app.ui.components.MessageBox.confirm(
-        //        window, StringResource.get("DEL_TITLE"), StringResource.get("DEL_FINISHED_TEXT"))) {
+        //        window, text("DEL_TITLE"), text("DEL_FINISHED_TEXT"))) {
         //      XDMApp.getInstance().deleteCompleted();
         //    }
     }

@@ -29,6 +29,10 @@ object AppContext {
         val f = File(System.getProperty("user.home"), "Downloads")
         defaultDownloadFolder = if (f.exists()) f.absolutePath else System.getProperty("user.home")
         appConfig = loadConfig(configDir, tempDir)
+
+        Logger.info("Loading translations...")
+        I8N.loadTexts(appConfig.lang)
+
         if (::db.isInitialized
             && ::app.isInitialized
             && ::downloader.isInitialized

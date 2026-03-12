@@ -2,12 +2,12 @@ package xdm.app.ui.components
 
 import com.formdev.flatlaf.FlatClientProperties
 import xdm.app.DbRecord
+import xdm.app.I8N.text
 import xdm.app.RecordStatus
 import xdm.app.utils.createSVGIcon
 import xdm.app.utils.showMenu
 import xdm.core.util.FormatUtilities
 import xdm.core.util.Logger
-import xdman.ui.res.StringResource
 import java.awt.*
 import java.awt.event.ActionListener
 import java.awt.event.MouseAdapter
@@ -311,23 +311,23 @@ class MainListViewRow(
             lblInfo.text = getStatusText(ent)
             lblTitle.text = ent.fileName
             prg.value = ent.progress
-            var prgText = StringResource.get("STAT_DOWNLOADING")
+            var prgText = text("STAT_DOWNLOADING")
             if (ent.status == RecordStatus.DOWNLOADING) {
                 if (ent.progress > 0) {
                     prgText = String.format(
-                        "%s %d%s", StringResource.get("STAT_DOWNLOADING"), ent.progress, "%"
+                        "%s %d%s", text("STAT_DOWNLOADING"), ent.progress, "%"
                     )
                 }
                 prg.isVisible = true
             } else if (ent.status == RecordStatus.PAUSED) {
                 prgText = if (ent.progress > 0) {
-                    String.format("%s %d%s", StringResource.get("STAT_PAUSED"), ent.progress, "%")
+                    String.format("%s %d%s", text("STAT_PAUSED"), ent.progress, "%")
                 } else {
-                    StringResource.get("STAT_PAUSED")
+                    text("STAT_PAUSED")
                 }
                 prg.isVisible = false
             } else if (ent.status == RecordStatus.ASSEMBLING) {
-                prgText = StringResource.get("STAT_ASSEMBLING")
+                prgText = text("STAT_ASSEMBLING")
                 prg.isVisible = false
             }
             lblProgress.text = prgText

@@ -1,8 +1,8 @@
 package xdm.app.ui.components
 
 import com.formdev.flatlaf.FlatClientProperties
+import xdm.app.I8N.text
 import xdm.app.utils.createSVGIcon
-import xdman.ui.res.StringResource
 import java.awt.Color
 import java.awt.Component
 import java.awt.Dimension
@@ -99,7 +99,7 @@ class AppToolBar(searchCallback: (String) -> Unit, buttonCallback: ActionListene
     }
 
     private fun createToolButton(iconName: String, callback: ActionListener, key: String): JButton {
-        return JButton(StringResource.get(key)).apply {
+        return JButton(text(key)).apply {
             name = key
             iconTextGap = 10
             icon = createSVGIcon(iconName, 16, Color.GRAY)

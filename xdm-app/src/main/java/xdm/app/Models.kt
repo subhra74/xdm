@@ -13,5 +13,23 @@ data class AppConfigData(
     var videoExtList: List<String> = mutableListOf(
         "MP4", "M3U8", "F4M", "WEBM", "OGG", "MP3", "AAC", "FLV", "MKV", "DIVX",
         "MOV", "MPG", "MPEG", "OPUS", "MPD"
-    )
+    ),
+    var lang: String = "en"
 )
+
+enum class OS {
+    Windows,
+    Linux,
+    MacOS
+}
+
+enum class MessageBoxResult {
+    YES,
+    CANCEL,
+    YES_WITH_SELECTION
+}
+
+interface ListChangeListener {
+    fun listChanged()
+    fun listItemUpdated(id: Long)
+}

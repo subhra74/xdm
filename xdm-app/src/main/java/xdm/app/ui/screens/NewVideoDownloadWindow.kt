@@ -2,11 +2,11 @@ package xdm.app.ui.screens
 
 import xdm.app.AppContext
 import xdm.app.AppContext.config
+import xdm.app.I8N.text
 import xdm.app.utils.createSVGIcon
 import xdm.app.utils.sameWidth
 import xdm.core.downloaders.StreamingDownloadTaskInfo
 import xdm.core.util.*
-import xdman.ui.res.StringResource
 import java.awt.*
 import java.awt.event.ActionEvent
 import java.awt.event.WindowAdapter
@@ -33,7 +33,7 @@ class NewVideoDownloadWindow : JDialog() {
 
     private fun initUI() {
         isAlwaysOnTop = true
-        title = StringResource.get("ND_TITLE")
+        title = text("ND_TITLE")
         val gridBagLayout = GridBagLayout().apply {
             columnWidths = intArrayOf(0, 0, 0, 0, 0, 0, 0)
             rowHeights = intArrayOf(0, 0, 0, 0, 0, 0)
@@ -45,7 +45,7 @@ class NewVideoDownloadWindow : JDialog() {
             background = UIManager.getColor("Table.background")
         }
 
-        val lblFile = JLabel(StringResource.get("ND_FILE")).apply {
+        val lblFile = JLabel(text("ND_FILE")).apply {
             horizontalAlignment = SwingConstants.RIGHT
         }
         val gbcLblFile = GridBagConstraints().apply {
@@ -87,7 +87,7 @@ class NewVideoDownloadWindow : JDialog() {
         }
         contentPane.add(lblFileInfo, gbcLblFileInfo)
 
-        val lblSaveIn = JLabel(StringResource.get("LBL_SAVE_IN")).apply {
+        val lblSaveIn = JLabel(text("LBL_SAVE_IN")).apply {
             horizontalAlignment = SwingConstants.RIGHT
         }
         val gbcLblSaveIn = GridBagConstraints().apply {
@@ -119,7 +119,7 @@ class NewVideoDownloadWindow : JDialog() {
         }
         contentPane.add(btnBrowse, gbcBtnBrowse)
 
-        val lblIgnore = JLabel(StringResource.get("ND_IGNORE_URL"))
+        val lblIgnore = JLabel(text("ND_IGNORE_URL"))
         lblIgnore.verticalAlignment = SwingConstants.TOP
         val gbcLblIgnore = GridBagConstraints().apply {
             weighty = 1.0
@@ -144,21 +144,21 @@ class NewVideoDownloadWindow : JDialog() {
         contentPane.add(panel, gcPanel)
         panel.layout = BoxLayout(panel, BoxLayout.X_AXIS)
 
-        val btnQueue = JButton(StringResource.get("ND_QUEUE"))
+        val btnQueue = JButton(text("ND_QUEUE"))
         panel.add(btnQueue)
 
         panel.add(Box.createHorizontalGlue())
         val rigidArea1 = Box.createRigidArea(Dimension(80, 20))
         panel.add(rigidArea1)
 
-        val btnCancel = JButton(StringResource.get("ND_CANCEL"))
+        val btnCancel = JButton(text("ND_CANCEL"))
         btnCancel.addActionListener { e: ActionEvent? -> dispose() }
         panel.add(btnCancel)
 
         val rigidArea = Box.createRigidArea(Dimension(10, 30))
         panel.add(rigidArea)
 
-        btnDownload = JButton(StringResource.get("ND_DOWNLOAD"))
+        btnDownload = JButton(text("ND_DOWNLOAD"))
         btnDownload.addActionListener { _ -> downloadNow() }
         panel.add(btnDownload)
 
@@ -182,7 +182,7 @@ class NewVideoDownloadWindow : JDialog() {
     private fun downloadNow() {
         val file = txtFileName.text
         if (StringUtils.isNullOrEmptyOrBlank(file)) {
-            JOptionPane.showMessageDialog(this, StringResource.get("MSG_NO_FILE"))
+            JOptionPane.showMessageDialog(this, text("MSG_NO_FILE"))
             return
         }
 

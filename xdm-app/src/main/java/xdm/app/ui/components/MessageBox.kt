@@ -1,6 +1,6 @@
 package xdm.app.ui.components
 
-import xdman.constants.MessageBoxResult
+import xdm.app.MessageBoxResult
 import java.awt.Window
 import javax.swing.JCheckBox
 import javax.swing.JFrame

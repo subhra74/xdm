@@ -3,10 +3,7 @@ package xdm.app
 import xdm.core.downloaders.DashDownloadTaskInfo
 import xdm.core.downloaders.HlsDownloadTaskInfo
 import xdm.core.downloaders.HttpDownloadTaskInfo
-import xdm.core.util.FileUtils
-import xdm.core.util.XDMUtils
-import xdm.core.util.getContentLength
-import xdm.core.util.getHeader
+import xdm.core.util.*
 import xdm.integration.DetectedVideoInfo
 import xdm.integration.StreamingVideoDisplayInfo
 
@@ -157,7 +154,7 @@ class CapturedVideoTracker : ICapturedVideoTracker {
     private val dashVideoList = LinkedHashMap<Long, Pair<DashDownloadTaskInfo, StreamingVideoDisplayInfo>>()
     private val httpVideoList = LinkedHashMap<Long, Pair<HttpDownloadTaskInfo, StreamingVideoDisplayInfo>>()
     private fun generateUpdatedFileName(oldName: String, newName: String): String {
-        val ext: String? = XDMUtils.getExtension(oldName)
+        val ext: String? = getExtension(oldName)
         var newFileName = FileUtils.sanitizeFileName(newName)
         ext?.let { newFileName += ext }
         return newFileName

@@ -1,12 +1,16 @@
 package xdm.app.utils
 
 import xdm.app.AppContext.app
+import xdm.app.OS
 import xdm.core.util.Logger
 import java.awt.*
 import java.awt.datatransfer.DataFlavor
 import java.awt.desktop.AppReopenedEvent
 import java.awt.desktop.AppReopenedListener
 import java.awt.event.ActionEvent
+import java.awt.event.InputEvent
+import java.awt.event.MouseEvent
+import java.io.File
 
 fun createTray(image: Image) {
     if (!SystemTray.isSupported()) {
@@ -54,7 +58,55 @@ fun getClipBoardText(): String {
         return Toolkit.getDefaultToolkit().systemClipboard
             .getData(DataFlavor.stringFlavor) as String
     } catch (e: Exception) {
-        xdman.util.Logger.log(e)
+        Logger.error(e)
     }
     return ""
+}
+
+fun isMacPopupTrigger(e: MouseEvent): Boolean {
+    if (detectOS() == OS.MacOS) {
+        return (e.modifiersEx and InputEvent.BUTTON1_DOWN_MASK) != 0
+                && (e.modifiersEx and InputEvent.CTRL_DOWN_MASK) != 0
+    }
+    return false
+}
+
+fun detectOS(): OS {
+    System.getProperty("os.name")?.let { osName ->
+        return if (osName.contains("windows", ignoreCase = true)) {
+            OS.Windows
+        } else if (osName.contains("mac os", ignoreCase = true)) {
+            OS.MacOS
+        } else {
+            OS.Linux
+        }
+    } ?: return OS.Linux
+}
+
+fun openFileExternal(file: String, folder: String?) {
+    val os = detectOS()
+    val f = File(folder, file)
+    when (os) {
+        OS.Windows -> WinUtils.open(f)
+        OS.Linux -> LinuxUtils.open(f)
+        OS.MacOS -> MacUtils.open(f)
+        else -> Desktop.getDesktop().open(f)
+    }
+}
+
+
+fun openFolderExternal(file: String?, folder: String) {
+    val os = detectOS()
+    when (os) {
+        OS.Windows -> WinUtils.openFolder(folder, file)
+        OS.Linux -> {
+            val f = File(folder)
+            LinuxUtils.open(f)
+        }
+        OS.MacOS -> MacUtils.openFolder(folder, file)
+        else -> {
+            val ff = File(folder)
+            Desktop.getDesktop().open(ff)
+        }
+    }
 }

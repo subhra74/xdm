@@ -1,7 +1,7 @@
 package xdm.app
 
+import xdm.app.I8N.text
 import xdm.app.ui.components.SortKey
-import xdman.ui.res.StringResource
 import java.io.File
 
 interface IAppConfig {
@@ -10,17 +10,18 @@ interface IAppConfig {
     fun shouldRunVirusScan(): Boolean
     fun shouldRunCommand(): Boolean
     fun shouldShowDownloadProgressWindow(): Boolean
-    val defaultDownloadFolder: String?
-    val tempFolder: String?
+    val defaultDownloadFolder: String
+    val tempFolder: String
     fun shouldAutoRenameOnConflict(): Boolean
     fun shouldShutdownAfterAllDone(): Boolean
     val maxParallelDownloads: Int
-    val recentFolders: List<String?>?
+    val recentFolders: List<String>
     var autoSelectFolder: Boolean
     val folderIndex: Int
     var sortKey: SortKey?
     var sortAscending: Boolean
     var minVideoSize: Long
+    var lang: String
 }
 
 class AppConfig : IAppConfig {
@@ -29,6 +30,9 @@ class AppConfig : IAppConfig {
     override var sortKey: SortKey? = SortKey.DATE
     override var sortAscending = false
     override var minVideoSize: Long = 1024
+    override var lang: String
+        get() = "en"
+        set(value) {}
     override val maxParallelDownloads: Int = 4
 
     override fun load() {}
@@ -49,10 +53,10 @@ class AppConfig : IAppConfig {
         return true
     }
 
-    override val defaultDownloadFolder: String?
+    override val defaultDownloadFolder: String
         get() = File(System.getProperty("user.home"), "Downloads").absolutePath
 
-    override val tempFolder: String?
+    override val tempFolder: String
         get() = File(System.getProperty("user.home"), ".temp").absolutePath
 
     override fun shouldAutoRenameOnConflict(): Boolean {
@@ -63,6 +67,6 @@ class AppConfig : IAppConfig {
         return false
     }
 
-    override val recentFolders: List<String?>?
-        get() = mutableListOf(StringResource.get("ND_AUTO_CAT"), defaultDownloadFolder)
+    override val recentFolders: List<String>
+        get() = mutableListOf(text("ND_AUTO_CAT"), defaultDownloadFolder)
 }
