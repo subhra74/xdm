@@ -6,7 +6,9 @@ import xdm.app.I8N.text
 import xdm.app.RecordStatus
 import xdm.app.utils.createSVGIcon
 import xdm.app.utils.showMenu
-import xdm.core.util.FormatUtilities
+import xdm.core.util.FormatHelper.formatDateShort
+import xdm.core.util.FormatHelper.formatSize
+import xdm.core.util.FormatHelper.toLongEta
 import xdm.core.util.Logger
 import java.awt.*
 import java.awt.event.ActionListener
@@ -152,7 +154,7 @@ class MainListViewRow(
         lblTitle.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent?) {
                 if (editEntry != null) {
-                    Logger.info(editEntry)
+                    Logger.info(editEntry!!)
                     onOpenFileClick?.invoke(editEntry!!)
                 }
             }
@@ -189,7 +191,7 @@ class MainListViewRow(
                 "pause-circle-line.svg"
             ) {
                 if (editEntry != null) {
-                    Logger.info(editEntry)
+                    Logger.info(editEntry!!)
                     onPauseClick?.invoke(editEntry!!)
                 }
             }
@@ -274,18 +276,18 @@ class MainListViewRow(
 
     private fun getStatusText(ent: DbRecord): String {
         val text = StringBuilder(80)
-        text.append(FormatUtilities.formatDateShort(ent.date))
+        text.append(formatDateShort(ent.date))
         if (ent.downloaded > 0) {
-            text.append(gap).append(FormatUtilities.formatSize(ent.downloaded.toDouble()))
+            text.append(gap).append(formatSize(ent.downloaded.toDouble()))
         }
         if (ent.size > 0) {
-            text.append(" / ").append(FormatUtilities.formatSize(ent.size.toDouble()))
+            text.append(" / ").append(formatSize(ent.size.toDouble()))
         }
         if (ent.speed > 0 && ent.status == RecordStatus.DOWNLOADING) {
-            text.append(" (").append(FormatUtilities.formatSize(ent.speed.toDouble())).append("/s)")
+            text.append(" (").append(formatSize(ent.speed.toDouble())).append("/s)")
         }
         if (ent.eta > 0 && ent.status == RecordStatus.DOWNLOADING) {
-            text.append(gap).append(FormatUtilities.toLongEta(ent.eta)).append(" left")
+            text.append(gap).append(toLongEta(ent.eta)).append(" left")
         }
         return text.toString()
     }
@@ -301,9 +303,9 @@ class MainListViewRow(
             ent.status != RecordStatus.FINISHED && ent.status != RecordStatus.DOWNLOADING && ent.status != RecordStatus.READY
         resumeGap.isVisible = btnResume.isVisible
         if (ent.status == RecordStatus.FINISHED) {
-            lblInfo.text = (FormatUtilities.formatDateShort(ent.date)
+            lblInfo.text = (formatDateShort(ent.date)
                     + gap
-                    + FormatUtilities.formatSize(ent.size.toDouble()))
+                    + formatSize(ent.size.toDouble()))
             lblTitle.text = ent.fileName
             prg.isVisible = false
             lblProgress.text = ""

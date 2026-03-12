@@ -157,6 +157,6 @@ class CapturedVideoTracker : ICapturedVideoTracker {
         val ext: String? = getExtension(oldName)
         var newFileName = FileUtils.sanitizeFileName(newName)
         ext?.let { newFileName += ext }
-        return newFileName
+        return newFileName!!
     }
 }

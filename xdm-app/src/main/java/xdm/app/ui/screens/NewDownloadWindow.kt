@@ -397,7 +397,7 @@ class NewDownloadWindow : JDialog() {
             this.txtFileName.text = taskInfo.fileName
             this.originalFileName = taskInfo.fileName
             this.lblFileInfo.text = taskInfo.knownFileSize?.let {
-                FormatUtilities.formatSize(it.toDouble())
+                FormatHelper.formatSize(it.toDouble())
             } ?: "---"
         }
         this.isVisible = true

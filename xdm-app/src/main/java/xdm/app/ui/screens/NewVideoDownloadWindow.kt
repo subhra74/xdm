@@ -187,7 +187,7 @@ class NewVideoDownloadWindow : JDialog() {
         }
 
         try {
-            val name = FileUtils.sanitizeFileName(file)
+            val name = FileUtils.sanitizeFileName(file)!!
             //TODO: Check FFmpeg required
 
             var folder: String? = null
@@ -220,7 +220,7 @@ class NewVideoDownloadWindow : JDialog() {
         }
         txtFileName.text = FileUtils.sanitizeFileName(fileName)
         fileSize?.let {
-            lblFileInfo.text = FormatUtilities.formatSize(it.toDouble())
+            lblFileInfo.text = FormatHelper.formatSize(it.toDouble())
         }
         this.isVisible = true
     }

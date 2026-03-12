@@ -2,10 +2,7 @@ package xdm.core.util
 
 fun getFileExtFromUrl(url: String): String? {
     val fileName = FileUtils.getFileName(url)
-    if (fileName != null) {
-        return XDMUtils.getExtension(fileName)
-    }
-    return null
+    return getExtension(fileName)
 }
 
 fun getExtension(file: String): String? {
@@ -14,5 +11,14 @@ fun getExtension(file: String): String? {
         file.substring(index)
     } else {
         null
+    }
+}
+
+fun getFileNameWithoutExtension(name: String): String {
+    val index = name.lastIndexOf(".")
+    return if (index > 0) {
+        name.substring(0, index)
+    } else {
+        return name
     }
 }

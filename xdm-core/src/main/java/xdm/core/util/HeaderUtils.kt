@@ -1,5 +1,6 @@
 package xdm.core.util
 
+import xdm.core.util.FileUtils.decodeFileName
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -53,9 +54,54 @@ fun getFileName(
     return oldName
 }
 
+private fun getExtendedContentDisposition(header: String): String? {
+    try {
+        val arr = header.split(";")
+        for (str in arr) {
+            if (str.contains("filename*")) {
+                val index = str.lastIndexOf("'")
+                if (index > 0) {
+                    val st = str.substring(index + 1)
+                    return decodeFileName(st)
+                }
+            }
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+    return null
+}
+
+fun getNameFromContentDisposition(header: String?): String? {
+    try {
+        if (header == null) return null
+        val headerLow = header.lowercase(Locale.getDefault())
+        if (headerLow.startsWith("attachment") || headerLow.startsWith("inline")) {
+            val name = getExtendedContentDisposition(header)
+            if (name != null) return name
+            val arr = header.split(";".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+            for (i in arr.indices) {
+                val str = arr[i].trim { it <= ' ' }
+                if (str.lowercase(Locale.getDefault()).startsWith("filename")) {
+                    val index = str.indexOf('=')
+                    val file = str.substring(index + 1).replace("\"", "").trim { it <= ' ' }
+                    return try {
+                        decodeFileName(file)
+                    } catch (e: Exception) {
+                        file
+                    }
+                }
+            }
+        }
+    } catch (e: Exception) {
+        //NOOP
+    }
+    return null
+}
+
 fun getFileName(url: String, contentDisposition: String? = null, contentType: String? = null): String {
-    NetUtils.getNameFromContentDisposition(contentDisposition)?.let { return it }
-    FileUtils.getFileName(url).let {
+    getNameFromContentDisposition(contentDisposition)?.let { return it }
+    FileUtils.getFileName(url)?.let {
         if (StringUtils.containsIgnoreCase(contentType, "text/html")) {
             if (it.endsWith(".html")) {
                 return it
@@ -64,6 +110,7 @@ fun getFileName(url: String, contentDisposition: String? = null, contentType: St
         }
         return it
     }
+    return "FILE"
 }
 
 //fun getFileName(uri: String?): String {

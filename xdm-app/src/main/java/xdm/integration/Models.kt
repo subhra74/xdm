@@ -1,6 +1,6 @@
 package xdm.integration
 
-import xdm.core.util.FormatUtilities
+import xdm.core.util.FormatHelper
 import java.time.LocalDateTime
 
 data class DetectedVideoInfo(
@@ -26,7 +26,7 @@ data class StreamingVideoDisplayInfo(
                 duration?.let {
                     if (it > 0) {
                         quality?.let { append(" ") }
-                        append(FormatUtilities.hms(it.toInt()))
+                        append(FormatHelper.hms(it.toInt()))
                     }
                 }
             }.toString()

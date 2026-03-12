@@ -2,7 +2,7 @@ package xdm.core.downloaders.web
 
 import xdm.core.downloaders.web.http.Chunk
 import xdm.core.downloaders.web.streaming.downloader.StreamingChunk
-import xdm.core.util.FormatUtilities
+import xdm.core.util.FormatHelper.getEtaAsSec
 import java.util.*
 
 data class SegmentProgress(var start: Long = 0, var length: Long = 0, var downloaded: Long = 0, val id: Long = 0)
@@ -50,7 +50,7 @@ class ProgressTracker {
             if (prg != null) {
                 this.progress = prg.toInt()
                 if (totalSize != null) {
-                    this.eta = FormatUtilities.getEtaAsSec(
+                    this.eta = getEtaAsSec(
                         totalSize.toDouble() - totalDownloadedBytes, avgSpeed
                     )
                 } else {

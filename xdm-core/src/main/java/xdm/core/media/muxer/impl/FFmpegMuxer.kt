@@ -1,6 +1,6 @@
 package xdm.core.media.muxer.impl
 
-import xdm.core.Config
+//import xdm.core.Config
 import xdm.core.media.muxer.Muxer
 import xdm.core.util.Logger
 import xdm.core.util.PlatformUtils
@@ -15,7 +15,7 @@ import java.util.regex.Matcher
 import java.util.regex.Pattern
 import kotlin.math.min
 
-class FFmpegMuxer : Muxer {
+class FFmpegMuxer(private val appDir: String) : Muxer {
     private var duration: Long = 0
     private var time: Long = 0
     private var lastTick: Long = 0
@@ -81,7 +81,7 @@ class FFmpegMuxer : Muxer {
                     writer.write("file '$s'\n")
                 }
             }
-            val pathToFFmpeg = findFFmpegBinary()
+            val pathToFFmpeg = findFFmpegBinary(appDir)
             spawnFFmpeg(
                 progressCallback,
                 pathToFFmpeg,
@@ -114,7 +114,7 @@ class FFmpegMuxer : Muxer {
         file1: String, file2: String, outputFile: String, progressCallback: (Int) -> Unit, tempDir: String
     ): Boolean {
         try {
-            val pathToFFmpeg = findFFmpegBinary()
+            val pathToFFmpeg = findFFmpegBinary(appDir)
             spawnFFmpeg(
                 progressCallback,
                 pathToFFmpeg,
@@ -257,19 +257,19 @@ class FFmpegMuxer : Muxer {
         private val rxDuration: Pattern = Pattern.compile("Duration:\\s+(\\d\\d):(\\d\\d):(\\d\\d)\\.\\d\\d,\\s")
         private val rxTime: Pattern = Pattern.compile("frame=.*?time=(\\d\\d):(\\d\\d):(\\d\\d)\\.\\d\\d.*?bitrate=")
         private val execNames: List<String>
-            get() = if (PlatformUtils.isWindows()) mutableListOf(
+            get() = if (PlatformUtils.isWindows) mutableListOf(
                 "ffmpeg-x86.exe", "ffmpeg.exe"
             ) else listOf("ffmpeg")
 
 
-        private fun findFFmpegBinary(): String {
+        private fun findFFmpegBinary(appDir: String): String {
             val exeNames = execNames
             for (exe in exeNames) {
-                var file = File(Config.getInstance().dataFolder, exe)
+                var file = File(appDir, exe)
                 if (file.exists()) {
                     return file.absolutePath
                 }
-                val baseDirectory = PlatformUtils.getBaseDirectory()
+                val baseDirectory = PlatformUtils.baseDirectory
                 if (baseDirectory != null) {
                     file = File(baseDirectory, exe)
                     if (file.exists()) {

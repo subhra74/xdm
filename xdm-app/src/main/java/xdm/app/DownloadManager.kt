@@ -138,6 +138,9 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
             }
         }
 
+        override val appDir: String
+            get() = AppContext.configDir
+
         override fun getTempDir(id: Long, url: String, contentType: String?, contentDisposition: String?): String {
             taskInfoDB.getHttpTask(id)?.let { t ->
                 return t.defaultDownloadFolder
@@ -232,7 +235,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                         configDir = AppContext.configDir,
                         http = HttpClientImpl(100),
                         host = downloadHost,
-                        muxer = FFmpegMuxer()
+                        muxer = FFmpegMuxer(AppContext.configDir)
                     )
 
                     DownloadType.Dash -> controller = DashDownloaderTask(
@@ -240,7 +243,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                         configDir = AppContext.configDir,
                         http = HttpClientImpl(100),
                         host = downloadHost,
-                        muxer = FFmpegMuxer()
+                        muxer = FFmpegMuxer(AppContext.configDir)
                     )
 
                     DownloadType.Hds -> TODO()
@@ -316,7 +319,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
         val controller = HlsDownloaderTask(
             taskInfo = task,
             http = HttpClientImpl(100),
-            muxer = FFmpegMuxer(),
+            muxer = FFmpegMuxer(AppContext.configDir),
             host = downloadHost,
             configDir = AppContext.configDir,
         )
@@ -347,7 +350,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
         val controller = DashDownloaderTask(
             taskInfo = task,
             http = HttpClientImpl(100),
-            muxer = FFmpegMuxer(),
+            muxer = FFmpegMuxer(AppContext.configDir),
             host = downloadHost,
             configDir = AppContext.configDir,
         )

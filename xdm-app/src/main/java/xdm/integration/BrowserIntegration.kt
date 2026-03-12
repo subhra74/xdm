@@ -140,7 +140,7 @@ object BrowserIntegration {
         return HttpDownloadTaskInfo(
             id = CoreUtils.uniqueId(),
             url = msg.url!!,
-            fileName = FileUtils.sanitizeFileName(msg.file ?: FileUtils.getFileName(msg.url)),
+            fileName = FileUtils.sanitizeFileName(msg.file ?: FileUtils.getFileName(msg.url))!!,
             respectFileName = false,
             cookie = msg.cookie,
             headers = msg.requestHeaders,

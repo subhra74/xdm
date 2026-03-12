@@ -18,4 +18,5 @@ interface DownloadHost : FileProvider {
     fun onDownloadSuccess(event: DownloadStatusInfo.FinalInfo)
     fun onDownloadFailed(id: Long, error: DownloadError)
     fun onDownloadPaused(id: Long, event: PauseEvent)
+    val appDir: String
 }

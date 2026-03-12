@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 data class AppConfigData(
     var tempDir: String,
     var fileExtList: List<String> = mutableListOf(
-        "3GP", "7Z", "AVI", "BZ2", "DEB", "DOC", "DOCX", "EXE", "ISO",
+        "3GP", "7Z", "AVI", "BZ2", "DEB", "DOC", "DOCX", "EXE", "ISO", "DMG",
         "MSI", "PDF", "PPT", "PPTX", "RAR", "RPM", "XLS", "XLSX", "SIT", "SITX", "TAR", "JAR", "ZIP", "XZ"
     ),
     var blockedHosts: List<String> = mutableListOf("update.microsoft.com", "windowsupdate.com", "thwawte.com"),

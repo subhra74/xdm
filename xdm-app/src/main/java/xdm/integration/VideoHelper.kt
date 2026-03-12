@@ -115,7 +115,7 @@ object VideoHelper {
         val respHeaders =
             msg.responseHeaders?.map { entry -> entry.key to entry.value.map { it.value } }?.associate { it }
         val http = HttpDownloadTaskInfo(
-            id = UniqueID.get(),
+            id = CoreUtils.uniqueId(),
             url = url,
             fileName = getFileName(msg),
             respectFileName = true,
@@ -134,7 +134,7 @@ object VideoHelper {
             listOf(
                 Pair(
                     http, StreamingVideoDisplayInfo(
-                        quality = "[$ext] " + (if (len > 0) FormatUtilities.formatSize(len.toDouble()) else ""),
+                        quality = "[$ext] " + (if (len > 0) FormatHelper.formatSize(len.toDouble()) else ""),
                         size = len,
                         dateTime = LocalDateTime.now(),
                         tabId = msg.tabId,
@@ -156,7 +156,7 @@ object VideoHelper {
     }
 
     private fun getFileName(msg: ExtensionMessage): String =
-        FileUtils.sanitizeFileName(msg.file ?: msg.tabTile ?: FileUtils.getFileName(msg.url))
+        FileUtils.sanitizeFileName(msg.file ?: msg.tabTile ?: FileUtils.getFileName(msg.url))!!
 
     private fun processDashVideo(msg: ExtensionMessage) {
         Logger.info("Processing DASH manifest:  ${msg.url}")
@@ -183,7 +183,7 @@ object VideoHelper {
                 if (video != null && audio != null) {
                     val fileExt = if (video.mimeType.contains("mp4") && audio.mimeType.contains("mp4")) "mp4" else "mkv"
                     val dashDownloadTaskInfo = DashDownloadTaskInfo(
-                        id = UniqueID.get(),
+                        id = CoreUtils.uniqueId(),
                         fileName = getFileName(msg) + "." + fileExt,
                         tempDir = AppContext.appConfig.tempDir,
                         respectFileName = true,
