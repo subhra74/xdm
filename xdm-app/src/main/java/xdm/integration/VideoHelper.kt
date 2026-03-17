@@ -156,7 +156,7 @@ object VideoHelper {
     }
 
     private fun getFileName(msg: ExtensionMessage): String =
-        FileUtils.sanitizeFileName(msg.file ?: msg.tabTile ?: FileUtils.getFileName(msg.url))!!
+        FileUtils.sanitizeFileName(msg.filename ?: msg.tabTile ?: FileUtils.getFileName(msg.url))!!
 
     private fun processDashVideo(msg: ExtensionMessage) {
         Logger.info("Processing DASH manifest:  ${msg.url}")

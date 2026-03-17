@@ -140,7 +140,7 @@ object BrowserIntegration {
         return HttpDownloadTaskInfo(
             id = CoreUtils.uniqueId(),
             url = msg.url!!,
-            fileName = FileUtils.sanitizeFileName(msg.file ?: FileUtils.getFileName(msg.url))!!,
+            fileName = FileUtils.sanitizeFileName(msg.filename ?: FileUtils.getFileName(msg.url))!!,
             respectFileName = false,
             cookie = msg.cookie,
             headers = msg.requestHeaders,
@@ -175,7 +175,7 @@ data class ExtensionMessage(
     val cookie: String? = null,
     val requestHeaders: MutableMap<String, List<String>>? = null,
     val responseHeaders: MutableMap<String, List<SafeStr>>? = null,
-    val file: String? = null,
+    val filename: String? = null,
     val method: String? = null,
     val userAgent: String? = null,
     val tabUrl: String? = null,

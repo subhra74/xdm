@@ -101,6 +101,10 @@ class MainListView {
         model.fireTableRowsUpdated(index, index)
     }
 
+    fun rowDeleted(index: Int) {
+        model.fireTableRowsDeleted(index, index)
+    }
+
     fun rowAdded(index: Int) {
         if (table.isEditing) {
             table.cellEditor.cancelCellEditing()

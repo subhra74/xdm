@@ -53,14 +53,14 @@ fun applyMacOSWindowCustomizations(image: Image) {
     }
 }
 
-fun getClipBoardText(): String {
+fun getClipBoardText(): String? {
     try {
         return Toolkit.getDefaultToolkit().systemClipboard
-            .getData(DataFlavor.stringFlavor) as String
+            .getData(DataFlavor.stringFlavor) as? String?
     } catch (e: Exception) {
         Logger.error(e)
     }
-    return ""
+    return null
 }
 
 fun isMacPopupTrigger(e: MouseEvent): Boolean {

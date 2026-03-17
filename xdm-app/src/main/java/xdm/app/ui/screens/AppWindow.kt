@@ -64,6 +64,10 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
         listView.rowUpdated(index)
     }
 
+    fun deleteDownloadInView(index: Int) {
+        listView.rowDeleted(index)
+    }
+
     fun addDownloadInView(index: Int) {
         listView.rowAdded(index)
     }

@@ -1,7 +1,12 @@
 package xdm.core.util
 
 import java.io.File
+import java.io.IOException
 import java.net.URLDecoder
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import kotlin.use
 
 object FileUtils {
     private val invalidChars = setOf('/', '\\', '"', '?', '*', '<', '>', ':', '|')
@@ -83,5 +88,24 @@ object FileUtils {
             builder.append(c)
         }
         return builder.toString()
+    }
+
+    fun deleteFolder(folder: String): Result<Unit> {
+        return deleteFolder(Paths.get(folder))
+    }
+
+    fun deleteFolder(folder: Path): Result<Unit> {
+        return runCatching {
+            Files.walk(folder).sorted(Comparator.reverseOrder()).use { files ->
+                files.forEach { f: Path ->
+                    try {
+                        Files.delete(f)
+                        Logger.info("XDM", "Successfully delete file : $f")
+                    } catch (e: IOException) {
+                        Logger.error("XDM", "Error deleting temp file: $f ", e)
+                    }
+                }
+            }
+        }
     }
 }

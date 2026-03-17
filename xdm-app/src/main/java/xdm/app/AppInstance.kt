@@ -16,9 +16,10 @@ interface IAppInstance {
     fun showDownloadProgressWindow(id: Long)
     fun showDownloadCompleteWindow(id: Long, folder: String, fileName: String)
     fun updateDownloadInView(id: Long)
+    fun deleteDownloadInView(id: Long)
     fun addDownloadInView(id: Long)
     fun showErrorInProgressWindow(id: Long, errorMessage: String)
-    fun addDownload(metadata: HttpDownloadTaskInfo?)
+    fun addDownload(downloadInfo: HttpDownloadTaskInfo?)
     fun addVideoDownload(vid: Long, fileName: String, fileSize: Long?, fileType: String?)
 }
 
@@ -49,6 +50,13 @@ class AppInstance : IAppInstance {
         val index = db.indexById(id)
         if (index != null) {
             SwingUtilities.invokeLater { appWindow.updateDownloadInView(index) }
+        }
+    }
+
+    override fun deleteDownloadInView(id: Long) {
+        val index = db.indexById(id)
+        if (index != null) {
+            SwingUtilities.invokeLater { appWindow.deleteDownloadInView(index) }
         }
     }
 

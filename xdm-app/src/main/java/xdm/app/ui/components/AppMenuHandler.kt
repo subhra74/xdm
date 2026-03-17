@@ -46,7 +46,6 @@ object AppMenuHandler {
         }
     }
 
-
     fun openFolder(ent: DbRecord?, window: Window?) {
         if (ent == null) return
         if (ent.status == RecordStatus.FINISHED) {
@@ -85,18 +84,17 @@ object AppMenuHandler {
     }
 
     fun deleteDownload(ent: DbRecord?, window: Window?) {
-        val ret =
-            MessageBox.confirmWithCheckBox(
-                window,
-                text("DEL_TITLE"),
-                text("DEL_SEL_TEXT"),
-                text("LBL_DELETE_FILE")
-            )
+        if (ent == null) return
+        val ret = MessageBox.confirmWithCheckBox(
+            window,
+            text("DEL_TITLE"),
+            text("DEL_SEL_TEXT"),
+            text("LBL_DELETE_FILE")
+        )
+        val fromDisk = ret == MessageBoxResult.YES_WITH_SELECTION
         if (ret != MessageBoxResult.CANCEL) {
-            //      XDMApp.getInstance()
-            //          .deleteDownloads(
-            //              items.stream().map(DownloadEntry::getId).collect(Collectors.toList()),
-            //              ret == MessageBoxResult.YES_WITH_SELECTION);
+            Logger.info("XDM", "Deleting ${ent.id}")
+            downloader.deleteDownload(ent.id, fromDisk)
         }
     }
 

@@ -155,6 +155,8 @@ private fun readHeaders(r: DataInputStream): HeaderMap {
 private fun writeContext(context: HttpTaskContext, out: DataOutputStream) {
     context.apply {
         out.writeLong(id)
+        out.writeUTF(tempFolder)
+        out.writeUTF(tempFileName)
         writeChunks(chunks, out)
         out.writeBoolean(init.get())
         out.writeBoolean(totalSize != null)
@@ -168,16 +170,16 @@ private fun writeContext(context: HttpTaskContext, out: DataOutputStream) {
         out.writeBoolean(cookie != null)
         cookie?.let { out.writeUTF(it) }
         out.writeBoolean(completed.get())
-        out.writeUTF(tempFileName)
         out.writeBoolean(tempFileCreated.get())
         out.writeBoolean(diskError.get())
-        out.writeUTF(tempFolder)
     }
 }
 
 private fun writeHlsContext(context: HlsTaskContext, out: DataOutputStream) {
     context.apply {
         out.writeLong(id)
+        out.writeUTF(tempFolder)
+        out.writeUTF(tempFileName)
         writeChunks(chunks, out)
         out.writeBoolean(init.get())
         out.writeBoolean(totalSize != null)
@@ -190,8 +192,6 @@ private fun writeHlsContext(context: HlsTaskContext, out: DataOutputStream) {
         out.writeBoolean(cookie != null)
         cookie?.let { out.writeUTF(it) }
         out.writeBoolean(completed.get())
-        out.writeUTF(tempFileName)
-        out.writeUTF(tempFolder)
         out.writeBoolean(hasSeparateStreams)
         out.writeInt(pieceCompletedCount.get())
         out.writeUTF(url)
@@ -206,6 +206,8 @@ private fun writeHlsContext(context: HlsTaskContext, out: DataOutputStream) {
 private fun writeDashContext(context: DashTaskContext, out: DataOutputStream) {
     context.apply {
         out.writeLong(id)
+        out.writeUTF(tempFolder)
+        out.writeUTF(tempFileName)
         writeChunks(chunks, out)
         out.writeBoolean(init.get())
         out.writeBoolean(totalSize != null)
@@ -218,8 +220,6 @@ private fun writeDashContext(context: DashTaskContext, out: DataOutputStream) {
         out.writeBoolean(cookie != null)
         cookie?.let { out.writeUTF(it) }
         out.writeBoolean(completed.get())
-        out.writeUTF(tempFileName)
-        out.writeUTF(tempFolder)
         out.writeBoolean(hasSeparateStreams)
         out.writeInt(pieceCompletedCount.get())
         out.writeUTF(url)
@@ -231,6 +231,8 @@ private fun writeDashContext(context: DashTaskContext, out: DataOutputStream) {
 private fun readContext(r: DataInputStream, http: PoolingHttpClient, host: DownloadHost): HttpTaskContext {
     return HttpTaskContext(
         id = r.readLong(),
+        tempFolder = r.readUTF(),
+        tempFileName = r.readUTF(),
         chunks = readChunks(r),
         init = AtomicBoolean(r.readBoolean()),
         totalSize = if (r.readBoolean()) r.readLong() else null,
@@ -242,17 +244,17 @@ private fun readContext(r: DataInputStream, http: PoolingHttpClient, host: Downl
         httpClient = http,
         stopFlag = AtomicBoolean(false),
         completed = AtomicBoolean(r.readBoolean()),
-        tempFileName = r.readUTF(),
         tempFileCreated = AtomicBoolean(r.readBoolean()),
         diskError = AtomicBoolean(r.readBoolean()),
         downloadHost = host,
-        tempFolder = r.readUTF(),
     ).apply { Logger.info(this) }
 }
 
 private fun readHlsContext(r: DataInputStream, http: PoolingHttpClient, host: DownloadHost): HlsTaskContext {
     return HlsTaskContext(
         id = r.readLong(),
+        tempFolder = r.readUTF(),
+        tempFileName = r.readUTF(),
         chunks = readStreamingChunks(r),
         init = AtomicBoolean(r.readBoolean()),
         totalSize = if (r.readBoolean()) r.readLong() else null,
@@ -263,8 +265,6 @@ private fun readHlsContext(r: DataInputStream, http: PoolingHttpClient, host: Do
         httpClient = http,
         stopFlag = AtomicBoolean(false),
         completed = AtomicBoolean(r.readBoolean()),
-        tempFileName = r.readUTF(),
-        tempFolder = r.readUTF(),
         hasSeparateStreams = r.readBoolean(),
         pieceCompletedCount = AtomicInteger(r.readInt()),
         url = r.readUTF(),
@@ -279,6 +279,8 @@ private fun readHlsContext(r: DataInputStream, http: PoolingHttpClient, host: Do
 private fun readDashContext(r: DataInputStream, http: PoolingHttpClient, host: DownloadHost): DashTaskContext {
     return DashTaskContext(
         id = r.readLong(),
+        tempFolder = r.readUTF(),
+        tempFileName = r.readUTF(),
         chunks = readStreamingChunks(r),
         init = AtomicBoolean(r.readBoolean()),
         totalSize = if (r.readBoolean()) r.readLong() else null,
@@ -289,8 +291,6 @@ private fun readDashContext(r: DataInputStream, http: PoolingHttpClient, host: D
         httpClient = http,
         stopFlag = AtomicBoolean(false),
         completed = AtomicBoolean(r.readBoolean()),
-        tempFileName = r.readUTF(),
-        tempFolder = r.readUTF(),
         hasSeparateStreams = r.readBoolean(),
         pieceCompletedCount = AtomicInteger(r.readInt()),
         url = r.readUTF(),
@@ -342,5 +342,15 @@ fun loadHlsState(id: Long, configDir: String, http: PoolingHttpClient, host: Dow
 fun loadDashState(id: Long, configDir: String, http: PoolingHttpClient, host: DownloadHost): Result<DashTaskContext> {
     return AtomicIO.readTransacted<DashTaskContext>("$id.state", configDir) { fs ->
         return Result.success(readDashContext(fs, http, host))
+    }
+}
+
+@Synchronized
+fun getTempFileFolder(id: Long, configDir: String): Result<Pair<String, String>> {
+    return AtomicIO.readTransacted<Pair<String, String>>("$id.state", configDir) { fs ->
+        fs.readLong() //Skip id
+        return runCatching {
+            Pair(fs.readUTF(), fs.readUTF())
+        }
     }
 }

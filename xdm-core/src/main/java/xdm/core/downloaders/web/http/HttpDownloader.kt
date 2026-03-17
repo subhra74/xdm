@@ -102,6 +102,13 @@ class HttpDownloaderTask : ChunkController {
         }.start()
     }
 
+    override fun deleteTemp() {
+        val tmpFile = File(context.tempFolder, context.tempFileName)
+        Logger.info("XDM", "Deleting temp file ${tmpFile.absolutePath}")
+        val ret = tmpFile.delete()
+        Logger.info("XDM", "Deleted temp file $ret")
+    }
+
     override fun stop() {
         Thread {
             context.write {

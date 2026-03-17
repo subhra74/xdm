@@ -25,6 +25,7 @@ interface DownloaderTask {
     fun start()
     fun stop()
     fun resume()
+    fun deleteTemp()
 }
 
 data class HttpDownloadTaskInfo(

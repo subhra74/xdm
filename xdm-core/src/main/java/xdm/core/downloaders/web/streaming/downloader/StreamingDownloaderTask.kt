@@ -4,6 +4,7 @@ import xdm.core.downloaders.*
 import xdm.core.downloaders.web.ProgressTracker
 import xdm.core.downloaders.web.http.ChunkStatus
 import xdm.core.media.muxer.Muxer
+import xdm.core.util.FileUtils
 import xdm.core.util.Logger
 import xdm.core.util.ManifestUtils.downloadManifestAsFile
 import xdm.core.util.getFileExtFromUrl
@@ -63,6 +64,10 @@ abstract class StreamingDownloaderTask(
 
     override fun resume() {
         start()
+    }
+
+    override fun deleteTemp() {
+        cleanup()
     }
 
     private fun download() {
@@ -205,16 +210,7 @@ abstract class StreamingDownloaderTask(
             if (!Files.exists(folderPath)) {
                 return
             }
-            Files.walk(folderPath).sorted(Comparator.reverseOrder()).use { files ->
-                files.forEach { f: Path ->
-                    try {
-                        Files.delete(f)
-                        Logger.info("XDM", "Successfully delete file : $f")
-                    } catch (e: IOException) {
-                        Logger.error("XDM", "Error deleting temp file: $f ", e)
-                    }
-                }
-            }
+            FileUtils.deleteFolder(folderPath)
         } catch (ex: Exception) {
             Logger.error("XDM", "Error cleaning up temp files", ex)
         }

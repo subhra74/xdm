@@ -59,6 +59,38 @@ class AppDB(private val configDir: String) {
     }
 
     @Synchronized
+    fun removeItem(id: Long) {
+        var savePaused = false
+        var saveFinished = false
+        var saveActive = false
+        for (rec in records) {
+            if (rec.id == id) {
+                if (rec.status == RecordStatus.PAUSED) {
+                    savePaused = true
+                } else if (rec.status == RecordStatus.FINISHED) {
+                    saveFinished = true
+                } else if (rec.status == RecordStatus.READY || rec.status == RecordStatus.DOWNLOADING) {
+                    saveActive = true
+                }
+                records.remove(rec)
+                break
+            }
+        }
+        for ((i, r) in records.withIndex()) {
+            indexMap[r.id] = i
+        }
+        if (savePaused) {
+            savePausedRecords()
+        }
+        if (saveActive) {
+            saveActiveRecords()
+        }
+        if (saveFinished) {
+            saveFinishedRecords()
+        }
+    }
+
+    @Synchronized
     fun loadRecords() {
         loadActiveRecords()
         loadPausedRecords()
