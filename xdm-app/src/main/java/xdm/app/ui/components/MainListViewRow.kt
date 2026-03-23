@@ -263,6 +263,7 @@ class MainListViewRow(
     private fun createButton(iconName: String, e: ActionListener): JButton {
         val btn = JButton(createSVGIcon(iconName, 16, Color.GRAY))
         btn.putClientProperty("JButton.buttonType", "toolBarButton")
+        btn.isFocusable = false
         btn.addActionListener(e)
         return btn
     }

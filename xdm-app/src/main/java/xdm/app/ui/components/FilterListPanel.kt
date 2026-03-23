@@ -9,30 +9,34 @@ import javax.swing.*
 import javax.swing.border.EmptyBorder
 import javax.swing.border.MatteBorder
 
-class FilterListPanel {
+class FilterListPanel(
+    val stateChanged: (FilterState) -> Unit,
+    val categoryChanged: (FilterCategory) -> Unit
+) :
+    JPanel() {
     private val jsp: JScrollPane
 
     init {
-        val stateFilterModel = DefaultListModel<FilterListItem>()
+        val stateFilterModel = DefaultListModel<FilterItem>()
         val stateFilterList = JList(stateFilterModel)
         stateFilterModel.addElement(
-            FilterListItem(
-                FilterItemType.ALL, text("CAT_ALL"),
+            FilterItem.State(
+                FilterState.All, text("CAT_ALL"),
                 makeIcon("arrow-down-circle-fill.svg", Color.GRAY),
                 makeIcon("arrow-down-circle-fill.svg", stateFilterList.selectionForeground)
             )
         )
         stateFilterModel.addElement(
-            FilterListItem(
-                FilterItemType.UNFINISHED,
+            FilterItem.State(
+                FilterState.Incomplete,
                 text("CAT_INCOMPLETE"),
                 makeIcon("progress-2-fill.svg", Color.GRAY),
                 makeIcon("progress-2-fill.svg", stateFilterList.selectionForeground)
             )
         )
         stateFilterModel.addElement(
-            FilterListItem(
-                FilterItemType.FINISHED,
+            FilterItem.State(
+                FilterState.Completed,
                 text("CAT_FINISHED"),
                 makeIcon("checkbox-circle-fill.svg", Color.GRAY),
                 makeIcon("checkbox-circle-fill.svg", stateFilterList.selectionForeground)
@@ -42,19 +46,19 @@ class FilterListPanel {
         stateFilterList.cellRenderer = FilterListRenderer()
         stateFilterList.alignmentX = 0f
 
-        val catFilterModel = DefaultListModel<FilterListItem>()
+        val catFilterModel = DefaultListModel<FilterItem>()
         for ((type, iconName) in listOf(
-            Pair(FilterItemType.CAT_ALL_TYPES, "archive-2-fill.svg"),
-            Pair(FilterItemType.CAT_DOCUMENTS, "file-list-2-fill.svg"),
-            Pair(FilterItemType.CAT_COMPRESSED, "file-zip-fill.svg"),
-            Pair(FilterItemType.CAT_MUSIC, "mv-fill.svg"),
-            Pair(FilterItemType.CAT_VIDEOS, "movie-fill.svg"),
-            Pair(FilterItemType.CAT_PROGRAMS, "microsoft-fill.svg")
+            Pair(FilterCategory.All, "archive-2-fill.svg"),
+            Pair(FilterCategory.Docs, "file-list-2-fill.svg"),
+            Pair(FilterCategory.Zip, "file-zip-fill.svg"),
+            Pair(FilterCategory.Music, "mv-fill.svg"),
+            Pair(FilterCategory.Video, "movie-fill.svg"),
+            Pair(FilterCategory.Apps, "microsoft-fill.svg")
         )) {
             catFilterModel.addElement(
-                FilterListItem(
+                FilterItem.Category(
                     type,
-                    text(type.toString()),
+                    text(type.text),
                     makeIcon(iconName, Color.GRAY),
                     makeIcon(iconName, stateFilterList.selectionForeground)
                 )
@@ -84,6 +88,22 @@ class FilterListPanel {
 
         stateFilterList.selectedIndex = 0
         catFilterList.selectedIndex = 0
+
+        stateFilterList.addListSelectionListener {
+            val index = stateFilterList.selectedIndex
+            if (index != -1) {
+                val state = stateFilterModel[index] as FilterItem.State
+                stateChanged(state.state)
+            }
+        }
+
+        catFilterList.addListSelectionListener {
+            val index = catFilterList.selectedIndex
+            if (index != -1) {
+                val category = catFilterModel[index] as FilterItem.Category
+                categoryChanged(category.category)
+            }
+        }
     }
 
     private fun makeIcon(icon: String, color: Color): Icon {

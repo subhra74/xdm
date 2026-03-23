@@ -12,31 +12,24 @@ import javax.swing.border.CompoundBorder
 import javax.swing.border.EmptyBorder
 import javax.swing.border.MatteBorder
 
-class FilterListRenderer : ListCellRenderer<FilterListItem> {
-    private val defaultBorder: Border
-    private val selectedBorder: Border
-    private val label: JLabel
-
-    init {
-        defaultBorder = EmptyBorder(7, 20, 7, 15)
-        selectedBorder =
-            CompoundBorder(
-                EmptyBorder(7, 0, 7, 0),
-                CompoundBorder(
-                    MatteBorder(0, 3, 0, 0, Color(30, 144, 255)),
-                    EmptyBorder(0, 17, 0, 15)
-                )
-            )
-        label = JLabel().apply {
-            icon = createSVGIcon("arrow-up-down-fill.svg", 20, Color.GRAY)
-            iconTextGap = 10
-            border = defaultBorder
-        }
+class FilterListRenderer : ListCellRenderer<FilterItem> {
+    private val defaultBorder = EmptyBorder(7, 20, 7, 15)
+    private val selectedBorder: Border = CompoundBorder(
+        EmptyBorder(7, 0, 7, 0),
+        CompoundBorder(
+            MatteBorder(0, 3, 0, 0, Color(30, 144, 255)),
+            EmptyBorder(0, 17, 0, 15)
+        )
+    )
+    private val label: JLabel = JLabel().apply {
+        icon = createSVGIcon("arrow-up-down-fill.svg", 20, Color.GRAY)
+        iconTextGap = 10
+        border = defaultBorder
     }
 
     override fun getListCellRendererComponent(
-        list: JList<out FilterListItem>,
-        value: FilterListItem,
+        list: JList<out FilterItem>,
+        value: FilterItem,
         index: Int,
         isSelected: Boolean,
         cellHasFocus: Boolean

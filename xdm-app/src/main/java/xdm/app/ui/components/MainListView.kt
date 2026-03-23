@@ -27,7 +27,7 @@ class MainListView {
     private var editingRow = -1
     private val contextMenu: JPopupMenu
 
-//    private lateinit var mSaveAs: JMenuItem
+    //    private lateinit var mSaveAs: JMenuItem
     private lateinit var mRefresh: JMenuItem
     private lateinit var mProgress: JMenuItem
     private lateinit var mCopyUrl: JMenuItem
@@ -35,6 +35,8 @@ class MainListView {
     //    private lateinit var mCopyFile: JMenuItem
     private lateinit var mProperty: JMenuItem
     var selectModeCallback: ((Boolean) -> Unit)? = null
+
+    private val filter = MainListViewFilter(FilterState.All, FilterCategory.All, "")
 
     init {
         this.contextMenu = createContextMenu(this.table)
@@ -70,6 +72,7 @@ class MainListView {
             setComparator(0, DownloadSorter())
             sortKeys = keys
         }
+        sorter.rowFilter = filter
         table.rowSorter = sorter
         sorter.sort()
 
@@ -188,5 +191,20 @@ class MainListView {
         }
         menu.add(mItem)
         return mItem
+    }
+
+    fun filterStateChanged(state: FilterState) {
+        filter.filterState = state
+        model.fireTableDataChanged()
+    }
+
+    fun filterCategoryChanged(category: FilterCategory) {
+        filter.filterCategory = category
+        model.fireTableDataChanged()
+    }
+
+    fun searchTextChanged(text: String) {
+        filter.searchText = text
+        model.fireTableDataChanged()
     }
 }
