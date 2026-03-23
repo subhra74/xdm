@@ -5,6 +5,7 @@ import xdm.app.OS
 import xdm.core.util.Logger
 import java.awt.*
 import java.awt.datatransfer.DataFlavor
+import java.awt.datatransfer.StringSelection
 import java.awt.desktop.AppReopenedEvent
 import java.awt.desktop.AppReopenedListener
 import java.awt.event.ActionEvent
@@ -63,6 +64,15 @@ fun getClipBoardText(): String? {
     return null
 }
 
+fun setClipBoardText(text: String) {
+    try {
+        return Toolkit.getDefaultToolkit().systemClipboard
+            .setContents(StringSelection(text), null)
+    } catch (e: Exception) {
+        Logger.error(e)
+    }
+}
+
 fun isMacPopupTrigger(e: MouseEvent): Boolean {
     if (detectOS() == OS.MacOS) {
         return (e.modifiersEx and InputEvent.BUTTON1_DOWN_MASK) != 0
@@ -103,6 +113,7 @@ fun openFolderExternal(file: String?, folder: String) {
             val f = File(folder)
             LinuxUtils.open(f)
         }
+
         OS.MacOS -> MacUtils.openFolder(folder, file)
         else -> {
             val ff = File(folder)

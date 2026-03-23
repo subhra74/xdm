@@ -266,19 +266,20 @@ class HttpChunkRetriever(
         if (isCancelled()) return CopyResult.Cancel
         val buf = ByteArray(256 * 1024)
 
-        var fileHandle: RandomAccessFile? = null
+        var fileHandle: RandomAccessFile
 
         try {
             fileHandle = openFileHandle() ?: run { return CopyResult.Cancel }
         } catch (ioError: IOException) {
             return CopyResult.DiskError
-        } finally {
-            closeFileHandle(fileHandle)
         }
 
         try {
             while (true) {
-                if (!isCancelled()) return CopyResult.Cancel
+                if (isCancelled()) {
+                    Logger.info("XDM", "Download cancelled $id")
+                    return CopyResult.Cancel
+                }
                 val read: Int
                 try {
                     read = response.inputStream.read(buf, 0, buf.size)
@@ -296,7 +297,7 @@ class HttpChunkRetriever(
                 }
 
                 try {
-                    fileHandle?.write(buf, 0, read)
+                    fileHandle.write(buf, 0, read)
                 } catch (ioError: IOException) {
                     Logger.error("XDM", "Error writing to file for chunk $id", ioError)
                     return CopyResult.DiskError

@@ -7,7 +7,7 @@ import java.util.*
 
 data class SegmentProgress(var start: Long = 0, var length: Long = 0, var downloaded: Long = 0, val id: Long = 0)
 
-class ProgressTracker {
+class ProgressTracker(val singleFile: Boolean) {
     var init = false
     var totalDownloadedBytes: Long = 0
     var lastDownloadedBytes: Long = 0
@@ -21,9 +21,13 @@ class ProgressTracker {
     var lastProgress = 0
     var downloadSpeed = 0f
     var eta: Long = 0
+    var totalSize: Long? = null
     private val offsetComparator = compareBy<SegmentProgress> { it.start }
     private val segments = ArrayList<SegmentProgress>()
     private val sortedSegments = sortedSetOf(offsetComparator)
+
+    val segmentData: Collection<SegmentProgress>
+        get() = if (singleFile) sortedSegments else segments
 
     private fun update(
         ticks: Long,
@@ -32,6 +36,7 @@ class ProgressTracker {
         totalSize: Long?,
         prg: Float?
     ) {
+        this.totalSize = totalSize
         this.totalDownloadedBytes += downloadedBytes
         this.downloadedBytesSinceStartOrResume += downloadedBytes
         if (ticks - this.lastProgressUpdatedAt > 500 && ticksElapsed > 0) {

@@ -108,12 +108,12 @@ public class DownloadWindow extends JFrame implements ActionListener {
 		long sz = ((d.getType() == XDMConstants.HTTP || d.getType() == XDMConstants.FTP
 				|| d.getType() == XDMConstants.DASH) ? d.getSize() : 100);
 		segProgress.setValues(segDet, sz);
-//		if (Taskbar.isTaskbarSupported()) {
-//			Taskbar taskbar = Taskbar.getTaskbar();
-//			if(taskbar.isSupported(Feature.PROGRESS_VALUE_WINDOW)) {
-//				taskbar.setWindowProgressValue(this, d.getProgress());
-//			}
-//		}
+		if (Taskbar.isTaskbarSupported()) {
+			Taskbar taskbar = Taskbar.getTaskbar();
+			if(taskbar.isSupported(Feature.PROGRESS_VALUE_WINDOW)) {
+				taskbar.setWindowProgressValue(this, d.getProgress());
+			}
+		}
 	}
 
 	private void createP2() {

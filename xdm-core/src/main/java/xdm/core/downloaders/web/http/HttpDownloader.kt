@@ -68,7 +68,7 @@ class HttpDownloaderTask : ChunkController {
     }
 
     private var lastUpdate: Long = 0
-    private val progressTracker = ProgressTracker()
+    private val progressTracker = ProgressTracker(singleFile = true)
     private val time = System.currentTimeMillis()
 
     override fun start() {
@@ -174,7 +174,13 @@ class HttpDownloaderTask : ChunkController {
     override fun onChunkFailed(id: Long, error: DownloadError) {
         if (isAllError()) {
             Logger.error("XDM", "All chunks failed, stopping download - error: $error")
-            context.downloadHost.onDownloadFailed(context.id, error)
+            val finalError =
+                if (error == DownloadError.InvalidResponse && context.downloaded.get() > 0 && context.chunks.size > 2) {
+                    DownloadError.SessionExpired
+                } else {
+                    error
+                }
+            context.downloadHost.onDownloadFailed(context.id, finalError)
             context.write {
                 saveState()
             }
@@ -392,6 +398,7 @@ class HttpDownloaderTask : ChunkController {
                 this.downloaded = progressTracker.totalDownloadedBytes
                 this.eta = progressTracker.eta
                 this.speed = progressTracker.downloadSpeed
+                this.segments = progressTracker.segmentData
             }
         }
         context.downloaded.addAndGet(downloaded)

@@ -36,7 +36,7 @@ class MainListViewModel : AbstractTableModel(), ListChangeListener {
         }
     }
 
-    private fun getItemAt(index: Int): DbRecord {
+    fun getItemAt(index: Int): DbRecord {
         return db.getByIndex(index)
     }
 

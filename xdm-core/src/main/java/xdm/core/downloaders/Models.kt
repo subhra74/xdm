@@ -1,5 +1,6 @@
 package xdm.core.downloaders
 
+import xdm.core.downloaders.web.SegmentProgress
 import xdm.core.network.http.HeaderMap
 
 enum class DownloadType {
@@ -107,8 +108,8 @@ data class DashDownloadTaskInfo(
     var videoSegments: List<String>,
     var audioSegments: List<String>,
     var url: String,
-    val audioMime:String,
-    val videoMime:String,
+    val audioMime: String,
+    val videoMime: String,
 ) : StreamingDownloadTaskInfo(
     id,
     fileName,
@@ -141,6 +142,7 @@ sealed interface DownloadStatusInfo {
         var speed: Float = 0.0f,
         var eta: Long = 0,
         var downloaded: Long = 0,
+        var segments: Collection<SegmentProgress> = listOf(),
     )
 
     data class AssembleInfo(

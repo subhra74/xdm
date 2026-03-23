@@ -11,6 +11,7 @@ import xdm.app.ui.components.FilterListPanel
 import xdm.app.ui.components.MainListView
 import xdm.app.utils.applyMacOSWindowCustomizations
 import xdm.app.utils.detectOS
+import xdm.core.util.Logger
 import java.awt.*
 import java.awt.event.ActionEvent
 import java.awt.event.ActionListener
@@ -35,6 +36,8 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
 
         setWindowSizeAndPosition()
         initWindow()
+
+        //ProgressWindow().isVisible = true
     }
 
     private fun initWindow() {
@@ -74,6 +77,7 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
 
 
     override fun actionPerformed(e: ActionEvent) {
+        Logger.info("XDM", "Command: ${e.actionCommand}")
         if (e.source is JComponent) {
             val name: String = (e.source as JComponent).name ?: return
 
@@ -84,6 +88,8 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
                 }
             }
 
+
+
             if (name.startsWith("STOP")) {
                 AppMenuHandler.stopQueue(name)
             } else if (name.startsWith("START")) {
@@ -92,8 +98,6 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
                 app.addDownload(null)
             } else if ("PAUSE" == name || "MENU_PAUSE" == name) {
                 // AppMenuHandler.pauseDownloads(this);
-            } else if ("CTX_COPY_URL" == name) {
-                AppMenuHandler.copyUrl(this)
             } else if ("LBL_SHOW_PROGRESS" == name) {
                 AppMenuHandler.showProgressWindow(this)
             } else if ("MENU_RESTART" == name) {
@@ -121,11 +125,9 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
                 //        }
             } else if ("DESC_Q_TITLE" == name) {
                 // SettingsPage.getInstance().showPanel(this, "Q_MAN");
-            } else if ("MENU_DELETE_DWN" == name
-                || "DELETE" == name
-                || "DESC_DEL" == name
-            ) {
-                //        AppMenuHandler.deleteDownloads(this);
+            } else if ("TOOL_DELETE" == name) {
+                Logger.info("Selected items: ${listView.selectedItems}")
+                AppMenuHandler.deleteSelectedDownloads(listView.selectedItems, this)
             } else if ("MENU_DELETE_COMPLETED" == name) {
                 AppMenuHandler.deleteCompleted(this)
             } else if ("MENU_ABOUT" == name) {

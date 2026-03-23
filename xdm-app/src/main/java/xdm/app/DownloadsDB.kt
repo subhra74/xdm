@@ -2,6 +2,7 @@ package xdm.app
 
 import xdm.core.downloaders.DownloadType
 import xdm.core.util.AtomicIO
+import xdm.core.util.Logger
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.util.Collections
@@ -72,6 +73,7 @@ class AppDB(private val configDir: String) {
                 } else if (rec.status == RecordStatus.READY || rec.status == RecordStatus.DOWNLOADING) {
                     saveActive = true
                 }
+                Logger.info("Item removed: $rec")
                 records.remove(rec)
                 break
             }

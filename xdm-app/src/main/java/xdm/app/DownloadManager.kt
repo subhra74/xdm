@@ -12,12 +12,7 @@ import xdm.core.util.FileUtils
 import xdm.core.util.Logger
 import xdm.core.util.getFileName
 import java.io.File
-import java.io.IOException
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.use
 
 interface IDownloadManager {
     fun stopDownload(id: Long)
@@ -84,6 +79,8 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
         }
 
         override fun onDownloadProgress(event: DownloadStatusInfo.ProgressInfo) {
+            var size: Long = -1
+            var fileName: String? = null
             activeSessions[event.id]?.let {
                 synchronized(appDB) {
                     appDB.getById(event.id)?.let {
@@ -91,9 +88,21 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                         it.progress = event.progress
                         it.speed = event.speed
                         it.eta = event.eta
+                        size = it.size
+                        fileName = it.fileName
                     }
                 }
                 AppContext.app.updateDownloadInView(event.id)
+                AppContext.app.updateProgressWindow(
+                    event.id,
+                    fileName,
+                    event.downloaded,
+                    size,
+                    event.speed,
+                    event.eta,
+                    event.progress,
+                    event.segments
+                )
             }
         }
 
@@ -117,6 +126,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                     }
                 }
                 AppContext.app.updateDownloadInView(event.id)
+                AppContext.app.hideProgressWindow(event.id)
             }
         }
 
@@ -130,6 +140,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                     }
                 }
                 AppContext.app.updateDownloadInView(id)
+                AppContext.app.showProgressError(id, error)
             }
         }
 
@@ -144,6 +155,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                     }
                 }
                 AppContext.app.updateDownloadInView(id)
+                AppContext.app.hideProgressWindow(id)
                 if (toDelete.contains(id)) {
                     toDelete.remove(id)
                     deleteAfterStopped(id, it)
@@ -235,8 +247,10 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
     }
 
     override fun resumeDownload(id: Long) {
+        var fileName: String? = null
         try {
             appDB.getById(id)?.let {
+                fileName = it.fileName
                 val controller: DownloaderTask
                 when (it.downloadType) {
                     DownloadType.Http -> controller = HttpDownloaderTask(
@@ -269,9 +283,18 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                 appDB.savePausedRecords()
                 appDB.saveActiveRecords()
                 controller.resume()
+                AppContext.app.showProgressWindow(id, fileName)
             }
         } catch (error: Exception) {
             Logger.error("XDM", "Error while resume", error)
+        }
+    }
+
+    private fun deleteItem(id: Long) {
+        val index = appDB.indexById(id)
+        if (index != null) {
+            appDB.removeItem(id)
+            AppContext.app.deleteDownloadInView(index)
         }
     }
 
@@ -279,19 +302,17 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
         try {
             appDB.getById(id)?.let { rec ->
                 if (rec.status == RecordStatus.FINISHED) {
+                    deleteItem(id)
                     if (fromDisk) {
-                        appDB.removeItem(id)
-                        AppContext.app.deleteDownloadInView(id)
                         val (fileName: String?, folder: String?) = getFileFolder(rec) ?: return
                         if (fileName != null && folder != null) {
-                            val fileToDelete = File(folder, folder)
+                            val fileToDelete = File(folder, fileName)
                             val deleted = fileToDelete.delete()
                             Logger.info("XDM", "Delete file $fileToDelete $deleted")
                         }
                     }
                 } else if (rec.status == RecordStatus.PAUSED) {
-                    appDB.removeItem(id)
-                    AppContext.app.deleteDownloadInView(id)
+                    deleteItem(id)
                     getTempFileFolder(id, configDir).onSuccess {
                         val (tempFolder, tempFile) = it
                         if (rec.downloadType == DownloadType.Http) {
@@ -309,7 +330,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                 }
             }
         } catch (error: Exception) {
-            Logger.error("XDM", "Error while resume", error)
+            Logger.error("XDM", "Error while delete", error)
         }
     }
 
@@ -335,7 +356,8 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
             )
         )
         appDB.saveActiveRecords()
-        AppContext.app.addDownloadInView(task.id);
+        AppContext.app.addDownloadInView(task.id)
+        AppContext.app.showProgressWindow(task.id, task.fileName)
         controller.start()
     }
 
@@ -390,7 +412,8 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
             )
         )
         appDB.saveActiveRecords()
-        AppContext.app.addDownloadInView(task.id);
+        AppContext.app.addDownloadInView(task.id)
+        AppContext.app.showProgressWindow(task.id, task.fileName)
         controller.start()
     }
 
@@ -421,15 +444,15 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
             )
         )
         appDB.saveActiveRecords()
-        AppContext.app.addDownloadInView(task.id);
+        AppContext.app.addDownloadInView(task.id)
+        AppContext.app.showProgressWindow(task.id, task.fileName)
         controller.start()
     }
 
     private fun deleteAfterStopped(id: Long, task: DownloaderTask) {
         try {
             task.deleteTemp()
-            appDB.removeItem(id)
-            AppContext.app.updateDownloadInView(id)
+            deleteItem(id)
         } catch (error: Exception) {
             Logger.error("XDM", "Error while resume", error)
         }

@@ -1,5 +1,6 @@
 package xdm.app.ui.components
 
+import xdm.app.AppContext
 import xdm.app.AppContext.downloader
 import xdm.app.DbRecord
 import xdm.app.I8N.text
@@ -9,6 +10,8 @@ import xdm.app.ui.screens.AppWindow
 import xdm.app.utils.getFileFolder
 import xdm.app.utils.openFileExternal
 import xdm.app.utils.openFolderExternal
+import xdm.app.utils.setClipBoardText
+import xdm.core.downloaders.DownloadType
 import xdm.core.util.Logger
 //import xdman.Config
 //import xdman.constants.MessageBoxResult
@@ -24,6 +27,9 @@ import javax.swing.JComboBox
 import javax.swing.JOptionPane
 
 object AppMenuHandler {
+
+    data class SelectionResult(val approve: Boolean, val deleteFromDisk: Boolean)
+
     fun openFile(ent: DbRecord?, window: Window?) {
         if (ent == null) return
         if (ent.status == RecordStatus.FINISHED) {
@@ -83,18 +89,35 @@ object AppMenuHandler {
         downloader.stopDownload(ent.id)
     }
 
-    fun deleteDownload(ent: DbRecord?, window: Window?) {
-        if (ent == null) return
+    private fun showConfirmDeleteDialog(window: Window?): SelectionResult {
         val ret = MessageBox.confirmWithCheckBox(
             window,
             text("DEL_TITLE"),
             text("DEL_SEL_TEXT"),
             text("LBL_DELETE_FILE")
         )
-        val fromDisk = ret == MessageBoxResult.YES_WITH_SELECTION
-        if (ret != MessageBoxResult.CANCEL) {
+        return SelectionResult(
+            approve = ret != MessageBoxResult.CANCEL,
+            deleteFromDisk = ret == MessageBoxResult.YES_WITH_SELECTION
+        )
+    }
+
+    fun deleteDownload(ent: DbRecord?, window: Window?) {
+        if (ent == null) return
+        val (approve, deleteFromDisk) = showConfirmDeleteDialog(window)
+        if (approve) {
             Logger.info("XDM", "Deleting ${ent.id}")
-            downloader.deleteDownload(ent.id, fromDisk)
+            downloader.deleteDownload(ent.id, deleteFromDisk)
+        }
+    }
+
+    fun deleteSelectedDownloads(selectedItems: List<DbRecord>, window: Window?) {
+        val (approve, deleteFromDisk) = showConfirmDeleteDialog(window)
+        if (approve) {
+            Logger.info("XDM", "Deleting multiple selected")
+            for (selectedItem in selectedItems) {
+                downloader.deleteDownload(selectedItem.id, deleteFromDisk)
+            }
         }
     }
 
@@ -351,15 +374,6 @@ object AppMenuHandler {
         //    }
     }
 
-    fun copyUrl(window: AppWindow?) {
-        //    var items = window.getSelectedDownloads();
-        //    if (items == null || items.isEmpty()) {
-        //      return;
-        //    }
-        //    DownloadEntry ent = items.get(0);
-        //    XDMUtils.copyURL(XDMApp.getInstance().getURL(ent.getId()));
-    }
-
     fun showProgressWindow(window: AppWindow?) {
         //    var items = window.getSelectedDownloads();
         //    if (items == null || items.isEmpty()) {
@@ -374,5 +388,17 @@ object AppMenuHandler {
         //        window, text("DEL_TITLE"), text("DEL_FINISHED_TEXT"))) {
         //      XDMApp.getInstance().deleteCompleted();
         //    }
+    }
+
+    fun copyUrl(record: DbRecord) {
+        val url = when (record.downloadType) {
+            DownloadType.Http -> AppContext.taskInfoDB.getHttpTask(record.id)?.url
+            DownloadType.Hls -> AppContext.taskInfoDB.getHlsTask(record.id)?.url
+            DownloadType.Dash -> AppContext.taskInfoDB.getDashTask(record.id)?.url
+            else -> null
+        }
+        if (url != null) {
+            setClipBoardText(url)
+        }
     }
 }

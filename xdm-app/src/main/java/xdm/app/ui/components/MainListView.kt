@@ -1,10 +1,14 @@
 package xdm.app.ui.components
 
 
+import xdm.app.AppContext
 import xdm.app.DbRecord
 import xdm.app.I8N.text
 import xdm.app.RecordStatus
 import xdm.app.utils.isMacPopupTrigger
+import xdm.app.utils.setClipBoardText
+import xdm.core.downloaders.DownloadType
+import xdm.core.downloaders.TaskInfoDB
 import java.awt.Component
 import java.awt.event.ActionEvent
 import java.awt.event.ActionListener
@@ -23,11 +27,12 @@ class MainListView {
     private var editingRow = -1
     private val contextMenu: JPopupMenu
 
-    private lateinit var mSaveAs: JMenuItem
+//    private lateinit var mSaveAs: JMenuItem
     private lateinit var mRefresh: JMenuItem
     private lateinit var mProgress: JMenuItem
     private lateinit var mCopyUrl: JMenuItem
-    private lateinit var mCopyFile: JMenuItem
+
+    //    private lateinit var mCopyFile: JMenuItem
     private lateinit var mProperty: JMenuItem
     var selectModeCallback: ((Boolean) -> Unit)? = null
 
@@ -102,7 +107,7 @@ class MainListView {
     }
 
     fun rowDeleted(index: Int) {
-        model.fireTableRowsDeleted(index, index)
+        model.fireTableDataChanged()
     }
 
     fun rowAdded(index: Int) {
@@ -115,17 +120,28 @@ class MainListView {
     val component: Component
         get() = jsp
 
+    val selectedRows: IntArray
+        get() = table.selectedRows
+
+    val selectedItems: List<DbRecord>
+        get() = table.selectedRows.map { model.getItemAt(table.convertRowIndexToModel(it)) }
+
+    val selectedRowCount: Int
+        get() = table.selectedRowCount
+
     private fun createMenuListener(): ActionListener {
         return ActionListener { e: ActionEvent ->
             val name = (e.source as? JComponent)?.name
-            val ent = contextMenu.getClientProperty("menu.context") as DbRecord
-            when (name) {
-                "CTX_SAVE_AS" -> {}
-                "MENU_REFRESH_LINK" -> {}
-                "LBL_SHOW_PROGRESS" -> {}
-                "CTX_COPY_URL" -> {}
-                "CTX_COPY_FILE" -> {}
-                "MENU_PROPERTIES" -> {}
+            val ent = contextMenu.getClientProperty("menu.context") as? DbRecord
+            if (ent != null) {
+                when (name) {
+                    "CTX_SAVE_AS" -> {}
+                    "MENU_REFRESH_LINK" -> {}
+                    "LBL_SHOW_PROGRESS" -> {}
+                    "CTX_COPY_URL" -> AppMenuHandler.copyUrl(ent)
+                    "CTX_COPY_FILE" -> {}
+                    "MENU_PROPERTIES" -> {}
+                }
             }
         }
     }
@@ -134,11 +150,11 @@ class MainListView {
         val a = createMenuListener()
 
         val ctx = JPopupMenu()
-        mSaveAs = addMenuItem("CTX_SAVE_AS", ctx, a)
+//        mSaveAs = addMenuItem("CTX_SAVE_AS", ctx, a)
         mRefresh = addMenuItem("MENU_REFRESH_LINK", ctx, a)
         mProgress = addMenuItem("LBL_SHOW_PROGRESS", ctx, a)
         mCopyUrl = addMenuItem("CTX_COPY_URL", ctx, a)
-        mCopyFile = addMenuItem("CTX_COPY_FILE", ctx, a)
+//        mCopyFile = addMenuItem("CTX_COPY_FILE", ctx, a)
         mProperty = addMenuItem("MENU_PROPERTIES", ctx, a)
         table.addMouseListener(
             object : MouseAdapter() {
@@ -158,10 +174,10 @@ class MainListView {
     }
 
     private fun prepareMenu(contextMenu: JPopupMenu, entry: DbRecord) {
-        mSaveAs.isVisible = entry.status != RecordStatus.FINISHED
+//        mSaveAs.isVisible = entry.status != RecordStatus.FINISHED
         mRefresh.isVisible = entry.status == RecordStatus.PAUSED
         mProgress.isVisible = entry.status == RecordStatus.DOWNLOADING
-        mCopyFile.isVisible = entry.status == RecordStatus.FINISHED
+//        mCopyFile.isVisible = entry.status == RecordStatus.FINISHED
         contextMenu.putClientProperty("menu.context", entry)
     }
 

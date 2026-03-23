@@ -25,7 +25,7 @@ abstract class StreamingDownloaderTask(
     private val muxer: Muxer,
 ) : DownloaderTask {
     protected val executorService: ExecutorService = Executors.newFixedThreadPool(8)
-    private val progressTracker = ProgressTracker()
+    private val progressTracker = ProgressTracker(false)
     private val prgInfo = DownloadStatusInfo.ProgressInfo(id = context.id)
     private var lastUpdate: Long = 0
 

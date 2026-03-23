@@ -4,27 +4,55 @@ import xdm.app.AppContext.db
 import xdm.app.ui.screens.AppWindow
 import xdm.app.ui.screens.NewDownloadWindow
 import xdm.app.ui.screens.NewVideoDownloadWindow
+import xdm.app.ui.screens.ProgressWindow
 import xdm.app.utils.createSVGIcon
 import xdm.app.utils.createTray
+import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.HttpDownloadTaskInfo
+import xdm.core.downloaders.web.SegmentProgress
+import xdm.core.util.Logger
 import javax.swing.SwingUtilities
 
 interface IAppInstance {
     fun run(args: Array<String>)
+
     fun showAppWindow()
-    fun hideDownloadProgressWindow(id: Long)
-    fun showDownloadProgressWindow(id: Long)
+
     fun showDownloadCompleteWindow(id: Long, folder: String, fileName: String)
+
     fun updateDownloadInView(id: Long)
+
     fun deleteDownloadInView(id: Long)
+
+    fun deleteDownloadInView(index: Int)
+
     fun addDownloadInView(id: Long)
-    fun showErrorInProgressWindow(id: Long, errorMessage: String)
+
     fun addDownload(downloadInfo: HttpDownloadTaskInfo?)
+
     fun addVideoDownload(vid: Long, fileName: String, fileSize: Long?, fileType: String?)
+
+    fun showProgressWindow(id: Long, fileName: String)
+
+    fun hideProgressWindow(id: Long)
+
+    fun showProgressError(id: Long, error: DownloadError)
+
+    fun updateProgressWindow(
+        id: Long,
+        fileName: String?,
+        downloaded: Long,
+        size: Long,
+        speed: Float,
+        eta: Long,
+        prg: Int,
+        segData: Collection<SegmentProgress>
+    )
 }
 
 class AppInstance : IAppInstance {
     private lateinit var appWindow: AppWindow
+    private val prgWndMap = mutableMapOf<Long, ProgressWindow>()
 
     override fun run(args: Array<String>) {
         SwingUtilities.invokeLater {
@@ -39,10 +67,6 @@ class AppInstance : IAppInstance {
         appWindow.isVisible = true
         appWindow.toFront()
     }
-
-    override fun hideDownloadProgressWindow(id: Long) {}
-
-    override fun showDownloadProgressWindow(id: Long) {}
 
     override fun showDownloadCompleteWindow(id: Long, folder: String, fileName: String) {}
 
@@ -60,16 +84,20 @@ class AppInstance : IAppInstance {
         }
     }
 
+    override fun deleteDownloadInView(index: Int) {
+        if (SwingUtilities.isEventDispatchThread()) {
+            appWindow.deleteDownloadInView(index)
+        } else {
+            SwingUtilities.invokeAndWait { appWindow.deleteDownloadInView(index) }
+        }
+    }
+
     override fun addDownloadInView(id: Long) {
         val index = db.indexById(id)
         if (index != null) {
             SwingUtilities.invokeLater { appWindow.addDownloadInView(index) }
         }
     }
-
-    //  @Override
-    //  public void updateProgressWindow(long id, AbstractDownloader downloader) {}
-    override fun showErrorInProgressWindow(id: Long, errorMessage: String) {}
 
     override fun addDownload(downloadInfo: HttpDownloadTaskInfo?) {
         // TODO: Check if link refresh is searching for download
@@ -96,5 +124,59 @@ class AppInstance : IAppInstance {
     ) {
         val dlg = NewVideoDownloadWindow()
         dlg.showWindow(vid, fileName, fileSize, contentType)
+    }
+
+    private inline fun runOnUIThread(crossinline action: () -> Unit) {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater { action() }
+        } else {
+            action()
+        }
+    }
+
+    override fun showProgressWindow(id: Long, fileName: String) {
+        runOnUIThread {
+            var prgWnd = prgWndMap[id]
+            if (prgWnd != null) {
+                prgWnd.isVisible = true
+            } else {
+                prgWnd = ProgressWindow(id).apply {
+                    lblFileName.text = fileName
+                    title = "[ 0% ] $fileName"
+                    isVisible = true
+                }
+                prgWndMap[id] = prgWnd
+            }
+        }
+    }
+
+    override fun updateProgressWindow(
+        id: Long,
+        fileName: String?,
+        downloaded: Long,
+        size: Long,
+        speed: Float,
+        eta: Long,
+        prg: Int,
+        segData: Collection<SegmentProgress>
+    ) {
+        runOnUIThread { prgWndMap[id]?.updateProgress(fileName, downloaded, size, speed, eta, prg, segData) }
+    }
+
+    override fun hideProgressWindow(id: Long) {
+        runOnUIThread {
+            val wnd = prgWndMap.remove(id)
+            Logger.info(wnd)
+            wnd?.isVisible = false
+            wnd?.dispose()
+        }
+    }
+
+    override fun showProgressError(id: Long, error: DownloadError) {
+        runOnUIThread {
+            val wnd = prgWndMap.remove(id)
+            Logger.info(wnd)
+            wnd?.showError(error)
+        }
     }
 }
