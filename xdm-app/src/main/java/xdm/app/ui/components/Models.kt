@@ -42,7 +42,7 @@ enum class FilterCategory(val text: String) {
 }
 
 val docExt = listOf(".pdf", ".docx", ".doc", ".ppt", ".pptx", ".odt", ".odf")
-val zipExt = listOf(".zip", ".rar", ".7z", ".gz", ".tar", ".tgz", ".tz", ".bz2")
+val zipExt = listOf(".zip", ".rar", ".7z", ".gz", ".tar", ".tgz", ".tz", ".bz2", ".xz")
 val musicExt = listOf(".mp3", ".aac", ".wav", ".ac3")
 val videoExt = listOf(".ts", ".mp4", ".mkv", ".webm", ".avi")
 val appsExt = listOf(".exe", ".msi", ".msix", ".deb", ".dmg", ".rpm", ".iso", ".pkg", ".sh", ".py")

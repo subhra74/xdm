@@ -97,7 +97,7 @@ class ProgressWindow(val id: Long) : JFrame() {
         preferredSize = Dimension(80, 5)
     }
     val lblFileName = JLabel("---")
-    val lblStat = JLabel("---").apply {
+    val lblStat = JLabel(text("DWN_TITLE")).apply {
         font = this.font.deriveFont(font.size.toFloat() - 1)
         foreground = Color.GRAY
     }

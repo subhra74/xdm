@@ -41,7 +41,6 @@ class MainListViewRow(
     private val gap = "  -  "
     private val icoUnchecked: Icon
     private val icoChecked: Icon
-    private val icoFile: Icon
     private val btnOpenFolder: JButton
     private val btnPause: JButton
     private val btnResume: JButton
@@ -58,6 +57,15 @@ class MainListViewRow(
     var onOpenFolderClick: ActionCallBack? = null
     var onDeleteClick: ActionCallBack? = null
     var onMenuClick: ActionCallBack? = null
+
+    private val iconMap = mapOf(
+        FilterCategory.All to createSVGIcon("file-list-2-fill.svg", 16, Color.WHITE),
+        FilterCategory.Docs to createSVGIcon("file-list-2-fill.svg", 16, Color.WHITE),
+        FilterCategory.Zip to createSVGIcon("file-zip-fill.svg", 16, Color.WHITE),
+        FilterCategory.Music to createSVGIcon("mv-fill.svg", 16, Color.WHITE),
+        FilterCategory.Video to createSVGIcon("movie-fill.svg", 16, Color.WHITE),
+        FilterCategory.Apps to createSVGIcon("microsoft-fill.svg", 16, Color.WHITE),
+    )
 
     init {
         model?.addTableModelListener { e: TableModelEvent ->
@@ -83,8 +91,8 @@ class MainListViewRow(
 
         icoUnchecked = createSVGIcon("checkbox-blank-line.svg", 16, Color.WHITE)
         icoChecked = createSVGIcon("checkbox-line.svg", 16, Color.WHITE)
-        icoFile = createSVGIcon("file-zip-fill.svg", 16, Color.WHITE)
-        icon = JLabel(icoFile)
+//        icoFile = createSVGIcon("file-zip-fill.svg", 16, Color.WHITE)
+        icon = JLabel(iconMap[FilterCategory.All])
         icon.border = EmptyBorder(7, 7, 7, 7)
         //    icon.addMouseMotionListener(
         //        new MouseAdapter() {
@@ -107,7 +115,9 @@ class MainListViewRow(
         icon.addMouseListener(
             object : MouseAdapter() {
                 override fun mouseEntered(e: MouseEvent) {
+                    val oldIcon = icon.icon
                     icon.icon = if (table.isRowSelected(viewRow)) icoChecked else icoUnchecked
+                    icon.putClientProperty("old.icon", oldIcon)
                 }
 
                 override fun mouseExited(e: MouseEvent) {
@@ -115,7 +125,14 @@ class MainListViewRow(
                     icon.icon = if (table.isRowSelected(viewRow))
                         icoChecked
                     else
-                        if (isSelectionMode) icoUnchecked else icoFile
+                        if (isSelectionMode) icoUnchecked else {
+                            val oldIcon = icon.getClientProperty("old.icon")
+                            if (oldIcon != null) {
+                                oldIcon as Icon
+                            } else {
+                                iconMap[FilterCategory.All]
+                            }
+                        }
                 }
 
                 override fun mouseClicked(e: MouseEvent) {
@@ -294,7 +311,8 @@ class MainListViewRow(
     }
 
     private fun updateLabelText(ent: DbRecord, isSelected: Boolean) {
-        icon.icon = if (isSelected) icoChecked else if (table.selectedRowCount > 0) icoUnchecked else icoFile
+        icon.icon =
+            if (isSelected) icoChecked else if (table.selectedRowCount > 0) icoUnchecked else getIcon(ent.fileName)
         buttonContainer.isVisible = table.selectedRowCount == 0
         btnOpenFolder.isVisible = ent.status == RecordStatus.FINISHED
         openFolderGap.isVisible = btnOpenFolder.isVisible
@@ -386,5 +404,20 @@ class MainListViewRow(
 
     override fun removeCellEditorListener(l: CellEditorListener) {
         // Noop
+    }
+
+    private fun getIcon(name: String): Icon {
+        val type = if (isZip(name)) {
+            FilterCategory.Zip
+        } else if (isMusic(name)) {
+            FilterCategory.Music
+        } else if (isVideo(name)) {
+            FilterCategory.Video
+        } else if (isApp(name)) {
+            FilterCategory.Apps
+        } else {
+            FilterCategory.Docs
+        }
+        return iconMap[type]!!
     }
 }
