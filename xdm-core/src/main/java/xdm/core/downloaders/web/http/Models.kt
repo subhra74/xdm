@@ -58,7 +58,6 @@ data class HttpTaskContext(
     var contentType: String?,
     var headers: HeaderMap?,
     var cookie: String?,
-    val httpClient: PoolingHttpClient,
     val stopFlag: AtomicBoolean,
     val completed: AtomicBoolean,
     val tempFileName: String,
@@ -67,7 +66,9 @@ data class HttpTaskContext(
     val diskError: AtomicBoolean,
     val downloadHost: DownloadHost,
     var tempFolder: String,
-)
+) {
+    lateinit var httpClient: PoolingHttpClient
+}
 
 inline fun HttpTaskContext.read(r: () -> Unit) {
     try {

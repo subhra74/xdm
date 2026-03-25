@@ -5,8 +5,12 @@ import com.formdev.flatlaf.extras.FlatSVGIcon.ColorFilter
 import xdm.app.AppContext
 import java.awt.Color
 import java.awt.Component
+import java.awt.Container
 import java.awt.Dimension
+import java.awt.GridBagConstraints
+import java.awt.Insets
 import java.io.IOException
+import javax.swing.JComponent
 import javax.swing.JPopupMenu
 import kotlin.math.max
 
@@ -48,4 +52,31 @@ fun showMenu(target: Component, menu: JPopupMenu) {
     val x = targetWidth - menuWidth
     menu.invoker = target
     menu.show(target, x, target.height)
+}
+
+fun gbAdd(
+    comp: JComponent,
+    container: Container,
+    gridX: Int = 0,
+    gridY: Int = 0,
+    alignment: Int = GridBagConstraints.WEST,
+    padding: Insets = Insets(0, 0, 0, 0),
+    colSpan: Int = 1,
+    rowSpan: Int = 1,
+    weightX: Double = 0.0,
+    horizontalFill: Boolean = false,
+    verticalFill: Boolean = false,
+) {
+    val gc = GridBagConstraints().apply {
+        anchor = alignment
+        insets = padding
+        gridx = gridX
+        gridy = gridY
+        gridheight = rowSpan
+        gridwidth = colSpan
+        weightx = weightX
+        fill =
+            if (horizontalFill) GridBagConstraints.HORIZONTAL else if (verticalFill) GridBagConstraints.VERTICAL else GridBagConstraints.NONE
+    }
+    container.add(comp, gc)
 }

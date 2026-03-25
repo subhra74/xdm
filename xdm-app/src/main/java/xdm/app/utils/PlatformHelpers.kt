@@ -12,6 +12,7 @@ import java.awt.event.ActionEvent
 import java.awt.event.InputEvent
 import java.awt.event.MouseEvent
 import java.io.File
+import java.net.URI
 
 fun createTray(image: Image) {
     if (!SystemTray.isSupported()) {
@@ -120,4 +121,16 @@ fun openFolderExternal(file: String?, folder: String) {
             Desktop.getDesktop().open(ff)
         }
     }
+}
+
+fun openWebPage(url: String): Boolean {
+    try {
+        if (Desktop.isDesktopSupported()) {
+            Desktop.getDesktop().browse(URI(url))
+            return true
+        }
+    } catch (e: Exception) {
+        Logger.error(e)
+    }
+    return false
 }

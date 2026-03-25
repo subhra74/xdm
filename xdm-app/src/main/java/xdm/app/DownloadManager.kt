@@ -4,13 +4,17 @@ import xdm.app.utils.getFileFolder
 import xdm.core.downloaders.*
 import xdm.core.downloaders.web.getTempFileFolder
 import xdm.core.downloaders.web.http.HttpDownloaderTask
+import xdm.core.downloaders.web.readContext
+import xdm.core.downloaders.web.saveState
 import xdm.core.downloaders.web.streaming.downloader.dash.DashDownloaderTask
 import xdm.core.downloaders.web.streaming.downloader.hls.HlsDownloaderTask
 import xdm.core.media.muxer.impl.FFmpegMuxer
 import xdm.core.network.http.impl.HttpClientImpl
+import xdm.core.util.AtomicIO
 import xdm.core.util.FileUtils
 import xdm.core.util.Logger
 import xdm.core.util.getFileName
+import xdm.core.util.getHeader
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
@@ -22,6 +26,8 @@ interface IDownloadManager {
     fun addVideoDownload(videoId: Long, fileName: String, folder: String?, autoSelectFolder: Boolean)
     fun addHlsDownload(task: HlsDownloadTaskInfo)
     fun addDashDownload(task: DashDownloadTaskInfo)
+    fun updateDownloadInfo(id: Long, task: HttpDownloadTaskInfo)
+    fun getOriginPage(id: Long): String?
 }
 
 class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val configDir: String) :
@@ -127,6 +133,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                 }
                 AppContext.app.updateDownloadInView(event.id)
                 AppContext.app.hideProgressWindow(event.id)
+                AppContext.app.showDownloadCompleteWindow(event.id, event.finalOutputFolder, event.finalFileName)
             }
         }
 
@@ -447,6 +454,39 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
         AppContext.app.addDownloadInView(task.id)
         AppContext.app.showProgressWindow(task.id, task.fileName)
         controller.start()
+    }
+
+    override fun getOriginPage(id: Long): String? {
+        taskInfoDB.getHttpTask(id)?.let {
+            if (it.origin != null) return it.origin!!
+            val referer = getHeader("Referer", it.headers)
+            if (referer != null) return referer
+            return it.url
+        }
+        return null
+    }
+
+    override fun updateDownloadInfo(id: Long, task: HttpDownloadTaskInfo) {
+        taskInfoDB.getHttpTask(id)?.let {
+            it.url = task.url
+            it.headers = task.headers
+            it.cookie = task.cookie
+            taskInfoDB.saveHttpTask(it)
+            Logger.info("Task ${task.id} updated")
+        }
+        AtomicIO.readTransacted("$id.state", configDir) { fs ->
+            try {
+                val context = readContext(fs, downloadHost)
+                context.url = task.url
+                context.headers = task.headers
+                context.cookie = task.cookie
+                saveState(context, configDir)
+                Logger.info("Context ${context.id} updated")
+            } catch (e: Exception) {
+                Logger.error(e)
+                throw e
+            }
+        }.onFailure { Logger.error(it) }
     }
 
     private fun deleteAfterStopped(id: Long, task: DownloaderTask) {

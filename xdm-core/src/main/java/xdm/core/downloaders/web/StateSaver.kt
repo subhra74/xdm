@@ -228,7 +228,7 @@ private fun writeDashContext(context: DashTaskContext, out: DataOutputStream) {
     }
 }
 
-private fun readContext(r: DataInputStream, http: PoolingHttpClient, host: DownloadHost): HttpTaskContext {
+fun readContext(r: DataInputStream, host: DownloadHost): HttpTaskContext {
     return HttpTaskContext(
         id = r.readLong(),
         tempFolder = r.readUTF(),
@@ -241,7 +241,6 @@ private fun readContext(r: DataInputStream, http: PoolingHttpClient, host: Downl
         contentType = if (r.readBoolean()) r.readUTF() else null,
         headers = readHeaders(r),
         cookie = if (r.readBoolean()) r.readUTF() else null,
-        httpClient = http,
         stopFlag = AtomicBoolean(false),
         completed = AtomicBoolean(r.readBoolean()),
         tempFileCreated = AtomicBoolean(r.readBoolean()),
@@ -327,7 +326,7 @@ fun saveState(context: DashTaskContext, configDir: String) {
 @Synchronized
 fun loadState(id: Long, configDir: String, http: PoolingHttpClient, host: DownloadHost): Result<HttpTaskContext> {
     return AtomicIO.readTransacted<HttpTaskContext>("$id.state", configDir) { fs ->
-        return Result.success(readContext(fs, http, host))
+        return Result.success(readContext(fs, host).apply { httpClient = http })
     }
 }
 

@@ -5,12 +5,12 @@ import xdm.app.I8N.text
 import xdm.app.ui.components.AppMenuHandler
 import xdm.app.ui.components.CircularProgress
 import xdm.app.ui.components.SegmentPanel
+import xdm.app.utils.gbAdd
 import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.web.SegmentProgress
 import xdm.core.util.FormatHelper.formatSize
 import xdm.core.util.FormatHelper.toLongEta
 import java.awt.Color
-import java.awt.Container
 import java.awt.Cursor
 import java.awt.Dimension
 import java.awt.GridBagConstraints
@@ -130,11 +130,11 @@ class ProgressWindow(val id: Long) : JFrame() {
         }
         contentPane.layout = gridBagLayout
 
-        addComp(
+        gbAdd(
             prg, contentPane, padding = Insets(20, 15, 0, 0),
             rowSpan = 5, alignment = GridBagConstraints.NORTHWEST
         )
-        addComp(
+        gbAdd(
             lblFileName,
             contentPane,
             gridX = 1,
@@ -142,7 +142,7 @@ class ProgressWindow(val id: Long) : JFrame() {
             alignment = GridBagConstraints.SOUTHWEST,
             colSpan = 2,
         )
-        addComp(
+        gbAdd(
             lblStat,
             contentPane,
             gridX = 1,
@@ -151,7 +151,7 @@ class ProgressWindow(val id: Long) : JFrame() {
             alignment = GridBagConstraints.NORTHWEST,
             colSpan = 2,
         )
-        addComp(
+        gbAdd(
             lblStat1,
             contentPane,
             gridX = 1,
@@ -159,7 +159,7 @@ class ProgressWindow(val id: Long) : JFrame() {
             padding = Insets(15, 10, 5, 5),
             alignment = GridBagConstraints.WEST,
         )
-        addComp(
+        gbAdd(
             lblStat2,
             contentPane,
             gridX = 2,
@@ -167,7 +167,7 @@ class ProgressWindow(val id: Long) : JFrame() {
             padding = Insets(15, 10, 5, 15),
             alignment = GridBagConstraints.EAST,
         )
-        addComp(
+        gbAdd(
             segPanel,
             contentPane,
             gridX = 1,
@@ -177,7 +177,7 @@ class ProgressWindow(val id: Long) : JFrame() {
             colSpan = 2,
             horizontalFill = true,
         )
-        addComp(
+        gbAdd(
             lblStat3,
             contentPane,
             gridX = 1,
@@ -185,7 +185,7 @@ class ProgressWindow(val id: Long) : JFrame() {
             padding = Insets(5, 10, 5, 5),
             alignment = GridBagConstraints.WEST,
         )
-        addComp(
+        gbAdd(
             lblStat4,
             contentPane,
             gridX = 2,
@@ -193,7 +193,7 @@ class ProgressWindow(val id: Long) : JFrame() {
             padding = Insets(5, 10, 5, 15),
             alignment = GridBagConstraints.EAST,
         )
-        addComp(
+        gbAdd(
             b1,
             contentPane,
             gridX = 0,
@@ -213,33 +213,6 @@ class ProgressWindow(val id: Long) : JFrame() {
                     System.gc()
                 }
             })
-    }
-
-    private fun addComp(
-        comp: JComponent,
-        container: Container,
-        gridX: Int = 0,
-        gridY: Int = 0,
-        alignment: Int = GridBagConstraints.WEST,
-        padding: Insets = Insets(0, 0, 0, 0),
-        colSpan: Int = 1,
-        rowSpan: Int = 1,
-        weightX: Double = 0.0,
-        horizontalFill: Boolean = false,
-        verticalFill: Boolean = false,
-    ) {
-        val gc = GridBagConstraints().apply {
-            anchor = alignment
-            insets = padding
-            gridx = gridX
-            gridy = gridY
-            gridheight = rowSpan
-            gridwidth = colSpan
-            weightx = weightX
-            fill =
-                if (horizontalFill) GridBagConstraints.HORIZONTAL else if (verticalFill) GridBagConstraints.VERTICAL else GridBagConstraints.NONE
-        }
-        container.add(comp, gc)
     }
 
     private fun pauseDownload() {

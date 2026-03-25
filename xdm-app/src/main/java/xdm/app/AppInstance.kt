@@ -1,16 +1,22 @@
 package xdm.app
 
 import xdm.app.AppContext.db
+import xdm.app.I8N.text
+import xdm.app.ui.components.MessageBox
 import xdm.app.ui.screens.AppWindow
+import xdm.app.ui.screens.DownloadCompleteWindow
 import xdm.app.ui.screens.NewDownloadWindow
 import xdm.app.ui.screens.NewVideoDownloadWindow
 import xdm.app.ui.screens.ProgressWindow
+import xdm.app.ui.screens.RefreshLinkWindow
 import xdm.app.utils.createSVGIcon
 import xdm.app.utils.createTray
+import xdm.app.utils.openWebPage
 import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.downloaders.web.SegmentProgress
-import xdm.core.util.Logger
+import java.awt.event.WindowAdapter
+import java.awt.event.WindowEvent
 import javax.swing.SwingUtilities
 
 interface IAppInstance {
@@ -48,11 +54,14 @@ interface IAppInstance {
         prg: Int,
         segData: Collection<SegmentProgress>
     )
+
+    fun showRefreshWindow(id: Long)
 }
 
 class AppInstance : IAppInstance {
     private lateinit var appWindow: AppWindow
     private val prgWndMap = mutableMapOf<Long, ProgressWindow>()
+    private var refreshLinkWindow: RefreshLinkWindow? = null
 
     override fun run(args: Array<String>) {
         SwingUtilities.invokeLater {
@@ -68,7 +77,9 @@ class AppInstance : IAppInstance {
         appWindow.toFront()
     }
 
-    override fun showDownloadCompleteWindow(id: Long, folder: String, fileName: String) {}
+    override fun showDownloadCompleteWindow(id: Long, folder: String, fileName: String) {
+        runOnUIThread { DownloadCompleteWindow().apply { setDetails(fileName, folder) }.isVisible = true }
+    }
 
     override fun updateDownloadInView(id: Long) {
         val index = db.indexById(id)
@@ -100,7 +111,12 @@ class AppInstance : IAppInstance {
     }
 
     override fun addDownload(downloadInfo: HttpDownloadTaskInfo?) {
-        // TODO: Check if link refresh is searching for download
+        if (AppContext.refreshLinkInProgress.get() && downloadInfo != null) {
+            AppContext.downloader.updateDownloadInfo(AppContext.refreshLinkId.get(), downloadInfo)
+            refreshLinkWindow?.dispose()
+            MessageBox.show(appWindow, "XDM", text("SUCCESS_REFRESH"))
+            return
+        }
         // TODO: Check if download window needs to be shown, or directly start the download
         SwingUtilities.invokeLater {
             showNewDownloadWindowInternal(downloadInfo)
@@ -108,6 +124,13 @@ class AppInstance : IAppInstance {
     }
 
     override fun addVideoDownload(vid: Long, fileName: String, fileSize: Long?, contentType: String?) {
+        AppContext.videoTracker.getHttpVideo(vid)?.let { source ->
+            if (AppContext.refreshLinkInProgress.get()) {
+                AppContext.downloader.updateDownloadInfo(AppContext.refreshLinkId.get(), source)
+                return
+            }
+        }
+
         // TODO: Check if download window needs to be shown, or directly start the download
         SwingUtilities.invokeLater {
             showNewVideoDownloadWindowInternal(vid, fileName, fileSize, contentType)
@@ -166,7 +189,6 @@ class AppInstance : IAppInstance {
     override fun hideProgressWindow(id: Long) {
         runOnUIThread {
             val wnd = prgWndMap.remove(id)
-            Logger.info(wnd)
             wnd?.isVisible = false
             wnd?.dispose()
         }
@@ -175,8 +197,29 @@ class AppInstance : IAppInstance {
     override fun showProgressError(id: Long, error: DownloadError) {
         runOnUIThread {
             val wnd = prgWndMap.remove(id)
-            Logger.info(wnd)
             wnd?.showError(error)
         }
+    }
+
+    override fun showRefreshWindow(id: Long) {
+        val url = AppContext.downloader.getOriginPage(id)
+        if (url == null) {
+            MessageBox.show(appWindow, "XDM", text("ERR_NO_REFRESH"))
+            return
+        }
+        AppContext.refreshLinkId.set(id)
+        AppContext.refreshLinkInProgress.set(true)
+        refreshLinkWindow = RefreshLinkWindow(id).apply {
+            addWindowListener(object : WindowAdapter() {
+                override fun windowClosed(e: WindowEvent) {
+                    AppContext.refreshLinkInProgress.set(false)
+                    AppContext.refreshLinkId.set(-1)
+                    refreshLinkWindow = null
+                    System.gc()
+                }
+            })
+        }
+        refreshLinkWindow?.isVisible = true
+        openWebPage(url)
     }
 }

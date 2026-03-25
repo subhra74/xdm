@@ -35,7 +35,6 @@ fun makeContext(task: HttpDownloadTaskInfo, host: DownloadHost): HttpTaskContext
     contentType = null,
     headers = task.headers,
     cookie = task.cookie,
-    httpClient = HttpClientImpl(100),
     stopFlag = AtomicBoolean(false),
     completed = AtomicBoolean(false),
     tempFileCreated = AtomicBoolean(false),
@@ -43,7 +42,7 @@ fun makeContext(task: HttpDownloadTaskInfo, host: DownloadHost): HttpTaskContext
     diskError = AtomicBoolean(false),
     downloadHost = host,
     tempFolder = task.defaultDownloadFolder
-)
+).apply { httpClient = HttpClientImpl(100) }
 
 class HttpDownloaderTask : ChunkController {
     private val context: HttpTaskContext

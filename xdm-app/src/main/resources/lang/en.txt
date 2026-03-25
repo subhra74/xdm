@@ -211,7 +211,7 @@ REF_TITLE=REFRESH LINK
 REF_DESC1=Please open the web page in browser, where the download link was found. In case of streaming video, please play the video and select the same format.
 REF_DESC2=Please click below button and select the same video format again.
 REF_OPEN_PAGE=Open containing web page
-REF_WAITING_FOR_LINK=Waiting for download link...
+REF_WAITING_FOR_LINK=Waiting for new link...
 MB_OK=OK
 MB_YES=YES
 MB_NO=NO
@@ -354,3 +354,6 @@ TOOL_DOWNLOAD=New
 TOOL_CLEAR=Clear
 TOOL_SETTINGS=Settings
 TOOL_DELETE=Delete
+
+ERR_NO_REFRESH=Unable to refresh link
+SUCCESS_REFRESH=Refresh link success

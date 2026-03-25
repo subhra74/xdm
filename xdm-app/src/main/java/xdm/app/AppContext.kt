@@ -8,6 +8,8 @@ import xdm.integration.BrowserIntegration
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.io.path.exists
 
 object AppContext {
@@ -23,6 +25,9 @@ object AppContext {
     lateinit var defaultDownloadFolder: String
     lateinit var taskInfoDB: TaskInfoDB
     lateinit var configDir: String
+
+    var refreshLinkInProgress = AtomicBoolean(false)
+    var refreshLinkId = AtomicLong(-1)
 
     fun init(args: Array<String>, configDir: String, tempDir: String) {
         this.configDir = configDir

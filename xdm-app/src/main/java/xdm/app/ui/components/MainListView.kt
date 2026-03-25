@@ -139,7 +139,7 @@ class MainListView {
             if (ent != null) {
                 when (name) {
                     "CTX_SAVE_AS" -> {}
-                    "MENU_REFRESH_LINK" -> {}
+                    "MENU_REFRESH_LINK" -> AppContext.app.showRefreshWindow(ent.id)
                     "LBL_SHOW_PROGRESS" -> {}
                     "CTX_COPY_URL" -> AppMenuHandler.copyUrl(ent)
                     "CTX_COPY_FILE" -> {}
@@ -178,7 +178,7 @@ class MainListView {
 
     private fun prepareMenu(contextMenu: JPopupMenu, entry: DbRecord) {
 //        mSaveAs.isVisible = entry.status != RecordStatus.FINISHED
-        mRefresh.isVisible = entry.status == RecordStatus.PAUSED
+        mRefresh.isVisible = entry.status == RecordStatus.PAUSED && !AppContext.refreshLinkInProgress.get()
         mProgress.isVisible = entry.status == RecordStatus.DOWNLOADING
 //        mCopyFile.isVisible = entry.status == RecordStatus.FINISHED
         contextMenu.putClientProperty("menu.context", entry)
