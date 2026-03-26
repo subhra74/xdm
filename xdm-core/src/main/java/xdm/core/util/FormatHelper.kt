@@ -59,7 +59,9 @@ object FormatHelper {
 
     fun formatSize(length: Double): String {
         if (length < 0) return "---"
-        return if (length > MB) {
+        return if (length > GB) {
+            String.format("%.1f GB", length.toFloat() / GB)
+        } else if (length > MB) {
             String.format("%.1f MB", length.toFloat() / MB)
         } else if (length > KB) {
             String.format("%.1f KB", length.toFloat() / KB)

@@ -133,7 +133,12 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                 }
                 AppContext.app.updateDownloadInView(event.id)
                 AppContext.app.hideProgressWindow(event.id)
-                AppContext.app.showDownloadCompleteWindow(event.id, event.finalOutputFolder, event.finalFileName)
+                AppContext.app.showDownloadCompleteWindow(
+                    event.id,
+                    event.finalOutputFolder,
+                    event.finalFileName,
+                    event.fileSize
+                )
             }
         }
 

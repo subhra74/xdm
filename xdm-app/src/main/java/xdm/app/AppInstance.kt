@@ -24,7 +24,7 @@ interface IAppInstance {
 
     fun showAppWindow()
 
-    fun showDownloadCompleteWindow(id: Long, folder: String, fileName: String)
+    fun showDownloadCompleteWindow(id: Long, folder: String, fileName: String, fileSize: Long)
 
     fun updateDownloadInView(id: Long)
 
@@ -64,7 +64,7 @@ class AppInstance : IAppInstance {
     private var refreshLinkWindow: RefreshLinkWindow? = null
 
     override fun run(args: Array<String>) {
-        SwingUtilities.invokeLater {
+        runOnUIThread {
             val image = createSVGIcon("xdm-logo.svg", 256).image
             appWindow = AppWindow(image)
             createTray(image)
@@ -77,8 +77,8 @@ class AppInstance : IAppInstance {
         appWindow.toFront()
     }
 
-    override fun showDownloadCompleteWindow(id: Long, folder: String, fileName: String) {
-        runOnUIThread { DownloadCompleteWindow().apply { setDetails(fileName, folder) }.isVisible = true }
+    override fun showDownloadCompleteWindow(id: Long, folder: String, fileName: String, fileSize: Long) {
+        runOnUIThread { DownloadCompleteWindow().apply { setDetails(fileName, folder, fileSize) }.isVisible = true }
     }
 
     override fun updateDownloadInView(id: Long) {
