@@ -33,3 +33,5 @@ interface ListChangeListener {
     fun listChanged()
     fun listItemUpdated(id: Long)
 }
+
+data class QueueItem(val id: Long, val resume: Boolean)

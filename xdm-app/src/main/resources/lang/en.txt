@@ -357,3 +357,4 @@ TOOL_DELETE=Delete
 
 ERR_NO_REFRESH=Unable to refresh link
 SUCCESS_REFRESH=Refresh link success
+MSG_WAIT=Waiting

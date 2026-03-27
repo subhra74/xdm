@@ -33,7 +33,7 @@ class AppConfig : IAppConfig {
     override var lang: String
         get() = "en"
         set(value) {}
-    override val maxParallelDownloads: Int = 4
+    override val maxParallelDownloads: Int = 1
 
     override fun load() {}
 

@@ -347,6 +347,13 @@ class MainListViewRow(
                     text("STAT_PAUSED")
                 }
                 prg.isVisible = false
+            } else if (ent.status == RecordStatus.READY) {
+                prgText = if (ent.progress > 0) {
+                    String.format("%s %d%s", text("MSG_WAIT"), ent.progress, "%")
+                } else {
+                    text("MSG_WAIT")
+                }
+                prg.isVisible = true
             } else if (ent.status == RecordStatus.ASSEMBLING) {
                 prgText = text("STAT_ASSEMBLING")
                 prg.isVisible = false

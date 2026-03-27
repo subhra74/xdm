@@ -2,6 +2,7 @@ package xdm.core.downloaders.web.http
 
 import xdm.core.downloaders.*
 import xdm.core.downloaders.web.ProgressTracker
+import xdm.core.downloaders.web.SpeedLimiter
 import xdm.core.downloaders.web.loadState
 import xdm.core.network.http.PoolingHttpClient
 import xdm.core.network.http.impl.HttpClientImpl
@@ -48,11 +49,13 @@ class HttpDownloaderTask : ChunkController {
     private val context: HttpTaskContext
     private val configDir: String
     private val prgInfo: DownloadStatusInfo.ProgressInfo
+    private val throttle: SpeedLimiter
 
     constructor(task: HttpDownloadTaskInfo, host: DownloadHost, configDir: String) {
         this.context = makeContext(task, host)
         this.configDir = configDir
         this.prgInfo = DownloadStatusInfo.ProgressInfo(id = context.id)
+        this.throttle = SpeedLimiter(host)
     }
 
     constructor(
@@ -64,6 +67,7 @@ class HttpDownloaderTask : ChunkController {
         this.context = loadState(id = id, configDir = configDir, http = httpClient, host = host).getOrThrow()
         this.configDir = configDir
         this.prgInfo = DownloadStatusInfo.ProgressInfo(id = context.id)
+        this.throttle = SpeedLimiter(host)
     }
 
     private var lastUpdate: Long = 0
@@ -120,6 +124,7 @@ class HttpDownloaderTask : ChunkController {
                     }
                 }
                 saveState()
+                throttle.disable()
                 context.downloadHost.onDownloadPaused(context.id, PauseEvent.PausedByUser)
             }
         }.start()
@@ -160,6 +165,7 @@ class HttpDownloaderTask : ChunkController {
                     }
                 } finally {
                     context.httpClient.close()
+                    throttle.disable()
                 }
             }
         }
@@ -410,6 +416,9 @@ class HttpDownloaderTask : ChunkController {
                 saveState()
             }
             lastUpdate = now
+        }
+        if (!context.stopFlag.get()) {
+            throttle.throttleIfNeeded(context.downloaded.get())
         }
     }
 

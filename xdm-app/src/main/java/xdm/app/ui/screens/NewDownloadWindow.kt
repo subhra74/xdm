@@ -311,7 +311,7 @@ class NewDownloadWindow : JDialog() {
 //                AppContext.defaultDownloadFolder
 //        }
 
-        AppContext.downloader.addHttpDownload(task)
+        AppContext.downloader.startHttpDownload(task)
         dispose()
     }
 

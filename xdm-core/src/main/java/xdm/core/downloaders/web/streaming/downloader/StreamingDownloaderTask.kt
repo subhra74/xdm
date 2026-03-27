@@ -2,6 +2,7 @@ package xdm.core.downloaders.web.streaming.downloader
 
 import xdm.core.downloaders.*
 import xdm.core.downloaders.web.ProgressTracker
+import xdm.core.downloaders.web.SpeedLimiter
 import xdm.core.downloaders.web.http.ChunkStatus
 import xdm.core.media.muxer.Muxer
 import xdm.core.util.FileUtils
@@ -9,9 +10,7 @@ import xdm.core.util.Logger
 import xdm.core.util.ManifestUtils.downloadManifestAsFile
 import xdm.core.util.getFileExtFromUrl
 import java.io.File
-import java.io.IOException
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutorService
@@ -28,6 +27,7 @@ abstract class StreamingDownloaderTask(
     private val progressTracker = ProgressTracker(false)
     private val prgInfo = DownloadStatusInfo.ProgressInfo(id = context.id)
     private var lastUpdate: Long = 0
+    private val throttle: SpeedLimiter = SpeedLimiter(context.downloadHost)
 
     abstract fun initDownload(): DownloadStatusInfo.InitInfo?
     abstract fun fileExt(): String
@@ -58,6 +58,7 @@ abstract class StreamingDownloaderTask(
                 }
             }
             saveContext()
+            throttle.disable()
             context.downloadHost.onDownloadPaused(context.id, PauseEvent.PausedByUser)
         }.start()
     }
@@ -127,6 +128,7 @@ abstract class StreamingDownloaderTask(
             assembleSingle(tmpFile.absolutePath)
         }
         if (context.stopFlag.get()) return
+        throttle.disable()
         if (!ret) {
             context.downloadHost.onDownloadFailed(context.id, DownloadError.MuxError)
             return
@@ -259,6 +261,7 @@ abstract class StreamingDownloaderTask(
                 saveContext()
                 lastUpdate = now
             }
+            throttle.throttleIfNeeded(context.downloaded.get())
         }
     }
 

@@ -22,16 +22,16 @@ interface IDownloadManager {
     fun stopDownload(id: Long)
     fun resumeDownload(id: Long)
     fun deleteDownload(id: Long, fromDisk: Boolean)
-    fun addHttpDownload(task: HttpDownloadTaskInfo)
+    fun startHttpDownload(task: HttpDownloadTaskInfo)
     fun addVideoDownload(videoId: Long, fileName: String, folder: String?, autoSelectFolder: Boolean)
-    fun addHlsDownload(task: HlsDownloadTaskInfo)
-    fun addDashDownload(task: DashDownloadTaskInfo)
+    fun startHlsDownload(task: HlsDownloadTaskInfo)
+    fun startDashDownload(task: DashDownloadTaskInfo)
     fun updateDownloadInfo(id: Long, task: HttpDownloadTaskInfo)
     fun getOriginPage(id: Long): String?
 }
 
-class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val configDir: String) :
-    IDownloadManager {
+class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val configDir: String) : IDownloadManager {
+    private val queue = ArrayDeque<QueueItem>()
     private val toDelete = mutableSetOf<Long>()
     private val activeSessions = ConcurrentHashMap<Long, DownloaderTask>()
     private val downloadHost = object : DownloadHost {
@@ -51,25 +51,24 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                 synchronized(appDB) {
                     appDB.getById(data.id)?.let { e ->
                         when (downloadType) {
-                            DownloadType.Http ->
-                                taskInfoDB.getHttpTask(data.id)?.let { t ->
-                                    val newFileName = if (data.videoExt != null) {
-                                        t.fileName + data.videoExt
-                                    } else {
-                                        getFileName(
-                                            t.fileName,
-                                            t.respectFileName,
-                                            data.url,
-                                            data.contentDisposition,
-                                            data.contentType
-                                        )
-                                    }
-                                    //TODO: Check if only ext to be updated
-                                    e.fileName = newFileName
-                                    t.fileName = newFileName
-                                    data.fileSize?.let { e.size = it }
-                                    taskInfoDB.saveHttpTask(t)
+                            DownloadType.Http -> taskInfoDB.getHttpTask(data.id)?.let { t ->
+                                val newFileName = if (data.videoExt != null) {
+                                    t.fileName + data.videoExt
+                                } else {
+                                    getFileName(
+                                        t.fileName,
+                                        t.respectFileName,
+                                        data.url,
+                                        data.contentDisposition,
+                                        data.contentType
+                                    )
                                 }
+                                //TODO: Check if only ext to be updated
+                                e.fileName = newFileName
+                                t.fileName = newFileName
+                                data.fileSize?.let { e.size = it }
+                                taskInfoDB.saveHttpTask(t)
+                            }
 
                             DownloadType.Hls -> {}
                             DownloadType.Dash -> {}
@@ -100,14 +99,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                 }
                 AppContext.app.updateDownloadInView(event.id)
                 AppContext.app.updateProgressWindow(
-                    event.id,
-                    fileName,
-                    event.downloaded,
-                    size,
-                    event.speed,
-                    event.eta,
-                    event.progress,
-                    event.segments
+                    event.id, fileName, event.downloaded, size, event.speed, event.eta, event.progress, event.segments
                 )
             }
         }
@@ -134,12 +126,10 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                 AppContext.app.updateDownloadInView(event.id)
                 AppContext.app.hideProgressWindow(event.id)
                 AppContext.app.showDownloadCompleteWindow(
-                    event.id,
-                    event.finalOutputFolder,
-                    event.finalFileName,
-                    event.fileSize
+                    event.id, event.finalOutputFolder, event.finalFileName, event.fileSize
                 )
             }
+            processNextQueue()
         }
 
         override fun onDownloadFailed(id: Long, error: DownloadError) {
@@ -154,6 +144,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                 AppContext.app.updateDownloadInView(id)
                 AppContext.app.showProgressError(id, error)
             }
+            processNextQueue()
         }
 
         override fun onDownloadPaused(id: Long, event: PauseEvent) {
@@ -173,10 +164,15 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                     deleteAfterStopped(id, it)
                 }
             }
+            processNextQueue()
         }
 
         override val appDir: String
             get() = AppContext.configDir
+        override val applySpeedLimit: Boolean
+            get() = false
+        override val speedLimit: Int
+            get() = -1
 
         override fun getTempDir(id: Long, url: String, contentType: String?, contentDisposition: String?): String {
             taskInfoDB.getHttpTask(id)?.let { t ->
@@ -186,12 +182,8 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
         }
 
         private fun renameFile(
-            fileName: String,
-            folderPath: String,
-            tmpFilePath: String,
-            callback: (
-                finalName: String,
-                folder: String
+            fileName: String, folderPath: String, tmpFilePath: String, callback: (
+                finalName: String, folder: String
             ) -> Unit
         ): CommitResult {
             val folder = File(folderPath)
@@ -255,11 +247,32 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
     }
 
     override fun stopDownload(id: Long) {
-        activeSessions[id]?.stop()
+        activeSessions[id]?.let {
+            it.stop()
+            return
+        }
+        val queued = queue.find { it.id == id }
+        if (queued != null) {
+            queue.remove(queued)
+            appDB.getById(id)?.let {
+                it.status = RecordStatus.PAUSED
+                AppContext.app.updateDownloadInView(id)
+            }
+        }
     }
 
     override fun resumeDownload(id: Long) {
-        var fileName: String? = null
+        if (activeSessions.size >= AppContext.config.maxParallelDownloads) {
+            synchronized(queue) {
+                queue.add(QueueItem(id, true))
+            }
+        } else {
+            resumeImmediately(id)
+        }
+    }
+
+    private fun resumeImmediately(id: Long) {
+        var fileName: String?
         try {
             appDB.getById(id)?.let {
                 fileName = it.fileName
@@ -302,7 +315,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
         }
     }
 
-    private fun deleteItem(id: Long) {
+    private fun deleteRecord(id: Long) {
         val index = appDB.indexById(id)
         if (index != null) {
             appDB.removeItem(id)
@@ -314,7 +327,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
         try {
             appDB.getById(id)?.let { rec ->
                 if (rec.status == RecordStatus.FINISHED) {
-                    deleteItem(id)
+                    deleteRecord(id)
                     if (fromDisk) {
                         val (fileName: String?, folder: String?) = getFileFolder(rec) ?: return
                         if (fileName != null && folder != null) {
@@ -323,8 +336,13 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                             Logger.info("XDM", "Delete file $fileToDelete $deleted")
                         }
                     }
-                } else if (rec.status == RecordStatus.PAUSED) {
-                    deleteItem(id)
+                } else if (rec.status == RecordStatus.PAUSED || rec.status == RecordStatus.READY) {
+                    synchronized(queue) {
+                        queue.find { it.id == id }?.let {
+                            queue.remove(it)
+                        }
+                    }
+                    deleteRecord(id)
                     getTempFileFolder(id, configDir).onSuccess {
                         val (tempFolder, tempFile) = it
                         if (rec.downloadType == DownloadType.Http) {
@@ -336,7 +354,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                             FileUtils.deleteFolder(tempFolder)
                         }
                     }.onFailure { Logger.error("XDM", "Error deleting file", it) }
-                } else if (rec.status == RecordStatus.DOWNLOADING || rec.status == RecordStatus.READY) {
+                } else if (rec.status == RecordStatus.DOWNLOADING) {
                     toDelete.add(id)
                     stopDownload(id)
                 }
@@ -346,13 +364,8 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
         }
     }
 
-    override fun addHttpDownload(task: HttpDownloadTaskInfo) {
+    override fun startHttpDownload(task: HttpDownloadTaskInfo) {
         taskInfoDB.saveHttpTask(task)
-        val controller = HttpDownloaderTask(
-            task, downloadHost,
-            configDir
-        )
-        activeSessions[task.id] = controller
         appDB.addActive(
             DbRecord(
                 id = task.id,
@@ -361,7 +374,8 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                 progress = 0,
                 date = System.currentTimeMillis(),
                 fileName = task.fileName,
-                eta = 0, speed = 0.0f,
+                eta = 0,
+                speed = 0.0f,
                 status = RecordStatus.READY,
                 selected = false,
                 downloadType = DownloadType.Http
@@ -369,7 +383,32 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
         )
         appDB.saveActiveRecords()
         AppContext.app.addDownloadInView(task.id)
+
+        if (activeSessions.size >= AppContext.config.maxParallelDownloads) {
+            synchronized(queue) {
+                queue.add(QueueItem(task.id, false))
+            }
+        } else {
+            startHttpTask(task)
+        }
+    }
+
+    private fun startHttpTask(id: Long) {
+        taskInfoDB.getHttpTask(id)?.let {
+            startHttpTask(it)
+        }
+    }
+
+    private fun startHttpTask(task: HttpDownloadTaskInfo) {
+        val controller = HttpDownloaderTask(
+            task, downloadHost, configDir
+        )
+        activeSessions[task.id] = controller
         AppContext.app.showProgressWindow(task.id, task.fileName)
+        appDB.getById(task.id)?.let {
+            it.status = RecordStatus.DOWNLOADING
+            AppContext.app.updateDownloadInView(task.id)
+        }
         controller.start()
     }
 
@@ -378,7 +417,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
             source.fileName = fileName
             source.autoCategorize = (folder == null)
             source.userSelectedDownloadFolder = folder
-            addHttpDownload(source);
+            startHttpDownload(source);
         }
 
         AppContext.videoTracker.getHlsVideo(videoId)?.let { source ->
@@ -386,7 +425,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
             source.fileName = fileName
             source.autoCategorize = (folder == null)
             source.userSelectedDownloadFolder = folder
-            addHlsDownload(source)
+            startHlsDownload(source)
         }
 
         AppContext.videoTracker.getDashVideo(videoId)?.let { source ->
@@ -394,11 +433,11 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
             source.fileName = fileName
             source.autoCategorize = (folder == null)
             source.userSelectedDownloadFolder = folder
-            addDashDownload(source)
+            startDashDownload(source)
         }
     }
 
-    override fun addHlsDownload(task: HlsDownloadTaskInfo) {
+    override fun startHlsDownload(task: HlsDownloadTaskInfo) {
         task.tempDir = AppContext.appConfig.tempDir + File.separator + task.id
         taskInfoDB.saveHlsTask(task)
         val controller = HlsDownloaderTask(
@@ -417,7 +456,8 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                 progress = 0,
                 date = System.currentTimeMillis(),
                 fileName = task.fileName,
-                eta = 0, speed = 0.0f,
+                eta = 0,
+                speed = 0.0f,
                 status = RecordStatus.READY,
                 selected = false,
                 downloadType = DownloadType.Hls
@@ -429,7 +469,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
         controller.start()
     }
 
-    override fun addDashDownload(task: DashDownloadTaskInfo) {
+    override fun startDashDownload(task: DashDownloadTaskInfo) {
         println("Not implemented yet")
         task.tempDir = AppContext.appConfig.tempDir + File.separator + task.id
         taskInfoDB.saveDashTask(task)
@@ -449,7 +489,8 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                 progress = 0,
                 date = System.currentTimeMillis(),
                 fileName = task.fileName,
-                eta = 0, speed = 0.0f,
+                eta = 0,
+                speed = 0.0f,
                 status = RecordStatus.READY,
                 selected = false,
                 downloadType = DownloadType.Dash
@@ -497,9 +538,26 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
     private fun deleteAfterStopped(id: Long, task: DownloaderTask) {
         try {
             task.deleteTemp()
-            deleteItem(id)
+            deleteRecord(id)
         } catch (error: Exception) {
             Logger.error("XDM", "Error while resume", error)
+        }
+    }
+
+    private fun processNextQueue() {
+        synchronized(queue) {
+            if (queue.isNotEmpty()) {
+                val (id, resume) = queue.removeFirst()
+                if (resume) {
+                    resumeImmediately(id)
+                } else {
+                    appDB.getById(id)?.let {
+                        if (it.downloadType == DownloadType.Http) {
+                            startHttpTask(id)
+                        }
+                    }
+                }
+            }
         }
     }
 }

@@ -11,7 +11,6 @@ import xdm.core.downloaders.web.SegmentProgress
 import xdm.core.util.FormatHelper.formatSize
 import xdm.core.util.FormatHelper.toLongEta
 import java.awt.Color
-import java.awt.Cursor
 import java.awt.Dimension
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
@@ -82,11 +81,7 @@ class ProgressWindow(val id: Long) : JFrame() {
     }
 
     private val textBuf = StringBuilder(100)
-    private val btnSpeedLimit = JLabel(text("MENU_SPEED_LIMITER")).apply {
-        foreground = UIManager.getColor("ProgressBar.foreground")
-        cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-    }
-    private val btnHide = JButton(text("DWN_HIDE"))
+    private val btnHide = JButton(text("DWN_HIDE")).apply { addActionListener { dispose() } }
     private val btnPauseResume = JButton(text("MENU_PAUSE")).apply { addActionListener { pauseDownload() } }
     val prg = CircularProgress().apply {
         value = 0
@@ -113,7 +108,6 @@ class ProgressWindow(val id: Long) : JFrame() {
 
         val b1 = Box.createHorizontalBox().apply {
             border = BorderFactory.createEmptyBorder(10, 15, 10, 15)
-            add(btnSpeedLimit)
             add(Box.createHorizontalGlue())
             add(btnHide)
             add(Box.createRigidArea(Dimension(10, 10)))

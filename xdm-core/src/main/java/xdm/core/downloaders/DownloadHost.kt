@@ -19,4 +19,6 @@ interface DownloadHost : FileProvider {
     fun onDownloadFailed(id: Long, error: DownloadError)
     fun onDownloadPaused(id: Long, event: PauseEvent)
     val appDir: String
+    val applySpeedLimit: Boolean
+    val speedLimit: Int
 }
