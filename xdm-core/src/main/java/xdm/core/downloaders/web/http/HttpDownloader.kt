@@ -50,6 +50,8 @@ class HttpDownloaderTask : ChunkController {
     private val configDir: String
     private val prgInfo: DownloadStatusInfo.ProgressInfo
     private val throttle: SpeedLimiter
+    private val stopRequested = AtomicBoolean(false)
+    private val startRequested = AtomicBoolean(false)
 
     constructor(task: HttpDownloadTaskInfo, host: DownloadHost, configDir: String) {
         this.context = makeContext(task, host)
@@ -75,6 +77,10 @@ class HttpDownloaderTask : ChunkController {
     private val time = System.currentTimeMillis()
 
     override fun start() {
+        if (startRequested.get()) {
+            return
+        }
+        startRequested.set(true)
         Thread {
             context.downloadHost.onDownloadActivated(context.id)
             val id = CoreUtils.uniqueId()
@@ -94,6 +100,10 @@ class HttpDownloaderTask : ChunkController {
     }
 
     override fun resume() {
+        if (startRequested.get()) {
+            return
+        }
+        startRequested.set(true)
         Thread {
             context.downloadHost.onDownloadActivated(context.id)
             progressTracker.totalDownloadedBytes = context.downloaded.get()
@@ -113,6 +123,10 @@ class HttpDownloaderTask : ChunkController {
     }
 
     override fun stop() {
+        if (stopRequested.get()) {
+            return
+        }
+        stopRequested.set(true)
         Thread {
             context.write {
                 context.stopFlag.set(true)

@@ -15,6 +15,9 @@ import xdm.core.util.FileUtils
 import xdm.core.util.Logger
 import xdm.core.util.getFileName
 import xdm.core.util.getHeader
+import java.awt.Desktop
+import java.awt.SystemTray
+import java.awt.TrayIcon
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
@@ -128,6 +131,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                 AppContext.app.showDownloadCompleteWindow(
                     event.id, event.finalOutputFolder, event.finalFileName, event.fileSize
                 )
+                //SystemTray.getSystemTray().trayIcons[0].displayMessage("Hello", "World", TrayIcon.MessageType.INFO)
             }
             processNextQueue()
         }

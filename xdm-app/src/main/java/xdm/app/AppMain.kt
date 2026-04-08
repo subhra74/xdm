@@ -32,6 +32,7 @@ object AppMain {
         System.setProperty("apple.awt.application.appearance", "system")
         System.setProperty("apple.laf.useScreenMenuBar", "true")
         System.setProperty("apple.awt.application.name", "XDM")
+        System.setProperty("apple.awt.enableTemplateImages", "true")
 
         FlatMacDarkLaf.setup()
         UIManager.put("TableHeader.cellMargins", Insets(0, 10, 0, 0))

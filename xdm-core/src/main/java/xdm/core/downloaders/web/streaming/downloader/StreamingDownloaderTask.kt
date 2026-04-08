@@ -28,6 +28,8 @@ abstract class StreamingDownloaderTask(
     private val prgInfo = DownloadStatusInfo.ProgressInfo(id = context.id)
     private var lastUpdate: Long = 0
     private val throttle: SpeedLimiter = SpeedLimiter(context.downloadHost)
+    private val stopRequested = AtomicBoolean(false)
+    private val startRequested = AtomicBoolean(false)
 
     abstract fun initDownload(): DownloadStatusInfo.InitInfo?
     abstract fun fileExt(): String
@@ -37,6 +39,10 @@ abstract class StreamingDownloaderTask(
     abstract fun postProcessChunks()
 
     override fun start() {
+        if (startRequested.get()) {
+            return
+        }
+        startRequested.set(true)
         Thread {
             File(context.tempFolder).mkdirs()
             download()
@@ -44,6 +50,10 @@ abstract class StreamingDownloaderTask(
     }
 
     override fun stop() {
+        if (stopRequested.get()) {
+            return
+        }
+        stopRequested.set(true)
         Thread {
             context.stopFlag.set(true)
             muxer.stop()

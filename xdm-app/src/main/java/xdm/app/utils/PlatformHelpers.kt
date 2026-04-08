@@ -10,6 +10,7 @@ import java.awt.desktop.AppReopenedEvent
 import java.awt.desktop.AppReopenedListener
 import java.awt.event.ActionEvent
 import java.awt.event.InputEvent
+import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.io.File
 import java.net.URI
@@ -21,7 +22,16 @@ fun createTray(image: Image) {
     }
     val trayIcon = TrayIcon(image)
     trayIcon.isImageAutoSize = true
-    trayIcon.addActionListener { e: ActionEvent? -> app.showAppWindow() }
+    trayIcon.addMouseListener(object : MouseAdapter() {
+        override fun mouseClicked(e: MouseEvent?) {
+            Logger.info("Tray icon was clicked")
+            app.showAppWindow()
+        }
+    })
+//    trayIcon.addActionListener {
+//        Logger.info("Tray icon was clicked")
+//        app.showAppWindow()
+//    }
     val tray = SystemTray.getSystemTray()
     try {
         tray.add(trayIcon)
@@ -39,13 +49,6 @@ fun applyMacOSWindowCustomizations(image: Image) {
     } catch (e: SecurityException) {
         // Noop
     }
-//    try {
-//        if (SystemInfo.isMacFullWindowContentSupported) {
-//            getRootPane().putClientProperty("apple.awt.transparentTitleBar", true)
-//        }
-//    } catch (ex: Exception) {
-//        // Nothing to do
-//    }
     try {
         Desktop.getDesktop()
             .addAppEventListener(

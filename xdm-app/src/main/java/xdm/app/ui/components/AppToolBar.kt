@@ -2,6 +2,7 @@ package xdm.app.ui.components
 
 import com.formdev.flatlaf.FlatClientProperties
 import xdm.app.I8N.text
+import xdm.app.ui.screens.SettingsWindow
 import xdm.app.utils.createSVGIcon
 import java.awt.Color
 import java.awt.Component
@@ -13,6 +14,7 @@ import javax.swing.Box
 import javax.swing.JButton
 import javax.swing.JTextField
 import javax.swing.JToolBar
+import javax.swing.SwingUtilities
 
 class AppToolBar(searchCallback: (String) -> Unit, buttonCallback: ActionListener) {
     private val btnNew: JButton
@@ -27,6 +29,8 @@ class AppToolBar(searchCallback: (String) -> Unit, buttonCallback: ActionListene
     private val btnSettingsGap: Component
     private val btnClearGap: Component
     private val btnDeleteGap: Component
+
+    private var settingsWindow: SettingsWindow? = null
 
     init {
         this.btnNew = createToolButton("add-large-fill.svg", buttonCallback, "TOOL_DOWNLOAD")
@@ -45,7 +49,14 @@ class AppToolBar(searchCallback: (String) -> Unit, buttonCallback: ActionListene
         this.btnSettingsGap = Box.createRigidArea(Dimension(5, 0))
 
         this.btnMenu = createToolButton("menu-line.svg")
-        btnMenu.addActionListener { e: ActionEvent? -> System.exit(0) }
+        btnMenu.addActionListener {
+            if (settingsWindow == null) {
+                settingsWindow = SettingsWindow(SwingUtilities.windowForComponent(toolbar))
+            }
+            settingsWindow!!.isModal = true
+            settingsWindow!!.setLocationRelativeTo(settingsWindow!!.parent)
+            settingsWindow!!.isVisible = true
+        }
 
         toolbar.apply {
             add(btnNew)

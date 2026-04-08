@@ -81,16 +81,23 @@ ERR_INTERNAL=Internal error.
 ERR_ASM_FAILED=Failed to append/convert file parts, please check if the drive is full or write protected
 ERR_DISK_FAILED=Disk error.
 LBL_MENU=Menu
+
 TITLE_SETTINGS=Settings
 SETTINGS_GENERAL=General settings
 SHOW_DWN_PRG=Show download progress window
 SHOW_DWN_COMPLETE=Show download complete dialog
+LBL_START_AUTO=Start download automatically
 SHOW_DUP_ACT=Action for duplicate download
 DUT_ACT_RENAME=Auto rename
 DUP_ACT_PROMPT=Prompt
 DUP_ACT_OPEN=Resume/Open
 DUP_ACT_OVERWRITE=Overwrite
+LBL_OVERWRITE_EXISTING=Overwrite existing file
+LBL_TEMP_FOLDER=Temporary folder
 SETTINGS_FOLDER=Default download folder
+MSG_MAX_DOWNLOAD=Maximum simultaneous downloads
+
+
 SETTINGS_FOLDER_CHANGE=Change
 SETTINGS_MONITORING=Browser monitoring
 SETTINGS_NETWORK=Network settings
@@ -116,10 +123,10 @@ DESC_CHROME_BASED=Chromium based browsers
 DESC_INSTALL=Install addon
 DESC_INSTRUCTION=Instructions
 DESC_OTHER_BROWSERS=XDM can also be integrated into other Chromium based browser (Vivaldi, SRWare Iron etc) or Mozilla based (Icewasel, Waterfox etc) browsers using below links
-DESC_FILETYPES=XDM will automatically take over downloads from browser for below file types
-DESC_VIDEOTYPES=XDM will show download option when below video formats are played in browser
+DESC_FILETYPES=File types to download
+DESC_VIDEOTYPES=Video types to download
 DESC_FILEEXCEPTIONS=Do not automatically capture downloads for below file types
-DESC_SITEEXCEPTIONS=Do not automatically capture downloads from below web sites
+DESC_SITEEXCEPTIONS=Don't download from following websites
 DESC_MOZ=Older Firefox and other Mozilla based browsers
 DESC_CHROME=Chromium based browsers
 DESC_DEF=Defaults
@@ -161,15 +168,9 @@ MSG_Q_D5=Thursday
 MSG_Q_D6=Friday
 MSG_Q_D7=Saturday
 
-MSG_MAX_DOWNLOAD=Maximum simultaneous downloads
 
-DESC_ADV_TITLE=Advanced settings
-MSG_HALT=Shutdown computer after all download completes
-MSG_AWAKE=Prevent hibernate or sleep during downloads
-EXEC_CMD=Run a program after all download finishes
-EXE_ANTI_VIR=Scan file with antivirus after download
-ANTIVIR_CMD=Antivirus executable
-ANTIVIR_ARGS=Command line parameters
+
+
 AUTO_START=Launch XDM when system starts
 MSG_SPEED_LIMIT=Download speed limit [KB/Sec ](0 unlimited)
 SPEED_LIMIT_TITLE=Speed limit
@@ -281,14 +282,13 @@ LBL_FILE_CONVERT_PRG=Converting %s
 LBL_VOLUME_BOOST=Boost
 LBL_CONV_SUCCESS=Conversion successful
 LBL_CONV_FAILED=Conversion failed
-LBL_OVERWRITE_EXISTING=Overwrite existing file
 LBL_QUIET_MODE = Quiet mode
 LBL_GENERAL_CAT=General
 LBL_MIN_VIDEO_SIZE=Download video larger than
 LBL_STOP_Q=Stop queue processesing?
 LBL_DELETE_FILE=Delete files from disk
-LBL_TEMP_FOLDER=Temporary folder
-LBL_START_AUTO=Start download automatically
+
+
 LBL_HW_ACCEL=Hardware acceleration
 LBL_START_QUEUE_PROCESSING=Start queue processing?
 LBL_DOWNLOAD=DOWNLOAD
@@ -358,3 +358,19 @@ TOOL_DELETE=Delete
 ERR_NO_REFRESH=Unable to refresh link
 SUCCESS_REFRESH=Refresh link success
 MSG_WAIT=Waiting
+
+MSG_MAX_SPLIT=Max segments per download
+MSG_MAX_RETRY=Max retry
+MSG_USE_PROXY=User Proxy
+MSG_PROXY_HOST=Proxy Host
+MSG_PROXY_PORT=Proxy Port
+MSG_PROXY_USER=Proxy User
+MSG_PROXY_PASS=Proxy Password
+
+MSG_ADV_TITLE=Advanced settings
+MSG_HALT=Shutdown computer after all download completes
+MSG_AWAKE=Prevent hibernate or sleep during downloads
+MSG_RUN_CMD=Run a program after all download finishes
+MSG_SCAN=Run Antivirus after download
+MSG_AV_CMD=Antivirus executable
+MSG_ARGS=Parameter
