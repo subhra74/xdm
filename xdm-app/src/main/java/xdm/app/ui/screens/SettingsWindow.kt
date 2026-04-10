@@ -296,9 +296,13 @@ class BrowserMonitorPanel : JPanel() {
 }
 
 class NetworkConfigPanel : JPanel() {
-    private val txtProxyHost: JTextField
-    private val txtProxyUser: JTextField
-    private val txtProxyPass: JPasswordField?
+    private val cmbSplit = JComboBox<Any?>()
+    private val cmbRetry = JComboBox<Any?>()
+    private val chkProxy = JCheckBox(text("MSG_USE_PROXY"))
+    private val txtProxyHost = JTextField().apply { columns = 10 }
+    private val spProxyPort = JSpinner()
+    private val txtProxyUser = JTextField().apply { columns = 10 }
+    private val txtProxyPass = JPasswordField()
 
     init {
         val gridBagLayout = GridBagLayout()
@@ -327,7 +331,6 @@ class NetworkConfigPanel : JPanel() {
         gbclblSplit.gridy = 1
         add(lblSplit, gbclblSplit)
 
-        val cmbSplit: JComboBox<*> = JComboBox<Any?>()
         val gbcCmbsplit = GridBagConstraints()
         gbcCmbsplit.insets = Insets(0, 0, 5, 0)
         gbcCmbsplit.fill = GridBagConstraints.HORIZONTAL
@@ -343,7 +346,6 @@ class NetworkConfigPanel : JPanel() {
         gbclblRetry.gridy = 2
         add(lblRetry, gbclblRetry)
 
-        val cmbRetry: JComboBox<*> = JComboBox<Any?>()
         val gbcCmbretry = GridBagConstraints()
         gbcCmbretry.insets = Insets(0, 0, 5, 0)
         gbcCmbretry.fill = GridBagConstraints.HORIZONTAL
@@ -351,7 +353,6 @@ class NetworkConfigPanel : JPanel() {
         gbcCmbretry.gridy = 2
         add(cmbRetry, gbcCmbretry)
 
-        val chkProxy = JCheckBox(text("MSG_USE_PROXY"))
         val gbcChkproxy = GridBagConstraints()
         gbcChkproxy.anchor = GridBagConstraints.WEST
         gbcChkproxy.insets = Insets(0, 0, 5, 5)
@@ -367,14 +368,12 @@ class NetworkConfigPanel : JPanel() {
         gbcchkProxy.gridy = 5
         add(lblProxyHost, gbcchkProxy)
 
-        txtProxyHost = JTextField()
         val gbctxtProxyHost = GridBagConstraints()
         gbctxtProxyHost.insets = Insets(0, 0, 5, 5)
         gbctxtProxyHost.fill = GridBagConstraints.HORIZONTAL
         gbctxtProxyHost.gridx = 1
         gbctxtProxyHost.gridy = 5
         add(txtProxyHost, gbctxtProxyHost)
-        txtProxyHost.setColumns(10)
 
         val lblProxyPort = JLabel(text("MSG_PROXY_PORT"))
         val gbclblProxyPort = GridBagConstraints()
@@ -384,7 +383,6 @@ class NetworkConfigPanel : JPanel() {
         gbclblProxyPort.gridy = 6
         add(lblProxyPort, gbclblProxyPort)
 
-        val spProxyPort = JSpinner()
         val gbcspProxyPort = GridBagConstraints()
         gbcspProxyPort.anchor = GridBagConstraints.WEST
         gbcspProxyPort.insets = Insets(0, 0, 5, 5)
@@ -400,14 +398,12 @@ class NetworkConfigPanel : JPanel() {
         gbclblProxyUser.gridy = 7
         add(lblProxyUser, gbclblProxyUser)
 
-        txtProxyUser = JTextField()
         val gbctxtProxyUser = GridBagConstraints()
         gbctxtProxyUser.insets = Insets(0, 0, 5, 5)
         gbctxtProxyUser.fill = GridBagConstraints.HORIZONTAL
         gbctxtProxyUser.gridx = 1
         gbctxtProxyUser.gridy = 7
         add(txtProxyUser, gbctxtProxyUser)
-        txtProxyUser.setColumns(10)
 
         val lblProxyPass = JLabel(text("MSG_PROXY_PASS"))
         val gbclblProxyPass = GridBagConstraints()
@@ -417,7 +413,6 @@ class NetworkConfigPanel : JPanel() {
         gbclblProxyPass.gridy = 8
         add(lblProxyPass, gbclblProxyPass)
 
-        txtProxyPass = JPasswordField()
         val gbctxtProxyPass = GridBagConstraints()
         gbctxtProxyPass.insets = Insets(0, 0, 5, 5)
         gbctxtProxyPass.fill = GridBagConstraints.HORIZONTAL
