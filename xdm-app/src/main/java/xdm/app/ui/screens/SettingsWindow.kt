@@ -137,6 +137,34 @@ class GeneralPanel : JPanel() {
 }
 
 class BrowserMonitorPanel : JPanel() {
+    private val txtFileExt = JTextArea().apply {
+        rows = 3
+        wrapStyleWord = true
+        lineWrap = true
+    }
+    private val btnExtDef = JButton(text("DESC_DEF"))
+    private val txtVidExt = JTextArea().apply {
+        rows = 3
+        wrapStyleWord = true
+        lineWrap = true
+    }
+    private val btnVidExtDef = JButton(text("DESC_DEF"))
+    private val cmbMinVidSize = JComboBox<Any?>().apply {
+        fixHeight(this)
+        preferredSize = Dimension(150, preferredSize.height)
+        maximumSize = Dimension(150, preferredSize.height)
+    }
+    private val txtBlockedHosts = JTextArea().apply {
+        rows = 3
+        wrapStyleWord = true
+        lineWrap = true
+    }
+    private val btnHostDef = JButton(text("DESC_DEF"))
+    private val chckbxNewCheckBox = JCheckBox("New check box").apply {
+        padding(this, 10)
+        setAlignmentX(LEFT_ALIGNMENT)
+    }
+
     init {
         setLayout(BoxLayout(this, BoxLayout.Y_AXIS))
 
@@ -196,11 +224,6 @@ class BrowserMonitorPanel : JPanel() {
         }
         add(lblFileExt)
 
-        val txtFileExt = JTextArea().apply {
-            rows = 3
-            wrapStyleWord = true
-            lineWrap = true
-        }
         add(JScrollPane(txtFileExt).apply {
             setAlignmentX(LEFT_ALIGNMENT)
         })
@@ -212,7 +235,6 @@ class BrowserMonitorPanel : JPanel() {
         add(p2)
         p2.setLayout(BoxLayout(p2, BoxLayout.X_AXIS))
 
-        val btnExtDef = JButton(text("DESC_DEF"))
         p2.add(btnExtDef)
 
         val lblVidExt = JLabel(text("DESC_VIDEOTYPES")).apply {
@@ -221,11 +243,6 @@ class BrowserMonitorPanel : JPanel() {
         }
         add(lblVidExt)
 
-        val txtVidExt = JTextArea().apply {
-            rows = 3
-            wrapStyleWord = true
-            lineWrap = true
-        }
         add(JScrollPane(txtVidExt).apply {
             setAlignmentX(LEFT_ALIGNMENT)
         })
@@ -237,7 +254,6 @@ class BrowserMonitorPanel : JPanel() {
         add(p3)
         p3.setLayout(BoxLayout(p3, BoxLayout.X_AXIS))
 
-        val btnVidExtDef = JButton(text("DESC_DEF"))
         p3.add(btnVidExtDef)
 
         val p4 = JPanel().apply {
@@ -250,11 +266,6 @@ class BrowserMonitorPanel : JPanel() {
         val lblMinVidSize = JLabel(text("LBL_MIN_VIDEO_SIZE"))
         p4.add(lblMinVidSize)
         p4.add(Box.createHorizontalGlue())
-        val cmbMinVidSize: JComboBox<*> = JComboBox<Any?>().apply {
-            fixHeight(this)
-            preferredSize = Dimension(150, preferredSize.height)
-            maximumSize = Dimension(150, preferredSize.height)
-        }
         p4.add(cmbMinVidSize)
 
         val lblBlockedHosts = JLabel(text("DESC_SITEEXCEPTIONS")).apply {
@@ -263,11 +274,6 @@ class BrowserMonitorPanel : JPanel() {
         }
         add(lblBlockedHosts)
 
-        val txtBlockedHosts = JTextArea().apply {
-            rows = 3
-            wrapStyleWord = true
-            lineWrap = true
-        }
         add(JScrollPane(txtBlockedHosts).apply {
             setAlignmentX(LEFT_ALIGNMENT)
         })
@@ -279,13 +285,8 @@ class BrowserMonitorPanel : JPanel() {
         add(p5)
         p5.setLayout(BoxLayout(p5, BoxLayout.X_AXIS))
 
-        val btnHostDef = JButton(text("DESC_DEF"))
         p5.add(btnHostDef)
 
-        val chckbxNewCheckBox = JCheckBox("New check box").apply {
-            padding(this, 10)
-            setAlignmentX(LEFT_ALIGNMENT)
-        }
         add(chckbxNewCheckBox)
     }
 
