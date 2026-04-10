@@ -36,8 +36,14 @@ class SettingsWindow(parent: Window) : JDialog(parent) {
 }
 
 class GeneralPanel : JPanel() {
-    private val txtTmpDir: JTextField
-    private val txtDwnDir: JTextField
+    private val txtTmpDir = JTextField().apply {
+        columns = 10
+        fixHeight(this)
+    }
+    private val txtDwnDir = JTextField().apply {
+        columns = 10
+        fixHeight(this)
+    }
     private val spModel = SpinnerNumberModel(100, 0, 10000000, 1)
     private val spnSpeedLimiter = JSpinner(spModel).apply {
         fixHeight(this)
@@ -45,6 +51,18 @@ class GeneralPanel : JPanel() {
         maximumSize = Dimension(120, preferredSize.height)
     }
     private val chkSpeedLimiter = JCheckBox(text("SPEED_LIMIT_TITLE"))
+    private val chkShowDwnPrg = JCheckBox(text("SHOW_DWN_PRG")).apply {
+        padding(this, 10)
+        alignmentX = LEFT_ALIGNMENT
+    }
+    private val chkShowComplete = JCheckBox(text("SHOW_DWN_COMPLETE")).apply { padding(this, 10) }
+    private val chkStartAutoDwn = JCheckBox(text("LBL_START_AUTO")).apply { padding(this, 10) }
+    private val chkOverwrite = JCheckBox(text("LBL_OVERWRITE_EXISTING")).apply { padding(this, 10) }
+    private val btnBrowse1 = JButton("...")
+    private val btnBrowse2 = JButton("...")
+    private val cmbMaxConn = JComboBox<Any?>().apply {
+        fixHeight(this)
+    }
 
     init {
         setLayout(BoxLayout(this, BoxLayout.Y_AXIS))
@@ -55,17 +73,12 @@ class GeneralPanel : JPanel() {
         }
         add(lblTitle)
 
-        val chkShowDwnPrg = JCheckBox(text("SHOW_DWN_PRG")).apply { padding(this, 10) }
-        chkShowDwnPrg.setAlignmentX(LEFT_ALIGNMENT)
         add(chkShowDwnPrg)
 
-        val chkShowComplete = JCheckBox(text("SHOW_DWN_COMPLETE")).apply { padding(this, 10) }
         add(chkShowComplete)
 
-        val chkStartAutoDwn = JCheckBox(text("LBL_START_AUTO")).apply { padding(this, 10) }
         add(chkStartAutoDwn)
 
-        val chkOverwrite = JCheckBox(text("LBL_OVERWRITE_EXISTING")).apply { padding(this, 10) }
         add(chkOverwrite)
 
         val panelSp = JPanel().apply { padding(this, 10) }
@@ -86,14 +99,10 @@ class GeneralPanel : JPanel() {
         add(panelTemp)
         panelTemp.setLayout(BoxLayout(panelTemp, BoxLayout.X_AXIS))
 
-        txtTmpDir = JTextField()
         panelTemp.add(txtTmpDir)
-        fixHeight(txtTmpDir)
-        txtTmpDir.setColumns(10)
 
         panelTemp.add(Box.createRigidArea(Dimension(10, 10)))
 
-        val btnBrowse1 = JButton("...")
         panelTemp.add(btnBrowse1)
 
         val lblDefFolder = JLabel(text("SETTINGS_FOLDER")).apply { padding(this, 5) }
@@ -104,14 +113,10 @@ class GeneralPanel : JPanel() {
         add(panelDefFolder)
         panelDefFolder.setLayout(BoxLayout(panelDefFolder, BoxLayout.X_AXIS))
 
-        txtDwnDir = JTextField()
         panelDefFolder.add(txtDwnDir)
-        fixHeight(txtDwnDir)
-        txtDwnDir.setColumns(10)
 
         panelDefFolder.add(Box.createRigidArea(Dimension(10, 10)))
 
-        val btnBrowse2 = JButton("...")
         panelDefFolder.add(btnBrowse2)
 
         val panelMaxConn = Box.createHorizontalBox()
@@ -121,9 +126,7 @@ class GeneralPanel : JPanel() {
         val lblMaxConn = JLabel(text("MSG_MAX_DOWNLOAD"))
         panelMaxConn.add(lblMaxConn)
         panelMaxConn.add(Box.createHorizontalGlue())
-        val comboBox: JComboBox<*> = JComboBox<Any?>()
-        fixHeight(comboBox)
-        panelMaxConn.add(comboBox)
+        panelMaxConn.add(cmbMaxConn)
 
         add(Box.createHorizontalGlue())
     }
