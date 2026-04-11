@@ -12,6 +12,7 @@ import java.awt.Insets
 import java.io.IOException
 import javax.swing.JComponent
 import javax.swing.JPopupMenu
+import javax.swing.border.EmptyBorder
 import kotlin.math.max
 
 fun createSVGIcon(name: String, size: Int, color: Color?): FlatSVGIcon {
@@ -79,4 +80,19 @@ fun gbAdd(
             if (horizontalFill) GridBagConstraints.HORIZONTAL else if (verticalFill) GridBagConstraints.VERTICAL else GridBagConstraints.NONE
     }
     container.add(comp, gc)
+}
+
+fun fixHeight(comp: JComponent) {
+    val height = comp.preferredSize.height
+    comp.maximumSize = Dimension(comp.maximumSize.width, height)
+    comp.minimumSize = Dimension(comp.minimumSize.width, height)
+}
+
+fun padding(comp: JComponent, padding: Int, bottomPadding: Boolean = true, topPadding: Boolean = false) {
+    comp.border = EmptyBorder(
+        if (topPadding) padding else 0,
+        0,
+        if (bottomPadding) padding else 0,
+        0,
+    )
 }
