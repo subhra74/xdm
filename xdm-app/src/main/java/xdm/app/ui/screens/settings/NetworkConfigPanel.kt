@@ -1,5 +1,6 @@
 package xdm.app.ui.screens.settings
 
+import xdm.app.AppContext
 import xdm.app.I8N
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
@@ -11,13 +12,22 @@ import javax.swing.JPanel
 import javax.swing.JPasswordField
 import javax.swing.JSpinner
 import javax.swing.JTextField
+import javax.swing.SpinnerNumberModel
 
 class NetworkConfigPanel : JPanel() {
-    private val cmbSplit = JComboBox<Any?>()
-    private val cmbRetry = JComboBox<Any?>()
+    private val cmbSplit = JComboBox<Int>().apply {
+        for (i in intArrayOf(1, 2, 4, 8, 16, 32, 64)) {
+            addItem(i)
+        }
+    }
+    private val cmbRetry = JComboBox<Int>().apply {
+        for (i in 1..99) {
+            addItem(i)
+        }
+    }
     private val chkProxy = JCheckBox(I8N.text("MSG_USE_PROXY"))
     private val txtProxyHost = JTextField().apply { columns = 10 }
-    private val spProxyPort = JSpinner()
+    private val spProxyPort = JSpinner(SpinnerNumberModel(8080, 1, 65535, 1))
     private val txtProxyUser = JTextField().apply { columns = 10 }
     private val txtProxyPass = JPasswordField()
 
@@ -136,6 +146,30 @@ class NetworkConfigPanel : JPanel() {
         gbctxtProxyPass.gridx = 1
         gbctxtProxyPass.gridy = 8
         add(txtProxyPass, gbctxtProxyPass)
+
+        load()
+    }
+
+    private fun load() {
+        val config = AppContext.config
+        cmbSplit.selectedItem = config.maxSegments
+        cmbRetry.selectedItem = config.maxRetries
+        chkProxy.isSelected = config.useProxy
+        txtProxyHost.text = config.proxyHost
+        spProxyPort.value = config.proxyPort
+        txtProxyUser.text = config.proxyUser
+        txtProxyPass.text = config.proxyPass
+    }
+
+    fun save() {
+        val config = AppContext.config
+        config.maxSegments = cmbSplit.selectedItem as Int
+        config.maxRetries = cmbRetry.selectedItem as Int
+        config.useProxy = chkProxy.isSelected
+        config.proxyHost = txtProxyHost.text
+        config.proxyPort = spProxyPort.value as Int
+        config.proxyUser = txtProxyUser.text
+        config.proxyPass = String(txtProxyPass.password)
     }
 
     override fun getInsets(): Insets {

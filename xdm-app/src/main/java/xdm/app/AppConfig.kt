@@ -26,6 +26,17 @@ interface IAppConfig {
     var speedLimit: Int
     var startDownloadAutomatically: Boolean
     var overwriteExistingFiles: Boolean
+    var fileExtensions: List<String>
+    var videoExtensions: List<String>
+    var blockedHosts: List<String>
+    var getServerTime: Boolean
+    var maxSegments: Int
+    var maxRetries: Int
+    var useProxy: Boolean
+    var proxyHost: String
+    var proxyPort: Int
+    var proxyUser: String
+    var proxyPass: String
 }
 
 class AppConfig : IAppConfig {
@@ -48,6 +59,20 @@ class AppConfig : IAppConfig {
     override var speedLimit: Int = 100
     override var startDownloadAutomatically: Boolean = false
     override var overwriteExistingFiles: Boolean = false
+    override var fileExtensions: List<String> = listOf("3GP", "7Z", "AVI", "BZ2", "DEB", "DOC", "DOCX", "EXE", "ISO", "DMG",
+        "MSI", "PDF", "PPT", "PPTX", "RAR", "RPM", "XLS", "XLSX", "TAR", "JAR", "ZIP", "XZ", "PKG"
+    )
+    override var videoExtensions: List<String> = listOf("MP4", "M3U8", "F4M", "WEBM", "OGG", "MP3", "AAC", "FLV", "MKV", "DIVX",
+        "MOV", "MPG", "MPEG", "OPUS", "MPD")
+    override var blockedHosts: List<String> = listOf("update.microsoft.com", "windowsupdate.com", "thwawte.com")
+    override var getServerTime: Boolean = true
+    override var maxSegments: Int = 8
+    override var maxRetries: Int = 5
+    override var useProxy: Boolean = false
+    override var proxyHost: String = ""
+    override var proxyPort: Int = 8080
+    override var proxyUser: String = ""
+    override var proxyPass: String = ""
 
     override fun load() {}
 

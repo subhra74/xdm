@@ -1,5 +1,6 @@
 package xdm.app.ui.screens.settings
 
+import xdm.app.AppContext
 import xdm.app.I8N
 import xdm.app.utils.createSVGIcon
 import xdm.app.utils.fixHeight
@@ -33,10 +34,15 @@ class BrowserMonitorPanel : JPanel() {
         lineWrap = true
     }
     private val btnVidExtDef = JButton(I8N.text("DESC_DEF"))
-    private val cmbMinVidSize = JComboBox<Any?>().apply {
+    private val cmbMinVidSize = JComboBox<Long>().apply {
         fixHeight(this)
         preferredSize = Dimension(150, preferredSize.height)
         maximumSize = Dimension(150, preferredSize.height)
+        addItem(1L)
+        addItem(5L)
+        addItem(10L)
+        addItem(50L)
+        addItem(100L)
     }
     private val txtBlockedHosts = JTextArea().apply {
         rows = 3
@@ -172,6 +178,26 @@ class BrowserMonitorPanel : JPanel() {
         p5.add(btnHostDef)
 
         add(chkGetServerTime)
+
+//        load()
+    }
+
+    fun load() {
+        val config = AppContext.config
+        txtFileExt.text = config.fileExtensions.joinToString(", ")
+        txtVidExt.text = config.videoExtensions.joinToString(", ")
+        txtBlockedHosts.text = config.blockedHosts.joinToString(", ")
+        cmbMinVidSize.selectedItem = config.minVideoSize
+        chkGetServerTime.isSelected = config.getServerTime
+    }
+
+    fun save() {
+        val config = AppContext.config
+        config.fileExtensions = txtFileExt.text.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+        config.videoExtensions = txtVidExt.text.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+        config.blockedHosts = txtBlockedHosts.text.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+        config.minVideoSize = cmbMinVidSize.selectedItem as Long
+        config.getServerTime = chkGetServerTime.isSelected
     }
 
     override fun getInsets(): Insets {
