@@ -150,7 +150,7 @@ class NetworkConfigPanel : JPanel() {
         load()
     }
 
-    private fun load() {
+    fun load() {
         val config = AppContext.config
         cmbSplit.selectedItem = config.maxSegments
         cmbRetry.selectedItem = config.maxRetries

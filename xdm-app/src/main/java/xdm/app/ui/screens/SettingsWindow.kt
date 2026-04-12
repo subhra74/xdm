@@ -71,10 +71,14 @@ class SettingsWindow(parent: Window) : JDialog(parent) {
     fun save() {
         generalPanel.save()
         browserMonitorPanel.save()
+        networkConfigPanel.save()
+        advancedConfigPanel.save()
     }
 
     fun loadConfig() {
         generalPanel.load()
         browserMonitorPanel.load()
+        networkConfigPanel.load()
+        advancedConfigPanel.load()
     }
 }

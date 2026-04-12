@@ -374,3 +374,4 @@ MSG_RUN_CMD=Run a program after all download finishes
 MSG_SCAN=Run Antivirus after download
 MSG_AV_CMD=Antivirus executable
 MSG_ARGS=Parameter
+MSG_CUSTOM_CMD=Custom command

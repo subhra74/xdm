@@ -1,5 +1,6 @@
 package xdm.app.ui.screens.settings
 
+import xdm.app.AppContext
 import xdm.app.I8N
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
@@ -11,9 +12,19 @@ import javax.swing.JPanel
 import javax.swing.JTextField
 
 class AdvancedConfigPanel : JPanel() {
-    private val txtCmd = JTextField().apply { columns = 10 }
-    private val txtVirusScan = JTextField().apply { columns = 10 }
-    private val txtArgs = JTextField().apply { columns = 10 }
+    private val key = "JTextField.placeholderText"
+    private val txtCmd = JTextField().apply {
+        putClientProperty(key, I8N.text("MSG_CUSTOM_CMD"))
+        columns = 10
+    }
+    private val txtVirusScan = JTextField().apply {
+        putClientProperty(key, I8N.text("MSG_AV_CMD"))
+        columns = 10
+    }
+    private val txtArgs = JTextField().apply {
+        putClientProperty(key, I8N.text("MSG_ARGS"))
+        columns = 10
+    }
     private val chkHalt = JCheckBox(I8N.text("MSG_HALT"))
     private val chkNoSleep = JCheckBox(I8N.text("MSG_AWAKE"))
     private val chkRunCmd = JCheckBox(I8N.text("MSG_RUN_CMD"))
@@ -74,14 +85,6 @@ class AdvancedConfigPanel : JPanel() {
         gbcChkvirusscan.gridy = 5
         add(chkVirusScan, gbcChkvirusscan)
 
-        val lblAVcmd = JLabel(I8N.text("MSG_AV_CMD"))
-        val gbcLblAVcmd = GridBagConstraints()
-        gbcLblAVcmd.anchor = GridBagConstraints.WEST
-        gbcLblAVcmd.insets = Insets(0, 0, 5, 5)
-        gbcLblAVcmd.gridx = 0
-        gbcLblAVcmd.gridy = 6
-        add(lblAVcmd, gbcLblAVcmd)
-
         val gbcTxtvirusscan = GridBagConstraints()
         gbcTxtvirusscan.insets = Insets(0, 0, 5, 5)
         gbcTxtvirusscan.fill = GridBagConstraints.HORIZONTAL
@@ -95,21 +98,35 @@ class AdvancedConfigPanel : JPanel() {
         gbcBtnbrowse.gridy = 6
         add(btnBrowse, gbcBtnbrowse)
 
-        val lblArgs = JLabel(I8N.text("MSG_ARGS"))
-        val gbcLblargs = GridBagConstraints()
-        gbcLblargs.anchor = GridBagConstraints.WEST
-        gbcLblargs.insets = Insets(0, 0, 5, 5)
-        gbcLblargs.gridx = 0
-        gbcLblargs.gridy = 7
-        add(lblArgs, gbcLblargs)
-
         val gbcTxtargs = GridBagConstraints()
         gbcTxtargs.gridwidth = 2
         gbcTxtargs.insets = Insets(0, 0, 0, 5)
         gbcTxtargs.fill = GridBagConstraints.HORIZONTAL
         gbcTxtargs.gridx = 0
-        gbcTxtargs.gridy = 8
+        gbcTxtargs.gridy = 7
         add(txtArgs, gbcTxtargs)
+    }
+
+    fun load() {
+        val config = AppContext.config
+        chkHalt.isSelected = config.haltAfterDownload
+        chkNoSleep.isSelected = config.keepAwake
+        chkRunCmd.isSelected = config.runCommand
+        txtCmd.text = config.customCommand
+        chkVirusScan.isSelected = config.runVirusScan
+        txtVirusScan.text = config.virusScannerPath
+        txtArgs.text = config.virusScannerArgs
+    }
+
+    fun save() {
+        val config = AppContext.config
+        config.haltAfterDownload = chkHalt.isSelected
+        config.keepAwake = chkNoSleep.isSelected
+        config.runCommand = chkRunCmd.isSelected
+        config.customCommand = txtCmd.text
+        config.runVirusScan = chkVirusScan.isSelected
+        config.virusScannerPath = txtVirusScan.text
+        config.virusScannerArgs = txtArgs.text
     }
 
     override fun getInsets(): Insets {

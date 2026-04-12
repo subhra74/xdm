@@ -37,6 +37,11 @@ interface IAppConfig {
     var proxyPort: Int
     var proxyUser: String
     var proxyPass: String
+    var haltAfterDownload: Boolean
+    var keepAwake: Boolean
+    var customCommand: String
+    var virusScannerPath: String
+    var virusScannerArgs: String
 }
 
 class AppConfig : IAppConfig {
@@ -73,6 +78,11 @@ class AppConfig : IAppConfig {
     override var proxyPort: Int = 8080
     override var proxyUser: String = ""
     override var proxyPass: String = ""
+    override var haltAfterDownload: Boolean = false
+    override var keepAwake: Boolean = true
+    override var customCommand: String = ""
+    override var virusScannerPath: String = ""
+    override var virusScannerArgs: String = ""
 
     override fun load() {}
 
