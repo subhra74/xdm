@@ -55,6 +55,7 @@ class AppToolBar(searchCallback: (String) -> Unit, buttonCallback: ActionListene
             }
             settingsWindow!!.isModal = true
             settingsWindow!!.setLocationRelativeTo(settingsWindow!!.parent)
+            settingsWindow!!.loadConfig()
             settingsWindow!!.isVisible = true
         }
 

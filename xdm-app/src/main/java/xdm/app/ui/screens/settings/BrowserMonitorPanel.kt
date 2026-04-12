@@ -44,7 +44,7 @@ class BrowserMonitorPanel : JPanel() {
         lineWrap = true
     }
     private val btnHostDef = JButton(I8N.text("DESC_DEF"))
-    private val chckbxNewCheckBox = JCheckBox("New check box").apply {
+    private val chkGetServerTime = JCheckBox(I8N.text("LBL_GET_TIMESTAMP")).apply {
         padding(this, 10)
         setAlignmentX(LEFT_ALIGNMENT)
     }
@@ -171,7 +171,7 @@ class BrowserMonitorPanel : JPanel() {
 
         p5.add(btnHostDef)
 
-        add(chckbxNewCheckBox)
+        add(chkGetServerTime)
     }
 
     override fun getInsets(): Insets {

@@ -1,5 +1,6 @@
 package xdm.app.ui.screens.settings
 
+import xdm.app.AppContext
 import xdm.app.I8N
 import xdm.app.utils.fixHeight
 import xdm.app.utils.padding
@@ -41,8 +42,14 @@ class GeneralPanel : JPanel() {
     private val chkOverwrite = JCheckBox(I8N.text("LBL_OVERWRITE_EXISTING")).apply { padding(this, 10) }
     private val btnBrowse1 = JButton("...")
     private val btnBrowse2 = JButton("...")
-    private val cmbMaxConn = JComboBox<Any?>().apply {
+    private val cmbMaxConn = JComboBox<Int>().apply {
         fixHeight(this)
+        addItem(1)
+        addItem(2)
+        addItem(4)
+        addItem(8)
+        addItem(16)
+        addItem(32)
     }
 
     init {
@@ -110,6 +117,32 @@ class GeneralPanel : JPanel() {
         panelMaxConn.add(cmbMaxConn)
 
         add(Box.createHorizontalGlue())
+    }
+
+    fun load() {
+        val config = AppContext.config
+        chkShowDwnPrg.isSelected = config.showDownloadProgressWindow
+        chkShowComplete.isSelected = config.showDownloadCompleteWindow
+        chkStartAutoDwn.isSelected = config.startDownloadAutomatically
+        chkOverwrite.isSelected = config.overwriteExistingFiles
+        chkSpeedLimiter.isSelected = config.speedLimiterEnabled
+        spnSpeedLimiter.value = config.speedLimit
+        txtTmpDir.text = config.tempFolder
+        txtDwnDir.text = config.defaultDownloadFolder
+        cmbMaxConn.selectedItem = config.maxParallelDownloads
+    }
+
+    fun save() {
+        val config = AppContext.config
+        config.showDownloadProgressWindow = chkShowDwnPrg.isSelected
+        config.showDownloadCompleteWindow = chkShowComplete.isSelected
+        config.startDownloadAutomatically = chkStartAutoDwn.isSelected
+        config.overwriteExistingFiles = chkOverwrite.isSelected
+        config.speedLimiterEnabled = chkSpeedLimiter.isSelected
+        config.speedLimit = spnSpeedLimiter.value as Int
+        config.tempFolder = txtTmpDir.text
+        config.defaultDownloadFolder = txtDwnDir.text
+        config.maxParallelDownloads = cmbMaxConn.selectedItem as Int
     }
 
     override fun getInsets(): Insets {

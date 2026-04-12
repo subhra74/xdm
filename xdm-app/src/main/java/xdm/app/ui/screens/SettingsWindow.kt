@@ -13,12 +13,21 @@ import javax.swing.border.EmptyBorder
 
 
 class SettingsWindow(parent: Window) : JDialog(parent) {
+    private val generalPanel = GeneralPanel()
+    private val browserMonitorPanel = JScrollPane(BrowserMonitorPanel()).apply { border = EmptyBorder(0, 0, 0, 0) }
+    private val networkConfigPanel = NetworkConfigPanel()
+    private val advancedConfigPanel = AdvancedConfigPanel()
     private val card = CardLayout()
     private val panelHolder = JPanel(card)
     private val panelCenter = JPanel(BorderLayout())
     private val panelIndices = arrayOf("GEN_PAN", "BRM_PAN", "NET_PAN", "ADV_PAN")
-    private val btnSave = JButton(text("DESC_SAVE_Q"))
-    private val btnCancel = JButton(text("ND_CANCEL"))
+    private val btnSave = JButton(text("DESC_SAVE_Q")).apply {
+        addActionListener {
+            save()
+            dispose()
+        }
+    }
+    private val btnCancel = JButton(text("ND_CANCEL")).apply { addActionListener { dispose() } }
     private val leftList =
         JList(
             arrayOf(
@@ -51,10 +60,18 @@ class SettingsWindow(parent: Window) : JDialog(parent) {
         add(leftList, BorderLayout.WEST)
         add(panelCenter, BorderLayout.CENTER)
 
-        panelHolder.add(GeneralPanel(), "GEN_PAN")
-        panelHolder.add(JScrollPane(BrowserMonitorPanel()).apply { border = EmptyBorder(0, 0, 0, 0) }, "BRM_PAN")
-        panelHolder.add(NetworkConfigPanel(), "NET_PAN")
-        panelHolder.add(AdvancedConfigPanel(), "ADV_PAN")
+        panelHolder.add(generalPanel, "GEN_PAN")
+        panelHolder.add(browserMonitorPanel, "BRM_PAN")
+        panelHolder.add(networkConfigPanel, "NET_PAN")
+        panelHolder.add(advancedConfigPanel, "ADV_PAN")
         leftList.selectedIndex = 0
+    }
+
+    fun save() {
+        generalPanel.save()
+    }
+
+    fun loadConfig() {
+        generalPanel.load()
     }
 }
