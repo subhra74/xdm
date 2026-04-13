@@ -4,6 +4,7 @@ import com.formdev.flatlaf.FlatClientProperties
 import xdm.app.I8N.text
 import xdm.app.ui.screens.SettingsWindow
 import xdm.app.utils.createSVGIcon
+import xdm.app.utils.showMenu
 import java.awt.Color
 import java.awt.Component
 import java.awt.Dimension
@@ -12,9 +13,13 @@ import java.awt.event.ActionEvent
 import java.awt.event.ActionListener
 import javax.swing.Box
 import javax.swing.JButton
+import javax.swing.JComponent
+import javax.swing.JMenuItem
+import javax.swing.JPopupMenu
 import javax.swing.JTextField
 import javax.swing.JToolBar
 import javax.swing.SwingUtilities
+import kotlin.system.exitProcess
 
 class AppToolBar(searchCallback: (String) -> Unit, buttonCallback: ActionListener) {
     private val btnNew: JButton
@@ -29,10 +34,18 @@ class AppToolBar(searchCallback: (String) -> Unit, buttonCallback: ActionListene
     private val btnSettingsGap: Component
     private val btnClearGap: Component
     private val btnDeleteGap: Component
+    private val contextMenu: JPopupMenu
+    private lateinit var mSettings: JMenuItem
+    private lateinit var mBatchImport: JMenuItem
+    private lateinit var mLanguage: JMenuItem
+    private lateinit var mHelp: JMenuItem
+    private lateinit var mUpdate: JMenuItem
+    private lateinit var mAbout: JMenuItem
+    private lateinit var mExit: JMenuItem
 
-    private var settingsWindow: SettingsWindow? = null
 
     init {
+        this.contextMenu = createContextMenu()
         this.btnNew = createToolButton("add-large-fill.svg", buttonCallback, "TOOL_DOWNLOAD")
         this.btnNewGap = Box.createRigidArea(Dimension(5, 0))
 
@@ -50,13 +63,7 @@ class AppToolBar(searchCallback: (String) -> Unit, buttonCallback: ActionListene
 
         this.btnMenu = createToolButton("menu-line.svg")
         btnMenu.addActionListener {
-            if (settingsWindow == null) {
-                settingsWindow = SettingsWindow(SwingUtilities.windowForComponent(toolbar))
-            }
-            settingsWindow!!.isModal = true
-            settingsWindow!!.setLocationRelativeTo(settingsWindow!!.parent)
-            settingsWindow!!.loadConfig()
-            settingsWindow!!.isVisible = true
+            showMenu(btnMenu, contextMenu)
         }
 
         toolbar.apply {
@@ -93,6 +100,62 @@ class AppToolBar(searchCallback: (String) -> Unit, buttonCallback: ActionListene
             add(Box.createRigidArea(Dimension(5, 0)))
             add(btnMenu)
             add(Box.createRigidArea(Dimension(5, 0)))
+        }
+    }
+
+    private fun createContextMenu(): JPopupMenu {
+        val a = createMenuListener()
+        val ctx = JPopupMenu()
+        mSettings = addMenuItem("TITLE_SETTINGS", ctx, a)
+        mBatchImport = addMenuItem("MENU_CLIP_ADD_MENU", ctx, a)
+        mLanguage = addMenuItem("MENU_LANG", ctx, a)
+        mUpdate = addMenuItem("MENU_UPDATE", ctx, a)
+        mHelp = addMenuItem("MENU_HELP_SUP", ctx, a)
+        mAbout = addMenuItem("MENU_ABOUT", ctx, a)
+        mExit = addMenuItem("MENU_EXIT", ctx, a)
+        return ctx
+    }
+
+    private fun addMenuItem(id: String, menu: JComponent, a: ActionListener): JMenuItem {
+        val mItem = JMenuItem(text(id)).apply {
+            name = id
+            addActionListener(a)
+        }
+        menu.add(mItem)
+        return mItem
+    }
+
+    private fun createMenuListener(): ActionListener {
+        return ActionListener { e: ActionEvent ->
+            val name = (e.source as? JComponent)?.name
+            when (name) {
+                "TITLE_SETTINGS" -> {
+                    SettingsWindow(SwingUtilities.windowForComponent(toolbar)).apply {
+                        isModal = true
+                        setLocationRelativeTo(parent)
+                        loadConfig()
+                        isVisible = true
+                    }
+                }
+                "MENU_CLIP_ADD_MENU" -> {
+
+                }
+                "MENU_LANG" -> {
+
+                }
+                "MENU_UPDATE" -> {
+
+                }
+                "MENU_HELP_SUP" -> {
+
+                }
+                "MENU_ABOUT" -> {
+
+                }
+                "MENU_EXIT" -> {
+                    exitProcess(0)
+                }
+            }
         }
     }
 

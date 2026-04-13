@@ -60,7 +60,7 @@ class HttpServer(
                     }
                 }
             } catch (e: Exception) {
-                Logger.info(e)
+                Logger.info(e.message)
             }
         }.start()
     }
