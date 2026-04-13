@@ -18,7 +18,7 @@ interface IAppConfig {
     val recentFolders: List<String>
     var autoSelectFolder: Boolean
     var folderIndex: Int
-    var sortKey: SortKey?
+    var sortKey: SortKey
     var sortAscending: Boolean
     var minVideoSize: Long
     var lang: String
@@ -47,7 +47,7 @@ interface IAppConfig {
 class AppConfig : IAppConfig {
     override var autoSelectFolder = false
     override var folderIndex = 0
-    override var sortKey: SortKey? = SortKey.DATE
+    override var sortKey: SortKey = SortKey.DATE
     override var sortAscending = false
     override var minVideoSize: Long = 1024
     override var lang: String = "en"
