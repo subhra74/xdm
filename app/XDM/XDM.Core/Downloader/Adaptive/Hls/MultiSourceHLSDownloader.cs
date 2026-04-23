@@ -345,8 +345,8 @@ namespace XDM.Core.Downloader.Adaptive.Hls
             }
             catch
             {
-                // ignored
                 Log.Debug("Chunk restore failed");
+                _chunks = null;
             }
         }
 
