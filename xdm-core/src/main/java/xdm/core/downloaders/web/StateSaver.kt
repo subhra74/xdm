@@ -93,7 +93,7 @@ private fun readHlsChunk(r: DataInputStream): StreamingChunk {
 private fun readStreamingChunks(r: DataInputStream): ArrayList<StreamingChunk> {
     val count = r.readInt()
     val chunkMap = ArrayList<StreamingChunk>()
-    for (i in 0..<count) {
+    (0..<count).forEach { _ ->
         val chunk = readHlsChunk(r)
         chunkMap.add(chunk)
     }

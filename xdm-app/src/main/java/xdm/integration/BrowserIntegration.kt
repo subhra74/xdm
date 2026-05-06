@@ -99,9 +99,9 @@ object BrowserIntegration {
     private fun onSyncMessage(context: RequestContext) {
         val data = ConfigDto(
             enabled = true,
-            fileExts = AppContext.appConfig.fileExtList,
-            blockedHosts = AppContext.appConfig.blockedHosts,
-            requestFileExts = AppContext.appConfig.videoExtList,
+            fileExts = AppContext.config.fileExtensions,
+            blockedHosts = AppContext.config.blockedHosts,
+            requestFileExts = AppContext.config.videoExtensions,
             mediaTypes = listOf("audio/", "video/", "mpeg", "dash"),
             matchingHosts = emptyList(),
             videoList = AppContext.videoTracker.videoList.map {
@@ -144,7 +144,7 @@ object BrowserIntegration {
             respectFileName = false,
             cookie = msg.cookie,
             headers = msg.requestHeaders,
-            origin = null,
+            origin = msg.referer ?: msg.tabUrl,
             autoCategorize = false,
             defaultDownloadFolder = AppContext.defaultDownloadFolder,
             userSelectedDownloadFolder = null,

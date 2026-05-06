@@ -7,6 +7,7 @@ import xdm.core.network.http.PoolingHttpClient
 import xdm.core.network.http.Range
 import xdm.core.util.Logger
 import xdm.core.util.getFileExtFromUrl
+import xdm.core.util.getRetryDelay
 import java.io.File
 import java.io.IOException
 import java.io.RandomAccessFile
@@ -30,6 +31,7 @@ class StreamingChunkRetriever(
         val buffer = ByteArray(256 * 1024)
         try {
             while (!stopFlag.get()) {
+                var retryAfter = 3L
                 if (piece.status.get() == ChunkStatus.Finished) return
                 val (start, end) = piece.byteRange ?: Pair(0L, null)
                 val realRange = Range(start + piece.downloaded.get(), end)
@@ -52,6 +54,17 @@ class StreamingChunkRetriever(
                             piece.status.set(ChunkStatus.Failed)
                             piece.error.set(DownloadError.ResumeNotSupported)
                             return
+                        }
+                        if (code == 429) {
+                            val retryHeader = response.getHeader("retry-after")
+                            val delay = getRetryDelay(retryHeader)
+                            if (delay != null) {
+                                retryAfter = delay
+                            } else {
+                                Logger.info("Unable to get retry delay: using default $retryAfter sec")
+                            }
+                            Logger.info("Rate limit hit: Will wait for $retryAfter sec")
+                            throw IOException("Rate limit hit")
                         }
                         if (code != 206 && code != 200) {
                             Logger.error("XDM", "Chunk download failed - invalid response: $code")
@@ -100,7 +113,7 @@ class StreamingChunkRetriever(
                 } catch (ex: IOException) {
                     Logger.error("XDM", "Error downloading chunk", ex)
                     if (stopFlag.get()) return
-                    Thread.sleep(3000)
+                    Thread.sleep(retryAfter * 1000)
                 }
             }
         } catch (ex: InterruptedException) {

@@ -1,13 +1,17 @@
 package xdm.app.ui.screens
 
 import com.formdev.flatlaf.FlatClientProperties
+import xdm.app.AppContext
 import xdm.app.I8N.text
 import xdm.app.ui.screens.settings.AdvancedConfigPanel
 import xdm.app.ui.screens.settings.BrowserMonitorPanel
 import xdm.app.ui.screens.settings.GeneralPanel
 import xdm.app.ui.screens.settings.NetworkConfigPanel
 import xdm.app.utils.padding
+import xdm.core.util.Logger
 import java.awt.*
+import java.awt.event.WindowAdapter
+import java.awt.event.WindowEvent
 import javax.swing.*
 import javax.swing.border.EmptyBorder
 
@@ -45,6 +49,7 @@ class SettingsWindow(parent: Window) : JDialog(parent) {
     init {
         size = Dimension(550, 450)
         title = text("TITLE_SETTINGS")
+        rootPane.defaultButton = btnSave
 
         val boxBottom = Box.createHorizontalBox().apply {
             add(Box.createHorizontalGlue())
@@ -65,7 +70,16 @@ class SettingsWindow(parent: Window) : JDialog(parent) {
         panelHolder.add(browserMonitorPanelJsp, "BRM_PAN")
         panelHolder.add(networkConfigPanel, "NET_PAN")
         panelHolder.add(advancedConfigPanel, "ADV_PAN")
+
         leftList.selectedIndex = 0
+        btnSave.requestFocusInWindow()
+
+        addWindowListener(object : WindowAdapter() {
+            override fun windowActivated(e: WindowEvent) {
+                Logger.info("Settings window activated")
+                btnSave.requestFocusInWindow()
+            }
+        })
     }
 
     fun save() {
@@ -73,6 +87,7 @@ class SettingsWindow(parent: Window) : JDialog(parent) {
         browserMonitorPanel.save()
         networkConfigPanel.save()
         advancedConfigPanel.save()
+        AppContext.config.save()
     }
 
     fun loadConfig() {

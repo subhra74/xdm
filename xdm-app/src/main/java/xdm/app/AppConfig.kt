@@ -2,10 +2,15 @@ package xdm.app
 
 import xdm.app.I8N.text
 import xdm.app.ui.components.SortKey
+import java.io.DataInputStream
+import java.io.DataOutputStream
 import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
 
 interface IAppConfig {
     fun load()
+    fun save()
     var showDownloadCompleteWindow: Boolean
     var runVirusScan: Boolean
     var runCommand: Boolean
@@ -44,7 +49,7 @@ interface IAppConfig {
     var virusScannerArgs: String
 }
 
-class AppConfig : IAppConfig {
+class AppConfig(private val configDir: String) : IAppConfig {
     override var autoSelectFolder = false
     override var folderIndex = 0
     override var sortKey: SortKey = SortKey.DATE
@@ -64,11 +69,14 @@ class AppConfig : IAppConfig {
     override var speedLimit: Int = 100
     override var startDownloadAutomatically: Boolean = false
     override var overwriteExistingFiles: Boolean = false
-    override var fileExtensions: List<String> = listOf("3GP", "7Z", "AVI", "BZ2", "DEB", "DOC", "DOCX", "EXE", "ISO", "DMG",
+    override var fileExtensions: List<String> = listOf(
+        "3GP", "7Z", "AVI", "BZ2", "DEB", "DOC", "DOCX", "EXE", "ISO", "DMG",
         "MSI", "PDF", "PPT", "PPTX", "RAR", "RPM", "XLS", "XLSX", "TAR", "JAR", "ZIP", "XZ", "PKG"
     )
-    override var videoExtensions: List<String> = listOf("MP4", "M3U8", "F4M", "WEBM", "OGG", "MP3", "AAC", "FLV", "MKV", "DIVX",
-        "MOV", "MPG", "MPEG", "OPUS", "MPD")
+    override var videoExtensions: List<String> = listOf(
+        "MP4", "M3U8", "F4M", "WEBM", "OGG", "MP3", "AAC", "FLV", "MKV", "DIVX",
+        "MOV", "MPG", "MPEG", "OPUS", "MPD"
+    )
     override var blockedHosts: List<String> = listOf("update.microsoft.com", "windowsupdate.com", "thwawte.com")
     override var getServerTime: Boolean = true
     override var maxSegments: Int = 8
@@ -84,7 +92,115 @@ class AppConfig : IAppConfig {
     override var virusScannerPath: String = ""
     override var virusScannerArgs: String = ""
 
-    override fun load() {}
+    override fun load() {
+        val configFile = File(configDir, "xdm-app.config")
+        if (configFile.exists()) {
+            FileInputStream(configFile).use { fs ->
+                DataInputStream(fs).use { ds ->
+                    load(ds)
+                }
+            }
+        }
+    }
+
+    override fun save() {
+        val configFile = File(configDir, "xdm-app.config")
+        FileOutputStream(configFile).use { fs ->
+            DataOutputStream(fs).use { ds ->
+                save(ds)
+            }
+        }
+    }
+
+    private fun save(out: DataOutputStream) {
+        out.writeBoolean(showDownloadCompleteWindow)
+        out.writeBoolean(runVirusScan)
+        out.writeBoolean(runCommand)
+        out.writeBoolean(showDownloadProgressWindow)
+        out.writeUTF(defaultDownloadFolder)
+        out.writeUTF(tempFolder)
+        out.writeBoolean(autoRenameOnConflict)
+        out.writeBoolean(shutdownAfterAllDone)
+        out.writeInt(maxParallelDownloads)
+        out.writeBoolean(autoSelectFolder)
+        out.writeInt(folderIndex)
+        out.writeInt(sortKey.ordinal)
+        out.writeBoolean(sortAscending)
+        out.writeLong(minVideoSize)
+        out.writeUTF(lang)
+        out.writeBoolean(speedLimiterEnabled)
+        out.writeInt(speedLimit)
+        out.writeBoolean(startDownloadAutomatically)
+        out.writeBoolean(overwriteExistingFiles)
+        writeStringList(out, fileExtensions)
+        writeStringList(out, videoExtensions)
+        writeStringList(out, blockedHosts)
+        out.writeBoolean(getServerTime)
+        out.writeInt(maxSegments)
+        out.writeInt(maxRetries)
+        out.writeBoolean(useProxy)
+        out.writeUTF(proxyHost)
+        out.writeInt(proxyPort)
+        out.writeUTF(proxyUser)
+        out.writeUTF(proxyPass)
+        out.writeBoolean(haltAfterDownload)
+        out.writeBoolean(keepAwake)
+        out.writeUTF(customCommand)
+        out.writeUTF(virusScannerPath)
+        out.writeUTF(virusScannerArgs)
+    }
+
+    private fun load(input: DataInputStream) {
+        showDownloadCompleteWindow = input.readBoolean()
+        runVirusScan = input.readBoolean()
+        runCommand = input.readBoolean()
+        showDownloadProgressWindow = input.readBoolean()
+        defaultDownloadFolder = input.readUTF()
+        tempFolder = input.readUTF()
+        autoRenameOnConflict = input.readBoolean()
+        shutdownAfterAllDone = input.readBoolean()
+        maxParallelDownloads = input.readInt()
+        autoSelectFolder = input.readBoolean()
+        folderIndex = input.readInt()
+        sortKey = SortKey.entries[input.readInt()]
+        sortAscending = input.readBoolean()
+        minVideoSize = input.readLong()
+        lang = input.readUTF()
+        speedLimiterEnabled = input.readBoolean()
+        speedLimit = input.readInt()
+        startDownloadAutomatically = input.readBoolean()
+        overwriteExistingFiles = input.readBoolean()
+        fileExtensions = readStringList(input)
+        videoExtensions = readStringList(input)
+        blockedHosts = readStringList(input)
+        getServerTime = input.readBoolean()
+        maxSegments = input.readInt()
+        maxRetries = input.readInt()
+        useProxy = input.readBoolean()
+        proxyHost = input.readUTF()
+        proxyPort = input.readInt()
+        proxyUser = input.readUTF()
+        proxyPass = input.readUTF()
+        haltAfterDownload = input.readBoolean()
+        keepAwake = input.readBoolean()
+        customCommand = input.readUTF()
+        virusScannerPath = input.readUTF()
+        virusScannerArgs = input.readUTF()
+    }
+
+    private fun writeStringList(out: DataOutputStream, list: List<String>) {
+        out.writeInt(list.size)
+        list.forEach { out.writeUTF(it) }
+    }
+
+    private fun readStringList(input: DataInputStream): List<String> {
+        val size = input.readInt()
+        val list = mutableListOf<String>()
+        repeat(size) {
+            list.add(input.readUTF())
+        }
+        return list
+    }
 
     override val recentFolders: List<String>
         get() = mutableListOf(text("ND_AUTO_CAT"), defaultDownloadFolder)

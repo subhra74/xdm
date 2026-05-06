@@ -185,7 +185,7 @@ object VideoHelper {
                     val dashDownloadTaskInfo = DashDownloadTaskInfo(
                         id = CoreUtils.uniqueId(),
                         fileName = getFileName(msg) + "." + fileExt,
-                        tempDir = AppContext.appConfig.tempDir,
+                        tempDir = AppContext.config.tempFolder,
                         respectFileName = true,
                         cookie = msg.cookie,
                         headers = msg.requestHeaders,
@@ -322,7 +322,7 @@ object VideoHelper {
         return HlsDownloadTaskInfo(
             id = CoreUtils.uniqueId(),
             fileName = getFileName(msg) + ".mp4",
-            tempDir = AppContext.appConfig.tempDir,
+            tempDir = AppContext.config.tempFolder,
             respectFileName = true,
             cookie = msg.cookie,
             headers = msg.requestHeaders,

@@ -53,7 +53,7 @@ object AppMain {
         val appDB = AppDB(configDir)
         val taskDB = TaskInfoDB(configDir)
 
-        if(!args.contains("--no-gc")){
+        if (!args.contains("--no-gc")) {
             Logger.info("Registering periodic GC")
             Thread {
                 while (true) {
@@ -67,7 +67,7 @@ object AppMain {
         AppContext.apply {
             db = appDB
             app = AppInstance()
-            config = AppConfig()
+            config = AppConfig(configDir)
             queue = QueueManager()
             platform = PlatformInvoke()
             downloader = DownloadManager(appDB = appDB, taskInfoDB = taskDB, configDir = configDir)

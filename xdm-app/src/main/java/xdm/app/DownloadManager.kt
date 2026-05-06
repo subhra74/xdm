@@ -128,10 +128,11 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                 }
                 AppContext.app.updateDownloadInView(event.id)
                 AppContext.app.hideProgressWindow(event.id)
-                AppContext.app.showDownloadCompleteWindow(
-                    event.id, event.finalOutputFolder, event.finalFileName, event.fileSize
-                )
-                //SystemTray.getSystemTray().trayIcons[0].displayMessage("Hello", "World", TrayIcon.MessageType.INFO)
+                if (AppContext.config.showDownloadCompleteWindow) {
+                    AppContext.app.showDownloadCompleteWindow(
+                        event.id, event.finalOutputFolder, event.finalFileName, event.fileSize
+                    )
+                }
             }
             processNextQueue()
         }
@@ -312,7 +313,9 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                 appDB.savePausedRecords()
                 appDB.saveActiveRecords()
                 controller.resume()
-                AppContext.app.showProgressWindow(id, fileName)
+                if (AppContext.config.showDownloadProgressWindow) {
+                    AppContext.app.showProgressWindow(id, fileName)
+                }
             }
         } catch (error: Exception) {
             Logger.error("XDM", "Error while resume", error)
@@ -408,7 +411,10 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
             task, downloadHost, configDir
         )
         activeSessions[task.id] = controller
-        AppContext.app.showProgressWindow(task.id, task.fileName)
+        if (AppContext.config.showDownloadProgressWindow) {
+            AppContext.app.showProgressWindow(task.id, task.fileName)
+        }
+
         appDB.getById(task.id)?.let {
             it.status = RecordStatus.DOWNLOADING
             AppContext.app.updateDownloadInView(task.id)
@@ -442,7 +448,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
     }
 
     override fun startHlsDownload(task: HlsDownloadTaskInfo) {
-        task.tempDir = AppContext.appConfig.tempDir + File.separator + task.id
+        task.tempDir = AppContext.config.tempFolder + File.separator + task.id
         taskInfoDB.saveHlsTask(task)
         val controller = HlsDownloaderTask(
             taskInfo = task,
@@ -469,13 +475,15 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
         )
         appDB.saveActiveRecords()
         AppContext.app.addDownloadInView(task.id)
-        AppContext.app.showProgressWindow(task.id, task.fileName)
+        if (AppContext.config.showDownloadProgressWindow) {
+            AppContext.app.showProgressWindow(task.id, task.fileName)
+        }
         controller.start()
     }
 
     override fun startDashDownload(task: DashDownloadTaskInfo) {
         println("Not implemented yet")
-        task.tempDir = AppContext.appConfig.tempDir + File.separator + task.id
+        task.tempDir = AppContext.config.tempFolder + File.separator + task.id
         taskInfoDB.saveDashTask(task)
         val controller = DashDownloaderTask(
             taskInfo = task,
@@ -502,7 +510,9 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
         )
         appDB.saveActiveRecords()
         AppContext.app.addDownloadInView(task.id)
-        AppContext.app.showProgressWindow(task.id, task.fileName)
+        if (AppContext.config.showDownloadProgressWindow) {
+            AppContext.app.showProgressWindow(task.id, task.fileName)
+        }
         controller.start()
     }
 

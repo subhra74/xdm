@@ -104,7 +104,7 @@ class HlsDownloaderTask : StreamingDownloaderTask {
                     sequence = index.toLong(),
                     status = AtomicReference(ChunkStatus.Ready),
                     url = ms.url,
-                    keyUrl = ms.keyUrl?.toString(),
+                    keyUrl = ms.keyUrl,
                     iv = ms.iv,
                     byteRange = ms.byteRange,
                     tag = "VIDEO",

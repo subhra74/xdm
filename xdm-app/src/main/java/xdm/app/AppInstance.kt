@@ -117,9 +117,12 @@ class AppInstance : IAppInstance {
             MessageBox.show(appWindow, "XDM", text("SUCCESS_REFRESH"))
             return
         }
-        // TODO: Check if download window needs to be shown, or directly start the download
-        SwingUtilities.invokeLater {
-            showNewDownloadWindowInternal(downloadInfo)
+        if (downloadInfo != null && AppContext.config.startDownloadAutomatically) {
+            AppContext.downloader.startHttpDownload(downloadInfo)
+        } else {
+            SwingUtilities.invokeLater {
+                showNewDownloadWindowInternal(downloadInfo)
+            }
         }
     }
 

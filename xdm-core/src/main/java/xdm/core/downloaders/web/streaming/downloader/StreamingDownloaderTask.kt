@@ -15,6 +15,7 @@ import java.nio.file.Paths
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
@@ -111,6 +112,8 @@ abstract class StreamingDownloaderTask(
             executorService.submit(pg)
         }
         try {
+            //executorService.shutdown()
+            //executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS)
             latch.await()
             saveContext()
             if (context.stopFlag.get()) return
@@ -284,12 +287,16 @@ abstract class StreamingDownloaderTask(
             if (pc.status.get() == ChunkStatus.Finished) {
                 context.pieceCompletedCount.addAndGet(1)
                 Logger.info("total completed ${context.pieceCompletedCount.get()} of ${context.chunks.size}")
-                context.chunks.filter { it.status.get() == ChunkStatus.Failed }.forEach {
-                    val pg = createPieceGrabber(it, latch)
-                    executorService.submit(pg)
-                }
+//                val pc2 = context.chunks.find { it.status.get() == ChunkStatus.Failed }
+//                if (pc2 != null) {
+//                    val pg = createPieceGrabber(pc2, latch)
+//                    executorService.submit(pg)
+//                } else {
+//                    latch.countDown()
+//                }
             } else {
-                Logger.info("Chunk failed")
+                Logger.info("Chunk failed- $pc")
+//                latch.countDown()
             }
             saveContext()
         }

@@ -36,6 +36,25 @@ fun getModifiedDate(headers: Map<String, List<String>>?): Long? {
     return null
 }
 
+fun getRetryDelay(retryAfter: String?): Long? {
+    if (retryAfter != null) {
+        try {
+            // First, try to parse as a delta-seconds value
+            return retryAfter.toLong()
+        } catch (e: NumberFormatException) {
+            // If it's not a number, try to parse as an HTTP-date
+            try {
+                val date = fmt.parse(retryAfter)
+                val delaySeconds = (date.time - System.currentTimeMillis()) / 1000
+                return if (delaySeconds > 0) delaySeconds else 0
+            } catch (ex: Exception) {
+                Logger.error("Failed to parse Retry-After header as date: $retryAfter", ex)
+            }
+        }
+    }
+    return null
+}
+
 fun getFileName(
     oldName: String,
     keepFileName: Boolean,

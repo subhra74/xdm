@@ -285,31 +285,6 @@ class NewDownloadWindow : JDialog() {
             authInfo = null,
             knownFileSize = taskInfo?.knownFileSize
         )
-//        if (taskInfo == null) {
-//            taskInfo =
-//                HttpDownloadTaskInfo(
-//                    uniqueId(),
-//                    url,
-//                    file,
-//                    fileRenamedByUser,
-//                    null,
-//                    null,
-//                    null,
-//                    false,
-//                    AppContext.defaultDownloadFolder,
-//                    null,
-//                    8,
-//                    null
-//                )
-//        }
-//        taskInfo?.apply {
-//            this.url = url
-//            this.id = uniqueId()
-//            taskInfo!!.defaultDownloadFolder = if (cmbSaveIn!!.selectedIndex > 0)
-//                cmbSaveIn!!.getItemAt(cmbSaveIn!!.selectedIndex)
-//            else
-//                AppContext.defaultDownloadFolder
-//        }
 
         AppContext.downloader.startHttpDownload(task)
         dispose()

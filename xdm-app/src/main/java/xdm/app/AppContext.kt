@@ -20,7 +20,7 @@ object AppContext {
     lateinit var config: IAppConfig
     lateinit var platform: IPlatformInvoke
     lateinit var queue: IQueueManager
-    lateinit var appConfig: AppConfigData
+
     lateinit var videoTracker: ICapturedVideoTracker
     lateinit var defaultDownloadFolder: String
     lateinit var taskInfoDB: TaskInfoDB
@@ -33,10 +33,6 @@ object AppContext {
         this.configDir = configDir
         val f = File(System.getProperty("user.home"), "Downloads")
         defaultDownloadFolder = if (f.exists()) f.absolutePath else System.getProperty("user.home")
-        appConfig = loadConfig(configDir, tempDir)
-
-        Logger.info("Loading translations...")
-        I8N.loadTexts(appConfig.lang)
 
         if (::db.isInitialized
             && ::app.isInitialized
@@ -47,6 +43,8 @@ object AppContext {
             && ::videoTracker.isInitialized
         ) {
             config.load()
+            Logger.info("Loading translations...")
+            I8N.loadTexts(config.lang)
             BrowserIntegration.start(
                 {
                     db.loadRecords()
@@ -58,29 +56,5 @@ object AppContext {
             return
         }
         throw IllegalStateException("All services are not initialized properly")
-    }
-
-    private fun loadConfig(configDir: String, tempDir: String): AppConfigData {
-        val configFile = Paths.get(configDir).resolve(CONFIG_FILE)
-        var config: AppConfigData? = null
-        if (configFile.exists()) {
-            try {
-                Logger.info("Loading config from file")
-                config = Json.decodeFromString(Files.readString(configFile))
-                Logger.info("Loading config from file.. done")
-            } catch (ex: Exception) {
-                //do nothing
-            }
-        }
-        if (config == null) {
-            Logger.info("Using default config")
-            config = AppConfigData(tempDir)
-            try {
-                Files.writeString(configFile, Json.encodeToString(config))
-            } catch (ex: Exception) {
-                Logger.info(ex)
-            }
-        }
-        return config
     }
 }
