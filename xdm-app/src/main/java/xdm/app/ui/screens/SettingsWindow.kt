@@ -47,7 +47,7 @@ class SettingsWindow(parent: Window) : JDialog(parent) {
         }
 
     init {
-        size = Dimension(550, 450)
+        size = Dimension(650, 450)
         title = text("TITLE_SETTINGS")
         rootPane.defaultButton = btnSave
 

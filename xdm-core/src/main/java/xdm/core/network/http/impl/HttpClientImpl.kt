@@ -96,6 +96,8 @@ class HttpClientImpl(poolSize: Int) : PoolingHttpClient {
             val finalUrl = response.request.url.toUri().toASCIIString()
             val redirected = response.priorResponse?.isRedirect ?: false
 
+            Logger.info(response.headers)
+
             HttpResponseImpl(
                 contentDisposition = response.headers.get("Content-Disposition"),
                 statusCode = response.code,

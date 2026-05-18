@@ -6,7 +6,6 @@ import xdm.core.network.http.HeaderMap
 import xdm.core.network.http.PoolingHttpClient
 import xdm.core.network.http.Range
 import xdm.core.util.Logger
-import xdm.core.util.getFileExtFromUrl
 import xdm.core.util.getRetryDelay
 import java.io.File
 import java.io.IOException
@@ -56,13 +55,7 @@ class StreamingChunkRetriever(
                             return
                         }
                         if (code == 429) {
-                            val retryHeader = response.getHeader("retry-after")
-                            val delay = getRetryDelay(retryHeader)
-                            if (delay != null) {
-                                retryAfter = delay
-                            } else {
-                                Logger.info("Unable to get retry delay: using default $retryAfter sec")
-                            }
+                            retryAfter = getRetryDelay(response.getHeader("retry-after"), 5)
                             Logger.info("Rate limit hit: Will wait for $retryAfter sec")
                             throw IOException("Rate limit hit")
                         }

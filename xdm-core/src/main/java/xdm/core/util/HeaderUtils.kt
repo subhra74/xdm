@@ -36,7 +36,7 @@ fun getModifiedDate(headers: Map<String, List<String>>?): Long? {
     return null
 }
 
-fun getRetryDelay(retryAfter: String?): Long? {
+fun getRetryDelay(retryAfter: String?, defaultDelay: Long = 5): Long {
     if (retryAfter != null) {
         try {
             // First, try to parse as a delta-seconds value
@@ -52,7 +52,7 @@ fun getRetryDelay(retryAfter: String?): Long? {
             }
         }
     }
-    return null
+    return defaultDelay
 }
 
 fun getFileName(

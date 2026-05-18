@@ -29,7 +29,7 @@ enum class ChunkStatus {
 
 sealed interface ConnectResult {
     data class Connected(val response: HttpResponse) : ConnectResult
-    data object Retry : ConnectResult
+    data class Retry(val delay: Long) : ConnectResult
     data object InvalidResponse : ConnectResult
     data object NoResume : ConnectResult
 }

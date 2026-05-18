@@ -11,6 +11,7 @@ import javax.swing.BoxLayout
 import javax.swing.JButton
 import javax.swing.JCheckBox
 import javax.swing.JComboBox
+import javax.swing.JFileChooser
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JSpinner
@@ -32,7 +33,7 @@ class GeneralPanel : JPanel() {
         preferredSize = Dimension(120, preferredSize.height)
         maximumSize = Dimension(120, preferredSize.height)
     }
-    private val chkSpeedLimiter = JCheckBox(I8N.text("SPEED_LIMIT_TITLE"))
+    private val chkSpeedLimiter = JCheckBox(I8N.text("MSG_SPEED_LIMIT"))
     private val chkShowDwnPrg = JCheckBox(I8N.text("SHOW_DWN_PRG")).apply {
         padding(this, 10)
         alignmentX = LEFT_ALIGNMENT
@@ -40,8 +41,12 @@ class GeneralPanel : JPanel() {
     private val chkShowComplete = JCheckBox(I8N.text("SHOW_DWN_COMPLETE")).apply { padding(this, 10) }
     private val chkStartAutoDwn = JCheckBox(I8N.text("LBL_START_AUTO")).apply { padding(this, 10) }
     private val chkOverwrite = JCheckBox(I8N.text("LBL_OVERWRITE_EXISTING")).apply { padding(this, 10) }
-    private val btnBrowse1 = JButton("...")
-    private val btnBrowse2 = JButton("...")
+    private val btnBrowse1 = JButton("...").apply { addActionListener {
+        chooseFolder(txtTmpDir)
+    } }
+    private val btnBrowse2 = JButton("...").apply { addActionListener {
+        chooseFolder(txtDwnDir)
+    } }
     private val cmbMaxConn = JComboBox<Int>().apply {
         fixHeight(this)
         addItem(1)
@@ -67,7 +72,7 @@ class GeneralPanel : JPanel() {
 
         add(chkStartAutoDwn)
 
-        add(chkOverwrite)
+        //add(chkOverwrite)
 
         val panelSp = JPanel().apply { padding(this, 10) }
         panelSp.setAlignmentX(LEFT_ALIGNMENT)
@@ -147,5 +152,14 @@ class GeneralPanel : JPanel() {
 
     override fun getInsets(): Insets {
         return Insets(10, 10, 10, 10)
+    }
+
+    private fun chooseFolder(textField: JTextField){
+        val fileChooser = JFileChooser()
+        fileChooser.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
+        val result = fileChooser.showOpenDialog(this)
+        if (result == JFileChooser.APPROVE_OPTION) {
+            textField.text = fileChooser.selectedFile.absolutePath
+        }
     }
 }

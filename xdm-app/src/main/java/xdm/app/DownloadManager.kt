@@ -175,9 +175,9 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
         override val appDir: String
             get() = AppContext.configDir
         override val applySpeedLimit: Boolean
-            get() = false
+            get() = AppContext.config.speedLimiterEnabled
         override val speedLimit: Int
-            get() = -1
+            get() = if (AppContext.config.speedLimit > 0) AppContext.config.speedLimit else -1
 
         override fun getTempDir(id: Long, url: String, contentType: String?, contentDisposition: String?): String {
             taskInfoDB.getHttpTask(id)?.let { t ->

@@ -4,6 +4,7 @@ import xdm.core.downloaders.DownloadError
 import xdm.core.network.http.HttpResponse
 import xdm.core.network.http.Range
 import xdm.core.util.Logger
+import xdm.core.util.getRetryDelay
 import java.io.File
 import java.io.IOException
 import java.io.RandomAccessFile
@@ -26,6 +27,7 @@ class HttpChunkRetriever(
     fun retrieveChunk() {
         var retryCount = 0
         var maxByteRange: Long? = null
+        var retryAfter = 5L
 
         while (!isCancelled()) {
             // Check if already completed in case of resume
@@ -71,18 +73,19 @@ class HttpChunkRetriever(
                     false
                 }
 
-                ConnectResult.Retry -> {
+                is ConnectResult.Retry -> {
                     if (isCancelled()) {
                         Logger.info("XDM", "Chunk $id cancelled during retry")
                         false
                     } else {
                         retryCount += 1
+                        retryAfter = connectResult.delay
                         onRetry(retryCount)
                     }
                 }
             }
             if (isCancelled() || !shouldRetry) return
-            Thread.sleep(5000)
+            Thread.sleep(retryAfter * 1000)
         }
     }
 
@@ -92,6 +95,7 @@ class HttpChunkRetriever(
         Logger.info(range)
         val response = context.httpClient.getResponse(context.url, context.headers, context.cookie, range)
         response.onSuccess { r ->
+            print(r)
             if (isFatalStatus(r.statusCode, startRange, !context.init.get())) {
                 r.close()
                 return ConnectResult.InvalidResponse
@@ -112,11 +116,17 @@ class HttpChunkRetriever(
                 return ConnectResult.Connected(r)
             } else {
                 r.close()
-                return ConnectResult.Retry
+                var retryAfter = 5L
+                if (r.statusCode == 429) {
+                    retryAfter = getRetryDelay(r.getHeader("retry-after"), 5)
+                    Logger.info("Rate limit hit: Will wait for $retryAfter sec")
+                    throw IOException("Rate limit hit")
+                }
+                return ConnectResult.Retry(retryAfter)
             }
         }
         response.onFailure { t -> Logger.error("XDM", "Connect error", t) }
-        return ConnectResult.Retry
+        return ConnectResult.Retry(5)
     }
 
     private fun copyDataOrRetry(res: HttpResponse, maxByteRange: Long?): Boolean {
@@ -319,6 +329,7 @@ class HttpChunkRetriever(
         if (code != 200
             && code != 206
             && code != 416
+            && code != 429
             && code != 413
             && code != 408
             && code != 502
