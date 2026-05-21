@@ -1,5 +1,6 @@
 package xdm.app.ui.screens.settings
 
+import xdm.app.AppConfig
 import xdm.app.AppContext
 import xdm.app.I8N
 import xdm.app.utils.createSVGIcon
@@ -27,13 +28,17 @@ class BrowserMonitorPanel : JPanel() {
         wrapStyleWord = true
         lineWrap = true
     }
-    private val btnExtDef = JButton(I8N.text("DESC_DEF"))
     private val txtVidExt = JTextArea().apply {
         rows = 3
         wrapStyleWord = true
         lineWrap = true
     }
-    private val btnVidExtDef = JButton(I8N.text("DESC_DEF"))
+    private val btnExtDef = JButton(I8N.text("DESC_DEF")).apply {
+        txtFileExt.text = AppContext.config.defFileExtensions.joinToString(", ")
+    }
+    private val btnVidExtDef = JButton(I8N.text("DESC_DEF")).apply {
+        txtVidExt.text = AppContext.config.defVideoExtensions.joinToString(", ")
+    }
     private val cmbMinVidSize = JComboBox<Long>().apply {
         fixHeight(this)
         preferredSize = Dimension(150, preferredSize.height)
@@ -49,7 +54,9 @@ class BrowserMonitorPanel : JPanel() {
         wrapStyleWord = true
         lineWrap = true
     }
-    private val btnHostDef = JButton(I8N.text("DESC_DEF"))
+    private val btnHostDef = JButton(I8N.text("DESC_DEF")).apply {
+        txtBlockedHosts.text = AppContext.config.defBlockedHosts.joinToString(", ")
+    }
     private val chkGetServerTime = JCheckBox(I8N.text("LBL_GET_TIMESTAMP")).apply {
         padding(this, 10)
         setAlignmentX(LEFT_ALIGNMENT)

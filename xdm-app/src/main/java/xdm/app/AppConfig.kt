@@ -32,8 +32,11 @@ interface IAppConfig {
     var startDownloadAutomatically: Boolean
     var overwriteExistingFiles: Boolean
     var fileExtensions: List<String>
+    var defFileExtensions: List<String>
     var videoExtensions: List<String>
+    var defVideoExtensions: List<String>
     var blockedHosts: List<String>
+    var defBlockedHosts: List<String>
     var getServerTime: Boolean
     var maxSegments: Int
     var maxRetries: Int
@@ -69,15 +72,18 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var speedLimit: Int = 100
     override var startDownloadAutomatically: Boolean = false
     override var overwriteExistingFiles: Boolean = false
-    override var fileExtensions: List<String> = listOf(
+    override var defFileExtensions: List<String> = listOf(
         "3GP", "7Z", "AVI", "BZ2", "DEB", "DOC", "DOCX", "EXE", "ISO", "DMG",
         "MSI", "PDF", "PPT", "PPTX", "RAR", "RPM", "XLS", "XLSX", "TAR", "JAR", "ZIP", "XZ", "PKG"
     )
-    override var videoExtensions: List<String> = listOf(
+    override var fileExtensions: List<String> = defFileExtensions
+    override var defVideoExtensions: List<String> = listOf(
         "MP4", "M3U8", "F4M", "WEBM", "OGG", "MP3", "AAC", "FLV", "MKV", "DIVX",
         "MOV", "MPG", "MPEG", "OPUS", "MPD"
     )
-    override var blockedHosts: List<String> = listOf("update.microsoft.com", "windowsupdate.com", "thwawte.com")
+    override var videoExtensions: List<String> = defVideoExtensions
+    override var defBlockedHosts: List<String> = listOf("update.microsoft.com", "windowsupdate.com", "thwawte.com")
+    override var blockedHosts: List<String> = defBlockedHosts
     override var getServerTime: Boolean = true
     override var maxSegments: Int = 8
     override var maxRetries: Int = 5
