@@ -1,5 +1,6 @@
 package xdm.core.downloaders.web
 
+import xdm.core.CoreConfig
 import xdm.core.downloaders.DownloadHost
 import xdm.core.util.Logger
 import java.util.concurrent.CountDownLatch
@@ -8,7 +9,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 import kotlin.math.ceil
 
-class SpeedLimiter(val host: DownloadHost) {
+class SpeedLimiter(val config: CoreConfig) {
     @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
     private val lock: CountDownLatch = CountDownLatch(1)
     private var lastTick: Long = 0
@@ -63,8 +64,8 @@ class SpeedLimiter(val host: DownloadHost) {
     }
 
     private fun getSpeedLimit(): Int {
-        if (host.applySpeedLimit && host.speedLimit > 0) {
-            return host.speedLimit
+        if (config.speedLimiterEnabled && config.speedLimit > 0) {
+            return config.speedLimit
         }
         return 0
     }

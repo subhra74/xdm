@@ -165,6 +165,9 @@ class BrowserMonitorPanel : JPanel() {
         p4.add(Box.createHorizontalGlue())
         p4.add(cmbMinVidSize)
 
+        p4.add(Box.createRigidArea(Dimension(5, 5)))
+        p4.add(JLabel("MB"))
+
         val lblBlockedHosts = JLabel(I8N.text("DESC_SITEEXCEPTIONS")).apply {
             padding(this, 10)
             setAlignmentX(LEFT_ALIGNMENT)

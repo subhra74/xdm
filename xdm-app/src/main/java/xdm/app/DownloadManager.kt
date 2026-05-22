@@ -284,7 +284,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                 val controller: DownloaderTask
                 when (it.downloadType) {
                     DownloadType.Http -> controller = HttpDownloaderTask(
-                        id, configDir, HttpClientImpl(100), downloadHost,
+                        id, configDir, HttpClientImpl(100), downloadHost, AppContext.config
                     )
 
                     DownloadType.Hls -> controller = HlsDownloaderTask(
@@ -292,7 +292,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                         configDir = AppContext.configDir,
                         http = HttpClientImpl(100),
                         host = downloadHost,
-                        muxer = FFmpegMuxer(AppContext.configDir)
+                        muxer = FFmpegMuxer(AppContext.configDir), AppContext.config
                     )
 
                     DownloadType.Dash -> controller = DashDownloaderTask(
@@ -300,7 +300,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                         configDir = AppContext.configDir,
                         http = HttpClientImpl(100),
                         host = downloadHost,
-                        muxer = FFmpegMuxer(AppContext.configDir)
+                        muxer = FFmpegMuxer(AppContext.configDir), AppContext.config
                     )
 
                     DownloadType.Hds -> TODO()
@@ -408,7 +408,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
 
     private fun startHttpTask(task: HttpDownloadTaskInfo) {
         val controller = HttpDownloaderTask(
-            task, downloadHost, configDir
+            task, downloadHost, configDir, AppContext.config
         )
         activeSessions[task.id] = controller
         if (AppContext.config.showDownloadProgressWindow) {
@@ -455,7 +455,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
             http = HttpClientImpl(100),
             muxer = FFmpegMuxer(AppContext.configDir),
             host = downloadHost,
-            configDir = AppContext.configDir,
+            configDir = AppContext.configDir, AppContext.config
         )
         activeSessions[task.id] = controller
         appDB.addActive(
@@ -490,7 +490,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
             http = HttpClientImpl(100),
             muxer = FFmpegMuxer(AppContext.configDir),
             host = downloadHost,
-            configDir = AppContext.configDir,
+            configDir = AppContext.configDir, AppContext.config
         )
         activeSessions[task.id] = controller
         appDB.addActive(

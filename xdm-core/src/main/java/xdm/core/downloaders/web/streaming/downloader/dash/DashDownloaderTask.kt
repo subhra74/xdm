@@ -1,5 +1,6 @@
 package xdm.core.downloaders.web.streaming.downloader.dash
 
+import xdm.core.CoreConfig
 import xdm.core.downloaders.*
 import xdm.core.downloaders.web.http.ChunkStatus
 import xdm.core.downloaders.web.loadDashState
@@ -71,10 +72,12 @@ class DashDownloaderTask : StreamingDownloaderTask {
         http: PoolingHttpClient,
         host: DownloadHost,
         muxer: Muxer,
+        config: CoreConfig
     ) : super(
         loadContext(id, configDir, http, host),
         configDir,
-        muxer
+        muxer,
+        config
     )
 
     constructor(
@@ -83,7 +86,8 @@ class DashDownloaderTask : StreamingDownloaderTask {
         muxer: Muxer,
         host: DownloadHost,
         configDir: String,
-    ) : super(makeContext(taskInfo, http, host), configDir, muxer)
+        config: CoreConfig
+    ) : super(makeContext(taskInfo, http, host), configDir, muxer, config)
 
     override fun initDownload(): DownloadStatusInfo.InitInfo? {
         return DownloadStatusInfo.InitInfo(

@@ -1,5 +1,6 @@
 package xdm.core.downloaders.web.http
 
+import xdm.core.CoreConfig
 import xdm.core.downloaders.*
 import xdm.core.downloaders.web.ProgressTracker
 import xdm.core.downloaders.web.SpeedLimiter
@@ -14,8 +15,6 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
-
-const val MAX_CHUNK = 8
 
 interface ChunkController : DownloaderTask {
     fun onChunkConnected(id: Long, data: ChunkConfirmedData?)
@@ -52,24 +51,36 @@ class HttpDownloaderTask : ChunkController {
     private val throttle: SpeedLimiter
     private val stopRequested = AtomicBoolean(false)
     private val startRequested = AtomicBoolean(false)
+    private val config: CoreConfig
+    private val maxChunk: Int
 
-    constructor(task: HttpDownloadTaskInfo, host: DownloadHost, configDir: String) {
+    constructor(
+        task: HttpDownloadTaskInfo,
+        host: DownloadHost,
+        configDir: String,
+        config: CoreConfig
+    ) {
         this.context = makeContext(task, host)
         this.configDir = configDir
         this.prgInfo = DownloadStatusInfo.ProgressInfo(id = context.id)
-        this.throttle = SpeedLimiter(host)
+        this.throttle = SpeedLimiter(config)
+        this.config = config
+        this.maxChunk = config.maxSegments
     }
 
     constructor(
         id: Long,
         configDir: String,
         httpClient: PoolingHttpClient,
-        host: DownloadHost
+        host: DownloadHost,
+        config: CoreConfig
     ) {
         this.context = loadState(id = id, configDir = configDir, http = httpClient, host = host).getOrThrow()
         this.configDir = configDir
         this.prgInfo = DownloadStatusInfo.ProgressInfo(id = context.id)
-        this.throttle = SpeedLimiter(host)
+        this.throttle = SpeedLimiter(config)
+        this.config = config
+        this.maxChunk = config.maxSegments
     }
 
     private var lastUpdate: Long = 0
@@ -295,8 +306,8 @@ class HttpDownloaderTask : ChunkController {
 
     private fun splitChuck(chunks: MutableMap<Long, Chunk>) {
         val activeChunks = getActiveCount(chunks)
-        if (activeChunks >= MAX_CHUNK) return
-        var rc = MAX_CHUNK - activeChunks
+        if (activeChunks >= maxChunk) return
+        var rc = maxChunk - activeChunks
         if (rc < 1) return
         rc -= retryFailedChunk(rc)
         if (rc < 1) return

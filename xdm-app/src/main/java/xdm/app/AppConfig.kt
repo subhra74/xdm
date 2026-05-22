@@ -2,13 +2,14 @@ package xdm.app
 
 import xdm.app.I8N.text
 import xdm.app.ui.components.SortKey
+import xdm.core.CoreConfig
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 
-interface IAppConfig {
+interface IAppConfig : CoreConfig {
     fun load()
     fun save()
     var showDownloadCompleteWindow: Boolean
@@ -27,8 +28,8 @@ interface IAppConfig {
     var sortAscending: Boolean
     var minVideoSize: Long
     var lang: String
-    var speedLimiterEnabled: Boolean
-    var speedLimit: Int
+    override var speedLimiterEnabled: Boolean
+    override var speedLimit: Int
     var startDownloadAutomatically: Boolean
     var overwriteExistingFiles: Boolean
     var fileExtensions: List<String>
@@ -38,13 +39,13 @@ interface IAppConfig {
     var blockedHosts: List<String>
     var defBlockedHosts: List<String>
     var getServerTime: Boolean
-    var maxSegments: Int
-    var maxRetries: Int
-    var useProxy: Boolean
-    var proxyHost: String
-    var proxyPort: Int
-    var proxyUser: String
-    var proxyPass: String
+    override var maxSegments: Int
+    override var maxRetries: Int
+    override var useProxy: Boolean
+    override var proxyHost: String
+    override var proxyPort: Int
+    override var proxyUser: String
+    override var proxyPass: String
     var haltAfterDownload: Boolean
     var keepAwake: Boolean
     var customCommand: String

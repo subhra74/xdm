@@ -1,5 +1,6 @@
 package xdm.core.downloaders.web.http
 
+import xdm.core.CoreConfig
 import xdm.core.downloaders.DownloadError
 import xdm.core.network.http.HttpResponse
 import xdm.core.network.http.Range
@@ -10,12 +11,12 @@ import java.io.IOException
 import java.io.RandomAccessFile
 import kotlin.math.min
 
-const val MAX_RETRY = 10
 
 class HttpChunkRetriever(
     private val id: Long,
     private val context: HttpTaskContext,
-    private val controller: ChunkController
+    private val controller: ChunkController,
+    private val config: CoreConfig
 ) {
     val buf: ByteArray
 
@@ -263,7 +264,7 @@ class HttpChunkRetriever(
     }
 
     private fun onRetry(retryCount: Int): Boolean {
-        if (retryCount > MAX_RETRY) {
+        if (retryCount > config.maxRetries) {
             Logger.info("XDM", "Max retries reached for chunk $id")
             chunkFailed(DownloadError.NetworkError)
             return false

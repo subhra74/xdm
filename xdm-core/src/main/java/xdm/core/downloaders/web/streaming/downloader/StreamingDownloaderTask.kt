@@ -1,5 +1,6 @@
 package xdm.core.downloaders.web.streaming.downloader
 
+import xdm.core.CoreConfig
 import xdm.core.downloaders.*
 import xdm.core.downloaders.web.ProgressTracker
 import xdm.core.downloaders.web.SpeedLimiter
@@ -23,12 +24,13 @@ abstract class StreamingDownloaderTask(
     protected val context: StreamingTaskContext,
     protected val configDir: String,
     private val muxer: Muxer,
+    private val config: CoreConfig
 ) : DownloaderTask {
-    protected val executorService: ExecutorService = Executors.newFixedThreadPool(8)
+    protected val executorService: ExecutorService = Executors.newFixedThreadPool(config.maxSegments)
     private val progressTracker = ProgressTracker(false)
     private val prgInfo = DownloadStatusInfo.ProgressInfo(id = context.id)
     private var lastUpdate: Long = 0
-    private val throttle: SpeedLimiter = SpeedLimiter(context.downloadHost)
+    private val throttle: SpeedLimiter = SpeedLimiter(config)
     private val stopRequested = AtomicBoolean(false)
     private val startRequested = AtomicBoolean(false)
 

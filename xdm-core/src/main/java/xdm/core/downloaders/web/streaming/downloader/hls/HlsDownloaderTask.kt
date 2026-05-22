@@ -1,5 +1,6 @@
 package xdm.core.downloaders.web.streaming.downloader.hls
 
+import xdm.core.CoreConfig
 import xdm.core.downloaders.*
 import xdm.core.downloaders.web.http.ChunkStatus
 import xdm.core.downloaders.web.loadHlsState
@@ -62,7 +63,8 @@ class HlsDownloaderTask : StreamingDownloaderTask {
         http: PoolingHttpClient,
         host: DownloadHost,
         muxer: Muxer,
-    ) : super(loadContext(id, configDir, http, host), configDir, muxer)
+        config: CoreConfig
+    ) : super(loadContext(id, configDir, http, host), configDir, muxer, config)
 
     constructor(
         taskInfo: HlsDownloadTaskInfo,
@@ -70,7 +72,8 @@ class HlsDownloaderTask : StreamingDownloaderTask {
         muxer: Muxer,
         host: DownloadHost,
         configDir: String,
-    ) : super(makeContext(taskInfo, http, host), configDir, muxer)
+        config: CoreConfig
+    ) : super(makeContext(taskInfo, http, host), configDir, muxer, config)
 
     private val keyCache = ConcurrentHashMap<String, ByteArray>()
     private val decryptBuffer = ByteArray(256 * 1024)
