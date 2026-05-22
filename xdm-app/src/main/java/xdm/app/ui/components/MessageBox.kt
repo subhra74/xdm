@@ -36,4 +36,8 @@ object MessageBox {
     fun show(window: Window?, title: String?, message: String?) {
         JOptionPane.showMessageDialog(window, message, title, JOptionPane.INFORMATION_MESSAGE)
     }
+
+    fun showAuth(window: Window?, title: String?, message: String?) {
+
+    }
 }

@@ -8,6 +8,7 @@ import java.io.DataOutputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.net.Proxy
 
 interface IAppConfig : CoreConfig {
     fun load()
@@ -51,6 +52,7 @@ interface IAppConfig : CoreConfig {
     var customCommand: String
     var virusScannerPath: String
     var virusScannerArgs: String
+    fun applyAuthConfig()
 }
 
 class AppConfig(private val configDir: String) : IAppConfig {
@@ -89,6 +91,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var maxSegments: Int = 8
     override var maxRetries: Int = 5
     override var useProxy: Boolean = false
+    override var socksProxy: Boolean = false
     override var proxyHost: String = ""
     override var proxyPort: Int = 8080
     override var proxyUser: String = ""
@@ -98,6 +101,10 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var customCommand: String = ""
     override var virusScannerPath: String = ""
     override var virusScannerArgs: String = ""
+
+    override fun applyAuthConfig() {
+        TODO("Not yet implemented")
+    }
 
     override fun load() {
         val configFile = File(configDir, "xdm-app.config")
@@ -146,6 +153,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
         out.writeInt(maxSegments)
         out.writeInt(maxRetries)
         out.writeBoolean(useProxy)
+        out.writeBoolean(socksProxy)
         out.writeUTF(proxyHost)
         out.writeInt(proxyPort)
         out.writeUTF(proxyUser)
@@ -184,6 +192,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
         maxSegments = input.readInt()
         maxRetries = input.readInt()
         useProxy = input.readBoolean()
+        socksProxy = input.readBoolean()
         proxyHost = input.readUTF()
         proxyPort = input.readInt()
         proxyUser = input.readUTF()
@@ -211,4 +220,13 @@ class AppConfig(private val configDir: String) : IAppConfig {
 
     override val recentFolders: List<String>
         get() = mutableListOf(text("ND_AUTO_CAT"), defaultDownloadFolder)
+
+    override fun toProxy(): Proxy? {
+        if (!useProxy) return null
+        if (socksProxy) {
+            return Proxy(Proxy.Type.SOCKS, java.net.InetSocketAddress(proxyHost, proxyPort))
+        } else {
+            return Proxy(Proxy.Type.HTTP, java.net.InetSocketAddress(proxyHost, proxyPort))
+        }
+    }
 }

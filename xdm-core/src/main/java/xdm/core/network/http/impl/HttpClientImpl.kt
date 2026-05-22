@@ -1,10 +1,10 @@
 package xdm.core.network.http.impl
 
 import okhttp3.*
-import okio.Buffer
 import xdm.core.network.http.*
 import xdm.core.util.Logger
 import java.io.IOException
+import java.net.Proxy
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
 import java.time.LocalDateTime
@@ -13,7 +13,7 @@ import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
 
-class HttpClientImpl(poolSize: Int) : PoolingHttpClient {
+class HttpClientImpl(poolSize: Int, proxy: Proxy? = null) : PoolingHttpClient {
     private val dispatcher: Dispatcher = Dispatcher().apply {
         maxRequests = poolSize
         maxRequestsPerHost = poolSize
@@ -38,6 +38,7 @@ class HttpClientImpl(poolSize: Int) : PoolingHttpClient {
     private val connectionPool: ConnectionPool = ConnectionPool(poolSize, 5, TimeUnit.SECONDS)
     private val client: OkHttpClient =
         OkHttpClient.Builder().dispatcher(dispatcher).connectionPool(connectionPool)
+            .proxy(proxy)
             .protocols(listOf(Protocol.HTTP_1_1))
             .connectTimeout(30, TimeUnit.SECONDS).readTimeout(0, TimeUnit.SECONDS).retryOnConnectionFailure(false)
             .sslSocketFactory(sslContext.socketFactory, trustAllCerts[0] as X509TrustManager)

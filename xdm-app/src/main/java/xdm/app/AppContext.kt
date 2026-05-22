@@ -43,6 +43,10 @@ object AppContext {
             && ::videoTracker.isInitialized
         ) {
             config.load()
+
+            Logger.info("Setting up global authenticator...")
+            config.applyAuthConfig()
+
             Logger.info("Loading translations...")
             I8N.loadTexts(config.lang)
             BrowserIntegration.start(

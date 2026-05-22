@@ -25,7 +25,7 @@ import kotlin.concurrent.thread
 
 
 object VideoHelper {
-    private val httpClient: PoolingHttpClient = HttpClientImpl(10)
+    private val httpClient: PoolingHttpClient = HttpClientImpl(10, AppContext.config.toProxy())
     private val hslExt = listOf("mpegurl", ".m3u8", "m3u8")
     private val m3u8MpdTabs = Collections.synchronizedSet(mutableSetOf<String>())
     private val suspectedMp4Fragments = Collections.synchronizedSet(mutableSetOf<String>())

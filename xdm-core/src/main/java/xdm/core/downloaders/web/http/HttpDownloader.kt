@@ -10,6 +10,7 @@ import xdm.core.network.http.impl.HttpClientImpl
 import xdm.core.util.Logger
 import xdm.core.util.CoreUtils
 import java.io.File
+import java.net.Proxy
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
@@ -25,7 +26,7 @@ interface ChunkController : DownloaderTask {
     fun takeOverChunk(chunkId: Long, maxByteRange: Long): Boolean
 }
 
-fun makeContext(task: HttpDownloadTaskInfo, host: DownloadHost): HttpTaskContext = HttpTaskContext(
+fun makeContext(task: HttpDownloadTaskInfo, host: DownloadHost, proxy: Proxy?): HttpTaskContext = HttpTaskContext(
     id = task.id,
     chunks = ConcurrentHashMap<Long, Chunk>(),
     init = AtomicBoolean(false),
@@ -42,7 +43,7 @@ fun makeContext(task: HttpDownloadTaskInfo, host: DownloadHost): HttpTaskContext
     diskError = AtomicBoolean(false),
     downloadHost = host,
     tempFolder = task.defaultDownloadFolder
-).apply { httpClient = HttpClientImpl(100) }
+).apply { httpClient = HttpClientImpl(100, proxy) }
 
 class HttpDownloaderTask : ChunkController {
     private val context: HttpTaskContext
@@ -60,7 +61,7 @@ class HttpDownloaderTask : ChunkController {
         configDir: String,
         config: CoreConfig
     ) {
-        this.context = makeContext(task, host)
+        this.context = makeContext(task, host, config.toProxy())
         this.configDir = configDir
         this.prgInfo = DownloadStatusInfo.ProgressInfo(id = context.id)
         this.throttle = SpeedLimiter(config)
@@ -410,7 +411,7 @@ class HttpDownloaderTask : ChunkController {
 
     private fun startChunk(id: Long) {
         Thread {
-            val retriever = HttpChunkRetriever(id, context, this)
+            val retriever = HttpChunkRetriever(id, context, this, config)
             retriever.retrieveChunk()
         }.start()
     }
