@@ -12,12 +12,12 @@ import java.util.Date
 import javax.swing.*
 import javax.swing.border.EmptyBorder
 
-class ScheduleDialog(parent: Window, private val downloadId: Long) :
+class ScheduleWindow(parent: Window, private val downloadId: Long) :
     JDialog(parent, text("TITLE_SCHEDULER"), ModalityType.APPLICATION_MODAL) {
 
     // Schedule type radio buttons
-    private val radioOneTime = JRadioButton("One-time")
-    private val radioWeekly = JRadioButton("Weekly")
+    private val radioOneTime = JRadioButton(text("MSG_SHD_ONCE"))
+    private val radioWeekly = JRadioButton(text("MSG_SHD_WEEKLY"))
 
     // Card panel to swap between sub-panels
     private val cardLayout = CardLayout()
@@ -69,7 +69,7 @@ class ScheduleDialog(parent: Window, private val downloadId: Long) :
         // --- Download info row ---
         val record = AppContext.db.getById(downloadId)
         val infoText = record?.fileName ?: "---"
-        val lblDownload = JLabel("Download:")
+        val lblDownload = JLabel(text("MSG_SHD_DOWNLOAD"))
         val lblInfo = JLabel(infoText)
 
         gbAdd(
@@ -86,7 +86,7 @@ class ScheduleDialog(parent: Window, private val downloadId: Long) :
         )
 
         // --- Schedule type row ---
-        val lblType = JLabel("Type:")
+        val lblType = JLabel(text("MSG_SHD_TYPE"))
         val typeGroup = ButtonGroup()
         radioOneTime.isSelected = true
         typeGroup.add(radioOneTime)
@@ -141,10 +141,10 @@ class ScheduleDialog(parent: Window, private val downloadId: Long) :
         btnBar.border = EmptyBorder(10, 15, 10, 15)
         btnBar.layout = BoxLayout(btnBar, BoxLayout.X_AXIS)
 
-        val btnCancel = JButton("Cancel")
+        val btnCancel = JButton(text("ND_CANCEL"))
         btnCancel.addActionListener { dispose() }
 
-        val btnSchedule = JButton("Schedule")
+        val btnSchedule = JButton(text("MSG_SHD_SCHEDULE"))
         btnSchedule.addActionListener { onSchedule() }
 
         sameWidth(btnCancel, btnSchedule)
@@ -160,15 +160,15 @@ class ScheduleDialog(parent: Window, private val downloadId: Long) :
 
     private fun buildOneTimePanel(): JPanel {
         val panel = JPanel(GridBagLayout())
-        panel.border = BorderFactory.createTitledBorder("Date & Time")
+        panel.border = BorderFactory.createTitledBorder(text("MSG_SHD_DT"))
 
         // Use a clean date-only format for the date spinner
         dateSpinner.editor = JSpinner.DateEditor(dateSpinner, "yyyy-MM-dd")
         styleTimeSpinner(hourSpinnerOneTime)
         styleTimeSpinner(minuteSpinnerOneTime)
 
-        val lblDate = JLabel("Date:")
-        val lblTime = JLabel("Time:")
+        val lblDate = JLabel(text("MSG_SHD_DATE"))
+        val lblTime = JLabel(text("MSG_SHD_TIME"))
         val lblColon = JLabel(":")
 
         gbAdd(
@@ -199,7 +199,7 @@ class ScheduleDialog(parent: Window, private val downloadId: Long) :
 
     private fun buildWeeklyPanel(): JPanel {
         val panel = JPanel(GridBagLayout())
-        panel.border = BorderFactory.createTitledBorder("Repeat On")
+        panel.border = BorderFactory.createTitledBorder(text("MSG_SHD_REPEAT_ON"))
 
         styleTimeSpinner(hourSpinnerWeekly)
         styleTimeSpinner(minuteSpinnerWeekly)
@@ -208,8 +208,8 @@ class ScheduleDialog(parent: Window, private val downloadId: Long) :
         val daysPanel = JPanel(GridLayout(2, 4, 6, 4))
         dayCheckBoxes.forEach { daysPanel.add(it) }
 
-        val lblDays = JLabel("Days:")
-        val lblTime = JLabel("Time:")
+        val lblDays = JLabel(text("MSG_SHD_DAYS"))
+        val lblTime = JLabel(text("MSG_SHD_TIME"))
         val lblColon = JLabel(":")
 
         gbAdd(
@@ -290,7 +290,7 @@ class ScheduleDialog(parent: Window, private val downloadId: Long) :
                 .toSet()
             if (selectedDays.isEmpty()) {
                 JOptionPane.showMessageDialog(
-                    this, "Please select at least one day.", title, JOptionPane.WARNING_MESSAGE
+                    this, text("MSG_SHD_MESSAGE1"), title, JOptionPane.WARNING_MESSAGE
                 )
                 return
             }

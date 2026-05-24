@@ -9,7 +9,7 @@ import xdm.app.ui.screens.NewDownloadWindow
 import xdm.app.ui.screens.NewVideoDownloadWindow
 import xdm.app.ui.screens.ProgressWindow
 import xdm.app.ui.screens.RefreshLinkWindow
-import xdm.app.ui.screens.ScheduleDialog
+import xdm.app.ui.screens.ScheduleWindow
 import xdm.app.utils.createSVGIcon
 import xdm.app.utils.createTray
 import xdm.app.utils.openWebPage
@@ -230,6 +230,6 @@ class AppInstance : IAppInstance {
     }
 
     override fun showSchedulerWindow(id: Long) {
-        ScheduleDialog(appWindow, id).showDialog()
+        ScheduleWindow(appWindow, id).showDialog()
     }
 }

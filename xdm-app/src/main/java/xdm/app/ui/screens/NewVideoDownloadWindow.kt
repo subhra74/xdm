@@ -144,8 +144,8 @@ class NewVideoDownloadWindow : JDialog() {
         contentPane.add(panel, gcPanel)
         panel.layout = BoxLayout(panel, BoxLayout.X_AXIS)
 
-        val btnQueue = JButton(text("ND_QUEUE"))
-        panel.add(btnQueue)
+//        val btnQueue = JButton(text("ND_QUEUE"))
+//        panel.add(btnQueue)
 
         panel.add(Box.createHorizontalGlue())
         val rigidArea1 = Box.createRigidArea(Dimension(80, 20))

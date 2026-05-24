@@ -142,7 +142,7 @@ class MainListView {
                     "CTX_SAVE_AS" -> {}
                     "MENU_REFRESH_LINK" -> AppContext.app.showRefreshWindow(ent.id)
                     "MENU_SCHEDULE" -> AppContext.app.showSchedulerWindow(ent.id)
-                    "LBL_SHOW_PROGRESS" -> {}
+                    "LBL_SHOW_PROGRESS" -> AppContext.app.showProgressWindow(ent.id, ent.fileName)
                     "CTX_COPY_URL" -> AppMenuHandler.copyUrl(ent)
                     "CTX_COPY_FILE" -> {}
                     "MENU_PROPERTIES" -> {}

@@ -27,7 +27,7 @@ interface IDownloadManager {
     fun stopDownload(id: Long)
     fun resumeDownload(id: Long)
     fun deleteDownload(id: Long, fromDisk: Boolean)
-    fun startHttpDownload(task: HttpDownloadTaskInfo)
+    fun startHttpDownload(task: HttpDownloadTaskInfo, runNow: Boolean = true)
     fun addVideoDownload(videoId: Long, fileName: String, folder: String?, autoSelectFolder: Boolean)
     fun startHlsDownload(task: HlsDownloadTaskInfo)
     fun startDashDownload(task: DashDownloadTaskInfo)
@@ -393,7 +393,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
         }
     }
 
-    override fun startHttpDownload(task: HttpDownloadTaskInfo) {
+    override fun startHttpDownload(task: HttpDownloadTaskInfo, runNow: Boolean) {
         Logger.info("Adding new download: $task")
         taskInfoDB.saveHttpTask(task)
         appDB.addActive(
@@ -406,20 +406,25 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                 fileName = task.fileName,
                 eta = 0,
                 speed = 0.0f,
-                status = RecordStatus.READY,
+                status = if (runNow) RecordStatus.READY else RecordStatus.PAUSED,
                 selected = false,
                 downloadType = DownloadType.Http
             )
         )
-        appDB.saveActiveRecords()
-        AppContext.app.addDownloadInView(task.id)
-
-        if (activeSessions.size >= AppContext.config.maxParallelDownloads) {
-            synchronized(queue) {
-                queue.add(QueueItem(task.id, false))
-            }
+        if (runNow) {
+            appDB.saveActiveRecords()
         } else {
-            startHttpTask(task)
+            appDB.savePausedRecords()
+        }
+        AppContext.app.addDownloadInView(task.id)
+        if (runNow) {
+            if (activeSessions.size >= AppContext.config.maxParallelDownloads) {
+                synchronized(queue) {
+                    queue.add(QueueItem(task.id, false))
+                }
+            } else {
+                startHttpTask(task)
+            }
         }
     }
 

@@ -31,6 +31,7 @@ class NewDownloadWindow : JDialog() {
     private lateinit var lbAddress: JLabel
 
     private var taskInfo: HttpDownloadTaskInfo? = null
+    private var selectedFolder: String? = null
 
     init {
         initUI()
@@ -143,18 +144,21 @@ class NewDownloadWindow : JDialog() {
         }
         contentPane.add(btnBrowse, gbcBtnBrowse)
 
-        val lblIgnore = JLabel(text("ND_IGNORE_URL"))
-        lblIgnore.verticalAlignment = SwingConstants.TOP
+        val lblFreeSpace = JLabel("---").apply {
+//            foreground = UIManager.getColor("ProgressBar.foreground")
+//            cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+            verticalAlignment = SwingConstants.TOP
+        }
         val gbcLblIgnore = GridBagConstraints().apply {
             weighty = 1.0
             fill = GridBagConstraints.VERTICAL
             anchor = GridBagConstraints.NORTHWEST
             gridwidth = 4
-            insets = Insets(10, 0, 5, 5)
+            insets = Insets(5, 0, 5, 5)
             gridx = 1
             gridy = 3
         }
-        contentPane.add(lblIgnore, gbcLblIgnore)
+        contentPane.add(lblFreeSpace, gbcLblIgnore)
 
         val panel = JPanel()
         panel.background = UIManager.getColor("Table.background")
@@ -169,8 +173,9 @@ class NewDownloadWindow : JDialog() {
         contentPane.add(panel, gcPanel)
         panel.layout = BoxLayout(panel, BoxLayout.X_AXIS)
 
-        val btnQueue = JButton(text("ND_QUEUE"))
-        panel.add(btnQueue)
+        val btnIgnore = JButton(text("MSG_IGNORE_ADDR"))
+        btnIgnore.addActionListener { }
+        panel.add(btnIgnore)
 
         panel.add(Box.createHorizontalGlue())
         val rigidArea1 = Box.createRigidArea(Dimension(80, 20))
@@ -184,7 +189,7 @@ class NewDownloadWindow : JDialog() {
         panel.add(rigidArea)
 
         btnDownload = JButton(text("ND_DOWNLOAD"))
-        btnDownload.addActionListener { downloadNow() }
+        btnDownload.addActionListener { downloadNow(true) }
         panel.add(btnDownload)
 
         getRootPane().defaultButton = btnDownload
@@ -195,6 +200,7 @@ class NewDownloadWindow : JDialog() {
             object : WindowAdapter() {
                 override fun windowActivated(e: WindowEvent) {
                     btnDownload.requestFocusInWindow()
+                    requestFocus()
                 }
 
                 override fun windowClosed(e: WindowEvent) {
@@ -208,7 +214,19 @@ class NewDownloadWindow : JDialog() {
                 currentDirectory = File(AppContext.defaultDownloadFolder)
             }
             if (fc.showOpenDialog(this@NewDownloadWindow) == SystemFileChooser.APPROVE_OPTION) {
+                val selectedIndex = modelSaveIn.size
                 modelSaveIn.addElement(fc.selectedFile.absolutePath)
+                cmbSaveIn.selectedIndex = selectedIndex
+            }
+        }
+
+        cmbSaveIn.addItemListener {
+            Logger.info("Selected item: ${cmbSaveIn.selectedItem}")
+            val folder = cmbSaveIn.selectedItem as? String
+            if (folder != null && selectedFolder != folder) {
+                selectedFolder = folder
+                val freeSpace = File(folder).freeSpace
+                lblFreeSpace.text = "${text("MSG_FREE_SPACE")} ${FormatHelper.formatSize(freeSpace.toDouble())}"
             }
         }
     }
@@ -252,7 +270,7 @@ class NewDownloadWindow : JDialog() {
     //    AppContext.INSTANCE.getDownloader().startDownload(source, true, -1);
     //    dispose();
     //  }
-    private fun downloadNow() {
+    private fun downloadNow(now: Boolean) {
         val url = txtUrl.text
         val file = txtFileName.text
         if (StringUtils.isNullOrEmptyOrBlank(url)) {
@@ -286,7 +304,7 @@ class NewDownloadWindow : JDialog() {
             knownFileSize = taskInfo?.knownFileSize
         )
 
-        AppContext.downloader.startHttpDownload(task)
+        AppContext.downloader.startHttpDownload(task, now)
         dispose()
     }
 
