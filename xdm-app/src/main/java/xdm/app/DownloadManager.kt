@@ -20,6 +20,7 @@ import java.awt.Desktop
 import java.awt.SystemTray
 import java.awt.TrayIcon
 import java.io.File
+import java.io.FileNotFoundException
 import java.util.concurrent.ConcurrentHashMap
 
 interface IDownloadManager {
@@ -268,13 +269,27 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
     }
 
     override fun resumeDownload(id: Long) {
-        if (activeSessions.size >= AppContext.config.maxParallelDownloads) {
-            synchronized(queue) {
-                queue.add(QueueItem(id, true))
-            }
-        } else {
-            resumeImmediately(id)
+        activeSessions[id]?.let {
+            Logger.info("Attempt made to resume already running download: $id")
+            return
         }
+
+        appDB.getById(id)?.let {
+            it.status = RecordStatus.READY
+            appDB.saveActiveRecords()
+            appDB.savePausedRecords()
+            AppContext.app.updateDownloadInView(id)
+
+            if (activeSessions.size >= AppContext.config.maxParallelDownloads) {
+                synchronized(queue) {
+                    queue.add(QueueItem(id, true))
+                }
+            } else {
+                resumeImmediately(id)
+            }
+        }
+
+
     }
 
     private fun resumeImmediately(id: Long) {
@@ -285,23 +300,29 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                 val controller: DownloaderTask
                 when (it.downloadType) {
                     DownloadType.Http -> controller = HttpDownloaderTask(
-                        id, configDir, HttpClientImpl(100, AppContext.config.toProxy()), downloadHost, AppContext.config
+                        taskInfoDB.getHttpTask(id)!!,
+                        downloadHost,
+                        HttpClientImpl(100, AppContext.config.toProxy()),
+                        configDir,
+                        AppContext.config
                     )
 
                     DownloadType.Hls -> controller = HlsDownloaderTask(
-                        id = id,
-                        configDir = AppContext.configDir,
+                        taskInfo = taskInfoDB.getHlsTask(id)!!,
                         http = HttpClientImpl(100, AppContext.config.toProxy()),
+                        muxer = FFmpegMuxer(AppContext.configDir),
                         host = downloadHost,
-                        muxer = FFmpegMuxer(AppContext.configDir), AppContext.config
+                        configDir = AppContext.configDir,
+                        config = AppContext.config
                     )
 
                     DownloadType.Dash -> controller = DashDownloaderTask(
-                        id = id,
-                        configDir = AppContext.configDir,
+                        taskInfo = taskInfoDB.getDashTask(id)!!,
                         http = HttpClientImpl(100, AppContext.config.toProxy()),
+                        muxer = FFmpegMuxer(AppContext.configDir),
                         host = downloadHost,
-                        muxer = FFmpegMuxer(AppContext.configDir), AppContext.config
+                        configDir = AppContext.configDir,
+                        config = AppContext.config
                     )
 
                     DownloadType.Hds -> TODO()
@@ -373,6 +394,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
     }
 
     override fun startHttpDownload(task: HttpDownloadTaskInfo) {
+        Logger.info("Adding new download: $task")
         taskInfoDB.saveHttpTask(task)
         appDB.addActive(
             DbRecord(
@@ -409,7 +431,12 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
 
     private fun startHttpTask(task: HttpDownloadTaskInfo) {
         val controller = HttpDownloaderTask(
-            task, downloadHost, configDir, AppContext.config
+            task, downloadHost,
+            HttpClientImpl(
+                100, AppContext.config.toProxy()
+            ),
+            configDir,
+            AppContext.config
         )
         activeSessions[task.id] = controller
         if (AppContext.config.showDownloadProgressWindow) {

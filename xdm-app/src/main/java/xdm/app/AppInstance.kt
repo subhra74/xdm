@@ -9,6 +9,7 @@ import xdm.app.ui.screens.NewDownloadWindow
 import xdm.app.ui.screens.NewVideoDownloadWindow
 import xdm.app.ui.screens.ProgressWindow
 import xdm.app.ui.screens.RefreshLinkWindow
+import xdm.app.ui.screens.ScheduleDialog
 import xdm.app.utils.createSVGIcon
 import xdm.app.utils.createTray
 import xdm.app.utils.openWebPage
@@ -56,6 +57,8 @@ interface IAppInstance {
     )
 
     fun showRefreshWindow(id: Long)
+
+    fun showSchedulerWindow(id: Long)
 }
 
 class AppInstance : IAppInstance {
@@ -224,5 +227,9 @@ class AppInstance : IAppInstance {
         }
         refreshLinkWindow?.isVisible = true
         openWebPage(url)
+    }
+
+    override fun showSchedulerWindow(id: Long) {
+        ScheduleDialog(appWindow, id).showDialog()
     }
 }

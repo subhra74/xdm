@@ -66,7 +66,7 @@ data class HttpTaskContext(
     val diskError: AtomicBoolean,
     val downloadHost: DownloadHost,
     var tempFolder: String,
-) {
+){
     lateinit var httpClient: PoolingHttpClient
 }
 

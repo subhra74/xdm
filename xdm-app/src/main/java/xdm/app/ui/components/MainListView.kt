@@ -29,6 +29,7 @@ class MainListView {
 
     //    private lateinit var mSaveAs: JMenuItem
     private lateinit var mRefresh: JMenuItem
+    private lateinit var mSchedule: JMenuItem
     private lateinit var mProgress: JMenuItem
     private lateinit var mCopyUrl: JMenuItem
 
@@ -140,6 +141,7 @@ class MainListView {
                 when (name) {
                     "CTX_SAVE_AS" -> {}
                     "MENU_REFRESH_LINK" -> AppContext.app.showRefreshWindow(ent.id)
+                    "MENU_SCHEDULE" -> AppContext.app.showSchedulerWindow(ent.id)
                     "LBL_SHOW_PROGRESS" -> {}
                     "CTX_COPY_URL" -> AppMenuHandler.copyUrl(ent)
                     "CTX_COPY_FILE" -> {}
@@ -155,6 +157,7 @@ class MainListView {
         val ctx = JPopupMenu()
 //        mSaveAs = addMenuItem("CTX_SAVE_AS", ctx, a)
         mRefresh = addMenuItem("MENU_REFRESH_LINK", ctx, a)
+        mSchedule = addMenuItem("MENU_SCHEDULE", ctx, a)
         mProgress = addMenuItem("LBL_SHOW_PROGRESS", ctx, a)
         mCopyUrl = addMenuItem("CTX_COPY_URL", ctx, a)
 //        mCopyFile = addMenuItem("CTX_COPY_FILE", ctx, a)
@@ -179,6 +182,7 @@ class MainListView {
     private fun prepareMenu(contextMenu: JPopupMenu, entry: DbRecord) {
 //        mSaveAs.isVisible = entry.status != RecordStatus.FINISHED
         mRefresh.isVisible = entry.status == RecordStatus.PAUSED && !AppContext.refreshLinkInProgress.get()
+        mSchedule.isVisible = entry.status == RecordStatus.PAUSED
         mProgress.isVisible = entry.status == RecordStatus.DOWNLOADING
 //        mCopyFile.isVisible = entry.status == RecordStatus.FINISHED
         contextMenu.putClientProperty("menu.context", entry)

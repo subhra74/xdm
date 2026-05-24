@@ -73,6 +73,9 @@ object AppMain {
             downloader = DownloadManager(appDB = appDB, taskInfoDB = taskDB, configDir = configDir)
             videoTracker = CapturedVideoTracker()
             taskInfoDB = taskDB
+            scheduler = DownloadScheduler(appDB, configDir)
         }.init(args, configDir, tempDir)
+
+        AppContext.scheduler.start()
     }
 }

@@ -31,40 +31,46 @@ import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 fun makeContext(
-    taskInfo: HlsDownloadTaskInfo, http: PoolingHttpClient, host: DownloadHost
-) = HlsTaskContext(
-    id = taskInfo.id,
-    chunks = ArrayList(),
-    httpClient = http,
-    downloadHost = host,
-    tempFolder = taskInfo.tempDir,
-    tempFileName = "${taskInfo.id}.mp4",
-    url = taskInfo.url,
-    headers = taskInfo.headers,
-    cookie = taskInfo.cookie,
-    audioUrl = taskInfo.audioUrl,
-    audioOnly = taskInfo.audioOnly,
-    independent = taskInfo.independent,
-    encrypted = false
-)
+    taskInfo: HlsDownloadTaskInfo, http: PoolingHttpClient, host: DownloadHost, configDir: String,
+): HlsTaskContext {
+    loadHlsState(id = taskInfo.id, configDir = configDir, http = http, host = host).onSuccess {
+        return it
+    }
+    Logger.info("Unable to load saved download state, starting new download: ${taskInfo.id}")
+    return HlsTaskContext(
+        id = taskInfo.id,
+        chunks = ArrayList(),
+        httpClient = http,
+        downloadHost = host,
+        tempFolder = taskInfo.tempDir,
+        tempFileName = "${taskInfo.id}.mp4",
+        url = taskInfo.url,
+        headers = taskInfo.headers,
+        cookie = taskInfo.cookie,
+        audioUrl = taskInfo.audioUrl,
+        audioOnly = taskInfo.audioOnly,
+        independent = taskInfo.independent,
+        encrypted = false
+    )
+}
 
-fun loadContext(
-    id: Long,
-    configDir: String,
-    http: PoolingHttpClient,
-    host: DownloadHost,
-) = loadHlsState(id = id, configDir = configDir, http = http, host = host).getOrThrow()
+//fun loadContext(
+//    id: Long,
+//    configDir: String,
+//    http: PoolingHttpClient,
+//    host: DownloadHost,
+//) = loadHlsState(id = id, configDir = configDir, http = http, host = host).getOrThrow()
 
 class HlsDownloaderTask : StreamingDownloaderTask {
 
-    constructor(
-        id: Long,
-        configDir: String,
-        http: PoolingHttpClient,
-        host: DownloadHost,
-        muxer: Muxer,
-        config: CoreConfig
-    ) : super(loadContext(id, configDir, http, host), configDir, muxer, config)
+//    constructor(
+//        id: Long,
+//        configDir: String,
+//        http: PoolingHttpClient,
+//        host: DownloadHost,
+//        muxer: Muxer,
+//        config: CoreConfig
+//    ) : super(loadContext(id, configDir, http, host), configDir, muxer, config)
 
     constructor(
         taskInfo: HlsDownloadTaskInfo,
@@ -73,7 +79,7 @@ class HlsDownloaderTask : StreamingDownloaderTask {
         host: DownloadHost,
         configDir: String,
         config: CoreConfig
-    ) : super(makeContext(taskInfo, http, host), configDir, muxer, config)
+    ) : super(makeContext(taskInfo, http, host, configDir), configDir, muxer, config)
 
     private val keyCache = ConcurrentHashMap<String, ByteArray>()
     private val decryptBuffer = ByteArray(256 * 1024)

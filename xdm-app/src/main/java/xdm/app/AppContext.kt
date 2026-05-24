@@ -20,6 +20,7 @@ object AppContext {
     lateinit var defaultDownloadFolder: String
     lateinit var taskInfoDB: TaskInfoDB
     lateinit var configDir: String
+    lateinit var scheduler: DownloadScheduler
 
     var refreshLinkInProgress = AtomicBoolean(false)
     var refreshLinkId = AtomicLong(-1)
@@ -36,6 +37,7 @@ object AppContext {
             && ::platform.isInitialized
             && ::queue.isInitialized
             && ::videoTracker.isInitialized
+            && ::scheduler.isInitialized
         ) {
             config.load()
 

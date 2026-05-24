@@ -14,71 +14,74 @@ import xdm.core.util.CoreUtils
 import java.util.concurrent.atomic.AtomicReference
 
 fun makeContext(
-    taskInfo: DashDownloadTaskInfo, http: PoolingHttpClient, host: DownloadHost
-) = DashTaskContext(
-    id = taskInfo.id,
-    chunks = taskInfo.audioSegments.mapIndexed { index, s ->
-        StreamingChunk(
-            id = CoreUtils.uniqueId(),
-            sequence = index.toLong(),
-            status = AtomicReference(ChunkStatus.Ready),
-            url = s,
-            keyUrl = null,
-            iv = null,
-            byteRange = null,
-            tag = "AUDIO",
-            error = AtomicReference(null),
-            fileHandle = AtomicReference(null),
-            encrypted = false
-        )
-    } + taskInfo.videoSegments.mapIndexed { index, s ->
-        StreamingChunk(
-            id = CoreUtils.uniqueId(),
-            sequence = index.toLong(),
-            status = AtomicReference(ChunkStatus.Ready),
-            url = s,
-            keyUrl = null,
-            iv = null,
-            byteRange = null,
-            tag = "VIDEO",
-            error = AtomicReference(null),
-            fileHandle = AtomicReference(null),
-            encrypted = false
-        )
-    },
-    httpClient = http,
-    downloadHost = host,
-    tempFolder = taskInfo.tempDir,
-    tempFileName = "${taskInfo.id}.mp4",
-    url = taskInfo.url,
-    headers = taskInfo.headers,
-    cookie = taskInfo.cookie,
-    audioMime = taskInfo.audioMime,
-    videoMime = taskInfo.videoMime,
-    hasSeparateStreams = true,
-)
+    taskInfo: DashDownloadTaskInfo, http: PoolingHttpClient, host: DownloadHost, configDir: String,
+): DashTaskContext {
+    loadDashState(id = taskInfo.id, configDir = configDir, http = http, host = host).onSuccess { return it }
+    return DashTaskContext(
+        id = taskInfo.id,
+        chunks = taskInfo.audioSegments.mapIndexed { index, s ->
+            StreamingChunk(
+                id = CoreUtils.uniqueId(),
+                sequence = index.toLong(),
+                status = AtomicReference(ChunkStatus.Ready),
+                url = s,
+                keyUrl = null,
+                iv = null,
+                byteRange = null,
+                tag = "AUDIO",
+                error = AtomicReference(null),
+                fileHandle = AtomicReference(null),
+                encrypted = false
+            )
+        } + taskInfo.videoSegments.mapIndexed { index, s ->
+            StreamingChunk(
+                id = CoreUtils.uniqueId(),
+                sequence = index.toLong(),
+                status = AtomicReference(ChunkStatus.Ready),
+                url = s,
+                keyUrl = null,
+                iv = null,
+                byteRange = null,
+                tag = "VIDEO",
+                error = AtomicReference(null),
+                fileHandle = AtomicReference(null),
+                encrypted = false
+            )
+        },
+        httpClient = http,
+        downloadHost = host,
+        tempFolder = taskInfo.tempDir,
+        tempFileName = "${taskInfo.id}.mp4",
+        url = taskInfo.url,
+        headers = taskInfo.headers,
+        cookie = taskInfo.cookie,
+        audioMime = taskInfo.audioMime,
+        videoMime = taskInfo.videoMime,
+        hasSeparateStreams = true,
+    )
+}
 
-fun loadContext(
-    id: Long,
-    configDir: String,
-    http: PoolingHttpClient,
-    host: DownloadHost,
-) = loadDashState(id = id, configDir = configDir, http = http, host = host).getOrThrow()
+//fun loadContext(
+//    id: Long,
+//    configDir: String,
+//    http: PoolingHttpClient,
+//    host: DownloadHost,
+//) = loadDashState(id = id, configDir = configDir, http = http, host = host).getOrThrow()
 
 class DashDownloaderTask : StreamingDownloaderTask {
-    constructor(
-        id: Long,
-        configDir: String,
-        http: PoolingHttpClient,
-        host: DownloadHost,
-        muxer: Muxer,
-        config: CoreConfig
-    ) : super(
-        loadContext(id, configDir, http, host),
-        configDir,
-        muxer,
-        config
-    )
+//    constructor(
+//        id: Long,
+//        configDir: String,
+//        http: PoolingHttpClient,
+//        host: DownloadHost,
+//        muxer: Muxer,
+//        config: CoreConfig
+//    ) : super(
+//        loadContext(id, configDir, http, host),
+//        configDir,
+//        muxer,
+//        config
+//    )
 
     constructor(
         taskInfo: DashDownloadTaskInfo,
@@ -87,7 +90,7 @@ class DashDownloaderTask : StreamingDownloaderTask {
         host: DownloadHost,
         configDir: String,
         config: CoreConfig
-    ) : super(makeContext(taskInfo, http, host), configDir, muxer, config)
+    ) : super(makeContext(taskInfo, http, host, configDir), configDir, muxer, config)
 
     override fun initDownload(): DownloadStatusInfo.InitInfo? {
         return DownloadStatusInfo.InitInfo(

@@ -26,24 +26,40 @@ interface ChunkController : DownloaderTask {
     fun takeOverChunk(chunkId: Long, maxByteRange: Long): Boolean
 }
 
-fun makeContext(task: HttpDownloadTaskInfo, host: DownloadHost, proxy: Proxy?): HttpTaskContext = HttpTaskContext(
-    id = task.id,
-    chunks = ConcurrentHashMap<Long, Chunk>(),
-    init = AtomicBoolean(false),
-    totalSize = null,
-    downloaded = AtomicLong(0),
-    url = task.url,
-    contentType = null,
-    headers = task.headers,
-    cookie = task.cookie,
-    stopFlag = AtomicBoolean(false),
-    completed = AtomicBoolean(false),
-    tempFileCreated = AtomicBoolean(false),
-    tempFileName = "${CoreUtils.uniqueId()}.tmp",
-    diskError = AtomicBoolean(false),
-    downloadHost = host,
-    tempFolder = task.defaultDownloadFolder
-).apply { httpClient = HttpClientImpl(100, proxy) }
+fun makeContext(
+    task: HttpDownloadTaskInfo,
+    host: DownloadHost,
+    configDir: String,
+    httpClient: PoolingHttpClient,
+): Pair<HttpTaskContext, Boolean> {
+    loadState(
+        id = task.id,
+        configDir = configDir,
+        http = httpClient,
+        host = host
+    ).onSuccess { return Pair(it.apply { this.httpClient = httpClient }, false) }
+    Logger.info("Unable to load saved download state, starting new download: ${task.id}")
+    return Pair(
+        HttpTaskContext(
+            id = task.id,
+            chunks = ConcurrentHashMap<Long, Chunk>(),
+            init = AtomicBoolean(false),
+            totalSize = null,
+            downloaded = AtomicLong(0),
+            url = task.url,
+            contentType = null,
+            headers = task.headers,
+            cookie = task.cookie,
+            stopFlag = AtomicBoolean(false),
+            completed = AtomicBoolean(false),
+            tempFileCreated = AtomicBoolean(false),
+            tempFileName = "${CoreUtils.uniqueId()}.tmp",
+            diskError = AtomicBoolean(false),
+            downloadHost = host,
+            tempFolder = task.defaultDownloadFolder,
+        ).apply { this.httpClient = httpClient }, true
+    )
+}
 
 class HttpDownloaderTask : ChunkController {
     private val context: HttpTaskContext
@@ -54,14 +70,18 @@ class HttpDownloaderTask : ChunkController {
     private val startRequested = AtomicBoolean(false)
     private val config: CoreConfig
     private val maxChunk: Int
+    private val newDownload: Boolean
 
     constructor(
         task: HttpDownloadTaskInfo,
         host: DownloadHost,
+        httpClient: PoolingHttpClient,
         configDir: String,
         config: CoreConfig
     ) {
-        this.context = makeContext(task, host, config.toProxy())
+        val (ctx, nd) = makeContext(task, host, configDir, httpClient)
+        this.context = ctx
+        this.newDownload = nd
         this.configDir = configDir
         this.prgInfo = DownloadStatusInfo.ProgressInfo(id = context.id)
         this.throttle = SpeedLimiter(config)
@@ -69,26 +89,30 @@ class HttpDownloaderTask : ChunkController {
         this.maxChunk = config.maxSegments
     }
 
-    constructor(
-        id: Long,
-        configDir: String,
-        httpClient: PoolingHttpClient,
-        host: DownloadHost,
-        config: CoreConfig
-    ) {
-        this.context = loadState(id = id, configDir = configDir, http = httpClient, host = host).getOrThrow()
-        this.configDir = configDir
-        this.prgInfo = DownloadStatusInfo.ProgressInfo(id = context.id)
-        this.throttle = SpeedLimiter(config)
-        this.config = config
-        this.maxChunk = config.maxSegments
-    }
+//    constructor(
+//        id: Long,
+//        configDir: String,
+//        httpClient: PoolingHttpClient,
+//        host: DownloadHost,
+//        config: CoreConfig
+//    ) {
+//        this.context = loadState(id = id, configDir = configDir, http = httpClient, host = host).getOrThrow()
+//        this.configDir = configDir
+//        this.prgInfo = DownloadStatusInfo.ProgressInfo(id = context.id)
+//        this.throttle = SpeedLimiter(config)
+//        this.config = config
+//        this.maxChunk = config.maxSegments
+//    }
 
     private var lastUpdate: Long = 0
     private val progressTracker = ProgressTracker(singleFile = true)
     private val time = System.currentTimeMillis()
 
     override fun start() {
+        if (!newDownload) {
+            resume()
+            return
+        }
         if (startRequested.get()) {
             return
         }
@@ -112,6 +136,10 @@ class HttpDownloaderTask : ChunkController {
     }
 
     override fun resume() {
+        if (newDownload) {
+            start()
+            return
+        }
         if (startRequested.get()) {
             return
         }
