@@ -2,14 +2,18 @@ package xdm.app.ui.screens.settings
 
 import xdm.app.AppContext
 import xdm.app.I8N
+import java.awt.Dimension
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import java.awt.Insets
+import javax.swing.Box
+import javax.swing.ButtonGroup
 import javax.swing.JCheckBox
 import javax.swing.JComboBox
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JPasswordField
+import javax.swing.JRadioButton
 import javax.swing.JSpinner
 import javax.swing.JTextField
 import javax.swing.SpinnerNumberModel
@@ -25,11 +29,17 @@ class NetworkConfigPanel : JPanel() {
             addItem(i)
         }
     }
-    private val chkProxy = JCheckBox(I8N.text("MSG_USE_PROXY"))
+
+    //    private val chkProxy = JCheckBox(I8N.text("MSG_USE_PROXY"))
     private val txtProxyHost = JTextField().apply { columns = 10 }
     private val spProxyPort = JSpinner(SpinnerNumberModel(8080, 1, 65535, 1))
     private val txtProxyUser = JTextField().apply { columns = 10 }
     private val txtProxyPass = JPasswordField()
+    private val radNoProxy = JRadioButton(I8N.text("MSG_NO_PROXY"))
+    private val radHttpProxy = JRadioButton(I8N.text("MSG_HTTP_PROXY"))
+    private val radSocksProxy = JRadioButton(I8N.text("MSG_SOCKS_PROXY"))
+    private val lblProxyHost = JLabel(I8N.text("MSG_PROXY_HOST"))
+    val lblProxyPort = JLabel(I8N.text("MSG_PROXY_PORT"))
 
     init {
         val gridBagLayout = GridBagLayout()
@@ -54,6 +64,7 @@ class NetworkConfigPanel : JPanel() {
         val gbclblSplit = GridBagConstraints()
         gbclblSplit.insets = Insets(0, 0, 5, 5)
         gbclblSplit.anchor = GridBagConstraints.WEST
+        gbclblSplit.gridwidth = 2
         gbclblSplit.gridx = 0
         gbclblSplit.gridy = 1
         add(lblSplit, gbclblSplit)
@@ -61,13 +72,14 @@ class NetworkConfigPanel : JPanel() {
         val gbcCmbsplit = GridBagConstraints()
         gbcCmbsplit.insets = Insets(0, 0, 5, 0)
         gbcCmbsplit.fill = GridBagConstraints.HORIZONTAL
-        gbcCmbsplit.gridx = 2
+        gbcCmbsplit.gridx = 3
         gbcCmbsplit.gridy = 1
         add(cmbSplit, gbcCmbsplit)
 
         val lblRetry = JLabel(I8N.text("MSG_MAX_RETRY"))
         val gbclblRetry = GridBagConstraints()
         gbclblRetry.anchor = GridBagConstraints.WEST
+        gbclblRetry.gridwidth = 2
         gbclblRetry.insets = Insets(0, 0, 5, 5)
         gbclblRetry.gridx = 0
         gbclblRetry.gridy = 2
@@ -76,85 +88,133 @@ class NetworkConfigPanel : JPanel() {
         val gbcCmbretry = GridBagConstraints()
         gbcCmbretry.insets = Insets(0, 0, 5, 0)
         gbcCmbretry.fill = GridBagConstraints.HORIZONTAL
-        gbcCmbretry.gridx = 2
+        gbcCmbretry.gridx = 3
         gbcCmbretry.gridy = 2
         add(cmbRetry, gbcCmbretry)
+
+        val buttonGroup = ButtonGroup()
+        buttonGroup.add(radNoProxy)
+        buttonGroup.add(radHttpProxy)
+        buttonGroup.add(radSocksProxy)
+
+        val proxyBox = Box.createHorizontalBox()
+        proxyBox.add(radNoProxy)
+        proxyBox.add(Box.createRigidArea(Dimension(10, 10)))
+        proxyBox.add(radHttpProxy)
+        proxyBox.add(Box.createRigidArea(Dimension(10, 10)))
+        proxyBox.add(radSocksProxy)
 
         val gbcChkproxy = GridBagConstraints()
         gbcChkproxy.anchor = GridBagConstraints.WEST
         gbcChkproxy.insets = Insets(0, 0, 5, 5)
         gbcChkproxy.gridx = 0
         gbcChkproxy.gridy = 4
-        add(chkProxy, gbcChkproxy)
+        gbcChkproxy.gridwidth = 3
+        gbcChkproxy.fill = GridBagConstraints.HORIZONTAL
+        add(proxyBox, gbcChkproxy)
 
-        val lblProxyHost = JLabel(I8N.text("MSG_PROXY_HOST"))
+//        val gbcChkSocksProxy = GridBagConstraints()
+//        gbcChkSocksProxy.anchor = GridBagConstraints.WEST
+//        gbcChkSocksProxy.insets = Insets(0, 0, 5, 5)
+//        gbcChkSocksProxy.gridx = 0
+//        gbcChkSocksProxy.gridy = 5
+//        add(chkSocksProxy, gbcChkSocksProxy)
+
+
         val gbcchkProxy = GridBagConstraints()
-        gbcchkProxy.anchor = GridBagConstraints.EAST
+        gbcchkProxy.anchor = GridBagConstraints.WEST
         gbcchkProxy.insets = Insets(0, 0, 5, 5)
         gbcchkProxy.gridx = 0
-        gbcchkProxy.gridy = 5
+        gbcchkProxy.gridy = 6
         add(lblProxyHost, gbcchkProxy)
 
         val gbctxtProxyHost = GridBagConstraints()
         gbctxtProxyHost.insets = Insets(0, 0, 5, 5)
         gbctxtProxyHost.fill = GridBagConstraints.HORIZONTAL
         gbctxtProxyHost.gridx = 1
-        gbctxtProxyHost.gridy = 5
+        gbctxtProxyHost.gridy = 6
         add(txtProxyHost, gbctxtProxyHost)
 
-        val lblProxyPort = JLabel(I8N.text("MSG_PROXY_PORT"))
         val gbclblProxyPort = GridBagConstraints()
-        gbclblProxyPort.anchor = GridBagConstraints.EAST
+        gbclblProxyPort.anchor = GridBagConstraints.WEST
         gbclblProxyPort.insets = Insets(0, 0, 5, 5)
         gbclblProxyPort.gridx = 0
-        gbclblProxyPort.gridy = 6
+        gbclblProxyPort.gridy = 7
         add(lblProxyPort, gbclblProxyPort)
 
         val gbcspProxyPort = GridBagConstraints()
         gbcspProxyPort.anchor = GridBagConstraints.WEST
         gbcspProxyPort.insets = Insets(0, 0, 5, 5)
         gbcspProxyPort.gridx = 1
-        gbcspProxyPort.gridy = 6
+        gbcspProxyPort.gridy = 7
         add(spProxyPort, gbcspProxyPort)
 
-        val lblProxyUser = JLabel(I8N.text("MSG_PROXY_USER"))
-        val gbclblProxyUser = GridBagConstraints()
-        gbclblProxyUser.anchor = GridBagConstraints.EAST
-        gbclblProxyUser.insets = Insets(0, 0, 5, 5)
-        gbclblProxyUser.gridx = 0
-        gbclblProxyUser.gridy = 7
-        add(lblProxyUser, gbclblProxyUser)
+        radNoProxy.addActionListener {
+            updateProxySettings()
+        }
 
-        val gbctxtProxyUser = GridBagConstraints()
-        gbctxtProxyUser.insets = Insets(0, 0, 5, 5)
-        gbctxtProxyUser.fill = GridBagConstraints.HORIZONTAL
-        gbctxtProxyUser.gridx = 1
-        gbctxtProxyUser.gridy = 7
-        add(txtProxyUser, gbctxtProxyUser)
+        radSocksProxy.addActionListener {
+            updateProxySettings()
+        }
 
-        val lblProxyPass = JLabel(I8N.text("MSG_PROXY_PASS"))
-        val gbclblProxyPass = GridBagConstraints()
-        gbclblProxyPass.anchor = GridBagConstraints.EAST
-        gbclblProxyPass.insets = Insets(0, 0, 5, 5)
-        gbclblProxyPass.gridx = 0
-        gbclblProxyPass.gridy = 8
-        add(lblProxyPass, gbclblProxyPass)
+        radHttpProxy.addActionListener {
+            updateProxySettings()
+        }
 
-        val gbctxtProxyPass = GridBagConstraints()
-        gbctxtProxyPass.insets = Insets(0, 0, 5, 5)
-        gbctxtProxyPass.fill = GridBagConstraints.HORIZONTAL
-        gbctxtProxyPass.gridx = 1
-        gbctxtProxyPass.gridy = 8
-        add(txtProxyPass, gbctxtProxyPass)
+
+//        val lblProxyUser = JLabel(I8N.text("MSG_PROXY_USER"))
+//        val gbclblProxyUser = GridBagConstraints()
+//        gbclblProxyUser.anchor = GridBagConstraints.EAST
+//        gbclblProxyUser.insets = Insets(0, 0, 5, 5)
+//        gbclblProxyUser.gridx = 0
+//        gbclblProxyUser.gridy = 7
+//        add(lblProxyUser, gbclblProxyUser)
+//
+//        val gbctxtProxyUser = GridBagConstraints()
+//        gbctxtProxyUser.insets = Insets(0, 0, 5, 5)
+//        gbctxtProxyUser.fill = GridBagConstraints.HORIZONTAL
+//        gbctxtProxyUser.gridx = 1
+//        gbctxtProxyUser.gridy = 7
+//        add(txtProxyUser, gbctxtProxyUser)
+//
+//        val lblProxyPass = JLabel(I8N.text("MSG_PROXY_PASS"))
+//        val gbclblProxyPass = GridBagConstraints()
+//        gbclblProxyPass.anchor = GridBagConstraints.EAST
+//        gbclblProxyPass.insets = Insets(0, 0, 5, 5)
+//        gbclblProxyPass.gridx = 0
+//        gbclblProxyPass.gridy = 8
+//        add(lblProxyPass, gbclblProxyPass)
+//
+//        val gbctxtProxyPass = GridBagConstraints()
+//        gbctxtProxyPass.insets = Insets(0, 0, 5, 5)
+//        gbctxtProxyPass.fill = GridBagConstraints.HORIZONTAL
+//        gbctxtProxyPass.gridx = 1
+//        gbctxtProxyPass.gridy = 8
+//        add(txtProxyPass, gbctxtProxyPass)
 
         load()
+    }
+
+    private fun updateProxySettings() {
+        val showFields = radHttpProxy.isSelected || radSocksProxy.isSelected
+        lblProxyHost.isVisible = showFields
+        lblProxyPort.isVisible = showFields
+        txtProxyHost.isVisible = showFields
+        spProxyPort.isVisible = showFields
     }
 
     fun load() {
         val config = AppContext.config
         cmbSplit.selectedItem = config.maxSegments
         cmbRetry.selectedItem = config.maxRetries
-        chkProxy.isSelected = config.useProxy
+        if (config.useProxy) {
+            radHttpProxy.isSelected = true
+        } else if (config.socksProxy) {
+            radSocksProxy.isSelected = true
+        } else {
+            radNoProxy.isSelected = true
+        }
+        updateProxySettings()
         txtProxyHost.text = config.proxyHost
         spProxyPort.value = config.proxyPort
         txtProxyUser.text = config.proxyUser
@@ -165,7 +225,16 @@ class NetworkConfigPanel : JPanel() {
         val config = AppContext.config
         config.maxSegments = cmbSplit.selectedItem as Int
         config.maxRetries = cmbRetry.selectedItem as Int
-        config.useProxy = chkProxy.isSelected
+        if (radHttpProxy.isSelected && txtProxyHost.text.isNotEmpty()) {
+            config.useProxy = true
+            config.socksProxy = false
+        } else if (radSocksProxy.isSelected && txtProxyHost.text.isNotEmpty()) {
+            config.useProxy = false
+            config.socksProxy = true
+        } else {
+            config.useProxy = false
+            config.socksProxy = false
+        }
         config.proxyHost = txtProxyHost.text
         config.proxyPort = spProxyPort.value as Int
         config.proxyUser = txtProxyUser.text

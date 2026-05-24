@@ -137,3 +137,11 @@ fun openWebPage(url: String): Boolean {
     }
     return false
 }
+
+fun initShutdown(){
+    when (detectOS()) {
+        OS.Windows -> WinUtils.initShutdown()
+        OS.Linux -> LinuxUtils.initShutdown()
+        OS.MacOS -> MacUtils.initShutdown()
+    }
+}

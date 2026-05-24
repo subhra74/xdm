@@ -165,18 +165,18 @@ object MacUtils {
 //        }
 //    }
 //
-//    fun initShutdown() {
-//        try {
-//            val builder = ProcessBuilder()
-//            val lst = ArrayList<String>()
-//            lst.add("osascript")
-//            lst.add("-e")
-//            lst.add("tell app \"System Events\" to shut down")
-//            builder.command(lst)
-//            builder.start()
-//        } catch (e: Exception) {
-//            Logger.log(e)
-//        }
-//    }
+    fun initShutdown() {
+        try {
+            val builder = ProcessBuilder()
+            val lst = ArrayList<String>()
+            lst.add("osascript")
+            lst.add("-e")
+            lst.add("tell app \"System Events\" to shut down")
+            builder.command(lst)
+            builder.start()
+        } catch (e: Exception) {
+            Logger.error(e)
+        }
+    }
 }
 

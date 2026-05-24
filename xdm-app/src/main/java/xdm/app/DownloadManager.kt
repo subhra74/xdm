@@ -1,6 +1,7 @@
 package xdm.app
 
 import xdm.app.utils.getFileFolder
+import xdm.app.utils.initShutdown
 import xdm.core.downloaders.*
 import xdm.core.downloaders.web.getTempFileFolder
 import xdm.core.downloaders.web.http.HttpDownloaderTask
@@ -570,6 +571,12 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                             startHttpTask(id)
                         }
                     }
+                }
+            } else {
+                Logger.info("No pending download")
+                if (AppContext.config.haltAfterDownload) {
+                    Logger.info("Attempting shutdown after download")
+                    initShutdown()
                 }
             }
         }

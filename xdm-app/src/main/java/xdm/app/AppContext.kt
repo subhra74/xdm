@@ -1,16 +1,11 @@
 package xdm.app
 
-
-import kotlinx.serialization.json.Json
 import xdm.core.downloaders.TaskInfoDB
 import xdm.core.util.Logger
 import xdm.integration.BrowserIntegration
 import java.io.File
-import java.nio.file.Files
-import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
-import kotlin.io.path.exists
 
 object AppContext {
 

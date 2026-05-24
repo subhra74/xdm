@@ -361,11 +361,15 @@ MSG_WAIT=Waiting
 
 MSG_MAX_SPLIT=Max segments per download
 MSG_MAX_RETRY=Max retry
-MSG_USE_PROXY=User Proxy
+MSG_USE_PROXY=Use Proxy
 MSG_PROXY_HOST=Proxy Host
 MSG_PROXY_PORT=Proxy Port
 MSG_PROXY_USER=Proxy User
 MSG_PROXY_PASS=Proxy Password
+MSG_USE_SOCKS_PROXY=Use Socks Proxy
+MSG_NO_PROXY=No Proxy
+MSG_HTTP_PROXY=HTTP Proxy
+MSG_SOCKS_PROXY=Socks Proxy
 
 MSG_ADV_TITLE=Advanced settings
 MSG_HALT=Shutdown computer after all download completes

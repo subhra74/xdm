@@ -8,6 +8,7 @@ import java.io.DataOutputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.net.Authenticator
 import java.net.Proxy
 
 interface IAppConfig : CoreConfig {
@@ -103,7 +104,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var virusScannerArgs: String = ""
 
     override fun applyAuthConfig() {
-        TODO("Not yet implemented")
+        Authenticator.setDefault(DefaultAuthenticator())
     }
 
     override fun load() {
