@@ -35,6 +35,7 @@ class AppToolBar(searchCallback: (String) -> Unit, buttonCallback: ActionListene
     private val btnClearGap: Component
     private val btnDeleteGap: Component
     private val contextMenu: JPopupMenu
+    private val sortMenu: JPopupMenu
     private lateinit var mSettings: JMenuItem
     private lateinit var mBatchImport: JMenuItem
     private lateinit var mLanguage: JMenuItem
@@ -46,6 +47,7 @@ class AppToolBar(searchCallback: (String) -> Unit, buttonCallback: ActionListene
 
     init {
         this.contextMenu = createContextMenu()
+        this.sortMenu = createContextMenu()
         this.btnNew = createToolButton("add-large-fill.svg", buttonCallback, "TOOL_DOWNLOAD")
         this.btnNewGap = Box.createRigidArea(Dimension(5, 0))
 
@@ -56,10 +58,14 @@ class AppToolBar(searchCallback: (String) -> Unit, buttonCallback: ActionListene
         this.btnDeleteGap = Box.createRigidArea(Dimension(5, 0))
 
         this.btnSort = createToolButton("sort-desc.svg", buttonCallback, "TOOL_SORT") // "Stop all");
+        this.btnSort.addActionListener {
+            showMenu(btnSort, contextMenu)
+        }
         this.btnSortGap = Box.createRigidArea(Dimension(5, 0))
 
         this.btnSettings = createToolButton("settings-4-line.svg", buttonCallback, "TOOL_SETTINGS") // "Settings");
         this.btnSettingsGap = Box.createRigidArea(Dimension(5, 0))
+        this.btnSettings.addActionListener { showSettings() }
 
         this.btnMenu = createToolButton("menu-line.svg")
         btnMenu.addActionListener {
@@ -116,6 +122,10 @@ class AppToolBar(searchCallback: (String) -> Unit, buttonCallback: ActionListene
         return ctx
     }
 
+    private fun createSortMenu(): JPopupMenu {
+
+    }
+
     private fun addMenuItem(id: String, menu: JComponent, a: ActionListener): JMenuItem {
         val mItem = JMenuItem(text(id)).apply {
             name = id
@@ -130,12 +140,7 @@ class AppToolBar(searchCallback: (String) -> Unit, buttonCallback: ActionListene
             val name = (e.source as? JComponent)?.name
             when (name) {
                 "TITLE_SETTINGS" -> {
-                    SettingsWindow(SwingUtilities.windowForComponent(toolbar)).apply {
-                        isModal = true
-                        setLocationRelativeTo(parent)
-                        loadConfig()
-                        isVisible = true
-                    }
+                    showSettings()
                 }
                 "MENU_CLIP_ADD_MENU" -> {
 
@@ -156,6 +161,15 @@ class AppToolBar(searchCallback: (String) -> Unit, buttonCallback: ActionListene
                     exitProcess(0)
                 }
             }
+        }
+    }
+
+    private fun showSettings() {
+        SettingsWindow(SwingUtilities.windowForComponent(toolbar)).apply {
+            isModal = true
+            setLocationRelativeTo(parent)
+            loadConfig()
+            isVisible = true
         }
     }
 

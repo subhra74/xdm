@@ -25,6 +25,7 @@ class NewDownloadWindow : JDialog() {
     private lateinit var txtFileName: JTextField
     private lateinit var cmbSaveIn: JComboBox<String>
     private lateinit var btnDownload: JButton
+    private lateinit var btnIgnore: JButton
     private lateinit var modelSaveIn: DefaultComboBoxModel<String>
     private lateinit var lblFileInfo: JLabel
     private lateinit var originalFileName: String
@@ -173,7 +174,7 @@ class NewDownloadWindow : JDialog() {
         contentPane.add(panel, gcPanel)
         panel.layout = BoxLayout(panel, BoxLayout.X_AXIS)
 
-        val btnIgnore = JButton(text("MSG_IGNORE_ADDR"))
+        btnIgnore = JButton(text("MSG_IGNORE_ADDR"))
         btnIgnore.addActionListener { }
         panel.add(btnIgnore)
 
@@ -368,6 +369,7 @@ class NewDownloadWindow : JDialog() {
 
         val folderPaths = LinkedHashSet<String>()
         folderPaths.add(AppContext.defaultDownloadFolder)
+        btnIgnore.isVisible = taskInfo != null
         //folderPaths.addAll(config.recentFolders)
 
         modelSaveIn.removeAllElements()
