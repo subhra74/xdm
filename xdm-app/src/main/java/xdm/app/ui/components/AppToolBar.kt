@@ -43,11 +43,17 @@ class AppToolBar(searchCallback: (String) -> Unit, buttonCallback: ActionListene
     private lateinit var mUpdate: JMenuItem
     private lateinit var mAbout: JMenuItem
     private lateinit var mExit: JMenuItem
+    private lateinit var mSortNameAsc: JMenuItem
+    private lateinit var mSortNameDesc: JMenuItem
+    private lateinit var mSortSizeAsc: JMenuItem
+    private lateinit var mSortSizeDesc: JMenuItem
+    private lateinit var mSortDateAsc: JMenuItem
+    private lateinit var mSortDateDesc: JMenuItem
 
 
     init {
         this.contextMenu = createContextMenu()
-        this.sortMenu = createContextMenu()
+        this.sortMenu = createSortMenu()
         this.btnNew = createToolButton("add-large-fill.svg", buttonCallback, "TOOL_DOWNLOAD")
         this.btnNewGap = Box.createRigidArea(Dimension(5, 0))
 
@@ -59,7 +65,7 @@ class AppToolBar(searchCallback: (String) -> Unit, buttonCallback: ActionListene
 
         this.btnSort = createToolButton("sort-desc.svg", buttonCallback, "TOOL_SORT") // "Stop all");
         this.btnSort.addActionListener {
-            showMenu(btnSort, contextMenu)
+            showMenu(btnSort, sortMenu)
         }
         this.btnSortGap = Box.createRigidArea(Dimension(5, 0))
 
@@ -123,7 +129,37 @@ class AppToolBar(searchCallback: (String) -> Unit, buttonCallback: ActionListene
     }
 
     private fun createSortMenu(): JPopupMenu {
+        val a = createSortMenuListener()
+        val ctx = JPopupMenu()
+        mSortNameAsc = addMenuItem("SORT_NAME_ASC", ctx, a)
+        mSortNameDesc = addMenuItem("SORT_NAME_DESC", ctx, a)
+        ctx.addSeparator()
+        mSortSizeAsc = addMenuItem("SORT_SIZE_ASC", ctx, a)
+        mSortSizeDesc = addMenuItem("SORT_SIZE_DESC", ctx, a)
+        ctx.addSeparator()
+        mSortDateAsc = addMenuItem("SORT_DATE_ASC", ctx, a)
+        mSortDateDesc = addMenuItem("SORT_DATE_DESC", ctx, a)
+        return ctx
+    }
 
+    private fun createSortMenuListener(): ActionListener {
+        return ActionListener { e: ActionEvent ->
+            val name = (e.source as? JComponent)?.name
+            when (name) {
+                "SORT_NAME_ASC" -> {
+                }
+                "SORT_NAME_DESC" -> {
+                }
+                "SORT_SIZE_ASC" -> {
+                }
+                "SORT_SIZE_DESC" -> {
+                }
+                "SORT_DATE_ASC" -> {
+                }
+                "SORT_DATE_DESC" -> {
+                }
+            }
+        }
     }
 
     private fun addMenuItem(id: String, menu: JComponent, a: ActionListener): JMenuItem {
