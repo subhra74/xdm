@@ -38,6 +38,7 @@ class MainListView {
     var selectModeCallback: ((Boolean) -> Unit)? = null
 
     private val filter = MainListViewFilter(FilterState.All, FilterCategory.All, "")
+    private val sorter: TableRowSorter<MainListViewModel>
 
     init {
         this.contextMenu = createContextMenu(this.table)
@@ -69,7 +70,7 @@ class MainListView {
 
         val keys =
             mutableListOf(RowSorter.SortKey(0, SortOrder.DESCENDING))
-        val sorter = TableRowSorter(model).apply {
+        sorter = TableRowSorter(model).apply {
             setComparator(0, DownloadSorter())
             sortKeys = keys
         }
@@ -209,6 +210,14 @@ class MainListView {
 
     fun searchTextChanged(text: String) {
         filter.searchText = text
+        model.fireTableDataChanged()
+    }
+
+    fun sort(sortKey: SortKey, ascending: Boolean) {
+        AppContext.config.sortKey = sortKey
+        AppContext.config.sortAscending = ascending
+        AppContext.config.save()
+        sorter.sort()
         model.fireTableDataChanged()
     }
 }

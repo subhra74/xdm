@@ -5,6 +5,7 @@ import xdm.app.I8N.text
 import xdm.app.ui.screens.SettingsWindow
 import xdm.app.utils.createSVGIcon
 import xdm.app.utils.showMenu
+import xdm.app.ui.components.SortKey
 import java.awt.Color
 import java.awt.Component
 import java.awt.Dimension
@@ -21,7 +22,10 @@ import javax.swing.JToolBar
 import javax.swing.SwingUtilities
 import kotlin.system.exitProcess
 
-class AppToolBar(searchCallback: (String) -> Unit, buttonCallback: ActionListener) {
+class AppToolBar(
+    searchCallback: (String) -> Unit,
+    buttonCallback: ActionListener,
+    private val sortCallback: (SortKey, Boolean) -> Unit) {
     private val btnNew: JButton
     private val btnSort: JButton
     private val btnSettings: JButton
@@ -146,18 +150,12 @@ class AppToolBar(searchCallback: (String) -> Unit, buttonCallback: ActionListene
         return ActionListener { e: ActionEvent ->
             val name = (e.source as? JComponent)?.name
             when (name) {
-                "SORT_NAME_ASC" -> {
-                }
-                "SORT_NAME_DESC" -> {
-                }
-                "SORT_SIZE_ASC" -> {
-                }
-                "SORT_SIZE_DESC" -> {
-                }
-                "SORT_DATE_ASC" -> {
-                }
-                "SORT_DATE_DESC" -> {
-                }
+                "SORT_NAME_ASC" -> sortCallback(SortKey.NAME, true)
+                "SORT_NAME_DESC" -> sortCallback(SortKey.NAME, false)
+                "SORT_SIZE_ASC" -> sortCallback(SortKey.SIZE, true)
+                "SORT_SIZE_DESC" -> sortCallback(SortKey.SIZE, false)
+                "SORT_DATE_ASC" -> sortCallback(SortKey.DATE, true)
+                "SORT_DATE_DESC" -> sortCallback(SortKey.DATE, false)
             }
         }
     }

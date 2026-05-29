@@ -208,4 +208,13 @@ class AppDB(private val configDir: String) {
             downloadType = DownloadType.valueOf(r.readUTF()),
         )
     }
+
+    @Synchronized
+    fun clear() {
+        records.clear()
+        indexMap.clear()
+        savePausedRecords()
+        saveActiveRecords()
+        saveFinishedRecords()
+    }
 }

@@ -45,7 +45,7 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
             stateChanged = { listView.filterStateChanged(it) },
             categoryChanged = { listView.filterCategoryChanged(it) }
         )
-        val toolbar = AppToolBar({ listView.searchTextChanged(it) }, this)
+        val toolbar = AppToolBar({ listView.searchTextChanged(it) }, this, { key, asc -> listView.sort(key, asc) })
         toolbar.setMultiSelectView(false)
         listView.selectModeCallback = { toolbar.setMultiSelectView(it) }
 
@@ -88,6 +88,9 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
                 "TOOL_DOWNLOAD" -> {
                     app.addDownload(null)
                     return
+                }
+                "TOOL_CLEAR" -> {
+
                 }
             }
 
