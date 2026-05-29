@@ -9,6 +9,7 @@ import xdm.app.utils.isMacPopupTrigger
 import xdm.app.utils.setClipBoardText
 import xdm.core.downloaders.DownloadType
 import xdm.core.downloaders.TaskInfoDB
+import xdm.core.util.Logger
 import java.awt.Component
 import java.awt.event.ActionEvent
 import java.awt.event.ActionListener
@@ -225,7 +226,8 @@ class MainListView {
         val window = SwingUtilities.windowForComponent(jsp) as? JFrame
         if (MessageBox.confirm(window, text("TOOL_CLEAR"), text("MSG_CLEAR_CONFIRM"))) {
             AppContext.db.clear()
-            model.fireTableDataChanged()
+            sorter.modelStructureChanged()
+            model.listChanged()
         }
     }
 }

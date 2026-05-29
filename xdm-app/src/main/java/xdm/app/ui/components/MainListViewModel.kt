@@ -24,7 +24,7 @@ class MainListViewModel : AbstractTableModel(), ListChangeListener {
     }
 
     override fun listChanged() {
-        Logger.info("List changed")
+        Logger.info("List changed. row count: ${db.size}")
         fireTableDataChanged()
     }
 

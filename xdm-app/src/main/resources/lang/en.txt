@@ -63,6 +63,7 @@ ND_ADDRESS=Address
 ND_FILE=File
 ND_MORE=MORE...
 ND_CANCEL=Cancel
+BTN_OK=OK
 ND_DOWNLOAD_NOW=DOWNLOAD NOW
 ND_DOWNLOAD_LATER=Download Later
 ND_IGNORE_URL=Do not capture download from this address

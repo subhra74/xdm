@@ -25,7 +25,8 @@ import kotlin.system.exitProcess
 class AppToolBar(
     searchCallback: (String) -> Unit,
     buttonCallback: ActionListener,
-    private val sortCallback: (SortKey, Boolean) -> Unit) {
+    private val sortCallback: (SortKey, Boolean) -> Unit
+) {
     private val btnNew: JButton
     private val btnSort: JButton
     private val btnSettings: JButton
@@ -176,21 +177,27 @@ class AppToolBar(
                 "TITLE_SETTINGS" -> {
                     showSettings()
                 }
-                "MENU_CLIP_ADD_MENU" -> {
 
+                "MENU_CLIP_ADD_MENU" -> {
+                    AppMenuHandler.showBatchDialog(SwingUtilities.windowForComponent(toolbar))
                 }
+
                 "MENU_LANG" -> {
 
                 }
+
                 "MENU_UPDATE" -> {
 
                 }
+
                 "MENU_HELP_SUP" -> {
 
                 }
+
                 "MENU_ABOUT" -> {
 
                 }
+
                 "MENU_EXIT" -> {
                     exitProcess(0)
                 }

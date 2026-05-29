@@ -7,6 +7,9 @@ import xdm.app.I8N.text
 import xdm.app.MessageBoxResult
 import xdm.app.RecordStatus
 import xdm.app.ui.screens.AppWindow
+import xdm.app.ui.screens.BatchDownloadDialog
+import xdm.app.utils.getClipBoardText
+import xdm.app.utils.validateURL
 import xdm.app.utils.getFileFolder
 import xdm.app.utils.openFileExternal
 import xdm.app.utils.openFolderExternal
@@ -198,17 +201,20 @@ object AppMenuHandler {
 //        }
     }
 
-    fun showBatchDialog(window: AppWindow?) {
-        //    window.restoreWindowIfNeeded();
-        //    List<String> urlList = BatchDownloadWnd.getUrls();
-        //    if (!urlList.isEmpty()) {
-        //      // new BatchDownloadWnd(XDMUtils.toMetadata(urlList)).setVisible(true);
-        //    } else {
-        //      xdm.app.ui.components.MessageBox.show(
-        //          window,
-        //          text("MENU_BATCH_DOWNLOAD"),
-        //          text("LBL_BATCH_EMPTY_CLIPBOARD"));
-        //    }
+    fun showBatchDialog(window: Window?) {
+        val clipboardText = getClipBoardText()
+        val urls = clipboardText
+            ?.lines()
+            ?.map { it.trim() }
+            ?.filter { validateURL(it) }
+            ?: emptyList()
+
+        if (urls.isEmpty()) {
+            MessageBox.show(window, text("MENU_BATCH_DOWNLOAD"), text("LBL_BATCH_EMPTY_CLIPBOARD"))
+            return
+        }
+
+        BatchDownloadDialog(window, urls).isVisible = true
     }
 
     fun openFile(window: AppWindow?) {
