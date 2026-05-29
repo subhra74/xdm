@@ -1,10 +1,13 @@
 package xdm.app
 
 import xdm.core.downloaders.DownloadType
+import xdm.core.downloaders.TaskInfoDB
 import xdm.core.util.AtomicIO
+import xdm.core.util.FileUtils
 import xdm.core.util.Logger
 import java.io.DataInputStream
 import java.io.DataOutputStream
+import java.io.File
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 
@@ -211,6 +214,12 @@ class AppDB(private val configDir: String) {
 
     @Synchronized
     fun clear() {
+        for (rec in records) {
+            AppContext.taskInfoDB.deleteRecord(rec.id)
+            File(configDir, "${rec.id}.state")
+            File(configDir, "${rec.id}.state.bak2")
+            FileUtils.deleteFolder(File(configDir, "${rec.id}").toPath())
+        }
         records.clear()
         indexMap.clear()
         savePausedRecords()

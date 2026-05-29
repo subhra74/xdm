@@ -220,4 +220,12 @@ class MainListView {
         sorter.sort()
         model.fireTableDataChanged()
     }
+
+    fun clear() {
+        val window = SwingUtilities.windowForComponent(jsp) as? JFrame
+        if (MessageBox.confirm(window, text("TOOL_CLEAR"), text("MSG_CLEAR_CONFIRM"))) {
+            AppContext.db.clear()
+            model.fireTableDataChanged()
+        }
+    }
 }

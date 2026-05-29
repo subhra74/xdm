@@ -1,5 +1,6 @@
 package xdm.app.ui.screens
 
+import xdm.app.AppContext
 import xdm.app.AppContext.app
 import xdm.app.XDM_WINDOW_TITLE
 import xdm.app.DbRecord
@@ -89,12 +90,11 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
                     app.addDownload(null)
                     return
                 }
-                "TOOL_CLEAR" -> {
 
+                "TOOL_CLEAR" -> {
+                    clearDownloads()
                 }
             }
-
-
 
             if (name.startsWith("STOP")) {
                 AppMenuHandler.stopQueue(name)
@@ -175,6 +175,10 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
                 AppMenuHandler.openBugReportPage()
             }
         }
+    }
+
+    private fun clearDownloads() {
+        listView.clear()
     }
 
     private fun createMainMenu() {

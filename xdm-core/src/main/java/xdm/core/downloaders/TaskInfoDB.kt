@@ -2,6 +2,7 @@ package xdm.core.downloaders
 
 import xdm.core.util.AtomicIO
 import xdm.core.util.Logger
+import java.io.File
 
 class TaskInfoDB(private val configDir: String) {
     fun getHttpTask(id: Long): HttpDownloadTaskInfo? {
@@ -128,5 +129,10 @@ class TaskInfoDB(private val configDir: String) {
             w.writeUTF(task.audioMime)
             w.writeUTF(task.videoMime)
         }
+    }
+
+    fun deleteRecord(id: Long) {
+        File(configDir, "task-$id.info").delete()
+        File(configDir, "task-$id.info.bak2").delete()
     }
 }
