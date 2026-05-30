@@ -5,11 +5,15 @@ import xdm.app.AppContext
 import xdm.app.DbRecord
 import xdm.app.I8N.text
 import xdm.app.RecordStatus
+import xdm.app.utils.createSVGIcon
 import xdm.app.utils.isMacPopupTrigger
 import xdm.app.utils.setClipBoardText
 import xdm.core.downloaders.DownloadType
 import xdm.core.downloaders.TaskInfoDB
 import xdm.core.util.Logger
+import java.awt.BorderLayout
+import java.awt.CardLayout
+import java.awt.Color
 import java.awt.Component
 import java.awt.event.ActionEvent
 import java.awt.event.ActionListener
@@ -25,6 +29,8 @@ class MainListView {
     private val model: MainListViewModel = MainListViewModel()
     private val table: JTable = JTable(model)
     private val jsp: JScrollPane
+    private val cardLayout = CardLayout()
+    private val cardPanel = JPanel(cardLayout)
     private var editingRow = -1
     private val contextMenu: JPopupMenu
 
@@ -101,6 +107,29 @@ class MainListView {
             onDeleteClick = (
                     { e: DbRecord? -> AppMenuHandler.deleteDownload(e, SwingUtilities.windowForComponent(jsp)) })
         }
+
+        val emptyLabel = JLabel(text("MSG_NO_DOWNLOAD"), SwingConstants.CENTER).apply {
+            icon = createSVGIcon("sparkling-2-fill.svg", 96, UIManager.getColor("Table.background"))
+            horizontalAlignment = SwingConstants.CENTER
+            verticalTextPosition = SwingConstants.BOTTOM
+            horizontalTextPosition = SwingConstants.CENTER
+            foreground = Color.GRAY
+            border = EmptyBorder(0, 0, 90, 0)
+        }
+        val emptyPanel = JPanel(BorderLayout()).apply {
+            add(emptyLabel, BorderLayout.CENTER)
+        }
+        cardPanel.add(emptyPanel, "EMPTY")
+        cardPanel.add(jsp, "LIST")
+        updateCard()
+    }
+
+    private fun updateCard() {
+        if (model.rowCount == 0) {
+            cardLayout.show(cardPanel, "EMPTY")
+        } else {
+            cardLayout.show(cardPanel, "LIST")
+        }
     }
 
     private fun showMenu(entry: DbRecord, editor: MainListViewRow) {
@@ -110,10 +139,12 @@ class MainListView {
 
     fun rowUpdated(index: Int) {
         model.fireTableRowsUpdated(index, index)
+        updateCard()
     }
 
     fun rowDeleted(index: Int) {
         model.fireTableDataChanged()
+        updateCard()
     }
 
     fun rowAdded(index: Int) {
@@ -121,10 +152,11 @@ class MainListView {
             table.cellEditor.cancelCellEditing()
         }
         model.fireTableRowsInserted(index, index)
+        updateCard()
     }
 
     val component: Component
-        get() = jsp
+        get() = cardPanel
 
     val selectedRows: IntArray
         get() = table.selectedRows
@@ -223,11 +255,12 @@ class MainListView {
     }
 
     fun clear() {
-        val window = SwingUtilities.windowForComponent(jsp) as? JFrame
+        val window = SwingUtilities.windowForComponent(cardPanel) as? JFrame
         if (MessageBox.confirm(window, text("TOOL_CLEAR"), text("MSG_CLEAR_CONFIRM"))) {
             AppContext.db.clear()
             sorter.modelStructureChanged()
             model.listChanged()
+            updateCard()
         }
     }
 }

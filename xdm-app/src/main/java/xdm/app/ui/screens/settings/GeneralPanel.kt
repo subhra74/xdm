@@ -6,8 +6,13 @@ import xdm.app.utils.fixHeight
 import xdm.app.utils.padding
 import java.awt.Dimension
 import java.awt.Insets
+import java.io.FileInputStream
+import java.io.InputStreamReader
+import java.nio.charset.StandardCharsets
+import java.util.Properties
 import javax.swing.Box
 import javax.swing.BoxLayout
+import javax.swing.DefaultComboBoxModel
 import javax.swing.JButton
 import javax.swing.JCheckBox
 import javax.swing.JComboBox
@@ -41,12 +46,16 @@ class GeneralPanel : JPanel() {
     private val chkShowComplete = JCheckBox(I8N.text("SHOW_DWN_COMPLETE")).apply { padding(this, 10) }
     private val chkStartAutoDwn = JCheckBox(I8N.text("LBL_START_AUTO")).apply { padding(this, 10) }
     private val chkOverwrite = JCheckBox(I8N.text("LBL_OVERWRITE_EXISTING")).apply { padding(this, 10) }
-    private val btnBrowse1 = JButton("...").apply { addActionListener {
-        chooseFolder(txtTmpDir)
-    } }
-    private val btnBrowse2 = JButton("...").apply { addActionListener {
-        chooseFolder(txtDwnDir)
-    } }
+    private val btnBrowse1 = JButton("...").apply {
+        addActionListener {
+            chooseFolder(txtTmpDir)
+        }
+    }
+    private val btnBrowse2 = JButton("...").apply {
+        addActionListener {
+            chooseFolder(txtDwnDir)
+        }
+    }
     private val cmbMaxConn = JComboBox<Int>().apply {
         fixHeight(this)
         addItem(1)
@@ -56,6 +65,9 @@ class GeneralPanel : JPanel() {
         addItem(16)
         addItem(32)
     }
+    private val langModel = DefaultComboBoxModel<String>()
+    private val cmbLang = JComboBox<String>(langModel).apply { fixHeight(this) }
+    private val langProp: Properties
 
     init {
         setLayout(BoxLayout(this, BoxLayout.Y_AXIS))
@@ -105,11 +117,8 @@ class GeneralPanel : JPanel() {
         panelDefFolder.setAlignmentX(LEFT_ALIGNMENT)
         add(panelDefFolder)
         panelDefFolder.setLayout(BoxLayout(panelDefFolder, BoxLayout.X_AXIS))
-
         panelDefFolder.add(txtDwnDir)
-
         panelDefFolder.add(Box.createRigidArea(Dimension(10, 10)))
-
         panelDefFolder.add(btnBrowse2)
 
         val panelMaxConn = Box.createHorizontalBox()
@@ -120,6 +129,30 @@ class GeneralPanel : JPanel() {
         panelMaxConn.add(lblMaxConn)
         panelMaxConn.add(Box.createHorizontalGlue())
         panelMaxConn.add(cmbMaxConn)
+
+        langProp = Properties()
+        langProp.load(
+            InputStreamReader(
+                GeneralPanel::class.java.getResourceAsStream("/lang/map") ?: FileInputStream("lang/map"),
+                StandardCharsets.UTF_8
+            )
+        )
+        langModel.addAll(langProp.values.map { it.toString() })
+
+        val panelLang = Box.createHorizontalBox().apply {
+            padding(this, 10, topPadding = true, bottomPadding = true)
+        }
+        panelLang.setAlignmentX(LEFT_ALIGNMENT)
+        add(panelLang)
+
+        val lblLang = JLabel(I8N.text("MSG_LANG1"))
+        panelLang.add(lblLang)
+        panelLang.add(Box.createHorizontalGlue())
+        panelLang.add(cmbLang)
+
+        add(JLabel(I8N.text("MSG_LANG2")).apply {
+            setAlignmentX(LEFT_ALIGNMENT)
+        })
 
         add(Box.createHorizontalGlue())
     }
@@ -135,6 +168,10 @@ class GeneralPanel : JPanel() {
         txtTmpDir.text = config.tempFolder
         txtDwnDir.text = config.defaultDownloadFolder
         cmbMaxConn.selectedItem = config.maxParallelDownloads
+        val langValue = langProp[config.lang]
+        if (langValue != null) {
+            cmbLang.selectedItem = langValue
+        }
     }
 
     fun save() {
@@ -148,13 +185,19 @@ class GeneralPanel : JPanel() {
         config.tempFolder = txtTmpDir.text
         config.defaultDownloadFolder = txtDwnDir.text
         config.maxParallelDownloads = cmbMaxConn.selectedItem as Int
+        for (key in langProp.keys) {
+            if (langProp[key] == cmbLang.selectedItem) {
+                config.lang = key as String
+                break
+            }
+        }
     }
 
     override fun getInsets(): Insets {
         return Insets(10, 10, 10, 10)
     }
 
-    private fun chooseFolder(textField: JTextField){
+    private fun chooseFolder(textField: JTextField) {
         val fileChooser = JFileChooser()
         fileChooser.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
         val result = fileChooser.showOpenDialog(this)
@@ -162,4 +205,6 @@ class GeneralPanel : JPanel() {
             textField.text = fileChooser.selectedFile.absolutePath
         }
     }
+
+    private data class LanguageEntry(val code: String, val name: String)
 }

@@ -397,3 +397,4 @@ MSG_SHD_TIME=Time:
 MSG_SHD_REPEAT_ON=Repeat On
 MSG_SHD_MESSAGE1=Please select at least one day.
 MSG_SHD_DOWNLOAD=Download:
+MSG_NO_DOWNLOAD=No downloads

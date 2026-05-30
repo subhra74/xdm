@@ -26,6 +26,7 @@ class ProgressWindow(val id: Long) : JFrame() {
         lblStat.text = text("MSG_FAILED")
         lblStat3.text = mapErrorMessage(error)
         btnPauseResume.isEnabled = false
+        btnHide.isVisible = false
     }
 
     fun updateProgress(
