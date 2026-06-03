@@ -43,7 +43,6 @@ class AppToolBar(
     private val sortMenu: JPopupMenu
     private lateinit var mSettings: JMenuItem
     private lateinit var mBatchImport: JMenuItem
-    private lateinit var mLanguage: JMenuItem
     private lateinit var mHelp: JMenuItem
     private lateinit var mUpdate: JMenuItem
     private lateinit var mAbout: JMenuItem
@@ -125,7 +124,6 @@ class AppToolBar(
         val ctx = JPopupMenu()
         mSettings = addMenuItem("TITLE_SETTINGS", ctx, a)
         mBatchImport = addMenuItem("MENU_CLIP_ADD_MENU", ctx, a)
-        mLanguage = addMenuItem("MENU_LANG", ctx, a)
         mUpdate = addMenuItem("MENU_UPDATE", ctx, a)
         mHelp = addMenuItem("MENU_HELP_SUP", ctx, a)
         mAbout = addMenuItem("MENU_ABOUT", ctx, a)

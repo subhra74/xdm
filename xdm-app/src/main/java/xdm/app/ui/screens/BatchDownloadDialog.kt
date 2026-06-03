@@ -9,13 +9,15 @@ import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.util.CoreUtils.uniqueId
 import xdm.core.util.FileUtils
 import java.awt.*
+import java.awt.event.WindowAdapter
+import java.awt.event.WindowEvent
 import java.io.File
 import javax.swing.*
 import javax.swing.border.EmptyBorder
 import javax.swing.table.AbstractTableModel
 
 class BatchDownloadDialog(owner: Window?, urls: List<String>) : JDialog(owner) {
-
+    val btnOk = JButton(text("BTN_OK"))
     private val entries: MutableList<BatchEntry> = urls.map { url ->
         BatchEntry(url = url, fileName = FileUtils.getFileName(url), selected = true)
     }.toMutableList()
@@ -61,9 +63,20 @@ class BatchDownloadDialog(owner: Window?, urls: List<String>) : JDialog(owner) {
         isModal = true
         initUI()
         populateFolders()
-        pack()
-        minimumSize = Dimension(600, 400)
+        size = Dimension(600, 450)
         setLocationRelativeTo(owner)
+
+        addWindowListener(
+            object : WindowAdapter() {
+                override fun windowActivated(e: WindowEvent) {
+                    btnOk.requestFocusInWindow()
+                    requestFocus()
+                }
+
+                override fun windowClosed(e: WindowEvent) {
+                    System.gc()
+                }
+            })
     }
 
     private fun initUI() {
@@ -82,10 +95,10 @@ class BatchDownloadDialog(owner: Window?, urls: List<String>) : JDialog(owner) {
             autoResizeMode = JTable.AUTO_RESIZE_LAST_COLUMN
         }
 
-        val scrollPane = JScrollPane(table).apply {
-            border = EmptyBorder(0, 0, 0, 0)
-        }
-        add(scrollPane, BorderLayout.CENTER)
+        val panel1 = JPanel(BorderLayout())
+        panel1.border = EmptyBorder(10, 10, 10, 10)
+        panel1.add(JScrollPane(table))
+        add(panel1)
 
         val southPanel = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -99,7 +112,7 @@ class BatchDownloadDialog(owner: Window?, urls: List<String>) : JDialog(owner) {
 
     private fun createFolderPanel(): JPanel {
         val panel = JPanel(GridBagLayout()).apply {
-            border = EmptyBorder(8, 15, 8, 15)
+            border = EmptyBorder(0, 10, 10, 10)
         }
 
         val lblSaveIn = JLabel(text("LBL_SAVE_IN")).apply {
@@ -145,8 +158,8 @@ class BatchDownloadDialog(owner: Window?, urls: List<String>) : JDialog(owner) {
 
     private fun createButtonPanel(): JPanel {
         val panel = JPanel().apply {
-            background = UIManager.getColor("Table.background")
-            border = EmptyBorder(10, 15, 10, 15)
+            //background = UIManager.getColor("Table.background")
+            border = EmptyBorder(0, 10, 10, 10)
             layout = BoxLayout(this, BoxLayout.X_AXIS)
         }
 
@@ -158,7 +171,7 @@ class BatchDownloadDialog(owner: Window?, urls: List<String>) : JDialog(owner) {
 
         panel.add(Box.createRigidArea(Dimension(10, 0)))
 
-        val btnOk = JButton(text("BTN_OK"))
+
         btnOk.addActionListener {
             val selectedItems = tableModel.getSelectedItems()
             selectedItems.forEach { item ->
