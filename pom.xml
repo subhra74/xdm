@@ -10,5 +10,6 @@
         <module>xdm-core</module>
         <!--        <module>xdm-app2</module>-->
         <module>xdm-app</module>
+        <module>hls-muxer</module>
     </modules>
 </project>

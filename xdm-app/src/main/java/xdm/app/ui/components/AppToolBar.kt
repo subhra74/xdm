@@ -2,6 +2,7 @@ package xdm.app.ui.components
 
 import com.formdev.flatlaf.FlatClientProperties
 import xdm.app.I8N.text
+import xdm.app.ui.screens.AboutDialog
 import xdm.app.ui.screens.SettingsWindow
 import xdm.app.utils.createSVGIcon
 import xdm.app.utils.showMenu
@@ -193,7 +194,7 @@ class AppToolBar(
                 }
 
                 "MENU_ABOUT" -> {
-
+                    AboutDialog(SwingUtilities.windowForComponent(toolbar)).isVisible = true
                 }
 
                 "MENU_EXIT" -> {
