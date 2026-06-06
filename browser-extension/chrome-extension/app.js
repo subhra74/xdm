@@ -74,6 +74,11 @@ export default class App {
         this.logger.log(download);
         let url = download.finalUrl || download.url;
         this.logger.log(url);
+        if (this.requestWatcher.wasPostRequest(download.url) ||
+            this.requestWatcher.wasPostRequest(download.finalUrl)) {
+            this.logger.log("Skipping POST-originated download: " + url);
+            return;
+        }
         if (this.isMonitoringEnabled() && this.shouldTakeOver(url, download.filename)) {
             chrome.downloads.cancel(
                 download.id,

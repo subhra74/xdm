@@ -8,6 +8,7 @@ export default class RequestWatcher {
         this.mediaExts = [];
         this.fileExts = [];
         this.requestMap = new Map();
+        this.postUrls = new Map();
         this.callback = callback;
         this.matchingHosts = [];
         this.mediaTypes = [];
@@ -90,11 +91,26 @@ export default class RequestWatcher {
     }
 
     onSendHeadersEvent(info) {
+        if (info.method === "POST") {
+            // remember POST URLs briefly so the downloads API can skip them
+            this.postUrls.set(info.url, Date.now());
+        }
         if (info.method !== "GET" && !(this.matchingHosts
             && this.matchingHosts.find(matchingHost => info.url.indexOf(matchingHost) > 0))) {
             return;
         }
         this.requestMap.set(info.requestId, info);
+    }
+
+    wasPostRequest(url, ttlMs = 60000) {
+        if (!url) return false;
+        let ts = this.postUrls.get(url);
+        if (!ts) return false;
+        if (Date.now() - ts > ttlMs) {
+            this.postUrls.delete(url);
+            return false;
+        }
+        return true;
     }
 
     onHeadersReceivedEvent(res) {
