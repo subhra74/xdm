@@ -1,0 +1,28 @@
+{
+    "name": "XDM Integration Module",
+    "action": {},
+    "manifest_version": 3,
+    "version": "3.3",
+    "description": "Download with Xtreme Download Manager.",
+    "host_permissions": [
+        "*://*/*"
+    ],
+    "permissions": [
+        "downloads",
+        "cookies",
+        "webRequest",
+        "tabs",
+        "storage",
+        "contextMenus",
+        "alarms"
+    ],
+    "background": {
+        "service_worker": "main.js",
+        "type": "module"
+    },
+    "icons": {
+        "16": "icon16.png",
+        "48": "icon48.png",
+        "128": "icon128.png"
+    }
+}
