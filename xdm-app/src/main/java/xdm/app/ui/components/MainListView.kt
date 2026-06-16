@@ -179,7 +179,7 @@ class MainListView {
                     "LBL_SHOW_PROGRESS" -> AppContext.app.showProgressWindow(ent.id, ent.fileName)
                     "CTX_COPY_URL" -> AppMenuHandler.copyUrl(ent)
                     "CTX_COPY_FILE" -> {}
-                    "MENU_PROPERTIES" -> {}
+                    "MENU_PROPERTIES" -> AppContext.app.showPropertiesWindow(ent)
                 }
             }
         }

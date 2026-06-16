@@ -6,7 +6,6 @@ import xdm.app.ui.screens.AboutDialog
 import xdm.app.ui.screens.SettingsWindow
 import xdm.app.utils.createSVGIcon
 import xdm.app.utils.showMenu
-import xdm.app.ui.components.SortKey
 import java.awt.Color
 import java.awt.Component
 import java.awt.Dimension

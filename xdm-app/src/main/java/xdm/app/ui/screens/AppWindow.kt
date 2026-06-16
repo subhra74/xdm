@@ -121,7 +121,7 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
             } else if ("MENU_REFRESH_LINK" == name) {
                 AppMenuHandler.openRefreshPage(this)
             } else if ("MENU_PROPERTIES" == name) {
-                AppMenuHandler.showProperties(this)
+                //AppMenuHandler.showProperties(this)
             } else if ("MENU_BROWSER_INT" == name) {
                 // SettingsPage.getInstance().showPanel(this, "BTN_MONITORING");
             } else if ("MENU_SPEED_LIMITER" == name) {

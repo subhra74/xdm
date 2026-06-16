@@ -333,40 +333,7 @@ object AppMenuHandler {
         //    }
     }
 
-    fun showProperties(window: AppWindow?) {
-        //    var items = window.getSelectedDownloads();
-        //    if (items == null || items.isEmpty()) {
-        //      return;
-        //    }
-        //    var ent = items.get(0);
-        //    HttpMetadata md = HttpMetadata.load(ent.getId());
-        //    HeaderCollection headers = md.getHeaders();
-        //    String referer = "";
-        //    StringBuilder cookies = new StringBuilder();
-        //    Iterator<HttpHeader> cookieIt = headers.getAll();
-        //    while (cookieIt.hasNext()) {
-        //      HttpHeader header = cookieIt.next();
-        //      if ("referer".equalsIgnoreCase(header.getName())) {
-        //        referer = header.getValue();
-        //      }
-        //      if ("cookie".equalsIgnoreCase(header.getName())) {
-        //        cookies.append(header.getValue() + "\n");
-        //      }
-        //    }
-        //    String type = "HTTP";
-        //    if (md instanceof DashMetadata) {
-        //      type = "DASH";
-        //    } else if (md instanceof HlsMetadata) {
-        //      type = "HLS";
-        //    } else if (md instanceof HdsMetadata) {
-        //      type = "HDS";
-        //    }
 
-        //				propPage.setDetails(ent.getFile(), XDMApp.getInstance().getFolder(ent), ent.getSize(),
-        // md.getUrl(),
-        //						referer, ent.getDateStr(), cookies.toString(), type);
-        //				propPage.showPanel();
-    }
 
     fun startQueue(name: String?) {
         //    String queueId = "";

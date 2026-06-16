@@ -59,6 +59,8 @@ interface IAppInstance {
     fun showRefreshWindow(id: Long)
 
     fun showSchedulerWindow(id: Long)
+
+    fun showPropertiesWindow(ent: DbRecord)
 }
 
 class AppInstance : IAppInstance {
@@ -231,5 +233,9 @@ class AppInstance : IAppInstance {
 
     override fun showSchedulerWindow(id: Long) {
         ScheduleWindow(appWindow, id).showDialog()
+    }
+
+    override fun showPropertiesWindow(ent: DbRecord) {
+        System.out.println("ShowProperties")
     }
 }
