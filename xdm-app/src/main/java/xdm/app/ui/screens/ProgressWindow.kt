@@ -21,11 +21,13 @@ import java.awt.event.WindowEvent
 import javax.swing.*
 
 class ProgressWindow(val id: Long) : JFrame() {
+    private var isError: Boolean = false
     fun showError(error: DownloadError) {
+        this.isError = true
         lblStat4.text = ""
         lblStat.text = text("MSG_FAILED")
         lblStat3.text = mapErrorMessage(error)
-        btnPauseResume.isEnabled = false
+        btnPauseResume.text = text("LBL_CLOSE")
         btnHide.isVisible = false
     }
 
@@ -211,6 +213,10 @@ class ProgressWindow(val id: Long) : JFrame() {
     }
 
     private fun pauseDownload() {
+        if (isError) {
+            dispose()
+            return
+        }
         synchronized(AppContext.db) {
             AppContext.db.getById(id)?.let { e ->
                 AppMenuHandler.pauseDownload(e)

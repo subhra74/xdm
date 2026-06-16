@@ -8,6 +8,7 @@ import xdm.app.ui.screens.DownloadCompleteWindow
 import xdm.app.ui.screens.NewDownloadWindow
 import xdm.app.ui.screens.NewVideoDownloadWindow
 import xdm.app.ui.screens.ProgressWindow
+import xdm.app.ui.screens.PropertiesDialog
 import xdm.app.ui.screens.RefreshLinkWindow
 import xdm.app.ui.screens.ScheduleWindow
 import xdm.app.utils.createSVGIcon
@@ -204,6 +205,7 @@ class AppInstance : IAppInstance {
 
     override fun showProgressError(id: Long, error: DownloadError) {
         runOnUIThread {
+            println("Thread: ${Thread.currentThread().name}")
             val wnd = prgWndMap.remove(id)
             wnd?.showError(error)
         }
@@ -236,6 +238,6 @@ class AppInstance : IAppInstance {
     }
 
     override fun showPropertiesWindow(ent: DbRecord) {
-        System.out.println("ShowProperties")
+        PropertiesDialog(appWindow, ent).isVisible = true
     }
 }
