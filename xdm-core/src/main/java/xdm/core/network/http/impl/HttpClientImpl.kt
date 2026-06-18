@@ -52,6 +52,7 @@ class HttpClientImpl(poolSize: Int, proxy: Proxy? = null) : PoolingHttpClient {
         Thread {
             Logger.info("XDM", "Trying connection pool clean up..")
             dispatcher.executorService.awaitTermination(Int.MAX_VALUE.toLong(), TimeUnit.HOURS)
+            client.cache?.close()
             Logger.info("XDM", "Connection pool clean up.. triggering GC")
             System.gc()
         }.start()
