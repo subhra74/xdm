@@ -12,6 +12,7 @@ import java.awt.event.ActionEvent
 import java.awt.event.InputEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import java.awt.image.BufferedImage
 import java.io.File
 import java.net.URI
 
@@ -20,7 +21,11 @@ fun createTray(image: Image) {
         Logger.info("SystemTray is not supported")
         return
     }
-    val trayIcon = TrayIcon(image)
+    val tray = SystemTray.getSystemTray()
+    // On macOS the menu bar expects a small, monochrome icon that adapts to the
+    // light/dark appearance. Windows and Linux keep using the original logo.
+    val trayImage = if (detectOS() == OS.MacOS) createMacTrayImage(tray) else image
+    val trayIcon = TrayIcon(trayImage)
     trayIcon.isImageAutoSize = true
     trayIcon.addMouseListener(object : MouseAdapter() {
         override fun mouseClicked(e: MouseEvent?) {
@@ -32,11 +37,48 @@ fun createTray(image: Image) {
 //        Logger.info("Tray icon was clicked")
 //        app.showAppWindow()
 //    }
-    val tray = SystemTray.getSystemTray()
     try {
         tray.add(trayIcon)
     } catch (ex: Exception) {
         Logger.error(ex.message, ex)
+    }
+}
+
+/** Builds a menu-bar friendly monochrome tray icon for macOS. */
+private fun createMacTrayImage(tray: SystemTray): Image {
+    val baseSize = tray.trayIconSize.height.takeIf { it > 0 } ?: 22
+    // Render at 2x for crisp results on Retina displays; auto-size fits it to the bar.
+    val raw = createSVGIcon("xdm-tray-mac.svg", baseSize * 2).image
+    val color = if (isMacDarkMode()) Color.WHITE else Color(0x26, 0x26, 0x26)
+    return tintByAlpha(raw, color)
+}
+
+/** Recolors an image to [color] while preserving its alpha channel (keeps edges smooth). */
+private fun tintByAlpha(src: Image, color: Color): BufferedImage {
+    val w = src.getWidth(null).coerceAtLeast(1)
+    val h = src.getHeight(null).coerceAtLeast(1)
+    val buf = BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB)
+    val g = buf.createGraphics()
+    g.drawImage(src, 0, 0, null)
+    g.dispose()
+    val rgb = color.rgb and 0x00FFFFFF
+    for (y in 0 until h) {
+        for (x in 0 until w) {
+            val alpha = (buf.getRGB(x, y) ushr 24) and 0xFF
+            buf.setRGB(x, y, (alpha shl 24) or rgb)
+        }
+    }
+    return buf
+}
+
+private fun isMacDarkMode(): Boolean {
+    return try {
+        val process = ProcessBuilder("defaults", "read", "-g", "AppleInterfaceStyle").start()
+        val output = process.inputStream.bufferedReader().use { it.readText() }.trim()
+        process.waitFor()
+        output.equals("Dark", ignoreCase = true)
+    } catch (e: Exception) {
+        false
     }
 }
 

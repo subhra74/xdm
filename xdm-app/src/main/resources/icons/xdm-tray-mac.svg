@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+  <!-- Monochrome download glyph for the macOS menu bar.
+       Rendered as a template-style icon: the shape is tinted at runtime
+       (white in dark mode, near-black in light mode) while preserving alpha. -->
+  <path fill="#000000"
+        d="M11 3h2v8.17l2.59-2.58L17 10l-5 5-5-5 1.41-1.41L11 11.17V3z"/>
+  <path fill="#000000" d="M5 18h14v2H5z"/>
+</svg>
