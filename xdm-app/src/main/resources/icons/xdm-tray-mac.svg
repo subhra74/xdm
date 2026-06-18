@@ -1,8 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-  <!-- Monochrome download glyph for the macOS menu bar.
-       Rendered as a template-style icon: the shape is tinted at runtime
-       (white in dark mode, near-black in light mode) while preserving alpha. -->
-  <path fill="#000000"
-        d="M11 3h2v8.17l2.59-2.58L17 10l-5 5-5-5 1.41-1.41L11 11.17V3z"/>
-  <path fill="#000000" d="M5 18h14v2H5z"/>
+  <!-- Monochrome download glyph for the macOS menu bar: a short, thick
+       downward arrow inside a rounded square border, echoing the XDM logo.
+       Tinted at runtime (white in dark mode, near-black in light mode)
+       while preserving alpha. -->
+  <rect x="2.5" y="2.5" width="19" height="19" rx="5" ry="5"
+        fill="none" stroke="#000000" stroke-width="2"/>
+  <path fill="#000000" d="M10 7.5h4V11h3.5L12 17 6.5 11H10z"/>
 </svg>
