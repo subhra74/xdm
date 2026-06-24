@@ -58,14 +58,10 @@ class MainListViewRow(
     var onDeleteClick: ActionCallBack? = null
     var onMenuClick: ActionCallBack? = null
 
-    private val iconMap = mapOf(
-        FilterCategory.All to createSVGIcon("file-list-2-fill.svg", 16, Color.WHITE),
-        FilterCategory.Docs to createSVGIcon("file-list-2-fill.svg", 16, Color.WHITE),
-        FilterCategory.Zip to createSVGIcon("file-zip-fill.svg", 16, Color.WHITE),
-        FilterCategory.Music to createSVGIcon("mv-fill.svg", 16, Color.WHITE),
-        FilterCategory.Video to createSVGIcon("movie-fill.svg", 16, Color.WHITE),
-        FilterCategory.Apps to createSVGIcon("microsoft-fill.svg", 16, Color.WHITE),
-    )
+    private val iconBadge: JPanel
+    private val iconMap = FilterCategory.values().associateWith { cat ->
+        createSVGIcon(CategoryStyle.iconName(cat), 16, Color.WHITE)
+    }
 
     init {
         model?.addTableModelListener { e: TableModelEvent ->
@@ -87,7 +83,8 @@ class MainListViewRow(
         val p4 = JPanel(FlowLayout())
         p4.isOpaque = false
         val p3 = JPanel(BorderLayout())
-        p3.background = Color(30, 144, 255)
+        p3.background = CategoryStyle.color(FilterCategory.Docs)
+        iconBadge = p3
 
         icoUnchecked = createSVGIcon("checkbox-blank-line.svg", 16, Color.WHITE)
         icoChecked = createSVGIcon("checkbox-line.svg", 16, Color.WHITE)
@@ -205,7 +202,7 @@ class MainListViewRow(
 
         btnPause =
             createButton(
-                "pause-circle-line.svg"
+                "pause-circle-line.svg", CategoryStyle.WARN
             ) {
                 if (editEntry != null) {
                     Logger.info(editEntry!!)
@@ -215,7 +212,7 @@ class MainListViewRow(
 
         btnResume =
             createButton(
-                "play-circle-line.svg"
+                "play-circle-line.svg", CategoryStyle.SUCCESS
             ) {
                 if (editEntry != null) {
                     Logger.info(editEntry)
@@ -225,7 +222,7 @@ class MainListViewRow(
 
         btnDelete =
             createButton(
-                "delete-bin-line.svg"
+                "delete-bin-line.svg", CategoryStyle.DANGER
             ) {
                 if (editEntry != null) {
                     onDeleteClick?.invoke(editEntry!!)
@@ -243,7 +240,7 @@ class MainListViewRow(
 
         btnOpenFolder =
             createButton(
-                "folder-6-line.svg"
+                "folder-6-line.svg", CategoryStyle.SKY
             ) {
                 if (editEntry != null) {
                     onOpenFolderClick?.invoke(editEntry!!)
@@ -277,8 +274,12 @@ class MainListViewRow(
         this.buttonContainer = buttonContainer
     }
 
-    private fun createButton(iconName: String, e: ActionListener): JButton {
-        val btn = JButton(createSVGIcon(iconName, 16, Color.GRAY))
+    private fun createButton(
+        iconName: String,
+        iconColor: Color = CategoryStyle.neutralIcon(),
+        e: ActionListener
+    ): JButton {
+        val btn = JButton(createSVGIcon(iconName, 16, iconColor))
         btn.putClientProperty("JButton.buttonType", "toolBarButton")
         btn.isFocusable = false
         btn.addActionListener(e)
@@ -311,6 +312,7 @@ class MainListViewRow(
     }
 
     private fun updateLabelText(ent: DbRecord, isSelected: Boolean) {
+        iconBadge.background = CategoryStyle.color(categoryFor(ent.fileName))
         icon.icon =
             if (isSelected) icoChecked else if (table.selectedRowCount > 0) icoUnchecked else getIcon(ent.fileName)
         buttonContainer.isVisible = table.selectedRowCount == 0
@@ -413,18 +415,17 @@ class MainListViewRow(
         // Noop
     }
 
+    private fun categoryFor(name: String): FilterCategory = when {
+        isZip(name) -> FilterCategory.Zip
+        isMusic(name) -> FilterCategory.Music
+        isVideo(name) -> FilterCategory.Video
+        isApp(name) -> FilterCategory.Apps
+        else -> FilterCategory.Docs
+    }
+
     private fun getIcon(name: String): Icon {
-        val type = if (isZip(name)) {
-            FilterCategory.Zip
-        } else if (isMusic(name)) {
-            FilterCategory.Music
-        } else if (isVideo(name)) {
-            FilterCategory.Video
-        } else if (isApp(name)) {
-            FilterCategory.Apps
-        } else {
-            FilterCategory.Docs
-        }
+        val type = categoryFor(name)
+        iconBadge.background = CategoryStyle.color(type)
         return iconMap[type]!!
     }
 }

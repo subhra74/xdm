@@ -68,6 +68,12 @@ class GeneralPanel : JPanel() {
     private val langModel = DefaultComboBoxModel<String>()
     private val cmbLang = JComboBox<String>(langModel).apply { fixHeight(this) }
     private val langProp: Properties
+    private val themeCodes = listOf("dark", "light")
+    private val cmbTheme = JComboBox<String>().apply {
+        fixHeight(this)
+        addItem(I8N.text("THEME_DARK"))
+        addItem(I8N.text("THEME_LIGHT"))
+    }
 
     init {
         setLayout(BoxLayout(this, BoxLayout.Y_AXIS))
@@ -150,6 +156,17 @@ class GeneralPanel : JPanel() {
         panelLang.add(Box.createHorizontalGlue())
         panelLang.add(cmbLang)
 
+        val panelTheme = Box.createHorizontalBox().apply {
+            padding(this, 10, topPadding = true, bottomPadding = true)
+        }
+        panelTheme.setAlignmentX(LEFT_ALIGNMENT)
+        add(panelTheme)
+
+        val lblTheme = JLabel(I8N.text("MSG_THEME"))
+        panelTheme.add(lblTheme)
+        panelTheme.add(Box.createHorizontalGlue())
+        panelTheme.add(cmbTheme)
+
         add(JLabel(I8N.text("MSG_LANG2")).apply {
             setAlignmentX(LEFT_ALIGNMENT)
         })
@@ -172,6 +189,8 @@ class GeneralPanel : JPanel() {
         if (langValue != null) {
             cmbLang.selectedItem = langValue
         }
+        val themeIndex = themeCodes.indexOf(config.theme.lowercase())
+        cmbTheme.selectedIndex = if (themeIndex >= 0) themeIndex else 0
     }
 
     fun save() {
@@ -191,6 +210,7 @@ class GeneralPanel : JPanel() {
                 break
             }
         }
+        config.theme = themeCodes[cmbTheme.selectedIndex.coerceIn(themeCodes.indices)]
     }
 
     override fun getInsets(): Insets {

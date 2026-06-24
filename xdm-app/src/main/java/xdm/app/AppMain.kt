@@ -1,6 +1,7 @@
 package xdm.app
 
 import com.formdev.flatlaf.themes.FlatMacDarkLaf
+import com.formdev.flatlaf.themes.FlatMacLightLaf
 import xdm.core.downloaders.TaskInfoDB
 import xdm.core.util.Logger
 import java.awt.Insets
@@ -33,11 +34,6 @@ object AppMain {
         System.setProperty("apple.laf.useScreenMenuBar", "true")
         System.setProperty("apple.awt.application.name", "XDM")
         System.setProperty("apple.awt.enableTemplateImages", "true")
-
-        FlatMacDarkLaf.setup()
-        UIManager.put("TableHeader.cellMargins", Insets(0, 10, 0, 0))
-        UIManager.put("SplitPaneDivider.gripDotCount", 0)
-        UIManager.put("SplitPane.dividerSize", 10)
 
         val homeDir = System.getProperty("user.home")
         val configDir = "$homeDir${File.separatorChar}.xdm-app"
@@ -77,5 +73,20 @@ object AppMain {
         }.init(args, configDir, tempDir)
 
         AppContext.scheduler.start()
+    }
+
+    /**
+     * Installs the FlatLaf look-and-feel for the configured theme. Must be called
+     * before any Swing UI is created (i.e. before [AppInstance.run]).
+     */
+    @JvmStatic
+    fun setupTheme(theme: String) {
+        when (theme.lowercase()) {
+            "light" -> FlatMacLightLaf.setup()
+            else -> FlatMacDarkLaf.setup()
+        }
+        UIManager.put("TableHeader.cellMargins", Insets(0, 10, 0, 0))
+        UIManager.put("SplitPaneDivider.gripDotCount", 0)
+        UIManager.put("SplitPane.dividerSize", 10)
     }
 }

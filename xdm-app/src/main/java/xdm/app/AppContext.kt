@@ -49,6 +49,9 @@ object AppContext {
                 config.save()
             }
 
+            Logger.info("Setting up look-and-feel theme: ${config.theme}")
+            AppMain.setupTheme(config.theme)
+
             Logger.info("Setting up global authenticator...")
             config.applyAuthConfig()
 

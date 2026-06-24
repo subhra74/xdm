@@ -58,26 +58,26 @@ class AppToolBar(
     init {
         this.contextMenu = createContextMenu()
         this.sortMenu = createSortMenu()
-        this.btnNew = createToolButton("add-large-fill.svg", buttonCallback, "TOOL_DOWNLOAD")
+        this.btnNew = createToolButton("add-large-fill.svg", buttonCallback, "TOOL_DOWNLOAD", CategoryStyle.ACCENT)
         this.btnNewGap = Box.createRigidArea(Dimension(5, 0))
 
-        this.btnClear = createToolButton("delete-bin-line.svg", buttonCallback, "TOOL_CLEAR")
+        this.btnClear = createToolButton("delete-bin-line.svg", buttonCallback, "TOOL_CLEAR", CategoryStyle.ORANGE)
         this.btnClearGap = Box.createRigidArea(Dimension(5, 0))
 
-        this.btnDelete = createToolButton("delete-bin-line.svg", buttonCallback, "TOOL_DELETE")
+        this.btnDelete = createToolButton("delete-bin-line.svg", buttonCallback, "TOOL_DELETE", CategoryStyle.DANGER)
         this.btnDeleteGap = Box.createRigidArea(Dimension(5, 0))
 
-        this.btnSort = createToolButton("sort-desc.svg", buttonCallback, "TOOL_SORT") // "Stop all");
+        this.btnSort = createToolButton("sort-desc.svg", buttonCallback, "TOOL_SORT", CategoryStyle.VIOLET) // "Stop all");
         this.btnSort.addActionListener {
             showMenu(btnSort, sortMenu)
         }
         this.btnSortGap = Box.createRigidArea(Dimension(5, 0))
 
-        this.btnSettings = createToolButton("settings-4-line.svg", buttonCallback, "TOOL_SETTINGS") // "Settings");
+        this.btnSettings = createToolButton("settings-4-line.svg", buttonCallback, "TOOL_SETTINGS", CategoryStyle.TEAL) // "Settings");
         this.btnSettingsGap = Box.createRigidArea(Dimension(5, 0))
         this.btnSettings.addActionListener { showSettings() }
 
-        this.btnMenu = createToolButton("menu-line.svg")
+        this.btnMenu = createToolButton("menu-line.svg", CategoryStyle.SKY)
         btnMenu.addActionListener {
             showMenu(btnMenu, contextMenu)
         }
@@ -103,7 +103,7 @@ class AppToolBar(
             putClientProperty(FlatClientProperties.STYLE, "arc: 10")
             putClientProperty("JTextField.placeholderText", "Search")
             putClientProperty(
-                "JTextField.trailingIcon", createSVGIcon("search-line.svg", 16, Color.GRAY)
+                "JTextField.trailingIcon", createSVGIcon("search-line.svg", 16, CategoryStyle.EMERALD)
             )
         }
         val d = txtSearch.preferredSize
@@ -226,21 +226,24 @@ class AppToolBar(
         btnDeleteGap.isVisible = isMultiSelect
     }
 
-    private fun createToolButton(iconName: String, callback: ActionListener, key: String): JButton {
+    private fun createToolButton(
+        iconName: String,
+        callback: ActionListener,
+        key: String,
+        iconColor: Color = CategoryStyle.neutralIcon()
+    ): JButton {
         return JButton(text(key)).apply {
             name = key
             iconTextGap = 10
-            icon = createSVGIcon(iconName, 16, Color.GRAY)
-            foreground = Color.GRAY
+            icon = createSVGIcon(iconName, 16, iconColor)
             margin = Insets(5, 5, 5, 5)
             addActionListener(callback)
         }
     }
 
-    private fun createToolButton(iconName: String): JButton {
+    private fun createToolButton(iconName: String, iconColor: Color = CategoryStyle.neutralIcon()): JButton {
         return JButton().apply {
-            icon = createSVGIcon(iconName, 16, Color.GRAY)
-            foreground = Color.GRAY
+            icon = createSVGIcon(iconName, 16, iconColor)
             margin = Insets(5, 5, 5, 5)
         }
     }

@@ -30,6 +30,7 @@ interface IAppConfig : CoreConfig {
     var sortAscending: Boolean
     var minVideoSize: Long
     var lang: String
+    var theme: String
     override var speedLimiterEnabled: Boolean
     override var speedLimit: Int
     var startDownloadAutomatically: Boolean
@@ -64,6 +65,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var sortAscending = false
     override var minVideoSize: Long = 1024
     override var lang: String = "en"
+    override var theme: String = "dark"
     override var maxParallelDownloads: Int = 1
     override var showDownloadCompleteWindow: Boolean = true
     override var runVirusScan: Boolean = false
@@ -167,6 +169,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
         out.writeUTF(virusScannerPath)
         out.writeUTF(virusScannerArgs)
         out.writeBoolean(runOnStartup)
+        out.writeUTF(theme)
     }
 
     private fun load(input: DataInputStream) {
@@ -206,11 +209,12 @@ class AppConfig(private val configDir: String) : IAppConfig {
         customCommand = input.readUTF()
         virusScannerPath = input.readUTF()
         virusScannerArgs = input.readUTF()
-        // Trailing field: tolerate config files written before it existed.
-        runOnStartup = try {
-            input.readBoolean()
+        // Trailing fields: tolerate config files written before they existed.
+        try {
+            runOnStartup = input.readBoolean()
+            theme = input.readUTF()
         } catch (e: java.io.EOFException) {
-            false
+            // older config without these trailing fields; keep defaults
         }
     }
 

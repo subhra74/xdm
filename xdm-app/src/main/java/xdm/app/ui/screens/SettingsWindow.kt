@@ -18,6 +18,7 @@ import javax.swing.border.EmptyBorder
 
 class SettingsWindow(parent: Window) : JDialog(parent) {
     private val generalPanel = GeneralPanel()
+    private val generalPanelJsp = JScrollPane(generalPanel).apply { border = EmptyBorder(0, 0, 0, 0) }
     private val browserMonitorPanel = BrowserMonitorPanel()
     private val browserMonitorPanelJsp = JScrollPane(browserMonitorPanel).apply { border = EmptyBorder(0, 0, 0, 0) }
     private val networkConfigPanel = NetworkConfigPanel()
@@ -66,7 +67,7 @@ class SettingsWindow(parent: Window) : JDialog(parent) {
         add(leftList, BorderLayout.WEST)
         add(panelCenter, BorderLayout.CENTER)
 
-        panelHolder.add(generalPanel, "GEN_PAN")
+        panelHolder.add(generalPanelJsp, "GEN_PAN")
         panelHolder.add(browserMonitorPanelJsp, "BRM_PAN")
         panelHolder.add(networkConfigPanel, "NET_PAN")
         panelHolder.add(advancedConfigPanel, "ADV_PAN")
