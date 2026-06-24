@@ -384,6 +384,7 @@ MSG_SOCKS_PROXY=Socks Proxy
 MSG_ADV_TITLE=Advanced settings
 MSG_HALT=Shutdown computer after all download completes
 MSG_AWAKE=Prevent hibernate or sleep during downloads
+MSG_AUTOSTART=Start XDM automatically on system login
 MSG_RUN_CMD=Run a program after all download finishes
 MSG_SCAN=Run Antivirus after download
 MSG_AV_CMD=Antivirus executable

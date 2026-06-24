@@ -2,6 +2,7 @@ package xdm.app
 
 import xdm.core.downloaders.TaskInfoDB
 import xdm.core.util.Logger
+import xdm.app.utils.AutoStart
 import xdm.integration.BrowserIntegration
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
@@ -39,7 +40,14 @@ object AppContext {
             && ::videoTracker.isInitialized
             && ::scheduler.isInitialized
         ) {
+            val firstRun = !File(configDir, "xdm-app.config").exists()
             config.load()
+
+            if (firstRun) {
+                Logger.info("First run: enabling start-on-login")
+                config.runOnStartup = AutoStart.setEnabled(true)
+                config.save()
+            }
 
             Logger.info("Setting up global authenticator...")
             config.applyAuthConfig()

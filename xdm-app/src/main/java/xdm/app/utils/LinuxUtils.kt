@@ -2,25 +2,47 @@ package xdm.app.utils
 
 import xdm.core.util.Logger
 import java.io.*
+import java.util.concurrent.TimeUnit
 
 object LinuxUtils {
-    var shutdownCmds: Array<String> = arrayOf(
-        "dbus-send --system --print-reply --dest=org.freedesktop.login1 /org/freedesktop/login1 \"org.freedesktop.login1.Manager.PowerOff\" boolean:true",
-        "dbus-send --system --print-reply --dest=\"org.freedesktop.ConsoleKit\" /org/freedesktop/ConsoleKit/Manager org.freedesktop.ConsoleKit.Manager.Stop",
-        "systemctl poweroff"
+    // Each command is an explicit argv list so quoted arguments are passed verbatim (Runtime.exec
+    // on a single String splits on whitespace and does NOT honor quotes, which corrupts dbus-send).
+    // All of these work for an active local desktop session WITHOUT sudo on systemd distros
+    // (Debian, Ubuntu, Fedora, etc.) via polkit's default allow_active=yes for power-off.
+    // They are tried in order; the first one to exit 0 wins.
+    var shutdownCmds: List<Array<String>> = listOf(
+        // Preferred: systemd. Present on all mainstream modern distros.
+        arrayOf("systemctl", "poweroff"),
+        // Equivalent via logind over D-Bus (works even if `systemctl` isn't on PATH).
+        arrayOf(
+            "dbus-send", "--system", "--print-reply",
+            "--dest=org.freedesktop.login1", "/org/freedesktop/login1",
+            "org.freedesktop.login1.Manager.PowerOff", "boolean:true"
+        ),
+        // Legacy fallback for pre-systemd / ConsoleKit-based systems.
+        arrayOf(
+            "dbus-send", "--system", "--print-reply",
+            "--dest=org.freedesktop.ConsoleKit", "/org/freedesktop/ConsoleKit/Manager",
+            "org.freedesktop.ConsoleKit.Manager.Stop"
+        )
     )
 
     fun initShutdown() {
-        for (i in shutdownCmds.indices) {
-            val cmd = shutdownCmds[0]
+        for (cmd in shutdownCmds) {
             try {
-                val proc = Runtime.getRuntime().exec(cmd)
-                val ret = proc.waitFor()
-                if (ret == 0) break
+                val proc = ProcessBuilder(*cmd).redirectErrorStream(true).start()
+                // Bound the wait so a polkit prompt or unresponsive bus can't hang the app.
+                val finished = proc.waitFor(20, TimeUnit.SECONDS)
+                if (finished && proc.exitValue() == 0) {
+                    Logger.info("Shutdown initiated via: ${cmd.joinToString(" ")}")
+                    return
+                }
+                if (!finished) proc.destroy()
             } catch (e: Exception) {
                 Logger.error(e)
             }
         }
+        Logger.error("All shutdown attempts failed; manual shutdown may be required")
     }
 
 
@@ -33,16 +55,6 @@ object LinuxUtils {
             pb.command("xdg-open", f.absolutePath)
             pb.start() // .waitFor();
         }.isSuccess
-    }
-
-    fun keepAwakePing() {
-        try {
-            Runtime.getRuntime().exec(
-                "dbus-send --print-reply --type=method_call --dest=org.freedesktop.ScreenSaver /ScreenSaver org.freedesktop.ScreenSaver.SimulateUserActivity"
-            )
-        } catch (e: Exception) {
-            Logger.error(e)
-        }
     }
 
 //    fun addToStartup() {

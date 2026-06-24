@@ -73,20 +73,28 @@ fun getFileName(
     return oldName
 }
 
+// Parses the RFC 5987/6266 extended form: filename*=charset'lang'percent-encoded-value
 private fun getExtendedContentDisposition(header: String): String? {
     try {
-        val arr = header.split(";")
-        for (str in arr) {
-            if (str.contains("filename*")) {
-                val index = str.lastIndexOf("'")
-                if (index > 0) {
-                    val st = str.substring(index + 1)
-                    return decodeFileName(st)
-                }
+        for (segment in header.split(";")) {
+            val str = segment.trim { it <= ' ' }
+            if (!str.lowercase(Locale.getDefault()).startsWith("filename*")) continue
+            val eq = str.indexOf('=')
+            if (eq < 0) continue
+            var value = str.substring(eq + 1).trim { it <= ' ' }
+            // Strip the leading charset'lang' prefix (if present) up to the last quote.
+            val firstQuote = value.indexOf('\'')
+            val lastQuote = value.lastIndexOf('\'')
+            if (firstQuote in 0 until lastQuote) {
+                value = value.substring(lastQuote + 1)
             }
+            value = value.replace("\"", "").trim { it <= ' ' }
+            if (value.isEmpty()) continue
+            val name = decodeFileName(value)
+            if (name.isNotEmpty()) return name
         }
     } catch (e: Exception) {
-        e.printStackTrace()
+        Logger.info(e)
     }
     return null
 }
@@ -96,19 +104,24 @@ fun getNameFromContentDisposition(header: String?): String? {
         if (header == null) return null
         val headerLow = header.lowercase(Locale.getDefault())
         if (headerLow.startsWith("attachment") || headerLow.startsWith("inline")) {
-            val name = getExtendedContentDisposition(header)
-            if (name != null) return name
+            // RFC 6266: prefer the extended (filename*) form when present.
+            getExtendedContentDisposition(header)?.let { return it }
             val arr = header.split(";".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
             for (i in arr.indices) {
                 val str = arr[i].trim { it <= ' ' }
-                if (str.lowercase(Locale.getDefault()).startsWith("filename")) {
+                val low = str.lowercase(Locale.getDefault())
+                // Skip the extended form here; it is handled above.
+                if (low.startsWith("filename") && !low.startsWith("filename*")) {
                     val index = str.indexOf('=')
+                    if (index < 0) continue
                     val file = str.substring(index + 1).replace("\"", "").trim { it <= ' ' }
-                    return try {
+                    if (file.isEmpty()) continue
+                    val name = try {
                         decodeFileName(file)
                     } catch (e: Exception) {
                         file
                     }
+                    if (name.isNotEmpty()) return name
                 }
             }
         }

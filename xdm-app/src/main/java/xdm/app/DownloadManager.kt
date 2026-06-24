@@ -1,7 +1,7 @@
 package xdm.app
 
+import xdm.app.utils.KeepAwake
 import xdm.app.utils.getFileFolder
-import xdm.app.utils.initShutdown
 import xdm.core.downloaders.*
 import xdm.core.downloaders.web.getTempFileFolder
 import xdm.core.downloaders.web.http.HttpDownloaderTask
@@ -135,6 +135,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                         event.id, event.finalOutputFolder, event.finalFileName, event.fileSize
                     )
                 }
+                runPostDownloadActions(event)
             }
             processNextQueue()
         }
@@ -331,6 +332,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                 }
 
                 activeSessions[id] = controller
+                syncKeepAwake()
                 it.status = RecordStatus.DOWNLOADING
                 appDB.savePausedRecords()
                 appDB.saveActiveRecords()
@@ -444,6 +446,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
             AppContext.config
         )
         activeSessions[task.id] = controller
+        syncKeepAwake()
         if (AppContext.config.showDownloadProgressWindow) {
             AppContext.app.showProgressWindow(task.id, task.fileName)
         }
@@ -491,6 +494,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
             configDir = AppContext.configDir, AppContext.config
         )
         activeSessions[task.id] = controller
+        syncKeepAwake()
         appDB.addActive(
             DbRecord(
                 id = task.id,
@@ -526,6 +530,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
             configDir = AppContext.configDir, AppContext.config
         )
         activeSessions[task.id] = controller
+        syncKeepAwake()
         appDB.addActive(
             DbRecord(
                 id = task.id,
@@ -591,7 +596,20 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
         }
     }
 
+    /**
+     * Keeps the machine awake while any download is in flight. Driven off [activeSessions]; call
+     * after every transition that adds or removes a session. Idempotent and gated by config.
+     */
+    private fun syncKeepAwake() {
+        if (AppContext.config.keepAwake && activeSessions.isNotEmpty()) {
+            KeepAwake.acquire()
+        } else {
+            KeepAwake.release()
+        }
+    }
+
     private fun processNextQueue() {
+        syncKeepAwake()
         synchronized(queue) {
             if (queue.isNotEmpty()) {
                 val (id, resume) = queue.removeFirst()
@@ -606,11 +624,28 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                 }
             } else {
                 Logger.info("No pending download")
-                if (AppContext.config.haltAfterDownload) {
-                    Logger.info("Attempting shutdown after download")
-                    initShutdown()
+                // Only shut down once every download has actually finished, not merely when
+                // the queue drains while parallel downloads are still in flight.
+                if (AppContext.config.haltAfterDownload && activeSessions.isEmpty()) {
+                    Logger.info("Attempting shutdown after all downloads")
+                    AppContext.platform.shutdownPC()
                 }
             }
+        }
+    }
+
+    /** Runs the configured antivirus scan / custom command against a freshly completed file. */
+    private fun runPostDownloadActions(event: DownloadStatusInfo.FinalInfo) {
+        val filePath = File(event.finalOutputFolder, event.finalFileName).absolutePath
+        try {
+            if (AppContext.config.runVirusScan) {
+                AppContext.platform.runVirusScan(filePath)
+            }
+            if (AppContext.config.runCommand) {
+                AppContext.platform.runCustomCommand(filePath)
+            }
+        } catch (error: Exception) {
+            Logger.error("XDM", "Error running post-download actions", error)
         }
     }
 }

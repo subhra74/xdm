@@ -22,24 +22,24 @@ class FilterListPanel(
         stateFilterModel.addElement(
             FilterItem.State(
                 FilterState.All, text("CAT_ALL"),
-                makeIcon("arrow-down-circle-fill.svg", Color.GRAY),
-                makeIcon("arrow-down-circle-fill.svg", stateFilterList.selectionForeground)
+                makeIcon("arrow-down-circle-fill.svg", INDIGO),
+                makeIcon("arrow-down-circle-fill.svg", INDIGO)
             )
         )
         stateFilterModel.addElement(
             FilterItem.State(
                 FilterState.Incomplete,
                 text("CAT_INCOMPLETE"),
-                makeIcon("progress-2-fill.svg", Color.GRAY),
-                makeIcon("progress-2-fill.svg", stateFilterList.selectionForeground)
+                makeIcon("progress-2-fill.svg", EMERALD),
+                makeIcon("progress-2-fill.svg", EMERALD)
             )
         )
         stateFilterModel.addElement(
             FilterItem.State(
                 FilterState.Completed,
                 text("CAT_FINISHED"),
-                makeIcon("checkbox-circle-fill.svg", Color.GRAY),
-                makeIcon("checkbox-circle-fill.svg", stateFilterList.selectionForeground)
+                makeIcon("checkbox-circle-fill.svg", AMBER),
+                makeIcon("checkbox-circle-fill.svg", AMBER)
             )
         )
         stateFilterList.isOpaque = false
@@ -47,20 +47,20 @@ class FilterListPanel(
         stateFilterList.alignmentX = 0f
 
         val catFilterModel = DefaultListModel<FilterItem>()
-        for ((type, iconName) in listOf(
-            Pair(FilterCategory.All, "archive-2-fill.svg"),
-            Pair(FilterCategory.Docs, "file-list-2-fill.svg"),
-            Pair(FilterCategory.Zip, "file-zip-fill.svg"),
-            Pair(FilterCategory.Music, "mv-fill.svg"),
-            Pair(FilterCategory.Video, "movie-fill.svg"),
-            Pair(FilterCategory.Apps, "microsoft-fill.svg")
+        for ((type, iconName, color) in listOf(
+            Triple(FilterCategory.All, "archive-2-fill.svg", VIOLET),
+            Triple(FilterCategory.Docs, "file-list-2-fill.svg", SKY),
+            Triple(FilterCategory.Zip, "file-zip-fill.svg", ORANGE),
+            Triple(FilterCategory.Music, "mv-fill.svg", PINK),
+            Triple(FilterCategory.Video, "movie-fill.svg", RED),
+            Triple(FilterCategory.Apps, "microsoft-fill.svg", TEAL)
         )) {
             catFilterModel.addElement(
                 FilterItem.Category(
                     type,
                     text(type.text),
-                    makeIcon(iconName, Color.GRAY),
-                    makeIcon(iconName, stateFilterList.selectionForeground)
+                    makeIcon(iconName, color),
+                    makeIcon(iconName, color)
                 )
             )
         }
@@ -112,4 +112,18 @@ class FilterListPanel(
 
     val component: Component
         get() = this.jsp
+
+    companion object {
+        // Vibrant, mid-luminance hues (Tailwind 500-ish) that keep good
+        // contrast on both light and dark theme backgrounds.
+        private val INDIGO = Color(0x63, 0x66, 0xF1)
+        private val EMERALD = Color(0x10, 0xB9, 0x81)
+        private val AMBER = Color(0xF5, 0x9E, 0x0B)
+        private val VIOLET = Color(0x8B, 0x5C, 0xF6)
+        private val SKY = Color(0x0E, 0xA5, 0xE9)
+        private val ORANGE = Color(0xF9, 0x73, 0x16)
+        private val PINK = Color(0xEC, 0x48, 0x99)
+        private val RED = Color(0xEF, 0x44, 0x44)
+        private val TEAL = Color(0x14, 0xB8, 0xA6)
+    }
 }

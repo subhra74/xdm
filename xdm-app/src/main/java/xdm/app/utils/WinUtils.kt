@@ -50,10 +50,6 @@ object WinUtils {
         builder.start()
     }
 
-    fun keepAwakePing() {
-       // NativeMethods.getInstance().keepAwakePing()
-    }
-
     fun browseURL(url: String) {
         try {
             val builder = ProcessBuilder()

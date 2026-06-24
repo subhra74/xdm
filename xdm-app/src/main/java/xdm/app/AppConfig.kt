@@ -50,6 +50,7 @@ interface IAppConfig : CoreConfig {
     override var proxyPass: String
     var haltAfterDownload: Boolean
     var keepAwake: Boolean
+    var runOnStartup: Boolean
     var customCommand: String
     var virusScannerPath: String
     var virusScannerArgs: String
@@ -99,6 +100,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var proxyPass: String = ""
     override var haltAfterDownload: Boolean = false
     override var keepAwake: Boolean = true
+    override var runOnStartup: Boolean = false
     override var customCommand: String = ""
     override var virusScannerPath: String = ""
     override var virusScannerArgs: String = ""
@@ -164,6 +166,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
         out.writeUTF(customCommand)
         out.writeUTF(virusScannerPath)
         out.writeUTF(virusScannerArgs)
+        out.writeBoolean(runOnStartup)
     }
 
     private fun load(input: DataInputStream) {
@@ -203,6 +206,12 @@ class AppConfig(private val configDir: String) : IAppConfig {
         customCommand = input.readUTF()
         virusScannerPath = input.readUTF()
         virusScannerArgs = input.readUTF()
+        // Trailing field: tolerate config files written before it existed.
+        runOnStartup = try {
+            input.readBoolean()
+        } catch (e: java.io.EOFException) {
+            false
+        }
     }
 
     private fun writeStringList(out: DataOutputStream, list: List<String>) {
