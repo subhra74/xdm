@@ -36,7 +36,10 @@ class FilterListRenderer : ListCellRenderer<FilterItem> {
     ): Component {
         label.apply {
             text = value.text
-            foreground = if (isSelected) list.selectionForeground else list.foreground
+            // Selection is indicated by the blue left bar, not a filled background,
+            // so keep the normal foreground (selectionForeground is unreadable on the
+            // unfilled cell in the light theme).
+            foreground = list.foreground
             icon = if (isSelected) value.selectedIcon else value.icon
             border = if (isSelected) selectedBorder else defaultBorder
         }

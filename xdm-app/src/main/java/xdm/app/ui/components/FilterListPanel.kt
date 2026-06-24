@@ -1,6 +1,7 @@
 package xdm.app.ui.components
 
 
+import com.formdev.flatlaf.FlatLaf
 import xdm.app.I8N.text
 import xdm.app.utils.createSVGIcon
 import java.awt.Color
@@ -70,8 +71,15 @@ class FilterListPanel(
             background = UIManager.getColor("Table.background")
         }
 
+        // Keep the black divider in the dark theme (as before); use FlatLaf's
+        // border color in the light theme so it isn't a harsh black line.
+        val dividerColor = if (FlatLaf.isLafDark()) {
+            Color.BLACK
+        } else {
+            UIManager.getColor("Component.borderColor") ?: Color.GRAY
+        }
         jsp = JScrollPane(box).apply {
-            border = MatteBorder(0, 0, 0, 1, Color.BLACK)
+            border = MatteBorder(0, 0, 0, 1, dividerColor)
             isOpaque = false
         }
 

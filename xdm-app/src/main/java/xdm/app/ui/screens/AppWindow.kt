@@ -1,5 +1,6 @@
 package xdm.app.ui.screens
 
+import com.formdev.flatlaf.FlatLaf
 import xdm.app.AppContext
 import xdm.app.AppContext.app
 import xdm.app.XDM_WINDOW_TITLE
@@ -56,8 +57,15 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
             border = EmptyBorder(7, 0, 0, 0)
         }
 
+        // Keep the black top border in the dark theme (as before); use FlatLaf's
+        // border color in the light theme so it isn't a harsh black line.
+        val topBorderColor = if (FlatLaf.isLafDark()) {
+            Color.BLACK
+        } else {
+            UIManager.getColor("Component.borderColor") ?: Color.GRAY
+        }
         val splitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT).apply {
-            border = MatteBorder(1, 0, 0, 0, Color.BLACK)
+            border = MatteBorder(1, 0, 0, 0, topBorderColor)
             dividerLocation = 180
             leftComponent = filterPanel.component
             rightComponent = panel
