@@ -73,7 +73,7 @@ class PropertiesDialog(owner: Window?, ent: DbRecord) : JDialog(owner) {
 
         contentPane.add(panel)
         pack()
-        size = Dimension(maxOf(width, 480), height)
+        size = Dimension(500, 300)
         setLocationRelativeTo(owner)
     }
 
