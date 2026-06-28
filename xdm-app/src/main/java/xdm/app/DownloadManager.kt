@@ -110,11 +110,43 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
         }
 
         override fun onAssembleStart(id: Long) {
-            //TODO("Not yet implemented")
+            activeSessions[id]?.let {
+                var fileName: String? = null
+                synchronized(appDB) {
+                    appDB.getById(id)?.let { e ->
+                        e.status = RecordStatus.ASSEMBLING
+                        e.progress = 0
+                        e.speed = 0.0f
+                        e.eta = 0
+                        fileName = e.fileName
+                    }
+                }
+                AppContext.app.updateDownloadInView(id)
+                AppContext.app.updateProgressWindow(id, fileName, 0, -1, 0.0f, 0, 0, listOf())
+            }
         }
 
         override fun onAssembleProgress(event: DownloadStatusInfo.AssembleInfo) {
-            //TODO("Not yet implemented")
+            var downloaded: Long = 0
+            var size: Long = -1
+            var fileName: String? = null
+            activeSessions[event.id]?.let {
+                synchronized(appDB) {
+                    appDB.getById(event.id)?.let { e ->
+                        e.status = RecordStatus.ASSEMBLING
+                        e.progress = event.progress
+                        e.speed = 0.0f
+                        e.eta = 0
+                        downloaded = e.downloaded
+                        size = e.size
+                        fileName = e.fileName
+                    }
+                }
+                AppContext.app.updateDownloadInView(event.id)
+                AppContext.app.updateProgressWindow(
+                    event.id, fileName, downloaded, size, 0.0f, 0, event.progress, listOf()
+                )
+            }
         }
 
         override fun onDownloadSuccess(event: DownloadStatusInfo.FinalInfo) {

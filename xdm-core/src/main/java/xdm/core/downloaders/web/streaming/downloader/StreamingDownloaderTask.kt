@@ -33,6 +33,7 @@ abstract class StreamingDownloaderTask(
     private val throttle: SpeedLimiter = SpeedLimiter(config)
     private val stopRequested = AtomicBoolean(false)
     private val startRequested = AtomicBoolean(false)
+    private var lastAssembleProgress = -1
 
     abstract fun initDownload(): DownloadStatusInfo.InitInfo?
     abstract fun fileExt(): String
@@ -183,12 +184,24 @@ abstract class StreamingDownloaderTask(
         }
     }
 
+    /** Reports muxing/assembly progress to the host, throttled to whole-percent changes. */
+    private fun onAssembleProgress(progress: Int) {
+        if (context.stopFlag.get()) return
+        if (progress == lastAssembleProgress) return
+        lastAssembleProgress = progress
+        context.downloadHost.onAssembleProgress(DownloadStatusInfo.AssembleInfo(context.id, progress))
+    }
+
     private fun assembleStreams(outFile: String): Boolean {
         try {
             Logger.info("Mux multiple streams to $outFile")
             val audioChunks = context.chunks.filter { it.tag == "AUDIO" }.map { getChunkTempFileName(it) }
             val videoChunks = context.chunks.filter { it.tag == "VIDEO" }.map { getChunkTempFileName(it) }
-            if (muxer.mux(audioChunks, videoChunks, outFile, {}, context.tempFolder, isIndependentSegment(), isMp4())) {
+            if (muxer.mux(
+                    audioChunks, videoChunks, outFile, this::onAssembleProgress, context.tempFolder,
+                    isIndependentSegment(), isMp4()
+                )
+            ) {
                 context.completed.set(true)
                 return true
             }
@@ -210,7 +223,7 @@ abstract class StreamingDownloaderTask(
             val tempFiles = context.chunks.map {
                 getChunkTempFileName(it)
             }
-            if (muxer.mux(tempFiles, outFile, {}, context.tempFolder, isIndependentSegment(), isMp4())) {
+            if (muxer.mux(tempFiles, outFile, this::onAssembleProgress, context.tempFolder, isIndependentSegment(), isMp4())) {
                 context.completed.set(true)
                 return true
             }
