@@ -53,9 +53,9 @@ that is not what `AppMain` actually uses.)
   (OkHttp-based `HttpClientImpl`), the downloader tasks, manifest parsers, and the muxer.
 - **xdm-app** — Swing desktop application + browser-integration HTTP server. Depends on
   xdm-core.
-- **hls-muxer** — standalone pure-Kotlin HLS/MPEG-TS muxer (depends on `org.mp4parser`).
-  Currently NOT wired into the app's download path (the app muxes via `FFmpegMuxer`, which
-  shells out to an external `ffmpeg`). It is also listed in `.gitignore`.
+- **hls-muxer** — an older standalone pure-Kotlin HLS/MPEG-TS muxer experiment (depends on
+  `org.mp4parser`). NOT wired in and listed in `.gitignore`; superseded by the in-tree
+  transmuxer under `xdm-core/.../media/muxer/transmux/` (see Muxing below).
 
 ### Global wiring (`AppContext`)
 `AppContext` is a singleton service locator holding `lateinit` references to every major
@@ -77,7 +77,7 @@ integration server, then runs the UI. Most code reaches services through `AppCon
    `activeSessions` (id → `DownloaderTask`), a pending `queue`, enforces
    `maxParallelDownloads`, and persists records. It builds the concrete task per
    `DownloadType`: `HttpDownloaderTask`, `HlsDownloaderTask`, or `DashDownloaderTask`
-   (all in xdm-core), injecting an `HttpClientImpl` (with proxy config) and an `FFmpegMuxer`
+   (all in xdm-core), injecting an `HttpClientImpl` (with proxy config) and a `TransmuxingMuxer`
    for streaming types.
 4. **Engine callbacks via `DownloadHost`.** Every downloader task talks back through the
    `DownloadHost` interface (extends `FileProvider`). `DownloadManager` implements it as an
@@ -107,6 +107,31 @@ HLS and DASH manifest parsing live under
 `xdm-core/.../downloaders/web/streaming/manifest/{hls,dash}` (e.g. `HlsParser`, `MpdParser`
 plus DASH template/period/representation parsers). The corresponding segment downloaders are
 under `.../streaming/downloader/{hls,dash}`.
+
+### Muxing
+After a streaming download finishes, its segments are merged into a single MP4 by a muxer
+implementing the `Muxer` interface (`media/muxer/Muxer.kt`). The default is `TransmuxingMuxer`
+(`media/muxer/impl/`), a **pure-Kotlin transmuxer** — it copies the compressed elementary
+streams into MP4 with no decoding, and **does not call ffmpeg**. `FFmpegMuxer` (which shells out
+to an external `ffmpeg`) is kept in the tree but is no longer wired into the download path.
+
+The engine lives under `media/muxer/transmux/`:
+- `ts/` — MPEG-TS demux (`TsDemuxer`: 188/192/204-byte packets, PAT/PMT, `PesAssembler` for
+  PES reassembly + PTS/DTS with 33-bit rollover unwrap).
+- `es/` — per-codec elementary-stream readers for the TS path (`H264Reader`, `H265Reader`,
+  `AdtsReader` for AAC, `Ac3Reader` for AC-3/E-AC-3, `Mp3Reader`). Each parses just enough to
+  split samples, extract the decoder config (SPS/PPS→avcC, etc.) and flag keyframes — never decode.
+- `iso/Mp4Demuxer.kt` — ISO-BMFF demux for the non-TS path: fragmented MP4/CMAF (`moof`/`trun`)
+  **and** progressive single-file MP4 (`stbl` tables). Copies sample bytes and the `stsd` sample
+  entry verbatim, so any MP4 codec (incl. HEVC/AV1/Opus) passes through.
+- `mp4/Mp4Writer.kt` — writes a progressive MP4 (`ftyp` + streaming 64-bit `mdat` + `moov`), with
+  hand-written boxes (`BoxBuf`/`CodecBoxes`). Each sample is its own chunk so audio/video
+  interleave is order-independent; A/V sync via edit lists, B-frames via `ctts`.
+- `sample/` (`Track`/`Sample`/`Codec`) and `io/` (byte/bit readers, NAL utilities) are shared.
+
+`TransmuxingMuxer` sniffs each segment list's container (TS vs MP4) and routes to the right
+demuxer, feeding all tracks into one `Mp4Writer`. `TestTransmuxer` exercises it end-to-end by
+generating fixtures with `ffmpeg` if present (skips via JUnit `Assume` otherwise).
 
 ### UI
 Swing UI is under `xdm-app/.../ui`: `screens/` (windows/dialogs, `AppWindow` is the main

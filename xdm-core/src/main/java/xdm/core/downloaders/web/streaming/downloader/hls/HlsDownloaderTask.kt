@@ -103,7 +103,10 @@ class HlsDownloaderTask : StreamingDownloaderTask {
                 context.independent = videoPlaylist.independent
             }
             retrieveKeys(videoPlaylist, audioPlaylist)
-            if (videoPlaylist.encrypted) {
+            // Decryption must run if EITHER stream is encrypted. Setting this from the video
+            // playlist alone left audio-only-encrypted streams with undecrypted .enc segments,
+            // which were then handed to the muxer under the wrong (encrypted) temp file name.
+            if (videoPlaylist.encrypted || audioPlaylist?.encrypted == true) {
                 context.encrypted = true
             }
             context.chunks.ensureCapacity(videoPlaylist.mediaSegments.size + (audioPlaylist?.mediaSegments?.size ?: 0))
@@ -241,7 +244,9 @@ class HlsDownloaderTask : StreamingDownloaderTask {
             return
         }
         val encChunkFile = getChunkTempFileName(chunk)
-        val decChunkFile = encChunkFile.replace(".enc", "")
+        // Drop only the trailing ".enc" suffix so the decrypted path exactly matches what
+        // getChunkTempFileName(encrypted=false) yields for muxing (a parent dir could contain ".enc").
+        val decChunkFile = encChunkFile.removeSuffix(".enc")
         Logger.info("XDM", "Decrypting chunk: $encChunkFile -> $decChunkFile")
         val key = keyCache[chunk.keyUrl] ?: throw Exception("Key missing")
         val iv = chunk.iv

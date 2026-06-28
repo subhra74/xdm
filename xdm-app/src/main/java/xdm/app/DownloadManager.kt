@@ -9,7 +9,7 @@ import xdm.core.downloaders.web.readContext
 import xdm.core.downloaders.web.saveState
 import xdm.core.downloaders.web.streaming.downloader.dash.DashDownloaderTask
 import xdm.core.downloaders.web.streaming.downloader.hls.HlsDownloaderTask
-import xdm.core.media.muxer.impl.FFmpegMuxer
+import xdm.core.media.muxer.impl.TransmuxingMuxer
 import xdm.core.network.http.impl.HttpClientImpl
 import xdm.core.util.AtomicIO
 import xdm.core.util.FileUtils
@@ -311,7 +311,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                     DownloadType.Hls -> controller = HlsDownloaderTask(
                         taskInfo = taskInfoDB.getHlsTask(id)!!,
                         http = HttpClientImpl(100, AppContext.config.toProxy()),
-                        muxer = FFmpegMuxer(AppContext.configDir),
+                        muxer = TransmuxingMuxer(AppContext.configDir),
                         host = downloadHost,
                         configDir = AppContext.configDir,
                         config = AppContext.config
@@ -320,7 +320,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                     DownloadType.Dash -> controller = DashDownloaderTask(
                         taskInfo = taskInfoDB.getDashTask(id)!!,
                         http = HttpClientImpl(100, AppContext.config.toProxy()),
-                        muxer = FFmpegMuxer(AppContext.configDir),
+                        muxer = TransmuxingMuxer(AppContext.configDir),
                         host = downloadHost,
                         configDir = AppContext.configDir,
                         config = AppContext.config
@@ -489,7 +489,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
         val controller = HlsDownloaderTask(
             taskInfo = task,
             http = HttpClientImpl(100, AppContext.config.toProxy()),
-            muxer = FFmpegMuxer(AppContext.configDir),
+            muxer = TransmuxingMuxer(AppContext.configDir),
             host = downloadHost,
             configDir = AppContext.configDir, AppContext.config
         )
@@ -525,7 +525,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
         val controller = DashDownloaderTask(
             taskInfo = task,
             http = HttpClientImpl(100, AppContext.config.toProxy()),
-            muxer = FFmpegMuxer(AppContext.configDir),
+            muxer = TransmuxingMuxer(AppContext.configDir),
             host = downloadHost,
             configDir = AppContext.configDir, AppContext.config
         )
