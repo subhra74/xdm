@@ -22,7 +22,9 @@ class SettingsWindow(parent: Window) : JDialog(parent) {
     private val browserMonitorPanel = BrowserMonitorPanel()
     private val browserMonitorPanelJsp = JScrollPane(browserMonitorPanel).apply { border = EmptyBorder(0, 0, 0, 0) }
     private val networkConfigPanel = NetworkConfigPanel()
+    private val networkConfigPanelJsp = JScrollPane(networkConfigPanel).apply { border = EmptyBorder(0, 0, 0, 0) }
     private val advancedConfigPanel = AdvancedConfigPanel()
+    private val advancedConfigPanelJsp = JScrollPane(advancedConfigPanel).apply { border = EmptyBorder(0, 0, 0, 0) }
     private val card = CardLayout()
     private val panelHolder = JPanel(card)
     private val panelCenter = JPanel(BorderLayout())
@@ -69,8 +71,8 @@ class SettingsWindow(parent: Window) : JDialog(parent) {
 
         panelHolder.add(generalPanelJsp, "GEN_PAN")
         panelHolder.add(browserMonitorPanelJsp, "BRM_PAN")
-        panelHolder.add(networkConfigPanel, "NET_PAN")
-        panelHolder.add(advancedConfigPanel, "ADV_PAN")
+        panelHolder.add(networkConfigPanelJsp, "NET_PAN")
+        panelHolder.add(advancedConfigPanelJsp, "ADV_PAN")
 
         leftList.selectedIndex = 0
         btnSave.requestFocusInWindow()

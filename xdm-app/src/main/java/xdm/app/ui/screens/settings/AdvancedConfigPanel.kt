@@ -4,123 +4,102 @@ import xdm.app.AppContext
 import xdm.app.I8N
 import xdm.app.utils.AutoStart
 import xdm.app.utils.chooseFile
-import java.awt.GridBagConstraints
-import java.awt.GridBagLayout
+import xdm.app.utils.createSVGIcon
+import xdm.app.utils.fixHeight
+import java.awt.Dimension
 import java.awt.Insets
+import javax.swing.Box
+import javax.swing.BoxLayout
 import javax.swing.JButton
 import javax.swing.JCheckBox
-import javax.swing.JLabel
+import javax.swing.JComponent
 import javax.swing.JPanel
 import javax.swing.JTextField
 
-class AdvancedConfigPanel : JPanel() {
+class AdvancedConfigPanel : SettingsPanel() {
     private val key = "JTextField.placeholderText"
     private val txtCmd = JTextField().apply {
         putClientProperty(key, I8N.text("MSG_CUSTOM_CMD"))
         columns = 10
+        fixHeight(this)
     }
     private val txtVirusScan = JTextField().apply {
         putClientProperty(key, I8N.text("MSG_AV_CMD"))
         columns = 10
+        fixHeight(this)
     }
     private val txtArgs = JTextField().apply {
         putClientProperty(key, I8N.text("MSG_ARGS"))
         columns = 10
+        fixHeight(this)
     }
     private val chkHalt = JCheckBox(I8N.text("MSG_HALT"))
     private val chkNoSleep = JCheckBox(I8N.text("MSG_AWAKE"))
     private val chkRunOnStartup = JCheckBox(I8N.text("MSG_AUTOSTART"))
     private val chkRunCmd = JCheckBox(I8N.text("MSG_RUN_CMD"))
     private val chkVirusScan = JCheckBox(I8N.text("MSG_SCAN"))
-    private val btnBrowse = JButton("...")
+    private val btnBrowse = JButton(
+        I8N.text("SETTINGS_FOLDER_CHANGE"),
+        createSVGIcon("folder-6-line.svg", 16, settingsAccentColor())
+    ).apply {
+        iconTextGap = 6
+        fixHeight(this)
+    }
 
     init {
+        setLayout(BoxLayout(this, BoxLayout.Y_AXIS))
 
-        val gridBagLayout = GridBagLayout()
-        gridBagLayout.columnWidths = intArrayOf(0, 0, 0)
-        gridBagLayout.rowHeights = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-        gridBagLayout.columnWeights = doubleArrayOf(1.0, 0.0, Double.Companion.MIN_VALUE)
-        gridBagLayout.rowWeights =
-            doubleArrayOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.Companion.MIN_VALUE)
-        setLayout(gridBagLayout)
+        add(settingsTitle(I8N.text("MSG_ADV_TITLE")))
 
-        val lblTitle = JLabel(I8N.text("MSG_ADV_TITLE")).apply { font = font.deriveFont(16.0f) }
-        val gbcLbltitle = GridBagConstraints()
-        gbcLbltitle.anchor = GridBagConstraints.WEST
-        gbcLbltitle.insets = Insets(5, 0, 10, 5)
-        gbcLbltitle.gridx = 0
-        gbcLbltitle.gridy = 0
-        add(lblTitle, gbcLbltitle)
+        // General
+        add(
+            settingsCard(
+                "settings-4-line.svg", I8N.text("SETTINGS_SEC_ADV_GENERAL"),
+                settingsLeftAligned(chkHalt),
+                settingsLeftAligned(chkNoSleep),
+                settingsLeftAligned(chkRunOnStartup),
+            )
+        )
+        add(Box.createRigidArea(Dimension(0, 12)))
 
-        val gbcChkhalt = GridBagConstraints()
-        gbcChkhalt.anchor = GridBagConstraints.WEST
-        gbcChkhalt.insets = Insets(0, 0, 5, 5)
-        gbcChkhalt.gridx = 0
-        gbcChkhalt.gridy = 1
-        add(chkHalt, gbcChkhalt)
+        // Custom command
+        add(
+            settingsCard(
+                "file-text-line.svg", I8N.text("SETTINGS_SEC_COMMAND"),
+                settingsLeftAligned(chkRunCmd),
+                fullWidth(txtCmd),
+            )
+        )
+        add(Box.createRigidArea(Dimension(0, 12)))
 
-        val gbcChknosleep = GridBagConstraints()
-        gbcChknosleep.anchor = GridBagConstraints.WEST
-        gbcChknosleep.insets = Insets(0, 0, 5, 5)
-        gbcChknosleep.gridx = 0
-        gbcChknosleep.gridy = 2
-        add(chkNoSleep, gbcChknosleep)
+        // Antivirus
+        val scannerRow = Box.createHorizontalBox().apply {
+            alignmentX = LEFT_ALIGNMENT
+            add(txtVirusScan)
+            add(Box.createRigidArea(Dimension(8, 0)))
+            add(btnBrowse)
+        }
+        add(
+            settingsCard(
+                "file-shield-line.svg", I8N.text("SETTINGS_SEC_ANTIVIRUS"),
+                settingsLeftAligned(chkVirusScan),
+                scannerRow,
+                fullWidth(txtArgs),
+            )
+        )
 
-        val gbcChkstartup = GridBagConstraints()
-        gbcChkstartup.anchor = GridBagConstraints.WEST
-        gbcChkstartup.insets = Insets(0, 0, 5, 5)
-        gbcChkstartup.gridx = 0
-        gbcChkstartup.gridy = 3
-        add(chkRunOnStartup, gbcChkstartup)
-
-        val gbcChkruncmd = GridBagConstraints()
-        gbcChkruncmd.anchor = GridBagConstraints.WEST
-        gbcChkruncmd.insets = Insets(0, 0, 5, 5)
-        gbcChkruncmd.gridx = 0
-        gbcChkruncmd.gridy = 4
-        add(chkRunCmd, gbcChkruncmd)
-
-        val gbcTxtcmd = GridBagConstraints()
-        gbcTxtcmd.insets = Insets(0, 0, 5, 0)
-        gbcTxtcmd.gridwidth = 3
-        gbcTxtcmd.fill = GridBagConstraints.HORIZONTAL
-        gbcTxtcmd.gridx = 0
-        gbcTxtcmd.gridy = 5
-        add(txtCmd, gbcTxtcmd)
-
-        val gbcChkvirusscan = GridBagConstraints()
-        gbcChkvirusscan.insets = Insets(0, 0, 5, 5)
-        gbcChkvirusscan.anchor = GridBagConstraints.WEST
-        gbcChkvirusscan.gridx = 0
-        gbcChkvirusscan.gridy = 6
-        add(chkVirusScan, gbcChkvirusscan)
-
-        val gbcTxtvirusscan = GridBagConstraints()
-        gbcTxtvirusscan.insets = Insets(0, 0, 5, 5)
-        gbcTxtvirusscan.fill = GridBagConstraints.HORIZONTAL
-        gbcTxtvirusscan.gridx = 0
-        gbcTxtvirusscan.gridy = 7
-        add(txtVirusScan, gbcTxtvirusscan)
-
-        val gbcBtnbrowse = GridBagConstraints()
-        gbcBtnbrowse.insets = Insets(0, 0, 5, 0)
-        gbcBtnbrowse.gridx = 1
-        gbcBtnbrowse.gridy = 7
-        add(btnBrowse, gbcBtnbrowse)
-
-        val gbcTxtargs = GridBagConstraints()
-        gbcTxtargs.gridwidth = 2
-        gbcTxtargs.insets = Insets(0, 0, 0, 5)
-        gbcTxtargs.fill = GridBagConstraints.HORIZONTAL
-        gbcTxtargs.gridx = 0
-        gbcTxtargs.gridy = 8
-        add(txtArgs, gbcTxtargs)
+        add(Box.createVerticalGlue())
 
         btnBrowse.addActionListener { chooseScanner() }
-
         chkRunCmd.addActionListener { updateEnabledState() }
         chkVirusScan.addActionListener { updateEnabledState() }
     }
+
+    private fun fullWidth(comp: JComponent): JComponent =
+        Box.createHorizontalBox().apply {
+            alignmentX = LEFT_ALIGNMENT
+            add(comp)
+        }
 
     private fun chooseScanner() {
         chooseFile(this, directoriesOnly = false)?.let {
@@ -164,6 +143,6 @@ class AdvancedConfigPanel : JPanel() {
     }
 
     override fun getInsets(): Insets {
-        return Insets(15, 10, 10, 10)
+        return Insets(10, 12, 12, 12)
     }
 }

@@ -3,8 +3,8 @@ package xdm.app.ui.screens.settings
 import xdm.app.AppContext
 import xdm.app.I8N
 import xdm.app.utils.chooseFile
+import xdm.app.utils.createSVGIcon
 import xdm.app.utils.fixHeight
-import xdm.app.utils.padding
 import java.awt.Dimension
 import java.awt.Insets
 import java.io.FileInputStream
@@ -17,13 +17,14 @@ import javax.swing.DefaultComboBoxModel
 import javax.swing.JButton
 import javax.swing.JCheckBox
 import javax.swing.JComboBox
+import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JSpinner
 import javax.swing.JTextField
 import javax.swing.SpinnerNumberModel
 
-class GeneralPanel : JPanel() {
+class GeneralPanel : SettingsPanel() {
     private val txtTmpDir = JTextField().apply {
         columns = 10
         fixHeight(this)
@@ -39,23 +40,12 @@ class GeneralPanel : JPanel() {
         maximumSize = Dimension(120, preferredSize.height)
     }
     private val chkSpeedLimiter = JCheckBox(I8N.text("MSG_SPEED_LIMIT"))
-    private val chkShowDwnPrg = JCheckBox(I8N.text("SHOW_DWN_PRG")).apply {
-        padding(this, 10)
-        alignmentX = LEFT_ALIGNMENT
-    }
-    private val chkShowComplete = JCheckBox(I8N.text("SHOW_DWN_COMPLETE")).apply { padding(this, 10) }
-    private val chkStartAutoDwn = JCheckBox(I8N.text("LBL_START_AUTO")).apply { padding(this, 10) }
-    private val chkOverwrite = JCheckBox(I8N.text("LBL_OVERWRITE_EXISTING")).apply { padding(this, 10) }
-    private val btnBrowse1 = JButton("...").apply {
-        addActionListener {
-            chooseFolder(txtTmpDir)
-        }
-    }
-    private val btnBrowse2 = JButton("...").apply {
-        addActionListener {
-            chooseFolder(txtDwnDir)
-        }
-    }
+    private val chkShowDwnPrg = JCheckBox(I8N.text("SHOW_DWN_PRG"))
+    private val chkShowComplete = JCheckBox(I8N.text("SHOW_DWN_COMPLETE"))
+    private val chkStartAutoDwn = JCheckBox(I8N.text("LBL_START_AUTO"))
+    private val chkOverwrite = JCheckBox(I8N.text("LBL_OVERWRITE_EXISTING"))
+    private val btnBrowse1 = createBrowseButton(txtTmpDir)
+    private val btnBrowse2 = createBrowseButton(txtDwnDir)
     private val cmbMaxConn = JComboBox<Int>().apply {
         fixHeight(this)
         addItem(1)
@@ -78,64 +68,36 @@ class GeneralPanel : JPanel() {
     init {
         setLayout(BoxLayout(this, BoxLayout.Y_AXIS))
 
-        val lblTitle = JLabel(I8N.text("SETTINGS_GENERAL")).apply {
-            padding(this, 10, topPadding = true)
-            font = font.deriveFont(16.0f)
-        }
-        add(lblTitle)
+        add(settingsTitle(I8N.text("SETTINGS_GENERAL")))
 
-        add(chkShowDwnPrg)
+        // Behaviour
+        add(
+            settingsCard(
+                "settings-4-line.svg", I8N.text("SETTINGS_SEC_BEHAVIOR"),
+                settingsLeftAligned(chkShowDwnPrg),
+                settingsLeftAligned(chkShowComplete),
+                settingsLeftAligned(chkStartAutoDwn),
+            )
+        )
+        add(Box.createRigidArea(Dimension(0, 12)))
 
-        add(chkShowComplete)
+        // Downloads
+        val speedRow = settingsRow(chkSpeedLimiter, spnSpeedLimiter)
+        val maxConnRow = settingsRow(JLabel(I8N.text("MSG_MAX_DOWNLOAD")), cmbMaxConn)
+        add(settingsCard("arrow-up-down-fill.svg", I8N.text("SETTINGS_SEC_DOWNLOADS"), speedRow, maxConnRow))
+        add(Box.createRigidArea(Dimension(0, 12)))
 
-        add(chkStartAutoDwn)
+        // Folders
+        add(
+            settingsCard(
+                "folder-6-line.svg", I8N.text("SETTINGS_SEC_FOLDERS"),
+                folderField(I8N.text("LBL_TEMP_FOLDER"), txtTmpDir, btnBrowse1),
+                folderField(I8N.text("SETTINGS_FOLDER"), txtDwnDir, btnBrowse2),
+            )
+        )
+        add(Box.createRigidArea(Dimension(0, 12)))
 
-        //add(chkOverwrite)
-
-        val panelSp = JPanel().apply { padding(this, 10) }
-        panelSp.setAlignmentX(LEFT_ALIGNMENT)
-        add(panelSp)
-        panelSp.setLayout(BoxLayout(panelSp, BoxLayout.X_AXIS))
-
-        panelSp.add(chkSpeedLimiter)
-        panelSp.add(Box.createHorizontalGlue())
-        panelSp.add(spnSpeedLimiter)
-
-
-        val lblTempFolder = JLabel(I8N.text("LBL_TEMP_FOLDER")).apply { padding(this, 5) }
-        add(lblTempFolder)
-
-        val panelTemp = JPanel().apply { padding(this, 10) }
-        panelTemp.setAlignmentX(LEFT_ALIGNMENT)
-        add(panelTemp)
-        panelTemp.setLayout(BoxLayout(panelTemp, BoxLayout.X_AXIS))
-
-        panelTemp.add(txtTmpDir)
-
-        panelTemp.add(Box.createRigidArea(Dimension(10, 10)))
-
-        panelTemp.add(btnBrowse1)
-
-        val lblDefFolder = JLabel(I8N.text("SETTINGS_FOLDER")).apply { padding(this, 5) }
-        add(lblDefFolder)
-
-        val panelDefFolder = JPanel().apply { padding(this, 10) }
-        panelDefFolder.setAlignmentX(LEFT_ALIGNMENT)
-        add(panelDefFolder)
-        panelDefFolder.setLayout(BoxLayout(panelDefFolder, BoxLayout.X_AXIS))
-        panelDefFolder.add(txtDwnDir)
-        panelDefFolder.add(Box.createRigidArea(Dimension(10, 10)))
-        panelDefFolder.add(btnBrowse2)
-
-        val panelMaxConn = Box.createHorizontalBox()
-        panelMaxConn.setAlignmentX(LEFT_ALIGNMENT)
-        add(panelMaxConn)
-
-        val lblMaxConn = JLabel(I8N.text("MSG_MAX_DOWNLOAD"))
-        panelMaxConn.add(lblMaxConn)
-        panelMaxConn.add(Box.createHorizontalGlue())
-        panelMaxConn.add(cmbMaxConn)
-
+        // Appearance & language
         langProp = Properties()
         langProp.load(
             InputStreamReader(
@@ -145,33 +107,46 @@ class GeneralPanel : JPanel() {
         )
         langModel.addAll(langProp.values.map { it.toString() })
 
-        val panelLang = Box.createHorizontalBox().apply {
-            padding(this, 10, topPadding = true, bottomPadding = true)
+        val themeRow = settingsRow(JLabel(I8N.text("MSG_THEME")), cmbTheme)
+        val langRow = settingsRow(JLabel(I8N.text("MSG_LANG1")), cmbLang)
+        val lblNote = JLabel(I8N.text("MSG_LANG2")).apply {
+            font = font.deriveFont(font.size2D - 1f)
+            foreground = settingsMutedColor()
         }
-        panelLang.setAlignmentX(LEFT_ALIGNMENT)
-        add(panelLang)
+        add(
+            settingsCard(
+                "sparkling-2-fill.svg", I8N.text("SETTINGS_SEC_APPEARANCE"),
+                themeRow, langRow, settingsLeftAligned(lblNote)
+            )
+        )
 
-        val lblLang = JLabel(I8N.text("MSG_LANG1"))
-        panelLang.add(lblLang)
-        panelLang.add(Box.createHorizontalGlue())
-        panelLang.add(cmbLang)
+        add(Box.createVerticalGlue())
+    }
 
-        val panelTheme = Box.createHorizontalBox().apply {
-            padding(this, 10, topPadding = true, bottomPadding = true)
+    /** A titled folder input: a caption above a text field with a trailing browse button. */
+    private fun folderField(caption: String, field: JTextField, button: JButton): JComponent {
+        val box = Box.createVerticalBox().apply { alignmentX = LEFT_ALIGNMENT }
+        box.add(settingsLeftAligned(JLabel(caption).apply { foreground = settingsMutedColor() }))
+        box.add(Box.createRigidArea(Dimension(0, 5)))
+        val inputRow = Box.createHorizontalBox().apply {
+            alignmentX = LEFT_ALIGNMENT
+            add(field)
+            add(Box.createRigidArea(Dimension(8, 0)))
+            add(button)
         }
-        panelTheme.setAlignmentX(LEFT_ALIGNMENT)
-        add(panelTheme)
+        box.add(inputRow)
+        return box
+    }
 
-        val lblTheme = JLabel(I8N.text("MSG_THEME"))
-        panelTheme.add(lblTheme)
-        panelTheme.add(Box.createHorizontalGlue())
-        panelTheme.add(cmbTheme)
-
-        add(JLabel(I8N.text("MSG_LANG2")).apply {
-            setAlignmentX(LEFT_ALIGNMENT)
-        })
-
-        add(Box.createHorizontalGlue())
+    private fun createBrowseButton(field: JTextField): JButton {
+        return JButton(
+            I8N.text("SETTINGS_FOLDER_CHANGE"),
+            createSVGIcon("folder-6-line.svg", 16, settingsAccentColor())
+        ).apply {
+            iconTextGap = 6
+            fixHeight(this)
+            addActionListener { chooseFolder(field) }
+        }
     }
 
     fun load() {
@@ -214,7 +189,7 @@ class GeneralPanel : JPanel() {
     }
 
     override fun getInsets(): Insets {
-        return Insets(10, 10, 10, 10)
+        return Insets(10, 12, 12, 12)
     }
 
     private fun chooseFolder(textField: JTextField) {
@@ -222,6 +197,4 @@ class GeneralPanel : JPanel() {
             textField.text = it.absolutePath
         }
     }
-
-    private data class LanguageEntry(val code: String, val name: String)
 }

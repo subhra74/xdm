@@ -1,16 +1,20 @@
 package xdm.app.ui.screens.settings
 
-import xdm.app.AppConfig
 import xdm.app.AppContext
 import xdm.app.I8N
 import xdm.app.utils.createSVGIcon
 import xdm.app.utils.fixHeight
-import xdm.app.utils.padding
 import java.awt.Color
 import java.awt.Cursor
 import java.awt.Dimension
+import java.awt.Font
+import java.awt.Graphics
+import java.awt.Graphics2D
 import java.awt.GridLayout
 import java.awt.Insets
+import java.awt.RenderingHints
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.JButton
@@ -21,8 +25,11 @@ import javax.swing.JPanel
 import javax.swing.JScrollPane
 import javax.swing.JTextArea
 import javax.swing.SwingConstants
+import javax.swing.SwingUtilities
+import javax.swing.UIManager
+import javax.swing.border.EmptyBorder
 
-class BrowserMonitorPanel : JPanel() {
+class BrowserMonitorPanel : SettingsPanel() {
     private val txtFileExt = JTextArea().apply {
         rows = 3
         wrapStyleWord = true
@@ -34,10 +41,10 @@ class BrowserMonitorPanel : JPanel() {
         lineWrap = true
     }
     private val btnExtDef = JButton(I8N.text("DESC_DEF")).apply {
-        txtFileExt.text = AppContext.config.defFileExtensions.joinToString(", ")
+        addActionListener { txtFileExt.text = AppContext.config.defFileExtensions.joinToString(", ") }
     }
     private val btnVidExtDef = JButton(I8N.text("DESC_DEF")).apply {
-        txtVidExt.text = AppContext.config.defVideoExtensions.joinToString(", ")
+        addActionListener { txtVidExt.text = AppContext.config.defVideoExtensions.joinToString(", ") }
     }
     private val cmbMinVidSize = JComboBox<Long>().apply {
         fixHeight(this)
@@ -55,142 +62,72 @@ class BrowserMonitorPanel : JPanel() {
         lineWrap = true
     }
     private val btnHostDef = JButton(I8N.text("DESC_DEF")).apply {
-        txtBlockedHosts.text = AppContext.config.defBlockedHosts.joinToString(", ")
+        addActionListener { txtBlockedHosts.text = AppContext.config.defBlockedHosts.joinToString(", ") }
     }
-    private val chkGetServerTime = JCheckBox(I8N.text("LBL_GET_TIMESTAMP")).apply {
-        padding(this, 10)
-        setAlignmentX(LEFT_ALIGNMENT)
-    }
+    private val chkGetServerTime = JCheckBox(I8N.text("LBL_GET_TIMESTAMP"))
 
     init {
         setLayout(BoxLayout(this, BoxLayout.Y_AXIS))
 
-        val lblBrowerMon = JLabel(I8N.text("BROWSER_MONITORING")).apply {
-            setAlignmentX(LEFT_ALIGNMENT)
-            padding(this, 10, topPadding = true)
-            font = font.deriveFont(16.0f)
+        add(settingsTitle(I8N.text("BROWSER_MONITORING")))
+
+        // Supported browsers
+        val browsers = JPanel(GridLayout(1, 4, 12, 0)).apply {
+            isOpaque = false
+            alignmentX = LEFT_ALIGNMENT
+            add(BrowserTile("chrome-fill.svg", "Chrome", Color(0x4285F4)))
+            add(BrowserTile("firefox-fill.svg", "Firefox", Color(0xFF7139)))
+            add(BrowserTile("edge-new-fill.svg", "Edge", Color(0x24B0C4)))
+            add(BrowserTile("global-fill.svg", "Other", settingsAccentColor()))
         }
-        add(lblBrowerMon)
+        add(settingsCard("global-fill.svg", I8N.text("SETTINGS_SEC_BROWSERS"), browsers))
+        add(Box.createRigidArea(Dimension(0, 12)))
 
-        val p1 = JPanel().apply {
-            padding(this, 5, topPadding = true)
-            setAlignmentX(LEFT_ALIGNMENT)
+        // File types
+        val minSizeRow = Box.createHorizontalBox().apply {
+            alignmentX = LEFT_ALIGNMENT
+            add(JLabel(I8N.text("LBL_MIN_VIDEO_SIZE")))
+            add(Box.createHorizontalGlue())
+            add(cmbMinVidSize)
+            add(Box.createRigidArea(Dimension(6, 0)))
+            add(JLabel("MB"))
         }
-        add(p1)
-        p1.setLayout(GridLayout(1, 4, 0, 20))
+        add(
+            settingsCard(
+                "file-list-2-fill.svg", I8N.text("SETTINGS_SEC_FILETYPES"),
+                caption(I8N.text("DESC_FILETYPES")),
+                textAreaScroll(txtFileExt),
+                settingsLeftAligned(btnExtDef),
+                caption(I8N.text("DESC_VIDEOTYPES")),
+                textAreaScroll(txtVidExt),
+                settingsLeftAligned(btnVidExtDef),
+                minSizeRow,
+            )
+        )
+        add(Box.createRigidArea(Dimension(0, 12)))
 
-        val lblChrome = JLabel(createSVGIcon("chrome-fill.svg", 64, Color.GRAY)).apply {
-            text = "Chrome"
-            horizontalAlignment = SwingConstants.CENTER
-            horizontalTextPosition = SwingConstants.CENTER
-            verticalTextPosition = SwingConstants.BOTTOM
-            cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-        }
-        p1.add(lblChrome)
+        // Site exceptions
+        add(
+            settingsCard(
+                "file-shield-line.svg", I8N.text("SETTINGS_SEC_EXCEPTIONS"),
+                caption(I8N.text("DESC_SITEEXCEPTIONS")),
+                textAreaScroll(txtBlockedHosts),
+                settingsLeftAligned(btnHostDef),
+                settingsLeftAligned(chkGetServerTime),
+            )
+        )
 
-        val lblFirefox = JLabel(createSVGIcon("firefox-fill.svg", 64, Color.GRAY)).apply {
-            text = "Firefox"
-            horizontalAlignment = SwingConstants.CENTER
-            horizontalTextPosition = SwingConstants.CENTER
-            verticalTextPosition = SwingConstants.BOTTOM
-            cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-        }
-        p1.add(lblFirefox)
-
-        val lblEdge = JLabel(createSVGIcon("edge-new-fill.svg", 64, Color.GRAY)).apply {
-            text = "Edge"
-            horizontalAlignment = SwingConstants.CENTER
-            horizontalTextPosition = SwingConstants.CENTER
-            verticalTextPosition = SwingConstants.BOTTOM
-            cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-        }
-        p1.add(lblEdge)
-
-        val lblOther = JLabel(createSVGIcon("global-fill.svg", 64, Color.GRAY)).apply {
-            text = "Other"
-            horizontalAlignment = SwingConstants.CENTER
-            horizontalTextPosition = SwingConstants.CENTER
-            verticalTextPosition = SwingConstants.BOTTOM
-            cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-        }
-        p1.add(lblOther)
-
-        val lblFileExt = JLabel(I8N.text("DESC_FILETYPES")).apply {
-            padding(this, 10, topPadding = true)
-            setAlignmentX(LEFT_ALIGNMENT)
-        }
-        add(lblFileExt)
-
-        add(JScrollPane(txtFileExt).apply {
-            setAlignmentX(LEFT_ALIGNMENT)
-        })
-
-        val p2 = JPanel().apply {
-            padding(this, 10, topPadding = true)
-            setAlignmentX(LEFT_ALIGNMENT)
-        }
-        add(p2)
-        p2.setLayout(BoxLayout(p2, BoxLayout.X_AXIS))
-
-        p2.add(btnExtDef)
-
-        val lblVidExt = JLabel(I8N.text("DESC_VIDEOTYPES")).apply {
-            padding(this, 10)
-            setAlignmentX(LEFT_ALIGNMENT)
-        }
-        add(lblVidExt)
-
-        add(JScrollPane(txtVidExt).apply {
-            setAlignmentX(LEFT_ALIGNMENT)
-        })
-
-        val p3 = JPanel().apply {
-            padding(this, 10, topPadding = true)
-            setAlignmentX(LEFT_ALIGNMENT)
-        }
-        add(p3)
-        p3.setLayout(BoxLayout(p3, BoxLayout.X_AXIS))
-
-        p3.add(btnVidExtDef)
-
-        val p4 = JPanel().apply {
-            padding(this, 10)
-            setAlignmentX(LEFT_ALIGNMENT)
-        }
-        add(p4)
-        p4.setLayout(BoxLayout(p4, BoxLayout.X_AXIS))
-
-        val lblMinVidSize = JLabel(I8N.text("LBL_MIN_VIDEO_SIZE"))
-        p4.add(lblMinVidSize)
-        p4.add(Box.createHorizontalGlue())
-        p4.add(cmbMinVidSize)
-
-        p4.add(Box.createRigidArea(Dimension(5, 5)))
-        p4.add(JLabel("MB"))
-
-        val lblBlockedHosts = JLabel(I8N.text("DESC_SITEEXCEPTIONS")).apply {
-            padding(this, 10)
-            setAlignmentX(LEFT_ALIGNMENT)
-        }
-        add(lblBlockedHosts)
-
-        add(JScrollPane(txtBlockedHosts).apply {
-            setAlignmentX(LEFT_ALIGNMENT)
-        })
-
-        val p5 = JPanel().apply {
-            padding(this, 10, topPadding = true)
-            setAlignmentX(LEFT_ALIGNMENT)
-        }
-        add(p5)
-        p5.setLayout(BoxLayout(p5, BoxLayout.X_AXIS))
-
-        p5.add(btnHostDef)
-
-        add(chkGetServerTime)
-
-//        load()
+        add(Box.createVerticalGlue())
     }
+
+    private fun caption(text: String): JLabel = JLabel(text).apply { foreground = settingsMutedColor() }
+
+    private fun textAreaScroll(area: JTextArea): JScrollPane =
+        JScrollPane(area).apply {
+            alignmentX = LEFT_ALIGNMENT
+            preferredSize = Dimension(preferredSize.width, 74)
+            maximumSize = Dimension(Int.MAX_VALUE, 74)
+        }
 
     fun load() {
         val config = AppContext.config
@@ -211,6 +148,68 @@ class BrowserMonitorPanel : JPanel() {
     }
 
     override fun getInsets(): Insets {
-        return Insets(10, 10, 10, 10)
+        return Insets(10, 12, 12, 12)
+    }
+
+    /** A rounded browser "tile": brand-tinted icon over a name, with a hover highlight. */
+    private class BrowserTile(iconName: String, label: String, private val accent: Color) : JPanel() {
+        private var hovered = false
+
+        init {
+            isOpaque = false
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            border = EmptyBorder(16, 8, 14, 8)
+            cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+
+            add(JLabel(createSVGIcon(iconName, 44, accent)).apply {
+                alignmentX = CENTER_ALIGNMENT
+                horizontalAlignment = SwingConstants.CENTER
+            })
+            add(JLabel(label).apply {
+                alignmentX = CENTER_ALIGNMENT
+                font = font.deriveFont(Font.BOLD)
+                border = EmptyBorder(10, 0, 0, 0)
+            })
+
+            val hoverListener = object : MouseAdapter() {
+                override fun mouseEntered(e: MouseEvent) {
+                    hovered = true
+                    repaint()
+                }
+
+                override fun mouseExited(e: MouseEvent) {
+                    // Ignore transitions onto our own child components.
+                    val pt = SwingUtilities.convertPoint(e.component, e.point, this@BrowserTile)
+                    if (!contains(pt)) {
+                        hovered = false
+                        repaint()
+                    }
+                }
+            }
+            addMouseListener(hoverListener)
+            components.forEach { it.addMouseListener(hoverListener) }
+        }
+
+        override fun paintComponent(g: Graphics) {
+            val base = UIManager.getColor("Panel.background") ?: Color(0x3C, 0x3F, 0x41)
+            val luminance = (base.red * 299 + base.green * 587 + base.blue * 114) / 1000
+            val fill = if (luminance < 128) shift(base, if (hovered) 34 else 26) else shift(base, if (hovered) -16 else -6)
+
+            val g2 = g.create() as Graphics2D
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+            g2.color = fill
+            g2.fillRoundRect(0, 0, width - 1, height - 1, 16, 16)
+            if (hovered) {
+                g2.color = Color(accent.red, accent.green, accent.blue, 170)
+                g2.drawRoundRect(0, 0, width - 1, height - 1, 16, 16)
+            }
+            g2.dispose()
+            super.paintComponent(g)
+        }
+
+        private fun shift(c: Color, amount: Int): Color {
+            fun clamp(v: Int) = v.coerceIn(0, 255)
+            return Color(clamp(c.red + amount), clamp(c.green + amount), clamp(c.blue + amount))
+        }
     }
 }
