@@ -19,11 +19,8 @@ import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 
 private fun writeChunks(chunkMap: Map<Long, Chunk>, w: DataOutputStream) {
-    // Race chunks are ephemeral redundant connections; never persist them. On resume the
-    // stall monitor will re-spawn one if the tail is still slow.
-    val persistable = chunkMap.filterValues { !it.isRace }
-    w.writeInt(persistable.size)
-    for ((k, v) in persistable) {
+    w.writeInt(chunkMap.size)
+    for ((k, v) in chunkMap) {
         w.writeLong(k)
         writeChunk(v, w)
     }

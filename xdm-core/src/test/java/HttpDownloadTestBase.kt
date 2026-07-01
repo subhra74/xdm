@@ -49,28 +49,17 @@ abstract class HttpDownloadTestBase {
         work = Files.createTempDirectory("xdm-http-test").toFile()
         tmpDir = File(work, "tmp").apply { mkdirs() }
         outDir = File(work, "out").apply { mkdirs() }
-        // Dial the stall/race timings way down so tests exercise the logic in ~1s, not ~12s.
-        HttpDownloaderTask.RACE_MONITOR_INTERVAL_MS = 150L
-        HttpDownloaderTask.RACE_TRIGGER_MS = 400L
-        HttpDownloaderTask.RACE_SLOW_SPEED_BYTES = 8 * 1024
-        HttpDownloaderTask.MIN_RACE_REMAINING = 4L * 1024
     }
 
     @After
     fun tearDown() {
-        // Stop every task first so no monitor/retriever thread survives the test (a timed-out
-        // download would otherwise leave a monitor spinning and spawning connections against the
-        // now-stopped server).
+        // Stop every task first so no retriever thread survives the test (a timed-out download
+        // would otherwise leave threads spinning against the now-stopped server).
         tasks.forEach { runCatching { it.stop() } }
-        Thread.sleep(200) // let stopFlag propagate to the monitor/retriever loops
+        Thread.sleep(200) // let stopFlag propagate to the retriever loops
         clients.forEach { runCatching { it.close() } }
         server.stop()
         rawServers.forEach { runCatching { it.stop() } }
-        // Restore production defaults for anything else running in the same JVM.
-        HttpDownloaderTask.RACE_MONITOR_INTERVAL_MS = 3000L
-        HttpDownloaderTask.RACE_TRIGGER_MS = 9000L
-        HttpDownloaderTask.RACE_SLOW_SPEED_BYTES = 24 * 1024
-        HttpDownloaderTask.MIN_RACE_REMAINING = 8L * 1024
         work.deleteRecursively()
     }
 

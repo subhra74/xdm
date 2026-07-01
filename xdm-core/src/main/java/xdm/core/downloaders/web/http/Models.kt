@@ -46,17 +46,6 @@ data class Chunk(
     var status: AtomicReference<ChunkStatus>,
     var fileHandle: AtomicReference<RandomAccessFile?>,
     val lastTakeOver: AtomicLong,
-    // Redundant "race" connection support: when the last remaining chunk stalls, a second
-    // connection is spawned over the same byte range. `isRace` marks such a connection (never
-    // infer this from `raceOf`'s sign - chunk ids are signed and often negative). `raceOf` is
-    // the id of the primary chunk this race is covering; `racedBy` is the id of the race chunk
-    // spawned for this (primary) chunk. These are transient and never persisted. `response`
-    // holds the in-flight response so a losing/paused connection can be force-closed to unblock
-    // a stalled read.
-    var isRace: Boolean = false,
-    var raceOf: Long = -1L,
-    val racedBy: AtomicLong = AtomicLong(-1L),
-    val response: AtomicReference<HttpResponse?> = AtomicReference(null),
 )
 
 data class HttpTaskContext(

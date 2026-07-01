@@ -8,8 +8,7 @@ import xdm.core.downloaders.DownloadError
 /**
  * End-to-end tests for the segmented HTTP downloader ([xdm.core.downloaders.web.http.HttpDownloaderTask])
  * driven against an in-process [MockHttpServer]: single/multi-segment downloads, odd sizes,
- * no-resume streaming, and failure/retry handling. The race/stall behaviour lives in
- * [TestHttpSegmentedDownloadRace] (separate class -> separate JVM fork).
+ * no-resume streaming, and failure/retry handling.
  */
 class TestHttpSegmentedDownload : HttpDownloadTestBase() {
 
