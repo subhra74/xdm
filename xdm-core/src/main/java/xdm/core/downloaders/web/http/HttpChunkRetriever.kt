@@ -42,23 +42,30 @@ class HttpChunkRetriever(
                 is ConnectResult.Connected -> {
                     if (isCancelled()) return
                     connectResult.response.use { res ->
-                        val len = res.contentLength ?: -1L
-                        if (len > 0) maxByteRange = data.offset + len
-                        Logger.info("XDM", "Chunk connected $id")
-                        controller.onChunkConnected(
-                            id,
-                            if (!context.init.get()) ChunkConfirmedData(
-                                resumeSupport = res.statusCode == 206,
-                                contentLength = res.contentLength,
-                                finalUrl = res.finalUrl,
-                                contentDisposition = res.contentDisposition,
-                                contentType = res.contentType,
-                                lastModified = res.lastModified,
-                                isRedirect = res.isRedirected
-                            ) else null
-                        )
-                        if (isCancelled()) return
-                        copyDataOrRetry(res, maxByteRange)
+                        // Expose the live response so the controller can force-close this
+                        // connection (losing a race, or on pause) to unblock a stalled read.
+                        context.chunks[id]?.response?.set(res)
+                        try {
+                            val len = res.contentLength ?: -1L
+                            if (len > 0) maxByteRange = data.offset + len
+                            Logger.info("XDM", "Chunk connected $id")
+                            controller.onChunkConnected(
+                                id,
+                                if (!context.init.get()) ChunkConfirmedData(
+                                    resumeSupport = res.statusCode == 206,
+                                    contentLength = res.contentLength,
+                                    finalUrl = res.finalUrl,
+                                    contentDisposition = res.contentDisposition,
+                                    contentType = res.contentType,
+                                    lastModified = res.lastModified,
+                                    isRedirect = res.isRedirected
+                                ) else null
+                            )
+                            if (isCancelled()) return
+                            copyDataOrRetry(res, maxByteRange)
+                        } finally {
+                            context.chunks[id]?.response?.compareAndSet(res, null)
+                        }
                     }
                 }
 

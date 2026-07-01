@@ -139,6 +139,17 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- Each test class runs in a fresh JVM. The HTTP downloader tests spin up
+                         many real networked downloads (some deliberately stalled); a fresh fork
+                         per class stops leaked threads/sockets from bleeding across classes. -->
+                    <reuseForks>false</reuseForks>
+                    <forkCount>1</forkCount>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <executions>
                     <execution>
