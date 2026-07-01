@@ -1,8 +1,8 @@
 package xdm.app.ui.screens
 
-import com.formdev.flatlaf.util.SystemFileChooser
 import xdm.app.AppContext
 import xdm.app.I8N.text
+import xdm.app.utils.chooseFile
 import xdm.app.utils.createSVGIcon
 import xdm.app.utils.sameWidth
 import xdm.core.downloaders.HttpDownloadTaskInfo
@@ -135,12 +135,13 @@ class BatchDownloadDialog(owner: Window?, urls: List<String>) : JDialog(owner) {
 
         val btnBrowse = JButton(createSVGIcon("folder-fill.svg", 16, Color.GRAY))
         btnBrowse.addActionListener {
-            val fc = SystemFileChooser().apply {
-                fileSelectionMode = SystemFileChooser.DIRECTORIES_ONLY
-                currentDirectory = File(AppContext.defaultDownloadFolder)
-            }
-            if (fc.showOpenDialog(this) == SystemFileChooser.APPROVE_OPTION) {
-                val path = fc.selectedFile.absolutePath
+            val selected = chooseFile(
+                this,
+                directoriesOnly = true,
+                currentDir = File(AppContext.defaultDownloadFolder)
+            )
+            if (selected != null) {
+                val path = selected.absolutePath
                 val idx = modelSaveIn.getIndexOf(path).takeIf { it >= 0 } ?: run {
                     modelSaveIn.addElement(path)
                     modelSaveIn.size - 1

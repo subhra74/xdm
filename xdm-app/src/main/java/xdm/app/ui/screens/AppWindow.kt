@@ -11,6 +11,8 @@ import xdm.app.ui.components.AppMenuHandler
 import xdm.app.ui.components.AppToolBar
 import xdm.app.ui.components.FilterListPanel
 import xdm.app.ui.components.MainListView
+import xdm.app.ui.components.UpdatePanel
+import xdm.app.update.UpdateChecker
 import xdm.app.utils.applyMacOSWindowCustomizations
 import xdm.app.utils.detectOS
 import xdm.core.util.Logger
@@ -25,6 +27,7 @@ import javax.swing.event.PopupMenuListener
 
 class AppWindow(image: Image) : JFrame(), ActionListener {
     private val listView = MainListView()
+    private val updatePanel = UpdatePanel()
 
     init {
         title = XDM_WINDOW_TITLE
@@ -38,8 +41,23 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
 
         setWindowSizeAndPosition()
         initWindow()
+        checkForUpdates()
 
         //ProgressWindow().isVisible = true
+    }
+
+    /**
+     * Kicks off a background update check at startup; if a newer release is
+     * found, reveals the update banner at the bottom of the window (on the EDT).
+     */
+    private fun checkForUpdates() {
+        UpdateChecker.checkForUpdate { info ->
+            if (info != null) {
+                SwingUtilities.invokeLater {
+                    updatePanel.showUpdate(info.latestVersion, info.downloadUrl)
+                }
+            }
+        }
     }
 
     private fun initWindow() {
@@ -55,6 +73,9 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
             add(toolbar.component, BorderLayout.NORTH)
             add(listView.component)
             border = EmptyBorder(7, 0, 0, 0)
+            if (AppContext.config.theme == "light") {
+                background = UIManager.getColor("Table.background")
+            }
         }
 
         // Keep the black top border in the dark theme (as before); use FlatLaf's
@@ -69,8 +90,12 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
             dividerLocation = 180
             leftComponent = filterPanel.component
             rightComponent = panel
+            if (AppContext.config.theme == "light") {
+                background = UIManager.getColor("Table.background")
+            }
         }
-        add(splitPane)
+        add(splitPane, BorderLayout.CENTER)
+        add(updatePanel, BorderLayout.SOUTH)
 
         ToolTipManager.sharedInstance().initialDelay = 500
     }

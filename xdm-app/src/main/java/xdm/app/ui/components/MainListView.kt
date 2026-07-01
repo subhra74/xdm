@@ -30,7 +30,11 @@ class MainListView {
     private val table: JTable = JTable(model)
     private val jsp: JScrollPane
     private val cardLayout = CardLayout()
-    private val cardPanel = JPanel(cardLayout)
+    private val cardPanel = JPanel(cardLayout).apply {
+        if (AppContext.config.theme == "light") {
+            background = UIManager.getColor("Table.background")
+        }
+    }
     private var editingRow = -1
     private val contextMenu: JPopupMenu
 
@@ -72,8 +76,9 @@ class MainListView {
         table.setDefaultRenderer(Any::class.java, renderer)
         table.setDefaultEditor(Any::class.java, editor)
         table.fillsViewportHeight = true
-        table.background = UIManager.getColor("Panel.background")
-
+        if (AppContext.config.theme == "dark") {
+            table.background = UIManager.getColor("Panel.background")
+        }
 
         val keys =
             mutableListOf(RowSorter.SortKey(0, SortOrder.DESCENDING))

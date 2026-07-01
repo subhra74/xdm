@@ -1,93 +1,204 @@
-# xdm
+# XDM — Xtreme Download Manager
 
+A desktop download manager. Maven multi-module Kotlin/JVM project with a Swing UI
+(FlatLaf), driven by a companion browser extension that captures download/media requests
+and forwards them to the running app over a local HTTP server.
 
+## Modules
 
-## Getting started
+- **xdm-core** — download engine (HTTP/HLS/DASH), HTTP client, manifest parsers, pure-Kotlin transmuxer. No UI dependencies.
+- **xdm-app** — Swing desktop application + browser-integration HTTP server. Main class: `xdm.app.AppMain`.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+> `hls-muxer` is a superseded standalone experiment and is **not** part of the reactor build.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+## Build & Run
 
-## Add your files
+Plain Maven (system `mvn`, no wrapper). Reactor root is `pom.xml`.
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
-
+```bash
+mvn -q clean package              # build all modules → xdm-app/target/xdm-app.jar (fat jar)
+mvn -q -pl xdm-app -am package    # build xdm-app and its dependencies only
+mvn -q test                       # run all tests
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/subhradasgupta/xdm.git
-git branch -M main
-git push -uf origin main
+
+Run:
+
+```bash
+java -jar xdm-app/target/xdm-app.jar          # or run AppMain from the IDE
+java -jar xdm-app/target/xdm-app.jar --no-gc  # disable the periodic System.gc() thread
 ```
 
-## Integrate with your tools
+## Packaging a native installer (jpackage)
 
-- [ ] [Set up project integrations](https://gitlab.com/subhradasgupta/xdm/-/settings/integrations)
+The app ships as a self-contained native bundle built with `jlink` + `jpackage` (JDK 14+,
+tested on JDK 25). First build the fat jar with `mvn -q clean package`.
 
-## Collaborate with your team
+### 1. Determine the required JDK modules
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+The minimal module set was derived with `jdeps` against the fat jar and verified at runtime:
 
-## Test and Deploy
+```bash
+jdeps --multi-release 25 --ignore-missing-deps \
+      --print-module-deps xdm-app/target/xdm-app.jar
+```
 
-Use the built-in continuous integration in GitLab.
+The app needs only these modules (everything else in the JDK is dropped):
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+| Module           | Why it's needed                                              |
+|------------------|-------------------------------------------------------------|
+| `java.base`      | Core runtime, networking, I/O (OkHttp uses raw sockets).    |
+| `java.desktop`   | Swing/AWT UI, FlatLaf, system tray.                         |
+| `java.prefs`     | Java Preferences (FlatLaf / config).                        |
+| `java.xml`       | DASH `.mpd` manifest parsing (`DocumentBuilderFactory`).    |
+| `java.logging`   | Soft dependency of OkHttp/okio.                             |
+| `jdk.crypto.ec`  | Elliptic-curve TLS — required for HTTPS handshakes.\*       |
+| `jdk.charsets`   | Non-Latin charsets for international URLs/filenames.        |
 
-***
+\* `jdk.crypto.ec` is **not** reported by `jdeps` (it's loaded as a security provider via
+service binding), but without it HTTPS downloads fail with handshake errors. Keep it.
 
-# Editing this README
+### 2. Build a trimmed runtime image with jlink
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+```bash
+jlink \
+  --add-modules java.base,java.desktop,java.prefs,java.xml,java.logging,jdk.crypto.ec,jdk.charsets \
+  --strip-debug --no-header-files --no-man-pages --compress=zip-6 \
+  --output xdm-app/target/runtime
+```
 
-## Suggestions for a good README
+This produces a ~53 MB self-contained runtime.
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+### 3. Package with jpackage
 
-## Name
-Choose a self-explaining name for your project.
+`jpackage` is **not** a cross-compiler — you must run both `jlink` (step 2) and `jpackage`
+**on the target OS**. The runtime image and native launchers it produces are
+platform-specific. The portable core of the command below is the same everywhere; only the
+`--type` and the platform-specific shortcut/icon flags differ.
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+Stage the fat jar in a clean input directory (so jpackage doesn't bundle the rest of
+`target/`) and define the shared GC options once:
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+```bash
+rm -rf xdm-app/target/jpackage-in && mkdir -p xdm-app/target/jpackage-in
+cp xdm-app/target/xdm-app.jar xdm-app/target/jpackage-in/
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+# Tuned GC/startup options baked into the app launcher (see Notes below).
+JAVA_OPTS="-XX:+UseZGC -XX:MinMetaspaceFreeRatio=1 -XX:MaxMetaspaceFreeRatio=2 -XX:ZCollectionInterval=30 -XX:ZUncommitDelay=10 -XX:+ClassUnloading -XX:+ClassUnloadingWithConcurrentMark -XX:-AlwaysPreTouch -XX:-ZProactive -XX:-DisableExplicitGC -XX:TieredStopAtLevel=1 -XX:CICompilerCount=1 -Xms4m"
+```
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+**macOS** (`.dmg`, the default on macOS — works out of the box):
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+```bash
+jpackage \
+  --name XDM \
+  --app-version 0.0.1 \
+  --vendor "XDM" \
+  --input xdm-app/target/jpackage-in \
+  --main-jar xdm-app.jar \
+  --main-class xdm.app.AppMain \
+  --runtime-image xdm-app/target/runtime \
+  --dest xdm-app/target/dist \
+  --icon packaging/xdm.icns \
+  --java-options "$JAVA_OPTS"
+```
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+**Windows** (`.exe` via [WiX Toolset](https://wixtoolset.org/) v3.x on `PATH`; use `--type msi` for MSI):
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+```bash
+jpackage \
+  --type exe \
+  --name XDM \
+  --app-version 0.0.1 \
+  --vendor "XDM" \
+  --input xdm-app/target/jpackage-in \
+  --main-jar xdm-app.jar \
+  --main-class xdm.app.AppMain \
+  --runtime-image xdm-app/target/runtime \
+  --dest xdm-app/target/dist \
+  --icon packaging/xdm.ico \
+  --win-menu --win-shortcut --win-dir-chooser \
+  --java-options "$JAVA_OPTS"
+```
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+**Linux — Debian/Ubuntu (`.deb`) or Fedora/RHEL (`.rpm`):** swap `--type deb` for
+`--type rpm`. `.deb` needs `fakeroot` + `dpkg`; `.rpm` needs `rpm-build`.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+```bash
+jpackage \
+  --type deb \
+  --name xdm \
+  --app-version 0.0.1 \
+  --vendor "XDM" \
+  --input xdm-app/target/jpackage-in \
+  --main-jar xdm-app.jar \
+  --main-class xdm.app.AppMain \
+  --runtime-image xdm-app/target/runtime \
+  --dest xdm-app/target/dist \
+  --icon packaging/xdm.png \
+  --linux-shortcut --linux-menu-group "Network" \
+  --linux-package-name xdm \
+  --java-options "$JAVA_OPTS"
+```
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+**Linux — Arch Linux:** jpackage has no native Arch (`.pkg.tar.zst`) packager, so build a
+self-contained **app-image** and wrap it in a `PKGBUILD`. First produce the app-image:
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+```bash
+jpackage \
+  --type app-image \
+  --name xdm \
+  --app-version 0.0.1 \
+  --input xdm-app/target/jpackage-in \
+  --main-jar xdm-app.jar \
+  --main-class xdm.app.AppMain \
+  --runtime-image xdm-app/target/runtime \
+  --dest xdm-app/target/dist \
+  --java-options "$JAVA_OPTS"
+# → xdm-app/target/dist/xdm/  (contains bin/xdm launcher + lib/ + runtime)
+```
 
-## License
-For open source projects, say how it is licensed.
+Then a minimal `PKGBUILD` that installs it under `/opt` and exposes a launcher + desktop entry:
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+```bash
+# PKGBUILD
+pkgname=xdm
+pkgver=0.0.1
+pkgrel=1
+pkgdesc="Xtreme Download Manager"
+arch=('x86_64')
+license=('custom')
+options=(!strip)            # don't strip the bundled JVM
+package() {
+  # assumes the jpackage app-image dir 'xdm/' sits next to this PKGBUILD
+  install -dm755 "$pkgdir/opt"
+  cp -r "$srcdir/../xdm" "$pkgdir/opt/xdm"
+  install -dm755 "$pkgdir/usr/bin"
+  ln -s /opt/xdm/bin/xdm "$pkgdir/usr/bin/xdm"
+  install -Dm644 "$srcdir/../packaging/xdm.png" "$pkgdir/usr/share/pixmaps/xdm.png"
+  install -Dm644 /dev/stdin "$pkgdir/usr/share/applications/xdm.desktop" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=XDM
+Exec=/opt/xdm/bin/xdm
+Icon=xdm
+Categories=Network;
+EOF
+}
+```
+
+Build the package with `makepkg -f` (run from the directory holding the `PKGBUILD` and the
+`xdm/` app-image), then install with `sudo pacman -U xdm-0.0.1-1-x86_64.pkg.tar.zst`. For a
+shareable recipe, publish this as an AUR package that pulls the release jar in `prepare()`
+instead of bundling the prebuilt app-image.
+
+Notes:
+
+- `--app-version` must be numeric (no `-SNAPSHOT`).
+- `--icon` format is per-platform: `.icns` (macOS), `.ico` (Windows), `.png` (Linux). The
+  `packaging/` paths above are placeholders — point them at your actual icon files or drop
+  the flag to use the default icon.
+- The `$JAVA_OPTS` string is the tuned GC/startup configuration baked into the app launcher:
+  ZGC with aggressive metaspace reclamation, concurrent class unloading, minimal JIT
+  tiering, and a tiny initial heap for fast startup and low idle footprint. Explicit GC is
+  kept enabled (`-XX:-DisableExplicitGC`) so the app's periodic `System.gc()` works; pass
+  `--no-gc` at runtime to suppress it.

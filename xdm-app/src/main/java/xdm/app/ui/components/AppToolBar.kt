@@ -1,6 +1,7 @@
 package xdm.app.ui.components
 
 import com.formdev.flatlaf.FlatClientProperties
+import xdm.app.AppContext
 import xdm.app.I8N.text
 import xdm.app.ui.screens.AboutDialog
 import xdm.app.ui.screens.SettingsWindow
@@ -20,6 +21,7 @@ import javax.swing.JPopupMenu
 import javax.swing.JTextField
 import javax.swing.JToolBar
 import javax.swing.SwingUtilities
+import javax.swing.UIManager
 import kotlin.system.exitProcess
 
 class AppToolBar(
@@ -94,6 +96,10 @@ class AppToolBar(
             add(btnDelete)
             add(btnDeleteGap)
             add(Box.createHorizontalGlue())
+
+            if (AppContext.config.theme == "light") {
+                background = UIManager.getColor("Table.background")
+            }
         }
 
         val txtSearch = JTextField(12).apply {

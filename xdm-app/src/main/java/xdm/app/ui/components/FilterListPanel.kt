@@ -2,6 +2,7 @@ package xdm.app.ui.components
 
 
 import com.formdev.flatlaf.FlatLaf
+import xdm.app.AppContext
 import xdm.app.I8N.text
 import xdm.app.utils.createSVGIcon
 import java.awt.Color
@@ -68,7 +69,11 @@ class FilterListPanel(
             add(catFilterList)
             border = EmptyBorder(10, 0, 10, 10)
             isOpaque = true
-            background = UIManager.getColor("Table.background")
+            background = if (AppContext.config.theme == "light") {
+                UIManager.getColor("Panel.background")
+            } else {
+                UIManager.getColor("Table.background")
+            }
         }
 
         // Keep the black divider in the dark theme (as before); use FlatLaf's

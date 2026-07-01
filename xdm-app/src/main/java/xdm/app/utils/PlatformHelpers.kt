@@ -1,8 +1,10 @@
 package xdm.app.utils
 
+import com.formdev.flatlaf.util.SystemFileChooser
 import xdm.app.AppContext.app
 import xdm.app.OS
 import xdm.core.util.Logger
+import javax.swing.JFileChooser
 import java.awt.*
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.StringSelection
@@ -137,6 +139,28 @@ fun detectOS(): OS {
             OS.Linux
         }
     } ?: return OS.Linux
+}
+
+/**
+ * Shows a native-feeling file/folder picker and returns the selected [File], or null if
+ * cancelled. Uses FlatLaf's [SystemFileChooser] (native dialog) on Windows and macOS, but
+ * falls back to Swing's [JFileChooser] on Linux because the native chooser can hang under
+ * Wayland.
+ */
+fun chooseFile(parent: Component?, directoriesOnly: Boolean, currentDir: File? = null): File? {
+    return if (detectOS() == OS.Linux) {
+        val fc = JFileChooser()
+        fc.fileSelectionMode =
+            if (directoriesOnly) JFileChooser.DIRECTORIES_ONLY else JFileChooser.FILES_ONLY
+        currentDir?.let { fc.currentDirectory = it }
+        if (fc.showOpenDialog(parent) == JFileChooser.APPROVE_OPTION) fc.selectedFile else null
+    } else {
+        val fc = SystemFileChooser()
+        fc.fileSelectionMode =
+            if (directoriesOnly) SystemFileChooser.DIRECTORIES_ONLY else SystemFileChooser.FILES_ONLY
+        currentDir?.let { fc.currentDirectory = it }
+        if (fc.showOpenDialog(parent) == SystemFileChooser.APPROVE_OPTION) fc.selectedFile else null
+    }
 }
 
 fun openFileExternal(file: String, folder: String?) {

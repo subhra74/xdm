@@ -2,6 +2,7 @@ package xdm.app.ui.screens.settings
 
 import xdm.app.AppContext
 import xdm.app.I8N
+import xdm.app.utils.chooseFile
 import xdm.app.utils.fixHeight
 import xdm.app.utils.padding
 import java.awt.Dimension
@@ -16,7 +17,6 @@ import javax.swing.DefaultComboBoxModel
 import javax.swing.JButton
 import javax.swing.JCheckBox
 import javax.swing.JComboBox
-import javax.swing.JFileChooser
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JSpinner
@@ -218,11 +218,8 @@ class GeneralPanel : JPanel() {
     }
 
     private fun chooseFolder(textField: JTextField) {
-        val fileChooser = JFileChooser()
-        fileChooser.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
-        val result = fileChooser.showOpenDialog(this)
-        if (result == JFileChooser.APPROVE_OPTION) {
-            textField.text = fileChooser.selectedFile.absolutePath
+        chooseFile(this, directoriesOnly = true)?.let {
+            textField.text = it.absolutePath
         }
     }
 

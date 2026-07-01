@@ -1,6 +1,7 @@
 package xdm.app.ui.components
 
 import com.formdev.flatlaf.FlatClientProperties
+import xdm.app.AppContext
 import xdm.app.DbRecord
 import xdm.app.I8N.text
 import xdm.app.RecordStatus
@@ -79,7 +80,11 @@ class MainListViewRow(
             }
         }
 
-        panel = JPanel(BorderLayout(8, 5))
+        panel = JPanel(BorderLayout(8, 5)).apply {
+            if (AppContext.config.theme == "light") {
+                background = UIManager.getColor("Table.background")
+            }
+        }
         val p4 = JPanel(FlowLayout())
         p4.isOpaque = false
         val p3 = JPanel(BorderLayout())
@@ -183,8 +188,16 @@ class MainListViewRow(
         content.add(lblTitle)
         content.add(lblInfo)
 
-        val p1 = JPanel(BorderLayout(0, 0))
-        panDetails = JPanel(BorderLayout())
+        val p1 = JPanel(BorderLayout(0, 0)).apply {
+            if (AppContext.config.theme == "light") {
+                background = UIManager.getColor("Table.background")
+            }
+        }
+        panDetails = JPanel(BorderLayout()).apply {
+            if (AppContext.config.theme == "light") {
+                background = UIManager.getColor("Table.background")
+            }
+        }
         panDetails.border = EmptyBorder(0, 0, 0, 10)
         prg = JProgressBar()
         prg.preferredSize = Dimension(60, 10)

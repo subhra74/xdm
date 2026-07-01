@@ -1,8 +1,8 @@
 package xdm.app.ui.screens
 
-import com.formdev.flatlaf.util.SystemFileChooser
 import xdm.app.AppContext
 import xdm.app.I8N.text
+import xdm.app.utils.chooseFile
 import xdm.app.utils.createSVGIcon
 import xdm.app.utils.getClipBoardText
 import xdm.app.utils.sameWidth
@@ -210,13 +210,14 @@ class NewDownloadWindow : JDialog() {
             })
 
         btnBrowse.addActionListener {
-            val fc = SystemFileChooser().apply {
-                fileSelectionMode = SystemFileChooser.DIRECTORIES_ONLY
-                currentDirectory = File(AppContext.defaultDownloadFolder)
-            }
-            if (fc.showOpenDialog(this@NewDownloadWindow) == SystemFileChooser.APPROVE_OPTION) {
+            val selected = chooseFile(
+                this@NewDownloadWindow,
+                directoriesOnly = true,
+                currentDir = File(AppContext.defaultDownloadFolder)
+            )
+            if (selected != null) {
                 val selectedIndex = modelSaveIn.size
-                modelSaveIn.addElement(fc.selectedFile.absolutePath)
+                modelSaveIn.addElement(selected.absolutePath)
                 cmbSaveIn.selectedIndex = selectedIndex
             }
         }

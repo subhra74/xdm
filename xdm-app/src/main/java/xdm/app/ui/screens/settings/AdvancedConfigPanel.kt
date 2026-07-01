@@ -3,12 +3,12 @@ package xdm.app.ui.screens.settings
 import xdm.app.AppContext
 import xdm.app.I8N
 import xdm.app.utils.AutoStart
+import xdm.app.utils.chooseFile
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import java.awt.Insets
 import javax.swing.JButton
 import javax.swing.JCheckBox
-import javax.swing.JFileChooser
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JTextField
@@ -123,10 +123,8 @@ class AdvancedConfigPanel : JPanel() {
     }
 
     private fun chooseScanner() {
-        val fileChooser = JFileChooser()
-        fileChooser.fileSelectionMode = JFileChooser.FILES_ONLY
-        if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-            txtVirusScan.text = fileChooser.selectedFile.absolutePath
+        chooseFile(this, directoriesOnly = false)?.let {
+            txtVirusScan.text = it.absolutePath
         }
     }
 

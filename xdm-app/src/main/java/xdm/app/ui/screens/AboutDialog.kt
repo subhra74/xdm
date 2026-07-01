@@ -2,6 +2,7 @@ package xdm.app.ui.screens
 
 import com.formdev.flatlaf.extras.FlatSVGIcon
 import xdm.app.AppContext
+import xdm.app.update.UpdateChecker
 import java.awt.*
 import javax.swing.*
 import javax.swing.border.EmptyBorder
@@ -30,7 +31,8 @@ class AboutDialog(owner: Window?) : JDialog(owner) {
             alignmentX = Component.CENTER_ALIGNMENT
         }
 
-        val appName = JLabel("Xtreme Download Manager 9.0.1").apply {
+        val version = UpdateChecker.loadConfig()?.currentVersion ?: ""
+        val appName = JLabel("Xtreme Download Manager $version".trim()).apply {
             font = font.deriveFont(Font.PLAIN, 16f)
             horizontalAlignment = SwingConstants.CENTER
         }
