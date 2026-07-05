@@ -21,7 +21,7 @@ fun parseAdaptationSet(
 ): List<Representation> {
     var baseUrl = baseUrl
     val representations: MutableList<Representation> = ArrayList()
-    val baseUrlValue = getFirstTagValue(xmlAdaptationSet, "BaseURL")
+    val baseUrlValue = getDirectChildTagValue(xmlAdaptationSet, "BaseURL")
     if (baseUrlValue != null) {
         baseUrl = resolveUri(baseUrl, baseUrlValue)
     }
@@ -90,16 +90,15 @@ private fun parseSegmentTimeLineSimple(
     mimeType: String,
     lang: String
 ): Representation? {
-    val timescaleStr = getAttr(xmlSegmentTemplate, "timescale") ?: "1"
-    val durationStr = getAttr(xmlSegmentTemplate, "duration") ?: "1"
-    val startNumberStr = getAttr(xmlSegmentTemplate, "startNumber") ?: "1"
-    val timescale = timescaleStr.toLong()
-    val duration = durationStr.toLong()
-    val startNumber = startNumberStr.toLong()
+    val timescale = getAttr(xmlSegmentTemplate, "timescale")?.toLongOrNull() ?: 1L
+    val duration = getAttr(xmlSegmentTemplate, "duration")?.toLongOrNull() ?: 1L
+    val startNumber = getAttr(xmlSegmentTemplate, "startNumber")?.toLongOrNull() ?: 1L
     val segmentCount = ceil((periodDuration.toDouble() / 1000) / (duration.toDouble() / timescale)).toInt()
     val representationId = attrs.getNamedItem("id")?.nodeValue ?: ""
     var number = startNumber
-    var time = startNumber
+    // $Time$ addressing counts presentation time from the presentation-time-offset (default 0),
+    // not from startNumber. Seeding time with startNumber would offset every $Time$ URL.
+    var time = 0L
     val initUrl = getAttr(xmlSegmentTemplate, "initialization")?.replace("$$", "\u0000")
     val mediaUrl = getAttr(xmlSegmentTemplate, MEDIA_KEY)?.replace("$$", "\u0000")
     val mediaMatches: MutableList<MatcherResult> = ArrayList()
@@ -120,7 +119,7 @@ private fun parseSegmentTimeLineSimple(
     for (i in 0..<segmentCount) {
         val segmentUrl = parseTemplate(
             mediaMatches, mediaUrl!!, number, time, bandwidthStr, representationId
-        ).replace("\u0000", "$ ")
+        ).replace("\u0000", "$")
         segments.add(resolveUri(baseUrl, segmentUrl))
         number++
         time += duration
@@ -142,6 +141,12 @@ private fun matchTemplateUrl(url: String?): List<MatcherResult> {
     return arr
 }
 
+/** The explicit start time (@t) of the S element after [index], or null if there is none. */
+private fun nextSegmentStartTime(xmlSs: NodeList, index: Int): Long? {
+    if (index + 1 >= xmlSs.length) return null
+    return getAttr(xmlSs.item(index + 1), "t")?.toLongOrNull()
+}
+
 private fun parseSegmentTimeLineExplicit(
     xmlSegmentTemplate: Node,
     xmlSs: NodeList,
@@ -157,8 +162,8 @@ private fun parseSegmentTimeLineExplicit(
     lang: String
 ): Representation? {
     val representationId = attrs.getNamedItem("id")?.nodeValue ?: ""
-    val startNumberStr = getAttr(xmlSegmentTemplate, "startNumber") ?: "1"
-    var number = startNumberStr.toLong()
+    val timescale = getAttr(xmlSegmentTemplate, "timescale")?.toLongOrNull() ?: 1L
+    var number = getAttr(xmlSegmentTemplate, "startNumber")?.toLongOrNull() ?: 1L
     var time = 0L
 
     val initUrl = getAttr(xmlSegmentTemplate, "initialization")?.replace("$$", "\u0000")
@@ -169,18 +174,21 @@ private fun parseSegmentTimeLineExplicit(
         val initMatches = matchTemplateUrl(initUrl)
         val initializationUrl = parseTemplate(
             initMatches, initUrl, number, time, bandwidthStr, representationId
-        ).replace("\u0000", "$ ")
+        ).replace("\u0000", "$")
         segments.add(resolveUri(baseUrl, initializationUrl))
     }
+    // End of the timeline, in @timescale ticks, used to bound an "r=-1" run.
+    val periodEndTicks = (periodDuration.toDouble() / 1000.0 * timescale).toLong()
     for (i in 0..<xmlSs.length) {
         val xmls = xmlSs.item(i)
-        val d = getAttr(xmls, "d")?.toLong() ?: 0L
-        val t = getAttr(xmls, "t")?.toLong() ?: -1L
-        val r = getAttr(xmls, "r")?.toLong() ?: -1L
-        if (t > 0) time = t
+        val d = getAttr(xmls, "d")?.toLongOrNull() ?: 0L
+        val t = getAttr(xmls, "t")?.toLongOrNull() ?: -1L
+        val r = getAttr(xmls, "r")?.toLongOrNull() ?: 0L
+        // t="0" is a valid start time; only a missing t (-1) is ignored.
+        if (t >= 0) time = t
         var segmentUrl = parseTemplate(
             mediaMatches, mediaUrl!!, number, time, bandwidthStr, representationId
-        ).replace("\u0000", "$ ")
+        ).replace("\u0000", "$")
         segments.add(resolveUri(baseUrl, segmentUrl))
         number++
         time += d
@@ -188,7 +196,18 @@ private fun parseSegmentTimeLineExplicit(
             for (k in 0..<r) {
                 segmentUrl = parseTemplate(
                     mediaMatches, mediaUrl, number, time, bandwidthStr, representationId
-                ).replace("\u0000", "$ ")
+                ).replace("\u0000", "$")
+                segments.add(resolveUri(baseUrl, segmentUrl))
+                number++
+                time += d
+            }
+        } else if (r < 0 && d > 0) {
+            // r="-1": repeat until the next S element's start time, or the end of the period.
+            val boundary = nextSegmentStartTime(xmlSs, i) ?: periodEndTicks
+            while (time < boundary) {
+                segmentUrl = parseTemplate(
+                    mediaMatches, mediaUrl, number, time, bandwidthStr, representationId
+                ).replace("\u0000", "$")
                 segments.add(resolveUri(baseUrl, segmentUrl))
                 number++
                 time += d
@@ -212,11 +231,11 @@ private fun parseRepresentation(
     val parent = xmlRepresentation.parentNode
     val pAttrs = parent.attributes
     val mimeType = getAttr(attrs, pAttrs, "mimeType")?.lowercase(Locale.getDefault()) ?: ""
-    val width = getAttr(attrs, pAttrs, "width")?.toInt() ?: -1 //.map { s: String -> s.toInt() }.orElse(-1)
-    val height = getAttr(attrs, pAttrs, "height")?.toInt() ?: -1//.map { s: String -> s.toInt() }.orElse(-1)
+    val width = getAttr(attrs, pAttrs, "width")?.toIntOrNull() ?: -1
+    val height = getAttr(attrs, pAttrs, "height")?.toIntOrNull() ?: -1
     val bw = getAttr(attrs, pAttrs, "bandwidth")
     val bandwidthStr = bw ?: ""
-    val bandwidth = bw?.toLong() ?: -1L//.map { s: String -> s.toLong() }.orElse(-1L)
+    val bandwidth = bw?.toLongOrNull() ?: -1L
     val codec = getAttr(attrs, pAttrs, "codecs")?.lowercase(Locale.getDefault()) ?: ""
     val lang = getAttr(attrs, pAttrs, "lang")?.lowercase(Locale.getDefault()) ?: ""
 

@@ -33,8 +33,6 @@ class PropertiesDialog(owner: Window?, ent: DbRecord) : JDialog(owner) {
             DownloadType.Http -> "HTTP"
             DownloadType.Hls -> "HLS"
             DownloadType.Dash -> "DASH"
-            DownloadType.Hds -> "HDS"
-            DownloadType.Hss -> "HSS"
             DownloadType.Torrent -> "Torrent"
         }
 

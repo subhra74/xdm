@@ -77,8 +77,6 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
 
                             DownloadType.Hls -> {}
                             DownloadType.Dash -> {}
-                            DownloadType.Hds -> TODO()
-                            DownloadType.Hss -> TODO()
                             DownloadType.Torrent -> TODO()
                         }
                         appDB.saveActiveRecords()
@@ -275,8 +273,6 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                     }
                 }
 
-                DownloadType.Hds -> TODO()
-                DownloadType.Hss -> TODO()
                 DownloadType.Torrent -> TODO()
             }
 
@@ -358,8 +354,6 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                         config = AppContext.config
                     )
 
-                    DownloadType.Hds -> TODO()
-                    DownloadType.Hss -> TODO()
                     DownloadType.Torrent -> TODO()
                 }
 

@@ -47,8 +47,19 @@ class Track(val codec: Codec) {
      */
     var sampleEntryBox: ByteArray? = null
 
+    /**
+     * Matroska/WebM codec identity carried verbatim from a Matroska input (e.g. `V_VP9`, `A_OPUS`).
+     * When set, the MKV writer emits it directly and uses [decoderConfigRecord] as the
+     * `CodecPrivate` (used by the Matroska demux path, and the natural output form for MKV).
+     */
+    var matroskaCodecId: String? = null
+
+    /** Audio bit depth (Matroska `BitDepth`), when known — used for raw/PCM tracks. */
+    var audioBitDepth: Int = 0
+
     fun isReady(): Boolean {
         if (samples.isEmpty()) return false
+        if (matroskaCodecId != null) return true
         if (sampleEntryBox != null) return true
         return when (codec) {
             Codec.H264, Codec.H265 -> width > 0 && height > 0 && parameterSets.isNotEmpty()

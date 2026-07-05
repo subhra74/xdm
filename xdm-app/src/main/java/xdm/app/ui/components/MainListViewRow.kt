@@ -235,7 +235,7 @@ class MainListViewRow(
 
         btnDelete =
             createButton(
-                "delete-bin-line.svg", CategoryStyle.DANGER
+                "delete-bin-line.svg", CategoryStyle.WARN
             ) {
                 if (editEntry != null) {
                     onDeleteClick?.invoke(editEntry!!)
@@ -253,7 +253,7 @@ class MainListViewRow(
 
         btnOpenFolder =
             createButton(
-                "folder-6-line.svg", CategoryStyle.SKY
+                "folder-6-line.svg", CategoryStyle.SUCCESS
             ) {
                 if (editEntry != null) {
                     onOpenFolderClick?.invoke(editEntry!!)

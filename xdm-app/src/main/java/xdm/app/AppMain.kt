@@ -26,6 +26,13 @@ object AppMain {
 
     @JvmStatic
     fun main(args: Array<String>) {
+        val homeDir = System.getProperty("user.home")
+        val configDir = "$homeDir${File.separatorChar}.xdm-app"
+        val tempDir = "$configDir${File.separatorChar}tmp"
+
+        File(configDir).mkdirs()
+        Logger.init(File(configDir))
+
         Logger.info("Use OKHttp..")
         Logger.info("loading...")
         Logger.info(System.getProperty("java.version") + " " + System.getProperty("os.version"))
@@ -34,14 +41,6 @@ object AppMain {
         System.setProperty("apple.laf.useScreenMenuBar", "true")
         System.setProperty("apple.awt.application.name", "XDM")
         System.setProperty("apple.awt.enableTemplateImages", "true")
-
-        val homeDir = System.getProperty("user.home")
-        val configDir = "$homeDir${File.separatorChar}.xdm-app"
-        val tempDir = "$configDir${File.separatorChar}tmp"
-
-        Logger.info("Creating dir: $configDir")
-        val f = File(configDir)
-        f.mkdirs()
 
         Logger.info("Creating dir: $tempDir")
         File(tempDir).mkdirs()

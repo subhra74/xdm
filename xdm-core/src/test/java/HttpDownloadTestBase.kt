@@ -115,6 +115,36 @@ abstract class HttpDownloadTestBase {
         assertArrayEquals("file content mismatch", expected, f.readBytes())
     }
 
+    /** SHA-256 of a byte array, hex-encoded. Used for content-integrity assertions. */
+    protected fun sha256(data: ByteArray): String =
+        java.security.MessageDigest.getInstance("SHA-256").digest(data)
+            .joinToString("") { "%02x".format(it) }
+
+    /** SHA-256 of a file's contents, hex-encoded (streamed so large fixtures don't hit heap). */
+    protected fun sha256(file: File): String {
+        val md = java.security.MessageDigest.getInstance("SHA-256")
+        file.inputStream().buffered().use { ins ->
+            val buf = ByteArray(64 * 1024)
+            while (true) {
+                val n = ins.read(buf)
+                if (n < 0) break
+                md.update(buf, 0, n)
+            }
+        }
+        return md.digest().joinToString("") { "%02x".format(it) }
+    }
+
+    /**
+     * Assert the committed file both matches [expected]'s size and has an identical SHA-256
+     * checksum - i.e. the reassembled segments are byte-for-byte intact.
+     */
+    protected fun assertChecksumMatches(host: TestDownloadHost, expected: ByteArray) {
+        val f = host.finalFile
+        assertNotNull("no final file committed", f)
+        assertEquals("file size mismatch", expected.size.toLong(), f!!.length())
+        assertEquals("SHA-256 checksum mismatch", sha256(expected), sha256(f))
+    }
+
     protected fun randomData(size: Int, seed: Long): ByteArray {
         val b = ByteArray(size)
         Random(seed).nextBytes(b)

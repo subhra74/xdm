@@ -166,7 +166,7 @@ export default class RequestWatcher {
     createRequestData(req, res, title, tabUrl, tabId) {
         let data = {
             url: res.url,
-            file: title,
+            tabTitle: title,
             requestHeaders: {},
             responseHeaders: {},
             cookie: undefined,

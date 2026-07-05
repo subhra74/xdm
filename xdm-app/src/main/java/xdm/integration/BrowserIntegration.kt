@@ -48,6 +48,7 @@ object BrowserIntegration {
             "/download" -> onDownloadMessage(context)
             "/media" -> onMediaMessage(context)
             "/vid" -> onVideoDownloadMessage(context)
+            "/clear" -> AppContext.videoTracker.clear()
         }
         onSyncMessage(context)
     }
@@ -108,7 +109,8 @@ object BrowserIntegration {
                 VideoItem(
                     id = "${it.id}",
                     text = it.name,
-                    info = it.description
+                    info = it.description,
+                    tabId = it.tabId
                 )
             },
         )
@@ -140,7 +142,11 @@ object BrowserIntegration {
         return HttpDownloadTaskInfo(
             id = CoreUtils.uniqueId(),
             url = msg.url!!,
-            fileName = FileUtils.sanitizeFileName(msg.filename ?: FileUtils.getFileName(msg.url))!!,
+            fileName = FileUtils.sanitizeFileName(
+                // Chrome's suggested name may include sub-directories (e.g. "sub/file.zip");
+                // reduce it to the base name so separators aren't mangled into underscores.
+                msg.filename?.let { FileUtils.getFileName(it) } ?: FileUtils.getFileName(msg.url)
+            )!!,
             respectFileName = false,
             cookie = msg.cookie,
             headers = msg.requestHeaders,
@@ -167,7 +173,7 @@ data class ConfigDto(
 )
 
 @Serializable
-data class VideoItem(val id: String, val text: String, val info: String)
+data class VideoItem(val id: String, val text: String, val info: String, val tabId: String? = null)
 
 @Serializable
 data class ExtensionMessage(
@@ -176,11 +182,12 @@ data class ExtensionMessage(
     val requestHeaders: MutableMap<String, List<String>>? = null,
     val responseHeaders: MutableMap<String, List<SafeStr>>? = null,
     val filename: String? = null,
+    val file: String? = null,
     val method: String? = null,
     val userAgent: String? = null,
     val tabUrl: String? = null,
     val tabId: String? = null,
-    val tabTile: String? = null,
+    val tabTitle: String? = null,
     val referer: String? = null,
     val fileSize: Long? = null,
     val mimeType: String? = null,

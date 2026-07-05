@@ -11,6 +11,7 @@ import xdm.app.ui.screens.ProgressWindow
 import xdm.app.ui.screens.PropertiesDialog
 import xdm.app.ui.screens.RefreshLinkWindow
 import xdm.app.ui.screens.ScheduleWindow
+import xdm.app.utils.TextContextMenu
 import xdm.app.utils.createSVGIcon
 import xdm.app.utils.createTray
 import xdm.app.utils.openWebPage
@@ -71,6 +72,7 @@ class AppInstance : IAppInstance {
 
     override fun run(args: Array<String>) {
         runOnUIThread {
+            TextContextMenu.install()
             val image = createSVGIcon("xdm-logo.svg", 256).image
             appWindow = AppWindow(image)
             createTray(image)

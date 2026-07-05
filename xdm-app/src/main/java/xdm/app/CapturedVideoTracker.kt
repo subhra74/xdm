@@ -16,6 +16,7 @@ interface ICapturedVideoTracker {
     fun getHttpVideo(videoId: Long): HttpDownloadTaskInfo?
     fun getHlsVideo(videoId: Long): HlsDownloadTaskInfo?
     fun getDashVideo(videoId: Long): DashDownloadTaskInfo?
+    fun clear()
     val videoList: List<DetectedVideoInfo>
 }
 
@@ -148,6 +149,13 @@ class CapturedVideoTracker : ICapturedVideoTracker {
             }
         }
         return null
+    }
+
+    @Synchronized
+    override fun clear() {
+        hlsVideoList.clear()
+        dashVideoList.clear()
+        httpVideoList.clear()
     }
 
     private val hlsVideoList = LinkedHashMap<Long, Pair<HlsDownloadTaskInfo, StreamingVideoDisplayInfo>>()

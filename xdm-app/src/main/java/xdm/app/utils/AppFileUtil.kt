@@ -33,8 +33,6 @@ fun getFileFolder(ent: DbRecord): Pair<String?, String?>? {
             fileName = md.fileName
         }
 
-        DownloadType.Hds -> TODO()
-        DownloadType.Hss -> TODO()
         DownloadType.Torrent -> TODO()
     }
 

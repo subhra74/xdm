@@ -88,11 +88,17 @@ object VideoHelper {
     }
 
     private fun processHttpVideo(msg: ExtensionMessage, type: String?, len: Long) {
-        processHttpVideo(msg, type, len, msg.url!!)
+        processHttpVideo(msg, type, len, msg.url!!, false)
     }
 
-    private fun processHttpVideo(msg: ExtensionMessage, type: String?, len: Long, url: String) {
-        if (isFragment(getHeader(REFERER, msg.requestHeaders))) {
+    private fun processHttpVideo(
+        msg: ExtensionMessage,
+        type: String?,
+        len: Long,
+        url: String,
+        ignoreFragment: Boolean
+    ) {
+        if (!ignoreFragment && isFragment(getHeader(REFERER, msg.requestHeaders))) {
             Logger.info("$url is fragment, ignoring")
             return
         }
@@ -117,7 +123,7 @@ object VideoHelper {
         val http = HttpDownloadTaskInfo(
             id = CoreUtils.uniqueId(),
             url = url,
-            fileName = getFileName(msg),
+            fileName = fileNameWithExt(msg, ext),
             respectFileName = true,
             cookie = msg.cookie,
             headers = msg.requestHeaders,
@@ -155,8 +161,22 @@ object VideoHelper {
         return false
     }
 
-    private fun getFileName(msg: ExtensionMessage): String =
-        FileUtils.sanitizeFileName(msg.filename ?: msg.tabTile ?: FileUtils.getFileName(msg.url))!!
+    private fun getFileName(msg: ExtensionMessage): String {
+        // Ignore blank/whitespace-only candidates so an empty tab title does not
+        // collapse into a hidden ".<ext>" file once the extension is appended.
+        val candidate = listOf(msg.filename, msg.file, msg.tabTitle)
+            .firstOrNull { !it.isNullOrBlank() }
+            ?.trim()
+            ?: FileUtils.getFileName(msg.url)
+        return FileUtils.sanitizeFileName(candidate)!!
+    }
+
+    // Build "<name>.<ext>" without duplicating an extension the name already carries
+    // (e.g. a tab title of "clip.mp4" would otherwise become "clip.mp4.mp4").
+    private fun fileNameWithExt(msg: ExtensionMessage, ext: String): String {
+        val name = getFileName(msg)
+        return if (name.endsWith(".$ext", ignoreCase = true)) name else "$name.$ext"
+    }
 
     private fun processDashVideo(msg: ExtensionMessage) {
         Logger.info("Processing DASH manifest:  ${msg.url}")
@@ -184,7 +204,7 @@ object VideoHelper {
                     val fileExt = if (video.mimeType.contains("mp4") && audio.mimeType.contains("mp4")) "mp4" else "mkv"
                     val dashDownloadTaskInfo = DashDownloadTaskInfo(
                         id = CoreUtils.uniqueId(),
-                        fileName = getFileName(msg) + "." + fileExt,
+                        fileName = fileNameWithExt(msg, fileExt),
                         tempDir = AppContext.config.tempFolder,
                         respectFileName = true,
                         cookie = msg.cookie,
@@ -218,7 +238,7 @@ object VideoHelper {
                     val mimeType = video?.mimeType ?: audio!!.mimeType
                     val segments = (video?.segments ?: audio!!.segments)
                     if (segments.isNotEmpty()) {
-                        processHttpVideo(msg, mimeType, -1, segments[0].toString())
+                        processHttpVideo(msg, mimeType, -1, segments[0].toString(), true)
                     }
                 }
             }
@@ -321,7 +341,7 @@ object VideoHelper {
     ): HlsDownloadTaskInfo {
         return HlsDownloadTaskInfo(
             id = CoreUtils.uniqueId(),
-            fileName = getFileName(msg) + ".mp4",
+            fileName = fileNameWithExt(msg, "mp4"),
             tempDir = AppContext.config.tempFolder,
             respectFileName = true,
             cookie = msg.cookie,

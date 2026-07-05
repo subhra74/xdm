@@ -1,40 +1,49 @@
 package xdm.core.downloaders.web.streaming.manifest.dash
 
-import org.w3c.dom.Node
 import org.w3c.dom.NodeList
-import java.util.*
 
 
 fun calculatePeriodDurationsIfMissing(
     periods: NodeList, mediaPresentationDuration: Long
 ): List<Long> {
-    val stack: Deque<Node> = ArrayDeque()
-    for (i in 0..<periods.length) {
-        stack.push(periods.item(i))
+    val n = periods.length
+    val startAttr = arrayOfNulls<String>(n)
+    val durAttr = arrayOfNulls<String>(n)
+    for (i in 0..<n) {
+        startAttr[i] = getAttr(periods.item(i), "start")
+        durAttr[i] = getAttr(periods.item(i), "duration")
     }
-    val list: MutableList<Long> = ArrayList(periods.length)
-    var last = mediaPresentationDuration
-    val count = stack.size
-    for (i in 0..<count) {
-        val node = stack.pop()
-        val duration1 = getAttr(node, "duration")
-        var start1 = getAttr(node, "start")
-        if (start1 == null && duration1 == null) {
-            throw ParseException("Both period start and duration is missing")
+
+    // Resolve each period's start time (in ms). A start is either explicit (@start), zero for the
+    // first period, or the previous period's start plus its (explicit) duration.
+    val starts = LongArray(n)
+    val hasStart = BooleanArray(n)
+    for (i in 0..<n) {
+        when {
+            startAttr[i] != null -> {
+                starts[i] = parseXsDuration(startAttr[i]!!); hasStart[i] = true
+            }
+            i == 0 -> {
+                starts[i] = 0L; hasStart[i] = true
+            }
+            hasStart[i - 1] && durAttr[i - 1] != null -> {
+                starts[i] = starts[i - 1] + parseXsDuration(durAttr[i - 1]!!); hasStart[i] = true
+            }
+            else -> hasStart[i] = false
         }
-        if (duration1 != null) {
-            val duration = parseXsDuration(duration1)
-            list.add(duration)
-            last = mediaPresentationDuration - duration
-            continue
-        }
-        if (start1 == null && i == stack.size - 1) {
-            start1 = "PT0S"
-        }
-        val start = parseXsDuration(start1!!)
-        list.add(last - start)
-        last = start
     }
-    list.reverse()
-    return list
+
+    // Resolve each period's duration: explicit @duration, else the gap to the next period's start,
+    // else (for the last period) the remainder of the presentation.
+    val durations = ArrayList<Long>(n)
+    for (i in 0..<n) {
+        val duration = when {
+            durAttr[i] != null -> parseXsDuration(durAttr[i]!!)
+            i < n - 1 && hasStart[i] && hasStart[i + 1] -> starts[i + 1] - starts[i]
+            i == n - 1 && hasStart[i] -> mediaPresentationDuration - starts[i]
+            else -> throw ParseException("Cannot determine duration for period $i")
+        }
+        durations.add(duration)
+    }
+    return durations
 }

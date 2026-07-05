@@ -151,35 +151,38 @@ export default class App {
         }
         let path = file || u.pathname;
         let upath = path.toUpperCase();
-        if (this.fileExts.find(ext => upath.endsWith(ext))) {
+        // fileExts arrive without a leading dot; match on ".EXT" so names that merely
+        // end in an extension substring (e.g. "...NEWEXE") don't false-positive.
+        if (this.fileExts.find(ext => upath.endsWith("." + ext.toUpperCase()))) {
             return true;
         }
         return false;
     }
 
+    // A video belongs to the given tab when its tabId matches, or when it has
+    // no meaningful tabId (untabbed / background capture: missing, "-1" or "0"),
+    // in which case it is shown in every tab.
+    isVideoForTab(vid, tabId) {
+        if (!vid.tabId || vid.tabId == '-1' || vid.tabId == '0') {
+            return true;
+        }
+        return vid.tabId == tabId;
+    }
+
+    videosForTab(tabId) {
+        if (!this.videoList) {
+            return [];
+        }
+        return this.videoList.filter(vid => this.isVideoForTab(vid, tabId));
+    }
+
     updateActionIcon() {
         chrome.action.setIcon({ path: this.getActionIcon() });
         let vc = "";
-        if (this.videoList && this.videoList.length > 0) {
-            let len = this.videoList.length;
-            if (len > 0) {
-                vc = len + "";
-            }
+        let len = this.videosForTab(this.activeTabId).length;
+        if (len > 0) {
+            vc = len + "";
         }
-        // if (this.videoList && this.videoList.length > 0) {
-        //     let len = this.videoList.filter(vid => {
-        //         if (!vid.tabId) {
-        //             return true;
-        //         }
-        //         if (vid.tabId == '-1') {
-        //             return true;
-        //         }
-        //         return (vid.tabId == this.activeTabId);
-        //     }).length;
-        //     if (len > 0) {
-        //         vc = len + "";
-        //     }
-        // }
         chrome.action.setBadgeText({ text: vc });
         if (!this.connector.isConnected()) {
             this.logger.log("Not connected...");
@@ -252,17 +255,17 @@ export default class App {
     onPopupMessage(request, sender, sendResponse) {
         this.logger.log(request.type);
         if (request.type === "stat") {
-            let resp = {
-                enabled: this.isMonitoringEnabled(),
-                list: this.videoList
-                // list: this.videoList.filter(vid => {
-                //     if (!vid.tabId) {
-                //         return true;
-                //     }
-                //     return (vid.tabId == this.activeTabId);
-                // })
-            };
-            sendResponse(resp);
+            // Resolve the active tab fresh: the MV3 service worker can be torn
+            // down, resetting this.activeTabId, so don't rely on it here.
+            chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+                let tabId = (tabs && tabs[0]) ? tabs[0].id + "" : this.activeTabId;
+                this.activeTabId = tabId;
+                sendResponse({
+                    enabled: this.isMonitoringEnabled(),
+                    list: this.videosForTab(tabId)
+                });
+            });
+            return true; // keep the message channel open for the async response
         }
         else if (request.type === "cmd") {
             this.userDisabled = request.enabled === false;

@@ -11,15 +11,45 @@ import kotlin.use
 object FileUtils {
     private val invalidChars = setOf('/', '\\', '"', '?', '*', '<', '>', ':', '|')
 
+    // Windows reserved device names (case-insensitive, matched on the base name).
+    private val reservedNames = setOf(
+        "CON", "PRN", "AUX", "NUL",
+        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
+    )
+
+    // Keep the whole name within common filesystem limits (255 bytes on most),
+    // leaving headroom for temp suffixes and "_N" dedupe counters.
+    private const val MAX_FILE_NAME_LENGTH = 200
+
     fun sanitizeFileName(name: String?): String? {
         if (name == null) return null
         val arr = name.toCharArray()
         for (i in arr.indices) {
-            if (invalidChars.contains(arr[i])) {
+            // Replace explicit invalid chars plus any control characters (incl. newlines).
+            if (invalidChars.contains(arr[i]) || arr[i].code < 0x20) {
                 arr[i] = '_'
             }
         }
-        return String(arr)
+        // Trailing dots/spaces are invalid on Windows and stripped silently there.
+        var result = String(arr).trim().trimEnd('.', ' ')
+        if (result.isEmpty()) return "_"
+
+        // Avoid reserved device names (matched against the base, ignoring extension).
+        val ext = getExtension(result) ?: ""
+        val base = getFileNameWithoutExtension(result)
+        if (reservedNames.contains(base.uppercase())) {
+            result = "_$base$ext"
+        }
+
+        // Enforce a length cap while preserving the extension.
+        if (result.length > MAX_FILE_NAME_LENGTH) {
+            val cappedExt = if (ext.length <= 20) ext else ""
+            val keep = (MAX_FILE_NAME_LENGTH - cappedExt.length).coerceAtLeast(1)
+            result = getFileNameWithoutExtension(result).take(keep).trimEnd('.', ' ') + cappedExt
+            if (result.isEmpty()) result = "_"
+        }
+        return result
     }
 
     fun getUniqueFileName(folder: String?, fileName: String): String {
@@ -51,6 +81,12 @@ object FileUtils {
             val qindex = path.indexOf("?")
             if (qindex > -1) {
                 path = path.substring(0, qindex)
+            }
+            // Drop any URL fragment so it doesn't leak into the name/extension
+            // (e.g. "video.mp4#t=10" -> extension ".mp4#t=10").
+            val hindex = path.indexOf("#")
+            if (hindex > -1) {
+                path = path.substring(0, hindex)
             }
             path = decodeFileName(path)
             if (path.isEmpty()) return "FILE"

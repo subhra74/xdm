@@ -35,9 +35,12 @@ fun parseMpdManifest(inputStream: InputStream, playlistUrl: String): List<MpdEnt
                 "0"
         )
     var baseUrl = URI(playlistUrl)
-    val baseUrlNodeRoot = root.getElementsByTagName("BaseURL")
-    if (baseUrlNodeRoot.length > 0) {
-        baseUrl = resolveUri(baseUrl, baseUrlNodeRoot.item(0).textContent)
+    // Only a BaseURL that is a *direct* child of <MPD> is the document base. Using the recursive
+    // getElementsByTagName here would grab a BaseURL nested inside an AdaptationSet/Representation
+    // and wrongly apply it to every track (see getDirectChildTagValue).
+    val rootBaseUrl = getDirectChildTagValue(root, "BaseURL")
+    if (rootBaseUrl != null) {
+        baseUrl = resolveUri(baseUrl, rootBaseUrl)
     }
     val periods = root.getElementsByTagName("Period")
     if (periods.length == 0) throw MpdParserException("No period found!")

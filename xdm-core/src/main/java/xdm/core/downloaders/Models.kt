@@ -4,7 +4,7 @@ import xdm.core.downloaders.web.SegmentProgress
 import xdm.core.network.http.HeaderMap
 
 enum class DownloadType {
-    Http, Hls, Dash, Hds, Hss, Torrent
+    Http, Hls, Dash, Torrent
 }
 
 enum class DownloadError {

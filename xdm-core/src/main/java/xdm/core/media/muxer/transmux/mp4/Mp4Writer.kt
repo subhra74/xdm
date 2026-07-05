@@ -1,6 +1,6 @@
 package xdm.core.media.muxer.transmux.mp4
 
-import xdm.core.media.muxer.transmux.es.SampleSink
+import xdm.core.media.muxer.transmux.ContainerWriter
 import xdm.core.media.muxer.transmux.sample.Codec
 import xdm.core.media.muxer.transmux.sample.Track
 import java.io.BufferedOutputStream
@@ -16,7 +16,7 @@ import java.io.RandomAccessFile
  * records are kept in memory, so the `moov` sample tables can be built in one pass at the end.
  * Each sample is emitted as its own MP4 chunk, which correctly handles audio/video interleaving.
  */
-class Mp4Writer(outputPath: String) : SampleSink {
+class Mp4Writer(outputPath: String) : ContainerWriter {
     private val file = File(outputPath)
     private val bos = BufferedOutputStream(FileOutputStream(file), 1 shl 20)
     private var position = 0L
@@ -43,7 +43,7 @@ class Mp4Writer(outputPath: String) : SampleSink {
     }
 
     /** Finalizes the file: patches the mdat size and appends the moov. Returns false if no media. */
-    fun finish(tracks: List<Track>): Boolean {
+    override fun finish(tracks: List<Track>): Boolean {
         val usable = tracks.filter { it.samples.isNotEmpty() && it.isReady() }
         if (usable.isEmpty()) {
             bos.flush(); bos.close()
@@ -64,7 +64,7 @@ class Mp4Writer(outputPath: String) : SampleSink {
         return true
     }
 
-    fun abort() {
+    override fun abort() {
         try { bos.close() } catch (_: Exception) {}
         file.delete()
     }

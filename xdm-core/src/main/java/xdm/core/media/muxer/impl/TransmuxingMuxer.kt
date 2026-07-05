@@ -1,8 +1,11 @@
 package xdm.core.media.muxer.impl
 
 import xdm.core.media.muxer.Muxer
+import xdm.core.media.muxer.transmux.ContainerWriter
 import xdm.core.media.muxer.transmux.es.SampleSink
 import xdm.core.media.muxer.transmux.iso.Mp4Demuxer
+import xdm.core.media.muxer.transmux.mkv.MatroskaDemuxer
+import xdm.core.media.muxer.transmux.mkv.MkvWriter
 import xdm.core.media.muxer.transmux.mp4.Mp4Writer
 import xdm.core.media.muxer.transmux.sample.Track
 import xdm.core.media.muxer.transmux.ts.TsDemuxer
@@ -18,9 +21,12 @@ import java.util.concurrent.atomic.AtomicBoolean
  *  - MPEG-TS segments (.ts) via [TsDemuxer]
  *  - ISO-BMFF / fragmented-MP4 / CMAF segments (.mp4/.m4s/.fmp4) via [Mp4Demuxer]
  *
- * All inputs are remuxed into a single progressive MP4. The container of each segment list is
- * detected from its bytes, so callers don't need to tell us which it is. (The legacy [FFmpegMuxer]
- * class is retained but no longer invoked.)
+ *  - Matroska / WebM segments (.webm/.mkv) via [MatroskaDemuxer]
+ *
+ * Inputs are remuxed into a single progressive MP4, or into Matroska (`.mkv`) when the requested
+ * output path ends in `.mkv` — the case DASH uses for WebM/VP8/VP9/Opus streams that MP4 can't
+ * carry cleanly. The container of each segment list is detected from its bytes, so callers don't
+ * need to tell us which it is. (The legacy [FFmpegMuxer] class is retained but no longer invoked.)
  */
 class TransmuxingMuxer(@Suppress("UNUSED_PARAMETER") appDir: String) : Muxer {
     private val stopFlag = AtomicBoolean(false)
@@ -74,8 +80,9 @@ class TransmuxingMuxer(@Suppress("UNUSED_PARAMETER") appDir: String) : Muxer {
 
     // ---- core ----
 
-    private inline fun transmux(outputFile: String, body: (Mp4Writer) -> List<Track>): Boolean {
-        val writer = Mp4Writer(outputFile)
+    private inline fun transmux(outputFile: String, body: (ContainerWriter) -> List<Track>): Boolean {
+        val writer: ContainerWriter =
+            if (outputFile.endsWith(".mkv", ignoreCase = true)) MkvWriter(outputFile) else Mp4Writer(outputFile)
         return try {
             val tracks = body(writer)
             if (stopFlag.get()) { writer.abort(); false }
@@ -94,20 +101,33 @@ class TransmuxingMuxer(@Suppress("UNUSED_PARAMETER") appDir: String) : Muxer {
     /** Demuxes a (homogeneous) list of segments into [writer], picking the demuxer by container. */
     private fun demuxList(segments: List<String>, writer: SampleSink, progress: (Int) -> Unit): List<Track> {
         if (segments.isEmpty()) return emptyList()
-        return if (isMpegTs(segments.first())) {
-            val demux = TsDemuxer(writer)
-            feedTs(segments, demux, progress)
-            demux.finish()
-            demux.tracks
-        } else {
-            val demux = Mp4Demuxer(writer)
-            for ((i, seg) in segments.withIndex()) {
-                if (stopFlag.get()) break
-                demux.parseSegment(seg)
-                progress(((i + 1) * 100) / segments.size)
+        return when (containerOf(segments.first())) {
+            Container.TS -> {
+                val demux = TsDemuxer(writer)
+                feedTs(segments, demux, progress)
+                demux.finish()
+                demux.tracks
             }
-            demux.finish()
-            demux.tracks
+            Container.MKV -> {
+                val demux = MatroskaDemuxer(writer)
+                for ((i, seg) in segments.withIndex()) {
+                    if (stopFlag.get()) break
+                    demux.parseSegment(seg)
+                    progress(((i + 1) * 100) / segments.size)
+                }
+                demux.finish()
+                demux.tracks
+            }
+            Container.MP4 -> {
+                val demux = Mp4Demuxer(writer)
+                for ((i, seg) in segments.withIndex()) {
+                    if (stopFlag.get()) break
+                    demux.parseSegment(seg)
+                    progress(((i + 1) * 100) / segments.size)
+                }
+                demux.finish()
+                demux.tracks
+            }
         }
     }
 
@@ -127,16 +147,26 @@ class TransmuxingMuxer(@Suppress("UNUSED_PARAMETER") appDir: String) : Muxer {
         }
     }
 
-    /** Sniffs the container: 0x47 sync at packet stride => MPEG-TS; otherwise treat as MP4/ISO-BMFF. */
-    private fun isMpegTs(path: String): Boolean {
+    private enum class Container { TS, MP4, MKV }
+
+    /** Sniffs the container from the file header: EBML magic => Matroska, MP4 box type => MP4, else TS. */
+    private fun containerOf(path: String): Container {
         RandomAccessFile(path, "r").use { raf ->
             val head = ByteArray(minOf(8, raf.length().toInt()))
             raf.readFully(head)
+            // EBML magic (0x1A45DFA3) => Matroska/WebM.
+            if (head.size >= 4 && (head[0].toInt() and 0xFF) == 0x1A && (head[1].toInt() and 0xFF) == 0x45 &&
+                (head[2].toInt() and 0xFF) == 0xDF && (head[3].toInt() and 0xFF) == 0xA3
+            ) return Container.MKV
             if (head.size >= 8) {
                 val type = String(head, 4, 4, Charsets.US_ASCII)
-                if (type in MP4_TOP_LEVEL_TYPES) return false
+                if (type in MP4_TOP_LEVEL_TYPES) return Container.MP4
             }
-            return head.isNotEmpty() && (head[0].toInt() and 0xFF) == 0x47
+            // A media segment that begins mid-Matroska-Segment starts with a bare Cluster (0x1F43B675).
+            if (head.size >= 4 && (head[0].toInt() and 0xFF) == 0x1F && (head[1].toInt() and 0xFF) == 0x43 &&
+                (head[2].toInt() and 0xFF) == 0xB6 && (head[3].toInt() and 0xFF) == 0x75
+            ) return Container.MKV
+            return if (head.isNotEmpty() && (head[0].toInt() and 0xFF) == 0x47) Container.TS else Container.MP4
         }
     }
 

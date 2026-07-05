@@ -78,6 +78,31 @@ fun getFirstTagValue(node: Node, childTagName: String?): String? {
     return null
 }
 
+/**
+ * Returns the text of the first *direct child* element named [childTagName], or null.
+ *
+ * Unlike [getFirstTagValue] (which uses the recursive [Element.getElementsByTagName] and can
+ * therefore return an element nested arbitrarily deep), this only inspects immediate children.
+ * This matters for `BaseURL`, whose scope in DASH is the element it is a direct child of: a
+ * recursive lookup at the MPD/Period level would wrongly pick up a `BaseURL` belonging to a
+ * nested AdaptationSet/Representation and apply it to unrelated tracks.
+ */
+fun getDirectChildTagValue(node: Node, childTagName: String): String? {
+    return getDirectChildTag(node, childTagName)?.textContent
+}
+
+/** Returns the first *direct child* element named [childTagName], or null. See [getDirectChildTagValue]. */
+fun getDirectChildTag(node: Node, childTagName: String): Node? {
+    val children = node.childNodes
+    for (i in 0..<children.length) {
+        val child = children.item(i)
+        if (child.nodeType == Node.ELEMENT_NODE && child.nodeName == childTagName) {
+            return child
+        }
+    }
+    return null
+}
+
 fun getFirstTag(node: Node, childTagName: String?): Node? {
     val nodeList = (node as Element).getElementsByTagName(childTagName)
     if (nodeList.length > 0) {
@@ -117,18 +142,27 @@ fun getSelfOrParentAttr(
 }
 
 fun resolveBaseUrl(node: Node, baseUrl: URI): URI {
-    val baseUrlValue = getFirstTagValue(node, "BaseURL")
+    val baseUrlValue = getDirectChildTagValue(node, "BaseURL")
     if (baseUrlValue != null) {
         return resolveUri(baseUrl, baseUrlValue)
     }
     return baseUrl
 }
 
-fun findSelfOrParentTag(node: Node, name: String?): Node? {
-    val selfNode = getFirstTag(node, name)
-    if (selfNode != null) {
-        return selfNode
+/**
+ * Finds a [name] element that applies to [node] by walking up the ancestor chain
+ * (Representation → AdaptationSet → Period), using *direct-child* lookups at each level.
+ *
+ * A `SegmentTemplate` inherits from the level it is a direct child of. A recursive search on an
+ * ancestor would incorrectly match a *sibling* Representation's `SegmentTemplate`, so we only ever
+ * inspect immediate children.
+ */
+fun findSelfOrParentTag(node: Node, name: String): Node? {
+    var current: Node? = node
+    while (current != null && current.nodeType == Node.ELEMENT_NODE) {
+        val found = getDirectChildTag(current, name)
+        if (found != null) return found
+        current = current.parentNode
     }
-    val parent = node.parentNode
-    return getFirstTag(parent, name)
+    return null
 }
