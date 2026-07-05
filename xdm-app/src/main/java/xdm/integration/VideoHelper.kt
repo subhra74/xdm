@@ -6,6 +6,7 @@ import xdm.core.downloaders.DashDownloadTaskInfo
 import xdm.core.downloaders.HlsDownloadTaskInfo
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.downloaders.web.streaming.manifest.dash.Representation
+import xdm.core.downloaders.web.streaming.manifest.dash.XlinkResolver
 import xdm.core.downloaders.web.streaming.manifest.dash.parseMpdManifest
 import xdm.core.downloaders.web.streaming.manifest.hls.HlsMasterPlaylist
 import xdm.core.downloaders.web.streaming.manifest.hls.HlsParser
@@ -192,7 +193,13 @@ object VideoHelper {
             httpClient, msg.url, headers, msg.cookie, AtomicBoolean(false)
         ) ?: return
         FileInputStream(file).use { f ->
-            val entries = parseMpdManifest(f, msg.url)
+            // Resolve xlink remote elements (e.g. ad-insertion Periods) over HTTP, reusing the same
+            // headers/cookie as the manifest fetch.
+            val xlinkResolver = XlinkResolver { xlinkUrl ->
+                ManifestUtils.downloadManifestBytes(httpClient, xlinkUrl, headers, msg.cookie, AtomicBoolean(false))
+                    ?.toString(Charsets.UTF_8)
+            }
+            val entries = parseMpdManifest(f, msg.url, xlinkResolver)
             if (entries.isEmpty()) {
                 Logger.info("Unable to parse manifest")
                 return

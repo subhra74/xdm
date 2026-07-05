@@ -3,12 +3,17 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import xdm.core.downloaders.web.streaming.manifest.dash.MpdEntry
+import xdm.core.downloaders.web.streaming.manifest.dash.XlinkResolver
 import xdm.core.downloaders.web.streaming.manifest.dash.parseMpdManifest
 
 class TestDashParser {
 
-    private fun parse(mpd: String, url: String = "http://host/path/manifest.mpd"): List<MpdEntry> =
-        mpd.trimIndent().byteInputStream().use { parseMpdManifest(it, url) }
+    private fun parse(
+        mpd: String,
+        url: String = "http://host/path/manifest.mpd",
+        resolver: XlinkResolver? = null
+    ): List<MpdEntry> =
+        mpd.trimIndent().byteInputStream().use { parseMpdManifest(it, url, resolver) }
 
     @Test
     fun test1(){
@@ -150,5 +155,115 @@ class TestDashParser {
         val p2 = entries.first { it.video!!.segments.first().toString().contains("p2-") }.video!!
         assertEquals(4, p1.segments.size)
         assertEquals(6, p2.segments.size)
+    }
+
+    private val remotePeriod =
+        """
+        <Period xmlns="urn:mpeg:dash:schema:mpd:2011">
+          <AdaptationSet mimeType="video/mp4">
+            <Representation id="v0" bandwidth="1000" codecs="avc1.42c00d">
+              <SegmentTemplate media="remote-${'$'}Number${'$'}.m4s" duration="1000" timescale="1000" startNumber="0"/>
+            </Representation>
+          </AdaptationSet>
+        </Period>
+        """.trimIndent()
+
+    /** A remote (xlink) Period is fetched via the resolver and spliced in place of the placeholder. */
+    @Test
+    fun xlinkPeriodIsResolvedAndSpliced() {
+        val mpd = """
+            <MPD type="static" mediaPresentationDuration="PT2S" xmlns="urn:mpeg:dash:schema:mpd:2011" xmlns:xlink="http://www.w3.org/1999/xlink">
+              <Period xlink:href="https://cdn.example.com/ad.period" xlink:actuate="onLoad"/>
+            </MPD>
+        """
+        val entries = parse(mpd, resolver = XlinkResolver { url ->
+            if (url == "https://cdn.example.com/ad.period") remotePeriod else null
+        })
+        val urls = entries.first().video!!.segments.map { it.toString().substringAfterLast('/') }
+        assertEquals(listOf("remote-0.m4s", "remote-1.m4s"), urls)
+    }
+
+    /** A relative xlink href resolves against the document base before being fetched. */
+    @Test
+    fun xlinkHrefResolvesAgainstDocumentBase() {
+        val requested = arrayOfNulls<String>(1)
+        val mpd = """
+            <MPD type="static" mediaPresentationDuration="PT2S" xmlns="urn:mpeg:dash:schema:mpd:2011" xmlns:xlink="http://www.w3.org/1999/xlink">
+              <Period xlink:href="ads/ad.period"/>
+            </MPD>
+        """
+        parse(mpd, resolver = XlinkResolver { url -> requested[0] = url; remotePeriod })
+        assertEquals("http://host/path/ads/ad.period", requested[0])
+    }
+
+    /** The resolve-to-zero sentinel removes the placeholder without any fetch. */
+    @Test
+    fun xlinkResolveToZeroRemovesPeriod() {
+        val mpd = """
+            <MPD type="static" mediaPresentationDuration="PT4S" xmlns="urn:mpeg:dash:schema:mpd:2011" xmlns:xlink="http://www.w3.org/1999/xlink">
+              <Period xlink:href="urn:mpeg:dash:resolve-to-zero:2013"/>
+              <Period duration="PT2S">
+                <AdaptationSet mimeType="video/mp4">
+                  <Representation id="v0" bandwidth="1000" codecs="avc1.42c00d">
+                    <SegmentTemplate media="local-${'$'}Number${'$'}.m4s" duration="1000" timescale="1000" startNumber="0"/>
+                  </Representation>
+                </AdaptationSet>
+              </Period>
+            </MPD>
+        """
+        val entries = parse(mpd, resolver = XlinkResolver { error("resolve-to-zero must not fetch") })
+        // Only the local period survives.
+        val urls = entries.map { it.video!!.segments.first().toString().substringAfterLast('/') }
+        assertTrue("resolve-to-zero period should be gone, got $urls", urls.all { it.startsWith("local-") })
+    }
+
+    /** With no resolver, an xlink placeholder is dropped (not an error) and inline periods still parse. */
+    @Test
+    fun xlinkWithoutResolverDropsPlaceholder() {
+        val mpd = """
+            <MPD type="static" mediaPresentationDuration="PT2S" xmlns="urn:mpeg:dash:schema:mpd:2011" xmlns:xlink="http://www.w3.org/1999/xlink">
+              <Period xlink:href="https://cdn.example.com/ad.period"/>
+              <Period duration="PT2S">
+                <AdaptationSet mimeType="video/mp4">
+                  <Representation id="v0" bandwidth="1000" codecs="avc1.42c00d">
+                    <SegmentTemplate media="local-${'$'}Number${'$'}.m4s" duration="1000" timescale="1000" startNumber="0"/>
+                  </Representation>
+                </AdaptationSet>
+              </Period>
+            </MPD>
+        """
+        val entries = parse(mpd)
+        val urls = entries.map { it.video!!.segments.first().toString().substringAfterLast('/') }
+        assertEquals(listOf("local-0.m4s"), urls.map { it })
+    }
+
+    /** A remote entity may carry an XML prolog and several top-level elements; all are spliced in. */
+    @Test
+    fun xlinkRemoteEntityWithPrologAndMultipleElements() {
+        val twoPeriods = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <Period xmlns="urn:mpeg:dash:schema:mpd:2011" duration="PT1S">
+              <AdaptationSet mimeType="video/mp4">
+                <Representation id="a" bandwidth="1000" codecs="avc1.42c00d">
+                  <SegmentTemplate media="a-${'$'}Number${'$'}.m4s" duration="1000" timescale="1000" startNumber="0"/>
+                </Representation>
+              </AdaptationSet>
+            </Period>
+            <Period xmlns="urn:mpeg:dash:schema:mpd:2011" duration="PT1S">
+              <AdaptationSet mimeType="video/mp4">
+                <Representation id="b" bandwidth="1000" codecs="avc1.42c00d">
+                  <SegmentTemplate media="b-${'$'}Number${'$'}.m4s" duration="1000" timescale="1000" startNumber="0"/>
+                </Representation>
+              </AdaptationSet>
+            </Period>
+        """.trimIndent()
+        val mpd = """
+            <MPD type="static" mediaPresentationDuration="PT2S" xmlns="urn:mpeg:dash:schema:mpd:2011" xmlns:xlink="http://www.w3.org/1999/xlink">
+              <Period xlink:href="https://cdn.example.com/ads"/>
+            </MPD>
+        """
+        val entries = parse(mpd, resolver = XlinkResolver { twoPeriods })
+        val prefixes = entries.map { it.video!!.segments.first().toString().substringAfterLast('/').substringBefore('-') }
+        assertTrue("expected both remote periods spliced, got $prefixes", prefixes.containsAll(listOf("a", "b")))
     }
 }
