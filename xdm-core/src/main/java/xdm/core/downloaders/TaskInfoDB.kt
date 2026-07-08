@@ -1,8 +1,25 @@
 package xdm.core.downloaders
 
+import xdm.core.downloaders.web.streaming.manifest.dash.DashSegment
 import xdm.core.util.AtomicIO
 import xdm.core.util.Logger
+import java.io.DataInput
+import java.io.DataOutput
 import java.io.File
+import java.net.URI
+
+/** Serialises a DASH segment as its URL plus an optional `(offset, length)` byte range. */
+private fun writeDashSegment(seg: DashSegment, w: DataOutput) {
+    w.writeUTF(seg.url.toString())
+    w.writeBoolean(seg.range != null)
+    seg.range?.let { w.writeLong(it.first); w.writeLong(it.second) }
+}
+
+private fun readDashSegment(r: DataInput): DashSegment {
+    val url = URI(r.readUTF())
+    val range = if (r.readBoolean()) Pair(r.readLong(), r.readLong()) else null
+    return DashSegment(url, range)
+}
 
 class TaskInfoDB(private val configDir: String) {
     fun getHttpTask(id: Long): HttpDownloadTaskInfo? {
@@ -68,8 +85,8 @@ class TaskInfoDB(private val configDir: String) {
                 maxPiece = r.readInt(),
                 authInfo = null,
                 tempDir = r.readUTF(),
-                audioSegments = (0..<r.readInt()).map { r.readUTF() }.toList(),
-                videoSegments = (0..<r.readInt()).map { r.readUTF() }.toList(),
+                audioSegments = (0..<r.readInt()).map { readDashSegment(r) }.toList(),
+                videoSegments = (0..<r.readInt()).map { readDashSegment(r) }.toList(),
                 audioMime = r.readUTF(),
                 videoMime = r.readUTF(),
             )
@@ -120,11 +137,11 @@ class TaskInfoDB(private val configDir: String) {
             w.writeUTF(task.tempDir)
             w.writeInt(task.audioSegments.size)
             for (seg in task.audioSegments) {
-                w.writeUTF(seg)
+                writeDashSegment(seg, w)
             }
             w.writeInt(task.videoSegments.size)
             for (seg in task.videoSegments) {
-                w.writeUTF(seg)
+                writeDashSegment(seg, w)
             }
             w.writeUTF(task.audioMime)
             w.writeUTF(task.videoMime)

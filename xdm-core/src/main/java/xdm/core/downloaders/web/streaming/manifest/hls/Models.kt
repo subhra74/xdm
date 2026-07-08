@@ -12,6 +12,7 @@ data class HlsPlaylist(
     val hasInitSection: Boolean = false,
     val version: Int = 0,
     val independent: Boolean = false,
+    val hasDiscontinuity: Boolean = false,
 )
 
 data class HlsMasterPlaylist(
@@ -28,4 +29,5 @@ data class HlsMediaSegment(
     val keyUrl: String? = null,
     val iv: String? = null,
     val encrypted: Boolean,
+    val discontinuity: Boolean = false,
 )

@@ -39,7 +39,8 @@ class TransmuxingMuxer(@Suppress("UNUSED_PARAMETER") appDir: String) : Muxer {
         tempDir: String,
         independentSegement: Boolean,
         isMp4: Boolean,
-    ): Boolean = transmux(outputFile) { writer ->
+        discontinuous: Boolean,
+    ): Boolean = transmux(outputFile, discontinuous) { writer ->
         demuxList(segments, writer, progressCallback)
     }
 
@@ -63,7 +64,8 @@ class TransmuxingMuxer(@Suppress("UNUSED_PARAMETER") appDir: String) : Muxer {
         tempDir: String,
         independentSegement: Boolean,
         isMp4: Boolean,
-    ): Boolean = transmux(outputFile) { writer ->
+        discontinuous: Boolean,
+    ): Boolean = transmux(outputFile, discontinuous) { writer ->
         val total = (videoSegments.size + audioSegments.size).coerceAtLeast(1)
         val done = intArrayOf(0)
         val tick = { _: Int -> done[0]++; progressCallback(minOf(100, done[0] * 100 / total)) }
@@ -80,9 +82,12 @@ class TransmuxingMuxer(@Suppress("UNUSED_PARAMETER") appDir: String) : Muxer {
 
     // ---- core ----
 
-    private inline fun transmux(outputFile: String, body: (ContainerWriter) -> List<Track>): Boolean {
+    private inline fun transmux(
+        outputFile: String, discontinuous: Boolean = false, body: (ContainerWriter) -> List<Track>
+    ): Boolean {
         val writer: ContainerWriter =
-            if (outputFile.endsWith(".mkv", ignoreCase = true)) MkvWriter(outputFile) else Mp4Writer(outputFile)
+            if (outputFile.endsWith(".mkv", ignoreCase = true)) MkvWriter(outputFile)
+            else Mp4Writer(outputFile, repairTimeline = discontinuous)
         return try {
             val tracks = body(writer)
             if (stopFlag.get()) { writer.abort(); false }

@@ -42,6 +42,17 @@ private fun getAttr(
     attrs: NamedNodeMap, pAttrs: NamedNodeMap, name: String
 ) = getSelfOrParentAttr(attrs, pAttrs, name)
 
+/** Parses a DASH byte-range attribute ("start-end", absolute inclusive) into `(offset, length)`. */
+private fun parseRangeAttr(range: String?): Pair<Long, Long>? {
+    if (range == null) return null
+    val parts = range.split("-")
+    if (parts.size != 2) return null
+    val start = parts[0].trim().toLongOrNull() ?: return null
+    val end = parts[1].trim().toLongOrNull() ?: return null
+    if (end < start) return null
+    return Pair(start, end - start + 1)
+}
+
 private fun parseSegmentList(
     xmlSegmentList: Node,
     baseUrl: URI,
@@ -54,19 +65,27 @@ private fun parseSegmentList(
     lang: String
 ): Representation? {
     val segmentUrlNodes = (xmlSegmentList as Element).getElementsByTagName("SegmentURL")
-    val segments: MutableList<URI> = ArrayList()
+    val segments: MutableList<DashSegment> = ArrayList()
     val xmlInit = findTag(xmlSegmentList, mutableListOf("Initialization", "RepresentationIndex"))
     if (xmlInit != null) {
+        // Either a separate init file (sourceURL) or a byte range into the single BaseURL file (range).
         val sourceURL = getAttr(xmlInit, "sourceURL")
+        val initRange = parseRangeAttr(getAttr(xmlInit, "range"))
         if (sourceURL != null) {
-            segments.add(resolveUri(baseUrl, sourceURL))
+            segments.add(DashSegment(resolveUri(baseUrl, sourceURL), initRange))
+        } else if (initRange != null) {
+            segments.add(DashSegment(baseUrl, initRange))
         }
     }
     for (i in 0..<segmentUrlNodes.length) {
         val segmentNode = segmentUrlNodes.item(i)
         val media = getAttr(segmentNode, MEDIA_KEY)
+        // Single-file addressing: no media= attribute, just a mediaRange into the BaseURL file.
+        val mediaRange = parseRangeAttr(getAttr(segmentNode, "mediaRange"))
         if (media != null) {
-            segments.add(resolveUri(baseUrl, media))
+            segments.add(DashSegment(resolveUri(baseUrl, media), mediaRange))
+        } else if (mediaRange != null) {
+            segments.add(DashSegment(baseUrl, mediaRange))
         }
     }
     if (segments.isNotEmpty()) {
@@ -126,7 +145,7 @@ private fun parseSegmentTimeLineSimple(
     }
     if (segments.isNotEmpty()) {
         return Representation(
-            width, height, codec, bandwidth, periodDuration, segments, mimeType, lang
+            width, height, codec, bandwidth, periodDuration, segments.map { DashSegment(it) }, mimeType, lang
         )
     }
     return null
@@ -216,7 +235,7 @@ private fun parseSegmentTimeLineExplicit(
     }
     if (segments.isNotEmpty()) {
         return Representation(
-            width, height, codec, bandwidth, periodDuration, segments, mimeType, lang
+            width, height, codec, bandwidth, periodDuration, segments.map { DashSegment(it) }, mimeType, lang
         )
     }
 
@@ -249,10 +268,8 @@ private fun parseRepresentation(
     // SegmentBase
     val segmentBaseNodes = (xmlRepresentation as Element).getElementsByTagName("SegmentBase")
     if (segmentBaseNodes.length > 0 || hasParentSegmentBase) {
-        val segments: MutableList<URI> = ArrayList()
-        segments.add(baseUrl)
         return Representation(
-            width, height, codec, bandwidth, periodDuration, segments, mimeType, lang
+            width, height, codec, bandwidth, periodDuration, listOf(DashSegment(baseUrl)), mimeType, lang
         )
     }
 

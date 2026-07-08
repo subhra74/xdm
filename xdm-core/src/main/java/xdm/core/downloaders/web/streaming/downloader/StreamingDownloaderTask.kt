@@ -42,6 +42,13 @@ abstract class StreamingDownloaderTask(
     abstract fun isIndependentSegment(): Boolean
     abstract fun postProcessChunks()
 
+    /**
+     * True when the manifest signals a discontinuity (e.g. HLS EXT-X-DISCONTINUITY): segment
+     * timestamps reset mid-stream, so the muxer must repair the timeline to stay monotonic.
+     * Defaults to false for streaming types that don't carry the concept.
+     */
+    protected open fun hasDiscontinuity(): Boolean = false
+
     override fun start() {
         if (startRequested.get()) {
             return
@@ -199,7 +206,7 @@ abstract class StreamingDownloaderTask(
             val videoChunks = context.chunks.filter { it.tag == "VIDEO" }.map { getChunkTempFileName(it) }
             if (muxer.mux(
                     audioChunks, videoChunks, outFile, this::onAssembleProgress, context.tempFolder,
-                    isIndependentSegment(), isMp4()
+                    isIndependentSegment(), isMp4(), hasDiscontinuity()
                 )
             ) {
                 context.completed.set(true)
@@ -223,7 +230,7 @@ abstract class StreamingDownloaderTask(
             val tempFiles = context.chunks.map {
                 getChunkTempFileName(it)
             }
-            if (muxer.mux(tempFiles, outFile, this::onAssembleProgress, context.tempFolder, isIndependentSegment(), isMp4())) {
+            if (muxer.mux(tempFiles, outFile, this::onAssembleProgress, context.tempFolder, isIndependentSegment(), isMp4(), hasDiscontinuity())) {
                 context.completed.set(true)
                 return true
             }

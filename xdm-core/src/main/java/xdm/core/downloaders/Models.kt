@@ -1,6 +1,7 @@
 package xdm.core.downloaders
 
 import xdm.core.downloaders.web.SegmentProgress
+import xdm.core.downloaders.web.streaming.manifest.dash.DashSegment
 import xdm.core.network.http.HeaderMap
 
 enum class DownloadType {
@@ -105,8 +106,8 @@ data class DashDownloadTaskInfo(
     override var userSelectedDownloadFolder: String?,
     override var maxPiece: Int,
     override var authInfo: AuthInfo?,
-    var videoSegments: List<String>,
-    var audioSegments: List<String>,
+    var videoSegments: List<DashSegment>,
+    var audioSegments: List<DashSegment>,
     var url: String,
     val audioMime: String,
     val videoMime: String,

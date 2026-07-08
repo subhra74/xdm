@@ -2,6 +2,7 @@ package xdm.core.media.muxer.transmux.mp4
 
 import xdm.core.media.muxer.transmux.ContainerWriter
 import xdm.core.media.muxer.transmux.sample.Codec
+import xdm.core.media.muxer.transmux.sample.Sample
 import xdm.core.media.muxer.transmux.sample.Track
 import java.io.BufferedOutputStream
 import java.io.File
@@ -16,7 +17,7 @@ import java.io.RandomAccessFile
  * records are kept in memory, so the `moov` sample tables can be built in one pass at the end.
  * Each sample is emitted as its own MP4 chunk, which correctly handles audio/video interleaving.
  */
-class Mp4Writer(outputPath: String) : ContainerWriter {
+class Mp4Writer(outputPath: String, private val repairTimeline: Boolean = false) : ContainerWriter {
     private val file = File(outputPath)
     private val bos = BufferedOutputStream(FileOutputStream(file), 1 shl 20)
     private var position = 0L
@@ -112,17 +113,8 @@ class Mp4Writer(outputPath: String) : ContainerWriter {
         val plans = ArrayList<TrackPlan>()
         for ((idx, t) in tracks.withIndex()) {
             val base = baseInfo[idx]
-            val n = t.samples.size
-            // durations from successive DTS deltas.
-            for (i in 0 until n) {
-                val cur = t.samples[i].dts - base
-                val durTo = if (i < n - 1) (t.samples[i + 1].dts - base) - cur else -1L
-                t.samples[i].durationTicks = durTo
-            }
-            // Last sample: reuse previous duration (or 1).
-            if (n >= 2) t.samples[n - 1].durationTicks = t.samples[n - 2].durationTicks
-            else t.samples[n - 1].durationTicks = 1
-            for (i in 0 until n) if (t.samples[i].durationTicks < 0) t.samples[i].durationTicks = 0
+            // durations from successive DTS deltas (repairing discontinuity gaps when enabled).
+            assignSampleDurations(t.samples, repairTimeline)
 
             val mediaDuration = t.samples.sumOf { it.durationTicks }
             val firstCts = (t.samples[0].pts - t.samples[0].dts).coerceAtLeast(0)
@@ -392,4 +384,43 @@ class Mp4Writer(outputPath: String) : ContainerWriter {
         buf.u32(0); buf.u32(0x00010000); buf.u32(0)
         buf.u32(0); buf.u32(0); buf.u32(0x40000000)
     }
+}
+
+/** A discontinuity gap is an inter-sample delta larger than this multiple of the typical frame. */
+private const val DISCONTINUITY_GAP_FACTOR = 8
+
+/**
+ * Fills in each sample's [Sample.durationTicks] from successive DTS deltas.
+ *
+ * When [repairTimeline] is true (the manifest signalled a discontinuity), inter-sample gaps that
+ * are negative or implausibly large — the artefact of a mid-stream timestamp reset — are replaced
+ * with the track's typical (median) frame duration, so the output timeline stays monotonic and
+ * continuous across the boundary. When false, behaviour is unchanged (negative gaps clamp to 0,
+ * legitimate large gaps are preserved).
+ */
+internal fun assignSampleDurations(samples: List<Sample>, repairTimeline: Boolean) {
+    val n = samples.size
+    if (n == 0) return
+    val base = samples[0].dts
+    for (i in 0 until n) {
+        val cur = samples[i].dts - base
+        val durTo = if (i < n - 1) (samples[i + 1].dts - base) - cur else -1L
+        samples[i].durationTicks = durTo
+    }
+    // Last sample: reuse previous duration (or 1) since there's no following DTS.
+    if (n >= 2) samples[n - 1].durationTicks = samples[n - 2].durationTicks
+    else samples[n - 1].durationTicks = 1
+
+    if (repairTimeline) {
+        val positives = samples.mapNotNull { if (it.durationTicks > 0) it.durationTicks else null }.sorted()
+        if (positives.isNotEmpty()) {
+            val typical = positives[positives.size / 2]
+            val threshold = typical * DISCONTINUITY_GAP_FACTOR
+            for (i in 0 until n) {
+                val d = samples[i].durationTicks
+                if (d < 0 || d > threshold) samples[i].durationTicks = typical
+            }
+        }
+    }
+    for (i in 0 until n) if (samples[i].durationTicks < 0) samples[i].durationTicks = 0
 }

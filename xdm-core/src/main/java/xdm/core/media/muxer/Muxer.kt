@@ -6,6 +6,9 @@ interface Muxer {
         segments: List<String>, outputFile: String, progressCallback: (Int) -> Unit, tempDir: String,
         independentSegement: Boolean,
         isMp4: Boolean,
+        // Manifest signalled a discontinuity (e.g. EXT-X-DISCONTINUITY): repair the output timeline
+        // across mid-stream timestamp resets. No-op when false.
+        discontinuous: Boolean = false,
     ): Boolean
 
     fun mux(
@@ -20,6 +23,7 @@ interface Muxer {
         tempDir: String,
         independentSegement: Boolean,
         isMp4: Boolean,
+        discontinuous: Boolean = false,
     ): Boolean
 
     fun stop()

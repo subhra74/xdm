@@ -73,6 +73,9 @@ data class HlsTaskContext(
     var audioOnly: Boolean = false,
     var independent: Boolean,
     var encrypted: Boolean,
+    // At least one segment (video or audio) is preceded by EXT-X-DISCONTINUITY. Enables timeline
+    // repair in the muxer so the output stays monotonic across the timestamp reset.
+    var discontinuous: Boolean = false,
 ) : StreamingTaskContext
 
 data class DashTaskContext(

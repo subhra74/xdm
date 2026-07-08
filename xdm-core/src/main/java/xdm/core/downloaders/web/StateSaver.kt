@@ -200,6 +200,7 @@ private fun writeHlsContext(context: HlsTaskContext, out: DataOutputStream) {
         out.writeBoolean(audioOnly)
         out.writeBoolean(independent)
         out.writeBoolean(encrypted)
+        out.writeBoolean(discontinuous)
     }
 }
 
@@ -272,6 +273,7 @@ private fun readHlsContext(r: DataInputStream, http: PoolingHttpClient, host: Do
         downloadHost = host,
         independent = r.readBoolean(),
         encrypted = r.readBoolean(),
+        discontinuous = r.readBoolean(),
     ).apply { Logger.info(this) }
 }
 

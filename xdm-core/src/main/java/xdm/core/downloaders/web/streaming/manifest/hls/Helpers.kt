@@ -25,6 +25,27 @@ fun HlsMasterPlaylist.getInfoString(): String? {
     return if (arr.isEmpty()) null else arr.joinToString(" ")
 }
 
+/**
+ * When this VOD media playlist is a single self-contained file addressed purely by byte ranges —
+ * every segment shares one URL, the ranges tile the file contiguously from offset 0, and nothing is
+ * encrypted — the whole file is a complete media file. Such a playlist can be fetched with a single
+ * plain HTTP download (via the fast multi-connection downloader) instead of pulling each byte range
+ * separately and transmuxing. Returns that URL, or null when it is not reducible to one whole-file
+ * download (multiple files, gaps/holes, or encryption that a plain download could not decrypt).
+ */
+fun HlsPlaylist.singleFileHttpUrl(): String? {
+    if (encrypted || mediaSegments.isEmpty()) return null
+    val url = mediaSegments.first().url
+    var expectedOffset = 0L
+    for (seg in mediaSegments) {
+        if (seg.encrypted || seg.url != url) return null
+        val (offset, length) = seg.byteRange ?: return null
+        if (offset != expectedOffset) return null
+        expectedOffset += length
+    }
+    return url
+}
+
 private val ATTRIBUTE_PATTERN = Pattern.compile("([A-Z0-9-]+)=(?:\"([^\"]*)\"|([^,]*))")
 
 fun parseAttributes(attributeString: String): Map<String, String> {

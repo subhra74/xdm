@@ -32,8 +32,13 @@ class StreamingChunkRetriever(
             while (!stopFlag.get()) {
                 var retryAfter = 3L
                 if (piece.status.get() == ChunkStatus.Finished) return
-                val (start, end) = piece.byteRange ?: Pair(0L, null)
-                val realRange = Range(start + piece.downloaded.get(), end)
+                // byteRange is (offset, length) per the HLS/DASH parsers; an HTTP Range needs the
+                // absolute inclusive end (offset + length - 1), not the raw length. Passing the
+                // length straight through requested "bytes=offset-length", corrupting every
+                // single-file byte-range segment. A null byteRange means "whole resource".
+                val (offset, absEnd) = piece.byteRange?.let { (off, len) -> off to (off + len - 1) }
+                    ?: (0L to null)
+                val realRange = Range(offset + piece.downloaded.get(), absEnd)
                 Logger.info("XDM", "${piece.sequence}: Connecting to: ${piece.url}, range: $realRange")
                 try {
                     httpClient.getResponse(

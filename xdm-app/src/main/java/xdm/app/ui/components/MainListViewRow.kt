@@ -235,7 +235,7 @@ class MainListViewRow(
 
         btnDelete =
             createButton(
-                "delete-bin-line.svg", CategoryStyle.WARN
+                "delete-bin-line.svg", CategoryStyle.DANGER
             ) {
                 if (editEntry != null) {
                     onDeleteClick?.invoke(editEntry!!)

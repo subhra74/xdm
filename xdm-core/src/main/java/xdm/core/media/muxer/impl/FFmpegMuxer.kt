@@ -68,6 +68,7 @@ class FFmpegMuxer(private val appDir: String) : Muxer {
         tempDir: String,
         independentSegement: Boolean,
         isMp4: Boolean,
+        discontinuous: Boolean,
     ): Boolean {
         if (shouldAppend(segments, independentSegement, isMp4)) {
             Logger.info("Concat fmp4 segments")
@@ -154,6 +155,7 @@ class FFmpegMuxer(private val appDir: String) : Muxer {
         tempDir: String,
         independentSegement: Boolean,
         isMp4: Boolean,
+        discontinuous: Boolean,
     ): Boolean {
         val totalProgress = AtomicInteger(0)
         val callback = { prg: Int ->

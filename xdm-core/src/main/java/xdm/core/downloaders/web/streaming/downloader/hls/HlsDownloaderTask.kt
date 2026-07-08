@@ -109,6 +109,11 @@ class HlsDownloaderTask : StreamingDownloaderTask {
             if (videoPlaylist.encrypted || audioPlaylist?.encrypted == true) {
                 context.encrypted = true
             }
+            // A discontinuity in either stream means the muxer must repair the timeline so the
+            // output MP4 stays monotonic across the timestamp reset.
+            if (videoPlaylist.hasDiscontinuity || audioPlaylist?.hasDiscontinuity == true) {
+                context.discontinuous = true
+            }
             context.chunks.ensureCapacity(videoPlaylist.mediaSegments.size + (audioPlaylist?.mediaSegments?.size ?: 0))
             context.chunks.addAll(videoPlaylist.mediaSegments.mapIndexed { index, ms ->
                 StreamingChunk(
@@ -170,6 +175,8 @@ class HlsDownloaderTask : StreamingDownloaderTask {
 
     override fun isIndependentSegment() = (context as HlsTaskContext).independent
 
+    override fun hasDiscontinuity() = (context as HlsTaskContext).discontinuous
+
     private fun parseManifest(
         videoManifestContent: AtomicReference<Iterator<String>>, audioManifestContent: AtomicReference<Iterator<String>>
     ): Pair<HlsPlaylist, HlsPlaylist?> {
@@ -189,10 +196,10 @@ class HlsDownloaderTask : StreamingDownloaderTask {
         val error = AtomicBoolean(false)
         val keyUrls = HashSet<String>()
         if (videoPlayList.encrypted) {
-            keyUrls.addAll(videoPlayList.mediaSegments.map { it.keyUrl!!.toString() })
+            keyUrls.addAll(videoPlayList.mediaSegments.mapNotNull { it.keyUrl })
         }
         if (audioPlayList != null && audioPlayList.encrypted) {
-            keyUrls.addAll(audioPlayList.mediaSegments.map { it.keyUrl!!.toString() })
+            keyUrls.addAll(audioPlayList.mediaSegments.mapNotNull { it.keyUrl })
         }
         if (context.stopFlag.get()) {
             return

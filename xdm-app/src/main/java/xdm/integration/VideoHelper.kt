@@ -11,6 +11,7 @@ import xdm.core.downloaders.web.streaming.manifest.dash.parseMpdManifest
 import xdm.core.downloaders.web.streaming.manifest.hls.HlsMasterPlaylist
 import xdm.core.downloaders.web.streaming.manifest.hls.HlsParser
 import xdm.core.downloaders.web.streaming.manifest.hls.getInfoString
+import xdm.core.downloaders.web.streaming.manifest.hls.singleFileHttpUrl
 import xdm.core.network.http.*
 import xdm.core.network.http.impl.*
 import xdm.core.util.*
@@ -118,7 +119,15 @@ object VideoHelper {
                 return
             }
         }
+        submitHttpDownload(msg, url, ext, len)
+    }
 
+    /**
+     * Registers a plain HTTP video download with the given output [ext]. Used both by the
+     * content-type-guessing [processHttpVideo] and by the single-file HLS/DASH fast paths, which
+     * pass a native container extension (via [plainDownloadExt]) because nothing is transmuxed.
+     */
+    private fun submitHttpDownload(msg: ExtensionMessage, url: String, ext: String, len: Long) {
         val respHeaders =
             msg.responseHeaders?.map { entry -> entry.key to entry.value.map { it.value } }?.associate { it }
         val http = HttpDownloadTaskInfo(
@@ -223,8 +232,8 @@ object VideoHelper {
                         maxPiece = 8,
                         authInfo = null,
                         url = msg.url,
-                        audioSegments = audio.segments.map { it.toString() },
-                        videoSegments = video.segments.map { it.toString() },
+                        audioSegments = audio.segments,
+                        videoSegments = video.segments,
                         audioMime = audio.mimeType,
                         videoMime = video.mimeType,
                     )
@@ -245,7 +254,10 @@ object VideoHelper {
                     val mimeType = video?.mimeType ?: audio!!.mimeType
                     val segments = (video?.segments ?: audio!!.segments)
                     if (segments.isNotEmpty()) {
-                        processHttpVideo(msg, mimeType, -1, segments[0].toString(), true)
+                        // Single-stream representation, downloaded whole with no mux: keep the native
+                        // container from the MIME type (video/webm -> .webm, audio/mp4 -> .m4a, ...).
+                        val segUrl = segments[0].toString()
+                        submitHttpDownload(msg, segUrl, plainDownloadExt(mimeType, segUrl), -1)
                     }
                 }
             }
@@ -311,6 +323,16 @@ object VideoHelper {
             Logger.info("Processing normal hls playlist")
             val playlist = HlsParser.parseMediaSegments(lines.iterator(), msg.url).getOrNull() ?: return
             if (playlist.mediaSegments.isEmpty()) {
+                return
+            }
+            // A single self-contained file addressed purely by byte ranges is just a plain media
+            // file: fetch it whole with the (multi-connection, resumable) HTTP downloader instead of
+            // pulling each range and transmuxing.
+            playlist.singleFileHttpUrl()?.let { fileUrl ->
+                // No mux happens, so keep the native container (MPEG-TS -> .ts, fMP4 -> .mp4, etc.).
+                val ext = plainDownloadExt(null, fileUrl)
+                Logger.info("Single-file byte-range HLS; downloading as plain HTTP ($ext): $fileUrl")
+                submitHttpDownload(msg, fileUrl, ext, -1)
                 return
             }
             val hlsSource = toHlsSource(msg, null, msg.url, false, playlist.independent)
