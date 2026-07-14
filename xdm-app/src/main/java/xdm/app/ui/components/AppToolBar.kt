@@ -79,7 +79,7 @@ class AppToolBar(
         this.btnSettingsGap = Box.createRigidArea(Dimension(5, 0))
         this.btnSettings.addActionListener { showSettings() }
 
-        this.btnMenu = createToolButton("menu-line.svg", CategoryStyle.SKY)
+        this.btnMenu = createToolButton("menu-line.svg", CategoryStyle.neutralIcon())
         btnMenu.addActionListener {
             showMenu(btnMenu, contextMenu)
         }
@@ -109,7 +109,7 @@ class AppToolBar(
             putClientProperty(FlatClientProperties.STYLE, "arc: 10")
             putClientProperty("JTextField.placeholderText", "Search")
             putClientProperty(
-                "JTextField.trailingIcon", createSVGIcon("search-line.svg", 16, CategoryStyle.EMERALD)
+                "JTextField.trailingIcon", createSVGIcon("search-line.svg", 16, Color.GRAY)
             )
         }
         val d = txtSearch.preferredSize

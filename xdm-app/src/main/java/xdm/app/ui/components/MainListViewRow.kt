@@ -215,7 +215,7 @@ class MainListViewRow(
 
         btnPause =
             createButton(
-                "pause-circle-line.svg", CategoryStyle.WARN
+                "pause-circle-line.svg", CategoryStyle.neutralIcon()
             ) {
                 if (editEntry != null) {
                     Logger.info(editEntry!!)
@@ -225,7 +225,7 @@ class MainListViewRow(
 
         btnResume =
             createButton(
-                "play-circle-line.svg", CategoryStyle.SUCCESS
+                "play-circle-line.svg", CategoryStyle.neutralIcon()
             ) {
                 if (editEntry != null) {
                     Logger.info(editEntry)
@@ -235,7 +235,7 @@ class MainListViewRow(
 
         btnDelete =
             createButton(
-                "delete-bin-line.svg", CategoryStyle.DANGER
+                "delete-bin-line.svg", CategoryStyle.neutralIcon()
             ) {
                 if (editEntry != null) {
                     onDeleteClick?.invoke(editEntry!!)
@@ -253,7 +253,7 @@ class MainListViewRow(
 
         btnOpenFolder =
             createButton(
-                "folder-6-line.svg", CategoryStyle.SUCCESS
+                "folder-6-line.svg", CategoryStyle.neutralIcon()
             ) {
                 if (editEntry != null) {
                     onOpenFolderClick?.invoke(editEntry!!)
