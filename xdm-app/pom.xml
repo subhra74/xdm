@@ -225,4 +225,38 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- GraalVM native image (Windows only). Opt-in: build with `mvn -Pnative package`
+             and run the image goal explicitly, e.g. `mvn -Pnative native:compile-no-fork`.
+             Kept out of the default build so `extensions=true` does not re-register the
+             Kotlin source roots (which breaks the normal `mvn install`). -->
+        <profile>
+            <id>native</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.graalvm.buildtools</groupId>
+                        <artifactId>native-maven-plugin</artifactId>
+                        <version>0.10.3</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <imageName>xdm-app</imageName>
+                            <mainClass>xdm.app.AppMain</mainClass>
+                            <buildArgs>
+                                <buildArg>-Djava.awt.headless=false</buildArg>
+                                <buildArg>-H:ConfigurationFileDirectories=tracing</buildArg>
+                                <buildArg>-H:NativeLinkerOption=/SUBSYSTEM:WINDOWS</buildArg>
+                                <buildArg>-H:NativeLinkerOption=/ENTRY:mainCRTStartup</buildArg>
+                                <buildArg>--enable-http</buildArg>
+                                <buildArg>--enable-https</buildArg>
+                                <buildArg>-R:MinHeapSize=5m</buildArg>
+                                <buildArg>-R:MaxHeapFree=5m</buildArg>
+                            </buildArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
