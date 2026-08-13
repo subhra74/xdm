@@ -20,10 +20,21 @@ public class SocketFactory {
 		try {
 			SSLSocket sock2 = (SSLSocket) (HttpContext.getInstance().getSSLContext().getSocketFactory())
 					.createSocket(socket, host, port, true);
+			/*
+			 * Trusting the certificate chain is only half of the check - without
+			 * this the handshake accepts any valid certificate regardless of
+			 * which host it was issued for.
+			 */
+			if (!Config.getInstance().isAllowInsecureSSL()) {
+				SSLParameters params = sock2.getSSLParameters();
+				params.setEndpointIdentificationAlgorithm("HTTPS");
+				sock2.setSSLParameters(params);
+			}
 			sock2.startHandshake();
 			return sock2;
 		} catch (IOException e) {
-			throw new NetworkException("Https connection failed: " + host + ":" + port);
+			Logger.log(e);
+			throw new NetworkException("Https connection failed: " + host + ":" + port + " (" + e.getMessage() + ")");
 		}
 	}
 

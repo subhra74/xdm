@@ -52,6 +52,7 @@ public class Config {
 	private boolean downloadAutoStart;
 	private boolean fetchTs;
 	private boolean noTransparency;
+	private boolean allowInsecureSSL;
 	private boolean hideTray;
 	private String lastFolder;
 	private List<MonitoringListener> listeners;
@@ -136,6 +137,7 @@ public class Config {
 				fw.write("categoryPrograms:" + this.categoryPrograms + newLine);
 			fw.write("fetchTs:" + this.fetchTs + newLine);
 			fw.write("noTransparency:" + this.noTransparency + newLine);
+			fw.write("allowInsecureSSL:" + this.allowInsecureSSL + newLine);
 			fw.write("forceSingleFolder:" + this.forceSingleFolder + newLine);
 			fw.write("hideTray:" + this.hideTray + newLine);
 			if (lastFolder != null) {
@@ -266,6 +268,8 @@ public class Config {
 					this.fetchTs = "true".equals(val);
 				} else if (key.equals("noTransparency")) {
 					this.noTransparency = "true".equals(val);
+				} else if (key.equals("allowInsecureSSL")) {
+					this.allowInsecureSSL = "true".equals(val);
 				} else if (key.equals("forceSingleFolder")) {
 					this.forceSingleFolder = "true".equals(val);
 				} else if (key.equals("hideTray")) {
@@ -354,6 +358,7 @@ public class Config {
 		this.language = "en";
 		this.monitorClipboard = false;
 		this.noTransparency = false;
+		this.allowInsecureSSL = false;
 		this.hideTray = true;
 		this.listeners = new ArrayList<>();
 
@@ -859,6 +864,18 @@ public class Config {
 
 	public void setNoTransparency(boolean noTransparency) {
 		this.noTransparency = noTransparency;
+	}
+
+	/**
+	 * When enabled XDM accepts any https certificate. Off by default, it only
+	 * exists for servers using self signed certificates.
+	 */
+	public boolean isAllowInsecureSSL() {
+		return allowInsecureSSL;
+	}
+
+	public void setAllowInsecureSSL(boolean allowInsecureSSL) {
+		this.allowInsecureSSL = allowInsecureSSL;
 	}
 
 	public boolean isForceSingleFolder() {

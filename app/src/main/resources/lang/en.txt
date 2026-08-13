@@ -138,6 +138,7 @@ DESC_NET6=Use proxy server <host:port>
 DESC_NET7=Proxy username
 DESC_NET8=Proxy password
 DESC_NET9=Use socks proxy <host:port>
+LBL_ALLOW_INSECURE_SSL=Accept untrusted certificates
 
 DESC_PASS_TITLE=Password manager
 DESC_HOST=Host/Server

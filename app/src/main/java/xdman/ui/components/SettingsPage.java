@@ -138,7 +138,8 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 	JTextField txtPACUrl, txtProxyHostnPort, txtProxyPass, txtProxyUser, txtSocksHostnPort;
 
 	JCheckBox chkHaltAfterFinish, chkKeepAwake, chkExecCmd, chkExecAntivir, chkAutoStart, chkMonitorClipboard,
-			chkDwnAuto, chkGetTs, chkNoTransparency, chkForceFolder, chkShowTray, chkVidBrowserOnly;
+			chkDwnAuto, chkGetTs, chkNoTransparency, chkForceFolder, chkShowTray, chkVidBrowserOnly,
+			chkAllowInsecureSSL;
 
 	JTextField txtCustomCmd, txtAntivirCmd, txtAntivirArgs;
 
@@ -1072,6 +1073,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 				txtProxyPass.setText(config.getProxyPass());
 			}
 		}
+		chkAllowInsecureSSL.setSelected(config.isAllowInsecureSSL());
 	}
 
 	private void loadPasswordSettings() {
@@ -1650,6 +1652,14 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		txtProxyPass.setForeground(Color.WHITE);
 		txtProxyPass.setOpaque(false);
 		p.add(txtProxyPass);
+		y += h;
+
+		y += getScaledInt(20);
+
+		h = getScaledInt(30);
+		chkAllowInsecureSSL = createCheckBox("LBL_ALLOW_INSECURE_SSL");
+		chkAllowInsecureSSL.setBounds(getScaledInt(15), y, getScaledInt(350), h);
+		p.add(chkAllowInsecureSSL);
 		y += h;
 
 		y += getScaledInt(50);
@@ -2518,6 +2528,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 
 		config.setProxyUser(txtProxyUser.getText());
 		config.setProxyPass(txtProxyPass.getText());
+		config.setAllowInsecureSSL(chkAllowInsecureSSL.isSelected());
 	}
 }
 
