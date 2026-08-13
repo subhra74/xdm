@@ -139,7 +139,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 
 	JCheckBox chkHaltAfterFinish, chkKeepAwake, chkExecCmd, chkExecAntivir, chkAutoStart, chkMonitorClipboard,
 			chkDwnAuto, chkGetTs, chkNoTransparency, chkForceFolder, chkShowTray, chkVidBrowserOnly,
-			chkAllowInsecureSSL;
+			chkAllowInsecureSSL, chkYtdlAutoUpdate;
 
 	JTextField txtCustomCmd, txtAntivirCmd, txtAntivirArgs;
 
@@ -1020,6 +1020,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		cmbMinVidSize.setSelectedIndex(index);
 		chkDwnAuto.setSelected(config.isDownloadAutoStart());
 		chkGetTs.setSelected(config.isFetchTs());
+		chkYtdlAutoUpdate.setSelected(config.isYtdlAutoUpdate());
 	}
 
 	private void loadNetworkSettings() {
@@ -1434,6 +1435,14 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		chkGetTs = createCheckBox("LBL_GET_TIMESTAMP");
 		chkGetTs.setBounds(getScaledInt(15), y, getScaledInt(350), h);
 		p.add(chkGetTs);
+		y += h;
+
+		y += getScaledInt(10);
+
+		h = getScaledInt(30);
+		chkYtdlAutoUpdate = createCheckBox("LBL_YTDL_AUTO_UPDATE");
+		chkYtdlAutoUpdate.setBounds(getScaledInt(15), y, getScaledInt(350), h);
+		p.add(chkYtdlAutoUpdate);
 		y += h;
 
 		y += getScaledInt(50);
@@ -2449,6 +2458,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		}
 		config.setDownloadAutoStart(chkDwnAuto.isSelected());
 		config.setFetchTs(chkGetTs.isSelected());
+		config.setYtdlAutoUpdate(chkYtdlAutoUpdate.isSelected());
 		config.save();
 	}
 

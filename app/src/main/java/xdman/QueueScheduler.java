@@ -8,6 +8,7 @@ import xdman.util.DateTimeUtils;
 import xdman.util.Logger;
 import xdman.util.UpdateChecker;
 import xdman.util.XDMUtils;
+import xdman.util.YoutubeDLUpdater;
 
 public class QueueScheduler implements Runnable {
 	// private boolean stop;
@@ -111,6 +112,7 @@ public class QueueScheduler implements Runnable {
 
 				long now = System.currentTimeMillis();
 				if (now - lastUpdateChecked > 3600 * 1000) {
+					YoutubeDLUpdater.updateIfDue();
 					int stat = UpdateChecker.getUpdateStat();
 					switch (stat) {
 					case UpdateChecker.NO_UPDATE_AVAILABLE:
