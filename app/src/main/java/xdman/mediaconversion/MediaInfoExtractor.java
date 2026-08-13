@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 import javax.swing.ImageIcon;
 
 import xdman.Config;
+import xdman.util.ExternalTools;
 import xdman.util.Logger;
 import xdman.util.XDMUtils;
 
@@ -44,14 +45,9 @@ public class MediaInfoExtractor {
 		File tmpImgFile = new File(Config.getInstance().getTemporaryFolder(), UUID.randomUUID().toString() + ".jpg");
 		if (!f.exists())
 			return null;
-		File ffFile = new File(Config.getInstance().getDataFolder(),
-				System.getProperty("os.name").toLowerCase().contains("windows") ? "ffmpeg.exe" : "ffmpeg");
-		if (!ffFile.exists()) {
-			ffFile = new File(XDMUtils.getJarFile().getParentFile(),
-					System.getProperty("os.name").toLowerCase().contains("windows") ? "ffmpeg.exe" : "ffmpeg");
-			if (!ffFile.exists()) {
-				return null;
-			}
+		File ffFile = ExternalTools.getFFmpeg();
+		if (ffFile == null) {
+			return null;
 		}
 		if(stop)return null;
 		try {

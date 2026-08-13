@@ -138,6 +138,7 @@ DESC_NET6=Use proxy server <host:port>
 DESC_NET7=Proxy username
 DESC_NET8=Proxy password
 DESC_NET9=Use socks proxy <host:port>
+LBL_ALLOW_INSECURE_SSL=Accept untrusted certificates
 
 DESC_PASS_TITLE=Password manager
 DESC_HOST=Host/Server
@@ -312,6 +313,7 @@ LBL_NET_OPT_256=High speed: Direct connection (Ethernet/Cable) / Wi-Fi / Mobile 
 LBL_TRANSLATE=Translate XDM
 LBL_TWITTER_PAGE=XDM on Twitter
 LBL_GET_TIMESTAMP=Get timestamp from server
+LBL_YTDL_AUTO_UPDATE=Keep video parser updated
 LBL_TRANSPARENCY=Do not use transparency
 LBL_FORCE_FOLDER=Download all files to a single folder
 LBL_SHOW_TRAY=Show tray icon (needs restart)

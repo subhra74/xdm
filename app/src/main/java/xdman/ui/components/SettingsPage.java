@@ -138,7 +138,8 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 	JTextField txtPACUrl, txtProxyHostnPort, txtProxyPass, txtProxyUser, txtSocksHostnPort;
 
 	JCheckBox chkHaltAfterFinish, chkKeepAwake, chkExecCmd, chkExecAntivir, chkAutoStart, chkMonitorClipboard,
-			chkDwnAuto, chkGetTs, chkNoTransparency, chkForceFolder, chkShowTray, chkVidBrowserOnly;
+			chkDwnAuto, chkGetTs, chkNoTransparency, chkForceFolder, chkShowTray, chkVidBrowserOnly,
+			chkAllowInsecureSSL, chkYtdlAutoUpdate;
 
 	JTextField txtCustomCmd, txtAntivirCmd, txtAntivirArgs;
 
@@ -1019,6 +1020,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		cmbMinVidSize.setSelectedIndex(index);
 		chkDwnAuto.setSelected(config.isDownloadAutoStart());
 		chkGetTs.setSelected(config.isFetchTs());
+		chkYtdlAutoUpdate.setSelected(config.isYtdlAutoUpdate());
 	}
 
 	private void loadNetworkSettings() {
@@ -1072,6 +1074,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 				txtProxyPass.setText(config.getProxyPass());
 			}
 		}
+		chkAllowInsecureSSL.setSelected(config.isAllowInsecureSSL());
 	}
 
 	private void loadPasswordSettings() {
@@ -1434,6 +1437,14 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		p.add(chkGetTs);
 		y += h;
 
+		y += getScaledInt(10);
+
+		h = getScaledInt(30);
+		chkYtdlAutoUpdate = createCheckBox("LBL_YTDL_AUTO_UPDATE");
+		chkYtdlAutoUpdate.setBounds(getScaledInt(15), y, getScaledInt(350), h);
+		p.add(chkYtdlAutoUpdate);
+		y += h;
+
 		y += getScaledInt(50);
 
 		p.setPreferredSize(new Dimension(getScaledInt(350), y));
@@ -1650,6 +1661,14 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		txtProxyPass.setForeground(Color.WHITE);
 		txtProxyPass.setOpaque(false);
 		p.add(txtProxyPass);
+		y += h;
+
+		y += getScaledInt(20);
+
+		h = getScaledInt(30);
+		chkAllowInsecureSSL = createCheckBox("LBL_ALLOW_INSECURE_SSL");
+		chkAllowInsecureSSL.setBounds(getScaledInt(15), y, getScaledInt(350), h);
+		p.add(chkAllowInsecureSSL);
 		y += h;
 
 		y += getScaledInt(50);
@@ -2439,6 +2458,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 		}
 		config.setDownloadAutoStart(chkDwnAuto.isSelected());
 		config.setFetchTs(chkGetTs.isSelected());
+		config.setYtdlAutoUpdate(chkYtdlAutoUpdate.isSelected());
 		config.save();
 	}
 
@@ -2518,6 +2538,7 @@ public class SettingsPage extends JPanel implements ActionListener, ListSelectio
 
 		config.setProxyUser(txtProxyUser.getText());
 		config.setProxyPass(txtProxyPass.getText());
+		config.setAllowInsecureSSL(chkAllowInsecureSSL.isSelected());
 	}
 }
 

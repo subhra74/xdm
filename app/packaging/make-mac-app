@@ -1,0 +1,110 @@
+#!/bin/bash
+#
+# Builds XDM as a self contained macOS application bundle.
+#
+# The bundle ships its own Java runtime, ffmpeg and yt-dlp, so a user does not
+# have to install anything to download and merge videos. ffmpeg is taken from
+# Homebrew and its libraries are copied into the bundle, yt-dlp is the official
+# standalone build.
+#
+# Requirements:
+#   - a JDK 14 or newer (jpackage), maven
+#   - homebrew with ffmpeg and dylibbundler installed
+#
+# Usage: app/packaging/make-mac-app [output folder]
+#
+set -euo pipefail
+
+APP_NAME="XDM"
+APP_VERSION="7.2.11"
+BUNDLE_ID="org.sdg.xdman"
+YTDL_URL="https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos"
+
+cd "$(dirname "$0")/.."
+APP_DIR="$(pwd)"
+OUT_DIR="${1:-$APP_DIR/target/mac}"
+WORK_DIR="$APP_DIR/target/mac-work"
+
+require() {
+	command -v "$1" >/dev/null 2>&1 || { echo "error: $1 is required but not installed" >&2; exit 1; }
+}
+
+require mvn
+require dylibbundler
+require jpackage
+
+# ---------------------------------------------------------------- application
+echo "==> building xdman.jar"
+mvn -B -q package
+
+rm -rf "$WORK_DIR" "$OUT_DIR"
+mkdir -p "$WORK_DIR/input/lib" "$OUT_DIR"
+cp "$APP_DIR/target/xdman.jar" "$WORK_DIR/input/"
+
+# ---------------------------------------------------------------------- ffmpeg
+# The Homebrew binary links against libraries under the Homebrew prefix, so
+# every dependency is copied into the bundle and the load paths are rewritten
+# to be relative to the executable.
+FFMPEG_BIN="$(command -v ffmpeg || true)"
+if [ -z "$FFMPEG_BIN" ]; then
+	echo "error: ffmpeg not found, install it with 'brew install ffmpeg'" >&2
+	exit 1
+fi
+
+echo "==> bundling $FFMPEG_BIN and its libraries"
+cp "$FFMPEG_BIN" "$WORK_DIR/input/ffmpeg"
+chmod +w "$WORK_DIR/input/ffmpeg"
+dylibbundler -od -b -x "$WORK_DIR/input/ffmpeg" \
+	-d "$WORK_DIR/input/lib/" -p @executable_path/lib/ >/dev/null
+
+# Nothing may still point outside the bundle, or it breaks on a machine
+# without Homebrew.
+for binary in "$WORK_DIR/input/ffmpeg" "$WORK_DIR"/input/lib/*.dylib; do
+	if otool -L "$binary" | grep -q "$(brew --prefix)"; then
+		echo "error: $(basename "$binary") still references $(brew --prefix)" >&2
+		exit 1
+	fi
+done
+
+# ---------------------------------------------------------------------- yt-dlp
+echo "==> downloading yt-dlp"
+curl -fL --retry 3 -o "$WORK_DIR/input/yt-dlp" "$YTDL_URL"
+chmod +x "$WORK_DIR/input/yt-dlp"
+
+# ----------------------------------------------------------------------- icon
+ICON_ARG=()
+LOGO="$APP_DIR/src/main/resources/icons/xxhdpi/icon.png"
+if [ -f "$LOGO" ]; then
+	ICONSET="$WORK_DIR/$APP_NAME.iconset"
+	mkdir -p "$ICONSET"
+	for size in 16 32 128 256 512; do
+		sips -z $size $size "$LOGO" --out "$ICONSET/icon_${size}x${size}.png" >/dev/null
+		sips -z $((size * 2)) $((size * 2)) "$LOGO" \
+			--out "$ICONSET/icon_${size}x${size}@2x.png" >/dev/null
+	done
+	iconutil -c icns "$ICONSET" -o "$WORK_DIR/$APP_NAME.icns"
+	ICON_ARG=(--icon "$WORK_DIR/$APP_NAME.icns")
+fi
+
+# ---------------------------------------------------------------------- bundle
+echo "==> creating $APP_NAME.app"
+jpackage \
+	--type app-image \
+	--name "$APP_NAME" \
+	--app-version "$APP_VERSION" \
+	--input "$WORK_DIR/input" \
+	--main-jar xdman.jar \
+	--main-class xdman.Main \
+	--dest "$OUT_DIR" \
+	--mac-package-identifier "$BUNDLE_ID" \
+	--vendor "subhra74" \
+	--description "Xtreme Download Manager" \
+	--java-options "-Xmx1024m" \
+	--java-options "-Xdock:name=$APP_NAME" \
+	"${ICON_ARG[@]}"
+
+codesign --verify --deep --strict "$OUT_DIR/$APP_NAME.app"
+
+echo "==> built $OUT_DIR/$APP_NAME.app"
+echo "    run 'jpackage --type dmg --name $APP_NAME --app-version $APP_VERSION \\"
+echo "        --app-image $OUT_DIR/$APP_NAME.app --dest $OUT_DIR' to create an installer"

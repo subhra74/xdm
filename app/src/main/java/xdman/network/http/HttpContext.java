@@ -13,6 +13,7 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509ExtendedTrustManager;
 
+import xdman.Config;
 import xdman.CredentialManager;
 import xdman.network.ICredentialManager;
 import xdman.util.Logger;
@@ -123,8 +124,22 @@ public class HttpContext {
 				// throws CertificateException {
 				// }
 				// } };
-				sslContext.init(null, trustAllCerts, new SecureRandom());
-				HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
+				/*
+				 * The trust-all manager above used to be installed
+				 * unconditionally, which disabled certificate validation for
+				 * every https transfer XDM made and left downloads open to
+				 * tampering by anything on the network path. Use the platform
+				 * trust store instead, and keep the permissive behaviour only
+				 * for users who explicitly ask for it (self signed servers on a
+				 * private network, for instance).
+				 */
+				if (Config.getInstance().isAllowInsecureSSL()) {
+					Logger.log("WARNING: certificate validation is disabled by configuration");
+					sslContext.init(null, trustAllCerts, new SecureRandom());
+					HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
+				} else {
+					sslContext.init(null, null, null);
+				}
 			} catch (Exception e) {
 				Logger.log(e);
 			}
