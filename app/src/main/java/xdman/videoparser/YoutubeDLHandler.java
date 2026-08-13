@@ -10,6 +10,7 @@ import java.util.UUID;
 import xdman.Config;
 import xdman.network.ProxyResolver;
 import xdman.network.http.WebProxy;
+import xdman.util.ExternalTools;
 import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
@@ -27,18 +28,18 @@ public class YoutubeDLHandler {
 	public YoutubeDLHandler(String url, String user, String pass) {
 		this.url = url;
 		this.videos = new ArrayList<>();
-		File ydlFile = new File(Config.getInstance().getDataFolder(),
-				System.getProperty("os.name").toLowerCase().contains("windows") ? "youtube-dl.exe" : "youtube-dl");
-		if (!ydlFile.exists()) {
-			ydlFile = new File(XDMUtils.getJarFile().getParentFile(),
-					System.getProperty("os.name").toLowerCase().contains("windows") ? "youtube-dl.exe" : "youtube-dl");
-		}
-		ydlLocation = ydlFile.getAbsolutePath();
+		File ydlFile = ExternalTools.getYoutubeDL();
+		ydlLocation = ydlFile == null ? null : ydlFile.getAbsolutePath();
 		this.user = user;
 		this.pass = pass;
 	}
 
 	public void start() {
+		if (ydlLocation == null) {
+			Logger.log("yt-dlp/youtube-dl not found, unable to parse: " + url);
+			exitCode = -1;
+			return;
+		}
 		File tmpError = new File(Config.getInstance().getTemporaryFolder(), UUID.randomUUID().toString());
 		File tmpOutput = new File(Config.getInstance().getTemporaryFolder(), UUID.randomUUID().toString());
 		InputStream in = null;

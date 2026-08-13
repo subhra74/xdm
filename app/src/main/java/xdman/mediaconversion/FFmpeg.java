@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import xdman.Config;
+import xdman.util.ExternalTools;
 import xdman.util.Logger;
 import xdman.util.StringUtils;
 import xdman.util.XDMUtils;
@@ -42,14 +43,9 @@ public class FFmpeg {
 
 			Logger.log("Outformat: " + outformat);
 
-			File ffFile = new File(Config.getInstance().getDataFolder(),
-					System.getProperty("os.name").toLowerCase().contains("windows") ? "ffmpeg.exe" : "ffmpeg");
-			if (!ffFile.exists()) {
-				ffFile = new File(XDMUtils.getJarFile().getParentFile(),
-						System.getProperty("os.name").toLowerCase().contains("windows") ? "ffmpeg.exe" : "ffmpeg");
-				if (!ffFile.exists()) {
-					return FF_NOT_FOUND;
-				}
+			File ffFile = ExternalTools.getFFmpeg();
+			if (ffFile == null) {
+				return FF_NOT_FOUND;
 			}
 
 			List<String> args = new ArrayList<String>();

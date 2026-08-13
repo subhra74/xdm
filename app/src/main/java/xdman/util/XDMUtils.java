@@ -411,23 +411,8 @@ public class XDMUtils {
 	}
 
 	public static boolean checkComponentsInstalled() {
-		File ffFile = new File(Config.getInstance().getDataFolder(),
-				XDMUtils.detectOS() == XDMUtils.WINDOWS ? "ffmpeg.exe"
-						: "ffmpeg");
-		File ytFile = new File(Config.getInstance().getDataFolder(),
-				XDMUtils.detectOS() == XDMUtils.WINDOWS ? "youtube-dl.exe"
-						: "youtube-dl");
-		if ((ffFile.exists() && ytFile.exists())) {
-			return true;
-		} else {
-			ffFile = new File(XDMUtils.getJarFile().getParentFile(),
-					XDMUtils.detectOS() == XDMUtils.WINDOWS ? "ffmpeg.exe"
-							: "ffmpeg");
-			ytFile = new File(XDMUtils.getJarFile().getParentFile(),
-					XDMUtils.detectOS() == XDMUtils.WINDOWS ? "youtube-dl.exe"
-							: "youtube-dl");
-			return (ffFile.exists() && ytFile.exists());
-		}
+		return ExternalTools.isFFmpegInstalled()
+				&& ExternalTools.isYoutubeDLInstalled();
 	}
 
 	public static String getClipBoardText() {
@@ -474,15 +459,7 @@ public class XDMUtils {
 	}
 
 	public static boolean isFFmpegInstalled() {
-		File f1 = new File(Config.getInstance().getDataFolder(), "ffmpeg"
-				+ (XDMUtils.detectOS() == XDMUtils.WINDOWS ? ".exe" : ""));
-		if (f1.exists()) {
-			return true;
-		}
-		return new File(XDMUtils.getJarFile().getParentFile(), "ffmpeg"
-				+ (XDMUtils.detectOS() == XDMUtils.WINDOWS ? ".exe" : ""))
-						.exists();
-
+		return ExternalTools.isFFmpegInstalled();
 	}
 
 	// public static boolean isYdlInstalled() {
