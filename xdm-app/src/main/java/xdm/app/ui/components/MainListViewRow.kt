@@ -88,7 +88,7 @@ class MainListViewRow(
         val p4 = JPanel(FlowLayout())
         p4.isOpaque = false
         val p3 = JPanel(BorderLayout())
-        p3.background = CategoryStyle.color(FilterCategory.Docs)
+        p3.background = Color(30, 144, 255)
         iconBadge = p3
 
         icoUnchecked = createSVGIcon("checkbox-blank-line.svg", 16, Color.WHITE)
@@ -215,7 +215,7 @@ class MainListViewRow(
 
         btnPause =
             createButton(
-                "pause-circle-line.svg", CategoryStyle.neutralIcon()
+                "pause-circle-line.svg", Color.GRAY
             ) {
                 if (editEntry != null) {
                     Logger.info(editEntry!!)
@@ -225,7 +225,7 @@ class MainListViewRow(
 
         btnResume =
             createButton(
-                "play-circle-line.svg", CategoryStyle.neutralIcon()
+                "play-circle-line.svg", Color.GRAY
             ) {
                 if (editEntry != null) {
                     Logger.info(editEntry)
@@ -235,7 +235,7 @@ class MainListViewRow(
 
         btnDelete =
             createButton(
-                "delete-bin-line.svg", CategoryStyle.neutralIcon()
+                "delete-bin-line.svg", Color.GRAY
             ) {
                 if (editEntry != null) {
                     onDeleteClick?.invoke(editEntry!!)
@@ -253,7 +253,7 @@ class MainListViewRow(
 
         btnOpenFolder =
             createButton(
-                "folder-6-line.svg", CategoryStyle.neutralIcon()
+                "folder-6-line.svg", Color.GRAY
             ) {
                 if (editEntry != null) {
                     onOpenFolderClick?.invoke(editEntry!!)
@@ -289,7 +289,7 @@ class MainListViewRow(
 
     private fun createButton(
         iconName: String,
-        iconColor: Color = CategoryStyle.neutralIcon(),
+        iconColor: Color = Color.GRAY,
         e: ActionListener
     ): JButton {
         val btn = JButton(createSVGIcon(iconName, 16, iconColor))
@@ -325,7 +325,7 @@ class MainListViewRow(
     }
 
     private fun updateLabelText(ent: DbRecord, isSelected: Boolean) {
-        iconBadge.background = CategoryStyle.color(categoryFor(ent.fileName))
+        iconBadge.background = Color(30, 144, 255)//CategoryStyle.color(categoryFor(ent.fileName))
         icon.icon =
             if (isSelected) icoChecked else if (table.selectedRowCount > 0) icoUnchecked else getIcon(ent.fileName)
         buttonContainer.isVisible = table.selectedRowCount == 0
@@ -444,7 +444,7 @@ class MainListViewRow(
 
     private fun getIcon(name: String): Icon {
         val type = categoryFor(name)
-        iconBadge.background = CategoryStyle.color(type)
+        iconBadge.background = Color(30, 144, 255)
         return iconMap[type]!!
     }
 }

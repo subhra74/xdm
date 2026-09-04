@@ -60,26 +60,26 @@ class AppToolBar(
     init {
         this.contextMenu = createContextMenu()
         this.sortMenu = createSortMenu()
-        this.btnNew = createToolButton("add-large-fill.svg", buttonCallback, "TOOL_DOWNLOAD", CategoryStyle.ACCENT)
+        this.btnNew = createToolButton("add-large-fill.svg", buttonCallback, "TOOL_DOWNLOAD", Color.gray)
         this.btnNewGap = Box.createRigidArea(Dimension(5, 0))
 
-        this.btnClear = createToolButton("delete-bin-line.svg", buttonCallback, "TOOL_CLEAR", CategoryStyle.ORANGE)
+        this.btnClear = createToolButton("delete-bin-line.svg", buttonCallback, "TOOL_CLEAR", Color.gray)
         this.btnClearGap = Box.createRigidArea(Dimension(5, 0))
 
-        this.btnDelete = createToolButton("delete-bin-line.svg", buttonCallback, "TOOL_DELETE", CategoryStyle.DANGER)
+        this.btnDelete = createToolButton("delete-bin-line.svg", buttonCallback, "TOOL_DELETE", Color.gray)
         this.btnDeleteGap = Box.createRigidArea(Dimension(5, 0))
 
-        this.btnSort = createToolButton("sort-desc.svg", buttonCallback, "TOOL_SORT", CategoryStyle.VIOLET) // "Stop all");
+        this.btnSort = createToolButton("sort-desc.svg", buttonCallback, "TOOL_SORT", Color.gray) // "Stop all");
         this.btnSort.addActionListener {
             showMenu(btnSort, sortMenu)
         }
         this.btnSortGap = Box.createRigidArea(Dimension(5, 0))
 
-        this.btnSettings = createToolButton("settings-4-line.svg", buttonCallback, "TOOL_SETTINGS", CategoryStyle.TEAL) // "Settings");
+        this.btnSettings = createToolButton("settings-4-line.svg", buttonCallback, "TOOL_SETTINGS", Color.gray) // "Settings");
         this.btnSettingsGap = Box.createRigidArea(Dimension(5, 0))
         this.btnSettings.addActionListener { showSettings() }
 
-        this.btnMenu = createToolButton("menu-line.svg", CategoryStyle.neutralIcon())
+        this.btnMenu = createToolButton("menu-line.svg", Color.gray)
         btnMenu.addActionListener {
             showMenu(btnMenu, contextMenu)
         }
@@ -236,7 +236,7 @@ class AppToolBar(
         iconName: String,
         callback: ActionListener,
         key: String,
-        iconColor: Color = CategoryStyle.neutralIcon()
+        iconColor: Color = Color.gray
     ): JButton {
         return JButton(text(key)).apply {
             name = key
@@ -247,7 +247,7 @@ class AppToolBar(
         }
     }
 
-    private fun createToolButton(iconName: String, iconColor: Color = CategoryStyle.neutralIcon()): JButton {
+    private fun createToolButton(iconName: String, iconColor: Color = Color.gray): JButton {
         return JButton().apply {
             icon = createSVGIcon(iconName, 16, iconColor)
             margin = Insets(5, 5, 5, 5)

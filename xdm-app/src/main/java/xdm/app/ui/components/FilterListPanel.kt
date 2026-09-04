@@ -24,24 +24,24 @@ class FilterListPanel(
         stateFilterModel.addElement(
             FilterItem.State(
                 FilterState.All, text("CAT_ALL"),
-                makeIcon("arrow-down-circle-fill.svg", CategoryStyle.INDIGO),
-                makeIcon("arrow-down-circle-fill.svg", CategoryStyle.INDIGO)
+                makeIcon("arrow-down-circle-fill.svg", Color.gray),
+                makeIcon("arrow-down-circle-fill.svg", Color.gray)
             )
         )
         stateFilterModel.addElement(
             FilterItem.State(
                 FilterState.Incomplete,
                 text("CAT_INCOMPLETE"),
-                makeIcon("progress-2-fill.svg", CategoryStyle.EMERALD),
-                makeIcon("progress-2-fill.svg", CategoryStyle.EMERALD)
+                makeIcon("progress-2-fill.svg", Color.gray),
+                makeIcon("progress-2-fill.svg", Color.gray)
             )
         )
         stateFilterModel.addElement(
             FilterItem.State(
                 FilterState.Completed,
                 text("CAT_FINISHED"),
-                makeIcon("checkbox-circle-fill.svg", CategoryStyle.AMBER),
-                makeIcon("checkbox-circle-fill.svg", CategoryStyle.AMBER)
+                makeIcon("checkbox-circle-fill.svg", Color.gray),
+                makeIcon("checkbox-circle-fill.svg", Color.gray)
             )
         )
         stateFilterList.isOpaque = false
@@ -50,7 +50,7 @@ class FilterListPanel(
 
         val catFilterModel = DefaultListModel<FilterItem>()
         for (type in FilterCategory.values()) {
-            val icon = makeIcon(CategoryStyle.iconName(type), CategoryStyle.color(type))
+            val icon = makeIcon(CategoryStyle.iconName(type), Color.gray)
             catFilterModel.addElement(
                 FilterItem.Category(type, text(type.text), icon, icon)
             )
