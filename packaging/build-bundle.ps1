@@ -30,20 +30,35 @@ Set-Location $ProjectRoot
 $Modules = 'java.desktop,java.logging,jdk.crypto.ec,jdk.unsupported'
 if ($WithLocales) { $Modules += ',jdk.localedata' }
 
+# JVM tuning flags baked into the launcher. See the comment block in
+# build-bundle.sh for the measurements behind this set: SerialGC keeps
+# JVM-committed memory at ~68 MB vs 82 (Shenandoah), 113 (ZGC), 120 (G1) and
+# 195 (Parallel), because G1/Parallel size their card tables and remembered
+# sets from the *maximum* heap and we deliberately do not set -Xmx.
 $JavaOptions = @(
-  '-XX:+UseZGC'
+  # collector: minimum native overhead, heap returned to the OS quickly
+  '-XX:+UseSerialGC'
+  '-XX:MinHeapFreeRatio=5'
+  '-XX:MaxHeapFreeRatio=10'
+  '-Xms4m'
+  '-XX:-AlwaysPreTouch'
+  # AppMain runs a System.gc() every 15s; that is what triggers the shrink
+  '-XX:-DisableExplicitGC'
+  # class metadata
+  '-XX:+ClassUnloading'
   '-XX:MinMetaspaceFreeRatio=1'
   '-XX:MaxMetaspaceFreeRatio=2'
-  '-XX:ZCollectionInterval=30'
-  '-XX:ZUncommitDelay=10'
-  '-XX:+ClassUnloading'
-  '-XX:+ClassUnloadingWithConcurrentMark'
-  '-XX:-AlwaysPreTouch'
-  '-XX:-ZProactive'
-  '-XX:-DisableExplicitGC'
+  '-XX:MetaspaceReclaimPolicy=aggressive'
+  '-XX:CompressedClassSpaceSize=64m'
+  # JIT
   '-XX:TieredStopAtLevel=1'
   '-XX:CICompilerCount=1'
-  '-Xms4m'
+  # drop FlatLaf/Swing soft-referenced image caches on each GC
+  '-XX:SoftRefLRUPolicyMSPerMB=0'
+  # no hsperfdata mmap file
+  '-XX:-UsePerfData'
+  # bound the per-thread direct-buffer cache NIO keeps for heap-buffer writes
+  '-Djdk.nio.maxCachedBufferSize=262144'
 )
 
 $AppName    = 'XDM'

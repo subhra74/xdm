@@ -32,20 +32,52 @@ cd "$PROJECT_ROOT"
 MODULES="java.desktop,java.logging,jdk.crypto.ec,jdk.unsupported"
 
 # JVM tuning flags baked into the launcher.
+#
+# Goal: smallest steady-state footprint in Task Manager / Activity Monitor,
+# with no -Xmx (so max heap stays the default 1/4 of RAM and the app can never
+# hit an artificial OOM). Measured with JDK 25 Native Memory Tracking on an
+# idle app after several of the app's own periodic System.gc() cycles
+# (JVM-committed memory, the part these flags control):
+#
+#   SerialGC      68 MB   (GC bookkeeping 0.1 MB)   <- chosen
+#   Shenandoah    82 MB   (GC bookkeeping 5.9 MB)
+#   ZGC          113 MB   (heap floor ~53 MB)
+#   G1           120 MB   (GC bookkeeping 51 MB)
+#   ParallelGC   195 MB   (GC bookkeeping 123 MB)
+#
+# The app's live set is ~10-15 MB, so the heap is never the problem; what costs
+# memory is per-collector native bookkeeping (card tables, remembered sets),
+# which G1/Parallel size from the *maximum* heap. Since we deliberately do not
+# set -Xmx, that penalty is large - SerialGC is the only collector whose
+# overhead is independent of max heap. Its pauses are irrelevant at this live
+# set size.
+#
+# TieredStopAtLevel=1 (C1 only) keeps the code cache at ~5 MB.
 JAVA_OPTIONS=(
-  -XX:+UseZGC
+  # --- collector: minimum native overhead, heap returned to the OS quickly ---
+  -XX:+UseSerialGC
+  -XX:MinHeapFreeRatio=5
+  -XX:MaxHeapFreeRatio=10
+  -Xms4m
+  -XX:-AlwaysPreTouch
+  # AppMain runs a System.gc() every 15s; that is what triggers the shrink.
+  -XX:-DisableExplicitGC
+  # --- class metadata ---
+  -XX:+ClassUnloading
   -XX:MinMetaspaceFreeRatio=1
   -XX:MaxMetaspaceFreeRatio=2
-  -XX:ZCollectionInterval=30
-  -XX:ZUncommitDelay=10
-  -XX:+ClassUnloading
-  -XX:+ClassUnloadingWithConcurrentMark
-  -XX:-AlwaysPreTouch
-  -XX:-ZProactive
-  -XX:-DisableExplicitGC
+  -XX:MetaspaceReclaimPolicy=aggressive
+  -XX:CompressedClassSpaceSize=64m
+  # --- JIT ---
   -XX:TieredStopAtLevel=1
   -XX:CICompilerCount=1
-  -Xms4m
+  # --- misc ---
+  # drop FlatLaf/Swing soft-referenced image caches on each GC
+  -XX:SoftRefLRUPolicyMSPerMB=0
+  # no hsperfdata mmap file
+  -XX:-UsePerfData
+  # bound the per-thread direct-buffer cache NIO keeps for heap-buffer writes
+  -Djdk.nio.maxCachedBufferSize=262144
 )
 
 APP_NAME="XDM"
