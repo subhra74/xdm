@@ -117,6 +117,9 @@ $args = @(
 # FlatLaf loads a native library; JDK 22+ warns about that unless native access
 # is enabled explicitly (and will block it in a future release).
 if ([int]$specVersion -ge 22) { $JavaOptions += '--enable-native-access=ALL-UNNAMED' }
+# 64-bit object headers instead of 96-bit: product flag since JDK 25, default
+# from JDK 27 (JEP 534), experimental before that - so gate on the JDK version.
+if ([int]$specVersion -ge 25) { $JavaOptions += '-XX:+UseCompactObjectHeaders' }
 foreach ($o in $JavaOptions) { $args += @('--java-options', $o) }
 
 $icon = Join-Path $PSScriptRoot 'icons\xdm.ico'

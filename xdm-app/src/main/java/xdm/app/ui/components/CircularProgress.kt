@@ -29,7 +29,7 @@ class CircularProgress : JComponent() {
     }
 
     val stroke: Stroke = BasicStroke(
-        4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_MITER
+        4f, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER, 1.0f, floatArrayOf(4.0f, 5.0f), 1.0f
     )
     private var _value = 0
 
