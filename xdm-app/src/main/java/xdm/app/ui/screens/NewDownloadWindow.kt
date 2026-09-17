@@ -3,6 +3,10 @@ package xdm.app.ui.screens
 import xdm.app.AppContext
 import xdm.app.I8N.text
 import xdm.app.utils.chooseFile
+import xdm.app.utils.isAutoCategorySelected
+import xdm.app.utils.populateSaveInFolders
+import xdm.app.utils.rememberFolderChoice
+import xdm.app.utils.selectedBaseFolder
 import xdm.app.utils.createSVGIcon
 import xdm.app.utils.getClipBoardText
 import xdm.app.utils.sameWidth
@@ -14,6 +18,7 @@ import java.awt.*
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import java.io.File
+import java.net.URI
 import javax.swing.*
 import javax.swing.border.EmptyBorder
 import javax.swing.event.DocumentEvent
@@ -175,7 +180,7 @@ class NewDownloadWindow : JDialog() {
         panel.layout = BoxLayout(panel, BoxLayout.X_AXIS)
 
         btnIgnore = JButton(text("MSG_IGNORE_ADDR"))
-        btnIgnore.addActionListener { }
+        btnIgnore.addActionListener { ignoreHost() }
         panel.add(btnIgnore)
 
         panel.add(Box.createHorizontalGlue())
@@ -213,19 +218,22 @@ class NewDownloadWindow : JDialog() {
             val selected = chooseFile(
                 this@NewDownloadWindow,
                 directoriesOnly = true,
-                currentDir = File(AppContext.defaultDownloadFolder)
+                currentDir = File(selectedBaseFolder(cmbSaveIn))
             )
             if (selected != null) {
-                val selectedIndex = modelSaveIn.size
-                modelSaveIn.addElement(selected.absolutePath)
-                cmbSaveIn.selectedIndex = selectedIndex
+                val path = selected.absolutePath
+                val idx = modelSaveIn.getIndexOf(path).takeIf { it >= 0 } ?: run {
+                    modelSaveIn.addElement(path)
+                    modelSaveIn.size - 1
+                }
+                cmbSaveIn.selectedIndex = idx
             }
         }
 
         cmbSaveIn.addItemListener {
             Logger.info("Selected item: ${cmbSaveIn.selectedItem}")
-            val folder = cmbSaveIn.selectedItem as? String
-            if (folder != null && selectedFolder != folder) {
+            val folder = selectedBaseFolder(cmbSaveIn)
+            if (selectedFolder != folder) {
                 selectedFolder = folder
                 val freeSpace = File(folder).freeSpace
                 lblFreeSpace.text = "${text("MSG_FREE_SPACE")} ${FormatHelper.formatSize(freeSpace.toDouble())}"
@@ -298,14 +306,15 @@ class NewDownloadWindow : JDialog() {
             cookie = taskInfo?.cookie,
             headers = taskInfo?.headers,
             origin = taskInfo?.origin,
-            autoCategorize = false,
-            defaultDownloadFolder = cmbSaveIn.selectedItem?.toString() ?: AppContext.defaultDownloadFolder,
+            autoCategorize = isAutoCategorySelected(cmbSaveIn),
+            defaultDownloadFolder = selectedBaseFolder(cmbSaveIn),
             userSelectedDownloadFolder = null,
             maxPiece = 8,
             authInfo = null,
             knownFileSize = taskInfo?.knownFileSize
         )
 
+        rememberFolderChoice(cmbSaveIn)
         AppContext.downloader.startHttpDownload(task, now)
         dispose()
     }
@@ -364,23 +373,30 @@ class NewDownloadWindow : JDialog() {
     //    }
     //    this.setVisible(true);
     //  }
+    private fun ignoreHost() {
+        val url = taskInfo?.url ?: txtUrl.text
+        val host = try {
+            URI(url.trim()).host
+        } catch (e: Exception) {
+            Logger.info(e)
+            null
+        }
+        if (!host.isNullOrBlank()) {
+            val config = AppContext.config
+            if (config.blockedHosts.none { it.equals(host, ignoreCase = true) }) {
+                config.blockedHosts = config.blockedHosts + host
+                config.save()
+            }
+        }
+        dispose()
+    }
+
     fun showWindow(taskInfo: HttpDownloadTaskInfo?) {
         this.adjustSize()
         this.setLocationRelativeTo(null)
 
-        val folderPaths = LinkedHashSet<String>()
-        folderPaths.add(AppContext.defaultDownloadFolder)
         btnIgnore.isVisible = taskInfo != null
-        //folderPaths.addAll(config.recentFolders)
-
-        modelSaveIn.removeAllElements()
-        modelSaveIn.addAll(folderPaths)
-        cmbSaveIn.selectedIndex = 0
-//        if (config.isAutoSelectFolder) {
-//            cmbSaveIn.setSelectedIndex(0)
-//        } else {
-//            cmbSaveIn.setSelectedIndex(config.folderIndex + 1)
-//        }
+        populateSaveInFolders(modelSaveIn, cmbSaveIn)
         if (taskInfo == null) {
             val url = getClipBoardText()
             if (url != null && validateURL(url)) {

@@ -1,16 +1,24 @@
 package xdm.app.ui.screens
 
 import xdm.app.AppContext
-import xdm.app.AppContext.config
 import xdm.app.I8N.text
+import xdm.app.utils.chooseFile
 import xdm.app.utils.createSVGIcon
+import xdm.app.utils.isAutoCategorySelected
+import xdm.app.utils.populateSaveInFolders
+import xdm.app.utils.rememberFolderChoice
+import xdm.app.utils.selectedBaseFolder
 import xdm.app.utils.sameWidth
 import xdm.core.downloaders.StreamingDownloadTaskInfo
 import xdm.core.util.*
 import java.awt.*
 import java.awt.event.ActionEvent
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
+import java.io.File
+import java.net.URI
 import javax.swing.*
 import javax.swing.border.EmptyBorder
 import kotlin.math.max
@@ -118,9 +126,31 @@ class NewVideoDownloadWindow : JDialog() {
             gridy = 2
         }
         contentPane.add(btnBrowse, gbcBtnBrowse)
+        btnBrowse.addActionListener {
+            val selected = chooseFile(
+                this@NewVideoDownloadWindow,
+                directoriesOnly = true,
+                currentDir = File(selectedBaseFolder(cmbSaveIn))
+            )
+            if (selected != null) {
+                val path = selected.absolutePath
+                val idx = modelSaveIn.getIndexOf(path).takeIf { it >= 0 } ?: run {
+                    modelSaveIn.addElement(path)
+                    modelSaveIn.size - 1
+                }
+                cmbSaveIn.selectedIndex = idx
+            }
+        }
 
         val lblIgnore = JLabel(text("ND_IGNORE_URL"))
         lblIgnore.verticalAlignment = SwingConstants.TOP
+        lblIgnore.cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+        lblIgnore.foreground = UIManager.getColor("ProgressBar.foreground")
+        lblIgnore.addMouseListener(object : MouseAdapter() {
+            override fun mouseClicked(e: MouseEvent) {
+                ignoreHost()
+            }
+        })
         val gbcLblIgnore = GridBagConstraints().apply {
             weighty = 1.0
             fill = GridBagConstraints.VERTICAL
@@ -190,12 +220,9 @@ class NewVideoDownloadWindow : JDialog() {
             val name = FileUtils.sanitizeFileName(file)!!
             //TODO: Check FFmpeg required
 
-            var folder: String? = null
-            if (cmbSaveIn.selectedIndex != 0) {
-                folder = cmbSaveIn.selectedItem?.toString()
-            }
-
-            AppContext.downloader.addVideoDownload(videoId, name, folder, (folder == null))
+            val auto = isAutoCategorySelected(cmbSaveIn)
+            rememberFolderChoice(cmbSaveIn)
+            AppContext.downloader.addVideoDownload(videoId, name, selectedBaseFolder(cmbSaveIn), auto)
         } finally {
             dispose()
         }
@@ -203,21 +230,36 @@ class NewVideoDownloadWindow : JDialog() {
 
     private fun adjustSize() {
         var dim = preferredSize
-        dim = Dimension(max(dim.width.toDouble(), 500.0).toInt(), max(dim.height.toDouble(), 270.0).toInt())
+        dim = Dimension(max(dim.width.toDouble(), 500.0).toInt(), max(dim.height.toDouble(), 220.0).toInt())
         size = dim
+    }
+
+    private fun ignoreHost() {
+        val tracker = AppContext.videoTracker
+        val url = tracker.getHttpVideo(videoId)?.url
+            ?: tracker.getHlsVideo(videoId)?.url
+            ?: tracker.getDashVideo(videoId)?.url
+        val host = try {
+            url?.let { URI(it.trim()).host }
+        } catch (e: Exception) {
+            Logger.info(e)
+            null
+        }
+        if (!host.isNullOrBlank()) {
+            val config = AppContext.config
+            if (config.blockedHosts.none { it.equals(host, ignoreCase = true) }) {
+                config.blockedHosts = config.blockedHosts + host
+                config.save()
+            }
+        }
+        dispose()
     }
 
     fun showWindow(vid: Long, fileName: String, fileSize: Long?, contentType: String?) {
         this.videoId = vid
         this.adjustSize()
         this.setLocationRelativeTo(null)
-        modelSaveIn.removeAllElements()
-        modelSaveIn.addAll(config.recentFolders)
-        if (config.autoSelectFolder) {
-            cmbSaveIn.setSelectedIndex(0)
-        } else {
-            cmbSaveIn.setSelectedIndex(config.folderIndex + 1)
-        }
+        populateSaveInFolders(modelSaveIn, cmbSaveIn)
         txtFileName.text = FileUtils.sanitizeFileName(fileName)
         fileSize?.let {
             lblFileInfo.text = FormatHelper.formatSize(it.toDouble())

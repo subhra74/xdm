@@ -1,6 +1,7 @@
 package xdm.app
 
 import xdm.app.utils.KeepAwake
+import xdm.app.utils.categoryFolderFor
 import xdm.app.utils.getFileFolder
 import xdm.core.downloaders.*
 import xdm.core.downloaders.web.getTempFileFolder
@@ -244,31 +245,37 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
             }
         }
 
+        private fun outputFolder(fileName: String, folder: String, autoCategorize: Boolean) =
+            if (autoCategorize) categoryFolderFor(fileName, folder) else folder
+
         override fun commitOutputFile(id: Long, tmpFilePath: String, downloadType: DownloadType): CommitResult {
             when (downloadType) {
                 DownloadType.Http -> taskInfoDB.getHttpTask(id)?.let { t ->
-                    return renameFile(t.fileName, t.defaultDownloadFolder, tmpFilePath) { finalName, finalFolder ->
+                    return renameFile(t.fileName, outputFolder(t.fileName, t.defaultDownloadFolder, t.autoCategorize), tmpFilePath) { finalName, finalFolder ->
                         Logger.info("Success renaming file")
                         t.fileName = finalName
                         t.defaultDownloadFolder = finalFolder
+                        t.autoCategorize = false
                         taskInfoDB.saveHttpTask(t)
                     }
                 }
 
                 DownloadType.Hls -> taskInfoDB.getHlsTask(id)?.let { t ->
-                    return renameFile(t.fileName, t.defaultDownloadFolder, tmpFilePath) { finalName, finalFolder ->
+                    return renameFile(t.fileName, outputFolder(t.fileName, t.defaultDownloadFolder, t.autoCategorize), tmpFilePath) { finalName, finalFolder ->
                         Logger.info("Success renaming file")
                         t.fileName = finalName
                         t.defaultDownloadFolder = finalFolder
+                        t.autoCategorize = false
                         taskInfoDB.saveHlsTask(t)
                     }
                 }
 
                 DownloadType.Dash -> taskInfoDB.getDashTask(id)?.let { t ->
-                    return renameFile(t.fileName, t.defaultDownloadFolder, tmpFilePath) { finalName, finalFolder ->
+                    return renameFile(t.fileName, outputFolder(t.fileName, t.defaultDownloadFolder, t.autoCategorize), tmpFilePath) { finalName, finalFolder ->
                         Logger.info("Success renaming file")
                         t.fileName = finalName
                         t.defaultDownloadFolder = finalFolder
+                        t.autoCategorize = false
                         taskInfoDB.saveDashTask(t)
                     }
                 }
@@ -487,24 +494,24 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
     override fun addVideoDownload(videoId: Long, fileName: String, folder: String?, autoSelectFolder: Boolean) {
         AppContext.videoTracker.getHttpVideo(videoId)?.let { source ->
             source.fileName = fileName
-            source.autoCategorize = (folder == null)
-            source.userSelectedDownloadFolder = folder
+            source.autoCategorize = autoSelectFolder
+            folder?.let { source.defaultDownloadFolder = it }
             startHttpDownload(source);
         }
 
         AppContext.videoTracker.getHlsVideo(videoId)?.let { source ->
             Logger.info(source)
             source.fileName = fileName
-            source.autoCategorize = (folder == null)
-            source.userSelectedDownloadFolder = folder
+            source.autoCategorize = autoSelectFolder
+            folder?.let { source.defaultDownloadFolder = it }
             startHlsDownload(source)
         }
 
         AppContext.videoTracker.getDashVideo(videoId)?.let { source ->
             Logger.info(source)
             source.fileName = fileName
-            source.autoCategorize = (folder == null)
-            source.userSelectedDownloadFolder = folder
+            source.autoCategorize = autoSelectFolder
+            folder?.let { source.defaultDownloadFolder = it }
             startDashDownload(source)
         }
     }

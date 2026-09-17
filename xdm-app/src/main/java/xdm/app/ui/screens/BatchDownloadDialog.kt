@@ -4,6 +4,10 @@ import xdm.app.AppContext
 import xdm.app.I8N.text
 import xdm.app.utils.chooseFile
 import xdm.app.utils.createSVGIcon
+import xdm.app.utils.isAutoCategorySelected
+import xdm.app.utils.populateSaveInFolders
+import xdm.app.utils.rememberFolderChoice
+import xdm.app.utils.selectedBaseFolder
 import xdm.app.utils.sameWidth
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.util.CoreUtils.uniqueId
@@ -138,7 +142,7 @@ class BatchDownloadDialog(owner: Window?, urls: List<String>) : JDialog(owner) {
             val selected = chooseFile(
                 this,
                 directoriesOnly = true,
-                currentDir = File(AppContext.defaultDownloadFolder)
+                currentDir = File(selectedBaseFolder(cmbSaveIn))
             )
             if (selected != null) {
                 val path = selected.absolutePath
@@ -175,6 +179,9 @@ class BatchDownloadDialog(owner: Window?, urls: List<String>) : JDialog(owner) {
 
         btnOk.addActionListener {
             val selectedItems = tableModel.getSelectedItems()
+            val auto = isAutoCategorySelected(cmbSaveIn)
+            val folder = selectedBaseFolder(cmbSaveIn)
+            rememberFolderChoice(cmbSaveIn)
             selectedItems.forEach { item ->
                 val task = HttpDownloadTaskInfo(
                     id = uniqueId(),
@@ -184,8 +191,8 @@ class BatchDownloadDialog(owner: Window?, urls: List<String>) : JDialog(owner) {
                     cookie = null,
                     headers = null,
                     origin = null,
-                    autoCategorize = false,
-                    defaultDownloadFolder = cmbSaveIn.selectedItem?.toString() ?: AppContext.defaultDownloadFolder,
+                    autoCategorize = auto,
+                    defaultDownloadFolder = folder,
                     userSelectedDownloadFolder = null,
                     maxPiece = 8,
                     authInfo = null,
@@ -204,7 +211,6 @@ class BatchDownloadDialog(owner: Window?, urls: List<String>) : JDialog(owner) {
     }
 
     private fun populateFolders() {
-        modelSaveIn.addElement(AppContext.defaultDownloadFolder)
-        cmbSaveIn.selectedIndex = 0
+        populateSaveInFolders(modelSaveIn, cmbSaveIn)
     }
 }

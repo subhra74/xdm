@@ -40,7 +40,7 @@ object AppContext {
             && ::videoTracker.isInitialized
             && ::scheduler.isInitialized
         ) {
-            val firstRun = !File(configDir, "xdm-app.config").exists()
+            val firstRun = !File(configDir, AppConfig.CONFIG_FILE).exists()
             config.load()
 
             if (firstRun) {

@@ -5,9 +5,9 @@ import xdm.app.ui.components.SortKey
 import xdm.core.CoreConfig
 import java.io.DataInputStream
 import java.io.DataOutputStream
+import xdm.core.util.AtomicIO
+import xdm.core.util.Logger
 import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
 import java.net.Authenticator
 import java.net.Proxy
 
@@ -24,6 +24,8 @@ interface IAppConfig : CoreConfig {
     var shutdownAfterAllDone: Boolean
     var maxParallelDownloads: Int
     val recentFolders: List<String>
+    /** Folders picked via "Browse", most recent first; persisted. */
+    var savedFolders: List<String>
     var autoSelectFolder: Boolean
     var folderIndex: Int
     var sortKey: SortKey
@@ -59,8 +61,13 @@ interface IAppConfig : CoreConfig {
 }
 
 class AppConfig(private val configDir: String) : IAppConfig {
+    companion object {
+        const val CONFIG_FILE = "xdm-app.config"
+    }
+
     override var autoSelectFolder = false
     override var folderIndex = 0
+    override var savedFolders: List<String> = emptyList()
     override var sortKey: SortKey = SortKey.DATE
     override var sortAscending = false
     override var minVideoSize: Long = 1024
@@ -112,23 +119,13 @@ class AppConfig(private val configDir: String) : IAppConfig {
     }
 
     override fun load() {
-        val configFile = File(configDir, "xdm-app.config")
-        if (configFile.exists()) {
-            FileInputStream(configFile).use { fs ->
-                DataInputStream(fs).use { ds ->
-                    load(ds)
-                }
-            }
-        }
+        AtomicIO.readTransacted(CONFIG_FILE, configDir) { load(it) }
+            .onFailure { Logger.error("Unable to load config, using defaults: $it") }
     }
 
     override fun save() {
-        val configFile = File(configDir, "xdm-app.config")
-        FileOutputStream(configFile).use { fs ->
-            DataOutputStream(fs).use { ds ->
-                save(ds)
-            }
-        }
+        AtomicIO.writeTransacted(CONFIG_FILE, configDir) { save(it) }
+            .onFailure { Logger.error("Unable to save config: $it") }
     }
 
     private fun save(out: DataOutputStream) {
@@ -170,6 +167,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
         out.writeUTF(virusScannerArgs)
         out.writeBoolean(runOnStartup)
         out.writeUTF(theme)
+        writeStringList(out, savedFolders)
     }
 
     private fun load(input: DataInputStream) {
@@ -215,6 +213,12 @@ class AppConfig(private val configDir: String) : IAppConfig {
             theme = input.readUTF()
         } catch (e: java.io.EOFException) {
             // older config without these trailing fields; keep defaults
+            return
+        }
+        try {
+            savedFolders = readStringList(input)
+        } catch (e: java.io.EOFException) {
+            // config written before savedFolders existed
         }
     }
 
@@ -233,7 +237,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
     }
 
     override val recentFolders: List<String>
-        get() = mutableListOf(text("ND_AUTO_CAT"), defaultDownloadFolder)
+        get() = (listOf(text("ND_AUTO_CAT"), defaultDownloadFolder) + savedFolders).distinct()
 
     override fun toProxy(): Proxy? {
         if (!useProxy) return null

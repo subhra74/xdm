@@ -28,7 +28,7 @@ class CapturedVideoTracker : ICapturedVideoTracker {
         httpVideoList[videoId]?.let {
             //TODO: Check for link refresh
             val (source, _) = it
-            size = getContentLength(source.headers) ?: -1
+            size = getContentLength(source.headers) ?: (source.knownFileSize ?: -1)
             contentType = getHeader("Content-Type", source.headers)
             AppContext.app.addVideoDownload(videoId, source.fileName, size, contentType)
             return
