@@ -18,8 +18,8 @@ Severity legend:
 
 | # | Sev | Area | Issue |
 |---|-----|------|-------|
-| S1 | P0 | Integration | Any website can make the app add downloads (no auth or Origin check on `127.0.0.1:8597`) |
-| S2 | P0 | Network | TLS certificate and hostname checks are turned off for every download |
+| S1 | P0 | Integration | ~~Any website could make the app add downloads~~ **Fixed:** loopback + Origin allowlist + POST-only for state-changing paths |
+| S2 | P0 | Network | ~~TLS checks turned off for every download~~ **Fixed:** verified by default; opt-out setting in Advanced → Security |
 | B1 | P0 | HTTP engine | Read→write lock upgrade deadlocks the chunk thread on resume |
 | B2 | P0 | HTTP engine | An HTTP 429 response kills the chunk thread and the download hangs forever |
 | B3 | P1 | Persistence | Queued and "download later" tasks lose cookies, headers and origin |
@@ -47,40 +47,154 @@ Severity legend:
 
 ## 1. Bugs and risks
 
-### S1 (P0): The local integration server accepts commands from any web page
-**Where:** `xdm-app/.../integration/BrowserIntegration.kt:46`, `HttpServer.kt`, `browser-extension/chrome-extension/connector.js:46`
+### S1 (P0): The local integration server accepted commands from any web page (FIXED)
+**Where:** `xdm-app/.../integration/HttpServer.kt`, `HttpParser.kt`, `RequestContext.kt`, `BrowserIntegration.kt`
 
-The server trusts every request that reaches `127.0.0.1:8597`. The extension sends
-`fetch(url, {method:"POST", body: JSON.stringify(...)})`, which the browser treats as a
-*CORS-simple request* (`text/plain`, no preflight). Any web page can send the same request with
-`fetch("http://127.0.0.1:8597/download", {method:"POST", mode:"no-cors", body: ...})` and:
-- queue arbitrary downloads, which start silently if `startDownloadAutomatically` is on,
-- pollute the detected-video list (`/media`), or open "new video" dialogs (`/vid`),
-- clear the list (`/clear`).
+**Status:** Fixed in the working tree and compiles. Still to do: run the curl checks and the
+browser checks below.
 
-DNS rebinding is also possible because the `Host` header is never checked.
+#### The problem
+The server accepted every request reaching `127.0.0.1:8597` and routed on the path alone, ignoring
+the HTTP method. Because a web page runs in the browser on the same machine, its requests come from
+the same loopback address as the extension's. A page could:
+- send a CORS-simple POST, e.g. `fetch("http://127.0.0.1:8597/download", {method:"POST", mode:"no-cors", body})`,
+  exactly as the extension does, to queue downloads (they start silently if
+  `startDownloadAutomatically` is on), pollute `/media`, or open `/vid` dialogs;
+- send a plain GET with no `Origin`, e.g. `<img src="http://127.0.0.1:8597/clear">`, to clear the list.
 
-**Fix:**
-1. Generate a random token at first run (store it in config) and require it on every request, for
-   example in an `X-XDM-Token` header. A custom header forces a CORS preflight, which the server
-   will not answer, so web pages can no longer send these requests. The extension receives the token
-   once through a pairing step: the user pastes it, or the app shows it on the extension's
-   register page.
-2. As defence in depth, reject requests whose `Origin` is present and is not
-   `chrome-extension://<id>` or `moz-extension://<id>`, and reject any `Host` other than
-   `127.0.0.1:8597` or `localhost:8597`.
-3. Require `POST` for the state-changing paths (`/download`, `/media`, `/vid`, `/clear`).
+#### Constraints
+- Local tools (for example curl or scripts) must keep working, so there is no token or `Host`
+  allowlist, and requests with no `Origin` are allowed.
+- An IP check alone doesn't block web pages, for the reason above. It is kept only as a safety net
+  in case the bind address changes.
 
-### S2 (P0): TLS verification is disabled for all downloads
-**Where:** `xdm-core/.../network/http/impl/HttpClientImpl.kt:22-45`
+#### Where the real traffic comes from (verified in the extension code)
+Every request goes through `Connector` (`chrome-extension/connector.js`,
+`firefox-extension/app/connector.js`) in the extension's background context: the service worker on
+Chrome MV3, the background page on Firefox MV2. Neither manifest declares `content_scripts` or
+`web_accessible_resources`, and the popup only talks to the background through
+`chrome.runtime.sendMessage`.
 
-A trust-all `X509TrustManager` plus `hostnameVerifier { _, _ -> true }` means any network attacker
-can MITM downloads, including executables. Cookies and auth headers forwarded from the browser are
-exposed too.
+| Call | Method |
+|------|--------|
+| `/sync` (poll every ~5 s) | GET |
+| `/download`, `/media`, `/vid`, `/clear`, `/tab-update` | POST (`body: JSON.stringify(...)`, `text/plain`) |
 
-**Fix:** Remove the custom `sslSocketFactory` and `hostnameVerifier` so OkHttp uses the platform
-defaults. If insecure hosts need to be supported, add an explicit per-download
-"ignore certificate errors" option that is off by default, and show a warning in the UI when it is used.
+#### Observed headers (Chrome 152 and Firefox 152 on macOS)
+| Browser | Request | `Origin` | `Sec-Fetch-Site` | `Host` |
+|---------|---------|----------|------------------|--------|
+| Chrome | GET `/sync` | *(none)* | `none` | `127.0.0.1:8597` |
+| Chrome | POST `/download` | `chrome-extension://jcjlmfolckgddgcdheneibfilmcjekkj` | `none` | `127.0.0.1:8597` |
+| Firefox | POST `/download` | `moz-extension://1e6f7e9d-d7dd-48d2-89a0-38a0569c1565` | `same-origin` | `127.0.0.1:8597` |
+
+Firefox reports `same-origin`, so `Sec-Fetch-Site` is not a reliable signal and is not used. The
+`moz-extension` UUID is random per install, so origins are matched on scheme, not on a fixed id.
+Web pages always send their own `Origin` on POST (`http(s)://...`, or `null` from sandboxed frames).
+
+#### What was implemented
+1. **Loopback-only connections** (`HttpServer.process`): a non-loopback socket is logged and closed
+   before any request is read.
+2. **The request method is now parsed** (`HttpParser.parseRequestStatusLine` returns
+   `(method, path)`; `RequestContext.requestMethod`). A case-insensitive
+   `RequestContext.getRequestHeader(name)` was added.
+3. **Checks run before dispatch** (`BrowserIntegration.rejectionStatus`, called from `handleRequest`):
+   - `Origin` present and not starting with `chrome-extension://`, `moz-extension://`,
+     `extension://` or `safari-web-extension://` → **403 Forbidden**. This includes `Origin: null`.
+   - A non-POST to `/download`, `/media`, `/vid`, `/clear` or `/tab-update` → **405 Method Not
+     Allowed**. The path is compared without its query string.
+   - No `Origin` → allowed (Chrome's `/sync` poll, local tools).
+   - Each rejection is logged with its method, path and origin. The request body is not logged.
+4. No `Access-Control-Allow-Origin` header is sent, so pages still can't *read* `/sync`, which
+   lists detected video titles.
+5. The temporary header logging used to collect the data above was removed.
+
+#### Residual risk (accepted)
+- Any local process can call the API, and so can another installed extension with host
+  permissions. Both already run with the user's privileges, and local access is required.
+- A web page can still send a GET to `/sync`, but without CORS headers it can't read the response,
+  and `/sync` changes nothing.
+- The Origin allowlist doesn't pin extension ids. Chrome's id could be pinned once it is stable
+  (store-published, or a `key` in the manifest).
+
+#### Verification
+```bash
+curl -i -X POST -H "Origin: https://example.com" --data '{}' http://127.0.0.1:8597/download   # 403
+curl -i -X POST -H "Origin: null" --data '{}' http://127.0.0.1:8597/download                  # 403
+curl -i http://127.0.0.1:8597/clear                                                           # 405
+curl -i http://127.0.0.1:8597/sync                                                            # 200 + JSON
+```
+Then, from both Chrome and Firefox: confirm the extension shows as connected, start a browser
+download, click a detected video in the popup, and use Clear.
+
+### S2 (P0): TLS verification was disabled for all downloads (FIXED)
+**Where:** `xdm-core/.../network/http/impl/HttpClientImpl.kt`
+
+**Status:** Fixed in the working tree and compiles. The behaviour was checked against live test
+hosts (see Verification). The settings UI has not been clicked through yet.
+
+#### The problem
+Every `HttpClientImpl` installed a trust-all `X509TrustManager` and `hostnameVerifier { _, _ -> true }`.
+Any network attacker could intercept or replace downloads, including executables, and read the
+cookies and auth headers forwarded from the browser.
+
+#### What was implemented
+1. **Secure by default** (`HttpClientImpl`): the client uses OkHttp's platform trust store and
+   hostname verification. A new constructor parameter, `ignoreCertErrors: Boolean = false`, installs
+   the trust-all manager and hostname verifier only when true, and logs that it did. The
+   `SSLContext` protocol changed from `"SSL"` to `"TLS"`.
+2. **User setting** (`AppConfig.ignoreCertErrors`, default `false`): persisted as a new trailing
+   field in `xdm-app.config`. Older config files hit `EOFException` there and keep the secure default.
+3. **Settings UI** (`AdvancedConfigPanel`): a new **Security** card in Advanced settings with an
+   "Ignore TLS certificate errors (insecure)" checkbox and a hint. Ticking it shows a warning
+   dialog, and choosing No unticks it. Strings are in `lang/en.txt` (`SETTINGS_SEC_SECURITY`,
+   `MSG_IGNORE_CERT_ERRORS*`); other languages fall back to English.
+4. **Call sites:** `DownloadManager` builds every client (HTTP, HLS, DASH; start and resume)
+   through `newHttpClient()`, which passes the setting. `VideoHelper`'s manifest client is rebuilt
+   whenever the proxy or this setting changes, so edits apply without a restart. That also fixes the
+   stale-proxy part of B16.
+
+#### Behaviour notes
+- The setting is read when a download starts or resumes. A download already running keeps its
+  current client, so pause and resume it to apply a change.
+- With checks on, a certificate or hostname failure fails the download straight away with
+  **`DownloadError.TlsError`** (added as a follow-up). There is no retry loop. The progress window
+  shows "Secure connection failed: the server's certificate could not be verified. If you trust
+  this server, enable "Ignore TLS certificate errors" in Settings > Advanced." How it works:
+  - `xdm-core/.../network/http/TlsErrors.kt`: `isTlsVerificationError(t)` walks the cause chain
+    for `SSLHandshakeException`, `SSLPeerUnverifiedException` or `CertificateException`. Other
+    `SSLException`s (for example a reset in the middle of a TLS record) still count as retryable
+    network errors.
+  - HTTP: `HttpChunkRetriever.connect` returns the new `ConnectResult.TlsError`, and the chunk
+    fails with `DownloadError.TlsError`.
+  - HLS/DASH segments: `StreamingChunkRetriever` marks the piece `Failed` with `TlsError` instead
+    of retrying forever.
+  - Manifest and AES key fetches: `ManifestUtils.downloadManifestAsFile/Bytes` take an optional
+    `onError` callback. `StreamingDownloaderTask` records TLS failures there and reports `TlsError`
+    in place of `InvalidResponse` / `InternalError` when setup fails.
+  - UI: `ProgressWindow` maps it to `ERR_TLS`. The error label now wraps (HTML) and has a tooltip,
+    so long messages aren't cut off in the 400 px window.
+  - The failure is not persisted: as with other errors (B20), the record shows as Paused once the
+    progress window is closed.
+- `UpdateChecker` uses `HttpURLConnection` with JVM defaults and was already verifying certificates.
+
+#### Verification
+A temporary JUnit test (since removed) called `HttpClientImpl.getResponse` against live hosts:
+
+| URL | `ignoreCertErrors=false` | `ignoreCertErrors=true` |
+|-----|--------------------------|-------------------------|
+| `https://example.com/` | HTTP 206 | HTTP 206 |
+| `https://self-signed.badssl.com/` | `SSLHandshakeException` | HTTP 206 |
+| `https://wrong.host.badssl.com/` | `SSLPeerUnverifiedException` | HTTP 206 |
+
+`TlsError` check (temporary test, since removed): the detector returns true for the two badssl hosts
+and false for a refused connection (`ConnectException`). A full `HttpDownloaderTask` against
+`https://self-signed.badssl.com/` failed with `TlsError` in about 2.4 s. The existing
+`TestHttp*`, `TestHlsE2E` and `TestDashE2E` suites still pass (44 tests). The HLS/DASH TLS paths
+were not exercised against a live bad-certificate server.
+
+Still to check by hand: open Settings → Advanced, tick the box, choose No (it should untick), tick
+again and choose Yes, save, reopen Settings (it should stay ticked), and download from
+`https://self-signed.badssl.com/` with the box on and off.
 
 ### B1 (P0): Deadlock when resuming a chunk that is already complete
 **Where:** `HttpChunkRetriever.kt:431-443` (`isAlreadyDone`)
@@ -242,8 +356,9 @@ lines += "Content-Length: ${responseBody?.size ?: 0}"
 lines += "Connection: ${if (keepAlive) "keep-alive" else "close"}"
 io.write((lines.joinToString(CRLF) + CRLF + CRLF).toByteArray())
 ```
-Also, `HttpParser` looks up `Content-Length` and `Connection` case-sensitively. Store header keys
-lowercased.
+Also, `HttpParser` looks up `Content-Length` and `Connection` case-sensitively, so a client sending
+`content-length` loses its body. Use the new `RequestContext.getRequestHeader` there as well, or
+store header keys lowercased.
 
 ### B9 (P1): `AtomicIO.readTransacted` can prefer a corrupt file
 **Where:** `xdm-core/.../util/AtomicIO.kt:37-49`
@@ -366,8 +481,8 @@ Use `ConcurrentHashMap` in `readChunks`.
   the unimplemented "use server time" setting needs (F9).
 - Proxy username and password are stored but never passed on. OkHttp does not use
   `java.net.Authenticator` for proxies, so set `.proxyAuthenticator { _, resp -> ... Credentials.basic(user, pass) }`.
-- `VideoHelper.httpClient` is built once at class init with the proxy settings **of that moment**.
-  Proxy changes need a restart to take effect for manifest fetching.
+- ~~`VideoHelper.httpClient` was built once at class init with the proxy settings of that moment.~~
+  Fixed with S2: it is rebuilt when the proxy or certificate setting changes.
 
 ### B17 (P2): Secrets written to the log
 **Where:** `BrowserIntegration.kt:60,74,88` (logs the raw extension JSON, including `cookie` and
@@ -386,7 +501,7 @@ restrict the config file permissions to `600`.
 - No `soTimeout`, and one unbounded thread per connection: idle keep-alive sockets pile up threads.
 - A JSON parse error in a handler throws, the connection closes with **no response**, and the
   extension marks the app as disconnected.
-- `requestPath` includes the query string, so `/sync?x=1` does not match.
+- `requestPath` includes the query string, so `/sync?x=1` does not match in `handleRequest` (the S1 method check already strips it).
 
 **Fix:** Cap the body (for example at 4 MB) and reply 413. Set `socket.soTimeout = 15_000`. Use a
 bounded daemon thread pool. Wrap `requestListener` in try/catch that replies 400/500. Strip the query
@@ -426,6 +541,7 @@ record format), show it in the row tooltip and Properties dialog, and offer "Ret
 auto-retry `NetworkError` with backoff.
 
 ### B21 (P3): Smaller issues
+- **`/tab-update` is sent but never handled**: both extensions POST it from `onTabUpdate`, but `BrowserIntegration.handleRequest` has no case for it, so `CapturedVideoTracker.updateMediaTitle` is never called. The extension only sends it when `msg.tabsWatcher` from `/sync` matches, and `ConfigDto` has no `tabsWatcher` field (only `matchingHosts = emptyList()`), so it is dead on both sides. Add the route plus a `tabsWatcher` list in `ConfigDto`, or remove the feature.
 - **`writeUTF` 64 KB limit**: `DataOutputStream.writeUTF` throws `UTFDataFormatException` above
   65,535 bytes. Large cookie strings or long signed URLs make `saveState` / `saveHttpTask` fail
   (the error is only logged), and the download then cannot resume. Write length-prefixed byte
@@ -493,13 +609,13 @@ auto-retry `NetworkError` with backoff.
 | — | Filename update on init | `//TODO: Check if only ext to be updated` | `DownloadManager.kt:72` | When the user set a name explicitly (`respectFileName`), only fix the extension; don't replace the whole name with one derived from the server. |
 | — | FFmpeg requirement check | `//TODO: Check FFmpeg required` | `NewVideoDownloadWindow.kt:221` | Obsolete, since the transmuxer replaced ffmpeg; remove the TODO. Optionally warn about unsupported codecs using `UnsupportedCodecException` before starting. |
 | — | Extension `launchApp()` | Empty | `connector.js:52` | Use native messaging, or a custom URL scheme (`xdm://`) registered by the installer, to launch the app when it is disconnected. |
-| — | Firefox extension | Still Manifest V2 (v1.4), while Chrome is MV3 (v3.3) | `browser-extension/firefox-extension` | Port it to MV3 with the shared code and apply the token change from S1 to both. |
+| — | Firefox extension | Still Manifest V2 (v1.4), while Chrome is MV3 (v3.3) | `browser-extension/firefox-extension` | Port it to MV3 with the shared code. |
 
 ---
 
 ## 3. Suggested order of work
 
-1. **Security:** S1 (pairing token) and S2 (TLS). Both are small, self-contained changes with a large impact.
+1. **Security:** S1 and S2 are done. Run the manual checks listed in each section.
 2. **Hangs and data loss:** B1, B2, B9, B3 (persist headers and cookies with a version header), B4.
 3. **Queue and lifecycle:** B5 + F1 + F2 together (scheduler and queues depend on a correct pump),
    then B6, B7, B14.
@@ -507,5 +623,5 @@ auto-retry `NetworkError` with backoff.
 5. **Polish:** B15–B21, remaining F-items, dead-code removal, CLAUDE.md update.
 6. **Tests to add alongside:** `TaskInfoDB` / `AppDB` / `AtomicIO` round-trip and truncated-file
    recovery; `DownloadManager` queue limits using a fake `DownloaderTask`; integration server header
-   format and origin/token rejection; resuming encrypted HLS (extend `TestHlsE2E`); a 429 and
+   format and the S1 origin/method rejection (403/405 cases); resuming encrypted HLS (extend `TestHlsE2E`); a 429 and
    stalled-read case in `MockHttpServer`.

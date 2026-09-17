@@ -85,6 +85,7 @@ RESUME_FAILED=Download could not be resumed/started.
 ERR_INTERNAL=Internal error.
 ERR_ASM_FAILED=Failed to append/convert file parts, please check if the drive is full or write protected
 ERR_DISK_FAILED=Disk error.
+ERR_TLS=TLS connection error.
 LBL_MENU=Menu
 
 TITLE_SETTINGS=Settings
@@ -111,6 +112,7 @@ SETTINGS_SEC_PROXY=Proxy
 SETTINGS_SEC_ADV_GENERAL=General
 SETTINGS_SEC_COMMAND=Custom command
 SETTINGS_SEC_ANTIVIRUS=Antivirus
+SETTINGS_SEC_SECURITY=Security
 SETTINGS_SEC_BROWSERS=Supported browsers
 SETTINGS_SEC_FILETYPES=File types
 SETTINGS_SEC_EXCEPTIONS=Site exceptions
@@ -405,6 +407,9 @@ MSG_SCAN=Run Antivirus after download
 MSG_AV_CMD=Antivirus executable
 MSG_ARGS=Parameter
 MSG_CUSTOM_CMD=Custom command
+MSG_IGNORE_CERT_ERRORS=Ignore TLS certificate errors (insecure)
+MSG_IGNORE_CERT_ERRORS_HINT=Skips certificate and hostname checks.
+MSG_IGNORE_CERT_ERRORS_CONFIRM=XDM will no longer verify HTTPS certificates or hostnames.\nDownloaded files could be intercepted or replaced without warning.\n\nOnly enable this for servers you trust. Continue?
 
 MSG_SHD_ONCE=One-time
 MSG_SHD_WEEKLY=Weekly

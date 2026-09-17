@@ -27,7 +27,24 @@ import kotlin.concurrent.thread
 
 
 object VideoHelper {
-    private val httpClient: PoolingHttpClient = HttpClientImpl(10, AppContext.config.toProxy())
+    private var cachedClient: PoolingHttpClient? = null
+    private var cachedClientKey: Pair<java.net.Proxy?, Boolean>? = null
+
+    /**
+     * Manifest client, rebuilt when the proxy or certificate-check settings change so edits in
+     * Settings apply without a restart. A replaced client is not closed (that would cancel in-flight
+     * manifest fetches); OkHttp releases its idle threads and connections on its own.
+     */
+    private val httpClient: PoolingHttpClient
+        @Synchronized get() {
+            val config = AppContext.config
+            val key = Pair(config.toProxy(), config.ignoreCertErrors)
+            cachedClient?.takeIf { key == cachedClientKey }?.let { return it }
+            return HttpClientImpl(10, key.first, key.second).also {
+                cachedClient = it
+                cachedClientKey = key
+            }
+        }
     private val hslExt = listOf("mpegurl", ".m3u8", "m3u8")
     private val m3u8MpdTabs = Collections.synchronizedSet(mutableSetOf<String>())
     private val suspectedMp4Fragments = Collections.synchronizedSet(mutableSetOf<String>())

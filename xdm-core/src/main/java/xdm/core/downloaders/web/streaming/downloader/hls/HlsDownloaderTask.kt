@@ -213,7 +213,8 @@ class HlsDownloaderTask : StreamingDownloaderTask {
                     if (!error.get() && !context.stopFlag.get()) {
                         Logger.info("Headers: ${hlsContext.headers}")
                         val bytes = downloadManifestBytes(
-                            context.httpClient, keyUrl, hlsContext.headers, hlsContext.cookie, context.stopFlag
+                            context.httpClient, keyUrl, hlsContext.headers, hlsContext.cookie, context.stopFlag,
+                            recordFetchError
                         )
                         if (bytes != null) {
                             keyCache[keyUrl] = bytes

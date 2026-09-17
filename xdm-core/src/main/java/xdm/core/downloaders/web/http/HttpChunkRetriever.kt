@@ -4,6 +4,7 @@ import xdm.core.CoreConfig
 import xdm.core.downloaders.DownloadError
 import xdm.core.network.http.HttpResponse
 import xdm.core.network.http.Range
+import xdm.core.network.http.isTlsVerificationError
 import xdm.core.util.Logger
 import xdm.core.util.getRetryDelay
 import java.io.File
@@ -68,6 +69,12 @@ class HttpChunkRetriever(
                     false
                 }
 
+                ConnectResult.TlsError -> {
+                    Logger.info("XDM", "Chunk $id failed during connect - TLS certificate verification failed")
+                    chunkFailed(DownloadError.TlsError)
+                    false
+                }
+
                 ConnectResult.NoResume -> {
                     Logger.info("XDM", "Chunk $id failed during connect due to no resume")
                     chunkFailed(DownloadError.ResumeNotSupported)
@@ -126,7 +133,10 @@ class HttpChunkRetriever(
                 return ConnectResult.Retry(retryAfter)
             }
         }
-        response.onFailure { t -> Logger.error("XDM", "Connect error", t) }
+        response.onFailure { t ->
+            Logger.error("XDM", "Connect error", t)
+            if (isTlsVerificationError(t)) return ConnectResult.TlsError
+        }
         return ConnectResult.Retry(5)
     }
 

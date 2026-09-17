@@ -34,6 +34,14 @@ object BrowserIntegration {
         "accept-encoding"
     )
 
+    private val extensionOriginSchemes = listOf(
+        "chrome-extension://",
+        "moz-extension://",
+        "extension://",
+        "safari-web-extension://"
+    )
+    private val stateChangingPaths = setOf("/download", "/media", "/vid", "/clear", "/tab-update")
+
     fun start(onSuccess: Runnable?, onFailure: Runnable?) {
         server = HttpServer(
             "127.0.0.1", 8597,
@@ -44,6 +52,18 @@ object BrowserIntegration {
     }
 
     private fun handleRequest(context: RequestContext) {
+        rejectionStatus(context)?.let { (code, message) ->
+            Logger.info(
+                "INTEGRATION",
+                "Rejected ${context.requestMethod} ${context.requestPath} from origin=${context.getRequestHeader("Origin")}: $code $message"
+            )
+            context.apply {
+                statusCode = code
+                statusMessage = message
+                responseBody = ByteArray(0)
+            }.sendResponse()
+            return
+        }
         when (context.requestPath) {
             "/download" -> onDownloadMessage(context)
             "/media" -> onMediaMessage(context)
@@ -51,6 +71,28 @@ object BrowserIntegration {
             "/clear" -> AppContext.videoTracker.clear()
         }
         onSyncMessage(context)
+    }
+
+    /**
+     * Blocks requests made by web pages, which share the extension's loopback address.
+     *
+     * - A page's requests carry its own `Origin` (`http(s)://...`, or `null` from sandboxed frames),
+     *   so any `Origin` that isn't a browser-extension scheme is refused. Requests with no `Origin`
+     *   (the extension's GET /sync, local tools) are allowed.
+     * - Pages can send simple GETs without an `Origin` (e.g. `<img src>`), so paths that change
+     *   state only accept POST.
+     *
+     * Returns the (status code, message) to reply with, or null if the request is allowed.
+     */
+    private fun rejectionStatus(context: RequestContext): Pair<Int, String>? {
+        val origin = context.getRequestHeader("Origin")
+        if (origin != null && extensionOriginSchemes.none { origin.startsWith(it, ignoreCase = true) }) {
+            return Pair(403, "Forbidden")
+        }
+        if (context.requestPath.substringBefore('?') in stateChangingPaths && context.requestMethod != "POST") {
+            return Pair(405, "Method Not Allowed")
+        }
+        return null
     }
 
     private fun onVideoDownloadMessage(context: RequestContext) {

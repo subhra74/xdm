@@ -32,6 +32,7 @@ sealed interface ConnectResult {
     data class Retry(val delay: Long) : ConnectResult
     data object InvalidResponse : ConnectResult
     data object NoResume : ConnectResult
+    data object TlsError : ConnectResult
 }
 
 enum class CopyResult {

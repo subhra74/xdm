@@ -13,26 +13,21 @@ import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
 
-class HttpClientImpl(poolSize: Int, proxy: Proxy? = null) : PoolingHttpClient {
+/**
+ * OkHttp-backed client.
+ *
+ * TLS certificate and hostname verification use the platform defaults. Only when
+ * [ignoreCertErrors] is true (an explicit, off-by-default user setting) are certificate chain and
+ * hostname checks skipped, which leaves connections open to interception.
+ */
+class HttpClientImpl(
+    poolSize: Int,
+    proxy: Proxy? = null,
+    ignoreCertErrors: Boolean = false,
+) : PoolingHttpClient {
     private val dispatcher: Dispatcher = Dispatcher().apply {
         maxRequests = poolSize
         maxRequestsPerHost = poolSize
-    }
-
-    var trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
-        override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {
-        }
-
-        override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {
-        }
-
-        override fun getAcceptedIssuers(): Array<X509Certificate> {
-            return arrayOf()
-        }
-    })
-
-    val sslContext = SSLContext.getInstance("SSL").apply {
-        init(null, trustAllCerts, SecureRandom())
     }
 
     private val connectionPool: ConnectionPool = ConnectionPool(poolSize, 5, TimeUnit.SECONDS)
@@ -41,9 +36,22 @@ class HttpClientImpl(poolSize: Int, proxy: Proxy? = null) : PoolingHttpClient {
             .proxy(proxy)
             .protocols(listOf(Protocol.HTTP_1_1))
             .connectTimeout(30, TimeUnit.SECONDS).readTimeout(0, TimeUnit.SECONDS).retryOnConnectionFailure(false)
-            .sslSocketFactory(sslContext.socketFactory, trustAllCerts[0] as X509TrustManager)
-            .hostnameVerifier({ a, b -> true })
+            .apply { if (ignoreCertErrors) trustAllCertificates(this) }
             .build()
+
+    private fun trustAllCertificates(builder: OkHttpClient.Builder) {
+        Logger.info("XDM", "TLS certificate and hostname verification disabled by user setting")
+        val trustAll = object : X509TrustManager {
+            override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
+            override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {}
+            override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+        }
+        val sslContext = SSLContext.getInstance("TLS").apply {
+            init(null, arrayOf<TrustManager>(trustAll), SecureRandom())
+        }
+        builder.sslSocketFactory(sslContext.socketFactory, trustAll)
+            .hostnameVerifier { _, _ -> true }
+    }
 
     override fun close() {
         client.dispatcher.cancelAll()

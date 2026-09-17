@@ -6,6 +6,7 @@ import xdm.core.downloaders.web.ProgressTracker
 import xdm.core.downloaders.web.SpeedLimiter
 import xdm.core.downloaders.web.http.ChunkStatus
 import xdm.core.media.muxer.Muxer
+import xdm.core.network.http.isTlsVerificationError
 import xdm.core.util.FileUtils
 import xdm.core.util.Logger
 import xdm.core.util.ManifestUtils.downloadManifestAsFile
@@ -34,6 +35,14 @@ abstract class StreamingDownloaderTask(
     private val stopRequested = AtomicBoolean(false)
     private val startRequested = AtomicBoolean(false)
     private var lastAssembleProgress = -1
+
+    /** Set when a manifest or key fetch failed TLS verification, so setup failures report [DownloadError.TlsError]. */
+    private val tlsFailure = AtomicBoolean(false)
+
+    /** Pass to manifest/key downloads so a TLS verification failure is remembered. */
+    protected val recordFetchError: (Throwable) -> Unit = { if (isTlsVerificationError(it)) tlsFailure.set(true) }
+
+    private fun setupError(fallback: DownloadError) = if (tlsFailure.get()) DownloadError.TlsError else fallback
 
     abstract fun initDownload(): DownloadStatusInfo.InitInfo?
     abstract fun fileExt(): String
@@ -99,7 +108,7 @@ abstract class StreamingDownloaderTask(
                 val initInfo = initDownload()
                 if (initInfo == null) {
                     Logger.error("XDM", "Failed to download manifest")
-                    context.downloadHost.onDownloadFailed(context.id, DownloadError.InvalidResponse)
+                    context.downloadHost.onDownloadFailed(context.id, setupError(DownloadError.InvalidResponse))
                     return
                 }
                 context.init.set(true)
@@ -109,7 +118,7 @@ abstract class StreamingDownloaderTask(
             downloadChunks()
         } catch (ex: Exception) {
             Logger.error("XDM", "Download failed due to error", ex)
-            context.downloadHost.onDownloadFailed(context.id, DownloadError.InternalError)
+            context.downloadHost.onDownloadFailed(context.id, setupError(DownloadError.InternalError))
         }
     }
 
@@ -259,7 +268,7 @@ abstract class StreamingDownloaderTask(
         executorService.submit {
             try {
                 downloadManifestAsFile(
-                    context.httpClient, url, context.headers, context.cookie, context.stopFlag
+                    context.httpClient, url, context.headers, context.cookie, context.stopFlag, recordFetchError
                 )?.let { file ->
                     manifestContent.set(Files.lines(Paths.get(file)).iterator())
                 }

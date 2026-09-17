@@ -12,11 +12,12 @@ import java.net.Socket
 import kotlin.math.min
 
 object HttpParser {
-    private fun parseRequestStatusLine(statusLine: String): String {
+    /** Returns the (method, path) of an HTTP request line such as "POST /download HTTP/1.1". */
+    private fun parseRequestStatusLine(statusLine: String): Pair<String, String> {
         try {
             val arr = statusLine.split(" ")
             if (arr.size > 2) {
-                return arr[1]
+                return Pair(arr[0].uppercase(), arr[1])
             }
         } catch (ex: Exception) {
             Logger.info(ex)
@@ -41,6 +42,7 @@ object HttpParser {
     }
 
     fun parseContext(socket: Socket): RequestContext {
+        var method = "GET"
         var path = "/"
         val headers: MutableMap<String, MutableList<String>> = HashMap()
         var body: ByteArray? = null
@@ -51,7 +53,9 @@ object HttpParser {
             val line = readLine(io)
             if (StringUtils.isNullOrEmpty(line)) break
             if (first) {
-                path = parseRequestStatusLine(line)
+                val (m, p) = parseRequestStatusLine(line)
+                method = m
+                path = p
                 first = false
                 continue
             }
@@ -71,7 +75,7 @@ object HttpParser {
             }
         }
 
-        return RequestContext(path, headers, body, socket, shouldKeepAlive(headers))
+        return RequestContext(method, path, headers, body, socket, shouldKeepAlive(headers))
     }
 
 

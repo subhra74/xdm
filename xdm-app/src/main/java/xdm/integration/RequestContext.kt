@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets
 const val CRLF = "\r\n"
 
 class RequestContext(
+    val requestMethod: String,
     val requestPath: String,
     val requestHeaders: Map<String, List<String>>,
     val requestBody: ByteArray?,
@@ -38,6 +39,9 @@ class RequestContext(
         responseBody?.let { io.write(it, 0, it.size) }
         io.flush()
     }
+
+    fun getRequestHeader(name: String): String? =
+        requestHeaders.entries.firstOrNull { it.key.equals(name, ignoreCase = true) }?.value?.firstOrNull()
 
     fun addResponseHeader(name: String, value: String) {
         val values = responseHeaders.getOrDefault(name, ArrayList())

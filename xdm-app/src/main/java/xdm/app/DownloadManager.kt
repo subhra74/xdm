@@ -338,14 +338,14 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
                     DownloadType.Http -> controller = HttpDownloaderTask(
                         taskInfoDB.getHttpTask(id)!!,
                         downloadHost,
-                        HttpClientImpl(100, AppContext.config.toProxy()),
+                        newHttpClient(),
                         configDir,
                         AppContext.config
                     )
 
                     DownloadType.Hls -> controller = HlsDownloaderTask(
                         taskInfo = taskInfoDB.getHlsTask(id)!!,
-                        http = HttpClientImpl(100, AppContext.config.toProxy()),
+                        http = newHttpClient(),
                         muxer = TransmuxingMuxer(AppContext.configDir),
                         host = downloadHost,
                         configDir = AppContext.configDir,
@@ -354,7 +354,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
 
                     DownloadType.Dash -> controller = DashDownloaderTask(
                         taskInfo = taskInfoDB.getDashTask(id)!!,
-                        http = HttpClientImpl(100, AppContext.config.toProxy()),
+                        http = newHttpClient(),
                         muxer = TransmuxingMuxer(AppContext.configDir),
                         host = downloadHost,
                         configDir = AppContext.configDir,
@@ -472,9 +472,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
     private fun startHttpTask(task: HttpDownloadTaskInfo) {
         val controller = HttpDownloaderTask(
             task, downloadHost,
-            HttpClientImpl(
-                100, AppContext.config.toProxy()
-            ),
+            newHttpClient(),
             configDir,
             AppContext.config
         )
@@ -521,7 +519,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
         taskInfoDB.saveHlsTask(task)
         val controller = HlsDownloaderTask(
             taskInfo = task,
-            http = HttpClientImpl(100, AppContext.config.toProxy()),
+            http = newHttpClient(),
             muxer = TransmuxingMuxer(AppContext.configDir),
             host = downloadHost,
             configDir = AppContext.configDir, AppContext.config
@@ -557,7 +555,7 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
         taskInfoDB.saveDashTask(task)
         val controller = DashDownloaderTask(
             taskInfo = task,
-            http = HttpClientImpl(100, AppContext.config.toProxy()),
+            http = newHttpClient(),
             muxer = TransmuxingMuxer(AppContext.configDir),
             host = downloadHost,
             configDir = AppContext.configDir, AppContext.config
@@ -619,6 +617,9 @@ class DownloadManager(val appDB: AppDB, val taskInfoDB: TaskInfoDB, private val 
             }
         }.onFailure { Logger.error(it) }
     }
+
+    private fun newHttpClient() =
+        HttpClientImpl(100, AppContext.config.toProxy(), AppContext.config.ignoreCertErrors)
 
     private fun deleteAfterStopped(id: Long, task: DownloaderTask) {
         try {

@@ -16,6 +16,8 @@ enum class DownloadError {
     InternalError,
     ResumeNotSupported,
     MuxError,
+    /** The server's TLS certificate or hostname could not be verified. */
+    TlsError,
 }
 
 enum class PauseEvent {

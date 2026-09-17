@@ -13,6 +13,8 @@ import javax.swing.BoxLayout
 import javax.swing.JButton
 import javax.swing.JCheckBox
 import javax.swing.JComponent
+import javax.swing.JLabel
+import javax.swing.JOptionPane
 import javax.swing.JPanel
 import javax.swing.JTextField
 
@@ -38,6 +40,10 @@ class AdvancedConfigPanel : SettingsPanel() {
     private val chkRunOnStartup = JCheckBox(I8N.text("MSG_AUTOSTART"))
     private val chkRunCmd = JCheckBox(I8N.text("MSG_RUN_CMD"))
     private val chkVirusScan = JCheckBox(I8N.text("MSG_SCAN"))
+    private val chkIgnoreCertErrors = JCheckBox(I8N.text("MSG_IGNORE_CERT_ERRORS"))
+    private val lblIgnoreCertErrorsHint = JLabel(I8N.text("MSG_IGNORE_CERT_ERRORS_HINT")).apply {
+        foreground = settingsMutedColor()
+    }
     private val btnBrowse = JButton(
         I8N.text("SETTINGS_FOLDER_CHANGE"),
         createSVGIcon("folder-6-line.svg", 16, settingsAccentColor())
@@ -87,12 +93,23 @@ class AdvancedConfigPanel : SettingsPanel() {
                 fullWidth(txtArgs),
             )
         )
+        add(Box.createRigidArea(Dimension(0, 12)))
+
+        // Security
+        add(
+            settingsCard(
+                "file-shield-line.svg", I8N.text("SETTINGS_SEC_SECURITY"),
+                settingsLeftAligned(chkIgnoreCertErrors),
+                settingsLeftAligned(lblIgnoreCertErrorsHint),
+            )
+        )
 
         add(Box.createVerticalGlue())
 
         btnBrowse.addActionListener { chooseScanner() }
         chkRunCmd.addActionListener { updateEnabledState() }
         chkVirusScan.addActionListener { updateEnabledState() }
+        chkIgnoreCertErrors.addActionListener { confirmIgnoreCertErrors() }
     }
 
     private fun fullWidth(comp: JComponent): JComponent =
@@ -100,6 +117,21 @@ class AdvancedConfigPanel : SettingsPanel() {
             alignmentX = LEFT_ALIGNMENT
             add(comp)
         }
+
+    /** Turning certificate checks off is risky, so ask before ticking the box. */
+    private fun confirmIgnoreCertErrors() {
+        if (!chkIgnoreCertErrors.isSelected) return
+        val choice = JOptionPane.showConfirmDialog(
+            this,
+            I8N.text("MSG_IGNORE_CERT_ERRORS_CONFIRM"),
+            I8N.text("MSG_IGNORE_CERT_ERRORS"),
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.WARNING_MESSAGE
+        )
+        if (choice != JOptionPane.YES_OPTION) {
+            chkIgnoreCertErrors.isSelected = false
+        }
+    }
 
     private fun chooseScanner() {
         chooseFile(this, directoriesOnly = false)?.let {
@@ -124,6 +156,7 @@ class AdvancedConfigPanel : SettingsPanel() {
         chkVirusScan.isSelected = config.runVirusScan
         txtVirusScan.text = config.virusScannerPath
         txtArgs.text = config.virusScannerArgs
+        chkIgnoreCertErrors.isSelected = config.ignoreCertErrors
         updateEnabledState()
     }
 
@@ -140,6 +173,7 @@ class AdvancedConfigPanel : SettingsPanel() {
         config.runVirusScan = chkVirusScan.isSelected
         config.virusScannerPath = txtVirusScan.text
         config.virusScannerArgs = txtArgs.text
+        config.ignoreCertErrors = chkIgnoreCertErrors.isSelected
     }
 
     override fun getInsets(): Insets {

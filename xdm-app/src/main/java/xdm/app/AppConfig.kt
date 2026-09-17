@@ -57,6 +57,8 @@ interface IAppConfig : CoreConfig {
     var customCommand: String
     var virusScannerPath: String
     var virusScannerArgs: String
+    /** When true, TLS certificate and hostname checks are skipped for downloads (insecure). */
+    var ignoreCertErrors: Boolean
     fun applyAuthConfig()
 }
 
@@ -113,6 +115,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var customCommand: String = ""
     override var virusScannerPath: String = ""
     override var virusScannerArgs: String = ""
+    override var ignoreCertErrors: Boolean = false
 
     override fun applyAuthConfig() {
         Authenticator.setDefault(DefaultAuthenticator())
@@ -168,6 +171,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
         out.writeBoolean(runOnStartup)
         out.writeUTF(theme)
         writeStringList(out, savedFolders)
+        out.writeBoolean(ignoreCertErrors)
     }
 
     private fun load(input: DataInputStream) {
@@ -219,6 +223,12 @@ class AppConfig(private val configDir: String) : IAppConfig {
             savedFolders = readStringList(input)
         } catch (e: java.io.EOFException) {
             // config written before savedFolders existed
+            return
+        }
+        try {
+            ignoreCertErrors = input.readBoolean()
+        } catch (e: java.io.EOFException) {
+            // config written before ignoreCertErrors existed; keep the secure default
         }
     }
 

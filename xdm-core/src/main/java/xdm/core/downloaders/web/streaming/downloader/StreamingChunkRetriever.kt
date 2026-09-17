@@ -5,6 +5,7 @@ import xdm.core.downloaders.web.http.ChunkStatus
 import xdm.core.network.http.HeaderMap
 import xdm.core.network.http.PoolingHttpClient
 import xdm.core.network.http.Range
+import xdm.core.network.http.isTlsVerificationError
 import xdm.core.util.Logger
 import xdm.core.util.getRetryDelay
 import java.io.File
@@ -111,6 +112,11 @@ class StreamingChunkRetriever(
                 } catch (ex: IOException) {
                     Logger.error("XDM", "Error downloading chunk", ex)
                     if (stopFlag.get()) return
+                    if (isTlsVerificationError(ex)) {
+                        piece.status.set(ChunkStatus.Failed)
+                        piece.error.set(DownloadError.TlsError)
+                        return
+                    }
                     Thread.sleep(retryAfter * 1000)
                 }
             }

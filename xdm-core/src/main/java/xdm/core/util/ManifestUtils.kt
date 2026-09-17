@@ -16,14 +16,16 @@ object ManifestUtils {
         url: String,
         headers: HeaderMap?,
         cookie: String?,
-        stopFlag: AtomicBoolean
+        stopFlag: AtomicBoolean,
+        onError: ((Throwable) -> Unit)? = null,
     ): ByteArray? {
         downloadManifestAsFile(
             httpClient,
             url,
             headers,
             cookie,
-            stopFlag
+            stopFlag,
+            onError
         )?.let {
             val tempFile = Paths.get(it);
             val bytes = Files.readAllBytes(tempFile);
@@ -42,7 +44,8 @@ object ManifestUtils {
         url: String,
         headers: HeaderMap?,
         cookie: String?,
-        stopFlag: AtomicBoolean
+        stopFlag: AtomicBoolean,
+        onError: ((Throwable) -> Unit)? = null,
     ): String? {
         try {
             Logger.info("XDM","Downloading manifest: $url")
@@ -59,9 +62,13 @@ object ManifestUtils {
                     }
                     return fileCopy(response, stopFlag)
                 }
+            }.onFailure {
+                Logger.error("Error downloading manifest", it)
+                onError?.invoke(it)
             }
         } catch (ex: IOException) {
             Logger.error("Error downloading manifest", ex)
+            onError?.invoke(ex)
         }
         return null
     }

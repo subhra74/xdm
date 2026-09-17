@@ -26,7 +26,11 @@ class ProgressWindow(val id: Long) : JFrame() {
         this.isError = true
         lblStat4.text = ""
         lblStat.text = text("MSG_FAILED")
-        lblStat3.text = mapErrorMessage(error)
+        val message = mapErrorMessage(error)
+        // Wrap so longer messages (e.g. the TLS hint) fit the fixed-width window instead of being cut off.
+        val escaped = message.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        lblStat3.text = "<html><body style='width:300px'>$escaped</body></html>"
+        lblStat3.toolTipText = message
         btnPauseResume.text = text("LBL_CLOSE")
         btnHide.isVisible = false
     }
@@ -231,6 +235,7 @@ class ProgressWindow(val id: Long) : JFrame() {
             DownloadError.DiskSpaceError -> text("ERR_DISK_FAILED")
             DownloadError.ResumeNotSupported -> text("ERR_NO_RESUME")
             DownloadError.SessionExpired -> text("ERR_SESSION_FAILED")
+            DownloadError.TlsError -> text("ERR_TLS")
             else -> text("ERR_INTERNAL")
         }
     }

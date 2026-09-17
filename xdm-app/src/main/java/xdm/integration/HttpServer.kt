@@ -33,6 +33,11 @@ class HttpServer(
     private fun process() {
         try {
             val socket = serverSocket.accept()
+            if (!socket.inetAddress.isLoopbackAddress) {
+                Logger.info("INTEGRATION", "Rejected non-loopback connection from ${socket.inetAddress.hostAddress}")
+                socket.close()
+                return
+            }
             processRequest(socket)
         } catch (e: IOException) {
             Logger.info(e)
