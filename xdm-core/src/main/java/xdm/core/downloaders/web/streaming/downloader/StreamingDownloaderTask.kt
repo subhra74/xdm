@@ -78,6 +78,8 @@ abstract class StreamingDownloaderTask(
             context.stopFlag.set(true)
             muxer.stop()
             executorService.shutdownNow()
+            // Closing the client also cancels in-flight segment calls stuck in a read.
+            context.httpClient.close()
             synchronized(this) {
                 context.chunks.filter { it.status.get() != ChunkStatus.Finished }.forEach {
                     try {
@@ -107,6 +109,7 @@ abstract class StreamingDownloaderTask(
             if (!context.init.get()) {
                 val initInfo = initDownload()
                 if (initInfo == null) {
+                    if (context.stopFlag.get()) return
                     Logger.error("XDM", "Failed to download manifest")
                     context.downloadHost.onDownloadFailed(context.id, setupError(DownloadError.InvalidResponse))
                     return
@@ -119,7 +122,24 @@ abstract class StreamingDownloaderTask(
         } catch (ex: Exception) {
             Logger.error("XDM", "Download failed due to error", ex)
             context.downloadHost.onDownloadFailed(context.id, setupError(DownloadError.InternalError))
+        } finally {
+            // Success, failure or pause: the task is done, so release its segment threads and its
+            // HTTP client (dispatcher + connection pool). stop() may already have done both.
+            executorService.shutdownNow()
+            context.httpClient.close()
         }
+    }
+
+    /**
+     * Waits for [latch] but gives up once the download is stopped: stop() shuts the pool down with
+     * shutdownNow(), so queued tasks never run and never count the latch down.
+     * Returns false if the download was stopped before the latch reached zero.
+     */
+    protected fun awaitUnlessStopped(latch: CountDownLatch): Boolean {
+        while (!latch.await(200, TimeUnit.MILLISECONDS)) {
+            if (context.stopFlag.get()) return false
+        }
+        return true
     }
 
     private fun downloadChunks() {
@@ -133,7 +153,7 @@ abstract class StreamingDownloaderTask(
         try {
             //executorService.shutdown()
             //executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS)
-            latch.await()
+            if (!awaitUnlessStopped(latch)) return
             saveContext()
             if (context.stopFlag.get()) return
             context.chunks.find { it.status.get() != ChunkStatus.Finished }?.let {

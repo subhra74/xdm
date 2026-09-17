@@ -29,7 +29,7 @@ Severity legend:
 | B7 | P1 | Commit | `File.renameTo` fails across drives, so HLS/DASH to another volume fails with "disk space error" |
 | B8 | P1 | Integration | Malformed HTTP response headers from the local server |
 | B9 | P1 | Persistence | `AtomicIO` reads a half-written `.bak1` in preference to the good file |
-| B10 | P2 | Resources | Thread pools and OkHttp clients leak for every streaming download and every paused HTTP download |
+| B10 | P2 | Resources | ~~Thread pools and OkHttp clients leak for every streaming download and every paused HTTP download~~ **Fixed:** pools shut down and clients closed on success, failure and pause; paused HLS/DASH thread no longer hangs; background threads are daemon |
 | B11 | P2 | HTTP engine | `readTimeout = 0`, so a stalled connection blocks forever and Pause cannot unblock it |
 | B12 | P2 | Cleanup | Deleting a download never removes `task-<id>.info` / `<id>.state`; `AppDB.clear()` is also broken |
 | B13 | P2 | UI | "Clear" wipes the DB while downloads are still running |
@@ -459,23 +459,68 @@ Ideally also write a magic number, version, and trailing CRC32 so a truncated fi
 instead of partially parsed (see the similar problem in `AppConfig.load`, B21). On the write side,
 use `Files.move(..., ATOMIC_MOVE, REPLACE_EXISTING)` and check the result.
 
-### B10 (P2): Thread and connection leaks
-**Where:** `StreamingDownloaderTask.kt:29, 63-85, 116-140`; `HttpDownloader.kt:165-185, 221, 479-506`; `AppMain.kt:53`
+### B10 (P2): Thread and connection leaks (FIXED)
+**Where:** `StreamingDownloaderTask.kt`, `HlsDownloaderTask.kt`, `HttpDownloader.kt`, `HttpClientImpl.kt`, `AppMain.kt`
 
-- `Executors.newFixedThreadPool(maxSegments)` creates non-daemon threads and is shut down only in
-  `stop()`. On success or failure the threads stay alive forever: 8 threads for every HLS/DASH download.
-- After `stop()`'s `shutdownNow()`, segments that were queued but not started never call
-  `latch.countDown()`, so the `download()` thread blocks in `latch.await()` forever.
-- A new `HttpClientImpl` (with its own dispatcher and connection pool) is created per task.
-  `close()` is called only on the success path of a fresh HTTP download. It is never called on
-  pause, failure, `finishDownload()` (resume path), or for any streaming download.
-- The periodic `System.gc()` thread in `AppMain` is non-daemon.
+**Status:** Fixed in the working tree, keeping one HTTP client per task. Covered by
+`TestHttpResourceCleanup` and `TestStreamingResourceCleanup`; all six tests failed on the old code
+and pass with the fix. Full test suite passes.
 
-**Fix:** Add `DownloaderTask.dispose()`, which shuts down the executor and closes the HTTP client,
-and call it from `DownloadManager` whenever a session leaves `activeSessions`. Replace
-`latch.await()` with `executorService.invokeAll(...)`, or `await` with a timeout in a loop that
-checks `stopFlag`. Better still, share **one** `OkHttpClient` app-wide; OkHttp is designed for that.
-Make background threads daemon threads.
+#### The problems (all confirmed)
+1. **Streaming thread pools never shut down.** `Executors.newFixedThreadPool(maxSegments)` threads are
+   non-daemon and never time out, and the pool was shut down only in `stop()`. Every finished or
+   failed HLS/DASH download left up to `maxSegments` idle threads until the app restarted.
+2. **The streaming download thread hung on Pause.** `downloadChunks()` waited on `latch.await()`.
+   `stop()`'s `shutdownNow()` drops segments that have not started, so they never count down and the
+   thread blocked forever, keeping the whole task (context, segment list, client, muxer) reachable.
+   This happened on nearly every pause (whenever there are more segments than `maxSegments`). The
+   HLS manifest wait in `initDownload()` had the same pattern.
+3. **Per-task HTTP clients were rarely closed.** HTTP closed the client only inside
+   `onChunkFinished`; never on pause, when all chunks failed, or in `finishDownload()` (resume with
+   every chunk done). Streaming tasks never closed theirs. Requests are synchronous and idle
+   connections expire after 5 s, so the cost was mostly idle sockets and objects, but closing on
+   pause also matters for B11: `dispatcher.cancelAll()` cancels running synchronous calls, which
+   unblocks chunk threads stuck in a read.
+4. **The periodic `System.gc()` thread was non-daemon** (normal exit uses `exitProcess`, so this only
+   mattered when the app should end some other way, e.g. B14's failed server bind).
+
+#### The fix
+- **Streaming (`StreamingDownloaderTask`):**
+  - `download()` has a `finally` that calls `executorService.shutdownNow()` and
+    `context.httpClient.close()`, so pool and client are released on success, failure, exception
+    and pause.
+  - `stop()` closes the client right after `shutdownNow()`, cancelling in-flight segment reads.
+  - New `awaitUnlessStopped(latch)` waits in 200 ms steps and returns `false` once `stopFlag` is set.
+    `downloadChunks()` and `HlsDownloaderTask.initDownload()` use it instead of `latch.await()`.
+    If the manifest wait is abandoned because of a pause, `download()` returns without reporting a
+    failure.
+- **HTTP (`HttpDownloaderTask`), client still per task:**
+  - `stop()` closes the client after saving state and before `onDownloadPaused`.
+  - `onChunkFailed` closes it after reporting that all chunks failed.
+  - `finishDownload()` closes it in a `finally`.
+  - The existing close in `onChunkFinished` (fresh download, commit success or failure) is unchanged.
+  - `close()` can now run more than once (for example pause after success); that is harmless.
+- **`HttpClientImpl.close()`**: `client.dispatcher.cancelAll()`, `shutdownNow()` on the dispatcher
+  executor and `connectionPool.evictAll()` release the dispatcher and connection pool; the
+  follow-up cleanup thread is now a daemon.
+- **`AppMain`**: the periodic GC thread is named `periodic-gc` and is a daemon.
+
+Not done, by choice: one shared `OkHttpClient` app-wide. If that is revisited, tasks would derive
+per-task clients with `sharedClient.newBuilder()` (keeping proxy and `ignoreCertErrors` per task),
+and a task's `close()` must then cancel only its own calls and never shut down the shared dispatcher.
+
+#### Tests
+| Test | Old code | Fixed |
+|---|---|---|
+| `TestHttpResourceCleanup.pause_closesHttpClient` | Client never closed | Closed |
+| `TestHttpResourceCleanup.failure_closesHttpClient` (HTTP 500) | Client never closed | Closed |
+| `TestHttpResourceCleanup.resumeWithAllChunksFinished_closesHttpClient` | Client never closed | Closed |
+| `TestStreamingResourceCleanup.success_shutsDownPoolAndClosesClient` (ffmpeg HLS) | Pool still running | Pool shut down, client closed |
+| `TestStreamingResourceCleanup.failure_shutsDownPoolAndClosesClient` (missing playlist) | Pool still running | Pool shut down, client closed |
+| `TestStreamingResourceCleanup.pause_withQueuedSegments_downloadThreadExitsAndClientCloses` (20 slow segments, 2 threads) | Download thread parked on the latch forever | Thread exits, client closed |
+
+The tests count `close()` calls with a `CountingHttpClient` wrapper around the real client. The
+daemon flag on the GC thread has no test.
 
 ### B11 (P2): Stalled connections hang, and Pause does not abort sockets
 **Where:** `HttpClientImpl.kt:43`; `HttpDownloader.stop()`
@@ -700,7 +745,7 @@ auto-retry `NetworkError` with backoff.
 2. **Hangs and data loss:** B1 and B2 are done. Then B9, B3 (persist headers and cookies with a version header), B4.
 3. **Queue and lifecycle:** B5 + F1 + F2 together (scheduler and queues depend on a correct pump),
    then B6, B7, B14.
-4. **Resource hygiene:** B10, B11, B12, B13, B18.
+4. **Resource hygiene:** B10 is done. Then B11, B12, B13, B18.
 5. **Polish:** B15–B21, remaining F-items, dead-code removal, CLAUDE.md update.
 6. **Tests to add alongside:** `TaskInfoDB` / `AppDB` / `AtomicIO` round-trip and truncated-file
    recovery; `DownloadManager` queue limits using a fake `DownloaderTask`; integration server header

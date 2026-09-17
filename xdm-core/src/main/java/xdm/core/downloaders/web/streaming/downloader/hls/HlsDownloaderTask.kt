@@ -97,7 +97,7 @@ class HlsDownloaderTask : StreamingDownloaderTask {
             loadManifest(hlsContext.audioUrl!!, audioManifestContent, latch, error)
         }
         try {
-            latch.await()
+            if (!awaitUnlessStopped(latch)) return null
             val (videoPlaylist, audioPlaylist) = parseManifest(videoManifestContent, audioManifestContent)
             if (!context.independent) {
                 context.independent = videoPlaylist.independent

@@ -67,9 +67,8 @@ fun makeContext(
 
 /**
  * A pause or crash between a chunk's last byte and its Finished status update persists a complete
- * chunk as Downloading. Mark such chunks Finished on restore so resume never restarts them: a
- * restarted complete chunk reaches onChunkFinished from inside isAlreadyDone's read lock, and the
- * read→write lock upgrade deadlocks.
+ * chunk as Downloading. Mark such chunks Finished on restore so resume never starts a thread for
+ * them (HttpChunkRetriever.isAlreadyDone also handles this case, under the write lock).
  */
 private fun normalizeRestoredChunks(ctx: HttpTaskContext) {
     if (!ctx.init.get()) return
@@ -200,6 +199,8 @@ class HttpDownloaderTask : ChunkController {
                 }
                 saveState()
                 throttle.disable()
+                // Closing the client also cancels in-flight calls, unblocking chunk threads stuck in a read.
+                context.httpClient.close()
                 context.downloadHost.onDownloadPaused(context.id, PauseEvent.PausedByUser)
             }
         }.start()
@@ -264,6 +265,7 @@ class HttpDownloaderTask : ChunkController {
             context.write {
                 saveState()
             }
+            context.httpClient.close()
         }
     }
 
@@ -500,29 +502,33 @@ class HttpDownloaderTask : ChunkController {
     private fun finishDownload() {
         context.completed.set(true)
         Logger.info("XDM", "Resume: All chunks downloaded")
-        val tmpFile = File(context.tempFolder, context.tempFileName)
-        val totalFileSize = context.totalSize ?: tmpFile.length()
-        val res = context.downloadHost.commitOutputFile(context.id, tmpFile.absolutePath, DownloadType.Http)
-        Logger.info("XDM", "Move file success: - $res")
-        when (res) {
-            is CommitResult.Failed -> {
-                if (context.stopFlag.get()) return
-                context.diskError.set(true)
-                saveState()
-                context.downloadHost.onDownloadFailed(context.id, DownloadError.DiskSpaceError)
-            }
+        try {
+            val tmpFile = File(context.tempFolder, context.tempFileName)
+            val totalFileSize = context.totalSize ?: tmpFile.length()
+            val res = context.downloadHost.commitOutputFile(context.id, tmpFile.absolutePath, DownloadType.Http)
+            Logger.info("XDM", "Move file success: - $res")
+            when (res) {
+                is CommitResult.Failed -> {
+                    if (context.stopFlag.get()) return
+                    context.diskError.set(true)
+                    saveState()
+                    context.downloadHost.onDownloadFailed(context.id, DownloadError.DiskSpaceError)
+                }
 
-            is CommitResult.Success -> {
-                saveState()
-                context.downloadHost.onDownloadSuccess(
-                    DownloadStatusInfo.FinalInfo(
-                        context.id,
-                        totalFileSize,
-                        res.fileName,
-                        res.outputDir
+                is CommitResult.Success -> {
+                    saveState()
+                    context.downloadHost.onDownloadSuccess(
+                        DownloadStatusInfo.FinalInfo(
+                            context.id,
+                            totalFileSize,
+                            res.fileName,
+                            res.outputDir
+                        )
                     )
-                )
+                }
             }
+        } finally {
+            context.httpClient.close()
         }
     }
 

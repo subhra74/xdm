@@ -56,6 +56,9 @@ object AppMain {
                     //Logger.info("XDM", "Triggering GC")
                     System.gc()
                 }
+            }.apply {
+                name = "periodic-gc"
+                isDaemon = true // must never keep the JVM alive on its own
             }.start()
         }
 

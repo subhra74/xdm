@@ -63,7 +63,7 @@ class HttpClientImpl(
             client.cache?.close()
             Logger.info("XDM", "Connection pool clean up.. triggering GC")
             System.gc()
-        }.start()
+        }.apply { isDaemon = true }.start()
     }
 
     override fun getResponse(url: String, headers: HeaderMap?, cookie: String?, range: Range): Result<HttpResponse> {
