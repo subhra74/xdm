@@ -20,8 +20,8 @@ Severity legend:
 |---|-----|------|-------|
 | S1 | P0 | Integration | ~~Any website could make the app add downloads~~ **Fixed:** loopback + Origin allowlist + POST-only for state-changing paths |
 | S2 | P0 | Network | ~~TLS checks turned off for every download~~ **Fixed:** verified by default; opt-out setting in Advanced → Security |
-| B1 | P0 | HTTP engine | Read→write lock upgrade deadlocks the chunk thread on resume |
-| B2 | P0 | HTTP engine | An HTTP 429 response kills the chunk thread and the download hangs forever |
+| B1 | P2 | HTTP engine | ~~Read→write lock upgrade deadlocks the chunk thread on resume~~ **Fixed:** complete chunks marked Finished on restore; `isAlreadyDone` uses the write lock; regression tests added |
+| B2 | P0 | HTTP engine | ~~An HTTP 429 response kills the chunk thread and the download hangs forever~~ **Fixed:** 429 retries after a capped Retry-After; unexpected errors fail the chunk; retry wait honours Pause |
 | B3 | P1 | Persistence | Queued and "download later" tasks lose cookies, headers and origin |
 | B4 | P1 | HLS | Encrypted HLS always fails after a pause or restart (AES keys are only held in memory) |
 | B5 | P1 | Queue | HLS/DASH ignore `maxParallelDownloads`, and duplicate callbacks start too many queued downloads |
@@ -196,47 +196,128 @@ Still to check by hand: open Settings → Advanced, tick the box, choose No (it 
 again and choose Yes, save, reopen Settings (it should stay ticked), and download from
 `https://self-signed.badssl.com/` with the box on and off.
 
-### B1 (P0): Deadlock when resuming a chunk that is already complete
-**Where:** `HttpChunkRetriever.kt:431-443` (`isAlreadyDone`)
+### B1 (P2, was P0): Deadlock when resuming a chunk that is already complete (FIXED)
+**Where:** `HttpChunkRetriever.kt` (`isAlreadyDone`) and `HttpDownloader.kt` (`makeContext`)
 
-`isAlreadyDone()` holds `context.read {}` and calls `controller.onChunkFinished(id)`, which takes
+**Status:** Fixed in the working tree by normalizing chunk status when saved state is restored, and
+by taking the write lock in `isAlreadyDone`.
+Covered by `TestHttpResumeCompletedChunk`, whose tests fail on the old code (with a thread dump of
+the stuck thread) and pass with the fix.
+
+#### The problem
+`isAlreadyDone()` held `context.read {}` and called `controller.onChunkFinished(id)`, which takes
 `context.write {}` (`HttpDownloader.kt:189`). `ReentrantReadWriteLock` cannot upgrade a read lock to
-a write lock, so the thread deadlocks on itself. Every other chunk thread and `stop()` then block on
-the same lock. This happens when a chunk's bytes are all on disk but `Finished` was never persisted,
-for example after a pause or crash right after the last write.
+a write lock, so the thread parked on itself. Every other chunk thread (a queued writer blocks new
+readers) and `stop()` then blocked on the same lock: the download froze and Pause did nothing until
+the app was restarted.
 
-**Fix:** Decide what to do inside the read lock and act after releasing it:
+A latent second bug sat behind it: the chunk was never marked `Finished`, so even without the
+deadlock `onChunkFinished` would return early ("some chunk not Finished") and the download would sit
+at 100%. That path could not run while the deadlock came first, but a naive fix would have exposed it.
+
+#### Why it was rare (severity lowered to P2)
+It needs a `.state` file with a chunk where `downloaded == length` but status is not `Finished`:
+- **Pause** that saves state in the sub-millisecond gap between a chunk's last byte-count update
+  (`HttpChunkRetriever.kt` `write { downloaded += read }`) and `status.set(Finished)`. Each chunk
+  passes through that gap once per download, while a pause almost always lands in
+  `inputStream.read()`.
+- **Crash or quit** (see B14) after the 5 s periodic save happened to fire on a chunk's last
+  progress update and before any later save.
+
+The impact was still severe when it hit, but it is not something a normal user hits regularly.
+
+#### The fix
+Two layers, both in the working tree.
+
+**1. Restore time (`HttpDownloader.kt`, `makeContext`).** A loaded state goes through
+`normalizeRestoredChunks` before the task uses it:
 ```kotlin
-private fun isAlreadyDone(): Boolean {
-    var finishNow = false
-    context.read {
-        val chunk = context.chunks[id] ?: return true
-        if (chunk.status.get() == ChunkStatus.Finished) return true
-        finishNow = context.init.get() && chunk.length.get() > 0 &&
-                    chunk.length.get() - chunk.downloaded.get() <= 0
+private fun normalizeRestoredChunks(ctx: HttpTaskContext) {
+    if (!ctx.init.get()) return
+    ctx.chunks.values.forEach { c ->
+        val len = c.length.get()
+        if (c.status.get() != ChunkStatus.Finished && len > 0 && c.downloaded.get() >= len) {
+            c.status.set(ChunkStatus.Finished)
+        }
     }
-    if (finishNow) {
-        context.write { context.chunks[id]?.status?.set(ChunkStatus.Finished) }
-        controller.onChunkFinished(id)
-    }
-    return finishNow
 }
 ```
-Also audit the other `read {}` blocks for callbacks that might take the write lock.
-`updateBytesDownloaded` → `saveState` is fine today.
+- If every chunk is complete, `resume()` sees all `Finished` and calls `finishDownload()` without
+  starting any chunk thread.
+- Otherwise `startChunks()` (and `retryFailedChunk`) skip `Finished` chunks, so no thread is started
+  for a complete chunk.
+- The check matches `isAlreadyDone` (`init`, `length > 0`), so chunks of unknown length are left alone.
+- No lock is needed: nothing else references the context yet.
 
-### B2 (P0): HTTP 429 kills the chunk thread
-**Where:** `HttpChunkRetriever.kt:121-125`
+**2. At the source (`HttpChunkRetriever.kt`, `isAlreadyDone`).** It takes the write lock instead of
+the read lock and marks the chunk before notifying:
+```kotlin
+context.write {
+    val chunk = context.chunks[id] ?: return true
+    if (chunk.status.get() == ChunkStatus.Finished) return true
+    val len = chunk.length.get()
+    val downloaded = chunk.downloaded.get()
+    if (context.init.get() && len > 0 && len - downloaded <= 0) {
+        chunk.status.set(ChunkStatus.Finished)
+        controller.onChunkFinished(id)
+        return true
+    }
+}
+```
+- The write lock is reentrant for its holder, so `onChunkFinished`'s own `write {}` succeeds.
+- Marking `Finished` and calling `onChunkFinished` under one lock mirrors the `CopyResult.Done` path,
+  so only the last chunk to be marked sees every chunk finished and the file is committed once.
+- It protects any future caller that restarts a complete chunk, which layer 1 does not.
+- `isAlreadyDone` runs once per connection attempt, so the exclusive lock costs nothing measurable.
 
-On 429 the code runs `throw IOException("Rate limit hit")` inside the inline `onSuccess` lambda. The
-exception escapes `connect()` and `retrieveChunk()`, which have no try/catch, so the thread dies. The
-chunk stays `Downloading` forever and is never counted as failed or finished, so the download hangs
-at a partial percentage with no error. The computed `retryAfter` is also thrown away.
+An earlier attempt at layer 2 released the read lock, marked `Finished`, and only then called
+`onChunkFinished`. It was dropped because it opened a double-commit race: `onChunkFinished` checks
+`completed` outside the write lock and not again inside it, so two threads could both pass the check
+and both commit, and the second commit (temp file already moved) reports `DiskSpaceError` after
+success. Doing both under one write lock, as layer 2 now does, closes that gap. Re-checking `completed` inside the
+write block would still be a cheap hardening.
 
-**Fix:** `return ConnectResult.Retry(retryAfter)`. Wrap the body of `retrieveChunk()` in a
-`try/catch (Exception)` that calls `chunkFailed(DownloadError.InternalError)` so an unexpected
-exception can never leave a chunk orphaned. Cap `retryAfter` (for example at 60 s) and sleep in
-short steps that check `isCancelled()`, so Pause responds quickly.
+Holding the write lock while `onChunkFinished` commits the file is intentional: it keeps `stop()`,
+takeover/split and `saveState` from changing or persisting state mid-commit. At that point every
+chunk is `Finished`, so no downloading thread is blocked.
+
+#### Tests (`TestHttpResumeCompletedChunk`)
+| Test | Old code | Fixed |
+|---|---|---|
+| `resume_chunkCompleteButNotFinished_commitsFile`: both chunks complete, one not `Finished` | Deadlock, never commits | Commits without connecting, file matches |
+| `resume_chunkCompleteButNotFinished_pauseStillWorks`: same state, then Pause | `stop()` blocks forever | Completes or pauses |
+| `resume_oneChunkCompleteOtherPending_downloadsOnlyTheRest`: one complete chunk not `Finished`, one empty | Deadlock; the pending chunk also freezes | Downloads only the second half, file matches |
+| `isAlreadyDone_completeChunkNotFinished_finishesWithoutRestoreFix`: undoes layer 1 on the loaded context and runs a retriever for the complete chunk | Deadlock | Chunk marked `Finished`, file committed |
+
+### B2 (P0): HTTP 429 kills the chunk thread (FIXED)
+**Where:** `HttpChunkRetriever.kt` (`connect`, `retrieveChunk`)
+
+**Status:** Fixed in the working tree. Covered by `TestHttpRetryHandling`; all three tests failed on
+the old code and pass with the fix.
+
+#### The problem
+On 429 the code ran `throw IOException("Rate limit hit")` inside the inline `onSuccess` lambda. The
+exception escaped `connect()` and `retrieveChunk()`, which had no try/catch, so the thread died. The
+chunk stayed `Downloading` forever and was never counted as failed or finished, so the download hung
+at a partial percentage with no error. The computed `retryAfter` was also thrown away. Any other
+unexpected exception in the chunk thread had the same effect, and the retry wait was a single
+`Thread.sleep` that ignored Pause.
+
+#### The fix
+- 429 now returns `ConnectResult.Retry(retryAfter)`, with `Retry-After` capped at
+  `MAX_RETRY_AFTER_SECS` (60 s). It still counts against `maxRetries`.
+- `retrieveChunk()` wraps the loop (now `retrieveChunkInternal()`) in `try/catch (Exception)`. If the
+  download was not cancelled, it logs and calls `chunkFailed(DownloadError.InternalError)`, so the
+  normal all-chunks-failed path reports the error.
+- The retry wait is `sleepUnlessCancelled`, which sleeps in 200 ms steps and returns as soon as
+  `isCancelled()` is true.
+
+#### Tests (`TestHttpRetryHandling`)
+| Test | Old code | Fixed |
+|---|---|---|
+| `rateLimited429_honoursRetryAfterAndCompletes`: first request 429 with `Retry-After: 1` | Thread dies after 1 request, download hangs | Retries after 1 s, file matches |
+| `unexpectedException_failsDownloadInsteadOfHanging`: HTTP client throws | Thread dies, no callback | `onDownloadFailed(InternalError)` |
+| `pauseDuringRetryWait_chunkThreadExitsPromptly`: every request 503, Pause during the 5 s wait | Thread keeps sleeping | Thread exits within 1.5 s, no further request |
 
 ### B3 (P1): Queued and deferred HTTP downloads lose cookies, headers and origin
 **Where:** `TaskInfoDB.kt:25-46, 97-109`; `DownloadManager.kt:466-470, 331-344`
@@ -616,7 +697,7 @@ auto-retry `NetworkError` with backoff.
 ## 3. Suggested order of work
 
 1. **Security:** S1 and S2 are done. Run the manual checks listed in each section.
-2. **Hangs and data loss:** B1, B2, B9, B3 (persist headers and cookies with a version header), B4.
+2. **Hangs and data loss:** B1 and B2 are done. Then B9, B3 (persist headers and cookies with a version header), B4.
 3. **Queue and lifecycle:** B5 + F1 + F2 together (scheduler and queues depend on a correct pump),
    then B6, B7, B14.
 4. **Resource hygiene:** B10, B11, B12, B13, B18.

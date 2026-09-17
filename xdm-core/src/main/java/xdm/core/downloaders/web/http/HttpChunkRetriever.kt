@@ -27,6 +27,18 @@ class HttpChunkRetriever(
     }
 
     fun retrieveChunk() {
+        try {
+            retrieveChunkInternal()
+        } catch (e: Exception) {
+            // Never let an unexpected exception kill the thread with the chunk still Downloading,
+            // or the download hangs with no error.
+            if (isCancelled()) return
+            Logger.error("XDM", "Chunk $id failed with unexpected error", e)
+            chunkFailed(DownloadError.InternalError)
+        }
+    }
+
+    private fun retrieveChunkInternal() {
         var retryCount = 0
         var maxByteRange: Long? = null
         var retryAfter = 5L
@@ -93,7 +105,17 @@ class HttpChunkRetriever(
                 }
             }
             if (isCancelled() || !shouldRetry) return
-            Thread.sleep(retryAfter * 1000)
+            sleepUnlessCancelled(retryAfter * 1000)
+        }
+    }
+
+    /** Sleeps in short steps so Pause is noticed without waiting out the whole retry delay. */
+    private fun sleepUnlessCancelled(millis: Long) {
+        val deadline = System.currentTimeMillis() + millis
+        while (!isCancelled()) {
+            val left = deadline - System.currentTimeMillis()
+            if (left <= 0) return
+            Thread.sleep(min(left, RETRY_SLEEP_STEP_MS))
         }
     }
 
@@ -126,9 +148,8 @@ class HttpChunkRetriever(
                 r.close()
                 var retryAfter = 5L
                 if (r.statusCode == 429) {
-                    retryAfter = getRetryDelay(r.getHeader("retry-after"), 5)
+                    retryAfter = min(getRetryDelay(r.getHeader("retry-after"), 5), MAX_RETRY_AFTER_SECS)
                     Logger.info("Rate limit hit: Will wait for $retryAfter sec")
-                    throw IOException("Rate limit hit")
                 }
                 return ConnectResult.Retry(retryAfter)
             }
@@ -439,22 +460,25 @@ class HttpChunkRetriever(
     }
 
     private fun isAlreadyDone(): Boolean {
-        var finishNow = false
-        context.read {
+        // Write lock, not read: onChunkFinished takes the write lock (reentrant for the holder, but
+        // a read lock cannot be upgraded). Marking Finished and notifying under the same lock
+        // mirrors the CopyResult.Done path, so only one thread can see every chunk finished.
+        context.write {
             val chunk = context.chunks[id] ?: return true
             if (chunk.status.get() == ChunkStatus.Finished) return true
             val len = chunk.length.get()
             val downloaded = chunk.downloaded.get()
-            finishNow = context.init.get() && len > 0 && len - downloaded <= 0
+            if (context.init.get() && len > 0 && len - downloaded <= 0) {
+                chunk.status.set(ChunkStatus.Finished)
+                controller.onChunkFinished(id)
+                return true
+            }
         }
-        if (!finishNow) return false
-        // onChunkFinished takes the write lock, which cannot be acquired while holding the read
-        // lock, so mark the chunk and notify only after the read lock is released.
-        context.write {
-            if (context.stopFlag.get()) return true
-            context.chunks[id]?.status?.set(ChunkStatus.Finished) ?: return true
-        }
-        controller.onChunkFinished(id)
-        return true
+        return false
+    }
+
+    private companion object {
+        const val MAX_RETRY_AFTER_SECS = 60L
+        const val RETRY_SLEEP_STEP_MS = 200L
     }
 }

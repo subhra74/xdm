@@ -37,7 +37,11 @@ fun makeContext(
         configDir = configDir,
         http = httpClient,
         host = host
-    ).onSuccess { return Pair(it.apply { this.httpClient = httpClient }, false) }
+    ).onSuccess {
+        it.httpClient = httpClient
+        normalizeRestoredChunks(it)
+        return Pair(it, false)
+    }
     Logger.info("Unable to load saved download state, starting new download: ${task.id}")
     return Pair(
         HttpTaskContext(
@@ -59,6 +63,23 @@ fun makeContext(
             tempFolder = task.defaultDownloadFolder,
         ).apply { this.httpClient = httpClient }, true
     )
+}
+
+/**
+ * A pause or crash between a chunk's last byte and its Finished status update persists a complete
+ * chunk as Downloading. Mark such chunks Finished on restore so resume never restarts them: a
+ * restarted complete chunk reaches onChunkFinished from inside isAlreadyDone's read lock, and the
+ * read→write lock upgrade deadlocks.
+ */
+private fun normalizeRestoredChunks(ctx: HttpTaskContext) {
+    if (!ctx.init.get()) return
+    ctx.chunks.values.forEach { c ->
+        val len = c.length.get()
+        if (c.status.get() != ChunkStatus.Finished && len > 0 && c.downloaded.get() >= len) {
+            Logger.info("XDM", "Restored chunk ${c.id} is complete; marking Finished")
+            c.status.set(ChunkStatus.Finished)
+        }
+    }
 }
 
 class HttpDownloaderTask : ChunkController {
