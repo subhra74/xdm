@@ -11,6 +11,12 @@ import xdm.core.network.http.HeaderMap
 import xdm.core.network.http.PoolingHttpClient
 import xdm.core.util.AtomicIO
 import xdm.core.util.Logger
+import xdm.core.util.readLongString
+import xdm.core.util.readNullableHeaders
+import xdm.core.util.readNullableLongString
+import xdm.core.util.writeLongString
+import xdm.core.util.writeNullableHeaders
+import xdm.core.util.writeNullableLongString
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.util.concurrent.atomic.AtomicBoolean
@@ -32,7 +38,7 @@ private fun writeChunk(chunk: Chunk, w: DataOutputStream) {
         w.writeLong(offset)
         w.writeLong(length.get())
         w.writeLong(downloaded.get())
-        w.writeUTF(status.toString())
+        w.writeLongString(status.toString())
     }
 }
 
@@ -49,20 +55,17 @@ private fun writeHlsChunk(chunk: StreamingChunk, w: DataOutputStream) {
         w.writeLong(sequence)
         w.writeLong(downloaded.get())
         w.writeLong(length.get())
-        w.writeUTF(status.toString())
-        w.writeBoolean(contentType != null)
-        contentType?.let { w.writeUTF(it) }
-        w.writeUTF(url)
+        w.writeLongString(status.toString())
+        w.writeNullableLongString(contentType)
+        w.writeLongString(url)
         w.writeBoolean(chunk.byteRange != null)
         byteRange?.let {
             w.writeLong(it.first)
             w.writeLong(it.second)
         }
-        w.writeBoolean(keyUrl != null)
-        keyUrl?.let { w.writeUTF(it) }
-        w.writeBoolean(iv != null)
-        iv?.let { w.writeUTF(it) }
-        w.writeUTF(tag)
+        w.writeNullableLongString(keyUrl)
+        w.writeNullableLongString(iv)
+        w.writeLongString(tag)
         w.writeBoolean(encrypted)
     }
 }
@@ -74,16 +77,16 @@ private fun readHlsChunk(r: DataInputStream): StreamingChunk {
         downloaded = AtomicLong(r.readLong()),
         length = AtomicLong(r.readLong()),
         status = AtomicReference(
-            ChunkStatus.valueOf(r.readUTF())
+            ChunkStatus.valueOf(r.readLongString())
         ),
-        contentType = if (r.readBoolean()) r.readUTF() else null,
-        url = r.readUTF(),
+        contentType = r.readNullableLongString(),
+        url = r.readLongString(),
         byteRange = if (r.readBoolean()) {
             Pair(r.readLong(), r.readLong())
         } else null,
-        keyUrl = if (r.readBoolean()) r.readUTF() else null,
-        iv = if (r.readBoolean()) r.readUTF() else null,
-        tag = r.readUTF(),
+        keyUrl = r.readNullableLongString(),
+        iv = r.readNullableLongString(),
+        tag = r.readLongString(),
         fileHandle = AtomicReference(null),
         error = AtomicReference(null),
         encrypted = r.readBoolean(),
@@ -107,7 +110,7 @@ private fun readChunk(r: DataInputStream): Chunk {
         length = AtomicLong(r.readLong()),
         downloaded = AtomicLong(r.readLong()),
         status = AtomicReference(
-            ChunkStatus.valueOf(r.readUTF())
+            ChunkStatus.valueOf(r.readLongString())
         ),
         fileHandle = AtomicReference(null),
         lastTakeOver = AtomicLong(0)
@@ -125,50 +128,20 @@ private fun readChunks(r: DataInputStream): MutableMap<Long, Chunk> {
     return chunkMap
 }
 
-private fun writeHeaders(headerMap: HeaderMap, w: DataOutputStream) {
-    w.writeInt(headerMap.size)
-    for ((k, v) in headerMap) {
-        w.writeUTF(k)
-        w.writeInt(v.size)
-        for (value in v) {
-            w.writeUTF(value)
-        }
-    }
-}
-
-private fun readHeaders(r: DataInputStream): HeaderMap {
-    val headerMap = HashMap<String, List<String>>()
-    if (!r.readBoolean()) return headerMap
-    val count = r.readInt()
-    for (i in 0..<count) {
-        val k = r.readUTF()
-        val n = r.readInt()
-        val list = ArrayList<String>()
-        for (j in 0..<n) {
-            list.add(r.readUTF())
-        }
-        headerMap[k] = list
-    }
-    return headerMap
-}
-
 private fun writeContext(context: HttpTaskContext, out: DataOutputStream) {
     context.apply {
         out.writeLong(id)
-        out.writeUTF(tempFolder)
-        out.writeUTF(tempFileName)
+        out.writeLongString(tempFolder)
+        out.writeLongString(tempFileName)
         writeChunks(chunks, out)
         out.writeBoolean(init.get())
         out.writeBoolean(totalSize != null)
         totalSize?.let { out.writeLong(it) }
         out.writeLong(downloaded.get())
-        out.writeUTF(url)
-        out.writeBoolean(contentType != null)
-        contentType?.let { out.writeUTF(it) }
-        out.writeBoolean(headers != null)
-        headers?.let { writeHeaders(it, out) }
-        out.writeBoolean(cookie != null)
-        cookie?.let { out.writeUTF(it) }
+        out.writeLongString(url)
+        out.writeNullableLongString(contentType)
+        out.writeNullableHeaders(headers)
+        out.writeNullableLongString(cookie)
         out.writeBoolean(completed.get())
         out.writeBoolean(tempFileCreated.get())
         out.writeBoolean(diskError.get())
@@ -178,25 +151,21 @@ private fun writeContext(context: HttpTaskContext, out: DataOutputStream) {
 private fun writeHlsContext(context: HlsTaskContext, out: DataOutputStream) {
     context.apply {
         out.writeLong(id)
-        out.writeUTF(tempFolder)
-        out.writeUTF(tempFileName)
+        out.writeLongString(tempFolder)
+        out.writeLongString(tempFileName)
         writeChunks(chunks, out)
         out.writeBoolean(init.get())
         out.writeBoolean(totalSize != null)
         totalSize?.let { out.writeLong(it) }
         out.writeLong(downloaded.get())
-        out.writeBoolean(contentType != null)
-        contentType?.let { out.writeUTF(it) }
-        out.writeBoolean(headers != null)
-        headers?.let { writeHeaders(it, out) }
-        out.writeBoolean(cookie != null)
-        cookie?.let { out.writeUTF(it) }
+        out.writeNullableLongString(contentType)
+        out.writeNullableHeaders(headers)
+        out.writeNullableLongString(cookie)
         out.writeBoolean(completed.get())
         out.writeBoolean(hasSeparateStreams)
         out.writeInt(pieceCompletedCount.get())
-        out.writeUTF(url)
-        out.writeBoolean(audioUrl != null)
-        audioUrl?.let { out.writeUTF(it) }
+        out.writeLongString(url)
+        out.writeNullableLongString(audioUrl)
         out.writeBoolean(audioOnly)
         out.writeBoolean(independent)
         out.writeBoolean(encrypted)
@@ -207,41 +176,38 @@ private fun writeHlsContext(context: HlsTaskContext, out: DataOutputStream) {
 private fun writeDashContext(context: DashTaskContext, out: DataOutputStream) {
     context.apply {
         out.writeLong(id)
-        out.writeUTF(tempFolder)
-        out.writeUTF(tempFileName)
+        out.writeLongString(tempFolder)
+        out.writeLongString(tempFileName)
         writeChunks(chunks, out)
         out.writeBoolean(init.get())
         out.writeBoolean(totalSize != null)
         totalSize?.let { out.writeLong(it) }
         out.writeLong(downloaded.get())
-        out.writeBoolean(contentType != null)
-        contentType?.let { out.writeUTF(it) }
-        out.writeBoolean(headers != null)
-        headers?.let { writeHeaders(it, out) }
-        out.writeBoolean(cookie != null)
-        cookie?.let { out.writeUTF(it) }
+        out.writeNullableLongString(contentType)
+        out.writeNullableHeaders(headers)
+        out.writeNullableLongString(cookie)
         out.writeBoolean(completed.get())
         out.writeBoolean(hasSeparateStreams)
         out.writeInt(pieceCompletedCount.get())
-        out.writeUTF(url)
-        out.writeUTF(audioMime)
-        out.writeUTF(videoMime)
+        out.writeLongString(url)
+        out.writeLongString(audioMime)
+        out.writeLongString(videoMime)
     }
 }
 
 fun readContext(r: DataInputStream, host: DownloadHost): HttpTaskContext {
     return HttpTaskContext(
         id = r.readLong(),
-        tempFolder = r.readUTF(),
-        tempFileName = r.readUTF(),
+        tempFolder = r.readLongString(),
+        tempFileName = r.readLongString(),
         chunks = readChunks(r),
         init = AtomicBoolean(r.readBoolean()),
         totalSize = if (r.readBoolean()) r.readLong() else null,
         downloaded = AtomicLong(r.readLong()),
-        url = r.readUTF(),
-        contentType = if (r.readBoolean()) r.readUTF() else null,
-        headers = readHeaders(r),
-        cookie = if (r.readBoolean()) r.readUTF() else null,
+        url = r.readLongString(),
+        contentType = r.readNullableLongString(),
+        headers = r.readNullableHeaders() ?: HashMap(),
+        cookie = r.readNullableLongString(),
         stopFlag = AtomicBoolean(false),
         completed = AtomicBoolean(r.readBoolean()),
         tempFileCreated = AtomicBoolean(r.readBoolean()),
@@ -253,22 +219,22 @@ fun readContext(r: DataInputStream, host: DownloadHost): HttpTaskContext {
 private fun readHlsContext(r: DataInputStream, http: PoolingHttpClient, host: DownloadHost): HlsTaskContext {
     return HlsTaskContext(
         id = r.readLong(),
-        tempFolder = r.readUTF(),
-        tempFileName = r.readUTF(),
+        tempFolder = r.readLongString(),
+        tempFileName = r.readLongString(),
         chunks = readStreamingChunks(r),
         init = AtomicBoolean(r.readBoolean()),
         totalSize = if (r.readBoolean()) r.readLong() else null,
         downloaded = AtomicLong(r.readLong()),
-        contentType = if (r.readBoolean()) r.readUTF() else null,
-        headers = readHeaders(r),
-        cookie = if (r.readBoolean()) r.readUTF() else null,
+        contentType = r.readNullableLongString(),
+        headers = r.readNullableHeaders() ?: HashMap(),
+        cookie = r.readNullableLongString(),
         httpClient = http,
         stopFlag = AtomicBoolean(false),
         completed = AtomicBoolean(r.readBoolean()),
         hasSeparateStreams = r.readBoolean(),
         pieceCompletedCount = AtomicInteger(r.readInt()),
-        url = r.readUTF(),
-        audioUrl = if (r.readBoolean()) r.readUTF() else null,
+        url = r.readLongString(),
+        audioUrl = r.readNullableLongString(),
         audioOnly = r.readBoolean(),
         downloadHost = host,
         independent = r.readBoolean(),
@@ -280,23 +246,23 @@ private fun readHlsContext(r: DataInputStream, http: PoolingHttpClient, host: Do
 private fun readDashContext(r: DataInputStream, http: PoolingHttpClient, host: DownloadHost): DashTaskContext {
     return DashTaskContext(
         id = r.readLong(),
-        tempFolder = r.readUTF(),
-        tempFileName = r.readUTF(),
+        tempFolder = r.readLongString(),
+        tempFileName = r.readLongString(),
         chunks = readStreamingChunks(r),
         init = AtomicBoolean(r.readBoolean()),
         totalSize = if (r.readBoolean()) r.readLong() else null,
         downloaded = AtomicLong(r.readLong()),
-        contentType = if (r.readBoolean()) r.readUTF() else null,
-        headers = readHeaders(r),
-        cookie = if (r.readBoolean()) r.readUTF() else null,
+        contentType = r.readNullableLongString(),
+        headers = r.readNullableHeaders() ?: HashMap(),
+        cookie = r.readNullableLongString(),
         httpClient = http,
         stopFlag = AtomicBoolean(false),
         completed = AtomicBoolean(r.readBoolean()),
         hasSeparateStreams = r.readBoolean(),
         pieceCompletedCount = AtomicInteger(r.readInt()),
-        url = r.readUTF(),
-        audioMime = r.readUTF(),
-        videoMime = r.readUTF(),
+        url = r.readLongString(),
+        audioMime = r.readLongString(),
+        videoMime = r.readLongString(),
         downloadHost = host,
     ).apply { Logger.info(this) }
 }
@@ -304,7 +270,7 @@ private fun readDashContext(r: DataInputStream, http: PoolingHttpClient, host: D
 @Synchronized
 fun saveState(context: HttpTaskContext, configDir: String) {
     //Logger.info(context)
-    AtomicIO.writeTransacted("${context.id}.state", configDir) { fs ->
+    AtomicIO.writeTransacted("${context.id}.state", configDir, ownerOnly = true) { fs ->
         writeContext(context, fs)
     }.onFailure { Logger.error("XDM", "Error saving state", it) }
 }
@@ -312,7 +278,7 @@ fun saveState(context: HttpTaskContext, configDir: String) {
 @Synchronized
 fun saveState(context: HlsTaskContext, configDir: String) {
     //Logger.info(context)
-    AtomicIO.writeTransacted("${context.id}.state", configDir) { fs ->
+    AtomicIO.writeTransacted("${context.id}.state", configDir, ownerOnly = true) { fs ->
         writeHlsContext(context, fs)
     }.onFailure { Logger.error("XDM", "Error saving state", it) }
 }
@@ -320,7 +286,7 @@ fun saveState(context: HlsTaskContext, configDir: String) {
 @Synchronized
 fun saveState(context: DashTaskContext, configDir: String) {
     //Logger.info(context)
-    AtomicIO.writeTransacted("${context.id}.state", configDir) { fs ->
+    AtomicIO.writeTransacted("${context.id}.state", configDir, ownerOnly = true) { fs ->
         writeDashContext(context, fs)
     }.onFailure { Logger.error("XDM", "Error saving state", it) }
 }
@@ -351,7 +317,7 @@ fun getTempFileFolder(id: Long, configDir: String): Result<Pair<String, String>>
     return AtomicIO.readTransacted<Pair<String, String>>("$id.state", configDir) { fs ->
         fs.readLong() //Skip id
         return runCatching {
-            Pair(fs.readUTF(), fs.readUTF())
+            Pair(fs.readLongString(), fs.readLongString())
         }
     }
 }

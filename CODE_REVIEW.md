@@ -22,8 +22,8 @@ Severity legend:
 | S2 | P0 | Network | ~~TLS checks turned off for every download~~ **Fixed:** verified by default; opt-out setting in Advanced → Security |
 | B1 | P2 | HTTP engine | ~~Read→write lock upgrade deadlocks the chunk thread on resume~~ **Fixed:** complete chunks marked Finished on restore; `isAlreadyDone` uses the write lock; regression tests added |
 | B2 | P0 | HTTP engine | ~~An HTTP 429 response kills the chunk thread and the download hangs forever~~ **Fixed:** 429 retries after a capped Retry-After; unexpected errors fail the chunk; retry wait honours Pause |
-| B3 | P1 | Persistence | Queued and "download later" tasks lose cookies, headers and origin |
-| B4 | P1 | HLS | Encrypted HLS always fails after a pause or restart (AES keys are only held in memory) |
+| B3 | P1 | Persistence | ~~Queued and "download later" tasks lose cookies, headers and origin~~ **Fixed:** persisted for HTTP, HLS and DASH; `.info`/`.state` strings no longer limited to 64 KB |
+| B4 | P1 | HLS | ~~Encrypted HLS always fails after a pause or restart (AES keys are only held in memory)~~ **Fixed:** keys stored in an owner-only `<id>.keys` file until decrypted; new `DecryptionError`; `.state`/`.info` owner-only |
 | B5 | P1 | Queue | HLS/DASH ignore `maxParallelDownloads`, and duplicate callbacks start too many queued downloads |
 | B6 | P1 | Video | Downloading the same detected video twice reuses the same task id |
 | B7 | P1 | Commit | `File.renameTo` fails across drives, so HLS/DASH to another volume fails with "disk space error" |
@@ -319,47 +319,119 @@ unexpected exception in the chunk thread had the same effect, and the retry wait
 | `unexpectedException_failsDownloadInsteadOfHanging`: HTTP client throws | Thread dies, no callback | `onDownloadFailed(InternalError)` |
 | `pauseDuringRetryWait_chunkThreadExitsPromptly`: every request 503, Pause during the 5 s wait | Thread keeps sleeping | Thread exits within 1.5 s, no further request |
 
-### B3 (P1): Queued and deferred HTTP downloads lose cookies, headers and origin
-**Where:** `TaskInfoDB.kt:25-46, 97-109`; `DownloadManager.kt:466-470, 331-344`
+### B3 (P1): Queued and deferred HTTP downloads lose cookies, headers and origin (FIXED)
+**Where:** `TaskInfoDB.kt`, `StateSaver.kt`, new `util/BinaryIO.kt`
 
-`saveHttpTask` persists only url, fileName, flags, folder, maxPiece and size. `getHttpTask` returns
-`cookie = null, headers = null, origin = null, userSelectedDownloadFolder = null`. The following
-paths build the task from the DB with no `.state` file yet, so they start **without auth**:
-- `processNextQueue` → `startHttpTask(id)`. The default `maxParallelDownloads = 1`, so every
-  second concurrent browser download is affected.
+**Status:** Fixed in the working tree. Covered by `TestTaskInfoDB`; all eight tests failed on the old
+code and pass with the fix. Full test suite passes.
+
+#### The problem
+`saveHttpTask` persisted only url, fileName, flags, folder, maxPiece and size, and `getHttpTask`
+returned `cookie = null, headers = null, origin = null, userSelectedDownloadFolder = null`. HLS and
+DASH had the same gap. Paths that build the task from the `.info` file with no `.state` yet started
+**without auth**:
+- `processNextQueue` → `startHttpTask(id)`. The default `maxParallelDownloads = 1`, so every second
+  concurrent browser download was affected.
 - "Download later" (`runNow = false`) → `resumeDownload` → `resumeImmediately`.
 - Any download whose `.state` was never written.
 
-The result is 401/403 responses, or an HTML login page saved as the file. `getOriginPage` also
-falls back to the file URL because `origin` and `Referer` are gone, so "Refresh link" opens the wrong page.
+The result was 401/403 responses, or an HTML login page saved as the file. Load-modify-save paths
+(`DownloadManager.kt` progress/init updates and `updateDownloadInfo`, i.e. "Refresh link") also
+wiped these fields, so a refreshed cookie was thrown away. `getOriginPage` fell back to the file URL.
 
-HLS and DASH have the same gap (`getHlsTask` / `getDashTask`); they resume correctly only because
-the `.state` file carries headers.
+Separately, every string in `.info` and `.state` files used `writeUTF`, which throws above 64 KB. A
+large cookie or long signed URL made the save fail (only logged), leaving no `.info` file (the
+queued download silently never starts) or no `.state` file (the download cannot resume).
 
-**Fix:** Persist `cookie`, `headers`, `origin` and `userSelectedDownloadFolder` in all three
-`save*Task` / `get*Task` pairs, keeping read and write order in lockstep as CLAUDE.md requires. Add
-a leading format version `Int` so old `.info` files can still be read: version 0 means the old
-layout, where these fields default to null. Reuse `writeHeaders` / `readHeaders` from
-`StateSaver.kt` by moving them into a shared util. Also see B21 about the 64 KB `writeUTF` limit on
-large cookies.
+#### The fix
+- **`TaskInfoDB`**: all three `save*Task` / `get*Task` pairs now write and read `cookie`, `headers`,
+  `origin` and `userSelectedDownloadFolder`, appended after the type-specific fields through one shared
+  `writeRequestFields` / `readRequestFields` pair, so the order stays in lockstep. `save*Task` now logs
+  a failed write instead of ignoring the `Result`.
+- **`util/BinaryIO.kt`** (new): `writeLongString` / `readLongString` (`Int` byte length + UTF-8
+  bytes, with a 64 MB sanity cap on read), nullable variants, and `writeNullableHeaders` /
+  `readNullableHeaders`. This replaces the private header helpers that were in `StateSaver.kt`.
+- **64 KB limit**: every string in `.info` files (task info, DASH segment URLs) and `.state` files
+  (HTTP/HLS/DASH contexts, chunks, segment/key URLs, IVs, headers, cookies, temp paths) now uses the
+  length-prefixed encoding. `.state` headers still load as an empty map when absent, as before.
+- **No format versioning**, by decision. Existing `task-<id>.info` and `<id>.state` files written by
+  earlier builds cannot be read by this build (and vice versa): unfinished downloads from before the
+  upgrade will not resume and need to be re-added.
 
-### B4 (P1): Encrypted HLS fails after any pause or restart
-**Where:** `HlsDownloaderTask.kt:84, 192-237, 249-275`
+Not changed:
+- `authInfo` is still not persisted. It holds a password, and nothing in the app sets it today;
+  storing it needs its own decision (e.g. the OS keychain).
+- `*-downloads.dat` (file names, enum names), `schedule.dat` and the config file still use
+  `writeUTF`. Their strings are file names, enum names, paths and user-typed settings, which cannot
+  realistically reach 64 KB.
 
-`keyCache` is an in-memory map filled only in `initDownload()`. After a resume, `context.init` is
-true, so `initDownload()` is skipped and `keyCache` is empty. `decryptChunk` then throws
-"Key missing" inside `assemble()`. `downloadChunks()` only catches `InterruptedException`, so the
-error reaches `download()`, which reports `InternalError`. The user must delete the download and
-start it again.
+#### Tests (`TestTaskInfoDB`)
+| Test | Old code | Fixed |
+|---|---|---|
+| `http_roundTripKeepsCookieHeadersOriginAndFolder` | Fields read back `null` | Equal |
+| `hls_roundTripKeepsCookieHeadersOriginAndFolder` | Fields read back `null` | Equal |
+| `dash_roundTripKeepsCookieHeadersOriginAndFolder` (incl. segments, MIME types) | Fields read back `null` | Equal |
+| `loadModifySave_keepsFieldsItDidNotTouch` ("Refresh link" pattern) | Cookie wiped | Kept |
+| `taskInfo_valuesOver64KbRoundTrip` (URL, cookie, header value) | Save fails | Equal |
+| `httpState_valuesOver64KbRoundTrip` | Save fails, load `EOFException` | Loads |
+| `hlsState_segmentUrlOver64KbRoundTrips` (segment URL, key URL, cookie) | Save fails, load `EOFException` | Loads |
+| `queuedHttpTask_sendsPersistedCookieAndHeaders`: task loaded from the DB only, downloaded from `MockHttpServer` | Server got no `Cookie` | `Cookie` and custom header sent |
 
-**Fix (either):**
-- In `decryptChunk`, fetch missing keys lazily with
-  `keyCache.getOrPut(chunk.keyUrl) { downloadManifestBytes(...) ?: throw IOException("key") }`.
-  This is simple and handles key rotation.
-- Or persist the keys (hex) in `HlsTaskContext` / `.state`. This works even if the key URL
-  expires, but it stores key material on disk.
+`MockHttpServer`'s `ReqCtx` now records request headers (new field with a default) for the last test.
 
-Lazy fetch is the smaller change. Also catch exceptions in `assemble()` and map them to `MuxError`.
+### B4 (P1): Encrypted HLS fails after any pause or restart (FIXED)
+**Where:** `HlsDownloaderTask.kt`, new `hls/HlsKeyStore.kt`, `StreamingDownloaderTask.kt`, `AtomicIO.kt`
+
+**Status:** Fixed in the working tree. Covered by `TestHlsKeyPersistence`; all five tests failed on
+the old code and pass with the fix. Full test suite passes.
+
+#### The problem
+`keyCache` was an in-memory map filled only in `initDownload()`. Every resume (after a pause or an app
+restart) builds a new task from `.state`, where `context.init` is true, so `initDownload()` is
+skipped and `keyCache` is empty. `decryptChunk` then threw "Key missing" inside `assemble()`, which
+reached `download()` and was reported as `InternalError`. The user had to delete the download and
+start again.
+
+Found while fixing it:
+- `retrieveKeys` ignored a key download that returned `null` (for example a 404): init succeeded,
+  every segment downloaded, and the download only failed at the end with "Key missing".
+- A wrong-size key was stored before the size check threw.
+- `.state` and `.info` files were created world-readable (`rw-r--r--`), and they hold cookies and
+  headers since B3.
+
+#### The fix
+- **Keys stored on disk, separately from `.state`** (`HlsKeyStore`): `retrieveKeys` writes all keys
+  once to `<id>.keys` (count, then key URL + raw key bytes per entry). They are deliberately not part
+  of `HlsTaskContext`, because `.state` is rewritten every few seconds during the download.
+- **Loaded lazily on resume:** `postProcessChunks()` loads the file when the in-memory map is empty
+  and some segment is still encrypted. Resume works even if the key URL has expired.
+- **Deleted when no longer needed:** once every segment is decrypted, the task saves `.state` (so
+  `encrypted = false` is recorded) and then deletes `<id>.keys`. `deleteTemp()` (deleting the
+  download) also removes it.
+- **Key fetch failures fail early:** a `null` download or a key that is not 16 bytes now fails
+  `initDownload()` with `InvalidResponse` (or `TlsError`), before any segment is downloaded.
+- **Separate error:** new `DownloadError.DecryptionError`. `decryptChunk` throws
+  `DecryptionException` for a missing key or any decryption failure (wrong key, corrupt data), and
+  `assemble()` reports it as `DecryptionError`. The progress window shows `ERR_DECRYPT` ("Unable to
+  decrypt the video. The encryption key is missing or invalid.", added to `en.txt`).
+- **Owner-only files:** `AtomicIO.writeTransacted` has a new `ownerOnly` flag that creates the temp
+  file as `rw-------` on POSIX systems (the rename keeps it). `.state`, `.info` and `.keys` use it.
+  Existing files become owner-only the next time they are saved. Windows is unchanged (per-user
+  profile folders are already restricted).
+
+Trade-off: while a download is paused or running, the AES key is on disk (owner-only) alongside
+the cookies in `.state`. It is removed as soon as decryption finishes.
+
+#### Tests (`TestHlsKeyPersistence`)
+| Test | Old code | Fixed |
+|---|---|---|
+| `resumeAfterPause_keyUrlGone_decryptsWithStoredKey`: pause right after init, delete the key from the server, resume with a new task | `InternalError` ("Key missing") | Succeeds, output passes ffprobe |
+| `keysFile_existsOwnerOnlyWhilePaused_andIsDeletedAfterSuccess` | No `.keys` file | `rw-------` while paused, deleted after success |
+| `stateAndTaskInfoFiles_areOwnerOnly` | `rw-r--r--` | `rw-------` |
+| `wrongKey_reportsDecryptionError`: server serves a different key | `InternalError` | `DecryptionError` |
+| `keyNotFetchable_failsBeforeDownloadingSegments`: key URL returns 404 | Segments downloaded, then `InternalError` | `InvalidResponse`, init never completes |
+
+The existing H7–H9 AES tests in `TestHlsE2E` still cover explicit IVs, sequence IVs and key rotation.
 
 ### B5 (P1): The parallel-download limit and queue are unreliable
 **Where:** `DownloadManager.kt:171, 186, 206, 519-588, 644-668`
@@ -668,12 +740,12 @@ auto-retry `NetworkError` with backoff.
 
 ### B21 (P3): Smaller issues
 - **`/tab-update` is sent but never handled**: both extensions POST it from `onTabUpdate`, but `BrowserIntegration.handleRequest` has no case for it, so `CapturedVideoTracker.updateMediaTitle` is never called. The extension only sends it when `msg.tabsWatcher` from `/sync` matches, and `ConfigDto` has no `tabsWatcher` field (only `matchingHosts = emptyList()`), so it is dead on both sides. Add the route plus a `tabsWatcher` list in `ConfigDto`, or remove the feature.
-- **`writeUTF` 64 KB limit**: `DataOutputStream.writeUTF` throws `UTFDataFormatException` above
-  65,535 bytes. Large cookie strings or long signed URLs make `saveState` / `saveHttpTask` fail
-  (the error is only logged), and the download then cannot resume. Write length-prefixed byte
-  arrays instead.
+- ~~**`writeUTF` 64 KB limit**~~ **Fixed with B3** for `.info` and `.state` files, which now use
+  length-prefixed UTF-8 strings. The remaining `writeUTF` users (`*-downloads.dat`, `schedule.dat`,
+  config) only store file names, enum names, paths and settings.
 - **No format versioning** in `.state`, `.info`, `*-downloads.dat` or `schedule.dat`. Any field
-  change breaks existing user data. `AppConfig.load` tolerates only trailing fields, and a corrupt
+  change breaks existing user data (the B3 fix changed the `.info` and `.state` layouts without a
+  version, by decision, so older files are unreadable). `AppConfig.load` tolerates only trailing fields, and a corrupt
   file leaves config **partially overwritten** (fields assigned before the exception). Load into a
   temporary object and apply it only on success. `SortKey.entries[input.readInt()]` can go out of range.
 - `HttpChunkRetriever`: `CopyResult.Retry` never increments `retryCount`, so a connection that
@@ -742,7 +814,7 @@ auto-retry `NetworkError` with backoff.
 ## 3. Suggested order of work
 
 1. **Security:** S1 and S2 are done. Run the manual checks listed in each section.
-2. **Hangs and data loss:** B1 and B2 are done. Then B9, B3 (persist headers and cookies with a version header), B4.
+2. **Hangs and data loss:** B1, B2, B3 and B4 are done. Then B9.
 3. **Queue and lifecycle:** B5 + F1 + F2 together (scheduler and queues depend on a correct pump),
    then B6, B7, B14.
 4. **Resource hygiene:** B10 is done. Then B11, B12, B13, B18.

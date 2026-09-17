@@ -216,11 +216,10 @@ class HlsDownloaderTask : StreamingDownloaderTask {
                             context.httpClient, keyUrl, hlsContext.headers, hlsContext.cookie, context.stopFlag,
                             recordFetchError
                         )
-                        if (bytes != null) {
-                            keyCache[keyUrl] = bytes
-                            if (bytes.size != 16) {
-                                throw Exception("Invalid key size")
-                            }
+                        when {
+                            bytes == null -> throw IOException("Unable to download key: $keyUrl")
+                            bytes.size != 16 -> throw IOException("Invalid key size ${bytes.size}: $keyUrl")
+                            else -> keyCache[keyUrl] = bytes
                         }
                     }
                 } catch (e: Exception) {
@@ -235,16 +234,33 @@ class HlsDownloaderTask : StreamingDownloaderTask {
         if (error.get()) {
             throw IOException("Unable to get keys")
         }
+        // Persist once, so a paused or restarted download can still decrypt (the .state file does
+        // not carry keys). Not fatal: this run has the keys in memory.
+        HlsKeyStore.save(context.id, configDir, keyCache)
+            .onFailure { Logger.error("XDM", "Unable to store HLS keys for ${context.id}", it) }
     }
 
     override fun postProcessChunks() {
         val context = context as HlsTaskContext
-        if (context.encrypted) {
-            for (chunk in context.chunks) {
-                if (context.stopFlag.get()) break
-                decryptChunk(chunk)
-            }
+        if (!context.encrypted) return
+        if (keyCache.isEmpty() && context.chunks.any { it.encrypted }) {
+            // Resumed task: initDownload() did not run, so load the keys stored by the first run.
+            keyCache.putAll(HlsKeyStore.load(context.id, configDir))
         }
+        for (chunk in context.chunks) {
+            if (context.stopFlag.get()) return
+            decryptChunk(chunk)
+        }
+        if (context.chunks.none { it.encrypted }) {
+            // Record the decrypted state before dropping the keys, so a later resume never needs them.
+            saveContext()
+            HlsKeyStore.delete(context.id, configDir)
+        }
+    }
+
+    override fun deleteTemp() {
+        super.deleteTemp()
+        HlsKeyStore.delete(context.id, configDir)
     }
 
     private fun decryptChunk(chunk: StreamingChunk) {
@@ -256,19 +272,21 @@ class HlsDownloaderTask : StreamingDownloaderTask {
         // getChunkTempFileName(encrypted=false) yields for muxing (a parent dir could contain ".enc").
         val decChunkFile = encChunkFile.removeSuffix(".enc")
         Logger.info("XDM", "Decrypting chunk: $encChunkFile -> $decChunkFile")
-        val key = keyCache[chunk.keyUrl] ?: throw Exception("Key missing")
-        val iv = chunk.iv
-        Logger.info("XDM", "Key: $key id: $iv")
-        FileOutputStream(decChunkFile).use { output ->
-            FileInputStream(encChunkFile).use { input ->
-                getCypherStream(input, key, strToIvBytes(chunk.iv!!)).use { cypherIn ->
-                    while (!context.stopFlag.get()) {
-                        val x = cypherIn.read(decryptBuffer)
-                        if (x == -1) break
-                        output.write(decryptBuffer, 0, x)
+        val key = keyCache[chunk.keyUrl] ?: throw DecryptionException("Key missing for ${chunk.keyUrl}")
+        try {
+            FileOutputStream(decChunkFile).use { output ->
+                FileInputStream(encChunkFile).use { input ->
+                    getCypherStream(input, key, strToIvBytes(chunk.iv!!)).use { cypherIn ->
+                        while (!context.stopFlag.get()) {
+                            val x = cypherIn.read(decryptBuffer)
+                            if (x == -1) break
+                            output.write(decryptBuffer, 0, x)
+                        }
                     }
                 }
             }
+        } catch (e: Exception) {
+            throw DecryptionException("Unable to decrypt $encChunkFile", e)
         }
         if (!context.stopFlag.get()) {
             chunk.encrypted = false

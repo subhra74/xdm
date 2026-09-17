@@ -86,6 +86,7 @@ ERR_INTERNAL=Internal error.
 ERR_ASM_FAILED=Failed to append/convert file parts, please check if the drive is full or write protected
 ERR_DISK_FAILED=Disk error.
 ERR_TLS=TLS connection error.
+ERR_DECRYPT=Unable to decrypt the video. The encryption key is missing or invalid.
 LBL_MENU=Menu
 
 TITLE_SETTINGS=Settings

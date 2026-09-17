@@ -17,6 +17,8 @@ data class ReqCtx(
     val rangeStart: Long,
     val rangeEnd: Long,
     val total: Long,
+    /** Request headers as received, keyed by lower-case name. */
+    val headers: Map<String, List<String>> = emptyMap(),
 )
 
 /**
@@ -112,7 +114,7 @@ class MockHttpServer {
                 if (m.groupValues[2].isNotEmpty()) end = m.groupValues[2].toLong()
             }
         }
-        val ctx = ReqCtx(idx, hasRange, start, end, total)
+        val ctx = ReqCtx(idx, hasRange, start, end, total, ex.requestHeaders.mapKeys { it.key.lowercase() })
         ep.requests.add(ctx)
         val plan = ep.plan(ctx)
 

@@ -18,6 +18,8 @@ enum class DownloadError {
     MuxError,
     /** The server's TLS certificate or hostname could not be verified. */
     TlsError,
+    /** An encrypted segment could not be decrypted (missing or wrong key, corrupt data). */
+    DecryptionError,
 }
 
 enum class PauseEvent {

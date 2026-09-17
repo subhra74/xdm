@@ -5,6 +5,7 @@ import xdm.core.downloaders.*
 import xdm.core.downloaders.web.ProgressTracker
 import xdm.core.downloaders.web.SpeedLimiter
 import xdm.core.downloaders.web.http.ChunkStatus
+import xdm.core.downloaders.web.streaming.downloader.hls.DecryptionException
 import xdm.core.media.muxer.Muxer
 import xdm.core.network.http.isTlsVerificationError
 import xdm.core.util.FileUtils
@@ -172,7 +173,14 @@ abstract class StreamingDownloaderTask(
         if (context.stopFlag.get()) return
         context.assembling.set(true)
         context.downloadHost.onAssembleStart(context.id)
-        postProcessChunks()
+        try {
+            postProcessChunks()
+        } catch (e: DecryptionException) {
+            Logger.error("XDM", "Decryption failed", e)
+            if (context.stopFlag.get()) return
+            context.downloadHost.onDownloadFailed(context.id, DownloadError.DecryptionError)
+            return
+        }
         val tmpFile = File(context.tempFolder, context.tempFileName + fileExt())
         val ret = if (context.hasSeparateStreams) {
             assembleStreams(tmpFile.absolutePath)
