@@ -439,16 +439,22 @@ class HttpChunkRetriever(
     }
 
     private fun isAlreadyDone(): Boolean {
+        var finishNow = false
         context.read {
             val chunk = context.chunks[id] ?: return true
             if (chunk.status.get() == ChunkStatus.Finished) return true
             val len = chunk.length.get()
             val downloaded = chunk.downloaded.get()
-            if (context.init.get() && len > 0 && len - downloaded <= 0) {
-                controller.onChunkFinished(id)
-                return true
-            }
+            finishNow = context.init.get() && len > 0 && len - downloaded <= 0
         }
-        return false
+        if (!finishNow) return false
+        // onChunkFinished takes the write lock, which cannot be acquired while holding the read
+        // lock, so mark the chunk and notify only after the read lock is released.
+        context.write {
+            if (context.stopFlag.get()) return true
+            context.chunks[id]?.status?.set(ChunkStatus.Finished) ?: return true
+        }
+        controller.onChunkFinished(id)
+        return true
     }
 }
