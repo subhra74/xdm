@@ -17,25 +17,28 @@ class RequestContext(
 
     var responseBody: ByteArray? = null
 
-    private val responseHeaders: MutableMap<String, MutableList<String>> = HashMap()
+    /** Insertion-ordered, so headers go out in the order they were added. */
+    private val responseHeaders: MutableMap<String, MutableList<String>> = LinkedHashMap()
 
     var statusCode: Int = 200
 
     var statusMessage = "OK"
 
-
+    /**
+     * Writes an HTTP/1.1 response: one `Name: value` line per header value, then `Content-Length`
+     * (always, 0 without a body) and a `Connection` header that matches whether the server keeps the
+     * socket open for another request ([keepAlive]).
+     */
     fun sendResponse() {
+        val lines = mutableListOf("HTTP/1.1 $statusCode $statusMessage")
+        responseHeaders
+            .filterKeys { !it.equals("Content-Length", ignoreCase = true) && !it.equals("Connection", ignoreCase = true) }
+            .forEach { (name, values) -> values.forEach { lines += "$name: $it" } }
+        lines += "Content-Length: ${responseBody?.size ?: 0}"
+        lines += "Connection: ${if (keepAlive) "keep-alive" else "close"}"
+
         val io = socket.getOutputStream()
-        val headerContents =
-            responseHeaders.filter { (k, _: List<String>) -> !"content-length".equals(k, ignoreCase = true) }
-                .map { (k, v) -> "$k : $v" }
-        val headerLine = "HTTP/1.0 $statusCode $statusMessage"
-        val headers = mutableListOf(headerLine, headerContents)
-        headers.add("Connection: keep-alive")
-        responseBody?.let { headers.add("Content-Length: ${it.size}") }
-        headers.add(CRLF)
-        val headerText = headers.joinToString(CRLF)
-        io.write(headerText.toByteArray(StandardCharsets.UTF_8))
+        io.write((lines.joinToString(CRLF) + CRLF + CRLF).toByteArray(StandardCharsets.UTF_8))
         responseBody?.let { io.write(it, 0, it.size) }
         io.flush()
     }

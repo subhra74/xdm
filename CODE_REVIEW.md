@@ -24,11 +24,11 @@ Severity legend:
 | B2 | P0 | HTTP engine | ~~An HTTP 429 response kills the chunk thread and the download hangs forever~~ **Fixed:** 429 retries after a capped Retry-After; unexpected errors fail the chunk; retry wait honours Pause |
 | B3 | P1 | Persistence | ~~Queued and "download later" tasks lose cookies, headers and origin~~ **Fixed:** persisted for HTTP, HLS and DASH; `.info`/`.state` strings no longer limited to 64 KB |
 | B4 | P1 | HLS | ~~Encrypted HLS always fails after a pause or restart (AES keys are only held in memory)~~ **Fixed:** keys stored in an owner-only `<id>.keys` file until decrypted; new `DecryptionError`; `.state`/`.info` owner-only |
-| B5 | P1 | Queue | HLS/DASH ignore `maxParallelDownloads`, and duplicate callbacks start too many queued downloads |
-| B6 | P1 | Video | Downloading the same detected video twice reuses the same task id |
-| B7 | P1 | Commit | `File.renameTo` fails across drives, so HLS/DASH to another volume fails with "disk space error" |
-| B8 | P1 | Integration | Malformed HTTP response headers from the local server |
-| B9 | P1 | Persistence | `AtomicIO` reads a half-written `.bak1` in preference to the good file |
+| B5 | P1 | Queue | ~~HLS/DASH ignore `maxParallelDownloads`, and duplicate callbacks start too many queued downloads~~ **Fixed:** every start goes through one locked `pumpQueue()` for HTTP, HLS and DASH |
+| B6 | P1 | Video | ~~Downloading the same detected video twice reuses the same task id~~ **Fixed:** each video download is a copy with a fresh id; duplicate ids are replaced on start |
+| B7 | P1 | Commit | ~~`File.renameTo` fails across drives, so HLS/DASH to another volume fails with "disk space error"~~ **Fixed:** streaming muxes into the destination folder; safe cross-drive move; real failure reasons; no re-mux on commit retry |
+| B8 | P1 | Integration | ~~Malformed HTTP response headers from the local server~~ **Fixed:** well-formed HTTP/1.1 responses; case-insensitive request headers; correct keep-alive |
+| B9 | P1 | Persistence | ~~`AtomicIO` reads a half-written `.bak1` in preference to the good file~~ **Fixed:** completion footer; newest complete copy is read; failed saves are reported |
 | B10 | P2 | Resources | ~~Thread pools and OkHttp clients leak for every streaming download and every paused HTTP download~~ **Fixed:** pools shut down and clients closed on success, failure and pause; paused HLS/DASH thread no longer hangs; background threads are daemon |
 | B11 | P2 | HTTP engine | `readTimeout = 0`, so a stalled connection blocks forever and Pause cannot unblock it |
 | B12 | P2 | Cleanup | Deleting a download never removes `task-<id>.info` / `<id>.state`; `AppDB.clear()` is also broken |
@@ -433,103 +433,328 @@ the cookies in `.state`. It is removed as soon as decryption finishes.
 
 The existing H7–H9 AES tests in `TestHlsE2E` still cover explicit IVs, sequence IVs and key rotation.
 
-### B5 (P1): The parallel-download limit and queue are unreliable
-**Where:** `DownloadManager.kt:171, 186, 206, 519-588, 644-668`
+### B5 (P1): The parallel-download limit and queue are unreliable (FIXED)
+**Where:** `DownloadManager.kt`
 
-1. `startHlsDownload` / `startDashDownload` always start immediately and ignore
+**Status:** Fixed in the working tree. Covered by `DownloadManagerQueueTest` (xdm-app); four of its
+five tests failed on the old code and all pass with the fix (repeated runs stable). Full test suite passes.
+
+#### The problems (all confirmed)
+1. `startHlsDownload` / `startDashDownload` always started immediately and ignored
    `maxParallelDownloads`.
-2. `processNextQueue()` handles non-resume items only for `DownloadType.Http`. A queued HLS or DASH
-   item is dequeued and dropped.
-3. `processNextQueue()` runs **outside** the `activeSessions.remove(id)?.let {}` guard. Duplicate
-   callbacks each pop a queue item: two chunks can fail at the same moment and both see
-   `isAllError()`, or pause and fail can race. This starts more downloads than the limit allows.
-   The function also never checks `activeSessions.size < max` before starting one.
-4. `resumeImmediately` catches an exception from a missing task (`!!` NPE), leaves the record in
-   `READY`, and never advances the queue.
+2. `processNextQueue()` started non-resume items only for `DownloadType.Http`; a queued HLS or DASH
+   item was dequeued and dropped.
+3. `processNextQueue()` ran **outside** the `activeSessions.remove(id)?.let {}` guard in the success,
+   failed and paused callbacks, and never checked `activeSessions.size`. A duplicate or racing
+   callback popped and started an extra download.
+4. `resumeImmediately` caught the `!!` NPE for a missing task, left the record `READY`, and never
+   advanced the queue.
+5. Also found: `startHttpDownload` / `resumeDownload` checked `activeSessions.size` and started the
+   task without a lock, so concurrent adds could exceed the limit; `stopDownload` read and changed
+   `queue` without its lock.
 
-**Fix:** Use a single `schedule()` routine:
-```kotlin
-private fun pumpQueue() = synchronized(queue) {
-    while (activeSessions.size < AppContext.config.maxParallelDownloads && queue.isNotEmpty()) {
-        val item = queue.removeFirst()
-        if (!startOrResume(item.id)) markFailed(item.id)   // handles Http/Hls/Dash uniformly
-    }
-}
+#### The fix
+- **One admission path:** `startHttpDownload` (when `runNow`), `startHlsDownload`, `startDashDownload`
+  and `resumeDownload` save the task and record, append a `QueueItem`, and call `pumpQueue()`.
+  Nothing else starts a task. `resumeDownload` ignores an id that is already running or queued.
+- **`pumpQueue()`**, under `synchronized(queue)`: while `activeSessions.size < maxParallelDownloads`
+  and the queue is not empty, pop the first item and `launch()` it; if that fails, `markNotStarted()`
+  sets the record to `PAUSED` and the loop continues. When the queue and sessions are both empty it
+  runs the existing halt-after-download check. Sessions are added only inside this lock and only
+  removed in callbacks, so the limit cannot be exceeded.
+- **`launch(item)`** handles HTTP, HLS and DASH uniformly: builds the task from `TaskInfoDB`, registers
+  the session, updates the record and progress window, then `start()`s or `resume()`s it. It returns
+  false when the record or task info is missing or the task throws. It replaces `startHttpTask`,
+  `resumeImmediately` and the duplicated start code in `startHls/DashDownload`.
+- **Callbacks** call `pumpQueue()` only inside the `activeSessions.remove(id)?.let {}` guard, after
+  their `synchronized(appDB)` block (lock order is always queue → appDB).
+- **`stopDownload`** removes queued items under the queue lock.
+- **Testability:** `DownloadManager` takes an optional `taskFactory` (default builds the real tasks),
+  so `AppMain` is unchanged.
+
+Notes:
+- The queue is strictly FIFO: a new download waits behind items already queued.
+- A download that cannot start is shown as `PAUSED` because `RecordStatus.ERROR` is unused (B20).
+- Tasks are rebuilt from `TaskInfoDB`, which does not persist `authInfo` (see B3); nothing in the app
+  sets it today.
+
+#### Tests (`DownloadManagerQueueTest`)
+Real `DownloadManager` with real HTTP/HLS tasks pointed at a local socket that accepts and never
+replies (so started downloads stay active), a real `AppConfig`/`AppDB`/`TaskInfoDB` in a temp dir,
+and a no-op `IAppInstance` proxy. Internals are read by reflection.
+
+| Test | Old code | Fixed |
+|---|---|---|
+| `hlsDownloads_respectParallelLimit`: limit 1, two HLS downloads | 2 active | 1 active, 1 queued |
+| `queuedHlsDownload_startsWhenSlotFrees`: HTTP active, HLS added, HTTP paused | HLS started immediately | HLS queued, then starts |
+| `duplicateFailureCallback_startsOnlyOneQueuedDownload`: A active, B and C queued, `onDownloadFailed(A)` twice | B and C both active | Only B active, C queued |
+| `queuedResumeWithMissingTask_isMarkedPausedAndQueueContinues` | Queue stalls, record left `READY` | Record `PAUSED`, next download starts |
+| `concurrentAdds_neverExceedLimit`: 8 threads add at once, limit 2 | Passed (the synchronized, fsync'd record save before the check lines threads up, so the race rarely shows) | Never more than 2 active |
+
+### B6 (P1): Downloading the same detected video twice creates an id collision (FIXED)
+**Where:** `DownloadManager.kt` (`addVideoDownload`, `startHttp/Hls/DashDownload`)
+
+**Status:** Fixed in the working tree. Covered by `DownloadManagerVideoTest` (xdm-app); all five tests
+failed on the old code and pass with the fix. Full test suite passes.
+
+#### The problem
+`addVideoDownload` changed the tracker's stored `HttpDownloadTaskInfo` / `HlsDownloadTaskInfo` /
+`DashDownloadTaskInfo` in place (`fileName`, `autoCategorize`, `defaultDownloadFolder`; `tempDir` for
+HLS/DASH) and passed that same object to `start*Download`. Picking the same video a second time used
+**the same `id`**:
+- the second download overwrote `task-<id>.info` and picked up the first download's `<id>.state`
+  (and, for HLS, `<id>.keys`), so it resumed or re-finished the first download;
+- `appDB.addActive` added a second record with the same id, so `indexMap` pointed at only one of
+  them and pause, delete and progress acted on the wrong row;
+- the tracker entry kept the last download's name and folder instead of what was detected.
+
+#### The fix
+- **`addVideoDownload`** starts a `copy` of the tracker entry with `id = CoreUtils.uniqueId()` and the
+  chosen file name, folder and auto-categorize flag. The tracker entry is never modified. Each branch
+  returns, so one video id starts one download.
+- **Duplicate-id guard:** `startHttpDownload`, `startHlsDownload` and `startDashDownload` check
+  `appDB` via `uniqueDownloadId()`; if a record already uses the id, they log it and continue with a
+  copy that has a fresh id. This protects any future caller that reuses a task object.
+- **HLS/DASH temp folder** is set on a copy (`tempFolder/<new id>`) instead of on the caller's object.
+
+Not changed: "Refresh link" (`AppInstance.addVideoDownload`) only reads the tracker entry and updates
+the existing download's id, and `updateMediaTitle` still renames detected entries on purpose.
+
+#### Tests (`DownloadManagerVideoTest`)
+Shares `DownloadManagerTestBase` with the B5 tests (real manager and tasks, a server that never
+replies, real `CapturedVideoTracker`).
+
+| Test | Old code | Fixed |
+|---|---|---|
+| `httpVideoDownloadedTwice_getsTwoIndependentDownloads` | Both records use the video id; one `.info` overwritten | Two ids, each `.info` keeps its own name and folder |
+| `hlsVideoDownloadedTwice_getsSeparateIdsAndTempFolders` | Same id and temp folder | Different ids and temp folders |
+| `dashVideoDownloadedTwice_getsSeparateIds` | Same id | Different ids |
+| `trackerEntry_isNotModifiedByDownloading` (HTTP and HLS) | Name, folder and flags changed | Unchanged |
+| `startWithIdThatAlreadyHasARecord_assignsNewId` | Two records with the same id | Second download gets a new id; the first `.info` is untouched |
+
+### B7 (P1): Committing the output file fails across filesystems (FIXED)
+**Where:** `DownloadManager.kt` (`renameFile`, `commitOutputFile`, `outputFilePath`),
+`FileUtils.kt` (`moveFile`), `StreamingDownloaderTask.kt` (`assemble`), `HlsDownloaderTask.kt`,
+`TransmuxingMuxer.kt`, `MkvWriter.kt`, `DownloadHost.kt`, `HttpDownloader.kt`
+
+**Status:** Fixed in the working tree. Full test suite passes. See the test tables below for which
+tests failed on the old code.
+
+#### The problem
+- **HLS/DASH:** segments, decrypted segments and the muxed output were all written under
+  `config.tempFolder/<id>` (default `~/.temp`), and `commitOutputFile` then used `File.renameTo`
+  into the download folder. `renameTo` cannot cross file systems, so saving to an external drive,
+  another partition or a network share **always** failed.
+- **HTTP:** the temp file is written in the download folder itself, so the move is to the same
+  folder or a category subfolder. It fails across drives only when that subfolder is a mount point
+  or a symlink/junction to another volume. It also failed for other reasons: an uncreatable
+  category folder, the temp file locked by antivirus or an indexer on Windows, the destination
+  appearing between the unique-name check and the rename, or the drive disappearing.
+- **Every failure was reported as `DiskSpaceError`:** `CommitResult.Failed` carried no reason,
+  including for "task not found" and a failed `mkdirs`.
+- **`renameTo` risks:** it silently overwrites an existing destination on macOS/Linux, and any copy
+  fallback could have left a partial file at the final name.
+- **Disk use and retries:** peak use on the temp drive was segments + output (+ `.enc` copies for
+  AES HLS, about 3×); a cross-drive copy would need space on both drives at once; and retrying a
+  failed commit re-decrypted and re-muxed everything.
+
+#### The fix
+1. **Safe move** (`FileUtils.moveFile(src, dst, ops)`): atomic rename first; on
+   `AtomicMoveNotSupportedException` it checks free space (`DiskSpaceError` if short), copies to
+   `<dst>.part`, renames that into place on the destination volume, then deletes the source. It
+   never overwrites an existing `dst`, and on any failure the source is kept and `.part` removed.
+   `MoveOps` makes the file-system calls replaceable in tests.
+2. **Real failure reasons:** `CommitResult.Failed(error)`. New `DownloadError.OutputWriteError`
+   ("Unable to save the file to the destination folder.", `ERR_OUTPUT_WRITE`). The HTTP engine
+   (`onChunkFinished`, `finishDownload`) and the streaming `assemble()` report `res.error`.
+   `commitOutputFile`: uncreatable folder or failed move → `OutputWriteError`, not enough space →
+   `DiskSpaceError`, task not found → `InternalError`. `renameFile` retries with the next unique
+   name (up to 3 times) if a file appears at the chosen name.
+3. **Mux directly into the destination folder:** new `FileProvider.outputFilePath(id, type, ext)`
+   (default `null` = old behaviour). `DownloadManager` returns a hidden `.<id>.xdm-part<ext>` file in
+   the resolved destination folder (category subfolder included) for HLS/DASH, and `null` for HTTP.
+   `assemble()` creates the folder (failing early with `OutputWriteError` before muxing), muxes into
+   that path, and the commit is a same-folder rename. Segments and decryption stay in the temp
+   folder. `deleteTemp()` and deleting a paused download remove the partial output.
+4. **MKV spool in the temp folder:** `MkvWriter(outputPath, spoolDir)`; `TransmuxingMuxer` now passes
+   its (previously ignored) `tempDir`, so the destination only needs the output's size for WebM too.
+5. **Commit retry without re-muxing:** if the state says the mux completed (`context.completed`) and
+   the output file exists, `assemble()` skips decryption and muxing and only retries the commit.
+6. **AES HLS `.enc` segments deleted** after every segment is decrypted and that state is saved
+   (together with the key file), so peak temp use drops from about 3× to 2×.
+
+Not done:
+- No progress is shown during a cross-drive copy (now only reachable from the HTTP category-folder
+  case or hosts that do not provide an output path).
+- Write failures during muxing (for example a network share disconnecting) still come back from
+  `mux()` as `false` and are reported as `MuxError`; telling them apart needs `mux()` to return a
+  reason.
+- The partial file is hidden with a leading dot, which Windows does not treat as hidden; cloud-sync
+  clients may see it while muxing.
+
+#### Tests
+`xdm-app` `DownloadManagerCommitTest` (reflection for new API, so it compiles against the old code):
+
+| Test | Old code | Fixed |
+|---|---|---|
+| `uncreatableDestinationFolder_reportsOutputWriteError` | Failed with no reason (shown as disk error) | `OutputWriteError`, temp file kept |
+| `missingTaskInfo_reportsInternalError` | No reason | `InternalError` |
+| `commit_movesFileAndNeverOverwritesExistingFile` | Passed (guard) | Passes: `file_1.bin`, existing file intact |
+| `streamingOutputPath_isHiddenPartFileInDestinationFolder` (category folder) | No such API | `<folder>/Video/.<id>.xdm-part.mp4`; `null` for HTTP |
+| `deletingPausedStreamingDownload_removesPartialOutput` | Partial file left | Removed |
+
+`xdm-core` (new API, written with the fix, so they only run against the new code):
+
+| Test | Checks |
+|---|---|
+| `TestFileMove.sameVolume_movesFile` | Content moved, source gone |
+| `TestFileMove.otherVolume_copiesThenDeletesSource` (atomic move throws, as across file systems) | Copied, source gone, no `.part` |
+| `TestFileMove.copyFailsPartway_leavesSourceAndNoPartialFile` | `OutputWriteError`, source intact, no destination or `.part` |
+| `TestFileMove.notEnoughSpace_reportsDiskSpaceErrorAndWritesNothing` | `DiskSpaceError`, nothing written |
+| `TestFileMove.destinationExists_isNeverOverwritten` | `OutputWriteError` on both paths, existing file intact |
+| `TestStreamingOutputFolder.muxesIntoDestinationFolder_andCommitsFromThere` (ffmpeg HLS) | Commit receives the destination-folder path; output valid; no partial file or temp folder left |
+| `TestStreamingOutputFolder.failedCommit_isRetriedWithoutMuxingAgain` | First run `OutputWriteError` with output kept; resume succeeds with a single mux call in total |
+| `TestStreamingOutputFolder.unwritableDestination_failsBeforeMuxing` | `OutputWriteError`, muxer never called |
+| `TestStreamingOutputFolder.encryptedSegments_areDeletedAfterDecryption` (AES HLS) | No `.enc` files left when committing |
+| `TestStreamingOutputFolder.mkvSpool_isWrittenToSpoolDir` | Spool in the temp folder, not next to the output |
+
+The test hosts in `HttpDownloadTestBase` and `StreamingE2EBase` were updated to
+`CommitResult.Failed(DownloadError.OutputWriteError)`.
+
+### B8 (P1): The integration server writes malformed response headers (FIXED)
+**Where:** `xdm-app/.../integration/RequestContext.kt`, `HttpParser.kt`, `HttpServer.kt`
+
+**Status:** Fixed in the working tree. Covered by `IntegrationHttpTest` (xdm-app); all eight tests
+failed on the old code and pass with the fix. Full test suite passes.
+
+#### The problem
+`RequestContext.sendResponse` built `mutableListOf(headerLine, headerContents)`, a list containing a
+list, with each entry formatted as `"$k : $v"` where `v` is a `List`. The bytes on the wire were:
 ```
-Call it only when a session was actually removed (inside the `let`), and route
-`startHls/DashDownload` through the same enqueue-or-start logic as `startHttpDownload`.
-
-### B6 (P1): Downloading the same detected video twice creates an id collision
-**Where:** `DownloadManager.kt:494-517`; `NewVideoDownloadWindow.kt:217-231`
-
-`addVideoDownload` passes the tracker's stored `HttpDownloadTaskInfo` / `HlsDownloadTaskInfo` object
-straight to `start*Download`. Picking the same video from the extension menu a second time uses
-**the same `id`**. The second download overwrites `task-<id>.info` and reuses `<id>.state` (so it
-resumes or completes the first download). `appDB.addActive` also adds a second record with the same
-id, which corrupts `indexMap`. The shared object is mutated too (`fileName`, `tempDir`,
-`defaultDownloadFolder`).
-
-**Fix:** Copy the task with a fresh id before starting it:
-`source.copy(id = CoreUtils.uniqueId(), fileName = fileName, ...)`. These are data classes, or can
-become ones. Never mutate the object stored in the tracker.
-
-### B7 (P1): Committing the output file fails across filesystems
-**Where:** `DownloadManager.kt:223-246` (`renameFile`)
-
-`File.renameTo` fails when the source and destination are on different volumes. HLS and DASH are
-assembled in `config.tempFolder` (default `~/.temp`), so saving to an external drive or another
-partition always fails. The failure is reported as `DiskSpaceError`, which is misleading.
-
-**Fix:**
-```kotlin
-try { Files.move(src, dst, StandardCopyOption.ATOMIC_MOVE) }
-catch (e: AtomicMoveNotSupportedException) { Files.move(src, dst) }  // copy+delete fallback
+HTTP/1.0 200 OK
+[Cache-Control : [max-age=0, no-cache, must-revalidate], Content-Type : [application/json]]
+Connection: keep-alive
+Content-Length: 11
 ```
-Add a distinct `DownloadError.FileMoveError` (or `OutputWriteError`) instead of reusing
-`DiskSpaceError`. For large files, report progress during the copy fallback, or assemble directly
-into the destination folder.
+- All custom headers on one malformed line (in random `HashMap` order). Browsers tolerated it; a
+  strict client does not: the JDK `HttpClient` fails with `Invalid header name "[Cache-Control "`.
+- `HTTP/1.0` together with an unconditional `Connection: keep-alive`, even when the server was about
+  to close the socket.
+- `Content-Length` only when a body was set.
 
-### B8 (P1): The integration server writes malformed response headers
-**Where:** `xdm-app/.../integration/RequestContext` (`sendResponse`)
+`HttpParser`:
+- `Content-Length` and `Connection` were looked up case-sensitively, so a lowercase
+  `content-length` body was ignored (and would corrupt the next request on the connection);
+  `Connection: Keep-Alive` was not recognised.
+- The HTTP version was ignored: an HTTP/1.1 request without a `Connection` header was treated as
+  "close", although HTTP/1.1 is persistent by default.
+- A client closing an idle kept-alive connection was logged as an error (`Unexpected EOF`).
 
-```kotlin
-val headers = mutableListOf(headerLine, headerContents)   // headerContents is a List<String>
-```
-`joinToString` prints the list's `toString()`, so the wire output is
-`[Content-Type : [application/json], Cache-Control : [...]]` on one line. The header names are also
-followed by `" : "`. It currently works only because Chrome is lenient. The response also sends
-`HTTP/1.0` together with `Connection: keep-alive`.
+Also found: `HttpServer.stop()` closed the listening socket but the accept loop kept running
+(`while (true)`), spinning and logging `Socket is closed` forever.
 
-**Fix:**
-```kotlin
-val lines = mutableListOf("HTTP/1.1 $statusCode $statusMessage")
-responseHeaders.filterKeys { !it.equals("content-length", true) }
-    .forEach { (k, vs) -> vs.forEach { lines += "$k: $it" } }
-lines += "Content-Length: ${responseBody?.size ?: 0}"
-lines += "Connection: ${if (keepAlive) "keep-alive" else "close"}"
-io.write((lines.joinToString(CRLF) + CRLF + CRLF).toByteArray())
-```
-Also, `HttpParser` looks up `Content-Length` and `Connection` case-sensitively, so a client sending
-`content-length` loses its body. Use the new `RequestContext.getRequestHeader` there as well, or
-store header keys lowercased.
+#### The fix
+- **`sendResponse`** writes `HTTP/1.1 <code> <message>`, one `Name: value` line per header value in
+  insertion order (`LinkedHashMap`), always `Content-Length` (0 without a body), and
+  `Connection: keep-alive|close` matching what the server will do with the socket.
+- **`HttpParser`** stores request headers in a case-insensitive map, parses the request version, and
+  decides keep-alive per HTTP/1.1 (persistent unless `close`) or HTTP/1.0 (only with `keep-alive`),
+  ignoring case and handling comma-separated tokens. End of stream before a new request throws
+  `ConnectionClosedException`, which `HttpServer` treats as a normal close. Blank lines before a
+  request line are tolerated.
+- **`HttpServer`** stops accepting once the server socket is closed.
 
-### B9 (P1): `AtomicIO.readTransacted` can prefer a corrupt file
-**Where:** `xdm-core/.../util/AtomicIO.kt:37-49`
+Note: because HTTP/1.1 requests are now kept alive by default, idle connections hold their thread
+until the client closes them. Browsers already send `Connection: keep-alive`, so behaviour for the
+extension is unchanged; the missing socket timeout and thread-per-connection model remain B18.
 
-Reads prefer `.bak1`, which is the in-progress temp file. If the process dies while writing it, the
-next read picks up the truncated `.bak1`, fails, and **does not fall back** to the intact final file.
-That loses config, the download list, or resume state. `renameTo` return values are also ignored.
+#### Tests (`IntegrationHttpTest`)
+Raw request bytes over a real local socket pair through `HttpParser` and `RequestContext`, plus an
+end-to-end run against `HttpServer`.
 
-**Fix:** Try the candidates in order and fall back on any exception:
-```kotlin
-for (f in listOf(finalFile, tmp3, tmp1)) if (f.exists())
-    runCatching { DataInputStream(BufferedInputStream(FileInputStream(f))).use(reader) }
-        .onSuccess { return Result.success(it) }
-return Result.failure(FileNotFoundException(fileName))
-```
-Ideally also write a magic number, version, and trailing CRC32 so a truncated file can be detected
-instead of partially parsed (see the similar problem in `AppConfig.load`, B21). On the write side,
-use `Files.move(..., ATOMIC_MOVE, REPLACE_EXISTING)` and check the result.
+| Test | Old code | Fixed |
+|---|---|---|
+| `response_usesHttp11StatusLine` | `HTTP/1.0 200 OK` | `HTTP/1.1 200 OK` |
+| `response_writesEachHeaderOnItsOwnWellFormedLine` | One `[...]` line | `Content-Type: application/json`, `Cache-Control: ...` |
+| `response_headerWithTwoValues_isSentAsTwoLines` | Printed as a list | Two `Vary:` lines |
+| `response_withoutBody_stillSendsContentLength` | No `Content-Length` | `Content-Length: 0` |
+| `response_connectionHeaderMatchesRequest` (`Connection: close`) | `Connection: keep-alive` | `Connection: close` |
+| `parser_readsBodyWithLowercaseContentLength` | Body `null` | Body read |
+| `parser_keepAliveFollowsHttpVersionDefaults` | HTTP/1.1 default and `Keep-Alive` → false | true; HTTP/1.0 default and `close` → false |
+| `endToEnd_strictClientParsesResponsesOnOneConnection` (JDK `HttpClient`, two GETs) | `ProtocolException: Invalid header name` | Both succeed with `application/json` |
+
+### B9 (P1): `AtomicIO.readTransacted` can prefer a corrupt file (FIXED)
+**Where:** `xdm-core/.../util/AtomicIO.kt`; `DownloadManager.updateDownloadInfo`
+
+**Status:** Fixed in the working tree. Covered by `TestAtomicIO`; six of its eight tests failed on
+the old code and all pass with the fix (the other two are guards). Full test suite passes.
+
+`AtomicIO` stores every persisted file: config, the three download lists, `schedule.dat`, `.state`,
+`.info` and `.keys`.
+
+#### The problem
+Reading:
+- Reads preferred `.bak1`, the in-progress temp file. A crash mid-write, or a writer that threw,
+  left a truncated `.bak1`, and every later read picked it, failed, and never fell back to the
+  intact file or `.bak2`. Config, the download list or resume state was lost until a later write
+  succeeded.
+- There was no fallback to `.bak2` when the main file was bad.
+- A truncated file was not detected up front, and two readers have side effects while reading:
+  `AppConfig.load` assigns fields one by one (a failure leaves config half overwritten, B21) and
+  `AppDB.loadRecordsFromStream` adds records to the live list. So simply retrying another copy after
+  an exception would have duplicated download records.
+- Reads were unbuffered (`DataInputStream(FileInputStream)`).
+
+Writing:
+- `renameTo` results were ignored: if moving the new file into place failed (for example a locked
+  file on Windows), `writeTransacted` still returned success and the data was never saved.
+- A writer that threw left `.bak1` behind for the next read to pick up.
+- Writes were unbuffered.
+
+Callers:
+- `DownloadManager.updateDownloadInfo` saved `.state` from inside the `readTransacted` reader, i.e.
+  while the same file was still open for reading (a rename that fails on Windows, silently because of
+  the point above).
+
+#### The fix
+- **Completion footer:** every save appends the 8 bytes `XDM-END!` after the writer returns, then
+  flushes and `fsync`s. A copy that does not end with the footer was not completely written.
+- **Reads** load the candidates `<name>`, `<name>.bak1`, `<name>.bak2` in that order and use the
+  first one that ends with the footer (`.bak1` is complete only when a crash happened between the
+  two moves, which is exactly when `<name>` is missing). Only that copy's bytes, without the footer,
+  are handed to the reader through an in-memory stream, so the reader runs **once, on complete
+  data**, and cannot leave partial side effects from a bad copy.
+- **Files written before the footer existed** are still read: if no candidate has the footer, the
+  first existing file (`<name>` before `.bak1`) is used as is. No versioning or migration is needed;
+  each file gains the footer on its next save.
+- **Writes** are buffered. If the writer throws, `.bak1` is deleted and failure is returned. The
+  current file is kept as `.bak2` (best effort, `Files.move(..., REPLACE_EXISTING)`), then `.bak1` is
+  moved into place with `ATOMIC_MOVE` (plain replace where atomic moves are unsupported). Any failure
+  is returned as `Result.failure`.
+- **`updateDownloadInfo`** reads the `.state` file first and saves it afterwards.
+
+Why a footer and not a checksum (decided): files are never overwritten in place (each save writes a
+new `.bak1`, syncs it, then renames), so the only corruption that can come from the app's own writes
+is an incomplete file, which the footer detects. A footer does not detect bytes damaged inside a
+complete file (bad sector, external tool); `.bak2` from the previous save remains available but is
+only used when the main copy is incomplete. A unique id written as both header and footer was also
+considered: it would additionally catch a torn in-place overwrite, which this write pattern cannot
+produce, at the cost of a format change at the start of every file.
+
+Remaining (B21): `AppConfig.load` still assigns fields as it reads, so an old footer-less config
+file that is corrupt can still be half applied.
+
+#### Tests (`TestAtomicIO`)
+| Test | Old code | Fixed |
+|---|---|---|
+| `roundTrip_andFileEndsWithCompletionFooter` | No footer | Data read back; file ends with `XDM-END!` |
+| `truncatedTempFile_isIgnoredInFavourOfIntactFile` | `EOFException` (read the partial `.bak1`) | Main file's data |
+| `writerThatThrows_reportsFailureAndLeavesPreviousDataReadable` | Partial `.bak1` left behind | Failure reported, `.bak1` removed, previous data read |
+| `incompleteFinalFile_fallsBackToBackup` | `EOFException` | `.bak2`'s data |
+| `readerRunsOnlyOnCompleteData` (reader appends as it reads, like `AppDB`) | Reader ran on the incomplete file | Reader sees only the complete `.bak2` data |
+| `failedCommit_isReportedAsFailure` (directories block the backup and final names) | Reported success | Reported failure |
+| `crashBetweenRenames_readsCompleteTempFile` | Passed (guard) | Newest data from `.bak1` |
+| `legacyFileWithoutFooter_isStillReadable` | Passed (guard) | Still readable |
 
 ### B10 (P2): Thread and connection leaks (FIXED)
 **Where:** `StreamingDownloaderTask.kt`, `HlsDownloaderTask.kt`, `HttpDownloader.kt`, `HttpClientImpl.kt`, `AppMain.kt`
@@ -746,7 +971,9 @@ auto-retry `NetworkError` with backoff.
 - **No format versioning** in `.state`, `.info`, `*-downloads.dat` or `schedule.dat`. Any field
   change breaks existing user data (the B3 fix changed the `.info` and `.state` layouts without a
   version, by decision, so older files are unreadable). `AppConfig.load` tolerates only trailing fields, and a corrupt
-  file leaves config **partially overwritten** (fields assigned before the exception). Load into a
+  file leaves config **partially overwritten** (fields assigned before the exception). Since B9,
+  incomplete files never reach the reader (completion footer), so this remains only for old
+  footer-less config files and for damage inside a complete file. Load into a
   temporary object and apply it only on success. `SortKey.entries[input.readInt()]` can go out of range.
 - `HttpChunkRetriever`: `CopyResult.Retry` never increments `retryCount`, so a connection that
   keeps dropping mid-stream retries forever at a fixed 5 s with no backoff. `Thread.sleep` does not
@@ -779,9 +1006,10 @@ auto-retry `NetworkError` with backoff.
 - Commented-out constructors and legacy Java code (`AppMenuHandler`, `AppWindow`,
   `MacUtils`/`LinuxUtils` startup helpers) make it harder to see what is live. `FFmpegMuxer` and
   `QueueService.kt` (empty) are dead.
-- Test coverage: `xdm-app` has only placeholder tests (`AppTest.kt`, `AppMainTest.java`). None of
-  `DownloadManager`, `AppDB`, `TaskInfoDB` round-trips, `AtomicIO` crash recovery, or the integration
-  server are tested; most bugs above are in these untested classes.
+- Test coverage: the fixes above added tests for `DownloadManager` (queue, video downloads, commit),
+  `TaskInfoDB` / `.state` round-trips and the integration server's HTTP handling. Still untested:
+  `AppDB` and the integration server's request routing. `AtomicIO` crash recovery is covered by
+  `TestAtomicIO` (B9).
 
 ---
 
@@ -789,8 +1017,8 @@ auto-retry `NetworkError` with backoff.
 
 | # | Feature | State | Where | Suggested implementation |
 |---|---------|-------|-------|--------------------------|
-| F1 | **Scheduler** | The UI saves schedules and the ticker runs, but `triggerScheduledDownload` only logs, so scheduled downloads **never start** | `DownloadScheduler.kt:120-123` | Call `AppContext.downloader.resumeDownload(id)`. Also catch up missed `ONE_TIME` entries at startup (fire if `epochMillis` has passed and it is within a grace window, otherwise drop), and remove entries on delete (B12). Consider a "stop at" time as well. |
-| F2 | **Queues** | `QueueManager.attachToQueue` is empty, `QueueService.kt` is empty, and Start/Stop queue handlers are commented out | `Queues.kt`, `AppMenuHandler.kt:127-137, 338-348` | Model `DownloadQueue(id, name, downloadIds, maxParallel, schedule)`, persist it with `AtomicIO`, and have `DownloadManager.pumpQueue()` (B5) choose per queue. The scheduler can then start or stop whole queues. |
+| F1 | **Scheduler** | The UI saves schedules and the ticker runs, but `triggerScheduledDownload` only logs, so scheduled downloads **never start** | `DownloadScheduler.kt:120-123` | Call `AppContext.downloader.resumeDownload(id)`, which now goes through `pumpQueue()` and respects the parallel limit (B5). Also catch up missed `ONE_TIME` entries at startup (fire if `epochMillis` has passed and it is within a grace window, otherwise drop), and remove entries on delete (B12). Consider a "stop at" time as well. |
+| F2 | **Queues** | `QueueManager.attachToQueue` is empty, `QueueService.kt` is empty, and Start/Stop queue handlers are commented out | `Queues.kt`, `AppMenuHandler.kt:127-137, 338-348` | Model `DownloadQueue(id, name, downloadIds, maxParallel, schedule)`, persist it with `AtomicIO`, and extend `DownloadManager.pumpQueue()` (added in B5) to choose per queue. The scheduler can then start or stop whole queues. |
 | F3 | **Restart download** | No-op | `AppMenuHandler.kt:81-83`, `AppWindow.kt:142` | Purge the `.state` and temp data (keep `.info`), reset the record to `READY`, and start again. |
 | F4 | **Change file name / Save as** before completion | Commented out; context menu item hidden | `AppMenuHandler.changeFile`, `MainListView.kt:181, 197` | For non-finished records, update `fileName` / `userSelectedDownloadFolder` in `.info`. The commit step already reads them. |
 | F5 | **Copy file** (to clipboard) | Hidden and no-op | `MainListView.kt:186, 202` | Put the file on the clipboard with `DataFlavor.javaFileListFlavor` via `Transferable`. |
@@ -814,9 +1042,10 @@ auto-retry `NetworkError` with backoff.
 ## 3. Suggested order of work
 
 1. **Security:** S1 and S2 are done. Run the manual checks listed in each section.
-2. **Hangs and data loss:** B1, B2, B3 and B4 are done. Then B9.
-3. **Queue and lifecycle:** B5 + F1 + F2 together (scheduler and queues depend on a correct pump),
-   then B6, B7, B14.
+2. **Hangs and data loss:** B1, B2, B3, B4 and B9 are done. B8 (integration server responses) is
+   also done.
+3. **Queue and lifecycle:** B5 (single `pumpQueue()`), B6 and B7 are done. Then F1 + F2 on top of the
+   pump, then B14.
 4. **Resource hygiene:** B10 is done. Then B11, B12, B13, B18.
 5. **Polish:** B15–B21, remaining F-items, dead-code removal, CLAUDE.md update.
 6. **Tests to add alongside:** `TaskInfoDB` / `AppDB` / `AtomicIO` round-trip and truncated-file

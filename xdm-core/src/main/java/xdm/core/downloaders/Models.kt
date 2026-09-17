@@ -20,6 +20,8 @@ enum class DownloadError {
     TlsError,
     /** An encrypted segment could not be decrypted (missing or wrong key, corrupt data). */
     DecryptionError,
+    /** The finished file could not be written or moved to the destination folder. */
+    OutputWriteError,
 }
 
 enum class PauseEvent {
@@ -165,5 +167,5 @@ sealed interface DownloadStatusInfo {
 
 sealed interface CommitResult {
     data class Success(val fileName: String, val outputDir: String) : CommitResult
-    data object Failed : CommitResult
+    data class Failed(val error: DownloadError) : CommitResult
 }

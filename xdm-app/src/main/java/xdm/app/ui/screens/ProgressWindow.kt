@@ -237,6 +237,7 @@ class ProgressWindow(val id: Long) : JFrame() {
             DownloadError.SessionExpired -> text("ERR_SESSION_FAILED")
             DownloadError.TlsError -> text("ERR_TLS")
             DownloadError.DecryptionError -> text("ERR_DECRYPT")
+            DownloadError.OutputWriteError -> text("ERR_OUTPUT_WRITE")
             else -> text("ERR_INTERNAL")
         }
     }

@@ -224,7 +224,7 @@ class HttpDownloaderTask : ChunkController {
                         is CommitResult.Failed -> {
                             if (context.stopFlag.get()) return
                             context.diskError.set(true)
-                            onChunkFailed(id, DownloadError.DiskSpaceError)
+                            onChunkFailed(id, res.error)
                         }
 
                         is CommitResult.Success -> {
@@ -512,7 +512,7 @@ class HttpDownloaderTask : ChunkController {
                     if (context.stopFlag.get()) return
                     context.diskError.set(true)
                     saveState()
-                    context.downloadHost.onDownloadFailed(context.id, DownloadError.DiskSpaceError)
+                    context.downloadHost.onDownloadFailed(context.id, res.error)
                 }
 
                 is CommitResult.Success -> {

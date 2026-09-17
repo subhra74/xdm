@@ -27,9 +27,10 @@ import java.io.RandomAccessFile
  * References: Matroska element spec (https://www.matroska.org/technical/elements.html) and the
  * conventions used by libavformat's `matroskaenc` and the JS `webm-muxer`.
  */
-class MkvWriter(outputPath: String) : ContainerWriter {
+class MkvWriter(outputPath: String, spoolDir: String? = null) : ContainerWriter {
     private val file = File(outputPath)
-    private val spoolFile = File("$outputPath.spool")
+    /** Scratch copy of the sample data; in [spoolDir] when given, otherwise next to the output. */
+    private val spoolFile = spoolDir?.let { File(it, "${file.name}.spool") } ?: File("$outputPath.spool")
     private val spool = BufferedOutputStream(FileOutputStream(spoolFile), 1 shl 20)
     private var spoolPos = 0L
 

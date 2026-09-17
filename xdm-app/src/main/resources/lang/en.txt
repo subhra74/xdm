@@ -87,6 +87,7 @@ ERR_ASM_FAILED=Failed to append/convert file parts, please check if the drive is
 ERR_DISK_FAILED=Disk error.
 ERR_TLS=TLS connection error.
 ERR_DECRYPT=Unable to decrypt the video. The encryption key is missing or invalid.
+ERR_OUTPUT_WRITE=Unable to save the file to the destination folder.
 LBL_MENU=Menu
 
 TITLE_SETTINGS=Settings

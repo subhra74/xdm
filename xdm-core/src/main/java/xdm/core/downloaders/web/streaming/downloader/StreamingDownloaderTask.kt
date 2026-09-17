@@ -102,7 +102,17 @@ abstract class StreamingDownloaderTask(
 
     override fun deleteTemp() {
         cleanup()
+        val out = outputFile()
+        if (out.delete()) Logger.info("XDM", "Deleted partial output $out")
     }
+
+    /**
+     * The assembled output: in the destination folder when the host provides a path (so the commit
+     * is a same-folder rename), otherwise in the temp folder. Stable for a download.
+     */
+    private fun outputFile(): File =
+        context.downloadHost.outputFilePath(context.id, downloadType(), fileExt())?.let { File(it) }
+            ?: File(context.tempFolder, context.tempFileName + fileExt())
 
     private fun download() {
         try {
@@ -173,26 +183,38 @@ abstract class StreamingDownloaderTask(
         if (context.stopFlag.get()) return
         context.assembling.set(true)
         context.downloadHost.onAssembleStart(context.id)
-        try {
-            postProcessChunks()
-        } catch (e: DecryptionException) {
-            Logger.error("XDM", "Decryption failed", e)
+        val tmpFile = outputFile()
+        // A previous run muxed successfully but the commit failed: only retry the commit.
+        val alreadyMuxed = context.completed.get() && tmpFile.isFile
+        if (!alreadyMuxed) {
+            try {
+                postProcessChunks()
+            } catch (e: DecryptionException) {
+                Logger.error("XDM", "Decryption failed", e)
+                if (context.stopFlag.get()) return
+                context.downloadHost.onDownloadFailed(context.id, DownloadError.DecryptionError)
+                return
+            }
+            val outFolder = tmpFile.absoluteFile.parentFile
+            if (!outFolder.isDirectory && !outFolder.mkdirs()) {
+                Logger.error("XDM", "Unable to create output folder $outFolder")
+                context.downloadHost.onDownloadFailed(context.id, DownloadError.OutputWriteError)
+                return
+            }
+            val ret = if (context.hasSeparateStreams) {
+                assembleStreams(tmpFile.absolutePath)
+            } else {
+                assembleSingle(tmpFile.absolutePath)
+            }
             if (context.stopFlag.get()) return
-            context.downloadHost.onDownloadFailed(context.id, DownloadError.DecryptionError)
-            return
-        }
-        val tmpFile = File(context.tempFolder, context.tempFileName + fileExt())
-        val ret = if (context.hasSeparateStreams) {
-            assembleStreams(tmpFile.absolutePath)
+            if (!ret) {
+                context.downloadHost.onDownloadFailed(context.id, DownloadError.MuxError)
+                return
+            }
         } else {
-            assembleSingle(tmpFile.absolutePath)
+            Logger.info("XDM", "Output already muxed, retrying commit: $tmpFile")
         }
-        if (context.stopFlag.get()) return
         throttle.disable()
-        if (!ret) {
-            context.downloadHost.onDownloadFailed(context.id, DownloadError.MuxError)
-            return
-        }
         Logger.info("Committing to final file")
         when (val res = context.downloadHost.commitOutputFile(context.id, tmpFile.absolutePath, downloadType())) {
             is CommitResult.Failed -> {
@@ -200,7 +222,7 @@ abstract class StreamingDownloaderTask(
                 Logger.info("Committing to final file - Failed!!")
                 context.diskError.set(true)
                 saveContext()
-                context.downloadHost.onDownloadFailed(context.id, DownloadError.DiskSpaceError)
+                context.downloadHost.onDownloadFailed(context.id, res.error)
             }
 
             is CommitResult.Success -> {

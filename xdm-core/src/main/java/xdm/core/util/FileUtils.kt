@@ -1,8 +1,11 @@
 package xdm.core.util
 
+import xdm.core.downloaders.DownloadError
 import java.io.File
 import java.io.IOException
 import java.net.URLDecoder
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -126,6 +129,54 @@ object FileUtils {
         return builder.toString()
     }
 
+    /**
+     * Moves [src] to [dst] without ever overwriting an existing file or leaving a partial [dst].
+     *
+     * Tries an atomic rename first. Across file systems (where a rename is impossible) it checks free
+     * space, copies to `<dst>.part`, renames that into place on the destination volume, then deletes
+     * [src]. On any failure [src] is left untouched and the `.part` file is removed.
+     *
+     * Returns null on success, [DownloadError.DiskSpaceError] if the destination lacks space, or
+     * [DownloadError.OutputWriteError] for any other failure (including [dst] already existing).
+     */
+    fun moveFile(src: File, dst: File, ops: MoveOps = MoveOps.Default): DownloadError? {
+        if (!src.isFile) {
+            Logger.error("XDM", "Move failed, source missing: $src")
+            return DownloadError.OutputWriteError
+        }
+        if (dst.exists()) {
+            Logger.error("XDM", "Move failed, destination exists: $dst")
+            return DownloadError.OutputWriteError
+        }
+        try {
+            ops.atomicMove(src.toPath(), dst.toPath())
+            return null
+        } catch (_: AtomicMoveNotSupportedException) {
+            Logger.info("XDM", "Atomic move not possible, copying $src -> $dst")
+        } catch (e: Exception) {
+            Logger.error("XDM", "Move failed: $src -> $dst", e)
+            return DownloadError.OutputWriteError
+        }
+
+        val folder = dst.absoluteFile.parentFile
+        if (ops.usableSpace(folder) < src.length()) {
+            Logger.error("XDM", "Not enough space in $folder for ${src.length()} bytes")
+            return DownloadError.DiskSpaceError
+        }
+        val part = File(folder, dst.name + ".part")
+        return try {
+            ops.copy(src.toPath(), part.toPath())
+            if (dst.exists()) throw FileAlreadyExistsException(dst.path)
+            ops.atomicMove(part.toPath(), dst.toPath())
+            if (!src.delete()) Logger.error("XDM", "Copied, but could not delete source $src")
+            null
+        } catch (e: Exception) {
+            Logger.error("XDM", "Copy failed: $src -> $dst", e)
+            part.delete()
+            DownloadError.OutputWriteError
+        }
+    }
+
     fun deleteFolder(folder: String): Result<Unit> {
         return deleteFolder(Paths.get(folder))
     }
@@ -143,5 +194,25 @@ object FileUtils {
                 }
             }
         }
+    }
+}
+
+/** File-system operations used by [FileUtils.moveFile]; replaceable in tests. */
+interface MoveOps {
+    /** Atomic rename; throws [java.nio.file.AtomicMoveNotSupportedException] across file systems. */
+    fun atomicMove(src: Path, dst: Path)
+    fun copy(src: Path, dst: Path)
+    fun usableSpace(folder: File): Long
+
+    companion object Default : MoveOps {
+        override fun atomicMove(src: Path, dst: Path) {
+            Files.move(src, dst, java.nio.file.StandardCopyOption.ATOMIC_MOVE)
+        }
+
+        override fun copy(src: Path, dst: Path) {
+            Files.copy(src, dst, java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+        }
+
+        override fun usableSpace(folder: File): Long = folder.usableSpace
     }
 }

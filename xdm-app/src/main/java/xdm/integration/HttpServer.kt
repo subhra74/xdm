@@ -20,7 +20,7 @@ class HttpServer(
             try {
                 serverSocket.bind(InetSocketAddress(host, port))
                 onSuccess()
-                while (true) {
+                while (!serverSocket.isClosed) {
                     process()
                 }
             } catch (ex: Exception) {
@@ -40,7 +40,7 @@ class HttpServer(
             }
             processRequest(socket)
         } catch (e: IOException) {
-            Logger.info(e)
+            if (!serverSocket.isClosed) Logger.info(e)
         }
     }
 
@@ -64,6 +64,8 @@ class HttpServer(
                         }
                     }
                 }
+            } catch (_: HttpParser.ConnectionClosedException) {
+                // Client closed an idle kept-alive connection.
             } catch (e: Exception) {
                 Logger.info(e.message)
             }

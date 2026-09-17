@@ -213,7 +213,7 @@ class TestDownloadHost(
             src.copyTo(dst, overwrite = true)
             src.delete()
         }.isSuccess
-        if (!moved || !dst.exists()) return CommitResult.Failed
+        if (!moved || !dst.exists()) return CommitResult.Failed(DownloadError.OutputWriteError)
         finalFile = dst
         return CommitResult.Success(dst.name, outDir)
     }

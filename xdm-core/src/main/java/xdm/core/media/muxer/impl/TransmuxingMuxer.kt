@@ -40,14 +40,14 @@ class TransmuxingMuxer(@Suppress("UNUSED_PARAMETER") appDir: String) : Muxer {
         independentSegement: Boolean,
         isMp4: Boolean,
         discontinuous: Boolean,
-    ): Boolean = transmux(outputFile, discontinuous) { writer ->
+    ): Boolean = transmux(outputFile, tempDir, discontinuous) { writer ->
         demuxList(segments, writer, progressCallback)
     }
 
     // ---- two separate files (e.g. video + audio) ----
     override fun mux(
         file1: String, file2: String, outputFile: String, progressCallback: (Int) -> Unit, tempDir: String
-    ): Boolean = transmux(outputFile) { writer ->
+    ): Boolean = transmux(outputFile, tempDir) { writer ->
         val tracks = ArrayList<Track>()
         tracks += demuxList(listOf(file1), writer) {}
         tracks += demuxList(listOf(file2), writer) {}
@@ -65,7 +65,7 @@ class TransmuxingMuxer(@Suppress("UNUSED_PARAMETER") appDir: String) : Muxer {
         independentSegement: Boolean,
         isMp4: Boolean,
         discontinuous: Boolean,
-    ): Boolean = transmux(outputFile, discontinuous) { writer ->
+    ): Boolean = transmux(outputFile, tempDir, discontinuous) { writer ->
         val total = (videoSegments.size + audioSegments.size).coerceAtLeast(1)
         val done = intArrayOf(0)
         val tick = { _: Int -> done[0]++; progressCallback(minOf(100, done[0] * 100 / total)) }
@@ -82,11 +82,12 @@ class TransmuxingMuxer(@Suppress("UNUSED_PARAMETER") appDir: String) : Muxer {
 
     // ---- core ----
 
+    /** [tempDir] holds scratch files (the MKV spool), so the output folder only needs the output's size. */
     private inline fun transmux(
-        outputFile: String, discontinuous: Boolean = false, body: (ContainerWriter) -> List<Track>
+        outputFile: String, tempDir: String, discontinuous: Boolean = false, body: (ContainerWriter) -> List<Track>
     ): Boolean {
         val writer: ContainerWriter =
-            if (outputFile.endsWith(".mkv", ignoreCase = true)) MkvWriter(outputFile)
+            if (outputFile.endsWith(".mkv", ignoreCase = true)) MkvWriter(outputFile, tempDir)
             else Mp4Writer(outputFile, repairTimeline = discontinuous)
         return try {
             val tracks = body(writer)

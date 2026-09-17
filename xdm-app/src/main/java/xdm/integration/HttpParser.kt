@@ -9,18 +9,15 @@ import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.Socket
+import java.util.TreeMap
 import kotlin.math.min
 
 object HttpParser {
-    /** Returns the (method, path) of an HTTP request line such as "POST /download HTTP/1.1". */
-    private fun parseRequestStatusLine(statusLine: String): Pair<String, String> {
-        try {
-            val arr = statusLine.split(" ")
-            if (arr.size > 2) {
-                return Pair(arr[0].uppercase(), arr[1])
-            }
-        } catch (ex: Exception) {
-            Logger.info(ex)
+    /** Returns (method, path, version) of a request line such as "POST /download HTTP/1.1". */
+    private fun parseRequestStatusLine(statusLine: String): Triple<String, String, String> {
+        val arr = statusLine.split(" ")
+        if (arr.size > 2) {
+            return Triple(arr[0].uppercase(), arr[1], arr[2].uppercase())
         }
         throw IOException("Invalid HTTP status line: $statusLine")
     }
@@ -33,29 +30,45 @@ object HttpParser {
         throw IOException("Invalid header")
     }
 
-    private fun parseContentLength(headers: Map<String, List<String>>): Long {
-        headers["Content-Length"]?.let { return if (it.isNotEmpty()) it[0].toLongOrDefault(-1) else -1 } ?: return -1
+    /** Header lookups ignore case (headers are stored in a case-insensitive map). */
+    private fun parseContentLength(headers: Map<String, List<String>>): Long =
+        headers["Content-Length"]?.firstOrNull()?.toLongOrDefault(-1) ?: -1
+
+    /**
+     * HTTP/1.1 connections are persistent unless the client sends `Connection: close`; HTTP/1.0 ones
+     * only when it sends `Connection: keep-alive`. Header values are compared ignoring case.
+     */
+    private fun shouldKeepAlive(version: String, headers: Map<String, List<String>>): Boolean {
+        val tokens = headers["Connection"].orEmpty().flatMap { it.split(",") }.map { it.trim().lowercase() }
+        return if (version == "HTTP/1.1") "close" !in tokens else "keep-alive" in tokens
     }
 
-    private fun shouldKeepAlive(headers: Map<String, List<String>>): Boolean {
-        headers["Connection"]?.let { return it.isNotEmpty() && it[0] == "keep-alive" } ?: return false
-    }
+    /**
+     * Thrown when the client closes the connection before sending another request: a normal end of a
+     * kept-alive connection, not an error.
+     */
+    class ConnectionClosedException : IOException("Connection closed by client")
 
     fun parseContext(socket: Socket): RequestContext {
         var method = "GET"
         var path = "/"
-        val headers: MutableMap<String, MutableList<String>> = HashMap()
+        var version = "HTTP/1.0"
+        val headers: MutableMap<String, MutableList<String>> = TreeMap(String.CASE_INSENSITIVE_ORDER)
         var body: ByteArray? = null
         val io = socket.getInputStream()
         var first = true
 
         while (true) {
-            val line = readLine(io)
-            if (StringUtils.isNullOrEmpty(line)) break
+            val line = if (first) readFirstLine(io) else readLine(io)
+            if (StringUtils.isNullOrEmpty(line)) {
+                if (first) continue // tolerate blank lines before a request line
+                break
+            }
             if (first) {
-                val (m, p) = parseRequestStatusLine(line)
+                val (m, p, v) = parseRequestStatusLine(line)
                 method = m
                 path = p
+                version = v
                 first = false
                 continue
             }
@@ -75,7 +88,15 @@ object HttpParser {
             }
         }
 
-        return RequestContext(method, path, headers, body, socket, shouldKeepAlive(headers))
+        return RequestContext(method, path, headers, body, socket, shouldKeepAlive(version, headers))
+    }
+
+    /** Reads a request's first line; end of stream before any byte means the client closed the connection. */
+    private fun readFirstLine(io: InputStream): String = when (val b = io.read()) {
+        -1 -> throw ConnectionClosedException()
+        '\n'.code -> ""
+        '\r'.code -> readLine(io)
+        else -> b.toChar() + readLine(io)
     }
 
 

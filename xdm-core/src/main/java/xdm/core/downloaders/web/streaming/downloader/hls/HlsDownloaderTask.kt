@@ -15,6 +15,7 @@ import xdm.core.network.http.PoolingHttpClient
 import xdm.core.util.CoreUtils
 import xdm.core.util.Logger
 import xdm.core.util.ManifestUtils.downloadManifestBytes
+import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
@@ -252,9 +253,13 @@ class HlsDownloaderTask : StreamingDownloaderTask {
             decryptChunk(chunk)
         }
         if (context.chunks.none { it.encrypted }) {
-            // Record the decrypted state before dropping the keys, so a later resume never needs them.
+            // Record the decrypted state before dropping the keys and encrypted segments, so a later
+            // resume never needs them.
             saveContext()
             HlsKeyStore.delete(context.id, configDir)
+            for (chunk in context.chunks) {
+                File(getChunkTempFileName(chunk) + ".enc").delete()
+            }
         }
     }
 
