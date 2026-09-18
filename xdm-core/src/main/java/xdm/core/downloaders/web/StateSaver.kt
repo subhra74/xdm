@@ -19,6 +19,7 @@ import xdm.core.util.writeNullableHeaders
 import xdm.core.util.writeNullableLongString
 import java.io.DataInputStream
 import java.io.DataOutputStream
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
@@ -119,7 +120,8 @@ private fun readChunk(r: DataInputStream): Chunk {
 
 private fun readChunks(r: DataInputStream): MutableMap<Long, Chunk> {
     val count = r.readInt()
-    val chunkMap = HashMap<Long, Chunk>()
+    // Same map type as a fresh download (HttpDownloader): chunk threads update it concurrently.
+    val chunkMap = ConcurrentHashMap<Long, Chunk>()
     for (i in 0..<count) {
         val id = r.readLong()
         val chunk = readChunk(r)

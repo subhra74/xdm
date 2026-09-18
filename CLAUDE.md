@@ -94,6 +94,11 @@ integration server, then runs the UI. Most code reaches services through `AppCon
   in `get*Task`/`save*Task` must stay in lockstep.
 - **`AtomicIO`** provides transacted read/write (with `.bak2` backups) used for both task
   info and `<id>.state` resume files. Prefer it for any new on-disk state.
+- **Deleting downloads.** `DownloadManager.deleteDownload` stops an active download and purges it
+  once it reports paused/failed (`toDelete`); anything else is purged at once. The purge
+  (`purgeFiles`/`deleteMetadata`) removes temp data, `task-<id>.info`, `<id>.state*`, HLS
+  `<id>.keys` and the schedule entry. The Clear button uses `clearInactive()`, which keeps running,
+  assembling and queued downloads. Any new per-download file must be added to `deleteMetadata`.
 
 ### Task info model
 `HttpDownloadTaskInfo` and the `StreamingDownloadTaskInfo` subtypes (`HlsDownloadTaskInfo`,
@@ -148,4 +153,8 @@ of the app calls to show/update windows; it marshals everything onto the Swing E
 - When changing any `*DownloadTaskInfo` field that is persisted, update the matching
   read/write pair in `TaskInfoDB` (and any `.state` serialization) together, preserving order.
 - All UI mutation must happen on the EDT; follow the existing `runOnUIThread`/`invokeLater`
-  pattern in `AppInstance`.
+  pattern in `AppInstance`. Every public `IAppInstance` method may be called from engine or
+  server threads, so it must marshal to the EDT itself. Pass download ids to the EDT and resolve
+  the row index there (`db.indexById`), never an index computed on the calling thread.
+- `AppDB` accessors are synchronized on the `AppDB` instance. `DownloadManager`'s lock order is
+  `queue` → `appDB`; never take the `queue` lock while holding `appDB`.

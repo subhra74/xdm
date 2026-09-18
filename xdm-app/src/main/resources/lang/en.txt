@@ -380,7 +380,7 @@ CAT_PROGRAMS=Programs
 TOOL_SORT=Sort
 TOOL_DOWNLOAD=New
 TOOL_CLEAR=Clear
-MSG_CLEAR_CONFIRM=Are you sure you want to clear all downloads from the list?
+MSG_CLEAR_CONFIRM=Remove all finished, paused and failed downloads from the list? Downloads in progress are kept. Downloaded files are not deleted.
 TOOL_SETTINGS=Settings
 TOOL_DELETE=Delete
 

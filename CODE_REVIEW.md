@@ -31,10 +31,10 @@ Severity legend:
 | B9 | P1 | Persistence | ~~`AtomicIO` reads a half-written `.bak1` in preference to the good file~~ **Fixed:** completion footer; newest complete copy is read; failed saves are reported |
 | B10 | P2 | Resources | ~~Thread pools and OkHttp clients leak for every streaming download and every paused HTTP download~~ **Fixed:** pools shut down and clients closed on success, failure and pause; paused HLS/DASH thread no longer hangs; background threads are daemon |
 | B11 | P2 | HTTP engine | ~~`readTimeout = 0`, so a stalled connection blocks forever and Pause cannot unblock it~~ **Fixed:** configurable read timeout (Advanced settings); stall retries are limited; Pause cancels open calls |
-| B12 | P2 | Cleanup | Deleting a download never removes `task-<id>.info` / `<id>.state`; `AppDB.clear()` is also broken |
-| B13 | P2 | UI | "Clear" wipes the DB while downloads are still running |
+| B12 | P2 | Cleanup | ~~Deleting a download never removes `task-<id>.info` / `<id>.state`; `AppDB.clear()` is also broken~~ **Fixed:** delete and Clear share one purge (temp data, `.info`, `.state`, keys, schedule); assembling/error downloads can be deleted |
+| B13 | P2 | UI | ~~"Clear" wipes the DB while downloads are still running~~ **Fixed:** Clear removes only finished, paused and failed downloads; running, assembling and queued ones are kept |
 | B14 | P2 | App lifecycle | Exit does not pause downloads or save state; a failed server bind leaves a headless JVM running |
-| B15 | P2 | Threading | Several UI calls run off the EDT; `queue` and `toDelete` are accessed without synchronization |
+| B15 | P2 | Threading | ~~Several UI calls run off the EDT; `queue` and `toDelete` are accessed without synchronization~~ **Fixed:** `IAppInstance` calls marshal to the EDT and resolve rows by id there; `AppDB` accessors synchronized; `queue`/`toDelete` guarded; resumed chunks use `ConcurrentHashMap` |
 | B16 | P2 | HTTP client | `contentType` loses the MIME subtype; `Cookie` values are joined with `;` |
 | B17 | P2 | Privacy | Cookies and auth headers are written to the log file |
 | B18 | P2 | Integration | The local server has no body size limit, no socket timeout, and makes a thread per connection |
@@ -873,7 +873,7 @@ daemon flag on the GC thread has no test.
 The tests create the client with a 1 s timeout through reflection (`httpClientWithReadTimeout`), so
 they compile against the old code, where the client had no timeout.
 
-### B12 (P2): Leftover files on delete; `AppDB.clear()` is broken
+### B12 (P2): Leftover files on delete; `AppDB.clear()` is broken (FIXED)
 **Where:** `DownloadManager.kt:382-429`; `DownloadsDB.kt:216-228`
 
 - `deleteRecord` removes only the in-memory row. `task-<id>.info`, `<id>.state` and the `.bak*`
@@ -890,7 +890,26 @@ they compile against the old code, where the client had no timeout.
 delete `<id>.state{,.bak1,.bak2}`, and call `scheduler.removeEntry(id)`. Use it from delete, clear
 and delete-completed.
 
-### B13 (P2): "Clear" while downloads are running
+**Status:** Fixed in the working tree. Covered by `DownloadManagerDeleteTest` (xdm-app).
+- `DownloadManager.deleteDownload` decides by whether the download has an active session, not by
+  its status. An active download (downloading or assembling) is stopped and added to `toDelete`,
+  and is purged in `onDownloadPaused`, or in `onDownloadFailed` if it fails first. If it finishes
+  before the stop takes effect, `onDownloadSuccess` drops the record and metadata but keeps the
+  file. Any other download (finished, paused, failed, queued) is dequeued and purged straight away.
+  The active check and the dequeue happen under the `queue` lock, so a queued download cannot be
+  launched while it is being deleted.
+- `purgeFiles(rec)` deletes the temp data of unfinished downloads (the HTTP temp file or the
+  streaming temp folder, plus a streaming download's partial `.mp4`/`.mkv`, resolved before the
+  task info goes). `deleteMetadata(id)` removes `task-<id>.info`, `<id>.state{,.bak1,.bak2}`, the
+  HLS `<id>.keys` and the schedule entry. `deleteAfterStopped` calls `task.deleteTemp()` and then
+  `deleteMetadata`.
+- `AppDB.clear()` is replaced by `AppDB.removeWhere(predicate)`, which removes the rows, rebuilds
+  the index and saves all three lists. `removeItem` now saves the active list for `ASSEMBLING` and
+  `ERROR` records too, and drops the id from the index.
+- `TaskInfoDB.deleteRecord` also removes `task-<id>.info.bak1`.
+- `AppContext.hasScheduler` lets the purge skip the scheduler when it is not set up (tests).
+
+### B13 (P2): "Clear" while downloads are running (FIXED)
 **Where:** `MainListView.kt:263-270` → `AppDB.clear()`
 
 Clearing removes records while `activeSessions` keeps downloading. Later callbacks find no record,
@@ -900,6 +919,13 @@ are orphaned.
 **Fix:** Either stop all active sessions first and wait for `onDownloadPaused` before purging, or
 make Clear remove only finished records (the conventional behaviour), with a separate "Delete all"
 action.
+
+**Status:** Fixed in the working tree. Covered by `DownloadManagerDeleteTest.clear_keepsActiveAndQueuedDownloads`.
+Clear (`MainListView.clear`) calls `DownloadManager.clearInactive()`, which, under the `queue`
+lock, removes every record that has no active session, is not queued or pending delete, and is not
+`DOWNLOADING`, `ASSEMBLING` or `READY`. Each removed record is then purged as in B12. Finished files
+in the download folder are kept. `MSG_CLEAR_CONFIRM` (en) now says that downloads in progress are
+kept and files are not deleted. A separate "Delete all" action was not added.
 
 ### B14 (P2): App lifecycle problems
 **Where:** `AppToolBar.kt:205` (`exitProcess(0)`); `AppContext.kt:60-67`; `AppMain.kt`
@@ -917,7 +943,7 @@ pause callbacks, saves the DBs and config, stops the scheduler and server, then 
 from the menu and via `Runtime.addShutdownHook`. On bind failure, send `/show` (a new endpoint) to
 the existing instance and exit, or show an error dialog and exit.
 
-### B15 (P2): Threading violations
+### B15 (P2): Threading violations (FIXED)
 - `AppInstance.addDownload` (refresh path, `AppInstance.kt:122-127`) runs on the HTTP server thread
   and calls `refreshLinkWindow.dispose()` and `MessageBox.show(...)` off the EDT.
 - `AppInstance.showAppWindow`, `showSchedulerWindow` and `showPropertiesWindow` do not marshal to the
@@ -935,6 +961,22 @@ the existing instance and exit, or show an error dialog and exit.
 with a single lock, or use `ConcurrentLinkedDeque` / `ConcurrentHashMap.newKeySet()`. Make every
 `AppDB` accessor `@Synchronized`, and pass ids (not indexes) to the EDT, resolving the index there.
 Use `ConcurrentHashMap` in `readChunks`.
+
+**Status:** Fixed in the working tree. xdm-core and xdm-app test suites pass; there is no automated
+EDT test.
+- `AppInstance`: `showAppWindow`, `showRefreshWindow`, `showSchedulerWindow`,
+  `showPropertiesWindow` and the refresh-link path of `addDownload` (dispose + message box) run
+  through `runOnUIThread`.
+- `updateDownloadInView(id)` and `addDownloadInView(id)` resolve the row index **on the EDT**. The
+  unused `deleteDownloadInView(id: Long)` overload, which could never resolve a removed id, is
+  gone. `deleteDownloadInView(index)` stays synchronous (`invokeAndWait`) and the list view
+  refreshes the whole table on delete, so a shifted index does no harm.
+- `AppDB.getById` and `size` are `@Synchronized` (the lock is the `AppDB` instance, as in
+  `DownloadManager`'s `synchronized(appDB)` blocks). `getById` also checks that the row it finds has
+  the requested id and uses `getOrNull`, so it never returns the wrong record or throws.
+- `DownloadManager`: every `queue` access is inside `synchronized(queue)` (lock order
+  queue → appDB); `toDelete` is `ConcurrentHashMap.newKeySet()`.
+- `StateSaver.readChunks` builds a `ConcurrentHashMap`, like a fresh `HttpDownloader`.
 
 ### B16 (P2): HTTP client correctness
 **Where:** `HttpClientImpl.kt:86, 101, 108-109`
@@ -1089,8 +1131,8 @@ auto-retry `NetworkError` with backoff.
    also done.
 3. **Queue and lifecycle:** B5 (single `pumpQueue()`), B6 and B7 are done. Then F1 + F2 on top of the
    pump, then B14.
-4. **Resource hygiene:** B10 and B11 are done. Then B12, B13, B18.
-5. **Polish:** B15–B21, remaining F-items, dead-code removal, CLAUDE.md update.
+4. **Resource hygiene:** B10, B11, B12 and B13 are done. Then B18.
+5. **Polish:** B15 is done. Then B16–B21, remaining F-items, dead-code removal, CLAUDE.md update.
 6. **Tests to add alongside:** `TaskInfoDB` / `AppDB` / `AtomicIO` round-trip and truncated-file
    recovery; `DownloadManager` queue limits using a fake `DownloaderTask`; integration server header
    format and the S1 origin/method rejection (403/405 cases); resuming encrypted HLS (extend `TestHlsE2E`); a 429 and

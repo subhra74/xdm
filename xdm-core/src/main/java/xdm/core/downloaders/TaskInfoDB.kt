@@ -224,6 +224,7 @@ class TaskInfoDB(private val configDir: String) {
 
     fun deleteRecord(id: Long) {
         File(configDir, "task-$id.info").delete()
+        File(configDir, "task-$id.info.bak1").delete()
         File(configDir, "task-$id.info.bak2").delete()
     }
 }

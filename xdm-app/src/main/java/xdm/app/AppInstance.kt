@@ -31,8 +31,6 @@ interface IAppInstance {
 
     fun updateDownloadInView(id: Long)
 
-    fun deleteDownloadInView(id: Long)
-
     fun deleteDownloadInView(index: Int)
 
     fun addDownloadInView(id: Long)
@@ -81,26 +79,20 @@ class AppInstance : IAppInstance {
     }
 
     override fun showAppWindow() {
-        appWindow.isVisible = true
-        appWindow.toFront()
+        runOnUIThread {
+            appWindow.isVisible = true
+            appWindow.toFront()
+        }
     }
 
     override fun showDownloadCompleteWindow(id: Long, folder: String, fileName: String, fileSize: Long) {
         runOnUIThread { DownloadCompleteWindow().apply { setDetails(fileName, folder, fileSize) }.isVisible = true }
     }
 
+    // Rows are resolved by id on the EDT: an index taken on the calling thread can point at a
+    // different row once a delete runs before the EDT gets to it.
     override fun updateDownloadInView(id: Long) {
-        val index = db.indexById(id)
-        if (index != null) {
-            SwingUtilities.invokeLater { appWindow.updateDownloadInView(index) }
-        }
-    }
-
-    override fun deleteDownloadInView(id: Long) {
-        val index = db.indexById(id)
-        if (index != null) {
-            SwingUtilities.invokeLater { appWindow.deleteDownloadInView(index) }
-        }
+        runOnUIThread { db.indexById(id)?.let { appWindow.updateDownloadInView(it) } }
     }
 
     override fun deleteDownloadInView(index: Int) {
@@ -112,17 +104,17 @@ class AppInstance : IAppInstance {
     }
 
     override fun addDownloadInView(id: Long) {
-        val index = db.indexById(id)
-        if (index != null) {
-            SwingUtilities.invokeLater { appWindow.addDownloadInView(index) }
-        }
+        runOnUIThread { db.indexById(id)?.let { appWindow.addDownloadInView(it) } }
     }
 
     override fun addDownload(downloadInfo: HttpDownloadTaskInfo?) {
         if (AppContext.refreshLinkInProgress.get() && downloadInfo != null) {
             AppContext.downloader.updateDownloadInfo(AppContext.refreshLinkId.get(), downloadInfo)
-            refreshLinkWindow?.dispose()
-            MessageBox.show(appWindow, "XDM", text("SUCCESS_REFRESH"))
+            // Called on the browser-integration server thread.
+            runOnUIThread {
+                refreshLinkWindow?.dispose()
+                MessageBox.show(appWindow, "XDM", text("SUCCESS_REFRESH"))
+            }
             return
         }
         if (downloadInfo != null && AppContext.config.startDownloadAutomatically) {
@@ -214,6 +206,10 @@ class AppInstance : IAppInstance {
     }
 
     override fun showRefreshWindow(id: Long) {
+        runOnUIThread { showRefreshWindowInternal(id) }
+    }
+
+    private fun showRefreshWindowInternal(id: Long) {
         val url = AppContext.downloader.getOriginPage(id)
         if (url == null) {
             MessageBox.show(appWindow, "XDM", text("ERR_NO_REFRESH"))
@@ -236,10 +232,10 @@ class AppInstance : IAppInstance {
     }
 
     override fun showSchedulerWindow(id: Long) {
-        ScheduleWindow(appWindow, id).showDialog()
+        runOnUIThread { ScheduleWindow(appWindow, id).showDialog() }
     }
 
     override fun showPropertiesWindow(ent: DbRecord) {
-        PropertiesDialog(appWindow, ent).isVisible = true
+        runOnUIThread { PropertiesDialog(appWindow, ent).isVisible = true }
     }
 }

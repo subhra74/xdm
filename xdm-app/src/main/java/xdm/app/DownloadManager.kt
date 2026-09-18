@@ -10,6 +10,7 @@ import xdm.core.downloaders.web.readContext
 import xdm.core.downloaders.web.saveState
 import xdm.core.downloaders.web.streaming.downloader.dash.DashDownloaderTask
 import xdm.core.downloaders.web.streaming.downloader.hls.HlsDownloaderTask
+import xdm.core.downloaders.web.streaming.downloader.hls.HlsKeyStore
 import xdm.core.media.muxer.impl.TransmuxingMuxer
 import xdm.core.network.http.impl.HttpClientImpl
 import xdm.core.util.AtomicIO
@@ -50,7 +51,8 @@ class DownloadManager(
 
     /** Downloads waiting for a free slot. Guarded by its own monitor; only [pumpQueue] starts tasks. */
     private val queue = ArrayDeque<QueueItem>()
-    private val toDelete = mutableSetOf<Long>()
+    /** Active downloads the user deleted: purged once their task reports it has stopped. */
+    private val toDelete: MutableSet<Long> = ConcurrentHashMap.newKeySet()
     private val activeSessions = ConcurrentHashMap<Long, DownloaderTask>()
     private val downloadHost = object : DownloadHost {
         override fun onDownloadActivated(id: Long) {
@@ -179,6 +181,11 @@ class DownloadManager(
                     )
                 }
                 runPostDownloadActions(event)
+                if (toDelete.remove(event.id)) {
+                    // Finished before the stop took effect: keep the file, drop the record as asked.
+                    deleteRecord(event.id)
+                    deleteMetadata(event.id)
+                }
                 pumpQueue()
             }
         }
@@ -193,7 +200,11 @@ class DownloadManager(
                     }
                 }
                 AppContext.app.updateDownloadInView(id)
-                AppContext.app.showProgressError(id, error)
+                if (toDelete.remove(id)) {
+                    deleteAfterStopped(id, it)
+                } else {
+                    AppContext.app.showProgressError(id, error)
+                }
                 pumpQueue()
             }
         }
@@ -210,8 +221,7 @@ class DownloadManager(
                 }
                 AppContext.app.updateDownloadInView(id)
                 AppContext.app.hideProgressWindow(id)
-                if (toDelete.contains(id)) {
-                    toDelete.remove(id)
+                if (toDelete.remove(id)) {
                     deleteAfterStopped(id, it)
                 }
                 pumpQueue()
@@ -436,47 +446,90 @@ class DownloadManager(
 
     override fun deleteDownload(id: Long, fromDisk: Boolean) {
         try {
-            appDB.getById(id)?.let { rec ->
-                if (rec.status == RecordStatus.FINISHED) {
-                    deleteRecord(id)
-                    if (fromDisk) {
-                        val (fileName: String?, folder: String?) = getFileFolder(rec) ?: return
-                        if (fileName != null && folder != null) {
-                            val fileToDelete = File(folder, fileName)
-                            val deleted = fileToDelete.delete()
-                            Logger.info("XDM", "Delete file $fileToDelete $deleted")
-                        }
-                    }
-                } else if (rec.status == RecordStatus.PAUSED || rec.status == RecordStatus.READY) {
-                    synchronized(queue) {
-                        queue.find { it.id == id }?.let {
-                            queue.remove(it)
-                        }
-                    }
-                    deleteRecord(id)
-                    getTempFileFolder(id, configDir).onSuccess {
-                        val (tempFolder, tempFile) = it
-                        if (rec.downloadType == DownloadType.Http) {
-                            val file = File(tempFolder, tempFile)
-                            Logger.info("XDM", "Delete file $file")
-                            val ret = file.delete()
-                            Logger.info("XDM", "Delete file $ret")
-                        } else {
-                            FileUtils.deleteFolder(tempFolder)
-                        }
-                    }.onFailure { Logger.error("XDM", "Error deleting file", it) }
-                    // Partial muxed output of a streaming download lives in the destination folder.
-                    // Resolve it before the task info is removed.
-                    listOf(".mp4", ".mkv").forEach { ext ->
-                        streamingOutputPath(id, rec.downloadType, ext)?.let { File(it).delete() }
-                    }
-                } else if (rec.status == RecordStatus.DOWNLOADING) {
-                    toDelete.add(id)
-                    stopDownload(id)
+            val rec = appDB.getById(id) ?: return
+            // Under the queue lock so a queued download cannot be launched while it is deleted.
+            val active = synchronized(queue) {
+                activeSessions.containsKey(id).also { if (!it) queue.removeAll { q -> q.id == id } }
+            }
+            if (active) {
+                // Downloading or assembling: stop first, purge in onDownloadPaused/Failed.
+                toDelete.add(id)
+                stopDownload(id)
+                return
+            }
+            deleteRecord(id)
+            purgeFiles(rec)
+            if (fromDisk && rec.status == RecordStatus.FINISHED) {
+                val (fileName: String?, folder: String?) = getFileFolder(rec) ?: return
+                if (fileName != null && folder != null) {
+                    val fileToDelete = File(folder, fileName)
+                    val deleted = fileToDelete.delete()
+                    Logger.info("XDM", "Delete file $fileToDelete $deleted")
                 }
             }
         } catch (error: Exception) {
             Logger.error("XDM", "Error while delete", error)
+        }
+    }
+
+    /**
+     * Removes every download that is not in progress (finished, paused, failed) together with its
+     * task info, state and temp data. Downloads that are running, assembling or queued are kept.
+     * Finished files in the download folder are not touched. Returns the number of removed records.
+     */
+    fun clearInactive(): Int {
+        val removed = synchronized(queue) {
+            val queued = queue.map { it.id }.toSet()
+            appDB.removeWhere { rec ->
+                !activeSessions.containsKey(rec.id) && rec.id !in queued && rec.id !in toDelete
+                        && rec.status != RecordStatus.DOWNLOADING
+                        && rec.status != RecordStatus.ASSEMBLING
+                        && rec.status != RecordStatus.READY
+            }
+        }
+        removed.forEach { rec ->
+            try {
+                purgeFiles(rec)
+            } catch (error: Exception) {
+                Logger.error("XDM", "Error while clearing ${rec.id}", error)
+            }
+        }
+        return removed.size
+    }
+
+    /**
+     * Deletes what a download that is not running left behind: its temp data (and a streaming
+     * download's partial output), then `task-<id>.info`, `<id>.state` and its schedule. Finished
+     * downloads have no temp data left, so only their metadata goes.
+     */
+    private fun purgeFiles(rec: DbRecord) {
+        val id = rec.id
+        if (rec.status != RecordStatus.FINISHED) {
+            getTempFileFolder(id, configDir).onSuccess {
+                val (tempFolder, tempFile) = it
+                if (rec.downloadType == DownloadType.Http) {
+                    val file = File(tempFolder, tempFile)
+                    Logger.info("XDM", "Delete file $file ${file.delete()}")
+                } else {
+                    FileUtils.deleteFolder(tempFolder)
+                }
+            }.onFailure { Logger.info("XDM", "No temp data to delete for $id") }
+            // Partial muxed output of a streaming download lives in the destination folder.
+            // Resolve it before the task info is removed.
+            listOf(".mp4", ".mkv").forEach { ext ->
+                streamingOutputPath(id, rec.downloadType, ext)?.let { File(it).delete() }
+            }
+        }
+        deleteMetadata(id)
+    }
+
+    /** Removes the per-download files in the config dir and any schedule entry for [id]. */
+    private fun deleteMetadata(id: Long) {
+        taskInfoDB.deleteRecord(id)
+        listOf("$id.state", "$id.state.bak1", "$id.state.bak2").forEach { File(configDir, it).delete() }
+        HlsKeyStore.delete(id, configDir)
+        if (AppContext.hasScheduler && AppContext.scheduler.contains(id)) {
+            AppContext.scheduler.removeEntry(id)
         }
     }
 
@@ -650,10 +703,13 @@ class DownloadManager(
 
     private fun deleteAfterStopped(id: Long, task: DownloaderTask) {
         try {
+            // deleteTemp resolves a streaming download's output path from its task info, so it
+            // must run before the metadata is removed.
             task.deleteTemp()
             deleteRecord(id)
+            deleteMetadata(id)
         } catch (error: Exception) {
-            Logger.error("XDM", "Error while resume", error)
+            Logger.error("XDM", "Error while delete", error)
         }
     }
 

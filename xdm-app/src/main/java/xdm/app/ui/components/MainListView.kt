@@ -262,7 +262,7 @@ class MainListView {
     fun clear() {
         val window = SwingUtilities.windowForComponent(cardPanel) as? JFrame
         if (MessageBox.confirm(window, text("TOOL_CLEAR"), text("MSG_CLEAR_CONFIRM"))) {
-            AppContext.db.clear()
+            AppContext.downloader.clearInactive()
             sorter.modelStructureChanged()
             model.listChanged()
             updateCard()

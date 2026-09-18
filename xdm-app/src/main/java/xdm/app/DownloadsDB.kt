@@ -1,13 +1,10 @@
 package xdm.app
 
 import xdm.core.downloaders.DownloadType
-import xdm.core.downloaders.TaskInfoDB
 import xdm.core.util.AtomicIO
-import xdm.core.util.FileUtils
 import xdm.core.util.Logger
 import java.io.DataInputStream
 import java.io.DataOutputStream
-import java.io.File
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 
@@ -51,9 +48,11 @@ class AppDB(private val configDir: String) {
     fun getByIndex(index: Int): DbRecord = records[index]
 
     val size: Int
-        get() = records.size
+        @Synchronized get() = records.size
 
-    fun getById(id: Long): DbRecord? = indexMap[id]?.let { records[it] }
+    /** Synchronized with [removeItem]/[removeWhere], which rebuild [indexMap] after shifting rows. */
+    @Synchronized
+    fun getById(id: Long): DbRecord? = indexMap[id]?.let { records.getOrNull(it) }?.takeIf { it.id == id }
 
     @Synchronized
     fun addActive(rec: DbRecord) {
@@ -73,7 +72,8 @@ class AppDB(private val configDir: String) {
                     savePaused = true
                 } else if (rec.status == RecordStatus.FINISHED) {
                     saveFinished = true
-                } else if (rec.status == RecordStatus.READY || rec.status == RecordStatus.DOWNLOADING) {
+                } else {
+                    // READY, DOWNLOADING, ASSEMBLING and ERROR are all kept in the active list.
                     saveActive = true
                 }
                 Logger.info("Item removed: $rec")
@@ -81,6 +81,7 @@ class AppDB(private val configDir: String) {
                 break
             }
         }
+        indexMap.remove(id)
         for ((i, r) in records.withIndex()) {
             indexMap[r.id] = i
         }
@@ -212,18 +213,24 @@ class AppDB(private val configDir: String) {
         )
     }
 
+    /**
+     * Removes every record matching [predicate], re-indexes and saves all three lists. Returns the
+     * removed records. Only removes rows; the caller deletes their files.
+     */
     @Synchronized
-    fun clear() {
-        for (rec in records) {
-            AppContext.taskInfoDB.deleteRecord(rec.id)
-            File(configDir, "${rec.id}.state")
-            File(configDir, "${rec.id}.state.bak2")
-            FileUtils.deleteFolder(File(configDir, "${rec.id}").toPath())
+    fun removeWhere(predicate: (DbRecord) -> Boolean): List<DbRecord> {
+        val removed = synchronized(records) {
+            val matching = records.filter(predicate)
+            records.removeAll(matching)
+            matching
         }
-        records.clear()
         indexMap.clear()
+        for ((i, r) in records.withIndex()) {
+            indexMap[r.id] = i
+        }
         savePausedRecords()
         saveActiveRecords()
         saveFinishedRecords()
+        return removed
     }
 }

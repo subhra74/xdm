@@ -23,6 +23,9 @@ object AppContext {
     lateinit var configDir: String
     lateinit var scheduler: DownloadScheduler
 
+    val hasScheduler: Boolean
+        get() = ::scheduler.isInitialized
+
     var refreshLinkInProgress = AtomicBoolean(false)
     var refreshLinkId = AtomicLong(-1)
 
