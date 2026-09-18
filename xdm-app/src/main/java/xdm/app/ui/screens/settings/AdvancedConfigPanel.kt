@@ -1,11 +1,13 @@
 package xdm.app.ui.screens.settings
 
+import xdm.app.AppConfig
 import xdm.app.AppContext
 import xdm.app.I8N
 import xdm.app.utils.AutoStart
 import xdm.app.utils.chooseFile
 import xdm.app.utils.createSVGIcon
 import xdm.app.utils.fixHeight
+import xdm.core.CoreConfig
 import java.awt.Dimension
 import java.awt.Insets
 import javax.swing.Box
@@ -16,7 +18,9 @@ import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JOptionPane
 import javax.swing.JPanel
+import javax.swing.JSpinner
 import javax.swing.JTextField
+import javax.swing.SpinnerNumberModel
 
 class AdvancedConfigPanel : SettingsPanel() {
     private val key = "JTextField.placeholderText"
@@ -40,6 +44,18 @@ class AdvancedConfigPanel : SettingsPanel() {
     private val chkRunOnStartup = JCheckBox(I8N.text("MSG_AUTOSTART"))
     private val chkRunCmd = JCheckBox(I8N.text("MSG_RUN_CMD"))
     private val chkVirusScan = JCheckBox(I8N.text("MSG_SCAN"))
+    private val spReadTimeout = JSpinner(
+        SpinnerNumberModel(
+            CoreConfig.DEFAULT_READ_TIMEOUT_SECONDS, AppConfig.MIN_READ_TIMEOUT_SECONDS, AppConfig.MAX_READ_TIMEOUT_SECONDS, 5
+        )
+    ).apply {
+        fixHeight(this)
+        preferredSize = Dimension(120, preferredSize.height)
+        maximumSize = Dimension(120, preferredSize.height)
+    }
+    private val lblReadTimeoutHint = JLabel(I8N.text("MSG_READ_TIMEOUT_HINT")).apply {
+        foreground = settingsMutedColor()
+    }
     private val chkIgnoreCertErrors = JCheckBox(I8N.text("MSG_IGNORE_CERT_ERRORS"))
     private val lblIgnoreCertErrorsHint = JLabel(I8N.text("MSG_IGNORE_CERT_ERRORS_HINT")).apply {
         foreground = settingsMutedColor()
@@ -91,6 +107,16 @@ class AdvancedConfigPanel : SettingsPanel() {
                 settingsLeftAligned(chkVirusScan),
                 scannerRow,
                 fullWidth(txtArgs),
+            )
+        )
+        add(Box.createRigidArea(Dimension(0, 12)))
+
+        // Network
+        add(
+            settingsCard(
+                "arrow-up-down-fill.svg", I8N.text("SETTINGS_SEC_ADV_NETWORK"),
+                settingsRow(JLabel(I8N.text("MSG_READ_TIMEOUT")), spReadTimeout),
+                settingsLeftAligned(lblReadTimeoutHint),
             )
         )
         add(Box.createRigidArea(Dimension(0, 12)))
@@ -157,6 +183,7 @@ class AdvancedConfigPanel : SettingsPanel() {
         txtVirusScan.text = config.virusScannerPath
         txtArgs.text = config.virusScannerArgs
         chkIgnoreCertErrors.isSelected = config.ignoreCertErrors
+        spReadTimeout.value = config.readTimeoutSeconds
         updateEnabledState()
     }
 
@@ -174,6 +201,7 @@ class AdvancedConfigPanel : SettingsPanel() {
         config.virusScannerPath = txtVirusScan.text
         config.virusScannerArgs = txtArgs.text
         config.ignoreCertErrors = chkIgnoreCertErrors.isSelected
+        config.readTimeoutSeconds = spReadTimeout.value as Int
     }
 
     override fun getInsets(): Insets {

@@ -71,7 +71,18 @@ class HttpChunkRetriever(
                             ) else null
                         )
                         if (isCancelled()) return
-                        copyDataOrRetry(res, maxByteRange)
+                        if (!copyDataOrRetry(res, maxByteRange)) {
+                            false
+                        } else if ((context.chunks[id]?.downloaded?.get() ?: 0L) > data.downloaded) {
+                            // The connection delivered data before failing (e.g. a read timeout on a
+                            // slow link): keep going without using up retries.
+                            retryCount = 0
+                            true
+                        } else {
+                            // Nothing received on this attempt, e.g. a server that stalls: count it.
+                            retryCount += 1
+                            onRetry(retryCount)
+                        }
                     }
                 }
 

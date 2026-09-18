@@ -392,6 +392,7 @@ abstract class StreamingDownloaderTask(
         tempDir = context.tempFolder,
         progressCallback = this::onChunkProgress,
         fileNameCallback = this::getChunkTempFileName,
+        maxRetries = config.maxRetries,
     ) { p ->
         onChunkComplete(p, latch)
     }

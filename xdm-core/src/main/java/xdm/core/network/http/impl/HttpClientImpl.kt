@@ -1,6 +1,7 @@
 package xdm.core.network.http.impl
 
 import okhttp3.*
+import xdm.core.CoreConfig
 import xdm.core.network.http.*
 import xdm.core.util.Logger
 import java.io.IOException
@@ -8,6 +9,7 @@ import java.net.Proxy
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
 import java.time.LocalDateTime
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
@@ -24,7 +26,16 @@ class HttpClientImpl(
     poolSize: Int,
     proxy: Proxy? = null,
     ignoreCertErrors: Boolean = false,
+    /** How long a read may wait for data before failing with a timeout, so a stalled server is retried. */
+    readTimeoutSeconds: Int = CoreConfig.DEFAULT_READ_TIMEOUT_SECONDS,
 ) : PoolingHttpClient {
+    /**
+     * Calls whose response is still open. OkHttp's dispatcher stops tracking a synchronous call once
+     * `execute()` returns the headers, so `cancelAll()` cannot abort a thread blocked reading the body;
+     * [close] cancels these instead.
+     */
+    private val openCalls: MutableSet<Call> = ConcurrentHashMap.newKeySet()
+
     private val dispatcher: Dispatcher = Dispatcher().apply {
         maxRequests = poolSize
         maxRequestsPerHost = poolSize
@@ -35,7 +46,7 @@ class HttpClientImpl(
         OkHttpClient.Builder().dispatcher(dispatcher).connectionPool(connectionPool)
             .proxy(proxy)
             .protocols(listOf(Protocol.HTTP_1_1))
-            .connectTimeout(30, TimeUnit.SECONDS).readTimeout(0, TimeUnit.SECONDS).retryOnConnectionFailure(false)
+            .connectTimeout(30, TimeUnit.SECONDS).readTimeout(readTimeoutSeconds.toLong(), TimeUnit.SECONDS).retryOnConnectionFailure(false)
             .apply { if (ignoreCertErrors) trustAllCertificates(this) }
             .build()
 
@@ -54,6 +65,8 @@ class HttpClientImpl(
     }
 
     override fun close() {
+        openCalls.forEach { it.cancel() }
+        openCalls.clear()
         client.dispatcher.cancelAll()
         dispatcher.executorService.shutdownNow()
         connectionPool.evictAll()
@@ -96,9 +109,17 @@ class HttpClientImpl(
 
         return kotlin.runCatching {
             val request = requestBuilder.build()
-            val response = client.newCall(request).execute()
+            val call = client.newCall(request)
+            openCalls.add(call)
+            val response = try {
+                call.execute()
+            } catch (e: Throwable) {
+                openCalls.remove(call)
+                throw e
+            }
             val body = response.body ?: run {
                 response.close()
+                openCalls.remove(call)
                 throw IOException("Body missing")
             }
             val inputStreamBody = body.byteStream()
@@ -131,6 +152,7 @@ class HttpClientImpl(
                         response.close()
                     } catch (ex: Exception) {// Swallow error
                     }
+                    openCalls.remove(call)
                 },
                 headerCallback = {
                     response.header(

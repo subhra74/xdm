@@ -23,16 +23,20 @@ class StreamingChunkRetriever(
     private val tempDir: String,
     private val progressCallback: (StreamingChunk, Long) -> Unit,
     private val fileNameCallback: (StreamingChunk) -> String,
+    /** Attempts in a row that receive no data (stalls, timeouts, 429s) before the segment fails. */
+    private val maxRetries: Int = Int.MAX_VALUE,
     private val completionCallback: (StreamingChunk) -> Unit,
 ) : Runnable {
     private var fileHandle = AtomicReference<RandomAccessFile?>()
 
     override fun run() {
         val buffer = ByteArray(256 * 1024)
+        var attemptsWithoutData = 0
         try {
             while (!stopFlag.get()) {
                 var retryAfter = 3L
                 if (piece.status.get() == ChunkStatus.Finished) return
+                val downloadedBefore = piece.downloaded.get()
                 // byteRange is (offset, length) per the HLS/DASH parsers; an HTTP Range needs the
                 // absolute inclusive end (offset + length - 1), not the raw length. Passing the
                 // length straight through requested "bytes=offset-length", corrupting every
@@ -115,6 +119,14 @@ class StreamingChunkRetriever(
                     if (isTlsVerificationError(ex)) {
                         piece.status.set(ChunkStatus.Failed)
                         piece.error.set(DownloadError.TlsError)
+                        return
+                    }
+                    if (piece.downloaded.get() > downloadedBefore) {
+                        attemptsWithoutData = 0 // made progress before failing, e.g. a slow link timing out
+                    } else if (++attemptsWithoutData > maxRetries) {
+                        Logger.error("XDM", "Segment ${piece.sequence} failed: no data after $attemptsWithoutData attempts")
+                        piece.status.set(ChunkStatus.Failed)
+                        piece.error.set(DownloadError.NetworkError)
                         return
                     }
                     Thread.sleep(retryAfter * 1000)

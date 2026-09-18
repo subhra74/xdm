@@ -59,12 +59,16 @@ interface IAppConfig : CoreConfig {
     var virusScannerArgs: String
     /** When true, TLS certificate and hostname checks are skipped for downloads (insecure). */
     var ignoreCertErrors: Boolean
+    /** Seconds without data before a connection's read times out and is retried (Advanced settings). */
+    override var readTimeoutSeconds: Int
     fun applyAuthConfig()
 }
 
 class AppConfig(private val configDir: String) : IAppConfig {
     companion object {
         const val CONFIG_FILE = "xdm-app.config"
+        const val MIN_READ_TIMEOUT_SECONDS = 5
+        const val MAX_READ_TIMEOUT_SECONDS = 600
     }
 
     override var autoSelectFolder = false
@@ -116,6 +120,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var virusScannerPath: String = ""
     override var virusScannerArgs: String = ""
     override var ignoreCertErrors: Boolean = false
+    override var readTimeoutSeconds: Int = CoreConfig.DEFAULT_READ_TIMEOUT_SECONDS
 
     override fun applyAuthConfig() {
         Authenticator.setDefault(DefaultAuthenticator())
@@ -172,6 +177,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
         out.writeUTF(theme)
         writeStringList(out, savedFolders)
         out.writeBoolean(ignoreCertErrors)
+        out.writeInt(readTimeoutSeconds)
     }
 
     private fun load(input: DataInputStream) {
@@ -229,6 +235,12 @@ class AppConfig(private val configDir: String) : IAppConfig {
             ignoreCertErrors = input.readBoolean()
         } catch (e: java.io.EOFException) {
             // config written before ignoreCertErrors existed; keep the secure default
+            return
+        }
+        try {
+            readTimeoutSeconds = input.readInt().coerceIn(MIN_READ_TIMEOUT_SECONDS, MAX_READ_TIMEOUT_SECONDS)
+        } catch (e: java.io.EOFException) {
+            // config written before readTimeoutSeconds existed; keep the default
         }
     }
 

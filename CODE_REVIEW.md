@@ -30,7 +30,7 @@ Severity legend:
 | B8 | P1 | Integration | ~~Malformed HTTP response headers from the local server~~ **Fixed:** well-formed HTTP/1.1 responses; case-insensitive request headers; correct keep-alive |
 | B9 | P1 | Persistence | ~~`AtomicIO` reads a half-written `.bak1` in preference to the good file~~ **Fixed:** completion footer; newest complete copy is read; failed saves are reported |
 | B10 | P2 | Resources | ~~Thread pools and OkHttp clients leak for every streaming download and every paused HTTP download~~ **Fixed:** pools shut down and clients closed on success, failure and pause; paused HLS/DASH thread no longer hangs; background threads are daemon |
-| B11 | P2 | HTTP engine | `readTimeout = 0`, so a stalled connection blocks forever and Pause cannot unblock it |
+| B11 | P2 | HTTP engine | ~~`readTimeout = 0`, so a stalled connection blocks forever and Pause cannot unblock it~~ **Fixed:** configurable read timeout (Advanced settings); stall retries are limited; Pause cancels open calls |
 | B12 | P2 | Cleanup | Deleting a download never removes `task-<id>.info` / `<id>.state`; `AppDB.clear()` is also broken |
 | B13 | P2 | UI | "Clear" wipes the DB while downloads are still running |
 | B14 | P2 | App lifecycle | Exit does not pause downloads or save state; a failed server bind leaves a headless JVM running |
@@ -776,8 +776,9 @@ and pass with the fix. Full test suite passes.
    `onChunkFinished`; never on pause, when all chunks failed, or in `finishDownload()` (resume with
    every chunk done). Streaming tasks never closed theirs. Requests are synchronous and idle
    connections expire after 5 s, so the cost was mostly idle sockets and objects, but closing on
-   pause also matters for B11: `dispatcher.cancelAll()` cancels running synchronous calls, which
-   unblocks chunk threads stuck in a read.
+   pause also matters for B11. (Correction found while fixing B11: `dispatcher.cancelAll()` only
+   cancels calls still inside `execute()`, so it does **not** unblock a thread already reading a
+   response body. B11 made `close()` cancel every open call.)
 4. **The periodic `System.gc()` thread was non-daemon** (normal exit uses `exitProcess`, so this only
    mattered when the app should end some other way, e.g. B14's failed server bind).
 
@@ -819,16 +820,58 @@ and a task's `close()` must then cancel only its own calls and never shut down t
 The tests count `close()` calls with a `CountingHttpClient` wrapper around the real client. The
 daemon flag on the GC thread has no test.
 
-### B11 (P2): Stalled connections hang, and Pause does not abort sockets
-**Where:** `HttpClientImpl.kt:43`; `HttpDownloader.stop()`
+### B11 (P2): Stalled connections hang, and Pause does not abort sockets (FIXED)
+**Where:** `HttpClientImpl.kt`, `CoreConfig.kt`, `HttpChunkRetriever.kt`, `StreamingChunkRetriever.kt`,
+`StreamingDownloaderTask.kt`, `AppConfig.kt`, `AdvancedConfigPanel.kt`, `DownloadManager.kt`
 
-With `readTimeout(0)`, a server that stops sending data blocks `inputStream.read` forever. The
-retry logic never runs. `stop()` closes the *file handles* but not the HTTP responses, so the chunk
-threads stay blocked until the kernel times out the TCP connection.
+**Status:** Fixed in the working tree. Covered by `TestHttpStalls` and `TestStreamingStalls`
+(xdm-core); all five tests failed on the old code and pass with the fix. `AppConfigReadTimeoutTest`
+(xdm-app) covers the new setting. Full test suite passes.
 
-**Fix:** Set `readTimeout(60, SECONDS)` (make it configurable) so reads time out and go through the
-existing Retry path. Track the live `HttpResponse` (or OkHttp `Call`) per chunk and `close()` or
-`cancel()` it in `stop()`.
+#### The problem
+- `HttpClientImpl` used `readTimeout(0)` (wait forever). A server that stops sending data blocked
+  `inputStream.read()` forever in HTTP chunks, HLS/DASH segments, and playlist/key downloads; the
+  retry logic never ran.
+- **Pause did not release a stalled read, even after B10.** `HttpClientImpl.close()` called
+  `dispatcher.cancelAll()`, but OkHttp stops tracking a synchronous call once `execute()` returns the
+  response headers, so a thread blocked reading the **body** was not cancelled.
+- With a timeout alone, a dead server would have been retried forever:
+  - HTTP: a failed body read returns `CopyResult.Retry`, but `retryCount` only counted connect failures.
+  - HLS/DASH: `StreamingChunkRetriever` retried every `IOException` (including its own 429 handling)
+    with no limit and ignored `maxRetries`.
+
+#### The fix
+- **Read timeout:** `HttpClientImpl(..., readTimeoutSeconds)` (default 60). `CoreConfig` gets
+  `readTimeoutSeconds` with a default of `CoreConfig.DEFAULT_READ_TIMEOUT_SECONDS` (60), and
+  `DownloadManager.newHttpClient()` passes the configured value. A stalled read throws a timeout and
+  goes through the normal retry path.
+- **Setting:** Advanced settings → Network → "Read timeout (seconds)" (spinner, 5–600, step 5, with a
+  hint). Saved as a trailing field in the config (older configs keep 60; out-of-range values are
+  clamped on load). New strings `SETTINGS_SEC_ADV_NETWORK`, `MSG_READ_TIMEOUT`, `MSG_READ_TIMEOUT_HINT`.
+  New clients pick it up; downloads already running keep their client's timeout until resumed.
+- **Pause cancels open calls:** `HttpClientImpl` tracks every call whose response is still open and
+  `close()` cancels them, which closes the socket and makes the blocked read fail at once. Both engines
+  already call `close()` on Pause (B10).
+- **Limited stall retries, without penalising a slow but working link:**
+  - HTTP: after a copy that ends in `Retry`, if the chunk received data during the attempt
+    `retryCount` resets to 0; otherwise it is incremented and `onRetry` fails the chunk with
+    `NetworkError` beyond `maxRetries`.
+  - HLS/DASH: `StreamingChunkRetriever` takes `maxRetries` (from `CoreConfig`) and counts attempts
+    that received no data (timeouts, connection errors, 429s); beyond the limit the segment fails with
+    `NetworkError`, so the download fails instead of hanging.
+
+#### Tests
+| Test | Old code | Fixed |
+|---|---|---|
+| `TestHttpStalls.stalledConnection_timesOutAndResumes` (first connection stalls after 100 KB) | Hangs | Times out, resumes with a range request, file matches |
+| `TestHttpStalls.serverThatNeverSendsData_failsAfterMaxRetries` (`maxRetries = 1`) | Hangs | `NetworkError` |
+| `TestHttpStalls.pauseDuringStalledRead_releasesChunkThread` (600 s timeout, so only Pause can release it) | Chunk thread stays blocked in `SocketInputStream.read` | Released at once |
+| `TestStreamingStalls.stalledSegment_timesOutAndIsRetried` (ffmpeg HLS) | Hangs | Retry succeeds, output passes ffprobe |
+| `TestStreamingStalls.segmentThatNeverArrives_failsAfterMaxRetries` | Hangs | `NetworkError` |
+| `AppConfigReadTimeoutTest` (3 tests: save/load, older config keeps default, clamping) | — (new setting) | Pass |
+
+The tests create the client with a 1 s timeout through reflection (`httpClientWithReadTimeout`), so
+they compile against the old code, where the client had no timeout.
 
 ### B12 (P2): Leftover files on delete; `AppDB.clear()` is broken
 **Where:** `DownloadManager.kt:382-429`; `DownloadsDB.kt:216-228`
@@ -975,10 +1018,10 @@ auto-retry `NetworkError` with backoff.
   incomplete files never reach the reader (completion footer), so this remains only for old
   footer-less config files and for damage inside a complete file. Load into a
   temporary object and apply it only on success. `SortKey.entries[input.readInt()]` can go out of range.
-- `HttpChunkRetriever`: `CopyResult.Retry` never increments `retryCount`, so a connection that
-  keeps dropping mid-stream retries forever at a fixed 5 s with no backoff. `Thread.sleep` does not
-  check for cancel. `StreamingChunkRetriever` retries IOExceptions with no limit at all and ignores
-  `config.maxRetries`. Segment failures are never retried at task level (that code is commented out
+- `HttpChunkRetriever` / `StreamingChunkRetriever`: ~~retries without limit~~ fixed in B11 (attempts
+  that receive no data are limited by `maxRetries`; the HTTP retry wait honours Pause since B2).
+  Still open: a fixed 5 s (HTTP) / 3 s (HLS/DASH) delay with no backoff, and the streaming retry wait
+  is a plain `Thread.sleep`. Segment failures are never retried at task level (that code is commented out
   in `onChunkComplete`), so one bad segment fails the whole HLS/DASH download after all the others finish.
 - `StreamingChunkRetriever`: on a resumed segment, `piece.length.set(contentLength)` stores the
   *remaining* length instead of the total, so progress is wrong after a resume.
@@ -1046,7 +1089,7 @@ auto-retry `NetworkError` with backoff.
    also done.
 3. **Queue and lifecycle:** B5 (single `pumpQueue()`), B6 and B7 are done. Then F1 + F2 on top of the
    pump, then B14.
-4. **Resource hygiene:** B10 is done. Then B11, B12, B13, B18.
+4. **Resource hygiene:** B10 and B11 are done. Then B12, B13, B18.
 5. **Polish:** B15–B21, remaining F-items, dead-code removal, CLAUDE.md update.
 6. **Tests to add alongside:** `TaskInfoDB` / `AppDB` / `AtomicIO` round-trip and truncated-file
    recovery; `DownloadManager` queue limits using a fake `DownloaderTask`; integration server header

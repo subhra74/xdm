@@ -644,7 +644,9 @@ class DownloadManager(
     }
 
     private fun newHttpClient() =
-        HttpClientImpl(100, AppContext.config.toProxy(), AppContext.config.ignoreCertErrors)
+        HttpClientImpl(
+            100, AppContext.config.toProxy(), AppContext.config.ignoreCertErrors, AppContext.config.readTimeoutSeconds
+        )
 
     private fun deleteAfterStopped(id: Long, task: DownloaderTask) {
         try {

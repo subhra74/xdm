@@ -17,3 +17,14 @@ class CountingHttpClient(private val delegate: HttpClientImpl = HttpClientImpl(8
     override fun getResponse(url: String, headers: HeaderMap?, cookie: String?, range: Range): Result<HttpResponse> =
         delegate.getResponse(url, headers, cookie, range)
 }
+
+/**
+ * A real client with the given read timeout. Uses the `readTimeoutSeconds` constructor parameter
+ * when it exists; otherwise (code before B11) the client has no read timeout at all.
+ */
+fun httpClientWithReadTimeout(seconds: Int): HttpClientImpl {
+    val ctor = HttpClientImpl::class.java.constructors.firstOrNull {
+        it.parameterCount == 4 && it.parameterTypes[3] == Int::class.javaPrimitiveType
+    }
+    return ctor?.newInstance(8, null, false, seconds) as HttpClientImpl? ?: HttpClientImpl(8)
+}

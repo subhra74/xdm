@@ -13,5 +13,13 @@ interface CoreConfig {
     var proxyPort: Int
     var proxyUser: String
     var proxyPass: String
+
+    /** Seconds a connection may go without receiving data before the read times out and is retried. */
+    val readTimeoutSeconds: Int get() = DEFAULT_READ_TIMEOUT_SECONDS
+
     fun toProxy(): Proxy?
+
+    companion object {
+        const val DEFAULT_READ_TIMEOUT_SECONDS = 60
+    }
 }
