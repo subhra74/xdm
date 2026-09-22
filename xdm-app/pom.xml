@@ -82,6 +82,13 @@
 <!--            <artifactId>jackson-databind</artifactId>-->
 <!--            <version>2.19.0</version>-->
 <!--        </dependency>-->
+        <!-- Conscrypt (BoringSSL) as the JSSE provider; installed at startup by AppMain. The uber jar
+             bundles natives for linux-x86_64/aarch64, osx-x86_64/aarch64 and windows-x86_64. -->
+        <dependency>
+            <groupId>org.conscrypt</groupId>
+            <artifactId>conscrypt-openjdk-uber</artifactId>
+            <version>2.7.0</version>
+        </dependency>
         <dependency>
             <groupId>xdm-core</groupId>
             <artifactId>xdm-core</artifactId>
@@ -124,6 +131,10 @@
                         <manifest>
                             <mainClass>xdm.app.AppMain</mainClass>
                         </manifest>
+                        <manifestEntries>
+                            <!-- Conscrypt loads a JNI library; avoids the JDK 22+ restricted-method warning. -->
+                            <Enable-Native-Access>ALL-UNNAMED</Enable-Native-Access>
+                        </manifestEntries>
                         <compress>false</compress>
                     </archive>
                     <descriptorRefs>

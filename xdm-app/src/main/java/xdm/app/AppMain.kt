@@ -2,10 +2,12 @@ package xdm.app
 
 import com.formdev.flatlaf.themes.FlatMacDarkLaf
 import com.formdev.flatlaf.themes.FlatMacLightLaf
+import org.conscrypt.Conscrypt
 import xdm.core.downloaders.TaskInfoDB
 import xdm.core.util.Logger
 import java.awt.Insets
 import java.io.File
+import java.security.Security
 import javax.swing.UIManager
 
 //java -XX:+UseShenandoahGC -XX:+UnlockExperimentalVMOptions -XX:MinMetaspaceFreeRatio=1 -XX:MaxMetaspaceFreeRatio=2 -XX:ShenandoahGuaranteedGCInterval=30 -XX:ShenandoahUncommitDelay=10 -XX:+ClassUnloading -XX:+ClassUnloadingWithConcurrentMark  -XX:-DisableExplicitGC -XX:TieredStopAtLevel=1 -XX:CICompilerCount=1 -Xms4m -XX:-AlwaysActAsServerClassMachine -jar /Users/subhro/Documents/xdm-app.jar
@@ -36,6 +38,8 @@ object AppMain {
         Logger.info("Use OKHttp..")
         Logger.info("loading...")
         Logger.info(System.getProperty("java.version") + " " + System.getProperty("os.version"))
+
+        installConscrypt()
 
         System.setProperty("apple.awt.application.appearance", "system")
         System.setProperty("apple.laf.useScreenMenuBar", "true")
@@ -75,6 +79,26 @@ object AppMain {
         }.init(args, configDir, tempDir)
 
         AppContext.scheduler.start()
+    }
+
+    /**
+     * Makes Conscrypt the highest-priority security provider so all TLS (OkHttp in xdm-core included)
+     * uses it instead of the JDK's SunJSSE. OkHttp picks its platform once, on first use, and only
+     * selects Conscrypt when it is provider #1, so this must run before any HTTP client is created.
+     * Falls back to the JDK provider if the native library is unavailable on this OS/arch.
+     */
+    private fun installConscrypt() {
+        try {
+            if (Conscrypt.isAvailable()) {
+                Security.insertProviderAt(Conscrypt.newProvider(), 1)
+                val v = Conscrypt.version()
+                Logger.info("XDM", "Using Conscrypt ${v.major()}.${v.minor()}.${v.patch()} for TLS")
+            } else {
+                Logger.info("XDM", "Conscrypt unavailable on this platform, using JDK TLS")
+            }
+        } catch (e: Throwable) {
+            Logger.info("XDM", "Failed to install Conscrypt, using JDK TLS: $e")
+        }
     }
 
     /**
