@@ -5,7 +5,8 @@ import xdm.app.AppContext
 import xdm.app.DbRecord
 import xdm.app.I8N.text
 import xdm.app.RecordStatus
-import xdm.app.utils.createSVGIcon
+import xdm.app.utils.RemixIcon
+import xdm.app.utils.createIcon
 import xdm.app.utils.isMacPopupTrigger
 import xdm.app.utils.setClipBoardText
 import xdm.core.downloaders.DownloadType
@@ -114,7 +115,7 @@ class MainListView {
         }
 
         val emptyLabel = JLabel(text("MSG_NO_DOWNLOAD"), SwingConstants.CENTER).apply {
-            icon = createSVGIcon("sparkling-2-fill.svg", 96, UIManager.getColor("Table.background"))
+            icon = createIcon(RemixIcon.SPARKLING_2_FILL, 96, UIManager.getColor("Table.background"))
             horizontalAlignment = SwingConstants.CENTER
             verticalTextPosition = SwingConstants.BOTTOM
             horizontalTextPosition = SwingConstants.CENTER

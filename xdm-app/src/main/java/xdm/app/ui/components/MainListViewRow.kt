@@ -5,7 +5,8 @@ import xdm.app.AppContext
 import xdm.app.DbRecord
 import xdm.app.I8N.text
 import xdm.app.RecordStatus
-import xdm.app.utils.createSVGIcon
+import xdm.app.utils.RemixIcon
+import xdm.app.utils.createIcon
 import xdm.app.utils.showMenu
 import xdm.core.util.FormatHelper.formatDateShort
 import xdm.core.util.FormatHelper.formatSize
@@ -61,7 +62,7 @@ class MainListViewRow(
 
     private val iconBadge: JPanel
     private val iconMap = FilterCategory.values().associateWith { cat ->
-        createSVGIcon(CategoryStyle.iconName(cat), 16, Color.WHITE)
+        createIcon(CategoryStyle.iconName(cat), 16, Color.WHITE)
     }
 
     init {
@@ -91,9 +92,9 @@ class MainListViewRow(
         p3.background = Color(30, 144, 255)
         iconBadge = p3
 
-        icoUnchecked = createSVGIcon("checkbox-blank-line.svg", 16, Color.WHITE)
-        icoChecked = createSVGIcon("checkbox-line.svg", 16, Color.WHITE)
-//        icoFile = createSVGIcon("file-zip-fill.svg", 16, Color.WHITE)
+        icoUnchecked = createIcon(RemixIcon.CHECKBOX_BLANK_LINE, 16, Color.WHITE)
+        icoChecked = createIcon(RemixIcon.CHECKBOX_LINE, 16, Color.WHITE)
+//        icoFile = createIcon(RemixIcon.FILE_ZIP_FILL, 16, Color.WHITE)
         icon = JLabel(iconMap[FilterCategory.All])
         icon.border = EmptyBorder(7, 7, 7, 7)
         //    icon.addMouseMotionListener(
@@ -215,7 +216,7 @@ class MainListViewRow(
 
         btnPause =
             createButton(
-                "pause-circle-line.svg", Color.GRAY
+                RemixIcon.PAUSE_CIRCLE_LINE, Color.GRAY
             ) {
                 if (editEntry != null) {
                     Logger.info(editEntry!!)
@@ -225,7 +226,7 @@ class MainListViewRow(
 
         btnResume =
             createButton(
-                "play-circle-line.svg", Color.GRAY
+                RemixIcon.PLAY_CIRCLE_LINE, Color.GRAY
             ) {
                 if (editEntry != null) {
                     Logger.info(editEntry)
@@ -235,7 +236,7 @@ class MainListViewRow(
 
         btnDelete =
             createButton(
-                "delete-bin-line.svg", Color.GRAY
+                RemixIcon.DELETE_BIN_LINE, Color.GRAY
             ) {
                 if (editEntry != null) {
                     onDeleteClick?.invoke(editEntry!!)
@@ -244,7 +245,7 @@ class MainListViewRow(
 
         btnMenu =
             createButton(
-                "more-2-fill.svg"
+                RemixIcon.MORE_2_FILL
             ) {
                 if (editEntry != null) {
                     onMenuClick?.invoke(editEntry!!)
@@ -253,7 +254,7 @@ class MainListViewRow(
 
         btnOpenFolder =
             createButton(
-                "folder-6-line.svg", Color.GRAY
+                RemixIcon.FOLDER_6_LINE, Color.GRAY
             ) {
                 if (editEntry != null) {
                     onOpenFolderClick?.invoke(editEntry!!)
@@ -288,11 +289,11 @@ class MainListViewRow(
     }
 
     private fun createButton(
-        iconName: String,
+        iconName: RemixIcon,
         iconColor: Color = Color.GRAY,
         e: ActionListener
     ): JButton {
-        val btn = JButton(createSVGIcon(iconName, 16, iconColor))
+        val btn = JButton(createIcon(iconName, 16, iconColor))
         btn.putClientProperty("JButton.buttonType", "toolBarButton")
         btn.isFocusable = false
         btn.addActionListener(e)

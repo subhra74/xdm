@@ -16,6 +16,7 @@ import javax.swing.JRadioButton
 import javax.swing.JSpinner
 import javax.swing.JTextField
 import javax.swing.SpinnerNumberModel
+import xdm.app.utils.RemixIcon
 
 class NetworkConfigPanel : SettingsPanel() {
     private val cmbSplit = JComboBox<Int>().apply {
@@ -56,7 +57,7 @@ class NetworkConfigPanel : SettingsPanel() {
         // Connection
         add(
             settingsCard(
-                "arrow-up-down-fill.svg", I8N.text("SETTINGS_SEC_CONNECTION"),
+                RemixIcon.ARROW_UP_DOWN_FILL, I8N.text("SETTINGS_SEC_CONNECTION"),
                 settingsRow(JLabel(I8N.text("MSG_MAX_SPLIT")), cmbSplit),
                 settingsRow(JLabel(I8N.text("MSG_MAX_RETRY")), cmbRetry),
             )
@@ -85,7 +86,7 @@ class NetworkConfigPanel : SettingsPanel() {
 
         add(
             settingsCard(
-                "global-fill.svg", I8N.text("SETTINGS_SEC_PROXY"),
+                RemixIcon.GLOBAL_FILL, I8N.text("SETTINGS_SEC_PROXY"),
                 proxyBox,
                 settingsRow(lblProxyHost, txtProxyHost),
                 settingsRow(lblProxyPort, spProxyPort),

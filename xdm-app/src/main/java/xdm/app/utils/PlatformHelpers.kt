@@ -50,7 +50,7 @@ fun createTray(image: Image) {
 private fun createMacTrayImage(tray: SystemTray): Image {
     val baseSize = tray.trayIconSize.height.takeIf { it > 0 } ?: 22
     // Render at 2x for crisp results on Retina displays; auto-size fits it to the bar.
-    val raw = createSVGIcon("xdm-tray-mac.svg", baseSize * 2).image
+    val raw = trayMacImage(baseSize * 2)
     val color = if (isMacDarkMode()) Color.WHITE else Color(0x26, 0x26, 0x26)
     return tintByAlpha(raw, color)
 }

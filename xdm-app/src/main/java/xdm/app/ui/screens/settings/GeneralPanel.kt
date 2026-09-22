@@ -3,7 +3,8 @@ package xdm.app.ui.screens.settings
 import xdm.app.AppContext
 import xdm.app.I8N
 import xdm.app.utils.chooseFile
-import xdm.app.utils.createSVGIcon
+import xdm.app.utils.RemixIcon
+import xdm.app.utils.createIcon
 import xdm.app.utils.fixHeight
 import java.awt.Dimension
 import java.awt.Insets
@@ -73,7 +74,7 @@ class GeneralPanel : SettingsPanel() {
         // Behaviour
         add(
             settingsCard(
-                "settings-4-line.svg", I8N.text("SETTINGS_SEC_BEHAVIOR"),
+                RemixIcon.SETTINGS_4_LINE, I8N.text("SETTINGS_SEC_BEHAVIOR"),
                 settingsLeftAligned(chkShowDwnPrg),
                 settingsLeftAligned(chkShowComplete),
                 settingsLeftAligned(chkStartAutoDwn),
@@ -84,13 +85,13 @@ class GeneralPanel : SettingsPanel() {
         // Downloads
         val speedRow = settingsRow(chkSpeedLimiter, spnSpeedLimiter)
         val maxConnRow = settingsRow(JLabel(I8N.text("MSG_MAX_DOWNLOAD")), cmbMaxConn)
-        add(settingsCard("arrow-up-down-fill.svg", I8N.text("SETTINGS_SEC_DOWNLOADS"), speedRow, maxConnRow))
+        add(settingsCard(RemixIcon.ARROW_UP_DOWN_FILL, I8N.text("SETTINGS_SEC_DOWNLOADS"), speedRow, maxConnRow))
         add(Box.createRigidArea(Dimension(0, 12)))
 
         // Folders
         add(
             settingsCard(
-                "folder-6-line.svg", I8N.text("SETTINGS_SEC_FOLDERS"),
+                RemixIcon.FOLDER_6_LINE, I8N.text("SETTINGS_SEC_FOLDERS"),
                 folderField(I8N.text("LBL_TEMP_FOLDER"), txtTmpDir, btnBrowse1),
                 folderField(I8N.text("SETTINGS_FOLDER"), txtDwnDir, btnBrowse2),
             )
@@ -115,7 +116,7 @@ class GeneralPanel : SettingsPanel() {
         }
         add(
             settingsCard(
-                "sparkling-2-fill.svg", I8N.text("SETTINGS_SEC_APPEARANCE"),
+                RemixIcon.SPARKLING_2_FILL, I8N.text("SETTINGS_SEC_APPEARANCE"),
                 themeRow, langRow, settingsLeftAligned(lblNote)
             )
         )
@@ -141,7 +142,7 @@ class GeneralPanel : SettingsPanel() {
     private fun createBrowseButton(field: JTextField): JButton {
         return JButton(
             I8N.text("SETTINGS_FOLDER_CHANGE"),
-            createSVGIcon("folder-6-line.svg", 16, settingsAccentColor())
+            createIcon(RemixIcon.FOLDER_6_LINE, 16, settingsAccentColor())
         ).apply {
             iconTextGap = 6
             fixHeight(this)

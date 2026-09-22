@@ -4,7 +4,8 @@ package xdm.app.ui.components
 import com.formdev.flatlaf.FlatLaf
 import xdm.app.AppContext
 import xdm.app.I8N.text
-import xdm.app.utils.createSVGIcon
+import xdm.app.utils.RemixIcon
+import xdm.app.utils.createIcon
 import java.awt.Color
 import java.awt.Component
 import javax.swing.*
@@ -24,24 +25,24 @@ class FilterListPanel(
         stateFilterModel.addElement(
             FilterItem.State(
                 FilterState.All, text("CAT_ALL"),
-                makeIcon("arrow-down-circle-fill.svg", Color.gray),
-                makeIcon("arrow-down-circle-fill.svg", Color.gray)
+                makeIcon(RemixIcon.ARROW_DOWN_CIRCLE_FILL, Color.gray),
+                makeIcon(RemixIcon.ARROW_DOWN_CIRCLE_FILL, Color.gray)
             )
         )
         stateFilterModel.addElement(
             FilterItem.State(
                 FilterState.Incomplete,
                 text("CAT_INCOMPLETE"),
-                makeIcon("progress-2-fill.svg", Color.gray),
-                makeIcon("progress-2-fill.svg", Color.gray)
+                makeIcon(RemixIcon.PROGRESS_2_FILL, Color.gray),
+                makeIcon(RemixIcon.PROGRESS_2_FILL, Color.gray)
             )
         )
         stateFilterModel.addElement(
             FilterItem.State(
                 FilterState.Completed,
                 text("CAT_FINISHED"),
-                makeIcon("checkbox-circle-fill.svg", Color.gray),
-                makeIcon("checkbox-circle-fill.svg", Color.gray)
+                makeIcon(RemixIcon.CHECKBOX_CIRCLE_FILL, Color.gray),
+                makeIcon(RemixIcon.CHECKBOX_CIRCLE_FILL, Color.gray)
             )
         )
         stateFilterList.isOpaque = false
@@ -108,8 +109,8 @@ class FilterListPanel(
         }
     }
 
-    private fun makeIcon(icon: String, color: Color): Icon {
-        return createSVGIcon(icon, 20, color)
+    private fun makeIcon(icon: RemixIcon, color: Color): Icon {
+        return createIcon(icon, 20, color)
     }
 
     val component: Component

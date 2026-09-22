@@ -2,7 +2,8 @@ package xdm.app.ui.screens
 
 import xdm.app.AppContext
 import xdm.app.I8N.text
-import xdm.app.utils.createSVGIcon
+import xdm.app.utils.RemixIcon
+import xdm.app.utils.createIcon
 import xdm.app.utils.openFileExternal
 import xdm.app.utils.openFolderExternal
 import xdm.core.util.FormatHelper.formatSize
@@ -116,7 +117,7 @@ class DownloadCompleteWindow : JDialog() {
     }
 
     private fun copyButton(source: JTextField) = JButton(
-        createSVGIcon("file-copy-line.svg", 16, mutedFg)
+        createIcon(RemixIcon.FILE_COPY_LINE, 16, mutedFg)
     ).apply {
         putClientProperty("JButton.buttonType", "toolBarButton")
         putClientProperty("JButton.squareSize", true)
@@ -127,7 +128,7 @@ class DownloadCompleteWindow : JDialog() {
             Toolkit.getDefaultToolkit().systemClipboard
                 .setContents(StringSelection(source.text), null)
             val original = icon
-            icon = createSVGIcon("checkbox-circle-fill.svg", 16, Color(0x2ECC71))
+            icon = createIcon(RemixIcon.CHECKBOX_CIRCLE_FILL, 16, Color(0x2ECC71))
             Timer(1100) { icon = original }.apply { isRepeats = false }.start()
         }
     }
@@ -174,7 +175,7 @@ class DownloadCompleteWindow : JDialog() {
 
         val header = Box.createVerticalBox().apply {
             alignmentX = Component.CENTER_ALIGNMENT
-            add(JLabel(createSVGIcon("checkbox-circle-fill.svg", 44, Color(0x2ECC71))).apply {
+            add(JLabel(createIcon(RemixIcon.CHECKBOX_CIRCLE_FILL, 44, Color(0x2ECC71))).apply {
                 alignmentX = Component.CENTER_ALIGNMENT
             })
             add(Box.createVerticalStrut(10))

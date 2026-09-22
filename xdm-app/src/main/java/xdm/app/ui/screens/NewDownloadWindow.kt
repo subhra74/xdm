@@ -7,7 +7,8 @@ import xdm.app.utils.isAutoCategorySelected
 import xdm.app.utils.populateSaveInFolders
 import xdm.app.utils.rememberFolderChoice
 import xdm.app.utils.selectedBaseFolder
-import xdm.app.utils.createSVGIcon
+import xdm.app.utils.RemixIcon
+import xdm.app.utils.createIcon
 import xdm.app.utils.getClipBoardText
 import xdm.app.utils.sameWidth
 import xdm.app.utils.validateURL
@@ -101,7 +102,7 @@ class NewDownloadWindow : JDialog() {
         txtFileName.columns = 10
 
         lblFileInfo = JLabel().apply {
-            icon = createSVGIcon("file-line.svg", 36, Color.GRAY)
+            icon = createIcon(RemixIcon.FILE_LINE, 36, Color.GRAY)
             verticalTextPosition = SwingConstants.BOTTOM
             horizontalTextPosition = SwingConstants.CENTER
             horizontalAlignment = SwingConstants.CENTER
@@ -142,7 +143,7 @@ class NewDownloadWindow : JDialog() {
         }
         contentPane.add(cmbSaveIn, gbcCmbSaveIn)
 
-        val btnBrowse = JButton(createSVGIcon("folder-fill.svg", 16, Color.GRAY))
+        val btnBrowse = JButton(createIcon(RemixIcon.FOLDER_FILL, 16, Color.GRAY))
         val gbcBtnBrowse = GridBagConstraints().apply {
             insets = Insets(5, 0, 5, 5)
             gridx = 4

@@ -1,8 +1,8 @@
 package xdm.app.ui.screens
 
-import com.formdev.flatlaf.extras.FlatSVGIcon
 import xdm.app.AppContext
 import xdm.app.update.UpdateChecker
+import xdm.app.utils.logoIcon
 import java.awt.*
 import javax.swing.*
 import javax.swing.border.EmptyBorder
@@ -21,8 +21,7 @@ class AboutDialog(owner: Window?) : JDialog(owner) {
         }
 
         val logoIcon = try {
-            val svgIcon = FlatSVGIcon(AppContext::class.java.getResourceAsStream("/icons/xdm-logo.svg"))
-            svgIcon.derive(96, 96)
+            logoIcon(96)
         } catch (e: Exception) {
             null
         }

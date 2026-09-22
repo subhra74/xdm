@@ -145,6 +145,10 @@ filters, progress widgets). `AppInstance` (implements `IAppInstance`) is the fac
 of the app calls to show/update windows; it marshals everything onto the Swing EDT
 (`SwingUtilities.invokeLater`). FlatLaf (`FlatMacDarkLaf`) and a system tray are set up in
 `AppMain`/`AppInstance`. UI strings are localized via `I8N` from `resources/lang`.
+Icons are glyphs from the bundled Remix Icon font (`resources/fonts/remixicon.ttf`), drawn by
+`FontIcon` via `createIcon(RemixIcon.X, size, color)` (`utils/RemixIcon.kt`); to add one, add its
+codepoint from the same release's `remixicon.css` to the `RemixIcon` enum. The logo and macOS tray
+icon are PNGs under `resources/images/` (`logoImage`/`logoIcon`/`trayMacImage` in `UiHelper.kt`).
 
 ## Conventions
 - Reach shared services through `AppContext`, not by passing them around manually.

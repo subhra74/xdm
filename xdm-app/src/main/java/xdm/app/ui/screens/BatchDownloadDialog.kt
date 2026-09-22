@@ -3,7 +3,8 @@ package xdm.app.ui.screens
 import xdm.app.AppContext
 import xdm.app.I8N.text
 import xdm.app.utils.chooseFile
-import xdm.app.utils.createSVGIcon
+import xdm.app.utils.RemixIcon
+import xdm.app.utils.createIcon
 import xdm.app.utils.isAutoCategorySelected
 import xdm.app.utils.populateSaveInFolders
 import xdm.app.utils.rememberFolderChoice
@@ -137,7 +138,7 @@ class BatchDownloadDialog(owner: Window?, urls: List<String>) : JDialog(owner) {
             gridy = 0
         })
 
-        val btnBrowse = JButton(createSVGIcon("folder-fill.svg", 16, Color.GRAY))
+        val btnBrowse = JButton(createIcon(RemixIcon.FOLDER_FILL, 16, Color.GRAY))
         btnBrowse.addActionListener {
             val selected = chooseFile(
                 this,

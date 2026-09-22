@@ -5,7 +5,8 @@ import xdm.app.AppContext
 import xdm.app.I8N
 import xdm.app.utils.AutoStart
 import xdm.app.utils.chooseFile
-import xdm.app.utils.createSVGIcon
+import xdm.app.utils.RemixIcon
+import xdm.app.utils.createIcon
 import xdm.app.utils.fixHeight
 import xdm.core.CoreConfig
 import java.awt.Dimension
@@ -62,7 +63,7 @@ class AdvancedConfigPanel : SettingsPanel() {
     }
     private val btnBrowse = JButton(
         I8N.text("SETTINGS_FOLDER_CHANGE"),
-        createSVGIcon("folder-6-line.svg", 16, settingsAccentColor())
+        createIcon(RemixIcon.FOLDER_6_LINE, 16, settingsAccentColor())
     ).apply {
         iconTextGap = 6
         fixHeight(this)
@@ -76,7 +77,7 @@ class AdvancedConfigPanel : SettingsPanel() {
         // General
         add(
             settingsCard(
-                "settings-4-line.svg", I8N.text("SETTINGS_SEC_ADV_GENERAL"),
+                RemixIcon.SETTINGS_4_LINE, I8N.text("SETTINGS_SEC_ADV_GENERAL"),
                 settingsLeftAligned(chkHalt),
                 settingsLeftAligned(chkNoSleep),
                 settingsLeftAligned(chkRunOnStartup),
@@ -87,7 +88,7 @@ class AdvancedConfigPanel : SettingsPanel() {
         // Custom command
         add(
             settingsCard(
-                "file-text-line.svg", I8N.text("SETTINGS_SEC_COMMAND"),
+                RemixIcon.FILE_TEXT_LINE, I8N.text("SETTINGS_SEC_COMMAND"),
                 settingsLeftAligned(chkRunCmd),
                 fullWidth(txtCmd),
             )
@@ -103,7 +104,7 @@ class AdvancedConfigPanel : SettingsPanel() {
         }
         add(
             settingsCard(
-                "file-shield-line.svg", I8N.text("SETTINGS_SEC_ANTIVIRUS"),
+                RemixIcon.FILE_SHIELD_LINE, I8N.text("SETTINGS_SEC_ANTIVIRUS"),
                 settingsLeftAligned(chkVirusScan),
                 scannerRow,
                 fullWidth(txtArgs),
@@ -114,7 +115,7 @@ class AdvancedConfigPanel : SettingsPanel() {
         // Network
         add(
             settingsCard(
-                "arrow-up-down-fill.svg", I8N.text("SETTINGS_SEC_ADV_NETWORK"),
+                RemixIcon.ARROW_UP_DOWN_FILL, I8N.text("SETTINGS_SEC_ADV_NETWORK"),
                 settingsRow(JLabel(I8N.text("MSG_READ_TIMEOUT")), spReadTimeout),
                 settingsLeftAligned(lblReadTimeoutHint),
             )
@@ -124,7 +125,7 @@ class AdvancedConfigPanel : SettingsPanel() {
         // Security
         add(
             settingsCard(
-                "file-shield-line.svg", I8N.text("SETTINGS_SEC_SECURITY"),
+                RemixIcon.FILE_SHIELD_LINE, I8N.text("SETTINGS_SEC_SECURITY"),
                 settingsLeftAligned(chkIgnoreCertErrors),
                 settingsLeftAligned(lblIgnoreCertErrorsHint),
             )

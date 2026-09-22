@@ -2,6 +2,7 @@ package xdm.app.ui.components
 
 import java.awt.Color
 import javax.swing.UIManager
+import xdm.app.utils.RemixIcon
 
 /**
  * Shared visual palette for file-category icons. Vibrant, mid-luminance hues
@@ -44,13 +45,13 @@ object CategoryStyle {
     }
 
     /** Glyph used for a category. */
-    fun iconName(category: FilterCategory): String = when (category) {
-        FilterCategory.All -> "archive-2-fill.svg"
-        FilterCategory.Docs -> "file-list-2-fill.svg"
-        FilterCategory.Zip -> "file-zip-fill.svg"
-        FilterCategory.Music -> "mv-fill.svg"
-        FilterCategory.Video -> "movie-fill.svg"
-        FilterCategory.Apps -> "microsoft-fill.svg"
+    fun iconName(category: FilterCategory): RemixIcon = when (category) {
+        FilterCategory.All -> RemixIcon.ARCHIVE_2_FILL
+        FilterCategory.Docs -> RemixIcon.FILE_LIST_2_FILL
+        FilterCategory.Zip -> RemixIcon.FILE_ZIP_FILL
+        FilterCategory.Music -> RemixIcon.MV_FILL
+        FilterCategory.Video -> RemixIcon.MOVIE_FILL
+        FilterCategory.Apps -> RemixIcon.MICROSOFT_FILL
     }
 
     /**

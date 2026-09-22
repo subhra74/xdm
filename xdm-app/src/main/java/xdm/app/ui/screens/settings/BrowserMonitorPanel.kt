@@ -2,7 +2,8 @@ package xdm.app.ui.screens.settings
 
 import xdm.app.AppContext
 import xdm.app.I8N
-import xdm.app.utils.createSVGIcon
+import xdm.app.utils.RemixIcon
+import xdm.app.utils.createIcon
 import xdm.app.utils.fixHeight
 import java.awt.Color
 import java.awt.Cursor
@@ -75,12 +76,12 @@ class BrowserMonitorPanel : SettingsPanel() {
         val browsers = JPanel(GridLayout(1, 4, 12, 0)).apply {
             isOpaque = false
             alignmentX = LEFT_ALIGNMENT
-            add(BrowserTile("chrome-fill.svg", "Chrome", Color(0x4285F4)))
-            add(BrowserTile("firefox-fill.svg", "Firefox", Color(0xFF7139)))
-            add(BrowserTile("edge-new-fill.svg", "Edge", Color(0x24B0C4)))
-            add(BrowserTile("global-fill.svg", "Other", settingsAccentColor()))
+            add(BrowserTile(RemixIcon.CHROME_FILL, "Chrome", Color(0x4285F4)))
+            add(BrowserTile(RemixIcon.FIREFOX_FILL, "Firefox", Color(0xFF7139)))
+            add(BrowserTile(RemixIcon.EDGE_NEW_FILL, "Edge", Color(0x24B0C4)))
+            add(BrowserTile(RemixIcon.GLOBAL_FILL, "Other", settingsAccentColor()))
         }
-        add(settingsCard("global-fill.svg", I8N.text("SETTINGS_SEC_BROWSERS"), browsers))
+        add(settingsCard(RemixIcon.GLOBAL_FILL, I8N.text("SETTINGS_SEC_BROWSERS"), browsers))
         add(Box.createRigidArea(Dimension(0, 12)))
 
         // File types
@@ -94,7 +95,7 @@ class BrowserMonitorPanel : SettingsPanel() {
         }
         add(
             settingsCard(
-                "file-list-2-fill.svg", I8N.text("SETTINGS_SEC_FILETYPES"),
+                RemixIcon.FILE_LIST_2_FILL, I8N.text("SETTINGS_SEC_FILETYPES"),
                 caption(I8N.text("DESC_FILETYPES")),
                 textAreaScroll(txtFileExt),
                 settingsLeftAligned(btnExtDef),
@@ -109,7 +110,7 @@ class BrowserMonitorPanel : SettingsPanel() {
         // Site exceptions
         add(
             settingsCard(
-                "file-shield-line.svg", I8N.text("SETTINGS_SEC_EXCEPTIONS"),
+                RemixIcon.FILE_SHIELD_LINE, I8N.text("SETTINGS_SEC_EXCEPTIONS"),
                 caption(I8N.text("DESC_SITEEXCEPTIONS")),
                 textAreaScroll(txtBlockedHosts),
                 settingsLeftAligned(btnHostDef),
@@ -152,7 +153,7 @@ class BrowserMonitorPanel : SettingsPanel() {
     }
 
     /** A rounded browser "tile": brand-tinted icon over a name, with a hover highlight. */
-    private class BrowserTile(iconName: String, label: String, private val accent: Color) : JPanel() {
+    private class BrowserTile(iconName: RemixIcon, label: String, private val accent: Color) : JPanel() {
         private var hovered = false
 
         init {
@@ -161,7 +162,7 @@ class BrowserMonitorPanel : SettingsPanel() {
             border = EmptyBorder(16, 8, 14, 8)
             cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
 
-            add(JLabel(createSVGIcon(iconName, 44, accent)).apply {
+            add(JLabel(createIcon(iconName, 44, accent)).apply {
                 alignmentX = CENTER_ALIGNMENT
                 horizontalAlignment = SwingConstants.CENTER
             })

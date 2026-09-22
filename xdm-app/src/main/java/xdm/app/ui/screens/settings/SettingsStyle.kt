@@ -1,6 +1,7 @@
 package xdm.app.ui.screens.settings
 
-import xdm.app.utils.createSVGIcon
+import xdm.app.utils.RemixIcon
+import xdm.app.utils.createIcon
 import java.awt.Color
 import java.awt.Component
 import java.awt.Dimension
@@ -39,13 +40,13 @@ internal fun settingsTitle(text: String): JLabel = JLabel(text).apply {
 }
 
 /** A rounded card section with an accented header icon + title and a set of stacked rows. */
-internal fun settingsCard(iconName: String, title: String, vararg rows: JComponent): JComponent {
+internal fun settingsCard(iconName: RemixIcon, title: String, vararg rows: JComponent): JComponent {
     val panel = SettingsCard()
     panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
     panel.border = EmptyBorder(14, 16, 16, 16)
     panel.alignmentX = Component.LEFT_ALIGNMENT
 
-    val header = JLabel(title, createSVGIcon(iconName, 18, settingsAccentColor()), SwingConstants.LEFT).apply {
+    val header = JLabel(title, createIcon(iconName, 18, settingsAccentColor()), SwingConstants.LEFT).apply {
         font = font.deriveFont(Font.BOLD, 14.0f)
         iconTextGap = 8
         alignmentX = Component.LEFT_ALIGNMENT

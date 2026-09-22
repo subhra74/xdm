@@ -12,7 +12,7 @@ import xdm.app.ui.screens.PropertiesDialog
 import xdm.app.ui.screens.RefreshLinkWindow
 import xdm.app.ui.screens.ScheduleWindow
 import xdm.app.utils.TextContextMenu
-import xdm.app.utils.createSVGIcon
+import xdm.app.utils.logoImage
 import xdm.app.utils.createTray
 import xdm.app.utils.openWebPage
 import xdm.core.downloaders.DownloadError
@@ -71,7 +71,7 @@ class AppInstance : IAppInstance {
     override fun run(args: Array<String>) {
         runOnUIThread {
             TextContextMenu.install()
-            val image = createSVGIcon("xdm-logo.svg", 256).image
+            val image = logoImage(256)
             appWindow = AppWindow(image)
             createTray(image)
             showAppWindow()

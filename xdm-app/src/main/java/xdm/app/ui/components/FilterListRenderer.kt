@@ -1,7 +1,8 @@
 package xdm.app.ui.components
 
 
-import xdm.app.utils.createSVGIcon
+import xdm.app.utils.RemixIcon
+import xdm.app.utils.createIcon
 import java.awt.Color
 import java.awt.Component
 import javax.swing.JLabel
@@ -22,7 +23,7 @@ class FilterListRenderer : ListCellRenderer<FilterItem> {
         )
     )
     private val label: JLabel = JLabel().apply {
-        icon = createSVGIcon("arrow-up-down-fill.svg", 20, Color.GRAY)
+        icon = createIcon(RemixIcon.ARROW_UP_DOWN_FILL, 20, Color.GRAY)
         iconTextGap = 10
         border = defaultBorder
     }

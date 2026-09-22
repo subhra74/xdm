@@ -4,7 +4,8 @@ import xdm.app.AppContext
 import xdm.app.DbRecord
 import xdm.app.I8N.text
 import xdm.app.RecordStatus
-import xdm.app.utils.createSVGIcon
+import xdm.app.utils.RemixIcon
+import xdm.app.utils.createIcon
 import xdm.app.utils.setClipBoardText
 import xdm.core.downloaders.DownloadType
 import xdm.core.util.FormatHelper
@@ -92,7 +93,7 @@ class PropertiesDialog(owner: Window?, ent: DbRecord) : JDialog(owner) {
                 border = null
                 isOpaque = false
             }
-            val copyBtn = JButton(createSVGIcon("file-line.svg", 14, Color.GRAY)).apply {
+            val copyBtn = JButton(createIcon(RemixIcon.FILE_LINE, 14, Color.GRAY)).apply {
                 toolTipText = text("CTX_COPY")
                 margin = Insets(2, 4, 2, 4)
                 addActionListener { setClipBoardText(value) }
