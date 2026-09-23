@@ -19,10 +19,8 @@ XDM seamlessly integrates with Google Chrome, Mozilla Firefox Quantum, Opera, Vi
 
 ## Screenshots
 
-| ![xdm_1][01] | ![xdm_5][05] | ![xdm_3][03] |
-| --- | --- | --- |
-| ![xdm_7][07] | ![xdm_6][06] | ![xdm_9][09] |
-| ![xdm_4][04] | ![xdm_2][02] |  |
+| ![xdm_1][01] | ![xdm_5][02] | ![xdm_3][03] |
+
 
 
 ## Features
