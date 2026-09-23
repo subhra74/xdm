@@ -12,10 +12,6 @@
 
 ### [XDM Homepage](https://xtremedownloadmanager.com/ "XDM Homepage") ###
 
-[New Experimental Beta version is out](https://github.com/subhra74/xdm-experimental-binaries/tags)
-
-[News about new version](https://github.com/subhra74/xdm/discussions/768)
-
 **X**treme **D**ownload **M**anager (XDM) is a powerful tool to increase download speeds up to 500%, save videos from popular video streaming websites, resume broken/dead downloads, schedule and convert downloads.<br>
 XDM seamlessly integrates with Google Chrome, Mozilla Firefox Quantum, Opera, Vivaldi and other Chroumium and Firefox based browsers, to take over downloads and saving streaming videos from web. XDM has a built in video converter which lets you convert your downloaded videos to different formats so that you can watch them on your mobile or TV (100+ devices are supported)
 
@@ -53,9 +49,9 @@ Steps are mentioned in: https://github.com/subhra74/xdm/wiki/Submitting-translat
 
 
 [//]: #ImageLinks
-[01]: https://i.stack.imgur.com/s7ViA.jpg
-[02]: https://i.stack.imgur.com/90TQO.jpg
-[03]: https://i.stack.imgur.com/V5XF3.jpg
+[01]: <img width="953" height="683" alt="image" src="https://github.com/user-attachments/assets/4bac0ef8-933a-4792-b19f-c98865ed7c56" />
+[02]: <img width="953" height="683" alt="image" src="https://github.com/user-attachments/assets/fc206cdf-a11a-4114-9927-fb0fba5938dd" />
+[03]: <img width="953" height="683" alt="image" src="https://github.com/user-attachments/assets/a28ff7a6-7f9c-455a-8c55-71e27759e980" />
 [04]: https://i.stack.imgur.com/aFyH5.png
 [05]: https://i.stack.imgur.com/lmAr6.png
 [06]: https://i.stack.imgur.com/H4yMj.png
