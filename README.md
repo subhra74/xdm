@@ -19,7 +19,9 @@ XDM seamlessly integrates with Google Chrome, Mozilla Firefox Quantum, Opera, Vi
 
 ## Screenshots
 
-| ![xdm_1][01] | ![xdm_5][02] | ![xdm_3][03] |
+| Main window | New download | Download progress |
+|---|---|---|
+| ![XDM main window with the downloads list][01] | ![New download dialog][02] | ![Download progress window][03] |
 
 
 
@@ -47,9 +49,9 @@ Steps are mentioned in: https://github.com/subhra74/xdm/wiki/Submitting-translat
 
 
 [//]: #ImageLinks
-[01]: <img width="953" height="683" alt="image" src="https://github.com/user-attachments/assets/4bac0ef8-933a-4792-b19f-c98865ed7c56" />
-[02]: <img width="953" height="683" alt="image" src="https://github.com/user-attachments/assets/fc206cdf-a11a-4114-9927-fb0fba5938dd" />
-[03]: <img width="953" height="683" alt="image" src="https://github.com/user-attachments/assets/a28ff7a6-7f9c-455a-8c55-71e27759e980" />
+[01]: screenshots/img1.png
+[02]: screenshots/img2.png
+[03]: screenshots/img3.png
 [04]: https://i.stack.imgur.com/aFyH5.png
 [05]: https://i.stack.imgur.com/lmAr6.png
 [06]: https://i.stack.imgur.com/H4yMj.png
