@@ -40,7 +40,7 @@ object BrowserIntegration {
         "extension://",
         "safari-web-extension://"
     )
-    private val stateChangingPaths = setOf("/download", "/media", "/vid", "/clear", "/tab-update")
+    private val stateChangingPaths = setOf("/download", "/media", "/vid", "/clear", "/tab-update", "/poll")
 
     fun start(onSuccess: Runnable?, onFailure: Runnable?) {
         server = HttpServer(
@@ -49,9 +49,18 @@ object BrowserIntegration {
             { onSuccess?.run() },
             { onFailure?.run() })
         server.start()
+        // Release parked polls on the way out (quit, SIGTERM, exitProcess) so the extension is told
+        // XDM is going away instead of having to infer it from the dropped connection.
+        Runtime.getRuntime().addShutdownHook(Thread {
+            EventChannel.shutdown()
+            server.stop()
+        })
     }
 
     private fun handleRequest(context: RequestContext) {
+        // Every reply but the long poll's is the last one on its connection: the handler thread ends
+        // with the response instead of parking in the keep-alive loop. The poll re-connects each time.
+        context.keepAlive = false
         rejectionStatus(context)?.let { (code, message) ->
             Logger.info(
                 "INTEGRATION",
@@ -62,6 +71,10 @@ object BrowserIntegration {
                 statusMessage = message
                 responseBody = ByteArray(0)
             }.sendResponse()
+            return
+        }
+        if (context.requestPath == "/poll") {
+            onPollMessage(context)
             return
         }
         when (context.requestPath) {
@@ -93,6 +106,35 @@ object BrowserIntegration {
             return Pair(405, "Method Not Allowed")
         }
         return null
+    }
+
+    /**
+     * The long poll. Parks the request until something the extension cares about changes, the wait
+     * times out, or XDM exits; the reply body is the same [ConfigDto] `/sync` returns, so the
+     * extension applies it through one code path.
+     */
+    private fun onPollMessage(context: RequestContext) {
+        val request = context.requestBody?.let { body ->
+            runCatching {
+                synchronized(json) { json.decodeFromString<PollRequest>(body.toString(StandardCharsets.UTF_8)) }
+            }.getOrNull()
+        } ?: PollRequest()
+
+        when (EventChannel.await(request.clientId ?: "default", request.version)) {
+            EventChannel.Outcome.CHANGED -> onSyncMessage(context)
+            EventChannel.Outcome.BYE -> context.apply {
+                statusCode = 200
+                statusMessage = "OK"
+                addResponseHeader("Content-Type", "application/json")
+                responseBody = synchronized(json) { Json.encodeToString(ByeDto()) }.toByteArray(StandardCharsets.UTF_8)
+            }.sendResponse()
+            // Nothing to report (or this poll was replaced / turned away): the extension polls again.
+            else -> context.apply {
+                statusCode = 204
+                statusMessage = "No Content"
+                responseBody = ByteArray(0)
+            }.sendResponse()
+        }
     }
 
     private fun onVideoDownloadMessage(context: RequestContext) {
@@ -147,6 +189,7 @@ object BrowserIntegration {
             requestFileExts = AppContext.config.videoExtensions,
             mediaTypes = listOf("audio/", "video/", "mpeg", "dash"),
             matchingHosts = emptyList(),
+            version = EventChannel.currentVersion,
             videoList = AppContext.videoTracker.videoList.map {
                 VideoItem(
                     id = "${it.id}",
@@ -212,7 +255,20 @@ data class ConfigDto(
     val mediaTypes: List<String>,
     val matchingHosts: List<String>,
     val videoList: List<VideoItem>,
+    /**
+     * State version this snapshot was taken at. A poll reply and a piggybacked `/sync` reply travel
+     * on different connections, so the extension uses this to drop one that arrives out of order.
+     */
+    val version: Long = 0,
 )
+
+/** Body of a `/poll` request: who is asking, and what they have already seen. */
+@Serializable
+data class PollRequest(val clientId: String? = null, val version: Long = 0)
+
+/** Sent to parked polls when XDM is shutting down. */
+@Serializable
+data class ByeDto(val bye: Boolean = true)
 
 @Serializable
 data class VideoItem(val id: String, val text: String, val info: String, val tabId: String? = null)

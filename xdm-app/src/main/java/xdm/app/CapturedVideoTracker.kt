@@ -5,6 +5,7 @@ import xdm.core.downloaders.HlsDownloadTaskInfo
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.util.*
 import xdm.integration.DetectedVideoInfo
+import xdm.integration.EventChannel
 import xdm.integration.StreamingVideoDisplayInfo
 
 interface ICapturedVideoTracker {
@@ -50,6 +51,7 @@ class CapturedVideoTracker : ICapturedVideoTracker {
                 hlsVideoList[item.first.id] = item
             }
         }
+        EventChannel.notifyChanged()
     }
 
     override fun addVideoDash(items: List<Pair<DashDownloadTaskInfo, StreamingVideoDisplayInfo>>) {
@@ -58,6 +60,7 @@ class CapturedVideoTracker : ICapturedVideoTracker {
                 dashVideoList[item.first.id] = item
             }
         }
+        EventChannel.notifyChanged()
     }
 
     override fun addVideoHttp(items: List<Pair<HttpDownloadTaskInfo, StreamingVideoDisplayInfo>>) {
@@ -66,6 +69,7 @@ class CapturedVideoTracker : ICapturedVideoTracker {
                 httpVideoList[item.first.id] = item
             }
         }
+        EventChannel.notifyChanged()
     }
 
     override val videoList: List<DetectedVideoInfo>
@@ -122,6 +126,7 @@ class CapturedVideoTracker : ICapturedVideoTracker {
                 }
             }
         }
+        EventChannel.notifyChanged()
     }
 
     override fun getHttpVideo(videoId: Long): HttpDownloadTaskInfo? {
@@ -151,11 +156,13 @@ class CapturedVideoTracker : ICapturedVideoTracker {
         return null
     }
 
-    @Synchronized
     override fun clear() {
-        hlsVideoList.clear()
-        dashVideoList.clear()
-        httpVideoList.clear()
+        synchronized(this) {
+            hlsVideoList.clear()
+            dashVideoList.clear()
+            httpVideoList.clear()
+        }
+        EventChannel.notifyChanged()
     }
 
     private val hlsVideoList = LinkedHashMap<Long, Pair<HlsDownloadTaskInfo, StreamingVideoDisplayInfo>>()

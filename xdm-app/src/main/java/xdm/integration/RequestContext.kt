@@ -12,8 +12,15 @@ class RequestContext(
     val requestHeaders: Map<String, List<String>>,
     val requestBody: ByteArray?,
     private val socket: Socket,
-    val keepAlive: Boolean
+    keepAlive: Boolean
 ) {
+
+    /**
+     * Whether the socket stays open for another request. Initialised from the request's HTTP
+     * version and `Connection` header, but the handler may force it to `false` to make the response
+     * the last one on this connection (and so end the thread serving it).
+     */
+    var keepAlive: Boolean = keepAlive
 
     var responseBody: ByteArray? = null
 

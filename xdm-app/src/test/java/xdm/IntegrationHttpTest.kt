@@ -130,6 +130,18 @@ class IntegrationHttpTest {
     }
 
     @Test
+    fun response_handlerCanForceCloseOnAPersistentRequest() {
+        // Everything but the long poll ends its connection so the thread serving it ends too, even
+        // though the extension's fetch cannot send `Connection: close` itself.
+        jsonResponse(request("POST /download HTTP/1.1\r\nHost: x\r\nContent-Length: 0\r\n\r\n").apply {
+            assertTrue("HTTP/1.1 request should default to persistent", keepAlive)
+            keepAlive = false
+        }).sendResponse()
+        val lines = readResponse().first
+        assertTrue("expected Connection: close in $lines", "Connection: close" in lines)
+    }
+
+    @Test
     fun parser_keepAliveFollowsHttpVersionDefaults() {
         assertTrue("HTTP/1.1 is persistent by default", request("GET /a HTTP/1.1\r\nHost: x\r\n\r\n").keepAlive)
         assertTrue("Connection value is case-insensitive", request("GET /b HTTP/1.1\r\nConnection: Keep-Alive\r\n\r\n").keepAlive)
