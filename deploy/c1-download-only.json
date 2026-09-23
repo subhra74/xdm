@@ -1,18 +1,43 @@
 [
+  // C1 is allowed only on the per-byte download path, as measured with JFR during a 200 MB
+  // 8-connection HTTPS download (jdk.ExecutionSample). Everything else runs interpreted: the wide
+  // java/lang/invoke, java/util/concurrent, java/nio and java/io matches this file used to carry
+  // were ~1150 of its 1439 compiled methods and never showed up hot. 1439 methods / 2.6 MB of code
+  // cache became 266 / 1.6 MB.
+  //
+  // java/io and java/nio were checked explicitly against a local HTTP server (1 GB, 8 connections,
+  // client-bound at ~170-200 MB/s) and a remote HTTPS server: adding "java/io/*.*" + "java/nio/*.*"
+  // (+218 methods) changed steady-state CPU per MB by less than the run-to-run noise
+  // (13.5 vs 13.3 ms/MB over 6 runs each), so they stay excluded. Measure over several runs if you
+  // revisit this - the first two runs of any variant are 10-20% slower and mislead a short A/B.
   {
     "match": [
-      "okio/*.*",
-      "okhttp3/*.*",
-      "org/conscrypt/*.*",
-      "sun/nio/ch/*.*",
-      "java/net/*.*",
-      "java/io/*.*",
-      "java/nio/*.*",
-      "java/util/concurrent/*.*",
-      "java/lang/invoke/*.*",
-      "java/lang/ThreadLocal*.*",
-      "jdk/internal/misc/*.*",
-      "xdm/core/*.*"
+      // The read -> file write loop and the retry/takeover logic around it.
+      "xdm/core/downloaders/web/http/HttpChunkRetriever.*",
+      "xdm/core/downloaders/web/http/HttpDownloaderTask.*",
+      // Same role on the HLS/DASH side (not covered by the HTTP profile, kept by inspection).
+      "xdm/core/downloaders/web/streaming/downloader/StreamingChunkRetriever.*",
+
+      // okio/okhttp body source chain: every buffer of every chunk passes through these.
+      "okio/RealBufferedSource*.*",
+      "okio/InputStreamSource.*",
+      "okio/AsyncTimeout*.*",
+      "okio/Buffer.*",
+      "okio/Segment*.*",
+      "okhttp3/internal/http1/Http1ExchangeCodec*.*",
+      "okhttp3/internal/connection/Exchange*.*",
+
+      // TLS record processing (the Java side of Conscrypt; the crypto itself is native).
+      "org/conscrypt/ConscryptEngineSocket*.*",
+      "org/conscrypt/ConscryptEngine.*",
+      "org/conscrypt/NativeSsl*.*",
+      "org/conscrypt/NativeCrypto.*",
+
+      // Socket reads and the RandomAccessFile writes underneath the loop.
+      "sun/nio/ch/NioSocketImpl*.*",
+      "java/net/Socket$SocketInputStream.*",
+      "java/io/RandomAccessFile.*",
+      "java/io/FileDescriptor.*"
     ],
     "c1": { "Exclude": false }
   },

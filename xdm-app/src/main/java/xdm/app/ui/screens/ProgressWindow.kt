@@ -21,6 +21,20 @@ import java.awt.event.WindowEvent
 import javax.swing.*
 
 class ProgressWindow(val id: Long) : JFrame() {
+    private companion object {
+        /**
+         * Resolved once: `isTaskbarSupported`/`getTaskbar`/`isSupported` used to run on every progress
+         * update (once a second per download), and showed up in profiles as `CTaskbarPeer.isSupported`.
+         * Null when this platform has no window progress indicator.
+         */
+        val windowProgressTaskbar: Taskbar? by lazy {
+            runCatching {
+                if (!Taskbar.isTaskbarSupported()) return@runCatching null
+                Taskbar.getTaskbar().takeIf { it.isSupported(Taskbar.Feature.PROGRESS_VALUE_WINDOW) }
+            }.getOrNull()
+        }
+    }
+
     private var isError: Boolean = false
     fun showError(error: DownloadError) {
         this.isError = true
@@ -79,16 +93,21 @@ class ProgressWindow(val id: Long) : JFrame() {
         }
         this.prg.value = prg
         segPanel.setValues(segData)
-        if (Taskbar.isTaskbarSupported()) {
-            val taskbar: Taskbar = Taskbar.getTaskbar()
-            if (taskbar.isSupported(Taskbar.Feature.PROGRESS_VALUE_WINDOW)) {
-                taskbar.setWindowProgressValue(this, prg)
-            }
-        }
+        windowProgressTaskbar?.setWindowProgressValue(this, prg)
     }
 
     private val textBuf = StringBuilder(100)
-    private val btnHide = JButton(text("DWN_HIDE")).apply { addActionListener { dispose() } }
+    /**
+     * Closes this window *and* drops it from [xdm.app.AppInstance]'s map, so the per-second progress
+     * updates stop. Plain `dispose()` left the window in that map, and it kept formatting labels and
+     * calling the taskbar for the rest of the download.
+     */
+    private fun hideWindow() {
+        AppContext.app.hideProgressWindow(id)
+        dispose() // no-op if hideProgressWindow already disposed it; needed when it is no longer mapped (error state)
+    }
+
+    private val btnHide = JButton(text("DWN_HIDE")).apply { addActionListener { hideWindow() } }
     private val btnPauseResume = JButton(text("MENU_PAUSE")).apply { addActionListener { pauseDownload() } }
     val prg = CircularProgress().apply {
         value = 0
@@ -208,6 +227,11 @@ class ProgressWindow(val id: Long) : JFrame() {
             object : WindowAdapter() {
                 override fun windowActivated(e: WindowEvent) {
                     btnPauseResume.requestFocusInWindow()
+                }
+
+                /** Closing the window must also stop the updates; see [hideWindow]. */
+                override fun windowClosing(e: WindowEvent) {
+                    hideWindow()
                 }
 
                 override fun windowClosed(e: WindowEvent) {
