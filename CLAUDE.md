@@ -162,3 +162,8 @@ icon are PNGs under `resources/images/` (`logoImage`/`logoIcon`/`trayMacImage` i
   the row index there (`db.indexById`), never an index computed on the calling thread.
 - `AppDB` accessors are synchronized on the `AppDB` instance. `DownloadManager`'s lock order is
   `queue` → `appDB`; never take the `queue` lock while holding `appDB`.
+- **Each download gets its own `HttpClientImpl`** (`DownloadManager.newHttpClient`), with its own
+  OkHttp `Dispatcher` and `ConnectionPool`, torn down by `close()` when the download ends. This is a
+  deliberate design decision: never propose a single shared OkHttp client or a connection pool shared
+  across downloads, however tempting it looks for memory or thread count. Reduce per-client cost
+  instead — e.g. the process-wide `SSLContext` shared by every client in `HttpClientImpl`.

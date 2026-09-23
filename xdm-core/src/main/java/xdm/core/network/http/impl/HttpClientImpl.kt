@@ -7,6 +7,7 @@ import xdm.core.util.Logger
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.Proxy
+import java.security.KeyStore
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
 import java.time.LocalDateTime
@@ -15,6 +16,8 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
+import javax.net.ssl.SSLSocketFactory
+import javax.net.ssl.TrustManagerFactory
 import javax.net.ssl.X509TrustManager
 
 /**
@@ -52,9 +55,24 @@ class HttpClientImpl @JvmOverloads constructor(
             .proxy(proxy)
             .protocols(listOf(Protocol.HTTP_1_1))
             .connectTimeout(30, TimeUnit.SECONDS).readTimeout(readTimeoutSeconds.toLong(), TimeUnit.SECONDS).retryOnConnectionFailure(false)
-            .apply { if (ignoreCertErrors) trustAllCertificates(this) }
+            .apply { if (ignoreCertErrors) trustAllCertificates(this) else sharedTls(this) }
             .apply { if (proxy != null && proxyUser.isNotEmpty()) proxyAuthentication(this, proxy, proxyUser, proxyPassword) }
             .build()
+
+    /**
+     * Reuses one process-wide [SSLContext] instead of letting OkHttp build its own per client.
+     *
+     * A client is created per download, and OkHttp's default is `SSLContext.getInstance("TLS")` per
+     * client. With Conscrypt as the first provider that allocates a fresh native BoringSSL context
+     * and session cache each time; closing the client frees them, but the platform allocator keeps
+     * the blocks, so the process footprint grew by ~0.8 MB per HTTPS download and never shrank.
+     * Sharing the context also shares the TLS session cache, so repeat hosts resume instead of doing
+     * a full handshake.
+     */
+    private fun sharedTls(builder: OkHttpClient.Builder) {
+        val tls = sharedTlsConfig ?: return
+        builder.sslSocketFactory(tls.first, tls.second)
+    }
 
     /**
      * OkHttp does not consult [java.net.Authenticator] for proxies, so answer the proxy's 407
@@ -206,6 +224,30 @@ class HttpClientImpl @JvmOverloads constructor(
                         it
                     )
                 })
+        }
+    }
+
+    private companion object {
+        /**
+         * The socket factory and trust manager shared by every client, built on first use (after
+         * `AppMain` has installed Conscrypt) and null if the platform refuses, in which case each
+         * client falls back to OkHttp's own default.
+         */
+        val sharedTlsConfig: Pair<SSLSocketFactory, X509TrustManager>? by lazy {
+            try {
+                val trustManagerFactory =
+                    TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
+                trustManagerFactory.init(null as KeyStore?)
+                val trustManager = trustManagerFactory.trustManagers
+                    .filterIsInstance<X509TrustManager>().firstOrNull()
+                    ?: return@lazy null
+                val context = SSLContext.getInstance("TLS").apply { init(null, arrayOf<TrustManager>(trustManager), null) }
+                Logger.info("XDM", "Shared TLS context: ${context.provider.name}")
+                context.socketFactory to trustManager
+            } catch (e: Exception) {
+                Logger.error("XDM", "Could not create a shared TLS context, using per-client defaults", e)
+                null
+            }
         }
     }
 }

@@ -53,8 +53,12 @@ class HttpChunkRetriever(
             Logger.info("start: $startOffset, end: $endOffset")
             val shouldRetry = when (val connectResult = connect(startOffset, endOffset)) {
                 is ConnectResult.Connected -> {
-                    if (isCancelled()) return
+                    // The cancel check must be inside use{}: a chunk that gets cancelled (or whose
+                    // entry is gone because the download just finished) between connect() and here
+                    // still owns an open response body, and returning without closing it leaks the
+                    // connection ("A connection to ... was leaked" from OkHttp on the next GC).
                     connectResult.response.use { res ->
+                        if (isCancelled()) return
                         val len = res.contentLength ?: -1L
                         if (len > 0) maxByteRange = data.offset + len
                         Logger.info("XDM", "Chunk connected $id")
