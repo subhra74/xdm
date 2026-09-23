@@ -26,7 +26,7 @@ class FilterListPanel(
             FilterItem.State(
                 FilterState.All, text("CAT_ALL"),
                 makeIcon(RemixIcon.ARROW_DOWN_CIRCLE_FILL, Color.gray),
-                makeIcon(RemixIcon.ARROW_DOWN_CIRCLE_FILL, Color.gray)
+                makeIcon(RemixIcon.ARROW_DOWN_CIRCLE_FILL, FilterListRenderer.emphasize(Color.gray))
             )
         )
         stateFilterModel.addElement(
@@ -34,7 +34,7 @@ class FilterListPanel(
                 FilterState.Incomplete,
                 text("CAT_INCOMPLETE"),
                 makeIcon(RemixIcon.PROGRESS_2_FILL, Color.gray),
-                makeIcon(RemixIcon.PROGRESS_2_FILL, Color.gray)
+                makeIcon(RemixIcon.PROGRESS_2_FILL, FilterListRenderer.emphasize(Color.gray))
             )
         )
         stateFilterModel.addElement(
@@ -42,7 +42,7 @@ class FilterListPanel(
                 FilterState.Completed,
                 text("CAT_FINISHED"),
                 makeIcon(RemixIcon.CHECKBOX_CIRCLE_FILL, Color.gray),
-                makeIcon(RemixIcon.CHECKBOX_CIRCLE_FILL, Color.gray)
+                makeIcon(RemixIcon.CHECKBOX_CIRCLE_FILL, FilterListRenderer.emphasize(Color.gray))
             )
         )
         stateFilterList.isOpaque = false
@@ -52,8 +52,9 @@ class FilterListPanel(
         val catFilterModel = DefaultListModel<FilterItem>()
         for (type in FilterCategory.values()) {
             val icon = makeIcon(CategoryStyle.iconName(type), Color.gray)
+            val selectedIcon = makeIcon(CategoryStyle.iconName(type), FilterListRenderer.emphasize(Color.gray))
             catFilterModel.addElement(
-                FilterItem.Category(type, text(type.text), icon, icon)
+                FilterItem.Category(type, text(type.text), icon, selectedIcon)
             )
         }
 
