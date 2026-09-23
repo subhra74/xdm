@@ -27,13 +27,16 @@ object ManifestUtils {
             stopFlag,
             onError
         )?.let {
-            val tempFile = Paths.get(it);
-            val bytes = Files.readAllBytes(tempFile);
+            val tempFile = Paths.get(it)
             try {
-                Files.delete(tempFile)
-                return bytes
-            } catch (e: Exception) {
-                //Nothing to do
+                return Files.readAllBytes(tempFile)
+            } finally {
+                // The manifest has been read; failing to remove the temp file must not discard it.
+                try {
+                    Files.deleteIfExists(tempFile)
+                } catch (e: Exception) {
+                    Logger.error("XDM", "Could not delete manifest temp file $tempFile", e)
+                }
             }
         }
         return null

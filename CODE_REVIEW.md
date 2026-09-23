@@ -35,10 +35,10 @@ Severity legend:
 | B13 | P2 | UI | ~~"Clear" wipes the DB while downloads are still running~~ **Fixed:** Clear removes only finished, paused and failed downloads; running, assembling and queued ones are kept |
 | B14 | P2 | App lifecycle | Exit does not pause downloads or save state; a failed server bind leaves a headless JVM running |
 | B15 | P2 | Threading | ~~Several UI calls run off the EDT; `queue` and `toDelete` are accessed without synchronization~~ **Fixed:** `IAppInstance` calls marshal to the EDT and resolve rows by id there; `AppDB` accessors synchronized; `queue`/`toDelete` guarded; resumed chunks use `ConcurrentHashMap` |
-| B16 | P2 | HTTP client | `contentType` loses the MIME subtype; `Cookie` values are joined with `;` |
+| B16 | P2 | HTTP client | ~~`contentType` loses the MIME subtype; `Cookie` values are joined with `;`~~ **Fixed:** full `type/subtype`; `"; "` cookie separator; `Last-Modified` is parsed; proxy credentials are sent |
 | B17 | P2 | Privacy | Cookies and auth headers are written to the log file |
 | B18 | P2 | Integration | The local server has no body size limit, no socket timeout, and makes a thread per connection |
-| B19 | P2 | Video | `VideoHelper` leaks manifest temp files, keeps growing its sets, captures a stale proxy, and can NPE |
+| B19 | P2 | Video | ~~`VideoHelper` leaks manifest temp files, keeps growing its sets, captures a stale proxy, and can NPE~~ **Fixed:** temp files deleted after parsing; bounded per-tab caches; pooled threads; no NPE; streaming downloads carry an origin |
 | B20 | P2 | Status | Failures are shown as "Paused"; `RecordStatus.ERROR` is never used |
 | B21 | P3 | Misc | Smaller issues (see list) |
 | F1–F14 | — | Features | Incomplete or stubbed features (see section 2) |
@@ -978,17 +978,60 @@ EDT test.
   queue → appDB); `toDelete` is `ConcurrentHashMap.newKeySet()`.
 - `StateSaver.readChunks` builds a `ConcurrentHashMap`, like a fresh `HttpDownloader`.
 
-### B16 (P2): HTTP client correctness
-**Where:** `HttpClientImpl.kt:86, 101, 108-109`
+### B16 (P2): HTTP client correctness — **Fixed**
+**Where:** `HttpClientImpl.kt`
 
-- `contentType = body.contentType()?.type` gives only `"video"`, not `"video/mp4"`. Filename and
-  extension inference (`getFileName`, `isMp4()` in streaming) receive the wrong value. Use
-  `body.contentType()?.let { "${it.type}/${it.subtype}" }` or the raw `Content-Type` header.
-- Cookies are joined with `";"`; the RFC 6265 separator is `"; "`.
-- `lastModified = LocalDateTime.now()` should parse the `Last-Modified` header. This is also what
-  the unimplemented "use server time" setting needs (F9).
-- Proxy username and password are stored but never passed on. OkHttp does not use
-  `java.net.Authenticator` for proxies, so set `.proxyAuthenticator { _, resp -> ... Credentials.basic(user, pass) }`.
+- ~~`contentType = body.contentType()?.type` gives only `"video"`, not `"video/mp4"`.~~ Fixed: it is
+  now `body.contentType()?.let { "${it.type}/${it.subtype}" }`, falling back to the raw
+  `Content-Type` header when OkHttp cannot parse it. Media-type parameters (`charset=...`) are
+  dropped, so `getFileName` and `isMp4()` see a clean `type/subtype`.
+- ~~Cookies are joined with `";"`.~~ Fixed: the RFC 6265 `"; "` separator.
+- ~~`lastModified = LocalDateTime.now()`.~~ Fixed: `response.headers.getDate("Last-Modified")`
+  (OkHttp accepts every HTTP-date form), converted to a `LocalDateTime` in the system zone, and
+  **null** when the header is absent or unparsable — previously every response claimed "now".
+  Nothing applies it to the output file yet; the "use server time" setting is still F9.
+- ~~Proxy username and password are stored but never passed on.~~ Fixed: `HttpClientImpl` takes
+  `proxyUser`/`proxyPassword` (trailing parameters, `@JvmOverloads`) and, when a proxy is set and the
+  user is non-empty, installs a `proxyAuthenticator` that answers 407 with `Credentials.basic` and
+  retries with a fresh pair if the request already carried `Proxy-Authorization` — the proxy refused
+  the saved credentials. The client cannot show a dialog from xdm-core, so it asks the JVM's default
+  `java.net.Authenticator` (a JDK type, not an app one) with `ProxyAuth.REJECTED_PROMPT` as the
+  prompt; the app's authenticator recognises that marker and prompts the user. Offering the same
+  credentials twice would loop, so that ends the attempt instead, and with no authenticator
+  installed the call returns null and fails exactly as before. Basic only — Digest and NTLM proxies
+  are still unsupported. `DownloadManager.newHttpClient` and `VideoHelper` pass `config.proxyUser`/`proxyPass`;
+  `VideoHelper`'s cache key is now a `ClientKey` data class including the credentials, so editing
+  them in Settings rebuilds the manifest client.
+
+  SOCKS is covered separately, in xdm-app: OkHttp has no hook for it, and the authenticator is
+  global JVM state that opens a Swing dialog, so it does not belong in the core. `DefaultAuthenticator`
+  (the process-wide `java.net.Authenticator` already installed by `applyAuthConfig`) now answers
+  from the config when the challenge is for the configured proxy, instead of prompting for
+  credentials the user already entered in Settings. It matches on host and port, not
+  `RequestorType.PROXY`, because `SocksSocketImpl` asks with requestor type **SERVER**; it reads the
+  config per call, so edits apply without a restart; and any other challenge still prompts as before.
+
+  Because the JDK never reports what the proxy made of the credentials, a wrong password would
+  otherwise fail every download in silence. So a saved user/password pair is checked once, by
+  `SocksProbe`: it runs the RFC 1928 greeting and RFC 1929 username/password sub-negotiation against
+  the proxy and stops before CONNECT. Only an explicit rejection counts — an unreachable proxy, a
+  SOCKS4 or non-SOCKS endpoint, a proxy that needs no authentication or that refuses username/password
+  altogether all fail open, keeping today's behaviour, since no password the user could type would
+  help. On a rejection the user is prompted once per credential set (the JDK asks again for every new
+  socket, so a dialog per chunk would be unusable), the answer is reused for the rest of the run, and
+  "Remember me" writes it back to the config. The JDK serializes calls on the authenticator, so the
+  probe, the prompt and that cached state are single-threaded.
+
+  Both prompts share one cached answer for the run, keyed by the credential set, so 100 parallel
+  chunks produce one dialog rather than one each.
+
+  Verified against a fake SOCKS5 proxy: correct credentials, rejected credentials, no-auth-required,
+  no acceptable method, an early close and an unreachable proxy all behave as above, and the proxy
+  receives exactly the user name and password from the config. Verified against a fake HTTP proxy
+  driving a real `HttpClientImpl`: a correct saved password never prompts; a wrong one prompts once
+  with the marker and the retry succeeds; repeating the same wrong password stops at two requests
+  instead of looping; a cancelled dialog gives up. Neither path has been exercised against a real
+  authenticating proxy.
 - ~~`VideoHelper.httpClient` was built once at class init with the proxy settings of that moment.~~
   Fixed with S2: it is rebuilt when the proxy or certificate setting changes.
 
@@ -1015,27 +1058,45 @@ restrict the config file permissions to `600`.
 bounded daemon thread pool. Wrap `requestListener` in try/catch that replies 400/500. Strip the query
 from the path.
 
-### B19 (P2): `VideoHelper` issues
-**Where:** `xdm-app/.../integration/VideoHelper.kt`
+### B19 (P2): `VideoHelper` issues — **Fixed**
+**Where:** `xdm-app/.../integration/VideoHelper.kt`, `CapturedVideoTracker.kt`, `ManifestUtils.kt`,
+`HeaderUtils.kt`
 
-- `ManifestUtils.downloadManifestAsFile` creates files with `File.createTempFile(...)` in the system
-  temp dir. `processHLSVideo` and `processDashVideo` never delete them, so one file leaks per
-  detected manifest. `downloadManifestBytes` returns **null** if deleting the temp file fails,
-  even though the bytes were read (`ManifestUtils.kt:28-36`).
-- `m3u8MpdTabs`, `suspectedMp4Fragments` and `referersToSkip` only ever grow. Once a tab has shown
-  an m3u8, plain HTTP videos in that tab id are suppressed forever, even after navigation.
-- `thread { ... }` starts one new thread per media message, with no bound.
-- `getHeader(CONTENT_LENGTH)?.toLong()` throws on a malformed value, which aborts the message.
-- `processDashVideo`: `audio!!.mimeType` throws if a period has neither video nor audio.
-- `contentType ?: false` (line 56) does nothing.
-- The DASH and HLS tasks set `origin = null`, so "Refresh link" cannot work for streaming downloads.
-- `CapturedVideoTracker.updateMediaTitle` renames HTTP and HLS entries but skips DASH.
-- `CapturedVideoTracker.addVideoDownload` reads the maps without `synchronized(this)`.
+- ~~`processHLSVideo` and `processDashVideo` never delete the manifest temp file.~~ Fixed, keeping
+  the download-to-file design: both wrap the parse in `useManifestFile`, which deletes the file in a
+  `finally`. (The leak was real: a development machine had **364** stale `*.m3u8` files, 1.4 MB, in
+  the system temp dir.) The HLS path also stopped using `Files.lines` iterators, which were never
+  closed — a leaked file handle per parse, and on Windows an open handle blocks the delete. It reads
+  the temp file once with `readAllLines` and parses that, so the file is still the source of truth.
+- ~~`downloadManifestBytes` returns null if deleting the temp file fails, even though the bytes were
+  read.~~ Fixed: the bytes are returned from a `try`, the delete happens in the `finally`, and a
+  failure to delete is logged rather than losing the manifest.
+- ~~`m3u8MpdTabs`, `suspectedMp4Fragments` and `referersToSkip` only ever grow.~~ Fixed: all three
+  are bounded LRU maps (64 tabs, 512 URLs). `m3u8MpdTabs` now maps tab id → the page URL the
+  manifest was seen on, so plain HTTP videos are suppressed only while that tab is still on that
+  page; after it navigates they are captured again, instead of being suppressed for the rest of the
+  session.
+- ~~`thread { ... }` per media message.~~ Fixed: a two-thread pool with a 64-deep bounded queue,
+  daemon threads that time out when idle, and a rejection handler that logs and drops rather than
+  queueing without limit.
+- ~~`getHeader(CONTENT_LENGTH)?.toLong()` throws on a malformed value.~~ Fixed with `toLongOrNull()`.
+  `getContentLength` in `HeaderUtils` (xdm-core) had the same bug on the same header and is fixed
+  the same way; a bad `Content-Length` now means "unknown size", not a thrown message.
+- ~~`processDashVideo`: `audio!!.mimeType` throws if a period has neither video nor audio.~~ Fixed:
+  `video ?: audio ?: continue`.
+- ~~`contentType ?: false` (line 56) does nothing.~~ Removed; the caller already rejects a null
+  content type.
+- ~~The DASH and HLS tasks set `origin = null`.~~ Fixed: both pass `msg.tabUrl`, falling back to the
+  `Referer` header, so "Refresh link" has a page to go back to.
+- ~~`CapturedVideoTracker.updateMediaTitle` skips DASH.~~ Fixed: it renames DASH entries too.
+- ~~`CapturedVideoTracker.addVideoDownload` reads the maps without `synchronized(this)`.~~ Fixed: the
+  lookup happens under the lock and returns a small summary; the UI call is made after releasing it.
 
-**Fix:** Delete manifest temp files in `finally`, or better, parse from bytes in memory. Replace the
-sets with size-bounded LRU maps keyed by tab id and cleared when the tab URL changes. Run processing
-on a small shared executor. Use `toLongOrNull()`. Pass `msg.tabUrl` as `origin`. Add the DASH branch
-to `updateMediaTitle`.
+Verified by driving `VideoHelper` against a local manifest server: an HLS master playlist yields its
+entries, a DASH manifest yields its entry, no `*.m3u8` temp file survives either, the streaming
+tasks carry the page URL as origin, a plain video is suppressed on the manifest's page and captured
+again once the tab navigates, the tab cache stops at its bound under 500 inserts, and a malformed
+`Content-Length` still captures the video instead of aborting the message.
 
 ### B20 (P2): Failures appear as "Paused"
 **Where:** `DownloadManager.kt:174-187`
@@ -1065,24 +1126,38 @@ auto-retry `NetworkError` with backoff.
   Still open: a fixed 5 s (HTTP) / 3 s (HLS/DASH) delay with no backoff, and the streaming retry wait
   is a plain `Thread.sleep`. Segment failures are never retried at task level (that code is commented out
   in `onChunkComplete`), so one bad segment fails the whole HLS/DASH download after all the others finish.
-- `StreamingChunkRetriever`: on a resumed segment, `piece.length.set(contentLength)` stores the
-  *remaining* length instead of the total, so progress is wrong after a resume.
+- ~~`StreamingChunkRetriever`: on a resumed segment, `piece.length.set(contentLength)` stores the
+  *remaining* length instead of the total, so progress is wrong after a resume.~~ **Fixed:** the
+  length is `piece.downloaded + contentLength`, so a 206 that reports only what is left still yields
+  the whole segment. Covered by `TestStreamingResumeProgress` (resumed and fresh segment); the test
+  fails on the old code with 45056 instead of 65536. Note that the per-segment percentage in
+  `ProgressTracker.updateChunkProgressData` is still computed with integer division
+  (`downloaded / len / chunks.size`), so it reads 0 until a segment completes — separate from this.
 - HLS: a live playlist (no `#EXT-X-ENDLIST`) is silently downloaded as a snapshot. Detect this and
   either tell the user or implement live recording (F11).
-- `DownloadManager.updateDownloadInfo` calls `saveState` (rename-based write) **inside**
-  `readTransacted` while the same file is open. On Windows the rename fails; it currently works only
-  because the `.bak1` preference in B9 hides it. Read first, close, then write.
+- ~~`DownloadManager.updateDownloadInfo` calls `saveState` (rename-based write) **inside**
+  `readTransacted` while the same file is open.~~ **Already fixed** (commit `c342aa1`), and verified:
+  `saveState` runs in the `onSuccess` block, after `readTransacted` has returned, and since B9 that
+  function reads the whole file into a `ByteArray` before the reader runs, so no handle is open on
+  the file being rewritten. `DownloadManagerUpdateInfoTest` now covers the refresh-link path end to
+  end: the new URL and cookie reach both `task-<id>.info` and `<id>.state`, and no `.bak1` is left
+  behind.
 - `DownloadScheduler`: a `ONE_TIME` entry whose minute passed while the app was closed never fires
   and is never removed. Entries for deleted downloads are never cleaned up.
-- `populateSaveInFolders`: `coerceIn(1, folders.size - 1)` throws if `recentFolders` ever has fewer
-  than 2 entries, for example if the `ND_AUTO_CAT` text equals the default folder after `distinct()`.
+- ~~`populateSaveInFolders`: `coerceIn(1, folders.size - 1)` throws if `recentFolders` ever has fewer
+  than 2 entries.~~ **Fixed:** the lower bound is now `minOf(1, lastIndex)` and an empty list selects
+  nothing, so a one-entry list selects the "As per file type" row instead of throwing
+  `IllegalArgumentException: Cannot coerce value to an empty range`. `PopulateSaveInFoldersTest`
+  covers the collapsed list, a remembered folder, auto-select and an out-of-range index.
 - `AppDB.loadActiveRecords` loads records with `paused = true` (intentional), but `lastActiveCount`
   and the other count fields and the `res` values are unused, as the `//TODO: Check errors` notes say.
 - Leftover debug output: `println("Not implemented yet")` in `startDashDownload`, which *is*
   implemented; `println("Thread: ...")` in `showProgressError`; `print(r)` in `HttpChunkRetriever.connect`.
-- `HttpDownloaderTask.throttleIfNeeded(id)` is `TODO("Not yet implemented")`. It is unused today
-  but part of the `ChunkController` interface, so any future call crashes. Remove it from the
-  interface or delegate to `throttle`.
+- ~~`HttpDownloaderTask.throttleIfNeeded(id)` is `TODO("Not yet implemented")`.~~ **Fixed:** removed
+  from both the `ChunkController` interface and the implementation. Nothing called it — the real
+  throttling goes through `SpeedLimiter.throttleIfNeeded(downloaded)`, which `HttpDownloaderTask`
+  and `StreamingDownloaderTask` both already call — so there is no longer a method that would throw
+  if someone wired it up.
 - `DownloadType.Torrent -> TODO()` in 4 places (`DownloadManager.kt:81, 283, 364`,
   `AppFileUtil.kt:41`) throws `NotImplementedError` if a record ever has that type, for example a
   corrupted DB. Replace it with a logged failure. `Hds` and `Hss` are referenced in CLAUDE.md but not in the enum.
@@ -1110,7 +1185,7 @@ auto-retry `NetworkError` with backoff.
 | F6 | **Refresh link for HLS/DASH** | `getOriginPage` handles HTTP only; `updateDownloadInfo` accepts only an `HttpDownloadTaskInfo`, and `/vid` refresh only matches HTTP videos | `DownloadManager.kt:590-621`, `AppInstance.kt:137-143` | Persist `origin` (B3). When refreshing a streaming task, match the new manifest by quality and variant and replace the segment URLs in the `.state` chunks, keeping the downloaded ones. |
 | F7 | **Link expiry detection** | `//TODO: Check for link refresh` ×3 | `CapturedVideoTracker.kt:29,38,45` | Store the capture time; if an entry is older than N minutes, re-probe it with HEAD or a small GET and prompt the user to reload the page if it fails. |
 | F8 | **Auto-start video downloads** | `// TODO: Check if download window needs to be shown` | `AppInstance.kt:145` | Honour `startDownloadAutomatically` for `/vid` as `addDownload` already does. |
-| F9 | **Settings that do nothing** | `getServerTime`, `overwriteExistingFiles` (UI only), `autoRenameOnConflict`, `shutdownAfterAllDone` (never read; duplicates `haltAfterDownload`), `proxyUser`/`proxyPass` (never sent, B16) | `AppConfig.kt`, settings panels | Implement: set the file mtime from `Last-Modified`; in `renameFile`, overwrite or rename based on the flags; remove `shutdownAfterAllDone`; add the proxy authenticator. Otherwise hide the controls. |
+| F9 | **Settings that do nothing** | `getServerTime`, `overwriteExistingFiles` (UI only), `autoRenameOnConflict`, `shutdownAfterAllDone` (never read; duplicates `haltAfterDownload`), ~~`proxyUser`/`proxyPass`~~ (sent since B16) | `AppConfig.kt`, settings panels | Implement: set the file mtime from `Last-Modified`; in `renameFile`, overwrite or rename based on the flags; remove `shutdownAfterAllDone`; add the proxy authenticator. Otherwise hide the controls. |
 | F10 | **Toolbar menu items with no action** | `MENU_LANG`, `MENU_UPDATE`, `MENU_HELP_SUP` handlers are empty | `AppToolBar.kt:189-199` | Language: show a picker, set `config.lang`, restart. Update: call `UpdateChecker.checkForUpdate` (it already exists) and show `UpdatePanel`. Help: `openWebPage(...)`. |
 | F11 | **Live HLS / dynamic DASH** | Dynamic MPD is rejected; live HLS is snapshotted silently | `MpdParser.kt:40`, `HlsParser` | Detect it first and report "live streams not supported". Recording can come later: re-poll the playlist every target duration and append new segments until stopped. |
 | F12 | **SAMPLE-AES / DRM** | Rejected explicitly (reasonable) | `HlsParser.kt`, `MpdParser.kt:71` | Show the user a clear "protected content" message instead of a silent failure in the extension list. |
@@ -1132,7 +1207,7 @@ auto-retry `NetworkError` with backoff.
 3. **Queue and lifecycle:** B5 (single `pumpQueue()`), B6 and B7 are done. Then F1 + F2 on top of the
    pump, then B14.
 4. **Resource hygiene:** B10, B11, B12 and B13 are done. Then B18.
-5. **Polish:** B15 is done. Then B16–B21, remaining F-items, dead-code removal, CLAUDE.md update.
+5. **Polish:** B15, B16 and B19 are done. Then B17, B18, B20, B21, remaining F-items, dead-code removal, CLAUDE.md update.
 6. **Tests to add alongside:** `TaskInfoDB` / `AppDB` / `AtomicIO` round-trip and truncated-file
    recovery; `DownloadManager` queue limits using a fake `DownloaderTask`; integration server header
    format and the S1 origin/method rejection (403/405 cases); resuming encrypted HLS (extend `TestHlsE2E`); a 429 and

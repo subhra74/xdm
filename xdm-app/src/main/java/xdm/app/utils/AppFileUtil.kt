@@ -68,10 +68,13 @@ fun populateSaveInFolders(model: DefaultComboBoxModel<String>, combo: JComboBox<
     val folders = config.recentFolders
     model.removeAllElements()
     model.addAll(folders)
-    combo.selectedIndex = if (config.autoSelectFolder) {
-        0
-    } else {
-        (config.folderIndex + 1).coerceIn(1, folders.size - 1)
+    // coerceIn(1, size - 1) threw when the list held fewer than two entries, which happens if
+    // `distinct()` collapses the "As per file type" entry into the default folder.
+    val lastIndex = folders.size - 1
+    combo.selectedIndex = when {
+        lastIndex < 0 -> -1
+        config.autoSelectFolder -> 0
+        else -> (config.folderIndex + 1).coerceIn(minOf(1, lastIndex), lastIndex)
     }
 }
 

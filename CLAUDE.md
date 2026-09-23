@@ -17,10 +17,10 @@ is `pom.xml`, with modules `xdm-core`, `xdm-app`, and `hls-muxer`.
 ```bash
 mvn -q clean package              # build all modules; produces xdm-app/target/xdm-app.jar (fat jar)
 mvn -q -pl xdm-app -am package    # build xdm-app and its dependencies only
-mvn -q test                       # run all tests
-mvn -q -pl xdm-core test          # test a single module
-mvn -q -pl xdm-core test -Dtest=SomeTest          # run a single test class (Surefire)
-mvn -q -pl xdm-core test -Dtest=SomeTest#method   # run a single test method
+mvn -q test -DskipTests=false                       # run all tests
+mvn -q -pl xdm-core test -DskipTests=false          # test a single module
+mvn -q -pl xdm-core test -DskipTests=false -Dtest=SomeTest          # run a single test class (Surefire)
+mvn -q -pl xdm-core test -DskipTests=false -Dtest=SomeTest#method   # run a single test method
 ```
 
 Run the app (main class is `xdm.app.AppMain`):

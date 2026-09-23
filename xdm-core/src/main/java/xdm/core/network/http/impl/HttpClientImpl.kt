@@ -5,10 +5,12 @@ import xdm.core.CoreConfig
 import xdm.core.network.http.*
 import xdm.core.util.Logger
 import java.io.IOException
+import java.net.InetSocketAddress
 import java.net.Proxy
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import javax.net.ssl.SSLContext
@@ -22,12 +24,15 @@ import javax.net.ssl.X509TrustManager
  * [ignoreCertErrors] is true (an explicit, off-by-default user setting) are certificate chain and
  * hostname checks skipped, which leaves connections open to interception.
  */
-class HttpClientImpl(
+class HttpClientImpl @JvmOverloads constructor(
     poolSize: Int,
     proxy: Proxy? = null,
     ignoreCertErrors: Boolean = false,
     /** How long a read may wait for data before failing with a timeout, so a stalled server is retried. */
     readTimeoutSeconds: Int = CoreConfig.DEFAULT_READ_TIMEOUT_SECONDS,
+    /** Credentials for an authenticating HTTP proxy; empty user means the proxy needs no auth. */
+    proxyUser: String = "",
+    proxyPassword: String = "",
 ) : PoolingHttpClient {
     /**
      * Calls whose response is still open. OkHttp's dispatcher stops tracking a synchronous call once
@@ -48,7 +53,47 @@ class HttpClientImpl(
             .protocols(listOf(Protocol.HTTP_1_1))
             .connectTimeout(30, TimeUnit.SECONDS).readTimeout(readTimeoutSeconds.toLong(), TimeUnit.SECONDS).retryOnConnectionFailure(false)
             .apply { if (ignoreCertErrors) trustAllCertificates(this) }
+            .apply { if (proxy != null && proxyUser.isNotEmpty()) proxyAuthentication(this, proxy, proxyUser, proxyPassword) }
             .build()
+
+    /**
+     * OkHttp does not consult [java.net.Authenticator] for proxies, so answer the proxy's 407
+     * challenge here, with the credentials from the config. If the proxy refuses those (it comes
+     * back 407 on a request that already carried the header), ask the default authenticator for
+     * another pair, which is how the app gets to prompt the user — see [ProxyAuth.REJECTED_PROMPT].
+     * Offering the same credentials twice would loop, so that ends the attempt instead.
+     *
+     * Only Basic is implemented; a proxy demanding Digest or NTLM is not supported. SOCKS
+     * authentication does not come through here at all: the JDK socket layer asks the default
+     * authenticator itself.
+     */
+    private fun proxyAuthentication(builder: OkHttpClient.Builder, proxy: Proxy, user: String, password: String) {
+        val address = proxy.address() as? InetSocketAddress
+        val configured = Credentials.basic(user, password)
+        builder.proxyAuthenticator { _, response ->
+            val alreadySent = response.request.header("Proxy-Authorization")
+            val credential = if (alreadySent == null) configured else rejectedCredentials(address)
+            if (credential == null || credential == alreadySent) return@proxyAuthenticator null
+            response.request.newBuilder().header("Proxy-Authorization", credential).build()
+        }
+    }
+
+    /** Asks the default [java.net.Authenticator] for credentials to replace the refused ones. */
+    private fun rejectedCredentials(address: InetSocketAddress?): String? {
+        if (address == null) return null
+        Logger.info("XDM", "Proxy ${address.hostString}:${address.port} refused the configured credentials")
+        val auth = java.net.Authenticator.requestPasswordAuthentication(
+            address.hostString,
+            address.address,
+            address.port,
+            "http",
+            ProxyAuth.REJECTED_PROMPT,
+            "basic",
+            null,
+            java.net.Authenticator.RequestorType.PROXY,
+        ) ?: return null
+        return Credentials.basic(auth.userName, String(auth.password))
+    }
 
     private fun trustAllCertificates(builder: OkHttpClient.Builder) {
         Logger.info("XDM", "TLS certificate and hostname verification disabled by user setting")
@@ -104,7 +149,7 @@ class HttpClientImpl(
 
         cookie?.let { cookies.add(it) }
         if (cookies.isNotEmpty()) {
-            requestBuilder.addHeader("Cookie", cookies.joinToString(";"))
+            requestBuilder.addHeader("Cookie", cookies.joinToString("; "))
         }
 
         return kotlin.runCatching {
@@ -134,8 +179,10 @@ class HttpClientImpl(
                 statusCode = response.code,
                 statusMessage = response.message,
                 contentLength = if (body.contentLength() > 0) body.contentLength() else null,
-                contentType = body.contentType()?.type,
-                lastModified = LocalDateTime.now(),
+                contentType = body.contentType()?.let { "${it.type}/${it.subtype}" }
+                    ?: response.header("Content-Type"),
+                lastModified = response.headers.getDate("Last-Modified")
+                    ?.let { LocalDateTime.ofInstant(it.toInstant(), ZoneId.systemDefault()) },
                 inputStream = inputStreamBody,
                 isRedirected = redirected,
                 finalUrl = finalUrl,

@@ -47,6 +47,10 @@ class AppDB(private val configDir: String) {
     @Synchronized
     fun getByIndex(index: Int): DbRecord = records[index]
 
+    /** Like [getByIndex] but null when [index] is out of range (rows can be removed on other threads). */
+    @Synchronized
+    fun getOrNull(index: Int): DbRecord? = records.getOrNull(index)
+
     val size: Int
         @Synchronized get() = records.size
 

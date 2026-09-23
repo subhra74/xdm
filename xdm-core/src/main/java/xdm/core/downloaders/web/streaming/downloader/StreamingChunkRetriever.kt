@@ -77,7 +77,10 @@ class StreamingChunkRetriever(
                         }
 
                         response.contentLength?.let {
-                            piece.length.set(it)
+                            // On a resumed segment the 206 reports what is left, not the whole
+                            // segment, so add what is already on disk; otherwise progress for that
+                            // segment reads as more than 100% after a resume.
+                            piece.length.set(piece.downloaded.get() + it)
                         }
                         response.contentType?.let {
                             piece.contentType = it

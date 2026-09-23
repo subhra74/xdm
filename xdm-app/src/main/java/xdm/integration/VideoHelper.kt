@@ -22,13 +22,24 @@ import java.nio.file.*
 import java.security.MessageDigest
 import java.time.LocalDateTime
 import java.util.*
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.RejectedExecutionHandler
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.concurrent.thread
 
 
 object VideoHelper {
+    /** Everything the manifest client is built from; a change to any part rebuilds it. */
+    private data class ClientKey(
+        val proxy: java.net.Proxy?,
+        val ignoreCertErrors: Boolean,
+        val proxyUser: String,
+        val proxyPass: String,
+    )
+
     private var cachedClient: PoolingHttpClient? = null
-    private var cachedClientKey: Pair<java.net.Proxy?, Boolean>? = null
+    private var cachedClientKey: ClientKey? = null
 
     /**
      * Manifest client, rebuilt when the proxy or certificate-check settings change so edits in
@@ -38,39 +49,82 @@ object VideoHelper {
     private val httpClient: PoolingHttpClient
         @Synchronized get() {
             val config = AppContext.config
-            val key = Pair(config.toProxy(), config.ignoreCertErrors)
+            val key = ClientKey(config.toProxy(), config.ignoreCertErrors, config.proxyUser, config.proxyPass)
             cachedClient?.takeIf { key == cachedClientKey }?.let { return it }
-            return HttpClientImpl(10, key.first, key.second).also {
+            return HttpClientImpl(
+                10, key.proxy, key.ignoreCertErrors,
+                proxyUser = key.proxyUser, proxyPassword = key.proxyPass
+            ).also {
                 cachedClient = it
                 cachedClientKey = key
             }
         }
     private val hslExt = listOf("mpegurl", ".m3u8", "m3u8")
-    private val m3u8MpdTabs = Collections.synchronizedSet(mutableSetOf<String>())
-    private val suspectedMp4Fragments = Collections.synchronizedSet(mutableSetOf<String>())
-    private val referersToSkip = Collections.synchronizedSet(mutableSetOf<Long>())
+
+    /**
+     * What has been seen recently. These used to be plain sets that only ever grew: a tab that once
+     * showed an m3u8 suppressed plain videos in it forever, even after navigating elsewhere, and the
+     * fragment and referer sets held every URL of the session. They are now bounded, least-recently-
+     * used maps, and the tab map remembers which page the manifest was on, so a tab that navigates
+     * starts fresh.
+     */
+    private const val MAX_TRACKED_TABS = 64
+    private const val MAX_TRACKED_URLS = 512
+
+    /** Tab id -> the page URL that was showing an HLS/DASH manifest ("" when the page URL is unknown). */
+    private val m3u8MpdTabs = lruMap<String, String>(MAX_TRACKED_TABS)
+    private val suspectedMp4Fragments = lruMap<String, Boolean>(MAX_TRACKED_URLS)
+    private val referersToSkip = lruMap<Long, Boolean>(MAX_TRACKED_URLS)
+
+    /** Access-ordered map that drops its least recently used entry past [max]. */
+    private fun <K, V> lruMap(max: Int): MutableMap<K, V> = Collections.synchronizedMap(
+        object : LinkedHashMap<K, V>(16, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<K, V>): Boolean = size > max
+        }
+    )
+
+    /**
+     * Manifest fetching and parsing. Every media message used to start its own thread, so a page
+     * full of streams could start an unbounded number of them; this is a small pool with a bounded
+     * queue that drops work rather than piling it up. Idle threads go away on their own.
+     */
+    private val mediaExecutor = ThreadPoolExecutor(
+        2, 2, 30L, TimeUnit.SECONDS, LinkedBlockingQueue(64),
+        { r -> Thread(r, "media-detect").apply { isDaemon = true } },
+        RejectedExecutionHandler { _, _ -> Logger.info("XDM", "Media detection is busy, ignoring manifest") }
+    ).apply { allowCoreThreadTimeOut(true) }
+
+    /** Reads the downloaded manifest and always removes the temp file afterwards. */
+    private fun <T> useManifestFile(path: String, block: (String) -> T): T {
+        try {
+            return block(path)
+        } finally {
+            runCatching { Files.deleteIfExists(Paths.get(path)) }
+                .onFailure { Logger.error("XDM", "Could not delete manifest temp file $path", it) }
+        }
+    }
 
     private fun isHLS(contentType: String?): Boolean = hslExt.any { StringUtils.containsIgnoreCase(contentType, it) }
 
-    private fun isHttpVideo(url: String, contentType: String?, size: Long?, tabId: String?): Boolean {
+    private fun isHttpVideo(url: String, contentType: String?, size: Long?, tabId: String?, tabUrl: String?): Boolean {
         size?.let {
             if (size > 0 && size < AppContext.config.minVideoSize * 1024) {
                 return false
             }
         }
         tabId?.let {
-            if (m3u8MpdTabs.contains(tabId)) {
+            // Only while the tab is still on the page the manifest came from.
+            if (m3u8MpdTabs[it] == (tabUrl ?: "")) {
                 return false
             }
         }
         if (StringUtils.containsIgnoreCase(url, "init.mp4")) {
-            suspectedMp4Fragments.add(URI.create(url).resolve(".").toString())
+            suspectedMp4Fragments[URI.create(url).resolve(".").toString()] = true
             return false
         }
-        if (suspectedMp4Fragments.contains(URI.create(url).resolve(".").toString())) {
+        if (suspectedMp4Fragments.containsKey(URI.create(url).resolve(".").toString())) {
             return false
         }
-        contentType ?: false
         return !(StringUtils.containsIgnoreCase(url, "http://127.0.0.1:9614") || StringUtils.containsIgnoreCase(
             url,
             "http://127.0.0.1:8597"
@@ -93,12 +147,13 @@ object VideoHelper {
         val responseHeaders =
             msg.responseHeaders?.map { entry -> entry.key to entry.value.map { it.value } }?.associate { it }
         val contentType = getHeader(CONTENT_TYPE, responseHeaders) ?: return
-        val contentLength = getHeader(CONTENT_LENGTH, responseHeaders)?.toLong()
+        // A malformed Content-Length must not abort the whole message.
+        val contentLength = getHeader(CONTENT_LENGTH, responseHeaders)?.toLongOrNull()
         msg.url ?: return
         when {
-            isDash(contentType) || isDashUrl(msg.url) -> thread { processDashVideo(msg) }
-            isHLS(contentType) || isHLSUrl(msg.url) -> thread { processHLSVideo(msg) }
-            isHttpVideo(msg.url, contentType, contentLength, msg.tabId) -> processHttpVideo(
+            isDash(contentType) || isDashUrl(msg.url) -> mediaExecutor.execute { processDashVideo(msg) }
+            isHLS(contentType) || isHLSUrl(msg.url) -> mediaExecutor.execute { processHLSVideo(msg) }
+            isHttpVideo(msg.url, contentType, contentLength, msg.tabId, msg.tabUrl) -> processHttpVideo(
                 msg,
                 contentType,
                 contentLength ?: -1L
@@ -181,7 +236,7 @@ object VideoHelper {
     private fun isFragment(referer: String?): Boolean {
         referer?.let {
             val hash = generate64BitHash(referer)
-            if (referersToSkip.contains(hash)) {
+            if (referersToSkip.containsKey(hash)) {
                 return true
             }
         }
@@ -208,9 +263,9 @@ object VideoHelper {
     private fun processDashVideo(msg: ExtensionMessage) {
         Logger.info("Processing DASH manifest:  ${msg.url}")
         msg.url ?: return
-        msg.tabId?.let { m3u8MpdTabs.add(it) }
+        msg.tabId?.let { m3u8MpdTabs[it] = msg.tabUrl ?: "" }
         val headers = msg.requestHeaders ?: HashMap<String, List<String>>()
-        getHeader(REFERER, headers)?.let { referersToSkip.add(generate64BitHash(it)) }
+        getHeader(REFERER, headers)?.let { referersToSkip[generate64BitHash(it)] = true }
         val acceptHeaderAdded = headers.keys.any { StringUtils.equalsIgnoreCase(it, "accept") }
         if (!acceptHeaderAdded) {
             headers["ACCEPT"] = mutableListOf("*/*")
@@ -218,14 +273,23 @@ object VideoHelper {
         val file = ManifestUtils.downloadManifestAsFile(
             httpClient, msg.url, headers, msg.cookie, AtomicBoolean(false)
         ) ?: return
-        FileInputStream(file).use { f ->
+        useManifestFile(file) { path -> parseDashManifest(msg, msg.url, path, headers) }
+    }
+
+    private fun parseDashManifest(
+        msg: ExtensionMessage,
+        url: String,
+        path: String,
+        headers: MutableMap<String, List<String>>,
+    ) {
+        FileInputStream(path).use { f ->
             // Resolve xlink remote elements (e.g. ad-insertion Periods) over HTTP, reusing the same
             // headers/cookie as the manifest fetch.
             val xlinkResolver = XlinkResolver { xlinkUrl ->
                 ManifestUtils.downloadManifestBytes(httpClient, xlinkUrl, headers, msg.cookie, AtomicBoolean(false))
                     ?.toString(Charsets.UTF_8)
             }
-            val entries = parseMpdManifest(f, msg.url, xlinkResolver)
+            val entries = parseMpdManifest(f, url, xlinkResolver)
             if (entries.isEmpty()) {
                 Logger.info("Unable to parse manifest")
                 return
@@ -242,13 +306,14 @@ object VideoHelper {
                         respectFileName = true,
                         cookie = msg.cookie,
                         headers = msg.requestHeaders,
-                        origin = null,
+                        // The page the manifest was found on, so "Refresh link" has somewhere to go.
+                        origin = msg.tabUrl ?: getHeader(REFERER, msg.requestHeaders),
                         autoCategorize = false,
                         defaultDownloadFolder = AppContext.defaultDownloadFolder,
                         userSelectedDownloadFolder = null,
                         maxPiece = 8,
                         authInfo = null,
-                        url = msg.url,
+                        url = url,
                         audioSegments = audio.segments,
                         videoSegments = video.segments,
                         audioMime = audio.mimeType,
@@ -268,8 +333,10 @@ object VideoHelper {
                         )
                     )
                 } else {
-                    val mimeType = video?.mimeType ?: audio!!.mimeType
-                    val segments = (video?.segments ?: audio!!.segments)
+                    // A period with neither stream used to throw on the !! below.
+                    val single = video ?: audio ?: continue
+                    val mimeType = single.mimeType
+                    val segments = single.segments
                     if (segments.isNotEmpty()) {
                         // Single-stream representation, downloaded whole with no mux: keep the native
                         // container from the MIME type (video/webm -> .webm, audio/mp4 -> .m4a, ...).
@@ -289,16 +356,12 @@ object VideoHelper {
         return "$res $bwStr $lng"
     }
 
-    private fun lineIter(file: String): Iterator<String> {
-        return Files.lines(Paths.get(file), Charsets.UTF_8).iterator()
-    }
-
     private fun processHLSVideo(msg: ExtensionMessage) {
         Logger.info("Downloading HLS manifest:  ${msg.url}")
         msg.url ?: return
-        msg.tabId?.let { m3u8MpdTabs.add(it) }
+        msg.tabId?.let { m3u8MpdTabs[it] = msg.tabUrl ?: "" }
         val headers = msg.requestHeaders ?: HashMap<String, List<String>>()
-        getHeader(REFERER, headers)?.let { referersToSkip.add(generate64BitHash(it)) }
+        getHeader(REFERER, headers)?.let { referersToSkip[generate64BitHash(it)] = true }
         val acceptHeaderAdded = headers.keys.any { StringUtils.equalsIgnoreCase(it, "accept") }
         if (!acceptHeaderAdded) {
             headers["ACCEPT"] = mutableListOf("*/*")
@@ -306,11 +369,13 @@ object VideoHelper {
         val file = ManifestUtils.downloadManifestAsFile(
             httpClient, msg.url, headers, msg.cookie, AtomicBoolean(false)
         ) ?: return
-        val lines = Files.readAllLines(Paths.get(file), Charsets.UTF_8)
-        if (HlsParser.isMasterPlaylist(lineIter(file))) {
+        // Read the playlist out of the temp file once. The old `Files.lines` iterators were never
+        // closed, which leaked a file handle per parse and, on Windows, would block the delete.
+        val lines = useManifestFile(file) { path -> Files.readAllLines(Paths.get(path), Charsets.UTF_8) }
+        if (HlsParser.isMasterPlaylist(lines.iterator())) {
             Logger.info("Master playlist found")
             val playlists: List<HlsMasterPlaylist> =
-                HlsParser.parseMasterPlaylist(lineIter(file), msg.url).getOrNull() ?: return
+                HlsParser.parseMasterPlaylist(lines.iterator(), msg.url).getOrNull() ?: return
             Logger.info("Items in playlist: ${playlists.size}")
             for (playlist in playlists) {
                 val videoUrl = playlist.videoPlaylist?.toString()
@@ -392,7 +457,8 @@ object VideoHelper {
             respectFileName = true,
             cookie = msg.cookie,
             headers = msg.requestHeaders,
-            origin = null,
+            // The page the manifest was found on, so "Refresh link" has somewhere to go.
+            origin = msg.tabUrl ?: getHeader(REFERER, msg.requestHeaders),
             autoCategorize = false,
             defaultDownloadFolder = AppContext.defaultDownloadFolder,
             userSelectedDownloadFolder = null,

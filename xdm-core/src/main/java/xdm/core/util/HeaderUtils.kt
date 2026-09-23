@@ -18,7 +18,8 @@ fun getHeader(key: String, headers: Map<String, List<String>>?): String? {
 
 
 fun getContentLength(headers: Map<String, List<String>>?): Long? {
-    return headers?.let { getHeader("content-length", headers)?.toLong() }
+    // A malformed value is no length at all; it must not throw at the caller.
+    return headers?.let { getHeader("content-length", headers)?.toLongOrNull() }
 }
 
 private val fmt by lazy {

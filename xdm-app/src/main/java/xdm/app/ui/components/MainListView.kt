@@ -168,7 +168,7 @@ class MainListView {
         get() = table.selectedRows
 
     val selectedItems: List<DbRecord>
-        get() = table.selectedRows.map { model.getItemAt(table.convertRowIndexToModel(it)) }
+        get() = table.selectedRows.asList().mapNotNull { model.getItemAt(table.convertRowIndexToModel(it)) }
 
     val selectedRowCount: Int
         get() = table.selectedRowCount

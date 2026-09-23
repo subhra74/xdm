@@ -21,32 +21,26 @@ interface ICapturedVideoTracker {
 }
 
 class CapturedVideoTracker : ICapturedVideoTracker {
+    /** What the UI needs about one detected video, read out under the lock. */
+    private data class VideoSummary(val fileName: String, val size: Long, val contentType: String?)
+
     override fun addVideoDownload(videoId: Long) {
-        var name: String?
-        var size: Long
-        var contentType: String?
-        httpVideoList[videoId]?.let {
+        // The maps are guarded by this instance; look the video up under the lock, then call the UI
+        // outside it. (This ran unsynchronized before.)
+        val summary = synchronized(this) {
             //TODO: Check for link refresh
-            val (source, _) = it
-            size = getContentLength(source.headers) ?: (source.knownFileSize ?: -1)
-            contentType = getHeader("Content-Type", source.headers)
-            AppContext.app.addVideoDownload(videoId, source.fileName, size, contentType)
-            return
-        }
+            httpVideoList[videoId]?.let { (source, _) ->
+                VideoSummary(
+                    fileName = source.fileName,
+                    size = getContentLength(source.headers) ?: (source.knownFileSize ?: -1),
+                    contentType = getHeader("Content-Type", source.headers),
+                )
+            }
+                ?: hlsVideoList[videoId]?.let { (s, _) -> VideoSummary(s.fileName, -1, "application/x-mpegURL") }
+                ?: dashVideoList[videoId]?.let { (s, _) -> VideoSummary(s.fileName, -1, "application/dash+xml") }
+        } ?: return
 
-        hlsVideoList[videoId]?.let {
-            //TODO: Check for link refresh
-            val (source, _) = it
-            AppContext.app.addVideoDownload(videoId, source.fileName, -1, "application/x-mpegURL")
-            return
-        }
-
-        dashVideoList[videoId]?.let {
-            //TODO: Check for link refresh
-            val (source, _) = it
-            AppContext.app.addVideoDownload(videoId, source.fileName, -1, "application/dash+xml")
-            return
-        }
+        AppContext.app.addVideoDownload(videoId, summary.fileName, summary.size, summary.contentType)
     }
 
 
@@ -117,6 +111,12 @@ class CapturedVideoTracker : ICapturedVideoTracker {
                 }
             }
             for ((s, di) in hlsVideoList.values) {
+                if (di.tabUrl == tabUrl) {
+                    s.fileName = generateUpdatedFileName(s.fileName, tabTitle)
+                }
+            }
+            // DASH entries were skipped here, so their names never picked up the tab title.
+            for ((s, di) in dashVideoList.values) {
                 if (di.tabUrl == tabUrl) {
                     s.fileName = generateUpdatedFileName(s.fileName, tabTitle)
                 }

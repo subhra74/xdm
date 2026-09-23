@@ -6,6 +6,10 @@
     <artifactId>xdm</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
+    <properties>
+        <!-- Tests are skipped by default (install/package stay fast). Run them with -DskipTests=false. -->
+        <skipTests>true</skipTests>
+    </properties>
     <modules>
         <module>xdm-core</module>
         <!--        <module>xdm-app2</module>-->

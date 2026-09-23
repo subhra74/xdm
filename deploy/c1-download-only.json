@@ -1,0 +1,20 @@
+[
+  {
+    "match": [
+      "okio/*.*",
+      "okhttp3/*.*",
+      "org/conscrypt/*.*",
+      "sun/nio/ch/*.*",
+      "java/net/*.*",
+      "java/io/*.*",
+      "java/nio/*.*",
+      "java/util/concurrent/*.*",
+      "java/lang/invoke/*.*",
+      "java/lang/ThreadLocal*.*",
+      "jdk/internal/misc/*.*",
+      "xdm/core/*.*"
+    ],
+    "c1": { "Exclude": false }
+  },
+  { "match": "*.*", "c1": { "Exclude": true }, "c2": { "Exclude": true } }
+]

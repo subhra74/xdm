@@ -9,7 +9,7 @@ class MainListViewFilter(var filterState: FilterState, var filterCategory: Filte
         val index = entry.identifier
         val model = entry.model as MainListViewModel
         if (index < 0 || index >= model.rowCount) return false
-        val rec = model.getItemAt(index)
+        val rec = model.getItemAt(index) ?: return false
         if (searchText.isNotBlank() && !rec.fileName.contains(searchText, ignoreCase = true)) {
             return false
         }

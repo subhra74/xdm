@@ -22,7 +22,6 @@ interface ChunkController : DownloaderTask {
     fun updateBytesDownloaded(id: Long, downloaded: Long)
     fun onChunkFailed(id: Long, error: DownloadError)
     fun onChunkFinished(id: Long)
-    fun throttleIfNeeded(id: Long)
     fun takeOverChunk(chunkId: Long, maxByteRange: Long): Boolean
 }
 
@@ -246,10 +245,6 @@ class HttpDownloaderTask : ChunkController {
             }
         }
         return
-    }
-
-    override fun throttleIfNeeded(id: Long) {
-        TODO("Not yet implemented")
     }
 
     override fun onChunkFailed(id: Long, error: DownloadError) {
