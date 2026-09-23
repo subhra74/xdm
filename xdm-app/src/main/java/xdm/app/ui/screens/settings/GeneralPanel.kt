@@ -74,7 +74,7 @@ class GeneralPanel : SettingsPanel() {
         // Behaviour
         add(
             settingsCard(
-                RemixIcon.SETTINGS_4_LINE, I8N.text("SETTINGS_SEC_BEHAVIOR"),
+                I8N.text("SETTINGS_SEC_BEHAVIOR"),
                 settingsLeftAligned(chkShowDwnPrg),
                 settingsLeftAligned(chkShowComplete),
                 settingsLeftAligned(chkStartAutoDwn),
@@ -85,13 +85,13 @@ class GeneralPanel : SettingsPanel() {
         // Downloads
         val speedRow = settingsRow(chkSpeedLimiter, spnSpeedLimiter)
         val maxConnRow = settingsRow(JLabel(I8N.text("MSG_MAX_DOWNLOAD")), cmbMaxConn)
-        add(settingsCard(RemixIcon.ARROW_UP_DOWN_FILL, I8N.text("SETTINGS_SEC_DOWNLOADS"), speedRow, maxConnRow))
+        add(settingsCard(I8N.text("SETTINGS_SEC_DOWNLOADS"), speedRow, maxConnRow))
         add(Box.createRigidArea(Dimension(0, 12)))
 
         // Folders
         add(
             settingsCard(
-                RemixIcon.FOLDER_6_LINE, I8N.text("SETTINGS_SEC_FOLDERS"),
+                I8N.text("SETTINGS_SEC_FOLDERS"),
                 folderField(I8N.text("LBL_TEMP_FOLDER"), txtTmpDir, btnBrowse1),
                 folderField(I8N.text("SETTINGS_FOLDER"), txtDwnDir, btnBrowse2),
             )
@@ -116,7 +116,7 @@ class GeneralPanel : SettingsPanel() {
         }
         add(
             settingsCard(
-                RemixIcon.SPARKLING_2_FILL, I8N.text("SETTINGS_SEC_APPEARANCE"),
+                I8N.text("SETTINGS_SEC_APPEARANCE"),
                 themeRow, langRow, settingsLeftAligned(lblNote)
             )
         )

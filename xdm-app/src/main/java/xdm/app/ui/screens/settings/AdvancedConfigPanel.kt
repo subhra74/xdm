@@ -77,7 +77,7 @@ class AdvancedConfigPanel : SettingsPanel() {
         // General
         add(
             settingsCard(
-                RemixIcon.SETTINGS_4_LINE, I8N.text("SETTINGS_SEC_ADV_GENERAL"),
+                I8N.text("SETTINGS_SEC_ADV_GENERAL"),
                 settingsLeftAligned(chkHalt),
                 settingsLeftAligned(chkNoSleep),
                 settingsLeftAligned(chkRunOnStartup),
@@ -88,7 +88,7 @@ class AdvancedConfigPanel : SettingsPanel() {
         // Custom command
         add(
             settingsCard(
-                RemixIcon.FILE_TEXT_LINE, I8N.text("SETTINGS_SEC_COMMAND"),
+                I8N.text("SETTINGS_SEC_COMMAND"),
                 settingsLeftAligned(chkRunCmd),
                 fullWidth(txtCmd),
             )
@@ -104,7 +104,7 @@ class AdvancedConfigPanel : SettingsPanel() {
         }
         add(
             settingsCard(
-                RemixIcon.FILE_SHIELD_LINE, I8N.text("SETTINGS_SEC_ANTIVIRUS"),
+                I8N.text("SETTINGS_SEC_ANTIVIRUS"),
                 settingsLeftAligned(chkVirusScan),
                 scannerRow,
                 fullWidth(txtArgs),
@@ -115,7 +115,7 @@ class AdvancedConfigPanel : SettingsPanel() {
         // Network
         add(
             settingsCard(
-                RemixIcon.ARROW_UP_DOWN_FILL, I8N.text("SETTINGS_SEC_ADV_NETWORK"),
+                I8N.text("SETTINGS_SEC_ADV_NETWORK"),
                 settingsRow(JLabel(I8N.text("MSG_READ_TIMEOUT")), spReadTimeout),
                 settingsLeftAligned(lblReadTimeoutHint),
             )
@@ -125,7 +125,7 @@ class AdvancedConfigPanel : SettingsPanel() {
         // Security
         add(
             settingsCard(
-                RemixIcon.FILE_SHIELD_LINE, I8N.text("SETTINGS_SEC_SECURITY"),
+                I8N.text("SETTINGS_SEC_SECURITY"),
                 settingsLeftAligned(chkIgnoreCertErrors),
                 settingsLeftAligned(lblIgnoreCertErrorsHint),
             )

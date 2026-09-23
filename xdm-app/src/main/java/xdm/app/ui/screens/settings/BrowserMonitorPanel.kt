@@ -81,7 +81,7 @@ class BrowserMonitorPanel : SettingsPanel() {
             add(BrowserTile(RemixIcon.EDGE_NEW_FILL, "Edge", Color(0x24B0C4)))
             add(BrowserTile(RemixIcon.GLOBAL_FILL, "Other", settingsAccentColor()))
         }
-        add(settingsCard(RemixIcon.GLOBAL_FILL, I8N.text("SETTINGS_SEC_BROWSERS"), browsers))
+        add(settingsCard(I8N.text("SETTINGS_SEC_BROWSERS"), browsers))
         add(Box.createRigidArea(Dimension(0, 12)))
 
         // File types
@@ -95,7 +95,7 @@ class BrowserMonitorPanel : SettingsPanel() {
         }
         add(
             settingsCard(
-                RemixIcon.FILE_LIST_2_FILL, I8N.text("SETTINGS_SEC_FILETYPES"),
+                I8N.text("SETTINGS_SEC_FILETYPES"),
                 caption(I8N.text("DESC_FILETYPES")),
                 textAreaScroll(txtFileExt),
                 settingsLeftAligned(btnExtDef),
@@ -110,7 +110,7 @@ class BrowserMonitorPanel : SettingsPanel() {
         // Site exceptions
         add(
             settingsCard(
-                RemixIcon.FILE_SHIELD_LINE, I8N.text("SETTINGS_SEC_EXCEPTIONS"),
+                I8N.text("SETTINGS_SEC_EXCEPTIONS"),
                 caption(I8N.text("DESC_SITEEXCEPTIONS")),
                 textAreaScroll(txtBlockedHosts),
                 settingsLeftAligned(btnHostDef),
