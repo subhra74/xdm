@@ -131,11 +131,12 @@ class HttpClientImpl @JvmOverloads constructor(
         openCalls.forEach { it.cancel() }
         openCalls.clear()
         client.dispatcher.cancelAll()
-        dispatcher.executorService.shutdownNow()
         connectionPool.evictAll()
+        // The dispatcher's executor is deliberately left alone: every request goes through
+        // `call.execute()` (synchronous), which never uses it, so touching `executorService` here
+        // only forced the thread pool to be created just to shut it down again — once per download.
         Thread {
             Logger.info("XDM", "Trying connection pool clean up..")
-            dispatcher.executorService.awaitTermination(Int.MAX_VALUE.toLong(), TimeUnit.HOURS)
             client.cache?.close()
             Logger.info("XDM", "Connection pool clean up.. triggering GC")
             System.gc()
