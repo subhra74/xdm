@@ -1,3 +1,5 @@
+**As of 2026 this project is in active development**
+
 <p id="downloads" align="center">
 	<img src="https://i.stack.imgur.com/TOfqL.png" height="120px"/>
 	<h1 align="center">Xtreme Download Manager</h1>
