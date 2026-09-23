@@ -30,6 +30,10 @@ interface IAppConfig : CoreConfig {
     var folderIndex: Int
     var sortKey: SortKey
     var sortAscending: Boolean
+    /** User-editable file categories, in match order (first match wins). */
+    var categories: List<DownloadCategory>
+    /** The categories shipped with the app, used by "Restore defaults". */
+    val defaultCategories: List<DownloadCategory>
     var minVideoSize: Long
     var lang: String
     var theme: String
@@ -76,6 +80,9 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var savedFolders: List<String> = emptyList()
     override var sortKey: SortKey = SortKey.DATE
     override var sortAscending = false
+    override var categories: List<DownloadCategory> = DownloadCategory.defaults()
+    override val defaultCategories: List<DownloadCategory>
+        get() = DownloadCategory.defaults()
     override var minVideoSize: Long = 1024
     override var lang: String = "en"
     override var theme: String = "dark"
@@ -178,6 +185,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
         writeStringList(out, savedFolders)
         out.writeBoolean(ignoreCertErrors)
         out.writeInt(readTimeoutSeconds)
+        writeCategories(out, categories)
     }
 
     private fun load(input: DataInputStream) {
@@ -241,7 +249,43 @@ class AppConfig(private val configDir: String) : IAppConfig {
             readTimeoutSeconds = input.readInt().coerceIn(MIN_READ_TIMEOUT_SECONDS, MAX_READ_TIMEOUT_SECONDS)
         } catch (e: java.io.EOFException) {
             // config written before readTimeoutSeconds existed; keep the default
+            return
         }
+        // The category block is last and self-contained: a stale or damaged one falls back to
+        // the built-ins instead of failing the whole load and resetting every other setting.
+        runCatching { readCategories(input) }
+            .onSuccess { categories = it }
+            .onFailure { Logger.error("Unable to read categories, using defaults: $it") }
+    }
+
+    private fun writeCategories(out: DataOutputStream, list: List<DownloadCategory>) {
+        out.writeInt(list.size)
+        list.forEach { cat ->
+            out.writeUTF(cat.id)
+            out.writeUTF(cat.name)
+            writeStringList(out, cat.extensions.toList())
+            out.writeUTF(cat.folder)
+            out.writeBoolean(cat.predefined)
+            out.writeUTF(cat.icon)
+        }
+    }
+
+    private fun readCategories(input: DataInputStream): List<DownloadCategory> {
+        val size = input.readInt()
+        val list = mutableListOf<DownloadCategory>()
+        repeat(size) {
+            list.add(
+                DownloadCategory(
+                    id = input.readUTF(),
+                    name = input.readUTF(),
+                    extensions = LinkedHashSet(readStringList(input)),
+                    folder = input.readUTF(),
+                    predefined = input.readBoolean(),
+                    icon = input.readUTF(),
+                )
+            )
+        }
+        return list
     }
 
     private fun writeStringList(out: DataOutputStream, list: List<String>) {

@@ -65,7 +65,12 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
             stateChanged = { listView.filterStateChanged(it) },
             categoryChanged = { listView.filterCategoryChanged(it) }
         )
-        val toolbar = AppToolBar({ listView.searchTextChanged(it) }, this, { key, asc -> listView.sort(key, asc) })
+        val toolbar = AppToolBar(
+            { listView.searchTextChanged(it) },
+            this,
+            { key, asc -> listView.sort(key, asc) },
+            { filterPanel.reloadCategories() }
+        )
         toolbar.setMultiSelectView(false)
         listView.selectModeCallback = { toolbar.setMultiSelectView(it) }
 

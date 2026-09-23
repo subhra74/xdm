@@ -3,6 +3,7 @@ package xdm.app.ui.components
 
 import xdm.app.AppContext
 import xdm.app.DbRecord
+import xdm.app.DownloadCategory
 import xdm.app.I8N.text
 import xdm.app.RecordStatus
 import xdm.app.utils.RemixIcon
@@ -49,7 +50,7 @@ class MainListView {
     private lateinit var mProperty: JMenuItem
     var selectModeCallback: ((Boolean) -> Unit)? = null
 
-    private val filter = MainListViewFilter(FilterState.All, FilterCategory.All, "")
+    private val filter = MainListViewFilter(FilterState.All, null, "")
     private val sorter: TableRowSorter<MainListViewModel>
 
     init {
@@ -242,7 +243,7 @@ class MainListView {
         model.fireTableDataChanged()
     }
 
-    fun filterCategoryChanged(category: FilterCategory) {
+    fun filterCategoryChanged(category: DownloadCategory?) {
         filter.filterCategory = category
         model.fireTableDataChanged()
     }

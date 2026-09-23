@@ -377,6 +377,22 @@ CAT_MUSIC=Music
 CAT_VIDEOS=Video
 CAT_PROGRAMS=Programs
 
+CAT_MANAGE=Manage categories
+CAT_SEC_CATEGORIES=File categories
+CAT_DESC=With "As per file type", a download goes to the first matching category.
+CAT_ADD=Add
+CAT_EDIT=Edit
+CAT_DELETE=Delete
+CAT_NAME=Name
+CAT_FILE_TYPES=File types
+CAT_FILE_TYPES_HINT=Comma separated, for example: mp4, mkv, webm
+CAT_FOLDER=Folder
+CAT_FOLDER_HINT=Empty: a sub-folder of the download folder, named after the category.
+CAT_APPEARANCE=Icon
+MSG_CAT_NAME_MISSING=Please enter a category name.
+MSG_CAT_FILE_TYPES_MISSING=Please enter at least one file type.
+MSG_CAT_DELETE_CONFIRM=Delete this category? Downloads already saved are not moved.
+
 TOOL_SORT=Sort
 TOOL_DOWNLOAD=New
 TOOL_CLEAR=Clear

@@ -45,19 +45,13 @@ fun getFileFolder(ent: DbRecord): Pair<String?, String?>? {
 }
 
 /**
- * Returns the folder a file should land in when auto-categorization is on:
- * a per-type subfolder of [baseFolder], or [baseFolder] itself for unknown types.
+ * Returns the folder a file should land in when auto-categorization is on: the folder of
+ * the first matching category (its own folder if it has one, else a sub-folder of
+ * [baseFolder] named after it), or [baseFolder] itself when nothing matches.
  */
 fun categoryFolderFor(fileName: String, baseFolder: String): String {
-    val subFolder = when {
-        isDoc(fileName) -> "Documents"
-        isZip(fileName) -> "Compressed"
-        isMusic(fileName) -> "Music"
-        isVideo(fileName) -> "Video"
-        isApp(fileName) -> "Programs"
-        else -> return baseFolder
-    }
-    return File(baseFolder, subFolder).absolutePath
+    val category = config.categories.firstOrNull { it.matches(fileName) } ?: return baseFolder
+    return category.folderFor(baseFolder)
 }
 
 /**

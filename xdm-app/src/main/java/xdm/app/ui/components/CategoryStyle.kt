@@ -2,6 +2,7 @@ package xdm.app.ui.components
 
 import java.awt.Color
 import javax.swing.UIManager
+import xdm.app.DownloadCategory
 import xdm.app.utils.RemixIcon
 
 /**
@@ -34,33 +35,29 @@ object CategoryStyle {
      */
     fun neutralIcon(): Color = UIManager.getColor("Label.foreground") ?: Color.GRAY
 
-    /** Solid accent color for a category (icon glyph color in the sidebar). */
-    fun color(category: FilterCategory): Color = when (category) {
-        FilterCategory.All -> VIOLET
-        FilterCategory.Docs -> SKY
-        FilterCategory.Zip -> ORANGE
-        FilterCategory.Music -> PINK
-        FilterCategory.Video -> RED
-        FilterCategory.Apps -> TEAL
-    }
-
-    /** Glyph used for a category. */
-    fun iconName(category: FilterCategory): RemixIcon = when (category) {
-        FilterCategory.All -> RemixIcon.ARCHIVE_2_FILL
-        FilterCategory.Docs -> RemixIcon.FILE_LIST_2_FILL
-        FilterCategory.Zip -> RemixIcon.FILE_ZIP_FILL
-        FilterCategory.Music -> RemixIcon.MV_FILL
-        FilterCategory.Video -> RemixIcon.MOVIE_FILL
-        FilterCategory.Apps -> RemixIcon.MICROSOFT_FILL
-    }
+    /** Glyph used for the "All types" sidebar row, which has no category behind it. */
+    val ALL_ICON = RemixIcon.ARCHIVE_2_FILL
 
     /**
-     * Subtle tinted background for the rounded icon badge in list rows.
-     * A low-alpha wash of the accent color reads well on both themes and is
-     * far softer than a saturated solid fill.
+     * Glyphs a user may pick for their own categories, in the order the editor shows them.
+     * Keep every constant here present in [RemixIcon].
      */
-    fun badgeBackground(category: FilterCategory): Color {
-        val c = color(category)
-        return Color(c.red, c.green, c.blue, 0x33)
-    }
+    val PICKABLE_ICONS = listOf(
+        RemixIcon.FILE_LINE,
+        RemixIcon.FILE_LIST_2_FILL,
+        RemixIcon.FILE_ZIP_FILL,
+        RemixIcon.MV_FILL,
+        RemixIcon.MOVIE_FILL,
+        RemixIcon.MICROSOFT_FILL,
+        RemixIcon.ARCHIVE_2_FILL,
+        RemixIcon.FILE_TEXT_LINE,
+        RemixIcon.FILE_SHIELD_LINE,
+        RemixIcon.FOLDER_FILL,
+        RemixIcon.GLOBAL_FILL,
+        RemixIcon.SPARKLING_2_FILL,
+    )
+
+    /** Glyph used for a category; an unknown or stale icon name falls back to a plain file glyph. */
+    fun iconName(category: DownloadCategory): RemixIcon =
+        runCatching { RemixIcon.valueOf(category.icon) }.getOrDefault(RemixIcon.FILE_LINE)
 }

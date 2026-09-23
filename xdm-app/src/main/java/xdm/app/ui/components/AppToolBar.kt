@@ -28,7 +28,9 @@ import kotlin.system.exitProcess
 class AppToolBar(
     searchCallback: (String) -> Unit,
     buttonCallback: ActionListener,
-    private val sortCallback: (SortKey, Boolean) -> Unit
+    private val sortCallback: (SortKey, Boolean) -> Unit,
+    /** Invoked after the settings window saves, so the sidebar can reload its categories. */
+    private val settingsSavedCallback: () -> Unit = {}
 ) {
     private val btnNew: JButton
     private val btnSort: JButton
@@ -212,6 +214,7 @@ class AppToolBar(
 
     private fun showSettings() {
         SettingsWindow(SwingUtilities.windowForComponent(toolbar)).apply {
+            onSaved = settingsSavedCallback
             isModal = true
             setLocationRelativeTo(parent)
             loadConfig()

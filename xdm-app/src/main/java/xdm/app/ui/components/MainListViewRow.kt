@@ -3,6 +3,7 @@ package xdm.app.ui.components
 import com.formdev.flatlaf.FlatClientProperties
 import xdm.app.AppContext
 import xdm.app.DbRecord
+import xdm.app.DownloadCategory
 import xdm.app.I8N.text
 import xdm.app.RecordStatus
 import xdm.app.utils.RemixIcon
@@ -61,9 +62,14 @@ class MainListViewRow(
     var onMenuClick: ActionCallBack? = null
 
     private val iconBadge: JPanel
-    private val iconMap = FilterCategory.values().associateWith { cat ->
-        createIcon(CategoryStyle.iconName(cat), 16, Color.WHITE)
-    }
+    /** Icon for a file that matches no category, and for the neutral pre-render state. */
+    private val defaultIcon = createIcon(CategoryStyle.ALL_ICON, 16, Color.WHITE)
+
+    /**
+     * Category icons, cached per category. The key carries the glyph name so editing a
+     * category's icon in settings invalidates the entry instead of showing the old glyph.
+     */
+    private val iconCache = HashMap<String, Icon>()
 
     init {
         model?.addTableModelListener { e: TableModelEvent ->
@@ -95,7 +101,7 @@ class MainListViewRow(
         icoUnchecked = createIcon(RemixIcon.CHECKBOX_BLANK_LINE, 16, Color.WHITE)
         icoChecked = createIcon(RemixIcon.CHECKBOX_LINE, 16, Color.WHITE)
 //        icoFile = createIcon(RemixIcon.FILE_ZIP_FILL, 16, Color.WHITE)
-        icon = JLabel(iconMap[FilterCategory.All])
+        icon = JLabel(defaultIcon)
         icon.border = EmptyBorder(7, 7, 7, 7)
         //    icon.addMouseMotionListener(
         //        new MouseAdapter() {
@@ -133,7 +139,7 @@ class MainListViewRow(
                             if (oldIcon != null) {
                                 oldIcon as Icon
                             } else {
-                                iconMap[FilterCategory.All]
+                                defaultIcon
                             }
                         }
                 }
@@ -435,17 +441,14 @@ class MainListViewRow(
         // Noop
     }
 
-    private fun categoryFor(name: String): FilterCategory = when {
-        isZip(name) -> FilterCategory.Zip
-        isMusic(name) -> FilterCategory.Music
-        isVideo(name) -> FilterCategory.Video
-        isApp(name) -> FilterCategory.Apps
-        else -> FilterCategory.Docs
-    }
+    private fun categoryFor(name: String): DownloadCategory? =
+        AppContext.config.categories.firstOrNull { it.matches(name) }
 
     private fun getIcon(name: String): Icon {
-        val type = categoryFor(name)
+        val cat = categoryFor(name) ?: return defaultIcon
         iconBadge.background = Color(30, 144, 255)
-        return iconMap[type]!!
+        return iconCache.getOrPut("${cat.id}:${cat.icon}") {
+            createIcon(CategoryStyle.iconName(cat), 16, Color.WHITE)
+        }
     }
 }

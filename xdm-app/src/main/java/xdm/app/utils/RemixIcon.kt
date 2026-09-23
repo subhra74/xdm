@@ -26,6 +26,7 @@ enum class RemixIcon(val codepoint: Int) {
     CHROME_FILL(0xeb8c),
     DELETE_BIN_LINE(0xec2a),
     EDGE_NEW_FILL(0xf31c),
+    EDIT_LINE(0xec86),
     FILE_COPY_LINE(0xecd5),
     FILE_LINE(0xeceb),
     FILE_LIST_2_FILL(0xecec),
