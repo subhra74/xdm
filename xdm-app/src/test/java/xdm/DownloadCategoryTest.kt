@@ -21,6 +21,7 @@ class DownloadCategoryTest {
         dir = Files.createTempDirectory("xdm-category").toFile()
         AppContext.config = AppConfig(dir.absolutePath).apply {
             defaultDownloadFolder = dir.absolutePath
+            categories = DownloadCategory.defaults(dir.absolutePath)
         }
     }
 
@@ -43,15 +44,24 @@ class DownloadCategoryTest {
     }
 
     @Test
-    fun blankFolder_resolvesToSubfolderOfBase() {
-        val cat = DownloadCategory(id = "x", name = "Video", extensions = setOf(".mp4"))
-        assertEquals(File("/base", "Video").absolutePath, cat.folderFor("/base"))
+    fun defaults_areSeededUnderTheGivenFolder() {
+        val seeded = DownloadCategory.defaults("/base")
+        assertEquals(File("/base", "Video").absolutePath, seeded.first { it.id == "CAT_VIDEOS" }.folder)
+        assertTrue(seeded.all { it.folder.isNotBlank() })
     }
 
     @Test
-    fun explicitFolder_overridesBase() {
-        val cat = DownloadCategory(id = "x", name = "Video", extensions = setOf(".mp4"), folder = "/movies")
-        assertEquals("/movies", cat.folderFor("/base"))
+    fun renamingACategory_doesNotMoveItsFolder() {
+        val video = DownloadCategory.defaults("/base").first { it.id == "CAT_VIDEOS" }
+        assertEquals(video.folder, video.copy(name = "Movies").folder)
+    }
+
+    @Test
+    fun seededFolders_areIndependentOfTheDownloadFolderAfterwards() {
+        val config = AppContext.config as AppConfig
+        val before = config.categories.map { it.folder }
+        config.defaultDownloadFolder = "/somewhere/else"
+        assertEquals(before, config.categories.map { it.folder })
     }
 
     @Test
@@ -62,6 +72,15 @@ class DownloadCategoryTest {
         assertEquals(File(base, "Compressed").absolutePath, categoryFolderFor("bundle.tar.gz", base))
         assertEquals(File(base, "Music").absolutePath, categoryFolderFor("song.mp3", base))
         assertEquals(File(base, "Programs").absolutePath, categoryFolderFor("setup.exe", base))
+    }
+
+    @Test
+    fun categoryFolderWins_overTheBaseFolderPassedIn() {
+        val config = AppContext.config as AppConfig
+        config.categories = listOf(
+            DownloadCategory(id = "a", name = "Video", extensions = setOf(".mp4"), folder = "/movies")
+        )
+        assertEquals("/movies", categoryFolderFor("clip.mp4", "/some/other/base"))
     }
 
     @Test
@@ -80,6 +99,21 @@ class DownloadCategoryTest {
     }
 
     @Test
+    fun untouchedBuiltIn_usesItsTranslatedName() {
+        val video = DownloadCategory.defaults("/base").first { it.id == "CAT_VIDEOS" }
+        // Translations are not loaded in tests, so this falls back to the stored name;
+        // what matters is that a renamed built-in shows the typed name either way.
+        assertEquals("Video", video.displayName)
+        assertEquals("Movies", video.copy(name = "Movies").displayName)
+    }
+
+    @Test
+    fun renamingBuiltInBackRestoresItsKey() {
+        val video = DownloadCategory.defaults("/base").first { it.id == "CAT_VIDEOS" }
+        assertEquals(video, video.copy(name = "Movies").copy(name = "Video"))
+    }
+
+    @Test
     fun userCategory_survivesSaveAndLoad() {
         val custom = DownloadCategory(
             id = "custom-1",
@@ -89,28 +123,23 @@ class DownloadCategoryTest {
             icon = "FILE_TEXT_LINE",
         )
         AppConfig(dir.absolutePath).apply {
-            categories = DownloadCategory.defaults() + custom
+            categories = DownloadCategory.defaults(dir.absolutePath) + custom
         }.save()
 
         val loaded = AppConfig(dir.absolutePath).apply { load() }.categories
-        assertEquals(DownloadCategory.defaults().size + 1, loaded.size)
+        assertEquals(DownloadCategory.defaults(dir.absolutePath).size + 1, loaded.size)
         assertEquals(custom, loaded.last())
     }
 
     @Test
-    fun untouchedBuiltIn_usesItsTranslatedName() {
-        val video = DownloadCategory.defaults().first { it.id == "CAT_VIDEOS" }
-        // Translations are not loaded in tests, so this falls back to the stored name;
-        // what matters is that a renamed built-in shows the typed name either way.
-        assertEquals("Video", video.displayName)
-        assertEquals("Movies", video.copy(name = "Movies").displayName)
-    }
+    fun editedFolder_survivesSaveAndLoad() {
+        AppConfig(dir.absolutePath).apply {
+            categories = DownloadCategory.defaults(dir.absolutePath)
+                .map { if (it.id == "CAT_VIDEOS") it.copy(folder = "/mnt/media") else it }
+        }.save()
 
-    @Test
-    fun renamingBuiltInBackRestoresItsKey() {
-        val video = DownloadCategory.defaults().first { it.id == "CAT_VIDEOS" }
-        val renamed = video.copy(name = "Movies")
-        assertEquals(video, renamed.copy(name = "Video"))
+        val loaded = AppConfig(dir.absolutePath).apply { load() }.categories
+        assertEquals("/mnt/media", loaded.first { it.id == "CAT_VIDEOS" }.folder)
     }
 
     @Test

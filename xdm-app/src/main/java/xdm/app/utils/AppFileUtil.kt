@@ -45,25 +45,25 @@ fun getFileFolder(ent: DbRecord): Pair<String?, String?>? {
 }
 
 /**
- * Returns the folder a file should land in when auto-categorization is on: the folder of
- * the first matching category (its own folder if it has one, else a sub-folder of
- * [baseFolder] named after it), or [baseFolder] itself when nothing matches.
+ * Returns the folder a file should land in when auto-categorization is on: the folder of the
+ * first matching category, or [baseFolder] when nothing matches. A category's folder stands
+ * on its own, so the base folder only decides where uncategorized files go.
  */
 fun categoryFolderFor(fileName: String, baseFolder: String): String {
     val category = config.categories.firstOrNull { it.matches(fileName) } ?: return baseFolder
-    return category.folderFor(baseFolder)
+    return category.folder.ifBlank { baseFolder }
 }
 
 /**
  * Fills a "Save in" combo from [IAppConfig.recentFolders] (index 0 is the
- * "As per file type" entry) and selects the last remembered choice.
+ * "Automatic (by file type)" entry) and selects the last remembered choice.
  */
 fun populateSaveInFolders(model: DefaultComboBoxModel<String>, combo: JComboBox<String>) {
     val folders = config.recentFolders
     model.removeAllElements()
     model.addAll(folders)
     // coerceIn(1, size - 1) threw when the list held fewer than two entries, which happens if
-    // `distinct()` collapses the "As per file type" entry into the default folder.
+    // `distinct()` collapses the "Automatic (by file type)" entry into the default folder.
     val lastIndex = folders.size - 1
     combo.selectedIndex = when {
         lastIndex < 0 -> -1
@@ -72,10 +72,10 @@ fun populateSaveInFolders(model: DefaultComboBoxModel<String>, combo: JComboBox<
     }
 }
 
-/** True when the "As per file type" entry is selected in a combo filled by [populateSaveInFolders]. */
+/** True when the "Automatic (by file type)" entry is selected in a combo filled by [populateSaveInFolders]. */
 fun isAutoCategorySelected(combo: JComboBox<String>) = combo.selectedIndex == 0
 
-/** The real folder behind the current combo selection (the default folder for "As per file type"). */
+/** The real folder behind the current combo selection (the default folder for "Automatic (by file type)"). */
 fun selectedBaseFolder(combo: JComboBox<String>): String =
     if (isAutoCategorySelected(combo)) config.defaultDownloadFolder
     else combo.selectedItem?.toString() ?: config.defaultDownloadFolder

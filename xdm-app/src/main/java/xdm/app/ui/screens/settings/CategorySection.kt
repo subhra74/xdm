@@ -11,14 +11,13 @@ import java.awt.Color
 import java.awt.Component
 import java.awt.Dimension
 import java.awt.Font
-import java.awt.Insets
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.Box
-import javax.swing.BoxLayout
 import javax.swing.DefaultListCellRenderer
 import javax.swing.DefaultListModel
 import javax.swing.JButton
+import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JList
 import javax.swing.JOptionPane
@@ -29,15 +28,16 @@ import javax.swing.SwingUtilities
 import javax.swing.border.EmptyBorder
 
 /**
- * Settings page for user-defined download categories. Edits a working copy; the list is
- * only pushed into the config by [save], so cancelling the settings window discards it.
+ * The "File categories" card shown inside General settings, under Folders. Edits a working
+ * copy of the category list; [save] is what pushes it into the config, so cancelling the
+ * settings window discards the edits.
  */
-class CategoryPanel : SettingsPanel() {
+class CategorySection {
     private val model = DefaultListModel<DownloadCategory>()
     private val list = JList(model).apply {
         selectionMode = ListSelectionModel.SINGLE_SELECTION
         cellRenderer = CategoryRenderer()
-        visibleRowCount = 7
+        visibleRowCount = 5
         addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
                 if (e.clickCount == 2 && selectedIndex >= 0) editSelected()
@@ -53,11 +53,8 @@ class CategoryPanel : SettingsPanel() {
         addActionListener { restoreDefaults() }
     }
 
-    init {
-        layout = BoxLayout(this, BoxLayout.Y_AXIS)
-
-        add(settingsTitle(I8N.text("CAT_TEXT")))
-
+    /** The card to drop into a settings panel. */
+    val component: JComponent by lazy {
         val buttons = Box.createHorizontalBox().apply {
             add(btnAdd)
             add(Box.createRigidArea(Dimension(8, 0)))
@@ -67,22 +64,19 @@ class CategoryPanel : SettingsPanel() {
             add(Box.createHorizontalGlue())
             add(btnDefaults)
         }
-
         val scroll = JScrollPane(list).apply {
-            alignmentX = LEFT_ALIGNMENT
-            preferredSize = Dimension(0, 230)
-            maximumSize = Dimension(Int.MAX_VALUE, 230)
+            preferredSize = Dimension(0, 170)
+            maximumSize = Dimension(Int.MAX_VALUE, 170)
         }
-
-        add(
-            settingsCard(
-                I8N.text("CAT_SEC_CATEGORIES"),
-                caption(I8N.text("CAT_DESC")),
-                scroll,
-                buttons,
-            )
+        settingsCard(
+            I8N.text("CAT_SEC_CATEGORIES"),
+            JLabel(I8N.text("CAT_DESC")).apply {
+                foreground = settingsMutedColor()
+                font = font.deriveFont(Font.PLAIN, font.size2D - 1f)
+            },
+            scroll,
+            buttons,
         )
-        add(Box.createVerticalGlue())
     }
 
     private fun actionButton(key: String, icon: RemixIcon, action: () -> Unit) =
@@ -92,7 +86,7 @@ class CategoryPanel : SettingsPanel() {
             addActionListener { action() }
         }
 
-    private fun owner() = SwingUtilities.getWindowAncestor(this)
+    private fun owner() = SwingUtilities.getWindowAncestor(list)
 
     private fun addCategory() {
         val dlg = CategoryEditDialog(owner(), null).apply { isVisible = true }
@@ -110,7 +104,7 @@ class CategoryPanel : SettingsPanel() {
         val index = list.selectedIndex
         if (index < 0) return
         val confirm = JOptionPane.showConfirmDialog(
-            this,
+            list,
             I8N.text("MSG_CAT_DELETE_CONFIRM"),
             I8N.text("CAT_DELETE"),
             JOptionPane.YES_NO_OPTION
@@ -139,12 +133,9 @@ class CategoryPanel : SettingsPanel() {
         AppContext.config.categories = (0 until model.size()).map { model[it] }
     }
 
-    override fun getInsets(): Insets = Insets(10, 12, 12, 12)
-
     /**
-     * One row: the category's glyph, its name and file types, then the folder its
-     * downloads land in — derived from the default download folder when the user set none,
-     * so every row shows a real path rather than a blank.
+     * One row: the category's glyph, its name and file types, then the folder its downloads
+     * land in. Every category carries a concrete folder, so this is never blank.
      */
     private class CategoryRenderer : DefaultListCellRenderer() {
         override fun getListCellRendererComponent(
@@ -156,13 +147,12 @@ class CategoryPanel : SettingsPanel() {
                 c.iconTextGap = 10
                 c.verticalTextPosition = SwingConstants.TOP
                 c.border = EmptyBorder(4, 4, 4, 4)
-                val folder = value.folderFor(AppContext.config.defaultDownloadFolder)
                 // The muted gray is unreadable on the selection fill, so the selected row
                 // keeps the full-strength foreground for both lines.
                 val subColor = if (isSelected) c.foreground else settingsMutedColor()
                 c.text = "<html><b>${escape(value.displayName)}</b> &nbsp;${
                     escape(DownloadCategory.formatExtensions(value.extensions))
-                }<br><font color='${hex(subColor)}'>${escape(folder)}</font></html>"
+                }<br><font color='${hex(subColor)}'>${escape(value.folder)}</font></html>"
             }
             return c
         }
@@ -172,11 +162,4 @@ class CategoryPanel : SettingsPanel() {
 
         private fun hex(c: Color) = String.format("#%06x", c.rgb and 0xFFFFFF)
     }
-}
-
-/** Small muted caption line, matching the other settings panels. */
-private fun caption(text: String): JLabel = JLabel(text).apply {
-    alignmentX = Component.LEFT_ALIGNMENT
-    foreground = settingsMutedColor()
-    font = font.deriveFont(Font.PLAIN, font.size2D - 1f)
 }

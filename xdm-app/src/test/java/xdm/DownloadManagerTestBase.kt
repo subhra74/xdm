@@ -6,6 +6,7 @@ import xdm.app.AppConfig
 import xdm.app.AppContext
 import xdm.app.AppDB
 import xdm.app.CapturedVideoTracker
+import xdm.app.DownloadCategory
 import xdm.app.DownloadManager
 import xdm.app.IAppInstance
 import xdm.core.downloaders.DownloadHost
@@ -57,6 +58,9 @@ abstract class DownloadManagerTestBase {
             haltAfterDownload = false
             tempFolder = File(dir, "temp").absolutePath
             defaultDownloadFolder = dir.absolutePath
+            // Categories are seeded at construction from the real download folder; re-seed
+            // them under the temp dir so auto-categorized tests stay inside it.
+            categories = DownloadCategory.defaults(dir.absolutePath)
         }
         appDB = AppDB(dir.absolutePath)
         taskDB = TaskInfoDB(dir.absolutePath)

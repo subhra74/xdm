@@ -365,7 +365,7 @@ ND_CMB_OPTION_2=Add to: Default queue
 ND_CMB_OPTION_3=Queue and scheduler
 ND_QUEUE=Download later
 ND_DOWNLOAD=Download
-ND_AUTO_CAT=As per file type
+ND_AUTO_CAT=Automatic (by file type)
 
 CAT_FINISHED=Completed
 CAT_INCOMPLETE=Incomplete
@@ -379,7 +379,7 @@ CAT_PROGRAMS=Programs
 
 CAT_MANAGE=Manage categories
 CAT_SEC_CATEGORIES=File categories
-CAT_DESC=With "As per file type", a download goes to the first matching category.
+CAT_DESC=An automatic download goes to the first category whose file types match.
 CAT_ADD=Add
 CAT_EDIT=Edit
 CAT_DELETE=Delete
@@ -387,10 +387,11 @@ CAT_NAME=Name
 CAT_FILE_TYPES=File types
 CAT_FILE_TYPES_HINT=Comma separated, for example: mp4, mkv, webm
 CAT_FOLDER=Folder
-CAT_FOLDER_HINT=Empty: a sub-folder of the download folder, named after the category.
+CAT_FOLDER_HINT=Where downloads of these types are saved. Renaming the category does not move it.
 CAT_APPEARANCE=Icon
 MSG_CAT_NAME_MISSING=Please enter a category name.
 MSG_CAT_FILE_TYPES_MISSING=Please enter at least one file type.
+MSG_CAT_FOLDER_MISSING=Please choose a folder for this category.
 MSG_CAT_DELETE_CONFIRM=Delete this category? Downloads already saved are not moved.
 
 TOOL_SORT=Sort

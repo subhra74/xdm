@@ -4,23 +4,28 @@ import java.io.File
 
 /**
  * A user-editable file category. Categories drive three things:
- *  - which sub-folder a finished download lands in when "As per file type" is picked,
+ *  - which folder a finished download lands in when "Automatic (by file type)" is picked,
  *  - the category list in the sidebar and the row icons in the downloads list,
  *  - nothing in xdm-core: the engine only carries the `autoCategorize` flag and
  *    [xdm.app.DownloadManager] resolves the folder here.
  *
- * The five [defaults] ship with the app and can be edited or deleted like any other;
- * [predefined] only tells "Restore defaults" what to put back.
+ * Every category owns a concrete [folder]. It is decided once — when the category is
+ * created, or when the built-ins are first seeded from the download folder — and nothing
+ * moves it afterwards: renaming a category does not touch its folder, and changing the
+ * default download folder does not either. Only editing the folder itself does.
+ *
+ * The five built-ins ([defaults]) can be edited or deleted like any other; [predefined]
+ * only tells "Restore defaults" what to put back.
  */
 data class DownloadCategory(
     /** Stable key: the language-file key for a built-in, a random id for a user category. */
     val id: String,
-    /** Untranslated name. Doubles as the sub-folder name when [folder] is blank. */
+    /** Untranslated name; shown as-is once a built-in has been renamed. */
     val name: String,
     /** Lowercase, dot-prefixed, e.g. `.mp4`. */
-    val extensions: Set<String> = emptySet(),
-    /** Absolute folder override. Blank means `<base folder>/<name>`. */
-    val folder: String = "",
+    val extensions: Set<String>,
+    /** Absolute folder this category's downloads land in. */
+    val folder: String,
     val predefined: Boolean = false,
     /** Name of a [xdm.app.utils.RemixIcon] constant; unknown names fall back to a file glyph. */
     val icon: String = "FILE_LINE",
@@ -32,7 +37,7 @@ data class DownloadCategory(
      */
     val displayName: String
         get() {
-            if (defaults().none { it.id == id && it.name == name }) return name
+            if (defaultNameOf(id) != name) return name
             val translated: String? = I8N.text(id)
             return if (translated.isNullOrBlank()) name else translated
         }
@@ -40,56 +45,60 @@ data class DownloadCategory(
     fun matches(fileName: String): Boolean =
         extensions.any { fileName.endsWith(it, ignoreCase = true) }
 
-    /**
-     * Where a file of this category goes given the base folder the user picked. A category
-     * with an explicit [folder] always wins; otherwise the file lands in a sub-folder of
-     * [baseFolder] so auto-categorization still composes with a non-default "Save in" choice.
-     */
-    fun folderFor(baseFolder: String): String =
-        if (folder.isNotBlank()) folder else File(baseFolder, name).absolutePath
-
     companion object {
+        /** Everything about a built-in except the folder, which depends on where it is seeded. */
+        private class BuiltIn(
+            val id: String,
+            val name: String,
+            val icon: String,
+            val extensions: Set<String>,
+        )
+
         /**
-         * The built-in categories. Extension lists and sub-folder names match what the app
-         * used before categories became editable, so upgrading changes no download's path.
+         * The built-in categories. Names, extension lists and icons match what the app used
+         * before categories became editable, so seeding them changes no download's path.
          */
-        fun defaults(): List<DownloadCategory> = listOf(
-            DownloadCategory(
-                id = "CAT_DOCUMENTS",
-                name = "Documents",
-                extensions = setOf(".pdf", ".docx", ".doc", ".ppt", ".pptx", ".odt", ".odf"),
-                predefined = true,
-                icon = "FILE_LIST_2_FILL",
+        private val BUILT_INS = listOf(
+            BuiltIn(
+                "CAT_DOCUMENTS", "Documents", "FILE_LIST_2_FILL",
+                setOf(".pdf", ".docx", ".doc", ".ppt", ".pptx", ".odt", ".odf")
             ),
-            DownloadCategory(
-                id = "CAT_COMPRESSED",
-                name = "Compressed",
-                extensions = setOf(".zip", ".rar", ".7z", ".gz", ".tar", ".tgz", ".tz", ".bz2", ".xz"),
-                predefined = true,
-                icon = "FILE_ZIP_FILL",
+            BuiltIn(
+                "CAT_COMPRESSED", "Compressed", "FILE_ZIP_FILL",
+                setOf(".zip", ".rar", ".7z", ".gz", ".tar", ".tgz", ".tz", ".bz2", ".xz")
             ),
-            DownloadCategory(
-                id = "CAT_MUSIC",
-                name = "Music",
-                extensions = setOf(".mp3", ".aac", ".wav", ".ac3"),
-                predefined = true,
-                icon = "MV_FILL",
+            BuiltIn(
+                "CAT_MUSIC", "Music", "MV_FILL",
+                setOf(".mp3", ".aac", ".wav", ".ac3")
             ),
-            DownloadCategory(
-                id = "CAT_VIDEOS",
-                name = "Video",
-                extensions = setOf(".ts", ".mp4", ".mkv", ".webm", ".avi"),
-                predefined = true,
-                icon = "MOVIE_FILL",
+            BuiltIn(
+                "CAT_VIDEOS", "Video", "MOVIE_FILL",
+                setOf(".ts", ".mp4", ".mkv", ".webm", ".avi")
             ),
-            DownloadCategory(
-                id = "CAT_PROGRAMS",
-                name = "Programs",
-                extensions = setOf(".exe", ".msi", ".msix", ".deb", ".dmg", ".rpm", ".iso", ".pkg", ".sh", ".py"),
-                predefined = true,
-                icon = "MICROSOFT_FILL",
+            BuiltIn(
+                "CAT_PROGRAMS", "Programs", "MICROSOFT_FILL",
+                setOf(".exe", ".msi", ".msix", ".deb", ".dmg", ".rpm", ".iso", ".pkg", ".sh", ".py")
             ),
         )
+
+        /**
+         * Seeds the built-in categories under [baseFolder], each in a sub-folder named after
+         * it. This is the only point where the download folder feeds into a category: the
+         * paths are captured here and then stand on their own.
+         */
+        fun defaults(baseFolder: String): List<DownloadCategory> = BUILT_INS.map {
+            DownloadCategory(
+                id = it.id,
+                name = it.name,
+                extensions = it.extensions,
+                folder = File(baseFolder, it.name).absolutePath,
+                predefined = true,
+                icon = it.icon,
+            )
+        }
+
+        /** The shipped name for a built-in id, or null when [id] is not a built-in. */
+        fun defaultNameOf(id: String): String? = BUILT_INS.firstOrNull { it.id == id }?.name
 
         /**
          * Parses a free-form extension list ("mp4, *.mkv; AVI") into the canonical

@@ -11,7 +11,7 @@ import javax.swing.JComboBox
 /**
  * Regression for CODE_REVIEW B21: `populateSaveInFolders` used `coerceIn(1, folders.size - 1)`,
  * which throws when `recentFolders` holds fewer than two entries — for instance when `distinct()`
- * collapses the "As per file type" entry into the default folder.
+ * collapses the "Automatic (by file type)" entry into the default folder.
  */
 class PopulateSaveInFoldersTest : DownloadManagerTestBase() {
 

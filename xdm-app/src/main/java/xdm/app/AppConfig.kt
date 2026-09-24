@@ -80,9 +80,6 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var savedFolders: List<String> = emptyList()
     override var sortKey: SortKey = SortKey.DATE
     override var sortAscending = false
-    override var categories: List<DownloadCategory> = DownloadCategory.defaults()
-    override val defaultCategories: List<DownloadCategory>
-        get() = DownloadCategory.defaults()
     override var minVideoSize: Long = 1024
     override var lang: String = "en"
     override var theme: String = "dark"
@@ -93,6 +90,14 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var showDownloadProgressWindow: Boolean = true
     override var defaultDownloadFolder: String = File(System.getProperty("user.home"), "Downloads").absolutePath
     override var tempFolder: String = File(System.getProperty("user.home"), ".temp").absolutePath
+
+    // Declared after defaultDownloadFolder on purpose: Kotlin initializes properties in
+    // declaration order, and seeding the built-ins reads that folder. This runs on first
+    // run only — a config on disk replaces the list wholesale.
+    override var categories: List<DownloadCategory> = DownloadCategory.defaults(defaultDownloadFolder)
+    override val defaultCategories: List<DownloadCategory>
+        get() = DownloadCategory.defaults(defaultDownloadFolder)
+
     override var autoRenameOnConflict: Boolean = true
     override var shutdownAfterAllDone: Boolean = false
     override var speedLimiterEnabled: Boolean = false
@@ -255,7 +260,12 @@ class AppConfig(private val configDir: String) : IAppConfig {
         // the built-ins instead of failing the whole load and resetting every other setting.
         runCatching { readCategories(input) }
             .onSuccess { categories = it }
-            .onFailure { Logger.error("Unable to read categories, using defaults: $it") }
+            .onFailure {
+                Logger.error("Unable to read categories, using defaults: $it")
+                // Re-seed from the folder this config actually carries, not the one the
+                // constructor guessed before the file was read.
+                categories = DownloadCategory.defaults(defaultDownloadFolder)
+            }
     }
 
     private fun writeCategories(out: DataOutputStream, list: List<DownloadCategory>) {

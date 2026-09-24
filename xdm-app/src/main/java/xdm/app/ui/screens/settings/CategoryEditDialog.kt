@@ -27,8 +27,6 @@ import javax.swing.JList
 import javax.swing.JPanel
 import javax.swing.JTextField
 import javax.swing.border.EmptyBorder
-import javax.swing.event.DocumentEvent
-import javax.swing.event.DocumentListener
 
 /**
  * Add/edit dialog for a single [DownloadCategory]: name, file types, target folder and the
@@ -37,9 +35,6 @@ import javax.swing.event.DocumentListener
 class CategoryEditDialog(parent: Window, private val existing: DownloadCategory?) : JDialog(parent) {
     var result: DownloadCategory? = null
         private set
-
-    /** The name the folder box was last derived from; see [syncDerivedFolder]. */
-    private var lastDerivedName = existing?.name ?: ""
 
     private val txtName = JTextField().apply { fixHeight(this) }
     private val txtTypes = JTextField().apply { fixHeight(this) }
@@ -58,14 +53,12 @@ class CategoryEditDialog(parent: Window, private val existing: DownloadCategory?
         existing?.let {
             txtName.text = it.name
             txtTypes.text = DownloadCategory.formatExtensions(it.extensions)
-            // Show the real destination even when the category has no folder of its own,
-            // rather than an empty box the user has to interpret.
-            txtFolder.text = it.folderFor(baseFolder())
+            txtFolder.text = it.folder
             cmbIcon.selectedItem = CategoryStyle.iconName(it)
         }
-        txtName.document.addDocumentListener(object : DocumentAdapter() {
-            override fun changed() = syncDerivedFolder()
-        })
+        // A new category starts in the download folder; the user points it wherever they
+        // want. Nothing re-derives it later, so renaming never moves a category's files.
+        if (existing == null) txtFolder.text = AppContext.config.defaultDownloadFolder
         if (cmbIcon.selectedIndex < 0) cmbIcon.selectedIndex = 0
 
         val btnBrowse = JButton(
@@ -119,24 +112,6 @@ class CategoryEditDialog(parent: Window, private val existing: DownloadCategory?
         setLocationRelativeTo(parent)
     }
 
-    private fun baseFolder(): String = AppContext.config.defaultDownloadFolder
-
-    /** The folder a category named [name] uses when it has no folder of its own. */
-    private fun derivedFolder(name: String): String =
-        File(baseFolder(), name.ifBlank { "" }).absolutePath
-
-    /**
-     * Keeps the folder box in step with the name while it still holds a derived path, so a
-     * category renamed in the editor shows where it will actually save. A path the user
-     * typed or picked is left alone.
-     */
-    private fun syncDerivedFolder() {
-        val current = txtFolder.text.trim()
-        if (current.isNotEmpty() && current != derivedFolder(lastDerivedName)) return
-        lastDerivedName = txtName.text.trim()
-        txtFolder.text = derivedFolder(lastDerivedName)
-    }
-
     /** Pins a combo to a fixed width so the icon/color pickers stay compact. */
     private fun sizeTo(combo: JComboBox<*>, width: Int) {
         fixHeight(combo)
@@ -173,11 +148,11 @@ class CategoryEditDialog(parent: Window, private val existing: DownloadCategory?
             showError(I8N.text("MSG_CAT_FILE_TYPES_MISSING"))
             return
         }
-        // A folder still equal to the derived one is left blank, so the category keeps
-        // following whatever base folder the download uses instead of being pinned here.
-        val typedFolder = txtFolder.text.trim()
-        val folder = if (typedFolder == derivedFolder(name)) "" else typedFolder
-
+        val folder = txtFolder.text.trim()
+        if (folder.isEmpty()) {
+            showError(I8N.text("MSG_CAT_FOLDER_MISSING"))
+            return
+        }
         result = DownloadCategory(
             id = existing?.id ?: UUID.randomUUID().toString(),
             name = name,
@@ -206,14 +181,6 @@ class CategoryEditDialog(parent: Window, private val existing: DownloadCategory?
             }
             return c
         }
-    }
-
-    /** [DocumentListener] that funnels every edit into one callback. */
-    private abstract class DocumentAdapter : DocumentListener {
-        abstract fun changed()
-        override fun insertUpdate(e: DocumentEvent) = changed()
-        override fun removeUpdate(e: DocumentEvent) = changed()
-        override fun changedUpdate(e: DocumentEvent) = changed()
     }
 
 }

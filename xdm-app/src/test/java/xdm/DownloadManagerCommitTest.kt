@@ -40,6 +40,26 @@ class DownloadManagerCommitTest : DownloadManagerTestBase() {
         httpTask().copy(defaultDownloadFolder = folder.absolutePath, fileName = fileName)
 
     @Test
+    fun firstRun_commitCreatesTheMissingCategoryFolder() {
+        // First run: the seeded category folders do not exist on disk yet.
+        val videos = File(config.categories.first { it.id == "CAT_VIDEOS" }.folder)
+        assertFalse("precondition: category folder must not exist", videos.exists())
+
+        val tmp = File(dir, "clip.tmp").apply { writeText("downloaded") }
+        val task = httpTask().copy(
+            defaultDownloadFolder = File(dir, "never-created").absolutePath,
+            fileName = "clip.mp4",
+            autoCategorize = true,
+        )
+        taskDB.saveHttpTask(task)
+
+        val result = commit(task.id, tmp, DownloadType.Http) as CommitResult.Success
+        assertEquals(videos.absolutePath, result.outputDir)
+        assertTrue("commit should have created it", videos.isDirectory)
+        assertEquals("downloaded", File(videos, "clip.mp4").readText())
+    }
+
+    @Test
     fun uncreatableDestinationFolder_reportsOutputWriteError() {
         val blocker = File(dir, "blocker").apply { writeText("not a folder") }
         val task = httpTaskIn(File(blocker, "sub"))
@@ -82,8 +102,11 @@ class DownloadManagerCommitTest : DownloadManagerTestBase() {
         val hls = hlsTask().copy(defaultDownloadFolder = out.absolutePath, fileName = "clip.mp4", autoCategorize = true)
         taskDB.saveHlsTask(hls)
 
+        // Auto-categorized downloads land in the category's own folder, which stands on its
+        // own — the task's folder is only used when nothing matches.
+        val videoFolder = File(config.categories.first { it.id == "CAT_VIDEOS" }.folder)
         val path = outputFilePath(hls.id, DownloadType.Hls, ".mp4")
-        assertEquals(File(File(out, "Video"), ".${hls.id}.xdm-part.mp4").absolutePath, path)
+        assertEquals(File(videoFolder, ".${hls.id}.xdm-part.mp4").absolutePath, path)
         assertEquals("HTTP keeps its own temp file", null, outputFilePath(hls.id, DownloadType.Http, ".mp4"))
     }
 

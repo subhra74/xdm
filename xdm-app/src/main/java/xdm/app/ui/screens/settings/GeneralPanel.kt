@@ -60,6 +60,7 @@ class GeneralPanel : SettingsPanel() {
     private val cmbLang = JComboBox<String>(langModel).apply { fixHeight(this) }
     private val langProp: Properties
     private val themeCodes = listOf("dark", "light")
+    private val categorySection = CategorySection()
     private val cmbTheme = JComboBox<String>().apply {
         fixHeight(this)
         addItem(I8N.text("THEME_DARK"))
@@ -96,6 +97,11 @@ class GeneralPanel : SettingsPanel() {
                 folderField(I8N.text("SETTINGS_FOLDER"), txtDwnDir, btnBrowse2),
             )
         )
+        add(Box.createRigidArea(Dimension(0, 12)))
+
+        // File categories: where each type of download is filed, under Folders because
+        // that is the setting it sits next to.
+        add(categorySection.component)
         add(Box.createRigidArea(Dimension(0, 12)))
 
         // Appearance & language
@@ -167,6 +173,7 @@ class GeneralPanel : SettingsPanel() {
         }
         val themeIndex = themeCodes.indexOf(config.theme.lowercase())
         cmbTheme.selectedIndex = if (themeIndex >= 0) themeIndex else 0
+        categorySection.load()
     }
 
     fun save() {
@@ -187,6 +194,7 @@ class GeneralPanel : SettingsPanel() {
             }
         }
         config.theme = themeCodes[cmbTheme.selectedIndex.coerceIn(themeCodes.indices)]
+        categorySection.save()
     }
 
     override fun getInsets(): Insets {
