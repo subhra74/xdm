@@ -39,25 +39,40 @@ object CategoryStyle {
     val ALL_ICON = RemixIcon.ARCHIVE_2_FILL
 
     /**
-     * Glyphs a user may pick for their own categories, in the order the editor shows them.
-     * Keep every constant here present in [RemixIcon].
+     * Fill glyphs mapped to their outlined twin. A category stores one icon name, and the two
+     * places that draw it disagree on style: the download list wants the filled glyph, the
+     * filter sidebar the outlined one. Categories are stored filled and the sidebar translates
+     * on the way out, so nothing on disk has to change.
+     *
+     * This map is also the source of truth for [PICKABLE_ICONS]: an icon is only offered if it
+     * appears here, so the user can never pick a glyph that has no outlined counterpart and
+     * would fall back to its filled self in the sidebar.
      */
-    val PICKABLE_ICONS = listOf(
-        RemixIcon.FILE_LINE,
-        RemixIcon.FILE_LIST_2_FILL,
-        RemixIcon.FILE_ZIP_FILL,
-        RemixIcon.MV_FILL,
-        RemixIcon.MOVIE_FILL,
-        RemixIcon.MICROSOFT_FILL,
-        RemixIcon.ARCHIVE_2_FILL,
-        RemixIcon.FILE_TEXT_LINE,
-        RemixIcon.FILE_SHIELD_LINE,
-        RemixIcon.FOLDER_FILL,
-        RemixIcon.GLOBAL_FILL,
-        RemixIcon.SPARKLING_2_FILL,
+    private val LINE_VARIANTS: Map<RemixIcon, RemixIcon> = linkedMapOf(
+        RemixIcon.FILE_FILL to RemixIcon.FILE_LINE,
+        RemixIcon.FILE_LIST_2_FILL to RemixIcon.FILE_LIST_2_LINE,
+        RemixIcon.FILE_ZIP_FILL to RemixIcon.FILE_ZIP_LINE,
+        RemixIcon.MV_FILL to RemixIcon.MV_LINE,
+        RemixIcon.MOVIE_FILL to RemixIcon.MOVIE_LINE,
+        RemixIcon.MICROSOFT_FILL to RemixIcon.MICROSOFT_LINE,
+        RemixIcon.ARCHIVE_2_FILL to RemixIcon.ARCHIVE_2_LINE,
+        RemixIcon.FILE_TEXT_FILL to RemixIcon.FILE_TEXT_LINE,
+        RemixIcon.FILE_SHIELD_FILL to RemixIcon.FILE_SHIELD_LINE,
+        RemixIcon.FOLDER_FILL to RemixIcon.FOLDER_LINE,
+        RemixIcon.GLOBAL_FILL to RemixIcon.GLOBAL_LINE,
+        RemixIcon.SPARKLING_2_FILL to RemixIcon.SPARKLING_2_LINE,
     )
+
+    /**
+     * Glyphs a user may pick for their own categories, in the order the editor shows them.
+     * Derived from [LINE_VARIANTS] so every choice is guaranteed to have both styles.
+     */
+    val PICKABLE_ICONS: List<RemixIcon> = LINE_VARIANTS.keys.toList()
+
+    /** The outlined twin of [icon], or [icon] itself when it has no filled/outlined pair. */
+    fun lineVariant(icon: RemixIcon): RemixIcon = LINE_VARIANTS[icon] ?: icon
 
     /** Glyph used for a category; an unknown or stale icon name falls back to a plain file glyph. */
     fun iconName(category: DownloadCategory): RemixIcon =
-        runCatching { RemixIcon.valueOf(category.icon) }.getOrDefault(RemixIcon.FILE_LINE)
+        runCatching { RemixIcon.valueOf(category.icon) }.getOrDefault(RemixIcon.FILE_FILL)
 }
