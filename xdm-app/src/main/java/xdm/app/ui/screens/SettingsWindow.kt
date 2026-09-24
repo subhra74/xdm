@@ -9,6 +9,7 @@ import xdm.app.ui.screens.settings.FoldersPanel
 import xdm.app.ui.screens.settings.GeneralPanel
 import xdm.app.ui.screens.settings.NetworkConfigPanel
 import xdm.app.ui.screens.settings.settingsAccentColor
+import xdm.app.ui.screens.settings.settingsHint
 import xdm.app.ui.screens.settings.settingsMutedColor
 import xdm.app.ui.screens.settings.settingsStroke
 import xdm.app.ui.screens.settings.settingsSurface
@@ -104,6 +105,10 @@ class SettingsWindow(parent: Window) : JDialog(parent) {
 
         val bottom = Box.createHorizontalBox().apply {
             border = EmptyBorder(14, 24, 16, 24)
+            // The language note belongs to the dialog, not to one row: it is the restart that
+            // applies the change, and the restart applies it whichever page you saved from.
+            add(settingsHint(text("MSG_LANG2")))
+            add(Box.createRigidArea(Dimension(16, 0)))
             add(Box.createHorizontalGlue())
             add(btnCancel)
             add(Box.createRigidArea(Dimension(10, 0)))

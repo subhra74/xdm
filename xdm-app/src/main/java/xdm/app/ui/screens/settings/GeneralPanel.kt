@@ -83,7 +83,7 @@ class GeneralPanel : SettingsPanel() {
             settingsSection(
                 I8N.text("SETTINGS_SEC_APPEARANCE"),
                 settingsFullRow(I8N.text("MSG_THEME"), null, optTheme),
-                settingsRow(I8N.text("MSG_LANG1"), I8N.text("MSG_LANG2"), cmbLang),
+                settingsRow(I8N.text("MSG_LANG1"), I8N.text("MSG_LANG_SUB"), cmbLang),
             )
         )
 

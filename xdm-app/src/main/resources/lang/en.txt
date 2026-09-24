@@ -294,6 +294,7 @@ MENU_EXPORT=Export
 MENU_LANG=Language
 MSG_LANG1=Language
 MSG_LANG2=Please note changes will take effect next time you start XDM
+MSG_LANG_SUB=The language XDM's menus, dialogs and labels are shown in
 MSG_THEME=Theme
 THEME_DARK=Dark
 THEME_LIGHT=Light
