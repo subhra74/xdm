@@ -1,164 +1,96 @@
 package xdm.app.ui.screens.settings
 
-import xdm.app.AppConfig
 import xdm.app.AppContext
 import xdm.app.I8N
 import xdm.app.utils.AutoStart
 import xdm.app.utils.chooseFile
-import xdm.app.utils.RemixIcon
-import xdm.app.utils.createIcon
-import xdm.app.utils.fixHeight
-import xdm.core.CoreConfig
 import java.awt.Dimension
 import java.awt.Insets
 import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.JButton
-import javax.swing.JCheckBox
 import javax.swing.JComponent
-import javax.swing.JLabel
-import javax.swing.JOptionPane
-import javax.swing.JPanel
-import javax.swing.JSpinner
 import javax.swing.JTextField
-import javax.swing.SpinnerNumberModel
 
+/** The things most people never touch: system behaviour, and programs run after a download. */
 class AdvancedConfigPanel : SettingsPanel() {
-    private val key = "JTextField.placeholderText"
-    private val txtCmd = JTextField().apply {
-        putClientProperty(key, I8N.text("MSG_CUSTOM_CMD"))
+    private val placeholder = "JTextField.placeholderText"
+
+    private val tglHalt = SettingsToggle()
+    private val tglNoSleep = SettingsToggle()
+    private val tglRunOnStartup = SettingsToggle()
+
+    private val tglRunCmd = SettingsToggle()
+    private val txtCmd = rounded(JTextField()).apply {
+        putClientProperty(placeholder, I8N.text("MSG_CUSTOM_CMD"))
         columns = 10
-        fixHeight(this)
     }
-    private val txtVirusScan = JTextField().apply {
-        putClientProperty(key, I8N.text("MSG_AV_CMD"))
+
+    private val tglVirusScan = SettingsToggle()
+    private val txtVirusScan = rounded(JTextField()).apply {
+        putClientProperty(placeholder, I8N.text("MSG_AV_CMD"))
         columns = 10
-        fixHeight(this)
     }
-    private val txtArgs = JTextField().apply {
-        putClientProperty(key, I8N.text("MSG_ARGS"))
+    private val txtArgs = rounded(JTextField()).apply {
+        putClientProperty(placeholder, I8N.text("MSG_ARGS"))
         columns = 10
-        fixHeight(this)
     }
-    private val chkHalt = JCheckBox(I8N.text("MSG_HALT"))
-    private val chkNoSleep = JCheckBox(I8N.text("MSG_AWAKE"))
-    private val chkRunOnStartup = JCheckBox(I8N.text("MSG_AUTOSTART"))
-    private val chkRunCmd = JCheckBox(I8N.text("MSG_RUN_CMD"))
-    private val chkVirusScan = JCheckBox(I8N.text("MSG_SCAN"))
-    private val spReadTimeout = JSpinner(
-        SpinnerNumberModel(
-            CoreConfig.DEFAULT_READ_TIMEOUT_SECONDS, AppConfig.MIN_READ_TIMEOUT_SECONDS, AppConfig.MAX_READ_TIMEOUT_SECONDS, 5
-        )
-    ).apply {
-        fixHeight(this)
-        preferredSize = Dimension(120, preferredSize.height)
-        maximumSize = Dimension(120, preferredSize.height)
-    }
-    private val lblReadTimeoutHint = JLabel(I8N.text("MSG_READ_TIMEOUT_HINT")).apply {
-        foreground = settingsMutedColor()
-    }
-    private val chkIgnoreCertErrors = JCheckBox(I8N.text("MSG_IGNORE_CERT_ERRORS"))
-    private val lblIgnoreCertErrorsHint = JLabel(I8N.text("MSG_IGNORE_CERT_ERRORS_HINT")).apply {
-        foreground = settingsMutedColor()
-    }
-    private val btnBrowse = JButton(
-        I8N.text("SETTINGS_FOLDER_CHANGE"),
-        createIcon(RemixIcon.FOLDER_6_LINE, 16, settingsAccentColor())
-    ).apply {
-        iconTextGap = 6
-        fixHeight(this)
-    }
+    private val btnBrowse: JButton = settingsButton(I8N.text("SETTINGS_FOLDER_CHANGE")) { chooseScanner() }
 
     init {
-        setLayout(BoxLayout(this, BoxLayout.Y_AXIS))
+        layout = BoxLayout(this, BoxLayout.Y_AXIS)
 
         add(settingsTitle(I8N.text("MSG_ADV_TITLE")))
 
-        // General
         add(
-            settingsCard(
+            settingsSection(
                 I8N.text("SETTINGS_SEC_ADV_GENERAL"),
-                settingsLeftAligned(chkHalt),
-                settingsLeftAligned(chkNoSleep),
-                settingsLeftAligned(chkRunOnStartup),
+                settingsRow(I8N.text("MSG_AUTOSTART"), I8N.text("MSG_AUTOSTART_SUB"), tglRunOnStartup),
+                settingsRow(I8N.text("MSG_AWAKE"), I8N.text("MSG_AWAKE_SUB"), tglNoSleep),
+                settingsRow(I8N.text("MSG_HALT"), I8N.text("MSG_HALT_SUB"), tglHalt),
             )
         )
-        add(Box.createRigidArea(Dimension(0, 12)))
+        add(settingsGap())
 
-        // Custom command
         add(
-            settingsCard(
+            settingsSection(
                 I8N.text("SETTINGS_SEC_COMMAND"),
-                settingsLeftAligned(chkRunCmd),
-                fullWidth(txtCmd),
+                settingsRow(I8N.text("MSG_RUN_CMD"), I8N.text("MSG_RUN_CMD_SUB"), tglRunCmd),
+                settingsFullRow(null, null, fullWidth(txtCmd)),
             )
         )
-        add(Box.createRigidArea(Dimension(0, 12)))
+        add(settingsGap())
 
-        // Antivirus
-        val scannerRow = Box.createHorizontalBox().apply {
-            alignmentX = LEFT_ALIGNMENT
-            add(txtVirusScan)
-            add(Box.createRigidArea(Dimension(8, 0)))
-            add(btnBrowse)
-        }
         add(
-            settingsCard(
+            settingsSection(
                 I8N.text("SETTINGS_SEC_ANTIVIRUS"),
-                settingsLeftAligned(chkVirusScan),
-                scannerRow,
-                fullWidth(txtArgs),
-            )
-        )
-        add(Box.createRigidArea(Dimension(0, 12)))
-
-        // Network
-        add(
-            settingsCard(
-                I8N.text("SETTINGS_SEC_ADV_NETWORK"),
-                settingsRow(JLabel(I8N.text("MSG_READ_TIMEOUT")), spReadTimeout),
-                settingsLeftAligned(lblReadTimeoutHint),
-            )
-        )
-        add(Box.createRigidArea(Dimension(0, 12)))
-
-        // Security
-        add(
-            settingsCard(
-                I8N.text("SETTINGS_SEC_SECURITY"),
-                settingsLeftAligned(chkIgnoreCertErrors),
-                settingsLeftAligned(lblIgnoreCertErrorsHint),
+                settingsRow(I8N.text("MSG_SCAN"), I8N.text("MSG_SCAN_SUB"), tglVirusScan),
+                settingsFullRow(
+                    null, null,
+                    Box.createHorizontalBox().apply {
+                        alignmentX = LEFT_ALIGNMENT
+                        txtVirusScan.maximumSize = Dimension(Int.MAX_VALUE, txtVirusScan.preferredSize.height)
+                        add(txtVirusScan)
+                        add(Box.createRigidArea(Dimension(10, 0)))
+                        add(btnBrowse)
+                    }
+                ),
+                settingsFullRow(null, null, fullWidth(txtArgs)),
             )
         )
 
         add(Box.createVerticalGlue())
 
-        btnBrowse.addActionListener { chooseScanner() }
-        chkRunCmd.addActionListener { updateEnabledState() }
-        chkVirusScan.addActionListener { updateEnabledState() }
-        chkIgnoreCertErrors.addActionListener { confirmIgnoreCertErrors() }
+        tglRunCmd.addActionListener { updateEnabledState() }
+        tglVirusScan.addActionListener { updateEnabledState() }
     }
 
     private fun fullWidth(comp: JComponent): JComponent =
         Box.createHorizontalBox().apply {
             alignmentX = LEFT_ALIGNMENT
+            comp.maximumSize = Dimension(Int.MAX_VALUE, comp.preferredSize.height)
             add(comp)
         }
-
-    /** Turning certificate checks off is risky, so ask before ticking the box. */
-    private fun confirmIgnoreCertErrors() {
-        if (!chkIgnoreCertErrors.isSelected) return
-        val choice = JOptionPane.showConfirmDialog(
-            this,
-            I8N.text("MSG_IGNORE_CERT_ERRORS_CONFIRM"),
-            I8N.text("MSG_IGNORE_CERT_ERRORS"),
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.WARNING_MESSAGE
-        )
-        if (choice != JOptionPane.YES_OPTION) {
-            chkIgnoreCertErrors.isSelected = false
-        }
-    }
 
     private fun chooseScanner() {
         chooseFile(this, directoriesOnly = false)?.let {
@@ -167,45 +99,39 @@ class AdvancedConfigPanel : SettingsPanel() {
     }
 
     private fun updateEnabledState() {
-        txtCmd.isEnabled = chkRunCmd.isSelected
-        txtVirusScan.isEnabled = chkVirusScan.isSelected
-        txtArgs.isEnabled = chkVirusScan.isSelected
-        btnBrowse.isEnabled = chkVirusScan.isSelected
+        txtCmd.isEnabled = tglRunCmd.isSelected
+        txtVirusScan.isEnabled = tglVirusScan.isSelected
+        txtArgs.isEnabled = tglVirusScan.isSelected
+        btnBrowse.isEnabled = tglVirusScan.isSelected
     }
 
     fun load() {
         val config = AppContext.config
-        chkHalt.isSelected = config.haltAfterDownload
-        chkNoSleep.isSelected = config.keepAwake
-        chkRunOnStartup.isSelected = config.runOnStartup
-        chkRunCmd.isSelected = config.runCommand
+        tglHalt.isSelected = config.haltAfterDownload
+        tglNoSleep.isSelected = config.keepAwake
+        tglRunOnStartup.isSelected = config.runOnStartup
+        tglRunCmd.isSelected = config.runCommand
         txtCmd.text = config.customCommand
-        chkVirusScan.isSelected = config.runVirusScan
+        tglVirusScan.isSelected = config.runVirusScan
         txtVirusScan.text = config.virusScannerPath
         txtArgs.text = config.virusScannerArgs
-        chkIgnoreCertErrors.isSelected = config.ignoreCertErrors
-        spReadTimeout.value = config.readTimeoutSeconds
         updateEnabledState()
     }
 
     fun save() {
         val config = AppContext.config
-        config.haltAfterDownload = chkHalt.isSelected
-        config.keepAwake = chkNoSleep.isSelected
-        if (config.runOnStartup != chkRunOnStartup.isSelected) {
-            config.runOnStartup = chkRunOnStartup.isSelected
-            AutoStart.setEnabled(chkRunOnStartup.isSelected)
+        config.haltAfterDownload = tglHalt.isSelected
+        config.keepAwake = tglNoSleep.isSelected
+        if (config.runOnStartup != tglRunOnStartup.isSelected) {
+            config.runOnStartup = tglRunOnStartup.isSelected
+            AutoStart.setEnabled(tglRunOnStartup.isSelected)
         }
-        config.runCommand = chkRunCmd.isSelected
+        config.runCommand = tglRunCmd.isSelected
         config.customCommand = txtCmd.text
-        config.runVirusScan = chkVirusScan.isSelected
+        config.runVirusScan = tglVirusScan.isSelected
         config.virusScannerPath = txtVirusScan.text
         config.virusScannerArgs = txtArgs.text
-        config.ignoreCertErrors = chkIgnoreCertErrors.isSelected
-        config.readTimeoutSeconds = spReadTimeout.value as Int
     }
 
-    override fun getInsets(): Insets {
-        return Insets(10, 12, 12, 12)
-    }
+    override fun getInsets(): Insets = Insets(18, 24, 24, 24)
 }

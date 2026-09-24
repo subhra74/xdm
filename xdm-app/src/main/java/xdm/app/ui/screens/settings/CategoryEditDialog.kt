@@ -20,7 +20,6 @@ import java.util.UUID
 import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.DefaultListCellRenderer
-import javax.swing.JButton
 import javax.swing.JComboBox
 import javax.swing.JDialog
 import javax.swing.JLabel
@@ -39,10 +38,10 @@ class CategoryEditDialog(parent: Window, private val existing: DownloadCategory?
     var result: DownloadCategory? = null
         private set
 
-    private val txtName = JTextField().apply { fixHeight(this) }
-    private val txtTypes = JTextField().apply { fixHeight(this) }
-    private val txtFolder = JTextField().apply { fixHeight(this) }
-    private val cmbIcon = JComboBox(CategoryStyle.PICKABLE_ICONS.toTypedArray()).apply {
+    private val txtName = rounded(JTextField()).apply { fixHeight(this) }
+    private val txtTypes = rounded(JTextField()).apply { fixHeight(this) }
+    private val txtFolder = rounded(JTextField()).apply { fixHeight(this) }
+    private val cmbIcon = rounded(JComboBox(CategoryStyle.PICKABLE_ICONS.toTypedArray())).apply {
         renderer = IconChoiceRenderer()
         sizeTo(this, 76)
     }
@@ -64,17 +63,10 @@ class CategoryEditDialog(parent: Window, private val existing: DownloadCategory?
         if (existing == null) txtFolder.text = AppContext.config.defaultDownloadFolder
         if (cmbIcon.selectedIndex < 0) cmbIcon.selectedIndex = 0
 
-        val btnBrowse = JButton(
-            I8N.text("SETTINGS_FOLDER_CHANGE"),
-            createIcon(RemixIcon.FOLDER_6_LINE, 16, settingsAccentColor())
-        ).apply {
-            iconTextGap = 6
-            fixHeight(this)
-            addActionListener {
-                val start = txtFolder.text.takeIf { t -> t.isNotBlank() }?.let { t -> File(t) }
-                chooseFile(this@CategoryEditDialog, directoriesOnly = true, currentDir = start)?.let {
-                    txtFolder.text = it.absolutePath
-                }
+        val btnBrowse = settingsButton(I8N.text("SETTINGS_FOLDER_CHANGE")) {
+            val start = txtFolder.text.takeIf { t -> t.isNotBlank() }?.let { t -> File(t) }
+            chooseFile(this@CategoryEditDialog, directoriesOnly = true, currentDir = start)?.let {
+                txtFolder.text = it.absolutePath
             }
         }
 
@@ -108,15 +100,15 @@ class CategoryEditDialog(parent: Window, private val existing: DownloadCategory?
             add(settingsLeftAligned(lblVolumeHint))
             add(Box.createRigidArea(Dimension(0, 10)))
             add(
-                settingsRow(JLabel(I8N.text("CAT_APPEARANCE")), cmbIcon)
+                settingsRow(I8N.text("CAT_APPEARANCE"), null, cmbIcon)
                     // Without a height cap the row stretches and squeezes the fields above it.
-                    .apply { maximumSize = Dimension(Int.MAX_VALUE, 30) }
+                    .apply { maximumSize = Dimension(Int.MAX_VALUE, 34) }
             )
             add(Box.createVerticalGlue())
         }
 
-        val btnOk = JButton(I8N.text("DESC_SAVE_Q")).apply { addActionListener { onOk() } }
-        val btnCancel = JButton(I8N.text("ND_CANCEL")).apply { addActionListener { dispose() } }
+        val btnOk = settingsButton(I8N.text("DESC_SAVE_Q")) { onOk() }
+        val btnCancel = settingsButton(I8N.text("ND_CANCEL")) { dispose() }
         rootPane.defaultButton = btnOk
 
         val buttons = Box.createHorizontalBox().apply {
