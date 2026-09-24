@@ -41,14 +41,16 @@ class TestFileMove {
 
     /** Behaves like a different volume: the source cannot be renamed into the destination. */
     private open class OtherVolume(val space: Long = Long.MAX_VALUE) : MoveOps {
-        override fun atomicMove(src: Path, dst: Path) {
+        override fun atomicMove(src: Path, dst: Path, replaceExisting: Boolean) {
             if (!src.fileName.toString().endsWith(".part") || src.parent != dst.parent) {
                 throw AtomicMoveNotSupportedException(src.toString(), dst.toString(), "different file system")
             }
-            MoveOps.Default.atomicMove(src, dst)
+            MoveOps.Default.atomicMove(src, dst, replaceExisting)
         }
 
-        override fun copy(src: Path, dst: Path) = MoveOps.Default.copy(src, dst)
+        override fun copy(src: Path, dst: Path, progress: ((Long) -> Boolean)?) =
+            MoveOps.Default.copy(src, dst, progress)
+
         override fun usableSpace(folder: File) = space
     }
 
@@ -72,7 +74,7 @@ class TestFileMove {
     @Test
     fun copyFailsPartway_leavesSourceAndNoPartialFile() {
         val failing = object : OtherVolume() {
-            override fun copy(src: Path, dst: Path) {
+            override fun copy(src: Path, dst: Path, progress: ((Long) -> Boolean)?) {
                 dst.toFile().writeBytes(content.copyOf(1000)) // partial write, then the drive fails
                 throw IOException("device disconnected")
             }
@@ -81,6 +83,64 @@ class TestFileMove {
         assertTrue("source must survive for a retry", src.exists())
         assertFalse("no partial file at the final name", dst.exists())
         assertEquals("no .part left behind", emptyList<File>(), partFiles())
+    }
+
+    @Test
+    fun crossVolumeCopy_reportsProgress() {
+        val seen = mutableListOf<Long>()
+        assertNull(FileUtils.moveFile(src, dst, OtherVolume(), id = 7) { copied ->
+            seen.add(copied)
+            true
+        })
+        assertTrue("progress must be reported while copying", seen.isNotEmpty())
+        assertEquals("last report is the whole file", content.size.toLong(), seen.last())
+        assertTrue(content.contentEquals(dst.readBytes()))
+    }
+
+    @Test
+    fun cancelledCopy_keepsSourceAndPublishesNothing() {
+        val error = FileUtils.moveFile(src, dst, OtherVolume(), id = 7) { false }
+        assertEquals(DownloadError.Cancelled, error)
+        assertTrue("source must survive so the publish can be retried", src.exists())
+        assertTrue(content.contentEquals(src.readBytes()))
+        assertFalse("nothing under the real name", dst.exists())
+        assertEquals("no scratch file left behind", emptyList<File>(), partFiles())
+    }
+
+    @Test
+    fun sameVolumeMove_isNotReportedAsProgress() {
+        var called = false
+        assertNull(FileUtils.moveFile(src, dst, id = 7) { called = true; true })
+        assertFalse("a rename moves no bytes, so there is nothing to report", called)
+    }
+
+    @Test
+    fun replaceExisting_overwritesAtomically() {
+        dst.writeText("stale")
+        assertNull(FileUtils.moveFile(src, dst, id = 7, replaceExisting = true))
+        assertTrue(content.contentEquals(dst.readBytes()))
+        assertFalse(src.exists())
+    }
+
+    @Test
+    fun withoutReplaceExisting_refusesToOverwrite() {
+        dst.writeText("mine")
+        assertEquals(DownloadError.OutputWriteError, FileUtils.moveFile(src, dst, id = 7))
+        assertEquals("mine", dst.readText())
+        assertTrue(src.exists())
+    }
+
+    @Test
+    fun scratchFileIsNamedFromTheDownloadId() {
+        val seen = mutableListOf<String>()
+        val watching = object : OtherVolume() {
+            override fun copy(src: Path, dst: Path, progress: ((Long) -> Boolean)?) {
+                seen.add(dst.fileName.toString())
+                MoveOps.Default.copy(src, dst, progress)
+            }
+        }
+        assertNull(FileUtils.moveFile(src, dst, watching, id = 42))
+        assertEquals(listOf("video.mp4.42.part"), seen)
     }
 
     @Test

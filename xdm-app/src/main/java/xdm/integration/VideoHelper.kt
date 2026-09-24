@@ -1,6 +1,8 @@
 package xdm.integration
 
 import xdm.app.AppContext
+import xdm.app.utils.rememberedAutoCategorize
+import xdm.app.utils.rememberedBaseFolder
 import xdm.core.*
 import xdm.core.downloaders.DashDownloadTaskInfo
 import xdm.core.downloaders.HlsDownloadTaskInfo
@@ -210,8 +212,8 @@ object VideoHelper {
             cookie = msg.cookie,
             headers = msg.requestHeaders,
             origin = getHeader("Referer", msg.requestHeaders),
-            autoCategorize = true,
-            defaultDownloadFolder = AppContext.defaultDownloadFolder,
+            autoCategorize = rememberedAutoCategorize(),
+            defaultDownloadFolder = rememberedBaseFolder(),
             maxPiece = 8,
             userSelectedDownloadFolder = null,
             authInfo = null,
@@ -308,8 +310,8 @@ object VideoHelper {
                         headers = msg.requestHeaders,
                         // The page the manifest was found on, so "Refresh link" has somewhere to go.
                         origin = msg.tabUrl ?: getHeader(REFERER, msg.requestHeaders),
-                        autoCategorize = false,
-                        defaultDownloadFolder = AppContext.defaultDownloadFolder,
+                        autoCategorize = rememberedAutoCategorize(),
+                        defaultDownloadFolder = rememberedBaseFolder(),
                         userSelectedDownloadFolder = null,
                         maxPiece = 8,
                         authInfo = null,
@@ -459,8 +461,8 @@ object VideoHelper {
             headers = msg.requestHeaders,
             // The page the manifest was found on, so "Refresh link" has somewhere to go.
             origin = msg.tabUrl ?: getHeader(REFERER, msg.requestHeaders),
-            autoCategorize = false,
-            defaultDownloadFolder = AppContext.defaultDownloadFolder,
+            autoCategorize = rememberedAutoCategorize(),
+            defaultDownloadFolder = rememberedBaseFolder(),
             userSelectedDownloadFolder = null,
             maxPiece = 8,
             authInfo = null,

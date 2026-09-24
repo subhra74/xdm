@@ -130,26 +130,52 @@ object FileUtils {
     }
 
     /**
+     * Marks [file] hidden where the platform needs an attribute for it. A leading dot is enough on
+     * Unix but means nothing on Windows, so the streaming part file would otherwise be plainly
+     * visible in the user's folder while it is being muxed. Failures are ignored: the attribute is
+     * cosmetic, and not every file system supports it.
+     */
+    fun hideFile(file: File) {
+        runCatching { Files.setAttribute(file.toPath(), "dos:hidden", true) }
+    }
+
+    /**
      * Moves [src] to [dst] without ever overwriting an existing file or leaving a partial [dst].
      *
      * Tries an atomic rename first. Across file systems (where a rename is impossible) it checks free
-     * space, copies to `<dst>.part`, renames that into place on the destination volume, then deletes
-     * [src]. On any failure [src] is left untouched and the `.part` file is removed.
+     * space, copies to a scratch file next to [dst], flushes it to disk, renames it into place on the
+     * destination volume, then deletes [src]. On any failure [src] is left untouched and the scratch
+     * file is removed, so the download stays resumable and nothing partial is ever visible under the
+     * real name.
+     *
+     * [progress] is called with the number of bytes copied so far, and may return false to cancel;
+     * a cancelled copy leaves [src] intact and returns [DownloadError.Cancelled]. It is not called
+     * for the rename path, which moves no bytes.
+     *
+     * The scratch file is named from [id] rather than from [dst], so two downloads resolving to the
+     * same destination name cannot collide on it.
      *
      * Returns null on success, [DownloadError.DiskSpaceError] if the destination lacks space, or
      * [DownloadError.OutputWriteError] for any other failure (including [dst] already existing).
      */
-    fun moveFile(src: File, dst: File, ops: MoveOps = MoveOps.Default): DownloadError? {
+    fun moveFile(
+        src: File,
+        dst: File,
+        ops: MoveOps = MoveOps.Default,
+        id: Long = 0,
+        replaceExisting: Boolean = false,
+        progress: ((Long) -> Boolean)? = null,
+    ): DownloadError? {
         if (!src.isFile) {
             Logger.error("XDM", "Move failed, source missing: $src")
             return DownloadError.OutputWriteError
         }
-        if (dst.exists()) {
+        if (dst.exists() && !replaceExisting) {
             Logger.error("XDM", "Move failed, destination exists: $dst")
             return DownloadError.OutputWriteError
         }
         try {
-            ops.atomicMove(src.toPath(), dst.toPath())
+            ops.atomicMove(src.toPath(), dst.toPath(), replaceExisting)
             return null
         } catch (_: AtomicMoveNotSupportedException) {
             Logger.info("XDM", "Atomic move not possible, copying $src -> $dst")
@@ -163,13 +189,17 @@ object FileUtils {
             Logger.error("XDM", "Not enough space in $folder for ${src.length()} bytes")
             return DownloadError.DiskSpaceError
         }
-        val part = File(folder, dst.name + ".part")
+        val part = File(folder, "${dst.name}.$id.part")
         return try {
-            ops.copy(src.toPath(), part.toPath())
-            if (dst.exists()) throw FileAlreadyExistsException(dst.path)
-            ops.atomicMove(part.toPath(), dst.toPath())
+            ops.copy(src.toPath(), part.toPath(), progress)
+            if (dst.exists() && !replaceExisting) throw FileAlreadyExistsException(dst.path)
+            ops.atomicMove(part.toPath(), dst.toPath(), replaceExisting)
             if (!src.delete()) Logger.error("XDM", "Copied, but could not delete source $src")
             null
+        } catch (_: CopyCancelledException) {
+            Logger.info("XDM", "Copy cancelled: $src -> $dst")
+            part.delete()
+            DownloadError.Cancelled
         } catch (e: Exception) {
             Logger.error("XDM", "Copy failed: $src -> $dst", e)
             part.delete()
@@ -197,20 +227,60 @@ object FileUtils {
     }
 }
 
+/** Thrown by [MoveOps.copy] when the progress callback asks to stop. */
+class CopyCancelledException : IOException("Copy cancelled")
+
 /** File-system operations used by [FileUtils.moveFile]; replaceable in tests. */
 interface MoveOps {
     /** Atomic rename; throws [java.nio.file.AtomicMoveNotSupportedException] across file systems. */
-    fun atomicMove(src: Path, dst: Path)
-    fun copy(src: Path, dst: Path)
+    fun atomicMove(src: Path, dst: Path, replaceExisting: Boolean = false)
+
+    /**
+     * Copies [src] to [dst] and flushes it to stable storage before returning. [progress] receives
+     * the running byte count and may return false to abort with [CopyCancelledException].
+     */
+    fun copy(src: Path, dst: Path, progress: ((Long) -> Boolean)? = null)
     fun usableSpace(folder: File): Long
 
     companion object Default : MoveOps {
-        override fun atomicMove(src: Path, dst: Path) {
-            Files.move(src, dst, java.nio.file.StandardCopyOption.ATOMIC_MOVE)
+        private const val COPY_BUFFER = 1 shl 20
+
+        override fun atomicMove(src: Path, dst: Path, replaceExisting: Boolean) {
+            // ATOMIC_MOVE replaces an existing target as part of the same operation, so an
+            // overwrite never leaves a window where neither file is present.
+            if (replaceExisting) {
+                Files.move(
+                    src, dst,
+                    java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                )
+            } else {
+                Files.move(src, dst, java.nio.file.StandardCopyOption.ATOMIC_MOVE)
+            }
         }
 
-        override fun copy(src: Path, dst: Path) {
-            Files.copy(src, dst, java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+        /**
+         * Hand-rolled rather than [Files.copy] so the copy can report progress, be cancelled, and —
+         * the part that matters for correctness — be forced to disk before it is renamed into place.
+         * Without the force, a power loss can publish a truncated file under the real name, which is
+         * worse than failing outright because the user believes the download succeeded.
+         */
+        override fun copy(src: Path, dst: Path, progress: ((Long) -> Boolean)?) {
+            java.io.FileInputStream(src.toFile()).use { input ->
+                java.io.FileOutputStream(dst.toFile()).use { output ->
+                    val buffer = ByteArray(COPY_BUFFER)
+                    var copied = 0L
+                    while (true) {
+                        val read = input.read(buffer)
+                        if (read <= 0) break
+                        output.write(buffer, 0, read)
+                        copied += read
+                        if (progress != null && !progress(copied)) throw CopyCancelledException()
+                    }
+                    output.flush()
+                    output.fd.sync()
+                }
+            }
         }
 
         override fun usableSpace(folder: File): Long = folder.usableSpace

@@ -99,6 +99,7 @@ class DownloadScheduler(private val appDB: AppDB, private val configDir: String)
                 if (record != null &&
                     (record.status == RecordStatus.DOWNLOADING
                             || record.status == RecordStatus.ASSEMBLING
+                            || record.status == RecordStatus.PUBLISHING
                             || record.status == RecordStatus.READY)
                 ) {
                     Logger.info("Scheduler: download ${entry.downloadId} already running, skipping")

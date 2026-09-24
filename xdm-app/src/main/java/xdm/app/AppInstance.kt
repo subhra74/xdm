@@ -3,6 +3,7 @@ package xdm.app
 import xdm.app.AppContext.db
 import xdm.app.I8N.text
 import xdm.app.ui.components.MessageBox
+import xdm.core.util.FormatHelper.formatSize
 import xdm.app.ui.screens.AppWindow
 import xdm.app.ui.screens.DownloadCompleteWindow
 import xdm.app.ui.screens.NewDownloadWindow
@@ -44,6 +45,12 @@ interface IAppInstance {
     fun hideProgressWindow(id: Long)
 
     fun showProgressError(id: Long, error: DownloadError)
+
+    /** Drives the progress window through the publish phase, where download events have stopped. */
+    fun updatePublishProgress(id: Long, prg: Int)
+
+    /** Advisory: the temp volume looks too small for a download that is starting. */
+    fun showTempSpaceWarning(tempFolder: String, needed: Long, free: Long)
 
     fun updateProgressWindow(
         id: Long,
@@ -187,6 +194,23 @@ class AppInstance : IAppInstance {
         segData: Collection<SegmentProgress>
     ) {
         runOnUIThread { prgWndMap[id]?.updateProgress(fileName, downloaded, size, speed, eta, prg, segData) }
+    }
+
+    override fun updatePublishProgress(id: Long, prg: Int) {
+        runOnUIThread { prgWndMap[id]?.showPublishing(prg) }
+    }
+
+    override fun showTempSpaceWarning(tempFolder: String, needed: Long, free: Long) {
+        runOnUIThread {
+            MessageBox.show(
+                appWindow,
+                text("TITLE_TEMP_SPACE_LOW"),
+                text("MSG_TEMP_SPACE_LOW")
+                    .replace("%folder%", tempFolder)
+                    .replace("%needed%", formatSize(needed.toDouble()))
+                    .replace("%free%", formatSize(free.toDouble())),
+            )
+        }
     }
 
     override fun hideProgressWindow(id: Long) {

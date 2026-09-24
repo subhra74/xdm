@@ -172,6 +172,7 @@ private fun writeHlsContext(context: HlsTaskContext, out: DataOutputStream) {
         out.writeBoolean(independent)
         out.writeBoolean(encrypted)
         out.writeBoolean(discontinuous)
+        out.writeNullableLongString(muxOutputPath)
     }
 }
 
@@ -194,6 +195,7 @@ private fun writeDashContext(context: DashTaskContext, out: DataOutputStream) {
         out.writeLongString(url)
         out.writeLongString(audioMime)
         out.writeLongString(videoMime)
+        out.writeNullableLongString(muxOutputPath)
     }
 }
 
@@ -242,6 +244,7 @@ private fun readHlsContext(r: DataInputStream, http: PoolingHttpClient, host: Do
         independent = r.readBoolean(),
         encrypted = r.readBoolean(),
         discontinuous = r.readBoolean(),
+        muxOutputPath = r.readNullableLongString(),
     ).apply { Logger.info(this) }
 }
 
@@ -265,6 +268,7 @@ private fun readDashContext(r: DataInputStream, http: PoolingHttpClient, host: D
         url = r.readLongString(),
         audioMime = r.readLongString(),
         videoMime = r.readLongString(),
+        muxOutputPath = r.readNullableLongString(),
         downloadHost = host,
     ).apply { Logger.info(this) }
 }

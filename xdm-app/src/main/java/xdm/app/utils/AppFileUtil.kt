@@ -59,6 +59,32 @@ fun categoryFolderFor(fileName: String, baseFolder: String): String {
  * "Automatic (by file type)" entry) and selects the last remembered choice.
  */
 fun populateSaveInFolders(model: DefaultComboBoxModel<String>, combo: JComboBox<String>) {
+    // Filling the model moves the selection, which would otherwise look like a user choice to the
+    // listener installed by [persistFolderChoiceOnChange] and overwrite the setting being restored.
+    combo.putClientProperty(POPULATING, true)
+    try {
+        fillSaveInFolders(model, combo)
+    } finally {
+        combo.putClientProperty(POPULATING, false)
+    }
+}
+
+private const val POPULATING = "xdm.saveIn.populating"
+
+/**
+ * Persists the "Save in" choice the moment the user changes it, rather than only when they press
+ * Download. Closing the dialog, or starting a download from somewhere else entirely, then still
+ * uses the folder they last picked.
+ */
+fun persistFolderChoiceOnChange(combo: JComboBox<String>) {
+    combo.addActionListener {
+        if (combo.getClientProperty(POPULATING) != true && combo.selectedIndex >= 0) {
+            rememberFolderChoice(combo)
+        }
+    }
+}
+
+private fun fillSaveInFolders(model: DefaultComboBoxModel<String>, combo: JComboBox<String>) {
     val folders = config.recentFolders
     model.removeAllElements()
     model.addAll(folders)
@@ -71,6 +97,18 @@ fun populateSaveInFolders(model: DefaultComboBoxModel<String>, combo: JComboBox<
         else -> (config.folderIndex + 1).coerceIn(minOf(1, lastIndex), lastIndex)
     }
 }
+
+/**
+ * The base folder behind the user's last "Save in" choice. Downloads started without a dialog —
+ * from the browser extension, say — use this so they land where the user last chose rather than in
+ * a hardcoded folder.
+ */
+fun rememberedBaseFolder(): String =
+    if (config.autoSelectFolder) config.defaultDownloadFolder
+    else config.recentFolders.getOrNull(config.folderIndex + 1) ?: config.defaultDownloadFolder
+
+/** True when the user's last "Save in" choice was "Automatic (by file type)". */
+fun rememberedAutoCategorize(): Boolean = config.autoSelectFolder
 
 /** True when the "Automatic (by file type)" entry is selected in a combo filled by [populateSaveInFolders]. */
 fun isAutoCategorySelected(combo: JComboBox<String>) = combo.selectedIndex == 0

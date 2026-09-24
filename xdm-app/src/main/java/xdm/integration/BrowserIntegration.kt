@@ -8,6 +8,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.*
 import xdm.app.AppContext
+import xdm.app.utils.rememberedAutoCategorize
+import xdm.app.utils.rememberedBaseFolder
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.util.*
 import java.nio.charset.StandardCharsets
@@ -236,8 +238,10 @@ object BrowserIntegration {
             cookie = msg.cookie,
             headers = msg.requestHeaders,
             origin = msg.referer ?: msg.tabUrl,
-            autoCategorize = false,
-            defaultDownloadFolder = AppContext.defaultDownloadFolder,
+            // Follow the user's last "Save in" choice, so a browser download honours both their
+            // download folder and the "Automatic (by file type)" option like a dialog download does.
+            autoCategorize = rememberedAutoCategorize(),
+            defaultDownloadFolder = rememberedBaseFolder(),
             userSelectedDownloadFolder = null,
             maxPiece = 8,
             authInfo = null,

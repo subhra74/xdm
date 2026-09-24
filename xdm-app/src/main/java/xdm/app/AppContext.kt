@@ -19,6 +19,9 @@ object AppContext {
 
     lateinit var videoTracker: ICapturedVideoTracker
     lateinit var defaultDownloadFolder: String
+
+    /** The startup temp directory; [IAppConfig.tempFolder] defaults to it and may override it. */
+    lateinit var tempDir: String
     lateinit var taskInfoDB: TaskInfoDB
     lateinit var configDir: String
     lateinit var scheduler: DownloadScheduler
@@ -31,6 +34,7 @@ object AppContext {
 
     fun init(args: Array<String>, configDir: String, tempDir: String) {
         this.configDir = configDir
+        this.tempDir = tempDir
         val f = File(System.getProperty("user.home"), "Downloads")
         defaultDownloadFolder = if (f.exists()) f.absolutePath else System.getProperty("user.home")
 
@@ -45,6 +49,13 @@ object AppContext {
         ) {
             val firstRun = !File(configDir, AppConfig.CONFIG_FILE).exists()
             config.load()
+
+            // Every download now writes here before being published, so it is the one folder that
+            // has to exist before anything starts. Creating it also removes the old failure where
+            // an HTTP download died on its first chunk because the download folder was missing.
+            if (!File(config.tempFolder).mkdirs() && !File(config.tempFolder).isDirectory) {
+                Logger.error("Unable to create temp folder ${config.tempFolder}")
+            }
 
             if (firstRun) {
                 Logger.info("First run: enabling start-on-login")

@@ -6,6 +6,7 @@ import xdm.app.utils.chooseFile
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.createIcon
 import xdm.app.utils.isAutoCategorySelected
+import xdm.app.utils.persistFolderChoiceOnChange
 import xdm.app.utils.populateSaveInFolders
 import xdm.app.utils.rememberFolderChoice
 import xdm.app.utils.selectedBaseFolder
@@ -119,6 +120,7 @@ class NewVideoDownloadWindow : JDialog() {
             gridy = 2
         }
         contentPane.add(cmbSaveIn, gbcCmbSaveIn)
+        persistFolderChoiceOnChange(cmbSaveIn)
 
         val btnBrowse = JButton(createIcon(RemixIcon.FOLDER_FILL, 16, Color.GRAY))
         val gbcBtnBrowse = GridBagConstraints().apply {

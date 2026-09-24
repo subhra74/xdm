@@ -4,6 +4,7 @@ import xdm.app.AppContext
 import xdm.app.I8N.text
 import xdm.app.utils.chooseFile
 import xdm.app.utils.isAutoCategorySelected
+import xdm.app.utils.persistFolderChoiceOnChange
 import xdm.app.utils.populateSaveInFolders
 import xdm.app.utils.rememberFolderChoice
 import xdm.app.utils.selectedBaseFolder
@@ -231,6 +232,7 @@ class NewDownloadWindow : JDialog() {
             }
         }
 
+        persistFolderChoiceOnChange(cmbSaveIn)
         cmbSaveIn.addItemListener {
             Logger.info("Selected item: ${cmbSaveIn.selectedItem}")
             val folder = selectedBaseFolder(cmbSaveIn)

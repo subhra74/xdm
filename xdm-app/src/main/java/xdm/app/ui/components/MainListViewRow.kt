@@ -339,11 +339,12 @@ class MainListViewRow(
         btnOpenFolder.isVisible = ent.status == RecordStatus.FINISHED
         openFolderGap.isVisible = btnOpenFolder.isVisible
         btnPause.isVisible = ent.status == RecordStatus.DOWNLOADING || ent.status == RecordStatus.READY
-                || ent.status == RecordStatus.ASSEMBLING
+                || ent.status == RecordStatus.ASSEMBLING || ent.status == RecordStatus.PUBLISHING
         pauseGap.isVisible = btnPause.isVisible
         btnResume.isVisible =
             ent.status != RecordStatus.FINISHED && ent.status != RecordStatus.DOWNLOADING
                     && ent.status != RecordStatus.READY && ent.status != RecordStatus.ASSEMBLING
+                    && ent.status != RecordStatus.PUBLISHING
         resumeGap.isVisible = btnResume.isVisible
         if (ent.status == RecordStatus.FINISHED) {
             lblInfo.text = (formatDateShort(ent.date)
@@ -383,6 +384,13 @@ class MainListViewRow(
                     String.format("%s %d%s", text("STAT_ASSEMBLING"), ent.progress, "%")
                 } else {
                     text("STAT_ASSEMBLING")
+                }
+                prg.isVisible = true
+            } else if (ent.status == RecordStatus.PUBLISHING) {
+                prgText = if (ent.progress > 0) {
+                    String.format("%s %d%s", text("STAT_PUBLISHING"), ent.progress, "%")
+                } else {
+                    text("STAT_PUBLISHING")
                 }
                 prg.isVisible = true
             }

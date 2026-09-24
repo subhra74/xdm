@@ -5,6 +5,7 @@ import xdm.app.DownloadCategory
 import xdm.app.I8N
 import xdm.app.ui.components.CategoryStyle
 import xdm.app.utils.RemixIcon
+import xdm.app.utils.VolumeHints
 import xdm.app.utils.chooseFile
 import xdm.app.utils.createIcon
 import xdm.app.utils.fixHeight
@@ -27,6 +28,8 @@ import javax.swing.JList
 import javax.swing.JPanel
 import javax.swing.JTextField
 import javax.swing.border.EmptyBorder
+import javax.swing.event.DocumentEvent
+import javax.swing.event.DocumentListener
 
 /**
  * Add/edit dialog for a single [DownloadCategory]: name, file types, target folder and the
@@ -75,6 +78,22 @@ class CategoryEditDialog(parent: Window, private val existing: DownloadCategory?
             }
         }
 
+        val lblVolumeHint = JLabel().apply {
+            alignmentX = Component.LEFT_ALIGNMENT
+            foreground = settingsMutedColor()
+            font = font.deriveFont(Font.PLAIN, font.size2D - 1f)
+        }
+        fun refreshVolumeHint() {
+            val different = VolumeHints.isDifferentVolume(txtFolder.text, AppContext.config.tempFolder)
+            lblVolumeHint.text = if (different) I8N.text("MSG_DIFFERENT_VOLUME") else " "
+        }
+        refreshVolumeHint()
+        txtFolder.document.addDocumentListener(object : DocumentListener {
+            override fun insertUpdate(e: DocumentEvent) = refreshVolumeHint()
+            override fun removeUpdate(e: DocumentEvent) = refreshVolumeHint()
+            override fun changedUpdate(e: DocumentEvent) = refreshVolumeHint()
+        })
+
         val form = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             border = EmptyBorder(14, 14, 10, 14)
@@ -85,6 +104,8 @@ class CategoryEditDialog(parent: Window, private val existing: DownloadCategory?
             add(field(I8N.text("CAT_FOLDER"), txtFolder, I8N.text("CAT_FOLDER_HINT")))
             add(Box.createRigidArea(Dimension(0, 6)))
             add(settingsLeftAligned(btnBrowse))
+            add(Box.createRigidArea(Dimension(0, 4)))
+            add(settingsLeftAligned(lblVolumeHint))
             add(Box.createRigidArea(Dimension(0, 10)))
             add(
                 settingsRow(JLabel(I8N.text("CAT_APPEARANCE")), cmbIcon)

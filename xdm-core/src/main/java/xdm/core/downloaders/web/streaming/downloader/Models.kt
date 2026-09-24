@@ -47,6 +47,13 @@ interface StreamingTaskContext {
     var hasSeparateStreams: Boolean
     val pieceCompletedCount: AtomicInteger
     val assembling: AtomicBoolean
+
+    /**
+     * Absolute path of the muxed output, recorded the first time it is chosen and never
+     * recomputed. Commit, delete and retry-after-failed-commit all address this path, so a
+     * destination changed after muxing cannot orphan the partial. Null until muxing starts.
+     */
+    var muxOutputPath: String?
 }
 
 data class HlsTaskContext(
@@ -68,6 +75,7 @@ data class HlsTaskContext(
     override var hasSeparateStreams: Boolean = false,
     override val pieceCompletedCount: AtomicInteger = AtomicInteger(0),
     override val assembling: AtomicBoolean = AtomicBoolean(false),
+    override var muxOutputPath: String? = null,
     var url: String,
     var audioUrl: String?,
     var audioOnly: Boolean = false,
@@ -97,6 +105,7 @@ data class DashTaskContext(
     override var hasSeparateStreams: Boolean = false,
     override val pieceCompletedCount: AtomicInteger = AtomicInteger(0),
     override val assembling: AtomicBoolean = AtomicBoolean(false),
+    override var muxOutputPath: String? = null,
     var url: String,
     val audioMime: String,
     val videoMime: String,

@@ -22,6 +22,11 @@ enum class DownloadError {
     DecryptionError,
     /** The finished file could not be written or moved to the destination folder. */
     OutputWriteError,
+    /**
+     * The user stopped a publish that was copying across volumes. The downloaded bytes are still in
+     * the temp folder, so resuming republishes without downloading anything again.
+     */
+    Cancelled,
 }
 
 enum class PauseEvent {

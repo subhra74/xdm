@@ -5,6 +5,7 @@ import xdm.app.I8N
 import xdm.app.utils.chooseFile
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.createIcon
+import xdm.app.utils.VolumeHints
 import xdm.app.utils.fixHeight
 import java.awt.Dimension
 import java.awt.Insets
@@ -61,6 +62,11 @@ class GeneralPanel : SettingsPanel() {
     private val langProp: Properties
     private val themeCodes = listOf("dark", "light")
     private val categorySection = CategorySection()
+    private val lblVolumeHint = JLabel().apply {
+        foreground = settingsMutedColor()
+        font = font.deriveFont(java.awt.Font.PLAIN, font.size2D - 1f)
+        isVisible = false
+    }
     private val cmbTheme = JComboBox<String>().apply {
         fixHeight(this)
         addItem(I8N.text("THEME_DARK"))
@@ -95,6 +101,7 @@ class GeneralPanel : SettingsPanel() {
                 I8N.text("SETTINGS_SEC_FOLDERS"),
                 folderField(I8N.text("LBL_TEMP_FOLDER"), txtTmpDir, btnBrowse1),
                 folderField(I8N.text("SETTINGS_FOLDER"), txtDwnDir, btnBrowse2),
+                settingsLeftAligned(lblVolumeHint),
             )
         )
         add(Box.createRigidArea(Dimension(0, 12)))
@@ -174,6 +181,17 @@ class GeneralPanel : SettingsPanel() {
         val themeIndex = themeCodes.indexOf(config.theme.lowercase())
         cmbTheme.selectedIndex = if (themeIndex >= 0) themeIndex else 0
         categorySection.load()
+        refreshVolumeHint()
+    }
+
+    /**
+     * Downloads are written to the temp folder and moved at the end. When the two folders are on
+     * different volumes that move becomes a full copy, so say so where the folders are chosen.
+     */
+    private fun refreshVolumeHint() {
+        val different = VolumeHints.isDifferentVolume(txtDwnDir.text, txtTmpDir.text)
+        lblVolumeHint.isVisible = different
+        if (different) lblVolumeHint.text = I8N.text("MSG_DIFFERENT_VOLUME")
     }
 
     fun save() {
@@ -204,6 +222,7 @@ class GeneralPanel : SettingsPanel() {
     private fun chooseFolder(textField: JTextField) {
         chooseFile(this, directoriesOnly = true)?.let {
             textField.text = it.absolutePath
+            refreshVolumeHint()
         }
     }
 }

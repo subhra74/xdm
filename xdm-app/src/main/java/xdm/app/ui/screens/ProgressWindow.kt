@@ -49,6 +49,21 @@ class ProgressWindow(val id: Long) : JFrame() {
         btnHide.isVisible = false
     }
 
+    /**
+     * The publish phase: the file is complete and is being copied into the destination folder.
+     * Download progress events have stopped by now, so this window is driven separately or it
+     * would sit frozen at 100%. Speed and ETA are blank because neither applies to a local copy.
+     */
+    fun showPublishing(prg: Int) {
+        lblStat.text = text("STAT_PUBLISHING")
+        title = "[ $prg% ] " + text("STAT_PUBLISHING")
+        lblStat1.text = text("STAT_PUBLISHING") + " " + prg + "%"
+        lblStat3.text = ""
+        lblStat4.text = ""
+        this.prg.value = prg
+        windowProgressTaskbar?.setWindowProgressValue(this, prg)
+    }
+
     fun updateProgress(
         fileName: String?,
         downloaded: Long,

@@ -14,7 +14,14 @@ enum class RecordStatus {
     READY,
     ERROR,
     PAUSED,
-    ASSEMBLING
+    ASSEMBLING,
+
+    /**
+     * The file is complete and is being moved into the destination folder. Only a cross-volume
+     * publish stays here long enough to be seen; a same-volume one is a rename and passes through
+     * instantly. Cancellable — the bytes stay in temp and resuming republishes them.
+     */
+    PUBLISHING
 }
 
 data class DbRecord(
@@ -77,7 +84,7 @@ class AppDB(private val configDir: String) {
                 } else if (rec.status == RecordStatus.FINISHED) {
                     saveFinished = true
                 } else {
-                    // READY, DOWNLOADING, ASSEMBLING and ERROR are all kept in the active list.
+                    // READY, DOWNLOADING, ASSEMBLING, PUBLISHING and ERROR stay in the active list.
                     saveActive = true
                 }
                 Logger.info("Item removed: $rec")

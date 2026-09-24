@@ -71,6 +71,7 @@ interface IAppConfig : CoreConfig {
 class AppConfig(private val configDir: String) : IAppConfig {
     companion object {
         const val CONFIG_FILE = "xdm-app.config"
+        val LEGACY_TEMP_FOLDER: String = File(System.getProperty("user.home"), ".temp").absolutePath
         const val MIN_READ_TIMEOUT_SECONDS = 5
         const val MAX_READ_TIMEOUT_SECONDS = 600
     }
@@ -89,7 +90,10 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var runCommand: Boolean = false
     override var showDownloadProgressWindow: Boolean = true
     override var defaultDownloadFolder: String = File(System.getProperty("user.home"), "Downloads").absolutePath
-    override var tempFolder: String = File(System.getProperty("user.home"), ".temp").absolutePath
+    // Under the config dir on purpose, not java.io.tmpdir: on most Linux distributions /tmp is
+    // tmpfs and RAM-backed, and OS temp cleaners delete stale files, which would purge a download
+    // left paused for a week. See FILE_PLACEMENT.md.
+    override var tempFolder: String = File(configDir, "tmp").absolutePath
 
     // Declared after defaultDownloadFolder on purpose: Kotlin initializes properties in
     // declaration order, and seeding the built-ins reads that folder. This runs on first
@@ -199,7 +203,11 @@ class AppConfig(private val configDir: String) : IAppConfig {
         runCommand = input.readBoolean()
         showDownloadProgressWindow = input.readBoolean()
         defaultDownloadFolder = input.readUTF()
-        tempFolder = input.readUTF()
+        tempFolder = input.readUTF().let {
+            // Configs written before the temp folder moved under the config dir carry the old
+            // default; move them rather than stranding downloads in ~/.temp.
+            if (it == LEGACY_TEMP_FOLDER) File(configDir, "tmp").absolutePath else it
+        }
         autoRenameOnConflict = input.readBoolean()
         shutdownAfterAllDone = input.readBoolean()
         maxParallelDownloads = input.readInt()

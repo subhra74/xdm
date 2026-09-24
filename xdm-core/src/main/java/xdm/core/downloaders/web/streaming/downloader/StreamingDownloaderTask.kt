@@ -102,17 +102,31 @@ abstract class StreamingDownloaderTask(
 
     override fun deleteTemp() {
         cleanup()
-        val out = outputFile()
-        if (out.delete()) Logger.info("XDM", "Deleted partial output $out")
+        // Delete the recorded output only. Recomputing it here would miss the real file
+        // whenever the destination changed after muxing, leaving it orphaned.
+        context.muxOutputPath?.let {
+            val out = File(it)
+            if (out.delete()) Logger.info("XDM", "Deleted partial output $out")
+        }
     }
 
     /**
      * The assembled output: in the destination folder when the host provides a path (so the commit
-     * is a same-folder rename), otherwise in the temp folder. Stable for a download.
+     * is a same-folder rename), otherwise in the temp folder.
+     *
+     * Resolved once and recorded in [context]; every later call returns the recorded path, so a
+     * destination changed after muxing cannot orphan the partial. Callers that must not create a
+     * recording (delete, cleanup) read [StreamingTaskContext.muxOutputPath] directly.
      */
-    private fun outputFile(): File =
-        context.downloadHost.outputFilePath(context.id, downloadType(), fileExt())?.let { File(it) }
+    private fun outputFile(): File {
+        context.muxOutputPath?.let { return File(it) }
+        val resolved = context.downloadHost.outputFilePath(context.id, downloadType(), fileExt())
+            ?.let { File(it) }
             ?: File(context.tempFolder, context.tempFileName + fileExt())
+        context.muxOutputPath = resolved.absolutePath
+        saveContext()
+        return resolved
+    }
 
     private fun download() {
         try {
@@ -201,6 +215,7 @@ abstract class StreamingDownloaderTask(
                 context.downloadHost.onDownloadFailed(context.id, DownloadError.OutputWriteError)
                 return
             }
+            FileUtils.hideFile(tmpFile)
             val ret = if (context.hasSeparateStreams) {
                 assembleStreams(tmpFile.absolutePath)
             } else {
