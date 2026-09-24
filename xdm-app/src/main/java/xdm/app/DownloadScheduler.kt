@@ -14,6 +14,10 @@ data class ScheduleEntry(
     val minute: Int,
     val daysOfWeek: Set<Int>, // Calendar constants (MONDAY–SUNDAY) for WEEKLY; empty for ONE_TIME
     val epochMillis: Long,    // target epoch millis for ONE_TIME; -1 for WEEKLY
+    val hasStopTime: Boolean = false,  // when set, the download is paused again at the stop time
+    val stopHour: Int = 0,             // WEEKLY stop time; unused for ONE_TIME
+    val stopMinute: Int = 0,           // WEEKLY stop time; unused for ONE_TIME
+    val stopEpochMillis: Long = -1L,   // ONE_TIME stop instant; -1 for WEEKLY
 )
 
 class DownloadScheduler(private val appDB: AppDB, private val configDir: String) {
@@ -88,28 +92,40 @@ class DownloadScheduler(private val appDB: AppDB, private val configDir: String)
 
         synchronized(entries) {
             for (entry in entries) {
-                val matches = when (entry.scheduleType) {
+                val startMatches = when (entry.scheduleType) {
                     ScheduleType.ONE_TIME -> entry.epochMillis / 60_000 == nowMinuteBucket
                     ScheduleType.WEEKLY -> nowHour == entry.hour && nowMinute == entry.minute && nowDay in entry.daysOfWeek
                 }
 
-                if (!matches) continue
-
-                val record = appDB.getById(entry.downloadId)
-                if (record != null &&
-                    (record.status == RecordStatus.DOWNLOADING
-                            || record.status == RecordStatus.ASSEMBLING
-                            || record.status == RecordStatus.PUBLISHING
-                            || record.status == RecordStatus.READY)
-                ) {
-                    Logger.info("Scheduler: download ${entry.downloadId} already running, skipping")
-                    continue
+                val stopMatches = entry.hasStopTime && when (entry.scheduleType) {
+                    ScheduleType.ONE_TIME -> entry.stopEpochMillis / 60_000 == nowMinuteBucket
+                    ScheduleType.WEEKLY ->
+                        nowHour == entry.stopHour && nowMinute == entry.stopMinute && stopDayMatches(entry, nowDay)
                 }
 
-                triggerScheduledDownload(entry.downloadId)
+                // A stop applies to a download that is still working, so it runs before (and
+                // independently of) the "already running, skip" guard below.
+                if (stopMatches) stopScheduledDownload(entry.downloadId)
 
+                if (startMatches) {
+                    val record = appDB.getById(entry.downloadId)
+                    if (record != null &&
+                        (record.status == RecordStatus.DOWNLOADING
+                                || record.status == RecordStatus.ASSEMBLING
+                                || record.status == RecordStatus.PUBLISHING
+                                || record.status == RecordStatus.READY)
+                    ) {
+                        Logger.info("Scheduler: download ${entry.downloadId} already running, skipping")
+                    } else {
+                        triggerScheduledDownload(entry.downloadId)
+                    }
+                }
+
+                // A one-time entry lives until its stop time has been handled, so a start does not
+                // take the pending stop down with it.
                 if (entry.scheduleType == ScheduleType.ONE_TIME) {
-                    toRemove.add(entry)
+                    val stopPending = entry.hasStopTime && !stopMatches && nowMillis <= entry.stopEpochMillis
+                    if ((startMatches || stopMatches) && !stopPending) toRemove.add(entry)
                 }
             }
             entries.removeAll(toRemove)
@@ -118,9 +134,28 @@ class DownloadScheduler(private val appDB: AppDB, private val configDir: String)
         if (toRemove.isNotEmpty()) saveEntries()
     }
 
+    /**
+     * Whether today's tick is the one that should stop a weekly entry. A stop time at or before the
+     * start time means the window runs past midnight, so the stop belongs to the day after the
+     * scheduled one.
+     */
+    private fun stopDayMatches(entry: ScheduleEntry, nowDay: Int): Boolean {
+        val wrapsMidnight = entry.stopHour * 60 + entry.stopMinute <= entry.hour * 60 + entry.minute
+        if (!wrapsMidnight) return nowDay in entry.daysOfWeek
+        val previousDay = if (nowDay == Calendar.SUNDAY) Calendar.SATURDAY else nowDay - 1
+        return previousDay in entry.daysOfWeek
+    }
+
     private fun triggerScheduledDownload(id: Long) {
-        // TODO: implement actual download trigger
-        Logger.info("Scheduler: triggered download id=$id")
+        // resumeDownload queues the download and pumps the queue; it guards against a download that
+        // is already active or already queued, so a duplicated tick is harmless.
+        Logger.info("Scheduler: starting download id=$id")
+        AppContext.downloader.resumeDownload(id)
+    }
+
+    private fun stopScheduledDownload(id: Long) {
+        Logger.info("Scheduler: stopping download id=$id")
+        AppContext.downloader.stopDownload(id)
     }
 
     private fun saveEntries() {
@@ -135,6 +170,10 @@ class DownloadScheduler(private val appDB: AppDB, private val configDir: String)
                     out.writeInt(e.daysOfWeek.size)
                     for (day in e.daysOfWeek) out.writeInt(day)
                     out.writeLong(e.epochMillis)
+                    out.writeBoolean(e.hasStopTime)
+                    out.writeInt(e.stopHour)
+                    out.writeInt(e.stopMinute)
+                    out.writeLong(e.stopEpochMillis)
                 }
             }
         }
@@ -151,6 +190,10 @@ class DownloadScheduler(private val appDB: AppDB, private val configDir: String)
                 val dayCount = inp.readInt()
                 val daysOfWeek = (0 until dayCount).map { inp.readInt() }.toSet()
                 val epochMillis = inp.readLong()
+                val hasStopTime = inp.readBoolean()
+                val stopHour = inp.readInt()
+                val stopMinute = inp.readInt()
+                val stopEpochMillis = inp.readLong()
                 entries.add(
                     ScheduleEntry(
                         downloadId = downloadId,
@@ -159,9 +202,13 @@ class DownloadScheduler(private val appDB: AppDB, private val configDir: String)
                         minute = minute,
                         daysOfWeek = daysOfWeek,
                         epochMillis = epochMillis,
+                        hasStopTime = hasStopTime,
+                        stopHour = stopHour,
+                        stopMinute = stopMinute,
+                        stopEpochMillis = stopEpochMillis,
                     )
                 )
             }
-        }
+        }.onFailure { Logger.error("Unable to load schedule entries", it) }
     }
 }
