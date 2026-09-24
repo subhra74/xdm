@@ -15,6 +15,7 @@ import xdm.app.ui.screens.ScheduleWindow
 import xdm.app.utils.TextContextMenu
 import xdm.app.utils.logoImage
 import xdm.app.utils.createTray
+import xdm.app.utils.showTrayNotification
 import xdm.app.utils.openWebPage
 import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.HttpDownloadTaskInfo
@@ -29,6 +30,9 @@ interface IAppInstance {
     fun showAppWindow()
 
     fun showDownloadCompleteWindow(id: Long, folder: String, fileName: String, fileSize: Long)
+
+    /** Posts a quiet "<file> download finished" system notification instead of the full dialog. */
+    fun showDownloadCompleteNotification(fileName: String)
 
     fun updateDownloadInView(id: Long)
 
@@ -94,6 +98,12 @@ class AppInstance : IAppInstance {
 
     override fun showDownloadCompleteWindow(id: Long, folder: String, fileName: String, fileSize: Long) {
         runOnUIThread { DownloadCompleteWindow().apply { setDetails(fileName, folder, fileSize) }.isVisible = true }
+    }
+
+    override fun showDownloadCompleteNotification(fileName: String) {
+        runOnUIThread {
+            showTrayNotification(text("CD_TITLE"), text("MSG_DOWNLOAD_FINISHED").format(fileName))
+        }
     }
 
     // Rows are resolved by id on the EDT: an index taken on the calling thread can point at a

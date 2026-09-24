@@ -11,9 +11,27 @@ import java.io.File
 import java.net.Authenticator
 import java.net.Proxy
 
+/** What the app does when a download finishes. */
+enum class DownloadCompleteNotification {
+    /** The full [xdm.app.ui.screens.DownloadCompleteWindow] dialog. */
+    DIALOG,
+
+    /** A system tray balloon/notification; clicking it opens the main window. */
+    NOTIFICATION,
+
+    /** Nothing at all. */
+    NONE,
+}
+
 interface IAppConfig : CoreConfig {
     fun load()
     fun save()
+    /** What to show when a download finishes. */
+    var downloadCompleteNotification: DownloadCompleteNotification
+    /**
+     * Legacy view of [downloadCompleteNotification]: true iff the mode is [DownloadCompleteNotification.DIALOG].
+     * Kept because it is the first field of the on-disk config format.
+     */
     var showDownloadCompleteWindow: Boolean
     var runVirusScan: Boolean
     var runCommand: Boolean
@@ -85,7 +103,15 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var lang: String = "en"
     override var theme: String = "dark"
     override var maxParallelDownloads: Int = 1
-    override var showDownloadCompleteWindow: Boolean = true
+    override var downloadCompleteNotification: DownloadCompleteNotification = DownloadCompleteNotification.DIALOG
+    override var showDownloadCompleteWindow: Boolean
+        // No backing field: the old boolean is just a projection of the three-way mode, so a
+        // config written by an older build (which only knows the boolean) still round-trips.
+        get() = downloadCompleteNotification == DownloadCompleteNotification.DIALOG
+        set(value) {
+            downloadCompleteNotification =
+                if (value) DownloadCompleteNotification.DIALOG else DownloadCompleteNotification.NONE
+        }
     override var runVirusScan: Boolean = false
     override var runCommand: Boolean = false
     override var showDownloadProgressWindow: Boolean = true
@@ -195,6 +221,9 @@ class AppConfig(private val configDir: String) : IAppConfig {
         out.writeBoolean(ignoreCertErrors)
         out.writeInt(readTimeoutSeconds)
         writeCategories(out, categories)
+        // Appended after the self-contained category block so an older build, which stops
+        // reading here, is unaffected.
+        out.writeInt(downloadCompleteNotification.ordinal)
     }
 
     private fun load(input: DataInputStream) {
@@ -266,7 +295,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
         }
         // The category block is last and self-contained: a stale or damaged one falls back to
         // the built-ins instead of failing the whole load and resetting every other setting.
-        runCatching { readCategories(input) }
+        val categoriesRead = runCatching { readCategories(input) }
             .onSuccess { categories = it }
             .onFailure {
                 Logger.error("Unable to read categories, using defaults: $it")
@@ -274,6 +303,13 @@ class AppConfig(private val configDir: String) : IAppConfig {
                 // constructor guessed before the file was read.
                 categories = DownloadCategory.defaults(defaultDownloadFolder)
             }
+            .isSuccess
+        // Written after the categories, so it is only readable when they parsed cleanly and
+        // left the stream aligned. Until then the legacy boolean read above already picked
+        // DIALOG or NONE, which is the right answer for a config from an older build.
+        if (!categoriesRead) return
+        runCatching { DownloadCompleteNotification.entries[input.readInt()] }
+            .onSuccess { downloadCompleteNotification = it }
     }
 
     private fun writeCategories(out: DataOutputStream, list: List<DownloadCategory>) {

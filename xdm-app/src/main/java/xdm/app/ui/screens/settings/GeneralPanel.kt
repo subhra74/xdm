@@ -1,6 +1,7 @@
 package xdm.app.ui.screens.settings
 
 import xdm.app.AppContext
+import xdm.app.DownloadCompleteNotification
 import xdm.app.I8N
 import xdm.app.utils.chooseFile
 import xdm.app.utils.RemixIcon
@@ -43,7 +44,18 @@ class GeneralPanel : SettingsPanel() {
     }
     private val chkSpeedLimiter = JCheckBox(I8N.text("MSG_SPEED_LIMIT"))
     private val chkShowDwnPrg = JCheckBox(I8N.text("SHOW_DWN_PRG"))
-    private val chkShowComplete = JCheckBox(I8N.text("SHOW_DWN_COMPLETE"))
+    // Order must match completeModes.
+    private val cmbOnComplete = JComboBox<String>().apply {
+        fixHeight(this)
+        addItem(I8N.text("ON_COMPLETE_DIALOG"))
+        addItem(I8N.text("ON_COMPLETE_NOTIFICATION"))
+        addItem(I8N.text("ON_COMPLETE_NOTHING"))
+    }
+    private val completeModes = listOf(
+        DownloadCompleteNotification.DIALOG,
+        DownloadCompleteNotification.NOTIFICATION,
+        DownloadCompleteNotification.NONE,
+    )
     private val chkStartAutoDwn = JCheckBox(I8N.text("LBL_START_AUTO"))
     private val chkOverwrite = JCheckBox(I8N.text("LBL_OVERWRITE_EXISTING"))
     private val btnBrowse1 = createBrowseButton(txtTmpDir)
@@ -83,8 +95,8 @@ class GeneralPanel : SettingsPanel() {
             settingsCard(
                 I8N.text("SETTINGS_SEC_BEHAVIOR"),
                 settingsLeftAligned(chkShowDwnPrg),
-                settingsLeftAligned(chkShowComplete),
                 settingsLeftAligned(chkStartAutoDwn),
+                settingsRow(JLabel(I8N.text("LBL_ON_COMPLETE")), cmbOnComplete),
             )
         )
         add(Box.createRigidArea(Dimension(0, 12)))
@@ -166,7 +178,8 @@ class GeneralPanel : SettingsPanel() {
     fun load() {
         val config = AppContext.config
         chkShowDwnPrg.isSelected = config.showDownloadProgressWindow
-        chkShowComplete.isSelected = config.showDownloadCompleteWindow
+        cmbOnComplete.selectedIndex = completeModes.indexOf(config.downloadCompleteNotification)
+            .let { if (it >= 0) it else 0 }
         chkStartAutoDwn.isSelected = config.startDownloadAutomatically
         chkOverwrite.isSelected = config.overwriteExistingFiles
         chkSpeedLimiter.isSelected = config.speedLimiterEnabled
@@ -197,7 +210,8 @@ class GeneralPanel : SettingsPanel() {
     fun save() {
         val config = AppContext.config
         config.showDownloadProgressWindow = chkShowDwnPrg.isSelected
-        config.showDownloadCompleteWindow = chkShowComplete.isSelected
+        config.downloadCompleteNotification =
+            completeModes[cmbOnComplete.selectedIndex.coerceIn(completeModes.indices)]
         config.startDownloadAutomatically = chkStartAutoDwn.isSelected
         config.overwriteExistingFiles = chkOverwrite.isSelected
         config.speedLimiterEnabled = chkSpeedLimiter.isSelected

@@ -170,6 +170,10 @@ class DownloadCompleteWindow : JDialog() {
 
     init {
         isAlwaysOnTop = true
+        // Show the notification without pulling focus away from whatever the user is
+        // doing: the dialog appears on top but the active window keeps keyboard focus
+        // until the user clicks this one.
+        isAutoRequestFocus = false
         title = text("CD_TITLE")
         defaultCloseOperation = DISPOSE_ON_CLOSE
 

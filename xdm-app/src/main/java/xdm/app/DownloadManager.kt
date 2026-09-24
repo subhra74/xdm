@@ -186,10 +186,15 @@ class DownloadManager(
                 }
                 AppContext.app.updateDownloadInView(event.id)
                 AppContext.app.hideProgressWindow(event.id)
-                if (AppContext.config.showDownloadCompleteWindow) {
-                    AppContext.app.showDownloadCompleteWindow(
+                when (AppContext.config.downloadCompleteNotification) {
+                    DownloadCompleteNotification.DIALOG -> AppContext.app.showDownloadCompleteWindow(
                         event.id, event.finalOutputFolder, event.finalFileName, event.fileSize
                     )
+
+                    DownloadCompleteNotification.NOTIFICATION ->
+                        AppContext.app.showDownloadCompleteNotification(event.finalFileName)
+
+                    DownloadCompleteNotification.NONE -> {}
                 }
                 runPostDownloadActions(event)
                 if (toDelete.remove(event.id)) {

@@ -18,6 +18,12 @@ import java.awt.image.BufferedImage
 import java.io.File
 import java.net.URI
 
+/**
+ * The tray icon, kept so [showTrayNotification] can post balloons through it. Null until
+ * [createTray] runs, and on platforms without a system tray.
+ */
+private var trayIconRef: TrayIcon? = null
+
 fun createTray(image: Image) {
     if (!SystemTray.isSupported()) {
         Logger.info("SystemTray is not supported")
@@ -35,12 +41,34 @@ fun createTray(image: Image) {
             app.showAppWindow()
         }
     })
-//    trayIcon.addActionListener {
-//        Logger.info("Tray icon was clicked")
-//        app.showAppWindow()
-//    }
+    // Fires when a balloon posted by showTrayNotification is clicked (and, on Windows, on a
+    // double-click of the icon itself) - both mean the same thing here, so there is nothing
+    // to disambiguate.
+    trayIcon.addActionListener {
+        Logger.info("Tray notification was clicked")
+        app.showAppWindow()
+    }
     try {
         tray.add(trayIcon)
+        trayIconRef = trayIcon
+    } catch (ex: Exception) {
+        Logger.error(ex.message, ex)
+    }
+}
+
+/**
+ * Posts a system notification through the tray icon. The balloon is drawn by the OS shell, so
+ * it never takes focus from the window the user is working in - unlike a dialog. It is also the
+ * shell's call whether to show it at all (Focus Assist, Do Not Disturb, notification settings),
+ * so treat delivery as best-effort. No-op when there is no tray.
+ */
+fun showTrayNotification(caption: String, text: String) {
+    val icon = trayIconRef ?: run {
+        Logger.info("No tray icon, skipping notification")
+        return
+    }
+    try {
+        icon.displayMessage(caption, text, TrayIcon.MessageType.INFO)
     } catch (ex: Exception) {
         Logger.error(ex.message, ex)
     }
