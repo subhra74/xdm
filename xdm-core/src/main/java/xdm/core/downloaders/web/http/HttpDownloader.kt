@@ -105,7 +105,8 @@ class HttpDownloaderTask : ChunkController {
         this.prgInfo = DownloadStatusInfo.ProgressInfo(id = context.id)
         this.throttle = SpeedLimiter(config)
         this.config = config
-        this.maxChunk = config.maxSegments
+        // The new-download dialog can override the configured segment count per download.
+        this.maxChunk = task.maxPiece.takeIf { it > 0 } ?: config.maxSegments
     }
 
 //    constructor(

@@ -116,3 +116,4 @@ fun padding(comp: JComponent, padding: Int, bottomPadding: Boolean = true, topPa
         0,
     )
 }
+

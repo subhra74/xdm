@@ -1,6 +1,8 @@
 package xdm.app.ui.screens
 
+import com.formdev.flatlaf.FlatClientProperties
 import xdm.app.AppContext
+import xdm.app.ui.components.CategoryStyle
 import xdm.app.I8N.text
 import xdm.app.utils.chooseFile
 import xdm.app.utils.isAutoCategorySelected
@@ -17,6 +19,8 @@ import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.util.*
 import xdm.core.util.CoreUtils.uniqueId
 import java.awt.*
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import java.io.File
@@ -32,8 +36,9 @@ class NewDownloadWindow : JDialog() {
     private lateinit var txtFileName: JTextField
     private lateinit var cmbSaveIn: JComboBox<String>
     private lateinit var btnDownload: JButton
-    private lateinit var btnSchedule: JButton
-    private lateinit var btnIgnore: JButton
+    private lateinit var btnLater: JButton
+    private lateinit var lblIgnore: JLabel
+    private lateinit var cmbSegments: JComboBox<Int>
     private lateinit var modelSaveIn: DefaultComboBoxModel<String>
     private lateinit var lblFileInfo: JLabel
     private lateinit var originalFileName: String
@@ -45,6 +50,7 @@ class NewDownloadWindow : JDialog() {
     init {
         initUI()
         attachUrlChangeListener()
+        attachFileNameChangeListener()
         defaultCloseOperation = DISPOSE_ON_CLOSE
     }
 
@@ -71,6 +77,7 @@ class NewDownloadWindow : JDialog() {
         contentPane.add(lbAddress, gbcLbAddress)
 
         txtUrl = JTextField()
+        txtUrl.putClientProperty(FlatClientProperties.STYLE, "arc: 10")
         val gbcTxtUrl = GridBagConstraints().apply {
             gridwidth = 4
             insets = Insets(15, 0, 5, 5)
@@ -92,6 +99,7 @@ class NewDownloadWindow : JDialog() {
         contentPane.add(lblFile, gbcLblFile)
 
         txtFileName = JTextField()
+        txtFileName.putClientProperty(FlatClientProperties.STYLE, "arc: 10")
         val gbcTxtFileName = GridBagConstraints().apply {
             gridwidth = 4
             weightx = 1.0
@@ -154,11 +162,28 @@ class NewDownloadWindow : JDialog() {
         contentPane.add(btnBrowse, gbcBtnBrowse)
 
         val lblFreeSpace = JLabel("---").apply {
-//            foreground = UIManager.getColor("ProgressBar.foreground")
-//            cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-            verticalAlignment = SwingConstants.TOP
+            alignmentX = Component.LEFT_ALIGNMENT
         }
-        val gbcLblIgnore = GridBagConstraints().apply {
+
+        lblIgnore = JLabel(text("ND_IGNORE_PAGE")).apply {
+            alignmentX = Component.LEFT_ALIGNMENT
+            cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+            foreground = UIManager.getColor("ProgressBar.foreground")
+            addMouseListener(object : MouseAdapter() {
+                override fun mouseClicked(e: MouseEvent) {
+                    ignoreHost()
+                }
+            })
+        }
+
+        // Glue rather than a fixed gap: the link stays on the bottom edge as the dialog is resized.
+        val infoBox = Box.createVerticalBox().apply {
+            add(lblFreeSpace)
+            add(Box.createVerticalGlue())
+            add(lblIgnore)
+            add(Box.createRigidArea(Dimension(0, 10)))
+        }
+        val gbcInfoBox = GridBagConstraints().apply {
             weighty = 1.0
             fill = GridBagConstraints.VERTICAL
             anchor = GridBagConstraints.NORTHWEST
@@ -167,7 +192,7 @@ class NewDownloadWindow : JDialog() {
             gridx = 1
             gridy = 3
         }
-        contentPane.add(lblFreeSpace, gbcLblIgnore)
+        contentPane.add(infoBox, gbcInfoBox)
 
         val panel = JPanel()
         panel.background = UIManager.getColor("Table.background")
@@ -182,12 +207,17 @@ class NewDownloadWindow : JDialog() {
         contentPane.add(panel, gcPanel)
         panel.layout = BoxLayout(panel, BoxLayout.X_AXIS)
 
-        btnIgnore = JButton(text("MSG_IGNORE_ADDR"))
-        btnIgnore.addActionListener { ignoreHost() }
-        panel.add(btnIgnore)
+        panel.add(JLabel(text("ND_SEGMENTS")))
+        panel.add(Box.createRigidArea(Dimension(10, 30)))
+
+        cmbSegments = JComboBox(arrayOf(1, 2, 4, 8, 16, 32, 64)).apply {
+            selectedItem = AppContext.config.maxSegments
+            maximumSize = preferredSize
+        }
+        panel.add(cmbSegments)
 
         panel.add(Box.createHorizontalGlue())
-        val rigidArea1 = Box.createRigidArea(Dimension(80, 20))
+        val rigidArea1 = Box.createRigidArea(Dimension(10, 20))
         panel.add(rigidArea1)
 
         val btnCancel = JButton(text("ND_CANCEL"))
@@ -196,20 +226,20 @@ class NewDownloadWindow : JDialog() {
 
         panel.add(Box.createRigidArea(Dimension(10, 30)))
 
-        btnSchedule = JButton(text("MSG_SHD_SCHEDULE"))
-        btnSchedule.addActionListener { scheduleDownload() }
-        panel.add(btnSchedule)
+        btnLater = JButton(text("ND_DOWNLOAD_LATER"))
+        btnLater.addActionListener { downloadLater() }
+        panel.add(btnLater)
 
         val rigidArea = Box.createRigidArea(Dimension(10, 30))
         panel.add(rigidArea)
 
         btnDownload = JButton(text("ND_DOWNLOAD"))
-        btnDownload.addActionListener { downloadNow(true) }
+        btnDownload.addActionListener { addDownload(now = true) }
         panel.add(btnDownload)
 
         getRootPane().defaultButton = btnDownload
 
-        sameWidth(btnDownload, btnCancel, btnSchedule)
+        //sameWidth(btnDownload, btnCancel, btnLater)
 
         addWindowListener(
             object : WindowAdapter() {
@@ -290,8 +320,25 @@ class NewDownloadWindow : JDialog() {
     //    AppContext.INSTANCE.getDownloader().startDownload(source, true, -1);
     //    dispose();
     //  }
-    private fun downloadNow(now: Boolean) {
+    /** Registers the download, started right away when [now] is set and left paused otherwise. */
+    private fun addDownload(now: Boolean) {
         if (createDownload(now) != null) dispose()
+    }
+
+    /**
+     * Queues the download without starting it, offering the scheduler on the way: answering yes goes
+     * on to [scheduleDownload], no leaves the download paused until it is started by hand.
+     */
+    private fun downloadLater() {
+        when (
+            JOptionPane.showConfirmDialog(
+                this, text("MSG_ASK_SCHEDULE"), text("ND_DOWNLOAD_LATER"), JOptionPane.YES_NO_CANCEL_OPTION
+            )
+        ) {
+            JOptionPane.YES_OPTION -> scheduleDownload()
+            JOptionPane.NO_OPTION -> addDownload(now = false)
+            else -> Unit
+        }
     }
 
     /**
@@ -341,7 +388,7 @@ class NewDownloadWindow : JDialog() {
             autoCategorize = isAutoCategorySelected(cmbSaveIn),
             defaultDownloadFolder = selectedBaseFolder(cmbSaveIn),
             userSelectedDownloadFolder = null,
-            maxPiece = 8,
+            maxPiece = cmbSegments.selectedItem as Int,
             authInfo = null,
             knownFileSize = taskInfo?.knownFileSize
         )
@@ -351,10 +398,10 @@ class NewDownloadWindow : JDialog() {
         return task.id
     }
 
+    /** Packing first is what makes the window insets known, so the content is never clipped. */
     private fun adjustSize() {
-        var dim = preferredSize
-        dim = Dimension(max(dim.width.toDouble(), 500.0).toInt(), max(dim.height.toDouble(), 270.0).toInt())
-        size = dim
+        pack()
+        size = Dimension(max(width, 500), max(height, 270))
     }
 
     //  public void showWindow(final HttpMetadata metadata) {
@@ -424,10 +471,8 @@ class NewDownloadWindow : JDialog() {
     }
 
     fun showWindow(taskInfo: HttpDownloadTaskInfo?) {
-        this.adjustSize()
-        this.setLocationRelativeTo(null)
-
-        btnIgnore.isVisible = taskInfo != null
+        lblIgnore.isVisible = taskInfo != null
+        cmbSegments.selectedItem = AppContext.config.maxSegments
         populateSaveInFolders(modelSaveIn, cmbSaveIn)
         if (taskInfo == null) {
             val url = getClipBoardText()
@@ -444,7 +489,17 @@ class NewDownloadWindow : JDialog() {
                 FormatHelper.formatSize(it.toDouble())
             } ?: "---"
         }
+
+        // Sized last: the ignore link is only part of the layout for browser-captured downloads.
+        this.adjustSize()
+        this.setLocationRelativeTo(null)
         this.isVisible = true
+    }
+
+    /** Picks the icon the file's category uses, so the preview matches the row it will become. */
+    private fun updateFileIcon() {
+        val glyph = CategoryStyle.lineVariant(CategoryStyle.iconForFile(txtFileName.text.orEmpty()))
+        lblFileInfo.icon = createIcon(glyph, 36, Color.GRAY)
     }
 
     private fun urlUpdated(e: DocumentEvent) {
@@ -457,6 +512,16 @@ class NewDownloadWindow : JDialog() {
         } catch (err: Exception) {
             Logger.info(err)
         }
+    }
+
+    private fun attachFileNameChangeListener() {
+        txtFileName.document.addDocumentListener(object : DocumentListener {
+            override fun insertUpdate(e: DocumentEvent) = updateFileIcon()
+
+            override fun removeUpdate(e: DocumentEvent) = updateFileIcon()
+
+            override fun changedUpdate(e: DocumentEvent) = updateFileIcon()
+        })
     }
 
     private fun attachUrlChangeListener() {

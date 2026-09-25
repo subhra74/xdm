@@ -2,6 +2,7 @@ package xdm.app.ui.components
 
 import java.awt.Color
 import javax.swing.UIManager
+import xdm.app.AppContext
 import xdm.app.DownloadCategory
 import xdm.app.utils.RemixIcon
 
@@ -75,4 +76,12 @@ object CategoryStyle {
     /** Glyph used for a category; an unknown or stale icon name falls back to a plain file glyph. */
     fun iconName(category: DownloadCategory): RemixIcon =
         runCatching { RemixIcon.valueOf(category.icon) }.getOrDefault(RemixIcon.FILE_FILL)
+
+    /**
+     * Glyph for a file, taken from the category that claims its extension so a name shown before the
+     * download exists gets the same icon its row will have. Falls back to a plain file glyph.
+     */
+    fun iconForFile(fileName: String): RemixIcon =
+        AppContext.config.categories.firstOrNull { it.matches(fileName) }
+            ?.let { iconName(it) } ?: RemixIcon.FILE_FILL
 }
