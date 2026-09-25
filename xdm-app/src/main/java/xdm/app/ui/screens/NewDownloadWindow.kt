@@ -32,6 +32,7 @@ class NewDownloadWindow : JDialog() {
     private lateinit var txtFileName: JTextField
     private lateinit var cmbSaveIn: JComboBox<String>
     private lateinit var btnDownload: JButton
+    private lateinit var btnSchedule: JButton
     private lateinit var btnIgnore: JButton
     private lateinit var modelSaveIn: DefaultComboBoxModel<String>
     private lateinit var lblFileInfo: JLabel
@@ -193,6 +194,12 @@ class NewDownloadWindow : JDialog() {
         btnCancel.addActionListener { dispose() }
         panel.add(btnCancel)
 
+        panel.add(Box.createRigidArea(Dimension(10, 30)))
+
+        btnSchedule = JButton(text("MSG_SHD_SCHEDULE"))
+        btnSchedule.addActionListener { scheduleDownload() }
+        panel.add(btnSchedule)
+
         val rigidArea = Box.createRigidArea(Dimension(10, 30))
         panel.add(rigidArea)
 
@@ -202,7 +209,7 @@ class NewDownloadWindow : JDialog() {
 
         getRootPane().defaultButton = btnDownload
 
-        sameWidth(btnDownload, btnCancel)
+        sameWidth(btnDownload, btnCancel, btnSchedule)
 
         addWindowListener(
             object : WindowAdapter() {
@@ -284,20 +291,42 @@ class NewDownloadWindow : JDialog() {
     //    dispose();
     //  }
     private fun downloadNow(now: Boolean) {
+        if (createDownload(now) != null) dispose()
+    }
+
+    /**
+     * Adds the download in a paused state and asks the user when it should run. Cancelling the
+     * scheduler leaves nothing behind: the just-created download is removed again.
+     */
+    private fun scheduleDownload() {
+        val id = createDownload(now = false) ?: return
+        val scheduled = ScheduleWindow(this, id).showDialog()
+        if (!scheduled) {
+            AppContext.downloader.deleteDownload(id, false)
+            return
+        }
+        dispose()
+    }
+
+    /**
+     * Validates the form and registers the download, started right away when [now] is set and left
+     * paused otherwise. Returns the new download id, or null if the form is incomplete.
+     */
+    private fun createDownload(now: Boolean): Long? {
         val url = txtUrl.text
         val file = txtFileName.text
         if (StringUtils.isNullOrEmptyOrBlank(url)) {
             JOptionPane.showMessageDialog(this, text("MSG_NO_URL"))
-            return
+            return null
         }
         if (!validateURL(url)) {
             JOptionPane.showMessageDialog(this, text("MSG_INVALID_URL"))
-            return
+            return null
         }
 
         if (StringUtils.isNullOrEmptyOrBlank(file)) {
             JOptionPane.showMessageDialog(this, text("MSG_NO_FILE"))
-            return
+            return null
         }
 
         val fileRenamedByUser = !StringUtils.equalsIgnoreCase(txtFileName.text, originalFileName)
@@ -319,7 +348,7 @@ class NewDownloadWindow : JDialog() {
 
         rememberFolderChoice(cmbSaveIn)
         AppContext.downloader.startHttpDownload(task, now)
-        dispose()
+        return task.id
     }
 
     private fun adjustSize() {

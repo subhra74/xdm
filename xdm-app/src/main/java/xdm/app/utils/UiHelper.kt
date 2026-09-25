@@ -57,14 +57,13 @@ fun logoIcon(size: Int): ImageIcon {
 /** The monochrome macOS tray glyph (black on transparent) at [size] px. */
 fun trayMacImage(size: Int): BufferedImage = scaleImage(loadImage("/images/xdm-tray-mac-88.png"), size, size)
 
-fun sameWidth(c1: Component, c2: Component) {
-    val p1 = c1.preferredSize
-    val p2 = c2.preferredSize
-    val maxW = max(p1.width.toDouble(), p2.width.toDouble()).toInt()
-    val maxH = max(p1.height.toDouble(), p2.height.toDouble()).toInt()
+/** Gives every component the preferred size of the widest and tallest one among them. */
+fun sameWidth(vararg components: Component) {
+    if (components.isEmpty()) return
+    val maxW = components.maxOf { it.preferredSize.width }
+    val maxH = components.maxOf { it.preferredSize.height }
     val dim = Dimension(maxW, maxH)
-    c1.preferredSize = dim
-    c2.preferredSize = dim
+    components.forEach { it.preferredSize = dim }
 }
 
 fun showMenu(target: Component, menu: JPopupMenu) {

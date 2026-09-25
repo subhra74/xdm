@@ -457,6 +457,7 @@ MSG_SHD_ENABLE_STOP=Stop the download at:
 MSG_SHD_STOP_DATE=Stop date:
 MSG_SHD_STOP_TIME=Stop time:
 MSG_SHD_MESSAGE2=Stop time must be after the start time.
+MSG_SHD_MESSAGE3=The selected date and time is in the past.
 MSG_NO_DOWNLOAD=No downloads
 
 

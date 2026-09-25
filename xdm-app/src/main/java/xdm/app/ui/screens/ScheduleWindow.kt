@@ -49,6 +49,9 @@ class ScheduleWindow(parent: Window, private val downloadId: Long) :
     )
     private val dayCheckBoxes = Array(7) { i -> JCheckBox(dayLabels[i]) }
 
+    /** Set once an entry has been stored, so callers can tell a confirm from a cancel. */
+    private var scheduled = false
+
     init {
         // Default time: now + 1 hour, rounded to the next minute
         val defaultCal = Calendar.getInstance().apply { add(Calendar.HOUR_OF_DAY, 1) }
@@ -388,6 +391,12 @@ class ScheduleWindow(parent: Window, private val downloadId: Long) :
             dateCal.set(Calendar.SECOND, 0)
             dateCal.set(Calendar.MILLISECOND, 0)
 
+            // A one-time entry only fires on the minute it names, so a past instant would never run.
+            if (dateCal.timeInMillis < System.currentTimeMillis() - 60_000) {
+                warn("MSG_SHD_MESSAGE3")
+                return
+            }
+
             var stopMillis = -1L
             if (chkStopOneTime.isSelected) {
                 val stopCal = Calendar.getInstance().apply { time = stopDateSpinner.value as Date }
@@ -446,6 +455,7 @@ class ScheduleWindow(parent: Window, private val downloadId: Long) :
         // Remove old entry (if any) then add the new one
         AppContext.scheduler.removeEntry(downloadId)
         AppContext.scheduler.addEntry(entry)
+        scheduled = true
         dispose()
     }
 
@@ -455,8 +465,10 @@ class ScheduleWindow(parent: Window, private val downloadId: Long) :
         )
     }
 
-    fun showDialog() {
+    /** Shows the dialog modally; returns true when the user scheduled the download. */
+    fun showDialog(): Boolean {
         isVisible = true
+        return scheduled
     }
 
     companion object {
