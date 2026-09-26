@@ -88,7 +88,7 @@ class FilterListRenderer : ListCellRenderer<FilterItem> {
         private fun pillColor(): Color =
             if (FlatLaf.isLafDark()) {
                 val c1 = UIManager.getColor("Button.background")
-                Color(c1.red, c1.green, c1.blue, 75) //?: settingsSurface()
+                Color(c1.red, c1.green, c1.blue, 90) //?: settingsSurface()
             } else {
                 val accent = settingsAccentColor()
                 Color(accent.red, accent.green, accent.blue, 46)

@@ -32,7 +32,7 @@ class FilterListPanel(
             FilterItem.State(
                 FilterState.All, text("CAT_ALL"),
                 makeIcon(RemixIcon.ARROW_DOWN_CIRCLE_LINE, Color.gray),
-                makeIcon(RemixIcon.ARROW_DOWN_CIRCLE_LINE, selectedIconColor())
+                makeIcon(RemixIcon.ARROW_DOWN_CIRCLE_FILL, selectedIconColor())
             )
         )
         stateFilterModel.addElement(
@@ -40,7 +40,7 @@ class FilterListPanel(
                 FilterState.Incomplete,
                 text("CAT_INCOMPLETE"),
                 makeIcon(RemixIcon.PROGRESS_2_LINE, Color.gray),
-                makeIcon(RemixIcon.PROGRESS_2_LINE, selectedIconColor())
+                makeIcon(RemixIcon.PROGRESS_2_FILL, selectedIconColor())
             )
         )
         stateFilterModel.addElement(
@@ -48,7 +48,7 @@ class FilterListPanel(
                 FilterState.Completed,
                 text("CAT_FINISHED"),
                 makeIcon(RemixIcon.CHECKBOX_CIRCLE_LINE, Color.gray),
-                makeIcon(RemixIcon.CHECKBOX_CIRCLE_LINE, selectedIconColor())
+                makeIcon(RemixIcon.CHECKBOX_CIRCLE_FILL, selectedIconColor())
             )
         )
         stateFilterList.isOpaque = false
@@ -125,17 +125,18 @@ class FilterListPanel(
             FilterItem.Category(
                 null, text("CAT_ALL_TYPES"),
                 makeIcon(CategoryStyle.lineVariant(CategoryStyle.ALL_ICON), Color.gray),
-                makeIcon(CategoryStyle.lineVariant(CategoryStyle.ALL_ICON), selectedIconColor())
+                makeIcon(CategoryStyle.ALL_ICON, selectedIconColor())
             )
         )
         for (cat in AppContext.config.categories) {
-            // The sidebar draws line style; the download list keeps the stored filled glyph.
-            val glyph = CategoryStyle.lineVariant(CategoryStyle.iconName(cat))
+            // Unselected sidebar rows draw the line style; the selected row draws the stored
+            // filled glyph, as the download list does.
+            val filled = CategoryStyle.iconName(cat)
             catFilterModel.addElement(
                 FilterItem.Category(
                     cat, cat.displayName,
-                    makeIcon(glyph, Color.gray),
-                    makeIcon(glyph, selectedIconColor())
+                    makeIcon(CategoryStyle.lineVariant(filled), Color.gray),
+                    makeIcon(filled, selectedIconColor())
                 )
             )
         }
