@@ -12,6 +12,7 @@ import xdm.core.downloaders.web.streaming.downloader.dash.DashDownloaderTask
 import xdm.core.downloaders.web.streaming.downloader.hls.HlsDownloaderTask
 import xdm.core.downloaders.web.streaming.downloader.hls.HlsKeyStore
 import xdm.core.media.muxer.impl.TransmuxingMuxer
+import xdm.core.network.http.HeaderMap
 import xdm.core.network.http.impl.HttpClientImpl
 import xdm.core.util.AtomicIO
 import xdm.core.util.CoreUtils
@@ -35,7 +36,15 @@ interface IDownloadManager {
     fun startHlsDownload(task: HlsDownloadTaskInfo)
     fun startDashDownload(task: DashDownloadTaskInfo)
     fun updateDownloadInfo(id: Long, task: HttpDownloadTaskInfo)
+    fun updateDownloadLink(id: Long, url: String, headers: HeaderMap?, cookie: String?)
     fun getOriginPage(id: Long): String?
+
+    /**
+     * The page the download was found on: its origin, or its `Referer`. Unlike [getOriginPage]
+     * this does not fall back to the download URL — a null means there is no page to reopen, and
+     * the link can only be refreshed by hand.
+     */
+    fun getRefererPage(id: Long): String?
 }
 
 /** Builds the engine task for a persisted download, or returns null if its task info is missing. */
@@ -816,20 +825,35 @@ class DownloadManager(
         return null
     }
 
-    override fun updateDownloadInfo(id: Long, task: HttpDownloadTaskInfo) {
+    override fun getRefererPage(id: Long): String? {
         taskInfoDB.getHttpTask(id)?.let {
-            it.url = task.url
-            it.headers = task.headers
-            it.cookie = task.cookie
+            if (it.origin != null) return it.origin!!
+            return getHeader("Referer", it.headers)
+        }
+        return null
+    }
+
+    override fun updateDownloadInfo(id: Long, task: HttpDownloadTaskInfo) =
+        applyLinkUpdate(id, task.url, task.headers, task.cookie)
+
+    override fun updateDownloadLink(id: Long, url: String, headers: HeaderMap?, cookie: String?) =
+        applyLinkUpdate(id, url, headers, cookie)
+
+    /** Writes a refreshed link to both the task info and the resume state of a paused download. */
+    private fun applyLinkUpdate(id: Long, url: String, headers: HeaderMap?, cookie: String?) {
+        taskInfoDB.getHttpTask(id)?.let {
+            it.url = url
+            it.headers = headers
+            it.cookie = cookie
             taskInfoDB.saveHttpTask(it)
-            Logger.info("Task ${task.id} updated")
+            Logger.info("Task $id updated")
         }
         // Read first, then save: never rewrite the state file from inside its own read.
         AtomicIO.readTransacted("$id.state", configDir) { fs -> readContext(fs, downloadHost) }
             .onSuccess { context ->
-                context.url = task.url
-                context.headers = task.headers
-                context.cookie = task.cookie
+                context.url = url
+                context.headers = headers
+                context.cookie = cookie
                 saveState(context, configDir)
                 Logger.info("Context ${context.id} updated")
             }

@@ -16,7 +16,6 @@ import xdm.app.utils.TextContextMenu
 import xdm.app.utils.logoImage
 import xdm.app.utils.createTray
 import xdm.app.utils.showTrayNotification
-import xdm.app.utils.openWebPage
 import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.downloaders.web.SegmentProgress
@@ -244,14 +243,17 @@ class AppInstance : IAppInstance {
     }
 
     private fun showRefreshWindowInternal(id: Long) {
-        val url = AppContext.downloader.getOriginPage(id)
-        if (url == null) {
+        // Refreshing rewrites an HTTP task's link; there is nothing to refresh without one.
+        if (AppContext.taskInfoDB.getHttpTask(id) == null) {
             MessageBox.show(appWindow, "XDM", text("ERR_NO_REFRESH"))
             return
         }
+        // Null when the download carries no origin or Referer: the dialog then offers only the
+        // manual link entry, since there is no page to send the browser back to.
+        val page = AppContext.downloader.getRefererPage(id)
         AppContext.refreshLinkId.set(id)
         AppContext.refreshLinkInProgress.set(true)
-        refreshLinkWindow = RefreshLinkWindow(id).apply {
+        refreshLinkWindow = RefreshLinkWindow(appWindow, id, page).apply {
             addWindowListener(object : WindowAdapter() {
                 override fun windowClosed(e: WindowEvent) {
                     AppContext.refreshLinkInProgress.set(false)
@@ -262,7 +264,6 @@ class AppInstance : IAppInstance {
             })
         }
         refreshLinkWindow?.isVisible = true
-        openWebPage(url)
     }
 
     override fun showSchedulerWindow(id: Long) {
