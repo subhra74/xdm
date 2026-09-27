@@ -1,5 +1,7 @@
 package xdm.integration
 
+import java.util.UUID
+
 /**
  * Lets the browser extension learn about state changes (and about XDM exiting) without polling.
  *
@@ -27,6 +29,14 @@ object EventChannel {
 
     /** Bumped on every change the extension cares about; also handed out in `ConfigDto.version`. */
     private var version = 1L
+
+    /**
+     * Identifies this run of XDM. [version] counts from the start of a run, so a restarted XDM hands
+     * out *lower* numbers than the run before it; the extension needs this to tell "an old snapshot
+     * arrived out of order" from "XDM restarted and is counting again", instead of writing the new
+     * run's state off as stale and never noticing XDM came back.
+     */
+    val instanceId: String = UUID.randomUUID().toString()
 
     /** clientId -> the token of that client's currently parked poll. */
     private val waiters = HashMap<String, Any>()

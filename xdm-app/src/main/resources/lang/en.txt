@@ -515,3 +515,4 @@ REF_HDR_OK=OK
 REF_APPLY=Apply
 ERR_REF_INVALID_URL=Please enter a valid http or https address
 ERR_REF_HDR_NAME=Please enter a header name
+ERR_PORT_IN_USE=Another program is using port %s, which XDM needs for its browser integration. Please close that program and start XDM again.

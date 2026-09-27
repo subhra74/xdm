@@ -139,6 +139,15 @@ object VideoHelper {
         ) || StringUtils.containsIgnoreCase(contentType, "f4f"))
     }
 
+    /**
+     * Forgets what was captured for a tab that has just started loading a new document. Without
+     * this the tab stays marked as "a manifest came from here", so plain HTTP videos on the
+     * reloaded/next page would keep being suppressed by [isHttpVideo].
+     */
+    fun onTabNavigated(tabId: String) {
+        m3u8MpdTabs.remove(tabId)
+    }
+
     private fun isHLSUrl(url: String?): Boolean = StringUtils.containsIgnoreCase(url, "m3u8")
 
     private fun isDash(contentType: String?): Boolean = StringUtils.containsIgnoreCase(contentType, "dash")

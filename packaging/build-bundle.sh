@@ -156,6 +156,82 @@ APP_VERSION="$(sed -n 's/.*"currentVersion"[[:space:]]*:[[:space:]]*"\([^"]*\)".
   xdm-app/src/main/resources/app-version.json | head -1)"
 : "${APP_VERSION:=1.0.0}"
 
+# --------------------------------------------------------------------------
+# Drop the bundled natives for every platform except this build's target.
+#
+# Conscrypt (conscrypt-openjdk-uber) ships BoringSSL for five platforms and
+# FlatLaf its own library for seven; a bundle runs on exactly one. That is most
+# of a 14.7 MB conscrypt payload sitting dead in every install.
+#
+# Only the copy under build/input that jpackage wraps is trimmed.
+# xdm-app/target/xdm-app.jar keeps every native, so the fat jar stays runnable
+# on any platform when it is shared or launched on its own with `java -jar`.
+#
+# Both loaders resolve their library through an <os>-<arch> classifier in the
+# entry name, so keeping just the matching entry is enough. The two spell the
+# same platform differently (conscrypt: osx/aarch_64, FlatLaf: macos/arm64), so
+# the classifier is matched inside each library's own directory.
+# --------------------------------------------------------------------------
+strip_foreign_natives() {
+  local jar="$1"
+
+  if ! command -v zip >/dev/null 2>&1; then
+    echo ">> zip not on PATH - bundling natives for all platforms"
+    return 0
+  fi
+
+  local cs_os fl_os cs_arch fl_arch
+  case "$OS" in
+    mac)     cs_os=osx     fl_os=macos   ;;
+    linux)   cs_os=linux   fl_os=linux   ;;
+    windows) cs_os=windows fl_os=windows ;;
+  esac
+
+  local machine
+  machine="$(uname -m)"
+  case "$machine" in
+    arm64|aarch64) cs_arch=aarch_64 fl_arch=arm64  ;;
+    x86_64|amd64)  cs_arch=x86_64   fl_arch=x86_64 ;;
+    *)
+      echo ">> unrecognised machine '$machine' - bundling natives for all platforms"
+      return 0
+      ;;
+  esac
+
+  # Conscrypt publishes no windows-aarch64 build, so an ARM Windows target keeps
+  # the x86_64 one and runs it under emulation.
+  [[ "$OS" == windows ]] && cs_arch=x86_64
+
+  # Scoped per library: the two classifier spellings overlap (conscrypt's
+  # windows-x86_64 would otherwise also match FlatLaf's windows-x86_64 dll on an
+  # ARM Windows target, where FlatLaf's own pick is windows-arm64).
+  local cs_dir="META-INF/native/"
+  local fl_dir="com/formdev/flatlaf/natives/"
+
+  local before after entry
+  local drop=()
+  before="$(wc -c <"$jar")"
+  while IFS= read -r entry; do
+    case "$entry" in
+      "$cs_dir"*"-${cs_os}-${cs_arch}."*) continue ;;
+      "$fl_dir"*"-${fl_os}-${fl_arch}."*) continue ;;
+      *) drop+=("$entry") ;;
+    esac
+  done < <(jar tf "$jar" | grep -E '\.(dylib|jnilib|so|dll)$' || true)
+
+  if [[ ${#drop[@]} -eq 0 ]]; then
+    echo ">> no foreign natives to strip"
+    return 0
+  fi
+
+  # zip -d rewrites the central directory and copies the surviving entries
+  # byte-for-byte, so the assembly's deliberately uncompressed entries stay
+  # uncompressed.
+  zip -q -d "$jar" "${drop[@]}"
+  after="$(wc -c <"$jar")"
+  echo ">> stripped ${#drop[@]} foreign natives ($OS/$machine): $(( (before - after) / 1024 )) KB"
+}
+
 # ---- trimmed runtime ------------------------------------------------------
 echo ">> jlink runtime: $MODULES"
 rm -rf "$RUNTIME_DIR" "$INPUT_DIR"
@@ -174,6 +250,7 @@ jlink \
   --output "$RUNTIME_DIR"
 
 cp "$JAR_PATH" "$INPUT_DIR/$MAIN_JAR"
+strip_foreign_natives "$INPUT_DIR/$MAIN_JAR"
 
 # ---- jpackage -------------------------------------------------------------
 ARGS=(

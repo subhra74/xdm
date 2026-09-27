@@ -6,6 +6,17 @@ const APP_BASE_URL = "http://127.0.0.1:8597";
 /** Floor on how fast the long poll may be re-issued after an immediate empty reply. */
 const MIN_POLL_INTERVAL_MS = 1000;
 
+/**
+ * Floor on how often the extension may reach out to XDM looking for it. Every trigger goes through
+ * tryConnect(), so however many events fire, XDM is contacted at most once per this interval - an
+ * extension that hammers a local port is something a store reviewer will (rightly) ask about, and
+ * nothing here needs to find XDM faster than this.
+ */
+const MIN_CONNECT_INTERVAL_MS = 5000;
+
+/** Name of the one watchdog alarm. */
+const WATCHDOG_ALARM = "xdm-watchdog";
+
 export default class Connector {
     constructor(onMessage, onDisconnect) {
         this.logger = new Logger();
@@ -13,43 +24,81 @@ export default class Connector {
         this.onDisconnect = onDisconnect;
         this.connected = undefined;
         // State version last applied; sent with each poll and used to drop snapshots that arrive
-        // out of order, since poll and /sync replies travel on separate connections.
+        // out of order, since poll and /sync replies travel on separate connections. Only comparable
+        // within one run of XDM, which is what instanceId identifies.
         this.version = 0;
+        this.instanceId = undefined;
         this.polling = false;
+        /** When the last request to XDM went out, for the MIN_CONNECT_INTERVAL_MS floor. */
+        this.lastAttemptAt = 0;
         this.clientId = undefined;
     }
 
     connect() {
-        for (let i = 0; i < 12; i++) {
-            chrome.alarms.create("alerm-" + i, {
+        // A single alarm is the idle floor; what actually finds XDM quickly is the user doing
+        // something (see the tryConnect callers in app.js). Earlier versions armed 12 staggered
+        // alarms and fetched on every one of them, connected or not, so clear those leftovers -
+        // alarms outlive an extension update.
+        chrome.alarms.clearAll(() => {
+            chrome.alarms.create(WATCHDOG_ALARM, {
                 periodInMinutes: 1,
-                when: Date.now() + 1000 + ((i + 1) * 5000)
+                when: Date.now() + 1000
             });
-        }
+        });
         chrome.alarms.onAlarm.addListener(this.onTimer.bind(this));
-        // Don't wait ~6s for the first alarm to find out whether XDM is running.
-        this.onTimer();
+        // Don't wait for the first alarm to find out whether XDM is running.
+        this.tryConnect("worker started");
     }
 
     /**
-     * The alarms are now a watchdog rather than the main channel: they re-arm the long poll after
-     * the service worker has been torn down, and they still find XDM after it is (re)started.
+     * The watchdog. It re-arms the long poll after the service worker has been torn down, and is the
+     * backstop for finding a restarted XDM when the user is doing nothing at all.
      */
     onTimer() {
-        fetch(APP_BASE_URL + "/sync")
-            .then(this.onResponse.bind(this))
-            .catch(err => this.disconnect());
+        this.tryConnect("watchdog alarm");
     }
 
     disconnect() {
         this.polling = false;
         this.connected = false;
+        // Whatever comes next is a different XDM (or the same one restarted): nothing from before
+        // is worth comparing against.
+        this.version = 0;
+        this.instanceId = undefined;
         this.onDisconnect();
     }
 
     isConnected() {
         return this.connected;
     }
+
+    /**
+     * The single place that goes looking for XDM. Anything that hints it may be worth another look
+     * calls this - the watchdog, the user browsing, the popup being opened - and it does nothing at
+     * all while the long poll is already live, or if it ran within MIN_CONNECT_INTERVAL_MS. So no
+     * amount of triggering turns into traffic: while XDM is up this is silent (the parked poll is
+     * the channel), and while it is down this is one small request every few seconds at most.
+     *
+     * Returns a promise that settles once the attempt is over, so a caller that wants to report
+     * fresh state (the popup) can wait for it. A refused connection fails immediately, so waiting
+     * costs nothing when XDM is down.
+     */
+    tryConnect(reason) {
+        if (this.polling) {
+            return Promise.resolve();
+        }
+        const since = Date.now() - this.lastAttemptAt;
+        if (since < MIN_CONNECT_INTERVAL_MS) {
+            this.logger.log("Not looking for XDM (" + reason + "): last attempt " + since + "ms ago");
+            return Promise.resolve();
+        }
+        this.lastAttemptAt = Date.now();
+        this.logger.log("Looking for XDM (" + reason + ")");
+        return fetch(APP_BASE_URL + "/sync")
+            .then(this.onResponse.bind(this))
+            .catch(err => this.disconnect());
+    }
+
 
     onResponse(res) {
         this.connected = true;
@@ -60,6 +109,14 @@ export default class Connector {
     applyMessage(json) {
         if (!json) {
             return;
+        }
+        // A version only counts from the start of one XDM run, so a restarted XDM hands out lower
+        // numbers than the run before it. Comparing across runs would make every snapshot from the
+        // new XDM look stale, and the extension would never notice it had come back up.
+        if (json.instanceId && json.instanceId !== this.instanceId) {
+            this.logger.log("XDM instance " + json.instanceId + " (was " + this.instanceId + ")");
+            this.instanceId = json.instanceId;
+            this.version = 0;
         }
         if (typeof json.version === "number") {
             if (json.version < this.version) {
@@ -147,12 +204,16 @@ export default class Connector {
     }
 
     verifyConnection() {
+        this.lastAttemptAt = Date.now();
         fetch(APP_BASE_URL + "/sync")
             .then(this.onResponse.bind(this))
             .catch(err => this.disconnect());
     }
 
     postMessage(url, data) {
+        // A command is a user action: it is never throttled, but it does count as having just
+        // reached out, so no lookup follows right behind it.
+        this.lastAttemptAt = Date.now();
         fetch(APP_BASE_URL + url, { method: "POST", body: JSON.stringify(data) })
             .then(this.onResponse.bind(this))
             .catch(err => this.disconnect());

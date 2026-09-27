@@ -19,14 +19,22 @@ import xdm.app.utils.showTrayNotification
 import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.downloaders.web.SegmentProgress
+import xdm.core.util.Logger
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
+import javax.swing.JOptionPane
 import javax.swing.SwingUtilities
 
 interface IAppInstance {
     fun run(args: Array<String>)
 
     fun showAppWindow()
+
+    /**
+     * Reports a failure that stops XDM from starting at all. Blocks until the user dismisses it,
+     * because the caller exits right afterwards.
+     */
+    fun showFatalError(message: String)
 
     fun showDownloadCompleteWindow(id: Long, folder: String, fileName: String, fileSize: Long)
 
@@ -79,12 +87,36 @@ class AppInstance : IAppInstance {
     private var refreshLinkWindow: RefreshLinkWindow? = null
 
     override fun run(args: Array<String>) {
+        val minimized = args.contains(MINIMIZED_FLAG)
         runOnUIThread {
             TextContextMenu.install()
             val image = logoImage(256)
             appWindow = AppWindow(image)
-            createTray(image)
-            showAppWindow()
+            val hasTray = createTray(image)
+            // Starting hidden is only safe when there is a tray icon to get the window back from.
+            // Without one (some Linux desktops drop the tray entirely) a hidden window would leave
+            // the user with a running XDM they cannot reach, so show it anyway.
+            if (minimized && hasTray) {
+                Logger.info("Starting minimized to the system tray")
+            } else {
+                if (minimized) {
+                    Logger.info("No system tray available; ignoring $MINIMIZED_FLAG")
+                }
+                showAppWindow()
+            }
+        }
+    }
+
+    override fun showFatalError(message: String) {
+        val show = Runnable {
+            JOptionPane.showMessageDialog(null, message, "XDM", JOptionPane.ERROR_MESSAGE)
+        }
+        if (SwingUtilities.isEventDispatchThread()) {
+            show.run()
+        } else {
+            // invokeAndWait, not invokeLater: the caller exits the process on return.
+            runCatching { SwingUtilities.invokeAndWait(show) }
+                .onFailure { Logger.error("Could not show the startup error dialog", it) }
         }
     }
 

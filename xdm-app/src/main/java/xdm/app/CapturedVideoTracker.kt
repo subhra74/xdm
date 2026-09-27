@@ -18,6 +18,9 @@ interface ICapturedVideoTracker {
     fun getHlsVideo(videoId: Long): HlsDownloadTaskInfo?
     fun getDashVideo(videoId: Long): DashDownloadTaskInfo?
     fun clear()
+
+    /** Drops everything captured for one browser tab (it reloaded, or navigated elsewhere). */
+    fun clearTab(tabId: String)
     val videoList: List<DetectedVideoInfo>
 }
 
@@ -164,6 +167,25 @@ class CapturedVideoTracker : ICapturedVideoTracker {
         }
         EventChannel.notifyChanged()
     }
+
+    override fun clearTab(tabId: String) {
+        // Only entries captured in this very tab go; ones with no meaningful tab id are shown in
+        // every tab (see the extension's isVideoForTab) and must survive a single tab reloading.
+        val removed = synchronized(this) {
+            // `or`, not `||`: every list must be swept, not just up to the first match.
+            removeTabEntries(hlsVideoList, tabId) or
+                    removeTabEntries(dashVideoList, tabId) or
+                    removeTabEntries(httpVideoList, tabId)
+        }
+        if (removed) {
+            EventChannel.notifyChanged()
+        }
+    }
+
+    private fun <T> removeTabEntries(
+        list: MutableMap<Long, Pair<T, StreamingVideoDisplayInfo>>,
+        tabId: String
+    ): Boolean = list.values.removeIf { (_, display) -> display.tabId == tabId }
 
     private val hlsVideoList = LinkedHashMap<Long, Pair<HlsDownloadTaskInfo, StreamingVideoDisplayInfo>>()
     private val dashVideoList = LinkedHashMap<Long, Pair<DashDownloadTaskInfo, StreamingVideoDisplayInfo>>()

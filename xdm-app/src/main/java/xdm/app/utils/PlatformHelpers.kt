@@ -24,10 +24,14 @@ import java.net.URI
  */
 private var trayIconRef: TrayIcon? = null
 
-fun createTray(image: Image) {
+/**
+ * Installs the tray icon. Returns whether there is one: the caller needs to know, because starting
+ * with the window hidden is only safe when the tray can bring it back.
+ */
+fun createTray(image: Image): Boolean {
     if (!SystemTray.isSupported()) {
         Logger.info("SystemTray is not supported")
-        return
+        return false
     }
     val tray = SystemTray.getSystemTray()
     // On macOS the menu bar expects a small, monochrome icon that adapts to the
@@ -48,11 +52,13 @@ fun createTray(image: Image) {
         Logger.info("Tray notification was clicked")
         app.showAppWindow()
     }
-    try {
+    return try {
         tray.add(trayIcon)
         trayIconRef = trayIcon
+        true
     } catch (ex: Exception) {
         Logger.error(ex.message, ex)
+        false
     }
 }
 

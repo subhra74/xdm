@@ -12,12 +12,37 @@ import xdm.app.utils.rememberedAutoCategorize
 import xdm.app.utils.rememberedBaseFolder
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.util.*
+import java.io.IOException
+import java.net.HttpURLConnection
+import java.net.InetSocketAddress
+import java.net.Proxy
+import java.net.ServerSocket
+import java.net.URL
 import java.nio.charset.StandardCharsets
 import java.util.*
 
 object BrowserIntegration {
+    /** The port the extension talks to, and the process-wide lock on "being XDM" (see [acquire]). */
+    const val PORT = 8597
+
+    private const val LOOPBACK = "127.0.0.1"
+
+    /** Loopback only, so these are generous. */
+    private const val PROBE_CONNECT_TIMEOUT_MS = 500
+    private const val PROBE_READ_TIMEOUT_MS = 1500
+
     private lateinit var server: HttpServer
-    private val json = Json { ignoreUnknownKeys = true }
+    private var serverSocket: ServerSocket? = null
+    /**
+     * The one Json for the extension protocol. [ignoreUnknownKeys] so a newer extension may add
+     * fields without breaking an older app, and [encodeDefaults] because the extension reads fields
+     * whose Kotlin-side value happens to be the default (`bye`, `version`) - omitting those makes a
+     * protocol message unreadable on the other side.
+     */
+    private val json = Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true
+    }
     private val blockedHeaders = setOf(
         "accept",
         "if",
@@ -42,14 +67,59 @@ object BrowserIntegration {
         "extension://",
         "safari-web-extension://"
     )
-    private val stateChangingPaths = setOf("/download", "/media", "/vid", "/clear", "/tab-update", "/poll")
+    private val stateChangingPaths =
+        setOf("/download", "/media", "/vid", "/clear", "/clear-tab", "/tab-update", "/show", "/poll")
 
-    fun start(onSuccess: Runnable?, onFailure: Runnable?) {
-        server = HttpServer(
-            "127.0.0.1", 8597,
-            ::handleRequest,
-            { onSuccess?.run() },
-            { onFailure?.run() })
+    /** What [acquire] found when it tried to take ownership of [PORT]. */
+    sealed interface Acquired {
+        /** This process owns the port: it is the one XDM. Carry on starting up, then call [serve]. */
+        object Primary : Acquired
+
+        /** Another XDM already owns it and has been asked to show itself. This process should exit. */
+        object AnotherInstance : Acquired
+
+        /** Something that is not XDM holds the port. XDM cannot run; tell the user and exit. */
+        object PortTaken : Acquired
+    }
+
+    /**
+     * Takes ownership of the local port, which doubles as XDM's single-instance lock.
+     *
+     * The port is the lock because it is the one the OS releases on a crash - there is no stale
+     * lock file to reason about - and because it is already the channel for handing work to the
+     * instance that holds it. A second launch therefore does not fight for the port: it asks the
+     * running XDM to show its window ([postShow]) and exits.
+     *
+     * A busy port is not assumed to be XDM: an unrelated process can be sitting on it, and in that
+     * case XDM must say so rather than silently exit and look broken.
+     */
+    fun acquire(args: Array<String>, port: Int = PORT): Acquired {
+        bind(port)?.let {
+            serverSocket = it
+            return Acquired.Primary
+        }
+        if (!looksLikeXdm(port)) {
+            Logger.error("INTEGRATION", "Port $port is held by something that is not XDM")
+            return Acquired.PortTaken
+        }
+        if (postShow(args, port)) {
+            return Acquired.AnotherInstance
+        }
+        // The instance we just probed went away between the probe and the request, so the port may
+        // be free again: one more try before giving up, otherwise this launch ends with no XDM at
+        // all even though the user asked for one.
+        Logger.info("INTEGRATION", "The running instance did not answer; retrying the bind")
+        bind(port)?.let {
+            serverSocket = it
+            return Acquired.Primary
+        }
+        return if (looksLikeXdm(port)) Acquired.AnotherInstance else Acquired.PortTaken
+    }
+
+    /** Starts serving the socket taken by [acquire]. Call once the app's services are up. */
+    fun serve() {
+        val socket = serverSocket ?: throw IllegalStateException("serve() without a successful acquire()")
+        server = HttpServer(socket, ::handleRequest)
         server.start()
         // Release parked polls on the way out (quit, SIGTERM, exitProcess) so the extension is told
         // XDM is going away instead of having to infer it from the dropped connection.
@@ -58,6 +128,58 @@ object BrowserIntegration {
             server.stop()
         })
     }
+
+    /** Binds the port, or returns null if someone else already holds it. */
+    private fun bind(port: Int): ServerSocket? = runCatching {
+        ServerSocket().apply { bind(InetSocketAddress(LOOPBACK, port)) }
+    }.getOrNull()
+
+    /**
+     * Asks whoever holds the port whether they are XDM. Deliberately lenient about which fields it
+     * finds: during an upgrade a new binary can meet a running older one whose `/sync` predates
+     * some of them.
+     */
+    private fun looksLikeXdm(port: Int): Boolean = runCatching {
+        val body = open("http://$LOOPBACK:$port/sync", port).run {
+            requestMethod = "GET"
+            if (responseCode != 200) return false
+            inputStream.use { it.readBytes().toString(StandardCharsets.UTF_8) }
+        }
+        listOf("\"instanceId\"", "\"enabled\"", "\"fileExts\"").any { it in body }
+    }.getOrDefault(false)
+
+    /**
+     * Tells the running instance to come to the front. The arguments this launch was given travel
+     * with it: nothing consumes them yet, but a launch is only ever handed off this way, so this is
+     * where a future `xdm-app://...` URL would arrive.
+     */
+    private fun postShow(args: Array<String>, port: Int): Boolean = runCatching {
+        val payload = synchronized(json) { json.encodeToString(ShowRequest(args.toList())) }
+            .toByteArray(StandardCharsets.UTF_8)
+        open("http://$LOOPBACK:$port/show", port).run {
+            requestMethod = "POST"
+            doOutput = true
+            setRequestProperty("Content-Type", "application/json")
+            outputStream.use { it.write(payload) }
+            val code = responseCode
+            runCatching { inputStream.use { it.readBytes() } }
+            code == 200
+        }
+    }.getOrElse {
+        Logger.info("INTEGRATION", "Could not reach the running instance: ${it.message}")
+        false
+    }
+
+    /**
+     * A connection to the running instance. [Proxy.NO_PROXY] matters: the user's configured proxy
+     * must never be consulted for a loopback handoff between two XDM processes.
+     */
+    private fun open(url: String, port: Int): HttpURLConnection =
+        (URL(url).openConnection(Proxy.NO_PROXY) as HttpURLConnection).apply {
+            connectTimeout = PROBE_CONNECT_TIMEOUT_MS
+            readTimeout = PROBE_READ_TIMEOUT_MS
+            useCaches = false
+        }
 
     private fun handleRequest(context: RequestContext) {
         // Every reply but the long poll's is the last one on its connection: the handler thread ends
@@ -84,6 +206,9 @@ object BrowserIntegration {
             "/media" -> onMediaMessage(context)
             "/vid" -> onVideoDownloadMessage(context)
             "/clear" -> AppContext.videoTracker.clear()
+            "/clear-tab" -> onClearTabMessage(context)
+            "/tab-update" -> onTabUpdateMessage(context)
+            "/show" -> onShowMessage(context)
         }
         onSyncMessage(context)
     }
@@ -128,7 +253,7 @@ object BrowserIntegration {
                 statusCode = 200
                 statusMessage = "OK"
                 addResponseHeader("Content-Type", "application/json")
-                responseBody = synchronized(json) { Json.encodeToString(ByeDto()) }.toByteArray(StandardCharsets.UTF_8)
+                responseBody = synchronized(json) { json.encodeToString(ByeDto()) }.toByteArray(StandardCharsets.UTF_8)
             }.sendResponse()
             // Nothing to report (or this poll was replaced / turned away): the extension polls again.
             else -> context.apply {
@@ -137,6 +262,55 @@ object BrowserIntegration {
                 responseBody = ByteArray(0)
             }.sendResponse()
         }
+    }
+
+    /**
+     * A second launch handing over to this one: bring the window up. Reachable only by a local
+     * process - it is POST-only and every request carrying a web page's `Origin` is refused before
+     * this point - and it does nothing but raise a window, which is also what the tray icon does.
+     */
+    private fun onShowMessage(context: RequestContext) {
+        Logger.info("INTEGRATION", "Another launch asked this instance to show itself")
+        // The arguments are read (and logged) but not acted on yet; see ShowRequest.
+        context.requestBody?.let { content ->
+            runCatching {
+                val str = content.toString(StandardCharsets.UTF_8)
+                synchronized(json) { json.decodeFromString<ShowRequest>(str) }
+            }.onSuccess { Logger.info("INTEGRATION", "Launch arguments: ${it.args}") }
+        }
+        AppContext.app.showAppWindow()
+    }
+
+    /**
+     * A tab started loading a different document (reload, or navigation to another page), so
+     * everything detected in it is stale.
+     */
+    private fun onClearTabMessage(context: RequestContext) {
+        Logger.info("Received clear-tab message..")
+        val extMsg = context.requestBody?.let { content ->
+            val str = content.toString(StandardCharsets.UTF_8)
+            Logger.info(str)
+            synchronized(json) { json.decodeFromString<ExtensionMessage>(str) }
+        } ?: return
+        val tabId = extMsg.tabId ?: return
+        VideoHelper.onTabNavigated(tabId)
+        AppContext.videoTracker.clearTab(tabId)
+    }
+
+    /**
+     * The tab's title arrived (usually after the media request that was captured there), so the
+     * videos detected on that page can be named after it.
+     */
+    private fun onTabUpdateMessage(context: RequestContext) {
+        Logger.info("Received tab update message..")
+        val extMsg = context.requestBody?.let { content ->
+            val str = content.toString(StandardCharsets.UTF_8)
+            Logger.info(str)
+            synchronized(json) { json.decodeFromString<ExtensionMessage>(str) }
+        } ?: return
+        val tabUrl = extMsg.tabUrl ?: return
+        val tabTitle = extMsg.tabTitle?.takeIf { it.isNotBlank() } ?: return
+        AppContext.videoTracker.updateMediaTitle(tabUrl, tabTitle)
     }
 
     private fun onVideoDownloadMessage(context: RequestContext) {
@@ -192,6 +366,7 @@ object BrowserIntegration {
             mediaTypes = listOf("audio/", "video/", "mpeg", "dash"),
             matchingHosts = emptyList(),
             version = EventChannel.currentVersion,
+            instanceId = EventChannel.instanceId,
             videoList = AppContext.videoTracker.videoList.map {
                 VideoItem(
                     id = "${it.id}",
@@ -207,7 +382,7 @@ object BrowserIntegration {
             addResponseHeader("Content-Type", "application/json")
             addResponseHeader("Cache-Control", "max-age=0, no-cache, must-revalidate")
             synchronized(json) {
-                responseBody = Json.encodeToString(data).toByteArray(StandardCharsets.UTF_8)
+                responseBody = json.encodeToString(data).toByteArray(StandardCharsets.UTF_8)
             }
         }.sendResponse()
     }
@@ -264,11 +439,24 @@ data class ConfigDto(
      * on different connections, so the extension uses this to drop one that arrives out of order.
      */
     val version: Long = 0,
+    /**
+     * Which run of XDM [version] belongs to. Versions from different runs are not comparable, so the
+     * extension starts over whenever this changes.
+     */
+    val instanceId: String = "",
 )
 
 /** Body of a `/poll` request: who is asking, and what they have already seen. */
 @Serializable
 data class PollRequest(val clientId: String? = null, val version: Long = 0)
+
+/**
+ * Body of a `/show` request: the command line of the launch that handed over to this instance.
+ * Nothing consumes [args] yet - it is the seam for a future `xdm-app://...` URL handler, and
+ * `IAppInstance.run` ignores its own arguments today too.
+ */
+@Serializable
+data class ShowRequest(val args: List<String> = emptyList())
 
 /** Sent to parked polls when XDM is shutting down. */
 @Serializable

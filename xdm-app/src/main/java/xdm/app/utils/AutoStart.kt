@@ -1,5 +1,6 @@
 package xdm.app.utils
 
+import xdm.app.MINIMIZED_FLAG
 import xdm.app.OS
 import xdm.core.util.Logger
 import java.io.File
@@ -18,7 +19,9 @@ import java.util.concurrent.TimeUnit
  *             / `reg delete` whose arguments contain neither spaces nor quotes.
  *
  * Enable/disable is idempotent. The launch target is always the `xdm-app` executable (see
- * [launchCommand]).
+ * [launchCommand]), started with [MINIMIZED_FLAG] so logging in brings up XDM in the tray rather
+ * than throwing its window in the user's face. [sync] rewrites entries written by older versions,
+ * which lack that flag.
  */
 object AutoStart {
     private const val LABEL = "app.xdm.autostart"
@@ -44,6 +47,29 @@ object AutoStart {
     }.getOrElse {
         Logger.error("AutoStart: failed to set autostart=$enabled", it)
         false
+    }
+
+    /**
+     * Brings an existing login entry up to date with what [enable] would write now - in practice,
+     * adding [MINIMIZED_FLAG] to entries created before it existed. Does nothing when autostart is
+     * off or the entry already matches, so it is cheap enough to call on every launch.
+     */
+    fun sync() {
+        runCatching {
+            if (!isEnabled() || isUpToDate()) return
+            Logger.info("AutoStart: refreshing the login entry")
+            enable()
+        }.onFailure { Logger.error("AutoStart: could not refresh the login entry", it) }
+    }
+
+    /** Whether the stored entry is exactly what [enable] would write today. */
+    private fun isUpToDate(): Boolean {
+        val cmd = launchCommand() ?: return true
+        return when (os) {
+            OS.MacOS -> macPlist().readText() == macPlistContent(cmd)
+            OS.Linux -> linuxDesktopFile().readText() == linuxDesktopContent(cmd)
+            OS.Windows -> windowsRunValueMatches(commandLine(cmd))
+        }
     }
 
     private fun enable() {
@@ -88,7 +114,10 @@ object AutoStart {
      * `xdm-app` (jpackage launcher on all platforms, or the GraalVM native-image binary on Windows).
      * Falls back to `java -jar <jar>` when running from a plain JVM during development.
      */
-    private fun launchCommand(): List<String>? {
+    private fun launchCommand(): List<String>? = launcher()?.plus(MINIMIZED_FLAG)
+
+    /** The executable part of [launchCommand], without the arguments XDM adds. */
+    private fun launcher(): List<String>? {
         // jpackage sets this to the absolute path of the native launcher.
         System.getProperty("jpackage.app-path")?.takeIf { it.isNotBlank() }?.let { return listOf(it) }
 
@@ -180,6 +209,19 @@ X-GNOME-Autostart-enabled=true
 
     private fun windowsRunValueExists(): Boolean =
         runReg("query", WIN_RUN_KEY, "/v", WIN_VALUE_NAME) == 0
+
+    /** True when the stored Run value is already the command line we would write. */
+    private fun windowsRunValueMatches(expected: String): Boolean = runCatching {
+        val proc = ProcessBuilder(listOf("reg", "query", WIN_RUN_KEY, "/v", WIN_VALUE_NAME))
+            .redirectErrorStream(true)
+            .start()
+        val out = proc.inputStream.bufferedReader().use { it.readText() }
+        if (!proc.waitFor(20, TimeUnit.SECONDS)) {
+            proc.destroy()
+            return false
+        }
+        proc.exitValue() == 0 && out.contains(expected)
+    }.getOrDefault(false)
 
     /** Runs `reg <args>` quietly and returns its exit code (or -1 on failure). */
     private fun runReg(vararg args: String): Int = runCatching {

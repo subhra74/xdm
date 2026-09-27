@@ -8,7 +8,6 @@ class App {
         this.blockedHosts = [];
         this.fileExts = [];
         this.requestWatcher = new RequestWatcher(this.onRequestDataReceived.bind(this), this.isMonitoringEnabled.bind(this));
-        this.tabsWatcher = [];
         this.userDisabled = false;
         this.appEnabled = false;
         this.onTabUpdateCallback = this.onTabUpdate.bind(this);
@@ -33,7 +32,6 @@ class App {
         this.appEnabled = msg.enabled === true;
         this.fileExts = msg.fileExts;
         this.blockedHosts = msg.blockedHosts;
-        this.tabsWatcher = msg.tabsWatcher;
         this.videoList = msg.videoList;
         this.requestWatcher.updateConfig({
             blockedHosts: msg.blockedHosts,
@@ -70,23 +68,48 @@ class App {
     }
 
     onTabUpdate(tabId, changeInfo, tab) {
+        // The user is browsing, so this is a good moment to notice XDM has been started. Cheap: the
+        // connector ignores this outright while it is connected, and rate-limits it when it is not.
+        this.connector.tryConnect("tab update");
+        // A new document started loading in this tab - a reload, or a navigation to a different
+        // page - so anything captured for it no longer belongs to what is on screen. Same-document
+        // changes (hash / history.pushState) report no status, so they are left alone.
+        // This runs even while monitoring is off: the stale list should still go.
+        if (changeInfo.status === 'loading') {
+            this.clearTabVideos(tabId, changeInfo.url || (tab && tab.url));
+        }
         if (!this.isMonitoringEnabled()) {
             return;
         }
-        if (changeInfo.title) {
-            if (this.tabsWatcher &&
-                this.tabsWatcher.find(t => tab.url.indexOf(t) > 0)) {
-                this.logger.log("Tab changed: " + changeInfo.title + " => " + tab.url);
-                try {
-                    this.connector.postMessage("/tab-update", {
-                        tabUrl: tab.url,
-                        tabTitle: changeInfo.title
-                    });
-                } catch (ex) {
-                    console.log(ex);
-                }
+        // XDM names a detected video after the page it came from, so it needs the tab's title -
+        // which usually arrives after the media request. Only worth reporting when XDM actually has
+        // something captured for this tab to rename. (This used to be gated on a `tabsWatcher` list
+        // XDM never sends, so no title ever reached it.)
+        if (changeInfo.title && this.videosForTab(tabId + "").length > 0) {
+            this.logger.log("Tab changed: " + changeInfo.title + " => " + tab.url);
+            try {
+                this.connector.postMessage("/tab-update", {
+                    tabUrl: tab.url,
+                    tabTitle: changeInfo.title
+                });
+            } catch (ex) {
+                console.log(ex);
             }
         }
+    }
+
+    clearTabVideos(tabId, tabUrl) {
+        if (!this.connector.isConnected()) {
+            return;
+        }
+        this.logger.log("Tab navigated, clearing detected videos for tab " + tabId);
+        // Drop them locally too, so the badge doesn't keep counting them until XDM's reply lands.
+        this.videoList = (this.videoList || []).filter(vid => vid.tabId != (tabId + ""));
+        this.connector.postMessage("/clear-tab", {
+            tabId: tabId + "",
+            tabUrl: tabUrl
+        });
+        this.updateActionIcon();
     }
 
     register() {
@@ -105,22 +128,29 @@ class App {
         return u.protocol === 'http:' || u.protocol === 'https:';
     }
 
+    // A video belongs to the given tab when its tabId matches, or when it has
+    // no meaningful tabId (untabbed / background capture: missing, "-1" or "0"),
+    // in which case it is shown in every tab.
+    isVideoForTab(vid, tabId) {
+        if (!vid.tabId || vid.tabId == '-1' || vid.tabId == '0') {
+            return true;
+        }
+        return vid.tabId == tabId;
+    }
+
+    videosForTab(tabId) {
+        if (!this.videoList) {
+            return [];
+        }
+        return this.videoList.filter(vid => this.isVideoForTab(vid, tabId));
+    }
+
     updateActionIcon() {
         chrome.browserAction.setIcon({ path: this.getActionIcon() });
         let vc = "";
-        if (this.videoList && this.videoList.length > 0) {
-            let len = this.videoList.filter(vid => {
-                if (!vid.tabId) {
-                    return true;
-                }
-                if (vid.tabId == '-1') {
-                    return true;
-                }
-                return (vid.tabId == this.activeTabId);
-            }).length;
-            if (len > 0) {
-                vc = len + "";
-            }
+        let len = this.videosForTab(this.activeTabId).length;
+        if (len > 0) {
+            vc = len + "";
         }
         chrome.browserAction.setBadgeText({ text: vc });
         if (!this.connector.isConnected()) {
@@ -193,16 +223,16 @@ class App {
     onPopupMessage(request, sender, sendResponse) {
         this.logger.log(request.type);
         if (request.type === "stat") {
-            let resp = {
-                enabled: this.isMonitoringEnabled(),
-                list: this.videoList.filter(vid => {
-                    if (!vid.tabId) {
-                        return true;
-                    }
-                    return (vid.tabId == this.activeTabId);
-                })
-            };
-            sendResponse(resp);
+            // Opening the popup is the clearest "is XDM there?" moment there is, so look before
+            // answering rather than reporting what the background page knew last.
+            this.connector.tryConnect("popup opened").then(() => {
+                sendResponse({
+                    enabled: this.isMonitoringEnabled(),
+                    connected: this.connector.isConnected() === true,
+                    list: this.videosForTab(this.activeTabId)
+                });
+            });
+            return true; // keep the message channel open for the async response
         }
         else if (request.type === "cmd") {
             this.userDisabled = request.enabled === false;
@@ -277,6 +307,7 @@ class App {
     }
 
     onTabActivated(activeInfo) {
+        this.connector.tryConnect("tab activated");
         this.activeTabId = activeInfo.tabId + "";
         this.logger.log("Active tab: " + this.activeTabId);
         this.updateActionIcon();

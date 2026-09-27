@@ -1,50 +1,75 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 
 <head>
+  <meta charset="utf-8">
   <script src="popup.js"></script>
   <link rel="stylesheet" href="styles.css">
 </head>
 
-<body style="min-width: 400px; font-family:helvetica,arial,courier;">
-  <div style="font-size: 18px; border-bottom: 1px solid lightgray; padding: 15px; ">
-    XDM Integration Module
+<body>
+  <header class="app-header">
+    <h1>XDM Integration Module</h1>
+    <span class="count-badge" id="count" hidden></span>
+  </header>
+
+  <ul class="video-list" id="list"></ul>
+
+  <div class="empty-state" id="empty" hidden>
+    <svg class="glyph" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" aria-hidden="true">
+      <rect x="2" y="5" width="20" height="14" rx="2" />
+      <path d="M10 9.5v5l4-2.5-4-2.5z" fill="currentColor" stroke="none" />
+    </svg>
+    <p>No videos detected on this page</p>
+    <p class="hint">Start playing a video and it will show up here.</p>
   </div>
-  <div>
-    <div id="content">
-      <div id="list" style="min-height: 200px; max-height: 400px; overflow: hidden; overflow-y: auto;">
 
-        <table id="table"
-          style="overflow-y: auto;background: white; margin: 0px; padding: 0px;font-family:helvetica,arial,courier;">
-        </table>
-
-      </div>
-      <div style="padding: 5px; display: flex;">
-        <button id="format" style="flex: 1;" class="flat-button">More formats</button>
-        <div style="padding: 5px;">
-          <div style="width: 1px; background: rgb(230,230,230); height: 20px;">
-
-          </div>
-        </div>
-        <button id="clear" style="flex: 1;" class="flat-button">Clear items</button>
-      </div>
-    </div>
+  <div class="actions" id="actions" hidden>
+    <button class="text-button" id="format" type="button" aria-expanded="false">More formats</button>
+    <div class="separator"></div>
+    <button class="text-button" id="clear" type="button">Clear list</button>
   </div>
-  <div
-    style="font-size: 14px; padding-top: 5px; background-color: rgb(240,240,240);border-top: 1px solid rgb(200,200,200);">
-    <div>
-      <div
-        style="display: flex; justify-content: space-between; padding: 20px; padding-top: 10px; padding-bottom: 10px;">
-        <!--span>Browser monitoring</span-->
+  <p class="hint-text" id="formatHint" hidden>
+    XDM captures the quality the page is playing. Pick another quality in the player and it will
+    appear here as a separate item.
+  </p>
 
-        <label class="container">Browser monitoring
-          <input type="checkbox" id="chk">
-          <span class="checkmark"></span>
-        </label>
-        <!-- <button class="primary-button">Connect with XDM</button> -->
-        <!--input type="checkbox" id="chk" /-->
-      </div>
-    </div>
-  </div>
+  <footer class="app-footer">
+    <label class="toggle">
+      <span>Browser monitoring</span>
+      <input type="checkbox" id="chk">
+      <span class="track"></span>
+    </label>
+  </footer>
+
+  <!-- One row of the list. Filled in by popup.js with textContent - titles come from web pages. -->
+  <template id="rowTemplate">
+    <li>
+      <button class="video-item" type="button">
+        <span class="thumb">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="1.6" aria-hidden="true">
+            <rect x="2" y="5" width="20" height="14" rx="2" />
+            <path d="M10 9.5v5l4-2.5-4-2.5z" fill="currentColor" stroke="none" />
+          </svg>
+        </span>
+        <span class="video-body">
+          <span class="video-title"></span>
+          <span class="video-meta">
+            <span class="format-badge" hidden></span>
+            <span class="video-size"></span>
+          </span>
+        </span>
+        <svg class="glyph download" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 3v11" />
+          <path d="M7.5 10.5 12 15l4.5-4.5" />
+          <path d="M4 19h16" />
+        </svg>
+      </button>
+    </li>
+  </template>
 </body>
 
 </html>

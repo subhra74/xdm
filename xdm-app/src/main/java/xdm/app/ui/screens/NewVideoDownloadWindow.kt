@@ -2,6 +2,7 @@ package xdm.app.ui.screens
 
 import xdm.app.AppContext
 import xdm.app.I8N.text
+import xdm.app.ui.components.CategoryStyle
 import xdm.app.utils.chooseFile
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.createIcon
@@ -23,6 +24,8 @@ import java.io.File
 import java.net.URI
 import javax.swing.*
 import javax.swing.border.EmptyBorder
+import javax.swing.event.DocumentEvent
+import javax.swing.event.DocumentListener
 import kotlin.math.max
 
 class NewVideoDownloadWindow : JDialog() {
@@ -35,9 +38,11 @@ class NewVideoDownloadWindow : JDialog() {
     private var videoId: Long = -1
 
     private var taskInfo: StreamingDownloadTaskInfo? = null
+    private var selectedFolder: String? = null
 
     init {
         initUI()
+        attachFileNameChangeListener()
         defaultCloseOperation = DISPOSE_ON_CLOSE
     }
 
@@ -145,25 +150,47 @@ class NewVideoDownloadWindow : JDialog() {
             }
         }
 
-        val lblIgnore = JLabel(text("ND_IGNORE_URL"))
-        lblIgnore.verticalAlignment = SwingConstants.TOP
-        lblIgnore.cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-        lblIgnore.foreground = UIManager.getColor("ProgressBar.foreground")
-        lblIgnore.addMouseListener(object : MouseAdapter() {
-            override fun mouseClicked(e: MouseEvent) {
-                ignoreHost()
-            }
-        })
-        val gbcLblIgnore = GridBagConstraints().apply {
+        val lblFreeSpace = JLabel("---").apply {
+            alignmentX = Component.LEFT_ALIGNMENT
+        }
+
+        val lblIgnore = JLabel(text("ND_IGNORE_URL")).apply {
+            alignmentX = Component.LEFT_ALIGNMENT
+            cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+            foreground = UIManager.getColor("ProgressBar.foreground")
+            addMouseListener(object : MouseAdapter() {
+                override fun mouseClicked(e: MouseEvent) {
+                    ignoreHost()
+                }
+            })
+        }
+
+        // Glue rather than a fixed gap: the link stays on the bottom edge as the dialog is resized.
+        val infoBox = Box.createVerticalBox().apply {
+            add(lblFreeSpace)
+            add(Box.createVerticalGlue())
+            add(lblIgnore)
+            add(Box.createRigidArea(Dimension(0, 10)))
+        }
+        val gbcInfoBox = GridBagConstraints().apply {
             weighty = 1.0
             fill = GridBagConstraints.VERTICAL
             anchor = GridBagConstraints.NORTHWEST
             gridwidth = 4
-            insets = Insets(10, 0, 5, 5)
+            insets = Insets(5, 0, 5, 5)
             gridx = 1
             gridy = 3
         }
-        contentPane.add(lblIgnore, gbcLblIgnore)
+        contentPane.add(infoBox, gbcInfoBox)
+
+        cmbSaveIn.addItemListener {
+            val folder = selectedBaseFolder(cmbSaveIn)
+            if (selectedFolder != folder) {
+                selectedFolder = folder
+                val freeSpace = File(folder).freeSpace
+                lblFreeSpace.text = "${text("MSG_FREE_SPACE")} ${FormatHelper.formatSize(freeSpace.toDouble())}"
+            }
+        }
 
         val panel = JPanel()
         panel.border = EmptyBorder(10, 15, 10, 15)
@@ -231,10 +258,10 @@ class NewVideoDownloadWindow : JDialog() {
         }
     }
 
+    /** Packing first is what makes the window insets known, so the content is never clipped. */
     private fun adjustSize() {
-        var dim = preferredSize
-        dim = Dimension(max(dim.width.toDouble(), 500.0).toInt(), max(dim.height.toDouble(), 220.0).toInt())
-        size = dim
+        pack()
+        size = Dimension(max(width, 500), max(height, 240))
     }
 
     private fun ignoreHost() {
@@ -260,13 +287,28 @@ class NewVideoDownloadWindow : JDialog() {
 
     fun showWindow(vid: Long, fileName: String, fileSize: Long?, contentType: String?) {
         this.videoId = vid
-        this.adjustSize()
-        this.setLocationRelativeTo(null)
         populateSaveInFolders(modelSaveIn, cmbSaveIn)
         txtFileName.text = FileUtils.sanitizeFileName(fileName)
-        fileSize?.let {
-            lblFileInfo.text = FormatHelper.formatSize(it.toDouble())
-        }
+        lblFileInfo.text = fileSize?.let { FormatHelper.formatSize(it.toDouble()) } ?: "---"
+
+        this.adjustSize()
+        this.setLocationRelativeTo(null)
         this.isVisible = true
+    }
+
+    /** Picks the icon the file's category uses, so the preview matches the row it will become. */
+    private fun updateFileIcon() {
+        val glyph = CategoryStyle.lineVariant(CategoryStyle.iconForFile(txtFileName.text.orEmpty()))
+        lblFileInfo.icon = createIcon(glyph, 36, Color.GRAY)
+    }
+
+    private fun attachFileNameChangeListener() {
+        txtFileName.document.addDocumentListener(object : DocumentListener {
+            override fun insertUpdate(e: DocumentEvent) = updateFileIcon()
+
+            override fun removeUpdate(e: DocumentEvent) = updateFileIcon()
+
+            override fun changedUpdate(e: DocumentEvent) = updateFileIcon()
+        })
     }
 }

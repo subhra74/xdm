@@ -7,6 +7,7 @@ import xdm.integration.BrowserIntegration
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.system.exitProcess
 
 object AppContext {
 
@@ -61,6 +62,9 @@ object AppContext {
                 Logger.info("First run: enabling start-on-login")
                 config.runOnStartup = AutoStart.setEnabled(true)
                 config.save()
+            } else {
+                // Entries written by older versions start XDM without --minimized.
+                AutoStart.sync()
             }
 
             Logger.info("Setting up look-and-feel theme: ${config.theme}")
@@ -71,14 +75,33 @@ object AppContext {
 
             Logger.info("Loading translations...")
             I8N.loadTexts(config.lang)
-            BrowserIntegration.start(
-                {
+
+            // Taking the integration port is also how XDM decides it is the only instance, so this
+            // happens before the UI exists - but after the theme and translations, so both paths
+            // out of here can talk to the user. The accept loop starts only once the services and
+            // the window are up; connections that arrive meanwhile wait in the listen backlog.
+            when (BrowserIntegration.acquire(args)) {
+                BrowserIntegration.Acquired.Primary -> {
                     db.loadRecords()
                     app.run(args)
-                },
-                {
-                    println("Unable to start server")
-                })
+                    BrowserIntegration.serve()
+                }
+
+                BrowserIntegration.Acquired.AnotherInstance -> {
+                    Logger.info("XDM is already running; asked it to show its window")
+                    exitProcess(0)
+                }
+
+                BrowserIntegration.Acquired.PortTaken -> {
+                    Logger.error("Port ${BrowserIntegration.PORT} is in use by another program")
+                    app.showFatalError(
+                        I8N.text("ERR_PORT_IN_USE")?.replace("%s", "${BrowserIntegration.PORT}")
+                            ?: "Another program is using port ${BrowserIntegration.PORT}, which XDM needs." +
+                            " Please close that program and start XDM again."
+                    )
+                    exitProcess(1)
+                }
+            }
             return
         }
         throw IllegalStateException("All services are not initialized properly")

@@ -93,6 +93,58 @@ $AppVersion = (Get-Content (Join-Path $ProjectRoot 'xdm-app\src\main\resources\a
   ConvertFrom-Json).currentVersion
 if (-not $AppVersion) { $AppVersion = '1.0.0' }
 
+# --------------------------------------------------------------------------
+# Drop the bundled natives for every platform except this build's target.
+#
+# Conscrypt (conscrypt-openjdk-uber) ships BoringSSL for five platforms and
+# FlatLaf its own library for seven; a bundle runs on exactly one. That is most
+# of a 14.7 MB conscrypt payload sitting dead in every install.
+#
+# Only the copy under build\input that jpackage wraps is trimmed.
+# xdm-app\target\xdm-app.jar keeps every native, so the fat jar stays runnable
+# on any platform when it is shared or launched on its own with `java -jar`.
+#
+# Both loaders resolve their library through an <os>-<arch> classifier in the
+# entry name, and the classifier is matched inside each library's own directory:
+# the two spell the same platform differently (conscrypt: windows/x86_64,
+# FlatLaf: windows/arm64 on an ARM host), so an unscoped match would keep the
+# wrong FlatLaf dll here.
+# --------------------------------------------------------------------------
+function Remove-ForeignNatives {
+  param([string]$Jar)
+
+  # Conscrypt publishes no windows-aarch64 build, so ARM Windows keeps the
+  # x86_64 one and runs it under emulation. FlatLaf does ship windows-arm64.
+  $csArch = 'x86_64'
+  switch ($env:PROCESSOR_ARCHITECTURE) {
+    'ARM64' { $flArch = 'arm64'  }
+    'AMD64' { $flArch = 'x86_64' }
+    default {
+      Write-Host ">> unrecognised PROCESSOR_ARCHITECTURE '$env:PROCESSOR_ARCHITECTURE' - bundling natives for all platforms"
+      return
+    }
+  }
+
+  $csKeep = "META-INF/native/*-windows-$csArch.*"
+  $flKeep = "com/formdev/flatlaf/natives/*-windows-$flArch.*"
+
+  Add-Type -AssemblyName System.IO.Compression.FileSystem
+  $before = (Get-Item $Jar).Length
+  $zip = [System.IO.Compression.ZipFile]::Open($Jar, 'Update')
+  try {
+    $doomed = @($zip.Entries | Where-Object {
+      $_.FullName -match '\.(dylib|jnilib|so|dll)$' -and
+      -not ($_.FullName -like $csKeep) -and
+      -not ($_.FullName -like $flKeep)
+    })
+    foreach ($entry in $doomed) { $entry.Delete() }
+  } finally {
+    $zip.Dispose()
+  }
+  $saved = [math]::Round(($before - (Get-Item $Jar).Length) / 1KB)
+  Write-Host ">> stripped $($doomed.Count) foreign natives (windows/$env:PROCESSOR_ARCHITECTURE): $saved KB"
+}
+
 Write-Host ">> jlink runtime: $Modules"
 Remove-Item -Recurse -Force $RuntimeDir, $InputDir -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $InputDir, $DestDir | Out-Null
@@ -101,6 +153,7 @@ New-Item -ItemType Directory -Force -Path $InputDir, $DestDir | Out-Null
 if ($LASTEXITCODE -ne 0) { throw 'jlink failed' }
 
 Copy-Item $JarPath (Join-Path $InputDir $MainJar)
+Remove-ForeignNatives (Join-Path $InputDir $MainJar)
 
 $args = @(
   '--type', $Type

@@ -10,6 +10,7 @@ import xdm.integration.HttpParser
 import xdm.integration.HttpServer
 import xdm.integration.RequestContext
 import java.io.InputStream
+import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.URI
@@ -17,8 +18,6 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 
 /**
  * Regression for CODE_REVIEW B8: the local integration server must write well-formed HTTP/1.1
@@ -151,12 +150,11 @@ class IntegrationHttpTest {
 
     @Test
     fun endToEnd_strictClientParsesResponsesOnOneConnection() {
-        val port = ServerSocket(0).use { it.localPort }
-        val started = CountDownLatch(1)
-        val http = HttpServer("127.0.0.1", port, { ctx -> jsonResponse(ctx).sendResponse() }, { started.countDown() }, {})
+        val listening = ServerSocket().apply { bind(InetSocketAddress("127.0.0.1", 0)) }
+        val port = listening.localPort
+        val http = HttpServer(listening) { ctx -> jsonResponse(ctx).sendResponse() }
         http.start()
         try {
-            assertTrue("server did not start", started.await(5, TimeUnit.SECONDS))
             val jdk = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).connectTimeout(Duration.ofSeconds(5)).build()
             repeat(2) {
                 val res = jdk.send(
