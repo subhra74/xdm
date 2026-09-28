@@ -3,6 +3,8 @@ import Logger from './logger.js';
 import RequestWatcher from './request-watcher.js';
 import Connector from './connector.js';
 
+const HOST_ORIGINS = ["*://*/*"];
+
 export default class App {
     constructor() {
         this.logger = new Logger();
@@ -12,6 +14,9 @@ export default class App {
         this.requestWatcher = new RequestWatcher(this.onRequestDataReceived.bind(this));
         this.userDisabled = false;
         this.appEnabled = false;
+        // Whether the extension can see the network. Unknown until checked, and treated as withheld
+        // until then: without it a download cannot be replayed, so it must be left to the browser.
+        this.hostAccess = false;
         this.onDownloadCreatedCallback = this.onDownloadCreated.bind(this);
         this.onDeterminingFilenameCallback = this.onDeterminingFilename.bind(this);
         this.onTabUpdateCallback = this.onTabUpdate.bind(this);
@@ -40,7 +45,6 @@ export default class App {
         this.requestWatcher.updateConfig({
             mediaExts: msg.requestFileExts,
             blockedHosts: msg.blockedHosts,
-            matchingHosts: msg.matchingHosts,
             mediaTypes: msg.mediaTypes
         });
         this.updateActionIcon();
@@ -53,8 +57,19 @@ export default class App {
     }
 
     isMonitoringEnabled() {
-        this.logger.log(this.appEnabled + " " + this.userDisabled);
-        return this.appEnabled === true && this.userDisabled === false && this.connector.isConnected();
+        this.logger.log(this.appEnabled + " " + this.userDisabled + " " + this.hostAccess);
+        return this.appEnabled === true && this.userDisabled === false && this.hostAccess === true
+            && this.connector.isConnected();
+    }
+
+    // Chrome's "On click" / "On specific sites" site access withholds host permissions while the
+    // downloads API keeps firing. The extension then sees no requests, so it has nothing to replay.
+    refreshHostAccess() {
+        chrome.permissions.contains({ origins: HOST_ORIGINS }, granted => {
+            this.hostAccess = granted === true;
+            this.logger.log("host access: " + this.hostAccess);
+            this.updateActionIcon();
+        });
     }
 
     onRequestDataReceived(data) {
@@ -64,31 +79,41 @@ export default class App {
         this.isMonitoringEnabled() && this.connector.isConnected() && this.connector.postMessage("/media", data);
     }
 
+    // Every path calls suggest() exactly once, and every path that does not take the download
+    // leaves it completely alone. Only a GET the extension watched, with its real headers in hand,
+    // is taken: that is everything XDM needs to replay it, so the browser copy can go at once.
     onDeterminingFilename(download, suggest) {
         this.logger.log("onDeterminingFilename");
         if (!this.isMonitoringEnabled()) {
+            suggest();
             return;
         }
         this.logger.log(download);
         let url = download.finalUrl || download.url;
-        this.logger.log(url);
-        if (this.requestWatcher.wasPostRequest(download.url) ||
-            this.requestWatcher.wasPostRequest(download.finalUrl)) {
-            this.logger.log("Skipping POST-originated download: " + url);
+        let observed = this.requestWatcher.findObserved(download);
+        if (!observed) {
+            if (this.shouldTakeOver(url, download.filename)) {
+                // The failure mode of this design is XDM quietly not capturing, so make it visible.
+                this.logger.log("Not intercepting, request was not observed: " + url);
+            }
+            suggest();
             return;
         }
-        if (this.isMonitoringEnabled() && this.shouldTakeOver(url, download.filename)) {
-            chrome.downloads.cancel(
-                download.id,
-                () => chrome.downloads.erase({ id: download.id })
-            );
-            let referrer = download.referrer;
-            if (!referrer && download.finalUrl !== download.url) {
-                referrer = download.url;
-            }
-            this.triggerDownload(url, download.filename,
-                referrer, download.fileSize, download.mime);
+        if (observed.method !== "GET") {
+            this.logger.log("Not intercepting " + observed.method + "-originated download: " + url);
+            suggest();
+            return;
         }
+        if (!this.shouldTakeOver(url, download.filename)) {
+            suggest();
+            return;
+        }
+        suggest();
+        chrome.downloads.cancel(
+            download.id,
+            () => chrome.downloads.erase({ id: download.id })
+        );
+        this.sendDownload(observed, download);
     }
 
     onDownloadCreated(download) {
@@ -157,6 +182,9 @@ export default class App {
         chrome.runtime.onStartup.addListener(() => this.connector.tryConnect("browser startup"));
         chrome.runtime.onInstalled.addListener(() => this.connector.tryConnect("extension installed"));
         this.requestWatcher.register();
+        chrome.permissions.onAdded.addListener(() => this.refreshHostAccess());
+        chrome.permissions.onRemoved.addListener(() => this.refreshHostAccess());
+        this.refreshHostAccess();
         this.attachContextMenu();
         chrome.tabs.onActivated.addListener(this.onTabActivated.bind(this));
     }
@@ -211,6 +239,13 @@ export default class App {
             vc = len + "";
         }
         chrome.action.setBadgeText({ text: vc });
+        // Checked first: without host access the connection to XDM fails too (the fetches become
+        // plain cross-origin requests whose replies the extension cannot read), so "not running"
+        // would be the wrong thing to tell the user.
+        if (!this.hostAccess) {
+            chrome.action.setPopup({ popup: "./site-access.html" });
+            return;
+        }
         if (!this.connector.isConnected()) {
             this.logger.log("Not connected...");
             chrome.action.setPopup({ popup: "./error.html" });
@@ -241,6 +276,27 @@ export default class App {
         }
     }
 
+    // Hands XDM the request the browser actually made - its own headers and the cookies it really
+    // sent - together with what the downloads API settled on for name, size and type.
+    sendDownload(observed, download) {
+        let data = {
+            url: observed.url,
+            cookie: observed.cookie,
+            requestHeaders: observed.requestHeaders,
+            responseHeaders: observed.responseHeaders,
+            filename: download.filename,
+            fileSize: download.fileSize > 0 ? download.fileSize : undefined,
+            mimeType: download.mime,
+            referer: download.referrer || undefined,
+            tabUrl: observed.tabUrl,
+            tabId: observed.tabId
+        };
+        this.logger.log(data);
+        this.connector.postMessage("/download", data);
+    }
+
+    // For the context menu only: those links were never requested by the browser, so there is no
+    // observed request to replay and the cookies have to be looked up instead.
     triggerDownload(url, file, referer, size, mime) {
         chrome.cookies.getAll({ "url": url }, cookies => {
             let cookieStr = undefined;

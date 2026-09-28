@@ -58,6 +58,9 @@ class DownloadManager(
 ) : IDownloadManager {
     private val taskFactory: DownloaderTaskFactory = taskFactory ?: ::createTask
 
+    /** URL and ETag hashes of the HTTP downloads, for the New Download dialog's duplicate check. */
+    val duplicates = DuplicateIndex(configDir, appDB)
+
     /** Downloads waiting for a free slot. Guarded by its own monitor; only [pumpQueue] starts tasks. */
     private val queue = ArrayDeque<QueueItem>()
     /** Active downloads the user deleted: purged once their task reports it has stopped. */
@@ -675,6 +678,7 @@ class DownloadManager(
     /** Removes the per-download files in the config dir and any schedule entry for [id]. */
     private fun deleteMetadata(id: Long) {
         taskInfoDB.deleteRecord(id)
+        duplicates.remove(id)
         listOf("$id.state", "$id.state.bak1", "$id.state.bak2", "$id.out").forEach { File(configDir, it).delete() }
         HlsKeyStore.delete(id, configDir)
         if (AppContext.hasScheduler && AppContext.scheduler.contains(id)) {
@@ -698,6 +702,7 @@ class DownloadManager(
         if (id != task.id) return startHttpDownload(task.copy(id = id), runNow)
         Logger.info("Adding new download: $task")
         taskInfoDB.saveHttpTask(task)
+        duplicates.add(task.id, task.url, task.etag)
         appDB.addActive(
             DbRecord(
                 id = task.id,
@@ -846,6 +851,7 @@ class DownloadManager(
             it.headers = headers
             it.cookie = cookie
             taskInfoDB.saveHttpTask(it)
+            duplicates.updateUrl(id, url)
             Logger.info("Task $id updated")
         }
         // Read first, then save: never rewrite the state file from inside its own read.

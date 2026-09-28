@@ -420,7 +420,8 @@ object BrowserIntegration {
             userSelectedDownloadFolder = null,
             maxPiece = 8,
             authInfo = null,
-            knownFileSize = msg.fileSize ?: getContentLength(respHeaders)
+            knownFileSize = msg.fileSize ?: getContentLength(respHeaders),
+            etag = getHeader("etag", respHeaders),
         )
     }
 }

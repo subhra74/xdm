@@ -61,6 +61,10 @@ class AppDB(private val configDir: String) {
     val size: Int
         @Synchronized get() = records.size
 
+    /** A copy of the records matching [predicate], taken under the lock. */
+    @Synchronized
+    fun findAll(predicate: (DbRecord) -> Boolean): List<DbRecord> = synchronized(records) { records.filter(predicate) }
+
     /** Synchronized with [removeItem]/[removeWhere], which rebuild [indexMap] after shifting rows. */
     @Synchronized
     fun getById(id: Long): DbRecord? = indexMap[id]?.let { records.getOrNull(it) }?.takeIf { it.id == id }

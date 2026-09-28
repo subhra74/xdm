@@ -16,6 +16,7 @@ import xdm.app.ui.screens.settings.settingsSurface
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.createIcon
 import xdm.core.util.Logger
+import xdm.integration.EventChannel
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
@@ -142,6 +143,11 @@ class SettingsWindow(parent: Window) : JDialog(parent) {
         networkConfigPanel.save()
         advancedConfigPanel.save()
         AppContext.config.save()
+        // The browser-monitor panel writes the three fields the extension gates capture on -
+        // fileExtensions, videoExtensions and blockedHosts - so publish after persisting rather
+        // than leaving the extension on stale config until the next watchdog /sync. Fired for any
+        // save: the panels are cheap to re-read, and missing a change is worse than a spare wake.
+        EventChannel.notifyChanged()
         onSaved?.invoke()
     }
 

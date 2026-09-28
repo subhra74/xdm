@@ -14,6 +14,7 @@ import xdm.app.utils.selectedBaseFolder
 import xdm.app.utils.sameWidth
 import xdm.core.downloaders.StreamingDownloadTaskInfo
 import xdm.core.util.*
+import xdm.integration.EventChannel
 import java.awt.*
 import java.awt.event.ActionEvent
 import java.awt.event.MouseAdapter
@@ -280,6 +281,11 @@ class NewVideoDownloadWindow : JDialog() {
             if (config.blockedHosts.none { it.equals(host, ignoreCase = true) }) {
                 config.blockedHosts = config.blockedHosts + host
                 config.save()
+                // The extension gates capture on this list, so it is useless until it arrives
+                // there. Without this the parked poll keeps waiting and the new host only lands
+                // on the next /sync - up to a watchdog interval later, by which time the user has
+                // already retried the link and been captured again.
+                EventChannel.notifyChanged()
             }
         }
         dispose()

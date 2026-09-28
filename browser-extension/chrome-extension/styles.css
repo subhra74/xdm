@@ -1,6 +1,6 @@
 /*
- * Shared by popup.html, error.html and disabled.html. The three pages are one small UI, so they
- * share a single set of tokens: change a colour here and every state follows.
+ * Shared by popup.html, error.html, disabled.html and site-access.html. The pages are one small
+ * UI, so they share a single set of tokens: change a colour here and every state follows.
  */
 
 :root {
@@ -344,7 +344,7 @@ body {
     outline-offset: 2px;
 }
 
-/* ---- status pages (error.html, disabled.html) -------------------------- */
+/* ---- status pages (error.html, disabled.html, site-access.html) -------- */
 
 .page-body {
     padding: 16px;

@@ -66,17 +66,19 @@ fun createTray(image: Image): Boolean {
  * Posts a system notification through the tray icon. The balloon is drawn by the OS shell, so
  * it never takes focus from the window the user is working in - unlike a dialog. It is also the
  * shell's call whether to show it at all (Focus Assist, Do Not Disturb, notification settings),
- * so treat delivery as best-effort. No-op when there is no tray.
+ * so treat delivery as best-effort. No-op when there is no tray. Returns whether it was posted.
  */
-fun showTrayNotification(caption: String, text: String) {
+fun showTrayNotification(caption: String, text: String): Boolean {
     val icon = trayIconRef ?: run {
         Logger.info("No tray icon, skipping notification")
-        return
+        return false
     }
-    try {
+    return try {
         icon.displayMessage(caption, text, TrayIcon.MessageType.INFO)
+        true
     } catch (ex: Exception) {
         Logger.error(ex.message, ex)
+        false
     }
 }
 

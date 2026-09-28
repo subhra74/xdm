@@ -55,6 +55,11 @@ data class HttpDownloadTaskInfo(
     var maxPiece: Int,
     var authInfo: AuthInfo?,
     val knownFileSize: Long?,
+    /**
+     * The response ETag the browser saw, used only to register the download for the duplicate
+     * check when it is added. Deliberately not persisted by TaskInfoDB, so it is null on reload.
+     */
+    val etag: String? = null,
 )
 
 abstract class StreamingDownloadTaskInfo(

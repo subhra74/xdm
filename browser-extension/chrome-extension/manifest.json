@@ -11,7 +11,7 @@
         "downloads",
         "cookies",
         "webRequest",
-        "tabs",
+        "activeTab",
         "storage",
         "contextMenus",
         "alarms"

@@ -26,6 +26,7 @@ import java.awt.desktop.AppReopenedListener
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import javax.swing.JOptionPane
+import java.util.concurrent.ConcurrentHashMap
 import javax.swing.SwingUtilities
 
 interface IAppInstance {
@@ -87,6 +88,12 @@ interface IAppInstance {
 class AppInstance : IAppInstance {
     private lateinit var appWindow: AppWindow
     private val prgWndMap = mutableMapOf<Long, ProgressWindow>()
+    /**
+     * Browser downloads started straight away that have not yet received a byte. The extension has
+     * already cancelled the browser's copy, so if one of these fails there is no fallback - and with
+     * no progress window open, nothing else would tell the user the file landed nowhere.
+     */
+    private val pendingHandoffs = ConcurrentHashMap.newKeySet<Long>()
     private var refreshLinkWindow: RefreshLinkWindow? = null
 
     override fun run(args: Array<String>) {
@@ -185,6 +192,7 @@ class AppInstance : IAppInstance {
             return
         }
         if (downloadInfo != null && AppContext.config.startDownloadAutomatically) {
+            pendingHandoffs.add(downloadInfo.id)
             AppContext.downloader.startHttpDownload(downloadInfo)
         } else {
             SwingUtilities.invokeLater {
@@ -253,6 +261,7 @@ class AppInstance : IAppInstance {
         prg: Int,
         segData: Collection<SegmentProgress>
     ) {
+        if (downloaded > 0) pendingHandoffs.remove(id)
         runOnUIThread { prgWndMap[id]?.updateProgress(fileName, downloaded, size, speed, eta, prg, segData) }
     }
 
@@ -274,6 +283,7 @@ class AppInstance : IAppInstance {
     }
 
     override fun hideProgressWindow(id: Long) {
+        pendingHandoffs.remove(id)
         runOnUIThread {
             val wnd = prgWndMap.remove(id)
             wnd?.isVisible = false
@@ -282,10 +292,22 @@ class AppInstance : IAppInstance {
     }
 
     override fun showProgressError(id: Long, error: DownloadError) {
+        val handoff = pendingHandoffs.remove(id)
         runOnUIThread {
-            println("Thread: ${Thread.currentThread().name}")
             val wnd = prgWndMap.remove(id)
-            wnd?.showError(error)
+            if (wnd != null) {
+                wnd.showError(error)
+            } else if (handoff) {
+                showHandoffFailed(id)
+            }
+        }
+    }
+
+    private fun showHandoffFailed(id: Long) {
+        val fileName = db.getById(id)?.fileName ?: return
+        val message = text("MSG_BROWSER_DOWNLOAD_FAILED").format(fileName)
+        if (!showTrayNotification(text("TITLE_BROWSER_DOWNLOAD_FAILED"), message)) {
+            MessageBox.show(appWindow, text("TITLE_BROWSER_DOWNLOAD_FAILED"), message)
         }
     }
 

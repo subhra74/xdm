@@ -2,6 +2,9 @@ package xdm.app.ui.screens
 
 import com.formdev.flatlaf.FlatClientProperties
 import xdm.app.AppContext
+import xdm.app.DuplicateKind
+import xdm.app.RecordStatus
+import xdm.app.ui.components.AppMenuHandler
 import xdm.app.ui.components.CategoryStyle
 import xdm.app.I8N.text
 import xdm.app.utils.chooseFile
@@ -18,6 +21,7 @@ import xdm.app.utils.validateURL
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.util.*
 import xdm.core.util.CoreUtils.uniqueId
+import xdm.integration.EventChannel
 import java.awt.*
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
@@ -322,7 +326,62 @@ class NewDownloadWindow : JDialog() {
     //  }
     /** Registers the download, started right away when [now] is set and left paused otherwise. */
     private fun addDownload(now: Boolean) {
+        if (!confirmNotDuplicate()) return
         if (createDownload(now) != null) dispose()
+    }
+
+    /**
+     * Looks the entered download up among the existing ones and, on a match, asks what to do.
+     * Returns true to go on adding it; false otherwise. Cancelling, or handling it through the
+     * existing download (resuming it or opening its folder), also closes this dialog.
+     * The browser's size and ETag describe the captured URL only, so they are dropped once the
+     * user edits the address.
+     */
+    private fun confirmNotDuplicate(): Boolean {
+        val url = txtUrl.text.trim()
+        if (url.isEmpty()) return true
+        val captured = taskInfo?.takeIf { it.url == url }
+        val match = AppContext.downloader.duplicates.find(
+            url, txtFileName.text.trim(), captured?.knownFileSize, captured?.etag
+        ) ?: return true
+        val rec = match.record
+
+        val message = buildString {
+            append(text(if (match.kind == DuplicateKind.SAME_URL) "MSG_DUP_SAME" else "MSG_DUP_LIKELY"))
+            append("\n\n").append(rec.fileName)
+            if (rec.size > 0) append("  ·  ").append(FormatHelper.formatSize(rec.size.toDouble()))
+            append("  ·  ").append(statusText(rec.status))
+            append("\n\n").append(text("MSG_DUP_ASK"))
+        }
+        val again = text("DUP_DOWNLOAD_AGAIN")
+        val existing = when (rec.status) {
+            RecordStatus.FINISHED -> text("CTX_OPEN_FOLDER")
+            RecordStatus.PAUSED, RecordStatus.ERROR -> text("DUP_RESUME_EXISTING")
+            else -> null
+        }
+        val options = listOfNotNull(again, existing, text("ND_CANCEL")).toTypedArray()
+        val choice = JOptionPane.showOptionDialog(
+            this, message, text("DUP_TITLE"), JOptionPane.DEFAULT_OPTION,
+            JOptionPane.WARNING_MESSAGE, null, options, options.last()
+        )
+        return when {
+            choice == 0 -> true
+            existing != null && choice == 1 -> {
+                if (rec.status == RecordStatus.FINISHED) {
+                    AppMenuHandler.openFolder(rec, this)
+                } else {
+                    AppContext.downloader.resumeDownload(rec.id)
+                }
+                dispose()
+                false
+            }
+            // Cancel drops the download altogether; closing the prompt (Esc, title bar) goes back to the form.
+            choice == options.lastIndex -> {
+                dispose()
+                false
+            }
+            else -> false
+        }
     }
 
     /**
@@ -330,6 +389,7 @@ class NewDownloadWindow : JDialog() {
      * on to [scheduleDownload], no leaves the download paused until it is started by hand.
      */
     private fun downloadLater() {
+        if (!confirmNotDuplicate()) return
         when (
             JOptionPane.showConfirmDialog(
                 this, text("MSG_ASK_SCHEDULE"), text("ND_DOWNLOAD_LATER"), JOptionPane.YES_NO_CANCEL_OPTION
@@ -390,7 +450,9 @@ class NewDownloadWindow : JDialog() {
             userSelectedDownloadFolder = null,
             maxPiece = cmbSegments.selectedItem as Int,
             authInfo = null,
-            knownFileSize = taskInfo?.knownFileSize
+            knownFileSize = taskInfo?.knownFileSize,
+            // The browser's ETag belongs to the URL it captured, not to an address typed over it.
+            etag = taskInfo?.etag?.takeIf { taskInfo?.url == url },
         )
 
         rememberFolderChoice(cmbSaveIn)
@@ -465,6 +527,11 @@ class NewDownloadWindow : JDialog() {
             if (config.blockedHosts.none { it.equals(host, ignoreCase = true) }) {
                 config.blockedHosts = config.blockedHosts + host
                 config.save()
+                // The extension gates capture on this list, so it is useless until it arrives
+                // there. Without this the parked poll keeps waiting and the new host only lands
+                // on the next /sync - up to a watchdog interval later, by which time the user has
+                // already retried the link and been captured again.
+                EventChannel.notifyChanged()
             }
         }
         dispose()

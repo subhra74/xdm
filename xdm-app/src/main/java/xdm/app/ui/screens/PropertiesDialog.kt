@@ -195,16 +195,6 @@ class PropertiesDialog(private val owner: Window?, ent: DbRecord) : JDialog(owne
         ?.entries?.firstOrNull { it.key.equals("Referer", ignoreCase = true) }
         ?.value?.firstOrNull { it.isNotBlank() }
 
-    private fun statusText(status: RecordStatus): String = when (status) {
-        RecordStatus.DOWNLOADING -> text("STAT_DOWNLOADING")
-        RecordStatus.FINISHED -> text("STAT_FINISHED")
-        RecordStatus.PAUSED -> text("STAT_PAUSED")
-        RecordStatus.ASSEMBLING -> text("STAT_ASSEMBLING")
-        RecordStatus.PUBLISHING -> text("STAT_PUBLISHING")
-        RecordStatus.ERROR -> text("MSG_FAILED")
-        RecordStatus.READY -> text("MSG_WAIT")
-    }
-
     private fun headersView(): JComponent {
         if (headerRows.isEmpty()) {
             return JPanel(BorderLayout()).apply {
@@ -387,4 +377,15 @@ class PropertiesDialog(private val owner: Window?, ent: DbRecord) : JDialog(owne
             return if (columnIndex == 0) name else value
         }
     }
+}
+
+/** The status as the download list words it. */
+fun statusText(status: RecordStatus): String = when (status) {
+    RecordStatus.DOWNLOADING -> text("STAT_DOWNLOADING")
+    RecordStatus.FINISHED -> text("STAT_FINISHED")
+    RecordStatus.PAUSED -> text("STAT_PAUSED")
+    RecordStatus.ASSEMBLING -> text("STAT_ASSEMBLING")
+    RecordStatus.PUBLISHING -> text("STAT_PUBLISHING")
+    RecordStatus.ERROR -> text("MSG_FAILED")
+    RecordStatus.READY -> text("MSG_WAIT")
 }
