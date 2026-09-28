@@ -61,7 +61,12 @@ $JavaOptions = @(
   '-Djdk.nio.maxCachedBufferSize=262144'
 )
 
-$AppName    = 'XDM'
+# The app is "Xtreme Download Manager" - the bundle, the installer and the Start-menu shortcut all
+# use it. What XDM registers with the OS (login entry, xdm-app:// handler) points at a second
+# launcher, "xdm-app.exe", added with --add-launcher: a stable, space-free binary name. That extra
+# launcher gets no shortcut of its own, so the Start menu shows exactly one, named properly.
+$AppName      = 'Xtreme Download Manager'
+$LauncherName = 'xdm-app'
 $Vendor     = 'Xtreme Download Manager'
 $MainClass  = 'xdm.app.AppMain'
 $MainJar    = 'xdm-app.jar'
@@ -155,12 +160,18 @@ if ($LASTEXITCODE -ne 0) { throw 'jlink failed' }
 Copy-Item $JarPath (Join-Path $InputDir $MainJar)
 Remove-ForeignNatives (Join-Path $InputDir $MainJar)
 
+# An added launcher inherits the main class, jar and java-options; this file only keeps it out of
+# the menus, so "xdm-app" never shows up as a second Start-menu entry.
+$LauncherProps = Join-Path $BuildDir "$LauncherName.properties"
+Set-Content -Path $LauncherProps -Value @('win-shortcut=false', 'win-menu=false')
+
 $args = @(
   '--type', $Type
   '--name', $AppName
+  '--add-launcher', "$LauncherName=$LauncherProps"
   '--app-version', $AppVersion
   '--vendor', $Vendor
-  '--description', $Vendor
+  '--description', $AppName
   '--input', $InputDir
   '--main-jar', $MainJar
   '--main-class', $MainClass

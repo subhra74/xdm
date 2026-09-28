@@ -80,8 +80,16 @@ JAVA_OPTIONS=(
   -Djdk.nio.maxCachedBufferSize=262144
 )
 
-APP_NAME="XDM"
+# The app is "Xtreme Download Manager" - that is what --name gives the bundle, the installer and
+# the Start-menu shortcut. Everything XDM registers with the OS (the login entry, the xdm-app://
+# handler) instead points at a second launcher called "xdm-app", added with --add-launcher: a
+# stable, space-free binary name that does not change when the display name does. The extra
+# launcher gets no shortcut of its own (see the properties file below), so the Start menu shows
+# one entry, named properly.
+APP_NAME="Xtreme Download Manager"
+LAUNCHER_NAME="xdm-app"
 VENDOR="Xtreme Download Manager"
+URL_SCHEME="xdm-app"
 DESCRIPTION="Xtreme Download Manager"
 MAIN_CLASS="xdm.app.AppMain"
 MAIN_JAR="xdm-app.jar"
@@ -111,6 +119,8 @@ Usage: packaging/build-bundle.sh [options] [-- extra jpackage args]
   -h, --help          This message
 
 Output: build/dist/<installer>, or build/dist/$APP_NAME(.app) for app-image.
+        The app image also contains a second launcher, $LAUNCHER_NAME, which is what the
+        login entry and the $URL_SCHEME:// handler are registered against.
 EOF
 }
 
@@ -253,9 +263,19 @@ cp "$JAR_PATH" "$INPUT_DIR/$MAIN_JAR"
 strip_foreign_natives "$INPUT_DIR/$MAIN_JAR"
 
 # ---- jpackage -------------------------------------------------------------
+# An added launcher inherits the main class, jar and java-options; all this file does is keep it
+# out of the menus, so "xdm-app" never appears as a second entry beside the real one.
+LAUNCHER_PROPS="$BUILD_DIR/$LAUNCHER_NAME.properties"
+cat > "$LAUNCHER_PROPS" <<'PROPS'
+win-shortcut=false
+win-menu=false
+linux-shortcut=false
+PROPS
+
 ARGS=(
   --type "$PKG_TYPE"
   --name "$APP_NAME"
+  --add-launcher "$LAUNCHER_NAME=$LAUNCHER_PROPS"
   --app-version "$APP_VERSION"
   --vendor "$VENDOR"
   --description "$DESCRIPTION"
@@ -284,8 +304,11 @@ ICON_DIR="$PROJECT_ROOT/packaging/icons"
 case "$OS" in
   mac)
     [[ -f "$ICON_DIR/xdm.icns" ]] && ARGS+=(--icon "$ICON_DIR/xdm.icns")
+    # CFBundleName: what the menu bar and Finder show, independent of the launcher name.
+    # CFBundleName drives the macOS menu bar, where Apple wants <= 15 characters, so the short
+    # form goes there and the full name goes in CFBundleDisplayName / the bundle name below.
     ARGS+=(--mac-package-identifier com.xtremedownloadmanager.xdm
-           --mac-package-name "$APP_NAME")
+           --mac-package-name "XDM")
     ;;
   linux)
     [[ -f "$ICON_DIR/xdm.png" ]] && ARGS+=(--icon "$ICON_DIR/xdm.png")
@@ -297,7 +320,7 @@ case "$OS" in
   windows)
     [[ -f "$ICON_DIR/xdm.ico" ]] && ARGS+=(--icon "$ICON_DIR/xdm.ico")
     if [[ "$PKG_TYPE" != "app-image" ]]; then
-      ARGS+=(--win-menu --win-menu-group "$APP_NAME" --win-shortcut
+      ARGS+=(--win-menu --win-menu-group "$DISPLAY_NAME" --win-shortcut
              --win-dir-chooser --win-per-user-install
              --win-upgrade-uuid 6f9619ff-8b86-d011-b42d-00c04fc964ff)
     fi
@@ -306,6 +329,33 @@ esac
 
 echo ">> jpackage --type $PKG_TYPE ($OS, version $APP_VERSION)"
 jpackage "${ARGS[@]}" ${EXTRA_ARGS+"${EXTRA_ARGS[@]}"}
+
+# ---- macOS: display name + the xdm-app:// scheme ---------------------------
+# A bundle can only claim a URL scheme in its Info.plist, and jpackage has no option for it, so
+# the plist is patched afterwards. This only reaches the plist for an app-image build; a dmg/pkg
+# build makes its .app inside jpackage's own temp dir (see the note printed below).
+if [[ "$OS" == "mac" && "$PKG_TYPE" == "app-image" ]]; then
+  BUNDLE="$DEST_DIR/$APP_NAME.app"
+  if [[ -d "$BUNDLE" ]]; then
+    PLIST="$BUNDLE/Contents/Info.plist"
+    echo ">> declaring the $URL_SCHEME:// scheme in Info.plist"
+    plutil -replace CFBundleDisplayName -string "$APP_NAME" "$PLIST" >/dev/null 2>&1 ||
+      plutil -insert CFBundleDisplayName -string "$APP_NAME" "$PLIST"
+    plutil -remove CFBundleURLTypes "$PLIST" >/dev/null 2>&1 || true
+    plutil -insert CFBundleURLTypes -xml \
+      "<array><dict>\
+         <key>CFBundleURLName</key><string>$APP_NAME</string>\
+         <key>CFBundleTypeRole</key><string>Viewer</string>\
+         <key>CFBundleURLSchemes</key><array><string>$URL_SCHEME</string></array>\
+       </dict></array>" "$PLIST"
+    # Tell LaunchServices about it now, so the scheme works without a logout.
+    /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
+      -f "$BUNDLE" >/dev/null 2>&1 || true
+  fi
+elif [[ "$OS" == "mac" ]]; then
+  echo ">> note: $PKG_TYPE bundles cannot be patched for the $URL_SCHEME:// scheme;"
+  echo ">>       build --type app-image first, then package that image."
+fi
 
 echo
 echo "Runtime size: $(du -sh "$RUNTIME_DIR" | cut -f1)"

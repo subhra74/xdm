@@ -2,9 +2,9 @@ package xdm.app.utils
 
 import xdm.app.MINIMIZED_FLAG
 import xdm.app.OS
+import xdm.app.utils.win.Win32Registry
 import xdm.core.util.Logger
 import java.io.File
-import java.util.concurrent.TimeUnit
 
 /**
  * Registers/unregisters XDM to start automatically on user login. No JNI; each platform uses a
@@ -12,11 +12,10 @@ import java.util.concurrent.TimeUnit
  *
  *  - macOS:   a LaunchAgent plist at ~/Library/LaunchAgents/<LABEL>.plist with RunAtLoad=true.
  *  - Linux:   an XDG autostart .desktop file at ~/.config/autostart/xdm-app.desktop.
- *  - Windows: a value under HKCU\Software\Microsoft\Windows\CurrentVersion\Run. Writing is done by
- *             generating a .reg file and running `reg import`, which gives byte-exact control over
- *             quoting/escaping (passing a value that itself contains quotes and spaces through
- *             ProcessBuilder to `reg add` is unreliable). Reading/removing use plain `reg query`
- *             / `reg delete` whose arguments contain neither spaces nor quotes.
+ *  - Windows: a value under HKCU\Software\Microsoft\Windows\CurrentVersion\Run, written through
+ *             [Win32Registry] (java.lang.foreign -> Advapi32). This used to shell out to `reg`,
+ *             which meant a `.reg` file in UTF-16LE and two layers of escaping; the API takes the
+ *             value verbatim, so only command-line quoting is left.
  *
  * Enable/disable is idempotent. The launch target is always the `xdm-app` executable (see
  * [launchCommand]), started with [MINIMIZED_FLAG] so logging in brings up XDM in the tray rather
@@ -27,7 +26,8 @@ object AutoStart {
     private const val LABEL = "app.xdm.autostart"
     private const val APP_NAME = "Xtreme Download Manager"
 
-    private const val WIN_RUN_KEY = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run"
+    /** Relative to HKCU - [Win32Registry] works there and nowhere else. */
+    private const val WIN_RUN_KEY = "Software\\Microsoft\\Windows\\CurrentVersion\\Run"
     private const val WIN_VALUE_NAME = "XDM"
 
     private val os = detectOS()
@@ -36,7 +36,7 @@ object AutoStart {
         when (os) {
             OS.MacOS -> macPlist().isFile
             OS.Linux -> linuxDesktopFile().isFile
-            OS.Windows -> windowsRunValueExists()
+            OS.Windows -> Win32Registry.getString(WIN_RUN_KEY, WIN_VALUE_NAME) != null
         }
     }.getOrDefault(false)
 
@@ -68,7 +68,7 @@ object AutoStart {
         return when (os) {
             OS.MacOS -> macPlist().readText() == macPlistContent(cmd)
             OS.Linux -> linuxDesktopFile().readText() == linuxDesktopContent(cmd)
-            OS.Windows -> windowsRunValueMatches(commandLine(cmd))
+            OS.Windows -> Win32Registry.getString(WIN_RUN_KEY, WIN_VALUE_NAME) == commandLine(cmd)
         }
     }
 
@@ -98,7 +98,7 @@ object AutoStart {
         when (os) {
             OS.MacOS -> deleteFile(macPlist())
             OS.Linux -> deleteFile(linuxDesktopFile())
-            OS.Windows -> deleteWindowsRunValue()
+            OS.Windows -> Win32Registry.deleteValue(WIN_RUN_KEY, WIN_VALUE_NAME)
         }
         Logger.info("AutoStart: disabled ($os)")
     }
@@ -109,36 +109,10 @@ object AutoStart {
 
     // --- launch target resolution ------------------------------------------------------------
 
-    /**
-     * Resolves the command that launches XDM. In production the executable is always named
-     * `xdm-app` (jpackage launcher on all platforms, or the GraalVM native-image binary on Windows).
-     * Falls back to `java -jar <jar>` when running from a plain JVM during development.
-     */
-    private fun launchCommand(): List<String>? = launcher()?.plus(MINIMIZED_FLAG)
+    /** The launcher plus [MINIMIZED_FLAG]: starting with the machine should not open a window. */
+    private fun launchCommand(): List<String>? = AppLauncher.command()?.plus(MINIMIZED_FLAG)
 
-    /** The executable part of [launchCommand], without the arguments XDM adds. */
-    private fun launcher(): List<String>? {
-        // jpackage sets this to the absolute path of the native launcher.
-        System.getProperty("jpackage.app-path")?.takeIf { it.isNotBlank() }?.let { return listOf(it) }
-
-        // native-image (and most direct launches): the actual process executable.
-        val processCmd = ProcessHandle.current().info().command().orElse(null)
-        if (processCmd != null) {
-            val name = File(processCmd).name.lowercase()
-            if (!name.startsWith("java")) return listOf(processCmd)
-
-            // Dev fallback: running under a JVM, reconstruct `java -jar <jar>`.
-            val jar = runCatching {
-                File(AutoStart::class.java.protectionDomain.codeSource.location.toURI())
-            }.getOrNull()
-            if (jar != null && jar.isFile) return listOf(processCmd, "-jar", jar.absolutePath)
-        }
-        return null
-    }
-
-    /** Joins a launch command into a single Windows command line, quoting tokens with spaces. */
-    private fun commandLine(cmd: List<String>): String =
-        cmd.joinToString(" ") { if (it.contains(' ')) "\"$it\"" else it }
+    private fun commandLine(cmd: List<String>): String = AppLauncher.commandLine(cmd)
 
     // --- macOS -------------------------------------------------------------------------------
 
@@ -183,62 +157,10 @@ X-GNOME-Autostart-enabled=true
     // --- Windows -----------------------------------------------------------------------------
 
     private fun writeWindowsRunValue(cmd: List<String>) {
-        // The Run value must contain the launch command line with the exe path quoted so Explorer
-        // parses spaces correctly at logon.
-        val value = regEscape(commandLine(cmd))
-        // "Version 5.00" .reg files are UTF-16LE with a BOM; reg import requires this encoding for
-        // reliable handling of non-ASCII paths.
-        val content = "Windows Registry Editor Version 5.00\r\n\r\n" +
-            "[$WIN_RUN_KEY_FULL]\r\n" +
-            "\"$WIN_VALUE_NAME\"=\"$value\"\r\n"
-        val tmp = File.createTempFile("xdm-autostart", ".reg")
-        try {
-            tmp.outputStream().use { out ->
-                out.write(byteArrayOf(0xFF.toByte(), 0xFE.toByte())) // UTF-16LE BOM
-                out.write(content.toByteArray(Charsets.UTF_16LE))
-            }
-            runReg("import", tmp.absolutePath)
-        } finally {
-            tmp.delete()
-        }
+        // The value is the launch command line with the exe path quoted, so Explorer parses spaces
+        // correctly at logon.
+        Win32Registry.setString(WIN_RUN_KEY, WIN_VALUE_NAME, commandLine(cmd))
     }
-
-    private fun deleteWindowsRunValue() {
-        runReg("delete", WIN_RUN_KEY, "/v", WIN_VALUE_NAME, "/f")
-    }
-
-    private fun windowsRunValueExists(): Boolean =
-        runReg("query", WIN_RUN_KEY, "/v", WIN_VALUE_NAME) == 0
-
-    /** True when the stored Run value is already the command line we would write. */
-    private fun windowsRunValueMatches(expected: String): Boolean = runCatching {
-        val proc = ProcessBuilder(listOf("reg", "query", WIN_RUN_KEY, "/v", WIN_VALUE_NAME))
-            .redirectErrorStream(true)
-            .start()
-        val out = proc.inputStream.bufferedReader().use { it.readText() }
-        if (!proc.waitFor(20, TimeUnit.SECONDS)) {
-            proc.destroy()
-            return false
-        }
-        proc.exitValue() == 0 && out.contains(expected)
-    }.getOrDefault(false)
-
-    /** Runs `reg <args>` quietly and returns its exit code (or -1 on failure). */
-    private fun runReg(vararg args: String): Int = runCatching {
-        val proc = ProcessBuilder(listOf("reg") + args)
-            .redirectOutput(ProcessBuilder.Redirect.DISCARD)
-            .redirectError(ProcessBuilder.Redirect.DISCARD)
-            .start()
-        if (proc.waitFor(20, TimeUnit.SECONDS)) proc.exitValue() else { proc.destroy(); -1 }
-    }.getOrDefault(-1)
-
-    /** Escapes a REG_SZ value for a .reg file: backslashes and quotes are backslash-escaped. */
-    private fun regEscape(s: String) = s.replace("\\", "\\\\").replace("\"", "\\\"")
-
-    // The HKCU\... short form works for `reg query`/`reg delete`, but .reg files need the long
-    // HKEY_CURRENT_USER form for the key path.
-    private val WIN_RUN_KEY_FULL =
-        "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run"
 
     private fun xmlEscape(s: String) = s
         .replace("&", "&amp;")

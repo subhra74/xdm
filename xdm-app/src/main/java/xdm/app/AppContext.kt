@@ -3,6 +3,7 @@ package xdm.app
 import xdm.core.downloaders.TaskInfoDB
 import xdm.core.util.Logger
 import xdm.app.utils.AutoStart
+import xdm.app.utils.UrlScheme
 import xdm.integration.BrowserIntegration
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
@@ -66,6 +67,10 @@ object AppContext {
                 // Entries written by older versions start XDM without --minimized.
                 AutoStart.sync()
             }
+
+            // Lets a browser start XDM by opening xdm-app://... Registration is per-user and only
+            // rewritten when it is missing or stale.
+            UrlScheme.sync()
 
             Logger.info("Setting up look-and-feel theme: ${config.theme}")
             AppMain.setupTheme(config.theme)

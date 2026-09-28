@@ -16,8 +16,10 @@
     <url>https://github.com/subhra74/xdm</url>
 
     <properties>
-        <maven.compiler.target>11</maven.compiler.target>
-        <maven.compiler.source>11</maven.compiler.source>
+        <!-- xdm-app targets the JDK it ships (jlink'd 25): it uses java.lang.foreign for the
+             Windows integration. xdm-core stays on Java 8 - see its own pom. -->
+        <maven.compiler.target>25</maven.compiler.target>
+        <maven.compiler.source>25</maven.compiler.source>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <kotlin.version>2.3.0</kotlin.version>
         <serialization.version>1.10.0</serialization.version>
@@ -225,8 +227,8 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <source>11</source>
-                    <target>11</target>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
                 </configuration>
             </plugin>
         </plugins>

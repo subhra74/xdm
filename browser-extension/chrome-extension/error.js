@@ -1,6 +1,6 @@
 window.onload = function () {
     document.getElementById("OpenLink").addEventListener('click', function () {
-        window.open("xdm+app://launch");
+        window.open("xdm-app://launch");
         window.close();
     });
     // Asking for state makes the background script look for XDM again. If it is up by now - the

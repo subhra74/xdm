@@ -35,8 +35,9 @@ Notes:
   `default-compile`/`default-testCompile` executions are deliberately disabled and
   re-bound so Kotlin and Java sources interop. Source roots are `src/main/java` even
   though they hold Kotlin (`xdm-core`/`xdm-app`); `hls-muxer` uses `src/main/kotlin`.
-- JVM target differs by module: `xdm-app` targets JDK 11, `xdm-core` and `hls-muxer`
-  target JDK 8.
+- JVM target differs by module: `xdm-app` targets **JDK 25** (it uses `java.lang.foreign` for the
+  Windows integration, so building it needs a JDK 25 toolchain - `JAVA_HOME=<jdk25> mvn package`);
+  `xdm-core` and `hls-muxer` stay on **JDK 8** and must keep working there.
 - `kotlinx-serialization` is enabled as a Kotlin compiler plugin for JSON models.
 
 ## Runtime layout
@@ -149,6 +150,27 @@ Icons are glyphs from the bundled Remix Icon font (`resources/fonts/remixicon.tt
 `FontIcon` via `createIcon(RemixIcon.X, size, color)` (`utils/RemixIcon.kt`); to add one, add its
 codepoint from the same release's `remixicon.css` to the `RemixIcon` enum. The logo and macOS tray
 icon are PNGs under `resources/images/` (`logoImage`/`logoIcon`/`trayMacImage` in `UiHelper.kt`).
+
+### Platform integration (`xdm-app/.../utils`)
+`AutoStart` (login entry), `UrlScheme` (the `xdm-app://` handler) and `KeepAwake` (idle-sleep
+inhibitor) all register per-user, without elevation, and are idempotent - each has a `sync()`-style
+entry point called from `AppContext.init` that rewrites only what is missing or stale. They resolve
+the executable through `AppLauncher`, which prefers jpackage's `jpackage.app-path`; the packaged
+launcher is `xdm-app.exe` on Windows and `xdm-app` elsewhere, while the app's display name is
+"Xtreme Download Manager" (see `packaging/build-bundle.sh`).
+
+On Windows these go through `utils/win/` - `Win32Registry` and `Win32Power`, thin
+`java.lang.foreign` bindings over Advapi32/Kernel32. **Do not reintroduce `reg.exe`, `.reg` files or
+a `powershell.exe` helper**; that is what this layer replaced. The FFM classes are only touched on
+Windows, and lazily, because loading them costs metaspace. Two Win32 notes worth keeping in mind:
+`SetThreadExecutionState` binds to the *calling thread*, so `KeepAwake` owns one platform (never
+virtual) daemon thread for as long as any download is active; and the registry layer only ever
+writes under `HKEY_CURRENT_USER`.
+
+Launching via the URL scheme differs by platform: Windows and Linux start a second process and the
+URL arrives in `args` (handed to the running instance by `BrowserIntegration.acquire` -> `/show`),
+while macOS activates the running app and delivers an Apple event instead, handled by the
+`setOpenURIHandler`/`AppReopenedListener` pair installed in `AppInstance.run`.
 
 ## Conventions
 - Reach shared services through `AppContext`, not by passing them around manually.

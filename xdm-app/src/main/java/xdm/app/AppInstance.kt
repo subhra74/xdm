@@ -15,11 +15,14 @@ import xdm.app.ui.screens.ScheduleWindow
 import xdm.app.utils.TextContextMenu
 import xdm.app.utils.logoImage
 import xdm.app.utils.createTray
+import xdm.app.utils.detectOS
 import xdm.app.utils.showTrayNotification
 import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.downloaders.web.SegmentProgress
 import xdm.core.util.Logger
+import java.awt.Desktop
+import java.awt.desktop.AppReopenedListener
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import javax.swing.JOptionPane
@@ -88,6 +91,7 @@ class AppInstance : IAppInstance {
 
     override fun run(args: Array<String>) {
         val minimized = args.contains(MINIMIZED_FLAG)
+        installMacHandlers()
         runOnUIThread {
             TextContextMenu.install()
             val image = logoImage(256)
@@ -105,6 +109,21 @@ class AppInstance : IAppInstance {
                 showAppWindow()
             }
         }
+    }
+
+    /**
+     * On macOS a second launch does not start a second process: LaunchServices activates the
+     * running app and delivers `xdm-app://...` as an Apple event, so the argv/`/show` handover the
+     * other platforms use never happens. Both events mean the same thing here - show the window.
+     */
+    private fun installMacHandlers() {
+        if (detectOS() != OS.MacOS || !Desktop.isDesktopSupported()) {
+            return
+        }
+        val desktop = Desktop.getDesktop()
+        // Unsupported when not running from a bundle (i.e. in development), hence runCatching.
+        runCatching { desktop.setOpenURIHandler { showAppWindow() } }
+        runCatching { desktop.addAppEventListener(AppReopenedListener { showAppWindow() }) }
     }
 
     override fun showFatalError(message: String) {
