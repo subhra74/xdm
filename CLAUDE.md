@@ -36,8 +36,24 @@ Notes:
   re-bound so Kotlin and Java sources interop. Source roots are `src/main/java` even
   though they hold Kotlin (`xdm-core`/`xdm-app`); `hls-muxer` uses `src/main/kotlin`.
 - JVM target differs by module: `xdm-app` targets **JDK 25** (it uses `java.lang.foreign` for the
-  Windows integration, so building it needs a JDK 25 toolchain - `JAVA_HOME=<jdk25> mvn package`);
-  `xdm-core` and `hls-muxer` stay on **JDK 8** and must keep working there.
+  Windows integration); `xdm-core` and `hls-muxer` stay on **JDK 8** and must keep working there.
+- **A JDK 25 compiler is selected through a Maven toolchain, not `JAVA_HOME`.** Copy
+  `packaging/toolchains.sample.xml` to `~/.m2/toolchains.xml` and point `jdkHome` at a JDK 25.
+  Maven itself can then run on any JDK; without a matching entry the build stops with
+  "Cannot find matching toolchain definitions". This matters because the JDK Maven runs on is
+  usually accidental - a Homebrew `mvn` forces its own openjdk when `JAVA_HOME` is unset, and
+  IntelliJ builds with the JetBrains Runtime.
+- Kotlin must stay at **2.3.21 or newer**: 2.3.0 cannot resolve `java.lang.foreign`'s
+  `allocateFrom` overloads when the compiler runs on the JetBrains Runtime, which breaks
+  `xdm-app`'s Windows layer with a misleading "unresolved reference".
+- Tests are **JUnit 5** (`org.junit.jupiter`) and live in `xdm` (xdm-app) and `xdm.core`
+  (xdm-core); keep new ones in a package. Remember Jupiter puts the assertion message **last**
+  (`assertEquals(expected, actual, message)`), the reverse of JUnit 4.
+- Surefire is pinned to **3.5.6**, not 3.6.0: under 3.6.0 `reuseForks=false` discovers no tests at
+  all and still reports BUILD SUCCESS. xdm-core needs that setting - a fresh JVM per class keeps
+  leaked threads and sockets from bleeding between the networked download tests - so the plugin
+  waits. If you bump it, check the test COUNTS, not the build status: xdm-core must run 175 and
+  xdm-app 98.
 - `kotlinx-serialization` is enabled as a Kotlin compiler plugin for JSON models.
 
 ## Runtime layout

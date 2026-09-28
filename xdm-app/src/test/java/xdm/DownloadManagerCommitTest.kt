@@ -1,9 +1,9 @@
 package xdm
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 import xdm.app.DbRecord
 import xdm.app.RecordStatus
 import xdm.core.downloaders.CommitResult
@@ -43,7 +43,7 @@ class DownloadManagerCommitTest : DownloadManagerTestBase() {
     fun firstRun_commitCreatesTheMissingCategoryFolder() {
         // First run: the seeded category folders do not exist on disk yet.
         val videos = File(config.categories.first { it.id == "CAT_VIDEOS" }.folder)
-        assertFalse("precondition: category folder must not exist", videos.exists())
+        assertFalse(videos.exists(), "precondition: category folder must not exist")
 
         val tmp = File(dir, "clip.tmp").apply { writeText("downloaded") }
         val task = httpTask().copy(
@@ -55,7 +55,7 @@ class DownloadManagerCommitTest : DownloadManagerTestBase() {
 
         val result = commit(task.id, tmp, DownloadType.Http) as CommitResult.Success
         assertEquals(videos.absolutePath, result.outputDir)
-        assertTrue("commit should have created it", videos.isDirectory)
+        assertTrue(videos.isDirectory, "commit should have created it")
         assertEquals("downloaded", File(videos, "clip.mp4").readText())
     }
 
@@ -69,7 +69,7 @@ class DownloadManagerCommitTest : DownloadManagerTestBase() {
         val result = commit(task.id, tmp, DownloadType.Http)
         assertTrue(result is CommitResult.Failed)
         assertEquals("OutputWriteError", errorName(result))
-        assertTrue("temp file must be kept for a retry", tmp.exists())
+        assertTrue(tmp.exists(), "temp file must be kept for a retry")
     }
 
     @Test
@@ -107,7 +107,7 @@ class DownloadManagerCommitTest : DownloadManagerTestBase() {
         val videoFolder = File(config.categories.first { it.id == "CAT_VIDEOS" }.folder)
         val path = outputFilePath(hls.id, DownloadType.Hls, ".mp4")
         assertEquals(File(videoFolder, ".${hls.id}.xdm-part.mp4").absolutePath, path)
-        assertEquals("HTTP keeps its own temp file", null, outputFilePath(hls.id, DownloadType.Http, ".mp4"))
+        assertEquals(null, outputFilePath(hls.id, DownloadType.Http, ".mp4"), "HTTP keeps its own temp file")
     }
 
     @Test
@@ -125,6 +125,6 @@ class DownloadManagerCommitTest : DownloadManagerTestBase() {
         val part = File(out, ".${hls.id}.xdm-part.mp4").apply { writeText("half a video") }
 
         dm.deleteDownload(hls.id, fromDisk = false)
-        assertFalse("partial output left in the download folder", part.exists())
+        assertFalse(part.exists(), "partial output left in the download folder")
     }
 }

@@ -1,11 +1,11 @@
 package xdm
 
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import xdm.app.AppConfig
 import xdm.app.AppContext
 import xdm.app.I8N
@@ -28,7 +28,7 @@ class SaveInFolderChoiceTest {
 
     private fun autoLabel(): String = I8N.text("ND_AUTO_CAT") ?: "As per file type"
 
-    @Before
+    @BeforeEach
     fun setup() {
         I8N.loadTexts("en")
         dir = Files.createTempDirectory("xdm-savein").toFile()
@@ -42,7 +42,7 @@ class SaveInFolderChoiceTest {
         persistFolderChoiceOnChange(combo)
     }
 
-    @After
+    @AfterEach
     fun tearDown() {
         dir.deleteRecursively()
     }
@@ -51,7 +51,7 @@ class SaveInFolderChoiceTest {
     fun populatingDoesNotOverwriteTheStoredChoice() {
         config.autoSelectFolder = true
         populateSaveInFolders(model, combo)
-        assertTrue("filling the combo must not look like a user choice", config.autoSelectFolder)
+        assertTrue(config.autoSelectFolder, "filling the combo must not look like a user choice")
     }
 
     @Test
@@ -61,7 +61,7 @@ class SaveInFolderChoiceTest {
 
         combo.selectedIndex = 1 // the default download folder, not "Automatic"
 
-        assertFalse("changing the combo must persist without pressing Download", config.autoSelectFolder)
+        assertFalse(config.autoSelectFolder, "changing the combo must persist without pressing Download")
         assertEquals(config.defaultDownloadFolder, config.recentFolders[config.folderIndex + 1])
     }
 

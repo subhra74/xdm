@@ -1,9 +1,11 @@
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.junit.Before
-import org.junit.Test
+package xdm.core
+
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import xdm.core.util.AtomicIO
 import java.io.DataOutputStream
 import java.io.File
@@ -22,12 +24,12 @@ class TestAtomicIO {
     private val bak1 get() = File(dir, "$name.bak1")
     private val bak2 get() = File(dir, "$name.bak2")
 
-    @Before
+    @BeforeEach
     fun setup() {
         dir = Files.createTempDirectory("xdm-atomicio").toFile()
     }
 
-    @After
+    @AfterEach
     fun tearDown() {
         dir.deleteRecursively()
     }
@@ -68,7 +70,7 @@ class TestAtomicIO {
             throw IOException("writer failed")
         }
         assertTrue(result.isFailure)
-        assertFalse("partial temp file left behind", bak1.exists())
+        assertFalse(bak1.exists(), "partial temp file left behind")
         assertEquals(listOf("previous"), load().getOrThrow())
     }
 
@@ -90,7 +92,7 @@ class TestAtomicIO {
             repeat(r.readInt()) { seen += r.readUTF() } // adds as it reads, like AppDB
         }
         assertTrue(result.isSuccess)
-        assertEquals("reader must not see the incomplete file", listOf("v1"), seen)
+        assertEquals(listOf("v1"), seen, "reader must not see the incomplete file")
     }
 
     @Test
@@ -116,6 +118,6 @@ class TestAtomicIO {
         // Non-empty directories where the backup and the final file must go: the save cannot complete.
         File(final, "blocker").apply { parentFile.mkdirs(); writeText("x") }
         File(bak2, "blocker").apply { parentFile.mkdirs(); writeText("x") }
-        assertTrue("a save that did not reach the final file must fail", save("lost").isFailure)
+        assertTrue(save("lost").isFailure, "a save that did not reach the final file must fail")
     }
 }

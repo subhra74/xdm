@@ -1,7 +1,9 @@
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertTrue
-import org.junit.Test
+package xdm.core
+
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 import xdm.core.downloaders.DashDownloadTaskInfo
 import xdm.core.downloaders.HlsDownloadTaskInfo
 import xdm.core.downloaders.HttpDownloadTaskInfo
@@ -130,7 +132,7 @@ class TestTaskInfoDB : HttpDownloadTestBase() {
         saveState(ctx, work.absolutePath)
 
         val loaded = loadState(6, work.absolutePath, CountingHttpClient(), host)
-        assertTrue("state with >64KB values did not load: ${loaded.exceptionOrNull()}", loaded.isSuccess)
+        assertTrue(loaded.isSuccess, "state with >64KB values did not load: ${loaded.exceptionOrNull()}")
         val c = loaded.getOrThrow()
         assertEquals(ctx.url, c.url)
         assertEquals(ctx.cookie, c.cookie)
@@ -160,7 +162,7 @@ class TestTaskInfoDB : HttpDownloadTestBase() {
         saveState(ctx, work.absolutePath)
 
         val loaded = loadHlsState(7, work.absolutePath, CountingHttpClient(), host)
-        assertTrue("HLS state with >64KB values did not load: ${loaded.exceptionOrNull()}", loaded.isSuccess)
+        assertTrue(loaded.isSuccess, "HLS state with >64KB values did not load: ${loaded.exceptionOrNull()}")
         val c = loaded.getOrThrow()
         assertEquals(ctx.url, c.url)
         assertEquals(ctx.cookie, c.cookie)
@@ -190,7 +192,7 @@ class TestTaskInfoDB : HttpDownloadTestBase() {
         assertDownloaded(host, bytes)
 
         val first = ep.requests.first().headers
-        assertTrue("Cookie not sent: ${first["cookie"]}", first["cookie"].orEmpty().any { "session=s3cr3t" in it })
+        assertTrue(first["cookie"].orEmpty().any { "session=s3cr3t" in it }, "Cookie not sent: ${first["cookie"]}")
         assertEquals(listOf("abc", "def"), first["x-token"]?.flatMap { it.split(",").map(String::trim) })
     }
 }

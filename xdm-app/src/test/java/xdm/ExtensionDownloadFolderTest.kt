@@ -1,11 +1,11 @@
 package xdm
 
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import xdm.app.AppConfig
 import xdm.app.AppContext
 import xdm.app.DownloadCategory
@@ -29,7 +29,7 @@ class ExtensionDownloadFolderTest {
     private lateinit var dir: File
     private lateinit var config: AppConfig
 
-    @Before
+    @BeforeEach
     fun setup() {
         // recentFolders builds the "Automatic" label from the language file.
         I8N.loadTexts("en")
@@ -42,7 +42,7 @@ class ExtensionDownloadFolderTest {
         AppContext.config = config
     }
 
-    @After
+    @AfterEach
     fun tearDown() {
         dir.deleteRecursively()
     }
@@ -64,7 +64,7 @@ class ExtensionDownloadFolderTest {
         config.autoSelectFolder = true
 
         val task = taskFor("clip.mp4")
-        assertTrue("browser download must follow the Automatic choice", task.autoCategorize)
+        assertTrue(task.autoCategorize, "browser download must follow the Automatic choice")
         assertEquals(config.defaultDownloadFolder, task.defaultDownloadFolder)
 
         // The category decides the real destination at publish time.

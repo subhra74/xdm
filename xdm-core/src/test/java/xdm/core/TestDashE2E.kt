@@ -1,6 +1,8 @@
-import org.junit.Assert.assertTrue
-import org.junit.Assume
-import org.junit.Test
+package xdm.core
+
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assumptions
+import org.junit.jupiter.api.Test
 import xdm.core.downloaders.DashDownloadTaskInfo
 import xdm.core.downloaders.web.streaming.downloader.dash.DashDownloaderTask
 import xdm.core.downloaders.web.streaming.manifest.dash.MpdEntry
@@ -76,7 +78,7 @@ class TestDashE2E : StreamingE2EBase() {
     @Test fun d3_segmentList() {
         requireFfmpeg()
         genDash("d3", "-use_template", "0", "-use_timeline", "0")
-        Assume.assumeTrue("expected SegmentList", File(caseDir("d3"), "manifest.mpd").readText().contains("SegmentList"))
+        Assumptions.assumeTrue(File(caseDir("d3"), "manifest.mpd").readText().contains("SegmentList"), "expected SegmentList")
         val h = runDash("d3", "d3/manifest.mpd")
         verifyOutput(h, expectVideo = true, expectAudio = true, minDuration = 2.0)
     }
@@ -86,12 +88,12 @@ class TestDashE2E : StreamingE2EBase() {
         requireFfmpeg()
         genDash("d4", "-single_file", "1")
         val mpd = File(caseDir("d4"), "manifest.mpd")
-        Assume.assumeTrue("expected mediaRange single-file MPD", mpd.readText().contains("mediaRange"))
+        Assumptions.assumeTrue(mpd.readText().contains("mediaRange"), "expected mediaRange single-file MPD")
         // The whole representation is one file; every segment is a byte range into it. Parsing must
         // now yield ranged segments, and the downloader must fetch each range and mux them.
         val entries = mpd.inputStream().use { parseMpdManifest(it, url("d4/manifest.mpd")) }
         val v = entries.first { it.video != null }.video!!
-        assertTrue("expected byte-ranged single-file segments", v.segments.all { it.range != null } && v.segments.size > 1)
+        assertTrue(v.segments.all { it.range != null } && v.segments.size > 1, "expected byte-ranged single-file segments")
         val h = runDash("d4", "d4/manifest.mpd")
         verifyOutput(h, expectVideo = true, expectAudio = true, minDuration = 2.0)
     }
@@ -144,7 +146,7 @@ class TestDashE2E : StreamingE2EBase() {
         val withDuration = period.replaceFirst("<Period", "<Period duration=\"PT3S\"")
         mpd.writeText(text.replaceFirst(period, withDuration + "\n" + withDuration))
         val entries = mpd.inputStream().use { parseMpdManifest(it, url("d8/manifest.mpd")) }
-        assertTrue("expected >= 2 period entries, got ${entries.size}", entries.size >= 2)
+        assertTrue(entries.size >= 2, "expected >= 2 period entries, got ${entries.size}")
         // Each entry is independently downloadable+muxable; verify the first.
         val h = runDash("d8", "d8/manifest.mpd")
         verifyOutput(h, expectVideo = true, expectAudio = true, minDuration = 2.0)
@@ -153,7 +155,7 @@ class TestDashE2E : StreamingE2EBase() {
     // ---- D9: HEVC video passthrough ---------------------------------------------------------
     @Test fun d9_hevc() {
         requireFfmpeg()
-        Assume.assumeTrue("libx265 not available", hasEncoder("libx265"))
+        Assumptions.assumeTrue(hasEncoder("libx265"), "libx265 not available")
         val d = caseDir("d9")
         ffmpeg(
             "-f", "lavfi", "-i", "testsrc=size=320x240:rate=25",
@@ -170,7 +172,7 @@ class TestDashE2E : StreamingE2EBase() {
     // ---- D10: DASH-WebM (VP9 + Opus) -> MKV output ------------------------------------------
     @Test fun d10_webmVp9OpusToMkv() {
         requireFfmpeg()
-        Assume.assumeTrue("vp9/opus not available", hasEncoder("libvpx-vp9") && hasEncoder("libopus"))
+        Assumptions.assumeTrue(hasEncoder("libvpx-vp9") && hasEncoder("libopus"), "vp9/opus not available")
         val d = caseDir("d10")
         val ok = ffmpegSoft(
             "-f", "lavfi", "-i", "testsrc=size=320x240:rate=25",
@@ -180,9 +182,9 @@ class TestDashE2E : StreamingE2EBase() {
             "-f", "dash", "-seg_duration", "1", "-dash_segment_type", "webm",
             "-use_template", "1", "-use_timeline", "0", File(d, "manifest.mpd").path
         )
-        Assume.assumeTrue("webm DASH packaging failed on this ffmpeg", ok && File(d, "manifest.mpd").exists())
+        Assumptions.assumeTrue(ok && File(d, "manifest.mpd").exists(), "webm DASH packaging failed on this ffmpeg")
         val h = runDash("d10", "d10/manifest.mpd", expectMkv = true)
-        assertTrue("expected .mkv output", h.finalFile!!.name.endsWith(".mkv"))
+        assertTrue(h.finalFile!!.name.endsWith(".mkv"), "expected .mkv output")
         verifyOutput(h, expectVideo = true, expectAudio = true, minDuration = 1.0)
     }
 
@@ -207,6 +209,6 @@ class TestDashE2E : StreamingE2EBase() {
         val ex = runCatching {
             File(d, "manifest.mpd").inputStream().use { parseMpdManifest(it, url("d12/manifest.mpd")) }
         }.exceptionOrNull()
-        assertTrue("expected an encrypted-manifest rejection, got $ex", ex != null)
+        assertTrue(ex != null, "expected an encrypted-manifest rejection, got $ex")
     }
 }

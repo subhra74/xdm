@@ -1,9 +1,10 @@
 package xdm
 
-import org.junit.Assert.assertEquals
-import org.junit.Assume.assumeTrue
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assumptions.assumeTrue
+import org.junit.jupiter.api.Test
 import xdm.app.utils.win.Ffm
+import xdm.app.utils.win.Win32Registry
 import java.lang.foreign.Arena
 import java.lang.foreign.FunctionDescriptor
 import java.lang.foreign.MemorySegment
@@ -23,7 +24,7 @@ class FfmDowncallTest {
 
     @Test
     fun downcallReachesNativeCodeAndReturnsItsValue() {
-        assumeTrue("no strlen in the default lookup", libc().find("strlen").isPresent)
+        assumeTrue(libc().find("strlen").isPresent, "no strlen in the default lookup")
         val strlen = Ffm.downcall(
             libc(), "strlen",
             FunctionDescriptor.of(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS)
@@ -42,17 +43,23 @@ class FfmDowncallTest {
     fun wideStringsAreNullTerminatedUtf16() {
         Arena.ofConfined().use { arena ->
             val wide = arena.allocateFrom("XDM", StandardCharsets.UTF_16LE)
-            assertEquals("3 chars * 2 bytes + a 2-byte terminator", 8L, wide.byteSize())
+            assertEquals(8L, wide.byteSize(), "3 chars * 2 bytes + a 2-byte terminator")
 
             val raw = wide.toArray(ValueLayout.JAVA_BYTE)
             assertEquals("XDM", String(raw, 0, raw.size - 2, StandardCharsets.UTF_16LE))
         }
     }
 
-    /** HKEY_CURRENT_USER and friends are pseudo-handles passed as plain pointers. */
+    /**
+     * HKEY_CURRENT_USER and friends are pseudo-handles passed as plain pointers.
+     *
+     * Pinned against the literal from winreg.h rather than against itself: the predefined handles
+     * are adjacent values, 0x80000002 is HKEY_LOCAL_MACHINE, and getting it wrong shows up only as
+     * an ERROR_ACCESS_DENIED at runtime on Windows. Reading the constant out of [Win32Registry]
+     * touches no native symbol, so this runs on any platform.
+     */
     @Test
     fun pseudoHandlesCanBePassedAsPointers() {
-        val hkcu = MemorySegment.ofAddress(0x80000002L)
-        assertEquals(0x80000002L, hkcu.address())
+        assertEquals(0x80000001L, Win32Registry.HKEY_CURRENT_USER.address(), "HKEY_CURRENT_USER")
     }
 }

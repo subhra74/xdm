@@ -1,11 +1,11 @@
 package xdm
 
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import xdm.integration.HttpParser
 import xdm.integration.HttpServer
 import xdm.integration.RequestContext
@@ -31,14 +31,14 @@ class IntegrationHttpTest {
     private lateinit var client: Socket
     private lateinit var server: Socket
 
-    @Before
+    @BeforeEach
     fun setup() {
         listener = ServerSocket(0)
         client = Socket("127.0.0.1", listener.localPort).apply { soTimeout = 5000 }
         server = listener.accept().apply { soTimeout = 5000 }
     }
 
-    @After
+    @AfterEach
     fun tearDown() {
         listOf(client, server, listener).forEach { runCatching { it.close() } }
     }
@@ -87,9 +87,9 @@ class IntegrationHttpTest {
     fun response_writesEachHeaderOnItsOwnWellFormedLine() {
         jsonResponse(request("GET /sync HTTP/1.1\r\nHost: x\r\n\r\n")).sendResponse()
         val (lines, body) = readResponse()
-        assertTrue("Content-Type line missing: $lines", "Content-Type: application/json" in lines)
-        assertTrue("Cache-Control line missing: $lines", "Cache-Control: max-age=0, no-cache, must-revalidate" in lines)
-        lines.drop(1).forEach { assertTrue("malformed header line: '$it'", Regex("^[A-Za-z0-9-]+: .*").matches(it)) }
+        assertTrue("Content-Type: application/json" in lines, "Content-Type line missing: $lines")
+        assertTrue("Cache-Control: max-age=0, no-cache, must-revalidate" in lines, "Cache-Control line missing: $lines")
+        lines.drop(1).forEach { assertTrue(Regex("^[A-Za-z0-9-]+: .*").matches(it), "malformed header line: '$it'") }
         assertEquals("""{"ok":true}""", body)
     }
 
@@ -118,7 +118,7 @@ class IntegrationHttpTest {
     fun response_connectionHeaderMatchesRequest() {
         jsonResponse(request("GET /sync HTTP/1.1\r\nHost: x\r\nConnection: close\r\n\r\n")).sendResponse()
         val lines = readResponse().first
-        assertTrue("expected Connection: close in $lines", "Connection: close" in lines)
+        assertTrue("Connection: close" in lines, "expected Connection: close in $lines")
         assertFalse(lines.any { it.equals("Connection: keep-alive", ignoreCase = true) })
     }
 
@@ -133,18 +133,18 @@ class IntegrationHttpTest {
         // Everything but the long poll ends its connection so the thread serving it ends too, even
         // though the extension's fetch cannot send `Connection: close` itself.
         jsonResponse(request("POST /download HTTP/1.1\r\nHost: x\r\nContent-Length: 0\r\n\r\n").apply {
-            assertTrue("HTTP/1.1 request should default to persistent", keepAlive)
+            assertTrue(keepAlive, "HTTP/1.1 request should default to persistent")
             keepAlive = false
         }).sendResponse()
         val lines = readResponse().first
-        assertTrue("expected Connection: close in $lines", "Connection: close" in lines)
+        assertTrue("Connection: close" in lines, "expected Connection: close in $lines")
     }
 
     @Test
     fun parser_keepAliveFollowsHttpVersionDefaults() {
-        assertTrue("HTTP/1.1 is persistent by default", request("GET /a HTTP/1.1\r\nHost: x\r\n\r\n").keepAlive)
-        assertTrue("Connection value is case-insensitive", request("GET /b HTTP/1.1\r\nConnection: Keep-Alive\r\n\r\n").keepAlive)
-        assertFalse("HTTP/1.0 closes by default", request("GET /c HTTP/1.0\r\nHost: x\r\n\r\n").keepAlive)
+        assertTrue(request("GET /a HTTP/1.1\r\nHost: x\r\n\r\n").keepAlive, "HTTP/1.1 is persistent by default")
+        assertTrue(request("GET /b HTTP/1.1\r\nConnection: Keep-Alive\r\n\r\n").keepAlive, "Connection value is case-insensitive")
+        assertFalse(request("GET /c HTTP/1.0\r\nHost: x\r\n\r\n").keepAlive, "HTTP/1.0 closes by default")
         assertFalse(request("GET /d HTTP/1.1\r\nConnection: close\r\n\r\n").keepAlive)
     }
 

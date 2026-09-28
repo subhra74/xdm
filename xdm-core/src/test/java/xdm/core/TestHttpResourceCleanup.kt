@@ -1,6 +1,8 @@
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertTrue
-import org.junit.Test
+package xdm.core
+
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.downloaders.web.http.Chunk
 import xdm.core.downloaders.web.http.ChunkStatus
@@ -33,7 +35,7 @@ class TestHttpResourceCleanup : HttpDownloadTestBase() {
         )
 
     private fun assertClosed(client: CountingHttpClient, what: String) =
-        assertTrue("HTTP client not closed after $what", waitFor(3000) { client.closeCount.get() >= 1 })
+        assertTrue(waitFor(3000) { client.closeCount.get() >= 1 }, "HTTP client not closed after $what")
 
     @Test
     fun pause_closesHttpClient() {
@@ -43,10 +45,10 @@ class TestHttpResourceCleanup : HttpDownloadTestBase() {
         val client = CountingHttpClient()
         val t = task(50, server.url("/slow"), host, client)
         t.start()
-        assertTrue("download never started", waitFor(5000) { host.initInfo != null })
+        assertTrue(waitFor(5000) { host.initInfo != null }, "download never started")
 
         t.stop()
-        assertTrue("pause not acknowledged", host.pauseLatch.await(5, TimeUnit.SECONDS))
+        assertTrue(host.pauseLatch.await(5, TimeUnit.SECONDS), "pause not acknowledged")
         assertClosed(client, "pause")
     }
 
@@ -60,7 +62,7 @@ class TestHttpResourceCleanup : HttpDownloadTestBase() {
         try {
             t.start()
             awaitDone(host, 10)
-            assertNotNull("expected a failure", host.failure)
+            assertNotNull(host.failure, "expected a failure")
             assertClosed(client, "failure")
         } finally {
             t.stop()

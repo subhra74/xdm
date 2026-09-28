@@ -1,9 +1,9 @@
 package xdm
 
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import xdm.app.AppConfig
 import xdm.app.DownloadCompleteNotification
 import java.io.File
@@ -13,12 +13,12 @@ import java.nio.file.Files
 class AppConfigCompleteNotificationTest {
     private lateinit var dir: File
 
-    @Before
+    @BeforeEach
     fun setup() {
         dir = Files.createTempDirectory("xdm-config").toFile()
     }
 
-    @After
+    @AfterEach
     fun tearDown() {
         dir.deleteRecursively()
     }

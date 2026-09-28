@@ -1,12 +1,12 @@
 package xdm
 
-import org.junit.After
-import org.junit.Assert.assertArrayEquals
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertArrayEquals
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 import xdm.app.RecordStatus
 import java.io.File
 import java.util.Random
@@ -22,7 +22,7 @@ class DownloadManagerRefreshLinkTest : DownloadManagerTestBase() {
     private val data = ByteArray(4 * 1024 * 1024).apply { Random(7).nextBytes(this) }
     private val fileServer = LocalFileServer(data)
 
-    @After
+    @AfterEach
     fun stopServer() {
         fileServer.stop()
     }
@@ -37,16 +37,14 @@ class DownloadManagerRefreshLinkTest : DownloadManagerTestBase() {
 
         // Part way in: enough bytes on disk that the resume has something to continue from.
         assertTrue(
-            "download never made progress",
             waitFor(20_000) { (appDB.getById(task.id)?.downloaded ?: 0L) in 1 until data.size.toLong() }
-        )
+        , "download never made progress")
         dm.stopDownload(task.id)
         assertTrue(
-            "download never paused",
             waitFor(20_000) { appDB.getById(task.id)?.status == RecordStatus.PAUSED }
-        )
+        , "download never paused")
         val downloadedWhenPaused = appDB.getById(task.id)!!.downloaded
-        assertTrue("nothing was downloaded before the pause", downloadedWhenPaused > 0)
+        assertTrue(downloadedWhenPaused > 0, "nothing was downloaded before the pause")
 
         // The old signed URL and session are dead from here on.
         fileServer.validToken = "new"
@@ -68,30 +66,27 @@ class DownloadManagerRefreshLinkTest : DownloadManagerTestBase() {
         dm.resumeDownload(task.id)
         remember()
         assertTrue(
-            "download did not finish on the refreshed link",
             waitFor(60_000) { appDB.getById(task.id)?.status == RecordStatus.FINISHED }
-        )
+        , "download did not finish on the refreshed link")
 
         // The engine names the file from the response, so take the name it settled on.
         val finished = appDB.getById(task.id)!!
         val output = File(dir, finished.fileName)
-        assertTrue("finished file is missing: ${dir.list()?.toList()}", output.isFile)
+        assertTrue(output.isFile, "finished file is missing: ${dir.list()?.toList()}")
         assertEquals(data.size.toLong(), finished.size)
-        assertArrayEquals("refreshed download produced a different file", data, output.readBytes())
+        assertArrayEquals(data, output.readBytes(), "refreshed download produced a different file")
 
         // Every request after the refresh used the new link, and none of them started from zero
         // for a chunk that was already partly on disk.
         val after = fileServer.requests.toList()
-        assertTrue("no request was made after the refresh", after.isNotEmpty())
+        assertTrue(after.isNotEmpty(), "no request was made after the refresh")
         assertTrue(
-            "a request still used the stale link",
             after.all { it.query == "token=new" && it.cookie == "session=new" }
-        )
+        , "a request still used the stale link")
         assertTrue(
-            "the refreshed headers were not sent",
             after.all { it.headers["x-refresh"] == listOf("yes") }
-        )
-        assertTrue("the download restarted instead of resuming", after.any { it.rangeStart > 0 })
+        , "the refreshed headers were not sent")
+        assertTrue(after.any { it.rangeStart > 0 }, "the download restarted instead of resuming")
     }
 
     @Test
@@ -104,6 +99,6 @@ class DownloadManagerRefreshLinkTest : DownloadManagerTestBase() {
         val info = taskDB.getHttpTask(task.id)
         assertNotNull(info)
         assertEquals("session=new", info!!.cookie)
-        assertFalse("the old cookie survived the refresh", info.cookie!!.contains("session=old"))
+        assertFalse(info.cookie!!.contains("session=old"), "the old cookie survived the refresh")
     }
 }

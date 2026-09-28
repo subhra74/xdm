@@ -1,6 +1,8 @@
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Test
+package xdm.core
+
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.downloaders.web.http.HttpDownloaderTask
@@ -25,7 +27,7 @@ class TestHttpStalls : HttpDownloadTestBase() {
 
     private val started = ArrayList<HttpDownloaderTask>()
 
-    @org.junit.After
+    @org.junit.jupiter.api.AfterEach
     fun stopStarted() {
         started.forEach { runCatching { it.stop() } }
     }
@@ -42,10 +44,10 @@ class TestHttpStalls : HttpDownloadTestBase() {
         val host = host()
         task(80, "/stall-once", host, TestConfig(maxSegments = 1)).start()
 
-        assertTrue("download hung on a stalled connection", host.latch.await(30, TimeUnit.SECONDS))
+        assertTrue(host.latch.await(30, TimeUnit.SECONDS), "download hung on a stalled connection")
         assertDownloaded(host, bytes)
-        assertTrue("expected a reconnect after the stall", ep.connCount.get() >= 2)
-        assertTrue("retry must resume, not restart", ep.requests.drop(1).any { it.rangeStart > 0 })
+        assertTrue(ep.connCount.get() >= 2, "expected a reconnect after the stall")
+        assertTrue(ep.requests.drop(1).any { it.rangeStart > 0 }, "retry must resume, not restart")
     }
 
     @Test
@@ -55,7 +57,7 @@ class TestHttpStalls : HttpDownloadTestBase() {
         val host = host()
         task(81, "/stall-always", host, TestConfig(maxSegments = 1, maxRetries = 1)).start()
 
-        assertTrue("download hung instead of failing", host.latch.await(40, TimeUnit.SECONDS))
+        assertTrue(host.latch.await(40, TimeUnit.SECONDS), "download hung instead of failing")
         assertEquals(DownloadError.NetworkError, host.failure)
     }
 
@@ -80,13 +82,12 @@ class TestHttpStalls : HttpDownloadTestBase() {
         Thread.sleep(500) // blocked in the stalled read
 
         t.stop()
-        assertTrue("pause not acknowledged", host.pauseLatch.await(5, TimeUnit.SECONDS))
+        assertTrue(host.pauseLatch.await(5, TimeUnit.SECONDS), "pause not acknowledged")
         val released = waitFor(3000) { (chunkThreads() - before).isEmpty() }
         assertTrue(
+            released,
             "chunk thread still blocked after Pause:\n" + (chunkThreads() - before).joinToString("\n\n") { th ->
                 th.name + "\n" + th.stackTrace.take(15).joinToString("\n") { "  at $it" }
-            },
-            released
-        )
+            })
     }
 }

@@ -1,9 +1,11 @@
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Test
+package xdm.core
+
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 import xdm.core.downloaders.web.streaming.manifest.hls.HlsMasterPlaylist
 import xdm.core.downloaders.web.streaming.manifest.hls.HlsPlaylist
 import xdm.core.downloaders.web.streaming.manifest.hls.HlsParser
@@ -110,7 +112,7 @@ class TestHlsParser {
             v.mp4
             """
         )
-        assertTrue("EXT-X-I-FRAMES-ONLY should set keyFrameOnly", p.keyFrameOnly)
+        assertTrue(p.keyFrameOnly, "EXT-X-I-FRAMES-ONLY should set keyFrameOnly")
     }
 
     @Test
@@ -123,7 +125,7 @@ class TestHlsParser {
             a.ts
             """
         )
-        assertTrue("EXT-X-INDEPENDENT-SEGMENTS should set independent", p.independent)
+        assertTrue(p.independent, "EXT-X-INDEPENDENT-SEGMENTS should set independent")
     }
 
     // ---------------------------------------------------------------------------------------
@@ -172,7 +174,7 @@ class TestHlsParser {
             """
         )
         assertEquals(Pair(0L, 2000L), p.mediaSegments[0].byteRange)
-        assertNull("segment without its own BYTERANGE must not inherit one", p.mediaSegments[1].byteRange)
+        assertNull(p.mediaSegments[1].byteRange, "segment without its own BYTERANGE must not inherit one")
     }
 
     // ---------------------------------------------------------------------------------------
@@ -266,13 +268,13 @@ class TestHlsParser {
             clear1.ts
             """
         )
-        assertTrue("any encrypted segment => playlist encrypted", p.encrypted)
+        assertTrue(p.encrypted, "any encrypted segment => playlist encrypted")
         assertTrue(p.mediaSegments[0].encrypted)
         assertEquals("https://host.example/path/enc.key", p.mediaSegments[0].keyUrl)
 
         assertFalse(p.mediaSegments[1].encrypted)
-        assertNull("clear segment must not carry a stale keyUrl", p.mediaSegments[1].keyUrl)
-        assertNull("clear segment must not carry a stale iv", p.mediaSegments[1].iv)
+        assertNull(p.mediaSegments[1].keyUrl, "clear segment must not carry a stale keyUrl")
+        assertNull(p.mediaSegments[1].iv, "clear segment must not carry a stale iv")
     }
 
     @Test
@@ -300,7 +302,7 @@ class TestHlsParser {
             a.ts
             """
         )
-        assertTrue("non-identity KEYFORMAT should not parse as plain AES-128", r.isFailure)
+        assertTrue(r.isFailure, "non-identity KEYFORMAT should not parse as plain AES-128")
     }
 
     @Test
@@ -313,12 +315,11 @@ class TestHlsParser {
             a.ts
             """
         )
-        assertTrue("SAMPLE-AES is not supported and should fail", r.isFailure)
+        assertTrue(r.isFailure, "SAMPLE-AES is not supported and should fail")
         // Only full-segment AES-128 is supported; the rejection should name SAMPLE-AES explicitly.
         assertTrue(
-            "expected an explicit SAMPLE-AES message, got: ${r.exceptionOrNull()?.message}",
             r.exceptionOrNull()?.message?.contains("SAMPLE-AES") == true
-        )
+        , "expected an explicit SAMPLE-AES message, got: ${r.exceptionOrNull()?.message}")
     }
 
     // ---------------------------------------------------------------------------------------
@@ -340,7 +341,7 @@ class TestHlsParser {
             """
         )
         assertFalse(p.mediaSegments[0].discontinuity)
-        assertTrue("segment after EXT-X-DISCONTINUITY should be flagged", p.mediaSegments[1].discontinuity)
+        assertTrue(p.mediaSegments[1].discontinuity, "segment after EXT-X-DISCONTINUITY should be flagged")
         assertFalse(p.mediaSegments[2].discontinuity)
         assertTrue(p.hasDiscontinuity)
     }

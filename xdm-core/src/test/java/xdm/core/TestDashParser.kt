@@ -1,7 +1,9 @@
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertTrue
-import org.junit.Test
+package xdm.core
+
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 import xdm.core.downloaders.web.streaming.manifest.dash.MpdEntry
 import xdm.core.downloaders.web.streaming.manifest.dash.XlinkResolver
 import xdm.core.downloaders.web.streaming.manifest.dash.parseMpdManifest
@@ -42,20 +44,17 @@ class TestDashParser {
 
         // Video resolves against the document URL, NOT the audio AdaptationSet's BaseURL.
         assertTrue(
-            "video segments should resolve against the document base, got $videoUrls",
             videoUrls.all { it.startsWith("https://storage.googleapis.com/bitmovin-demos/av1/AV1_480/video/480/") }
-        )
+        , "video segments should resolve against the document base, got $videoUrls")
         assertTrue(
-            "video segments must not leak the audio BaseURL host, got $videoUrls",
             videoUrls.none { it.contains("audio.example.com") }
-        )
+        , "video segments must not leak the audio BaseURL host, got $videoUrls")
         assertNotNull(videoUrls.firstOrNull { it.endsWith("/AV1_480/video/480/segment_0.chk") })
 
         // Audio still resolves against its own BaseURL.
         assertTrue(
-            "audio segments should resolve against the audio BaseURL, got $audioUrls",
             audioUrls.all { it.startsWith("https://audio.example.com/mozillaAV1/base_v1/audio/") }
-        )
+        , "audio segments should resolve against the audio BaseURL, got $audioUrls")
     }
 
     /** `$$` is the DASH escape for a literal `$`; it must not leave a stray space behind. */
@@ -75,8 +74,8 @@ class TestDashParser {
             """
         )
         val urls = entries.first().video!!.segments.map { it.toString() }
-        assertTrue("expected a literal \$ with no stray space, got $urls", urls.any { it.endsWith("/seg-\$-0.m4s") })
-        assertTrue("no segment URL should contain a space, got $urls", urls.none { it.contains(" ") })
+        assertTrue(urls.any { it.endsWith("/seg-\$-0.m4s") }, "expected a literal \$ with no stray space, got $urls")
+        assertTrue(urls.none { it.contains(" ") }, "no segment URL should contain a space, got $urls")
     }
 
     /** With `$Time$` simple addressing, presentation time starts at 0, not startNumber. */
@@ -149,7 +148,7 @@ class TestDashParser {
         )
         val durations = entries.mapNotNull { it.video?.duration }.toSet()
         // Period 1 duration = 4s; period 2 duration = 10s - 4s = 6s.
-        assertTrue("expected period durations 4000 and 6000, got $durations", durations.containsAll(listOf(4000L, 6000L)))
+        assertTrue(durations.containsAll(listOf(4000L, 6000L)), "expected period durations 4000 and 6000, got $durations")
         // Segment counts follow from those durations (4 and 6 one-second segments).
         val p1 = entries.first { it.video!!.segments.first().toString().contains("p1-") }.video!!
         val p2 = entries.first { it.video!!.segments.first().toString().contains("p2-") }.video!!
@@ -214,7 +213,7 @@ class TestDashParser {
         val entries = parse(mpd, resolver = XlinkResolver { error("resolve-to-zero must not fetch") })
         // Only the local period survives.
         val urls = entries.map { it.video!!.segments.first().toString().substringAfterLast('/') }
-        assertTrue("resolve-to-zero period should be gone, got $urls", urls.all { it.startsWith("local-") })
+        assertTrue(urls.all { it.startsWith("local-") }, "resolve-to-zero period should be gone, got $urls")
     }
 
     /** With no resolver, an xlink placeholder is dropped (not an error) and inline periods still parse. */
@@ -264,6 +263,6 @@ class TestDashParser {
         """
         val entries = parse(mpd, resolver = XlinkResolver { twoPeriods })
         val prefixes = entries.map { it.video!!.segments.first().toString().substringAfterLast('/').substringBefore('-') }
-        assertTrue("expected both remote periods spliced, got $prefixes", prefixes.containsAll(listOf("a", "b")))
+        assertTrue(prefixes.containsAll(listOf("a", "b")), "expected both remote periods spliced, got $prefixes")
     }
 }

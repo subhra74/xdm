@@ -1,6 +1,8 @@
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Test
+package xdm.core
+
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 import xdm.core.downloaders.web.http.Chunk
 import xdm.core.downloaders.web.http.ChunkStatus
 import xdm.core.downloaders.web.http.HttpChunkRetriever
@@ -110,10 +112,9 @@ class TestHttpResumeCompletedChunk : HttpDownloadTestBase() {
 
         val settled = host.latch.await(10, TimeUnit.SECONDS)
         assertTrue(
+            settled,
             "resume never completed; chunk thread deadlocked upgrading read->write lock:\n" +
-                stuckChunkThreads(),
-            settled
-        )
+                stuckChunkThreads())
         awaitSuccess(host, 0)
         assertDownloaded(host, bytes)
     }
@@ -133,10 +134,9 @@ class TestHttpResumeCompletedChunk : HttpDownloadTestBase() {
         task.stop()
         val settled = host.latch.count == 0L || host.pauseLatch.await(5, TimeUnit.SECONDS)
         assertTrue(
+            settled,
             "stop() never delivered onDownloadPaused/onDownloadSuccess; write lock is held hostage:\n" +
-                stuckChunkThreads(),
-            settled
-        )
+                stuckChunkThreads())
     }
 
     @Test
@@ -155,13 +155,12 @@ class TestHttpResumeCompletedChunk : HttpDownloadTestBase() {
         newTaskForUrl(id, server.url("/partial"), host, TestConfig(maxSegments = 2)).resume()
 
         val settled = host.latch.await(15, TimeUnit.SECONDS)
-        assertTrue("resume never completed; stuck chunk threads:\n" + stuckChunkThreads(), settled)
+        assertTrue( settled,"resume never completed; stuck chunk threads:\n" + stuckChunkThreads())
         awaitSuccess(host, 0)
         assertDownloaded(host, bytes)
         assertTrue(
-            "complete chunk was downloaded again: ${ep.requests.map { it.rangeStart }}",
             ep.requests.none { it.rangeStart < half }
-        )
+        , "complete chunk was downloaded again: ${ep.requests.map { it.rangeStart }}")
     }
 
     /**
@@ -186,7 +185,7 @@ class TestHttpResumeCompletedChunk : HttpDownloadTestBase() {
             .apply { isDaemon = true; start() }
 
         val settled = host.latch.await(10, TimeUnit.SECONDS)
-        assertTrue("isAlreadyDone did not finish the download; stuck:\n" + stuckChunkThreads(), settled)
+        assertTrue( settled,"isAlreadyDone did not finish the download; stuck:\n" + stuckChunkThreads())
         awaitSuccess(host, 0)
         assertDownloaded(host, bytes)
         assertEquals(ChunkStatus.Finished, ctx.chunks[2L]!!.status.get())

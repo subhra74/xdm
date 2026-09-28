@@ -1,7 +1,9 @@
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Test
+package xdm.core
+
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.downloaders.web.http.HttpDownloaderTask
@@ -38,13 +40,12 @@ class TestHttpRetryHandling : HttpDownloadTestBase() {
 
         val settled = host.latch.await(15, TimeUnit.SECONDS)
         assertTrue(
-            "download hung after HTTP 429 (connections=${ep.connCount.get()}, " +
-                "live chunk threads=${liveChunkThreads().size})",
             settled
-        )
-        assertNull("unexpected failure: ${host.failure}", host.failure)
+        , "download hung after HTTP 429 (connections=${ep.connCount.get()}, " +
+                "live chunk threads=${liveChunkThreads().size})")
+        assertNull(host.failure, "unexpected failure: ${host.failure}")
         assertDownloaded(host, bytes)
-        assertTrue("expected a retry after the 429", ep.connCount.get() >= 2)
+        assertTrue(ep.connCount.get() >= 2, "expected a retry after the 429")
     }
 
     @Test
@@ -65,9 +66,8 @@ class TestHttpRetryHandling : HttpDownloadTestBase() {
         try {
             task.start()
             assertTrue(
-                "chunk thread died on an unexpected exception without reporting a failure",
                 host.latch.await(5, TimeUnit.SECONDS)
-            )
+            , "chunk thread died on an unexpected exception without reporting a failure")
             assertEquals(DownloadError.InternalError, host.failure)
         } finally {
             task.stop()
@@ -83,15 +83,14 @@ class TestHttpRetryHandling : HttpDownloadTestBase() {
         val task = newTask(id = 42, path = "/retrywait", host = host, maxSegments = 1)
         task.start()
 
-        assertTrue("no connection attempt", waitFor(5000) { ep.connCount.get() >= 1 })
+        assertTrue(waitFor(5000) { ep.connCount.get() >= 1 }, "no connection attempt")
         Thread.sleep(300) // let the thread enter the retry wait
         task.stop()
-        assertTrue("pause not acknowledged", host.pauseLatch.await(5, TimeUnit.SECONDS))
+        assertTrue(host.pauseLatch.await(5, TimeUnit.SECONDS), "pause not acknowledged")
 
         assertTrue(
-            "chunk thread kept sleeping through the retry delay after Pause",
             waitFor(1500) { liveChunkThreads().isEmpty() }
-        )
-        assertEquals("no request expected after Pause", 1, ep.connCount.get())
+        , "chunk thread kept sleeping through the retry delay after Pause")
+        assertEquals(1, ep.connCount.get(), "no request expected after Pause")
     }
 }

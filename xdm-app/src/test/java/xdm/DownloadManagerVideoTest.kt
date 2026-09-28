@@ -1,10 +1,10 @@
 package xdm
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotEquals
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 import xdm.core.downloaders.DashDownloadTaskInfo
 import xdm.core.downloaders.DownloadType
 import xdm.core.downloaders.web.streaming.manifest.dash.DashSegment
@@ -35,12 +35,11 @@ class DownloadManagerVideoTest : DownloadManagerTestBase() {
         tracker.addVideoHttp(listOf(source to StreamingVideoDisplayInfo()))
 
         val ids = downloadTwice(source.id)
-        assertEquals("records", 2, ids.size)
-        assertNotEquals("the two downloads share an id", ids[0], ids[1])
+        assertEquals(2, ids.size, "records")
+        assertNotEquals(ids[0], ids[1], "the two downloads share an id")
         assertEquals(
-            "each download keeps its own task info",
             listOf("first.mp4", "second.mp4"), ids.map { taskDB.getHttpTask(it)!!.fileName }
-        )
+        , "each download keeps its own task info")
         assertEquals(listOf(File(dir, "out1").absolutePath, File(dir, "out2").absolutePath),
             ids.map { taskDB.getHttpTask(it)!!.defaultDownloadFolder })
     }
@@ -51,10 +50,10 @@ class DownloadManagerVideoTest : DownloadManagerTestBase() {
         tracker.addVideoHls(listOf(source to StreamingVideoDisplayInfo()))
 
         val ids = downloadTwice(source.id)
-        assertEquals("records", 2, ids.size)
-        assertNotEquals("the two downloads share an id", ids[0], ids[1])
+        assertEquals(2, ids.size, "records")
+        assertNotEquals(ids[0], ids[1], "the two downloads share an id")
         val temps = ids.map { taskDB.getHlsTask(it)!!.tempDir }
-        assertNotEquals("the two downloads share a temp folder", temps[0], temps[1])
+        assertNotEquals(temps[0], temps[1], "the two downloads share a temp folder")
     }
 
     @Test
@@ -70,8 +69,8 @@ class DownloadManagerVideoTest : DownloadManagerTestBase() {
         tracker.addVideoDash(listOf(source to StreamingVideoDisplayInfo()))
 
         val ids = downloadTwice(source.id)
-        assertEquals("records", 2, ids.size)
-        assertNotEquals("the two downloads share an id", ids[0], ids[1])
+        assertEquals(2, ids.size, "records")
+        assertNotEquals(ids[0], ids[1], "the two downloads share an id")
         ids.forEach { assertNotNull(taskDB.getDashTask(it)) }
     }
 
@@ -100,8 +99,8 @@ class DownloadManagerVideoTest : DownloadManagerTestBase() {
         remember()
 
         val ids = recordIds()
-        assertEquals("records", 2, ids.size)
-        assertTrue("duplicate id in the downloads list: $ids", ids.toSet().size == 2)
+        assertEquals(2, ids.size, "records")
+        assertTrue(ids.toSet().size == 2, "duplicate id in the downloads list: $ids")
         assertEquals(DownloadType.Http, appDB.getById(ids[1])!!.downloadType)
         assertEquals("again.bin", taskDB.getHttpTask(ids[1])!!.fileName)
         assertEquals("f${task.id}.bin", taskDB.getHttpTask(task.id)!!.fileName)

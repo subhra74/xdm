@@ -1,7 +1,9 @@
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Before
-import org.junit.Test
+package xdm.core
+
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.web.http.ChunkStatus
 import xdm.core.downloaders.web.streaming.downloader.StreamingChunk
@@ -25,14 +27,14 @@ class TestStreamingResumeProgress {
     private val total = 64 * 1024
     private val alreadyOnDisk = 20 * 1024
 
-    @Before
+    @BeforeEach
     fun setup() {
         root = java.nio.file.Files.createTempDirectory("xdm-resume-progress").toFile()
         server = FileServer(root)
         client = HttpClientImpl(4)
     }
 
-    @After
+    @AfterEach
     fun tearDown() {
         client.close()
         server.stop()
@@ -81,10 +83,10 @@ class TestStreamingResumeProgress {
         val piece = chunk(server.url("seg.ts"), alreadyOnDisk.toLong())
         run(piece, tempFile)
 
-        assertEquals("segment must finish", ChunkStatus.Finished, piece.status.get())
-        assertEquals("length must be the whole segment", total.toLong(), piece.length.get())
-        assertEquals("downloaded must be the whole segment", total.toLong(), piece.downloaded.get())
-        assertEquals("the resumed file must match the source", body.toList(), tempFile.readBytes().toList())
+        assertEquals(ChunkStatus.Finished, piece.status.get(), "segment must finish")
+        assertEquals(total.toLong(), piece.length.get(), "length must be the whole segment")
+        assertEquals(total.toLong(), piece.downloaded.get(), "downloaded must be the whole segment")
+        assertEquals(body.toList(), tempFile.readBytes().toList(), "the resumed file must match the source")
     }
 
     @Test

@@ -1,6 +1,8 @@
-import org.junit.Assert.assertEquals
-import org.junit.Assume
-import org.junit.Test
+package xdm.core
+
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assumptions
+import org.junit.jupiter.api.Test
 import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.HlsDownloadTaskInfo
 import xdm.core.downloaders.HttpDownloadTaskInfo
@@ -145,8 +147,8 @@ class TestHlsE2E : StreamingE2EBase() {
             "-hls_segment_type", "mpegts", "-hls_list_size", "0",
             "-hls_segment_filename", File(d, "media.ts").path, File(d, "index.m3u8").path
         )
-        Assume.assumeTrue("expected single-file byte-range playlist",
-            File(d, "index.m3u8").readText().contains("EXT-X-BYTERANGE"))
+        Assumptions.assumeTrue(
+            File(d, "index.m3u8").readText().contains("EXT-X-BYTERANGE"), "expected single-file byte-range playlist")
         val h = runHls("h5", url("h5/index.m3u8"))
         verifyOutput(h, expectVideo = true, expectAudio = true, minDuration = 2.0)
     }
@@ -317,7 +319,7 @@ class TestHlsE2E : StreamingE2EBase() {
     // ---- H11: HEVC / H.265 in TS ------------------------------------------------------------
     @Test fun h11_hevcInTs() {
         requireFfmpeg()
-        Assume.assumeTrue("libx265 not available", hasEncoder("libx265"))
+        Assumptions.assumeTrue(hasEncoder("libx265"), "libx265 not available")
         val d = caseDir("h11")
         ffmpeg(
             "-f", "lavfi", "-i", "testsrc=size=320x240:rate=25",
@@ -330,14 +332,14 @@ class TestHlsE2E : StreamingE2EBase() {
         val h = runHls("h11", url("h11/index.m3u8"))
         verifyOutput(h, expectVideo = true, expectAudio = true, minDuration = 1.0)
         probeCodecs(h.finalFile!!.absolutePath)?.let {
-            Assume.assumeTrue("expected hevc video, got $it", it.contains("hevc"))
+            Assumptions.assumeTrue(it.contains("hevc"), "expected hevc video, got $it")
         }
     }
 
     // ---- H12: AC-3 audio --------------------------------------------------------------------
     @Test fun h12_ac3Audio() {
         requireFfmpeg()
-        Assume.assumeTrue("ac3 encoder not available", hasEncoder("ac3"))
+        Assumptions.assumeTrue(hasEncoder("ac3"), "ac3 encoder not available")
         val d = caseDir("h12")
         ffmpeg(
             "-f", "lavfi", "-i", "testsrc=size=320x240:rate=25",
@@ -392,6 +394,6 @@ class TestHlsE2E : StreamingE2EBase() {
         HlsDownloaderTask(info, newClient(), muxer(), h, root.absolutePath, config()).start()
         val err = awaitFailure(h)
         // The manifest never parses, so init fails -> InvalidResponse (not a mux error).
-        org.junit.Assert.assertEquals(DownloadError.InvalidResponse, err)
+        org.junit.jupiter.api.Assertions.assertEquals(DownloadError.InvalidResponse, err)
     }
 }

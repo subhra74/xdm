@@ -1,10 +1,12 @@
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Before
-import org.junit.Test
+package xdm.core
+
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import xdm.core.downloaders.DownloadError
 import xdm.core.util.FileUtils
 import xdm.core.util.MoveOps
@@ -27,14 +29,14 @@ class TestFileMove {
     private lateinit var dst: File
     private val content = ByteArray(200_000) { (it % 251).toByte() }
 
-    @Before
+    @BeforeEach
     fun setup() {
         dir = Files.createTempDirectory("xdm-move").toFile()
         src = File(dir, "tmp/video.part").apply { parentFile.mkdirs(); writeBytes(content) }
         dst = File(dir, "out/video.mp4").apply { parentFile.mkdirs() }
     }
 
-    @After
+    @AfterEach
     fun tearDown() {
         dir.deleteRecursively()
     }
@@ -68,7 +70,7 @@ class TestFileMove {
         assertNull(FileUtils.moveFile(src, dst, OtherVolume()))
         assertFalse(src.exists())
         assertTrue(content.contentEquals(dst.readBytes()))
-        assertEquals("no .part left behind", emptyList<File>(), partFiles())
+        assertEquals(emptyList<File>(), partFiles(), "no .part left behind")
     }
 
     @Test
@@ -80,9 +82,9 @@ class TestFileMove {
             }
         }
         assertEquals(DownloadError.OutputWriteError, FileUtils.moveFile(src, dst, failing))
-        assertTrue("source must survive for a retry", src.exists())
-        assertFalse("no partial file at the final name", dst.exists())
-        assertEquals("no .part left behind", emptyList<File>(), partFiles())
+        assertTrue(src.exists(), "source must survive for a retry")
+        assertFalse(dst.exists(), "no partial file at the final name")
+        assertEquals(emptyList<File>(), partFiles(), "no .part left behind")
     }
 
     @Test
@@ -92,8 +94,8 @@ class TestFileMove {
             seen.add(copied)
             true
         })
-        assertTrue("progress must be reported while copying", seen.isNotEmpty())
-        assertEquals("last report is the whole file", content.size.toLong(), seen.last())
+        assertTrue(seen.isNotEmpty(), "progress must be reported while copying")
+        assertEquals(content.size.toLong(), seen.last(), "last report is the whole file")
         assertTrue(content.contentEquals(dst.readBytes()))
     }
 
@@ -101,17 +103,17 @@ class TestFileMove {
     fun cancelledCopy_keepsSourceAndPublishesNothing() {
         val error = FileUtils.moveFile(src, dst, OtherVolume(), id = 7) { false }
         assertEquals(DownloadError.Cancelled, error)
-        assertTrue("source must survive so the publish can be retried", src.exists())
+        assertTrue(src.exists(), "source must survive so the publish can be retried")
         assertTrue(content.contentEquals(src.readBytes()))
-        assertFalse("nothing under the real name", dst.exists())
-        assertEquals("no scratch file left behind", emptyList<File>(), partFiles())
+        assertFalse(dst.exists(), "nothing under the real name")
+        assertEquals(emptyList<File>(), partFiles(), "no scratch file left behind")
     }
 
     @Test
     fun sameVolumeMove_isNotReportedAsProgress() {
         var called = false
         assertNull(FileUtils.moveFile(src, dst, id = 7) { called = true; true })
-        assertFalse("a rename moves no bytes, so there is nothing to report", called)
+        assertFalse(called, "a rename moves no bytes, so there is nothing to report")
     }
 
     @Test

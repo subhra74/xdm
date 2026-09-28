@@ -1,11 +1,13 @@
+package xdm.core
+
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
-import org.junit.After
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Assume
-import org.junit.Before
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assumptions
+import org.junit.jupiter.api.BeforeEach
 import xdm.core.CoreConfig
 import xdm.core.downloaders.CommitResult
 import xdm.core.downloaders.DownloadError
@@ -42,13 +44,13 @@ abstract class StreamingE2EBase {
     private val clients = CopyOnWriteArrayList<HttpClientImpl>()
     protected val hosts = CopyOnWriteArrayList<StreamingTestHost>()
 
-    @Before
+    @BeforeEach
     fun setup() {
         root = java.nio.file.Files.createTempDirectory("xdm-stream-e2e").toFile()
         server = FileServer(root)
     }
 
-    @After
+    @AfterEach
     fun tearDown() {
         hosts.forEach { runCatching { it.stopFlag.set(true) } }
         Thread.sleep(150)
@@ -76,16 +78,16 @@ abstract class StreamingE2EBase {
     protected fun url(relPath: String): String = server.url(relPath)
 
     protected fun awaitSuccess(host: StreamingTestHost, timeoutSec: Long = 60) {
-        assertTrue("download did not finish within ${timeoutSec}s", host.latch.await(timeoutSec, TimeUnit.SECONDS))
-        assertNull("unexpected failure: ${host.failure}", host.failure)
-        assertNotNull("expected success info", host.success)
-        assertNotNull("no committed file", host.finalFile)
-        assertTrue("output too small: ${host.finalFile?.length()}", (host.finalFile?.length() ?: 0) > 2_000)
+        assertTrue(host.latch.await(timeoutSec, TimeUnit.SECONDS), "download did not finish within ${timeoutSec}s")
+        assertNull(host.failure, "unexpected failure: ${host.failure}")
+        assertNotNull(host.success, "expected success info")
+        assertNotNull(host.finalFile, "no committed file")
+        assertTrue((host.finalFile?.length() ?: 0) > 2_000, "output too small: ${host.finalFile?.length()}")
     }
 
     protected fun awaitFailure(host: StreamingTestHost, timeoutSec: Long = 60): DownloadError {
-        assertTrue("download did not settle within ${timeoutSec}s", host.latch.await(timeoutSec, TimeUnit.SECONDS))
-        assertNotNull("expected a failure", host.failure)
+        assertTrue(host.latch.await(timeoutSec, TimeUnit.SECONDS), "download did not settle within ${timeoutSec}s")
+        assertNotNull(host.failure, "expected a failure")
         return host.failure!!
     }
 
@@ -113,7 +115,7 @@ abstract class StreamingE2EBase {
     }
 
     protected fun requireFfmpeg() {
-        Assume.assumeTrue("ffmpeg not on PATH; skipping", ffmpeg != null)
+        Assumptions.assumeTrue(ffmpeg != null, "ffmpeg not on PATH; skipping")
     }
 
     /** Runs ffmpeg; fails the test on non-zero exit. */
@@ -168,11 +170,11 @@ abstract class StreamingE2EBase {
     ) {
         val f = host.finalFile!!
         val types = probeStreamTypes(f.absolutePath) ?: return
-        if (expectVideo) assertTrue("expected a video stream, got $types", types.contains("video"))
-        if (expectAudio) assertTrue("expected an audio stream, got $types", types.contains("audio"))
-        if (!expectVideo) assertTrue("unexpected video stream in $types", !types.contains("video"))
+        if (expectVideo) assertTrue(types.contains("video"), "expected a video stream, got $types")
+        if (expectAudio) assertTrue(types.contains("audio"), "expected an audio stream, got $types")
+        if (!expectVideo) assertTrue(!types.contains("video"), "unexpected video stream in $types")
         val dur = probeDuration(f.absolutePath)
-        assertTrue("duration too short ($dur < $minDuration)", dur < 0 || dur >= minDuration)
+        assertTrue(dur < 0 || dur >= minDuration, "duration too short ($dur < $minDuration)")
     }
 }
 

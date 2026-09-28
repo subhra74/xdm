@@ -1,10 +1,12 @@
-import org.junit.After
-import org.junit.Assert.assertArrayEquals
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Before
+package xdm.core
+
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertArrayEquals
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
 import xdm.core.CoreConfig
 import xdm.core.downloaders.CommitResult
 import xdm.core.downloaders.DownloadError
@@ -43,7 +45,7 @@ abstract class HttpDownloadTestBase {
     private val tasks = CopyOnWriteArrayList<HttpDownloaderTask>()
     protected val rawServers = CopyOnWriteArrayList<RawDropServer>()
 
-    @Before
+    @BeforeEach
     fun setup() {
         server = MockHttpServer()
         work = Files.createTempDirectory("xdm-http-test").toFile()
@@ -51,7 +53,7 @@ abstract class HttpDownloadTestBase {
         outDir = File(work, "out").apply { mkdirs() }
     }
 
-    @After
+    @AfterEach
     fun tearDown() {
         // Stop every task first so no retriever thread survives the test (a timed-out download
         // would otherwise leave threads spinning against the now-stopped server).
@@ -99,20 +101,20 @@ abstract class HttpDownloadTestBase {
     protected fun host() = TestDownloadHost(work.absolutePath, tmpDir.absolutePath, outDir.absolutePath)
 
     protected fun awaitSuccess(host: TestDownloadHost, timeoutSec: Long = 30) {
-        assertTrue("download did not finish within ${timeoutSec}s", host.latch.await(timeoutSec, TimeUnit.SECONDS))
-        assertNull("unexpected failure: ${host.failure}", host.failure)
-        assertNotNull("expected success info", host.success)
+        assertTrue(host.latch.await(timeoutSec, TimeUnit.SECONDS), "download did not finish within ${timeoutSec}s")
+        assertNull(host.failure, "unexpected failure: ${host.failure}")
+        assertNotNull(host.success, "expected success info")
     }
 
     protected fun awaitDone(host: TestDownloadHost, timeoutSec: Long = 30) {
-        assertTrue("download did not settle within ${timeoutSec}s", host.latch.await(timeoutSec, TimeUnit.SECONDS))
+        assertTrue(host.latch.await(timeoutSec, TimeUnit.SECONDS), "download did not settle within ${timeoutSec}s")
     }
 
     protected fun assertDownloaded(host: TestDownloadHost, expected: ByteArray) {
         val f = host.finalFile
-        assertNotNull("no final file committed", f)
-        assertEquals("file size mismatch", expected.size.toLong(), f!!.length())
-        assertArrayEquals("file content mismatch", expected, f.readBytes())
+        assertNotNull(f, "no final file committed")
+        assertEquals(expected.size.toLong(), f!!.length(), "file size mismatch")
+        assertArrayEquals(expected, f.readBytes(), "file content mismatch")
     }
 
     /** SHA-256 of a byte array, hex-encoded. Used for content-integrity assertions. */
@@ -140,9 +142,9 @@ abstract class HttpDownloadTestBase {
      */
     protected fun assertChecksumMatches(host: TestDownloadHost, expected: ByteArray) {
         val f = host.finalFile
-        assertNotNull("no final file committed", f)
-        assertEquals("file size mismatch", expected.size.toLong(), f!!.length())
-        assertEquals("SHA-256 checksum mismatch", sha256(expected), sha256(f))
+        assertNotNull(f, "no final file committed")
+        assertEquals(expected.size.toLong(), f!!.length(), "file size mismatch")
+        assertEquals(sha256(expected), sha256(f), "SHA-256 checksum mismatch")
     }
 
     protected fun randomData(size: Int, seed: Long): ByteArray {

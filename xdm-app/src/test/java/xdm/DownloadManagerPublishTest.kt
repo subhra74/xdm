@@ -1,9 +1,9 @@
 package xdm
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 import xdm.core.downloaders.CommitResult
 import xdm.core.downloaders.DownloadType
 import java.io.File
@@ -27,7 +27,7 @@ class DownloadManagerPublishTest : DownloadManagerTestBase() {
 
         val expected = File(config.tempFolder, task.id.toString())
         assertEquals(expected.absolutePath, tempDir(task.id))
-        assertTrue("the temp folder must exist before the first byte is written", expected.isDirectory)
+        assertTrue(expected.isDirectory, "the temp folder must exist before the first byte is written")
     }
 
     @Test
@@ -67,7 +67,7 @@ class DownloadManagerPublishTest : DownloadManagerTestBase() {
         val result = commit(task.id, tmp, DownloadType.Http) as CommitResult.Success
         assertEquals("file.bin", result.fileName)
         assertEquals("downloaded", File(out, "file.bin").readText())
-        assertFalse("nothing renamed aside", File(out, "file_1.bin").exists())
+        assertFalse(File(out, "file_1.bin").exists(), "nothing renamed aside")
     }
 
     @Test
@@ -81,8 +81,8 @@ class DownloadManagerPublishTest : DownloadManagerTestBase() {
         val tmp = File(dir, "src.tmp").apply { writeText("downloaded") }
 
         assertTrue(commit(task.id, tmp, DownloadType.Http) is CommitResult.Failed)
-        assertEquals("existing file untouched", "someone else's file", File(out, "file.bin").readText())
-        assertTrue("source kept for a retry", tmp.exists())
+        assertEquals("someone else's file", File(out, "file.bin").readText(), "existing file untouched")
+        assertTrue(tmp.exists(), "source kept for a retry")
     }
 
     @Test

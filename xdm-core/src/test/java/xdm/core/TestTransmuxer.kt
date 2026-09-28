@@ -1,6 +1,8 @@
-import org.junit.Assume
-import org.junit.BeforeClass
-import org.junit.Test
+package xdm.core
+
+import org.junit.jupiter.api.Assumptions
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
 import xdm.core.media.muxer.impl.TransmuxingMuxer
 import xdm.core.media.muxer.transmux.es.SampleSink
 import xdm.core.media.muxer.transmux.mkv.MatroskaDemuxer
@@ -25,7 +27,7 @@ class TestTransmuxer {
         private val workDir = File(System.getProperty("java.io.tmpdir"), "xdm-transmux-test")
         private var ffmpeg: String? = null
 
-        @BeforeClass
+        @BeforeAll
         @JvmStatic
         fun setup() {
             ffmpeg = which("ffmpeg")
@@ -113,7 +115,7 @@ class TestTransmuxer {
     private fun seg(prefix: String) = workDir.listFiles { f -> f.name.matches(Regex("$prefix\\d+\\.ts")) }
         ?.sortedBy { it.name }?.map { it.absolutePath } ?: emptyList()
 
-    private fun requireFfmpeg() = Assume.assumeTrue("ffmpeg not on PATH; skipping", ffmpeg != null)
+    private fun requireFfmpeg() = Assumptions.assumeTrue(ffmpeg != null, "ffmpeg not on PATH; skipping")
 
     /** Runs ffprobe (if present) and returns the codec_type of each stream, else null. */
     private fun ffprobeStreams(path: String): List<String>? {
@@ -151,7 +153,7 @@ class TestTransmuxer {
         val media = workDir.listFiles { f -> f.name.matches(Regex("fmp\\d+\\.m4s")) }
             ?.sortedBy { it.name }?.map { it.absolutePath } ?: emptyList()
         val list = listOf(File(workDir, "fmp4.mp4").absolutePath) + media
-        Assume.assumeTrue("no fmp4 segments", media.isNotEmpty())
+        Assumptions.assumeTrue(media.isNotEmpty(), "no fmp4 segments")
         val out = File(workDir, "from_fmp4.mp4").absolutePath
         val ok = TransmuxingMuxer("/nonexistent-appdir").mux(list, out, {}, workDir.path, false, true)
         assert(ok) { "fmp4 mux returned false" }
@@ -162,7 +164,7 @@ class TestTransmuxer {
     fun progressiveWholeMp4() {
         requireFfmpeg()
         val whole = File(workDir, "whole.mp4")
-        Assume.assumeTrue("no whole.mp4", whole.exists())
+        Assumptions.assumeTrue(whole.exists(), "no whole.mp4")
         val out = File(workDir, "from_whole.mp4").absolutePath
         val ok = TransmuxingMuxer("/nonexistent-appdir").mux(listOf(whole.absolutePath), out, {}, workDir.path, true, true)
         assert(ok) { "progressive mux returned false" }
@@ -173,7 +175,7 @@ class TestTransmuxer {
     fun webmToMkv() {
         requireFfmpeg()
         val whole = File(workDir, "whole.webm")
-        Assume.assumeTrue("no whole.webm (VP9/Opus encoders?)", whole.exists() && whole.length() > 0)
+        Assumptions.assumeTrue(whole.exists() && whole.length() > 0, "no whole.webm (VP9/Opus encoders?)")
         val out = File(workDir, "from_webm.mkv")
         val ok = TransmuxingMuxer("/nonexistent-appdir")
             .mux(listOf(whole.absolutePath), out.absolutePath, {}, workDir.path, false, false)
@@ -193,7 +195,7 @@ class TestTransmuxer {
     fun separateWebmToMkv() {
         requireFfmpeg()
         val a = File(workDir, "a.webm"); val v = File(workDir, "v.webm")
-        Assume.assumeTrue("no separate webm fixtures", a.exists() && v.exists() && a.length() > 0 && v.length() > 0)
+        Assumptions.assumeTrue(a.exists() && v.exists() && a.length() > 0 && v.length() > 0, "no separate webm fixtures")
         val out = File(workDir, "merged.mkv")
         val ok = TransmuxingMuxer("/nonexistent-appdir")
             .mux(listOf(a.absolutePath), listOf(v.absolutePath), out.absolutePath, {}, workDir.path, false, false)
@@ -208,7 +210,7 @@ class TestTransmuxer {
     fun matroskaDemuxerRecoversMetadata() {
         requireFfmpeg()
         val whole = File(workDir, "whole.webm")
-        Assume.assumeTrue("no whole.webm", whole.exists() && whole.length() > 0)
+        Assumptions.assumeTrue(whole.exists() && whole.length() > 0, "no whole.webm")
         val writer = MkvWriter(File(workDir, "lowlevel.mkv").absolutePath)
         val demux = MatroskaDemuxer(writer)
         demux.parseSegment(whole.absolutePath)

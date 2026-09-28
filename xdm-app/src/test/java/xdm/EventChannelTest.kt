@@ -1,10 +1,10 @@
 package xdm
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.FixMethodOrder
-import org.junit.Test
-import org.junit.runners.MethodSorters
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.MethodOrderer
+import org.junit.jupiter.api.TestMethodOrder
+import org.junit.jupiter.api.Test
 import xdm.integration.EventChannel
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.CountDownLatch
@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit
  * Methods run in name order because [EventChannel] is a singleton and `zz_shutdown` latches it into
  * the shutting-down state for the rest of the JVM.
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(MethodOrderer.MethodName::class)
 class EventChannelTest {
 
     private fun awaitInThread(clientId: String, since: Long, timeoutMs: Long): ArrayBlockingQueue<EventChannel.Outcome> {
@@ -39,7 +39,7 @@ class EventChannelTest {
     fun b_upToDateClientParksUntilTimeout() {
         val started = System.currentTimeMillis()
         assertEquals(EventChannel.Outcome.TIMEOUT, EventChannel.await("b", EventChannel.currentVersion, 300))
-        assertTrue("should have waited for the timeout", System.currentTimeMillis() - started >= 250)
+        assertTrue(System.currentTimeMillis() - started >= 250, "should have waited for the timeout")
     }
 
     @Test
@@ -81,6 +81,6 @@ class EventChannelTest {
         assertEquals(EventChannel.Outcome.BYE, take(parked))
         // A poll that arrives after shutdown is told immediately rather than parked.
         Thread { assertEquals(EventChannel.Outcome.BYE, EventChannel.await("late", 0, 10_000)); late.countDown() }.start()
-        assertTrue("late poll should not park", late.await(2, TimeUnit.SECONDS))
+        assertTrue(late.await(2, TimeUnit.SECONDS), "late poll should not park")
     }
 }

@@ -180,6 +180,7 @@ class DownloadScheduler(private val appDB: AppDB, private val configDir: String)
     }
 
     private fun loadEntries() {
+        if (!AtomicIO.exists(scheduleFileName, configDir)) return
         AtomicIO.readTransacted(scheduleFileName, configDir) { inp ->
             val count = inp.readInt()
             repeat(count) {

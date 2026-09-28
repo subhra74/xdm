@@ -1,7 +1,7 @@
 package xdm
 
-import org.junit.After
-import org.junit.Before
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import xdm.app.AppConfig
 import xdm.app.AppContext
 import xdm.app.AppDB
@@ -41,7 +41,7 @@ abstract class DownloadManagerTestBase {
     private val everStarted = CopyOnWriteArrayList<DownloaderTask>()
     protected var nextId = 100L
 
-    @Before
+    @BeforeEach
     fun setup() {
         dir = Files.createTempDirectory("xdm-dm-test").toFile()
         server = ServerSocket(0)
@@ -77,7 +77,7 @@ abstract class DownloadManagerTestBase {
         ) { _, _, _ -> null } as IAppInstance
     }
 
-    @After
+    @AfterEach
     fun tearDown() {
         (activeSessions().values + everStarted).forEach { runCatching { it.stop() } }
         Thread.sleep(300)

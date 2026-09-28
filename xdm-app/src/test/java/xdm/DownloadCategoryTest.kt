@@ -1,10 +1,10 @@
 package xdm
 
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import xdm.app.AppConfig
 import xdm.app.AppContext
 import xdm.app.DownloadCategory
@@ -16,7 +16,7 @@ import java.nio.file.Files
 class DownloadCategoryTest {
     private lateinit var dir: File
 
-    @Before
+    @BeforeEach
     fun setup() {
         dir = Files.createTempDirectory("xdm-category").toFile()
         AppContext.config = AppConfig(dir.absolutePath).apply {
@@ -25,7 +25,7 @@ class DownloadCategoryTest {
         }
     }
 
-    @After
+    @AfterEach
     fun tearDown() {
         dir.deleteRecursively()
     }

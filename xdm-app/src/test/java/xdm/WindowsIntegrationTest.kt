@@ -1,14 +1,14 @@
 package xdm
 
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Assume.assumeTrue
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assumptions.assumeTrue
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import xdm.app.OS
 import xdm.app.utils.KeepAwake
 import xdm.app.utils.detectOS
@@ -26,12 +26,12 @@ class WindowsIntegrationTest {
 
     private val scratchKey = "Software\\XDM-Test-${ProcessHandle.current().pid()}"
 
-    @Before
+    @BeforeEach
     fun onlyOnWindows() {
-        assumeTrue("Windows only", detectOS() == OS.Windows)
+        assumeTrue(detectOS() == OS.Windows, "Windows only")
     }
 
-    @After
+    @AfterEach
     fun cleanUp() {
         if (detectOS() == OS.Windows) {
             Win32Registry.deleteTree(scratchKey)
@@ -66,9 +66,9 @@ class WindowsIntegrationTest {
         assertTrue(Win32Registry.setString(scratchKey, "Command", "x"))
         assertTrue(Win32Registry.deleteValue(scratchKey, "Command"))
         assertNull(Win32Registry.getString(scratchKey, "Command"))
-        assertTrue("deleting an absent value is not a failure", Win32Registry.deleteValue(scratchKey, "Command"))
+        assertTrue(Win32Registry.deleteValue(scratchKey, "Command"), "deleting an absent value is not a failure")
         assertTrue(Win32Registry.deleteTree(scratchKey))
-        assertTrue("deleting an absent key is not a failure", Win32Registry.deleteTree(scratchKey))
+        assertTrue(Win32Registry.deleteTree(scratchKey), "deleting an absent key is not a failure")
     }
 
     @Test
@@ -83,7 +83,7 @@ class WindowsIntegrationTest {
         val previous = Win32Power.setThreadExecutionState(
             Win32Power.ES_CONTINUOUS or Win32Power.ES_SYSTEM_REQUIRED
         )
-        assertTrue("SetThreadExecutionState reported failure", previous != 0)
+        assertTrue(previous != 0, "SetThreadExecutionState reported failure")
         assertTrue(Win32Power.setThreadExecutionState(Win32Power.ES_CONTINUOUS) != 0)
     }
 
@@ -91,13 +91,13 @@ class WindowsIntegrationTest {
     @Test
     fun keepAwakeThreadStartsAndIsGoneAfterRelease() {
         KeepAwake.acquire()
-        assertNotNull("inhibitor thread was not started", keepAwakeThread())
+        assertNotNull(keepAwakeThread(), "inhibitor thread was not started")
 
         KeepAwake.acquire() // idempotent: still exactly one
         assertEquals(1, Thread.getAllStackTraces().keys.count { it.name == KEEP_AWAKE_THREAD })
 
         KeepAwake.release()
-        assertFalse("inhibitor thread outlived the download", keepAwakeThread()?.isAlive ?: false)
+        assertFalse(keepAwakeThread()?.isAlive ?: false, "inhibitor thread outlived the download")
     }
 
     private fun keepAwakeThread(): Thread? =

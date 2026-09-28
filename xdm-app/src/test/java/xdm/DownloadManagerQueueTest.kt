@@ -1,8 +1,8 @@
 package xdm
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 import xdm.app.DbRecord
 import xdm.app.RecordStatus
 import xdm.core.downloaders.DownloadError
@@ -22,8 +22,8 @@ class DownloadManagerQueueTest : DownloadManagerTestBase() {
         dm.startHlsDownload(b)
         remember()
 
-        assertEquals("active downloads", 1, activeSessions().size)
-        assertEquals("queued downloads", listOf(b.id), queuedIds())
+        assertEquals(1, activeSessions().size, "active downloads")
+        assertEquals(listOf(b.id), queuedIds(), "queued downloads")
     }
 
     @Test
@@ -33,10 +33,10 @@ class DownloadManagerQueueTest : DownloadManagerTestBase() {
         dm.startHttpDownload(http)
         dm.startHlsDownload(hls)
         remember()
-        assertEquals("HLS must wait for the HTTP download", setOf(http.id), activeSessions().keys)
+        assertEquals(setOf(http.id), activeSessions().keys, "HLS must wait for the HTTP download")
 
         dm.stopDownload(http.id)
-        assertTrue("queued HLS download never started", waitFor { activeSessions().keys == setOf(hls.id) })
+        assertTrue(waitFor { activeSessions().keys == setOf(hls.id) }, "queued HLS download never started")
         remember()
     }
 
@@ -54,7 +54,7 @@ class DownloadManagerQueueTest : DownloadManagerTestBase() {
         host().onDownloadFailed(a.id, DownloadError.NetworkError) // duplicate
         remember()
 
-        assertEquals("only one queued download may take the freed slot", setOf(b.id), activeSessions().keys)
+        assertEquals(setOf(b.id), activeSessions().keys, "only one queued download may take the freed slot")
         assertEquals(listOf(c.id), queuedIds())
     }
 
@@ -79,7 +79,7 @@ class DownloadManagerQueueTest : DownloadManagerTestBase() {
         dm.startHttpDownload(b)
 
         dm.stopDownload(a.id)
-        assertTrue("queue stalled behind the missing task", waitFor { activeSessions().keys == setOf(b.id) })
+        assertTrue(waitFor { activeSessions().keys == setOf(b.id) }, "queue stalled behind the missing task")
         remember()
         assertEquals(RecordStatus.PAUSED, appDB.getById(missingId)!!.status)
     }
@@ -110,7 +110,7 @@ class DownloadManagerQueueTest : DownloadManagerTestBase() {
         remember()
 
         maxSeen = maxOf(maxSeen, activeSessions().size)
-        assertTrue("more than 2 downloads active at once: $maxSeen", maxSeen <= 2)
+        assertTrue(maxSeen <= 2, "more than 2 downloads active at once: $maxSeen")
         assertEquals(threads, activeSessions().size + queuedIds().size)
     }
 }

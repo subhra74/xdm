@@ -1,10 +1,10 @@
 package xdm
 
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import xdm.app.AppConfig
 import xdm.app.AppContext
 import xdm.app.CapturedVideoTracker
@@ -32,7 +32,7 @@ class SingleInstanceTest {
     private val shown = AtomicInteger()
     private val strays = mutableListOf<ServerSocket>()
 
-    @Before
+    @BeforeEach
     fun setup() {
         dir = Files.createTempDirectory("xdm-single-instance").toFile()
         AppContext.configDir = dir.absolutePath
@@ -48,7 +48,7 @@ class SingleInstanceTest {
         } as IAppInstance
     }
 
-    @After
+    @AfterEach
     fun tearDown() {
         releaseAcquiredPort()
         strays.forEach { runCatching { it.close() } }
@@ -85,7 +85,7 @@ class SingleInstanceTest {
         // Holding it means holding it: nothing else can bind while we are primary.
         val second = runCatching { ServerSocket().apply { bind(InetSocketAddress("127.0.0.1", port)) } }
         second.getOrNull()?.close()
-        assertTrue("the port should still be held by the primary instance", second.isFailure)
+        assertTrue(second.isFailure, "the port should still be held by the primary instance")
     }
 
     @Test
@@ -97,7 +97,7 @@ class SingleInstanceTest {
         val outcome = BrowserIntegration.acquire(arrayOf("xdm-app://launch"), port)
 
         assertEquals(BrowserIntegration.Acquired.AnotherInstance, outcome)
-        assertEquals("the running instance should have been asked to show itself", 1, shown.get())
+        assertEquals(1, shown.get(), "the running instance should have been asked to show itself")
     }
 
     @Test
@@ -106,7 +106,7 @@ class SingleInstanceTest {
         rudeListener(port)
 
         assertEquals(BrowserIntegration.Acquired.PortTaken, BrowserIntegration.acquire(emptyArray(), port))
-        assertEquals("nothing should have been asked to show a window", 0, shown.get())
+        assertEquals(0, shown.get(), "nothing should have been asked to show a window")
     }
 
     /**
@@ -130,7 +130,7 @@ class SingleInstanceTest {
 
         val outcome = BrowserIntegration.acquire(emptyArray(), port)
 
-        assertTrue("the fake instance was never probed", probed.await(5, TimeUnit.SECONDS))
+        assertTrue(probed.await(5, TimeUnit.SECONDS), "the fake instance was never probed")
         assertEquals(BrowserIntegration.Acquired.Primary, outcome)
     }
 

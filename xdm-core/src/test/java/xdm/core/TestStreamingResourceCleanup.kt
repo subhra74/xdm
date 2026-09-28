@@ -1,5 +1,7 @@
-import org.junit.Assert.assertTrue
-import org.junit.Test
+package xdm.core
+
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 import xdm.core.downloaders.HlsDownloadTaskInfo
 import xdm.core.downloaders.web.streaming.downloader.StreamingDownloaderTask
 import xdm.core.downloaders.web.streaming.downloader.hls.HlsDownloaderTask
@@ -64,8 +66,8 @@ class TestStreamingResourceCleanup : StreamingE2EBase() {
         task.start()
         awaitSuccess(h)
 
-        assertTrue("segment pool still running after success", waitFor(3000) { executorOf(task).isShutdown })
-        assertTrue("HTTP client not closed after success", waitFor(3000) { client.closeCount.get() >= 1 })
+        assertTrue(waitFor(3000) { executorOf(task).isShutdown }, "segment pool still running after success")
+        assertTrue(waitFor(3000) { client.closeCount.get() >= 1 }, "HTTP client not closed after success")
     }
 
     @Test
@@ -76,8 +78,8 @@ class TestStreamingResourceCleanup : StreamingE2EBase() {
         task.start()
         awaitFailure(h, 30)
 
-        assertTrue("segment pool still running after failure", waitFor(3000) { executorOf(task).isShutdown })
-        assertTrue("HTTP client not closed after failure", waitFor(3000) { client.closeCount.get() >= 1 })
+        assertTrue(waitFor(3000) { executorOf(task).isShutdown }, "segment pool still running after failure")
+        assertTrue(waitFor(3000) { client.closeCount.get() >= 1 }, "HTTP client not closed after failure")
     }
 
     @Test
@@ -101,15 +103,14 @@ class TestStreamingResourceCleanup : StreamingE2EBase() {
             val client = CountingHttpClient()
             val (task, h) = hlsTask("pause", slow.url("/index.m3u8"), client, maxSegments = 2)
             task.start()
-            assertTrue("segments never started", waitFor(10_000) { h.initInfo != null && downloadThreads().isNotEmpty() })
+            assertTrue(waitFor(10_000) { h.initInfo != null && downloadThreads().isNotEmpty() }, "segments never started")
 
             task.stop()
-            assertTrue("pause not acknowledged", h.latch.await(10, TimeUnit.SECONDS))
+            assertTrue(h.latch.await(10, TimeUnit.SECONDS), "pause not acknowledged")
             assertTrue(
-                "download thread still parked on the segment latch after Pause",
                 waitFor(3000) { downloadThreads().isEmpty() }
-            )
-            assertTrue("HTTP client not closed after pause", waitFor(3000) { client.closeCount.get() >= 1 })
+            , "download thread still parked on the segment latch after Pause")
+            assertTrue(waitFor(3000) { client.closeCount.get() >= 1 }, "HTTP client not closed after pause")
         } finally {
             slow.stop()
         }

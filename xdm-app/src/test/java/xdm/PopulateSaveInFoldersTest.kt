@@ -1,7 +1,7 @@
 package xdm
 
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 import xdm.app.AppContext
 import xdm.app.utils.populateSaveInFolders
 import xdm.app.I8N

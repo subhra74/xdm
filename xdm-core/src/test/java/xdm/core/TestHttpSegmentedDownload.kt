@@ -1,8 +1,10 @@
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Test
+package xdm.core
+
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 import xdm.core.downloaders.DownloadError
 
 /**
@@ -25,7 +27,7 @@ class TestHttpSegmentedDownload : HttpDownloadTestBase() {
         awaitSuccess(host)
         assertDownloaded(host, bytes)
         assertEquals(bytes.size.toLong(), host.success!!.fileSize)
-        assertTrue("expected at least one request", ep.connCount.get() >= 1)
+        assertTrue(ep.connCount.get() >= 1, "expected at least one request")
     }
 
     @Test
@@ -40,10 +42,9 @@ class TestHttpSegmentedDownload : HttpDownloadTestBase() {
         awaitSuccess(host)
         assertDownloaded(host, bytes)
         assertTrue(
-            "expected multiple segment connections, saw ${ep.connCount.get()}",
             ep.connCount.get() >= 2
-        )
-        assertTrue("expected >1 segment in progress", host.maxSegmentsSeen.get() >= 2)
+        , "expected multiple segment connections, saw ${ep.connCount.get()}")
+        assertTrue(host.maxSegmentsSeen.get() >= 2, "expected >1 segment in progress")
     }
 
     @Test
@@ -65,7 +66,7 @@ class TestHttpSegmentedDownload : HttpDownloadTestBase() {
 
         awaitSuccess(host)
         assertDownloaded(host, bytes)
-        assertEquals("small file should not be split", 1, ep.connCount.get())
+        assertEquals(1, ep.connCount.get(), "small file should not be split")
     }
 
     @Test
@@ -75,7 +76,7 @@ class TestHttpSegmentedDownload : HttpDownloadTestBase() {
         val host = download(id = 5, path = "/init", maxSegments = 4)
 
         awaitSuccess(host)
-        assertNotNull("init callback should fire", host.initInfo)
+        assertNotNull(host.initInfo, "init callback should fire")
         assertEquals(bytes.size.toLong(), host.initInfo!!.fileSize)
     }
 
@@ -138,9 +139,9 @@ class TestHttpSegmentedDownload : HttpDownloadTestBase() {
         // Let some data flow, then pause while still in flight.
         Thread.sleep(500)
         task1.stop()
-        assertTrue("pause callback should fire", host1.pauseLatch.await(5, java.util.concurrent.TimeUnit.SECONDS))
+        assertTrue(host1.pauseLatch.await(5, java.util.concurrent.TimeUnit.SECONDS), "pause callback should fire")
         assertTrue(host1.paused)
-        assertNull("download should not have completed before pause", host1.success)
+        assertNull(host1.success, "download should not have completed before pause")
 
         // Resume in a fresh task instance (as the app does), loading the saved .state.
         val host2 = host()

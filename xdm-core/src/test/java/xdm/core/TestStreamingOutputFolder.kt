@@ -1,7 +1,9 @@
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.junit.Test
+package xdm.core
+
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 import xdm.core.downloaders.CommitResult
 import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.DownloadHost
@@ -91,9 +93,9 @@ class TestStreamingOutputFolder : StreamingE2EBase() {
         awaitSuccess(h)
         verifyOutput(h, expectVideo = true, expectAudio = false, minDuration = 2.0)
 
-        assertEquals("commit must receive the file muxed in the destination folder", listOf(destPart.absolutePath), oh.committed)
-        assertFalse("partial output left behind", destPart.exists())
-        assertFalse("temp folder not cleaned up", File(root, "dest/tmp").exists())
+        assertEquals(listOf(destPart.absolutePath), oh.committed, "commit must receive the file muxed in the destination folder")
+        assertFalse(destPart.exists(), "partial output left behind")
+        assertFalse(File(root, "dest/tmp").exists(), "temp folder not cleaned up")
     }
 
     @Test
@@ -110,7 +112,7 @@ class TestStreamingOutputFolder : StreamingE2EBase() {
             OutputHost(first, part.absolutePath, failCommits = 1), root.absolutePath, config()
         ).start()
         assertEquals(DownloadError.OutputWriteError, awaitFailure(first))
-        assertTrue("muxed output must be kept for the retry", part.isFile)
+        assertTrue(part.isFile, "muxed output must be kept for the retry")
 
         val second = host("retry-2")
         HlsDownloaderTask(
@@ -118,7 +120,7 @@ class TestStreamingOutputFolder : StreamingE2EBase() {
             OutputHost(second, part.absolutePath), root.absolutePath, config()
         ).start()
         awaitSuccess(second)
-        assertEquals("the retry must only commit, not mux again", 1, counting.calls.get())
+        assertEquals(1, counting.calls.get(), "the retry must only commit, not mux again")
     }
 
     @Test
@@ -134,7 +136,7 @@ class TestStreamingOutputFolder : StreamingE2EBase() {
             OutputHost(h, File(blocker, ".$id.xdm-part.mp4").absolutePath), root.absolutePath, config()
         ).start()
         assertEquals(DownloadError.OutputWriteError, awaitFailure(h))
-        assertEquals("must not mux into an unwritable folder", 0, counting.calls.get())
+        assertEquals(0, counting.calls.get(), "must not mux into an unwritable folder")
     }
 
     @Test
@@ -166,7 +168,7 @@ class TestStreamingOutputFolder : StreamingE2EBase() {
         }
         HlsDownloaderTask(info(id, "aes", url("aes/enc.m3u8")), newClient(), muxer(), oh, root.absolutePath, config()).start()
         awaitSuccess(h)
-        assertEquals("encrypted segments still on disk after decryption", 0, encAtCommit)
+        assertEquals(0, encAtCommit, "encrypted segments still on disk after decryption")
     }
 
     @Test
@@ -175,8 +177,8 @@ class TestStreamingOutputFolder : StreamingE2EBase() {
         val spoolDir = File(caseDir("mkv"), "tmp").apply { mkdirs() }
         val writer = MkvWriter(out.absolutePath, spoolDir.absolutePath)
         try {
-            assertTrue("spool not in the temp folder", File(spoolDir, "${out.name}.spool").exists())
-            assertFalse("spool must not be written next to the output", File("${out.absolutePath}.spool").exists())
+            assertTrue(File(spoolDir, "${out.name}.spool").exists(), "spool not in the temp folder")
+            assertFalse(File("${out.absolutePath}.spool").exists(), "spool must not be written next to the output")
         } finally {
             writer.abort()
         }

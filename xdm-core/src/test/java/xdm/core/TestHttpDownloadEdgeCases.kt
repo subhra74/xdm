@@ -1,5 +1,7 @@
-import org.junit.Assert.assertTrue
-import org.junit.Test
+package xdm.core
+
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 
 /**
  * Edge-case coverage for the segmented HTTP downloader: connection drops mid-transport (retry +
@@ -29,7 +31,7 @@ class TestHttpDownloadEdgeCases : HttpDownloadTestBase() {
 
         awaitSuccess(host) // retry sleeps ~5s before resuming
         assertDownloaded(host, bytes)
-        assertTrue("expected a reconnect after the drop", raw.requestedRanges.size >= 2)
+        assertTrue(raw.requestedRanges.size >= 2, "expected a reconnect after the drop")
     }
 
     @Test
@@ -44,7 +46,7 @@ class TestHttpDownloadEdgeCases : HttpDownloadTestBase() {
 
         awaitSuccess(host)
         assertDownloaded(host, bytes)
-        assertTrue("expected multiple reconnects", raw.requestedRanges.size >= 3)
+        assertTrue(raw.requestedRanges.size >= 3, "expected multiple reconnects")
     }
 
     // ---------------------------------------------------------------------------------------
@@ -63,6 +65,6 @@ class TestHttpDownloadEdgeCases : HttpDownloadTestBase() {
         val elapsed = System.currentTimeMillis() - start
         assertDownloaded(host, bytes)
         // 2MB at 512 KB/s ~= 4s; assert it clearly took real throttling time (never instant).
-        assertTrue("expected throttled download, took only ${elapsed}ms", elapsed >= 2500)
+        assertTrue(elapsed >= 2500, "expected throttled download, took only ${elapsed}ms")
     }
 }

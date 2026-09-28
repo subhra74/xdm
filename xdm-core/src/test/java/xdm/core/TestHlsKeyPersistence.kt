@@ -1,9 +1,11 @@
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Assume
-import org.junit.Test
+package xdm.core
+
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assumptions
+import org.junit.jupiter.api.Test
 import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.DownloadHost
 import xdm.core.downloaders.DownloadStatusInfo
@@ -97,12 +99,12 @@ class TestHlsKeyPersistence : StreamingE2EBase() {
         lateinit var task: HlsDownloaderTask
         val hookHost = InitHookHost(paused) {
             task.stop()
-            assertTrue("pause not acknowledged", paused.latch.await(10, TimeUnit.SECONDS))
+            assertTrue(paused.latch.await(10, TimeUnit.SECONDS), "pause not acknowledged")
         }
         task = HlsDownloaderTask(info(id, caseName, url), newClient(), muxer(), hookHost, root.absolutePath, config())
         task.start()
-        assertTrue("first run never reached init", paused.latch.await(30, TimeUnit.SECONDS))
-        assertNull("first run failed: ${paused.failure}", paused.failure)
+        assertTrue(paused.latch.await(30, TimeUnit.SECONDS), "first run never reached init")
+        assertNull(paused.failure, "first run failed: ${paused.failure}")
         return id
     }
 
@@ -113,12 +115,11 @@ class TestHlsKeyPersistence : StreamingE2EBase() {
     }
 
     private fun assertOwnerOnly(file: File) {
-        assertTrue("missing file ${file.name}", file.exists())
+        assertTrue(file.exists(), "missing file ${file.name}")
         assertEquals(
-            "${file.name} must be readable/writable by the owner only",
             setOf(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE),
             Files.getPosixFilePermissions(file.toPath())
-        )
+        , "${file.name} must be readable/writable by the owner only")
     }
 
     @Test
@@ -138,7 +139,7 @@ class TestHlsKeyPersistence : StreamingE2EBase() {
     @Test
     fun keysFile_existsOwnerOnlyWhilePaused_andIsDeletedAfterSuccess() {
         requireFfmpeg()
-        Assume.assumeTrue(FileSystems.getDefault().supportedFileAttributeViews().contains("posix"))
+        Assumptions.assumeTrue(FileSystems.getDefault().supportedFileAttributeViews().contains("posix"))
         val url = buildAesCase("keys", randomKey())
         val id = startAndPauseAfterInit("keys", url)
 
@@ -146,12 +147,12 @@ class TestHlsKeyPersistence : StreamingE2EBase() {
         assertOwnerOnly(keys)
 
         awaitSuccess(resume(id, "keys", url))
-        assertFalse("keys file left on disk after every segment was decrypted", keys.exists())
+        assertFalse(keys.exists(), "keys file left on disk after every segment was decrypted")
     }
 
     @Test
     fun stateAndTaskInfoFiles_areOwnerOnly() {
-        Assume.assumeTrue(FileSystems.getDefault().supportedFileAttributeViews().contains("posix"))
+        Assumptions.assumeTrue(FileSystems.getDefault().supportedFileAttributeViews().contains("posix"))
         requireFfmpeg()
         val url = buildAesCase("perm", randomKey())
         val id = startAndPauseAfterInit("perm", url)
@@ -190,6 +191,6 @@ class TestHlsKeyPersistence : StreamingE2EBase() {
             .start()
 
         assertEquals(DownloadError.InvalidResponse, awaitFailure(h, 30))
-        assertNull("init should fail before segments are known", h.initInfo)
+        assertNull(h.initInfo, "init should fail before segments are known")
     }
 }

@@ -1,11 +1,11 @@
 package xdm
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 import xdm.app.RecordStatus
 import java.io.File
 
@@ -20,7 +20,7 @@ class DownloadManagerDeleteTest : DownloadManagerTestBase() {
         dm.startHttpDownload(httpTask(id))
         remember()
         dm.stopDownload(id)
-        assertTrue("download never paused", waitFor { appDB.getById(id)?.status == RecordStatus.PAUSED })
+        assertTrue(waitFor { appDB.getById(id)?.status == RecordStatus.PAUSED }, "download never paused")
     }
 
     @Test
@@ -33,7 +33,7 @@ class DownloadManagerDeleteTest : DownloadManagerTestBase() {
         dm.deleteDownload(id, fromDisk = false)
 
         assertNull(appDB.getById(id))
-        metadataFiles(id).forEach { assertFalse("$it left behind", it.exists()) }
+        metadataFiles(id).forEach { assertFalse(it.exists(), "$it left behind") }
     }
 
     @Test
@@ -45,7 +45,7 @@ class DownloadManagerDeleteTest : DownloadManagerTestBase() {
 
         dm.deleteDownload(t.id, fromDisk = false)
 
-        assertTrue("record not removed after stop", waitFor { appDB.getById(t.id) == null })
+        assertTrue(waitFor { appDB.getById(t.id) == null }, "record not removed after stop")
         assertTrue(waitFor { metadataFiles(t.id).none { it.exists() } })
     }
 
@@ -65,10 +65,10 @@ class DownloadManagerDeleteTest : DownloadManagerTestBase() {
         val removed = dm.clearInactive()
 
         assertEquals(1, removed)
-        assertNull("paused download must be cleared", appDB.getById(paused))
-        metadataFiles(paused).forEach { assertFalse("$it left behind", it.exists()) }
-        assertNotNull("running download must be kept", appDB.getById(running.id))
-        assertNotNull("queued download must be kept", appDB.getById(queued.id))
+        assertNull(appDB.getById(paused), "paused download must be cleared")
+        metadataFiles(paused).forEach { assertFalse(it.exists(), "$it left behind") }
+        assertNotNull(appDB.getById(running.id), "running download must be kept")
+        assertNotNull(appDB.getById(queued.id), "queued download must be kept")
         assertTrue(File(dir, "task-${running.id}.info").exists())
         assertTrue(File(dir, "task-${queued.id}.info").exists())
         assertEquals(setOf(running.id), activeSessions().keys)

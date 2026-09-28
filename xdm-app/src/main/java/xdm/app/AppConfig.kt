@@ -169,6 +169,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
     }
 
     override fun load() {
+        if (!AtomicIO.exists(CONFIG_FILE, configDir)) return
         AtomicIO.readTransacted(CONFIG_FILE, configDir) { load(it) }
             .onFailure { Logger.error("Unable to load config, using defaults: $it") }
     }

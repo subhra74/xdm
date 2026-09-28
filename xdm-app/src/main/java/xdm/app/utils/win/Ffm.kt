@@ -27,4 +27,5 @@ internal object Ffm {
         val symbol = lookup.find(name).orElseThrow { UnsatisfiedLinkError("Symbol not found: $name") }
         return linker.downcallHandle(symbol, descriptor)
     }
+
 }

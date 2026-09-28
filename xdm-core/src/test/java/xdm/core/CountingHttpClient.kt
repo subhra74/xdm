@@ -1,3 +1,5 @@
+package xdm.core
+
 import xdm.core.network.http.HeaderMap
 import xdm.core.network.http.HttpResponse
 import xdm.core.network.http.PoolingHttpClient

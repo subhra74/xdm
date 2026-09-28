@@ -17,15 +17,19 @@
         <maven.compiler.target>8</maven.compiler.target>
         <maven.compiler.source>8</maven.compiler.source>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <kotlin.version>2.3.0</kotlin.version>
+        <junit.version>5.11.4</junit.version>
+        <!-- 2.3.21 or newer: 2.3.0 cannot resolve java.lang.foreign's allocateFrom overloads
+             when the compiler runs on the JetBrains Runtime (what IntelliJ builds with),
+             which breaks xdm-app's Windows layer. -->
+        <kotlin.version>2.3.21</kotlin.version>
         <serialization.version>1.10.0</serialization.version>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.13.2</version>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
         <!-- https://mvnrepository.com/artifact/commons-net/commons-net -->
@@ -71,7 +75,7 @@
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-test-junit</artifactId>
+            <artifactId>kotlin-test-junit5</artifactId>
             <version>${kotlin.version}</version>
             <scope>test</scope>
         </dependency>
@@ -141,6 +145,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <includes>
+                        <include>**/Test*.java</include>
+                    </includes>
                     <!-- Each test class runs in a fresh JVM. The HTTP downloader tests spin up
                          many real networked downloads (some deliberately stalled); a fresh fork
                          per class stops leaked threads/sockets from bleeding across classes. -->

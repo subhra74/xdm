@@ -1,7 +1,9 @@
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Test
+package xdm.core
+
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 import java.util.concurrent.TimeUnit
 import kotlin.random.Random
 
@@ -58,9 +60,8 @@ class TestHttpDownloadIntegrity : HttpDownloadTestBase() {
         awaitSuccess(host, timeoutSec = 60)
         assertChecksumMatches(host, bytes)
         assertTrue(
-            "expected several connections across fast/slow lanes, saw ${ep.connCount.get()}",
             ep.connCount.get() >= 3
-        )
+        , "expected several connections across fast/slow lanes, saw ${ep.connCount.get()}")
     }
 
     // ---------------------------------------------------------------------------------------
@@ -109,9 +110,8 @@ class TestHttpDownloadIntegrity : HttpDownloadTestBase() {
         awaitSuccess(host, timeoutSec = 90) // retries sleep ~5s each before resuming
         assertChecksumMatches(host, bytes)
         assertTrue(
-            "expected reconnects beyond the initial segment opens, saw ${raw.requestedRanges.size}",
             raw.requestedRanges.size >= 5
-        )
+        , "expected reconnects beyond the initial segment opens, saw ${raw.requestedRanges.size}")
     }
 
     // ---------------------------------------------------------------------------------------
@@ -140,11 +140,10 @@ class TestHttpDownloadIntegrity : HttpDownloadTestBase() {
             Thread.sleep(400)
             task.stop()
             assertTrue(
-                "pause callback should fire on cycle $i",
                 host.pauseLatch.await(5, TimeUnit.SECONDS)
-            )
-            assertTrue("expected paused state on cycle $i", host.paused)
-            assertNull("download must not complete before final resume (cycle $i)", host.success)
+            , "pause callback should fire on cycle $i")
+            assertTrue(host.paused, "expected paused state on cycle $i")
+            assertNull(host.success, "download must not complete before final resume (cycle $i)")
 
             // Resume in a fresh task instance, exactly as the app does after a restart.
             host = host()
@@ -171,8 +170,8 @@ class TestHttpDownloadIntegrity : HttpDownloadTestBase() {
         task1.start()
         Thread.sleep(500)
         task1.stop()
-        assertTrue("pause callback should fire", host1.pauseLatch.await(5, TimeUnit.SECONDS))
-        assertNull("should not have completed before pause", host1.success)
+        assertTrue(host1.pauseLatch.await(5, TimeUnit.SECONDS), "pause callback should fire")
+        assertNull(host1.success, "should not have completed before pause")
 
         val host2 = host()
         newTask(id = 107, path = "/pause1", host = host2, maxSegments = 1).resume()

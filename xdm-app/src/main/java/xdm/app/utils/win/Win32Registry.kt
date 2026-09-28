@@ -26,8 +26,12 @@ import java.nio.charset.StandardCharsets
  */
 internal object Win32Registry {
 
-    /** Pseudo-handle; passed like any other HKEY. */
-    private val HKEY_CURRENT_USER = MemorySegment.ofAddress(0x80000002L)
+    /**
+     * Pseudo-handle; passed like any other HKEY. The predefined handles sit next to each other -
+     * 0x80000000 is HKEY_CLASSES_ROOT and 0x80000002 is HKEY_LOCAL_MACHINE - and picking the wrong
+     * one fails as a bare ERROR_ACCESS_DENIED from an unelevated process, so leave this alone.
+     */
+    internal val HKEY_CURRENT_USER = MemorySegment.ofAddress(0x80000001L)
 
     private const val ERROR_SUCCESS = 0
     private const val ERROR_FILE_NOT_FOUND = 2
@@ -140,7 +144,7 @@ internal object Win32Registry {
             val keyOut = arena.allocate(ADDRESS)
             val created = regCreateKeyEx.invoke(
                 HKEY_CURRENT_USER, arena.wide(path), 0, MemorySegment.NULL,
-                REG_OPTION_NON_VOLATILE, KEY_WRITE, 0, keyOut, MemorySegment.NULL
+                REG_OPTION_NON_VOLATILE, KEY_WRITE, MemorySegment.NULL, keyOut, MemorySegment.NULL
             ) as Int
             if (created != ERROR_SUCCESS) {
                 log("RegCreateKeyExW", path, created)
@@ -148,7 +152,7 @@ internal object Win32Registry {
             }
             val key = keyOut.get(ADDRESS, 0)
             try {
-                // allocateFrom appends the terminator, and cbData must count it.
+                // allocateFrom appends the terminator, and cbData has to count it.
                 val value = arena.wide(data)
                 val status = regSetValueEx.invoke(
                     key, arena.wide(valueName), 0, REG_SZ, value, value.byteSize().toInt()

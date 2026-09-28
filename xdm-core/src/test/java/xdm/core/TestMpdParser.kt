@@ -1,4 +1,6 @@
-//import org.junit.Test
+package xdm.core
+
+//import org.junit.jupiter.api.Test
 //import xdm.core.downloaders.web.streaming.manifest.dash.parseMpdManifest
 //import xdm.core.media.parser.dash.MpdParser
 //

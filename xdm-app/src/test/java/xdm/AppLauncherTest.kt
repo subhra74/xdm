@@ -1,8 +1,8 @@
 package xdm
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 import xdm.app.utils.AppLauncher
 import java.io.File
 import java.nio.file.Files
@@ -85,8 +85,8 @@ class AppLauncherTest {
     fun resolutionNeverThrowsAndPointsAtSomethingRealWhenItSucceeds() {
         val command = AppLauncher.command()
         if (command != null) {
-            assertTrue("resolved an empty command", command.isNotEmpty())
-            assertTrue("resolved a launcher that does not exist: ${command[0]}", File(command[0]).exists())
+            assertTrue(command.isNotEmpty(), "resolved an empty command")
+            assertTrue(File(command[0]).exists(), "resolved a launcher that does not exist: ${command[0]}")
         }
     }
 

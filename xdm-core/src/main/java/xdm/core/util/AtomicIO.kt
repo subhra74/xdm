@@ -85,6 +85,14 @@ object AtomicIO {
         Files.createFile(file.toPath(), PosixFilePermissions.asFileAttribute(ownerOnlyPermissions))
     }
 
+    /**
+     * Whether [readTransacted] has anything to read: true if `<name>` or either backup exists. Use it
+     * to skip loading a file that is simply not there yet (a first run), instead of handling the
+     * resulting failure.
+     */
+    fun exists(fileName: String, folder: String): Boolean =
+        listOf(fileName, "$fileName.bak1", "$fileName.bak2").any { File(folder, it).isFile }
+
     inline fun <T> readTransacted(
         fileName: String,
         folder: String,
