@@ -117,10 +117,8 @@ object AppMenuHandler {
     fun deleteSelectedDownloads(selectedItems: List<DbRecord>, window: Window?) {
         val (approve, deleteFromDisk) = showConfirmDeleteDialog(window)
         if (approve) {
-            Logger.info("XDM", "Deleting multiple selected")
-            for (selectedItem in selectedItems) {
-                downloader.deleteDownload(selectedItem.id, deleteFromDisk)
-            }
+            Logger.info("XDM", "Deleting ${selectedItems.size} selected")
+            downloader.deleteDownloads(selectedItems.map { it.id }, deleteFromDisk)
         }
     }
 

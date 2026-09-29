@@ -31,6 +31,7 @@ interface IDownloadManager {
     fun stopDownload(id: Long)
     fun resumeDownload(id: Long)
     fun deleteDownload(id: Long, fromDisk: Boolean)
+    fun deleteDownloads(ids: Collection<Long>, fromDisk: Boolean)
     fun startHttpDownload(task: HttpDownloadTaskInfo, runNow: Boolean = true)
     fun addVideoDownload(videoId: Long, fileName: String, folder: String?, autoSelectFolder: Boolean)
     fun startHlsDownload(task: HlsDownloadTaskInfo)
@@ -587,40 +588,36 @@ class DownloadManager(
         }
     }
 
-    override fun deleteDownload(id: Long, fromDisk: Boolean) {
-        try {
-            val rec = appDB.getById(id) ?: return
-            // Under the queue lock so a queued download cannot be launched while it is deleted.
-            val active = synchronized(queue) {
-                activeSessions.containsKey(id).also { if (!it) queue.removeAll { q -> q.id == id } }
-            }
-            if (active) {
-                // Downloading or assembling: stop first, purge in onDownloadPaused/Failed.
-                toDelete.add(id)
-                stopDownload(id)
-                return
-            }
-            deleteRecord(id)
-            purgeFiles(rec)
-            if (fromDisk && rec.status == RecordStatus.FINISHED) {
-                val (fileName: String?, folder: String?) = getFileFolder(rec) ?: return
-                if (fileName != null && folder != null) {
-                    val fileToDelete = File(folder, fileName)
-                    val deleted = fileToDelete.delete()
-                    Logger.info("XDM", "Delete file $fileToDelete $deleted")
-                }
-            }
-        } catch (error: Exception) {
-            Logger.error("XDM", "Error while delete", error)
+    override fun deleteDownload(id: Long, fromDisk: Boolean) = deleteDownloads(listOf(id), fromDisk)
+
+    /**
+     * Deletes [ids] in one pass: the idle ones are removed from the list together (each list file
+     * is saved once, not once per download) and purged, the running ones are stopped and purged
+     * once they report it. With [fromDisk], completed files are deleted from the download folder too.
+     */
+    override fun deleteDownloads(ids: Collection<Long>, fromDisk: Boolean) {
+        val wanted = ids.toHashSet()
+        // Under the queue lock so a queued download cannot be launched while it is deleted.
+        val (removed, running) = synchronized(queue) {
+            queue.removeAll { it.id in wanted && !activeSessions.containsKey(it.id) }
+            appDB.removeWhere { it.id in wanted && !activeSessions.containsKey(it.id) } to
+                    wanted.filter { activeSessions.containsKey(it) }
         }
+        // Downloading or assembling: stop first, purge in onDownloadPaused/Failed.
+        running.forEach {
+            toDelete.add(it)
+            stopDownload(it)
+        }
+        purgeRemoved(removed, fromDisk)
     }
 
     /**
-     * Removes every download that is not in progress (finished, paused, failed) together with its
-     * task info, state and temp data. Downloads that are running, assembling or queued are kept.
-     * Finished files in the download folder are not touched. Returns the number of removed records.
+     * Removes every download that is not in progress (finished, paused, failed) and matches
+     * [filter], together with its task info, state and temp data. Downloads that are running,
+     * assembling or queued are always kept. With [fromDisk], completed files are deleted from the
+     * download folder too. Returns the number of removed records.
      */
-    fun clearInactive(): Int {
+    fun clearInactive(fromDisk: Boolean = false, filter: (DbRecord) -> Boolean = { true }): Int {
         val removed = synchronized(queue) {
             val queued = queue.map { it.id }.toSet()
             appDB.removeWhere { rec ->
@@ -628,16 +625,33 @@ class DownloadManager(
                         && rec.status != RecordStatus.DOWNLOADING
                         && rec.status != RecordStatus.ASSEMBLING
                         && rec.status != RecordStatus.READY
+                        && filter(rec)
             }
         }
+        purgeRemoved(removed, fromDisk)
+        return removed.size
+    }
+
+    /** Purges records already taken out of [appDB], then refreshes the list view once. */
+    private fun purgeRemoved(removed: List<DbRecord>, fromDisk: Boolean) {
+        if (removed.isEmpty()) return
         removed.forEach { rec ->
             try {
+                // Resolved first: the path is read from the task info that the purge deletes.
+                val file = if (fromDisk && rec.status == RecordStatus.FINISHED) finishedFile(rec) else null
                 purgeFiles(rec)
+                file?.let { Logger.info("XDM", "Delete file $it ${it.delete()}") }
             } catch (error: Exception) {
-                Logger.error("XDM", "Error while clearing ${rec.id}", error)
+                Logger.error("XDM", "Error while deleting ${rec.id}", error)
             }
         }
-        return removed.size
+        AppContext.app.downloadsRemovedInView()
+    }
+
+    /** Where a completed download's file is: its task info holds the final name and folder. */
+    private fun finishedFile(rec: DbRecord): File? {
+        val (fileName, folder) = getFileFolder(rec) ?: return null
+        return if (fileName != null && folder != null) File(folder, fileName) else null
     }
 
     /**
@@ -678,7 +692,6 @@ class DownloadManager(
     /** Removes the per-download files in the config dir and any schedule entry for [id]. */
     private fun deleteMetadata(id: Long) {
         taskInfoDB.deleteRecord(id)
-        duplicates.remove(id)
         listOf("$id.state", "$id.state.bak1", "$id.state.bak2", "$id.out").forEach { File(configDir, it).delete() }
         HlsKeyStore.delete(id, configDir)
         if (AppContext.hasScheduler && AppContext.scheduler.contains(id)) {

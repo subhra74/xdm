@@ -1,5 +1,7 @@
 package xdm.app.ui.components
 
+import xdm.app.utils.RemixIcon
+import xdm.app.utils.createIcon
 import xdm.core.util.Logger
 import java.awt.Color
 import java.awt.Cursor
@@ -40,9 +42,7 @@ class UpdatePanel : JPanel() {
             EmptyBorder(8, 12, 8, 12)
         )
 
-        val infoIcon = JLabel("⬆").apply {
-            font = font.deriveFont(Font.BOLD, 14f)
-            foreground = accent
+        val infoIcon = JLabel(createIcon(RemixIcon.INSTALL_FILL, 18, accent)).apply {
             verticalAlignment = SwingConstants.CENTER
         }
 

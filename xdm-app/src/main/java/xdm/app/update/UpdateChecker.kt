@@ -22,15 +22,17 @@ data class AppVersionConfig(
     val downloadUrl: String
 )
 
-/** Subset of the GitHub "latest release" response we care about. */
+/**
+ * Subset of the GitHub "latest release" response we care about: only the version. The release page
+ * itself is never opened - updates go through [AppVersionConfig.downloadUrl], our website.
+ */
 @Serializable
 private data class GithubRelease(
     val tag_name: String = "",
-    val name: String = "",
-    val html_url: String = ""
+    val name: String = ""
 )
 
-/** Result handed to the UI when a newer release is found. */
+/** Result handed to the UI when a newer release is found; [downloadUrl] is always our website. */
 data class UpdateInfo(val latestVersion: String, val downloadUrl: String)
 
 object UpdateChecker {

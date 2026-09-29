@@ -103,6 +103,7 @@ DEST_DIR="$BUILD_DIR/dist"
 PKG_TYPE=""
 SKIP_MAVEN=0
 WITH_LOCALES=0
+RECORD_CLASSES=0
 EXTRA_ARGS=()
 
 usage() {
@@ -115,6 +116,8 @@ Usage: packaging/build-bundle.sh [options] [-- extra jpackage args]
                       Windows: app-image | msi | exe
   -s, --skip-build    Skip "mvn package"; reuse xdm-app/target/$MAIN_JAR
       --with-locales  Add jdk.localedata (bigger bundle, full locale formatting)
+      --record-classes  Before packaging, run XDM on the bundled runtime to record
+                      packaging/cds/<os>.classlist for the AppCDS archive (see APPCDS.md)
   -o, --out DIR       Output directory (default: build/dist)
   -h, --help          This message
 
@@ -129,6 +132,7 @@ while [[ $# -gt 0 ]]; do
     -t|--type) PKG_TYPE="$2"; shift 2 ;;
     -s|--skip-build) SKIP_MAVEN=1; shift ;;
     --with-locales) WITH_LOCALES=1; shift ;;
+    --record-classes) RECORD_CLASSES=1; shift ;;
     -o|--out) DEST_DIR="$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     --) shift; EXTRA_ARGS=("$@"); break ;;
@@ -153,6 +157,21 @@ done
 JDK_MAJOR="$(java -XshowSettings:properties -version 2>&1 | sed -n 's/.*java\.specification\.version = \([0-9]*\).*/\1/p' | head -1)"
 : "${JDK_MAJOR:=17}"
 if [[ "$JDK_MAJOR" -ge 21 ]]; then COMPRESS="zip-9"; else COMPRESS="2"; fi
+
+# Version-gated flags join JAVA_OPTIONS here, before anything runs the bundled
+# runtime: the AppCDS dump below must see the exact flags the launcher will use.
+# FlatLaf loads a native library; JDK 22+ warns about that unless native access
+# is enabled explicitly (and will block it in a future release).
+if [[ "$JDK_MAJOR" -ge 22 ]]; then
+  JAVA_OPTIONS+=(--enable-native-access=ALL-UNNAMED)
+fi
+# 64-bit object headers instead of 96-bit. A product (non-experimental) flag
+# since JDK 25 and the default from JDK 27 (JEP 534); on JDK 24 and older it is
+# experimental, so only pass it where it is supported. Measured here: heap
+# 14.4 -> 12.9 MB, metaspace 22.0 -> 20.6 MB committed.
+if [[ "$JDK_MAJOR" -ge 25 ]]; then
+  JAVA_OPTIONS+=(-XX:+UseCompactObjectHeaders)
+fi
 
 # ---- app jar --------------------------------------------------------------
 if [[ $SKIP_MAVEN -eq 0 ]]; then
@@ -262,6 +281,50 @@ jlink \
 cp "$JAR_PATH" "$INPUT_DIR/$MAIN_JAR"
 strip_foreign_natives "$INPUT_DIR/$MAIN_JAR"
 
+# ---- AppCDS archive (APPCDS.md) ---------------------------------------------
+# A static archive of JDK + app classes, mapped read-only at startup instead of
+# parsed into metaspace: ~19 MB less at idle. The JVM uses it only while the
+# jar's size and mtime match the dump, so the jar is pinned to a fixed time and
+# the app re-pins it on start if an installer or copy moved it (CdsJarPin).
+#
+# The class list is recorded by hand (--record-classes) and checked in, one per
+# OS; without one, the bundle is built without an archive.
+CDS_EPOCH=1577836800                                 # 2020-01-01T00:00:00Z
+CDS_LIST="$PROJECT_ROOT/packaging/cds/$OS.classlist"
+CDS_ARCHIVE="xdm.jsa"
+CDS_PROPERTY="xdm.cds.mtime"                         # read by CdsJarPin
+BUNDLED_JAVA="$RUNTIME_DIR/bin/java"
+TZ=UTC touch -t 202001010000.00 "$INPUT_DIR/$MAIN_JAR"
+
+if [[ $RECORD_CLASSES -eq 1 ]]; then
+  mkdir -p "$(dirname "$CDS_LIST")"
+  echo ">> recording $(basename "$CDS_LIST"): quit any running XDM first, then use this one"
+  echo ">>   as users do - run a real download to completion - and quit it from the tray"
+  "$BUNDLED_JAVA" "${JAVA_OPTIONS[@]}" "-XX:DumpLoadedClassList=$CDS_LIST" \
+    -cp "$INPUT_DIR/$MAIN_JAR" "$MAIN_CLASS"
+fi
+
+if [[ -s "$CDS_LIST" ]]; then
+  echo ">> dumping the AppCDS archive from $(basename "$CDS_LIST")"
+  # Classes named in the list but gone from the jar are skipped with a warning;
+  # the output is quiet otherwise.
+  "$BUNDLED_JAVA" -Xshare:dump "${JAVA_OPTIONS[@]}" \
+    "-XX:SharedClassListFile=$CDS_LIST" \
+    "-XX:SharedArchiveFile=$INPUT_DIR/$CDS_ARCHIVE" \
+    -cp "$INPUT_DIR/$MAIN_JAR" >/dev/null
+  # $APPDIR is expanded by the jpackage launcher to the image's app directory.
+  # ArchiveRelocationMode=0 maps the archive at its preferred address, so its
+  # pages stay shared instead of turning private on relocation (-9 MB).
+  JAVA_OPTIONS+=(
+    '-XX:SharedArchiveFile=$APPDIR/'"$CDS_ARCHIVE"
+    -XX:+UnlockDiagnosticVMOptions
+    -XX:ArchiveRelocationMode=0
+    "-D$CDS_PROPERTY=$CDS_EPOCH"
+  )
+else
+  echo ">> no packaging/cds/$OS.classlist - building without an AppCDS archive (see --record-classes)"
+fi
+
 # ---- jpackage -------------------------------------------------------------
 # An added launcher inherits the main class, jar and java-options; all this file does is keep it
 # out of the menus, so "xdm-app" never appears as a second entry beside the real one.
@@ -286,18 +349,6 @@ ARGS=(
   --runtime-image "$RUNTIME_DIR"
   --dest "$DEST_DIR"
 )
-# FlatLaf loads a native library; JDK 22+ warns about that unless native access
-# is enabled explicitly (and will block it in a future release).
-if [[ "$JDK_MAJOR" -ge 22 ]]; then
-  JAVA_OPTIONS+=(--enable-native-access=ALL-UNNAMED)
-fi
-# 64-bit object headers instead of 96-bit. A product (non-experimental) flag
-# since JDK 25 and the default from JDK 27 (JEP 534); on JDK 24 and older it is
-# experimental, so only pass it where it is supported. Measured here: heap
-# 14.4 -> 12.9 MB, metaspace 22.0 -> 20.6 MB committed.
-if [[ "$JDK_MAJOR" -ge 25 ]]; then
-  JAVA_OPTIONS+=(-XX:+UseCompactObjectHeaders)
-fi
 for opt in "${JAVA_OPTIONS[@]}"; do ARGS+=(--java-options "$opt"); done
 
 ICON_DIR="$PROJECT_ROOT/packaging/icons"
@@ -329,6 +380,14 @@ esac
 
 echo ">> jpackage --type $PKG_TYPE ($OS, version $APP_VERSION)"
 jpackage "${ARGS[@]}" ${EXTRA_ARGS+"${EXTRA_ARGS[@]}"}
+
+# jpackage copies the jar with a fresh mtime, which would cost a fresh image its
+# archive until CdsJarPin fixes it on the first start; pin the image's copy now.
+if [[ -s "$CDS_LIST" && "$PKG_TYPE" == "app-image" ]]; then
+  while IFS= read -r jar; do
+    TZ=UTC touch -t 202001010000.00 "$jar"
+  done < <(find "$DEST_DIR/$APP_NAME"* -path "*/app/$MAIN_JAR" 2>/dev/null)
+fi
 
 # ---- macOS: display name + the xdm-app:// scheme ---------------------------
 # A bundle can only claim a URL scheme in its Info.plist, and jpackage has no option for it, so

@@ -16,7 +16,10 @@ Icons are glyphs from the bundled Remix Icon font (`resources/fonts/remixicon.tt
 without elevation, and are idempotent — each has a `sync()`-style entry point called from `AppContext.init` that rewrites
 only what is missing or stale. They resolve the executable via `AppLauncher`, which prefers jpackage's
 `jpackage.app-path`; the packaged launcher is `xdm-app.exe` on Windows and `xdm-app` elsewhere, while the display name is
-"Xtreme Download Manager" (see `packaging/build-bundle.sh`).
+"Xtreme Download Manager" (see `packaging/build-bundle.sh`). Only a packaged build (`AppLauncher.isPackaged`) enables
+the login entry on first run, so `java -jar`/IDE runs never register a build-output jar. The settings toggle reads and
+records the OS entry itself (`AutoStart.isEnabled()`), not just `config.runOnStartup`, because the entry can be removed
+from outside XDM.
 
 On Windows these use `utils/win/` — `Win32Registry` and `Win32Power`, thin `java.lang.foreign` bindings over
 Advapi32/Kernel32. **Do not reintroduce `reg.exe`, `.reg` files or a `powershell.exe` helper.** The FFM classes are only

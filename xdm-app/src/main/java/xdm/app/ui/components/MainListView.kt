@@ -6,6 +6,7 @@ import xdm.app.DbRecord
 import xdm.app.DownloadCategory
 import xdm.app.I8N.text
 import xdm.app.RecordStatus
+import xdm.app.ui.screens.ClearDownloadsDialog
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.createIcon
 import xdm.app.utils.isMacPopupTrigger
@@ -154,6 +155,12 @@ class MainListView {
         updateCard()
     }
 
+    fun rowsRemoved() {
+        sorter.modelStructureChanged()
+        model.listChanged()
+        updateCard()
+    }
+
     fun rowAdded(index: Int) {
         if (table.isEditing) {
             table.cellEditor.cancelCellEditing()
@@ -263,11 +270,6 @@ class MainListView {
 
     fun clear() {
         val window = SwingUtilities.windowForComponent(cardPanel) as? JFrame
-        if (MessageBox.confirm(window, text("TOOL_CLEAR"), text("MSG_CLEAR_CONFIRM"))) {
-            AppContext.downloader.clearInactive()
-            sorter.modelStructureChanged()
-            model.listChanged()
-            updateCard()
-        }
+        ClearDownloadsDialog(window).isVisible = true
     }
 }

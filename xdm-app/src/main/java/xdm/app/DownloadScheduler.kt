@@ -80,7 +80,6 @@ class DownloadScheduler(private val appDB: AppDB, private val configDir: String)
         entries.find { it.downloadId == downloadId }
 
     private fun tick() {
-        Logger.info("Scheduler tick")
         val cal = Calendar.getInstance()
         val nowHour = cal.get(Calendar.HOUR_OF_DAY)
         val nowMinute = cal.get(Calendar.MINUTE)

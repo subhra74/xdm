@@ -1,6 +1,7 @@
 package xdm
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import xdm.app.utils.AppLauncher
@@ -28,6 +29,40 @@ class AppLauncherTest {
             "/opt/xdm-app/bin/xdm-app --minimized",
             AppLauncher.commandLine(listOf("/opt/xdm-app/bin/xdm-app", "--minimized"))
         )
+    }
+
+    @Test
+    fun plainDesktopExecArgumentsAreLeftAlone() {
+        assertEquals(
+            "/opt/xdm/bin/xdm-app --minimized",
+            AppLauncher.desktopExec(listOf("/opt/xdm/bin/xdm-app", "--minimized"))
+        )
+    }
+
+    /**
+     * The Desktop Entry spec quotes with `"`, escapes `"` `` ` `` `$` `\` inside the quotes, then
+     * applies the string escape (every `\` doubled) and turns `%` into `%%`.
+     */
+    @Test
+    fun desktopExecEscapesPerTheDesktopEntrySpec() {
+        assertEquals(
+            """"/home/a b/xdm-app" --minimized""",
+            AppLauncher.desktopExec(listOf("/home/a b/xdm-app", "--minimized"))
+        )
+        assertEquals(
+            """"/opt/\\${'$'}x\\"q\\`/xdm-app"""",
+            AppLauncher.desktopExec(listOf("/opt/\$x\"q`/xdm-app"))
+        )
+        assertEquals(""""/opt/a\\\\b/xdm-app"""", AppLauncher.desktopExec(listOf("""/opt/a\b/xdm-app""")))
+        assertEquals("/opt/100%%/xdm-app", AppLauncher.desktopExec(listOf("/opt/100%/xdm-app")))
+    }
+
+    @Test
+    fun isPackagedFollowsTheJpackageProperty() {
+        withAppPath("xdm-app", siblings = emptyList()) {
+            assertTrue(AppLauncher.isPackaged, "jpackage.app-path is set, yet not packaged")
+        }
+        assertFalse(AppLauncher.isPackaged, "a Surefire run is not a packaged build")
     }
 
     /**

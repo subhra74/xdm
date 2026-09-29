@@ -12,13 +12,17 @@
   Include jdk.localedata (~15 MB bigger, full locale-aware formatting).
 .PARAMETER Out
   Output directory (default: build\dist).
+.PARAMETER RecordClasses
+  Before packaging, run XDM on the bundled runtime to record
+  packaging\cds\windows.classlist for the AppCDS archive (see APPCDS.md).
 #>
 [CmdletBinding()]
 param(
   [ValidateSet('app-image','msi','exe')] [string]$Type = 'app-image',
   [switch]$SkipBuild,
   [switch]$WithLocales,
-  [string]$Out
+  [string]$Out,
+  [switch]$RecordClasses
 )
 
 $ErrorActionPreference = 'Stop'
@@ -84,6 +88,15 @@ foreach ($tool in 'jlink','jpackage') {
 $specVersion = (& java -XshowSettings:properties -version 2>&1 |
   Select-String 'java\.specification\.version = (\d+)').Matches.Groups[1].Value
 $compress = if ([int]$specVersion -ge 21) { 'zip-9' } else { '2' }
+
+# Version-gated flags join $JavaOptions here, before anything runs the bundled
+# runtime: the AppCDS dump below must see the exact flags the launcher will use.
+# FlatLaf loads a native library; JDK 22+ warns about that unless native access
+# is enabled explicitly (and will block it in a future release).
+if ([int]$specVersion -ge 22) { $JavaOptions += '--enable-native-access=ALL-UNNAMED' }
+# 64-bit object headers instead of 96-bit: product flag since JDK 25, default
+# from JDK 27 (JEP 534), experimental before that - so gate on the JDK version.
+if ([int]$specVersion -ge 25) { $JavaOptions += '-XX:+UseCompactObjectHeaders' }
 
 if (-not $SkipBuild) {
   Write-Host '>> mvn clean package'
@@ -160,6 +173,41 @@ if ($LASTEXITCODE -ne 0) { throw 'jlink failed' }
 Copy-Item $JarPath (Join-Path $InputDir $MainJar)
 Remove-ForeignNatives (Join-Path $InputDir $MainJar)
 
+# AppCDS archive - see the matching block in build-bundle.sh and APPCDS.md. The
+# JVM uses the archive only while the jar's size and mtime match the dump, so the
+# jar is pinned to a fixed time and the app re-pins it on start (CdsJarPin).
+$CdsEpoch    = 1577836800                                  # 2020-01-01T00:00:00Z
+$CdsPinned   = [datetime]::new(2020, 1, 1, 0, 0, 0, [DateTimeKind]::Utc)
+$CdsList     = Join-Path $PSScriptRoot 'cds\windows.classlist'
+$CdsArchive  = 'xdm.jsa'
+$CdsProperty = 'xdm.cds.mtime'                             # read by CdsJarPin
+$BundledJava = Join-Path $RuntimeDir 'bin\java.exe'
+$InputJar    = Join-Path $InputDir $MainJar
+(Get-Item $InputJar).LastWriteTimeUtc = $CdsPinned
+
+if ($RecordClasses) {
+  New-Item -ItemType Directory -Force -Path (Split-Path $CdsList) | Out-Null
+  Write-Host ">> recording windows.classlist: quit any running XDM first, then use this one"
+  Write-Host ">>   as users do - run a real download to completion - and quit it from the tray"
+  & $BundledJava @JavaOptions "-XX:DumpLoadedClassList=$CdsList" -cp $InputJar $MainClass
+}
+
+if ((Test-Path $CdsList) -and (Get-Item $CdsList).Length -gt 0) {
+  Write-Host '>> dumping the AppCDS archive from windows.classlist'
+  & $BundledJava -Xshare:dump @JavaOptions "-XX:SharedClassListFile=$CdsList" `
+      "-XX:SharedArchiveFile=$(Join-Path $InputDir $CdsArchive)" -cp $InputJar | Out-Null
+  if ($LASTEXITCODE -ne 0) { throw 'AppCDS dump failed' }
+  # $APPDIR is expanded by the jpackage launcher; single quotes keep PowerShell off it.
+  $JavaOptions += @(
+    ('-XX:SharedArchiveFile=$APPDIR\' + $CdsArchive)
+    '-XX:+UnlockDiagnosticVMOptions'
+    '-XX:ArchiveRelocationMode=0'
+    "-D$CdsProperty=$CdsEpoch"
+  )
+} else {
+  Write-Host '>> no packaging\cds\windows.classlist - building without an AppCDS archive (see -RecordClasses)'
+}
+
 # An added launcher inherits the main class, jar and java-options; this file only keeps it out of
 # the menus, so "xdm-app" never shows up as a second Start-menu entry.
 $LauncherProps = Join-Path $BuildDir "$LauncherName.properties"
@@ -178,12 +226,6 @@ $args = @(
   '--runtime-image', $RuntimeDir
   '--dest', $DestDir
 )
-# FlatLaf loads a native library; JDK 22+ warns about that unless native access
-# is enabled explicitly (and will block it in a future release).
-if ([int]$specVersion -ge 22) { $JavaOptions += '--enable-native-access=ALL-UNNAMED' }
-# 64-bit object headers instead of 96-bit: product flag since JDK 25, default
-# from JDK 27 (JEP 534), experimental before that - so gate on the JDK version.
-if ([int]$specVersion -ge 25) { $JavaOptions += '-XX:+UseCompactObjectHeaders' }
 foreach ($o in $JavaOptions) { $args += @('--java-options', $o) }
 
 $icon = Join-Path $PSScriptRoot 'icons\xdm.ico'
@@ -199,6 +241,13 @@ if ($Type -ne 'app-image') {
 Write-Host ">> jpackage --type $Type (windows, version $AppVersion)"
 & jpackage @args
 if ($LASTEXITCODE -ne 0) { throw 'jpackage failed' }
+
+# jpackage copies the jar with a fresh mtime; pin the image's copy so a fresh
+# image uses the archive from its very first start.
+if ($Type -eq 'app-image' -and (Test-Path (Join-Path $InputDir $CdsArchive))) {
+  $imageJar = Join-Path $DestDir "$AppName\app\$MainJar"
+  if (Test-Path $imageJar) { (Get-Item $imageJar).LastWriteTimeUtc = $CdsPinned }
+}
 
 $size = [math]::Round((Get-ChildItem -Recurse $RuntimeDir | Measure-Object Length -Sum).Sum / 1MB, 1)
 Write-Host ""

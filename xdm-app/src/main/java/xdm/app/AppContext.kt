@@ -2,6 +2,7 @@ package xdm.app
 
 import xdm.core.downloaders.TaskInfoDB
 import xdm.core.util.Logger
+import xdm.app.utils.AppLauncher
 import xdm.app.utils.AutoStart
 import xdm.app.utils.UrlScheme
 import xdm.integration.BrowserIntegration
@@ -31,6 +32,10 @@ object AppContext {
     val hasScheduler: Boolean
         get() = ::scheduler.isInitialized
 
+    /** True when this launch found no saved config, i.e. XDM is running for the first time. */
+    var firstRun = false
+        private set
+
     var refreshLinkInProgress = AtomicBoolean(false)
     var refreshLinkId = AtomicLong(-1)
 
@@ -49,7 +54,7 @@ object AppContext {
             && ::videoTracker.isInitialized
             && ::scheduler.isInitialized
         ) {
-            val firstRun = !File(configDir, AppConfig.CONFIG_FILE).exists()
+            firstRun = !File(configDir, AppConfig.CONFIG_FILE).exists()
             config.load()
 
             // Every download now writes here before being published, so it is the one folder that
@@ -60,8 +65,14 @@ object AppContext {
             }
 
             if (firstRun) {
-                Logger.info("First run: enabling start-on-login")
-                config.runOnStartup = AutoStart.setEnabled(true)
+                // Only a packaged build registers itself. Under `java -jar` or an IDE the entry
+                // would point at a JVM and a build-output jar, and outlive the checkout.
+                if (AppLauncher.isPackaged) {
+                    Logger.info("First run: enabling start-on-login")
+                    config.runOnStartup = AutoStart.setEnabled(true)
+                } else {
+                    Logger.info("First run outside a packaged build: not enabling start-on-login")
+                }
                 config.save()
             } else {
                 // Entries written by older versions start XDM without --minimized.

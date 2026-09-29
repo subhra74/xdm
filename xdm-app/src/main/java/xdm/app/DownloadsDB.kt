@@ -61,6 +61,10 @@ class AppDB(private val configDir: String) {
     val size: Int
         @Synchronized get() = records.size
 
+    /** How many records match [predicate]. */
+    @Synchronized
+    fun count(predicate: (DbRecord) -> Boolean): Int = synchronized(records) { records.count(predicate) }
+
     /** A copy of the records matching [predicate], taken under the lock. */
     @Synchronized
     fun findAll(predicate: (DbRecord) -> Boolean): List<DbRecord> = synchronized(records) { records.filter(predicate) }
@@ -229,7 +233,7 @@ class AppDB(private val configDir: String) {
     }
 
     /**
-     * Removes every record matching [predicate], re-indexes and saves all three lists. Returns the
+     * Removes every record matching [predicate], re-indexes and saves the affected lists. Returns the
      * removed records. Only removes rows; the caller deletes their files.
      */
     @Synchronized
@@ -243,9 +247,10 @@ class AppDB(private val configDir: String) {
         for ((i, r) in records.withIndex()) {
             indexMap[r.id] = i
         }
-        savePausedRecords()
-        saveActiveRecords()
-        saveFinishedRecords()
+        // Only the lists that lost rows: the finished one can be large and rarely needs rewriting.
+        if (removed.any { it.status == RecordStatus.PAUSED }) savePausedRecords()
+        if (removed.any { it.status == RecordStatus.FINISHED }) saveFinishedRecords()
+        if (removed.any { it.status != RecordStatus.PAUSED && it.status != RecordStatus.FINISHED }) saveActiveRecords()
         return removed
     }
 }

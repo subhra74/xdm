@@ -10,6 +10,7 @@ Modules: `xdm-core` (download engine, no UI deps, JDK 8), `xdm-app` (Swing app +
 - [docs/build.md](docs/build.md) — build/test commands, toolchain, version pins, runtime layout
 - [docs/architecture.md](docs/architecture.md) — download flow, persistence, task info, manifests, muxing
 - [docs/ui-and-platform.md](docs/ui-and-platform.md) — Swing UI, icons, AutoStart/UrlScheme/KeepAwake, Win32 layer
+- [PACKAGING.md](PACKAGING.md) — installers (WiX MSI, dmg, nfpm), XDM 8 migration, updates, full-JIT `.cfg` override
 - Other: [SCHEDULER.md](SCHEDULER.md), [FILE_PLACEMENT.md](FILE_PLACEMENT.md), [APPCDS.md](APPCDS.md)
 
 ## Essentials

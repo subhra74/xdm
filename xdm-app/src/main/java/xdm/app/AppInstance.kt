@@ -5,6 +5,7 @@ import xdm.app.I8N.text
 import xdm.app.ui.components.MessageBox
 import xdm.core.util.FormatHelper.formatSize
 import xdm.app.ui.screens.AppWindow
+import xdm.app.ui.screens.BrowserSetupDialog
 import xdm.app.ui.screens.DownloadCompleteWindow
 import xdm.app.ui.screens.NewDownloadWindow
 import xdm.app.ui.screens.NewVideoDownloadWindow
@@ -48,6 +49,9 @@ interface IAppInstance {
     fun updateDownloadInView(id: Long)
 
     fun deleteDownloadInView(index: Int)
+
+    /** Refreshes the list once after several downloads were removed together. */
+    fun downloadsRemovedInView()
 
     fun addDownloadInView(id: Long)
 
@@ -114,6 +118,9 @@ class AppInstance : IAppInstance {
                     Logger.info("No system tray available; ignoring $MINIMIZED_FLAG")
                 }
                 showAppWindow()
+                if (AppContext.firstRun) {
+                    BrowserSetupDialog(appWindow).isVisible = true
+                }
             }
         }
     }
@@ -175,6 +182,10 @@ class AppInstance : IAppInstance {
         } else {
             SwingUtilities.invokeAndWait { appWindow.deleteDownloadInView(index) }
         }
+    }
+
+    override fun downloadsRemovedInView() {
+        runOnUIThread { appWindow.downloadsRemovedInView() }
     }
 
     override fun addDownloadInView(id: Long) {

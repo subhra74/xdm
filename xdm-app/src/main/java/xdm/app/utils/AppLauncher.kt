@@ -20,6 +20,16 @@ object AppLauncher {
     /** The name of the launcher XDM registers with the OS, on every platform. */
     const val LAUNCHER_NAME = "xdm-app"
 
+    /** Characters that force an argument in a `.desktop` `Exec=` line to be quoted. */
+    private const val DESKTOP_RESERVED = " \t\n\"'\\><~|&;$*?#()`"
+
+    /**
+     * True when running from a jpackage launcher; false under a plain JVM (`java -jar`, an IDE,
+     * the tests), where there is no installed executable worth registering with the OS.
+     */
+    val isPackaged: Boolean
+        get() = !System.getProperty("jpackage.app-path").isNullOrBlank()
+
     /** The executable, with no arguments. Null when it cannot be worked out. */
     fun command(): List<String>? {
         // jpackage sets this to the absolute path of the launcher that started this process.
@@ -64,4 +74,20 @@ object AppLauncher {
     /** Joins a command into a single command line, quoting tokens with spaces. */
     fun commandLine(cmd: List<String>): String =
         cmd.joinToString(" ") { if (it.contains(' ')) "\"$it\"" else it }
+
+    /**
+     * Joins a command into the value of a `.desktop` file's `Exec=` key, per the Desktop Entry
+     * spec: an argument holding a reserved character is double-quoted, with `"`, `` ` ``, `$` and
+     * `\` backslash-escaped inside the quotes; the string-value escape then doubles every
+     * backslash (so a literal one ends up as four); and `%` becomes `%%`, since `%x` is a field
+     * code.
+     */
+    fun desktopExec(cmd: List<String>): String = cmd.joinToString(" ") { arg ->
+        val quoted = if (arg.isEmpty() || arg.any { it in DESKTOP_RESERVED }) {
+            "\"" + arg.replace(Regex("""["`$\\]"""), """\\$0""") + "\""
+        } else {
+            arg
+        }
+        quoted.replace("\\", "\\\\").replace("%", "%%")
+    }
 }

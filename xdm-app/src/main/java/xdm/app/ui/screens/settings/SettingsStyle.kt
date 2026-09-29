@@ -356,6 +356,9 @@ class SettingsToggle : JToggleButton() {
         rolloverIcon = createIcon(RemixIcon.TOGGLE_LINE, 26, settingsAccentColor())
         selectedIcon = createIcon(RemixIcon.TOGGLE_FILL, 26, settingsAccentColor())
         rolloverSelectedIcon = selectedIcon
+        // Font glyphs, not ImageIcons, so the look-and-feel cannot derive greyed-out versions.
+        disabledIcon = icon
+        disabledSelectedIcon = createIcon(RemixIcon.TOGGLE_FILL, 26, settingsMutedColor())
         val size = Dimension(30, 28)
         preferredSize = size
         maximumSize = size

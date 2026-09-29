@@ -3,6 +3,8 @@ package xdm.app
 import com.formdev.flatlaf.themes.FlatMacDarkLaf
 import com.formdev.flatlaf.themes.FlatMacLightLaf
 import org.conscrypt.Conscrypt
+import xdm.app.utils.CdsJarPin
+import xdm.app.utils.JitOverride
 import xdm.core.downloaders.TaskInfoDB
 import xdm.core.util.Logger
 import java.awt.Insets
@@ -34,6 +36,8 @@ object AppMain {
 
         File(configDir).mkdirs()
         Logger.init(File(configDir))
+        CdsJarPin.repin()
+        JitOverride.sync()
 
         Logger.info("Use OKHttp..")
         Logger.info("loading...")

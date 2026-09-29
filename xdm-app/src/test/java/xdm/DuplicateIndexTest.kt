@@ -103,8 +103,35 @@ class DuplicateIndexTest {
         index.add(2, "https://example.com/b", null) // no record
         assertNull(index.find("https://example.com/b", "b.zip", null, null), "no record")
         appDB.removeItem(1)
-        index.remove(1)
         assertNull(index.find("https://example.com/a", "a.zip", null, null), "removed")
+    }
+
+    @Test
+    fun partialTrailingRecordIsDroppedAndAppendsContinue() {
+        addRecord(1, "a.zip", 0)
+        addRecord(2, "b.zip", 0)
+        index.add(1, "https://example.com/a", null)
+        File(dir, DuplicateIndex.FILE_NAME).appendBytes(ByteArray(7)) // a crash mid-append
+        assertEquals(1L, index.find("https://example.com/a", "x", null, null)?.record?.id, "before append")
+        index.add(2, "https://example.com/b", null)
+        assertEquals(1L, index.find("https://example.com/a", "x", null, null)?.record?.id, "old entry")
+        assertEquals(2L, index.find("https://example.com/b", "x", null, null)?.record?.id, "new entry")
+    }
+
+    @Test
+    fun compactsWhenMostEntriesAreDead() {
+        val file = File(dir, DuplicateIndex.FILE_NAME)
+        addRecord(1, "keep.zip", 0)
+        index.add(1, "https://example.com/keep", "\"k\"")
+        for (id in 2L..1501L) index.add(id, "https://example.com/$id", null) // no records: dead
+        val before = file.length()
+        assertEquals(1L, index.find("https://example.com/keep", "x", null, null)?.record?.id, "live entry")
+        assertEquals(8L + 25, file.length(), "compacted from $before bytes")
+        assertEquals(
+            DuplicateKind.SAME_ETAG,
+            index.find("https://example.com/other", "x", null, "\"k\"")?.kind,
+            "etag survives compaction"
+        )
     }
 
     @Test

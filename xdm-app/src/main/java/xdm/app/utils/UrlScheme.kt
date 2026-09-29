@@ -90,7 +90,7 @@ object UrlScheme {
     /** `"<launcher>" "%1"` on Windows - the URL is passed as the first argument. */
     private fun handlerCommand(): String? = when (os) {
         OS.Windows -> AppLauncher.commandLine("%1")
-        else -> AppLauncher.command()?.let { AppLauncher.commandLine(it) }
+        else -> AppLauncher.command()?.let { AppLauncher.desktopExec(it) }
     }
 
     // --- Linux -----------------------------------------------------------------------------

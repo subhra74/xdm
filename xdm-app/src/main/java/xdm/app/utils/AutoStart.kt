@@ -40,10 +40,14 @@ object AutoStart {
         }
     }.getOrDefault(false)
 
-    /** Enable or disable autostart. Safe to call repeatedly. Returns true on success. */
+    /**
+     * Enable or disable autostart. Safe to call repeatedly. Returns true when the OS entry now
+     * matches [enabled] - checked, not assumed, since [enable] gives up without throwing when the
+     * executable cannot be resolved.
+     */
     fun setEnabled(enabled: Boolean): Boolean = runCatching {
         if (enabled) enable() else disable()
-        true
+        isEnabled() == enabled
     }.getOrElse {
         Logger.error("AutoStart: failed to set autostart=$enabled", it)
         false
@@ -144,11 +148,10 @@ $args
         File(System.getProperty("user.home"), ".config/autostart/xdm-app.desktop")
 
     private fun linuxDesktopContent(cmd: List<String>): String {
-        val exec = cmd.joinToString(" ") { if (it.contains(' ')) "\"$it\"" else it }
         return """[Desktop Entry]
 Type=Application
 Name=$APP_NAME
-Exec=$exec
+Exec=${AppLauncher.desktopExec(cmd)}
 Terminal=false
 X-GNOME-Autostart-enabled=true
 """

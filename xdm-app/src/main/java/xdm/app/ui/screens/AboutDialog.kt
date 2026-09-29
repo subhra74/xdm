@@ -1,5 +1,6 @@
 package xdm.app.ui.screens
 
+import org.conscrypt.Conscrypt
 import xdm.app.AppContext
 import xdm.app.update.UpdateChecker
 import xdm.app.utils.logoIcon
@@ -10,7 +11,7 @@ import javax.swing.border.EmptyBorder
 class AboutDialog(owner: Window?) : JDialog(owner) {
 
     init {
-        setSize(400, 350)
+        setSize(400, 380)
         title = "About XDM"
         isModal = true
         defaultCloseOperation = DISPOSE_ON_CLOSE
@@ -71,6 +72,12 @@ class AboutDialog(owner: Window?) : JDialog(owner) {
             horizontalAlignment = SwingConstants.CENTER
         }
 
+        val tlsInfo = JLabel(conscryptStatus()).apply {
+            font = font.deriveFont(Font.PLAIN, 12f)
+            foreground = UIManager.getColor("Label.disabledForeground")
+            horizontalAlignment = SwingConstants.CENTER
+        }
+
         val gc = GridBagConstraints().apply {
             gridx = 0; gridy = GridBagConstraints.RELATIVE
             fill = GridBagConstraints.HORIZONTAL
@@ -89,9 +96,20 @@ class AboutDialog(owner: Window?) : JDialog(owner) {
 
         panel.add(osInfo, gc)
         panel.add(javaInfo, gc)
+        panel.add(tlsInfo, gc)
 
         contentPane.add(panel)
         //pack()
         setLocationRelativeTo(owner)
     }
+
+    /** Whether TLS runs on Conscrypt (installed by `AppMain` when its native library loads). */
+    private fun conscryptStatus(): String = runCatching {
+        if (Conscrypt.isAvailable()) {
+            val v = Conscrypt.version()
+            "Conscrypt ${v.major()}.${v.minor()}.${v.patch()}"
+        } else {
+            "Conscrypt not available (using JDK TLS)"
+        }
+    }.getOrDefault("Conscrypt not available (using JDK TLS)")
 }

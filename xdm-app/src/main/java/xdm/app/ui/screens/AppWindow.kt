@@ -51,6 +51,8 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
      * found, reveals the update banner at the bottom of the window (on the EDT).
      */
     private fun checkForUpdates() {
+        // GitHub only supplies the latest version number; the button always opens our download page
+        // (downloadUrl in app-version.json), never the GitHub release.
         UpdateChecker.checkForUpdate { info ->
             if (info != null) {
                 SwingUtilities.invokeLater {
@@ -111,6 +113,10 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
 
     fun deleteDownloadInView(index: Int) {
         listView.rowDeleted(index)
+    }
+
+    fun downloadsRemovedInView() {
+        listView.rowsRemoved()
     }
 
     fun addDownloadInView(index: Int) {

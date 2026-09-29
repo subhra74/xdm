@@ -3,6 +3,7 @@ package xdm.app.ui.screens.settings
 import xdm.app.AppContext
 import xdm.app.I8N
 import xdm.app.utils.AutoStart
+import xdm.app.utils.JitOverride
 import xdm.app.utils.chooseFile
 import java.awt.Dimension
 import java.awt.Insets
@@ -19,6 +20,7 @@ class AdvancedConfigPanel : SettingsPanel() {
     private val tglHalt = SettingsToggle()
     private val tglNoSleep = SettingsToggle()
     private val tglRunOnStartup = SettingsToggle()
+    private val tglFullJit = SettingsToggle()
 
     private val tglRunCmd = SettingsToggle()
     private val txtCmd = rounded(JTextField()).apply {
@@ -48,6 +50,7 @@ class AdvancedConfigPanel : SettingsPanel() {
                 settingsRow(I8N.text("MSG_AUTOSTART"), I8N.text("MSG_AUTOSTART_SUB"), tglRunOnStartup),
                 settingsRow(I8N.text("MSG_AWAKE"), I8N.text("MSG_AWAKE_SUB"), tglNoSleep),
                 settingsRow(I8N.text("MSG_HALT"), I8N.text("MSG_HALT_SUB"), tglHalt),
+                settingsRow(I8N.text("MSG_FULL_JIT"), I8N.text("MSG_FULL_JIT_SUB"), tglFullJit),
             )
         )
         add(settingsGap())
@@ -109,7 +112,12 @@ class AdvancedConfigPanel : SettingsPanel() {
         val config = AppContext.config
         tglHalt.isSelected = config.haltAfterDownload
         tglNoSleep.isSelected = config.keepAwake
-        tglRunOnStartup.isSelected = config.runOnStartup
+        // The OS entry, not the config, is the truth: it can be removed behind XDM's back.
+        tglRunOnStartup.isSelected = AutoStart.isEnabled()
+        // Like autostart, the file on disk is the setting. Builds that always run full tiered
+        // (Windows ARM64) show it on and locked; dev runs and tar.gz builds show it off and locked.
+        tglFullJit.isSelected = JitOverride.isAlwaysFull || JitOverride.isEnabled()
+        tglFullJit.isEnabled = JitOverride.isConfigurable
         tglRunCmd.isSelected = config.runCommand
         txtCmd.text = config.customCommand
         tglVirusScan.isSelected = config.runVirusScan
@@ -122,9 +130,13 @@ class AdvancedConfigPanel : SettingsPanel() {
         val config = AppContext.config
         config.haltAfterDownload = tglHalt.isSelected
         config.keepAwake = tglNoSleep.isSelected
-        if (config.runOnStartup != tglRunOnStartup.isSelected) {
-            config.runOnStartup = tglRunOnStartup.isSelected
+        if (AutoStart.isEnabled() != tglRunOnStartup.isSelected) {
             AutoStart.setEnabled(tglRunOnStartup.isSelected)
+        }
+        // Record what actually took effect - enabling can fail.
+        config.runOnStartup = AutoStart.isEnabled()
+        if (JitOverride.isConfigurable && JitOverride.isEnabled() != tglFullJit.isSelected) {
+            JitOverride.setEnabled(tglFullJit.isSelected)
         }
         config.runCommand = tglRunCmd.isSelected
         config.customCommand = txtCmd.text

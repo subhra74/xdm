@@ -1,9 +1,20 @@
 package xdm.app
 
-import xdm.core.util.AtomicIO
 import xdm.core.util.Logger
+import java.io.BufferedInputStream
+import java.io.BufferedOutputStream
+import java.io.DataInputStream
+import java.io.DataOutputStream
+import java.io.EOFException
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.RandomAccessFile
 import java.net.URI
 import java.nio.ByteBuffer
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 import java.util.Locale
 
@@ -13,41 +24,29 @@ enum class DuplicateKind { SAME_URL, SAME_NAME_AND_SIZE, SAME_ETAG }
 data class DuplicateMatch(val record: DbRecord, val kind: DuplicateKind)
 
 /**
- * Remembers a hash of every HTTP download's URL and of its ETag (when the browser reported one) in
- * `download-index.dat`, so the New Download dialog can spot a duplicate without reading every
- * `task-<id>.info`. Name and size need no index: [AppDB] already holds them in memory.
+ * Remembers a hash of every HTTP download's URL and of its ETag (when the browser reported one), so
+ * the New Download dialog can spot a duplicate without reading every `task-<id>.info`. Name and
+ * size need no index: [AppDB] already holds them in memory.
  *
- * Loaded on first use. Entries of downloads that are gone are dropped then, and [remove] only
- * forgets in memory: the file is rewritten by the next [add]/[updateUrl], so clearing a long list
- * does not rewrite it once per download. A leftover entry is harmless since [find] ignores ids
- * that have no record.
+ * Nothing is kept in memory: `download-index.log` is append-only and [find] streams through it, so
+ * the check costs a few milliseconds per click and no heap in between. [AppDB] decides which
+ * entries are alive, so a deleted download needs no write at all; its entries are skipped until a
+ * [find] sees that most of the file is dead and rewrites it without them.
+ *
+ * The file is an 8-byte header followed by fixed [RECORD_SIZE]-byte records, so a record cut short
+ * by a crash is recognised by length and dropped. Appends are not synced: losing the last entry
+ * only means one duplicate goes unnoticed.
  */
-class DuplicateIndex(private val configDir: String, private val appDB: AppDB) {
-    private class Entry(var urlHash: Long, val etagHash: Long?)
+class DuplicateIndex(configDir: String, private val appDB: AppDB) {
+    private val file = File(configDir, FILE_NAME)
 
-    private val entries = LinkedHashMap<Long, Entry>()
-    private var loaded = false
-
+    /** Registers a new download. */
     @Synchronized
-    fun add(id: Long, url: String, etag: String?) {
-        ensureLoaded()
-        entries[id] = Entry(urlHash(url), etagHash(url, etag))
-        save()
-    }
+    fun add(id: Long, url: String, etag: String?) = append(id, KIND_ADD, urlHash(url), etagHash(url, etag) ?: NO_ETAG)
 
-    /** A refreshed link keeps its ETag entry: the file is the same, only the address changed. */
+    /** A refreshed link keeps its ETag: the file is the same, only the address changed. */
     @Synchronized
-    fun updateUrl(id: Long, url: String) {
-        ensureLoaded()
-        val entry = entries[id] ?: return
-        entry.urlHash = urlHash(url)
-        save()
-    }
-
-    @Synchronized
-    fun remove(id: Long) {
-        if (loaded) entries.remove(id)
-    }
+    fun updateUrl(id: Long, url: String) = append(id, KIND_URL, urlHash(url), NO_ETAG)
 
     /**
      * The existing download this one most likely duplicates, or null. Checked strongest first: the
@@ -56,13 +55,7 @@ class DuplicateIndex(private val configDir: String, private val appDB: AppDB) {
      * wins within a kind.
      */
     fun find(url: String, fileName: String?, size: Long?, etag: String?): DuplicateMatch? {
-        val (byUrl, byEtag) = synchronized(this) {
-            ensureLoaded()
-            val u = urlHash(url)
-            val e = etagHash(url, etag)
-            entries.filterValues { it.urlHash == u }.keys to
-                    (e?.let { h -> entries.filterValues { it.etagHash == h }.keys } ?: emptySet())
-        }
+        val (byUrl, byEtag) = scan(urlHash(url), etagHash(url, etag))
         fun newest(ids: Collection<Long>) = ids.mapNotNull { appDB.getById(it) }.maxByOrNull { it.date }
 
         newest(byUrl)?.let { return DuplicateMatch(it, DuplicateKind.SAME_URL) }
@@ -75,37 +68,104 @@ class DuplicateIndex(private val configDir: String, private val appDB: AppDB) {
         return null
     }
 
-    private fun ensureLoaded() {
-        if (loaded) return
-        loaded = true
-        if (!AtomicIO.exists(FILE_NAME, configDir)) return
-        AtomicIO.readTransacted(FILE_NAME, configDir) { r ->
-            if (r.readInt() != VERSION) return@readTransacted
-            repeat(r.readInt()) {
-                val id = r.readLong()
-                val urlHash = r.readLong()
-                val etagHash = if (r.readBoolean()) r.readLong() else null
-                if (appDB.getById(id) != null) entries[id] = Entry(urlHash, etagHash)
+    /**
+     * Streams the file once, collecting the ids whose latest URL / ETag entry matches. Only matches
+     * are held, so memory does not grow with the list. Compacts afterwards if most entries are dead.
+     */
+    @Synchronized
+    private fun scan(url: Long, etag: Long?): Pair<Set<Long>, Set<Long>> {
+        val byUrl = HashSet<Long>()
+        val byEtag = HashSet<Long>()
+        var dead = 0
+        var total = 0
+        forEachRecord { id, kind, u, e ->
+            total++
+            if (appDB.getById(id) == null) dead++
+            if (u == url) byUrl.add(id) else byUrl.remove(id)
+            if (kind == KIND_ADD && etag != null) {
+                if (e == etag) byEtag.add(id) else byEtag.remove(id)
             }
-        }.onFailure { Logger.error("XDM", "Unable to read $FILE_NAME", it) }
+        }
+        if (dead >= COMPACT_MIN_DEAD && dead * 2 > total) compact()
+        return byUrl to byEtag
     }
 
-    private fun save() {
-        AtomicIO.writeTransacted(FILE_NAME, configDir) { w ->
-            w.writeInt(VERSION)
-            w.writeInt(entries.size)
-            for ((id, e) in entries) {
-                w.writeLong(id)
-                w.writeLong(e.urlHash)
-                w.writeBoolean(e.etagHash != null)
-                e.etagHash?.let { w.writeLong(it) }
+    private inline fun forEachRecord(action: (id: Long, kind: Byte, urlHash: Long, etagHash: Long) -> Unit) {
+        if (!file.isFile) return
+        try {
+            DataInputStream(BufferedInputStream(FileInputStream(file), 16 * 1024)).use { r ->
+                if (r.readLong() != MAGIC) return
+                // A trailing partial record (a crash mid-append) is simply never read.
+                repeat(((file.length() - HEADER_SIZE) / RECORD_SIZE).toInt()) {
+                    action(r.readLong(), r.readByte(), r.readLong(), r.readLong())
+                }
             }
-        }.onFailure { Logger.error("XDM", "Unable to save $FILE_NAME", it) }
+        } catch (_: EOFException) {
+        } catch (e: Exception) {
+            Logger.error("XDM", "Unable to read $FILE_NAME", e)
+        }
+    }
+
+    private fun append(id: Long, kind: Byte, urlHash: Long, etagHash: Long) {
+        try {
+            RandomAccessFile(file, "rw").use { f ->
+                val len = f.length()
+                if (len < HEADER_SIZE || !hasMagic(f)) {
+                    f.setLength(0)
+                    f.writeLong(MAGIC)
+                } else {
+                    // Drop a partial record left by a crash, so the new one starts on a boundary.
+                    f.setLength(len - (len - HEADER_SIZE) % RECORD_SIZE)
+                }
+                f.seek(f.length())
+                f.write(
+                    ByteBuffer.allocate(RECORD_SIZE)
+                        .putLong(id).put(kind).putLong(urlHash).putLong(etagHash).array()
+                )
+            }
+        } catch (e: Exception) {
+            Logger.error("XDM", "Unable to write $FILE_NAME", e)
+        }
+    }
+
+    private fun hasMagic(f: RandomAccessFile): Boolean {
+        f.seek(0)
+        return f.readLong() == MAGIC
+    }
+
+    /** Rewrites the file with only the entries of downloads that still exist, streaming both ways. */
+    private fun compact() {
+        val tmp = File(file.parentFile, "$FILE_NAME.tmp")
+        try {
+            DataOutputStream(BufferedOutputStream(FileOutputStream(tmp), 16 * 1024)).use { w ->
+                w.writeLong(MAGIC)
+                forEachRecord { id, kind, u, e ->
+                    if (appDB.getById(id) != null) {
+                        w.writeLong(id); w.writeByte(kind.toInt()); w.writeLong(u); w.writeLong(e)
+                    }
+                }
+            }
+            try {
+                Files.move(tmp.toPath(), file.toPath(), StandardCopyOption.ATOMIC_MOVE)
+            } catch (_: AtomicMoveNotSupportedException) {
+                Files.move(tmp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            }
+            Logger.info("XDM", "Compacted $FILE_NAME to ${file.length()} bytes")
+        } catch (e: Exception) {
+            tmp.delete()
+            Logger.error("XDM", "Unable to compact $FILE_NAME", e)
+        }
     }
 
     companion object {
-        const val FILE_NAME = "download-index.dat"
-        private const val VERSION = 1
+        const val FILE_NAME = "download-index.log"
+        private const val MAGIC = 0x58444D4944583031L // "XDMIDX01"
+        private const val HEADER_SIZE = 8L
+        private const val RECORD_SIZE = 25 // id, kind, url hash, etag hash
+        private const val KIND_ADD: Byte = 0
+        private const val KIND_URL: Byte = 1
+        private const val NO_ETAG = 0L
+        private const val COMPACT_MIN_DEAD = 1000
 
         /**
          * Trimmed, scheme and host lower-cased, fragment dropped. The query is kept: it often picks
@@ -139,7 +199,8 @@ class DuplicateIndex(private val configDir: String, private val appDB: AppDB) {
             val tag = etag?.trim()?.takeIf { it.isNotEmpty() && !it.startsWith("W/", ignoreCase = true) }
                 ?: return null
             val host = runCatching { URI(url.trim()).host }.getOrNull()?.lowercase(Locale.ROOT) ?: return null
-            return hash("$host\n$tag")
+            // 0 marks "no ETag" on disk; a real hash landing on it just goes unmatched.
+            return hash("$host\n$tag").takeIf { it != NO_ETAG }
         }
 
         /** The first 8 bytes of SHA-256: collisions are negligible at download-list sizes. */

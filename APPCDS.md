@@ -282,12 +282,10 @@ Platform notes:
   mtimes by default. Use `tar -p`/`rsync -t` when packaging, and re-`touch` in the launcher
   as above. macOS `touch -t` takes `YYYYMMDDhhmm`; GNU `touch -d '2026-09-22 00:00:00 UTC'`
   is equivalent.
-* **macOS app bundles** don't run a shell script — jpackage bakes the flags into
-  `Contents/Info.plist` (`JVMOptions`) via `--java-options`, which is what
-  `packaging/build-bundle.sh` already does. Add the CDS and directives flags there, using
-  `$APP_ROOT` (jpackage expands it) for paths inside the bundle:
-  `--java-options '-XX:SharedArchiveFile=$APP_ROOT/app/xdm.jsa'`. Code-signing and
-  notarisation do **not** touch the jar's mtime, but rebuilding the jar does.
+* **jpackage bundles** don't run a shell script — `--java-options` are baked into each
+  launcher's `app/<launcher>.cfg` (`Contents/app/` on macOS), and the launcher expands
+  `$APPDIR` there to the image's app directory. See §11 for what the build scripts do.
+  Code-signing and notarisation do **not** touch the jar's mtime, but rebuilding the jar does.
 * **macOS measurement**: Activity Monitor's "Memory" column is *phys\_footprint*, which
   counts dirty + compressed pages and, unlike Windows' private working set, does **not**
   exclude clean file-backed pages the process is using. So the AppCDS saving shows up, the
@@ -352,3 +350,41 @@ real: it should fall from ~21 MB committed to a few MB.
 * If you would rather not ship an archive at all, `-XX:+AutoCreateSharedArchive
   -XX:SharedArchiveFile=<per-user cache dir>/xdm.jsa` self-heals on version changes, but the
   first run pays the dump cost and gets no saving.
+
+---
+
+## 11. What `packaging/build-bundle.*` does
+
+The scripts automate §3–§5 and §7 for the jpackage image, with the class list as the one
+manual input:
+
+1. **Record** (only with `--record-classes` / `-RecordClasses`): runs XDM on the freshly
+   linked runtime with the final flags and `-XX:DumpLoadedClassList`, writing
+   `packaging/cds/<os>.classlist` (`mac`, `linux`, `windows`). Quit any running XDM first,
+   run a real download to completion, then quit from the tray. Check the list in, and
+   re-record it when the app's startup or download path changes a lot. A stale list is not
+   fatal: missing classes are skipped at dump time.
+2. **Pin** the bundled jar's mtime to 2020-01-01T00:00:00Z.
+3. **Dump** `xdm.jsa` into the jpackage input with the launcher's own flags. It must use the
+   same flags: `UseCompactObjectHeaders` or a different collector would make the JVM reject
+   the archive.
+4. **Launcher flags**: `-XX:SharedArchiveFile=$APPDIR/xdm.jsa`,
+   `-XX:+UnlockDiagnosticVMOptions -XX:ArchiveRelocationMode=0`, and
+   `-Dxdm.cds.mtime=1577836800`.
+5. **Re-pin** the jar inside an `app-image`, because jpackage's copy gets a fresh mtime.
+
+Without a class list, the bundle is built as before, with no archive.
+
+The launcher cannot run code before the JVM starts, so §5's "re-pin before every start" is
+done by the app instead: `CdsJarPin` (called first thing in `AppMain`) compares the jar's
+mtime with `xdm.cds.mtime` and restores it. The start that finds the jar drifted runs without
+the archive; every start after that uses it. This covers installers and copies that rewrite
+mtimes, as long as the install directory is writable by the user.
+
+Not wired in (deliberately, for now): `-XX:AllocateHeapAt`, whose directory has to exist
+before the JVM starts, and the §6 compiler directives. The JDK's base `classes.jsa` is not
+deleted; jlink does not generate one unless asked.
+
+Verified on macOS/aarch64, JDK 25: the image's archive maps (`Mapped static region`), still
+maps after the `.app` is moved, and is rejected with "timestamp has changed" once the jar is
+touched.

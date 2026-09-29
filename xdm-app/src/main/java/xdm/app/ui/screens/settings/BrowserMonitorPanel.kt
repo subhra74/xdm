@@ -2,29 +2,16 @@ package xdm.app.ui.screens.settings
 
 import xdm.app.AppContext
 import xdm.app.I8N
-import xdm.app.utils.RemixIcon
-import xdm.app.utils.createIcon
-import java.awt.Color
-import java.awt.Cursor
+import xdm.app.ui.components.BrowserExtensionPanel
 import java.awt.Dimension
-import java.awt.Font
-import java.awt.Graphics
-import java.awt.Graphics2D
-import java.awt.GridLayout
 import java.awt.Insets
-import java.awt.RenderingHints
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
 import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.JComboBox
 import javax.swing.JComponent
 import javax.swing.JLabel
-import javax.swing.JPanel
 import javax.swing.JScrollPane
 import javax.swing.JTextArea
-import javax.swing.SwingConstants
-import javax.swing.SwingUtilities
 import javax.swing.border.EmptyBorder
 
 /** What the browser extension hands over: which file types are captured, and from which sites. */
@@ -44,18 +31,10 @@ class BrowserMonitorPanel : SettingsPanel() {
 
         add(settingsTitle(I8N.text("SETTINGS_MONITORING")))
 
-        val browsers = JPanel(GridLayout(1, 4, 10, 0)).apply {
-            isOpaque = false
-            alignmentX = LEFT_ALIGNMENT
-            add(BrowserTile(RemixIcon.CHROME_FILL, "Chrome", Color(0x4285F4)))
-            add(BrowserTile(RemixIcon.FIREFOX_FILL, "Firefox", Color(0xFF7139)))
-            add(BrowserTile(RemixIcon.EDGE_NEW_FILL, "Edge", Color(0x24B0C4)))
-            add(BrowserTile(RemixIcon.GLOBAL_FILL, I8N.text("SETTINGS_BROWSER_OTHER"), settingsAccentColor()))
-        }
         add(
             settingsSection(
                 I8N.text("SETTINGS_SEC_BROWSERS"),
-                settingsFullRow(null, I8N.text("SETTINGS_SEC_BROWSERS_SUB"), browsers),
+                settingsFullRow(null, I8N.text("SETTINGS_SEC_BROWSERS_SUB"), BrowserExtensionPanel()),
             )
         )
         add(settingsGap())
@@ -148,57 +127,4 @@ class BrowserMonitorPanel : SettingsPanel() {
     }
 
     override fun getInsets(): Insets = Insets(18, 24, 24, 24)
-
-    /** A rounded browser "tile": brand-tinted icon over a name, with a hover highlight. */
-    private class BrowserTile(iconName: RemixIcon, label: String, private val accent: Color) : JPanel() {
-        private var hovered = false
-
-        init {
-            isOpaque = false
-            layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            border = EmptyBorder(16, 8, 14, 8)
-            cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-
-            add(JLabel(createIcon(iconName, 40, accent)).apply {
-                alignmentX = CENTER_ALIGNMENT
-                horizontalAlignment = SwingConstants.CENTER
-            })
-            add(JLabel(label).apply {
-                alignmentX = CENTER_ALIGNMENT
-                font = font.deriveFont(Font.BOLD)
-                border = EmptyBorder(10, 0, 0, 0)
-            })
-
-            val hoverListener = object : MouseAdapter() {
-                override fun mouseEntered(e: MouseEvent) {
-                    hovered = true
-                    repaint()
-                }
-
-                override fun mouseExited(e: MouseEvent) {
-                    // Ignore transitions onto our own child components.
-                    val pt = SwingUtilities.convertPoint(e.component, e.point, this@BrowserTile)
-                    if (!contains(pt)) {
-                        hovered = false
-                        repaint()
-                    }
-                }
-            }
-            addMouseListener(hoverListener)
-            components.forEach { it.addMouseListener(hoverListener) }
-        }
-
-        override fun paintComponent(g: Graphics) {
-            val g2 = g.create() as Graphics2D
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-            g2.color = settingsSurface(hovered)
-            g2.fillRoundRect(0, 0, width - 1, height - 1, 14, 14)
-            if (hovered) {
-                g2.color = Color(accent.red, accent.green, accent.blue, 170)
-                g2.drawRoundRect(0, 0, width - 1, height - 1, 14, 14)
-            }
-            g2.dispose()
-            super.paintComponent(g)
-        }
-    }
 }
