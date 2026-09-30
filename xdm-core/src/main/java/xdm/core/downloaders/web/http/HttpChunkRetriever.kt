@@ -10,6 +10,9 @@ import xdm.core.util.getRetryDelay
 import java.io.File
 import java.io.IOException
 import java.io.RandomAccessFile
+import java.nio.file.Files
+import java.nio.file.StandardOpenOption
+import java.util.EnumSet
 import kotlin.math.min
 
 
@@ -433,7 +436,9 @@ class HttpChunkRetriever(
             val chunk = context.chunks[id] ?: return null
             var fs: RandomAccessFile? = null
             try {
-                fs = RandomAccessFile(File(context.tempFolder, context.tempFileName), "rw")
+                val file = File(context.tempFolder, context.tempFileName)
+                if (!context.tempFileCreated.get()) createSparse(file)
+                fs = RandomAccessFile(file, "rw")
                 context.totalSize?.let { len ->
                     if (!context.tempFileCreated.get()) {
                         fs.setLength(len)
@@ -453,6 +458,20 @@ class HttpChunkRetriever(
             }
         }
         return null
+    }
+
+    /**
+     * Creates the temp file as sparse (NTFS; ignored elsewhere). Chunks write far into a preallocated
+     * file, and NTFS zero-fills everything below a write past the valid data length, so a normal file
+     * gets written almost twice. A sparse file skips the zero-fill.
+     */
+    private fun createSparse(file: File) {
+        if (file.exists()) return
+        try {
+            Files.newByteChannel(file.toPath(), EnumSet.of(StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE, StandardOpenOption.SPARSE)).close()
+        } catch (e: IOException) {
+            Logger.info("XDM", "Could not create sparse temp file, using a normal one: $e")
+        }
     }
 
     private fun closeFileHandle(fileHandle: RandomAccessFile?) {
