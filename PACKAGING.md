@@ -23,7 +23,7 @@ Related: [AUTOSTART.md](AUTOSTART.md) (login entry, JVM flags), [APPCDS.md](APPC
 | Linux packages | **nfpm** (one config → deb, rpm, Arch) plus a plain `.tar.gz` |
 | Architectures | Separate builds: Windows x64 / ARM64, macOS x64 / ARM64, Linux x64 / ARM64 |
 | Launchers | One launcher, `xdm-app`. The `--add-launcher` hack goes away; installers supply the display name |
-| JIT | C1 only when Conscrypt's native library ships in the build (every target except Windows ARM64). Users can switch to full tiered in Advanced settings (§8) |
+| JIT | C1 for all code, C2 only for the JDK's crypto hot methods (`packaging/jit-directives.json`), on every target. TLS is the JDK's own (SunJSSE); Conscrypt was removed. Users can switch to full tiered in Advanced settings (§8) |
 | Code signing | None for now. Apply to SignPath Foundation for Windows (§10). macOS stays ad-hoc signed |
 | Updates | Semi-manual: the app shows a banner, the user downloads the new installer from the website and installs over the old version (§9) |
 | XDM 8 migration | Windows: same MSI UpgradeCode, same Run key name; detect the Store (MSIX) version. Linux: take over the old package names (§11) |
@@ -54,48 +54,70 @@ mvn package ──► jlink runtime ──► strip foreign natives ──► de
 Each target is built natively on its own architecture. Nothing is cross-built: the jlink runtime, the jpackage
 launcher and the AppCDS archive are all specific to one architecture. ✅
 
-| Target | GitHub Actions runner | Conscrypt native | JIT | Output |
-|---|---|---|---|---|
-| Windows x64 | `windows-latest` | ✅ | C1 only | `xdm-<ver>-x64.msi` |
-| Windows ARM64 | `windows-11-arm` | ❌ | full tiered | `xdm-<ver>-arm64.msi` |
-| macOS ARM64 | `macos-latest` | ✅ | C1 only | `xdm-<ver>-arm64.dmg` |
-| macOS x64 | an Intel macOS runner 🔎 (check the current label) | ✅ | C1 only | `xdm-<ver>-x64.dmg` |
-| Linux x64 | `ubuntu-latest` | ✅ | C1 only | deb, rpm, Arch, tar.gz |
-| Linux ARM64 | `ubuntu-24.04-arm` | ✅ | C1 only | deb, rpm, Arch, tar.gz |
+| Target | GitHub Actions runner | Output |
+|---|---|---|
+| Windows x64 | `windows-latest` | `xdm-<ver>-x64.msi` |
+| Windows ARM64 | `windows-11-arm` | `xdm-<ver>-arm64.msi` |
+| macOS ARM64 | `macos-latest` | `xdm-<ver>-arm64.dmg` |
+| macOS x64 | an Intel macOS runner 🔎 (check the current label) | `xdm-<ver>-x64.dmg` |
+| Linux x64 | `ubuntu-latest` | deb, rpm, Arch, tar.gz |
+| Linux ARM64 | `ubuntu-24.04-arm` | deb, rpm, Arch, tar.gz |
 
 - ✅ Linux and Windows ARM64 runners are free for public repositories (GitHub, Aug 2025).
-- ✅ Conscrypt 2.7.0 (`xdm-app/pom.xml`) ships natives for windows-x86_64, linux-x86_64, linux-aarch_64,
-  osx-x86_64 and osx-aarch_64. There is no windows-aarch64 build (checked in the jar and on Maven Central).
+- Every target uses the same JIT setup (§3.2), so no target needs special handling for TLS.
 - **Build with a vendor JDK (e.g. Temurin), not a distro package.** The runtime and launcher come from the build
   JDK, so the JDK's glibc baseline becomes XDM's. Vendor builds target old glibc; a distro OpenJDK may need the
   build host's newer one. 🔎 After building, check the highest `GLIBC_` symbol version in
   `lib/runtime/lib/server/libjvm.so` and the launcher.
 
-### 3.2 JIT flags follow what ships (planned)
+### 3.2 JIT: C1 for all code, C2 for crypto (implemented)
 
-`-XX:TieredStopAtLevel=1` and `-XX:CICompilerCount=1` leave the fixed option list in both scripts. They are
-added right after the foreign-natives strip, and before AppCDS record/dump, so the archive is built with the
-launcher's exact flags:
+Both scripts pass `-XX:CICompilerCount=2 -XX:ReservedCodeCacheSize=32m`, and, after the AppCDS step,
+`-XX:+UnlockDiagnosticVMOptions -XX:CompilerDirectivesFile=$APPDIR/jit-directives.json`. The directive
+(`packaging/jit-directives.json`, copied into `app/`) lets C1 compile everything and C2 only the JDK's crypto
+methods that do the per-byte work of TLS (AES, GHASH, CBC, ChaCha20, Poly1305, SHA). Most are the AES-NI /
+ARMv8 crypto intrinsics, which C1 alone does not use; the rest are the SHA methods' callers (see below).
 
-```bash
-if jar tf "$INPUT_DIR/$MAIN_JAR" | grep -q '^META-INF/native/.*conscrypt'; then
-  JAVA_OPTIONS+=(-XX:TieredStopAtLevel=1 -XX:CICompilerCount=1)   # Conscrypt does TLS natively
-else
-  JAVA_OPTIONS+=(-XX:CICompilerCount=2)                           # tiered needs >= 2 compiler threads
-fi
-```
+- **Why not C1 only:** with the JDK's TLS, C1 alone costs 4-10x the CPU per MB (measured below). That was only
+  acceptable while Conscrypt did TLS natively.
+- **Why not full tiered:** it spends C2 time and memory on the whole app for no download-speed gain.
+- **The directive is added after AppCDS record/dump** because `$APPDIR` exists only in the launcher. The
+  recording run passes the directive with its build path, so it matches production.
+- **One directive for every target** (Windows, macOS, Linux; x64 and arm64), and this is its only copy. The
+  method names are the JDK's, not a platform's.
+- **Verified tiers** (Apple M2, JDK 25, `-XX:+PrintCompilation` over the six suites below): C1 compiled code in 39
+  packages; all 31 methods that reached tier 4 were on the list; 309 others the JVM wanted on C2 were refused.
+- **`UnlockDiagnosticVMOptions` must come before `CompilerDirectivesFile`.**
+- **Re-check the method names on every JDK update.** A renamed method silently stays on C1. Run a TLS download
+  with `-XX:+PrintCompilation` and look for the directive's methods at level 4.
 
-- ✅ The two flags must move together. With C2 enabled, `CICompilerCount=1` is rejected at JVM start.
-- **Take the architecture from the bundled runtime** (`$RUNTIME_DIR/bin/java -XshowSettings:properties` →
-  `os.arch`), not from the host (`uname -m`, `$env:PROCESSOR_ARCHITECTURE`). An x64 JDK running emulated on ARM64
-  Windows then correctly yields an x64 bundle.
-- **Fix `Remove-ForeignNatives` in `build-bundle.ps1`.** It always keeps `windows-x86_64.dll`, including on
-  ARM64, with the comment "runs it under emulation". That comment is wrong: an ARM64 JVM cannot load an x64 DLL.
-  On ARM64 it must keep no Conscrypt library, or the check above picks C1 only. The same wrong comment appears in
-  `build-bundle.sh`.
-- The JIT flags are not among the settings the JVM validates when loading a CDS archive, so the C1 and
-  full-tiered modes should share one archive. 🔎 Not yet tested: the §8.4 build had no class list, so no archive.
-  Check with `-Xlog:cds` under the override once a class list is committed.
+Measured on an Apple M2 (macOS, Temurin 25.0.1), loopback TLS 512 MB, client read in 8 KB pieces as OkHttp
+does, CPU of the client process (average of 2 rounds):
+
+| Cipher suite | C1 only | Handoff directive (v3) | **Shipped directive** | Full tiered |
+|---|---|---|---|---|
+| TLS 1.3 AES-128-GCM | 3.28 | 0.33 | **0.32** | 0.55 |
+| TLS 1.3 AES-256-GCM | 3.57 | 0.34 | **0.34** | 0.54 |
+| TLS 1.3 ChaCha20-Poly1305 | 0.99 | 0.58 | **0.57** | 0.62 |
+| TLS 1.2 AES-128-CBC-SHA256 | 2.27 | 1.12 | **0.42** | 0.53 |
+| TLS 1.2 AES-256-CBC-SHA384 | 2.09 | 0.87 | **0.50** | 0.58 |
+| TLS 1.2 AES-128-CBC-SHA | 1.90 | 0.84 | **0.43** | 0.51 |
+
+CPU-s per 100 MB. Code cache after each run: ~6-6.5 MB with either directive.
+
+- **The handoff's directive (v3) left SHA on C1.** The SHA intrinsics are applied where `SHA*.implCompress0` /
+  `DigestBase.implCompressMultiBlock0` are *called* from C2 code, and v3 kept the callers (`implCompress`,
+  `implCompressMultiBlock`) on C1, so HMAC-SHA ran as plain Java through C1-compiled `VarHandle`s (80% of the
+  JFR samples). The shipped directive adds those callers. That changes CBC suites only; the x64 numbers below
+  were measured with v3.
+- ChaCha20 under the directive tops out at ~210 MB/s vs ~280 MB/s full tiered, at the same CPU per MB. Far
+  above any home link.
+- **A directive file the JVM can't parse stops XDM from starting.** Comments are only allowed inside the
+  top-level array. Check with `java -XX:+UnlockDiagnosticVMOptions -XX:CompilerDirectivesFile=… -version`.
+
+The Windows x64 numbers behind the same directive (i7-8750H, local Caddy and real servers) are in the
+2026-09-30 benchmark handoff: 0.14-0.34 CPU-s per 100 MB, the same as Conscrypt, and faster than Conscrypt
+on the local server.
 
 ### 3.3 App image (planned)
 
@@ -112,26 +134,9 @@ fi
 
 Unchanged from [APPCDS.md](APPCDS.md) §11, with these changes:
 - **Class lists:** `cds/windows.classlist`, `cds/mac.classlist` and `cds/linux.classlist` are shared by x64 and
-  ARM64, since both load the same Conscrypt classes. Windows ARM64 gets `cds/windows-aarch64.classlist` (it loads
-  the JDK's TLS classes instead); the script looks for `<os>-<arch>` first and falls back to `<os>`.
+  ARM64, since every target now loads the same JDK TLS classes.
 - **Windows per-machine installs:** `CdsJarPin` cannot re-pin the jar under Program Files, which isn't writable,
   so the installed jar must already carry the pinned mtime (§5.6).
-
-### 3.5 Conscrypt native loading (optional hardening)
-
-✅ Conscrypt's `NativeLibraryLoader` first extracts its library from the jar into a work folder (the temp
-folder, or the one named by the `org.conscrypt.native.workdir` property) and loads it from there. If that fails,
-it falls back to `System.loadLibrary`, which searches `java.library.path`.
-
-Extraction fails when `/tmp` is mounted `noexec` or antivirus blocks DLLs in `%TEMP%`. XDM then runs on the JDK's
-TLS. The per-user full-JIT override (§8) exists partly for this case.
-
-Hardening, 🔎 to verify on each OS:
-1. At build time, extract the one remaining Conscrypt library into `app/` and delete it from the jar.
-2. Add `-Djava.library.path=$APPDIR` to the launcher options.
-
-The extraction step then finds no resource, and the fallback loads the library straight from the install folder.
-Nothing is written to temp, no DLL ends up in `%TEMP%`, and the library is shipped once.
 
 ---
 
@@ -313,8 +318,6 @@ Notes:
   the right-click → Open bypass). Put this on the download page.
 - ✅ **Homebrew:** since 2026-09-01 the official cask repo disables casks that fail Gatekeeper, so an unsigned
   XDM can't be listed there. A tap of our own would work but updates without the website (§9).
-- 🔎 **Conscrypt's dylibs declare macOS 26 as their minimum.** They load on macOS 15.6 (✅ this machine); older
-  versions are untested. Failure is not fatal: XDM falls back to JDK TLS, and the About dialog shows it (§8.6).
 - **Updating:** the user quits XDM and drags the new app over the old one. Finder asks to replace it.
 
 ---
@@ -431,13 +434,13 @@ registers its own `.desktop` scheme handler and autostart entry at first run (pe
 
 ### 8.1 What the user sees
 
-Settings → Advanced → System → **Full JIT compiler**: "Faster HTTPS where Conscrypt cannot load, and faster video
+Settings → Advanced → System → **Full JIT compiler**: "Optimizes all hot code, not just encryption: faster video
 muxing, at the cost of more memory. Takes effect after a restart."
 
 | Build / install | Toggle |
 |---|---|
-| C1-only build, override supported (Windows/macOS with `.package`, Linux deb/rpm) | Editable |
-| Build without C1 flags (Windows ARM64) | On, locked |
+| Build with the directive, override supported (Windows/macOS with `.package`, Linux deb/rpm) | Editable |
+| Build without the directive (older packaging) | On, locked |
 | No `.package` (Arch, tar.gz, today's builds), or a dev run | Off, locked |
 
 ### 8.2 How the jpackage launcher reads its `.cfg`
@@ -469,21 +472,23 @@ muxing, at the cost of more memory. Takes effect after a restart."
 Code: `xdm-app/src/main/java/xdm/app/utils/JitOverride.kt`.
 - **Finding the installed `.cfg`:** from `jpackage.app-path` (Windows `<root>\app`, Linux `<root>/lib/app`,
   macOS `Contents/app`). The package name comes from `app/.package`.
-- **Turning it on** writes, for every installed `*.cfg`, a per-user copy with the `TieredStopAtLevel` and
-  `CICompilerCount` lines dropped and `java-options=-Dxdm.jit=full` added. The write goes through a temp file and
+- **Turning it on** writes, for every installed `*.cfg`, a per-user copy with the `CompilerDirectivesFile`,
+  `CICompilerCount` and `ReservedCodeCacheSize` lines dropped and `java-options=-Dxdm.jit=full` added. The write goes through a temp file and
   a rename. It deliberately doesn't use `AtomicIO`, whose footer and `.bak` files the launcher would misparse.
 - **Turning it off** deletes the copies.
 - **`JitOverride.sync()`** runs at the start of `AppMain`, after `CdsJarPin.repin()`:
   - regenerates an existing copy when the installed file changed (after an upgrade, the new flags apply from the
     second start)
-  - deletes it if the install no longer runs C1 only
-  - logs `Running C1 only` / `Running full tiered (C1+C2)`
-- **Mode:** `isRunningFull` is `-Dxdm.jit=full` (set only by the override) or a build without C1 flags.
+  - deletes it if the install no longer uses the directive
+  - logs `Running C1, C2 for crypto only` / `Running full tiered (C1+C2)`
+- **Mode:** `isRunningFull` is `-Dxdm.jit=full` (set only by the override) or a build without the directive.
 - **Fixed names:** `xdm-app.jar` and `xdm.app.AppMain` must never be renamed. A stale override from an older
   version would point at them, and a missing jar means XDM can't start. **Recovery:** delete the per-user
   `xdm-app.cfg`.
 
-### 8.4 Verified on macOS 15.6 / ARM64 / JDK 25
+### 8.4 Verified on macOS 15.6 / ARM64 / JDK 25 (with the earlier C1-only flags)
+
+🔎 This check predates the switch from C1-only to the directive; repeat it with the new `.cfg`.
 
 Test setup: a copy of `build/dist/Xtreme Download Manager.app` with `Contents/app/.package` added, and an override
 in a scratch `$HOME` whose main class was a probe that prints `xdm.jit`, run with `-XX:+PrintFlagsFinal`.
@@ -505,9 +510,7 @@ needs.
 
 ### 8.6 About dialog
 
-Shows `Conscrypt <major>.<minor>.<patch>` when its native library loaded, otherwise `Conscrypt not available
-(using JDK TLS)`. This tells users and bug reports whether TLS runs natively, and whether the full-JIT option is
-worth enabling.
+Shows `TLS: <provider> <version>` (normally `SunJSSE`), so bug reports say which TLS implementation ran.
 
 ---
 
@@ -575,13 +578,13 @@ worth enabling.
 | 3 | Upgrade from an XDM 8 MSI install **while XDM 8 is running**: XDM 8 closed and removed, no reboot prompt, `Run\XDM` points at XDM 9, port 8597 owned by XDM 9 | Windows |
 | 4 | With the Store XDM 8 installed, the MSI blocks with the uninstall message | Windows |
 | 5 | Installed jar mtime = 2020-01-01T00:00:00Z, and no `CDS: cannot re-pin` in the log, on a machine in another timezone | Windows |
-| 6 | Full-JIT toggle on → restart → log says `Running full tiered`; toggle off → `Running C1 only` | all |
-| 7 | ARM64 MSI: toggle on and locked; About shows Conscrypt not available; log says full tiered | Windows ARM64 |
+| 6 | Full-JIT toggle on → restart → log says `Running full tiered`; toggle off → `Running C1, C2 for crypto only` | all |
+| 7 | HTTPS download: `-XX:+PrintCompilation` shows the directive's crypto methods at level 4 | all |
 | 8 | `codesign --verify --deep --strict` passes on the dmg's app; the downloaded app opens via Open Anyway (not "damaged") | macOS |
 | 9 | `rpm -ql xdman` lists `/opt/xdman/lib/app` and `/opt/xdman/lib/runtime`; XDM starts from the rpm | Fedora |
 | 10 | deb upgrade over XDM 8's `xdman`; rpm replaces `xdman_gtk`; exactly one menu entry and one `xdm-app://` handler | Ubuntu, Fedora |
 | 11 | Highest `GLIBC_` version in the runtime and launcher ≤ the oldest supported distro | Linux |
-| 12 | About shows the Conscrypt version on every C1 build | all |
+| 12 | About shows `TLS: SunJSSE` | all |
 
 ---
 
@@ -590,7 +593,6 @@ worth enabling.
 1. Package name: `xdman` (proposed) or something else (§4.1).
 2. Windows install folder: `Program Files\XDM` (proposed, XDM 8's name) or `Program Files\Xtreme Download Manager`.
 3. XDM 8's Store package family name, for the detection in §5.5.
-4. Whether to do the Conscrypt hardening in §3.5.
 
 ---
 
@@ -609,9 +611,6 @@ worth enabling.
   [UtilCompiler.cs](https://github.com/wixtoolset/wix/blob/main/src/ext/Util/wixext/UtilCompiler.cs),
   [CloseApps.cpp](https://github.com/wixtoolset/wix/blob/main/src/ext/Util/ca/CloseApps.cpp),
   [UtilExtension_Platform.wxi](https://github.com/wixtoolset/wix/blob/main/src/ext/Util/wixlib/UtilExtension_Platform.wxi)
-- Conscrypt: [releases](https://github.com/google/conscrypt/releases),
-  [2.7.0 artifacts](https://repo1.maven.org/maven2/org/conscrypt/conscrypt-openjdk/2.7.0/),
-  [NativeLibraryLoader.java](https://github.com/google/conscrypt/blob/master/openjdk/src/main/java/org/conscrypt/NativeLibraryLoader.java)
 - nFPM: [configuration](https://nfpm.goreleaser.com/docs/configuration/),
   [nfpm.go](https://github.com/goreleaser/nfpm/blob/main/nfpm.go),
   [rpm/relations.go](https://github.com/goreleaser/nfpm/blob/main/rpm/relations.go)

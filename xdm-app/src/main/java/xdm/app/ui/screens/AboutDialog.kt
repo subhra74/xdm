@@ -1,10 +1,10 @@
 package xdm.app.ui.screens
 
-import org.conscrypt.Conscrypt
 import xdm.app.AppContext
 import xdm.app.update.UpdateChecker
 import xdm.app.utils.logoIcon
 import java.awt.*
+import javax.net.ssl.SSLContext
 import javax.swing.*
 import javax.swing.border.EmptyBorder
 
@@ -72,7 +72,7 @@ class AboutDialog(owner: Window?) : JDialog(owner) {
             horizontalAlignment = SwingConstants.CENTER
         }
 
-        val tlsInfo = JLabel(conscryptStatus()).apply {
+        val tlsInfo = JLabel(tlsStatus()).apply {
             font = font.deriveFont(Font.PLAIN, 12f)
             foreground = UIManager.getColor("Label.disabledForeground")
             horizontalAlignment = SwingConstants.CENTER
@@ -103,13 +103,9 @@ class AboutDialog(owner: Window?) : JDialog(owner) {
         setLocationRelativeTo(owner)
     }
 
-    /** Whether TLS runs on Conscrypt (installed by `AppMain` when its native library loads). */
-    private fun conscryptStatus(): String = runCatching {
-        if (Conscrypt.isAvailable()) {
-            val v = Conscrypt.version()
-            "Conscrypt ${v.major()}.${v.minor()}.${v.patch()}"
-        } else {
-            "Conscrypt not available (using JDK TLS)"
-        }
-    }.getOrDefault("Conscrypt not available (using JDK TLS)")
+    /** The JSSE provider that handles TLS (the JDK's SunJSSE unless something else was installed). */
+    private fun tlsStatus(): String = runCatching {
+        val provider = SSLContext.getInstance("TLS").provider
+        "TLS: ${provider.name} ${provider.versionStr}"
+    }.getOrDefault("TLS: unavailable")
 }

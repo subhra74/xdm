@@ -54,9 +54,10 @@ $JavaOptions = @(
   '-XX:MaxMetaspaceFreeRatio=2'
   '-XX:MetaspaceReclaimPolicy=aggressive'
   '-XX:CompressedClassSpaceSize=64m'
-  # JIT
-  '-XX:TieredStopAtLevel=1'
-  '-XX:CICompilerCount=1'
+  # JIT: C1 for everything, C2 only for the crypto methods in jit-directives.json
+  # (the directive itself is added after the AppCDS step; see build-bundle.sh)
+  '-XX:CICompilerCount=2'
+  '-XX:ReservedCodeCacheSize=32m'
   # drop FlatLaf/Swing soft-referenced image caches on each GC
   '-XX:SoftRefLRUPolicyMSPerMB=0'
   # no hsperfdata mmap file
@@ -114,26 +115,17 @@ if (-not $AppVersion) { $AppVersion = '1.0.0' }
 # --------------------------------------------------------------------------
 # Drop the bundled natives for every platform except this build's target.
 #
-# Conscrypt (conscrypt-openjdk-uber) ships BoringSSL for five platforms and
-# FlatLaf its own library for seven; a bundle runs on exactly one. That is most
-# of a 14.7 MB conscrypt payload sitting dead in every install.
-#
-# Only the copy under build\input that jpackage wraps is trimmed.
+# FlatLaf ships its native library for seven platforms; a bundle runs on exactly
+# one. Only the copy under build\input that jpackage wraps is trimmed.
 # xdm-app\target\xdm-app.jar keeps every native, so the fat jar stays runnable
 # on any platform when it is shared or launched on its own with `java -jar`.
 #
-# Both loaders resolve their library through an <os>-<arch> classifier in the
-# entry name, and the classifier is matched inside each library's own directory:
-# the two spell the same platform differently (conscrypt: windows/x86_64,
-# FlatLaf: windows/arm64 on an ARM host), so an unscoped match would keep the
-# wrong FlatLaf dll here.
+# FlatLaf resolves its library through an <os>-<arch> classifier in the entry
+# name, so keeping just the matching entry is enough.
 # --------------------------------------------------------------------------
 function Remove-ForeignNatives {
   param([string]$Jar)
 
-  # Conscrypt publishes no windows-aarch64 build, so ARM Windows keeps the
-  # x86_64 one and runs it under emulation. FlatLaf does ship windows-arm64.
-  $csArch = 'x86_64'
   switch ($env:PROCESSOR_ARCHITECTURE) {
     'ARM64' { $flArch = 'arm64'  }
     'AMD64' { $flArch = 'x86_64' }
@@ -143,7 +135,6 @@ function Remove-ForeignNatives {
     }
   }
 
-  $csKeep = "META-INF/native/*-windows-$csArch.*"
   $flKeep = "com/formdev/flatlaf/natives/*-windows-$flArch.*"
 
   Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -152,7 +143,6 @@ function Remove-ForeignNatives {
   try {
     $doomed = @($zip.Entries | Where-Object {
       $_.FullName -match '\.(dylib|jnilib|so|dll)$' -and
-      -not ($_.FullName -like $csKeep) -and
       -not ($_.FullName -like $flKeep)
     })
     foreach ($entry in $doomed) { $entry.Delete() }
@@ -172,6 +162,8 @@ if ($LASTEXITCODE -ne 0) { throw 'jlink failed' }
 
 Copy-Item $JarPath (Join-Path $InputDir $MainJar)
 Remove-ForeignNatives (Join-Path $InputDir $MainJar)
+$JitDirectives = 'jit-directives.json'
+Copy-Item (Join-Path $PSScriptRoot $JitDirectives) $InputDir
 
 # AppCDS archive - see the matching block in build-bundle.sh and APPCDS.md. The
 # JVM uses the archive only while the jar's size and mtime match the dump, so the
@@ -189,7 +181,9 @@ if ($RecordClasses) {
   New-Item -ItemType Directory -Force -Path (Split-Path $CdsList) | Out-Null
   Write-Host ">> recording windows.classlist: quit any running XDM first, then use this one"
   Write-Host ">>   as users do - run a real download to completion - and quit it from the tray"
-  & $BundledJava @JavaOptions "-XX:DumpLoadedClassList=$CdsList" -cp $InputJar $MainClass
+  & $BundledJava @JavaOptions '-XX:+UnlockDiagnosticVMOptions' `
+      "-XX:CompilerDirectivesFile=$(Join-Path $InputDir $JitDirectives)" `
+      "-XX:DumpLoadedClassList=$CdsList" -cp $InputJar $MainClass
 }
 
 if ((Test-Path $CdsList) -and (Get-Item $CdsList).Length -gt 0) {
@@ -207,6 +201,13 @@ if ((Test-Path $CdsList) -and (Get-Item $CdsList).Length -gt 0) {
 } else {
   Write-Host '>> no packaging\cds\windows.classlist - building without an AppCDS archive (see -RecordClasses)'
 }
+
+# JIT directive: added only now, because $APPDIR exists only in the launcher and the AppCDS dump
+# above runs the bundled java directly. JitOverride's "Full JIT" setting drops it again.
+$JavaOptions += @(
+  '-XX:+UnlockDiagnosticVMOptions'
+  ('-XX:CompilerDirectivesFile=$APPDIR\' + $JitDirectives)
+)
 
 # An added launcher inherits the main class, jar and java-options; this file only keeps it out of
 # the menus, so "xdm-app" never shows up as a second Start-menu entry.

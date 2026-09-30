@@ -4,6 +4,13 @@ How to build a class-data-sharing archive for the shipped bundle and which JVM f
 run it with. Everything here is measurement-backed; the raw numbers and the dead ends are
 in the tuning notes this file condenses (`jvm-gc-tuning.md`, kept outside the repo).
 
+> **Conscrypt has been removed.** XDM now uses the JDK's own TLS (SunJSSE), and the packaged
+> launcher runs C1 for all code with C2 only for the JDK's crypto hot methods
+> (`packaging/jit-directives.json`, see PACKAGING.md §3.2). The launcher flags and §6 below
+> are updated for that; the memory and CPU tables were measured with Conscrypt and have not
+> been re-measured. Don't combine C1-only (`TieredStopAtLevel=1`) with the JDK's TLS: it costs
+> 4-10x the CPU per MB.
+
 ## Intent
 
 The goal is to make XDM actually use less memory while it sits in the tray — it is a
@@ -74,9 +81,8 @@ jlink --add-modules java.base,java.desktop,java.logging,jdk.unsupported,jdk.cryp
 Resulting app folder:
 
 ```
-app\xdm-app.jar                              # Conscrypt META-INF/native/* extracted out of the jar
-app\conscrypt_openjdk_jni-windows-x86_64.dll
-app\c1-download-only.json                    # see §6
+app\xdm-app.jar
+app\jit-directives.json                      # see §6
 app\xdm.jsa                                  # produced in §4
 ```
 
@@ -94,9 +100,8 @@ runtime\bin\java.exe -XX:DumpLoadedClassList=classes.lst ^
   -XX:+UseSerialGC -Xms4m -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:-UsePerfData ^
   -XX:AllocateHeapAt=%LOCALAPPDATA%\xdm-lowmem\heap ^
   -XX:+UnlockDiagnosticVMOptions -XX:ArchiveRelocationMode=0 ^
-  -XX:TieredStopAtLevel=1 -XX:CICompilerCount=1 -XX:ReservedCodeCacheSize=32m ^
-  -XX:CompilerDirectivesFile=app\c1-download-only.json ^
-  -Djava.library.path=app ^
+  -XX:CICompilerCount=2 -XX:ReservedCodeCacheSize=32m ^
+  -XX:CompilerDirectivesFile=app\jit-directives.json ^
   -jar app\xdm-app.jar
 ```
 
@@ -148,35 +153,29 @@ Moving the install folder is fine — only the jar identity matters, not its pat
 
 ---
 
-## 6. Compiler directives: C1 on the download path only
+## 6. Compiler directive: C1 for all code, C2 for crypto
 
-`-XX:TieredStopAtLevel=1` (C1) is cheap in memory but **disables the AES-NI intrinsics**:
-AES-128-GCM drops from ~1,250 MB/s to **11 MB/s**, and `-Xint` to 1 MB/s. XDM avoids this by
-installing Conscrypt (native BoringSSL), which does TLS outside the JVM — 988 MB/s under C1,
-672 MB/s under `-Xint`.
+`-XX:TieredStopAtLevel=1` (C1) is cheap in memory but **disables the AES-NI / ARMv8 crypto
+intrinsics**: the JDK's TLS then costs 4-10x the CPU per MB. XDM keeps tiered compilation on
+and uses the one directive the packaged build uses, `packaging/jit-directives.json` (copied to
+`app\jit-directives.json`; see PACKAGING.md §3.2):
 
-That leaves the plain byte-moving code (Okio/OkHttp reads, socket I/O, file writes). Pure
-`-Xint` costs ~9× the CPU of C1 per GB downloaded. Compiling only those packages gives
-nearly all of C1's throughput at nearly `-Xint`'s footprint — `app\c1-download-only.json`:
+1. **C1 and C2 for the crypto hot methods** (AES, GHASH, CBC, ChaCha20, Poly1305, SHA and the
+   SHA callers).
+2. **C1 only for everything else** (`*.*`, C2 excluded).
 
-```json
-[
-  { "match": ["okio/*.*", "okhttp3/*.*", "org/conscrypt/*.*", "sun/nio/ch/*.*", "java/net/*.*", "java/io/*.*",
-              "java/nio/*.*", "java/util/concurrent/*.*", "java/lang/invoke/*.*", "java/lang/ThreadLocal*.*",
-              "jdk/internal/misc/*.*", "xdm/core/*.*"],
-    "c1": { "Exclude": false } },
-  { "match": "*.*", "c1": { "Exclude": true }, "c2": { "Exclude": true } }
-]
-```
+The first matching rule wins, and the explicit `"Exclude": false` on the allow rule is required.
+Verified on Apple M2 / JDK 25 with `-XX:+PrintCompilation` over six cipher suites: C1 compiled
+code in 39 packages, and every method that reached tier 4 (31) was on the list; 309 others
+the JVM wanted on C2 were refused.
 
-The explicit `"Exclude": false` on the allow rule is required — without it the catch-all
-wins.
+The same file is used on every target (Windows, macOS, Linux; x64 and arm64): its method
+names are the JDK's, not a platform's.
 
-| Mode (static AppCDS) | Idle | Real download | CPU-s per GB |
-|---|---|---|---|
-| `-Xint` | 26.4 | 27.5–28.0 | 7.9–8.6 |
-| **C1, download path only** | **28.6** | **31.4** | **1.45–1.48** |
-| full C1 | 31.4 | 34.2–34.8 | 0.9–1.3 |
+An earlier variant compiled only the download path with C1 and left the rest interpreted
+(measured with Conscrypt: ~3 MB less at idle). It was dropped: with the JDK's TLS the whole
+JDK must be on C1 for the intrinsics to pay off, which removes most of its saving, and one
+directive is easier to keep correct across JDK updates.
 
 ---
 
@@ -191,9 +190,8 @@ start "" runtime\bin\javaw.exe ^
   "-XX:AllocateHeapAt=%LOCALAPPDATA%\xdm-lowmem\heap" ^
   -XX:+UnlockDiagnosticVMOptions -XX:ArchiveRelocationMode=0 ^
   "-XX:SharedArchiveFile=%~dp0app\xdm.jsa" ^
-  -XX:TieredStopAtLevel=1 -XX:CICompilerCount=1 -XX:ReservedCodeCacheSize=32m ^
-  "-XX:CompilerDirectivesFile=%~dp0app\c1-download-only.json" ^
-  "-Djava.library.path=%~dp0app" ^
+  -XX:CICompilerCount=2 -XX:ReservedCodeCacheSize=32m ^
+  "-XX:CompilerDirectivesFile=%~dp0app\jit-directives.json" ^
   -jar "%~dp0app\xdm-app.jar"
 ```
 
@@ -205,9 +203,8 @@ What each flag is for:
 | `-XX:AllocateHeapAt=<dir>` | Heap becomes a file-backed mapping → shared, not private (−18 MB). Temp, delete-on-close file: no disk space used, ~5 KB/s at idle. Failure mode is *disk full → crash*, not OOM. Directory must exist. |
 | `-XX:+UnlockDiagnosticVMOptions -XX:ArchiveRelocationMode=0` | Maps the CDS archive at its preferred address instead of relocating it (relocated pages turn private): −9 MB. Costs a little ASLR hardening. |
 | `-XX:SharedArchiveFile=…` | The archive from §4. |
-| `-XX:TieredStopAtLevel=1 -XX:CICompilerCount=1 -XX:ReservedCodeCacheSize=32m` | C1 only, one compiler thread, bounded code cache. Safe here only because Conscrypt does TLS natively. |
+| `-XX:CICompilerCount=2 -XX:ReservedCodeCacheSize=32m` | Tiered with one C1 and one C2 thread, bounded code cache. C2 only runs for the directive's crypto methods (§6); don't add `TieredStopAtLevel=1`, which would put the JDK's TLS on C1 alone. |
 | `-XX:-UsePerfData` | No `hsperfdata` mmap file. |
-| `-Djava.library.path=app` | Conscrypt's JNI library, extracted from the jar. |
 
 Deliberately **not** used: `-Xmx` (no benefit, and caps a download manager needlessly),
 `-XX:MaxDirectMemorySize`, `-Xss` (OOM / StackOverflow risk). Metaspace flags do nothing —
@@ -225,7 +222,6 @@ change. Verified on macOS/aarch64 with JDK 25: both `-XX:AllocateHeapAt` and
 | | Windows | macOS | Linux |
 |---|---|---|---|
 | jlink modules | + `jdk.crypto.mscapi` | base list | base list |
-| Conscrypt native | `conscrypt_openjdk_jni-windows-x86_64.dll` | `libconscrypt_openjdk_jni-osx-{x86_64,aarch_64}.dylib` | `libconscrypt_openjdk_jni-linux-{x86_64,aarch_64}.so` |
 | heap-file dir | `%LOCALAPPDATA%\xdm-lowmem\heap` | `~/Library/Caches/xdm-lowmem/heap` | `${XDG_CACHE_HOME:-~/.cache}/xdm-lowmem/heap` |
 | launcher binary | `javaw.exe` | `java` | `java` |
 | jpackage types | `app-image`, `msi`, `exe` | `app-image`, `dmg`, `pkg` | `app-image`, `deb`, `rpm` |
@@ -241,9 +237,8 @@ runtime/bin/java -XX:DumpLoadedClassList=classes.lst \
   -XX:+UseSerialGC -Xms4m -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:-UsePerfData \
   "-XX:AllocateHeapAt=$HEAP" \
   -XX:+UnlockDiagnosticVMOptions -XX:ArchiveRelocationMode=0 \
-  -XX:TieredStopAtLevel=1 -XX:CICompilerCount=1 -XX:ReservedCodeCacheSize=32m \
-  -XX:CompilerDirectivesFile=app/c1-download-only.json \
-  -Djava.library.path=app \
+  -XX:CICompilerCount=2 -XX:ReservedCodeCacheSize=32m \
+  -XX:CompilerDirectivesFile=app/jit-directives.json \
   -jar app/xdm-app.jar      # then run a real download and quit
 
 runtime/bin/java -Xshare:dump -XX:+UseSerialGC \
@@ -270,9 +265,8 @@ exec "$here/runtime/bin/java" \
   "-XX:AllocateHeapAt=$heap" \
   -XX:+UnlockDiagnosticVMOptions -XX:ArchiveRelocationMode=0 \
   "-XX:SharedArchiveFile=$here/app/xdm.jsa" \
-  -XX:TieredStopAtLevel=1 -XX:CICompilerCount=1 -XX:ReservedCodeCacheSize=32m \
-  "-XX:CompilerDirectivesFile=$here/app/c1-download-only.json" \
-  "-Djava.library.path=$here/app" \
+  -XX:CICompilerCount=2 -XX:ReservedCodeCacheSize=32m \
+  "-XX:CompilerDirectivesFile=$here/app/jit-directives.json" \
   -jar "$here/app/xdm-app.jar" "$@"
 ```
 
@@ -297,9 +291,9 @@ Platform notes:
 * **Linux GUI trimming**: there is no equivalent of Windows trimming a minimised window's
   working set, so idle numbers are steadier but nominally higher than the Windows figures in
   this document. Compare within a platform only.
-* **Conscrypt** ships `osx-x86_64`, `osx-aarch_64`, `linux-x86_64` and `linux-aarch_64`, so
-  unlike Windows-on-ARM every Mac and Linux target gets a native TLS provider — C1-only is
-  safe on all of them.
+* The same directive works on every target: its method names are the JDK's, not a
+  platform's. Checked on macOS arm64 (§6); re-check with `-XX:+PrintCompilation` after a JDK
+  update, since a renamed method silently stays on C1.
 * `jdk.crypto.mscapi` in the §2 module list is Windows-only; drop it elsewhere. The base
   list in `packaging/build-bundle.sh` (`java.desktop,java.logging,jdk.crypto.ec,jdk.unsupported`)
   is the portable one.
@@ -344,9 +338,8 @@ real: it should fall from ~21 MB committed to a few MB.
   address cannot be reserved, the archive is relocated: still correct, smaller saving.
 * The archive assumes **compressed oops**. On machines with 128 GB+ RAM the default heap
   exceeds 32 GB, compressed oops turn off, and the archive is skipped.
-* Conscrypt's **Windows** build is x86_64 only (ARM Windows runs it emulated); macOS and
-  Linux have both x86_64 and aarch64 (§8). On any target without Conscrypt, do *not* use
-  C1-only — keep C2 for the AES-NI intrinsics, which costs about +25 MB.
+* Never use C1-only (`TieredStopAtLevel=1`) with the JDK's TLS: keep tiered on so C2 can
+  compile the directive's crypto methods.
 * If you would rather not ship an archive at all, `-XX:+AutoCreateSharedArchive
   -XX:SharedArchiveFile=<per-user cache dir>/xdm.jsa` self-heals on version changes, but the
   first run pays the dump cost and gets no saving.

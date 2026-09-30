@@ -1,0 +1,4 @@
+- list incorrect after delete
+- sort not working
+- no detail error message on download progress if download fails
+- hls or streaming download segment bar not working

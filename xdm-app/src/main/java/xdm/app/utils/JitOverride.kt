@@ -8,7 +8,12 @@ import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 
 /**
- * The "full JIT" setting: a per-user copy of the launcher's `.cfg` without the C1-only flags.
+ * The "full JIT" setting: a per-user copy of the launcher's `.cfg` without the compiler directive.
+ *
+ * Packaged builds run C1 for all code and C2 only for the JDK's crypto hot methods, through
+ * `-XX:CompilerDirectivesFile` (PACKAGING.md). That keeps TLS on the AES/GHASH/ChaCha20 intrinsics
+ * without paying C2's memory for everything else. Full JIT drops the directive so all hot code can
+ * reach C2 (faster video muxing, more memory).
  *
  * The installed `app/<launcher>.cfg` is read-only (Program Files, a signed .app, a deb/rpm), but a
  * jpackage launcher looks for its `.cfg` in a per-user folder first and uses the first one it finds
@@ -20,32 +25,31 @@ import java.nio.file.StandardCopyOption
  *             the build writes `.package` for those and not for the tar.gz
  *
  * The copy replaces the installed file as a whole (the launcher never merges), so it is always
- * generated from it: the same lines minus `TieredStopAtLevel`/`CICompilerCount`, plus
+ * generated from it: the same lines minus the directive and its code-cache/compiler-count limits, plus
  * `-Dxdm.jit=full` so the running app can tell which file the launcher used. [sync] regenerates it
  * on every start, so a copy made by an older version is refreshed one start after an upgrade.
  *
- * A build without the C1-only flags (Windows ARM64, where Conscrypt has no native library) always
- * runs full tiered; there is nothing to override.
+ * A build without the directive (older packaging) always runs full tiered; there is nothing to override.
  */
 object JitOverride {
 
     private const val MODE_PROPERTY = "xdm.jit"
     private const val MODE_FULL = "full"
     private const val JAVA_OPTIONS = "java-options="
-    private const val C1_ONLY_OPTION = "-XX:TieredStopAtLevel=1"
-    private val DROPPED_OPTIONS = listOf("-XX:TieredStopAtLevel=", "-XX:CICompilerCount=")
+    private const val DIRECTIVE_OPTION = "-XX:CompilerDirectivesFile="
+    private val DROPPED_OPTIONS = listOf(DIRECTIVE_OPTION, "-XX:CICompilerCount=", "-XX:ReservedCodeCacheSize=")
 
     private class Layout(val appDir: File, val launcherCfg: File, val userDir: File?)
 
     private val layout: Layout? by lazy { runCatching { resolveLayout() }.getOrNull() }
 
-    /** True when the launcher that started XDM runs C1 only and a per-user override is honoured. */
+    /** True when the launcher that started XDM uses the directive and a per-user override is honoured. */
     val isConfigurable: Boolean
-        get() = layout?.let { it.userDir != null && isC1Only(it.launcherCfg) } == true
+        get() = layout?.let { it.userDir != null && isRestricted(it.launcherCfg) } == true
 
-    /** True for a packaged build whose installed launcher already runs full tiered (Windows ARM64). */
+    /** True for a packaged build whose installed launcher already runs full tiered. */
     val isAlwaysFull: Boolean
-        get() = layout?.let { !isC1Only(it.launcherCfg) } == true
+        get() = layout?.let { !isRestricted(it.launcherCfg) } == true
 
     /** True when this JVM was started with full tiered compilation. */
     val isRunningFull: Boolean
@@ -77,19 +81,19 @@ object JitOverride {
 
     /**
      * Run once at start: refreshes existing overrides from the installed files, and removes them
-     * when the install no longer runs C1 only (nothing left to override).
+     * when the install no longer uses the directive (nothing left to override).
      */
     fun sync() {
         val l = layout ?: return
         val userDir = l.userDir ?: return
-        val keep = isC1Only(l.launcherCfg)
+        val keep = isRestricted(l.launcherCfg)
         installedCfgs(l.appDir).forEach { installed ->
             val override = File(userDir, installed.name)
             if (!override.isFile) return@forEach
             runCatching {
                 if (!keep) {
                     Files.deleteIfExists(override.toPath())
-                    Logger.info("JIT", "Removed $override: the installed launcher is not C1-only")
+                    Logger.info("JIT", "Removed $override: the installed launcher has no compiler directive")
                 } else {
                     val expected = generate(installed)
                     if (override.readText() != expected) {
@@ -99,7 +103,7 @@ object JitOverride {
                 }
             }.onFailure { Logger.error("JIT", "Could not refresh $override", it) }
         }
-        Logger.info("JIT", if (isRunningFull) "Running full tiered (C1+C2)" else "Running C1 only")
+        Logger.info("JIT", if (isRunningFull) "Running full tiered (C1+C2)" else "Running C1, C2 for crypto only")
     }
 
     private fun resolveLayout(): Layout? {
@@ -130,10 +134,10 @@ object JitOverride {
     private fun installedCfgs(appDir: File): List<File> =
         appDir.listFiles { f -> f.isFile && f.name.endsWith(".cfg") }?.toList().orEmpty()
 
-    private fun isC1Only(cfg: File): Boolean =
-        runCatching { cfg.readLines().any { it.trim() == JAVA_OPTIONS + C1_ONLY_OPTION } }.getOrDefault(false)
+    private fun isRestricted(cfg: File): Boolean =
+        runCatching { cfg.readLines().any { it.trim().startsWith(JAVA_OPTIONS + DIRECTIVE_OPTION) } }.getOrDefault(false)
 
-    /** The installed file with the C1-only options dropped and the full-mode marker added. */
+    /** The installed file with the directive options dropped and the full-mode marker added. */
     private fun generate(installed: File): String {
         val text = installed.readText()
         val eol = if (text.contains("\r\n")) "\r\n" else "\n"

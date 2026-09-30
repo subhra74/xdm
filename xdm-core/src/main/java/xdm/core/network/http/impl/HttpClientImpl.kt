@@ -63,11 +63,10 @@ class HttpClientImpl @JvmOverloads constructor(
      * Reuses one process-wide [SSLContext] instead of letting OkHttp build its own per client.
      *
      * A client is created per download, and OkHttp's default is `SSLContext.getInstance("TLS")` per
-     * client. With Conscrypt as the first provider that allocates a fresh native BoringSSL context
-     * and session cache each time; closing the client frees them, but the platform allocator keeps
-     * the blocks, so the process footprint grew by ~0.8 MB per HTTPS download and never shrank.
-     * Sharing the context also shares the TLS session cache, so repeat hosts resume instead of doing
-     * a full handshake.
+     * client, each with its own TLS session cache. Sharing one context shares that cache, so repeat
+     * hosts resume instead of doing a full handshake, and a download no longer pays for building a
+     * context. (It was introduced for Conscrypt, where each context was a native BoringSSL context
+     * whose memory the platform allocator never returned.)
      */
     private fun sharedTls(builder: OkHttpClient.Builder) {
         val tls = sharedTlsConfig ?: return
@@ -232,9 +231,8 @@ class HttpClientImpl @JvmOverloads constructor(
 
     private companion object {
         /**
-         * The socket factory and trust manager shared by every client, built on first use (after
-         * `AppMain` has installed Conscrypt) and null if the platform refuses, in which case each
-         * client falls back to OkHttp's own default.
+         * The socket factory and trust manager shared by every client, built on first use and null if
+         * the platform refuses, in which case each client falls back to OkHttp's own default.
          */
         val sharedTlsConfig: Pair<SSLSocketFactory, X509TrustManager>? by lazy {
             try {

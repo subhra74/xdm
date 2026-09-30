@@ -1,0 +1,21 @@
+[
+  // C1 compiles all code; C2 only these JDK crypto methods, which do TLS's per-byte work through the
+  // AES/GHASH/CBC/ChaCha20/Poly1305/SHA intrinsics that C1 lacks. The SHA callers (implCompress,
+  // implCompressMultiBlock*) must be here too: the SHA intrinsics are applied at C2-compiled call sites.
+  // "Full JIT" (JitOverride) drops this file. Re-check the names on every JDK update (PACKAGING.md §3.2).
+  { "match": [
+      "com/sun/crypto/provider/AESCrypt.implEncryptBlock", "com/sun/crypto/provider/AESCrypt.implDecryptBlock",
+      "com/sun/crypto/provider/GHASH.processBlocks", "com/sun/crypto/provider/GHASH.update",
+      "com/sun/crypto/provider/CounterMode.implCrypt", "com/sun/crypto/provider/GCTR.update", "com/sun/crypto/provider/GCTR.doFinal",
+      "com/sun/crypto/provider/GaloisCounterMode.implGCMCrypt0",
+      "com/sun/crypto/provider/CipherBlockChaining.implEncrypt", "com/sun/crypto/provider/CipherBlockChaining.implDecrypt",
+      "com/sun/crypto/provider/ChaCha20Cipher.implChaCha20Block", "com/sun/crypto/provider/ChaCha20Cipher.chaCha20Block",
+      "com/sun/crypto/provider/ChaCha20Cipher.xor",
+      "com/sun/crypto/provider/Poly1305.*", "sun/security/util/math/intpoly/IntegerPolynomial1305.*",
+      "sun/security/provider/DigestBase.implCompressMultiBlock0",
+      "sun/security/provider/SHA.implCompress0", "sun/security/provider/SHA2.implCompress0", "sun/security/provider/SHA5.implCompress0",
+      "sun/security/provider/DigestBase.implCompressMultiBlock", "sun/security/provider/DigestBase.implCompressMultiBlockCheck",
+      "sun/security/provider/SHA.implCompress", "sun/security/provider/SHA2.implCompress", "sun/security/provider/SHA5.implCompress" ],
+    "c1": { "Exclude": false }, "c2": { "Exclude": false } },
+  { "match": "*.*", "c1": { "Exclude": false }, "c2": { "Exclude": true } }
+]

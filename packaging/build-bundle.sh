@@ -52,7 +52,10 @@ MODULES="java.desktop,java.logging,jdk.crypto.ec,jdk.unsupported"
 # overhead is independent of max heap. Its pauses are irrelevant at this live
 # set size.
 #
-# TieredStopAtLevel=1 (C1 only) keeps the code cache at ~5 MB.
+# JIT: C1 compiles everything and C2 only the JDK's crypto hot methods, named in
+# packaging/jit-directives.json (added below, once the app dir exists). HTTPS
+# then runs on the AES/GHASH/ChaCha20 intrinsics at C2 speed without paying C2's
+# memory for the rest of the app. C1 alone costs ~10x the CPU per MB of TLS.
 JAVA_OPTIONS=(
   # --- collector: minimum native overhead, heap returned to the OS quickly ---
   -XX:+UseSerialGC
@@ -68,9 +71,9 @@ JAVA_OPTIONS=(
   -XX:MaxMetaspaceFreeRatio=2
   -XX:MetaspaceReclaimPolicy=aggressive
   -XX:CompressedClassSpaceSize=64m
-  # --- JIT ---
-  -XX:TieredStopAtLevel=1
-  -XX:CICompilerCount=1
+  # --- JIT (the directive itself is added after the AppCDS step) ---
+  -XX:CICompilerCount=2
+  -XX:ReservedCodeCacheSize=32m
   # --- misc ---
   # drop FlatLaf/Swing soft-referenced image caches on each GC
   -XX:SoftRefLRUPolicyMSPerMB=0
@@ -188,18 +191,13 @@ APP_VERSION="$(sed -n 's/.*"currentVersion"[[:space:]]*:[[:space:]]*"\([^"]*\)".
 # --------------------------------------------------------------------------
 # Drop the bundled natives for every platform except this build's target.
 #
-# Conscrypt (conscrypt-openjdk-uber) ships BoringSSL for five platforms and
-# FlatLaf its own library for seven; a bundle runs on exactly one. That is most
-# of a 14.7 MB conscrypt payload sitting dead in every install.
-#
-# Only the copy under build/input that jpackage wraps is trimmed.
+# FlatLaf ships its native library for seven platforms; a bundle runs on exactly
+# one. Only the copy under build/input that jpackage wraps is trimmed.
 # xdm-app/target/xdm-app.jar keeps every native, so the fat jar stays runnable
 # on any platform when it is shared or launched on its own with `java -jar`.
 #
-# Both loaders resolve their library through an <os>-<arch> classifier in the
-# entry name, so keeping just the matching entry is enough. The two spell the
-# same platform differently (conscrypt: osx/aarch_64, FlatLaf: macos/arm64), so
-# the classifier is matched inside each library's own directory.
+# FlatLaf resolves its library through an <os>-<arch> classifier in the entry
+# name, so keeping just the matching entry is enough.
 # --------------------------------------------------------------------------
 strip_foreign_natives() {
   local jar="$1"
@@ -209,32 +207,24 @@ strip_foreign_natives() {
     return 0
   fi
 
-  local cs_os fl_os cs_arch fl_arch
+  local fl_os fl_arch
   case "$OS" in
-    mac)     cs_os=osx     fl_os=macos   ;;
-    linux)   cs_os=linux   fl_os=linux   ;;
-    windows) cs_os=windows fl_os=windows ;;
+    mac)     fl_os=macos   ;;
+    linux)   fl_os=linux   ;;
+    windows) fl_os=windows ;;
   esac
 
   local machine
   machine="$(uname -m)"
   case "$machine" in
-    arm64|aarch64) cs_arch=aarch_64 fl_arch=arm64  ;;
-    x86_64|amd64)  cs_arch=x86_64   fl_arch=x86_64 ;;
+    arm64|aarch64) fl_arch=arm64  ;;
+    x86_64|amd64)  fl_arch=x86_64 ;;
     *)
       echo ">> unrecognised machine '$machine' - bundling natives for all platforms"
       return 0
       ;;
   esac
 
-  # Conscrypt publishes no windows-aarch64 build, so an ARM Windows target keeps
-  # the x86_64 one and runs it under emulation.
-  [[ "$OS" == windows ]] && cs_arch=x86_64
-
-  # Scoped per library: the two classifier spellings overlap (conscrypt's
-  # windows-x86_64 would otherwise also match FlatLaf's windows-x86_64 dll on an
-  # ARM Windows target, where FlatLaf's own pick is windows-arm64).
-  local cs_dir="META-INF/native/"
   local fl_dir="com/formdev/flatlaf/natives/"
 
   local before after entry
@@ -242,7 +232,6 @@ strip_foreign_natives() {
   before="$(wc -c <"$jar")"
   while IFS= read -r entry; do
     case "$entry" in
-      "$cs_dir"*"-${cs_os}-${cs_arch}."*) continue ;;
       "$fl_dir"*"-${fl_os}-${fl_arch}."*) continue ;;
       *) drop+=("$entry") ;;
     esac
@@ -280,6 +269,8 @@ jlink \
 
 cp "$JAR_PATH" "$INPUT_DIR/$MAIN_JAR"
 strip_foreign_natives "$INPUT_DIR/$MAIN_JAR"
+JIT_DIRECTIVES="jit-directives.json"
+cp "$PROJECT_ROOT/packaging/$JIT_DIRECTIVES" "$INPUT_DIR/"
 
 # ---- AppCDS archive (APPCDS.md) ---------------------------------------------
 # A static archive of JDK + app classes, mapped read-only at startup instead of
@@ -300,7 +291,9 @@ if [[ $RECORD_CLASSES -eq 1 ]]; then
   mkdir -p "$(dirname "$CDS_LIST")"
   echo ">> recording $(basename "$CDS_LIST"): quit any running XDM first, then use this one"
   echo ">>   as users do - run a real download to completion - and quit it from the tray"
-  "$BUNDLED_JAVA" "${JAVA_OPTIONS[@]}" "-XX:DumpLoadedClassList=$CDS_LIST" \
+  "$BUNDLED_JAVA" "${JAVA_OPTIONS[@]}" \
+    -XX:+UnlockDiagnosticVMOptions "-XX:CompilerDirectivesFile=$INPUT_DIR/$JIT_DIRECTIVES" \
+    "-XX:DumpLoadedClassList=$CDS_LIST" \
     -cp "$INPUT_DIR/$MAIN_JAR" "$MAIN_CLASS"
 fi
 
@@ -324,6 +317,15 @@ if [[ -s "$CDS_LIST" ]]; then
 else
   echo ">> no packaging/cds/$OS.classlist - building without an AppCDS archive (see --record-classes)"
 fi
+
+# ---- JIT directive -------------------------------------------------------
+# Added only now: $APPDIR exists only in the launcher, and the AppCDS dump above
+# runs the bundled java directly. JitOverride's "Full JIT" setting drops the
+# directive, CICompilerCount and ReservedCodeCacheSize lines again.
+JAVA_OPTIONS+=(
+  -XX:+UnlockDiagnosticVMOptions
+  '-XX:CompilerDirectivesFile=$APPDIR/'"$JIT_DIRECTIVES"
+)
 
 # ---- jpackage -------------------------------------------------------------
 # An added launcher inherits the main class, jar and java-options; all this file does is keep it
