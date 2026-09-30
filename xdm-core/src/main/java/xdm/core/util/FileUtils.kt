@@ -186,6 +186,7 @@ object FileUtils {
         }
         try {
             ops.atomicMove(src.toPath(), dst.toPath(), replaceExisting)
+            syncDirectory(dst.absoluteFile.parentFile.toPath(), ops)
             return null
         } catch (_: AtomicMoveNotSupportedException) {
             Logger.info("XDM", "Atomic move not possible, copying $src -> $dst")
@@ -204,6 +205,7 @@ object FileUtils {
             ops.copy(src.toPath(), part.toPath(), progress)
             if (dst.exists() && !replaceExisting) throw FileAlreadyExistsException(dst.path)
             ops.atomicMove(part.toPath(), dst.toPath(), replaceExisting)
+            syncDirectory(folder.toPath(), ops)
             if (!src.delete()) Logger.error("XDM", "Copied, but could not delete source $src")
             null
         } catch (_: CopyCancelledException) {
@@ -214,6 +216,21 @@ object FileUtils {
             Logger.error("XDM", "Copy failed: $src -> $dst", e)
             part.delete()
             DownloadError.OutputWriteError
+        }
+    }
+
+    /**
+     * Best effort: flushes [dir]'s entries so a rename into it survives a power loss. On Linux a
+     * rename is only durable once its folder is synced; NTFS journals renames, and Java cannot open
+     * a folder there, so Windows is skipped. Never throws: by the time it runs the rename has
+     * happened and cannot be undone, so a failure is only logged.
+     */
+    fun syncDirectory(dir: Path, ops: MoveOps = MoveOps.Default) {
+        if (PlatformUtils.isWindows) return
+        try {
+            ops.forceDirectory(dir)
+        } catch (e: Exception) {
+            Logger.error("XDM", "Could not flush folder $dir", e)
         }
     }
 
@@ -258,6 +275,11 @@ interface MoveOps {
      */
     fun force(file: Path) {
         FileChannel.open(file, StandardOpenOption.WRITE).use { it.force(true) }
+    }
+
+    /** Flushes [dir]'s entries (Unix only; see [FileUtils.syncDirectory]). */
+    fun forceDirectory(dir: Path) {
+        FileChannel.open(dir, StandardOpenOption.READ).use { it.force(true) }
     }
 
     companion object Default : MoveOps {

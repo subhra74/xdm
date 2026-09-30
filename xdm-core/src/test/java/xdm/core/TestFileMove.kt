@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test
 import xdm.core.downloaders.DownloadError
 import xdm.core.util.FileUtils
 import xdm.core.util.MoveOps
+import xdm.core.util.PlatformUtils
 import java.io.File
 import java.io.IOException
 import java.nio.file.AtomicMoveNotSupportedException
@@ -166,10 +167,55 @@ class TestFileMove {
                 calls.add("move ${src.fileName}")
                 MoveOps.Default.atomicMove(src, dst, replaceExisting)
             }
+
+            override fun forceDirectory(dir: Path) {
+                calls.add("sync ${dir.fileName}")
+                MoveOps.Default.forceDirectory(dir)
+            }
         }
         assertNull(FileUtils.moveFile(src, dst, recording))
-        assertEquals(listOf("force video.part", "move video.part"), calls, "flush must come before the rename")
+        val expected = listOf("force video.part", "move video.part") +
+            (if (PlatformUtils.isWindows) emptyList() else listOf("sync out"))
+        assertEquals(expected, calls, "flush the file, rename, then flush the destination folder")
         assertTrue(content.contentEquals(dst.readBytes()))
+    }
+
+    @Test
+    fun crossVolumeCopy_flushesDestinationFolderAfterRename() {
+        val synced = mutableListOf<String>()
+        val recording = object : OtherVolume() {
+            override fun forceDirectory(dir: Path) {
+                synced.add(dir.fileName.toString())
+                super.forceDirectory(dir)
+            }
+        }
+        assertNull(FileUtils.moveFile(src, dst, recording, id = 7))
+        assertEquals(if (PlatformUtils.isWindows) emptyList<String>() else listOf("out"), synced, "only the destination folder")
+    }
+
+    @Test
+    fun folderFlushFails_moveStillSucceeds() {
+        val failing = object : MoveOps by MoveOps.Default {
+            override fun forceDirectory(dir: Path) = throw IOException("not supported")
+        }
+        assertNull(FileUtils.moveFile(src, dst, failing), "the rename already happened, so the move succeeded")
+        assertFalse(src.exists())
+        assertTrue(content.contentEquals(dst.readBytes()))
+    }
+
+    @Test
+    fun failedRename_doesNotFlushFolder() {
+        var synced = false
+        val recording = object : MoveOps by MoveOps.Default {
+            override fun atomicMove(src: Path, dst: Path, replaceExisting: Boolean) =
+                throw IOException("access denied")
+
+            override fun forceDirectory(dir: Path) {
+                synced = true
+            }
+        }
+        assertEquals(DownloadError.OutputWriteError, FileUtils.moveFile(src, dst, recording))
+        assertFalse(synced, "nothing was renamed, so there is nothing to flush")
     }
 
     @Test

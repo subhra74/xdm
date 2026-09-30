@@ -61,7 +61,10 @@ object AtomicIO {
         }
     }
 
-    /** Keeps the current file as `.bak2` (best effort), then atomically moves the new file into place. */
+    /**
+     * Keeps the current file as `.bak2` (best effort), then atomically moves the new file into place
+     * and flushes the folder so the rename survives a power loss.
+     */
     @PublishedApi
     internal fun commit(tmp: File, finalFile: File, backup: File) {
         if (finalFile.isFile) {
@@ -73,6 +76,7 @@ object AtomicIO {
         } catch (_: AtomicMoveNotSupportedException) {
             Files.move(tmp.toPath(), finalFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
         }
+        FileUtils.syncDirectory(finalFile.absoluteFile.parentFile.toPath())
     }
 
     private val ownerOnlyPermissions: Set<PosixFilePermission> =
