@@ -4,11 +4,13 @@ import xdm.core.downloaders.DownloadError
 import java.io.File
 import java.io.IOException
 import java.net.URLDecoder
+import java.nio.channels.FileChannel
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.nio.file.StandardOpenOption
 import kotlin.use
 
 object FileUtils {
@@ -142,7 +144,9 @@ object FileUtils {
     /**
      * Moves [src] to [dst] without ever overwriting an existing file or leaving a partial [dst].
      *
-     * Tries an atomic rename first. Across file systems (where a rename is impossible) it checks free
+     * Flushes [src] to disk, then tries an atomic rename. Without the flush a same-volume rename can
+     * publish a file whose data was still in the OS cache, so a power loss leaves zeros under the real
+     * name. A failed flush fails the move. Across file systems (where a rename is impossible) it checks free
      * space, copies to a scratch file next to [dst], flushes it to disk, renames it into place on the
      * destination volume, then deletes [src]. On any failure [src] is left untouched and the scratch
      * file is removed, so the download stays resumable and nothing partial is ever visible under the
@@ -172,6 +176,12 @@ object FileUtils {
         }
         if (dst.exists() && !replaceExisting) {
             Logger.error("XDM", "Move failed, destination exists: $dst")
+            return DownloadError.OutputWriteError
+        }
+        try {
+            ops.force(src.toPath())
+        } catch (e: Exception) {
+            Logger.error("XDM", "Could not flush $src before moving it", e)
             return DownloadError.OutputWriteError
         }
         try {
@@ -241,6 +251,14 @@ interface MoveOps {
      */
     fun copy(src: Path, dst: Path, progress: ((Long) -> Boolean)? = null)
     fun usableSpace(folder: File): Long
+
+    /**
+     * Flushes [file]'s data and metadata to stable storage. Opened for writing because Windows needs
+     * write access to flush; metadata included because a sparse file allocates clusters as data arrives.
+     */
+    fun force(file: Path) {
+        FileChannel.open(file, StandardOpenOption.WRITE).use { it.force(true) }
+    }
 
     companion object Default : MoveOps {
         private const val COPY_BUFFER = 1 shl 20

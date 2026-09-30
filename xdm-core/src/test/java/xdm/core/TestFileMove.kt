@@ -154,6 +154,36 @@ class TestFileMove {
     }
 
     @Test
+    fun sameVolume_flushesSourceBeforeRename() {
+        val calls = mutableListOf<String>()
+        val recording = object : MoveOps by MoveOps.Default {
+            override fun force(file: Path) {
+                calls.add("force ${file.fileName}")
+                MoveOps.Default.force(file)
+            }
+
+            override fun atomicMove(src: Path, dst: Path, replaceExisting: Boolean) {
+                calls.add("move ${src.fileName}")
+                MoveOps.Default.atomicMove(src, dst, replaceExisting)
+            }
+        }
+        assertNull(FileUtils.moveFile(src, dst, recording))
+        assertEquals(listOf("force video.part", "move video.part"), calls, "flush must come before the rename")
+        assertTrue(content.contentEquals(dst.readBytes()))
+    }
+
+    @Test
+    fun flushFails_keepsSourceAndPublishesNothing() {
+        val failing = object : MoveOps by MoveOps.Default {
+            override fun force(file: Path) = throw IOException("device disconnected")
+        }
+        assertEquals(DownloadError.OutputWriteError, FileUtils.moveFile(src, dst, failing))
+        assertTrue(src.exists(), "source must survive for a retry")
+        assertTrue(content.contentEquals(src.readBytes()))
+        assertFalse(dst.exists(), "nothing under the real name")
+    }
+
+    @Test
     fun destinationExists_isNeverOverwritten() {
         dst.writeText("user's file")
         assertEquals(DownloadError.OutputWriteError, FileUtils.moveFile(src, dst))
