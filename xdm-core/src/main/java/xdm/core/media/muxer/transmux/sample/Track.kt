@@ -18,6 +18,8 @@ class Track(val codec: Codec) {
     // --- Audio ---
     var sampleRate: Int = 0
     var channelCount: Int = 0
+    /** MPEG audio layer (1, 2 or 3) for [Codec.MP3] tracks, which carry all MPEG-1/2 audio layers. */
+    var mpegAudioLayer: Int = 3
 
     /**
      * Codec-specific decoder config:
@@ -33,6 +35,7 @@ class Track(val codec: Codec) {
      * Ready-to-embed codec box payload (everything after the box size+type):
      *  - H264 -> avcC payload, H265 -> hvcC payload
      *  - AC3 -> dac3 payload, EAC3 -> dec3 payload
+     *  - OPUS -> an `OpusHead` (little-endian, as in Ogg/Matroska); the MP4 writer converts it to dOps
      * AAC instead carries its config in [audioSpecificConfig] (wrapped in esds by the writer).
      */
     var decoderConfigRecord: ByteArray? = null
@@ -46,6 +49,13 @@ class Track(val codec: Codec) {
      * from [parameterSets]/[audioSpecificConfig] (used by the MP4 demux path).
      */
     var sampleEntryBox: ByteArray? = null
+
+    /**
+     * Further sample entries (stsd index 2, 3, ...) when a later init segment changes the codec
+     * config mid-stream, e.g. an HLS `EXT-X-MAP` after a discontinuity. Samples point at theirs via
+     * [Sample.sampleDescriptionIndex].
+     */
+    val additionalSampleEntries = ArrayList<ByteArray>()
 
     /**
      * Matroska/WebM codec identity carried verbatim from a Matroska input (e.g. `V_VP9`, `A_OPUS`).
@@ -65,6 +75,7 @@ class Track(val codec: Codec) {
             Codec.H264, Codec.H265 -> width > 0 && height > 0 && parameterSets.isNotEmpty()
             Codec.AAC -> audioSpecificConfig != null && sampleRate > 0
             Codec.AC3, Codec.EAC3, Codec.MP3 -> sampleRate > 0
+            Codec.OPUS -> decoderConfigRecord != null
             else -> true
         }
     }

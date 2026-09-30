@@ -5,6 +5,7 @@ import xdm.core.media.muxer.transmux.io.ParsableByteArray
 import xdm.core.media.muxer.transmux.sample.Codec
 import xdm.core.media.muxer.transmux.sample.Sample
 import xdm.core.media.muxer.transmux.sample.Track
+import xdm.core.util.Logger
 import java.io.RandomAccessFile
 
 /**
@@ -21,15 +22,25 @@ class Mp4Demuxer(private val sink: SampleSink) {
 
     private class TrackState(
         val track: Track,
+        var inputTrackId: Int,
+        /** Timescale of the current init segment; samples are rescaled to [Track.timescale]. */
+        var inputTimescale: Int,
+        var descriptionIndex: Int = 1,
         var defaultSampleDuration: Long = 0,
         var defaultSampleSize: Long = 0,
         var defaultSampleFlags: Long = 0
-    )
+    ) {
+        fun scale(v: Long): Long =
+            if (inputTimescale == track.timescale || inputTimescale <= 0) v else v * track.timescale / inputTimescale
+    }
 
-    private val byTrackId = LinkedHashMap<Int, TrackState>()
+    /** Every output track, in first-seen order. */
+    private val states = ArrayList<TrackState>()
+    /** Input track_ID -> output track, for the most recent init segment (moov). */
+    private val current = HashMap<Int, TrackState>()
     private val trexDefaults = HashMap<Int, LongArray>() // trackId -> [dur, size, flags]
 
-    val tracks: List<Track> get() = byTrackId.values.map { it.track }
+    val tracks: List<Track> get() = states.map { it.track }
 
     /** Parses one segment file (init, media, or a self-contained progressive MP4). */
     fun parseSegment(path: String) {
@@ -64,12 +75,19 @@ class Mp4Demuxer(private val sink: SampleSink) {
 
     // ---- moov (init or progressive) ----
 
+    /**
+     * A moov may arrive more than once (HLS repeats `EXT-X-MAP` across discontinuities): later ones
+     * continue the existing tracks rather than replacing them, so earlier samples are kept.
+     */
     private fun parseMoov(data: ByteArray, raf: RandomAccessFile) {
+        current.clear()
+        trexDefaults.clear()
+        // mvex (trex defaults) follows the traks, but parseTrak needs it: read it first.
         forEachBox(data, 0, data.size) { type, s, e ->
-            when (type) {
-                "mvex" -> forEachBox(data, s, e) { t2, s2, _ -> if (t2 == "trex") parseTrex(data, s2) }
-                "trak" -> parseTrak(data, s, e, raf)
-            }
+            if (type == "mvex") forEachBox(data, s, e) { t2, s2, _ -> if (t2 == "trex") parseTrex(data, s2) }
+        }
+        forEachBox(data, 0, data.size) { type, s, e ->
+            if (type == "trak") parseTrak(data, s, e, raf)
         }
     }
 
@@ -88,7 +106,7 @@ class Mp4Demuxer(private val sink: SampleSink) {
         var width = 0
         var height = 0
         var timescale = 0
-        var isVideo = false
+        var handler = ""
         var sampleEntry: ByteArray? = null
         var stblStart = -1; var stblEnd = -1
 
@@ -114,8 +132,7 @@ class Mp4Demuxer(private val sink: SampleSink) {
                             timescale = p.readInt()
                         }
                         "hdlr" -> {
-                            val handler = String(data, s2 + 8, 4, Charsets.US_ASCII)
-                            isVideo = handler == "vide"
+                            handler = String(data, s2 + 8, 4, Charsets.US_ASCII)
                         }
                         "minf" -> forEachBox(data, s2, e2) { t3, s3, e3 ->
                             if (t3 == "stbl") {
@@ -130,20 +147,54 @@ class Mp4Demuxer(private val sink: SampleSink) {
             }
         }
         if (trackId == 0 || sampleEntry == null) return
-
-        val track = Track(if (isVideo) Codec.OTHER_VIDEO else Codec.OTHER_AUDIO)
-        track.timescale = if (timescale > 0) timescale else 90000
-        track.width = width
-        track.height = height
-        track.sampleEntryBox = sampleEntry
-        val state = TrackState(track)
-        trexDefaults[trackId]?.let {
-            state.defaultSampleDuration = it[0]; state.defaultSampleSize = it[1]; state.defaultSampleFlags = it[2]
+        // Only audio and video are muxed; subtitle (subt/text/sbtl), timed-metadata (meta) and hint
+        // tracks are skipped, so their fragments are ignored too (they never enter [current]).
+        if (handler != "vide" && handler != "soun") {
+            Logger.info("XDM", "MP4: skipping non-A/V track $trackId (handler '$handler')")
+            return
         }
-        byTrackId[trackId] = state
+        val isVideo = handler == "vide"
+
+        val inputTimescale = if (timescale > 0) timescale else 90000
+        val state = continuingTrack(trackId, isVideo)?.also { st ->
+            st.inputTrackId = trackId
+            st.inputTimescale = inputTimescale
+            st.descriptionIndex = descriptionIndexFor(st.track, sampleEntry!!)
+        } ?: run {
+            val track = Track(if (isVideo) Codec.OTHER_VIDEO else Codec.OTHER_AUDIO)
+            track.timescale = inputTimescale
+            track.width = width
+            track.height = height
+            track.sampleEntryBox = sampleEntry
+            TrackState(track, trackId, inputTimescale).also { states.add(it) }
+        }
+        val trex = trexDefaults[trackId]
+        state.defaultSampleDuration = trex?.get(0) ?: 0
+        state.defaultSampleSize = trex?.get(1) ?: 0
+        state.defaultSampleFlags = trex?.get(2) ?: 0
+        current[trackId] = state
 
         // Progressive MP4: samples live in this file's stbl + mdat.
-        if (stblStart >= 0) extractProgressiveSamples(data, stblStart, stblEnd, track, raf)
+        if (stblStart >= 0) extractProgressiveSamples(data, stblStart, stblEnd, state, raf)
+    }
+
+    /**
+     * The existing output track a trak from a repeated init segment continues: same track_ID and
+     * kind, else the only not-yet-claimed track of that kind (an ad/period that renumbered its
+     * tracks). Null for the first init segment, or when the trak is genuinely new.
+     */
+    private fun continuingTrack(trackId: Int, isVideo: Boolean): TrackState? {
+        val free = states.filter { it.track.codec.isVideo == isVideo && it !in current.values }
+        return free.firstOrNull { it.inputTrackId == trackId } ?: free.singleOrNull()
+    }
+
+    /** 1-based stsd index of [entry] in [track], registering it as a new sample entry if unseen. */
+    private fun descriptionIndexFor(track: Track, entry: ByteArray): Int {
+        if (track.sampleEntryBox?.contentEquals(entry) == true) return 1
+        val i = track.additionalSampleEntries.indexOfFirst { it.contentEquals(entry) }
+        if (i >= 0) return i + 2
+        track.additionalSampleEntries.add(entry)
+        return track.additionalSampleEntries.size + 1
     }
 
     /** Returns the first sample entry box (with header) inside an stsd. */
@@ -191,7 +242,7 @@ class Mp4Demuxer(private val sink: SampleSink) {
                 "trun" -> truns.add(intArrayOf(s, e))
             }
         }
-        val state = byTrackId[trackId] ?: return
+        val state = current[trackId] ?: return
         val dDur = if (defDur >= 0) defDur else state.defaultSampleDuration
         val dSize = if (defSize >= 0) defSize else state.defaultSampleSize
         val dFlags = if (defFlags >= 0) defFlags else state.defaultSampleFlags
@@ -199,14 +250,14 @@ class Mp4Demuxer(private val sink: SampleSink) {
 
         var runningDts = baseMediaDecodeTime
         for (trun in truns) {
-            runningDts = parseTrun(data, trun[0], trun[1], base, dDur, dSize, dFlags, runningDts, state.track, raf)
+            runningDts = parseTrun(data, trun[0], trun[1], base, dDur, dSize, dFlags, runningDts, state, raf)
         }
     }
 
     private fun parseTrun(
         data: ByteArray, start: Int, end: Int, base: Long,
         defDur: Long, defSize: Long, defFlags: Long,
-        startDts: Long, track: Track, raf: RandomAccessFile
+        startDts: Long, state: TrackState, raf: RandomAccessFile
     ): Long {
         val version = data[start].toInt() and 0xFF
         val flags = readU24(data, start + 1)
@@ -237,7 +288,10 @@ class Mp4Demuxer(private val sink: SampleSink) {
             val sz = size.toInt()
             val isKey = (sFlags and 0x00010000L) == 0L
             val outOffset = copySample(raf, sz, buf)
-            track.samples.add(Sample(outOffset, sz, dts + cto, dts, isKey))
+            state.track.samples.add(
+                Sample(outOffset, sz, state.scale(dts + cto), state.scale(dts), isKey)
+                    .also { it.sampleDescriptionIndex = state.descriptionIndex }
+            )
             dts += dur
             filePos += sz
         }
@@ -246,7 +300,8 @@ class Mp4Demuxer(private val sink: SampleSink) {
 
     // ---- progressive stbl sample tables ----
 
-    private fun extractProgressiveSamples(data: ByteArray, stblStart: Int, stblEnd: Int, track: Track, raf: RandomAccessFile) {
+    private fun extractProgressiveSamples(data: ByteArray, stblStart: Int, stblEnd: Int, state: TrackState, raf: RandomAccessFile) {
+        val track = state.track
         var sttsOff = -1; var cttsOff = -1; var stscOff = -1; var stszOff = -1; var stcoOff = -1; var co64Off = -1; var stssOff = -1
         forEachBox(data, stblStart, stblEnd) { type, s, _ ->
             when (type) {
@@ -328,7 +383,10 @@ class Mp4Demuxer(private val sink: SampleSink) {
             val isKey = syncSet?.contains(i + 1) ?: true
             raf.seek(sampleFileOffsets[i])
             val outOffset = copySample(raf, sizes[i], buf)
-            track.samples.add(Sample(outOffset, sizes[i], dts + cto, dts, isKey))
+            track.samples.add(
+                Sample(outOffset, sizes[i], state.scale(dts + cto), state.scale(dts), isKey)
+                    .also { it.sampleDescriptionIndex = state.descriptionIndex }
+            )
             dts += dur
             sttsRem--
         }

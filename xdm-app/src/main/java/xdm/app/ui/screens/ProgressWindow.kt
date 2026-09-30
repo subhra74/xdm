@@ -173,7 +173,7 @@ class ProgressWindow(val id: Long) : JFrame() {
             lblFileName,
             contentPane,
             gridX = 1,
-            padding = Insets(20, 10, 0, 0),
+            padding = Insets(20, 10, 0, 15),
             alignment = GridBagConstraints.SOUTHWEST,
             colSpan = 2,
         )

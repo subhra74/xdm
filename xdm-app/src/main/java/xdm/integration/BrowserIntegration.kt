@@ -45,9 +45,7 @@ object BrowserIntegration {
     }
     private val blockedHeaders = setOf(
         "accept",
-        "if",
 //        "authorization",
-        "proxy",
         "connection",
         "expect",
         "te",
@@ -60,6 +58,13 @@ object BrowserIntegration {
         "content-encoding",
         "accept-encoding"
     )
+
+    /**
+     * Whole header families that must not be replayed: conditionals (`If-None-Match`,
+     * `If-Modified-Since`, ...) would turn the fetch into a 304 with no body, and `Proxy-*` belongs
+     * to the browser's proxy hop, not ours.
+     */
+    private val blockedHeaderPrefixes = listOf("if-", "proxy-")
 
     private val extensionOriginSchemes = listOf(
         "chrome-extension://",
@@ -390,9 +395,8 @@ object BrowserIntegration {
     private fun removeBlockedHeaders(msg: ExtensionMessage) {
         val filteredHeaders = mutableMapOf<String, List<String>>()
         filteredHeaders.putAll(msg.requestHeaders?.filter {
-            !blockedHeaders.contains(
-                it.key.lowercase(Locale.ENGLISH)
-            )
+            val name = it.key.lowercase(Locale.ENGLISH)
+            !blockedHeaders.contains(name) && blockedHeaderPrefixes.none { prefix -> name.startsWith(prefix) }
         } ?: return)
         msg.requestHeaders.clear()
         msg.requestHeaders.putAll(filteredHeaders)

@@ -20,7 +20,7 @@ mvn -q -pl xdm-core test -DskipTests=false -Dtest=SomeTest      # scoped test ru
 java -jar xdm-app/target/xdm-app.jar                            # run (main: xdm.app.AppMain)
 ```
 - JDK 25 is picked via a Maven toolchain (`~/.m2/toolchains.xml`, see `packaging/toolchains.sample.xml`), not `JAVA_HOME`.
-- Keep Kotlin >= 2.3.21 and Surefire pinned at 3.5.6 (check test counts: xdm-core 175, xdm-app 98).
+- Keep Kotlin >= 2.3.21 and Surefire pinned at 3.5.6 (check test counts: xdm-core 188, xdm-app 101).
 - Tests are JUnit 5; assertion message goes **last**. Kotlin sources live in `src/main/java`.
 - State lives in `~/.xdm-app/`.
 

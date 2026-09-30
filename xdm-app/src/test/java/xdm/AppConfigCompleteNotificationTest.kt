@@ -25,11 +25,14 @@ class AppConfigCompleteNotificationTest {
 
     private fun load() = AppConfig(dir.absolutePath).apply { load() }
 
-    /** Strips the trailing mode field, leaving the config an older build would have written. */
+    /**
+     * Strips the trailing mode field (an int) and everything after it (the skip-duplicate-manifests
+     * boolean), leaving the config an older build would have written.
+     */
     private fun dropTrailingMode() {
         val file = File(dir, AppConfig.CONFIG_FILE)
         val bytes = file.readBytes()
-        file.writeBytes(bytes.copyOf(bytes.size - 12) + "XDM-END!".toByteArray(Charsets.US_ASCII))
+        file.writeBytes(bytes.copyOf(bytes.size - 13) + "XDM-END!".toByteArray(Charsets.US_ASCII))
     }
 
     @Test

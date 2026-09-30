@@ -51,6 +51,11 @@ export default class RequestWatcher {
     }
 
     isMatchingRequest(res) {
+        // A failed response (a 410 from an expired or used-up CDN token, a 403, ...) is not media:
+        // XDM would only replay the request and get the same error back.
+        if (res.statusCode < 200 || res.statusCode >= 300) {
+            return false;
+        }
         let u = new URL(res.url);
 
         let hostName = u.host;
@@ -273,7 +278,7 @@ export default class RequestWatcher {
             });
         }
         if (cookies.length > 0) {
-            data.cookie = cookies.join(";");
+            data.cookie = cookies.join("; ");
         }
         return data;
     }

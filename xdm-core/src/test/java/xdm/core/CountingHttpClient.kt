@@ -16,7 +16,7 @@ class CountingHttpClient(private val delegate: HttpClientImpl = HttpClientImpl(8
         delegate.close()
     }
 
-    override fun getResponse(url: String, headers: HeaderMap?, cookie: String?, range: Range): Result<HttpResponse> =
+    override fun getResponse(url: String, headers: HeaderMap?, cookie: String?, range: Range?): Result<HttpResponse> =
         delegate.getResponse(url, headers, cookie, range)
 }
 

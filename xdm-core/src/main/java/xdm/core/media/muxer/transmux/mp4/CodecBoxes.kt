@@ -61,7 +61,46 @@ object CodecBoxes {
     }
 
     const val OTI_AAC = 0x40
-    const val OTI_MP3 = 0x6B
+    /** MPEG-1 audio (ISO/IEC 11172-3, any layer). */
+    const val OTI_MPEG1_AUDIO = 0x6B
+    /** MPEG-2 low-sample-rate audio (ISO/IEC 13818-3: 16/22.05/24 kHz and MPEG-2.5 rates). */
+    const val OTI_MPEG2_AUDIO = 0x69
+
+    /**
+     * dOps box (Opus in ISO-BMFF §4.3.2) from an Ogg/Matroska `OpusHead`: the same fields, but
+     * big-endian and without the magic, and version 0.
+     */
+    fun writeDOps(buf: BoxBuf, opusHead: ByteArray) {
+        fun le16(o: Int) = (opusHead[o].toInt() and 0xFF) or ((opusHead[o + 1].toInt() and 0xFF) shl 8)
+        val channels = opusHead[9].toInt() and 0xFF
+        val family = opusHead[18].toInt() and 0xFF
+        buf.box("dOps") {
+            u8(0)                                   // Version
+            u8(channels)                            // OutputChannelCount
+            u16(le16(10))                           // PreSkip
+            u32(le16(12).toLong() or (le16(14).toLong() shl 16)) // InputSampleRate
+            u16(le16(16))                           // OutputGain
+            u8(family)                              // ChannelMappingFamily
+            if (family != 0 && opusHead.size >= 21 + channels) {
+                bytes(opusHead.copyOfRange(19, 21 + channels)) // StreamCount, CoupledCount, ChannelMapping
+            }
+        }
+    }
+
+    /** Inverse of [writeDOps]: rebuilds an `OpusHead` (Matroska's A_OPUS CodecPrivate) from dOps contents. */
+    fun opusHeadFromDOps(dOps: ByteArray): ByteArray? {
+        if (dOps.size < 11) return null
+        val tail = dOps.copyOfRange(10, dOps.size)   // ChannelMappingFamily [+ StreamCount, CoupledCount, mapping]
+        val h = ByteArray(18 + tail.size)
+        "OpusHead".toByteArray(Charsets.US_ASCII).copyInto(h)
+        h[8] = 1                                      // version
+        h[9] = dOps[1]                                // channel count
+        h[10] = dOps[3]; h[11] = dOps[2]              // pre-skip, BE -> LE
+        h[12] = dOps[7]; h[13] = dOps[6]; h[14] = dOps[5]; h[15] = dOps[4] // input sample rate
+        h[16] = dOps[9]; h[17] = dOps[8]              // output gain
+        tail.copyInto(h, 18)
+        return h
+    }
 
     /** esds box with an ES/DecoderConfig/SL descriptor chain. ASC is optional (absent for MP3). */
     fun writeEsds(buf: BoxBuf, objectTypeIndication: Int, asc: ByteArray?) {

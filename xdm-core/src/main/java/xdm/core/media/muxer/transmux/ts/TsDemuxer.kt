@@ -6,10 +6,12 @@ import xdm.core.media.muxer.transmux.es.ByteArrayBuilder
 import xdm.core.media.muxer.transmux.es.ElementaryStreamReader
 import xdm.core.media.muxer.transmux.es.H264Reader
 import xdm.core.media.muxer.transmux.es.H265Reader
-import xdm.core.media.muxer.transmux.es.Mp3Reader
+import xdm.core.media.muxer.transmux.es.MpegAudioReader
+import xdm.core.media.muxer.transmux.es.OpusReader
 import xdm.core.media.muxer.transmux.es.SampleSink
 import xdm.core.media.muxer.transmux.sample.Codec
 import xdm.core.media.muxer.transmux.sample.Track
+import xdm.core.util.Logger
 
 /**
  * MPEG-2 Transport Stream demuxer. Feeds raw TS bytes (one or many segments, in order),
@@ -25,6 +27,7 @@ class TsDemuxer(private val sink: SampleSink) {
     private var packetSizeResolved = false
 
     private var pmtPid = -1
+    private var pmtParsed = false
     private val readersByPid = HashMap<Int, PesAssembler>()
     /** Tracks in PMT declaration order, for stable output ordering. */
     val tracks = ArrayList<Track>()
@@ -168,7 +171,7 @@ class TsDemuxer(private val sink: SampleSink) {
     }
 
     private fun parsePmt(data: ByteArray, start: Int, end: Int, pusi: Boolean) {
-        if (readersByPid.isNotEmpty()) return // already configured
+        if (pmtParsed) return // already configured
         var p = start
         if (pusi) p += 1 + (data[p].toInt() and 0xFF)
         if (p + 12 > end) return
@@ -180,40 +183,65 @@ class TsDemuxer(private val sink: SampleSink) {
             val streamType = data[esLoop].toInt() and 0xFF
             val esPid = ((data[esLoop + 1].toInt() and 0x1F) shl 8) or (data[esLoop + 2].toInt() and 0xFF)
             val esInfoLength = ((data[esLoop + 3].toInt() and 0x0F) shl 8) or (data[esLoop + 4].toInt() and 0xFF)
-            val registration = readRegistration(data, esLoop + 5, esLoop + 5 + esInfoLength)
-            val codec = StreamType.fromStreamType(streamType, registration)
-            addReader(esPid, codec)
+            val info = readEsDescriptors(data, esLoop + 5, minOf(esLoop + 5 + esInfoLength, sectionEnd))
+            val codec = StreamType.fromStreamType(streamType, info.registration, info.dvbAudio)
+            addReader(esPid, streamType, codec, info)
             esLoop += 5 + esInfoLength
         }
+        pmtParsed = true
     }
 
-    /** Scans an ES_info descriptor loop for a registration_descriptor (tag 0x05) format id. */
-    private fun readRegistration(data: ByteArray, start: Int, end: Int): Int? {
+    /** What we use from an ES_info descriptor loop. */
+    private class EsDescriptors(val registration: Int?, val opusChannelConfig: Int?, val dvbAudio: Codec?)
+
+    /**
+     * Scans an ES_info descriptor loop for the registration_descriptor (tag 0x05) format id and the
+     * Opus channel_config_code (extension descriptor tag 0x7F, extension tag 0x80).
+     */
+    private fun readEsDescriptors(data: ByteArray, start: Int, end: Int): EsDescriptors {
+        var registration: Int? = null
+        var opusChannelConfig: Int? = null
+        var dvbAudio: Codec? = null
         var d = start
         while (d + 2 <= end) {
             val tag = data[d].toInt() and 0xFF
             val len = data[d + 1].toInt() and 0xFF
-            if (tag == 0x05 && len >= 4 && d + 2 + 4 <= end) {
-                return ((data[d + 2].toInt() and 0xFF) shl 24) or
+            if (d + 2 + len > end) break
+            if (tag == 0x05 && len >= 4 && registration == null) {
+                registration = ((data[d + 2].toInt() and 0xFF) shl 24) or
                     ((data[d + 3].toInt() and 0xFF) shl 16) or
                     ((data[d + 4].toInt() and 0xFF) shl 8) or
                     (data[d + 5].toInt() and 0xFF)
+            } else if (tag == 0x7F && len >= 2 && (data[d + 2].toInt() and 0xFF) == 0x80) {
+                opusChannelConfig = data[d + 3].toInt() and 0xFF
+            } else if (tag == 0x6A) {
+                dvbAudio = Codec.AC3        // DVB AC-3_descriptor
+            } else if (tag == 0x7A) {
+                dvbAudio = Codec.EAC3       // DVB enhanced_AC-3_descriptor
             }
             d += 2 + len
         }
-        return null
+        return EsDescriptors(registration, opusChannelConfig, dvbAudio)
     }
 
-    private fun addReader(pid: Int, codec: Codec) {
+    private fun addReader(pid: Int, streamType: Int, codec: Codec, info: EsDescriptors) {
         if (readersByPid.containsKey(pid)) return
+        if (codec == Codec.UNKNOWN) {
+            // Timed metadata (ID3), SCTE-35, subtitles, ...: not media we mux.
+            Logger.info("XDM", "TS: skipping non-A/V stream pid=$pid stream_type=0x${Integer.toHexString(streamType)}")
+            return
+        }
         val reader: ElementaryStreamReader = when (codec) {
             Codec.H264 -> H264Reader(sink)
             Codec.H265 -> H265Reader(sink)
             Codec.AAC -> AdtsReader(sink)
             Codec.AC3 -> Ac3Reader(sink, eac3 = false)
             Codec.EAC3 -> Ac3Reader(sink, eac3 = true)
-            Codec.MP3 -> Mp3Reader(sink)
-            else -> throw UnsupportedCodecException("Unsupported codec in TS stream: $codec (pid=$pid)")
+            Codec.MP3 -> MpegAudioReader(sink)
+            Codec.OPUS -> OpusReader(sink, info.opusChannelConfig)
+            else -> throw UnsupportedCodecException(
+                "Unsupported codec in TS stream: $codec (pid=$pid, stream_type=0x${Integer.toHexString(streamType)})"
+            )
         }
         readersByPid[pid] = PesAssembler(reader)
         tracks.add(reader.track)

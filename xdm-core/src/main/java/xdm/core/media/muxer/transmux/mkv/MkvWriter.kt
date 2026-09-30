@@ -60,7 +60,7 @@ class MkvWriter(outputPath: String, spoolDir: String? = null) : ContainerWriter 
                 Logger.error("XDM", "MKV: skipping track with unmappable codec ${t.codec}")
                 null
             }
-            resolved?.let { TrackPlan(t, idx + 1, it.first, it.second) }
+            resolved?.let { TrackPlan(t, idx + 1, it.first, it.second, dolbyVisionConfig(t)) }
         }
         if (plans.isEmpty()) { spoolFile.delete(); return false }
 
@@ -70,7 +70,7 @@ class MkvWriter(outputPath: String, spoolDir: String? = null) : ContainerWriter 
 
         try {
             out = BufferedOutputStream(FileOutputStream(file), 1 shl 20)
-            writeEbmlHeader()
+            writeEbmlHeader(docTypeVersion = if (plans.any { it.dolbyVision != null }) 4 else 2)
             // Segment: reserved size, back-patched once all children are written.
             writeRaw(Ebml.idBytes(Ebml.SEGMENT))
             val segPatch = position
@@ -110,7 +110,8 @@ class MkvWriter(outputPath: String, spoolDir: String? = null) : ContainerWriter 
 
     // ---- header / info / tracks ----
 
-    private fun writeEbmlHeader() {
+    /** [docTypeVersion] 4 when BlockAdditionMapping (Matroska v4) is used; readers only need v2. */
+    private fun writeEbmlHeader(docTypeVersion: Long) {
         val b = EbmlBuf()
         b.master(Ebml.EBML) {
             uint(Ebml.EBML_VERSION, 1)
@@ -118,7 +119,7 @@ class MkvWriter(outputPath: String, spoolDir: String? = null) : ContainerWriter 
             uint(Ebml.EBML_MAX_ID_LENGTH, 4)
             uint(Ebml.EBML_MAX_SIZE_LENGTH, 8)
             str(Ebml.DOC_TYPE, "matroska")
-            uint(Ebml.DOC_TYPE_VERSION, 2)
+            uint(Ebml.DOC_TYPE_VERSION, docTypeVersion)
             uint(Ebml.DOC_TYPE_READ_VERSION, 2)
         }
         writeRaw(b.toByteArray())
@@ -148,6 +149,13 @@ class MkvWriter(outputPath: String, spoolDir: String? = null) : ContainerWriter 
                     str(Ebml.LANGUAGE, "und")
                     str(Ebml.CODEC_ID, p.codecId)
                     p.codecPrivate?.let { if (it.isNotEmpty()) bin(Ebml.CODEC_PRIVATE, it) }
+                    p.dolbyVision?.let { dv ->
+                        master(Ebml.BLOCK_ADDITION_MAPPING) {
+                            str(Ebml.BLOCK_ADD_ID_NAME, "Dolby Vision configuration ${dv.type}")
+                            uint(Ebml.BLOCK_ADD_ID_TYPE, fourccValue(dv.type))
+                            bin(Ebml.BLOCK_ADD_ID_EXTRA_DATA, dv.record)
+                        }
+                    }
                     if (t.codec.isVideo) {
                         master(Ebml.VIDEO) {
                             uint(Ebml.PIXEL_WIDTH, t.width.toLong().coerceAtLeast(1))
@@ -170,13 +178,31 @@ class MkvWriter(outputPath: String, spoolDir: String? = null) : ContainerWriter 
 
     private class Entry(val plan: TrackPlan, val sample: Sample, val absMs: Long)
 
-    private fun writeClusters(plans: List<TrackPlan>, globalMinMs: Long) {
-        // Merge all tracks' samples into one timeline, ordered by presentation time.
-        val entries = ArrayList<Entry>()
-        for (p in plans) for (s in p.track.samples) {
+    /**
+     * Merges all tracks' samples into one stream. Blocks must be stored in *decode* order (a
+     * B-frame's reference frames come first) while each block's timestamp is its *presentation*
+     * time, so each track keeps its own (decode) order and tracks are interleaved by DTS.
+     */
+    private fun interleave(plans: List<TrackPlan>, globalMinMs: Long): List<Entry> {
+        val cursors = IntArray(plans.size)
+        val entries = ArrayList<Entry>(plans.sumOf { it.track.samples.size })
+        while (true) {
+            var best = -1
+            var bestDtsMs = Long.MAX_VALUE
+            for ((i, p) in plans.withIndex()) {
+                val s = p.track.samples.getOrNull(cursors[i]) ?: continue
+                val dtsMs = msOf(s.dts, p.track.timescale)
+                if (dtsMs < bestDtsMs) { best = i; bestDtsMs = dtsMs }
+            }
+            if (best < 0) return entries
+            val p = plans[best]
+            val s = p.track.samples[cursors[best]++]
             entries.add(Entry(p, s, msOf(s.pts, p.track.timescale) - globalMinMs))
         }
-        entries.sortBy { it.absMs }
+    }
+
+    private fun writeClusters(plans: List<TrackPlan>, globalMinMs: Long) {
+        val entries = interleave(plans, globalMinMs)
 
         val anyVideo = plans.any { it.track.codec.isVideo }
         val spoolIn = RandomAccessFile(spoolFile, "r")
@@ -245,7 +271,13 @@ class MkvWriter(outputPath: String, spoolDir: String? = null) : ContainerWriter 
 
     // ---- codec mapping ----
 
-    private class TrackPlan(val track: Track, val trackNumber: Int, val codecId: String, val codecPrivate: ByteArray?)
+    private class TrackPlan(
+        val track: Track, val trackNumber: Int, val codecId: String, val codecPrivate: ByteArray?,
+        val dolbyVision: DolbyVisionConfig?
+    )
+
+    /** A DOVIDecoderConfigurationRecord and the box type (dvcC/dvvC/dvwC) it came in. */
+    private class DolbyVisionConfig(val type: String, val record: ByteArray)
 
     /** Resolves the Matroska CodecID + CodecPrivate for [t], or null if it can't be mapped. */
     private fun resolveCodec(t: Track): Pair<String, ByteArray?>? {
@@ -260,7 +292,7 @@ class MkvWriter(outputPath: String, spoolDir: String? = null) : ContainerWriter 
             Codec.VP8 -> return "V_VP8" to null
             Codec.VP9 -> return "V_VP9" to t.decoderConfigRecord
             Codec.AAC -> return "A_AAC" to t.audioSpecificConfig
-            Codec.MP3 -> return "A_MPEG/L3" to null
+            Codec.MP3 -> return "A_MPEG/L${t.mpegAudioLayer}" to null
             Codec.AC3 -> return "A_AC3" to null
             Codec.EAC3 -> return "A_EAC3" to null
             Codec.OPUS -> return "A_OPUS" to t.decoderConfigRecord
@@ -269,7 +301,13 @@ class MkvWriter(outputPath: String, spoolDir: String? = null) : ContainerWriter 
         }
 
         // 3) MP4 sample entry copied verbatim (OTHER_VIDEO/OTHER_AUDIO): map by its fourcc.
-        t.sampleEntryBox?.let { return fromSampleEntry(t, it) }
+        t.sampleEntryBox?.let {
+            if (t.additionalSampleEntries.isNotEmpty()) {
+                // Matroska has one CodecPrivate per track; later configs are dropped.
+                Logger.error("XDM", "MKV: track changes codec config mid-stream; using the first one")
+            }
+            return fromSampleEntry(t, it)
+        }
         return null
     }
 
@@ -287,17 +325,73 @@ class MkvWriter(outputPath: String, spoolDir: String? = null) : ContainerWriter 
         // Child config boxes begin after the sample-entry header (visual 78, audio 28 bytes).
         val childStart = if (t.codec.isVideo || fourcc in VIDEO_FOURCCS) 8 + 78 else 8 + 28
         return when (fourcc) {
-            "avc1", "avc3" -> "V_MPEG4/ISO/AVC" to childBox(entry, childStart, "avcC")
-            "hev1", "hvc1" -> "V_MPEGH/ISO/HEVC" to childBox(entry, childStart, "hvcC")
+            // Dolby Vision sample entries carry the base layer's config; the DV record goes to
+            // BlockAdditionMapping (see dolbyVisionConfig).
+            "avc1", "avc3", "dva1", "dvav" -> "V_MPEG4/ISO/AVC" to childBox(entry, childStart, "avcC")
+            "hev1", "hvc1", "dvh1", "dvhe" -> "V_MPEGH/ISO/HEVC" to childBox(entry, childStart, "hvcC")
             "vp08" -> "V_VP8" to null
             "vp09" -> "V_VP9" to childBox(entry, childStart, "vpcC")
-            "av01" -> "V_AV1" to childBox(entry, childStart, "av1C")
-            "mp4a" -> "A_AAC" to (childBox(entry, childStart, "esds")?.let { extractAsc(it) })
+            "av01", "dav1" -> "V_AV1" to childBox(entry, childStart, "av1C")
+            "mp4a" -> {
+                val esds = childBox(entry, childStart, "esds")
+                when (esds?.let { esdsObjectType(it) }) {
+                    0x40, 0x66, 0x67, 0x68 -> "A_AAC" to extractAsc(esds)
+                    // MPEG-1 / MPEG-2 LSF audio; the OTI doesn't say which layer, and it's ~always L3.
+                    0x69, 0x6B -> "A_MPEG/L3" to null
+                    // Registered MP4 audio object types for Dolby/DTS streams stored as mp4a.
+                    0xA5 -> "A_AC3" to null
+                    0xA6 -> "A_EAC3" to null
+                    0xA9 -> "A_DTS" to null
+                    else -> null
+                }
+            }
             "ac-3" -> "A_AC3" to null
             "ec-3" -> "A_EAC3" to null
-            "Opus" -> "A_OPUS" to childBox(entry, childStart, "dOps")
+            // Matroska wants an OpusHead, not the MP4 dOps payload.
+            "Opus" -> "A_OPUS" to childBox(entry, childStart, "dOps")?.let { CodecBoxes.opusHeadFromDOps(it) }
+            // FLAC: "fLaC" + metadata blocks; dfLa is a full box holding those blocks.
+            "fLaC" -> childBox(entry, childStart, "dfLa")?.takeIf { it.size > 4 }?.let {
+                "A_FLAC" to ("fLaC".toByteArray(Charsets.US_ASCII) + it.copyOfRange(4, it.size))
+            }
+            // ALAC magic cookie: the ALACSpecificConfig inside the (full box) alac child.
+            "alac" -> childBox(entry, childStart, "alac")?.takeIf { it.size > 4 }?.let {
+                "A_ALAC" to it.copyOfRange(4, it.size)
+            }
+            "dtsc", "dtsh", "dtsl" -> "A_DTS" to null
+            "dtse" -> "A_DTS/EXPRESS" to null
+            "mlpa" -> "A_TRUEHD" to null
+            // No Matroska codec ID exists for e.g. AC-4 (ac-4), MPEG-H (mha1/mhm1) or APAC (apac).
             else -> null
+        }.also { if (it == null) Logger.error("XDM", "MKV: no Matroska mapping for MP4 sample entry '$fourcc'") }
+    }
+
+    /** The Dolby Vision config record of a video track copied from MP4, if its sample entry has one. */
+    private fun dolbyVisionConfig(t: Track): DolbyVisionConfig? {
+        val entry = t.sampleEntryBox ?: return null
+        if (!t.codec.isVideo || entry.size < 8 + 78) return null
+        for (type in DOLBY_VISION_BOXES) {
+            childBox(entry, 8 + 78, type)?.let { return DolbyVisionConfig(type, it) }
         }
+        return null
+    }
+
+    private fun fourccValue(s: String): Long =
+        s.toByteArray(Charsets.US_ASCII).fold(0L) { acc, b -> (acc shl 8) or (b.toLong() and 0xFF) }
+
+    /** objectTypeIndication of the DecoderConfigDescriptor (tag 0x04) in an esds payload. */
+    private fun esdsObjectType(esds: ByteArray): Int? {
+        var p = 4 // skip version/flags
+        fun readLen(): Int { var v = 0; while (p < esds.size) { val b = esds[p++].toInt() and 0xFF; v = (v shl 7) or (b and 0x7F); if (b and 0x80 == 0) break }; return v }
+        while (p < esds.size) {
+            val tag = esds[p++].toInt() and 0xFF
+            val len = readLen()
+            when (tag) {
+                0x03 -> p += 3 // ES_Descriptor header, nested descriptors follow
+                0x04 -> return if (p < esds.size) esds[p].toInt() and 0xFF else null
+                else -> p += len
+            }
+        }
+        return null
     }
 
     /** Returns the *contents* (payload without size+type) of the first child box named [name]. */
@@ -343,6 +437,9 @@ class MkvWriter(outputPath: String, spoolDir: String? = null) : ContainerWriter 
     private fun writeRaw(bytes: ByteArray) { out.write(bytes); position += bytes.size }
 
     private companion object {
-        val VIDEO_FOURCCS = setOf("avc1", "avc3", "hev1", "hvc1", "vp08", "vp09", "av01")
+        val VIDEO_FOURCCS = setOf(
+            "avc1", "avc3", "hev1", "hvc1", "vp08", "vp09", "av01", "dva1", "dvav", "dvh1", "dvhe", "dav1"
+        )
+        val DOLBY_VISION_BOXES = listOf("dvcC", "dvvC", "dvwC")
     }
 }

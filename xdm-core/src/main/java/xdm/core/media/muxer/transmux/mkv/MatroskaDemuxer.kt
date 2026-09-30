@@ -108,6 +108,7 @@ class MatroskaDemuxer(private val sink: SampleSink) {
 
         val isVideo = type == Ebml.TRACK_TYPE_VIDEO
         val track = Track(codecFor(codecId, isVideo))
+        if (codecId.startsWith("A_MPEG/L")) track.mpegAudioLayer = codecId.last() - '0'
         track.matroskaCodecId = codecId
         track.decoderConfigRecord = codecPrivate
         track.timescale = 1000 // milliseconds; block timecodes are converted to ms
@@ -281,7 +282,7 @@ class MatroskaDemuxer(private val sink: SampleSink) {
         "A_AAC" -> Codec.AAC
         "A_AC3" -> Codec.AC3
         "A_EAC3" -> Codec.EAC3
-        "A_MPEG/L3" -> Codec.MP3
+        "A_MPEG/L1", "A_MPEG/L2", "A_MPEG/L3" -> Codec.MP3
         else -> if (isVideo) Codec.OTHER_VIDEO else Codec.OTHER_AUDIO
     }
 }

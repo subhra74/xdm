@@ -1,0 +1,9 @@
+[
+  { "match": [ "com/sun/crypto/provider/GHASH.processBlocks", "com/sun/crypto/provider/GHASH.update",
+    "com/sun/crypto/provider/CounterMode.implCrypt", "com/sun/crypto/provider/GCTR.update", "com/sun/crypto/provider/GCTR.doFinal",
+    "com/sun/crypto/provider/AESCrypt.implEncryptBlock", "com/sun/crypto/provider/AESCrypt.implDecryptBlock",
+    "com/sun/crypto/provider/GaloisCounterMode.implGCMCrypt0",
+    "com/sun/crypto/provider/ChaCha20Cipher.implChaCha20Block", "com/sun/crypto/provider/Poly1305.processMultipleBlocks" ],
+    "c1": { "Exclude": false }, "c2": { "Exclude": false } },
+  { "match": "*.*", "c1": { "Exclude": false }, "c2": { "Exclude": true } }
+]

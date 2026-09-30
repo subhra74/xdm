@@ -78,6 +78,17 @@ object VideoHelper {
     private val suspectedMp4Fragments = lruMap<String, Boolean>(MAX_TRACKED_URLS)
     private val referersToSkip = lruMap<Long, Boolean>(MAX_TRACKED_URLS)
 
+    /**
+     * A player re-requests the same manifest (retries, live playlist refreshes), and each request
+     * makes XDM fetch it again. Against CDNs that rate-limit or use-limit a signed URL, those
+     * replays are what earns the 410, so the user can opt in to fetching each one only once per
+     * window. Only the key and a timestamp are kept, never the manifest body.
+     */
+    private const val MANIFEST_REFETCH_WINDOW_MS = 30_000L
+
+    /** (tab id, manifest URL) -> when XDM last fetched it for that tab. */
+    private val recentManifests = lruMap<Pair<String?, String>, Long>(MAX_TRACKED_URLS)
+
     /** Access-ordered map that drops its least recently used entry past [max]. */
     private fun <K, V> lruMap(max: Int): MutableMap<K, V> = Collections.synchronizedMap(
         object : LinkedHashMap<K, V>(16, 0.75f, true) {
@@ -146,6 +157,28 @@ object VideoHelper {
      */
     fun onTabNavigated(tabId: String) {
         m3u8MpdTabs.remove(tabId)
+        // The tab's detected videos were just cleared, so a reload must be allowed to find them again.
+        synchronized(recentManifests) { recentManifests.keys.removeIf { it.first == tabId } }
+    }
+
+    /**
+     * True if this manifest should be fetched now; false if it was fetched for this tab moments ago.
+     * Always true unless "Skip repeated playlist requests" is on in Advanced settings.
+     */
+    private fun claimManifestFetch(url: String, tabId: String?): Boolean {
+        if (!AppContext.config.skipDuplicateManifests) {
+            return true
+        }
+        val now = System.currentTimeMillis()
+        synchronized(recentManifests) {
+            val key = tabId to url
+            val last = recentManifests[key]
+            if (last != null && now - last < MANIFEST_REFETCH_WINDOW_MS) {
+                return false
+            }
+            recentManifests[key] = now
+            return true
+        }
     }
 
     private fun isHLSUrl(url: String?): Boolean = StringUtils.containsIgnoreCase(url, "m3u8")
@@ -161,8 +194,13 @@ object VideoHelper {
         // A malformed Content-Length must not abort the whole message.
         val contentLength = getHeader(CONTENT_LENGTH, responseHeaders)?.toLongOrNull()
         msg.url ?: return
+        val dash = isDash(contentType) || isDashUrl(msg.url)
+        if ((dash || isHLS(contentType) || isHLSUrl(msg.url)) && !claimManifestFetch(msg.url, msg.tabId)) {
+            Logger.info("Manifest fetched moments ago, skipping: ${msg.url}")
+            return
+        }
         when {
-            isDash(contentType) || isDashUrl(msg.url) -> mediaExecutor.execute { processDashVideo(msg) }
+            dash -> mediaExecutor.execute { processDashVideo(msg) }
             isHLS(contentType) || isHLSUrl(msg.url) -> mediaExecutor.execute { processHLSVideo(msg) }
             isHttpVideo(msg.url, contentType, contentLength, msg.tabId, msg.tabUrl) -> processHttpVideo(
                 msg,

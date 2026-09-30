@@ -143,7 +143,7 @@ class HttpClientImpl @JvmOverloads constructor(
         }.apply { isDaemon = true }.start()
     }
 
-    override fun getResponse(url: String, headers: HeaderMap?, cookie: String?, range: Range): Result<HttpResponse> {
+    override fun getResponse(url: String, headers: HeaderMap?, cookie: String?, range: Range?): Result<HttpResponse> {
         val requestBuilder = Request.Builder().url(url).get()
         val cookies: MutableSet<String> = LinkedHashSet()
 
@@ -157,13 +157,15 @@ class HttpClientImpl @JvmOverloads constructor(
             }
         }
 
-        val end = range.end ?: 0
-        if (end <= 0) {
-            requestBuilder.addHeader("Range", String.format("bytes=%d-", range.start))
-        } else {
-            requestBuilder.addHeader(
-                "Range", String.format("bytes=%d-%d", range.start, range.end)
-            )
+        if (range != null) {
+            val end = range.end ?: 0
+            if (end <= 0) {
+                requestBuilder.addHeader("Range", String.format("bytes=%d-", range.start))
+            } else {
+                requestBuilder.addHeader(
+                    "Range", String.format("bytes=%d-%d", range.start, range.end)
+                )
+            }
         }
 
         cookie?.let { cookies.add(it) }

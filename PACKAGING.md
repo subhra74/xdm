@@ -33,7 +33,7 @@ Related: [AUTOSTART.md](AUTOSTART.md) (login entry, JVM flags), [APPCDS.md](APPC
 ## 2. Constraints
 
 - **Free and open source; no paid code signing.** Windows SmartScreen and macOS Gatekeeper warn on first install.
-- **Updates must go through the website**, which carries ads. So no auto-update, and channels that update behind
+- **Updates must go through the website**. So no auto-update, and channels that update behind
   the site's back (Store MSIX, winget, Homebrew, Flathub/Snap, apt/rpm repos) are optional extras at best (§9).
 - **XDM 8 users must end up with exactly one XDM.** XDM 8 and XDM 9 both listen on `127.0.0.1:8597`; with two
   installed, one fails to start and the browser extension behaves unpredictably.

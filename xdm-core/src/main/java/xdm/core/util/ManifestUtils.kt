@@ -52,8 +52,9 @@ object ManifestUtils {
     ): String? {
         try {
             Logger.info("XDM","Downloading manifest: $url")
+            // No Range: browsers never send one for a playlist, and some CDNs reject it (400 over HTTP/2).
             httpClient.getResponse(
-                url, headers, cookie, Range(start = 0)
+                url, headers, cookie, null
             ).onSuccess {
                 it.use { response ->
                     if (stopFlag.get()) return null

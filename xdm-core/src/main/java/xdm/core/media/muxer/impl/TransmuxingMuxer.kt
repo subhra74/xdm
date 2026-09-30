@@ -7,6 +7,7 @@ import xdm.core.media.muxer.transmux.iso.Mp4Demuxer
 import xdm.core.media.muxer.transmux.mkv.MatroskaDemuxer
 import xdm.core.media.muxer.transmux.mkv.MkvWriter
 import xdm.core.media.muxer.transmux.mp4.Mp4Writer
+import xdm.core.media.muxer.transmux.packed.PackedAudioDemuxer
 import xdm.core.media.muxer.transmux.sample.Track
 import xdm.core.media.muxer.transmux.ts.TsDemuxer
 import xdm.core.util.Logger
@@ -22,6 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  *  - ISO-BMFF / fragmented-MP4 / CMAF segments (.mp4/.m4s/.fmp4) via [Mp4Demuxer]
  *
  *  - Matroska / WebM segments (.webm/.mkv) via [MatroskaDemuxer]
+ *  - HLS packed audio (.aac/.mp3/.ac3/.ec3: raw frames behind an ID3 timestamp) via [PackedAudioDemuxer]
  *
  * Inputs are remuxed into a single progressive MP4, or into Matroska (`.mkv`) when the requested
  * output path ends in `.mkv` — the case DASH uses for WebM/VP8/VP9/Opus streams that MP4 can't
@@ -124,6 +126,16 @@ class TransmuxingMuxer(@Suppress("UNUSED_PARAMETER") appDir: String) : Muxer {
                 demux.finish()
                 demux.tracks
             }
+            Container.PACKED_AUDIO -> {
+                val demux = PackedAudioDemuxer(writer)
+                for ((i, seg) in segments.withIndex()) {
+                    if (stopFlag.get()) break
+                    demux.parseSegment(seg)
+                    progress(((i + 1) * 100) / segments.size)
+                }
+                demux.finish()
+                demux.tracks
+            }
             Container.MP4 -> {
                 val demux = Mp4Demuxer(writer)
                 for ((i, seg) in segments.withIndex()) {
@@ -153,12 +165,15 @@ class TransmuxingMuxer(@Suppress("UNUSED_PARAMETER") appDir: String) : Muxer {
         }
     }
 
-    private enum class Container { TS, MP4, MKV }
+    private enum class Container { TS, MP4, MKV, PACKED_AUDIO }
 
-    /** Sniffs the container from the file header: EBML magic => Matroska, MP4 box type => MP4, else TS. */
+    /**
+     * Sniffs the container from the file header: EBML magic => Matroska, MP4 box type => MP4,
+     * 0x47 => TS, ID3 tag or a raw audio sync word => packed audio, else MP4.
+     */
     private fun containerOf(path: String): Container {
         RandomAccessFile(path, "r").use { raf ->
-            val head = ByteArray(minOf(8, raf.length().toInt()))
+            val head = ByteArray(minOf(10, raf.length().toInt()))
             raf.readFully(head)
             // EBML magic (0x1A45DFA3) => Matroska/WebM.
             if (head.size >= 4 && (head[0].toInt() and 0xFF) == 0x1A && (head[1].toInt() and 0xFF) == 0x45 &&
@@ -172,8 +187,18 @@ class TransmuxingMuxer(@Suppress("UNUSED_PARAMETER") appDir: String) : Muxer {
             if (head.size >= 4 && (head[0].toInt() and 0xFF) == 0x1F && (head[1].toInt() and 0xFF) == 0x43 &&
                 (head[2].toInt() and 0xFF) == 0xB6 && (head[3].toInt() and 0xFF) == 0x75
             ) return Container.MKV
-            return if (head.isNotEmpty() && (head[0].toInt() and 0xFF) == 0x47) Container.TS else Container.MP4
+            if (head.isNotEmpty() && (head[0].toInt() and 0xFF) == 0x47) return Container.TS
+            if (PackedAudioDemuxer.isId3(head, 0) || isAudioSync(head)) return Container.PACKED_AUDIO
+            return Container.MP4
         }
+    }
+
+    /** ADTS / MPEG audio (0xFFE sync) or AC-3 / E-AC-3 (0x0B77) frame at the start of [head]. */
+    private fun isAudioSync(head: ByteArray): Boolean {
+        if (head.size < 2) return false
+        val b0 = head[0].toInt() and 0xFF
+        val b1 = head[1].toInt() and 0xFF
+        return (b0 == 0xFF && (b1 and 0xE0) == 0xE0) || (b0 == 0x0B && b1 == 0x77)
     }
 
     private companion object {

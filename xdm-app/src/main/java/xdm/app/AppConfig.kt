@@ -83,6 +83,11 @@ interface IAppConfig : CoreConfig {
     var ignoreCertErrors: Boolean
     /** Seconds without data before a connection's read times out and is retried (Advanced settings). */
     override var readTimeoutSeconds: Int
+    /**
+     * When true, an HLS/DASH manifest the browser keeps re-requesting is fetched once per tab in a
+     * short window instead of on every request (Advanced settings). Off by default.
+     */
+    var skipDuplicateManifests: Boolean
     fun applyAuthConfig()
 }
 
@@ -163,6 +168,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var virusScannerArgs: String = ""
     override var ignoreCertErrors: Boolean = false
     override var readTimeoutSeconds: Int = CoreConfig.DEFAULT_READ_TIMEOUT_SECONDS
+    override var skipDuplicateManifests: Boolean = false
 
     override fun applyAuthConfig() {
         Authenticator.setDefault(DefaultAuthenticator())
@@ -225,6 +231,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
         // Appended after the self-contained category block so an older build, which stops
         // reading here, is unaffected.
         out.writeInt(downloadCompleteNotification.ordinal)
+        out.writeBoolean(skipDuplicateManifests)
     }
 
     private fun load(input: DataInputStream) {
@@ -309,8 +316,13 @@ class AppConfig(private val configDir: String) : IAppConfig {
         // left the stream aligned. Until then the legacy boolean read above already picked
         // DIALOG or NONE, which is the right answer for a config from an older build.
         if (!categoriesRead) return
-        runCatching { DownloadCompleteNotification.entries[input.readInt()] }
+        val notificationRead = runCatching { DownloadCompleteNotification.entries[input.readInt()] }
             .onSuccess { downloadCompleteNotification = it }
+            .isSuccess
+        if (!notificationRead) return
+        // Config written before this field existed: keep the default (off).
+        runCatching { input.readBoolean() }
+            .onSuccess { skipDuplicateManifests = it }
     }
 
     private fun writeCategories(out: DataOutputStream, list: List<DownloadCategory>) {

@@ -95,33 +95,31 @@ class Mp4Writer(outputPath: String, private val repairTimeline: Boolean = false)
     private class TrackPlan(
         val track: Track,
         val trackId: Int,
-        val firstCts: Long,
+        /** Media time (from the first DTS) of the first presented sample: the edit's media_time. */
+        val mediaTime: Long,
         val mediaDuration: Long,
         val emptyEditMovie: Long,
         val trackDurationMovie: Long
     )
 
     private fun buildMoov(tracks: List<Track>): ByteArray {
-        // Normalize each track to start at media-time 0 and compute durations.
-        var globalStartSec = Double.MAX_VALUE
-        val baseInfo = tracks.map { t ->
-            val base = t.samples[0].dts
-            globalStartSec = minOf(globalStartSec, base.toDouble() / t.timescale)
-            base
-        }
+        // A/V sync: each track's content becomes visible at its earliest PTS (not its first DTS,
+        // which precedes it by the B-frame reorder delay). Align tracks on that, then let the edit
+        // list skip the reorder delay inside each track.
+        val startPts = tracks.map { presentationStart(it.samples) }
+        val globalStartSec = tracks.indices.minOf { startPts[it].toDouble() / tracks[it].timescale }
 
         val plans = ArrayList<TrackPlan>()
         for ((idx, t) in tracks.withIndex()) {
-            val base = baseInfo[idx]
             // durations from successive DTS deltas (repairing discontinuity gaps when enabled).
             assignSampleDurations(t.samples, repairTimeline)
 
             val mediaDuration = t.samples.sumOf { it.durationTicks }
-            val firstCts = (t.samples[0].pts - t.samples[0].dts).coerceAtLeast(0)
-            val startSec = base.toDouble() / t.timescale
+            val mediaTime = (startPts[idx] - t.samples[0].dts).coerceIn(0, mediaDuration)
+            val startSec = startPts[idx].toDouble() / t.timescale
             val emptyEditMovie = ((startSec - globalStartSec) * movieTimescale).toLong().coerceAtLeast(0)
-            val mediaDurationMovie = mediaDuration * movieTimescale / t.timescale
-            plans.add(TrackPlan(t, idx + 1, firstCts, mediaDuration, emptyEditMovie, emptyEditMovie + mediaDurationMovie))
+            val presentedMovie = (mediaDuration - mediaTime) * movieTimescale / t.timescale
+            plans.add(TrackPlan(t, idx + 1, mediaTime, mediaDuration, emptyEditMovie, emptyEditMovie + presentedMovie))
         }
         val movieDuration = plans.maxOf { it.trackDurationMovie }
 
@@ -171,8 +169,8 @@ class Mp4Writer(outputPath: String, private val repairTimeline: Boolean = false)
                 box("elst") {
                     val entries = ArrayList<Triple<Long, Long, Int>>() // segDur(movie), mediaTime(media), rate
                     if (p.emptyEditMovie > 0) entries.add(Triple(p.emptyEditMovie, -1L, 0x00010000))
-                    val normalDur = p.mediaDuration * movieTimescale / t.timescale
-                    entries.add(Triple(normalDur, p.firstCts, 0x00010000))
+                    val normalDur = (p.mediaDuration - p.mediaTime) * movieTimescale / t.timescale
+                    entries.add(Triple(normalDur, p.mediaTime, 0x00010000))
                     fullBoxHeader(0, 0)
                     u32(entries.size)
                     for ((seg, mt, rate) in entries) {
@@ -235,11 +233,17 @@ class Mp4Writer(outputPath: String, private val repairTimeline: Boolean = false)
             writeStts(this, t)
             writeCtts(this, t)
             if (t.codec.isVideo) writeStss(this, t)
-            // stsc: one sample per chunk.
+            // stsc: one sample per chunk; a new run wherever the sample description changes.
             box("stsc") {
                 fullBoxHeader(0, 0)
-                u32(1)
-                u32(1); u32(1); u32(1)     // first_chunk, samples_per_chunk, sample_desc_index
+                val runs = ArrayList<IntArray>() // [first_chunk, sample_desc_index]
+                for ((i, s) in t.samples.withIndex()) {
+                    if (runs.isEmpty() || runs.last()[1] != s.sampleDescriptionIndex) {
+                        runs.add(intArrayOf(i + 1, s.sampleDescriptionIndex))
+                    }
+                }
+                u32(runs.size)
+                for ((firstChunk, descIndex) in runs) { u32(firstChunk); u32(1); u32(descIndex) }
             }
             // stsz
             box("stsz") {
@@ -269,13 +273,15 @@ class Mp4Writer(outputPath: String, private val repairTimeline: Boolean = false)
     private fun writeStsd(buf: BoxBuf, t: Track) {
         buf.box("stsd") {
             fullBoxHeader(0, 0)
-            u32(1)
             val entry = t.sampleEntryBox
             if (entry != null) {
-                // Copy the input MP4's sample entry (avc1/mp4a/...) verbatim.
+                // Copy the input MP4's sample entries (avc1/mp4a/...) verbatim.
+                u32(1 + t.additionalSampleEntries.size)
                 bytes(entry)
+                for (extra in t.additionalSampleEntries) bytes(extra)
                 return@box
             }
+            u32(1)
             when (t.codec) {
                 Codec.H264 -> visualSampleEntry(this, "avc1", t) { CodecBoxes.writeAvcC(this, t) }
                 Codec.H265 -> visualSampleEntry(this, "hev1", t) { CodecBoxes.writeHvcC(this, t) }
@@ -283,13 +289,17 @@ class Mp4Writer(outputPath: String, private val repairTimeline: Boolean = false)
                     CodecBoxes.writeEsds(this, CodecBoxes.OTI_AAC, t.audioSpecificConfig)
                 }
                 Codec.MP3 -> audioSampleEntry(this, "mp4a", t) {
-                    CodecBoxes.writeEsds(this, CodecBoxes.OTI_MP3, null)
+                    val oti = if (t.sampleRate >= 32000) CodecBoxes.OTI_MPEG1_AUDIO else CodecBoxes.OTI_MPEG2_AUDIO
+                    CodecBoxes.writeEsds(this, oti, null)
                 }
                 Codec.AC3 -> audioSampleEntry(this, "ac-3", t) {
                     box("dac3") { bytes(t.decoderConfigRecord ?: ByteArray(3)) }
                 }
                 Codec.EAC3 -> audioSampleEntry(this, "ec-3", t) {
                     box("dec3") { bytes(t.decoderConfigRecord ?: ByteArray(5)) }
+                }
+                Codec.OPUS -> t.decoderConfigRecord?.let { head ->
+                    audioSampleEntry(this, "Opus", t) { CodecBoxes.writeDOps(this, head) }
                 }
                 else -> {}
             }
@@ -384,6 +394,19 @@ class Mp4Writer(outputPath: String, private val repairTimeline: Boolean = false)
         buf.u32(0); buf.u32(0x00010000); buf.u32(0)
         buf.u32(0); buf.u32(0); buf.u32(0x40000000)
     }
+}
+
+/** Samples scanned for the earliest PTS; far deeper than any real B-frame reorder window. */
+private const val REORDER_WINDOW = 64
+
+/**
+ * Earliest presentation time among the first samples in decode order. Only the leading window is
+ * scanned: later samples may sit on a reset timeline after a discontinuity.
+ */
+internal fun presentationStart(samples: List<Sample>): Long {
+    var min = Long.MAX_VALUE
+    for (i in 0 until minOf(samples.size, REORDER_WINDOW)) min = minOf(min, samples[i].pts)
+    return min
 }
 
 /** A discontinuity gap is an inter-sample delta larger than this multiple of the typical frame. */

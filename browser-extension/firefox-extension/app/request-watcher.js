@@ -205,7 +205,7 @@ class RequestWatcher {
             });
         }
         if (cookies.length > 0) {
-            data.cookie = cookies.join(";");
+            data.cookie = cookies.join("; ");
         }
         return data;
     }

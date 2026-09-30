@@ -21,6 +21,7 @@ class AdvancedConfigPanel : SettingsPanel() {
     private val tglNoSleep = SettingsToggle()
     private val tglRunOnStartup = SettingsToggle()
     private val tglFullJit = SettingsToggle()
+    private val tglSkipDupManifests = SettingsToggle()
 
     private val tglRunCmd = SettingsToggle()
     private val txtCmd = rounded(JTextField()).apply {
@@ -51,6 +52,18 @@ class AdvancedConfigPanel : SettingsPanel() {
                 settingsRow(I8N.text("MSG_AWAKE"), I8N.text("MSG_AWAKE_SUB"), tglNoSleep),
                 settingsRow(I8N.text("MSG_HALT"), I8N.text("MSG_HALT_SUB"), tglHalt),
                 settingsRow(I8N.text("MSG_FULL_JIT"), I8N.text("MSG_FULL_JIT_SUB"), tglFullJit),
+            )
+        )
+        add(settingsGap())
+
+        add(
+            settingsSection(
+                I8N.text("SETTINGS_SEC_ADV_VIDEO"),
+                settingsRow(
+                    I8N.text("MSG_SKIP_DUP_MANIFEST"),
+                    I8N.text("MSG_SKIP_DUP_MANIFEST_SUB"),
+                    tglSkipDupManifests
+                ),
             )
         )
         add(settingsGap())
@@ -118,6 +131,7 @@ class AdvancedConfigPanel : SettingsPanel() {
         // (Windows ARM64) show it on and locked; dev runs and tar.gz builds show it off and locked.
         tglFullJit.isSelected = JitOverride.isAlwaysFull || JitOverride.isEnabled()
         tglFullJit.isEnabled = JitOverride.isConfigurable
+        tglSkipDupManifests.isSelected = config.skipDuplicateManifests
         tglRunCmd.isSelected = config.runCommand
         txtCmd.text = config.customCommand
         tglVirusScan.isSelected = config.runVirusScan
@@ -138,6 +152,7 @@ class AdvancedConfigPanel : SettingsPanel() {
         if (JitOverride.isConfigurable && JitOverride.isEnabled() != tglFullJit.isSelected) {
             JitOverride.setEnabled(tglFullJit.isSelected)
         }
+        config.skipDuplicateManifests = tglSkipDupManifests.isSelected
         config.runCommand = tglRunCmd.isSelected
         config.customCommand = txtCmd.text
         config.runVirusScan = tglVirusScan.isSelected

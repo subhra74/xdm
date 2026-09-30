@@ -16,4 +16,7 @@ class Sample(
 ) {
     /** Duration in track timescale, filled in once the next sample's DTS is known. */
     var durationTicks: Long = 0
+
+    /** 1-based index into the track's sample entries (see [Track.additionalSampleEntries]). */
+    var sampleDescriptionIndex: Int = 1
 }

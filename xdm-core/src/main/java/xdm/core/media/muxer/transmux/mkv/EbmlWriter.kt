@@ -42,6 +42,10 @@ object Ebml {
     const val SAMPLING_FREQUENCY = 0xB5L
     const val CHANNELS = 0x9FL
     const val BIT_DEPTH = 0x6264L
+    const val BLOCK_ADDITION_MAPPING = 0x41E4L
+    const val BLOCK_ADD_ID_NAME = 0x41A4L
+    const val BLOCK_ADD_ID_TYPE = 0x41E7L
+    const val BLOCK_ADD_ID_EXTRA_DATA = 0x41EDL
 
     // Clusters
     const val CLUSTER = 0x1F43B675L
