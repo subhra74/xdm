@@ -78,8 +78,8 @@ Both scripts pass `-XX:CICompilerCount=2 -XX:ReservedCodeCacheSize=32m`, and, af
 methods that do the per-byte work of TLS (AES, GHASH, CBC, ChaCha20, Poly1305, SHA). Most are the AES-NI /
 ARMv8 crypto intrinsics, which C1 alone does not use; the rest are the SHA methods' callers (see below).
 
-- **Why not C1 only:** with the JDK's TLS, C1 alone costs 4-10x the CPU per MB (measured below). That was only
-  acceptable while Conscrypt did TLS natively.
+- **Required on every target.** XDM uses the JDK's TLS, and only C2 applies its crypto intrinsics. There is no
+  C1-only mode: without C2 the same cipher suites cost 1.9-3.6 CPU-s per 100 MB instead of 0.3-0.6.
 - **Why not full tiered:** it spends C2 time and memory on the whole app for no download-speed gain.
 - **The directive is added after AppCDS record/dump** because `$APPDIR` exists only in the launcher. The
   recording run passes the directive with its build path, so it matches production.
@@ -94,14 +94,14 @@ ARMv8 crypto intrinsics, which C1 alone does not use; the rest are the SHA metho
 Measured on an Apple M2 (macOS, Temurin 25.0.1), loopback TLS 512 MB, client read in 8 KB pieces as OkHttp
 does, CPU of the client process (average of 2 rounds):
 
-| Cipher suite | C1 only | Handoff directive (v3) | **Shipped directive** | Full tiered |
-|---|---|---|---|---|
-| TLS 1.3 AES-128-GCM | 3.28 | 0.33 | **0.32** | 0.55 |
-| TLS 1.3 AES-256-GCM | 3.57 | 0.34 | **0.34** | 0.54 |
-| TLS 1.3 ChaCha20-Poly1305 | 0.99 | 0.58 | **0.57** | 0.62 |
-| TLS 1.2 AES-128-CBC-SHA256 | 2.27 | 1.12 | **0.42** | 0.53 |
-| TLS 1.2 AES-256-CBC-SHA384 | 2.09 | 0.87 | **0.50** | 0.58 |
-| TLS 1.2 AES-128-CBC-SHA | 1.90 | 0.84 | **0.43** | 0.51 |
+| Cipher suite | Handoff directive (v3) | **Shipped directive** | Full tiered |
+|---|---|---|---|
+| TLS 1.3 AES-128-GCM | 0.33 | **0.32** | 0.55 |
+| TLS 1.3 AES-256-GCM | 0.34 | **0.34** | 0.54 |
+| TLS 1.3 ChaCha20-Poly1305 | 0.58 | **0.57** | 0.62 |
+| TLS 1.2 AES-128-CBC-SHA256 | 1.12 | **0.42** | 0.53 |
+| TLS 1.2 AES-256-CBC-SHA384 | 0.87 | **0.50** | 0.58 |
+| TLS 1.2 AES-128-CBC-SHA | 0.84 | **0.43** | 0.51 |
 
 CPU-s per 100 MB. Code cache after each run: ~6-6.5 MB with either directive.
 
@@ -440,7 +440,6 @@ muxing, at the cost of more memory. Takes effect after a restart."
 | Build / install | Toggle |
 |---|---|
 | Build with the directive, override supported (Windows/macOS with `.package`, Linux deb/rpm) | Editable |
-| Build without the directive (older packaging) | On, locked |
 | No `.package` (Arch, tar.gz, today's builds), or a dev run | Off, locked |
 
 ### 8.2 How the jpackage launcher reads its `.cfg`
@@ -481,27 +480,20 @@ Code: `xdm-app/src/main/java/xdm/app/utils/JitOverride.kt`.
     second start)
   - deletes it if the install no longer uses the directive
   - logs `Running C1, C2 for crypto only` / `Running full tiered (C1+C2)`
-- **Mode:** `isRunningFull` is `-Dxdm.jit=full` (set only by the override) or a build without the directive.
+- **Mode:** `isRunningFull` is `-Dxdm.jit=full`, which only the override sets.
 - **Fixed names:** `xdm-app.jar` and `xdm.app.AppMain` must never be renamed. A stale override from an older
   version would point at them, and a missing jar means XDM can't start. **Recovery:** delete the per-user
   `xdm-app.cfg`.
 
-### 8.4 Verified on macOS 15.6 / ARM64 / JDK 25 (with the earlier C1-only flags)
+### 8.4 Verification (🔎 to do)
 
-🔎 This check predates the switch from C1-only to the directive; repeat it with the new `.cfg`.
-
-Test setup: a copy of `build/dist/Xtreme Download Manager.app` with `Contents/app/.package` added, and an override
-in a scratch `$HOME` whose main class was a probe that prints `xdm.jit`, run with `-XX:+PrintFlagsFinal`.
-
-| `.cfg` used | `xdm.jit` | `TieredStopAtLevel` | `CICompilerCount` |
-|---|---|---|---|
-| Per-user override | `full` | 4 (default) | 4 (ergonomic) |
-| Installed (override removed) | — | 1 | 1 |
-
-`JitOverride` itself was also run against a fake bundle. It wrote exactly the installed file minus the two C1
-lines, plus the marker and a comment header. `setEnabled(false)` removed it.
-
-🔎 Still to test: Windows (`%LOCALAPPDATA%`) and Linux deb/rpm (`~/.local/<pkg>`).
+Not yet verified with the directive-based `.cfg`. On each OS, with `app/.package` present:
+- Toggle on, restart: the per-user `.cfg` has no `CompilerDirectivesFile`, `CICompilerCount` or
+  `ReservedCodeCacheSize` lines and has `-Dxdm.jit=full`; the log says `Running full tiered (C1+C2)`.
+- Toggle off, restart: the per-user `.cfg` is gone; the log says `Running C1, C2 for crypto only`, and
+  `-XX:+PrintCompilation` shows only the directive's methods at level 4.
+- Per-user folders: macOS `~/Library/Application Support/<pkg>/`, Windows `%LOCALAPPDATA%\<pkg>\`, Linux deb/rpm
+  `~/.local/<pkg>/`.
 
 ### 8.5 Build requirement
 

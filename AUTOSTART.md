@@ -54,7 +54,8 @@ launcher at packaging time:
    - SerialGC with low heap free ratios and `-Xms4m`, so the heap goes back to the OS quickly. `-Xmx` is deliberately
      left out.
    - Metaspace ratios, `CompressedClassSpaceSize=64m` and `ClassUnloading`.
-   - C1 JIT only (`TieredStopAtLevel=1`) with one compiler thread.
+   - Tiered JIT with one C1 and one C2 thread (`CICompilerCount=2`), a 32 MB code cache, and the compiler directive
+     `packaging/jit-directives.json`: C1 for all code, C2 only for the JDK's crypto methods (PACKAGING.md §3.2).
    - `SoftRefLRUPolicyMSPerMB=0`, `-UsePerfData` and `jdk.nio.maxCachedBufferSize`.
    - Depending on JDK version: `--enable-native-access=ALL-UNNAMED` (22+) and `UseCompactObjectHeaders` (25+).
    - When a class list exists, the AppCDS flags described in §4.

@@ -28,8 +28,6 @@ import java.nio.file.StandardCopyOption
  * generated from it: the same lines minus the directive and its code-cache/compiler-count limits, plus
  * `-Dxdm.jit=full` so the running app can tell which file the launcher used. [sync] regenerates it
  * on every start, so a copy made by an older version is refreshed one start after an upgrade.
- *
- * A build without the directive (older packaging) always runs full tiered; there is nothing to override.
  */
 object JitOverride {
 
@@ -47,13 +45,9 @@ object JitOverride {
     val isConfigurable: Boolean
         get() = layout?.let { it.userDir != null && isRestricted(it.launcherCfg) } == true
 
-    /** True for a packaged build whose installed launcher already runs full tiered. */
-    val isAlwaysFull: Boolean
-        get() = layout?.let { !isRestricted(it.launcherCfg) } == true
-
-    /** True when this JVM was started with full tiered compilation. */
+    /** True when this JVM was started through the override, i.e. with full tiered compilation. */
     val isRunningFull: Boolean
-        get() = System.getProperty(MODE_PROPERTY) == MODE_FULL || isAlwaysFull
+        get() = System.getProperty(MODE_PROPERTY) == MODE_FULL
 
     /** True when the override exists for the launcher that started XDM (applies from the next start). */
     fun isEnabled(): Boolean {

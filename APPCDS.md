@@ -8,8 +8,7 @@ in the tuning notes this file condenses (`jvm-gc-tuning.md`, kept outside the re
 > launcher runs C1 for all code with C2 only for the JDK's crypto hot methods
 > (`packaging/jit-directives.json`, see PACKAGING.md §3.2). The launcher flags and §6 below
 > are updated for that; the memory and CPU tables were measured with Conscrypt and have not
-> been re-measured. Don't combine C1-only (`TieredStopAtLevel=1`) with the JDK's TLS: it costs
-> 4-10x the CPU per MB.
+> been re-measured. Tiered compilation with the directive is required; there is no C1-only mode.
 
 ## Intent
 
@@ -36,13 +35,16 @@ win when you are watching Task Manager:
   keeps archive pages shared instead of privatising them on relocation (a real saving, at a
   small ASLR cost).
 
-Everything else — Serial GC, the bounded code cache, C1-only, `-XX:-UsePerfData` — reduces
-what the process allocates.
+Everything else — Serial GC, the bounded code cache, `-XX:-UsePerfData` — reduces what the
+process allocates.
+
+Measured with the retired Conscrypt setup, which ran C1 only; the current directive (§6) keeps
+C2 for crypto and has not been re-measured here:
 
 | Setup (Windows 11, private working set, idle) | MB |
 |---|---|
 | stock JVM | 82–113 |
-| tuned flags only (Serial GC, C1, no perf data) | 76–78 |
+| tuned flags only (Serial GC, bounded JIT, no perf data) | 76–78 |
 | \+ heap file \+ `ArchiveRelocationMode=0` | ~49 |
 | **\+ static AppCDS** | **28–29** |
 
@@ -155,14 +157,13 @@ Moving the install folder is fine — only the jar identity matters, not its pat
 
 ## 6. Compiler directive: C1 for all code, C2 for crypto
 
-`-XX:TieredStopAtLevel=1` (C1) is cheap in memory but **disables the AES-NI / ARMv8 crypto
-intrinsics**: the JDK's TLS then costs 4-10x the CPU per MB. XDM keeps tiered compilation on
-and uses the one directive the packaged build uses, `packaging/jit-directives.json` (copied to
-`app\jit-directives.json`; see PACKAGING.md §3.2):
+XDM uses the JDK's TLS, whose AES-NI / ARMv8 crypto intrinsics only C2 applies. Tiered
+compilation with the directive `packaging/jit-directives.json` (copied to
+`app\jit-directives.json`; see PACKAGING.md §3.2) is therefore required on every target:
 
 1. **C1 and C2 for the crypto hot methods** (AES, GHASH, CBC, ChaCha20, Poly1305, SHA and the
    SHA callers).
-2. **C1 only for everything else** (`*.*`, C2 excluded).
+2. **C1 for everything else** (`*.*`, C2 excluded).
 
 The first matching rule wins, and the explicit `"Exclude": false` on the allow rule is required.
 Verified on Apple M2 / JDK 25 with `-XX:+PrintCompilation` over six cipher suites: C1 compiled
@@ -203,7 +204,7 @@ What each flag is for:
 | `-XX:AllocateHeapAt=<dir>` | Heap becomes a file-backed mapping → shared, not private (−18 MB). Temp, delete-on-close file: no disk space used, ~5 KB/s at idle. Failure mode is *disk full → crash*, not OOM. Directory must exist. |
 | `-XX:+UnlockDiagnosticVMOptions -XX:ArchiveRelocationMode=0` | Maps the CDS archive at its preferred address instead of relocating it (relocated pages turn private): −9 MB. Costs a little ASLR hardening. |
 | `-XX:SharedArchiveFile=…` | The archive from §4. |
-| `-XX:CICompilerCount=2 -XX:ReservedCodeCacheSize=32m` | Tiered with one C1 and one C2 thread, bounded code cache. C2 only runs for the directive's crypto methods (§6); don't add `TieredStopAtLevel=1`, which would put the JDK's TLS on C1 alone. |
+| `-XX:CICompilerCount=2 -XX:ReservedCodeCacheSize=32m` | Tiered with one C1 and one C2 thread, bounded code cache. C2 only runs for the directive's crypto methods (§6). |
 | `-XX:-UsePerfData` | No `hsperfdata` mmap file. |
 
 Deliberately **not** used: `-Xmx` (no benefit, and caps a download manager needlessly),
@@ -332,14 +333,12 @@ real: it should fall from ~21 MB committed to a few MB.
 * **Regenerate `xdm.jsa` whenever the jar or the bundled runtime changes.** A stale archive
   is ignored silently and costs ~19 MB.
 * The archive is **JIT-mode independent** — it holds class metadata, not compiled code, so
-  one archive serves `-Xint`, C1 and C2.
+  the same archive serves the directive and the "Full JIT" override.
 * **No CPU-feature dependency** — any x64 or aarch64 machine of the archive's own
   architecture works (an archive is per JDK build, so per platform anyway). If the preferred
   address cannot be reserved, the archive is relocated: still correct, smaller saving.
 * The archive assumes **compressed oops**. On machines with 128 GB+ RAM the default heap
   exceeds 32 GB, compressed oops turn off, and the archive is skipped.
-* Never use C1-only (`TieredStopAtLevel=1`) with the JDK's TLS: keep tiered on so C2 can
-  compile the directive's crypto methods.
 * If you would rather not ship an archive at all, `-XX:+AutoCreateSharedArchive
   -XX:SharedArchiveFile=<per-user cache dir>/xdm.jsa` self-heals on version changes, but the
   first run pays the dump cost and gets no saving.

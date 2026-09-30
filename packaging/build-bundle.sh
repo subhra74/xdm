@@ -55,7 +55,8 @@ MODULES="java.desktop,java.logging,jdk.crypto.ec,jdk.unsupported"
 # JIT: C1 compiles everything and C2 only the JDK's crypto hot methods, named in
 # packaging/jit-directives.json (added below, once the app dir exists). HTTPS
 # then runs on the AES/GHASH/ChaCha20 intrinsics at C2 speed without paying C2's
-# memory for the rest of the app. C1 alone costs ~10x the CPU per MB of TLS.
+# memory for the rest of the app. Required: without C2, TLS costs 4-10x the CPU
+# per MB. There is no C1-only mode.
 JAVA_OPTIONS=(
   # --- collector: minimum native overhead, heap returned to the OS quickly ---
   -XX:+UseSerialGC

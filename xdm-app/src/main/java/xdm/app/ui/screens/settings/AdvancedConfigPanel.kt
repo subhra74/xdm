@@ -127,9 +127,8 @@ class AdvancedConfigPanel : SettingsPanel() {
         tglNoSleep.isSelected = config.keepAwake
         // The OS entry, not the config, is the truth: it can be removed behind XDM's back.
         tglRunOnStartup.isSelected = AutoStart.isEnabled()
-        // Like autostart, the file on disk is the setting. Builds that always run full tiered show it
-        // on and locked; dev runs and tar.gz builds show it off and locked.
-        tglFullJit.isSelected = JitOverride.isAlwaysFull || JitOverride.isEnabled()
+        // Like autostart, the file on disk is the setting. Dev runs and tar.gz builds show it off and locked.
+        tglFullJit.isSelected = JitOverride.isEnabled()
         tglFullJit.isEnabled = JitOverride.isConfigurable
         tglSkipDupManifests.isSelected = config.skipDuplicateManifests
         tglRunCmd.isSelected = config.runCommand

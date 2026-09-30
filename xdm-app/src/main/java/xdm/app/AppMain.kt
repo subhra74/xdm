@@ -10,9 +10,6 @@ import java.awt.Insets
 import java.io.File
 import javax.swing.UIManager
 
-//java -XX:+UseShenandoahGC -XX:+UnlockExperimentalVMOptions -XX:MinMetaspaceFreeRatio=1 -XX:MaxMetaspaceFreeRatio=2 -XX:ShenandoahGuaranteedGCInterval=30 -XX:ShenandoahUncommitDelay=10 -XX:+ClassUnloading -XX:+ClassUnloadingWithConcurrentMark  -XX:-DisableExplicitGC -XX:TieredStopAtLevel=1 -XX:CICompilerCount=1 -Xms4m -XX:-AlwaysActAsServerClassMachine -jar /Users/subhro/Documents/xdm-app.jar
-//java.exe  -XX:+UseZGC -XX:MinMetaspaceFreeRatio=1 -XX:MaxMetaspaceFreeRatio=2 -XX:ZCollectionInterval=30 -XX:ZUncommitDelay=10 -XX:+ClassUnloading -XX:+ClassUnloadingWithConcurrentMark -XX:-AlwaysPreTouch -XX:-ZProactive -XX:-DisableExplicitGC -XX:TieredStopAtLevel=1 -XX:CICompilerCount=1 -Xms4m -jar C:\Users\subhro\Desktop\xdm-app_5.jar
-//xdm-app -Xms5m -XX:MaxHeapFree=5m -XX:MaximumYoungGenerationSizePercent=5
 object AppMain {
     init {
         System.setProperty("http.KeepAlive.remainingData", "0")
