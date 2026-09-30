@@ -270,17 +270,24 @@ class HttpChunkRetriever(
                         continue
                     }
                 }
-                val x = min(rem, buf.size.toLong()).toInt()
+                val x = min(rem, FILL_BYTES.toLong()).toInt()
                 if (x == 0) {
                     Logger.info("XDM", "Downloading complete for chunk $id")
                     return CopyResult.Done
                 }
-                val read: Int
-                try {
-                    read = response.inputStream.read(buf, 0, x)
-                } catch (ioError: IOException) {
-                    Logger.info("XDM", "Error reading data for chunk  $id")
-                    return CopyResult.Retry
+                // OkHttp hands out at most 8 KB per read; gather up to FILL_BYTES so the file write,
+                // the lock round trips and the progress update happen once per 64 KB, not per 8 KB.
+                var read = 0
+                var readError = false
+                while (read < x) {
+                    val n = try {
+                        response.inputStream.read(buf, read, x - read)
+                    } catch (ioError: IOException) {
+                        readError = true
+                        break
+                    }
+                    if (n == -1) break
+                    read += n
                 }
 
                 if (isCancelled()) {
@@ -288,7 +295,11 @@ class HttpChunkRetriever(
                     return CopyResult.Cancel
                 }
 
-                if (read == -1) {
+                if (read == 0) {
+                    if (readError) {
+                        Logger.info("XDM", "Error reading data for chunk  $id")
+                        return CopyResult.Retry
+                    }
                     Logger.info("XDM", "Unexpected EOF   $id")
                     return CopyResult.Eof
                 }
@@ -306,6 +317,11 @@ class HttpChunkRetriever(
                 }
 
                 controller.updateBytesDownloaded(id, read.toLong())
+                if (readError) {
+                    // The bytes before the error are written and counted, so the retry resumes after them.
+                    Logger.info("XDM", "Error reading data for chunk  $id")
+                    return CopyResult.Retry
+                }
             }
         } finally {
             closeFileHandle(fileHandle)
@@ -514,5 +530,11 @@ class HttpChunkRetriever(
     private companion object {
         const val MAX_RETRY_AFTER_SECS = 60L
         const val RETRY_SLEEP_STEP_MS = 200L
+        /**
+         * Bytes gathered before each write. Must stay at most 128 KB: a split only happens with
+         * 256 KB or more remaining and leaves the split chunk half, so a fill still in flight can
+         * never run past the chunk's new end.
+         */
+        const val FILL_BYTES = 64 * 1024
     }
 }
