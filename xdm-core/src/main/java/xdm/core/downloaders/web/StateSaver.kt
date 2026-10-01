@@ -9,6 +9,7 @@ import xdm.core.downloaders.web.streaming.downloader.HlsTaskContext
 import xdm.core.downloaders.web.streaming.downloader.StreamingChunk
 import xdm.core.network.http.HeaderMap
 import xdm.core.network.http.PoolingHttpClient
+import xdm.core.network.http.SensitiveHeaders
 import xdm.core.util.AtomicIO
 import xdm.core.util.Logger
 import xdm.core.util.readLongString
@@ -142,7 +143,7 @@ private fun writeContext(context: HttpTaskContext, out: DataOutputStream) {
         out.writeLong(downloaded.get())
         out.writeLongString(url)
         out.writeNullableLongString(contentType)
-        out.writeNullableHeaders(headers)
+        out.writeNullableHeaders(SensitiveHeaders.strip(id, headers))
         out.writeNullableLongString(cookie)
         out.writeBoolean(completed.get())
         out.writeBoolean(tempFileCreated.get())
@@ -161,7 +162,7 @@ private fun writeHlsContext(context: HlsTaskContext, out: DataOutputStream) {
         totalSize?.let { out.writeLong(it) }
         out.writeLong(downloaded.get())
         out.writeNullableLongString(contentType)
-        out.writeNullableHeaders(headers)
+        out.writeNullableHeaders(SensitiveHeaders.strip(id, headers))
         out.writeNullableLongString(cookie)
         out.writeBoolean(completed.get())
         out.writeBoolean(hasSeparateStreams)
@@ -187,7 +188,7 @@ private fun writeDashContext(context: DashTaskContext, out: DataOutputStream) {
         totalSize?.let { out.writeLong(it) }
         out.writeLong(downloaded.get())
         out.writeNullableLongString(contentType)
-        out.writeNullableHeaders(headers)
+        out.writeNullableHeaders(SensitiveHeaders.strip(id, headers))
         out.writeNullableLongString(cookie)
         out.writeBoolean(completed.get())
         out.writeBoolean(hasSeparateStreams)
@@ -200,8 +201,9 @@ private fun writeDashContext(context: DashTaskContext, out: DataOutputStream) {
 }
 
 fun readContext(r: DataInputStream, host: DownloadHost): HttpTaskContext {
+    val id = r.readLong()
     return HttpTaskContext(
-        id = r.readLong(),
+        id = id,
         tempFolder = r.readLongString(),
         tempFileName = r.readLongString(),
         chunks = readChunks(r),
@@ -210,19 +212,20 @@ fun readContext(r: DataInputStream, host: DownloadHost): HttpTaskContext {
         downloaded = AtomicLong(r.readLong()),
         url = r.readLongString(),
         contentType = r.readNullableLongString(),
-        headers = r.readNullableHeaders() ?: HashMap(),
+        headers = SensitiveHeaders.restore(id, r.readNullableHeaders()) ?: HashMap(),
         cookie = r.readNullableLongString(),
         stopFlag = AtomicBoolean(false),
         completed = AtomicBoolean(r.readBoolean()),
         tempFileCreated = AtomicBoolean(r.readBoolean()),
         diskError = AtomicBoolean(r.readBoolean()),
         downloadHost = host,
-    ).apply { Logger.info(this) }
+    ).also { Logger.info("XDM", "Restored state for download $id") }
 }
 
 private fun readHlsContext(r: DataInputStream, http: PoolingHttpClient, host: DownloadHost): HlsTaskContext {
+    val id = r.readLong()
     return HlsTaskContext(
-        id = r.readLong(),
+        id = id,
         tempFolder = r.readLongString(),
         tempFileName = r.readLongString(),
         chunks = readStreamingChunks(r),
@@ -230,7 +233,7 @@ private fun readHlsContext(r: DataInputStream, http: PoolingHttpClient, host: Do
         totalSize = if (r.readBoolean()) r.readLong() else null,
         downloaded = AtomicLong(r.readLong()),
         contentType = r.readNullableLongString(),
-        headers = r.readNullableHeaders() ?: HashMap(),
+        headers = SensitiveHeaders.restore(id, r.readNullableHeaders()) ?: HashMap(),
         cookie = r.readNullableLongString(),
         httpClient = http,
         stopFlag = AtomicBoolean(false),
@@ -245,12 +248,13 @@ private fun readHlsContext(r: DataInputStream, http: PoolingHttpClient, host: Do
         encrypted = r.readBoolean(),
         discontinuous = r.readBoolean(),
         muxOutputPath = r.readNullableLongString(),
-    ).apply { Logger.info(this) }
+    ).also { Logger.info("XDM", "Restored state for download $id") }
 }
 
 private fun readDashContext(r: DataInputStream, http: PoolingHttpClient, host: DownloadHost): DashTaskContext {
+    val id = r.readLong()
     return DashTaskContext(
-        id = r.readLong(),
+        id = id,
         tempFolder = r.readLongString(),
         tempFileName = r.readLongString(),
         chunks = readStreamingChunks(r),
@@ -258,7 +262,7 @@ private fun readDashContext(r: DataInputStream, http: PoolingHttpClient, host: D
         totalSize = if (r.readBoolean()) r.readLong() else null,
         downloaded = AtomicLong(r.readLong()),
         contentType = r.readNullableLongString(),
-        headers = r.readNullableHeaders() ?: HashMap(),
+        headers = SensitiveHeaders.restore(id, r.readNullableHeaders()) ?: HashMap(),
         cookie = r.readNullableLongString(),
         httpClient = http,
         stopFlag = AtomicBoolean(false),
@@ -270,7 +274,7 @@ private fun readDashContext(r: DataInputStream, http: PoolingHttpClient, host: D
         videoMime = r.readLongString(),
         muxOutputPath = r.readNullableLongString(),
         downloadHost = host,
-    ).apply { Logger.info(this) }
+    ).also { Logger.info("XDM", "Restored state for download $id") }
 }
 
 @Synchronized

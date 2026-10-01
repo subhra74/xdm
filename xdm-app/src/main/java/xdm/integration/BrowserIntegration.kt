@@ -287,6 +287,18 @@ object BrowserIntegration {
     }
 
     /**
+     * Logs what a message is about. Never the message itself: its cookie and request header values
+     * carry the user's credentials, and the log folder is not the place for them.
+     */
+    private fun logMessage(m: ExtensionMessage) {
+        Logger.info(
+            "INTEGRATION",
+            "url=${m.url} tab=${m.tabId} mime=${m.mimeType} size=${m.fileSize} vid=${m.vid} " +
+                    "cookie=${if (m.cookie.isNullOrEmpty()) "no" else "yes"} headers=${m.requestHeaders?.keys}"
+        )
+    }
+
+    /**
      * A tab started loading a different document (reload, or navigation to another page), so
      * everything detected in it is stale.
      */
@@ -294,8 +306,7 @@ object BrowserIntegration {
         Logger.info("Received clear-tab message..")
         val extMsg = context.requestBody?.let { content ->
             val str = content.toString(StandardCharsets.UTF_8)
-            Logger.info(str)
-            synchronized(json) { json.decodeFromString<ExtensionMessage>(str) }
+            synchronized(json) { json.decodeFromString<ExtensionMessage>(str) }.also { logMessage(it) }
         } ?: return
         val tabId = extMsg.tabId ?: return
         VideoHelper.onTabNavigated(tabId)
@@ -310,8 +321,7 @@ object BrowserIntegration {
         Logger.info("Received tab update message..")
         val extMsg = context.requestBody?.let { content ->
             val str = content.toString(StandardCharsets.UTF_8)
-            Logger.info(str)
-            synchronized(json) { json.decodeFromString<ExtensionMessage>(str) }
+            synchronized(json) { json.decodeFromString<ExtensionMessage>(str) }.also { logMessage(it) }
         } ?: return
         val tabUrl = extMsg.tabUrl ?: return
         val tabTitle = extMsg.tabTitle?.takeIf { it.isNotBlank() } ?: return
@@ -322,11 +332,11 @@ object BrowserIntegration {
         Logger.info("Received video download message..")
         context.requestBody?.let { content ->
             val str = content.toString(StandardCharsets.UTF_8)
-            Logger.info(str)
             val extMsg: ExtensionMessage
             synchronized(json) {
                 extMsg = json.decodeFromString<ExtensionMessage>(str)
             }
+            logMessage(extMsg)
             removeBlockedHeaders(extMsg)
             extMsg.vid?.let { AppContext.videoTracker.addVideoDownload(it) }
         }
@@ -336,11 +346,11 @@ object BrowserIntegration {
         Logger.info("Received media message..")
         context.requestBody?.let { content ->
             val str = content.toString(StandardCharsets.UTF_8)
-            Logger.info(str)
             val extMsg: ExtensionMessage
             synchronized(json) {
                 extMsg = json.decodeFromString<ExtensionMessage>(str)
             }
+            logMessage(extMsg)
             removeBlockedHeaders(extMsg)
             VideoHelper.processMediaMessage(extMsg)
         }
@@ -350,11 +360,11 @@ object BrowserIntegration {
         Logger.info("Received download message..")
         context.requestBody?.let {
             val str = it.toString(StandardCharsets.UTF_8)
-            Logger.info(str)
             val extMsg: ExtensionMessage
             synchronized(json) {
                 extMsg = json.decodeFromString<ExtensionMessage>(str)
             }
+            logMessage(extMsg)
             removeBlockedHeaders(extMsg)
             extMsg.url?.let {
                 AppContext.app.addDownload(toHttpSource(extMsg))

@@ -34,10 +34,14 @@ object Logger {
         try {
             val dir = File(logDir, "logs")
             dir.mkdirs()
+            FileUtils.restrictToOwner(dir)
             rotate(dir)
 
             val stamp = SimpleDateFormat("yyyyMMdd-HHmmss-SSS", Locale.ROOT).format(Date())
             val file = File(dir, "$LOG_PREFIX$stamp$LOG_SUFFIX")
+            // Logs can name the user's URLs and hosts: keep them private before anything is written.
+            file.createNewFile()
+            FileUtils.restrictToOwner(file)
             val stream = PrintStream(BufferedOutputStream(FileOutputStream(file, true), 16 * 1024), false, "UTF-8")
             fileStream = stream
 

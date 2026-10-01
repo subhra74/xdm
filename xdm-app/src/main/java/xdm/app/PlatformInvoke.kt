@@ -1,12 +1,18 @@
 package xdm.app
 
+import xdm.app.utils.DownloadSource
+import xdm.app.utils.OriginMarker
 import xdm.app.utils.initShutdown
 import xdm.core.util.Logger
+import java.io.File
 
 interface IPlatformInvoke {
     fun runVirusScan(file: String)
     fun runCustomCommand(file: String)
     fun shutdownPC()
+
+    /** Marks [file] as downloaded from the internet (see [OriginMarker]). Blocking; never throws. */
+    fun markDownloadedFile(file: File, source: DownloadSource): Boolean
 }
 
 class PlatformInvoke : IPlatformInvoke {
@@ -43,6 +49,8 @@ class PlatformInvoke : IPlatformInvoke {
         Logger.info("Initiating shutdown after all downloads")
         initShutdown()
     }
+
+    override fun markDownloadedFile(file: File, source: DownloadSource): Boolean = OriginMarker.mark(file, source)
 
     private fun launch(command: List<String>, what: String) {
         if (command.isEmpty()) return

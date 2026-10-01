@@ -1,5 +1,6 @@
 package xdm.app
 
+import xdm.app.utils.DownloadSource
 import xdm.app.utils.KeepAwake
 import xdm.app.utils.categoryFolderFor
 import xdm.app.utils.getFileFolder
@@ -192,6 +193,9 @@ class DownloadManager(
                 // temp folder with one empty directory per completed download.
                 FileUtils.deleteFolder(tempDirFor(event.id).absolutePath)
                 File(configDir, "${event.id}.out").delete()
+                // Before the record turns FINISHED, so nothing (the dialog, "Open", the virus scan,
+                // the custom command) can reach the file unmarked.
+                if (AppContext.config.markDownloadedFiles) markDownloaded(event)
                 synchronized(appDB) {
                     appDB.getById(event.id)?.let { e ->
                         e.status = RecordStatus.FINISHED
@@ -742,7 +746,7 @@ class DownloadManager(
     override fun startHttpDownload(task: HttpDownloadTaskInfo, runNow: Boolean) {
         val id = uniqueDownloadId(task.id)
         if (id != task.id) return startHttpDownload(task.copy(id = id), runNow)
-        Logger.info("Adding new download: $task")
+        Logger.info("Adding new download: ${task.id} ${task.url}")
         taskInfoDB.saveHttpTask(task)
         duplicates.add(task.id, task.url, task.etag)
         appDB.addActive(
@@ -916,7 +920,8 @@ class DownloadManager(
     private fun newHttpClient() =
         HttpClientImpl(
             100, AppContext.config.toProxy(), AppContext.config.ignoreCertErrors, AppContext.config.readTimeoutSeconds,
-            AppContext.config.proxyUser, AppContext.config.proxyPass
+            AppContext.config.proxyUser, AppContext.config.proxyPass,
+            auth = AppContext.httpAuth, serverAuth = true,
         )
 
     private fun deleteAfterStopped(id: Long, task: DownloaderTask) {
@@ -964,6 +969,25 @@ class DownloadManager(
                     AppContext.platform.shutdownPC()
                 }
             }
+        }
+    }
+
+    /** Marks a freshly completed file as downloaded from the internet. A failure is only logged. */
+    private fun markDownloaded(event: DownloadStatusInfo.FinalInfo) {
+        val file = File(event.finalOutputFolder, event.finalFileName)
+        val type = synchronized(appDB) { appDB.getById(event.id)?.downloadType }
+        val source = when (type) {
+            DownloadType.Http -> taskInfoDB.getHttpTask(event.id)?.let { DownloadSource(it.url, it.origin) }
+            DownloadType.Hls -> taskInfoDB.getHlsTask(event.id)?.let { DownloadSource(it.url, it.origin) }
+            DownloadType.Dash -> taskInfoDB.getDashTask(event.id)?.let { DownloadSource(it.url, it.origin) }
+            else -> null
+        } ?: DownloadSource(null, null)
+        try {
+            if (!AppContext.platform.markDownloadedFile(file, source)) {
+                Logger.info("Download ${event.id} finished but could not be marked as downloaded: $file")
+            }
+        } catch (e: Exception) {
+            Logger.error("Error marking $file as downloaded", e)
         }
     }
 

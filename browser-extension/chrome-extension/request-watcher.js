@@ -144,13 +144,18 @@ export default class RequestWatcher {
             return;
         }
         this.requestMap.delete(reqId);
-        let data = this.createRequestData(req, res, null, null, req.tabId);
-        if (this.isDownloadCandidate(res)) {
-            this.observe(data, req.originUrl);
-        }
+        let candidate = this.isDownloadCandidate(res);
         // Media is only ever captured from a GET: no request body is recorded, so nothing else
         // could be replayed.
         let media = this.callback && req.method === "GET" && this.isMatchingRequest(res);
+        if (!candidate && !media) {
+            // The common case by far (every image, script, XHR, ...): nothing to keep or report.
+            return;
+        }
+        let data = this.createRequestData(req, res, null, null, req.tabId);
+        if (candidate) {
+            this.observe(data, req.originUrl);
+        }
         if (req.tabId === -1) {
             media && this.callback(data);
             return;

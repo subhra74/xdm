@@ -280,6 +280,7 @@ class ProgressWindow(val id: Long) : JFrame() {
             DownloadError.DiskSpaceError -> text("ERR_DISK_FAILED")
             DownloadError.ResumeNotSupported -> text("ERR_NO_RESUME")
             DownloadError.SessionExpired -> text("ERR_SESSION_FAILED")
+            DownloadError.LinkExpired -> text("ERR_LINK_EXPIRED")
             DownloadError.TlsError -> text("ERR_TLS")
             DownloadError.DecryptionError -> text("ERR_DECRYPT")
             DownloadError.OutputWriteError -> text("ERR_OUTPUT_WRITE")

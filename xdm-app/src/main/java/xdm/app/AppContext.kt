@@ -1,6 +1,7 @@
 package xdm.app
 
 import xdm.core.downloaders.TaskInfoDB
+import xdm.core.network.http.HttpAuth
 import xdm.core.util.Logger
 import xdm.app.utils.AppLauncher
 import xdm.app.utils.AutoStart
@@ -35,6 +36,9 @@ object AppContext {
     /** True when this launch found no saved config, i.e. XDM is running for the first time. */
     var firstRun = false
         private set
+
+    /** Answers 401 / 407 for every download client; asks the user through a Swing dialog. */
+    val httpAuth: HttpAuth by lazy { HttpAuth(SwingCredentialPrompt) }
 
     var refreshLinkInProgress = AtomicBoolean(false)
     var refreshLinkId = AtomicLong(-1)

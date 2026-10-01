@@ -55,7 +55,9 @@ object VideoHelper {
             cachedClient?.takeIf { key == cachedClientKey }?.let { return it }
             return HttpClientImpl(
                 10, key.proxy, key.ignoreCertErrors,
-                proxyUser = key.proxyUser, proxyPassword = key.proxyPass
+                proxyUser = key.proxyUser, proxyPassword = key.proxyPass,
+                // Proxy only: a manifest fetched in the background must not pop up a server login.
+                auth = AppContext.httpAuth,
             ).also {
                 cachedClient = it
                 cachedClientKey = key

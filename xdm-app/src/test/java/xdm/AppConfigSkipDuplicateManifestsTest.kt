@@ -45,10 +45,11 @@ class AppConfigSkipDuplicateManifestsTest {
             skipDuplicateManifests = true
             downloadCompleteNotification = DownloadCompleteNotification.NOTIFICATION
         }.save()
-        // Drop the trailing boolean, keeping AtomicIO's 8-byte end marker.
+        // Drop this boolean and the one written after it (markDownloadedFiles), keeping
+        // AtomicIO's 8-byte end marker.
         val file = File(dir, AppConfig.CONFIG_FILE)
         val bytes = file.readBytes()
-        file.writeBytes(bytes.copyOf(bytes.size - 9) + "XDM-END!".toByteArray(Charsets.US_ASCII))
+        file.writeBytes(bytes.copyOf(bytes.size - 10) + "XDM-END!".toByteArray(Charsets.US_ASCII))
 
         val config = load()
         assertFalse(config.skipDuplicateManifests, "missing field keeps the default")

@@ -8,7 +8,7 @@ import javax.swing.JOptionPane
 import javax.swing.JTextField
 import javax.swing.JPasswordField
 
-data class AuthInput(val userName: String, val password: String, val remember: Boolean)
+data class AuthInput(val userName: String, val password: String)
 
 object MessageBox {
     fun confirmWithCheckBox(
@@ -41,20 +41,15 @@ object MessageBox {
         JOptionPane.showMessageDialog(window, message, title, JOptionPane.INFORMATION_MESSAGE)
     }
 
-    fun showAuth(title: String, message: String, rememberOption: Boolean): AuthInput? {
+    fun showAuth(title: String, message: String): AuthInput? {
         val usernameField = JTextField()
         val passwordField = JPasswordField()
-        val rememberMeCheckBox = JCheckBox("Remember me")
 
         val components = mutableListOf<Any>(
             message,
             "Username:", usernameField,
             "Password:", passwordField
         )
-
-        if (rememberOption) {
-            components.add(rememberMeCheckBox)
-        }
 
         val result = JOptionPane.showOptionDialog(
             null, // Parent component, can be null for a default frame
@@ -71,7 +66,6 @@ object MessageBox {
             AuthInput(
                 userName = usernameField.text,
                 password = String(passwordField.password),
-                remember = rememberMeCheckBox.isSelected
             )
         } else null
     }

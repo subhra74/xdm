@@ -1,15 +1,20 @@
 {
     "name": "XDM v8+ Browser Helper",
-    "browser_action": {},
+    "browser_action": {
+        "default_title": "XDM v8+ Browser Helper",
+        "default_icon": {
+            "16": "icon16-mono.png",
+            "48": "icon48-mono.png",
+            "128": "icon128-mono.png"
+        }
+    },
     "manifest_version": 2,
-    "version": "1.4",
+    "version": "1.5",
     "description": "Download files with XDM v8+",
     "permissions": [
         "tabs",
         "cookies",
-        "contextMenus",
         "menus",
-        "activeTab",
         "webRequest",
         "webRequestBlocking",
         "*://*/*"
@@ -24,7 +29,12 @@
     },
     "browser_specific_settings": {
         "gecko": {
-            "id": "xdm-v8-browser-helper@subhra74.github.io"
+            "id": "xdm-v8-browser-helper@subhra74.github.io",
+            "data_collection_permissions": {
+                "required": [
+                    "none"
+                ]
+            }
         }
     }
 }

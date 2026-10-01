@@ -14,6 +14,7 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
 import javax.net.ssl.SSLSocketFactory
@@ -33,10 +34,17 @@ class HttpClientImpl @JvmOverloads constructor(
     ignoreCertErrors: Boolean = false,
     /** How long a read may wait for data before failing with a timeout, so a stalled server is retried. */
     readTimeoutSeconds: Int = CoreConfig.DEFAULT_READ_TIMEOUT_SECONDS,
-    /** Credentials for an authenticating HTTP proxy; empty user means the proxy needs no auth. */
+    /** Credentials for an authenticating HTTP proxy; empty user means none are configured. */
     proxyUser: String = "",
     proxyPassword: String = "",
+    /** Asks the user when a proxy (407) or, with [serverAuth], a server (401) wants credentials. */
+    private val auth: HttpAuth? = null,
+    /** Answer a server's 401 Basic challenge; off for background fetches the user did not start. */
+    serverAuth: Boolean = false,
 ) : PoolingHttpClient {
+    /** Set when the user cancels a credentials prompt: this client stops asking. */
+    private val authCancelled = AtomicBoolean(false)
+
     /**
      * Calls whose response is still open. OkHttp's dispatcher stops tracking a synchronous call once
      * `execute()` returns the headers, so `cancelAll()` cannot abort a thread blocked reading the body;
@@ -56,7 +64,8 @@ class HttpClientImpl @JvmOverloads constructor(
             .protocols(listOf(Protocol.HTTP_1_1))
             .connectTimeout(30, TimeUnit.SECONDS).readTimeout(readTimeoutSeconds.toLong(), TimeUnit.SECONDS).retryOnConnectionFailure(false)
             .apply { if (ignoreCertErrors) trustAllCertificates(this) else sharedTls(this) }
-            .apply { if (proxy != null && proxyUser.isNotEmpty()) proxyAuthentication(this, proxy, proxyUser, proxyPassword) }
+            .apply { if (proxy != null) proxyAuthentication(this, proxy, proxyUser, proxyPassword) }
+            .apply { if (serverAuth && auth != null) serverAuthentication(this, auth) }
             .build()
 
     /**
@@ -74,42 +83,49 @@ class HttpClientImpl @JvmOverloads constructor(
     }
 
     /**
-     * OkHttp does not consult [java.net.Authenticator] for proxies, so answer the proxy's 407
-     * challenge here, with the credentials from the config. If the proxy refuses those (it comes
-     * back 407 on a request that already carried the header), ask the default authenticator for
-     * another pair, which is how the app gets to prompt the user — see [ProxyAuth.REJECTED_PROMPT].
-     * Offering the same credentials twice would loop, so that ends the attempt instead.
+     * OkHttp does not consult [java.net.Authenticator] for proxies, so answer the proxy's 407 here:
+     * first with the credentials from the config, then, each time the proxy refuses what was sent,
+     * with what the user enters through [auth]. Without [auth] the configured pair is offered once.
      *
      * Only Basic is implemented; a proxy demanding Digest or NTLM is not supported. SOCKS
      * authentication does not come through here at all: the JDK socket layer asks the default
      * authenticator itself.
      */
     private fun proxyAuthentication(builder: OkHttpClient.Builder, proxy: Proxy, user: String, password: String) {
-        val address = proxy.address() as? InetSocketAddress
-        val configured = Credentials.basic(user, password)
+        val address = proxy.address() as? InetSocketAddress ?: return
+        val configured = if (user.isNotEmpty()) BasicCredentials(user, password) else null
+        val scope = AuthScope(proxy = true, host = address.hostString, port = address.port, realm = null)
         builder.proxyAuthenticator { _, response ->
-            val alreadySent = response.request.header("Proxy-Authorization")
-            val credential = if (alreadySent == null) configured else rejectedCredentials(address)
-            if (credential == null || credential == alreadySent) return@proxyAuthenticator null
-            response.request.newBuilder().header("Proxy-Authorization", credential).build()
+            val sent = decodeBasic(response.request.header("Proxy-Authorization"))
+            val next = if (auth != null) {
+                auth.onChallenge(scope, sent, authCancelled, configured)
+            } else {
+                configured?.takeIf { sent == null }
+            }
+            // [HttpAuth] hands back the refused pair only if the user typed it again, so that is a
+            // retry, not a loop; without it, the configured pair is only ever offered once.
+            if (next == null) return@proxyAuthenticator null
+            Logger.info("XDM", "Authenticating to proxy ${scope.host}:${scope.port} as ${next.user}")
+            response.request.newBuilder().header("Proxy-Authorization", encodeBasic(next)).build()
         }
     }
 
-    /** Asks the default [java.net.Authenticator] for credentials to replace the refused ones. */
-    private fun rejectedCredentials(address: InetSocketAddress?): String? {
-        if (address == null) return null
-        Logger.info("XDM", "Proxy ${address.hostString}:${address.port} refused the configured credentials")
-        val auth = java.net.Authenticator.requestPasswordAuthentication(
-            address.hostString,
-            address.address,
-            address.port,
-            "http",
-            ProxyAuth.REJECTED_PROMPT,
-            "basic",
-            null,
-            java.net.Authenticator.RequestorType.PROXY,
-        ) ?: return null
-        return Credentials.basic(auth.userName, String(auth.password))
+    /**
+     * Answers a server's 401 Basic challenge with credentials from [auth], asking the user again each
+     * time the server refuses them. A challenge that offers no Basic scheme (Bearer, Digest, NTLM,
+     * Negotiate) cannot be met with a user name and password, so the 401 stands.
+     */
+    private fun serverAuthentication(builder: OkHttpClient.Builder, auth: HttpAuth) {
+        builder.authenticator { _, response ->
+            val basic = response.challenges().firstOrNull { it.scheme.equals("Basic", ignoreCase = true) }
+                ?: return@authenticator null
+            val url = response.request.url
+            val scope = AuthScope(proxy = false, host = url.host, port = url.port, realm = basic.realm)
+            val sent = decodeBasic(response.request.header("Authorization"))
+            val next = auth.onChallenge(scope, sent, authCancelled) ?: return@authenticator null
+            Logger.info("XDM", "Authenticating to ${url.host} as ${next.user}")
+            response.request.newBuilder().header("Authorization", encodeBasic(next)).build()
+        }
     }
 
     private fun trustAllCertificates(builder: OkHttpClient.Builder) {
@@ -192,7 +208,10 @@ class HttpClientImpl @JvmOverloads constructor(
             val finalUrl = response.request.url.toUri().toASCIIString()
             val redirected = response.priorResponse?.isRedirect ?: false
 
-            Logger.info(response.headers)
+            // Set-Cookie values are session credentials; log that they came, not what they are.
+            Logger.info(response.headers.joinToString("\n") { (name, value) ->
+                if (name.equals("Set-Cookie", ignoreCase = true)) "$name: <redacted>" else "$name: $value"
+            })
 
             HttpResponseImpl(
                 contentDisposition = response.headers.get("Content-Disposition"),
@@ -251,4 +270,16 @@ class HttpClientImpl @JvmOverloads constructor(
             }
         }
     }
+}
+
+private fun encodeBasic(c: BasicCredentials): String = Credentials.basic(c.user, c.password, Charsets.UTF_8)
+
+/** The pair inside a `Basic` authorization header, or null for none or another scheme (Bearer). */
+private fun decodeBasic(header: String?): BasicCredentials? {
+    if (header == null || !header.startsWith("Basic ", ignoreCase = true)) return null
+    val decoded = runCatching { String(java.util.Base64.getDecoder().decode(header.substring(6).trim()), Charsets.UTF_8) }
+        .getOrNull() ?: return null
+    val colon = decoded.indexOf(':')
+    if (colon < 0) return null
+    return BasicCredentials(decoded.substring(0, colon), decoded.substring(colon + 1))
 }

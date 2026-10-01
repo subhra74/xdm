@@ -1,7 +1,7 @@
 "use strict";
 export default class Logger {
     constructor() {
-        this.loggingEnabled = true;
+        this.loggingEnabled = false;
     }
 
     log(content) {

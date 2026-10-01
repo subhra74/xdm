@@ -212,7 +212,7 @@ class HlsDownloaderTask : StreamingDownloaderTask {
             executorService.submit {
                 try {
                     if (!error.get() && !context.stopFlag.get()) {
-                        Logger.info("Headers: ${hlsContext.headers}")
+                        Logger.info("Header names: ${hlsContext.headers?.keys}")
                         val bytes = downloadManifestBytes(
                             context.httpClient, keyUrl, hlsContext.headers, hlsContext.cookie, context.stopFlag,
                             recordFetchError

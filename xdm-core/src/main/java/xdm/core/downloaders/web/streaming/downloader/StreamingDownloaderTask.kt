@@ -186,7 +186,11 @@ abstract class StreamingDownloaderTask(
             if (context.stopFlag.get()) return
             context.chunks.find { it.status.get() != ChunkStatus.Finished }?.let {
                 Logger.error("XDM", "Not all chunks downloaded successfully")
-                context.downloadHost.onDownloadFailed(context.id, it.error.get() ?: DownloadError.InternalError)
+                var error = it.error.get() ?: DownloadError.InternalError
+                // A refusal is only an expiry if the link worked before; otherwise it never did.
+                val anyProgress = context.chunks.any { c -> c.status.get() == ChunkStatus.Finished || c.downloaded.get() > 0 }
+                if (error == DownloadError.LinkExpired && !anyProgress) error = DownloadError.InvalidResponse
+                context.downloadHost.onDownloadFailed(context.id, error)
                 return
             }
             assemble()

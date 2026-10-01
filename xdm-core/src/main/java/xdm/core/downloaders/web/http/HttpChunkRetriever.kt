@@ -7,6 +7,7 @@ import xdm.core.network.http.Range
 import xdm.core.network.http.isTlsVerificationError
 import xdm.core.util.Logger
 import xdm.core.util.getRetryDelay
+import xdm.core.util.isLinkExpiredStatus
 import java.io.File
 import java.io.IOException
 import java.io.RandomAccessFile
@@ -99,6 +100,11 @@ class HttpChunkRetriever(
                     false
                 }
 
+                ConnectResult.LinkExpired -> {
+                    chunkFailed(DownloadError.LinkExpired)
+                    false
+                }
+
                 ConnectResult.TlsError -> {
                     Logger.info("XDM", "Chunk $id failed during connect - TLS certificate verification failed")
                     chunkFailed(DownloadError.TlsError)
@@ -144,6 +150,12 @@ class HttpChunkRetriever(
         val response = context.httpClient.getResponse(context.url, context.headers, context.cookie, range)
         response.onSuccess { r ->
             print(r)
+            // The link worked before (bytes are on disk) and is now refused: it expired.
+            if (context.downloaded.get() > 0 && isLinkExpiredStatus(r.statusCode, r.getHeader("WWW-Authenticate"))) {
+                Logger.info("XDM", "Chunk: $id - link refused with ${r.statusCode} after partial download")
+                r.close()
+                return ConnectResult.LinkExpired
+            }
             if (isFatalStatus(r.statusCode, startRange, !context.init.get())) {
                 r.close()
                 return ConnectResult.InvalidResponse

@@ -8,6 +8,7 @@ import xdm.core.network.http.Range
 import xdm.core.network.http.isTlsVerificationError
 import xdm.core.util.Logger
 import xdm.core.util.getRetryDelay
+import xdm.core.util.isLinkExpiredStatus
 import java.io.File
 import java.io.IOException
 import java.io.RandomAccessFile
@@ -55,6 +56,15 @@ class StreamingChunkRetriever(
                         if (stopFlag.get()) return
 
                         val code: Int = response.statusCode
+                        // Checked before the resume check: a refused resume is an expiry, not a
+                        // server without range support. The task reports it as such only if
+                        // something was downloaded (see StreamingDownloaderTask.downloadChunks).
+                        if (isLinkExpiredStatus(code, response.getHeader("WWW-Authenticate"))) {
+                            Logger.error("XDM", "Chunk download refused: $code")
+                            piece.status.set(ChunkStatus.Failed)
+                            piece.error.set(DownloadError.LinkExpired)
+                            return
+                        }
                         if (realRange.start > 0 && code != 206) {
                             Logger.error(
                                 "XDM",

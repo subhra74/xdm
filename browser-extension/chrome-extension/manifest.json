@@ -1,6 +1,13 @@
 {
     "name": "XDM Integration Module",
-    "action": {},
+    "action": {
+        "default_title": "XDM Integration Module",
+        "default_icon": {
+            "16": "icon16-mono.png",
+            "48": "icon48-mono.png",
+            "128": "icon128-mono.png"
+        }
+    },
     "manifest_version": 3,
     "version": "3.3",
     "description": "Download with Xtreme Download Manager.",
@@ -11,7 +18,6 @@
         "downloads",
         "cookies",
         "webRequest",
-        "activeTab",
         "storage",
         "contextMenus",
         "alarms"

@@ -7,13 +7,28 @@ import java.net.URLDecoder
 import java.nio.channels.FileChannel
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.FileAlreadyExistsException
+import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
+import java.nio.file.attribute.PosixFilePermissions
 import kotlin.use
 
 object FileUtils {
+    /**
+     * Makes [file] readable only by the current user (`rwx------` for a folder, `rw-------` for a
+     * file). POSIX only; on Windows the user profile's inherited ACL already does this. Best effort:
+     * a failure is logged and otherwise ignored.
+     */
+    fun restrictToOwner(file: File) {
+        if (!FileSystems.getDefault().supportedFileAttributeViews().contains("posix")) return
+        runCatching {
+            val perms = if (file.isDirectory) "rwx------" else "rw-------"
+            Files.setPosixFilePermissions(file.toPath(), PosixFilePermissions.fromString(perms))
+        }.onFailure { Logger.error("XDM", "Unable to restrict $file to its owner", it) }
+    }
+
     private val invalidChars = setOf('/', '\\', '"', '?', '*', '<', '>', ':', '|')
 
     // Windows reserved device names (case-insensitive, matched on the base name).

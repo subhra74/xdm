@@ -1,120 +1,69 @@
 package xdm.app
 
 import xdm.app.ui.components.MessageBox
-import xdm.core.network.http.ProxyAuth
+import xdm.core.network.http.AuthScope
+import xdm.core.network.http.BasicCredentials
+import xdm.core.network.http.CredentialPrompt
 import xdm.core.util.Logger
 import java.net.Authenticator
 import java.net.InetSocketAddress
 import java.net.PasswordAuthentication
 import java.net.Proxy
 import java.net.Socket
+import java.util.concurrent.atomic.AtomicBoolean
+import javax.swing.SwingUtilities
 
 /**
  * Process-wide authenticator, installed once from [IAppConfig.applyAuthConfig].
  *
- * A SOCKS proxy cannot be authenticated through OkHttp: `proxyAuthenticator` only answers an HTTP
- * proxy's 407, while SOCKS5 authentication happens in the JDK socket layer, which asks the default
- * [Authenticator] instead (`SocksSocketImpl` calls it with protocol `SOCKS5` and, note, requestor
- * type SERVER rather than PROXY). So when the request is for the proxy configured in Settings,
- * answer it from the config; everything else still prompts the user.
+ * HTTP 401 / 407 never reach it: the download clients answer those through [AppContext.httpAuth].
+ * A SOCKS proxy cannot be authenticated through OkHttp, though: SOCKS5 authentication happens in the
+ * JDK socket layer, which asks the default [Authenticator] instead (`SocksSocketImpl` calls it with
+ * protocol `SOCKS5` and, note, requestor type SERVER rather than PROXY). So when the request is for
+ * the proxy configured in Settings, answer it from the same [AppContext.httpAuth] entry the HTTP
+ * proxy path uses; anything else prompts.
  *
- * Stored credentials are checked before they are handed out, so a wrong user name or password
- * prompts instead of failing every download silently. For SOCKS that means probing the proxy
- * ([SocksProbe]); for an HTTP proxy the client in xdm-core has already had them refused with a 407
- * and says so with [ProxyAuth.REJECTED_PROMPT]. What the user types is kept for the rest of the
- * run, and written back to the config if they tick "Remember me". The config is read on each call,
- * so credentials edited in Settings apply without a restart.
+ * The JDK never says whether a SOCKS proxy accepted what it was given, so each new pair is checked
+ * first ([SocksProbe]); a rejected one prompts again until the proxy takes one or the user cancels.
+ * Cancel holds until the proxy settings change. The config is read on each call, so credentials
+ * edited in Settings apply without a restart.
  *
- * The JDK serializes calls on the installed authenticator, so the probe, the prompt and [state] are
- * only ever touched by one thread at a time.
+ * The JDK serializes calls on the installed authenticator, so the fields here are only ever touched
+ * by one thread at a time.
  */
 class DefaultAuthenticator : Authenticator() {
-    /** Identifies one set of proxy credentials; a change to any part starts over. */
-    private data class ProxyKey(val host: String, val port: Int, val user: String, val password: String)
+    private var lastConfigured: BasicCredentials? = null
+    private val proxyCancelled = AtomicBoolean(false)
 
-    private sealed interface State {
-        /** The proxy accepted these credentials, or would not say; hand them out. */
-        object Accepted : State
-
-        /** The proxy rejected the configured credentials; [entered] is what the user typed since. */
-        data class Rejected(val entered: PasswordAuthentication?) : State
-    }
-
-    private var stateKey: ProxyKey? = null
-    private var state: State? = null
+    /** The pair the SOCKS proxy accepted (or would not judge); handed out without probing again. */
+    private var verified: BasicCredentials? = null
 
     override fun getPasswordAuthentication(): PasswordAuthentication? {
-        proxyAuthentication()?.let { return it }
-        return prompt(requestorType == RequestorType.PROXY)
+        val config = runCatching { AppContext.config }.getOrNull()
+        if (config != null && config.useProxy && isConfiguredProxy(config)) return proxyAuthentication(config)
+        val scope = AuthScope(requestorType == RequestorType.PROXY, requestingHost ?: "", requestingPort, requestingPrompt)
+        return SwingCredentialPrompt.ask(scope, rejected = false)?.let { PasswordAuthentication(it.user, it.password.toCharArray()) }
     }
 
-    /**
-     * Credentials for the configured proxy, or null when this request is not that proxy (then the
-     * caller prompts as before).
-     */
-    private fun proxyAuthentication(): PasswordAuthentication? {
-        val config = runCatching { AppContext.config }.getOrNull() ?: return null
-        if (!config.useProxy || config.proxyUser.isEmpty()) return null
-        if (!isConfiguredProxy(config)) return null
-
-        val key = ProxyKey(config.proxyHost, config.proxyPort, config.proxyUser, config.proxyPass)
-        // The HTTP client only asks after a 407, so its request is itself proof of a rejection.
-        val refused = requestingPrompt == ProxyAuth.REJECTED_PROMPT
-        if (key != stateKey) {
-            stateKey = key
-            state = if (refused || (config.socksProxy && SocksProbe.rejects(key.host, key.port, key.user, key.password))) {
-                Logger.info("XDM", "Proxy ${key.host}:${key.port} rejected the saved credentials")
-                State.Rejected(null)
-            } else {
-                State.Accepted
-            }
-        } else if (refused && state is State.Accepted) {
-            Logger.info("XDM", "Proxy ${key.host}:${key.port} rejected the saved credentials")
-            state = State.Rejected(null)
+    private fun proxyAuthentication(config: IAppConfig): PasswordAuthentication? {
+        val scope = AuthScope(proxy = true, host = config.proxyHost, port = config.proxyPort, realm = null)
+        val configured = config.proxyUser.takeIf { it.isNotEmpty() }?.let { BasicCredentials(it, config.proxyPass) }
+        if (configured != lastConfigured) {
+            lastConfigured = configured
+            proxyCancelled.set(false)
+            verified = null
         }
-
-        when (val current = state) {
-            is State.Accepted -> {
-                Logger.info("XDM", "Authenticating to proxy ${key.host}:${key.port} as ${key.user}")
-                return PasswordAuthentication(key.user, key.password.toCharArray())
+        val auth = AppContext.httpAuth
+        var next = auth.onChallenge(scope, null, proxyCancelled, configured) ?: return null
+        if (config.socksProxy) {
+            while (next != verified && SocksProbe.rejects(scope.host, scope.port, next.user, next.password)) {
+                Logger.info("XDM", "Proxy ${scope.host}:${scope.port} rejected the credentials for ${next.user}")
+                next = auth.onChallenge(scope, next, proxyCancelled, configured) ?: return null
             }
-
-            is State.Rejected -> {
-                // Ask once, then reuse the answer: the JDK asks again for every new socket, and a
-                // dialog per download chunk would be unusable.
-                current.entered?.let { return it }
-                val entered = prompt(isProxy = true, message = rejectedMessage(key)) ?: return null
-                state = State.Rejected(entered)
-                return entered
-            }
-
-            null -> return null
+            verified = next
         }
-    }
-
-    private fun rejectedMessage(key: ProxyKey) =
-        "The proxy ${key.host}:${key.port} did not accept the credentials saved in Settings."
-
-    private fun prompt(isProxy: Boolean, message: String = "$requestingSite  $requestingPrompt"): PasswordAuthentication? {
-        val auth = MessageBox.showAuth("XDM", message, isProxy) ?: return null
-        if (isProxy && auth.remember) rememberProxyCredentials(auth.userName, auth.password)
-        return PasswordAuthentication(auth.userName, auth.password.toCharArray())
-    }
-
-    /** Writes credentials the user asked to keep back to the config, so the next run uses them. */
-    private fun rememberProxyCredentials(user: String, password: String) {
-        val config = runCatching { AppContext.config }.getOrNull() ?: return
-        if (!config.useProxy) return
-        runCatching {
-            config.proxyUser = user
-            config.proxyPass = password
-            config.save()
-            // Clients built before the edit still send the old pair and will be refused again, so
-            // keep handing the new one out under the new key instead of prompting a second time.
-            stateKey = ProxyKey(config.proxyHost, config.proxyPort, user, password)
-            state = State.Rejected(PasswordAuthentication(user, password.toCharArray()))
-            Logger.info("XDM", "Saved proxy credentials for ${config.proxyHost}:${config.proxyPort}")
-        }.onFailure { Logger.error("XDM", "Could not save proxy credentials", it) }
+        Logger.info("XDM", "Authenticating to proxy ${scope.host}:${scope.port} as ${next.user}")
+        return PasswordAuthentication(next.user, next.password.toCharArray())
     }
 
     /**
@@ -130,6 +79,28 @@ class DefaultAuthenticator : Authenticator() {
         return requestingHost.equals(host, ignoreCase = true) ||
                 requestingSite?.hostAddress.equals(host, ignoreCase = true) ||
                 requestingSite?.hostName.equals(host, ignoreCase = true)
+    }
+}
+
+/**
+ * Asks for credentials with a modal dialog on the EDT; the caller is a download thread, which waits.
+ * What the user types is kept in memory for the run only (see [xdm.core.network.http.HttpAuth]).
+ */
+object SwingCredentialPrompt : CredentialPrompt {
+    override fun ask(scope: AuthScope, rejected: Boolean): BasicCredentials? {
+        val message = message(scope, rejected)
+        var input: xdm.app.ui.components.AuthInput? = null
+        val show = Runnable { input = MessageBox.showAuth("XDM", message) }
+        if (SwingUtilities.isEventDispatchThread()) show.run() else SwingUtilities.invokeAndWait(show)
+        val answer = input ?: return null
+        return BasicCredentials(answer.userName, answer.password)
+    }
+
+    private fun message(scope: AuthScope, rejected: Boolean): String {
+        val who = if (scope.proxy) "The proxy ${scope.host}:${scope.port}" else
+            scope.host + (scope.realm?.takeIf { it.isNotBlank() }?.let { " (\"$it\")" } ?: "")
+        return if (rejected) "$who did not accept the user name and password. Enter them again."
+        else "$who needs a user name and password."
     }
 }
 

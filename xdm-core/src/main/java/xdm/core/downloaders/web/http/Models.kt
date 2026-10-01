@@ -33,6 +33,7 @@ sealed interface ConnectResult {
     data object InvalidResponse : ConnectResult
     data object NoResume : ConnectResult
     data object TlsError : ConnectResult
+    data object LinkExpired : ConnectResult
 }
 
 enum class CopyResult {

@@ -35,6 +35,20 @@ Singleton service locator with `lateinit` refs: `db`, `app` (UI facade), `downlo
   `task-<id>.info`, `<id>.state*`, HLS `<id>.keys` and the schedule entry. Clear uses `clearInactive()` (keeps running,
   assembling and queued). Any new per-download file must be added to `deleteMetadata`.
 
+## Credentials
+- **Never on disk:** the proxy password (`AppConfig` writes `""` in its slot) and captured `Authorization` headers
+  (`SensitiveHeaders` strips them from `.info`/`.state` and keeps them in memory for the run). Cookies and other
+  headers are stored plaintext; `~/.xdm-app` is `0700` on POSIX (`FileUtils.restrictToOwner`), config/task files
+  `0600`. Logs never carry cookie or header values (`BrowserIntegration.logMessage`, `Set-Cookie` redacted).
+- **401 / 407:** `HttpAuth` (xdm-core) answers Basic challenges for all clients through a `CredentialPrompt`
+  (`SwingCredentialPrompt`): one prompt per scope (proxy, or host+port+realm), re-asks while the server refuses,
+  Cancel stops that download. Typed credentials are memory-only. Server 401 only for download clients
+  (`serverAuth = true`), not `VideoHelper`'s background fetches. SOCKS goes through `DefaultAuthenticator`, which
+  shares the proxy entry and checks each pair with `SocksProbe`.
+- **Expired links:** a 403, 410 or non-Basic 401 after bytes were downloaded fails the download with
+  `DownloadError.LinkExpired` (`isLinkExpiredStatus`), shown as "use Refresh link". The same status before any
+  progress stays `InvalidResponse`.
+
 ## Task info model
 `HttpDownloadTaskInfo` and `StreamingDownloadTaskInfo` subtypes (`HlsDownloadTaskInfo`, `DashDownloadTaskInfo`) in
 `xdm-core/.../downloaders/Models.kt` are the app→engine descriptors. `DownloadType` (`Http`, `Hls`, `Dash`, `Hds`, `Hss`,

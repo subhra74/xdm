@@ -2,6 +2,7 @@ package xdm.core.downloaders
 
 import xdm.core.downloaders.web.streaming.manifest.dash.DashSegment
 import xdm.core.network.http.HeaderMap
+import xdm.core.network.http.SensitiveHeaders
 import xdm.core.util.AtomicIO
 import xdm.core.util.Logger
 import xdm.core.util.readLongString
@@ -41,17 +42,18 @@ private class RequestFields(
 )
 
 private fun writeRequestFields(
-    w: DataOutput, cookie: String?, headers: HeaderMap?, origin: String?, userSelectedDownloadFolder: String?,
+    w: DataOutput, id: Long, cookie: String?, headers: HeaderMap?, origin: String?, userSelectedDownloadFolder: String?,
 ) {
     w.writeNullableLongString(cookie)
-    w.writeNullableHeaders(headers)
+    // Credentials such as Authorization stay in memory only.
+    w.writeNullableHeaders(SensitiveHeaders.strip(id, headers))
     w.writeNullableLongString(origin)
     w.writeNullableLongString(userSelectedDownloadFolder)
 }
 
-private fun readRequestFields(r: DataInput) = RequestFields(
+private fun readRequestFields(r: DataInput, id: Long) = RequestFields(
     cookie = r.readNullableLongString(),
-    headers = r.readNullableHeaders(),
+    headers = SensitiveHeaders.restore(id, r.readNullableHeaders()),
     origin = r.readNullableLongString(),
     userSelectedDownloadFolder = r.readNullableLongString(),
 )
@@ -72,7 +74,7 @@ class TaskInfoDB(private val configDir: String) {
             val defaultDownloadFolder = r.readLongString()
             val maxPiece = r.readInt()
             val knownFileSize = if (r.readBoolean()) r.readLong() else null
-            val req = readRequestFields(r)
+            val req = readRequestFields(r, taskId)
             return HttpDownloadTaskInfo(
                 id = taskId,
                 url = url,
@@ -105,7 +107,7 @@ class TaskInfoDB(private val configDir: String) {
             val audioOnly = r.readBoolean()
             val tempDir = r.readLongString()
             val independent = r.readBoolean()
-            val req = readRequestFields(r)
+            val req = readRequestFields(r, taskId)
             return HlsDownloadTaskInfo(
                 id = taskId,
                 url = url,
@@ -142,7 +144,7 @@ class TaskInfoDB(private val configDir: String) {
             val videoSegments = List(r.readInt()) { readDashSegment(r) }
             val audioMime = r.readLongString()
             val videoMime = r.readLongString()
-            val req = readRequestFields(r)
+            val req = readRequestFields(r, taskId)
             return DashDownloadTaskInfo(
                 id = taskId,
                 url = url,
@@ -177,7 +179,7 @@ class TaskInfoDB(private val configDir: String) {
             w.writeInt(task.maxPiece)
             w.writeBoolean(task.knownFileSize != null)
             task.knownFileSize?.let { w.writeLong(it) }
-            writeRequestFields(w, task.cookie, task.headers, task.origin, task.userSelectedDownloadFolder)
+            writeRequestFields(w, task.id, task.cookie, task.headers, task.origin, task.userSelectedDownloadFolder)
         }.onFailure { Logger.error("XDM", "Error saving task info ${task.id}", it) }
     }
 
@@ -194,7 +196,7 @@ class TaskInfoDB(private val configDir: String) {
             w.writeBoolean(task.audioOnly)
             w.writeLongString(task.tempDir)
             w.writeBoolean(task.independent)
-            writeRequestFields(w, task.cookie, task.headers, task.origin, task.userSelectedDownloadFolder)
+            writeRequestFields(w, task.id, task.cookie, task.headers, task.origin, task.userSelectedDownloadFolder)
         }.onFailure { Logger.error("XDM", "Error saving task info ${task.id}", it) }
     }
 
@@ -218,11 +220,12 @@ class TaskInfoDB(private val configDir: String) {
             }
             w.writeLongString(task.audioMime)
             w.writeLongString(task.videoMime)
-            writeRequestFields(w, task.cookie, task.headers, task.origin, task.userSelectedDownloadFolder)
+            writeRequestFields(w, task.id, task.cookie, task.headers, task.origin, task.userSelectedDownloadFolder)
         }.onFailure { Logger.error("XDM", "Error saving task info ${task.id}", it) }
     }
 
     fun deleteRecord(id: Long) {
+        SensitiveHeaders.forget(id)
         File(configDir, "task-$id.info").delete()
         File(configDir, "task-$id.info.bak1").delete()
         File(configDir, "task-$id.info.bak2").delete()

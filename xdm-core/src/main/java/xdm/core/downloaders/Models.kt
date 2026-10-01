@@ -12,6 +12,12 @@ enum class DownloadError {
     NetworkError,
     InvalidResponse,
     SessionExpired,
+    /**
+     * Part of the file was downloaded, then the server started refusing the link (403, 410, or a 401
+     * that no user name and password can answer): its signature, token or session ran out. A fresh
+     * link (Refresh link) resumes from where it stopped.
+     */
+    LinkExpired,
     DiskSpaceError,
     InternalError,
     ResumeNotSupported,

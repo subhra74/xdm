@@ -88,6 +88,11 @@ interface IAppConfig : CoreConfig {
      * short window instead of on every request (Advanced settings). Off by default.
      */
     var skipDuplicateManifests: Boolean
+    /**
+     * When true, finished downloads are marked as coming from the internet (Zone.Identifier on
+     * Windows, com.apple.quarantine on macOS), as a browser would. On by default. See QUARANTINE.md.
+     */
+    var markDownloadedFiles: Boolean
     fun applyAuthConfig()
 }
 
@@ -159,6 +164,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var proxyHost: String = ""
     override var proxyPort: Int = 8080
     override var proxyUser: String = ""
+    /** Kept in memory only: [save] writes an empty string in its slot. */
     override var proxyPass: String = ""
     override var haltAfterDownload: Boolean = false
     override var keepAwake: Boolean = true
@@ -169,6 +175,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var ignoreCertErrors: Boolean = false
     override var readTimeoutSeconds: Int = CoreConfig.DEFAULT_READ_TIMEOUT_SECONDS
     override var skipDuplicateManifests: Boolean = false
+    override var markDownloadedFiles: Boolean = true
 
     override fun applyAuthConfig() {
         Authenticator.setDefault(DefaultAuthenticator())
@@ -178,10 +185,16 @@ class AppConfig(private val configDir: String) : IAppConfig {
         if (!AtomicIO.exists(CONFIG_FILE, configDir)) return
         AtomicIO.readTransacted(CONFIG_FILE, configDir) { load(it) }
             .onFailure { Logger.error("Unable to load config, using defaults: $it") }
+        // Older builds saved the proxy password. Keep it for this run, but rewrite the file without
+        // it; twice, because a save moves the previous file to `.bak2`.
+        if (proxyPass.isNotEmpty()) {
+            save()
+            save()
+        }
     }
 
     override fun save() {
-        AtomicIO.writeTransacted(CONFIG_FILE, configDir) { save(it) }
+        AtomicIO.writeTransacted(CONFIG_FILE, configDir, ownerOnly = true) { save(it) }
             .onFailure { Logger.error("Unable to save config: $it") }
     }
 
@@ -216,7 +229,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
         out.writeUTF(proxyHost)
         out.writeInt(proxyPort)
         out.writeUTF(proxyUser)
-        out.writeUTF(proxyPass)
+        out.writeUTF("") // proxyPass: never written to disk
         out.writeBoolean(haltAfterDownload)
         out.writeBoolean(keepAwake)
         out.writeUTF(customCommand)
@@ -232,6 +245,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
         // reading here, is unaffected.
         out.writeInt(downloadCompleteNotification.ordinal)
         out.writeBoolean(skipDuplicateManifests)
+        out.writeBoolean(markDownloadedFiles)
     }
 
     private fun load(input: DataInputStream) {
@@ -321,8 +335,13 @@ class AppConfig(private val configDir: String) : IAppConfig {
             .isSuccess
         if (!notificationRead) return
         // Config written before this field existed: keep the default (off).
-        runCatching { input.readBoolean() }
+        val skipDupRead = runCatching { input.readBoolean() }
             .onSuccess { skipDuplicateManifests = it }
+            .isSuccess
+        if (!skipDupRead) return
+        // Config written before this field existed: keep the default (on).
+        runCatching { input.readBoolean() }
+            .onSuccess { markDownloadedFiles = it }
     }
 
     private fun writeCategories(out: DataOutputStream, list: List<DownloadCategory>) {

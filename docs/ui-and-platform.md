@@ -30,3 +30,9 @@ under `HKEY_CURRENT_USER`.
 URL-scheme launch differs by platform: Windows/Linux start a second process and the URL arrives in `args` (handed to the
 running instance by `BrowserIntegration.acquire` -> `/show`); macOS activates the running app and delivers an Apple event,
 handled by the `setOpenURIHandler`/`AppReopenedListener` pair installed in `AppInstance.run`.
+
+`OriginMarker` marks each finished download as coming from the internet, from `DownloadManager.onDownloadSuccess`
+before the record turns FINISHED (setting `markDownloadedFiles`, on by default): the `Zone.Identifier` alternate data
+stream on Windows (java.io, not NIO), `com.apple.quarantine` via `/usr/bin/xattr` on macOS (NIO's
+`UserDefinedFileAttributeView` adds a `user.` prefix there, which Gatekeeper ignores), and `user.xdg.origin.url`/
+`user.xdg.referrer.url` on Linux. A failed mark is logged and never fails the download. Design: [QUARANTINE.md](../QUARANTINE.md).

@@ -29,6 +29,7 @@ class AdvancedConfigPanel : SettingsPanel() {
         columns = 10
     }
 
+    private val tglMarkDownloads = SettingsToggle()
     private val tglVirusScan = SettingsToggle()
     private val txtVirusScan = rounded(JTextField()).apply {
         putClientProperty(placeholder, I8N.text("MSG_AV_CMD"))
@@ -80,6 +81,7 @@ class AdvancedConfigPanel : SettingsPanel() {
         add(
             settingsSection(
                 I8N.text("SETTINGS_SEC_ANTIVIRUS"),
+                settingsRow(I8N.text("MSG_MARK_DOWNLOADS"), I8N.text("MSG_MARK_DOWNLOADS_SUB"), tglMarkDownloads),
                 settingsRow(I8N.text("MSG_SCAN"), I8N.text("MSG_SCAN_SUB"), tglVirusScan),
                 settingsFullRow(
                     null, null,
@@ -133,6 +135,7 @@ class AdvancedConfigPanel : SettingsPanel() {
         tglSkipDupManifests.isSelected = config.skipDuplicateManifests
         tglRunCmd.isSelected = config.runCommand
         txtCmd.text = config.customCommand
+        tglMarkDownloads.isSelected = config.markDownloadedFiles
         tglVirusScan.isSelected = config.runVirusScan
         txtVirusScan.text = config.virusScannerPath
         txtArgs.text = config.virusScannerArgs
@@ -154,6 +157,7 @@ class AdvancedConfigPanel : SettingsPanel() {
         config.skipDuplicateManifests = tglSkipDupManifests.isSelected
         config.runCommand = tglRunCmd.isSelected
         config.customCommand = txtCmd.text
+        config.markDownloadedFiles = tglMarkDownloads.isSelected
         config.runVirusScan = tglVirusScan.isSelected
         config.virusScannerPath = txtVirusScan.text
         config.virusScannerArgs = txtArgs.text

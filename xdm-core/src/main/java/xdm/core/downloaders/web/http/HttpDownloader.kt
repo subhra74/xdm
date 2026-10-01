@@ -128,6 +128,12 @@ class HttpDownloaderTask : ChunkController {
     private val progressTracker = ProgressTracker(singleFile = true)
     private val time = System.currentTimeMillis()
 
+    /** The error of the most recent failed chunk, reported if the download ends up failing. */
+    private val lastChunkError = AtomicReference<DownloadError?>(null)
+
+    /** Set once the failure has been reported, so chunks failing together report it once. */
+    private val failureReported = AtomicBoolean(false)
+
     override fun start() {
         if (!newDownload) {
             resume()
@@ -209,7 +215,11 @@ class HttpDownloaderTask : ChunkController {
     override fun onChunkFinished(id: Long) {
         if (!context.completed.get()) {
             context.write {
-                if (context.chunks.values.any { it.status.get() != ChunkStatus.Finished }) return
+                if (context.chunks.values.any { it.status.get() != ChunkStatus.Finished }) {
+                    // The last running chunk is done but others had failed: nothing will retry them.
+                    lastChunkError.get()?.let { if (isAllError()) reportFailure(it) }
+                    return
+                }
                 context.completed.set(true)
                 try {
                     Logger.info("XDM", "All chunks downloaded")
@@ -251,20 +261,24 @@ class HttpDownloaderTask : ChunkController {
     }
 
     override fun onChunkFailed(id: Long, error: DownloadError) {
-        if (isAllError()) {
-            Logger.error("XDM", "All chunks failed, stopping download - error: $error")
-            val finalError =
-                if (error == DownloadError.InvalidResponse && context.downloaded.get() > 0 && context.chunks.size > 2) {
-                    DownloadError.SessionExpired
-                } else {
-                    error
-                }
-            context.downloadHost.onDownloadFailed(context.id, finalError)
-            context.write {
-                saveState()
+        lastChunkError.set(error)
+        if (isAllError()) reportFailure(error)
+    }
+
+    private fun reportFailure(error: DownloadError) {
+        if (!failureReported.compareAndSet(false, true)) return
+        Logger.error("XDM", "No chunk left downloading, stopping download - error: $error")
+        val finalError =
+            if (error == DownloadError.InvalidResponse && context.downloaded.get() > 0 && context.chunks.size > 2) {
+                DownloadError.SessionExpired
+            } else {
+                error
             }
-            context.httpClient.close()
+        context.downloadHost.onDownloadFailed(context.id, finalError)
+        context.write {
+            saveState()
         }
+        context.httpClient.close()
     }
 
     override fun onChunkConnected(id: Long, data: ChunkConfirmedData?) {
@@ -437,13 +451,18 @@ class HttpDownloaderTask : ChunkController {
         return false
     }
 
+    /**
+     * True once the download cannot make progress: no chunk is still downloading (or about to) and at
+     * least one failed. Finished chunks never restart a failed one (only a connecting chunk does,
+     * through [splitChuck]), so a mix of Finished and Failed is as final as all Failed.
+     */
     private fun isAllError(): Boolean {
         if (context.stopFlag.get()) return false
         if (context.diskError.get()) return true
         context.read {
-            if (context.chunks.isEmpty()) return false
-            if (context.chunks.values.any { it.status.get() != ChunkStatus.Failed }) return false
-            return true
+            val statuses = context.chunks.values.map { it.status.get() }
+            if (statuses.any { it != ChunkStatus.Finished && it != ChunkStatus.Failed }) return false
+            return statuses.any { it == ChunkStatus.Failed }
         }
         return false
     }

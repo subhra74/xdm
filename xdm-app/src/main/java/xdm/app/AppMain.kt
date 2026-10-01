@@ -5,6 +5,7 @@ import com.formdev.flatlaf.themes.FlatMacLightLaf
 import xdm.app.utils.CdsJarPin
 import xdm.app.utils.JitOverride
 import xdm.core.downloaders.TaskInfoDB
+import xdm.core.util.FileUtils
 import xdm.core.util.Logger
 import java.awt.Insets
 import java.io.File
@@ -30,6 +31,8 @@ object AppMain {
         val tempDir = "$configDir${File.separatorChar}tmp"
 
         File(configDir).mkdirs()
+        // Holds cookies, captured request headers and logs: other users of the machine stay out.
+        FileUtils.restrictToOwner(File(configDir))
         Logger.init(File(configDir))
         CdsJarPin.repin()
         JitOverride.sync()

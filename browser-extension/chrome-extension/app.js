@@ -28,7 +28,21 @@ export default class App {
         this.logger.log("starting...");
         this.starAppConnector();
         this.register();
+        this.restoreUserDisabled();
         this.logger.log("started.");
+    }
+
+    // The popup toggle lives in session storage: the service worker is torn down after a short idle
+    // spell, and keeping it only in memory would quietly switch monitoring back on. Session storage
+    // still resets with the browser, as the toggle always has.
+    restoreUserDisabled() {
+        chrome.storage.session.get("userDisabled", stored => {
+            if (chrome.runtime.lastError || !stored) {
+                return;
+            }
+            this.userDisabled = stored.userDisabled === true;
+            this.updateActionIcon();
+        });
     }
 
     starAppConnector() {
@@ -39,9 +53,9 @@ export default class App {
         this.logger.log("message from XDM");
         this.logger.log(msg);
         this.appEnabled = msg.enabled === true;
-        this.fileExts = msg.fileExts;
-        this.blockedHosts = msg.blockedHosts;
-        this.videoList = msg.videoList;
+        this.fileExts = msg.fileExts || [];
+        this.blockedHosts = msg.blockedHosts || [];
+        this.videoList = msg.videoList || [];
         this.requestWatcher.updateConfig({
             mediaExts: msg.requestFileExts,
             blockedHosts: msg.blockedHosts,
@@ -357,6 +371,7 @@ export default class App {
         }
         else if (request.type === "cmd") {
             this.userDisabled = request.enabled === false;
+            chrome.storage.session.set({ userDisabled: this.userDisabled });
             this.logger.log("request.enabled:" + request.enabled);
             if (request.enabled && !this.connector.isConnected()) {
                 this.connector.launchApp();
@@ -412,16 +427,20 @@ export default class App {
     }
 
     attachContextMenu() {
-        chrome.contextMenus.create({
-            id: 'download-any-link',
-            title: "Download with XDM",
-            contexts: ["link", "video", "audio", "all"]
-        });
+        // Menu items outlive the service worker, so every restart would otherwise fail on a
+        // duplicate id. Start from a clean slate instead.
+        chrome.contextMenus.removeAll(() => {
+            chrome.contextMenus.create({
+                id: 'download-any-link',
+                title: "Download with XDM",
+                contexts: ["link", "video", "audio", "all"]
+            });
 
-        chrome.contextMenus.create({
-            id: 'download-image-link',
-            title: "Download Image with XDM",
-            contexts: ["image"]
+            chrome.contextMenus.create({
+                id: 'download-image-link',
+                title: "Download Image with XDM",
+                contexts: ["image"]
+            });
         });
 
         chrome.contextMenus.onClicked.addListener(this.onMenuClicked.bind(this));
