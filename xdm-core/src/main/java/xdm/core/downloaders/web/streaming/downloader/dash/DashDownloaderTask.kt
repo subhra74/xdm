@@ -90,7 +90,7 @@ class DashDownloaderTask : StreamingDownloaderTask {
         host: DownloadHost,
         configDir: String,
         config: CoreConfig
-    ) : super(makeContext(taskInfo, http, host, configDir), configDir, muxer, config)
+    ) : super(makeContext(taskInfo, http, host, configDir), configDir, muxer, config, taskInfo.maxPiece)
 
     override fun initDownload(): DownloadStatusInfo.InitInfo? {
         return DownloadStatusInfo.InitInfo(

@@ -185,6 +185,15 @@ class TestFileMove {
     }
 
     @Test
+    fun replaceExisting_overwritesAcrossVolumes() {
+        dst.writeText("stale")
+        assertNull(FileUtils.moveFile(src, dst, OtherVolume(), id = 7, replaceExisting = true))
+        assertTrue(content.contentEquals(dst.readBytes()))
+        assertFalse(src.exists())
+        assertEquals(emptyList<File>(), partFiles(), "no .part left behind")
+    }
+
+    @Test
     fun withoutReplaceExisting_refusesToOverwrite() {
         dst.writeText("mine")
         assertEquals(DownloadError.OutputWriteError, FileUtils.moveFile(src, dst, id = 7))

@@ -80,7 +80,7 @@ class HlsDownloaderTask : StreamingDownloaderTask {
         host: DownloadHost,
         configDir: String,
         config: CoreConfig
-    ) : super(makeContext(taskInfo, http, host, configDir), configDir, muxer, config)
+    ) : super(makeContext(taskInfo, http, host, configDir), configDir, muxer, config, taskInfo.maxPiece)
 
     private val keyCache = ConcurrentHashMap<String, ByteArray>()
     private val decryptBuffer = ByteArray(256 * 1024)

@@ -34,7 +34,10 @@ interface IDownloadManager {
     fun deleteDownload(id: Long, fromDisk: Boolean)
     fun deleteDownloads(ids: Collection<Long>, fromDisk: Boolean)
     fun startHttpDownload(task: HttpDownloadTaskInfo, runNow: Boolean = true)
-    fun addVideoDownload(videoId: Long, fileName: String, folder: String?, autoSelectFolder: Boolean)
+    /** [maxPiece] is the segment count picked in the dialog; null keeps the captured video's own. */
+    fun addVideoDownload(
+        videoId: Long, fileName: String, folder: String?, autoSelectFolder: Boolean, maxPiece: Int? = null
+    )
     fun startHlsDownload(task: HlsDownloadTaskInfo)
     fun startDashDownload(task: DashDownloadTaskInfo)
     fun updateDownloadInfo(id: Long, task: HttpDownloadTaskInfo)
@@ -768,7 +771,9 @@ class DownloadManager(
         }
     }
 
-    override fun addVideoDownload(videoId: Long, fileName: String, folder: String?, autoSelectFolder: Boolean) {
+    override fun addVideoDownload(
+        videoId: Long, fileName: String, folder: String?, autoSelectFolder: Boolean, maxPiece: Int?
+    ) {
         // Each download of a detected video is a new download: copy the tracker's entry with a fresh
         // id instead of reusing (and mutating) it, so downloading the same video twice cannot share
         // records, task info, state or temp files.
@@ -778,6 +783,7 @@ class DownloadManager(
                 source.copy(
                     id = CoreUtils.uniqueId(), fileName = fileName, autoCategorize = autoSelectFolder,
                     defaultDownloadFolder = folder ?: source.defaultDownloadFolder,
+                    maxPiece = maxPiece ?: source.maxPiece,
                 )
             )
             return
@@ -788,6 +794,7 @@ class DownloadManager(
                 source.copy(
                     id = CoreUtils.uniqueId(), fileName = fileName, autoCategorize = autoSelectFolder,
                     defaultDownloadFolder = folder ?: source.defaultDownloadFolder,
+                    maxPiece = maxPiece ?: source.maxPiece,
                 )
             )
             return
@@ -798,6 +805,7 @@ class DownloadManager(
                 source.copy(
                     id = CoreUtils.uniqueId(), fileName = fileName, autoCategorize = autoSelectFolder,
                     defaultDownloadFolder = folder ?: source.defaultDownloadFolder,
+                    maxPiece = maxPiece ?: source.maxPiece,
                 )
             )
         }

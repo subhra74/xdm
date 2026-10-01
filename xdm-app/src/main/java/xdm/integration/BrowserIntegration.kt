@@ -422,7 +422,7 @@ object BrowserIntegration {
             autoCategorize = rememberedAutoCategorize(),
             defaultDownloadFolder = rememberedBaseFolder(),
             userSelectedDownloadFolder = null,
-            maxPiece = 8,
+            maxPiece = AppContext.config.maxSegments,
             authInfo = null,
             knownFileSize = msg.fileSize ?: getContentLength(respHeaders),
             etag = getHeader("etag", respHeaders),

@@ -11,6 +11,7 @@ import java.awt.Dimension
 import java.awt.Font
 import java.awt.Graphics
 import java.awt.Graphics2D
+import java.awt.GridBagLayout
 import java.awt.GridLayout
 import java.awt.Rectangle
 import java.awt.RenderingHints
@@ -23,6 +24,7 @@ import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
+import javax.swing.JTextArea
 import javax.swing.JToggleButton
 import javax.swing.Scrollable
 import javax.swing.SwingConstants
@@ -129,7 +131,7 @@ internal fun settingsFullRow(title: String?, subtitle: String?, content: JCompon
             add(labelStack(title, subtitle))
             add(Box.createRigidArea(Dimension(0, 9)))
         } else if (subtitle != null) {
-            add(settingsLeftAligned(settingsHint(subtitle)))
+            add(settingsDescription(subtitle))
             add(Box.createRigidArea(Dimension(0, 9)))
         }
         content.alignmentX = Component.LEFT_ALIGNMENT
@@ -162,11 +164,41 @@ private fun labelStack(title: String, subtitle: String?): JComponent = JPanel().
     })
     if (subtitle != null) {
         add(Box.createRigidArea(Dimension(0, 3)))
-        add(JLabel(subtitle).apply {
-            alignmentX = Component.LEFT_ALIGNMENT
-            font = font.deriveFont(Font.PLAIN, 11.0f)
-            foreground = settingsMutedColor()
-        })
+        add(settingsDescription(subtitle))
+    }
+}
+
+/** Muted description text that wraps onto as many lines as its row's width needs. */
+internal fun settingsDescription(text: String): JComponent = WrappingText(text)
+
+/**
+ * Multi-line muted text. A [JLabel] cannot wrap, so a long description was cut off with "…" whenever
+ * the row also held a control. This asks for almost no width, so it never widens the card, and for
+ * exactly the height its current width needs. That height is only known once the layout has given it
+ * a width, so a width change that alters the line count triggers one more layout pass.
+ */
+private class WrappingText(text: String) : JTextArea(text) {
+    init {
+        lineWrap = true
+        wrapStyleWord = true
+        isEditable = false
+        isFocusable = false
+        isOpaque = false
+        highlighter = null
+        border = EmptyBorder(0, 0, 0, 0)
+        alignmentX = Component.LEFT_ALIGNMENT
+        font = UIManager.getFont("Label.font").deriveFont(Font.PLAIN, 11.0f)
+        foreground = settingsMutedColor()
+    }
+
+    override fun getPreferredSize(): Dimension = Dimension(1, super.getPreferredSize().height)
+    override fun getMinimumSize(): Dimension = preferredSize
+    override fun getMaximumSize(): Dimension = Dimension(Int.MAX_VALUE, preferredSize.height)
+
+    override fun setBounds(x: Int, y: Int, width: Int, height: Int) {
+        val widthChanged = width != this.width
+        super.setBounds(x, y, width, height)
+        if (widthChanged && preferredSize.height != height) SwingUtilities.invokeLater { revalidate() }
     }
 }
 
@@ -332,7 +364,9 @@ private class SettingsRow(left: JComponent, control: JComponent?) : JPanel(Borde
         border = EmptyBorder(11, 0, 11, 0)
         left.alignmentX = Component.LEFT_ALIGNMENT
         add(left, BorderLayout.CENTER)
-        if (control != null) add(control, BorderLayout.EAST)
+        // Centered rather than added directly: EAST stretches to the row's height, which a wrapped
+        // description can make taller than the control.
+        if (control != null) add(JPanel(GridBagLayout()).apply { isOpaque = false; add(control) }, BorderLayout.EAST)
     }
 
     override fun getMaximumSize(): Dimension = Dimension(Int.MAX_VALUE, preferredSize.height)

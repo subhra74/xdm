@@ -195,7 +195,7 @@ class BatchDownloadDialog(owner: Window?, urls: List<String>) : JDialog(owner) {
                     autoCategorize = auto,
                     defaultDownloadFolder = folder,
                     userSelectedDownloadFolder = null,
-                    maxPiece = 8,
+                    maxPiece = AppContext.config.maxSegments,
                     authInfo = null,
                     knownFileSize = null
                 )

@@ -53,7 +53,7 @@ class CategorySection {
         }
         val list = Box.createVerticalBox().apply {
             alignmentX = Component.LEFT_ALIGNMENT
-            add(settingsLeftAligned(settingsHint(I8N.text("CAT_DESC"))))
+            add(settingsDescription(I8N.text("CAT_DESC")))
             add(Box.createRigidArea(Dimension(0, 4)))
             add(rows)
             add(settingsLeftAligned(emptyHint))

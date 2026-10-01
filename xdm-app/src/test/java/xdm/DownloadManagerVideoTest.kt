@@ -91,6 +91,25 @@ class DownloadManagerVideoTest : DownloadManagerTestBase() {
     }
 
     @Test
+    fun segmentCountChosenInTheDialog_isKeptPerDownload() {
+        val http = httpTask().apply { fileName = "detected.mp4"; maxPiece = 8 }
+        val hls = hlsTask().apply { fileName = "detected.mp4"; maxPiece = 8 }
+        tracker.addVideoHttp(listOf(http to StreamingVideoDisplayInfo()))
+        tracker.addVideoHls(listOf(hls to StreamingVideoDisplayInfo()))
+
+        config.maxParallelDownloads = 5
+        dm.addVideoDownload(http.id, "a.mp4", dir.absolutePath, autoSelectFolder = false, maxPiece = 2)
+        dm.addVideoDownload(hls.id, "b.mp4", dir.absolutePath, autoSelectFolder = false, maxPiece = 16)
+        dm.addVideoDownload(hls.id, "c.mp4", dir.absolutePath, autoSelectFolder = false)
+        remember()
+
+        val ids = recordIds()
+        assertEquals(2, taskDB.getHttpTask(ids[0])!!.maxPiece)
+        assertEquals(16, taskDB.getHlsTask(ids[1])!!.maxPiece)
+        assertEquals(8, taskDB.getHlsTask(ids[2])!!.maxPiece, "no choice keeps the captured video's count")
+    }
+
+    @Test
     fun startWithIdThatAlreadyHasARecord_assignsNewId() {
         config.maxParallelDownloads = 5
         val task = httpTask()

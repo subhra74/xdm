@@ -26,9 +26,12 @@ abstract class StreamingDownloaderTask(
     protected val context: StreamingTaskContext,
     protected val configDir: String,
     private val muxer: Muxer,
-    private val config: CoreConfig
+    private val config: CoreConfig,
+    /** Media segments fetched at once: the download's own choice, or the global setting when unset. */
+    maxPiece: Int = 0,
 ) : DownloaderTask {
-    protected val executorService: ExecutorService = Executors.newFixedThreadPool(config.maxSegments)
+    protected val executorService: ExecutorService =
+        Executors.newFixedThreadPool(maxPiece.takeIf { it > 0 } ?: config.maxSegments)
     private val progressTracker = ProgressTracker(false)
     private val prgInfo = DownloadStatusInfo.ProgressInfo(id = context.id)
     private var lastUpdate: Long = 0

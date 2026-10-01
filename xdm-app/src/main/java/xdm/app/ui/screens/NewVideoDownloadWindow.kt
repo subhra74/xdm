@@ -35,6 +35,7 @@ class NewVideoDownloadWindow : JDialog() {
     private lateinit var btnDownload: JButton
     private lateinit var modelSaveIn: DefaultComboBoxModel<String>
     private lateinit var lblFileInfo: JLabel
+    private lateinit var cmbSegments: JComboBox<Int>
     private var originalFileName: String? = null
     private var videoId: Long = -1
 
@@ -155,7 +156,7 @@ class NewVideoDownloadWindow : JDialog() {
             alignmentX = Component.LEFT_ALIGNMENT
         }
 
-        val lblIgnore = JLabel(text("ND_IGNORE_URL")).apply {
+        val lblIgnore = JLabel(text("ND_IGNORE_PAGE")).apply {
             alignmentX = Component.LEFT_ALIGNMENT
             cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
             foreground = UIManager.getColor("ProgressBar.foreground")
@@ -208,8 +209,17 @@ class NewVideoDownloadWindow : JDialog() {
 //        val btnQueue = JButton(text("ND_QUEUE"))
 //        panel.add(btnQueue)
 
+        panel.add(JLabel(text("ND_SEGMENTS")))
+        panel.add(Box.createRigidArea(Dimension(10, 30)))
+
+        cmbSegments = JComboBox(arrayOf(1, 2, 4, 8, 16, 32, 64)).apply {
+            selectedItem = AppContext.config.maxSegments
+            maximumSize = preferredSize
+        }
+        panel.add(cmbSegments)
+
         panel.add(Box.createHorizontalGlue())
-        val rigidArea1 = Box.createRigidArea(Dimension(80, 20))
+        val rigidArea1 = Box.createRigidArea(Dimension(10, 20))
         panel.add(rigidArea1)
 
         val btnCancel = JButton(text("ND_CANCEL"))
@@ -253,7 +263,9 @@ class NewVideoDownloadWindow : JDialog() {
 
             val auto = isAutoCategorySelected(cmbSaveIn)
             rememberFolderChoice(cmbSaveIn)
-            AppContext.downloader.addVideoDownload(videoId, name, selectedBaseFolder(cmbSaveIn), auto)
+            AppContext.downloader.addVideoDownload(
+                videoId, name, selectedBaseFolder(cmbSaveIn), auto, cmbSegments.selectedItem as Int
+            )
         } finally {
             dispose()
         }
@@ -293,6 +305,7 @@ class NewVideoDownloadWindow : JDialog() {
 
     fun showWindow(vid: Long, fileName: String, fileSize: Long?, contentType: String?) {
         this.videoId = vid
+        cmbSegments.selectedItem = AppContext.config.maxSegments
         populateSaveInFolders(modelSaveIn, cmbSaveIn)
         txtFileName.text = FileUtils.sanitizeFileName(fileName)
         lblFileInfo.text = fileSize?.let { FormatHelper.formatSize(it.toDouble()) } ?: "---"
