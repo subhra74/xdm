@@ -26,6 +26,7 @@ import javax.swing.*
 import javax.swing.border.EmptyBorder
 import javax.swing.event.ChangeEvent
 import javax.swing.event.ListSelectionEvent
+import javax.swing.event.TableModelEvent
 import javax.swing.table.TableRowSorter
 
 class MainListView {
@@ -116,6 +117,16 @@ class MainListView {
                     { e: DbRecord? -> AppMenuHandler.deleteDownload(e, SwingUtilities.windowForComponent(jsp)) })
         }
 
+        // The hover editor keeps painting the record it was opened on. When rows are added, removed or
+        // re-sorted, JTable moves it to wherever its model index now points, so a deleted download stayed
+        // visible over the row that took its place. Drop it (added after JTable's own listener, so this
+        // runs first) and re-open it under the mouse once the table has caught up.
+        model.addTableModelListener { e: TableModelEvent ->
+            if (e.type == TableModelEvent.UPDATE && e.lastRow != Int.MAX_VALUE) return@addTableModelListener
+            resetEditor()
+            SwingUtilities.invokeLater { editRowUnderMouse() }
+        }
+
         val emptyLabel = JLabel(text("MSG_NO_DOWNLOAD"), SwingConstants.CENTER).apply {
             icon = createIcon(RemixIcon.SPARKLING_2_FILL, 96, UIManager.getColor("Table.background"))
             horizontalAlignment = SwingConstants.CENTER
@@ -130,6 +141,24 @@ class MainListView {
         cardPanel.add(emptyPanel, "EMPTY")
         cardPanel.add(jsp, "LIST")
         updateCard()
+    }
+
+    /** [MainListViewRow.cancelCellEditing] does not notify JTable, so the editor must be removed directly. */
+    private fun resetEditor() {
+        if (table.isEditing) {
+            table.removeEditor()
+        }
+        editingRow = -1
+    }
+
+    private fun editRowUnderMouse() {
+        if (table.isEditing) return
+        val p = table.getMousePosition(true) ?: return
+        val row = table.rowAtPoint(p)
+        if (row != -1) {
+            table.editCellAt(row, 0)
+            editingRow = row
+        }
     }
 
     private fun updateCard() {
@@ -156,15 +185,13 @@ class MainListView {
     }
 
     fun rowsRemoved() {
-        sorter.modelStructureChanged()
+        // Not sorter.modelStructureChanged(): that clears the sort keys and comparator, leaving the
+        // list in insertion order and every later sort() a no-op.
         model.listChanged()
         updateCard()
     }
 
     fun rowAdded(index: Int) {
-        if (table.isEditing) {
-            table.cellEditor.cancelCellEditing()
-        }
         model.fireTableRowsInserted(index, index)
         updateCard()
     }

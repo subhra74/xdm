@@ -1,6 +1,7 @@
 package xdm.core.downloaders.web
 
 import xdm.core.downloaders.web.http.Chunk
+import xdm.core.downloaders.web.http.ChunkStatus
 import xdm.core.downloaders.web.streaming.downloader.StreamingChunk
 import xdm.core.util.FormatHelper.getEtaAsSec
 import java.util.*
@@ -26,8 +27,12 @@ class ProgressTracker(val singleFile: Boolean) {
     private val segments = ArrayList<SegmentProgress>()
     private val sortedSegments = sortedSetOf(offsetComparator)
 
+    /**
+     * A snapshot for the progress window, which paints it on the EDT while the download threads keep
+     * updating the live segments under this tracker's lock.
+     */
     val segmentData: Collection<SegmentProgress>
-        get() = if (singleFile) sortedSegments else segments
+        @Synchronized get() = (if (singleFile) sortedSegments else segments).map { it.copy() }
 
     private fun update(
         ticks: Long,
@@ -131,23 +136,29 @@ class ProgressTracker(val singleFile: Boolean) {
         }
     }
 
+    /**
+     * Streaming chunks are separate files whose sizes are mostly unknown up front, so each one gets an
+     * equal slot of [STREAM_SLOT] units on the bar, filled by the fraction of it downloaded.
+     */
     private fun updateChunkProgressData(chunks: List<StreamingChunk>) {
-        if (segments.size < chunks.size) {
-            for (n in 0 until chunks.size - segments.size) {
-                segments.add(SegmentProgress())
-            }
+        while (segments.size < chunks.size) {
+            segments.add(SegmentProgress())
         }
         for ((index, chunk) in chunks.withIndex()) {
             val len = chunk.length.get()
-            val chunkPercent = if (len > 0) {
-                (chunk.downloaded.get() / len) / chunks.size
-            } else 0
+            val fraction = when {
+                chunk.status.get() == ChunkStatus.Finished -> 1.0
+                len > 0 -> (chunk.downloaded.get().toDouble() / len).coerceIn(0.0, 1.0)
+                else -> 0.0
+            }
             val s = segments[index]
-            s.length = 100
-            s.start = index * 10L
-            s.downloaded = chunkPercent
-            segments[index] = s
+            s.start = index * STREAM_SLOT
+            s.length = STREAM_SLOT
+            s.downloaded = (fraction * STREAM_SLOT).toLong()
         }
     }
 
+    private companion object {
+        const val STREAM_SLOT = 1000L
+    }
 }

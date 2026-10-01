@@ -222,7 +222,9 @@ class HttpDownloaderTask : ChunkController {
                     val now = System.currentTimeMillis()
                     when (res) {
                         is CommitResult.Failed -> {
-                            if (context.stopFlag.get()) return
+                            // A cancelled publish means a stop is on its way (waiting for this lock),
+                            // and it reports the pause; this is not a disk error.
+                            if (context.stopFlag.get() || res.error == DownloadError.Cancelled) return
                             context.diskError.set(true)
                             onChunkFailed(id, res.error)
                         }
@@ -505,7 +507,7 @@ class HttpDownloaderTask : ChunkController {
             Logger.info("XDM", "Move file success: - $res")
             when (res) {
                 is CommitResult.Failed -> {
-                    if (context.stopFlag.get()) return
+                    if (context.stopFlag.get() || res.error == DownloadError.Cancelled) return
                     context.diskError.set(true)
                     saveState()
                     context.downloadHost.onDownloadFailed(context.id, res.error)

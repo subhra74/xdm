@@ -4,8 +4,12 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import xdm.app.DbRecord
+import xdm.app.RecordStatus
 import xdm.core.downloaders.CommitResult
+import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.DownloadType
+import xdm.core.util.MovePhase
 import java.io.File
 
 /**
@@ -95,6 +99,42 @@ class DownloadManagerPublishTest : DownloadManagerTestBase() {
 
         val result = commit(task.id, tmp, DownloadType.Http) as CommitResult.Success
         assertEquals("file.bin", result.fileName)
+        assertEquals("downloaded", File(out, "file.bin").readText())
+    }
+
+    private fun publishingRecord(id: Long, phase: MovePhase) = appDB.addActive(
+        DbRecord(
+            id = id, size = 0, downloaded = 0, progress = 0, date = 0L, fileName = "file.bin",
+            eta = 0, speed = 0f, status = RecordStatus.PUBLISHING, selected = false,
+            downloadType = DownloadType.Http, movePhase = phase,
+        )
+    )
+
+    @Test
+    fun pauseWhileCopying_cancelsThePublish() {
+        val out = File(dir, "out")
+        val task = httpTask().copy(defaultDownloadFolder = out.absolutePath, fileName = "file.bin")
+        taskDB.saveHttpTask(task)
+        publishingRecord(task.id, MovePhase.COPYING)
+        val tmp = File(dir, "src.tmp").apply { writeText("downloaded") }
+
+        dm.stopDownload(task.id)
+        assertEquals(CommitResult.Failed(DownloadError.Cancelled), commit(task.id, tmp, DownloadType.Http))
+        assertTrue(tmp.exists(), "source kept so resume can republish it")
+        assertFalse(File(out, "file.bin").exists(), "nothing published")
+    }
+
+    @Test
+    fun pauseWhileFinalizing_isRefused() {
+        val out = File(dir, "out")
+        val task = httpTask().copy(defaultDownloadFolder = out.absolutePath, fileName = "file.bin")
+        taskDB.saveHttpTask(task)
+        publishingRecord(task.id, MovePhase.FINALIZING)
+        val tmp = File(dir, "src.tmp").apply { writeText("downloaded") }
+
+        dm.stopDownload(task.id)
+        assertEquals(RecordStatus.PUBLISHING, appDB.getById(task.id)!!.status, "the row is not paused")
+        assertTrue(commit(task.id, tmp, DownloadType.Http) is CommitResult.Success, "the move is not cancelled")
         assertEquals("downloaded", File(out, "file.bin").readText())
     }
 }

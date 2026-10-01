@@ -156,6 +156,10 @@ object FileUtils {
      * a cancelled copy leaves [src] intact and returns [DownloadError.Cancelled]. It is not called
      * for the rename path, which moves no bytes.
      *
+     * [phase] is told when each slow step starts (see [MovePhase]) and may return false to cancel
+     * before that step runs, with the same result as a cancelled copy. [MovePhase.FINALIZING] is the
+     * last point a cross-volume move can be cancelled; once it is accepted the move runs to the end.
+     *
      * The scratch file is named from [id] rather than from [dst], so two downloads resolving to the
      * same destination name cannot collide on it.
      *
@@ -168,6 +172,7 @@ object FileUtils {
         ops: MoveOps = MoveOps.Default,
         id: Long = 0,
         replaceExisting: Boolean = false,
+        phase: ((MovePhase) -> Boolean)? = null,
         progress: ((Long) -> Boolean)? = null,
     ): DownloadError? {
         if (!src.isFile) {
@@ -178,6 +183,7 @@ object FileUtils {
             Logger.error("XDM", "Move failed, destination exists: $dst")
             return DownloadError.OutputWriteError
         }
+        if (phase != null && !phase(MovePhase.PREPARING)) return DownloadError.Cancelled
         try {
             ops.force(src.toPath())
         } catch (e: Exception) {
@@ -200,9 +206,12 @@ object FileUtils {
             Logger.error("XDM", "Not enough space in $folder for ${src.length()} bytes")
             return DownloadError.DiskSpaceError
         }
+        if (phase != null && !phase(MovePhase.COPYING)) return DownloadError.Cancelled
         val part = File(folder, "${dst.name}.$id.part")
         return try {
             ops.copy(src.toPath(), part.toPath(), progress)
+            if (phase != null && !phase(MovePhase.FINALIZING)) throw CopyCancelledException()
+            ops.force(part.toPath())
             if (dst.exists() && !replaceExisting) throw FileAlreadyExistsException(dst.path)
             ops.atomicMove(part.toPath(), dst.toPath(), replaceExisting)
             syncDirectory(folder.toPath(), ops)
@@ -257,14 +266,27 @@ object FileUtils {
 /** Thrown by [MoveOps.copy] when the progress callback asks to stop. */
 class CopyCancelledException : IOException("Copy cancelled")
 
+/** The slow steps of [FileUtils.moveFile], in order. A same-volume move only goes through [PREPARING]. */
+enum class MovePhase {
+    /** Flushing the finished file to disk; cannot be interrupted, but a cancel is honoured right after. */
+    PREPARING,
+
+    /** Copying to the other volume, reported through the progress callback; cancellable throughout. */
+    COPYING,
+
+    /** Flushing the copy, renaming it into place and deleting the source. Not cancellable. */
+    FINALIZING,
+}
+
 /** File-system operations used by [FileUtils.moveFile]; replaceable in tests. */
 interface MoveOps {
     /** Atomic rename; throws [java.nio.file.AtomicMoveNotSupportedException] across file systems. */
     fun atomicMove(src: Path, dst: Path, replaceExisting: Boolean = false)
 
     /**
-     * Copies [src] to [dst] and flushes it to stable storage before returning. [progress] receives
-     * the running byte count and may return false to abort with [CopyCancelledException].
+     * Copies [src] to [dst]. [progress] receives the running byte count and may return false to abort
+     * with [CopyCancelledException]. Does not flush: [FileUtils.moveFile] forces the copy itself, so it
+     * can report that step separately.
      */
     fun copy(src: Path, dst: Path, progress: ((Long) -> Boolean)? = null)
     fun usableSpace(folder: File): Long
@@ -300,10 +322,10 @@ interface MoveOps {
         }
 
         /**
-         * Hand-rolled rather than [Files.copy] so the copy can report progress, be cancelled, and —
-         * the part that matters for correctness — be forced to disk before it is renamed into place.
-         * Without the force, a power loss can publish a truncated file under the real name, which is
-         * worse than failing outright because the user believes the download succeeded.
+         * Hand-rolled rather than [Files.copy] so the copy can report progress and be cancelled. The
+         * caller forces the result to disk before renaming it into place: without that, a power loss
+         * can publish a truncated file under the real name, which is worse than failing outright
+         * because the user believes the download succeeded.
          */
         override fun copy(src: Path, dst: Path, progress: ((Long) -> Boolean)?) {
             java.io.FileInputStream(src.toFile()).use { input ->
@@ -318,7 +340,6 @@ interface MoveOps {
                         if (progress != null && !progress(copied)) throw CopyCancelledException()
                     }
                     output.flush()
-                    output.fd.sync()
                 }
             }
         }

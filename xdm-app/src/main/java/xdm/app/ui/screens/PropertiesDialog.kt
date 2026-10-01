@@ -16,6 +16,7 @@ import xdm.core.downloaders.DownloadType
 import xdm.core.network.http.HeaderMap
 import xdm.core.util.FormatHelper
 import xdm.core.util.Logger
+import xdm.core.util.MovePhase
 import java.awt.BorderLayout
 import java.awt.Cursor
 import java.awt.Dimension
@@ -377,6 +378,14 @@ class PropertiesDialog(private val owner: Window?, ent: DbRecord) : JDialog(owne
             return if (columnIndex == 0) name else value
         }
     }
+}
+
+/** What a publish in [phase] shows; only the copy has a meaningful percentage. */
+fun publishText(phase: MovePhase?, progress: Int): String = when (phase) {
+    MovePhase.PREPARING -> text("STAT_PREPARING_MOVE")
+    MovePhase.FINALIZING -> text("STAT_FINALIZING")
+    MovePhase.COPYING, null ->
+        if (progress > 0) "${text("STAT_PUBLISHING")} $progress%" else text("STAT_PUBLISHING")
 }
 
 /** The status as the download list words it. */

@@ -15,10 +15,12 @@ import java.awt.Insets
 import java.awt.event.ActionEvent
 import java.awt.event.ActionListener
 import javax.swing.Box
+import javax.swing.ButtonGroup
 import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JMenuItem
 import javax.swing.JPopupMenu
+import javax.swing.JRadioButtonMenuItem
 import javax.swing.JTextField
 import javax.swing.JToolBar
 import javax.swing.SwingUtilities
@@ -143,15 +145,31 @@ class AppToolBar(
     private fun createSortMenu(): JPopupMenu {
         val a = createSortMenuListener()
         val ctx = JPopupMenu()
-        mSortNameAsc = addMenuItem("SORT_NAME_ASC", ctx, a)
-        mSortNameDesc = addMenuItem("SORT_NAME_DESC", ctx, a)
+        val group = ButtonGroup()
+        mSortNameAsc = addSortMenuItem("SORT_NAME_ASC", SortKey.NAME, true, ctx, group, a)
+        mSortNameDesc = addSortMenuItem("SORT_NAME_DESC", SortKey.NAME, false, ctx, group, a)
         ctx.addSeparator()
-        mSortSizeAsc = addMenuItem("SORT_SIZE_ASC", ctx, a)
-        mSortSizeDesc = addMenuItem("SORT_SIZE_DESC", ctx, a)
+        mSortSizeAsc = addSortMenuItem("SORT_SIZE_ASC", SortKey.SIZE, true, ctx, group, a)
+        mSortSizeDesc = addSortMenuItem("SORT_SIZE_DESC", SortKey.SIZE, false, ctx, group, a)
         ctx.addSeparator()
-        mSortDateAsc = addMenuItem("SORT_DATE_ASC", ctx, a)
-        mSortDateDesc = addMenuItem("SORT_DATE_DESC", ctx, a)
+        mSortDateAsc = addSortMenuItem("SORT_DATE_ASC", SortKey.DATE, true, ctx, group, a)
+        mSortDateDesc = addSortMenuItem("SORT_DATE_DESC", SortKey.DATE, false, ctx, group, a)
         return ctx
+    }
+
+    /** A radio item checked when it is the saved sort order; the [group] moves the check on click. */
+    private fun addSortMenuItem(
+        id: String, key: SortKey, ascending: Boolean, menu: JComponent, group: ButtonGroup, a: ActionListener
+    ): JMenuItem {
+        val config = AppContext.config
+        val mItem = JRadioButtonMenuItem(text(id)).apply {
+            name = id
+            isSelected = config.sortKey == key && config.sortAscending == ascending
+            addActionListener(a)
+        }
+        group.add(mItem)
+        menu.add(mItem)
+        return mItem
     }
 
     private fun createSortMenuListener(): ActionListener {

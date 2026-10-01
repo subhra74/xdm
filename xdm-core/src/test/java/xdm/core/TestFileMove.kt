@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import xdm.core.downloaders.DownloadError
 import xdm.core.util.FileUtils
+import xdm.core.util.MovePhase
 import xdm.core.util.MoveOps
 import xdm.core.util.PlatformUtils
 import java.io.File
@@ -115,6 +116,64 @@ class TestFileMove {
         var called = false
         assertNull(FileUtils.moveFile(src, dst, id = 7) { called = true; true })
         assertFalse(called, "a rename moves no bytes, so there is nothing to report")
+    }
+
+    @Test
+    fun crossVolume_reportsEachPhaseBeforeItsWork() {
+        val calls = mutableListOf<String>()
+        val recording = object : OtherVolume() {
+            override fun force(file: Path) {
+                calls.add("force ${file.fileName}")
+                super.force(file)
+            }
+
+            override fun copy(src: Path, dst: Path, progress: ((Long) -> Boolean)?) {
+                calls.add("copy")
+                super.copy(src, dst, progress)
+            }
+        }
+        assertNull(FileUtils.moveFile(src, dst, recording, id = 7, phase = { calls.add("phase $it"); true }))
+        assertEquals(
+            listOf(
+                "phase PREPARING", "force video.part",
+                "phase COPYING", "copy",
+                "phase FINALIZING", "force video.mp4.7.part",
+            ),
+            calls,
+            "the copy is flushed only after FINALIZING is announced",
+        )
+        assertTrue(content.contentEquals(dst.readBytes()))
+    }
+
+    @Test
+    fun sameVolume_reportsOnlyPreparing() {
+        val phases = mutableListOf<MovePhase>()
+        assertNull(FileUtils.moveFile(src, dst, id = 7, phase = { phases.add(it); true }))
+        assertEquals(listOf(MovePhase.PREPARING), phases)
+    }
+
+    @Test
+    fun cancelledWhilePreparing_touchesNothing() {
+        var flushed = false
+        val recording = object : OtherVolume() {
+            override fun force(file: Path) {
+                flushed = true
+            }
+        }
+        val error = FileUtils.moveFile(src, dst, recording, id = 7, phase = { it != MovePhase.PREPARING })
+        assertEquals(DownloadError.Cancelled, error)
+        assertFalse(flushed, "a cancel before the flush skips it")
+        assertTrue(src.exists())
+        assertFalse(dst.exists())
+    }
+
+    @Test
+    fun cancelledAtFinalizing_keepsSourceAndRemovesCopy() {
+        val error = FileUtils.moveFile(src, dst, OtherVolume(), id = 7, phase = { it != MovePhase.FINALIZING })
+        assertEquals(DownloadError.Cancelled, error)
+        assertTrue(content.contentEquals(src.readBytes()), "source must survive so the publish can be retried")
+        assertFalse(dst.exists(), "nothing under the real name")
+        assertEquals(emptyList<File>(), partFiles(), "the finished copy is discarded")
     }
 
     @Test

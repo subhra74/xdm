@@ -233,7 +233,8 @@ abstract class StreamingDownloaderTask(
         Logger.info("Committing to final file")
         when (val res = context.downloadHost.commitOutputFile(context.id, tmpFile.absolutePath, downloadType())) {
             is CommitResult.Failed -> {
-                if (context.stopFlag.get()) return
+                // Cancelled only by a stop, which reports the pause itself.
+                if (context.stopFlag.get() || res.error == DownloadError.Cancelled) return
                 Logger.info("Committing to final file - Failed!!")
                 context.diskError.set(true)
                 saveContext()
@@ -359,6 +360,7 @@ abstract class StreamingDownloaderTask(
                 this.downloaded = progressTracker.totalDownloadedBytes
                 this.eta = progressTracker.eta
                 this.speed = progressTracker.downloadSpeed
+                this.segments = progressTracker.segmentData
             }
             context.downloaded.addAndGet(downloaded)
             if (update) {

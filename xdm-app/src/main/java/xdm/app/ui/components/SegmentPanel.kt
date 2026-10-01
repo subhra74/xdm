@@ -47,19 +47,22 @@ class SegmentPanel : JComponent() {
         try {
 //            g2.paint = Color.GRAY
             g2.fillRect(0, 0, getWidth(), getHeight())
-            if (segDet.isEmpty() || totalSize < 0) {
+            if (segDet.isEmpty() || totalSize <= 0) {
                 return
             }
 
             g2.paint = UIManager.getColor("ProgressBar.foreground")
 
-            val r = getWidth().toFloat() / totalSize
+            // Pixel edges are rounded from absolute offsets so adjacent filled segments meet without
+            // gaps; an untouched segment draws nothing (a streaming download has hundreds of them,
+            // and a 1px minimum each would paint the bar full before anything is downloaded).
+            val r = getWidth().toDouble() / totalSize
             for (info in segDet) {
-                val start = (info.start * r).toInt()
-                val length = (info.length * r).toInt()
-                var downloaded = (info.downloaded * r).toInt()
-                if (downloaded > length) downloaded = length
-                g2.fillRect(start, 0, downloaded + 1, getHeight())
+                val downloaded = info.downloaded.coerceAtMost(info.length)
+                if (downloaded <= 0) continue
+                val x0 = (info.start * r).toInt()
+                val x1 = Math.ceil((info.start + downloaded) * r).toInt()
+                g2.fillRect(x0, 0, maxOf(1, x1 - x0), getHeight())
             }
         } finally {
             g2.clip = originalClip

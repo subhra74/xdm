@@ -10,6 +10,7 @@ import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.web.SegmentProgress
 import xdm.core.util.FormatHelper.formatSize
 import xdm.core.util.FormatHelper.toLongEta
+import xdm.core.util.MovePhase
 import java.awt.Color
 import java.awt.Dimension
 import java.awt.GridBagConstraints
@@ -46,20 +47,25 @@ class ProgressWindow(val id: Long) : JFrame() {
         lblStat3.text = "<html><body style='width:300px'>$escaped</body></html>"
         lblStat3.toolTipText = message
         btnPauseResume.text = text("LBL_CLOSE")
+        // It may have been disabled while finalizing, and Close must always work.
+        btnPauseResume.isEnabled = true
         btnHide.isVisible = false
     }
 
     /**
-     * The publish phase: the file is complete and is being copied into the destination folder.
+     * The publish phase: the file is complete and is being moved into the destination folder.
      * Download progress events have stopped by now, so this window is driven separately or it
      * would sit frozen at 100%. Speed and ETA are blank because neither applies to a local copy.
+     * Pause is disabled while finalizing, which cannot be undone (see DownloadManager.stopDownload).
      */
-    fun showPublishing(prg: Int) {
+    fun showPublishing(phase: MovePhase, prg: Int) {
+        val status = publishText(phase, prg)
         lblStat.text = text("STAT_PUBLISHING")
-        title = "[ $prg% ] " + text("STAT_PUBLISHING")
-        lblStat1.text = text("STAT_PUBLISHING") + " " + prg + "%"
+        title = "[ $prg% ] $status"
+        lblStat1.text = status
         lblStat3.text = ""
         lblStat4.text = ""
+        btnPauseResume.isEnabled = phase != MovePhase.FINALIZING
         this.prg.value = prg
         windowProgressTaskbar?.setWindowProgressValue(this, prg)
     }
@@ -277,6 +283,7 @@ class ProgressWindow(val id: Long) : JFrame() {
             DownloadError.TlsError -> text("ERR_TLS")
             DownloadError.DecryptionError -> text("ERR_DECRYPT")
             DownloadError.OutputWriteError -> text("ERR_OUTPUT_WRITE")
+            DownloadError.MuxError -> text("ERR_MUX")
             else -> text("ERR_INTERNAL")
         }
     }

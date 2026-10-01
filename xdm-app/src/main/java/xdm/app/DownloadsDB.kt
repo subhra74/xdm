@@ -3,6 +3,7 @@ package xdm.app
 import xdm.core.downloaders.DownloadType
 import xdm.core.util.AtomicIO
 import xdm.core.util.Logger
+import xdm.core.util.MovePhase
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.util.Collections
@@ -17,9 +18,10 @@ enum class RecordStatus {
     ASSEMBLING,
 
     /**
-     * The file is complete and is being moved into the destination folder. Only a cross-volume
-     * publish stays here long enough to be seen; a same-volume one is a rename and passes through
-     * instantly. Cancellable — the bytes stay in temp and resuming republishes them.
+     * The file is complete and is being moved into the destination folder; [DbRecord.movePhase] says
+     * which step. A same-volume publish only flushes and renames, so it is brief; a cross-volume one
+     * also copies. Cancellable until [MovePhase.FINALIZING]: the bytes stay in temp and resuming
+     * republishes them.
      */
     PUBLISHING
 }
@@ -36,6 +38,8 @@ data class DbRecord(
     var selected: Boolean,
     var status: RecordStatus,
     val downloadType: DownloadType,
+    /** The publish step while [status] is [RecordStatus.PUBLISHING]; meaningless otherwise. Not persisted. */
+    var movePhase: MovePhase? = null,
 )
 
 class AppDB(private val configDir: String) {

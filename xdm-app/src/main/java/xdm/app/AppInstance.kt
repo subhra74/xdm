@@ -22,6 +22,7 @@ import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.downloaders.web.SegmentProgress
 import xdm.core.util.Logger
+import xdm.core.util.MovePhase
 import java.awt.Desktop
 import java.awt.desktop.AppReopenedListener
 import java.awt.event.WindowAdapter
@@ -66,7 +67,7 @@ interface IAppInstance {
     fun showProgressError(id: Long, error: DownloadError)
 
     /** Drives the progress window through the publish phase, where download events have stopped. */
-    fun updatePublishProgress(id: Long, prg: Int)
+    fun updatePublishProgress(id: Long, phase: MovePhase, prg: Int)
 
     /** Advisory: the temp volume looks too small for a download that is starting. */
     fun showTempSpaceWarning(tempFolder: String, needed: Long, free: Long)
@@ -276,8 +277,8 @@ class AppInstance : IAppInstance {
         runOnUIThread { prgWndMap[id]?.updateProgress(fileName, downloaded, size, speed, eta, prg, segData) }
     }
 
-    override fun updatePublishProgress(id: Long, prg: Int) {
-        runOnUIThread { prgWndMap[id]?.showPublishing(prg) }
+    override fun updatePublishProgress(id: Long, phase: MovePhase, prg: Int) {
+        runOnUIThread { prgWndMap[id]?.showPublishing(phase, prg) }
     }
 
     override fun showTempSpaceWarning(tempFolder: String, needed: Long, free: Long) {

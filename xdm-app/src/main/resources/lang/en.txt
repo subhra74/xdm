@@ -59,6 +59,8 @@ STAT_FINISHED=Finished
 STAT_DOWNLOADING=Downloading
 STAT_ASSEMBLING=Assembling
 STAT_PUBLISHING=Moving to folder
+STAT_PREPARING_MOVE=Preparing to move
+STAT_FINALIZING=Finalizing
 MSG_DIFFERENT_VOLUME=On a different drive from the temporary folder, so finished downloads are copied there instead of moved.
 TITLE_TEMP_SPACE_LOW=Low disk space
 MSG_TEMP_SPACE_LOW=The temporary folder %folder% has only %free% free, but this download needs about %needed%. Downloads are written there first and then moved to their destination. You can change the temporary folder in Settings.
@@ -95,6 +97,7 @@ ERR_DISK_FAILED=Disk error.
 ERR_TLS=TLS connection error.
 ERR_DECRYPT=Unable to decrypt the video. The encryption key is missing or invalid.
 ERR_OUTPUT_WRITE=Unable to save the file to the destination folder.
+ERR_MUX=Unable to combine the downloaded video segments into the output file. The stream format may be unsupported or the downloaded data may be corrupt.
 LBL_MENU=Menu
 
 TITLE_SETTINGS=Settings

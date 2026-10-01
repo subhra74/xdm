@@ -18,6 +18,7 @@ import xdm.core.util.AtomicIO
 import xdm.core.util.CoreUtils
 import xdm.core.util.FileUtils
 import xdm.core.util.Logger
+import xdm.core.util.MovePhase
 import xdm.core.util.getFileName
 import xdm.core.util.getHeader
 import java.awt.Desktop
@@ -332,15 +333,14 @@ class DownloadManager(
          */
         private fun publish(id: Long, src: File, dst: File, replace: Boolean): DownloadError? {
             val total = src.length().coerceAtLeast(1)
-            var announced = false
-            return FileUtils.moveFile(src, dst, id = id, replaceExisting = replace) { copied ->
-                if (!announced) {
-                    announced = true
-                    setPublishing(id)
-                }
-                updatePublishProgress(id, (copied * 100 / total).toInt())
-                !publishCancelled.contains(id)
-            }
+            return FileUtils.moveFile(
+                src, dst, id = id, replaceExisting = replace,
+                progress = { copied ->
+                    updatePublishProgress(id, (copied * 100 / total).toInt())
+                    !publishCancelled.contains(id)
+                },
+                phase = { enterPublishPhase(id, it) },
+            )
         }
 
         override fun commitOutputFile(id: Long, tmpFilePath: String, downloadType: DownloadType): CommitResult {
@@ -425,23 +425,39 @@ class DownloadManager(
         AppContext.app.showTempSpaceWarning(AppContext.config.tempFolder, size, free)
     }
 
-    /** Moves the row into the publishing phase the first time bytes are actually copied. */
-    private fun setPublishing(id: Long) {
-        synchronized(appDB) {
+    /**
+     * Shows that the publish of [id] entered [phase], and returns whether it may go on. The cancel check
+     * and the switch to [MovePhase.FINALIZING] share the [appDB] lock with [stopDownload]'s check, so a
+     * pause either cancels the move or is refused: it can never land after the point of no return, where
+     * the paused row would hide a file that was published anyway.
+     */
+    private fun enterPublishPhase(id: Long, phase: MovePhase): Boolean {
+        val progress = if (phase == MovePhase.FINALIZING) 100 else 0
+        val shown = synchronized(appDB) {
+            if (publishCancelled.contains(id)) return false
+            // A stopped session has already reported its pause; do not flip its row back.
+            if (!activeSessions.containsKey(id)) return@synchronized false
             appDB.getById(id)?.let {
                 it.status = RecordStatus.PUBLISHING
-                it.progress = 0
-                appDB.saveActiveRecords()
-            }
+                it.movePhase = phase
+                it.progress = progress
+                it.speed = 0.0f
+                it.eta = 0
+                if (phase == MovePhase.PREPARING) appDB.saveActiveRecords()
+                true
+            } ?: false
         }
-        AppContext.app.updateDownloadInView(id)
-        AppContext.app.updatePublishProgress(id, 0)
+        if (shown) {
+            AppContext.app.updateDownloadInView(id)
+            AppContext.app.updatePublishProgress(id, phase, progress)
+        }
+        return true
     }
 
     private fun updatePublishProgress(id: Long, percent: Int) {
         val changed = synchronized(appDB) {
             appDB.getById(id)?.let {
-                if (it.progress == percent) false else {
+                if (it.status != RecordStatus.PUBLISHING || it.progress == percent) false else {
                     it.progress = percent
                     true
                 }
@@ -449,7 +465,7 @@ class DownloadManager(
         }
         if (changed) {
             AppContext.app.updateDownloadInView(id)
-            AppContext.app.updatePublishProgress(id, percent)
+            AppContext.app.updatePublishProgress(id, MovePhase.COPYING, percent)
         }
     }
 
@@ -472,8 +488,18 @@ class DownloadManager(
     }
 
     override fun stopDownload(id: Long) {
-        // Also aborts a publish in progress; the bytes stay in temp so resume republishes them.
-        publishCancelled.add(id)
+        // Also aborts a publish in progress; the bytes stay in temp so resume republishes them. Once the
+        // publish is finalizing it can no longer be undone, so the stop is refused and it finishes.
+        val finalizing = synchronized(appDB) {
+            val rec = appDB.getById(id)
+            (rec?.status == RecordStatus.PUBLISHING && rec.movePhase == MovePhase.FINALIZING).also {
+                if (!it) publishCancelled.add(id)
+            }
+        }
+        if (finalizing) {
+            Logger.info("XDM", "Download $id is finalizing its move and cannot be paused")
+            return
+        }
         activeSessions[id]?.let {
             it.stop()
             return
