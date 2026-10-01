@@ -346,13 +346,16 @@ class NewDownloadWindow : JDialog() {
         ) ?: return true
         val rec = match.record
 
-        val message = buildString {
-            append(text(if (match.kind == DuplicateKind.SAME_URL) "MSG_DUP_SAME" else "MSG_DUP_LIKELY"))
-            append("\n\n").append(rec.fileName)
-            if (rec.size > 0) append("  ·  ").append(FormatHelper.formatSize(rec.size.toDouble()))
-            append("  ·  ").append(statusText(rec.status))
-            append("\n\n").append(text("MSG_DUP_ASK"))
+        val details = buildList {
+            add(text("PROP_NAME") to rec.fileName)
+            if (rec.size > 0) add(text("PROP_SIZE") to FormatHelper.formatSize(rec.size.toDouble()))
+            add(text("PROP_STATUS") to statusText(rec.status))
         }
+        val message = arrayOf(
+            text(if (match.kind == DuplicateKind.SAME_URL) "MSG_DUP_SAME" else "MSG_DUP_LIKELY"),
+            duplicateDetailsPanel(details),
+            text("MSG_DUP_ASK")
+        )
         val again = text("DUP_DOWNLOAD_AGAIN")
         val existing = when (rec.status) {
             RecordStatus.FINISHED -> text("CTX_OPEN_FOLDER")
@@ -382,6 +385,43 @@ class NewDownloadWindow : JDialog() {
             }
             else -> false
         }
+    }
+
+    /**
+     * Lays the existing download's details out as label/value rows. Values wrap at a fixed width, so a
+     * long file name grows the prompt downwards rather than sideways; they also stay selectable for copying.
+     */
+    private fun duplicateDetailsPanel(rows: List<Pair<String, String>>): JPanel {
+        val valueWidth = 360
+        val panel = JPanel(GridBagLayout()).apply {
+            isOpaque = false
+            border = EmptyBorder(8, 0, 8, 0)
+        }
+        rows.forEachIndexed { i, (label, value) ->
+            val top = if (i == 0) 0 else 6
+            panel.add(JLabel("$label:").apply {
+                foreground = UIManager.getColor("Label.disabledForeground")
+            }, GridBagConstraints().apply {
+                gridx = 0; gridy = i; anchor = GridBagConstraints.FIRST_LINE_START
+                insets = Insets(top, 0, 0, 12)
+            })
+            val valueArea = JTextArea(value).apply {
+                isEditable = false
+                lineWrap = true
+                isOpaque = false
+                border = null
+                font = UIManager.getFont("Label.font")
+                foreground = UIManager.getColor("Label.foreground")
+                // Sizing to the wrap width first makes the preferred height account for wrapped lines.
+                setSize(valueWidth, Short.MAX_VALUE.toInt())
+            }
+            panel.add(valueArea, GridBagConstraints().apply {
+                gridx = 1; gridy = i; anchor = GridBagConstraints.FIRST_LINE_START
+                fill = GridBagConstraints.HORIZONTAL; weightx = 1.0
+                insets = Insets(top, 0, 0, 0)
+            })
+        }
+        return panel
     }
 
     /**

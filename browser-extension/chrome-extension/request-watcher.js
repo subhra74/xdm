@@ -23,6 +23,11 @@ export default class RequestWatcher {
         this.onErrorOccurredEventCallback = this.onErrorOccurredEvent.bind(this);
         this.urlPatterns = [];
         this.requestFileExts = [];
+        // Set by the app while the service worker is starting up. Until it settles the lists above
+        // are empty, so a response is held rather than judged against them: the media request
+        // that woke the worker would otherwise never match.
+        this.gate = null;
+        this.registered = false;
     }
 
     updateConfig(config) {
@@ -144,6 +149,19 @@ export default class RequestWatcher {
             return;
         }
         this.requestMap.delete(reqId);
+        if (this.gate) {
+            // Held in arrival order, ahead of any onDeterminingFilename waiting on the same gate.
+            this.gate.then(() => this.onResponse(req, res));
+            return;
+        }
+        this.onResponse(req, res);
+    }
+
+    onResponse(req, res) {
+        // Held through startup, then XDM turned out not to be running: nothing to do with it.
+        if (!this.registered) {
+            return;
+        }
         let candidate = this.isDownloadCandidate(res);
         // Media is only ever captured from a GET: no request body is recorded, so nothing else
         // could be replayed.
@@ -221,7 +239,13 @@ export default class RequestWatcher {
         this.requestMap.delete(reqId);
     }
 
+    // Both are safe to call repeatedly: the app registers on every reply from XDM and unregisters
+    // on every disconnect.
     register() {
+        if (this.registered) {
+            return;
+        }
+        this.registered = true;
         chrome.webRequest.onSendHeaders.addListener(
             this.onSendHeadersEventCallback,
             { urls: ["http://*/*", "https://*/*"] },
@@ -241,6 +265,13 @@ export default class RequestWatcher {
     }
 
     unRegister() {
+        if (!this.registered) {
+            return;
+        }
+        this.registered = false;
+        // Nothing half-seen is worth keeping: by the time the listeners return, these are stale.
+        this.requestMap.clear();
+        this.observed.clear();
         chrome.webRequest.onSendHeaders.removeListener(this.onSendHeadersEventCallback);
         chrome.webRequest.onHeadersReceived.removeListener(this.onHeadersReceivedEventCallback);
         chrome.webRequest.onErrorOccurred.removeListener(this.onErrorOccurredEventCallback);

@@ -22,31 +22,67 @@ export default class App {
         this.onTabUpdateCallback = this.onTabUpdate.bind(this);
         this.activeTabId = -1;
         this.connector = new Connector(this.onMessage.bind(this), this.onDisconnect.bind(this));
+        // See start(). Until `started`, everything above is a placeholder, not what is known.
+        this.started = false;
+        this.ready = null;
     }
 
+    /**
+     * The MV3 service worker is torn down ~30s after its last event and spun up again by the next
+     * one, with all of the state above back at its defaults. (While XDM is up, Chrome 154 keeps it
+     * going on the long poll's traffic, but that is not documented and nothing here relies on it.)
+     * The event that woke it is
+     * dispatched before XDM's settings, the host-access check or the popup toggle have come back.
+     * So startup is gated: the listeners go in at once (Chrome only wakes the worker for listeners
+     * added synchronously), but anything that decides on that state - a media response, a
+     * download, a tab navigating, the popup, the toolbar icon - waits for `ready`. The first lookup
+     * is quick either way: a local reply, or a refused connection when XDM is not running.
+     */
     start() {
         this.logger.log("starting...");
-        this.starAppConnector();
+        const loaded = Promise.all([
+            this.connector.connect(),
+            this.restoreUserDisabled(),
+            this.refreshHostAccess(),
+            this.restoreActiveTab()
+        ]);
+        this.ready = loaded.then(() => {
+            this.started = true;
+            this.requestWatcher.gate = null;
+            this.updateActionIcon();
+            this.logger.log("started.");
+        });
+        this.requestWatcher.gate = this.ready;
         this.register();
-        this.restoreUserDisabled();
-        this.logger.log("started.");
+    }
+
+    /** Runs fn now once started, or as soon as startup completes. */
+    whenReady(fn) {
+        if (this.started) {
+            fn();
+        } else {
+            this.ready.then(fn);
+        }
     }
 
     // The popup toggle lives in session storage: the service worker is torn down after a short idle
     // spell, and keeping it only in memory would quietly switch monitoring back on. Session storage
     // still resets with the browser, as the toggle always has.
     restoreUserDisabled() {
-        chrome.storage.session.get("userDisabled", stored => {
-            if (chrome.runtime.lastError || !stored) {
-                return;
-            }
-            this.userDisabled = stored.userDisabled === true;
-            this.updateActionIcon();
-        });
+        return chrome.storage.session.get("userDisabled").then(stored => {
+            this.userDisabled = (stored && stored.userDisabled) === true;
+        }, () => { });
     }
 
-    starAppConnector() {
-        this.connector.connect();
+    // The badge counts the active tab's videos. A restarted worker no longer knows which tab that
+    // is, and would count none of them until the user switched tabs.
+    restoreActiveTab() {
+        return chrome.tabs.query({ active: true, lastFocusedWindow: true }).then(tabs => {
+            // onTabActivated may have got there first, and is the fresher answer.
+            if (this.activeTabId === -1 && tabs && tabs[0]) {
+                this.activeTabId = tabs[0].id + "";
+            }
+        }, () => { });
     }
 
     onMessage(msg) {
@@ -61,12 +97,20 @@ export default class App {
             blockedHosts: msg.blockedHosts,
             mediaTypes: msg.mediaTypes
         });
+        // XDM is there: watch the network again (see onDisconnect).
+        this.requestWatcher.register();
         this.updateActionIcon();
     }
 
+    // With XDM gone there is nothing to report a request to, so stop watching the network at all:
+    // Chrome then neither dispatches webRequest events to the extension nor wakes the worker for
+    // them. XDM is looked for on startup, tab activity, the popup and the watchdog (see Connector);
+    // the listeners come back with its first reply (onMessage). They are still added at startup,
+    // synchronously, because Chrome only wakes a worker for listeners added that way.
     onDisconnect() {
         this.logger.log("Disconnected from native host!");
         this.logger.log("Disconnected...");
+        this.requestWatcher.unRegister();
         this.updateActionIcon();
     }
 
@@ -79,11 +123,11 @@ export default class App {
     // Chrome's "On click" / "On specific sites" site access withholds host permissions while the
     // downloads API keeps firing. The extension then sees no requests, so it has nothing to replay.
     refreshHostAccess() {
-        chrome.permissions.contains({ origins: HOST_ORIGINS }, granted => {
+        return chrome.permissions.contains({ origins: HOST_ORIGINS }).then(granted => {
             this.hostAccess = granted === true;
             this.logger.log("host access: " + this.hostAccess);
             this.updateActionIcon();
-        });
+        }, () => { });
     }
 
     onRequestDataReceived(data) {
@@ -93,10 +137,22 @@ export default class App {
         this.isMonitoringEnabled() && this.connector.isConnected() && this.connector.postMessage("/media", data);
     }
 
+    onDeterminingFilename(download, suggest) {
+        if (this.started) {
+            this.decideDownload(download, suggest);
+            return;
+        }
+        // The worker is still starting (often woken by this very download): decide once XDM's
+        // settings are in. Returning true lets suggest() come later; Chrome holds the download
+        // until it does, which startup bounds to a few milliseconds (SYNC_TIMEOUT_MS at worst).
+        this.ready.then(() => this.decideDownload(download, suggest));
+        return true;
+    }
+
     // Every path calls suggest() exactly once, and every path that does not take the download
     // leaves it completely alone. Only a GET the extension watched, with its real headers in hand,
     // is taken: that is everything XDM needs to replay it, so the browser copy can go at once.
-    onDeterminingFilename(download, suggest) {
+    decideDownload(download, suggest) {
         this.logger.log("onDeterminingFilename");
         if (!this.isMonitoringEnabled()) {
             suggest();
@@ -136,6 +192,13 @@ export default class App {
     }
 
     onTabUpdate(tabId, changeInfo, tab) {
+        // A navigation is a common reason for the worker to be woken, and clearing the tab's
+        // videos needs to know whether XDM is there: on a cold start that is not known yet, and
+        // the clear would be skipped, leaving the last page's videos listed against the new one.
+        this.whenReady(() => this.handleTabUpdate(tabId, changeInfo, tab));
+    }
+
+    handleTabUpdate(tabId, changeInfo, tab) {
         // The user is browsing, so this is a good moment to notice XDM has been started. Cheap: the
         // connector ignores this outright while it is connected, and rate-limits it when it is not.
         this.connector.tryConnect("tab update");
@@ -194,11 +257,13 @@ export default class App {
         // Both wake the service worker, and both are moments where XDM may have appeared since the
         // worker last ran.
         chrome.runtime.onStartup.addListener(() => this.connector.tryConnect("browser startup"));
-        chrome.runtime.onInstalled.addListener(() => this.connector.tryConnect("extension installed"));
+        chrome.runtime.onInstalled.addListener(() => {
+            this.connector.resetAlarms();
+            this.connector.tryConnect("extension installed");
+        });
         this.requestWatcher.register();
         chrome.permissions.onAdded.addListener(() => this.refreshHostAccess());
         chrome.permissions.onRemoved.addListener(() => this.refreshHostAccess());
-        this.refreshHostAccess();
         this.attachContextMenu();
         chrome.tabs.onActivated.addListener(this.onTabActivated.bind(this));
     }
@@ -246,6 +311,12 @@ export default class App {
     }
 
     updateActionIcon() {
+        // Before startup completes this would paint placeholders: a grey icon, a cleared badge and
+        // the error popup, on every wake.
+        // start() paints it once everything is known.
+        if (!this.started) {
+            return;
+        }
         chrome.action.setIcon({ path: this.getActionIcon() });
         let vc = "";
         let len = this.videosForTab(this.activeTabId).length;
@@ -353,8 +424,9 @@ export default class App {
         this.logger.log(request.type);
         if (request.type === "stat") {
             // Opening the popup is the clearest "is XDM there?" moment there is, so look before
-            // answering rather than reporting what the worker happened to know last.
-            this.connector.tryConnect("popup opened").then(() => {
+            // answering rather than reporting what the worker happened to know last. Opening it
+            // often wakes the worker too, so wait for startup first.
+            this.ready.then(() => this.connector.tryConnect("popup opened")).then(() => {
                 // Resolve the active tab fresh: the MV3 service worker can be torn
                 // down, resetting this.activeTabId, so don't rely on it here.
                 chrome.tabs.query({ active: true, currentWindow: true }, tabs => {

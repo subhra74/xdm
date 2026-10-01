@@ -14,6 +14,13 @@ const MIN_POLL_INTERVAL_MS = 1000;
  */
 const MIN_CONNECT_INTERVAL_MS = 5000;
 
+/**
+ * How long a /sync may take before XDM is taken to be absent. A refused connection fails at once;
+ * this only bounds an XDM that accepts the connection and never answers, since the worker's startup
+ * (and any download held for it) waits on the first attempt.
+ */
+const SYNC_TIMEOUT_MS = 3000;
+
 /** Name of the one watchdog alarm. */
 const WATCHDOG_ALARM = "xdm-watchdog";
 
@@ -31,23 +38,42 @@ export default class Connector {
         this.polling = false;
         /** When the last request to XDM went out, for the MIN_CONNECT_INTERVAL_MS floor. */
         this.lastAttemptAt = 0;
+        /** The lookup under way, if any; callers arriving meanwhile share its outcome. */
+        this.attempt = undefined;
         this.clientId = undefined;
     }
 
+    /**
+     * Returns the first lookup's promise: the worker's startup waits on it, so nothing is decided
+     * on the empty state a freshly spun-up worker starts with.
+     */
     connect() {
         // A single alarm is the idle floor; what actually finds XDM quickly is the user doing
-        // something (see the tryConnect callers in app.js). Earlier versions armed 12 staggered
-        // alarms and fetched on every one of them, connected or not, so clear those leftovers -
-        // alarms outlive an extension update.
-        chrome.alarms.clearAll(() => {
-            chrome.alarms.create(WATCHDOG_ALARM, {
-                periodInMinutes: 1,
-                when: Date.now() + 1000
-            });
-        });
+        // something (see the tryConnect callers in app.js).
+        this.ensureWatchdog();
         chrome.alarms.onAlarm.addListener(this.onTimer.bind(this));
         // Don't wait for the first alarm to find out whether XDM is running.
-        this.tryConnect("worker started");
+        return this.tryConnect("worker started");
+    }
+
+    /**
+     * Creates the watchdog only when it is missing. The worker restarts every time it is woken, the
+     * alarm included, so re-creating it on each start would keep moving its schedule.
+     */
+    ensureWatchdog() {
+        chrome.alarms.get(WATCHDOG_ALARM, alarm => {
+            if (!alarm) {
+                chrome.alarms.create(WATCHDOG_ALARM, { periodInMinutes: 1 });
+            }
+        });
+    }
+
+    /**
+     * On install / update. Earlier versions armed 12 staggered alarms and fetched on every one of
+     * them, connected or not, and alarms outlive an extension update: clear those leftovers.
+     */
+    resetAlarms() {
+        chrome.alarms.clearAll(() => this.ensureWatchdog());
     }
 
     /**
@@ -81,11 +107,15 @@ export default class Connector {
      *
      * Returns a promise that settles once the attempt is over, so a caller that wants to report
      * fresh state (the popup) can wait for it. A refused connection fails immediately, so waiting
-     * costs nothing when XDM is down.
+     * costs nothing when XDM is down. A caller that arrives while a lookup is under way waits for
+     * that one rather than being let through on the throttle with nothing known yet.
      */
     tryConnect(reason) {
         if (this.polling) {
             return Promise.resolve();
+        }
+        if (this.attempt) {
+            return this.attempt;
         }
         const since = Date.now() - this.lastAttemptAt;
         if (since < MIN_CONNECT_INTERVAL_MS) {
@@ -94,9 +124,11 @@ export default class Connector {
         }
         this.lastAttemptAt = Date.now();
         this.logger.log("Looking for XDM (" + reason + ")");
-        return fetch(APP_BASE_URL + "/sync")
+        this.attempt = fetch(APP_BASE_URL + "/sync", { signal: AbortSignal.timeout(SYNC_TIMEOUT_MS) })
             .then(this.onResponse.bind(this))
-            .catch(err => this.disconnect());
+            .catch(err => this.disconnect())
+            .finally(() => { this.attempt = undefined; });
+        return this.attempt;
     }
 
 
