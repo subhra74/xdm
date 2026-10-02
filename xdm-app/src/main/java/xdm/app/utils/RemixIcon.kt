@@ -53,6 +53,7 @@ enum class RemixIcon(val codepoint: Int) {
     GLOBAL_FILL(0xedce),
     GLOBAL_LINE(0xedcf),
     INSTALL_FILL(0xee67),
+    LIST_CHECK_2(0xeeb9),
     MENU_LINE(0xef3e),
     MICROSOFT_FILL(0xef57),
     MICROSOFT_LINE(0xef58),

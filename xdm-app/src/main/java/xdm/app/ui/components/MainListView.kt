@@ -18,6 +18,7 @@ import java.awt.BorderLayout
 import java.awt.CardLayout
 import java.awt.Color
 import java.awt.Component
+import java.awt.Font
 import java.awt.event.ActionEvent
 import java.awt.event.ActionListener
 import java.awt.event.MouseAdapter
@@ -128,12 +129,13 @@ class MainListView {
         }
 
         val emptyLabel = JLabel(text("MSG_NO_DOWNLOAD"), SwingConstants.CENTER).apply {
-            icon = createIcon(RemixIcon.SPARKLING_2_FILL, 96, UIManager.getColor("Table.background"))
+            icon = createIcon(RemixIcon.LIST_CHECK_2, 128, UIManager.getColor("Table.background"))
             horizontalAlignment = SwingConstants.CENTER
             verticalTextPosition = SwingConstants.BOTTOM
             horizontalTextPosition = SwingConstants.CENTER
             foreground = Color.GRAY
             border = EmptyBorder(0, 0, 90, 0)
+            font = font.deriveFont(Font.PLAIN, 14.0f)
         }
         val emptyPanel = JPanel(BorderLayout()).apply {
             add(emptyLabel, BorderLayout.CENTER)
