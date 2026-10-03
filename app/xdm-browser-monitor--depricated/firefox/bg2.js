@@ -7,7 +7,7 @@ xdm.monitoring = {
 
     //configurations for network request inspection
     config: {
-        blockedHosts: ["update.microsoft.com", "windowsupdate.com", "thwawte.com"],
+        blockedHosts: ["update.microsoft.com", "windowsupdate.com", "thawte.com"],
         videoUrls: [".facebook.com|pagelet", "player.vimeo.com/", "instagram.com/p/"],
         fileExts: ["3GP", "7Z", "AVI", "BZ2", "DEB", "DOC", "DOCX", "EXE", "GZ", "ISO",
             "MSI", "PDF", "PPT", "PPTX", "RAR", "RPM", "XLS", "XLSX", "SIT", "SITX", "TAR", "JAR", "ZIP", "XZ"],
