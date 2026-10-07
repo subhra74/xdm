@@ -1,0 +1,47 @@
+name: Build
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      # The root pom selects the compiler via maven-toolchains-plugin (JDK 25), so register the
+      # runner's JDK in ~/.m2/toolchains.xml (see packaging/toolchains.sample.xml).
+      - name: Write Maven toolchains.xml
+        run: |
+          mkdir -p ~/.m2
+          cat > ~/.m2/toolchains.xml <<XML
+          <toolchains>
+            <toolchain>
+              <type>jdk</type>
+              <provides><version>25</version></provides>
+              <configuration><jdkHome>${JAVA_HOME}</jdkHome></configuration>
+            </toolchain>
+          </toolchains>
+          XML
+
+      - name: Build jar
+        run: mvn -B -pl xdm-app -am package
+
+      - name: Upload jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: xdm-app-jar
+          path: xdm-app/target/xdm-app.jar
+          if-no-files-found: error
