@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="84" viewBox="0 0 360 84">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2F80ED"/>
+      <stop offset="1" stop-color="#7B2FF7"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.28"/>
+      <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-20%" width="120%" height="160%">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#4B3FD8" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#shadow)">
+    <rect x="10" y="6" width="340" height="64" rx="32" fill="url(#bg)"/>
+    <rect x="10" y="6" width="340" height="64" rx="32" fill="url(#shine)"/>
+  </g>
+
+  <!-- icon badge -->
+  <circle cx="44" cy="38" r="22" fill="#FFFFFF" fill-opacity="0.18"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M44 27v15"/>
+    <path d="M37.5 36.5 44 43l6.5-6.5"/>
+    <path d="M35 48h18"/>
+  </g>
+
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" fill="#FFFFFF">
+    <text x="78" y="36" font-size="21" font-weight="700" letter-spacing="0.2">Download XDM</text>
+    <text x="78" y="56" font-size="13" fill-opacity="0.85">Windows · macOS · Linux · Free</text>
+  </g>
+
+  <!-- arrow chip -->
+  <circle cx="316" cy="38" r="16" fill="#FFFFFF"/>
+  <path d="M311 38h10M317 33.5l4.5 4.5-4.5 4.5" fill="none" stroke="#5A3FF0" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

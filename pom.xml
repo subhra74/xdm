@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>xdm</groupId>
+    <artifactId>xdm</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <properties>
+        <!-- Tests are skipped by default (install/package stay fast). Run them with -DskipTests=false. -->
+        <skipTests>true</skipTests>
+    </properties>
+    <modules>
+        <module>xdm-core</module>
+        <!--        <module>xdm-app2</module>-->
+        <module>xdm-app</module>
+<!--        <module>hls-muxer</module>-->
+    </modules>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <!-- Pinned here so both modules build with the same plugins.
+
+                     Surefire is held at 3.5.6: with 3.6.0, reuseForks=false discovers no tests at
+                     all and still reports BUILD SUCCESS (xdm-core: 175 -> 0). Measured both ways
+                     and on both frameworks - 3.6.0 without reuseForks runs all 175, 3.5.6 with it
+                     runs all 175, and migrating these tests to JUnit 5 did not change it, so it is
+                     the fork setting and not the framework. xdm-core needs a fresh JVM per test
+                     class (its download tests leak threads and sockets on purpose), so the plugin
+                     waits rather than the isolation.
+
+                     Whoever bumps this next: check the test COUNTS, not the build status. -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.16.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.5.6</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-toolchains-plugin</artifactId>
+                    <version>3.3.0</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+        <plugins>
+            <!--
+              xdm-app compiles at Java 25 (it uses java.lang.foreign), so the build needs a JDK 25
+              compiler. Which JDK Maven itself runs on is an accident of the environment - on a
+              Homebrew install, `mvn` hard-defaults JAVA_HOME to Homebrew's own openjdk - so the
+              compiler is selected here instead, from ~/.m2/toolchains.xml. See
+              packaging/toolchains.sample.xml; without a matching entry the build stops with
+              "Cannot find matching toolchain", which says what to fix.
+
+              xdm-core still emits Java 8 bytecode; that is a target, not a second toolchain.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-toolchains-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>select-jdk-25</id>
+                        <goals>
+                            <goal>select-jdk-toolchain</goal>
+                        </goals>
+                        <configuration>
+                            <version>25</version>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

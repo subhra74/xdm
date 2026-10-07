@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  XDM 9 MSI (PACKAGING.md §5). Built by packaging\build-bundle.ps1 -Type msi from the jpackage app image:
+
+    wix build xdm.wxs -arch x64|arm64 -ext WixToolset.Util.wixext -ext WixToolset.UI.wixext
+              -bindpath AppImage=<image dir> -d Version=<a.b.c> -d IconFile=<ico> -d LicenseRtf=<rtf>
+
+  Needs WiX 7 or later: Scope="perMachineOrUser" does not exist before v7.0.0 (v6 only has perUserOrMachine,
+  which defaults to a per-user install).
+
+  x64 and arm64 are separate MSIs with the same UpgradeCode, so either one upgrades the other.
+-->
+<?if $(sys.BUILDARCH) != "x64" AND $(sys.BUILDARCH) != "arm64" ?>
+<?error XDM is built for -arch x64 or -arch arm64 only ?>
+<?endif?>
+
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
+  <!-- UpgradeCode is XDM 8's, so this MSI removes an XDM 8 installed from its MSI (§5.1). -->
+  <Package Name="Xtreme Download Manager" Manufacturer="Subhra Das Gupta" Language="1033"
+           Version="$(var.Version)" UpgradeCode="3E462F34-3D19-4247-AD64-1B74703555D6"
+           Scope="perMachineOrUser" Compressed="yes">
+    <SummaryInformation Description="Xtreme Download Manager" />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <!-- afterInstallExecute: the old version is removed after the new files are in, so the close step below
+         (WiX's default, before InstallFiles) has ended every XDM by then (§5.1, §5.3). An earlier position
+         can't follow the close step: RemoveExistingProducts after InstallInitialize must be the first action
+         that writes the script (error 2613), and before InstallInitialize nothing deferred can be queued.
+         XDM 8's removal may delete its Run value, which is also the AutoStart component's below; XDM then
+         shows a "not starting automatically" banner with a button to turn it back on. Needs stable component GUIDs: the Files element derives them from the install path.
+         AllowSameVersionUpgrades: every build gets a new ProductCode, so without it a rebuilt MSI of the same
+         version installs next to the old one (two entries in Apps & features). With it, the rebuild replaces it.
+         Running the very same MSI again still opens Repair/Remove (same ProductCode). -->
+    <MajorUpgrade Schedule="afterInstallExecute" AllowSameVersionUpgrades="yes"
+                  DowngradeErrorMessage="A newer version of Xtreme Download Manager is already installed." />
+
+    <!-- On Windows 10 the Installer reports 8.1's version, so this lets 8.1 through too; JDK 25 needs 10. -->
+    <Launch Condition="Installed OR VersionNT &gt; 602"
+            Message="Xtreme Download Manager needs Windows 10 or later." />
+
+    <!-- §5.5: block installs that would leave two XDMs fighting over port 8597. -->
+    <Property Id="XDM8_MACHINE">
+      <RegistrySearch Root="HKLM" Key="Software\Xtreme Download Manager" Name="Installed2" Type="raw"
+                      Bitness="always32" />
+    </Property>
+    <Property Id="XDM9_MACHINE">
+      <RegistrySearch Root="HKLM" Key="Software\XDM" Name="Installed" Type="raw" Bitness="always64" />
+    </Property>
+    <Property Id="XDM9_USER">
+      <RegistrySearch Root="HKCU" Key="Software\XDM" Name="Installed" Type="raw" Bitness="always64" />
+    </Property>
+    <Launch Condition="Installed OR NOT (MSIINSTALLPERUSER = 1 AND XDM8_MACHINE)"
+            Message="Xtreme Download Manager 8 is installed for all users. Uninstall it first, or install this version for all users." />
+    <Launch Condition="Installed OR NOT (MSIINSTALLPERUSER = 1 AND XDM9_MACHINE)"
+            Message="Xtreme Download Manager is already installed for all users on this computer." />
+    <Launch Condition="Installed OR MSIINSTALLPERUSER = 1 OR NOT XDM9_USER"
+            Message="Xtreme Download Manager is installed for your account only. Uninstall it from Settings &gt; Apps first." />
+    <!-- §5.4: the login entry. Read before install, as the installing user, to keep their choice on upgrade. -->
+    <Property Id="XDM_RUN">
+      <RegistrySearch Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Run" Name="XDM" Type="raw"
+                      Bitness="always64" />
+    </Property>
+
+    <!-- TODO §5.5: block when XDM 8 from the Microsoft Store is present, with a DirectorySearch for
+         [LocalAppDataFolder]Packages\<XDM 8 package family name>. Needs the family name (§13.3). -->
+
+    <!-- §5.3: end every running XDM (XDM 8 and 9 are both xdm-app.exe), including other users'. Timeout is
+         in seconds (WiX multiplies it by 1000). RebootPrompt must be off: WiX rejects it together with
+         TerminateProcess, and its default is on. -->
+    <util:CloseApplication Id="CloseXdm" Target="xdm-app.exe" CloseMessage="yes" ElevatedCloseMessage="yes"
+                           TerminateProcess="1" Timeout="5" RebootPrompt="no" Property="XDMWASRUNNING" />
+    <!-- The close step kills XDM after its timeout and returns at once, and InstallFiles starts ~50 ms later,
+         while the files are still locked: killing XDM takes ~80 ms to release xdm-app.exe (measured, Windows 11
+         ARM, 9.0.1). MSI then replaces them at reboot and, in a quiet install, reboots by itself. So when XDM was
+         running, wait 5 s before copying. waitfor.exe is a Windows built-in; it times out on a signal nobody
+         sends (exit code 1, hence Return="ignore"). The close messages rarely help: XDM hides to the tray on
+         WM_CLOSE, and the elevated step runs outside the user's desktop, where it can't see XDM's windows.
+         TerminateProcess="1" is the force kill; WiX has no option to wait for it to complete, hence this step. -->
+    <SetProperty Id="XdmWaitAfterClose" Sequence="execute" Before="XdmWaitAfterClose"
+                 Value="&quot;[System64Folder]waitfor.exe&quot; /t 5 XdmInstallerPause" />
+    <CustomAction Id="XdmWaitAfterClose" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec"
+                  Execute="deferred" Impersonate="no" Return="ignore" />
+    <!-- The Restart Manager would otherwise offer its own "close these applications?" dialog first. -->
+    <Property Id="MSIRESTARTMANAGERCONTROL" Value="Disable" />
+
+    <!-- §5.7: Java heap file in C:\Windows\Temp, only if the installing user's JVM can create it there.
+         1. XdmHeapTest, as the user (not elevated): XDM's own jar on the bundled java.exe with the heap in that
+            folder. Reaching main writes a marker in the user's temp folder; a JVM that can't start writes none.
+         2. XdmApplyHeapCfg, elevated: rewrites app\xdm-app.cfg from app\xdm-app.cfg.base, adding the heap line
+            only if a fresh marker exists, then deletes the marker. It always rewrites, so an upgrade never keeps
+            the previous version's .cfg.
+         Deferred actions can't pass properties to each other, hence the marker. [TempFolder] is resolved in the
+         immediate phase, so it is the installing user's. Return="ignore": a failed test means no heap file,
+         never a failed install. Install, upgrade and repair all run both. -->
+    <SetProperty Id="XdmHeapTest" Sequence="execute" Before="XdmHeapTest"
+                 Value="&quot;[INSTALLFOLDER]runtime\bin\java.exe&quot; -XX:+UseSerialGC -Xms6m -Xshare:off &quot;-XX:AllocateHeapAt=[WindowsFolder]Temp&quot; -jar &quot;[INSTALLFOLDER]app\xdm-app.jar&quot; &quot;--heap-test=[TempFolder]xdm-heap-test.ok&quot;" />
+    <CustomAction Id="XdmHeapTest" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec"
+                  Execute="deferred" Impersonate="yes" Return="ignore" />
+    <SetProperty Id="XdmApplyHeapCfg" Sequence="execute" Before="XdmApplyHeapCfg"
+                 Value="&quot;[INSTALLFOLDER]runtime\bin\java.exe&quot; -XX:+UseSerialGC -Xshare:off -jar &quot;[INSTALLFOLDER]app\xdm-app.jar&quot; &quot;--apply-heap-cfg=[TempFolder]xdm-heap-test.ok&quot; &quot;--heap-dir=[WindowsFolder]Temp&quot;" />
+    <CustomAction Id="XdmApplyHeapCfg" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec"
+                  Execute="deferred" Impersonate="no" Return="ignore" />
+    <InstallExecuteSequence>
+      <Custom Action="XdmWaitAfterClose" After="Wix4CloseApplications_$(sys.BUILDARCHSHORT)" Condition="XDMWASRUNNING" />
+      <Custom Action="XdmHeapTest" After="InstallFiles" Condition="NOT REMOVE" />
+      <Custom Action="XdmApplyHeapCfg" After="XdmHeapTest" Condition="NOT REMOVE" />
+    </InstallExecuteSequence>
+
+
+    <Icon Id="XdmIcon" SourceFile="$(var.IconFile)" />
+    <Property Id="ARPPRODUCTICON" Value="XdmIcon" />
+
+    <!-- Per-user installs (MSIINSTALLPERUSER=1) are redirected to %LOCALAPPDATA%\Programs\XDM. -->
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="XDM" />
+    </StandardDirectory>
+
+    <Feature Id="Main" Title="Xtreme Download Manager" Level="1">
+      <ComponentGroupRef Id="AppImage" />
+      <ComponentGroupRef Id="Shortcuts" />
+      <ComponentGroupRef Id="AutoStart" />
+      <ComponentGroupRef Id="UrlScheme" />
+    </Feature>
+
+    <!-- UI: licence, install folder, and "Launch Xtreme Download Manager" on the last page. -->
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+    <WixVariable Id="WixUILicenseRtf" Value="$(var.LicenseRtf)" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Xtreme Download Manager" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+    <!-- Unelevated: XDM must run as the logged-in user even when msiexec itself was started elevated, or it
+         would start in the wrong session and profile.
+         The target is set on Finish, not by a <Property>: a Property value is a literal (WIX1077), while a
+         Publish value is formatted when the button is clicked, so it is the folder the user chose.
+         The Property itself must still exist: WiX's Util library references it (WIX0094 without it). Its
+         placeholder value has no [...], so no WIX1077; Finish replaces it before the launch. -->
+    <Property Id="WixUnelevatedShellExecTarget" Value="xdm-app.exe" />
+    <UI>
+      <Publish Dialog="ExitDialog" Control="Finish" Property="WixUnelevatedShellExecTarget"
+               Value="[INSTALLFOLDER]xdm-app.exe" Order="1"
+               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND NOT Installed" />
+      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction"
+               Value="Wix4UnelevatedShellExec_$(sys.BUILDARCHSHORT)" Order="2"
+               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND NOT Installed" />
+    </UI>
+
+    <!-- The Run value and the xdm-app:// keys are the AutoStart and UrlScheme components below (§5.4). -->
+  </Package>
+
+  <Fragment>
+    <!-- The whole jpackage app image: xdm-app.exe, app\ (jar, xdm.jsa, jit-directives.json, cfg, cfg.base)
+         and runtime\. Cabinet timestamps keep the jar's pinned mtime for AppCDS (§5.6). -->
+    <ComponentGroup Id="AppImage" Directory="INSTALLFOLDER">
+      <Files Include="!(bindpath.AppImage)\**" />
+    </ComponentGroup>
+  </Fragment>
+
+  <Fragment>
+    <!-- HKMU is HKLM for a per-machine install and HKCU for a per-user one; the value doubles as the marker
+         the launch conditions above look for. -->
+    <ComponentGroup Id="Shortcuts">
+      <Component Id="StartMenuShortcut" Directory="ProgramMenuFolder">
+        <Shortcut Id="StartMenuShortcut" Name="Xtreme Download Manager - XDM" Description="Xtreme Download Manager"
+                  Target="[INSTALLFOLDER]xdm-app.exe" WorkingDirectory="INSTALLFOLDER" />
+        <!-- 9.0.1 named it "Xtreme Download Manager". This component (and its GUID) is shared across the upgrade,
+             so the old version's removal leaves its shortcut behind; delete it here. -->
+        <RemoveFile Id="OldStartMenuShortcut" Name="Xtreme Download Manager.lnk" On="install" />
+        <RegistryValue Root="HKMU" Key="Software\XDM" Name="Installed" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+      <Component Id="DesktopShortcut" Directory="DesktopFolder">
+        <Shortcut Id="DesktopShortcut" Name="Xtreme Download Manager" Description="Xtreme Download Manager"
+                  Target="[INSTALLFOLDER]xdm-app.exe" WorkingDirectory="INSTALLFOLDER" />
+        <RegistryValue Root="HKMU" Key="Software\XDM" Name="DesktopShortcut" Type="integer" Value="1"
+                       KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <Fragment>
+    <!-- §5.4: start on login, for the installing user (HKCU in both scopes: an HKLM value can't be switched off
+         per user without elevation). The app never writes it at startup, which antivirus heuristics flagged; its
+         settings toggle and Task Manager switch it through Explorer\StartupApproved\Run, which MSI never
+         touches, so a repair or upgrade rewriting this value keeps autostart off when the user turned it off.
+         Installed on a fresh install, and on an upgrade only when the entry exists: 9.0.x and XDM 8 deleted it
+         when switched off (a Task Manager disable keeps it, and its flag). Same name as XDM 8, so XDM 8's removal
+         (after this install, §5.1) may delete it again; XDM's banner offers to turn it back on. Not transitive:
+         a repair doesn't re-evaluate the condition. Never for LocalSystem (S-1-5-18): a deployment tool installing
+         as SYSTEM would write it into SYSTEM's profile, where no one logs in; users turn it on from XDM's banner.
+         The GUID is derived from the key path, so every version shares this component and an upgrade's removal
+         of the old version leaves the value in place; uninstall removes it. -->
+    <ComponentGroup Id="AutoStart" Directory="INSTALLFOLDER">
+      <Component Id="AutoStartRunValue"
+                 Condition="UserSID &lt;&gt; &quot;S-1-5-18&quot; AND (NOT WIX_UPGRADE_DETECTED OR XDM_RUN)">
+        <RegistryValue Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Run" Name="XDM" Type="string"
+                       Value="&quot;[INSTALLFOLDER]xdm-app.exe&quot; --minimized" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <Fragment>
+    <!-- §5.4: xdm-app:// lets a browser start XDM by opening a link. HKMU: HKLM\Software\Classes for a per-machine
+         install, so every user (and a SYSTEM install) gets it; HKCU for a per-user one. The app never writes or
+         reads these keys. Not minimized: following a link is asking to see XDM. 9.0.x wrote the same keys in
+         HKCU with the same command, which still wins for that user and is harmless. Removed on uninstall. -->
+    <ComponentGroup Id="UrlScheme" Directory="INSTALLFOLDER">
+      <Component Id="UrlSchemeKeys">
+        <RegistryKey Root="HKMU" Key="Software\Classes\xdm-app">
+          <RegistryValue Type="string" Value="URL:Xtreme Download Manager Protocol" KeyPath="yes" />
+          <!-- The marker that makes the key a URL scheme; its (empty) data is ignored. -->
+          <RegistryValue Name="URL Protocol" Type="string" Value="" />
+          <RegistryKey Key="shell\open\command">
+            <RegistryValue Type="string" Value="&quot;[INSTALLFOLDER]xdm-app.exe&quot; &quot;%1&quot;" />
+          </RegistryKey>
+        </RegistryKey>
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>

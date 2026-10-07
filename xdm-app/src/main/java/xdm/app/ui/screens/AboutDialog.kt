@@ -1,0 +1,113 @@
+package xdm.app.ui.screens
+
+import xdm.app.AppContext
+import xdm.app.update.UpdateChecker
+import xdm.app.utils.ScaledEmptyBorder
+import xdm.app.utils.logoIcon
+import xdm.app.utils.px
+import xdm.app.utils.scaledInsets
+import java.awt.*
+import javax.net.ssl.SSLContext
+import javax.swing.*
+
+class AboutDialog(owner: Window?) : JDialog(owner) {
+
+    init {
+        setSize(400.px, 380.px)
+        title = "About XDM"
+        isModal = true
+        defaultCloseOperation = DISPOSE_ON_CLOSE
+        isResizable = false
+
+        val panel = JPanel(GridBagLayout()).apply {
+            border = ScaledEmptyBorder(30, 40, 30, 40)
+        }
+
+        val logoIcon = try {
+            logoIcon(96.px)
+        } catch (e: Exception) {
+            null
+        }
+
+        val logoLabel = JLabel(logoIcon).apply {
+            alignmentX = Component.CENTER_ALIGNMENT
+        }
+
+        val version = UpdateChecker.loadConfig()?.currentVersion ?: ""
+        val appName = JLabel("Xtreme Download Manager $version".trim()).apply {
+            font = font.deriveFont(Font.PLAIN, 16f.px)
+            horizontalAlignment = SwingConstants.CENTER
+        }
+
+        val copyright = JLabel("© 2013 - 2026 Subhra Das Gupta").apply {
+            font = font.deriveFont(Font.PLAIN, 13f.px)
+            horizontalAlignment = SwingConstants.CENTER
+        }
+
+        val website = JLabel("www.xtremedownloadmanager.com").apply {
+            horizontalAlignment = SwingConstants.CENTER
+            foreground = UIManager.getColor("ProgressBar.foreground")
+            cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+            addMouseListener(object : java.awt.event.MouseAdapter() {
+                override fun mouseClicked(e: java.awt.event.MouseEvent) {
+                    try {
+                        Desktop.getDesktop().browse(java.net.URI("https://www.xtremedownloadmanager.com"))
+                    } catch (_: Exception) {
+                    }
+                }
+            })
+        }
+
+        val osName = System.getProperty("os.name") ?: ""
+        val osVersion = System.getProperty("os.version") ?: ""
+        val javaVersion = System.getProperty("java.version") ?: ""
+
+        val osInfo = JLabel("$osName $osVersion").apply {
+            font = font.deriveFont(Font.PLAIN, 12f.px)
+            foreground = UIManager.getColor("Label.disabledForeground")
+            horizontalAlignment = SwingConstants.CENTER
+        }
+
+        val javaInfo = JLabel("Java $javaVersion").apply {
+            font = font.deriveFont(Font.PLAIN, 12f.px)
+            foreground = UIManager.getColor("Label.disabledForeground")
+            horizontalAlignment = SwingConstants.CENTER
+        }
+
+        val tlsInfo = JLabel(tlsStatus()).apply {
+            font = font.deriveFont(Font.PLAIN, 12f.px)
+            foreground = UIManager.getColor("Label.disabledForeground")
+            horizontalAlignment = SwingConstants.CENTER
+        }
+
+        val gc = GridBagConstraints().apply {
+            gridx = 0; gridy = GridBagConstraints.RELATIVE
+            fill = GridBagConstraints.HORIZONTAL
+            anchor = GridBagConstraints.CENTER
+            insets = scaledInsets(6, 0, 6, 0)
+            weightx = 1.0
+        }
+
+        panel.add(logoLabel, gc)
+        panel.add(appName, gc)
+        panel.add(copyright, gc)
+        panel.add(website, gc)
+
+//        val sep = JSeparator().apply { maximumSize = Dimension(Int.MAX_VALUE, 1) }
+//        panel.add(sep, gc)
+
+        panel.add(osInfo, gc)
+        panel.add(javaInfo, gc)
+        panel.add(tlsInfo, gc)
+
+        contentPane.add(panel)
+        //pack()
+        setLocationRelativeTo(owner)
+    }
+
+    /** The JSSE provider that handles TLS (the JDK's SunJSSE unless something else was installed). */
+    private fun tlsStatus(): String = runCatching {
+        val provider = SSLContext.getInstance("TLS").provider
+        "TLS: ${provider.name} ${provider.versionStr}"
+    }.getOrDefault("TLS: unavailable")
+}

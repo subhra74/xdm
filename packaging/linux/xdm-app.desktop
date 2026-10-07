@@ -1,0 +1,17 @@
+[Desktop Entry]
+Type=Application
+Name=Xtreme Download Manager
+GenericName=Download Manager
+Comment=Download accelerator and video downloader
+Exec=/opt/xdm-app/bin/xdm-app %U
+Icon=xdm-app
+Terminal=false
+Categories=Network;FileTransfer;
+Keywords=download;accelerator;video;hls;dash;
+MimeType=x-scheme-handler/xdm-app;
+# No launch feedback: GNOME ends its busy cursor when the first window hands back the launch's
+# XDG_ACTIVATION_TOKEN, and JBR's Wayland toolkit never does, so the cursor stayed busy until the
+# timeout (PACKAGING.md 7.2).
+StartupNotify=false
+# X11 window class; under native Wayland the window's app id is xdm-app, which matches this file's name.
+StartupWMClass=xdm-app-AppMain

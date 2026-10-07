@@ -1,0 +1,4635 @@
+general_v|Common Video Formats
+general_a|Common Audio Formats
+iphone|Apple iPhone
+ipad|Apple iPad
+ipod|Apple iPod
+appletv|Apple TV
+samsung_phone|Samsung Phones
+samsung_pad|Samsung Tablets
+gphone|Android Phones
+android_pad|Android Tablets
+roku_box|Roku Box
+ps4|Sony PS4
+ps3|Sony PS3
+psp|Sony PSP
+sonywm|Sony Walkman
+archos|Archos
+zen|Creative Zen
+iriver|iRiver
+sansa|Sandisk Sansa
+xbox one|Microsoft Xbox one
+xbox|Microsoft Xbox 360
+wm|Windows Mobile
+zune|Microsoft Zune
+wii|Nintendo Wii
+mobile_phone|Mobile Phone
+blackberry|BlackBerry
+nokia|Nokia
+flash|Flash Video
+gigabeat|Toshiba Gigabeat
+html5_video|HTML5 Embed Video
+dvd_video|Burning to DVD
+avchd|AVCHD DVD Movie
+tvs|TVS
+huawei_phone|Huawei Phones
+lg_phone|LG Phones
+
+name: Apple iPhone MPEG-4 Movie (*.mp4)
+ext: mp4
+group: iphone
+resolutions: 480x270 480x320 640x480 720x480
+video_codecs:x264 mpeg4 xvid
+framerates:8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:480x320
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:768
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPhone 4 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: iphone
+resolutions: 480x270 480x320 640x480 720x480 960x640 1024x768 1280x720
+video_codecs:x264 mpeg4 xvid
+framerates:8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:960x640
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:160
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPhone 4S MPEG-4 Movie (*.mp4)
+ext: mp4
+group: iphone
+resolutions: 480x270 480x320 640x480 720x480 960x640 1024x768 1280x720 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:960x640
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:160
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPhone 5 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: iphone
+resolutions: 480x270 480x320 640x480 720x480 960x640 1024x768 1136x640 1280x720 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1136x640
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:160
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPhone 5C MPEG-4 Movie (*.mp4)
+ext: mp4
+group: iphone
+resolutions: 480x270 480x320 640x480 720x480 960x640 1024x768 1136x640 1440x900 1280x720 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 3500 4000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1136x640
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:160
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPhone 5S MPEG-4 Movie (*.mp4)
+ext: mp4
+group: iphone
+resolutions: 480x270 480x320 640x480 720x480 960x640 1024x768 1136x640 1280x720 1440x900 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 3500 4000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1136x640
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:160
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPhone 6 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: iphone
+resolutions: 480x270 480x320 640x480 720x480 960x640 1024x768 1136x640 1334x750 1280x720 1440x900 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 3500 4000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1334x750
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:160
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPhone 6 Plus MPEG-4 Movie (*.mp4)
+ext: mp4
+group: iphone
+resolutions: 480x270 480x320 640x480 720x480 960x640 1024x768 1136x640 1334x750 1280x720 1440x900 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 3500 4000 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:5000
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:160
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPhone 7 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: iphone
+resolutions: 480x270 480x320 640x480 720x480 960x640 1024x768 1136x640 1334x750 1280x720 1440x900 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 3500 4000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1334x750
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:160
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPhone 7 Plus MPEG-4 Movie (*.mp4)
+ext: mp4
+group: iphone
+resolutions: 480x270 480x320 640x480 720x480 960x640 1024x768 1136x640 1334x750 1280x720 1440x900 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 3500 4000 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:5000
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:160
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPhone 8 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: iphone
+resolutions: 480x270 480x320 640x480 720x480 960x640 1024x768 1136x640 1334x750 1280x720 1440x900 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 3500 4000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:4000
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:160
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPhone X MPEG-4 Movie (*.mp4)
+ext: mp4
+group: iphone
+resolutions: 480x270 480x320 640x480 720x480 960x640 1024x768 1136x640 1334x750 1280x720 1440x900 1920x1080 2436x1125
+video_codecs:x264 mpeg4 xvid
+framerates:8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 3500 4000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:2436x1125
+default_video_codec:x264
+default_framerate:30
+default_video_bitrate:4000
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:160
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPhone Movie for 480p TV Out (*.mp4)
+ext: mp4
+group: iphone
+resolutions: 640x480
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:640x480
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:768
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPhone Movie for 576p TV Out (*.mp4)
+ext: mp4
+group: iphone
+resolutions: 720x576
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:720x576
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:768
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPhone 6s MPEG-4 Movie (*.mp4)
+ext: mp4
+group: iphone
+resolutions: 480x270 480x320 640x480 720x480 960x640 1024x768 1136x640 1334x750 1280x720 1440x900 1920x1080 3840x2160
+video_codecs:x264 mpeg4 xvid
+framerates:8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 3500 4000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1334x750
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:160
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPhone 6s Plus MPEG-4 Movie (*.mp4)
+ext: mp4
+group: iphone
+resolutions: 480x270 480x320 640x480 720x480 960x640 1024x768 1136x640 1334x750 1280x720 1440x900 1920x1080 3840x2160
+video_codecs:x264 mpeg4 xvid
+framerates:8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 3500 4000 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:5000
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:160
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPhone Se MPEG-4 Movie (*.mp4)
+ext: mp4
+group: iphone
+resolutions: 480x270 480x320 640x480 720x480 960x640 1024x768 1136x640 1334x750 1280x720 1440x900 1920x1080 3840x2160
+video_codecs:x264 mpeg4 xvid
+framerates:8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 3500 4000 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1136x640
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:5000
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:160
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPad MPEG-4 Movie (*.mp4)
+ext: mp4
+group: ipad
+resolutions: 480x270 480x320 640x480 720x480 720x480 720x576 1024x768 1280x720
+video_codecs:x264 mpeg4 xvid
+framerates:8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1024x768
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:768
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPad Mini MPEG-4 Movie (*.mp4)
+ext: mp4
+group: ipad
+resolutions: 480x270 480x320 640x480 720x480 720x480 720x576 1024x768 1280x720 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1024x768
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPad Mini 2 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: ipad
+resolutions: 480x270 480x320 640x480 720x480 720x480 720x576 1024x768 1280x720 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:8 10 12 15 23.976 24 25 29.97 30 60
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000 5000 6000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPad Mini 3 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: ipad
+resolutions: 480x270 480x320 640x480 720x480 720x480 720x576 1024x768 1280x720 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:8 10 12 15 23.976 24 25 29.97 30 60
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000 5000 6000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPad 2 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: ipad
+resolutions: 480x270 480x320 640x480 720x480 720x480 720x576 1024x768 1280x720 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 3500 4000 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1024x768
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:768
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPad Retina MPEG-4 Movie (*.mp4)
+ext: mp4
+group: ipad
+resolutions: 480x270 480x320 640x480 720x480 720x576 1024x768 1280x720 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2000 2500 3000 4000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1280x720
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPad 4 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: ipad
+resolutions: 480x270 480x320 640x480 720x480 720x576 1024x768 1280x720 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2000 2500 3000 4000 5000 6000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPad Air MPEG-4 Movie (*.mp4)
+ext: mp4
+group: ipad
+resolutions: 480x270 480x320 640x480 720x480 720x576 1024x768 1280x720 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:8 10 12 15 23.976 24 25 29.97 30 60
+video_bitrates:256 512 768 1000 1200 1500 2000 2500 3000 4000 5000 6000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPad Air2 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: ipad
+resolutions: 480x270 480x320 640x480 720x480 720x576 1024x768 1280x720 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:8 10 12 15 23.976 24 25 29.97 30 60
+video_bitrates:256 512 768 1000 1200 1500 2000 2500 3000 4000 5000 6000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPad Movie for 480p TV Out (*.mp4)
+ext: mp4
+group: ipad
+resolutions: 640x480
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:640x480
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:768
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPad Movie for 576p TV Out (*.mp4)
+ext: mp4
+group: ipad
+resolutions: 720x576
+video_codecs:x264
+framerates:Auto 8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:720x576
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:768
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPad Movie for 720p TV Out (*.mp4)
+ext: mp4
+group: ipad
+resolutions: 1280x720
+video_codecs:x264
+framerates:Auto 8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1280x720
+default_video_codec:x264
+default_framerate:30
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPad 2 Movie for 1080p TV Out (*.mp4)
+ext: mp4
+group: ipad
+resolutions: 1920x1080
+video_codecs:x264
+framerates:Auto 8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 3500 4000 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:x264
+default_framerate:30
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPad Mini 4 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: ipad
+resolutions: 480x270 480x320 640x480 720x480 720x480 720x576 1024x768 1280x720 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:8 10 12 15 23.976 24 25 29.97 30 60
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000 5000 6000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPad Pro MPEG-4 Movie (*.mp4)
+ext: mp4
+group: ipad
+resolutions: 480x270 480x320 640x480 720x480 720x576 1024x768 1280x720 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:8 10 12 15 23.976 24 25 29.97 30 60
+video_bitrates:256 512 768 1000 1200 1500 2000 2500 3000 4000 5000 6000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPod Classic MPEG-4 Movie (*.mp4)
+ext: mp4
+group: ipod
+resolutions: 320x240 480x270 480x320 480x480 640x480
+video_codecs:xvid mpeg4 x264
+framerates:Auto 8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:320x240
+default_video_codec:xvid
+default_framerate:25
+default_video_bitrate:512
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:64
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPod Nano MPEG-4 Movie (*.mp4)
+ext: mp4
+group: ipod
+resolutions: 320x240 480x270 480x320 640x480 720x576
+video_codecs:xvid mpeg4 x264
+framerates:Auto 8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:320x240
+default_video_codec:xvid
+default_framerate:25
+default_video_bitrate:768
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:160
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPod Touch 1-3 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: ipod
+resolutions: 480x270 480x320 640x480
+video_codecs:xvid mpeg4 x264
+framerates:Auto 8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:480x320
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:768
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPod Touch 4 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: ipod
+resolutions: 480x270 480x320 640x480 720x480 960x640 1024x768 1280x720
+video_codecs:xvid mpeg4 x264
+framerates:Auto 8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:960x640
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:768
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPod Touch 5 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: ipod
+resolutions: 480x270 480x320 640x480 720x480 960x640 1024x768 1136x640 1280x720 1920x1080
+video_codecs:xvid mpeg4 x264
+framerates:Auto 8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1280x720
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:768
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPod Movie for 480p TV Out (*.mp4)
+ext: mp4
+group: ipod
+resolutions: 640x480
+video_codecs:xvid mpeg4 x264
+framerates:Auto 8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:null
+default_video_codec:xvid
+default_framerate:25
+default_video_bitrate:512
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Apple iPod Movie for 576p TV Out (*.mp4)
+ext: mp4
+group: ipod
+resolutions: 720x576
+video_codecs:xvid mpeg4 x264
+framerates:Auto 8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:null
+default_video_codec:xvid
+default_framerate:25
+default_video_bitrate:512
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Apple TV MPEG-4 Movie (*.mp4)
+ext: mp4
+group: appletv
+resolutions: 320x240 480x270 480x320 640x480 720x432
+video_codecs:xvid mpeg4
+framerates:Auto 8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1500 2500 3000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:480x320
+default_video_codec:xvid
+default_framerate:25
+default_video_bitrate:512
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Apple TV MPEG-4 AVC Movie (*.mp4)
+ext: mp4
+group: appletv
+resolutions: 320x240 480x270 480x320 640x480 720x432 720x576 960x540 1280x720
+video_codecs:x264
+framerates:Auto 8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1500 2500 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:720x576
+default_video_codec:x264
+default_framerate:24
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Apple TV III MPEG-4 Movie (*.mp4)
+ext: mp4
+group: appletv
+resolutions: 640x480 720x480 960x640 1024x768 1280x720 1440x900 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 3500 4000 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:160
+default_samplerate:44100
+default_channel:2
+
+name: Samsung Galaxy Note 4 Prime MPEG-4 Movie (*.mp4)
+ext: mp4
+group: samsung_phone
+resolutions: 480x270 480x320 640x480 720x480 960x640 1024x768 1136x640 1280x720 1440x900 1920x1080 2560x1440
+video_codecs:x264 mpeg4 xvid
+framerates:8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 3000 3500 4000 7500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:2560x1440
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:7500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:160
+default_samplerate:44100
+default_channel:2
+
+name: Samsung Galaxy Note 4 Standard MPEG-4 Movie (*.mp4)
+ext: mp4
+group: samsung_phone
+resolutions: 480x270 480x320 640x480 720x480 960x640 1024x768 1136x640 1280x720 1440x900 1920x1080 2560x1440
+video_codecs:x264 mpeg4 xvid
+framerates:8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 3000 3500 4000 7500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:2560x1440
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:7500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:160
+default_samplerate:44100
+default_channel:2
+
+name: Samsung Galaxy Note MPEG-4 Movie (*.mp4)
+ext: mp4
+group: samsung_phone
+resolutions: 480x270 480x320 640x480 800x480 1280x800
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1280x800
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Samsung Galaxy Note II MPEG-4 Movie (*.mp4)
+ext: mp4
+group: samsung_phone
+resolutions: 480x270 480x320 640x480 800x480 1280x720 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1280x720
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Samsung Galaxy Note III MPEG-4 Movie (*.mp4)
+ext: mp4
+group: samsung_phone
+resolutions: 480x270 480x320 640x480 800x480 1280x720 1440x900 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 3500 4000 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Samsung Galaxy Note IV MPEG-4 Movie (*.mp4)
+ext: mp4
+group: samsung_phone
+resolutions: 480x270 480x320 640x480 800x480 1280x720 1440x900 1920x1080 2560x1440
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 3500 4000 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:2560x1440
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:5000
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Samsung Galaxy Note 7 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: samsung_phone
+resolutions: 480x270 480x320 640x480 800x480 1280x720 1440x900 1920x1080 2560x1440
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 3500 4000 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:2560x1440
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:5000
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Samsung Galaxy Note 8 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: samsung_phone
+resolutions: 480x270 480x320 640x480 800x480 1280x720 1440x900 1920x1080 2560x1440 3840x2160
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 3500 4000 5000 6000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:3840x2160
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:6000
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Samsung Galaxy S II MPEG-4 Movie (*.mp4)
+ext: mp4
+group: samsung_phone
+resolutions: 480x270 480x320 640x480 800x480
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:800x480
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Samsung Galaxy S III MPEG-4 Movie (*.mp4)
+ext: mp4
+group: samsung_phone
+resolutions: 480x270 480x320 640x480 800x480 1280x720
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1280x720
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Samsung Galaxy S IV MPEG-4 Movie (*.mp4)
+ext: mp4
+group: samsung_phone
+resolutions: 480x270 480x320 640x480 800x480 1280x720 1440x900 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Samsung Galaxy S V MPEG-4 Movie (*.mp4)
+ext: mp4
+group: samsung_phone
+resolutions: 480x270 480x320 640x480 800x480 1280x720 1440x900 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Samsung Galaxy S VI MPEG-4 Movie (*.mp4)
+ext: mp4
+group: samsung_phone
+resolutions: 480x270 480x320 640x480 800x480 1280x720 1440x900 1920x1080 2560x1440
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:2560x1440
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Samsung Galaxy S VII MPEG-4 Movie (*.mp4)
+ext: mp4
+group: samsung_phone
+resolutions: 480x270 480x320 640x480 800x480 1280x720 1440x900 1920x1080 2560x1440
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:2560x1440
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Samsung Galaxy C5 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: samsung_phone
+resolutions: 480x270 480x320 640x480 800x480 1280x720 1440x900 1920x1080 2560x1440
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Samsung Galaxy C7 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: samsung_phone
+resolutions: 480x270 480x320 640x480 800x480 1280x720 1440x900 1920x1080 2560x1440
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Samsung Galaxy S8 Plus MPEG-4 Movie (*.mp4)
+ext: mp4
+group: samsung_phone
+resolutions: 480x270 480x320 640x480 800x480 1280x720 1440x900 1920x1080 2560x1440 2960x1440
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:2960x1440
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Samsung Galaxy Tab 10.1 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: samsung_pad
+resolutions: 320x240 480x270 480x320 640x480 720x480 800x480 1280x800 1280x720 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1280x800
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Samsung Galaxy Tab 10.5 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: samsung_pad
+resolutions: 320x240 480x270 480x320 640x480 720x480 800x480 1280x800 1280x720 1920x1080 2560x1600
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 6000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:2560x1600
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:6000
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Samsung Galaxy Note 10.1 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: samsung_pad
+resolutions: 320x240 480x270 480x320 640x480 720x405 800x480 1280x800 1280x720 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1280x800
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Samsung Galaxy Note Pro 12.2 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: samsung_pad
+resolutions: 320x240 480x270 480x320 640x480 720x405 800x480 1280x800 1280x720 1920x1080 2560x1600
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 6000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:2560x1600
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:6000
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Google Android MPEG-4 Movie (*.mp4)
+ext: mp4
+group: gphone
+resolutions: 320x240 480x270 480x320 640x480 720x480 800x480
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30 50 59.94 60
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:480x320
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:768
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Google Nexus One MPEG-4 Movie (*.mp4)
+ext: mp4
+group: gphone
+resolutions: 480x270 480x320 640x480 800x480
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:800x480
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1200
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Google Nexus 4 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: gphone
+resolutions: 480x270 480x320 640x480 800x480 1280x720
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1280x720
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Sony Ericsson Xperia MPEG-4 Movie (*.mp4)
+ext: mp4
+group: gphone
+resolutions: 320x240 480x320 640x480 800x480 854x480 960x540 1024x600 1280x720 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:854x480
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1200
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: ZTE Mobile Phones MPEG-4 Movie (*.mp4)
+ext: mp4
+group: gphone
+resolutions: 320x240 480x320 640x480 800x480 854x480 960x540 1024x600 1280x720 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:800x480
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: HTC Desire MPEG-4 Movie (*.mp4)
+ext: mp4
+group: gphone
+resolutions: 480x270 480x320 640x480 800x480
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:800x480
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1200
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: IS01 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: gphone
+resolutions: 320x240 640x480 800x480 960x480
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:960x480
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1200
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: LYNX SH-10B MPEG-4 Movie (*.mp4)
+ext: mp4
+group: gphone
+resolutions: 320x240 640x480 800x480 960x480
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:960x480
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1200
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Google Nexus 5 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: gphone
+resolutions: 480x270 480x320 640x480 800x480 1280x720 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3375
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:3375
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Google Nexus 6 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: gphone
+resolutions: 480x270 480x320 640x480 800x480 1280x720 2560x1440
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 6000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:2560x1440
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:6000
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Amazon Kindle Fire MPEG-4 Movie (*.mp4)
+ext: mp4
+group: android_pad
+resolutions: 320x240 480x270 480x320 640x480 720x480 800x480 1024x600 1280x800
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1024x600
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Amazon Kindle Fire HD 7-inch MPEG-4 Movie (*.mp4)
+ext: mp4
+group: android_pad
+resolutions: 320x240 480x270 480x320 640x480 720x405 800x480 1024x600 1280x800
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1280x800
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Amazon Kindle Fire HD 8.9-inch MPEG-4 Movie (*.mp4)
+ext: mp4
+group: android_pad
+resolutions: 320x240 480x270 480x320 640x480 720x405 800x480 1024x600 1280x800 1920x1200
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1200
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Google Nexus 7 Tablet MPEG-4 Movie (*.mp4)
+ext: mp4
+group: android_pad
+resolutions: 320x240 480x270 480x320 640x480 720x405 800x480 1024x600 1280x800 1920x1080 1920x1200
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1200
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Google Nexus 9 Tablet MPEG-4 Movie (*.mp4)
+ext: mp4
+group: android_pad
+resolutions: 320x240 480x270 480x320 640x480 720x405 800x480 1024x600 1280x800 1920x1080 1920x1200 2048x1536
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 3500 4000 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:2048x1536
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:3500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Amazon Kindle Fire HDX 8.9-inch MPEG-4 Movie (*.mp4)
+ext: mp4
+group: android_pad
+resolutions: 320x240 480x270 480x320 640x480 720x405 800x480 1024x600 1280x800 1440x900 1920x1080 1920x1200 2560x1600
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1200
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Google Nexus 7 Tablet MPEG-4 Movie (*.mp4)
+ext: mp4
+group: android_pad
+resolutions: 320x240 480x270 480x320 640x480 720x405 800x480 1024x600 1280x800
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1280x800
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Google Nexus 7 2013 Tablet MPEG-4 Movie (*.mp4)
+ext: mp4
+group: android_pad
+resolutions: 320x240 480x270 480x320 640x480 720x405 800x480 1024x600 1280x720 1280x800 1440x900 1920x1080 1920x1200
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Google Nexus 10 Tablet MPEG-4 Movie (*.mp4)
+ext: mp4
+group: android_pad
+resolutions: 320x240 480x270 480x320 640x480 720x405 800x480 1024x600 1280x720 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1280x720
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Motorola Xoom MPEG-4 Movie (*.mp4)
+ext: mp4
+group: android_pad
+resolutions: 320x240 480x270 480x320 640x480 720x480 800x480 1280x800
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1280x800
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Dell Streak 10 Pro MPEG-4 Movie (*.mp4)
+ext: mp4
+group: android_pad
+resolutions: 320x240 480x270 480x320 640x480 720x480 800x480 1280x800
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1280x800
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Sony Xperia Tablet S MPEG-4 Movie (*.mp4)
+ext: mp4
+group: android_pad
+resolutions: 320x240 480x270 480x320 640x480 720x405 800x480 1280x800 1280x720 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1280x800
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Asus Eee Pad Transformer MPEG-4 Movie (*.mp4)
+ext: mp4
+group: android_pad
+resolutions: 320x240 480x270 480x320 640x480 720x480 800x480 1280x800 1280x720 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1280x800
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Acer Iconia Tab A500 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: android_pad
+resolutions: 320x240 480x270 480x320 640x480 720x480 800x480 1280x800
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1280x800
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: HTC Flyer MPEG-4 Movie (*.mp4)
+ext: mp4
+group: android_pad
+resolutions: 320x240 480x270 480x320 640x480 720x480 800x480 1024x600
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1024x600
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Viewsonic Viewpad 7 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: android_pad
+resolutions: 320x240 480x270 480x320 640x480 720x480 800x480
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:800x480
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Creative ZiiO MPEG-4 Movie (*.mp4)
+ext: mp4
+group: android_pad
+resolutions: 320x240 480x270 480x320 640x480 720x480 800x480 1280x800
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1280x800
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Toshiba Regza Tablet MPEG-4 Movie (*.mp4)
+ext: mp4
+group: android_pad
+resolutions: 320x240 480x270 480x320 640x480 720x480 800x480 1280x800
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1280x800
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: NOOK HD Tablet MPEG-4 Movie (*.mp4)
+ext: mp4
+group: android_pad
+resolutions: 320x240 480x270 480x320 640x480 720x405 800x480 1024x600 1280x720 1440x900
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1280x720
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: NOOK HD+ Tablet MPEG-4 Movie (*.mp4)
+ext: mp4
+group: android_pad
+resolutions: 320x240 480x270 480x320 640x480 720x405 800x480 1024x600 1280x720 1440x900 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Roku LT Streaming Player MPEG-4 Movie (*.mp4)
+ext: mp4
+group: roku_box
+resolutions: 320x240 480x270 480x320 640x480 720x405 800x480 1024x600 1280x720
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1280x720
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Roku HD Streaming Player MPEG-4 Movie (*.mp4)
+ext: mp4
+group: roku_box
+resolutions: 320x240 480x270 480x320 640x480 720x405 800x480 1024x600 1280x720
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1280x720
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Roku 2 XD Streaming Player MPEG-4 Movie (*.mp4)
+ext: mp4
+group: roku_box
+resolutions: 320x240 480x270 480x320 640x480 720x405 800x480 1024x600 1280x720 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Roku 3 Streaming Player MPEG-4 Movie (*.mp4)
+ext: mp4
+group: roku_box
+resolutions: 320x240 480x270 480x320 640x480 720x405 800x480 1024x600 1280x720 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Sony PS4 MPEG-4 AVC Movie (1080p) (*.mp4)
+ext: mp4
+group: ps4
+resolutions: 480x272 640x480 720x480 720x576 1280x720 1440x1080 1920x1080
+video_codecs:x264
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.976 30 50 59.94 60
+video_bitrates:1200 1500 2000 2500 3000 4000 5000
+aspect_ratios:
+audio_codecs:ac3
+audio_bitrates:64 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:null
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:192
+default_samplerate:48000
+default_channel:2
+
+name: Sony PS4 MPEG-4 AVC Movie (1080p) (*.mkv)
+ext: mkv
+group: ps4
+resolutions: 480x272 640x480 720x480 720x576 1280x720 1440x1080 1920x1080
+video_codecs:x264
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.976 30 50 59.94 60
+video_bitrates:1200 1500 2000 2500 3000 4000 5000
+aspect_ratios:
+audio_codecs:ac3
+audio_bitrates:64 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:null
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:192
+default_samplerate:48000
+default_channel:2
+
+name: Sony PS4 MPEG-4 AVC Movie (1080p) (*.m2ts)
+ext: m2ts
+group: ps4
+resolutions: 480x272 640x480 720x480 720x576 1280x720 1440x1080 1920x1080
+video_codecs:x264
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.976 30 50 59.94 60
+video_bitrates:1200 1500 2000 2500 3000 4000 5000
+aspect_ratios:
+audio_codecs:ac3
+audio_bitrates:64 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:null
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:192
+default_samplerate:48000
+default_channel:2
+
+name: Sony PS3 MPEG-4 AVC Movie (480p) (*.mp4)
+ext: mp4
+group: ps3
+resolutions: 480x272 640x480 720x480 720x576
+video_codecs:x264
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.976 30 50 59.94 60
+video_bitrates:1200 1500 2000 2500 3000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:64 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:720x480
+default_video_codec:null
+default_framerate:29.976
+default_video_bitrate:2000
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:96
+default_samplerate:48000
+default_channel:2
+
+name: Sony PS3 MPEG-4 AVC Movie (720p) (*.mp4)
+ext: mp4
+group: ps3
+resolutions: 480x272 640x480 720x480 720x576 1280x720
+video_codecs:x264
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.976 30 50 59.94 60
+video_bitrates:1200 1500 2000 2500 3000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:64 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1280x720
+default_video_codec:null
+default_framerate:29.976
+default_video_bitrate:2000
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:48000
+default_channel:2
+
+name: Sony PS3 MPEG-4 AVC Movie (1080p) (*.m2ts)
+ext: m2ts
+group: ps3
+resolutions: 480x272 640x480 720x480 720x576 1280x720 1440x1080 1920x1080
+video_codecs:x264
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.976 30 50 59.94 60
+video_bitrates:1200 1500 2000 2500 3000 4000 5000
+aspect_ratios:
+audio_codecs:ac3
+audio_bitrates:64 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:null
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:192
+default_samplerate:48000
+default_channel:2
+
+name: Sony PSP MPEG-4 Movie (*.mp4)
+ext: mp4
+group: psp
+resolutions: 160x112 320x240 368x208
+video_codecs:mpeg4
+framerates:29.970 14.985
+video_bitrates:256 512 768 1000 1500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:24000
+audio_channels:2
+default_resolution:null
+default_video_codec:null
+default_framerate:null
+default_video_bitrate:512
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:96
+default_samplerate:null
+default_channel:null
+
+name: Sony PSP MPEG-4 AVC Movie (*.mp4)
+ext: mp4
+group: psp
+resolutions: 160x112 368x208 320x240 480x272 720x480
+video_codecs:x264
+framerates:Auto 8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:480x272
+default_video_codec:null
+default_framerate:29.97
+default_video_bitrate:512
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:96
+default_samplerate:48000
+default_channel:2
+
+name: Sony PSVita MPEG-4 Movie (*.mp4)
+ext: mp4
+group: psp
+resolutions: 368x208 320x240 640x360 640x480 960x544 960x720 1024x576 1280x720
+video_codecs:mpeg4 x264
+framerates:Auto 8 10 12 15 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1500 2000 2500 3000 4000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:960x544
+default_video_codec:x264
+default_framerate:29.97
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:48000
+default_channel:2
+
+name: Sony WalkMan MPEG-4 Movie (*.mp4)
+ext: mp4
+group: sonywm
+resolutions: 160x112 176x144 220x176 320x240 400x240 720x480
+video_codecs:xvid mpeg4
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1500 2500 4000 5000 6000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:320x240
+default_video_codec:xvid
+default_framerate:25
+default_video_bitrate:768
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Sony WalkMan MPEG-4 AVC Movie (*.mp4)
+ext: mp4
+group: sonywm
+resolutions: 160x112 176x144 220x176 320x240 400x240 720x480
+video_codecs:x264
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 2000 5000 8000 10000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:320x240
+default_video_codec:null
+default_framerate:25
+default_video_bitrate:512
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Sony WalkMan WMV9 Movie (*.wmv)
+ext: wmv
+group: sonywm
+resolutions: 320x240 400x240 480x270 720x480
+video_codecs:WMV V9
+framerates:
+video_bitrates:256 384 768 1700 2500 5000 6000
+aspect_ratios:
+audio_codecs:WMA 9.2
+audio_bitrates:
+audio_samplerates:
+audio_channels:
+default_resolution:320x240
+default_video_codec:null
+default_framerate:null
+default_video_bitrate:768
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:null
+default_channel:null
+
+name: Archos 105 Movie (*.wmv)
+ext: wmv
+group: archos
+resolutions: 160x128
+video_codecs:WMV V9
+framerates:
+video_bitrates:256 128
+aspect_ratios:
+audio_codecs:WMA 9.2
+audio_bitrates:
+audio_samplerates:
+audio_channels:
+default_resolution:null
+default_video_codec:null
+default_framerate:null
+default_video_bitrate:256
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:null
+default_channel:null
+
+name: Archos 404/405 Movie (*.avi)
+ext: avi
+group: archos
+resolutions: 320x240 480x272 640x480 720x480 720x576
+video_codecs:xvid
+framerates:Auto 23.976 24 25 29.97 30
+video_bitrates:128 256 384 512 768 1024 1600
+aspect_ratios:
+audio_codecs:mp3 mp2 pcm Original
+audio_bitrates:64 96 112 128 192 224 256 320
+audio_samplerates:8000 11025 16000 22050 32000 44100 48000
+audio_channels:
+default_resolution:480x272
+default_video_codec:xvid
+default_framerate:25
+default_video_bitrate:512
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:null
+
+name: Archos 504/604 Movie (*.avi)
+ext: avi
+group: archos
+resolutions: 320x240 480x272 640x480 720x480 720x576
+video_codecs:xvid
+framerates:Auto 23.976 24 25 29.97 30
+video_bitrates:128 256 384 512 768 1024 1600
+aspect_ratios:
+audio_codecs:mp3 mp2 pcm Original
+audio_bitrates:64 96 112 128 192 224 256 320
+audio_samplerates:8000 11025 16000 22050 32000 44100 48000
+audio_channels:
+default_resolution:480x272
+default_video_codec:xvid
+default_framerate:25
+default_video_bitrate:768
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:null
+
+name: Archos 605/705/TV+ Movie (*.avi)
+ext: avi
+group: archos
+resolutions: 320x240 480x272 640x480 720x480 720x576 800x480
+video_codecs:xvid
+framerates:Auto 23.976 24 25 29.97 30
+video_bitrates:128 256 384 512 768 1024 1600 2500
+aspect_ratios:
+audio_codecs:mp3 mp2 pcm Original
+audio_bitrates:64 96 112 128 192 224 256 320
+audio_samplerates:8000 11025 16000 22050 32000 44100 48000
+audio_channels:
+default_resolution:720x480
+default_video_codec:xvid
+default_framerate:25
+default_video_bitrate:768
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:null
+
+name: Archos AV500/700 Movie (*.avi)
+ext: avi
+group: archos
+resolutions: 320x240 352x288 480x234 480x272
+video_codecs:xvid
+framerates:Auto 23.976 24 25 29.97 30
+video_bitrates:128 256 384 512 768 1024 1600
+aspect_ratios:
+audio_codecs:mp3 mp2 pcm Original
+audio_bitrates:64 96 112 128 192 224 256 320
+audio_samplerates:8000 11025 16000 22050 32000 44100 48000
+audio_channels:
+default_resolution:480x272
+default_video_codec:xvid
+default_framerate:25
+default_video_bitrate:512
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:null
+
+name: Creative Zen X-Fi Movie (*.avi)
+ext: avi
+group: zen
+resolutions: 160x112 176x144 220x176 320x240
+video_codecs:mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:64 96 112 128 160 192 256 384 512 768
+aspect_ratios:
+audio_codecs:mp3
+audio_bitrates:12 32 48 64 96 112 128 160 192 224 256 320
+audio_samplerates:8000 11025 16000 22050 32000 44100 48000
+audio_channels:2 1
+default_resolution:320x240
+default_video_codec:null
+default_framerate:25
+default_video_bitrate:384
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:96
+default_samplerate:44100
+default_channel:null
+
+name: Creative ZEN Vision Movie (*.avi)
+ext: avi
+group: zen
+resolutions: 160x112 176x144 220x176 320x240 640x480
+video_codecs:mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:64 96 112 128 160 192 256 384 512 768
+aspect_ratios:
+audio_codecs:mp3
+audio_bitrates:12 32 48 64 96 112 128 160 192 224 256 320
+audio_samplerates:8000 11025 16000 22050 32000 44100 48000
+audio_channels:2 1
+default_resolution:320x240
+default_video_codec:null
+default_framerate:25
+default_video_bitrate:384
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:96
+default_samplerate:44100
+default_channel:null
+
+name: Creative Zen Vision M Movie (*.avi)
+ext: avi
+group: zen
+resolutions: 160x112 176x144 220x176 320x240
+video_codecs:mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:64 96 112 128 160 192 256 384 512 768
+aspect_ratios:
+audio_codecs:mp3
+audio_bitrates:12 32 48 64 96 112 128 160 192 224 256 320
+audio_samplerates:8000 11025 16000 22050 32000 44100 48000
+audio_channels:2 1
+default_resolution:320x240
+default_video_codec:null
+default_framerate:25
+default_video_bitrate:384
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:96
+default_samplerate:44100
+default_channel:null
+
+name: Creative Zen Vision W Movie (*.avi)
+ext: avi
+group: zen
+resolutions: 160x112 176x144 220x176 320x240 480x272
+video_codecs:mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:64 96 112 128 160 192 256 384 512 768
+aspect_ratios:
+audio_codecs:mp3
+audio_bitrates:12 32 48 64 96 112 128 160 192 224 256 320
+audio_samplerates:8000 11025 16000 22050 32000 44100 48000
+audio_channels:2 1
+default_resolution:480x272
+default_video_codec:null
+default_framerate:25
+default_video_bitrate:384
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:96
+default_samplerate:44100
+default_channel:null
+
+name: iRiver E10 Movie (*.avi)
+ext: avi
+group: iriver
+resolutions: 128x128
+video_codecs:mpeg4 xvid
+framerates:15 12 10
+video_bitrates:64 96 112 128 160 192 256 384
+aspect_ratios:
+audio_codecs:mp3
+audio_bitrates:12 32 48 64 96 112 128
+audio_samplerates:8000 11025 16000 22050 32000 44100 48000
+audio_channels:2 1
+default_resolution:null
+default_video_codec:null
+default_framerate:15
+default_video_bitrate:256
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:null
+
+name: iRiver U10/Clix Movie (*.avi)
+ext: avi
+group: iriver
+resolutions: 160x112 176x144 220x176 320x240
+video_codecs:mpeg4 xvid
+framerates:15 12 10
+video_bitrates:64 96 112 128 160 192 256 384
+aspect_ratios:
+audio_codecs:mp3
+audio_bitrates:12 32 48 64 96 112 128
+audio_samplerates:8000 11025 16000 22050 32000 44100 48000
+audio_channels:2 1
+default_resolution:220x176
+default_video_codec:null
+default_framerate:15
+default_video_bitrate:256
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:null
+
+name: iRiver B20/X20/Clix 2/E100/Lplayer Movie (*.avi)
+ext: avi
+group: iriver
+resolutions: 160x112 176x144 220x176 320x240
+video_codecs:mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:64 96 112 128 160 192 256 384 512 768 1024 2048
+aspect_ratios:
+audio_codecs:mp3
+audio_bitrates:12 32 48 64 96 112 128 160 192 224 256 320
+audio_samplerates:8000 11025 16000 22050 32000 44100 48000
+audio_channels:2 1
+default_resolution:320x240
+default_video_codec:null
+default_framerate:15
+default_video_bitrate:384
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:96
+default_samplerate:44100
+default_channel:null
+
+name: iRiver Spinn/D28/DICPLE D30 Movie (*.avi)
+ext: avi
+group: iriver
+resolutions: 160x112 176x144 220x176 320x240 480x270
+video_codecs:mpeg4 xvid
+framerates:30 29.97 25 15 12 10
+video_bitrates:64 96 112 128 160 192 256 384 512 768
+aspect_ratios:
+audio_codecs:mp3
+audio_bitrates:12 32 48 64 96 112 128
+audio_samplerates:8000 11025 16000 22050 32000 44100 48000
+audio_channels:2 1
+default_resolution:480x270
+default_video_codec:null
+default_framerate:15
+default_video_bitrate:384
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:96
+default_samplerate:44100
+default_channel:null
+
+name: iRiver P10/P20 Movie (*.avi)
+ext: avi
+group: iriver
+resolutions: 160x112 176x144 220x176 320x240 640x272 480x360 640x368 640x480
+video_codecs:mpeg4 xvid
+framerates:30 29.97 25 15 12 10
+video_bitrates:64 96 112 128 160 192 256 384 512 768 1500
+aspect_ratios:
+audio_codecs:mp3
+audio_bitrates:12 32 48 64 96 112 128 192
+audio_samplerates:8000 11025 16000 22050 32000 44100 48000
+audio_channels:2 1
+default_resolution:640x272
+default_video_codec:null
+default_framerate:25
+default_video_bitrate:512
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:null
+
+name: iRiver PMP-120/140/IMP-1000/1100 Movie (*.avi)
+ext: avi
+group: iriver
+resolutions: 320x240 640x272 480x360 640x368 640x480 720x480
+video_codecs:xvid mpeg4
+framerates:30 29.97 25 15 12 10
+video_bitrates:64 96 112 128 160 192 256 384 512 768 1500 2000
+aspect_ratios:
+audio_codecs:mp3
+audio_bitrates:12 32 48 64 96 112 128 192
+audio_samplerates:8000 11025 16000 22050 32000 44100 48000
+audio_channels:2 1
+default_resolution:640x480
+default_video_codec:null
+default_framerate:25
+default_video_bitrate:512
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:null
+
+name: Sandisk Sansa AVI Movie (*.avi)
+ext: avi
+group: sansa
+resolutions: 160x112 224x176 368x208 320x240 480x320 512x384 480x480 640x480 480x576
+video_codecs:mpeg4
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 384 512 768 1000 1500 2000
+aspect_ratios:
+audio_codecs:mp3
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:8000 11025 16000 22050 24000 32000 44100 48000
+audio_channels:2
+default_resolution:320x240
+default_video_codec:null
+default_framerate:20
+default_video_bitrate:512
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:64
+default_samplerate:24000
+default_channel:null
+
+name: Sandisk Sansa WMV Movie (*.wmv)
+ext: wmv
+group: sansa
+resolutions: 160x112 176x144 220x176 320x240 480x320 512x384 480x480 640x480 480x576
+video_codecs:WMV V8 WMV V9
+framerates:
+video_bitrates:768 384 256
+aspect_ratios:
+audio_codecs:WMA 9.2
+audio_bitrates:
+audio_samplerates:
+audio_channels:
+default_resolution:320x240
+default_video_codec:WMV V9
+default_framerate:null
+default_video_bitrate:768
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:null
+default_channel:null
+
+name: Sandisk Sansa MPEG-4 Movie (*.mp4)
+ext: mp4
+group: sansa
+resolutions: 160x112 224x176 368x208 320x240 480x320 512x384 480x480 640x480 480x576
+video_codecs:mpeg4
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1500 2000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:8000 11025 16000 22050 24000 32000 44100 48000
+audio_channels:2
+default_resolution:320x240
+default_video_codec:null
+default_framerate:24
+default_video_bitrate:512
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:64
+default_samplerate:24000
+default_channel:null
+
+name: Xbox One WMV Movie (*.wmv)
+ext: wmv
+group: xbox one
+resolutions: 320x240 640x480 720x480 720x576 1024x768 1280x720 1280x1024 1366x768 1920x1080
+video_codecs:WMV V8 WMV V9
+framerates:
+video_bitrates:256 384 768 1024 1500 2500 15000
+aspect_ratios:
+audio_codecs:WMA 9.2
+audio_bitrates:
+audio_samplerates:
+audio_channels:
+default_resolution:1280x720
+default_video_codec:WMV V8
+default_framerate:null
+default_video_bitrate:768
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:null
+default_channel:null
+
+name: Xbox One AVI Movie (*.avi)
+ext: avi
+group: xbox one
+resolutions: 320x240 512x384 640x480 720x480 720x576 1280x720
+video_codecs:mpeg4
+framerates:15 20 23.976 24 25 29.97 30 50 59.94 60
+video_bitrates:256 384 512 768 1024 2000 2500 5000
+aspect_ratios:
+audio_codecs:mp3
+audio_bitrates:64 96 112 128 192 224 256 320
+audio_samplerates:44100 48000
+audio_channels:2
+default_resolution:1280x720
+default_video_codec:null
+default_framerate:30
+default_video_bitrate:1024
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:null
+
+name: Xbox One MPEG-4 Movie (*.mp4)
+ext: mp4
+group: xbox one
+resolutions: 320x240 640x480 720x480 720x576 1280x720 1440x1080 1920x1080
+video_codecs:xvid mpeg4 x264
+framerates:15 20 23.976 24 25 29.97 30 50 59.94 60
+video_bitrates:256 512 768 1000 1500 2500 3000 5000 10000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:64 80 96 112 128 160 192 224 256 320
+audio_samplerates:44100 48000 54000 96000
+audio_channels:1 2
+default_resolution:1280x720
+default_video_codec:mpeg4
+default_framerate:30
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:48000
+default_channel:2
+
+name: Xbox WMV Movie (*.wmv)
+ext: wmv
+group: xbox
+resolutions: 320x240 640x480 720x480 720x576 1024x768 1280x720 1280x1024 1366x768 1920x1080
+video_codecs:WMV V8 WMV V9
+framerates:
+video_bitrates:256 384 768 1024 1500 2500 15000
+aspect_ratios:
+audio_codecs:WMA 9.2
+audio_bitrates:
+audio_samplerates:
+audio_channels:
+default_resolution:1280x720
+default_video_codec:WMV V8
+default_framerate:null
+default_video_bitrate:768
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:null
+default_channel:null
+
+name: Xbox AVI Movie (*.avi)
+ext: avi
+group: xbox
+resolutions: 320x240 512x384 640x480 720x480 720x576 1280x720
+video_codecs:mpeg4
+framerates:15 20 23.976 24 25 29.97 30 50 59.94 60
+video_bitrates:256 384 512 768 1024 2000 2500 5000
+aspect_ratios:
+audio_codecs:mp3
+audio_bitrates:64 96 112 128 192 224 256 320
+audio_samplerates:44100 48000
+audio_channels:2
+default_resolution:1280x720
+default_video_codec:null
+default_framerate:30
+default_video_bitrate:1024
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:null
+
+name: Xbox MPEG-4 Movie (*.mp4)
+ext: mp4
+group: xbox
+resolutions: 320x240 640x480 720x480 720x576 1280x720 1440x1080 1920x1080
+video_codecs:xvid mpeg4 x264
+framerates:15 20 23.976 24 25 29.97 30 50 59.94 60
+video_bitrates:256 512 768 1000 1500 2500 3000 5000 10000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:64 80 96 112 128 160 192 224 256 320
+audio_samplerates:44100 48000 54000 96000
+audio_channels:1 2
+default_resolution:1280x720
+default_video_codec:mpeg4
+default_framerate:30
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:48000
+default_channel:2
+
+name: Microsoft Surface RT Tablet MPEG-4 Movie (*.mp4)
+ext: mp4
+group: wm
+resolutions: 320x240 480x270 480x320 640x480 720x405 800x480 1024x600 1280x720 1366x768 1440x900 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30 50 60
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1366x768
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Microsoft Surface PRO Tablet MPEG-4 Movie (*.mp4)
+ext: mp4
+group: wm
+resolutions: 320x240 480x270 480x320 640x480 720x405 800x480 1024x600 1280x720 1366x768 1440x900 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30 50 60
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Windows Phone MPEG-4 Movie (*.mp4)
+ext: mp4
+group: wm
+resolutions: 480x270 480x320 640x480 720x480 800x480 1280x720 1280x768 1440x900 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:800x480
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Dell Axim 51 Movie (*.wmv)
+ext: wmv
+group: wm
+resolutions: 320x240 640x480 720x576
+video_codecs:WMV V8 WMV V9
+framerates:
+video_bitrates:256 384 768 1200 1500 2000 3000 4000
+aspect_ratios:
+audio_codecs:WMA 9.2
+audio_bitrates:
+audio_samplerates:
+audio_channels:
+default_resolution:320x240
+default_video_codec:WMV V9
+default_framerate:null
+default_video_bitrate:768
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:null
+default_channel:null
+
+name: Dell Axim 51V Movie (*.wmv)
+ext: wmv
+group: wm
+resolutions: 320x240 640x480 720x576
+video_codecs:WMV V8 WMV V9
+framerates:
+video_bitrates:256 384 768 1200 1500 2000 3000 4000
+aspect_ratios:
+audio_codecs:WMA 9.2
+audio_bitrates:
+audio_samplerates:
+audio_channels:
+default_resolution:640x480
+default_video_codec:WMV V9
+default_framerate:null
+default_video_bitrate:768
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:null
+default_channel:null
+
+name: HP iPAQ hw6500 Series Movie (*.wmv)
+ext: wmv
+group: wm
+resolutions: 240x240 320x240 640x480 720x576
+video_codecs:WMV V8 WMV V9
+framerates:
+video_bitrates:256 384 768 1200 1500 2000 3000 4000
+aspect_ratios:
+audio_codecs:WMA 9.2
+audio_bitrates:
+audio_samplerates:
+audio_channels:
+default_resolution:240x240
+default_video_codec:WMV V9
+default_framerate:null
+default_video_bitrate:768
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:null
+default_channel:null
+
+name: HP iPAQ hx2000/rx3000/rx1900 Series Movie (*.wmv)
+ext: wmv
+group: wm
+resolutions: 320x240 640x480 720x576
+video_codecs:WMV V8 WMV V9
+framerates:
+video_bitrates:256 384 768 1200 1500 2000 3000 4000
+aspect_ratios:
+audio_codecs:WMA 9.2
+audio_bitrates:
+audio_samplerates:
+audio_channels:
+default_resolution:320x240
+default_video_codec:WMV V9
+default_framerate:null
+default_video_bitrate:768
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:null
+default_channel:null
+
+name: HP iPAQ hx4700 Series Movie (*.wmv)
+ext: wmv
+group: wm
+resolutions: 320x240 640x480 720x576
+video_codecs:WMV V8 WMV V9
+framerates:
+video_bitrates:256 384 768 1200 1500 2000 3000 4000
+aspect_ratios:
+audio_codecs:WMA 9.2
+audio_bitrates:
+audio_samplerates:
+audio_channels:
+default_resolution:640x480
+default_video_codec:WMV V9
+default_framerate:null
+default_video_bitrate:768
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:null
+default_channel:null
+
+name: Palm Treo Series Movie (*.wmv)
+ext: wmv
+group: wm
+resolutions: 320x240 640x480 720x576
+video_codecs:WMV V8 WMV V9
+framerates:
+video_bitrates:256 384 512 768 1200
+aspect_ratios:
+audio_codecs:WMA 9.2
+audio_bitrates:
+audio_samplerates:
+audio_channels:
+default_resolution:320x240
+default_video_codec:WMV V9
+default_framerate:null
+default_video_bitrate:384
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:null
+default_channel:null
+
+name: HTC Touch Diamond Movie (*.wmv)
+ext: wmv
+group: wm
+resolutions: 320x240 640x480 720x576
+video_codecs:WMV V8 WMV V9
+framerates:
+video_bitrates:256 384 768 1200 1500
+aspect_ratios:
+audio_codecs:WMA 9.2
+audio_bitrates:
+audio_samplerates:
+audio_channels:
+default_resolution:640x480
+default_video_codec:WMV V9
+default_framerate:null
+default_video_bitrate:768
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:null
+default_channel:null
+
+name: General Pocket PC Movie (*.wmv)
+ext: wmv
+group: wm
+resolutions: Original 160x112 176x144 220x176 320x240 352x240 352x288 368x208 480x272 480x320 480x480 480x576 512x384 640x480 720x480 720x576
+video_codecs:WMV V8 WMV V9
+framerates:
+video_bitrates:192 256 384 768 1000 1200 1500 2000 3000 4000
+aspect_ratios:
+audio_codecs:WMA 9.2
+audio_bitrates:
+audio_samplerates:
+audio_channels:
+default_resolution:320x240
+default_video_codec:WMV V9
+default_framerate:null
+default_video_bitrate:768
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:null
+default_channel:null
+
+name: Microsoft Zune WMV Movie (*.wmv)
+ext: wmv
+group: zune
+resolutions: 320x240
+video_codecs:WMV V8 WMV V9
+framerates:
+video_bitrates:768 384 256
+aspect_ratios:
+audio_codecs:WMA 9.2
+audio_bitrates:
+audio_samplerates:
+audio_channels:
+default_resolution:null
+default_video_codec:WMV V8
+default_framerate:null
+default_video_bitrate:768
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:null
+default_channel:null
+
+name: Microsoft Zune MPEG-4 Movie (*.mp4)
+ext: mp4
+group: zune
+resolutions: 320x240
+video_codecs:mpeg4 xvid
+framerates:30 25 15 12 10
+video_bitrates:64 96 112 128 160 192 256 384 512 768
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:12 32 48 64 96 112 128 192
+audio_samplerates:8000 11025 22050 44100 48000
+audio_channels:2 1
+default_resolution:null
+default_video_codec:null
+default_framerate:25
+default_video_bitrate:768
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:null
+
+name: Microsoft Zune HD WMV Movie (*.wmv)
+ext: wmv
+group: zune
+resolutions: 320x240 480x272 720x480 720x576 1280x720
+video_codecs:WMV V8 WMV V9
+framerates:
+video_bitrates:256 384 512 768 1024 1500 2500 4000
+aspect_ratios:
+audio_codecs:WMA 9.2
+audio_bitrates:
+audio_samplerates:
+audio_channels:
+default_resolution:480x272
+default_video_codec:WMV V8
+default_framerate:null
+default_video_bitrate:1500
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:null
+default_channel:null
+
+name: Microsoft Zune HD MPEG-4 Movie (*.mp4)
+ext: mp4
+group: zune
+resolutions: 320x240 480x272 720x480 720x576 1280x720
+video_codecs:mpeg4 xvid
+framerates:30 25 15 12 10
+video_bitrates:256 384 512 768 1024 1500 2500 4000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:12 32 48 64 96 112 128 192 320
+audio_samplerates:8000 11025 22050 44100 48000
+audio_channels:2 1
+default_resolution:480x272
+default_video_codec:null
+default_framerate:25
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:null
+
+name: Nintendo Wii AVI Movie (*.avi)
+ext: avi
+group: wii
+resolutions: 320x240 352x240 352x288 368x208 480x272 480x320 480x480 480x576 512x384 640x480 720x480 720x576 848x480
+video_codecs:mjpeg
+framerates:29.97 25 15
+video_bitrates:384 512 768 1024 2000 5000 8000
+aspect_ratios:
+audio_codecs:pcm
+audio_bitrates:
+audio_samplerates:
+audio_channels:
+default_resolution:720x480
+default_video_codec:null
+default_framerate:25
+default_video_bitrate:768
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:null
+default_channel:null
+
+name: Mobile Phone 3GP Movie (*.3gp)
+ext: 3gp
+group: mobile_phone
+resolutions: 128x96 176x144 352x288 704x576 1408x1152
+video_codecs:h263 mpeg4
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:48 64 128 192 256 384 512 768
+aspect_ratios:
+audio_codecs:opencore_amrnb faac
+audio_bitrates:4.75 6.7 7.95 10.2 12.2 24 48 64 96 128 192
+audio_samplerates:8000
+audio_channels:1 2
+default_resolution:176x144
+default_video_codec:null
+default_framerate:15
+default_video_bitrate:64
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:12.2
+default_samplerate:null
+default_channel:null
+
+name: Mobile Phone 3GPP2 Movie (*.3g2)
+ext: 3g2
+group: mobile_phone
+resolutions: Original 128x96 160x120 176x144 220x176 320x240 352x288 640x480
+video_codecs:h263 mpeg4
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:48 64 128 192 256 384 512 768
+aspect_ratios:
+audio_codecs:opencore_amrnb faac
+audio_bitrates:4.75 6.7 7.95 10.2 12.2 24 48 64 96 128 192
+audio_samplerates:8000
+audio_channels:1 2
+default_resolution:176x144
+default_video_codec:null
+default_framerate:15
+default_video_bitrate:64
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:12.2
+default_samplerate:null
+default_channel:null
+
+name: Mobile Phone MPEG-4 Movie (*.mp4)
+ext: mp4
+group: mobile_phone
+resolutions: Original 128x96 160x120 176x144 220x176 240x180 320x240 352x288 640x480
+video_codecs:mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30 50 59.94 60
+video_bitrates:48 64 96 112 128 192 256 384 512 768
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:12 32 48 64 96 112 128 192
+audio_samplerates:11025 22050 44100 48000
+audio_channels:2
+default_resolution:176x144
+default_video_codec:null
+default_framerate:15
+default_video_bitrate:128
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:64
+default_samplerate:11025
+default_channel:null
+
+name: BlackBerry MPEG-4 Movie (*.mp4)
+ext: mp4
+group: blackberry
+resolutions: 160x112 320x240 480x320 480x360 640x480 720x405 800x480 1024x600 1280x720 1280x800 1440x900 1920x1080
+video_codecs:mpeg4 xvid x264
+framerates:14.985 15 20 23.976 24 25 29.97 30
+video_bitrates:256 384 512 768 1000 1500 2000 2500 3000 4000 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:320x240
+default_video_codec:null
+default_framerate:24
+default_video_bitrate:512
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:64
+default_samplerate:44100
+default_channel:2
+
+name: Nokia N-Series MPEG-4 Movie (*.mp4)
+ext: mp4
+group: nokia
+resolutions: Original 128x96 176x144 220x176 320x176 320x240 352x288 640x360 640x480 800x480
+video_codecs:mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:48 64 96 112 128 192 256 384 512 768
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:12 32 48 64 96 112 128 192
+audio_samplerates:8000 16000 24000 44100 48000
+audio_channels:2
+default_resolution:320x176
+default_video_codec:null
+default_framerate:15
+default_video_bitrate:128
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:64
+default_samplerate:24000
+default_channel:null
+
+name: Nokia Lumia Series Phone MPEG-4 Movie (*.mp4)
+ext: mp4
+group: nokia
+resolutions: 480x270 480x320 640x480 720x480 800x480 1280x720 1280x768 1440x900 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:800x480
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Flash Video Movie (*.flv)
+ext: flv
+group: flash
+resolutions: Original 176x144 220x176 320x240 640x480
+video_codecs:flv
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30 50 59.94 60
+video_bitrates:192 216 256 384 512 768 1000 1500
+aspect_ratios:
+audio_codecs:mp3
+audio_bitrates:64 96 128 192
+audio_samplerates:11025 22050 44100
+audio_channels:2
+default_resolution:320x240
+default_video_codec:null
+default_framerate:25
+default_video_bitrate:512
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:44100
+default_channel:null
+
+name: Flash SWF (*.swf)
+ext: swf
+group: flash
+resolutions: Original 128x96 176x144 220x176 320x240 640x480 704x576
+video_codecs:flv
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30 50 59.94 60
+video_bitrates:192 216 256 384 512 768 1000 1500
+aspect_ratios:
+audio_codecs:mp3
+audio_bitrates:64 96 128 192
+audio_samplerates:11025 22050 44100
+audio_channels:2
+default_resolution:320x240
+default_video_codec:null
+default_framerate:25
+default_video_bitrate:512
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:44100
+default_channel:null
+
+name: Toshiba Gigabeat WMV Movie (*.wmv)
+ext: wmv
+group: gigabeat
+resolutions: 320x240
+video_codecs:WMV V8 WMV V9
+framerates:
+video_bitrates:768 512 384 256
+aspect_ratios:
+audio_codecs:WMA 9.2
+audio_bitrates:
+audio_samplerates:
+audio_channels:
+default_resolution:null
+default_video_codec:WMV V8
+default_framerate:null
+default_video_bitrate:512
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:null
+default_channel:null
+
+name: Customized MP4 Movie (*.mp4)
+ext: mp4
+group: general_v
+resolutions: Original 160x112 176x144 220x176 320x240 352x240 352x288 368x208 480x272 480x320 480x480 480x576 512x384 640x480 720x480 720x576 1080x720 1280x720 1440x1080 1920x1080 1920x1200 2048x1536 2560x1440 2560x1600 2732x2048 3840x2160
+video_codecs:x264 x265 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30 50 59.94 60
+video_bitrates:192 256 384 512 768 1024 2000 4000 5000 6000 8000 10000 12000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac ac3 mp3
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:Original
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2000
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Matroska Movie (*.mkv)
+ext: mkv
+group: general_v
+resolutions: Original 160x112 176x144 220x176 320x240 352x240 352x288 368x208 480x272 480x320 480x480 480x576 512x384 640x480 720x480 720x576 1080x720 1280x720 1440x1080 1920x1080 1920x1200 2048x1536 2560x1440 2560x1600 3840x2160
+video_codecs:Original xvid mpeg4 msmpeg4 msmpeg4v2 mjpeg wmv1 wmv2 mpeg2 mpeg1 h263p x264 huffyuv ffv1
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30 50 60
+video_bitrates:64 96 112 128 160 192 256 384 512 768 1024 2000 4000 5000 6000 8000 10000 12000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:mp3 ac3 aac mp2 pcm Original
+audio_bitrates:12 32 48 64 96 112 128 192 224 256 320
+audio_samplerates:8000 16000 22050 32000 44100 48000
+audio_channels:2 1
+default_resolution:Original
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2000
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:null
+video_extra:-profile:v high444 -crf 18
+
+name: MPEG-I Movie (*.mpg)
+ext: mpg
+group: general_v
+resolutions: Original 128x96 176x144 352x240 352x288 480x272 480x480 480x576 640x480 720x480 720x576 704x576
+video_codecs:mpeg1video
+framerates:29.97 25 30 50 59.94 60
+video_bitrates:256 512 768 1000 1152 1500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:mp2
+audio_bitrates:128 224
+audio_samplerates:44100
+audio_channels:2
+default_resolution:352x240
+default_video_codec:null
+default_framerate:null
+default_video_bitrate:1152
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:null
+default_channel:null
+
+name: MPEG-II Movie (*.mpg)
+ext: mpg
+group: general_v
+resolutions: Original 128x96 176x144 352x240 352x288 480x272 480x480 480x576 640x480 704x576 720x480 720x576 1080x720 1280x720 1440x1080 1920x1080
+video_codecs:mpeg2video
+framerates:29.97 25 30 50 59.94 60
+video_bitrates:256 512 768 1000 1500 1800 2500 3000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:mp2 ac3
+audio_bitrates:128 224 384
+audio_samplerates:44100 48000
+audio_channels:2
+default_resolution:720x480
+default_video_codec:null
+default_framerate:null
+default_video_bitrate:1800
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:null
+default_channel:null
+
+name: Customized AVI Movie (*.avi)
+ext: avi
+group: general_v
+resolutions: Original 160x112 176x144 220x176 320x240 352x240 352x288 368x208 480x272 480x320 480x480 480x576 512x384 640x480 720x480 720x576 1080x720 1280x720 1440x1080 1920x1080 1920x1200 2048x1536 2560x1440 2560x1600 2732x2048 3840x2160
+video_codecs:Original xvid mpeg4 msmpeg4 msmpeg4v2 mjpeg wmv1 wmv2 mpeg2 mpeg1 h263p x264 huffyuv ffv1
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:64 96 112 128 160 192 256 384 512 768 1024 2000 4000 5000 6000 8000 10000 12000
+aspect_ratios:
+audio_codecs:mp3 ac3 aac mp2 pcm Original
+audio_bitrates:12 32 48 64 96 112 128 192 224 256 320
+audio_samplerates:8000 16000 22050 32000 44100 48000
+audio_channels:2 1
+default_resolution:320x240
+default_video_codec:xvid
+default_framerate:25
+default_video_bitrate:2000
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:null
+
+name: Customized WMV Movie (*.wmv)
+ext: wmv
+group: general_v
+resolutions: Original 160x112 176x144 220x176 320x240 352x240 352x288 368x208 480x272 480x320 480x480 480x576 512x384 640x480 720x480 720x576 1080x720 1280x720 1440x1080 1920x1080 1920x1200 2048x1536 2560x1440 2560x1600 2732x2048 3840x2160
+video_codecs:WMV V8 WMV V9
+framerates:
+video_bitrates:192 256 384 512 768 1024 2000 4000 5000 6000 8000 10000 12000
+aspect_ratios:
+audio_codecs:WMA 9.2
+audio_bitrates:
+audio_samplerates:
+audio_channels:
+default_resolution:320x240
+default_video_codec:WMV V9
+default_framerate:null
+default_video_bitrate:2000
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:null
+default_channel:null
+
+name: Customized M4V Movie (*.m4v)
+ext: m4v
+group: general_v
+resolutions: Original 160x112 176x144 220x176 320x240 352x240 352x288 368x208 480x272 480x320 480x480 480x576 512x384 640x480 720x480 720x576 1080x720 1280x720 1440x1080 1920x1080 1920x1200 2048x1536 2560x1440 2560x1600 2732x2048 3840x2160
+video_codecs:x264
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30 50 59.94 60
+video_bitrates:192 256 384 512 768 1024 2000 4000 5000 6000 8000 10000 12000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:320x240
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2000
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Apple QuickTime Movie (*.mov)
+ext: mov
+group: general_v
+resolutions: Original 160x112 176x144 220x176 368x208 320x240 352x240 480x272 352x288 480x320 512x384 480x480 640x480 720x480 480x576 720x576 1080x720 1280x720 1440x1080 1920x1080 1920x1200 2560x1440 2048x1536 2560x1600 3840x2160
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30 50 59.94 60
+video_bitrates:192 256 384 512 768 1024 2000 4000 5000 6000 8000 10000 12000
+aspect_ratios:
+audio_codecs:aac ac3 mp3
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:320x240
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2000
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Windows ASF Video Movie (*.asf)
+ext: asf
+group: general_v
+resolutions: Original 160x112 176x144 220x176 320x240 352x240 352x288 368x208 480x272 480x320 480x480 480x576 512x384 640x480 720x480 720x576 1080x720 1280x720 1440x1080 1920x1080 1920x1200 2048x1536 2560x1440 2560x1600 3840x2160
+video_codecs:wmv1 wmv2
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30 50 59.94 60
+video_bitrates:64 96 112 128 160 192 256 384 512 768 1024 2000 4000 5000 6000 8000 10000 12000
+aspect_ratios:
+audio_codecs:wmav1 wmav2
+audio_bitrates:12 32 48 64 96 112 128 192 224 256 320
+audio_samplerates:8000 11025 16000 22050 32000 44100 48000
+audio_channels:2 1
+default_resolution:320x240
+default_video_codec:wmv2
+default_framerate:25
+default_video_bitrate:2000
+default_aspect_ratio:null
+default_audio_codec:wmav2
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:null
+
+name: M2TS Movie (*.m2ts)
+ext: m2ts
+group: general_v
+resolutions: 480x272 640x480 720x480 720x576 1280x720 1440x1080 1920x1080 1920x1200 2048x1536 2560x1440 2560x1600 3840x2160
+video_codecs:x264
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.976 30 50 60
+video_bitrates:1200 1500 2000 2500 3000 4000 5000 6000 8000 10000 12000
+aspect_ratios:
+audio_codecs:aac ac3
+audio_bitrates:64 96 112 128 160 192 224 256 320 640
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1280x720
+default_video_codec:null
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:192
+default_samplerate:48000
+default_channel:2
+
+name: WebM Movie (*.webm)
+ext: webm
+group: general_v
+resolutions: Original 160x112 176x144 220x176 320x240 352x240 352x288 368x208 480x272 480x320 480x480 480x576 512x384 640x480 720x480 720x576 1080x720 1280x720 1440x1080 1920x1080 1920x1200 2048x1536 2560x1440 2560x1600 3840x2160
+video_codecs:VP8
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30 50 60
+video_bitrates:64 96 112 128 160 192 256 384 512 768 1024 2000 4000 5000 6000 8000 10000 12000
+aspect_ratios:
+audio_codecs:vorbis
+audio_bitrates:12 32 48 64 96 112 128 192 224 256 320
+audio_samplerates:16000 22050 32000 44100 48000
+audio_channels:
+default_resolution:320x240
+default_video_codec:null
+default_framerate:25
+default_video_bitrate:2000
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:null
+
+name: OGG Movie (*.ogv)
+ext: ogv
+group: general_v
+resolutions: Original 160x112 176x144 220x176 320x240 352x240 352x288 368x208 480x272 480x320 480x480 480x576 512x384 640x480 720x480 720x576 1080x720 1280x720 1440x1080 1920x1080 1920x1200 2048x1536 2560x1440 2560x1600 3840x2160
+video_codecs:libtheora
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30 50 60
+video_bitrates:64 96 112 128 160 192 256 384 512 768 1024 2000 4000 5000 6000 8000 10000 12000
+aspect_ratios:
+audio_codecs:vorbis
+audio_bitrates:12 32 48 64 96 112 128 192 224 256 320
+audio_samplerates:16000 22050 32000 44100 48000
+audio_channels:
+default_resolution:320x240
+default_video_codec:null
+default_framerate:25
+default_video_bitrate:2000
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:null
+
+name: GIF Animation Format (*.gif)
+ext: gif
+group: general_v
+resolutions: Original 128x96 160x120 176x144 220x176 320x240 352x240 352x288 368x208 480x272 480x320 480x480 480x576 512x384 640x480 720x480 720x576 1080x720 1280x720 1440x1080 1920x1080 1920x1200 2048x1536 2560x1440 2560x1600 3840x2160
+video_codecs:gif
+framerates:
+video_bitrates:
+aspect_ratios:
+audio_codecs:
+audio_bitrates:
+audio_samplerates:
+audio_channels:
+default_resolution:320x240
+default_video_codec:null
+default_framerate:null
+default_video_bitrate:null
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:null
+default_channel:null
+
+name: HTML5 MP4 Movie (*.mp4)
+ext: mp4
+group: html5_video
+resolutions: Original 160x112 176x144 220x176 320x240 352x240 352x288 368x208 480x272 480x320 480x480 480x576 512x384 640x480 720x480 720x576 1080x720 1280x720 1440x1080 1920x1080
+video_codecs:x264
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:192 256 384 512 768 1024 2000 4000 5000 6000 8000 10000 12000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac ac3
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:320x240
+default_video_codec:null
+default_framerate:25
+default_video_bitrate:768
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: HTML5 WebM Movie (*.webm)
+ext: webm
+group: html5_video
+resolutions: Original 160x112 176x144 220x176 320x240 352x240 352x288 368x208 480x272 480x320 480x480 480x576 512x384 640x480 720x480 720x576 1080x720 1280x720 1440x1080 1920x1080
+video_codecs:VP8
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:64 96 112 128 160 192 256 384 512 768 1024 2000 4000 5000 6000 8000 10000 12000
+aspect_ratios:
+audio_codecs:vorbis
+audio_bitrates:12 32 48 64 96 112 128 192 224 256 320
+audio_samplerates:16000 22050 32000 44100 48000
+audio_channels:
+default_resolution:320x240
+default_video_codec:null
+default_framerate:25
+default_video_bitrate:768
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:null
+
+name: HTML5 OGG Movie (*.ogv)
+ext: ogv
+group: html5_video
+resolutions: Original 160x112 176x144 220x176 320x240 352x240 352x288 368x208 480x272 480x320 480x480 480x576 512x384 640x480 720x480 720x576 1080x720 1280x720 1440x1080 1920x1080
+video_codecs:libtheora
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:64 96 112 128 160 192 256 384 512 768 1024 2000 4000 5000 6000 8000 10000 12000
+aspect_ratios:
+audio_codecs:vorbis
+audio_bitrates:12 32 48 64 96 112 128 192 224 256 320
+audio_samplerates:16000 22050 32000 44100 48000
+audio_channels:
+default_resolution:320x240
+default_video_codec:null
+default_framerate:25
+default_video_bitrate:768
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:null
+
+name: MP2 Audio (*.mp2)
+ext: mp2
+group: general_a
+resolutions: 
+video_codecs:
+framerates:
+video_bitrates:
+aspect_ratios:
+audio_codecs:mp2
+audio_bitrates:32 64 96 128 160 192 224 256 320
+audio_samplerates:16000 22050 32000 44100 48000
+audio_channels:2 1
+default_resolution:null
+default_video_codec:null
+default_framerate:null
+default_video_bitrate:null
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: MP3 Audio (*.mp3)
+ext: mp3
+group: general_a
+resolutions: 
+video_codecs:
+framerates:
+video_bitrates:
+aspect_ratios:
+audio_codecs:mp3
+audio_bitrates:32 64 96 128 160 192 224 256 320
+audio_samplerates:11025 22050 44100 48000
+audio_channels:2 1
+default_resolution:null
+default_video_codec:null
+default_framerate:null
+default_video_bitrate:null
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:null
+
+name: OGG Vorbis Audio (*.ogg)
+ext: ogg
+group: general_a
+resolutions: 
+video_codecs:
+framerates:
+video_bitrates:
+aspect_ratios:
+audio_codecs:ogg
+audio_bitrates:64 96 128 192 256 320 500
+audio_samplerates:16000 22050 44100 48000
+audio_channels:2 1
+default_resolution:null
+default_video_codec:null
+default_framerate:null
+default_video_bitrate:null
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:null
+
+name: AAC Audio (*.aac)
+ext: aac
+group: general_a
+resolutions: 
+video_codecs:
+framerates:
+video_bitrates:
+aspect_ratios:
+audio_codecs:aac_low aac_main aac_ltp
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 16000 8000
+audio_channels:2
+default_resolution:null
+default_video_codec:null
+default_framerate:null
+default_video_bitrate:null
+default_aspect_ratio:null
+default_audio_codec:aac_low
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: AC3 Audio (*.ac3)
+ext: ac3
+group: general_a
+resolutions: 
+video_codecs:
+framerates:
+video_bitrates:
+aspect_ratios:
+audio_codecs:ac3
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320 384 512
+audio_samplerates:48000 44100 32000 24000 22050 16000 8000
+audio_channels:1 2
+default_resolution:null
+default_video_codec:null
+default_framerate:null
+default_video_bitrate:null
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: AIFF Audio (*.aiff)
+ext: aiff
+group: general_a
+resolutions: 
+video_codecs:
+framerates:
+video_bitrates:
+aspect_ratios:
+audio_codecs:pcm_s16be
+audio_bitrates:
+audio_samplerates:72000 54000 48000 44100 32000 24000 22050 16000 8000
+audio_channels:1 2
+default_resolution:null
+default_video_codec:null
+default_framerate:null
+default_video_bitrate:null
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:44100
+default_channel:2
+
+name: Apple Loseless Audio (*.m4a)
+ext: m4a
+group: general_a
+resolutions: 
+video_codecs:
+framerates:
+video_bitrates:
+aspect_ratios:
+audio_codecs:alac
+audio_bitrates:
+audio_samplerates:48000 44100 32000 24000 22050 16000 8000
+audio_channels:2 1
+default_resolution:null
+default_video_codec:null
+default_framerate:null
+default_video_bitrate:null
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:44100
+default_channel:2
+
+name: Monkey's Audio Format (*.ape)
+ext: ape
+group: general_a
+resolutions: 
+video_codecs:
+framerates:
+video_bitrates:
+aspect_ratios:
+audio_codecs:ape
+audio_bitrates:
+audio_samplerates:48000 44100 32000 24000 22050 16000 8000
+audio_channels:2
+default_resolution:null
+default_video_codec:null
+default_framerate:null
+default_video_bitrate:null
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:44100
+default_channel:null
+
+name: SUN AU Format (*.au)
+ext: au
+group: general_a
+resolutions: 
+video_codecs:
+framerates:
+video_bitrates:
+aspect_ratios:
+audio_codecs:pcm_s16be
+audio_bitrates:
+audio_samplerates:96000 72000 48000 44100 32000 24000 22050 16000 8000
+audio_channels:1 2
+default_resolution:null
+default_video_codec:null
+default_framerate:null
+default_video_bitrate:null
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:44100
+default_channel:2
+
+name: Digital Surround Audio (*.dts)
+ext: dts
+group: general_a
+resolutions: 
+video_codecs:
+framerates:
+video_bitrates:
+aspect_ratios:
+audio_codecs:dca
+audio_bitrates:
+audio_samplerates:192000 96000 72000 48000 44100 32000 24000 22050 16000 8000
+audio_channels:2
+default_resolution:null
+default_video_codec:null
+default_framerate:null
+default_video_bitrate:null
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:48000
+default_channel:2
+
+name: Free Lossless Audio Codec (.flac)
+ext: flac
+group: general_a
+resolutions: 
+video_codecs:
+framerates:
+video_bitrates:
+aspect_ratios:
+audio_codecs:flac
+audio_bitrates:
+audio_samplerates:22050 44100 48000
+audio_channels:2 1
+default_resolution:null
+default_video_codec:null
+default_framerate:null
+default_video_bitrate:null
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:48000
+default_channel:null
+
+name: MPEG-4 Audio (*.m4a)
+ext: m4a
+group: general_a
+resolutions: 
+video_codecs:
+framerates:
+video_bitrates:
+aspect_ratios:
+audio_codecs:aac_low aac_main aac_ltp
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 16000 8000
+audio_channels:1 2
+default_resolution:null
+default_video_codec:null
+default_framerate:null
+default_video_bitrate:null
+default_aspect_ratio:null
+default_audio_codec:aac_low
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: WAVE Audio (*.wav)
+ext: wav
+group: general_a
+resolutions: 
+video_codecs:
+framerates:
+video_bitrates:
+aspect_ratios:
+audio_codecs:pcm
+audio_bitrates:
+audio_samplerates:
+audio_channels:1 2
+default_resolution:null
+default_video_codec:null
+default_framerate:null
+default_video_bitrate:null
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:null
+default_channel:2
+
+name: WMA Audio (*.wma)
+ext: wma
+group: general_a
+resolutions: 
+video_codecs:
+framerates:
+video_bitrates:
+aspect_ratios:
+audio_codecs:WMA 9.2
+audio_bitrates:
+audio_samplerates:
+audio_channels:
+default_resolution:null
+default_video_codec:null
+default_framerate:null
+default_video_bitrate:null
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:null
+default_channel:null
+
+name: DVD video NTSC Movie
+ext: mpg
+group: dvd_video
+resolutions: 720x480
+video_codecs:mpeg2video
+framerates:29.97
+video_bitrates:8000 5000 2000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:ac3
+audio_bitrates:128 192
+audio_samplerates:48000
+audio_channels:2
+default_resolution:null
+default_video_codec:null
+default_framerate:null
+default_video_bitrate:8000
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:null
+default_channel:null
+
+name: DVD video PAL Movie
+ext: mpg
+group: dvd_video
+resolutions: 720x576
+video_codecs:mpeg2video
+framerates:25
+video_bitrates:8000 5000 2000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:ac3 mp2
+audio_bitrates:128 192
+audio_samplerates:48000
+audio_channels:2
+default_resolution:null
+default_video_codec:null
+default_framerate:null
+default_video_bitrate:8000
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:null
+default_samplerate:null
+default_channel:null
+
+name: AVCHD 720P Movie (*.m2ts)
+ext: m2ts
+group: avchd
+resolutions: 1280x720
+video_codecs:x264
+framerates:24 25 29.976 30 50 60
+video_bitrates:1200 1500 2000 2500 3000 4000 5000 6000 8000 10000 12000
+aspect_ratios:
+audio_codecs:ac3
+audio_bitrates:64 96 112 128 160 192 224 256 320 640
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1280x720
+default_video_codec:null
+default_framerate:25
+default_video_bitrate:4000
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:192
+default_samplerate:48000
+default_channel:2
+
+name: AVCHD 1080P Movie (*.m2ts)
+ext: m2ts
+group: avchd
+resolutions: 1440x1080 1920x1080
+video_codecs:x264
+framerates:24 25 29.976 30 50 59.94 60
+video_bitrates:1200 1500 2000 2500 3000 4000 5000 6000 8000 10000 12000
+aspect_ratios:
+audio_codecs:ac3
+audio_bitrates:64 96 112 128 160 192 224 256 320 640
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:null
+default_framerate:25
+default_video_bitrate:6000
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:192
+default_samplerate:48000
+default_channel:2
+
+name: Samsung TV H264 Movie (*.mp4)
+ext: mp4
+group: tvs
+resolutions: Original 320x240 480x320 640x480 720x480 720x576 960x640 1280x720 1920x1080
+video_codecs:x264
+framerates:Auto 24 29.97 30
+video_bitrates:2000 3000 4000 5000 6000 8000 10000 12000
+aspect_ratios:
+audio_codecs:aac
+audio_bitrates:64 96 128 160 192 256 320
+audio_samplerates:48000 44100 32000 22050
+audio_channels:2
+default_resolution:1920x1080
+default_video_codec:null
+default_framerate:24
+default_video_bitrate:4000
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: LG TV H264 Movie (*.mp4)
+ext: mp4
+group: tvs
+resolutions: Original 320x240 480x320 640x480 720x480 720x576 960x640 1280x720 1920x1080
+video_codecs:x264
+framerates:Auto 24 29.97 30
+video_bitrates:2000 3000 4000 5000 6000 8000 10000 12000
+aspect_ratios:
+audio_codecs:aac
+audio_bitrates:64 96 128 160 192 256 320
+audio_samplerates:48000 44100 32000 22050
+audio_channels:2
+default_resolution:1920x1080
+default_video_codec:null
+default_framerate:24
+default_video_bitrate:3000
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: SONY TV H264 Movie (*.mp4)
+ext: mp4
+group: tvs
+resolutions: Original 320x240 480x320 640x480 720x480 720x576 960x640 1280x720 1920x1080
+video_codecs:x264
+framerates:Auto 24 29.97 30
+video_bitrates:2000 3000 4000 5000 6000 8000 10000 12000
+aspect_ratios:
+audio_codecs:aac
+audio_bitrates:64 96 128 160 192 256 320
+audio_samplerates:48000 44100 32000 22050
+audio_channels:2
+default_resolution:1920x1080
+default_video_codec:null
+default_framerate:24
+default_video_bitrate:4000
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Panasonic TV H264 Movie (*.mp4)
+ext: mp4
+group: tvs
+resolutions: Original 320x240 480x320 640x480 720x480 720x576 960x640 1280x720 1920x1080
+video_codecs:x264
+framerates:Auto 24 29.97 30
+video_bitrates:2000 3000 4000 5000 6000 8000 10000 12000
+aspect_ratios:
+audio_codecs:aac
+audio_bitrates:64 96 128 160 192 256 320
+audio_samplerates:48000 44100 32000 22050
+audio_channels:2
+default_resolution:1920x1080
+default_video_codec:null
+default_framerate:24
+default_video_bitrate:4000
+default_aspect_ratio:null
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Huawei Ascend Series MPEG-4 Movie (*.mp4)
+ext: mp4
+group: huawei_phone
+resolutions: 320x240 480x320 640x480 800x480 854x480 960x540 1024x600 1280x720 1920x1080
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:800x480
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Huawei P7 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: huawei_phone
+resolutions: 480x270 480x320 640x480 800x480 1280x720 1440x900 1920x1080 2560x1440
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Huawei P8 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: huawei_phone
+resolutions: 480x270 480x320 640x480 800x480 1280x720 1440x900 1920x1080 2560x1440
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Huawei P9 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: huawei_phone
+resolutions: 480x270 480x320 640x480 800x480 1280x720 1440x900 1920x1080 2560x1440
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Huawei P9 Plus MPEG-4 Movie (*.mp4)
+ext: mp4
+group: huawei_phone
+resolutions: 480x270 480x320 640x480 800x480 1280x720 1440x900 1920x1080 2560x1440 2560x1600 2732x2048 3840x2160
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:2560x1440
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:4000
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Huawei P10 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: huawei_phone
+resolutions: 480x270 480x320 640x480 800x480 1280x720 1440x900 1920x1080 2560x1440
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1920x1080
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Huawei P10 Plus MPEG-4 Movie (*.mp4)
+ext: mp4
+group: huawei_phone
+resolutions: 480x270 480x320 640x480 800x480 1280x720 1440x900 1920x1080 2560x1440 2560x1600 2732x2048 3840x2160
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:2560x1440
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:4000
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: Huawei MateBook MPEG-4 Movie (*.mp4)
+ext: mp4
+group: huawei_phone
+resolutions: 480x270 480x320 640x480 800x480 1280x720 1440x900 1920x1080 2160x1440 2560x1440
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:2160x1440
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:2500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: LG Optimus Pad MPEG-4 Movie (*.mp4)
+ext: mp4
+group: lg_phone
+resolutions: 320x240 480x270 480x320 640x480 720x480 800x480 1280x768
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:1280x768
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:1500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: LG G3 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: lg_phone
+resolutions: 480x270 480x320 640x480 800x480 1280x720 1440x900 1920x1080 2560x1440 2880x1440 2960x1440
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000 4500 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:2560x1440
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:4000
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: LG G4 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: lg_phone
+resolutions: 480x270 480x320 640x480 800x480 1280x720 1440x900 1920x1080 2560x1440 2880x1440 2960x1440
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000 4500 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:2560x1440
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:4000
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: LG G5 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: lg_phone
+resolutions: 480x270 480x320 640x480 800x480 1280x720 1440x900 1920x1080 2560x1440 2880x1440 2960x1440
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000 4500 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:2560x1440
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:4000
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+
+name: LG G6 MPEG-4 Movie (*.mp4)
+ext: mp4
+group: lg_phone
+resolutions: 480x270 480x320 640x480 800x480 1280x720 1440x900 1920x1080 2560x1440 2880x1440 2960x1440
+video_codecs:x264 mpeg4 xvid
+framerates:Auto 8 10 12 15 20 23.976 24 25 29.97 30
+video_bitrates:256 512 768 1000 1200 1500 2500 3000 4000 4500 5000
+aspect_ratios:Auto 4/3 16/9
+audio_codecs:aac
+audio_bitrates:32 40 48 56 64 80 96 112 128 160 192 224 256 320
+audio_samplerates:48000 44100 32000 24000 22050 11025 8000
+audio_channels:1 2
+default_resolution:2880x1440
+default_video_codec:x264
+default_framerate:25
+default_video_bitrate:4500
+default_aspect_ratio:16/9
+default_audio_codec:null
+default_audio_bitrate:128
+default_samplerate:44100
+default_channel:2
+

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+  Regression fixture for the "nested BaseURL leaks upward" bug.
+  Modeled on the Bitmovin AV1 demo (av1/stream_chrome.mpd): the video AdaptationSet has NO
+  BaseURL of its own, while the audio AdaptationSet carries a <BaseURL> pointing at a different
+  host. Video segments must resolve against the document URL, NOT the audio BaseURL.
+-->
+<MPD profiles="urn:mpeg:dash:profile:full:2011" type="static"
+     mediaPresentationDuration="PT8S" minBufferTime="PT2S"
+     xmlns="urn:mpeg:dash:schema:mpd:2011">
+    <Period start="PT0S">
+        <AdaptationSet mimeType="video/webm">
+            <Representation id="v0" bandwidth="100000" width="480" height="200" frameRate="24" codecs="av01.0.00M.08">
+                <SegmentTemplate media="AV1_480/video/480/segment_$Number$.chk" initialization="AV1_480/video/480/init.hdr" duration="96000" startNumber="0" timescale="24000"/>
+            </Representation>
+        </AdaptationSet>
+        <AdaptationSet lang="en" mimeType="audio/webm">
+            <BaseURL>https://audio.example.com/mozillaAV1/base_v1/</BaseURL>
+            <Representation id="a0" bandwidth="32000" audioSamplingRate="48000" codecs="opus">
+                <SegmentTemplate media="audio/segment_$Number$.chk" initialization="audio/init.hdr" duration="192000" startNumber="0" timescale="48000"/>
+            </Representation>
+        </AdaptationSet>
+    </Period>
+</MPD>

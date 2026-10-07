@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Download with XDM</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="bulk.css">
+  <script type="module" src="bulk.js"></script>
+</head>
+
+<!--
+  The bulk download picker, opened in its own window for one tab. Everything shown here comes from
+  a web page, so bulk.js writes it with textContent only.
+-->
+
+<body class="bulk">
+  <div class="banner" id="banner" role="status" hidden>
+    <svg class="banner-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 8v5" />
+      <path d="M12 16.5v.01" />
+    </svg>
+    <p id="bannerText"></p>
+    <button class="link-button" id="reloadCapture" type="button" hidden>Reload &amp; capture</button>
+    <button class="icon-button small" id="bannerClose" type="button" title="Dismiss" aria-label="Dismiss">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+        stroke-linecap="round" aria-hidden="true">
+        <path d="M6 6l12 12M18 6 6 18" />
+      </svg>
+    </button>
+  </div>
+
+  <div class="controls">
+    <div class="segmented" role="tablist" aria-label="What to list">
+      <button class="segment" role="tab" type="button" data-tab="links">Links <span class="seg-count" id="countLinks"></span></button>
+      <button class="segment" role="tab" type="button" data-tab="resources">Images &amp; files <span class="seg-count" id="countResources"></span></button>
+    </div>
+    <label class="search">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7" />
+        <path d="m20 20-3.5-3.5" />
+      </svg>
+      <input id="filter" type="search" spellcheck="false" autocomplete="off"
+        placeholder="Filter by name, *.jpg or /regex/" aria-label="Filter">
+      <kbd>/</kbd>
+    </label>
+  </div>
+
+  <div class="chips" id="chips" role="group" aria-label="File types"></div>
+
+  <div class="options">
+    <label class="size-field" id="minSizeField">Min size
+      <input id="minSize" type="number" min="0" step="50" value="0" aria-label="Minimum image size in pixels">
+      <span>px</span>
+    </label>
+    <label class="switch" title="Requests the page made by script, and pieces of video streams">
+      <input type="checkbox" id="noise"><span class="switch-track" aria-hidden="true"></span>API &amp; streams
+    </label>
+    <label class="switch" title="Each preview downloads the image again, so it's off by default">
+      <input type="checkbox" id="previews"><span class="switch-track" aria-hidden="true"></span>Previews
+    </label>
+  </div>
+
+  <div class="list-head">
+    <input class="check" type="checkbox" id="master" title="Select all shown" aria-label="Select all shown">
+    <span class="list-head-label" id="listLabel">Select all</span>
+    <button class="link-button" id="selInvert" type="button">Invert</button>
+  </div>
+
+  <div class="list-wrap">
+    <div class="list" id="list" role="list" tabindex="0">
+      <div class="spacer" id="spacer"></div>
+    </div>
+    <div class="empty-state list-empty" id="empty" hidden>
+      <svg class="glyph" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 7h16v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7z" />
+        <path d="M4 7l2-3h12l2 3" />
+        <path d="M10 11h4" />
+      </svg>
+      <p id="emptyText">Nothing matches the current filters.</p>
+    </div>
+    <div class="busy" id="busy" hidden>
+      <span class="spinner" aria-hidden="true"></span>
+      <span id="busyText">Scanning page…</span>
+    </div>
+  </div>
+
+  <footer class="bulk-footer">
+    <div class="footer-status">
+      <span class="send-hint" id="sendHint" role="status" hidden>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 3 2 20h20L12 3z" />
+          <path d="M12 10v4" />
+          <path d="M12 17v.01" />
+        </svg>
+        XDM isn't running. Start it to send these links.
+      </span>
+      <span class="summary" id="summary"></span>
+    </div>
+    <div class="send-tools">
+      <button class="secondary-button icon-only" id="rescan" type="button" title="Scan the page again"
+        aria-label="Scan the page again">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20 11a8 8 0 1 0-2.3 5.7" />
+          <path d="M20 4v7h-7" />
+        </svg>
+      </button>
+      <button class="secondary-button" id="copy" type="button">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="8" y="8" width="12" height="12" rx="2" />
+          <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" />
+        </svg>
+        Copy URLs
+      </button>
+      <button class="primary-button" id="send" type="button">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 4v11" />
+          <path d="m7.5 10.5 4.5 4.5 4.5-4.5" />
+          <path d="M5 19.5h14" />
+        </svg>
+        <span id="sendLabel">Download</span>
+      </button>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+
+  <!-- One row of the list, filled in by bulk.js. -->
+  <template id="rowTemplate">
+    <div class="row" role="listitem">
+      <input class="check row-check" type="checkbox" tabindex="-1" aria-hidden="true">
+      <span class="row-thumb"></span>
+      <span class="row-main">
+        <span class="row-name"></span>
+        <span class="row-url"></span>
+      </span>
+      <span class="row-meta">
+        <span class="row-info"></span>
+        <span class="row-source"></span>
+      </span>
+    </div>
+  </template>
+</body>
+
+</html>

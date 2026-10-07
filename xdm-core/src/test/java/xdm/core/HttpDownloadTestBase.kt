@@ -1,0 +1,258 @@
+package xdm.core
+
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertArrayEquals
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
+import xdm.core.CoreConfig
+import xdm.core.downloaders.CommitResult
+import xdm.core.downloaders.DownloadError
+import xdm.core.downloaders.DownloadHost
+import xdm.core.downloaders.DownloadStatusInfo
+import xdm.core.downloaders.DownloadType
+import xdm.core.downloaders.HttpDownloadTaskInfo
+import xdm.core.downloaders.PauseEvent
+import xdm.core.downloaders.web.http.HttpDownloaderTask
+import xdm.core.network.http.impl.HttpClientImpl
+import java.io.File
+import java.net.Proxy
+import java.nio.file.Files
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.random.Random
+
+/**
+ * Shared harness for the segmented HTTP downloader tests: a fresh [MockHttpServer], temp
+ * dirs, and helpers to build/run/await [HttpDownloaderTask]s. The race-connection timings are
+ * dialled down so tests exercise the stall logic in ~1s instead of ~12s.
+ *
+ * The concrete test classes are split (plain vs. race/stall) and run in separate JVM forks
+ * (see surefire `reuseForks=false`) so the many networked downloads in one class can't leak
+ * threads/sockets into another.
+ */
+abstract class HttpDownloadTestBase {
+
+    protected lateinit var server: MockHttpServer
+    protected lateinit var work: File
+    protected lateinit var tmpDir: File
+    protected lateinit var outDir: File
+    private val clients = CopyOnWriteArrayList<HttpClientImpl>()
+    private val tasks = CopyOnWriteArrayList<HttpDownloaderTask>()
+    protected val rawServers = CopyOnWriteArrayList<RawDropServer>()
+
+    @BeforeEach
+    fun setup() {
+        server = MockHttpServer()
+        work = Files.createTempDirectory("xdm-http-test").toFile()
+        tmpDir = File(work, "tmp").apply { mkdirs() }
+        outDir = File(work, "out").apply { mkdirs() }
+    }
+
+    @AfterEach
+    fun tearDown() {
+        // Stop every task first so no retriever thread survives the test (a timed-out download
+        // would otherwise leave threads spinning against the now-stopped server).
+        tasks.forEach { runCatching { it.stop() } }
+        Thread.sleep(200) // let stopFlag propagate to the retriever loops
+        clients.forEach { runCatching { it.close() } }
+        server.stop()
+        rawServers.forEach { runCatching { it.stop() } }
+        work.deleteRecursively()
+    }
+
+    protected fun download(id: Long, path: String, maxSegments: Int): TestDownloadHost {
+        val host = host()
+        newTask(id, path, host, maxSegments).start()
+        return host
+    }
+
+    protected fun newTask(id: Long, path: String, host: TestDownloadHost, maxSegments: Int): HttpDownloaderTask =
+        newTask(id, path, host, TestConfig(maxSegments))
+
+    protected fun newTask(id: Long, path: String, host: TestDownloadHost, config: CoreConfig): HttpDownloaderTask =
+        newTaskForUrl(id, server.url(path), host, config)
+
+    /** [maxPiece] is the segment count saved with the download; 0 leaves it to the config. */
+    protected fun newTaskForUrl(
+        id: Long, url: String, host: TestDownloadHost, config: CoreConfig, maxPiece: Int = 0,
+    ): HttpDownloaderTask {
+        val client = HttpClientImpl(8)
+        clients.add(client)
+        val info = HttpDownloadTaskInfo(
+            id = id,
+            url = url,
+            fileName = "file-$id.bin",
+            respectFileName = false,
+            cookie = null,
+            headers = null,
+            origin = null,
+            autoCategorize = false,
+            defaultDownloadFolder = tmpDir.absolutePath,
+            userSelectedDownloadFolder = null,
+            maxPiece = maxPiece,
+            authInfo = null,
+            knownFileSize = null,
+        )
+        return HttpDownloaderTask(info, host, client, work.absolutePath, config).also { tasks.add(it) }
+    }
+
+    protected fun host() = TestDownloadHost(work.absolutePath, tmpDir.absolutePath, outDir.absolutePath)
+
+    protected fun awaitSuccess(host: TestDownloadHost, timeoutSec: Long = 30) {
+        assertTrue(host.latch.await(timeoutSec, TimeUnit.SECONDS), "download did not finish within ${timeoutSec}s")
+        assertNull(host.failure, "unexpected failure: ${host.failure}")
+        assertNotNull(host.success, "expected success info")
+    }
+
+    protected fun awaitDone(host: TestDownloadHost, timeoutSec: Long = 30) {
+        assertTrue(host.latch.await(timeoutSec, TimeUnit.SECONDS), "download did not settle within ${timeoutSec}s")
+    }
+
+    protected fun assertDownloaded(host: TestDownloadHost, expected: ByteArray) {
+        val f = host.finalFile
+        assertNotNull(f, "no final file committed")
+        assertEquals(expected.size.toLong(), f!!.length(), "file size mismatch")
+        assertArrayEquals(expected, f.readBytes(), "file content mismatch")
+    }
+
+    /** SHA-256 of a byte array, hex-encoded. Used for content-integrity assertions. */
+    protected fun sha256(data: ByteArray): String =
+        java.security.MessageDigest.getInstance("SHA-256").digest(data)
+            .joinToString("") { "%02x".format(it) }
+
+    /** SHA-256 of a file's contents, hex-encoded (streamed so large fixtures don't hit heap). */
+    protected fun sha256(file: File): String {
+        val md = java.security.MessageDigest.getInstance("SHA-256")
+        file.inputStream().buffered().use { ins ->
+            val buf = ByteArray(64 * 1024)
+            while (true) {
+                val n = ins.read(buf)
+                if (n < 0) break
+                md.update(buf, 0, n)
+            }
+        }
+        return md.digest().joinToString("") { "%02x".format(it) }
+    }
+
+    /**
+     * Assert the committed file both matches [expected]'s size and has an identical SHA-256
+     * checksum - i.e. the reassembled segments are byte-for-byte intact.
+     */
+    protected fun assertChecksumMatches(host: TestDownloadHost, expected: ByteArray) {
+        val f = host.finalFile
+        assertNotNull(f, "no final file committed")
+        assertEquals(expected.size.toLong(), f!!.length(), "file size mismatch")
+        assertEquals(sha256(expected), sha256(f), "SHA-256 checksum mismatch")
+    }
+
+    protected fun randomData(size: Int, seed: Long): ByteArray {
+        val b = ByteArray(size)
+        Random(seed).nextBytes(b)
+        return b
+    }
+
+    protected fun waitFor(timeoutMs: Long, cond: () -> Boolean): Boolean {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            if (cond()) return true
+            Thread.sleep(30)
+        }
+        return cond()
+    }
+}
+
+/** Minimal [CoreConfig] for tests. */
+class TestConfig(
+    override var maxSegments: Int,
+    override var maxRetries: Int = 5,
+) : CoreConfig {
+    override var speedLimit: Int = 0
+    override var speedLimiterEnabled: Boolean = false
+    override var useProxy: Boolean = false
+    override var socksProxy: Boolean = false
+    override var proxyHost: String = ""
+    override var proxyPort: Int = 0
+    override var proxyUser: String = ""
+    override var proxyPass: String = ""
+    override fun toProxy(): Proxy? = null
+}
+
+/** Captures downloader callbacks and performs the temp -> final file move. */
+class TestDownloadHost(
+    override val appDir: String,
+    private val tempDir: String,
+    private val outDir: String,
+) : DownloadHost {
+    val latch = CountDownLatch(1)
+    val pauseLatch = CountDownLatch(1)
+
+    @Volatile
+    var success: DownloadStatusInfo.FinalInfo? = null
+
+    @Volatile
+    var failure: DownloadError? = null
+
+    @Volatile
+    var paused = false
+
+    @Volatile
+    var initInfo: DownloadStatusInfo.InitInfo? = null
+
+    @Volatile
+    var finalFile: File? = null
+
+    val maxSegmentsSeen = AtomicInteger(0)
+
+    override fun getTempDir(id: Long, url: String, contentType: String?, contentDisposition: String?): String = tempDir
+
+    override fun commitOutputFile(id: Long, tmpFilePath: String, downloadType: DownloadType): CommitResult {
+        val src = File(tmpFilePath)
+        val dst = File(outDir, "out-$id.bin")
+        if (dst.exists()) dst.delete()
+        val moved = src.renameTo(dst) || runCatching {
+            src.copyTo(dst, overwrite = true)
+            src.delete()
+        }.isSuccess
+        if (!moved || !dst.exists()) return CommitResult.Failed(DownloadError.OutputWriteError)
+        finalFile = dst
+        return CommitResult.Success(dst.name, outDir)
+    }
+
+    override fun onDownloadActivated(id: Long) {}
+
+    override fun onDownloadInit(data: DownloadStatusInfo.InitInfo, downloadType: DownloadType) {
+        initInfo = data
+    }
+
+    override fun onDownloadProgress(event: DownloadStatusInfo.ProgressInfo) {
+        val n = event.segments.size
+        maxSegmentsSeen.updateAndGet { if (n > it) n else it }
+    }
+
+    override fun onAssembleStart(id: Long) {}
+
+    override fun onAssembleProgress(event: DownloadStatusInfo.AssembleInfo) {}
+
+    override fun onDownloadSuccess(event: DownloadStatusInfo.FinalInfo) {
+        success = event
+        latch.countDown()
+    }
+
+    override fun onDownloadFailed(id: Long, error: DownloadError) {
+        failure = error
+        latch.countDown()
+    }
+
+    override fun onDownloadPaused(id: Long, event: PauseEvent) {
+        paused = true
+        pauseLatch.countDown()
+    }
+
+    override val applySpeedLimit: Boolean = false
+    override val speedLimit: Int = 0
+}

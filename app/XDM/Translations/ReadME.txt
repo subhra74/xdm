@@ -1,1 +1,0 @@
-﻿Language files are stored in $(SOLUTION)\Lang directory

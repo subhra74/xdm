@@ -1,0 +1,78 @@
+package xdm.core.downloaders.web
+
+import xdm.core.CoreConfig
+import xdm.core.downloaders.DownloadHost
+import xdm.core.util.Logger
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+
+import kotlin.math.ceil
+
+class SpeedLimiter(val config: CoreConfig) {
+    @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
+    private val lock: CountDownLatch = CountDownLatch(1)
+    private var lastTick: Long = 0
+    private var lastBytes: Long = 0
+    private val disabled = AtomicBoolean(false)
+
+    fun throttleIfNeeded(downloaded: Long) {
+        val speedLimit = getSpeedLimit()
+        if (speedLimit < 1) {
+            // Forget the baseline while off: turned back on, the limit measures from then, not from when it
+            // was last on, which would mean sleeping for everything downloaded in between.
+            lastBytes = 0
+            lastTick = 0
+            return
+        }
+        if (lastBytes == 0L || lastTick == 0L) {
+            lastBytes = downloaded
+            lastTick = System.currentTimeMillis()
+            return
+        }
+        synchronized(this) {
+            try {
+                val maxBytesPerMS = speedLimit.toDouble() * 1024 / 1000
+                val now = System.currentTimeMillis()
+                val actualTimeSpent = now - lastTick
+                if (actualTimeSpent < 1) return
+                val diff = downloaded - lastBytes
+                lastBytes = downloaded
+                lastTick = now
+                val expectedTimeSpent = diff / maxBytesPerMS
+
+                if (actualTimeSpent < expectedTimeSpent) {
+                    sleep(ceil(expectedTimeSpent - actualTimeSpent).toLong())
+                }
+            } catch (e: Exception) {
+                Logger.error(e)
+            }
+        }
+    }
+
+    fun disable() {
+        try {
+            lock.countDown()
+        } catch (e: Exception) {
+            Logger.error(e)
+        }
+        disabled.set(true)
+    }
+
+    private fun sleep(interval: Long) {
+        try {
+            if (!disabled.get() && lock.await(interval, TimeUnit.MILLISECONDS)) {
+                Logger.info("Speed limiter wait cancelled!")
+            }
+        } catch (e: Exception) {
+            Logger.error(e)
+        }
+    }
+
+    private fun getSpeedLimit(): Int {
+        if (config.speedLimiterEnabled && config.speedLimit > 0) {
+            return config.speedLimit
+        }
+        return 0
+    }
+}

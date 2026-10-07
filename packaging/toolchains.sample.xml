@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copy to ~/.m2/toolchains.xml (or merge into an existing one) and adjust jdkHome.
+
+  This is how the build finds a JDK 25 compiler for xdm-app regardless of which JDK Maven itself
+  is running on - which is worth pinning down, because a Homebrew `mvn` defaults JAVA_HOME to
+  Homebrew's own openjdk when the variable is unset, and IntelliJ builds with the JetBrains
+  Runtime. Without a matching entry the build fails with "Cannot find matching toolchain
+  definitions", rather than an error deep in the compiler.
+
+  Find installed JDKs with:  /usr/libexec/java_home -V   (macOS)
+-->
+<toolchains>
+    <toolchain>
+        <type>jdk</type>
+        <provides>
+            <version>25</version>
+        </provides>
+        <configuration>
+            <jdkHome>/Library/Java/JavaVirtualMachines/temurin-25.jdk/Contents/Home</jdkHome>
+        </configuration>
+    </toolchain>
+</toolchains>

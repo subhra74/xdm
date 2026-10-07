@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!--
+  Manual test page for the bulk download picker. Serve this folder over HTTP (extensions can't read
+  file:// pages without an extra switch), e.g.
+
+      python3 -m http.server 8765 --directory browser-extension/test-pages
+
+  then open http://localhost:8765/bulk-fixture.html and use "Download all with XDM…".
+  Every case the collector is meant to find is listed below with what it should produce.
+-->
+
+<head>
+  <meta charset="utf-8">
+  <title>XDM bulk fixture</title>
+  <meta property="og:image" content="big.png?og">
+  <link rel="icon" href="pixel.png?favicon">
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 24px; }
+    section { margin-bottom: 20px; }
+    /* Two backgrounds on one element: both must be found. */
+    .multi-bg { width: 120px; height: 40px; background-image: url("pixel.png?bg1"), url('pixel.png?bg2'); }
+    /* Pseudo-element image. */
+    .pseudo::before { content: ""; display: inline-block; width: 16px; height: 16px; background: url(pixel.png?before); }
+    /* image-set, and a mask. */
+    .imageset { width: 40px; height: 40px; background-image: image-set(url("pixel.png?1x") 1x, url("big.png?2x") 2x); }
+    .masked { width: 40px; height: 40px; background: #333; -webkit-mask-image: url("pixel.png?mask"); mask-image: url("pixel.png?mask"); }
+    /* Never applied: only Resource Timing could ever see this one, and it won't, since it isn't fetched. */
+    .unused { background-image: url("pixel.png?unused"); }
+  </style>
+</head>
+
+<body>
+  <h1>XDM bulk fixture</h1>
+
+  <section id="links">
+    <h2>Links</h2>
+    <a href="files/archive.zip">archive.zip (Archives)</a> ·
+    <a href="files/manual.pdf">manual.pdf (Documents)</a> ·
+    <a href="files/setup.exe">setup.exe (Programs)</a> ·
+    <a href="files/raw-name" download="renamed.mp3">download="renamed.mp3"</a> ·
+    <a href="about.html">about.html (Other, page)</a> ·
+    <a href="redirect?file=https%3A%2F%2Fexample.com%2Fhidden.iso">query-param URL (hidden.iso)</a> ·
+    <span onclick="location.href='https://example.com/onclick.7z'">onclick URL (onclick.7z)</span> ·
+    <a href="#section">fragment only (same page, kept once)</a> ·
+    <a href="mailto:someone@example.com">mailto (dropped)</a> ·
+    <a href="javascript:void(0)">javascript: (dropped)</a>
+  </section>
+
+  <section id="selection-area">
+    <h2>Select this paragraph and use "Download selected links with XDM…"</h2>
+    <p>Only <a href="files/selected-1.zip">selected-1.zip</a> and <a href="files/selected-2.pdf">selected-2.pdf</a>
+      should be listed in selection mode.</p>
+  </section>
+
+  <section id="images">
+    <h2>Images</h2>
+    <img src="pixel.png?plain" alt="plain img" width="16" height="16">
+    <!-- srcset with commas inside a candidate URL: only the largest (big.png?w_640,h_480) is kept. -->
+    <img src="pixel.png?small" srcset="pixel.png?w_100,h_100 100w, big.png?w_640,h_480 640w" sizes="16px"
+      width="16" height="16" alt="srcset">
+    <picture>
+      <source srcset="big.png?picture-source 2x, pixel.png?picture-1x 1x">
+      <img src="pixel.png?picture-fallback" width="16" height="16" alt="picture">
+    </picture>
+    <!-- Lazy loading: the real image is only in data-src. -->
+    <img src="pixel.png?placeholder" data-src="big.png?lazy-data-src" width="16" height="16" alt="lazy">
+    <div data-bg="big.png?lazy-data-bg"></div>
+    <svg width="16" height="16" xmlns:xlink="http://www.w3.org/1999/xlink">
+      <image xlink:href="pixel.png?svg-xlink" width="16" height="16" />
+    </svg>
+    <video poster="big.png?poster" width="64" height="48"></video>
+    <div class="multi-bg"></div>
+    <span class="pseudo">pseudo</span>
+    <div class="imageset"></div>
+    <div class="masked"></div>
+    <div id="inline-style" style="width:20px;height:20px;background-image:url('pixel.png?inline')"></div>
+    <div id="shadow-host"></div>
+  </section>
+
+  <section id="many">
+    <h2>300 extra images (fills the 250-entry Resource Timing buffer)</h2>
+    <div id="many-images"></div>
+  </section>
+
+  <script>
+    // A closed shadow root: only chrome.dom.openOrClosedShadowRoot can see into it.
+    const root = document.getElementById("shadow-host").attachShadow({ mode: "closed" });
+    root.innerHTML = '<img src="pixel.png?closed-shadow" width="16" height="16" alt="shadow">';
+
+    // Loaded by script, never in the DOM: only Resource Timing knows about it.
+    new Image().src = "big.png?preloaded-by-script";
+    fetch("pixel.png?fetched-by-script");
+    fetch("files/api.json").catch(() => { });
+
+    const many = document.getElementById("many-images");
+    for (let i = 0; i < 300; i++) {
+      const img = document.createElement("img");
+      img.src = "pixel.png?many=" + i;
+      img.width = 4;
+      img.height = 4;
+      many.appendChild(img);
+    }
+  </script>
+</body>
+
+</html>

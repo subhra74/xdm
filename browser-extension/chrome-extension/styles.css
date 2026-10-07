@@ -1,0 +1,442 @@
+/*
+ * Shared by popup.html, error.html, disabled.html and site-access.html. The pages are one small
+ * UI, so they share a single set of tokens: change a colour here and every state follows.
+ */
+
+:root {
+    color-scheme: light dark;
+
+    --bg: #ffffff;
+    --bg-subtle: #f6f7f9;
+    --bg-hover: #f0f2f5;
+    --bg-active: #e6e9ee;
+    --border: #e3e6ea;
+    --text: #1f2328;
+    --text-muted: #646b74;
+    --accent: #2196f3;
+    --accent-hover: #1a82db;
+    --accent-contrast: #ffffff;
+    --focus: #2196f3;
+
+    --ok-bg: #eaf6ec;
+    --ok-border: #2e7d32;
+    --ok-text: #1b5e20;
+    --warn-bg: #fdf3e2;
+    --warn-border: #c77700;
+    --warn-text: #7a4b00;
+    --info-bg: #eef4fd;
+    --info-border: #2196f3;
+    --info-text: #14508c;
+
+    --radius: 6px;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #1f2126;
+        --bg-subtle: #26282e;
+        --bg-hover: #2d3037;
+        --bg-active: #353941;
+        --border: #383c44;
+        --text: #e8eaed;
+        --text-muted: #a1a7b0;
+        --accent: #4ba3f2;
+        --accent-hover: #6cb5f5;
+        --accent-contrast: #10131a;
+        --focus: #6cb5f5;
+
+        --ok-bg: #1d2e20;
+        --ok-border: #4caf50;
+        --ok-text: #b7e3ba;
+        --warn-bg: #33270f;
+        --warn-border: #e0a03a;
+        --warn-text: #f0d5a6;
+        --info-bg: #182739;
+        --info-border: #4ba3f2;
+        --info-text: #bcd9f7;
+    }
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    width: 380px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: -2px;
+}
+
+/* ---- header ------------------------------------------------------------ */
+
+.app-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.app-header h1 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+/* Count of detected videos, sitting next to the title. */
+.count-badge {
+    margin-left: auto;
+    min-width: 18px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--accent-contrast);
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.count-badge[hidden] {
+    display: none;
+}
+
+/* ---- video list -------------------------------------------------------- */
+
+.video-list {
+    margin: 0;
+    padding: 4px 0;
+    list-style: none;
+    max-height: 360px;
+    overflow-y: auto;
+}
+
+.video-list:empty {
+    display: none;
+}
+
+.video-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 16px;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.video-item:hover {
+    background: var(--bg-hover);
+}
+
+.video-item:active {
+    background: var(--bg-active);
+}
+
+.video-item .glyph {
+    flex: none;
+    margin-top: 1px;
+    color: var(--text-muted);
+}
+
+/* Thumbnail stand-in for the capture. Sized to the two-line row rather than to the text, so the
+   list reads as media rather than as a row of tiny icons. */
+.thumb {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 5px;
+    background: var(--bg-active);
+    color: var(--text-muted);
+}
+
+.video-item:hover .thumb,
+.video-item:focus-visible .thumb {
+    color: var(--text);
+}
+
+.video-item:hover .glyph.download,
+.video-item:focus-visible .glyph.download {
+    color: var(--accent);
+}
+
+.video-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.video-title {
+    /* Titles come from the page, so they can be long; two lines then ellipsis. */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 500;
+    word-break: break-word;
+}
+
+.video-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 3px;
+    color: var(--text-muted);
+    font-size: 11.5px;
+}
+
+/* Container format (mp4, m3u8...), which is what usually tells two captures apart. */
+.format-badge {
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: var(--bg-active);
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+/* ---- empty state ------------------------------------------------------- */
+
+.empty-state {
+    padding: 34px 24px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.empty-state .glyph {
+    color: var(--text-muted);
+    opacity: 0.4;
+}
+
+.empty-state p {
+    margin: 10px 0 0;
+    font-size: 13px;
+    color: var(--text);
+}
+
+.empty-state .hint {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* ---- action row and footer --------------------------------------------- */
+
+.actions {
+    display: flex;
+    align-items: center;
+    padding: 6px 8px;
+    border-top: 1px solid var(--border);
+}
+
+.actions[hidden] {
+    display: none;
+}
+
+.text-button {
+    flex: 1;
+    padding: 7px 10px;
+    border: none;
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+}
+
+.text-button:hover {
+    background: var(--bg-hover);
+}
+
+.text-button:disabled {
+    opacity: 0.45;
+    cursor: default;
+    background: transparent;
+}
+
+.separator {
+    width: 1px;
+    height: 18px;
+    background: var(--border);
+}
+
+.hint-text {
+    margin: 0;
+    padding: 0 16px 10px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.hint-text[hidden] {
+    display: none;
+}
+
+.app-footer {
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-subtle);
+}
+
+.footer-action {
+    display: block;
+    width: calc(100% + 20px);
+    margin: -4px -10px 6px;
+    text-align: left;
+    font-size: 13px;
+}
+
+/* ---- toggle ------------------------------------------------------------ */
+
+.toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    cursor: pointer;
+    font-size: 13px;
+    user-select: none;
+}
+
+.toggle input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle .track {
+    flex: none;
+    position: relative;
+    width: 34px;
+    height: 20px;
+    border-radius: 999px;
+    background: #b9bfc7;
+    transition: background 0.15s ease;
+}
+
+.toggle .track::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    transition: transform 0.15s ease;
+}
+
+.toggle input:checked ~ .track {
+    background: var(--accent);
+}
+
+.toggle input:checked ~ .track::after {
+    transform: translateX(14px);
+}
+
+.toggle input:focus-visible ~ .track {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+}
+
+/* ---- status pages (error.html, disabled.html, site-access.html) -------- */
+
+.page-body {
+    padding: 16px;
+}
+
+.notice {
+    padding: 12px 14px;
+    border-left: 3px solid var(--info-border);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    background: var(--info-bg);
+    color: var(--info-text);
+}
+
+.notice h2 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.notice p {
+    margin: 4px 0 0;
+    font-size: 12.5px;
+    opacity: 0.9;
+}
+
+.notice p.version-hint {
+    margin-top: 8px;
+    font-size: 12px;
+}
+
+.notice p[hidden] {
+    display: none;
+}
+
+.notice a {
+    color: inherit;
+    font-weight: 600;
+}
+
+/* XDM not running is a state to act on, not a failure - amber, not red. */
+.notice.warn {
+    border-left-color: var(--warn-border);
+    background: var(--warn-bg);
+    color: var(--warn-text);
+}
+
+.notice.ok {
+    border-left-color: var(--ok-border);
+    background: var(--ok-bg);
+    color: var(--ok-text);
+}
+
+.button-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 14px;
+}
+
+.button-row[hidden] {
+    display: none;
+}
+
+.primary-button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: var(--radius);
+    background: var(--accent);
+    color: var(--accent-contrast);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.primary-button:hover {
+    background: var(--accent-hover);
+}
