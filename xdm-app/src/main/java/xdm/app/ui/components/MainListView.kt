@@ -37,9 +37,7 @@ class MainListView {
     private val jsp: JScrollPane
     private val cardLayout = CardLayout()
     private val cardPanel = JPanel(cardLayout).apply {
-        if (AppContext.config.theme == "light") {
-            background = UIManager.getColor("Table.background")
-        }
+        background = AppTheme.listBackground
     }
     private var editingRow = -1
     private val contextMenu: JPopupMenu
@@ -83,9 +81,7 @@ class MainListView {
         table.setDefaultRenderer(Any::class.java, renderer)
         table.setDefaultEditor(Any::class.java, editor)
         table.fillsViewportHeight = true
-        if (AppContext.config.theme == "dark") {
-            table.background = UIManager.getColor("Panel.background")
-        }
+        table.background = AppTheme.listBackground
 
         val keys =
             mutableListOf(RowSorter.SortKey(0, SortOrder.DESCENDING))
@@ -130,9 +126,8 @@ class MainListView {
             SwingUtilities.invokeLater { editRowUnderMouse() }
         }
 
-        val lightTheme = AppContext.config.theme == "light"
-        // Light theme: the empty view sits on the white list background, so the icon uses the panel grey.
-        val emptyIconColor = UIManager.getColor(if (lightTheme) "Panel.background" else "Table.background")
+        // A faint relief on the list background.
+        val emptyIconColor = AppTheme.emptyIconColor
         val emptyLabel = JLabel(text("MSG_NO_DOWNLOAD"), SwingConstants.CENTER).apply {
             icon = createIcon(RemixIcon.LIST_CHECK_2, 172, emptyIconColor)
             horizontalAlignment = SwingConstants.CENTER
@@ -143,9 +138,7 @@ class MainListView {
             font = font.deriveFont(Font.PLAIN, 14.0f.px)
         }
         val emptyPanel = JPanel(BorderLayout()).apply {
-            if (lightTheme) {
-                background = UIManager.getColor("Table.background")
-            }
+            background = AppTheme.listBackground
             add(emptyLabel, BorderLayout.CENTER)
         }
         cardPanel.add(emptyPanel, "EMPTY")
@@ -208,6 +201,15 @@ class MainListView {
 
     val component: Component
         get() = cardPanel
+
+    /** Every download the list knows about, ignoring the current filter. EDT only. */
+    val records: List<DbRecord>
+        get() = (0 until model.rowCount).mapNotNull { model.getItemAt(it) }
+
+    /** Runs [listener] after any change to the list's rows (added, removed or updated). */
+    fun addRowsChangedListener(listener: () -> Unit) {
+        model.addTableModelListener { listener() }
+    }
 
     val selectedRows: IntArray
         get() = table.selectedRows

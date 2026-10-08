@@ -41,7 +41,7 @@ class MainListViewRow(
     private val lblInfo: JLabel
     private val lblTitle: JLabel
     private val icon: JLabel
-    private val lblProgress: JLabel
+    private val lblProgress: StatusLabel
     private val panDetails: JPanel
     private val prg: JProgressBar
     private var viewRow = -1
@@ -67,14 +67,15 @@ class MainListViewRow(
     var onMenuClick: ActionCallBack? = null
 
     private val iconBadge: JPanel
-    /** Icon for a file that matches no category, and for the neutral pre-render state. */
-    private val defaultIcon = createIcon(CategoryStyle.ALL_ICON, 16, Color.WHITE)
 
     /**
-     * Category icons, cached per category. The key carries the glyph name so editing a
+     * Tile icons, cached per glyph and color. The key carries the glyph name so editing a
      * category's icon in settings invalidates the entry instead of showing the old glyph.
      */
     private val iconCache = HashMap<String, Icon>()
+
+    /** Icon for a file that matches no category, and for the neutral pre-render state. */
+    private val defaultIcon: Icon get() = tileIcon(CategoryStyle.ALL_ICON, AppTheme.tile(null as DownloadCategory?).glyph)
 
     init {
         model?.addTableModelListener { e: TableModelEvent ->
@@ -93,21 +94,19 @@ class MainListViewRow(
         }
 
         panel = JPanel(BorderLayout(8.px, 5.px)).apply {
-            if (AppContext.config.theme == "light") {
-                background = UIManager.getColor("Table.background")
-            }
+            background = AppTheme.listBackground
         }
         val p4 = JPanel(FlowLayout())
         p4.isOpaque = false
         val p3 = JPanel(BorderLayout())
-        p3.background = Color(30, 144, 255)
+        p3.background = AppTheme.tile(null as DownloadCategory?).background
         iconBadge = p3
 
         icoUnchecked = createIcon(RemixIcon.CHECKBOX_BLANK_LINE, 16, Color.WHITE)
         icoChecked = createIcon(RemixIcon.CHECKBOX_LINE, 16, Color.WHITE)
 //        icoFile = createIcon(RemixIcon.FILE_ZIP_FILL, 16, Color.WHITE)
         icon = JLabel(defaultIcon)
-        icon.border = ScaledEmptyBorder(7, 7, 7, 7)
+        icon.border = ScaledEmptyBorder(9, 9, 9, 9)
         //    icon.addMouseMotionListener(
         //        new MouseAdapter() {
         //          @Override
@@ -129,9 +128,10 @@ class MainListViewRow(
         icon.addMouseListener(
             object : MouseAdapter() {
                 override fun mouseEntered(e: MouseEvent) {
-                    val oldIcon = icon.icon
+                    icon.putClientProperty("old.icon", icon.icon)
+                    icon.putClientProperty("old.background", iconBadge.background)
                     icon.icon = if (table.isRowSelected(viewRow)) icoChecked else icoUnchecked
-                    icon.putClientProperty("old.icon", oldIcon)
+                    iconBadge.background = AppTheme.accent
                 }
 
                 override fun mouseExited(e: MouseEvent) {
@@ -140,6 +140,7 @@ class MainListViewRow(
                         icoChecked
                     else
                         if (isSelectionMode) icoUnchecked else {
+                            (icon.getClientProperty("old.background") as? Color)?.let { iconBadge.background = it }
                             val oldIcon = icon.getClientProperty("old.icon")
                             if (oldIcon != null) {
                                 oldIcon as Icon
@@ -177,7 +178,16 @@ class MainListViewRow(
         p4.add(p3)
 
         // p3.setBorder(new EmptyBorder(5,5,5,5));
-        val content = JPanel(GridLayout(2, 1, 0, 0))
+        // The two text lines as one block, centered vertically against the icon tile. A 2-row
+        // GridLayout split the height into equal cells and pinned the lines to the middle edge,
+        // which drifts off-center as the row grows. The zero minimum width lets the title
+        // ellipsize instead of making GridBagLayout fall back to minimum sizes.
+        val lines = object : JPanel() {
+            override fun getMinimumSize(): Dimension = Dimension(0, preferredSize.height)
+        }
+        lines.layout = BoxLayout(lines, BoxLayout.Y_AXIS)
+        lines.isOpaque = false
+        val content = JPanel(GridBagLayout())
         content.isOpaque = false
 
         lblTitle = JLabel("Some long title name for testing")
@@ -195,27 +205,29 @@ class MainListViewRow(
         lblInfo = JLabel("Some long title name for testing")
         lblInfo.verticalAlignment = SwingConstants.TOP
         lblInfo.font = fnt
-        lblInfo.font = lblTitle.font.deriveFont(12.0f.px)
+        lblInfo.font = lblTitle.font.deriveFont(11.0f.px)
         lblInfo.foreground = Color.GRAY
-        content.add(lblTitle)
-        content.add(lblInfo)
+        lblTitle.alignmentX = 0f
+        lblInfo.alignmentX = 0f
+        lines.add(lblTitle)
+        lines.add(Box.createVerticalStrut(3.px))
+        lines.add(lblInfo)
+        content.add(lines, GridBagConstraints().apply {
+            weightx = 1.0
+            fill = GridBagConstraints.HORIZONTAL
+        })
 
         val p1 = JPanel(BorderLayout(0, 0)).apply {
-            if (AppContext.config.theme == "light") {
-                background = UIManager.getColor("Table.background")
-            }
+            background = AppTheme.listBackground
         }
         panDetails = JPanel(BorderLayout()).apply {
-            if (AppContext.config.theme == "light") {
-                background = UIManager.getColor("Table.background")
-            }
+            background = AppTheme.listBackground
         }
         panDetails.border = ScaledEmptyBorder(0, 0, 0, 10)
         prg = JProgressBar()
         prg.preferredSize = scaledSize(60, 10)
         prg.alignmentY = Component.TOP_ALIGNMENT
-        lblProgress = JLabel("Downloading 100 %")
-        lblProgress.font = fnt
+        lblProgress = StatusLabel(fnt)
         // prg.setPreferredSize(new Dimension(lblProgress.getPreferredSize().width + 5, 10));
         panDetails.add(lblProgress)
         panDetails.add(prg, BorderLayout.SOUTH)
@@ -337,9 +349,14 @@ class MainListViewRow(
     }
 
     private fun updateLabelText(ent: DbRecord, isSelected: Boolean) {
-        iconBadge.background = Color(30, 144, 255)//CategoryStyle.color(categoryFor(ent.fileName))
-        icon.icon =
-            if (isSelected) icoChecked else if (table.selectedRowCount > 0) icoUnchecked else getIcon(ent)
+        // In selection mode the tile turns accent so the white check boxes stay visible.
+        if (isSelected || table.selectedRowCount > 0) {
+            iconBadge.background = AppTheme.accent
+            icon.icon = if (isSelected) icoChecked else icoUnchecked
+        } else {
+            icon.icon = getIcon(ent)
+        }
+        lblProgress.paused = ent.status == RecordStatus.PAUSED
         buttonContainer.isVisible = table.selectedRowCount == 0
         btnOpenFolder.isVisible = ent.status == RecordStatus.FINISHED
         openFolderGap.isVisible = btnOpenFolder.isVisible
@@ -455,19 +472,56 @@ class MainListViewRow(
     private fun categoryFor(name: String): DownloadCategory? =
         AppContext.config.categories.firstOrNull { it.matches(name) }
 
-    /** A batch shows a folder, with a warning when some of its files failed; anything else its category's icon. */
+    /**
+     * A batch shows a folder on an accent tile, with a warning when some of its files failed;
+     * anything else its category's glyph on that category's tinted tile. Sets the tile color too.
+     */
     private fun getIcon(ent: DbRecord): Icon {
-        if (ent.downloadType != DownloadType.Batch) return getIcon(ent.fileName)
-        iconBadge.background = Color(30, 144, 255)
-        val glyph = if (ent.failedFiles > 0) RemixIcon.FOLDER_WARNING_FILL else RemixIcon.FOLDER_FILL
-        return iconCache.getOrPut("batch:${glyph.name}") { createIcon(glyph, 16, Color.WHITE) }
+        if (ent.downloadType == DownloadType.Batch) {
+            val tile = AppTheme.tile(AppTheme.accent)
+            iconBadge.background = tile.background
+            val glyph = if (ent.failedFiles > 0) RemixIcon.FOLDER_WARNING_FILL else RemixIcon.FOLDER_FILL
+            return tileIcon(glyph, tile.glyph)
+        }
+        val cat = categoryFor(ent.fileName)
+        val tile = AppTheme.tile(cat)
+        iconBadge.background = tile.background
+        return tileIcon(cat?.let { CategoryStyle.iconName(it) } ?: CategoryStyle.ALL_ICON, tile.glyph)
     }
 
-    private fun getIcon(name: String): Icon {
-        val cat = categoryFor(name) ?: return defaultIcon
-        iconBadge.background = Color(30, 144, 255)
-        return iconCache.getOrPut("${cat.id}:${cat.icon}") {
-            createIcon(CategoryStyle.iconName(cat), 16, Color.WHITE)
+    private fun tileIcon(glyph: RemixIcon, color: Color): Icon =
+        iconCache.getOrPut("${glyph.name}:${color.rgb}") { createIcon(glyph, 16, color) }
+
+    /**
+     * The status text right of the file name. While [paused] it is drawn as a rounded amber
+     * pill, otherwise as plain text.
+     */
+    private class StatusLabel(private val plainFont: Font) : JLabel() {
+        private val plainForeground = foreground
+
+        init {
+            font = plainFont
+        }
+
+        var paused = false
+            set(value) {
+                if (field == value) return
+                field = value
+                foreground = if (value) AppTheme.pausedForeground else plainForeground
+                horizontalAlignment = if (value) CENTER else LEADING
+                border = if (value) ScaledEmptyBorder(0, 10, 0, 10) else null
+            }
+
+        override fun paintComponent(g: Graphics) {
+            if (paused) {
+                val h = minOf(height, 24.px)
+                val g2 = g.create() as Graphics2D
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+                g2.color = AppTheme.pausedBackground
+                g2.fillRoundRect(0, (height - h) / 2, width, h, h, h)
+                g2.dispose()
+            }
+            super.paintComponent(g)
         }
     }
 }

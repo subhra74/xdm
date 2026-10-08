@@ -1,6 +1,5 @@
 package xdm.app.ui.screens
 
-import com.formdev.flatlaf.FlatLaf
 import xdm.app.AppContext
 import xdm.app.I8N.text
 import xdm.app.ui.screens.settings.AdvancedConfigPanel
@@ -9,6 +8,7 @@ import xdm.app.ui.screens.settings.DownloadsPanel
 import xdm.app.ui.screens.settings.FoldersPanel
 import xdm.app.ui.screens.settings.GeneralPanel
 import xdm.app.ui.screens.settings.NetworkConfigPanel
+import xdm.app.ui.components.AppTheme
 import xdm.app.ui.screens.settings.settingsAccentColor
 import xdm.app.ui.screens.settings.settingsHint
 import xdm.app.ui.screens.settings.settingsMutedColor
@@ -129,13 +129,8 @@ class SettingsWindow(parent: Window) : JDialog(parent) {
             add(FooterBar(bottom), BorderLayout.SOUTH)
         }
 
-        // Same top border as the main window: black in the dark theme, FlatLaf's border color in light.
-        val topBorderColor = if (FlatLaf.isLafDark()) {
-            Color.BLACK
-        } else {
-            UIManager.getColor("Component.borderColor") ?: Color.GRAY
-        }
-        (contentPane as JComponent).border = MatteBorder(1, 0, 0, 0, topBorderColor)
+        // Same top border as the main window.
+        (contentPane as JComponent).border = MatteBorder(1, 0, 0, 0, AppTheme.sidebarBorder)
 
         add(NavRail(navList), BorderLayout.WEST)
         add(center, BorderLayout.CENTER)

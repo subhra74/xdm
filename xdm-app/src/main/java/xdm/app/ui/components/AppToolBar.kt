@@ -106,9 +106,7 @@ class AppToolBar(
             add(btnDeleteGap)
             add(Box.createHorizontalGlue())
 
-            if (AppContext.config.theme == "light") {
-                background = UIManager.getColor("Table.background")
-            }
+            background = AppTheme.listBackground
         }
 
         val txtSearch = JTextField(12).apply {

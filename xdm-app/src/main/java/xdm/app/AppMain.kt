@@ -1,5 +1,6 @@
 package xdm.app
 
+import com.formdev.flatlaf.FlatLaf
 import com.formdev.flatlaf.themes.FlatMacDarkLaf
 import com.formdev.flatlaf.themes.FlatMacLightLaf
 import xdm.app.utils.CdsJarPin
@@ -99,6 +100,8 @@ object AppMain {
         // before setup as its base font; the antialiasing hint goes into Swing's defaults after it.
         val desktop = if (WaylandToolkit.isActive) DesktopFontSettings.read() else null
         desktop?.font?.let { UIManager.put("defaultFont", FontUIResource(it)) }
+        // XDM's palette: resources/xdm/app/themes/<LafClassName>.properties, merged over the theme's own.
+        FlatLaf.registerCustomDefaultsSource("xdm.app.themes")
         when (theme.lowercase()) {
             "light" -> FlatMacLightLaf.setup()
             else -> FlatMacDarkLaf.setup()

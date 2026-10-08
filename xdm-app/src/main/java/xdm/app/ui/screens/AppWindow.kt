@@ -1,6 +1,5 @@
 package xdm.app.ui.screens
 
-import com.formdev.flatlaf.FlatLaf
 import xdm.app.AppContext
 import xdm.app.AppContext.app
 import xdm.app.DbRecord
@@ -8,6 +7,7 @@ import xdm.app.I8N.text
 import xdm.app.OS
 import xdm.app.XDM_WINDOW_TITLE
 import xdm.app.ui.components.AppMenuHandler
+import xdm.app.ui.components.AppTheme
 import xdm.app.ui.components.AppToolBar
 import xdm.app.ui.components.AutoStartPanel
 import xdm.app.ui.components.FilterListPanel
@@ -40,7 +40,7 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
         iconImages = windowIconImages
         val os = detectOS()
         if (os == OS.Windows) {
-            getRootPane().putClientProperty("JRootPane.titleBarBackground", UIManager.getColor("Table.background"))
+            getRootPane().putClientProperty("JRootPane.titleBarBackground", AppTheme.sidebarBackground)
         } else if (os == OS.MacOS) {
             applyMacOSWindowCustomizations(image)
         }
@@ -80,32 +80,23 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
             { filterPanel.reloadCategories() }
         )
         toolbar.setMultiSelectView(false)
+        filterPanel.countsFrom { listView.records }
+        listView.addRowsChangedListener { filterPanel.scheduleRecount() }
         listView.selectModeCallback = { toolbar.setMultiSelectView(it) }
 
         val panel = JPanel(BorderLayout(10.px, 0)).apply {
             add(toolbar.component, BorderLayout.NORTH)
             add(listView.component)
             border = ScaledEmptyBorder(7, 0, 0, 0)
-            if (AppContext.config.theme == "light") {
-                background = UIManager.getColor("Table.background")
-            }
+            background = AppTheme.listBackground
         }
 
-        // Keep the black top border in the dark theme (as before); use FlatLaf's
-        // border color in the light theme so it isn't a harsh black line.
-        val topBorderColor = if (FlatLaf.isLafDark()) {
-            Color.BLACK
-        } else {
-            UIManager.getColor("Component.borderColor") ?: Color.GRAY
-        }
         val splitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT).apply {
-            border = MatteBorder(1, 0, 0, 0, topBorderColor)
-            dividerLocation = 180.px
+            border = MatteBorder(1, 0, 0, 0, AppTheme.sidebarBorder)
+            dividerLocation = 190.px
             leftComponent = filterPanel.component
             rightComponent = panel
-            if (AppContext.config.theme == "light") {
-                background = UIManager.getColor("Table.background")
-            }
+            background = AppTheme.listBackground
         }
         add(splitPane, BorderLayout.CENTER)
         add(JPanel().apply {

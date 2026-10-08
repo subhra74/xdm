@@ -1,22 +1,29 @@
 package xdm.app.ui.components
 
 
-import com.formdev.flatlaf.FlatLaf
 import xdm.app.AppContext
+import xdm.app.DbRecord
 import xdm.app.DownloadCategory
 import xdm.app.I8N.text
-import xdm.app.ui.screens.settings.settingsAccentColor
+import xdm.app.RecordStatus
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.createIcon
 import xdm.app.utils.px
-import java.awt.Color
 import java.awt.Component
 import java.awt.Dimension
+import java.awt.Font
 import java.awt.Rectangle
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
+import java.awt.font.TextAttribute
 import javax.swing.*
 import javax.swing.border.MatteBorder
 
+/**
+ * The main window's sidebar: a "Library" section filtering by download state and a "File types"
+ * section filtering by category, each row showing how many downloads it matches.
+ */
 class FilterListPanel(
     val stateChanged: (FilterState) -> Unit,
     val categoryChanged: (DownloadCategory?) -> Unit
@@ -25,79 +32,67 @@ class FilterListPanel(
     private val jsp: JScrollPane
     private val catFilterModel = DefaultListModel<FilterItem>()
     private val catFilterList: JList<FilterItem>
+    private val stateFilterList: JList<FilterItem>
+
+    private var stateCounts = emptyMap<FilterState, Int>()
+
+    /** Keyed by category id; null is "All types". */
+    private var categoryCounts = emptyMap<String?, Int>()
+    private var countSource: (() -> List<DbRecord>)? = null
+
+    /** Downloads report progress many times a second; recount at most a few times a second. */
+    private val countTimer = Timer(250) { recount() }.apply { isRepeats = false }
 
     init {
         val stateFilterModel = DefaultListModel<FilterItem>()
-        val stateFilterList = stretchingList(stateFilterModel)
+        stateFilterList = sidebarList(stateFilterModel)
         stateFilterModel.addElement(
             FilterItem.State(
                 FilterState.All, text("CAT_ALL"),
-                makeIcon(RemixIcon.ARROW_DOWN_CIRCLE_LINE, Color.gray),
-                makeIcon(RemixIcon.ARROW_DOWN_CIRCLE_FILL, selectedIconColor())
+                makeIcon(RemixIcon.ARROW_DOWN_CIRCLE_LINE, false),
+                makeIcon(RemixIcon.ARROW_DOWN_CIRCLE_FILL, true)
             )
         )
         stateFilterModel.addElement(
             FilterItem.State(
                 FilterState.Incomplete,
                 text("CAT_INCOMPLETE"),
-                makeIcon(RemixIcon.PROGRESS_2_LINE, Color.gray),
-                makeIcon(RemixIcon.PROGRESS_2_FILL, selectedIconColor())
+                makeIcon(RemixIcon.PROGRESS_2_LINE, false),
+                makeIcon(RemixIcon.PROGRESS_2_FILL, true)
             )
         )
         stateFilterModel.addElement(
             FilterItem.State(
                 FilterState.Completed,
                 text("CAT_FINISHED"),
-                makeIcon(RemixIcon.CHECKBOX_CIRCLE_LINE, Color.gray),
-                makeIcon(RemixIcon.CHECKBOX_CIRCLE_FILL, selectedIconColor())
+                makeIcon(RemixIcon.CHECKBOX_CIRCLE_LINE, false),
+                makeIcon(RemixIcon.CHECKBOX_CIRCLE_FILL, true)
             )
         )
-        stateFilterList.isOpaque = false
-        stateFilterList.cellRenderer = FilterListRenderer()
-        stateFilterList.alignmentX = 0f
-        // Side padding so the selection pill floats clear of the panel edges.
-        stateFilterList.border = ScaledEmptyBorder(0, 13, 0, 13)
 
         fillCategories()
-
-        catFilterList = stretchingList(catFilterModel).apply {
-            selectionMode = ListSelectionModel.SINGLE_SELECTION
-            border = ScaledEmptyBorder(10, 13, 0, 13)
-            isOpaque = false
-            cellRenderer = FilterListRenderer()
-            alignmentX = 0f
-        }
-
-        val sidebarBackground = if (AppContext.config.theme == "light") {
-            UIManager.getColor("Panel.background")
-        } else {
-            UIManager.getColor("Table.background")
-        }
+        catFilterList = sidebarList(catFilterModel)
 
         val box = FilterBox().apply {
+            add(sectionLabel(text("CAT_SECTION_LIBRARY")))
             add(stateFilterList)
+            add(Box.createVerticalStrut(14.px))
+            add(sectionLabel(text("CAT_SECTION_TYPES")))
             add(catFilterList)
-            border = ScaledEmptyBorder(10, 0, 10, 0)
+            border = ScaledEmptyBorder(14, 2, 14, 2)
             isOpaque = true
-            background = sidebarBackground
+            background = AppTheme.sidebarBackground
         }
 
-        // Keep the black divider in the dark theme (as before); use FlatLaf's
-        // border color in the light theme so it isn't a harsh black line.
-        val dividerColor = if (FlatLaf.isLafDark()) {
-            Color.BLACK
-        } else {
-            UIManager.getColor("Component.borderColor") ?: Color.GRAY
-        }
         jsp = JScrollPane(box).apply {
-            border = MatteBorder(0, 0, 0, 1, dividerColor)
+            border = MatteBorder(0, 0, 0, 1, AppTheme.sidebarBorder)
             // The rows never fill the sidebar's height, so the viewport has to carry the
             // same colour as the panel -- otherwise the strip below the last row shows the
             // scroll pane's own background instead.
             isOpaque = true
-            background = sidebarBackground
+            background = AppTheme.sidebarBackground
             viewport.isOpaque = true
-            viewport.background = sidebarBackground
+            viewport.background = AppTheme.sidebarBackground
         }
 
         stateFilterList.selectedIndex = 0
@@ -120,26 +115,49 @@ class FilterListPanel(
         }
     }
 
+    /**
+     * Sets where the row counts come from and counts once; [scheduleRecount] then refreshes them
+     * whenever the list changes. Call on the EDT.
+     */
+    fun countsFrom(source: () -> List<DbRecord>) {
+        countSource = source
+        recount()
+    }
+
+    fun scheduleRecount() {
+        if (!countTimer.isRunning) countTimer.start()
+    }
+
+    private fun recount() {
+        val records = countSource?.invoke() ?: return
+        val finished = records.count { it.status == RecordStatus.FINISHED }
+        stateCounts = mapOf(
+            FilterState.All to records.size,
+            FilterState.Incomplete to records.size - finished,
+            FilterState.Completed to finished
+        )
+        val counts = HashMap<String?, Int>()
+        counts[null] = records.size
+        for (cat in AppContext.config.categories) {
+            counts[cat.id] = records.count { cat.matches(it.fileName) }
+        }
+        categoryCounts = counts
+        stateFilterList.repaint()
+        catFilterList.repaint()
+    }
+
+    private fun countOf(item: FilterItem): Int? = when (item) {
+        is FilterItem.State -> stateCounts[item.state]
+        is FilterItem.Category -> categoryCounts[item.category?.id]
+    }
+
     private fun fillCategories() {
         catFilterModel.clear()
-        catFilterModel.addElement(
-            FilterItem.Category(
-                null, text("CAT_ALL_TYPES"),
-                makeIcon(CategoryStyle.lineVariant(CategoryStyle.ALL_ICON), Color.gray),
-                makeIcon(CategoryStyle.ALL_ICON, selectedIconColor())
-            )
-        )
+        val allDot = CategoryDotIcon(AppTheme.accent)
+        catFilterModel.addElement(FilterItem.Category(null, text("CAT_ALL_TYPES"), allDot, allDot))
         for (cat in AppContext.config.categories) {
-            // Unselected sidebar rows draw the line style; the selected row draws the stored
-            // filled glyph, as the download list does.
-            val filled = CategoryStyle.iconName(cat)
-            catFilterModel.addElement(
-                FilterItem.Category(
-                    cat, cat.displayName,
-                    makeIcon(CategoryStyle.lineVariant(filled), Color.gray),
-                    makeIcon(filled, selectedIconColor())
-                )
-            )
+            val dot = CategoryDotIcon(AppTheme.categoryColor(cat))
+            catFilterModel.addElement(FilterItem.Category(cat, cat.displayName, dot, dot))
         }
     }
 
@@ -155,6 +173,7 @@ class FilterListPanel(
             .firstOrNull { (catFilterModel[it] as FilterItem.Category).category?.id == selectedId }
             ?: 0
         catFilterList.selectedIndex = index
+        recount()
         // Notify unconditionally: when the index is unchanged the selection listener does
         // not fire, but the category behind it may have been edited, so the list still
         // needs to re-filter and repaint its icons.
@@ -162,27 +181,51 @@ class FilterListPanel(
     }
 
     /**
-     * A list that reports an unbounded maximum width but its natural height. Inside the
+     * A sidebar list: reports an unbounded maximum width but its natural height. Inside the
      * vertical [FilterBox] a plain JList would be capped at its preferred width, leaving the
      * selection pill stopping short of the sidebar's edge; the height stays preferred so the
-     * two stacked lists do not share out the leftover vertical space between them.
+     * two stacked lists do not share out the leftover vertical space between them. Tracks the
+     * row under the mouse for the renderer's hover pill.
      */
-    private fun stretchingList(model: DefaultListModel<FilterItem>): JList<FilterItem> =
+    private fun sidebarList(model: DefaultListModel<FilterItem>): JList<FilterItem> =
         object : JList<FilterItem>(model) {
             override fun getMaximumSize(): Dimension = Dimension(Int.MAX_VALUE, preferredSize.height)
+        }.apply {
+            selectionMode = ListSelectionModel.SINGLE_SELECTION
+            isOpaque = false
+            cellRenderer = FilterListRenderer(::countOf)
+            alignmentX = 0f
+            // Side padding so the pill floats clear of the panel edges.
+            border = ScaledEmptyBorder(0, 10, 0, 10)
+            val hover = object : MouseAdapter() {
+                override fun mouseMoved(e: MouseEvent) = setHover(locationToIndex(e.point).takeIf {
+                    it != -1 && getCellBounds(it, it).contains(e.point)
+                } ?: -1)
+
+                override fun mouseExited(e: MouseEvent) = setHover(-1)
+
+                private fun setHover(index: Int) {
+                    if (getClientProperty(FilterListRenderer.HOVER_INDEX) != index) {
+                        putClientProperty(FilterListRenderer.HOVER_INDEX, index)
+                        repaint()
+                    }
+                }
+            }
+            addMouseListener(hover)
+            addMouseMotionListener(hover)
         }
 
-    /**
-     * Color of a selected row's glyph. The dark theme brightens the normal gray, as it always
-     * has; the light theme uses the accent, so the selected icon matches the settings window's
-     * selected nav entry.
-     */
-    private fun selectedIconColor(): Color =
-        if (FlatLaf.isLafDark()) FilterListRenderer.emphasize(Color.gray) else settingsAccentColor()
-
-    private fun makeIcon(icon: RemixIcon, color: Color): Icon {
-        return createIcon(icon, 20, color)
+    /** The small spaced-out uppercase caption above each section, lined up with the row text. */
+    private fun sectionLabel(title: String): JLabel = JLabel(title.uppercase()).apply {
+        font = font.deriveFont(Font.BOLD, 9.0f.px).deriveFont(mapOf(TextAttribute.TRACKING to 0.08f))
+        foreground = AppTheme.sidebarSection
+        alignmentX = 0f
+        border = ScaledEmptyBorder(0, 18, 8, 10)
     }
+
+    /** State rows draw the outlined glyph muted, and the filled one in the accent when selected. */
+    private fun makeIcon(icon: RemixIcon, selected: Boolean): Icon =
+        createIcon(icon, 16, if (selected) AppTheme.accent else AppTheme.sidebarIcon)
 
     /**
      * Stretches to the scroll pane's width instead of to the lists' preferred width, so a
