@@ -107,6 +107,8 @@ interface IAppConfig : CoreConfig {
 
 class AppConfig(private val configDir: String) : IAppConfig {
     companion object {
+        /** Largest "Only detect videos larger than" choice in Settings, in MB. */
+        const val MAX_MIN_VIDEO_SIZE_MB = 100L
         const val CONFIG_FILE = "xdm-app.config"
         val LEGACY_TEMP_FOLDER: String = File(System.getProperty("user.home"), ".temp").absolutePath
         const val MIN_READ_TIMEOUT_SECONDS = 5
@@ -118,6 +120,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var savedFolders: List<String> = emptyList()
     override var sortKey: SortKey = SortKey.DATE
     override var sortAscending = false
+    /** In KB; Settings shows it in MB. */
     override var minVideoSize: Long = 1024
     override var lang: String = "en"
     override var theme: String = "dark"
@@ -283,7 +286,10 @@ class AppConfig(private val configDir: String) : IAppConfig {
         folderIndex = input.readInt()
         sortKey = SortKey.entries[input.readInt()]
         sortAscending = input.readBoolean()
-        minVideoSize = input.readLong()
+        minVideoSize = input.readLong().let {
+            // Settings used to save its MB choice (1..100) here unconverted, as if it were KB.
+            if (it in 1..MAX_MIN_VIDEO_SIZE_MB) it * 1024 else it
+        }
         lang = input.readUTF()
         speedLimiterEnabled = input.readBoolean()
         speedLimit = input.readInt()

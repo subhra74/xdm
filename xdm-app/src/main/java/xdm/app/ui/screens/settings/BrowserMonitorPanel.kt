@@ -1,5 +1,6 @@
 package xdm.app.ui.screens.settings
 
+import xdm.app.AppConfig
 import xdm.app.AppContext
 import xdm.app.I8N
 import xdm.app.ui.components.BrowserExtensionPanel
@@ -23,7 +24,7 @@ class BrowserMonitorPanel : SettingsPanel() {
     private val txtVidExt = extensionArea()
     private val txtBlockedHosts = extensionArea()
     private val cmbMinVidSize = rounded(JComboBox<Long>()).apply {
-        listOf(1L, 5L, 10L, 50L, 100L).forEach { addItem(it) }
+        listOf(1L, 5L, 10L, 50L, AppConfig.MAX_MIN_VIDEO_SIZE_MB).forEach { addItem(it) }
         preferredSize = Dimension(110.px, preferredSize.height)
         maximumSize = preferredSize
     }
@@ -116,7 +117,8 @@ class BrowserMonitorPanel : SettingsPanel() {
         txtFileExt.text = config.fileExtensions.joinToString(", ")
         txtVidExt.text = config.videoExtensions.joinToString(", ")
         txtBlockedHosts.text = config.blockedHosts.joinToString(", ")
-        cmbMinVidSize.selectedItem = config.minVideoSize
+        // The config holds KB, the choices are MB.
+        cmbMinVidSize.selectedItem = config.minVideoSize / 1024
         tglGetServerTime.isSelected = config.getServerTime
     }
 
@@ -125,7 +127,7 @@ class BrowserMonitorPanel : SettingsPanel() {
         config.fileExtensions = txtFileExt.text.split(",").map { it.trim() }.filter { it.isNotEmpty() }
         config.videoExtensions = txtVidExt.text.split(",").map { it.trim() }.filter { it.isNotEmpty() }
         config.blockedHosts = txtBlockedHosts.text.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-        config.minVideoSize = cmbMinVidSize.selectedItem as Long
+        config.minVideoSize = (cmbMinVidSize.selectedItem as Long) * 1024
         config.getServerTime = tglGetServerTime.isSelected
     }
 

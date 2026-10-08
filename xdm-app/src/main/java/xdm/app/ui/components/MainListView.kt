@@ -130,8 +130,11 @@ class MainListView {
             SwingUtilities.invokeLater { editRowUnderMouse() }
         }
 
+        val lightTheme = AppContext.config.theme == "light"
+        // Light theme: the empty view sits on the white list background, so the icon uses the panel grey.
+        val emptyIconColor = UIManager.getColor(if (lightTheme) "Panel.background" else "Table.background")
         val emptyLabel = JLabel(text("MSG_NO_DOWNLOAD"), SwingConstants.CENTER).apply {
-            icon = createIcon(RemixIcon.LIST_CHECK_2, 128, UIManager.getColor("Table.background"))
+            icon = createIcon(RemixIcon.LIST_CHECK_2, 172, emptyIconColor)
             horizontalAlignment = SwingConstants.CENTER
             verticalTextPosition = SwingConstants.BOTTOM
             horizontalTextPosition = SwingConstants.CENTER
@@ -140,6 +143,9 @@ class MainListView {
             font = font.deriveFont(Font.PLAIN, 14.0f.px)
         }
         val emptyPanel = JPanel(BorderLayout()).apply {
+            if (lightTheme) {
+                background = UIManager.getColor("Table.background")
+            }
             add(emptyLabel, BorderLayout.CENTER)
         }
         cardPanel.add(emptyPanel, "EMPTY")

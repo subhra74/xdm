@@ -33,6 +33,15 @@ fun getContentLength(headers: Map<String, List<String>>?): Long? {
     return headers?.let { getHeader("content-length", headers)?.toLongOrNull() }
 }
 
+/**
+ * The whole file's size. For a 206, Content-Length is only the range's, so the total from
+ * Content-Range ("bytes 0-99/600") wins; otherwise Content-Length. Null when neither says.
+ */
+fun getFileSize(headers: Map<String, List<String>>?): Long? {
+    val total = getHeader("content-range", headers)?.substringAfterLast('/', "")?.trim()?.toLongOrNull()
+    return total ?: getContentLength(headers)
+}
+
 private val fmt by lazy {
     SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US).apply {
         timeZone = TimeZone.getTimeZone("GMT")

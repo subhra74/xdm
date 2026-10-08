@@ -264,13 +264,25 @@ object VideoHelper {
             ?.lowercase()
             ?.takeIf { it in plainMediaExts }
 
+    /**
+     * Whether a response with no Content-Type is still worth a look: a manifest by its URL, or a
+     * plain media file by its path extension whose Content-Length says it is at least [minBytes].
+     * With neither a type nor a size (range probes, segments) there is too little to go on.
+     */
+    internal fun isUntypedMedia(url: String, contentLength: Long?, minBytes: Long): Boolean =
+        isHLSUrl(url) || isDashUrl(url)
+            || (plainMediaExt(url) != null && contentLength != null && contentLength >= minBytes)
+
     fun processMediaMessage(msg: ExtensionMessage) {
         val responseHeaders =
             msg.responseHeaders?.map { entry -> entry.key to entry.value.map { it.value } }?.associate { it }
-        val contentType = getHeader(CONTENT_TYPE, responseHeaders) ?: return
-        // A malformed Content-Length must not abort the whole message.
-        val contentLength = getHeader(CONTENT_LENGTH, responseHeaders)?.toLongOrNull()
+        val contentType = getHeader(CONTENT_TYPE, responseHeaders)
+        // The whole file's size, also for a range request. A malformed value must not abort the message.
+        val contentLength = getFileSize(responseHeaders)
         msg.url ?: return
+        if (contentType == null && !isUntypedMedia(msg.url, contentLength, AppContext.config.minVideoSize * 1024)) {
+            return
+        }
         val dash = isDash(contentType) || isDashUrl(msg.url)
         if ((dash || isHLS(contentType) || isHLSUrl(msg.url)) && !claimManifestFetch(msg.url, msg.tabId)) {
             Logger.info("Manifest fetched moments ago, skipping: ${msg.url}")
@@ -358,7 +370,7 @@ object VideoHelper {
             maxPiece = AppContext.config.maxSegments,
             userSelectedDownloadFolder = null,
             authInfo = null,
-            knownFileSize = msg.fileSize ?: getContentLength(respHeaders)
+            knownFileSize = msg.fileSize ?: getFileSize(respHeaders)
         )
 
         AppContext.videoTracker.addVideoHttp(
