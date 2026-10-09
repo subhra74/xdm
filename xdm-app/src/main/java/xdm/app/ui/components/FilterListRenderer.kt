@@ -29,7 +29,7 @@ class FilterListRenderer(private val countOf: (FilterItem) -> Int?) : ListCellRe
     }
 
     private val label = JLabel().apply {
-        iconTextGap = 8.px
+        iconTextGap = 8 // FlatLaf scales iconTextGap itself
     }
     private val count = JLabel().apply {
         font = font.deriveFont(11.0f.px)

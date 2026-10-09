@@ -68,6 +68,9 @@ class MainListViewRow(
 
     private val iconBadge: JPanel
 
+    /** Hue of the tile currently shown, so hovering can deepen the same color. */
+    private var tileHue: Color = AppTheme.tileHue(null)
+
     /**
      * Tile icons, cached per glyph and color. The key carries the glyph name so editing a
      * category's icon in settings invalidates the entry instead of showing the old glyph.
@@ -96,7 +99,7 @@ class MainListViewRow(
         panel = JPanel(BorderLayout(8.px, 5.px)).apply {
             background = AppTheme.listBackground
         }
-        val p4 = JPanel(FlowLayout())
+        val p4 = JPanel(FlowLayout(FlowLayout.CENTER, 5.px, 5.px))
         p4.isOpaque = false
         val p3 = JPanel(BorderLayout())
         p3.background = AppTheme.tile(null as DownloadCategory?).background
@@ -130,8 +133,15 @@ class MainListViewRow(
                 override fun mouseEntered(e: MouseEvent) {
                     icon.putClientProperty("old.icon", icon.icon)
                     icon.putClientProperty("old.background", iconBadge.background)
-                    icon.icon = if (table.isRowSelected(viewRow)) icoChecked else icoUnchecked
-                    iconBadge.background = AppTheme.accent
+                    if (table.isRowSelected(viewRow) || table.selectedRowCount > 0) {
+                        // Selection mode: the tile is already accent with white check boxes.
+                        icon.icon = if (table.isRowSelected(viewRow)) icoChecked else icoUnchecked
+                    } else {
+                        // Outside selection mode, deepen the tile's own tint and offer the check box in its color.
+                        val tile = AppTheme.tile(tileHue, hovered = true)
+                        iconBadge.background = tile.background
+                        icon.icon = tileIcon(RemixIcon.CHECKBOX_BLANK_LINE, tile.glyph)
+                    }
                 }
 
                 override fun mouseExited(e: MouseEvent) {
@@ -165,8 +175,8 @@ class MainListViewRow(
                     }
                 }
             })
-        val dim = icon.preferredSize
-        p3.putClientProperty(FlatClientProperties.STYLE, "arc: " + dim.width)
+        // A full circle; FlatLaf scales `arc` and clamps it to the panel size.
+        p3.putClientProperty(FlatClientProperties.STYLE, "arc: 999")
 
         // icon.setOpaque(true);
         // icon.setBackground(Color.ORANGE);
@@ -191,6 +201,7 @@ class MainListViewRow(
         content.isOpaque = false
 
         lblTitle = JLabel("Some long title name for testing")
+        lblTitle.foreground = AppTheme.listTitle
         lblTitle.cursor = Cursor(Cursor.HAND_CURSOR)
         lblTitle.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent?) {
@@ -227,7 +238,7 @@ class MainListViewRow(
         prg = JProgressBar()
         prg.preferredSize = scaledSize(60, 10)
         prg.alignmentY = Component.TOP_ALIGNMENT
-        lblProgress = StatusLabel(fnt)
+        lblProgress = StatusLabel(lblTitle.font.deriveFont(11.0f.px))
         // prg.setPreferredSize(new Dimension(lblProgress.getPreferredSize().width + 5, 10));
         panDetails.add(lblProgress)
         panDetails.add(prg, BorderLayout.SOUTH)
@@ -478,13 +489,15 @@ class MainListViewRow(
      */
     private fun getIcon(ent: DbRecord): Icon {
         if (ent.downloadType == DownloadType.Batch) {
-            val tile = AppTheme.tile(AppTheme.accent)
+            tileHue = AppTheme.accent
+            val tile = AppTheme.tile(tileHue)
             iconBadge.background = tile.background
             val glyph = if (ent.failedFiles > 0) RemixIcon.FOLDER_WARNING_FILL else RemixIcon.FOLDER_FILL
             return tileIcon(glyph, tile.glyph)
         }
         val cat = categoryFor(ent.fileName)
-        val tile = AppTheme.tile(cat)
+        tileHue = AppTheme.tileHue(cat)
+        val tile = AppTheme.tile(tileHue)
         iconBadge.background = tile.background
         return tileIcon(cat?.let { CategoryStyle.iconName(it) } ?: CategoryStyle.ALL_ICON, tile.glyph)
     }

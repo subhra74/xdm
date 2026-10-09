@@ -21,7 +21,7 @@ package xdm.app.ui.components
 
 import xdm.app.utils.px
 import xdm.core.downloaders.web.SegmentProgress
-import java.awt.Color
+import java.awt.Dimension
 import java.awt.Graphics
 import java.awt.Graphics2D
 import java.awt.geom.RoundRectangle2D
@@ -32,6 +32,15 @@ class SegmentPanel : JComponent() {
     private var segDet: Collection<SegmentProgress> = listOf()
     private var totalSize: Long = 0
 
+    /**
+     * Keeps the preferred height when the layout falls back to minimum sizes. A bare JComponent
+     * reports its current size as its minimum (0 before the first layout), so in the progress
+     * window's GridBagLayout -- which switches to minimum sizes whenever a long file name makes the
+     * preferred layout too wide -- the bar collapsed to a sliver.
+     */
+    override fun getMinimumSize(): Dimension =
+        if (isMinimumSizeSet) super.getMinimumSize() else Dimension(0, preferredSize.height)
+
     fun setValues(segDet: Collection<SegmentProgress>) {
         this.segDet = segDet
         this.totalSize = segDet.sumOf { it.length }
@@ -40,13 +49,12 @@ class SegmentPanel : JComponent() {
 
     public override fun paintComponent(g: Graphics) {
         val g2 = g as Graphics2D
-        g2.paint = UIManager.getColor("ProgressBar.background")
-        g2.fillRect(0, 0, getWidth(), getHeight())
         val originalClip = g2.clip
+        // Track and segments are both drawn inside the rounded clip, so the bar keeps round ends.
         val clipShape = RoundRectangle2D.Double(0.0, 0.0, getWidth().toDouble(), getHeight().toDouble(), 5f.px.toDouble(), 5f.px.toDouble())
-        g2.clip = clipShape
+        g2.clip(clipShape)
         try {
-//            g2.paint = Color.GRAY
+            g2.paint = UIManager.getColor("ProgressBar.background")
             g2.fillRect(0, 0, getWidth(), getHeight())
             if (segDet.isEmpty() || totalSize <= 0) {
                 return
