@@ -55,7 +55,7 @@ class MainListView {
 
     private val filter = MainListViewFilter(FilterState.All, null, "")
     private val sorter: TableRowSorter<MainListViewModel>
-    private val emptyListIcon = createIcon(RemixIcon.LIST_CHECK_2, 96, AppTheme.emptyIconColor)
+    private val emptyListIcon = createIcon(RemixIcon.ARCHIVE_STACK_FILL, 96, AppTheme.emptyIconColor)
     private val noMatchIcon = createIcon(RemixIcon.SEARCH_LINE, 96, AppTheme.emptyIconColor)
     private val emptyLabel = JLabel("", SwingConstants.CENTER)
 

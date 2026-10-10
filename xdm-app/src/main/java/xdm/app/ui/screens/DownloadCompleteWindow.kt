@@ -35,7 +35,6 @@ import javax.swing.JDialog
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JTextField
-import javax.swing.SwingConstants
 import javax.swing.Timer
 import javax.swing.UIManager
 
@@ -54,8 +53,7 @@ class DownloadCompleteWindow : JDialog() {
     private val txtFileName = borderlessField()
     private val lblFileSize = JLabel("---").apply {
         foreground = mutedFg
-        horizontalAlignment = SwingConstants.CENTER
-        alignmentX = Component.CENTER_ALIGNMENT
+        alignmentX = Component.LEFT_ALIGNMENT
     }
 
     private val btnOpenFile = JButton(text("CTX_OPEN_FILE")).apply {
@@ -144,8 +142,8 @@ class DownloadCompleteWindow : JDialog() {
     private fun infoCard(): JComponent {
         val card = JPanel(GridBagLayout()).apply {
             background = cardBg
-            border = ScaledEmptyBorder(12, 14, 12, 8)
-            putClientProperty("FlatLaf.style", "arc: 16")
+            border = ScaledEmptyBorder(8, 12, 8, 6)
+            putClientProperty("FlatLaf.style", "arc: 12")
         }
 
         fun row(gridY: Int, captionKey: String, field: JTextField, top: Int) {
@@ -167,7 +165,7 @@ class DownloadCompleteWindow : JDialog() {
         }
 
         row(0, "ND_FILE", txtFileName, 0)
-        row(2, "CD_LOC", txtFolderPath, 10)
+        row(2, "CD_LOC", txtFolderPath, 6)
         return card
     }
 
@@ -180,31 +178,33 @@ class DownloadCompleteWindow : JDialog() {
         title = text("CD_TITLE")
         defaultCloseOperation = DISPOSE_ON_CLOSE
 
-        val header = Box.createVerticalBox().apply {
-            alignmentX = Component.CENTER_ALIGNMENT
-            add(JLabel(createIcon(RemixIcon.CHECKBOX_CIRCLE_FILL, 44, Color(0x2ECC71))).apply {
-                alignmentX = Component.CENTER_ALIGNMENT
+        // Compact header: icon on the left, title and size stacked beside it.
+        val header = Box.createHorizontalBox().apply {
+            alignmentX = Component.LEFT_ALIGNMENT
+            add(JLabel(createIcon(RemixIcon.CHECKBOX_CIRCLE_FILL, 32, Color(0x2ECC71))))
+            add(Box.createHorizontalStrut(10.px))
+            add(Box.createVerticalBox().apply {
+                add(JLabel(text("CD_TITLE")).apply {
+                    font = font.deriveFont(Font.BOLD, 14f.px)
+                    foreground = UIManager.getColor("Label.foreground")
+                    alignmentX = Component.LEFT_ALIGNMENT
+                })
+                add(Box.createVerticalStrut(2.px))
+                add(lblFileSize)
             })
-            add(Box.createVerticalStrut(10.px))
-            add(JLabel(text("CD_TITLE")).apply {
-                font = font.deriveFont(Font.BOLD, 16f.px)
-                foreground = UIManager.getColor("Label.foreground")
-                alignmentX = Component.CENTER_ALIGNMENT
-            })
-            add(Box.createVerticalStrut(4.px))
-            add(lblFileSize)
+            add(Box.createHorizontalGlue())
         }
 
         val content = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            border = ScaledEmptyBorder(24, 24, 16, 24)
+            border = ScaledEmptyBorder(14, 16, 10, 16)
             add(header)
-            add(Box.createVerticalStrut(18.px))
-            add(infoCard().apply { alignmentX = Component.CENTER_ALIGNMENT })
+            add(Box.createVerticalStrut(10.px))
+            add(infoCard().apply { alignmentX = Component.LEFT_ALIGNMENT })
         }
 
         val footer = JPanel(BorderLayout()).apply {
-            border = ScaledEmptyBorder(0, 24, 18, 24)
+            border = ScaledEmptyBorder(0, 16, 14, 16)
             add(lblSkipNotification, BorderLayout.WEST)
             add(Box.createHorizontalBox().apply {
                 add(btnOpenFolder)
@@ -221,8 +221,8 @@ class DownloadCompleteWindow : JDialog() {
 
         pack()
         isResizable = false
-        minimumSize = Dimension(440.px, height)
-        size = Dimension(440.px, height)
+        minimumSize = Dimension(400.px, height)
+        size = Dimension(400.px, height)
         setLocationRelativeTo(null)
 
         addWindowListener(object : WindowAdapter() {
