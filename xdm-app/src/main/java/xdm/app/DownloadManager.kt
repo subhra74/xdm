@@ -251,7 +251,9 @@ class DownloadManager(
             activeSessions.remove(id)?.let {
                 synchronized(appDB) {
                     appDB.getById(id)?.let { e ->
-                        e.status = RecordStatus.PAUSED
+                        e.status = RecordStatus.ERROR
+                        e.speed = 0.0f
+                        e.eta = 0
                         appDB.saveActiveRecords()
                         appDB.savePausedRecords()
                     }

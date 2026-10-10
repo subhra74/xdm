@@ -14,6 +14,11 @@ enum class RecordStatus {
     DOWNLOADING,
     FINISHED,
     READY,
+
+    /**
+     * Stopped by an error rather than by the user. Behaves like [PAUSED] (resumable, kept in the paused
+     * list) and only differs in how it is shown.
+     */
     ERROR,
     PAUSED,
     ASSEMBLING,
@@ -24,7 +29,10 @@ enum class RecordStatus {
      * also copies. Cancellable until [MovePhase.FINALIZING]: the bytes stay in temp and resuming
      * republishes them.
      */
-    PUBLISHING
+    PUBLISHING;
+
+    /** Idle and resumable: these records are saved in the paused list. */
+    val isStopped: Boolean get() = this == PAUSED || this == ERROR
 }
 
 data class DbRecord(
@@ -97,12 +105,12 @@ class AppDB(private val configDir: String) {
         var saveActive = false
         for (rec in records) {
             if (rec.id == id) {
-                if (rec.status == RecordStatus.PAUSED) {
+                if (rec.status.isStopped) {
                     savePaused = true
                 } else if (rec.status == RecordStatus.FINISHED) {
                     saveFinished = true
                 } else {
-                    // READY, DOWNLOADING, ASSEMBLING, PUBLISHING and ERROR stay in the active list.
+                    // READY, DOWNLOADING, ASSEMBLING and PUBLISHING stay in the active list.
                     saveActive = true
                 }
                 Logger.info("Item removed: $rec")
@@ -143,10 +151,10 @@ class AppDB(private val configDir: String) {
         val res = AtomicIO.writeTransacted(activeFileName, configDir) { fs ->
             synchronized(records) {
                 val count =
-                    records.count { it.status != RecordStatus.FINISHED && it.status != RecordStatus.PAUSED }
+                    records.count { it.status != RecordStatus.FINISHED && !it.status.isStopped }
                 fs.writeInt(count)
                 for (value in records.filter {
-                    it.status != RecordStatus.FINISHED && it.status != RecordStatus.PAUSED
+                    it.status != RecordStatus.FINISHED && !it.status.isStopped
                 }) {
                     writeRecord(value, fs)
                 }
@@ -176,10 +184,10 @@ class AppDB(private val configDir: String) {
         val res = AtomicIO.writeTransacted(pausedFileName, configDir) { fs ->
             synchronized(records) {
                 val count =
-                    records.count { it.status == RecordStatus.PAUSED }
+                    records.count { it.status.isStopped }
                 fs.writeInt(count)
                 for (value in records.filter {
-                    it.status == RecordStatus.PAUSED
+                    it.status.isStopped
                 }) {
                     writeRecord(value, fs)
                 }
@@ -227,21 +235,35 @@ class AppDB(private val configDir: String) {
         writer.writeLong(rec.date)
         writer.writeUTF(rec.fileName)
         writer.writeUTF(rec.downloadType.toString())
+        writer.writeBoolean(rec.status == RecordStatus.ERROR)
     }
 
     private fun readRecord(r: DataInputStream, paused: Boolean = true): DbRecord {
+        val id = r.readLong()
+        val size = r.readLong()
+        val downloaded = r.readLong()
+        val progress = r.readInt()
+        val date = r.readLong()
+        val fileName = r.readUTF()
+        val downloadType = DownloadType.valueOf(r.readUTF())
+        val failed = r.readBoolean()
         return DbRecord(
-            id = r.readLong(),
-            size = r.readLong(),
-            downloaded = r.readLong(),
-            progress = r.readInt(),
-            date = r.readLong(),
-            fileName = r.readUTF(),
+            id = id,
+            size = size,
+            downloaded = downloaded,
+            progress = progress,
+            date = date,
+            fileName = fileName,
             eta = 0,
             speed = 0.0f,
             selected = false,
-            status = if (paused) RecordStatus.PAUSED else RecordStatus.FINISHED,
-            downloadType = DownloadType.valueOf(r.readUTF()),
+            // A download that was running when XDM exited comes back paused.
+            status = when {
+                !paused -> RecordStatus.FINISHED
+                failed -> RecordStatus.ERROR
+                else -> RecordStatus.PAUSED
+            },
+            downloadType = downloadType,
         )
     }
 
@@ -261,9 +283,9 @@ class AppDB(private val configDir: String) {
             indexMap[r.id] = i
         }
         // Only the lists that lost rows: the finished one can be large and rarely needs rewriting.
-        if (removed.any { it.status == RecordStatus.PAUSED }) savePausedRecords()
+        if (removed.any { it.status.isStopped }) savePausedRecords()
         if (removed.any { it.status == RecordStatus.FINISHED }) saveFinishedRecords()
-        if (removed.any { it.status != RecordStatus.PAUSED && it.status != RecordStatus.FINISHED }) saveActiveRecords()
+        if (removed.any { !it.status.isStopped && it.status != RecordStatus.FINISHED }) saveActiveRecords()
         return removed
     }
 }

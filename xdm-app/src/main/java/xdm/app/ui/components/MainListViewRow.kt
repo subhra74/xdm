@@ -367,7 +367,11 @@ class MainListViewRow(
         } else {
             icon.icon = getIcon(ent)
         }
-        lblProgress.paused = ent.status == RecordStatus.PAUSED
+        lblProgress.pill = when (ent.status) {
+            RecordStatus.PAUSED -> StatusPill.PAUSED
+            RecordStatus.ERROR -> StatusPill.FAILED
+            else -> null
+        }
         buttonContainer.isVisible = table.selectedRowCount == 0
         btnOpenFolder.isVisible = ent.status == RecordStatus.FINISHED
         openFolderGap.isVisible = btnOpenFolder.isVisible
@@ -400,11 +404,12 @@ class MainListViewRow(
                     )
                 }
                 prg.isVisible = true
-            } else if (ent.status == RecordStatus.PAUSED) {
+            } else if (ent.status.isStopped) {
+                val label = text(if (ent.status == RecordStatus.ERROR) "STAT_FAILED" else "STAT_PAUSED")
                 prgText = if (ent.progress > 0) {
-                    String.format("%s %d%s", text("STAT_PAUSED"), ent.progress, "%")
+                    String.format("%s %d%s", label, ent.progress, "%")
                 } else {
-                    text("STAT_PAUSED")
+                    label
                 }
                 prg.isVisible = false
             } else if (ent.status == RecordStatus.READY) {
@@ -505,9 +510,11 @@ class MainListViewRow(
     private fun tileIcon(glyph: RemixIcon, color: Color): Icon =
         iconCache.getOrPut("${glyph.name}:${color.rgb}") { createIcon(glyph, 16, color) }
 
+    private enum class StatusPill { PAUSED, FAILED }
+
     /**
-     * The status text right of the file name. While [paused] it is drawn as a rounded amber
-     * pill, otherwise as plain text.
+     * The status text right of the file name. With a [pill] it is drawn as a rounded pill (amber
+     * when paused, red when failed), otherwise as plain text.
      */
     private class StatusLabel(private val plainFont: Font) : JLabel() {
         private val plainForeground = foreground
@@ -516,21 +523,26 @@ class MainListViewRow(
             font = plainFont
         }
 
-        var paused = false
+        var pill: StatusPill? = null
             set(value) {
                 if (field == value) return
                 field = value
-                foreground = if (value) AppTheme.pausedForeground else plainForeground
-                horizontalAlignment = if (value) CENTER else LEADING
-                border = if (value) ScaledEmptyBorder(0, 10, 0, 10) else null
+                foreground = when (value) {
+                    StatusPill.PAUSED -> AppTheme.pausedForeground
+                    StatusPill.FAILED -> AppTheme.failedForeground
+                    null -> plainForeground
+                }
+                horizontalAlignment = if (value != null) CENTER else LEADING
+                border = if (value != null) ScaledEmptyBorder(0, 10, 0, 10) else null
             }
 
         override fun paintComponent(g: Graphics) {
-            if (paused) {
+            val pill = pill
+            if (pill != null) {
                 val h = minOf(height, 24.px)
                 val g2 = g.create() as Graphics2D
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-                g2.color = AppTheme.pausedBackground
+                g2.color = if (pill == StatusPill.FAILED) AppTheme.failedBackground else AppTheme.pausedBackground
                 g2.fillRoundRect(0, (height - h) / 2, width, h, h, h)
                 g2.dispose()
             }

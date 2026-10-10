@@ -27,8 +27,7 @@ enum class ClearAge(val labelKey: String, val days: Long) {
 }
 
 /**
- * Which idle downloads Clear removes. Paused covers failed downloads too once XDM restarts, as
- * failures are only kept apart for the running session.
+ * Which idle downloads Clear removes. Paused and failed are separate statuses, also across restarts.
  */
 data class ClearCriteria(val statuses: Set<RecordStatus>, val age: ClearAge) {
     fun matches(rec: DbRecord, now: Long): Boolean =

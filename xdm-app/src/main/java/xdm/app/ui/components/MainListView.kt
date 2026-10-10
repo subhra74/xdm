@@ -55,6 +55,9 @@ class MainListView {
 
     private val filter = MainListViewFilter(FilterState.All, null, "")
     private val sorter: TableRowSorter<MainListViewModel>
+    private val emptyListIcon = createIcon(RemixIcon.LIST_CHECK_2, 96, AppTheme.emptyIconColor)
+    private val noMatchIcon = createIcon(RemixIcon.SEARCH_LINE, 96, AppTheme.emptyIconColor)
+    private val emptyLabel = JLabel("", SwingConstants.CENTER)
 
     init {
         this.contextMenu = createContextMenu(this.table)
@@ -127,9 +130,7 @@ class MainListView {
         }
 
         // A faint relief on the list background.
-        val emptyIconColor = AppTheme.emptyIconColor
-        val emptyLabel = JLabel(text("MSG_NO_DOWNLOAD"), SwingConstants.CENTER).apply {
-            icon = createIcon(RemixIcon.LIST_CHECK_2, 172, emptyIconColor)
+        emptyLabel.apply {
             horizontalAlignment = SwingConstants.CENTER
             verticalTextPosition = SwingConstants.BOTTOM
             horizontalTextPosition = SwingConstants.CENTER
@@ -143,6 +144,8 @@ class MainListView {
         }
         cardPanel.add(emptyPanel, "EMPTY")
         cardPanel.add(jsp, "LIST")
+        // Filter, search and sort changes re-filter the view without touching the model.
+        sorter.addRowSorterListener { updateCard() }
         updateCard()
     }
 
@@ -164,12 +167,19 @@ class MainListView {
         }
     }
 
+    /** Shows the list, or a placeholder when there are no downloads at all or none pass the filter. */
     private fun updateCard() {
-        if (model.rowCount == 0) {
-            cardLayout.show(cardPanel, "EMPTY")
-        } else {
-            cardLayout.show(cardPanel, "LIST")
+        when {
+            model.rowCount == 0 -> showEmpty(text("MSG_NO_DOWNLOAD"), emptyListIcon)
+            table.rowCount == 0 -> showEmpty(text("MSG_NO_MATCHING_DOWNLOAD"), noMatchIcon)
+            else -> cardLayout.show(cardPanel, "LIST")
         }
+    }
+
+    private fun showEmpty(message: String, icon: Icon) {
+        emptyLabel.text = message
+        emptyLabel.icon = icon
+        cardLayout.show(cardPanel, "EMPTY")
     }
 
     private fun showMenu(entry: DbRecord, editor: MainListViewRow) {
@@ -271,11 +281,11 @@ class MainListView {
     private fun prepareMenu(contextMenu: JPopupMenu, entry: DbRecord) {
 //        mSaveAs.isVisible = entry.status != RecordStatus.FINISHED
         // A batch has many links and no single one to refresh.
-        mRefresh.isVisible = entry.status == RecordStatus.PAUSED && !AppContext.refreshLinkInProgress.get()
+        mRefresh.isVisible = entry.status.isStopped && !AppContext.refreshLinkInProgress.get()
                 && entry.downloadType != DownloadType.Batch
         mRetryFailed.isVisible = entry.downloadType == DownloadType.Batch && entry.status == RecordStatus.FINISHED
                 && entry.failedFiles > 0
-        mSchedule.isVisible = entry.status == RecordStatus.PAUSED
+        mSchedule.isVisible = entry.status.isStopped
         mProgress.isVisible = entry.status == RecordStatus.DOWNLOADING
 //        mCopyFile.isVisible = entry.status == RecordStatus.FINISHED
         contextMenu.putClientProperty("menu.context", entry)

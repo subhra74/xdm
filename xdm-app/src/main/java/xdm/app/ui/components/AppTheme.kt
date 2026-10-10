@@ -34,6 +34,8 @@ object AppTheme {
 
     val pausedForeground: Color get() = color("XDM.list.pausedForeground", "Label.foreground")
     val pausedBackground: Color get() = color("XDM.list.pausedBackground", "Button.background")
+    val failedForeground: Color get() = color("XDM.list.failedForeground", "Actions.Red")
+    val failedBackground: Color get() = color("XDM.list.failedBackground", "Button.background")
 
     /** Colors of a download row's round icon tile: [background] fill and [glyph] color. */
     data class Tile(val background: Color, val glyph: Color)
