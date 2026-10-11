@@ -3,6 +3,7 @@ package xdm.app.ui.screens
 import com.formdev.flatlaf.FlatClientProperties
 import xdm.app.AppContext
 import xdm.app.I8N.text
+import xdm.app.ui.components.CappedComboBox
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.chooseFile
@@ -84,7 +85,8 @@ import javax.swing.table.DefaultTableModel
 class StreamDownloadDialog(owner: Window?) : JDialog(owner, ModalityType.MODELESS) {
     private val radioHls = JRadioButton(text("SD_HLS"), true)
     private val radioDash = JRadioButton(text("SD_DASH"))
-    private val txtUrl = JTextField()
+    // Columns: a long URL or file name must not widen the dialog; the row stretches the field.
+    private val txtUrl = JTextField().apply { columns = 10 }
     private val btnPaste = JButton(createIcon(RemixIcon.CLIPBOARD_LINE, 16, Color.GRAY)).apply { toolTipText = text("SD_PASTE") }
     private val btnLoad = JButton(text("SD_LOAD"))
     private val lblStatus = JLabel(" ")
@@ -98,7 +100,7 @@ class StreamDownloadDialog(owner: Window?) : JDialog(owner, ModalityType.MODELES
     private val bottomFiller = JPanel().apply { isOpaque = false }
     private val lblAudio = JLabel(text("SD_AUDIO"))
     private val audioModel = DefaultComboBoxModel<AudioChoice>()
-    private val cmbAudio = JComboBox(audioModel)
+    private val cmbAudio = CappedComboBox(audioModel)
 
     /** Name and Value. Edited through Add / Edit (or a double-click), not in the cells. */
     private val headerModel = object : DefaultTableModel(arrayOf(text("SD_NAME"), text("SD_VALUE")), 0) {
@@ -109,9 +111,9 @@ class StreamDownloadDialog(owner: Window?) : JDialog(owner, ModalityType.MODELES
     private val btnRemoveHeader = JButton(text("SD_REMOVE"))
     private val tabs = JTabbedPane()
 
-    private val txtFileName = JTextField()
+    private val txtFileName = JTextField().apply { columns = 10 }
     private val modelSaveIn = DefaultComboBoxModel<String>()
-    private val cmbSaveIn = JComboBox(modelSaveIn)
+    private val cmbSaveIn = CappedComboBox(modelSaveIn)
     private val cmbSegments = JComboBox(arrayOf(1, 2, 4, 8, 16, 32, 64))
     private val btnDownload = JButton(text("ND_DOWNLOAD"))
 

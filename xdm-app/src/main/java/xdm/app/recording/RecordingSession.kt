@@ -55,7 +55,8 @@ import kotlin.system.exitProcess
 object RecordingSession {
     const val PROPERTY = "xdm.record.session"
 
-    private const val STEP_TIMEOUT_MS = 5 * 60_000L
+    // The HTTPS step fetches a 601 MB file (RecordServer.HTTPS_URL): room for a slow link.
+    private const val STEP_TIMEOUT_MS = 15 * 60_000L
     private const val UI_TIMEOUT_MS = 60_000L
     private const val USER_AGENT =
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36"

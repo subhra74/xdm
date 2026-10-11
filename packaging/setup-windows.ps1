@@ -5,8 +5,9 @@
   Run once per machine, before build-bundle.ps1 (PACKAGING.md section 0). Without switches it only
   reports what is there and what is missing; nothing is installed or changed.
 
-    JDK 25     BellSoft Liberica JDK 25 Standard (PACKAGING.md section 3.1), one per target
-               architecture: the JDK decides the MSI's architecture.
+    JDK 25     BellSoft Liberica JDK 25 Standard, the exact build pinned in packaging\jdk.properties
+               (PACKAGING.md section 3.1), one per target architecture: the JDK decides the MSI's
+               architecture, and the class lists are recorded on that build.
     .NET SDK   needed only to install the WiX CLI (a dotnet tool); -Type msi only.
     WiX 7      the "wix" dotnet tool; -Type msi only. build-bundle.ps1 adds its extensions itself.
 
@@ -15,18 +16,22 @@
   The architectures to build for. Default: x64 and arm64 on an ARM64 machine (x64 runs under
   emulation), x64 on an x64 machine.
 .PARAMETER InstallJdk
-  For each architecture without a JDK 25, download Liberica JDK 25's zip from BellSoft, check its
-  SHA-1 and unpack it to %USERPROFILE%\jdks\liberica-<version>-<arch>, where build-bundle.ps1
-  looks. Zips rather than MSIs: on Windows 11 ARM, the x64 and arm64 MSIs both install to
+  For each architecture without the pinned Liberica build, download its zip (URL and SHA-1 from
+  packaging\jdk.properties), check the SHA-1 and unpack it to %USERPROFILE%\jdks\liberica-<version>-<arch>,
+  where build-bundle.ps1 looks. Zips rather than MSIs: on Windows 11 ARM, the x64 and arm64 MSIs both install to
   C:\Program Files\BellSoft\LibericaJDK-25, so only one of them can be installed.
 .PARAMETER InstallWix
   Install the .NET SDK (if missing) and the WiX 7 CLI, and offer to accept the WiX EULA.
+.PARAMETER AcceptWixEula
+  With -InstallWix: accept the WiX 7 OSMF EULA without asking (unattended builds, e.g. CI). Passing it
+  is accepting https://wixtoolset.org/osmf/ for this machine.
 #>
 [CmdletBinding()]
 param(
   [ValidateSet('x64','arm64')] [string[]]$Arch,
   [switch]$InstallJdk,
-  [switch]$InstallWix
+  [switch]$InstallWix,
+  [switch]$AcceptWixEula
 )
 
 $ErrorActionPreference = 'Stop'
@@ -63,6 +68,15 @@ function Get-JdkArch($Release) {
 
 $JdksDir = Join-Path $env:USERPROFILE 'jdks'
 
+# The Liberica build pinned in packaging\jdk.properties (build-bundle.ps1 accepts only that one).
+function Read-Pin([string]$Key) {
+  $line = Get-Content (Join-Path $PSScriptRoot 'jdk.properties') | Where-Object { $_ -match "^$([regex]::Escape($Key))=" }
+  if (-not $line) { throw "packaging\jdk.properties has no $Key" }
+  ($line -split '=', 2)[1].Trim()
+}
+$PinnedVersion = Read-Pin 'liberica.version'
+$PinnedRuntime = Read-Pin 'liberica.runtime'
+
 # The same candidates, in the same order, as build-bundle.ps1 searches with -Arch.
 function Find-Jdk25([string]$TargetArch) {
   $candidates = @()
@@ -75,8 +89,8 @@ function Find-Jdk25([string]$TargetArch) {
   if ($onPath) { $candidates += (Split-Path -Parent (Split-Path -Parent $onPath.Source)) }
   foreach ($dir in $candidates) {
     $r = Read-JdkRelease $dir
-    if ($r -and [int](($r['JAVA_VERSION'] -split '\.')[0]) -ge 25 -and (Get-JdkArch $r) -eq $TargetArch -and
-        (Test-Path (Join-Path $dir 'bin\jpackage.exe'))) {
+    if ($r -and $r['IMPLEMENTOR'] -match 'BellSoft' -and $r['JAVA_RUNTIME_VERSION'] -eq $PinnedRuntime -and
+        (Get-JdkArch $r) -eq $TargetArch -and (Test-Path (Join-Path $dir 'bin\jpackage.exe'))) {
       return [pscustomobject]@{ Home = $dir; Release = $r }
     }
   }
@@ -84,25 +98,19 @@ function Find-Jdk25([string]$TargetArch) {
 }
 
 function Install-LibericaZip([string]$TargetArch) {
-  $apiArch = if ($TargetArch -eq 'arm64') { 'arm' } else { 'x86' }
-  $api = 'https://api.bell-sw.com/v1/liberica/releases?version-feature=25&version-modifier=latest' +
-         "&os=windows&arch=$apiArch&bitness=64&package-type=zip&bundle-type=jdk"
-  # Assigned first: Windows PowerShell 5.1 emits a JSON array as one pipeline object, a variable enumerates.
-  $releases = Invoke-RestMethod $api
-  $releases = @($releases | ForEach-Object { $_ })
-  # Prefer the full patch-set update (PSU) over the security-only one (CPU) when both are listed.
-  $rel = (@($releases | Where-Object { $_.updateType -eq 'psu' }) + $releases) | Select-Object -First 1
-  if (-not $rel) { throw "BellSoft lists no Liberica JDK 25 zip for windows-$TargetArch" }
+  $url = Read-Pin "liberica.windows-$TargetArch.url"
+  $expected = Read-Pin "liberica.windows-$TargetArch.sha1"
+  $name = Split-Path $url -Leaf
 
   New-Item -ItemType Directory -Force -Path $JdksDir | Out-Null
-  $zip = Join-Path $env:TEMP $rel.filename
-  Write-Host "   downloading $($rel.filename) ($([math]::Round($rel.size / 1MB)) MB) from $($rel.downloadUrl)"
-  Invoke-WebRequest $rel.downloadUrl -OutFile $zip -UseBasicParsing
+  $zip = Join-Path $env:TEMP $name
+  Write-Host "   downloading $url"
+  Invoke-WebRequest $url -OutFile $zip -UseBasicParsing
   $sha1 = (Get-FileHash $zip -Algorithm SHA1).Hash
-  if ($sha1 -ne $rel.sha1) { Remove-Item $zip; throw "SHA-1 mismatch for $($rel.filename): $sha1, expected $($rel.sha1)" }
+  if ($sha1 -ne $expected) { Remove-Item $zip; throw "SHA-1 mismatch for ${name}: $sha1, expected $expected" }
 
   # The zip holds one folder (jdk-25.0.x); unpack beside the others, then give it an arch-specific name.
-  $dest = Join-Path $JdksDir "liberica-$($rel.version -replace '\+', '_')-$TargetArch"
+  $dest = Join-Path $JdksDir "liberica-$($PinnedVersion -replace '\+', '_')-$TargetArch"
   $tmp = Join-Path $JdksDir ".unpack-$TargetArch"
   Remove-Item -Recurse -Force $tmp, $dest -ErrorAction SilentlyContinue
   Expand-Archive $zip -DestinationPath $tmp
@@ -115,7 +123,7 @@ Update-SessionPath
 
 # ---- JDK 25, one per architecture --------------------------------------------
 foreach ($a in $Arch) {
-  Write-Host ">> JDK 25 for $a$(if ($a -eq 'x64' -and $hostArch -eq 'ARM64') { ' (runs under emulation)' })"
+  Write-Host ">> Liberica $PinnedRuntime for $a$(if ($a -eq 'x64' -and $hostArch -eq 'ARM64') { ' (runs under emulation)' })"
   $jdk = Find-Jdk25 $a
   if (-not $jdk -and $InstallJdk) {
     Install-LibericaZip $a
@@ -123,11 +131,10 @@ foreach ($a in $Arch) {
   }
   if ($jdk) {
     $r = $jdk.Release
-    Write-Host "   ok: $($jdk.Home)  ($($r['IMPLEMENTOR']) $($r['JAVA_VERSION']))"
-    if ($r['IMPLEMENTOR'] -notmatch 'BellSoft') { Write-Host '   note: not Liberica; the shipped builds use Liberica' }
+    Write-Host "   ok: $($jdk.Home)  ($($r['IMPLEMENTOR']) $($r['JAVA_RUNTIME_VERSION']))"
   } else {
-    Write-Host "   missing: rerun with -InstallJdk (unpacks the $a zip into $JdksDir)"
-    $missing += "JDK 25 ($a)"
+    Write-Host "   missing: rerun with -InstallJdk (unpacks the pinned $a zip into $JdksDir)"
+    $missing += "Liberica $PinnedRuntime ($a)"
   }
 }
 
@@ -166,7 +173,7 @@ if ($wixMajor -lt 7 -and $InstallWix -and $sdks) {
   $wixMajor = [int](((& wix --version) -split '[.+]')[0])
   if ($wixMajor -ge 7) {
     # WiX 7 refuses to build until its Open Source Maintenance Fee EULA is accepted, once per machine.
-    $answer = Read-Host '   Accept the WiX 7 OSMF EULA (https://wixtoolset.org/osmf/)? [y/N]'
+    $answer = if ($AcceptWixEula) { 'y' } else { Read-Host '   Accept the WiX 7 OSMF EULA (https://wixtoolset.org/osmf/)? [y/N]' }
     if ($answer -match '^[yY]') { & wix eula accept wix7 } else { Write-Host '   later: wix eula accept wix7' }
   }
 }

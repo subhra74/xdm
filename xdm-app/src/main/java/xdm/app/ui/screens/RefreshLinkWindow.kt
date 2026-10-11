@@ -60,7 +60,7 @@ class RefreshLinkWindow(
     private val cardLayout = CardLayout()
     private val cardPanel = JPanel(cardLayout)
 
-    private val txtUrl = JTextField()
+    private val txtUrl = JTextField().apply { columns = 10 } // a long URL must not widen the window
 
     /**
      * Header rows in display order, one row per value. A `Cookie` row carries the whole cookie

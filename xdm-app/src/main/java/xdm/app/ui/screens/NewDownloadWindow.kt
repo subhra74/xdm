@@ -6,6 +6,7 @@ import xdm.app.DuplicateKind
 import xdm.app.I8N.text
 import xdm.app.RecordStatus
 import xdm.app.ui.components.AppMenuHandler
+import xdm.app.ui.components.CappedComboBox
 import xdm.app.ui.components.CategoryStyle
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
@@ -149,7 +150,7 @@ class NewDownloadWindow : JDialog() {
         contentPane.add(lblSaveIn, gbcLblSaveIn)
 
         modelSaveIn = DefaultComboBoxModel()
-        cmbSaveIn = JComboBox(modelSaveIn)
+        cmbSaveIn = CappedComboBox(modelSaveIn)
         val gbcCmbSaveIn = GridBagConstraints().apply {
             gridwidth = 3
             weightx = 1.0

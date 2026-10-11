@@ -40,9 +40,10 @@ class CategoryEditDialog(parent: Window, private val existing: DownloadCategory?
     var result: DownloadCategory? = null
         private set
 
-    private val txtName = rounded(JTextField()).apply { fixHeight(this) }
-    private val txtTypes = rounded(JTextField()).apply { fixHeight(this) }
-    private val txtFolder = rounded(JTextField()).apply { fixHeight(this) }
+    // Columns: a long type list or folder path must not widen the dialog; BoxLayout stretches the fields.
+    private val txtName = rounded(JTextField()).apply { columns = 10; fixHeight(this) }
+    private val txtTypes = rounded(JTextField()).apply { columns = 10; fixHeight(this) }
+    private val txtFolder = rounded(JTextField()).apply { columns = 10; fixHeight(this) }
     private val cmbIcon = rounded(JComboBox(CategoryStyle.PICKABLE_ICONS.toTypedArray())).apply {
         renderer = IconChoiceRenderer()
         sizeTo(this, 76)

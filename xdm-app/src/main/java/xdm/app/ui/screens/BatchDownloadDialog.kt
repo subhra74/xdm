@@ -5,6 +5,7 @@ import xdm.app.AppContext
 import xdm.app.BatchRequest
 import xdm.app.BatchRequestItem
 import xdm.app.I8N.text
+import xdm.app.ui.components.CappedComboBox
 import xdm.app.ui.components.MessageBox
 import xdm.app.utils.BatchFolderState
 import xdm.app.utils.RemixIcon
@@ -78,6 +79,7 @@ class BatchDownloadDialog(owner: Window?, private val request: BatchRequest) : J
     private val lblName = JLabel(text("BATCH_NAME"))
     private val txtName = JTextField(defaultBatchName(request.pageTitle, request.pageUrl)).apply {
         putClientProperty(FlatClientProperties.STYLE, "arc: 10")
+        columns = 10 // a long page title must not widen the dialog; the row stretches the field
     }
 
     /** Save in for one download per link: "Automatic (by file type)" first, then folders. */
@@ -85,7 +87,7 @@ class BatchDownloadDialog(owner: Window?, private val request: BatchRequest) : J
 
     /** Save in for one batch: folders only. */
     private val modelBatch = DefaultComboBoxModel<String>()
-    private val cmbSaveIn = JComboBox<String>()
+    private val cmbSaveIn = CappedComboBox<String>()
 
     private val lblTarget = JLabel()
     private val lblProblem = JLabel().apply {

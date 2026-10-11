@@ -40,6 +40,9 @@
   Before packaging, run XDM on the bundled runtime to record
   packaging\cds\windows-<arch>.classlist for the AppCDS archive (see APPCDS.md). With -RecordServer
   the session is scripted and needs no hands; without it, use XDM yourself and quit it from the tray.
+.PARAMETER AnyJdk
+  Build with a JDK other than the Liberica build pinned in packaging\jdk.properties. The AppCDS class list
+  then doesn't match the runtime: local experiments only.
 .PARAMETER RecordServer
   With -RecordClasses: the URL of packaging\recording\RecordServer.java (e.g. http://192.168.1.20:8780).
   XDM then runs the recording session against it on a fresh profile and exits by itself; the build
@@ -55,7 +58,8 @@ param(
   [switch]$WithLocales,
   [string]$Out,
   [switch]$RecordClasses,
-  [string]$RecordServer
+  [string]$RecordServer,
+  [switch]$AnyJdk
 )
 
 $ErrorActionPreference = 'Stop'
@@ -123,6 +127,16 @@ function Read-JdkRelease([string]$Dir) {
   Get-Content $file | ForEach-Object { if ($_ -match '^(\w+)="?(.*?)"?$') { $r[$Matches[1]] = $Matches[2] } }
   $r
 }
+# The Liberica build pinned in packaging\jdk.properties: the class lists are recorded on it (APPCDS.md).
+function Read-Pin([string]$Key) {
+  $line = Get-Content (Join-Path $PSScriptRoot 'jdk.properties') | Where-Object { $_ -match "^$([regex]::Escape($Key))=" }
+  if (-not $line) { throw "packaging\jdk.properties has no $Key" }
+  ($line -split '=', 2)[1].Trim()
+}
+$PinnedRuntime = Read-Pin 'liberica.runtime'
+function Test-PinnedJdk($Release) {
+  $Release['IMPLEMENTOR'] -match 'BellSoft' -and $Release['JAVA_RUNTIME_VERSION'] -eq $PinnedRuntime
+}
 function Get-JdkArch($Release) {
   switch ($Release['OS_ARCH']) {
     { $_ -in 'x86_64','amd64' }  { 'x64' }
@@ -143,15 +157,21 @@ if (-not $JavaHome) {
                      -ErrorAction SilentlyContinue | Sort-Object Name -Descending | ForEach-Object FullName)
   $onPath = Get-Command java.exe -ErrorAction SilentlyContinue
   if ($onPath) { $candidates += (Split-Path -Parent (Split-Path -Parent $onPath.Source)) }
-  foreach ($dir in $candidates) {
-    $r = Read-JdkRelease $dir
-    if (-not $r -or [int](($r['JAVA_VERSION'] -split '\.')[0]) -lt 25) { continue }
-    if ($Arch -and (Get-JdkArch $r) -ne $Arch) { continue }
-    $JavaHome = $dir
-    break
+  # The pinned build first; any JDK 25 only with -AnyJdk.
+  foreach ($pinnedOnly in @($true, $false)) {
+    if (-not $pinnedOnly -and -not $AnyJdk) { break }
+    foreach ($dir in $candidates) {
+      $r = Read-JdkRelease $dir
+      if (-not $r -or [int](($r['JAVA_VERSION'] -split '\.')[0]) -lt 25) { continue }
+      if ($Arch -and (Get-JdkArch $r) -ne $Arch) { continue }
+      if ($pinnedOnly -and -not (Test-PinnedJdk $r)) { continue }
+      $JavaHome = $dir
+      break
+    }
+    if ($JavaHome) { break }
   }
   if (-not $JavaHome) {
-    throw "No $(if ($Arch) { "$Arch " })JDK 25 found: run packaging\setup-windows.ps1 -InstallJdk, or pass -JavaHome"
+    throw "No $(if ($Arch) { "$Arch " })Liberica $PinnedRuntime (packaging\jdk.properties) found: run packaging\setup-windows.ps1 -InstallJdk, pass -JavaHome, or -AnyJdk for a local experiment"
   }
 }
 $Java     = Join-Path $JavaHome 'bin\java.exe'
@@ -172,8 +192,13 @@ $Arch = $jdkArch
 if ([int]($release['JAVA_VERSION'] -split '\.')[0] -lt 25) {
   throw "JDK 25 or later required; $JavaHome is $($release['JAVA_VERSION'])"
 }
-if ($release['IMPLEMENTOR'] -notmatch 'BellSoft') {
-  Write-Host ">> note: $JavaHome is $($release['IMPLEMENTOR']), not Liberica (PACKAGING.md sect. 3.1)"
+# The stamp recording writes into the class list, and the dump compares against.
+$JdkStamp = "$($release['IMPLEMENTOR']) $($release['JAVA_RUNTIME_VERSION'])"
+if (-not (Test-PinnedJdk $release)) {
+  if (-not $AnyJdk) {
+    throw "$JavaHome is $JdkStamp, not the pinned Liberica $PinnedRuntime (packaging\jdk.properties): run packaging\setup-windows.ps1 -InstallJdk, or pass -AnyJdk for a local experiment"
+  }
+  Write-Warning "-AnyJdk: building with $JdkStamp instead of the pinned Liberica $PinnedRuntime; the AppCDS class list won't match"
 }
 
 # The machine's own architecture, whatever this PowerShell process runs as.
@@ -328,11 +353,21 @@ if ($RecordClasses) {
       "-XX:CompilerDirectivesFile=$(Join-Path $InputDir $JitDirectives)" `
       "-Dflatlaf.nativeLibraryPath=$InputDir" @session `
       "-XX:DumpLoadedClassList=$recorded" -cp $InputJar $MainClass
-  if ($RecordServer -and $LASTEXITCODE -ne 0) {
-    throw "The recording session reported $LASTEXITCODE failed step(s) (RECORD: lines above); $CdsListName was not updated"
+  $recordStatus = $LASTEXITCODE
+  if ($RecordServer) {
+    # The session downloads ~700 MB (Downloads\, partial files in .xdm-app\tmp): drop it, pass or
+    # fail, so repeated recordings don't fill the VM's small disk. .xdm-app keeps the logs.
+    Get-ChildItem $recordHome -Force | Where-Object { $_.Name -ne '.xdm-app' } |
+      Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item (Join-Path $recordHome '.xdm-app\tmp') -Recurse -Force -ErrorAction SilentlyContinue
   }
-  # The session's own classes (xdm.app.recording) never load in a user's run: keep them out.
-  Get-Content $recorded | Where-Object { $_ -notmatch 'xdm/app/recording/' } | Set-Content -Encoding ascii $CdsList
+  if ($RecordServer -and $recordStatus -ne 0) {
+    throw "The recording session reported $recordStatus failed step(s) (RECORD: lines above); $CdsListName was not updated"
+  }
+  # The session's own classes (xdm.app.recording) never load in a user's run: keep them out. The stamp
+  # names the JDK build the list belongs to; the dump below checks it.
+  @("# xdm-jdk: $JdkStamp") + @(Get-Content $recorded | Where-Object { $_ -notmatch 'xdm/app/recording/' }) |
+    Set-Content -Encoding ascii $CdsList
   Remove-Item $recorded
 }
 
@@ -349,6 +384,14 @@ try {
 Write-Host '>> removed the recording session (xdm/app/recording) from the bundled jar'
 
 if ((Test-Path $CdsList) -and (Get-Item $CdsList).Length -gt 0) {
+  $listJdk = (Get-Content $CdsList -TotalCount 20 | Where-Object { $_ -like '# xdm-jdk: *' } | Select-Object -First 1)
+  if (-not $listJdk) {
+    Write-Warning "$CdsListName has no '# xdm-jdk:' stamp (recorded before the JDK pin): re-record it on $JdkStamp"
+  } elseif ($listJdk.Substring(11) -ne $JdkStamp) {
+    $msg = "$CdsListName was recorded on $($listJdk.Substring(11)), but this build uses $JdkStamp"
+    if (-not $AnyJdk) { throw "$msg`: re-record it (-RecordServer), or revert packaging\jdk.properties" }
+    Write-Warning $msg
+  }
   Write-Host ">> dumping the AppCDS archive from $CdsListName"
   $dump = & $BundledJava -Xshare:dump @JavaOptions "-XX:SharedClassListFile=$CdsList" `
       "-XX:SharedArchiveFile=$(Join-Path $InputDir $CdsArchive)" -cp $InputJar

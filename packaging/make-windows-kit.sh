@@ -45,6 +45,7 @@ cp "$JAR"                                   "$KIT/xdm-app.jar"
 cp packaging/build-bundle.ps1               "$KIT/packaging/"
 cp packaging/setup-windows.ps1              "$KIT/packaging/"
 cp packaging/jit-directives.json            "$KIT/packaging/"
+cp packaging/jdk.properties                 "$KIT/packaging/"
 cp packaging/icons/xdm.ico                  "$KIT/packaging/icons/"
 cp packaging/windows/xdm.wxs packaging/windows/gpl-3.0.rtf "$KIT/packaging/windows/"
 # Only the Windows lists, one per architecture (recorded on that architecture's runtime).

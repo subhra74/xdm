@@ -1,0 +1,162 @@
+name: Binaries
+
+# The installers for every target in PACKAGING.md section 3.1, each built natively on its own runner. The jar is
+# built once and shared. Every target links its runtime from the JDK pinned in packaging/jdk.properties, which
+# the build scripts enforce; the AppCDS archive is dumped from the checked-in class list (packaging/cds), so no
+# job needs a desktop session. A target without a list builds without an archive.
+
+on:
+  workflow_dispatch:
+  push:
+    tags: [ 'v*' ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: binaries-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  jar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      # The root pom selects the compiler via maven-toolchains-plugin (JDK 25): register the runner's JDK
+      # (packaging/toolchains.sample.xml).
+      - name: Write Maven toolchains.xml
+        run: |
+          mkdir -p ~/.m2
+          cat > ~/.m2/toolchains.xml <<XML
+          <toolchains>
+            <toolchain>
+              <type>jdk</type>
+              <provides><version>25</version></provides>
+              <configuration><jdkHome>${JAVA_HOME}</jdkHome></configuration>
+            </toolchain>
+          </toolchains>
+          XML
+
+      - name: Build jar
+        run: mvn -B -q -pl xdm-app -am package
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xdm-app-jar
+          path: xdm-app/target/xdm-app.jar
+          if-no-files-found: error
+
+  macos:
+    needs: jar
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: arm64, runner: macos-15 }
+          - { arch: x64, runner: macos-15-intel }
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: xdm-app-jar
+          path: xdm-app/target
+
+      - name: Pinned Liberica JDK
+        run: |
+          home="$(packaging/fetch-jdk.sh "mac-${{ matrix.arch }}" | tail -1)"
+          echo "JAVA_HOME=$home" >> "$GITHUB_ENV"
+          echo "$home/bin" >> "$GITHUB_PATH"
+
+      - name: Build dmg
+        run: packaging/build-bundle.sh -s --type dmg
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xdm-macos-${{ matrix.arch }}
+          path: build/dist/*.dmg
+          if-no-files-found: error
+
+  windows:
+    needs: jar
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: x64, runner: windows-latest }
+          - { arch: arm64, runner: windows-11-arm }
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: xdm-app-jar
+          path: xdm-app/target
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # Installs the pinned Liberica zip and the WiX 7 CLI. -AcceptWixEula accepts the WiX 7 OSMF EULA
+      # (https://wixtoolset.org/osmf/) for this runner, as setup-windows.ps1 otherwise asks on a desktop.
+      - name: Pinned Liberica JDK and WiX
+        shell: pwsh
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File packaging\setup-windows.ps1 `
+            -Arch ${{ matrix.arch }} -InstallJdk -InstallWix -AcceptWixEula
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          "$env:USERPROFILE\.dotnet\tools" | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
+
+      - name: Build MSI
+        shell: pwsh
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File packaging\build-bundle.ps1 `
+            -Arch ${{ matrix.arch }} -Type msi -SkipBuild
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xdm-windows-${{ matrix.arch }}
+          path: build/dist/windows-${{ matrix.arch }}/*.msi
+          if-no-files-found: error
+
+  linux:
+    needs: jar
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: x64, runner: ubuntu-24.04 }
+          - { arch: arm64, runner: ubuntu-24.04-arm }
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: xdm-app-jar
+          path: xdm-app/target
+
+      # Docker image with the pinned JBR (passed from packaging/jdk.properties) and nfpm.
+      - name: Build packages
+        run: packaging/build-linux.sh -s --arch ${{ matrix.arch }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xdm-linux-${{ matrix.arch }}
+          path: |
+            build/linux-${{ matrix.arch }}/*.deb
+            build/linux-${{ matrix.arch }}/*.rpm
+            build/linux-${{ matrix.arch }}/*.pkg.tar.zst
+            build/linux-${{ matrix.arch }}/*.tar.gz
+          if-no-files-found: error

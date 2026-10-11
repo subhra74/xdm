@@ -7,6 +7,7 @@
 FROM ubuntu:22.04
 
 ARG TARGETARCH
+# build-linux.sh passes the JBR pinned in packaging/jdk.properties; these defaults only cover a bare docker build.
 ARG JBR_VERSION=25.0.4.1
 ARG JBR_BUILD=b635.70
 ARG NFPM_VERSION=2.47.0

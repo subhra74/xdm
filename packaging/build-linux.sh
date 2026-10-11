@@ -39,7 +39,10 @@ fi
 
 IMAGE="xdm-linux-build:$ARCH"
 echo ">> build image $IMAGE ($PLATFORM)"
-docker build -q --platform "$PLATFORM" -t "$IMAGE" packaging/linux >/dev/null
+# The JDK is the JBR build pinned in packaging/jdk.properties (the class list is recorded on it).
+pin() { sed -n "s/^$1=//p" packaging/jdk.properties; }
+docker build -q --platform "$PLATFORM" -t "$IMAGE" \
+  --build-arg "JBR_VERSION=$(pin jbr.version)" --build-arg "JBR_BUILD=$(pin jbr.build)" packaging/linux >/dev/null
 
 echo ">> packaging in $IMAGE"
 docker run --rm --platform "$PLATFORM" -v "$PROJECT_ROOT:/src" -w /src "$IMAGE" packaging/linux/package.sh

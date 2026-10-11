@@ -107,6 +107,7 @@ SKIP_MAVEN=0
 WITH_LOCALES=0
 RECORD_CLASSES=0
 RECORD_SERVER=""
+ANY_JDK=0
 EXTRA_ARGS=()
 
 usage() {
@@ -124,6 +125,8 @@ Usage: packaging/build-bundle.sh [options] [-- extra jpackage args]
       --record-server URL  Like --record-classes, but XDM runs the scripted session against
                       packaging/recording/RecordServer.java at URL on a fresh profile and
                       exits by itself; the build stops if a step of the session failed
+      --any-jdk       Build with a JDK other than the one pinned in packaging/jdk.properties
+                      (the AppCDS class list then doesn't match: local experiments only)
   -o, --out DIR       Output directory (default: build/dist)
   -h, --help          This message
 
@@ -141,6 +144,7 @@ while [[ $# -gt 0 ]]; do
     --with-locales) WITH_LOCALES=1; shift ;;
     --record-classes) RECORD_CLASSES=1; shift ;;
     --record-server) RECORD_CLASSES=1; RECORD_SERVER="$2"; shift 2 ;;
+    --any-jdk) ANY_JDK=1; shift ;;
     -o|--out) DEST_DIR="$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     --) shift; EXTRA_ARGS=("$@"); break ;;
@@ -179,6 +183,30 @@ done
 JDK_MAJOR="$(java -XshowSettings:properties -version 2>&1 | sed -n 's/.*java\.specification\.version = \([0-9]*\).*/\1/p' | head -1)"
 : "${JDK_MAJOR:=17}"
 if [[ "$JDK_MAJOR" -ge 21 ]]; then COMPRESS="zip-9"; else COMPRESS="2"; fi
+
+# The JDK must be the build pinned in packaging/jdk.properties: Liberica on macOS, JBR on Linux. The class
+# list's @cp and lambda lines only hold for the JDK build it was recorded on (APPCDS.md).
+pin() { sed -n "s/^$1=//p" "$PROJECT_ROOT/packaging/jdk.properties"; }
+JDK_HOME_DIR="$(java -XshowSettings:properties -version 2>&1 | sed -n 's/^ *java\.home = //p' | head -1)"
+jdk_release() { sed -n "s/^$1=\"\{0,1\}\([^\"]*\)\"\{0,1\}$/\1/p" "$JDK_HOME_DIR/release" 2>/dev/null; }
+JDK_RUNTIME="$(jdk_release JAVA_RUNTIME_VERSION)"
+# The stamp recording writes into the class list, and the dump compares against.
+JDK_STAMP="$(jdk_release IMPLEMENTOR) $JDK_RUNTIME"
+if [[ "$OS" == "mac" ]]; then
+  JDK_PINNED="BellSoft Liberica $(pin liberica.runtime)"
+  [[ "$JDK_RUNTIME" == "$(pin liberica.runtime)" && "$JDK_STAMP" == BellSoft* ]] && JDK_OK=1 || JDK_OK=0
+else
+  JDK_PINNED="JetBrains Runtime $(pin jbr.version)-$(pin jbr.build)"
+  [[ "$(jdk_release JAVA_VERSION)" == "$(pin jbr.version)" && "$JDK_RUNTIME" == *"-$(pin jbr.build)" ]] && JDK_OK=1 || JDK_OK=0
+fi
+if [[ $JDK_OK -eq 0 ]]; then
+  if [[ $ANY_JDK -eq 0 ]]; then
+    echo "The JDK on PATH ($JDK_HOME_DIR: $JDK_STAMP) isn't the pinned $JDK_PINNED (packaging/jdk.properties)." >&2
+    echo "Select the pinned JDK (packaging/fetch-jdk.sh downloads it), or pass --any-jdk for a local experiment." >&2
+    exit 1
+  fi
+  echo "!! --any-jdk: building with $JDK_STAMP instead of the pinned $JDK_PINNED; the AppCDS class list won't match" >&2
+fi
 
 # Version-gated flags join JAVA_OPTIONS here, before anything runs the bundled
 # runtime: the AppCDS dump below must see the exact flags the launcher will use.
@@ -357,13 +385,20 @@ if [[ $RECORD_CLASSES -eq 1 ]]; then
     ${SESSION[@]+"${SESSION[@]}"} \
     "-XX:DumpLoadedClassList=$RECORDED" \
     -cp "$INPUT_DIR/$MAIN_JAR" "$MAIN_CLASS" || status=$?
+  if [[ -n "$RECORD_SERVER" ]]; then
+    # The session downloads ~700 MB (Downloads/, partial files in .xdm-app/tmp): drop it, pass or
+    # fail, so repeated recordings don't fill a small VM disk. .xdm-app keeps the logs.
+    find "$RECORD_HOME" -mindepth 1 -maxdepth 1 ! -name .xdm-app -exec rm -rf {} +
+    rm -rf "$RECORD_HOME/.xdm-app/tmp"
+  fi
   if [[ -n "$RECORD_SERVER" && $status -ne 0 ]]; then
     echo "The recording session reported $status failed step(s) (RECORD: lines above);" \
       "$(basename "$CDS_LIST") was not updated" >&2
     exit 1
   fi
-  # The session's own classes (xdm.app.recording) never load in a user's run: keep them out.
-  grep -v 'xdm/app/recording/' "$RECORDED" > "$CDS_LIST" || true
+  # The session's own classes (xdm.app.recording) never load in a user's run: keep them out. The stamp
+  # names the JDK build the list belongs to; the dump below checks it.
+  { echo "# xdm-jdk: $JDK_STAMP"; grep -v 'xdm/app/recording/' "$RECORDED" || true; } > "$CDS_LIST"
   rm -f "$RECORDED"
 fi
 
@@ -379,6 +414,18 @@ else
 fi
 
 if [[ -s "$CDS_LIST" ]]; then
+  LIST_JDK="$(sed -n 's/^# xdm-jdk: //p' "$CDS_LIST" | head -1)"
+  if [[ -z "$LIST_JDK" ]]; then
+    echo "!! $(basename "$CDS_LIST") has no '# xdm-jdk:' stamp (recorded before the JDK pin): re-record it" \
+      "on $JDK_STAMP" >&2
+  elif [[ "$LIST_JDK" != "$JDK_STAMP" ]]; then
+    if [[ $ANY_JDK -eq 0 ]]; then
+      echo "$(basename "$CDS_LIST") was recorded on $LIST_JDK, but this build uses $JDK_STAMP:" \
+        "re-record it (--record-server), or revert packaging/jdk.properties" >&2
+      exit 1
+    fi
+    echo "!! $(basename "$CDS_LIST") was recorded on $LIST_JDK, not $JDK_STAMP" >&2
+  fi
   echo ">> dumping the AppCDS archive from $(basename "$CDS_LIST")"
   DUMP_LOG="$BUILD_DIR/cds-dump.log"
   "$BUNDLED_JAVA" -Xshare:dump "${JAVA_OPTIONS[@]}" \

@@ -378,6 +378,7 @@ class PropertiesDialog(private val owner: Window?, ent: DbRecord) : JDialog(owne
     }
 
     private fun readOnlyField(value: String) = JTextField(value).apply {
+        columns = 1 // width from the row, not from a long URL or path (as in DownloadCompleteWindow)
         isEditable = false
         border = null
         isOpaque = false

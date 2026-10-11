@@ -31,9 +31,14 @@ import java.util.regex.Pattern;
 public class RecordServer {
     static final String USER = "xdm";
     static final String PASSWORD = "xdm-record";
-    static final String HTTPS_URL = "https://ffmpeg.org/releases/ffmpeg-7.1.1.tar.xz";
-    static final String HTTPS_PROXY_URL =
-            "https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/2.0.0/kotlin-stdlib-2.0.0.jar";
+    // Real HTTPS downloads: versioned package-manager files (immutable, CDN-served, ranged), so a recording
+    // isn't rate-limited or throttled by a project's own server. One large file keeps TLS's C2-compiled crypto
+    // busy for a while; the proxied one is medium. They must differ, or XDM's duplicate prompt appears.
+    static final String HTTPS_URL = "https://files.pythonhosted.org/packages/d7/24/"
+            + "f7b5c130975303efa4a91341e294fd784b94910c2a4c0f0f0561e5fc7405/"
+            + "tensorflow-2.17.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"; // PyPI, 601 MB
+    static final String HTTPS_PROXY_URL = "https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp/"
+            + "4.11.0/microsoft.codeanalysis.csharp.4.11.0.nupkg"; // NuGet, 17 MB
 
     static Path assets;
     static int port = 8780;
