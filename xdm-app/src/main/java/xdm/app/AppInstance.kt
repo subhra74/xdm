@@ -15,6 +15,7 @@ import xdm.app.ui.screens.PropertiesDialog
 import xdm.app.ui.screens.RefreshLinkWindow
 import xdm.app.ui.screens.ScheduleWindow
 import xdm.app.utils.TextContextMenu
+import xdm.app.utils.WorkingSetTrim
 import xdm.app.utils.createTray
 import xdm.app.utils.detectOS
 import xdm.app.utils.logoImage
@@ -126,13 +127,19 @@ class AppInstance : IAppInstance {
         runOnUIThread {
             TextContextMenu.install()
             val image = logoImage(256)
-            appWindow = AppWindow(image)
+            appWindow = AppWindow(image).apply {
+                // Closing hides the window (to the tray): XDM's working set can go back to Windows.
+                addWindowListener(object : WindowAdapter() {
+                    override fun windowClosing(e: WindowEvent) = WorkingSetTrim.request("main window closed")
+                })
+            }
             val hasTray = createTray(image)
             // Hidden even without a tray icon (GNOME without the AppIndicator extension, the Wayland
             // toolkit): the browser extension still works, and launching XDM again hands over to this
             // instance, which shows the window - the same state as closing the window.
             if (minimized) {
                 Logger.info(if (hasTray) "Starting minimized to the system tray" else "Starting hidden (no system tray)")
+                WorkingSetTrim.request("started in the tray")
             } else {
                 showAppWindow()
                 if (AppContext.firstRun) {

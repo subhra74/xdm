@@ -73,20 +73,38 @@ $Modules = 'java.desktop,java.logging,jdk.crypto.ec,jdk.unsupported'
 if ($WithLocales) { $Modules += ',jdk.localedata' }
 
 # JVM tuning flags baked into the launcher. See the comment block in
-# build-bundle.sh for the measurements behind this set: SerialGC keeps
-# JVM-committed memory at ~68 MB vs 82 (Shenandoah), 113 (ZGC), 120 (G1) and
-# 195 (Parallel), because G1/Parallel size their card tables and remembered
-# sets from the *maximum* heap and we deliberately do not set -Xmx.
+# build-bundle.sh for the measurements behind this set: G1 tuned to return
+# memory had the lowest settled and download-time memory without a heap file
+# (APPCDS.md sect. 12). -XX:AllocateHeapAt is no longer used (JDK-8390353).
 $JavaOptions = @(
-  # collector: minimum native overhead, heap returned to the OS quickly
-  '-XX:+UseSerialGC'
-  '-XX:MinHeapFreeRatio=5'
-  '-XX:MaxHeapFreeRatio=10'
+  # collector: G1 sized down hard and returning memory quickly (see build-bundle.sh)
+  '-XX:+UseG1GC'
+  '-XX:G1HeapRegionSize=1m'
+  '-XX:ParallelGCThreads=1'
+  '-XX:ConcGCThreads=1'
+  '-XX:G1ConcRefinementThreads=0'
+  # a compacting full GC whenever 15 s pass without a GC; it is what shrinks the heap
+  '-XX:G1PeriodicGCInterval=15000'
+  '-XX:-G1PeriodicGCInvokesConcurrent'
+  '-XX:MinHeapFreeRatio=1'
+  '-XX:MaxHeapFreeRatio=5'
+  '-XX:-ShrinkHeapInSteps'
+  # grow slowly: accept more GC time instead of a bigger heap
+  '-XX:GCTimeRatio=4'
+  '-XX:MarkStackSize=65536'
+  # experimental sizing knobs; must follow the unlock flag
+  '-XX:+UnlockExperimentalVMOptions'
+  '-XX:G1NewSizePercent=1'
+  '-XX:G1MaxNewSizePercent=10'
+  '-XX:G1ReservePercent=1'
+  '-XX:G1HeapWastePercent=1'
+  '-XX:G1RemSetFreeMemoryKeepExcessRatio=0'
+  '-XX:G1ExpandByPercentOfAvailable=2'
   # >= 5m: the AppCDS archive's ~3.4 MB of pre-built heap objects must fit the initial heap, or the
   # JVM skips them (and the archived module graph) without a word. 4m was just too small.
   '-Xms6m'
   '-XX:-AlwaysPreTouch'
-  # AppMain runs a System.gc() every 15s; that is what triggers the shrink
+  # XDM's own System.gc() calls (AppMain's 15 s thread, after downloads) must stay full GCs
   '-XX:-DisableExplicitGC'
   # class metadata
   '-XX:+ClassUnloading'
@@ -461,11 +479,6 @@ if (-not ($cfgLines -match '^win\.norestart=')) {
   $cfgLines.Insert($at + 1, 'win.norestart=true')
   [IO.File]::WriteAllLines($Cfg, $cfgLines)
 }
-
-# The clean copy the MSI writes xdm-app.cfg from, adding -XX:AllocateHeapAt only if the install-time test
-# passes (PACKAGING.md sect. 5.7). Never modified after install, so an upgrade always replaces it. Not a
-# *.cfg name, so neither the launcher nor JitOverride treats it as a launcher config.
-Copy-Item $Cfg "$Cfg.base" -Force
 
 $size = [math]::Round((Get-ChildItem -Recurse $RuntimeDir | Measure-Object Length -Sum).Sum / 1MB, 1)
 Write-Host ">> runtime size: $size MB"

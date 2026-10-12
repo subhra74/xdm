@@ -4,7 +4,6 @@ import com.formdev.flatlaf.FlatLaf
 import com.formdev.flatlaf.themes.FlatMacDarkLaf
 import com.formdev.flatlaf.themes.FlatMacLightLaf
 import xdm.app.utils.CdsJarPin
-import xdm.app.utils.HeapFileSetup
 import xdm.app.utils.JitOverride
 import xdm.app.utils.WaylandToolkit
 import xdm.app.utils.linux.DesktopFontSettings
@@ -21,7 +20,6 @@ object AppMain {
     init {
         System.setProperty("http.KeepAlive.remainingData", "0")
         System.setProperty("http.KeepAlive.queuedConnections", "0")
-        System.setProperty("awt.useSystemAAFontSettings", "lcd")
         System.setProperty("swing.aatext", "true")
         System.setProperty("sun.java2d.d3d", "false")
         System.setProperty("sun.java2d.opengl", "false")
@@ -32,8 +30,6 @@ object AppMain {
 
     @JvmStatic
     fun main(args: Array<String>) {
-        // The MSI's heap-file hooks (PACKAGING.md §5.7) exit here, before anything touches the profile.
-        HeapFileSetup.handle(args)
         val homeDir = System.getProperty("user.home")
         val configDir = "$homeDir${File.separatorChar}.xdm-app"
         val tempDir = "$configDir${File.separatorChar}tmp"

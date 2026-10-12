@@ -35,22 +35,20 @@ MODULES="java.desktop,java.logging,jdk.crypto.ec,jdk.unsupported"
 #
 # Goal: smallest steady-state footprint in Task Manager / Activity Monitor,
 # with no -Xmx (so max heap stays the default 1/4 of RAM and the app can never
-# hit an artificial OOM). Measured with JDK 25 Native Memory Tracking on an
-# idle app after several of the app's own periodic System.gc() cycles
-# (JVM-committed memory, the part these flags control):
+# hit an artificial OOM).
 #
-#   SerialGC      68 MB   (GC bookkeeping 0.1 MB)   <- chosen
-#   Shenandoah    82 MB   (GC bookkeeping 5.9 MB)
-#   ZGC          113 MB   (heap floor ~53 MB)
-#   G1           120 MB   (GC bookkeeping 51 MB)
-#   ParallelGC   195 MB   (GC bookkeeping 123 MB)
-#
-# The app's live set is ~10-15 MB, so the heap is never the problem; what costs
-# memory is per-collector native bookkeeping (card tables, remembered sets),
-# which G1/Parallel size from the *maximum* heap. Since we deliberately do not
-# set -Xmx, that penalty is large - SerialGC is the only collector whose
-# overhead is independent of max heap. Its pauses are irrelevant at this live
-# set size.
+# Collector: G1, tuned to give memory back (APPCDS.md sect. 12). Measured on
+# Windows 11 ARM with the full AppCDS archive and no heap file (2026-10-12):
+# settled resident memory ~64 MB for G1 vs ~67 for Serial (young gen capped)
+# and ~68 for Shenandoah; under three 601 MB HTTPS downloads G1 also had the
+# lowest total working set and CPU. ZGC shows ~10 MB less in Task Manager only
+# because its heap is shared memory; its real memory and CPU were the highest.
+# Serial used to win because -XX:AllocateHeapAt kept the heap out of the
+# private count; that flag is gone (JDK-8390353: on Windows the JVM deletes the
+# heap file while it is mapped, so paged-out heap comes back as zeros).
+# G1 shrinks region by region after a compacting full GC: its own periodic one
+# (-XX:-G1PeriodicGCInvokesConcurrent) and the System.gc() calls XDM makes
+# (AppMain's 15 s thread, after downloads and dialogs).
 #
 # JIT: C1 compiles everything and C2 only the JDK's crypto hot methods, named in
 # packaging/jit-directives.json (added below, once the app dir exists). HTTPS
@@ -58,15 +56,34 @@ MODULES="java.desktop,java.logging,jdk.crypto.ec,jdk.unsupported"
 # memory for the rest of the app. Required: without C2, TLS costs 4-10x the CPU
 # per MB. There is no C1-only mode.
 JAVA_OPTIONS=(
-  # --- collector: minimum native overhead, heap returned to the OS quickly ---
-  -XX:+UseSerialGC
-  -XX:MinHeapFreeRatio=5
-  -XX:MaxHeapFreeRatio=10
+  # --- collector: G1 sized down hard and returning memory quickly (see above) ---
+  -XX:+UseG1GC
+  -XX:G1HeapRegionSize=1m
+  -XX:ParallelGCThreads=1
+  -XX:ConcGCThreads=1
+  -XX:G1ConcRefinementThreads=0
+  # a compacting full GC whenever 15 s pass without a GC; it is what shrinks the heap
+  -XX:G1PeriodicGCInterval=15000
+  -XX:-G1PeriodicGCInvokesConcurrent
+  -XX:MinHeapFreeRatio=1
+  -XX:MaxHeapFreeRatio=5
+  -XX:-ShrinkHeapInSteps
+  # grow slowly: accept more GC time instead of a bigger heap
+  -XX:GCTimeRatio=4
+  -XX:MarkStackSize=65536
+  # experimental sizing knobs; must follow the unlock flag
+  -XX:+UnlockExperimentalVMOptions
+  -XX:G1NewSizePercent=1
+  -XX:G1MaxNewSizePercent=10
+  -XX:G1ReservePercent=1
+  -XX:G1HeapWastePercent=1
+  -XX:G1RemSetFreeMemoryKeepExcessRatio=0
+  -XX:G1ExpandByPercentOfAvailable=2
   # >= 5m: the AppCDS archive's ~3.4 MB of pre-built heap objects must fit the initial heap, or the
   # JVM skips them (and the archived module graph) without a word. 4m was just too small.
   -Xms6m
   -XX:-AlwaysPreTouch
-  # AppMain runs a System.gc() every 15s; that is what triggers the shrink.
+  # XDM's own System.gc() calls (AppMain's 15 s thread, after downloads) must stay full GCs
   -XX:-DisableExplicitGC
   # --- class metadata ---
   -XX:+ClassUnloading

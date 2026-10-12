@@ -2,6 +2,7 @@ package xdm.app
 
 import xdm.app.utils.DownloadSource
 import xdm.app.utils.KeepAwake
+import xdm.app.utils.WorkingSetTrim
 import xdm.app.utils.categoryFolderFor
 import xdm.app.utils.getFileFolder
 import xdm.app.utils.isUsableBatchFolder
@@ -1049,6 +1050,9 @@ class DownloadManager(
      * cannot start extra downloads. A download that cannot start is marked paused and skipped.
      * Lock order is queue -> appDB; callers must not hold the appDB lock.
      */
+    /** True while a download is running or waiting in the queue. Takes the queue lock only. */
+    fun hasPendingDownloads(): Boolean = synchronized(queue) { queue.isNotEmpty() || activeSessions.isNotEmpty() }
+
     private fun pumpQueue() {
         synchronized(queue) {
             while (activeSessions.size < AppContext.config.maxParallelDownloads && queue.isNotEmpty()) {
@@ -1058,6 +1062,7 @@ class DownloadManager(
             syncKeepAwake()
             if (queue.isEmpty() && activeSessions.isEmpty()) {
                 Logger.info("No pending download")
+                WorkingSetTrim.request("all downloads finished")
                 if (AppContext.config.haltAfterDownload) {
                     Logger.info("Attempting shutdown after all downloads")
                     AppContext.platform.shutdownPC()

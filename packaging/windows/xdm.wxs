@@ -86,27 +86,8 @@
     <!-- The Restart Manager would otherwise offer its own "close these applications?" dialog first. -->
     <Property Id="MSIRESTARTMANAGERCONTROL" Value="Disable" />
 
-    <!-- §5.7: Java heap file in C:\Windows\Temp, only if the installing user's JVM can create it there.
-         1. XdmHeapTest, as the user (not elevated): XDM's own jar on the bundled java.exe with the heap in that
-            folder. Reaching main writes a marker in the user's temp folder; a JVM that can't start writes none.
-         2. XdmApplyHeapCfg, elevated: rewrites app\xdm-app.cfg from app\xdm-app.cfg.base, adding the heap line
-            only if a fresh marker exists, then deletes the marker. It always rewrites, so an upgrade never keeps
-            the previous version's .cfg.
-         Deferred actions can't pass properties to each other, hence the marker. [TempFolder] is resolved in the
-         immediate phase, so it is the installing user's. Return="ignore": a failed test means no heap file,
-         never a failed install. Install, upgrade and repair all run both. -->
-    <SetProperty Id="XdmHeapTest" Sequence="execute" Before="XdmHeapTest"
-                 Value="&quot;[INSTALLFOLDER]runtime\bin\java.exe&quot; -XX:+UseSerialGC -Xms6m -Xshare:off &quot;-XX:AllocateHeapAt=[WindowsFolder]Temp&quot; -jar &quot;[INSTALLFOLDER]app\xdm-app.jar&quot; &quot;--heap-test=[TempFolder]xdm-heap-test.ok&quot;" />
-    <CustomAction Id="XdmHeapTest" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec"
-                  Execute="deferred" Impersonate="yes" Return="ignore" />
-    <SetProperty Id="XdmApplyHeapCfg" Sequence="execute" Before="XdmApplyHeapCfg"
-                 Value="&quot;[INSTALLFOLDER]runtime\bin\java.exe&quot; -XX:+UseSerialGC -Xshare:off -jar &quot;[INSTALLFOLDER]app\xdm-app.jar&quot; &quot;--apply-heap-cfg=[TempFolder]xdm-heap-test.ok&quot; &quot;--heap-dir=[WindowsFolder]Temp&quot;" />
-    <CustomAction Id="XdmApplyHeapCfg" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec"
-                  Execute="deferred" Impersonate="no" Return="ignore" />
     <InstallExecuteSequence>
       <Custom Action="XdmWaitAfterClose" After="Wix4CloseApplications_$(sys.BUILDARCHSHORT)" Condition="XDMWASRUNNING" />
-      <Custom Action="XdmHeapTest" After="InstallFiles" Condition="NOT REMOVE" />
-      <Custom Action="XdmApplyHeapCfg" After="XdmHeapTest" Condition="NOT REMOVE" />
     </InstallExecuteSequence>
 
 
@@ -150,7 +131,7 @@
   </Package>
 
   <Fragment>
-    <!-- The whole jpackage app image: xdm-app.exe, app\ (jar, xdm.jsa, jit-directives.json, cfg, cfg.base)
+    <!-- The whole jpackage app image: xdm-app.exe, app\ (jar, xdm.jsa, jit-directives.json, cfg)
          and runtime\. Cabinet timestamps keep the jar's pinned mtime for AppCDS (§5.6). -->
     <ComponentGroup Id="AppImage" Directory="INSTALLFOLDER">
       <Files Include="!(bindpath.AppImage)\**" />
