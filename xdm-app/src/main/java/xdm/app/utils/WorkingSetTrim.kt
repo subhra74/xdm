@@ -2,7 +2,7 @@ package xdm.app.utils
 
 import xdm.app.AppContext
 import xdm.app.OS
-import xdm.app.utils.win.Win32Memory
+// import xdm.app.utils.win.Win32Memory  // working-set trimming disabled
 import xdm.core.util.Logger
 import java.awt.Window
 import java.util.concurrent.Executors
@@ -46,9 +46,10 @@ object WorkingSetTrim {
             var windowShowing = false
             SwingUtilities.invokeAndWait { windowShowing = Window.getWindows().any { it.isShowing } }
             if (windowShowing || AppContext.downloader.hasPendingDownloads()) return
-            System.gc()
-            if (Win32Memory.trimWorkingSet()) Logger.info("Working set trimmed ($reason)")
-            else Logger.info("Working set trim refused by Windows ($reason)")
+            // Working-set trimming disabled.
+            // System.gc()
+            // if (Win32Memory.trimWorkingSet()) Logger.info("Working set trimmed ($reason)")
+            // else Logger.info("Working set trim refused by Windows ($reason)")
         } catch (e: Throwable) {
             Logger.error("Working set trim failed", e)
         }
