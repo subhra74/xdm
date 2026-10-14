@@ -22,6 +22,7 @@ class FoldersPanel : SettingsPanel() {
     private val txtTmpDir = rounded(JTextField()).apply { columns = 10 }
     private val txtDwnDir = rounded(JTextField()).apply { columns = 10 }
     private val lblVolumeHint = settingsHint("").apply { isVisible = false }
+    private val tglAutoCategorize = SettingsToggle()
     private val categorySection = CategorySection()
 
     init {
@@ -47,6 +48,7 @@ class FoldersPanel : SettingsPanel() {
                         add(settingsLeftAligned(lblVolumeHint))
                     }
                 ),
+                settingsRow(I8N.text("SETTINGS_AUTO_CAT"), I8N.text("SETTINGS_AUTO_CAT_SUB"), tglAutoCategorize),
             )
         )
         add(settingsGap())
@@ -89,6 +91,7 @@ class FoldersPanel : SettingsPanel() {
         val config = AppContext.config
         txtTmpDir.text = config.tempFolder
         txtDwnDir.text = config.defaultDownloadFolder
+        tglAutoCategorize.isSelected = config.autoSelectFolder
         categorySection.load()
         refreshVolumeHint()
     }
@@ -97,6 +100,7 @@ class FoldersPanel : SettingsPanel() {
         val config = AppContext.config
         config.tempFolder = txtTmpDir.text
         config.defaultDownloadFolder = txtDwnDir.text
+        config.autoSelectFolder = tglAutoCategorize.isSelected
         categorySection.save()
     }
 

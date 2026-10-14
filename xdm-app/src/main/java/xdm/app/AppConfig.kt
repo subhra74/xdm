@@ -115,7 +115,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
         const val MAX_READ_TIMEOUT_SECONDS = 600
     }
 
-    override var autoSelectFolder = false
+    override var autoSelectFolder = true
     override var folderIndex = 0
     override var savedFolders: List<String> = emptyList()
     override var sortKey: SortKey = SortKey.DATE
