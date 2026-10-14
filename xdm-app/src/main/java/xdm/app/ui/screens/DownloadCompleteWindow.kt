@@ -2,6 +2,7 @@ package xdm.app.ui.screens
 
 import xdm.app.AppContext
 import xdm.app.I8N.text
+import xdm.app.ui.components.ChecksumDialog
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.createIcon
@@ -9,6 +10,7 @@ import xdm.app.utils.openFileExternal
 import xdm.app.utils.openFolderExternal
 import xdm.app.utils.px
 import xdm.app.utils.scaledInsets
+import xdm.core.checksum.ChecksumSource
 import xdm.core.util.FormatHelper.formatSize
 import xdm.core.util.Logger
 import java.awt.BorderLayout
@@ -22,8 +24,7 @@ import java.awt.GridBagLayout
 import java.awt.Insets
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
+import java.io.File
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import javax.swing.BorderFactory
@@ -77,26 +78,26 @@ class DownloadCompleteWindow : JDialog() {
             }
         }
     }
-    private val lblSkipNotification = JLabel(text("MSG_DONT_SHOW_AGAIN")).apply {
-        foreground = mutedFg
-        cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-        addMouseListener(object : MouseAdapter() {
-            override fun mouseClicked(e: MouseEvent) {
-                AppContext.config.showDownloadCompleteWindow = false
-                dispose()
-            }
-
-            override fun mouseEntered(e: MouseEvent) {
-                foreground = accent
-            }
-
-            override fun mouseExited(e: MouseEvent) {
-                foreground = mutedFg
-            }
-        })
+    private val btnSkipNotification = footerIconButton(RemixIcon.NOTIFICATION_OFF_FILL, text("MSG_DONT_SHOW_AGAIN")) {
+        AppContext.config.showDownloadCompleteWindow = false
+        dispose()
     }
 
-    fun setDetails(file: String, folder: String, fileSize: Long) {
+    /** Request of a single-URL HTTP download; null (HLS/DASH, batch, torrent) hides [btnVerify]. */
+    private var checksumSource: ChecksumSource? = null
+
+    /** Opens verification in its own non-modal window and closes this one, as the open buttons do. */
+    private val btnVerify = footerIconButton(RemixIcon.FINGERPRINT_FILL, text("CD_VERIFY_CHECKSUM")) {
+        val source = checksumSource ?: return@footerIconButton
+        // No owner: disposing this dialog must not take the verify window with it.
+        ChecksumDialog(null, File(txtFolderPath.text, txtFileName.text), source).isVisible = true
+        dispose()
+    }.apply { isVisible = false }
+
+    fun setDetails(file: String, folder: String, fileSize: Long, checksumSource: ChecksumSource?) {
+        this.checksumSource = checksumSource
+        btnVerify.isVisible = checksumSource != null
+        fitToContent()
         txtFolderPath.text = folder
         txtFileName.text = file
         txtFolderPath.caretPosition = 0
@@ -133,6 +134,30 @@ class DownloadCompleteWindow : JDialog() {
             Timer(1100) { icon = original }.apply { isRepeats = false }.start()
         }
     }
+
+    /**
+     * Makes the packed size (at least the usual 400 wide) the floor the user can resize from. Run
+     * again when the footer changes: at a large UI scale or with a long translation the footer can
+     * be wider than 400, and the fingerprint button is only shown after the first pack.
+     */
+    private fun fitToContent() {
+        val preferred = preferredSize
+        val min = Dimension(maxOf(400.px, preferred.width), preferred.height)
+        minimumSize = min
+        size = Dimension(maxOf(width, min.width), maxOf(height, min.height))
+    }
+
+    /** Borderless icon-only button for the left of the footer. */
+    private fun footerIconButton(icon: RemixIcon, tooltip: String, action: () -> Unit) =
+        JButton(createIcon(icon, 18, mutedFg)).apply {
+            putClientProperty("JButton.buttonType", "toolBarButton")
+            putClientProperty("JButton.squareSize", true)
+            rolloverIcon = createIcon(icon, 18, accent)
+            toolTipText = tooltip
+            isFocusable = false
+            cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+            addActionListener { action() }
+        }
 
     private fun caption(key: String) = JLabel(text(key)).apply {
         foreground = mutedFg
@@ -198,14 +223,22 @@ class DownloadCompleteWindow : JDialog() {
         val content = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             border = ScaledEmptyBorder(14, 16, 10, 16)
-            add(header)
+            // Fixed heights plus glue: when the window is made taller the rows stay together at the top.
+            add(header.apply { maximumSize = Dimension(Int.MAX_VALUE, preferredSize.height) })
             add(Box.createVerticalStrut(10.px))
-            add(infoCard().apply { alignmentX = Component.LEFT_ALIGNMENT })
+            add(infoCard().apply {
+                alignmentX = Component.LEFT_ALIGNMENT
+                maximumSize = Dimension(Int.MAX_VALUE, preferredSize.height)
+            })
+            add(Box.createVerticalGlue())
         }
 
         val footer = JPanel(BorderLayout()).apply {
             border = ScaledEmptyBorder(0, 16, 14, 16)
-            add(lblSkipNotification, BorderLayout.WEST)
+            add(Box.createHorizontalBox().apply {
+                add(btnVerify)
+                add(btnSkipNotification)
+            }, BorderLayout.WEST)
             add(Box.createHorizontalBox().apply {
                 add(btnOpenFolder)
                 add(Box.createHorizontalStrut(8.px))
@@ -220,9 +253,8 @@ class DownloadCompleteWindow : JDialog() {
         rootPane.defaultButton = btnOpenFile
 
         pack()
-        isResizable = false
-        minimumSize = Dimension(400.px, height)
-        size = Dimension(400.px, height)
+        isResizable = true
+        fitToContent()
         setLocationRelativeTo(null)
 
         addWindowListener(object : WindowAdapter() {

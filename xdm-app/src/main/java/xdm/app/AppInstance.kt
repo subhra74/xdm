@@ -2,6 +2,7 @@ package xdm.app
 
 import xdm.app.AppContext.db
 import xdm.app.I8N.text
+import xdm.app.ui.components.ChecksumPanel
 import xdm.app.ui.components.MessageBox
 import xdm.app.ui.screens.AboutDialog
 import xdm.app.ui.screens.AppWindow
@@ -24,6 +25,7 @@ import xdm.app.utils.offerMacNotificationSettings
 import xdm.app.utils.openFolderExternal
 import xdm.app.utils.showTrayNotification
 import xdm.core.downloaders.DownloadError
+import xdm.core.downloaders.DownloadType
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.downloaders.web.SegmentProgress
 import xdm.core.util.FormatHelper.formatSize
@@ -206,7 +208,11 @@ class AppInstance : IAppInstance {
     }
 
     override fun showDownloadCompleteWindow(id: Long, folder: String, fileName: String, fileSize: Long) {
-        runOnUIThread { DownloadCompleteWindow().apply { setDetails(fileName, folder, fileSize) }.isVisible = true }
+        runOnUIThread {
+            // Checksums only make sense for a file fetched from one URL as-is.
+            val source = if (AppContext.db.getById(id)?.downloadType == DownloadType.Http) ChecksumPanel.sourceOf(id) else null
+            DownloadCompleteWindow().apply { setDetails(fileName, folder, fileSize, source) }.isVisible = true
+        }
     }
 
     override fun showDownloadCompleteNotification(folder: String, fileName: String) {

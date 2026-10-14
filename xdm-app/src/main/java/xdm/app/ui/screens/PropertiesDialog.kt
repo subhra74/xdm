@@ -4,11 +4,14 @@ import xdm.app.AppContext
 import xdm.app.DbRecord
 import xdm.app.I8N.text
 import xdm.app.RecordStatus
+import xdm.app.ui.components.ChecksumDialog
+import xdm.app.ui.components.ChecksumPanel
 import xdm.app.ui.components.MessageBox
 import xdm.app.ui.screens.settings.settingsAccentColor
 import xdm.app.ui.screens.settings.settingsIconButton
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
+import xdm.app.utils.createIcon
 import xdm.app.utils.gbAdd
 import xdm.app.utils.openFolderExternal
 import xdm.app.utils.openWebPage
@@ -159,7 +162,7 @@ class PropertiesDialog(private val owner: Window?, ent: DbRecord) : JDialog(owne
         }
 
         contentPane.add(panel, BorderLayout.CENTER)
-        contentPane.add(buttonBar(), BorderLayout.SOUTH)
+        contentPane.add(buttonBar(ent, details), BorderLayout.SOUTH)
         size = scaledSize(750, 500)
         //pack()
 //        size = if (batch != null) Dimension(780, 600) else Dimension(
@@ -276,12 +279,22 @@ class PropertiesDialog(private val owner: Window?, ent: DbRecord) : JDialog(owne
         return JScrollPane(table)
     }
 
-    private fun buttonBar(): JPanel = JPanel().apply {
+    private fun buttonBar(ent: DbRecord, details: Details): JPanel = JPanel().apply {
         background = UIManager.getColor("Table.background")
         border = ScaledEmptyBorder(7, 14, 7, 14)
         layout = BoxLayout(this, BoxLayout.X_AXIS)
         val btnClose = JButton(text("LBL_CLOSE")).apply { addActionListener { dispose() } }
         this@PropertiesDialog.rootPane.defaultButton = btnClose
+        // Only a finished single-URL HTTP download has one file to check against one published sum.
+        val folder = details.folder
+        if (ent.downloadType == DownloadType.Http && ent.status == RecordStatus.FINISHED && details.url != null && folder != null) {
+            add(JButton(text("CD_VERIFY_CHECKSUM"), createIcon(RemixIcon.FINGERPRINT_FILL, 16, settingsAccentColor())).apply {
+                addActionListener {
+                    // Owned by the main window, not this modal dialog, so it stays open after this closes.
+                    ChecksumDialog(owner, File(folder, ent.fileName), ChecksumPanel.sourceOf(ent.id)).isVisible = true
+                }
+            })
+        }
         add(Box.createHorizontalGlue())
         add(btnClose)
     }
