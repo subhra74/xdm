@@ -46,7 +46,7 @@ for i in $(seq 1 30); do [ -S $XDG_RUNTIME_DIR/wayland-1 ] && break; sleep 0.5; 
 
 # The package's launcher options, as the recording in build-bundle.sh uses them.
 mapfile -t OPTS < <(sed -n 's/^java-options=//p' $APP/xdm-app.cfg | grep -v '^-Djpackage' | sed "s#\$APPDIR#$APP#g")
-printf '%q ' "$RT/bin/java" "${OPTS[@]}" "-Duser.home=$W/home" "-Dxdm.record.session=$SERVER" \
+printf '%q ' "$RT/bin/java" "${OPTS[@]}" "-Duser.home=$W/home" "-Dxdm.data.dir=$W/home/xdm-app" "-Dxdm.record.session=$SERVER" \
   "-XX:DumpLoadedClassList=$W/recorded.classlist" -cp "$W/rec.jar" xdm.app.AppMain > $W/cmd.sh
 echo ">> recording $(basename $LIST) (Wayland, scripted session; ~3 min native, longer emulated)"
 start=$(date +%s)

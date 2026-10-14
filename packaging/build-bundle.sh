@@ -388,7 +388,7 @@ if [[ $RECORD_CLASSES -eq 1 ]]; then
     # A fresh profile: the session starts from first run and leaves the user's downloads alone.
     RECORD_HOME="$BUILD_DIR/record-home"
     rm -rf "$RECORD_HOME" && mkdir -p "$RECORD_HOME"
-    SESSION=("-Duser.home=$RECORD_HOME" "-Dxdm.record.session=$RECORD_SERVER")
+    SESSION=("-Duser.home=$RECORD_HOME" "-Dxdm.data.dir=$RECORD_HOME/xdm-app" "-Dxdm.record.session=$RECORD_SERVER")
     echo ">> recording $(basename "$CDS_LIST") with the scripted session against $RECORD_SERVER"
     echo ">>   quit any running XDM first (port 8597); XDM exits by itself when the session ends"
   else
@@ -403,10 +403,10 @@ if [[ $RECORD_CLASSES -eq 1 ]]; then
     "-XX:DumpLoadedClassList=$RECORDED" \
     -cp "$INPUT_DIR/$MAIN_JAR" "$MAIN_CLASS" || status=$?
   if [[ -n "$RECORD_SERVER" ]]; then
-    # The session downloads ~700 MB (Downloads/, partial files in .xdm-app/tmp): drop it, pass or
-    # fail, so repeated recordings don't fill a small VM disk. .xdm-app keeps the logs.
-    find "$RECORD_HOME" -mindepth 1 -maxdepth 1 ! -name .xdm-app -exec rm -rf {} +
-    rm -rf "$RECORD_HOME/.xdm-app/tmp"
+    # The session downloads ~700 MB (Downloads/, partial files in xdm-app/tmp): drop it, pass or
+    # fail, so repeated recordings don't fill a small VM disk. xdm-app keeps the logs.
+    find "$RECORD_HOME" -mindepth 1 -maxdepth 1 ! -name xdm-app -exec rm -rf {} +
+    rm -rf "$RECORD_HOME/xdm-app/tmp"
   fi
   if [[ -n "$RECORD_SERVER" && $status -ne 0 ]]; then
     echo "The recording session reported $status failed step(s) (RECORD: lines above);" \

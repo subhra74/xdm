@@ -3,6 +3,7 @@ package xdm.app
 import com.formdev.flatlaf.FlatLaf
 import com.formdev.flatlaf.themes.FlatMacDarkLaf
 import com.formdev.flatlaf.themes.FlatMacLightLaf
+import xdm.app.utils.AppDirs
 import xdm.app.utils.CdsJarPin
 import xdm.app.utils.JitOverride
 import xdm.app.utils.WaylandToolkit
@@ -30,8 +31,7 @@ object AppMain {
 
     @JvmStatic
     fun main(args: Array<String>) {
-        val homeDir = System.getProperty("user.home")
-        val configDir = "$homeDir${File.separatorChar}.xdm-app"
+        val configDir = AppDirs.root.path
         val tempDir = "$configDir${File.separatorChar}tmp"
 
         File(configDir).mkdirs()

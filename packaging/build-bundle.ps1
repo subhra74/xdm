@@ -360,7 +360,7 @@ if ($RecordClasses) {
     $recordHome = Join-Path $BuildDir "windows-$Arch\record-home"
     Remove-Item $recordHome -Recurse -Force -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Force -Path $recordHome | Out-Null
-    $session = @("-Duser.home=$recordHome", "-Dxdm.record.session=$RecordServer")
+    $session = @("-Duser.home=$recordHome", "-Dxdm.data.dir=$(Join-Path $recordHome 'xdm-app')", "-Dxdm.record.session=$RecordServer")
     Write-Host ">> recording $CdsListName with the scripted session against $RecordServer"
     Write-Host '>>   quit any running XDM first (port 8597); XDM exits by itself when the session ends'
   } else {
@@ -373,11 +373,11 @@ if ($RecordClasses) {
       "-XX:DumpLoadedClassList=$recorded" -cp $InputJar $MainClass
   $recordStatus = $LASTEXITCODE
   if ($RecordServer) {
-    # The session downloads ~700 MB (Downloads\, partial files in .xdm-app\tmp): drop it, pass or
-    # fail, so repeated recordings don't fill the VM's small disk. .xdm-app keeps the logs.
-    Get-ChildItem $recordHome -Force | Where-Object { $_.Name -ne '.xdm-app' } |
+    # The session downloads ~700 MB (Downloads\, partial files in xdm-app\tmp): drop it, pass or
+    # fail, so repeated recordings don't fill the VM's small disk. xdm-app keeps the logs.
+    Get-ChildItem $recordHome -Force | Where-Object { $_.Name -ne 'xdm-app' } |
       Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-    Remove-Item (Join-Path $recordHome '.xdm-app\tmp') -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item (Join-Path $recordHome 'xdm-app\tmp') -Recurse -Force -ErrorAction SilentlyContinue
   }
   if ($RecordServer -and $recordStatus -ne 0) {
     throw "The recording session reported $recordStatus failed step(s) (RECORD: lines above); $CdsListName was not updated"
