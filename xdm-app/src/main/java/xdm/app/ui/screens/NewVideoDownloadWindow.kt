@@ -4,8 +4,11 @@ import xdm.app.AppContext
 import xdm.app.I8N.text
 import xdm.app.ui.components.CappedComboBox
 import xdm.app.ui.components.CategoryStyle
+import xdm.app.ui.components.StorageStatusLabel
+import xdm.app.ui.components.TempFolderCards
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
+import xdm.app.utils.categoryFolderFor
 import xdm.app.utils.chooseFile
 import xdm.app.utils.createIcon
 import xdm.app.utils.isAutoCategorySelected
@@ -40,14 +43,18 @@ class NewVideoDownloadWindow : JDialog() {
     private lateinit var modelSaveIn: DefaultComboBoxModel<String>
     private lateinit var lblFileInfo: JLabel
     private lateinit var cmbSegments: JComboBox<Int>
+    private lateinit var storageStatus: StorageStatusLabel
+    private lateinit var tempFolderCards: TempFolderCards
+    private var fileSize: Long? = null
     private var originalFileName: String? = null
     private var videoId: Long = -1
 
     private var taskInfo: StreamingDownloadTaskInfo? = null
-    private var selectedFolder: String? = null
 
     init {
         initUI()
+        // After the form is built: its content pane becomes the first card.
+        tempFolderCards = TempFolderCards(this, fitMain = ::adjustSize, onSaved = { storageStatus.refreshNow() })
         attachFileNameChangeListener()
         defaultCloseOperation = DISPOSE_ON_CLOSE
     }
@@ -156,10 +163,6 @@ class NewVideoDownloadWindow : JDialog() {
             }
         }
 
-        val lblFreeSpace = JLabel("---").apply {
-            alignmentX = Component.LEFT_ALIGNMENT
-        }
-
         val lblIgnore = JLabel(text("ND_IGNORE_PAGE")).apply {
             alignmentX = Component.LEFT_ALIGNMENT
             cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
@@ -171,9 +174,13 @@ class NewVideoDownloadWindow : JDialog() {
             })
         }
 
+        storageStatus = StorageStatusLabel { dest, size -> tempFolderCards.showTempFolder(dest, size) }.apply {
+            alignmentX = Component.LEFT_ALIGNMENT
+        }
+
         // Glue rather than a fixed gap: the link stays on the bottom edge as the dialog is resized.
         val infoBox = Box.createVerticalBox().apply {
-            add(lblFreeSpace)
+            add(storageStatus)
             add(Box.createVerticalGlue())
             add(lblIgnore)
             add(Box.createRigidArea(scaledSize(0, 10)))
@@ -190,12 +197,7 @@ class NewVideoDownloadWindow : JDialog() {
         contentPane.add(infoBox, gbcInfoBox)
 
         cmbSaveIn.addItemListener {
-            val folder = selectedBaseFolder(cmbSaveIn)
-            if (selectedFolder != folder) {
-                selectedFolder = folder
-                val freeSpace = File(folder).freeSpace
-                lblFreeSpace.text = "${text("MSG_FREE_SPACE")} ${FormatHelper.formatSize(freeSpace.toDouble())}"
-            }
+            updateStorageStatus()
         }
 
         val panel = JPanel()
@@ -275,10 +277,24 @@ class NewVideoDownloadWindow : JDialog() {
         }
     }
 
+    /**
+     * The storage line for the folder the file will really land in: with "Automatic" that is
+     * the category folder the file name picks, which can sit on another drive than the default.
+     * A stream's size is often unknown, in which case the warning uses a fixed floor.
+     */
+    private fun updateStorageStatus() {
+        if (!::storageStatus.isInitialized) return
+        val base = selectedBaseFolder(cmbSaveIn)
+        val destination =
+            if (isAutoCategorySelected(cmbSaveIn)) categoryFolderFor(txtFileName.text.orEmpty(), base) else base
+        storageStatus.update(destination, fileSize)
+    }
+
     /** Packing first is what makes the window insets known, so the content is never clipped. */
     private fun adjustSize() {
         pack()
         size = Dimension(max(width, 500.px), max(height, 240.px))
+        TempFolderCards.clampToScreen(this)
     }
 
     private fun ignoreHost() {
@@ -313,6 +329,8 @@ class NewVideoDownloadWindow : JDialog() {
         populateSaveInFolders(modelSaveIn, cmbSaveIn)
         txtFileName.text = FileUtils.sanitizeFileName(fileName)
         lblFileInfo.text = fileSize?.let { FormatHelper.formatSize(it.toDouble()) } ?: "---"
+        this.fileSize = fileSize
+        updateStorageStatus()
 
         this.adjustSize()
         this.setLocationRelativeTo(null)
@@ -325,13 +343,19 @@ class NewVideoDownloadWindow : JDialog() {
         lblFileInfo.icon = createIcon(glyph, 36, Color.GRAY)
     }
 
+    /** The name picks the icon and, with "Automatic", the category folder the warnings check. */
+    private fun fileNameChanged() {
+        updateFileIcon()
+        updateStorageStatus()
+    }
+
     private fun attachFileNameChangeListener() {
         txtFileName.document.addDocumentListener(object : DocumentListener {
-            override fun insertUpdate(e: DocumentEvent) = updateFileIcon()
+            override fun insertUpdate(e: DocumentEvent) = fileNameChanged()
 
-            override fun removeUpdate(e: DocumentEvent) = updateFileIcon()
+            override fun removeUpdate(e: DocumentEvent) = fileNameChanged()
 
-            override fun changedUpdate(e: DocumentEvent) = updateFileIcon()
+            override fun changedUpdate(e: DocumentEvent) = fileNameChanged()
         })
     }
 }

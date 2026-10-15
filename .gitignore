@@ -12,3 +12,6 @@ packaging/xdm-9.0.1-x64.msi
 /private-docs/
 /CLAUDE.md
 hs_err_pid27504.log
+
+# Local test credentials (NTLM test VM account)
+/test-credentials/

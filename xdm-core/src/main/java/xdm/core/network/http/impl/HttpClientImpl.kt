@@ -45,6 +45,9 @@ class HttpClientImpl @JvmOverloads constructor(
     /** Set when the user cancels a credentials prompt: this client stops asking. */
     private val authCancelled = AtomicBoolean(false)
 
+    /** Set once the proxy has asked for NTLM: tunnels then skip OkHttp's preemptive Basic header. */
+    private val proxyWantsNtlm = AtomicBoolean(false)
+
     /**
      * Calls whose response is still open. OkHttp's dispatcher stops tracking a synchronous call once
      * `execute()` returns the headers, so `cancelAll()` cannot abort a thread blocked reading the body;
@@ -87,7 +90,7 @@ class HttpClientImpl @JvmOverloads constructor(
      * first with the credentials from the config, then, each time the proxy refuses what was sent,
      * with what the user enters through [auth]. Without [auth] the configured pair is offered once.
      *
-     * Only Basic is implemented; a proxy demanding Digest or NTLM is not supported. SOCKS
+     * Basic and NTLM are implemented (see [ntlmStep]); Digest and Kerberos are not. SOCKS
      * authentication does not come through here at all: the JDK socket layer asks the default
      * authenticator itself.
      */
@@ -95,13 +98,21 @@ class HttpClientImpl @JvmOverloads constructor(
         val address = proxy.address() as? InetSocketAddress ?: return
         val configured = if (user.isNotEmpty()) BasicCredentials(user, password) else null
         val scope = AuthScope(proxy = true, host = address.hostString, port = address.port, realm = null)
+        fun credentials(sent: BasicCredentials?, scope: AuthScope): BasicCredentials? =
+            if (auth != null) auth.onChallenge(scope, sent, authCancelled, configured) else configured?.takeIf { sent == null }
+
         builder.proxyAuthenticator { _, response ->
-            val sent = decodeBasic(response.request.header("Proxy-Authorization"))
-            val next = if (auth != null) {
-                auth.onChallenge(scope, sent, authCancelled, configured)
-            } else {
-                configured?.takeIf { sent == null }
+            val preemptive = response.header("Proxy-Authenticate").equals(PREEMPTIVE_CHALLENGE, ignoreCase = true)
+            // An NTLM proxy answers a preemptive Basic header with a 407 anyway; do not hand it the password.
+            if (preemptive && proxyWantsNtlm.get()) return@proxyAuthenticator null
+            ntlmChallenge(response, "Proxy-Authenticate")?.let { challenge ->
+                proxyWantsNtlm.set(true)
+                return@proxyAuthenticator ntlmStep(response, challenge, "Proxy-Authorization") { sent ->
+                    credentials(sent, scope.withNtlm())
+                }
             }
+            val sent = decodeBasic(response.request.header("Proxy-Authorization"))
+            val next = credentials(sent, scope)
             // [HttpAuth] hands back the refused pair only if the user typed it again, so that is a
             // retry, not a loop; without it, the configured pair is only ever offered once.
             if (next == null) return@proxyAuthenticator null
@@ -111,15 +122,21 @@ class HttpClientImpl @JvmOverloads constructor(
     }
 
     /**
-     * Answers a server's 401 Basic challenge with credentials from [auth], asking the user again each
-     * time the server refuses them. A challenge that offers no Basic scheme (Bearer, Digest, NTLM,
-     * Negotiate) cannot be met with a user name and password, so the 401 stands.
+     * Answers a server's 401 with credentials from [auth], asking the user again each time the server
+     * refuses them: NTLM (or Negotiate, answered with NTLM) when offered, else Basic. A challenge
+     * offering neither (Bearer, Digest) cannot be met with a user name and password, so the 401 stands.
      */
     private fun serverAuthentication(builder: OkHttpClient.Builder, auth: HttpAuth) {
         builder.authenticator { _, response ->
+            val url = response.request.url
+            ntlmChallenge(response, "WWW-Authenticate")?.let { challenge ->
+                val scope = AuthScope(proxy = false, host = url.host, port = url.port, realm = null).withNtlm()
+                return@authenticator ntlmStep(response, challenge, "Authorization") { sent ->
+                    auth.onChallenge(scope, sent, authCancelled)
+                }
+            }
             val basic = response.challenges().firstOrNull { it.scheme.equals("Basic", ignoreCase = true) }
                 ?: return@authenticator null
-            val url = response.request.url
             val scope = AuthScope(proxy = false, host = url.host, port = url.port, realm = basic.realm)
             val sent = decodeBasic(response.request.header("Authorization"))
             val next = auth.onChallenge(scope, sent, authCancelled) ?: return@authenticator null
@@ -127,6 +144,51 @@ class HttpClientImpl @JvmOverloads constructor(
             response.request.newBuilder().header("Authorization", encodeBasic(next)).build()
         }
     }
+
+    /**
+     * One step of the NTLM handshake for a 401 / 407 carrying [challenge], or null to let it stand.
+     *
+     * NTLM authenticates a connection (Type1, Type2, Type3 on one socket), but OkHttp sends a retry
+     * on whichever pooled connection is idle. So each step is decided from the challenge and the
+     * [NtlmAttempt] tagged on the request that drew it (one per proxy and per server): a Type2 is answered with a Type3; a bare
+     * challenge after a Type1 or Type3 restarts the handshake once with the same credentials (it may
+     * have crossed connections), and after that counts as a refusal, which asks [credentials] again
+     * with the refused pair.
+     */
+    private fun ntlmStep(
+        response: Response,
+        challenge: NtlmChallenge,
+        header: String,
+        credentials: (sent: BasicCredentials?) -> BasicCredentials?,
+    ): Request? {
+        // The proxy's and the server's handshakes are tracked apart: a request can carry both, and
+        // mistaking one for the other would answer a server with the proxy's credentials.
+        val proxy = header == "Proxy-Authorization"
+        val attempt = if (proxy) response.request.tag(ProxyNtlm::class.java)?.attempt else response.request.tag(ServerNtlm::class.java)?.attempt
+        val type2 = challenge.token?.let { Ntlm.parseType2(it) }
+        if (type2 != null && attempt != null && !attempt.sentType3) {
+            val (domain, user) = Ntlm.splitUser(attempt.credentials.user)
+            val type3 = Ntlm.type3(type2, user, domain, attempt.credentials.password)
+            return ntlmRequest(response, header, challenge.scheme, type3, NtlmAttempt(attempt.credentials, true, attempt.restarts))
+        }
+        if (attempt != null && attempt.restarts < NTLM_RESTARTS) {
+            val restart = NtlmAttempt(attempt.credentials, false, attempt.restarts + 1)
+            return ntlmRequest(response, header, challenge.scheme, Ntlm.type1(), restart)
+        }
+        val next = credentials(attempt?.credentials) ?: return null
+        val target = if (proxy) "proxy" else response.request.url.host
+        Logger.info("XDM", "NTLM authentication to $target as ${next.user}")
+        return ntlmRequest(response, header, challenge.scheme, Ntlm.type1(), NtlmAttempt(next, false, 0))
+    }
+
+    private fun ntlmRequest(response: Response, header: String, scheme: String, message: ByteArray, attempt: NtlmAttempt) =
+        response.request.newBuilder()
+            .header(header, scheme + " " + java.util.Base64.getEncoder().encodeToString(message))
+            .apply {
+                if (header == "Proxy-Authorization") tag(ProxyNtlm::class.java, ProxyNtlm(attempt))
+                else tag(ServerNtlm::class.java, ServerNtlm(attempt))
+            }
+            .build()
 
     private fun trustAllCertificates(builder: OkHttpClient.Builder) {
         Logger.info("XDM", "TLS certificate and hostname verification disabled by user setting")
@@ -249,6 +311,12 @@ class HttpClientImpl @JvmOverloads constructor(
     }
 
     private companion object {
+        /** The challenge OkHttp puts on the fake 407 it uses to ask for preemptive tunnel credentials. */
+        const val PREEMPTIVE_CHALLENGE = "OkHttp-Preemptive"
+
+        /** Handshakes restarted with the same credentials before a bare NTLM challenge counts as a refusal. */
+        const val NTLM_RESTARTS = 1
+
         /**
          * The socket factory and trust manager shared by every client, built on first use and null if
          * the platform refuses, in which case each client falls back to OkHttp's own default.
@@ -270,6 +338,32 @@ class HttpClientImpl @JvmOverloads constructor(
             }
         }
     }
+}
+
+/** What an NTLM request carried, so the next challenge can tell a Type2 reply from a refusal. */
+private class NtlmAttempt(val credentials: BasicCredentials, val sentType3: Boolean, val restarts: Int)
+
+/** Request tags: the proxy's handshake and the server's, kept apart. */
+private class ProxyNtlm(val attempt: NtlmAttempt)
+private class ServerNtlm(val attempt: NtlmAttempt)
+
+/** An `NTLM` or `Negotiate` challenge, with its token (a Type2) or null for a bare one. */
+private class NtlmChallenge(val scheme: String, val token: ByteArray?)
+
+/**
+ * The NTLM challenge in [response]'s [header], preferring `NTLM` over `Negotiate` (answered with raw
+ * NTLM tokens, which Windows' Negotiate package accepts). Null when neither is offered, or when a
+ * Negotiate token is not NTLM (a Kerberos reply).
+ */
+private fun ntlmChallenge(response: Response, header: String): NtlmChallenge? {
+    val entries = response.headers(header).flatMap { it.split(',') }.map { it.trim() }
+    fun find(scheme: String) = entries.firstOrNull { it.equals(scheme, ignoreCase = true) || it.startsWith("$scheme ", ignoreCase = true) }
+    val entry = find("NTLM") ?: find("Negotiate") ?: return null
+    val space = entry.indexOf(' ')
+    if (space < 0) return NtlmChallenge(entry, null)
+    val token = runCatching { java.util.Base64.getDecoder().decode(entry.substring(space + 1).trim()) }.getOrNull()
+        ?.takeIf { Ntlm.isNtlmMessage(it) } ?: return null
+    return NtlmChallenge(entry.substring(0, space), token)
 }
 
 private fun encodeBasic(c: BasicCredentials): String = Credentials.basic(c.user, c.password, Charsets.UTF_8)

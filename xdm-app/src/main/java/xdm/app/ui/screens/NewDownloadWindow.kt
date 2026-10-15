@@ -8,8 +8,11 @@ import xdm.app.RecordStatus
 import xdm.app.ui.components.AppMenuHandler
 import xdm.app.ui.components.CappedComboBox
 import xdm.app.ui.components.CategoryStyle
+import xdm.app.ui.components.StorageStatusLabel
+import xdm.app.ui.components.TempFolderCards
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
+import xdm.app.utils.categoryFolderFor
 import xdm.app.utils.chooseFile
 import xdm.app.utils.createIcon
 import xdm.app.utils.getClipBoardText
@@ -51,12 +54,15 @@ class NewDownloadWindow : JDialog() {
     private lateinit var lblFileInfo: JLabel
     private lateinit var originalFileName: String
     private lateinit var lbAddress: JLabel
+    private lateinit var storageStatus: StorageStatusLabel
+    private lateinit var tempFolderCards: TempFolderCards
 
     private var taskInfo: HttpDownloadTaskInfo? = null
-    private var selectedFolder: String? = null
 
     init {
         initUI()
+        // After the form is built: its content pane becomes the first card.
+        tempFolderCards = TempFolderCards(this, fitMain = ::adjustSize, onSaved = { storageStatus.refreshNow() })
         attachUrlChangeListener()
         attachFileNameChangeListener()
         defaultCloseOperation = DISPOSE_ON_CLOSE
@@ -169,10 +175,6 @@ class NewDownloadWindow : JDialog() {
         }
         contentPane.add(btnBrowse, gbcBtnBrowse)
 
-        val lblFreeSpace = JLabel("---").apply {
-            alignmentX = Component.LEFT_ALIGNMENT
-        }
-
         lblIgnore = JLabel(text("ND_IGNORE_PAGE")).apply {
             alignmentX = Component.LEFT_ALIGNMENT
             cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
@@ -184,9 +186,13 @@ class NewDownloadWindow : JDialog() {
             })
         }
 
+        storageStatus = StorageStatusLabel { dest, size -> tempFolderCards.showTempFolder(dest, size) }.apply {
+            alignmentX = Component.LEFT_ALIGNMENT
+        }
+
         // Glue rather than a fixed gap: the link stays on the bottom edge as the dialog is resized.
         val infoBox = Box.createVerticalBox().apply {
-            add(lblFreeSpace)
+            add(storageStatus)
             add(Box.createVerticalGlue())
             add(lblIgnore)
             add(Box.createRigidArea(scaledSize(0, 10)))
@@ -280,13 +286,20 @@ class NewDownloadWindow : JDialog() {
         persistFolderChoiceOnChange(cmbSaveIn)
         cmbSaveIn.addItemListener {
             Logger.info("Selected item: ${cmbSaveIn.selectedItem}")
-            val folder = selectedBaseFolder(cmbSaveIn)
-            if (selectedFolder != folder) {
-                selectedFolder = folder
-                val freeSpace = File(folder).freeSpace
-                lblFreeSpace.text = "${text("MSG_FREE_SPACE")} ${FormatHelper.formatSize(freeSpace.toDouble())}"
-            }
+            updateStorageStatus()
         }
+    }
+
+    /**
+     * The storage line for the folder the file will really land in: with "Automatic" that is
+     * the category folder the file name picks, which can sit on another drive than the default.
+     */
+    private fun updateStorageStatus() {
+        if (!::storageStatus.isInitialized) return
+        val base = selectedBaseFolder(cmbSaveIn)
+        val destination =
+            if (isAutoCategorySelected(cmbSaveIn)) categoryFolderFor(txtFileName.text.orEmpty(), base) else base
+        storageStatus.update(destination, taskInfo?.knownFileSize)
     }
 
     //  private void downloadNow() {
@@ -508,6 +521,7 @@ class NewDownloadWindow : JDialog() {
     private fun adjustSize() {
         pack()
         size = Dimension(max(width, 500.px), max(height, 270.px))
+        TempFolderCards.clampToScreen(this)
     }
 
     //  public void showWindow(final HttpMetadata metadata) {
@@ -601,6 +615,7 @@ class NewDownloadWindow : JDialog() {
             } ?: "---"
         }
 
+        updateStorageStatus()
         // Sized last: the ignore link is only part of the layout for browser-captured downloads.
         this.adjustSize()
         this.setLocationRelativeTo(null)
@@ -611,6 +626,12 @@ class NewDownloadWindow : JDialog() {
     private fun updateFileIcon() {
         val glyph = CategoryStyle.lineVariant(CategoryStyle.iconForFile(txtFileName.text.orEmpty()))
         lblFileInfo.icon = createIcon(glyph, 36, Color.GRAY)
+    }
+
+    /** The name picks the icon and, with "Automatic", the category folder the warnings check. */
+    private fun fileNameChanged() {
+        updateFileIcon()
+        updateStorageStatus()
     }
 
     private fun urlUpdated(e: DocumentEvent) {
@@ -627,11 +648,11 @@ class NewDownloadWindow : JDialog() {
 
     private fun attachFileNameChangeListener() {
         txtFileName.document.addDocumentListener(object : DocumentListener {
-            override fun insertUpdate(e: DocumentEvent) = updateFileIcon()
+            override fun insertUpdate(e: DocumentEvent) = fileNameChanged()
 
-            override fun removeUpdate(e: DocumentEvent) = updateFileIcon()
+            override fun removeUpdate(e: DocumentEvent) = fileNameChanged()
 
-            override fun changedUpdate(e: DocumentEvent) = updateFileIcon()
+            override fun changedUpdate(e: DocumentEvent) = fileNameChanged()
         })
     }
 

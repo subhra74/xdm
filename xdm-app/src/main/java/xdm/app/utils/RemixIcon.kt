@@ -60,6 +60,7 @@ enum class RemixIcon(val codepoint: Int) {
     FOLDER_WARNING_FILL(0xed85),
     GLOBAL_FILL(0xedce),
     GLOBAL_LINE(0xedcf),
+    HARD_DRIVE_2_LINE(0xedf9),
     INSTALL_FILL(0xee67),
     LIST_CHECK_2(0xeeb9),
     MENU_LINE(0xef3e),

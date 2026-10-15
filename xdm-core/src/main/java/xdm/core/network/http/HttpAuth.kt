@@ -3,11 +3,20 @@ package xdm.core.network.http
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** A user name and password for HTTP Basic authentication, to a server or to the proxy. */
+/** A user name and password for HTTP Basic or NTLM authentication, to a server or to the proxy. */
 data class BasicCredentials(val user: String, val password: String)
 
 /** Who is asking: the proxy, or one protection space (host, port, realm) of a server. */
-data class AuthScope(val proxy: Boolean, val host: String, val port: Int, val realm: String?)
+data class AuthScope(val proxy: Boolean, val host: String, val port: Int, val realm: String?) {
+    /**
+     * The challenge is NTLM, so the prompt can say a domain account is typed as `DOMAIN\user`. Not part
+     * of the scope's identity: the proxy's entry is the same whichever scheme it asks for.
+     */
+    var ntlm: Boolean = false
+        private set
+
+    fun withNtlm(): AuthScope = copy().also { it.ntlm = true }
+}
 
 /** Asks the user for credentials; implemented by the app. Null means the user cancelled. */
 fun interface CredentialPrompt {

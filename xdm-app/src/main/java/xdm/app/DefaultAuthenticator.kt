@@ -99,8 +99,9 @@ object SwingCredentialPrompt : CredentialPrompt {
     private fun message(scope: AuthScope, rejected: Boolean): String {
         val who = if (scope.proxy) "The proxy ${scope.host}:${scope.port}" else
             scope.host + (scope.realm?.takeIf { it.isNotBlank() }?.let { " (\"$it\")" } ?: "")
-        return if (rejected) "$who did not accept the user name and password. Enter them again."
+        val text = if (rejected) "$who did not accept the user name and password. Enter them again."
         else "$who needs a user name and password."
+        return if (scope.ntlm) "$text\nFor a Windows domain account, enter the user name as DOMAIN\\user." else text
     }
 }
 

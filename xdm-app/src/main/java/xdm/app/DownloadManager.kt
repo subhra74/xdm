@@ -211,7 +211,7 @@ class DownloadManager(
             activeSessions.remove(event.id)?.let {
                 // The working folder has served its purpose; leaving it behind would litter the
                 // temp folder with one empty directory per completed download.
-                FileUtils.deleteFolder(tempDirFor(event.id).absolutePath)
+                deleteTempFolders(event.id)
                 File(configDir, "${event.id}.out").delete()
                 // Before the record turns FINISHED, so nothing (the dialog, "Open", the virus scan,
                 // the custom command) can reach the file unmarked.
@@ -504,6 +504,21 @@ class DownloadManager(
     private fun tempDirFor(id: Long) = File(AppContext.config.tempFolder, id.toString()).apply { mkdirs() }
 
     /**
+     * Deletes a download's working folder: the one recorded in its state when it started, and the
+     * one under the current temp folder. They differ when the temp folder was changed while the
+     * download was running or paused. The recorded folder is only deleted when it is named after
+     * the id; downloads from before the temp-folder change recorded their download folder there.
+     */
+    private fun deleteTempFolders(id: Long) {
+        getTempFileFolder(id, configDir).onSuccess { (folder, _) ->
+            if (File(folder).name == id.toString()) FileUtils.deleteFolder(folder)
+        }
+        File(AppContext.config.tempFolder, id.toString()).takeIf { it.exists() }?.let {
+            FileUtils.deleteFolder(it.absolutePath)
+        }
+    }
+
+    /**
      * Where a streaming download's muxed output was actually written. Recorded the first time the
      * path is chosen and read back from disk afterwards, so commit, retry and delete all address
      * the file that exists even if the destination changed after muxing began.
@@ -730,7 +745,7 @@ class DownloadManager(
         } else if (rec.status != RecordStatus.FINISHED) {
             // Every download type keeps its working data in one folder now, so one delete does it.
             // Older downloads may still have their temp file elsewhere; fall back to the state file.
-            FileUtils.deleteFolder(tempDirFor(id).absolutePath)
+            deleteTempFolders(id)
             getTempFileFolder(id, configDir).onSuccess {
                 val (tempFolder, tempFile) = it
                 if (rec.downloadType == DownloadType.Http) {

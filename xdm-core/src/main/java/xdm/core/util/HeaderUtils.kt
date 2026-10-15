@@ -9,13 +9,15 @@ private val URL_PATTERN by lazy { Regex("https?://([^/:]*)/?") }
 /**
  * True when a refusal means the link itself stopped working (an expired signature, token or
  * session) rather than a server error: 403 Forbidden, 410 Gone, or a 401 whose challenge is not
- * Basic. A Basic 401 is a login the user can answer (see `HttpAuth`), so it is not an expiry.
+ * Basic, NTLM or Negotiate. Those are a login the user can answer (see `HttpAuth`), so not an expiry.
  */
 fun isLinkExpiredStatus(code: Int, wwwAuthenticate: String?): Boolean = when (code) {
     403, 410 -> true
-    401 -> wwwAuthenticate?.contains("basic", ignoreCase = true) != true
+    401 -> LOGIN_SCHEMES.none { wwwAuthenticate?.contains(it, ignoreCase = true) == true }
     else -> false
 }
+
+private val LOGIN_SCHEMES = listOf("basic", "ntlm", "negotiate")
 
 fun getHeaders(key: String, headers: Map<String, List<String>>?): List<String>? {
     val keyName = headers?.keys?.find { StringUtils.equalsIgnoreCase(it, key) }
