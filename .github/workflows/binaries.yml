@@ -222,4 +222,9 @@ jobs:
           flags=(--title "XDM ${tag#v}" --generate-notes --target "$GITHUB_SHA")
           [[ "$pre" == true ]] && flags+=(--prerelease) || flags+=(--latest)
           ls -l dist
-          gh release create "$tag" "${flags[@]}" dist/*
+          # A release drafted on the GitHub web page pushes its tag and already exists: just attach the files.
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" --clobber dist/*
+          else
+            gh release create "$tag" "${flags[@]}" dist/*
+          fi
