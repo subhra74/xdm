@@ -5,8 +5,27 @@ name: Binaries
 # the build scripts enforce; the AppCDS archive is dumped from the checked-in class list (packaging/cds), so no
 # job needs a desktop session. A target without a list builds without an archive.
 
+# A tag push (v*) publishes a GitHub release with every installer; a tag with a suffix (v9.0.1-beta.1) is
+# marked pre-release. A manual run only uploads the run's artifacts unless "release" is ticked; it then tags the
+# commit (the "tag" input, or v<app-version.json version>-pre.<run number>) and publishes a pre-release unless
+# "prerelease" is cleared. The macOS jobs may fail without blocking the release: their dmgs can be added to it
+# by hand.
+
 on:
   workflow_dispatch:
+    inputs:
+      release:
+        description: Publish a GitHub release from this run
+        type: boolean
+        default: false
+      prerelease:
+        description: Mark the release as a pre-release
+        type: boolean
+        default: true
+      tag:
+        description: Release tag (empty = v<app version>-pre.<run number>)
+        type: string
+        default: ''
   push:
     tags: [ 'v*' ]
 
@@ -76,6 +95,12 @@ jobs:
           home="$(packaging/fetch-jdk.sh "mac-${{ matrix.arch }}" | tail -1)"
           echo "JAVA_HOME=$home" >> "$GITHUB_ENV"
           echo "$home/bin" >> "$GITHUB_PATH"
+
+      # No list is recorded on Intel macs: use the arm64 one (same JDK build, so the stamp matches). The
+      # arm64-only JDK classes in it are skipped at dump time; the app's own classes are the same.
+      - name: Borrow the arm64 class list
+        if: matrix.arch == 'x64' && hashFiles('packaging/cds/mac-x64.classlist') == ''
+        run: cp packaging/cds/mac-arm64.classlist packaging/cds/mac-x64.classlist
 
       - name: Build dmg
         run: packaging/build-bundle.sh -s --type dmg
@@ -160,3 +185,41 @@ jobs:
             build/linux-${{ matrix.arch }}/*.pkg.tar.zst
             build/linux-${{ matrix.arch }}/*.tar.gz
           if-no-files-found: error
+
+  release:
+    needs: [ macos, windows, linux ]
+    # Windows and Linux must succeed; macOS is best effort.
+    if: >-
+      always() && needs.windows.result == 'success' && needs.linux.result == 'success' &&
+      (github.event_name == 'push' || inputs.release)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: xdm-*
+          path: dist
+          merge-multiple: true
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_TAG: ${{ inputs.tag }}
+          INPUT_PRERELEASE: ${{ inputs.prerelease }}
+        run: |
+          version="$(sed -n 's/.*"currentVersion"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
+            xdm-app/src/main/resources/app-version.json | head -1)"
+          if [[ "$GITHUB_EVENT_NAME" == push ]]; then
+            tag="$GITHUB_REF_NAME"
+            [[ "$tag" == *-* ]] && pre=true || pre=false
+          else
+            tag="${INPUT_TAG:-v$version-pre.$GITHUB_RUN_NUMBER}"
+            pre="$INPUT_PRERELEASE"
+          fi
+          flags=(--title "XDM ${tag#v}" --generate-notes --target "$GITHUB_SHA")
+          [[ "$pre" == true ]] && flags+=(--prerelease) || flags+=(--latest)
+          ls -l dist
+          gh release create "$tag" "${flags[@]}" dist/*
