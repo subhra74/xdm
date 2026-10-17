@@ -21,7 +21,8 @@
   <a href="#-features">Features</a> ·
   <a href="#-browser-integration">Browser integration</a> ·
   <a href="#-building-from-source">Build</a> ·
-  <a href="#-translations">Translations</a>
+  <a href="#-translations">Translations</a> ·
+  <a href="CODE_SIGNING_POLICY.md">Code signing policy</a>
 </p>
 
 <p align="center">
@@ -95,9 +96,25 @@ java -jar xdm-app/target/xdm-app.jar
 Want XDM in your language? Translations are welcome — see
 [Submitting translations for XDM](https://github.com/subhra74/xdm/wiki/Submitting-translations-for-XDM).
 
-## 🔏 Code signing
+## 🗑️ Uninstalling
 
-Free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
+- **Windows:** Settings → Apps → Installed apps → *Xtreme Download Manager* → Uninstall.
+- **macOS:** quit XDM, then drag `xdm-app` from Applications to the Trash.
+- **Linux:** `sudo apt remove xdm-app` (Debian/Ubuntu), `sudo dnf remove xdm-app` (Fedora) or
+  `sudo pacman -R xdm-app` (Arch).
+
+Uninstalling keeps your settings and download list. To remove them too, delete the data folder:
+`%LOCALAPPDATA%\xdm-app` (Windows), `~/Library/Application Support/xdm-app` (macOS) or
+`~/.local/share/xdm-app` (Linux).
+
+## 🔏 Code signing policy
+
+Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org).
+Who builds, reviews and approves signed releases: see the [code signing policy](CODE_SIGNING_POLICY.md).
+
+## 🔒 Privacy
+
+XDM has no accounts, analytics or tracking, and keeps your data on your computer. See the [privacy policy](PRIVACY.md).
 
 ---
 

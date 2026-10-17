@@ -236,7 +236,10 @@ jobs:
             tag="${INPUT_TAG:-v$version-pre.$GITHUB_RUN_NUMBER}"
             pre="$INPUT_PRERELEASE"
           fi
-          flags=(--title "XDM ${tag#v}" --generate-notes --target "$GITHUB_SHA")
+          # SignPath Foundation requires a "Code signing policy" link on every release page.
+          policy="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/blob/master/CODE_SIGNING_POLICY.md"
+          flags=(--title "XDM ${tag#v}" --generate-notes --target "$GITHUB_SHA"
+            --notes "[Code signing policy]($policy)")
           [[ "$pre" == true ]] && flags+=(--prerelease) || flags+=(--latest)
           shopt -s nullglob
           files=(dist/*.dmg dist/*.msi dist/*.deb dist/*.rpm dist/*.pkg.tar.zst dist/*.tar.gz)
