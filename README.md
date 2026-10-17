@@ -116,6 +116,11 @@ Who builds, reviews and approves signed releases: see the [code signing policy](
 
 XDM has no accounts, analytics or tracking, and keeps your data on your computer. See the [privacy policy](PRIVACY.md).
 
+## 📄 License
+
+XDM is free software, licensed under the [GNU General Public License v3.0](LICENSE). XDM 8 and earlier were released
+under GPL v2.
+
 ---
 
 <p align="center">
