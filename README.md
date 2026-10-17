@@ -95,6 +95,10 @@ java -jar xdm-app/target/xdm-app.jar
 Want XDM in your language? Translations are welcome — see
 [Submitting translations for XDM](https://github.com/subhra74/xdm/wiki/Submitting-translations-for-XDM).
 
+## 🔏 Code signing
+
+Free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
+
 ---
 
 <p align="center">
