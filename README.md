@@ -35,6 +35,9 @@
 from streaming sites, and picks up broken downloads exactly where they left off. A companion browser extension hands
 downloads and detected videos straight to the app, so you never have to copy a link by hand.
 
+Wondering why you'd still want a download manager on a fast connection? Read
+[Why use a download manager in an age of fast internet?](docs/why-a-download-manager.md)
+
 > [!NOTE]
 > As of 2026 XDM is being rebuilt and is in **active development**.
 
