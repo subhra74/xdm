@@ -13,8 +13,12 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
+    "sync-lang": "node scripts/sync-lang.js",
+    "prestart": "npm run sync-lang",
     "start": "react-scripts start",
+    "prebuild": "npm run sync-lang",
     "build": "react-scripts build",
+    "pretest": "npm run sync-lang",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

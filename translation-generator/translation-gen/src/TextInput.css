@@ -1,5 +1,99 @@
 .TextInput {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 16px;
+    padding: 14px 16px 12px 19px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+}
+.TextInput:last-child { border-bottom: 0; }
+.TextInput::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: transparent;
+    transition: background 0.15s;
+}
+.TextInput:focus-within { background: color-mix(in srgb, var(--accent-soft) 45%, transparent); }
+.TextInput:focus-within::before { background: var(--accent); }
+
+.TextInput .meta {
     display: flex;
-    flex-direction: column;
-    padding-bottom: 10px;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 4px;
+    min-width: 0;
+}
+.TextInput .status-dot {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border-strong);
+}
+.TextInput.done .status-dot { background: var(--ok); border-color: var(--ok); }
+.TextInput.warn .status-dot { background: var(--warn); border-color: var(--warn); }
+
+.TextInput .key {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.TextInput .english { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+.TextInput textarea {
+    display: block;
+    width: 100%;
+    min-height: 38px;
+    padding: 8px 10px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    background: var(--surface);
+    resize: vertical;
+    field-sizing: content;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.TextInput textarea::placeholder { color: var(--muted); opacity: 0.7; }
+.TextInput textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.TextInput.warn textarea { border-color: var(--warn); }
+.TextInput.warn textarea:focus { box-shadow: 0 0 0 3px var(--warn-soft); }
+
+.TextInput .target-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    min-height: 20px;
+    margin-top: 4px;
+    font-size: 12px;
+}
+.TextInput .warning { color: var(--warn); }
+
+.link-btn {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s;
+}
+.link-btn:hover { color: var(--accent); }
+.link-btn:focus-visible { opacity: 1; outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+.TextInput:hover .link-btn, .TextInput:focus-within .link-btn { opacity: 1; }
+
+@media (max-width: 640px) {
+    .TextInput { grid-template-columns: 1fr; gap: 8px; }
+    .link-btn { opacity: 1; }
+}
+@media (hover: none) {
+    .link-btn { opacity: 1; }
 }

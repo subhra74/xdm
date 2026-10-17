@@ -21,3 +21,6 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# copied from xdm-app/src/main/resources/lang by scripts/sync-lang.js
+/public/lang

@@ -1,4 +1,27 @@
-# Getting Started with Create React App
+# XDM translation generator
+
+A small web page for translating XDM's UI texts. It lists every English text from
+`xdm-app/src/main/resources/lang/en.txt` and writes a `<code>.txt` file in the same
+`java.util.Properties` format (UTF-8) that `xdm.app.I8N` loads.
+
+- **Start from** an existing translation (from `lang/map`) to fill in only what's missing, or open a
+  `.txt` you saved earlier. "Show only untranslated texts" hides finished entries.
+- The language code is the file name (`de`, `pt-br`, `sr_lat`, ...). A new language also needs a line in `lang/map`.
+- Untranslated texts are left out of the file. I8N overlays the translation on `en.txt`, so they show in English.
+
+```bash
+npm ci
+npm start        # http://localhost:3000
+npm test -- --watchAll=false
+npm run build
+```
+
+`start`, `build` and `test` first run `scripts/sync-lang.js`, which copies the app's `lang/` folder into
+`public/lang` (git-ignored). That keeps the page in step with the strings the app ships.
+
+---
+
+## Create React App notes
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
