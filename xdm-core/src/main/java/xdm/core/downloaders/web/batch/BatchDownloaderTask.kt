@@ -21,8 +21,8 @@ import xdm.core.util.getNameFromContentDisposition
 import xdm.core.storage.LocalStorage
 import xdm.core.storage.Storage
 import xdm.core.storage.StorageFolder
+import xdm.core.storage.TargetExistsException
 import java.io.IOException
-import java.nio.file.FileAlreadyExistsException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -246,7 +246,7 @@ class BatchDownloaderTask(
                     file.finalName = name
                     dirty.set(true)
                     return null
-                } catch (e: FileAlreadyExistsException) {
+                } catch (e: TargetExistsException) {
                     file.finalName = name
                     Logger.info("XDM", "$name appeared while renaming, trying another name")
                 } catch (e: IOException) {

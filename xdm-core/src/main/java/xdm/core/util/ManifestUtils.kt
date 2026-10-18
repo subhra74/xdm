@@ -5,8 +5,6 @@ import xdm.core.network.http.*
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-import java.nio.file.Files
-import java.nio.file.Paths
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -29,15 +27,13 @@ object ManifestUtils {
             onError,
             onHttpError,
         )?.let {
-            val tempFile = Paths.get(it)
+            val tempFile = File(it)
             try {
-                return Files.readAllBytes(tempFile)
+                return tempFile.readBytes()
             } finally {
                 // The manifest has been read; failing to remove the temp file must not discard it.
-                try {
-                    Files.deleteIfExists(tempFile)
-                } catch (e: Exception) {
-                    Logger.error("XDM", "Could not delete manifest temp file $tempFile", e)
+                if (!tempFile.delete() && tempFile.exists()) {
+                    Logger.error("XDM", "Could not delete manifest temp file $tempFile")
                 }
             }
         }
@@ -82,23 +78,35 @@ object ManifestUtils {
         return null
     }
 
-    private fun fileCopy(response: HttpResponse, stopFlag: AtomicBoolean): String {
+    /**
+     * Copies the body to a new temp file and returns its path, or null if [stopFlag] was set before the
+     * body ended. A stopped or failed copy deletes the file, so a partial manifest is never parsed or left behind.
+     */
+    private fun fileCopy(response: HttpResponse, stopFlag: AtomicBoolean): String? {
         val file = File.createTempFile(
             UUID.randomUUID().toString(),
             ".m3u8"
         )
-        FileOutputStream(
-            file
-        ).use { w ->
-            val b = ByteArray(8192)
-            response.inputStream.use { inputStream ->
-                while (!stopFlag.get()) {
-                    val x: Int = inputStream.read(b)
-                    if (x == -1) break
-                    w.write(b, 0, x)
+        var complete = false
+        try {
+            FileOutputStream(file).use { w ->
+                val b = ByteArray(8192)
+                response.inputStream.use { inputStream ->
+                    while (!stopFlag.get()) {
+                        val x: Int = inputStream.read(b)
+                        if (x == -1) {
+                            complete = true
+                            break
+                        }
+                        w.write(b, 0, x)
+                    }
                 }
-                return file.absolutePath
+            }
+        } finally {
+            if (!complete && !file.delete() && file.exists()) {
+                Logger.error("XDM", "Could not delete partial manifest $file")
             }
         }
+        return if (complete) file.absolutePath else null
     }
 }

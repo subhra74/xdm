@@ -11,7 +11,7 @@ import xdm.core.storage.LocalStorage
 import xdm.core.storage.uniqueFileName
 import java.io.File
 import java.io.FileNotFoundException
-import java.nio.file.FileAlreadyExistsException
+import xdm.core.storage.TargetExistsException
 
 /** [LocalStorage]: the desktop backend behind [xdm.core.downloaders.DownloadHost.storage]. */
 class TestLocalStorage {
@@ -50,7 +50,7 @@ class TestLocalStorage {
         val folder = LocalStorage.folder(root.path)
         File(root, "part").writeText("new")
         File(root, "taken").writeText("old")
-        assertThrows(FileAlreadyExistsException::class.java, { folder.rename("part", "taken", replace = false) }, "no replace")
+        assertThrows(TargetExistsException::class.java, { folder.rename("part", "taken", replace = false) }, "no replace")
         assertEquals("old", File(root, "taken").readText(), "existing file untouched")
         assertTrue(File(root, "part").exists(), "source untouched")
         folder.rename("part", "taken", replace = true)

@@ -2,7 +2,6 @@ package xdm.core.network.http
 
 import java.io.InputStream
 import java.net.URI
-import java.time.LocalDateTime
 
 interface HttpResponse : AutoCloseable {
     override fun close()
@@ -11,7 +10,8 @@ interface HttpResponse : AutoCloseable {
     val contentLength: Long?
     val contentDisposition: String?
     val contentType: String?
-    val lastModified: LocalDateTime?
+    /** The Last-Modified header as epoch milliseconds, or null if absent or unparseable. */
+    val lastModifiedMillis: Long?
     val inputStream: InputStream
     val isRedirected: Boolean
     val finalUrl: String?
@@ -24,7 +24,7 @@ class HttpResponseImpl(
     override val statusMessage: String,
     override val contentLength: Long?,
     override val contentType: String?,
-    override val lastModified: LocalDateTime?,
+    override val lastModifiedMillis: Long?,
     override val inputStream: InputStream,
     override val isRedirected: Boolean,
     override val finalUrl: String?,

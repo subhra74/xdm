@@ -8,22 +8,21 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import xdm.core.downloaders.DownloadError
+import xdm.core.storage.CrossDeviceException
 import xdm.core.util.FileUtils
 import xdm.core.util.MovePhase
 import xdm.core.util.MoveOps
 import xdm.core.util.PlatformUtils
 import java.io.File
 import java.io.IOException
-import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
-import java.nio.file.Path
 
 /**
  * Regression for CODE_REVIEW B7: [FileUtils.moveFile] must work across file systems, never overwrite
  * an existing file, never leave a partial destination, and report why it failed.
  *
  * A different volume is simulated with [MoveOps] whose atomic move of the source throws
- * [AtomicMoveNotSupportedException], exactly what the JDK does across file systems.
+ * [CrossDeviceException], exactly what the platform layer reports across file systems.
  */
 class TestFileMove {
     private lateinit var dir: File
@@ -45,14 +44,14 @@ class TestFileMove {
 
     /** Behaves like a different volume: the source cannot be renamed into the destination. */
     private open class OtherVolume(val space: Long = Long.MAX_VALUE) : MoveOps {
-        override fun atomicMove(src: Path, dst: Path, replaceExisting: Boolean) {
-            if (!src.fileName.toString().endsWith(".part") || src.parent != dst.parent) {
-                throw AtomicMoveNotSupportedException(src.toString(), dst.toString(), "different file system")
+        override fun atomicMove(src: File, dst: File, replaceExisting: Boolean) {
+            if (!src.name.endsWith(".part") || src.parent != dst.parent) {
+                throw CrossDeviceException(src.path, dst.path)
             }
             MoveOps.Default.atomicMove(src, dst, replaceExisting)
         }
 
-        override fun copy(src: Path, dst: Path, progress: ((Long) -> Boolean)?) =
+        override fun copy(src: File, dst: File, progress: ((Long) -> Boolean)?) =
             MoveOps.Default.copy(src, dst, progress)
 
         override fun usableSpace(folder: File) = space
@@ -78,8 +77,8 @@ class TestFileMove {
     @Test
     fun copyFailsPartway_leavesSourceAndNoPartialFile() {
         val failing = object : OtherVolume() {
-            override fun copy(src: Path, dst: Path, progress: ((Long) -> Boolean)?) {
-                dst.toFile().writeBytes(content.copyOf(1000)) // partial write, then the drive fails
+            override fun copy(src: File, dst: File, progress: ((Long) -> Boolean)?) {
+                dst.writeBytes(content.copyOf(1000)) // partial write, then the drive fails
                 throw IOException("device disconnected")
             }
         }
@@ -122,12 +121,12 @@ class TestFileMove {
     fun crossVolume_reportsEachPhaseBeforeItsWork() {
         val calls = mutableListOf<String>()
         val recording = object : OtherVolume() {
-            override fun force(file: Path) {
-                calls.add("force ${file.fileName}")
+            override fun force(file: File) {
+                calls.add("force ${file.name}")
                 super.force(file)
             }
 
-            override fun copy(src: Path, dst: Path, progress: ((Long) -> Boolean)?) {
+            override fun copy(src: File, dst: File, progress: ((Long) -> Boolean)?) {
                 calls.add("copy")
                 super.copy(src, dst, progress)
             }
@@ -156,7 +155,7 @@ class TestFileMove {
     fun cancelledWhilePreparing_touchesNothing() {
         var flushed = false
         val recording = object : OtherVolume() {
-            override fun force(file: Path) {
+            override fun force(file: File) {
                 flushed = true
             }
         }
@@ -205,8 +204,8 @@ class TestFileMove {
     fun scratchFileIsNamedFromTheDownloadId() {
         val seen = mutableListOf<String>()
         val watching = object : OtherVolume() {
-            override fun copy(src: Path, dst: Path, progress: ((Long) -> Boolean)?) {
-                seen.add(dst.fileName.toString())
+            override fun copy(src: File, dst: File, progress: ((Long) -> Boolean)?) {
+                seen.add(dst.name)
                 MoveOps.Default.copy(src, dst, progress)
             }
         }
@@ -226,18 +225,18 @@ class TestFileMove {
     fun sameVolume_flushesSourceBeforeRename() {
         val calls = mutableListOf<String>()
         val recording = object : MoveOps by MoveOps.Default {
-            override fun force(file: Path) {
-                calls.add("force ${file.fileName}")
+            override fun force(file: File) {
+                calls.add("force ${file.name}")
                 MoveOps.Default.force(file)
             }
 
-            override fun atomicMove(src: Path, dst: Path, replaceExisting: Boolean) {
-                calls.add("move ${src.fileName}")
+            override fun atomicMove(src: File, dst: File, replaceExisting: Boolean) {
+                calls.add("move ${src.name}")
                 MoveOps.Default.atomicMove(src, dst, replaceExisting)
             }
 
-            override fun forceDirectory(dir: Path) {
-                calls.add("sync ${dir.fileName}")
+            override fun forceDirectory(dir: File) {
+                calls.add("sync ${dir.name}")
                 MoveOps.Default.forceDirectory(dir)
             }
         }
@@ -252,8 +251,8 @@ class TestFileMove {
     fun crossVolumeCopy_flushesDestinationFolderAfterRename() {
         val synced = mutableListOf<String>()
         val recording = object : OtherVolume() {
-            override fun forceDirectory(dir: Path) {
-                synced.add(dir.fileName.toString())
+            override fun forceDirectory(dir: File) {
+                synced.add(dir.name)
                 super.forceDirectory(dir)
             }
         }
@@ -264,7 +263,7 @@ class TestFileMove {
     @Test
     fun folderFlushFails_moveStillSucceeds() {
         val failing = object : MoveOps by MoveOps.Default {
-            override fun forceDirectory(dir: Path) = throw IOException("not supported")
+            override fun forceDirectory(dir: File) = throw IOException("not supported")
         }
         assertNull(FileUtils.moveFile(src, dst, failing), "the rename already happened, so the move succeeded")
         assertFalse(src.exists())
@@ -275,10 +274,10 @@ class TestFileMove {
     fun failedRename_doesNotFlushFolder() {
         var synced = false
         val recording = object : MoveOps by MoveOps.Default {
-            override fun atomicMove(src: Path, dst: Path, replaceExisting: Boolean) =
+            override fun atomicMove(src: File, dst: File, replaceExisting: Boolean) =
                 throw IOException("access denied")
 
-            override fun forceDirectory(dir: Path) {
+            override fun forceDirectory(dir: File) {
                 synced = true
             }
         }
@@ -289,7 +288,7 @@ class TestFileMove {
     @Test
     fun flushFails_keepsSourceAndPublishesNothing() {
         val failing = object : MoveOps by MoveOps.Default {
-            override fun force(file: Path) = throw IOException("device disconnected")
+            override fun force(file: File) = throw IOException("device disconnected")
         }
         assertEquals(DownloadError.OutputWriteError, FileUtils.moveFile(src, dst, failing))
         assertTrue(src.exists(), "source must survive for a retry")

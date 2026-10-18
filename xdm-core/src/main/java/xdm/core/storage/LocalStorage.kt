@@ -1,20 +1,12 @@
 package xdm.core.storage
 
 import xdm.core.util.FileUtils
-import xdm.core.util.Logger
 import xdm.core.util.MoveOps
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileNotFoundException
-import java.io.IOException
 import java.io.InputStream
 import java.io.RandomAccessFile
-import java.nio.file.AtomicMoveNotSupportedException
-import java.nio.file.FileAlreadyExistsException
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
-import java.nio.file.StandardOpenOption
-import java.util.EnumSet
 
 /** [Storage] on the local file system: a location is an absolute path. */
 object LocalStorage : Storage {
@@ -42,44 +34,17 @@ private class LocalFolder(private val dir: File) : StorageFolder {
     override fun open(name: String, create: Boolean): RandomAccessOutput {
         val file = f(name)
         if (!create && !file.isFile) throw FileNotFoundException(file.path)
-        if (create) createSparse(file)
+        // Sparse on NTFS: see NioFileOps.createSparse.
+        if (create) PlatformFiles.ops.createSparse(file)
         return LocalOutput(RandomAccessFile(file, "rw"))
-    }
-
-    /**
-     * Creates the file as sparse (NTFS; ignored elsewhere). Chunks write far into a preallocated file,
-     * and NTFS zero-fills everything below a write past the valid data length, so a normal file gets
-     * written almost twice. A sparse file skips the zero-fill.
-     */
-    private fun createSparse(file: File) {
-        if (file.exists()) return
-        try {
-            Files.newByteChannel(
-                file.toPath(),
-                EnumSet.of(StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE, StandardOpenOption.SPARSE)
-            ).close()
-        } catch (e: IOException) {
-            Logger.info("XDM", "Could not create sparse file, using a normal one: $e")
-        }
     }
 
     override fun openRead(name: String): InputStream = FileInputStream(f(name))
 
     override fun delete(name: String): Boolean = f(name).let { it.delete() || !it.exists() }
 
-    override fun rename(from: String, to: String, replace: Boolean) {
-        val src = f(from).toPath()
-        val dst = f(to).toPath()
-        // ATOMIC_MOVE replaces an existing target on POSIX even without REPLACE_EXISTING.
-        if (!replace && Files.exists(dst)) throw FileAlreadyExistsException(dst.toString())
-        val options = listOfNotNull(StandardCopyOption.REPLACE_EXISTING.takeIf { replace })
-        try {
-            Files.move(src, dst, *(options + StandardCopyOption.ATOMIC_MOVE).toTypedArray())
-        } catch (e: AtomicMoveNotSupportedException) {
-            // Same folder, so only on exotic file systems: a plain rename still moves no bytes.
-            Files.move(src, dst, *options.toTypedArray())
-        }
-    }
+    override fun rename(from: String, to: String, replace: Boolean) =
+        PlatformFiles.ops.rename(f(from), f(to), replace)
 
     override fun listFiles(): List<String> = dir.listFiles { f -> f.isFile }?.map { it.name } ?: emptyList()
 
@@ -94,9 +59,9 @@ private class LocalFolder(private val dir: File) : StorageFolder {
         -1
     }
 
-    override fun force(name: String) = MoveOps.force(f(name).toPath())
+    override fun force(name: String) = MoveOps.force(f(name))
 
-    override fun sync() = FileUtils.syncDirectory(dir.toPath())
+    override fun sync() = FileUtils.syncDirectory(dir)
 
     override fun equals(other: Any?) = other is LocalFolder && other.dir == dir
     override fun hashCode() = dir.hashCode()

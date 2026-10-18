@@ -79,7 +79,7 @@ data class HttpDownloadTaskInfo(
  * name, and with no real extension, so players and indexers leave it alone. HTTP writes it directly;
  * streaming appends the container extension to the muxed output.
  */
-fun partFileName(id: Long): String = ".${java.lang.Long.toUnsignedString(id, 16)}.xdm-part"
+fun partFileName(id: Long): String = ".${id.toULong().toString(16)}.xdm-part"
 
 abstract class StreamingDownloadTaskInfo(
     open val id: Long,

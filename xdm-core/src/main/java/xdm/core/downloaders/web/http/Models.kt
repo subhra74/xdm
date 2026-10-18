@@ -6,7 +6,6 @@ import xdm.core.network.http.HttpResponse
 import xdm.core.network.http.PoolingHttpClient
 import xdm.core.storage.RandomAccessOutput
 import xdm.core.storage.StorageFile
-import java.time.LocalDateTime
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
@@ -20,7 +19,7 @@ data class ChunkConfirmedData(
     val finalUrl: String?,
     val contentDisposition: String?,
     val contentType: String?,
-    val lastModified: LocalDateTime?,
+    val lastModifiedMillis: Long?,
     val isRedirect: Boolean,
     /** The response's Last-Modified, as sent (see [HttpTaskContext.validator]). */
     val validator: String?,

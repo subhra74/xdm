@@ -15,8 +15,7 @@ import xdm.core.util.Logger
 import xdm.core.util.ManifestUtils.downloadManifestAsFile
 import xdm.core.util.getFileExtFromUrl
 import java.io.File
-import java.nio.file.Files
-import java.nio.file.Paths
+import java.io.IOException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -319,7 +318,7 @@ abstract class StreamingDownloaderTask(
     fun getChunkTempFileName(chunk: StreamingChunk): String {
         val ext = getFileExtFromUrl(chunk.url) ?: ""
         val suffix = if (chunk.encrypted) ".enc" else ""
-        return Paths.get(context.tempFolder, "temp-${chunk.id}.tmp.$ext$suffix").toAbsolutePath().toString()
+        return File(context.tempFolder, "temp-${chunk.id}.tmp.$ext$suffix").absolutePath
     }
 
     private fun assembleSingle(outFile: StorageFile): Boolean {
@@ -341,8 +340,8 @@ abstract class StreamingDownloaderTask(
     private fun cleanup() {
         Logger.info("XDM", "Cleaning up temp files")
         try {
-            val folderPath = Paths.get(context.tempFolder)
-            if (!Files.exists(folderPath)) {
+            val folderPath = File(context.tempFolder)
+            if (!folderPath.exists()) {
                 return
             }
             FileUtils.deleteFolder(folderPath)
@@ -351,15 +350,22 @@ abstract class StreamingDownloaderTask(
         }
     }
 
+    /**
+     * Downloads the playlist at [url] to a temp file and hands it over through [manifestFile]. The file
+     * is not read here: a media playlist can list a very large number of segments, so the caller streams
+     * it (see [readManifestLines]) and must call [discardManifest] when done. A file that arrives after
+     * the caller has discarded [manifestFile] (it stopped waiting) is deleted here instead.
+     */
     protected fun loadManifest(
-        url: String, manifestContent: AtomicReference<Iterator<String>>, latch: CountDownLatch, error: AtomicBoolean
+        url: String, manifestFile: AtomicReference<File?>, latch: CountDownLatch, error: AtomicBoolean
     ) {
         executorService.submit {
             try {
                 downloadManifestAsFile(
                     context.httpClient, url, context.headers, context.cookie, context.stopFlag, recordFetchError
-                )?.let { file ->
-                    manifestContent.set(Files.lines(Paths.get(file)).iterator())
+                )?.let { path ->
+                    val file = File(path)
+                    if (!manifestFile.compareAndSet(null, file)) deleteManifestFile(file)
                 }
             } catch (ex: Exception) {
                 Logger.error("XDM", "Error downloading manifest", ex)
@@ -368,6 +374,22 @@ abstract class StreamingDownloaderTask(
                 latch.countDown()
             }
         }
+    }
+
+    /** Runs [block] over the lines of the manifest in [manifestFile], streaming and closing the file. */
+    protected fun <T> readManifestLines(manifestFile: AtomicReference<File?>, block: (Iterator<String>) -> T): T {
+        val file = manifestFile.get()?.takeIf { it !== DISCARDED_MANIFEST }
+            ?: throw IOException("Manifest was not downloaded")
+        return file.bufferedReader(Charsets.UTF_8).useLines { block(it.iterator()) }
+    }
+
+    /** Deletes the manifest temp file, if any, and makes a late [loadManifest] delete its own. */
+    protected fun discardManifest(manifestFile: AtomicReference<File?>) {
+        manifestFile.getAndSet(DISCARDED_MANIFEST)?.takeIf { it !== DISCARDED_MANIFEST }?.let(::deleteManifestFile)
+    }
+
+    private fun deleteManifestFile(file: File) {
+        if (!file.delete() && file.exists()) Logger.error("XDM", "Could not delete manifest temp file $file")
     }
 
     private fun onChunkProgress(pc: StreamingChunk, downloaded: Long) {
@@ -437,3 +459,6 @@ abstract class StreamingDownloaderTask(
         onChunkComplete(p, latch)
     }
 }
+
+/** Marks a manifest slot whose file was discarded; see [StreamingDownloaderTask.discardManifest]. */
+private val DISCARDED_MANIFEST = File("")

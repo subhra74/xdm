@@ -68,7 +68,7 @@ interface StorageFolder {
 
     /**
      * Renames the file [from] to [to] in this folder. Never copies. When [to] exists it is replaced if
-     * [replace], otherwise [java.nio.file.FileAlreadyExistsException] is thrown and [from] is untouched.
+     * [replace], otherwise [TargetExistsException] is thrown and [from] is untouched.
      */
     fun rename(from: String, to: String, replace: Boolean)
 

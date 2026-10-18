@@ -75,7 +75,7 @@ class HttpChunkRetriever(
                                 finalUrl = res.finalUrl,
                                 contentDisposition = res.contentDisposition,
                                 contentType = res.contentType,
-                                lastModified = res.lastModified,
+                                lastModifiedMillis = res.lastModifiedMillis,
                                 isRedirect = res.isRedirected,
                                 // Not the ETag: mirrors of the same file have their own ETags.
                                 validator = res.getHeader("Last-Modified"),

@@ -178,6 +178,8 @@ class BatchFileRetriever(
 
     private companion object {
         /** One buffer per worker thread, reused for every file it downloads. */
-        val BUFFER: ThreadLocal<ByteArray> = ThreadLocal.withInitial { ByteArray(256 * 1024) }
+        val BUFFER: ThreadLocal<ByteArray> = object : ThreadLocal<ByteArray>() {
+            override fun initialValue() = ByteArray(256 * 1024)
+        }
     }
 }

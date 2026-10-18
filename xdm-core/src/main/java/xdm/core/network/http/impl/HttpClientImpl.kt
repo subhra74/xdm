@@ -1,6 +1,8 @@
 package xdm.core.network.http.impl
 
 import okhttp3.*
+import okio.ByteString.Companion.decodeBase64
+import okio.ByteString.Companion.toByteString
 import xdm.core.CoreConfig
 import xdm.core.network.http.*
 import xdm.core.util.Logger
@@ -10,8 +12,6 @@ import java.net.Proxy
 import java.security.KeyStore
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
-import java.time.LocalDateTime
-import java.time.ZoneId
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -183,7 +183,7 @@ class HttpClientImpl @JvmOverloads constructor(
 
     private fun ntlmRequest(response: Response, header: String, scheme: String, message: ByteArray, attempt: NtlmAttempt) =
         response.request.newBuilder()
-            .header(header, scheme + " " + java.util.Base64.getEncoder().encodeToString(message))
+            .header(header, scheme + " " + message.toByteString().base64())
             .apply {
                 if (header == "Proxy-Authorization") tag(ProxyNtlm::class.java, ProxyNtlm(attempt))
                 else tag(ServerNtlm::class.java, ServerNtlm(attempt))
@@ -282,8 +282,7 @@ class HttpClientImpl @JvmOverloads constructor(
                 contentLength = if (body.contentLength() > 0) body.contentLength() else null,
                 contentType = body.contentType()?.let { "${it.type}/${it.subtype}" }
                     ?: response.header("Content-Type"),
-                lastModified = response.headers.getDate("Last-Modified")
-                    ?.let { LocalDateTime.ofInstant(it.toInstant(), ZoneId.systemDefault()) },
+                lastModifiedMillis = response.headers.getDate("Last-Modified")?.time,
                 inputStream = inputStreamBody,
                 isRedirected = redirected,
                 finalUrl = finalUrl,
@@ -361,7 +360,7 @@ private fun ntlmChallenge(response: Response, header: String): NtlmChallenge? {
     val entry = find("NTLM") ?: find("Negotiate") ?: return null
     val space = entry.indexOf(' ')
     if (space < 0) return NtlmChallenge(entry, null)
-    val token = runCatching { java.util.Base64.getDecoder().decode(entry.substring(space + 1).trim()) }.getOrNull()
+    val token = entry.substring(space + 1).trim().decodeBase64()?.toByteArray()
         ?.takeIf { Ntlm.isNtlmMessage(it) } ?: return null
     return NtlmChallenge(entry.substring(0, space), token)
 }
@@ -371,8 +370,7 @@ private fun encodeBasic(c: BasicCredentials): String = Credentials.basic(c.user,
 /** The pair inside a `Basic` authorization header, or null for none or another scheme (Bearer). */
 private fun decodeBasic(header: String?): BasicCredentials? {
     if (header == null || !header.startsWith("Basic ", ignoreCase = true)) return null
-    val decoded = runCatching { String(java.util.Base64.getDecoder().decode(header.substring(6).trim()), Charsets.UTF_8) }
-        .getOrNull() ?: return null
+    val decoded = header.substring(6).trim().decodeBase64()?.utf8() ?: return null
     val colon = decoded.indexOf(':')
     if (colon < 0) return null
     return BasicCredentials(decoded.substring(0, colon), decoded.substring(colon + 1))

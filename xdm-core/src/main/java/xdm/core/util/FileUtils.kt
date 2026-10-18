@@ -1,20 +1,15 @@
 package xdm.core.util
 
 import xdm.core.downloaders.DownloadError
+import xdm.core.storage.CrossDeviceException
+import xdm.core.storage.PlatformFiles
+import xdm.core.storage.TargetExistsException
 import xdm.core.storage.uniqueFileName
 import java.io.File
+import java.io.FileNotFoundException
 import java.io.IOException
+import java.io.RandomAccessFile
 import java.net.URLDecoder
-import java.nio.channels.FileChannel
-import java.nio.file.AtomicMoveNotSupportedException
-import java.nio.file.FileAlreadyExistsException
-import java.nio.file.FileSystems
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.nio.file.StandardOpenOption
-import java.nio.file.attribute.PosixFilePermissions
-import kotlin.use
 
 object FileUtils {
     /**
@@ -22,13 +17,7 @@ object FileUtils {
      * file). POSIX only; on Windows the user profile's inherited ACL already does this. Best effort:
      * a failure is logged and otherwise ignored.
      */
-    fun restrictToOwner(file: File) {
-        if (!FileSystems.getDefault().supportedFileAttributeViews().contains("posix")) return
-        runCatching {
-            val perms = if (file.isDirectory) "rwx------" else "rw-------"
-            Files.setPosixFilePermissions(file.toPath(), PosixFilePermissions.fromString(perms))
-        }.onFailure { Logger.error("XDM", "Unable to restrict $file to its owner", it) }
-    }
+    fun restrictToOwner(file: File) = PlatformFiles.ops.restrictToOwner(file)
 
     private val invalidChars = setOf('/', '\\', '"', '?', '*', '<', '>', ':', '|')
 
@@ -179,16 +168,16 @@ object FileUtils {
         }
         if (phase != null && !phase(MovePhase.PREPARING)) return DownloadError.Cancelled
         try {
-            ops.force(src.toPath())
+            ops.force(src)
         } catch (e: Exception) {
             Logger.error("XDM", "Could not flush $src before moving it", e)
             return DownloadError.OutputWriteError
         }
         try {
-            ops.atomicMove(src.toPath(), dst.toPath(), replaceExisting)
-            syncDirectory(dst.absoluteFile.parentFile.toPath(), ops)
+            ops.atomicMove(src, dst, replaceExisting)
+            syncDirectory(dst.absoluteFile.parentFile, ops)
             return null
-        } catch (_: AtomicMoveNotSupportedException) {
+        } catch (_: CrossDeviceException) {
             Logger.info("XDM", "Atomic move not possible, copying $src -> $dst")
         } catch (e: Exception) {
             Logger.error("XDM", "Move failed: $src -> $dst", e)
@@ -224,12 +213,12 @@ object FileUtils {
         if (phase != null && !phase(MovePhase.COPYING)) return DownloadError.Cancelled
         val part = File(folder, "${dst.name}.$id.part")
         return try {
-            ops.copy(src.toPath(), part.toPath(), progress)
+            ops.copy(src, part, progress)
             if (phase != null && !phase(MovePhase.FINALIZING)) throw CopyCancelledException()
-            ops.force(part.toPath())
-            if (dst.exists() && !replaceExisting) throw FileAlreadyExistsException(dst.path)
-            ops.atomicMove(part.toPath(), dst.toPath(), replaceExisting)
-            syncDirectory(folder.toPath(), ops)
+            ops.force(part)
+            if (dst.exists() && !replaceExisting) throw TargetExistsException(dst.path)
+            ops.atomicMove(part, dst, replaceExisting)
+            syncDirectory(folder, ops)
             null
         } catch (_: CopyCancelledException) {
             Logger.info("XDM", "Copy cancelled: $src -> $dst")
@@ -248,7 +237,7 @@ object FileUtils {
      * a folder there, so Windows is skipped. Never throws: by the time it runs the rename has
      * happened and cannot be undone, so a failure is only logged.
      */
-    fun syncDirectory(dir: Path, ops: MoveOps = MoveOps.Default) {
+    fun syncDirectory(dir: File, ops: MoveOps = MoveOps.Default) {
         if (PlatformUtils.isWindows) return
         try {
             ops.forceDirectory(dir)
@@ -257,24 +246,10 @@ object FileUtils {
         }
     }
 
-    fun deleteFolder(folder: String): Result<Unit> {
-        return deleteFolder(Paths.get(folder))
-    }
+    /** Deletes [folder] and everything under it without following symbolic links. */
+    fun deleteFolder(folder: String): Result<Unit> = deleteFolder(File(folder))
 
-    fun deleteFolder(folder: Path): Result<Unit> {
-        return runCatching {
-            Files.walk(folder).sorted(Comparator.reverseOrder()).use { files ->
-                files.forEach { f: Path ->
-                    try {
-                        Files.delete(f)
-                        Logger.info("XDM", "Successfully delete file : $f")
-                    } catch (e: IOException) {
-                        Logger.error("XDM", "Error deleting temp file: $f ", e)
-                    }
-                }
-            }
-        }
-    }
+    fun deleteFolder(folder: File): Result<Unit> = PlatformFiles.ops.deleteTree(folder)
 }
 
 /** Thrown by [MoveOps.copy] when the progress callback asks to stop. */
@@ -294,56 +269,45 @@ enum class MovePhase {
 
 /** File-system operations used by [FileUtils.moveFile]; replaceable in tests. */
 interface MoveOps {
-    /** Atomic rename; throws [java.nio.file.AtomicMoveNotSupportedException] across file systems. */
-    fun atomicMove(src: Path, dst: Path, replaceExisting: Boolean = false)
+    /** Atomic rename; throws [CrossDeviceException] across file systems. */
+    fun atomicMove(src: File, dst: File, replaceExisting: Boolean = false)
 
     /**
      * Copies [src] to [dst]. [progress] receives the running byte count and may return false to abort
      * with [CopyCancelledException]. Does not flush: [FileUtils.moveFile] forces the copy itself, so it
      * can report that step separately.
      */
-    fun copy(src: Path, dst: Path, progress: ((Long) -> Boolean)? = null)
+    fun copy(src: File, dst: File, progress: ((Long) -> Boolean)? = null)
     fun usableSpace(folder: File): Long
 
     /**
      * Flushes [file]'s data and metadata to stable storage. Opened for writing because Windows needs
      * write access to flush; metadata included because a sparse file allocates clusters as data arrives.
      */
-    fun force(file: Path) {
-        FileChannel.open(file, StandardOpenOption.WRITE).use { it.force(true) }
+    fun force(file: File) {
+        // "rw" would create a missing file, where flushing one that is not there must fail.
+        if (!file.isFile) throw FileNotFoundException(file.path)
+        RandomAccessFile(file, "rw").use { it.fd.sync() }
     }
 
     /** Flushes [dir]'s entries (Unix only; see [FileUtils.syncDirectory]). */
-    fun forceDirectory(dir: Path) {
-        FileChannel.open(dir, StandardOpenOption.READ).use { it.force(true) }
-    }
+    fun forceDirectory(dir: File) = PlatformFiles.ops.forceDirectory(dir)
 
     companion object Default : MoveOps {
         private const val COPY_BUFFER = 1 shl 20
 
-        override fun atomicMove(src: Path, dst: Path, replaceExisting: Boolean) {
-            // ATOMIC_MOVE replaces an existing target as part of the same operation, so an
-            // overwrite never leaves a window where neither file is present.
-            if (replaceExisting) {
-                Files.move(
-                    src, dst,
-                    java.nio.file.StandardCopyOption.ATOMIC_MOVE,
-                    java.nio.file.StandardCopyOption.REPLACE_EXISTING,
-                )
-            } else {
-                Files.move(src, dst, java.nio.file.StandardCopyOption.ATOMIC_MOVE)
-            }
-        }
+        override fun atomicMove(src: File, dst: File, replaceExisting: Boolean) =
+            PlatformFiles.ops.moveAtomic(src, dst, replaceExisting)
 
         /**
-         * Hand-rolled rather than [Files.copy] so the copy can report progress and be cancelled. The
+         * Hand-rolled rather than `Files.copy` so the copy can report progress and be cancelled. The
          * caller forces the result to disk before renaming it into place: without that, a power loss
          * can publish a truncated file under the real name, which is worse than failing outright
          * because the user believes the download succeeded.
          */
-        override fun copy(src: Path, dst: Path, progress: ((Long) -> Boolean)?) {
-            java.io.FileInputStream(src.toFile()).use { input ->
-                java.io.FileOutputStream(dst.toFile()).use { output ->
+        override fun copy(src: File, dst: File, progress: ((Long) -> Boolean)?) {
+            java.io.FileInputStream(src).use { input ->
+                java.io.FileOutputStream(dst).use { output ->
                     val buffer = ByteArray(COPY_BUFFER)
                     var copied = 0L
                     while (true) {

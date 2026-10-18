@@ -1,25 +1,26 @@
 package xdm.core.util
 
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.TimeZone
 import kotlin.math.ceil
 
 object FormatHelper {
-    private val shortFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("MMM dd")
-    private val longFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
+    // SimpleDateFormat is not thread-safe: only used under formatDateShort's lock.
+    private val shortFormat = SimpleDateFormat("MMM dd")
+    private val longFormat = SimpleDateFormat("dd MMM yyyy")
     private const val GB: Int = 1024 * 1024 * 1024
     private const val MB: Int = 1024 * 1024
     private const val KB: Int = 1024
 
     @Synchronized
     fun formatDateShort(epoch: Long): String {
-        val date = Instant.ofEpochMilli(epoch).atZone(ZoneId.systemDefault()).toLocalDate()
-        if (date.year == LocalDate.now().year) {
-            return shortFormat.format(date)
-        }
-        return longFormat.format(date)
+        val year = Calendar.getInstance().apply { timeInMillis = epoch }.get(Calendar.YEAR)
+        val format = if (year == Calendar.getInstance().get(Calendar.YEAR)) shortFormat else longFormat
+        // Re-read the zone each call, as java.time's systemDefault() did.
+        format.timeZone = TimeZone.getDefault()
+        return format.format(Date(epoch))
     }
 
     fun hms(seconds: Int): String {
@@ -48,7 +49,7 @@ object FormatHelper {
         if (hrs == 0L && min == 0L) {
             arr.add(sec.toString() + "s")
         }
-        return java.lang.String.join(" ", arr)
+        return arr.joinToString(" ")
     }
 
     fun getEtaAsSec(length: Double, rate: Float): Long {

@@ -1,5 +1,6 @@
 package xdm.core.util
 
+import xdm.core.storage.PlatformFiles
 import java.io.BufferedOutputStream
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
@@ -7,12 +8,6 @@ import java.io.DataOutputStream
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
-import java.nio.file.AtomicMoveNotSupportedException
-import java.nio.file.FileSystems
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
-import java.nio.file.attribute.PosixFilePermission
-import java.nio.file.attribute.PosixFilePermissions
 
 /**
  * Crash-safe storage for the app's small binary files (config, download lists, schedule, `.state`,
@@ -67,27 +62,18 @@ object AtomicIO {
      */
     @PublishedApi
     internal fun commit(tmp: File, finalFile: File, backup: File) {
+        val fs = PlatformFiles.ops
         if (finalFile.isFile) {
-            runCatching { Files.move(finalFile.toPath(), backup.toPath(), StandardCopyOption.REPLACE_EXISTING) }
+            runCatching { fs.rename(finalFile, backup, replace = true) }
                 .onFailure { Logger.error("XDM", "Unable to keep backup $backup", it) }
         }
-        try {
-            Files.move(tmp.toPath(), finalFile.toPath(), StandardCopyOption.ATOMIC_MOVE)
-        } catch (_: AtomicMoveNotSupportedException) {
-            Files.move(tmp.toPath(), finalFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
-        }
-        FileUtils.syncDirectory(finalFile.absoluteFile.parentFile.toPath())
+        // Atomic where the file system can, a plain replacing rename otherwise.
+        fs.rename(tmp, finalFile, replace = true)
+        FileUtils.syncDirectory(finalFile.absoluteFile.parentFile)
     }
-
-    private val ownerOnlyPermissions: Set<PosixFilePermission> =
-        PosixFilePermissions.fromString("rw-------")
 
     @PublishedApi
-    internal fun createOwnerOnly(file: File) {
-        if (!FileSystems.getDefault().supportedFileAttributeViews().contains("posix")) return
-        Files.deleteIfExists(file.toPath())
-        Files.createFile(file.toPath(), PosixFilePermissions.asFileAttribute(ownerOnlyPermissions))
-    }
+    internal fun createOwnerOnly(file: File) = PlatformFiles.ops.createOwnerOnly(file)
 
     /**
      * Whether [readTransacted] has anything to read: true if `<name>` or either backup exists. Use it

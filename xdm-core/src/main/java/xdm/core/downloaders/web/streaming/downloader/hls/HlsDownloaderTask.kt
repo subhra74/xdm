@@ -90,16 +90,16 @@ class HlsDownloaderTask : StreamingDownloaderTask {
         context.hasSeparateStreams = hlsContext.audioUrl != null
         //val independent = context.independent //In case master playlist contain #EXT-X-INDEPENDENT-SEGMENTS
         val latch = CountDownLatch(if (context.hasSeparateStreams) 2 else 1)
-        val videoManifestContent = AtomicReference<Iterator<String>>()
-        val audioManifestContent = AtomicReference<Iterator<String>>()
+        val videoManifest = AtomicReference<File?>()
+        val audioManifest = AtomicReference<File?>()
         val error = AtomicBoolean(false)
-        loadManifest(hlsContext.url, videoManifestContent, latch, error)
+        loadManifest(hlsContext.url, videoManifest, latch, error)
         if (context.hasSeparateStreams) {
-            loadManifest(hlsContext.audioUrl!!, audioManifestContent, latch, error)
+            loadManifest(hlsContext.audioUrl!!, audioManifest, latch, error)
         }
         try {
             if (!awaitUnlessStopped(latch)) return null
-            val (videoPlaylist, audioPlaylist) = parseManifest(videoManifestContent, audioManifestContent)
+            val (videoPlaylist, audioPlaylist) = parseManifest(videoManifest, audioManifest)
             if (!context.independent) {
                 context.independent = videoPlaylist.independent
             }
@@ -162,6 +162,10 @@ class HlsDownloaderTask : StreamingDownloaderTask {
             Logger.error("XDM", "Error downloading manifests", e)
             error.set(true)
             return null
+        } finally {
+            // Also on a stop: a manifest still downloading is then deleted when it arrives.
+            discardManifest(videoManifest)
+            discardManifest(audioManifest)
         }
     }
 
@@ -179,13 +183,15 @@ class HlsDownloaderTask : StreamingDownloaderTask {
     override fun hasDiscontinuity() = (context as HlsTaskContext).discontinuous
 
     private fun parseManifest(
-        videoManifestContent: AtomicReference<Iterator<String>>, audioManifestContent: AtomicReference<Iterator<String>>
+        videoManifest: AtomicReference<File?>, audioManifest: AtomicReference<File?>
     ): Pair<HlsPlaylist, HlsPlaylist?> {
-        val videoPlaylist =
-            HlsParser.parseMediaSegments(videoManifestContent.get(), (context as HlsTaskContext).url).getOrThrow()
+        val hlsContext = context as HlsTaskContext
+        val videoPlaylist = readManifestLines(videoManifest) {
+            HlsParser.parseMediaSegments(it, hlsContext.url).getOrThrow()
+        }
         var audioPlaylist: HlsPlaylist? = null
-        context.audioUrl?.let {
-            audioPlaylist = HlsParser.parseMediaSegments(audioManifestContent.get(), it).getOrThrow()
+        hlsContext.audioUrl?.let { url ->
+            audioPlaylist = readManifestLines(audioManifest) { HlsParser.parseMediaSegments(it, url).getOrThrow() }
         }
         return Pair(videoPlaylist, audioPlaylist)
     }

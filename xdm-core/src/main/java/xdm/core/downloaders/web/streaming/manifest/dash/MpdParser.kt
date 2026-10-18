@@ -4,10 +4,12 @@ package xdm.core.downloaders.web.streaming.manifest.dash
 import org.w3c.dom.Element
 import org.w3c.dom.Node
 import xdm.core.downloaders.web.streaming.manifest.common.resolveUri
+import xdm.core.util.Logger
 import java.io.InputStream
 import java.net.URI
 import javax.xml.XMLConstants
 import javax.xml.parsers.DocumentBuilderFactory
+import javax.xml.parsers.ParserConfigurationException
 
 
 /**
@@ -91,9 +93,24 @@ fun parseMpdManifest(
     return mediaList
 }
 
+@Volatile
+private var secureProcessingUnsupportedLogged = false
+
+/**
+ * Secure processing where the platform supports it. Android's built-in factory accepts only the
+ * namespaces and validation features and throws for any other, so without the fallback every MPD
+ * would fail to parse there; its DocumentBuilder never resolves external entities or DTDs anyway.
+ */
 private fun newSecureFactory(): DocumentBuilderFactory {
     val factory = DocumentBuilderFactory.newInstance()
-    factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
+    try {
+        factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
+    } catch (e: ParserConfigurationException) {
+        if (!secureProcessingUnsupportedLogged) {
+            secureProcessingUnsupportedLogged = true
+            Logger.info("XDM", "XML secure processing not supported by ${factory.javaClass.name}: ${e.message}")
+        }
+    }
     factory.isNamespaceAware = false
     return factory
 }

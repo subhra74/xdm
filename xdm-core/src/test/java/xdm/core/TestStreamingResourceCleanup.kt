@@ -1,5 +1,6 @@
 package xdm.core
 
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import xdm.core.downloaders.HlsDownloadTaskInfo
@@ -111,6 +112,38 @@ maxPiece = 0, authInfo = null,
                 waitFor(3000) { downloadThreads().isEmpty() }
             , "download thread still parked on the segment latch after Pause")
             assertTrue(waitFor(3000) { client.closeCount.get() >= 1 }, "HTTP client not closed after pause")
+        } finally {
+            slow.stop()
+        }
+    }
+
+    @Test
+    fun hlsInit_deletesManifestTempFile() {
+        val slow = MockHttpServer()
+        try {
+            val segCount = 4
+            val playlist = buildString {
+                append("#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:1\n#EXT-X-MEDIA-SEQUENCE:0\n")
+                repeat(segCount) { append("#EXTINF:1.0,\n").append(slow.url("/s%02d.ts".format(it))).append('\n') }
+                append("#EXT-X-ENDLIST\n")
+            }
+            slow.register("/index.m3u8", Endpoint(playlist.toByteArray()))
+            repeat(segCount) {
+                slow.register("/s%02d.ts".format(it), Endpoint(ByteArray(256 * 1024), plan = {
+                    ConnPlan(throttleChunk = 4 * 1024, throttleSleepMs = 50)
+                }))
+            }
+            val tmp = File(System.getProperty("java.io.tmpdir"))
+            fun manifests() = tmp.list { _, n -> n.endsWith(".m3u8") }?.toSet() ?: emptySet()
+            val before = manifests()
+
+            val (task, h) = hlsTask("manifest-tmp", slow.url("/index.m3u8"), CountingHttpClient(), maxSegments = 2)
+            task.start()
+            assertTrue(waitFor(10_000) { h.initInfo != null }, "init never finished")
+            assertEquals(before, manifests(), "manifest temp file left behind after init")
+
+            task.stop()
+            assertTrue(h.latch.await(10, TimeUnit.SECONDS), "pause not acknowledged")
         } finally {
             slow.stop()
         }
