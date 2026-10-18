@@ -188,7 +188,7 @@ class TestHttpDownloadIntegrity : HttpDownloadTestBase() {
 
     /** The `.state` the download has saved so far, read from disk. */
     private fun savedState(id: Long, host: TestDownloadHost) =
-        AtomicIO.readTransacted("$id.state", work.absolutePath) { readContext(it, host) }.getOrThrow()
+        AtomicIO.readTransacted("$id.state", work.absolutePath) { readContext(it, host, "", "") }.getOrThrow()
 
     /**
      * `.state` may only record progress whose data has been forced to disk: after a power cut, data

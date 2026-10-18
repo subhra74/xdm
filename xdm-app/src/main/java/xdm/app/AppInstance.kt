@@ -81,10 +81,13 @@ interface IAppInstance {
     fun showProgressError(id: Long, error: DownloadError)
 
     /** Drives the progress window through the publish phase, where download events have stopped. */
-    fun updatePublishProgress(id: Long, phase: MovePhase, prg: Int)
+    fun updateMoveProgress(id: Long, phase: MovePhase, prg: Int)
 
-    /** Advisory: the temp volume looks too small for a download that is starting. */
-    fun showTempSpaceWarning(tempFolder: String, needed: Long, free: Long)
+    /**
+     * Advisory: the volume a starting download writes to looks too small. [isTempFolder] says whether that
+     * is the temp folder (HLS/DASH segments) or the download's own folder (HTTP).
+     */
+    fun showSpaceWarning(folder: String, needed: Long, free: Long, isTempFolder: Boolean)
 
     fun updateProgressWindow(
         id: Long,
@@ -337,17 +340,17 @@ class AppInstance : IAppInstance {
         runOnUIThread { prgWndMap[id]?.updateProgress(fileName, downloaded, size, speed, eta, prg, segData, files) }
     }
 
-    override fun updatePublishProgress(id: Long, phase: MovePhase, prg: Int) {
-        runOnUIThread { prgWndMap[id]?.showPublishing(phase, prg) }
+    override fun updateMoveProgress(id: Long, phase: MovePhase, prg: Int) {
+        runOnUIThread { prgWndMap[id]?.showMoving(phase, prg) }
     }
 
-    override fun showTempSpaceWarning(tempFolder: String, needed: Long, free: Long) {
+    override fun showSpaceWarning(folder: String, needed: Long, free: Long, isTempFolder: Boolean) {
         runOnUIThread {
             MessageBox.show(
                 appWindow,
                 text("TITLE_TEMP_SPACE_LOW"),
-                text("MSG_TEMP_SPACE_LOW")
-                    .replace("%folder%", tempFolder)
+                text(if (isTempFolder) "MSG_TEMP_SPACE_LOW" else "MSG_TARGET_SPACE_LOW")
+                    .replace("%folder%", folder)
                     .replace("%needed%", formatSize(needed.toDouble()))
                     .replace("%free%", formatSize(free.toDouble())),
             )

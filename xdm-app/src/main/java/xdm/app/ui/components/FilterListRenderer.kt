@@ -91,12 +91,12 @@ class FilterListRenderer(private val countOf: (FilterItem) -> Int?) : ListCellRe
  * The small rounded square that stands for a file type in the sidebar, padded to the width of
  * the state icons so the labels of both lists line up.
  */
-class CategoryDotIcon(private val color: Color, private val boxSize: Int = 16) : Icon {
+class CategoryDotIcon(private val color: Color, private val boxSize: Int = 16, private val dotSize: Int = 7) : Icon {
     override fun getIconWidth(): Int = boxSize.px
     override fun getIconHeight(): Int = boxSize.px
 
     override fun paintIcon(c: Component?, g: Graphics, x: Int, y: Int) {
-        val d = 7.px
+        val d = dotSize.px
         val g2 = g.create() as Graphics2D
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
         g2.color = color

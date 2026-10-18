@@ -3,7 +3,6 @@ package xdm.app
 import xdm.app.utils.DownloadSource
 import xdm.app.utils.KeepAwake
 // import xdm.app.utils.WorkingSetTrim  // working-set trimming disabled
-import xdm.app.utils.categoryFolderFor
 import xdm.app.utils.getFileFolder
 import xdm.app.utils.isUsableBatchFolder
 import xdm.core.downloaders.*
@@ -11,7 +10,6 @@ import xdm.core.downloaders.web.batch.BatchDownloaderTask
 import xdm.core.downloaders.web.batch.deleteBatchFiles
 import xdm.core.downloaders.web.batch.deleteBatchPartFiles
 import xdm.core.downloaders.web.batch.loadBatchState
-import xdm.core.downloaders.web.getTempFileFolder
 import xdm.core.downloaders.web.http.ChunkStatus
 import xdm.core.downloaders.web.http.HttpDownloaderTask
 import xdm.core.downloaders.web.readContext
@@ -34,7 +32,28 @@ import java.awt.SystemTray
 import java.awt.TrayIcon
 import java.io.File
 import java.io.FileNotFoundException
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.util.concurrent.ConcurrentHashMap
+
+/** What Change folder would do for a download (docs/download-categories.md §6.1). */
+enum class ChangeFolderPlan {
+    /** The download is running, queued or moving: Change folder is not offered. */
+    NOT_ALLOWED,
+    /** The chosen folder is the current one: nothing to do. */
+    SAME,
+    /** Copy the part file over (or, with nothing on disk yet, just record the folder). */
+    MOVE,
+    /**
+     * The part file is not there (e.g. its drive is disconnected): nothing to copy. The user reconnects
+     * the drive and resumes, or restarts the download.
+     */
+    PART_UNAVAILABLE,
+}
+
+/** How a Change folder ended. */
+enum class ChangeFolderResult { DONE, CANCELLED, NO_SPACE, FAILED }
 
 interface IDownloadManager {
     fun stopDownload(id: Long)
@@ -44,7 +63,7 @@ interface IDownloadManager {
     fun startHttpDownload(task: HttpDownloadTaskInfo, runNow: Boolean = true)
     /** [maxPiece] is the segment count picked in the dialog; null keeps the captured video's own. */
     fun addVideoDownload(
-        videoId: Long, fileName: String, folder: String?, autoSelectFolder: Boolean, maxPiece: Int? = null
+        videoId: Long, fileName: String, categoryId: String?, targetFolder: String, maxPiece: Int? = null
     )
     fun startHlsDownload(task: HlsDownloadTaskInfo)
     fun startDashDownload(task: DashDownloadTaskInfo)
@@ -67,6 +86,16 @@ interface IDownloadManager {
      * the link can only be refreshed by hand.
      */
     fun getRefererPage(id: Long): String?
+
+    /** What [changeFolder] would do for [id] and [folder]. */
+    fun changeFolderPlan(id: Long, folder: String): ChangeFolderPlan
+
+    /** Moves a stopped download to [folder] in the background; [done] runs on the moving thread when it ends. */
+    fun changeFolder(id: Long, folder: String, done: (ChangeFolderResult) -> Unit)
+
+    /** True while Change folder is moving [id]; it cannot be deleted or resumed meanwhile. */
+    fun isMoving(id: Long): Boolean
+
 }
 
 /** Builds the engine task for a persisted download, or returns null if its task info is missing. */
@@ -94,7 +123,10 @@ class DownloadManager(
      * Downloads whose publish the user asked to stop. The copy runs on the downloader's thread and
      * cannot see the task's stop flag from here, so the cancel request is tracked alongside it.
      */
-    private val publishCancelled: MutableSet<Long> = ConcurrentHashMap.newKeySet()
+    private val moveCancelled: MutableSet<Long> = ConcurrentHashMap.newKeySet()
+
+    /** Downloads Change folder is moving right now. */
+    private val moving: MutableSet<Long> = ConcurrentHashMap.newKeySet()
     private val activeSessions = ConcurrentHashMap<Long, DownloaderTask>()
     private val downloadHost = object : DownloadHost {
         override fun onDownloadActivated(id: Long) {
@@ -141,7 +173,7 @@ class DownloadManager(
                     }
                 }
                 AppContext.app.updateDownloadInView(data.id)
-                warnIfTempVolumeIsShort(data.id, data.fileSize)
+                warnIfVolumeIsShort(data.id, data.fileSize, downloadType)
             }
         }
 
@@ -212,7 +244,6 @@ class DownloadManager(
                 // The working folder has served its purpose; leaving it behind would litter the
                 // temp folder with one empty directory per completed download.
                 deleteTempFolders(event.id)
-                File(configDir, "${event.id}.out").delete()
                 // Before the record turns FINISHED, so nothing (the dialog, "Open", the virus scan,
                 // the custom command) can reach the file unmarked.
                 if (AppContext.config.markDownloadedFiles) markDownloaded(event)
@@ -296,45 +327,48 @@ class DownloadManager(
             get() = if (AppContext.config.speedLimit > 0) AppContext.config.speedLimit else -1
 
         /**
-         * Working data goes to `<config temp folder>/<id>`, never to the destination. The
-         * destination is resolved only at publish, so renaming or re-categorizing a running
-         * download moves nothing on disk. See FILE_PLACEMENT.md.
+         * Kept in the interface (unused by HTTP, which derives its part file from the task's target folder):
+         * the per-download working folder under the temp folder.
          */
         override fun getTempDir(id: Long, url: String, contentType: String?, contentDisposition: String?): String =
             tempDirFor(id).absolutePath
 
         /**
-         * Moves the finished file into [folderPath] under a unique name derived from [fileName]. Never
-         * overwrites an existing file: if one appears between choosing the name and moving, the next
-         * unique name is tried. Works across drives (see [FileUtils.moveFile]).
+         * Publishes the part file [partPath] under its real name in [folderPath], the folder it is already
+         * in. The final name is resolved now ([resolveConflict]), so the clash window is milliseconds.
+         * A same-folder rename never copies; one that fails (a Windows sharing violation from antivirus or
+         * sync, a name taken in the meantime) is retried, and on failure the part file is left as it is.
          */
-        private fun renameFile(
-            id: Long, fileName: String, folderPath: String, tmpFilePath: String, callback: (
-                finalName: String, folder: String
-            ) -> Unit
+        private fun publishInFolder(
+            fileName: String, folderPath: String, partPath: String, callback: (finalName: String, folder: String) -> Unit
         ): CommitResult {
             val folder = File(folderPath)
-            if (!folder.isDirectory && !folder.mkdirs()) {
-                Logger.error("XDM", "Unable to create output dir: $folderPath")
-                return CommitResult.Failed(DownloadError.OutputWriteError)
-            }
-            val tmpFile = File(tmpFilePath)
-            var error: DownloadError = DownloadError.OutputWriteError
-            repeat(3) {
-                val resolved = resolveConflict(folder, fileName)
+            val part = File(partPath)
+            repeat(PUBLISH_ATTEMPTS) { attempt ->
+                if (attempt > 0) Thread.sleep(PUBLISH_RETRY_MS * attempt)
+                val (finalName, replace) = resolveConflict(folder, fileName)
                     ?: return CommitResult.Failed(DownloadError.OutputWriteError)
-                val (finalName, replace) = resolved
-                val outFile = File(folder, finalName)
-                error = publish(id, tmpFile, outFile, replace) ?: run {
-                    Logger.info("Success moving file: $tmpFile -> ${outFile.absolutePath}")
+                val out = File(folder, finalName)
+                try {
+                    val options = if (replace) {
+                        arrayOf(StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+                    } else {
+                        arrayOf(StandardCopyOption.ATOMIC_MOVE)
+                    }
+                    try {
+                        Files.move(part.toPath(), out.toPath(), *options)
+                    } catch (e: AtomicMoveNotSupportedException) {
+                        // Same folder, so this only happens on exotic file systems: a plain rename still moves no bytes.
+                        Files.move(part.toPath(), out.toPath(), *options.filter { it != StandardCopyOption.ATOMIC_MOVE }.toTypedArray())
+                    }
+                    Logger.info("Published $part -> $out")
                     callback(finalName, folder.absolutePath)
                     return CommitResult.Success(fileName = finalName, outputDir = folder.absolutePath)
+                } catch (e: Exception) {
+                    Logger.error("XDM", "Unable to publish $part as $out (attempt ${attempt + 1})", e)
                 }
-                // A cancelled publish is the user's choice, not a retryable failure.
-                if (error == DownloadError.Cancelled) return CommitResult.Failed(error)
-                if (!outFile.exists()) return CommitResult.Failed(error)
             }
-            return CommitResult.Failed(error)
+            return CommitResult.Failed(DownloadError.OutputWriteError)
         }
 
         /**
@@ -356,48 +390,25 @@ class DownloadManager(
             }
         }
 
-        /**
-         * Moves the finished file into place, reporting progress while it does. A same-volume move
-         * is a rename and finishes instantly; a cross-volume one copies, which for a large file is
-         * long enough that it needs its own status, a progress bar and a working cancel.
-         */
-        private fun publish(id: Long, src: File, dst: File, replace: Boolean): DownloadError? {
-            val total = src.length().coerceAtLeast(1)
-            return FileUtils.moveFile(
-                src, dst, id = id, replaceExisting = replace,
-                progress = { copied ->
-                    updatePublishProgress(id, (copied * 100 / total).toInt())
-                    !publishCancelled.contains(id)
-                },
-                phase = { enterPublishPhase(id, it) },
-            )
-        }
-
         override fun commitOutputFile(id: Long, tmpFilePath: String, downloadType: DownloadType): CommitResult {
             when (downloadType) {
                 DownloadType.Http -> taskInfoDB.getHttpTask(id)?.let { t ->
-                    return renameFile(id, t.fileName, outputFolder(t.fileName, t.defaultDownloadFolder, t.autoCategorize), tmpFilePath) { finalName, finalFolder ->
+                    return publishInFolder(t.fileName, t.targetFolder, tmpFilePath) { finalName, _ ->
                         t.fileName = finalName
-                        t.defaultDownloadFolder = finalFolder
-                        t.autoCategorize = false
                         taskInfoDB.saveHttpTask(t)
                     }
                 }
 
                 DownloadType.Hls -> taskInfoDB.getHlsTask(id)?.let { t ->
-                    return renameFile(id, t.fileName, outputFolder(t.fileName, t.defaultDownloadFolder, t.autoCategorize), tmpFilePath) { finalName, finalFolder ->
+                    return publishInFolder(t.fileName, t.targetFolder, tmpFilePath) { finalName, _ ->
                         t.fileName = finalName
-                        t.defaultDownloadFolder = finalFolder
-                        t.autoCategorize = false
                         taskInfoDB.saveHlsTask(t)
                     }
                 }
 
                 DownloadType.Dash -> taskInfoDB.getDashTask(id)?.let { t ->
-                    return renameFile(id, t.fileName, outputFolder(t.fileName, t.defaultDownloadFolder, t.autoCategorize), tmpFilePath) { finalName, finalFolder ->
+                    return publishInFolder(t.fileName, t.targetFolder, tmpFilePath) { finalName, _ ->
                         t.fileName = finalName
-                        t.defaultDownloadFolder = finalFolder
-                        t.autoCategorize = false
                         taskInfoDB.saveDashTask(t)
                     }
                 }
@@ -410,18 +421,14 @@ class DownloadManager(
             return CommitResult.Failed(DownloadError.InternalError)
         }
 
-        override fun outputFilePath(id: Long, downloadType: DownloadType, ext: String): String? {
-            // Resolve first so HTTP still gets null; only streaming has a muxed output to record.
-            val resolved = streamingOutputPath(id, downloadType, ext) ?: return null
-            return recordedOutputPath(id) ?: resolved.also { recordOutputPath(id, it) }
-        }
+        override fun outputFilePath(id: Long, downloadType: DownloadType, ext: String): String? =
+            streamingOutputPath(id, downloadType, ext)
     }
 
     /**
-     * Streaming downloads mux straight into their destination folder (category subfolder included) as
-     * a `.<id>.xdm-part<ext>` file, so the commit is a same-folder rename even when the temp
-     * folder is on another drive. The name depends only on the id, so a retry reuses it. Null for
-     * HTTP, which keeps its temp file in the download folder.
+     * Streaming downloads mux straight into their target folder as `.<hexid>.xdm-part<ext>`, so the
+     * commit is a same-folder rename. Derived from the task info every time; the target folder only
+     * changes through Change folder. Null for HTTP, which writes its part file directly.
      */
     private fun streamingOutputPath(id: Long, downloadType: DownloadType, ext: String): String? {
         val task: StreamingDownloadTaskInfo = when (downloadType) {
@@ -429,47 +436,42 @@ class DownloadManager(
             DownloadType.Dash -> taskInfoDB.getDashTask(id)
             else -> null
         } ?: return null
-        val folder = outputFolder(task.fileName, task.defaultDownloadFolder, task.autoCategorize)
-        return File(folder, ".$id.xdm-part$ext").absolutePath
+        return File(task.targetFolder, partFileName(id) + ext).absolutePath
     }
 
-    private fun outputFolder(fileName: String, folder: String, autoCategorize: Boolean) =
-        if (autoCategorize) categoryFolderFor(fileName, folder) else folder
-
     /**
-     * Warns once, at the start, when the temp volume cannot hold the file. This is the check that
-     * matters now that every download accumulates in the temp folder — the destination is only
-     * checked at publish, and by then the bytes have already been written somewhere.
+     * Warns once, at the start, when the volume the bytes land on cannot hold the file: the target folder
+     * for HTTP, which writes there directly, and the temp folder for HLS/DASH, whose segments go there
+     * first.
      *
      * It warns rather than refusing: a server's Content-Length is sometimes wrong, and blocking a
      * download over a bad number is worse than letting it try and fail honestly.
      */
-    private fun warnIfTempVolumeIsShort(id: Long, fileSize: Long?) {
+    private fun warnIfVolumeIsShort(id: Long, fileSize: Long?, type: DownloadType) {
         val size = fileSize ?: return
         if (size <= 0) return
-        val free = runCatching { tempDirFor(id).usableSpace }.getOrNull() ?: return
+        val (folder, isTemp) = when (type) {
+            DownloadType.Http -> (taskInfoDB.getHttpTask(id)?.targetFolder ?: return) to false
+            else -> tempDirFor(id).absolutePath to true
+        }
+        val free = runCatching { File(folder).usableSpace }.getOrNull()?.takeIf { it > 0 } ?: return
         if (free >= size) return
-        Logger.error(
-            "XDM",
-            "Temp volume has $free bytes free, download $id needs $size: ${AppContext.config.tempFolder}"
-        )
-        AppContext.app.showTempSpaceWarning(AppContext.config.tempFolder, size, free)
+        Logger.error("XDM", "Volume of $folder has $free bytes free, download $id needs $size")
+        AppContext.app.showSpaceWarning(folder, size, free, isTemp)
     }
 
     /**
-     * Shows that the publish of [id] entered [phase], and returns whether it may go on. The cancel check
+     * Shows that the move of [id] entered [phase], and returns whether it may go on. The cancel check
      * and the switch to [MovePhase.FINALIZING] share the [appDB] lock with [stopDownload]'s check, so a
-     * pause either cancels the move or is refused: it can never land after the point of no return, where
-     * the paused row would hide a file that was published anyway.
+     * cancel either stops the move or is refused: it can never land after the point of no return.
      */
-    private fun enterPublishPhase(id: Long, phase: MovePhase): Boolean {
+    private fun enterMovePhase(id: Long, phase: MovePhase): Boolean {
         val progress = if (phase == MovePhase.FINALIZING) 100 else 0
         val shown = synchronized(appDB) {
-            if (publishCancelled.contains(id)) return false
-            // A stopped session has already reported its pause; do not flip its row back.
-            if (!activeSessions.containsKey(id)) return@synchronized false
+            if (moveCancelled.contains(id)) return false
+            if (!moving.contains(id)) return@synchronized false
             appDB.getById(id)?.let {
-                it.status = RecordStatus.PUBLISHING
+                it.status = RecordStatus.MOVING
                 it.movePhase = phase
                 it.progress = progress
                 it.speed = 0.0f
@@ -480,15 +482,15 @@ class DownloadManager(
         }
         if (shown) {
             AppContext.app.updateDownloadInView(id)
-            AppContext.app.updatePublishProgress(id, phase, progress)
+            AppContext.app.updateMoveProgress(id, phase, progress)
         }
         return true
     }
 
-    private fun updatePublishProgress(id: Long, percent: Int) {
+    private fun updateMoveProgress(id: Long, percent: Int) {
         val changed = synchronized(appDB) {
             appDB.getById(id)?.let {
-                if (it.status != RecordStatus.PUBLISHING || it.progress == percent) false else {
+                if (it.status != RecordStatus.MOVING || it.progress == percent) false else {
                     it.progress = percent
                     true
                 }
@@ -496,7 +498,7 @@ class DownloadManager(
         }
         if (changed) {
             AppContext.app.updateDownloadInView(id)
-            AppContext.app.updatePublishProgress(id, MovePhase.COPYING, percent)
+            AppContext.app.updateMoveProgress(id, MovePhase.COPYING, percent)
         }
     }
 
@@ -504,48 +506,32 @@ class DownloadManager(
     private fun tempDirFor(id: Long) = File(AppContext.config.tempFolder, id.toString()).apply { mkdirs() }
 
     /**
-     * Deletes a download's working folder: the one recorded in its state when it started, and the
-     * one under the current temp folder. They differ when the temp folder was changed while the
-     * download was running or paused. The recorded folder is only deleted when it is named after
-     * the id; downloads from before the temp-folder change recorded their download folder there.
+     * Deletes a download's HLS/DASH segment folder: the one its task info recorded at creation, and the
+     * one under the current temp folder (they differ when the temp folder was changed meanwhile). HTTP has
+     * no working folder; its part file is in the target folder.
      */
     private fun deleteTempFolders(id: Long) {
-        getTempFileFolder(id, configDir).onSuccess { (folder, _) ->
-            if (File(folder).name == id.toString()) FileUtils.deleteFolder(folder)
+        val recorded = (taskInfoDB.getHlsTask(id)?.tempDir ?: taskInfoDB.getDashTask(id)?.tempDir)
+        listOfNotNull(recorded, File(AppContext.config.tempFolder, id.toString()).absolutePath).distinct().forEach {
+            val folder = File(it)
+            if (folder.name == id.toString() && folder.exists()) FileUtils.deleteFolder(folder.absolutePath)
         }
-        File(AppContext.config.tempFolder, id.toString()).takeIf { it.exists() }?.let {
-            FileUtils.deleteFolder(it.absolutePath)
-        }
-    }
-
-    /**
-     * Where a streaming download's muxed output was actually written. Recorded the first time the
-     * path is chosen and read back from disk afterwards, so commit, retry and delete all address
-     * the file that exists even if the destination changed after muxing began.
-     */
-    private fun recordedOutputPath(id: Long): String? =
-        File(configDir, "$id.out").takeIf { it.isFile }?.let {
-            runCatching { it.readText().trim().ifBlank { null } }.getOrNull()
-        }
-
-    private fun recordOutputPath(id: Long, path: String) {
-        runCatching { File(configDir, "$id.out").writeText(path) }
-            .onFailure { Logger.error("XDM", "Unable to record output path for $id", it) }
     }
 
     override fun stopDownload(id: Long) {
-        // Also aborts a publish in progress; the bytes stay in temp so resume republishes them. Once the
-        // publish is finalizing it can no longer be undone, so the stop is refused and it finishes.
+        // Also cancels a Change folder move; the part file stays where it was. Once the move is
+        // finalizing it can no longer be undone, so the stop is refused and it finishes.
         val finalizing = synchronized(appDB) {
             val rec = appDB.getById(id)
-            (rec?.status == RecordStatus.PUBLISHING && rec.movePhase == MovePhase.FINALIZING).also {
-                if (!it) publishCancelled.add(id)
+            (rec?.status == RecordStatus.MOVING && rec.movePhase == MovePhase.FINALIZING).also {
+                if (!it) moveCancelled.add(id)
             }
         }
         if (finalizing) {
             Logger.info("XDM", "Download $id is finalizing its move and cannot be paused")
             return
         }
+        if (moving.contains(id)) return
         activeSessions[id]?.let {
             it.stop()
             return
@@ -565,6 +551,10 @@ class DownloadManager(
             return
         }
 
+        if (moving.contains(id)) {
+            Logger.info("Download $id is being moved and cannot be resumed yet")
+            return
+        }
         appDB.getById(id)?.let {
             synchronized(queue) {
                 if (queue.any { q -> q.id == id }) return
@@ -614,7 +604,7 @@ class DownloadManager(
     private fun launch(item: QueueItem): Boolean {
         val id = item.id
         // Starting again clears any earlier cancel, so a republish is not stopped before it begins.
-        publishCancelled.remove(id)
+        moveCancelled.remove(id)
         return try {
             val rec = appDB.getById(id) ?: return false
             val controller = taskFactory(rec.downloadType, id, downloadHost) ?: run {
@@ -672,7 +662,8 @@ class DownloadManager(
      * once they report it. With [fromDisk], completed files are deleted from the download folder too.
      */
     override fun deleteDownloads(ids: Collection<Long>, fromDisk: Boolean) {
-        val wanted = ids.toHashSet()
+        // A download being moved cannot be deleted: its file is half way between two folders.
+        val wanted = ids.filterTo(HashSet()) { it !in moving }
         // Under the queue lock so a queued download cannot be launched while it is deleted.
         val (removed, running) = synchronized(queue) {
             queue.removeAll { it.id in wanted && !activeSessions.containsKey(it.id) }
@@ -702,6 +693,7 @@ class DownloadManager(
                         && rec.status != RecordStatus.DOWNLOADING
                         && rec.status != RecordStatus.ASSEMBLING
                         && rec.status != RecordStatus.READY
+                        && rec.id !in moving
                         && filter(rec)
             }
         }
@@ -743,29 +735,11 @@ class DownloadManager(
             // Its state holds the batch folder, not a temp folder: the generic cleanup below must not run.
             purgeBatchFiles(id, fromDisk)
         } else if (rec.status != RecordStatus.FINISHED) {
-            // Every download type keeps its working data in one folder now, so one delete does it.
-            // Older downloads may still have their temp file elsewhere; fall back to the state file.
+            // HLS/DASH segments live in the temp folder; every partial file sits in the target folder
+            // under a name derived from the id, so the paths come from the task info (read before the
+            // metadata goes).
             deleteTempFolders(id)
-            getTempFileFolder(id, configDir).onSuccess {
-                val (tempFolder, tempFile) = it
-                if (rec.downloadType == DownloadType.Http) {
-                    val file = File(tempFolder, tempFile)
-                    if (file.isFile) Logger.info("XDM", "Delete file $file ${file.delete()}")
-                } else {
-                    FileUtils.deleteFolder(tempFolder)
-                }
-            }.onFailure { Logger.info("XDM", "No temp data to delete for $id") }
-            // A streaming download's partial muxed output lives in the destination folder. Prefer
-            // the recorded path, since recomputing misses the file whenever the destination changed
-            // after muxing. Downloads that predate the recording fall back to the old guess.
-            val recorded = recordedOutputPath(id)
-            if (recorded != null) {
-                File(recorded).delete()
-            } else {
-                listOf(".mp4", ".mkv").forEach { ext ->
-                    streamingOutputPath(id, rec.downloadType, ext)?.let { File(it).delete() }
-                }
-            }
+            partFiles(id, rec.downloadType).forEach { if (it.isFile) Logger.info("XDM", "Delete file $it ${it.delete()}") }
         }
         deleteMetadata(id)
     }
@@ -783,10 +757,34 @@ class DownloadManager(
         }
     }
 
+    /**
+     * Whether [a] and [b] are the same folder, also when spelled differently (letter case on macOS and
+     * Windows, a symlink). Falls back to comparing absolute paths while either does not exist yet.
+     */
+    private fun sameFolder(a: String, b: String): Boolean {
+        val fa = File(a)
+        val fb = File(b)
+        if (fa.absolutePath == fb.absolutePath) return true
+        return runCatching { Files.isSameFile(fa.toPath(), fb.toPath()) }.getOrDefault(false)
+    }
+
+    /** The partial files a download may have in its target folder (and a Change folder scratch file). */
+    private fun partFiles(id: Long, type: DownloadType): List<File> = when (type) {
+        DownloadType.Http -> taskInfoDB.getHttpTask(id)?.let { t ->
+            listOf(File(t.targetFolder, partFileName(id)), File(t.targetFolder, "${partFileName(id)}.$id.part"))
+        }.orEmpty()
+
+        DownloadType.Hls, DownloadType.Dash -> listOf(".mp4", ".mkv").mapNotNull { ext ->
+            streamingOutputPath(id, type, ext)?.let { File(it) }
+        }
+
+        else -> emptyList()
+    }
+
     /** Removes the per-download files in the config dir and any schedule entry for [id]. */
     private fun deleteMetadata(id: Long) {
         taskInfoDB.deleteRecord(id)
-        listOf("$id.state", "$id.state.bak1", "$id.state.bak2", "$id.out").forEach { File(configDir, it).delete() }
+        listOf("$id.state", "$id.state.bak1", "$id.state.bak2").forEach { File(configDir, it).delete() }
         HlsKeyStore.delete(id, configDir)
         if (AppContext.hasScheduler && AppContext.scheduler.contains(id)) {
             AppContext.scheduler.removeEntry(id)
@@ -822,7 +820,8 @@ class DownloadManager(
                 speed = 0.0f,
                 status = if (runNow) RecordStatus.READY else RecordStatus.PAUSED,
                 selected = false,
-                downloadType = DownloadType.Http
+                downloadType = DownloadType.Http,
+                categoryId = task.categoryId,
             )
         )
         if (runNow) {
@@ -837,7 +836,7 @@ class DownloadManager(
     }
 
     override fun addVideoDownload(
-        videoId: Long, fileName: String, folder: String?, autoSelectFolder: Boolean, maxPiece: Int?
+        videoId: Long, fileName: String, categoryId: String?, targetFolder: String, maxPiece: Int?
     ) {
         // Each download of a detected video is a new download: copy the tracker's entry with a fresh
         // id instead of reusing (and mutating) it, so downloading the same video twice cannot share
@@ -846,8 +845,8 @@ class DownloadManager(
         tracker.getHttpVideo(videoId)?.let { source ->
             startHttpDownload(
                 source.copy(
-                    id = CoreUtils.uniqueId(), fileName = fileName, autoCategorize = autoSelectFolder,
-                    defaultDownloadFolder = folder ?: source.defaultDownloadFolder,
+                    id = CoreUtils.uniqueId(), fileName = fileName, categoryId = categoryId,
+                    targetFolder = targetFolder,
                     maxPiece = maxPiece ?: source.maxPiece,
                 )
             )
@@ -857,8 +856,8 @@ class DownloadManager(
         tracker.getHlsVideo(videoId)?.let { source ->
             startHlsDownload(
                 source.copy(
-                    id = CoreUtils.uniqueId(), fileName = fileName, autoCategorize = autoSelectFolder,
-                    defaultDownloadFolder = folder ?: source.defaultDownloadFolder,
+                    id = CoreUtils.uniqueId(), fileName = fileName, categoryId = categoryId,
+                    targetFolder = targetFolder,
                     maxPiece = maxPiece ?: source.maxPiece,
                 )
             )
@@ -868,8 +867,8 @@ class DownloadManager(
         tracker.getDashVideo(videoId)?.let { source ->
             startDashDownload(
                 source.copy(
-                    id = CoreUtils.uniqueId(), fileName = fileName, autoCategorize = autoSelectFolder,
-                    defaultDownloadFolder = folder ?: source.defaultDownloadFolder,
+                    id = CoreUtils.uniqueId(), fileName = fileName, categoryId = categoryId,
+                    targetFolder = targetFolder,
                     maxPiece = maxPiece ?: source.maxPiece,
                 )
             )
@@ -896,7 +895,8 @@ class DownloadManager(
                 speed = 0.0f,
                 status = RecordStatus.READY,
                 selected = false,
-                downloadType = DownloadType.Hls
+                downloadType = DownloadType.Hls,
+                categoryId = task.categoryId,
             )
         )
         appDB.saveActiveRecords()
@@ -924,7 +924,8 @@ class DownloadManager(
                 speed = 0.0f,
                 status = RecordStatus.READY,
                 selected = false,
-                downloadType = DownloadType.Dash
+                downloadType = DownloadType.Dash,
+                categoryId = task.categoryId,
             )
         )
         appDB.saveActiveRecords()
@@ -1015,7 +1016,7 @@ class DownloadManager(
             Logger.info("Task $id updated")
         }
         // Read first, then save: never rewrite the state file from inside its own read.
-        AtomicIO.readTransacted("$id.state", configDir) { fs -> readContext(fs, downloadHost) }
+        AtomicIO.readTransacted("$id.state", configDir) { fs -> readContext(fs, downloadHost, "", "") }
             .onSuccess { context ->
                 context.url = url
                 context.headers = headers
@@ -1024,6 +1025,129 @@ class DownloadManager(
                 Logger.info("Context ${context.id} updated")
             }
             .onFailure { Logger.error(it) }
+    }
+
+    override fun isMoving(id: Long): Boolean = id in moving
+
+    override fun changeFolderPlan(id: Long, folder: String): ChangeFolderPlan {
+        val rec = appDB.getById(id) ?: return ChangeFolderPlan.NOT_ALLOWED
+        if (!rec.status.isStopped || id in moving || activeSessions.containsKey(id)) return ChangeFolderPlan.NOT_ALLOWED
+        if (synchronized(queue) { queue.any { it.id == id } }) return ChangeFolderPlan.NOT_ALLOWED
+        val newFolder = File(folder).absolutePath
+        return when (rec.downloadType) {
+            DownloadType.Http -> {
+                val task = taskInfoDB.getHttpTask(id) ?: return ChangeFolderPlan.NOT_ALLOWED
+                if (sameFolder(task.targetFolder, newFolder)) return ChangeFolderPlan.SAME
+                val hasProgress = File(configDir, "$id.state").isFile
+                if (!hasProgress || File(task.targetFolder, partFileName(id)).isFile) ChangeFolderPlan.MOVE
+                else ChangeFolderPlan.PART_UNAVAILABLE
+            }
+
+            DownloadType.Hls, DownloadType.Dash -> {
+                val task: StreamingDownloadTaskInfo = taskInfoDB.getHlsTask(id) ?: taskInfoDB.getDashTask(id)
+                    ?: return ChangeFolderPlan.NOT_ALLOWED
+                if (sameFolder(task.targetFolder, newFolder)) ChangeFolderPlan.SAME else ChangeFolderPlan.MOVE
+            }
+
+            else -> ChangeFolderPlan.NOT_ALLOWED
+        }
+    }
+
+    override fun changeFolder(id: Long, folder: String, done: (ChangeFolderResult) -> Unit) {
+        val newFolder = File(folder).absolutePath
+        // Claimed under both locks, so a resume, delete or queue start cannot slip in meanwhile.
+        val previous = synchronized(queue) {
+            if (activeSessions.containsKey(id) || queue.any { it.id == id }) return done(ChangeFolderResult.FAILED)
+            synchronized(appDB) {
+                val rec = appDB.getById(id)
+                if (rec == null || !rec.status.isStopped || !moving.add(id)) return done(ChangeFolderResult.FAILED)
+                rec.status
+            }
+        }
+        moveCancelled.remove(id)
+        Thread {
+            val result = runCatching { moveTo(id, newFolder) }
+                .onFailure { Logger.error("XDM", "Change folder failed for $id", it) }
+                .getOrDefault(ChangeFolderResult.FAILED)
+            synchronized(appDB) {
+                moving.remove(id)
+                moveCancelled.remove(id)
+                appDB.getById(id)?.let {
+                    it.status = if (result == ChangeFolderResult.DONE) RecordStatus.PAUSED else previous
+                    it.movePhase = null
+                    it.progress = if (it.size > 0) (it.downloaded * 100 / it.size).toInt() else 0
+                    appDB.saveActiveRecords()
+                    appDB.savePausedRecords()
+                }
+            }
+            AppContext.app.updateDownloadInView(id)
+            done(result)
+        }.apply { name = "change-folder-$id" }.start()
+    }
+
+    /**
+     * The work of [changeFolder], on its own thread. HTTP always copies (the usual reason to move is a
+     * full or failing drive, so the new folder is on another one): copy the part file into place, then
+     * record the new folder, then delete the old file. A crash at any point leaves the record pointing
+     * at a complete file, so nothing needs recovering; at worst a stray copy is left behind.
+     */
+    private fun moveTo(id: Long, newFolder: String): ChangeFolderResult {
+        val folder = File(newFolder)
+        if (!folder.isDirectory && !folder.mkdirs()) return ChangeFolderResult.FAILED
+        taskInfoDB.getHlsTask(id)?.let { t ->
+            // Segments stay in the temp folder; a partial mux in the old folder is simply muxed again.
+            partFiles(id, DownloadType.Hls).forEach { it.delete() }
+            t.targetFolder = newFolder
+            taskInfoDB.saveHlsTask(t)
+            return ChangeFolderResult.DONE
+        }
+        taskInfoDB.getDashTask(id)?.let { t ->
+            partFiles(id, DownloadType.Dash).forEach { it.delete() }
+            t.targetFolder = newFolder
+            taskInfoDB.saveDashTask(t)
+            return ChangeFolderResult.DONE
+        }
+        val task = taskInfoDB.getHttpTask(id) ?: return ChangeFolderResult.FAILED
+        // The same folder spelled differently (case, a symlink): copying onto itself and then deleting
+        // the "old" file would delete the only copy.
+        if (sameFolder(task.targetFolder, newFolder)) return ChangeFolderResult.DONE
+        val source = File(task.targetFolder, partFileName(id))
+        if (!File(configDir, "$id.state").isFile || !source.isFile) {
+            // Nothing written yet: only the folder changes.
+            task.targetFolder = newFolder
+            taskInfoDB.saveHttpTask(task)
+            return ChangeFolderResult.DONE
+        }
+        val total = source.length().coerceAtLeast(1)
+        val target = File(folder, partFileName(id))
+        val error = FileUtils.copyFile(
+            source, target, id = id, replaceExisting = true,
+            phase = { enterMovePhase(id, it) },
+            progress = { copied ->
+                updateMoveProgress(id, (copied * 100 / total).toInt())
+                !moveCancelled.contains(id)
+            },
+        )
+        return when (error) {
+            null -> {
+                task.targetFolder = newFolder
+                // The old file goes only once the record provably points at the copy; otherwise the copy
+                // goes and the download stays where it was.
+                val recorded = taskInfoDB.saveHttpTask(task) &&
+                        taskInfoDB.getHttpTask(id)?.targetFolder == newFolder
+                if (!recorded) {
+                    Logger.error("XDM", "Could not record the new folder of $id; keeping it in ${source.parent}")
+                    target.delete()
+                    return ChangeFolderResult.FAILED
+                }
+                if (!source.delete()) Logger.error("XDM", "Moved, but could not delete the old part file $source")
+                ChangeFolderResult.DONE
+            }
+
+            DownloadError.Cancelled -> ChangeFolderResult.CANCELLED
+            DownloadError.DiskSpaceError -> ChangeFolderResult.NO_SPACE
+            else -> ChangeFolderResult.FAILED
+        }
     }
 
     private fun newHttpClient() =
@@ -1135,5 +1259,11 @@ class DownloadManager(
         } catch (error: Exception) {
             Logger.error("XDM", "Error running post-download actions", error)
         }
+    }
+
+    private companion object {
+        /** How many times a publish rename is tried, waiting a little longer each time. */
+        const val PUBLISH_ATTEMPTS = 5
+        const val PUBLISH_RETRY_MS = 200L
     }
 }

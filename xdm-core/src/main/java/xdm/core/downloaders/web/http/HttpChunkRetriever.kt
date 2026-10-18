@@ -498,6 +498,11 @@ class HttpChunkRetriever(
             var fs: RandomAccessFile? = null
             try {
                 val file = File(context.tempFolder, context.tempFileName)
+                // A part file written before must still be there, at full size; recreating it would
+                // silently lose what it held. Failing here is a disk error, and the download stops.
+                if (context.tempFileCreated.get() &&
+                    (!file.isFile || context.totalSize.let { it != null && file.length() != it })
+                ) throw java.io.IOException("Part file missing or damaged: $file")
                 if (!context.tempFileCreated.get()) createSparse(file)
                 fs = RandomAccessFile(file, "rw")
                 context.totalSize?.let { len ->

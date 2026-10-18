@@ -12,20 +12,16 @@ import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.batchFolderState
 import xdm.app.utils.chooseFile
+import xdm.app.utils.rememberHandPickedFolder
+import xdm.app.resolvedNoneFolder
 import xdm.app.utils.createIcon
 import xdm.app.utils.defaultBatchName
 import xdm.app.utils.dialogHeight
-import xdm.app.utils.isAutoCategorySelected
-import xdm.app.utils.populateSaveInFolders
 import xdm.app.utils.px
-import xdm.app.utils.rememberBatchFolder
-import xdm.app.utils.rememberFolderChoice
-import xdm.app.utils.rememberedBaseFolder
 import xdm.app.utils.sameWidth
 import xdm.app.utils.sanitizeBatchName
 import xdm.app.utils.scaledInsets
 import xdm.app.utils.scaledSize
-import xdm.app.utils.selectedBaseFolder
 import xdm.app.utils.suggestBatchName
 import xdm.app.utils.uniqueFileNames
 import xdm.core.downloaders.BatchDownloadTaskInfo
@@ -82,12 +78,16 @@ class BatchDownloadDialog(owner: Window?, private val request: BatchRequest) : J
         columns = 10 // a long page title must not widen the dialog; the row stretches the field
     }
 
-    /** Save in for one download per link: "Automatic (by file type)" first, then folders. */
-    private val modelEach = DefaultComboBoxModel<String>()
+    /**
+     * Save in, for both modes: the None folder first, then the folder history and the default folder.
+     * One download per link is always None (no category); docs/download-categories.md §4.4.
+     */
+    private val folderModel = DefaultComboBoxModel<String>()
+    private val cmbSaveIn = CappedComboBox(folderModel)
 
-    /** Save in for one batch: folders only. */
-    private val modelBatch = DefaultComboBoxModel<String>()
-    private val cmbSaveIn = CappedComboBox<String>()
+    /** Set once the user picks or browses to a folder, so only a hand-chosen folder is remembered. */
+    private var folderHandPicked = false
+    private var fillingFolders = false
 
     private val lblTarget = JLabel()
     private val lblProblem = JLabel().apply {
@@ -151,8 +151,7 @@ class BatchDownloadDialog(owner: Window?, private val request: BatchRequest) : J
         defaultCloseOperation = DISPOSE_ON_CLOSE
         isModal = true
         initUI()
-        populateSaveInFolders(modelEach, cmbSaveIn.apply { model = modelEach })
-        modelBatch.addAll(AppContext.config.recentFolders.drop(1))
+        fillFolders()
         val asOne = if (request.fromBrowser) AppContext.config.batchAsOneFromBrowser
         else AppContext.config.batchAsOneFromClipboard
         (if (asOne) radioBatch else radioEach).isSelected = true
@@ -271,7 +270,10 @@ class BatchDownloadDialog(owner: Window?, private val request: BatchRequest) : J
             insets = scaledInsets(0, 0, 0, 5)
             gridx = 1; gridy = 0
         })
-        cmbSaveIn.addActionListener { validateInput() }
+        cmbSaveIn.addActionListener {
+            if (!fillingFolders) folderHandPicked = true
+            validateInput()
+        }
 
         val btnBrowse = JButton(createIcon(RemixIcon.FOLDER_FILL, 16, Color.GRAY))
         btnBrowse.addActionListener { browse() }
@@ -300,17 +302,27 @@ class BatchDownloadDialog(owner: Window?, private val request: BatchRequest) : J
         return panel
     }
 
+    private fun fillFolders() {
+        fillingFolders = true
+        try {
+            val config = AppContext.config
+            (listOf(config.resolvedNoneFolder) + config.folderHistory + config.defaultDownloadFolder)
+                .map { File(it).absolutePath }.distinct().forEach { folderModel.addElement(it) }
+            cmbSaveIn.selectedIndex = 0
+        } finally {
+            fillingFolders = false
+        }
+    }
+
     private fun browse() {
-        val current = if (batchMode) cmbSaveIn.selectedItem?.toString() ?: rememberedBaseFolder()
-        else selectedBaseFolder(cmbSaveIn)
-        val selected = chooseFile(this, directoriesOnly = true, currentDir = File(current)) ?: return
+        val selected = chooseFile(this, directoriesOnly = true, currentDir = File(selectedFolder())) ?: return
         val path = selected.absolutePath
-        val model = cmbSaveIn.model as DefaultComboBoxModel<String>
-        val idx = model.getIndexOf(path).takeIf { it >= 0 } ?: run {
-            model.addElement(path)
-            model.size - 1
+        val idx = folderModel.getIndexOf(path).takeIf { it >= 0 } ?: run {
+            folderModel.insertElementAt(path, 0)
+            0
         }
         cmbSaveIn.selectedIndex = idx
+        folderHandPicked = true
     }
 
     private fun createButtonPanel(): JPanel {
@@ -339,21 +351,12 @@ class BatchDownloadDialog(owner: Window?, private val request: BatchRequest) : J
         lblName.isVisible = batch
         txtName.isVisible = batch
         lblTarget.isVisible = batch
-        val wanted: DefaultComboBoxModel<String> = if (batch) modelBatch else modelEach
-        if (cmbSaveIn.model !== wanted) {
-            cmbSaveIn.model = wanted
-            if (batch) {
-                val folder = rememberedBaseFolder()
-                cmbSaveIn.selectedIndex = wanted.getIndexOf(folder).takeIf { it >= 0 } ?: 0
-            }
-        }
         validateInput()
         revalidate()
     }
 
     private fun selectedFolder(): String =
-        if (batchMode) cmbSaveIn.selectedItem?.toString() ?: AppContext.config.defaultDownloadFolder
-        else selectedBaseFolder(cmbSaveIn)
+        cmbSaveIn.selectedItem?.toString() ?: AppContext.config.resolvedNoneFolder
 
     /** Shows where the batch goes and whether that folder can be used; enables Download accordingly. */
     private fun validateInput() {
@@ -430,15 +433,16 @@ class BatchDownloadDialog(owner: Window?, private val request: BatchRequest) : J
             validateInput()
             return
         }
-        rememberBatchFolder(parent)
+        // A batch has no category: its folder joins the history but does not become the None folder.
+        if (folderHandPicked) rememberHandPickedFolder(parent, underNone = false)
         rememberMode()
         dispose()
     }
 
     private fun downloadEach() {
-        val auto = isAutoCategorySelected(cmbSaveIn)
-        val folder = selectedBaseFolder(cmbSaveIn)
-        rememberFolderChoice(cmbSaveIn)
+        val folder = selectedFolder()
+        // One download per link is a None download: a hand-picked folder becomes the None folder.
+        if (folderHandPicked) rememberHandPickedFolder(folder, underNone = true)
         rememberMode()
         entries.filter { it.selected }.forEach { e ->
             AppContext.downloader.startHttpDownload(
@@ -450,9 +454,8 @@ class BatchDownloadDialog(owner: Window?, private val request: BatchRequest) : J
                     cookie = request.cookies.getOrNull(e.item.cookieGroup),
                     headers = request.headers,
                     origin = request.pageUrl,
-                    autoCategorize = auto,
-                    defaultDownloadFolder = folder,
-                    userSelectedDownloadFolder = null,
+                    categoryId = null,
+                    targetFolder = folder,
                     maxPiece = AppContext.config.maxSegments,
                     authInfo = null,
                     knownFileSize = e.item.knownSize,

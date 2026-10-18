@@ -15,12 +15,17 @@ import javax.swing.UIManager
 
 /**
  * The one storage line in the new-download dialogs. Normally a drive icon and the destination's free
- * space. Two cases turn it into a warning link that runs [onChangeTempFolder]: the temp folder's drive
- * is too low (the space the download fills first), or the destination is on a different drive from
- * it (the finished file is copied, not moved). Low space wins when both apply; the tooltip lists all
+ * space. In the video dialogs ([usesTempFolder]) two cases turn it into a warning link that runs
+ * [onChangeTempFolder]: the temp folder's drive is too low (the segments fill it first), or the
+ * destination is on a different drive from it (both drives need space). Low space wins when both apply; the tooltip lists all
  * of it, including the destination's free space the warning text replaced.
  */
 class StorageStatusLabel(
+    /**
+     * True for video (HLS/DASH) dialogs, whose segments go to the temp folder first, so its space and
+     * drive matter. False for HTTP, which writes straight to the destination: only its space counts.
+     */
+    var usesTempFolder: Boolean = true,
     private val onChangeTempFolder: (destination: String?, needed: Long?) -> Unit,
 ) : JLabel("---") {
     private var destination: String? = null
@@ -51,6 +56,7 @@ class StorageStatusLabel(
     }
 
     private fun refresh() {
+        if (!usesTempFolder) return refreshDestinationOnly()
         val temp = AppContext.config.tempFolder
         val tempSpace = VolumeHints.spaceOf(temp)
         val destFree = VolumeHints.spaceOf(destination)?.free
@@ -90,6 +96,20 @@ class StorageStatusLabel(
             add(destFreeText)
             add(text("STORAGE_CLICK"))
         }.joinToString("<br>", "<html>", "</html>")
+    }
+
+    /** HTTP: the destination's free space, turning into a warning when the download will not fit. */
+    private fun refreshDestinationOnly() {
+        val space = VolumeHints.spaceOf(destination)
+        val freeText = "${text("MSG_FREE_SPACE")} ${space?.free?.let { size(it) } ?: "---"}"
+        val low = space != null && VolumeHints.isLow(space.free, needed)
+        icon = if (low) createIcon(RemixIcon.ERROR_WARNING_FILL, 14, WARNING) else createIcon(RemixIcon.HARD_DRIVE_2_LINE, 14, Color.GRAY)
+        text = freeText
+        foreground = UIManager.getColor(if (low) "ProgressBar.foreground" else "Label.foreground")
+        clickable = false
+        cursor = Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR)
+        toolTipText = if (low) needed?.let { text("MSG_TARGET_SPACE_LOW").replace("%folder%", destination.orEmpty())
+            .replace("%free%", size(space!!.free)).replace("%needed%", size(it)) } else null
     }
 
     /** Re-reads the disk even if nothing changed, e.g. after the temp folder was changed. */

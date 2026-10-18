@@ -2,12 +2,10 @@ package xdm.app.ui.components
 
 import java.awt.Color
 import javax.swing.UIManager
-import xdm.app.AppContext
-import xdm.app.DownloadCategory
 import xdm.app.utils.RemixIcon
 
 /**
- * Shared visual palette for file-category icons. Vibrant, mid-luminance hues
+ * Shared palette and file-type glyphs. Vibrant, mid-luminance hues
  * (Tailwind 500-ish) that keep good contrast on both light and dark themes.
  * Used by the sidebar filter list and the main download-list rows so a given
  * category looks identical in both places.
@@ -39,16 +37,7 @@ object CategoryStyle {
     /** Glyph used for the "All types" sidebar row, which has no category behind it. */
     val ALL_ICON = RemixIcon.ARCHIVE_2_FILL
 
-    /**
-     * Fill glyphs mapped to their outlined twin. A category stores one icon name, and the two
-     * places that draw it disagree on style: the download list wants the filled glyph, the
-     * filter sidebar the outlined one. Categories are stored filled and the sidebar translates
-     * on the way out, so nothing on disk has to change.
-     *
-     * This map is also the source of truth for [PICKABLE_ICONS]: an icon is only offered if it
-     * appears here, so the user can never pick a glyph that has no outlined counterpart and
-     * would fall back to its filled self in the sidebar.
-     */
+    /** Fill glyphs mapped to their outlined twin, for places that draw a file glyph outlined. */
     private val LINE_VARIANTS: Map<RemixIcon, RemixIcon> = linkedMapOf(
         RemixIcon.FILE_FILL to RemixIcon.FILE_LINE,
         RemixIcon.FILE_LIST_2_FILL to RemixIcon.FILE_LIST_2_LINE,
@@ -57,31 +46,25 @@ object CategoryStyle {
         RemixIcon.MOVIE_FILL to RemixIcon.MOVIE_LINE,
         RemixIcon.MICROSOFT_FILL to RemixIcon.MICROSOFT_LINE,
         RemixIcon.ARCHIVE_2_FILL to RemixIcon.ARCHIVE_2_LINE,
-        RemixIcon.FILE_TEXT_FILL to RemixIcon.FILE_TEXT_LINE,
-        RemixIcon.FILE_SHIELD_FILL to RemixIcon.FILE_SHIELD_LINE,
-        RemixIcon.FOLDER_FILL to RemixIcon.FOLDER_LINE,
-        RemixIcon.GLOBAL_FILL to RemixIcon.GLOBAL_LINE,
-        RemixIcon.SPARKLING_2_FILL to RemixIcon.SPARKLING_2_LINE,
     )
-
-    /**
-     * Glyphs a user may pick for their own categories, in the order the editor shows them.
-     * Derived from [LINE_VARIANTS] so every choice is guaranteed to have both styles.
-     */
-    val PICKABLE_ICONS: List<RemixIcon> = LINE_VARIANTS.keys.toList()
 
     /** The outlined twin of [icon], or [icon] itself when it has no filled/outlined pair. */
     fun lineVariant(icon: RemixIcon): RemixIcon = LINE_VARIANTS[icon] ?: icon
 
-    /** Glyph used for a category; an unknown or stale icon name falls back to a plain file glyph. */
-    fun iconName(category: DownloadCategory): RemixIcon =
-        runCatching { RemixIcon.valueOf(category.icon) }.getOrDefault(RemixIcon.FILE_FILL)
-
     /**
-     * Glyph for a file, taken from the category that claims its extension so a name shown before the
-     * download exists gets the same icon its row will have. Falls back to a plain file glyph.
+     * File-type glyphs by extension. A download's glyph comes from its file name alone, never from its
+     * category (categories only have a color).
      */
-    fun iconForFile(fileName: String): RemixIcon =
-        AppContext.config.categories.firstOrNull { it.matches(fileName) }
-            ?.let { iconName(it) } ?: RemixIcon.FILE_FILL
+    private val GLYPHS: Map<String, RemixIcon> = buildMap {
+        fun put(glyph: RemixIcon, vararg exts: String) = exts.forEach { put(it, glyph) }
+        put(RemixIcon.MOVIE_FILL, "mp4", "mkv", "webm", "avi", "ts", "mov", "m4v", "wmv", "flv", "mpg", "mpeg", "3gp", "ogv")
+        put(RemixIcon.MV_FILL, "mp3", "aac", "wav", "ac3", "m4a", "flac", "ogg", "oga", "opus", "wma")
+        put(RemixIcon.FILE_ZIP_FILL, "zip", "rar", "7z", "gz", "tar", "tgz", "tz", "bz2", "xz", "zst", "cab")
+        put(RemixIcon.FILE_LIST_2_FILL, "pdf", "doc", "docx", "ppt", "pptx", "xls", "xlsx", "odt", "odf", "ods", "odp", "rtf", "txt", "epub")
+        put(RemixIcon.MICROSOFT_FILL, "exe", "msi", "msix", "deb", "dmg", "rpm", "iso", "pkg", "sh", "py", "apk", "xapk", "appimage", "jar", "img")
+    }
+
+    /** The glyph for a file of this name, from its extension; a plain file glyph when it is unknown. */
+    fun glyphForFile(fileName: String): RemixIcon =
+        GLYPHS[fileName.substringAfterLast('.', "").lowercase()] ?: RemixIcon.FILE_FILL
 }

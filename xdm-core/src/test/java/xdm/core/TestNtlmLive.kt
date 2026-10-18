@@ -111,8 +111,8 @@ class TestNtlmLive : HttpDownloadTestBase() {
         val host = host()
         val info = HttpDownloadTaskInfo(
             id = 1, url = "$base$path", fileName = "big.zip", respectFileName = false, cookie = null, headers = null,
-            origin = null, autoCategorize = false, defaultDownloadFolder = tmpDir.absolutePath,
-            userSelectedDownloadFolder = null, maxPiece = 0, authInfo = null, knownFileSize = null,
+            origin = null, categoryId = null, targetFolder = tmpDir.absolutePath,
+maxPiece = 0, authInfo = null, knownFileSize = null,
         )
         HttpDownloaderTask(info, host, client(prompt), work.absolutePath, TestConfig(8)).also { liveTasks += it }.start()
 

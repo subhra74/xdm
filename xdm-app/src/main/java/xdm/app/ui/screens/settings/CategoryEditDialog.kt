@@ -3,40 +3,55 @@ package xdm.app.ui.screens.settings
 import xdm.app.AppContext
 import xdm.app.DownloadCategory
 import xdm.app.I8N
-import xdm.app.ui.components.CategoryStyle
-import xdm.app.utils.RemixIcon
+import xdm.app.ui.components.AppTheme
+import xdm.app.ui.components.CategoryDotIcon
 import xdm.app.utils.ScaledEmptyBorder
-import xdm.app.utils.VolumeHints
 import xdm.app.utils.chooseFile
-import xdm.app.utils.createIcon
 import xdm.app.utils.fixHeight
 import xdm.app.utils.padding
 import xdm.app.utils.px
 import xdm.app.utils.scaledSize
+import xdm.app.utils.scaledInsets
+import xdm.app.utils.dialogHeight
 import java.awt.BorderLayout
+import java.awt.Color
 import java.awt.Component
 import java.awt.Dimension
 import java.awt.Font
+import java.awt.GridBagConstraints
+import java.awt.GridBagLayout
 import java.awt.Window
 import java.io.File
 import java.util.UUID
 import javax.swing.Box
 import javax.swing.BoxLayout
-import javax.swing.DefaultListCellRenderer
+import javax.swing.JButton
+import javax.swing.JColorChooser
 import javax.swing.JComboBox
 import javax.swing.JDialog
 import javax.swing.JLabel
-import javax.swing.JList
 import javax.swing.JPanel
+import javax.swing.JScrollPane
+import javax.swing.JTextArea
 import javax.swing.JTextField
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
 /**
- * Add/edit dialog for a single [DownloadCategory]: name, file types, target folder and the
- * icon+color the sidebar and list rows use. [result] is null when the user cancels.
+ * Add/edit dialog for a single [DownloadCategory]: name, rules (file types, address and file name
+ * patterns, Any/All), target folder and the color the sidebar dot and the list rows' tiles use.
+ *
+ * Settings opens it modal and reads [result] afterwards (null when cancelled). A download dialog's +
+ * button opens it non-modal as its child and gets the saved category through [onSaved].
  */
-class CategoryEditDialog(parent: Window, private val existing: DownloadCategory?) : JDialog(parent) {
+class CategoryEditDialog(
+    parent: Window,
+    private val existing: DownloadCategory?,
+    modal: Boolean = true,
+    private val onSaved: ((DownloadCategory) -> Unit)? = null,
+    /** The categories the name must not clash with; defaults to the saved ones. */
+    private val others: () -> List<DownloadCategory> = { AppContext.config.categories },
+) : JDialog(parent) {
     var result: DownloadCategory? = null
         private set
 
@@ -44,27 +59,42 @@ class CategoryEditDialog(parent: Window, private val existing: DownloadCategory?
     private val txtName = rounded(JTextField()).apply { columns = 10; fixHeight(this) }
     private val txtTypes = rounded(JTextField()).apply { columns = 10; fixHeight(this) }
     private val txtFolder = rounded(JTextField()).apply { columns = 10; fixHeight(this) }
-    private val cmbIcon = rounded(JComboBox(CategoryStyle.PICKABLE_ICONS.toTypedArray())).apply {
-        renderer = IconChoiceRenderer()
-        sizeTo(this, 76)
+    private val txtUrlPatterns = JTextArea(3, 10)
+    private val txtNamePatterns = JTextArea(3, 10)
+    private val cmbMatch = rounded(JComboBox(arrayOf(I8N.text("CAT_MATCH_ANY"), I8N.text("CAT_MATCH_ALL"))))
+    /** The color the user picked, as `0xRRGGBB`; null keeps the theme's default for the category. */
+    private var pickedColor: Int? = existing?.color
+
+    /** A swatch of the category's color; clicking it opens the color picker. */
+    private val btnColor = JButton().apply {
+        toolTipText = I8N.text("CAT_COLOR_PICK")
+        addActionListener { pickColor() }
     }
 
     init {
         title = I8N.text(if (existing == null) "CAT_ADD" else "CAT_EDIT")
-        isModal = true
-        size = scaledSize(500, 420)
+        isModal = modal
         layout = BorderLayout()
 
         existing?.let {
             txtName.text = it.name
             txtTypes.text = DownloadCategory.formatExtensions(it.extensions)
             txtFolder.text = it.folder
-            cmbIcon.selectedItem = CategoryStyle.iconName(it)
+            txtUrlPatterns.text = it.urlPatterns.joinToString("\n")
+            txtNamePatterns.text = it.fileNamePatterns.joinToString("\n")
+            cmbMatch.selectedIndex = if (it.matchAll) 1 else 0
         }
         // A new category starts in the download folder; the user points it wherever they
         // want. Nothing re-derives it later, so renaming never moves a category's files.
         if (existing == null) txtFolder.text = AppContext.config.defaultDownloadFolder
-        if (cmbIcon.selectedIndex < 0) cmbIcon.selectedIndex = 0
+        refreshSwatch()
+
+        // Hints live in placeholders and tooltips, so the dialog stays short.
+        txtTypes.putClientProperty("JTextField.placeholderText", I8N.text("CAT_FILE_TYPES_PLACEHOLDER"))
+        txtTypes.toolTipText = I8N.text("CAT_FILE_TYPES_HINT")
+        txtUrlPatterns.toolTipText = I8N.text("CAT_URL_PATTERNS_HINT")
+        txtNamePatterns.toolTipText = I8N.text("CAT_NAME_PATTERNS_HINT")
+        txtFolder.toolTipText = I8N.text("CAT_FOLDER_HINT")
 
         val btnBrowse = settingsButton(I8N.text("SETTINGS_FOLDER_CHANGE")) {
             val start = txtFolder.text.takeIf { t -> t.isNotBlank() }?.let { t -> File(t) }
@@ -73,42 +103,64 @@ class CategoryEditDialog(parent: Window, private val existing: DownloadCategory?
             }
         }
 
-        val lblVolumeHint = JLabel().apply {
-            alignmentX = Component.LEFT_ALIGNMENT
+        // "All rules" only differs from "Any rule" once two kinds of rule are filled in.
+        fun refreshMatchChoice() {
+            val kinds = listOf(
+                DownloadCategory.parseExtensions(txtTypes.text).isNotEmpty(),
+                DownloadCategory.parsePatterns(txtUrlPatterns.text).isNotEmpty(),
+                DownloadCategory.parsePatterns(txtNamePatterns.text).isNotEmpty(),
+            ).count { it }
+            cmbMatch.isEnabled = kinds >= 2
+        }
+        listOf(txtTypes.document, txtUrlPatterns.document, txtNamePatterns.document).forEach {
+            it.addDocumentListener(object : DocumentListener {
+                override fun insertUpdate(e: DocumentEvent) = refreshMatchChoice()
+                override fun removeUpdate(e: DocumentEvent) = refreshMatchChoice()
+                override fun changedUpdate(e: DocumentEvent) = refreshMatchChoice()
+            })
+        }
+        refreshMatchChoice()
+
+        // One label/field grid: every row is one line tall except the two pattern boxes.
+        val form = JPanel(GridBagLayout()).apply { border = ScaledEmptyBorder(14, 14, 6, 14) }
+        var row = 0
+        fun addRow(label: String, field: Component, extra: Component? = null) {
+            form.add(JLabel(label), GridBagConstraints().apply {
+                gridx = 0; gridy = row; anchor = GridBagConstraints.NORTHEAST
+                insets = scaledInsets(9, 0, 4, 10)
+            })
+            form.add(field, GridBagConstraints().apply {
+                gridx = 1; gridy = row; weightx = 1.0; fill = GridBagConstraints.HORIZONTAL
+                gridwidth = if (extra == null) 2 else 1; insets = scaledInsets(4, 0, 4, 0)
+            })
+            extra?.let {
+                form.add(it, GridBagConstraints().apply {
+                    gridx = 2; gridy = row; insets = scaledInsets(4, 8, 4, 0); anchor = GridBagConstraints.WEST
+                })
+            }
+            row++
+        }
+        addRow(I8N.text("CAT_NAME"), txtName)
+        addRow(I8N.text("CAT_FILE_TYPES"), txtTypes)
+        addRow(I8N.text("CAT_URL_PATTERNS"), patternBox(txtUrlPatterns))
+        addRow(I8N.text("CAT_NAME_PATTERNS"), patternBox(txtNamePatterns))
+        addRow(I8N.text("CAT_MATCH"), JPanel().apply {
+            isOpaque = false
+            layout = BoxLayout(this, BoxLayout.X_AXIS)
+            add(cmbMatch.apply { fixHeight(this); maximumSize = preferredSize })
+            add(Box.createRigidArea(scaledSize(16, 0)))
+            add(JLabel(I8N.text("CAT_COLOR")))
+            add(Box.createRigidArea(scaledSize(8, 0)))
+            add(btnColor)
+            add(Box.createHorizontalGlue())
+        })
+        addRow(I8N.text("CAT_FOLDER"), txtFolder, btnBrowse)
+        form.add(JLabel(I8N.text("CAT_FOLDER_NEW_ONLY")).apply {
             foreground = settingsMutedColor()
             font = font.deriveFont(Font.PLAIN, font.size2D - 1f)
-        }
-        fun refreshVolumeHint() {
-            val different = VolumeHints.isDifferentVolume(txtFolder.text, AppContext.config.tempFolder)
-            lblVolumeHint.text = if (different) I8N.text("MSG_DIFFERENT_VOLUME") else " "
-        }
-        refreshVolumeHint()
-        txtFolder.document.addDocumentListener(object : DocumentListener {
-            override fun insertUpdate(e: DocumentEvent) = refreshVolumeHint()
-            override fun removeUpdate(e: DocumentEvent) = refreshVolumeHint()
-            override fun changedUpdate(e: DocumentEvent) = refreshVolumeHint()
+        }, GridBagConstraints().apply {
+            gridx = 1; gridy = row; gridwidth = 2; anchor = GridBagConstraints.WEST; insets = scaledInsets(0, 0, 4, 0)
         })
-
-        val form = JPanel().apply {
-            layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            border = ScaledEmptyBorder(14, 14, 10, 14)
-            add(field(I8N.text("CAT_NAME"), txtName, null))
-            add(Box.createRigidArea(scaledSize(0, 10)))
-            add(field(I8N.text("CAT_FILE_TYPES"), txtTypes, I8N.text("CAT_FILE_TYPES_HINT")))
-            add(Box.createRigidArea(scaledSize(0, 10)))
-            add(field(I8N.text("CAT_FOLDER"), txtFolder, I8N.text("CAT_FOLDER_HINT")))
-            add(Box.createRigidArea(scaledSize(0, 6)))
-            add(settingsLeftAligned(btnBrowse))
-            add(Box.createRigidArea(scaledSize(0, 4)))
-            add(settingsLeftAligned(lblVolumeHint))
-            add(Box.createRigidArea(scaledSize(0, 10)))
-            add(
-                settingsRow(I8N.text("CAT_APPEARANCE"), null, cmbIcon)
-                    // Without a height cap the row stretches and squeezes the fields above it.
-                    .apply { maximumSize = Dimension(Int.MAX_VALUE, 34.px) }
-            )
-            add(Box.createVerticalGlue())
-        }
 
         val btnOk = settingsButton(I8N.text("DESC_SAVE_Q")) { onOk() }
         val btnCancel = settingsButton(I8N.text("ND_CANCEL")) { dispose() }
@@ -125,32 +177,17 @@ class CategoryEditDialog(parent: Window, private val existing: DownloadCategory?
 
         add(form, BorderLayout.CENTER)
         add(buttons, BorderLayout.SOUTH)
+        pack()
+        // Never taller than the main window (or the screen); wide enough for a folder path.
+        size = Dimension(maxOf(width, 520.px), minOf(height, dialogHeight(height)))
         setLocationRelativeTo(parent)
     }
 
-    /** Pins a combo to a fixed width so the icon/color pickers stay compact. */
-    private fun sizeTo(combo: JComboBox<*>, width: Int) {
-        fixHeight(combo)
-        combo.preferredSize = Dimension(width.px, combo.preferredSize.height)
-        combo.maximumSize = Dimension(width.px, combo.preferredSize.height)
-    }
-
-    private fun field(label: String, input: JTextField, hint: String?): JPanel = JPanel().apply {
-        isOpaque = false
-        layout = BoxLayout(this, BoxLayout.Y_AXIS)
-        alignmentX = Component.LEFT_ALIGNMENT
-        maximumSize = Dimension(Int.MAX_VALUE, (if (hint == null) 48 else 66).px)
-        add(JLabel(label).apply { alignmentX = Component.LEFT_ALIGNMENT })
-        add(Box.createRigidArea(scaledSize(0, 4)))
-        add(input.apply { alignmentX = Component.LEFT_ALIGNMENT })
-        if (hint != null) {
-            add(Box.createRigidArea(scaledSize(0, 3)))
-            add(JLabel(hint).apply {
-                alignmentX = Component.LEFT_ALIGNMENT
-                foreground = settingsMutedColor()
-                font = font.deriveFont(Font.PLAIN, font.size2D - 1f)
-            })
-        }
+    /** A two-line pattern box (one pattern per line) that scrolls beyond that. */
+    private fun patternBox(area: JTextArea): JScrollPane {
+        area.rows = 2
+        area.font = txtName.font
+        return JScrollPane(area)
     }
 
     private fun onOk() {
@@ -159,9 +196,11 @@ class CategoryEditDialog(parent: Window, private val existing: DownloadCategory?
             showError(I8N.text("MSG_CAT_NAME_MISSING"))
             return
         }
+        // Rules are optional: a category with none is only ever picked by hand.
         val extensions = DownloadCategory.parseExtensions(txtTypes.text)
-        if (extensions.isEmpty()) {
-            showError(I8N.text("MSG_CAT_FILE_TYPES_MISSING"))
+        val clash = others().any { it.id != existing?.id && it.displayName.equals(name, ignoreCase = true) }
+        if (clash) {
+            showError(I8N.text("MSG_CAT_NAME_DUPLICATE"))
             return
         }
         val folder = txtFolder.text.trim()
@@ -173,10 +212,14 @@ class CategoryEditDialog(parent: Window, private val existing: DownloadCategory?
             id = existing?.id ?: UUID.randomUUID().toString(),
             name = name,
             extensions = extensions,
+            urlPatterns = DownloadCategory.parsePatterns(txtUrlPatterns.text),
+            fileNamePatterns = DownloadCategory.parsePatterns(txtNamePatterns.text),
+            matchAll = cmbMatch.isEnabled && cmbMatch.selectedIndex == 1,
             folder = folder,
             predefined = existing?.predefined ?: false,
-            icon = (cmbIcon.selectedItem as RemixIcon).name,
+            color = pickedColor,
         )
+        result?.let { onSaved?.invoke(it) }
         dispose()
     }
 
@@ -185,17 +228,23 @@ class CategoryEditDialog(parent: Window, private val existing: DownloadCategory?
             this, message, title, javax.swing.JOptionPane.WARNING_MESSAGE
         )
 
-    /** Shows each glyph next to its name so the choice is visible before saving. */
-    private class IconChoiceRenderer : DefaultListCellRenderer() {
-        override fun getListCellRendererComponent(
-            list: JList<*>?, value: Any?, index: Int, isSelected: Boolean, cellHasFocus: Boolean
-        ): Component {
-            val c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
-            if (value is RemixIcon && c is JLabel) {
-                c.text = ""
-                c.icon = createIcon(value, 16, null)
-            }
-            return c
+    /** The color shown on the swatch: the picked one, or the theme default for this category. */
+    private fun currentColor(): Color =
+        pickedColor?.let { Color(it) }
+            ?: existing?.let { AppTheme.categoryColor(it.copy(color = null)) }
+            ?: AppTheme.categoryColor(DownloadCategory(id = "new", name = "", extensions = emptySet(), folder = ""))
+
+    private fun refreshSwatch() {
+        val h = maxOf(cmbMatch.preferredSize.height, 22.px)
+        btnColor.icon = CategoryDotIcon(currentColor(), boxSize = 18, dotSize = 14)
+        btnColor.preferredSize = Dimension(h + 8.px, h)
+        btnColor.maximumSize = btnColor.preferredSize
+    }
+
+    private fun pickColor() {
+        JColorChooser.showDialog(this, I8N.text("CAT_COLOR_PICK"), currentColor())?.let {
+            pickedColor = it.rgb and 0xFFFFFF
+            refreshSwatch()
         }
     }
 

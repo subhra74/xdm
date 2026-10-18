@@ -24,20 +24,21 @@ class MainListViewFilter(
                 if (rec.status == RecordStatus.FINISHED) {
                     return false
                 }
-                matchCategory(rec.fileName)
+                matchCategory(rec.categoryId)
             }
 
             FilterState.Completed -> {
                 if (rec.status != RecordStatus.FINISHED) {
                     return false
                 }
-                matchCategory(rec.fileName)
+                matchCategory(rec.categoryId)
             }
 
-            else -> matchCategory(rec.fileName)
+            else -> matchCategory(rec.categoryId)
         }
     }
 
-    private fun matchCategory(name: String): Boolean =
-        filterCategory?.matches(name) ?: true
+    /** A download is listed under the category it was saved with; None downloads only under All types. */
+    private fun matchCategory(categoryId: String?): Boolean =
+        filterCategory?.let { it.id == categoryId } ?: true
 }

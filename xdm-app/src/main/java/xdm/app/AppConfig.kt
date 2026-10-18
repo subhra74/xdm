@@ -1,6 +1,5 @@
 package xdm.app
 
-import xdm.app.I8N.text
 import xdm.app.ui.components.SortKey
 import xdm.core.CoreConfig
 import java.io.DataInputStream
@@ -41,14 +40,19 @@ interface IAppConfig : CoreConfig {
     var autoRenameOnConflict: Boolean
     var shutdownAfterAllDone: Boolean
     var maxParallelDownloads: Int
-    val recentFolders: List<String>
-    /** Folders picked via "Browse", most recent first; persisted. */
-    var savedFolders: List<String>
-    var autoSelectFolder: Boolean
-    var folderIndex: Int
+    /**
+     * The only remembered category choice: true after the user hand-picked None, so rules preselect
+     * nothing for later browser captures; hand-picking a category clears it. Settings shows it inverted
+     * as "categorize browser downloads automatically".
+     */
+    var rememberNone: Boolean
+    /** The folder last hand-picked while None was selected; null means [defaultDownloadFolder]. */
+    var noneFolder: String?
+    /** The last [MAX_FOLDER_HISTORY] hand-chosen folders, most recent first, deduplicated. */
+    var folderHistory: List<String>
     var sortKey: SortKey
     var sortAscending: Boolean
-    /** User-editable file categories, in match order (first match wins). */
+    /** User-editable categories. Replaced as a whole on every change, never mutated in place. */
     var categories: List<DownloadCategory>
     /** The categories shipped with the app, used by "Restore defaults". */
     val defaultCategories: List<DownloadCategory>
@@ -103,7 +107,18 @@ interface IAppConfig : CoreConfig {
      */
     var nativeWayland: Boolean
     fun applyAuthConfig()
+
+    /**
+     * Called (on whatever thread made the change) when the categories or the default download folder
+     * change, so open dialogs can refresh. Listeners marshal to the EDT themselves.
+     */
+    fun addChangeListener(listener: () -> Unit)
+    fun removeChangeListener(listener: () -> Unit)
 }
+
+/** The None folder: the last folder hand-picked under None, else the default download folder. */
+val IAppConfig.resolvedNoneFolder: String
+    get() = noneFolder ?: defaultDownloadFolder
 
 class AppConfig(private val configDir: String) : IAppConfig {
     companion object {
@@ -113,11 +128,31 @@ class AppConfig(private val configDir: String) : IAppConfig {
         val LEGACY_TEMP_FOLDER: String = File(System.getProperty("user.home"), ".temp").absolutePath
         const val MIN_READ_TIMEOUT_SECONDS = 5
         const val MAX_READ_TIMEOUT_SECONDS = 600
+        const val MAX_FOLDER_HISTORY = 10
     }
 
-    override var autoSelectFolder = true
-    override var folderIndex = 0
-    override var savedFolders: List<String> = emptyList()
+    private val changeListeners = java.util.concurrent.CopyOnWriteArrayList<() -> Unit>()
+
+    override fun addChangeListener(listener: () -> Unit) {
+        changeListeners.add(listener)
+    }
+
+    override fun removeChangeListener(listener: () -> Unit) {
+        changeListeners.remove(listener)
+    }
+
+    private fun fireChanged() = changeListeners.forEach { runCatching { it() } }
+
+    // Read on the browser-integration thread (auto-start captures) and written on the EDT: each is an
+    // immutable value replaced in one write, so a reader sees the old value or the new one.
+    @Volatile
+    override var rememberNone = false
+
+    @Volatile
+    override var noneFolder: String? = null
+
+    @Volatile
+    override var folderHistory: List<String> = emptyList()
     override var sortKey: SortKey = SortKey.DATE
     override var sortAscending = false
     /** In KB; Settings shows it in MB. */
@@ -138,6 +173,14 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var runCommand: Boolean = false
     override var showDownloadProgressWindow: Boolean = true
     override var defaultDownloadFolder: String = File(System.getProperty("user.home"), "Downloads").absolutePath
+        set(value) {
+            if (field == value) return
+            field = value
+            // None downloads follow a new default at once; the hand-picked None folder would otherwise
+            // make the setting silently stop mattering.
+            noneFolder = null
+            fireChanged()
+        }
     // Under the config dir on purpose, not java.io.tmpdir: on most Linux distributions /tmp is
     // tmpfs and RAM-backed, and OS temp cleaners delete stale files, which would purge a download
     // left paused for a week. See FILE_PLACEMENT.md.
@@ -146,7 +189,12 @@ class AppConfig(private val configDir: String) : IAppConfig {
     // Declared after defaultDownloadFolder on purpose: Kotlin initializes properties in
     // declaration order, and seeding the built-ins reads that folder. This runs on first
     // run only — a config on disk replaces the list wholesale.
+    @Volatile
     override var categories: List<DownloadCategory> = DownloadCategory.defaults(defaultDownloadFolder)
+        set(value) {
+            field = value.toList()
+            fireChanged()
+        }
     override val defaultCategories: List<DownloadCategory>
         get() = DownloadCategory.defaults(defaultDownloadFolder)
 
@@ -225,8 +273,8 @@ class AppConfig(private val configDir: String) : IAppConfig {
         out.writeBoolean(autoRenameOnConflict)
         out.writeBoolean(shutdownAfterAllDone)
         out.writeInt(maxParallelDownloads)
-        out.writeBoolean(autoSelectFolder)
-        out.writeInt(folderIndex)
+        out.writeBoolean(rememberNone)
+        out.writeUTF(noneFolder ?: "")
         out.writeInt(sortKey.ordinal)
         out.writeBoolean(sortAscending)
         out.writeLong(minVideoSize)
@@ -254,7 +302,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
         out.writeUTF(virusScannerArgs)
         out.writeBoolean(runOnStartup)
         out.writeUTF(theme)
-        writeStringList(out, savedFolders)
+        writeStringList(out, folderHistory)
         out.writeBoolean(ignoreCertErrors)
         out.writeInt(readTimeoutSeconds)
         writeCategories(out, categories)
@@ -282,8 +330,8 @@ class AppConfig(private val configDir: String) : IAppConfig {
         autoRenameOnConflict = input.readBoolean()
         shutdownAfterAllDone = input.readBoolean()
         maxParallelDownloads = input.readInt()
-        autoSelectFolder = input.readBoolean()
-        folderIndex = input.readInt()
+        rememberNone = input.readBoolean()
+        noneFolder = input.readUTF().ifEmpty { null }
         sortKey = SortKey.entries[input.readInt()]
         sortAscending = input.readBoolean()
         minVideoSize = input.readLong().let {
@@ -321,9 +369,8 @@ class AppConfig(private val configDir: String) : IAppConfig {
             return
         }
         try {
-            savedFolders = readStringList(input)
+            folderHistory = readStringList(input).take(MAX_FOLDER_HISTORY)
         } catch (e: java.io.EOFException) {
-            // config written before savedFolders existed
             return
         }
         try {
@@ -383,9 +430,12 @@ class AppConfig(private val configDir: String) : IAppConfig {
             out.writeUTF(cat.id)
             out.writeUTF(cat.name)
             writeStringList(out, cat.extensions.toList())
+            out.writeBoolean(cat.matchAll)
+            writeStringList(out, cat.urlPatterns)
+            writeStringList(out, cat.fileNamePatterns)
             out.writeUTF(cat.folder)
             out.writeBoolean(cat.predefined)
-            out.writeUTF(cat.icon)
+            out.writeInt(cat.color ?: -1)
         }
     }
 
@@ -398,9 +448,12 @@ class AppConfig(private val configDir: String) : IAppConfig {
                     id = input.readUTF(),
                     name = input.readUTF(),
                     extensions = LinkedHashSet(readStringList(input)),
+                    matchAll = input.readBoolean(),
+                    urlPatterns = readStringList(input),
+                    fileNamePatterns = readStringList(input),
                     folder = input.readUTF(),
                     predefined = input.readBoolean(),
-                    icon = input.readUTF(),
+                    color = input.readInt().takeIf { it >= 0 },
                 )
             )
         }
@@ -420,9 +473,6 @@ class AppConfig(private val configDir: String) : IAppConfig {
         }
         return list
     }
-
-    override val recentFolders: List<String>
-        get() = (listOf(text("ND_AUTO_CAT"), defaultDownloadFolder) + savedFolders).distinct()
 
     override fun toProxy(): Proxy? {
         if (!useProxy) return null

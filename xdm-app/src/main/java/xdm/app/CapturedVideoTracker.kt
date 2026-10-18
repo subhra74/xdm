@@ -3,6 +3,7 @@ package xdm.app
 import xdm.core.downloaders.DashDownloadTaskInfo
 import xdm.core.downloaders.HlsDownloadTaskInfo
 import xdm.core.downloaders.HttpDownloadTaskInfo
+import xdm.core.downloaders.StreamingDownloadTaskInfo
 import xdm.core.util.*
 import xdm.integration.DetectedVideoInfo
 import xdm.integration.EventChannel
@@ -17,6 +18,13 @@ interface ICapturedVideoTracker {
     fun getHttpVideo(videoId: Long): HttpDownloadTaskInfo?
     fun getHlsVideo(videoId: Long): HlsDownloadTaskInfo?
     fun getDashVideo(videoId: Long): DashDownloadTaskInfo?
+
+    /**
+     * Registers a copy of a saved HLS/DASH download for Restart, so the video dialog can take it like a
+     * capture. Kept apart from the captured lists: it is not offered in the browser and never pushes
+     * out a capture. Returns its video id.
+     */
+    fun addRestart(task: StreamingDownloadTaskInfo): Long
     fun clear()
 
     /** Drops everything captured for one browser tab (it reloaded, or navigated elsewhere). */
@@ -42,6 +50,7 @@ class CapturedVideoTracker : ICapturedVideoTracker {
             }
                 ?: hlsVideoList[videoId]?.let { (s, _) -> VideoSummary(s.fileName, -1, "application/x-mpegURL") }
                 ?: dashVideoList[videoId]?.let { (s, _) -> VideoSummary(s.fileName, -1, "application/dash+xml") }
+                ?: restarts[videoId]?.let { s -> VideoSummary(s.fileName, -1, if (s is DashDownloadTaskInfo) "application/dash+xml" else "application/x-mpegURL") }
         } ?: return
 
         AppContext.app.addVideoDownload(videoId, summary.fileName, summary.size, summary.contentType)
@@ -146,6 +155,7 @@ class CapturedVideoTracker : ICapturedVideoTracker {
             this.hlsVideoList[videoId]?.let {
                 return it.first
             }
+            (restarts[videoId] as? HlsDownloadTaskInfo)?.let { return it }
         }
         return null
     }
@@ -155,6 +165,7 @@ class CapturedVideoTracker : ICapturedVideoTracker {
             this.dashVideoList[videoId]?.let {
                 return it.first
             }
+            (restarts[videoId] as? DashDownloadTaskInfo)?.let { return it }
         }
         return null
     }
@@ -190,6 +201,16 @@ class CapturedVideoTracker : ICapturedVideoTracker {
     private val hlsVideoList = LinkedHashMap<Long, Pair<HlsDownloadTaskInfo, StreamingVideoDisplayInfo>>()
     private val dashVideoList = LinkedHashMap<Long, Pair<DashDownloadTaskInfo, StreamingVideoDisplayInfo>>()
     private val httpVideoList = LinkedHashMap<Long, Pair<HttpDownloadTaskInfo, StreamingVideoDisplayInfo>>()
+
+    /** Restarted HLS/DASH downloads waiting for their dialog; a few at most, oldest dropped first. */
+    private val restarts = object : LinkedHashMap<Long, StreamingDownloadTaskInfo>() {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Long, StreamingDownloadTaskInfo>) = size > 16
+    }
+
+    override fun addRestart(task: StreamingDownloadTaskInfo): Long {
+        synchronized(this) { restarts[task.id] = task }
+        return task.id
+    }
     private fun generateUpdatedFileName(oldName: String, newName: String): String {
         val ext: String? = getExtension(oldName)
         var newFileName = FileUtils.sanitizeFileName(newName)

@@ -35,14 +35,15 @@ import javax.swing.event.DocumentListener
 /**
  * Changes the app's temp folder from inside a download dialog: a card shown in place of the form
  * (see [TempFolderCards]), not a modal dialog over an always-on-top window. Shows how full the chosen
- * folder's drive is, and whether it is on a different drive from the download's destination, which
- * turns the final move into a copy.
+ * folder's drive is, and whether it is on a different drive from the download's destination, in
+ * which case both drives need space (video segments go to the temp folder, the joined file to the
+ * destination).
  *
  * Its width is fixed by the path field's column count, never by the path or message text: every
  * message wraps at that width, so a long path or a large font makes it taller, not wider.
  *
- * Only new downloads use the new folder: running and paused ones keep the temp location recorded
- * when they started. See FILE_PLACEMENT.md.
+ * Only new HLS/DASH downloads use the new folder: running and paused ones keep the segment folder
+ * recorded when they started. See FILE_PLACEMENT.md.
  */
 class TempFolderPanel(
     private val onClose: (saved: Boolean) -> Unit,

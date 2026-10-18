@@ -61,8 +61,15 @@ fun createTray(image: Image): Boolean {
     val trayIcon = TrayIcon(trayImage)
     trayIcon.isImageAutoSize = true
     // Right click: the same menu the Linux StatusNotifierItem has. The macOS menu-bar icon keeps
-    // its click-to-open (Quit lives in the Dock and app menu there).
-    if (detectOS() != OS.MacOS) {
+    // its click-to-open (Quit lives in the Dock and app menu there). Windows gets a Swing menu:
+    // AWT's is drawn at a fixed size, tiny on a scaled display.
+    if (detectOS() == OS.Windows) {
+        trayIcon.addMouseListener(object : MouseAdapter() {
+            override fun mouseReleased(e: MouseEvent) {
+                if (e.isPopupTrigger) WindowsTrayMenu.show()
+            }
+        })
+    } else if (detectOS() != OS.MacOS) {
         trayIcon.popupMenu = PopupMenu().apply {
             add(MenuItem(I8N.text("MSG_RESTORE")).apply { addActionListener { app.showAppWindow() } })
             addSeparator()

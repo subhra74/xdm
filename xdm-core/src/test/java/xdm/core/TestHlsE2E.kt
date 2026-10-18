@@ -42,9 +42,9 @@ class TestHlsE2E : StreamingE2EBase() {
         val info = HlsDownloadTaskInfo(
             id = nextId++, fileName = "$caseName.mp4",
             tempDir = File(root, "$caseName/tmp").absolutePath, respectFileName = false,
-            cookie = null, headers = null, origin = null, autoCategorize = false,
-            defaultDownloadFolder = File(root, "$caseName/out").absolutePath,
-            userSelectedDownloadFolder = null, maxPiece = 0, authInfo = null,
+            cookie = null, headers = null, origin = null, categoryId = null,
+            targetFolder = File(root, "$caseName/out").absolutePath,
+maxPiece = 0, authInfo = null,
             url = mediaUrl, audioUrl = audioUrl, audioOnly = audioOnly, independent = independent,
         )
         HlsDownloaderTask(info, newClient(), muxer(), h, root.absolutePath, config()).start()
@@ -178,9 +178,8 @@ class TestHlsE2E : StreamingE2EBase() {
         val h = host("h5b")
         val info = HttpDownloadTaskInfo(
             id = nextId++, url = fileUrl!!, fileName = "h5b.ts", respectFileName = false,
-            cookie = null, headers = null, origin = null, autoCategorize = false,
-            defaultDownloadFolder = File(root, "h5b/out").absolutePath, userSelectedDownloadFolder = null,
-            maxPiece = 4, authInfo = null, knownFileSize = null,
+            cookie = null, headers = null, origin = null, categoryId = null,
+            targetFolder = File(root, "h5b/out").absolutePath,            maxPiece = 4, authInfo = null, knownFileSize = null,
         )
         HttpDownloaderTask(info, h, newClient(), root.absolutePath, config()).start()
         awaitSuccess(h)
@@ -386,9 +385,8 @@ class TestHlsE2E : StreamingE2EBase() {
         val h = host("h14")
         val info = HlsDownloadTaskInfo(
             id = nextId++, fileName = "h14.mp4", tempDir = File(root, "h14/tmp").absolutePath,
-            respectFileName = false, cookie = null, headers = null, origin = null, autoCategorize = false,
-            defaultDownloadFolder = File(root, "h14/out").absolutePath, userSelectedDownloadFolder = null,
-            maxPiece = 0, authInfo = null, url = url("h14/index.m3u8"), audioUrl = null,
+            respectFileName = false, cookie = null, headers = null, origin = null, categoryId = null,
+            targetFolder = File(root, "h14/out").absolutePath,            maxPiece = 0, authInfo = null, url = url("h14/index.m3u8"), audioUrl = null,
             audioOnly = false, independent = false,
         )
         HlsDownloaderTask(info, newClient(), muxer(), h, root.absolutePath, config()).start()

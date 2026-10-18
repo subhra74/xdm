@@ -1,5 +1,6 @@
 package xdm.core
 
+import xdm.core.downloaders.partFileName
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -27,9 +28,8 @@ class TestHttpResourceCleanup : HttpDownloadTestBase() {
         HttpDownloaderTask(
             HttpDownloadTaskInfo(
                 id = id, url = url, fileName = "file-$id.bin", respectFileName = false,
-                cookie = null, headers = null, origin = null, autoCategorize = false,
-                defaultDownloadFolder = tmpDir.absolutePath, userSelectedDownloadFolder = null,
-                maxPiece = 0, authInfo = null, knownFileSize = null,
+                cookie = null, headers = null, origin = null, categoryId = null,
+                targetFolder = tmpDir.absolutePath,                maxPiece = 0, authInfo = null, knownFileSize = null,
             ),
             host, client, work.absolutePath, TestConfig(maxSegments = 2)
         )
@@ -74,7 +74,7 @@ class TestHttpResourceCleanup : HttpDownloadTestBase() {
         val id = 52L
         val bytes = randomData(64 * 1024, seed = 52)
         val host = host()
-        val tempName = "done-$id.tmp"
+        val tempName = partFileName(id)
         File(tmpDir, tempName).writeBytes(bytes)
         val size = bytes.size.toLong()
         val chunks = ConcurrentHashMap<Long, Chunk>()

@@ -139,11 +139,14 @@ private fun readChunks(r: DataInputStream): MutableMap<Long, Chunk> {
     return chunkMap
 }
 
+/**
+ * Progress only. The part file's folder and name are not saved: they are derived from the task info's
+ * target folder and the id every time the download is loaded, so the task info stays the only record of
+ * where the file is.
+ */
 private fun writeContext(context: HttpTaskContext, out: DataOutputStream) {
     context.apply {
         out.writeLong(id)
-        out.writeLongString(tempFolder)
-        out.writeLongString(tempFileName)
         writeChunks(chunks, out)
         out.writeBoolean(init.get())
         out.writeBoolean(totalSize != null)
@@ -210,12 +213,12 @@ private fun writeDashContext(context: DashTaskContext, out: DataOutputStream) {
     }
 }
 
-fun readContext(r: DataInputStream, host: DownloadHost): HttpTaskContext {
+fun readContext(r: DataInputStream, host: DownloadHost, tempFolder: String, tempFileName: String): HttpTaskContext {
     val id = r.readLong()
     return HttpTaskContext(
         id = id,
-        tempFolder = r.readLongString(),
-        tempFileName = r.readLongString(),
+        tempFolder = tempFolder,
+        tempFileName = tempFileName,
         chunks = readChunks(r),
         init = AtomicBoolean(r.readBoolean()),
         totalSize = if (r.readBoolean()) r.readLong() else null,
@@ -316,10 +319,18 @@ fun saveState(context: DashTaskContext, configDir: String) {
     }.onFailure { Logger.error("XDM", "Error saving state", it) }
 }
 
+/** Loads an HTTP download's progress; [tempFolder] and [tempFileName] say where its part file is. */
 @Synchronized
-fun loadState(id: Long, configDir: String, http: PoolingHttpClient, host: DownloadHost): Result<HttpTaskContext> {
+fun loadState(
+    id: Long,
+    configDir: String,
+    http: PoolingHttpClient,
+    host: DownloadHost,
+    tempFolder: String,
+    tempFileName: String,
+): Result<HttpTaskContext> {
     return AtomicIO.readTransacted<HttpTaskContext>("$id.state", configDir) { fs ->
-        return Result.success(readContext(fs, host).apply { httpClient = http })
+        return Result.success(readContext(fs, host, tempFolder, tempFileName).apply { httpClient = http })
     }
 }
 
@@ -334,15 +345,5 @@ fun loadHlsState(id: Long, configDir: String, http: PoolingHttpClient, host: Dow
 fun loadDashState(id: Long, configDir: String, http: PoolingHttpClient, host: DownloadHost): Result<DashTaskContext> {
     return AtomicIO.readTransacted<DashTaskContext>("$id.state", configDir) { fs ->
         return Result.success(readDashContext(fs, http, host))
-    }
-}
-
-@Synchronized
-fun getTempFileFolder(id: Long, configDir: String): Result<Pair<String, String>> {
-    return AtomicIO.readTransacted<Pair<String, String>>("$id.state", configDir) { fs ->
-        fs.readLong() //Skip id
-        return runCatching {
-            Pair(fs.readLongString(), fs.readLongString())
-        }
     }
 }

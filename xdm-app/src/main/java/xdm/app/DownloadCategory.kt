@@ -3,11 +3,12 @@ package xdm.app
 import java.io.File
 
 /**
- * A user-editable file category. Categories drive three things:
- *  - which folder a finished download lands in when "Automatic (by file type)" is picked,
- *  - the category list in the sidebar and the row icons in the downloads list,
- *  - nothing in xdm-core: the engine only carries the `autoCategorize` flag and
- *    [xdm.app.DownloadManager] resolves the folder here.
+ * A user-editable download category (see docs/download-categories.md). Categories drive:
+ *  - the folder a new download is saved to when the category is picked, or preselected by its rules
+ *    ([urlPatterns], [fileNamePatterns], [extensions]; see [CategoryRules]) for a browser capture,
+ *  - the category list in the sidebar (filtered by each download's stored category id) and the color
+ *    of a download row's tile,
+ *  - nothing in xdm-core: the engine only carries the download's opaque `categoryId`.
  *
  * Every category owns a concrete [folder]. It is decided once — when the category is
  * created, or when the built-ins are first seeded from the download folder — and nothing
@@ -24,11 +25,21 @@ data class DownloadCategory(
     val name: String,
     /** Lowercase, dot-prefixed, e.g. `.mp4`. */
     val extensions: Set<String>,
+    /** Globs matched against the download URL and the page URL ([CategoryRules]). */
+    val urlPatterns: List<String> = emptyList(),
+    /** Globs matched against the file name ([CategoryRules]). */
+    val fileNamePatterns: List<String> = emptyList(),
+    /** False: any rule matching is enough. True: every non-empty rule kind must match. */
+    val matchAll: Boolean = false,
     /** Absolute folder this category's downloads land in. */
     val folder: String,
     val predefined: Boolean = false,
-    /** Name of a [xdm.app.utils.RemixIcon] constant; unknown names fall back to a file glyph. */
-    val icon: String = "FILE_LINE",
+    /**
+     * The category's color as `0xRRGGBB`, picked by the user; null keeps the theme's default for it
+     * (see [xdm.app.ui.components.AppTheme.categoryColor]). Categories have no icon: a download's glyph
+     * comes from its file type.
+     */
+    val color: Int? = null,
 ) {
     /**
      * Translated name for an untouched built-in, the plain [name] otherwise. The language key
@@ -42,41 +53,45 @@ data class DownloadCategory(
             return if (translated.isNullOrBlank()) name else translated
         }
 
+    /** Whether [fileName] has one of [extensions]. Used for row icons; download matching is [CategoryRules]. */
     fun matches(fileName: String): Boolean =
         extensions.any { fileName.endsWith(it, ignoreCase = true) }
+
+    /** True when the category has no rules at all: it is only ever picked by hand. */
+    val hasNoRules: Boolean
+        get() = extensions.isEmpty() && urlPatterns.isEmpty() && fileNamePatterns.isEmpty()
 
     companion object {
         /** Everything about a built-in except the folder, which depends on where it is seeded. */
         private class BuiltIn(
             val id: String,
             val name: String,
-            val icon: String,
             val extensions: Set<String>,
         )
 
         /**
-         * The built-in categories. Names, extension lists and icons match what the app used
+         * The built-in categories. Names and extension lists match what the app used
          * before categories became editable, so seeding them changes no download's path.
          */
         private val BUILT_INS = listOf(
             BuiltIn(
-                "CAT_DOCUMENTS", "Documents", "FILE_LIST_2_FILL",
+                "CAT_DOCUMENTS", "Documents",
                 setOf(".pdf", ".docx", ".doc", ".ppt", ".pptx", ".odt", ".odf")
             ),
             BuiltIn(
-                "CAT_COMPRESSED", "Compressed", "FILE_ZIP_FILL",
+                "CAT_COMPRESSED", "Compressed",
                 setOf(".zip", ".rar", ".7z", ".gz", ".tar", ".tgz", ".tz", ".bz2", ".xz")
             ),
             BuiltIn(
-                "CAT_MUSIC", "Music", "MV_FILL",
+                "CAT_MUSIC", "Music",
                 setOf(".mp3", ".aac", ".wav", ".ac3")
             ),
             BuiltIn(
-                "CAT_VIDEOS", "Video", "MOVIE_FILL",
+                "CAT_VIDEOS", "Video",
                 setOf(".ts", ".mp4", ".mkv", ".webm", ".avi")
             ),
             BuiltIn(
-                "CAT_PROGRAMS", "Programs", "MICROSOFT_FILL",
+                "CAT_PROGRAMS", "Programs",
                 setOf(".exe", ".msi", ".msix", ".deb", ".dmg", ".rpm", ".iso", ".pkg", ".sh", ".py")
             ),
         )
@@ -93,7 +108,6 @@ data class DownloadCategory(
                 extensions = it.extensions,
                 folder = File(baseFolder, it.name).absolutePath,
                 predefined = true,
-                icon = it.icon,
             )
         }
 
@@ -113,5 +127,9 @@ data class DownloadCategory(
 
         /** Renders [extensions] back into the comma-separated form shown in the editor. */
         fun formatExtensions(extensions: Set<String>): String = extensions.joinToString(", ")
+
+        /** Splits a one-pattern-per-line field into its trimmed, non-blank patterns, in order. */
+        fun parsePatterns(raw: String): List<String> =
+            raw.lines().map { it.trim() }.filter { it.isNotEmpty() }.distinct()
     }
 }

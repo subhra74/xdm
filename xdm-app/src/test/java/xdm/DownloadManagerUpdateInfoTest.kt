@@ -36,7 +36,7 @@ class DownloadManagerUpdateInfoTest : DownloadManagerTestBase() {
             assertEquals("https://new.example/file.bin?sig=abc", info.url)
             assertEquals("new=2", info.cookie)
 
-            val reloaded = loadState(task.id, dir.absolutePath, client, host()).getOrThrow()
+            val reloaded = loadState(task.id, dir.absolutePath, client, host(), "", "").getOrThrow()
             assertEquals("https://new.example/file.bin?sig=abc", reloaded.url)
             assertEquals("new=2", reloaded.cookie)
 

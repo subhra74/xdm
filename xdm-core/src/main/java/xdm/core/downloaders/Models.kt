@@ -32,10 +32,7 @@ enum class DownloadError {
     DecryptionError,
     /** The finished file could not be written or moved to the destination folder. */
     OutputWriteError,
-    /**
-     * The user stopped a publish that was copying across volumes. The downloaded bytes are still in
-     * the temp folder, so resuming republishes without downloading anything again.
-     */
+    /** The user stopped a move that was copying across volumes. The part file is still where it was. */
     Cancelled,
 }
 
@@ -59,9 +56,14 @@ data class HttpDownloadTaskInfo(
     var cookie: String?,
     var headers: HeaderMap?,
     var origin: String?,
-    var autoCategorize: Boolean,
-    var defaultDownloadFolder: String,
-    var userSelectedDownloadFolder: String?,
+    /** The category chosen when the download was created; null is None. Opaque to xdm-core. */
+    var categoryId: String?,
+    /**
+     * The folder the download is written to and published in. Resolved once when the download is
+     * created and never recomputed; only Change folder rewrites it, after copying the part file there.
+     * The part file's path is derived from it and the id ([partFileName]), so it is the only location record.
+     */
+    var targetFolder: String,
     var maxPiece: Int,
     var authInfo: AuthInfo?,
     val knownFileSize: Long?,
@@ -72,6 +74,13 @@ data class HttpDownloadTaskInfo(
     val etag: String? = null,
 )
 
+/**
+ * The name of a download's partial file: id-based, so it never clashes and does not depend on the final
+ * name, and with no real extension, so players and indexers leave it alone. HTTP writes it directly;
+ * streaming appends the container extension to the muxed output.
+ */
+fun partFileName(id: Long): String = ".${java.lang.Long.toUnsignedString(id, 16)}.xdm-part"
+
 abstract class StreamingDownloadTaskInfo(
     open val id: Long,
     open var fileName: String,
@@ -80,9 +89,8 @@ abstract class StreamingDownloadTaskInfo(
     open var cookie: String?,
     open var headers: HeaderMap?,
     open var origin: String?,
-    open var autoCategorize: Boolean,
-    open var defaultDownloadFolder: String,
-    open var userSelectedDownloadFolder: String?,
+    open var categoryId: String?,
+    open var targetFolder: String,
     open var maxPiece: Int,
     open var authInfo: AuthInfo?,
 )
@@ -95,9 +103,8 @@ data class HlsDownloadTaskInfo(
     override var cookie: String?,
     override var headers: HeaderMap?,
     override var origin: String?,
-    override var autoCategorize: Boolean,
-    override var defaultDownloadFolder: String,
-    override var userSelectedDownloadFolder: String?,
+    override var categoryId: String?,
+    override var targetFolder: String,
     override var maxPiece: Int,
     override var authInfo: AuthInfo?,
     var url: String,
@@ -112,9 +119,8 @@ data class HlsDownloadTaskInfo(
     cookie,
     headers,
     origin,
-    autoCategorize,
-    defaultDownloadFolder,
-    userSelectedDownloadFolder,
+    categoryId,
+    targetFolder,
     maxPiece,
     authInfo
 )
@@ -127,9 +133,8 @@ data class DashDownloadTaskInfo(
     override var cookie: String?,
     override var headers: HeaderMap?,
     override var origin: String?,
-    override var autoCategorize: Boolean,
-    override var defaultDownloadFolder: String,
-    override var userSelectedDownloadFolder: String?,
+    override var categoryId: String?,
+    override var targetFolder: String,
     override var maxPiece: Int,
     override var authInfo: AuthInfo?,
     var videoSegments: List<DashSegment>,
@@ -145,9 +150,8 @@ data class DashDownloadTaskInfo(
     cookie,
     headers,
     origin,
-    autoCategorize,
-    defaultDownloadFolder,
-    userSelectedDownloadFolder,
+    categoryId,
+    targetFolder,
     maxPiece,
     authInfo
 )

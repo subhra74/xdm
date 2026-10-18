@@ -19,8 +19,8 @@ class TestHttpStalls : HttpDownloadTestBase() {
         HttpDownloaderTask(
             HttpDownloadTaskInfo(
                 id = id, url = server.url(path), fileName = "f$id.bin", respectFileName = false, cookie = null,
-                headers = null, origin = null, autoCategorize = false, defaultDownloadFolder = tmpDir.absolutePath,
-                userSelectedDownloadFolder = null, maxPiece = 0, authInfo = null, knownFileSize = null,
+                headers = null, origin = null, categoryId = null, targetFolder = tmpDir.absolutePath,
+maxPiece = 0, authInfo = null, knownFileSize = null,
             ),
             host, CountingHttpClient(httpClientWithReadTimeout(1)), work.absolutePath, config
         ).also { started += it }
@@ -70,8 +70,8 @@ class TestHttpStalls : HttpDownloadTestBase() {
         val t = HttpDownloaderTask(
             HttpDownloadTaskInfo(
                 id = 82, url = server.url("/stall-pause"), fileName = "f82.bin", respectFileName = false, cookie = null,
-                headers = null, origin = null, autoCategorize = false, defaultDownloadFolder = tmpDir.absolutePath,
-                userSelectedDownloadFolder = null, maxPiece = 0, authInfo = null, knownFileSize = null,
+                headers = null, origin = null, categoryId = null, targetFolder = tmpDir.absolutePath,
+maxPiece = 0, authInfo = null, knownFileSize = null,
             ),
             host, CountingHttpClient(httpClientWithReadTimeout(600)), work.absolutePath, TestConfig(maxSegments = 1)
         )

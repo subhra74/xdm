@@ -122,14 +122,14 @@ abstract class DownloadManagerTestBase {
 
     protected fun httpTask(id: Long = nextId++) = HttpDownloadTaskInfo(
         id = id, url = "$hangingBase/file", fileName = "f$id.bin", respectFileName = false, cookie = null,
-        headers = null, origin = null, autoCategorize = false, defaultDownloadFolder = dir.absolutePath,
-        userSelectedDownloadFolder = null, maxPiece = 0, authInfo = null, knownFileSize = null,
+        headers = null, origin = null, categoryId = null, targetFolder = dir.absolutePath,
+maxPiece = 0, authInfo = null, knownFileSize = null,
     )
 
     protected fun hlsTask(id: Long = nextId++) = HlsDownloadTaskInfo(
         id = id, fileName = "v$id.mp4", tempDir = "", respectFileName = false, cookie = null, headers = null,
-        origin = null, autoCategorize = false, defaultDownloadFolder = dir.absolutePath,
-        userSelectedDownloadFolder = null, maxPiece = 0, authInfo = null,
+        origin = null, categoryId = null, targetFolder = dir.absolutePath,
+maxPiece = 0, authInfo = null,
         url = "$hangingBase/index.m3u8", audioUrl = null, independent = false,
     )
 }

@@ -67,11 +67,13 @@ object AppTheme {
     private const val CUSTOM_HUES = 4
 
     /**
-     * Dot color for a category: built-ins have their own hue, a user category takes one of the
-     * custom hues picked from its id, so it keeps the same color across restarts and edits.
+     * Color of a category (sidebar dot, Category combo dot, row tile): the one the user picked, else
+     * the theme's: built-ins have their own hue, a user category takes one of the custom hues picked
+     * from its id, so it keeps the same color across restarts and edits.
      */
     fun categoryColor(category: DownloadCategory): Color =
-        UIManager.getColor("XDM.category.${category.id}")
+        category.color?.let { Color(it) }
+            ?: UIManager.getColor("XDM.category.${category.id}")
             ?: UIManager.getColor("XDM.category.custom${Math.floorMod(category.id.hashCode(), CUSTOM_HUES) + 1}")
             ?: sidebarIcon
 }

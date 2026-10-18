@@ -206,6 +206,27 @@ object FileUtils {
             return DownloadError.OutputWriteError
         }
 
+        copyFile(src, dst, ops, id, replaceExisting, phase, progress)?.let { return it }
+        if (!src.delete()) Logger.error("XDM", "Copied, but could not delete source $src")
+        return null
+    }
+
+    /**
+     * Copies [src] to [dst] durably and leaves [src] alone: checks free space for the whole file, copies
+     * into the scratch file `<dst>.<id>.part`, forces it to disk and renames it into place, so [dst] only
+     * ever appears complete. [phase] and [progress] work as in [moveFile]; a cancel or failure deletes
+     * the scratch file. Returns null on success, [DownloadError.Cancelled], [DownloadError.DiskSpaceError]
+     * or [DownloadError.OutputWriteError].
+     */
+    fun copyFile(
+        src: File,
+        dst: File,
+        ops: MoveOps = MoveOps.Default,
+        id: Long = 0,
+        replaceExisting: Boolean = false,
+        phase: ((MovePhase) -> Boolean)? = null,
+        progress: ((Long) -> Boolean)? = null,
+    ): DownloadError? {
         val folder = dst.absoluteFile.parentFile
         if (ops.usableSpace(folder) < src.length()) {
             Logger.error("XDM", "Not enough space in $folder for ${src.length()} bytes")
@@ -220,7 +241,6 @@ object FileUtils {
             if (dst.exists() && !replaceExisting) throw FileAlreadyExistsException(dst.path)
             ops.atomicMove(part.toPath(), dst.toPath(), replaceExisting)
             syncDirectory(folder.toPath(), ops)
-            if (!src.delete()) Logger.error("XDM", "Copied, but could not delete source $src")
             null
         } catch (_: CopyCancelledException) {
             Logger.info("XDM", "Copy cancelled: $src -> $dst")

@@ -8,12 +8,15 @@ import xdm.app.MessageBoxResult
 import xdm.app.RecordStatus
 import xdm.app.ui.screens.AppWindow
 import xdm.app.ui.screens.BatchUrlDialog
+import xdm.app.ui.screens.ChangeFolderDialog
 import xdm.app.ui.screens.StreamDownloadDialog
+import xdm.app.utils.captureDestination
 import xdm.app.utils.getFileFolder
 import xdm.app.utils.openFileExternal
 import xdm.app.utils.openFolderExternal
 import xdm.app.utils.setClipBoardText
 import xdm.core.downloaders.DownloadType
+import xdm.core.util.CoreUtils
 import xdm.core.util.Logger
 //import xdman.Config
 //import xdman.constants.MessageBoxResult
@@ -77,8 +80,44 @@ object AppMenuHandler {
         }
     }
 
+    /**
+     * Restart: submits the download again exactly like a new browser capture (docs/download-categories.md
+     * §6.2): a new entry with a new id, its category and folder resolved afresh, the duplicate prompt as
+     * usual. The old entry is left as it is. Offered for stopped and finished HTTP, HLS and DASH downloads.
+     */
     fun restartDownload(ent: DbRecord?) {
-        //    AppContext.INSTANCE.getDownloader().restartDownload(ent.getId());
+        if (ent == null) return
+        if (!(ent.status.isStopped || ent.status == RecordStatus.FINISHED)) return
+        val db = AppContext.taskInfoDB
+        when (ent.downloadType) {
+            DownloadType.Http -> db.getHttpTask(ent.id)?.let { t ->
+                val (categoryId, folder) = captureDestination(t.fileName, t.url, t.origin)
+                AppContext.app.addDownload(
+                    t.copy(
+                        id = CoreUtils.uniqueId(), categoryId = categoryId, targetFolder = folder,
+                        etag = null,
+                    )
+                )
+            }
+
+            DownloadType.Hls -> db.getHlsTask(ent.id)?.let { t ->
+                val vid = AppContext.videoTracker.addRestart(t.copy(id = CoreUtils.uniqueId()))
+                AppContext.videoTracker.addVideoDownload(vid)
+            }
+
+            DownloadType.Dash -> db.getDashTask(ent.id)?.let { t ->
+                val vid = AppContext.videoTracker.addRestart(t.copy(id = CoreUtils.uniqueId()))
+                AppContext.videoTracker.addVideoDownload(vid)
+            }
+
+            else -> {}
+        }
+    }
+
+    /** Opens Change folder for a stopped download (docs/download-categories.md §6.1). */
+    fun changeFolder(ent: DbRecord?, window: Window?) {
+        if (ent == null || !ent.status.isStopped || ent.downloadType == DownloadType.Batch) return
+        ChangeFolderDialog(window, ent).isVisible = true
     }
 
     fun resumeDownload(ent: DbRecord?) {
@@ -104,8 +143,13 @@ object AppMenuHandler {
         )
     }
 
+    /** Tells the user that downloads being moved were left out of a delete. */
+    private fun warnMovingSkipped(window: Window?) =
+        MessageBox.show(window, text("CAT_DELETE"), text("MSG_DELETE_SKIPPED_MOVING"))
+
     fun deleteDownload(ent: DbRecord?, window: Window?) {
         if (ent == null) return
+        if (downloader.isMoving(ent.id)) return warnMovingSkipped(window)
         val (approve, deleteFromDisk) = showConfirmDeleteDialog(window)
         if (approve) {
             Logger.info("XDM", "Deleting ${ent.id}")
@@ -117,7 +161,9 @@ object AppMenuHandler {
         val (approve, deleteFromDisk) = showConfirmDeleteDialog(window)
         if (approve) {
             Logger.info("XDM", "Deleting ${selectedItems.size} selected")
-            downloader.deleteDownloads(selectedItems.map { it.id }, deleteFromDisk)
+            val (moving, rest) = selectedItems.partition { downloader.isMoving(it.id) }
+            downloader.deleteDownloads(rest.map { it.id }, deleteFromDisk)
+            if (moving.isNotEmpty()) warnMovingSkipped(window)
         }
     }
 

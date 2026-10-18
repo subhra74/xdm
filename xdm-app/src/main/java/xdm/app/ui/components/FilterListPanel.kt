@@ -139,7 +139,7 @@ class FilterListPanel(
         val counts = HashMap<String?, Int>()
         counts[null] = records.size
         for (cat in AppContext.config.categories) {
-            counts[cat.id] = records.count { cat.matches(it.fileName) }
+            counts[cat.id] = records.count { it.categoryId == cat.id }
         }
         categoryCounts = counts
         stateFilterList.repaint()

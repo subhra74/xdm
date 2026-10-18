@@ -25,9 +25,9 @@ class TestStreamingResourceCleanup : StreamingE2EBase() {
         val info = HlsDownloadTaskInfo(
             id = nextId++, fileName = "$caseName.mp4",
             tempDir = File(root, "$caseName/tmp").absolutePath, respectFileName = false,
-            cookie = null, headers = null, origin = null, autoCategorize = false,
-            defaultDownloadFolder = File(root, "$caseName/out").absolutePath,
-            userSelectedDownloadFolder = null, maxPiece = 0, authInfo = null,
+            cookie = null, headers = null, origin = null, categoryId = null,
+            targetFolder = File(root, "$caseName/out").absolutePath,
+maxPiece = 0, authInfo = null,
             url = url, audioUrl = null, audioOnly = false, independent = false,
         )
         return HlsDownloaderTask(info, client, muxer(), h, root.absolutePath, config(maxSegments)) to h

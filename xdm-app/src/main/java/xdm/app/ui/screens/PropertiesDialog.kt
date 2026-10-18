@@ -203,21 +203,21 @@ class PropertiesDialog(private val owner: Window?, ent: DbRecord) : JDialog(owne
         return when (ent.downloadType) {
             DownloadType.Http -> db.getHttpTask(ent.id)?.let {
                 Details(
-                    it.url, folderOf(it.userSelectedDownloadFolder, it.defaultDownloadFolder),
+                    it.url, it.targetFolder.takeIf { f -> f.isNotBlank() },
                     it.fileName, it.origin, it.headers, it.cookie
                 )
             }
 
             DownloadType.Hls -> db.getHlsTask(ent.id)?.let {
                 Details(
-                    it.url, folderOf(it.userSelectedDownloadFolder, it.defaultDownloadFolder),
+                    it.url, it.targetFolder.takeIf { f -> f.isNotBlank() },
                     it.fileName, it.origin, it.headers, it.cookie
                 )
             }
 
             DownloadType.Dash -> db.getDashTask(ent.id)?.let {
                 Details(
-                    it.url, folderOf(it.userSelectedDownloadFolder, it.defaultDownloadFolder),
+                    it.url, it.targetFolder.takeIf { f -> f.isNotBlank() },
                     it.fileName, it.origin, it.headers, it.cookie
                 )
             }
@@ -229,9 +229,6 @@ class PropertiesDialog(private val owner: Window?, ent: DbRecord) : JDialog(owne
             DownloadType.Torrent -> null
         } ?: Details(null, null, null, null, null, null)
     }
-
-    private fun folderOf(userSelected: String?, default: String): String? =
-        (userSelected ?: default).takeIf { it.isNotBlank() }
 
     /**
      * Flattens the headers into display rows. Cookies are pulled out of the map and joined with
@@ -453,7 +450,7 @@ class PropertiesDialog(private val owner: Window?, ent: DbRecord) : JDialog(owne
 }
 
 /** What a publish in [phase] shows; only the copy has a meaningful percentage. */
-fun publishText(phase: MovePhase?, progress: Int): String = when (phase) {
+fun moveText(phase: MovePhase?, progress: Int): String = when (phase) {
     MovePhase.PREPARING -> text("STAT_PREPARING_MOVE")
     MovePhase.FINALIZING -> text("STAT_FINALIZING")
     MovePhase.COPYING, null ->
@@ -466,7 +463,7 @@ fun statusText(status: RecordStatus): String = when (status) {
     RecordStatus.FINISHED -> text("STAT_FINISHED")
     RecordStatus.PAUSED -> text("STAT_PAUSED")
     RecordStatus.ASSEMBLING -> text("STAT_ASSEMBLING")
-    RecordStatus.PUBLISHING -> text("STAT_PUBLISHING")
+    RecordStatus.MOVING -> text("STAT_PUBLISHING")
     RecordStatus.ERROR -> text("MSG_FAILED")
     RecordStatus.READY -> text("MSG_WAIT")
 }

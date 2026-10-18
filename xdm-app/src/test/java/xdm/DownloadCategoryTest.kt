@@ -8,11 +8,15 @@ import org.junit.jupiter.api.Test
 import xdm.app.AppConfig
 import xdm.app.AppContext
 import xdm.app.DownloadCategory
-import xdm.app.utils.categoryFolderFor
+import xdm.app.CategoryRules
+import xdm.app.ui.components.AppTheme
+import xdm.app.ui.components.CategoryStyle
+import xdm.app.utils.RemixIcon
+import xdm.app.utils.folderFor
 import java.io.File
 import java.nio.file.Files
 
-/** User-defined categories: matching, folder resolution and config round-tripping. */
+/** User-defined categories: rules, folder resolution and config round-tripping. */
 class DownloadCategoryTest {
     private lateinit var dir: File
 
@@ -64,38 +68,96 @@ class DownloadCategoryTest {
         assertEquals(before, config.categories.map { it.folder })
     }
 
+    private fun match(name: String?, url: String? = null, page: String? = null) =
+        CategoryRules.match(name, url, page)?.id
+
     @Test
-    fun defaultCategories_keepLegacyFolderNames() {
-        val base = dir.absolutePath
-        assertEquals(File(base, "Video").absolutePath, categoryFolderFor("clip.mp4", base))
-        assertEquals(File(base, "Documents").absolutePath, categoryFolderFor("paper.pdf", base))
-        assertEquals(File(base, "Compressed").absolutePath, categoryFolderFor("bundle.tar.gz", base))
-        assertEquals(File(base, "Music").absolutePath, categoryFolderFor("song.mp3", base))
-        assertEquals(File(base, "Programs").absolutePath, categoryFolderFor("setup.exe", base))
+    fun defaultCategories_matchByExtension() {
+        assertEquals("CAT_VIDEOS", match("clip.mp4"))
+        assertEquals("CAT_DOCUMENTS", match("paper.pdf"))
+        assertEquals("CAT_COMPRESSED", match("bundle.tar.gz"))
+        assertEquals("CAT_MUSIC", match("song.mp3"))
+        assertEquals("CAT_PROGRAMS", match("setup.exe"))
+        assertEquals(null, match("notes.xyz"), "no rule matches: None")
     }
 
     @Test
-    fun categoryFolderWins_overTheBaseFolderPassedIn() {
+    fun folderFor_isTheCategoryFolderOrTheNoneFolder() {
+        val video = AppContext.config.categories.first { it.id == "CAT_VIDEOS" }
+        assertEquals(File(dir, "Video").absolutePath, folderFor(video))
+        assertEquals(dir.absolutePath, folderFor(null))
+        AppContext.config.noneFolder = "/picked"
+        assertEquals("/picked", folderFor(null))
+    }
+
+    @Test
+    fun globWithoutWildcard_isContains_withWildcard_isWholeMatch() {
         val config = AppContext.config as AppConfig
         config.categories = listOf(
-            DownloadCategory(id = "a", name = "Video", extensions = setOf(".mp4"), folder = "/movies")
+            DownloadCategory(id = "setup", name = "Setups", extensions = emptySet(), fileNamePatterns = listOf("setup"), folder = "/s"),
+            DownloadCategory(id = "inv", name = "Invoices", extensions = emptySet(), fileNamePatterns = listOf("invoice_*"), folder = "/i"),
         )
-        assertEquals("/movies", categoryFolderFor("clip.mp4", "/some/other/base"))
+        assertEquals("setup", match("my-SETUP-v2.exe"))
+        assertEquals("inv", match("invoice_42.pdf"))
+        assertEquals(null, match("old_invoice_42.pdf"), "a wildcard pattern must match the whole name")
     }
 
     @Test
-    fun unmatchedFile_staysInBaseFolder() {
-        assertEquals(dir.absolutePath, categoryFolderFor("notes.xyz", dir.absolutePath))
-    }
-
-    @Test
-    fun firstMatchingCategoryWins() {
+    fun urlRules_seeTheDownloadAndThePageUrl() {
         val config = AppContext.config as AppConfig
         config.categories = listOf(
-            DownloadCategory(id = "a", name = "Podcasts", extensions = setOf(".mp3"), folder = "/podcasts"),
-            DownloadCategory(id = "b", name = "Music", extensions = setOf(".mp3"), folder = "/music"),
+            DownloadCategory(id = "yt", name = "Site", extensions = emptySet(), urlPatterns = listOf("example.com/watch"), folder = "/v"),
         )
-        assertEquals("/podcasts", categoryFolderFor("episode.mp3", dir.absolutePath))
+        assertEquals("yt", match("x.bin", "https://cdn.net/1.ts", "https://www.example.com/watch?v=1"))
+        assertEquals(null, match("x.bin", "https://cdn.net/1.ts", "https://other.org/"))
+    }
+
+    @Test
+    fun all_needsEveryNonEmptyKind() {
+        val config = AppContext.config as AppConfig
+        config.categories = listOf(
+            DownloadCategory(id = "w", name = "Work", extensions = setOf(".pdf"), urlPatterns = listOf("intranet.corp/"),
+                matchAll = true, folder = "/w"),
+        )
+        assertEquals("w", match("a.pdf", "https://intranet.corp/a.pdf"))
+        assertEquals(null, match("a.pdf", "https://public.org/a.pdf"), "URL rule not met")
+        assertEquals(null, match("a.doc", "https://intranet.corp/a.doc"), "extension rule not met")
+    }
+
+    @Test
+    fun precedence_moreSpecificKindWins_thenListOrder() {
+        val config = AppContext.config as AppConfig
+        config.categories = listOf(
+            DownloadCategory(id = "docs", name = "Docs", extensions = setOf(".pdf"), folder = "/d"),
+            DownloadCategory(id = "work", name = "Work", extensions = emptySet(), urlPatterns = listOf("intranet.corp/"), folder = "/w"),
+            DownloadCategory(id = "work2", name = "Work 2", extensions = emptySet(), urlPatterns = listOf("intranet"), folder = "/w2"),
+        )
+        assertEquals("work", match("report.pdf", "https://intranet.corp/report.pdf"), "URL beats extension; list order breaks the tie")
+        assertEquals("docs", match("report.pdf", "https://public.org/report.pdf"))
+    }
+
+    @Test
+    fun fileGlyph_comesFromTheExtension_notTheCategory() {
+        val config = AppContext.config as AppConfig
+        // A category claiming .mp4 does not change the glyph: categories only have a color.
+        config.categories = listOf(DownloadCategory(id = "w", name = "Work", extensions = setOf(".mp4"), folder = "/w"))
+        assertEquals(RemixIcon.MOVIE_FILL, CategoryStyle.glyphForFile("clip.MP4"))
+        assertEquals(RemixIcon.FILE_ZIP_FILL, CategoryStyle.glyphForFile("bundle.tar.xz"))
+        assertEquals(RemixIcon.FILE_FILL, CategoryStyle.glyphForFile("notes.xyz"))
+        assertEquals(RemixIcon.FILE_FILL, CategoryStyle.glyphForFile("README"))
+    }
+
+    @Test
+    fun pickedColor_winsOverTheThemeColor() {
+        val c = DownloadCategory(id = "x", name = "X", extensions = emptySet(), folder = "/x", color = 0x123456)
+        assertEquals(java.awt.Color(0x123456), AppTheme.categoryColor(c))
+    }
+
+    @Test
+    fun categoryWithoutRules_neverMatches() {
+        val config = AppContext.config as AppConfig
+        config.categories = listOf(DownloadCategory(id = "manual", name = "Manual", extensions = emptySet(), folder = "/m"))
+        assertEquals(null, match("anything.mp4", "https://x.org/anything.mp4"))
     }
 
     @Test
@@ -119,8 +181,11 @@ class DownloadCategoryTest {
             id = "custom-1",
             name = "Subtitles",
             extensions = setOf(".srt", ".vtt"),
+            urlPatterns = listOf("opensubtitles.org/"),
+            fileNamePatterns = listOf("*.forced.*"),
+            matchAll = true,
             folder = "/subs",
-            icon = "FILE_TEXT_LINE",
+            color = 0x2B88C8,
         )
         AppConfig(dir.absolutePath).apply {
             categories = DownloadCategory.defaults(dir.absolutePath) + custom

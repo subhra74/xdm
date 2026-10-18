@@ -49,8 +49,8 @@ class TestTaskInfoDB : HttpDownloadTestBase() {
     private fun httpTask(id: Long, url: String = "https://example.com/file.bin") = HttpDownloadTaskInfo(
         id = id, url = url, fileName = "file.bin", respectFileName = true,
         cookie = "session=s3cr3t; theme=dark", headers = headers, origin = "https://example.com/page",
-        autoCategorize = true, defaultDownloadFolder = "/downloads", userSelectedDownloadFolder = "/chosen",
-        maxPiece = 4, authInfo = null, knownFileSize = 1234L,
+        categoryId = "CAT_VIDEOS", targetFolder = "/downloads",
+        maxPiece = 4, authInfo = null, knownFileSize = 1234L
     )
 
     @Test
@@ -65,7 +65,7 @@ class TestTaskInfoDB : HttpDownloadTestBase() {
         val task = HlsDownloadTaskInfo(
             id = 2, fileName = "v.mp4", tempDir = "/tmp/v", respectFileName = false,
             cookie = "cf=1", headers = headers, origin = "https://example.com/hls",
-            autoCategorize = false, defaultDownloadFolder = "/downloads", userSelectedDownloadFolder = "/chosen",
+            categoryId = "CAT_VIDEOS", targetFolder = "/downloads",
             maxPiece = 0, authInfo = null, url = "https://cdn.example.com/master.m3u8",
             audioUrl = "https://cdn.example.com/audio.m3u8", audioOnly = false, independent = true,
         )
@@ -78,8 +78,7 @@ class TestTaskInfoDB : HttpDownloadTestBase() {
         val task = DashDownloadTaskInfo(
             id = 3, fileName = "d.mp4", tempDir = "/tmp/d", respectFileName = false,
             cookie = "cf=2", headers = headers, origin = "https://example.com/dash",
-            autoCategorize = false, defaultDownloadFolder = "/downloads", userSelectedDownloadFolder = null,
-            maxPiece = 0, authInfo = null,
+            categoryId = null, targetFolder = "/downloads",            maxPiece = 0, authInfo = null,
             videoSegments = listOf(DashSegment(URI("https://cdn.example.com/v1.m4s"), Pair(0L, 99L))),
             audioSegments = listOf(DashSegment(URI("https://cdn.example.com/a1.m4s"), null)),
             url = "https://cdn.example.com/manifest.mpd", audioMime = "audio/mp4", videoMime = "video/mp4",
@@ -101,7 +100,7 @@ class TestTaskInfoDB : HttpDownloadTestBase() {
         assertEquals("session=s3cr3t; theme=dark", again.cookie)
         assertEquals(headers, again.headers)
         assertEquals("https://example.com/page", again.origin)
-        assertEquals("/chosen", again.userSelectedDownloadFolder)
+        assertEquals("CAT_VIDEOS", again.categoryId)
     }
 
     @Test
@@ -131,7 +130,7 @@ class TestTaskInfoDB : HttpDownloadTestBase() {
         )
         saveState(ctx, work.absolutePath)
 
-        val loaded = loadState(6, work.absolutePath, CountingHttpClient(), host)
+        val loaded = loadState(6, work.absolutePath, CountingHttpClient(), host, tmpDir.absolutePath, "t.tmp")
         assertTrue(loaded.isSuccess, "state with >64KB values did not load: ${loaded.exceptionOrNull()}")
         val c = loaded.getOrThrow()
         assertEquals(ctx.url, c.url)
@@ -176,8 +175,7 @@ class TestTaskInfoDB : HttpDownloadTestBase() {
         val ep = server.register("/auth", Endpoint(bytes))
         db().saveHttpTask(
             httpTask(60, url = server.url("/auth")).copy(
-                defaultDownloadFolder = tmpDir.absolutePath,
-                userSelectedDownloadFolder = null,
+                targetFolder = tmpDir.absolutePath,
                 knownFileSize = null,
                 maxPiece = 0,
             )

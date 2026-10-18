@@ -17,14 +17,15 @@ import javax.swing.UIManager
  */
 enum class RemixIcon(val codepoint: Int) {
     ADD_LARGE_FILL(0xf4b0),
+    ADD_FILL(0xea12),
     ADD_LINE(0xea13),
     ARCHIVE_2_FILL(0xf3a5),
     ARCHIVE_2_LINE(0xf3a6),
-    ARCHIVE_STACK_FILL(0xf426),
     ARROW_DOWN_CIRCLE_FILL(0xea49),
     ARROW_DOWN_CIRCLE_LINE(0xea4a),
     ARROW_LEFT_LINE(0xea60),
     ARROW_UP_DOWN_FILL(0xea73),
+    BOOK_SHELF_LINE(0xf523),
     BRUSH_LINE(0xeb01),
     CHECKBOX_BLANK_LINE(0xeb7f),
     CHECKBOX_CIRCLE_FILL(0xeb80),

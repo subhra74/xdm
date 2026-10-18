@@ -23,8 +23,8 @@ class DownloadManagerVideoTest : DownloadManagerTestBase() {
 
     private fun downloadTwice(videoId: Long): List<Long> {
         config.maxParallelDownloads = 5
-        dm.addVideoDownload(videoId, "first.mp4", File(dir, "out1").absolutePath, autoSelectFolder = false)
-        dm.addVideoDownload(videoId, "second.mp4", File(dir, "out2").absolutePath, autoSelectFolder = true)
+        dm.addVideoDownload(videoId, "first.mp4", null, File(dir, "out1").absolutePath)
+        dm.addVideoDownload(videoId, "second.mp4", null, File(dir, "out2").absolutePath)
         remember()
         return recordIds()
     }
@@ -41,7 +41,7 @@ class DownloadManagerVideoTest : DownloadManagerTestBase() {
             listOf("first.mp4", "second.mp4"), ids.map { taskDB.getHttpTask(it)!!.fileName }
         , "each download keeps its own task info")
         assertEquals(listOf(File(dir, "out1").absolutePath, File(dir, "out2").absolutePath),
-            ids.map { taskDB.getHttpTask(it)!!.defaultDownloadFolder })
+            ids.map { taskDB.getHttpTask(it)!!.targetFolder })
     }
 
     @Test
@@ -60,8 +60,8 @@ class DownloadManagerVideoTest : DownloadManagerTestBase() {
     fun dashVideoDownloadedTwice_getsSeparateIds() {
         val source = DashDownloadTaskInfo(
             id = nextId++, fileName = "detected.mp4", tempDir = "", respectFileName = false, cookie = null,
-            headers = null, origin = null, autoCategorize = false, defaultDownloadFolder = dir.absolutePath,
-            userSelectedDownloadFolder = null, maxPiece = 0, authInfo = null,
+            headers = null, origin = null, categoryId = null, targetFolder = dir.absolutePath,
+maxPiece = 0, authInfo = null,
             videoSegments = listOf(DashSegment(URI("$hangingBase/v.m4s"), null)),
             audioSegments = listOf(DashSegment(URI("$hangingBase/a.m4s"), null)),
             url = "$hangingBase/manifest.mpd", audioMime = "audio/mp4", videoMime = "video/mp4",
@@ -82,8 +82,8 @@ class DownloadManagerVideoTest : DownloadManagerTestBase() {
         tracker.addVideoHls(listOf(hls.copy() to StreamingVideoDisplayInfo()))
 
         config.maxParallelDownloads = 5
-        dm.addVideoDownload(http.id, "renamed.bin", File(dir, "elsewhere").absolutePath, autoSelectFolder = true)
-        dm.addVideoDownload(hls.id, "renamed.mp4", File(dir, "elsewhere").absolutePath, autoSelectFolder = true)
+        dm.addVideoDownload(http.id, "renamed.bin", null, File(dir, "elsewhere").absolutePath)
+        dm.addVideoDownload(hls.id, "renamed.mp4", null, File(dir, "elsewhere").absolutePath)
         remember()
 
         assertEquals(http, tracker.getHttpVideo(http.id))
@@ -98,9 +98,9 @@ class DownloadManagerVideoTest : DownloadManagerTestBase() {
         tracker.addVideoHls(listOf(hls to StreamingVideoDisplayInfo()))
 
         config.maxParallelDownloads = 5
-        dm.addVideoDownload(http.id, "a.mp4", dir.absolutePath, autoSelectFolder = false, maxPiece = 2)
-        dm.addVideoDownload(hls.id, "b.mp4", dir.absolutePath, autoSelectFolder = false, maxPiece = 16)
-        dm.addVideoDownload(hls.id, "c.mp4", dir.absolutePath, autoSelectFolder = false)
+        dm.addVideoDownload(http.id, "a.mp4", null, dir.absolutePath, maxPiece = 2)
+        dm.addVideoDownload(hls.id, "b.mp4", null, dir.absolutePath, maxPiece = 16)
+        dm.addVideoDownload(hls.id, "c.mp4", null, dir.absolutePath)
         remember()
 
         val ids = recordIds()

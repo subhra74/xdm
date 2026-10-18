@@ -52,7 +52,7 @@ class ProgressWindow(val id: Long) : JFrame() {
         lblStat4.text = ""
         lblStat.text = text("MSG_FAILED")
         val message = downloadErrorText(error)
-        // Wrap so longer messages (e.g. the TLS hint) fit the fixed-width window instead of being cut off.
+        // Messages are kept short (the help link explains the details), but still wrap rather than being cut off.
         // The message takes both columns: the size label next to it would otherwise squeeze it.
         val escaped = message.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
         lblStat3.text = "<html><body style='width:220px'>$escaped</body></html>"
@@ -79,8 +79,8 @@ class ProgressWindow(val id: Long) : JFrame() {
      * would sit frozen at 100%. Speed and ETA are blank because neither applies to a local copy.
      * Pause is disabled while finalizing, which cannot be undone (see DownloadManager.stopDownload).
      */
-    fun showPublishing(phase: MovePhase, prg: Int) {
-        val status = publishText(phase, prg)
+    fun showMoving(phase: MovePhase, prg: Int) {
+        val status = moveText(phase, prg)
         lblStat.text = text("STAT_PUBLISHING")
         title = "[ $prg% ] $status"
         lblStat1.text = status
@@ -172,8 +172,10 @@ class ProgressWindow(val id: Long) : JFrame() {
 
     /** The website page for the current error; set by [showError]. */
     private var helpUrl: String? = null
-    private val lblHelp = JLabel(text("ERR_HELP_LINK") + " →").apply {
+    /** A small link under the short error text; the details live on the XDM website. */
+    private val lblHelp = JLabel(text("ERR_HELP_LINK")).apply {
         isVisible = false
+        font = font.deriveFont(font.size2D - 1f)
         cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
         foreground = UIManager.getColor("ProgressBar.foreground")
         addMouseListener(object : MouseAdapter() {

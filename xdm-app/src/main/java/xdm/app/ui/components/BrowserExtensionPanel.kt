@@ -69,7 +69,7 @@ class BrowserExtensionPanel : JPanel() {
             foreground = settingsMutedColor()
             border = ScaledEmptyBorder(0, 2, 7, 0)
         })
-        add(linkRow(extensionPageUrl("chromium")))
+        add(linkRow(extensionPageUrl("chromium"), fitText = false))
     }
 
     /**
@@ -122,10 +122,14 @@ class BrowserExtensionPanel : JPanel() {
     }
 }
 
-/** Read-only [url] field with a copy button beside it. */
-private fun linkRow(url: String): JPanel {
+/**
+ * Read-only [url] field with a copy button beside it. With [fitText] false the field asks for no width
+ * of its own (it still stretches to fill the row), so a long URL does not widen the window it sits in.
+ */
+private fun linkRow(url: String, fitText: Boolean = true): JPanel {
     val field = JTextField(url).apply {
         isEditable = false
+        if (!fitText) columns = 1
         // Filled but borderless: it reads as a value to copy rather than an input.
         putClientProperty(
             FlatClientProperties.STYLE,

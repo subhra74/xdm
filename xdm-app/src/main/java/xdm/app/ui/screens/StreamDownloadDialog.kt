@@ -4,20 +4,15 @@ import com.formdev.flatlaf.FlatClientProperties
 import xdm.app.AppContext
 import xdm.app.I8N.text
 import xdm.app.ui.components.CappedComboBox
+import xdm.app.ui.components.DestinationPicker
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
-import xdm.app.utils.chooseFile
 import xdm.app.utils.createIcon
 import xdm.app.utils.dialogHeight
-import xdm.app.utils.isAutoCategorySelected
-import xdm.app.utils.persistFolderChoiceOnChange
-import xdm.app.utils.populateSaveInFolders
 import xdm.app.utils.px
-import xdm.app.utils.rememberFolderChoice
 import xdm.app.utils.sameWidth
 import xdm.app.utils.scaledInsets
 import xdm.app.utils.scaledSize
-import xdm.app.utils.selectedBaseFolder
 import xdm.core.downloaders.DashDownloadTaskInfo
 import xdm.core.downloaders.HlsDownloadTaskInfo
 import xdm.core.downloaders.HttpDownloadTaskInfo
@@ -44,7 +39,6 @@ import java.awt.Window
 import java.awt.datatransfer.DataFlavor
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import java.io.File
 import java.net.URI
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
@@ -58,6 +52,7 @@ import javax.swing.JButton
 import javax.swing.JComboBox
 import javax.swing.JComponent
 import javax.swing.JDialog
+import javax.swing.SwingConstants
 import javax.swing.JLabel
 import javax.swing.JList
 import javax.swing.JOptionPane
@@ -112,8 +107,8 @@ class StreamDownloadDialog(owner: Window?) : JDialog(owner, ModalityType.MODELES
     private val tabs = JTabbedPane()
 
     private val txtFileName = JTextField().apply { columns = 10 }
-    private val modelSaveIn = DefaultComboBoxModel<String>()
-    private val cmbSaveIn = CappedComboBox(modelSaveIn)
+    /** A stream URL entered here counts as a browser capture (it is a video): the category rules apply. */
+    private val picker = DestinationPicker(this, capture = true)
     private val cmbSegments = JComboBox(arrayOf(1, 2, 4, 8, 16, 32, 64))
     private val btnDownload = JButton(text("ND_DOWNLOAD"))
 
@@ -147,8 +142,7 @@ class StreamDownloadDialog(owner: Window?) : JDialog(owner, ModalityType.MODELES
         rootPane.border = ScaledEmptyBorder(10, 10, 10, 10)
 
         wireEvents()
-        populateSaveInFolders(modelSaveIn, cmbSaveIn)
-        persistFolderChoiceOnChange(cmbSaveIn)
+        picker.reset(null, null, null)
         cmbSegments.selectedItem = AppContext.config.maxSegments
         rootPane.defaultButton = btnLoad
         reset()
@@ -240,12 +234,15 @@ class StreamDownloadDialog(owner: Window?) : JDialog(owner, ModalityType.MODELES
                 gridx = x; gridy = y; gridwidth = w; weightx = weightX; this.fill = fill
                 anchor = GridBagConstraints.WEST; insets = scaledInsets(4, 4, 4, 4)
             }
-        p.add(JLabel(text("ND_FILE")), gbc(0, 0))
-        p.add(txtFileName, gbc(1, 0, 2, 1.0, GridBagConstraints.HORIZONTAL))
-        p.add(JLabel(text("LBL_SAVE_IN")), gbc(0, 1))
-        p.add(cmbSaveIn, gbc(1, 1, 1, 1.0, GridBagConstraints.HORIZONTAL))
-        val btnBrowse = JButton(createIcon(RemixIcon.FOLDER_FILL, 16, Color.GRAY)).apply { addActionListener { browse() } }
-        p.add(btnBrowse, gbc(2, 1))
+        // Same columns and insets as the picker's rows below, so the three fields line up.
+        p.add(JLabel(text("ND_FILE")).apply { horizontalAlignment = SwingConstants.RIGHT }, GridBagConstraints().apply {
+            anchor = GridBagConstraints.EAST; insets = scaledInsets(5, 0, 5, 10); gridx = 0; gridy = 0
+        })
+        p.add(txtFileName, GridBagConstraints().apply {
+            gridwidth = 4; weightx = 1.0; fill = GridBagConstraints.HORIZONTAL
+            insets = scaledInsets(5, 0, 5, 5); gridx = 1; gridy = 0
+        })
+        picker.addTo(p, firstRow = 1, leftInset = 0)
 
         cmbSegments.maximumSize = cmbSegments.preferredSize
         val btnCancel = JButton(text("ND_CANCEL")).apply { addActionListener { dispose() } }
@@ -259,7 +256,7 @@ class StreamDownloadDialog(owner: Window?) : JDialog(owner, ModalityType.MODELES
             add(btnCancel); add(Box.createRigidArea(scaledSize(10, 0)))
             add(btnDownload)
         }
-        p.add(row, gbc(0, 2, 3, 1.0, GridBagConstraints.HORIZONTAL))
+        p.add(row, gbc(0, 3, 5, 1.0, GridBagConstraints.HORIZONTAL))
         return p
     }
 
@@ -282,6 +279,7 @@ class StreamDownloadDialog(owner: Window?) : JDialog(owner, ModalityType.MODELES
         cmbAudio.addActionListener { suggestName(); updateDownloadButton() }
         txtFileName.document.addDocumentListener(onChange {
             if (!settingName) nameEdited = true
+            picker.fileNameChanged(txtFileName.text)
             updateDownloadButton()
         })
     }
@@ -342,6 +340,9 @@ class StreamDownloadDialog(owner: Window?) : JDialog(owner, ModalityType.MODELES
         setChoicesVisible(format = manifest !is LoadedManifest.HlsMedia, audio = false)
         lstFormat.selectedIndex = 0
         formatSelected()
+        val (headers, _) = collectHeaders()
+        val origin = headers.entries.firstOrNull { it.key.equals("Referer", ignoreCase = true) }?.value?.firstOrNull()
+        picker.reset(txtFileName.text, manifest.url, origin)
         rootPane.defaultButton = btnDownload
     }
 
@@ -429,9 +430,8 @@ class StreamDownloadDialog(owner: Window?) : JDialog(owner, ModalityType.MODELES
         val name = FileUtils.sanitizeFileName(txtFileName.text.trim())?.takeIf { it.isNotBlank() } ?: return
         val (headers, cookie) = collectHeaders()
         val origin = headers.entries.firstOrNull { it.key.equals("Referer", ignoreCase = true) }?.value?.firstOrNull()
-        val folder = selectedBaseFolder(cmbSaveIn)
-        val auto = isAutoCategorySelected(cmbSaveIn)
-        rememberFolderChoice(cmbSaveIn)
+        val folder = picker.targetFolder
+        val categoryId = picker.selectedCategory?.id
         val segments = cmbSegments.selectedItem as Int
         val config = AppContext.config
         val downloader = AppContext.downloader
@@ -439,8 +439,8 @@ class StreamDownloadDialog(owner: Window?) : JDialog(owner, ModalityType.MODELES
             is StreamPick.Hls -> downloader.startHlsDownload(
                 HlsDownloadTaskInfo(
                     id = CoreUtils.uniqueId(), fileName = name, tempDir = config.tempFolder, respectFileName = true,
-                    cookie = cookie, headers = headers, origin = origin, autoCategorize = auto,
-                    defaultDownloadFolder = folder, userSelectedDownloadFolder = null, maxPiece = segments,
+                    cookie = cookie, headers = headers, origin = origin, categoryId = categoryId,
+                    targetFolder = folder, maxPiece = segments,
                     authInfo = null, url = pick.url, audioUrl = pick.audioUrl, audioOnly = pick.audioOnly,
                     independent = pick.independent,
                 )
@@ -449,8 +449,8 @@ class StreamDownloadDialog(owner: Window?) : JDialog(owner, ModalityType.MODELES
             is StreamPick.Dash -> downloader.startDashDownload(
                 DashDownloadTaskInfo(
                     id = CoreUtils.uniqueId(), fileName = name, tempDir = config.tempFolder, respectFileName = true,
-                    cookie = cookie, headers = headers, origin = origin, autoCategorize = auto,
-                    defaultDownloadFolder = folder, userSelectedDownloadFolder = null, maxPiece = segments,
+                    cookie = cookie, headers = headers, origin = origin, categoryId = categoryId,
+                    targetFolder = folder, maxPiece = segments,
                     authInfo = null, videoSegments = pick.video.segments, audioSegments = pick.audio.segments,
                     url = manifest.url, audioMime = pick.audio.mimeType, videoMime = pick.video.mimeType,
                 )
@@ -459,8 +459,8 @@ class StreamDownloadDialog(owner: Window?) : JDialog(owner, ModalityType.MODELES
             is StreamPick.Http -> downloader.startHttpDownload(
                 HttpDownloadTaskInfo(
                     id = CoreUtils.uniqueId(), url = pick.url, fileName = name, respectFileName = true,
-                    cookie = cookie, headers = headers, origin = origin, autoCategorize = auto,
-                    defaultDownloadFolder = folder, userSelectedDownloadFolder = null, maxPiece = segments,
+                    cookie = cookie, headers = headers, origin = origin, categoryId = categoryId,
+                    targetFolder = folder, maxPiece = segments,
                     authInfo = null, knownFileSize = null,
                 )
             )
@@ -470,17 +470,8 @@ class StreamDownloadDialog(owner: Window?) : JDialog(owner, ModalityType.MODELES
 
     override fun dispose() {
         cancelLoad.set(true)
+        picker.dispose()
         super.dispose()
-    }
-
-    private fun browse() {
-        val selected = chooseFile(this, directoriesOnly = true, currentDir = File(selectedBaseFolder(cmbSaveIn))) ?: return
-        val path = selected.absolutePath
-        val idx = modelSaveIn.getIndexOf(path).takeIf { it >= 0 } ?: run {
-            modelSaveIn.addElement(path)
-            modelSaveIn.size - 1
-        }
-        cmbSaveIn.selectedIndex = idx
     }
 
     // ---- URL and headers ------------------------------------------------------------------

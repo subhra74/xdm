@@ -62,9 +62,8 @@ class TestHttpRetryHandling : HttpDownloadTestBase() {
         val host = host()
         val info = HttpDownloadTaskInfo(
             id = 41, url = "http://127.0.0.1:1/unused", fileName = "file-41.bin", respectFileName = false,
-            cookie = null, headers = null, origin = null, autoCategorize = false,
-            defaultDownloadFolder = tmpDir.absolutePath, userSelectedDownloadFolder = null,
-            maxPiece = 0, authInfo = null, knownFileSize = null,
+            cookie = null, headers = null, origin = null, categoryId = null,
+            targetFolder = tmpDir.absolutePath,            maxPiece = 0, authInfo = null, knownFileSize = null,
         )
         val task = HttpDownloaderTask(info, host, throwing, work.absolutePath, TestConfig(maxSegments = 1))
         try {
@@ -91,9 +90,8 @@ class TestHttpRetryHandling : HttpDownloadTestBase() {
         val host = host()
         val info = HttpDownloadTaskInfo(
             id = 43, url = "http://127.0.0.1:1/unused", fileName = "file-43.bin", respectFileName = false,
-            cookie = null, headers = null, origin = null, autoCategorize = false,
-            defaultDownloadFolder = tmpDir.absolutePath, userSelectedDownloadFolder = null,
-            maxPiece = 0, authInfo = null, knownFileSize = null,
+            cookie = null, headers = null, origin = null, categoryId = null,
+            targetFolder = tmpDir.absolutePath,            maxPiece = 0, authInfo = null, knownFileSize = null,
         )
         val task = HttpDownloaderTask(info, host, throwing, work.absolutePath, TestConfig(maxSegments = 1))
         try {
@@ -132,7 +130,7 @@ class TestHttpRetryHandling : HttpDownloadTestBase() {
 
         awaitSuccess(host, timeoutSec = 30)
         assertDownloaded(host, bytes)
-        val saved = AtomicIO.readTransacted("44.state", work.absolutePath) { readContext(it, host) }.getOrThrow()
+        val saved = AtomicIO.readTransacted("44.state", work.absolutePath) { readContext(it, host, "", "") }.getOrThrow()
         assertEquals(server.url("/link"), saved.url, "the saved state keeps the expired redirect target")
     }
 

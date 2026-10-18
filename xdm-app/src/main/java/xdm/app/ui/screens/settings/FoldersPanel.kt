@@ -78,8 +78,8 @@ class FoldersPanel : SettingsPanel() {
     }
 
     /**
-     * Downloads are written to the temp folder and moved at the end. When the two folders are on
-     * different volumes that move becomes a full copy, so say so where the folders are chosen.
+     * Video (HLS/DASH) segments are downloaded to the temp folder and joined into the download folder.
+     * When the two are on different volumes both need space, so say so where the folders are chosen.
      */
     private fun refreshVolumeHint() {
         val different = VolumeHints.isDifferentVolume(txtDwnDir.text, txtTmpDir.text)
@@ -91,7 +91,7 @@ class FoldersPanel : SettingsPanel() {
         val config = AppContext.config
         txtTmpDir.text = config.tempFolder
         txtDwnDir.text = config.defaultDownloadFolder
-        tglAutoCategorize.isSelected = config.autoSelectFolder
+        tglAutoCategorize.isSelected = !config.rememberNone
         categorySection.load()
         refreshVolumeHint()
     }
@@ -100,9 +100,12 @@ class FoldersPanel : SettingsPanel() {
         val config = AppContext.config
         config.tempFolder = txtTmpDir.text
         config.defaultDownloadFolder = txtDwnDir.text
-        config.autoSelectFolder = tglAutoCategorize.isSelected
+        config.rememberNone = !tglAutoCategorize.isSelected
         categorySection.save()
     }
+
+    /** Releases the category list's config listener when the settings window goes away. */
+    fun dispose() = categorySection.dispose()
 
     override fun getInsets(): Insets = scaledInsets(18, 24, 24, 24)
 }

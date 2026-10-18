@@ -24,12 +24,11 @@ enum class RecordStatus {
     ASSEMBLING,
 
     /**
-     * The file is complete and is being moved into the destination folder; [DbRecord.movePhase] says
-     * which step. A same-volume publish only flushes and renames, so it is brief; a cross-volume one
-     * also copies. Cancellable until [MovePhase.FINALIZING]: the bytes stay in temp and resuming
-     * republishes them.
+     * Change folder is moving a stopped download's part file to another folder; [DbRecord.movePhase]
+     * says which step. A same-volume move only renames, so it is brief; a cross-volume one copies.
+     * Cancellable until [MovePhase.FINALIZING]: the part file stays where it was.
      */
-    PUBLISHING;
+    MOVING;
 
     /** Idle and resumable: these records are saved in the paused list. */
     val isStopped: Boolean get() = this == PAUSED || this == ERROR
@@ -47,13 +46,18 @@ data class DbRecord(
     var selected: Boolean,
     var status: RecordStatus,
     val downloadType: DownloadType,
-    /** The publish step while [status] is [RecordStatus.PUBLISHING]; meaningless otherwise. Not persisted. */
+    /** The move step while [status] is [RecordStatus.MOVING]; meaningless otherwise. Not persisted. */
     var movePhase: MovePhase? = null,
     /**
      * Batch only: files that could not be downloaded. A batch with failures is still FINISHED; this
      * only changes its icon. Not persisted in the record files: read back from the batch state on load.
      */
     var failedFiles: Int = 0,
+    /**
+     * The category the download was saved with, for the sidebar filter; null is None. An id whose
+     * category was deleted also reads as None. Persisted.
+     */
+    val categoryId: String? = null,
 )
 
 class AppDB(private val configDir: String) {
@@ -83,6 +87,9 @@ class AppDB(private val configDir: String) {
     @Synchronized
     fun count(predicate: (DbRecord) -> Boolean): Int = synchronized(records) { records.count(predicate) }
 
+    /** The records matching [predicate], copied out under the list's lock. */
+    fun filter(predicate: (DbRecord) -> Boolean): List<DbRecord> = synchronized(records) { records.filter(predicate) }
+
     /** A copy of the records matching [predicate], taken under the lock. */
     @Synchronized
     fun findAll(predicate: (DbRecord) -> Boolean): List<DbRecord> = synchronized(records) { records.filter(predicate) }
@@ -110,7 +117,7 @@ class AppDB(private val configDir: String) {
                 } else if (rec.status == RecordStatus.FINISHED) {
                     saveFinished = true
                 } else {
-                    // READY, DOWNLOADING, ASSEMBLING and PUBLISHING stay in the active list.
+                    // READY, DOWNLOADING, ASSEMBLING and MOVING stay in the active list.
                     saveActive = true
                 }
                 Logger.info("Item removed: $rec")
@@ -236,6 +243,7 @@ class AppDB(private val configDir: String) {
         writer.writeUTF(rec.fileName)
         writer.writeUTF(rec.downloadType.toString())
         writer.writeBoolean(rec.status == RecordStatus.ERROR)
+        writer.writeUTF(rec.categoryId ?: "")
     }
 
     private fun readRecord(r: DataInputStream, paused: Boolean = true): DbRecord {
@@ -247,6 +255,7 @@ class AppDB(private val configDir: String) {
         val fileName = r.readUTF()
         val downloadType = DownloadType.valueOf(r.readUTF())
         val failed = r.readBoolean()
+        val categoryId = r.readUTF().ifEmpty { null }
         return DbRecord(
             id = id,
             size = size,
@@ -264,6 +273,7 @@ class AppDB(private val configDir: String) {
                 else -> RecordStatus.PAUSED
             },
             downloadType = downloadType,
+            categoryId = categoryId,
         )
     }
 

@@ -3,10 +3,10 @@ package xdm.app.ui.screens.settings
 import xdm.app.AppContext
 import xdm.app.DownloadCategory
 import xdm.app.I8N
-import xdm.app.ui.components.CategoryStyle
+import xdm.app.ui.components.AppTheme
+import xdm.app.ui.components.CategoryDotIcon
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
-import xdm.app.utils.createIcon
 import xdm.app.utils.px
 import xdm.app.utils.scaledSize
 import java.awt.BorderLayout
@@ -38,6 +38,33 @@ import javax.swing.SwingUtilities
  */
 class CategorySection {
     private val categories = mutableListOf<DownloadCategory>()
+
+    /**
+     * Every id this working copy has held, deleted ones included. A category added meanwhile from a
+     * download dialog's + button is the only kind not in here; [mergeAdded] appends it, so saving the
+     * settings never drops it, and never brings back one the user deleted here.
+     */
+    private val seenIds = mutableSetOf<String>()
+
+    private val configListener: () -> Unit = { SwingUtilities.invokeLater { mergeAdded() } }
+
+    init {
+        AppContext.config.addChangeListener(configListener)
+    }
+
+    private fun mergeAdded() {
+        if (!rows.isDisplayable) return
+        val added = AppContext.config.categories.filter { it.id !in seenIds }
+        if (added.isEmpty()) return
+        categories.addAll(added)
+        seenIds.addAll(added.map { it.id })
+        rebuild()
+    }
+
+    /** Stops listening for categories added elsewhere; call when the settings window goes away. */
+    fun dispose() {
+        AppContext.config.removeChangeListener(configListener)
+    }
     private val rows = JPanel().apply {
         isOpaque = false
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -86,16 +113,17 @@ class CategorySection {
     }
 
     private fun addCategory() {
-        val dlg = CategoryEditDialog(owner(), null).apply { isVisible = true }
+        val dlg = CategoryEditDialog(owner(), null, others = { categories.toList() }).apply { isVisible = true }
         dlg.result?.let {
             categories.add(it)
+            seenIds.add(it.id)
             rebuild()
         }
     }
 
     private fun editAt(index: Int) {
         if (index !in categories.indices) return
-        val dlg = CategoryEditDialog(owner(), categories[index]).apply { isVisible = true }
+        val dlg = CategoryEditDialog(owner(), categories[index], others = { categories.toList() }).apply { isVisible = true }
         dlg.result?.let {
             categories[index] = it
             rebuild()
@@ -121,13 +149,15 @@ class CategorySection {
         val present = categories.map { it.id }.toSet()
         AppContext.config.defaultCategories
             .filterNot { present.contains(it.id) }
-            .forEach { categories.add(it) }
+            .forEach { categories.add(it); seenIds.add(it.id) }
         rebuild()
     }
 
     fun load() {
         categories.clear()
         categories.addAll(AppContext.config.categories)
+        seenIds.clear()
+        seenIds.addAll(categories.map { it.id })
         rebuild()
     }
 
@@ -148,7 +178,7 @@ class CategorySection {
             cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
 
             add(
-                JLabel(createIcon(CategoryStyle.iconName(category), 20, settingsAccentColor())).apply {
+                JLabel(CategoryDotIcon(AppTheme.categoryColor(category), boxSize = 20, dotSize = 12)).apply {
                     verticalAlignment = SwingConstants.TOP
                     border = ScaledEmptyBorder(2, 2, 0, 0)
                 },

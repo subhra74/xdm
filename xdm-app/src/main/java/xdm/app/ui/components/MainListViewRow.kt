@@ -6,8 +6,9 @@ import xdm.app.DbRecord
 import xdm.app.DownloadCategory
 import xdm.app.I8N.text
 import xdm.app.RecordStatus
-import xdm.app.ui.screens.publishText
+import xdm.app.ui.screens.moveText
 import xdm.app.utils.RemixIcon
+import xdm.app.utils.categoryById
 import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.createIcon
 import xdm.app.utils.px
@@ -378,12 +379,12 @@ class MainListViewRow(
         // A finalizing publish cannot be undone, so it offers neither pause nor resume.
         btnPause.isVisible = ent.status == RecordStatus.DOWNLOADING || ent.status == RecordStatus.READY
                 || ent.status == RecordStatus.ASSEMBLING
-                || (ent.status == RecordStatus.PUBLISHING && ent.movePhase != MovePhase.FINALIZING)
+                || (ent.status == RecordStatus.MOVING && ent.movePhase != MovePhase.FINALIZING)
         pauseGap.isVisible = btnPause.isVisible
         btnResume.isVisible =
             ent.status != RecordStatus.FINISHED && ent.status != RecordStatus.DOWNLOADING
                     && ent.status != RecordStatus.READY && ent.status != RecordStatus.ASSEMBLING
-                    && ent.status != RecordStatus.PUBLISHING
+                    && ent.status != RecordStatus.MOVING
         resumeGap.isVisible = btnResume.isVisible
         if (ent.status == RecordStatus.FINISHED) {
             lblInfo.text = (formatDateShort(ent.date)
@@ -426,8 +427,8 @@ class MainListViewRow(
                     text("STAT_ASSEMBLING")
                 }
                 prg.isVisible = true
-            } else if (ent.status == RecordStatus.PUBLISHING) {
-                prgText = publishText(ent.movePhase, ent.progress)
+            } else if (ent.status == RecordStatus.MOVING) {
+                prgText = moveText(ent.movePhase, ent.progress)
                 prg.isVisible = true
             }
             lblProgress.text = prgText
@@ -485,12 +486,10 @@ class MainListViewRow(
         // Noop
     }
 
-    private fun categoryFor(name: String): DownloadCategory? =
-        AppContext.config.categories.firstOrNull { it.matches(name) }
-
     /**
-     * A batch shows a folder on an accent tile, with a warning when some of its files failed;
-     * anything else its category's glyph on that category's tinted tile. Sets the tile color too.
+     * A batch shows a folder on an accent tile, with a warning when some of its files failed. Any other
+     * download shows the glyph of its file type (from the extension) on a tile tinted with the color of
+     * the category it was saved with (neutral for None or a deleted category). Sets the tile color too.
      */
     private fun getIcon(ent: DbRecord): Icon {
         if (ent.downloadType == DownloadType.Batch) {
@@ -500,11 +499,10 @@ class MainListViewRow(
             val glyph = if (ent.failedFiles > 0) RemixIcon.FOLDER_WARNING_FILL else RemixIcon.FOLDER_FILL
             return tileIcon(glyph, tile.glyph)
         }
-        val cat = categoryFor(ent.fileName)
-        tileHue = AppTheme.tileHue(cat)
+        tileHue = AppTheme.tileHue(categoryById(ent.categoryId))
         val tile = AppTheme.tile(tileHue)
         iconBadge.background = tile.background
-        return tileIcon(cat?.let { CategoryStyle.iconName(it) } ?: CategoryStyle.ALL_ICON, tile.glyph)
+        return tileIcon(CategoryStyle.glyphForFile(ent.fileName), tile.glyph)
     }
 
     private fun tileIcon(glyph: RemixIcon, color: Color): Icon =

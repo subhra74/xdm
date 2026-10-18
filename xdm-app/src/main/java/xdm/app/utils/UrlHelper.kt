@@ -10,6 +10,9 @@ import kotlin.concurrent.thread
 const val WEBSITE_URL = "https://xtremedownloadmanager.com"
 const val WEBSITE_HELP_URL = "$WEBSITE_URL/help/"
 
+/** Compares `?v=<version>` with the latest GitHub release (docs/update-checker.html on GitHub Pages). */
+const val UPDATE_CHECK_PAGE_URL = "https://subhra74.github.io/xdm/update-checker.html"
+
 fun validateURL(url: String): Boolean {
     try {
         if (url.startsWith("http://", ignoreCase = true) || url.startsWith(

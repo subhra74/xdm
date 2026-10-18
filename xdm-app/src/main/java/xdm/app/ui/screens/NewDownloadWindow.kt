@@ -6,25 +6,18 @@ import xdm.app.DuplicateKind
 import xdm.app.I8N.text
 import xdm.app.RecordStatus
 import xdm.app.ui.components.AppMenuHandler
-import xdm.app.ui.components.CappedComboBox
 import xdm.app.ui.components.CategoryStyle
+import xdm.app.ui.components.DestinationPicker
 import xdm.app.ui.components.StorageStatusLabel
 import xdm.app.ui.components.TempFolderCards
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
-import xdm.app.utils.categoryFolderFor
-import xdm.app.utils.chooseFile
 import xdm.app.utils.createIcon
 import xdm.app.utils.getClipBoardText
-import xdm.app.utils.isAutoCategorySelected
-import xdm.app.utils.persistFolderChoiceOnChange
-import xdm.app.utils.populateSaveInFolders
 import xdm.app.utils.px
-import xdm.app.utils.rememberFolderChoice
 import xdm.app.utils.sameWidth
 import xdm.app.utils.scaledInsets
 import xdm.app.utils.scaledSize
-import xdm.app.utils.selectedBaseFolder
 import xdm.app.utils.validateURL
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.util.*
@@ -35,7 +28,6 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
-import java.io.File
 import java.net.URI
 import javax.swing.*
 import javax.swing.event.DocumentEvent
@@ -45,12 +37,11 @@ import kotlin.math.max
 class NewDownloadWindow : JDialog() {
     private lateinit var txtUrl: JTextField
     private lateinit var txtFileName: JTextField
-    private lateinit var cmbSaveIn: JComboBox<String>
     private lateinit var btnDownload: JButton
     private lateinit var btnLater: JButton
     private lateinit var lblIgnore: JLabel
     private lateinit var cmbSegments: JComboBox<Int>
-    private lateinit var modelSaveIn: DefaultComboBoxModel<String>
+    private lateinit var picker: DestinationPicker
     private lateinit var lblFileInfo: JLabel
     private lateinit var originalFileName: String
     private lateinit var lbAddress: JLabel
@@ -73,9 +64,9 @@ class NewDownloadWindow : JDialog() {
         title = text("ND_TITLE")
         val gridBagLayout = GridBagLayout().apply {
             columnWidths = intArrayOf(0, 0, 0, 0, 0, 0, 0)
-            rowHeights = intArrayOf(0, 0, 0, 0, 0, 0)
+            rowHeights = intArrayOf(0, 0, 0, 0, 0, 0, 0)
             columnWeights = doubleArrayOf(0.0, 0.0, 0.0, 1.0, 0.0, 0.0, Double.MIN_VALUE)
-            rowWeights = doubleArrayOf(0.0, 0.0, 0.0, 1.0, 0.0, Double.MIN_VALUE)
+            rowWeights = doubleArrayOf(0.0, 0.0, 0.0, 0.0, 1.0, 0.0, Double.MIN_VALUE)
         }
         contentPane.layout = gridBagLayout
         //contentPane.background = UIManager.getColor("Table.background")
@@ -139,41 +130,15 @@ class NewDownloadWindow : JDialog() {
 
         val gbcLblFileInfo = GridBagConstraints().apply {
             insets = scaledInsets(20, 5, 5, 10)
-            gridheight = 3
+            // Address, file, category and save-to rows.
+            gridheight = 4
             gridx = 5
             gridy = 0
         }
         contentPane.add(lblFileInfo, gbcLblFileInfo)
 
-        val lblSaveIn = JLabel(text("LBL_SAVE_IN"))
-        lblSaveIn.horizontalAlignment = SwingConstants.RIGHT
-        val gbcLblSaveIn = GridBagConstraints().apply {
-            anchor = GridBagConstraints.EAST
-            insets = scaledInsets(5, 20, 5, 10)
-            gridx = 0
-            gridy = 2
-        }
-        contentPane.add(lblSaveIn, gbcLblSaveIn)
-
-        modelSaveIn = DefaultComboBoxModel()
-        cmbSaveIn = CappedComboBox(modelSaveIn)
-        val gbcCmbSaveIn = GridBagConstraints().apply {
-            gridwidth = 3
-            weightx = 1.0
-            insets = scaledInsets(5, 0, 5, 5)
-            fill = GridBagConstraints.HORIZONTAL
-            gridx = 1
-            gridy = 2
-        }
-        contentPane.add(cmbSaveIn, gbcCmbSaveIn)
-
-        val btnBrowse = JButton(createIcon(RemixIcon.FOLDER_FILL, 16, Color.GRAY))
-        val gbcBtnBrowse = GridBagConstraints().apply {
-            insets = scaledInsets(5, 0, 5, 5)
-            gridx = 4
-            gridy = 2
-        }
-        contentPane.add(btnBrowse, gbcBtnBrowse)
+        picker = DestinationPicker(this, onChanged = { updateStorageStatus() })
+        picker.addTo(contentPane, firstRow = 2)
 
         lblIgnore = JLabel(text("ND_IGNORE_PAGE")).apply {
             alignmentX = Component.LEFT_ALIGNMENT
@@ -186,13 +151,16 @@ class NewDownloadWindow : JDialog() {
             })
         }
 
-        storageStatus = StorageStatusLabel { dest, size -> tempFolderCards.showTempFolder(dest, size) }.apply {
+        // HTTP writes straight to its folder: only that folder's space matters, not the temp folder's.
+        storageStatus = StorageStatusLabel(usesTempFolder = false) { dest, size -> tempFolderCards.showTempFolder(dest, size) }.apply {
             alignmentX = Component.LEFT_ALIGNMENT
         }
 
         // Glue rather than a fixed gap: the link stays on the bottom edge as the dialog is resized.
         val infoBox = Box.createVerticalBox().apply {
             add(storageStatus)
+            // A minimum gap, so the ignore link never touches the storage line in a short dialog.
+            add(Box.createRigidArea(scaledSize(0, 8)))
             add(Box.createVerticalGlue())
             add(lblIgnore)
             add(Box.createRigidArea(scaledSize(0, 10)))
@@ -204,7 +172,7 @@ class NewDownloadWindow : JDialog() {
             gridwidth = 4
             insets = scaledInsets(5, 0, 5, 5)
             gridx = 1
-            gridy = 3
+            gridy = 4
         }
         contentPane.add(infoBox, gbcInfoBox)
 
@@ -216,7 +184,7 @@ class NewDownloadWindow : JDialog() {
             gridwidth = 6
             fill = GridBagConstraints.HORIZONTAL
             gridx = 0
-            gridy = 4
+            gridy = 5
         }
         contentPane.add(panel, gcPanel)
         panel.layout = BoxLayout(panel, BoxLayout.X_AXIS)
@@ -266,40 +234,17 @@ class NewDownloadWindow : JDialog() {
                     System.gc()
                 }
             })
-
-        btnBrowse.addActionListener {
-            val selected = chooseFile(
-                this@NewDownloadWindow,
-                directoriesOnly = true,
-                currentDir = File(selectedBaseFolder(cmbSaveIn))
-            )
-            if (selected != null) {
-                val path = selected.absolutePath
-                val idx = modelSaveIn.getIndexOf(path).takeIf { it >= 0 } ?: run {
-                    modelSaveIn.addElement(path)
-                    modelSaveIn.size - 1
-                }
-                cmbSaveIn.selectedIndex = idx
-            }
-        }
-
-        persistFolderChoiceOnChange(cmbSaveIn)
-        cmbSaveIn.addItemListener {
-            Logger.info("Selected item: ${cmbSaveIn.selectedItem}")
-            updateStorageStatus()
-        }
     }
 
-    /**
-     * The storage line for the folder the file will really land in: with "Automatic" that is
-     * the category folder the file name picks, which can sit on another drive than the default.
-     */
+    /** The storage line for the folder the file will be written to. */
     private fun updateStorageStatus() {
-        if (!::storageStatus.isInitialized) return
-        val base = selectedBaseFolder(cmbSaveIn)
-        val destination =
-            if (isAutoCategorySelected(cmbSaveIn)) categoryFolderFor(txtFileName.text.orEmpty(), base) else base
-        storageStatus.update(destination, taskInfo?.knownFileSize)
+        if (!::storageStatus.isInitialized || !::picker.isInitialized) return
+        storageStatus.update(picker.targetFolder, taskInfo?.knownFileSize)
+    }
+
+    override fun dispose() {
+        if (::picker.isInitialized) picker.dispose()
+        super.dispose()
     }
 
     //  private void downloadNow() {
@@ -502,9 +447,8 @@ class NewDownloadWindow : JDialog() {
             cookie = taskInfo?.cookie,
             headers = taskInfo?.headers,
             origin = taskInfo?.origin,
-            autoCategorize = isAutoCategorySelected(cmbSaveIn),
-            defaultDownloadFolder = selectedBaseFolder(cmbSaveIn),
-            userSelectedDownloadFolder = null,
+            categoryId = picker.selectedCategory?.id,
+            targetFolder = picker.targetFolder,
             maxPiece = cmbSegments.selectedItem as Int,
             authInfo = null,
             knownFileSize = taskInfo?.knownFileSize,
@@ -512,7 +456,6 @@ class NewDownloadWindow : JDialog() {
             etag = taskInfo?.etag?.takeIf { taskInfo?.url == url },
         )
 
-        rememberFolderChoice(cmbSaveIn)
         AppContext.downloader.startHttpDownload(task, now)
         return task.id
     }
@@ -598,7 +541,6 @@ class NewDownloadWindow : JDialog() {
     fun showWindow(taskInfo: HttpDownloadTaskInfo?) {
         lblIgnore.isVisible = taskInfo != null
         cmbSegments.selectedItem = AppContext.config.maxSegments
-        populateSaveInFolders(modelSaveIn, cmbSaveIn)
         if (taskInfo == null) {
             val url = getClipBoardText()
             if (url != null && validateURL(url)) {
@@ -615,6 +557,9 @@ class NewDownloadWindow : JDialog() {
             } ?: "---"
         }
 
+        // A browser capture is preselected by the category rules; an address typed by hand starts at None.
+        picker.capture = taskInfo != null
+        picker.reset(txtFileName.text, txtUrl.text, taskInfo?.origin)
         updateStorageStatus()
         // Sized last: the ignore link is only part of the layout for browser-captured downloads.
         this.adjustSize()
@@ -622,15 +567,16 @@ class NewDownloadWindow : JDialog() {
         this.isVisible = true
     }
 
-    /** Picks the icon the file's category uses, so the preview matches the row it will become. */
+    /** Picks the file-type glyph, the one the row will show. */
     private fun updateFileIcon() {
-        val glyph = CategoryStyle.lineVariant(CategoryStyle.iconForFile(txtFileName.text.orEmpty()))
+        val glyph = CategoryStyle.lineVariant(CategoryStyle.glyphForFile(txtFileName.text.orEmpty()))
         lblFileInfo.icon = createIcon(glyph, 36, Color.GRAY)
     }
 
-    /** The name picks the icon and, with "Automatic", the category folder the warnings check. */
+    /** The name picks the icon and, for a capture not yet touched, re-runs the category rules. */
     private fun fileNameChanged() {
         updateFileIcon()
+        if (::picker.isInitialized) picker.fileNameChanged(txtFileName.text)
         updateStorageStatus()
     }
 

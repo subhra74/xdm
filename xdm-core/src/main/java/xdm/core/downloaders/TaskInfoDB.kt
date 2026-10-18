@@ -38,24 +38,21 @@ private class RequestFields(
     val cookie: String?,
     val headers: HeaderMap?,
     val origin: String?,
-    val userSelectedDownloadFolder: String?,
 )
 
 private fun writeRequestFields(
-    w: DataOutput, id: Long, cookie: String?, headers: HeaderMap?, origin: String?, userSelectedDownloadFolder: String?,
+    w: DataOutput, id: Long, cookie: String?, headers: HeaderMap?, origin: String?,
 ) {
     w.writeNullableLongString(cookie)
     // Credentials such as Authorization stay in memory only.
     w.writeNullableHeaders(SensitiveHeaders.strip(id, headers))
     w.writeNullableLongString(origin)
-    w.writeNullableLongString(userSelectedDownloadFolder)
 }
 
 private fun readRequestFields(r: DataInput, id: Long) = RequestFields(
     cookie = r.readNullableLongString(),
     headers = SensitiveHeaders.restore(id, r.readNullableHeaders()),
     origin = r.readNullableLongString(),
-    userSelectedDownloadFolder = r.readNullableLongString(),
 )
 
 /**
@@ -70,8 +67,8 @@ class TaskInfoDB(private val configDir: String) {
             val url = r.readLongString()
             val fileName = r.readLongString()
             val respectFileName = r.readBoolean()
-            val autoCategorize = r.readBoolean()
-            val defaultDownloadFolder = r.readLongString()
+            val categoryId = r.readNullableLongString()
+            val targetFolder = r.readLongString()
             val maxPiece = r.readInt()
             val knownFileSize = if (r.readBoolean()) r.readLong() else null
             val req = readRequestFields(r, taskId)
@@ -83,9 +80,8 @@ class TaskInfoDB(private val configDir: String) {
                 cookie = req.cookie,
                 headers = req.headers,
                 origin = req.origin,
-                autoCategorize = autoCategorize,
-                defaultDownloadFolder = defaultDownloadFolder,
-                userSelectedDownloadFolder = req.userSelectedDownloadFolder,
+                categoryId = categoryId,
+                targetFolder = targetFolder,
                 maxPiece = maxPiece,
                 authInfo = null,
                 knownFileSize = knownFileSize,
@@ -101,8 +97,8 @@ class TaskInfoDB(private val configDir: String) {
             val audioUrl = r.readNullableLongString()
             val fileName = r.readLongString()
             val respectFileName = r.readBoolean()
-            val autoCategorize = r.readBoolean()
-            val defaultDownloadFolder = r.readLongString()
+            val categoryId = r.readNullableLongString()
+            val targetFolder = r.readLongString()
             val maxPiece = r.readInt()
             val audioOnly = r.readBoolean()
             val tempDir = r.readLongString()
@@ -117,9 +113,8 @@ class TaskInfoDB(private val configDir: String) {
                 cookie = req.cookie,
                 headers = req.headers,
                 origin = req.origin,
-                autoCategorize = autoCategorize,
-                defaultDownloadFolder = defaultDownloadFolder,
-                userSelectedDownloadFolder = req.userSelectedDownloadFolder,
+                categoryId = categoryId,
+                targetFolder = targetFolder,
                 maxPiece = maxPiece,
                 authInfo = null,
                 audioOnly = audioOnly,
@@ -136,8 +131,8 @@ class TaskInfoDB(private val configDir: String) {
             val url = r.readLongString()
             val fileName = r.readLongString()
             val respectFileName = r.readBoolean()
-            val autoCategorize = r.readBoolean()
-            val defaultDownloadFolder = r.readLongString()
+            val categoryId = r.readNullableLongString()
+            val targetFolder = r.readLongString()
             val maxPiece = r.readInt()
             val tempDir = r.readLongString()
             val audioSegments = List(r.readInt()) { readDashSegment(r) }
@@ -153,9 +148,8 @@ class TaskInfoDB(private val configDir: String) {
                 cookie = req.cookie,
                 headers = req.headers,
                 origin = req.origin,
-                autoCategorize = autoCategorize,
-                defaultDownloadFolder = defaultDownloadFolder,
-                userSelectedDownloadFolder = req.userSelectedDownloadFolder,
+                categoryId = categoryId,
+                targetFolder = targetFolder,
                 maxPiece = maxPiece,
                 authInfo = null,
                 tempDir = tempDir,
@@ -168,20 +162,20 @@ class TaskInfoDB(private val configDir: String) {
         return null
     }
 
-    fun saveHttpTask(task: HttpDownloadTaskInfo) {
+    /** Returns whether the task info reached the disk; callers that delete files after it must check. */
+    fun saveHttpTask(task: HttpDownloadTaskInfo): Boolean =
         AtomicIO.writeTransacted("task-${task.id}.info", configDir, ownerOnly = true) { w ->
             w.writeLong(task.id)
             w.writeLongString(task.url)
             w.writeLongString(task.fileName)
             w.writeBoolean(task.respectFileName)
-            w.writeBoolean(task.autoCategorize)
-            w.writeLongString(task.defaultDownloadFolder)
+            w.writeNullableLongString(task.categoryId)
+            w.writeLongString(task.targetFolder)
             w.writeInt(task.maxPiece)
             w.writeBoolean(task.knownFileSize != null)
             task.knownFileSize?.let { w.writeLong(it) }
-            writeRequestFields(w, task.id, task.cookie, task.headers, task.origin, task.userSelectedDownloadFolder)
-        }.onFailure { Logger.error("XDM", "Error saving task info ${task.id}", it) }
-    }
+            writeRequestFields(w, task.id, task.cookie, task.headers, task.origin)
+        }.onFailure { Logger.error("XDM", "Error saving task info ${task.id}", it) }.isSuccess
 
     fun saveHlsTask(task: HlsDownloadTaskInfo) {
         AtomicIO.writeTransacted("task-${task.id}.info", configDir, ownerOnly = true) { w ->
@@ -190,13 +184,13 @@ class TaskInfoDB(private val configDir: String) {
             w.writeNullableLongString(task.audioUrl)
             w.writeLongString(task.fileName)
             w.writeBoolean(task.respectFileName)
-            w.writeBoolean(task.autoCategorize)
-            w.writeLongString(task.defaultDownloadFolder)
+            w.writeNullableLongString(task.categoryId)
+            w.writeLongString(task.targetFolder)
             w.writeInt(task.maxPiece)
             w.writeBoolean(task.audioOnly)
             w.writeLongString(task.tempDir)
             w.writeBoolean(task.independent)
-            writeRequestFields(w, task.id, task.cookie, task.headers, task.origin, task.userSelectedDownloadFolder)
+            writeRequestFields(w, task.id, task.cookie, task.headers, task.origin)
         }.onFailure { Logger.error("XDM", "Error saving task info ${task.id}", it) }
     }
 
@@ -206,8 +200,8 @@ class TaskInfoDB(private val configDir: String) {
             w.writeLongString(task.url)
             w.writeLongString(task.fileName)
             w.writeBoolean(task.respectFileName)
-            w.writeBoolean(task.autoCategorize)
-            w.writeLongString(task.defaultDownloadFolder)
+            w.writeNullableLongString(task.categoryId)
+            w.writeLongString(task.targetFolder)
             w.writeInt(task.maxPiece)
             w.writeLongString(task.tempDir)
             w.writeInt(task.audioSegments.size)
@@ -220,7 +214,7 @@ class TaskInfoDB(private val configDir: String) {
             }
             w.writeLongString(task.audioMime)
             w.writeLongString(task.videoMime)
-            writeRequestFields(w, task.id, task.cookie, task.headers, task.origin, task.userSelectedDownloadFolder)
+            writeRequestFields(w, task.id, task.cookie, task.headers, task.origin)
         }.onFailure { Logger.error("XDM", "Error saving task info ${task.id}", it) }
     }
 

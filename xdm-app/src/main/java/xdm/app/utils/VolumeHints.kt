@@ -4,9 +4,10 @@ import java.io.File
 import java.nio.file.Files
 
 /**
- * Tells whether a destination folder sits on the same volume as the temp folder. Downloads are
- * written to temp first and moved at the end, so a shared volume makes that move a metadata-only
- * rename and a different one makes it a full byte copy. See FILE_PLACEMENT.md.
+ * Tells whether a destination folder sits on the same volume as the temp folder, and how much space
+ * there is. Only video (HLS/DASH) downloads use the temp folder: their segments go there first and are
+ * joined into the destination, so on different volumes both need space. HTTP writes straight to the
+ * destination. See FILE_PLACEMENT.md.
  */
 object VolumeHints {
 

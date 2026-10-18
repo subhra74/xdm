@@ -45,6 +45,8 @@ class MainListView {
     //    private lateinit var mSaveAs: JMenuItem
     private lateinit var mRefresh: JMenuItem
     private lateinit var mSchedule: JMenuItem
+    private lateinit var mChangeFolder: JMenuItem
+    private lateinit var mRestart: JMenuItem
     private lateinit var mProgress: JMenuItem
     private lateinit var mCopyUrl: JMenuItem
 
@@ -55,7 +57,7 @@ class MainListView {
 
     private val filter = MainListViewFilter(FilterState.All, null, "")
     private val sorter: TableRowSorter<MainListViewModel>
-    private val emptyListIcon = createIcon(RemixIcon.ARCHIVE_STACK_FILL, 96, AppTheme.emptyIconColor)
+    private val emptyListIcon = createIcon(RemixIcon.BOOK_SHELF_LINE, 96, AppTheme.emptyIconColor)
     private val noMatchIcon = createIcon(RemixIcon.SEARCH_LINE, 96, AppTheme.emptyIconColor)
     private val emptyLabel = JLabel("", SwingConstants.CENTER)
 
@@ -244,6 +246,8 @@ class MainListView {
                     "CTX_COPY_FILE" -> {}
                     "MENU_PROPERTIES" -> AppContext.app.showPropertiesWindow(ent)
                     "CTX_RETRY_FAILED" -> AppContext.downloader.retryFailedFiles(ent.id)
+                    "CTX_CHANGE_FOLDER" -> AppMenuHandler.changeFolder(ent, SwingUtilities.getWindowAncestor(contextMenu.invoker))
+                    "MENU_RESTART" -> AppMenuHandler.restartDownload(ent)
                 }
             }
         }
@@ -258,6 +262,8 @@ class MainListView {
         mSchedule = addMenuItem("MENU_SCHEDULE", ctx, a)
         mProgress = addMenuItem("LBL_SHOW_PROGRESS", ctx, a)
         mRetryFailed = addMenuItem("CTX_RETRY_FAILED", ctx, a)
+        mChangeFolder = addMenuItem("CTX_CHANGE_FOLDER", ctx, a)
+        mRestart = addMenuItem("MENU_RESTART", ctx, a)
         mCopyUrl = addMenuItem("CTX_COPY_URL", ctx, a)
 //        mCopyFile = addMenuItem("CTX_COPY_FILE", ctx, a)
         mProperty = addMenuItem("MENU_PROPERTIES", ctx, a)
@@ -286,6 +292,11 @@ class MainListView {
         mRetryFailed.isVisible = entry.downloadType == DownloadType.Batch && entry.status == RecordStatus.FINISHED
                 && entry.failedFiles > 0
         mSchedule.isVisible = entry.status.isStopped
+        // Change folder: stopped single-file downloads only, never while one is being moved.
+        mChangeFolder.isVisible = entry.status.isStopped && entry.downloadType != DownloadType.Batch
+                && !AppContext.downloader.isMoving(entry.id)
+        mRestart.isVisible = (entry.status.isStopped || entry.status == RecordStatus.FINISHED)
+                && entry.downloadType != DownloadType.Batch
         mProgress.isVisible = entry.status == RecordStatus.DOWNLOADING
 //        mCopyFile.isVisible = entry.status == RecordStatus.FINISHED
         contextMenu.putClientProperty("menu.context", entry)

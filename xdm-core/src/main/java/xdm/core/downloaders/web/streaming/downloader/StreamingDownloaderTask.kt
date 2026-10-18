@@ -68,6 +68,13 @@ abstract class StreamingDownloaderTask(
         }
         startRequested.set(true)
         Thread {
+            segmentsGone()?.let { problem ->
+                // Nothing is touched, so the state is still there if the segments come back.
+                Logger.error("XDM", "Download ${context.id} cannot resume: segments missing in ${context.tempFolder}")
+                context.httpClient.close()
+                context.downloadHost.onDownloadFailed(context.id, problem)
+                return@Thread
+            }
             File(context.tempFolder).mkdirs()
             download()
         }.start()
@@ -103,31 +110,37 @@ abstract class StreamingDownloaderTask(
         start()
     }
 
+    /**
+     * A disk problem that stops a saved download from resuming, or null: a downloaded segment's file (or
+     * the whole temp folder) is gone, so continuing would mux a file with holes, and re-downloading
+     * silently would start over. A download already muxed only needs its output, not the segments.
+     */
+    private fun segmentsGone(): DownloadError? {
+        if (!context.init.get()) return null
+        val finished = context.chunks.filter { it.status.get() == ChunkStatus.Finished }
+        if (finished.isEmpty()) return null
+        if (context.completed.get() && outputFile().isFile) return null
+        return if (finished.any { !File(getChunkTempFileName(it)).isFile }) DownloadError.DiskSpaceError else null
+    }
+
     override fun deleteTemp() {
         cleanup()
-        // Delete the recorded output only. Recomputing it here would miss the real file
-        // whenever the destination changed after muxing, leaving it orphaned.
-        context.muxOutputPath?.let {
-            val out = File(it)
-            if (out.delete()) Logger.info("XDM", "Deleted partial output $out")
-        }
+        val out = outputFile()
+        if (out.delete()) Logger.info("XDM", "Deleted partial output $out")
     }
 
     /**
-     * The assembled output: in the destination folder when the host provides a path (so the commit
-     * is a same-folder rename), otherwise in the temp folder.
-     *
-     * Resolved once and recorded in [context]; every later call returns the recorded path, so a
-     * destination changed after muxing cannot orphan the partial. Callers that must not create a
-     * recording (delete, cleanup) read [StreamingTaskContext.muxOutputPath] directly.
+     * The assembled output: in the target folder when the host provides a path (so the commit is a
+     * same-folder rename), otherwise in the temp folder. Derived every time, never taken from the saved
+     * state: the host derives it from the task's target folder and the id, and that folder only changes
+     * through Change folder, which deletes a partial output in the old folder. [StreamingTaskContext.muxOutputPath]
+     * just mirrors the latest value.
      */
     private fun outputFile(): File {
-        context.muxOutputPath?.let { return File(it) }
         val resolved = context.downloadHost.outputFilePath(context.id, downloadType(), fileExt())
             ?.let { File(it) }
             ?: File(context.tempFolder, context.tempFileName + fileExt())
         context.muxOutputPath = resolved.absolutePath
-        saveContext()
         return resolved
     }
 

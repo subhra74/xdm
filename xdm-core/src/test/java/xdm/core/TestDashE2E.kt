@@ -34,9 +34,9 @@ class TestDashE2E : StreamingE2EBase() {
         val info = DashDownloadTaskInfo(
             id = nextId++, fileName = "$caseName.${if (expectMkv) "mkv" else "mp4"}",
             tempDir = File(root, "$caseName/tmp").absolutePath, respectFileName = false,
-            cookie = null, headers = null, origin = null, autoCategorize = false,
-            defaultDownloadFolder = File(root, "$caseName/out").absolutePath,
-            userSelectedDownloadFolder = null, maxPiece = 0, authInfo = null,
+            cookie = null, headers = null, origin = null, categoryId = null,
+            targetFolder = File(root, "$caseName/out").absolutePath,
+maxPiece = 0, authInfo = null,
             videoSegments = v.segments,
             audioSegments = a.segments,
             url = url(mpdRel), audioMime = a.mimeType, videoMime = v.mimeType,

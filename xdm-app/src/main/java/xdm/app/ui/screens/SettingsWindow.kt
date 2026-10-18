@@ -53,6 +53,11 @@ import javax.swing.border.MatteBorder
  * dialog's height.
  */
 class SettingsWindow(parent: Window) : JDialog(parent) {
+    override fun dispose() {
+        foldersPanel.dispose()
+        super.dispose()
+    }
+
     private class Page(val key: String, val icon: RemixIcon, val panel: JComponent)
 
     private val generalPanel = GeneralPanel()

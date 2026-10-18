@@ -1,5 +1,6 @@
 package xdm.core
 
+import xdm.core.downloaders.partFileName
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -54,7 +55,7 @@ class TestHttpResumeCompletedChunk : HttpDownloadTestBase() {
         first: SavedChunk = SavedChunk(ChunkStatus.Finished, half),
         second: SavedChunk = SavedChunk(ChunkStatus.Downloading, half),
     ) {
-        val tempName = "resume-$id.tmp"
+        val tempName = partFileName(id)
         val onDisk = bytes.copyOf()
         onDisk.fill(0, first.downloaded.toInt(), half.toInt())
         onDisk.fill(0, (half + second.downloaded).toInt(), size.toInt())
@@ -207,7 +208,7 @@ class TestHttpResumeCompletedChunk : HttpDownloadTestBase() {
         val bytes = randomData(size.toInt(), seed = 904)
         val ep = server.register("/unknown-size", Endpoint(bytes))
         val host = host()
-        val tempName = "resume-$id.tmp"
+        val tempName = partFileName(id)
         File(tmpDir, tempName).writeBytes(bytes)
         val chunks = ConcurrentHashMap<Long, Chunk>()
         chunks[1L] = Chunk(
@@ -276,7 +277,7 @@ class TestHttpResumeCompletedChunk : HttpDownloadTestBase() {
         awaitSuccess(warmHost)
 
         val host = host()
-        val tempName = "resume-$id.tmp"
+        val tempName = partFileName(id)
         File(tmpDir, tempName).writeBytes(bytes.copyOf().also { it.fill(0, segLen, it.size) })
         val chunks = ConcurrentHashMap<Long, Chunk>()
         for (i in 0 until segments) {
@@ -339,7 +340,7 @@ class TestHttpResumeCompletedChunk : HttpDownloadTestBase() {
 
     /** Writes [onDisk] as the temp file and a `.state` of a download that size, made of [segments]. */
     private fun persistState(id: Long, host: TestDownloadHost, url: String, onDisk: ByteArray, segments: List<Chunk>) {
-        val tempName = "resume-$id.tmp"
+        val tempName = partFileName(id)
         File(tmpDir, tempName).writeBytes(onDisk)
         val ctx = HttpTaskContext(
             id = id,
@@ -390,11 +391,11 @@ class TestHttpResumeCompletedChunk : HttpDownloadTestBase() {
     }
 
     /**
-     * Saved as finished, but the segments leave a gap. Resume must not publish that file: it starts
-     * over and downloads the whole file again.
+     * Saved as finished, but the segments leave a gap. Resume must not publish that file, and must not
+     * silently start over either: it fails with a disk error and downloads nothing.
      */
     @Test
-    fun resume_finishedWithGap_startsOver() {
+    fun resume_finishedWithGap_failsWithDiskError() {
         val id = 908L
         val bytes = randomData(size.toInt(), seed = 908)
         val gap = 64 * 1024L
@@ -411,9 +412,10 @@ class TestHttpResumeCompletedChunk : HttpDownloadTestBase() {
 
         newTaskForUrl(id, server.url("/gap-finished"), host, TestConfig(maxSegments = 2)).resume()
 
-        awaitSuccess(host, 15)
-        assertDownloaded(host, bytes)
-        assertTrue(ep.connCount.get() > 0, "the file was not downloaded again")
+        awaitDone(host, 15)
+        assertEquals(DownloadError.DiskSpaceError, host.failure)
+        assertNull(host.success, "a damaged file must not be published")
+        assertEquals(0, ep.connCount.get(), "nothing may be downloaded again behind the user's back")
     }
 
     /**

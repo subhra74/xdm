@@ -39,9 +39,8 @@ class TestSensitiveHeaders : HttpDownloadTestBase() {
 
     private fun httpTask(id: Long) = HttpDownloadTaskInfo(
         id = id, url = "https://example.com/file.bin", fileName = "file.bin", respectFileName = true,
-        cookie = null, headers = headers, origin = null, autoCategorize = false,
-        defaultDownloadFolder = "/downloads", userSelectedDownloadFolder = null,
-        maxPiece = 4, authInfo = null, knownFileSize = null,
+        cookie = null, headers = headers, origin = null, categoryId = null,
+        targetFolder = "/downloads",        maxPiece = 4, authInfo = null, knownFileSize = null,
     )
 
     @Test
@@ -70,7 +69,7 @@ class TestSensitiveHeaders : HttpDownloadTestBase() {
         saveState(ctx, work.absolutePath)
 
         assertFalse(onDisk(), "Authorization was written to the .state file")
-        val loaded = loadState(ids[1], work.absolutePath, CountingHttpClient(), host).getOrThrow()
+        val loaded = loadState(ids[1], work.absolutePath, CountingHttpClient(), host, tmpDir.absolutePath, "t.tmp").getOrThrow()
         assertEquals(headers, loaded.headers, "Authorization not restored within the run")
     }
 

@@ -1,5 +1,6 @@
 package xdm.core
 
+import xdm.core.downloaders.partFileName
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
@@ -40,8 +41,8 @@ class TestAuthHeaderResume : HttpDownloadTestBase() {
     private fun info(id: Long, path: String) = HttpDownloadTaskInfo(
         id = id, url = server.url(path), fileName = "file-$id.bin", respectFileName = false,
         cookie = "session=abc", headers = mapOf("Authorization" to listOf(token), "Referer" to listOf("https://x/")),
-        origin = null, autoCategorize = false, defaultDownloadFolder = tmpDir.absolutePath,
-        userSelectedDownloadFolder = null, maxPiece = 0, authInfo = null, knownFileSize = null,
+        origin = null, categoryId = null, targetFolder = tmpDir.absolutePath,
+maxPiece = 0, authInfo = null, knownFileSize = null,
     )
 
     private fun task(info: HttpDownloadTaskInfo, host: TestDownloadHost) =
@@ -148,7 +149,7 @@ class TestAuthHeaderResume : HttpDownloadTestBase() {
         db().saveHttpTask(info(id, "/mixed"))
         // Paused with the first segment finished and the second half done, as a restart finds it.
         val host = host()
-        File(tmpDir, "mixed.tmp").writeBytes(ByteArray(size.toInt()))
+        File(tmpDir, partFileName(id)).writeBytes(ByteArray(size.toInt()))
         fun chunk(cid: Long, offset: Long, status: ChunkStatus, done: Long) = Chunk(
             id = cid, offset = offset, length = AtomicLong(half), downloaded = AtomicLong(done),
             status = AtomicReference(status), fileHandle = AtomicReference(null), lastTakeOver = AtomicLong(0),
@@ -162,7 +163,7 @@ class TestAuthHeaderResume : HttpDownloadTestBase() {
                 id = id, chunks = chunks, init = AtomicBoolean(true), totalSize = size,
                 downloaded = AtomicLong(half + half / 2), url = server.url("/mixed"), contentType = null,
                 headers = null, cookie = null, stopFlag = AtomicBoolean(false), completed = AtomicBoolean(false),
-                tempFileName = "mixed.tmp", tempFileCreated = AtomicBoolean(true), diskError = AtomicBoolean(false),
+                tempFileName = partFileName(id), tempFileCreated = AtomicBoolean(true), diskError = AtomicBoolean(false),
                 downloadHost = host, tempFolder = tmpDir.absolutePath,
             ),
             work.absolutePath,

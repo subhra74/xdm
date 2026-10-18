@@ -1,5 +1,7 @@
 package xdm.core
 
+import java.io.File
+import xdm.core.downloaders.partFileName
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
@@ -255,7 +257,7 @@ class TestHttpSegmentedDownload : HttpDownloadTestBase() {
 
     /** Waits until the temp file holds at least [min] bytes (a file of unknown size is not preallocated). */
     private fun awaitBytesOnDisk(min: Long) = assertTrue(
-        waitFor(5000) { tmpDir.listFiles()?.any { it.name.endsWith(".tmp") && it.length() >= min } == true },
+        waitFor(5000) { tmpDir.listFiles()?.any { it.name.endsWith(".xdm-part") && it.length() >= min } == true },
         "no data reached the temp file"
     )
 
@@ -282,7 +284,7 @@ class TestHttpSegmentedDownload : HttpDownloadTestBase() {
         awaitSuccess(host2)
         assertDownloaded(host2, bytes)
         assertTrue(
-            tmpDir.listFiles { f -> f.name.endsWith(".tmp") }.isNullOrEmpty(),
+            tmpDir.listFiles { f -> f.name.endsWith(".xdm-part") }.isNullOrEmpty(),
             "the discarded temp file was left behind"
         )
     }
@@ -395,30 +397,72 @@ class TestHttpSegmentedDownload : HttpDownloadTestBase() {
         assertDownloaded(host2, bytes)
     }
 
-    /**
-     * The temp file is deleted while the download is paused. Its bytes are gone, so resume must start
-     * over: continuing would recreate an empty file and publish it with the paused progress missing.
-     */
-    @Test
-    fun tempFileDeletedWhilePaused_resumeStartsOver() {
-        val bytes = randomData(2 * 1024 * 1024, seed = 23)
-        server.register("/temp-gone", Endpoint(bytes, plan = {
+    /** Starts download [id], pauses it once some data is on disk, and returns its part file. */
+    private fun pausedWithPartFile(id: Long, path: String, bytes: ByteArray): File {
+        server.register(path, Endpoint(bytes, plan = {
             ConnPlan(throttleChunk = 16 * 1024, throttleSleepMs = 50)
         }))
         val host1 = host()
-        val task1 = newTask(id = 23, path = "/temp-gone", host = host1, maxSegments = 4)
+        val task1 = newTask(id = id, path = path, host = host1, maxSegments = 4)
         task1.start()
         Thread.sleep(500)
         task1.stop()
         assertTrue(host1.pauseLatch.await(5, java.util.concurrent.TimeUnit.SECONDS), "pause callback should fire")
         assertNull(host1.success, "download should not have completed before pause")
-        val temp = tmpDir.listFiles { f -> f.name.endsWith(".tmp") }.orEmpty()
-        assertTrue(temp.isNotEmpty(), "no temp file to delete")
-        temp.forEach { it.delete() }
+        val part = File(tmpDir, partFileName(id))
+        assertTrue(part.isFile, "no part file after the pause")
+        return part
+    }
+
+    /**
+     * The part file is deleted while the download is paused. Resume must not start over by itself, which
+     * would silently throw the progress away: it fails with a disk error and keeps the saved state.
+     */
+    @Test
+    fun partFileDeletedWhilePaused_failsWithDiskErrorAndKeepsState() {
+        val part = pausedWithPartFile(23, "/temp-gone", randomData(2 * 1024 * 1024, seed = 23))
+        part.delete()
 
         val host2 = host()
         newTask(id = 23, path = "/temp-gone", host = host2, maxSegments = 4).resume()
-        awaitSuccess(host2)
-        assertDownloaded(host2, bytes)
+        awaitDone(host2)
+        assertEquals(DownloadError.DiskSpaceError, host2.failure, "a missing part file must not start over")
+        assertTrue(File(work, "23.state").isFile, "the saved state must be kept")
+        assertTrue(!part.exists(), "nothing may be downloaded again behind the user's back")
+    }
+
+    /**
+     * The folder (e.g. an unplugged drive) is gone while paused. Resume fails with a disk error and
+     * keeps everything; once the folder is back, resume continues and the file is complete.
+     */
+    @Test
+    fun folderGoneWhilePaused_resumeWaitsThenContinues() {
+        val bytes = randomData(2 * 1024 * 1024, seed = 24)
+        pausedWithPartFile(24, "/folder-gone", bytes)
+        val parked = File(work, "parked")
+        assertTrue(tmpDir.renameTo(parked), "could not take the folder away")
+
+        val host2 = host()
+        newTask(id = 24, path = "/folder-gone", host = host2, maxSegments = 4).resume()
+        awaitDone(host2)
+        assertEquals(DownloadError.DiskSpaceError, host2.failure, "a missing folder must not start over")
+
+        assertTrue(parked.renameTo(tmpDir), "could not put the folder back")
+        val host3 = host()
+        newTask(id = 24, path = "/folder-gone", host = host3, maxSegments = 4).resume()
+        awaitSuccess(host3)
+        assertDownloaded(host3, bytes)
+    }
+
+    /** A part file cut short while paused fails with a disk error, not restarted. */
+    @Test
+    fun partFileTruncatedWhilePaused_failsWithDiskError() {
+        val part = pausedWithPartFile(25, "/temp-short", randomData(2 * 1024 * 1024, seed = 25))
+        java.io.RandomAccessFile(part, "rw").use { it.setLength(1024) }
+
+        val host2 = host()
+        newTask(id = 25, path = "/temp-short", host = host2, maxSegments = 4).resume()
+        awaitDone(host2)
+        assertEquals(DownloadError.DiskSpaceError, host2.failure, "a damaged part file must not start over")
     }
 }

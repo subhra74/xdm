@@ -15,6 +15,7 @@ import xdm.app.ui.components.MainListView
 import xdm.app.ui.components.UpdatePanel
 import xdm.app.update.UpdateChecker
 import xdm.app.utils.ScaledEmptyBorder
+import xdm.app.utils.WindowGeometry
 import xdm.app.utils.applyMacOSWindowCustomizations
 import xdm.app.utils.detectOS
 import xdm.app.utils.px
@@ -156,7 +157,7 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
             } else if ("LBL_SHOW_PROGRESS" == name) {
                 AppMenuHandler.showProgressWindow(this)
             } else if ("MENU_RESTART" == name) {
-                //        AppMenuHandler.restartDownloads(this);
+                listView.selectedItems.forEach { AppMenuHandler.restartDownload(it) }
             } else if ("RESUME" == name || "MENU_RESUME" == name) {
                 //        AppMenuHandler.resumeDownloads(this);
             } else if ("CTX_OPEN_FILE" == name) {
@@ -308,11 +309,9 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
         return menu
     }
 
+    /** Back where the user left it (monitor, position, size, maximized), else 800x500 centered. */
     private fun setWindowSizeAndPosition() {
-        setSize(800.px, 500.px)
-        setLocationRelativeTo(null)
-//        if (Config.getInstance().width < 0 || Config.getInstance().height < 0) setSize(800, 500)
-//        if (Config.getInstance().x < 0 || Config.getInstance().y < 0) setLocationRelativeTo(null)
+        WindowGeometry.restore(this, "main", 800, 500)
     }
 
     private fun loadQueueMenu(menu: JMenu) {

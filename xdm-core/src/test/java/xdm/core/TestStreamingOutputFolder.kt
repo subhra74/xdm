@@ -65,9 +65,8 @@ class TestStreamingOutputFolder : StreamingE2EBase() {
 
     private fun info(id: Long, caseName: String, url: String) = HlsDownloadTaskInfo(
         id = id, fileName = "$caseName.mp4", tempDir = File(root, "$caseName/tmp").absolutePath,
-        respectFileName = false, cookie = null, headers = null, origin = null, autoCategorize = false,
-        defaultDownloadFolder = File(root, "$caseName/out").absolutePath, userSelectedDownloadFolder = null,
-        maxPiece = 0, authInfo = null, url = url, audioUrl = null, audioOnly = false, independent = false,
+        respectFileName = false, cookie = null, headers = null, origin = null, categoryId = null,
+        targetFolder = File(root, "$caseName/out").absolutePath,        maxPiece = 0, authInfo = null, url = url, audioUrl = null, audioOnly = false, independent = false,
     )
 
     private fun genTs(caseName: String) {

@@ -39,9 +39,8 @@ class TestStreamingStalls : StreamingE2EBase() {
         val h = host(caseName)
         val info = HlsDownloadTaskInfo(
             id = System.nanoTime(), fileName = "$caseName.mp4", tempDir = File(root, "$caseName/tmp").absolutePath,
-            respectFileName = false, cookie = null, headers = null, origin = null, autoCategorize = false,
-            defaultDownloadFolder = File(root, "$caseName/out").absolutePath, userSelectedDownloadFolder = null,
-            maxPiece = 0, authInfo = null, url = url, audioUrl = null, audioOnly = false, independent = false,
+            respectFileName = false, cookie = null, headers = null, origin = null, categoryId = null,
+            targetFolder = File(root, "$caseName/out").absolutePath,            maxPiece = 0, authInfo = null, url = url, audioUrl = null, audioOnly = false, independent = false,
         )
         HlsDownloaderTask(
             info, CountingHttpClient(httpClientWithReadTimeout(1)), muxer(), h, root.absolutePath,

@@ -26,17 +26,27 @@ interface ChunkController : DownloaderTask {
     fun takeOverChunk(chunkId: Long, maxByteRange: Long): Boolean
 }
 
+/**
+ * Loads a saved download or starts a new one. The part file is always `<targetFolder>/<partFileName>`:
+ * both are derived from the task, never read from the saved state, so the task info is the only record
+ * of where the file is. A part file that is gone or damaged is not checked here: opening it fails as a
+ * disk error ([HttpChunkRetriever]), and the download never starts over by itself because of it.
+ */
 fun makeContext(
     task: HttpDownloadTaskInfo,
     host: DownloadHost,
     configDir: String,
     httpClient: PoolingHttpClient,
 ): Pair<HttpTaskContext, Boolean> {
+    val folder = task.targetFolder
+    val name = partFileName(task.id)
     loadState(
         id = task.id,
         configDir = configDir,
         http = httpClient,
-        host = host
+        host = host,
+        tempFolder = folder,
+        tempFileName = name,
     ).onSuccess {
         it.httpClient = httpClient
         normalizeRestoredChunks(it)
@@ -60,10 +70,10 @@ fun makeContext(
             stopFlag = AtomicBoolean(false),
             completed = AtomicBoolean(false),
             tempFileCreated = AtomicBoolean(false),
-            tempFileName = "${CoreUtils.uniqueId()}.tmp",
+            tempFileName = name,
             diskError = AtomicBoolean(false),
             downloadHost = host,
-            tempFolder = task.defaultDownloadFolder,
+            tempFolder = folder,
         ).apply { this.httpClient = httpClient }, true
     )
 }
@@ -85,29 +95,17 @@ private fun normalizeRestoredChunks(ctx: HttpTaskContext) {
 }
 
 /**
- * Whether a saved download has to start over as a new download instead of resuming:
- * - Its temp file was deleted or cut short, so the bytes it held are gone.
+ * Whether a saved download has to start over because of a server limitation (a disk problem never
+ * starts it over; it fails as a disk error):
  * - Its first response had no Content-Length, so it can only ever request `bytes=0-` and the bytes
  *   already on disk cannot be continued. Starting over also lets a server that now sends a length run
  *   it as a normal sized download.
  * - The server does not do ranges ([HttpTaskContext.noRangeSupport]), so nothing can be continued
  *   either. (For both, a completed download only failed to publish, and resuming publishes it.)
- * - It was saved as finished, but its pieces do not make up the file ([piecesMakeUpFile]), so
- *   publishing it would hand over a corrupt file.
  */
 private fun mustStartOver(ctx: HttpTaskContext): Boolean {
     if (!ctx.init.get()) return false
-    if (ctx.tempFileCreated.get() && !ctx.tempFileIntact()) return true
-    if (!ctx.completed.get() && (ctx.totalSize == null || ctx.noRangeSupport)) return true
-    if (ctx.totalSize == null) return false
-    val finished = ctx.completed.get() || ctx.chunks.values.all { it.status.get() == ChunkStatus.Finished }
-    return finished && !ctx.piecesMakeUpFile()
-}
-
-/** The temp file is still there and, with a known size, still that big (it is created at full size). */
-private fun HttpTaskContext.tempFileIntact(): Boolean {
-    val file = File(tempFolder, tempFileName)
-    return file.isFile && totalSize.let { it == null || file.length() == it }
+    return !ctx.completed.get() && (ctx.totalSize == null || ctx.noRangeSupport)
 }
 
 /**
@@ -197,6 +195,9 @@ class HttpDownloaderTask : ChunkController {
         startRequested.set(true)
         Thread {
             context.downloadHost.onDownloadActivated(context.id)
+            // The part file is written straight into the target folder, so it has to exist before the
+            // first write. Failing here surfaces as a write error on that first write.
+            File(context.tempFolder).mkdirs()
             val id = CoreUtils.uniqueId()
             val chunk1 = Chunk(
                 id = id,
@@ -325,6 +326,13 @@ class HttpDownloaderTask : ChunkController {
 
     override fun onChunkFailed(id: Long, error: DownloadError) {
         lastChunkError.set(error)
+        if (error == DownloadError.DiskSpaceError) {
+            // A disk error is not retried: the whole download fails with it, and the other chunks stop.
+            context.diskError.set(true)
+            reportFailure(error)
+            context.stopFlag.set(true)
+            return
+        }
         if (isAllError()) reportFailure(error)
     }
 
@@ -355,12 +363,6 @@ class HttpDownloaderTask : ChunkController {
                 }
                 context.validator = data.validator
                 context.contentType = data.contentType
-                context.tempFolder = context.downloadHost.getTempDir(
-                    context.id,
-                    url = context.url,
-                    contentType = data.contentType,
-                    contentDisposition = data.contentDisposition
-                )
                 context.init.set(true)
                 context.downloadHost.onDownloadInit(
                     DownloadStatusInfo.InitInfo(
@@ -621,6 +623,13 @@ class HttpDownloaderTask : ChunkController {
     }
 
     private fun finishDownload() {
+        if (!context.piecesMakeUpFile()) {
+            // Saved as finished, but the part file is gone or does not match: a disk error, never published.
+            Logger.error("XDM", "Resume: the part file does not match the saved pieces")
+            context.httpClient.close()
+            context.downloadHost.onDownloadFailed(context.id, DownloadError.DiskSpaceError)
+            return
+        }
         context.completed.set(true)
         Logger.info("XDM", "Resume: All chunks downloaded")
         try {

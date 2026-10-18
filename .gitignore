@@ -6,7 +6,16 @@ build
 
 hls-muxer.zip
 handoff
-packaging/xdm-9.0.1-x64.msi
+# Installers dropped into packaging/ (the scripts themselves write to build/)
+packaging/*.msi
+packaging/*.exe
+packaging/*.dmg
+packaging/*.pkg
+packaging/*.deb
+packaging/*.rpm
+packaging/*.AppImage
+packaging/*.tar.gz
+packaging/*.zip
 
 # Private docs (separate repo)
 /private-docs/

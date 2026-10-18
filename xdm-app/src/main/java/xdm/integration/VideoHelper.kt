@@ -1,8 +1,7 @@
 package xdm.integration
 
 import xdm.app.AppContext
-import xdm.app.utils.rememberedAutoCategorize
-import xdm.app.utils.rememberedBaseFolder
+import xdm.app.utils.captureDestination
 import xdm.core.*
 import xdm.core.downloaders.DashDownloadTaskInfo
 import xdm.core.downloaders.HlsDownloadTaskInfo
@@ -357,18 +356,19 @@ object VideoHelper {
     private fun submitHttpDownload(msg: ExtensionMessage, url: String, ext: String, len: Long) {
         val respHeaders =
             msg.responseHeaders?.map { entry -> entry.key to entry.value.map { it.value } }?.associate { it }
+        val name = fileNameWithExt(msg, ext)
+        val dest = captureDestination(name, url, getHeader("Referer", msg.requestHeaders) ?: msg.tabUrl)
         val http = HttpDownloadTaskInfo(
             id = CoreUtils.uniqueId(),
             url = url,
-            fileName = fileNameWithExt(msg, ext),
+            fileName = name,
             respectFileName = true,
             cookie = msg.cookie,
             headers = msg.requestHeaders,
             origin = getHeader("Referer", msg.requestHeaders),
-            autoCategorize = rememberedAutoCategorize(),
-            defaultDownloadFolder = rememberedBaseFolder(),
+            categoryId = dest.first,
+            targetFolder = dest.second,
             maxPiece = AppContext.config.maxSegments,
-            userSelectedDownloadFolder = null,
             authInfo = null,
             knownFileSize = msg.fileSize ?: getFileSize(respHeaders)
         )
@@ -447,18 +447,19 @@ object VideoHelper {
             val audio = plc.audio
             if (video != null && audio != null) {
                 val fileExt = if (video.mimeType.contains("mp4") && audio.mimeType.contains("mp4")) "mp4" else "mkv"
+                val name = fileNameWithExt(msg, fileExt)
+                val dest = captureDestination(name, url, msg.tabUrl ?: getHeader(REFERER, msg.requestHeaders))
                 val dashDownloadTaskInfo = DashDownloadTaskInfo(
                     id = CoreUtils.uniqueId(),
-                    fileName = fileNameWithExt(msg, fileExt),
+                    fileName = name,
                     tempDir = AppContext.config.tempFolder,
                     respectFileName = true,
                     cookie = msg.cookie,
                     headers = msg.requestHeaders,
                     // The page the manifest was found on, so "Refresh link" has somewhere to go.
                     origin = msg.tabUrl ?: getHeader(REFERER, msg.requestHeaders),
-                    autoCategorize = rememberedAutoCategorize(),
-                    defaultDownloadFolder = rememberedBaseFolder(),
-                    userSelectedDownloadFolder = null,
+                    categoryId = dest.first,
+                    targetFolder = dest.second,
                     maxPiece = AppContext.config.maxSegments,
                     authInfo = null,
                     url = url,
@@ -596,18 +597,19 @@ object VideoHelper {
         audioOnly: Boolean,
         independent: Boolean,
     ): HlsDownloadTaskInfo {
+        val name = fileNameWithExt(msg, "mp4")
+        val dest = captureDestination(name, videoUrl, msg.tabUrl ?: getHeader(REFERER, msg.requestHeaders))
         return HlsDownloadTaskInfo(
             id = CoreUtils.uniqueId(),
-            fileName = fileNameWithExt(msg, "mp4"),
+            fileName = name,
             tempDir = AppContext.config.tempFolder,
             respectFileName = true,
             cookie = msg.cookie,
             headers = msg.requestHeaders,
             // The page the manifest was found on, so "Refresh link" has somewhere to go.
             origin = msg.tabUrl ?: getHeader(REFERER, msg.requestHeaders),
-            autoCategorize = rememberedAutoCategorize(),
-            defaultDownloadFolder = rememberedBaseFolder(),
-            userSelectedDownloadFolder = null,
+            categoryId = dest.first,
+            targetFolder = dest.second,
             maxPiece = AppContext.config.maxSegments,
             authInfo = null,
             url = videoUrl,

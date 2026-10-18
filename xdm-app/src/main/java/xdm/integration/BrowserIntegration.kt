@@ -10,8 +10,7 @@ import kotlinx.serialization.json.*
 import xdm.app.AppContext
 import xdm.app.BatchRequest
 import xdm.app.BatchRequestItem
-import xdm.app.utils.rememberedAutoCategorize
-import xdm.app.utils.rememberedBaseFolder
+import xdm.app.utils.captureDestination
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.util.*
 import java.io.IOException
@@ -436,23 +435,24 @@ object BrowserIntegration {
     private fun toHttpSource(msg: ExtensionMessage): HttpDownloadTaskInfo {
         val respHeaders =
             msg.responseHeaders?.map { entry -> entry.key to entry.value.map { it.value } }?.associate { it }
+        val fileName = FileUtils.sanitizeFileName(
+            // Chrome's suggested name may include sub-directories (e.g. "sub/file.zip");
+            // reduce it to the base name so separators aren't mangled into underscores.
+            msg.filename?.let { FileUtils.getFileName(it) } ?: FileUtils.getFileName(msg.url)
+        )!!
+        val origin = msg.referer ?: msg.tabUrl
+        // Used as is when the download starts without a dialog; the dialog resolves it again itself.
+        val (categoryId, targetFolder) = captureDestination(fileName, msg.url, origin)
         return HttpDownloadTaskInfo(
             id = CoreUtils.uniqueId(),
             url = msg.url!!,
-            fileName = FileUtils.sanitizeFileName(
-                // Chrome's suggested name may include sub-directories (e.g. "sub/file.zip");
-                // reduce it to the base name so separators aren't mangled into underscores.
-                msg.filename?.let { FileUtils.getFileName(it) } ?: FileUtils.getFileName(msg.url)
-            )!!,
+            fileName = fileName,
             respectFileName = false,
             cookie = msg.cookie,
             headers = msg.requestHeaders,
-            origin = msg.referer ?: msg.tabUrl,
-            // Follow the user's last "Save in" choice, so a browser download honours both their
-            // download folder and the "Automatic (by file type)" option like a dialog download does.
-            autoCategorize = rememberedAutoCategorize(),
-            defaultDownloadFolder = rememberedBaseFolder(),
-            userSelectedDownloadFolder = null,
+            origin = origin,
+            categoryId = categoryId,
+            targetFolder = targetFolder,
             maxPiece = AppContext.config.maxSegments,
             authInfo = null,
             knownFileSize = msg.fileSize ?: getContentLength(respHeaders),
