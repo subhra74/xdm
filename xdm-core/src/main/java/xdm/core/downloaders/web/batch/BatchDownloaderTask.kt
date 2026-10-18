@@ -18,12 +18,11 @@ import xdm.core.util.Logger
 import xdm.core.util.getExtension
 import xdm.core.util.getFileNameWithoutExtension
 import xdm.core.util.getNameFromContentDisposition
-import java.io.File
+import xdm.core.storage.LocalStorage
+import xdm.core.storage.Storage
+import xdm.core.storage.StorageFolder
 import java.io.IOException
-import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.FileAlreadyExistsException
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -52,7 +51,13 @@ class BatchDownloaderTask(
 ) : DownloaderTask, BatchFileListener {
     private val context: BatchTaskContext = loadBatchState(task.id, configDir).getOrNull()
         ?.takeIf { it.files.size == task.items.size }
-        ?: BatchTaskContext(task.id, task.batchFolder, List(task.items.size) { BatchFile(it) })
+        ?: BatchTaskContext(
+            task.id,
+            host.storage.folder(task.folder).child(task.name).location,
+            List(task.items.size) { BatchFile(it) }
+        )
+
+    private val folder: StorageFolder = host.storage.folder(context.batchFolder)
 
     private val executor: ExecutorService =
         Executors.newFixedThreadPool(task.maxPiece.takeIf { it > 0 } ?: config.maxSegments)
@@ -105,13 +110,12 @@ class BatchDownloaderTask(
     }
 
     /** Removes the unfinished part files; the finished files stay. */
-    override fun deleteTemp() = deleteBatchPartFiles(context.batchFolder)
+    override fun deleteTemp() = deleteBatchPartFiles(folder)
 
     private fun download() {
         try {
             host.onDownloadActivated(task.id)
-            val folder = File(context.batchFolder)
-            if (!folder.isDirectory && !folder.mkdirs()) {
+            if (!folder.create()) {
                 Logger.error("XDM", "Unable to create batch folder $folder")
                 host.onDownloadFailed(task.id, DownloadError.OutputWriteError)
                 return
@@ -175,7 +179,7 @@ class BatchDownloaderTask(
         val retriever = BatchFileRetriever(
             file = f,
             url = item.url,
-            partFile = batchPartFile(context.batchFolder, f.index),
+            partFile = folder.file(batchPartName(f.index)),
             httpClient = http,
             headers = task.headers,
             cookie = task.cookies.getOrNull(item.cookieGroup),
@@ -195,8 +199,8 @@ class BatchDownloaderTask(
     private fun nameOf(f: BatchFile) = f.finalName ?: task.items[f.index].fileName
 
     override fun onConnected(file: BatchFile, response: HttpResponse) {
-        val part = batchPartFile(context.batchFolder, file.index)
-        if (!part.exists()) runCatching { part.createNewFile() }
+        val part = folder.file(batchPartName(file.index))
+        if (!part.exists) runCatching { part.open(create = true).close() }
         if (file.finalName != null) return
         val item = task.items[file.index]
         var name = item.fileName
@@ -220,38 +224,33 @@ class BatchDownloaderTask(
         val ext = getExtension(name) ?: ""
         var candidate = name
         var n = 0
-        while (candidate.lowercase() in takenNames || File(context.batchFolder, candidate).exists()) {
+        while (candidate.lowercase() in takenNames || folder.exists(candidate)) {
             candidate = "${base}_${++n}$ext"
         }
         return candidate
     }
 
     override fun onComplete(file: BatchFile): DownloadError? {
-        val part = batchPartFile(context.batchFolder, file.index).toPath()
+        val part = batchPartName(file.index)
         synchronized(takenNames) {
             repeat(3) {
                 var name = nameOf(file)
                 // Something else (not this batch) took the name: never overwrite it.
-                if (File(context.batchFolder, name).exists()) {
+                if (folder.exists(name)) {
                     takenNames.remove(name.lowercase())
                     name = uniqueName(name)
                     takenNames.add(name.lowercase())
                 }
-                val target = File(context.batchFolder, name).toPath()
                 try {
-                    try {
-                        Files.move(part, target, StandardCopyOption.ATOMIC_MOVE)
-                    } catch (e: AtomicMoveNotSupportedException) {
-                        Files.move(part, target)
-                    }
+                    folder.rename(part, name, replace = false)
                     file.finalName = name
                     dirty.set(true)
                     return null
                 } catch (e: FileAlreadyExistsException) {
                     file.finalName = name
-                    Logger.info("XDM", "$target appeared while renaming, trying another name")
+                    Logger.info("XDM", "$name appeared while renaming, trying another name")
                 } catch (e: IOException) {
-                    Logger.error("XDM", "Unable to rename $part to $target", e)
+                    Logger.error("XDM", "Unable to rename $part to $name in $folder", e)
                     return DownloadError.OutputWriteError
                 }
             }
@@ -335,25 +334,24 @@ class BatchDownloaderTask(
 private val PART_FILE = Regex("""\.\d+\.xdm-part""")
 
 /** Deletes a batch's unfinished part files, and the folder if that leaves it empty. */
-fun deleteBatchPartFiles(batchFolder: String) {
-    val folder = File(batchFolder)
-    folder.listFiles { f -> f.isFile && PART_FILE.matches(f.name) }?.forEach { it.delete() }
-    deleteFolderIfEmpty(folder)
+fun deleteBatchPartFiles(batchFolder: String, storage: Storage = LocalStorage) =
+    deleteBatchPartFiles(storage.folder(batchFolder))
+
+private fun deleteBatchPartFiles(folder: StorageFolder) {
+    folder.listFiles().filter { PART_FILE.matches(it) }.forEach { folder.delete(it) }
+    folder.deleteIfEmpty()
 }
 
 /**
  * Deletes what a batch put in its folder — the finished files named in [context] and the part files —
  * then the folder only if nothing else is left in it. Never deletes files the batch did not create.
  */
-fun deleteBatchFiles(context: BatchTaskContext) {
+fun deleteBatchFiles(context: BatchTaskContext, storage: Storage = LocalStorage) {
+    val folder = storage.folder(context.batchFolder)
     for (f in context.files) {
         if (f.status.get() == ChunkStatus.Finished) {
-            f.finalName?.let { File(context.batchFolder, it).delete() }
+            f.finalName?.let { folder.delete(it) }
         }
     }
-    deleteBatchPartFiles(context.batchFolder)
-}
-
-private fun deleteFolderIfEmpty(folder: File) {
-    if (folder.isDirectory && folder.list()?.isEmpty() == true) folder.delete()
+    deleteBatchPartFiles(folder)
 }

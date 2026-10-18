@@ -238,7 +238,7 @@ class NewVideoDownloadWindow : JDialog() {
     /** Packing first is what makes the window insets known, so the content is never clipped. */
     private fun adjustSize() {
         pack()
-        size = Dimension(max(width, 500.px), max(height, 240.px))
+        size = Dimension(max(width, 500.px), max(height, 270.px))
         TempFolderCards.clampToScreen(this)
     }
 

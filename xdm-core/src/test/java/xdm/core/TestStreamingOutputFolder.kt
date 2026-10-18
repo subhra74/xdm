@@ -12,6 +12,8 @@ import xdm.core.downloaders.HlsDownloadTaskInfo
 import xdm.core.downloaders.web.streaming.downloader.hls.HlsDownloaderTask
 import xdm.core.media.muxer.Muxer
 import xdm.core.media.muxer.transmux.mkv.MkvWriter
+import xdm.core.storage.LocalStorage
+import xdm.core.storage.StorageFile
 import java.io.File
 import java.security.SecureRandom
 import java.util.concurrent.CopyOnWriteArrayList
@@ -35,11 +37,11 @@ class TestStreamingOutputFolder : StreamingE2EBase() {
     private class CountingMuxer(val inner: Muxer) : Muxer by inner {
         val calls = AtomicInteger(0)
         override fun mux(
-            segments: List<String>, outputFile: String, progressCallback: (Int) -> Unit, tempDir: String,
+            segments: List<String>, output: StorageFile, progressCallback: (Int) -> Unit, tempDir: String,
             independentSegement: Boolean, isMp4: Boolean, discontinuous: Boolean,
         ): Boolean {
             calls.incrementAndGet()
-            return inner.mux(segments, outputFile, progressCallback, tempDir, independentSegement, isMp4, discontinuous)
+            return inner.mux(segments, output, progressCallback, tempDir, independentSegement, isMp4, discontinuous)
         }
     }
 
@@ -54,12 +56,12 @@ class TestStreamingOutputFolder : StreamingE2EBase() {
         val beforeCommit: () -> Unit = {},
     ) : DownloadHost by inner {
         val committed = CopyOnWriteArrayList<String>()
-        override fun outputFilePath(id: Long, downloadType: DownloadType, ext: String) = outputPath
-        override fun commitOutputFile(id: Long, tmpFilePath: String, downloadType: DownloadType): CommitResult {
+        override fun outputFile(id: Long, downloadType: DownloadType, ext: String) = LocalStorage.file(outputPath)
+        override fun commitOutputFile(id: Long, part: StorageFile, downloadType: DownloadType): CommitResult {
             beforeCommit()
-            committed.add(tmpFilePath)
+            committed.add(part.localPath!!)
             if (failCommits-- > 0) return CommitResult.Failed(DownloadError.OutputWriteError)
-            return inner.commitOutputFile(id, tmpFilePath, downloadType)
+            return inner.commitOutputFile(id, part, downloadType)
         }
     }
 

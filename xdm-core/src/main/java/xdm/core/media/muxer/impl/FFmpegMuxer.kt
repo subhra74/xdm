@@ -2,6 +2,7 @@ package xdm.core.media.muxer.impl
 
 //import xdm.core.Config
 import xdm.core.media.muxer.Muxer
+import xdm.core.storage.StorageFile
 import xdm.core.util.Logger
 import xdm.core.util.PlatformUtils
 import xdm.core.util.StringUtils
@@ -16,6 +17,27 @@ import java.util.regex.Pattern
 import kotlin.math.min
 
 class FFmpegMuxer(private val appDir: String) : Muxer {
+    // ffmpeg writes to a path: an output outside the local file system (SAF) cannot be muxed here.
+    override fun mux(
+        segments: List<String>, output: StorageFile, progressCallback: (Int) -> Unit, tempDir: String,
+        independentSegement: Boolean, isMp4: Boolean, discontinuous: Boolean,
+    ): Boolean = mux(
+        segments, output.localPath ?: return false, progressCallback, tempDir, independentSegement, isMp4, discontinuous
+    )
+
+    override fun mux(
+        file1: String, file2: String, output: StorageFile, progressCallback: (Int) -> Unit, tempDir: String
+    ): Boolean = mux(file1, file2, output.localPath ?: return false, progressCallback, tempDir)
+
+    override fun mux(
+        audioSegments: List<String>, videoSegments: List<String>, output: StorageFile,
+        progressCallback: (Int) -> Unit, tempDir: String, independentSegement: Boolean, isMp4: Boolean,
+        discontinuous: Boolean,
+    ): Boolean = mux(
+        audioSegments, videoSegments, output.localPath ?: return false, progressCallback, tempDir,
+        independentSegement, isMp4, discontinuous
+    )
+
     private var duration: Long = 0
     private var time: Long = 0
     private var lastTick: Long = 0

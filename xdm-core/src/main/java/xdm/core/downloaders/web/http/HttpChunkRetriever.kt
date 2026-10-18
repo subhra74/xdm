@@ -8,12 +8,8 @@ import xdm.core.network.http.isTlsVerificationError
 import xdm.core.util.Logger
 import xdm.core.util.getRetryDelay
 import xdm.core.util.isLinkExpiredStatus
-import java.io.File
+import xdm.core.storage.RandomAccessOutput
 import java.io.IOException
-import java.io.RandomAccessFile
-import java.nio.file.Files
-import java.nio.file.StandardOpenOption
-import java.util.EnumSet
 import kotlin.math.min
 
 
@@ -279,7 +275,7 @@ class HttpChunkRetriever(
             return CopyResult.Cancel
         }
         var rem: Long = 0
-        val fileHandle: RandomAccessFile?
+        val fileHandle: RandomAccessOutput?
 
         try {
             fileHandle = openFileHandle() ?: run {
@@ -387,7 +383,7 @@ class HttpChunkRetriever(
         if (isCancelled()) return CopyResult.Cancel
         val buf = ByteArray(256 * 1024)
 
-        var fileHandle: RandomAccessFile
+        var fileHandle: RandomAccessOutput
 
         try {
             fileHandle = openFileHandle() ?: run { return CopyResult.Cancel }
@@ -491,19 +487,18 @@ class HttpChunkRetriever(
         return true
     }
 
-    private fun openFileHandle(): RandomAccessFile? {
+    private fun openFileHandle(): RandomAccessOutput? {
         context.write {
             val chunk = context.chunks[id] ?: return null
-            var fs: RandomAccessFile? = null
+            var fs: RandomAccessOutput? = null
             try {
-                val file = File(context.tempFolder, context.tempFileName)
+                val file = context.partFile
                 // A part file written before must still be there, at full size; recreating it would
                 // silently lose what it held. Failing here is a disk error, and the download stops.
                 if (context.tempFileCreated.get() &&
-                    (!file.isFile || context.totalSize.let { it != null && file.length() != it })
-                ) throw java.io.IOException("Part file missing or damaged: $file")
-                if (!context.tempFileCreated.get()) createSparse(file)
-                fs = RandomAccessFile(file, "rw")
+                    context.totalSize.let { size -> file.length().let { it < 0 || (size != null && it != size) } }
+                ) throw IOException("Part file missing or damaged: $file")
+                fs = file.open(create = !context.tempFileCreated.get())
                 context.totalSize?.let { len ->
                     if (!context.tempFileCreated.get()) {
                         fs.setLength(len)
@@ -525,21 +520,7 @@ class HttpChunkRetriever(
         return null
     }
 
-    /**
-     * Creates the temp file as sparse (NTFS; ignored elsewhere). Chunks write far into a preallocated
-     * file, and NTFS zero-fills everything below a write past the valid data length, so a normal file
-     * gets written almost twice. A sparse file skips the zero-fill.
-     */
-    private fun createSparse(file: File) {
-        if (file.exists()) return
-        try {
-            Files.newByteChannel(file.toPath(), EnumSet.of(StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE, StandardOpenOption.SPARSE)).close()
-        } catch (e: IOException) {
-            Logger.info("XDM", "Could not create sparse temp file, using a normal one: $e")
-        }
-    }
-
-    private fun closeFileHandle(fileHandle: RandomAccessFile?) {
+    private fun closeFileHandle(fileHandle: RandomAccessOutput?) {
         try {
             fileHandle?.close()
         } catch (e: Exception) {//No op

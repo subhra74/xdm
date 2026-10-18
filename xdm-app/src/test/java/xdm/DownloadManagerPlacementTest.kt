@@ -13,6 +13,7 @@ import xdm.core.downloaders.CommitResult
 import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.DownloadType
 import xdm.core.downloaders.partFileName
+import xdm.core.storage.LocalStorage
 import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -26,7 +27,7 @@ import java.util.concurrent.atomic.AtomicReference
 class DownloadManagerPlacementTest : DownloadManagerTestBase() {
 
     private fun commit(id: Long, part: File, type: DownloadType): CommitResult =
-        host().commitOutputFile(id, part.absolutePath, type)
+        host().commitOutputFile(id, LocalStorage.file(part.absolutePath), type)
 
     private fun stoppedRecord(id: Long, type: DownloadType, status: RecordStatus = RecordStatus.PAUSED) = appDB.addActive(
         DbRecord(
@@ -123,9 +124,9 @@ class DownloadManagerPlacementTest : DownloadManagerTestBase() {
         taskDB.saveHlsTask(hls)
         assertEquals(
             File(out, partFileName(hls.id) + ".mp4").absolutePath,
-            host().outputFilePath(hls.id, DownloadType.Hls, ".mp4"),
+            host().outputFile(hls.id, DownloadType.Hls, ".mp4")?.localPath,
         )
-        assertNull(host().outputFilePath(hls.id, DownloadType.Http, ".mp4"), "HTTP writes its part file directly")
+        assertNull(host().outputFile(hls.id, DownloadType.Http, ".mp4"), "HTTP writes its part file directly")
     }
 
     @Test

@@ -7,6 +7,9 @@ import xdm.core.media.muxer.transmux.sample.Codec
 import xdm.core.media.muxer.transmux.sample.Sample
 import xdm.core.media.muxer.transmux.sample.Track
 import xdm.core.util.Logger
+import xdm.core.storage.LocalStorage
+import xdm.core.storage.StorageFile
+import xdm.core.storage.asOutputStream
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -27,10 +30,17 @@ import java.io.RandomAccessFile
  * References: Matroska element spec (https://www.matroska.org/technical/elements.html) and the
  * conventions used by libavformat's `matroskaenc` and the JS `webm-muxer`.
  */
-class MkvWriter(outputPath: String, spoolDir: String? = null) : ContainerWriter {
-    private val file = File(outputPath)
-    /** Scratch copy of the sample data; in [spoolDir] when given, otherwise next to the output. */
-    private val spoolFile = spoolDir?.let { File(it, "${file.name}.spool") } ?: File("$outputPath.spool")
+class MkvWriter(private val output: StorageFile, spoolDir: String? = null) : ContainerWriter {
+    constructor(outputPath: String, spoolDir: String? = null) : this(LocalStorage.file(outputPath), spoolDir)
+
+    /**
+     * Scratch copy of the sample data, read back at random: in [spoolDir] when given, otherwise next to
+     * the output, which needs a local output.
+     */
+    private val spoolFile = File(
+        spoolDir ?: output.folder.localPath ?: throw IllegalArgumentException("No spool folder for $output"),
+        "${output.name}.spool"
+    )
     private val spool = BufferedOutputStream(FileOutputStream(spoolFile), 1 shl 20)
     private var spoolPos = 0L
 
@@ -69,7 +79,8 @@ class MkvWriter(outputPath: String, spoolDir: String? = null) : ContainerWriter 
         val durationMs = plans.maxOf { p -> p.track.samples.maxOf { endMsOf(it, p.track) } } - globalMinMs
 
         try {
-            out = BufferedOutputStream(FileOutputStream(file), 1 shl 20)
+            val handle = output.open(create = true).apply { setLength(0) }
+            out = BufferedOutputStream(handle.asOutputStream(), 1 shl 20)
             writeEbmlHeader(docTypeVersion = if (plans.any { it.dolbyVision != null }) 4 else 2)
             // Segment: reserved size, back-patched once all children are written.
             writeRaw(Ebml.idBytes(Ebml.SEGMENT))
@@ -82,22 +93,23 @@ class MkvWriter(outputPath: String, spoolDir: String? = null) : ContainerWriter 
             writeClusters(plans, globalMinMs)
 
             sizePatches.add(longArrayOf(segPatch, position - segContentStart))
-            out.flush(); out.close()
+            out.flush()
 
-            RandomAccessFile(file, "rw").use { raf ->
+            // Patched through the same handle; closing it closes [out] too.
+            handle.use { raf ->
                 for (patch in sizePatches) {
                     raf.seek(patch[0] + 1) // skip the 0x01 leading byte of the 8-byte vint
                     val v = patch[1]
                     val b = ByteArray(7) { i -> (v ushr (8 * (6 - i))).toByte() }
-                    raf.write(b)
+                    raf.write(b, 0, b.size)
                 }
             }
             spoolFile.delete()
             return true
         } catch (ex: Throwable) {
             Logger.error("XDM", "MKV write failed", ex)
-            try { out.close() } catch (_: Exception) {}
-            file.delete(); spoolFile.delete()
+            try { if (this::out.isInitialized) out.close() } catch (_: Exception) {}
+            output.delete(); spoolFile.delete()
             return false
         }
     }
@@ -105,7 +117,7 @@ class MkvWriter(outputPath: String, spoolDir: String? = null) : ContainerWriter 
     override fun abort() {
         try { spool.close() } catch (_: Exception) {}
         try { if (this::out.isInitialized) out.close() } catch (_: Exception) {}
-        file.delete(); spoolFile.delete()
+        output.delete(); spoolFile.delete()
     }
 
     // ---- header / info / tracks ----

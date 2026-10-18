@@ -4,10 +4,10 @@ import xdm.core.media.muxer.transmux.ContainerWriter
 import xdm.core.media.muxer.transmux.sample.Codec
 import xdm.core.media.muxer.transmux.sample.Sample
 import xdm.core.media.muxer.transmux.sample.Track
+import xdm.core.storage.LocalStorage
+import xdm.core.storage.StorageFile
+import xdm.core.storage.asOutputStream
 import java.io.BufferedOutputStream
-import java.io.File
-import java.io.FileOutputStream
-import java.io.RandomAccessFile
 
 /**
  * Writes a progressive (single-file) MP4 from demuxed [Track]s.
@@ -17,9 +17,12 @@ import java.io.RandomAccessFile
  * records are kept in memory, so the `moov` sample tables can be built in one pass at the end.
  * Each sample is emitted as its own MP4 chunk, which correctly handles audio/video interleaving.
  */
-class Mp4Writer(outputPath: String, private val repairTimeline: Boolean = false) : ContainerWriter {
-    private val file = File(outputPath)
-    private val bos = BufferedOutputStream(FileOutputStream(file), 1 shl 20)
+class Mp4Writer(private val output: StorageFile, private val repairTimeline: Boolean = false) : ContainerWriter {
+    constructor(outputPath: String, repairTimeline: Boolean = false) : this(LocalStorage.file(outputPath), repairTimeline)
+
+    /** Written front to back through [bos]; the mdat size is then patched through the same handle. */
+    private val handle = output.open(create = true).apply { setLength(0) }
+    private val bos = BufferedOutputStream(handle.asOutputStream(), 1 shl 20)
     private var position = 0L
     private var mdatHeaderPos = 0L
     private var mdatDataStart = 0L
@@ -47,27 +50,26 @@ class Mp4Writer(outputPath: String, private val repairTimeline: Boolean = false)
     override fun finish(tracks: List<Track>): Boolean {
         val usable = tracks.filter { it.samples.isNotEmpty() && it.isReady() }
         if (usable.isEmpty()) {
-            bos.flush(); bos.close()
+            bos.close()
             return false
         }
         val mdatEnd = position
         val moov = buildMoov(usable)
         writeRaw(moov)
         bos.flush()
-        bos.close()
 
         // Patch the mdat largesize.
-        RandomAccessFile(file, "rw").use { raf ->
+        handle.use {
             val mdatSize = mdatEnd - mdatHeaderPos
-            raf.seek(mdatHeaderPos + 8)
-            raf.write(longToBytes(mdatSize))
+            it.seek(mdatHeaderPos + 8)
+            it.write(longToBytes(mdatSize), 0, 8)
         }
         return true
     }
 
     override fun abort() {
         try { bos.close() } catch (_: Exception) {}
-        file.delete()
+        output.delete()
     }
 
     private fun writeFtyp() {

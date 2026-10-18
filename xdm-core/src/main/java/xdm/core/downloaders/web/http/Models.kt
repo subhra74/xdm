@@ -4,7 +4,8 @@ import xdm.core.downloaders.DownloadHost
 import xdm.core.network.http.HeaderMap
 import xdm.core.network.http.HttpResponse
 import xdm.core.network.http.PoolingHttpClient
-import java.io.RandomAccessFile
+import xdm.core.storage.RandomAccessOutput
+import xdm.core.storage.StorageFile
 import java.time.LocalDateTime
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
@@ -48,7 +49,7 @@ data class Chunk(
     var length: AtomicLong,
     var downloaded: AtomicLong,
     var status: AtomicReference<ChunkStatus>,
-    var fileHandle: AtomicReference<RandomAccessFile?>,
+    var fileHandle: AtomicReference<RandomAccessOutput?>,
     val lastTakeOver: AtomicLong,
     /**
      * How much of [downloaded] is known to be on disk: the progress as of the last time the temp file
@@ -78,6 +79,9 @@ data class HttpTaskContext(
     var tempFolder: String,
 ){
     lateinit var httpClient: PoolingHttpClient
+
+    /** The part file, `<tempFolder>/<tempFileName>`, in the host's [xdm.core.downloaders.DownloadHost.storage]. */
+    val partFile: StorageFile get() = downloadHost.storage.folder(tempFolder).file(tempFileName)
 
     /**
      * Identifies the version of the file the download started with: the first response's Last-Modified.

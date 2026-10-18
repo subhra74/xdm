@@ -1,6 +1,7 @@
 package xdm.core.util
 
 import xdm.core.downloaders.DownloadError
+import xdm.core.storage.uniqueFileName
 import java.io.File
 import java.io.IOException
 import java.net.URLDecoder
@@ -72,20 +73,8 @@ object FileUtils {
         return result
     }
 
-    fun getUniqueFileName(folder: String?, fileName: String): String {
-        var f = File(folder, fileName)
-        var ext = getExtension(fileName)
-        val name = getFileNameWithoutExtension(fileName)
-        if (ext == null) {
-            ext = ""
-        }
-        var c = 0
-        while (f.exists()) {
-            c++
-            f = File(folder, name + "_" + c + ext)
-        }
-        return if (c == 0) fileName else name + "_" + c + ext
-    }
+    fun getUniqueFileName(folder: String?, fileName: String): String =
+        uniqueFileName(fileName) { File(folder, it).exists() }
 
     fun getFileName(uri: String?): String {
         try {

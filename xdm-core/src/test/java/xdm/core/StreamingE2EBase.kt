@@ -17,6 +17,7 @@ import xdm.core.downloaders.DownloadType
 import xdm.core.downloaders.PauseEvent
 import xdm.core.media.muxer.impl.TransmuxingMuxer
 import xdm.core.network.http.impl.HttpClientImpl
+import xdm.core.storage.StorageFile
 import java.io.File
 import java.io.RandomAccessFile
 import java.net.InetSocketAddress
@@ -210,8 +211,8 @@ class StreamingTestHost(
 
     override fun getTempDir(id: Long, url: String, contentType: String?, contentDisposition: String?): String = tempDir
 
-    override fun commitOutputFile(id: Long, tmpFilePath: String, downloadType: DownloadType): CommitResult {
-        val src = File(tmpFilePath)
+    override fun commitOutputFile(id: Long, part: StorageFile, downloadType: DownloadType): CommitResult {
+        val src = File(part.localPath!!)
         val ext = src.name.substringAfterLast('.', "mp4")
         val dst = File(outDir, "out-$id.$ext")
         if (dst.exists()) dst.delete()

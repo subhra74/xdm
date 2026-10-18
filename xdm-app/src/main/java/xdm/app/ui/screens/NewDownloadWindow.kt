@@ -160,7 +160,7 @@ class NewDownloadWindow : JDialog() {
         val infoBox = Box.createVerticalBox().apply {
             add(storageStatus)
             // A minimum gap, so the ignore link never touches the storage line in a short dialog.
-            add(Box.createRigidArea(scaledSize(0, 8)))
+            add(Box.createRigidArea(scaledSize(0, 12)))
             add(Box.createVerticalGlue())
             add(lblIgnore)
             add(Box.createRigidArea(scaledSize(0, 10)))
@@ -463,7 +463,7 @@ class NewDownloadWindow : JDialog() {
     /** Packing first is what makes the window insets known, so the content is never clipped. */
     private fun adjustSize() {
         pack()
-        size = Dimension(max(width, 500.px), max(height, 270.px))
+        size = Dimension(max(width, 500.px), max(height, 300.px))
         TempFolderCards.clampToScreen(this)
     }
 

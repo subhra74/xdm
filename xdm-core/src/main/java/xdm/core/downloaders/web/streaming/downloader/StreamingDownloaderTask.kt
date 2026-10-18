@@ -8,6 +8,8 @@ import xdm.core.downloaders.web.http.ChunkStatus
 import xdm.core.downloaders.web.streaming.downloader.hls.DecryptionException
 import xdm.core.media.muxer.Muxer
 import xdm.core.network.http.isTlsVerificationError
+import xdm.core.storage.LocalStorage
+import xdm.core.storage.StorageFile
 import xdm.core.util.FileUtils
 import xdm.core.util.Logger
 import xdm.core.util.ManifestUtils.downloadManifestAsFile
@@ -119,14 +121,14 @@ abstract class StreamingDownloaderTask(
         if (!context.init.get()) return null
         val finished = context.chunks.filter { it.status.get() == ChunkStatus.Finished }
         if (finished.isEmpty()) return null
-        if (context.completed.get() && outputFile().isFile) return null
+        if (context.completed.get() && outputFile().exists) return null
         return if (finished.any { !File(getChunkTempFileName(it)).isFile }) DownloadError.DiskSpaceError else null
     }
 
     override fun deleteTemp() {
         cleanup()
         val out = outputFile()
-        if (out.delete()) Logger.info("XDM", "Deleted partial output $out")
+        if (out.exists && out.delete()) Logger.info("XDM", "Deleted partial output $out")
     }
 
     /**
@@ -136,11 +138,10 @@ abstract class StreamingDownloaderTask(
      * through Change folder, which deletes a partial output in the old folder. [StreamingTaskContext.muxOutputPath]
      * just mirrors the latest value.
      */
-    private fun outputFile(): File {
-        val resolved = context.downloadHost.outputFilePath(context.id, downloadType(), fileExt())
-            ?.let { File(it) }
-            ?: File(context.tempFolder, context.tempFileName + fileExt())
-        context.muxOutputPath = resolved.absolutePath
+    private fun outputFile(): StorageFile {
+        val resolved = context.downloadHost.outputFile(context.id, downloadType(), fileExt())
+            ?: LocalStorage.folder(context.tempFolder).file(context.tempFileName + fileExt())
+        context.muxOutputPath = resolved.toString()
         return resolved
     }
 
@@ -219,7 +220,7 @@ abstract class StreamingDownloaderTask(
         context.downloadHost.onAssembleStart(context.id)
         val tmpFile = outputFile()
         // A previous run muxed successfully but the commit failed: only retry the commit.
-        val alreadyMuxed = context.completed.get() && tmpFile.isFile
+        val alreadyMuxed = context.completed.get() && tmpFile.exists
         if (!alreadyMuxed) {
             try {
                 postProcessChunks()
@@ -229,16 +230,16 @@ abstract class StreamingDownloaderTask(
                 context.downloadHost.onDownloadFailed(context.id, DownloadError.DecryptionError)
                 return
             }
-            val outFolder = tmpFile.absoluteFile.parentFile
-            if (!outFolder.isDirectory && !outFolder.mkdirs()) {
+            val outFolder = tmpFile.folder
+            if (!outFolder.create()) {
                 Logger.error("XDM", "Unable to create output folder $outFolder")
                 context.downloadHost.onDownloadFailed(context.id, DownloadError.OutputWriteError)
                 return
             }
             val ret = if (context.hasSeparateStreams) {
-                assembleStreams(tmpFile.absolutePath)
+                assembleStreams(tmpFile)
             } else {
-                assembleSingle(tmpFile.absolutePath)
+                assembleSingle(tmpFile)
             }
             if (context.stopFlag.get()) return
             if (!ret) {
@@ -250,7 +251,7 @@ abstract class StreamingDownloaderTask(
         }
         throttle.disable()
         Logger.info("Committing to final file")
-        when (val res = context.downloadHost.commitOutputFile(context.id, tmpFile.absolutePath, downloadType())) {
+        when (val res = context.downloadHost.commitOutputFile(context.id, tmpFile, downloadType())) {
             is CommitResult.Failed -> {
                 // Cancelled only by a stop, which reports the pause itself.
                 if (context.stopFlag.get() || res.error == DownloadError.Cancelled) return
@@ -266,7 +267,10 @@ abstract class StreamingDownloaderTask(
                 Logger.info("Committing to final file - Success --> ${res.outputDir} ${res.fileName}")
                 context.downloadHost.onDownloadSuccess(
                     DownloadStatusInfo.FinalInfo(
-                        context.id, File(res.outputDir, res.fileName).length(), res.fileName, res.outputDir
+                        context.id,
+                        context.downloadHost.storage.folder(res.outputDir).length(res.fileName),
+                        res.fileName,
+                        res.outputDir
                     )
                 )
             }
@@ -293,7 +297,7 @@ abstract class StreamingDownloaderTask(
         context.downloadHost.onAssembleProgress(DownloadStatusInfo.AssembleInfo(context.id, progress))
     }
 
-    private fun assembleStreams(outFile: String): Boolean {
+    private fun assembleStreams(outFile: StorageFile): Boolean {
         try {
             Logger.info("Mux multiple streams to $outFile")
             val audioChunks = context.chunks.filter { it.tag == "AUDIO" }.map { getChunkTempFileName(it) }
@@ -318,7 +322,7 @@ abstract class StreamingDownloaderTask(
         return Paths.get(context.tempFolder, "temp-${chunk.id}.tmp.$ext$suffix").toAbsolutePath().toString()
     }
 
-    private fun assembleSingle(outFile: String): Boolean {
+    private fun assembleSingle(outFile: StorageFile): Boolean {
         try {
             Logger.info("Mux single stream to $outFile")
             val tempFiles = context.chunks.map {

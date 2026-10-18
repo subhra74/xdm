@@ -27,7 +27,10 @@ class BatchFile(
  */
 class BatchTaskContext(
     val id: Long,
-    /** Absolute folder the files go into, recorded when the batch first starts and never recomputed. */
+    /**
+     * The folder the files go into, as a [xdm.core.storage.StorageFolder.location] (an absolute path on
+     * desktop). Recorded when the batch first starts and never recomputed.
+     */
     val batchFolder: String,
     val files: List<BatchFile>,
 ) {
@@ -35,5 +38,8 @@ class BatchTaskContext(
     val failedCount: Int get() = files.count { it.status.get() == ChunkStatus.Failed }
 }
 
-/** The part file an item is written to until it is complete; the name depends only on the index. */
-fun batchPartFile(batchFolder: String, index: Int) = File(batchFolder, ".$index.xdm-part")
+/** The name of the part file an item is written to until it is complete; it depends only on the index. */
+fun batchPartName(index: Int) = ".$index.xdm-part"
+
+/** The part file of item [index] in a local [batchFolder]. */
+fun batchPartFile(batchFolder: String, index: Int) = File(batchFolder, batchPartName(index))

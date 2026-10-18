@@ -17,6 +17,7 @@ import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.downloaders.PauseEvent
 import xdm.core.downloaders.web.http.HttpDownloaderTask
 import xdm.core.network.http.impl.HttpClientImpl
+import xdm.core.storage.StorageFile
 import java.io.File
 import java.net.Proxy
 import java.nio.file.Files
@@ -209,8 +210,8 @@ class TestDownloadHost(
 
     override fun getTempDir(id: Long, url: String, contentType: String?, contentDisposition: String?): String = tempDir
 
-    override fun commitOutputFile(id: Long, tmpFilePath: String, downloadType: DownloadType): CommitResult {
-        val src = File(tmpFilePath)
+    override fun commitOutputFile(id: Long, part: StorageFile, downloadType: DownloadType): CommitResult {
+        val src = File(part.localPath!!)
         val dst = File(outDir, "out-$id.bin")
         if (dst.exists()) dst.delete()
         val moved = src.renameTo(dst) || runCatching {

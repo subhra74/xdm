@@ -1,6 +1,7 @@
 package xdm.core.media.muxer.impl
 
 import xdm.core.media.muxer.Muxer
+import xdm.core.storage.StorageFile
 import xdm.core.media.muxer.transmux.ContainerWriter
 import xdm.core.media.muxer.transmux.es.SampleSink
 import xdm.core.media.muxer.transmux.iso.Mp4Demuxer
@@ -36,20 +37,20 @@ class TransmuxingMuxer(@Suppress("UNUSED_PARAMETER") appDir: String) : Muxer {
     // ---- single list of (possibly A+V) segments ----
     override fun mux(
         segments: List<String>,
-        outputFile: String,
+        output: StorageFile,
         progressCallback: (Int) -> Unit,
         tempDir: String,
         independentSegement: Boolean,
         isMp4: Boolean,
         discontinuous: Boolean,
-    ): Boolean = transmux(outputFile, tempDir, discontinuous) { writer ->
+    ): Boolean = transmux(output, tempDir, discontinuous) { writer ->
         demuxList(segments, writer, progressCallback)
     }
 
     // ---- two separate files (e.g. video + audio) ----
     override fun mux(
-        file1: String, file2: String, outputFile: String, progressCallback: (Int) -> Unit, tempDir: String
-    ): Boolean = transmux(outputFile, tempDir) { writer ->
+        file1: String, file2: String, output: StorageFile, progressCallback: (Int) -> Unit, tempDir: String
+    ): Boolean = transmux(output, tempDir) { writer ->
         val tracks = ArrayList<Track>()
         tracks += demuxList(listOf(file1), writer) {}
         tracks += demuxList(listOf(file2), writer) {}
@@ -61,13 +62,13 @@ class TransmuxingMuxer(@Suppress("UNUSED_PARAMETER") appDir: String) : Muxer {
     override fun mux(
         audioSegments: List<String>,
         videoSegments: List<String>,
-        outputFile: String,
+        output: StorageFile,
         progressCallback: (Int) -> Unit,
         tempDir: String,
         independentSegement: Boolean,
         isMp4: Boolean,
         discontinuous: Boolean,
-    ): Boolean = transmux(outputFile, tempDir, discontinuous) { writer ->
+    ): Boolean = transmux(output, tempDir, discontinuous) { writer ->
         val total = (videoSegments.size + audioSegments.size).coerceAtLeast(1)
         val done = intArrayOf(0)
         val tick = { _: Int -> done[0]++; progressCallback(minOf(100, done[0] * 100 / total)) }
@@ -86,17 +87,17 @@ class TransmuxingMuxer(@Suppress("UNUSED_PARAMETER") appDir: String) : Muxer {
 
     /** [tempDir] holds scratch files (the MKV spool), so the output folder only needs the output's size. */
     private inline fun transmux(
-        outputFile: String, tempDir: String, discontinuous: Boolean = false, body: (ContainerWriter) -> List<Track>
+        output: StorageFile, tempDir: String, discontinuous: Boolean = false, body: (ContainerWriter) -> List<Track>
     ): Boolean {
         val writer: ContainerWriter =
-            if (outputFile.endsWith(".mkv", ignoreCase = true)) MkvWriter(outputFile, tempDir)
-            else Mp4Writer(outputFile, repairTimeline = discontinuous)
+            if (output.name.endsWith(".mkv", ignoreCase = true)) MkvWriter(output, tempDir)
+            else Mp4Writer(output, repairTimeline = discontinuous)
         return try {
             val tracks = body(writer)
             if (stopFlag.get()) { writer.abort(); false }
             else {
                 val ok = writer.finish(tracks)
-                if (!ok) File(outputFile).delete()
+                if (!ok) output.delete()
                 ok
             }
         } catch (ex: Throwable) {

@@ -20,6 +20,9 @@ import xdm.core.downloaders.web.streaming.downloader.hls.HlsKeyStore
 import xdm.core.media.muxer.impl.TransmuxingMuxer
 import xdm.core.network.http.HeaderMap
 import xdm.core.network.http.impl.HttpClientImpl
+import xdm.core.storage.StorageFile
+import xdm.core.storage.StorageFolder
+import xdm.core.storage.uniqueFileName
 import xdm.core.util.AtomicIO
 import xdm.core.util.CoreUtils
 import xdm.core.util.FileUtils
@@ -32,9 +35,7 @@ import java.awt.SystemTray
 import java.awt.TrayIcon
 import java.io.File
 import java.io.FileNotFoundException
-import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 import java.util.concurrent.ConcurrentHashMap
 
 /** What Change folder would do for a download (docs/download-categories.md §6.1). */
@@ -334,38 +335,27 @@ class DownloadManager(
             tempDirFor(id).absolutePath
 
         /**
-         * Publishes the part file [partPath] under its real name in [folderPath], the folder it is already
-         * in. The final name is resolved now ([resolveConflict]), so the clash window is milliseconds.
-         * A same-folder rename never copies; one that fails (a Windows sharing violation from antivirus or
+         * Publishes [part] under its real name in the folder it is already in (the task's target folder).
+         * The final name is resolved now ([resolveConflict]), so the clash window is milliseconds. A
+         * same-folder rename never copies; one that fails (a Windows sharing violation from antivirus or
          * sync, a name taken in the meantime) is retried, and on failure the part file is left as it is.
          */
         private fun publishInFolder(
-            fileName: String, folderPath: String, partPath: String, callback: (finalName: String, folder: String) -> Unit
+            fileName: String, part: StorageFile, callback: (finalName: String, folder: String) -> Unit
         ): CommitResult {
-            val folder = File(folderPath)
-            val part = File(partPath)
+            val folder = part.folder
             repeat(PUBLISH_ATTEMPTS) { attempt ->
                 if (attempt > 0) Thread.sleep(PUBLISH_RETRY_MS * attempt)
                 val (finalName, replace) = resolveConflict(folder, fileName)
                     ?: return CommitResult.Failed(DownloadError.OutputWriteError)
-                val out = File(folder, finalName)
                 try {
-                    val options = if (replace) {
-                        arrayOf(StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
-                    } else {
-                        arrayOf(StandardCopyOption.ATOMIC_MOVE)
-                    }
-                    try {
-                        Files.move(part.toPath(), out.toPath(), *options)
-                    } catch (e: AtomicMoveNotSupportedException) {
-                        // Same folder, so this only happens on exotic file systems: a plain rename still moves no bytes.
-                        Files.move(part.toPath(), out.toPath(), *options.filter { it != StandardCopyOption.ATOMIC_MOVE }.toTypedArray())
-                    }
-                    Logger.info("Published $part -> $out")
-                    callback(finalName, folder.absolutePath)
-                    return CommitResult.Success(fileName = finalName, outputDir = folder.absolutePath)
+                    folder.rename(part.name, finalName, replace)
+                    folder.sync()
+                    Logger.info("Published $part -> $finalName")
+                    callback(finalName, folder.location)
+                    return CommitResult.Success(fileName = finalName, outputDir = folder.location)
                 } catch (e: Exception) {
-                    Logger.error("XDM", "Unable to publish $part as $out (attempt ${attempt + 1})", e)
+                    Logger.error("XDM", "Unable to publish $part as $finalName (attempt ${attempt + 1})", e)
                 }
             }
             return CommitResult.Failed(DownloadError.OutputWriteError)
@@ -377,12 +367,12 @@ class DownloadManager(
          * or renaming. Returns the name to use and whether it replaces an existing file, or null
          * when the conflict cannot be resolved.
          */
-        private fun resolveConflict(folder: File, fileName: String): Pair<String, Boolean>? {
-            if (!File(folder, fileName).exists()) return fileName to false
+        private fun resolveConflict(folder: StorageFolder, fileName: String): Pair<String, Boolean>? {
+            if (!folder.exists(fileName)) return fileName to false
             val config = AppContext.config
             return when {
                 config.overwriteExistingFiles -> fileName to true
-                config.autoRenameOnConflict -> FileUtils.getUniqueFileName(folder.absolutePath, fileName) to false
+                config.autoRenameOnConflict -> uniqueFileName(fileName) { folder.exists(it) } to false
                 else -> {
                     Logger.error("XDM", "$fileName exists and both overwrite and auto-rename are off")
                     null
@@ -390,24 +380,24 @@ class DownloadManager(
             }
         }
 
-        override fun commitOutputFile(id: Long, tmpFilePath: String, downloadType: DownloadType): CommitResult {
+        override fun commitOutputFile(id: Long, part: StorageFile, downloadType: DownloadType): CommitResult {
             when (downloadType) {
                 DownloadType.Http -> taskInfoDB.getHttpTask(id)?.let { t ->
-                    return publishInFolder(t.fileName, t.targetFolder, tmpFilePath) { finalName, _ ->
+                    return publishInFolder(t.fileName, part) { finalName, _ ->
                         t.fileName = finalName
                         taskInfoDB.saveHttpTask(t)
                     }
                 }
 
                 DownloadType.Hls -> taskInfoDB.getHlsTask(id)?.let { t ->
-                    return publishInFolder(t.fileName, t.targetFolder, tmpFilePath) { finalName, _ ->
+                    return publishInFolder(t.fileName, part) { finalName, _ ->
                         t.fileName = finalName
                         taskInfoDB.saveHlsTask(t)
                     }
                 }
 
                 DownloadType.Dash -> taskInfoDB.getDashTask(id)?.let { t ->
-                    return publishInFolder(t.fileName, t.targetFolder, tmpFilePath) { finalName, _ ->
+                    return publishInFolder(t.fileName, part) { finalName, _ ->
                         t.fileName = finalName
                         taskInfoDB.saveDashTask(t)
                     }
@@ -421,8 +411,8 @@ class DownloadManager(
             return CommitResult.Failed(DownloadError.InternalError)
         }
 
-        override fun outputFilePath(id: Long, downloadType: DownloadType, ext: String): String? =
-            streamingOutputPath(id, downloadType, ext)
+        override fun outputFile(id: Long, downloadType: DownloadType, ext: String): StorageFile? =
+            streamingOutputFile(id, downloadType, ext)
     }
 
     /**
@@ -430,13 +420,13 @@ class DownloadManager(
      * commit is a same-folder rename. Derived from the task info every time; the target folder only
      * changes through Change folder. Null for HTTP, which writes its part file directly.
      */
-    private fun streamingOutputPath(id: Long, downloadType: DownloadType, ext: String): String? {
+    private fun streamingOutputFile(id: Long, downloadType: DownloadType, ext: String): StorageFile? {
         val task: StreamingDownloadTaskInfo = when (downloadType) {
             DownloadType.Hls -> taskInfoDB.getHlsTask(id)
             DownloadType.Dash -> taskInfoDB.getDashTask(id)
             else -> null
         } ?: return null
-        return File(task.targetFolder, partFileName(id) + ext).absolutePath
+        return downloadHost.storage.folder(task.targetFolder).file(partFileName(id) + ext)
     }
 
     /**
@@ -775,7 +765,7 @@ class DownloadManager(
         }.orEmpty()
 
         DownloadType.Hls, DownloadType.Dash -> listOf(".mp4", ".mkv").mapNotNull { ext ->
-            streamingOutputPath(id, type, ext)?.let { File(it) }
+            streamingOutputFile(id, type, ext)?.localPath?.let { File(it) }
         }
 
         else -> emptyList()

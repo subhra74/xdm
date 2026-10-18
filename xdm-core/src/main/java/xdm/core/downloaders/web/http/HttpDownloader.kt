@@ -9,8 +9,6 @@ import xdm.core.network.http.PoolingHttpClient
 import xdm.core.network.http.impl.HttpClientImpl
 import xdm.core.util.Logger
 import xdm.core.util.CoreUtils
-import xdm.core.util.MoveOps
-import java.io.File
 import java.net.Proxy
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
@@ -52,7 +50,7 @@ fun makeContext(
         normalizeRestoredChunks(it)
         if (!mustStartOver(it)) return Pair(it, false)
         Logger.info("XDM", "Download ${task.id} cannot resume from its saved state, starting over")
-        File(it.tempFolder, it.tempFileName).delete()
+        it.partFile.delete()
     }.onFailure {
         Logger.info("Unable to load saved download state, starting new download: ${task.id}")
     }
@@ -115,7 +113,7 @@ private fun mustStartOver(ctx: HttpTaskContext): Boolean {
  */
 private fun HttpTaskContext.piecesMakeUpFile(): Boolean {
     val size = totalSize ?: return true
-    if (File(tempFolder, tempFileName).length() != size) return false
+    if (partFile.length() != size) return false
     var next = 0L
     for (chunk in chunks.values.sortedBy { it.offset }) {
         if (chunk.offset != next || chunk.downloaded.get() < chunk.length.get()) return false
@@ -197,7 +195,7 @@ class HttpDownloaderTask : ChunkController {
             context.downloadHost.onDownloadActivated(context.id)
             // The part file is written straight into the target folder, so it has to exist before the
             // first write. Failing here surfaces as a write error on that first write.
-            File(context.tempFolder).mkdirs()
+            context.partFile.folder.create()
             val id = CoreUtils.uniqueId()
             val chunk1 = Chunk(
                 id = id,
@@ -235,8 +233,8 @@ class HttpDownloaderTask : ChunkController {
     }
 
     override fun deleteTemp() {
-        val tmpFile = File(context.tempFolder, context.tempFileName)
-        Logger.info("XDM", "Deleting temp file ${tmpFile.absolutePath}")
+        val tmpFile = context.partFile
+        Logger.info("XDM", "Deleting temp file $tmpFile")
         val ret = tmpFile.delete()
         Logger.info("XDM", "Deleted temp file $ret")
     }
@@ -288,10 +286,9 @@ class HttpDownloaderTask : ChunkController {
                 try {
                     Logger.info("XDM", "All chunks downloaded")
                     saveState()
-                    val tmpFile = File(context.tempFolder, context.tempFileName)
+                    val tmpFile = context.partFile
                     val totalFileSize = context.totalSize ?: tmpFile.length()
-                    val res =
-                        context.downloadHost.commitOutputFile(context.id, tmpFile.absolutePath, DownloadType.Http)
+                    val res = context.downloadHost.commitOutputFile(context.id, tmpFile, DownloadType.Http)
                     Logger.info("XDM", "Move file success: - $res")
                     val now = System.currentTimeMillis()
                     when (res) {
@@ -633,9 +630,9 @@ class HttpDownloaderTask : ChunkController {
         context.completed.set(true)
         Logger.info("XDM", "Resume: All chunks downloaded")
         try {
-            val tmpFile = File(context.tempFolder, context.tempFileName)
+            val tmpFile = context.partFile
             val totalFileSize = context.totalSize ?: tmpFile.length()
-            val res = context.downloadHost.commitOutputFile(context.id, tmpFile.absolutePath, DownloadType.Http)
+            val res = context.downloadHost.commitOutputFile(context.id, tmpFile, DownloadType.Http)
             Logger.info("XDM", "Move file success: - $res")
             when (res) {
                 is CommitResult.Failed -> {
@@ -696,13 +693,13 @@ class HttpDownloaderTask : ChunkController {
 
     /** Forces the temp file's data to disk: false (logged) if that failed, true if there is no file yet. */
     private fun forceTempFile(): Boolean {
-        val file = File(context.tempFolder, context.tempFileName)
-        if (!file.exists()) return true
+        val file = context.partFile
+        if (!file.exists) return true
         return try {
-            MoveOps.force(file.toPath())
+            file.folder.force(file.name)
             true
         } catch (e: IOException) {
-            Logger.error("XDM", "Unable to flush ${file.absolutePath}", e)
+            Logger.error("XDM", "Unable to flush $file", e)
             false
         }
     }

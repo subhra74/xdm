@@ -23,6 +23,9 @@ import xdm.core.network.http.HttpAuth
 import xdm.core.network.http.PoolingHttpClient
 import xdm.core.network.http.impl.HttpClientImpl
 import xdm.core.util.CoreUtils
+import xdm.core.storage.LocalStorage
+import xdm.core.storage.StorageFile
+import xdm.core.storage.uniqueFileName
 import xdm.core.util.FileUtils
 import xdm.core.util.FormatHelper
 import xdm.core.util.Logger
@@ -38,9 +41,6 @@ import java.io.PrintStream
 import java.net.InetSocketAddress
 import java.net.Proxy
 import java.net.URI
-import java.nio.file.AtomicMoveNotSupportedException
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 import java.util.Locale
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -342,40 +342,33 @@ object HeadlessCli {
             override fun getTempDir(id: Long, url: String, contentType: String?, contentDisposition: String?): String =
                 workDir(id).path
 
-            override fun outputFilePath(id: Long, downloadType: DownloadType, ext: String): String? =
-                File(targetFolder, partFileName(id) + ext).absolutePath
+            override fun outputFile(id: Long, downloadType: DownloadType, ext: String): StorageFile? =
+                LocalStorage.file(File(targetFolder, partFileName(id) + ext).path)
 
-            override fun commitOutputFile(id: Long, tmpFilePath: String, downloadType: DownloadType): CommitResult {
+            override fun commitOutputFile(id: Long, part: StorageFile, downloadType: DownloadType): CommitResult {
                 val name = when (downloadType) {
                     DownloadType.Http -> httpName ?: getFileName(httpInfo?.url.orEmpty())
                     // The muxer picks the container: keep a suggested name's extension in step with it.
                     else -> {
-                        val actual = tmpFilePath.substringAfterLast(partFileName(id), "")
+                        val actual = part.name.substringAfterLast(partFileName(id), "")
                         val base = streamName ?: "stream"
                         if (userName != null || actual.isEmpty() || base.endsWith(actual, true)) base
                         else base.substringBeforeLast('.') + actual
                     }
                 }
-                return publish(name, File(tmpFilePath))
+                return publish(name, part)
             }
 
             /** Renames the part file to [fileName] in its own folder: never copies. */
-            private fun publish(fileName: String, part: File): CommitResult {
-                val folder = part.absoluteFile.parentFile
-                val exists = File(folder, fileName).exists()
-                val finalName = if (exists && !o.overwrite) FileUtils.getUniqueFileName(folder.path, fileName) else fileName
-                val target = File(folder, finalName).toPath()
-                val replace = exists && o.overwrite
+            private fun publish(fileName: String, part: StorageFile): CommitResult {
+                val folder = part.folder
+                val exists = folder.exists(fileName)
+                val finalName = if (exists && !o.overwrite) uniqueFileName(fileName) { folder.exists(it) } else fileName
                 return try {
-                    val options = listOfNotNull(StandardCopyOption.REPLACE_EXISTING.takeIf { replace })
-                    try {
-                        Files.move(part.toPath(), target, *(options + StandardCopyOption.ATOMIC_MOVE).toTypedArray())
-                    } catch (e: AtomicMoveNotSupportedException) {
-                        Files.move(part.toPath(), target, *options.toTypedArray())
-                    }
-                    CommitResult.Success(fileName = finalName, outputDir = folder.path)
+                    folder.rename(part.name, finalName, replace = exists && o.overwrite)
+                    CommitResult.Success(fileName = finalName, outputDir = folder.location)
                 } catch (e: Exception) {
-                    Logger.error("XDM", "Unable to publish $part as $target", e)
+                    Logger.error("XDM", "Unable to publish $part as $finalName", e)
                     CommitResult.Failed(DownloadError.OutputWriteError)
                 }
             }

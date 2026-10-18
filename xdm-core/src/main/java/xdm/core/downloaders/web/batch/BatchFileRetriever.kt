@@ -10,9 +10,8 @@ import xdm.core.network.http.isTlsVerificationError
 import xdm.core.util.Logger
 import xdm.core.util.getRetryDelay
 import xdm.core.util.isLinkExpiredStatus
-import java.io.File
+import xdm.core.storage.StorageFile
 import java.io.IOException
-import java.io.RandomAccessFile
 import java.util.concurrent.atomic.AtomicBoolean
 
 /** What a [BatchFileRetriever] reports back to its task. */
@@ -42,7 +41,7 @@ interface BatchFileListener {
 class BatchFileRetriever(
     private val file: BatchFile,
     private val url: String,
-    private val partFile: File,
+    private val partFile: StorageFile,
     private val httpClient: PoolingHttpClient,
     private val headers: HeaderMap?,
     private val cookie: String?,
@@ -82,7 +81,7 @@ class BatchFileRetriever(
         while (!stopFlag.get()) {
             // Only bytes that are both recorded and on disk count: the state is saved every few
             // seconds, the file is written continuously, and either can be ahead after a crash.
-            val onDisk = if (partFile.isFile) partFile.length() else 0L
+            val onDisk = partFile.length().coerceAtLeast(0L)
             if (file.downloaded.get() != onDisk) file.downloaded.set(minOf(file.downloaded.get(), onDisk))
             val downloadedBefore = file.downloaded.get()
             var retryAfter = 3L
@@ -142,7 +141,7 @@ class BatchFileRetriever(
      */
     private fun copy(response: HttpResponse, offset: Long): Boolean {
         val buffer = BUFFER.get()
-        RandomAccessFile(partFile, "rw").use { raf ->
+        partFile.open(create = true).use { raf ->
             try {
                 raf.setLength(offset)
                 raf.seek(offset)
