@@ -1,5 +1,6 @@
 package xdm.app.ui.screens
 
+import com.formdev.flatlaf.FlatClientProperties
 import xdm.app.AppContext
 import xdm.app.I8N.text
 import xdm.app.ui.components.CategoryStyle
@@ -75,7 +76,7 @@ class NewVideoDownloadWindow : JDialog() {
         }
         contentPane.add(lblFile, gbcLblFile)
 
-        txtFileName = JTextField()
+        txtFileName = JTextField().apply { putClientProperty(FlatClientProperties.STYLE, "arc: 10") }
         val gbcTxtFileName = GridBagConstraints().apply {
             gridwidth = 4
             weightx = 1.0
