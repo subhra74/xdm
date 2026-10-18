@@ -100,6 +100,8 @@ JAVA_OPTIONS=(
   -XX:-UsePerfData
   # bound the per-thread direct-buffer cache NIO keeps for heap-buffer writes
   -Djdk.nio.maxCachedBufferSize=262144
+  # VM messages ("2 compiler directives added") on stderr: stdout is the headless CLI's output
+  -XX:+DisplayVMOutputToStderr
 )
 
 # The image, its one launcher and the macOS bundle are all "xdm-app" (xdm-app.app): a stable,

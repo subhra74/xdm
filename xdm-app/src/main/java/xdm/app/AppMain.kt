@@ -3,19 +3,24 @@ package xdm.app
 import com.formdev.flatlaf.FlatLaf
 import com.formdev.flatlaf.themes.FlatMacDarkLaf
 import com.formdev.flatlaf.themes.FlatMacLightLaf
+import xdm.app.headless.CliParser
+import xdm.app.headless.HeadlessCli
 import xdm.app.utils.AppDirs
 import xdm.app.utils.CdsJarPin
 import xdm.app.utils.JitOverride
 import xdm.app.utils.WaylandToolkit
 import xdm.app.utils.linux.DesktopFontSettings
+import xdm.app.utils.windowIconImages
 import xdm.core.downloaders.TaskInfoDB
 import xdm.core.util.FileUtils
 import xdm.core.util.Logger
 import java.awt.Insets
 import java.awt.RenderingHints
 import java.io.File
+import javax.swing.JOptionPane
 import javax.swing.UIManager
 import javax.swing.plaf.FontUIResource
+import kotlin.system.exitProcess
 
 object AppMain {
     init {
@@ -31,6 +36,9 @@ object AppMain {
 
     @JvmStatic
     fun main(args: Array<String>) {
+        // Before anything else: headless mode builds no UI, binds no port and loads no app state.
+        if (CliParser.isHeadless(args)) exitProcess(HeadlessCli.run(args))
+
         val configDir = AppDirs.root.path
         val tempDir = "$configDir${File.separatorChar}tmp"
 
@@ -109,5 +117,8 @@ object AppMain {
         UIManager.put("TableHeader.cellMargins", Insets(0, 10, 0, 0))
         UIManager.put("SplitPaneDivider.gripDotCount", 0)
         UIManager.put("SplitPane.dividerSize", 10)
+        // Ownerless dialogs (JDialog() / JDialog(null)) get Swing's hidden shared frame as owner and
+        // take its icon (X11 window manager icon, FlatLaf title pane): without this, the Java cup.
+        JOptionPane.getRootFrame().iconImages = windowIconImages
     }
 }

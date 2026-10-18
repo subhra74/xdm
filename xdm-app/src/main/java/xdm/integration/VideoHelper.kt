@@ -136,9 +136,12 @@ object VideoHelper {
     /**
      * Fetches and parses an HLS playlist the user entered (Stream download dialog), with the same
      * client and parser as captured streams. Blocking; throws [ManifestLoadException].
+     * Headless mode passes its own [client], since it has no app config to build this one from.
      */
-    fun loadHls(url: String, headers: HeaderMap, cookie: String?, cancelled: AtomicBoolean): LoadedManifest {
-        val lines = fetchManifest(url, withAccept(headers), cookie, cancelled).toString(Charsets.UTF_8).lines()
+    fun loadHls(
+        url: String, headers: HeaderMap, cookie: String?, cancelled: AtomicBoolean, client: PoolingHttpClient = httpClient,
+    ): LoadedManifest {
+        val lines = fetchManifest(client, url, withAccept(headers), cookie, cancelled).toString(Charsets.UTF_8).lines()
         if (HlsParser.isMasterPlaylist(lines.iterator())) {
             val entries = HlsParser.parseMasterPlaylist(lines.iterator(), url).getOrNull()
             if (entries.isNullOrEmpty()) throw ManifestLoadException("No playable variant in the master playlist")
@@ -150,11 +153,13 @@ object VideoHelper {
     }
 
     /** Like [loadHls], for a DASH manifest. */
-    fun loadDash(url: String, headers: HeaderMap, cookie: String?, cancelled: AtomicBoolean): LoadedManifest.Dash {
+    fun loadDash(
+        url: String, headers: HeaderMap, cookie: String?, cancelled: AtomicBoolean, client: PoolingHttpClient = httpClient,
+    ): LoadedManifest.Dash {
         val withAccept = withAccept(headers)
-        val bytes = fetchManifest(url, withAccept, cookie, cancelled)
+        val bytes = fetchManifest(client, url, withAccept, cookie, cancelled)
         val entries = try {
-            parseDash(url, bytes, withAccept, cookie)
+            parseDash(url, bytes, withAccept, cookie, client)
         } catch (e: Exception) {
             throw ManifestLoadException("Not a DASH manifest (${e.message ?: e.javaClass.simpleName})")
         }
@@ -164,10 +169,12 @@ object VideoHelper {
         return LoadedManifest.Dash(url, entries)
     }
 
-    private fun fetchManifest(url: String, headers: HeaderMap, cookie: String?, cancelled: AtomicBoolean): ByteArray {
+    private fun fetchManifest(
+        client: PoolingHttpClient, url: String, headers: HeaderMap, cookie: String?, cancelled: AtomicBoolean,
+    ): ByteArray {
         var failure: String? = null
         return ManifestUtils.downloadManifestBytes(
-            httpClient, url, headers, cookie, cancelled,
+            client, url, headers, cookie, cancelled,
             onError = { failure = it.message ?: it.javaClass.simpleName },
             onHttpError = { failure = "HTTP $it" },
         ) ?: throw ManifestLoadException(failure ?: "No response")
@@ -178,9 +185,11 @@ object VideoHelper {
         if (headers.keys.any { it.equals("accept", ignoreCase = true) }) headers else headers + ("ACCEPT" to listOf("*/*"))
 
     /** Parses an MPD, resolving xlink remote elements (e.g. ad-insertion Periods) with the same headers and cookie. */
-    private fun parseDash(url: String, bytes: ByteArray, headers: HeaderMap, cookie: String?): List<MpdEntry> {
+    private fun parseDash(
+        url: String, bytes: ByteArray, headers: HeaderMap, cookie: String?, client: PoolingHttpClient = httpClient,
+    ): List<MpdEntry> {
         val xlinkResolver = XlinkResolver { xlinkUrl ->
-            ManifestUtils.downloadManifestBytes(httpClient, xlinkUrl, headers, cookie, AtomicBoolean(false))
+            ManifestUtils.downloadManifestBytes(client, xlinkUrl, headers, cookie, AtomicBoolean(false))
                 ?.toString(Charsets.UTF_8)
         }
         return ByteArrayInputStream(bytes).use { parseMpdManifest(it, url, xlinkResolver) }

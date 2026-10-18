@@ -14,8 +14,18 @@ object Logger {
     private const val LOG_PREFIX = "xdm-"
     private const val LOG_SUFFIX = ".log"
 
-    private val consoleOut: PrintStream = System.out
-    private val consoleErr: PrintStream = System.err
+    /** Off in headless mode (unless --verbose), where stdout/stderr carry the CLI's own output. */
+    @Volatile
+    var consoleEnabled = true
+
+    private val consoleOut: PrintStream get() = if (consoleEnabled) System.out else NullStream
+    private val consoleErr: PrintStream get() = if (consoleEnabled) System.err else NullStream
+
+    // OutputStream.nullOutputStream() is JDK 11+; xdm-core targets 8.
+    private object NullStream : PrintStream(object : java.io.OutputStream() {
+        override fun write(b: Int) {}
+        override fun write(b: ByteArray, off: Int, len: Int) {}
+    })
 
     /** Buffered file sink for the current launch; null until [init] runs. */
     @Volatile

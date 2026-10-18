@@ -49,6 +49,8 @@ class FormatChoice(
     val audioMode: AudioMode,
     val audio: List<AudioChoice>,
     val audioOnly: Boolean = false,
+    /** Video height in pixels, 0 when unknown or audio-only. */
+    val height: Int = 0,
 ) {
     override fun toString() = label
 }
@@ -96,13 +98,17 @@ object StreamChoices {
                     .sortedByDescending { it.attributes["DEFAULT"].equals("YES", ignoreCase = true) }
                 val label = listOfNotNull(resolution(first.attributes), bandwidth(first.attributes), codecs(first.attributes))
                     .joinToString(" · ").ifEmpty { video.substringAfterLast('/') }
+                val height = height(first.attributes)
                 if (renditions.isEmpty()) {
-                    FormatChoice(label, AudioMode.INCLUDED, listOf(AudioChoice("", StreamPick.Hls(video, null, false, first.independent))))
+                    FormatChoice(
+                        label, AudioMode.INCLUDED,
+                        listOf(AudioChoice("", StreamPick.Hls(video, null, false, first.independent))), height = height,
+                    )
                 } else {
                     FormatChoice(label, AudioMode.CHOOSE, renditions.map { r ->
                         AudioChoice(audioName(r.attributes) ?: r.audioPlaylist.toString().substringAfterLast('/'),
                             StreamPick.Hls(video, r.audioPlaylist.toString(), false, r.independent))
-                    })
+                    }, height = height)
                 }
             }
     }
@@ -116,7 +122,7 @@ object StreamChoices {
             val audioChoices = { video: Representation ->
                 audios.map { a -> AudioChoice(dashAudioLabel(a), StreamPick.Dash(video, a)) }
             }
-            return videos.map { v -> FormatChoice(dashVideoLabel(v), AudioMode.CHOOSE, audioChoices(v)) }
+            return videos.map { v -> FormatChoice(dashVideoLabel(v), AudioMode.CHOOSE, audioChoices(v), height = v.height) }
         }
         // A single stream is downloaded whole with no mux, as captured ones are.
         return (videos.map { Triple(it, dashVideoLabel(it), false) } + audios.map { Triple(it, "Audio only · ${dashAudioLabel(it)}", true) })
@@ -126,6 +132,7 @@ object StreamChoices {
                 FormatChoice(
                     label, AudioMode.NONE,
                     listOf(AudioChoice("", StreamPick.Http(url, plainDownloadExt(rep.mimeType, url)))), audioOnly,
+                    height = if (audioOnly) 0 else rep.height,
                 )
             }
     }
@@ -144,8 +151,11 @@ object StreamChoices {
         language(a.language), codecName(a.codec), rate(a.bandwidth)
     ).joinToString(" · ").ifEmpty { a.mimeType }
 
+    private fun height(attrs: Map<String, String>): Int =
+        attrs["RESOLUTION"]?.substringAfter('x', "")?.toIntOrNull() ?: 0
+
     private fun resolution(attrs: Map<String, String>): String? =
-        attrs["RESOLUTION"]?.substringAfter('x', "")?.toIntOrNull()?.let { "${it}p" } ?: attrs["RESOLUTION"]
+        height(attrs).takeIf { it > 0 }?.let { "${it}p" } ?: attrs["RESOLUTION"]
 
     private fun bandwidth(attrs: Map<String, String>): String? = attrs["BANDWIDTH"]?.toLongOrNull()?.let { rate(it) }
 

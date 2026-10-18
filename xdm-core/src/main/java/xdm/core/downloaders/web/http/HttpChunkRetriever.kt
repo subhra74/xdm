@@ -164,7 +164,6 @@ class HttpChunkRetriever(
         } ?: context.headers
         val response = context.httpClient.getResponse(requestUrl, headers, context.cookie, range)
         response.onSuccess { r ->
-            print(r)
             if (isLinkExpiredStatus(r.statusCode, r.getHeader("WWW-Authenticate"))) {
                 // The link redirected to a target that is now refused, as a short-lived signed URL is once
                 // it expires: go back through the link, which redirects to a fresh one.

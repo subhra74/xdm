@@ -121,6 +121,8 @@ $JavaOptions = @(
   '-XX:-UsePerfData'
   # bound the per-thread direct-buffer cache NIO keeps for heap-buffer writes
   '-Djdk.nio.maxCachedBufferSize=262144'
+  # VM messages ("2 compiler directives added") on stderr: stdout is the headless CLI's output
+  '-XX:+DisplayVMOutputToStderr'
   # FlatLaf loads a native library; JDK 22+ warns unless native access is enabled
   '--enable-native-access=ALL-UNNAMED'
   # 64-bit object headers instead of 96-bit (product flag since JDK 25)
