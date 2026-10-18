@@ -2,8 +2,9 @@ name: Binaries
 
 # The installers for every target in PACKAGING.md section 3.1, each built natively on its own runner. The jar is
 # built once and shared. Every target links its runtime from the JDK pinned in packaging/jdk.properties, which
-# the build scripts enforce; the AppCDS archive is dumped from the checked-in class list (packaging/cds), so no
-# job needs a desktop session. A target without a list builds without an archive.
+# the build scripts enforce; the AppCDS archive is dumped from the checked-in class list for that JDK, recorded
+# on a Mac (packaging/cds/liberica.classlist: macOS and Windows; jbr.classlist: Linux), so no job records or
+# needs a desktop session. A missing list means a build without an archive.
 
 # A tag push (v*) publishes a GitHub release with every installer; a tag with a suffix (v9.0.1-beta.1) is
 # marked pre-release. A manual run only uploads the run's artifacts unless "release" is ticked; it then tags the
@@ -95,12 +96,6 @@ jobs:
           home="$(packaging/fetch-jdk.sh "mac-${{ matrix.arch }}" | tail -1)"
           echo "JAVA_HOME=$home" >> "$GITHUB_ENV"
           echo "$home/bin" >> "$GITHUB_PATH"
-
-      # No list is recorded on Intel macs: use the arm64 one (same JDK build, so the stamp matches). The
-      # arm64-only JDK classes in it are skipped at dump time; the app's own classes are the same.
-      - name: Borrow the arm64 class list
-        if: matrix.arch == 'x64' && hashFiles('packaging/cds/mac-x64.classlist') == ''
-        run: cp packaging/cds/mac-arm64.classlist packaging/cds/mac-x64.classlist
 
       - name: Build dmg
         run: packaging/build-bundle.sh -s --type dmg

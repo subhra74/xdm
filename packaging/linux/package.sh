@@ -15,7 +15,7 @@ OUT="build/linux-$ARCH"
 rm -rf "$OUT"
 mkdir -p "$OUT"
 
-# The app image, with the AppCDS archive when packaging/cds/linux-<arch>.classlist exists.
+# The app image, with the AppCDS archive when packaging/cds/jbr.classlist exists.
 packaging/build-bundle.sh -s -t app-image -o "$OUT/image"
 IMAGE="$OUT/image/xdm-app"
 [[ -x "$IMAGE/bin/xdm-app" ]] || { echo "no app image at $IMAGE" >&2; exit 1; }

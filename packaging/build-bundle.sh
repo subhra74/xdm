@@ -138,9 +138,11 @@ Usage: packaging/build-bundle.sh [options] [-- extra jpackage args]
                       Linux:   app-image (deb, rpm, Arch and tar.gz: packaging/build-linux.sh)
   -s, --skip-build    Skip "mvn package"; reuse xdm-app/target/$MAIN_JAR
       --with-locales  Add jdk.localedata (bigger bundle, full locale formatting)
-      --record-classes  Before packaging, run XDM on the bundled runtime to record
-                      packaging/cds/<os>-<arch>.classlist for the AppCDS archive (see APPCDS.md);
-                      use XDM yourself, then quit it from the tray
+      --record-classes  macOS only. Before packaging, run XDM on the bundled runtime to record
+                      packaging/cds/<runtime>.classlist for the AppCDS archive (see APPCDS.md):
+                      liberica.classlist with the pinned Liberica, jbr.classlist with the pinned
+                      JBR (packaging/fetch-jdk.sh jbr-mac-arm64; records the list, builds nothing).
+                      Use XDM yourself, then quit it from the tray
       --record-server URL  Like --record-classes, but XDM runs the scripted session against
                       packaging/recording/RecordServer.java at URL on a fresh profile and
                       exits by itself; the build stops if a step of the session failed
@@ -204,19 +206,37 @@ JDK_MAJOR="$(java -XshowSettings:properties -version 2>&1 | sed -n 's/.*java\.sp
 if [[ "$JDK_MAJOR" -ge 21 ]]; then COMPRESS="zip-9"; else COMPRESS="2"; fi
 
 # The JDK must be the build pinned in packaging/jdk.properties: Liberica on macOS, JBR on Linux. The class
-# list's @cp and lambda lines only hold for the JDK build it was recorded on (APPCDS.md).
+# list's @cp and lambda lines only hold for the JDK build it was recorded on (APPCDS.md). Both lists are
+# recorded on the Mac, so macOS also takes the pinned JBR, but only to record jbr.classlist.
 pin() { sed -n "s/^$1=//p" "$PROJECT_ROOT/packaging/jdk.properties"; }
 JDK_HOME_DIR="$(java -XshowSettings:properties -version 2>&1 | sed -n 's/^ *java\.home = //p' | head -1)"
 jdk_release() { sed -n "s/^$1=\"\{0,1\}\([^\"]*\)\"\{0,1\}$/\1/p" "$JDK_HOME_DIR/release" 2>/dev/null; }
 JDK_RUNTIME="$(jdk_release JAVA_RUNTIME_VERSION)"
 # The stamp recording writes into the class list, and the dump compares against.
 JDK_STAMP="$(jdk_release IMPLEMENTOR) $JDK_RUNTIME"
+is_pinned_liberica() { [[ "$JDK_RUNTIME" == "$(pin liberica.runtime)" && "$JDK_STAMP" == BellSoft* ]]; }
+is_pinned_jbr() { [[ "$(jdk_release JAVA_VERSION)" == "$(pin jbr.version)" && "$JDK_RUNTIME" == *"-$(pin jbr.build)" ]]; }
+JBR_RECORDING=0
 if [[ "$OS" == "mac" ]]; then
   JDK_PINNED="BellSoft Liberica $(pin liberica.runtime)"
-  [[ "$JDK_RUNTIME" == "$(pin liberica.runtime)" && "$JDK_STAMP" == BellSoft* ]] && JDK_OK=1 || JDK_OK=0
+  if is_pinned_liberica; then
+    JDK_OK=1
+  elif is_pinned_jbr && [[ $RECORD_CLASSES -eq 1 ]]; then
+    JDK_OK=1; JBR_RECORDING=1
+  elif is_pinned_jbr; then
+    echo "The pinned JBR builds no macOS bundle: on macOS it only records jbr.classlist (--record-server)." >&2
+    exit 1
+  else
+    JDK_OK=0
+  fi
 else
+  if [[ $RECORD_CLASSES -eq 1 ]]; then
+    echo "Class lists are recorded on the Mac only: jbr.classlist with the pinned JBR there" \
+      "(docs/class-list-recording.md)." >&2
+    exit 1
+  fi
   JDK_PINNED="JetBrains Runtime $(pin jbr.version)-$(pin jbr.build)"
-  [[ "$(jdk_release JAVA_VERSION)" == "$(pin jbr.version)" && "$JDK_RUNTIME" == *"-$(pin jbr.build)" ]] && JDK_OK=1 || JDK_OK=0
+  is_pinned_jbr && JDK_OK=1 || JDK_OK=0
 fi
 if [[ $JDK_OK -eq 0 ]]; then
   if [[ $ANY_JDK -eq 0 ]]; then
@@ -365,10 +385,15 @@ cp "$PROJECT_ROOT/packaging/$JIT_DIRECTIVES" "$INPUT_DIR/"
 # jar's size and mtime match the dump, so the jar is pinned to a fixed time and
 # the app re-pins it on start if an installer or copy moved it (CdsJarPin).
 #
-# The class list is recorded (--record-server, or by hand with --record-classes)
-# and checked in, one per OS and architecture: each is recorded on its own
-# runtime, so its @cp lines match that JDK build. Without one, the bundle is
-# built without an archive.
+# The class list is recorded on the Mac (--record-server, or by hand with
+# --record-classes) and checked in, one per JDK vendor, because its @cp and
+# lambda lines only hold for the JDK build it was recorded on:
+#   liberica.classlist  macOS and Windows (pinned Liberica)
+#   jbr.classlist       Linux (pinned JBR, recorded on the Mac's JBR build)
+# Classes only another OS loads (Win32/Wayland toolkit peers, utils/win) aren't
+# in the list; they load from the jar as usual. Measured on Windows: ~0.3 MB
+# more than a Windows-recorded list (docs/class-list-recording.md).
+# Without a list, the bundle is built without an archive.
 CDS_EPOCH=1577836800                                 # 2020-01-01T00:00:00Z
 JDK_ARCH="$(sed -n 's/^OS_ARCH="\(.*\)"/\1/p' "$(dirname "$(command -v jlink)")/../release" 2>/dev/null)"
 case "${JDK_ARCH:-$(uname -m)}" in
@@ -376,7 +401,10 @@ case "${JDK_ARCH:-$(uname -m)}" in
   x86_64|amd64)  CDS_ARCH=x64 ;;
   *)             CDS_ARCH="${JDK_ARCH:-$(uname -m)}" ;;
 esac
-CDS_LIST="$PROJECT_ROOT/packaging/cds/$OS-$CDS_ARCH.classlist"
+case "$JDK_STAMP" in
+  JetBrains*) CDS_LIST="$PROJECT_ROOT/packaging/cds/jbr.classlist" ;;
+  *)          CDS_LIST="$PROJECT_ROOT/packaging/cds/liberica.classlist" ;;
+esac
 CDS_ARCHIVE="xdm.jsa"
 CDS_PROPERTY="xdm.cds.mtime"                         # read by CdsJarPin
 BUNDLED_JAVA="$RUNTIME_DIR/bin/java"
@@ -419,6 +447,11 @@ if [[ $RECORD_CLASSES -eq 1 ]]; then
   # names the JDK build the list belongs to; the dump below checks it.
   { echo "# xdm-jdk: $JDK_STAMP"; grep -v 'xdm/app/recording/' "$RECORDED" || true; } > "$CDS_LIST"
   rm -f "$RECORDED"
+  echo ">> wrote packaging/cds/$(basename "$CDS_LIST"): $(grep -vc '^[#@]' "$CDS_LIST") classes"
+  if [[ $JBR_RECORDING -eq 1 ]]; then
+    echo ">> recorded on JBR for the Linux builds: no macOS bundle is built from it"
+    exit 0
+  fi
 fi
 
 # The recording session (xdm.app.recording) is build tooling: it leaves the bundle's jar once it has
@@ -452,11 +485,18 @@ if [[ -s "$CDS_LIST" ]]; then
     "-XX:SharedArchiveFile=$INPUT_DIR/$CDS_ARCHIVE" \
     -cp "$INPUT_DIR/$MAIN_JAR" >"$DUMP_LOG" || { cat "$DUMP_LOG"; exit 1; }
   # Lines recorded against another JDK build or an older jar are skipped (the class is
-  # still archived, only less pre-resolved). Say so: it's the cue to record the list again.
+  # still archived, only less pre-resolved). On the Mac's Liberica arm64 build, where the
+  # list was recorded, that's the cue to record it again. Anywhere else the list also names
+  # classes this OS or architecture doesn't have, so skipped lines are expected there.
   STALE="$(grep -c -E 'out of sync|Preload Warning' "$DUMP_LOG" || true)"
   if [[ "${STALE:-0}" -gt 0 ]]; then
-    echo "!! $STALE stale entries in $(basename "$CDS_LIST") (JDK or app changed since it was" \
-      "recorded) - re-record with --record-server / --record-classes" >&2
+    if [[ "$OS" == "mac" && "$CDS_ARCH" == "arm64" ]]; then
+      echo "!! $STALE stale entries in $(basename "$CDS_LIST") (JDK or app changed since it was" \
+        "recorded) - re-record with --record-server / --record-classes" >&2
+    else
+      echo ">> $STALE lines of $(basename "$CDS_LIST") skipped (recorded on mac-arm64: classes this" \
+        "$OS-$CDS_ARCH build doesn't have)"
+    fi
   fi
   # $APPDIR is expanded by the jpackage launcher to the image's app directory.
   # ArchiveRelocationMode=0 maps the archive at its preferred address, so its
@@ -468,7 +508,8 @@ if [[ -s "$CDS_LIST" ]]; then
     "-D$CDS_PROPERTY=$CDS_EPOCH"
   )
 else
-  echo ">> no packaging/cds/$(basename "$CDS_LIST") - building without an AppCDS archive (see --record-classes)"
+  echo ">> no packaging/cds/$(basename "$CDS_LIST") - building without an AppCDS archive (recorded on the Mac:" \
+    "--record-server)"
 fi
 
 # ---- JIT directive, FlatLaf native path -----------------------------------

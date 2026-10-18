@@ -7,7 +7,7 @@
 
     JDK 25     BellSoft Liberica JDK 25 Standard, the exact build pinned in packaging\jdk.properties
                (PACKAGING.md section 3.1), one per target architecture: the JDK decides the MSI's
-               architecture, and the class lists are recorded on that build.
+               architecture, and the AppCDS class list was recorded on the same build (on the Mac).
     .NET SDK   needed only to install the WiX CLI (a dotnet tool); -Type msi only.
     WiX 7      the "wix" dotnet tool; -Type msi only. build-bundle.ps1 adds its extensions itself.
 
@@ -181,21 +181,14 @@ if ($wixMajor -ge 7) { Write-Host "   ok: wix $(& wix --version)" }
 elseif ($wixMajor -gt 0) { Write-Host "   too old (v$wixMajor): rerun with -InstallWix"; $missing += 'WiX 7' }
 else { Write-Host '   missing (MSI only): rerun with -InstallWix'; $missing += 'WiX 7' }
 
-# ---- running XDM ------------------------------------------------------------
-if (Get-Process xdm-app -ErrorAction SilentlyContinue) {
-  Write-Host '>> XDM is running: quit it from the tray before recording (it holds port 8597)'
-}
-
 Write-Host ''
 if ($missing) {
   Write-Host "Missing: $($missing -join ', ')"
   Write-Host 'Without the .NET SDK and WiX, build-bundle.ps1 can still build the app image (no -Type msi).'
 } else {
-  # Each architecture has its own class list; record the ones the kit doesn't have yet.
+  # The AppCDS class list (packaging\cds\liberica.classlist) is recorded on the Mac; nothing to record here.
   Write-Host 'Ready. Next (from the kit folder), build each architecture:'
   foreach ($a in $Arch) {
-    $record = -not (Test-Path (Join-Path $PSScriptRoot "cds\windows-$a.classlist"))
-    Write-Host "  powershell -ExecutionPolicy Bypass -File packaging\build-bundle.ps1 -Arch $a -Type msi$(if ($record) { ' -RecordServer http://<mac>:8780' })"
+    Write-Host "  powershell -ExecutionPolicy Bypass -File packaging\build-bundle.ps1 -Arch $a -Type msi"
   }
-  Write-Host '  (-RecordServer: the class-list recording server, PACKAGING.md "Recording the class list")'
 }

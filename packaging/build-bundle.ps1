@@ -36,17 +36,9 @@
   Include jdk.localedata (~15 MB bigger, full locale-aware formatting).
 .PARAMETER Out
   Output directory (default: build\dist\windows-<arch>).
-.PARAMETER RecordClasses
-  Before packaging, run XDM on the bundled runtime to record
-  packaging\cds\windows-<arch>.classlist for the AppCDS archive (see APPCDS.md). With -RecordServer
-  the session is scripted and needs no hands; without it, use XDM yourself and quit it from the tray.
 .PARAMETER AnyJdk
   Build with a JDK other than the Liberica build pinned in packaging\jdk.properties. The AppCDS class list
   then doesn't match the runtime: local experiments only.
-.PARAMETER RecordServer
-  With -RecordClasses: the URL of packaging\recording\RecordServer.java (e.g. http://192.168.1.20:8780).
-  XDM then runs the recording session against it on a fresh profile and exits by itself; the build
-  stops if any step of the session failed.
 #>
 [CmdletBinding()]
 param(
@@ -57,13 +49,10 @@ param(
   [string]$Jar,
   [switch]$WithLocales,
   [string]$Out,
-  [switch]$RecordClasses,
-  [string]$RecordServer,
   [switch]$AnyJdk
 )
 
 $ErrorActionPreference = 'Stop'
-if ($RecordServer) { $RecordClasses = $true }
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $ProjectRoot
 
@@ -212,7 +201,7 @@ $Arch = $jdkArch
 if ([int]($release['JAVA_VERSION'] -split '\.')[0] -lt 25) {
   throw "JDK 25 or later required; $JavaHome is $($release['JAVA_VERSION'])"
 }
-# The stamp recording writes into the class list, and the dump compares against.
+# The stamp the class list was recorded with (on the Mac's Liberica build), compared before the dump.
 $JdkStamp = "$($release['IMPLEMENTOR']) $($release['JAVA_RUNTIME_VERSION'])"
 if (-not (Test-PinnedJdk $release)) {
   if (-not $AnyJdk) {
@@ -344,8 +333,10 @@ Copy-Item (Join-Path $PSScriptRoot $JitDirectives) $InputDir
 # jar is pinned to a fixed time and the app re-pins it on start (CdsJarPin).
 $CdsEpoch    = 1577836800                                  # 2020-01-01T00:00:00Z
 $CdsPinned   = [datetime]::new(2020, 1, 1, 0, 0, 0, [DateTimeKind]::Utc)
-# One list per architecture: each is recorded on its own runtime, so its @cp lines match that JDK build.
-$CdsListName = "windows-$Arch.classlist"
+# The Liberica list, recorded on the Mac's Liberica build (same JDK build as here, so its @cp and lambda
+# lines hold). Windows-only classes (WToolkit peers, utils\win) load from the jar: measured ~0.3 MB more than
+# a Windows-recorded list (docs/class-list-recording.md). The lists are recorded on the Mac only.
+$CdsListName = 'liberica.classlist'
 $CdsList     = Join-Path $PSScriptRoot "cds\$CdsListName"
 $CdsArchive  = 'xdm.jsa'
 $CdsProperty = 'xdm.cds.mtime'                             # read by CdsJarPin
@@ -353,47 +344,9 @@ $BundledJava = Join-Path $RuntimeDir 'bin\java.exe'
 $InputJar    = Join-Path $InputDir $MainJar
 (Get-Item $InputJar).LastWriteTimeUtc = $CdsPinned
 
-if ($RecordClasses) {
-  New-Item -ItemType Directory -Force -Path (Split-Path $CdsList) | Out-Null
-  $recorded = Join-Path $BuildDir "windows-$Arch\recorded.classlist"
-  $session = @()
-  if ($RecordServer) {
-    # A fresh profile: the session starts from first run and leaves the user's downloads alone.
-    $recordHome = Join-Path $BuildDir "windows-$Arch\record-home"
-    Remove-Item $recordHome -Recurse -Force -ErrorAction SilentlyContinue
-    New-Item -ItemType Directory -Force -Path $recordHome | Out-Null
-    $session = @("-Duser.home=$recordHome", "-Dxdm.data.dir=$(Join-Path $recordHome 'xdm-app')", "-Dxdm.record.session=$RecordServer")
-    Write-Host ">> recording $CdsListName with the scripted session against $RecordServer"
-    Write-Host '>>   quit any running XDM first (port 8597); XDM exits by itself when the session ends'
-  } else {
-    Write-Host ">> recording $CdsListName`: quit any running XDM first, then use this one"
-    Write-Host '>>   as users do - run a real download to completion - and quit it from the tray'
-  }
-  & $BundledJava @JavaOptions '-XX:+UnlockDiagnosticVMOptions' `
-      "-XX:CompilerDirectivesFile=$(Join-Path $InputDir $JitDirectives)" `
-      "-Dflatlaf.nativeLibraryPath=$InputDir" @session `
-      "-XX:DumpLoadedClassList=$recorded" -cp $InputJar $MainClass
-  $recordStatus = $LASTEXITCODE
-  if ($RecordServer) {
-    # The session downloads ~700 MB (Downloads\, partial files in xdm-app\tmp): drop it, pass or
-    # fail, so repeated recordings don't fill the VM's small disk. xdm-app keeps the logs.
-    Get-ChildItem $recordHome -Force | Where-Object { $_.Name -ne 'xdm-app' } |
-      Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-    Remove-Item (Join-Path $recordHome 'xdm-app\tmp') -Recurse -Force -ErrorAction SilentlyContinue
-  }
-  if ($RecordServer -and $recordStatus -ne 0) {
-    throw "The recording session reported $recordStatus failed step(s) (RECORD: lines above); $CdsListName was not updated"
-  }
-  # The session's own classes (xdm.app.recording) never load in a user's run: keep them out. The stamp
-  # names the JDK build the list belongs to; the dump below checks it.
-  @("# xdm-jdk: $JdkStamp") + @(Get-Content $recorded | Where-Object { $_ -notmatch 'xdm/app/recording/' }) |
-    Set-Content -Encoding ascii $CdsList
-  Remove-Item $recorded
-}
-
-# The recording session (xdm.app.recording) is build tooling: it leaves the bundle's jar once it has
-# run, before the archive is dumped, so the archive matches the jar that ships. Nothing else loads it:
-# the app only calls it when -Dxdm.record.session is set. The kit's xdm-app.jar keeps it for recording.
+# The recording session (xdm.app.recording) is build tooling, run on the Mac only: it leaves the bundle's
+# jar before the archive is dumped, so the archive matches the jar that ships. Nothing else loads it: the
+# app only calls it when -Dxdm.record.session is set.
 $zip = [System.IO.Compression.ZipFile]::Open($InputJar, 'Update')
 try {
   @($zip.Entries | Where-Object { $_.FullName -like 'xdm/app/recording/*' }) | ForEach-Object { $_.Delete() }
@@ -409,18 +362,18 @@ if ((Test-Path $CdsList) -and (Get-Item $CdsList).Length -gt 0) {
     Write-Warning "$CdsListName has no '# xdm-jdk:' stamp (recorded before the JDK pin): re-record it on $JdkStamp"
   } elseif ($listJdk.Substring(11) -ne $JdkStamp) {
     $msg = "$CdsListName was recorded on $($listJdk.Substring(11)), but this build uses $JdkStamp"
-    if (-not $AnyJdk) { throw "$msg`: re-record it (-RecordServer), or revert packaging\jdk.properties" }
+    if (-not $AnyJdk) { throw "$msg`: re-record it on the Mac (docs/class-list-recording.md), or revert packaging\jdk.properties" }
     Write-Warning $msg
   }
   Write-Host ">> dumping the AppCDS archive from $CdsListName"
   $dump = & $BundledJava -Xshare:dump @JavaOptions "-XX:SharedClassListFile=$CdsList" `
       "-XX:SharedArchiveFile=$(Join-Path $InputDir $CdsArchive)" -cp $InputJar
   if ($LASTEXITCODE -ne 0) { $dump | Write-Host; throw 'AppCDS dump failed' }
-  # Lines recorded against another JDK build or an older jar are skipped (the class is still
-  # archived, only less pre-resolved). Say so: it's the cue to record the list again.
+  # The list was recorded on mac-arm64, so it names classes Windows doesn't have: those lines are
+  # skipped (about 400). Staleness is checked where it was recorded (build-bundle.sh on the Mac).
   $stale = @($dump | Select-String 'out of sync|Preload Warning').Count
   if ($stale -gt 0) {
-    Write-Warning "$stale stale entries in $CdsListName (JDK or app changed since it was recorded) - re-record with -RecordClasses"
+    Write-Host ">> $stale lines of $CdsListName skipped (recorded on mac-arm64: classes this build doesn't have)"
   }
   # $APPDIR is expanded by the jpackage launcher; single quotes keep PowerShell off it.
   $JavaOptions += @(
@@ -430,7 +383,7 @@ if ((Test-Path $CdsList) -and (Get-Item $CdsList).Length -gt 0) {
     "-D$CdsProperty=$CdsEpoch"
   )
 } else {
-  Write-Host ">> no packaging\cds\$CdsListName - building without an AppCDS archive (see -RecordClasses)"
+  Write-Host ">> no packaging\cds\$CdsListName - building without an AppCDS archive (recorded on the Mac)"
 }
 
 # JIT directive and FlatLaf's DLL path: added only now, because $APPDIR exists only in the launcher
@@ -526,6 +479,3 @@ if ($Type -eq 'msi') {
 
 Write-Host ''
 Get-ChildItem $DestDir | Select-Object -ExpandProperty Name
-if ($RecordClasses -and $IsKit) {
-  Write-Host ">> copy $CdsList back to the repo (packaging\cds\) and commit it"
-}

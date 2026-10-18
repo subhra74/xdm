@@ -43,8 +43,8 @@ import kotlin.system.exitProcess
 
 /**
  * The scripted session the class-list recording runs (APPCDS.md, PACKAGING.md "Recording the class
- * list"). Only active with `-Dxdm.record.session=<server url>`, which build-bundle.sh / .ps1 pass for
- * `--record-server` / `-RecordServer`, against packaging/recording/RecordServer.java.
+ * list"). Only active with `-Dxdm.record.session=<server url>`, which build-bundle.sh passes for
+ * `--record-server` (macOS only), against packaging/recording/RecordServer.java.
  *
  * It does what a user and the browser extension do: messages go to the integration port the way the
  * extension sends them, and every dialog is answered by clicking its buttons on the EDT. Steps run one

@@ -1,7 +1,7 @@
 /*
  * Test server for recording the AppCDS class lists (APPCDS.md, PACKAGING.md "Recording the class list").
  *
- * The recording run of XDM (build-bundle.sh --record-server / build-bundle.ps1 -RecordServer) drives
+ * The recording run of XDM (build-bundle.sh --record-server on the Mac, once per pinned JDK) drives
  * a scripted session against this server: plain, chunked and Basic-auth HTTP downloads, HLS (with a
  * separate audio rendition), AES-128 HLS, DASH, a progressive MP4, two batches, and downloads through
  * an authenticating HTTP proxy. Real HTTPS downloads go to the internet (see session.properties).
@@ -9,8 +9,8 @@
  *   java packaging/recording/RecordServer.java [--port 8780] [--assets build/record-assets]
  *
  * Needs JDK 17+ and, the first time only, ffmpeg on PATH to generate the media into the assets folder.
- * The proxy listens on port + 1. Every machine that records can share one server: run it anywhere the
- * recording machines can reach, and pass http://<host>:<port> to the build.
+ * The proxy listens on port + 1. Run it on the Mac that records and pass http://127.0.0.1:<port> to the
+ * build.
  */
 
 import com.sun.net.httpserver.HttpExchange;
@@ -70,8 +70,7 @@ public class RecordServer {
         System.out.println("Server:  http://<this host>:" + port + "/  (session: /session.properties)");
         System.out.println("Proxy:   <this host>:" + (port + 1) + "  (Basic, " + USER + " / " + PASSWORD + ")");
         for (String host : hostAddresses()) {
-            System.out.println("Record with: --record-server http://" + host + ":" + port
-                    + "   (Windows: -RecordServer http://" + host + ":" + port + ")");
+            System.out.println("Record with: --record-server http://" + host + ":" + port);
         }
     }
 

@@ -7,8 +7,8 @@
 #   packaging/build-linux.sh --arch x64       # the other one (emulated on Apple silicon: slow)
 #   packaging/build-linux.sh -s               # reuse xdm-app/target/xdm-app.jar
 #
-# Output: build/linux-<arch>/. The class list (packaging/cds/linux-<arch>.classlist) is recorded on a
-# Linux desktop, not here: build-bundle.sh --record-server there (docs/class-list-recording.md).
+# Output: build/linux-<arch>/. The AppCDS class list (packaging/cds/jbr.classlist) is recorded on the Mac
+# with the pinned JBR, not here (docs/class-list-recording.md).
 #
 set -euo pipefail
 

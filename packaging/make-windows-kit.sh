@@ -2,7 +2,8 @@
 #
 # Builds the Windows build kit on macOS or Linux: the app jar plus everything
 # build-bundle.ps1 needs, so a Windows machine without Maven or this repo can
-# record the class list, link the runtime and build the MSI (PACKAGING.md §0).
+# link the runtime and build the MSI (PACKAGING.md §0). The AppCDS class list
+# comes from the Mac (packaging/cds/liberica.classlist).
 #
 #   packaging/make-windows-kit.sh               # mvn package, then the kit
 #   packaging/make-windows-kit.sh --skip-build  # reuse xdm-app/target/xdm-app.jar
@@ -48,19 +49,12 @@ cp packaging/jit-directives.json            "$KIT/packaging/"
 cp packaging/jdk.properties                 "$KIT/packaging/"
 cp packaging/icons/xdm.ico                  "$KIT/packaging/icons/"
 cp packaging/windows/xdm.wxs packaging/windows/gpl-3.0.rtf "$KIT/packaging/windows/"
-# Only the Windows lists, one per architecture (recorded on that architecture's runtime).
-MISSING=()
-for a in arm64 x64; do
-  if [[ -s "packaging/cds/windows-$a.classlist" ]]; then
-    cp "packaging/cds/windows-$a.classlist" "$KIT/packaging/cds/"
-  else
-    MISSING+=("$a")
-  fi
-done
-if [[ ${#MISSING[@]} -eq 0 ]]; then
-  CDS_NOTE="Class lists for arm64 and x64 are included: -RecordServer is optional (re-records them)."
+# The Liberica class list, recorded on the Mac; both architectures dump their archive from it.
+if [[ -s packaging/cds/liberica.classlist ]]; then
+  cp packaging/cds/liberica.classlist "$KIT/packaging/cds/"
+  CDS_NOTE="The AppCDS class list (packaging\\cds\\liberica.classlist, recorded on the Mac) is included."
 else
-  CDS_NOTE="No class list yet for: ${MISSING[*]}. Build those with -RecordServer (or -RecordClasses)."
+  CDS_NOTE="No packaging/cds/liberica.classlist in the repo: the MSIs are built without an AppCDS archive."
 fi
 
 # CRLF so Notepad shows it properly.
@@ -80,25 +74,18 @@ signed, so run them through -ExecutionPolicy Bypass as shown.
    the missing ones (an installed Liberica is used as is). -InstallWix installs
    the .NET SDK and the WiX 7 CLI.
 
-2. Quit any running XDM, then build each architecture. Each one has its own
-   class list (packaging\\cds\\windows-<arch>.classlist). To record it, start
-   the recording server on the Mac (java packaging/recording/RecordServer.java,
-   PACKAGING.md "Recording the class list") and add its URL:
+2. Build each architecture:
 
-   powershell -ExecutionPolicy Bypass -File packaging\\build-bundle.ps1 -Arch arm64 -Type msi -RecordServer http://<mac>:8780
-   powershell -ExecutionPolicy Bypass -File packaging\\build-bundle.ps1 -Arch x64 -Type msi -RecordServer http://<mac>:8780
+   powershell -ExecutionPolicy Bypass -File packaging\\build-bundle.ps1 -Arch arm64 -Type msi
+   powershell -ExecutionPolicy Bypass -File packaging\\build-bundle.ps1 -Arch x64 -Type msi
 
-   XDM starts from the fresh runtime on a throwaway profile, runs the scripted
-   session (about two minutes) and exits; the build then continues: AppCDS
-   archive, app image, MSI. Leave -RecordServer out to reuse the lists as they
-   are; the build warns when a list has gone stale (new JDK or app changes).
+   The AppCDS archive is dumped from the class list recorded on the Mac;
+   nothing is recorded here.
 
    $CDS_NOTE
 
 3. Output: build\\dist\\windows-arm64\\xdm-$VERSION-arm64.msi
            build\\dist\\windows-x64\\xdm-$VERSION-x64.msi
-   If you recorded, copy packaging\\cds\\windows-*.classlist back to the repo
-   and commit them.
 EOF
 
 (cd "$OUT_ROOT" && zip -qr "xdm-windows-kit-$VERSION.zip" xdm-windows-kit)
