@@ -8,6 +8,7 @@ import xdm.core.media.muxer.transmux.sample.Sample
 import xdm.core.media.muxer.transmux.sample.Track
 import xdm.core.util.Logger
 import xdm.core.storage.LocalStorage
+import xdm.core.storage.RandomAccessOutput
 import xdm.core.storage.StorageFile
 import xdm.core.storage.asOutputStream
 import java.io.BufferedOutputStream
@@ -78,9 +79,11 @@ class MkvWriter(private val output: StorageFile, spoolDir: String? = null) : Con
         val globalMinMs = plans.minOf { p -> p.track.samples.minOf { msOf(it.pts, p.track.timescale) } }
         val durationMs = plans.maxOf { p -> p.track.samples.maxOf { endMsOf(it, p.track) } } - globalMinMs
 
+        var handle: RandomAccessOutput? = null
         try {
-            val handle = output.open(create = true).apply { setLength(0) }
-            out = BufferedOutputStream(handle.asOutputStream(), 1 shl 20)
+            handle = output.open(create = true)
+            handle.setLength(0)
+            out =BufferedOutputStream(handle.asOutputStream(), 1 shl 20)
             writeEbmlHeader(docTypeVersion = if (plans.any { it.dolbyVision != null }) 4 else 2)
             // Segment: reserved size, back-patched once all children are written.
             writeRaw(Ebml.idBytes(Ebml.SEGMENT))
@@ -95,7 +98,9 @@ class MkvWriter(private val output: StorageFile, spoolDir: String? = null) : Con
             sizePatches.add(longArrayOf(segPatch, position - segContentStart))
             out.flush()
 
-            // Patched through the same handle; closing it closes [out] too.
+            // Patched through the same handle; closing it closes [out] too. Forced before the publish
+            // rename: the segments are deleted once the download succeeds, so after a power loss nothing
+            // could rebuild an unflushed output.
             handle.use { raf ->
                 for (patch in sizePatches) {
                     raf.seek(patch[0] + 1) // skip the 0x01 leading byte of the 8-byte vint
@@ -103,12 +108,16 @@ class MkvWriter(private val output: StorageFile, spoolDir: String? = null) : Con
                     val b = ByteArray(7) { i -> (v ushr (8 * (6 - i))).toByte() }
                     raf.write(b, 0, b.size)
                 }
+                raf.force()
             }
             spoolFile.delete()
             return true
         } catch (ex: Throwable) {
             Logger.error("XDM", "MKV write failed", ex)
-            try { if (this::out.isInitialized) out.close() } catch (_: Exception) {}
+            // The handle itself, not [out]: it may have failed before [out] wrapped it, and an open
+            // handle would keep Windows from deleting the output below. The output is dropped, so
+            // [out]'s buffer needs no flush.
+            try { handle?.close() } catch (_: Exception) {}
             output.delete(); spoolFile.delete()
             return false
         }

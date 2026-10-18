@@ -58,11 +58,13 @@ class Mp4Writer(private val output: StorageFile, private val repairTimeline: Boo
         writeRaw(moov)
         bos.flush()
 
-        // Patch the mdat largesize.
+        // Patch the mdat largesize. Forced before the publish rename: the segments are deleted once the
+        // download succeeds, so after a power loss nothing could rebuild an unflushed output.
         handle.use {
             val mdatSize = mdatEnd - mdatHeaderPos
             it.seek(mdatHeaderPos + 8)
             it.write(longToBytes(mdatSize), 0, 8)
+            it.force()
         }
         return true
     }
