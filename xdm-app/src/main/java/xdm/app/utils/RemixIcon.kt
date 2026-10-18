@@ -93,6 +93,7 @@ enum class RemixIcon(val codepoint: Int) {
     SPEED_LINE(0xf177),
     SUN_FILL(0xf1bc),
     TERMINAL_BOX_LINE(0xf1f6),
+    THUMB_UP_FILL(0xf206),
     TOGGLE_FILL(0xf218),
     TOGGLE_LINE(0xf219),
     WIFI_LINE(0xf2c0),

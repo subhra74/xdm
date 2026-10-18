@@ -9,11 +9,17 @@ import xdm.app.RecordStatus
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.createIcon
+import xdm.app.utils.openInDefaultBrowser
 import xdm.app.utils.px
+import java.awt.BorderLayout
 import java.awt.Component
+import java.awt.Cursor
 import java.awt.Dimension
 import java.awt.Font
+import java.awt.Graphics
+import java.awt.Graphics2D
 import java.awt.Rectangle
+import java.awt.RenderingHints
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.font.TextAttribute
@@ -30,6 +36,7 @@ class FilterListPanel(
 ) :
     JPanel() {
     private val jsp: JScrollPane
+    private val root: JPanel
     private val catFilterModel = DefaultListModel<FilterItem>()
     private val catFilterList: JList<FilterItem>
     private val stateFilterList: JList<FilterItem>
@@ -85,7 +92,7 @@ class FilterListPanel(
         }
 
         jsp = JScrollPane(box).apply {
-            border = MatteBorder(0, 0, 0, 1, AppTheme.sidebarBorder)
+            border = BorderFactory.createEmptyBorder()
             // The rows never fill the sidebar's height, so the viewport has to carry the
             // same colour as the panel -- otherwise the strip below the last row shows the
             // scroll pane's own background instead.
@@ -93,6 +100,14 @@ class FilterListPanel(
             background = AppTheme.sidebarBackground
             viewport.isOpaque = true
             viewport.background = AppTheme.sidebarBackground
+        }
+
+        // The support link stays pinned below the lists rather than scrolling with them.
+        root = JPanel(BorderLayout()).apply {
+            add(jsp, BorderLayout.CENTER)
+            add(supportLink(), BorderLayout.SOUTH)
+            border = MatteBorder(0, 0, 0, 1, AppTheme.sidebarBorder)
+            background = AppTheme.sidebarBackground
         }
 
         stateFilterList.selectedIndex = 0
@@ -223,6 +238,65 @@ class FilterListPanel(
         border = ScaledEmptyBorder(0, 18, 8, 10)
     }
 
+    /**
+     * The "support XDM" link at the foot of the sidebar: opens a GitHub page asking for a star.
+     * Drawn as a card in the list background, with the same inset, padding and corners as a
+     * selected row's pill. Labels truncate with an ellipsis instead of widening the sidebar.
+     */
+    private fun supportLink(): JComponent {
+        val title = JLabel(text("SIDEBAR_SUPPORT_TITLE")).apply {
+            font = font.deriveFont(Font.BOLD, font.size2D - 1f)
+            foreground = AppTheme.sidebarForeground
+        }
+        val labels = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            isOpaque = false
+            add(title)
+            add(JLabel(text("SIDEBAR_SUPPORT_SUBTITLE")).apply {
+                font = font.deriveFont(font.size2D - 3f)
+                foreground = AppTheme.sidebarSection
+            })
+        }
+        val card = object : JPanel(BorderLayout(8.px, 0)) {
+            override fun paintComponent(g: Graphics) {
+                val g2 = g.create() as Graphics2D
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+                g2.color = AppTheme.listBackground
+                g2.fillRoundRect(0, 0, width, height, 14.px, 14.px)
+                g2.dispose()
+            }
+        }
+        card.apply {
+            isOpaque = false
+            border = ScaledEmptyBorder(9, 8, 9, 10)
+            cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+            toolTipText = SUPPORT_URL
+            add(JLabel(createIcon(RemixIcon.THUMB_UP_FILL, 16, AppTheme.accent)).apply {
+                verticalAlignment = SwingConstants.CENTER
+            }, BorderLayout.WEST)
+            add(labels, BorderLayout.CENTER)
+            addMouseListener(object : MouseAdapter() {
+                override fun mouseClicked(e: MouseEvent) {
+                    if (SwingUtilities.isLeftMouseButton(e)) openInDefaultBrowser(SUPPORT_URL)
+                }
+
+                override fun mouseEntered(e: MouseEvent) {
+                    title.foreground = AppTheme.accent
+                }
+
+                override fun mouseExited(e: MouseEvent) {
+                    title.foreground = AppTheme.sidebarForeground
+                }
+            })
+        }
+        // 12px sides: the lists' 10px padding plus the box's 2px, so the card lines up with the pills.
+        return JPanel(BorderLayout()).apply {
+            isOpaque = false
+            border = ScaledEmptyBorder(6, 12, 12, 12)
+            add(card)
+        }
+    }
+
     /** State rows draw the outlined glyph muted, and the filled one in the accent when selected. */
     private fun makeIcon(icon: RemixIcon, selected: Boolean): Icon =
         createIcon(icon, 16, if (selected) AppTheme.accent else AppTheme.sidebarIcon)
@@ -250,5 +324,9 @@ class FilterListPanel(
     }
 
     val component: Component
-        get() = this.jsp
+        get() = this.root
+
+    private companion object {
+        const val SUPPORT_URL = "https://github.com/subhra74/xdm/blob/master/SUPPORT.md"
+    }
 }
