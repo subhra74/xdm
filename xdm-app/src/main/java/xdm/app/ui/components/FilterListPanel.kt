@@ -16,10 +16,7 @@ import java.awt.Component
 import java.awt.Cursor
 import java.awt.Dimension
 import java.awt.Font
-import java.awt.Graphics
-import java.awt.Graphics2D
 import java.awt.Rectangle
-import java.awt.RenderingHints
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.font.TextAttribute
@@ -240,8 +237,8 @@ class FilterListPanel(
 
     /**
      * The "support XDM" link at the foot of the sidebar: opens a GitHub page asking for a star.
-     * Drawn as a card in the list background, with the same inset, padding and corners as a
-     * selected row's pill. Labels truncate with an ellipsis instead of widening the sidebar.
+     * Uses the same inset and padding as a selected row's pill, so it lines up with the rows.
+     * Labels truncate with an ellipsis instead of widening the sidebar.
      */
     private fun supportLink(): JComponent {
         val title = JLabel(text("SIDEBAR_SUPPORT_TITLE")).apply {
@@ -257,16 +254,7 @@ class FilterListPanel(
                 foreground = AppTheme.sidebarSection
             })
         }
-        val card = object : JPanel(BorderLayout(8.px, 0)) {
-            override fun paintComponent(g: Graphics) {
-                val g2 = g.create() as Graphics2D
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-                g2.color = AppTheme.listBackground
-                g2.fillRoundRect(0, 0, width, height, 14.px, 14.px)
-                g2.dispose()
-            }
-        }
-        card.apply {
+        val card = JPanel(BorderLayout(8.px, 0)).apply {
             isOpaque = false
             border = ScaledEmptyBorder(9, 8, 9, 10)
             cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
