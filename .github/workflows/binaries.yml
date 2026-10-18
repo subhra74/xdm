@@ -236,17 +236,46 @@ jobs:
             tag="${INPUT_TAG:-v$version-pre.$GITHUB_RUN_NUMBER}"
             pre="$INPUT_PRERELEASE"
           fi
-          # SignPath Foundation requires a "Code signing policy" link on every release page.
-          policy="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/blob/master/CODE_SIGNING_POLICY.md"
-          flags=(--title "XDM ${tag#v}" --generate-notes --target "$GITHUB_SHA"
-            --notes "[Code signing policy]($policy)")
-          [[ "$pre" == true ]] && flags+=(--prerelease) || flags+=(--latest)
           shopt -s nullglob
           files=(dist/*.dmg dist/*.msi dist/*.deb dist/*.rpm dist/*.pkg.tar.zst dist/*.tar.gz)
           ls -l "${files[@]}"
-          # A release drafted on the GitHub web page pushes its tag and already exists: just attach the files.
+          # Download table: one row per installer actually built (a failed macOS job just has no rows).
+          # Names: xdm-<v>-<x64|arm64>.msi, XDM-<v>-<x64|arm64>.dmg, nfpm's amd64/x86_64 or arm64/aarch64
+          # for deb/rpm/Arch, xdm-app-<v>-linux-<x64|arm64>.tar.gz.
+          base="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/$tag"
+          {
+            echo "## Downloads"
+            echo
+            echo "| Installer | Notes |"
+            echo "|---|---|"
+            for f in "${files[@]}"; do
+              name="${f##*/}"
+              case "$name" in *arm64*|*aarch64*) cpu=ARM; mac="Apple Silicon (M1 or later)" ;; *) cpu=x64; mac=Intel ;; esac
+              case "$name" in
+                *.msi)        note="For Windows $cpu (Windows 10/11)" ;;
+                *.dmg)        note="For $mac mac" ;;
+                *.deb)        note="For Debian / Ubuntu / Linux Mint $cpu" ;;
+                *.rpm)        note="For Fedora / RHEL / openSUSE $cpu" ;;
+                *.pkg.tar.zst) note="For Arch Linux / Manjaro $cpu" ;;
+                *.tar.gz)     note="For any Linux $cpu (portable, no install)" ;;
+                *)            note="" ;;
+              esac
+              echo "| [$name]($base/$name) | $note |"
+            done
+            echo
+            # SignPath Foundation requires a "Code signing policy" link on every release page.
+            echo "[Code signing policy]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/blob/master/CODE_SIGNING_POLICY.md)"
+          } > downloads.md
+          cat downloads.md
+          flags=(--title "XDM ${tag#v}" --generate-notes --target "$GITHUB_SHA" --notes-file downloads.md)
+          [[ "$pre" == true ]] && flags+=(--prerelease) || flags+=(--latest)
+          # A release drafted on the GitHub web page pushes its tag and already exists: attach the files and
+          # put the table above the notes written there (replacing a table from an earlier run).
           if gh release view "$tag" >/dev/null 2>&1; then
             gh release upload "$tag" --clobber "${files[@]}"
+            gh release view "$tag" --json body -q .body | sed '/^## Downloads$/,/^\[Code signing policy\]/d' > old.md
+            { cat downloads.md; echo; cat old.md; } > notes.md
+            gh release edit "$tag" --notes-file notes.md
           else
             gh release create "$tag" "${flags[@]}" "${files[@]}"
           fi

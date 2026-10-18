@@ -44,14 +44,14 @@ class AboutDialog(owner: Window?) : JDialog(owner) {
             horizontalAlignment = SwingConstants.CENTER
         }
 
-        val website = JLabel("www.xtremedownloadmanager.com").apply {
+        val website = JLabel("xtremedownloadmanager.com").apply {
             horizontalAlignment = SwingConstants.CENTER
             foreground = UIManager.getColor("ProgressBar.foreground")
             cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
             addMouseListener(object : java.awt.event.MouseAdapter() {
                 override fun mouseClicked(e: java.awt.event.MouseEvent) {
                     try {
-                        Desktop.getDesktop().browse(java.net.URI("https://www.xtremedownloadmanager.com"))
+                        Desktop.getDesktop().browse(java.net.URI("https://xtremedownloadmanager.com"))
                     } catch (_: Exception) {
                     }
                 }
