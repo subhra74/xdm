@@ -20,12 +20,21 @@ class UpdatePanel : BannerPanel(RemixIcon.INSTALL_FILL, "BTN_UPDATE_NOW", "BTN_U
             toolTipText = "Open the XDM downloads page"
             addActionListener { openDownloadPage() }
         }
+        badgeLabel.apply {
+            text = "Pre-release"
+            toolTipText = "This is a pre-release (beta) build and may be less stable"
+        }
     }
 
-    /** Shows the banner with a message referencing [version] and remembers [url]. */
-    fun showUpdate(version: String, url: String) {
+    /**
+     * Shows the banner with a message referencing [version] and remembers [url]; a [preRelease]
+     * version also gets the "Pre-release" badge.
+     */
+    fun showUpdate(version: String, url: String, preRelease: Boolean) {
         downloadUrl = url
-        messageLabel.text = "A new version ($version) of XDM is available."
+        messageLabel.text = if (preRelease) "A new pre-release version ($version) of XDM is available."
+        else "A new version ($version) of XDM is available."
+        badgeLabel.isVisible = preRelease
         setShown(true)
     }
 

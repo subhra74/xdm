@@ -54,7 +54,7 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
     }
 
     /**
-     * Kicks off a background update check at startup; if a newer release is
+     * Kicks off a background update check at startup; if a newer release (pre-releases included) is
      * found, reveals the update banner at the bottom of the window (on the EDT).
      */
     private fun checkForUpdates() {
@@ -63,7 +63,7 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
         UpdateChecker.checkForUpdate { info ->
             if (info != null) {
                 SwingUtilities.invokeLater {
-                    updatePanel.showUpdate(info.latestVersion, info.downloadUrl)
+                    updatePanel.showUpdate(info.latestVersion, info.downloadUrl, info.isPreRelease)
                 }
             }
         }
