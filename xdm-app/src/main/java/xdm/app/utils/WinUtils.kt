@@ -24,10 +24,15 @@ object WinUtils {
     /**
      * Opens [folder] in Explorer with [file] selected. Both go through the shell API rather than an
      * `explorer.exe` command line, which splits on commas. Initialises COM, so never on the EDT.
+     * When the shell calls cannot run at all, falls back to `explorer`, with the path quoted.
      */
     fun openFolder(folder: String, file: String?): Boolean {
         if (file != null && Win32Shell.selectInExplorer(File(folder, file).absolutePath)) return true
-        return Win32Shell.execute(File(folder).absolutePath)
+        if (Win32Shell.execute(File(folder).absolutePath)) return true
+        // ProcessBuilder passes an argument that is already quoted as-is; Windows paths cannot hold '"'.
+        return runCatching { ProcessBuilder("explorer", "\"" + File(folder).absolutePath + "\"").start() }
+            .onFailure { Logger.error(it) }
+            .isSuccess
     }
 
     fun browseURL(url: String) {
