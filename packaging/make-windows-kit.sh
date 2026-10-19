@@ -39,11 +39,13 @@ VERSION="$(unzip -p "$JAR" app-version.json | sed -n 's/.*"currentVersion" *: *"
 OUT_ROOT="$PROJECT_ROOT/build/windows-kit"
 KIT="$OUT_ROOT/xdm-windows-kit"
 rm -rf "$KIT" "$OUT_ROOT"/xdm-windows-kit-*.zip
-mkdir -p "$KIT/packaging/cds" "$KIT/packaging/icons" "$KIT/packaging/windows"
+mkdir -p "$KIT/packaging/cds" "$KIT/packaging/icons" "$KIT/packaging/module" "$KIT/packaging/windows"
 
 # Same relative layout as the repo, so build-bundle.ps1 finds its files from $PSScriptRoot.
 cp "$JAR"                                   "$KIT/xdm-app.jar"
 cp packaging/build-bundle.ps1               "$KIT/packaging/"
+cp packaging/ModularJar.java                "$KIT/packaging/"
+cp packaging/module/module-info.java        "$KIT/packaging/module/"
 cp packaging/setup-windows.ps1              "$KIT/packaging/"
 cp packaging/jit-directives.json            "$KIT/packaging/"
 cp packaging/jdk.properties                 "$KIT/packaging/"

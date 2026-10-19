@@ -6,7 +6,6 @@ import com.formdev.flatlaf.themes.FlatMacLightLaf
 import xdm.app.headless.CliParser
 import xdm.app.headless.HeadlessCli
 import xdm.app.utils.AppDirs
-import xdm.app.utils.CdsJarPin
 import xdm.app.utils.JitOverride
 import xdm.app.utils.WaylandToolkit
 import xdm.app.utils.linux.DesktopFontSettings
@@ -46,7 +45,8 @@ object AppMain {
         // Holds cookies, captured request headers and logs: other users of the machine stay out.
         FileUtils.restrictToOwner(File(configDir))
         Logger.init(File(configDir))
-        CdsJarPin.repin()
+        // HotSpot appends "sharing" to java.vm.info while a CDS archive is mapped (APPCDS.md).
+        Logger.info("CDS: archive " + if (System.getProperty("java.vm.info").orEmpty().contains("sharing")) "in use" else "not in use")
         JitOverride.sync()
 
         Logger.info("Use OKHttp..")

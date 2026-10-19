@@ -114,11 +114,13 @@ URL_SCHEME="xdm-app"
 DESCRIPTION="Xtreme Download Manager"
 MAIN_CLASS="xdm.app.AppMain"
 MAIN_JAR="xdm-app.jar"
+APP_MODULE="xdm.app"
 COPYRIGHT="Copyright (c) Subhra Das Gupta"
 
 BUILD_DIR="$PROJECT_ROOT/build"
 RUNTIME_DIR="$BUILD_DIR/runtime"
 INPUT_DIR="$BUILD_DIR/input"
+MODULE_DIR="$BUILD_DIR/module"
 DEST_DIR="$BUILD_DIR/dist"
 
 PKG_TYPE=""
@@ -250,9 +252,11 @@ fi
 # Version-gated flags join JAVA_OPTIONS here, before anything runs the bundled
 # runtime: the AppCDS dump below must see the exact flags the launcher will use.
 # FlatLaf loads a native library; JDK 22+ warns about that unless native access
-# is enabled explicitly (and will block it in a future release).
+# is enabled explicitly (and will block it in a future release). The app is the
+# module xdm.app (below); the dump must see the same value, or the JVM drops the
+# archived module graph.
 if [[ "$JDK_MAJOR" -ge 22 ]]; then
-  JAVA_OPTIONS+=(--enable-native-access=ALL-UNNAMED)
+  JAVA_OPTIONS+=(--enable-native-access=xdm.app)
 fi
 # 64-bit object headers instead of 96-bit. A product (non-experimental) flag
 # since JDK 25 and the default from JDK 27 (JEP 534); on JDK 24 and older it is
@@ -278,7 +282,7 @@ APP_VERSION="$(sed -n 's/.*"currentVersion"[[:space:]]*:[[:space:]]*"\([^"]*\)".
 # Drop the bundled natives for every platform except this build's target.
 #
 # FlatLaf ships its native library for seven platforms; a bundle runs on exactly
-# one. Only the copy under build/input that jpackage wraps is trimmed.
+# one. Only the copy under build/module that becomes the app module is trimmed.
 # xdm-app/target/xdm-app.jar keeps every native, so the fat jar stays runnable
 # on any platform when it is shared or launched on its own with `java -jar`.
 #
@@ -335,25 +339,40 @@ strip_foreign_natives() {
   echo ">> stripped ${#drop[@]} foreign natives ($OS/$machine): $(( (before - after) / 1024 )) KB"
 }
 
-# ---- trimmed runtime ------------------------------------------------------
-echo ">> jlink runtime: $MODULES"
-rm -rf "$RUNTIME_DIR" "$INPUT_DIR"
-mkdir -p "$BUILD_DIR" "$INPUT_DIR" "$DEST_DIR"
+# ---- app module + trimmed runtime --------------------------------------------
+# The app ships inside the runtime image as the module xdm.app (packaging/module/module-info.java),
+# not as a jar in app/: the JVM checks a classpath jar against the AppCDS archive by size and exact
+# mtime, which installers and copies move; classes in lib/modules are checked by size only (APPCDS.md).
+# packaging/ModularJar.java makes the module jar from the fat jar; link_runtime links it in.
+rm -rf "$RUNTIME_DIR" "$INPUT_DIR" "$MODULE_DIR"
+mkdir -p "$BUILD_DIR" "$INPUT_DIR" "$MODULE_DIR" "$DEST_DIR"
 STRIP_NATIVE=()
 if jlink --help 2>&1 | grep -q -- '--strip-native-debug-symbols'; then
   STRIP_NATIVE=(--strip-native-debug-symbols exclude-debuginfo-files)
 fi
-jlink \
-  --add-modules "$MODULES" \
-  --strip-debug \
-  ${STRIP_NATIVE+"${STRIP_NATIVE[@]}"} \
-  --no-header-files \
-  --no-man-pages \
-  --compress="$COMPRESS" \
-  --output "$RUNTIME_DIR"
+# <module jar> [ModularJar options]: builds the module jar and links the runtime with it.
+link_runtime() {
+  local module_jar="$1"; shift
+  java "$PROJECT_ROOT/packaging/ModularJar.java" "$APP_JAR" "$module_jar" \
+    "$PROJECT_ROOT/packaging/module/module-info.java" "$@"
+  echo ">> jlink runtime: $MODULES,$APP_MODULE"
+  rm -rf "$RUNTIME_DIR"
+  jlink \
+    --module-path "$module_jar" \
+    --add-modules "$MODULES,$APP_MODULE" \
+    --strip-debug \
+    ${STRIP_NATIVE+"${STRIP_NATIVE[@]}"} \
+    --no-header-files \
+    --no-man-pages \
+    --compress="$COMPRESS" \
+    --output "$RUNTIME_DIR"
+}
 
-cp "$JAR_PATH" "$INPUT_DIR/$MAIN_JAR"
-strip_foreign_natives "$INPUT_DIR/$MAIN_JAR"
+# The fat jar, trimmed to this platform's natives. It stays out of $INPUT_DIR: jpackage would put
+# anything there on the class path.
+APP_JAR="$MODULE_DIR/$MAIN_JAR"
+cp "$JAR_PATH" "$APP_JAR"
+strip_foreign_natives "$APP_JAR"
 
 # FlatLaf's native library as a file in app/, loaded from there through
 # -Dflatlaf.nativeLibraryPath (added with the JIT directive below). Otherwise
@@ -370,7 +389,7 @@ case "$OS-$(uname -m)" in
   linux-x86_64)             FLATLAF_NATIVE="libflatlaf-linux-x86_64.so" ;;
 esac
 if [[ -n "$FLATLAF_NATIVE" ]] &&
-   unzip -j -o -q "$INPUT_DIR/$MAIN_JAR" "com/formdev/flatlaf/natives/$FLATLAF_NATIVE" -d "$INPUT_DIR" 2>/dev/null; then
+   unzip -j -o -q "$APP_JAR" "com/formdev/flatlaf/natives/$FLATLAF_NATIVE" -d "$INPUT_DIR" 2>/dev/null; then
   echo ">> FlatLaf native in app/: $FLATLAF_NATIVE"
 else
   FLATLAF_NATIVE=""
@@ -381,9 +400,9 @@ cp "$PROJECT_ROOT/packaging/$JIT_DIRECTIVES" "$INPUT_DIR/"
 
 # ---- AppCDS archive (APPCDS.md) ---------------------------------------------
 # A static archive of JDK + app classes, mapped read-only at startup instead of
-# parsed into metaspace: ~19 MB less at idle. The JVM uses it only while the
-# jar's size and mtime match the dump, so the jar is pinned to a fixed time and
-# the app re-pins it on start if an installer or copy moved it (CdsJarPin).
+# parsed into metaspace: ~19 MB less at idle. The app's classes come from the
+# runtime image (module xdm.app), which the JVM checks by size only, so the
+# archive survives installers and copies that move file times.
 #
 # The class list is recorded on the Mac (--record-server, or by hand with
 # --record-classes) and checked in, one per JDK vendor, because its @cp and
@@ -391,10 +410,9 @@ cp "$PROJECT_ROOT/packaging/$JIT_DIRECTIVES" "$INPUT_DIR/"
 #   liberica.classlist  macOS and Windows (pinned Liberica)
 #   jbr.classlist       Linux (pinned JBR, recorded on the Mac's JBR build)
 # Classes only another OS loads (Win32/Wayland toolkit peers, utils/win) aren't
-# in the list; they load from the jar as usual. Measured on Windows: ~0.3 MB
+# in the list; they load from lib/modules as usual. Measured on Windows: ~0.3 MB
 # more than a Windows-recorded list (docs/class-list-recording.md).
 # Without a list, the bundle is built without an archive.
-CDS_EPOCH=1577836800                                 # 2020-01-01T00:00:00Z
 JDK_ARCH="$(sed -n 's/^OS_ARCH="\(.*\)"/\1/p' "$(dirname "$(command -v jlink)")/../release" 2>/dev/null)"
 case "${JDK_ARCH:-$(uname -m)}" in
   aarch64|arm64) CDS_ARCH=arm64 ;;
@@ -406,11 +424,12 @@ case "$JDK_STAMP" in
   *)          CDS_LIST="$PROJECT_ROOT/packaging/cds/liberica.classlist" ;;
 esac
 CDS_ARCHIVE="xdm.jsa"
-CDS_PROPERTY="xdm.cds.mtime"                         # read by CdsJarPin
 BUNDLED_JAVA="$RUNTIME_DIR/bin/java"
-TZ=UTC touch -t 202001010000.00 "$INPUT_DIR/$MAIN_JAR"
 
 if [[ $RECORD_CLASSES -eq 1 ]]; then
+  # Recorded from a runtime whose module still holds the session (xdm.app.recording); the shipped
+  # runtime is linked again without it below.
+  link_runtime "$MODULE_DIR/$APP_MODULE-record.jar"
   mkdir -p "$(dirname "$CDS_LIST")"
   RECORDED="$BUILD_DIR/recorded.classlist"
   SESSION=()
@@ -431,7 +450,7 @@ if [[ $RECORD_CLASSES -eq 1 ]]; then
     ${FLATLAF_NATIVE:+"-Dflatlaf.nativeLibraryPath=$INPUT_DIR"} \
     ${SESSION[@]+"${SESSION[@]}"} \
     "-XX:DumpLoadedClassList=$RECORDED" \
-    -cp "$INPUT_DIR/$MAIN_JAR" "$MAIN_CLASS" || status=$?
+    -m "$APP_MODULE/$MAIN_CLASS" || status=$?
   if [[ -n "$RECORD_SERVER" ]]; then
     # The session downloads ~700 MB (Downloads/, partial files in xdm-app/tmp): drop it, pass or
     # fail, so repeated recordings don't fill a small VM disk. xdm-app keeps the logs.
@@ -454,16 +473,10 @@ if [[ $RECORD_CLASSES -eq 1 ]]; then
   fi
 fi
 
-# The recording session (xdm.app.recording) is build tooling: it leaves the bundle's jar once it has
-# run, before the archive is dumped, so the archive matches the jar that ships. Nothing else loads it:
-# the app only calls it when -Dxdm.record.session is set. target/xdm-app.jar keeps it for recording.
-if command -v zip >/dev/null 2>&1; then
-  zip -q -d "$INPUT_DIR/$MAIN_JAR" 'xdm/app/recording/*' >/dev/null 2>&1 || true
-  TZ=UTC touch -t 202001010000.00 "$INPUT_DIR/$MAIN_JAR"
-  echo ">> removed the recording session (xdm/app/recording) from the bundled jar"
-else
-  echo ">> zip not on PATH - the bundled jar keeps xdm/app/recording (unused, ~25 KB)"
-fi
+# The shipped runtime. The recording session (xdm.app.recording) is build tooling and stays out of its
+# module: nothing else loads it, the app only calls it when -Dxdm.record.session is set.
+# target/xdm-app.jar keeps it for recording.
+link_runtime "$MODULE_DIR/$APP_MODULE.jar" --exclude xdm/app/recording/
 
 if [[ -s "$CDS_LIST" ]]; then
   LIST_JDK="$(sed -n 's/^# xdm-jdk: //p' "$CDS_LIST" | head -1)"
@@ -483,7 +496,7 @@ if [[ -s "$CDS_LIST" ]]; then
   "$BUNDLED_JAVA" -Xshare:dump "${JAVA_OPTIONS[@]}" \
     "-XX:SharedClassListFile=$CDS_LIST" \
     "-XX:SharedArchiveFile=$INPUT_DIR/$CDS_ARCHIVE" \
-    -cp "$INPUT_DIR/$MAIN_JAR" >"$DUMP_LOG" || { cat "$DUMP_LOG"; exit 1; }
+    -m "$APP_MODULE/$MAIN_CLASS" >"$DUMP_LOG" || { cat "$DUMP_LOG"; exit 1; }
   # Lines recorded against another JDK build or an older jar are skipped (the class is
   # still archived, only less pre-resolved). On the Mac's Liberica arm64 build, where the
   # list was recorded, that's the cue to record it again. Anywhere else the list also names
@@ -498,15 +511,23 @@ if [[ -s "$CDS_LIST" ]]; then
         "$OS-$CDS_ARCH build doesn't have)"
     fi
   fi
-  # $APPDIR is expanded by the jpackage launcher to the image's app directory.
   # ArchiveRelocationMode=0 maps the archive at its preferred address, so its
   # pages stay shared instead of turning private on relocation (-9 MB).
-  JAVA_OPTIONS+=(
-    '-XX:SharedArchiveFile=$APPDIR/'"$CDS_ARCHIVE"
-    -XX:+UnlockDiagnosticVMOptions
-    -XX:ArchiveRelocationMode=0
-    "-D$CDS_PROPERTY=$CDS_EPOCH"
-  )
+  CDS_OPTIONS=(-XX:+UnlockDiagnosticVMOptions -XX:ArchiveRelocationMode=0)
+  # The archive must still map once installers and copies have moved every file time: move lib/modules'
+  # mtime (the copy jpackage makes gets a new one anyway) and start the VM as the launcher will, with
+  # -Xshare:on, which fails instead of running without the archive. The archived module graph is lost
+  # silently when a module property (-m, --enable-native-access) differs from the dump; check it too.
+  touch "$RUNTIME_DIR/lib/modules"
+  CHECK_LOG="$BUILD_DIR/cds-check.log"
+  "$BUNDLED_JAVA" "${JAVA_OPTIONS[@]}" "-XX:SharedArchiveFile=$INPUT_DIR/$CDS_ARCHIVE" "${CDS_OPTIONS[@]}" \
+    -Xshare:on -Xlog:cds=info --dry-run -m "$APP_MODULE/$MAIN_CLASS" >"$CHECK_LOG" 2>&1 ||
+    { cat "$CHECK_LOG"; echo "The AppCDS archive doesn't map (log above)" >&2; exit 1; }
+  grep -q 'full module graph: enabled' "$CHECK_LOG" ||
+    { grep -E '\[(error|warning)\]' "$CHECK_LOG" >&2; echo "The AppCDS archive maps without its module graph" >&2; exit 1; }
+  echo ">> AppCDS archive maps with the full module graph (lib/modules mtime moved)"
+  # $APPDIR is expanded by the jpackage launcher to the image's app directory.
+  JAVA_OPTIONS+=('-XX:SharedArchiveFile=$APPDIR/'"$CDS_ARCHIVE" "${CDS_OPTIONS[@]}")
 else
   echo ">> no packaging/cds/$(basename "$CDS_LIST") - building without an AppCDS archive (recorded on the Mac:" \
     "--record-server)"
@@ -522,6 +543,9 @@ JAVA_OPTIONS+=(
   '-XX:CompilerDirectivesFile=$APPDIR/'"$JIT_DIRECTIVES"
 )
 [[ -n "$FLATLAF_NATIVE" ]] && JAVA_OPTIONS+=('-Dflatlaf.nativeLibraryPath=$APPDIR')
+# The app dir for PlatformUtils.baseDirectory: with the app in the runtime image there is no jar path
+# to take it from.
+JAVA_OPTIONS+=('-Dxdm.app.dir=$APPDIR')
 
 # ---- jpackage -------------------------------------------------------------
 ARGS=(
@@ -532,8 +556,7 @@ ARGS=(
   --description "$DESCRIPTION"
   --copyright "$COPYRIGHT"
   --input "$INPUT_DIR"
-  --main-jar "$MAIN_JAR"
-  --main-class "$MAIN_CLASS"
+  --module "$APP_MODULE/$MAIN_CLASS"
   --runtime-image "$RUNTIME_DIR"
   --dest "$DEST_DIR"
 )
@@ -572,14 +595,6 @@ esac
 
 echo ">> jpackage --type $JPACKAGE_TYPE ($OS, version $APP_VERSION)"
 jpackage "${ARGS[@]}" ${EXTRA_ARGS+"${EXTRA_ARGS[@]}"}
-
-# jpackage copies the jar with a fresh mtime, which would cost a fresh image its
-# archive until CdsJarPin fixes it on the first start; pin the image's copy now.
-if [[ -s "$CDS_LIST" && "$JPACKAGE_TYPE" == "app-image" ]]; then
-  while IFS= read -r jar; do
-    TZ=UTC touch -t 202001010000.00 "$jar"
-  done < <(find "$DEST_DIR/$IMAGE_NAME"* -path "*/app/$MAIN_JAR" 2>/dev/null)
-fi
 
 # ---- macOS: display name + the xdm-app:// scheme ---------------------------
 # A bundle can only claim a URL scheme in its Info.plist, and jpackage has no option for it, so

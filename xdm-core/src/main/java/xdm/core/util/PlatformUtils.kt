@@ -21,22 +21,16 @@ object PlatformUtils {
         get() = System.getProperty("os.name").lowercase(Locale.getDefault()).contains("windows")
 
     /**
-     * The jar (or classes directory) the app runs from, taken from `java.class.path` - which the jpackage
-     * launcher sets to the installed jar - rather than from a class's CodeSource. For classes loaded from an
-     * AppCDS archive the JDK builds that URL from the jar path recorded at dump time: it names the build
-     * machine's copy, or is null where that path doesn't exist (APPCDS.md).
+     * The folder holding the app's own files. The bundles' launcher passes it as `-Dxdm.app.dir` (their app
+     * classes live in the runtime image, so there is no jar to take it from); a plain `java -jar` or an IDE
+     * run uses the jar's (or classes directory's) folder from `java.class.path`.
      */
-    val appClassPathRoot: File?
+    val baseDirectory: File?
         get() {
-            System.getProperty("java.class.path")
+            System.getProperty("xdm.app.dir")?.takeIf { it.isNotBlank() }?.let { return File(it).absoluteFile }
+            return System.getProperty("java.class.path")
                 ?.split(File.pathSeparatorChar)
                 ?.firstOrNull { it.isNotBlank() }
-                ?.let { return File(it).absoluteFile }
-            return runCatching {
-                File(PlatformUtils::class.java.protectionDomain.codeSource.location.toURI())
-            }.getOrNull()
+                ?.let { File(it).absoluteFile.parentFile }
         }
-
-    val baseDirectory: File?
-        get() = appClassPathRoot?.parentFile
 }

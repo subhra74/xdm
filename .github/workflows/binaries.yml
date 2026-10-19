@@ -4,7 +4,9 @@ name: Binaries
 # built once and shared. Every target links its runtime from the JDK pinned in packaging/jdk.properties, which
 # the build scripts enforce; the AppCDS archive is dumped from the checked-in class list for that JDK, recorded
 # on a Mac (packaging/cds/liberica.classlist: macOS and Windows; jbr.classlist: Linux), so no job records or
-# needs a desktop session. A missing list means a build without an archive.
+# needs a desktop session. A missing list means a build without an archive. The scripts link the jar into the
+# runtime image as the module xdm.app (packaging/ModularJar.java), so the archive doesn't depend on file times
+# and a runner's time zone doesn't matter; each build fails if its archive doesn't map (APPCDS.md).
 
 # A tag push (v*) publishes a GitHub release with every installer; a tag with a suffix (v9.0.1-beta.1) is
 # marked pre-release. A manual run only uploads the run's artifacts unless "release" is ticked; it then tags the

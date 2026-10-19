@@ -244,6 +244,7 @@ class FilterListPanel(
         val title = JLabel(text("SIDEBAR_SUPPORT_TITLE")).apply {
             font = font.deriveFont(Font.BOLD, font.size2D - 1f)
             foreground = AppTheme.sidebarForeground
+            border = ScaledEmptyBorder(0, 0, 3, 0)
         }
         val labels = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)

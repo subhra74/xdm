@@ -10,7 +10,12 @@
     arm64  an arm64 JDK, on an ARM64 machine
 
   Running an x64 JDK under emulation is fine: the archive holds class metadata only, and the JVM
-  validates it by JDK build, jar size/mtime and VM flags, never by CPU (APPCDS.md sect. 10).
+  validates it by JDK build, runtime image size and VM flags, never by CPU (APPCDS.md sect. 10).
+
+  The app ships inside the runtime image as the module xdm.app (packaging\module\module-info.java,
+  made from the fat jar by packaging\ModularJar.java), not as a jar in app\: the JVM checks a classpath
+  jar against the archive by exact mtime, which an MSI install moves by the build and install machines'
+  time-zone difference. Classes in lib\modules are checked by size only.
 
   Needs JDK 25 (BellSoft Liberica Standard, PACKAGING.md sect. 3.1). The app jar is the same on every
   platform, so it can be built elsewhere: either copy it to xdm-app\target\xdm-app.jar and pass
@@ -112,8 +117,9 @@ $JavaOptions = @(
   '-Djdk.nio.maxCachedBufferSize=262144'
   # VM messages ("2 compiler directives added") on stderr: stdout is the headless CLI's output
   '-XX:+DisplayVMOutputToStderr'
-  # FlatLaf loads a native library; JDK 22+ warns unless native access is enabled
-  '--enable-native-access=ALL-UNNAMED'
+  # FlatLaf loads a native library; JDK 22+ warns unless native access is enabled. The app is the
+  # module xdm.app; the dump must see the same value, or the JVM drops the archived module graph.
+  '--enable-native-access=xdm.app'
   # 64-bit object headers instead of 96-bit (product flag since JDK 25)
   '-XX:+UseCompactObjectHeaders'
 )
@@ -125,6 +131,7 @@ $Launcher    = 'xdm-app'
 $Vendor      = 'Subhra Das Gupta'
 $MainClass   = 'xdm.app.AppMain'
 $MainJar     = 'xdm-app.jar'
+$AppModule   = 'xdm.app'
 $BuildDir    = Join-Path $ProjectRoot 'build'
 
 # ---- JDK and target architecture ------------------------------------------
@@ -218,6 +225,7 @@ Write-Host ">> target windows-$Arch, JDK $($release['JAVA_VERSION']) ($($release
 
 $RuntimeDir = Join-Path $BuildDir "windows-$Arch\runtime"
 $InputDir   = Join-Path $BuildDir "windows-$Arch\input"
+$ModuleDir  = Join-Path $BuildDir "windows-$Arch\module"
 $DestDir    = if ($Out) { $Out } else { Join-Path $BuildDir "dist\windows-$Arch" }
 $ImageDir   = Join-Path $DestDir $Launcher
 
@@ -254,7 +262,7 @@ if (-not $AppVersion) { $AppVersion = '1.0.0' }
 # Drop the bundled natives for every platform except this build's target.
 #
 # FlatLaf ships its native library for seven platforms; a bundle runs on exactly
-# one. Only the copy under build\...\input that jpackage wraps is trimmed.
+# one. Only the copy under build\...\module that becomes the app module is trimmed.
 # xdm-app\target\xdm-app.jar keeps every native, so the fat jar stays runnable
 # on any platform when it is shared or launched on its own with `java -jar`.
 #
@@ -283,13 +291,28 @@ function Remove-ForeignNatives {
   Write-Host ">> stripped $($doomed.Count) foreign natives (windows-$flArch): $saved KB"
 }
 
-Write-Host ">> jlink runtime: $Modules"
-Remove-Item -Recurse -Force $RuntimeDir, $InputDir, $ImageDir -ErrorAction SilentlyContinue
-New-Item -ItemType Directory -Force -Path $InputDir, $DestDir | Out-Null
+Remove-Item -Recurse -Force $RuntimeDir, $InputDir, $ModuleDir, $ImageDir -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Force -Path $InputDir, $ModuleDir, $DestDir | Out-Null
+
+# The fat jar, trimmed to this target's natives. It stays out of $InputDir: jpackage would put anything
+# there on the class path.
+$AppJar = Join-Path $ModuleDir $MainJar
+Copy-Item $JarPath $AppJar
+Remove-ForeignNatives $AppJar
+
+# The app module (packaging\module\module-info.java). The recording session (xdm.app.recording) is build
+# tooling, run on the Mac only, and stays out of it: nothing else loads it, the app only calls it when
+# -Dxdm.record.session is set.
+$ModuleJar = Join-Path $ModuleDir "$AppModule.jar"
+& $Java (Join-Path $PSScriptRoot 'ModularJar.java') $AppJar $ModuleJar `
+    (Join-Path $PSScriptRoot 'module\module-info.java') --exclude 'xdm/app/recording/'
+if ($LASTEXITCODE -ne 0) { throw 'ModularJar failed' }
+
+Write-Host ">> jlink runtime: $Modules,$AppModule"
 # --vm server: Liberica's Windows x64 JDK also ships the client VM (bin\client\jvm.dll, 8.7 MB), which is
 # C1-only - no C2, so none of the crypto intrinsics TLS depends on (PACKAGING.md sect. 3.2).
-& $Jlink --add-modules $Modules --vm server --strip-debug --no-header-files --no-man-pages `
-         --compress=zip-9 --output $RuntimeDir
+& $Jlink --module-path $ModuleJar --add-modules "$Modules,$AppModule" --vm server --strip-debug `
+         --no-header-files --no-man-pages --compress=zip-9 --output $RuntimeDir
 if ($LASTEXITCODE -ne 0) { throw 'jlink failed' }
 
 # Files the runtime carries but never uses on Windows 10+ (which JDK 25 requires):
@@ -305,17 +328,14 @@ $unusedKb = [math]::Round(($unused | Measure-Object Length -Sum).Sum / 1KB)
 $unused | Remove-Item
 Write-Host ">> removed $($unused.Count) unused runtime files (UCRT forwarders, keytool, javaw): $unusedKb KB"
 
-Copy-Item $JarPath (Join-Path $InputDir $MainJar)
-Remove-ForeignNatives (Join-Path $InputDir $MainJar)
-
 # FlatLaf's DLL as a file in app\, loaded from there through -Dflatlaf.nativeLibraryPath (added with
 # the JIT directive below). Otherwise FlatLaf copies it out of the jar into %TEMP%\flatlaf.temp on
 # every start and loads it from there - a fresh DLL in %TEMP% is the kind of thing antivirus flags.
-# The name is the one FlatLaf asks for, System.mapLibraryName("flatlaf-windows-<arch>"). The jar
+# The name is the one FlatLaf asks for, System.mapLibraryName("flatlaf-windows-<arch>"). The module
 # keeps its copy, which FlatLaf falls back to (logging it) if this file goes missing.
 $flArch = if ($Arch -eq 'arm64') { 'arm64' } else { 'x86_64' }
 $FlatLafDll = "flatlaf-windows-$flArch.dll"
-$zip = [System.IO.Compression.ZipFile]::OpenRead((Join-Path $InputDir $MainJar))
+$zip = [System.IO.Compression.ZipFile]::OpenRead($AppJar)
 try {
   $entry = $zip.GetEntry("com/formdev/flatlaf/natives/$FlatLafDll")
   if (-not $entry) { throw "$MainJar has no FlatLaf native for windows-$flArch" }
@@ -328,33 +348,17 @@ Copy-Item (Join-Path $PSScriptRoot $JitDirectives) $InputDir
 # No app\.package on Windows: without it the launcher never reads a per-user .cfg, so the installed one
 # (and the heap line the MSI may add to it, PACKAGING.md sect. 5.7) is the only one. Full JIT stays locked.
 
-# AppCDS archive - see the matching block in build-bundle.sh and APPCDS.md. The
-# JVM uses the archive only while the jar's size and mtime match the dump, so the
-# jar is pinned to a fixed time and the app re-pins it on start (CdsJarPin).
-$CdsEpoch    = 1577836800                                  # 2020-01-01T00:00:00Z
-$CdsPinned   = [datetime]::new(2020, 1, 1, 0, 0, 0, [DateTimeKind]::Utc)
+# AppCDS archive - see the matching block in build-bundle.sh and APPCDS.md. The app's classes come
+# from the runtime image (module xdm.app), which the JVM checks by size only, so the archive survives
+# the MSI install moving file times.
 # The Liberica list, recorded on the Mac's Liberica build (same JDK build as here, so its @cp and lambda
-# lines hold). Windows-only classes (WToolkit peers, utils\win) load from the jar: measured ~0.3 MB more than
-# a Windows-recorded list (docs/class-list-recording.md). The lists are recorded on the Mac only.
+# lines hold). Windows-only classes (WToolkit peers, utils\win) load from lib\modules: measured ~0.3 MB more
+# than a Windows-recorded list (docs/class-list-recording.md). The lists are recorded on the Mac only.
 $CdsListName = 'liberica.classlist'
 $CdsList     = Join-Path $PSScriptRoot "cds\$CdsListName"
 $CdsArchive  = 'xdm.jsa'
-$CdsProperty = 'xdm.cds.mtime'                             # read by CdsJarPin
 $BundledJava = Join-Path $RuntimeDir 'bin\java.exe'
-$InputJar    = Join-Path $InputDir $MainJar
-(Get-Item $InputJar).LastWriteTimeUtc = $CdsPinned
-
-# The recording session (xdm.app.recording) is build tooling, run on the Mac only: it leaves the bundle's
-# jar before the archive is dumped, so the archive matches the jar that ships. Nothing else loads it: the
-# app only calls it when -Dxdm.record.session is set.
-$zip = [System.IO.Compression.ZipFile]::Open($InputJar, 'Update')
-try {
-  @($zip.Entries | Where-Object { $_.FullName -like 'xdm/app/recording/*' }) | ForEach-Object { $_.Delete() }
-} finally {
-  $zip.Dispose()
-}
-(Get-Item $InputJar).LastWriteTimeUtc = $CdsPinned
-Write-Host '>> removed the recording session (xdm/app/recording) from the bundled jar'
+$MainModule  = "$AppModule/$MainClass"
 
 if ((Test-Path $CdsList) -and (Get-Item $CdsList).Length -gt 0) {
   $listJdk = (Get-Content $CdsList -TotalCount 20 | Where-Object { $_ -like '# xdm-jdk: *' } | Select-Object -First 1)
@@ -367,7 +371,7 @@ if ((Test-Path $CdsList) -and (Get-Item $CdsList).Length -gt 0) {
   }
   Write-Host ">> dumping the AppCDS archive from $CdsListName"
   $dump = & $BundledJava -Xshare:dump @JavaOptions "-XX:SharedClassListFile=$CdsList" `
-      "-XX:SharedArchiveFile=$(Join-Path $InputDir $CdsArchive)" -cp $InputJar
+      "-XX:SharedArchiveFile=$(Join-Path $InputDir $CdsArchive)" -m $MainModule
   if ($LASTEXITCODE -ne 0) { $dump | Write-Host; throw 'AppCDS dump failed' }
   # The list was recorded on mac-arm64, so it names classes Windows doesn't have: those lines are
   # skipped (about 400). Staleness is checked where it was recorded (build-bundle.sh on the Mac).
@@ -375,13 +379,25 @@ if ((Test-Path $CdsList) -and (Get-Item $CdsList).Length -gt 0) {
   if ($stale -gt 0) {
     Write-Host ">> $stale lines of $CdsListName skipped (recorded on mac-arm64: classes this build doesn't have)"
   }
+  # ArchiveRelocationMode=0 maps the archive at its preferred address, so its pages stay shared instead
+  # of turning private on relocation.
+  $CdsOptions = @('-XX:+UnlockDiagnosticVMOptions', '-XX:ArchiveRelocationMode=0')
+  # The archive must still map once the MSI has moved every file time: move lib\modules' mtime and start
+  # the VM as the launcher will, with -Xshare:on, which fails instead of running without the archive. The
+  # archived module graph is lost silently when a module property (-m, --enable-native-access) differs
+  # from the dump; check it too. The log goes to a file: -XX:+DisplayVMOutputToStderr is in the flags.
+  (Get-Item (Join-Path $RuntimeDir 'lib\modules')).LastWriteTimeUtc = [datetime]::UtcNow
+  $checkLog = Join-Path $BuildDir "windows-$Arch\cds-check.log"
+  & $BundledJava @JavaOptions "-XX:SharedArchiveFile=$(Join-Path $InputDir $CdsArchive)" @CdsOptions `
+      -Xshare:on "-Xlog:cds=info:file=$checkLog" --dry-run -m $MainModule
+  if ($LASTEXITCODE -ne 0) { throw "The AppCDS archive doesn't map (see $checkLog)" }
+  if (-not (Select-String -Path $checkLog -Pattern 'full module graph: enabled' -Quiet)) {
+    Select-String -Path $checkLog -Pattern '\[(error|warning)\]' | ForEach-Object { Write-Host $_.Line }
+    throw "The AppCDS archive maps without its module graph (see $checkLog)"
+  }
+  Write-Host '>> AppCDS archive maps with the full module graph (lib\modules mtime moved)'
   # $APPDIR is expanded by the jpackage launcher; single quotes keep PowerShell off it.
-  $JavaOptions += @(
-    ('-XX:SharedArchiveFile=$APPDIR\' + $CdsArchive)
-    '-XX:+UnlockDiagnosticVMOptions'
-    '-XX:ArchiveRelocationMode=0'
-    "-D$CdsProperty=$CdsEpoch"
-  )
+  $JavaOptions += @(('-XX:SharedArchiveFile=$APPDIR\' + $CdsArchive)) + $CdsOptions
 } else {
   Write-Host ">> no packaging\cds\$CdsListName - building without an AppCDS archive (recorded on the Mac)"
 }
@@ -393,6 +409,8 @@ $JavaOptions += @(
   '-XX:+UnlockDiagnosticVMOptions'
   ('-XX:CompilerDirectivesFile=$APPDIR\' + $JitDirectives)
   '-Dflatlaf.nativeLibraryPath=$APPDIR'
+  # the app dir for PlatformUtils.baseDirectory: with the app in the runtime image there is no jar path
+  '-Dxdm.app.dir=$APPDIR'
 )
 
 $jpArgs = @(
@@ -402,8 +420,7 @@ $jpArgs = @(
   '--vendor', $Vendor
   '--description', $AppName
   '--input', $InputDir
-  '--main-jar', $MainJar
-  '--main-class', $MainClass
+  '--module', "$AppModule/$MainClass"
   '--runtime-image', $RuntimeDir
   '--dest', $DestDir
 )
@@ -415,11 +432,6 @@ if (Test-Path $Icon) { $jpArgs += @('--icon', $Icon) }
 Write-Host ">> jpackage app-image (windows-$Arch, version $AppVersion)"
 & $Jpackage @jpArgs
 if ($LASTEXITCODE -ne 0) { throw 'jpackage failed' }
-
-# jpackage copies the jar with a fresh mtime; pin the image's copy so the image - and the MSI
-# built from it, whose cabinet keeps file times - uses the archive from its very first start.
-$ImageJar = Join-Path $ImageDir "app\$MainJar"
-(Get-Item $ImageJar).LastWriteTimeUtc = $CdsPinned
 
 # One process, not two. By default the Windows launcher re-runs itself as a child in a job object, only
 # to put the app dir on that child's PATH (WinLauncher.cpp, needRestartLauncher), so every start shows
