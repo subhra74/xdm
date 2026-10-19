@@ -76,5 +76,48 @@ internal object Win32Shell {
         false
     }
 
+    private const val COINIT_APARTMENTTHREADED = 0x2
+    private const val COINIT_DISABLE_OLE1DDE = 0x4
+
+    // HRESULT CoInitializeEx(LPVOID, DWORD) / void CoUninitialize()
+    private val coInitializeEx by lazy { Win32.ole("CoInitializeEx", FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_INT)) }
+    private val coUninitialize by lazy { Win32.ole("CoUninitialize", FunctionDescriptor.ofVoid()) }
+
+    // PIDLIST_ABSOLUTE ILCreateFromPathW(PCWSTR) / void ILFree(PIDLIST_RELATIVE)
+    private val ilCreateFromPath by lazy { Win32.shell("ILCreateFromPathW", FunctionDescriptor.of(ADDRESS, ADDRESS)) }
+    private val ilFree by lazy { Win32.shell("ILFree", FunctionDescriptor.ofVoid(ADDRESS)) }
+
+    // HRESULT SHOpenFolderAndSelectItems(PCIDLIST_ABSOLUTE, UINT, PCUITEMID_CHILD_ARRAY, DWORD)
+    private val openFolderAndSelectItems by lazy {
+        Win32.shell("SHOpenFolderAndSelectItems", FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_INT, ADDRESS, JAVA_INT))
+    }
+
+    /**
+     * Opens Explorer on the folder holding [path] with that item selected, reusing a window already showing
+     * the folder. Unlike `explorer /select,` there is no command line to parse, so commas and quotes in the
+     * name are fine. Initialises COM on the calling thread, so call it from a thread of its own, not the EDT.
+     */
+    fun selectInExplorer(path: String): Boolean = runCatching {
+        // S_FALSE (already initialised) is a success too and needs its CoUninitialize.
+        val init = coInitializeEx.invoke(MemorySegment.NULL, COINIT_APARTMENTTHREADED or COINIT_DISABLE_OLE1DDE) as Int
+        try {
+            Arena.ofConfined().use { arena ->
+                val pidl = ilCreateFromPath.invoke(arena.wide(path)) as MemorySegment
+                if (pidl == MemorySegment.NULL) return@runCatching false
+                try {
+                    // cidl = 0: the pidl names the item itself, and Explorer selects it in its parent.
+                    (openFolderAndSelectItems.invoke(pidl, 0, MemorySegment.NULL, 0) as Int) >= 0
+                } finally {
+                    ilFree.invoke(pidl)
+                }
+            }
+        } finally {
+            if (init >= 0) coUninitialize.invoke()
+        }
+    }.getOrElse {
+        Logger.error("SHOpenFolderAndSelectItems($path) failed", it)
+        false
+    }
+
     private fun Arena.wide(text: String): MemorySegment = allocateFrom(text, StandardCharsets.UTF_16LE)
 }

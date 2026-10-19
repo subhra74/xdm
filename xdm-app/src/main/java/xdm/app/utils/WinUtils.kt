@@ -1,8 +1,8 @@
 package xdm.app.utils
 
+import xdm.app.utils.win.Win32Shell
 import xdm.core.util.Logger
 import java.io.File
-import java.io.FileNotFoundException
 import java.io.IOException
 
 object WinUtils {
@@ -21,33 +21,13 @@ object WinUtils {
         }.isSuccess
     }
 
+    /**
+     * Opens [folder] in Explorer with [file] selected. Both go through the shell API rather than an
+     * `explorer.exe` command line, which splits on commas. Initialises COM, so never on the EDT.
+     */
     fun openFolder(folder: String, file: String?): Boolean {
-        return runCatching {
-            if (file == null) {
-                openFolder2(folder)
-            } else {
-                val f = File(folder, file)
-                if (!f.exists()) {
-                    throw FileNotFoundException()
-                }
-                val builder = ProcessBuilder()
-                val lst = ArrayList<String>()
-                lst.add("explorer")
-                lst.add("/select,")
-                lst.add(f.absolutePath)
-                builder.command(lst)
-                builder.start()
-            }
-        }.isSuccess
-    }
-
-    private fun openFolder2(folder: String) {
-        val builder = ProcessBuilder()
-        val lst = ArrayList<String>()
-        lst.add("explorer")
-        lst.add(folder)
-        builder.command(lst)
-        builder.start()
+        if (file != null && Win32Shell.selectInExplorer(File(folder, file).absolutePath)) return true
+        return Win32Shell.execute(File(folder).absolutePath)
     }
 
     fun browseURL(url: String) {

@@ -222,7 +222,7 @@ class AppInstance : IAppInstance {
         runOnUIThread {
             showTrayNotification(
                 text("CD_TITLE"), fileName,
-                onClick = { openFolderExternal(fileName, folder) },
+                onClick = { runCatching { openFolderExternal(fileName, folder) }.onFailure { Logger.error(it) } },
             ) {
                 // macOS has XDM's notifications off: say so once per run rather than stay silent.
                 if (MacNotifications.isAvailable && !notificationsOffShown) {

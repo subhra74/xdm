@@ -22,10 +22,12 @@ import java.awt.event.MouseEvent
 import java.awt.image.BaseMultiResolutionImage
 import java.awt.image.BufferedImage
 import java.io.File
+import java.io.FileNotFoundException
 import java.net.URI
 import javax.swing.JFileChooser
 import javax.swing.JFrame
 import javax.swing.SwingUtilities
+import kotlin.concurrent.thread
 import kotlin.system.exitProcess
 
 /**
@@ -288,31 +290,39 @@ fun chooseFile(parent: Component?, directoriesOnly: Boolean, currentDir: File? =
     }
 }
 
+/**
+ * Opens [file] in [folder] with its default application. Throws [FileNotFoundException] when it is gone;
+ * the launch itself runs on a background thread, as `open` may wait on LaunchServices.
+ */
 fun openFileExternal(file: String, folder: String?) {
-    val os = detectOS()
     val f = File(folder, file)
-    when (os) {
-        OS.Windows -> WinUtils.open(f)
-        OS.Linux -> LinuxUtils.open(f)
-        OS.MacOS -> MacUtils.open(f)
-        else -> Desktop.getDesktop().open(f)
+    if (!f.exists()) throw FileNotFoundException(f.absolutePath)
+    val os = detectOS()
+    thread(isDaemon = true, name = "open-file") {
+        when (os) {
+            OS.Windows -> WinUtils.open(f)
+            OS.Linux -> LinuxUtils.open(f)
+            OS.MacOS -> MacUtils.open(f)
+            else -> runCatching { Desktop.getDesktop().open(f) }.onFailure { Logger.error(it) }
+        }
     }
 }
 
-
+/**
+ * Opens [folder] in the file manager, selecting [file] when it is given. Throws [FileNotFoundException]
+ * when the file (or, with no file, the folder) is gone. The file manager is started on a background
+ * thread: Windows initialises COM, Linux may wait for D-Bus to start the file manager.
+ */
 fun openFolderExternal(file: String?, folder: String) {
+    val target = if (file != null) File(folder, file) else File(folder)
+    if (!target.exists()) throw FileNotFoundException(target.absolutePath)
     val os = detectOS()
-    when (os) {
-        OS.Windows -> WinUtils.openFolder(folder, file)
-        OS.Linux -> {
-            val f = File(folder)
-            LinuxUtils.open(f)
-        }
-
-        OS.MacOS -> MacUtils.openFolder(folder, file)
-        else -> {
-            val ff = File(folder)
-            Desktop.getDesktop().open(ff)
+    thread(isDaemon = true, name = "open-folder") {
+        when (os) {
+            OS.Windows -> WinUtils.openFolder(folder, file)
+            OS.Linux -> LinuxUtils.openFolder(folder, file)
+            OS.MacOS -> MacUtils.openFolder(folder, file)
+            else -> runCatching { Desktop.getDesktop().open(File(folder)) }.onFailure { Logger.error(it) }
         }
     }
 }

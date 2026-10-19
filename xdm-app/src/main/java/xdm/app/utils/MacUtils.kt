@@ -2,48 +2,28 @@ package xdm.app.utils
 
 import xdm.core.util.Logger
 import java.io.File
+import java.util.concurrent.TimeUnit
 
 object MacUtils {
-    fun open(f: File): Boolean {
-        return runCatching {
-            if (!f.exists()) {
-                return false
-            }
-            val pb = ProcessBuilder()
-            pb.command("open", f.absolutePath)
-            if (pb.start().waitFor() != 0) {
-                Logger.error("Open failed")
-                return false
-            }
-        }.isSuccess
-    }
+    fun open(f: File): Boolean = run("open", f.absolutePath)
 
-    fun openFolder(folder: String, file: String?): Boolean {
-        return runCatching {
-            if (file == null) {
-                openFolder2(folder)
-                return true
-            }
-            val f = File(folder, file)
-            if (!f.exists()) {
-                return false
-            }
-            val pb = ProcessBuilder()
-            Logger.info("Opening folder: " + f.absolutePath)
-            pb.command("open", "-R", f.absolutePath)
-            if (pb.start().waitFor() != 0) {
-                Logger.error("Open folder failed")
-            }
-        }.isSuccess
-    }
+    /** Reveals [file] in Finder (`open -R`), or opens [folder] when there is no file. */
+    fun openFolder(folder: String, file: String?): Boolean =
+        if (file != null) run("open", "-R", File(folder, file).absolutePath) else run("open", folder)
 
-    private fun openFolder2(folder: String) {
-        val builder = ProcessBuilder()
-        val lst = ArrayList<String>()
-        lst.add("open")
-        lst.add(folder)
-        builder.command(lst)
-        builder.start()
+    /**
+     * Runs `open` and reports whether it succeeded. The wait is bounded so a stalled LaunchServices
+     * cannot hang the caller; a timeout counts as success, since the request has been handed over.
+     */
+    private fun run(vararg cmd: String): Boolean = runCatching {
+        val proc = ProcessBuilder(*cmd).redirectErrorStream(true).redirectOutput(ProcessBuilder.Redirect.DISCARD).start()
+        if (!proc.waitFor(5, TimeUnit.SECONDS)) return@runCatching true
+        val ok = proc.exitValue() == 0
+        if (!ok) Logger.error("${cmd.joinToString(" ")} failed: exit ${proc.exitValue()}")
+        ok
+    }.getOrElse {
+        Logger.error(it)
+        false
     }
 
 //    fun launchApp(app: String?, args: String?): Boolean {

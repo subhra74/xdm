@@ -1,5 +1,7 @@
 package xdm.app.utils
 
+import xdm.app.utils.linux.SessionBus
+import xdm.app.utils.linux.dbus.DBusError
 import xdm.core.util.Logger
 import java.io.*
 import java.util.concurrent.TimeUnit
@@ -51,11 +53,46 @@ object LinuxUtils {
             if (!f.exists()) {
                 return false
             }
-            val pb = ProcessBuilder()
-            pb.command("xdg-open", f.absolutePath)
-            pb.start() // .waitFor();
+            ProcessBuilder("xdg-open", f.absolutePath)
+                .redirectErrorStream(true)
+                .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+                .start()
         }.isSuccess
     }
+
+    /**
+     * Opens [folder] in the file manager with [file] selected, via the freedesktop
+     * `org.freedesktop.FileManager1.ShowItems` call (Nautilus, Dolphin, Nemo, Caja, Thunar). Falls back to
+     * opening the folder with xdg-open when there is no file, no session bus, or no file manager owns that name.
+     * Blocks while the bus starts the file manager, so never on the EDT.
+     */
+    fun openFolder(folder: String, file: String?): Boolean {
+        if (file != null && showItem(File(folder, file))) return true
+        return open(File(folder))
+    }
+
+    private fun showItem(f: File): Boolean {
+        val bus = SessionBus.connection ?: return false
+        return try {
+            bus.call(
+                FILE_MANAGER, FILE_MANAGER_PATH, FILE_MANAGER, "ShowItems", "ass",
+                listOf(listOf(f.toPath().toUri().toASCIIString()), ""),
+            )
+            true
+        } catch (e: DBusError) {
+            // Our own timeout means the call was delivered and the file manager is still starting:
+            // falling back now would open a second window.
+            if (e.name == "org.freedesktop.DBus.Error.Timeout") return true
+            Logger.info("ShowItems failed: ${e.name} ${e.message}")
+            false
+        } catch (e: Exception) {
+            Logger.error(e)
+            false
+        }
+    }
+
+    private const val FILE_MANAGER = "org.freedesktop.FileManager1"
+    private const val FILE_MANAGER_PATH = "/org/freedesktop/FileManager1"
 
 //    fun addToStartup() {
 //        val dir = File(System.getProperty("user.home"), ".config/autostart")
