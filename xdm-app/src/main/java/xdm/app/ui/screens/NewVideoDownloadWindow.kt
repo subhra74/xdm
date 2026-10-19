@@ -89,7 +89,7 @@ class NewVideoDownloadWindow : JDialog() {
         txtFileName.columns = 10
 
         lblFileInfo = JLabel().apply {
-            icon = createIcon(RemixIcon.FILE_LINE, 36, Color.GRAY)
+            icon = createIcon(RemixIcon.FILE_FILL, 36, Color.GRAY)
             verticalTextPosition = SwingConstants.BOTTOM
             horizontalTextPosition = SwingConstants.CENTER
             horizontalAlignment = SwingConstants.CENTER
@@ -291,7 +291,7 @@ class NewVideoDownloadWindow : JDialog() {
 
     /** Picks the file-type glyph, the one the row will show. */
     private fun updateFileIcon() {
-        val glyph = CategoryStyle.lineVariant(CategoryStyle.glyphForFile(txtFileName.text.orEmpty()))
+        val glyph = CategoryStyle.glyphForFile(txtFileName.text.orEmpty())
         lblFileInfo.icon = createIcon(glyph, 36, Color.GRAY)
     }
 
