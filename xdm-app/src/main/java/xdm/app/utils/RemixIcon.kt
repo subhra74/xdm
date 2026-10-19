@@ -59,10 +59,12 @@ enum class RemixIcon(val codepoint: Int) {
     FOLDER_FILL(0xed61),
     FOLDER_LINE(0xed6a),
     FOLDER_WARNING_FILL(0xed85),
+    GITHUB_FILL(0xedca),
     GLOBAL_FILL(0xedce),
     GLOBAL_LINE(0xedcf),
     HARD_DRIVE_2_LINE(0xedf9),
     INSTALL_FILL(0xee67),
+    LINKEDIN_BOX_FILL(0xeeb3),
     LIST_CHECK_2(0xeeb9),
     MENU_LINE(0xef3e),
     MICROSOFT_FILL(0xef57),
@@ -96,8 +98,10 @@ enum class RemixIcon(val codepoint: Int) {
     THUMB_UP_FILL(0xf206),
     TOGGLE_FILL(0xf218),
     TOGGLE_LINE(0xf219),
+    TWITTER_X_FILL(0xf3e5),
     WIFI_LINE(0xf2c0),
     WINDOW_2_LINE(0xf2c4),
+    YOUTUBE_FILL(0xf2d4),
 }
 
 private object RemixFont {

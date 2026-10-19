@@ -16,7 +16,11 @@ import java.awt.Component
 import java.awt.Cursor
 import java.awt.Dimension
 import java.awt.Font
+import java.awt.Graphics
+import java.awt.Graphics2D
+import java.awt.GridBagLayout
 import java.awt.Rectangle
+import java.awt.RenderingHints
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.font.TextAttribute
@@ -102,7 +106,7 @@ class FilterListPanel(
         // The support link stays pinned below the lists rather than scrolling with them.
         root = JPanel(BorderLayout()).apply {
             add(jsp, BorderLayout.CENTER)
-            add(supportLink(), BorderLayout.SOUTH)
+            add(followLinks(), BorderLayout.SOUTH)
             border = MatteBorder(0, 0, 0, 1, AppTheme.sidebarBorder)
             background = AppTheme.sidebarBackground
         }
@@ -236,53 +240,90 @@ class FilterListPanel(
     }
 
     /**
-     * The "support XDM" link at the foot of the sidebar: opens a GitHub page asking for a star.
-     * Uses the same inset and padding as a selected row's pill, so it lines up with the rows.
-     * Labels truncate with an ellipsis instead of widening the sidebar.
+     * The "Made by @subhra74" card at the foot of the sidebar: a caption over a row of links to the
+     * developer's profiles, spread evenly across the caption's width so the row starts and ends with
+     * the text, centred on a rounded tile in the list background, outlined in the sidebar's border color. The
+     * brand icons are drawn muted like the filter rows and turn to the accent on hover; nothing is
+     * fetched until one is clicked.
      */
-    private fun supportLink(): JComponent {
-        val title = JLabel(text("SIDEBAR_SUPPORT_TITLE")).apply {
-            font = font.deriveFont(Font.BOLD, font.size2D - 1f)
+    private fun followLinks(): JComponent {
+        val title = JLabel(text("SIDEBAR_FOLLOW_TITLE").format(DEVELOPER_HANDLE)).apply {
+            font = font.deriveFont(Font.BOLD, font.size2D - 2f)
             foreground = AppTheme.sidebarForeground
-            border = ScaledEmptyBorder(0, 0, 3, 0)
+            alignmentX = 0f
         }
-        val labels = JPanel().apply {
-            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+        val icons = object : JPanel() {
+            // As wide as the caption (or the icons' own width, if that is wider); glue spreads them out.
+            private fun rowSize(): Dimension {
+                val natural = super.getPreferredSize()
+                return Dimension(maxOf(title.preferredSize.width, natural.width), natural.height)
+            }
+
+            override fun getPreferredSize() = rowSize()
+
+            override fun getMaximumSize() = rowSize()
+        }.apply {
+            layout = BoxLayout(this, BoxLayout.X_AXIS)
             isOpaque = false
-            add(title)
-            add(JLabel(text("SIDEBAR_SUPPORT_SUBTITLE")).apply {
-                font = font.deriveFont(font.size2D - 3f)
-                foreground = AppTheme.sidebarSection
+            alignmentX = 0f
+            border = ScaledEmptyBorder(8, 0, 0, 0)
+            FOLLOW_LINKS.forEachIndexed { i, link ->
+                if (i > 0) add(Box.createHorizontalGlue())
+                add(followIcon(link))
+            }
+        }
+        val card = object : JPanel() {
+            override fun paintComponent(g: Graphics) {
+                val g2 = g.create() as Graphics2D
+                try {
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+                    //g2.color = AppTheme.listBackground
+                    //g2.fillRoundRect(0, 0, width, height, 14.px, 14.px)
+                    g2.color = AppTheme.sidebarBorder
+                    g2.drawRoundRect(0, 0, width - 1, height - 1, 14.px, 14.px)
+                } finally {
+                    g2.dispose()
+                }
+            }
+        }.apply {
+            // GridBagLayout keeps the caption and icons at their own size, centred in the card.
+            layout = GridBagLayout()
+            isOpaque = false
+            border = ScaledEmptyBorder(10, 10, 10, 10)
+            add(JPanel().apply {
+                layout = BoxLayout(this, BoxLayout.Y_AXIS)
+                isOpaque = false
+                add(title)
+                add(icons)
             })
         }
-        val card = JPanel(BorderLayout(8.px, 0)).apply {
+        // 14px sides: a little inside the rows' pills (12px), so the outline doesn't crowd the edges.
+        return JPanel(BorderLayout()).apply {
             isOpaque = false
-            border = ScaledEmptyBorder(9, 8, 9, 10)
+            border = ScaledEmptyBorder(6, 14, 12, 14)
+            add(card)
+        }
+    }
+
+    private fun followIcon(link: FollowLink): JLabel {
+        val normal = createIcon(link.icon, 16, AppTheme.sidebarIcon)
+        val hover = createIcon(link.icon, 16, AppTheme.accent)
+        return JLabel(normal).apply {
+            toolTipText = link.name
             cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-            toolTipText = SUPPORT_URL
-            add(JLabel(createIcon(RemixIcon.THUMB_UP_FILL, 16, AppTheme.accent)).apply {
-                verticalAlignment = SwingConstants.CENTER
-            }, BorderLayout.WEST)
-            add(labels, BorderLayout.CENTER)
             addMouseListener(object : MouseAdapter() {
                 override fun mouseClicked(e: MouseEvent) {
-                    if (SwingUtilities.isLeftMouseButton(e)) openInDefaultBrowser(SUPPORT_URL)
+                    if (SwingUtilities.isLeftMouseButton(e)) openInDefaultBrowser(link.url)
                 }
 
                 override fun mouseEntered(e: MouseEvent) {
-                    title.foreground = AppTheme.accent
+                    icon = hover
                 }
 
                 override fun mouseExited(e: MouseEvent) {
-                    title.foreground = AppTheme.sidebarForeground
+                    icon = normal
                 }
             })
-        }
-        // 12px sides: the lists' 10px padding plus the box's 2px, so the card lines up with the pills.
-        return JPanel(BorderLayout()).apply {
-            isOpaque = false
-            border = ScaledEmptyBorder(6, 12, 12, 12)
-            add(card)
         }
     }
 
@@ -315,7 +356,16 @@ class FilterListPanel(
     val component: Component
         get() = this.root
 
+    private class FollowLink(val name: String, val icon: RemixIcon, val url: String)
+
     private companion object {
-        const val SUPPORT_URL = "https://github.com/subhra74/xdm/blob/master/SUPPORT.md"
+        const val DEVELOPER_HANDLE = "@subhra74"
+
+        val FOLLOW_LINKS = listOf(
+            FollowLink("GitHub", RemixIcon.GITHUB_FILL, "https://github.com/subhra74"),
+            FollowLink("YouTube", RemixIcon.YOUTUBE_FILL, "https://www.youtube.com/@subhra74"),
+            FollowLink("X", RemixIcon.TWITTER_X_FILL, "https://x.com/subhra74"),
+            FollowLink("LinkedIn", RemixIcon.LINKEDIN_BOX_FILL, "https://www.linkedin.com/in/subhra74"),
+        )
     }
 }
