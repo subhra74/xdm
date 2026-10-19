@@ -62,16 +62,7 @@ class AboutDialog(owner: Window?) : JDialog(owner) {
             })
         }
 
-        val followSubtitle = JLabel(text("FOLLOW_SUBTITLE")).apply {
-            font = font.deriveFont(Font.PLAIN, 12f.px)
-            foreground = UIManager.getColor("Label.disabledForeground")
-            horizontalAlignment = SwingConstants.CENTER
-        }
-
-        val followIcons = JPanel(FlowLayout(FlowLayout.CENTER, 14.px, 0)).apply {
-            isOpaque = false
-            FOLLOW_LINKS.forEach { add(followIcon(it)) }
-        }
+        val githubLink = githubStarLink()
 
         val gc = GridBagConstraints().apply {
             gridx = 0; gridy = GridBagConstraints.RELATIVE
@@ -84,8 +75,7 @@ class AboutDialog(owner: Window?) : JDialog(owner) {
         panel.add(logoLabel, gc)
         panel.add(appName, gc)
         panel.add(copyright, gc)
-        panel.add(followSubtitle, gc.apply { insets = scaledInsets(14, 0, 0, 0) })
-        panel.add(followIcons, gc.apply { insets = scaledInsets(10, 0, 14, 0) })
+        panel.add(githubLink, gc.apply { insets = scaledInsets(14, 0, 14, 0) })
         panel.add(website, gc.apply { insets = scaledInsets(6, 0, 6, 0) })
 
         contentPane.add(panel)
@@ -93,37 +83,35 @@ class AboutDialog(owner: Window?) : JDialog(owner) {
         setLocationRelativeTo(owner)
     }
 
-    /** A brand icon that opens [link] in the browser; muted, and in the accent color on hover. */
-    private fun followIcon(link: FollowLink): JLabel {
-        val normal = createIcon(link.icon, 18, UIManager.getColor("Label.disabledForeground"))
-        val hover = createIcon(link.icon, 18, AppTheme.accent)
-        return JLabel(normal).apply {
-            toolTipText = link.name
+    /** The GitHub mark and "Star on GitHub", opening the repository; muted, and in the accent color on hover. */
+    private fun githubStarLink(): JLabel {
+        val muted = UIManager.getColor("Label.disabledForeground")
+        val normal = createIcon(RemixIcon.GITHUB_FILL, 18, muted)
+        val hover = createIcon(RemixIcon.GITHUB_FILL, 18, AppTheme.accent)
+        return JLabel(text("ABOUT_STAR_GITHUB"), normal, SwingConstants.CENTER).apply {
+            iconTextGap = 6.px
+            foreground = muted
+            toolTipText = GITHUB_REPO_URL
             cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
             addMouseListener(object : java.awt.event.MouseAdapter() {
                 override fun mouseClicked(e: java.awt.event.MouseEvent) {
-                    if (SwingUtilities.isLeftMouseButton(e)) openInDefaultBrowser(link.url)
+                    if (SwingUtilities.isLeftMouseButton(e)) openInDefaultBrowser(GITHUB_REPO_URL)
                 }
 
                 override fun mouseEntered(e: java.awt.event.MouseEvent) {
                     icon = hover
+                    foreground = AppTheme.accent
                 }
 
                 override fun mouseExited(e: java.awt.event.MouseEvent) {
                     icon = normal
+                    foreground = muted
                 }
             })
         }
     }
 
-    private class FollowLink(val name: String, val icon: RemixIcon, val url: String)
-
     private companion object {
-        val FOLLOW_LINKS = listOf(
-            FollowLink("GitHub", RemixIcon.GITHUB_FILL, "https://github.com/subhra74"),
-            FollowLink("YouTube", RemixIcon.YOUTUBE_FILL, "https://www.youtube.com/@subhra74"),
-            FollowLink("X", RemixIcon.TWITTER_X_FILL, "https://x.com/subhra74"),
-            FollowLink("LinkedIn", RemixIcon.LINKEDIN_BOX_FILL, "https://www.linkedin.com/in/subhra74"),
-        )
+        const val GITHUB_REPO_URL = "https://github.com/subhra74/xdm"
     }
 }

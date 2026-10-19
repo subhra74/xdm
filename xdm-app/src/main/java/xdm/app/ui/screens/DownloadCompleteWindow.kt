@@ -14,12 +14,15 @@ import xdm.app.utils.windowIconImages
 import xdm.core.checksum.ChecksumSource
 import xdm.core.util.FormatHelper.formatSize
 import xdm.core.util.Logger
+import java.awt.AlphaComposite
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
 import java.awt.Cursor
 import java.awt.Dimension
 import java.awt.Font
+import java.awt.Graphics
+import java.awt.Graphics2D
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import java.awt.Insets
@@ -35,6 +38,7 @@ import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import javax.swing.BorderFactory
 import javax.swing.Box
+import javax.swing.Icon
 import javax.swing.BoxLayout
 import javax.swing.JButton
 import javax.swing.JComponent
@@ -79,7 +83,8 @@ class DownloadCompleteWindow : JFrame() {
     private val btnOpenFolder = JButton(text("CTX_OPEN_FOLDER")).apply {
         addActionListener {
             try {
-                openFolderExternal(txtFileName.text, txtFolderPath.text)
+                // Once moved, the name field holds "File moved": open the folder without selecting a file.
+                openFolderExternal(if (fileMoved) null else txtFileName.text, txtFolderPath.text)
                 dispose()
             } catch (e: Exception) {
                 Logger.error(e)
@@ -107,6 +112,7 @@ class DownloadCompleteWindow : JFrame() {
      * target does the move; on another disk it may only copy, and the original is deliberately never deleted here.
      */
     private var downloadedFile = File("")
+    private var fileMoved = false
 
     private val btnDrag = footerIconButton(RemixIcon.DRAG_DROP_FILL, text("CD_DRAG_TO_MOVE")) {}.apply {
         transferHandler = FileDragHandler()
@@ -151,12 +157,15 @@ class DownloadCompleteWindow : JFrame() {
 
     /** What the window shows no longer points at the file, so stop offering what needs it. */
     private fun showMoved() {
+        fileMoved = true
         txtFileName.text = text("CD_FILE_MOVED")
         txtFileName.toolTipText = null
         txtFileName.caretPosition = 0
         btnCopyFileName.isEnabled = false
         btnVerify.isEnabled = false
         btnDrag.isEnabled = false
+        btnOpenFile.isEnabled = false
+        rootPane.defaultButton = btnOpenFolder
     }
 
     /** A single file as `javaFileListFlavor`; AWT offers it to native targets as a file drop (`text/uri-list` on Linux). */
@@ -200,6 +209,7 @@ class DownloadCompleteWindow : JFrame() {
     private fun copyButton(source: JTextField) = JButton(
         createIcon(RemixIcon.FILE_COPY_LINE, 16, mutedFg)
     ).apply {
+        disabledIcon = faded(icon)
         putClientProperty("JButton.buttonType", "toolBarButton")
         putClientProperty("JButton.squareSize", true)
         toolTipText = text("CTX_COPY")
@@ -232,11 +242,28 @@ class DownloadCompleteWindow : JFrame() {
             putClientProperty("JButton.buttonType", "toolBarButton")
             putClientProperty("JButton.squareSize", true)
             rolloverIcon = createIcon(icon, 18, accent)
+            disabledIcon = faded(this.icon)
             toolTipText = tooltip
             isFocusable = false
             cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
             addActionListener { action() }
         }
+
+    /**
+     * A disabled [xdm.app.utils.FontIcon] paints in `Label.disabledForeground`, the muted color these buttons
+     * already use, so a disabled button would look unchanged: fade it instead.
+     */
+    private fun faded(icon: Icon) = object : Icon by icon {
+        override fun paintIcon(c: Component?, g: Graphics, x: Int, y: Int) {
+            val g2 = g.create() as Graphics2D
+            try {
+                g2.composite = AlphaComposite.SrcOver.derive(0.4f)
+                icon.paintIcon(c, g2, x, y)
+            } finally {
+                g2.dispose()
+            }
+        }
+    }
 
     private fun caption(key: String) = JLabel(text(key)).apply {
         foreground = mutedFg
@@ -341,7 +368,7 @@ class DownloadCompleteWindow : JFrame() {
 
         addWindowListener(object : WindowAdapter() {
             override fun windowActivated(e: WindowEvent) {
-                btnOpenFile.requestFocusInWindow()
+                rootPane.defaultButton?.requestFocusInWindow()
             }
 
             override fun windowClosed(e: WindowEvent) {
