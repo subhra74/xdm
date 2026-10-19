@@ -1,13 +1,17 @@
 package xdm.app.ui.screens
 
 import xdm.app.AppContext
+import xdm.app.I8N.text
+import xdm.app.ui.components.AppTheme
 import xdm.app.update.UpdateChecker
+import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
+import xdm.app.utils.createIcon
 import xdm.app.utils.logoIcon
+import xdm.app.utils.openInDefaultBrowser
 import xdm.app.utils.px
 import xdm.app.utils.scaledInsets
 import java.awt.*
-import javax.net.ssl.SSLContext
 import javax.swing.*
 
 class AboutDialog(owner: Window?) : JDialog(owner) {
@@ -58,26 +62,15 @@ class AboutDialog(owner: Window?) : JDialog(owner) {
             })
         }
 
-        val osName = System.getProperty("os.name") ?: ""
-        val osVersion = System.getProperty("os.version") ?: ""
-        val javaVersion = System.getProperty("java.version") ?: ""
-
-        val osInfo = JLabel("$osName $osVersion").apply {
+        val followSubtitle = JLabel(text("FOLLOW_SUBTITLE")).apply {
             font = font.deriveFont(Font.PLAIN, 12f.px)
             foreground = UIManager.getColor("Label.disabledForeground")
             horizontalAlignment = SwingConstants.CENTER
         }
 
-        val javaInfo = JLabel("Java $javaVersion").apply {
-            font = font.deriveFont(Font.PLAIN, 12f.px)
-            foreground = UIManager.getColor("Label.disabledForeground")
-            horizontalAlignment = SwingConstants.CENTER
-        }
-
-        val tlsInfo = JLabel(tlsStatus()).apply {
-            font = font.deriveFont(Font.PLAIN, 12f.px)
-            foreground = UIManager.getColor("Label.disabledForeground")
-            horizontalAlignment = SwingConstants.CENTER
+        val followIcons = JPanel(FlowLayout(FlowLayout.CENTER, 14.px, 0)).apply {
+            isOpaque = false
+            FOLLOW_LINKS.forEach { add(followIcon(it)) }
         }
 
         val gc = GridBagConstraints().apply {
@@ -91,23 +84,46 @@ class AboutDialog(owner: Window?) : JDialog(owner) {
         panel.add(logoLabel, gc)
         panel.add(appName, gc)
         panel.add(copyright, gc)
-        panel.add(website, gc)
-
-//        val sep = JSeparator().apply { maximumSize = Dimension(Int.MAX_VALUE, 1) }
-//        panel.add(sep, gc)
-
-        panel.add(osInfo, gc)
-        panel.add(javaInfo, gc)
-        panel.add(tlsInfo, gc)
+        panel.add(followSubtitle, gc.apply { insets = scaledInsets(14, 0, 0, 0) })
+        panel.add(followIcons, gc.apply { insets = scaledInsets(10, 0, 14, 0) })
+        panel.add(website, gc.apply { insets = scaledInsets(6, 0, 6, 0) })
 
         contentPane.add(panel)
         //pack()
         setLocationRelativeTo(owner)
     }
 
-    /** The JSSE provider that handles TLS (the JDK's SunJSSE unless something else was installed). */
-    private fun tlsStatus(): String = runCatching {
-        val provider = SSLContext.getInstance("TLS").provider
-        "TLS: ${provider.name} ${provider.versionStr}"
-    }.getOrDefault("TLS: unavailable")
+    /** A brand icon that opens [link] in the browser; muted, and in the accent color on hover. */
+    private fun followIcon(link: FollowLink): JLabel {
+        val normal = createIcon(link.icon, 18, UIManager.getColor("Label.disabledForeground"))
+        val hover = createIcon(link.icon, 18, AppTheme.accent)
+        return JLabel(normal).apply {
+            toolTipText = link.name
+            cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+            addMouseListener(object : java.awt.event.MouseAdapter() {
+                override fun mouseClicked(e: java.awt.event.MouseEvent) {
+                    if (SwingUtilities.isLeftMouseButton(e)) openInDefaultBrowser(link.url)
+                }
+
+                override fun mouseEntered(e: java.awt.event.MouseEvent) {
+                    icon = hover
+                }
+
+                override fun mouseExited(e: java.awt.event.MouseEvent) {
+                    icon = normal
+                }
+            })
+        }
+    }
+
+    private class FollowLink(val name: String, val icon: RemixIcon, val url: String)
+
+    private companion object {
+        val FOLLOW_LINKS = listOf(
+            FollowLink("GitHub", RemixIcon.GITHUB_FILL, "https://github.com/subhra74"),
+            FollowLink("YouTube", RemixIcon.YOUTUBE_FILL, "https://www.youtube.com/@subhra74"),
+            FollowLink("X", RemixIcon.TWITTER_X_FILL, "https://x.com/subhra74"),
+            FollowLink("LinkedIn", RemixIcon.LINKEDIN_BOX_FILL, "https://www.linkedin.com/in/subhra74"),
+        )
+    }
 }

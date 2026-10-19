@@ -1,21 +1,28 @@
-# Support XDM
+# Stay in touch
 
 XDM is free and open source, and it stays that way. No ads, no paid tiers, no donations needed.
-If XDM saves you time, here are three small things that really help keep it going:
+If XDM saves you time, here are a few small things that really help keep it going.
 
-## ⭐ 1. Star the repository
+## ⭐ Star XDM on GitHub
 
-Click **Star** at the top of the [XDM repository](https://github.com/subhra74/xdm).
-It takes two seconds, and it helps more people find XDM.
+This helps the most. Click **Star** at the top of the [XDM repository](https://github.com/subhra74/xdm).
+It takes two seconds, and every star helps more people find XDM.
 
-## 🎬 2. Watch the XDM video on YouTube
+You'll need a GitHub account to star. It's free, and you only need to sign up once.
 
-*Video coming soon.*
+## 🎬 Subscribe on YouTube
 
-## 💬 3. Leave a comment
-
-Once the video is up, leave a comment under it: what you use XDM for, what you like, or what you'd like to see next.
+Subscribe on YouTube for XDM videos and tips. *Channel link coming soon.*
+Once videos are up, leave a comment under one: what you use XDM for, what you like, or what you'd like to see next.
 Hearing from users is what keeps XDM's development going.
+
+## 👋 Follow along
+
+Updates, news, and the occasional look behind the scenes:
+
+- X: *coming soon*
+- LinkedIn: *coming soon*
+- GitHub: *coming soon*
 
 ---
 

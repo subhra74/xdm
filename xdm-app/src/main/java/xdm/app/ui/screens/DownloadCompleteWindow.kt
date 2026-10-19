@@ -10,6 +10,7 @@ import xdm.app.utils.openFileExternal
 import xdm.app.utils.openFolderExternal
 import xdm.app.utils.px
 import xdm.app.utils.scaledInsets
+import xdm.app.utils.windowIconImages
 import xdm.core.checksum.ChecksumSource
 import xdm.core.util.FormatHelper.formatSize
 import xdm.core.util.Logger
@@ -23,8 +24,13 @@ import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import java.awt.Insets
 import java.awt.Toolkit
+import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.StringSelection
+import java.awt.datatransfer.Transferable
+import java.awt.datatransfer.UnsupportedFlavorException
 import java.io.File
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import javax.swing.BorderFactory
@@ -32,14 +38,15 @@ import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.JButton
 import javax.swing.JComponent
-import javax.swing.JDialog
+import javax.swing.JFrame
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JTextField
 import javax.swing.Timer
+import javax.swing.TransferHandler
 import javax.swing.UIManager
 
-class DownloadCompleteWindow : JDialog() {
+class DownloadCompleteWindow : JFrame() {
 
     private val accent: Color = UIManager.getColor("Component.focusColor")
         ?: UIManager.getColor("ProgressBar.foreground")
@@ -52,6 +59,7 @@ class DownloadCompleteWindow : JDialog() {
 
     private val txtFolderPath = borderlessField()
     private val txtFileName = borderlessField()
+    private val btnCopyFileName = copyButton(txtFileName)
     private val lblFileSize = JLabel("---").apply {
         foreground = mutedFg
         alignmentX = Component.LEFT_ALIGNMENT
@@ -94,9 +102,80 @@ class DownloadCompleteWindow : JDialog() {
         dispose()
     }.apply { isVisible = false }
 
+    /**
+     * Drag handle: dropping it on a folder in Explorer, Finder or a file manager moves the file there. The drop
+     * target does the move; on another disk it may only copy, and the original is deliberately never deleted here.
+     */
+    private var downloadedFile = File("")
+
+    private val btnDrag = footerIconButton(RemixIcon.DRAG_DROP_FILL, text("CD_DRAG_TO_MOVE")) {}.apply {
+        transferHandler = FileDragHandler()
+        cursor = Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR)
+        val dragStarter = object : MouseAdapter() {
+            private var started = false
+
+            override fun mousePressed(e: MouseEvent) {
+                started = false
+            }
+
+            override fun mouseDragged(e: MouseEvent) {
+                // Swing still delivers mouse events to a disabled button.
+                if (started || !isEnabled) return
+                started = true
+                transferHandler.exportAsDrag(e.component as JComponent, e, TransferHandler.MOVE)
+            }
+        }
+        addMouseListener(dragStarter)
+        addMouseMotionListener(dragStarter)
+    }
+
+    private inner class FileDragHandler : TransferHandler() {
+        override fun getSourceActions(c: JComponent) = MOVE
+
+        override fun createTransferable(c: JComponent): Transferable? =
+            if (downloadedFile.exists()) FileTransferable(downloadedFile) else null
+
+        /**
+         * The file is gone only if the target really moved it: a copy to another disk leaves it, and nothing
+         * changes. Checked again a moment later in case the target (e.g. Finder) moves after the drop returns.
+         */
+        override fun exportDone(source: JComponent, data: Transferable?, action: Int) {
+            if (data == null || action != MOVE) return
+            if (!downloadedFile.exists()) {
+                showMoved()
+            } else {
+                Timer(1000) { if (!downloadedFile.exists()) showMoved() }.apply { isRepeats = false }.start()
+            }
+        }
+    }
+
+    /** What the window shows no longer points at the file, so stop offering what needs it. */
+    private fun showMoved() {
+        txtFileName.text = text("CD_FILE_MOVED")
+        txtFileName.toolTipText = null
+        txtFileName.caretPosition = 0
+        btnCopyFileName.isEnabled = false
+        btnVerify.isEnabled = false
+        btnDrag.isEnabled = false
+    }
+
+    /** A single file as `javaFileListFlavor`; AWT offers it to native targets as a file drop (`text/uri-list` on Linux). */
+    private class FileTransferable(private val file: File) : Transferable {
+        override fun getTransferDataFlavors() = arrayOf(DataFlavor.javaFileListFlavor)
+
+        override fun isDataFlavorSupported(flavor: DataFlavor) = flavor == DataFlavor.javaFileListFlavor
+
+        override fun getTransferData(flavor: DataFlavor): Any {
+            if (!isDataFlavorSupported(flavor)) throw UnsupportedFlavorException(flavor)
+            return listOf(file)
+        }
+    }
+
     fun setDetails(file: String, folder: String, fileSize: Long, checksumSource: ChecksumSource?) {
         this.checksumSource = checksumSource
         btnVerify.isVisible = checksumSource != null
+        downloadedFile = File(folder, file)
+        btnDrag.isVisible = downloadedFile.exists()
         fitToContent()
         txtFolderPath.text = folder
         txtFileName.text = file
@@ -171,7 +250,7 @@ class DownloadCompleteWindow : JDialog() {
             putClientProperty("FlatLaf.style", "arc: 12")
         }
 
-        fun row(gridY: Int, captionKey: String, field: JTextField, top: Int) {
+        fun row(gridY: Int, captionKey: String, field: JTextField, copy: JButton, top: Int) {
             card.add(caption(captionKey), GridBagConstraints().apply {
                 gridx = 0; gridy = gridY; anchor = GridBagConstraints.WEST
                 insets = Insets(top.px, 0, 0, 0)
@@ -183,14 +262,14 @@ class DownloadCompleteWindow : JDialog() {
                 weightx = 1.0
                 insets = scaledInsets(1, 0, 0, 8)
             })
-            card.add(copyButton(field), GridBagConstraints().apply {
+            card.add(copy, GridBagConstraints().apply {
                 gridx = 1; gridy = gridY + 1; gridheight = 1
                 anchor = GridBagConstraints.EAST
             })
         }
 
-        row(0, "ND_FILE", txtFileName, 0)
-        row(2, "CD_LOC", txtFolderPath, 6)
+        row(0, "ND_FILE", txtFileName, btnCopyFileName, 0)
+        row(2, "CD_LOC", txtFolderPath, copyButton(txtFolderPath), 6)
         return card
     }
 
@@ -201,6 +280,8 @@ class DownloadCompleteWindow : JDialog() {
         // until the user clicks this one.
         isAutoRequestFocus = false
         title = text("CD_TITLE")
+        // A top-level frame (so it can be minimized) with its own taskbar button: without this it shows Java's icon.
+        iconImages = windowIconImages
         defaultCloseOperation = DISPOSE_ON_CLOSE
 
         // Compact header: icon on the left, title and size stacked beside it.
@@ -236,6 +317,7 @@ class DownloadCompleteWindow : JDialog() {
         val footer = JPanel(BorderLayout()).apply {
             border = ScaledEmptyBorder(0, 16, 14, 16)
             add(Box.createHorizontalBox().apply {
+                add(btnDrag)
                 add(btnVerify)
                 add(btnSkipNotification)
             }, BorderLayout.WEST)
