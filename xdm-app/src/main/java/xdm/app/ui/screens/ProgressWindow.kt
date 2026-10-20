@@ -117,11 +117,14 @@ class ProgressWindow(val id: Long) : JFrame() {
         } else {
             textBuf.append("---")
         }
-        textBuf.append(" / ")
-        if (size > 0) {
-            textBuf.append(formatSize(size.toDouble()))
-        } else {
-            textBuf.append("---")
+        // A batch total only counts the sizes known so far, so it can fall behind what is downloaded
+        if (files == null || size <= 0 || downloaded <= size) {
+            textBuf.append(" / ")
+            if (size > 0) {
+                textBuf.append(formatSize(size.toDouble()))
+            } else {
+                textBuf.append("---")
+            }
         }
         lblStat2.text = textBuf.toString()
         if (speed > 0) {

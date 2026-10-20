@@ -149,7 +149,9 @@ class BatchDownloadDialog(owner: Window?, private val request: BatchRequest) : J
     init {
         title = text("MENU_BATCH_DOWNLOAD")
         defaultCloseOperation = DISPOSE_ON_CLOSE
-        isModal = true
+        // Not modal: a modal dialog blocks every other window, including the progress window it starts
+        // and new-download windows sent by the browser while it is open.
+        isModal = false
         initUI()
         fillFolders()
         val asOne = if (request.fromBrowser) AppContext.config.batchAsOneFromBrowser

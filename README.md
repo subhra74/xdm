@@ -41,6 +41,12 @@ Wondering why you'd still want a download manager on a fast connection? Read
 > [!NOTE]
 > As of 2026 XDM is being rebuilt and is in **active development**.
 
+## 🎥 Video
+
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=fZ1tZY6RbKc"><img src="https://img.youtube.com/vi/fZ1tZY6RbKc/hqdefault.jpg" width="560" alt="Watch the XDM video on YouTube"/></a>
+</p>
+
 ## 📸 Screenshots
 
 | Main window | New download | Download progress |

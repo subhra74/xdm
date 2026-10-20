@@ -310,7 +310,10 @@ class AppInstance : IAppInstance {
     }
 
     override fun showProgressWindow(id: Long, fileName: String) {
-        runOnUIThread {
+        // Always deferred, even on the EDT: a download started from a dialog's action would otherwise
+        // show its window before that dialog closes, and on Windows closing it then activates the main
+        // window over the new progress window (and a modal dialog would block the window meanwhile).
+        SwingUtilities.invokeLater {
             var prgWnd = prgWndMap[id]
             if (prgWnd != null) {
                 prgWnd.isVisible = true
@@ -322,6 +325,7 @@ class AppInstance : IAppInstance {
                 }
                 prgWndMap[id] = prgWnd
             }
+            prgWnd.toFront()
         }
     }
 

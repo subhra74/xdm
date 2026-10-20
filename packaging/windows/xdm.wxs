@@ -152,6 +152,16 @@
         <RemoveFile Id="OldStartMenuShortcut" Name="Xtreme Download Manager.lnk" On="install" />
         <RegistryValue Root="HKMU" Key="Software\XDM" Name="Installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
+      <!-- [ProductCode] is written into the shortcut at install time. Every build has a new ProductCode, but the
+           component GUID is shared across upgrades, so the new install rewrites the shortcut and the old version's
+           removal leaves it in place. msiexec /x works without elevation for a per-user install. -->
+      <Component Id="UninstallShortcut" Directory="ProgramMenuFolder">
+        <Shortcut Id="UninstallShortcut" Name="Uninstall Xtreme Download Manager"
+                  Description="Uninstall Xtreme Download Manager"
+                  Target="[System64Folder]msiexec.exe" Arguments="/x [ProductCode]" />
+        <RegistryValue Root="HKMU" Key="Software\XDM" Name="UninstallShortcut" Type="integer" Value="1"
+                       KeyPath="yes" />
+      </Component>
       <Component Id="DesktopShortcut" Directory="DesktopFolder">
         <Shortcut Id="DesktopShortcut" Name="Xtreme Download Manager" Description="Xtreme Download Manager"
                   Target="[INSTALLFOLDER]xdm-app.exe" WorkingDirectory="INSTALLFOLDER" />
