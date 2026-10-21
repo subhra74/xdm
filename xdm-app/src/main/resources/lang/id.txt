@@ -1,3 +1,4 @@
+LANGUAGE_NAME=Indonesian (Bahasa Indonesia)
 CAT_ALL=Semua Unduhan
 CAT_DOCUMENTS=Dokumen
 CAT_COMPRESSED=Kompresi

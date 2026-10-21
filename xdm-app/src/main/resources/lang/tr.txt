@@ -1,3 +1,4 @@
+LANGUAGE_NAME=Turkish(Türkçe)
 CAT_ALL=Tüm İndirmeler
 CAT_DOCUMENTS=Belgeler
 CAT_COMPRESSED=Sıkıştırılmış

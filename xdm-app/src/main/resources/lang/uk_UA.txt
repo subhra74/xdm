@@ -1,3 +1,4 @@
+LANGUAGE_NAME=Ukrainian(Українська)
 
 CAT_ALL=Усі завантаження
 CAT_DOCUMENTS=Документи

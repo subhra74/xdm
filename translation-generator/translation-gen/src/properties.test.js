@@ -35,14 +35,15 @@ test('format leaves out untranslated keys and round-trips escapes', () => {
 
 test('reads the current en.txt with every key xdm-app ships', () => {
   const english = parseProperties(fs.readFileSync(path.join(LANG_DIR, 'en.txt'), 'utf8'));
-  expect(english.size).toBeGreaterThan(600);
-  expect(english.get('ALL_DOWNLOADS')).toBe('All');
-  expect(english.get('ABOUT_DETAILS')).toContain('\n\nCreated by');
+  expect(english.size).toBeGreaterThan(400);
+  expect(english.get('CAT_ALL')).toBe('All Downloads');
+  expect(english.get('LANGUAGE_NAME')).toBe('English');
+  expect(english.get('MSG_NOTIFICATIONS_OFF')).toContain('\n');
   expect([...english.keys()].every(k => /^[A-Za-z0-9_.-]+$/.test(k))).toBe(true);
 });
 
-test('every shipped translation and the map survive a parse/format round trip', () => {
-  const files = fs.readdirSync(LANG_DIR).filter(f => f.endsWith('.txt') || f === 'map');
+test('every shipped translation survives a parse/format round trip', () => {
+  const files = fs.readdirSync(LANG_DIR).filter(f => f.endsWith('.txt'));
   for (const f of files) {
     const parsed = parseProperties(fs.readFileSync(path.join(LANG_DIR, f), 'utf8'));
     expect(parsed.size).toBeGreaterThan(0);

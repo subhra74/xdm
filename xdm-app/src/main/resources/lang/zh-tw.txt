@@ -1,3 +1,4 @@
+LANGUAGE_NAME=Chinese Traditional (繁體中文)
 CAT_ALL=所有下載
 CAT_DOCUMENTS=文件
 CAT_COMPRESSED=壓縮檔案

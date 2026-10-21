@@ -1,3 +1,4 @@
+LANGUAGE_NAME=Traditional Chinese - Taiwan (繁體中文(台灣))
 CAT_ALL=所有下載
 CAT_DOCUMENTS=文件
 CAT_COMPRESSED=壓縮檔

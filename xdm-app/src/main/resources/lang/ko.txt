@@ -1,3 +1,4 @@
+LANGUAGE_NAME=Korea (한국어)
 
 CAT_ALL=모든 다운로드
 CAT_DOCUMENTS=문서

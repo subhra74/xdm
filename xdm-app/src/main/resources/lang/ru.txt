@@ -1,3 +1,4 @@
+LANGUAGE_NAME=Russian(Rусский)
 CAT_ALL=Все загрузки
 CAT_DOCUMENTS=Документы
 CAT_COMPRESSED=Сжатые

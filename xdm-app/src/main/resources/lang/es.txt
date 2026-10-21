@@ -1,3 +1,4 @@
+LANGUAGE_NAME=Spanish (Español)
 
 CAT_ALL=Todas las descargas
 CAT_DOCUMENTS=Documentos

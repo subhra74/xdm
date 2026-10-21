@@ -1,3 +1,4 @@
+LANGUAGE_NAME=Romanian (ROMÂNĂ)
 
 CAT_ALL=Toate descărcările
 CAT_DOCUMENTS=Documente

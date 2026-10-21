@@ -1,3 +1,4 @@
+LANGUAGE_NAME=French(Français)
 
 CAT_ALL=Tous les téléchargements
 CAT_DOCUMENTS=Documents

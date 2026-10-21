@@ -1,3 +1,4 @@
+LANGUAGE_NAME=Farsi/Persian (فارسی)
 
 CAT_ALL=همه بارگیری‌ها
 CAT_DOCUMENTS = اسناد

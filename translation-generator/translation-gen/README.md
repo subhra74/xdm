@@ -4,9 +4,10 @@ A small web page for translating XDM's UI texts. It lists every English text fro
 `xdm-app/src/main/resources/lang/en.txt` and writes a `<code>.txt` file in the same
 `java.util.Properties` format (UTF-8) that `xdm.app.I8N` loads.
 
-- **Start from** an existing translation (from `lang/map`) to fill in only what's missing, or open a
+- **Start from** an existing translation (every `lang/*.txt`) to fill in only what's missing, or open a
   `.txt` you saved earlier. "Show only untranslated texts" hides finished entries.
-- The language code is the file name (`de`, `pt-br`, `sr_lat`, ...). A new language also needs a line in `lang/map`.
+- The language code is the file name (`de`, `pt-br`, `sr_lat`, ...). Fill in `LANGUAGE_NAME`: it is the name XDM lists in Settings.
+- Most translators should use Weblate instead; this page is the no-sign-up fallback. See [TRANSLATING.md](../../TRANSLATING.md).
 - Untranslated texts are left out of the file. I8N overlays the translation on `en.txt`, so they show in English.
 
 ```bash

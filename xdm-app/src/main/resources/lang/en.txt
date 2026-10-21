@@ -1,3 +1,5 @@
+# The name of this language as listed in Settings, e.g. "Deutsch (German)"
+LANGUAGE_NAME=English
 
 MENU_HELP_SUP=Help and Support
 MENU_BATCH_DOWNLOAD=Batch download
@@ -172,6 +174,9 @@ MSG_RESTORE=Restore Window
 MSG_LANG1=Language
 MSG_LANG2=Please note changes will take effect next time you start XDM
 MSG_LANG_SUB=The language XDM's menus, dialogs and labels are shown in
+LANG_FOLDER=Translation files
+LANG_FOLDER_SUB=Files placed in this folder are used instead of the built-in translations. Restart XDM to see them
+LANG_FOLDER_OPEN=Open folder
 MSG_THEME=Theme
 THEME_DARK=Dark
 THEME_LIGHT=Light

@@ -1,3 +1,4 @@
+LANGUAGE_NAME=Serbian - Latin (Srpski (latinica))
 CAT_ALL=Sva preuzimanja
 CAT_DOCUMENTS=Dokumenta
 CAT_COMPRESSED=Zapakovano

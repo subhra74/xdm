@@ -1,3 +1,4 @@
+LANGUAGE_NAME=Italian
 
 CAT_ALL=Tutti i download
 CAT_DOCUMENTS=Documenti

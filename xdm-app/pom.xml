@@ -117,6 +117,34 @@
                     <useSystemClassLoader>false</useSystemClassLoader>
                 </configuration>
             </plugin>
+            <!--
+              Writes lang/index (code=LANGUAGE_NAME per lang/*.txt) into the build output, so the
+              Settings language list reads one file instead of every translation (docs/i18n.md).
+              Run with the JDK 25 toolchain's java as a single-file source program.
+            -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <id>lang-index</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>java</executable>
+                            <toolchain>jdk</toolchain>
+                            <arguments>
+                                <argument>${project.basedir}/src/build/LangIndex.java</argument>
+                                <argument>${project.basedir}/src/main/resources/lang</argument>
+                                <argument>${project.build.outputDirectory}/lang/index</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>

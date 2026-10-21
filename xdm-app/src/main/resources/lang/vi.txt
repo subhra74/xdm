@@ -1,3 +1,4 @@
+LANGUAGE_NAME=Vietnamese
 
 CAT_ALL=Tất cả tải về
 CAT_DOCUMENTS=Tài liệu

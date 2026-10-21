@@ -1,3 +1,4 @@
+LANGUAGE_NAME=Czech
 
 CAT_ALL=Všechna stahování
 CAT_DOCUMENTS=Dokumenty

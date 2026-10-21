@@ -6,14 +6,12 @@ import xdm.app.I8N
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.mac.MacNotifications
 import xdm.app.utils.offerMacNotificationSettings
+import xdm.app.utils.openFolderExternal
+import xdm.core.util.Logger
 import xdm.app.utils.px
 import xdm.app.utils.scaledInsets
 import java.awt.Dimension
 import java.awt.Insets
-import java.io.FileInputStream
-import java.io.InputStreamReader
-import java.nio.charset.StandardCharsets
-import java.util.Properties
 import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.DefaultComboBoxModel
@@ -51,7 +49,7 @@ class GeneralPanel : SettingsPanel() {
         preferredSize = Dimension(190.px, preferredSize.height)
         maximumSize = preferredSize
     }
-    private val langProp = Properties()
+    private val languages = I8N.languages()
 
     init {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -86,19 +84,17 @@ class GeneralPanel : SettingsPanel() {
         )
         add(settingsGap())
 
-        langProp.load(
-            InputStreamReader(
-                GeneralPanel::class.java.getResourceAsStream("/lang/map") ?: FileInputStream("lang/map"),
-                StandardCharsets.UTF_8
-            )
-        )
-        langModel.addAll(langProp.values.map { it.toString() })
+        langModel.addAll(languages.map { it.name })
 
         add(
             settingsSection(
                 I8N.text("SETTINGS_SEC_APPEARANCE"),
                 settingsFullRow(I8N.text("MSG_THEME"), null, optTheme),
                 settingsRow(I8N.text("MSG_LANG1"), I8N.text("MSG_LANG_SUB"), cmbLang),
+                settingsRow(
+                    I8N.text("LANG_FOLDER"), I8N.text("LANG_FOLDER_SUB"),
+                    settingsButton(I8N.text("LANG_FOLDER_OPEN"), ::openTranslationFolder)
+                ),
             )
         )
 
@@ -112,7 +108,7 @@ class GeneralPanel : SettingsPanel() {
         tglOverwrite.isSelected = config.overwriteExistingFiles
         optOnComplete.selected = config.downloadCompleteNotification
         optTheme.selected = config.theme.lowercase().takeIf { themeCodes.contains(it) } ?: "dark"
-        langProp[config.lang]?.let { cmbLang.selectedItem = it }
+        languages.indexOfFirst { it.code == config.lang }.takeIf { it >= 0 }?.let { cmbLang.selectedIndex = it }
     }
 
     fun save() {
@@ -122,12 +118,14 @@ class GeneralPanel : SettingsPanel() {
         config.overwriteExistingFiles = tglOverwrite.isSelected
         config.downloadCompleteNotification = optOnComplete.selected
         config.theme = optTheme.selected
-        for (key in langProp.keys) {
-            if (langProp[key] == cmbLang.selectedItem) {
-                config.lang = key as String
-                break
-            }
-        }
+        languages.getOrNull(cmbLang.selectedIndex)?.let { config.lang = it.code }
+    }
+
+    /** Translators drop their `<code>.txt` here to preview it (docs/i18n.md); created on first use. */
+    private fun openTranslationFolder() {
+        val dir = I8N.overrideDir
+        dir.mkdirs()
+        runCatching { openFolderExternal(null, dir.path) }.onFailure { Logger.error(it) }
     }
 
     override fun getInsets(): Insets = scaledInsets(18, 24, 24, 24)

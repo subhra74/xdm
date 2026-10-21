@@ -1,0 +1,54 @@
+name: Translations
+
+# Checks the language files (docs/i18n.md): valid UTF-8 properties, only keys en.txt has, no duplicates,
+# the same placeholders as English, a LANGUAGE_NAME. A Weblate PR that passes can be merged as is.
+on:
+  pull_request:
+    branches: [ "master" ]
+    paths:
+      - "xdm-app/src/main/resources/lang/**"
+      - "xdm-app/src/main/java/xdm/app/I8N.kt"
+      - "xdm-app/src/test/java/xdm/LanguageFilesTest.kt"
+      - "xdm-app/src/build/LangIndex.java"
+      - ".github/workflows/translations.yml"
+  push:
+    branches: [ "master" ]
+    paths:
+      - "xdm-app/src/main/resources/lang/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      # Same as build.yml: the root pom selects JDK 25 through maven-toolchains-plugin.
+      - name: Write Maven toolchains.xml
+        run: |
+          mkdir -p ~/.m2
+          cat > ~/.m2/toolchains.xml <<XML
+          <toolchains>
+            <toolchain>
+              <type>jdk</type>
+              <provides><version>25</version></provides>
+              <configuration><jdkHome>${JAVA_HOME}</jdkHome></configuration>
+            </toolchain>
+          </toolchains>
+          XML
+
+      - name: Check language files
+        run: >
+          mvn -B -pl xdm-app -am test -DskipTests=false
+          -Dtest='LanguageFilesTest,I8NTest' -Dsurefire.failIfNoSpecifiedTests=false

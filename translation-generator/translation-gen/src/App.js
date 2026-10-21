@@ -50,8 +50,9 @@ function App() {
           dict[keyName] = { englishText, text: "" };
         });
         setMappings(dict);
-        const map = await fetchProperties("map");
-        setLanguages([...map].filter(([code]) => code !== "en"));
+        const response = await fetch(`${LANG_URL}/languages.json`);
+        if (!response.ok) throw new Error(`Could not load languages.json (${response.status})`);
+        setLanguages((await response.json()).filter(([code]) => code !== "en"));
       } catch (e) {
         setError(e.message);
       }

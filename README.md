@@ -100,8 +100,9 @@ java -jar xdm-app/target/xdm-app.jar
 
 ## 🌍 Translations
 
-Want XDM in your language? Translations are welcome — see
-[Submitting translations for XDM](https://github.com/subhra74/xdm/wiki/Submitting-translations-for-XDM).
+Want XDM in your language? Translations are welcome. Translate in the browser on
+[Weblate](https://hosted.weblate.org/projects/xdm/), and preview your work in XDM before it ships. See
+[TRANSLATING.md](TRANSLATING.md).
 
 ## 🗑️ Uninstalling
 

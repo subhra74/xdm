@@ -1,3 +1,4 @@
+LANGUAGE_NAME=Portuguese Brazil (Português (Brasil))
 CAT_ALL=Todos os downloads
 CAT_DOCUMENTS=Documentos
 CAT_COMPRESSED=Compactos

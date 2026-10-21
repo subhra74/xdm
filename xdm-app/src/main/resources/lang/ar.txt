@@ -1,3 +1,4 @@
+LANGUAGE_NAME=Arabic (العربية)
 CAT_ALL=كل التنزيلات
 CAT_DOCUMENTS=مستندات
 CAT_COMPRESSED=مضغوط

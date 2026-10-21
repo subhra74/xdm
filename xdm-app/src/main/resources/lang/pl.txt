@@ -1,3 +1,4 @@
+LANGUAGE_NAME=Polish
 
 CAT_ALL=Wszystkie pobrania
 CAT_DOCUMENTS=Dokumenty

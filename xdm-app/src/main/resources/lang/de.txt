@@ -1,3 +1,4 @@
+LANGUAGE_NAME=German(Deutsch)
 
 CAT_ALL=Alle Downloads
 CAT_DOCUMENTS=Dokumente

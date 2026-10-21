@@ -1,3 +1,4 @@
+LANGUAGE_NAME=Nepali
 
 CAT_ALL=सबै डाउनलोडहरू
 CAT_DOCUMENTS=कागजात

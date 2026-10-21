@@ -1,3 +1,4 @@
+LANGUAGE_NAME=Serbian Cyrillic (Српски (ћирилица))
 CAT_ALL=Сва преузимања
 CAT_DOCUMENTS=Документа
 CAT_COMPRESSED=Запаковано

@@ -1,3 +1,4 @@
+LANGUAGE_NAME=Malayalam
 CAT_ALL =എല്ലാ ഡൗൺലോഡുകളും
 CAT_DOCUMENTS = രേഖകൾ
 CAT_COMPRESSED =കംപ്രസ് ചെയ്തവ

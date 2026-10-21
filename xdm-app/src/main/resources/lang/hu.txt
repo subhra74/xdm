@@ -1,3 +1,4 @@
+LANGUAGE_NAME=Hungarian
 CAT_ALL=Minden letöltés
 CAT_DOCUMENTS=Dokumentumok
 CAT_COMPRESSED=Tömörített
