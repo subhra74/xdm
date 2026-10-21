@@ -1,0 +1,86 @@
+name: Pages
+
+# Publishes subhra74.github.io/xdm/: the docs/ folder built with Jekyll (as the old "master /docs"
+# setting did), plus the translation generator at /xdm/translate/ (TRANSLATING.md). Rebuilt when a
+# language file changes, so the generator always offers the strings XDM ships.
+#
+# Needs Settings -> Pages -> Source: "GitHub Actions" (docs/i18n.md).
+on:
+  push:
+    branches: [ "master" ]
+    paths:
+      - "docs/**"
+      - "translation-generator/**"
+      - "xdm-app/src/main/resources/lang/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; a newer push replaces a queued one, but a running deploy finishes.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: translation-generator/translation-gen
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: translation-generator/translation-gen/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      # pretest/prebuild run scripts/sync-lang.js: copies lang/*.txt and writes languages.json.
+      - name: Test
+        run: npm test -- --watchAll=false
+        env:
+          CI: true
+
+      - name: Build generator
+        run: npm run build
+        env:
+          PUBLIC_URL: /xdm/translate
+          # As on any runner: CRA fails the build on lint warnings.
+          CI: true
+
+      # The generator goes into docs/translate on the runner only (never committed); Jekyll then
+      # builds docs/ exactly as branch Pages did (why-a-download-manager.md -> .html) and copies
+      # the generator's files unchanged, as they have no front matter.
+      - name: Add generator to the site
+        working-directory: .
+        run: cp -R translation-generator/translation-gen/build docs/translate
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./docs
+          destination: ./_site
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -17,6 +17,9 @@ npm test -- --watchAll=false
 npm run build
 ```
 
+Live at https://subhra74.github.io/xdm/translate/, deployed by `.github/workflows/pages.yml` on every push to
+`master` that changes this folder or `lang/`.
+
 `start`, `build` and `test` first run `scripts/sync-lang.js`, which copies the app's `lang/` folder into
 `public/lang` (git-ignored). That keeps the page in step with the strings the app ships.
 
