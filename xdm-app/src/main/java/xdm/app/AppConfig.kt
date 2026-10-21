@@ -10,6 +10,15 @@ import java.io.File
 import java.net.Authenticator
 import java.net.Proxy
 
+/** How the main download list selects and opens rows (Settings > Appearance). */
+enum class ListSelectionMode {
+    /** Check box tiles, click the title to open. */
+    MODERN,
+
+    /** Click selects, double-click opens, right-click menu, as in a file manager. */
+    CLASSIC,
+}
+
 /** What the app does when a download finishes. */
 enum class DownloadCompleteNotification {
     /** The full [xdm.app.ui.screens.DownloadCompleteWindow] dialog. */
@@ -106,6 +115,7 @@ interface IAppConfig : CoreConfig {
      * XWayland (Advanced settings, next start). On by default. See [xdm.app.utils.WaylandToolkit].
      */
     var nativeWayland: Boolean
+    var listSelectionMode: ListSelectionMode
     fun applyAuthConfig()
 
     /**
@@ -241,6 +251,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var batchAsOneFromBrowser: Boolean = true
     override var batchAsOneFromClipboard: Boolean = false
     override var nativeWayland: Boolean = true
+    override var listSelectionMode: ListSelectionMode = ListSelectionMode.CLASSIC
 
     override fun applyAuthConfig() {
         Authenticator.setDefault(DefaultAuthenticator())
@@ -314,6 +325,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
         out.writeBoolean(batchAsOneFromBrowser)
         out.writeBoolean(batchAsOneFromClipboard)
         out.writeBoolean(nativeWayland)
+        out.writeInt(listSelectionMode.ordinal)
     }
 
     private fun load(input: DataInputStream) {
@@ -421,7 +433,10 @@ class AppConfig(private val configDir: String) : IAppConfig {
         }.isSuccess
         if (!batchRead) return
         // Config written before this field existed: keep the default (on).
-        runCatching { nativeWayland = input.readBoolean() }
+        val waylandRead = runCatching { nativeWayland = input.readBoolean() }.isSuccess
+        if (!waylandRead) return
+        // Config written before this field existed: keep the default (Classic).
+        runCatching { ListSelectionMode.entries[input.readInt()] }.onSuccess { listSelectionMode = it }
     }
 
     private fun writeCategories(out: DataOutputStream, list: List<DownloadCategory>) {

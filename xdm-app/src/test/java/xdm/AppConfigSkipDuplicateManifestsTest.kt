@@ -46,10 +46,10 @@ class AppConfigSkipDuplicateManifestsTest {
             downloadCompleteNotification = DownloadCompleteNotification.NOTIFICATION
         }.save()
         // Drop this boolean and the four written after it (markDownloadedFiles, the batch dialog
-        // modes and nativeWayland), keeping AtomicIO's 8-byte end marker.
+        // modes and nativeWayland) and listSelectionMode, keeping AtomicIO's 8-byte end marker.
         val file = File(dir, AppConfig.CONFIG_FILE)
         val bytes = file.readBytes()
-        file.writeBytes(bytes.copyOf(bytes.size - 13) + "XDM-END!".toByteArray(Charsets.US_ASCII))
+        file.writeBytes(bytes.copyOf(bytes.size - 17) + "XDM-END!".toByteArray(Charsets.US_ASCII))
 
         val config = load()
         assertFalse(config.skipDuplicateManifests, "missing field keeps the default")

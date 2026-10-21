@@ -4,6 +4,7 @@ import xdm.app.AppContext
 import xdm.app.AppContext.app
 import xdm.app.DbRecord
 import xdm.app.I8N.text
+import xdm.app.ListSelectionMode
 import xdm.app.OS
 import xdm.app.XDM_WINDOW_TITLE
 import xdm.app.ui.components.AppMenuHandler
@@ -11,7 +12,11 @@ import xdm.app.ui.components.AppTheme
 import xdm.app.ui.components.AppToolBar
 import xdm.app.ui.components.AutoStartPanel
 import xdm.app.ui.components.FilterListPanel
-import xdm.app.ui.components.MainListView
+import xdm.app.ui.components.ClassicListView
+import xdm.app.ui.components.DownloadListView
+import xdm.app.ui.components.FilterState
+import xdm.app.ui.components.MainListViewFilter
+import xdm.app.ui.components.ModernListView
 import xdm.app.ui.components.UpdatePanel
 import xdm.app.update.UpdateChecker
 import xdm.app.utils.ScaledEmptyBorder
@@ -32,7 +37,10 @@ import javax.swing.event.PopupMenuEvent
 import javax.swing.event.PopupMenuListener
 
 class AppWindow(image: Image) : JFrame(), ActionListener {
-    private val listView = MainListView()
+    private var listView: DownloadListView = createListView(MainListViewFilter(FilterState.All, null, ""))
+    private lateinit var listContainer: JPanel
+    private lateinit var toolbar: AppToolBar
+    private lateinit var filterPanel: FilterListPanel
     private val updatePanel = UpdatePanel()
     private val autoStartPanel = AutoStartPanel()
 
@@ -70,24 +78,30 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
     }
 
     private fun initWindow() {
-        val filterPanel = FilterListPanel(
+        filterPanel = FilterListPanel(
             stateChanged = { listView.filterStateChanged(it) },
             categoryChanged = { listView.filterCategoryChanged(it) }
         )
-        val toolbar = AppToolBar(
+        toolbar = AppToolBar(
             { listView.searchTextChanged(it) },
             this,
             { key, asc -> listView.sort(key, asc) },
-            { filterPanel.reloadCategories() }
+            {
+                filterPanel.reloadCategories()
+                applyListSelectionMode()
+            }
         )
         toolbar.setMultiSelectView(false)
         filterPanel.countsFrom { listView.records }
-        listView.addRowsChangedListener { filterPanel.scheduleRecount() }
-        listView.selectModeCallback = { toolbar.setMultiSelectView(it) }
+        wireListView()
 
+        listContainer = JPanel(BorderLayout()).apply {
+            background = AppTheme.listBackground
+            add(listView.component)
+        }
         val panel = JPanel(BorderLayout(10.px, 0)).apply {
             add(toolbar.component, BorderLayout.NORTH)
-            add(listView.component)
+            add(listContainer)
             border = ScaledEmptyBorder(7, 0, 0, 0)
             background = AppTheme.listBackground
         }
@@ -111,6 +125,38 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
         })
 
         ToolTipManager.sharedInstance().initialDelay = 500
+    }
+
+    private fun createListView(filter: MainListViewFilter): DownloadListView =
+        when (AppContext.config.listSelectionMode) {
+            ListSelectionMode.CLASSIC -> ClassicListView(filter)
+            ListSelectionMode.MODERN -> ModernListView(filter)
+        }
+
+    private fun wireListView() {
+        listView.addRowsChangedListener { filterPanel.scheduleRecount() }
+        listView.bulkSelectionCallback = { toolbar.setMultiSelectView(it) }
+    }
+
+    /**
+     * After Settings is saved: swaps in the other list if the selection mode changed. The new list
+     * keeps the filter and search text; the selection and scroll position start fresh.
+     */
+    private fun applyListSelectionMode() {
+        val wanted = when (AppContext.config.listSelectionMode) {
+            ListSelectionMode.CLASSIC -> ClassicListView::class
+            ListSelectionMode.MODERN -> ModernListView::class
+        }
+        if (wanted.isInstance(listView)) return
+        val old = listView.filter
+        listView = createListView(MainListViewFilter(old.filterState, old.filterCategory, old.searchText))
+        wireListView()
+        toolbar.setMultiSelectView(false)
+        listContainer.removeAll()
+        listContainer.add(listView.component)
+        listContainer.revalidate()
+        listContainer.repaint()
+        filterPanel.scheduleRecount()
     }
 
     fun updateDownloadInView(index: Int) {

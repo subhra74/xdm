@@ -37,6 +37,10 @@ object AppTheme {
     val failedForeground: Color get() = color("XDM.list.failedForeground", "Actions.Red")
     val failedBackground: Color get() = color("XDM.list.failedBackground", "Button.background")
 
+    /** Classic list: the selected and hovered row's card, across the whole row. */
+    val listSelectionBackground: Color get() = color("XDM.list.selectionBackground", "Table.selectionInactiveBackground")
+    val listHoverBackground: Color get() = color("XDM.list.hoverBackground", "XDM.sidebar.hoverBackground")
+
     /** Colors of a download row's round icon tile: [background] fill and [glyph] color. */
     data class Tile(val background: Color, val glyph: Color)
 

@@ -44,10 +44,11 @@ class AppConfigNativeWaylandTest {
             batchAsOneFromClipboard = true
             nativeWayland = false
         }.save()
-        // Drop this boolean, keeping AtomicIO's 8-byte end marker.
+        // Drop this boolean and the int written after it (listSelectionMode), keeping AtomicIO's
+        // 8-byte end marker.
         val file = File(dir, AppConfig.CONFIG_FILE)
         val bytes = file.readBytes()
-        file.writeBytes(bytes.copyOf(bytes.size - 9) + "XDM-END!".toByteArray(Charsets.US_ASCII))
+        file.writeBytes(bytes.copyOf(bytes.size - 13) + "XDM-END!".toByteArray(Charsets.US_ASCII))
 
         val config = load()
         assertTrue(config.nativeWayland, "missing field keeps the default")

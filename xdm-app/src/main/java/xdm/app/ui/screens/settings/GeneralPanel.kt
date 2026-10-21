@@ -3,6 +3,7 @@ package xdm.app.ui.screens.settings
 import xdm.app.AppContext
 import xdm.app.DownloadCompleteNotification
 import xdm.app.I8N
+import xdm.app.ListSelectionMode
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.mac.MacNotifications
 import xdm.app.utils.offerMacNotificationSettings
@@ -41,6 +42,13 @@ class GeneralPanel : SettingsPanel() {
         listOf(
             SettingsOption("dark", I8N.text("THEME_DARK"), RemixIcon.MOON_FILL),
             SettingsOption("light", I8N.text("THEME_LIGHT"), RemixIcon.SUN_FILL),
+        )
+    )
+
+    private val optListMode = SettingsOptionGroup(
+        listOf(
+            SettingsOption(ListSelectionMode.CLASSIC, I8N.text("LIST_MODE_CLASSIC"), RemixIcon.FILE_LIST_2_LINE),
+            SettingsOption(ListSelectionMode.MODERN, I8N.text("LIST_MODE_MODERN"), RemixIcon.CHECKBOX_LINE),
         )
     )
 
@@ -90,6 +98,7 @@ class GeneralPanel : SettingsPanel() {
             settingsSection(
                 I8N.text("SETTINGS_SEC_APPEARANCE"),
                 settingsFullRow(I8N.text("MSG_THEME"), null, optTheme),
+                settingsFullRow(I8N.text("LIST_MODE"), I8N.text("LIST_MODE_SUB"), optListMode),
                 settingsRow(I8N.text("MSG_LANG1"), I8N.text("MSG_LANG_SUB"), cmbLang),
                 settingsRow(
                     I8N.text("LANG_FOLDER"), I8N.text("LANG_FOLDER_SUB"),
@@ -108,6 +117,7 @@ class GeneralPanel : SettingsPanel() {
         tglOverwrite.isSelected = config.overwriteExistingFiles
         optOnComplete.selected = config.downloadCompleteNotification
         optTheme.selected = config.theme.lowercase().takeIf { themeCodes.contains(it) } ?: "dark"
+        optListMode.selected = config.listSelectionMode
         languages.indexOfFirst { it.code == config.lang }.takeIf { it >= 0 }?.let { cmbLang.selectedIndex = it }
     }
 
@@ -118,6 +128,7 @@ class GeneralPanel : SettingsPanel() {
         config.overwriteExistingFiles = tglOverwrite.isSelected
         config.downloadCompleteNotification = optOnComplete.selected
         config.theme = optTheme.selected
+        config.listSelectionMode = optListMode.selected
         languages.getOrNull(cmbLang.selectedIndex)?.let { config.lang = it.code }
     }
 
