@@ -169,7 +169,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var minVideoSize: Long = 1024
     override var lang: String = "en"
     override var theme: String = "dark"
-    override var maxParallelDownloads: Int = 1
+    override var maxParallelDownloads: Int = 3
     override var downloadCompleteNotification: DownloadCompleteNotification = DownloadCompleteNotification.DIALOG
     override var showDownloadCompleteWindow: Boolean
         // No backing field: the old boolean is just a projection of the three-way mode, so a

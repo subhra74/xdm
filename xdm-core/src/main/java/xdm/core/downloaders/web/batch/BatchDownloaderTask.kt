@@ -15,6 +15,7 @@ import xdm.core.network.http.HttpResponse
 import xdm.core.network.http.PoolingHttpClient
 import xdm.core.util.FileUtils
 import xdm.core.util.Logger
+import xdm.core.util.fixExtension
 import xdm.core.util.getExtension
 import xdm.core.util.getFileNameWithoutExtension
 import xdm.core.util.getNameFromContentDisposition
@@ -204,14 +205,15 @@ class BatchDownloaderTask(
         if (file.finalName != null) return
         val item = task.items[file.index]
         var name = item.fileName
-        if (!item.nameFromPage) {
-            val fromServer = FileUtils.sanitizeFileName(getNameFromContentDisposition(response.contentDisposition))
-            if (fromServer != null && !fromServer.equals(name, ignoreCase = true)) {
-                synchronized(takenNames) {
-                    takenNames.remove(name.lowercase())
-                    name = uniqueName(fromServer)
-                    takenNames.add(name.lowercase())
-                }
+        val fromServer = if (item.nameFromPage) null
+        else FileUtils.sanitizeFileName(getNameFromContentDisposition(response.contentDisposition))
+        // A page's, user's or server's name only gets a missing extension; one taken from the URL may lose a wrong one.
+        val wanted = fixExtension(fromServer ?: name, response.contentType, replace = fromServer == null && !item.nameFromPage)
+        if (!wanted.equals(name, ignoreCase = true)) {
+            synchronized(takenNames) {
+                takenNames.remove(name.lowercase())
+                name = uniqueName(wanted)
+                takenNames.add(name.lowercase())
             }
         }
         file.finalName = name

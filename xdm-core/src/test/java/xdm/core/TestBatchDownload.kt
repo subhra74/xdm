@@ -165,6 +165,50 @@ class TestBatchDownload {
     }
 
     @Test
+    fun contentTypeAddsTheMissingExtension() {
+        val jpg = data(3_000, 11)
+        val pdf = data(5_000, 12)
+        server.register("/img", Endpoint(jpg, contentType = "image/jpeg"))
+        server.register("/doc", Endpoint(pdf, contentType = "application/pdf"))
+        server.register("/raw", Endpoint(data(1_000, 13), contentType = "application/octet-stream"))
+        val t = task(8, listOf(item("/img", "img"), item("/doc", "doc"), item("/raw", "raw")))
+
+        run(t)
+
+        val folder = File(t.batchFolder)
+        assertArrayEquals(jpg, File(folder, "img.jpg").readBytes(), "image/jpeg gets .jpg")
+        assertArrayEquals(pdf, File(folder, "doc.pdf").readBytes(), "application/pdf gets .pdf")
+        assertTrue(File(folder, "raw").isFile, "a generic type leaves the name alone")
+        val state = loadBatchState(8, configDir.absolutePath).getOrThrow()
+        assertEquals(listOf("img.jpg", "doc.pdf", "raw"), state.files.map { it.finalName }, "state records the typed names")
+    }
+
+    @Test
+    fun aPageNameKeepsItsExtension() {
+        server.register("/p", Endpoint(data(2_000, 14), contentType = "image/webp"))
+        server.register("/q", Endpoint(data(2_000, 15), contentType = "image/png"))
+        val t = task(9, listOf(item("/p", "cover.jpg", nameFromPage = true), item("/q", "shot", nameFromPage = true)))
+
+        run(t)
+
+        val folder = File(t.batchFolder)
+        assertTrue(File(folder, "cover.jpg").isFile, "a page's extension is never replaced")
+        assertTrue(File(folder, "shot.png").isFile, "a page's name still gets a missing extension")
+    }
+
+    @Test
+    fun aTypedNameNeverOverwritesAnother() {
+        server.register("/a", Endpoint(data(2_000, 16), contentType = "image/png"))
+        server.register("/b", Endpoint(data(2_000, 17)))
+        val t = task(10, listOf(item("/a", "pic"), item("/b", "pic.png")), maxPiece = 1)
+
+        run(t)
+
+        val folder = File(t.batchFolder)
+        assertEquals(setOf("pic.png", "pic_1.png"), folder.list()!!.toSet(), "both files kept under distinct names")
+    }
+
+    @Test
     fun aNameTakenInTheFolderIsNeverOverwritten() {
         server.register("/x", Endpoint(data(4_000, 7)))
         val t = task(6, listOf(item("/x", "x.bin")))

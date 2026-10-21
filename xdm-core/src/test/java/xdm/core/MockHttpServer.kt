@@ -72,6 +72,8 @@ class Endpoint(
      */
     val etag: String? = null,
     val lastModified: String? = null,
+    /** Sent as Content-Type when set. */
+    val contentType: String? = null,
     val plan: (ReqCtx) -> ConnPlan = { ConnPlan() },
 ) {
     val connCount = AtomicInteger(0)
@@ -205,6 +207,7 @@ class MockHttpServer {
             val length = rEnd - rStart + 1
             if (etag != null) ex.responseHeaders.add("ETag", etag)
             if (lastModified != null) ex.responseHeaders.add("Last-Modified", lastModified)
+            ep.contentType?.let { ex.responseHeaders.add("Content-Type", it) }
             if (useRange) {
                 ex.responseHeaders.add("Accept-Ranges", "bytes")
                 ex.responseHeaders.add("Content-Range", "bytes $rStart-$rEnd/$total")
