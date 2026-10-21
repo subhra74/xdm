@@ -171,7 +171,8 @@ jobs:
 
       - name: Sign MSI
         if: github.event_name == 'push' || inputs.release
-        uses: signpath/github-action-submit-signing-request@v3
+        # v3.0, pinned by commit: it gets the SignPath token. The repo's Actions settings allow this action.
+        uses: signpath/github-action-submit-signing-request@f6d04783b4569d051e0c80105fe66e82819d0092
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
