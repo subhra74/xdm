@@ -36,11 +36,30 @@ class TestMimeTypes {
     @Test fun noReplaceOnlyAdds() = assertEquals("a.jpg", fixExtension("a.jpg", "image/webp", replace = false))
     @Test fun noReplaceStillAddsMissing() = assertEquals("a.png", fixExtension("a", "image/png", replace = false))
 
-    // --- Single HTTP downloads keep their naming: the fix is batch-only ---------------------------
-    @Test fun singleHttpNameNotGivenImageExt() =
-        assertEquals("photo", getFileName("http://h/photo?id=1", null, "image/jpeg"), "single HTTP name unchanged")
+    // --- Single HTTP downloads: a missing extension is added, an existing one is never replaced ----
+    @Test fun singleHttpUrlNameGetsImageExt() =
+        assertEquals("photo.jpg", getFileName("http://h/photo?id=1", null, "image/jpeg"), "missing ext added")
 
-    @Test fun singleHttpKeptNameNotGivenPdfExt() =
-        assertEquals("report", getFileName("report", true, "http://h/get?id=1", null, "application/pdf"),
-            "single HTTP kept name unchanged")
+    @Test fun singleHttpDispositionNameGetsPdfExt() = assertEquals(
+        "report.pdf", getFileName("http://h/get?id=1", "attachment; filename=\"report\"", "application/pdf"),
+        "Content-Disposition name without ext gets one",
+    )
+
+    @Test fun singleHttpExistingExtNeverReplaced() =
+        assertEquals("a.jpg", getFileName("http://h/a.jpg", null, "image/webp"), "single HTTP keeps .jpg")
+
+    @Test fun singleHttpHtmlStillGetsHtml() =
+        assertEquals("x.exe.html", getFileName("http://h/x.exe", null, "text/html"), "a login page is still .html")
+
+    @Test fun singleHttpKeptNameGetsPdfExt() =
+        assertEquals("report.pdf", getFileName("report", true, "http://h/get?id=1", null, "application/pdf"),
+            "kept name without ext gets one")
+
+    @Test fun singleHttpKeptNameExtNeverReplaced() =
+        assertEquals("cover.jpg", getFileName("cover.jpg", true, "http://h/c", null, "image/png"),
+            "kept name keeps its ext")
+
+    @Test fun singleHttpKeptNameRedirectedToHtml() =
+        assertEquals("x.exe.html", getFileName("x.exe", true, "http://h/login", null, "text/html"),
+            "a kept name that turned into a page still gets .html")
 }

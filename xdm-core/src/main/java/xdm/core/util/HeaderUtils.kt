@@ -93,7 +93,7 @@ fun getFileName(
     if (newFileName.endsWith(".html") && !oldName.endsWith(".html")) {
         return "$oldName.html"
     }
-    return oldName
+    return fixExtension(oldName, contentType, replace = false)
 }
 
 // Parses the RFC 5987/6266 extended form: filename*=charset'lang'percent-encoded-value
@@ -154,8 +154,12 @@ fun getNameFromContentDisposition(header: String?): String? {
     return null
 }
 
+/**
+ * A single download's name: Content-Disposition's, else the URL's. Like a browser, a name with no
+ * extension gets the one its Content-Type implies; an existing extension is never replaced.
+ */
 fun getFileName(url: String, contentDisposition: String? = null, contentType: String? = null): String {
-    getNameFromContentDisposition(contentDisposition)?.let { return it }
+    getNameFromContentDisposition(contentDisposition)?.let { return fixExtension(it, contentType, replace = false) }
     FileUtils.getFileName(url)?.let {
         if (StringUtils.containsIgnoreCase(contentType, "text/html")) {
             if (it.endsWith(".html")) {
@@ -163,7 +167,7 @@ fun getFileName(url: String, contentDisposition: String? = null, contentType: St
             }
             return "$it.html"
         }
-        return it
+        return fixExtension(it, contentType, replace = false)
     }
     return "FILE"
 }
