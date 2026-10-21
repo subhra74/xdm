@@ -74,7 +74,7 @@ class LanguageFilesTest {
 
     @Test
     fun buildIndexListsEveryFile() {
-        // Written by src/build/LangIndex.java at process-resources, before the tests run.
+        // Written by src/tools/LangIndex.java at process-resources, before the tests run.
         val index = I8N::class.java.getResourceAsStream("/lang/index")
         assertTrue(index != null, "lang/index missing from the build output")
         val listed = Properties().apply { InputStreamReader(index!!, StandardCharsets.UTF_8).use { load(it) } }

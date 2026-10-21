@@ -137,7 +137,7 @@
                             <executable>java</executable>
                             <toolchain>jdk</toolchain>
                             <arguments>
-                                <argument>${project.basedir}/src/build/LangIndex.java</argument>
+                                <argument>${project.basedir}/src/tools/LangIndex.java</argument>
                                 <argument>${project.basedir}/src/main/resources/lang</argument>
                                 <argument>${project.build.outputDirectory}/lang/index</argument>
                             </arguments>

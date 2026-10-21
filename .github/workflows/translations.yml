@@ -9,7 +9,7 @@ on:
       - "xdm-app/src/main/resources/lang/**"
       - "xdm-app/src/main/java/xdm/app/I8N.kt"
       - "xdm-app/src/test/java/xdm/LanguageFilesTest.kt"
-      - "xdm-app/src/build/LangIndex.java"
+      - "xdm-app/src/tools/LangIndex.java"
       - ".github/workflows/translations.yml"
   push:
     branches: [ "master" ]
