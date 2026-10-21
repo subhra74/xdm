@@ -436,6 +436,68 @@ Write-Host ">> jpackage app-image (windows-$Arch, version $AppVersion)"
 & $Jpackage @jpArgs
 if ($LASTEXITCODE -ne 0) { throw 'jpackage failed' }
 
+# One version resource in the launcher. jpackage writes its own (xdm-app.properties) as language neutral
+# (0000) next to the one in Liberica's launcher template (0409, ProductName "Liberica Platform <ver>"), which
+# it leaves in. Windows shows the neutral one, but SignPath read the 0409 one and refused the product name
+# (signpath.md). Every non-neutral RT_VERSION goes; jpackage leaves the exe read-only.
+$LauncherExe = Join-Path $ImageDir "$Launcher.exe"
+Add-Type @'
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+public static class XdmVersionResource {
+  const uint LoadAsDatafile = 0x22; // LOAD_LIBRARY_AS_DATAFILE | LOAD_LIBRARY_AS_IMAGE_RESOURCE
+  static readonly IntPtr RtVersion = (IntPtr)16, VersionId = (IntPtr)1;
+  delegate bool EnumLangProc(IntPtr module, IntPtr type, IntPtr name, ushort lang, IntPtr param);
+  [DllImport("kernel32", SetLastError = true, CharSet = CharSet.Unicode)]
+  static extern IntPtr LoadLibraryEx(string file, IntPtr reserved, uint flags);
+  [DllImport("kernel32")] static extern bool FreeLibrary(IntPtr module);
+  [DllImport("kernel32")]
+  static extern bool EnumResourceLanguages(IntPtr module, IntPtr type, IntPtr name, EnumLangProc proc, IntPtr param);
+  [DllImport("kernel32", SetLastError = true, CharSet = CharSet.Unicode)]
+  static extern IntPtr BeginUpdateResource(string file, bool deleteExisting);
+  [DllImport("kernel32", SetLastError = true)]
+  static extern bool UpdateResource(IntPtr update, IntPtr type, IntPtr name, ushort lang, IntPtr data, uint size);
+  [DllImport("kernel32", SetLastError = true)] static extern bool EndUpdateResource(IntPtr update, bool discard);
+
+  public static List<ushort> Languages(string file) {
+    var langs = new List<ushort>();
+    IntPtr module = LoadLibraryEx(file, IntPtr.Zero, LoadAsDatafile);
+    if (module == IntPtr.Zero) throw new InvalidOperationException("LoadLibraryEx: " + Marshal.GetLastWin32Error());
+    try { EnumResourceLanguages(module, RtVersion, VersionId, (m, t, n, lang, p) => { langs.Add(lang); return true; }, IntPtr.Zero); }
+    finally { FreeLibrary(module); }
+    return langs;
+  }
+
+  public static void Remove(string file, IEnumerable<ushort> langs) {
+    IntPtr update = BeginUpdateResource(file, false);
+    if (update == IntPtr.Zero) throw new InvalidOperationException("BeginUpdateResource: " + Marshal.GetLastWin32Error());
+    foreach (ushort lang in langs) {
+      if (!UpdateResource(update, RtVersion, VersionId, lang, IntPtr.Zero, 0)) {
+        int error = Marshal.GetLastWin32Error();
+        EndUpdateResource(update, true);
+        throw new InvalidOperationException("UpdateResource " + lang.ToString("x4") + ": " + error);
+      }
+    }
+    if (!EndUpdateResource(update, false)) throw new InvalidOperationException("EndUpdateResource: " + Marshal.GetLastWin32Error());
+  }
+}
+'@
+$langs = [XdmVersionResource]::Languages($LauncherExe)
+if ($langs -notcontains 0) { throw "$LauncherExe has no language-neutral version resource from jpackage" }
+$extra = @($langs | Where-Object { $_ -ne 0 })
+if ($extra) {
+  Write-Host ">> launcher: dropping version resources $(($extra | ForEach-Object { $_.ToString('x4') }) -join ', ')"
+  Set-ItemProperty $LauncherExe IsReadOnly $false
+  [XdmVersionResource]::Remove($LauncherExe, [uint16[]]$extra)
+  Set-ItemProperty $LauncherExe IsReadOnly $true
+  if (@([XdmVersionResource]::Languages($LauncherExe) | Where-Object { $_ -ne 0 })) {
+    throw "$LauncherExe still has a non-neutral version resource"
+  }
+}
+$vi = (Get-Item $LauncherExe).VersionInfo
+Write-Host ">> launcher: $($vi.ProductName) $($vi.ProductVersion), $($vi.CompanyName)"
+
 # One process, not two. By default the Windows launcher re-runs itself as a child in a job object, only
 # to put the app dir on that child's PATH (WinLauncher.cpp, needRestartLauncher), so every start shows
 # two xdm-app.exe in Task Manager. XDM needs no PATH entry: its Win32 calls name system DLLs, FlatLaf
