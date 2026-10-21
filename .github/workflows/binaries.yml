@@ -35,6 +35,11 @@ on:
 permissions:
   contents: read
 
+# test-signing (self-signed test certificate) until SignPath imports the production certificate, then
+# release-signing.
+env:
+  SIGNPATH_SIGNING_POLICY: test-signing
+
 concurrency:
   group: binaries-${{ github.ref }}
   cancel-in-progress: true
@@ -146,9 +151,52 @@ jobs:
             -Arch ${{ matrix.arch }} -Type msi -SkipBuild
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - uses: actions/upload-artifact@v7
+      # Release builds (tag push, or a manual run with "release") are signed by SignPath Foundation (signpath.md):
+      # the MSI goes up zipped under a name without a dot, which the release job's download pattern skips, and
+      # SignPath signs xdm-app.exe inside it, then the MSI, after a manual approval. Other runs upload it unsigned.
+      - if: ${{ !(github.event_name == 'push' || inputs.release) }}
+        uses: actions/upload-artifact@v7
         with:
           path: build/dist/windows-${{ matrix.arch }}/*.msi
+          archive: false
+          if-no-files-found: error
+
+      - id: unsigned
+        if: github.event_name == 'push' || inputs.release
+        uses: actions/upload-artifact@v7
+        with:
+          name: msi-unsigned-${{ matrix.arch }}
+          path: build/dist/windows-${{ matrix.arch }}/*.msi
+          if-no-files-found: error
+
+      - name: Sign MSI
+        if: github.event_name == 'push' || inputs.release
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: xdm
+          signing-policy-slug: ${{ env.SIGNPATH_SIGNING_POLICY }}
+          artifact-configuration-slug: msi
+          github-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          # waits for the manual approval; a job may run 6 hours in all
+          wait-for-completion-timeout-in-seconds: 18000
+          output-artifact-directory: build/signed/windows-${{ matrix.arch }}
+
+      - name: Check signature
+        if: github.event_name == 'push' || inputs.release
+        shell: pwsh
+        run: |
+          $sig = Get-AuthenticodeSignature build\signed\windows-${{ matrix.arch }}\*.msi
+          $sig | Format-List Path, Status, StatusMessage
+          $sig.SignerCertificate | Format-List Subject, Thumbprint, NotAfter
+          if (-not $sig.SignerCertificate) { throw 'the MSI from SignPath is not signed' }
+
+      - if: github.event_name == 'push' || inputs.release
+        uses: actions/upload-artifact@v7
+        with:
+          path: build/signed/windows-${{ matrix.arch }}/*.msi
           archive: false
           if-no-files-found: error
 
@@ -211,11 +259,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # Every artifact of the run lands in dist/ (the unarchived installers as they are, the jar unzipped):
-      # only the installers are published.
+      # The installers land in dist/ as they are. Their artifacts are unarchived, so each is named after its
+      # file and has a dot; the jar and the unsigned MSIs (xdm-app-jar, msi-unsigned-<arch>) have none.
       - uses: actions/download-artifact@v8
         with:
           path: dist
+          pattern: '*.*'
           merge-multiple: true
 
       - name: Publish release

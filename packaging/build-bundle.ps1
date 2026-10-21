@@ -419,6 +419,9 @@ $jpArgs = @(
   '--app-version', $AppVersion
   '--vendor', $Vendor
   '--description', $AppName
+  # windows\resources\xdm-app.properties replaces jpackage's WinLauncher.template: ProductName would
+  # otherwise be the launcher name (xdm-app); SignPath restricts it to the product name on every file.
+  '--resource-dir', (Join-Path $PSScriptRoot 'windows\resources')
   '--input', $InputDir
   '--module', "$AppModule/$MainClass"
   '--runtime-image', $RuntimeDir

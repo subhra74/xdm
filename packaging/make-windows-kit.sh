@@ -39,7 +39,7 @@ VERSION="$(unzip -p "$JAR" app-version.json | sed -n 's/.*"currentVersion" *: *"
 OUT_ROOT="$PROJECT_ROOT/build/windows-kit"
 KIT="$OUT_ROOT/xdm-windows-kit"
 rm -rf "$KIT" "$OUT_ROOT"/xdm-windows-kit-*.zip
-mkdir -p "$KIT/packaging/cds" "$KIT/packaging/icons" "$KIT/packaging/module" "$KIT/packaging/windows"
+mkdir -p "$KIT/packaging/cds" "$KIT/packaging/icons" "$KIT/packaging/module" "$KIT/packaging/windows/resources"
 
 # Same relative layout as the repo, so build-bundle.ps1 finds its files from $PSScriptRoot.
 cp "$JAR"                                   "$KIT/xdm-app.jar"
@@ -51,6 +51,7 @@ cp packaging/jit-directives.json            "$KIT/packaging/"
 cp packaging/jdk.properties                 "$KIT/packaging/"
 cp packaging/icons/xdm.ico                  "$KIT/packaging/icons/"
 cp packaging/windows/xdm.wxs packaging/windows/gpl-3.0.rtf "$KIT/packaging/windows/"
+cp packaging/windows/resources/xdm-app.properties "$KIT/packaging/windows/resources/"
 # The Liberica class list, recorded on the Mac; both architectures dump their archive from it.
 if [[ -s packaging/cds/liberica.classlist ]]; then
   cp packaging/cds/liberica.classlist "$KIT/packaging/cds/"
