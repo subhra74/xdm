@@ -19,10 +19,15 @@ class ProgressTracker(val singleFile: Boolean) {
     var lastProgressUpdatedAt: Long = 0
     var lastChunkStatsUpdated: Long = 0
     var progress = 0
-    var lastProgress = 0
     var downloadSpeed = 0f
     var eta: Long = 0
     var totalSize: Long? = null
+
+    /**
+     * Streaming only: the bytes the chunks hold, finished or partial. Unlike [totalDownloadedBytes]
+     * (counted since this tracker was made) it includes what was downloaded before a resume.
+     */
+    var streamDownloadedBytes: Long = 0
     private val offsetComparator = compareBy<SegmentProgress> { it.start }
     private val segments = ArrayList<SegmentProgress>()
     private val sortedSegments = sortedSetOf(offsetComparator)
@@ -34,12 +39,17 @@ class ProgressTracker(val singleFile: Boolean) {
     val segmentData: Collection<SegmentProgress>
         @Synchronized get() = (if (singleFile) sortedSegments else segments).map { it.copy() }
 
+    /**
+     * [prg] (percent) and [remainingBytes] are only asked for on the ticks that recompute speed and
+     * ETA, about twice a second, as working them out can mean walking every chunk.
+     */
     private fun update(
         ticks: Long,
         ticksElapsed: Long,
         downloadedBytes: Long,
         totalSize: Long?,
-        prg: Float?
+        prg: () -> Float?,
+        remainingBytes: () -> Long?,
     ) {
         this.totalSize = totalSize
         this.totalDownloadedBytes += downloadedBytes
@@ -57,19 +67,14 @@ class ProgressTracker(val singleFile: Boolean) {
             this.lastProgressUpdatedAt = ticks
             this.lastDownloadedBytes = this.totalDownloadedBytes
             this.downloadSpeed = instanceSpeedBounded.toFloat()
-            if (prg != null) {
-                this.progress = prg.toInt()
-                if (totalSize != null) {
-                    this.eta = getEtaAsSec(
-                        totalSize.toDouble() - totalDownloadedBytes, avgSpeed
-                    )
-                } else {
-                    val prgDiff = progress - lastProgress
-                    lastProgress = progress
-                    if (prgDiff > 0) {
-                        this.eta = (ticksElapsed * (100 - progress) / 1000 * prgDiff)
-                    }
-                }
+            val percent = prg() ?: return
+            this.progress = percent.toInt()
+            val remaining = remainingBytes()
+            if (remaining != null) {
+                this.eta = getEtaAsSec(remaining.coerceAtLeast(0).toDouble(), avgSpeed)
+            } else if (percent > 0) {
+                // No byte count to go on: assume the rest goes as fast as what is done so far.
+                this.eta = (ticksElapsed * (100 - percent) / (percent * 1000)).toLong()
             }
         }
     }
@@ -79,7 +84,7 @@ class ProgressTracker(val singleFile: Boolean) {
         val prg = if (totalSize != null) (totalDownloadedBytes + downloadedBytes) * 100.0f / totalSize else null
         val ticks = System.currentTimeMillis()
         val ticksElapsed = ticks - this.ticksAtDownloadStartOrResume
-        update(ticks, ticksElapsed, downloadedBytes, totalSize, prg)
+        update(ticks, ticksElapsed, downloadedBytes, totalSize, { prg }, { totalSize?.minus(totalDownloadedBytes) })
         if (ticks - this.lastChunkStatsUpdated > 1000 && ticksElapsed > 0) {
             updateChunkProgressDataSingleFile(chunks)
             this.lastChunkStatsUpdated = ticks
@@ -88,12 +93,29 @@ class ProgressTracker(val singleFile: Boolean) {
         return false
     }
 
+    /**
+     * Streaming: progress by bytes when every chunk's size is known (byte-range segments, or each one
+     * already answered), else by finished chunks. The ETA counts the bytes left, estimating unknown
+     * chunk sizes from the known ones. [totalSize] wins when the caller knows it.
+     */
     @Synchronized
     fun update(downloadedBytes: Long, totalSize: Long?, chunks: List<StreamingChunk>, completed: Int): Boolean {
-        val prg = completed * 100.0f / chunks.size
         val ticks = System.currentTimeMillis()
         val ticksElapsed = ticks - this.ticksAtDownloadStartOrResume
-        update(ticks, ticksElapsed, downloadedBytes, totalSize, prg)
+        var size: StreamSize? = null
+        fun size() = size ?: streamSize(chunks, totalSize).also {
+            size = it
+            streamDownloadedBytes = chunks.sumOf { c -> c.downloaded.get() }
+        }
+        update(
+            ticks, ticksElapsed, downloadedBytes, totalSize,
+            prg = {
+                val s = size()
+                if (s.exact && s.bytes > 0) (streamDownloadedBytes * 100.0f / s.bytes).coerceAtMost(100f)
+                else completed * 100.0f / chunks.size
+            },
+            remainingBytes = { size().takeIf { it.bytes > 0 }?.let { it.bytes - streamDownloadedBytes } },
+        )
         if (ticks - this.lastChunkStatsUpdated > 1000 && ticksElapsed > 0) {
             updateChunkProgressData(chunks)
             this.lastChunkStatsUpdated = ticks
@@ -110,12 +132,35 @@ class ProgressTracker(val singleFile: Boolean) {
     fun update(downloadedBytes: Long, totalSize: Long?, progress: Float): Boolean {
         val ticks = System.currentTimeMillis()
         val ticksElapsed = ticks - this.ticksAtDownloadStartOrResume
-        update(ticks, ticksElapsed, downloadedBytes, totalSize, progress)
+        update(ticks, ticksElapsed, downloadedBytes, totalSize, { progress }, { totalSize?.minus(totalDownloadedBytes) })
         if (ticks - this.lastChunkStatsUpdated > 1000 && ticksElapsed > 0) {
             this.lastChunkStatsUpdated = ticks
             return true
         }
         return false
+    }
+
+    /** A stream's size in bytes; [exact] when every chunk's size is known, else estimated (0: no idea yet). */
+    private class StreamSize(val bytes: Long, val exact: Boolean)
+
+    /**
+     * Sums the chunk sizes that are known (from the response, or the segment's byte range) and gives
+     * each unknown chunk the average of the known ones.
+     */
+    private fun streamSize(chunks: List<StreamingChunk>, totalSize: Long?): StreamSize {
+        if (totalSize != null && totalSize > 0) return StreamSize(totalSize, true)
+        var known = 0L
+        var knownCount = 0
+        for (c in chunks) {
+            val len = c.length.get().takeIf { it > 0 } ?: c.byteRange?.second?.takeIf { it > 0 } ?: continue
+            known += len
+            knownCount++
+        }
+        return when (knownCount) {
+            0 -> StreamSize(0, false)
+            chunks.size -> StreamSize(known, true)
+            else -> StreamSize(known + known / knownCount * (chunks.size - knownCount), false)
+        }
     }
 
     private fun updateChunkProgressDataSingleFile(chunks: Map<Long, Chunk>) {

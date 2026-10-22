@@ -51,7 +51,7 @@ class SplitTrackDetectorTest {
         .encodeToString("""{"vencode_tag":"$tag","xpv_asset_id":$asset,"bitrate":$bitrate}""".toByteArray())
 
     private fun meta(file: String, tag: String, bitrate: Long, start: Long = 0, asset: Long = 42) =
-        "https://instagram.x.fna.fbcdn.net/v/$file.mp4?efg=${efg(tag, bitrate, asset)}&oe=1&bytestart=$start&byteend=${start + 99}"
+        "https://a.fbcdn.net/v/$file.mp4?efg=${efg(tag, bitrate, asset)}&oe=1&bytestart=$start&byteend=${start + 99}"
 
     private fun whole(url: String) = url.substringBefore("&bytestart")
 
@@ -139,7 +139,7 @@ class SplitTrackDetectorTest {
     // ---- bilibili ----
 
     private fun bili(n: String) =
-        "https://upos-hz-mirrorakam.akamaized.net/upgcxcode/02/48/41160804802/41160804802-1-$n.m4s?deadline=1"
+        "https://cdn.example/upgcxcode/01/02/1001/1001-1-$n.m4s?deadline=1"
 
     @Test
     fun bilibili_pairedByCid_tallerVideoWins() {

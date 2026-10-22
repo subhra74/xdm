@@ -402,7 +402,7 @@ abstract class StreamingDownloaderTask(
             )
             prgInfo.apply {
                 this.progress = progressTracker.progress
-                this.downloaded = progressTracker.totalDownloadedBytes
+                this.downloaded = progressTracker.streamDownloadedBytes
                 this.eta = progressTracker.eta
                 this.speed = progressTracker.downloadSpeed
                 this.segments = progressTracker.segmentData

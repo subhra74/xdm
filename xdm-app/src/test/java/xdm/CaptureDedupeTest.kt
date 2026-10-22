@@ -22,12 +22,12 @@ class CaptureDedupeTest {
     @Test
     fun clearTab_onlyWhenThePageChanges() {
         val filter = ClearTabFilter()
-        assertTrue(filter.shouldClear("1", "https://www.facebook.com/"), "first load")
-        repeat(20) { assertFalse(filter.shouldClear("1", "https://www.facebook.com/"), "iframe storm on the same page") }
-        assertTrue(filter.shouldClear("1", "https://www.facebook.com/watch/?v=9"), "another page")
-        assertTrue(filter.shouldClear("2", "https://www.facebook.com/"), "tabs are tracked apart")
+        assertTrue(filter.shouldClear("1", "https://site.example/"), "first load")
+        repeat(20) { assertFalse(filter.shouldClear("1", "https://site.example/"), "iframe storm on the same page") }
+        assertTrue(filter.shouldClear("1", "https://site.example/watch/9"), "another page")
+        assertTrue(filter.shouldClear("2", "https://site.example/"), "tabs are tracked apart")
         assertTrue(filter.shouldClear("1", null), "no URL: clear as before")
-        assertTrue(filter.shouldClear("1", "https://www.facebook.com/"), "back to the first page")
+        assertTrue(filter.shouldClear("1", "https://site.example/"), "back to the first page")
     }
 
     @Test
