@@ -26,7 +26,10 @@ data class ChunkConfirmedData(
 )
 
 enum class ChunkStatus {
-    Finished, Downloading, Failed, Cancelled, Ready
+    Finished, Downloading, Failed, Cancelled, Ready,
+
+    /** A batch item the server answered with no content (204/205): nothing to save, and not a failure. */
+    Skipped,
 }
 
 sealed interface ConnectResult {

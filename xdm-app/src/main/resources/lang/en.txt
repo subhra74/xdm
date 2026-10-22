@@ -393,6 +393,7 @@ BATCH_TYPE=Batch (%s files)
 BATCH_STATUS_DONE=Done
 BATCH_STATUS_WAITING=Waiting
 BATCH_STATUS_FAILED=Failed
+BATCH_STATUS_SKIPPED=Skipped (no content)
 BATCH_FAILED_ONLY=Failed only
 BATCH_COMBINE=Combine video and audio (%d)
 BATCH_FIND_MISSING=Find missing

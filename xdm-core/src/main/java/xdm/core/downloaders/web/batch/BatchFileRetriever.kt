@@ -36,7 +36,8 @@ interface BatchFileListener {
  * from what is on disk. Unlike a streaming segment, a server that ignores the Range restarts this one
  * file from zero instead of failing it: a single file is cheap to fetch again.
  *
- * Leaves [BatchFile.status] Finished or Failed (with [BatchFile.error]), or unchanged when stopped.
+ * Leaves [BatchFile.status] Finished, Skipped (no content) or Failed (with [BatchFile.error]), or
+ * unchanged when stopped.
  */
 class BatchFileRetriever(
     private val file: BatchFile,
@@ -98,6 +99,13 @@ class BatchFileRetriever(
                     if (code == 429) {
                         retryAfter = getRetryDelay(response.getHeader("retry-after"), 5)
                         throw IOException("Rate limit hit")
+                    }
+                    // No content (often an analytics beacon the page scan picked up): nothing to save.
+                    if ((code == 204 || code == 205) && downloadedBefore == 0L) {
+                        Logger.info("XDM", "Batch item ${file.index} skipped: $code, no content")
+                        partFile.delete()
+                        file.status.set(ChunkStatus.Skipped)
+                        return
                     }
                     if (code != 200 && code != 206) {
                         Logger.error("XDM", "Batch item ${file.index} failed - invalid response: $code")

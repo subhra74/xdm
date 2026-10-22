@@ -75,6 +75,7 @@ class BatchFilesView(
         val f = state?.files?.get(index) ?: return text("BATCH_STATUS_WAITING")
         return when (f.status.get()) {
             ChunkStatus.Finished -> text("BATCH_STATUS_DONE")
+            ChunkStatus.Skipped -> text("BATCH_STATUS_SKIPPED")
             ChunkStatus.Failed -> f.error.get()?.let { "${text("BATCH_STATUS_FAILED")}: ${downloadErrorText(it)}" }
                 ?: text("BATCH_STATUS_FAILED")
 

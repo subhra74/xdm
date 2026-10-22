@@ -190,7 +190,7 @@ class MockHttpServer {
         try {
             if (plan.delayBeforeMs > 0) sleepChecking(ep, plan.delayBeforeMs)
 
-            if (plan.failStatus >= 400) {
+            if (plan.failStatus >= 400 || plan.failStatus == 204) {
                 if (plan.failStatus == 429 && plan.retryAfterSecs > 0) {
                     ex.responseHeaders.add("Retry-After", plan.retryAfterSecs.toString())
                 }

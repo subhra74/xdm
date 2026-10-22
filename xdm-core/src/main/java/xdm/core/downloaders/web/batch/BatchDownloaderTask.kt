@@ -101,6 +101,7 @@ class BatchDownloaderTask(
     private val totalDownloaded = AtomicLong(0)
     private val finished = AtomicInteger(0)
     private val failed = AtomicInteger(0)
+    private val skipped = AtomicInteger(0)
 
     private val saveLock = Any()
     private val dirty = AtomicBoolean(false)
@@ -160,8 +161,9 @@ class BatchDownloaderTask(
                 return
             }
             // A start retries every file that is not finished, including those that failed last time.
+            // Skipped files (no content) are not fetched again.
             for (f in context.files) {
-                if (f.status.get() != ChunkStatus.Finished) {
+                if (!f.settled) {
                     (listOf(f) + f.tracks).filter { it.status.get() != ChunkStatus.Finished }.forEach {
                         it.status.set(ChunkStatus.Ready)
                         it.error.set(null)
@@ -169,10 +171,11 @@ class BatchDownloaderTask(
                 }
             }
             finished.set(context.finishedCount)
+            skipped.set(context.skippedCount)
             totalDownloaded.set(context.files.sumOf { it.bytes })
             saveState()
 
-            val pending = context.files.filter { it.status.get() != ChunkStatus.Finished }
+            val pending = context.files.filter { !it.settled }
             val latch = CountDownLatch(pending.size)
             this.latch = latch
             for (f in pending) {
@@ -205,7 +208,10 @@ class BatchDownloaderTask(
         saveState()
         val size = context.files.filter { it.status.get() == ChunkStatus.Finished }.sumOf { it.downloaded.get() }
         val failedFiles = context.failedCount
-        Logger.info("XDM", "Batch ${task.id} done: ${context.finishedCount} finished, $failedFiles failed")
+        Logger.info(
+            "XDM",
+            "Batch ${task.id} done: ${context.finishedCount} finished, ${context.skippedCount} skipped, $failedFiles failed"
+        )
         host.onDownloadSuccess(
             DownloadStatusInfo.FinalInfo(
                 id = task.id,
@@ -287,6 +293,8 @@ class BatchDownloaderTask(
             if (stopFlag.get()) return
             when (file.status.get()) {
                 ChunkStatus.Failed -> settle(item, ChunkStatus.Failed, file.error.get() ?: DownloadError.InternalError)
+                // A track with no content leaves nothing to merge.
+                ChunkStatus.Skipped -> settle(item, ChunkStatus.Failed, DownloadError.InvalidResponse)
                 ChunkStatus.Finished -> if (left.decrementAndGet() == 0) merge(item)
                 else -> {}
             }
@@ -418,6 +426,7 @@ class BatchDownloaderTask(
     override fun onDone(file: BatchFile) {
         when (file.status.get()) {
             ChunkStatus.Finished -> finished.incrementAndGet()
+            ChunkStatus.Skipped -> skipped.incrementAndGet()
             ChunkStatus.Failed -> {
                 failed.incrementAndGet()
                 val error = file.error.get()
@@ -438,14 +447,15 @@ class BatchDownloaderTask(
 
     private fun reportProgress(count: Long) {
         val total = context.files.size
-        val done = finished.get()
+        // A skipped file counts as done: there was nothing to fetch.
+        val done = finished.get() + skipped.get()
         val failedNow = failed.get()
         val percent = if (total == 0) 100f else (done + failedNow) * 100f / total
         if (!progressTracker.update(count, null, percent)) return
         val segments = context.files.mapIndexed { i, f ->
             val len = f.size
             val fraction = when {
-                f.status.get() == ChunkStatus.Finished || f.merging -> 1.0
+                f.settled || f.merging -> 1.0
                 len > 0 -> (f.bytes.toDouble() / len).coerceIn(0.0, 1.0)
                 else -> 0.0
             }

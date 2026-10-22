@@ -62,7 +62,12 @@ class BatchTaskContext(
 ) {
     val finishedCount: Int get() = files.count { it.status.get() == ChunkStatus.Finished }
     val failedCount: Int get() = files.count { it.status.get() == ChunkStatus.Failed }
+    val skippedCount: Int get() = files.count { it.status.get() == ChunkStatus.Skipped }
 }
+
+/** Finished, or skipped for having no content: either way never fetched again. */
+val BatchFile.settled: Boolean
+    get() = status.get().let { it == ChunkStatus.Finished || it == ChunkStatus.Skipped }
 
 /** The name of the part file an item is written to until it is complete; it depends only on the index. */
 fun batchPartName(index: Int) = ".$index.xdm-part"

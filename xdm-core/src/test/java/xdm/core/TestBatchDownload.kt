@@ -109,6 +109,25 @@ class TestBatchDownload {
     }
 
     @Test
+    fun aNoContentResponseIsSkippedNotFailed() {
+        server.register("/ok", Endpoint(data(5_000, 5)))
+        val beacon = server.register("/beacon", Endpoint(ByteArray(10)) { ConnPlan(failStatus = 204) })
+        val t = task(4, listOf(item("/ok", "ok.bin"), item("/beacon", "beacon")))
+
+        val success = notNull(run(t).success, "first run")
+
+        assertEquals(0, success.failedFiles, "a 204 is not a failure")
+        assertEquals(listOf("ok.bin"), File(t.batchFolder).list()!!.toList(), "nothing saved for the 204, no part file")
+        val state = loadBatchState(4, configDir.absolutePath).getOrThrow()
+        assertEquals(ChunkStatus.Skipped, state.files[1].status.get(), "state records the skip")
+        val beaconRequests = beacon.connCount.get()
+
+        run(t)
+
+        assertEquals(beaconRequests, beacon.connCount.get(), "a skipped file is not fetched again")
+    }
+
+    @Test
     fun retryDownloadsOnlyTheFailedFiles() {
         val ok = server.register("/ok", Endpoint(data(5_000, 3)))
         val broken = AtomicReference(true)
