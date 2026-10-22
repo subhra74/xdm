@@ -646,4 +646,46 @@ class TestHlsParser {
         )
         assertTrue(r.isFailure)
     }
+
+    @Test
+    fun master_subtitleGroupAttachesToEveryRendition() {
+        val list = master(
+            """
+            #EXTM3U
+            #EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="aud",NAME="English",LANGUAGE="en",URI="audio/en.m3u8"
+            #EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",NAME="English",LANGUAGE="en",DEFAULT=YES,URI="subs/en.m3u8"
+            #EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",NAME="Español",LANGUAGE="es",FORCED=YES,URI="https://cdn.example/es.m3u8"
+            #EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="other",NAME="French",LANGUAGE="fr",URI="subs/fr.m3u8"
+            #EXT-X-STREAM-INF:BANDWIDTH=2000000,AUDIO="aud",SUBTITLES="subs"
+            video/hi.m3u8
+            #EXT-X-STREAM-INF:BANDWIDTH=500000,SUBTITLES="subs"
+            video/lo.m3u8
+            #EXT-X-STREAM-INF:BANDWIDTH=300000
+            video/none.m3u8
+            """
+        )
+        assertEquals(3, list.size)
+        val subs = list[0].subtitles
+        assertEquals(listOf("en", "es"), subs.map { it.language })
+        assertEquals("https://host.example/path/subs/en.m3u8", subs[0].playlistUrl)
+        assertEquals("https://cdn.example/es.m3u8", subs[1].playlistUrl)
+        assertTrue(subs[0].isDefault && !subs[0].forced)
+        assertTrue(subs[1].forced && !subs[1].isDefault)
+        assertEquals("Español", subs[1].name)
+        assertEquals(subs, list[1].subtitles, "a variant without alternate audio gets the group too")
+        assertTrue(list[2].subtitles.isEmpty(), "a variant naming no group gets none")
+    }
+
+    @Test
+    fun master_imscSubtitlesAreSkipped() {
+        val list = master(
+            """
+            #EXTM3U
+            #EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",NAME="English",LANGUAGE="en",URI="subs/en.m3u8"
+            #EXT-X-STREAM-INF:BANDWIDTH=2000000,CODECS="avc1.64001f,mp4a.40.2,stpp.ttml.im1t",SUBTITLES="subs"
+            video/hi.m3u8
+            """
+        )
+        assertTrue(list.single().subtitles.isEmpty())
+    }
 }

@@ -49,6 +49,9 @@ class PesAssembler(val reader: ElementaryStreamReader) {
             lastRef = ref
             if (pts >= 0) pts += wrapOffset
             if (dts >= 0) dts += wrapOffset
+            // Near the rollover a reordered frame's PTS can wrap before its DTS does (PTS 3502 with
+            // DTS 2^33 - 3600): it is still later than the DTS, so it takes the next wrap too.
+            if (pts >= 0 && dts >= 0 && dts - pts > (1L shl 32)) pts += (1L shl 33)
         }
 
         val payloadOffset = 9 + headerDataLength

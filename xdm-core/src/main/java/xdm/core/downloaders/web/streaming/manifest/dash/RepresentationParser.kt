@@ -258,7 +258,8 @@ private fun parseRepresentation(
     val codec = getAttr(attrs, pAttrs, "codecs")?.lowercase(Locale.getDefault()) ?: ""
     val lang = getAttr(attrs, pAttrs, "lang")?.lowercase(Locale.getDefault()) ?: ""
 
-    if (!(mimeType.startsWith("audio") || mimeType.startsWith("video"))) {
+    val isVtt = mimeType == TEXT_VTT
+    if (!(mimeType.startsWith("audio") || mimeType.startsWith("video") || isVtt)) {
         return null
     }
 
@@ -316,6 +317,12 @@ private fun parseRepresentation(
                 lang
             )
         }
+    }
+    // A WebVTT track is usually one whole file named by its BaseURL, with no segment information.
+    if (isVtt) {
+        return Representation(
+            width, height, codec, bandwidth, periodDuration, listOf(DashSegment(baseUrl)), mimeType, lang
+        )
     }
     return null
 }

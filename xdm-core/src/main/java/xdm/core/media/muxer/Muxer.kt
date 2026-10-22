@@ -60,4 +60,10 @@ interface Muxer {
     )
 
     fun stop()
+
+    /**
+     * Where the last successful mux put time zero, in seconds of the source timeline (the earliest
+     * presented PTS). Subtitles timed against the source clock are shifted by it. Null when unknown.
+     */
+    val timelineStartSec: Double? get() = null
 }

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import xdm.core.downloaders.DashDownloadTaskInfo
 import xdm.core.downloaders.DownloadType
+import xdm.core.downloaders.SubtitleTrack
 import xdm.core.downloaders.web.streaming.manifest.dash.DashSegment
 import xdm.integration.StreamingVideoDisplayInfo
 import java.io.File
@@ -88,6 +89,24 @@ maxPiece = 0, authInfo = null,
 
         assertEquals(http, tracker.getHttpVideo(http.id))
         assertEquals(hls, tracker.getHlsVideo(hls.id))
+    }
+
+    @Test
+    fun subtitlePickedInTheDialog_isTheOnlyOneKept() {
+        val en = SubtitleTrack("English", "en", playlistUrl = "$hangingBase/en.m3u8")
+        val es = SubtitleTrack("Spanish", "es", playlistUrl = "$hangingBase/es.m3u8")
+        val hls = hlsTask().apply { fileName = "detected.mp4"; subtitles = listOf(en, es) }
+        tracker.addVideoHls(listOf(hls to StreamingVideoDisplayInfo()))
+
+        config.maxParallelDownloads = 5
+        dm.addVideoDownload(hls.id, "a.mp4", null, dir.absolutePath, subtitle = es)
+        dm.addVideoDownload(hls.id, "b.mp4", null, dir.absolutePath)
+        remember()
+
+        val ids = recordIds()
+        assertEquals(listOf(es), taskDB.getHlsTask(ids[0])!!.subtitles)
+        assertEquals(emptyList<SubtitleTrack>(), taskDB.getHlsTask(ids[1])!!.subtitles, "None saves no subtitle")
+        assertEquals(listOf(en, es), tracker.getHlsVideo(hls.id)!!.subtitles, "the tracker keeps offering all")
     }
 
     @Test

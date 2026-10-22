@@ -7,6 +7,7 @@ import xdm.core.downloaders.web.SpeedLimiter
 import xdm.core.downloaders.web.http.ChunkStatus
 import xdm.core.downloaders.web.streaming.downloader.hls.DecryptionException
 import xdm.core.media.muxer.Muxer
+import xdm.core.media.subtitle.WebVtt
 import xdm.core.network.http.isTlsVerificationError
 import xdm.core.storage.LocalStorage
 import xdm.core.storage.StorageFile
@@ -30,6 +31,8 @@ abstract class StreamingDownloaderTask(
     private val config: CoreConfig,
     /** Media segments fetched at once: the download's own choice, or the global setting when unset. */
     maxPiece: Int = 0,
+    /** The subtitle picked for this download, saved beside the video as SRT; its segments are [SUBS_TAG] chunks. */
+    private val subtitle: SubtitleTrack? = null,
 ) : DownloaderTask {
     protected val executorService: ExecutorService =
         Executors.newFixedThreadPool(maxPiece.takeIf { it > 0 } ?: config.maxSegments)
@@ -197,7 +200,8 @@ abstract class StreamingDownloaderTask(
             if (!awaitUnlessStopped(latch)) return
             saveContext()
             if (context.stopFlag.get()) return
-            context.chunks.find { it.status.get() != ChunkStatus.Finished }?.let {
+            // A subtitle is extra: a failed one is left out, it never fails the video.
+            context.chunks.find { it.tag != SUBS_TAG && it.status.get() != ChunkStatus.Finished }?.let {
                 Logger.error("XDM", "Not all chunks downloaded successfully")
                 var error = it.error.get() ?: DownloadError.InternalError
                 // A refusal is only an expiry if the link worked before; otherwise it never did.
@@ -262,6 +266,7 @@ abstract class StreamingDownloaderTask(
 
             is CommitResult.Success -> {
                 saveContext()
+                saveSubtitle(res.outputDir, res.fileName)
                 cleanup()
                 Logger.info("Committing to final file - Success --> ${res.outputDir} ${res.fileName}")
                 context.downloadHost.onDownloadSuccess(
@@ -324,7 +329,7 @@ abstract class StreamingDownloaderTask(
     private fun assembleSingle(outFile: StorageFile): Boolean {
         try {
             Logger.info("Mux single stream to $outFile")
-            val tempFiles = context.chunks.map {
+            val tempFiles = context.chunks.filter { it.tag != SUBS_TAG }.map {
                 getChunkTempFileName(it)
             }
             if (muxer.mux(tempFiles, outFile, this::onAssembleProgress, context.tempFolder, isIndependentSegment(), isMp4(), hasDiscontinuity())) {
@@ -335,6 +340,40 @@ abstract class StreamingDownloaderTask(
             Logger.error("XDM", "Mux failed - assembleSingle", e)
         }
         return false
+    }
+
+    /**
+     * Writes the subtitle segments as `<video name>.<language>.srt` next to the published video,
+     * replacing a file of that name. Any failure only loses the subtitle.
+     */
+    private fun saveSubtitle(outputDir: String, videoFileName: String) {
+        val track = subtitle ?: return
+        val chunks = context.chunks.filter { it.tag == SUBS_TAG }.sortedBy { it.sequence }
+        if (chunks.isEmpty()) return
+        if (chunks.any { it.status.get() != ChunkStatus.Finished }) {
+            Logger.info("XDM", "Subtitle segments incomplete, no subtitle saved for ${context.id}")
+            return
+        }
+        try {
+            val srt = WebVtt.toSrt(
+                chunks.map { File(getChunkTempFileName(it)).readText(Charsets.UTF_8) }, muxer.timelineStartSec,
+                hls = downloadType() == DownloadType.Hls,
+            )
+            if (srt.isEmpty()) {
+                Logger.info("XDM", "Subtitle has no cues, nothing saved for ${context.id}")
+                return
+            }
+            val name = subtitleFileName(videoFileName, track.language)
+            // A BOM, so Windows players don't read a non-Latin subtitle as the ANSI code page.
+            val bytes = byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte()) + srt.toByteArray(Charsets.UTF_8)
+            context.downloadHost.storage.folder(outputDir).file(name).open(create = true).use { out ->
+                out.setLength(0)
+                out.write(bytes, 0, bytes.size)
+            }
+            Logger.info("XDM", "Saved subtitle $name")
+        } catch (e: Exception) {
+            Logger.error("XDM", "Unable to save subtitle for ${context.id}", e)
+        }
     }
 
     private fun cleanup() {

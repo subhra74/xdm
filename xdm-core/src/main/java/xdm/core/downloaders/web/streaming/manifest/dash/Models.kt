@@ -1,9 +1,15 @@
 package xdm.core.downloaders.web.streaming.manifest.dash
 
 
+import xdm.core.downloaders.SubtitleTrack
 import java.net.URI
 
-data class MpdEntry(val video: Representation?, val audio: Representation?)
+data class MpdEntry(
+    val video: Representation?,
+    val audio: Representation?,
+    /** The period's WebVTT (`text/vtt`) tracks. */
+    val subtitles: List<SubtitleTrack> = emptyList(),
+)
 
 /**
  * One playable unit of a representation. [url] is the (resolved) segment URL; [range] is an

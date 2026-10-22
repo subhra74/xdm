@@ -16,7 +16,10 @@ import xdm.app.utils.sameWidth
 import xdm.app.utils.scaledInsets
 import xdm.app.utils.scaledSize
 import xdm.app.utils.windowIconImages
+import xdm.core.downloaders.DashDownloadTaskInfo
+import xdm.core.downloaders.HlsDownloadTaskInfo
 import xdm.core.downloaders.StreamingDownloadTaskInfo
+import xdm.core.downloaders.SubtitleTrack
 import xdm.core.util.*
 import xdm.integration.EventChannel
 import java.awt.*
@@ -26,6 +29,7 @@ import java.awt.event.MouseEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import java.net.URI
+import java.util.Locale
 import javax.swing.*
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
@@ -42,6 +46,8 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
     private lateinit var picker: DestinationPicker
     private lateinit var lblFileInfo: JLabel
     private lateinit var cmbSegments: JComboBox<Int>
+    private lateinit var lblSubtitles: JLabel
+    private lateinit var cmbSubtitles: JComboBox<SubtitleChoice>
     private lateinit var storageStatus: StorageStatusLabel
     private lateinit var tempFolderCards: TempFolderCards
     private var fileSize: Long? = null
@@ -64,9 +70,9 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
         iconImages = windowIconImages
         val gridBagLayout = GridBagLayout().apply {
             columnWidths = intArrayOf(0, 0, 0, 0, 0, 0, 0)
-            rowHeights = intArrayOf(0, 0, 0, 0, 0, 0, 0)
+            rowHeights = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0)
             columnWeights = doubleArrayOf(0.0, 0.0, 0.0, 1.0, 0.0, 0.0, Double.MIN_VALUE)
-            rowWeights = doubleArrayOf(0.0, 0.0, 0.0, 0.0, 1.0, 0.0, Double.MIN_VALUE)
+            rowWeights = doubleArrayOf(0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, Double.MIN_VALUE)
         }
         contentPane.run {
             layout = gridBagLayout
@@ -120,6 +126,23 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
         picker = DestinationPicker(this, capture = true, onChanged = { updateStorageStatus() })
         picker.addTo(contentPane, firstRow = 2)
 
+        // Hidden unless the stream has subtitles (showWindow).
+        lblSubtitles = JLabel(text("ND_SUBTITLES")).apply { horizontalAlignment = SwingConstants.RIGHT }
+        contentPane.add(lblSubtitles, GridBagConstraints().apply {
+            anchor = GridBagConstraints.EAST
+            insets = scaledInsets(5, 20, 5, 10)
+            gridx = 0
+            gridy = 4
+        })
+        cmbSubtitles = JComboBox<SubtitleChoice>()
+        contentPane.add(cmbSubtitles, GridBagConstraints().apply {
+            gridwidth = 4
+            anchor = GridBagConstraints.WEST
+            insets = scaledInsets(5, 0, 5, 5)
+            gridx = 1
+            gridy = 4
+        })
+
         val lblIgnore = JLabel(text("ND_IGNORE_PAGE")).apply {
             alignmentX = Component.LEFT_ALIGNMENT
             cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
@@ -151,7 +174,7 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
             gridwidth = 4
             insets = scaledInsets(5, 0, 5, 5)
             gridx = 1
-            gridy = 4
+            gridy = 5
         }
         contentPane.add(infoBox, gbcInfoBox)
 
@@ -162,7 +185,7 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
             gridwidth = 6
             fill = GridBagConstraints.HORIZONTAL
             gridx = 0
-            gridy = 5
+            gridy = 6
         }
         contentPane.add(panel, gcPanel)
         panel.layout = BoxLayout(panel, BoxLayout.X_AXIS)
@@ -223,7 +246,8 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
             //TODO: Check FFmpeg required
 
             AppContext.downloader.addVideoDownload(
-                videoId, name, picker.selectedCategory?.id, picker.targetFolder, cmbSegments.selectedItem as Int
+                videoId, name, picker.selectedCategory?.id, picker.targetFolder, cmbSegments.selectedItem as Int,
+                (cmbSubtitles.selectedItem as? SubtitleChoice)?.track,
             )
         } finally {
             dispose()
@@ -291,10 +315,49 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
         val url = http?.url ?: tracker.getHlsVideo(vid)?.url ?: tracker.getDashVideo(vid)?.url
         picker.reset(txtFileName.text, url, http?.origin ?: stream?.origin)
         updateStorageStatus()
+        fillSubtitles(
+            when (stream) {
+                is HlsDownloadTaskInfo -> stream.subtitles
+                is DashDownloadTaskInfo -> stream.subtitles
+                else -> emptyList()
+            }
+        )
 
         this.adjustSize()
         this.setLocationRelativeTo(null)
         this.isVisible = true
+    }
+
+    /** One dropdown entry; a null [track] is None. */
+    private class SubtitleChoice(val track: SubtitleTrack?, private val label: String) {
+        override fun toString() = label
+    }
+
+    /**
+     * None plus each track. Preselects the system language (a full track before a forced one), else
+     * the track the manifest marks default, else None. The row is hidden when there is nothing to pick.
+     */
+    private fun fillSubtitles(tracks: List<SubtitleTrack>) {
+        val choices = listOf(SubtitleChoice(null, text("ND_SUBTITLES_NONE"))) +
+            tracks.map { SubtitleChoice(it, subtitleLabel(it)) }
+        cmbSubtitles.model = DefaultComboBoxModel(choices.toTypedArray())
+        val system = Locale.getDefault().language
+        val pick = tracks.sortedBy { it.forced }.firstOrNull { sameLanguage(it.language, system) }
+            ?: tracks.firstOrNull { it.isDefault && !it.forced }
+        cmbSubtitles.selectedIndex = pick?.let { tracks.indexOf(it) + 1 } ?: 0
+        lblSubtitles.isVisible = tracks.isNotEmpty()
+        cmbSubtitles.isVisible = tracks.isNotEmpty()
+    }
+
+    private fun sameLanguage(tag: String, language: String): Boolean =
+        tag.isNotBlank() && Locale.forLanguageTag(tag).language.equals(language, ignoreCase = true)
+
+    /** The manifest's name for the track, else its language's name in the UI language. */
+    private fun subtitleLabel(track: SubtitleTrack): String {
+        val base = track.name.ifBlank {
+            Locale.forLanguageTag(track.language).displayName.ifBlank { track.language.ifBlank { "?" } }
+        }
+        return if (track.forced) text("ND_SUBTITLE_FORCED").format(base) else base
     }
 
     /** Picks the file-type glyph, the one the row will show. */

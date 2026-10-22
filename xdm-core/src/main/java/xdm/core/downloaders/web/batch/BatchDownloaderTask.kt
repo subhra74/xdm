@@ -11,6 +11,7 @@ import xdm.core.downloaders.web.ProgressTracker
 import xdm.core.downloaders.web.SegmentProgress
 import xdm.core.downloaders.web.SpeedLimiter
 import xdm.core.downloaders.web.http.ChunkStatus
+import xdm.core.media.muxer.Muxer
 import xdm.core.network.http.HttpResponse
 import xdm.core.network.http.PoolingHttpClient
 import xdm.core.util.FileUtils
@@ -23,7 +24,9 @@ import xdm.core.storage.LocalStorage
 import xdm.core.storage.Storage
 import xdm.core.storage.StorageFolder
 import xdm.core.storage.TargetExistsException
+import java.io.File
 import java.io.IOException
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -42,6 +45,10 @@ import java.util.concurrent.atomic.AtomicReference
  * the end. A file that fails does not stop the others: the batch finishes with
  * [DownloadStatusInfo.FinalInfo.failedFiles] set. Only a write failure (disk full, folder gone) stops
  * the whole batch. Resuming retries every file that is not finished.
+ *
+ * A merged item (a video played as separate video and audio tracks) downloads its two tracks into
+ * [BatchDownloadTaskInfo.trackFolder], each like a file of its own, then merges them with a muxer from
+ * [muxerFactory] into its part file in the batch folder and renames that like any other file.
  */
 class BatchDownloaderTask(
     private val task: BatchDownloadTaskInfo,
@@ -49,16 +56,36 @@ class BatchDownloaderTask(
     private val host: DownloadHost,
     private val configDir: String,
     private val config: CoreConfig,
+    /** One muxer per merge, so merged items can merge side by side. Needed only when an item is merged. */
+    private val muxerFactory: (() -> Muxer)? = null,
 ) : DownloaderTask, BatchFileListener {
-    private val context: BatchTaskContext = loadBatchState(task.id, configDir).getOrNull()
+    private val context: BatchTaskContext = (loadBatchState(task.id, configDir).getOrNull()
         ?.takeIf { it.files.size == task.items.size }
         ?: BatchTaskContext(
             task.id,
             host.storage.folder(task.folder).child(task.name).location,
             List(task.items.size) { BatchFile(it) }
-        )
+        )).also { ctx ->
+        // A merged item always has its two tracks, also in a state saved without them.
+        for (f in ctx.files) {
+            if (task.items[f.index].merged && !f.merged) {
+                f.video = BatchFile(f.index)
+                f.audio = BatchFile(f.index)
+            }
+        }
+    }
 
     private val folder: StorageFolder = host.storage.folder(context.batchFolder)
+
+    /** Merged items' tracks, as local files: the muxer reads them with random access. */
+    private val trackFolder: File? = task.trackFolder?.let(::File)
+
+    /** Merges running now, so a stop can cut them short. */
+    private val activeMuxers = CopyOnWriteArrayList<Muxer>()
+
+    /** Counts items down as they settle (finished, failed or stopped); set by [download]. */
+    @Volatile
+    private var latch: CountDownLatch? = null
 
     private val executor: ExecutorService =
         Executors.newFixedThreadPool(task.maxPiece.takeIf { it > 0 } ?: config.maxSegments)
@@ -101,6 +128,7 @@ class BatchDownloaderTask(
         if (!stopRequested.compareAndSet(false, true)) return
         Thread {
             stopFlag.set(true)
+            activeMuxers.forEach { runCatching { it.stop() } }
             executor.shutdownNow()
             // Closing the client also cancels in-flight reads.
             http.close()
@@ -110,8 +138,11 @@ class BatchDownloaderTask(
         }.start()
     }
 
-    /** Removes the unfinished part files; the finished files stay. */
-    override fun deleteTemp() = deleteBatchPartFiles(folder)
+    /** Removes the unfinished part files and merged items' tracks; the finished files stay. */
+    override fun deleteTemp() {
+        deleteBatchPartFiles(folder)
+        deleteBatchTracks(task)
+    }
 
     private fun download() {
         try {
@@ -121,21 +152,31 @@ class BatchDownloaderTask(
                 host.onDownloadFailed(task.id, DownloadError.OutputWriteError)
                 return
             }
+            if (context.files.any { it.merged && it.status.get() != ChunkStatus.Finished } &&
+                trackFolder?.let { it.isDirectory || it.mkdirs() } != true
+            ) {
+                Logger.error("XDM", "Unable to create track folder $trackFolder")
+                host.onDownloadFailed(task.id, DownloadError.DiskSpaceError)
+                return
+            }
             // A start retries every file that is not finished, including those that failed last time.
             for (f in context.files) {
                 if (f.status.get() != ChunkStatus.Finished) {
-                    f.status.set(ChunkStatus.Ready)
-                    f.error.set(null)
+                    (listOf(f) + f.tracks).filter { it.status.get() != ChunkStatus.Finished }.forEach {
+                        it.status.set(ChunkStatus.Ready)
+                        it.error.set(null)
+                    }
                 }
             }
             finished.set(context.finishedCount)
-            totalDownloaded.set(context.files.sumOf { it.downloaded.get() })
+            totalDownloaded.set(context.files.sumOf { it.bytes })
             saveState()
 
             val pending = context.files.filter { it.status.get() != ChunkStatus.Finished }
             val latch = CountDownLatch(pending.size)
+            this.latch = latch
             for (f in pending) {
-                executor.submit(retriever(f, latch))
+                if (f.merged) startMerged(f) else executor.submit(retriever(f, latch))
             }
             while (!latch.await(200, TimeUnit.MILLISECONDS)) {
                 if (stopFlag.get()) break
@@ -160,6 +201,7 @@ class BatchDownloaderTask(
 
     private fun complete() {
         throttle.disable()
+        trackFolder?.delete() // only if every merge cleaned up after itself
         saveState()
         val size = context.files.filter { it.status.get() == ChunkStatus.Finished }.sumOf { it.downloaded.get() }
         val failedFiles = context.failedCount
@@ -198,6 +240,113 @@ class BatchDownloaderTask(
     }
 
     private fun nameOf(f: BatchFile) = f.finalName ?: task.items[f.index].fileName
+
+    // ---- merged items ----
+
+    private fun trackFile(f: BatchFile, track: BatchFile): File =
+        File(trackFolder, "${f.index}.${if (track === f.audio) "audio" else "video"}")
+
+    /** Downloads the tracks that are not done yet, or goes straight to the merge when both are. */
+    private fun startMerged(f: BatchFile) {
+        f.status.set(ChunkStatus.Downloading)
+        val waiting = f.tracks.filter { it.status.get() != ChunkStatus.Finished }
+        if (waiting.isEmpty()) {
+            executor.submit { merge(f) }
+            return
+        }
+        val left = AtomicInteger(waiting.size)
+        val item = task.items[f.index]
+        for (track in waiting) {
+            val retriever = BatchFileRetriever(
+                file = track,
+                url = if (track === f.audio) item.audioUrl!! else item.url,
+                partFile = LocalStorage.file(trackFile(f, track).path),
+                httpClient = http,
+                headers = task.headers,
+                cookie = task.cookies.getOrNull(item.cookieGroup),
+                stopFlag = stopFlag,
+                maxRetries = config.maxRetries,
+                listener = TrackListener(f, left),
+            )
+            executor.submit(retriever)
+        }
+    }
+
+    /** A merged item's track: no name to pick or rename, it stays in the track folder until merged. */
+    private inner class TrackListener(private val item: BatchFile, private val left: AtomicInteger) : BatchFileListener {
+        override fun onConnected(file: BatchFile, response: HttpResponse) {
+            dirty.set(true)
+        }
+
+        override fun onBytes(file: BatchFile, count: Long) = this@BatchDownloaderTask.onBytes(file, count)
+
+        override fun onComplete(file: BatchFile): DownloadError? = null
+
+        override fun onDone(file: BatchFile) {
+            dirty.set(true)
+            if (stopFlag.get()) return
+            when (file.status.get()) {
+                ChunkStatus.Failed -> settle(item, ChunkStatus.Failed, file.error.get() ?: DownloadError.InternalError)
+                ChunkStatus.Finished -> if (left.decrementAndGet() == 0) merge(item)
+                else -> {}
+            }
+        }
+    }
+
+    /** Merges a merged item's two tracks into its part file, then gives it its final name. */
+    private fun merge(f: BatchFile) {
+        if (stopFlag.get() || f.status.get() != ChunkStatus.Downloading) return
+        val muxer = muxerFactory?.invoke()
+        if (muxer == null) {
+            Logger.error("XDM", "Batch ${task.id}: no muxer for merged item ${f.index}")
+            settle(f, ChunkStatus.Failed, DownloadError.InternalError)
+            return
+        }
+        val part = folder.file(batchPartName(f.index))
+        f.merging = true
+        reportProgress(0)
+        val ok = try {
+            activeMuxers.add(muxer)
+            muxer.mux(trackFile(f, f.video!!).path, trackFile(f, f.audio!!).path, part, {}, trackFolder!!.path)
+        } catch (e: Exception) {
+            Logger.error("XDM", "Batch ${task.id}: merging item ${f.index} failed", e)
+            false
+        } finally {
+            activeMuxers.remove(muxer)
+            f.merging = false
+        }
+        if (stopFlag.get()) {
+            // Both tracks are kept: the next start merges again.
+            part.delete()
+            return
+        }
+        if (!ok) {
+            part.delete()
+            settle(f, ChunkStatus.Failed, DownloadError.InternalError)
+            return
+        }
+        val size = part.length()
+        val error = onComplete(f)
+        if (error != null) {
+            settle(f, ChunkStatus.Failed, error)
+            return
+        }
+        f.length.set(size)
+        f.downloaded.set(size)
+        f.tracks.forEach { trackFile(f, it).delete() }
+        settle(f, ChunkStatus.Finished, null)
+    }
+
+    /** A merged item is done, one way or the other: counted, and its slot in [latch] released, once. */
+    private fun settle(f: BatchFile, status: ChunkStatus, error: DownloadError?) {
+        synchronized(f) {
+            if (f.status.get() != ChunkStatus.Downloading) return
+            f.error.set(error)
+            f.status.set(status)
+        }
+        onDone(f)
+        latch?.countDown()
+    }
 
     override fun onConnected(file: BatchFile, response: HttpResponse) {
         val part = folder.file(batchPartName(file.index))
@@ -294,10 +443,10 @@ class BatchDownloaderTask(
         val percent = if (total == 0) 100f else (done + failedNow) * 100f / total
         if (!progressTracker.update(count, null, percent)) return
         val segments = context.files.mapIndexed { i, f ->
-            val len = f.length.get()
+            val len = f.size
             val fraction = when {
-                f.status.get() == ChunkStatus.Finished -> 1.0
-                len > 0 -> (f.downloaded.get().toDouble() / len).coerceIn(0.0, 1.0)
+                f.status.get() == ChunkStatus.Finished || f.merging -> 1.0
+                len > 0 -> (f.bytes.toDouble() / len).coerceIn(0.0, 1.0)
                 else -> 0.0
             }
             SegmentProgress(start = i * SLOT, length = SLOT, downloaded = (fraction * SLOT).toLong())
@@ -334,6 +483,11 @@ class BatchDownloaderTask(
 }
 
 private val PART_FILE = Regex("""\.\d+\.xdm-part""")
+
+/** Deletes the tracks of a batch's merged items, which live outside the batch folder. */
+fun deleteBatchTracks(task: BatchDownloadTaskInfo) {
+    task.trackFolder?.let { File(it).deleteRecursively() }
+}
 
 /** Deletes a batch's unfinished part files, and the folder if that leaves it empty. */
 fun deleteBatchPartFiles(batchFolder: String, storage: Storage = LocalStorage) =

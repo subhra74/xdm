@@ -76,6 +76,31 @@ data class HttpDownloadTaskInfo(
 )
 
 /**
+ * A WebVTT subtitle track of a stream, saved next to the video as `<name>.<language>.srt`.
+ * HLS gives a media playlist ([playlistUrl]), fetched when the download starts; DASH gives the
+ * [segments] directly (usually one whole `.vtt` file).
+ */
+data class SubtitleTrack(
+    val name: String,
+    val language: String,
+    val playlistUrl: String? = null,
+    val segments: List<DashSegment> = emptyList(),
+    val isDefault: Boolean = false,
+    val forced: Boolean = false,
+)
+
+/**
+ * The sidecar subtitle's name for the video [videoFileName]: `movie.mp4` + `en` -> `movie.en.srt`.
+ * Characters a file name can't hold are dropped from the language; a blank one gives `movie.srt`.
+ */
+fun subtitleFileName(videoFileName: String, language: String): String {
+    val dot = videoFileName.lastIndexOf('.')
+    val base = if (dot > 0) videoFileName.substring(0, dot) else videoFileName
+    val lang = language.filter { it.isLetterOrDigit() || it == '-' || it == '_' }
+    return if (lang.isEmpty()) "$base.srt" else "$base.$lang.srt"
+}
+
+/**
  * The name of a download's partial file: id-based, so it never clashes and does not depend on the final
  * name, and with no real extension, so players and indexers leave it alone. HTTP writes it directly;
  * streaming appends the container extension to the muxed output.
@@ -112,6 +137,8 @@ data class HlsDownloadTaskInfo(
     var audioUrl: String?,
     var audioOnly: Boolean = false,
     var independent: Boolean,
+    /** The subtitles to save beside the video: the tracker offers all, a download keeps the one picked. */
+    var subtitles: List<SubtitleTrack> = emptyList(),
 ) : StreamingDownloadTaskInfo(
     id,
     fileName,
@@ -143,6 +170,8 @@ data class DashDownloadTaskInfo(
     var url: String,
     val audioMime: String,
     val videoMime: String,
+    /** As [HlsDownloadTaskInfo.subtitles]. */
+    var subtitles: List<SubtitleTrack> = emptyList(),
 ) : StreamingDownloadTaskInfo(
     id,
     fileName,
@@ -168,7 +197,14 @@ data class BatchItem(
     val knownSize: Long?,
     /** The page named the file (`<a download="…">`), so the server's name must not replace it. */
     val nameFromPage: Boolean,
-)
+    /**
+     * Set for a video played as two tracks (see docs/site-video-detection.md): [url] is then the
+     * video-only track, this the audio-only one, and the item is both merged into [fileName].
+     */
+    val audioUrl: String? = null,
+) {
+    val merged: Boolean get() = audioUrl != null
+}
 
 /**
  * Many links downloaded as one entry into the folder `<folder>/<name>`. The name and folder are fixed
@@ -188,8 +224,16 @@ data class BatchDownloadTaskInfo(
     /** Distinct Cookie header values, referenced by [BatchItem.cookieGroup]. */
     val cookies: List<String>,
     val items: List<BatchItem>,
+    /**
+     * Where merged items' tracks are downloaded before they are merged into the batch folder, as
+     * `<tempDir>/batch-<id>/`: the merge reads them as local files. Null when no item is merged.
+     */
+    var tempDir: String? = null,
 ) {
     val batchFolder: String get() = File(folder, name).absolutePath
+
+    /** The folder holding merged items' tracks, or null when the batch has none. */
+    val trackFolder: String? get() = tempDir?.let { File(it, "batch-$id").absolutePath }
 }
 
 sealed interface DownloadStatusInfo {

@@ -6,6 +6,7 @@ import xdm.core.downloaders.web.http.ChunkStatus
 import xdm.core.downloaders.web.loadDashState
 import xdm.core.downloaders.web.saveState
 import xdm.core.downloaders.web.streaming.downloader.DashTaskContext
+import xdm.core.downloaders.web.streaming.downloader.SUBS_TAG
 import xdm.core.downloaders.web.streaming.downloader.StreamingChunk
 import xdm.core.downloaders.web.streaming.downloader.StreamingDownloaderTask
 import xdm.core.media.muxer.Muxer
@@ -43,6 +44,20 @@ fun makeContext(
                 iv = null,
                 byteRange = s.range,
                 tag = "VIDEO",
+                error = AtomicReference(null),
+                fileHandle = AtomicReference(null),
+                encrypted = false
+            )
+        } + taskInfo.subtitles.take(1).flatMap { it.segments }.mapIndexed { index, s ->
+            StreamingChunk(
+                id = CoreUtils.uniqueId(),
+                sequence = index.toLong(),
+                status = AtomicReference(ChunkStatus.Ready),
+                url = s.url.toString(),
+                keyUrl = null,
+                iv = null,
+                byteRange = s.range,
+                tag = SUBS_TAG,
                 error = AtomicReference(null),
                 fileHandle = AtomicReference(null),
                 encrypted = false
@@ -90,7 +105,10 @@ class DashDownloaderTask : StreamingDownloaderTask {
         host: DownloadHost,
         configDir: String,
         config: CoreConfig
-    ) : super(makeContext(taskInfo, http, host, configDir), configDir, muxer, config, taskInfo.maxPiece)
+    ) : super(
+        makeContext(taskInfo, http, host, configDir), configDir, muxer, config, taskInfo.maxPiece,
+        taskInfo.subtitles.firstOrNull()
+    )
 
     override fun initDownload(): DownloadStatusInfo.InitInfo? {
         return DownloadStatusInfo.InitInfo(

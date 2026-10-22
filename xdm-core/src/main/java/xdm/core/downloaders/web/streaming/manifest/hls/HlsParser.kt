@@ -1,6 +1,7 @@
 package xdm.core.downloaders.web.streaming.manifest.hls
 
 
+import xdm.core.downloaders.SubtitleTrack
 import xdm.core.downloaders.web.streaming.manifest.common.resolveUri
 import xdm.core.util.Logger
 import xdm.core.util.StringUtils
@@ -11,6 +12,7 @@ import java.net.URI
 const val EXT_X_STREAM_INF = "#EXT-X-STREAM-INF:"
 const val AUDIO = "AUDIO"
 const val VIDEO = "VIDEO"
+const val SUBTITLES = "SUBTITLES"
 const val EXT_X_MEDIA = "#EXT-X-MEDIA:"
 const val EXT_X_BYTERANGE = "#EXT-X-BYTERANGE:"
 const val EXTINF = "#EXTINF:"
@@ -261,6 +263,7 @@ object HlsParser {
             }
 
             for ((extStreamInf, url) in variants) {
+                val subtitles = subtitleGroup(extStreamInf, mapExtMedia, baseUrl)
                 var alternateAudioFound = false
                 extStreamInf[AUDIO]?.let { groupId ->
                     alternateAudioFound = true
@@ -271,6 +274,7 @@ object HlsParser {
                                 audioPlaylist = media["URI"]?.let { resolveUri(baseUrl, it) },
                                 attributes = extStreamInf + media,
                                 isIndependent,
+                                subtitles,
                             )
                         })
                 }
@@ -288,6 +292,7 @@ object HlsParser {
                                 audioPlaylist = url,
                                 attributes = extStreamInf + media,
                                 isIndependent,
+                                subtitles,
                             )
                         })
                 }
@@ -299,11 +304,33 @@ object HlsParser {
                     HlsMasterPlaylist(
                         videoPlaylist = url, attributes = extStreamInf,
                         independent = isIndependent,
+                        subtitles = subtitles,
                     )
                 )
             }
             containers
         }
+    }
+
+    /**
+     * The `TYPE=SUBTITLES` renditions of the variant's `SUBTITLES` group. Only WebVTT is supported:
+     * a variant whose CODECS names IMSC (`stpp`) carries TTML in fMP4 instead, so it gets none.
+     */
+    private fun subtitleGroup(
+        streamInf: Map<String, String>, media: List<Map<String, String>>, baseUrl: URI
+    ): List<SubtitleTrack> {
+        val groupId = streamInf[SUBTITLES] ?: return emptyList()
+        if (StringUtils.containsIgnoreCase(streamInf["CODECS"], "stpp")) return emptyList()
+        return media.filter { SUBTITLES == it["TYPE"] && groupId == it["GROUP-ID"] && it["URI"] != null }
+            .map {
+                SubtitleTrack(
+                    name = it["NAME"] ?: "",
+                    language = it["LANGUAGE"] ?: "",
+                    playlistUrl = resolveUri(baseUrl, it["URI"]!!).toString(),
+                    isDefault = it["DEFAULT"] == "YES",
+                    forced = it["FORCED"] == "YES",
+                )
+            }
     }
 
     fun isMasterPlaylist(manifestLines: Iterator<String>): Boolean {

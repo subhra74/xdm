@@ -6,10 +6,12 @@ import org.junit.jupiter.api.Test
 import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.HlsDownloadTaskInfo
 import xdm.core.downloaders.HttpDownloadTaskInfo
+import xdm.core.downloaders.SubtitleTrack
 import xdm.core.downloaders.web.http.HttpDownloaderTask
 import xdm.core.downloaders.web.streaming.downloader.hls.HlsDownloaderTask
 import xdm.core.downloaders.web.streaming.manifest.hls.HlsParser
 import xdm.core.downloaders.web.streaming.manifest.hls.singleFileHttpUrl
+import xdm.core.media.muxer.impl.TransmuxingMuxer
 import java.io.File
 import javax.crypto.Cipher
 import javax.crypto.CipherOutputStream
@@ -37,6 +39,8 @@ class TestHlsE2E : StreamingE2EBase() {
         audioUrl: String? = null,
         independent: Boolean = false,
         audioOnly: Boolean = false,
+        subtitles: List<SubtitleTrack> = emptyList(),
+        muxer: TransmuxingMuxer = muxer(),
     ): StreamingTestHost {
         val h = host(caseName)
         val info = HlsDownloadTaskInfo(
@@ -46,8 +50,9 @@ class TestHlsE2E : StreamingE2EBase() {
             targetFolder = File(root, "$caseName/out").absolutePath,
 maxPiece = 0, authInfo = null,
             url = mediaUrl, audioUrl = audioUrl, audioOnly = audioOnly, independent = independent,
+            subtitles = subtitles,
         )
-        HlsDownloaderTask(info, newClient(), muxer(), h, root.absolutePath, config()).start()
+        HlsDownloaderTask(info, newClient(), muxer, h, root.absolutePath, config()).start()
         awaitSuccess(h)
         return h
     }
@@ -74,6 +79,51 @@ maxPiece = 0, authInfo = null,
         genMuxedTs("h1")
         val h = runHls("h1", url("h1/index.m3u8"))
         verifyOutput(h, expectVideo = true, expectAudio = true, minDuration = 2.0)
+    }
+
+    // ---- H1b: WebVTT subtitle playlist saved as a sidecar .srt -------------------------------
+    @Test fun h1b_webVttSidecar() {
+        requireFfmpeg()
+        genMuxedTs("h1b")
+        val d = caseDir("h1b")
+        // Two segments on the 90 kHz clock with MPEGTS 900000 = 10 s; a cue repeated across the boundary.
+        val map = "X-TIMESTAMP-MAP=MPEGTS:900000,LOCAL:00:00:00.000"
+        File(d, "sub0.vtt").writeText("WEBVTT\n$map\n\n00:00:00.500 --> 00:00:01.000\nFirst\n\n" +
+            "00:00:01.500 --> 00:00:02.000\nAcross\n")
+        File(d, "sub1.vtt").writeText("WEBVTT\n$map\n\n00:00:01.500 --> 00:00:02.000\nAcross\n\n" +
+            "00:00:02.000 --> 00:00:02.500\nLast\n")
+        File(d, "subs.m3u8").writeText(
+            "#EXTM3U\n#EXT-X-TARGETDURATION:2\n#EXTINF:1.5,\nsub0.vtt\n#EXTINF:1.5,\nsub1.vtt\n#EXT-X-ENDLIST\n"
+        )
+        val out = File(root, "h1b/out").apply { mkdirs() }
+        val id = nextId
+        // An older subtitle of the same name is replaced.
+        File(out, "out-$id.en.srt").writeText("stale")
+        val muxer = muxer()
+        val track = SubtitleTrack("English", "en", playlistUrl = url("h1b/subs.m3u8"))
+        val h = runHls("h1b", url("h1b/index.m3u8"), subtitles = listOf(track), muxer = muxer)
+        verifyOutput(h, expectVideo = true, expectAudio = true, minDuration = 2.0)
+
+        val srt = File(out, "out-$id.en.srt")
+        val text = srt.readText(Charsets.UTF_8).removePrefix("\uFEFF")
+        val origin = muxer.timelineStartSec!!
+        val shiftMs = Math.round(900_000 - origin * 90_000) / 90
+        fun t(ms: Long) = "%02d:%02d:%02d,%03d".format(ms / 3_600_000, ms / 60_000 % 60, ms / 1000 % 60, ms % 1000)
+        val expected = "1\r\n${t(500 + shiftMs)} --> ${t(1000 + shiftMs)}\r\nFirst\r\n\r\n" +
+            "2\r\n${t(1500 + shiftMs)} --> ${t(2000 + shiftMs)}\r\nAcross\r\n\r\n" +
+            "3\r\n${t(2000 + shiftMs)} --> ${t(2500 + shiftMs)}\r\nLast\r\n\r\n"
+        assertEquals(expected, text, "cues shifted onto the output timeline (origin $origin s)")
+    }
+
+    // ---- H1c: an unreachable subtitle playlist never fails the video ---------------------------
+    @Test fun h1c_missingSubtitleDoesNotFailVideo() {
+        requireFfmpeg()
+        genMuxedTs("h1c")
+        val track = SubtitleTrack("English", "en", playlistUrl = url("h1c/missing.m3u8"))
+        val id = nextId
+        val h = runHls("h1c", url("h1c/index.m3u8"), subtitles = listOf(track))
+        verifyOutput(h, expectVideo = true, expectAudio = true, minDuration = 2.0)
+        assertEquals(false, File(root, "h1c/out/out-$id.en.srt").exists(), "no subtitle written")
     }
 
     // ---- H2: master / ABR playlist -> pick highest-bandwidth variant ------------------------

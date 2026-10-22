@@ -9,6 +9,7 @@ import xdm.core.downloaders.*
 import xdm.core.downloaders.web.batch.BatchDownloaderTask
 import xdm.core.downloaders.web.batch.deleteBatchFiles
 import xdm.core.downloaders.web.batch.deleteBatchPartFiles
+import xdm.core.downloaders.web.batch.deleteBatchTracks
 import xdm.core.downloaders.web.batch.loadBatchState
 import xdm.core.downloaders.web.http.ChunkStatus
 import xdm.core.downloaders.web.http.HttpDownloaderTask
@@ -63,8 +64,10 @@ interface IDownloadManager {
     fun deleteDownloads(ids: Collection<Long>, fromDisk: Boolean)
     fun startHttpDownload(task: HttpDownloadTaskInfo, runNow: Boolean = true)
     /** [maxPiece] is the segment count picked in the dialog; null keeps the captured video's own. */
+    /** [subtitle] is one of the stream's tracks, saved beside the video; null saves none. */
     fun addVideoDownload(
-        videoId: Long, fileName: String, categoryId: String?, targetFolder: String, maxPiece: Int? = null
+        videoId: Long, fileName: String, categoryId: String?, targetFolder: String, maxPiece: Int? = null,
+        subtitle: SubtitleTrack? = null,
     )
     fun startHlsDownload(task: HlsDownloadTaskInfo)
     fun startDashDownload(task: DashDownloadTaskInfo)
@@ -579,7 +582,9 @@ class DownloadManager(
         }
 
         DownloadType.Batch -> taskInfoDB.getBatchTask(id)?.let {
-            BatchDownloaderTask(it, newHttpClient(), host, configDir, AppContext.config)
+            BatchDownloaderTask(it, newHttpClient(), host, configDir, AppContext.config) {
+                TransmuxingMuxer(AppContext.configDir)
+            }
         }
 
         DownloadType.Torrent -> null
@@ -697,10 +702,10 @@ class DownloadManager(
         removed.forEach { rec ->
             try {
                 // Resolved first: the path is read from the task info that the purge deletes.
-                val file = if (fromDisk && rec.status == RecordStatus.FINISHED && rec.downloadType != DownloadType.Batch)
-                    finishedFile(rec) else null
+                val files = if (fromDisk && rec.status == RecordStatus.FINISHED && rec.downloadType != DownloadType.Batch)
+                    listOfNotNull(finishedFile(rec), subtitleSidecar(rec)) else emptyList()
                 purgeFiles(rec, fromDisk)
-                file?.let { Logger.info("XDM", "Delete file $it ${it.delete()}") }
+                files.forEach { Logger.info("XDM", "Delete file $it ${it.delete()}") }
             } catch (error: Exception) {
                 Logger.error("XDM", "Error while deleting ${rec.id}", error)
             }
@@ -712,6 +717,17 @@ class DownloadManager(
     private fun finishedFile(rec: DbRecord): File? {
         val (fileName, folder) = getFileFolder(rec) ?: return null
         return if (fileName != null && folder != null) File(folder, fileName) else null
+    }
+
+    /** The `.srt` a finished HLS/DASH download saved beside its video, if it picked a subtitle. */
+    private fun subtitleSidecar(rec: DbRecord): File? {
+        val track = when (rec.downloadType) {
+            DownloadType.Hls -> taskInfoDB.getHlsTask(rec.id)?.subtitles
+            DownloadType.Dash -> taskInfoDB.getDashTask(rec.id)?.subtitles
+            else -> null
+        }?.firstOrNull() ?: return null
+        val video = finishedFile(rec) ?: return null
+        return File(video.parentFile, subtitleFileName(video.name, track.language)).takeIf { it.isFile }
     }
 
     /**
@@ -739,6 +755,8 @@ class DownloadManager(
      * part files. The folder goes only if that leaves it empty. Must run before the metadata is deleted.
      */
     private fun purgeBatchFiles(id: Long, fromDisk: Boolean) {
+        // Merged items' tracks, in the temp folder: never wanted once the batch is gone.
+        taskInfoDB.getBatchTask(id)?.let { deleteBatchTracks(it) }
         val state = loadBatchState(id, configDir).getOrNull()
         if (fromDisk && state != null) {
             deleteBatchFiles(state)
@@ -826,7 +844,8 @@ class DownloadManager(
     }
 
     override fun addVideoDownload(
-        videoId: Long, fileName: String, categoryId: String?, targetFolder: String, maxPiece: Int?
+        videoId: Long, fileName: String, categoryId: String?, targetFolder: String, maxPiece: Int?,
+        subtitle: SubtitleTrack?,
     ) {
         // Each download of a detected video is a new download: copy the tracker's entry with a fresh
         // id instead of reusing (and mutating) it, so downloading the same video twice cannot share
@@ -843,12 +862,14 @@ class DownloadManager(
             return
         }
 
+        // The tracker's entry lists every subtitle the stream has; the download keeps the picked one.
         tracker.getHlsVideo(videoId)?.let { source ->
             startHlsDownload(
                 source.copy(
                     id = CoreUtils.uniqueId(), fileName = fileName, categoryId = categoryId,
                     targetFolder = targetFolder,
                     maxPiece = maxPiece ?: source.maxPiece,
+                    subtitles = listOfNotNull(subtitle),
                 )
             )
             return
@@ -860,6 +881,7 @@ class DownloadManager(
                     id = CoreUtils.uniqueId(), fileName = fileName, categoryId = categoryId,
                     targetFolder = targetFolder,
                     maxPiece = maxPiece ?: source.maxPiece,
+                    subtitles = listOfNotNull(subtitle),
                 )
             )
         }

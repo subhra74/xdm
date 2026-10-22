@@ -91,6 +91,30 @@ class SplitTrackDetector(private val env: Env) {
         tabs.remove(tabId)
     }
 
+    /** A track the detector has seen, with its probe when it has one. */
+    data class KnownTrack(val url: SplitTrackUrl, val probe: Probe?)
+
+    /**
+     * Every track seen, in any tab, of the videos that any of [trackKeys] belongs to (keyed by asset).
+     * Lets the batch dialog pair tracks without probing them again, and add tracks the page's own list
+     * missed (an audio track it did not list, a better quality). Never touches the network.
+     */
+    @Synchronized
+    fun lookup(trackKeys: Set<String>): Map<String, List<KnownTrack>> {
+        val found = LinkedHashMap<String, LinkedHashMap<String, KnownTrack>>()
+        for (assets in tabs.values) {
+            for ((assetKey, asset) in assets) {
+                if (asset.candidates.keys.none { it in trackKeys }) continue
+                val known = found.getOrPut(assetKey) { LinkedHashMap() }
+                for ((key, c) in asset.candidates) {
+                    val probe = c.probe.takeIf { c.status == Status.DONE }
+                    if (known[key]?.probe == null) known[key] = KnownTrack(c.url, probe)
+                }
+            }
+        }
+        return found.mapValues { it.value.values.toList() }
+    }
+
     /**
      * A track whose URL ranks it is probed only if it beats every ranked track of its kind already
      * probed or being probed: Instagram lists its whole quality ladder, and only the top is wanted.

@@ -32,12 +32,14 @@ private const val HLS_AUDIO_URL = 20
 private const val HLS_AUDIO_ONLY = 21
 private const val HLS_TEMP_DIR = 22
 private const val HLS_INDEPENDENT = 23
+private const val HLS_SUBTITLE = 24
 
 private const val DASH_TEMP_DIR = 20
 private const val DASH_AUDIO_SEGMENT = 21
 private const val DASH_VIDEO_SEGMENT = 22
 private const val DASH_AUDIO_MIME = 23
 private const val DASH_VIDEO_MIME = 24
+private const val DASH_SUBTITLE = 25
 
 private const val BATCH_ID = 1
 private const val BATCH_NAME = 2
@@ -47,6 +49,7 @@ private const val BATCH_ORIGIN = 5
 private const val BATCH_HEADERS = 6
 private const val BATCH_COOKIE = 7
 private const val BATCH_ITEM = 8
+private const val BATCH_TEMP_DIR = 9
 
 // BatchItem
 private const val ITEM_URL = 1
@@ -54,11 +57,20 @@ private const val ITEM_FILE_NAME = 2
 private const val ITEM_COOKIE_GROUP = 3
 private const val ITEM_KNOWN_SIZE = 4
 private const val ITEM_NAME_FROM_PAGE = 5
+private const val ITEM_AUDIO_URL = 6
 
 // DashSegment; the range is present only when both of its fields are.
 private const val SEG_URL = 1
 private const val SEG_RANGE_START = 2
 private const val SEG_RANGE_END = 3
+
+// SubtitleTrack.
+private const val SUB_NAME = 1
+private const val SUB_LANGUAGE = 2
+private const val SUB_PLAYLIST_URL = 3
+private const val SUB_SEGMENT = 4
+private const val SUB_DEFAULT = 5
+private const val SUB_FORCED = 6
 
 // HeaderMap: one HEADER record per name, with its values in order.
 private const val HEADER = 1
@@ -122,6 +134,38 @@ private fun TagReader.dashSegment(): DashSegment {
         }
     }
     return DashSegment(URI(url), if (start != null && end != null) Pair(start, end) else null)
+}
+
+private fun TagWriter.subtitle(no: Int, track: SubtitleTrack) = message(no) {
+    string(SUB_NAME, track.name)
+    string(SUB_LANGUAGE, track.language)
+    stringOrNull(SUB_PLAYLIST_URL, track.playlistUrl)
+    track.segments.forEach { dashSegment(SUB_SEGMENT, it) }
+    bool(SUB_DEFAULT, track.isDefault)
+    bool(SUB_FORCED, track.forced)
+}
+
+private fun TagReader.subtitle(): SubtitleTrack {
+    val r = message()
+    var name = ""
+    var language = ""
+    var playlistUrl: String? = null
+    val segments = ArrayList<DashSegment>()
+    var isDefault = false
+    var forced = false
+    while (true) {
+        when (r.next()) {
+            -1 -> break
+            SUB_NAME -> name = r.string()
+            SUB_LANGUAGE -> language = r.string()
+            SUB_PLAYLIST_URL -> playlistUrl = r.string()
+            SUB_SEGMENT -> segments.add(r.dashSegment())
+            SUB_DEFAULT -> isDefault = r.bool()
+            SUB_FORCED -> forced = r.bool()
+            else -> r.skip()
+        }
+    }
+    return SubtitleTrack(name, language, playlistUrl, segments, isDefault, forced)
 }
 
 /** Fields 1..19, shared by the HTTP, HLS and DASH records. */
@@ -227,6 +271,7 @@ class TaskInfoDB(private val configDir: String) {
             var audioOnly = false
             var tempDir = ""
             var independent = false
+            val subtitles = ArrayList<SubtitleTrack>()
             while (true) {
                 val no = r.next()
                 if (no == -1) break
@@ -236,6 +281,7 @@ class TaskInfoDB(private val configDir: String) {
                     HLS_AUDIO_ONLY -> audioOnly = r.bool()
                     HLS_TEMP_DIR -> tempDir = r.string()
                     HLS_INDEPENDENT -> independent = r.bool()
+                    HLS_SUBTITLE -> subtitles.add(r.subtitle())
                     else -> r.skip()
                 }
             }
@@ -256,6 +302,7 @@ class TaskInfoDB(private val configDir: String) {
                 audioOnly = audioOnly,
                 tempDir = tempDir,
                 independent = independent,
+                subtitles = subtitles,
             )
         }
         return null
@@ -270,6 +317,7 @@ class TaskInfoDB(private val configDir: String) {
             val videoSegments = ArrayList<DashSegment>()
             var audioMime = ""
             var videoMime = ""
+            val subtitles = ArrayList<SubtitleTrack>()
             while (true) {
                 val no = r.next()
                 if (no == -1) break
@@ -280,6 +328,7 @@ class TaskInfoDB(private val configDir: String) {
                     DASH_VIDEO_SEGMENT -> videoSegments.add(r.dashSegment())
                     DASH_AUDIO_MIME -> audioMime = r.string()
                     DASH_VIDEO_MIME -> videoMime = r.string()
+                    DASH_SUBTITLE -> subtitles.add(r.subtitle())
                     else -> r.skip()
                 }
             }
@@ -301,6 +350,7 @@ class TaskInfoDB(private val configDir: String) {
                 videoSegments = videoSegments,
                 audioMime = audioMime,
                 videoMime = videoMime,
+                subtitles = subtitles,
             )
         }
         return null
@@ -331,6 +381,7 @@ class TaskInfoDB(private val configDir: String) {
                 bool(HLS_AUDIO_ONLY, task.audioOnly)
                 string(HLS_TEMP_DIR, task.tempDir)
                 bool(HLS_INDEPENDENT, task.independent)
+                task.subtitles.forEach { subtitle(HLS_SUBTITLE, it) }
             }
         }.onFailure { Logger.error("XDM", "Error saving task info ${task.id}", it) }
     }
@@ -348,6 +399,7 @@ class TaskInfoDB(private val configDir: String) {
                 task.videoSegments.forEach { dashSegment(DASH_VIDEO_SEGMENT, it) }
                 string(DASH_AUDIO_MIME, task.audioMime)
                 string(DASH_VIDEO_MIME, task.videoMime)
+                task.subtitles.forEach { subtitle(DASH_SUBTITLE, it) }
             }
         }.onFailure { Logger.error("XDM", "Error saving task info ${task.id}", it) }
     }
@@ -363,6 +415,7 @@ class TaskInfoDB(private val configDir: String) {
             var headers: HeaderMap? = null
             val cookies = ArrayList<String>()
             val items = ArrayList<BatchItem>()
+            var tempDir: String? = null
             var type = 0
             while (true) {
                 when (r.next()) {
@@ -376,6 +429,7 @@ class TaskInfoDB(private val configDir: String) {
                     BATCH_HEADERS -> headers = r.headers()
                     BATCH_COOKIE -> cookies.add(r.string())
                     BATCH_ITEM -> items.add(readBatchItem(r.message()))
+                    BATCH_TEMP_DIR -> tempDir = r.string()
                     else -> r.skip()
                 }
             }
@@ -389,6 +443,7 @@ class TaskInfoDB(private val configDir: String) {
                 maxPiece = maxPiece,
                 cookies = cookies,
                 items = items,
+                tempDir = tempDir,
             )
         }
         return null
@@ -400,6 +455,7 @@ class TaskInfoDB(private val configDir: String) {
         var cookieGroup = -1
         var knownSize: Long? = null
         var nameFromPage = false
+        var audioUrl: String? = null
         while (true) {
             when (r.next()) {
                 -1 -> break
@@ -408,6 +464,7 @@ class TaskInfoDB(private val configDir: String) {
                 ITEM_COOKIE_GROUP -> cookieGroup = r.int()
                 ITEM_KNOWN_SIZE -> knownSize = r.long()
                 ITEM_NAME_FROM_PAGE -> nameFromPage = r.bool()
+                ITEM_AUDIO_URL -> audioUrl = r.string()
                 else -> r.skip()
             }
         }
@@ -417,6 +474,7 @@ class TaskInfoDB(private val configDir: String) {
             cookieGroup = cookieGroup,
             knownSize = knownSize,
             nameFromPage = nameFromPage,
+            audioUrl = audioUrl,
         )
     }
 
@@ -433,6 +491,7 @@ class TaskInfoDB(private val configDir: String) {
                 headers(BATCH_HEADERS, SensitiveHeaders.strip(task.id, task.headers))
                 // In order: BatchItem.cookieGroup is an index into this list.
                 task.cookies.forEach { string(BATCH_COOKIE, it) }
+                task.tempDir?.let { string(BATCH_TEMP_DIR, it) }
                 for (item in task.items) {
                     message(BATCH_ITEM) {
                         string(ITEM_URL, item.url)
@@ -440,6 +499,7 @@ class TaskInfoDB(private val configDir: String) {
                         int(ITEM_COOKIE_GROUP, item.cookieGroup)
                         item.knownSize?.let { long(ITEM_KNOWN_SIZE, it) }
                         bool(ITEM_NAME_FROM_PAGE, item.nameFromPage)
+                        item.audioUrl?.let { string(ITEM_AUDIO_URL, it) }
                     }
                 }
             }

@@ -78,13 +78,19 @@ class BatchFilesView(
             ChunkStatus.Failed -> f.error.get()?.let { "${text("BATCH_STATUS_FAILED")}: ${downloadErrorText(it)}" }
                 ?: text("BATCH_STATUS_FAILED")
 
-            else -> if (recordStatus == RecordStatus.DOWNLOADING && f.downloaded.get() > 0)
+            // A merged item whose two tracks are both in is being merged into its file.
+            else -> if (recordStatus == RecordStatus.DOWNLOADING && f.merged && f.tracks.all { it.status.get() == ChunkStatus.Finished })
+                text("BATCH_STATUS_MERGING")
+            else if (recordStatus == RecordStatus.DOWNLOADING && f.bytes > 0)
                 text("STAT_DOWNLOADING") else text("BATCH_STATUS_WAITING")
         }
     }
 
     private fun sizeText(index: Int): String {
-        val length = state?.files?.get(index)?.length?.get() ?: -1
+        // A merged item not merged yet: its two tracks together.
+        val length = state?.files?.get(index)?.let { f ->
+            if (f.merged && f.status.get() != ChunkStatus.Finished) f.size else f.length.get()
+        } ?: -1
         val size = if (length >= 0) length else task.items[index].knownSize
         return size?.let { FormatHelper.formatSize(it.toDouble()) } ?: "–"
     }
@@ -111,7 +117,7 @@ class BatchFilesView(
             runCatching { openFolderExternal(name, folder()) }.onFailure { Logger.error(it) }
         }
         mCopy.addActionListener {
-            setClipBoardText(selectedIndexes().joinToString("\n") { task.items[it].url })
+            setClipBoardText(selectedIndexes().joinToString("\n") { listOfNotNull(task.items[it].url, task.items[it].audioUrl).joinToString("\n") })
         }
 
         table.addMouseListener(object : MouseAdapter() {

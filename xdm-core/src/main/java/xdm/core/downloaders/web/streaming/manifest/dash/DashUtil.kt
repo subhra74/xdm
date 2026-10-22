@@ -16,6 +16,9 @@ private val XS_DURATION_PATTERN: Pattern = Pattern.compile(
 
 private const val TRICK_MODE_URL = "http://dashif.org/guidelines/trickmode"
 
+/** The only DASH subtitle format supported: a WebVTT file. */
+const val TEXT_VTT = "text/vtt"
+
 fun parseXsDuration(value: String): Long {
     val match = XS_DURATION_PATTERN.matcher(value)
     return if (match.matches()) {

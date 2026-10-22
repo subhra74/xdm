@@ -265,4 +265,52 @@ class TestDashParser {
         val prefixes = entries.map { it.video!!.segments.first().toString().substringAfterLast('/').substringBefore('-') }
         assertTrue(prefixes.containsAll(listOf("a", "b")), "expected both remote periods spliced, got $prefixes")
     }
+
+    @Test
+    fun webVttAdaptationSetsBecomeSubtitles() {
+        val mpd = """
+            <MPD xmlns="urn:mpeg:dash:schema:mpd:2011" type="static" mediaPresentationDuration="PT10S">
+              <Period>
+                <AdaptationSet mimeType="video/mp4">
+                  <Representation id="v" bandwidth="1000" width="640" height="360" codecs="avc1.4d401e">
+                    <BaseURL>video.mp4</BaseURL>
+                    <SegmentBase indexRange="0-100"/>
+                  </Representation>
+                </AdaptationSet>
+                <AdaptationSet mimeType="audio/mp4" lang="en">
+                  <Representation id="a" bandwidth="128" codecs="mp4a.40.2">
+                    <BaseURL>audio.mp4</BaseURL>
+                    <SegmentBase indexRange="0-100"/>
+                  </Representation>
+                </AdaptationSet>
+                <AdaptationSet contentType="text" mimeType="text/vtt" lang="en" label="English CC">
+                  <Role schemeIdUri="urn:mpeg:dash:role:2011" value="main"/>
+                  <Representation id="s1" bandwidth="100">
+                    <BaseURL>subs/en.vtt</BaseURL>
+                  </Representation>
+                </AdaptationSet>
+                <AdaptationSet contentType="text" mimeType="text/vtt" lang="de">
+                  <Role schemeIdUri="urn:mpeg:dash:role:2011" value="forced-subtitle"/>
+                  <Representation id="s2" bandwidth="100">
+                    <BaseURL>subs/de.vtt</BaseURL>
+                  </Representation>
+                </AdaptationSet>
+                <AdaptationSet contentType="text" mimeType="application/mp4" lang="fr">
+                  <Representation id="s3" bandwidth="100" codecs="stpp">
+                    <BaseURL>subs/fr.mp4</BaseURL>
+                    <SegmentBase indexRange="0-100"/>
+                  </Representation>
+                </AdaptationSet>
+              </Period>
+            </MPD>
+        """
+        val entry = parse(mpd).single()
+        assertEquals("video/mp4", entry.video!!.mimeType, "a text set must not be taken for video")
+        val subs = entry.subtitles
+        assertEquals(listOf("en", "de"), subs.map { it.language }, "only WebVTT is offered")
+        assertEquals("English CC", subs[0].name)
+        assertEquals("http://host/path/subs/en.vtt", subs[0].segments.single().toString())
+        assertTrue(subs[0].isDefault && !subs[0].forced)
+        assertTrue(subs[1].forced)
+    }
 }

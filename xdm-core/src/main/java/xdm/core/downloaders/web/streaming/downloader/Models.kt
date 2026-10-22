@@ -11,6 +11,9 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 
+/** [StreamingChunk.tag] of a subtitle segment: saved beside the video, never muxed. */
+const val SUBS_TAG = "SUBS"
+
 data class StreamingChunk(
     val id: Long,
     val sequence: Long,

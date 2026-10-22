@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test
 import xdm.core.downloaders.DashDownloadTaskInfo
 import xdm.core.downloaders.HlsDownloadTaskInfo
 import xdm.core.downloaders.HttpDownloadTaskInfo
+import xdm.core.downloaders.SubtitleTrack
 import xdm.core.downloaders.TaskInfoDB
 import xdm.core.downloaders.web.http.Chunk
 import xdm.core.downloaders.web.http.ChunkStatus
@@ -69,6 +70,9 @@ class TestTaskInfoDB : HttpDownloadTestBase() {
             categoryId = "CAT_VIDEOS", targetFolder = "/downloads",
             maxPiece = 0, authInfo = null, url = "https://cdn.example.com/master.m3u8",
             audioUrl = "https://cdn.example.com/audio.m3u8", audioOnly = false, independent = true,
+            subtitles = listOf(
+                SubtitleTrack("English", "en", playlistUrl = "https://cdn.example.com/en.m3u8", isDefault = true),
+            ),
         )
         db().saveHlsTask(task)
         assertEquals(task, db().getHlsTask(2))
@@ -83,6 +87,11 @@ class TestTaskInfoDB : HttpDownloadTestBase() {
             videoSegments = listOf(DashSegment(URI("https://cdn.example.com/v1.m4s"), Pair(0L, 99L))),
             audioSegments = listOf(DashSegment(URI("https://cdn.example.com/a1.m4s"), null)),
             url = "https://cdn.example.com/manifest.mpd", audioMime = "audio/mp4", videoMime = "video/mp4",
+            subtitles = listOf(
+                SubtitleTrack(
+                    "", "de", segments = listOf(DashSegment(URI("https://cdn.example.com/de.vtt"), null)), forced = true
+                ),
+            ),
         )
         db().saveDashTask(task)
         assertEquals(task, db().getDashTask(3))

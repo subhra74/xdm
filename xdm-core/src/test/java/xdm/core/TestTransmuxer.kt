@@ -503,6 +503,35 @@ class TestTransmuxer {
     }
 
     @Test
+    fun ptsWrapMidStreamKeepsAvSync() {
+        requireFfmpeg()
+        // B-frame video + audio whose 33-bit PTS rolls over 1.5 s in: around the wrap, reordered
+        // frames carry a PTS that has wrapped while their DTS has not.
+        val wrapSec = (1L shl 33) / 90_000.0
+        val offset = wrapSec - 1.5 - 1.4 // the mpegts muxer starts at 1.4 s
+        run(ffmpeg!!, "-y", "-loglevel", "error",
+            "-f", "lavfi", "-i", "testsrc=size=320x240:rate=25",
+            "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=44100",
+            "-t", "4", "-c:v", "libx264", "-profile:v", "main", "-bf", "3", "-pix_fmt", "yuv420p", "-g", "25",
+            "-c:a", "aac", "-ar", "44100", "-ac", "2", "-output_ts_offset", "%.4f".format(offset),
+            "-f", "hls", "-hls_time", "1", "-hls_segment_type", "mpegts", "-hls_list_size", "0",
+            "-hls_segment_filename", File(workDir, "wrap%d.ts").path, File(workDir, "wrap.m3u8").path)
+        val segs = seg("wrap")
+        val out = File(workDir, "wrap_sync.mp4").absolutePath
+        val muxer = TransmuxingMuxer("/nonexistent-appdir")
+        assert(muxer.mux(segs, out, {}, workDir.path, false, false)) { "mux returned false" }
+
+        // Time zero is the pre-wrap start, not a wrapped frame's PTS.
+        val start = muxer.timelineStartSec!!
+        assert(start > wrapSec - 3 && start < wrapSec) { "timeline starts at $start s, wrap is at $wrapSec s" }
+        val expected = videoMinusAudioStart(segs.first()) ?: return
+        val actual = videoMinusAudioStart(out)!!
+        assert(kotlin.math.abs(actual - expected) < 0.002) { "A/V offset $actual s, source has $expected s" }
+        val durations = ffprobe(out, "codec_type,duration")!!.associate { it[0] to it[1].toDouble() }
+        for ((type, d) in durations) assert(d in 3.8..4.2) { "$type lasts $d s, expected about 4 s" }
+    }
+
+    @Test
     fun metadataStreamInTsIsSkipped() {
         requireFfmpeg()
         val patched = seg("m").mapIndexed { i, s ->

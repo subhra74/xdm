@@ -5,6 +5,7 @@ import xdm.app.utils.captureDestination
 import xdm.core.*
 import xdm.core.downloaders.DashDownloadTaskInfo
 import xdm.core.downloaders.HlsDownloadTaskInfo
+import xdm.core.downloaders.SubtitleTrack
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.downloaders.web.streaming.manifest.dash.DashSegment
 import xdm.core.downloaders.web.streaming.manifest.dash.MpdEntry
@@ -363,31 +364,13 @@ object VideoHelper {
         val name = fileNameWithExt(msg, "mp4")
         val origin = msg.tabUrl ?: getHeader(REFERER, msg.requestHeaders)
         val dest = captureDestination(name, offer.video.url, origin)
-        val info = DashDownloadTaskInfo(
-            id = offer.id,
-            fileName = name,
-            tempDir = AppContext.config.tempFolder,
-            respectFileName = true,
-            cookie = msg.cookie,
-            headers = msg.requestHeaders,
-            origin = origin,
-            categoryId = dest.first,
-            targetFolder = dest.second,
-            maxPiece = AppContext.config.maxSegments,
-            authInfo = null,
-            url = offer.video.url,
-            audioSegments = splitTrackSegments(offer.audio) ?: return,
-            videoSegments = splitTrackSegments(offer.video) ?: return,
-            audioMime = "audio/mp4",
-            videoMime = "video/mp4",
-        )
+        val info = splitTrackTask(
+            offer.id, offer.video, offer.audio, name, origin, msg.requestHeaders, msg.cookie, dest.first, dest.second,
+        ) ?: return
         val video = offer.video.probe
         val size = video.totalSize + offer.audio.probe.totalSize
-        val quality = listOfNotNull(
-            video.info.height.takeIf { it > 0 }?.let { "${it}p" },
-            codecName(video.info.codec),
-            FormatHelper.formatSize(size.toDouble()),
-        ).joinToString(" ")
+        val quality = listOfNotNull(splitTrackQuality(offer.video), FormatHelper.formatSize(size.toDouble()))
+            .joinToString(" ")
         AppContext.videoTracker.addVideoDash(
             listOf(
                 Pair(
@@ -403,6 +386,47 @@ object VideoHelper {
             )
         )
     }
+
+    /**
+     * A DASH download of a split-track pair, each track cut at its sidx (or whole without one). Null if
+     * a URL does not parse. Used for captures and for the batch dialog's one-download-per-link mode.
+     */
+    fun splitTrackTask(
+        id: Long, video: SplitTrackDetector.Track, audio: SplitTrackDetector.Track, fileName: String,
+        origin: String?, headers: HeaderMap?, cookie: String?, categoryId: String?, targetFolder: String,
+    ): DashDownloadTaskInfo? = DashDownloadTaskInfo(
+        id = id,
+        fileName = fileName,
+        tempDir = AppContext.config.tempFolder,
+        respectFileName = true,
+        cookie = cookie,
+        headers = headers,
+        origin = origin,
+        categoryId = categoryId,
+        targetFolder = targetFolder,
+        maxPiece = AppContext.config.maxSegments,
+        authInfo = null,
+        url = video.url,
+        audioSegments = splitTrackSegments(audio) ?: return null,
+        videoSegments = splitTrackSegments(video) ?: return null,
+        audioMime = "audio/mp4",
+        videoMime = "video/mp4",
+    )
+
+    /** "1080p VP9" for a video track, or null when it says neither. */
+    fun splitTrackQuality(video: SplitTrackDetector.Track): String? = listOfNotNull(
+        video.probe.info.height.takeIf { it > 0 }?.let { "${it}p" },
+        codecName(video.probe.info.codec),
+    ).joinToString(" ").ifEmpty { null }
+
+    /** Reads the head of a split track for the batch dialog, with that batch's headers and cookie. */
+    fun probeSplitTrack(url: String, headers: HeaderMap?, cookie: String?): SplitTrackDetector.Probe? =
+        runCatching { probeHead(httpClient, url, headers, cookie) }
+            .onFailure { Logger.error("XDM", "Track probe failed: $url", it) }.getOrNull()
+
+    /** What the capture side knows of these tracks' videos: see [SplitTrackDetector.lookup]. */
+    fun knownSplitTracks(trackKeys: Set<String>): Map<String, List<SplitTrackDetector.KnownTrack>> =
+        splitTracks.lookup(trackKeys)
 
     /** The track as byte-range segments cut at its sidx, or as one whole-file segment without one. */
     private fun splitTrackSegments(track: SplitTrackDetector.Track): List<DashSegment>? {
@@ -589,13 +613,14 @@ object VideoHelper {
                     videoSegments = video.segments,
                     audioMime = audio.mimeType,
                     videoMime = video.mimeType,
+                    subtitles = plc.subtitles,
                 )
 
                 AppContext.videoTracker.addVideoDash(
                     listOf(
                         Pair(
                             dashDownloadTaskInfo, StreamingVideoDisplayInfo(
-                                quality = getDashDisplayInfo(video, audio),
+                                quality = withSubtitleCount(getDashDisplayInfo(video, audio), plc.subtitles.size),
                                 dateTime = LocalDateTime.now(),
                                 tabId = msg.tabId ?: "0",
                                 tabUrl = msg.tabUrl,
@@ -616,6 +641,13 @@ object VideoHelper {
                 }
             }
         }
+    }
+
+    /** Adds "· CC n" to a quality line when the stream has subtitles; the download window offers them. */
+    private fun withSubtitleCount(quality: String?, count: Int): String? {
+        if (count == 0) return quality
+        val base = quality?.trim().orEmpty()
+        return if (base.isEmpty()) "CC $count" else "$base · CC $count"
     }
 
     private fun getDashDisplayInfo(video: Representation, audio: Representation): String {
@@ -656,12 +688,14 @@ object VideoHelper {
                 val audioOnly = videoUrl == null
                 val primaryUrl = videoUrl ?: audioUrl!!
                 val secondaryUrl = if (audioOnly) null else audioUrl
-                val hlsSource = toHlsSource(msg, secondaryUrl, primaryUrl, audioOnly, playlist.independent)
+                val hlsSource = toHlsSource(
+                    msg, secondaryUrl, primaryUrl, audioOnly, playlist.independent, playlist.subtitles
+                )
                 AppContext.videoTracker.addVideoHls(
                     listOf(
                         Pair(
                             hlsSource, StreamingVideoDisplayInfo(
-                                quality = playlist.getInfoString(),
+                                quality = withSubtitleCount(playlist.getInfoString(), playlist.subtitles.size),
                                 dateTime = LocalDateTime.now(),
                                 tabId = msg.tabId ?: "0",
                                 tabUrl = msg.tabUrl,
@@ -718,6 +752,7 @@ object VideoHelper {
         videoUrl: String,
         audioOnly: Boolean,
         independent: Boolean,
+        subtitles: List<SubtitleTrack> = emptyList(),
     ): HlsDownloadTaskInfo {
         val name = fileNameWithExt(msg, "mp4")
         val dest = captureDestination(name, videoUrl, msg.tabUrl ?: getHeader(REFERER, msg.requestHeaders))
@@ -738,6 +773,7 @@ object VideoHelper {
             audioUrl = audioUrl,
             audioOnly = audioOnly,
             independent,
+            subtitles = subtitles,
         )
     }
 }

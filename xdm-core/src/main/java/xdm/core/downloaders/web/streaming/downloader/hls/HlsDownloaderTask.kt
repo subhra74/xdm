@@ -6,6 +6,7 @@ import xdm.core.downloaders.web.http.ChunkStatus
 import xdm.core.downloaders.web.loadHlsState
 import xdm.core.downloaders.web.saveState
 import xdm.core.downloaders.web.streaming.downloader.HlsTaskContext
+import xdm.core.downloaders.web.streaming.downloader.SUBS_TAG
 import xdm.core.downloaders.web.streaming.downloader.StreamingChunk
 import xdm.core.downloaders.web.streaming.downloader.StreamingDownloaderTask
 import xdm.core.downloaders.web.streaming.manifest.hls.HlsParser
@@ -80,7 +81,15 @@ class HlsDownloaderTask : StreamingDownloaderTask {
         host: DownloadHost,
         configDir: String,
         config: CoreConfig
-    ) : super(makeContext(taskInfo, http, host, configDir), configDir, muxer, config, taskInfo.maxPiece)
+    ) : super(
+        makeContext(taskInfo, http, host, configDir), configDir, muxer, config, taskInfo.maxPiece,
+        taskInfo.subtitles.firstOrNull()
+    ) {
+        subtitleUrl = taskInfo.subtitles.firstOrNull()?.playlistUrl
+    }
+
+    /** The picked subtitle's media playlist; its segments are added as [SUBS_TAG] chunks. */
+    private val subtitleUrl: String?
 
     private val keyCache = ConcurrentHashMap<String, ByteArray>()
     private val decryptBuffer = ByteArray(256 * 1024)
@@ -89,14 +98,17 @@ class HlsDownloaderTask : StreamingDownloaderTask {
         val hlsContext = context as HlsTaskContext
         context.hasSeparateStreams = hlsContext.audioUrl != null
         //val independent = context.independent //In case master playlist contain #EXT-X-INDEPENDENT-SEGMENTS
-        val latch = CountDownLatch(if (context.hasSeparateStreams) 2 else 1)
+        val latch = CountDownLatch((if (context.hasSeparateStreams) 2 else 1) + (if (subtitleUrl != null) 1 else 0))
         val videoManifest = AtomicReference<File?>()
         val audioManifest = AtomicReference<File?>()
+        val subtitleManifest = AtomicReference<File?>()
         val error = AtomicBoolean(false)
         loadManifest(hlsContext.url, videoManifest, latch, error)
         if (context.hasSeparateStreams) {
             loadManifest(hlsContext.audioUrl!!, audioManifest, latch, error)
         }
+        // Its own error flag: a subtitle that can't be fetched only goes missing.
+        subtitleUrl?.let { loadManifest(it, subtitleManifest, latch, AtomicBoolean(false)) }
         try {
             if (!awaitUnlessStopped(latch)) return null
             val (videoPlaylist, audioPlaylist) = parseManifest(videoManifest, audioManifest)
@@ -149,6 +161,7 @@ class HlsDownloaderTask : StreamingDownloaderTask {
                     )
                 })
             }
+            subtitleChunks(subtitleManifest, context.chunks.size.toLong())?.let { context.chunks.addAll(it) }
             return DownloadStatusInfo.InitInfo(
                 id = context.id,
                 url = context.url,
@@ -166,6 +179,37 @@ class HlsDownloaderTask : StreamingDownloaderTask {
             // Also on a stop: a manifest still downloading is then deleted when it arrives.
             discardManifest(videoManifest)
             discardManifest(audioManifest)
+            discardManifest(subtitleManifest)
+        }
+    }
+
+    /** The subtitle playlist's segments as chunks, or null when it is missing, unreadable or encrypted. */
+    private fun subtitleChunks(manifest: AtomicReference<File?>, firstSequence: Long): List<StreamingChunk>? {
+        val url = subtitleUrl ?: return null
+        val playlist = runCatching {
+            readManifestLines(manifest) { HlsParser.parseMediaSegments(it, url).getOrThrow() }
+        }.getOrElse {
+            Logger.error("XDM", "Subtitle playlist unavailable, continuing without it", it)
+            return null
+        }
+        if (playlist.encrypted) {
+            Logger.info("XDM", "Encrypted subtitle playlist, continuing without it")
+            return null
+        }
+        return playlist.mediaSegments.mapIndexed { index, ms ->
+            StreamingChunk(
+                id = CoreUtils.uniqueId(),
+                sequence = firstSequence + index,
+                status = AtomicReference(ChunkStatus.Ready),
+                url = ms.url,
+                keyUrl = null,
+                iv = null,
+                byteRange = ms.byteRange,
+                tag = SUBS_TAG,
+                error = AtomicReference(null),
+                fileHandle = AtomicReference(null),
+                encrypted = false
+            )
         }
     }
 

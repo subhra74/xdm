@@ -28,15 +28,23 @@ import xdm.app.utils.windowIconImages
 import xdm.core.downloaders.BatchDownloadTaskInfo
 import xdm.core.downloaders.BatchItem
 import xdm.core.downloaders.HttpDownloadTaskInfo
+import xdm.integration.BatchVideoGrouper
+import xdm.integration.SplitVideo
+import xdm.integration.VideoHelper
 import xdm.core.util.CoreUtils.uniqueId
 import xdm.core.util.FileUtils
 import xdm.core.util.FormatHelper
+import xdm.core.util.getFileNameWithoutExtension
 import java.awt.*
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import java.io.File
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import javax.swing.*
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
@@ -52,6 +60,13 @@ import javax.swing.table.AbstractTableModel
  * Opened by the clipboard "Batch download" menu (URLs only) and by the browser's "Download all"
  * (with the page, headers and cookies the browser would send).
  *
+ * Links from the browser may include videos played as separate video and audio tracks (Facebook,
+ * Instagram, bilibili; [BatchVideoGrouper]). With "Combine video and audio" ticked, each such video is
+ * one row and one merged download; unticked, its tracks are ordinary rows. The tracks are probed in
+ * the background (or taken from what the capture side already read), and "Find missing" adds tracks
+ * the page's list left out but XDM saw the browser fetch. These controls share the count row under the
+ * table, so the dialog keeps its height.
+ *
  * An independent frame whoever opens it (docs/windows-and-modality.md): it has its own taskbar button
  * and stays when the main window goes to the tray. [near] is where it opens; null centres it.
  */
@@ -64,15 +79,64 @@ class BatchDownloadDialog(near: Window?, private val request: BatchRequest) : JF
         var selected: Boolean = true,
         /** The user typed this name: the server must not replace it. */
         var nameEdited: Boolean = false,
+        /** A video played as separate tracks, merged on download; null for an ordinary link. */
+        val video: SplitVideo? = null,
     )
 
-    private val entries: List<BatchEntry> = run {
-        val names = uniqueFileNames(request.items.map { initialName(it) })
-        request.items.mapIndexed { i, item -> BatchEntry(item, names[i]) }
+    private val grouping = if (request.fromBrowser) {
+        BatchVideoGrouper.group(request.items.map { it.url }, request.items.map { it.cookieGroup })
+    } else {
+        BatchVideoGrouper.Grouping(request.items.indices.toList(), emptyList())
     }
+    private val hasVideos = grouping.videos.isNotEmpty()
+
+    /** The links as sent, for "Combine video and audio" unticked; tracks read in pieces are one row per file. */
+    private val linkEntries: List<BatchEntry> = run {
+        val plain = grouping.plain.map { request.items[it] }
+        val tracks = grouping.videos.flatMap { v ->
+            v.trackUrls().map { BatchRequestItem(url = it, cookieGroup = v.cookieGroup) }
+        }
+        val items = plain + tracks
+        val names = uniqueFileNames(items.map { initialName(it) })
+        items.mapIndexed { i, item -> BatchEntry(item, names[i]) }
+    }
+
+    /** The other links, then one row per video; the ordinary links are the same entries as in [linkEntries]. */
+    private val combinedEntries: List<BatchEntry> = run {
+        val plain = linkEntries.take(grouping.plain.size)
+        // A generic name: the page title is the site's ("Instagram"), not the video's.
+        val base = text("BATCH_VIDEO_NAME")
+        val names = uniqueFileNames(plain.map { it.fileName } + grouping.videos.map { "$base.mp4" })
+            .drop(plain.size)
+        plain + grouping.videos.mapIndexed { i, v ->
+            BatchEntry(BatchRequestItem(url = "", cookieGroup = v.cookieGroup), names[i], video = v)
+        }
+    }
+
+    private var entries: List<BatchEntry> = if (hasVideos) combinedEntries else linkEntries
+    private val combine: Boolean get() = entries === combinedEntries
 
     private val tableModel = BatchTableModel()
     private val lblCount = JLabel()
+
+    private val chkCombine = JCheckBox(text("BATCH_COMBINE").format(grouping.videos.size)).apply {
+        isSelected = true
+        isVisible = hasVideos
+        margin = Insets(0, 0, 0, 0)
+    }
+    private val lblMissing = JLabel()
+
+    /** "Find missing" found nothing more: the link stays hidden and the hint says what to do instead. */
+    private var findExhausted = false
+    private val lnkFindMissing = JLabel(text("BATCH_FIND_MISSING")).apply {
+        foreground = UIManager.getColor("Component.linkColor") ?: Color(0x2F, 0x6F, 0xD0)
+        cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+    }
+
+    /** Reads the videos' track heads; a few at a time, stopped when the dialog closes. */
+    private val probePool: ExecutorService = Executors.newFixedThreadPool(4) { r ->
+        Thread(r, "batch-probe").apply { isDaemon = true }
+    }
 
     private val radioBatch = JRadioButton(text("BATCH_MODE_ONE"))
     private val radioEach = JRadioButton(text("BATCH_MODE_EACH"))
@@ -122,12 +186,33 @@ class BatchDownloadDialog(near: Window?, private val request: BatchRequest) : JF
         override fun getColumnName(col: Int) = columns[col]
         override fun getColumnClass(col: Int) = if (col == 0) Boolean::class.javaObjectType else String::class.java
 
-        override fun getValueAt(row: Int, col: Int): Any = when (col) {
-            0 -> entries[row].selected
-            1 -> entries[row].fileName
-            2 -> entries[row].item.knownSize?.let { FormatHelper.formatSize(it.toDouble()) } ?: "–"
-            3 -> entries[row].item.url
-            else -> ""
+        override fun getValueAt(row: Int, col: Int): Any {
+            val entry = entries[row]
+            entry.video?.let { return videoCell(it, col) ?: entry.selected }
+            return when (col) {
+                0 -> entry.selected
+                1 -> entry.fileName
+                2 -> entry.item.knownSize?.let { FormatHelper.formatSize(it.toDouble()) } ?: "–"
+                3 -> entry.item.url
+                else -> ""
+            }
+        }
+
+        private fun videoCell(video: SplitVideo, col: Int): Any? {
+            val pick = video.pick()
+            return when (col) {
+                1 -> entries.first { it.video === video }.fileName
+                2 -> if (pick.size > 0) FormatHelper.formatSize(pick.size.toDouble()) else if (video.probing) "…" else "–"
+                3 -> when {
+                    pick.complete -> text("BATCH_VIDEO_MERGED").format(VideoHelper.splitTrackQuality(pick.video!!) ?: "")
+                        .trimEnd(' ', '·')
+                    video.probing -> text("BATCH_VIDEO_CHECKING")
+                    pick.video != null -> text("BATCH_VIDEO_NO_AUDIO")
+                    pick.audio != null -> text("BATCH_VIDEO_NO_VIDEO")
+                    else -> text("BATCH_VIDEO_UNREADABLE")
+                }
+                else -> null
+            }
         }
 
         override fun isCellEditable(row: Int, col: Int) = col == 0 || col == COL_FILE
@@ -178,8 +263,69 @@ class BatchDownloadDialog(near: Window?, private val request: BatchRequest) : JF
 
             override fun windowClosed(e: WindowEvent) {
                 validateTimer.stop()
+                probePool.shutdownNow()
             }
         })
+        if (hasVideos) {
+            useKnownTracks(addMissing = false)
+            grouping.videos.forEach { startProbes(it) }
+        }
+    }
+
+    // ---- videos played as separate tracks ----
+
+    /**
+     * Takes what the capture side already read about these videos' tracks, so they need no probe. With
+     * [addMissing], also adds the tracks it saw that the page's list left out. Returns how many changed.
+     */
+    private fun useKnownTracks(addMissing: Boolean): Int {
+        val keys = grouping.videos.flatMapTo(HashSet()) { it.trackKeys }
+        val known = VideoHelper.knownSplitTracks(keys)
+        var changed = 0
+        for (video in grouping.videos) {
+            val listed = video.trackKeys
+            for (track in known[video.assetKey].orEmpty()) {
+                if (!addMissing && track.url.trackKey !in listed) continue
+                if (video.addKnown(track.url, track.probe)) changed++
+            }
+        }
+        return changed
+    }
+
+    private fun startProbes(video: SplitVideo) {
+        if (!combine) return
+        val cookie = request.cookies.getOrNull(video.cookieGroup)
+        for (track in video.nextProbes()) {
+            probePool.submit {
+                val probe = VideoHelper.probeSplitTrack(track.url.url, request.headers, cookie)
+                video.probed(track, probe)
+                SwingUtilities.invokeLater { onVideoChanged(video) }
+            }
+        }
+    }
+
+    /** A probe finished: try the next track if that one failed (or a better one is waiting), then repaint. */
+    private fun onVideoChanged(video: SplitVideo) {
+        if (!isDisplayable) return
+        startProbes(video)
+        val row = entries.indexOfFirst { it.video === video }
+        if (row >= 0) tableModel.fireTableRowsUpdated(row, row)
+        updateCount()
+    }
+
+    private fun findMissing() {
+        val added = useKnownTracks(addMissing = true)
+        grouping.videos.forEach { startProbes(it) }
+        tableModel.fireTableDataChanged()
+        if (added == 0) findExhausted = true
+        updateCount()
+    }
+
+    private fun setCombine(on: Boolean) {
+        entries = if (on) combinedEntries else linkEntries
+        tableModel.fireTableDataChanged()
+        if (on) grouping.videos.forEach { startProbes(it) }
+        updateCount()
     }
 
     private fun initUI() {
@@ -199,10 +345,28 @@ class BatchDownloadDialog(near: Window?, private val request: BatchRequest) : JF
             rowHeight = 24.px
             autoResizeMode = JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS
         }
+        // The count and the video controls share one row, so the dialog does not grow.
+        val videoControls = JPanel(FlowLayout(FlowLayout.RIGHT, 0, 0)).apply {
+            isOpaque = false
+            add(chkCombine)
+            add(Box.createRigidArea(scaledSize(12, 0)))
+            add(lblMissing)
+            add(Box.createRigidArea(scaledSize(6, 0)))
+            add(lnkFindMissing)
+        }
+        chkCombine.addActionListener { setCombine(chkCombine.isSelected) }
+        lnkFindMissing.addMouseListener(object : MouseAdapter() {
+            override fun mouseClicked(e: MouseEvent) = findMissing()
+        })
+        val countRow = JPanel(BorderLayout()).apply {
+            isOpaque = false
+            add(lblCount, BorderLayout.WEST)
+            add(videoControls, BorderLayout.EAST)
+        }
         val center = JPanel(BorderLayout(0, 4.px)).apply {
             border = ScaledEmptyBorder(0, 10, 6, 10)
             add(JScrollPane(table))
-            add(lblCount, BorderLayout.SOUTH)
+            add(countRow, BorderLayout.SOUTH)
         }
         add(center)
 
@@ -364,7 +528,8 @@ class BatchDownloadDialog(near: Window?, private val request: BatchRequest) : JF
 
     /** Shows where the batch goes and whether that folder can be used; enables Download accordingly. */
     private fun validateInput() {
-        val anySelected = entries.any { it.selected }
+        // A video still being read cannot be downloaded yet: which tracks it gets is not known.
+        val anySelected = entries.any { it.selected } && entries.none { it.selected && it.video?.probing == true }
         if (!batchMode) {
             showProblem(null, null)
             btnOk.isEnabled = anySelected
@@ -399,6 +564,11 @@ class BatchDownloadDialog(near: Window?, private val request: BatchRequest) : JF
 
     private fun updateCount() {
         lblCount.text = text("BATCH_SELECTED").format(entries.count { it.selected }, entries.size)
+        val incomplete = if (combine) grouping.videos.count { !it.probing && !it.pick().complete } else 0
+        lblMissing.isVisible = incomplete > 0
+        lnkFindMissing.isVisible = incomplete > 0 && !findExhausted
+        lblMissing.text = text("BATCH_MISSING").format(incomplete)
+        lblMissing.toolTipText = if (findExhausted) text("BATCH_MISSING_HINT") else null
         validateInput()
     }
 
@@ -414,6 +584,26 @@ class BatchDownloadDialog(near: Window?, private val request: BatchRequest) : JF
         val name = sanitizeBatchName(txtName.text) ?: return
         val parent = selectedFolder()
         val names = uniqueFileNames(selected.map { it.fileName })
+        val items = selected.mapIndexedNotNull { i, e ->
+            val video = e.video ?: return@mapIndexedNotNull BatchItem(
+                url = e.item.url,
+                fileName = names[i],
+                cookieGroup = e.item.cookieGroup,
+                knownSize = e.item.knownSize,
+                nameFromPage = e.item.fileName != null || e.nameEdited,
+            )
+            val pick = video.pick()
+            val single = pick.video ?: pick.audio ?: return@mapIndexedNotNull null
+            BatchItem(
+                url = single.url,
+                fileName = if (pick.video == null) withExtension(names[i], "m4a") else names[i],
+                cookieGroup = video.cookieGroup,
+                knownSize = pick.size.takeIf { it > 0 },
+                nameFromPage = true,
+                audioUrl = pick.audio?.url?.takeIf { pick.complete },
+            )
+        }
+        if (items.isEmpty()) return
         val task = BatchDownloadTaskInfo(
             id = uniqueId(),
             name = name,
@@ -422,15 +612,8 @@ class BatchDownloadDialog(near: Window?, private val request: BatchRequest) : JF
             origin = request.pageUrl,
             maxPiece = AppContext.config.maxSegments,
             cookies = request.cookies,
-            items = selected.mapIndexed { i, e ->
-                BatchItem(
-                    url = e.item.url,
-                    fileName = names[i],
-                    cookieGroup = e.item.cookieGroup,
-                    knownSize = e.item.knownSize,
-                    nameFromPage = e.item.fileName != null || e.nameEdited,
-                )
-            },
+            items = items,
+            tempDir = AppContext.config.tempFolder.takeIf { items.any { it.merged } },
         )
         if (!AppContext.downloader.startBatchDownload(task)) {
             MessageBox.show(this, text("MENU_BATCH_DOWNLOAD"), text("BATCH_FOLDER_ERROR").format(task.batchFolder))
@@ -449,6 +632,10 @@ class BatchDownloadDialog(near: Window?, private val request: BatchRequest) : JF
         if (folderHandPicked) rememberHandPickedFolder(folder, underNone = true)
         rememberMode()
         entries.filter { it.selected }.forEach { e ->
+            e.video?.let { video ->
+                downloadVideo(video, e.fileName, folder)
+                return@forEach
+            }
             AppContext.downloader.startHttpDownload(
                 HttpDownloadTaskInfo(
                     id = uniqueId(),
@@ -468,6 +655,38 @@ class BatchDownloadDialog(near: Window?, private val request: BatchRequest) : JF
         }
         dispose()
     }
+
+    /** One download for a video: merged when both tracks were found, else the one track as it is. */
+    private fun downloadVideo(video: SplitVideo, fileName: String, folder: String) {
+        val pick = video.pick()
+        val cookie = request.cookies.getOrNull(video.cookieGroup)
+        if (pick.complete) {
+            VideoHelper.splitTrackTask(
+                uniqueId(), pick.video!!, pick.audio!!, fileName, request.pageUrl, request.headers, cookie, null, folder,
+            )?.let { AppContext.downloader.startDashDownload(it) }
+            return
+        }
+        val single = pick.video ?: pick.audio ?: return
+        AppContext.downloader.startHttpDownload(
+            HttpDownloadTaskInfo(
+                id = uniqueId(),
+                url = single.url,
+                fileName = if (pick.video == null) withExtension(fileName, "m4a") else fileName,
+                respectFileName = true,
+                cookie = cookie,
+                headers = request.headers,
+                origin = request.pageUrl,
+                categoryId = null,
+                targetFolder = folder,
+                maxPiece = AppContext.config.maxSegments,
+                authInfo = null,
+                knownFileSize = single.probe.totalSize,
+            )
+        )
+    }
+
+    private fun withExtension(name: String, ext: String) =
+        getFileNameWithoutExtension(name) + "." + ext
 
     private companion object {
         const val SUGGESTION = "xdm.batch.suggestion"

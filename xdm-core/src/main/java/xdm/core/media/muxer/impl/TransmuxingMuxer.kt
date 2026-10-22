@@ -8,6 +8,7 @@ import xdm.core.media.muxer.transmux.iso.Mp4Demuxer
 import xdm.core.media.muxer.transmux.mkv.MatroskaDemuxer
 import xdm.core.media.muxer.transmux.mkv.MkvWriter
 import xdm.core.media.muxer.transmux.mp4.Mp4Writer
+import xdm.core.media.muxer.transmux.mp4.presentationStart
 import xdm.core.media.muxer.transmux.packed.PackedAudioDemuxer
 import xdm.core.media.muxer.transmux.sample.Track
 import xdm.core.media.muxer.transmux.ts.TsDemuxer
@@ -33,6 +34,10 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 class TransmuxingMuxer(@Suppress("UNUSED_PARAMETER") appDir: String) : Muxer {
     private val stopFlag = AtomicBoolean(false)
+
+    @Volatile
+    override var timelineStartSec: Double? = null
+        private set
 
     // ---- single list of (possibly A+V) segments ----
     override fun mux(
@@ -96,6 +101,9 @@ class TransmuxingMuxer(@Suppress("UNUSED_PARAMETER") appDir: String) : Muxer {
             val tracks = body(writer)
             if (stopFlag.get()) { writer.abort(); false }
             else {
+                // The earliest presented PTS, which the MP4 writer aligns the tracks on: time zero of the output.
+                timelineStartSec = tracks.filter { it.samples.isNotEmpty() && it.timescale > 0 }
+                    .minOfOrNull { presentationStart(it.samples).toDouble() / it.timescale }
                 val ok = writer.finish(tracks)
                 if (!ok) output.delete()
                 ok
