@@ -60,7 +60,7 @@ class CapturedVideoTracker : ICapturedVideoTracker {
     override fun addVideoHls(items: List<Pair<HlsDownloadTaskInfo, StreamingVideoDisplayInfo>>) {
         synchronized(this) {
             for (item in items) {
-                hlsVideoList[item.first.id] = item
+                putLatest(hlsVideoList, item.first.id, item) { "${it.url}|${it.audioUrl}" }
             }
         }
         EventChannel.notifyChanged()
@@ -69,7 +69,9 @@ class CapturedVideoTracker : ICapturedVideoTracker {
     override fun addVideoDash(items: List<Pair<DashDownloadTaskInfo, StreamingVideoDisplayInfo>>) {
         synchronized(this) {
             for (item in items) {
-                dashVideoList[item.first.id] = item
+                putLatest(dashVideoList, item.first.id, item) {
+                    "${it.videoSegments.firstOrNull() ?: it.url}|${it.audioSegments.firstOrNull()}"
+                }
             }
         }
         EventChannel.notifyChanged()
@@ -78,10 +80,29 @@ class CapturedVideoTracker : ICapturedVideoTracker {
     override fun addVideoHttp(items: List<Pair<HttpDownloadTaskInfo, StreamingVideoDisplayInfo>>) {
         synchronized(this) {
             for (item in items) {
-                httpVideoList[item.first.id] = item
+                putLatest(httpVideoList, item.first.id, item) { it.url }
             }
         }
         EventChannel.notifyChanged()
+    }
+
+    /**
+     * Adds [item], first dropping any other capture in the same tab with the same media URL (or the
+     * same video/audio URL pair). A tab is no longer cleared when it reloads the same page (see
+     * ClearTabFilter), so the reload's captures would otherwise sit next to the old ones; the newest
+     * is kept, as it carries the freshest signed URLs and headers. Same id: replaced in place.
+     */
+    private fun <T : Any> putLatest(
+        list: MutableMap<Long, Pair<T, StreamingVideoDisplayInfo>>,
+        id: Long,
+        item: Pair<T, StreamingVideoDisplayInfo>,
+        key: (T) -> String,
+    ) {
+        val itemKey = key(item.first)
+        list.entries.removeIf { (otherId, other) ->
+            otherId != id && other.second.tabId == item.second.tabId && key(other.first) == itemKey
+        }
+        list[id] = item
     }
 
     override val videoList: List<DetectedVideoInfo>

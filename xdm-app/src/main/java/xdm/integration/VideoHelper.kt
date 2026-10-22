@@ -6,6 +6,7 @@ import xdm.core.*
 import xdm.core.downloaders.DashDownloadTaskInfo
 import xdm.core.downloaders.HlsDownloadTaskInfo
 import xdm.core.downloaders.HttpDownloadTaskInfo
+import xdm.core.downloaders.web.streaming.manifest.dash.DashSegment
 import xdm.core.downloaders.web.streaming.manifest.dash.MpdEntry
 import xdm.core.downloaders.web.streaming.manifest.dash.Representation
 import xdm.core.downloaders.web.streaming.manifest.dash.XlinkResolver
@@ -15,6 +16,7 @@ import xdm.core.downloaders.web.streaming.manifest.hls.HlsParser
 import xdm.core.downloaders.web.streaming.manifest.hls.HlsPlaylist
 import xdm.core.downloaders.web.streaming.manifest.hls.getInfoString
 import xdm.core.downloaders.web.streaming.manifest.hls.singleFileHttpUrl
+import xdm.core.media.Mp4InitProbe
 import xdm.core.network.http.*
 import xdm.core.network.http.impl.*
 import xdm.core.util.*
@@ -235,6 +237,7 @@ object VideoHelper {
      */
     fun onTabNavigated(tabId: String) {
         m3u8MpdTabs.remove(tabId)
+        splitTracks.onTabNavigated(tabId)
         // The tab's detected videos were just cleared, so a reload must be allowed to find them again.
         synchronized(recentManifests) { recentManifests.keys.removeIf { it.first == tabId } }
     }
@@ -288,6 +291,10 @@ object VideoHelper {
         // The whole file's size, also for a range request. A malformed value must not abort the message.
         val contentLength = getFileSize(responseHeaders)
         msg.url ?: return
+        // Facebook/Instagram/bilibili tracks: paired from their CDN requests (see SplitTrackDetector).
+        if (splitTracks.onMediaMessage(msg, CoreUtils::uniqueId)) {
+            return
+        }
         if (contentType == null && !isUntypedMedia(msg.url, contentLength, AppContext.config.minVideoSize * 1024)) {
             return
         }
@@ -305,6 +312,112 @@ object VideoHelper {
                 contentLength ?: -1L
             )
         }
+    }
+
+    private val splitTracks = SplitTrackDetector(object : SplitTrackDetector.Env {
+        override fun execute(task: () -> Unit) = mediaExecutor.execute(task)
+
+        override fun probe(url: String, msg: ExtensionMessage): SplitTrackDetector.Probe? =
+            probeHead(httpClient, url, msg.requestHeaders, msg.cookie)
+
+        override fun offer(offer: SplitTrackDetector.Offer) = submitSplitTracks(offer)
+    })
+
+    /** Head bytes read first; a `moov`/`sidx` reaching past them is fetched again in full, up to [MAX_HEAD_BYTES]. */
+    private const val HEAD_PROBE_BYTES = 16 * 1024L
+    private const val MAX_HEAD_BYTES = 2 * 1024 * 1024L
+    private val CONTENT_RANGE_TOTAL = Regex("""/(\d+)\s*$""")
+
+    /** Reads the head of a single-file fMP4 track: what it holds, how long and how big it is, and its sidx. */
+    internal fun probeHead(
+        client: PoolingHttpClient, url: String, headers: HeaderMap?, cookie: String?,
+    ): SplitTrackDetector.Probe? {
+        var want = HEAD_PROBE_BYTES
+        for (attempt in 0..1) {
+            val response = client.getResponse(url, headers, cookie, Range(0, want - 1)).getOrNull() ?: return null
+            response.use {
+                val total = when (response.statusCode) {
+                    206 -> response.getHeader("Content-Range")
+                        ?.let { CONTENT_RANGE_TOTAL.find(it)?.groupValues?.get(1)?.toLongOrNull() }
+                    200 -> response.contentLength
+                    else -> {
+                        Logger.info("XDM", "Track probe got HTTP ${response.statusCode}: $url")
+                        return null
+                    }
+                }
+                val bytes = response.inputStream.use { it.readNBytes(want.toInt()) }
+                val info = Mp4InitProbe.parse(bytes) ?: return null
+                if (attempt == 0 && info.needBytes > want && info.needBytes <= MAX_HEAD_BYTES) {
+                    want = info.needBytes
+                } else {
+                    return SplitTrackDetector.Probe(info, total ?: info.sidx?.endOffset ?: return null)
+                }
+            }
+        }
+        return null
+    }
+
+    /** Publishes a split-track pair as a DASH capture; the same [SplitTrackDetector.Offer.id] replaces an earlier one. */
+    private fun submitSplitTracks(offer: SplitTrackDetector.Offer) {
+        val msg = offer.msg
+        val name = fileNameWithExt(msg, "mp4")
+        val origin = msg.tabUrl ?: getHeader(REFERER, msg.requestHeaders)
+        val dest = captureDestination(name, offer.video.url, origin)
+        val info = DashDownloadTaskInfo(
+            id = offer.id,
+            fileName = name,
+            tempDir = AppContext.config.tempFolder,
+            respectFileName = true,
+            cookie = msg.cookie,
+            headers = msg.requestHeaders,
+            origin = origin,
+            categoryId = dest.first,
+            targetFolder = dest.second,
+            maxPiece = AppContext.config.maxSegments,
+            authInfo = null,
+            url = offer.video.url,
+            audioSegments = splitTrackSegments(offer.audio) ?: return,
+            videoSegments = splitTrackSegments(offer.video) ?: return,
+            audioMime = "audio/mp4",
+            videoMime = "video/mp4",
+        )
+        val video = offer.video.probe
+        val size = video.totalSize + offer.audio.probe.totalSize
+        val quality = listOfNotNull(
+            video.info.height.takeIf { it > 0 }?.let { "${it}p" },
+            codecName(video.info.codec),
+            FormatHelper.formatSize(size.toDouble()),
+        ).joinToString(" ")
+        AppContext.videoTracker.addVideoDash(
+            listOf(
+                Pair(
+                    info, StreamingVideoDisplayInfo(
+                        quality = quality,
+                        size = size,
+                        duration = video.info.durationSeconds.toLong(),
+                        dateTime = LocalDateTime.now(),
+                        tabId = msg.tabId ?: "0",
+                        tabUrl = msg.tabUrl,
+                    )
+                )
+            )
+        )
+    }
+
+    /** The track as byte-range segments cut at its sidx, or as one whole-file segment without one. */
+    private fun splitTrackSegments(track: SplitTrackDetector.Track): List<DashSegment>? {
+        val uri = runCatching { URI(track.url) }.getOrNull() ?: return null
+        val ranges = Mp4InitProbe.segmentRanges(track.probe.info, track.probe.totalSize)
+            ?: return listOf(DashSegment(uri))
+        return ranges.map { DashSegment(uri, it) }
+    }
+
+    private fun codecName(codec: String?): String? = when (codec) {
+        "avc1", "avc3" -> "H.264"
+        "hvc1", "hev1" -> "HEVC"
+        "vp09" -> "VP9"
+        "av01" -> "AV1"
+        else -> codec
     }
 
     private fun processHttpVideo(msg: ExtensionMessage, type: String?, len: Long) {

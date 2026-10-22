@@ -44,6 +44,8 @@ object BrowserIntegration {
         ignoreUnknownKeys = true
         encodeDefaults = true
     }
+
+    private val clearTabFilter = ClearTabFilter()
     private val blockedHeaders = setOf(
         "accept",
 //        "authorization",
@@ -314,6 +316,10 @@ object BrowserIntegration {
             synchronized(json) { json.decodeFromString<ExtensionMessage>(str) }.also { logMessage(it) }
         } ?: return
         val tabId = extMsg.tabId ?: return
+        if (!clearTabFilter.shouldClear(tabId, extMsg.tabUrl)) {
+            Logger.info("Tab $tabId is still on the same page, keeping its videos")
+            return
+        }
         VideoHelper.onTabNavigated(tabId)
         AppContext.videoTracker.clearTab(tabId)
     }
