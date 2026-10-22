@@ -5,6 +5,7 @@ import xdm.app.DownloadCategory
 import xdm.app.I8N
 import xdm.app.ui.components.AppTheme
 import xdm.app.ui.components.CategoryDotIcon
+import xdm.app.ui.components.MessageBox
 import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.chooseFile
 import xdm.app.utils.fixHeight
@@ -224,9 +225,7 @@ class CategoryEditDialog(
     }
 
     private fun showError(message: String) =
-        javax.swing.JOptionPane.showMessageDialog(
-            this, message, title, javax.swing.JOptionPane.WARNING_MESSAGE
-        )
+        MessageBox.show(this, title, message, javax.swing.JOptionPane.WARNING_MESSAGE)
 
     /** The color shown on the swatch: the picked one, or the theme default for this category. */
     private fun currentColor(): Color =

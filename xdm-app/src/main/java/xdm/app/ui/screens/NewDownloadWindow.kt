@@ -8,6 +8,7 @@ import xdm.app.RecordStatus
 import xdm.app.ui.components.AppMenuHandler
 import xdm.app.ui.components.CategoryStyle
 import xdm.app.ui.components.DestinationPicker
+import xdm.app.ui.components.MessageBox
 import xdm.app.ui.components.StorageStatusLabel
 import xdm.app.ui.components.TempFolderCards
 import xdm.app.utils.RemixIcon
@@ -333,7 +334,8 @@ class NewDownloadWindow : JDialog() {
             choice == 0 -> true
             existing != null && choice == 1 -> {
                 if (rec.status == RecordStatus.FINISHED) {
-                    AppMenuHandler.openFolder(rec, this)
+                    // No owner: this window closes right away and would take the message with it.
+                    AppMenuHandler.openFolder(rec, null)
                 } else {
                     AppContext.downloader.resumeDownload(rec.id)
                 }
@@ -425,16 +427,16 @@ class NewDownloadWindow : JDialog() {
         val url = txtUrl.text
         val file = txtFileName.text
         if (StringUtils.isNullOrEmptyOrBlank(url)) {
-            JOptionPane.showMessageDialog(this, text("MSG_NO_URL"))
+            MessageBox.show(this, null, text("MSG_NO_URL"))
             return null
         }
         if (!validateURL(url)) {
-            JOptionPane.showMessageDialog(this, text("MSG_INVALID_URL"))
+            MessageBox.show(this, null, text("MSG_INVALID_URL"))
             return null
         }
 
         if (StringUtils.isNullOrEmptyOrBlank(file)) {
-            JOptionPane.showMessageDialog(this, text("MSG_NO_FILE"))
+            MessageBox.show(this, null, text("MSG_NO_FILE"))
             return null
         }
 

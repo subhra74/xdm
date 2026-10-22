@@ -417,7 +417,8 @@ class PropertiesDialog(private val owner: Window?, ent: DbRecord) : JDialog(owne
             openFolderExternal(if (exists) fileName else null, folder)
         } catch (e: Exception) {
             Logger.error(e)
-            MessageBox.show(owner, text("ERR_MSG_FILE_NOT_FOUND"), text("ERR_MSG_FILE_NOT_FOUND_MSG"))
+            // Owned by this dialog: while it is open (modal), a message owned by the main window would be blocked.
+            MessageBox.show(this, text("ERR_MSG_FILE_NOT_FOUND"), text("ERR_MSG_FILE_NOT_FOUND_MSG"))
         }
     }
 

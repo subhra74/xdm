@@ -5,6 +5,7 @@ import xdm.app.AppContext
 import xdm.app.I8N.text
 import xdm.app.ui.components.CategoryStyle
 import xdm.app.ui.components.DestinationPicker
+import xdm.app.ui.components.MessageBox
 import xdm.app.ui.components.StorageStatusLabel
 import xdm.app.ui.components.TempFolderCards
 import xdm.app.utils.RemixIcon
@@ -206,7 +207,7 @@ class NewVideoDownloadWindow : JDialog() {
     private fun downloadNow() {
         val file = txtFileName.text
         if (StringUtils.isNullOrEmptyOrBlank(file)) {
-            JOptionPane.showMessageDialog(this, text("MSG_NO_FILE"))
+            MessageBox.show(this, null, text("MSG_NO_FILE"))
             return
         }
 

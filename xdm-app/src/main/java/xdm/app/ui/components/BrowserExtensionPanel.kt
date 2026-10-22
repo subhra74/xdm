@@ -29,7 +29,6 @@ import java.awt.datatransfer.StringSelection
 import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.JLabel
-import javax.swing.JOptionPane
 import javax.swing.JPanel
 import javax.swing.JTextField
 import javax.swing.SwingUtilities
@@ -163,14 +162,13 @@ private fun linkRow(url: String, fitText: Boolean = true): JPanel {
 
 /** Shown when a tile's browser cannot be found: says so, and offers its install page link to copy. */
 private fun showNotInstalled(owner: Window?, browser: Browser, url: String) {
-    JOptionPane.showMessageDialog(
+    MessageBox.show(
         owner,
+        String.format(I8N.text("BROWSER_NOT_INSTALLED_TITLE"), browser.displayName),
         arrayOf(
             JLabel(String.format(I8N.text("BROWSER_NOT_INSTALLED"), browser.displayName)),
             Box.createRigidArea(scaledSize(0, 4)),
             linkRow(url),
         ),
-        String.format(I8N.text("BROWSER_NOT_INSTALLED_TITLE"), browser.displayName),
-        JOptionPane.INFORMATION_MESSAGE,
     )
 }

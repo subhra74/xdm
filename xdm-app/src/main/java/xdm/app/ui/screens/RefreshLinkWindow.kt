@@ -2,6 +2,7 @@ package xdm.app.ui.screens
 
 import xdm.app.AppContext
 import xdm.app.I8N.text
+import xdm.app.ui.components.MessageBox
 import xdm.app.ui.screens.settings.settingsIconButton
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
@@ -327,9 +328,7 @@ class RefreshLinkWindow(
     private fun onApply() {
         val url = txtUrl.text.trim()
         if (!isValidUrl(url)) {
-            JOptionPane.showMessageDialog(
-                this, text("ERR_REF_INVALID_URL"), title, JOptionPane.WARNING_MESSAGE
-            )
+            MessageBox.show(this, title, text("ERR_REF_INVALID_URL"), JOptionPane.WARNING_MESSAGE)
             return
         }
         val (headers, cookie) = collectHeaders()
@@ -429,9 +428,7 @@ private class HeaderEditDialog(parent: Window, existing: Pair<String, String>?) 
     private fun onOk() {
         val name = txtName.text.trim()
         if (name.isEmpty()) {
-            JOptionPane.showMessageDialog(
-                this, text("ERR_REF_HDR_NAME"), title, JOptionPane.WARNING_MESSAGE
-            )
+            MessageBox.show(this, title, text("ERR_REF_HDR_NAME"), JOptionPane.WARNING_MESSAGE)
             return
         }
         result = name to txtValue.text.trim()

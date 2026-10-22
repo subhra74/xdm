@@ -4,6 +4,7 @@ import xdm.app.AppContext
 import xdm.app.I8N.text
 import xdm.app.ScheduleEntry
 import xdm.app.ScheduleType
+import xdm.app.ui.components.MessageBox
 import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.gbAdd
 import xdm.app.utils.px
@@ -463,9 +464,7 @@ class ScheduleWindow(parent: Window, private val downloadId: Long) :
     }
 
     private fun warn(messageKey: String) {
-        JOptionPane.showMessageDialog(
-            this, text(messageKey), title, JOptionPane.WARNING_MESSAGE
-        )
+        MessageBox.show(this, title, text(messageKey), JOptionPane.WARNING_MESSAGE)
     }
 
     /** Shows the dialog modally; returns true when the user scheduled the download. */
