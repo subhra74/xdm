@@ -117,8 +117,10 @@ object AppMain {
         UIManager.put("TableHeader.cellMargins", Insets(0, 10, 0, 0))
         UIManager.put("SplitPaneDivider.gripDotCount", 0)
         UIManager.put("SplitPane.dividerSize", 10)
-        // Ownerless dialogs (JDialog() / JDialog(null)) get Swing's hidden shared frame as owner and
-        // take its icon (X11 window manager icon, FlatLaf title pane): without this, the Java cup.
+        // Dialogs made with no owner argument (JDialog(), JOptionPane with a null parent) get Swing's
+        // hidden shared frame as owner and take its icon (X11 window manager icon, FlatLaf title pane):
+        // without this, the Java cup. A truly ownerless one (JDialog(null as Window?)) does not, and
+        // sets windowIconImages itself (docs/windows-and-modality.md).
         JOptionPane.getRootFrame().iconImages = windowIconImages
     }
 }

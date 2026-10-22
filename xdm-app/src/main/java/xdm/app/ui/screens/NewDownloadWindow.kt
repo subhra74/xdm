@@ -20,6 +20,7 @@ import xdm.app.utils.sameWidth
 import xdm.app.utils.scaledInsets
 import xdm.app.utils.scaledSize
 import xdm.app.utils.validateURL
+import xdm.app.utils.windowIconImages
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.util.*
 import xdm.core.util.CoreUtils.uniqueId
@@ -35,7 +36,12 @@ import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 import kotlin.math.max
 
-class NewDownloadWindow : JDialog() {
+/**
+ * Truly ownerless (docs/windows-and-modality.md), not `JDialog()`: that hangs it on Swing's hidden
+ * shared frame, which gives it no taskbar button on Windows. It must show while the main window is in
+ * the tray, and on native Wayland, where always-on-top does nothing, the taskbar is how to find it.
+ */
+class NewDownloadWindow : JDialog(null as Window?) {
     private lateinit var txtUrl: JTextField
     private lateinit var txtFileName: JTextField
     private lateinit var btnDownload: JButton
@@ -63,6 +69,7 @@ class NewDownloadWindow : JDialog() {
     private fun initUI() {
         isAlwaysOnTop = true
         title = text("ND_TITLE")
+        iconImages = windowIconImages
         val gridBagLayout = GridBagLayout().apply {
             columnWidths = intArrayOf(0, 0, 0, 0, 0, 0, 0)
             rowHeights = intArrayOf(0, 0, 0, 0, 0, 0, 0)

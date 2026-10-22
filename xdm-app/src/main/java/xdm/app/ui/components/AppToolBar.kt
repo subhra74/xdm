@@ -7,6 +7,7 @@ import xdm.app.ui.screens.AboutDialog
 import xdm.app.ui.screens.SettingsWindow
 import xdm.app.utils.RemixIcon
 import xdm.app.update.UpdateChecker
+import xdm.app.utils.SingleWindows
 import xdm.app.utils.UPDATE_CHECK_PAGE_URL
 import xdm.app.utils.WEBSITE_HELP_URL
 import xdm.app.utils.WEBSITE_URL
@@ -15,6 +16,7 @@ import xdm.app.utils.openInDefaultBrowser
 import xdm.app.utils.px
 import xdm.app.utils.scaledSize
 import xdm.app.utils.showMenu
+import xdm.app.utils.shownWindow
 import java.awt.Color
 import java.awt.Component
 import java.awt.Dimension
@@ -233,7 +235,7 @@ class AppToolBar(
                 }
 
                 "MENU_ABOUT" -> {
-                    AboutDialog(SwingUtilities.windowForComponent(toolbar)).isVisible = true
+                    AboutDialog.open(SwingUtilities.windowForComponent(toolbar))
                 }
 
                 "MENU_EXIT" -> {
@@ -244,12 +246,12 @@ class AppToolBar(
     }
 
     private fun showSettings() {
-        SettingsWindow(SwingUtilities.windowForComponent(toolbar)).apply {
-            onSaved = settingsSavedCallback
-            isModal = true
-            setLocationRelativeTo(parent)
-            loadConfig()
-            isVisible = true
+        SingleWindows.show(SettingsWindow::class) {
+            SettingsWindow().apply {
+                onSaved = settingsSavedCallback
+                setLocationRelativeTo(shownWindow(toolbar))
+                loadConfig()
+            }
         }
     }
 

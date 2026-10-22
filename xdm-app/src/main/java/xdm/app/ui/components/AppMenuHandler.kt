@@ -10,6 +10,7 @@ import xdm.app.ui.screens.AppWindow
 import xdm.app.ui.screens.BatchUrlDialog
 import xdm.app.ui.screens.ChangeFolderDialog
 import xdm.app.ui.screens.StreamDownloadDialog
+import xdm.app.utils.SingleWindows
 import xdm.app.utils.captureDestination
 import xdm.app.utils.getFileFolder
 import xdm.app.utils.openFileExternal
@@ -117,7 +118,7 @@ object AppMenuHandler {
     /** Opens Change folder for a stopped download (docs/download-categories.md §6.1). */
     fun changeFolder(ent: DbRecord?, window: Window?) {
         if (ent == null || !ent.status.isStopped || ent.downloadType == DownloadType.Batch) return
-        ChangeFolderDialog(window, ent).isVisible = true
+        SingleWindows.show("change-folder" to ent.id) { ChangeFolderDialog(window, ent) }
     }
 
     fun resumeDownload(ent: DbRecord?) {
@@ -242,7 +243,7 @@ object AppMenuHandler {
 
     /** "Batch download": asks for the links, then shows the batch dialog. */
     fun showBatchDialog(window: Window?) {
-        BatchUrlDialog(window).isVisible = true
+        SingleWindows.show(BatchUrlDialog::class) { BatchUrlDialog(window) }
     }
 
     /** "Stream download (HLS/DASH)": a non-modal dialog; each click opens another. */

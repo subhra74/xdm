@@ -1,5 +1,6 @@
 package xdm.app
 
+import xdm.app.ui.components.AuthInput
 import xdm.app.ui.components.MessageBox
 import xdm.core.network.http.AuthScope
 import xdm.core.network.http.BasicCredentials
@@ -10,7 +11,9 @@ import java.net.InetSocketAddress
 import java.net.PasswordAuthentication
 import java.net.Proxy
 import java.net.Socket
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 import javax.swing.SwingUtilities
 
 /**
@@ -83,16 +86,27 @@ class DefaultAuthenticator : Authenticator() {
 }
 
 /**
- * Asks for credentials with a modal dialog on the EDT; the caller is a download thread, which waits.
+ * Asks for credentials in a dialog of its own; the caller is a download thread, which waits.
  * What the user types is kept in memory for the run only (see [xdm.core.network.http.HttpAuth]).
  */
 object SwingCredentialPrompt : CredentialPrompt {
     override fun ask(scope: AuthScope, rejected: Boolean): BasicCredentials? {
         val message = message(scope, rejected)
-        var input: xdm.app.ui.components.AuthInput? = null
-        val show = Runnable { input = MessageBox.showAuth("XDM", message) }
-        if (SwingUtilities.isEventDispatchThread()) show.run() else SwingUtilities.invokeAndWait(show)
-        val answer = input ?: return null
+        val input = AtomicReference<AuthInput?>()
+        if (SwingUtilities.isEventDispatchThread()) {
+            MessageBox.showAuth("XDM", message, modal = true) { input.set(it) }
+        } else {
+            // A download thread: it waits here, so the dialog need not block any window.
+            val answered = CountDownLatch(1)
+            SwingUtilities.invokeLater {
+                MessageBox.showAuth("XDM", message, modal = false) {
+                    input.set(it)
+                    answered.countDown()
+                }
+            }
+            answered.await()
+        }
+        val answer = input.get() ?: return null
         return BasicCredentials(answer.userName, answer.password)
     }
 

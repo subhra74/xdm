@@ -2,6 +2,7 @@ package xdm.app.utils
 
 import xdm.app.AppContext.app
 import xdm.app.I8N
+import java.awt.Dialog
 import java.awt.GraphicsEnvironment
 import java.awt.MouseInfo
 import java.awt.Point
@@ -64,6 +65,9 @@ internal object WindowsTrayMenu {
             title = OWNER_TITLE
             // No taskbar button and no Alt+Tab entry.
             type = Window.Type.UTILITY
+            // Restore and Exit work while a prompt is open. The menu's popup window is owned by this
+            // one and inherits it.
+            modalExclusionType = Dialog.ModalExclusionType.APPLICATION_EXCLUDE
             isAlwaysOnTop = true
             setSize(1, 1)
             opacity = 0f

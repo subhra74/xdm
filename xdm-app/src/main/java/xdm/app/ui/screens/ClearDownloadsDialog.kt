@@ -36,9 +36,12 @@ data class ClearCriteria(val statuses: Set<RecordStatus>, val age: ClearAge) {
 
 /**
  * Asked for by the toolbar's Clear button: removes idle downloads picked by status and age, and
- * optionally their completed files. Downloads in progress or queued are never touched.
+ * optionally their completed files. Downloads in progress or queued are never touched. What to clear
+ * is read when Clear is pressed, so downloads may change while this is open. *
+ * Not modal (docs/windows-and-modality.md): nothing waits on it, and a modal one blocked every other
+ * window, the browser's new-download windows included. One open at a time ([xdm.app.utils.SingleWindows]).
  */
-class ClearDownloadsDialog(owner: Window?) : JDialog(owner, text("CLR_TITLE"), ModalityType.APPLICATION_MODAL) {
+class ClearDownloadsDialog(owner: Window?) : JDialog(owner, text("CLR_TITLE"), ModalityType.MODELESS) {
     private val chkFinished = JCheckBox(text("CLR_FINISHED"), true)
     private val chkPaused = JCheckBox(text("CLR_PAUSED"), true)
     private val chkFailed = JCheckBox(text("CLR_FAILED"), true)

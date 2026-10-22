@@ -12,6 +12,7 @@ import xdm.core.util.Logger
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Cursor
+import java.awt.Dialog
 import java.awt.Font
 import java.awt.GraphicsEnvironment
 import java.awt.Point
@@ -121,6 +122,7 @@ object NotificationPopup {
 
         init {
             window.type = Window.Type.POPUP // no taskbar button
+            window.modalExclusionType = Dialog.ModalExclusionType.APPLICATION_EXCLUDE // clickable while a prompt is open
             window.isAlwaysOnTop = true
             window.focusableWindowState = false
             window.isAutoRequestFocus = false

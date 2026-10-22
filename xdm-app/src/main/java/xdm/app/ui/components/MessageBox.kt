@@ -1,10 +1,10 @@
 package xdm.app.ui.components
 
 import xdm.app.MessageBoxResult
+import xdm.app.utils.shownWindow
 import xdm.app.utils.windowIconImages
 import java.awt.Component
 import java.awt.Dialog
-import java.awt.Frame
 import java.awt.Window
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
@@ -12,7 +12,6 @@ import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import javax.swing.JCheckBox
 import javax.swing.JDialog
-import javax.swing.JFrame
 import javax.swing.JOptionPane
 import javax.swing.JTextField
 import javax.swing.JPasswordField
@@ -43,7 +42,7 @@ object MessageBox {
         return MessageBoxResult.CANCEL
     }
 
-    fun confirm(window: JFrame?, title: String?, message: String?): Boolean {
+    fun confirm(window: Window?, title: String?, message: String?): Boolean {
         return (JOptionPane.showConfirmDialog(window, message, title, JOptionPane.YES_NO_OPTION)
                 == JOptionPane.YES_OPTION)
     }
@@ -66,7 +65,7 @@ object MessageBox {
             SwingUtilities.invokeLater { show(parent, title, message, messageType) }
             return
         }
-        val owner = visibleOwner(parent)
+        val owner = shownWindow(parent)
         val key = owner to message
         openMessages[key]?.let { it.toFront(); return }
         val pane = JOptionPane(message, messageType)
@@ -93,44 +92,46 @@ object MessageBox {
     }
 
     /**
-     * [parent]'s window, or null when it is hidden or minimized (the main window in the tray): an
-     * owned window has no taskbar button on Windows, Windows hides it along with a minimized owner,
-     * and native Wayland gives it no parent surface unless the owner is on screen.
+     * Asks for a user name and password in a dialog of its own: no owner, so it has a taskbar button
+     * on Windows and shows while the main window is in the tray. [modal] only for a caller on the EDT,
+     * which has to wait inside the dialog; otherwise it blocks no window, the progress windows
+     * included, and [onDone] gets the answer (null when cancelled). EDT only.
      */
-    private fun visibleOwner(parent: Component?): Window? {
-        val window = parent as? Window ?: parent?.let { SwingUtilities.getWindowAncestor(it) } ?: return null
-        if (!window.isShowing) return null
-        val minimized = generateSequence(window) { it.owner }
-            .any { it is Frame && (it.extendedState and Frame.ICONIFIED) != 0 }
-        return window.takeUnless { minimized }
-    }
-
-    fun showAuth(title: String, message: String): AuthInput? {
+    fun showAuth(title: String, message: String, modal: Boolean, onDone: (AuthInput?) -> Unit) {
         val usernameField = JTextField()
         val passwordField = JPasswordField()
-
-        val components = mutableListOf<Any>(
-            message,
-            "Username:", usernameField,
-            "Password:", passwordField
-        )
-
-        val result = JOptionPane.showOptionDialog(
-            null, // Parent component, can be null for a default frame
-            components.toTypedArray(),
-            title,
-            JOptionPane.OK_CANCEL_OPTION,
+        val pane = JOptionPane(
+            arrayOf<Any>(message, "Username:", usernameField, "Password:", passwordField),
             JOptionPane.QUESTION_MESSAGE,
-            null,
-            null,
-            null
+            JOptionPane.OK_CANCEL_OPTION,
         )
-
-        return if (result == JOptionPane.OK_OPTION) {
-            AuthInput(
-                userName = usernameField.text,
-                password = String(passwordField.password),
-            )
-        } else null
+        val dialog = pane.createDialog(title).apply { iconImages = windowIconImages }
+        if (!modal) {
+            dialog.modalityType = Dialog.ModalityType.MODELESS
+            // As for info messages; ignored on native Wayland.
+            dialog.modalExclusionType = Dialog.ModalExclusionType.APPLICATION_EXCLUDE
+        }
+        var answered = false
+        val finish = {
+            if (!answered) {
+                answered = true
+                onDone(
+                    if (pane.value == JOptionPane.OK_OPTION) AuthInput(usernameField.text, String(passwordField.password))
+                    else null
+                )
+            }
+        }
+        dialog.addComponentListener(object : ComponentAdapter() {
+            override fun componentHidden(e: ComponentEvent) {
+                finish()
+                dialog.dispose()
+            }
+        })
+        dialog.isVisible = true
+        // Modal: the answer is in once setVisible returns.
+        if (modal) {
+            finish()
+            dialog.dispose()
+        }
     }
 }

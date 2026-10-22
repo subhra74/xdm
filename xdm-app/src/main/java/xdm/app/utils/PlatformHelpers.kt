@@ -25,7 +25,6 @@ import java.io.File
 import java.io.FileNotFoundException
 import java.net.URI
 import javax.swing.JFileChooser
-import javax.swing.JFrame
 import javax.swing.SwingUtilities
 import kotlin.concurrent.thread
 import kotlin.system.exitProcess
@@ -165,8 +164,8 @@ private fun showTrayBalloon(caption: String, text: String, onFailed: () -> Unit)
  * Must run on the EDT.
  */
 fun offerMacNotificationSettings(parent: Component?) {
-    val window = parent?.let { SwingUtilities.getWindowAncestor(it) ?: it as? JFrame } as? JFrame
-    if (MessageBox.confirm(window, I8N.text("MSG_NOTIFICATIONS_OFF_TITLE"), I8N.text("MSG_NOTIFICATIONS_OFF"))) {
+    // Not owned by a hidden main window (XDM in the tray): it would show behind the app in front.
+    if (MessageBox.confirm(shownWindow(parent), I8N.text("MSG_NOTIFICATIONS_OFF_TITLE"), I8N.text("MSG_NOTIFICATIONS_OFF"))) {
         MacNotifications.openSystemSettings()
     }
 }

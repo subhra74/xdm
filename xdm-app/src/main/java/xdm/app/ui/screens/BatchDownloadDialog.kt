@@ -24,6 +24,7 @@ import xdm.app.utils.scaledInsets
 import xdm.app.utils.scaledSize
 import xdm.app.utils.suggestBatchName
 import xdm.app.utils.uniqueFileNames
+import xdm.app.utils.windowIconImages
 import xdm.core.downloaders.BatchDownloadTaskInfo
 import xdm.core.downloaders.BatchItem
 import xdm.core.downloaders.HttpDownloadTaskInfo
@@ -50,8 +51,11 @@ import javax.swing.table.AbstractTableModel
  *
  * Opened by the clipboard "Batch download" menu (URLs only) and by the browser's "Download all"
  * (with the page, headers and cookies the browser would send).
+ *
+ * An independent frame whoever opens it (docs/windows-and-modality.md): it has its own taskbar button
+ * and stays when the main window goes to the tray. [near] is where it opens; null centres it.
  */
-class BatchDownloadDialog(owner: Window?, private val request: BatchRequest) : JDialog(owner) {
+class BatchDownloadDialog(near: Window?, private val request: BatchRequest) : JFrame() {
     val btnOk = JButton(text("ND_DOWNLOAD"))
 
     private class BatchEntry(
@@ -148,10 +152,8 @@ class BatchDownloadDialog(owner: Window?, private val request: BatchRequest) : J
 
     init {
         title = text("MENU_BATCH_DOWNLOAD")
+        iconImages = windowIconImages
         defaultCloseOperation = DISPOSE_ON_CLOSE
-        // Not modal: a modal dialog blocks every other window, including the progress window it starts
-        // and new-download windows sent by the browser while it is open.
-        isModal = false
         initUI()
         fillFolders()
         val asOne = if (request.fromBrowser) AppContext.config.batchAsOneFromBrowser
@@ -163,7 +165,7 @@ class BatchDownloadDialog(owner: Window?, private val request: BatchRequest) : J
         // From the browser it must not open behind the browser window.
         isAlwaysOnTop = request.fromBrowser
         size = Dimension(DIALOG_WIDTH.px, dialogHeight(DIALOG_HEIGHT))
-        setLocationRelativeTo(owner)
+        setLocationRelativeTo(near)
 
         // The description's height depends on the width it wraps to.
         addComponentListener(object : ComponentAdapter() {

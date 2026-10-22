@@ -7,6 +7,7 @@ import xdm.app.I8N.text
 import xdm.app.ui.screens.ClearDownloadsDialog
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
+import xdm.app.utils.SingleWindows
 import xdm.app.utils.createIcon
 import xdm.app.utils.px
 import java.awt.BorderLayout
@@ -223,6 +224,6 @@ abstract class DownloadListBase(final override val filter: MainListViewFilter) :
 
     override fun clear() {
         val window = SwingUtilities.windowForComponent(cardPanel) as? JFrame
-        ClearDownloadsDialog(window).isVisible = true
+        SingleWindows.show(ClearDownloadsDialog::class) { ClearDownloadsDialog(window) }
     }
 }

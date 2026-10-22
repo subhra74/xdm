@@ -1,6 +1,7 @@
 package xdm.app.ui.screens
 
 import xdm.app.AppContext
+import xdm.app.ConfigSnapshot
 import xdm.app.I8N.text
 import xdm.app.ui.screens.settings.AdvancedConfigPanel
 import xdm.app.ui.screens.settings.BrowserMonitorPanel
@@ -16,9 +17,11 @@ import xdm.app.ui.screens.settings.settingsStroke
 import xdm.app.ui.screens.settings.settingsSurface
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
+import xdm.app.utils.SingleWindows
 import xdm.app.utils.createIcon
 import xdm.app.utils.px
 import xdm.app.utils.scaledSize
+import xdm.app.utils.windowIconImages
 import xdm.core.util.Logger
 import xdm.integration.EventChannel
 import java.awt.BorderLayout
@@ -30,13 +33,12 @@ import java.awt.Graphics
 import java.awt.Graphics2D
 import java.awt.Point
 import java.awt.RenderingHints
-import java.awt.Window
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import javax.swing.Box
 import javax.swing.DefaultListCellRenderer
 import javax.swing.JComponent
-import javax.swing.JDialog
+import javax.swing.JFrame
 import javax.swing.JLabel
 import javax.swing.JList
 import javax.swing.JPanel
@@ -51,8 +53,13 @@ import javax.swing.border.MatteBorder
  * the browser hands over, how it reaches the network, and the rest. The old four-page split
  * put folders, categories, appearance and behaviour on one page that ran to roughly twice the
  * dialog's height.
+ *
+ * An independent frame, not modal (docs/windows-and-modality.md): it may stay open a while, and a
+ * modal window would block every other XDM window meanwhile, the browser's new-download windows
+ * included. One open at a time ([SingleWindows]); [save] keeps config values changed elsewhere while
+ * it was open ([ConfigSnapshot]).
  */
-class SettingsWindow(parent: Window) : JDialog(parent) {
+class SettingsWindow : JFrame() {
     override fun dispose() {
         foldersPanel.dispose()
         super.dispose()
@@ -79,6 +86,9 @@ class SettingsWindow(parent: Window) : JDialog(parent) {
     /** Called after a successful save so the main window can pick up edited categories. */
     var onSaved: (() -> Unit)? = null
 
+    /** The config as [loadConfig] found it. */
+    private var loaded: ConfigSnapshot? = null
+
     private val card = java.awt.CardLayout()
     private val panelHolder = JPanel(card)
     private val scrollPanes = ArrayList<JScrollPane>()
@@ -103,6 +113,8 @@ class SettingsWindow(parent: Window) : JDialog(parent) {
         size = scaledSize(800, 500)
         minimumSize = scaledSize(720, 460)
         title = text("TITLE_SETTINGS")
+        iconImages = windowIconImages
+        defaultCloseOperation = DISPOSE_ON_CLOSE
         rootPane.defaultButton = btnSave
 
         pages.forEach { page ->
@@ -163,13 +175,16 @@ class SettingsWindow(parent: Window) : JDialog(parent) {
     }
 
     fun save() {
+        val config = AppContext.config
+        val beforeWrite = ConfigSnapshot.of(config)
         generalPanel.save()
         downloadsPanel.save()
         foldersPanel.save()
         browserMonitorPanel.save()
         networkConfigPanel.save()
         advancedConfigPanel.save()
-        AppContext.config.save()
+        loaded?.keepChangedElsewhere(config, beforeWrite)
+        config.save()
         // The browser-monitor panel writes the three fields the extension gates capture on -
         // fileExtensions, videoExtensions and blockedHosts - so publish after persisting rather
         // than leaving the extension on stale config until the next watchdog /sync. Fired for any
@@ -179,6 +194,7 @@ class SettingsWindow(parent: Window) : JDialog(parent) {
     }
 
     fun loadConfig() {
+        loaded = ConfigSnapshot.of(AppContext.config)
         generalPanel.load()
         downloadsPanel.load()
         foldersPanel.load()

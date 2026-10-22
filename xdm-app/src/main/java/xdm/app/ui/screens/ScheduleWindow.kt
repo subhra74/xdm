@@ -16,8 +16,13 @@ import java.util.Calendar
 import java.util.Date
 import javax.swing.*
 
-class ScheduleWindow(parent: Window, private val downloadId: Long) :
-    JDialog(parent, text("TITLE_SCHEDULER"), ModalityType.APPLICATION_MODAL) {
+/**
+ * When a download runs. [modal] for the new-download window, which waits in [showDialog] for the
+ * answer (it removes the download again on cancel); not modal from the main window's menu, where
+ * nothing waits on it (docs/windows-and-modality.md).
+ */
+class ScheduleWindow(parent: Window, private val downloadId: Long, modal: Boolean = true) :
+    JDialog(parent, text("TITLE_SCHEDULER"), if (modal) ModalityType.APPLICATION_MODAL else ModalityType.MODELESS) {
 
     // Schedule type radio buttons
     private val radioOneTime = JRadioButton(text("MSG_SHD_ONCE"))

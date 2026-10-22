@@ -6,20 +6,34 @@ import xdm.app.ui.components.AppTheme
 import xdm.app.update.UpdateChecker
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
+import xdm.app.utils.SingleWindows
 import xdm.app.utils.createIcon
 import xdm.app.utils.logoIcon
 import xdm.app.utils.openInDefaultBrowser
 import xdm.app.utils.px
 import xdm.app.utils.scaledInsets
+import xdm.app.utils.shownWindow
+import xdm.app.utils.windowIconImages
 import java.awt.*
 import javax.swing.*
 
-class AboutDialog(owner: Window?) : JDialog(owner) {
+/**
+ * Not modal (docs/windows-and-modality.md): nothing here needs to hold up the rest of the app. Open it
+ * with [open]; a null [owner] (macOS app menu while XDM is in the tray) makes it a window of its own.
+ */
+class AboutDialog private constructor(owner: Window?) : JDialog(owner) {
+
+    companion object {
+        /** Opens About, or brings the open one forward. Owned by [parent]'s window while that is on screen. EDT only. */
+        fun open(parent: Component?) = SingleWindows.show(AboutDialog::class) { AboutDialog(shownWindow(parent)) }
+
+        private const val GITHUB_REPO_URL = "https://github.com/subhra74/xdm"
+    }
 
     init {
         setSize(400.px, 380.px)
         title = "About XDM"
-        isModal = true
+        if (owner == null) iconImages = windowIconImages
         defaultCloseOperation = DISPOSE_ON_CLOSE
         isResizable = false
 
@@ -109,9 +123,5 @@ class AboutDialog(owner: Window?) : JDialog(owner) {
                 }
             })
         }
-    }
-
-    private companion object {
-        const val GITHUB_REPO_URL = "https://github.com/subhra74/xdm"
     }
 }

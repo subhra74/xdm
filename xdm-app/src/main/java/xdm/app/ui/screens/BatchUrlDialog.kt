@@ -8,6 +8,7 @@ import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.px
 import xdm.app.utils.sameWidth
 import xdm.app.utils.scaledSize
+import xdm.app.utils.shownWindow
 import xdm.app.utils.validateURL
 import java.awt.BorderLayout
 import java.awt.Dimension
@@ -23,7 +24,9 @@ import javax.swing.JTextArea
 
 /**
  * First step of "Batch download" from the menu: the user types or pastes links, one per line. OK
- * opens the [BatchDownloadDialog] with the valid ones.
+ * opens the [BatchDownloadDialog] with the valid ones. *
+ * Not modal (docs/windows-and-modality.md): nothing waits on it, and a modal one blocked every other
+ * window, the browser's new-download windows included. One open at a time ([xdm.app.utils.SingleWindows]).
  */
 class BatchUrlDialog(private val owner: Window?) : JDialog(owner) {
     private val txtUrls = JTextArea()
@@ -31,7 +34,6 @@ class BatchUrlDialog(private val owner: Window?) : JDialog(owner) {
     init {
         title = text("MENU_BATCH_DOWNLOAD")
         defaultCloseOperation = DISPOSE_ON_CLOSE
-        isModal = true
         isResizable = true
 
         val content = JPanel(BorderLayout(0, 6.px)).apply {
@@ -66,7 +68,7 @@ class BatchUrlDialog(private val owner: Window?) : JDialog(owner) {
             return
         }
         dispose()
-        BatchDownloadDialog(owner, BatchRequest(items = urls.map { BatchRequestItem(it) }, fromBrowser = false))
+        BatchDownloadDialog(shownWindow(owner), BatchRequest(items = urls.map { BatchRequestItem(it) }, fromBrowser = false))
             .isVisible = true
     }
 

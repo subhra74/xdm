@@ -13,6 +13,7 @@ import xdm.app.utils.px
 import xdm.app.utils.sameWidth
 import xdm.app.utils.scaledInsets
 import xdm.app.utils.scaledSize
+import xdm.app.utils.windowIconImages
 import xdm.core.downloaders.DashDownloadTaskInfo
 import xdm.core.downloaders.HlsDownloadTaskInfo
 import xdm.core.downloaders.HttpDownloadTaskInfo
@@ -51,7 +52,7 @@ import javax.swing.DefaultListModel
 import javax.swing.JButton
 import javax.swing.JComboBox
 import javax.swing.JComponent
-import javax.swing.JDialog
+import javax.swing.JFrame
 import javax.swing.SwingConstants
 import javax.swing.JLabel
 import javax.swing.JList
@@ -73,11 +74,13 @@ import javax.swing.table.DefaultTableModel
  * loaded with [VideoHelper.loadHls] / [VideoHelper.loadDash] (the same fetch and parsing as captured
  * streams), then a format from the list and an audio track from the drop-down. Headers and cookies
  * from the second tab go with the playlist request and every segment. Non-modal: several can be open.
+ * An independent frame (docs/windows-and-modality.md): it may sit open while the user browses, so it
+ * has its own taskbar button and stays when the main window goes to the tray. [near] is where it opens.
  *
  * Everything here runs on the EDT except the load, whose result is dropped when the inputs changed
  * in the meantime ([generation]).
  */
-class StreamDownloadDialog(owner: Window?) : JDialog(owner, ModalityType.MODELESS) {
+class StreamDownloadDialog(private val near: Window?) : JFrame() {
     private val radioHls = JRadioButton(text("SD_HLS"), true)
     private val radioDash = JRadioButton(text("SD_DASH"))
     // Columns: a long URL or file name must not widen the dialog; the row stretches the field.
@@ -132,6 +135,7 @@ class StreamDownloadDialog(owner: Window?) : JDialog(owner, ModalityType.MODELES
         txtUrl.putClientProperty(FlatClientProperties.STYLE, "arc: 10")
         txtFileName.putClientProperty(FlatClientProperties.STYLE, "arc: 10")
         title = text("SD_TITLE")
+        iconImages = windowIconImages
         defaultCloseOperation = DISPOSE_ON_CLOSE
         contentPane.layout = BorderLayout()
 
@@ -151,7 +155,7 @@ class StreamDownloadDialog(owner: Window?) : JDialog(owner, ModalityType.MODELES
         val height = dialogHeight(DIALOG_HEIGHT)
         size = Dimension(DIALOG_WIDTH.px, height)
         minimumSize = Dimension(MIN_WIDTH.px, minOf(MIN_HEIGHT.px, height))
-        setLocationRelativeTo(owner)
+        setLocationRelativeTo(near)
     }
 
     // ---- layout ---------------------------------------------------------------------------

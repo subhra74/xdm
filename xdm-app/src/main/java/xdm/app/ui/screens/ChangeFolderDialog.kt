@@ -36,6 +36,9 @@ import javax.swing.SwingUtilities
  * Change folder for a stopped download (docs/download-categories.md §6.1): pick the new folder from the
  * Save to list (current folder, folder history, default folder) or Browse, then Move. The download keeps
  * its category; the folder joins the history but does not become the None folder.
+ * [move] checks again whether the move is allowed, so the download may change state while this is open. *
+ * Not modal (docs/windows-and-modality.md): nothing waits on it, and a modal one blocked every other
+ * window, the browser's new-download windows included. One per download ([xdm.app.utils.SingleWindows]).
  */
 class ChangeFolderDialog(owner: Window?, private val record: DbRecord) : JDialog(owner) {
     private val folderModel = DefaultComboBoxModel<String>()
@@ -45,7 +48,6 @@ class ChangeFolderDialog(owner: Window?, private val record: DbRecord) : JDialog
 
     init {
         title = text("CF_TITLE")
-        isModal = true
         defaultCloseOperation = DISPOSE_ON_CLOSE
         val current = getFileFolder(record)?.second?.let { File(it).absolutePath }
         val config = AppContext.config

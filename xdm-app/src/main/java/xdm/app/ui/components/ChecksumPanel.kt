@@ -7,6 +7,7 @@ import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.createIcon
 import xdm.app.utils.px
 import xdm.app.utils.scaledInsets
+import xdm.app.utils.windowIconImages
 import xdm.core.checksum.ChecksumAlgorithm
 import xdm.core.checksum.ChecksumParser
 import xdm.core.checksum.ChecksumResult
@@ -39,7 +40,7 @@ import javax.swing.ButtonGroup
 import javax.swing.Icon
 import javax.swing.JButton
 import javax.swing.JComponent
-import javax.swing.JDialog
+import javax.swing.JFrame
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JProgressBar
@@ -58,7 +59,7 @@ import javax.swing.event.DocumentListener
  * Two pages under one header: the form (algorithm and checksum URL or hash) and, once Verify is
  * pressed, the run (progress, then the result). Back returns to the form as it was left.
  *
- * Hosted by [ChecksumDialog], opened from the download complete dialog and from properties.
+ * Hosted by [ChecksumWindow], opened from the download complete dialog and from properties.
  * [source] is the request the file came from, null when there is none to derive a sidecar from;
  * the field then starts empty for the user to fill.
  */
@@ -512,16 +513,17 @@ class ChecksumPanel(
 }
 
 /**
- * [ChecksumPanel] in its own non-modal window. Excluded from application modality so it stays
- * usable while the (modal) properties dialog is open, and outlives it once that is closed.
+ * [ChecksumPanel] in a top-level window of its own. No owner: it outlives whatever opened it (the
+ * properties dialog, the download-complete window) and stays when the main window goes to the tray.
+ * A frame: hashing a large file takes a while, so it can be minimized and has a taskbar button.
+ * [near] is where it opens; null centres it on the screen.
  */
-class ChecksumDialog(owner: Window?, file: File, source: ChecksumSource?) : JDialog(owner) {
+class ChecksumWindow(file: File, source: ChecksumSource?, near: Window?) : JFrame() {
     private val panel = ChecksumPanel(file, source, onClose = { dispose() })
 
     init {
         title = text("CS_TITLE")
-        isModal = false
-        modalExclusionType = ModalExclusionType.APPLICATION_EXCLUDE
+        iconImages = windowIconImages
         defaultCloseOperation = DISPOSE_ON_CLOSE
         contentPane.add(panel)
         pack()
@@ -530,7 +532,7 @@ class ChecksumDialog(owner: Window?, file: File, source: ChecksumSource?) : JDia
         minimumSize = Dimension(maxOf(420.px, width), height)
         size = minimumSize
         isResizable = true
-        setLocationRelativeTo(owner)
+        setLocationRelativeTo(near)
         addWindowListener(object : WindowAdapter() {
             override fun windowClosed(e: WindowEvent) = panel.cancel()
         })

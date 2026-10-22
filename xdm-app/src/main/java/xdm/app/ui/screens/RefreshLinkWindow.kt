@@ -12,6 +12,7 @@ import xdm.app.utils.px
 import xdm.app.utils.sameWidth
 import xdm.app.utils.scaledInsets
 import xdm.app.utils.scaledSize
+import xdm.app.utils.windowIconImages
 import xdm.core.network.http.HeaderMap
 import java.awt.BorderLayout
 import java.awt.CardLayout
@@ -30,6 +31,7 @@ import javax.swing.BoxLayout
 import javax.swing.ButtonGroup
 import javax.swing.JButton
 import javax.swing.JDialog
+import javax.swing.JFrame
 import javax.swing.JLabel
 import javax.swing.JOptionPane
 import javax.swing.JPanel
@@ -48,13 +50,15 @@ import javax.swing.table.AbstractTableModel
  * available.
  *
  * The dialog stays non-modal: the browser path needs the integration server to keep delivering
- * captures into the running app while this window is up.
+ * captures into the running app while this window is up. An independent frame
+ * (docs/windows-and-modality.md): the user is in the browser meanwhile, so it needs its own taskbar
+ * button to come back to, and it stays if the main window goes to the tray. [near] is where it opens.
  */
 class RefreshLinkWindow(
-    parent: Window?,
+    near: Window?,
     val id: Long,
     private val refererPage: String?,
-) : JDialog(parent) {
+) : JFrame() {
 
     private val radioBrowser = JRadioButton(text("REF_MODE_BROWSER"))
     private val radioManual = JRadioButton(text("REF_MODE_MANUAL"))
@@ -82,6 +86,7 @@ class RefreshLinkWindow(
 
     init {
         title = text("MENU_REFRESH_LINK")
+        iconImages = windowIconImages
         defaultCloseOperation = DISPOSE_ON_CLOSE
         isAlwaysOnTop = true
 
@@ -90,7 +95,7 @@ class RefreshLinkWindow(
         syncMode()
 
         size = scaledSize(560, 500)
-        setLocationRelativeTo(parent)
+        setLocationRelativeTo(near)
     }
 
     /** Seeds the address and the header rows from the download's stored task info. */

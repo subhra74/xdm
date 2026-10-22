@@ -4,8 +4,8 @@ import xdm.app.AppContext
 import xdm.app.DbRecord
 import xdm.app.I8N.text
 import xdm.app.RecordStatus
-import xdm.app.ui.components.ChecksumDialog
 import xdm.app.ui.components.ChecksumPanel
+import xdm.app.ui.components.ChecksumWindow
 import xdm.app.ui.components.MessageBox
 import xdm.app.ui.screens.settings.settingsAccentColor
 import xdm.app.ui.screens.settings.settingsIconButton
@@ -64,6 +64,9 @@ import javax.swing.table.AbstractTableModel
  * missing entirely for a type the engine does not implement yet. [details] flattens all of that
  * into one shape, and rows with nothing to say are simply left out, so an unsupported or
  * half-recorded download still opens with whatever the list row itself knows.
+ *
+ * Not modal (docs/windows-and-modality.md): it only shows things, and a modal one blocked the
+ * checksum window it opens. Owned by the main window, one per download (see [IAppInstance.showPropertiesWindow]).
  */
 class PropertiesDialog(private val owner: Window?, ent: DbRecord) : JDialog(owner) {
 
@@ -93,7 +96,6 @@ class PropertiesDialog(private val owner: Window?, ent: DbRecord) : JDialog(owne
 
     init {
         title = text("TITLE_PROP")
-        isModal = true
         defaultCloseOperation = DISPOSE_ON_CLOSE
         isResizable = true
 
@@ -287,8 +289,7 @@ class PropertiesDialog(private val owner: Window?, ent: DbRecord) : JDialog(owne
         if (ent.downloadType == DownloadType.Http && ent.status == RecordStatus.FINISHED && details.url != null && folder != null) {
             add(JButton(text("CD_VERIFY_CHECKSUM"), createIcon(RemixIcon.FINGERPRINT_FILL, 16, settingsAccentColor())).apply {
                 addActionListener {
-                    // Owned by the main window, not this modal dialog, so it stays open after this closes.
-                    ChecksumDialog(owner, File(folder, ent.fileName), ChecksumPanel.sourceOf(ent.id)).isVisible = true
+                    ChecksumWindow(File(folder, ent.fileName), ChecksumPanel.sourceOf(ent.id), this@PropertiesDialog).isVisible = true
                 }
             })
         }
@@ -417,7 +418,6 @@ class PropertiesDialog(private val owner: Window?, ent: DbRecord) : JDialog(owne
             openFolderExternal(if (exists) fileName else null, folder)
         } catch (e: Exception) {
             Logger.error(e)
-            // Owned by this dialog: while it is open (modal), a message owned by the main window would be blocked.
             MessageBox.show(this, text("ERR_MSG_FILE_NOT_FOUND"), text("ERR_MSG_FILE_NOT_FOUND_MSG"))
         }
     }

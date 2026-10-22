@@ -2,7 +2,7 @@ package xdm.app.ui.screens
 
 import xdm.app.AppContext
 import xdm.app.I8N.text
-import xdm.app.ui.components.ChecksumDialog
+import xdm.app.ui.components.ChecksumWindow
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.createIcon
@@ -102,8 +102,7 @@ class DownloadCompleteWindow : JFrame() {
     /** Opens verification in its own non-modal window and closes this one, as the open buttons do. */
     private val btnVerify = footerIconButton(RemixIcon.FINGERPRINT_FILL, text("CD_VERIFY_CHECKSUM")) {
         val source = checksumSource ?: return@footerIconButton
-        // No owner: disposing this dialog must not take the verify window with it.
-        ChecksumDialog(null, File(txtFolderPath.text, txtFileName.text), source).isVisible = true
+        ChecksumWindow(File(txtFolderPath.text, txtFileName.text), source, this).isVisible = true
         dispose()
     }.apply { isVisible = false }
 

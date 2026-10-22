@@ -15,15 +15,18 @@ import xdm.app.ui.screens.ProgressWindow
 import xdm.app.ui.screens.PropertiesDialog
 import xdm.app.ui.screens.RefreshLinkWindow
 import xdm.app.ui.screens.ScheduleWindow
+import xdm.app.utils.SingleWindows
 import xdm.app.utils.TextContextMenu
 // import xdm.app.utils.WorkingSetTrim  // working-set trimming disabled
 import xdm.app.utils.createTray
 import xdm.app.utils.detectOS
 import xdm.app.utils.logoImage
 import xdm.app.utils.mac.MacNotifications
+import xdm.app.utils.mainWindowOnScreen
 import xdm.app.utils.offerMacNotificationSettings
 import xdm.app.utils.openFolderExternal
 import xdm.app.utils.showTrayNotification
+import xdm.app.utils.windowIconImages
 import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.DownloadType
 import xdm.core.downloaders.HttpDownloadTaskInfo
@@ -172,10 +175,7 @@ class AppInstance : IAppInstance {
         // App menu → "About Xtreme Download Manager": XDM's own dialog instead of the generic one.
         // Called on the EDT; owned by the main window only while it is on screen.
         runCatching {
-            desktop.setAboutHandler {
-                val owner = if (::appWindow.isInitialized && appWindow.isVisible) appWindow else null
-                AboutDialog(owner).apply { setLocationRelativeTo(owner) }.isVisible = true
-            }
+            desktop.setAboutHandler { AboutDialog.open(if (::appWindow.isInitialized) appWindow else null) }
         }
         installDockMenu()
     }
@@ -192,7 +192,12 @@ class AppInstance : IAppInstance {
 
     override fun showFatalError(message: String) {
         val show = Runnable {
-            JOptionPane.showMessageDialog(null, message, "XDM", JOptionPane.ERROR_MESSAGE)
+            // Truly ownerless, so it has a taskbar button on Windows: with no main window yet, nothing else shows.
+            JOptionPane(message, JOptionPane.ERROR_MESSAGE).createDialog("XDM").apply {
+                runCatching { iconImages = windowIconImages }
+                isVisible = true
+                dispose()
+            }
         }
         if (SwingUtilities.isEventDispatchThread()) {
             show.run()
@@ -419,17 +424,16 @@ class AppInstance : IAppInstance {
     }
 
     override fun showSchedulerWindow(id: Long) {
-        runOnUIThread { ScheduleWindow(appWindow, id).showDialog() }
+        runOnUIThread { SingleWindows.show("schedule" to id) { ScheduleWindow(appWindow, id, modal = false) } }
     }
 
     override fun showPropertiesWindow(ent: DbRecord) {
-        runOnUIThread { PropertiesDialog(appWindow, ent).isVisible = true }
+        runOnUIThread { SingleWindows.show("properties" to ent.id) { PropertiesDialog(appWindow, ent) } }
     }
 
     override fun showBatchDialog(request: BatchRequest) {
         runOnUIThread {
-            // No owner: like the new-download window it must show even while the main window is hidden.
-            BatchDownloadDialog(null, request).isVisible = true
+            BatchDownloadDialog(mainWindowOnScreen(), request).isVisible = true
         }
     }
 }
