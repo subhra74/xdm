@@ -266,6 +266,62 @@ class App {
         }
     }
 
+    getCookiesForDownload(url, referer, callback) {
+        let cookieMap = new Map();
+        const addCookies = (cookies) => {
+            if (cookies && cookies.length > 0) {
+                cookies.forEach(c => {
+                    if (!cookieMap.has(c.name)) {
+                        cookieMap.set(c.name, c.value);
+                    }
+                });
+            }
+        };
+
+        let baseDomain = "";
+        try {
+            let u = new URL(url);
+            let parts = u.hostname.split('.');
+            if (parts.length >= 2) {
+                baseDomain = parts.slice(-2).join('.');
+            }
+        } catch (e) { }
+
+        let queries = [
+            { url: url },
+            baseDomain ? { domain: baseDomain } : null,
+            referer ? { url: referer } : null
+        ].filter(Boolean);
+
+        let pending = queries.length;
+        if (pending === 0) {
+            let cookieStr = Array.from(cookieMap.entries()).map(p => p[0] + "=" + p[1]).join("; ");
+            callback(cookieStr || undefined);
+            return;
+        }
+
+        queries.forEach(q => {
+            try {
+                chrome.cookies.getAll(q, cookies => {
+                    if (!chrome.runtime.lastError) {
+                        addCookies(cookies);
+                    }
+                    pending--;
+                    if (pending === 0) {
+                        let cookieStr = Array.from(cookieMap.entries()).map(p => p[0] + "=" + p[1]).join("; ");
+                        callback(cookieStr || undefined);
+                    }
+                });
+            } catch (err) {
+                pending--;
+                if (pending === 0) {
+                    let cookieStr = Array.from(cookieMap.entries()).map(p => p[0] + "=" + p[1]).join("; ");
+                    callback(cookieStr || undefined);
+                }
+            }
+        });
+    }
+
     // Hands XDM the request the browser actually made - its own headers and the cookies it really
     // sent - together with the name, size and type its response announced.
     sendDownload(observed) {
@@ -281,6 +337,16 @@ class App {
             tabUrl: observed.tabUrl,
             tabId: observed.tabId
         };
+
+        if (!data.cookie) {
+            this.getCookiesForDownload(observed.url, observed.referer || observed.tabUrl, cookieStr => {
+                data.cookie = cookieStr;
+                this.logger.log(data);
+                this.connector.postMessage("/download", data);
+            });
+            return;
+        }
+
         this.logger.log(data);
         this.connector.postMessage("/download", data);
     }
@@ -288,11 +354,7 @@ class App {
     // For the context menu only: those links were never requested by the browser, so there is no
     // observed request to replay and the cookies have to be looked up instead.
     triggerDownload(url, file, referer, size, mime) {
-        chrome.cookies.getAll({ "url": url }, cookies => {
-            let cookieStr = undefined;
-            if (cookies) {
-                cookieStr = cookies.map(cookie => cookie.name + "=" + cookie.value).join("; ");
-            }
+        this.getCookiesForDownload(url, referer, cookieStr => {
             let requestHeaders = { "User-Agent": [navigator.userAgent] };
             if (referer) {
                 requestHeaders["Referer"] = [referer];

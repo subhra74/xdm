@@ -374,9 +374,67 @@ export default class App {
         }
     }
 
+    getCookiesForDownload(url, referer, callback) {
+        let cookieMap = new Map();
+        const addCookies = (cookies) => {
+            if (cookies && cookies.length > 0) {
+                cookies.forEach(c => {
+                    if (!cookieMap.has(c.name)) {
+                        cookieMap.set(c.name, c.value);
+                    }
+                });
+            }
+        };
+
+        let baseDomain = "";
+        try {
+            let u = new URL(url);
+            let parts = u.hostname.split('.');
+            if (parts.length >= 2) {
+                baseDomain = parts.slice(-2).join('.');
+            }
+        } catch (e) { }
+
+        let queries = [
+            { url: url },
+            baseDomain ? { domain: baseDomain } : null,
+            baseDomain ? { domain: baseDomain, partitionKey: {} } : null,
+            referer ? { url: referer } : null
+        ].filter(Boolean);
+
+        let pending = queries.length;
+        if (pending === 0) {
+            let cookieStr = Array.from(cookieMap.entries()).map(p => p[0] + "=" + p[1]).join("; ");
+            callback(cookieStr || undefined);
+            return;
+        }
+
+        queries.forEach(q => {
+            try {
+                chrome.cookies.getAll(q, cookies => {
+                    if (!chrome.runtime.lastError) {
+                        addCookies(cookies);
+                    }
+                    pending--;
+                    if (pending === 0) {
+                        let cookieStr = Array.from(cookieMap.entries()).map(p => p[0] + "=" + p[1]).join("; ");
+                        callback(cookieStr || undefined);
+                    }
+                });
+            } catch (err) {
+                pending--;
+                if (pending === 0) {
+                    let cookieStr = Array.from(cookieMap.entries()).map(p => p[0] + "=" + p[1]).join("; ");
+                    callback(cookieStr || undefined);
+                }
+            }
+        });
+    }
+
     // Hands XDM the request the browser actually made - its own headers and the cookies it really
     // sent - together with what the downloads API settled on for name, size and type.
     sendDownload(observed, download) {
+        let referer = download.referrer || undefined;
         let data = {
             url: observed.url,
             cookie: observed.cookie,
@@ -385,10 +443,20 @@ export default class App {
             filename: download.filename,
             fileSize: download.fileSize > 0 ? download.fileSize : undefined,
             mimeType: download.mime,
-            referer: download.referrer || undefined,
+            referer: referer,
             tabUrl: observed.tabUrl,
             tabId: observed.tabId
         };
+
+        if (!data.cookie) {
+            this.getCookiesForDownload(observed.url, referer || observed.tabUrl, cookieStr => {
+                data.cookie = cookieStr;
+                this.logger.log(data);
+                this.connector.postMessage("/download", data);
+            });
+            return;
+        }
+
         this.logger.log(data);
         this.connector.postMessage("/download", data);
     }
@@ -401,11 +469,7 @@ export default class App {
             this.logger.log("Not sending a link from a blocked site: " + url);
             return;
         }
-        chrome.cookies.getAll({ "url": url }, cookies => {
-            let cookieStr = undefined;
-            if (cookies) {
-                cookieStr = cookies.map(cookie => cookie.name + "=" + cookie.value).join("; ");
-            }
+        this.getCookiesForDownload(url, referer, cookieStr => {
             let requestHeaders = { "User-Agent": [navigator.userAgent] };
             if (referer) {
                 requestHeaders["Referer"] = [referer];
