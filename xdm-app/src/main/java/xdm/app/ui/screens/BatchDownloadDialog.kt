@@ -453,17 +453,17 @@ class BatchDownloadDialog(near: Window?, private val request: BatchRequest) : JF
             fill = GridBagConstraints.HORIZONTAL
             insets = scaledInsets(4, 0, 0, 0)
         })
-        val problemRow = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0)).apply {
-            isOpaque = false
-            add(lblProblem)
-            add(Box.createRigidArea(scaledSize(8, 0)))
-            add(btnSuggest)
-        }
+        // The problem and the suggested name on rows of their own: one wrapping row would be laid out one line tall.
         btnSuggest.addActionListener {
             (btnSuggest.getClientProperty(SUGGESTION) as? String)?.let { txtName.text = it }
         }
-        panel.add(problemRow, GridBagConstraints().apply {
+        panel.add(lblProblem, GridBagConstraints().apply {
             gridx = 1; gridy = 2; gridwidth = 2
+            anchor = GridBagConstraints.WEST
+            insets = scaledInsets(4, 0, 0, 0)
+        })
+        panel.add(btnSuggest, GridBagConstraints().apply {
+            gridx = 1; gridy = 3; gridwidth = 2
             anchor = GridBagConstraints.WEST
             insets = scaledInsets(4, 0, 0, 0)
         })
@@ -559,7 +559,15 @@ class BatchDownloadDialog(near: Window?, private val request: BatchRequest) : JF
         lblProblem.isVisible = message != null
         btnSuggest.isVisible = suggestion != null
         btnSuggest.putClientProperty(SUGGESTION, suggestion)
-        suggestion?.let { btnSuggest.text = text("BATCH_USE_NAME").format(it) }
+        btnSuggest.toolTipText = suggestion
+        // A long name is cut in the middle so the button fits and its "(2)" ending still shows.
+        suggestion?.let { btnSuggest.text = text("BATCH_USE_NAME").format(middleEllipsis(it, SUGGESTION_MAX_CHARS)) }
+    }
+
+    private fun middleEllipsis(s: String, max: Int): String {
+        if (s.length <= max) return s
+        val tail = (max - 1) / 2
+        return s.take(max - 1 - tail) + "…" + s.takeLast(tail)
     }
 
     private fun updateCount() {
@@ -690,6 +698,7 @@ class BatchDownloadDialog(near: Window?, private val request: BatchRequest) : JF
 
     private companion object {
         const val SUGGESTION = "xdm.batch.suggestion"
+        const val SUGGESTION_MAX_CHARS = 40
         const val COL_FILE = 1
         const val COL_SIZE = 2
         const val COL_URL = 3

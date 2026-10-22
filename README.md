@@ -30,7 +30,11 @@
 </p>
 
 <p align="center">
-  <a href="https://www.youtube.com/watch?v=fZ1tZY6RbKc"><img src="docs/assets/xdm-showcase-thumbnail.jpg" width="560" alt="Watch the XDM video on YouTube"/></a>
+  <a href="https://www.youtube.com/watch?v=fZ1tZY6RbKc"><img src="docs/assets/xdm-showcase-thumbnail.jpg" width="400" alt="Watch the top 3 XDM features on YouTube"/></a>
+  &nbsp;
+  <a href="https://www.youtube.com/watch?v=IJIxP7imtZ8"><img src="https://img.youtube.com/vi/IJIxP7imtZ8/maxresdefault.jpg" width="400" alt="Watch bulk social media video downloads with XDM on YouTube"/></a>
+  <br/>
+  <sub><b>Top 3 features</b> &nbsp;·&nbsp; <b>Bulk social media downloads</b></sub>
 </p>
 
 ---
@@ -47,18 +51,28 @@ Wondering why you'd still want a download manager on a fast connection? Read
 
 ## 📸 Screenshots
 
-| Main window | New download | Download progress |
-|:---:|:---:|:---:|
-| ![XDM main window with the downloads list](screenshots/img1.png) | ![New download dialog](screenshots/img2.png) | ![Download progress window](screenshots/img3.png) |
+| Main window | New download |
+|:---:|:---:|
+| ![XDM main window with the downloads list](screenshots/main-window.webp) | ![New download dialog](screenshots/new-download.webp) |
+| **Download progress** | **Download complete** |
+| ![Download progress window](screenshots/download-progress.webp) | ![Download complete window](screenshots/download-complete.webp) |
+| **Videos detected by the extension** | **Video download** |
+| ![Extension popup listing videos found on the page](screenshots/extension-video-list.webp) | ![New download dialog for a detected video](screenshots/video-download.webp) |
+| **Download all links on a page** | **Pick what to grab** |
+| ![Browser context menu with Download all with XDM](screenshots/download-all-menu.webp) | ![Bulk picker listing every link on the page by type](screenshots/bulk-picker.webp) |
+| **Batch download** | **HLS / DASH stream download** |
+| ![Batch download dialog: one batch or one download per link](screenshots/batch-download.webp) | ![Stream download dialog with format and audio track choice](screenshots/stream-download.webp) |
 
 ## ✨ Features
 
 | | |
 |---|---|
 | ⚡ **Faster downloads** | Multi-connection segmented downloading to make the most of your bandwidth. |
-| 🎬 **Video grabber** | Detects and saves videos from streaming sites, including `HLS` (`.m3u8`) and `MPEG-DASH` (`.mpd`) streams, muxed to MP4 with no external tools. |
+| 🧩 **Browser integration** | Works with Chrome, Firefox, Edge and other popular browsers: XDM takes over downloads from the browser automatically, so every file gets the speed boost without copying a link. |
+| 🎬 **Video grabber** | Detects and saves videos from streaming sites, including `HLS` (`.m3u8`) and `MPEG-DASH` (`.mpd`) streams, muxed to MP4 with no external tools. Pick a subtitle track and get it as an `.srt` file, timed to match the video. |
 | 🔁 **Resume anything** | Recovers downloads interrupted by network drops, crashes or power loss; refresh expired links without starting over. |
-| 📦 **Batch downloads** | Grab many links at once into a single folder. |
+| 📱 **Bulk social media downloads** | Save every video and image from a social media profile in a single click. Video and audio tracks are merged into ready-to-play MP4s, and ads are left out. |
+| 📦 **Batch downloads** | Grab every PDF on a page or a whole gallery of HD wallpapers at once: right-click → *Download all with XDM*, filter by type, size or name, and save them all into a single folder. |
 | 🗓️ **Scheduler & queues** | Start and stop downloads on a schedule, limit parallel downloads, shut down when done. |
 | 📋 **Paste from clipboard** | Add one link or a whole list of links straight from the clipboard. |
 | 🌐 **Proxies & auth** | HTTP and SOCKS proxies, and server/proxy authentication. |
@@ -71,8 +85,8 @@ XDM works with Chrome, Firefox, Edge, Opera, Vivaldi, Brave and other Chromium- 
 
 | Browser | Extension |
 |---|---|
-| <img src="https://img.shields.io/badge/Chrome-4285F4?style=flat-square&logo=googlechrome&logoColor=white" alt="Chrome"/> | Awaiting review |
-| <img src="https://img.shields.io/badge/Firefox-FF7139?style=flat-square&logo=firefoxbrowser&logoColor=white" alt="Firefox"/> | Awaiting review |
+| <img src="https://img.shields.io/badge/Chrome-4285F4?style=flat-square&logo=googlechrome&logoColor=white" alt="Chrome"/> | [Install XDM for Chrome](https://xtremedownloadmanager.com/extension/chrome/?utm_source=xdm-app) |
+| <img src="https://img.shields.io/badge/Firefox-FF7139?style=flat-square&logo=firefoxbrowser&logoColor=white" alt="Firefox"/> | [Install XDM for Firefox](https://xtremedownloadmanager.com/extension/firefox/?utm_source=xdm-app) |
 
 The extension forwards downloads and detected media to the running app over a local-only connection
 (`127.0.0.1:8597`); nothing leaves your machine.
