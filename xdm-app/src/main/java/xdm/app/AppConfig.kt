@@ -2,33 +2,37 @@ package xdm.app
 
 import xdm.app.ui.components.SortKey
 import xdm.core.CoreConfig
-import java.io.DataInputStream
-import java.io.DataOutputStream
 import xdm.core.util.AtomicIO
 import xdm.core.util.Logger
+import xdm.core.util.NotTaggedException
+import xdm.core.util.StableId
+import xdm.core.util.TagReader
+import xdm.core.util.TagWriter
+import xdm.core.util.TaggedFile
+import xdm.core.util.byStableId
 import java.io.File
 import java.net.Authenticator
 import java.net.Proxy
 
 /** How the main download list selects and opens rows (Settings > Appearance). */
-enum class ListSelectionMode {
+enum class ListSelectionMode(override val id: Int) : StableId {
     /** Check box tiles, click the title to open. */
-    MODERN,
+    MODERN(1),
 
     /** Click selects, double-click opens, right-click menu, as in a file manager. */
-    CLASSIC,
+    CLASSIC(2),
 }
 
 /** What the app does when a download finishes. */
-enum class DownloadCompleteNotification {
+enum class DownloadCompleteNotification(override val id: Int) : StableId {
     /** The full [xdm.app.ui.screens.DownloadCompleteWindow] dialog. */
-    DIALOG,
+    DIALOG(1),
 
     /** A system tray balloon/notification; clicking it opens the main window. */
-    NOTIFICATION,
+    NOTIFICATION(2),
 
     /** Nothing at all. */
-    NONE,
+    NONE(3),
 }
 
 interface IAppConfig : CoreConfig {
@@ -38,7 +42,7 @@ interface IAppConfig : CoreConfig {
     var downloadCompleteNotification: DownloadCompleteNotification
     /**
      * Legacy view of [downloadCompleteNotification]: true iff the mode is [DownloadCompleteNotification.DIALOG].
-     * Kept because it is the first field of the on-disk config format.
+     * Not saved; kept for the "don't show again" check box of the dialog.
      */
     var showDownloadCompleteWindow: Boolean
     var runVirusScan: Boolean
@@ -130,12 +134,73 @@ interface IAppConfig : CoreConfig {
 val IAppConfig.resolvedNoneFolder: String
     get() = noneFolder ?: defaultDownloadFolder
 
+// Field numbers of the config file (see TaggedFile). Never reuse or retype a number; a field that
+// is no longer saved keeps its number reserved. 29 is unused: the proxy password is never saved.
+private const val F_RUN_VIRUS_SCAN = 1
+private const val F_RUN_COMMAND = 2
+private const val F_SHOW_PROGRESS_WINDOW = 3
+private const val F_DEFAULT_DOWNLOAD_FOLDER = 4
+private const val F_TEMP_FOLDER = 5
+private const val F_AUTO_RENAME = 6
+private const val F_SHUTDOWN_AFTER_ALL_DONE = 7
+private const val F_MAX_PARALLEL_DOWNLOADS = 8
+private const val F_REMEMBER_NONE = 9
+private const val F_NONE_FOLDER = 10
+private const val F_SORT_KEY = 11
+private const val F_SORT_ASCENDING = 12
+private const val F_MIN_VIDEO_SIZE = 13
+private const val F_LANG = 14
+private const val F_SPEED_LIMITER_ENABLED = 15
+private const val F_SPEED_LIMIT = 16
+private const val F_START_AUTOMATICALLY = 17
+private const val F_OVERWRITE_EXISTING = 18
+private const val F_FILE_EXTENSIONS = 19
+private const val F_VIDEO_EXTENSIONS = 20
+private const val F_BLOCKED_HOSTS = 21
+private const val F_GET_SERVER_TIME = 22
+private const val F_MAX_SEGMENTS = 23
+private const val F_MAX_RETRIES = 24
+private const val F_USE_PROXY = 25
+private const val F_SOCKS_PROXY = 26
+private const val F_PROXY_HOST = 27
+private const val F_PROXY_PORT = 28
+private const val F_PROXY_USER = 30
+private const val F_HALT_AFTER_DOWNLOAD = 31
+private const val F_KEEP_AWAKE = 32
+private const val F_CUSTOM_COMMAND = 33
+private const val F_VIRUS_SCANNER_PATH = 34
+private const val F_VIRUS_SCANNER_ARGS = 35
+private const val F_RUN_ON_STARTUP = 36
+private const val F_THEME = 37
+private const val F_FOLDER_HISTORY = 38
+private const val F_IGNORE_CERT_ERRORS = 39
+private const val F_READ_TIMEOUT_SECONDS = 40
+private const val F_CATEGORIES = 41
+private const val F_COMPLETE_NOTIFICATION = 42
+private const val F_SKIP_DUPLICATE_MANIFESTS = 43
+private const val F_MARK_DOWNLOADED_FILES = 44
+private const val F_BATCH_AS_ONE_FROM_BROWSER = 45
+private const val F_BATCH_AS_ONE_FROM_CLIPBOARD = 46
+private const val F_NATIVE_WAYLAND = 47
+private const val F_LIST_SELECTION_MODE = 48
+
+// Inside F_CATEGORIES: one F_CATEGORY record per category, in order.
+private const val F_CATEGORY = 1
+private const val CAT_ID = 1
+private const val CAT_NAME = 2
+private const val CAT_EXTENSIONS = 3
+private const val CAT_MATCH_ALL = 4
+private const val CAT_URL_PATTERNS = 5
+private const val CAT_FILE_NAME_PATTERNS = 6
+private const val CAT_FOLDER = 7
+private const val CAT_PREDEFINED = 8
+private const val CAT_COLOR = 9
+
 class AppConfig(private val configDir: String) : IAppConfig {
     companion object {
         /** Largest "Only detect videos larger than" choice in Settings, in MB. */
         const val MAX_MIN_VIDEO_SIZE_MB = 100L
         const val CONFIG_FILE = "xdm-app.config"
-        val LEGACY_TEMP_FOLDER: String = File(System.getProperty("user.home"), ".temp").absolutePath
         const val MIN_READ_TIMEOUT_SECONDS = 5
         const val MAX_READ_TIMEOUT_SECONDS = 600
         const val MAX_FOLDER_HISTORY = 10
@@ -172,8 +237,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var maxParallelDownloads: Int = 3
     override var downloadCompleteNotification: DownloadCompleteNotification = DownloadCompleteNotification.DIALOG
     override var showDownloadCompleteWindow: Boolean
-        // No backing field: the old boolean is just a projection of the three-way mode, so a
-        // config written by an older build (which only knows the boolean) still round-trips.
+        // No backing field: just a projection of the three-way mode.
         get() = downloadCompleteNotification == DownloadCompleteNotification.DIALOG
         set(value) {
             downloadCompleteNotification =
@@ -236,7 +300,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var proxyHost: String = ""
     override var proxyPort: Int = 8080
     override var proxyUser: String = ""
-    /** Kept in memory only: [save] writes an empty string in its slot. */
+    /** Kept in memory only: [save] never writes it. */
     override var proxyPass: String = ""
     override var haltAfterDownload: Boolean = false
     override var keepAwake: Boolean = true
@@ -259,234 +323,218 @@ class AppConfig(private val configDir: String) : IAppConfig {
 
     override fun load() {
         if (!AtomicIO.exists(CONFIG_FILE, configDir)) return
-        AtomicIO.readTransacted(CONFIG_FILE, configDir) { load(it) }
-            .onFailure { Logger.error("Unable to load config, using defaults: $it") }
-        // Older builds saved the proxy password. Keep it for this run, but rewrite the file without
-        // it; twice, because a save moves the previous file to `.bak2`.
-        if (proxyPass.isNotEmpty()) {
-            save()
-            save()
-        }
+        AtomicIO.readTransacted(CONFIG_FILE, configDir) { load(TaggedFile.read(it)) }
+            .onFailure {
+                if (it is NotTaggedException) {
+                    // Written before the tagged format and not read. Deleted with its backups because
+                    // older builds saved the proxy password in it.
+                    Logger.info("Config is in an old format, using defaults")
+                    AtomicIO.delete(CONFIG_FILE, configDir)
+                } else {
+                    Logger.error("Unable to load config, using defaults: $it")
+                }
+            }
     }
 
     override fun save() {
-        AtomicIO.writeTransacted(CONFIG_FILE, configDir, ownerOnly = true) { save(it) }
-            .onFailure { Logger.error("Unable to save config: $it") }
+        AtomicIO.writeTransacted(CONFIG_FILE, configDir, ownerOnly = true) { out ->
+            TaggedFile.write(out) { save(this) }
+        }.onFailure { Logger.error("Unable to save config: $it") }
     }
 
-    private fun save(out: DataOutputStream) {
-        out.writeBoolean(showDownloadCompleteWindow)
-        out.writeBoolean(runVirusScan)
-        out.writeBoolean(runCommand)
-        out.writeBoolean(showDownloadProgressWindow)
-        out.writeUTF(defaultDownloadFolder)
-        out.writeUTF(tempFolder)
-        out.writeBoolean(autoRenameOnConflict)
-        out.writeBoolean(shutdownAfterAllDone)
-        out.writeInt(maxParallelDownloads)
-        out.writeBoolean(rememberNone)
-        out.writeUTF(noneFolder ?: "")
-        out.writeInt(sortKey.ordinal)
-        out.writeBoolean(sortAscending)
-        out.writeLong(minVideoSize)
-        out.writeUTF(lang)
-        out.writeBoolean(speedLimiterEnabled)
-        out.writeInt(speedLimit)
-        out.writeBoolean(startDownloadAutomatically)
-        out.writeBoolean(overwriteExistingFiles)
-        writeStringList(out, fileExtensions)
-        writeStringList(out, videoExtensions)
-        writeStringList(out, blockedHosts)
-        out.writeBoolean(getServerTime)
-        out.writeInt(maxSegments)
-        out.writeInt(maxRetries)
-        out.writeBoolean(useProxy)
-        out.writeBoolean(socksProxy)
-        out.writeUTF(proxyHost)
-        out.writeInt(proxyPort)
-        out.writeUTF(proxyUser)
-        out.writeUTF("") // proxyPass: never written to disk
-        out.writeBoolean(haltAfterDownload)
-        out.writeBoolean(keepAwake)
-        out.writeUTF(customCommand)
-        out.writeUTF(virusScannerPath)
-        out.writeUTF(virusScannerArgs)
-        out.writeBoolean(runOnStartup)
-        out.writeUTF(theme)
-        writeStringList(out, folderHistory)
-        out.writeBoolean(ignoreCertErrors)
-        out.writeInt(readTimeoutSeconds)
-        writeCategories(out, categories)
-        // Appended after the self-contained category block so an older build, which stops
-        // reading here, is unaffected.
-        out.writeInt(downloadCompleteNotification.ordinal)
-        out.writeBoolean(skipDuplicateManifests)
-        out.writeBoolean(markDownloadedFiles)
-        out.writeBoolean(batchAsOneFromBrowser)
-        out.writeBoolean(batchAsOneFromClipboard)
-        out.writeBoolean(nativeWayland)
-        out.writeInt(listSelectionMode.ordinal)
+    /**
+     * Fields this build does not know, kept as read and written back on save, so running an older
+     * build does not drop settings a newer one saved.
+     */
+    private var unknownFields = ByteArray(0)
+
+    private fun save(w: TagWriter) {
+        w.bool(F_RUN_VIRUS_SCAN, runVirusScan)
+        w.bool(F_RUN_COMMAND, runCommand)
+        w.bool(F_SHOW_PROGRESS_WINDOW, showDownloadProgressWindow)
+        w.string(F_DEFAULT_DOWNLOAD_FOLDER, defaultDownloadFolder)
+        w.string(F_TEMP_FOLDER, tempFolder)
+        w.bool(F_AUTO_RENAME, autoRenameOnConflict)
+        w.bool(F_SHUTDOWN_AFTER_ALL_DONE, shutdownAfterAllDone)
+        w.int(F_MAX_PARALLEL_DOWNLOADS, maxParallelDownloads)
+        w.bool(F_REMEMBER_NONE, rememberNone)
+        w.stringOrNull(F_NONE_FOLDER, noneFolder)
+        w.int(F_SORT_KEY, sortKey.id)
+        w.bool(F_SORT_ASCENDING, sortAscending)
+        w.long(F_MIN_VIDEO_SIZE, minVideoSize)
+        w.string(F_LANG, lang)
+        w.bool(F_SPEED_LIMITER_ENABLED, speedLimiterEnabled)
+        w.int(F_SPEED_LIMIT, speedLimit)
+        w.bool(F_START_AUTOMATICALLY, startDownloadAutomatically)
+        w.bool(F_OVERWRITE_EXISTING, overwriteExistingFiles)
+        w.strings(F_FILE_EXTENSIONS, fileExtensions)
+        w.strings(F_VIDEO_EXTENSIONS, videoExtensions)
+        w.strings(F_BLOCKED_HOSTS, blockedHosts)
+        w.bool(F_GET_SERVER_TIME, getServerTime)
+        w.int(F_MAX_SEGMENTS, maxSegments)
+        w.int(F_MAX_RETRIES, maxRetries)
+        w.bool(F_USE_PROXY, useProxy)
+        w.bool(F_SOCKS_PROXY, socksProxy)
+        w.string(F_PROXY_HOST, proxyHost)
+        w.int(F_PROXY_PORT, proxyPort)
+        w.string(F_PROXY_USER, proxyUser)
+        // proxyPass: never written to disk
+        w.bool(F_HALT_AFTER_DOWNLOAD, haltAfterDownload)
+        w.bool(F_KEEP_AWAKE, keepAwake)
+        w.string(F_CUSTOM_COMMAND, customCommand)
+        w.string(F_VIRUS_SCANNER_PATH, virusScannerPath)
+        w.string(F_VIRUS_SCANNER_ARGS, virusScannerArgs)
+        w.bool(F_RUN_ON_STARTUP, runOnStartup)
+        w.string(F_THEME, theme)
+        w.strings(F_FOLDER_HISTORY, folderHistory)
+        w.bool(F_IGNORE_CERT_ERRORS, ignoreCertErrors)
+        w.int(F_READ_TIMEOUT_SECONDS, readTimeoutSeconds)
+        w.message(F_CATEGORIES) { categories.forEach { writeCategory(this, it) } }
+        w.int(F_COMPLETE_NOTIFICATION, downloadCompleteNotification.id)
+        w.bool(F_SKIP_DUPLICATE_MANIFESTS, skipDuplicateManifests)
+        w.bool(F_MARK_DOWNLOADED_FILES, markDownloadedFiles)
+        w.bool(F_BATCH_AS_ONE_FROM_BROWSER, batchAsOneFromBrowser)
+        w.bool(F_BATCH_AS_ONE_FROM_CLIPBOARD, batchAsOneFromClipboard)
+        w.bool(F_NATIVE_WAYLAND, nativeWayland)
+        w.int(F_LIST_SELECTION_MODE, listSelectionMode.id)
+        w.raw(unknownFields)
     }
 
-    private fun load(input: DataInputStream) {
-        showDownloadCompleteWindow = input.readBoolean()
-        runVirusScan = input.readBoolean()
-        runCommand = input.readBoolean()
-        showDownloadProgressWindow = input.readBoolean()
-        defaultDownloadFolder = input.readUTF()
-        tempFolder = input.readUTF().let {
-            // Configs written before the temp folder moved under the config dir carry the old
-            // default; move them rather than stranding downloads in ~/.temp.
-            if (it == LEGACY_TEMP_FOLDER) File(configDir, "tmp").absolutePath else it
-        }
-        autoRenameOnConflict = input.readBoolean()
-        shutdownAfterAllDone = input.readBoolean()
-        maxParallelDownloads = input.readInt()
-        rememberNone = input.readBoolean()
-        noneFolder = input.readUTF().ifEmpty { null }
-        sortKey = SortKey.entries[input.readInt()]
-        sortAscending = input.readBoolean()
-        minVideoSize = input.readLong().let {
-            // Settings used to save its MB choice (1..100) here unconverted, as if it were KB.
-            if (it in 1..MAX_MIN_VIDEO_SIZE_MB) it * 1024 else it
-        }
-        lang = input.readUTF()
-        speedLimiterEnabled = input.readBoolean()
-        speedLimit = input.readInt()
-        startDownloadAutomatically = input.readBoolean()
-        overwriteExistingFiles = input.readBoolean()
-        fileExtensions = readStringList(input)
-        videoExtensions = readStringList(input)
-        blockedHosts = readStringList(input)
-        getServerTime = input.readBoolean()
-        maxSegments = input.readInt()
-        maxRetries = input.readInt()
-        useProxy = input.readBoolean()
-        socksProxy = input.readBoolean()
-        proxyHost = input.readUTF()
-        proxyPort = input.readInt()
-        proxyUser = input.readUTF()
-        proxyPass = input.readUTF()
-        haltAfterDownload = input.readBoolean()
-        keepAwake = input.readBoolean()
-        customCommand = input.readUTF()
-        virusScannerPath = input.readUTF()
-        virusScannerArgs = input.readUTF()
-        // Trailing fields: tolerate config files written before they existed.
-        try {
-            runOnStartup = input.readBoolean()
-            theme = input.readUTF()
-        } catch (e: java.io.EOFException) {
-            // older config without these trailing fields; keep defaults
-            return
-        }
-        try {
-            folderHistory = readStringList(input).take(MAX_FOLDER_HISTORY)
-        } catch (e: java.io.EOFException) {
-            return
-        }
-        try {
-            ignoreCertErrors = input.readBoolean()
-        } catch (e: java.io.EOFException) {
-            // config written before ignoreCertErrors existed; keep the secure default
-            return
-        }
-        try {
-            readTimeoutSeconds = input.readInt().coerceIn(MIN_READ_TIMEOUT_SECONDS, MAX_READ_TIMEOUT_SECONDS)
-        } catch (e: java.io.EOFException) {
-            // config written before readTimeoutSeconds existed; keep the default
-            return
-        }
-        // The category block is last and self-contained: a stale or damaged one falls back to
-        // the built-ins instead of failing the whole load and resetting every other setting.
-        val categoriesRead = runCatching { readCategories(input) }
-            .onSuccess { categories = it }
-            .onFailure {
-                Logger.error("Unable to read categories, using defaults: $it")
-                // Re-seed from the folder this config actually carries, not the one the
-                // constructor guessed before the file was read.
-                categories = DownloadCategory.defaults(defaultDownloadFolder)
+    private fun load(r: TagReader) {
+        val unknown = TagWriter()
+        // Applied after the loop: setting the default folder clears noneFolder, and the built-in
+        // categories are seeded from the folder this config carries.
+        var defaultFolder = defaultDownloadFolder
+        var none: String? = null
+        var cats: List<DownloadCategory>? = null
+        while (true) {
+            when (r.next()) {
+                -1 -> break
+                F_RUN_VIRUS_SCAN -> runVirusScan = r.bool()
+                F_RUN_COMMAND -> runCommand = r.bool()
+                F_SHOW_PROGRESS_WINDOW -> showDownloadProgressWindow = r.bool()
+                F_DEFAULT_DOWNLOAD_FOLDER -> defaultFolder = r.string()
+                F_TEMP_FOLDER -> tempFolder = r.string()
+                F_AUTO_RENAME -> autoRenameOnConflict = r.bool()
+                F_SHUTDOWN_AFTER_ALL_DONE -> shutdownAfterAllDone = r.bool()
+                F_MAX_PARALLEL_DOWNLOADS -> maxParallelDownloads = r.int()
+                F_REMEMBER_NONE -> rememberNone = r.bool()
+                F_NONE_FOLDER -> none = r.string()
+                F_SORT_KEY -> SortKey.entries.toTypedArray().byStableId(r.int())?.let { sortKey = it }
+                F_SORT_ASCENDING -> sortAscending = r.bool()
+                F_MIN_VIDEO_SIZE -> minVideoSize = r.long()
+                F_LANG -> lang = r.string()
+                F_SPEED_LIMITER_ENABLED -> speedLimiterEnabled = r.bool()
+                F_SPEED_LIMIT -> speedLimit = r.int()
+                F_START_AUTOMATICALLY -> startDownloadAutomatically = r.bool()
+                F_OVERWRITE_EXISTING -> overwriteExistingFiles = r.bool()
+                F_FILE_EXTENSIONS -> fileExtensions = r.strings()
+                F_VIDEO_EXTENSIONS -> videoExtensions = r.strings()
+                F_BLOCKED_HOSTS -> blockedHosts = r.strings()
+                F_GET_SERVER_TIME -> getServerTime = r.bool()
+                F_MAX_SEGMENTS -> maxSegments = r.int()
+                F_MAX_RETRIES -> maxRetries = r.int()
+                F_USE_PROXY -> useProxy = r.bool()
+                F_SOCKS_PROXY -> socksProxy = r.bool()
+                F_PROXY_HOST -> proxyHost = r.string()
+                F_PROXY_PORT -> proxyPort = r.int()
+                F_PROXY_USER -> proxyUser = r.string()
+                F_HALT_AFTER_DOWNLOAD -> haltAfterDownload = r.bool()
+                F_KEEP_AWAKE -> keepAwake = r.bool()
+                F_CUSTOM_COMMAND -> customCommand = r.string()
+                F_VIRUS_SCANNER_PATH -> virusScannerPath = r.string()
+                F_VIRUS_SCANNER_ARGS -> virusScannerArgs = r.string()
+                F_RUN_ON_STARTUP -> runOnStartup = r.bool()
+                F_THEME -> theme = r.string()
+                F_FOLDER_HISTORY -> folderHistory = r.strings().take(MAX_FOLDER_HISTORY)
+                F_IGNORE_CERT_ERRORS -> ignoreCertErrors = r.bool()
+                F_READ_TIMEOUT_SECONDS ->
+                    readTimeoutSeconds = r.int().coerceIn(MIN_READ_TIMEOUT_SECONDS, MAX_READ_TIMEOUT_SECONDS)
+                F_CATEGORIES -> cats = readCategories(r.message())
+                F_COMPLETE_NOTIFICATION -> DownloadCompleteNotification.entries.toTypedArray().byStableId(r.int())
+                    ?.let { downloadCompleteNotification = it }
+                F_SKIP_DUPLICATE_MANIFESTS -> skipDuplicateManifests = r.bool()
+                F_MARK_DOWNLOADED_FILES -> markDownloadedFiles = r.bool()
+                F_BATCH_AS_ONE_FROM_BROWSER -> batchAsOneFromBrowser = r.bool()
+                F_BATCH_AS_ONE_FROM_CLIPBOARD -> batchAsOneFromClipboard = r.bool()
+                F_NATIVE_WAYLAND -> nativeWayland = r.bool()
+                F_LIST_SELECTION_MODE -> ListSelectionMode.entries.toTypedArray().byStableId(r.int())
+                    ?.let { listSelectionMode = it }
+                else -> unknown.raw(r.rawField())
             }
-            .isSuccess
-        // Written after the categories, so it is only readable when they parsed cleanly and
-        // left the stream aligned. Until then the legacy boolean read above already picked
-        // DIALOG or NONE, which is the right answer for a config from an older build.
-        if (!categoriesRead) return
-        val notificationRead = runCatching { DownloadCompleteNotification.entries[input.readInt()] }
-            .onSuccess { downloadCompleteNotification = it }
-            .isSuccess
-        if (!notificationRead) return
-        // Config written before this field existed: keep the default (off).
-        val skipDupRead = runCatching { input.readBoolean() }
-            .onSuccess { skipDuplicateManifests = it }
-            .isSuccess
-        if (!skipDupRead) return
-        // Config written before this field existed: keep the default (on).
-        val markRead = runCatching { input.readBoolean() }
-            .onSuccess { markDownloadedFiles = it }
-            .isSuccess
-        if (!markRead) return
-        // Config written before the batch dialog modes existed: keep the defaults.
-        val batchRead = runCatching {
-            batchAsOneFromBrowser = input.readBoolean()
-            batchAsOneFromClipboard = input.readBoolean()
-        }.isSuccess
-        if (!batchRead) return
-        // Config written before this field existed: keep the default (on).
-        val waylandRead = runCatching { nativeWayland = input.readBoolean() }.isSuccess
-        if (!waylandRead) return
-        // Config written before this field existed: keep the default (Classic).
-        runCatching { ListSelectionMode.entries[input.readInt()] }.onSuccess { listSelectionMode = it }
-    }
-
-    private fun writeCategories(out: DataOutputStream, list: List<DownloadCategory>) {
-        out.writeInt(list.size)
-        list.forEach { cat ->
-            out.writeUTF(cat.id)
-            out.writeUTF(cat.name)
-            writeStringList(out, cat.extensions.toList())
-            out.writeBoolean(cat.matchAll)
-            writeStringList(out, cat.urlPatterns)
-            writeStringList(out, cat.fileNamePatterns)
-            out.writeUTF(cat.folder)
-            out.writeBoolean(cat.predefined)
-            out.writeInt(cat.color ?: -1)
         }
+        defaultDownloadFolder = defaultFolder
+        noneFolder = none
+        categories = cats ?: DownloadCategory.defaults(defaultDownloadFolder)
+        unknownFields = unknown.toByteArray()
     }
 
-    private fun readCategories(input: DataInputStream): List<DownloadCategory> {
-        val size = input.readInt()
+    private fun writeCategory(w: TagWriter, cat: DownloadCategory) = w.message(F_CATEGORY) {
+        string(CAT_ID, cat.id)
+        string(CAT_NAME, cat.name)
+        strings(CAT_EXTENSIONS, cat.extensions.toList())
+        bool(CAT_MATCH_ALL, cat.matchAll)
+        strings(CAT_URL_PATTERNS, cat.urlPatterns)
+        strings(CAT_FILE_NAME_PATTERNS, cat.fileNamePatterns)
+        string(CAT_FOLDER, cat.folder)
+        bool(CAT_PREDEFINED, cat.predefined)
+        cat.color?.let { int(CAT_COLOR, it) }
+    }
+
+    private fun readCategories(r: TagReader): List<DownloadCategory> {
         val list = mutableListOf<DownloadCategory>()
-        repeat(size) {
-            list.add(
-                DownloadCategory(
-                    id = input.readUTF(),
-                    name = input.readUTF(),
-                    extensions = LinkedHashSet(readStringList(input)),
-                    matchAll = input.readBoolean(),
-                    urlPatterns = readStringList(input),
-                    fileNamePatterns = readStringList(input),
-                    folder = input.readUTF(),
-                    predefined = input.readBoolean(),
-                    color = input.readInt().takeIf { it >= 0 },
-                )
-            )
+        while (true) {
+            when (r.next()) {
+                -1 -> return list
+                F_CATEGORY -> {
+                    // A damaged category is dropped, not the rest of the config.
+                    val cat = r.message()
+                    runCatching { readCategory(cat) }
+                        .onSuccess { it?.let(list::add) }
+                        .onFailure { Logger.error("Unable to read a category: $it") }
+                }
+                else -> r.skip()
+            }
         }
-        return list
     }
 
-    private fun writeStringList(out: DataOutputStream, list: List<String>) {
-        out.writeInt(list.size)
-        list.forEach { out.writeUTF(it) }
-    }
-
-    private fun readStringList(input: DataInputStream): List<String> {
-        val size = input.readInt()
-        val list = mutableListOf<String>()
-        repeat(size) {
-            list.add(input.readUTF())
+    /** Null for a category without an id or a folder. */
+    private fun readCategory(r: TagReader): DownloadCategory? {
+        var id: String? = null
+        var name = ""
+        var extensions = emptyList<String>()
+        var matchAll = false
+        var urlPatterns = emptyList<String>()
+        var fileNamePatterns = emptyList<String>()
+        var folder: String? = null
+        var predefined = false
+        var color: Int? = null
+        while (true) {
+            when (r.next()) {
+                -1 -> break
+                CAT_ID -> id = r.string()
+                CAT_NAME -> name = r.string()
+                CAT_EXTENSIONS -> extensions = r.strings()
+                CAT_MATCH_ALL -> matchAll = r.bool()
+                CAT_URL_PATTERNS -> urlPatterns = r.strings()
+                CAT_FILE_NAME_PATTERNS -> fileNamePatterns = r.strings()
+                CAT_FOLDER -> folder = r.string()
+                CAT_PREDEFINED -> predefined = r.bool()
+                CAT_COLOR -> color = r.int()
+                else -> r.skip()
+            }
         }
-        return list
+        return DownloadCategory(
+            id = id ?: return null,
+            name = name,
+            extensions = LinkedHashSet(extensions),
+            matchAll = matchAll,
+            urlPatterns = urlPatterns,
+            fileNamePatterns = fileNamePatterns,
+            folder = folder ?: return null,
+            predefined = predefined,
+            color = color,
+        )
     }
 
     override fun toProxy(): Proxy? {

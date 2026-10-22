@@ -8,7 +8,7 @@ import xdm.app.AppConfig
 import java.io.File
 import java.nio.file.Files
 
-/** The minimum video size is held in KB; MB values saved by older Settings are read as MB. */
+/** The minimum video size is held in KB and round-trips. */
 class AppConfigMinVideoSizeTest {
     private lateinit var dir: File
 
@@ -37,12 +37,5 @@ class AppConfigMinVideoSizeTest {
         for (kb in listOf(1024L, 5 * 1024L, 100 * 1024L)) {
             assertEquals(kb, roundTrip(kb), "round trip of $kb KB")
         }
-    }
-
-    @Test
-    fun megabyteValueSavedByOlderSettings_isReadAsMegabytes() {
-        assertEquals(1024L, roundTrip(1), "1 MB")
-        assertEquals(50 * 1024L, roundTrip(50), "50 MB")
-        assertEquals(100 * 1024L, roundTrip(AppConfig.MAX_MIN_VIDEO_SIZE_MB), "100 MB")
     }
 }

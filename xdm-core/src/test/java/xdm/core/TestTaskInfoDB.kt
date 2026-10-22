@@ -2,6 +2,7 @@ package xdm.core
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import xdm.core.downloaders.DashDownloadTaskInfo
@@ -101,6 +102,16 @@ class TestTaskInfoDB : HttpDownloadTestBase() {
         assertEquals(headers, again.headers)
         assertEquals("https://example.com/page", again.origin)
         assertEquals("CAT_VIDEOS", again.categoryId)
+    }
+
+    @Test
+    fun getterForAnotherType_returnsNull() {
+        db().saveHttpTask(httpTask(8))
+        // DownloadManager.moveTo tries the HLS getter first to tell the types apart.
+        assertNull(db().getHlsTask(8), "HTTP task read as HLS")
+        assertNull(db().getDashTask(8), "HTTP task read as DASH")
+        assertNull(db().getBatchTask(8), "HTTP task read as batch")
+        assertNotNull(db().getHttpTask(8), "HTTP task")
     }
 
     @Test

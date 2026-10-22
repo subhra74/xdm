@@ -9,7 +9,7 @@ import xdm.app.DownloadCompleteNotification
 import java.io.File
 import java.nio.file.Files
 
-/** The three-way "when a download finishes" setting round-trips, and older configs still load. */
+/** The three-way "when a download finishes" setting round-trips. */
 class AppConfigCompleteNotificationTest {
     private lateinit var dir: File
 
@@ -24,16 +24,6 @@ class AppConfigCompleteNotificationTest {
     }
 
     private fun load() = AppConfig(dir.absolutePath).apply { load() }
-
-    /**
-     * Strips the trailing mode field (an int) and everything after it (the skip-duplicate-manifests
-     * boolean), leaving the config an older build would have written.
-     */
-    private fun dropTrailingMode() {
-        val file = File(dir, AppConfig.CONFIG_FILE)
-        val bytes = file.readBytes()
-        file.writeBytes(bytes.copyOf(bytes.size - 13) + "XDM-END!".toByteArray(Charsets.US_ASCII))
-    }
 
     @Test
     fun eachMode_isSavedAndLoaded() {
@@ -54,19 +44,5 @@ class AppConfigCompleteNotificationTest {
         assertEquals(DownloadCompleteNotification.NONE, config.downloadCompleteNotification)
         config.showDownloadCompleteWindow = true
         assertEquals(DownloadCompleteNotification.DIALOG, config.downloadCompleteNotification)
-    }
-
-    @Test
-    fun oldConfigWithDialogEnabled_loadsAsDialog() {
-        AppConfig(dir.absolutePath).apply { downloadCompleteNotification = DownloadCompleteNotification.DIALOG }.save()
-        dropTrailingMode()
-        assertEquals(DownloadCompleteNotification.DIALOG, load().downloadCompleteNotification)
-    }
-
-    @Test
-    fun oldConfigWithDialogDisabled_loadsAsNone() {
-        AppConfig(dir.absolutePath).apply { downloadCompleteNotification = DownloadCompleteNotification.NONE }.save()
-        dropTrailingMode()
-        assertEquals(DownloadCompleteNotification.NONE, load().downloadCompleteNotification)
     }
 }

@@ -49,8 +49,9 @@ data class DownloadCategory(
     val displayName: String
         get() {
             if (defaultNameOf(id) != name) return name
-            val translated: String? = I8N.text(id)
-            return if (translated.isNullOrBlank()) name else translated
+            // I8N.text returns the id itself when no language file has it.
+            val translated = I8N.text(id)
+            return if (translated == id || translated.isBlank()) name else translated
         }
 
     /** Whether [fileName] has one of [extensions]. Used for row icons; download matching is [CategoryRules]. */

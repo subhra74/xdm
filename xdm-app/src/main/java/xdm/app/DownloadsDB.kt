@@ -5,8 +5,11 @@ import xdm.core.downloaders.web.batch.loadBatchState
 import xdm.core.util.AtomicIO
 import xdm.core.util.Logger
 import xdm.core.util.MovePhase
+import xdm.core.util.TagReader
+import xdm.core.util.TagWriter
+import xdm.core.util.TaggedFile
+import xdm.core.util.byStableId
 import java.io.DataInputStream
-import java.io.DataOutputStream
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 
@@ -59,6 +62,20 @@ data class DbRecord(
      */
     val categoryId: String? = null,
 )
+
+// Field numbers of the download list files (see TaggedFile). Never reuse or retype a number.
+private const val F_RECORD = 1
+
+// DbRecord
+private const val R_ID = 1
+private const val R_SIZE = 2
+private const val R_DOWNLOADED = 3
+private const val R_PROGRESS = 4
+private const val R_DATE = 5
+private const val R_FILE_NAME = 6
+private const val R_DOWNLOAD_TYPE = 7
+private const val R_FAILED = 8
+private const val R_CATEGORY_ID = 9
 
 class AppDB(private val configDir: String) {
     private val activeFileName: String = "active-downloads.dat"
@@ -157,13 +174,12 @@ class AppDB(private val configDir: String) {
     fun saveActiveRecords() {
         val res = AtomicIO.writeTransacted(activeFileName, configDir) { fs ->
             synchronized(records) {
-                val count =
-                    records.count { it.status != RecordStatus.FINISHED && !it.status.isStopped }
-                fs.writeInt(count)
-                for (value in records.filter {
-                    it.status != RecordStatus.FINISHED && !it.status.isStopped
-                }) {
-                    writeRecord(value, fs)
+                TaggedFile.write(fs) {
+                    for (value in records) {
+                        if (value.status != RecordStatus.FINISHED && !value.status.isStopped) {
+                            message(F_RECORD) { writeRecord(value, this) }
+                        }
+                    }
                 }
             }
         }
@@ -171,12 +187,22 @@ class AppDB(private val configDir: String) {
     }
 
     private fun loadRecordsFromStream(fs: DataInputStream, paused: Boolean): Int {
-        val c = fs.readInt()
-        for (x in 0..<c) {
-            val rec = readRecord(fs, paused)
-            records.add(rec)
+        val r = TaggedFile.read(fs)
+        var c = 0
+        while (true) {
+            when (r.next()) {
+                -1 -> return c
+                F_RECORD -> {
+                    // One unreadable record (say, a download type a newer build added) is skipped,
+                    // not the whole list.
+                    val rec = r.message()
+                    runCatching { readRecord(rec, paused) }
+                        .onSuccess { if (it != null) { records.add(it); c++ } }
+                        .onFailure { Logger.error("Skipping an unreadable download record: $it") }
+                }
+                else -> r.skip()
+            }
         }
-        return c
     }
 
     private fun loadActiveRecords() {
@@ -190,13 +216,12 @@ class AppDB(private val configDir: String) {
     fun savePausedRecords() {
         val res = AtomicIO.writeTransacted(pausedFileName, configDir) { fs ->
             synchronized(records) {
-                val count =
-                    records.count { it.status.isStopped }
-                fs.writeInt(count)
-                for (value in records.filter {
-                    it.status.isStopped
-                }) {
-                    writeRecord(value, fs)
+                TaggedFile.write(fs) {
+                    for (value in records) {
+                        if (value.status.isStopped) {
+                            message(F_RECORD) { writeRecord(value, this) }
+                        }
+                    }
                 }
             }
         }
@@ -214,13 +239,12 @@ class AppDB(private val configDir: String) {
     fun saveFinishedRecords() {
         val res = AtomicIO.writeTransacted(finishedFileName, configDir) { fs ->
             synchronized(records) {
-                val count =
-                    records.count { it.status == RecordStatus.FINISHED }
-                fs.writeInt(count)
-                for (value in records.filter {
-                    it.status == RecordStatus.FINISHED
-                }) {
-                    writeRecord(value, fs)
+                TaggedFile.write(fs) {
+                    for (value in records) {
+                        if (value.status == RecordStatus.FINISHED) {
+                            message(F_RECORD) { writeRecord(value, this) }
+                        }
+                    }
                 }
             }
         }
@@ -234,30 +258,46 @@ class AppDB(private val configDir: String) {
         //TODO: Check errors
     }
 
-    private fun writeRecord(rec: DbRecord, writer: DataOutputStream) {
-        writer.writeLong(rec.id)
-        writer.writeLong(rec.size)
-        writer.writeLong(rec.downloaded)
-        writer.writeInt(rec.progress)
-        writer.writeLong(rec.date)
-        writer.writeUTF(rec.fileName)
-        writer.writeUTF(rec.downloadType.toString())
-        writer.writeBoolean(rec.status == RecordStatus.ERROR)
-        writer.writeUTF(rec.categoryId ?: "")
+    private fun writeRecord(rec: DbRecord, w: TagWriter) {
+        w.long(R_ID, rec.id)
+        w.long(R_SIZE, rec.size)
+        w.long(R_DOWNLOADED, rec.downloaded)
+        w.int(R_PROGRESS, rec.progress)
+        w.long(R_DATE, rec.date)
+        w.string(R_FILE_NAME, rec.fileName)
+        w.int(R_DOWNLOAD_TYPE, rec.downloadType.id)
+        w.bool(R_FAILED, rec.status == RecordStatus.ERROR)
+        w.stringOrNull(R_CATEGORY_ID, rec.categoryId)
     }
 
-    private fun readRecord(r: DataInputStream, paused: Boolean = true): DbRecord {
-        val id = r.readLong()
-        val size = r.readLong()
-        val downloaded = r.readLong()
-        val progress = r.readInt()
-        val date = r.readLong()
-        val fileName = r.readUTF()
-        val downloadType = DownloadType.valueOf(r.readUTF())
-        val failed = r.readBoolean()
-        val categoryId = r.readUTF().ifEmpty { null }
+    /** Null for a record without an id or with a download type this build does not know. */
+    private fun readRecord(r: TagReader, paused: Boolean = true): DbRecord? {
+        var id: Long? = null
+        var size = 0L
+        var downloaded = 0L
+        var progress = 0
+        var date = 0L
+        var fileName = ""
+        var downloadType: DownloadType? = null
+        var failed = false
+        var categoryId: String? = null
+        while (true) {
+            when (r.next()) {
+                -1 -> break
+                R_ID -> id = r.long()
+                R_SIZE -> size = r.long()
+                R_DOWNLOADED -> downloaded = r.long()
+                R_PROGRESS -> progress = r.int()
+                R_DATE -> date = r.long()
+                R_FILE_NAME -> fileName = r.string()
+                R_DOWNLOAD_TYPE -> downloadType = DownloadType.entries.toTypedArray().byStableId(r.int())
+                R_FAILED -> failed = r.bool()
+                R_CATEGORY_ID -> categoryId = r.string()
+                else -> r.skip()
+            }
+        }
         return DbRecord(
-            id = id,
+            id = id ?: return null,
             size = size,
             downloaded = downloaded,
             progress = progress,
@@ -272,7 +312,7 @@ class AppDB(private val configDir: String) {
                 failed -> RecordStatus.ERROR
                 else -> RecordStatus.PAUSED
             },
-            downloadType = downloadType,
+            downloadType = downloadType ?: return null,
             categoryId = categoryId,
         )
     }

@@ -289,13 +289,14 @@ class DownloadRowPanel(val root: JPanel = JPanel()) {
     }
 
     /**
-     * A batch shows a folder on an accent tile, with a warning when some of its files failed. Any other
-     * download shows the glyph of its file type (from the extension) on a tile tinted with the color of
-     * the category it was saved with (neutral for None or a deleted category). Sets the tile color too.
+     * A batch shows a folder on a tile in the None color, with a warning when some of its files failed.
+     * Any other download shows the glyph of its file type (from the extension) on a tile tinted with the
+     * color of the category it was saved with (neutral for None or a deleted category). Sets the tile
+     * color too.
      */
     fun showFileIcon(ent: DbRecord) {
         if (ent.downloadType == DownloadType.Batch) {
-            tileHue = AppTheme.accent
+            tileHue = AppTheme.tileHue(null)
             val tile = AppTheme.tile(tileHue)
             iconBadge.background = tile.background
             val glyph = if (ent.failedFiles > 0) RemixIcon.FOLDER_WARNING_FILL else RemixIcon.FOLDER_FILL

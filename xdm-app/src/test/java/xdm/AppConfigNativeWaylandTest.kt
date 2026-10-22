@@ -9,7 +9,7 @@ import xdm.app.AppConfig
 import java.io.File
 import java.nio.file.Files
 
-/** "Native Wayland" is on by default, round-trips, and older configs load it as on. */
+/** "Native Wayland" is on by default and round-trips. */
 class AppConfigNativeWaylandTest {
     private lateinit var dir: File
 
@@ -36,22 +36,5 @@ class AppConfigNativeWaylandTest {
             AppConfig(dir.absolutePath).apply { nativeWayland = value }.save()
             assertEquals(value, load().nativeWayland, "round trip of $value")
         }
-    }
-
-    @Test
-    fun configWrittenBeforeTheField_loadsAsOn_andKeepsEarlierFields() {
-        AppConfig(dir.absolutePath).apply {
-            batchAsOneFromClipboard = true
-            nativeWayland = false
-        }.save()
-        // Drop this boolean and the int written after it (listSelectionMode), keeping AtomicIO's
-        // 8-byte end marker.
-        val file = File(dir, AppConfig.CONFIG_FILE)
-        val bytes = file.readBytes()
-        file.writeBytes(bytes.copyOf(bytes.size - 13) + "XDM-END!".toByteArray(Charsets.US_ASCII))
-
-        val config = load()
-        assertTrue(config.nativeWayland, "missing field keeps the default")
-        assertTrue(config.batchAsOneFromClipboard, "field before it still read")
     }
 }

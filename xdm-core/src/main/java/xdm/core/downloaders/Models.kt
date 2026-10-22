@@ -3,13 +3,14 @@ package xdm.core.downloaders
 import xdm.core.downloaders.web.SegmentProgress
 import xdm.core.downloaders.web.streaming.manifest.dash.DashSegment
 import xdm.core.network.http.HeaderMap
+import xdm.core.util.StableId
 import java.io.File
 
-enum class DownloadType {
-    Http, Hls, Dash, Torrent,
+enum class DownloadType(override val id: Int) : StableId {
+    Http(1), Hls(2), Dash(3), Torrent(4),
 
     /** Many links saved as separate files in one folder, shown as a single download (see docs/batch-downloader.md). */
-    Batch,
+    Batch(5),
 }
 
 enum class DownloadError {

@@ -165,7 +165,7 @@ class FilterListPanel(
 
     private fun fillCategories() {
         catFilterModel.clear()
-        val allDot = CategoryDotIcon(AppTheme.accent)
+        val allDot = CategoryDotIcon(AppTheme.tileHue(null))
         catFilterModel.addElement(FilterItem.Category(null, text("CAT_ALL_TYPES"), allDot, allDot))
         for (cat in AppContext.config.categories) {
             val dot = CategoryDotIcon(AppTheme.categoryColor(cat))

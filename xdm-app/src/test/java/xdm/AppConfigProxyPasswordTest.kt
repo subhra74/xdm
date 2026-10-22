@@ -51,20 +51,17 @@ class AppConfigProxyPasswordTest {
     }
 
     @Test
-    fun legacyConfigWithPassword_isScrubbedButKeptForTheRun() {
-        AppConfig(dir.absolutePath).apply { proxyUser = "alice" }.save()
-        // Put a password into the proxyPass slot the way older builds wrote it.
-        val file = File(dir, AppConfig.CONFIG_FILE)
-        val bytes = file.readBytes()
-        val user = utf("alice")
-        val at = (0..bytes.size - user.size).first { i -> user.indices.all { bytes[i + it] == user[it] } } + user.size
+    fun oldFormatConfig_isDeletedWithItsBackups() {
+        // A config from a build before the tagged format, which may carry the proxy password.
         val pass = utf("hunter2-secret")
-        file.writeBytes(
-            bytes.copyOfRange(0, at) + byteArrayOf(0, pass.size.toByte()) + pass + bytes.copyOfRange(at + 2, bytes.size)
-        )
-        assertEquals("hunter2-secret", AppConfig(dir.absolutePath).apply { load() }.proxyPass, "test setup")
+        val old = byteArrayOf(0, 1, 0, 1) + byteArrayOf(0, pass.size.toByte()) + pass +
+            "XDM-END!".toByteArray(Charsets.US_ASCII)
+        for (name in listOf(AppConfig.CONFIG_FILE, "${AppConfig.CONFIG_FILE}.bak2")) File(dir, name).writeBytes(old)
 
-        assertFalse(anyFileContains("hunter2-secret"), "legacy proxy password left on disk (incl. backups)")
+        val loaded = AppConfig(dir.absolutePath).apply { load() }
+
+        assertEquals("", loaded.proxyPass, "old config was read")
+        assertFalse(anyFileContains("hunter2-secret"), "old config left on disk (incl. backups)")
     }
 
     @Test

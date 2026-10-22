@@ -83,6 +83,11 @@ object AtomicIO {
     fun exists(fileName: String, folder: String): Boolean =
         listOf(fileName, "$fileName.bak1", "$fileName.bak2").any { File(folder, it).isFile }
 
+    /** Deletes `<name>` and both backups. */
+    fun delete(fileName: String, folder: String) {
+        listOf(fileName, "$fileName.bak1", "$fileName.bak2").forEach { File(folder, it).delete() }
+    }
+
     inline fun <T> readTransacted(
         fileName: String,
         folder: String,
