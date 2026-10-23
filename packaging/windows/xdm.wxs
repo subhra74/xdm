@@ -78,15 +78,28 @@
          running, wait 5 s before copying. waitfor.exe is a Windows built-in; it times out on a signal nobody
          sends (exit code 1, hence Return="ignore"). The close messages rarely help: XDM hides to the tray on
          WM_CLOSE, and the elevated step runs outside the user's desktop, where it can't see XDM's windows.
-         TerminateProcess="1" is the force kill; WiX has no option to wait for it to complete, hence this step. -->
+         TerminateProcess="1" is the force kill; WiX has no option to wait for it to complete, hence this step.
+         With XdmKillBeforeValidate below, this only still finds other users' XDM. -->
     <SetProperty Id="XdmWaitAfterClose" Sequence="execute" Before="XdmWaitAfterClose"
                  Value="&quot;[System64Folder]waitfor.exe&quot; /t 5 XdmInstallerPause" />
     <CustomAction Id="XdmWaitAfterClose" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec"
                   Execute="deferred" Impersonate="no" Return="ignore" />
-    <!-- The Restart Manager would otherwise offer its own "close these applications?" dialog first. -->
-    <Property Id="MSIRESTARTMANAGERCONTROL" Value="Disable" />
+    <!-- The close step runs after InstallValidate, whose files-in-use check would find the installing user's XDM
+         and show "close Xtreme Download Manager" with Retry/Ignore/Exit (seen, Windows 11 ARM, 9.0.3). So kill that
+         XDM first: an immediate step, run as the installing user, which reaches only their own XDM; other users'
+         XDM is still ended by the close step. XDM never starts msiexec, so it can't take the installer down with
+         it. The immediate WixQuietExec reads its command from WixQuietExecCmdLine (qtexecca.cpp). taskkill.exe is
+         a Windows built-in; it fails when no XDM is running, hence Return="ignore".
+         The Restart Manager stays on (no MSIRESTARTMANAGERCONTROL): the legacy check it replaces matches files by
+         name, so every app using the System32 vcruntime140.dll/msvcp140.dll (Notepad, Edge, OneDrive) showed up
+         as holding runtime\bin's copies. The Restart Manager looks at the files actually open. -->
+    <SetProperty Id="WixQuietExecCmdLine" Sequence="execute" Before="XdmKillBeforeValidate"
+                 Value="&quot;[System64Folder]taskkill.exe&quot; /f /im xdm-app.exe" />
+    <CustomAction Id="XdmKillBeforeValidate" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec"
+                  Execute="immediate" Return="ignore" />
 
     <InstallExecuteSequence>
+      <Custom Action="XdmKillBeforeValidate" Before="InstallValidate" />
       <Custom Action="XdmWaitAfterClose" After="Wix4CloseApplications_$(sys.BUILDARCHSHORT)" Condition="XDMWASRUNNING" />
     </InstallExecuteSequence>
 
