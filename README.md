@@ -51,6 +51,12 @@ Wondering why you'd still want a download manager on a fast connection? Read
 > [!NOTE]
 > As of 2026 XDM is being rebuilt and is in **active development**.
 
+> [!WARNING]
+> **A note for contributors:** XDM is going through a major rewrite, and the code is being restructured often.
+> Pull requests made now may need a lot of rework, or no longer apply after the next round of changes. Please hold off
+> on code contributions until things settle down. Translations, bug reports and feature ideas are very welcome in the
+> meantime. Thank you for your patience and support!
+
 ## 📸 Screenshots
 
 | Main window | New download |
