@@ -110,6 +110,12 @@ jobs:
           echo "JAVA_HOME=$home" >> "$GITHUB_ENV"
           echo "$home/bin" >> "$GITHUB_PATH"
 
+      # Spotlight and XProtect open freshly written files and make hdiutil fail with "Resource busy".
+      - name: Quiet Spotlight and XProtect
+        run: |
+          sudo mdutil -a -i off || true
+          sudo pkill -9 XProtect || true
+
       - name: Build dmg
         run: packaging/build-bundle.sh -s --type dmg
 

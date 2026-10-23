@@ -636,9 +636,13 @@ if [[ "$OS" == "mac" && "$JPACKAGE_TYPE" == "app-image" ]]; then
          <key>CFBundleTypeRole</key><string>Viewer</string>\
          <key>CFBundleURLSchemes</key><array><string>$URL_SCHEME</string></array>\
        </dict></array>" "$PLIST"
-    # Tell LaunchServices about it now, so the scheme works without a logout.
-    /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
-      -f "$BUNDLE" >/dev/null 2>&1 || true
+    # Tell LaunchServices about it now, so the scheme works without a logout. Skipped on CI: nobody
+    # uses the scheme there, and the registration wakes services that keep the bundle's files busy
+    # while hdiutil runs below.
+    if [[ -z "${CI:-}" ]]; then
+      /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
+        -f "$BUNDLE" >/dev/null 2>&1 || true
+    fi
     # jpackage signed the bundle before the plist edits above, so its signature no longer matches
     # ("invalid Info.plist"); a downloaded copy would then be "damaged and can't be opened".
     # Re-sign ad-hoc and fail the build if the result does not verify (PACKAGING.md §6).
@@ -654,7 +658,17 @@ if [[ "$OS" == "mac" && "$JPACKAGE_TYPE" == "app-image" ]]; then
       rm -rf "$STAGE" && mkdir -p "$STAGE"
       ditto "$BUNDLE" "$STAGE/$(basename "$BUNDLE")"   # ditto keeps the signature intact
       ln -s /Applications "$STAGE/Applications"
-      hdiutil create -volname "$MAC_DISPLAY_NAME" -srcfolder "$STAGE" -fs HFS+ -format UDZO -ov "$DMG" >/dev/null
+      # hdiutil create fails now and then with "Resource busy" when XProtect or Spotlight still holds
+      # the fresh files (often on GitHub runners); -ov makes a retry safe.
+      for attempt in 1 2 3 4 5; do
+        hdiutil create -volname "$MAC_DISPLAY_NAME" -srcfolder "$STAGE" -fs HFS+ -format UDZO -ov "$DMG" >/dev/null && break
+        if (( attempt == 5 )); then
+          echo "hdiutil create failed after $attempt attempts" >&2
+          exit 1
+        fi
+        echo ">> hdiutil create failed (attempt $attempt), retrying in $((attempt * 5))s"
+        sleep $((attempt * 5))
+      done
       hdiutil verify "$DMG" >/dev/null
       rm -rf "$STAGE"
     fi
