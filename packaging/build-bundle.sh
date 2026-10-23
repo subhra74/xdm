@@ -128,6 +128,7 @@ SKIP_MAVEN=0
 WITH_LOCALES=0
 RECORD_CLASSES=0
 RECORD_SERVER=""
+RECORD_ONLY=0
 ANY_JDK=0
 EXTRA_ARGS=()
 
@@ -148,6 +149,8 @@ Usage: packaging/build-bundle.sh [options] [-- extra jpackage args]
       --record-server URL  Like --record-classes, but XDM runs the scripted session against
                       packaging/recording/RecordServer.java at URL on a fresh profile and
                       exits by itself; the build stops if a step of the session failed
+      --record-only   With --record-server / --record-classes: stop once the class list is
+                      written (no archive, no bundle); refuses --any-jdk
       --any-jdk       Build with a JDK other than the one pinned in packaging/jdk.properties
                       (the AppCDS class list then doesn't match: local experiments only)
   -o, --out DIR       Output directory (default: build/dist)
@@ -167,6 +170,7 @@ while [[ $# -gt 0 ]]; do
     --with-locales) WITH_LOCALES=1; shift ;;
     --record-classes) RECORD_CLASSES=1; shift ;;
     --record-server) RECORD_CLASSES=1; RECORD_SERVER="$2"; shift 2 ;;
+    --record-only) RECORD_ONLY=1; shift ;;
     --any-jdk) ANY_JDK=1; shift ;;
     -o|--out) DEST_DIR="$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
@@ -174,6 +178,13 @@ while [[ $# -gt 0 ]]; do
     *) echo "Unknown option: $1" >&2; usage; exit 1 ;;
   esac
 done
+
+if [[ $RECORD_ONLY -eq 1 && $RECORD_CLASSES -eq 0 ]]; then
+  echo "--record-only needs --record-server URL or --record-classes" >&2; exit 1
+fi
+if [[ $RECORD_ONLY -eq 1 && $ANY_JDK -eq 1 ]]; then
+  echo "--record-only refuses --any-jdk: a class list is recorded on the pinned Liberica or JBR only" >&2; exit 1
+fi
 
 case "$(uname -s)" in
   Darwin) OS=mac ;;
@@ -200,8 +211,15 @@ JPACKAGE_TYPE="$PKG_TYPE"
 [[ $WITH_LOCALES -eq 1 ]] && MODULES="$MODULES,jdk.localedata"
 
 # ---- toolchain ------------------------------------------------------------
-for tool in jlink jpackage; do
-  command -v "$tool" >/dev/null 2>&1 || { echo "$tool not found on PATH (JDK 17+ required)" >&2; exit 1; }
+# jlink and jpackage come from the JDK of the java on PATH, the one checked against the pin below, never
+# from PATH themselves: a jlink of another JDK (the macOS /usr/bin stubs follow JAVA_HOME) would link a
+# runtime of that JDK while the class list is stamped with the checked one.
+command -v java >/dev/null 2>&1 || { echo "java not found on PATH (JDK 17+ required)" >&2; exit 1; }
+JDK_HOME_DIR="$(java -XshowSettings:properties -version 2>&1 | sed -n 's/^ *java\.home = //p' | head -1)"
+JLINK="$JDK_HOME_DIR/bin/jlink"
+JPACKAGE="$JDK_HOME_DIR/bin/jpackage"
+for tool in "$JLINK" "$JPACKAGE"; do
+  [[ -x "$tool" ]] || { echo "$tool not found: the java on PATH ($JDK_HOME_DIR) is not a full JDK" >&2; exit 1; }
 done
 JDK_MAJOR="$(java -XshowSettings:properties -version 2>&1 | sed -n 's/.*java\.specification\.version = \([0-9]*\).*/\1/p' | head -1)"
 : "${JDK_MAJOR:=17}"
@@ -211,7 +229,6 @@ if [[ "$JDK_MAJOR" -ge 21 ]]; then COMPRESS="zip-9"; else COMPRESS="2"; fi
 # list's @cp and lambda lines only hold for the JDK build it was recorded on (APPCDS.md). Both lists are
 # recorded on the Mac, so macOS also takes the pinned JBR, but only to record jbr.classlist.
 pin() { sed -n "s/^$1=//p" "$PROJECT_ROOT/packaging/jdk.properties"; }
-JDK_HOME_DIR="$(java -XshowSettings:properties -version 2>&1 | sed -n 's/^ *java\.home = //p' | head -1)"
 jdk_release() { sed -n "s/^$1=\"\{0,1\}\([^\"]*\)\"\{0,1\}$/\1/p" "$JDK_HOME_DIR/release" 2>/dev/null; }
 JDK_RUNTIME="$(jdk_release JAVA_RUNTIME_VERSION)"
 # The stamp recording writes into the class list, and the dump compares against.
@@ -347,7 +364,7 @@ strip_foreign_natives() {
 rm -rf "$RUNTIME_DIR" "$INPUT_DIR" "$MODULE_DIR"
 mkdir -p "$BUILD_DIR" "$INPUT_DIR" "$MODULE_DIR" "$DEST_DIR"
 STRIP_NATIVE=()
-if jlink --help 2>&1 | grep -q -- '--strip-native-debug-symbols'; then
+if "$JLINK" --help 2>&1 | grep -q -- '--strip-native-debug-symbols'; then
   STRIP_NATIVE=(--strip-native-debug-symbols exclude-debuginfo-files)
 fi
 # <module jar> [ModularJar options]: builds the module jar and links the runtime with it.
@@ -357,7 +374,7 @@ link_runtime() {
     "$PROJECT_ROOT/packaging/module/module-info.java" "$@"
   echo ">> jlink runtime: $MODULES,$APP_MODULE"
   rm -rf "$RUNTIME_DIR"
-  jlink \
+  "$JLINK" \
     --module-path "$module_jar" \
     --add-modules "$MODULES,$APP_MODULE" \
     --strip-debug \
@@ -413,7 +430,7 @@ cp "$PROJECT_ROOT/packaging/$JIT_DIRECTIVES" "$INPUT_DIR/"
 # in the list; they load from lib/modules as usual. Measured on Windows: ~0.3 MB
 # more than a Windows-recorded list (docs/class-list-recording.md).
 # Without a list, the bundle is built without an archive.
-JDK_ARCH="$(sed -n 's/^OS_ARCH="\(.*\)"/\1/p' "$(dirname "$(command -v jlink)")/../release" 2>/dev/null)"
+JDK_ARCH="$(sed -n 's/^OS_ARCH="\(.*\)"/\1/p' "$JDK_HOME_DIR/release" 2>/dev/null)"
 case "${JDK_ARCH:-$(uname -m)}" in
   aarch64|arm64) CDS_ARCH=arm64 ;;
   x86_64|amd64)  CDS_ARCH=x64 ;;
@@ -467,8 +484,13 @@ if [[ $RECORD_CLASSES -eq 1 ]]; then
   { echo "# xdm-jdk: $JDK_STAMP"; grep -v 'xdm/app/recording/' "$RECORDED" || true; } > "$CDS_LIST"
   rm -f "$RECORDED"
   echo ">> wrote packaging/cds/$(basename "$CDS_LIST"): $(grep -vc '^[#@]' "$CDS_LIST") classes"
+  echo ">>   stamp: $(head -1 "$CDS_LIST")"
   if [[ $JBR_RECORDING -eq 1 ]]; then
     echo ">> recorded on JBR for the Linux builds: no macOS bundle is built from it"
+    exit 0
+  fi
+  if [[ $RECORD_ONLY -eq 1 ]]; then
+    echo ">> --record-only: no archive or bundle built"
     exit 0
   fi
 fi
@@ -594,7 +616,7 @@ case "$OS" in
 esac
 
 echo ">> jpackage --type $JPACKAGE_TYPE ($OS, version $APP_VERSION)"
-jpackage "${ARGS[@]}" ${EXTRA_ARGS+"${EXTRA_ARGS[@]}"}
+"$JPACKAGE" "${ARGS[@]}" ${EXTRA_ARGS+"${EXTRA_ARGS[@]}"}
 
 # ---- macOS: display name + the xdm-app:// scheme ---------------------------
 # A bundle can only claim a URL scheme in its Info.plist, and jpackage has no option for it, so

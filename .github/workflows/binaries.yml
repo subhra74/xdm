@@ -29,16 +29,22 @@ on:
         description: Release tag (empty = v<app version>-pre.<run number>)
         type: string
         default: ''
+      signing:
+        description: Sign the Windows MSI with SignPath (signpath.md)
+        type: choice
+        options: [ unsigned, test-signing, release-signing ]
+        default: unsigned
   push:
     tags: [ 'v*' ]
 
 permissions:
   contents: read
 
-# test-signing (self-signed test certificate) until SignPath imports the production certificate, then
-# release-signing.
+# SignPath signing policy (signpath.md): a manual run takes the "signing" input; a tag push has no inputs and
+# uses the fixed value here: unsigned until SignPath imports the production certificate, then release-signing.
+# test-signing uses a self-signed test certificate: its MSIs show an untrusted publisher on Windows.
 env:
-  SIGNPATH_SIGNING_POLICY: test-signing
+  SIGNPATH_SIGNING_POLICY: ${{ github.event_name == 'push' && 'unsigned' || inputs.signing }}
 
 concurrency:
   group: binaries-${{ github.ref }}
@@ -151,10 +157,10 @@ jobs:
             -Arch ${{ matrix.arch }} -Type msi -SkipBuild
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      # Release builds (tag push, or a manual run with "release") are signed by SignPath Foundation (signpath.md):
-      # the MSI goes up zipped under a name without a dot, which the release job's download pattern skips, and
-      # SignPath signs xdm-app.exe inside it, then the MSI, after a manual approval. Other runs upload it unsigned.
-      - if: ${{ !(github.event_name == 'push' || inputs.release) }}
+      # With a signing policy (SIGNPATH_SIGNING_POLICY above) the MSI is signed by SignPath Foundation (signpath.md):
+      # it goes up zipped under a name without a dot, which the release job's download pattern skips, and SignPath
+      # signs xdm-app.exe inside it, then the MSI, after a manual approval. "unsigned" uploads it as it is.
+      - if: env.SIGNPATH_SIGNING_POLICY == 'unsigned'
         uses: actions/upload-artifact@v7
         with:
           path: build/dist/windows-${{ matrix.arch }}/*.msi
@@ -162,7 +168,7 @@ jobs:
           if-no-files-found: error
 
       - id: unsigned
-        if: github.event_name == 'push' || inputs.release
+        if: env.SIGNPATH_SIGNING_POLICY != 'unsigned'
         uses: actions/upload-artifact@v7
         with:
           name: msi-unsigned-${{ matrix.arch }}
@@ -170,7 +176,7 @@ jobs:
           if-no-files-found: error
 
       - name: Sign MSI
-        if: github.event_name == 'push' || inputs.release
+        if: env.SIGNPATH_SIGNING_POLICY != 'unsigned'
         # v3.0, pinned by commit: it gets the SignPath token. The repo's Actions settings allow this action.
         uses: signpath/github-action-submit-signing-request@f6d04783b4569d051e0c80105fe66e82819d0092
         with:
@@ -186,7 +192,7 @@ jobs:
           output-artifact-directory: build/signed/windows-${{ matrix.arch }}
 
       - name: Check signature
-        if: github.event_name == 'push' || inputs.release
+        if: env.SIGNPATH_SIGNING_POLICY != 'unsigned'
         shell: pwsh
         run: |
           $sig = Get-AuthenticodeSignature build\signed\windows-${{ matrix.arch }}\*.msi
@@ -194,7 +200,7 @@ jobs:
           $sig.SignerCertificate | Format-List Subject, Thumbprint, NotAfter
           if (-not $sig.SignerCertificate) { throw 'the MSI from SignPath is not signed' }
 
-      - if: github.event_name == 'push' || inputs.release
+      - if: env.SIGNPATH_SIGNING_POLICY != 'unsigned'
         uses: actions/upload-artifact@v7
         with:
           path: build/signed/windows-${{ matrix.arch }}/*.msi

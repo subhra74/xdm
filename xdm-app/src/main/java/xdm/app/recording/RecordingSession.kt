@@ -12,12 +12,15 @@ import xdm.app.ui.screens.StreamDownloadDialog
 import xdm.app.ui.components.AppMenuHandler
 import xdm.app.ui.screens.SettingsWindow
 import xdm.app.ui.screens.AppWindow
+import xdm.app.utils.getFileFolder
 import xdm.core.downloaders.DownloadType
+import xdm.core.downloaders.subtitleFileName
 import xdm.core.util.Logger
 import xdm.integration.BrowserIntegration
 import java.awt.Component
 import java.awt.Container
 import java.awt.Window
+import java.io.File
 import java.io.StringReader
 import java.net.InetSocketAddress
 import java.net.Proxy
@@ -27,6 +30,7 @@ import java.nio.charset.StandardCharsets
 import java.util.Properties
 import javax.swing.AbstractButton
 import javax.swing.JButton
+import javax.swing.JCheckBox
 import javax.swing.JComboBox
 import javax.swing.JList
 import javax.swing.JTable
@@ -87,12 +91,13 @@ object RecordingSession {
             step("proxy") {
                 withProxy { download(base + prop("http.proxy.file")) + ", " + download(prop("https.proxy.url")) }
             }
-            step("hls") { video("hls", base + prop("hls"), "application/vnd.apple.mpegurl", null) }
+            step("hls") { video("hls", base + prop("hls"), "application/vnd.apple.mpegurl", null, subtitles = true) }
             step("hls-aes") { video("hls-aes", base + prop("hls.aes"), "application/vnd.apple.mpegurl", null) }
-            step("dash") { video("dash", base + prop("dash"), "application/dash+xml", null) }
+            step("dash") { video("dash", base + prop("dash"), "application/dash+xml", null, subtitles = true) }
             step("mp4") { video("mp4", base + prop("video"), "video/mp4", prop("video.size").toLong()) }
             step("batch") { batch(prop("batch"), each = false) }
             step("batch-each") { batch(prop("batch.each"), each = true) }
+            step("batch-merged") { batch(prop("batch.merged"), each = false, merged = true) }
             step("settings") { openSettings() }
             step("menu") { openSortMenu() }
             step("properties") { openProperties() }
@@ -146,9 +151,10 @@ object RecordingSession {
 
     /**
      * A stream the extension saw ("/media"), with the response headers it observed, then picked
-     * from its video list ("/vid").
+     * from its video list ("/vid"). With [subtitles], the stream must offer a subtitle track: the first
+     * is picked and its `.srt` must be saved beside the video.
      */
-    private fun video(tab: String, url: String, mime: String, size: Long?): String {
+    private fun video(tab: String, url: String, mime: String, size: Long?, subtitles: Boolean = false): String {
         val tabId = "rec-$tab"
         val responseHeaders = buildList {
             add("\"Content-Type\":[${quote(mime)}]")
@@ -173,12 +179,29 @@ object RecordingSession {
         }
         val before = downloadIds()
         post("/vid", json("vid" to RawJson(vid), "tabId" to tabId, "tabUrl" to "$base/page/$tab"))
-        clickButton(awaitWindow(NewVideoDownloadWindow::class.java), text("ND_DOWNLOAD"))
-        return awaitDownloads(before, 1)
+        val window = awaitWindow(NewVideoDownloadWindow::class.java)
+        if (subtitles) {
+            val combo = poll("subtitle tracks") {
+                onEdt { find<JComboBox<*>>(window) { it.name == "ND_SUBTITLES" && it.isShowing && it.itemCount > 1 } }
+            }
+            onEdt { if (combo.selectedIndex == 0) combo.selectedIndex = 1 }
+        }
+        clickButton(window, text("ND_DOWNLOAD"))
+        val summary = awaitDownloads(before, 1)
+        if (!subtitles) return summary
+        val record = AppContext.db.findAll { it.id !in before }.first()
+        val (fileName, folder) = getFileFolder(record) ?: (null to null)
+        val srt = File(folder ?: "", subtitleFileName(fileName ?: record.fileName, "en"))
+        check(srt.isFile) { "$summary, but no subtitle at $srt" }
+        return "$summary + ${srt.name}"
     }
 
-    /** The extension's "Download all" ("/batch"), as one batch entry or one download per link. */
-    private fun batch(paths: String, each: Boolean): String {
+    /**
+     * The extension's "Download all" ("/batch"), as one batch entry or one download per link. With
+     * [merged], the links hold a video's two tracks: the dialog must offer to combine them (ticked), so
+     * the batch downloads them as one merged item.
+     */
+    private fun batch(paths: String, each: Boolean, merged: Boolean = false): String {
         val items = paths.split(',').joinToString(",") { p ->
             json("url" to base + p.trim(), "filename" to p.substringAfterLast('/'))
         }
@@ -186,7 +209,8 @@ object RecordingSession {
         post(
             "/batch", json(
                 "tabUrl" to "$base/page/batch",
-                "tabTitle" to "XDM recording batch",
+                // Its own title, so its batch folder doesn't collide with the first batch's.
+                "tabTitle" to if (merged) "XDM recording merged batch" else "XDM recording batch",
                 "userAgent" to USER_AGENT,
                 "referer" to "$base/page/batch",
                 "groups" to RawJson("[{\"items\":[$items]}]"),
@@ -196,8 +220,16 @@ object RecordingSession {
         val mode = text(if (each) "BATCH_MODE_EACH" else "BATCH_MODE_ONE")
         val radio = poll("batch mode option") { onEdt { find<JRadioButton>(dialog) { it.text == mode } } }
         onEdt { if (!radio.isSelected) radio.doClick() }
-        clickButton(dialog, text("ND_DOWNLOAD"))
-        return awaitDownloads(before, if (each) paths.split(',').size else 1)
+        if (merged) {
+            val combine = text("BATCH_COMBINE").format(1)
+            val box = poll("combine video and audio") { onEdt { find<JCheckBox>(dialog) { it.text == combine } } }
+            check(onEdt { box.isSelected }) { "'$combine' is not ticked" }
+        }
+        clickButton(dialog, text("ND_DOWNLOAD")) // enabled once the tracks are probed
+        val summary = awaitDownloads(before, if (each) paths.split(',').size else 1)
+        val failed = AppContext.db.findAll { it.id !in before }.sumOf { it.failedFiles }
+        check(failed == 0) { "$summary, $failed file(s) failed" }
+        return summary
     }
 
     /** Settings from the toolbar, closed again without saving. */

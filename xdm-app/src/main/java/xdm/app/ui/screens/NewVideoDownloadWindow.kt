@@ -134,7 +134,7 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
             gridx = 0
             gridy = 4
         })
-        cmbSubtitles = JComboBox<SubtitleChoice>()
+        cmbSubtitles = JComboBox<SubtitleChoice>().apply { name = "ND_SUBTITLES" }
         contentPane.add(cmbSubtitles, GridBagConstraints().apply {
             gridwidth = 4
             anchor = GridBagConstraints.WEST

@@ -3,8 +3,9 @@
  *
  * The recording run of XDM (build-bundle.sh --record-server on the Mac, once per pinned JDK) drives
  * a scripted session against this server: plain, chunked and Basic-auth HTTP downloads, HLS (with a
- * separate audio rendition), AES-128 HLS, DASH, a progressive MP4, two batches, and downloads through
- * an authenticating HTTP proxy. Real HTTPS downloads go to the internet (see session.properties).
+ * separate audio rendition and WebVTT subtitles), AES-128 HLS, DASH (with a WebVTT track), a progressive
+ * MP4, three batches (one with a video split into bilibili-style tracks), and downloads through an
+ * authenticating HTTP proxy. Real HTTPS downloads go to the internet (see session.properties).
  *
  *   java packaging/recording/RecordServer.java [--port 8780] [--assets build/record-assets]
  *
@@ -39,6 +40,13 @@ public class RecordServer {
             + "tensorflow-2.17.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"; // PyPI, 601 MB
     static final String HTTPS_PROXY_URL = "https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp/"
             + "4.11.0/microsoft.codeanalysis.csharp.4.11.0.nupkg"; // NuGet, 17 MB
+
+    // Bumped when prepareMedia makes different media: an older media folder is then made again.
+    static final String MEDIA_VERSION = "2";
+    // A video played as separate fMP4 tracks, at paths BilibiliCdnRule matches (it checks no host):
+    // the batch dialog groups them into one merged item. 30080 is a video quality id, 30280 an audio one.
+    static final String SPLIT_VIDEO = "upgcxcode/00/00/4242/4242-1-30080.m4s";
+    static final String SPLIT_AUDIO = "upgcxcode/00/00/4242/4242-1-30280.m4s";
 
     static Path assets;
     static int port = 8780;
@@ -98,9 +106,11 @@ public class RecordServer {
     /** The media is made once by ffmpeg; delete the media folder to make it again. */
     static void prepareMedia() throws Exception {
         Path media = assets.resolve("media");
-        if (Files.isRegularFile(media.resolve(".done"))) return;
+        Path done = media.resolve(".done");
+        if (Files.isRegularFile(done) && Files.readString(done).trim().equals(MEDIA_VERSION)) return;
         System.out.println("Generating HLS/DASH test media with ffmpeg in " + media + " ...");
         deleteTree(media);
+        deleteTree(assets.resolve("upgcxcode"));
         Files.createDirectories(media);
         String clip = media.resolve("clip.mp4").toString();
         // 12 s, 640x360, keyframe every 2 s so 4 s segments cut cleanly; AAC stereo.
@@ -109,7 +119,8 @@ public class RecordServer {
                 "-pix_fmt", "yuv420p", "-g", "50", "-keyint_min", "50", "-sc_threshold", "0", "-c:a", "aac",
                 "-ac", "2", "-b:a", "96k", "-movflags", "+faststart", clip);
 
-        // HLS: master playlist with a video-only variant and a separate audio rendition (two TS streams).
+        // HLS: master playlist with a video-only variant, a separate audio rendition (two TS streams) and
+        // a WebVTT subtitle rendition.
         Path hls = media.resolve("hls");
         Files.createDirectories(hls.resolve("video"));
         Files.createDirectories(hls.resolve("audio"));
@@ -120,11 +131,13 @@ public class RecordServer {
         ffmpeg("-i", clip, "-map", "0:a", "-c", "copy", "-f", "hls", "-hls_time", "4", "-hls_playlist_type", "vod",
                 "-hls_segment_filename", hls.resolve("audio/seg%03d.ts").toString(),
                 hls.resolve("audio/index.m3u8").toString());
+        hlsSubtitles(hls.resolve("subs"));
         Files.writeString(hls.resolve("master.m3u8"), String.join("\n",
                 "#EXTM3U",
                 "#EXT-X-VERSION:3",
                 "#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID=\"aud\",NAME=\"English\",LANGUAGE=\"en\",DEFAULT=YES,AUTOSELECT=YES,URI=\"audio/index.m3u8\"",
-                "#EXT-X-STREAM-INF:BANDWIDTH=900000,RESOLUTION=640x360,CODECS=\"avc1.64001e,mp4a.40.2\",AUDIO=\"aud\"",
+                "#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID=\"subs\",NAME=\"English\",LANGUAGE=\"en\",DEFAULT=YES,AUTOSELECT=YES,URI=\"subs/index.m3u8\"",
+                "#EXT-X-STREAM-INF:BANDWIDTH=900000,RESOLUTION=640x360,CODECS=\"avc1.64001e,mp4a.40.2\",AUDIO=\"aud\",SUBTITLES=\"subs\"",
                 "video/index.m3u8", ""));
 
         // HLS with AES-128: one muxed media playlist (no master), key served next to it.
@@ -147,8 +160,69 @@ public class RecordServer {
                 "-use_template", "1", "-use_timeline", "0", "-adaptation_sets", "id=0,streams=v id=1,streams=a",
                 "-init_seg_name", "init-$RepresentationID$.m4s",
                 "-media_seg_name", "chunk-$RepresentationID$-$Number%05d$.m4s", dash.resolve("manifest.mpd").toString());
+        dashSubtitles(dash);
 
-        Files.writeString(media.resolve(".done"), "ok\n");
+        // Split tracks: whole-file fragmented MP4s (ftyp, moov, sidx, moof/mdat...), as bilibili serves them.
+        for (String[] track : new String[][]{{SPLIT_VIDEO, "0:v"}, {SPLIT_AUDIO, "0:a"}}) {
+            Path out = assets.resolve(track[0]);
+            Files.createDirectories(out.getParent());
+            ffmpeg("-i", clip, "-map", track[1], "-c", "copy", "-movflags",
+                    "+frag_keyframe+empty_moov+default_base_moof+global_sidx", "-f", "mp4", out.toString());
+        }
+
+        Files.writeString(done, MEDIA_VERSION + "\n");
+    }
+
+    /** Cues for 12 s of media, one of them repeated across the 4 s boundary as segmenters do. */
+    static final String[][] CUES = {
+            {"00:00:00.500", "00:00:03.000", "XDM recording, first cue"},
+            {"00:00:03.000", "00:00:05.000", "<i>Across a segment boundary</i>"},
+            {"00:00:05.500", "00:00:07.500", "Second segment"},
+            {"00:00:08.500", "00:00:11.500", "<b>Last cue</b>"},
+    };
+
+    static String vtt(String header, int fromSec, int toSec) {
+        StringBuilder sb = new StringBuilder("WEBVTT\n");
+        if (header != null) sb.append(header).append('\n');
+        for (String[] c : CUES) {
+            int start = Integer.parseInt(c[0].substring(6, 8)), end = Integer.parseInt(c[1].substring(6, 8));
+            if (end < fromSec || start >= toSec) continue;
+            sb.append('\n').append(c[0]).append(" --> ").append(c[1]).append('\n').append(c[2]).append('\n');
+        }
+        return sb.toString();
+    }
+
+    /** A WebVTT media playlist of three 4 s segments, each mapped to the TS clock (ffmpeg starts at 1.4 s). */
+    static void hlsSubtitles(Path dir) throws IOException {
+        Files.createDirectories(dir);
+        StringBuilder playlist = new StringBuilder(
+                "#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:4\n#EXT-X-PLAYLIST-TYPE:VOD\n");
+        for (int i = 0; i < 3; i++) {
+            String name = String.format("seg%03d.vtt", i);
+            Files.writeString(dir.resolve(name),
+                    vtt("X-TIMESTAMP-MAP=MPEGTS:126000,LOCAL:00:00:00.000", i * 4, i * 4 + 4));
+            playlist.append("#EXTINF:4.0,\n").append(name).append('\n');
+        }
+        Files.writeString(dir.resolve("index.m3u8"), playlist.append("#EXT-X-ENDLIST\n").toString());
+    }
+
+    /** One whole WebVTT file as a `text/vtt` adaptation set, added to ffmpeg's manifest. */
+    static void dashSubtitles(Path dash) throws IOException {
+        Files.writeString(dash.resolve("subs-en.vtt"), vtt(null, 0, 12));
+        Path mpd = dash.resolve("manifest.mpd");
+        String manifest = Files.readString(mpd);
+        int period = manifest.lastIndexOf("</Period>");
+        if (period < 0) throw new IllegalStateException("no </Period> in " + mpd);
+        int end = manifest.lastIndexOf('\n', period) + 1; // the start of that line
+        String set = String.join("\n",
+                "\t\t<AdaptationSet id=\"2\" contentType=\"text\" mimeType=\"text/vtt\" lang=\"en\" label=\"English\">",
+                "\t\t\t<Role schemeIdUri=\"urn:mpeg:dash:role:2011\" value=\"main\"/>",
+                "\t\t\t<Representation id=\"sub-en\" bandwidth=\"256\">",
+                "\t\t\t\t<BaseURL>subs-en.vtt</BaseURL>",
+                "\t\t\t</Representation>",
+                "\t\t</AdaptationSet>",
+                "");
+        Files.writeString(mpd, manifest.substring(0, end) + set + manifest.substring(end));
     }
 
     static void ffmpeg(String... args) throws Exception {
@@ -223,6 +297,7 @@ public class RecordServer {
                 "video.size=" + sizeOf("media/clip.mp4"),
                 "batch=/batch/file-1.bin,/batch/file-2.bin,/batch/file-3.bin",
                 "batch.each=/batch/file-4.bin,/batch/file-5.bin,/batch/file-6.bin",
+                "batch.merged=/" + SPLIT_VIDEO + ",/" + SPLIT_AUDIO + ",/batch/file-1.bin",
                 "");
     }
 
@@ -317,6 +392,7 @@ public class RecordServer {
         if (name.endsWith(".ts")) return "video/mp2t";
         if (name.endsWith(".m4s")) return "video/iso.segment";
         if (name.endsWith(".mp4")) return "video/mp4";
+        if (name.endsWith(".vtt")) return "text/vtt";
         return "application/octet-stream";
     }
 
