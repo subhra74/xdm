@@ -30,11 +30,13 @@
 </p>
 
 <p align="center">
-  <a href="https://www.youtube.com/watch?v=fZ1tZY6RbKc"><img src="docs/assets/xdm-showcase-thumbnail.jpg" width="400" alt="Watch the top 3 XDM features on YouTube"/></a>
+  <a href="https://www.youtube.com/watch?v=qrUUSFh3Xfg"><img src="docs/assets/xdm-quick-start-thumbnail.jpg" width="280" alt="Watch the XDM quick start guide on YouTube"/></a>
   &nbsp;
-  <a href="https://www.youtube.com/watch?v=IJIxP7imtZ8"><img src="https://img.youtube.com/vi/IJIxP7imtZ8/maxresdefault.jpg" width="400" alt="Watch bulk social media video downloads with XDM on YouTube"/></a>
+  <a href="https://www.youtube.com/watch?v=fZ1tZY6RbKc"><img src="docs/assets/xdm-showcase-thumbnail.jpg" width="280" alt="Watch the top 3 XDM features on YouTube"/></a>
+  &nbsp;
+  <a href="https://www.youtube.com/watch?v=IJIxP7imtZ8"><img src="docs/assets/xdm-bulk-download-thumbnail.jpg" width="280" alt="Watch bulk social media video downloads with XDM on YouTube"/></a>
   <br/>
-  <sub><b>Top 3 features</b> &nbsp;·&nbsp; <b>Bulk social media downloads</b></sub>
+  <sub><b>Quick start guide</b> &nbsp;·&nbsp; <b>Top 3 features</b> &nbsp;·&nbsp; <b>Bulk social media downloads</b></sub>
 </p>
 
 ---
@@ -62,6 +64,32 @@ Wondering why you'd still want a download manager on a fast connection? Read
 | ![Browser context menu with Download all with XDM](screenshots/download-all-menu.webp) | ![Bulk picker listing every link on the page by type](screenshots/bulk-picker.webp) |
 | **Batch download** | **HLS / DASH stream download** |
 | ![Batch download dialog: one batch or one download per link](screenshots/batch-download.webp) | ![Stream download dialog with format and audio track choice](screenshots/stream-download.webp) |
+
+## 🆕 What's new in XDM 9
+
+XDM 9 is a ground-up rewrite. Highlights:
+
+- **Writes straight to the final file:** HTTP downloads go directly into your download folder, with no temp copy
+  and no slow "assembling" step at the end. Large files finish the moment the last byte arrives.
+- **Better HLS and DASH:** more reliable stream detection, a choice of quality and audio track, and muxing to MP4
+  without ffmpeg. You can also grab subtitles as `.srt`, timed to match the video.
+- **Bulk downloads:** right-click → *Download all with XDM* to grab every PDF, image or video on a page. You can
+  also save a social media profile's videos and images in one go, with video and audio merged into
+  ready-to-play MP4s.
+- **On the Chrome Web Store:** install the browser extension with one click.
+- **Modern UI:** a refreshed light and dark theme, runs natively on Wayland, a native macOS build
+  (Apple Silicon and Intel) and Windows on ARM64 support.
+- **Command-line mode:** `xdm-app --headless -o <folder> <url>` downloads HTTP, HLS and DASH from a terminal, with
+  a quality pick (`-q best|720p|audio`). It can run alongside the app.
+- **Download categories:** rules sort each download into a category and folder. You can change the folder or
+  restart a download from the list.
+- **Disk errors never restart from zero:** a full disk or a missing folder stops the download and keeps its
+  progress.
+- **Checksum verification:** check a finished file's hash from the download-complete window or the download's
+  properties.
+- **Safer downloads:** finished files are marked as coming from the internet (Mark-of-the-Web on Windows,
+  quarantine on macOS), so SmartScreen and Gatekeeper still check them. You can turn this off in settings.
+- **NTLM authentication:** works with Windows/IIS servers and corporate proxies that require NTLM.
 
 ## ✨ Features
 
