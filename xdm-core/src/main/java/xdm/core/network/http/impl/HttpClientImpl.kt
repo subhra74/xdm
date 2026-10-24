@@ -1,6 +1,7 @@
 package xdm.core.network.http.impl
 
 import okhttp3.*
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okio.ByteString.Companion.decodeBase64
 import okio.ByteString.Companion.toByteString
 import xdm.core.CoreConfig
@@ -69,7 +70,38 @@ class HttpClientImpl @JvmOverloads constructor(
             .apply { if (ignoreCertErrors) trustAllCertificates(this) else sharedTls(this) }
             .apply { if (proxy != null) proxyAuthentication(this, proxy, proxyUser, proxyPassword) }
             .apply { if (serverAuth && auth != null) serverAuthentication(this, auth) }
+            .addNetworkInterceptor(::scopeCredentials)
             .build()
+
+    /**
+     * Runs on every hop, redirects included, and takes off the captured credentials the hop's host may
+     * not have ([CredentialPolicy]). OkHttp only drops `Authorization` on a cross-host redirect; the
+     * cookie and custom token headers would otherwise follow a redirect anywhere, even to plain http.
+     * Credentials an authenticator added for this very host (a 401 the user answered) are left alone.
+     */
+    private fun scopeCredentials(chain: Interceptor.Chain): Response {
+        val request = chain.request()
+        val scope = request.tag(CapturedCredentials::class.java) ?: return chain.proceed(request)
+        val target = request.url
+        val removed = ArrayList<String>()
+        val builder = request.newBuilder()
+        if (request.header("Cookie") != null && !CredentialPolicy.allowsCookie(scope.origin, target)) {
+            builder.removeHeader("Cookie")
+            removed += "Cookie"
+        }
+        val answeredHere = request.tag(ServerAuth::class.java) != null || request.tag(ServerNtlm::class.java) != null
+        if (!CredentialPolicy.allowsCredentialHeader(scope.origin, target)) {
+            for (name in request.headers.names()) {
+                if (!scope.isCaptured(name)) continue
+                if (answeredHere && name.equals("Authorization", ignoreCase = true)) continue
+                builder.removeHeader(name)
+                removed += name
+            }
+        }
+        if (removed.isEmpty()) return chain.proceed(request)
+        Logger.info("XDM", "Not sending $removed from ${scope.origin.host} to ${target.scheme}://${target.host}")
+        return chain.proceed(builder.build())
+    }
 
     /**
      * Reuses one process-wide [SSLContext] instead of letting OkHttp build its own per client.
@@ -141,7 +173,8 @@ class HttpClientImpl @JvmOverloads constructor(
             val sent = decodeBasic(response.request.header("Authorization"))
             val next = auth.onChallenge(scope, sent, authCancelled) ?: return@authenticator null
             Logger.info("XDM", "Authenticating to ${url.host} as ${next.user}")
-            response.request.newBuilder().header("Authorization", encodeBasic(next)).build()
+            response.request.newBuilder().header("Authorization", encodeBasic(next))
+                .tag(ServerAuth::class.java, ServerAuth).build()
         }
     }
 
@@ -220,14 +253,18 @@ class HttpClientImpl @JvmOverloads constructor(
         }.apply { isDaemon = true }.start()
     }
 
-    override fun getResponse(url: String, headers: HeaderMap?, cookie: String?, range: Range?): Result<HttpResponse> {
+    override fun getResponse(
+        url: String, headers: HeaderMap?, cookie: String?, range: Range?, credentialsFor: String?,
+    ): Result<HttpResponse> {
         val requestBuilder = Request.Builder().url(url).get()
         val cookies: MutableSet<String> = LinkedHashSet()
+        val credentialHeaders = HashSet<String>()
 
         headers?.forEach { (name, value) ->
             if (name.lowercase() == "cookie" && value.isNotEmpty()) {
                 cookies.add(value.first())
             } else {
+                if (CredentialPolicy.isCredentialHeader(name)) credentialHeaders += name
                 for (headerValue in value) {
                     requestBuilder.addHeader(name, headerValue)
                 }
@@ -248,6 +285,11 @@ class HttpClientImpl @JvmOverloads constructor(
         cookie?.let { cookies.add(it) }
         if (cookies.isNotEmpty()) {
             requestBuilder.addHeader("Cookie", cookies.joinToString("; "))
+        }
+        if (cookies.isNotEmpty() || credentialHeaders.isNotEmpty()) {
+            // An unparsable origin falls back to the request's own URL (which did parse, or the call fails).
+            val origin = credentialsFor?.let { runCatching { it.toHttpUrl() }.getOrNull() }
+            requestBuilder.tag(CapturedCredentials::class.java, CapturedCredentials(origin ?: url.toHttpUrl(), credentialHeaders))
         }
 
         return kotlin.runCatching {
@@ -341,6 +383,18 @@ class HttpClientImpl @JvmOverloads constructor(
 
 /** What an NTLM request carried, so the next challenge can tell a Type2 reply from a refusal. */
 private class NtlmAttempt(val credentials: BasicCredentials, val sentType3: Boolean, val restarts: Int)
+
+/**
+ * Request tag: where the caller's credentials were captured, and which of its headers are credentials
+ * (names as the caller spelled them; OkHttp header lookups ignore case). Copied onto redirects.
+ */
+private class CapturedCredentials(val origin: HttpUrl, headerNames: Set<String>) {
+    private val lower = headerNames.mapTo(HashSet()) { it.lowercase() }
+    fun isCaptured(name: String) = name.lowercase() in lower
+}
+
+/** Request tag: this request's `Authorization` answers the 401 of the host it goes to. */
+private object ServerAuth
 
 /** Request tags: the proxy's handshake and the server's, kept apart. */
 private class ProxyNtlm(val attempt: NtlmAttempt)

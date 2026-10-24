@@ -158,7 +158,9 @@ class HttpChunkRetriever(
             context.headers.orEmpty().filterKeys { !it.equals("If-Range", ignoreCase = true) } +
                 ("If-Range" to listOf(validator))
         } ?: context.headers
-        val response = context.httpClient.getResponse(requestUrl, headers, context.cookie, range)
+        // The headers and cookie belong to the link itself: a redirect target only gets what its
+        // origin may have (CredentialPolicy), however many requests go straight to it.
+        val response = context.httpClient.getResponse(requestUrl, headers, context.cookie, range, credentialsFor = context.url)
         response.onSuccess { r ->
             if (isLinkExpiredStatus(r.statusCode, r.getHeader("WWW-Authenticate"))) {
                 // The link redirected to a target that is now refused, as a short-lived signed URL is once

@@ -401,7 +401,8 @@ abstract class StreamingDownloaderTask(
         executorService.submit {
             try {
                 downloadManifestAsFile(
-                    context.httpClient, url, context.headers, context.cookie, context.stopFlag, recordFetchError
+                    context.httpClient, url, context.headers, context.cookie, context.stopFlag, recordFetchError,
+                    credentialsFor = context.url,
                 )?.let { path ->
                     val file = File(path)
                     if (!manifestFile.compareAndSet(null, file)) deleteManifestFile(file)
@@ -490,6 +491,7 @@ abstract class StreamingDownloaderTask(
         stopFlag = context.stopFlag,
         headers = context.headers,
         cookie = context.cookie,
+        credentialsFor = context.url,
         tempDir = context.tempFolder,
         progressCallback = this::onChunkProgress,
         fileNameCallback = this::getChunkTempFileName,

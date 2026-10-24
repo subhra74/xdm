@@ -192,7 +192,7 @@ object VideoHelper {
         url: String, bytes: ByteArray, headers: HeaderMap, cookie: String?, client: PoolingHttpClient = httpClient,
     ): List<MpdEntry> {
         val xlinkResolver = XlinkResolver { xlinkUrl ->
-            ManifestUtils.downloadManifestBytes(client, xlinkUrl, headers, cookie, AtomicBoolean(false))
+            ManifestUtils.downloadManifestBytes(client, xlinkUrl, headers, cookie, AtomicBoolean(false), credentialsFor = url)
                 ?.toString(Charsets.UTF_8)
         }
         return ByteArrayInputStream(bytes).use { parseMpdManifest(it, url, xlinkResolver) }

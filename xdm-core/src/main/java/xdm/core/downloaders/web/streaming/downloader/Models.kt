@@ -57,6 +57,9 @@ interface StreamingTaskContext {
      * destination changed after muxing cannot orphan the partial. Null until muxing starts.
      */
     var muxOutputPath: String?
+
+    /** The manifest the download was captured from; [headers] and [cookie] belong to its origin. */
+    val url: String
 }
 
 data class HlsTaskContext(
@@ -79,7 +82,7 @@ data class HlsTaskContext(
     override val pieceCompletedCount: AtomicInteger = AtomicInteger(0),
     override val assembling: AtomicBoolean = AtomicBoolean(false),
     override var muxOutputPath: String? = null,
-    var url: String,
+    override var url: String,
     var audioUrl: String?,
     var audioOnly: Boolean = false,
     var independent: Boolean,
@@ -109,7 +112,7 @@ data class DashTaskContext(
     override val pieceCompletedCount: AtomicInteger = AtomicInteger(0),
     override val assembling: AtomicBoolean = AtomicBoolean(false),
     override var muxOutputPath: String? = null,
-    var url: String,
+    override var url: String,
     val audioMime: String,
     val videoMime: String,
 ) : StreamingTaskContext
