@@ -32,6 +32,9 @@ import javax.crypto.CipherInputStream
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
+/** An AES-128 key is 16 bytes; a key URL that keeps sending more is abandoned well before it matters. */
+private const val MAX_KEY_BYTES = 1024L
+
 fun makeContext(
     taskInfo: HlsDownloadTaskInfo, http: PoolingHttpClient, host: DownloadHost, configDir: String,
 ): HlsTaskContext {
@@ -265,7 +268,7 @@ class HlsDownloaderTask : StreamingDownloaderTask {
                         Logger.info("Header names: ${hlsContext.headers?.keys}")
                         val bytes = downloadManifestBytes(
                             context.httpClient, keyUrl, hlsContext.headers, hlsContext.cookie, context.stopFlag,
-                            recordFetchError
+                            recordFetchError, maxBytes = MAX_KEY_BYTES, credentialsFor = hlsContext.url
                         )
                         when {
                             bytes == null -> throw IOException("Unable to download key: $keyUrl")

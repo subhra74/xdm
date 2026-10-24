@@ -122,7 +122,15 @@ private fun getExtendedContentDisposition(header: String): String? {
     return null
 }
 
-fun getNameFromContentDisposition(header: String?): String? {
+/**
+ * The file name a Content-Disposition header asks for, made safe to use as a file name. The name is the
+ * server's choice: unsanitized, `setup.exe.` would be saved by Windows as `setup.exe` while the
+ * Zone.Identifier stream went to a separate `setup.exe.`, leaving the executable unmarked.
+ */
+fun getNameFromContentDisposition(header: String?): String? =
+    parseContentDispositionName(header)?.let { FileUtils.sanitizeFileName(it) }
+
+private fun parseContentDispositionName(header: String?): String? {
     try {
         if (header == null) return null
         val headerLow = header.lowercase(Locale.getDefault())

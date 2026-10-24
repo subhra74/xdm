@@ -56,7 +56,7 @@ class TestHttpRetryHandling : HttpDownloadTestBase() {
     fun unexpectedException_failsDownloadInsteadOfHanging() {
         val throwing = object : PoolingHttpClient {
             override fun close() {}
-            override fun getResponse(url: String, headers: HeaderMap?, cookie: String?, range: Range?): Result<HttpResponse> =
+            override fun getResponse(url: String, headers: HeaderMap?, cookie: String?, range: Range?, credentialsFor: String?): Result<HttpResponse> =
                 throw IllegalStateException("boom")
         }
         val host = host()
@@ -84,7 +84,7 @@ class TestHttpRetryHandling : HttpDownloadTestBase() {
     fun unexpectedError_failsDownloadInsteadOfHanging() {
         val throwing = object : PoolingHttpClient {
             override fun close() {}
-            override fun getResponse(url: String, headers: HeaderMap?, cookie: String?, range: Range?): Result<HttpResponse> =
+            override fun getResponse(url: String, headers: HeaderMap?, cookie: String?, range: Range?, credentialsFor: String?): Result<HttpResponse> =
                 throw SimulatedError()
         }
         val host = host()

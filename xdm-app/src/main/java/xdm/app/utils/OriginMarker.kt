@@ -76,7 +76,11 @@ object OriginMarker {
 
     // java.io (not NIO, whose Path rejects the ':') opens "file:stream" as an alternate data stream;
     // this relies on jdk.io.File.enableADS, which is true by default. Replaces any existing stream.
+    // A name ending in a dot or space is one Win32 strips when it opens the file, but not in front of
+    // ':', so the stream would land on a new, empty file beside the real one and leave it unmarked.
+    // Refused rather than written, so the failure is logged; and only an existing file is marked.
     private fun markWindows(file: File, source: DownloadSource): Boolean {
+        if (file.name.endsWith('.') || file.name.endsWith(' ') || !file.isFile) return false
         FileOutputStream(file.absolutePath + ":Zone.Identifier").use {
             it.write(zoneIdentifier(source).toByteArray(StandardCharsets.UTF_8))
         }

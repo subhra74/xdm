@@ -12,6 +12,16 @@ import kotlin.math.ceil
 
 
 private const val MEDIA_KEY = "media"
+
+/**
+ * The most segments one representation may expand to: over a day of video at 2s segments. A manifest
+ * is untrusted input fetched in the background for any page the user visits, and a template with a
+ * huge duration over a tiny segment length would otherwise build URIs until the heap runs out.
+ */
+const val MAX_SEGMENTS_PER_REPRESENTATION = 50_000
+
+private fun tooManySegments(): Nothing =
+    throw MpdParserException("Representation has more than $MAX_SEGMENTS_PER_REPRESENTATION segments")
 private val TemplatePattern: Pattern = Pattern.compile(
     "\\$(RepresentationID|Time|Time%0(?<timedigits>\\d+)(?<timedx>[dx])?|Number|Number%0(?<numdigits>\\d+)(?<numdx>[dx])?|Bandwidth)\\$"
 )
@@ -77,6 +87,7 @@ private fun parseSegmentList(
             segments.add(DashSegment(baseUrl, initRange))
         }
     }
+    if (segmentUrlNodes.length > MAX_SEGMENTS_PER_REPRESENTATION) tooManySegments()
     for (i in 0..<segmentUrlNodes.length) {
         val segmentNode = segmentUrlNodes.item(i)
         val media = getAttr(segmentNode, MEDIA_KEY)
@@ -112,7 +123,11 @@ private fun parseSegmentTimeLineSimple(
     val timescale = getAttr(xmlSegmentTemplate, "timescale")?.toLongOrNull() ?: 1L
     val duration = getAttr(xmlSegmentTemplate, "duration")?.toLongOrNull() ?: 1L
     val startNumber = getAttr(xmlSegmentTemplate, "startNumber")?.toLongOrNull() ?: 1L
-    val segmentCount = ceil((periodDuration.toDouble() / 1000) / (duration.toDouble() / timescale)).toInt()
+    if (timescale <= 0 || duration <= 0) return null
+    val count = ceil((periodDuration.toDouble() / 1000) / (duration.toDouble() / timescale))
+    if (count.isNaN() || count < 0) return null
+    if (count > MAX_SEGMENTS_PER_REPRESENTATION) tooManySegments()
+    val segmentCount = count.toInt()
     val representationId = attrs.getNamedItem("id")?.nodeValue ?: ""
     var number = startNumber
     // $Time$ addressing counts presentation time from the presentation-time-offset (default 0),
@@ -203,6 +218,7 @@ private fun parseSegmentTimeLineExplicit(
         val d = getAttr(xmls, "d")?.toLongOrNull() ?: 0L
         val t = getAttr(xmls, "t")?.toLongOrNull() ?: -1L
         val r = getAttr(xmls, "r")?.toLongOrNull() ?: 0L
+        if (segments.size >= MAX_SEGMENTS_PER_REPRESENTATION) tooManySegments()
         // t="0" is a valid start time; only a missing t (-1) is ignored.
         if (t >= 0) time = t
         var segmentUrl = parseTemplate(
@@ -212,6 +228,7 @@ private fun parseSegmentTimeLineExplicit(
         number++
         time += d
         if (r > 0) {
+            if (r > MAX_SEGMENTS_PER_REPRESENTATION - segments.size) tooManySegments()
             for (k in 0..<r) {
                 segmentUrl = parseTemplate(
                     mediaMatches, mediaUrl, number, time, bandwidthStr, representationId
@@ -224,6 +241,7 @@ private fun parseSegmentTimeLineExplicit(
             // r="-1": repeat until the next S element's start time, or the end of the period.
             val boundary = nextSegmentStartTime(xmlSs, i) ?: periodEndTicks
             while (time < boundary) {
+                if (segments.size >= MAX_SEGMENTS_PER_REPRESENTATION) tooManySegments()
                 segmentUrl = parseTemplate(
                     mediaMatches, mediaUrl, number, time, bandwidthStr, representationId
                 ).replace("\u0000", "$")

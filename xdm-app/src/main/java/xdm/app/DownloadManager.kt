@@ -347,9 +347,14 @@ class DownloadManager(
             fileName: String, part: StorageFile, callback: (finalName: String, folder: String) -> Unit
         ): CommitResult {
             val folder = part.folder
+            // The last stop before a name reaches the disk: whatever path it came by (a server's
+            // Content-Disposition, the URL, the extension, the user), it must not carry separators or a
+            // trailing dot or space, which Windows strips and which would leave the file unmarked.
+            val safeName = FileUtils.sanitizeFileName(fileName) ?: "_"
+            if (safeName != fileName) Logger.info("XDM", "Publishing \"$fileName\" as \"$safeName\"")
             repeat(PUBLISH_ATTEMPTS) { attempt ->
                 if (attempt > 0) Thread.sleep(PUBLISH_RETRY_MS * attempt)
-                val (finalName, replace) = resolveConflict(folder, fileName)
+                val (finalName, replace) = resolveConflict(folder, safeName)
                     ?: return CommitResult.Failed(DownloadError.OutputWriteError)
                 try {
                     folder.rename(part.name, finalName, replace)

@@ -34,15 +34,19 @@ object FileUtils {
 
     fun sanitizeFileName(name: String?): String? {
         if (name == null) return null
-        val arr = name.toCharArray()
-        for (i in arr.indices) {
-            // Replace explicit invalid chars plus any control characters (incl. newlines).
-            if (invalidChars.contains(arr[i]) || arr[i].code < 0x20) {
-                arr[i] = '_'
+        val sb = StringBuilder(name.length)
+        for (c in name) {
+            when {
+                // Invisible format characters (bidi overrides such as U+202E, zero-width spaces, BOM)
+                // are dropped: "invoice‮fdp.exe" would otherwise display as "invoiceexe.pdf".
+                Character.getType(c) == Character.FORMAT.toInt() -> {}
+                // Explicit invalid chars plus any C0/C1 control characters (incl. newlines).
+                invalidChars.contains(c) || c.code < 0x20 || c.code in 0x7F..0x9F -> sb.append('_')
+                else -> sb.append(c)
             }
         }
         // Trailing dots/spaces are invalid on Windows and stripped silently there.
-        var result = String(arr).trim().trimEnd('.', ' ')
+        var result = sb.toString().trim().trimEnd('.', ' ')
         if (result.isEmpty()) return "_"
 
         // Avoid reserved device names (matched against the base, ignoring extension).

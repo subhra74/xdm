@@ -21,6 +21,8 @@ class StreamingChunkRetriever(
     private val stopFlag: AtomicBoolean,
     private val headers: HeaderMap?,
     private val cookie: String?,
+    /** The manifest the segment was listed in: [headers] and [cookie] were captured for it. Null: the segment's own URL. */
+    private val credentialsFor: String? = null,
     private val tempDir: String,
     private val progressCallback: (StreamingChunk, Long) -> Unit,
     private val fileNameCallback: (StreamingChunk) -> String,
@@ -51,7 +53,8 @@ class StreamingChunkRetriever(
                         piece.url,
                         headers,
                         cookie,
-                        realRange
+                        realRange,
+                        credentialsFor,
                     ).getOrThrow().use { response ->
                         if (stopFlag.get()) return
 
