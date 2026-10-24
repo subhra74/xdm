@@ -2,6 +2,7 @@ package xdm.app.utils.win
 
 import java.lang.foreign.Arena
 import java.lang.foreign.FunctionDescriptor
+import java.lang.foreign.Linker
 import java.lang.foreign.SymbolLookup
 import java.lang.invoke.MethodHandle
 
@@ -32,8 +33,8 @@ internal object Win32 {
     fun ole(name: String, descriptor: FunctionDescriptor): MethodHandle =
         Ffm.downcall(ole32, name, descriptor)
 
-    fun shell(name: String, descriptor: FunctionDescriptor): MethodHandle =
-        Ffm.downcall(shell32, name, descriptor)
+    fun shell(name: String, descriptor: FunctionDescriptor, vararg options: Linker.Option): MethodHandle =
+        Ffm.downcall(shell32, name, descriptor, *options)
 
     fun user(name: String, descriptor: FunctionDescriptor): MethodHandle =
         Ffm.downcall(user32, name, descriptor)

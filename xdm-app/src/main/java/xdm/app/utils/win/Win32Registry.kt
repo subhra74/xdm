@@ -107,6 +107,15 @@ internal object Win32Registry {
             buffer.asSlice(0, size.toLong().coerceIn(0, buffer.byteSize())).toArray(JAVA_BYTE)
         }
 
+    /**
+     * Reads a REG_DWORD value, or null when the key or value does not exist or is not 4 bytes. Used
+     * for the OS light/dark setting (`AppsUseLightTheme`).
+     */
+    fun getDword(path: String, valueName: String): Int? =
+        query(path, valueName) { buffer, size ->
+            if (size == 4 && buffer.byteSize() >= 4) buffer.get(JAVA_INT, 0) else null
+        }
+
     /** Creates [path] if needed and writes a REG_SZ value ([valueName] `""` = the default value). */
     fun setString(path: String, valueName: String, data: String): Boolean =
         // allocateFrom appends the terminator, and cbData has to count it.

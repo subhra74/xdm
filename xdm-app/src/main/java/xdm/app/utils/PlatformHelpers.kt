@@ -175,7 +175,7 @@ private fun createMacTrayImage(tray: SystemTray): Image {
     val baseSize = tray.trayIconSize.height.takeIf { it > 0 } ?: 22
     // Render at 2x for crisp results on Retina displays; auto-size fits it to the bar.
     val raw = trayMacImage(baseSize * 2)
-    val color = if (isMacDarkMode()) Color.WHITE else Color(0x26, 0x26, 0x26)
+    val color = if (SystemTheme.isDark() == true) Color.WHITE else Color(0x26, 0x26, 0x26)
     return tintByAlpha(raw, color)
 }
 
@@ -195,17 +195,6 @@ private fun tintByAlpha(src: Image, color: Color): BufferedImage {
         }
     }
     return buf
-}
-
-private fun isMacDarkMode(): Boolean {
-    return try {
-        val process = ProcessBuilder("defaults", "read", "-g", "AppleInterfaceStyle").start()
-        val output = process.inputStream.bufferedReader().use { it.readText() }.trim()
-        process.waitFor()
-        output.equals("Dark", ignoreCase = true)
-    } catch (e: Exception) {
-        false
-    }
 }
 
 fun applyMacOSWindowCustomizations(image: Image) {

@@ -23,9 +23,11 @@ internal object Ffm {
     val linker: Linker by lazy { Linker.nativeLinker() }
 
     /** Resolves [name] in [lookup] and binds it to [descriptor]. Throws if the symbol is missing. */
-    fun downcall(lookup: SymbolLookup, name: String, descriptor: FunctionDescriptor): MethodHandle {
+    fun downcall(
+        lookup: SymbolLookup, name: String, descriptor: FunctionDescriptor, vararg options: Linker.Option
+    ): MethodHandle {
         val symbol = lookup.find(name).orElseThrow { UnsatisfiedLinkError("Symbol not found: $name") }
-        return linker.downcallHandle(symbol, descriptor)
+        return linker.downcallHandle(symbol, descriptor, *options)
     }
 
 }

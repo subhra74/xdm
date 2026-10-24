@@ -6,20 +6,13 @@ import java.io.File
 import java.io.IOException
 
 object WinUtils {
-    fun open(f: File): Boolean {
-        return runCatching {
-            if (!f.exists()) {
-                return false
-            }
-            val builder = ProcessBuilder()
-            val lst = ArrayList<String>()
-            lst.add("rundll32")
-            lst.add("url.dll,FileProtocolHandler")
-            lst.add(f.absolutePath)
-            builder.command(lst)
-            builder.start()
-        }.isSuccess
-    }
+    /**
+     * Opens [f] with its default application through `ShellExecuteExW`, so the shell runs its zone
+     * checks (SmartScreen) on a downloaded file the way an Explorer double-click does. No fallback:
+     * `Desktop.open` would repeat a prompt the user declined, and `rundll32 url.dll` skips SmartScreen.
+     * Blocks while a prompt is up.
+     */
+    fun open(f: File): Boolean = f.exists() && Win32Shell.openFile(f.absolutePath)
 
     /**
      * Opens [folder] in Explorer with [file] selected. Both go through the shell API rather than an

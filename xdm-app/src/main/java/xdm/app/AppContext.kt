@@ -3,6 +3,7 @@ package xdm.app
 import xdm.app.recording.RecordingSession
 import xdm.app.utils.AppLauncher
 import xdm.app.utils.AutoStart
+import xdm.app.utils.SystemTheme
 import xdm.app.utils.WaylandToolkit
 import xdm.app.utils.linux.X11UiScale
 import xdm.core.downloaders.TaskInfoDB
@@ -75,6 +76,11 @@ object AppContext {
             }
 
             if (firstRun) {
+                // Start in the OS's light/dark mode; light when it can't be read or has no preference.
+                // Saved below, so later launches use the setting and never look at the OS again.
+                config.theme = if (SystemTheme.isDark() == true) "dark" else "light"
+                Logger.info("First run: theme ${config.theme} from the OS setting")
+
                 // Only a packaged build registers itself. Under `java -jar` or an IDE the entry
                 // would point at a JVM and a build-output jar, and outlive the checkout.
                 if (AutoStart.isInstallerOwned) {

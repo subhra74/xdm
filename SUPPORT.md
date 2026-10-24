@@ -12,17 +12,10 @@ You'll need a GitHub account to star. It's free, and you only need to sign up on
 
 ## 🎬 Subscribe on YouTube
 
-Subscribe on YouTube for XDM videos and tips. *Channel link coming soon.*
+Please subscribe [My channel on YouTube](https://www.youtube.com/@subhra74-tech) for XDM videos and tips. 
 Once videos are up, leave a comment under one: what you use XDM for, what you like, or what you'd like to see next.
 Hearing from users is what keeps XDM's development going.
 
-## 👋 Follow along
-
-Updates, news, and the occasional look behind the scenes:
-
-- X: *coming soon*
-- LinkedIn: *coming soon*
-- GitHub: *coming soon*
 
 ---
 
