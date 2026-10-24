@@ -1,26 +1,41 @@
 package xdm.integration
 
 
+import java.io.InputStream
 import java.net.Socket
 import java.nio.charset.StandardCharsets
 
 const val CRLF = "\r\n"
 
 class RequestContext(
-    val requestMethod: String,
-    val requestPath: String,
-    val requestHeaders: Map<String, List<String>>,
-    val requestBody: ByteArray?,
+    head: HttpParser.RequestHead,
+    private val body: BoundedInputStream,
+    /** The body's length from `Content-Length`; 0 when there is none. */
+    val contentLength: Long,
     private val socket: Socket,
-    keepAlive: Boolean
 ) {
+    val requestMethod: String = head.method
+    val requestPath: String = head.path
+    val requestHeaders: Map<String, List<String>> = head.headers
+
+    /**
+     * The body as a stream read straight off the connection, or null when there is none. Read the
+     * body either this way or through [requestBody], not both.
+     */
+    val requestBodyStream: InputStream? get() = body.takeIf { contentLength > 0 }
+
+    /** The whole body, read on first use into an array of exactly its size; null when there is none. */
+    val requestBody: ByteArray? by lazy { requestBodyStream?.readNBytes(contentLength.toInt()) }
 
     /**
      * Whether the socket stays open for another request. Initialised from the request's HTTP
      * version and `Connection` header, but the handler may force it to `false` to make the response
      * the last one on this connection (and so end the thread serving it).
      */
-    var keepAlive: Boolean = keepAlive
+    var keepAlive: Boolean = head.keepAlive
+
+    /** Drops whatever of the body the handler did not read, so the next request can be parsed. */
+    fun discardRemainingBody() = body.discardRemaining()
 
     var responseBody: ByteArray? = null
 

@@ -1,6 +1,7 @@
 package xdm.integration
 
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
@@ -31,6 +32,9 @@ object BrowserIntegration {
     /** Loopback only, so these are generous. */
     private const val PROBE_CONNECT_TIMEOUT_MS = 500
     private const val PROBE_READ_TIMEOUT_MS = 1500
+
+    /** Body limit for `/batch`; every other path gets [HttpParser.DEFAULT_MAX_BODY_BYTES]. */
+    const val MAX_BATCH_BODY_BYTES = 64L * 1024 * 1024
 
     private lateinit var server: HttpServer
     private var serverSocket: ServerSocket? = null
@@ -127,7 +131,7 @@ object BrowserIntegration {
     /** Starts serving the socket taken by [acquire]. Call once the app's services are up. */
     fun serve() {
         val socket = serverSocket ?: throw IllegalStateException("serve() without a successful acquire()")
-        server = HttpServer(socket, ::handleRequest)
+        server = HttpServer(socket, RequestFilter(socket.localPort), requestListener = ::handleRequest)
         server.start()
         // Release parked polls on the way out (quit, SIGTERM, exitProcess) so the extension is told
         // XDM is going away instead of having to infer it from the dropped connection.
@@ -165,8 +169,7 @@ object BrowserIntegration {
      * where a future `xdm-app://...` URL would arrive.
      */
     private fun postShow(args: Array<String>, port: Int): Boolean = runCatching {
-        val payload = synchronized(json) { json.encodeToString(ShowRequest(args.toList())) }
-            .toByteArray(StandardCharsets.UTF_8)
+        val payload = json.encodeToString(ShowRequest(args.toList())).toByteArray(StandardCharsets.UTF_8)
         open("http://$LOOPBACK:$port/show", port).run {
             requestMethod = "POST"
             doOutput = true
@@ -195,19 +198,8 @@ object BrowserIntegration {
     private fun handleRequest(context: RequestContext) {
         // Every reply but the long poll's is the last one on its connection: the handler thread ends
         // with the response instead of parking in the keep-alive loop. The poll re-connects each time.
+        // Requests refused by RequestFilter never get here: the server answers them before their body.
         context.keepAlive = false
-        rejectionStatus(context)?.let { (code, message) ->
-            Logger.info(
-                "INTEGRATION",
-                "Rejected ${context.requestMethod} ${context.requestPath} from origin=${context.getRequestHeader("Origin")}: $code $message"
-            )
-            context.apply {
-                statusCode = code
-                statusMessage = message
-                responseBody = ByteArray(0)
-            }.sendResponse()
-            return
-        }
         if (context.requestPath == "/poll") {
             onPollMessage(context)
             return
@@ -233,19 +225,53 @@ object BrowserIntegration {
      *   (the extension's GET /sync, local tools) are allowed.
      * - Pages can send simple GETs without an `Origin` (e.g. `<img src>`), so paths that change
      *   state only accept POST.
+     * - A page that resolves its own host name to 127.0.0.1 (DNS rebinding) makes same-origin
+     *   requests, which carry no `Origin` on GET, so it could read `/sync`. Its requests carry its
+     *   host name in `Host`, though, so only the loopback names XDM is reached by are accepted.
      *
-     * Returns the (status code, message) to reply with, or null if the request is allowed.
+     * It runs on the request's head, before the body is read, and also sets the body size limits.
      */
-    private fun rejectionStatus(context: RequestContext): Pair<Int, String>? {
-        val origin = context.getRequestHeader("Origin")
-        if (origin != null && extensionOriginSchemes.none { origin.startsWith(it, ignoreCase = true) }) {
-            return Pair(403, "Forbidden")
+    internal class RequestFilter(port: Int) : RequestPolicy {
+        private val allowedHosts = setOf("$LOOPBACK:$port", "localhost:$port")
+
+        override fun reject(head: HttpParser.RequestHead): Pair<Int, String>? = rejection(head)?.also { (code, message) ->
+            Logger.info(
+                "INTEGRATION",
+                "Rejected ${head.method} ${head.route} from host=${head.header("Host")} origin=${head.header("Origin")}: $code $message"
+            )
         }
-        if (context.requestPath.substringBefore('?') in stateChangingPaths && context.requestMethod != "POST") {
-            return Pair(405, "Method Not Allowed")
+
+        private fun rejection(head: HttpParser.RequestHead): Pair<Int, String>? {
+            val host = head.header("Host")
+            if (host == null || allowedHosts.none { it.equals(host, ignoreCase = true) }) {
+                return Pair(403, "Forbidden")
+            }
+            val origin = head.header("Origin")
+            if (origin != null && extensionOriginSchemes.none { origin.startsWith(it, ignoreCase = true) }) {
+                return Pair(403, "Forbidden")
+            }
+            if (head.route in stateChangingPaths && head.method != "POST") {
+                return Pair(405, "Method Not Allowed")
+            }
+            return null
         }
-        return null
+
+        /**
+         * A batch holds up to the extension's 5000 links (cookies sent once per group), so it gets a
+         * larger limit; every other message is one link with its headers, a few kilobytes.
+         */
+        override fun maxBodyBytes(head: HttpParser.RequestHead): Long =
+            if (head.route == "/batch") MAX_BATCH_BODY_BYTES else HttpParser.DEFAULT_MAX_BODY_BYTES
     }
+
+    /**
+     * Decodes the request body straight off the connection, without buffering it first; null when
+     * the request has none. [json] is immutable and safe to share, so no lock is held: one with a
+     * slow body would otherwise hold up every other request.
+     */
+    @OptIn(ExperimentalSerializationApi::class)
+    private inline fun <reified T> decodeBody(context: RequestContext): T? =
+        context.requestBodyStream?.let { json.decodeFromStream<T>(it) }
 
     /**
      * The long poll. Parks the request until something the extension cares about changes, the wait
@@ -253,11 +279,7 @@ object BrowserIntegration {
      * extension applies it through one code path.
      */
     private fun onPollMessage(context: RequestContext) {
-        val request = context.requestBody?.let { body ->
-            runCatching {
-                synchronized(json) { json.decodeFromString<PollRequest>(body.toString(StandardCharsets.UTF_8)) }
-            }.getOrNull()
-        } ?: PollRequest()
+        val request = runCatching { decodeBody<PollRequest>(context) }.getOrNull() ?: PollRequest()
 
         when (EventChannel.await(request.clientId ?: "default", request.version)) {
             EventChannel.Outcome.CHANGED -> onSyncMessage(context)
@@ -265,7 +287,7 @@ object BrowserIntegration {
                 statusCode = 200
                 statusMessage = "OK"
                 addResponseHeader("Content-Type", "application/json")
-                responseBody = synchronized(json) { json.encodeToString(ByeDto()) }.toByteArray(StandardCharsets.UTF_8)
+                responseBody = json.encodeToString(ByeDto()).toByteArray(StandardCharsets.UTF_8)
             }.sendResponse()
             // Nothing to report (or this poll was replaced / turned away): the extension polls again.
             else -> context.apply {
@@ -284,12 +306,8 @@ object BrowserIntegration {
     private fun onShowMessage(context: RequestContext) {
         Logger.info("INTEGRATION", "Another launch asked this instance to show itself")
         // The arguments are read (and logged) but not acted on yet; see ShowRequest.
-        context.requestBody?.let { content ->
-            runCatching {
-                val str = content.toString(StandardCharsets.UTF_8)
-                synchronized(json) { json.decodeFromString<ShowRequest>(str) }
-            }.onSuccess { Logger.info("INTEGRATION", "Launch arguments: ${it.args}") }
-        }
+        runCatching { decodeBody<ShowRequest>(context) }
+            .onSuccess { it?.let { Logger.info("INTEGRATION", "Launch arguments: ${it.args}") } }
         AppContext.app.showAppWindow()
     }
 
@@ -311,10 +329,7 @@ object BrowserIntegration {
      */
     private fun onClearTabMessage(context: RequestContext) {
         Logger.info("Received clear-tab message..")
-        val extMsg = context.requestBody?.let { content ->
-            val str = content.toString(StandardCharsets.UTF_8)
-            synchronized(json) { json.decodeFromString<ExtensionMessage>(str) }.also { logMessage(it) }
-        } ?: return
+        val extMsg = decodeBody<ExtensionMessage>(context)?.also { logMessage(it) } ?: return
         val tabId = extMsg.tabId ?: return
         if (!clearTabFilter.shouldClear(tabId, extMsg.tabUrl)) {
             Logger.info("Tab $tabId is still on the same page, keeping its videos")
@@ -330,10 +345,7 @@ object BrowserIntegration {
      */
     private fun onTabUpdateMessage(context: RequestContext) {
         Logger.info("Received tab update message..")
-        val extMsg = context.requestBody?.let { content ->
-            val str = content.toString(StandardCharsets.UTF_8)
-            synchronized(json) { json.decodeFromString<ExtensionMessage>(str) }.also { logMessage(it) }
-        } ?: return
+        val extMsg = decodeBody<ExtensionMessage>(context)?.also { logMessage(it) } ?: return
         val tabUrl = extMsg.tabUrl ?: return
         val tabTitle = extMsg.tabTitle?.takeIf { it.isNotBlank() } ?: return
         AppContext.videoTracker.updateMediaTitle(tabUrl, tabTitle)
@@ -341,12 +353,7 @@ object BrowserIntegration {
 
     private fun onVideoDownloadMessage(context: RequestContext) {
         Logger.info("Received video download message..")
-        context.requestBody?.let { content ->
-            val str = content.toString(StandardCharsets.UTF_8)
-            val extMsg: ExtensionMessage
-            synchronized(json) {
-                extMsg = json.decodeFromString<ExtensionMessage>(str)
-            }
+        decodeBody<ExtensionMessage>(context)?.let { extMsg ->
             logMessage(extMsg)
             removeBlockedHeaders(extMsg)
             extMsg.vid?.let { AppContext.videoTracker.addVideoDownload(it) }
@@ -355,12 +362,7 @@ object BrowserIntegration {
 
     private fun onMediaMessage(context: RequestContext) {
         Logger.info("Received media message..")
-        context.requestBody?.let { content ->
-            val str = content.toString(StandardCharsets.UTF_8)
-            val extMsg: ExtensionMessage
-            synchronized(json) {
-                extMsg = json.decodeFromString<ExtensionMessage>(str)
-            }
+        decodeBody<ExtensionMessage>(context)?.let { extMsg ->
             logMessage(extMsg)
             removeBlockedHeaders(extMsg)
             VideoHelper.processMediaMessage(extMsg)
@@ -369,12 +371,7 @@ object BrowserIntegration {
 
     private fun onDownloadMessage(context: RequestContext) {
         Logger.info("Received download message..")
-        context.requestBody?.let {
-            val str = it.toString(StandardCharsets.UTF_8)
-            val extMsg: ExtensionMessage
-            synchronized(json) {
-                extMsg = json.decodeFromString<ExtensionMessage>(str)
-            }
+        decodeBody<ExtensionMessage>(context)?.let { extMsg ->
             logMessage(extMsg)
             removeBlockedHeaders(extMsg)
             extMsg.url?.let {
@@ -385,10 +382,7 @@ object BrowserIntegration {
 
     /** The extension's "Download all": opens the batch dialog. Replies at once, with the usual sync. */
     private fun onBatchMessage(context: RequestContext) {
-        val body = context.requestBody ?: return
-        val msg = runCatching {
-            synchronized(json) { json.decodeFromString<BatchMessage>(body.toString(StandardCharsets.UTF_8)) }
-        }.onFailure { Logger.error("INTEGRATION", "Invalid batch message", it) }.getOrNull() ?: return
+        val msg = runCatching { decodeBody<BatchMessage>(context) }.onFailure { Logger.error("INTEGRATION", "Invalid batch message", it) }.getOrNull() ?: return
         val request = toBatchRequest(msg) ?: return
         // Counts only: never log cookies or the links themselves.
         Logger.info(
@@ -422,9 +416,7 @@ object BrowserIntegration {
             statusMessage = "OK"
             addResponseHeader("Content-Type", "application/json")
             addResponseHeader("Cache-Control", "max-age=0, no-cache, must-revalidate")
-            synchronized(json) {
-                responseBody = json.encodeToString(data).toByteArray(StandardCharsets.UTF_8)
-            }
+            responseBody = json.encodeToString(data).toByteArray(StandardCharsets.UTF_8)
         }.sendResponse()
     }
 
