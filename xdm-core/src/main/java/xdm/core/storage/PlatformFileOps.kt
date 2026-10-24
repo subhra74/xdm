@@ -36,8 +36,12 @@ interface PlatformFileOps {
     /** Best effort `rwx------` for a folder, `rw-------` for a file; logs and ignores a failure. */
     fun restrictToOwner(file: File)
 
-    /** Creates [file] as sparse where that means something (NTFS). Best effort; does nothing if it exists. */
-    fun createSparse(file: File)
+    /**
+     * Creates [file] [length] bytes long without writing the bytes: sparse where the file system can, so
+     * the gap reads as zeros and takes no space. Best effort (the caller checks the length); does nothing
+     * if it exists.
+     */
+    fun createSparse(file: File, length: Long)
 
     /** Deletes [dir] and everything under it without following symbolic links. */
     fun deleteTree(dir: File): Result<Unit>

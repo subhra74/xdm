@@ -35,8 +35,15 @@ private class LocalFolder(private val dir: File) : StorageFolder {
         val file = f(name)
         if (!create && !file.isFile) throw FileNotFoundException(file.path)
         // Sparse on NTFS: see NioFileOps.createSparse.
-        if (create) PlatformFiles.ops.createSparse(file)
+        if (create) PlatformFiles.ops.createSparse(file, 0)
         return LocalOutput(RandomAccessFile(file, "rw"))
+    }
+
+    override fun openPresized(name: String, length: Long): RandomAccessOutput {
+        val file = f(name)
+        PlatformFiles.ops.createSparse(file, length)
+        // A file that was already there, or a presize that failed: size it with setLength.
+        return LocalOutput(RandomAccessFile(file, "rw")).apply { if (length() != length) setLength(length) }
     }
 
     override fun openRead(name: String): InputStream = FileInputStream(f(name))

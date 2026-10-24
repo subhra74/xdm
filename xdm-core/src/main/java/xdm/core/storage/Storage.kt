@@ -60,6 +60,13 @@ interface StorageFolder {
      */
     fun open(name: String, create: Boolean): RandomAccessOutput
 
+    /**
+     * Like [open] with `create`, then sized to [length] without writing the gap: a new file is created
+     * sparse where supported (see [LocalStorage]). An existing file keeps its content and is set to [length].
+     */
+    fun openPresized(name: String, length: Long): RandomAccessOutput =
+        open(name, create = true).apply { setLength(length) }
+
     /** Reads the file [name] from the start. */
     fun openRead(name: String): InputStream
 
@@ -98,6 +105,7 @@ data class StorageFile(val folder: StorageFolder, val name: String) {
     val exists: Boolean get() = folder.isFile(name)
     fun length(): Long = folder.length(name)
     fun open(create: Boolean): RandomAccessOutput = folder.open(name, create)
+    fun openPresized(length: Long): RandomAccessOutput = folder.openPresized(name, length)
     fun delete(): Boolean = folder.delete(name)
 
     /** The file's local path, or null when it is only reachable through a provider (SAF). */

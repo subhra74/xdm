@@ -5,10 +5,12 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import xdm.core.storage.LocalStorage
 import xdm.core.storage.uniqueFileName
+import xdm.core.util.PlatformUtils
 import java.io.File
 import java.io.FileNotFoundException
 import xdm.core.storage.TargetExistsException
@@ -43,6 +45,44 @@ class TestLocalStorage {
         }
         assertArrayEquals(byteArrayOf(9, 0, 0, 0, 0, 0, 0, 0, 1, 2), File(root, "p").readBytes(), "bytes at offsets")
         folder.open("p", create = true).use { assertEquals(10, it.length(), "reopening keeps content") }
+    }
+
+    @Test
+    fun presizedFileHasLengthAndReadsZeros() {
+        val folder = LocalStorage.folder(root.path)
+        folder.openPresized("p", 1000).use {
+            assertEquals(1000, it.length(), "new file presized")
+            assertEquals(0, it.position(), "positioned at 0")
+            it.seek(500)
+            it.write(byteArrayOf(7), 0, 1)
+        }
+        val bytes = File(root, "p").readBytes()
+        assertEquals(7, bytes[500].toInt(), "write lands at its offset")
+        assertTrue(bytes.withIndex().all { (i, b) -> i == 500 || b == 0.toByte() }, "the gap reads as zeros")
+        folder.openPresized("empty", 0).use { assertEquals(0, it.length(), "zero length is fine") }
+    }
+
+    @Test
+    fun presizeSetsLengthOfExistingFile() {
+        val folder = LocalStorage.folder(root.path)
+        File(root, "short").writeBytes(byteArrayOf(1, 2, 3))
+        folder.openPresized("short", 10).use { assertEquals(10, it.length(), "existing file grown") }
+        assertArrayEquals(byteArrayOf(1, 2, 3, 0, 0, 0, 0, 0, 0, 0), File(root, "short").readBytes(), "content kept")
+        File(root, "long").writeBytes(ByteArray(20) { 5 })
+        folder.openPresized("long", 4).use { assertEquals(4, it.length(), "existing file shrunk") }
+    }
+
+    @Test
+    fun presizedFileIsSparse() {
+        // `du` reports allocated blocks; Windows has no `du` (NTFS was checked by hand with fsutil).
+        assumeTrue(!PlatformUtils.isWindows, "needs du")
+        val size = 256L shl 20
+        LocalStorage.folder(root.path).openPresized("big", size).close()
+        val p = ProcessBuilder("du", "-k", File(root, "big").path).start()
+        val allocatedKb = p.inputStream.bufferedReader().readText().trim().split(Regex("\\s+"))[0].toLong()
+        p.waitFor()
+        assertEquals(size, File(root, "big").length(), "full length")
+        assertTrue(allocatedKb < 1024, "presize must not allocate the gap, got $allocatedKb KB")
     }
 
     @Test

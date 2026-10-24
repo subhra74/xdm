@@ -3,6 +3,7 @@ package xdm.core.storage
 import xdm.core.util.Logger
 import java.io.File
 import java.io.IOException
+import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.FileAlreadyExistsException
@@ -69,17 +70,22 @@ object NioFileOps : PlatformFileOps {
     }
 
     /**
-     * Sparse on NTFS, ignored elsewhere. Chunks write far into a preallocated file, and NTFS zero-fills
-     * everything below a write past the valid data length, so a normal file gets written almost twice.
-     * A sparse file skips the zero-fill.
+     * SPARSE matters on NTFS and is ignored elsewhere. Chunks write far into a preallocated file, and NTFS
+     * zero-fills everything below a write past the valid data length, so a normal file gets written almost
+     * twice. A sparse file skips the zero-fill.
+     *
+     * The length comes from writing the last byte, not from `RandomAccessFile.setLength`: NIO has no call
+     * that grows a file (`truncate` only shrinks), and the JetBrains Runtime the Linux bundle ships
+     * implements `setLength` by writing zeros up to the new length. A write past the end leaves a hole on
+     * ext4, btrfs and APFS, and on NTFS once the file is sparse.
      */
-    override fun createSparse(file: File) {
+    override fun createSparse(file: File, length: Long) {
         if (file.exists()) return
         try {
             Files.newByteChannel(
                 file.toPath(),
                 EnumSet.of(StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE, StandardOpenOption.SPARSE)
-            ).close()
+            ).use { if (length > 0) it.position(length - 1).write(ByteBuffer.wrap(ByteArray(1))) }
         } catch (e: IOException) {
             Logger.info("XDM", "Could not create sparse file, using a normal one: $e")
         }

@@ -498,14 +498,16 @@ class HttpChunkRetriever(
                 if (context.tempFileCreated.get() &&
                     context.totalSize.let { size -> file.length().let { it < 0 || (size != null && it != size) } }
                 ) throw IOException("Part file missing or damaged: $file")
-                fs = file.open(create = !context.tempFileCreated.get())
-                context.totalSize?.let { len ->
-                    if (!context.tempFileCreated.get()) {
-                        fs.setLength(len)
-                        Logger.info("XDM", "Temp file created with size $len")
-                    } else {
-                        Logger.info("XDM", "Temp file created already")
+                val size = context.totalSize
+                fs = when {
+                    context.tempFileCreated.get() -> file.open(create = false).also {
+                        if (size != null) Logger.info("XDM", "Temp file created already")
                     }
+                    // Sized without writing the gap (setLength may zero-fill): see NioFileOps.createSparse.
+                    size != null -> file.openPresized(size).also {
+                        Logger.info("XDM", "Temp file created with size $size")
+                    }
+                    else -> file.open(create = true)
                 }
                 context.tempFileCreated.set(true)
                 fs.seek(chunk.offset + chunk.downloaded.get())
