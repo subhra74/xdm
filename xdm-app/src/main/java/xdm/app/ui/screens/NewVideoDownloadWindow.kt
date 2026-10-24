@@ -223,7 +223,12 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
 
         addWindowListener(
             object : WindowAdapter() {
+                private var focused = false
+
+                /** First activation only; see [NewDownloadWindow] (KDE closes combo popups otherwise). */
                 override fun windowActivated(e: WindowEvent) {
+                    if (focused) return
+                    focused = true
                     btnDownload.requestFocusInWindow()
                 }
 

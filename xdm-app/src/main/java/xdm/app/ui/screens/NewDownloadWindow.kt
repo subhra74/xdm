@@ -233,9 +233,14 @@ class NewDownloadWindow : JDialog(null as Window?) {
 
         addWindowListener(
             object : WindowAdapter() {
+                private var focused = false
+
+                // Only on the first activation: KWin moves keyboard focus to a combo box's popup
+                // and back, which re-activates the window, and moving focus then closes the popup.
                 override fun windowActivated(e: WindowEvent) {
+                    if (focused) return
+                    focused = true
                     btnDownload.requestFocusInWindow()
-                    requestFocus()
                 }
 
                 override fun windowClosed(e: WindowEvent) {

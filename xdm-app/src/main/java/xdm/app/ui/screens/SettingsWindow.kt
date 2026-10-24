@@ -163,8 +163,13 @@ class SettingsWindow : JFrame() {
                 SwingUtilities.invokeLater { scrollPagesToTop() }
             }
 
+            private var focused = false
+
+            /** First activation only; see [NewDownloadWindow] (KDE closes combo popups otherwise). */
             override fun windowActivated(e: WindowEvent) {
                 Logger.info("Settings window activated")
+                if (focused) return
+                focused = true
                 btnSave.requestFocusInWindow()
             }
         })

@@ -5,6 +5,7 @@ import com.formdev.flatlaf.themes.FlatMacDarkLaf
 import com.formdev.flatlaf.themes.FlatMacLightLaf
 import xdm.app.headless.CliParser
 import xdm.app.headless.HeadlessCli
+import xdm.app.ui.components.WaylandComboBoxUI
 import xdm.app.utils.AppDirs
 import xdm.app.utils.JitOverride
 import xdm.app.utils.WaylandToolkit
@@ -117,6 +118,8 @@ object AppMain {
         UIManager.put("TableHeader.cellMargins", Insets(0, 10, 0, 0))
         UIManager.put("SplitPaneDivider.gripDotCount", 0)
         UIManager.put("SplitPane.dividerSize", 10)
+        // KWin can slide a combo popup under the pointer; see WaylandComboBoxUI.
+        if (WaylandToolkit.isActive) UIManager.put("ComboBoxUI", WaylandComboBoxUI::class.java.name)
         // Dialogs made with no owner argument (JDialog(), JOptionPane with a null parent) get Swing's
         // hidden shared frame as owner and take its icon (X11 window manager icon, FlatLaf title pane):
         // without this, the Java cup. A truly ownerless one (JDialog(null as Window?)) does not, and
