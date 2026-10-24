@@ -1,3 +1,6 @@
+// Copyright 2026 Subhra Das Gupta
+// SPDX-License-Identifier: Apache-2.0
+
 package xdm.core.util
 
 
@@ -9,6 +12,16 @@ import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 
 object ManifestUtils {
+    /**
+     * Largest manifest body accepted, counted as read (after content decoding, so a gzip bomb stops
+     * here too). Manifests are fetched in the background for any page that plays media; a real
+     * playlist, even a day-long one, is a few megabytes.
+     */
+    const val MAX_MANIFEST_BYTES = 32L * 1024 * 1024
+
+    /** A body longer than the caller's limit; reported through `onError`. */
+    class ManifestTooLargeException(limit: Long) : IOException("Response is larger than $limit bytes")
+
     fun downloadManifestBytes(
         httpClient: PoolingHttpClient,
         url: String,
@@ -17,6 +30,7 @@ object ManifestUtils {
         stopFlag: AtomicBoolean,
         onError: ((Throwable) -> Unit)? = null,
         onHttpError: ((Int) -> Unit)? = null,
+        maxBytes: Long = MAX_MANIFEST_BYTES,
     ): ByteArray? {
         downloadManifestAsFile(
             httpClient,
@@ -26,6 +40,7 @@ object ManifestUtils {
             stopFlag,
             onError,
             onHttpError,
+            maxBytes,
         )?.let {
             val tempFile = File(it)
             try {
@@ -49,6 +64,8 @@ object ManifestUtils {
         onError: ((Throwable) -> Unit)? = null,
         /** The status of a response that was neither 200 nor 206 (onError is only for exceptions). */
         onHttpError: ((Int) -> Unit)? = null,
+        /** A longer body is abandoned and reported to [onError] as a [ManifestTooLargeException]. */
+        maxBytes: Long = MAX_MANIFEST_BYTES,
     ): String? {
         try {
             Logger.info("XDM","Downloading manifest: $url")
@@ -65,7 +82,8 @@ object ManifestUtils {
                         onHttpError?.invoke(code)
                         return null
                     }
-                    return fileCopy(response, stopFlag)
+                    response.contentLength?.let { if (it > maxBytes) throw ManifestTooLargeException(maxBytes) }
+                    return fileCopy(response, stopFlag, maxBytes)
                 }
             }.onFailure {
                 Logger.error("Error downloading manifest", it)
@@ -81,13 +99,15 @@ object ManifestUtils {
     /**
      * Copies the body to a new temp file and returns its path, or null if [stopFlag] was set before the
      * body ended. A stopped or failed copy deletes the file, so a partial manifest is never parsed or left behind.
+     * A body longer than [maxBytes] throws [ManifestTooLargeException].
      */
-    private fun fileCopy(response: HttpResponse, stopFlag: AtomicBoolean): String? {
+    private fun fileCopy(response: HttpResponse, stopFlag: AtomicBoolean, maxBytes: Long): String? {
         val file = File.createTempFile(
             UUID.randomUUID().toString(),
             ".m3u8"
         )
         var complete = false
+        var total = 0L
         try {
             FileOutputStream(file).use { w ->
                 val b = ByteArray(8192)
@@ -98,6 +118,8 @@ object ManifestUtils {
                             complete = true
                             break
                         }
+                        total += x
+                        if (total > maxBytes) throw ManifestTooLargeException(maxBytes)
                         w.write(b, 0, x)
                     }
                 }

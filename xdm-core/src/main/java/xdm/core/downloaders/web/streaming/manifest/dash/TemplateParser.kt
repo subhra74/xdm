@@ -1,5 +1,13 @@
+// Copyright 2026 Subhra Das Gupta
+// SPDX-License-Identifier: Apache-2.0
+
 package xdm.core.downloaders.web.streaming.manifest.dash
 
+/**
+ * Widest `$Number%0<width>d$` padding honoured. A Long has at most 19 digits; a manifest asking for
+ * `%0999999999d` would otherwise build a gigabyte string for every segment.
+ */
+private const val MAX_DIGIT_WIDTH = 20
 
 fun parseTemplate(
     matches: List<MatcherResult>,
@@ -41,10 +49,9 @@ private fun formatDigit(digit: Long, match: MatcherResult, number: Boolean): Str
     if ((number && match.group("numdx") != null) || (!number && match.group("timedx") != null)) {
         dx = if (number) match.group("numdx") else match.group("timedx")
     }
-    var width = 0
-    if (!digitWidth.isNullOrEmpty()) {
-        width = digitWidth.toInt()
-    }
+    // A width too long to parse is as over the cap as any other.
+    val width = if (digitWidth.isNullOrEmpty()) 0
+    else digitWidth.toIntOrNull()?.coerceAtMost(MAX_DIGIT_WIDTH) ?: MAX_DIGIT_WIDTH
     return if (width > 0) {
         val fmt = String.format("%s%s%s", "%0", width, dx)
         String.format(fmt, digit)

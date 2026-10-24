@@ -1,3 +1,6 @@
+// Copyright 2026 Subhra Das Gupta
+// SPDX-License-Identifier: Apache-2.0
+
 package xdm.core.downloaders.web.streaming.downloader.hls
 
 import xdm.core.CoreConfig
@@ -31,6 +34,9 @@ import javax.crypto.Cipher
 import javax.crypto.CipherInputStream
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
+
+/** An AES-128 key is 16 bytes; a key URL that sends far more is refused before it is read in full. */
+private const val MAX_KEY_BYTES = 1024L
 
 fun makeContext(
     taskInfo: HlsDownloadTaskInfo, http: PoolingHttpClient, host: DownloadHost, configDir: String,
@@ -265,7 +271,7 @@ class HlsDownloaderTask : StreamingDownloaderTask {
                         Logger.info("Header names: ${hlsContext.headers?.keys}")
                         val bytes = downloadManifestBytes(
                             context.httpClient, keyUrl, hlsContext.headers, hlsContext.cookie, context.stopFlag,
-                            recordFetchError
+                            recordFetchError, maxBytes = MAX_KEY_BYTES
                         )
                         when {
                             bytes == null -> throw IOException("Unable to download key: $keyUrl")

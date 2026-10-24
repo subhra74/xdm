@@ -1,3 +1,6 @@
+// Copyright 2026 Subhra Das Gupta
+// SPDX-License-Identifier: Apache-2.0
+
 package xdm.core.downloaders.web.streaming.manifest.dash
 
 import org.w3c.dom.Element
@@ -16,8 +19,39 @@ private val TemplatePattern: Pattern = Pattern.compile(
     "\\$(RepresentationID|Time|Time%0(?<timedigits>\\d+)(?<timedx>[dx])?|Number|Number%0(?<numdigits>\\d+)(?<numdx>[dx])?|Bandwidth)\\$"
 )
 
+/** Over two days of 2s segments, or a day of 1s ones. */
+const val MAX_SEGMENTS_PER_REPRESENTATION = 100_000
+
+/** All representations of one manifest together, xlink-resolved periods included. */
+const val MAX_SEGMENTS_PER_MANIFEST = 400_000
+
+/**
+ * Bounds how many segment URLs one manifest may expand to. Manifests are fetched and parsed in the
+ * background for any page that plays DASH, and segment counts come straight from the server: a
+ * template with a tiny duration, or an S element with a huge `r`, would otherwise build URLs until
+ * the heap runs out. A manifest past either limit fails to parse.
+ */
+class SegmentBudget {
+    private var used = 0
+
+    /** Throws if a representation of [count] segments would pass either limit. */
+    fun check(count: Long) {
+        if (count > MAX_SEGMENTS_PER_REPRESENTATION) {
+            throw MpdParserException("Representation has more than $MAX_SEGMENTS_PER_REPRESENTATION segments")
+        }
+        if (used + count > MAX_SEGMENTS_PER_MANIFEST) {
+            throw MpdParserException("Manifest has more than $MAX_SEGMENTS_PER_MANIFEST segments")
+        }
+    }
+
+    fun commit(count: Int) {
+        used += count
+    }
+}
+
 fun parseAdaptationSet(
-    xmlAdaptationSet: Node, baseUrl: URI, periodDuration: Long, hasParentSegmentBase: Boolean
+    xmlAdaptationSet: Node, baseUrl: URI, periodDuration: Long, hasParentSegmentBase: Boolean,
+    budget: SegmentBudget,
 ): List<Representation> {
     var baseUrl = baseUrl
     val representations: MutableList<Representation> = ArrayList()
@@ -31,9 +65,12 @@ fun parseAdaptationSet(
     val xmlRepresentations = (xmlAdaptationSet as Element).getElementsByTagName("Representation")
     for (i in 0..<xmlRepresentations.length) {
         val rep = parseRepresentation(
-            xmlRepresentations.item(i), baseUrl, periodDuration, hasParentSegmentBase
+            xmlRepresentations.item(i), baseUrl, periodDuration, hasParentSegmentBase, budget
         )
-        if (rep != null) representations.add(rep)
+        if (rep != null) {
+            budget.commit(rep.segments.size)
+            representations.add(rep)
+        }
     }
     return representations
 }
@@ -62,9 +99,11 @@ private fun parseSegmentList(
     bandwidth: Long,
     periodDuration: Long,
     mimeType: String,
-    lang: String
+    lang: String,
+    budget: SegmentBudget,
 ): Representation? {
     val segmentUrlNodes = (xmlSegmentList as Element).getElementsByTagName("SegmentURL")
+    budget.check(segmentUrlNodes.length + 1L)
     val segments: MutableList<DashSegment> = ArrayList()
     val xmlInit = findTag(xmlSegmentList, mutableListOf("Initialization", "RepresentationIndex"))
     if (xmlInit != null) {
@@ -107,12 +146,19 @@ private fun parseSegmentTimeLineSimple(
     bandwidthStr: String,
     periodDuration: Long,
     mimeType: String,
-    lang: String
+    lang: String,
+    budget: SegmentBudget,
 ): Representation? {
     val timescale = getAttr(xmlSegmentTemplate, "timescale")?.toLongOrNull() ?: 1L
     val duration = getAttr(xmlSegmentTemplate, "duration")?.toLongOrNull() ?: 1L
     val startNumber = getAttr(xmlSegmentTemplate, "startNumber")?.toLongOrNull() ?: 1L
-    val segmentCount = ceil((periodDuration.toDouble() / 1000) / (duration.toDouble() / timescale)).toInt()
+    // A zero or negative duration or timescale has no segment count (it divides to infinity or below zero).
+    if (timescale <= 0 || duration <= 0) return null
+    val count = ceil((periodDuration.toDouble() / 1000) / (duration.toDouble() / timescale))
+    if (count.isNaN() || count < 0) return null
+    // Checked before toInt(), which would clamp a huge count to Int.MAX_VALUE.
+    budget.check(count.toLong())
+    val segmentCount = count.toInt()
     val representationId = attrs.getNamedItem("id")?.nodeValue ?: ""
     var number = startNumber
     // $Time$ addressing counts presentation time from the presentation-time-offset (default 0),
@@ -178,7 +224,8 @@ private fun parseSegmentTimeLineExplicit(
     bandwidthStr: String,
     periodDuration: Long,
     mimeType: String,
-    lang: String
+    lang: String,
+    budget: SegmentBudget,
 ): Representation? {
     val representationId = attrs.getNamedItem("id")?.nodeValue ?: ""
     val timescale = getAttr(xmlSegmentTemplate, "timescale")?.toLongOrNull() ?: 1L
@@ -205,6 +252,7 @@ private fun parseSegmentTimeLineExplicit(
         val r = getAttr(xmls, "r")?.toLongOrNull() ?: 0L
         // t="0" is a valid start time; only a missing t (-1) is ignored.
         if (t >= 0) time = t
+        budget.check(segments.size + 1L)
         var segmentUrl = parseTemplate(
             mediaMatches, mediaUrl!!, number, time, bandwidthStr, representationId
         ).replace("\u0000", "$")
@@ -213,6 +261,7 @@ private fun parseSegmentTimeLineExplicit(
         time += d
         if (r > 0) {
             for (k in 0..<r) {
+                budget.check(segments.size + 1L)
                 segmentUrl = parseTemplate(
                     mediaMatches, mediaUrl, number, time, bandwidthStr, representationId
                 ).replace("\u0000", "$")
@@ -224,6 +273,7 @@ private fun parseSegmentTimeLineExplicit(
             // r="-1": repeat until the next S element's start time, or the end of the period.
             val boundary = nextSegmentStartTime(xmlSs, i) ?: periodEndTicks
             while (time < boundary) {
+                budget.check(segments.size + 1L)
                 segmentUrl = parseTemplate(
                     mediaMatches, mediaUrl, number, time, bandwidthStr, representationId
                 ).replace("\u0000", "$")
@@ -243,7 +293,8 @@ private fun parseSegmentTimeLineExplicit(
 }
 
 private fun parseRepresentation(
-    xmlRepresentation: Node, baseUrlIn: URI, periodDuration: Long, hasParentSegmentBase: Boolean
+    xmlRepresentation: Node, baseUrlIn: URI, periodDuration: Long, hasParentSegmentBase: Boolean,
+    budget: SegmentBudget,
 ): Representation? {
     var baseUrl = baseUrlIn
     val attrs = xmlRepresentation.attributes
@@ -278,7 +329,7 @@ private fun parseRepresentation(
     val xmlSegmentList = getFirstTag(xmlRepresentation, "SegmentList")
     if (xmlSegmentList != null) {
         return parseSegmentList(
-            xmlSegmentList, baseUrl, width, height, codec, bandwidth, periodDuration, mimeType, lang
+            xmlSegmentList, baseUrl, width, height, codec, bandwidth, periodDuration, mimeType, lang, budget
         )
     }
 
@@ -297,7 +348,8 @@ private fun parseRepresentation(
             bandwidthStr,
             periodDuration,
             mimeType,
-            lang
+            lang,
+            budget
         )
         // explicit addressing
         val xmlSs = (xmlSegmentTimeline as Element).getElementsByTagName("S")
@@ -314,7 +366,8 @@ private fun parseRepresentation(
                 bandwidthStr,
                 periodDuration,
                 mimeType,
-                lang
+                lang,
+                budget
             )
         }
     }

@@ -1,3 +1,6 @@
+// Copyright 2026 Subhra Das Gupta
+// SPDX-License-Identifier: Apache-2.0
+
 package xdm.core.downloaders.web.streaming.manifest.dash
 
 import org.w3c.dom.Element
@@ -7,7 +10,7 @@ import java.net.URI
 
 
 fun parsePeriod(
-    period: Node, baseUrl: URI?, mediaPresentationDuration: Long
+    period: Node, baseUrl: URI?, mediaPresentationDuration: Long, budget: SegmentBudget
 ): List<MpdEntry> {
     var baseUrl = baseUrl
     var periodDuration = mediaPresentationDuration
@@ -24,7 +27,7 @@ fun parsePeriod(
     for (i in 0..<adaptationSets.length) {
         val adaptationSet = adaptationSets.item(i)
         val representations = parseAdaptationSet(
-                adaptationSet, baseUrl, periodDuration, hasParentSegmentBase
+                adaptationSet, baseUrl, periodDuration, hasParentSegmentBase, budget
             )
         if (representations.isEmpty()) continue
         if (representations[0].mimeType == TEXT_VTT) {

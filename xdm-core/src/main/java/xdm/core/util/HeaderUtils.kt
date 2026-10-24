@@ -1,3 +1,6 @@
+// Copyright 2026 Subhra Das Gupta
+// SPDX-License-Identifier: Apache-2.0
+
 package xdm.core.util
 
 import xdm.core.util.FileUtils.decodeFileName
@@ -157,9 +160,15 @@ fun getNameFromContentDisposition(header: String?): String? {
 /**
  * A single download's name: Content-Disposition's, else the URL's. Like a browser, a name with no
  * extension gets the one its Content-Type implies; an existing extension is never replaced.
+ *
+ * The Content-Disposition name is the server's choice, so it is sanitized like the URL's: Windows
+ * silently drops a trailing dot or space, so `setup.exe.` would be saved as `setup.exe` while XDM
+ * (and the Zone.Identifier stream it writes) still addressed `setup.exe.`.
  */
 fun getFileName(url: String, contentDisposition: String? = null, contentType: String? = null): String {
-    getNameFromContentDisposition(contentDisposition)?.let { return fixExtension(it, contentType, replace = false) }
+    getNameFromContentDisposition(contentDisposition)?.let { FileUtils.sanitizeFileName(it) }?.let {
+        return fixExtension(it, contentType, replace = false)
+    }
     FileUtils.getFileName(url)?.let {
         if (StringUtils.containsIgnoreCase(contentType, "text/html")) {
             if (it.endsWith(".html")) {

@@ -1,3 +1,6 @@
+// Copyright 2026 Subhra Das Gupta
+// SPDX-License-Identifier: Apache-2.0
+
 package xdm.core.downloaders.web.streaming.manifest.dash
 
 
@@ -77,17 +80,18 @@ fun parseMpdManifest(
     val mediaList: MutableList<MpdEntry> = ArrayList()
     val periods = root.getElementsByTagName("Period")
     if (periods.length == 0) throw MpdParserException("No period found!")
+    val budget = SegmentBudget()
     if (periods.length > 1) {
         val periodDurations = calculatePeriodDurationsIfMissing(
             periods, mediaPresentationDuration
         )
         for (i in 0..<periods.length) {
             val period = periods.item(i)
-            mediaList.addAll(parsePeriod(period, baseUrl, periodDurations[i]))
+            mediaList.addAll(parsePeriod(period, baseUrl, periodDurations[i], budget))
         }
     } else {
         mediaList.addAll(
-            parsePeriod(periods.item(0), baseUrl, mediaPresentationDuration)
+            parsePeriod(periods.item(0), baseUrl, mediaPresentationDuration, budget)
         )
     }
     return mediaList

@@ -1,3 +1,6 @@
+// Copyright 2026 Subhra Das Gupta
+// SPDX-License-Identifier: Apache-2.0
+
 package xdm.core.media.muxer.transmux.ts
 
 import xdm.core.media.muxer.transmux.sample.Codec

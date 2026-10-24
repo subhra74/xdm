@@ -177,6 +177,11 @@ XDM has no accounts, analytics or tracking, and keeps your data on your computer
 XDM is free software, licensed under the [GNU General Public License v3.0](LICENSE). XDM 8 and earlier were released
 under GPL v2.
 
+The download engine, [`xdm-core`](xdm-core), is licensed separately under the
+[Apache License 2.0](xdm-core/LICENSE), so it can be reused in other projects, including closed-source ones, as long
+as its [NOTICE](xdm-core/NOTICE) is kept and the product credits it. Everything else in this repository, including the
+desktop app (`xdm-app`) and the browser extensions, stays under GPL v3.
+
 ---
 
 <p align="center">
