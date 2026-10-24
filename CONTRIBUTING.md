@@ -89,6 +89,14 @@ Git adds the line for you with `-s`:
 git commit -s -m "Fix resume after a server restart"
 ```
 
+To have it added to every commit automatically (also from GitHub Desktop, which has no sign-off
+option), install the repository's hook once per clone, as shown in
+[Building from source](README.md#-building-from-source):
+
+```bash
+cp .githooks/prepare-commit-msg .git/hooks/ && chmod +x .git/hooks/prepare-commit-msg
+```
+
 The line uses the name and email from your Git config, for example:
 
 ```
@@ -96,7 +104,26 @@ Signed-off-by: Jane Doe <jane@example.com>
 ```
 
 Use your real name. If you forgot to sign off, `git commit --amend -s` fixes the last commit and
-`git rebase --signoff master` fixes all commits on your branch.
+`git rebase --signoff master` fixes all commits on your branch; then force-push the branch.
+
+If you'd rather not rewrite your branch, add one empty "remediation" commit that signs off your
+earlier commits, listing each one by its full hash (it can only cover commits you authored):
+
+```bash
+git commit --allow-empty -s -F remediation.txt
+```
+
+where `remediation.txt` contains:
+
+```
+DCO Remediation Commit for Jane Doe <jane@example.com>
+
+I, Jane Doe <jane@example.com>, hereby add my Signed-off-by to this commit: <full hash of commit 1>
+I, Jane Doe <jane@example.com>, hereby add my Signed-off-by to this commit: <full hash of commit 2>
+```
+
+The DCO check on your pull request lists the commits that are missing a sign-off and shows this
+message ready to copy.
 
 Code copied from another project needs to be under a license compatible with the part it goes into
 (for `xdm-core`, a permissive license such as Apache 2.0, MIT or BSD; GPL code cannot go into

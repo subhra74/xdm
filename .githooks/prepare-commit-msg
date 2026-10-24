@@ -1,0 +1,14 @@
+#!/bin/sh
+# Adds a DCO sign-off (see CONTRIBUTING.md) to every commit message, using the identity from your
+# git config, so commits made with tools that have no sign-off option (e.g. GitHub Desktop) pass the
+# DCO check too. Install it once per clone: copy this file to .git/hooks/ (see README.md).
+#
+# Does nothing if user.name or user.email is not set, or if the message already has this sign-off.
+
+name=$(git config user.name)
+email=$(git config user.email)
+[ -n "$name" ] && [ -n "$email" ] || exit 0
+
+git interpret-trailers --if-exists doNothing \
+  --trailer "Signed-off-by: $name <$email>" \
+  --in-place "$1"

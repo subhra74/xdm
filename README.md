@@ -146,6 +146,20 @@ java -jar xdm-app/target/xdm-app.jar
 | `xdm-app` | Swing desktop app (FlatLaf) and browser-integration server |
 | `browser-extension` | Chrome and Firefox extensions |
 
+**Contributing?** Commits need a DCO sign-off (see [CONTRIBUTING.md](CONTRIBUTING.md)). Install the hook that adds
+it for you, once per clone. It signs with the `user.name` and `user.email` from your git config, and works with
+GitHub Desktop and other tools that have no sign-off option:
+
+```bash
+# macOS / Linux
+cp .githooks/prepare-commit-msg .git/hooks/ && chmod +x .git/hooks/prepare-commit-msg
+```
+
+```bat
+:: Windows (Command Prompt)
+copy .githooks\prepare-commit-msg .git\hooks\
+```
+
 ## 🌍 Translations
 
 Want XDM in your language? Translations are welcome. Translate in the browser on

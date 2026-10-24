@@ -1,0 +1,5 @@
+# Settings for the DCO GitHub App (https://github.com/apps/dco).
+# A contributor who forgot to sign off can add one remediation commit for their own earlier
+# commits instead of rewriting the branch.
+allowRemediationCommits:
+  individual: true
