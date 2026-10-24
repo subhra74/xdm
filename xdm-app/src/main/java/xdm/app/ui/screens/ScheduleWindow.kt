@@ -5,6 +5,7 @@ import xdm.app.I8N.text
 import xdm.app.ScheduleEntry
 import xdm.app.ScheduleType
 import xdm.app.ui.components.MessageBox
+import xdm.app.ui.screens.settings.rounded
 import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.gbAdd
 import xdm.app.utils.px
@@ -85,6 +86,12 @@ class ScheduleWindow(parent: Window, private val downloadId: Long, modal: Boolea
         minuteSpinnerWeekly = JSpinner(SpinnerNumberModel(defaultMinute, 0, 59, 1))
         stopHourSpinnerWeekly = JSpinner(SpinnerNumberModel(defaultStopHour, 0, 23, 1))
         stopMinuteSpinnerWeekly = JSpinner(SpinnerNumberModel(defaultStopMinute, 0, 59, 1))
+
+        listOf(
+            dateSpinner, hourSpinnerOneTime, minuteSpinnerOneTime,
+            stopDateSpinner, stopHourSpinnerOneTime, stopMinuteSpinnerOneTime,
+            hourSpinnerWeekly, minuteSpinnerWeekly, stopHourSpinnerWeekly, stopMinuteSpinnerWeekly,
+        ).forEach { rounded(it) }
 
         initUI()
         populateExistingEntry()
