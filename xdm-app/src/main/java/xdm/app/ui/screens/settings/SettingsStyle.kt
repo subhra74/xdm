@@ -6,6 +6,7 @@ import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.createIcon
 import xdm.app.utils.px
 import xdm.app.utils.scaledSize
+import xdm.core.CoreConfig
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
@@ -27,7 +28,9 @@ import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
+import javax.swing.JSpinner
 import javax.swing.JTextArea
+import javax.swing.SpinnerNumberModel
 import javax.swing.JToggleButton
 import javax.swing.Scrollable
 import javax.swing.SwingConstants
@@ -283,6 +286,23 @@ internal class EllipsisLabel(text: String = "", muted: Boolean = false, scale: F
 internal fun <T : JComponent> rounded(comp: T): T = comp.apply {
     putClientProperty(FlatClientProperties.STYLE, "arc: 12")
 }
+
+/** A rounded 1..[max] count picker (segments, simultaneous downloads); set it through [count]. */
+internal fun countSpinner(max: Int): JSpinner =
+    rounded(JSpinner(SpinnerNumberModel(1, 1, max, 1))).apply {
+        (editor as JSpinner.DefaultEditor).textField.columns = max.toString().length
+        maximumSize = preferredSize
+    }
+
+/** Segment count picker (1..[CoreConfig.MAX_SEGMENTS]) for the download dialogs and settings. */
+internal fun segmentsSpinner(): JSpinner = countSpinner(CoreConfig.MAX_SEGMENTS)
+
+/** The picked count; a stored value outside the range is clamped (the model does not check a set value). */
+internal var JSpinner.count: Int
+    get() = value as Int
+    set(n) {
+        value = n.coerceIn(1, (model as SpinnerNumberModel).maximum as Int)
+    }
 
 /**
  * A plain text button. Settings buttons carry no icon: the label is the whole control, and

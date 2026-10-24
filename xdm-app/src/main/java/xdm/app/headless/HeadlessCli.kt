@@ -193,7 +193,7 @@ object HeadlessCli {
             )
             val job = Job(id, DownloadType.Http, name, ext, label)
             job.httpInfo = info
-            job.task = HttpDownloaderTask(info, job, newClient(100), workDir(id).path, config)
+            job.task = HttpDownloaderTask(info, job, newClient(CoreConfig.MAX_SEGMENTS), workDir(id).path, config)
             return job
         }
 
@@ -230,7 +230,7 @@ object HeadlessCli {
                     )
                     Job(id, DownloadType.Hls, o.fileName, null, label).also {
                         it.streamName = name
-                        it.task = HlsDownloaderTask(info, newClient(100), TransmuxingMuxer(workRoot.path), it, workDir(id).path, config)
+                        it.task = HlsDownloaderTask(info, newClient(CoreConfig.MAX_SEGMENTS), TransmuxingMuxer(workRoot.path), it, workDir(id).path, config)
                     }
                 }
 
@@ -245,7 +245,7 @@ object HeadlessCli {
                     )
                     Job(id, DownloadType.Dash, o.fileName, null, label).also {
                         it.streamName = name
-                        it.task = DashDownloaderTask(info, newClient(100), TransmuxingMuxer(workRoot.path), it, workDir(id).path, config)
+                        it.task = DashDownloaderTask(info, newClient(CoreConfig.MAX_SEGMENTS), TransmuxingMuxer(workRoot.path), it, workDir(id).path, config)
                     }
                 }
             }

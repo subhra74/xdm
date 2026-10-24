@@ -1,5 +1,6 @@
 package xdm.app.ui.screens.settings
 
+import xdm.app.AppConfig
 import xdm.app.AppContext
 import xdm.app.I8N
 import xdm.app.utils.px
@@ -25,8 +26,14 @@ class DownloadsPanel : SettingsPanel() {
         preferredSize = Dimension(110.px, preferredSize.height)
         maximumSize = preferredSize
     }
-    private val cmbMaxConn = numberCombo(listOf(1, 2, 4, 8, 16, 32))
-    private val cmbSplit = numberCombo(listOf(1, 2, 4, 8, 16, 32, 64))
+    private val spnMaxConn = countSpinner(AppConfig.MAX_PARALLEL_DOWNLOADS).apply {
+        preferredSize = Dimension(110.px, preferredSize.height)
+        maximumSize = preferredSize
+    }
+    private val spnSplit = segmentsSpinner().apply {
+        preferredSize = Dimension(110.px, preferredSize.height)
+        maximumSize = preferredSize
+    }
     private val cmbRetry = numberCombo((1..99).toList())
 
     init {
@@ -43,7 +50,7 @@ class DownloadsPanel : SettingsPanel() {
                     null,
                     withSuffix(spnSpeedLimiter, I8N.text("MSG_SPEED_LIMIT_UNIT"))
                 ),
-                settingsRow(I8N.text("MSG_MAX_DOWNLOAD"), I8N.text("MSG_MAX_DOWNLOAD_SUB"), cmbMaxConn),
+                settingsRow(I8N.text("MSG_MAX_DOWNLOAD"), I8N.text("MSG_MAX_DOWNLOAD_SUB"), spnMaxConn),
             )
         )
         add(settingsGap())
@@ -51,7 +58,7 @@ class DownloadsPanel : SettingsPanel() {
         add(
             settingsSection(
                 I8N.text("SETTINGS_SEC_CONNECTION"),
-                settingsRow(I8N.text("MSG_MAX_SPLIT"), I8N.text("MSG_MAX_SPLIT_SUB"), cmbSplit),
+                settingsRow(I8N.text("MSG_MAX_SPLIT"), I8N.text("MSG_MAX_SPLIT_SUB"), spnSplit),
                 settingsRow(I8N.text("MSG_MAX_RETRY"), I8N.text("MSG_MAX_RETRY_SUB"), cmbRetry),
             )
         )
@@ -84,8 +91,8 @@ class DownloadsPanel : SettingsPanel() {
         val config = AppContext.config
         tglSpeedLimiter.isSelected = config.speedLimiterEnabled
         spnSpeedLimiter.value = config.speedLimit
-        cmbMaxConn.selectedItem = config.maxParallelDownloads
-        cmbSplit.selectedItem = config.maxSegments
+        spnMaxConn.count = config.maxParallelDownloads
+        spnSplit.count = config.maxSegments
         cmbRetry.selectedItem = config.maxRetries
         updateEnabledState()
     }
@@ -94,8 +101,8 @@ class DownloadsPanel : SettingsPanel() {
         val config = AppContext.config
         config.speedLimiterEnabled = tglSpeedLimiter.isSelected
         config.speedLimit = spnSpeedLimiter.value as Int
-        config.maxParallelDownloads = cmbMaxConn.selectedItem as Int
-        config.maxSegments = cmbSplit.selectedItem as Int
+        config.maxParallelDownloads = spnMaxConn.count
+        config.maxSegments = spnSplit.count
         config.maxRetries = cmbRetry.selectedItem as Int
     }
 

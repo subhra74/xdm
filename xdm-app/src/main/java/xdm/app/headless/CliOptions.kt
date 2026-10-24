@@ -1,5 +1,7 @@
 package xdm.app.headless
 
+import xdm.core.CoreConfig
+
 /** What kind of download a URL is; [Auto] decides from the URL (`.m3u8` HLS, `.mpd` DASH, else HTTP). */
 enum class StreamType { Auto, Http, Hls, Dash }
 
@@ -177,7 +179,7 @@ object CliParser {
                 quality = values["--format"]?.let { parseIndex(it) } ?: parseQuality(values["--quality"]),
                 audio = values["--audio"]?.takeIf { it.isNotBlank() },
                 listFormats = listFormats,
-                segments = values["--segments"]?.let { positiveInt("--segments", it, max = 64) } ?: 0,
+                segments = values["--segments"]?.let { positiveInt("--segments", it, max = CoreConfig.MAX_SEGMENTS) } ?: 0,
                 speedLimit = values["--speed-limit"]?.let { positiveInt("--speed-limit", it) } ?: 0,
                 headers = headers,
                 cookie = cookie,

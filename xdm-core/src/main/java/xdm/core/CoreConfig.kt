@@ -24,5 +24,8 @@ interface CoreConfig {
 
     companion object {
         const val DEFAULT_READ_TIMEOUT_SECONDS = 60
+
+        /** Upper bound for [maxSegments] and a download's own segment count; the HTTP client pool is sized to it. */
+        const val MAX_SEGMENTS = 256
     }
 }

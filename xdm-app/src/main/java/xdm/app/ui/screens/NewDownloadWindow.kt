@@ -11,6 +11,8 @@ import xdm.app.ui.components.DestinationPicker
 import xdm.app.ui.components.MessageBox
 import xdm.app.ui.components.StorageStatusLabel
 import xdm.app.ui.components.TempFolderCards
+import xdm.app.ui.screens.settings.count
+import xdm.app.ui.screens.settings.segmentsSpinner
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.createIcon
@@ -47,7 +49,7 @@ class NewDownloadWindow : JDialog(null as Window?) {
     private lateinit var btnDownload: JButton
     private lateinit var btnLater: JButton
     private lateinit var lblIgnore: JLabel
-    private lateinit var cmbSegments: JComboBox<Int>
+    private lateinit var spnSegments: JSpinner
     private lateinit var picker: DestinationPicker
     private lateinit var lblFileInfo: JLabel
     private lateinit var originalFileName: String
@@ -200,11 +202,8 @@ class NewDownloadWindow : JDialog(null as Window?) {
         panel.add(JLabel(text("ND_SEGMENTS")))
         panel.add(Box.createRigidArea(scaledSize(10, 30)))
 
-        cmbSegments = JComboBox(arrayOf(1, 2, 4, 8, 16, 32, 64)).apply {
-            selectedItem = AppContext.config.maxSegments
-            maximumSize = preferredSize
-        }
-        panel.add(cmbSegments)
+        spnSegments = segmentsSpinner().apply { count = AppContext.config.maxSegments }
+        panel.add(spnSegments)
 
         panel.add(Box.createHorizontalGlue())
         val rigidArea1 = Box.createRigidArea(scaledSize(10, 20))
@@ -463,7 +462,7 @@ class NewDownloadWindow : JDialog(null as Window?) {
             origin = taskInfo?.origin,
             categoryId = picker.selectedCategory?.id,
             targetFolder = picker.targetFolder,
-            maxPiece = cmbSegments.selectedItem as Int,
+            maxPiece = spnSegments.count,
             authInfo = null,
             knownFileSize = taskInfo?.knownFileSize,
             // The browser's ETag belongs to the URL it captured, not to an address typed over it.
@@ -554,7 +553,7 @@ class NewDownloadWindow : JDialog(null as Window?) {
 
     fun showWindow(taskInfo: HttpDownloadTaskInfo?) {
         lblIgnore.isVisible = taskInfo != null
-        cmbSegments.selectedItem = AppContext.config.maxSegments
+        spnSegments.count = AppContext.config.maxSegments
         if (taskInfo == null) {
             val url = getClipBoardText()
             if (url != null && validateURL(url)) {

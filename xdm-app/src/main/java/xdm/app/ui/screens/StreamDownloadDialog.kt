@@ -5,6 +5,8 @@ import xdm.app.AppContext
 import xdm.app.I8N.text
 import xdm.app.ui.components.CappedComboBox
 import xdm.app.ui.components.DestinationPicker
+import xdm.app.ui.screens.settings.count
+import xdm.app.ui.screens.settings.segmentsSpinner
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.createIcon
@@ -50,7 +52,6 @@ import javax.swing.DefaultComboBoxModel
 import javax.swing.DefaultListCellRenderer
 import javax.swing.DefaultListModel
 import javax.swing.JButton
-import javax.swing.JComboBox
 import javax.swing.JComponent
 import javax.swing.JFrame
 import javax.swing.SwingConstants
@@ -112,7 +113,7 @@ class StreamDownloadDialog(private val near: Window?) : JFrame() {
     private val txtFileName = JTextField().apply { columns = 10 }
     /** A stream URL entered here counts as a browser capture (it is a video): the category rules apply. */
     private val picker = DestinationPicker(this, capture = true)
-    private val cmbSegments = JComboBox(arrayOf(1, 2, 4, 8, 16, 32, 64))
+    private val spnSegments = segmentsSpinner()
     private val btnDownload = JButton(text("ND_DOWNLOAD"))
 
     /** The manifest the current choices came from; null until a load for the current inputs succeeds. */
@@ -147,7 +148,7 @@ class StreamDownloadDialog(private val near: Window?) : JFrame() {
 
         wireEvents()
         picker.reset(null, null, null)
-        cmbSegments.selectedItem = AppContext.config.maxSegments
+        spnSegments.count = AppContext.config.maxSegments
         rootPane.defaultButton = btnLoad
         reset()
 
@@ -248,7 +249,6 @@ class StreamDownloadDialog(private val near: Window?) : JFrame() {
         })
         picker.addTo(p, firstRow = 1, leftInset = 0)
 
-        cmbSegments.maximumSize = cmbSegments.preferredSize
         val btnCancel = JButton(text("ND_CANCEL")).apply { addActionListener { dispose() } }
         btnDownload.addActionListener { download() }
         sameWidth(btnDownload, btnCancel)
@@ -256,7 +256,7 @@ class StreamDownloadDialog(private val near: Window?) : JFrame() {
             layout = BoxLayout(this, BoxLayout.X_AXIS)
             border = ScaledEmptyBorder(6, 0, 0, 0)
             add(JLabel(text("ND_SEGMENTS"))); add(Box.createRigidArea(scaledSize(10, 0)))
-            add(cmbSegments); add(Box.createHorizontalGlue())
+            add(spnSegments); add(Box.createHorizontalGlue())
             add(btnCancel); add(Box.createRigidArea(scaledSize(10, 0)))
             add(btnDownload)
         }
@@ -436,7 +436,7 @@ class StreamDownloadDialog(private val near: Window?) : JFrame() {
         val origin = headers.entries.firstOrNull { it.key.equals("Referer", ignoreCase = true) }?.value?.firstOrNull()
         val folder = picker.targetFolder
         val categoryId = picker.selectedCategory?.id
-        val segments = cmbSegments.selectedItem as Int
+        val segments = spnSegments.count
         val config = AppContext.config
         val downloader = AppContext.downloader
         when (pick) {

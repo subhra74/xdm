@@ -5,6 +5,7 @@ import xdm.app.utils.KeepAwake
 // import xdm.app.utils.WorkingSetTrim  // working-set trimming disabled
 import xdm.app.utils.getFileFolder
 import xdm.app.utils.isUsableBatchFolder
+import xdm.core.CoreConfig
 import xdm.core.downloaders.*
 import xdm.core.downloaders.web.batch.BatchDownloaderTask
 import xdm.core.downloaders.web.batch.deleteBatchFiles
@@ -1164,7 +1165,7 @@ class DownloadManager(
 
     private fun newHttpClient() =
         HttpClientImpl(
-            100, AppContext.config.toProxy(), AppContext.config.ignoreCertErrors, AppContext.config.readTimeoutSeconds,
+            CoreConfig.MAX_SEGMENTS, AppContext.config.toProxy(), AppContext.config.ignoreCertErrors, AppContext.config.readTimeoutSeconds,
             AppContext.config.proxyUser, AppContext.config.proxyPass,
             auth = AppContext.httpAuth, serverAuth = true,
         )

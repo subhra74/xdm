@@ -204,6 +204,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
         const val MIN_READ_TIMEOUT_SECONDS = 5
         const val MAX_READ_TIMEOUT_SECONDS = 600
         const val MAX_FOLDER_HISTORY = 10
+        const val MAX_PARALLEL_DOWNLOADS = 256
     }
 
     private val changeListeners = java.util.concurrent.CopyOnWriteArrayList<() -> Unit>()

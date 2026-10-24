@@ -8,6 +8,8 @@ import xdm.app.ui.components.DestinationPicker
 import xdm.app.ui.components.MessageBox
 import xdm.app.ui.components.StorageStatusLabel
 import xdm.app.ui.components.TempFolderCards
+import xdm.app.ui.screens.settings.count
+import xdm.app.ui.screens.settings.segmentsSpinner
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.createIcon
@@ -45,7 +47,7 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
     private lateinit var btnDownload: JButton
     private lateinit var picker: DestinationPicker
     private lateinit var lblFileInfo: JLabel
-    private lateinit var cmbSegments: JComboBox<Int>
+    private lateinit var spnSegments: JSpinner
     private lateinit var lblSubtitles: JLabel
     private lateinit var cmbSubtitles: JComboBox<SubtitleChoice>
     private lateinit var storageStatus: StorageStatusLabel
@@ -196,11 +198,8 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
         panel.add(JLabel(text("ND_SEGMENTS")))
         panel.add(Box.createRigidArea(scaledSize(10, 30)))
 
-        cmbSegments = JComboBox(arrayOf(1, 2, 4, 8, 16, 32, 64)).apply {
-            selectedItem = AppContext.config.maxSegments
-            maximumSize = preferredSize
-        }
-        panel.add(cmbSegments)
+        spnSegments = segmentsSpinner().apply { count = AppContext.config.maxSegments }
+        panel.add(spnSegments)
 
         panel.add(Box.createHorizontalGlue())
         val rigidArea1 = Box.createRigidArea(scaledSize(10, 20))
@@ -251,7 +250,7 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
             //TODO: Check FFmpeg required
 
             AppContext.downloader.addVideoDownload(
-                videoId, name, picker.selectedCategory?.id, picker.targetFolder, cmbSegments.selectedItem as Int,
+                videoId, name, picker.selectedCategory?.id, picker.targetFolder, spnSegments.count,
                 (cmbSubtitles.selectedItem as? SubtitleChoice)?.track,
             )
         } finally {
@@ -308,7 +307,7 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
 
     fun showWindow(vid: Long, fileName: String, fileSize: Long?, contentType: String?) {
         this.videoId = vid
-        cmbSegments.selectedItem = AppContext.config.maxSegments
+        spnSegments.count = AppContext.config.maxSegments
         txtFileName.text = FileUtils.sanitizeFileName(fileName)
         lblFileInfo.text = fileSize?.let { FormatHelper.formatSize(it.toDouble()) } ?: "---"
         this.fileSize = fileSize
