@@ -7,7 +7,6 @@ import xdm.app.headless.CliParser
 import xdm.app.headless.HeadlessCli
 import xdm.app.ui.components.WaylandComboBoxUI
 import xdm.app.utils.AppDirs
-import xdm.app.utils.JitOverride
 import xdm.app.utils.WaylandToolkit
 import xdm.app.utils.linux.DesktopFontSettings
 import xdm.app.utils.windowIconImages
@@ -48,7 +47,6 @@ object AppMain {
         Logger.init(File(configDir))
         // HotSpot appends "sharing" to java.vm.info while a CDS archive is mapped (APPCDS.md).
         Logger.info("CDS: archive " + if (System.getProperty("java.vm.info").orEmpty().contains("sharing")) "in use" else "not in use")
-        JitOverride.sync()
 
         Logger.info("Use OKHttp..")
         Logger.info("loading...")

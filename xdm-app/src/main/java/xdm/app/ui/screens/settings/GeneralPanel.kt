@@ -97,9 +97,9 @@ class GeneralPanel : SettingsPanel() {
         add(
             settingsSection(
                 I8N.text("SETTINGS_SEC_APPEARANCE"),
-                settingsFullRow(I8N.text("MSG_THEME"), null, optTheme),
+                settingsFullRow(I8N.text("MSG_THEME"), I8N.text("MSG_RESTART_NEEDED"), optTheme),
                 settingsFullRow(I8N.text("LIST_MODE"), I8N.text("LIST_MODE_SUB"), optListMode),
-                settingsRow(I8N.text("MSG_LANG1"), I8N.text("MSG_LANG_SUB"), cmbLang),
+                settingsRow(I8N.text("MSG_LANG1"), I8N.text("MSG_LANG_SUB") + "\n" + I8N.text("MSG_RESTART_NEEDED"), cmbLang),
                 settingsRow(
                     I8N.text("LANG_FOLDER"), I8N.text("LANG_FOLDER_SUB"),
                     settingsButton(I8N.text("LANG_FOLDER_OPEN"), ::openTranslationFolder)

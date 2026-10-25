@@ -11,7 +11,6 @@ import xdm.app.ui.screens.settings.GeneralPanel
 import xdm.app.ui.screens.settings.NetworkConfigPanel
 import xdm.app.ui.components.AppTheme
 import xdm.app.ui.screens.settings.settingsAccentColor
-import xdm.app.ui.screens.settings.settingsHint
 import xdm.app.ui.screens.settings.settingsMutedColor
 import xdm.app.ui.screens.settings.settingsStroke
 import xdm.app.ui.screens.settings.settingsSurface
@@ -110,7 +109,7 @@ class SettingsWindow : JFrame() {
 
     init {
         // Matches the main window's initial size, so Settings opens at the size the app did.
-        size = scaledSize(800, 500)
+        size = scaledSize(780, 500)
         minimumSize = scaledSize(720, 460)
         title = text("TITLE_SETTINGS")
         iconImages = windowIconImages
@@ -131,10 +130,6 @@ class SettingsWindow : JFrame() {
 
         val bottom = Box.createHorizontalBox().apply {
             border = ScaledEmptyBorder(14, 24, 16, 24)
-            // The language note belongs to the dialog, not to one row: it is the restart that
-            // applies the change, and the restart applies it whichever page you saved from.
-            add(settingsHint(text("MSG_LANG2")))
-            add(Box.createRigidArea(scaledSize(16, 0)))
             add(Box.createHorizontalGlue())
             add(btnCancel)
             add(Box.createRigidArea(scaledSize(10, 0)))

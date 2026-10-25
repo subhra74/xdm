@@ -2,12 +2,9 @@ package xdm.app.ui.screens.settings
 
 import xdm.app.AppContext
 import xdm.app.I8N
-import xdm.app.OS
 import xdm.app.utils.AutoStart
-import xdm.app.utils.JitOverride
 import xdm.app.utils.WaylandToolkit
 import xdm.app.utils.chooseFile
-import xdm.app.utils.detectOS
 import xdm.app.utils.scaledInsets
 import xdm.app.utils.scaledSize
 import java.awt.Dimension
@@ -25,10 +22,6 @@ class AdvancedConfigPanel : SettingsPanel() {
     private val tglHalt = SettingsToggle()
     private val tglNoSleep = SettingsToggle()
     private val tglRunOnStartup = SettingsToggle()
-    private val tglFullJit = SettingsToggle()
-    // Linux only: Windows builds have no per-user .cfg (the MSI may put the heap line in the installed one,
-    // PACKAGING.md §5.7), and the toggle is hidden on macOS too.
-    private val showFullJit = detectOS() == OS.Linux
     private val tglWayland = SettingsToggle()
     private val tglSkipDupManifests = SettingsToggle()
 
@@ -61,10 +54,7 @@ class AdvancedConfigPanel : SettingsPanel() {
                 settingsRow(I8N.text("MSG_AUTOSTART"), I8N.text("MSG_AUTOSTART_SUB"), tglRunOnStartup),
                 settingsRow(I8N.text("MSG_AWAKE"), I8N.text("MSG_AWAKE_SUB"), tglNoSleep),
                 settingsRow(I8N.text("MSG_HALT"), I8N.text("MSG_HALT_SUB"), tglHalt),
-                *listOfNotNull(
-                    settingsRow(I8N.text("MSG_FULL_JIT"), I8N.text("MSG_FULL_JIT_SUB"), tglFullJit).takeIf { showFullJit },
-                    settingsRow(I8N.text("MSG_WAYLAND"), I8N.text("MSG_WAYLAND_SUB"), tglWayland),
-                ).toTypedArray(),
+                settingsRow(I8N.text("MSG_WAYLAND"), I8N.text("MSG_WAYLAND_SUB"), tglWayland),
             )
         )
         add(settingsGap())
@@ -141,9 +131,6 @@ class AdvancedConfigPanel : SettingsPanel() {
         tglNoSleep.isSelected = config.keepAwake
         // The OS entry, not the config, is the truth: it can be removed behind XDM's back.
         tglRunOnStartup.isSelected = AutoStart.isEnabled()
-        // Like autostart, the file on disk is the setting. Dev runs and tar.gz builds show it off and locked.
-        tglFullJit.isSelected = JitOverride.isEnabled()
-        tglFullJit.isEnabled = JitOverride.isConfigurable
         // Only a Linux Wayland session on the JetBrains Runtime has a choice; elsewhere it shows off and locked.
         tglWayland.isSelected = WaylandToolkit.isSupported && config.nativeWayland
         tglWayland.isEnabled = WaylandToolkit.isSupported
@@ -166,9 +153,6 @@ class AdvancedConfigPanel : SettingsPanel() {
         }
         // Record what actually took effect - enabling can fail.
         config.runOnStartup = AutoStart.isEnabled()
-        if (showFullJit && JitOverride.isConfigurable && JitOverride.isEnabled() != tglFullJit.isSelected) {
-            JitOverride.setEnabled(tglFullJit.isSelected)
-        }
         if (WaylandToolkit.isSupported) {
             config.nativeWayland = tglWayland.isSelected
         }
