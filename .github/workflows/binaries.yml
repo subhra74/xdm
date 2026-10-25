@@ -10,8 +10,8 @@ name: Binaries
 
 # A tag push (v*) publishes a GitHub release with every installer; a tag with a suffix (v9.0.1-beta.1) is
 # marked pre-release. A manual run only uploads the run's artifacts unless "release" is ticked; it then tags the
-# commit (the "tag" input, or v<app-version.json version>-pre.<run number>) and publishes a pre-release unless
-# "prerelease" is cleared. The macOS jobs may fail without blocking the release: their dmgs can be added to it
+# commit (the "tag" input, or v<app-version.json version>, with -pre.<run number> added for a pre-release) and
+# publishes a pre-release unless "prerelease" is cleared. The macOS jobs may fail without blocking the release: their dmgs can be added to it
 # by hand.
 
 on:
@@ -26,7 +26,7 @@ on:
         type: boolean
         default: true
       tag:
-        description: Release tag (empty = v<app version>-pre.<run number>)
+        description: Release tag (empty = v<app version>, plus -pre.<run number> for a pre-release)
         type: string
         default: ''
       signing:
@@ -292,8 +292,12 @@ jobs:
             tag="$GITHUB_REF_NAME"
             [[ "$tag" == *-* ]] && pre=true || pre=false
           else
-            tag="${INPUT_TAG:-v$version-pre.$GITHUB_RUN_NUMBER}"
             pre="$INPUT_PRERELEASE"
+            if [[ "$pre" == true ]]; then
+              tag="${INPUT_TAG:-v$version-pre.$GITHUB_RUN_NUMBER}"
+            else
+              tag="${INPUT_TAG:-v$version}"
+            fi
           fi
           shopt -s nullglob
           files=(dist/*.dmg dist/*.msi dist/*.deb dist/*.rpm dist/*.pkg.tar.zst dist/*.tar.gz)

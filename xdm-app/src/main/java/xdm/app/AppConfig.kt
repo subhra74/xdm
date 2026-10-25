@@ -305,7 +305,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var videoExtensions: List<String> = defVideoExtensions
     override var defBlockedHosts: List<String> = listOf("update.microsoft.com", "windowsupdate.com", "thwawte.com")
     override var blockedHosts: List<String> = defBlockedHosts
-    override var getServerTime: Boolean = true
+    override var getServerTime: Boolean = false
     override var maxSegments: Int = 8
     override var maxRetries: Int = 5
     override var useProxy: Boolean = false
