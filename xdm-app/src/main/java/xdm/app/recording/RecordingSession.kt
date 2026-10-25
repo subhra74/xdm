@@ -12,6 +12,7 @@ import xdm.app.ui.screens.StreamDownloadDialog
 import xdm.app.ui.components.AppMenuHandler
 import xdm.app.ui.screens.SettingsWindow
 import xdm.app.ui.screens.AppWindow
+import xdm.app.utils.SoundPlayer
 import xdm.app.utils.getFileFolder
 import xdm.core.downloaders.DownloadType
 import xdm.core.downloaders.subtitleFileName
@@ -83,6 +84,8 @@ object RecordingSession {
             session = Properties().apply { load(StringReader(get(base, "/session.properties"))) }
             Thread({ answerPrompts() }, "record-prompts").apply { isDaemon = true }.start()
             Thread({ longPoll() }, "record-poll").apply { isDaemon = true }.start()
+            // The throwaway profile: every finished download below also plays the completion sound.
+            AppContext.config.playSound = true
 
             step("http") { download(base + prop("http.file")) }
             step("https") { download(prop("https.url")) }
@@ -101,6 +104,7 @@ object RecordingSession {
             step("settings") { openSettings() }
             step("menu") { openSortMenu() }
             step("properties") { openProperties() }
+            step("sound") { playSounds() }
             step("stream-dialog") {
                 // "?via=dialog" keeps these from repeating the downloads the media steps made.
                 listOf(
@@ -239,6 +243,23 @@ object RecordingSession {
         SwingUtilities.invokeLater { button.doClick() }
         clickButton(awaitWindow(SettingsWindow::class.java), text("ND_CANCEL"))
         return "(opened and closed)"
+    }
+
+    /**
+     * The failed sound (no download fails on purpose), and a user-chosen WAV: a copy of the bundled
+     * one in the throwaway profile, checked the way Settings checks a picked file, then played.
+     */
+    private fun playSounds(): String {
+        SoundPlayer.play(SoundPlayer.Sound.FAILED)
+        Thread.sleep(1500)
+        val custom = File(System.getProperty("user.home"), "record-sound.wav")
+        SoundPlayer::class.java.getResourceAsStream(SoundPlayer.Sound.COMPLETE.resource)!!.use { input ->
+            custom.outputStream().use { input.copyTo(it) }
+        }
+        check(SoundPlayer.isPlayableWav(custom)) { "${custom.name} is not a playable WAV" }
+        SoundPlayer.play(SoundPlayer.Sound.COMPLETE, custom.absolutePath)
+        Thread.sleep(1500)
+        return "(failed sound, custom WAV)"
     }
 
     /** The toolbar's sort menu: a popup with radio items, closed again without a choice. */

@@ -2,6 +2,7 @@ package xdm.app
 
 import xdm.app.utils.DownloadSource
 import xdm.app.utils.KeepAwake
+import xdm.app.utils.SoundPlayer
 // import xdm.app.utils.WorkingSetTrim  // working-set trimming disabled
 import xdm.app.utils.getFileFolder
 import xdm.app.utils.isUsableBatchFolder
@@ -274,6 +275,7 @@ class DownloadManager(
 
                     DownloadCompleteNotification.NONE -> {}
                 }
+                SoundPlayer.playIfEnabled(SoundPlayer.Sound.COMPLETE)
                 runPostDownloadActions(event)
                 if (toDelete.remove(event.id)) {
                     // Finished before the stop took effect: keep the file, drop the record as asked.
@@ -300,6 +302,7 @@ class DownloadManager(
                     deleteAfterStopped(id, it)
                 } else {
                     AppContext.app.showProgressError(id, error)
+                    SoundPlayer.playIfEnabled(SoundPlayer.Sound.FAILED)
                 }
                 pumpQueue()
             }

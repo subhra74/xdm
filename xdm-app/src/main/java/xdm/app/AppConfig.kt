@@ -120,6 +120,12 @@ interface IAppConfig : CoreConfig {
      */
     var nativeWayland: Boolean
     var listSelectionMode: ListSelectionMode
+    /** Play a sound when a download finishes or fails; ignored while [downloadCompleteNotification] is NONE. */
+    var playSound: Boolean
+    /** A user-chosen WAV played when a download finishes; blank means the built-in one. */
+    var completeSoundFile: String
+    /** A user-chosen WAV played when a download fails; blank means the built-in one. */
+    var failedSoundFile: String
     fun applyAuthConfig()
 
     /**
@@ -183,6 +189,9 @@ private const val F_BATCH_AS_ONE_FROM_BROWSER = 45
 private const val F_BATCH_AS_ONE_FROM_CLIPBOARD = 46
 private const val F_NATIVE_WAYLAND = 47
 private const val F_LIST_SELECTION_MODE = 48
+private const val F_PLAY_SOUND = 49
+private const val F_SOUND_COMPLETE_FILE = 50
+private const val F_SOUND_FAILED_FILE = 51
 
 // Inside F_CATEGORIES: one F_CATEGORY record per category, in order.
 private const val F_CATEGORY = 1
@@ -237,6 +246,9 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var theme: String = "dark"
     override var maxParallelDownloads: Int = 3
     override var downloadCompleteNotification: DownloadCompleteNotification = DownloadCompleteNotification.DIALOG
+    override var playSound: Boolean = false
+    override var completeSoundFile: String = ""
+    override var failedSoundFile: String = ""
     override var showDownloadCompleteWindow: Boolean
         // No backing field: just a projection of the three-way mode.
         get() = downloadCompleteNotification == DownloadCompleteNotification.DIALOG
@@ -398,6 +410,9 @@ class AppConfig(private val configDir: String) : IAppConfig {
         w.bool(F_BATCH_AS_ONE_FROM_CLIPBOARD, batchAsOneFromClipboard)
         w.bool(F_NATIVE_WAYLAND, nativeWayland)
         w.int(F_LIST_SELECTION_MODE, listSelectionMode.id)
+        w.bool(F_PLAY_SOUND, playSound)
+        w.string(F_SOUND_COMPLETE_FILE, completeSoundFile)
+        w.string(F_SOUND_FAILED_FILE, failedSoundFile)
         w.raw(unknownFields)
     }
 
@@ -461,6 +476,9 @@ class AppConfig(private val configDir: String) : IAppConfig {
                 F_NATIVE_WAYLAND -> nativeWayland = r.bool()
                 F_LIST_SELECTION_MODE -> ListSelectionMode.entries.toTypedArray().byStableId(r.int())
                     ?.let { listSelectionMode = it }
+                F_PLAY_SOUND -> playSound = r.bool()
+                F_SOUND_COMPLETE_FILE -> completeSoundFile = r.string()
+                F_SOUND_FAILED_FILE -> failedSoundFile = r.string()
                 else -> unknown.raw(r.rawField())
             }
         }
