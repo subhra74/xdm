@@ -1,9 +1,12 @@
 package xdm
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Test
 import xdm.app.utils.linux.DesktopFontSettings
+import java.awt.Font
 import java.awt.RenderingHints
 
 /** The desktop portal's font settings, as the native Wayland toolkit gets them (PACKAGING.md 7.6). */
@@ -14,6 +17,28 @@ class DesktopFontSettingsTest {
         assertEquals("Cantarell" to 10.5, DesktopFontSettings.parseFontName(" Cantarell 10.5 "), "fractional size")
         assertNull(DesktopFontSettings.parseFontName("Cantarell"), "no size")
         assertNull(DesktopFontSettings.parseFontName("11"), "no family")
+    }
+
+    @Test
+    fun toFont_keepsGlyphFallbackForALatinOnlyFamily() {
+        // The reported bug (a Chinese file name in Noto Sans): the portal font must be a composite,
+        // or every CJK character it lacks is drawn as a box. Try a few known families first;
+        // scanning every installed font is slow on machines with many Noto families.
+        val cjk = "\u4E2D\u6587\u4E0B\u8F7D"
+        assumeTrue(
+            Font(Font.SANS_SERIF, Font.PLAIN, 13).canDisplayUpTo(cjk) == -1,
+            "no CJK fallback font installed",
+        )
+        val family = listOf("DejaVu Sans", "Noto Sans", "Liberation Sans").firstOrNull { name ->
+            val raw = Font(name, Font.PLAIN, 13)
+            raw.family == name && raw.canDisplayUpTo(cjk) >= 0 && raw.canDisplayUpTo("Download") == -1
+        }
+        assumeTrue(family != null, "no known Latin-only font family installed")
+
+        val font = DesktopFontSettings.toFont("$family 11", 1.0)
+        assertNotNull(font, "installed family")
+        assertEquals(family, font!!.family, "family")
+        assertEquals(-1, font.canDisplayUpTo(cjk), "composite font should fall back to the CJK font")
     }
 
     @Test
