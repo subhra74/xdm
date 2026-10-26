@@ -1,6 +1,6 @@
 package xdm.app.utils.linux
 
-import xdm.app.utils.FontFallback
+import com.formdev.flatlaf.util.FontUtils
 import xdm.app.utils.linux.dbus.Variant
 import xdm.core.util.Logger
 import java.awt.Font
@@ -52,14 +52,12 @@ internal object DesktopFontSettings {
     /**
      * "Ubuntu Sans 11" -> Ubuntu Sans at 11 pt, in pixels at 96 dpi times the text scaling, as GTK does.
      *
-     * The font is built as a composite ([FontFallback.composite]): the raw font has no glyph fallback,
-     * so a desktop font without CJK glyphs (Noto Sans on most Linux desktops) turned Chinese text and
-     * file names into boxes. FlatLaf builds its own Linux fonts as composites; this portal font is
-     * installed directly as Swing's default font, so it needs the same treatment.
+     * The portal font is made composite, so glyphs the family lacks (CJK on Noto Sans) fall back to
+     * other installed fonts (#1378).
      */
     fun toFont(fontName: String, scaling: Double): Font? {
         val (family, points) = parseFontName(fontName) ?: return null
-        val font = FontFallback.composite(Font(family, Font.PLAIN, (points * 96.0 / 72.0 * scaling).roundToInt()))
+        val font = FontUtils.getCompositeFont(family, Font.PLAIN, (points * 96.0 / 72.0 * scaling).roundToInt())
         // A family Java doesn't know falls back to the logical Dialog font: better left to FlatLaf.
         return font.takeIf { it.family != Font.DIALOG }
     }
