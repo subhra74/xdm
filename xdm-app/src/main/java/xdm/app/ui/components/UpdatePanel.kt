@@ -1,9 +1,7 @@
 package xdm.app.ui.components
 
 import xdm.app.utils.RemixIcon
-import xdm.core.util.Logger
-import java.awt.Desktop
-import java.net.URI
+import xdm.app.utils.openInDefaultBrowser
 
 /**
  * A slim banner shown at the bottom of the main window when a newer release is
@@ -40,12 +38,6 @@ class UpdatePanel : BannerPanel(RemixIcon.INSTALL_FILL, "BTN_UPDATE_NOW", "BTN_U
 
     private fun openDownloadPage() {
         if (downloadUrl.isBlank()) return
-        try {
-            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-                Desktop.getDesktop().browse(URI(downloadUrl))
-            }
-        } catch (e: Exception) {
-            Logger.error("UPDATE", "Failed to open download page: $downloadUrl", e)
-        }
+        openInDefaultBrowser(downloadUrl)
     }
 }

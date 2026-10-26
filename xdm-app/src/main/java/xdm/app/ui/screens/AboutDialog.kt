@@ -7,6 +7,7 @@ import xdm.app.update.UpdateChecker
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.SingleWindows
+import xdm.app.utils.WEBSITE_URL
 import xdm.app.utils.createIcon
 import xdm.app.utils.logoIcon
 import xdm.app.utils.openInDefaultBrowser
@@ -68,10 +69,7 @@ class AboutDialog private constructor(owner: Window?) : JDialog(owner) {
             cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
             addMouseListener(object : java.awt.event.MouseAdapter() {
                 override fun mouseClicked(e: java.awt.event.MouseEvent) {
-                    try {
-                        Desktop.getDesktop().browse(java.net.URI("https://xtremedownloadmanager.com"))
-                    } catch (_: Exception) {
-                    }
+                    openInDefaultBrowser(WEBSITE_URL)
                 }
             })
         }

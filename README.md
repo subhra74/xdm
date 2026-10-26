@@ -22,6 +22,7 @@
   <a href="#-browser-integration">Browser integration</a> ·
   <a href="#-building-from-source">Build</a> ·
   <a href="#-translations">Translations</a> ·
+  <a href="https://www.reddit.com/r/xtremedownloadmanager/">Reddit</a> ·
   <a href="CODE_SIGNING_POLICY.md">Code signing policy</a>
 </p>
 
@@ -159,6 +160,12 @@ cp .githooks/prepare-commit-msg .git/hooks/ && chmod +x .git/hooks/prepare-commi
 :: Windows (Command Prompt)
 copy .githooks\prepare-commit-msg .git\hooks\
 ```
+
+## 💬 Community & support
+
+Questions, tips or need help? Join the XDM community on Reddit:
+[r/xtremedownloadmanager](https://www.reddit.com/r/xtremedownloadmanager/). Bug reports and feature requests are welcome
+on [GitHub Issues](https://github.com/subhra74/xdm/issues).
 
 ## 🌍 Translations
 

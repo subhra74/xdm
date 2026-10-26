@@ -14,7 +14,7 @@ import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.createIcon
 import xdm.app.utils.gbAdd
 import xdm.app.utils.openFolderExternal
-import xdm.app.utils.openWebPage
+import xdm.app.utils.openInDefaultBrowser
 import xdm.app.utils.px
 import xdm.app.utils.scaledInsets
 import xdm.app.utils.scaledSize
@@ -322,7 +322,7 @@ class PropertiesDialog(private val owner: Window?, ent: DbRecord) : JDialog(owne
             }
 
             webPage -> linkedValue(value, text("PROP_OPEN_PAGE"), RemixIcon.GLOBAL_LINE) {
-                openWebPage(value)
+                openInDefaultBrowser(value)
             }
 
             copyable -> JPanel(BorderLayout(6.px, 0)).apply {

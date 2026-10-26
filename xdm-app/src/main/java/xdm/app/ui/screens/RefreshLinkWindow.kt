@@ -7,7 +7,7 @@ import xdm.app.ui.screens.settings.settingsIconButton
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.gbAdd
-import xdm.app.utils.openWebPage
+import xdm.app.utils.openInDefaultBrowser
 import xdm.app.utils.px
 import xdm.app.utils.sameWidth
 import xdm.app.utils.scaledInsets
@@ -192,7 +192,7 @@ class RefreshLinkWindow(
         // Nothing is on its way until the page has actually been opened, so the status line
         // only appears once the user has sent the browser there.
         btnOpen.addActionListener {
-            refererPage?.let { openWebPage(it) }
+            refererPage?.let { openInDefaultBrowser(it) }
             lblWaiting.isVisible = true
         }
         panel.add(btnOpen)

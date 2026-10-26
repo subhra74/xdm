@@ -86,10 +86,7 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
             { listView.searchTextChanged(it) },
             this,
             { key, asc -> listView.sort(key, asc) },
-            {
-                filterPanel.reloadCategories()
-                applyListSelectionMode()
-            }
+            { applyListSelectionMode() }
         )
         toolbar.setMultiSelectView(false)
         filterPanel.countsFrom { listView.records }

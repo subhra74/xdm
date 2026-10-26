@@ -47,6 +47,9 @@ class FilterListPanel(
     /** Downloads report progress many times a second; recount at most a few times a second. */
     private val countTimer = Timer(250) { recount() }.apply { isRepeats = false }
 
+    /** The config's categories as the rows were last built from; the config listener compares against it. */
+    private var shownCategories = emptyList<DownloadCategory>()
+
     init {
         val stateFilterModel = DefaultListModel<FilterItem>()
         stateFilterList = sidebarList(stateFilterModel)
@@ -125,6 +128,16 @@ class FilterListPanel(
                 categoryChanged(category.category)
             }
         }
+
+        // Categories change from Settings and from a download dialog's + button; follow the config
+        // rather than either caller. The listener may fire on any thread, and fires for every config
+        // change, so only rebuild when the category list itself differs. The main window lives as
+        // long as the app, so the listener is never removed.
+        AppContext.config.addChangeListener {
+            SwingUtilities.invokeLater {
+                if (AppContext.config.categories != shownCategories) reloadCategories()
+            }
+        }
     }
 
     /**
@@ -164,6 +177,7 @@ class FilterListPanel(
     }
 
     private fun fillCategories() {
+        shownCategories = AppContext.config.categories
         catFilterModel.clear()
         val allDot = CategoryDotIcon(AppTheme.tileHue(null))
         catFilterModel.addElement(FilterItem.Category(null, text("CAT_ALL_TYPES"), allDot, allDot))
@@ -174,13 +188,15 @@ class FilterListPanel(
     }
 
     /**
-     * Rebuilds the category rows from the config after the settings window edits them.
+     * Rebuilds the category rows from the config after its category list changes.
      * Keeps the current selection when that category still exists, otherwise falls back
      * to "All types" so the list never shows a filter the user can no longer see.
      */
-    fun reloadCategories() {
+    private fun reloadCategories() {
         val selectedId = (catFilterList.selectedValue as? FilterItem.Category)?.category?.id
         fillCategories()
+        // The hovered row may have moved or gone; the next mouse move sets it again.
+        catFilterList.putClientProperty(FilterListRenderer.HOVER_INDEX, -1)
         val index = (0 until catFilterModel.size())
             .firstOrNull { (catFilterModel[it] as FilterItem.Category).category?.id == selectedId }
             ?: 0

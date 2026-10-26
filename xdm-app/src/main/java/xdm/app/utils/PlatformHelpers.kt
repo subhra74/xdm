@@ -23,7 +23,6 @@ import java.awt.image.BaseMultiResolutionImage
 import java.awt.image.BufferedImage
 import java.io.File
 import java.io.FileNotFoundException
-import java.net.URI
 import javax.swing.JFileChooser
 import javax.swing.SwingUtilities
 import javax.swing.filechooser.FileNameExtensionFilter
@@ -321,18 +320,6 @@ fun openFolderExternal(file: String?, folder: String) {
             else -> runCatching { Desktop.getDesktop().open(File(folder)) }.onFailure { Logger.error(it) }
         }
     }
-}
-
-fun openWebPage(url: String): Boolean {
-    try {
-        if (Desktop.isDesktopSupported()) {
-            Desktop.getDesktop().browse(URI(url))
-            return true
-        }
-    } catch (e: Exception) {
-        Logger.error(e)
-    }
-    return false
 }
 
 fun initShutdown(){

@@ -40,7 +40,7 @@ class AppToolBar(
     searchCallback: (String) -> Unit,
     buttonCallback: ActionListener,
     private val sortCallback: (SortKey, Boolean) -> Unit,
-    /** Invoked after the settings window saves, so the sidebar can reload its categories. */
+    /** Invoked after the settings window saves, so the main window can apply settings it reads once. */
     private val settingsSavedCallback: () -> Unit = {}
 ) {
     private val btnNew: JButton
