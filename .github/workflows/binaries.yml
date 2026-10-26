@@ -280,6 +280,17 @@ jobs:
           pattern: '*.*'
           merge-multiple: true
 
+      # XDM 8 from the Microsoft Store looks for xdmsetup-<v>.msi in the release for its update notice, so the x64 MSI
+      # also goes up under that name (after signing: a byte copy, the signature stays valid). XDM 9's MSI removes
+      # the Store version (xdm.wxs, XdmOldStoreDlg).
+      - name: Copy x64 MSI for XDM 8 Store update notice
+        run: |
+          shopt -s nullglob
+          msi=(dist/xdm-*-x64.msi)
+          [[ ${#msi[@]} -eq 1 ]] || { echo "expected one x64 MSI, found ${#msi[@]}"; exit 1; }
+          v="${msi[0]##*/xdm-}"; v="${v%-x64.msi}"
+          cp "${msi[0]}" "dist/xdmsetup-$v.msi"
+
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -303,8 +314,8 @@ jobs:
           files=(dist/*.dmg dist/*.msi dist/*.deb dist/*.rpm dist/*.pkg.tar.zst dist/*.tar.gz)
           ls -l "${files[@]}"
           # Download table: one row per installer actually built (a failed macOS job just has no rows).
-          # Names: xdm-<v>-<x64|arm64>.msi, XDM-<v>-<x64|arm64>.dmg, nfpm's amd64/x86_64 or arm64/aarch64
-          # for deb/rpm/Arch, xdm-app-<v>-linux-<x64|arm64>.tar.gz.
+          # Names: xdm-<v>-<x64|arm64>.msi (and xdmsetup-<v>.msi, a copy of x64), XDM-<v>-<x64|arm64>.dmg,
+          # nfpm's amd64/x86_64 or arm64/aarch64 for deb/rpm/Arch, xdm-app-<v>-linux-<x64|arm64>.tar.gz.
           base="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/$tag"
           {
             echo "## Downloads"
@@ -315,6 +326,7 @@ jobs:
               name="${f##*/}"
               case "$name" in *arm64*|*aarch64*) cpu=ARM; mac="Apple Silicon (M1 or later)" ;; *) cpu=x64; mac=Intel ;; esac
               case "$name" in
+                xdmsetup-*.msi) note="Same as the x64 MSI; for XDM 8 (Microsoft Store) update notices" ;;
                 *.msi)        note="For Windows $cpu (Windows 10/11)" ;;
                 *.dmg)        note="For $mac mac" ;;
                 *.deb)        note="For Debian / Ubuntu / Linux Mint $cpu" ;;

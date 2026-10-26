@@ -2,9 +2,13 @@ package xdm.app.utils
 
 import xdm.app.AppContext
 import xdm.app.OS
-// import xdm.app.utils.win.Win32Memory  // working-set trimming disabled
+import xdm.app.utils.win.Win32Memory
 import xdm.core.util.Logger
+import java.awt.AWTEvent
+import java.awt.Toolkit
 import java.awt.Window
+import java.awt.event.ComponentEvent
+import java.awt.event.WindowEvent
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
@@ -12,8 +16,9 @@ import javax.swing.SwingUtilities
 
 /**
  * Windows only: hands XDM's working set back to Windows once it has nothing to show and nothing to
- * download - the main window was closed to the tray and no download is pending, or the last download
- * finished while no window was open. Task Manager's "Memory" then drops to a few MB and climbs back
+ * download - the last XDM window was closed or hidden (the main window to the tray, a progress or
+ * completion window) and no download is pending, XDM started hidden, or the last download finished
+ * while no window was open. Task Manager's "Memory" then drops to a few MB and climbs back
  * only as far as XDM touches pages again (measured on Windows 11: ~34 MB idle in the tray -> ~19 MB
  * settled after a trim; reopening the window takes as long as without the trim, ~670 ms).
  *
@@ -22,6 +27,7 @@ import javax.swing.SwingUtilities
  * Windows (JDK-8390353), which is why that flag is gone.
  *
  * [request] may be called from any thread; requests within [DELAY_MS] collapse into one check.
+ * [install] requests one whenever any XDM window is hidden or disposed.
  */
 object WorkingSetTrim {
     /** Lets a window close and a finishing download's last callbacks settle first. */
@@ -32,6 +38,16 @@ object WorkingSetTrim {
         Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "working-set-trim").apply { isDaemon = true } }
     }
     private var pending: ScheduledFuture<*>? = null
+
+    /** Call once on the EDT. Every window hide/dispose asks for a trim; [trimIfIdle] skips it while one is still showing. */
+    fun install() {
+        if (!enabled) return
+        Toolkit.getDefaultToolkit().addAWTEventListener({ e ->
+            if (e.source is Window && (e.id == ComponentEvent.COMPONENT_HIDDEN || e.id == WindowEvent.WINDOW_CLOSED)) {
+                request("window closed")
+            }
+        }, AWTEvent.COMPONENT_EVENT_MASK or AWTEvent.WINDOW_EVENT_MASK)
+    }
 
     fun request(reason: String) {
         if (!enabled) return
@@ -46,10 +62,9 @@ object WorkingSetTrim {
             var windowShowing = false
             SwingUtilities.invokeAndWait { windowShowing = Window.getWindows().any { it.isShowing } }
             if (windowShowing || AppContext.downloader.hasPendingDownloads()) return
-            // Working-set trimming disabled.
-            // System.gc()
-            // if (Win32Memory.trimWorkingSet()) Logger.info("Working set trimmed ($reason)")
-            // else Logger.info("Working set trim refused by Windows ($reason)")
+            System.gc()
+            if (Win32Memory.trimWorkingSet()) Logger.info("Working set trimmed ($reason)")
+            else Logger.info("Working set trim refused by Windows ($reason)")
         } catch (e: Throwable) {
             Logger.error("Working set trim failed", e)
         }

@@ -3,7 +3,7 @@ package xdm.app
 import xdm.app.utils.DownloadSource
 import xdm.app.utils.KeepAwake
 import xdm.app.utils.SoundPlayer
-// import xdm.app.utils.WorkingSetTrim  // working-set trimming disabled
+import xdm.app.utils.WorkingSetTrim
 import xdm.app.utils.getFileFolder
 import xdm.app.utils.isUsableBatchFolder
 import xdm.core.CoreConfig
@@ -1217,7 +1217,7 @@ class DownloadManager(
             syncKeepAwake()
             if (queue.isEmpty() && activeSessions.isEmpty()) {
                 Logger.info("No pending download")
-                // WorkingSetTrim.request("all downloads finished")  // working-set trimming disabled
+                WorkingSetTrim.request("all downloads finished")
                 if (AppContext.config.haltAfterDownload) {
                     Logger.info("Attempting shutdown after all downloads")
                     AppContext.platform.shutdownPC()

@@ -1,0 +1,54 @@
+name: Close stale issues
+
+on:
+  schedule:
+    - cron: "30 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      # Issues with no activity for 6 months are closed right away, without a warning.
+      # Runs first, so the 3-month step below never warns about them.
+      - name: Close issues inactive for 6 months
+        uses: actions/stale@v10
+        with:
+          days-before-issue-stale: 180
+          days-before-issue-close: 0
+          days-before-pr-stale: -1
+          days-before-pr-close: -1
+          stale-issue-label: inactive
+          exempt-issue-labels: pinned,security
+          close-issue-reason: not_planned
+          operations-per-run: 200
+          close-issue-message: >
+            Hi there! 👋 This issue hasn't seen any activity for over 6 months, so we're closing it
+            to keep the tracker tidy. A lot may have changed in XDM since it was opened.
+            If you're still running into this with the latest version, please open a new issue
+            with up-to-date details. We'd be glad to take another look. Thanks for helping make XDM better! 💙
+
+      # Issues with no activity for 3 months get a warning, then close 7 days later
+      # unless someone comments.
+      - name: Warn and close issues inactive for 3 months
+        uses: actions/stale@v10
+        with:
+          days-before-issue-stale: 90
+          days-before-issue-close: 7
+          days-before-pr-stale: -1
+          days-before-pr-close: -1
+          stale-issue-label: stale
+          exempt-issue-labels: pinned,security
+          close-issue-reason: not_planned
+          operations-per-run: 200
+          stale-issue-message: >
+            Hi! 👋 This issue hasn't had any activity for 3 months. If it's still relevant to you,
+            just leave a comment and it will stay open. Otherwise it will be closed automatically
+            in 7 days. Thanks for your understanding!
+          close-issue-message: >
+            Closing this issue since there hasn't been any activity for a while. If the problem
+            is still around in the latest version of XDM, please feel free to open a new issue
+            with current details. We're happy to help! 💙

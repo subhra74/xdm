@@ -64,8 +64,26 @@
                       Bitness="always64" />
     </Property>
 
-    <!-- TODO §5.5: block when XDM 8 from the Microsoft Store is present, with a DirectorySearch for
-         [LocalAppDataFolder]Packages\<XDM 8 package family name>. Needs the family name (§13.3). -->
+    <!-- §5.5: XDM 8 from the Microsoft Store. An MSIX package isn't an MSI product, so the UpgradeCode can't remove
+         it. Its data folder is [LocalAppDataFolder]Packages\<package family name>, per user, so the search finds the
+         installing user's copy only (and nothing for an install run as SYSTEM). The family name was checked on the
+         Windows 11 ARM VM with Get-AppxPackage. -->
+    <Property Id="STOREXDM8" Secure="yes">
+      <DirectorySearch Id="StoreXdm8Folder" Depth="0" AssignToProperty="yes"
+                       Path="[LocalAppDataFolder]Packages\56617subhra74.XtremeDownloadManager-XDM_k8tk4t3m207x0" />
+    </Property>
+    <!-- The page's checkbox; ticked by default. A quiet install removes it too unless REMOVESTOREXDM=0 is passed. -->
+    <Property Id="REMOVESTOREXDM" Value="1" Secure="yes" />
+    <!-- Removal: deferred and impersonated, so it runs as the installing user, who owns the per-user package (no
+         elevation needed for that), and just before InstallFinalize, after XDM 9's files are in: it can't be rolled
+         back. Removing the package ends a running XDM 8 and deletes its data (settings, download list); XDM 9
+         doesn't import them (§11.2). Failure doesn't stop the install: both XDMs then compete for port 8597.
+         -NoProfile: the user's profile scripts can be slow, print or prompt. -NonInteractive: WixQuietExec shows no
+         window, so a prompt would hang the install; this makes it fail instead. Output goes to the MSI log. -->
+    <SetProperty Id="XdmRemoveStoreXdm8" Sequence="execute" Before="XdmRemoveStoreXdm8"
+                 Value="&quot;[System64Folder]WindowsPowerShell\v1.0\powershell.exe&quot; -NoProfile -NonInteractive -Command &quot;Get-AppxPackage -Name '56617subhra74.XtremeDownloadManager-XDM' | Remove-AppxPackage -ErrorAction Stop&quot;" />
+    <CustomAction Id="XdmRemoveStoreXdm8" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec"
+                  Execute="deferred" Impersonate="yes" Return="ignore" />
 
     <!-- §5.3: end every running XDM (XDM 8 and 9 are both xdm-app.exe), including other users'. Timeout is
          in seconds (WiX multiplies it by 1000). RebootPrompt must be off: WiX rejects it together with
@@ -101,6 +119,8 @@
     <InstallExecuteSequence>
       <Custom Action="XdmKillBeforeValidate" Before="InstallValidate" />
       <Custom Action="XdmWaitAfterClose" After="Wix4CloseApplications_$(sys.BUILDARCHSHORT)" Condition="XDMWASRUNNING" />
+      <Custom Action="XdmRemoveStoreXdm8" Before="InstallFinalize"
+              Condition="STOREXDM8 AND REMOVESTOREXDM = 1 AND NOT Installed AND NOT REMOVE" />
     </InstallExecuteSequence>
 
 
@@ -138,6 +158,42 @@
       <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction"
                Value="Wix4UnelevatedShellExec_$(sys.BUILDARCHSHORT)" Order="2"
                Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND NOT Installed" />
+      <!-- XdmOldStoreDlg goes between the licence and the install folder, only when XDM 8 from the Store was found.
+           These NewDialog events have a higher Order than WixUI_InstallDir's own, so they win when their condition
+           holds; otherwise the standard ones apply. -->
+      <Publish Dialog="LicenseAgreementDlg" Control="Next" Event="NewDialog" Value="XdmOldStoreDlg" Order="10"
+               Condition="LicenseAccepted = &quot;1&quot; AND STOREXDM8" />
+      <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="XdmOldStoreDlg" Order="10"
+               Condition="STOREXDM8" />
+
+      <Dialog Id="XdmOldStoreDlg" Width="370" Height="270" Title="!(loc.InstallDirDlg_Title)">
+        <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no"
+                 Text="!(loc.InstallDirDlgBannerBitmap)" />
+        <Control Id="Title" Type="Text" X="15" Y="6" Width="270" Height="15" Transparent="yes" NoPrefix="yes"
+                 Text="{\WixUI_Font_Title}Older version found" />
+        <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="15" Transparent="yes" NoPrefix="yes"
+                 Text="Xtreme Download Manager 8 from the Microsoft Store is installed." />
+        <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
+        <Control Id="Info" Type="Text" X="20" Y="60" Width="330" Height="40" NoPrefix="yes"
+                 Text="Both versions use the same browser connection and can't run at the same time. Setup can remove the old version for your account." />
+        <Control Id="RemoveCheckBox" Type="CheckBox" X="20" Y="104" Width="330" Height="18"
+                 Property="REMOVESTOREXDM" CheckBoxValue="1"
+                 Text="Remove Xtreme Download Manager 8 (Microsoft Store version)" />
+        <Control Id="Note" Type="Text" X="20" Y="130" Width="330" Height="60" NoPrefix="yes"
+                 Text="Its settings and download list are removed with it; downloaded files stay where they are. If you keep it, uninstall it later from Settings &gt; Apps &gt; Installed apps." />
+        <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+        <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="!(loc.WixUIBack)">
+          <Publish Event="NewDialog" Value="LicenseAgreementDlg" />
+        </Control>
+        <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes"
+                 Text="!(loc.WixUINext)">
+          <Publish Event="NewDialog" Value="InstallDirDlg" />
+        </Control>
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes"
+                 Text="!(loc.WixUICancel)">
+          <Publish Event="SpawnDialog" Value="CancelDlg" />
+        </Control>
+      </Dialog>
     </UI>
 
     <!-- The Run value and the xdm-app:// keys are the AutoStart and UrlScheme components below (§5.4). -->
