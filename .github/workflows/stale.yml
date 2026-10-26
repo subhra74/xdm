@@ -4,36 +4,123 @@ on:
   schedule:
     - cron: "30 1 * * *"
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only log the issues that would be closed"
+        type: boolean
+        default: false
 
 permissions:
   issues: write
+
+# A manual run started during the scheduled one would pick the same issues and comment twice.
+concurrency:
+  group: stale-issues
 
 jobs:
   stale:
     runs-on: ubuntu-latest
     steps:
-      # Issues with no activity for 6 months are closed right away, without a warning.
-      # Runs first, so the 3-month step below never warns about them.
+      # Issues with no human activity for 6 months are closed right away, without a warning.
+      # Bot activity (stale labels and warning comments) does not count, so an old issue that
+      # was only touched by this workflow is still closed. Runs before the 3-month step.
       - name: Close issues inactive for 6 months
-        uses: actions/stale@v10
+        uses: actions/github-script@v8
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
         with:
-          days-before-issue-stale: 180
-          days-before-issue-close: 0
-          days-before-pr-stale: -1
-          days-before-pr-close: -1
-          stale-issue-label: inactive
-          exempt-issue-labels: pinned,security
-          close-issue-reason: not_planned
-          operations-per-run: 200
-          close-issue-message: >
-            Hi there! 👋 This issue hasn't seen any activity for over 6 months, so we're closing it
-            to keep the tracker tidy. A lot may have changed in XDM since it was opened.
-            If you're still running into this with the latest version, please open a new issue
-            with up-to-date details. We'd be glad to take another look. Thanks for helping make XDM better! 💙
+          script: |
+            const DAY = 24 * 60 * 60 * 1000;
+            const cutoff = Date.now() - 180 * DAY;
+            const maxCloses = 150;
+            const exempt = ['pinned', 'security'];
+            const botLabels = ['stale', 'inactive'];
+            const dryRun = process.env.DRY_RUN === 'true';
+            const message = [
+              "Hi there! 👋 This issue hasn't seen any activity for over 6 months, so we're closing it",
+              "to keep the tracker tidy. A lot may have changed in XDM since it was opened.",
+              "If you're still running into this with the latest version, please open a new issue",
+              "with up-to-date details. We'd be glad to take another look. Thanks for helping make XDM better! 💙",
+            ].join(' ');
+
+            // Keep clear of GitHub's secondary limit on writes (about 80 a minute, 500 an hour).
+            const pauseMs = 3000;
+            // Passive events that say nothing about whether the issue is still alive.
+            const passiveEvents = ['subscribed', 'unsubscribed', 'mentioned'];
+
+            const isBot = (user) => !user || user.type === 'Bot' || user.login.endsWith('[bot]');
+
+            // Latest time a human did something on the issue: opened it, commented, labelled, edited, etc.
+            async function lastHumanActivity(issue) {
+              let last = Date.parse(issue.created_at);
+              const events = await github.paginate(github.rest.issues.listEventsForTimeline, {
+                ...context.repo, issue_number: issue.number, per_page: 100,
+              });
+              for (const e of events) {
+                if (passiveEvents.includes(e.event)) continue;
+                const who = e.actor || e.user;
+                const when = e.updated_at || e.created_at;
+                if (when && !isBot(who)) last = Math.max(last, Date.parse(when));
+              }
+              return last;
+            }
+
+            // Fetch the whole list first: closing while paging would shift later pages and skip issues.
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              ...context.repo, state: 'open', sort: 'updated', direction: 'asc', per_page: 100,
+            });
+
+            const inactive = [];
+            for (const issue of issues) {
+              if (issue.pull_request) continue;
+              const labels = issue.labels.map((l) => (typeof l === 'string' ? l : l.name));
+              if (labels.some((l) => exempt.includes(l))) continue;
+
+              // Recently updated issues need a closer look only if a bot touched them.
+              let last = Date.parse(issue.updated_at);
+              if (last >= cutoff) {
+                if (!labels.some((l) => botLabels.includes(l))) continue;
+                try {
+                  last = await lastHumanActivity(issue);
+                } catch (err) {
+                  core.warning(`Skipping #${issue.number}: could not read its timeline (${err.message})`);
+                  continue;
+                }
+                if (last >= cutoff) continue;
+              }
+              inactive.push({ issue, last });
+            }
+
+            // Oldest inactive first, so the longest-forgotten issues go before the run limit is hit.
+            inactive.sort((a, b) => a.last - b.last);
+            const batch = inactive.slice(0, maxCloses);
+            core.info(`${inactive.length} inactive issue(s) found; handling ${batch.length} this run.`);
+
+            // One bad issue (locked, deleted, transferred) must not stop the rest of the run.
+            let closed = 0;
+            let failed = 0;
+            for (const { issue, last } of batch) {
+              const since = new Date(last).toISOString().slice(0, 10);
+              core.info(`${dryRun ? '[dry run] would close' : 'Closing'} #${issue.number} (inactive since ${since}): ${issue.title}`);
+              if (dryRun) continue;
+              try {
+                await github.rest.issues.createComment({ ...context.repo, issue_number: issue.number, body: message });
+                await github.rest.issues.update({
+                  ...context.repo, issue_number: issue.number, state: 'closed', state_reason: 'not_planned',
+                });
+                closed++;
+              } catch (err) {
+                failed++;
+                core.warning(`Could not close #${issue.number}: ${err.message}`);
+              }
+              await new Promise((r) => setTimeout(r, pauseMs));
+            }
+            if (!dryRun) core.info(`Closed ${closed} issue(s), ${failed} failed.`);
 
       # Issues with no activity for 3 months get a warning, then close 7 days later
-      # unless someone comments.
+      # unless someone comments. Runs even if the step above failed.
       - name: Warn and close issues inactive for 3 months
+        if: ${{ !cancelled() && !inputs.dry_run }}
         uses: actions/stale@v10
         with:
           days-before-issue-stale: 90
@@ -43,7 +130,8 @@ jobs:
           stale-issue-label: stale
           exempt-issue-labels: pinned,security
           close-issue-reason: not_planned
-          operations-per-run: 200
+          # Kept low so this step and the one above stay under 500 writes an hour together.
+          operations-per-run: 100
           stale-issue-message: >
             Hi! 👋 This issue hasn't had any activity for 3 months. If it's still relevant to you,
             just leave a comment and it will stay open. Otherwise it will be closed automatically
