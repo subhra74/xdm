@@ -203,6 +203,16 @@ The download engine, [`xdm-core`](xdm-core), is licensed separately under the
 as its [NOTICE](xdm-core/NOTICE) is kept and the product credits it. Everything else in this repository, including the
 desktop app (`xdm-app`) and the browser extensions, stays under GPL v3.
 
+## ⭐ Star history
+
+<a href="https://star-history.com/#subhra74/xdm&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=subhra74/xdm&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=subhra74/xdm&type=Date" />
+    <img alt="Star history chart" src="https://api.star-history.com/svg?repos=subhra74/xdm&type=Date" />
+  </picture>
+</a>
+
 ---
 
 <p align="center">
