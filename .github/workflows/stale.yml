@@ -37,11 +37,17 @@ jobs:
             const botLabels = ['stale', 'inactive'];
             const dryRun = process.env.DRY_RUN === 'true';
             const message = [
-              "Hi there! 👋 This issue hasn't seen any activity for over 6 months, so we're closing it",
-              "to keep the tracker tidy. A lot may have changed in XDM since it was opened.",
-              "If you're still running into this with the latest version, please open a new issue",
-              "with up-to-date details. We'd be glad to take another look. Thanks for helping make XDM better! 💙",
-            ].join(' ');
+              [
+                "Hi there! 👋 Thank you so much for taking the time to report this, it really helps make XDM better.",
+                "This issue hasn't seen any activity for over 6 months, so we're closing it to keep the tracker tidy.",
+              ].join(' '),
+              [
+                "Good news: the latest version of XDM fixes the bulk of previously reported issues.",
+                "When you get a chance, please give the [latest release](https://github.com/subhra74/xdm/releases/latest) a try.",
+                "If the problem still persists, we'd love to hear from you, so please open a new issue with the details",
+                "and we'll be happy to take a fresh look. Thanks again for your patience and support! 💙",
+              ].join(' '),
+            ].join('\n\n');
 
             // Keep clear of GitHub's secondary limit on writes (about 80 a minute, 500 an hour).
             const pauseMs = 3000;
@@ -136,7 +142,7 @@ jobs:
             Hi! 👋 This issue hasn't had any activity for 3 months. If it's still relevant to you,
             just leave a comment and it will stay open. Otherwise it will be closed automatically
             in 7 days. Thanks for your understanding!
-          close-issue-message: >
-            Closing this issue since there hasn't been any activity for a while. If the problem
-            is still around in the latest version of XDM, please feel free to open a new issue
-            with current details. We're happy to help! 💙
+          close-issue-message: |
+            Hi there! 👋 Thank you so much for taking the time to report this, it really helps make XDM better. Since there hasn't been any activity for a while, we're closing this issue to keep the tracker tidy.
+
+            Good news: the latest version of XDM fixes the bulk of previously reported issues. When you get a chance, please give the [latest release](https://github.com/subhra74/xdm/releases/latest) a try. If the problem still persists, we'd love to hear from you, so please open a new issue with the details and we'll be happy to take a fresh look. Thanks again for your patience and support! 💙
