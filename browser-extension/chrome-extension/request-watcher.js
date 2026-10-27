@@ -304,7 +304,7 @@ export default class RequestWatcher {
 
         if (req.extraHeaders) {
             req.extraHeaders.forEach(h => {
-                if (h.name === 'Cookie' || h.name === 'cookie') {
+                if (h.name && h.name.toLowerCase() === 'cookie') {
                     cookies.push(h.value);
                 }
                 this.addToDict(data.requestHeaders, h.name, h.value);
@@ -312,7 +312,7 @@ export default class RequestWatcher {
         }
         if (req.requestHeaders) {
             req.requestHeaders.forEach(h => {
-                if (h.name === 'Cookie' || h.name === 'cookie') {
+                if (h.name && h.name.toLowerCase() === 'cookie') {
                     cookies.push(h.value);
                 }
                 this.addToDict(data.requestHeaders, h.name, h.value);
