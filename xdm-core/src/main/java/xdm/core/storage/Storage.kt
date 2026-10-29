@@ -9,6 +9,7 @@ import java.io.Closeable
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import java.nio.channels.ClosedChannelException
 
 /**
  * Where finished downloads go: resolves the folder locations recorded in task info (`targetFolder`, a
@@ -70,6 +71,14 @@ interface StorageFolder {
     fun openPresized(name: String, length: Long): RandomAccessOutput =
         open(name, create = true).apply { setLength(length) }
 
+    /**
+     * Opens the file [name] for [PositionalOutput] writes from many threads: like [open], or with [length]
+     * like [openPresized] (a new file is then created and sized without writing the gap). The default
+     * lets the writes take turns on one [RandomAccessOutput]; [LocalStorage] writes in parallel.
+     */
+    fun openPositional(name: String, create: Boolean, length: Long? = null): PositionalOutput =
+        LockedPositionalOutput(if (length != null) openPresized(name, length) else open(name, create))
+
     /** Reads the file [name] from the start. */
     fun openRead(name: String): InputStream
 
@@ -109,6 +118,8 @@ data class StorageFile(val folder: StorageFolder, val name: String) {
     fun length(): Long = folder.length(name)
     fun open(create: Boolean): RandomAccessOutput = folder.open(name, create)
     fun openPresized(length: Long): RandomAccessOutput = folder.openPresized(name, length)
+    fun openPositional(create: Boolean, length: Long? = null): PositionalOutput =
+        folder.openPositional(name, create, length)
     fun delete(): Boolean = folder.delete(name)
 
     /** The file's local path, or null when it is only reachable through a provider (SAF). */
@@ -118,8 +129,8 @@ data class StorageFile(val folder: StorageFolder, val name: String) {
 }
 
 /**
- * A file opened for writing at any offset: the HTTP part file (chunks write in parallel, each through its
- * own handle) and the muxer output (written front to back, then size fields are patched).
+ * A file opened for writing at any offset: the muxer output (written front to back, then size fields are
+ * patched), and each HTTP chunk's view of the shared part file ([PositionalOutput.at]).
  *
  * On Android a SAF document opened with mode "rw" gives a file descriptor; local providers (the
  * Downloads folder) back it with a real file, so a `FileChannel` on that descriptor seeks, and
@@ -136,6 +147,76 @@ interface RandomAccessOutput : Closeable {
 
     /** Flushes written data and metadata to stable storage. */
     fun force()
+}
+
+/**
+ * One handle on a file that many threads write through at once, each at its own offsets: the HTTP part
+ * file, which all of a download's chunks share from the first write until the download pauses, fails or
+ * completes. Antivirus scanners (Defender) scan a file each time a handle that wrote to it is closed, so a
+ * handle per chunk and connection got a part file scanned dozens of times per download, once at the end
+ * with a shared one.
+ *
+ * Thread safe. Closing it while writes are in flight fails them with an [IOException].
+ */
+interface PositionalOutput : Closeable {
+    /** Writes [len] bytes of [b] from [off] at [position]; returns once they are written, or throws. */
+    fun write(position: Long, b: ByteArray, off: Int, len: Int)
+    fun length(): Long
+
+    /** Flushes written data and metadata to stable storage. */
+    fun force()
+}
+
+/**
+ * [PositionalOutput] on one [RandomAccessOutput]: each write seeks and writes while holding the lock, so
+ * the writes take turns. For storage without positional writes (SAF, Android).
+ */
+class LockedPositionalOutput(private val out: RandomAccessOutput) : PositionalOutput {
+    @Synchronized
+    override fun write(position: Long, b: ByteArray, off: Int, len: Int) {
+        out.seek(position)
+        out.write(b, off, len)
+    }
+
+    @Synchronized
+    override fun length(): Long = out.length()
+
+    @Synchronized
+    override fun force() = out.force()
+
+    @Synchronized
+    override fun close() = out.close()
+}
+
+/**
+ * A writer's own view of this output, starting at [position] and moving forward with each write. Closing
+ * the view only closes the view: its next write throws [ClosedChannelException], and the output stays
+ * open for the others. A pause or a takeover stops a chunk that way.
+ */
+fun PositionalOutput.at(position: Long): RandomAccessOutput = PositionalView(this, position)
+
+private class PositionalView(private val out: PositionalOutput, private var position: Long) : RandomAccessOutput {
+    @Volatile
+    private var closed = false
+
+    override fun write(b: ByteArray, off: Int, len: Int) {
+        if (closed) throw ClosedChannelException()
+        out.write(position, b, off, len)
+        position += len
+    }
+
+    override fun seek(position: Long) {
+        this.position = position
+    }
+
+    override fun position(): Long = position
+    override fun length(): Long = out.length()
+    override fun setLength(length: Long) = throw UnsupportedOperationException("A view cannot resize the file")
+    override fun force() = out.force()
+
+    override fun close() {
+        closed = true
+    }
 }
 
 /** Writes at the handle's current position; closing the stream closes the handle. */

@@ -7,6 +7,7 @@ import xdm.core.util.Logger
 import java.io.File
 import java.io.IOException
 import java.nio.ByteBuffer
+import java.nio.channels.AsynchronousFileChannel
 import java.nio.channels.FileChannel
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.FileAlreadyExistsException
@@ -18,6 +19,8 @@ import java.nio.file.StandardOpenOption
 import java.nio.file.attribute.PosixFilePermission
 import java.nio.file.attribute.PosixFilePermissions
 import java.util.EnumSet
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.Future
 
 /**
  * [PlatformFileOps] on `java.nio.file`: the desktop (and the JVM tests). The only place in xdm-core that
@@ -91,6 +94,65 @@ object NioFileOps : PlatformFileOps {
             ).use { if (length > 0) it.position(length - 1).write(ByteBuffer.wrap(ByteArray(1))) }
         } catch (e: IOException) {
             Logger.info("XDM", "Could not create sparse file, using a normal one: $e")
+        }
+    }
+
+    /**
+     * An [AsynchronousFileChannel], each write waited for. Not a shared `FileChannel`: on Windows its
+     * positional writes take a lock (the JDK saves and restores the file pointer around each one), so the
+     * chunks write one at a time, measured 14–28% slower on an HDD than a handle per chunk. Overlapped
+     * writes on Windows, and `pwrite` from the JDK's pool elsewhere, need no lock.
+     *
+     * The file is grown by writing its last byte, never `RandomAccessFile.setLength` (see [createSparse]).
+     */
+    override fun openPositional(file: File, length: Long?): PositionalOutput {
+        val channel = AsynchronousFileChannel.open(file.toPath(), StandardOpenOption.WRITE)
+        try {
+            if (length != null) {
+                val size = channel.size()
+                if (size > length) channel.truncate(length)
+                else if (size < length) awaitWrite(channel.write(ByteBuffer.wrap(ByteArray(1)), length - 1))
+            }
+        } catch (e: IOException) {
+            channel.close()
+            throw e
+        }
+        return AsyncPositionalOutput(channel)
+    }
+
+    private class AsyncPositionalOutput(private val channel: AsynchronousFileChannel) : PositionalOutput {
+        override fun write(position: Long, b: ByteArray, off: Int, len: Int) {
+            val buf = ByteBuffer.wrap(b, off, len)
+            var p = position
+            while (buf.hasRemaining()) p += awaitWrite(channel.write(buf, p))
+        }
+
+        override fun length(): Long = channel.size()
+        override fun force() = channel.force(true)
+        override fun close() = channel.close()
+    }
+
+    /**
+     * Waits for a write to finish, and reports its failure as the [IOException] it is (a close while it ran
+     * is an [java.nio.channels.AsynchronousCloseException]). An interrupt does not end the wait: the write
+     * would still be running, so returning early could let the caller count bytes that are not written yet.
+     * The interrupt is restored once the write is done.
+     */
+    private fun awaitWrite(write: Future<Int>): Int {
+        var interrupted = false
+        try {
+            while (true) {
+                try {
+                    return write.get()
+                } catch (e: InterruptedException) {
+                    interrupted = true
+                } catch (e: ExecutionException) {
+                    val cause = e.cause
+                    throw cause as? IOException ?: IOException(cause)
+                }
+            }
+        } finally {
+            if (interrupted) Thread.currentThread().interrupt()
         }
     }
 

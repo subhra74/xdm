@@ -7,8 +7,11 @@ import xdm.core.downloaders.DownloadHost
 import xdm.core.network.http.HeaderMap
 import xdm.core.network.http.HttpResponse
 import xdm.core.network.http.PoolingHttpClient
+import xdm.core.storage.PositionalOutput
 import xdm.core.storage.RandomAccessOutput
 import xdm.core.storage.StorageFile
+import xdm.core.util.Logger
+import java.io.IOException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
@@ -111,6 +114,46 @@ data class HttpTaskContext(
      */
     @Volatile
     var finalUrl: String? = null
+
+    /**
+     * The part file's one write handle, which every chunk writes through ([PositionalOutput.at]): opened by
+     * the first chunk that writes, closed by [closeOutput] when the download pauses, fails, completes or is
+     * deleted, and never opened again in this session. Guarded by [lock].
+     */
+    private var output: PositionalOutput? = null
+    private var outputClosed = false
+
+    /** The shared write handle, opened with [open] if needed; null once [closeOutput] ran. */
+    fun output(open: () -> PositionalOutput): PositionalOutput? {
+        write {
+            if (outputClosed) return null
+            return output ?: open().also { output = it }
+        }
+        return null
+    }
+
+    /** The shared write handle if it is open, else null. */
+    fun currentOutput(): PositionalOutput? {
+        read { return output }
+        return null
+    }
+
+    /**
+     * Closes the shared write handle for good. A chunk still writing gets an [java.io.IOException], which
+     * with the download stopping is a cancel. Waits for writes in flight to end.
+     */
+    fun closeOutput() {
+        write {
+            outputClosed = true
+            val out = output ?: return
+            output = null
+            try {
+                out.close()
+            } catch (e: IOException) {
+                Logger.error("XDM", "Unable to close $partFile", e)
+            }
+        }
+    }
 }
 
 inline fun HttpTaskContext.read(r: () -> Unit) {

@@ -236,6 +236,7 @@ class HttpDownloaderTask : ChunkController {
     }
 
     override fun deleteTemp() {
+        context.closeOutput()
         val tmpFile = context.partFile
         Logger.info("XDM", "Deleting temp file $tmpFile")
         val ret = tmpFile.delete()
@@ -259,6 +260,8 @@ class HttpDownloaderTask : ChunkController {
                 }
                 syncAll()
                 saveState()
+                // After the state is saved: it records only what the forced handle holds.
+                context.closeOutput()
                 throttle.disable()
                 // Closing the client also cancels in-flight calls, unblocking chunk threads stuck in a read.
                 context.httpClient.close()
@@ -286,6 +289,9 @@ class HttpDownloaderTask : ChunkController {
                 // Saved as completed only once the whole file is on disk.
                 syncAll()
                 context.completed.set(true)
+                // Closed before the publish: Windows cannot rename a file that is open, and the scan the
+                // close triggers is the one scan of the whole file.
+                context.closeOutput()
                 try {
                     Logger.info("XDM", "All chunks downloaded")
                     saveState()
@@ -349,6 +355,7 @@ class HttpDownloaderTask : ChunkController {
         context.write {
             syncAll()
             saveState()
+            context.closeOutput()
         }
         context.downloadHost.onDownloadFailed(context.id, finalError)
         context.httpClient.close()
@@ -694,15 +701,18 @@ class HttpDownloaderTask : ChunkController {
         if (forceTempFile()) context.chunks.values.forEach { it.synced.set(it.downloaded.get()) }
     }
 
-    /** Forces the temp file's data to disk: false (logged) if that failed, true if there is no file yet. */
+    /**
+     * Forces the temp file's data to disk through the shared write handle: false (logged) if that failed.
+     * True if the handle is not open: nothing was written in this session, and what earlier ones wrote was
+     * forced when they ended (progress that was not is not in the saved state).
+     */
     private fun forceTempFile(): Boolean {
-        val file = context.partFile
-        if (!file.exists) return true
+        val output = context.currentOutput() ?: return true
         return try {
-            file.folder.force(file.name)
+            output.force()
             true
         } catch (e: IOException) {
-            Logger.error("XDM", "Unable to flush $file", e)
+            Logger.error("XDM", "Unable to flush ${context.partFile}", e)
             false
         }
     }

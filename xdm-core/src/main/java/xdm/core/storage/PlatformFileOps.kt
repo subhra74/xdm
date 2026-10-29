@@ -4,6 +4,8 @@
 package xdm.core.storage
 
 import java.io.File
+import java.io.IOException
+import java.io.RandomAccessFile
 
 /**
  * OS file operations that java.io cannot express: atomic rename that tells a cross-device move apart,
@@ -48,6 +50,22 @@ interface PlatformFileOps {
 
     /** Deletes [dir] and everything under it without following symbolic links. */
     fun deleteTree(dir: File): Result<Unit>
+
+    /**
+     * Opens the existing [file] for writes from many threads at once ([PositionalOutput]), first sizing it
+     * to [length] if that is given. Growing must not write the gap (see [createSparse]). The default lets
+     * the writes take turns on a [RandomAccessFile]; [NioFileOps] writes in parallel.
+     */
+    fun openPositional(file: File, length: Long?): PositionalOutput {
+        val out = LocalOutput(RandomAccessFile(file, "rw"))
+        try {
+            if (length != null && out.length() != length) out.setLength(length)
+        } catch (e: IOException) {
+            out.close()
+            throw e
+        }
+        return LockedPositionalOutput(out)
+    }
 }
 
 /** The process-wide [PlatformFileOps]. */

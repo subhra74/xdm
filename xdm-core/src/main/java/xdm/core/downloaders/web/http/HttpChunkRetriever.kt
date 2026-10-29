@@ -11,7 +11,9 @@ import xdm.core.network.http.isTlsVerificationError
 import xdm.core.util.Logger
 import xdm.core.util.getRetryDelay
 import xdm.core.util.isLinkExpiredStatus
+import xdm.core.storage.PositionalOutput
 import xdm.core.storage.RandomAccessOutput
+import xdm.core.storage.at
 import java.io.IOException
 import kotlin.math.min
 
@@ -490,39 +492,41 @@ class HttpChunkRetriever(
         return true
     }
 
+    /**
+     * This chunk's view of the part file's shared write handle (see [HttpTaskContext.output]), at the
+     * chunk's next byte. Null once the download stopped, completed or failed: the handle is closed for good.
+     */
     private fun openFileHandle(): RandomAccessOutput? {
         context.write {
             val chunk = context.chunks[id] ?: return null
-            var fs: RandomAccessOutput? = null
-            try {
-                val file = context.partFile
-                // A part file written before must still be there, at full size; recreating it would
-                // silently lose what it held. Failing here is a disk error, and the download stops.
-                if (context.tempFileCreated.get() &&
-                    context.totalSize.let { size -> file.length().let { it < 0 || (size != null && it != size) } }
-                ) throw IOException("Part file missing or damaged: $file")
-                val size = context.totalSize
-                fs = when {
-                    context.tempFileCreated.get() -> file.open(create = false).also {
-                        if (size != null) Logger.info("XDM", "Temp file created already")
-                    }
-                    // Sized without writing the gap (setLength may zero-fill): see NioFileOps.createSparse.
-                    size != null -> file.openPresized(size).also {
-                        Logger.info("XDM", "Temp file created with size $size")
-                    }
-                    else -> file.open(create = true)
-                }
-                context.tempFileCreated.set(true)
-                fs.seek(chunk.offset + chunk.downloaded.get())
-                chunk.fileHandle.set(fs)
-                return fs
-            } catch (ex: Exception) {
-                chunk.fileHandle.set(null)
-                closeFileHandle(fs)
-                throw ex
-            }
+            if (context.stopFlag.get() || context.completed.get()) return null
+            val output = context.output { openPartFile() } ?: return null
+            return output.at(chunk.offset + chunk.downloaded.get()).also { chunk.fileHandle.set(it) }
         }
         return null
+    }
+
+    /** Opens the part file for the download's shared write handle, creating it on the first start. */
+    private fun openPartFile(): PositionalOutput {
+        val file = context.partFile
+        // A part file written before must still be there, at full size; recreating it would
+        // silently lose what it held. Failing here is a disk error, and the download stops.
+        if (context.tempFileCreated.get() &&
+            context.totalSize.let { size -> file.length().let { it < 0 || (size != null && it != size) } }
+        ) throw IOException("Part file missing or damaged: $file")
+        val size = context.totalSize
+        val output = when {
+            context.tempFileCreated.get() -> file.openPositional(create = false).also {
+                if (size != null) Logger.info("XDM", "Temp file created already")
+            }
+            // Sized without writing the gap (setLength may zero-fill): see NioFileOps.createSparse.
+            size != null -> file.openPositional(create = true, length = size).also {
+                Logger.info("XDM", "Temp file created with size $size")
+            }
+            else -> file.openPositional(create = true)
+        }
+        context.tempFileCreated.set(true)
+        return output
     }
 
     private fun closeFileHandle(fileHandle: RandomAccessOutput?) {
