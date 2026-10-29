@@ -5,13 +5,13 @@ package xdm.core.checksum
 
 import xdm.core.network.http.HeaderMap
 import xdm.core.network.http.PoolingHttpClient
+import xdm.core.util.CryptoProviders
 import xdm.core.util.Logger
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 import java.net.URI
-import java.security.MessageDigest
 import java.util.concurrent.CancellationException
 
 /** The request the file was downloaded with; its headers and cookie go along to the same host only. */
@@ -156,7 +156,7 @@ class ChecksumVerifier(
 
     /** Lower-case hex digest of [file]. */
     fun hash(file: File, algorithm: ChecksumAlgorithm, progress: Progress): String {
-        val digest = MessageDigest.getInstance(algorithm.javaName)
+        val digest = CryptoProviders.messageDigest(algorithm.javaName)
         val total = file.length()
         var done = 0L
         var lastReport = 0L

@@ -7,6 +7,7 @@ import xdm.app.headless.CliParser
 import xdm.app.headless.HeadlessCli
 import xdm.app.ui.components.WaylandComboBoxUI
 import xdm.app.utils.AppDirs
+import xdm.app.utils.ConscryptTls
 import xdm.app.utils.WaylandToolkit
 import xdm.app.utils.linux.DesktopFontSettings
 import xdm.app.utils.windowIconImages
@@ -36,7 +37,10 @@ object AppMain {
     @JvmStatic
     fun main(args: Array<String>) {
         // Before anything else: headless mode builds no UI, binds no port and loads no app state.
-        if (CliParser.isHeadless(args)) exitProcess(HeadlessCli.run(args))
+        if (CliParser.isHeadless(args)) {
+            ConscryptTls.install()
+            exitProcess(HeadlessCli.run(args))
+        }
 
         val configDir = AppDirs.root.path
         val tempDir = "$configDir${File.separatorChar}tmp"
@@ -45,6 +49,8 @@ object AppMain {
         // Holds cookies, captured request headers and logs: other users of the machine stay out.
         FileUtils.restrictToOwner(File(configDir))
         Logger.init(File(configDir))
+        // Before any HTTP client or digest: the shared TLS contexts are built once.
+        ConscryptTls.install()
         // HotSpot appends "sharing" to java.vm.info while a CDS archive is mapped (APPCDS.md).
         Logger.info("CDS: archive " + if (System.getProperty("java.vm.info").orEmpty().contains("sharing")) "in use" else "not in use")
 
