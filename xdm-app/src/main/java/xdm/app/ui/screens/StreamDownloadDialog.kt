@@ -144,7 +144,7 @@ class StreamDownloadDialog(private val near: Window?) : JFrame() {
         tabs.addTab(text("SD_TAB_HEADERS"), createHeadersTab())
         contentPane.add(tabs, BorderLayout.CENTER)
         contentPane.add(createDownloadPanel(), BorderLayout.SOUTH)
-        rootPane.border = ScaledEmptyBorder(10, 10, 10, 10)
+        (contentPane as JComponent).border = ScaledEmptyBorder(10, 10, 10, 10)
 
         wireEvents()
         picker.reset(null, null, null)
