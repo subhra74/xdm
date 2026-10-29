@@ -46,15 +46,18 @@ MODULES="java.desktop,java.logging,jdk.crypto.ec,jdk.unsupported"
 # Serial used to win because -XX:AllocateHeapAt kept the heap out of the
 # private count; that flag is gone (JDK-8390353: on Windows the JVM deletes the
 # heap file while it is mapped, so paged-out heap comes back as zeros).
+# Windows also ships ZGC with its own archive and config, installed on Windows
+# 10 1803 or later (build-bundle.ps1, PACKAGING.md sect. 5.8).
 # G1 shrinks region by region after a compacting full GC: its own periodic one
 # (-XX:-G1PeriodicGCInvokesConcurrent) and the System.gc() calls XDM makes
 # (AppMain's 15 s thread, after downloads and dialogs).
 #
-# JIT: C1 compiles everything and C2 only the JDK's crypto hot methods, named in
-# packaging/jit-directives.json (added below, once the app dir exists). HTTPS
-# then runs on the AES/GHASH/ChaCha20 intrinsics at C2 speed without paying C2's
-# memory for the rest of the app. Required: without C2, TLS costs 4-10x the CPU
-# per MB. There is no C1-only mode.
+# JIT: C1 only (-XX:TieredStopAtLevel=1, added below per target). Every macOS
+# and Linux target ships Conscrypt's native library, so TLS and digests run in
+# BoringSSL and no JDK crypto is left for C2's intrinsics (PACKAGING.md sect. 3.2).
+# On a target without it, C1 compiles everything and C2 only the JDK's crypto
+# methods in packaging/jit-directives.json (added below, once the app dir exists):
+# without C2 the JDK's TLS costs 4-10x the CPU per MB.
 JAVA_OPTIONS=(
   # --- collector: G1 sized down hard and returning memory quickly (see above) ---
   -XX:+UseG1GC
@@ -90,8 +93,7 @@ JAVA_OPTIONS=(
   -XX:MinMetaspaceFreeRatio=1
   -XX:MaxMetaspaceFreeRatio=2
   -XX:CompressedClassSpaceSize=64m
-  # --- JIT (the directive itself is added after the AppCDS step) ---
-  -XX:CICompilerCount=2
+  # --- JIT (the compiler flags are added per target below) ---
   -XX:ReservedCodeCacheSize=32m
   # --- misc ---
   # drop FlatLaf/Swing soft-referenced image caches on each GC
@@ -282,6 +284,18 @@ fi
 if [[ "$JDK_MAJOR" -ge 25 ]]; then
   JAVA_OPTIONS+=(-XX:+UseCompactObjectHeaders)
 fi
+# JIT per target: C1 only where the app ships Conscrypt's native library (ConscryptTls: Windows x64,
+# Linux x64/arm64, macOS x64/arm64), else C1 plus C2 for the JDK's crypto (jit-directives.json).
+case "$OS-$(sed -n 's/^OS_ARCH="\(.*\)"/\1/p' "$JDK_HOME_DIR/release" 2>/dev/null)" in
+  mac-aarch64|mac-x86_64|linux-aarch64|linux-x86_64|linux-amd64)
+    C2_CRYPTO=0
+    JAVA_OPTIONS+=(-XX:TieredStopAtLevel=1 -XX:CICompilerCount=1)
+    echo ">> JIT: C1 only (Conscrypt does TLS and digests)" ;;
+  *)
+    C2_CRYPTO=1
+    JAVA_OPTIONS+=(-XX:CICompilerCount=2)
+    echo ">> JIT: C1, C2 for the JDK's crypto (no Conscrypt on this target)" ;;
+esac
 
 # ---- app jar --------------------------------------------------------------
 if [[ $SKIP_MAVEN -eq 0 ]]; then
@@ -303,8 +317,9 @@ APP_VERSION="$(sed -n 's/.*"currentVersion"[[:space:]]*:[[:space:]]*"\([^"]*\)".
 # xdm-app/target/xdm-app.jar keeps every native, so the fat jar stays runnable
 # on any platform when it is shared or launched on its own with `java -jar`.
 #
-# FlatLaf resolves its library through an <os>-<arch> classifier in the entry
-# name, so keeping just the matching entry is enough.
+# FlatLaf and Conscrypt resolve their library through an <os>-<arch> classifier
+# in the entry name, so keeping just the matching entries is enough. Conscrypt's
+# names: META-INF/native/libconscrypt_openjdk_jni-{osx,linux}-{aarch_64,x86_64}.*
 # --------------------------------------------------------------------------
 strip_foreign_natives() {
   local jar="$1"
@@ -314,17 +329,17 @@ strip_foreign_natives() {
     return 0
   fi
 
-  local fl_os fl_arch
+  local fl_os fl_arch cs_os cs_arch
   case "$OS" in
-    mac)     fl_os=macos   ;;
-    linux)   fl_os=linux   ;;
+    mac)     fl_os=macos; cs_os=osx ;;
+    linux)   fl_os=linux; cs_os=linux ;;
   esac
 
   local machine
   machine="$(uname -m)"
   case "$machine" in
-    arm64|aarch64) fl_arch=arm64  ;;
-    x86_64|amd64)  fl_arch=x86_64 ;;
+    arm64|aarch64) fl_arch=arm64;  cs_arch=aarch_64 ;;
+    x86_64|amd64)  fl_arch=x86_64; cs_arch=x86_64 ;;
     *)
       echo ">> unrecognised machine '$machine' - bundling natives for all platforms"
       return 0
@@ -339,6 +354,7 @@ strip_foreign_natives() {
   while IFS= read -r entry; do
     case "$entry" in
       "$fl_dir"*"-${fl_os}-${fl_arch}."*) continue ;;
+      "META-INF/native/libconscrypt_openjdk_jni-${cs_os}-${cs_arch}."*) continue ;;
       *) drop+=("$entry") ;;
     esac
   done < <(jar tf "$jar" | grep -E '\.(dylib|jnilib|so|dll)$' || true)
@@ -390,6 +406,11 @@ link_runtime() {
 APP_JAR="$MODULE_DIR/$MAIN_JAR"
 cp "$JAR_PATH" "$APP_JAR"
 strip_foreign_natives "$APP_JAR"
+# A C1-only target relies on Conscrypt for TLS; without its library the app would run the JDK's TLS on C1.
+if [[ $C2_CRYPTO -eq 0 ]] && ! jar tf "$APP_JAR" | grep -q '^META-INF/native/libconscrypt_openjdk_jni-'; then
+  echo "No Conscrypt native library for $OS/$(uname -m) in the app module, but this target runs C1 only" >&2
+  exit 1
+fi
 
 # FlatLaf's native library as a file in app/, loaded from there through
 # -Dflatlaf.nativeLibraryPath (added with the JIT directive below). Otherwise
@@ -413,7 +434,12 @@ else
   echo ">> no FlatLaf native for $OS/$(uname -m) - FlatLaf extracts it from the jar at run time"
 fi
 JIT_DIRECTIVES="jit-directives.json"
-cp "$PROJECT_ROOT/packaging/$JIT_DIRECTIVES" "$INPUT_DIR/"
+# The directive and its unlock flag, for the targets that keep C2 for crypto; empty on C1-only ones.
+JIT_RECORD=()
+if [[ $C2_CRYPTO -eq 1 ]]; then
+  cp "$PROJECT_ROOT/packaging/$JIT_DIRECTIVES" "$INPUT_DIR/"
+  JIT_RECORD=(-XX:+UnlockDiagnosticVMOptions "-XX:CompilerDirectivesFile=$INPUT_DIR/$JIT_DIRECTIVES")
+fi
 
 # ---- AppCDS archive (APPCDS.md) ---------------------------------------------
 # A static archive of JDK + app classes, mapped read-only at startup instead of
@@ -463,7 +489,7 @@ if [[ $RECORD_CLASSES -eq 1 ]]; then
   fi
   status=0
   "$BUNDLED_JAVA" "${JAVA_OPTIONS[@]}" \
-    -XX:+UnlockDiagnosticVMOptions "-XX:CompilerDirectivesFile=$INPUT_DIR/$JIT_DIRECTIVES" \
+    ${JIT_RECORD[@]+"${JIT_RECORD[@]}"} \
     ${FLATLAF_NATIVE:+"-Dflatlaf.nativeLibraryPath=$INPUT_DIR"} \
     ${SESSION[@]+"${SESSION[@]}"} \
     "-XX:DumpLoadedClassList=$RECORDED" \
@@ -558,12 +584,13 @@ fi
 # ---- JIT directive, FlatLaf native path -----------------------------------
 # Added only now: $APPDIR exists only in the launcher, and the AppCDS dump above
 # runs the bundled java directly (the recording run passes both with their build
-# paths). JitOverride's "Full JIT" setting drops the directive, CICompilerCount
-# and ReservedCodeCacheSize lines again, and keeps the FlatLaf path.
-JAVA_OPTIONS+=(
-  -XX:+UnlockDiagnosticVMOptions
-  '-XX:CompilerDirectivesFile=$APPDIR/'"$JIT_DIRECTIVES"
-)
+# paths). C1-only targets have no directive.
+if [[ $C2_CRYPTO -eq 1 ]]; then
+  JAVA_OPTIONS+=(
+    -XX:+UnlockDiagnosticVMOptions
+    '-XX:CompilerDirectivesFile=$APPDIR/'"$JIT_DIRECTIVES"
+  )
+fi
 [[ -n "$FLATLAF_NATIVE" ]] && JAVA_OPTIONS+=('-Dflatlaf.nativeLibraryPath=$APPDIR')
 # The app dir for PlatformUtils.baseDirectory: with the app in the runtime image there is no jar path
 # to take it from.

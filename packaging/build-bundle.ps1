@@ -70,7 +70,12 @@ if ($WithLocales) { $Modules += ',jdk.localedata' }
 # build-bundle.sh for the measurements behind this set: G1 tuned to return
 # memory had the lowest settled and download-time memory without a heap file
 # (APPCDS.md sect. 12). -XX:AllocateHeapAt is no longer used (JDK-8390353).
-$JavaOptions = @(
+#
+# Two collectors on Windows, each with its own AppCDS archive and launcher config; the MSI installs the one
+# matching the Windows build (PACKAGING.md sect. 5.8). ZGC needs Windows 10 1803 (build 17134) or later and
+# keeps its heap in pagefile-backed shared memory, which Task Manager's private column leaves out (about
+# 10-15 MB lower there than G1, APPCDS.md sect. 13). G1 is the fallback for older builds.
+$G1Options = @(
   # collector: G1 sized down hard and returning memory quickly (see build-bundle.sh)
   '-XX:+UseG1GC'
   '-XX:G1HeapRegionSize=1m'
@@ -94,6 +99,18 @@ $JavaOptions = @(
   '-XX:G1HeapWastePercent=1'
   '-XX:G1RemSetFreeMemoryKeepExcessRatio=0'
   '-XX:G1ExpandByPercentOfAvailable=2'
+)
+$ZgcOptions = @(
+  # collector: generational ZGC with one worker each, a cycle at least every 5 s and free memory returned
+  # after 1 s; no proactive cycles (XDM's own System.gc() calls do the settling)
+  '-XX:+UseZGC'
+  '-XX:ZCollectionInterval=5'
+  '-XX:ZUncommitDelay=1'
+  '-XX:-ZProactive'
+  '-XX:ConcGCThreads=1'
+  '-XX:ParallelGCThreads=1'
+)
+$JavaOptions = @(
   # >= 5m: the AppCDS archive's ~3.4 MB of pre-built heap objects must fit the initial heap, or the
   # JVM skips them (and the archived module graph) without a word. 4m was just too small.
   '-Xms6m'
@@ -105,9 +122,7 @@ $JavaOptions = @(
   '-XX:MinMetaspaceFreeRatio=1'
   '-XX:MaxMetaspaceFreeRatio=2'
   '-XX:CompressedClassSpaceSize=64m'
-  # JIT: C1 for everything, C2 only for the crypto methods in jit-directives.json
-  # (the directive itself is added after the AppCDS step; see build-bundle.sh)
-  '-XX:CICompilerCount=2'
+  # JIT: the compiler flags are added per architecture below (see build-bundle.sh)
   '-XX:ReservedCodeCacheSize=32m'
   # drop FlatLaf/Swing soft-referenced image caches on each GC
   '-XX:SoftRefLRUPolicyMSPerMB=0'
@@ -223,6 +238,18 @@ if ($Arch -eq 'arm64' -and $hostArch -ne 'ARM64') { throw 'An arm64 build must r
 $emulated = ($Arch -eq 'x64' -and $hostArch -eq 'ARM64')
 Write-Host ">> target windows-$Arch, JDK $($release['JAVA_VERSION']) ($($release['IMPLEMENTOR']))$(if ($emulated) { ', x64 under emulation' })"
 
+# JIT: x64 ships Conscrypt's native library (ConscryptTls), so TLS and digests run in BoringSSL and no
+# JDK crypto is left for C2: C1 only. arm64 has none (Conscrypt has no Windows arm64 build), so C1
+# compiles everything and C2 only the JDK's crypto methods in jit-directives.json (PACKAGING.md sect. 3.2).
+$C2Crypto = ($Arch -eq 'arm64')
+if ($C2Crypto) {
+  $JavaOptions += '-XX:CICompilerCount=2'
+  Write-Host ">> JIT: C1, C2 for the JDK's crypto (no Conscrypt on windows-arm64)"
+} else {
+  $JavaOptions += @('-XX:TieredStopAtLevel=1', '-XX:CICompilerCount=1')
+  Write-Host ">> JIT: C1 only (Conscrypt does TLS and digests)"
+}
+
 $RuntimeDir = Join-Path $BuildDir "windows-$Arch\runtime"
 $InputDir   = Join-Path $BuildDir "windows-$Arch\input"
 $ModuleDir  = Join-Path $BuildDir "windows-$Arch\module"
@@ -266,22 +293,26 @@ if (-not $AppVersion) { $AppVersion = '1.0.0' }
 # xdm-app\target\xdm-app.jar keeps every native, so the fat jar stays runnable
 # on any platform when it is shared or launched on its own with `java -jar`.
 #
-# FlatLaf resolves its library through an <os>-<arch> classifier in the entry
-# name, so keeping just the matching entry is enough. The arch is the target's,
-# not this process's: an x64 build on an ARM64 machine needs the x64 DLL.
+# FlatLaf and Conscrypt resolve their library through an <os>-<arch> classifier
+# in the entry name, so keeping just the matching entries is enough. Conscrypt has
+# no windows-arm64 library, so an arm64 bundle keeps none (the JDK's TLS then); the
+# x64 one moves out of the module into app\ (below).
+# The arch is the target's, not this process's: an x64 build on an ARM64 machine
+# needs the x64 DLLs.
 # --------------------------------------------------------------------------
 function Remove-ForeignNatives {
   param([string]$Jar)
 
   $flArch = if ($Arch -eq 'arm64') { 'arm64' } else { 'x86_64' }
   $flKeep = "com/formdev/flatlaf/natives/*-windows-$flArch.*"
+  $csKeep = "META-INF/native/conscrypt_openjdk_jni-windows-$flArch.dll"
 
   $before = (Get-Item $Jar).Length
   $zip = [System.IO.Compression.ZipFile]::Open($Jar, 'Update')
   try {
     $doomed = @($zip.Entries | Where-Object {
       $_.FullName -match '\.(dylib|jnilib|so|dll)$' -and
-      -not ($_.FullName -like $flKeep)
+      -not ($_.FullName -like $flKeep) -and $_.FullName -ne $csKeep
     })
     foreach ($entry in $doomed) { $entry.Delete() }
   } finally {
@@ -299,6 +330,27 @@ New-Item -ItemType Directory -Force -Path $InputDir, $ModuleDir, $DestDir | Out-
 $AppJar = Join-Path $ModuleDir $MainJar
 Copy-Item $JarPath $AppJar
 Remove-ForeignNatives $AppJar
+# Conscrypt's DLL as a file in app\, next to FlatLaf's, not in the app module. Conscrypt extracts a library it
+# finds among its resources into %TEMP% (a 1.9 MB copy on every start) and calls System.loadLibrary only when
+# there is none. That searches java.library.path, which has no app\ by default (the launcher adds its app dir
+# to PATH only by re-running itself, off with win.norestart below), so the launcher sets it to $APPDIR (below).
+# Nothing else loads a library by name: FlatLaf by full path, the JDK's own from sun.boot.library.path, the
+# Win32 calls through the OS search. x64 runs C1 only and relies on Conscrypt for TLS; without the DLL it
+# would run the JDK's TLS on C1.
+$ConscryptDll = 'conscrypt_openjdk_jni-windows-x86_64.dll'
+$ConscryptFile = Join-Path $InputDir $ConscryptDll
+$zip = [System.IO.Compression.ZipFile]::Open($AppJar, 'Update')
+try {
+  $entry = $zip.GetEntry("META-INF/native/$ConscryptDll")
+  if ($entry) {
+    [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $ConscryptFile, $true)
+    $entry.Delete()
+  }
+} finally {
+  $zip.Dispose()
+}
+if (-not $C2Crypto -and -not (Test-Path $ConscryptFile)) { throw "No Conscrypt DLL in $AppJar, but windows-$Arch runs C1 only" }
+if (Test-Path $ConscryptFile) { Write-Host ">> Conscrypt DLL -> app\$ConscryptDll" }
 
 # The app module (packaging\module\module-info.java). The recording session (xdm.app.recording) is build
 # tooling, run on the Mac only, and stays out of it: nothing else loads it, the app only calls it when
@@ -309,8 +361,8 @@ $ModuleJar = Join-Path $ModuleDir "$AppModule.jar"
 if ($LASTEXITCODE -ne 0) { throw 'ModularJar failed' }
 
 Write-Host ">> jlink runtime: $Modules,$AppModule"
-# --vm server: Liberica's Windows x64 JDK also ships the client VM (bin\client\jvm.dll, 8.7 MB), which is
-# C1-only - no C2, so none of the crypto intrinsics TLS depends on (PACKAGING.md sect. 3.2).
+# --vm server: Liberica's Windows x64 JDK also ships the client VM (bin\client\jvm.dll, 8.7 MB). x64 runs
+# C1 only too, but on the server VM the class list and archive were made with (PACKAGING.md sect. 3.3).
 & $Jlink --module-path $ModuleJar --add-modules "$Modules,$AppModule" --vm server --strip-debug `
          --no-header-files --no-man-pages --compress=zip-9 --output $RuntimeDir
 if ($LASTEXITCODE -ne 0) { throw 'jlink failed' }
@@ -344,9 +396,9 @@ try {
   $zip.Dispose()
 }
 $JitDirectives = 'jit-directives.json'
-Copy-Item (Join-Path $PSScriptRoot $JitDirectives) $InputDir
+if ($C2Crypto) { Copy-Item (Join-Path $PSScriptRoot $JitDirectives) $InputDir }
 # No app\.package on Windows: without it the launcher never reads a per-user .cfg, so the installed one
-# (and the heap line the MSI may add to it, PACKAGING.md sect. 5.7) is the only one. Full JIT stays locked.
+# (G1 or ZGC, PACKAGING.md sect. 5.8) is the only one.
 
 # AppCDS archive - see the matching block in build-bundle.sh and APPCDS.md. The app's classes come
 # from the runtime image (module xdm.app), which the JVM checks by size only, so the archive survives
@@ -356,7 +408,10 @@ Copy-Item (Join-Path $PSScriptRoot $JitDirectives) $InputDir
 # than a Windows-recorded list (docs/class-list-recording.md). The lists are recorded on the Mac only.
 $CdsListName = 'liberica.classlist'
 $CdsList     = Join-Path $PSScriptRoot "cds\$CdsListName"
-$CdsArchive  = 'xdm.jsa'
+# One archive per collector: an archive only maps under the compressed-oops setting it was dumped with, which
+# G1 uses and ZGC can't (PACKAGING.md sect. 5.8).
+$CdsArchive    = 'xdm.jsa'
+$ZgcCdsArchive = 'xdm-zgc.jsa'
 $BundledJava = Join-Path $RuntimeDir 'bin\java.exe'
 $MainModule  = "$AppModule/$MainClass"
 
@@ -369,34 +424,44 @@ if ((Test-Path $CdsList) -and (Get-Item $CdsList).Length -gt 0) {
     if (-not $AnyJdk) { throw "$msg`: re-record it on the Mac (docs/class-list-recording.md), or revert packaging\jdk.properties" }
     Write-Warning $msg
   }
-  Write-Host ">> dumping the AppCDS archive from $CdsListName"
-  $dump = & $BundledJava -Xshare:dump @JavaOptions "-XX:SharedClassListFile=$CdsList" `
-      "-XX:SharedArchiveFile=$(Join-Path $InputDir $CdsArchive)" -m $MainModule
-  if ($LASTEXITCODE -ne 0) { $dump | Write-Host; throw 'AppCDS dump failed' }
-  # The list was recorded on mac-arm64, so it names classes Windows doesn't have: those lines are
-  # skipped (about 400). Staleness is checked where it was recorded (build-bundle.sh on the Mac).
-  $stale = @($dump | Select-String 'out of sync|Preload Warning').Count
-  if ($stale -gt 0) {
-    Write-Host ">> $stale lines of $CdsListName skipped (recorded on mac-arm64: classes this build doesn't have)"
-  }
   # ArchiveRelocationMode=0 maps the archive at its preferred address, so its pages stay shared instead
   # of turning private on relocation.
   $CdsOptions = @('-XX:+UnlockDiagnosticVMOptions', '-XX:ArchiveRelocationMode=0')
-  # The archive must still map once the MSI has moved every file time: move lib\modules' mtime and start
-  # the VM as the launcher will, with -Xshare:on, which fails instead of running without the archive. The
-  # archived module graph is lost silently when a module property (-m, --enable-native-access) differs
-  # from the dump; check it too. The log goes to a file: -XX:+DisplayVMOutputToStderr is in the flags.
+  # The archive must still map once the MSI has moved every file time: lib\modules' mtime is moved before
+  # the check, which starts the VM as the launcher will, with -Xshare:on (fails instead of running without
+  # the archive). The archived module graph is lost silently when a module property (-m,
+  # --enable-native-access) differs from the dump; check it too. JDK 25 can't archive heap objects under
+  # ZGC ("ZGC is not supported"), so the ZGC archive holds class metadata only and never has the module
+  # graph. The log goes to a file: -XX:+DisplayVMOutputToStderr is in the flags.
   (Get-Item (Join-Path $RuntimeDir 'lib\modules')).LastWriteTimeUtc = [datetime]::UtcNow
-  $checkLog = Join-Path $BuildDir "windows-$Arch\cds-check.log"
-  & $BundledJava @JavaOptions "-XX:SharedArchiveFile=$(Join-Path $InputDir $CdsArchive)" @CdsOptions `
-      -Xshare:on "-Xlog:cds=info:file=$checkLog" --dry-run -m $MainModule
-  if ($LASTEXITCODE -ne 0) { throw "The AppCDS archive doesn't map (see $checkLog)" }
-  if (-not (Select-String -Path $checkLog -Pattern 'full module graph: enabled' -Quiet)) {
-    Select-String -Path $checkLog -Pattern '\[(error|warning)\]' | ForEach-Object { Write-Host $_.Line }
-    throw "The AppCDS archive maps without its module graph (see $checkLog)"
+  foreach ($cds in @(@{ Gc = 'G1'; Options = $G1Options; Archive = $CdsArchive; FullGraph = $true },
+                     @{ Gc = 'ZGC'; Options = $ZgcOptions; Archive = $ZgcCdsArchive; FullGraph = $false })) {
+    $archivePath = Join-Path $InputDir $cds.Archive
+    Write-Host ">> dumping the $($cds.Gc) AppCDS archive ($($cds.Archive)) from $CdsListName"
+    $dump = & $BundledJava -Xshare:dump @($cds.Options) @JavaOptions "-XX:SharedClassListFile=$CdsList" `
+        "-XX:SharedArchiveFile=$archivePath" -m $MainModule
+    if ($LASTEXITCODE -ne 0) { $dump | Write-Host; throw "$($cds.Gc) AppCDS dump failed" }
+    # The list was recorded on mac-arm64, so it names classes Windows doesn't have: those lines are
+    # skipped (about 400). Staleness is checked where it was recorded (build-bundle.sh on the Mac).
+    $stale = @($dump | Select-String 'out of sync|Preload Warning').Count
+    if ($stale -gt 0) {
+      Write-Host ">> $stale lines of $CdsListName skipped (recorded on mac-arm64: classes this build doesn't have)"
+    }
+    $checkLog = Join-Path $BuildDir "windows-$Arch\cds-check-$($cds.Gc.ToLower()).log"
+    & $BundledJava @($cds.Options) @JavaOptions "-XX:SharedArchiveFile=$archivePath" @CdsOptions `
+        -Xshare:on "-Xlog:cds=info:file=$checkLog" --dry-run -m $MainModule
+    if ($LASTEXITCODE -ne 0) { throw "The $($cds.Gc) AppCDS archive doesn't map (see $checkLog)" }
+    if (-not $cds.FullGraph) {
+      Write-Host ">> $($cds.Gc) AppCDS archive maps, class metadata only (lib\modules mtime moved)"
+    } elseif (Select-String -Path $checkLog -Pattern 'full module graph: enabled' -Quiet) {
+      Write-Host ">> $($cds.Gc) AppCDS archive maps with the full module graph (lib\modules mtime moved)"
+    } else {
+      Select-String -Path $checkLog -Pattern '\[(error|warning)\]' | ForEach-Object { Write-Host $_.Line }
+      throw "The $($cds.Gc) AppCDS archive maps without its module graph (see $checkLog)"
+    }
   }
-  Write-Host '>> AppCDS archive maps with the full module graph (lib\modules mtime moved)'
-  # $APPDIR is expanded by the jpackage launcher; single quotes keep PowerShell off it.
+  # $APPDIR is expanded by the jpackage launcher; single quotes keep PowerShell off it. The launcher gets
+  # the G1 archive; the ZGC config swaps it for the ZGC one after jpackage (below).
   $JavaOptions += @(('-XX:SharedArchiveFile=$APPDIR\' + $CdsArchive)) + $CdsOptions
 } else {
   Write-Host ">> no packaging\cds\$CdsListName - building without an AppCDS archive (recorded on the Mac)"
@@ -404,10 +469,15 @@ if ((Test-Path $CdsList) -and (Get-Item $CdsList).Length -gt 0) {
 
 # JIT directive and FlatLaf's DLL path: added only now, because $APPDIR exists only in the launcher
 # and the AppCDS dump above runs the bundled java directly (the recording run passes both with their
-# build paths). JitOverride's "Full JIT" setting drops the directive again and keeps the path.
+# build paths). x64 is C1 only and has no directive.
+if ($C2Crypto) {
+  $JavaOptions += @('-XX:+UnlockDiagnosticVMOptions', ('-XX:CompilerDirectivesFile=$APPDIR\' + $JitDirectives))
+}
+if (Test-Path $ConscryptFile) {
+  # where Conscrypt's System.loadLibrary finds its DLL (see above)
+  $JavaOptions += '-Djava.library.path=$APPDIR'
+}
 $JavaOptions += @(
-  '-XX:+UnlockDiagnosticVMOptions'
-  ('-XX:CompilerDirectivesFile=$APPDIR\' + $JitDirectives)
   '-Dflatlaf.nativeLibraryPath=$APPDIR'
   # the app dir for PlatformUtils.baseDirectory: with the app in the runtime image there is no jar path
   '-Dxdm.app.dir=$APPDIR'
@@ -427,7 +497,8 @@ $jpArgs = @(
   '--runtime-image', $RuntimeDir
   '--dest', $DestDir
 )
-foreach ($o in $JavaOptions) { $jpArgs += @('--java-options', $o) }
+# The launcher's own config is the G1 one, so the app image runs anywhere; the ZGC config is made from it below.
+foreach ($o in $G1Options + $JavaOptions) { $jpArgs += @('--java-options', $o) }
 
 $Icon = Join-Path $PSScriptRoot 'icons\xdm.ico'
 if (Test-Path $Icon) { $jpArgs += @('--icon', $Icon) }
@@ -512,10 +583,34 @@ if (-not ($cfgLines -match '^win\.norestart=')) {
   [IO.File]::WriteAllLines($Cfg, $cfgLines)
 }
 
+# The ZGC launcher config, app\xdm-app.cfg.zgc: the G1 one with the collector lines swapped and the ZGC
+# archive. The MSI installs one of the two as app\xdm-app.cfg (PACKAGING.md sect. 5.8). Not a *.cfg name, so
+# the launcher never takes it for a config of its own.
+$ZgcCfg = "$Cfg.zgc"
+$g1Lines = @($G1Options | ForEach-Object { "java-options=$_" })
+$zgcLines = [System.Collections.Generic.List[string]]::new()
+$swapped = $false
+foreach ($line in (Get-Content $Cfg)) {
+  if ($g1Lines -contains $line) {
+    if (-not $swapped) { $ZgcOptions | ForEach-Object { $zgcLines.Add("java-options=$_") }; $swapped = $true }
+  } elseif ($line -eq ('java-options=-XX:SharedArchiveFile=$APPDIR\' + $CdsArchive)) {
+    $zgcLines.Add('java-options=-XX:SharedArchiveFile=$APPDIR\' + $ZgcCdsArchive)
+  } else {
+    $zgcLines.Add($line)
+  }
+}
+$left = @(Get-Content $Cfg | Where-Object { $g1Lines -contains $_ }).Count
+if (-not $swapped -or $left -ne $G1Options.Count) {
+  throw "$Cfg doesn't hold the G1 options as one java-options line each ($left of $($G1Options.Count) found)"
+}
+[IO.File]::WriteAllLines($ZgcCfg, $zgcLines)
+
 $size = [math]::Round((Get-ChildItem -Recurse $RuntimeDir | Measure-Object Length -Sum).Sum / 1MB, 1)
 Write-Host ">> runtime size: $size MB"
 Write-Host ">> launcher config ($Cfg):"
 Get-Content $Cfg | ForEach-Object { Write-Host "   $_" }
+Write-Host ">> ZGC launcher config ($ZgcCfg), collector and archive lines:"
+Get-Content $ZgcCfg | Where-Object { $_ -cmatch 'ZGC|-XX:[+-]?Z|GCThreads|SharedArchiveFile' } | ForEach-Object { Write-Host "   $_" }
 
 # ---- MSI (PACKAGING.md sect. 5) -----------------------------------------------------
 if ($Type -eq 'msi') {

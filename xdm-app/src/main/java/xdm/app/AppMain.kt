@@ -49,7 +49,7 @@ object AppMain {
         // Holds cookies, captured request headers and logs: other users of the machine stay out.
         FileUtils.restrictToOwner(File(configDir))
         Logger.init(File(configDir))
-        // Before any HTTP client or digest: the shared TLS contexts are built once.
+        // Before any HTTP client or digest: the shared TLS context (SharedTls) is built once.
         ConscryptTls.install()
         // HotSpot appends "sharing" to java.vm.info while a CDS archive is mapped (APPCDS.md).
         Logger.info("CDS: archive " + if (System.getProperty("java.vm.info").orEmpty().contains("sharing")) "in use" else "not in use")

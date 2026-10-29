@@ -5,10 +5,10 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.decodeFromJsonElement
+import xdm.app.AppContext
+import xdm.core.network.http.impl.HttpClientImpl
 import xdm.core.util.Logger
 import java.io.InputStream
-import java.net.HttpURLConnection
-import java.net.URL
 
 /**
  * Bundled update configuration, read from `/app-version.json` on the classpath.
@@ -119,24 +119,32 @@ object UpdateChecker {
             .maxWithOrNull { a, b -> compareVersions(a.version, b.version) }
     }
 
+    /**
+     * Through OkHttp and the shared TLS context like every download, and through the configured proxy.
+     * Never trust-all and never a login prompt: it is a background fetch the user did not start.
+     */
     private fun fetchReleases(url: String): String? {
-        val conn = (URL(url).openConnection() as HttpURLConnection).apply {
-            requestMethod = "GET"
-            connectTimeout = 10_000
-            readTimeout = 10_000
-            instanceFollowRedirects = true
-            // GitHub's API rejects requests without a User-Agent.
-            setRequestProperty("User-Agent", "XDM-Update-Checker")
-            setRequestProperty("Accept", "application/vnd.github+json")
-        }
+        val config = AppContext.config
+        val client = HttpClientImpl(
+            1, config.toProxy(), readTimeoutSeconds = 10,
+            proxyUser = config.proxyUser, proxyPassword = config.proxyPass,
+        )
         try {
-            if (conn.responseCode !in 200..299) {
-                Logger.info("UPDATE", "Update check HTTP ${conn.responseCode}")
-                return null
+            // GitHub's API rejects requests without a User-Agent.
+            val headers = mapOf(
+                "User-Agent" to listOf("XDM-Update-Checker"),
+                "Accept" to listOf("application/vnd.github+json"),
+            )
+            return client.getResponse(url, headers, null, null).getOrThrow().use { response ->
+                if (response.statusCode !in 200..299) {
+                    Logger.info("UPDATE", "Update check HTTP ${response.statusCode}")
+                    null
+                } else {
+                    response.inputStream.readBytes().decodeToString()
+                }
             }
-            return conn.inputStream.use { it.readBytes().decodeToString() }
         } finally {
-            conn.disconnect()
+            client.close()
         }
     }
 

@@ -21,7 +21,7 @@ import javax.net.ssl.X509TrustManager
  * Mac keep coming from the JDK; a native image's JCE would also reject a provider created at run time.
  * Left null, everything uses the defaults.
  *
- * Set it before the first HTTP client or digest is created; the shared TLS contexts are built once.
+ * Set it before the first HTTP client or digest is created; the shared TLS context (SharedTls) is built once.
  */
 object CryptoProviders {
     @Volatile

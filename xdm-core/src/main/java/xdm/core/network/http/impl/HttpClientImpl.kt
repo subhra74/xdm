@@ -8,21 +8,12 @@ import okio.ByteString.Companion.decodeBase64
 import okio.ByteString.Companion.toByteString
 import xdm.core.CoreConfig
 import xdm.core.network.http.*
-import xdm.core.util.CryptoProviders
 import xdm.core.util.Logger
 import java.net.InetSocketAddress
 import java.net.Proxy
-import java.security.KeyStore
-import java.security.SecureRandom
-import java.security.cert.X509Certificate
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
-import javax.net.ssl.SSLContext
-import javax.net.ssl.TrustManager
-import javax.net.ssl.SSLSocketFactory
-import javax.net.ssl.TrustManagerFactory
-import javax.net.ssl.X509TrustManager
 
 /**
  * OkHttp-backed client.
@@ -85,18 +76,10 @@ class HttpClientImpl @JvmOverloads constructor(
             .apply { if (serverAuth && auth != null) serverAuthentication(this, auth) }
             .build()
 
-    /**
-     * Reuses one process-wide [SSLContext] instead of letting OkHttp build its own per client.
-     *
-     * A client is created per download, and OkHttp's default is `SSLContext.getInstance("TLS")` per
-     * client, each with its own TLS session cache. Sharing one context shares that cache, so repeat
-     * hosts resume instead of doing a full handshake, and a download no longer pays for building a
-     * context. (It was introduced for Conscrypt, where each context was a native BoringSSL context
-     * whose memory the platform allocator never returned.)
-     */
+    /** The process-wide TLS context ([SharedTls]) instead of OkHttp's own per client. */
     private fun sharedTls(builder: OkHttpClient.Builder) {
-        val tls = sharedTlsConfig ?: return
-        builder.sslSocketFactory(tls.first, tls.second)
+        val tls = SharedTls.instance ?: return
+        builder.sslSocketFactory(tls.socketFactory, tls.trustManager)
     }
 
     /**
@@ -206,7 +189,8 @@ class HttpClientImpl @JvmOverloads constructor(
 
     private fun trustAllCertificates(builder: OkHttpClient.Builder) {
         Logger.info("XDM", "TLS certificate and hostname verification disabled by user setting")
-        builder.sslSocketFactory(trustAllTlsConfig.first, trustAllTlsConfig.second)
+        val tls = SharedTls.trustAll
+        builder.sslSocketFactory(tls.socketFactory, tls.trustManager)
             .hostnameVerifier { _, _ -> true }
     }
 
@@ -317,39 +301,6 @@ class HttpClientImpl @JvmOverloads constructor(
 
         /** Handshakes restarted with the same credentials before a bare NTLM challenge counts as a refusal. */
         const val NTLM_RESTARTS = 1
-
-        /**
-         * The socket factory and trust manager shared by every client, built on first use and null if
-         * the platform refuses, in which case each client falls back to OkHttp's own default.
-         */
-        val sharedTlsConfig: Pair<SSLSocketFactory, X509TrustManager>? by lazy {
-            try {
-                val trustManagerFactory =
-                    TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
-                trustManagerFactory.init(null as KeyStore?)
-                val trustManager = trustManagerFactory.trustManagers
-                    .filterIsInstance<X509TrustManager>().firstOrNull()
-                    ?.let(CryptoProviders::trustManager)
-                    ?: return@lazy null
-                val context = CryptoProviders.tlsContext().apply { init(null, arrayOf<TrustManager>(trustManager), null) }
-                Logger.info("XDM", "Shared TLS context: ${context.provider.name}")
-                context.socketFactory to trustManager
-            } catch (e: Exception) {
-                Logger.error("XDM", "Could not create a shared TLS context, using per-client defaults", e)
-                null
-            }
-        }
-
-        /** Like [sharedTlsConfig], one context for every client that skips certificate checks. */
-        val trustAllTlsConfig: Pair<SSLSocketFactory, X509TrustManager> by lazy {
-            val trustAll = object : X509TrustManager {
-                override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
-                override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {}
-                override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
-            }
-            val context = CryptoProviders.tlsContext().apply { init(null, arrayOf<TrustManager>(trustAll), SecureRandom()) }
-            context.socketFactory to trustAll
-        }
     }
 }
 
