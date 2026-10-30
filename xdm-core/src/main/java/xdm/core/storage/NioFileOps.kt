@@ -7,7 +7,6 @@ import xdm.core.util.Logger
 import java.io.File
 import java.io.IOException
 import java.nio.ByteBuffer
-import java.nio.channels.ClosedChannelException
 import java.nio.channels.FileChannel
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.FileAlreadyExistsException
@@ -96,14 +95,17 @@ object NioFileOps : PlatformFileOps {
     }
 
     /**
-     * A `FileChannel` per writer (chunk), every one kept open until the output closes, then closed together.
+     * One `FileChannel` every chunk writes through, plus a second one for [PositionalOutput.force] and
+     * [PositionalOutput.length]; both closed together, so Defender scans the file once.
      *
-     * Not one channel for all the chunks: Windows runs one I/O at a time on a synchronous handle, and the
-     * JDK's Windows `FileChannel` holds a position lock around each positional write, so the chunks took
-     * turns (75 MB/s to an SSD, against 249 MB/s with a handle each). Not an `AsynchronousFileChannel`
-     * either: its IOCP threads and their temporary direct buffers cost +47% CPU and +10 MB. Handles kept
-     * open and closed together get the file scanned by Defender once (two handles, closed seconds apart:
-     * one scan), where a handle per connection, closed when it ended, got it scanned dozens of times.
+     * Flushing through the write channel would stall every chunk: Windows runs one I/O at a time on a
+     * synchronous handle, so a `FlushFileBuffers` there held all writes for its whole length (~1.2 s per
+     * 64 MB on an HDD, x64 laptop, Oct 2026). Through a channel nothing writes to, the writes go on.
+     *
+     * The JDK's Windows `FileChannel` takes a position lock around each positional write, so the chunks take
+     * turns on the one channel. A channel per chunk wrote no faster once flushes were rare and cost about
+     * twice the CPU (2.1 against 5.1 s per 3 GB to an SSD); an `AsynchronousFileChannel` cost +47% CPU and
+     * +10 MB for its IOCP threads, and a write cache with one writer thread 3 MB for no gain in speed.
      *
      * The file is grown by writing its last byte, never `RandomAccessFile.setLength` (see [createSparse]).
      */
@@ -115,93 +117,50 @@ object NioFileOps : PlatformFileOps {
                 if (size > length) channel.truncate(length)
                 else if (size < length) channel.write(ByteBuffer.wrap(ByteArray(1)), length - 1)
             }
+            return SharedChannelOutput(channel, FileChannel.open(file.toPath(), StandardOpenOption.WRITE))
         } catch (e: IOException) {
             channel.close()
             throw e
         }
-        return HandlePerWriterOutput(file, channel)
     }
 
-    /**
-     * [own] serves [write], [force] and [length]; each writer's views write through a channel of their own,
-     * opened at the writer's first write. A writer is only ever written from one thread at a time (a chunk's
-     * own thread), so its channel is never shared; a view closed under its chunk (pause, takeover) leaves the
-     * channel open, and a write still running on it finishes or fails on its own handle.
-     */
-    private class HandlePerWriterOutput(private val file: File, private val own: FileChannel) : PositionalOutput {
-        // Guarded by this.
-        private val handles = arrayListOf(own)
-        private val byWriter = HashMap<Long, FileChannel>()
-        private var closed = false
+    /** [channel] takes every write; [flush] serves [force] and [length] and is never written. */
+    private class SharedChannelOutput(private val channel: FileChannel, private val flush: FileChannel) : PositionalOutput {
+        override fun write(position: Long, b: ByteArray, off: Int, len: Int) = writeFully(channel, position, b, off, len)
 
-        override fun write(position: Long, b: ByteArray, off: Int, len: Int) = writeFully(own, position, b, off, len)
+        override fun length(): Long = uninterrupted { flush.size() }
 
-        override fun view(position: Long, writer: Long?): RandomAccessOutput = WriterView(writer, position)
-
-        override fun length(): Long = own.size()
-
-        /** One handle is enough: `FlushFileBuffers` and `fsync` flush the file's data, whichever handle wrote it. */
-        override fun force() = own.force(true)
+        /** `FlushFileBuffers` and `fsync` flush the file's data, whichever handle wrote it. */
+        override fun force() = uninterrupted { flush.force(true) }
 
         override fun close() {
-            val all = synchronized(this) {
-                closed = true
-                handles.toList()
-            }
-            var error: IOException? = null
-            for (channel in all) {
-                try {
-                    channel.close()
-                } catch (e: IOException) {
-                    if (error == null) error = e
-                }
-            }
-            error?.let { throw it }
-        }
-
-        /** [writer]'s channel, opened on first use; a new one each time for a one-off (null) writer. */
-        @Synchronized
-        private fun channelFor(writer: Long?): FileChannel {
-            if (closed) throw ClosedChannelException()
-            writer?.let { byWriter[it]?.let { channel -> return channel } }
-            val channel = FileChannel.open(file.toPath(), StandardOpenOption.WRITE)
-            handles += channel
-            if (writer != null) byWriter[writer] = channel
-            return channel
-        }
-
-        private inner class WriterView(private val writer: Long?, private var position: Long) : RandomAccessOutput {
-            @Volatile
-            private var closed = false
-            private var channel: FileChannel? = null
-
-            override fun write(b: ByteArray, off: Int, len: Int) {
-                if (closed) throw ClosedChannelException()
-                val channel = channel ?: channelFor(writer).also { this.channel = it }
-                writeFully(channel, position, b, off, len)
-                position += len
-            }
-
-            override fun seek(position: Long) {
-                this.position = position
-            }
-
-            override fun position(): Long = position
-            override fun length(): Long = this@HandlePerWriterOutput.length()
-            override fun setLength(length: Long) = throw UnsupportedOperationException("A view cannot resize the file")
-            override fun force() = this@HandlePerWriterOutput.force()
-
-            /** Only the view: its channel stays open until the output closes. */
-            override fun close() {
-                closed = true
+            try {
+                channel.close()
+            } finally {
+                flush.close()
             }
         }
     }
 
-    private fun writeFully(channel: FileChannel, position: Long, b: ByteArray, off: Int, len: Int) {
+    private fun writeFully(channel: FileChannel, position: Long, b: ByteArray, off: Int, len: Int) = uninterrupted {
         val buf = ByteBuffer.wrap(b, off, len)
         var p = position
         while (buf.hasRemaining()) p += channel.write(buf, p)
+    }
+
+    /**
+     * Runs [io] with the thread's interrupt cleared, then restores it. An interrupted thread's I/O closes a
+     * `FileChannel` for every thread (`ClosedByInterruptException`), and these channels are shared by all of
+     * a download's chunks. An interrupt that arrives during [io] still closes it; nothing in XDM interrupts a
+     * chunk's thread.
+     */
+    private inline fun <T> uninterrupted(io: () -> T): T {
+        val interrupted = Thread.interrupted()
+        try {
+            return io()
+        } finally {
+            if (interrupted) Thread.currentThread().interrupt()
+        }
     }
 
     override fun deleteTree(dir: File): Result<Unit> = runCatching {

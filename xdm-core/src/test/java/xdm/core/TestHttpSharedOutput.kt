@@ -10,15 +10,19 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.partFileName
+import xdm.core.downloaders.web.http.HttpDownloaderTask
 import xdm.core.storage.LocalStorage
 import xdm.core.storage.PositionalOutput
-import xdm.core.storage.RandomAccessOutput
 import xdm.core.storage.Storage
 import xdm.core.storage.StorageFile
 import xdm.core.storage.StorageFolder
 import java.io.File
 import java.io.IOException
+import java.nio.channels.ClosedChannelException
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.random.Random
@@ -33,16 +37,18 @@ class TestHttpSharedOutput : HttpDownloadTestBase() {
     /**
      * [LocalStorage] that counts the shared handles it opens and closes, and can fail like a disk: when
      * opening, or once [failAfterBytes] were written ("disk full"). [writeDelayMs] slows each write, so a
-     * pause finds writes in flight.
+     * pause finds writes in flight. [beforeWrite] sees every write first, with its position and length.
      */
     class FaultyStorage(
         private val failAfterBytes: Long = -1,
         private val failOnOpen: Boolean = false,
         private val writeDelayMs: Long = 0,
+        private val beforeWrite: ((position: Long, len: Int) -> Unit)? = null,
     ) : Storage {
         val opened = AtomicInteger()
         val closed = AtomicInteger()
         val written = AtomicLong()
+        val forces = AtomicInteger()
         val open: Int get() = opened.get() - closed.get()
 
         override fun folder(location: String): StorageFolder = Folder(LocalStorage.folder(location))
@@ -59,27 +65,18 @@ class TestHttpSharedOutput : HttpDownloadTestBase() {
 
         private inner class Output(private val real: PositionalOutput) : PositionalOutput by real {
             override fun write(position: Long, b: ByteArray, off: Int, len: Int) {
-                beforeWrite(len)
-                real.write(position, b, off, len)
-                written.addAndGet(len.toLong())
-            }
-
-            // The chunks write through their views (each with its own handle), not through write().
-            override fun view(position: Long, writer: Long?): RandomAccessOutput = View(real.view(position, writer))
-
-            private inner class View(private val view: RandomAccessOutput) : RandomAccessOutput by view {
-                override fun write(b: ByteArray, off: Int, len: Int) {
-                    beforeWrite(len)
-                    view.write(b, off, len)
-                    written.addAndGet(len.toLong())
-                }
-            }
-
-            private fun beforeWrite(len: Int) {
+                beforeWrite?.invoke(position, len)
                 if (writeDelayMs > 0) Thread.sleep(writeDelayMs)
                 if (failAfterBytes >= 0 && written.get() + len > failAfterBytes) {
                     throw IOException("Simulated: no space left on device")
                 }
+                real.write(position, b, off, len)
+                written.addAndGet(len.toLong())
+            }
+
+            override fun force() {
+                forces.incrementAndGet()
+                real.force()
             }
 
             override fun close() {
@@ -127,6 +124,104 @@ class TestHttpSharedOutput : HttpDownloadTestBase() {
         assertTrue(host.maxSegmentsSeen.get() > 1, "the download was segmented")
         assertEquals(1, storage.opened.get(), "one shared handle for the whole download")
         assertEquals(0, openAtCommit.get(), "closed before the publish")
+        assertEquals(0, storage.open, "nothing left open")
+        assertChecksumMatches(host, bytes)
+    }
+
+    /**
+     * The periodic sync runs on time: a download running for several intervals forces its data (and saves
+     * its progress) more than once before the final force at completion.
+     */
+    @Test
+    fun periodicSync_onTime() {
+        val bytes = randomData(4 * 1024 * 1024, seed = 12)
+        throttled("/timed", bytes, sliceKb = 8, sleepMs = 40)
+        val storage = FaultyStorage()
+        val host = host(storage)
+        val forcesAtCommit = AtomicInteger(-1)
+        host.onCommit = { forcesAtCommit.set(storage.forces.get()) }
+        val interval = HttpDownloaderTask.syncIntervalMs
+        HttpDownloaderTask.syncIntervalMs = 300
+        try {
+            newTask(12, "/timed", host, TestConfig(maxSegments = 8)).start()
+            awaitSuccess(host, 60)
+        } finally {
+            HttpDownloaderTask.syncIntervalMs = interval
+        }
+        assertTrue(forcesAtCommit.get() >= 3, "periodic forces plus the final one, got ${forcesAtCommit.get()}")
+        assertChecksumMatches(host, bytes)
+    }
+
+    /** Not on bytes: 72 MB, more than the old 64 MB trigger, inside one interval gets only the final force. */
+    @Test
+    fun periodicSync_notOnBytes() {
+        val bytes = randomData(72 * 1024 * 1024, seed = 13)
+        server.register("/big", Endpoint(bytes))
+        val storage = FaultyStorage()
+        val host = host(storage)
+        val forcesAtCommit = AtomicInteger(-1)
+        host.onCommit = { forcesAtCommit.set(storage.forces.get()) }
+        newTask(13, "/big", host, TestConfig(maxSegments = 8)).start()
+        awaitSuccess(host, 60)
+        assertEquals(1, forcesAtCommit.get(), "only the completion's force")
+        assertChecksumMatches(host, bytes)
+    }
+
+    /**
+     * Holds the first write of the second chunk (the first thread whose first write is not at offset 0) until
+     * the first chunk writes over that offset, which it can only do once it took the held chunk over: the
+     * held chunk has downloaded nothing, so it is the one a takeover removes. Then lets the held write go on,
+     * or throws what the chunk's closed view would ([closeInstead]).
+     */
+    private class HoldTakenOverWrite(private val closeInstead: Boolean) {
+        private val firstWrite = ConcurrentHashMap<Thread, Long>()
+        private val holding = AtomicBoolean()
+        @Volatile
+        private var heldAt = -1L
+        @Volatile
+        private var heldThread: Thread? = null
+        val takenOver = CountDownLatch(1)
+        val released = AtomicBoolean()
+
+        fun beforeWrite(position: Long, len: Int) {
+            val thread = Thread.currentThread()
+            if (firstWrite.putIfAbsent(thread, position) == null && position > 0 && holding.compareAndSet(false, true)) {
+                heldThread = thread
+                heldAt = position
+                assertTrue(takenOver.await(60, TimeUnit.SECONDS), "the first chunk never reached the held one")
+                released.set(true)
+                if (closeInstead) throw ClosedChannelException()
+                return
+            }
+            val at = heldAt
+            if (at >= 0 && thread !== heldThread && position <= at && at < position + len) takenOver.countDown()
+        }
+    }
+
+    /**
+     * A chunk taken over while it writes its first bytes: the takeover closed its view, so the write fails
+     * as closed. That is a cancel, not a disk error: the download completes and the file is intact.
+     */
+    @Test
+    fun takenOverChunk_writeFailsAsClosed_isCancel() = takenOverChunkWrite(closeInstead = true, id = 14)
+
+    /**
+     * A chunk taken over while its first write is already in the channel: the write lands, at offsets the
+     * first chunk writes with the same bytes, and is not counted. The download completes intact.
+     */
+    @Test
+    fun takenOverChunk_writeInFlightLands_fileIntact() = takenOverChunkWrite(closeInstead = false, id = 15)
+
+    private fun takenOverChunkWrite(closeInstead: Boolean, id: Long) {
+        val bytes = randomData(3 * 1024 * 1024, seed = id)
+        throttled("/takeover$id", bytes)
+        val hold = HoldTakenOverWrite(closeInstead)
+        val storage = FaultyStorage(beforeWrite = hold::beforeWrite)
+        val host = host(storage)
+        newTask(id, "/takeover$id", host, TestConfig(maxSegments = 2)).start()
+        awaitSuccess(host, 90)
+        assertTrue(hold.released.get(), "a second chunk's first write was held and released")
+        assertEquals(0L, hold.takenOver.count, "the first chunk took the held chunk over")
         assertEquals(0, storage.open, "nothing left open")
         assertChecksumMatches(host, bytes)
     }

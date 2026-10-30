@@ -493,16 +493,15 @@ class HttpChunkRetriever(
     }
 
     /**
-     * This chunk's view of the part file's output (see [HttpTaskContext.output]), at the chunk's next byte.
-     * Null once the download stopped, completed or failed: the output is closed for good.
+     * This chunk's view of the part file's shared write handle (see [HttpTaskContext.output]), at the
+     * chunk's next byte. Null once the download stopped, completed or failed: the handle is closed for good.
      */
     private fun openFileHandle(): RandomAccessOutput? {
         context.write {
             val chunk = context.chunks[id] ?: return null
             if (context.stopFlag.get() || context.completed.get()) return null
             val output = context.output { openPartFile() } ?: return null
-            // Keyed by the chunk: its reconnects reuse its handle, which only its own thread writes.
-            return output.at(chunk.offset + chunk.downloaded.get(), id).also { chunk.fileHandle.set(it) }
+            return output.at(chunk.offset + chunk.downloaded.get()).also { chunk.fileHandle.set(it) }
         }
         return null
     }

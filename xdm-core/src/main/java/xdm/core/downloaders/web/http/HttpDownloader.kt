@@ -617,10 +617,11 @@ class HttpDownloaderTask : ChunkController {
             context.write { splitChuck(context.chunks) }
         }
         // Only synced progress is saved, so how often the data is forced to disk is how far a resume
-        // after a crash can fall behind.
+        // after a power cut can fall behind: about [syncIntervalMs]. On time only, not every so many bytes:
+        // each flush holds the chunk that runs it, and every 64 MB that was more than once a second on an HDD.
         val unsynced = unsyncedBytes.addAndGet(downloaded)
         if (!context.stopFlag.get()
-            && (unsynced >= SYNC_BYTES || now - lastSync.get() >= SYNC_INTERVAL_MS)
+            && unsynced > 0 && now - lastSync.get() >= syncIntervalMs
             && syncing.compareAndSet(false, true)
         ) {
             try {
@@ -681,7 +682,8 @@ class HttpDownloaderTask : ChunkController {
 
     /**
      * Forces the temp file's data to disk, then records the progress it covers as synced and saves the
-     * state. The flush runs outside the lock, so the other chunks keep downloading meanwhile.
+     * state. Runs on the chunk thread whose progress update found it due; the flush runs outside the lock
+     * and through a handle no chunk writes to, so the other chunks keep downloading meanwhile.
      */
     private fun syncData() {
         unsyncedBytes.set(0)
@@ -710,9 +712,9 @@ class HttpDownloaderTask : ChunkController {
     }
 
     /**
-     * Forces the temp file's data to disk through the shared write handle: false (logged) if that failed.
-     * True if the handle is not open: nothing was written in this session, and what earlier ones wrote was
-     * forced when they ended (progress that was not is not in the saved state).
+     * Forces the temp file's data to disk through its output: false (logged) if that failed. True if the
+     * output is not open: nothing was written in this session, and what earlier ones wrote was forced when
+     * they ended (progress that was not is not in the saved state).
      */
     private fun forceTempFile(): Boolean {
         val output = context.currentOutput() ?: return true
@@ -725,12 +727,10 @@ class HttpDownloaderTask : ChunkController {
         }
     }
 
-    private companion object {
-        /** Force the downloaded data to disk after this much has been written... */
-        const val SYNC_BYTES = 64L * 1024 * 1024
-
-        /** ...or this long after the last time, whichever comes first. */
-        const val SYNC_INTERVAL_MS = 30_000L
+    internal companion object {
+        /** How often a running download forces its data to disk and saves its progress. Tests lower it. */
+        @Volatile
+        internal var syncIntervalMs = 30_000L
 
         /** How often a running download looks for a free slot to split into. */
         const val SPLIT_CHECK_MS = 1000L

@@ -196,7 +196,7 @@ class TestHttpDownloadIntegrity : HttpDownloadTestBase() {
     /**
      * `.state` may only record progress whose data has been forced to disk: after a power cut, data
      * still in the OS cache is gone, and a state claiming it would make resume skip the hole. Here one
-     * segment finishes long before the first fsync (64 MB or 30 s away), and the split that follows
+     * segment finishes long before the first fsync (30 s away), and the split that follows
      * saves the state, which must show no progress and no finished segment yet.
      */
     @Test

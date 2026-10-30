@@ -28,15 +28,15 @@ import java.util.concurrent.atomic.AtomicReference
 import kotlin.random.Random
 
 /**
- * [PositionalOutput], the part file handle all of a download's chunks share: the desktop one
- * ([NioFileOps], a handle per writer, all closed together) and the default that takes turns on one handle
- * (Android, SAF).
+ * [PositionalOutput], the part file handle all of a download's chunks share: the desktop one ([NioFileOps],
+ * one channel for the writes and one for flushes) and the default that takes turns on one handle (Android,
+ * SAF).
  */
 class TestPositionalOutput {
     @TempDir
     lateinit var root: File
 
-    enum class Impl { Handles, Locked }
+    enum class Impl { Shared, Locked }
 
     /** [PlatformFileOps] with the interface's own [PlatformFileOps.openPositional], the default Android gets. */
     private object LockedOps : PlatformFileOps by NioFileOps {
@@ -108,13 +108,13 @@ class TestPositionalOutput {
     }
 
     /**
-     * Eight chunks write their regions at once, each through views keyed by its id (as the chunks do), each
-     * view closed and reopened halfway like a reconnect: every byte lands at its offset, a closed view
-     * refuses writes while its writer's next view goes on, and after the output closes no view can write.
+     * Eight chunks write their regions at once through views (as the chunks do), each view closed and
+     * reopened halfway like a reconnect: every byte lands at its offset, a closed view refuses writes while
+     * its writer's next view goes on, and after the output closes no view can write.
      */
     @ParameterizedTest
     @EnumSource(Impl::class)
-    fun writerViews_inParallel_reopenAndClose(impl: Impl) = using(impl) { folder ->
+    fun views_inParallel_reopenAndClose(impl: Impl) = using(impl) { folder ->
         val region = 1024 * 1024
         val writers = 8
         val expected = data(region * writers, 9)
@@ -125,12 +125,12 @@ class TestPositionalOutput {
             Thread {
                 try {
                     start.await()
-                    var view = out.at(w.toLong() * region, w.toLong())
+                    var view = out.at(w.toLong() * region)
                     for (off in w * region until (w + 1) * region step PIECE) {
                         if (off == w * region + region / 2) {
                             view.close()
                             assertThrows(ClosedChannelException::class.java, { view.write(expected, off, PIECE) }, "a closed view refuses writes")
-                            view = out.at(off.toLong(), w.toLong())
+                            view = out.at(off.toLong())
                         }
                         view.write(expected, off, PIECE)
                     }
@@ -140,12 +140,49 @@ class TestPositionalOutput {
             }.apply { start() }
         }.forEach { it.join() }
         out.force()
-        val late = out.at(0, 0)
+        val late = out.at(0)
         out.close()
         errors.get()?.let { throw it }
         assertArrayEquals(expected, File(root, "part").readBytes(), "content after parallel writer views")
         assertThrows(IOException::class.java, { late.write(expected, 0, PIECE) }, "no view writes after the output closed")
-        assertThrows(IOException::class.java, { out.at(0, 99).write(expected, 0, PIECE) }, "nor a new writer's")
+        assertThrows(IOException::class.java, { out.at(0).write(expected, 0, PIECE) }, "nor a new view's")
+    }
+
+    /**
+     * The periodic sync: [PositionalOutput.force] while eight writers are writing neither fails them nor
+     * loses a byte, and [PositionalOutput.length] answers meanwhile.
+     */
+    @ParameterizedTest
+    @EnumSource(Impl::class)
+    fun forceWhileWriting_everyByteLands(impl: Impl) = using(impl) { folder ->
+        val region = 1024 * 1024
+        val writers = 8
+        val expected = data(region * writers, 10)
+        val errors = AtomicReference<Throwable>()
+        val running = CountDownLatch(writers)
+        folder.openPositional("part", create = true, length = expected.size.toLong()).use { out ->
+            val threads = (0 until writers).map { w ->
+                Thread {
+                    try {
+                        val view = out.at(w.toLong() * region)
+                        for (off in w * region until (w + 1) * region step PIECE) {
+                            view.write(expected, off, PIECE)
+                            if (off == w * region) running.countDown()
+                        }
+                    } catch (e: Throwable) {
+                        errors.compareAndSet(null, e)
+                    }
+                }.apply { start() }
+            }
+            assertTrue(running.await(10, TimeUnit.SECONDS), "writers started")
+            while (threads.any { it.isAlive }) {
+                out.force()
+                assertEquals(expected.size.toLong(), out.length(), "length while writing")
+            }
+            threads.forEach { it.join() }
+        }
+        errors.get()?.let { throw it }
+        assertArrayEquals(expected, File(root, "part").readBytes(), "content after forces during the writes")
     }
 
     /**
