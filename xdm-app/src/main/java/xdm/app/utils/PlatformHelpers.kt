@@ -36,6 +36,14 @@ import kotlin.system.exitProcess
 private var trayIconRef: TrayIcon? = null
 
 /**
+ * Whether a tray-icon click hides the window instead of showing it: only when it is already
+ * up, focused and not minimized. A window that is hidden, minimized or behind other windows
+ * comes up instead, so one click never strands it further out of sight.
+ */
+internal fun trayToggleHides(isVisible: Boolean, isFocused: Boolean, extendedState: Int): Boolean =
+    isVisible && isFocused && (extendedState and Frame.ICONIFIED) == 0
+
+/**
  * Installs the tray icon. Returns whether there is one (only logged: a hidden start without a tray
  * is still reachable by launching XDM again).
  */
@@ -82,7 +90,9 @@ fun createTray(image: Image): Boolean {
             // The right button opens the menu instead.
             if (e.button != MouseEvent.BUTTON1) return
             Logger.info("Tray icon was clicked")
-            app.showAppWindow()
+            // macOS keeps its click-to-open menu-bar convention; everywhere else a left click
+            // toggles the window.
+            if (detectOS() == OS.MacOS) app.showAppWindow() else app.toggleAppWindow()
         }
     })
     // Fires when a balloon posted by showTrayBalloon is clicked (and on a double-click of the icon

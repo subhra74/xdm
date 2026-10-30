@@ -18,7 +18,7 @@ import kotlin.system.exitProcess
  * `java.awt.SystemTray` (XEmbed) it also works under the JetBrains Runtime's Wayland toolkit, which has
  * no AWT tray at all (PACKAGING.md §7.6, §7.7).
  *
- * Left click (`Activate`) brings up the window; the menu has the same plus Exit.
+ * Left click (`Activate`) toggles the window; the menu has the same plus Exit.
  */
 internal object DBusTray {
 
@@ -108,6 +108,8 @@ internal object DBusTray {
 
     private fun showWindow() = AppContext.app.showAppWindow()
 
+    private fun toggleWindow() = AppContext.app.toggleAppWindow()
+
     private class Item(pixmaps: List<List<Any>>) : ExportedObject {
         private val properties: Map<String, Variant> = linkedMapOf(
             "Category" to Variant("s", "ApplicationStatus"),
@@ -144,7 +146,8 @@ internal object DBusTray {
         override fun invoke(interfaceName: String?, member: String, args: List<Any?>): Reply? = when (interfaceName) {
             PROPERTIES -> properties(properties, ITEM_INTERFACE, member, args)
             ITEM_INTERFACE, null -> when (member) {
-                "Activate", "SecondaryActivate" -> { showWindow(); Reply() }
+                "Activate" -> { toggleWindow(); Reply() }
+                "SecondaryActivate" -> { showWindow(); Reply() }
                 // We have a menu, so hosts draw it themselves; nothing to do for the other two.
                 "ContextMenu", "Scroll" -> Reply()
                 else -> null
