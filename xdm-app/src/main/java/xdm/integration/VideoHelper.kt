@@ -633,9 +633,14 @@ object VideoHelper {
         if (!acceptHeaderAdded) {
             headers["ACCEPT"] = mutableListOf("*/*")
         }
-        val bytes = downloadManifestForCapture(msg.url, headers, msg.cookie, reschedulesLeft) {
-            processDashVideo(msg, reschedulesLeft - 1)
-        } ?: return
+        val provided = msg.manifestBody?.takeIf { it.isNotBlank() }
+        if (provided != null) {
+            Logger.info("Using extension-provided manifest body: ${msg.url}")
+        }
+        val bytes = provided?.toByteArray()
+            ?: downloadManifestForCapture(msg.url, headers, msg.cookie, reschedulesLeft) {
+                processDashVideo(msg, reschedulesLeft - 1)
+            } ?: return
         parseDashManifest(msg, msg.url, bytes, headers)
     }
 
@@ -732,9 +737,14 @@ object VideoHelper {
         }
         // Read whole, once: the old `Files.lines` iterators over a temp file were never closed, which
         // leaked a file handle per parse and, on Windows, blocked the delete.
-        val lines = downloadManifestForCapture(msg.url, headers, msg.cookie, reschedulesLeft) {
-            processHLSVideo(msg, reschedulesLeft - 1)
-        }?.toString(Charsets.UTF_8)?.lines() ?: return
+        val provided = msg.manifestBody?.takeIf { it.isNotBlank() }
+        if (provided != null) {
+            Logger.info("Using extension-provided manifest body: ${msg.url}")
+        }
+        val lines = provided?.lines()
+            ?: downloadManifestForCapture(msg.url, headers, msg.cookie, reschedulesLeft) {
+                processHLSVideo(msg, reschedulesLeft - 1)
+            }?.toString(Charsets.UTF_8)?.lines() ?: return
         if (HlsParser.isMasterPlaylist(lines.iterator())) {
             Logger.info("Master playlist found")
             val playlists: List<HlsMasterPlaylist> =

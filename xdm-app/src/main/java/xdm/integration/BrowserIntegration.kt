@@ -516,6 +516,12 @@ data class ExtensionMessage(
     val fileSize: Long? = null,
     val mimeType: String? = null,
     val vid: Long? = null,
+    /**
+     * A manifest body fetched by the extension itself (browser stack, cookies included), for
+     * hosts that refuse the app's re-fetch. When present and non-blank the app parses it
+     * instead of downloading the manifest. Absent on old extensions; ignored by old apps.
+     */
+    val manifestBody: String? = null,
 )
 
 @Serializable
