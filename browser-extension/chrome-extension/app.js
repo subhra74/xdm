@@ -18,6 +18,16 @@ const MAX_BATCH_ITEMS = 5000;
 const MEDIA_REPORT_WINDOW_MS = 30000;
 /** Cap for the table below; the oldest entries go first (insertion order). */
 const MAX_MEDIA_REPORTS = 512;
+/**
+ * The extension refetches a reported manifest itself after this delay and hands the app the
+ * body, for hosts that refuse the app's own re-fetch (bot-managed CDNs answer the browser
+ * fine). Past the throttle window the player's own fetch spent. One delayed fetch plus one
+ * retry at most per URL; failures just leave today's refetch behavior in place.
+ */
+const MANIFEST_BODY_FETCH_DELAY_MS = 15000;
+const MANIFEST_BODY_RETRY_DELAY_MS = 60000;
+const MANIFEST_BODY_MAX_BYTES = 2 * 1024 * 1024;
+const MANIFEST_BODY_MAX_ATTEMPTS = 2;
 /** Registered by the bulk picker for one "Reload & capture" only; see bulk.js. */
 const OBSERVER_SCRIPT_ID = "xdm-rt-observer";
 
@@ -36,11 +46,17 @@ export default class App {
         this.onDownloadCreatedCallback = this.onDownloadCreated.bind(this);
         this.onDeterminingFilenameCallback = this.onDeterminingFilename.bind(this);
         this.onTabUpdateCallback = this.onTabUpdate.bind(this);
+        this.onAlarmCallback = this.onAlarm.bind(this);
         this.activeTabId = -1;
         this.connector = new Connector(this.onMessage.bind(this), this.onDisconnect.bind(this));
         // (tab id, manifest URL) -> when it was last reported. Cleared with the worker on every
         // restart, so a stale entry can only skip reports for one worker lifetime at most.
         this.recentMediaReports = new Map();
+        // Alarm name -> { data, attempts } for pending manifest-body fetches below. Alarms
+        // survive a worker restart but this map does not: an orphaned alarm finds no job and
+        // is ignored, so nothing is ever fetched twice for it.
+        this.manifestFetchJobs = new Map();
+        this.manifestFetchSeq = 0;
         // See start(). Until `started`, everything above is a placeholder, not what is known.
         this.started = false;
         this.ready = null;
@@ -161,6 +177,11 @@ export default class App {
             return;
         }
         this.connector.postMessage("/media", data);
+        // First sighting of a playlist: fetch its body in the background (browser stack,
+        // past the throttle window) so the app can parse it without refetching.
+        if (data && this.isManifestUrl(data.url)) {
+            this.scheduleManifestBodyFetch(data);
+        }
     }
 
     /**
@@ -196,6 +217,65 @@ export default class App {
                 this.recentMediaReports.delete(key);
             }
         }
+        for (let [name, job] of this.manifestFetchJobs) {
+            if ((job.data.tabId || "") === (tabId + "")) {
+                this.manifestFetchJobs.delete(name);
+                chrome.alarms.clear(name).catch(() => { });
+            }
+        }
+    }
+
+    /** Manifest by URL (query strings allowed), mirroring the app's isHLSUrl/isDashUrl. */
+    isManifestUrl(url) {
+        if (!url) {
+            return false;
+        }
+        const u = url.toLowerCase();
+        return u.includes("m3u8") || u.includes(".mpd");
+    }
+
+    /**
+     * Fetches a reported playlist with the browser's own stack after a delay, then hands the
+     * app the body so it never has to re-fetch (bot-managed hosts refuse the app but serve
+     * the browser). Bounded attempts; anything left over just keeps today's behavior.
+     */
+    scheduleManifestBodyFetch(data, delayMs) {
+        const name = "xdm-manifest-" + (++this.manifestFetchSeq);
+        this.manifestFetchJobs.set(name, { data: data, attempts: 0 });
+        chrome.alarms.create(name, { when: Date.now() + (delayMs || MANIFEST_BODY_FETCH_DELAY_MS) });
+    }
+
+    onAlarm(alarm) {
+        const job = alarm && this.manifestFetchJobs.get(alarm.name);
+        if (!job) {
+            return;
+        }
+        this.manifestFetchJobs.delete(alarm.name);
+        if (!this.isMonitoringEnabled() || !this.connector.isConnected()) {
+            return;
+        }
+        const url = job.data.url;
+        const init = { credentials: "include" };
+        if (job.data.tabUrl) {
+            init.referrer = job.data.tabUrl;
+            init.referrerPolicy = "unsafe-url";
+        }
+        fetch(url, init).then(async res => {
+            if (!res.ok) {
+                throw new Error("HTTP " + res.status);
+            }
+            const text = await res.text();
+            if (!text || text.length > MANIFEST_BODY_MAX_BYTES) {
+                throw new Error("unusable body");
+            }
+            this.connector.postMessage("/media", { ...job.data, manifestBody: text });
+        }).catch(err => {
+            this.logger.log("manifest body fetch failed (" + (err && err.message) + "): " + url);
+            if (++job.attempts < MANIFEST_BODY_MAX_ATTEMPTS) {
+                this.manifestFetchJobs.set(alarm.name, job);
+                chrome.alarms.create(alarm.name, { when: Date.now() + MANIFEST_BODY_RETRY_DELAY_MS });
+            }
+        });
     }
 
     onDeterminingFilename(download, suggest) {
@@ -327,6 +407,7 @@ export default class App {
             }
         });
         this.requestWatcher.register();
+        chrome.alarms.onAlarm.addListener(this.onAlarmCallback);
         chrome.permissions.onAdded.addListener(() => this.refreshHostAccess());
         chrome.permissions.onRemoved.addListener(() => this.refreshHostAccess());
         this.attachContextMenu();
