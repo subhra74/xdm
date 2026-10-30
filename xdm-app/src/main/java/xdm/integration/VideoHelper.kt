@@ -28,6 +28,7 @@ import java.nio.file.*
 import java.security.MessageDigest
 import java.time.LocalDateTime
 import java.util.*
+import java.util.concurrent.Executors
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.RejectedExecutionHandler
 import java.util.concurrent.ThreadPoolExecutor
@@ -186,6 +187,67 @@ object VideoHelper {
     /** Playlist requests carry an Accept header, as a browser's do; some CDNs refuse requests without one. */
     private fun withAccept(headers: HeaderMap): HeaderMap =
         if (headers.keys.any { it.equals("accept", ignoreCase = true) }) headers else headers + ("ACCEPT" to listOf("*/*"))
+
+    /**
+     * Quick retry delay on the pool thread, then delays for scheduled retries. The probe races
+     * the player: the browser fetches the playlist first and volume-throttled CDNs answer our
+     * immediate re-fetch with 403/429. Their budget recovers within seconds when quiet (a paused
+     * or backgrounded player stops spending it), so one quick retry plus two spaced ones before
+     * the video is dropped. Only the quick retry sleeps a media-detect pool thread; the spaced
+     * ones run on [retryScheduler].
+     */
+    private const val MANIFEST_PROBE_QUICK_RETRY_MS = 5000L
+    private val manifestProbeScheduledDelaysMs = longArrayOf(30_000, 120_000)
+
+    /** Runs spaced manifest re-probes; a lone daemon thread, never the 2-thread media pool. */
+    private val retryScheduler = Executors.newSingleThreadScheduledExecutor { r ->
+        Thread(r, "media-detect-retry").apply { isDaemon = true }
+    }
+
+    /**
+     * Fetches a captured playlist, retrying transient rate-limit walls. Only 429 and the 403
+     * some CDNs answer throttled fetches with are retried; anything else (404, DNS, TLS) is
+     * final and fails fast without sleeping. [reschedule] re-runs the caller's capture with one
+     * fewer round left, so retries never chain unboundedly; re-probes re-fetch, so a late round
+     * can only replace an entry with fresher data, never stale data.
+     */
+    private fun downloadManifestForCapture(
+        url: String,
+        headers: MutableMap<String, List<String>>,
+        cookie: String?,
+        reschedulesLeft: Int,
+        reschedule: () -> Unit,
+    ): ByteArray? {
+        var httpError = 0
+        fun fetch(): ByteArray? {
+            httpError = 0
+            return ManifestUtils.downloadManifestBytes(
+                httpClient, url, headers, cookie, AtomicBoolean(false),
+                onHttpError = { httpError = it },
+            )
+        }
+        fetch()?.let { return it }
+        if (httpError != 429 && httpError != 403) {
+            return null
+        }
+        Logger.info("Manifest probe got $httpError, retrying in ${MANIFEST_PROBE_QUICK_RETRY_MS}ms: $url")
+        try {
+            Thread.sleep(MANIFEST_PROBE_QUICK_RETRY_MS)
+        } catch (_: InterruptedException) {
+            Thread.currentThread().interrupt()
+            return null
+        }
+        fetch()?.let { return it }
+        if ((httpError == 429 || httpError == 403) && reschedulesLeft > 0) {
+            for (delayMs in manifestProbeScheduledDelaysMs) {
+                Logger.info("Manifest probe still $httpError, retrying in background in ${delayMs}ms: $url")
+                retryScheduler.schedule({ reschedule() }, delayMs, TimeUnit.MILLISECONDS)
+            }
+        } else {
+            Logger.info("Manifest probe failed, dropping video: $url")
+        }
+        return null
+    }
 
     /** Parses an MPD, resolving xlink remote elements (e.g. ad-insertion Periods) with the same headers and cookie. */
     private fun parseDash(
@@ -561,7 +623,7 @@ object VideoHelper {
         return if (name.endsWith(".$ext", ignoreCase = true)) name else "$name.$ext"
     }
 
-    private fun processDashVideo(msg: ExtensionMessage) {
+    private fun processDashVideo(msg: ExtensionMessage, reschedulesLeft: Int = 1) {
         Logger.info("Processing DASH manifest:  ${msg.url}")
         msg.url ?: return
         msg.tabId?.let { m3u8MpdTabs[it] = msg.tabUrl ?: "" }
@@ -571,9 +633,14 @@ object VideoHelper {
         if (!acceptHeaderAdded) {
             headers["ACCEPT"] = mutableListOf("*/*")
         }
-        val bytes = ManifestUtils.downloadManifestBytes(
-            httpClient, msg.url, headers, msg.cookie, AtomicBoolean(false)
-        ) ?: return
+        val provided = msg.manifestBody?.takeIf { it.isNotBlank() }
+        if (provided != null) {
+            Logger.info("Using extension-provided manifest body: ${msg.url}")
+        }
+        val bytes = provided?.toByteArray()
+            ?: downloadManifestForCapture(msg.url, headers, msg.cookie, reschedulesLeft) {
+                processDashVideo(msg, reschedulesLeft - 1)
+            } ?: return
         parseDashManifest(msg, msg.url, bytes, headers)
     }
 
@@ -658,7 +725,7 @@ object VideoHelper {
         return "$res $bwStr $lng"
     }
 
-    private fun processHLSVideo(msg: ExtensionMessage) {
+    private fun processHLSVideo(msg: ExtensionMessage, reschedulesLeft: Int = 1) {
         Logger.info("Downloading HLS manifest:  ${msg.url}")
         msg.url ?: return
         msg.tabId?.let { m3u8MpdTabs[it] = msg.tabUrl ?: "" }
@@ -670,9 +737,14 @@ object VideoHelper {
         }
         // Read whole, once: the old `Files.lines` iterators over a temp file were never closed, which
         // leaked a file handle per parse and, on Windows, blocked the delete.
-        val lines = ManifestUtils.downloadManifestBytes(
-            httpClient, msg.url, headers, msg.cookie, AtomicBoolean(false)
-        )?.toString(Charsets.UTF_8)?.lines() ?: return
+        val provided = msg.manifestBody?.takeIf { it.isNotBlank() }
+        if (provided != null) {
+            Logger.info("Using extension-provided manifest body: ${msg.url}")
+        }
+        val lines = provided?.lines()
+            ?: downloadManifestForCapture(msg.url, headers, msg.cookie, reschedulesLeft) {
+                processHLSVideo(msg, reschedulesLeft - 1)
+            }?.toString(Charsets.UTF_8)?.lines() ?: return
         if (HlsParser.isMasterPlaylist(lines.iterator())) {
             Logger.info("Master playlist found")
             val playlists: List<HlsMasterPlaylist> =
