@@ -150,17 +150,25 @@ interface RandomAccessOutput : Closeable {
 }
 
 /**
- * One handle on a file that many threads write through at once, each at its own offsets: the HTTP part
- * file, which all of a download's chunks share from the first write until the download pauses, fails or
- * completes. Antivirus scanners (Defender) scan a file each time a handle that wrote to it is closed, so a
- * handle per chunk and connection got a part file scanned dozens of times per download, once at the end
- * with a shared one.
+ * A file that many threads write at once, each at its own offsets: the HTTP part file, which all of a
+ * download's chunks write from the first write until the download pauses, fails or completes. Defender
+ * scans a file when the handles that wrote to it are closed; a handle per chunk and connection, each
+ * closed when its connection ended, got a part file scanned dozens of times per download. An output keeps
+ * whatever handles it opens until it is closed, and closes them together: one scan.
  *
  * Thread safe. Closing it while writes are in flight fails them with an [IOException].
  */
 interface PositionalOutput : Closeable {
     /** Writes [len] bytes of [b] from [off] at [position]; returns once they are written, or throws. */
     fun write(position: Long, b: ByteArray, off: Int, len: Int)
+
+    /**
+     * [writer]'s view at [position] ([at]). [writer] (a chunk's id) is only ever written from one thread at
+     * a time, so an output may give it a handle of its own and keep it for that writer's later views; null
+     * for a one-off view. By default every view writes through [write].
+     */
+    fun view(position: Long, writer: Long?): RandomAccessOutput = PositionalView(this, position)
+
     fun length(): Long
 
     /** Flushes written data and metadata to stable storage. */
@@ -191,9 +199,9 @@ class LockedPositionalOutput(private val out: RandomAccessOutput) : PositionalOu
 /**
  * A writer's own view of this output, starting at [position] and moving forward with each write. Closing
  * the view only closes the view: its next write throws [ClosedChannelException], and the output stays
- * open for the others. A pause or a takeover stops a chunk that way.
+ * open for the others. A pause or a takeover stops a chunk that way. See [PositionalOutput.view] for [writer].
  */
-fun PositionalOutput.at(position: Long): RandomAccessOutput = PositionalView(this, position)
+fun PositionalOutput.at(position: Long, writer: Long? = null): RandomAccessOutput = view(position, writer)
 
 private class PositionalView(private val out: PositionalOutput, private var position: Long) : RandomAccessOutput {
     @Volatile

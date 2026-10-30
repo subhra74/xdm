@@ -12,6 +12,7 @@ import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.partFileName
 import xdm.core.storage.LocalStorage
 import xdm.core.storage.PositionalOutput
+import xdm.core.storage.RandomAccessOutput
 import xdm.core.storage.Storage
 import xdm.core.storage.StorageFile
 import xdm.core.storage.StorageFolder
@@ -58,12 +59,27 @@ class TestHttpSharedOutput : HttpDownloadTestBase() {
 
         private inner class Output(private val real: PositionalOutput) : PositionalOutput by real {
             override fun write(position: Long, b: ByteArray, off: Int, len: Int) {
+                beforeWrite(len)
+                real.write(position, b, off, len)
+                written.addAndGet(len.toLong())
+            }
+
+            // The chunks write through their views (each with its own handle), not through write().
+            override fun view(position: Long, writer: Long?): RandomAccessOutput = View(real.view(position, writer))
+
+            private inner class View(private val view: RandomAccessOutput) : RandomAccessOutput by view {
+                override fun write(b: ByteArray, off: Int, len: Int) {
+                    beforeWrite(len)
+                    view.write(b, off, len)
+                    written.addAndGet(len.toLong())
+                }
+            }
+
+            private fun beforeWrite(len: Int) {
                 if (writeDelayMs > 0) Thread.sleep(writeDelayMs)
                 if (failAfterBytes >= 0 && written.get() + len > failAfterBytes) {
                     throw IOException("Simulated: no space left on device")
                 }
-                real.write(position, b, off, len)
-                written.addAndGet(len.toLong())
             }
 
             override fun close() {

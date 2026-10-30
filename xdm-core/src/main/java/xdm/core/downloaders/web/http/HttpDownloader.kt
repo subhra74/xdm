@@ -286,8 +286,13 @@ class HttpDownloaderTask : ChunkController {
                     reportFailure(DownloadError.InternalError)
                     return
                 }
-                // Saved as completed only once the whole file is on disk.
-                syncAll()
+                // Saved as completed only once the whole file is on disk. The writes go through a write
+                // cache, so a disk error can surface only here: then nothing is published, and the saved
+                // state keeps what was synced before.
+                if (!syncAll()) {
+                    reportFailure(DownloadError.DiskSpaceError)
+                    return
+                }
                 context.completed.set(true)
                 // Closed before the publish: Windows cannot rename a file that is open, and the scan the
                 // close triggers is the one scan of the whole file.
@@ -695,10 +700,13 @@ class HttpDownloaderTask : ChunkController {
 
     /**
      * For pause, failure and completion, when no chunk is writing: forces the data to disk and marks all
-     * of it synced, so the state saved next records exactly what was downloaded.
+     * of it synced, so the state saved next records exactly what was downloaded. False, marking nothing,
+     * if the force failed.
      */
-    private fun syncAll() {
-        if (forceTempFile()) context.chunks.values.forEach { it.synced.set(it.downloaded.get()) }
+    private fun syncAll(): Boolean {
+        if (!forceTempFile()) return false
+        context.chunks.values.forEach { it.synced.set(it.downloaded.get()) }
+        return true
     }
 
     /**

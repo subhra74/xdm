@@ -29,13 +29,14 @@ import kotlin.random.Random
 
 /**
  * [PositionalOutput], the part file handle all of a download's chunks share: the desktop one
- * ([NioFileOps], an asynchronous channel) and the default that takes turns on one handle (Android, SAF).
+ * ([NioFileOps], a handle per writer, all closed together) and the default that takes turns on one handle
+ * (Android, SAF).
  */
 class TestPositionalOutput {
     @TempDir
     lateinit var root: File
 
-    enum class Impl { Async, Locked }
+    enum class Impl { Handles, Locked }
 
     /** [PlatformFileOps] with the interface's own [PlatformFileOps.openPositional], the default Android gets. */
     private object LockedOps : PlatformFileOps by NioFileOps {
@@ -104,6 +105,47 @@ class TestPositionalOutput {
             out.write(PIECE.toLong(), expected, PIECE, PIECE)
         }
         assertArrayEquals(expected, File(root, "part").readBytes(), "the output stayed open for the others")
+    }
+
+    /**
+     * Eight chunks write their regions at once, each through views keyed by its id (as the chunks do), each
+     * view closed and reopened halfway like a reconnect: every byte lands at its offset, a closed view
+     * refuses writes while its writer's next view goes on, and after the output closes no view can write.
+     */
+    @ParameterizedTest
+    @EnumSource(Impl::class)
+    fun writerViews_inParallel_reopenAndClose(impl: Impl) = using(impl) { folder ->
+        val region = 1024 * 1024
+        val writers = 8
+        val expected = data(region * writers, 9)
+        val errors = AtomicReference<Throwable>()
+        val out = folder.openPositional("part", create = true, length = expected.size.toLong())
+        val start = CyclicBarrier(writers)
+        (0 until writers).map { w ->
+            Thread {
+                try {
+                    start.await()
+                    var view = out.at(w.toLong() * region, w.toLong())
+                    for (off in w * region until (w + 1) * region step PIECE) {
+                        if (off == w * region + region / 2) {
+                            view.close()
+                            assertThrows(ClosedChannelException::class.java, { view.write(expected, off, PIECE) }, "a closed view refuses writes")
+                            view = out.at(off.toLong(), w.toLong())
+                        }
+                        view.write(expected, off, PIECE)
+                    }
+                } catch (e: Throwable) {
+                    errors.compareAndSet(null, e)
+                }
+            }.apply { start() }
+        }.forEach { it.join() }
+        out.force()
+        val late = out.at(0, 0)
+        out.close()
+        errors.get()?.let { throw it }
+        assertArrayEquals(expected, File(root, "part").readBytes(), "content after parallel writer views")
+        assertThrows(IOException::class.java, { late.write(expected, 0, PIECE) }, "no view writes after the output closed")
+        assertThrows(IOException::class.java, { out.at(0, 99).write(expected, 0, PIECE) }, "nor a new writer's")
     }
 
     /**
