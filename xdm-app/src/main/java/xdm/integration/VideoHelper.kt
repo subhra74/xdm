@@ -187,6 +187,50 @@ object VideoHelper {
     private fun withAccept(headers: HeaderMap): HeaderMap =
         if (headers.keys.any { it.equals("accept", ignoreCase = true) }) headers else headers + ("ACCEPT" to listOf("*/*"))
 
+    /**
+     * Delays between manifest-probe attempts. The probe races the player: the browser fetches
+     * the playlist first and tight CDNs answer our immediate re-fetch with 403/429. Their budget
+     * resets within seconds, so two spaced retries before the video is dropped. Bounded (~9s worst
+     * case) for the 2-thread media-detect pool.
+     */
+    private val manifestProbeRetryDelaysMs = longArrayOf(4000, 5000)
+
+    /**
+     * Fetches a captured playlist, retrying transient rate-limit walls. Only 429 and the 403 some
+     * CDNs answer throttled fetches with are retried; anything else (404, DNS, TLS) is final and
+     * fails fast without sleeping.
+     */
+    private fun downloadManifestForCapture(
+        url: String,
+        headers: MutableMap<String, List<String>>,
+        cookie: String?,
+    ): ByteArray? {
+        var httpError = 0
+        ManifestUtils.downloadManifestBytes(
+            httpClient, url, headers, cookie, AtomicBoolean(false),
+            onHttpError = { httpError = it },
+        )?.let { return it }
+        if (httpError != 429 && httpError != 403) {
+            return null
+        }
+        for (waitMs in manifestProbeRetryDelaysMs) {
+            Logger.info("Manifest probe got $httpError, retrying in ${waitMs}ms: $url")
+            try {
+                Thread.sleep(waitMs)
+            } catch (_: InterruptedException) {
+                Thread.currentThread().interrupt()
+                return null
+            }
+            httpError = 0
+            ManifestUtils.downloadManifestBytes(
+                httpClient, url, headers, cookie, AtomicBoolean(false),
+                onHttpError = { httpError = it },
+            )?.let { return it }
+        }
+        Logger.info("Manifest probe failed, dropping video: $url")
+        return null
+    }
+
     /** Parses an MPD, resolving xlink remote elements (e.g. ad-insertion Periods) with the same headers and cookie. */
     private fun parseDash(
         url: String, bytes: ByteArray, headers: HeaderMap, cookie: String?, client: PoolingHttpClient = httpClient,
@@ -571,9 +615,7 @@ object VideoHelper {
         if (!acceptHeaderAdded) {
             headers["ACCEPT"] = mutableListOf("*/*")
         }
-        val bytes = ManifestUtils.downloadManifestBytes(
-            httpClient, msg.url, headers, msg.cookie, AtomicBoolean(false)
-        ) ?: return
+        val bytes = downloadManifestForCapture(msg.url, headers, msg.cookie) ?: return
         parseDashManifest(msg, msg.url, bytes, headers)
     }
 
@@ -670,9 +712,7 @@ object VideoHelper {
         }
         // Read whole, once: the old `Files.lines` iterators over a temp file were never closed, which
         // leaked a file handle per parse and, on Windows, blocked the delete.
-        val lines = ManifestUtils.downloadManifestBytes(
-            httpClient, msg.url, headers, msg.cookie, AtomicBoolean(false)
-        )?.toString(Charsets.UTF_8)?.lines() ?: return
+        val lines = downloadManifestForCapture(msg.url, headers, msg.cookie)?.toString(Charsets.UTF_8)?.lines() ?: return
         if (HlsParser.isMasterPlaylist(lines.iterator())) {
             Logger.info("Master playlist found")
             val playlists: List<HlsMasterPlaylist> =
