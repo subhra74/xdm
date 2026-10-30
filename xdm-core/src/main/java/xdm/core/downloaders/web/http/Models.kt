@@ -65,6 +65,11 @@ data class Chunk(
      * that survived it. Progress loaded from `.state` is synced by definition.
      */
     val synced: AtomicLong = AtomicLong(downloaded.get()),
+    /**
+     * The response this chunk's thread is reading, so a tail racer that finished the chunk can abort a read
+     * blocked on it ([HttpResponse.cancel]). Not saved.
+     */
+    val response: AtomicReference<HttpResponse?> = AtomicReference(null),
 )
 
 data class HttpTaskContext(

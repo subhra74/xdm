@@ -8,6 +8,7 @@ import xdm.core.downloaders.*
 import xdm.core.downloaders.web.ProgressTracker
 import xdm.core.downloaders.web.SpeedLimiter
 import xdm.core.downloaders.web.loadState
+import xdm.core.network.http.HttpResponse
 import xdm.core.network.http.PoolingHttpClient
 import xdm.core.network.http.impl.HttpClientImpl
 import xdm.core.util.Logger
@@ -185,6 +186,13 @@ class HttpDownloaderTask : ChunkController {
     /** Set once the failure has been reported, so chunks failing together report it once. */
     private val failureReported = AtomicBoolean(false)
 
+    /** Running tail racers by the chunk they race, and every chunk raced this session (each at most once). */
+    private val racers = ConcurrentHashMap<Long, TailRacer>()
+    private val racedChunks: MutableSet<Long> = ConcurrentHashMap.newKeySet()
+
+    /** Bytes counted as downloaded in this session's context; for tests. */
+    internal val downloadedBytes: Long get() = context.downloaded.get()
+
     override fun start() {
         if (!newDownload) {
             resume()
@@ -251,6 +259,7 @@ class HttpDownloaderTask : ChunkController {
         Thread {
             context.write {
                 context.stopFlag.set(true)
+                cancelRacers()
                 context.chunks.values.forEach {
                     try {
                         it.fileHandle.get()?.close()
@@ -271,6 +280,8 @@ class HttpDownloaderTask : ChunkController {
     }
 
     override fun onChunkFinished(id: Long) {
+        // Whoever finished it, a racer still fetching it is no longer needed.
+        racers[id]?.cancel()
         if (!context.completed.get()) {
             context.write {
                 if (context.chunks.values.any { it.status.get() != ChunkStatus.Finished }) {
@@ -327,6 +338,7 @@ class HttpDownloaderTask : ChunkController {
                         }
                     }
                 } finally {
+                    cancelRacers()
                     context.httpClient.close()
                     throttle.disable()
                 }
@@ -362,6 +374,7 @@ class HttpDownloaderTask : ChunkController {
             saveState()
             context.closeOutput()
         }
+        cancelRacers()
         context.downloadHost.onDownloadFailed(context.id, finalError)
         context.httpClient.close()
     }
@@ -448,7 +461,7 @@ class HttpDownloaderTask : ChunkController {
                 maxId = chunk.id
             }
         }
-        if (max > 256 * 1024 && maxId != -1L) {
+        if (max > MIN_SPLIT_BYTES && maxId != -1L) {
             Logger.info("XDM", "Max chunk found: $maxId with length $max")
             return maxId
         }
@@ -470,15 +483,20 @@ class HttpDownloaderTask : ChunkController {
         if (rc < 1) return
         rc -= retryFailedChunk(rc)
         if (rc < 1) return
-        findMaxChunk()?.let {
-            val max = it
+        val max = findMaxChunk()
+        if (max == null) {
+            // Nothing left big enough to split: race the tails that are left instead.
+            startTailRacers()
+            return
+        }
+        run {
             chunks[max]?.let { c ->
-                if (c.length.get() < 256 * 1024) {
+                if (c.length.get() < MIN_SPLIT_BYTES) {
                     Logger.info("XDM", "Chunk ${c.id} is to small to split")
                     return
                 }
                 val rem = c.length.get() - c.downloaded.get()
-                if (rem < 256 * 1024) {
+                if (rem < MIN_SPLIT_BYTES) {
                     Logger.info("XDM", "Chunk ${c.id} is to small to split")
                     return
                 }
@@ -511,6 +529,8 @@ class HttpDownloaderTask : ChunkController {
                 return false
             }
             val chunk = context.chunks[chunkId] ?: return false
+            // Finished by a tail racer: its thread is on its way out and must not grow it again.
+            if (chunk.status.get() == ChunkStatus.Finished) return false
             val position = chunk.offset + chunk.length.get()
 
             for (nextChunk in context.chunks.values) {
@@ -527,6 +547,7 @@ class HttpDownloaderTask : ChunkController {
             if (nextChunkId != -1L) {
                 Logger.info("XDM", "Takeover chunk $nextChunkId with $chunk")
                 context.chunks[nextChunkId]?.let { nc ->
+                    racers[nextChunkId]?.cancel()
                     nc.status.set(ChunkStatus.Cancelled)
                     closeFileHandle(nc)
                     len = nc.length.get()
@@ -544,6 +565,74 @@ class HttpDownloaderTask : ChunkController {
             Logger.info("XDM", "No Chunk found for takeover")
         }
         return false
+    }
+
+    /**
+     * Starts a [TailRacer] for each chunk still downloading whose rest is too small to split, at most one per
+     * chunk per session, in the slots no chunk uses. Racers never hold a slot a split or a retry needs: those
+     * do not count them, so a racer may briefly add a connection over the segment count. Under the lock.
+     * Not with a speed limit: racing spends extra bandwidth to finish sooner, which the limit is there to stop.
+     */
+    private fun startTailRacers() {
+        if (config.speedLimiterEnabled && config.speedLimit > 0) return
+        val free = maxChunk - getActiveCount(context.chunks) - racers.size
+        if (free < 1) return
+        context.chunks.values
+            .filter { c ->
+                c.status.get().let { it == ChunkStatus.Ready || it == ChunkStatus.Downloading }
+                    && c.id !in racedChunks
+                    && (c.length.get() - c.downloaded.get()) in 1..RACE_MAX_BYTES
+            }
+            .sortedByDescending { it.length.get() - it.downloaded.get() }
+            .take(free)
+            .forEach { c ->
+                racedChunks.add(c.id)
+                val racer = TailRacer(c.id, context, raceGraceMs, { start, end, data -> commitRace(c.id, start, end, data) }) {
+                    racers.remove(it.chunkId, it)
+                }
+                racers[c.id] = racer
+                Logger.info("XDM", "Starting a tail racer for chunk ${c.id}")
+                racer.start()
+            }
+    }
+
+    private fun cancelRacers() {
+        racers.values.forEach { it.cancel() }
+    }
+
+    /**
+     * Writes a racer's bytes `[start, end)` of chunk [chunkId] and finishes the chunk, if it still needs them:
+     * the download is running, the chunk is not finished, still ends at [end], and has not got past them.
+     * Only the part the chunk's own thread has not counted yet is written; that thread may still write some
+     * of it too, which is the same bytes. Its blocked read is aborted, and it sees the chunk Finished and stops.
+     */
+    private fun commitRace(chunkId: Long, start: Long, end: Long, data: ByteArray): Boolean {
+        var written = 0L
+        var stale: HttpResponse? = null
+        context.write {
+            if (context.stopFlag.get() || context.completed.get() || failureReported.get()) return false
+            val c = context.chunks[chunkId] ?: return false
+            if (c.status.get().let { it == ChunkStatus.Finished || it == ChunkStatus.Cancelled }) return false
+            if (c.offset + c.length.get() != end) return false
+            val from = c.offset + c.downloaded.get()
+            if (from < start || from >= end) return false
+            try {
+                val output = context.output { context.openPartFile() } ?: return false
+                output.write(from, data, (from - start).toInt(), (end - from).toInt())
+            } catch (e: IOException) {
+                // Left to the chunk's own thread, which reports a disk error if there is one.
+                Logger.error("XDM", "Tail racer for chunk $chunkId could not write", e)
+                return false
+            }
+            written = end - from
+            c.downloaded.set(c.length.get())
+            c.status.set(ChunkStatus.Finished)
+            stale = c.response.getAndSet(null)
+        }
+        stale?.cancel()
+        updateBytesDownloaded(chunkId, written)
+        onChunkFinished(chunkId)
+        return true
     }
 
     /**
@@ -734,5 +823,15 @@ class HttpDownloaderTask : ChunkController {
 
         /** How often a running download looks for a free slot to split into. */
         const val SPLIT_CHECK_MS = 1000L
+
+        /** A chunk with no more than this left is not split. */
+        const val MIN_SPLIT_BYTES = 256L * 1024
+
+        /** The most a tail racer fetches: exactly what cannot be split, so every lingering tail can be raced. */
+        const val RACE_MAX_BYTES = MIN_SPLIT_BYTES
+
+        /** How long a tail racer gives the chunk to finish on its own before connecting. Tests lower it. */
+        @Volatile
+        internal var raceGraceMs = 2000L
     }
 }

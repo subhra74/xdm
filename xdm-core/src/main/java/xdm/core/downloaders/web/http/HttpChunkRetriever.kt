@@ -5,6 +5,7 @@ package xdm.core.downloaders.web.http
 
 import xdm.core.CoreConfig
 import xdm.core.downloaders.DownloadError
+import xdm.core.network.http.HeaderMap
 import xdm.core.network.http.HttpResponse
 import xdm.core.network.http.Range
 import xdm.core.network.http.isTlsVerificationError
@@ -40,6 +41,9 @@ class HttpChunkRetriever(
             if (isCancelled()) return
             Logger.error("XDM", "Chunk $id failed with unexpected error", e)
             chunkFailed(DownloadError.InternalError)
+        } finally {
+            // A return from inside the response's use{} skips clearing it there.
+            context.chunks[id]?.response?.set(null)
         }
     }
 
@@ -63,6 +67,8 @@ class HttpChunkRetriever(
                     // still owns an open response body, and returning without closing it leaks the
                     // connection ("A connection to ... was leaked" from OkHttp on the next GC).
                     connectResult.response.use { res ->
+                        // A tail racer that finishes this chunk cancels it to free this thread from a stalled read.
+                        context.chunks[id]?.response?.set(res)
                         if (isCancelled()) return
                         // Where the link led this time (a request through the link may have been
                         // redirected somewhere fresh): later requests go there.
@@ -99,7 +105,7 @@ class HttpChunkRetriever(
                             retryCount += 1
                             onRetry(retryCount)
                         }
-                    }
+                    }.also { context.chunks[id]?.response?.compareAndSet(connectResult.response, null) }
                 }
 
                 ConnectResult.InvalidResponse -> {
@@ -157,12 +163,7 @@ class HttpChunkRetriever(
         Logger.info("XDM", "Chunk: $id - Connecting to url $requestUrl")
         val range = if (endRange != null) Range(startRange, endRange - 1) else Range(startRange)
         Logger.info(range)
-        // Only bytes of the version the download started with may be added: if the file changed, If-Range
-        // makes the server send the whole new file (200), which a bounded range refuses below.
-        val headers = context.validator?.takeIf { endRange != null }?.let { validator ->
-            context.headers.orEmpty().filterKeys { !it.equals("If-Range", ignoreCase = true) } +
-                ("If-Range" to listOf(validator))
-        } ?: context.headers
+        val headers = context.rangeHeaders(bounded = endRange != null)
         val response = context.httpClient.getResponse(requestUrl, headers, context.cookie, range)
         response.onSuccess { r ->
             if (isLinkExpiredStatus(r.statusCode, r.getHeader("WWW-Authenticate"))) {
@@ -236,8 +237,8 @@ class HttpChunkRetriever(
                 Logger.info("XDM", "Chunk $id copy_data done")
                 context.write {
                     context.chunks[id]?.apply {
-                        status.set(ChunkStatus.Finished)
-                        controller.onChunkFinished(id)
+                        // A tail racer may have finished it already, and reported that.
+                        if (status.getAndSet(ChunkStatus.Finished) != ChunkStatus.Finished) controller.onChunkFinished(id)
                     }
                 }
                 false
@@ -358,8 +359,13 @@ class HttpChunkRetriever(
                 }
 
                 context.write {
-                    val d = context.chunks[id]?.downloaded?.get() ?: return CopyResult.Cancel
-                    context.chunks[id]?.downloaded?.set(d + read)
+                    val chunk = context.chunks[id] ?: return CopyResult.Cancel
+                    // Finished by a tail racer after the cancel check above: those bytes are written (the same
+                    // bytes it wrote) but already counted.
+                    if (chunk.status.get().let { it == ChunkStatus.Finished || it == ChunkStatus.Cancelled }) {
+                        return CopyResult.Cancel
+                    }
+                    chunk.downloaded.addAndGet(read.toLong())
                 }
 
                 controller.updateBytesDownloaded(id, read.toLong())
@@ -482,12 +488,13 @@ class HttpChunkRetriever(
         return null
     }
 
+    /** Also true once the chunk is Finished by someone else: a tail racer got its bytes first. */
     private fun isCancelled(): Boolean {
         if (context.stopFlag.get()) {
             return true
         }
         context.read {
-            context.chunks[id]?.run { return status.get() == ChunkStatus.Cancelled }
+            context.chunks[id]?.run { return status.get().let { it == ChunkStatus.Cancelled || it == ChunkStatus.Finished } }
         }
         return true
     }
@@ -500,33 +507,10 @@ class HttpChunkRetriever(
         context.write {
             val chunk = context.chunks[id] ?: return null
             if (context.stopFlag.get() || context.completed.get()) return null
-            val output = context.output { openPartFile() } ?: return null
+            val output = context.output { context.openPartFile() } ?: return null
             return output.at(chunk.offset + chunk.downloaded.get()).also { chunk.fileHandle.set(it) }
         }
         return null
-    }
-
-    /** Opens the part file for the download's shared write handle, creating it on the first start. */
-    private fun openPartFile(): PositionalOutput {
-        val file = context.partFile
-        // A part file written before must still be there, at full size; recreating it would
-        // silently lose what it held. Failing here is a disk error, and the download stops.
-        if (context.tempFileCreated.get() &&
-            context.totalSize.let { size -> file.length().let { it < 0 || (size != null && it != size) } }
-        ) throw IOException("Part file missing or damaged: $file")
-        val size = context.totalSize
-        val output = when {
-            context.tempFileCreated.get() -> file.openPositional(create = false).also {
-                if (size != null) Logger.info("XDM", "Temp file created already")
-            }
-            // Sized without writing the gap (setLength may zero-fill): see NioFileOps.createSparse.
-            size != null -> file.openPositional(create = true, length = size).also {
-                Logger.info("XDM", "Temp file created with size $size")
-            }
-            else -> file.openPositional(create = true)
-        }
-        context.tempFileCreated.set(true)
-        return output
     }
 
     private fun closeFileHandle(fileHandle: RandomAccessOutput?) {
@@ -577,3 +561,36 @@ class HttpChunkRetriever(
         const val FILL_BYTES = 64 * 1024
     }
 }
+
+/** Opens the part file for the download's shared write handle, creating it on the first start. */
+internal fun HttpTaskContext.openPartFile(): PositionalOutput {
+    val file = partFile
+    // A part file written before must still be there, at full size; recreating it would
+    // silently lose what it held. Failing here is a disk error, and the download stops.
+    if (tempFileCreated.get() &&
+        totalSize.let { size -> file.length().let { it < 0 || (size != null && it != size) } }
+    ) throw IOException("Part file missing or damaged: $file")
+    val size = totalSize
+    val output = when {
+        tempFileCreated.get() -> file.openPositional(create = false).also {
+            if (size != null) Logger.info("XDM", "Temp file created already")
+        }
+        // Sized without writing the gap (setLength may zero-fill): see NioFileOps.createSparse.
+        size != null -> file.openPositional(create = true, length = size).also {
+            Logger.info("XDM", "Temp file created with size $size")
+        }
+        else -> file.openPositional(create = true)
+    }
+    tempFileCreated.set(true)
+    return output
+}
+
+/**
+ * The headers for a range request: only bytes of the version the download started with may be added, so a
+ * [bounded] range carries If-Range, and if the file changed the server sends the whole new file (200),
+ * which is refused.
+ */
+internal fun HttpTaskContext.rangeHeaders(bounded: Boolean): HeaderMap? =
+    validator?.takeIf { bounded }?.let { validator ->
+        headers.orEmpty().filterKeys { !it.equals("If-Range", ignoreCase = true) } + ("If-Range" to listOf(validator))
+    } ?: headers

@@ -291,7 +291,8 @@ class HttpClientImpl @JvmOverloads constructor(
                     response.header(
                         it
                     )
-                })
+                },
+                cancelCallback = { call.cancel() })
         }
     }
 

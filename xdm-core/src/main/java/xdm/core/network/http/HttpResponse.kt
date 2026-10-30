@@ -8,6 +8,12 @@ import java.net.URI
 
 interface HttpResponse : AutoCloseable {
     override fun close()
+
+    /**
+     * Aborts the response from another thread: a read blocked on its body fails with an IOException. The
+     * thread reading it still closes it. Unlike [close], safe while another thread is reading.
+     */
+    fun cancel() = close()
     val statusCode: Int
     val statusMessage: String
     val contentLength: Long?
@@ -33,9 +39,14 @@ class HttpResponseImpl(
     override val finalUrl: String?,
     private val closeCallback: () -> Unit,
     private val headerCallback: (String) -> String?,
+    private val cancelCallback: (() -> Unit)? = null,
 ) : HttpResponse {
     override fun close() {
         closeCallback()
+    }
+
+    override fun cancel() {
+        cancelCallback?.invoke() ?: close()
     }
 
     override fun getHeader(name: String): String? = headerCallback(name)
