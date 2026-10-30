@@ -46,7 +46,7 @@ class UntypedMediaMessageTest {
         "%20-%20Jun%2026%2F20261004%2F1521927%2Fe8fe00cd-27fd-4cf0-87ad-8cc44527d593.mp4"
 
     /** An S3 object served without a Content-Type, answering a player's Range request. */
-    private fun rangeMessage(range: String, length: Long, total: Long) = json.decodeFromString<ExtensionMessage>(
+    private fun rangeMessage(range: String, length: Long, total: Long, url: String = this.url) = json.decodeFromString<ExtensionMessage>(
         """
         {"url":"$url","tabId":"237767163","method":"GET",
          "requestHeaders":{"Range":["bytes=$range"],"Referer":["https://olympus.example.com/"]},
@@ -68,5 +68,14 @@ class UntypedMediaMessageTest {
     fun smallTailRangeOfALargeFile_passesTheMinimumSize() {
         VideoHelper.processMediaMessage(rangeMessage("599305003-599306002", 1000, 599306003))
         assertEquals(1, captured.size, "a 1000-byte range of a 572 MB file is still captured")
+    }
+
+    /** `[` `]` in the file name: Chrome sends them as is, and java.net.URI used to throw on them here. */
+    @Test
+    fun bracketsInTheFileName_areCaptured() {
+        val url = "https://21.static.example.com/80cf/Show.S01E06.540p.[Group.Com].mp4?download_token=d754"
+        VideoHelper.processMediaMessage(rangeMessage("0-999", 1000, 102818495, url))
+        assertEquals(1, captured.size, "captured once")
+        assertEquals(url, captured[0].first.url, "URL kept as sent")
     }
 }

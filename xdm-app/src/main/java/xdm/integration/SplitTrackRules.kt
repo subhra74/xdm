@@ -1,11 +1,11 @@
 package xdm.integration
 
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
-import java.net.URI
 import java.net.URLDecoder
 import java.util.Base64
 
@@ -38,10 +38,9 @@ object MetaCdnRule {
     private val json = Json { ignoreUnknownKeys = true }
 
     fun match(url: String): SplitTrackUrl? {
-        val uri = runCatching { URI(url) }.getOrNull() ?: return null
-        val host = uri.host?.lowercase() ?: return null
-        if (!host.endsWith(".fbcdn.net")) return null
-        val rawQuery = uri.rawQuery ?: return null
+        val uri = url.toHttpUrlOrNull() ?: return null
+        if (!uri.host.endsWith(".fbcdn.net")) return null
+        val rawQuery = uri.encodedQuery ?: return null
         val params = rawQuery.split('&').filter { it.isNotEmpty() }
         if (params.none { it.startsWith("bytestart=") || it.startsWith("byteend=") }) return null
         val efg = params.firstOrNull { it.startsWith("efg=") }?.substringAfter('=') ?: return null
@@ -53,7 +52,7 @@ object MetaCdnRule {
         val kept = params.filterNot { it.startsWith("bytestart=") || it.startsWith("byteend=") }
         val whole = url.substringBefore('?') + if (kept.isEmpty()) "" else "?" + kept.joinToString("&")
         return SplitTrackUrl(
-            trackKey = uri.rawPath,
+            trackKey = uri.encodedPath,
             url = whole,
             assetKey = "meta:$asset",
             audio = tag.endsWith("audio"),
@@ -80,8 +79,7 @@ object BilibiliCdnRule {
     private val PATH = Regex("""^/upgcxcode/\d+/\d+/(\d+)/\1-\d+-(\d+)\.m4s$""")
 
     fun match(url: String): SplitTrackUrl? {
-        val uri = runCatching { URI(url) }.getOrNull() ?: return null
-        val path = uri.rawPath ?: return null
+        val path = url.toHttpUrlOrNull()?.encodedPath ?: return null
         val m = PATH.matchEntire(path) ?: return null
         val cid = m.groupValues[1]
         val n = m.groupValues[2].toLongOrNull() ?: return null

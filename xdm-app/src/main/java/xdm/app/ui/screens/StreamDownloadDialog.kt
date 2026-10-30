@@ -1,6 +1,7 @@
 package xdm.app.ui.screens
 
 import com.formdev.flatlaf.FlatClientProperties
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import xdm.app.AppContext
 import xdm.app.I8N.text
 import xdm.app.ui.components.CappedComboBox
@@ -42,7 +43,6 @@ import java.awt.Window
 import java.awt.datatransfer.DataFlavor
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import java.net.URI
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.Box
@@ -411,8 +411,8 @@ class StreamDownloadDialog(private val near: Window?) : JFrame() {
             is StreamPick.Dash -> pick.extension
             is StreamPick.Http -> pick.extension
         }
-        val uri = runCatching { URI(txtUrl.text.trim()) }.getOrNull()
-        val segments = uri?.path?.split('/')?.filter { it.isNotBlank() }.orEmpty()
+        val uri = txtUrl.text.trim().toHttpUrlOrNull()
+        val segments = uri?.pathSegments?.filter { it.isNotBlank() }.orEmpty()
         val last = segments.lastOrNull()?.substringBeforeLast('.')
         val generic = setOf("master", "index", "playlist", "manifest", "chunklist", "prog_index", "stream", "main", "video")
         val base = when {

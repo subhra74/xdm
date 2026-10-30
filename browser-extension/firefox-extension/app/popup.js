@@ -82,8 +82,50 @@ class VideoPopup {
                 chrome.runtime.sendMessage({ type: "vid", itemId: item.id });
                 window.close();
             });
+            if (item.previewable) {
+                this.setUpPreview(item.id, row.querySelector('.thumb'), row.querySelector('.preview-button'));
+            }
             list.appendChild(row);
         });
+    }
+
+    /**
+     * The preview button of a captured MP4 (FramePreviews): XDM reads the video's first keyframe and
+     * the popup decodes it into the thumbnail, so captures on a page with many videos can be told
+     * apart. A preview kept from earlier is shown straight away.
+     */
+    setUpPreview(id, thumb, previewButton) {
+        previewButton.hidden = false;
+        previewButton.addEventListener('click', () => {
+            previewButton.disabled = true;
+            previewButton.classList.add('busy');
+            previewButton.title = "Loading preview…";
+            FramePreviews.load(id).then(images => {
+                this.showPreview(thumb, previewButton, images[0]);
+            }).catch(err => {
+                previewButton.classList.remove('busy');
+                previewButton.classList.add('failed');
+                previewButton.title = "Preview unavailable: " + (err && err.message ? err.message : err);
+            });
+        });
+        FramePreviews.cached(id).then(images => {
+            if (images && images.length) {
+                this.showPreview(thumb, previewButton, images[0]);
+            }
+        });
+    }
+
+    showPreview(thumb, previewButton, image) {
+        if (!image) {
+            return;
+        }
+        const img = document.createElement('img');
+        img.alt = "";
+        img.src = image;
+        thumb.replaceChildren(img);
+        thumb.classList.add('has-preview');
+        previewButton.classList.remove('busy');
+        previewButton.hidden = true;
     }
 
     /**

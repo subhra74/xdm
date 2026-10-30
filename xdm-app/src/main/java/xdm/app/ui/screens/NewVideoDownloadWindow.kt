@@ -1,6 +1,7 @@
 package xdm.app.ui.screens
 
 import com.formdev.flatlaf.FlatClientProperties
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import xdm.app.AppContext
 import xdm.app.I8N.text
 import xdm.app.ui.components.CategoryStyle
@@ -30,7 +31,6 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
-import java.net.URI
 import java.util.Locale
 import javax.swing.*
 import javax.swing.event.DocumentEvent
@@ -284,12 +284,7 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
         val url = tracker.getHttpVideo(videoId)?.url
             ?: tracker.getHlsVideo(videoId)?.url
             ?: tracker.getDashVideo(videoId)?.url
-        val host = try {
-            url?.let { URI(it.trim()).host }
-        } catch (e: Exception) {
-            Logger.info(e)
-            null
-        }
+        val host = url?.toHttpUrlOrNull()?.host
         if (!host.isNullOrBlank()) {
             val config = AppContext.config
             if (config.blockedHosts.none { it.equals(host, ignoreCase = true) }) {

@@ -169,6 +169,71 @@ body {
     color: var(--text-muted);
 }
 
+/* A row is the capture's button plus, for MP4 files, a preview button beside it. */
+.video-row {
+    display: flex;
+    align-items: stretch;
+}
+
+.video-row .video-item {
+    flex: 1;
+    min-width: 0;
+}
+
+.preview-button {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+/* Rows without one keep its slot, so every download icon lines up. */
+.preview-button[hidden] {
+    visibility: hidden;
+}
+
+.preview-button:hover:not(:disabled) {
+    background: var(--bg-hover);
+    color: var(--accent);
+}
+
+.preview-button:disabled {
+    cursor: default;
+}
+
+.preview-button.busy .glyph {
+    animation: preview-pulse 0.9s ease-in-out infinite alternate;
+}
+
+.preview-button.failed {
+    opacity: 0.4;
+}
+
+@keyframes preview-pulse {
+    from { opacity: 1; }
+    to { opacity: 0.25; }
+}
+
+/* The video's first frame in place of the icon: 16:9 at the row's height. */
+.thumb.has-preview {
+    width: 60px;
+    overflow: hidden;
+    background: #000;
+}
+
+.thumb.has-preview img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
 .video-item:hover .thumb,
 .video-item:focus-visible .thumb {
     color: var(--text);

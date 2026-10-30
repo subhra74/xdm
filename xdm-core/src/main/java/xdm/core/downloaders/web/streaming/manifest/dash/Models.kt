@@ -5,7 +5,7 @@ package xdm.core.downloaders.web.streaming.manifest.dash
 
 
 import xdm.core.downloaders.SubtitleTrack
-import java.net.URI
+import okhttp3.HttpUrl
 
 data class MpdEntry(
     val video: Representation?,
@@ -24,7 +24,7 @@ data class MpdEntry(
  * [toString] returns the bare URL so the many existing call-sites that render/serialise a segment
  * via `.toString()` (UI display, task-info persistence) are unaffected by the added range.
  */
-data class DashSegment(val url: URI, val range: Pair<Long, Long>? = null) {
+data class DashSegment(val url: HttpUrl, val range: Pair<Long, Long>? = null) {
     override fun toString(): String = url.toString()
 }
 

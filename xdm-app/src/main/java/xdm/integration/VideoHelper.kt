@@ -1,5 +1,6 @@
 package xdm.integration
 
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import xdm.app.AppContext
 import xdm.app.utils.captureDestination
 import xdm.core.*
@@ -18,11 +19,12 @@ import xdm.core.downloaders.web.streaming.manifest.hls.HlsPlaylist
 import xdm.core.downloaders.web.streaming.manifest.hls.getInfoString
 import xdm.core.downloaders.web.streaming.manifest.hls.singleFileHttpUrl
 import xdm.core.media.Mp4InitProbe
+import xdm.core.media.preview.Mp4PreviewReader
 import xdm.core.network.http.*
 import xdm.core.network.http.impl.*
 import xdm.core.util.*
 import java.io.ByteArrayInputStream
-import java.net.URI
+import java.io.IOException
 import java.nio.*
 import java.nio.file.*
 import java.security.MessageDigest
@@ -200,6 +202,9 @@ object VideoHelper {
 
     private fun isHLS(contentType: String?): Boolean = hslExt.any { StringUtils.containsIgnoreCase(contentType, it) }
 
+    /** The URL of the folder [url] is in; null when it does not parse. */
+    private fun folderOf(url: String): String? = url.toHttpUrlOrNull()?.resolve(".")?.toString()
+
     private fun isHttpVideo(url: String, contentType: String?, size: Long?, tabId: String?, tabUrl: String?): Boolean {
         size?.let {
             if (size > 0 && size < AppContext.config.minVideoSize * 1024) {
@@ -213,10 +218,10 @@ object VideoHelper {
             }
         }
         if (StringUtils.containsIgnoreCase(url, "init.mp4")) {
-            suspectedMp4Fragments[URI.create(url).resolve(".").toString()] = true
+            folderOf(url)?.let { suspectedMp4Fragments[it] = true }
             return false
         }
-        if (suspectedMp4Fragments.containsKey(URI.create(url).resolve(".").toString())) {
+        if (folderOf(url)?.let { suspectedMp4Fragments.containsKey(it) } == true) {
             return false
         }
         return !(StringUtils.containsIgnoreCase(url, "http://127.0.0.1:9614") || StringUtils.containsIgnoreCase(
@@ -270,8 +275,7 @@ object VideoHelper {
     private fun isDashUrl(url: String?): Boolean = StringUtils.containsIgnoreCase(url, ".mpd")
 
     private fun plainMediaExt(url: String): String? =
-        runCatching { URI.create(url).path }.getOrNull()
-            ?.substringAfterLast('/')
+        url.toHttpUrlOrNull()?.pathSegments?.last()
             ?.substringAfterLast('.', "")
             ?.lowercase()
             ?.takeIf { it in plainMediaExts }
@@ -327,6 +331,8 @@ object VideoHelper {
     /** Head bytes read first; a `moov`/`sidx` reaching past them is fetched again in full, up to [MAX_HEAD_BYTES]. */
     private const val HEAD_PROBE_BYTES = 16 * 1024L
     private const val MAX_HEAD_BYTES = 2 * 1024 * 1024L
+    /** Longest head a probe keeps for previews (see [SplitTrackDetector.Probe.head]). */
+    private const val MAX_KEPT_HEAD_BYTES = 64 * 1024L
     private val CONTENT_RANGE_TOTAL = Regex("""/(\d+)\s*$""")
 
     /** Reads the head of a single-file fMP4 track: what it holds, how long and how big it is, and its sidx. */
@@ -351,11 +357,49 @@ object VideoHelper {
                 if (attempt == 0 && info.needBytes > want && info.needBytes <= MAX_HEAD_BYTES) {
                     want = info.needBytes
                 } else {
-                    return SplitTrackDetector.Probe(info, total ?: info.sidx?.endOffset ?: return null)
+                    // Keep the head up to the first fragment for previews; it is a few KB in these files.
+                    val head = info.sidx?.firstOffset
+                        ?.takeIf { it <= bytes.size && it <= MAX_KEPT_HEAD_BYTES }
+                        ?.let { bytes.copyOf(it.toInt()) }
+                    return SplitTrackDetector.Probe(info, total ?: info.sidx?.endOffset ?: return null, head)
                 }
             }
         }
         return null
+    }
+
+    /**
+     * Keyframes of a captured MP4 file at [url], progressive or fragmented with a `sidx`, for the
+     * extension's preview. Read with the manifest client one range at a time (see [Mp4PreviewReader]),
+     * never in parallel and never the whole file. A split track's head is already known from its
+     * capture probe and its first keyframe follows it, so one frame of it takes a single read. Blocking; throws [IOException] (often
+     * [Mp4PreviewReader.UnavailableException]).
+     */
+    internal fun loadPreview(url: String, headers: HeaderMap?, cookie: String?, frames: Int, timeoutMs: Long): Mp4PreviewReader.Preview {
+        val client = httpClient
+        val deadline = System.nanoTime() + timeoutMs * 1_000_000
+        return Mp4PreviewReader(head = splitTracks.headOf(url)) { offset, length ->
+            readRange(client, url, headers, cookie, offset, length)
+        }.load(frames) { System.nanoTime() > deadline }
+    }
+
+    /** `[offset, offset + length)` of [url]; fewer bytes at the end of the file, none past it. */
+    private fun readRange(
+        client: PoolingHttpClient, url: String, headers: HeaderMap?, cookie: String?, offset: Long, length: Int,
+    ): ByteArray {
+        val response = client.getResponse(url, headers, cookie, Range(offset, offset + length - 1))
+            .getOrElse { throw IOException(it.message ?: it.javaClass.simpleName, it) }
+        response.use {
+            when (response.statusCode) {
+                206 -> {}
+                // A server ignoring Range sends the whole file from the start: right for the head read,
+                // wrong anywhere else. Closing the response drops the rest of the body.
+                200 -> if (offset != 0L) throw Mp4PreviewReader.UnavailableException("the server does not serve byte ranges")
+                416 -> return ByteArray(0)
+                else -> throw IOException("HTTP ${response.statusCode}")
+            }
+            return response.inputStream.use { it.readNBytes(length) }
+        }
     }
 
     /** Publishes a split-track pair as a DASH capture; the same [SplitTrackDetector.Offer.id] replaces an earlier one. */
@@ -430,7 +474,7 @@ object VideoHelper {
 
     /** The track as byte-range segments cut at its sidx, or as one whole-file segment without one. */
     private fun splitTrackSegments(track: SplitTrackDetector.Track): List<DashSegment>? {
-        val uri = runCatching { URI(track.url) }.getOrNull() ?: return null
+        val uri = track.url.toHttpUrlOrNull() ?: return null
         val ranges = Mp4InitProbe.segmentRanges(track.probe.info, track.probe.totalSize)
             ?: return listOf(DashSegment(uri))
         return ranges.map { DashSegment(uri, it) }

@@ -6,11 +6,11 @@ package xdm.core.downloaders.web.streaming.manifest.dash
 import org.w3c.dom.Element
 import org.w3c.dom.Node
 import xdm.core.downloaders.SubtitleTrack
-import java.net.URI
+import okhttp3.HttpUrl
 
 
 fun parsePeriod(
-    period: Node, baseUrl: URI?, mediaPresentationDuration: Long, budget: SegmentBudget
+    period: Node, baseUrl: HttpUrl?, mediaPresentationDuration: Long, budget: SegmentBudget
 ): List<MpdEntry> {
     var baseUrl = baseUrl
     var periodDuration = mediaPresentationDuration

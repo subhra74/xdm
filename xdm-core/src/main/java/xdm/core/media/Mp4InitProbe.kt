@@ -107,6 +107,16 @@ object Mp4InitProbe {
         return ranges
     }
 
+    /**
+     * A whole `sidx` box (header included) read from file offset [at], with [Sidx.firstOffset] made
+     * absolute. Null when [box] is not a complete `sidx`, or it references other `sidx` boxes.
+     */
+    fun parseSidxBox(box: ByteArray, at: Long): Sidx? {
+        val (size, type, header) = boxHeader(box, 0, box.size.toLong()) ?: return null
+        if (type != "sidx" || size > box.size) return null
+        return parseSidx(box, header.toLong(), size)?.let { it.copy(firstOffset = it.firstOffset + at) }
+    }
+
     private class State {
         var handler: String? = null
         var codec: String? = null

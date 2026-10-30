@@ -81,6 +81,28 @@ class TestDashParser {
         assertTrue(urls.none { it.contains(" ") }, "no segment URL should contain a space, got $urls")
     }
 
+    /** Browsers and servers accept `[` `]` in a path; java.net.URI rejected the whole manifest. */
+    @Test
+    fun bracketsInManifestAndBaseUrlAccepted() {
+        val entries = parse(
+            """
+            <MPD type="static" mediaPresentationDuration="PT2S" xmlns="urn:mpeg:dash:schema:mpd:2011">
+              <BaseURL>media/[hd]/</BaseURL>
+              <Period>
+                <AdaptationSet mimeType="video/mp4">
+                  <Representation id="v0" bandwidth="1000" codecs="avc1.42c00d">
+                    <SegmentTemplate media="seg-${'$'}Number${'$'}.m4s" duration="1000" timescale="1000" startNumber="0"/>
+                  </Representation>
+                </AdaptationSet>
+              </Period>
+            </MPD>
+            """,
+            url = "http://host/[show]/manifest.mpd"
+        )
+        val urls = entries.first().video!!.segments.map { it.toString() }
+        assertEquals("http://host/[show]/media/[hd]/seg-0.m4s", urls.first(), "BaseURL resolved with brackets kept")
+    }
+
     /** With `$Time$` simple addressing, presentation time starts at 0, not startNumber. */
     @Test
     fun simpleTimeAddressingStartsAtZero() {

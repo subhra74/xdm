@@ -1,5 +1,6 @@
 package xdm.app.utils
 
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import xdm.app.OS
 import xdm.core.util.Logger
 import java.awt.Desktop
@@ -14,22 +15,11 @@ const val WEBSITE_HELP_URL = "$WEBSITE_URL/help/"
 /** Compares `?v=<version>` with the latest GitHub release (docs/update-checker.html on GitHub Pages). */
 const val UPDATE_CHECK_PAGE_URL = "https://subhra74.github.io/xdm/update-checker.html"
 
-fun validateURL(url: String): Boolean {
-    try {
-        if (url.startsWith("http://", ignoreCase = true) || url.startsWith(
-                "https://",
-                ignoreCase = true
-            ) || url.startsWith("ftp://", ignoreCase = true)
-        ) {
-            URI.create(url)
-            return true
-        }
-        return false
-    } catch (e: Exception) {
-        e.printStackTrace()
-        return false
-    }
-}
+/**
+ * An http(s) URL, parsed as browsers parse it. `java.net.URI` is stricter than browsers and servers
+ * and refuses working links, e.g. with `[` or `]` in the file name.
+ */
+fun validateURL(url: String): Boolean = url.toHttpUrlOrNull() != null
 
 /**
  * Opens [url] in the default browser. Runs on its own thread: `Desktop.browse` can block for a moment

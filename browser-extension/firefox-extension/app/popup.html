@@ -3,6 +3,7 @@
 
 <head>
   <meta charset="utf-8">
+  <script src="preview.js"></script>
   <script src="popup.js"></script>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -46,7 +47,7 @@
 
   <!-- One row of the list. Filled in by popup.js with textContent - titles come from web pages. -->
   <template id="rowTemplate">
-    <li>
+    <li class="video-row">
       <button class="video-item" type="button">
         <span class="thumb">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -67,6 +68,13 @@
           <path d="M12 3v11" />
           <path d="M7.5 10.5 12 15l4.5-4.5" />
           <path d="M4 19h16" />
+        </svg>
+      </button>
+      <button class="preview-button" type="button" title="Preview" aria-label="Preview" hidden>
+        <svg class="glyph" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+          <circle cx="12" cy="12" r="3" />
         </svg>
       </button>
     </li>

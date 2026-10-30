@@ -69,6 +69,12 @@ class TestChecksum {
             "auto tries the folder manifest last"
         )
         assertEquals("my file.iso", SidecarUrls.remoteFileName("https://h/a/my%20file.iso?x=1"), "name is decoded")
+        assertEquals("Show.[G].mkv", SidecarUrls.remoteFileName("https://h/a/Show.[G].mkv?t=1"), "brackets in the name")
+        assertEquals(
+            "https://h/a/Show.[G].mkv.sha256",
+            SidecarUrls.sidecar("https://h/a/Show.[G].mkv?t=1", ChecksumAlgorithm.SHA256),
+            "sidecar for a name with brackets"
+        )
     }
 
     @Test

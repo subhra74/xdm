@@ -1,5 +1,6 @@
 package xdm.app.headless
 
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import xdm.app.utils.AppDirs
 import xdm.app.utils.win.Win32Console
 import xdm.core.CoreConfig
@@ -40,7 +41,6 @@ import java.io.File
 import java.io.PrintStream
 import java.net.InetSocketAddress
 import java.net.Proxy
-import java.net.URI
 import java.util.Locale
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -383,7 +383,7 @@ object HeadlessCli {
 
     /** `.m3u8` is HLS and `.mpd` DASH (by path, then anywhere in the URL for proxied links); anything else HTTP. */
     fun detectType(url: String): StreamType {
-        val path = runCatching { URI(url).path }.getOrNull().orEmpty().lowercase(Locale.ROOT)
+        val path = url.toHttpUrlOrNull()?.encodedPath.orEmpty().lowercase(Locale.ROOT)
         val all = url.lowercase(Locale.ROOT)
         return when {
             path.endsWith(".m3u8") || path.endsWith(".m3u") -> StreamType.Hls
@@ -396,8 +396,8 @@ object HeadlessCli {
 
     /** A name from the stream URL; generic manifest names ("master", "index") give way to the folder or host. */
     fun suggestStreamName(url: String, ext: String): String {
-        val uri = runCatching { URI(url) }.getOrNull()
-        val segments = uri?.path?.split('/')?.filter { it.isNotBlank() }.orEmpty()
+        val uri = url.toHttpUrlOrNull()
+        val segments = uri?.pathSegments?.filter { it.isNotBlank() }.orEmpty()
         val last = segments.lastOrNull()?.substringBeforeLast('.')
         val generic = setOf("master", "index", "playlist", "manifest", "chunklist", "prog_index", "stream", "main", "video")
         val base = when {

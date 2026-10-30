@@ -3,14 +3,14 @@
 
 package xdm.core.downloaders.web.streaming.manifest.hls
 
-
+import okhttp3.HttpUrl
 import xdm.core.downloaders.SubtitleTrack
+import xdm.core.downloaders.web.streaming.manifest.common.parseManifestUrl
 import xdm.core.downloaders.web.streaming.manifest.common.resolveUri
 import xdm.core.util.Logger
 import xdm.core.util.StringUtils
 import xdm.core.util.appendQuery
 import xdm.core.util.getQuery
-import java.net.URI
 
 const val EXT_X_STREAM_INF = "#EXT-X-STREAM-INF:"
 const val AUDIO = "AUDIO"
@@ -64,12 +64,12 @@ object HlsParser {
                 // which can flip to NONE mid-playlist).
                 var anyEncrypted = false
                 var hasInitMap = false
-                val baseUrl = URI.create(playlistUrl)
+                val baseUrl = parseManifestUrl(playlistUrl)
                 var keyFrameOnly = false
                 var missingIv = true
                 var version = -1
 
-                var keyUrl: URI? = null
+                var keyUrl: HttpUrl? = null
                 var iv: String? = null
                 var isIndependent = false
                 // EXT-X-DISCONTINUITY applies to the segment that follows it.
@@ -230,10 +230,10 @@ object HlsParser {
             // pairing two parallel lists by index. That keeps a stray/extra URI (e.g. from an
             // EXT-X-I-FRAME-STREAM-INF, whose URI is an attribute, not a line) from shifting the
             // pairing and throwing IndexOutOfBounds.
-            val variants = ArrayList<Pair<Map<String, String>, URI>>()
+            val variants = ArrayList<Pair<Map<String, String>, HttpUrl>>()
             val mapExtMedia = ArrayList<Map<String, String>>()
             val containers = ArrayList<HlsMasterPlaylist>()
-            val baseUrl = URI.create(playlistUrl)
+            val baseUrl = parseManifestUrl(playlistUrl)
             var pendingStreamInf: Map<String, String>? = null
             var isIndependent = false
 
@@ -320,7 +320,7 @@ object HlsParser {
      * a variant whose CODECS names IMSC (`stpp`) carries TTML in fMP4 instead, so it gets none.
      */
     private fun subtitleGroup(
-        streamInf: Map<String, String>, media: List<Map<String, String>>, baseUrl: URI
+        streamInf: Map<String, String>, media: List<Map<String, String>>, baseUrl: HttpUrl
     ): List<SubtitleTrack> {
         val groupId = streamInf[SUBTITLES] ?: return emptyList()
         if (StringUtils.containsIgnoreCase(streamInf["CODECS"], "stpp")) return emptyList()
@@ -346,17 +346,9 @@ object HlsParser {
         return Pair(if (attrs.size == 2) attrs[1].toLong() else 0, attrs[0].toLong())
     }
 
-    private fun effectivePort(u: URI): Int =
-        if (u.port != -1) u.port else when (u.scheme?.lowercase()) {
-            "https" -> 443
-            "http" -> 80
-            else -> -1
-        }
-
-    private fun sameOrigin(a: URI, b: URI): Boolean =
-        a.scheme.equals(b.scheme, ignoreCase = true) &&
-            a.host.equals(b.host, ignoreCase = true) &&
-            effectivePort(a) == effectivePort(b)
+    // HttpUrl lower-cases scheme and host and fills in the default port.
+    private fun sameOrigin(a: HttpUrl, b: HttpUrl): Boolean =
+        a.scheme == b.scheme && a.host == b.host && a.port == b.port
 
     /**
      * Carry the manifest's query string onto a resolved child URL, but only when the child stays on
@@ -364,7 +356,7 @@ object HlsParser {
      * different CDN host (and typically 403). [appendQuery] itself no-ops when the URL already
      * carries its own query string.
      */
-    private fun applyQuery(baseUrl: URI, resolved: URI, query: String): String {
+    private fun applyQuery(baseUrl: HttpUrl, resolved: HttpUrl, query: String): String {
         val s = resolved.toString()
         return if (query.isNotEmpty() && sameOrigin(baseUrl, resolved)) appendQuery(s, query) else s
     }

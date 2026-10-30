@@ -72,6 +72,29 @@ class TestHlsParser {
         assertFalse(p.independent)
     }
 
+    /** Browsers and servers accept `[` `]` in a path; java.net.URI rejected the whole playlist. */
+    @Test
+    fun bracketsInPlaylistAndSegmentUrlsAccepted() {
+        val p = media(
+            """
+            #EXTM3U
+            #EXTINF:4,
+            Show.[Group].seg0.ts
+            """,
+            url = "https://host.example/[tag]/index.m3u8?token=t"
+        )
+        assertEquals("https://host.example/[tag]/Show.[Group].seg0.ts?token=t", p.mediaSegments[0].url, "brackets kept as sent")
+        val m = master(
+            """
+            #EXTM3U
+            #EXT-X-STREAM-INF:BANDWIDTH=1000
+            v/[720p].m3u8
+            """,
+            url = "https://host.example/[tag]/master.m3u8"
+        )
+        assertEquals("https://host.example/[tag]/v/[720p].m3u8", m.single().videoPlaylist.toString(), "variant resolved")
+    }
+
     @Test
     fun absoluteSegmentUrlsPreserved() {
         val p = media(

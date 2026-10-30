@@ -1,5 +1,6 @@
 package xdm.app.ui.screens
 
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import xdm.app.AppContext
 import xdm.app.I8N.text
 import xdm.app.ui.components.MessageBox
@@ -27,7 +28,6 @@ import java.awt.Insets
 import java.awt.Window
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import java.net.URI
 import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.ButtonGroup
@@ -363,11 +363,7 @@ class RefreshLinkWindow(
     }
 
     private fun isValidUrl(url: String): Boolean {
-        if (url.isEmpty()) return false
-        return runCatching {
-            val scheme = URI(url).scheme
-            scheme.equals("http", ignoreCase = true) || scheme.equals("https", ignoreCase = true)
-        }.getOrDefault(false)
+        return url.toHttpUrlOrNull() != null
     }
 
     private inner class HeaderTableModel : AbstractTableModel() {

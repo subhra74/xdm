@@ -115,7 +115,8 @@ class CapturedVideoTracker : ICapturedVideoTracker {
                         name = t.fileName,
                         description = s.descriptionText,
                         date = s.dateTime,
-                        tabId = s.tabId
+                        tabId = s.tabId,
+                        previewable = previewUrl(t) != null,
                     )
                 })
                 list.addAll(hlsVideoList.values.map { (t, s) ->
@@ -133,7 +134,8 @@ class CapturedVideoTracker : ICapturedVideoTracker {
                         name = t.fileName,
                         description = s.descriptionText,
                         date = s.dateTime,
-                        tabId = s.tabId
+                        tabId = s.tabId,
+                        previewable = previewUrl(t) != null,
                     )
                 })
                 return list
@@ -238,4 +240,28 @@ class CapturedVideoTracker : ICapturedVideoTracker {
         ext?.let { newFileName += ext }
         return newFileName!!
     }
+}
+
+private val previewableExts = listOf("mp4", "m4v", "mov")
+
+/**
+ * The file `/preview` reads a plain capture's keyframes from: MP4 family by file name or URL path.
+ * Whether it really is an MP4 the preview can use is only known once it is read.
+ */
+fun previewUrl(task: HttpDownloadTaskInfo): String? {
+    val path = task.url.substringBefore('?').substringBefore('#')
+    val mp4 = listOf(task.fileName, path).any { name -> previewableExts.any { name.endsWith(".$it", ignoreCase = true) } }
+    return task.url.takeIf { mp4 }
+}
+
+/**
+ * The file `/preview` reads a DASH capture's keyframes from: its video track when that is one MP4
+ * file (a Facebook/Instagram split track, or a SegmentBase representation), cut into byte ranges or
+ * not. Null for segmented video, which has no single file to read.
+ */
+fun previewUrl(task: DashDownloadTaskInfo): String? {
+    if (!task.videoMime.contains("mp4", ignoreCase = true)) return null
+    val first = task.videoSegments.firstOrNull() ?: return null
+    if (task.videoSegments.any { it.url != first.url }) return null
+    return first.url.toString()
 }

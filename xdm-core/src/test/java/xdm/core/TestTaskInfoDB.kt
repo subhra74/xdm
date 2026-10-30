@@ -24,7 +24,7 @@ import xdm.core.downloaders.web.streaming.downloader.HlsTaskContext
 import xdm.core.downloaders.web.streaming.downloader.StreamingChunk
 import xdm.core.downloaders.web.streaming.manifest.dash.DashSegment
 import xdm.core.network.http.HeaderMap
-import java.net.URI
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
@@ -87,12 +87,12 @@ class TestTaskInfoDB : HttpDownloadTestBase() {
             id = 3, fileName = "d.mp4", tempDir = "/tmp/d", respectFileName = false,
             cookie = "cf=2", headers = headers, origin = "https://example.com/dash",
             categoryId = null, targetFolder = "/downloads",            maxPiece = 0, authInfo = null,
-            videoSegments = listOf(DashSegment(URI("https://cdn.example.com/v1.m4s"), Pair(0L, 99L))),
-            audioSegments = listOf(DashSegment(URI("https://cdn.example.com/a1.m4s"), null)),
+            videoSegments = listOf(DashSegment("https://cdn.example.com/v1.m4s".toHttpUrl(), Pair(0L, 99L))),
+            audioSegments = listOf(DashSegment("https://cdn.example.com/a1.m4s".toHttpUrl(), null)),
             url = "https://cdn.example.com/manifest.mpd", audioMime = "audio/mp4", videoMime = "video/mp4",
             subtitles = listOf(
                 SubtitleTrack(
-                    "", "de", segments = listOf(DashSegment(URI("https://cdn.example.com/de.vtt"), null)), forced = true
+                    "", "de", segments = listOf(DashSegment("https://cdn.example.com/de.vtt".toHttpUrl(), null)), forced = true
                 ),
             ),
         )

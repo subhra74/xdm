@@ -31,7 +31,15 @@ class SplitTrackDetector(private val env: Env) {
         fun offer(offer: Offer)
     }
 
-    data class Probe(val info: Mp4InitProbe.Info, val totalSize: Long) {
+    data class Probe(
+        val info: Mp4InitProbe.Info,
+        val totalSize: Long,
+        /**
+         * The file's head up to its first fragment (`ftyp`, `moov`, `sidx`), kept so a preview of the
+         * track needs no second read of it. Null when the probe read no `sidx`, or the head is large.
+         */
+        val head: ByteArray? = null,
+    ) {
         val bitrate: Long
             get() = if (info.durationSeconds > 0) (totalSize * 8 / info.durationSeconds).toLong() else 0
     }
@@ -89,6 +97,19 @@ class SplitTrackDetector(private val env: Env) {
     @Synchronized
     fun onTabNavigated(tabId: String) {
         tabs.remove(tabId)
+    }
+
+    /** The head kept by the probe of the track at [url], in any tab; null when there is none. */
+    @Synchronized
+    fun headOf(url: String): ByteArray? {
+        for (assets in tabs.values) {
+            for (asset in assets.values) {
+                for (c in asset.candidates.values) {
+                    if (c.status == Status.DONE && c.url.url == url) c.probe?.head?.let { return it }
+                }
+            }
+        }
+        return null
     }
 
     /** A track the detector has seen, with its probe when it has one. */

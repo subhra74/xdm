@@ -5,7 +5,7 @@ package xdm.core.downloaders.web.streaming.manifest.hls
 
 
 import xdm.core.downloaders.SubtitleTrack
-import java.net.URI
+import okhttp3.HttpUrl
 
 data class HlsPlaylist(
     val mediaSegments: List<HlsMediaSegment>,
@@ -20,8 +20,8 @@ data class HlsPlaylist(
 )
 
 data class HlsMasterPlaylist(
-    val videoPlaylist: URI? = null,
-    val audioPlaylist: URI? = null,
+    val videoPlaylist: HttpUrl? = null,
+    val audioPlaylist: HttpUrl? = null,
     val attributes: Map<String, String>,
     val independent: Boolean = false,
     /** The variant's WebVTT `SUBTITLES` group, each with its media playlist. */
