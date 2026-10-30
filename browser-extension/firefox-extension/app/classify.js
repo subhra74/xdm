@@ -171,8 +171,11 @@ export function classify(item) {
         noise = true;
     } else if (!isLink && fromRt && sources.length === 1) {
         // Seen only in Resource Timing: a script-made request with no file-like evidence is an
-        // API call, and a frame document is a page, not a file.
-        if (SCRIPT_INITIATORS.has(item.initiator) && !EXT_CATEGORY.has(ext) && !categoryFromMime(item.mime)) {
+        // API call, and a frame document is a page, not a file. A text/plain reply is no evidence
+        // from a script: logging endpoints answer with it (a real notes.txt has its extension).
+        const mimeIsPlainText = (item.mime || "").toLowerCase().split(";")[0].trim() === "text/plain";
+        const mimeEvidence = !mimeIsPlainText && categoryFromMime(item.mime);
+        if (SCRIPT_INITIATORS.has(item.initiator) && !EXT_CATEGORY.has(ext) && !mimeEvidence) {
             noise = true;
         }
         if (item.initiator === "iframe" || item.initiator === "navigation" || kind === "page") {

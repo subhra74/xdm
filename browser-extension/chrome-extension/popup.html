@@ -11,7 +11,10 @@
 <body>
   <header class="app-header">
     <h1>XDM Integration Module</h1>
-    <span class="count-badge" id="count" hidden></span>
+    <label class="toggle header-toggle" title="Browser monitoring">
+      <input type="checkbox" id="chk" aria-label="Browser monitoring">
+      <span class="track"></span>
+    </label>
   </header>
 
   <ul class="video-list" id="list"></ul>
@@ -45,9 +48,9 @@
 
   <footer class="app-footer">
     <button class="text-button footer-action" id="bulk" type="button">Grab all links for this page…</button>
-    <label class="toggle">
-      <span>Browser monitoring</span>
-      <input type="checkbox" id="chk">
+    <label class="toggle small">
+      <span>Video previews</span>
+      <input type="checkbox" id="previews">
       <span class="track"></span>
     </label>
   </footer>
@@ -57,11 +60,11 @@
     <li class="video-row">
       <button class="video-item" type="button">
         <span class="thumb">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="1.6" aria-hidden="true">
-            <rect x="2" y="5" width="20" height="14" rx="2" />
-            <path d="M10 9.5v5l4-2.5-4-2.5z" fill="currentColor" stroke="none" />
-          </svg>
+          <span class="play-badge">
+            <svg width="8" height="9" viewBox="0 0 8 9" aria-hidden="true">
+              <path d="M1 0.8v7.4c0 .5.5.8.9.5l5.6-3.7a.6.6 0 0 0 0-1L1.9.3C1.5 0 1 .3 1 .8z" fill="currentColor" />
+            </svg>
+          </span>
         </span>
         <span class="video-body">
           <span class="video-title"></span>
@@ -75,13 +78,6 @@
           <path d="M12 3v11" />
           <path d="M7.5 10.5 12 15l4.5-4.5" />
           <path d="M4 19h16" />
-        </svg>
-      </button>
-      <button class="preview-button" type="button" title="Preview" aria-label="Preview" hidden>
-        <svg class="glyph" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
-          <circle cx="12" cy="12" r="3" />
         </svg>
       </button>
     </li>

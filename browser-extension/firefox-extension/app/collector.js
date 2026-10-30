@@ -388,7 +388,10 @@ export function collectPage(options) {
         }
         const observed = globalThis.__xdmResourceLog instanceof Map ? globalThis.__xdmResourceLog : null;
         const take = (url, initiator, mime, size, status) => {
-            if (status >= 400) {
+            // A failed request, or one that answered with no content (204/205), is no file. Neither
+            // is a beacon: navigator.sendBeacon is always a POST, which Resource Timing does not
+            // record, so it would look like a GET for a file (Cloudflare's cdn-cgi/rum).
+            if (status >= 400 || status === 204 || status === 205 || initiator === "beacon") {
                 return;
             }
             add(url, "rt", { initiator: initiator, mime: mime, size: size > 0 ? size : 0, loaded: true });

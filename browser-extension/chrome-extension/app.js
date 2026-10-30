@@ -28,6 +28,9 @@ export default class App {
         this.onDeterminingFilenameCallback = this.onDeterminingFilename.bind(this);
         this.onTabUpdateCallback = this.onTabUpdate.bind(this);
         this.activeTabId = -1;
+        // Tabs given a badge of their own (updateBadges), so they can be cleared once their videos
+        // are gone. Null after a worker restart: which tabs have one is then not known.
+        this.badgedTabs = null;
         this.connector = new Connector(this.onMessage.bind(this), this.onDisconnect.bind(this));
         // See start(). Until `started`, everything above is a placeholder, not what is known.
         this.started = false;
@@ -81,8 +84,8 @@ export default class App {
         }, () => { });
     }
 
-    // The badge counts the active tab's videos. A restarted worker no longer knows which tab that
-    // is, and would count none of them until the user switched tabs.
+    // The popup's fallback when it cannot ask for the active tab itself. A restarted worker no
+    // longer knows which tab that is. (The badge is per tab and does not use it.)
     restoreActiveTab() {
         return chrome.tabs.query({ active: true, lastFocusedWindow: true }).then(tabs => {
             // onTabActivated may have got there first, and is the fresher answer.
@@ -216,6 +219,11 @@ export default class App {
         if (changeInfo.status === 'loading') {
             this.clearTabVideos(tabId, changeInfo.url || (tab && tab.url));
         }
+        // Chrome drops a tab's own badge when it navigates, possibly after clearTabVideos repainted
+        // it: a reload keeps its videos in XDM, so paint them again once the page is in.
+        if (changeInfo.status === 'complete' && this.videosForTab(tabId + "").length > 0) {
+            this.updateActionIcon();
+        }
         if (!this.isMonitoringEnabled()) {
             return;
         }
@@ -310,10 +318,11 @@ export default class App {
     // no meaningful tabId (untabbed / background capture: missing, "-1" or "0"),
     // in which case it is shown in every tab.
     isVideoForTab(vid, tabId) {
-        if (!vid.tabId || vid.tabId == '-1' || vid.tabId == '0') {
-            return true;
-        }
-        return vid.tabId == tabId;
+        return this.isUntabbed(vid) || vid.tabId == tabId;
+    }
+
+    isUntabbed(vid) {
+        return !vid.tabId || vid.tabId == '-1' || vid.tabId == '0';
     }
 
     videosForTab(tabId) {
@@ -331,12 +340,7 @@ export default class App {
             return;
         }
         chrome.action.setIcon({ path: this.getActionIcon() });
-        let vc = "";
-        let len = this.videosForTab(this.activeTabId).length;
-        if (len > 0) {
-            vc = len + "";
-        }
-        chrome.action.setBadgeText({ text: vc });
+        this.updateBadges();
         // Checked first: without host access the connection to XDM fails too (the fetches become
         // plain cross-origin requests whose replies the extension cannot read), so "not running"
         // would be the wrong thing to tell the user.
@@ -360,6 +364,53 @@ export default class App {
             //     chrome.action.setBadgeText({ text: this.videoList.length + "" });
             // }
         }
+    }
+
+    /**
+     * The video count on the toolbar icon, per tab: each tab with captures gets its own badge
+     * (its videos plus the untabbed ones, as videosForTab counts them), and the global badge,
+     * which every other tab shows, counts the untabbed ones. This used to be one global badge for
+     * activeTabId, which went stale on a window switch or a worker restart, so the badge could
+     * stay empty while the popup listed the video.
+     */
+    updateBadges() {
+        const counts = new Map();
+        let untabbed = 0;
+        for (const vid of this.videoList || []) {
+            if (this.isUntabbed(vid)) {
+                untabbed++;
+            } else {
+                counts.set(vid.tabId + "", (counts.get(vid.tabId + "") || 0) + 1);
+            }
+        }
+        chrome.action.setBadgeText({ text: untabbed > 0 ? untabbed + "" : "" });
+        const previous = this.badgedTabs;
+        this.badgedTabs = new Set(counts.keys());
+        counts.forEach((count, tabId) => this.setTabBadge(tabId, (count + untabbed) + ""));
+        if (previous) {
+            previous.forEach(tabId => {
+                if (!counts.has(tabId)) {
+                    this.setTabBadge(tabId, null);
+                }
+            });
+        } else {
+            // After a restart any tab may still carry a badge from before it: clear the others.
+            chrome.tabs.query({}).then(tabs => tabs.forEach(tab => {
+                if (!this.badgedTabs.has(tab.id + "")) {
+                    this.setTabBadge(tab.id + "", null);
+                }
+            }), () => { });
+        }
+    }
+
+    /** A null text drops the tab's own badge, so it shows the global one again. */
+    setTabBadge(tabId, text) {
+        const id = parseInt(tabId, 10);
+        if (!(id >= 0)) {
+            return;
+        }
+        // The tab may have closed since; nothing to clear then.
+        chrome.action.setBadgeText({ tabId: id, text: text }).catch(() => { });
     }
 
     getActionIconName(icon) {

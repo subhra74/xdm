@@ -28,6 +28,9 @@
     --info-border: #2196f3;
     --info-text: #14508c;
 
+    --thumb-from: #dfe3e9;
+    --thumb-to: #c9ced6;
+
     --radius: 6px;
 }
 
@@ -54,6 +57,9 @@
         --info-bg: #182739;
         --info-border: #4ba3f2;
         --info-text: #bcd9f7;
+
+        --thumb-from: #353943;
+        --thumb-to: #2a2d34;
     }
 }
 
@@ -93,23 +99,6 @@ body {
     font-size: 13px;
     font-weight: 600;
     letter-spacing: 0.01em;
-}
-
-/* Count of detected videos, sitting next to the title. */
-.count-badge {
-    margin-left: auto;
-    min-width: 18px;
-    padding: 1px 7px;
-    border-radius: 999px;
-    background: var(--accent);
-    color: var(--accent-contrast);
-    font-size: 11px;
-    font-weight: 600;
-    text-align: center;
-}
-
-.count-badge[hidden] {
-    display: none;
 }
 
 /* ---- video list -------------------------------------------------------- */
@@ -156,63 +145,49 @@ body {
 }
 
 /* Thumbnail stand-in for the capture. Sized to the two-line row rather than to the text, so the
-   list reads as media rather than as a row of tiny icons. */
+   list reads as media rather than as a row of tiny icons; 16:9, the same box a preview fills. */
 .thumb {
     flex: none;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 34px;
+    width: 60px;
     height: 34px;
+    overflow: hidden;
     border-radius: 5px;
-    background: var(--bg-active);
-    color: var(--text-muted);
+    /* A dim frame rather than a flat tile, with a hairline so it holds its edge on either theme. */
+    background: linear-gradient(135deg, var(--thumb-from), var(--thumb-to));
+    box-shadow: inset 0 0 0 1px rgba(127, 127, 127, 0.18);
 }
 
-/* A row is the capture's button plus, for MP4 files, a preview button beside it. */
-.video-row {
-    display: flex;
-    align-items: stretch;
-}
-
-.video-row .video-item {
-    flex: 1;
-    min-width: 0;
-}
-
-.preview-button {
-    flex: none;
+.play-badge {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    padding: 0;
-    border: none;
-    background: transparent;
-    color: var(--text-muted);
-    cursor: pointer;
+    width: 20px;
+    height: 20px;
+    padding-left: 2px;
+    box-sizing: border-box;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.35);
+    color: #fff;
+    transition: background 0.15s ease, transform 0.15s ease;
 }
 
-/* Rows without one keep its slot, so every download icon lines up. */
-.preview-button[hidden] {
-    visibility: hidden;
+.video-item:hover .play-badge,
+.video-item:focus-visible .play-badge {
+    background: var(--accent);
+    transform: scale(1.08);
 }
 
-.preview-button:hover:not(:disabled) {
-    background: var(--bg-hover);
-    color: var(--accent);
+/* The video's first frame in place of the icon. */
+.thumb.has-preview {
+    background: #000;
 }
 
-.preview-button:disabled {
-    cursor: default;
-}
-
-.preview-button.busy .glyph {
+/* A preview on its way from XDM. */
+.thumb.loading .play-badge {
     animation: preview-pulse 0.9s ease-in-out infinite alternate;
-}
-
-.preview-button.failed {
-    opacity: 0.4;
 }
 
 @keyframes preview-pulse {
@@ -220,23 +195,11 @@ body {
     to { opacity: 0.25; }
 }
 
-/* The video's first frame in place of the icon: 16:9 at the row's height. */
-.thumb.has-preview {
-    width: 60px;
-    overflow: hidden;
-    background: #000;
-}
-
 .thumb.has-preview img {
     display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
-}
-
-.video-item:hover .thumb,
-.video-item:focus-visible .thumb {
-    color: var(--text);
 }
 
 .video-item:hover .glyph.download,
@@ -415,6 +378,30 @@ body {
 .toggle input:focus-visible ~ .track {
     outline: 2px solid var(--focus);
     outline-offset: 2px;
+}
+
+/* Browser monitoring: a bare switch at the right of the header; its name is in the tooltip. */
+.header-toggle {
+    margin-left: auto;
+}
+
+/* A secondary setting, so a smaller switch than the monitoring one. */
+.toggle.small {
+    font-size: 12.5px;
+}
+
+.toggle.small .track {
+    width: 26px;
+    height: 15px;
+}
+
+.toggle.small .track::after {
+    width: 11px;
+    height: 11px;
+}
+
+.toggle.small input:checked ~ .track::after {
+    transform: translateX(11px);
 }
 
 /* ---- status pages (error.html, disabled.html) -------------------------- */

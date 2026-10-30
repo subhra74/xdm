@@ -603,6 +603,8 @@ data class ExtensionMessage(
     val fileSize: Long? = null,
     val mimeType: String? = null,
     val vid: Long? = null,
+    /** webRequest's resource type for a captured `/media` request ("media", "xmlhttprequest", ...); null from older extensions. */
+    val resourceType: String? = null,
 )
 
 @Serializable

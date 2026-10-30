@@ -60,7 +60,7 @@ object VideoHelper {
             val key = ClientKey(config.toProxy(), config.ignoreCertErrors, config.proxyUser, config.proxyPass)
             cachedClient?.takeIf { key == cachedClientKey }?.let { return it }
             return HttpClientImpl(
-                10, key.proxy, key.ignoreCertErrors,
+                5, key.proxy, key.ignoreCertErrors,
                 proxyUser = key.proxyUser, proxyPassword = key.proxyPass,
                 // Proxy only: a manifest fetched in the background must not pop up a server login.
                 auth = AppContext.httpAuth,
@@ -205,7 +205,35 @@ object VideoHelper {
     /** The URL of the folder [url] is in; null when it does not parse. */
     private fun folderOf(url: String): String? = url.toHttpUrlOrNull()?.resolve(".")?.toString()
 
-    private fun isHttpVideo(url: String, contentType: String?, size: Long?, tabId: String?, tabUrl: String?): Boolean {
+    /**
+     * What the request itself says, before any size or URL guessing: false for a declared segment
+     * type (`video/iso.segment`, sent with fMP4 fragments), true when a media element loaded a
+     * video itself ([resourceType] "media"), which is a whole file played progressively, however
+     * short. Null when it says neither: an XHR/fetch feeding MediaSource, an older extension that
+     * sends no type, or audio (a page's `new Audio("ding.mp3")` is "media" too) is left to the size
+     * and URL heuristics.
+     */
+    internal fun requestVerdict(url: String, resourceType: String?, contentType: String?): Boolean? = when {
+        StringUtils.containsIgnoreCase(contentType, "iso.segment") -> false
+        !"media".equals(resourceType, ignoreCase = true) -> null
+        isAudio(url, contentType) -> null
+        else -> true
+    }
+
+    private fun isAudio(url: String, contentType: String?): Boolean =
+        if (contentType != null) contentType.trimStart().startsWith("audio/", ignoreCase = true)
+        else plainMediaExt(url) in audioExts
+
+    private val audioExts = setOf("m4a", "oga", "opus", "mp3", "aac", "wav", "flac")
+
+    private fun isHttpVideo(
+        url: String, contentType: String?, size: Long?, tabId: String?, tabUrl: String?, resourceType: String?,
+    ): Boolean {
+        when (requestVerdict(url, resourceType, contentType)) {
+            false -> return false
+            true -> return !isExcludedHttpVideo(url, contentType)
+            null -> {}
+        }
         size?.let {
             if (size > 0 && size < AppContext.config.minVideoSize * 1024) {
                 return false
@@ -224,7 +252,12 @@ object VideoHelper {
         if (folderOf(url)?.let { suspectedMp4Fragments.containsKey(it) } == true) {
             return false
         }
-        return !(StringUtils.containsIgnoreCase(url, "http://127.0.0.1:9614") || StringUtils.containsIgnoreCase(
+        return !isExcludedHttpVideo(url, contentType)
+    }
+
+    /** URLs and types never offered as a plain HTTP video: XDM's own ports, Facebook CDN, HDS/m4s fragments. */
+    private fun isExcludedHttpVideo(url: String, contentType: String?): Boolean =
+        (StringUtils.containsIgnoreCase(url, "http://127.0.0.1:9614") || StringUtils.containsIgnoreCase(
             url,
             "http://127.0.0.1:8597"
         ) || StringUtils.containsIgnoreCase(url, "fbcdn") || StringUtils.containsIgnoreCase(
@@ -234,7 +267,6 @@ object VideoHelper {
             contentType,
             "m4s"
         ) || StringUtils.containsIgnoreCase(contentType, "f4f"))
-    }
 
     /**
      * Forgets what was captured for a tab that has just started loading a new document. Without
@@ -300,7 +332,9 @@ object VideoHelper {
         if (splitTracks.onMediaMessage(msg, CoreUtils::uniqueId)) {
             return
         }
-        if (contentType == null && !isUntypedMedia(msg.url, contentLength, AppContext.config.minVideoSize * 1024)) {
+        // A file a media element loaded itself needs no minimum size; the path extension still has to say media.
+        val untypedMin = if (requestVerdict(msg.url, msg.resourceType, null) == true) 0L else AppContext.config.minVideoSize * 1024
+        if (contentType == null && !isUntypedMedia(msg.url, contentLength, untypedMin)) {
             return
         }
         val dash = isDash(contentType) || isDashUrl(msg.url)
@@ -311,7 +345,7 @@ object VideoHelper {
         when {
             dash -> mediaExecutor.execute { processDashVideo(msg) }
             isHLS(contentType) || isHLSUrl(msg.url) -> mediaExecutor.execute { processHLSVideo(msg) }
-            isHttpVideo(msg.url, contentType, contentLength, msg.tabId, msg.tabUrl) -> processHttpVideo(
+            isHttpVideo(msg.url, contentType, contentLength, msg.tabId, msg.tabUrl, msg.resourceType) -> processHttpVideo(
                 msg,
                 contentType,
                 contentLength ?: -1L
@@ -489,7 +523,10 @@ object VideoHelper {
     }
 
     private fun processHttpVideo(msg: ExtensionMessage, type: String?, len: Long) {
-        processHttpVideo(msg, type, len, msg.url!!, false)
+        // A media element's own file is not a segment even when its page also loaded a manifest
+        // (players offering HLS, DASH and progressive sources share the page as Referer).
+        val wholeFile = requestVerdict(msg.url!!, msg.resourceType, type) == true
+        processHttpVideo(msg, type, len, msg.url, wholeFile)
     }
 
     private fun processHttpVideo(
