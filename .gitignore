@@ -25,3 +25,4 @@ hs_err_pid27504.log
 # Local test credentials (NTLM test VM account)
 /test-credentials/
 .claude/launch.json
+experiments
