@@ -9,6 +9,15 @@ const HOST_ORIGINS = ["*://*/*"];
 const WELCOME_URL = "https://xtremedownloadmanager.com/extension/welcome/?utm_source=extension";
 /** Most links one bulk request may carry; a sanity cap, far beyond any real selection. */
 const MAX_BATCH_ITEMS = 5000;
+/**
+ * Window in which a repeat media report for the same tab and URL is skipped. A playing
+ * HLS/DASH stream re-requests its playlists every few seconds, and every report makes XDM
+ * re-fetch the manifest: against rate-limited CDNs those replays burn the budget the player
+ * itself needs (and earn 403s). Mirrors the app's own manifest refetch window.
+ */
+const MEDIA_REPORT_WINDOW_MS = 30000;
+/** Cap for the table below; the oldest entries go first (insertion order). */
+const MAX_MEDIA_REPORTS = 512;
 /** Registered by the bulk picker for one "Reload & capture" only; see bulk.js. */
 const OBSERVER_SCRIPT_ID = "xdm-rt-observer";
 
@@ -29,6 +38,9 @@ export default class App {
         this.onTabUpdateCallback = this.onTabUpdate.bind(this);
         this.activeTabId = -1;
         this.connector = new Connector(this.onMessage.bind(this), this.onDisconnect.bind(this));
+        // (tab id, manifest URL) -> when it was last reported. Cleared with the worker on every
+        // restart, so a stale entry can only skip reports for one worker lifetime at most.
+        this.recentMediaReports = new Map();
         // See start(). Until `started`, everything above is a placeholder, not what is known.
         this.started = false;
         this.ready = null;
@@ -141,7 +153,49 @@ export default class App {
         //Streaming video data received, send to native messaging application
         this.logger.log("onRequestDataReceived");
         this.logger.log(data);
-        this.isMonitoringEnabled() && this.connector.isConnected() && this.connector.postMessage("/media", data);
+        if (!this.isMonitoringEnabled() || !this.connector.isConnected()) {
+            return;
+        }
+        if (this.isRepeatMediaReport(data)) {
+            this.logger.log("repeat media report, skipping: " + (data && data.url));
+            return;
+        }
+        this.connector.postMessage("/media", data);
+    }
+
+    /**
+     * True when this tab already reported this URL inside MEDIA_REPORT_WINDOW_MS. The first
+     * report always goes through; repeats are already tracked by XDM, so re-sending them only
+     * triggers another manifest fetch against the CDN.
+     */
+    isRepeatMediaReport(data) {
+        const url = data && data.url;
+        if (!url) {
+            return false;
+        }
+        const key = (data.tabId || "") + "\n" + url;
+        const now = Date.now();
+        const last = this.recentMediaReports.get(key);
+        if (last !== undefined && now - last < MEDIA_REPORT_WINDOW_MS) {
+            return true;
+        }
+        // Re-inserted rather than overwritten, so the map stays in timestamp order for eviction.
+        this.recentMediaReports.delete(key);
+        this.recentMediaReports.set(key, now);
+        while (this.recentMediaReports.size > MAX_MEDIA_REPORTS) {
+            this.recentMediaReports.delete(this.recentMediaReports.keys().next().value);
+        }
+        return false;
+    }
+
+    /** Drops a navigating tab's report history with its videos, so a reload may report again. */
+    forgetMediaReports(tabId) {
+        const prefix = (tabId + "") + "\n";
+        for (let key of this.recentMediaReports.keys()) {
+            if (key.startsWith(prefix)) {
+                this.recentMediaReports.delete(key);
+            }
+        }
     }
 
     onDeterminingFilename(download, suggest) {
@@ -243,6 +297,7 @@ export default class App {
         this.logger.log("Tab navigated, clearing detected videos for tab " + tabId);
         // Drop them locally too, so the badge doesn't keep counting them until XDM's reply lands.
         this.videoList = (this.videoList || []).filter(vid => vid.tabId != (tabId + ""));
+        this.forgetMediaReports(tabId);
         this.connector.postMessage("/clear-tab", {
             tabId: tabId + "",
             tabUrl: tabUrl
