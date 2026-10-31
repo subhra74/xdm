@@ -1,6 +1,7 @@
 package xdm.app.utils
 
 import com.formdev.flatlaf.util.SystemFileChooser
+import xdm.app.AppContext
 import xdm.app.AppContext.app
 import xdm.app.I8N
 import xdm.app.OS
@@ -8,6 +9,7 @@ import xdm.app.ui.components.NotificationPopup
 import xdm.app.ui.components.MessageBox
 import xdm.app.utils.linux.DBusNotifications
 import xdm.app.utils.linux.DBusTray
+import xdm.app.utils.linux.PortalFileChooser
 import xdm.app.utils.mac.MacNotifications
 import xdm.core.util.Logger
 import java.awt.*
@@ -258,14 +260,24 @@ fun detectOS(): OS {
 
 /**
  * Shows a native-feeling file/folder picker and returns the selected [File], or null if
- * cancelled. Uses FlatLaf's [SystemFileChooser] (native dialog) on Windows and macOS, but
- * falls back to Swing's [JFileChooser] on Linux because the native chooser can hang under
- * Wayland. A non-null [filter] (description, extensions without the dot) limits the files shown.
+ * cancelled. Uses FlatLaf's [SystemFileChooser] (native dialog) on Windows and macOS. On Linux
+ * FlatLaf's in-process native chooser can hang under Wayland, so the desktop's dialog comes from
+ * the XDG portal ([PortalFileChooser]) instead, with Swing's [JFileChooser] (places bar from
+ * [xdm.app.utils.linux.LinuxPlaces]) when there is no portal or the user chose it in Advanced
+ * settings. A non-null [filter] (description, extensions without the dot) limits the files shown.
  */
 fun chooseFile(
     parent: Component?, directoriesOnly: Boolean, currentDir: File? = null,
     filter: Pair<String, List<String>>? = null
 ): File? {
+    if (detectOS() == OS.Linux && !AppContext.config.swingFileChooser) {
+        val title = I8N.text(if (directoriesOnly) "CHOOSER_TITLE_FOLDER" else "CHOOSER_TITLE_FILE")
+        when (val result = PortalFileChooser.choose(parent, title, directoriesOnly, currentDir, filter)) {
+            is PortalFileChooser.Result.Chosen -> return result.file
+            PortalFileChooser.Result.Cancelled -> return null
+            PortalFileChooser.Result.Unavailable -> {}
+        }
+    }
     return if (detectOS() == OS.Linux) {
         val fc = JFileChooser()
         fc.fileSelectionMode =

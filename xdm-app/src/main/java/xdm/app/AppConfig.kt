@@ -119,6 +119,11 @@ interface IAppConfig : CoreConfig {
      * XWayland (Advanced settings, next start). On by default. See [xdm.app.utils.WaylandToolkit].
      */
     var nativeWayland: Boolean
+    /**
+     * Linux: always use Swing's file chooser instead of the desktop's own dialog through the XDG portal
+     * (Advanced settings). Off by default. See [xdm.app.utils.linux.PortalFileChooser].
+     */
+    var swingFileChooser: Boolean
     var listSelectionMode: ListSelectionMode
     /** Play a sound when a download finishes or fails; ignored while [downloadCompleteNotification] is NONE. */
     var playSound: Boolean
@@ -192,6 +197,7 @@ private const val F_LIST_SELECTION_MODE = 48
 private const val F_PLAY_SOUND = 49
 private const val F_SOUND_COMPLETE_FILE = 50
 private const val F_SOUND_FAILED_FILE = 51
+private const val F_SWING_FILE_CHOOSER = 52
 
 // Inside F_CATEGORIES: one F_CATEGORY record per category, in order.
 private const val F_CATEGORY = 1
@@ -328,6 +334,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var batchAsOneFromBrowser: Boolean = true
     override var batchAsOneFromClipboard: Boolean = false
     override var nativeWayland: Boolean = true
+    override var swingFileChooser: Boolean = false
     override var listSelectionMode: ListSelectionMode = ListSelectionMode.CLASSIC
 
     override fun applyAuthConfig() {
@@ -413,6 +420,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
         w.bool(F_PLAY_SOUND, playSound)
         w.string(F_SOUND_COMPLETE_FILE, completeSoundFile)
         w.string(F_SOUND_FAILED_FILE, failedSoundFile)
+        w.bool(F_SWING_FILE_CHOOSER, swingFileChooser)
         w.raw(unknownFields)
     }
 
@@ -479,6 +487,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
                 F_PLAY_SOUND -> playSound = r.bool()
                 F_SOUND_COMPLETE_FILE -> completeSoundFile = r.string()
                 F_SOUND_FAILED_FILE -> failedSoundFile = r.string()
+                F_SWING_FILE_CHOOSER -> swingFileChooser = r.bool()
                 else -> unknown.raw(r.rawField())
             }
         }
