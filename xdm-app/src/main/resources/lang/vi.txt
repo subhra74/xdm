@@ -281,7 +281,6 @@ SETTINGS_AUTO_CAT_SUB=Lượt tải từ trình duyệt bắt đầu ở danh m�
 CAT_EMPTY=Chưa có danh mục. Mọi lượt tải đều vào thư mục tải về.
 CAT_TYPE_COUNT=%d loại tệp
 SETTINGS_SEC_BROWSERS_SUB=Cài tiện ích XDM vào các trình duyệt bạn dùng để tải.
-BROWSER_EXT_OTHER_CHROMIUM=Trình duyệt Chromium khác? Mở liên kết này trong đó để cài.
 BROWSER_EXT_INSTALL=Cài đặt
 BROWSER_EXT_COPY=Sao chép liên kết
 BROWSER_EXT_COPIED=Đã sao chép

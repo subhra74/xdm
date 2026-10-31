@@ -280,7 +280,6 @@ SETTINGS_AUTO_CAT_SUB=Unduhan dari browser dimulai di kategori yang aturannya co
 CAT_EMPTY=Belum ada kategori. Semua unduhan masuk ke folder unduhan.
 CAT_TYPE_COUNT=%d jenis file
 SETTINGS_SEC_BROWSERS_SUB=Pasang ekstensi XDM di browser yang Anda gunakan untuk mengunduh.
-BROWSER_EXT_OTHER_CHROMIUM=Browser Chromium lain? Buka tautan ini di dalamnya untuk memasang.
 BROWSER_EXT_INSTALL=Pasang
 BROWSER_EXT_COPY=Salin tautan
 BROWSER_EXT_COPIED=Disalin

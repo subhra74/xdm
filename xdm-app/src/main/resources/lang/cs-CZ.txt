@@ -281,7 +281,6 @@ SETTINGS_AUTO_CAT_SUB=Stahování z prohlížeče začínají v kategorii s odpo
 CAT_EMPTY=Zatím žádné kategorie. Všechna stahování jdou do složky stahování.
 CAT_TYPE_COUNT=Typy souborů: %d
 SETTINGS_SEC_BROWSERS_SUB=Nainstalujte rozšíření XDM do prohlížečů, ze kterých stahujete.
-BROWSER_EXT_OTHER_CHROMIUM=Jiný prohlížeč Chromium? Otevřete v něm tento odkaz k instalaci.
 BROWSER_EXT_INSTALL=Instalovat
 BROWSER_EXT_COPY=Kopírovat odkaz
 BROWSER_EXT_COPIED=Zkopírováno

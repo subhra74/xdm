@@ -1,0 +1,32 @@
+# Normalize: store text as LF, check out LF on every OS
+* text=auto eol=lf
+
+# Windows-only scripts keep CRLF in the working tree
+*.ps1  text eol=crlf
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+
+# Shell scripts must stay LF (they run in Linux/macOS packaging and Docker)
+*.sh   text eol=lf
+
+# Binary: never convert, never diff as text
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ico binary
+*.gif binary
+*.mp4 binary
+*.wav binary
+*.ttf binary
+*.woff binary
+*.woff2 binary
+*.eot binary
+*.jar binary
+*.zip binary
+*.dll binary
+*.exe binary
+*.msi binary
+
+# WiX license RTF: keep byte-for-byte as committed
+*.rtf -text

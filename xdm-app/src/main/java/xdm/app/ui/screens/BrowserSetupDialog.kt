@@ -57,7 +57,7 @@ class BrowserSetupDialog(owner: Window?) : JDialog(owner) {
         pack()
         minimumSize = size
         // Same height as the main window.
-        setSize(maxOf(width, 500.px), maxOf(height, 500.px))
+        setSize(maxOf(width, 500.px), maxOf(height, 350.px))
         setLocationRelativeTo(owner)
     }
 }

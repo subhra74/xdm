@@ -277,7 +277,6 @@ SETTINGS_AUTO_CAT_SUB=ബ്രൗസർ ഡൗൺലോഡുകൾ നിയ�
 CAT_EMPTY=ഇതുവരെ വിഭാഗങ്ങളില്ല. എല്ലാ ഡൗൺലോഡുകളും ഡൗൺലോഡ് ഫോൾഡറിലേക്ക് പോകും.
 CAT_TYPE_COUNT=%d ഫയൽ തരങ്ങൾ
 SETTINGS_SEC_BROWSERS_SUB=നിങ്ങൾ ഡൗൺലോഡ് ചെയ്യുന്ന ബ്രൗസറുകളിൽ XDM എക്സ്റ്റൻഷൻ ഇൻസ്റ്റാൾ ചെയ്യുക.
-BROWSER_EXT_OTHER_CHROMIUM=മറ്റൊരു Chromium ബ്രൗസർ? ഇൻസ്റ്റാൾ ചെയ്യാൻ ഈ ലിങ്ക് അതിൽ തുറക്കുക.
 BROWSER_EXT_INSTALL=ഇൻസ്റ്റാൾ ചെയ്യുക
 BROWSER_EXT_COPY=ലിങ്ക് പകർത്തുക
 BROWSER_EXT_COPIED=പകർത്തി

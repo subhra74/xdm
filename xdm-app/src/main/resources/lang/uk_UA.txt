@@ -281,7 +281,6 @@ SETTINGS_AUTO_CAT_SUB=Завантаження з браузера почина�
 CAT_EMPTY=Категорій ще немає. Усі завантаження йдуть до теки завантажень.
 CAT_TYPE_COUNT=Типів файлів: %d
 SETTINGS_SEC_BROWSERS_SUB=Установіть розширення XDM у браузери, з яких ви завантажуєте.
-BROWSER_EXT_OTHER_CHROMIUM=Інший браузер на Chromium? Відкрийте в ньому це посилання для встановлення.
 BROWSER_EXT_INSTALL=Установити
 BROWSER_EXT_COPY=Копіювати посилання
 BROWSER_EXT_COPIED=Скопійовано

@@ -281,7 +281,6 @@ SETTINGS_AUTO_CAT_SUB=I download del browser partono nella categoria le cui rego
 CAT_EMPTY=Ancora nessuna categoria. Tutti i download vanno nella cartella download.
 CAT_TYPE_COUNT=%d tipi di file
 SETTINGS_SEC_BROWSERS_SUB=Installa l'estensione XDM nei browser da cui scarichi.
-BROWSER_EXT_OTHER_CHROMIUM=Altro browser Chromium? Apri questo link al suo interno per installare.
 BROWSER_EXT_INSTALL=Installa
 BROWSER_EXT_COPY=Copia link
 BROWSER_EXT_COPIED=Copiato

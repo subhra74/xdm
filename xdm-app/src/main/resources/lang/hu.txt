@@ -280,7 +280,6 @@ SETTINGS_AUTO_CAT_SUB=A böngészős letöltések az illeszkedő szabályú kate
 CAT_EMPTY=Még nincsenek kategóriák. Minden letöltés a letöltési mappába kerül.
 CAT_TYPE_COUNT=%d fájltípus
 SETTINGS_SEC_BROWSERS_SUB=Telepítse az XDM bővítményt a használt böngészőkbe.
-BROWSER_EXT_OTHER_CHROMIUM=Másik Chromium-böngésző? Nyissa meg benne ezt a hivatkozást a telepítéshez.
 BROWSER_EXT_INSTALL=Telepítés
 BROWSER_EXT_COPY=Hivatkozás másolása
 BROWSER_EXT_COPIED=Másolva

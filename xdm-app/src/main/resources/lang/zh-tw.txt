@@ -280,7 +280,6 @@ SETTINGS_AUTO_CAT_SUB=瀏覽器下載會進入規則相符的分類。在下載�
 CAT_EMPTY=尚無分類。所有下載都存入下載資料夾。
 CAT_TYPE_COUNT=%d 種檔案類型
 SETTINGS_SEC_BROWSERS_SUB=在你用來下載的瀏覽器中安裝 XDM 擴充功能。
-BROWSER_EXT_OTHER_CHROMIUM=其他 Chromium 瀏覽器？在其中開啟此連結進行安裝。
 BROWSER_EXT_INSTALL=安裝
 BROWSER_EXT_COPY=複製連結
 BROWSER_EXT_COPIED=已複製

@@ -281,7 +281,6 @@ SETTINGS_AUTO_CAT_SUB=ब्राउजरका डाउनलोड नि�
 CAT_EMPTY=अहिलेसम्म कुनै वर्ग छैन। सबै डाउनलोड डाउनलोड फोल्डरमा जान्छन्।
 CAT_TYPE_COUNT=%d फाइल प्रकार
 SETTINGS_SEC_BROWSERS_SUB=तपाईंले डाउनलोड गर्ने ब्राउजरहरूमा XDM एक्सटेन्सन स्थापना गर्नुहोस्।
-BROWSER_EXT_OTHER_CHROMIUM=अर्को Chromium ब्राउजर? स्थापना गर्न यो लिङ्क त्यसैमा खोल्नुहोस्।
 BROWSER_EXT_INSTALL=स्थापना
 BROWSER_EXT_COPY=लिङ्क प्रतिलिपि
 BROWSER_EXT_COPIED=प्रतिलिपि भयो

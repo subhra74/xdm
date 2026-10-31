@@ -276,7 +276,6 @@ SETTINGS_AUTO_CAT_SUB=تبدأ تنزيلات المتصفح في الفئة ا�
 CAT_EMPTY=لا توجد فئات بعد. تذهب كل التنزيلات إلى مجلد التنزيل.
 CAT_TYPE_COUNT=%d من أنواع الملفات
 SETTINGS_SEC_BROWSERS_SUB=ثبّت إضافة XDM في المتصفحات التي تنزّل منها.
-BROWSER_EXT_OTHER_CHROMIUM=متصفح Chromium آخر؟ افتح هذا الرابط فيه للتثبيت.
 BROWSER_EXT_INSTALL=تثبيت
 BROWSER_EXT_COPY=نسخ الرابط
 BROWSER_EXT_COPIED=تم النسخ

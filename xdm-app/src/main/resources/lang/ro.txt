@@ -281,7 +281,6 @@ SETTINGS_AUTO_CAT_SUB=Descărcările din browser încep în categoria ale cărei
 CAT_EMPTY=Nicio categorie încă. Toate descărcările merg în dosarul de descărcare.
 CAT_TYPE_COUNT=%d tipuri de fișiere
 SETTINGS_SEC_BROWSERS_SUB=Instalați extensia XDM în browserele din care descărcați.
-BROWSER_EXT_OTHER_CHROMIUM=Alt browser Chromium? Deschideți acest link în el pentru instalare.
 BROWSER_EXT_INSTALL=Instalează
 BROWSER_EXT_COPY=Copiază linkul
 BROWSER_EXT_COPIED=Copiat

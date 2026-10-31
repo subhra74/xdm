@@ -277,7 +277,6 @@ SETTINGS_AUTO_CAT_SUB=بارگیری‌های مرورگر در دسته‌ای 
 CAT_EMPTY=هنوز دسته‌ای نیست. همه بارگیری‌ها به پوشه بارگیری می‌روند.
 CAT_TYPE_COUNT=%d نوع فایل
 SETTINGS_SEC_BROWSERS_SUB=افزونه XDM را در مرورگرهایی که از آن‌ها بارگیری می‌کنید نصب کنید.
-BROWSER_EXT_OTHER_CHROMIUM=مرورگر Chromium دیگری دارید؟ این پیوند را در آن باز کنید تا نصب شود.
 BROWSER_EXT_INSTALL=نصب
 BROWSER_EXT_COPY=کپی پیوند
 BROWSER_EXT_COPIED=کپی شد

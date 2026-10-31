@@ -281,7 +281,6 @@ SETTINGS_AUTO_CAT_SUB=Pobrania z przeglądarki zaczynają w kategorii z pasując
 CAT_EMPTY=Brak kategorii. Wszystkie pobrania trafiają do folderu pobierania.
 CAT_TYPE_COUNT=Typy plików: %d
 SETTINGS_SEC_BROWSERS_SUB=Zainstaluj rozszerzenie XDM w przeglądarkach, z których pobierasz.
-BROWSER_EXT_OTHER_CHROMIUM=Inna przeglądarka Chromium? Otwórz w niej ten link, aby zainstalować.
 BROWSER_EXT_INSTALL=Zainstaluj
 BROWSER_EXT_COPY=Kopiuj link
 BROWSER_EXT_COPIED=Skopiowano

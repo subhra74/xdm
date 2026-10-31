@@ -280,7 +280,6 @@ SETTINGS_AUTO_CAT_SUB=Preuzimanja iz pregledača počinju u kategoriji čija se 
 CAT_EMPTY=Još nema kategorija. Sva preuzimanja idu u fasciklu za preuzimanja.
 CAT_TYPE_COUNT=Tipova datoteka: %d
 SETTINGS_SEC_BROWSERS_SUB=Instalirajte XDM proširenje u pregledače iz kojih preuzimate.
-BROWSER_EXT_OTHER_CHROMIUM=Drugi Chromium pregledač? Otvorite ovu vezu u njemu za instalaciju.
 BROWSER_EXT_INSTALL=Instaliraj
 BROWSER_EXT_COPY=Kopiraj vezu
 BROWSER_EXT_COPIED=Kopirano
