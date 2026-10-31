@@ -1,0 +1,121 @@
+name: AUR publish
+
+# Syncs packaging/aur/ to the xdm-app-bin AUR repository on every GitHub release.
+#
+# One-time setup (maintainer):
+#   1. Create an AUR account and an SSH key, add the public key to
+#      https://aur.archlinux.org/account.
+#   2. First push: the job creates the xdm-app-bin repo on first push if it is
+#      empty (push an empty commit or the files via `git push
+#      ssh://aur@aur.archlinux.org/xdm-app-bin.git`), or submit
+#      packaging/aur/PKGBUILD through the AUR web interface once.
+#   3. Add the private key as a repository secret named AUR_SSH_PRIVATE_KEY.
+#
+# Per release: bump packaging/aur/PKGBUILD first (`packaging/aur/bump.sh
+# <pkgver>`); this job fails early if PKGBUILD's pkgver doesn't match the
+# release tag, so a stale package can never be published.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to publish (empty = latest release)
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install tools
+        run: pacman -Sy --needed --noconfirm base-devel git openssh >/dev/null
+
+      - name: Resolve release tag
+        id: tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_TAG: ${{ github.event.release.tag_name }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          tag="${EVENT_TAG:-$INPUT_TAG}"
+          if [[ -z "$tag" ]]; then
+            tag="$(curl -fsSL "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/latest" \
+              | grep -o '"tag_name": *"[^"]*"' | head -1 | cut -d'"' -f4)"
+          fi
+          [[ -n "$tag" ]] || { echo "could not resolve a release tag" >&2; exit 1; }
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "resolved tag: $tag"
+
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.tag.outputs.tag }}
+
+      - name: Check PKGBUILD matches the release
+        run: |
+          pkgver="$(sed -n 's/^pkgver=//p' packaging/aur/PKGBUILD | head -1)"
+          tag="${{ steps.tag.outputs.tag }}"
+          [[ "$pkgver" == "${tag#v}" ]] || {
+            echo "packaging/aur/PKGBUILD has pkgver=$pkgver but the release is $tag" >&2
+            echo "run packaging/aur/bump.sh ${tag#v} $tag first" >&2
+            exit 1
+          }
+
+      - name: Assemble AUR directory
+        run: |
+          rm -rf aur && mkdir aur
+          cp packaging/aur/PKGBUILD aur/
+          cp packaging/linux/xdm-app.desktop aur/
+          for s in 16 24 32 48 64 128 256 512; do
+            cp "xdm-app/src/main/resources/images/xdm-logo-$s.png" "aur/xdm-logo-$s.png"
+          done
+          # The canonical .SRCINFO is always regenerated, never copied.
+          chown -R nobody:nobody aur
+          su nobody -s /bin/bash -c "cd '$PWD/aur' && makepkg --printsrcinfo" > aur/.SRCINFO
+          cat aur/.SRCINFO
+          git config --global --add safe.directory "$PWD/aur"
+
+      - name: Configure AUR SSH key
+        env:
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+        run: |
+          [[ -n "$AUR_SSH_PRIVATE_KEY" ]] || {
+            echo "secret AUR_SSH_PRIVATE_KEY is not set - see the setup notes at the top of this file" >&2
+            exit 1
+          }
+          mkdir -p ~/.ssh
+          printf '%s\n' "$AUR_SSH_PRIVATE_KEY" > ~/.ssh/aur
+          chmod 600 ~/.ssh/aur
+          ssh-keyscan -t ed25519 aur.archlinux.org >> ~/.ssh/known_hosts 2>/dev/null
+          cat >> ~/.ssh/config <<'EOF'
+          Host aur.archlinux.org
+            IdentityFile ~/.ssh/aur
+            IdentitiesOnly yes
+          EOF
+
+      - name: Push to AUR
+        run: |
+          if git ls-remote ssh://aur@aur.archlinux.org/xdm-app-bin.git HEAD | grep -q .; then
+            git clone ssh://aur@aur.archlinux.org/xdm-app-bin.git aur-push
+          else
+            echo "AUR repo has no commits yet - initializing"
+            mkdir aur-push && git -C aur-push init -b master
+            git -C aur-push remote add origin ssh://aur@aur.archlinux.org/xdm-app-bin.git
+          fi
+          cp aur/PKGBUILD aur/.SRCINFO aur/xdm-app.desktop aur/xdm-logo-*.png aur-push/
+          git -C aur-push config user.name "xdm-aur-bot"
+          git -C aur-push config user.email "xdm-aur-bot@users.noreply.github.com"
+          git -C aur-push add PKGBUILD .SRCINFO xdm-app.desktop xdm-logo-16.png xdm-logo-24.png \
+            xdm-logo-32.png xdm-logo-48.png xdm-logo-64.png xdm-logo-128.png \
+            xdm-logo-256.png xdm-logo-512.png
+          if git -C aur-push diff --cached --quiet; then
+            echo "AUR already up to date"
+          else
+            git -C aur-push commit -m "xdm-app-bin ${{ steps.tag.outputs.tag }}"
+            git -C aur-push push origin master
+          fi

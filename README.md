@@ -131,6 +131,37 @@ XDM works with Chrome, Firefox, Edge, Opera, Vivaldi, Brave and other Chromium- 
 The extension forwards downloads and detected media to the running app over a local-only connection
 (`127.0.0.1:8597`); nothing leaves your machine.
 
+## 📥 Install on Linux
+
+**Arch Linux** ([AUR](https://aur.archlinux.org/packages/xdm-app-bin), synced automatically on every
+release):
+
+```bash
+yay -S xdm-app-bin
+# or: paru -S xdm-app-bin
+```
+
+**One-liner** (Debian/Ubuntu, Fedora/RHEL/openSUSE, Arch — picks the right package for your distro,
+falls back to the portable build elsewhere):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/subhra74/xdm/master/packaging/linux/install.sh | bash
+```
+
+Useful variants:
+
+```bash
+curl -fsSL .../install.sh | bash -s -- --version 9.0.8  # pin a version
+curl -fsSL .../install.sh | bash -s -- --portable      # tarball into /opt, no package manager
+curl -fsSL .../install.sh | bash -s -- --uninstall     # remove XDM
+```
+
+**Manual:** download the `.deb`, `.rpm`, `.pkg.tar.zst` or portable `.tar.gz` from
+[GitHub Releases](https://github.com/subhra74/xdm/releases) and install it, e.g.
+`sudo apt install ./xdm-app_*_amd64.deb`, `sudo dnf install ./xdm-app-*.rpm`,
+`sudo pacman -U ./xdm-app-*.pkg.tar.zst`, or extract the `.tar.gz` to `/opt` and link
+`/usr/bin/xdm-app` (the one-liner's `--portable` mode does exactly this).
+
 ## 🛠️ Building from source
 
 **Requirements:** JDK 25 (configured as a [Maven toolchain](packaging/toolchains.sample.xml)) and Maven.
