@@ -188,7 +188,7 @@ object RecordingSession {
             )
         )
         val vid = poll("video item for $tab") {
-            Regex("\\{\"id\":\"(-?\\d+)\"[^{}]*\"tabId\":\"${Regex.escape(tabId)}\"\\}")
+            Regex("\\{\"id\":\"(-?\\d+)\"[^{}]*\"tabId\":\"${Regex.escape(tabId)}\"[,}]")
                 .find(get(extensionBase(), "/sync"))?.groupValues?.get(1)
         }
         val before = downloadIds()
