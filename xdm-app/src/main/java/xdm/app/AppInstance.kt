@@ -21,6 +21,7 @@ import xdm.app.utils.WorkingSetTrim
 import xdm.app.utils.createTray
 import xdm.app.utils.detectOS
 import xdm.app.utils.logoImage
+import xdm.app.utils.trayToggleHides
 import xdm.app.utils.mac.MacNotifications
 import xdm.app.utils.mainWindowOnScreen
 import xdm.app.utils.offerMacNotificationSettings
@@ -35,6 +36,7 @@ import xdm.core.util.FormatHelper.formatSize
 import xdm.core.util.Logger
 import xdm.core.util.MovePhase
 import java.awt.Desktop
+import java.awt.Frame
 import java.awt.MenuItem
 import java.awt.PopupMenu
 import java.awt.Taskbar
@@ -49,6 +51,12 @@ interface IAppInstance {
     fun run(args: Array<String>)
 
     fun showAppWindow()
+
+    /**
+     * Left click on the tray icon: hides the window when it is already up, brings it up
+     * otherwise (hidden, minimized or behind other windows).
+     */
+    fun toggleAppWindow()
 
     /**
      * Reports a failure that stops XDM from starting at all. Blocks until the user dismisses it,
@@ -207,6 +215,20 @@ class AppInstance : IAppInstance {
         runOnUIThread {
             appWindow.isVisible = true
             appWindow.toFront()
+        }
+    }
+
+    override fun toggleAppWindow() {
+        runOnUIThread {
+            if (trayToggleHides(appWindow.isVisible, appWindow.isFocused, appWindow.extendedState)) {
+                appWindow.isVisible = false
+            } else {
+                if ((appWindow.extendedState and Frame.ICONIFIED) != 0) {
+                    appWindow.extendedState = Frame.NORMAL
+                }
+                appWindow.isVisible = true
+                appWindow.toFront()
+            }
         }
     }
 
