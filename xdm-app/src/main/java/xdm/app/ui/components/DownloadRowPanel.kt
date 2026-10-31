@@ -120,7 +120,7 @@ class DownloadRowPanel(val root: JPanel = JPanel()) {
         lblTitle.verticalAlignment = SwingConstants.BOTTOM
         lblInfo = JLabel("Some long title name for testing")
         lblInfo.verticalAlignment = SwingConstants.TOP
-        lblInfo.font = lblTitle.font.deriveFont(11.0f.px)
+        lblInfo.font = lblTitle.font.deriveFont(12.0f.px)
         lblInfo.foreground = Color.GRAY
         lblTitle.alignmentX = 0f
         lblInfo.alignmentX = 0f
@@ -139,7 +139,7 @@ class DownloadRowPanel(val root: JPanel = JPanel()) {
         prg = JProgressBar()
         prg.preferredSize = scaledSize(60, 10)
         prg.alignmentY = Component.TOP_ALIGNMENT
-        lblProgress = StatusLabel(lblTitle.font.deriveFont(11.0f.px))
+        lblProgress = StatusLabel(lblTitle.font.deriveFont(12.0f.px))
         panDetails.add(lblProgress)
         panDetails.add(prg, BorderLayout.SOUTH)
         prg.border = ScaledEmptyBorder(0, 0, 5, 0)

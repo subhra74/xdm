@@ -192,7 +192,7 @@ private class WrappingText(text: String) : JTextArea(text) {
         highlighter = null
         border = ScaledEmptyBorder(0, 0, 0, 0)
         alignmentX = Component.LEFT_ALIGNMENT
-        font = UIManager.getFont("Label.font").deriveFont(Font.PLAIN, 11.0f.px)
+        font = UIManager.getFont("Label.font").deriveFont(Font.PLAIN, 12.0f.px)
         foreground = settingsMutedColor()
     }
 
@@ -214,7 +214,7 @@ private class WrappingText(text: String) : JTextArea(text) {
 /** A muted footnote, for notes that belong to a whole card rather than one row. */
 internal fun settingsHint(text: String): JLabel = JLabel(text).apply {
     alignmentX = Component.LEFT_ALIGNMENT
-    font = font.deriveFont(Font.PLAIN, 11.0f.px)
+    font = font.deriveFont(Font.PLAIN, 12.0f.px)
     foreground = settingsMutedColor()
 }
 

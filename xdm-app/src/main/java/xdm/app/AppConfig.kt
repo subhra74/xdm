@@ -38,6 +38,12 @@ enum class DownloadCompleteNotification(override val id: Int) : StableId {
 interface IAppConfig : CoreConfig {
     fun load()
     fun save()
+    /**
+     * Upgrades from 9.0.8 saved its Dark default as "dark", the same as a user who picked it, so a
+     * config that has not been through this yet moves "dark" to "system" once. "light" was always
+     * the user's own pick and stays. Returns whether anything changed and needs saving.
+     */
+    fun adoptSystemTheme(): Boolean
     /** What to show when a download finishes. */
     var downloadCompleteNotification: DownloadCompleteNotification
     /**
@@ -75,6 +81,11 @@ interface IAppConfig : CoreConfig {
     var theme: String
     /** Whole-UI zoom in percent (Settings > Appearance), one of [AppConfig.UI_SCALES]; 100 leaves the UI as is. */
     var uiScale: Int
+    /**
+     * Whether the one-time switch of the old Dark default to "system" has run (see [adoptSystemTheme]).
+     * Set on a first run too, so a new install never goes through it.
+     */
+    var themeMigrated: Boolean
     override var speedLimiterEnabled: Boolean
     override var speedLimit: Int
     var startDownloadAutomatically: Boolean
@@ -202,6 +213,7 @@ private const val F_SOUND_COMPLETE_FILE = 50
 private const val F_SOUND_FAILED_FILE = 51
 private const val F_SWING_FILE_CHOOSER = 52
 private const val F_UI_SCALE = 53
+private const val F_THEME_MIGRATED = 54
 
 // Inside F_CATEGORIES: one F_CATEGORY record per category, in order.
 private const val F_CATEGORY = 1
@@ -257,6 +269,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var lang: String = "en"
     override var theme: String = "dark"
     override var uiScale: Int = 100
+    override var themeMigrated: Boolean = false
     override var maxParallelDownloads: Int = 3
     override var downloadCompleteNotification: DownloadCompleteNotification = DownloadCompleteNotification.DIALOG
     override var playSound: Boolean = false
@@ -363,6 +376,13 @@ class AppConfig(private val configDir: String) : IAppConfig {
             }
     }
 
+    override fun adoptSystemTheme(): Boolean {
+        if (themeMigrated) return false
+        if (theme == "dark") theme = "system"
+        themeMigrated = true
+        return true
+    }
+
     override fun save() {
         AtomicIO.writeTransacted(CONFIG_FILE, configDir, ownerOnly = true) { out ->
             TaggedFile.write(out) { save(this) }
@@ -429,6 +449,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
         w.string(F_SOUND_FAILED_FILE, failedSoundFile)
         w.bool(F_SWING_FILE_CHOOSER, swingFileChooser)
         w.int(F_UI_SCALE, uiScale)
+        w.bool(F_THEME_MIGRATED, themeMigrated)
         w.raw(unknownFields)
     }
 
@@ -497,6 +518,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
                 F_SOUND_FAILED_FILE -> failedSoundFile = r.string()
                 F_SWING_FILE_CHOOSER -> swingFileChooser = r.bool()
                 F_UI_SCALE -> uiScale = r.int().takeIf { it in UI_SCALES } ?: 100
+                F_THEME_MIGRATED -> themeMigrated = r.bool()
                 else -> unknown.raw(r.rawField())
             }
         }

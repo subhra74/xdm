@@ -77,6 +77,7 @@ object AppContext {
             if (firstRun) {
                 // Follow the OS's light/dark mode, read at every startup (AppMain.setupTheme).
                 config.theme = "system"
+                config.themeMigrated = true
 
                 // Only a packaged build registers itself. Under `java -jar` or an IDE the entry
                 // would point at a JVM and a build-output jar, and outlive the checkout.
@@ -94,6 +95,10 @@ object AppContext {
             } else {
                 // Entries written by older versions start XDM without --minimized. No-op on Windows.
                 AutoStart.sync()
+                if (config.adoptSystemTheme()) {
+                    Logger.info("Theme setting migrated to ${config.theme}")
+                    config.save()
+                }
             }
 
             // xdm-app:// is registered by the installers (MSI, Linux packages' .desktop file, macOS
