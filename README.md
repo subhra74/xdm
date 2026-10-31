@@ -218,6 +218,22 @@ desktop app (`xdm-app`) and the browser extensions, stays under GPL v3.
   </picture>
 </a>
 
+## ⚖️ Disclaimer
+
+XDM is a general-purpose download manager intended for lawful use only.
+
+- XDM does not support downloading from YouTube.
+- XDM does not support DRM-protected content and does not circumvent DRM or any other technical protection measure.
+- Use XDM only to download content that you own or are authorized to download, in compliance with applicable laws
+  and the terms of service of the websites you use.
+- The XDM authors and contributors do not endorse, encourage, or condone copyright infringement or any other unlawful
+  use of this software.
+- XDM is provided "as is", without warranty of any kind, as set out in its [license](LICENSE). The authors and
+  contributors are not responsible or liable for how users use the software, or for any loss or damage arising from
+  its use.
+- XDM is not affiliated with, endorsed by, or sponsored by YouTube, Google, or any other website or service it may be
+  used with. All trademarks belong to their respective owners.
+
 ---
 
 <p align="center">

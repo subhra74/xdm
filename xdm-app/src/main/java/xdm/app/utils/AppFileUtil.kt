@@ -46,6 +46,16 @@ fun getFileFolder(ent: DbRecord): Pair<String?, String?>? {
     return Pair(fileName, folder)
 }
 
+/** Where a completed download's file (a batch's folder) is: its task info holds the final name and folder. */
+fun finishedFile(ent: DbRecord): File? {
+    if (ent.downloadType == DownloadType.Torrent) return null
+    val (fileName, folder) = getFileFolder(ent) ?: return null
+    return if (fileName != null && folder != null) File(folder, fileName) else null
+}
+
+/** Whether a completed download's file (a batch's folder) is still on disk; false when it cannot be located. */
+fun finishedFileExists(ent: DbRecord): Boolean = finishedFile(ent)?.exists() == true
+
 /** The category with [id], or null for None (including an id whose category was deleted). */
 fun categoryById(id: String?): DownloadCategory? =
     id?.let { wanted -> config.categories.firstOrNull { it.id == wanted } }

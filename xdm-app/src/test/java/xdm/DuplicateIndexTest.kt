@@ -19,11 +19,14 @@ class DuplicateIndexTest {
     private lateinit var appDB: AppDB
     private lateinit var index: DuplicateIndex
 
+    /** Ids whose finished file is gone from disk. */
+    private val missing = HashSet<Long>()
+
     @BeforeEach
     fun setup() {
         dir = Files.createTempDirectory("xdm-dup-test").toFile()
         appDB = AppDB(dir.absolutePath)
-        index = DuplicateIndex(dir.absolutePath, appDB)
+        index = DuplicateIndex(dir.absolutePath, appDB) { it.id !in missing }
     }
 
     @AfterEach
@@ -31,11 +34,13 @@ class DuplicateIndexTest {
         dir.deleteRecursively()
     }
 
-    private fun addRecord(id: Long, fileName: String, size: Long, date: Long = id) {
+    private fun addRecord(
+        id: Long, fileName: String, size: Long, date: Long = id, status: RecordStatus = RecordStatus.FINISHED,
+    ) {
         appDB.addActive(
             DbRecord(
                 id = id, size = size, downloaded = 0, progress = 0, date = date, fileName = fileName,
-                eta = 0, speed = 0f, selected = false, status = RecordStatus.FINISHED,
+                eta = 0, speed = 0f, selected = false, status = status,
                 downloadType = DownloadType.Http
             )
         )
@@ -151,7 +156,7 @@ class DuplicateIndexTest {
         addRecord(1, "a.zip", 0)
         index.add(1, "https://example.com/a", "\"e1\"")
         index.updateUrl(1, "https://example.com/new")
-        val reloaded = DuplicateIndex(dir.absolutePath, appDB)
+        val reloaded = DuplicateIndex(dir.absolutePath, appDB) { true }
         assertEquals(1L, reloaded.find("https://example.com/new", "x", null, null)?.record?.id, "new url")
         assertNull(reloaded.find("https://example.com/a", "x", null, null), "old url")
         assertEquals(
@@ -159,5 +164,33 @@ class DuplicateIndexTest {
             reloaded.find("https://example.com/z", "x", null, "\"e1\"")?.kind,
             "etag kept across refresh"
         )
+    }
+
+    @Test
+    fun finishedFileGoneFromDiskIsNotADuplicate() {
+        addRecord(1, "a.zip", 500)
+        index.add(1, "https://example.com/a", "\"e\"")
+        missing.add(1)
+        assertNull(index.find("https://example.com/a", "x", null, null), "same url")
+        assertNull(index.find("https://example.com/b", "a.zip", 500, null), "same name and size")
+        assertNull(index.find("https://example.com/c", "x", null, "\"e\""), "same etag")
+    }
+
+    @Test
+    fun olderDownloadStillOnDiskMatchesWhenNewerIsGone() {
+        addRecord(1, "a.zip", 0)
+        addRecord(2, "a.zip", 0)
+        index.add(1, "https://example.com/a", null)
+        index.add(2, "https://example.com/a", null)
+        missing.add(2)
+        assertEquals(1L, index.find("https://example.com/a", "x", null, null)?.record?.id, "older record on disk")
+    }
+
+    @Test
+    fun unfinishedDownloadCountsWithoutItsFile() {
+        addRecord(1, "a.zip", 0, status = RecordStatus.PAUSED)
+        index.add(1, "https://example.com/a", null)
+        missing.add(1)
+        assertEquals(1L, index.find("https://example.com/a", "x", null, null)?.record?.id, "paused record")
     }
 }

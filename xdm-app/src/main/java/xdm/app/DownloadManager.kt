@@ -4,7 +4,7 @@ import xdm.app.utils.DownloadSource
 import xdm.app.utils.KeepAwake
 import xdm.app.utils.SoundPlayer
 import xdm.app.utils.WorkingSetTrim
-import xdm.app.utils.getFileFolder
+import xdm.app.utils.finishedFile
 import xdm.app.utils.isUsableBatchFolder
 import xdm.core.CoreConfig
 import xdm.core.downloaders.*
@@ -715,12 +715,6 @@ class DownloadManager(
             }
         }
         AppContext.app.downloadsRemovedInView()
-    }
-
-    /** Where a completed download's file is: its task info holds the final name and folder. */
-    private fun finishedFile(rec: DbRecord): File? {
-        val (fileName, folder) = getFileFolder(rec) ?: return null
-        return if (fileName != null && folder != null) File(folder, fileName) else null
     }
 
     /** The `.srt` a finished HLS/DASH download saved beside its video, if it picked a subtitle. */

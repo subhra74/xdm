@@ -1,6 +1,7 @@
 package xdm.app
 
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import xdm.app.utils.finishedFileExists
 import xdm.core.util.Logger
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
@@ -37,8 +38,14 @@ data class DuplicateMatch(val record: DbRecord, val kind: DuplicateKind)
  * The file is an 8-byte header followed by fixed [RECORD_SIZE]-byte records, so a record cut short
  * by a crash is recognised by length and dropped. Appends are not synced: losing the last entry
  * only means one duplicate goes unnoticed.
+ *
+ * A finished download whose file ([fileExists]) is gone from disk is no longer a duplicate.
  */
-class DuplicateIndex(configDir: String, private val appDB: AppDB) {
+class DuplicateIndex(
+    configDir: String,
+    private val appDB: AppDB,
+    private val fileExists: (DbRecord) -> Boolean = ::finishedFileExists,
+) {
     private val file = File(configDir, FILE_NAME)
 
     /** Registers a new download. */
@@ -53,15 +60,18 @@ class DuplicateIndex(configDir: String, private val appDB: AppDB) {
      * The existing download this one most likely duplicates, or null. Checked strongest first: the
      * same URL, then the same file name with the same known size, then the same strong ETag from the
      * same host. A name alone, or a size of 0 (not known yet), is never enough. The newest record
-     * wins within a kind.
+     * wins within a kind. A finished download whose file was deleted is skipped, so an older one
+     * that is still on disk can match instead; unfinished ones always count (they can be resumed).
      */
     fun find(url: String, fileName: String?, size: Long?, etag: String?): DuplicateMatch? {
         val (byUrl, byEtag) = scan(urlHash(url), etagHash(url, etag))
-        fun newest(ids: Collection<Long>) = ids.mapNotNull { appDB.getById(it) }.maxByOrNull { it.date }
+        fun onDisk(rec: DbRecord) = rec.status != RecordStatus.FINISHED || fileExists(rec)
+        fun newest(ids: Collection<Long>) = ids.mapNotNull { appDB.getById(it) }.filter(::onDisk).maxByOrNull { it.date }
 
         newest(byUrl)?.let { return DuplicateMatch(it, DuplicateKind.SAME_URL) }
         if (!fileName.isNullOrBlank() && size != null && size > 0) {
             appDB.findAll { it.size == size && it.fileName.equals(fileName, ignoreCase = true) }
+                .filter(::onDisk)
                 .maxByOrNull { it.date }
                 ?.let { return DuplicateMatch(it, DuplicateKind.SAME_NAME_AND_SIZE) }
         }

@@ -4,6 +4,7 @@ import xdm.app.AppContext
 import xdm.app.DbRecord
 import xdm.app.I8N.text
 import xdm.app.RecordStatus
+import xdm.app.ui.components.AppTheme
 import xdm.app.ui.components.ChecksumPanel
 import xdm.app.ui.components.ChecksumWindow
 import xdm.app.ui.components.MessageBox
@@ -12,6 +13,7 @@ import xdm.app.ui.screens.settings.settingsIconButton
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.createIcon
+import xdm.app.utils.finishedFileExists
 import xdm.app.utils.gbAdd
 import xdm.app.utils.openFolderExternal
 import xdm.app.utils.openInDefaultBrowser
@@ -120,7 +122,10 @@ class PropertiesDialog(private val owner: Window?, ent: DbRecord) : JDialog(owne
 
         var row = 0
         val nameLabel = if (batch != null) text("BATCH_NAME") else text("PROP_NAME")
-        addRow(panel, row++, nameLabel, details.fileName ?: ent.fileName, copyable = true)
+        // A finished download's file (a batch's folder) that was deleted or moved since shows in red.
+        val missing = ent.status == RecordStatus.FINISHED && ent.downloadType != DownloadType.Torrent &&
+                !finishedFileExists(ent)
+        addRow(panel, row++, nameLabel, details.fileName ?: ent.fileName, copyable = true, missing = missing)
         if (batch != null) {
             // The batch folder itself, revealed in its parent.
             addRow(
@@ -300,7 +305,8 @@ class PropertiesDialog(private val owner: Window?, ent: DbRecord) : JDialog(owne
     /**
      * One full-width label/value row, its value spanning the pair columns. [copyable] adds a copy
      * button, [webPage] a copy button on a value that opens in the browser when clicked, and
-     * [folderOf] (folder to file name) a folder button on a value that reveals the file.
+     * [folderOf] (folder to file name) a folder button on a value that reveals the file. [missing]
+     * colours a copyable value red, for a file no longer on disk.
      */
     private fun addRow(
         panel: JPanel,
@@ -310,6 +316,7 @@ class PropertiesDialog(private val owner: Window?, ent: DbRecord) : JDialog(owne
         copyable: Boolean = false,
         webPage: Boolean = false,
         folderOf: Pair<String, String?>? = null,
+        missing: Boolean = false,
     ) {
         addLabel(panel, row, column = 0, label = label)
 
@@ -327,7 +334,12 @@ class PropertiesDialog(private val owner: Window?, ent: DbRecord) : JDialog(owne
 
             copyable -> JPanel(BorderLayout(6.px, 0)).apply {
                 isOpaque = false
-                add(readOnlyField(value), BorderLayout.CENTER)
+                add(readOnlyField(value).apply {
+                    if (missing) {
+                        foreground = AppTheme.failedForeground
+                        toolTipText = text("ERR_MSG_FILE_NOT_FOUND_MSG")
+                    }
+                }, BorderLayout.CENTER)
                 add(copyButton(value), BorderLayout.EAST)
             }
 
