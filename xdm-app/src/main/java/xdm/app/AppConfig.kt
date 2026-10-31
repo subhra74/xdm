@@ -71,7 +71,10 @@ interface IAppConfig : CoreConfig {
     val defaultCategories: List<DownloadCategory>
     var minVideoSize: Long
     var lang: String
+    /** "dark", "light" or "system" (follow the OS, read at every startup). */
     var theme: String
+    /** Whole-UI zoom in percent (Settings > Appearance), one of [AppConfig.UI_SCALES]; 100 leaves the UI as is. */
+    var uiScale: Int
     override var speedLimiterEnabled: Boolean
     override var speedLimit: Int
     var startDownloadAutomatically: Boolean
@@ -198,6 +201,7 @@ private const val F_PLAY_SOUND = 49
 private const val F_SOUND_COMPLETE_FILE = 50
 private const val F_SOUND_FAILED_FILE = 51
 private const val F_SWING_FILE_CHOOSER = 52
+private const val F_UI_SCALE = 53
 
 // Inside F_CATEGORIES: one F_CATEGORY record per category, in order.
 private const val F_CATEGORY = 1
@@ -220,6 +224,8 @@ class AppConfig(private val configDir: String) : IAppConfig {
         const val MAX_READ_TIMEOUT_SECONDS = 600
         const val MAX_FOLDER_HISTORY = 10
         const val MAX_PARALLEL_DOWNLOADS = 256
+        /** The Interface size choices in Settings, in percent. */
+        val UI_SCALES = listOf(90, 100, 110, 125, 150)
     }
 
     private val changeListeners = java.util.concurrent.CopyOnWriteArrayList<() -> Unit>()
@@ -250,6 +256,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var minVideoSize: Long = 1024
     override var lang: String = "en"
     override var theme: String = "dark"
+    override var uiScale: Int = 100
     override var maxParallelDownloads: Int = 3
     override var downloadCompleteNotification: DownloadCompleteNotification = DownloadCompleteNotification.DIALOG
     override var playSound: Boolean = false
@@ -421,6 +428,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
         w.string(F_SOUND_COMPLETE_FILE, completeSoundFile)
         w.string(F_SOUND_FAILED_FILE, failedSoundFile)
         w.bool(F_SWING_FILE_CHOOSER, swingFileChooser)
+        w.int(F_UI_SCALE, uiScale)
         w.raw(unknownFields)
     }
 
@@ -488,6 +496,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
                 F_SOUND_COMPLETE_FILE -> completeSoundFile = r.string()
                 F_SOUND_FAILED_FILE -> failedSoundFile = r.string()
                 F_SWING_FILE_CHOOSER -> swingFileChooser = r.bool()
+                F_UI_SCALE -> uiScale = r.int().takeIf { it in UI_SCALES } ?: 100
                 else -> unknown.raw(r.rawField())
             }
         }

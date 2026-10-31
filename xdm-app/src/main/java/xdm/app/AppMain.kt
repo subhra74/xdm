@@ -1,12 +1,14 @@
 package xdm.app
 
 import com.formdev.flatlaf.FlatLaf
+import com.formdev.flatlaf.util.UIScale
 import com.formdev.flatlaf.themes.FlatMacDarkLaf
 import com.formdev.flatlaf.themes.FlatMacLightLaf
 import xdm.app.headless.CliParser
 import xdm.app.headless.HeadlessCli
 import xdm.app.ui.components.WaylandComboBoxUI
 import xdm.app.utils.AppDirs
+import xdm.app.utils.SystemTheme
 import xdm.app.utils.ConscryptTls
 import xdm.app.utils.WaylandToolkit
 import xdm.app.utils.detectOS
@@ -100,12 +102,20 @@ object AppMain {
         AppContext.scheduler.start()
     }
 
+    /** Whether [theme] means dark; [systemIsDark] is only asked for "system". */
+    fun resolveDark(theme: String, systemIsDark: () -> Boolean?): Boolean = when (theme.lowercase()) {
+        "light" -> false
+        "system" -> systemIsDark() == true
+        else -> true
+    }
+
     /**
-     * Installs the FlatLaf look-and-feel for the configured theme. Must be called
-     * before any Swing UI is created (i.e. before [AppInstance.run]).
+     * Installs the FlatLaf look-and-feel for the configured theme ("system" follows the OS,
+     * light when it can't be read) and whole-UI zoom in percent. Must be called before any Swing
+     * UI is created (i.e. before [AppInstance.run]).
      */
     @JvmStatic
-    fun setupTheme(theme: String) {
+    fun setupTheme(theme: String, zoomPercent: Int = 100) {
         // Native Wayland gives Java neither the desktop font nor text antialiasing (both come over
         // XSETTINGS under X11): read them from the desktop portal. FlatLaf takes a "defaultFont" set
         // before setup as its base font; the antialiasing hint goes into Swing's defaults after it.
@@ -113,10 +123,11 @@ object AppMain {
         desktop?.font?.let { UIManager.put("defaultFont", FontUIResource(it)) }
         // XDM's palette: resources/xdm/app/themes/<LafClassName>.properties, merged over the theme's own.
         FlatLaf.registerCustomDefaultsSource("xdm.app.themes")
-        when (theme.lowercase()) {
-            "light" -> FlatMacLightLaf.setup()
-            else -> FlatMacDarkLaf.setup()
-        }
+        // FlatLaf's zoom multiplies its user scale (fonts, icons and every .px size), on top of
+        // whatever scale Java2D or X11UiScale already applies.
+        if (zoomPercent != 100) UIScale.setZoomFactor(zoomPercent / 100f)
+        if (resolveDark(theme, SystemTheme::isDark)) FlatMacDarkLaf.setup() else FlatMacLightLaf.setup()
+        Logger.info("Theme ${if (FlatLaf.isLafDark()) "dark" else "light"} ($theme), UI scale ${UIScale.getUserScaleFactor()}")
         desktop?.let {
             UIManager.put(RenderingHints.KEY_TEXT_ANTIALIASING, it.textAntialiasing)
             UIManager.put(RenderingHints.KEY_TEXT_LCD_CONTRAST, 140)

@@ -1,5 +1,6 @@
 package xdm.app.ui.screens.settings
 
+import xdm.app.AppConfig
 import xdm.app.AppContext
 import xdm.app.DownloadCompleteNotification
 import xdm.app.I8N
@@ -49,9 +50,10 @@ class GeneralPanel : SettingsPanel() {
     private val completeSound = SoundFileRow(SoundPlayer.Sound.COMPLETE)
     private val failedSound = SoundFileRow(SoundPlayer.Sound.FAILED)
 
-    private val themeCodes = listOf("dark", "light")
+    private val themeCodes = listOf("system", "dark", "light")
     private val optTheme = SettingsOptionGroup(
         listOf(
+            SettingsOption("system", I8N.text("THEME_SYSTEM"), RemixIcon.COMPUTER_FILL),
             SettingsOption("dark", I8N.text("THEME_DARK"), RemixIcon.MOON_FILL),
             SettingsOption("light", I8N.text("THEME_LIGHT"), RemixIcon.SUN_FILL),
         )
@@ -70,6 +72,11 @@ class GeneralPanel : SettingsPanel() {
         maximumSize = preferredSize
     }
     private val languages = I8N.languages()
+
+    private val cmbUiScale = rounded(JComboBox(AppConfig.UI_SCALES.map { "$it%" }.toTypedArray())).apply {
+        preferredSize = Dimension(190.px, preferredSize.height)
+        maximumSize = preferredSize
+    }
 
     init {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -117,6 +124,7 @@ class GeneralPanel : SettingsPanel() {
             settingsSection(
                 I8N.text("SETTINGS_SEC_APPEARANCE"),
                 settingsFullRow(I8N.text("MSG_THEME"), I8N.text("MSG_RESTART_NEEDED"), optTheme),
+                settingsRow(I8N.text("UI_SIZE"), I8N.text("UI_SIZE_SUB") + "\n" + I8N.text("MSG_RESTART_NEEDED"), cmbUiScale),
                 settingsFullRow(I8N.text("LIST_MODE"), I8N.text("LIST_MODE_SUB"), optListMode),
                 settingsRow(I8N.text("MSG_LANG1"), I8N.text("MSG_LANG_SUB") + "\n" + I8N.text("MSG_RESTART_NEEDED"), cmbLang),
                 settingsRow(
@@ -140,6 +148,7 @@ class GeneralPanel : SettingsPanel() {
         failedSound.path = config.failedSoundFile
         updateSoundEnabledState()
         optTheme.selected = config.theme.lowercase().takeIf { themeCodes.contains(it) } ?: "dark"
+        cmbUiScale.selectedIndex = AppConfig.UI_SCALES.indexOf(config.uiScale).takeIf { it >= 0 } ?: AppConfig.UI_SCALES.indexOf(100)
         optListMode.selected = config.listSelectionMode
         languages.indexOfFirst { it.code == config.lang }.takeIf { it >= 0 }?.let { cmbLang.selectedIndex = it }
     }
@@ -154,6 +163,7 @@ class GeneralPanel : SettingsPanel() {
         config.completeSoundFile = completeSound.path
         config.failedSoundFile = failedSound.path
         config.theme = optTheme.selected
+        AppConfig.UI_SCALES.getOrNull(cmbUiScale.selectedIndex)?.let { config.uiScale = it }
         config.listSelectionMode = optListMode.selected
         languages.getOrNull(cmbLang.selectedIndex)?.let { config.lang = it.code }
     }

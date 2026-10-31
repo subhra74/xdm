@@ -10,7 +10,7 @@ import java.lang.foreign.MemorySegment
 
 /**
  * The OS light/dark preference, read through the native layers XDM already has (no helper
- * processes). The first run picks its theme from it; after that the saved setting rules.
+ * processes). The "system" theme (the first-run default) is resolved from it at every startup.
  *
  * - Windows: `HKCU\...\Themes\Personalize` `AppsUseLightTheme` (REG_DWORD, 0 = dark).
  * - macOS: the `AppleInterfaceStyle` user default, `"Dark"` in dark mode and absent in light mode.

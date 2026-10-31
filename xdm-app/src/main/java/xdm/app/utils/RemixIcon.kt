@@ -35,6 +35,7 @@ enum class RemixIcon(val codepoint: Int) {
     CLIPBOARD_LINE(0xeb91),
     CLOSE_CIRCLE_LINE(0xeb97),
     CLOSE_LINE(0xeb99),
+    COMPUTER_FILL(0xebc9),
     DELETE_BIN_LINE(0xec2a),
     DOWNLOAD_2_LINE(0xec54),
     DRAG_DROP_FILL(0xec5d),
