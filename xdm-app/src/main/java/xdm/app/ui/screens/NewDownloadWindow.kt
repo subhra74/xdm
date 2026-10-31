@@ -1,6 +1,7 @@
 package xdm.app.ui.screens
 
 import com.formdev.flatlaf.FlatClientProperties
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import xdm.app.AppContext
 import xdm.app.DuplicateKind
 import xdm.app.I8N.text
@@ -32,7 +33,6 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
-import java.net.URI
 import javax.swing.*
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
@@ -530,12 +530,7 @@ class NewDownloadWindow : JDialog(null as Window?) {
     //  }
     private fun ignoreHost() {
         val url = taskInfo?.url ?: txtUrl.text
-        val host = try {
-            URI(url.trim()).host
-        } catch (e: Exception) {
-            Logger.info(e)
-            null
-        }
+        val host = url.toHttpUrlOrNull()?.host
         if (!host.isNullOrBlank()) {
             val config = AppContext.config
             if (config.blockedHosts.none { it.equals(host, ignoreCase = true) }) {

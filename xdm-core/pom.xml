@@ -92,11 +92,18 @@
             <artifactId>kotlinx-serialization-json</artifactId>
             <version>${serialization.version}</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/com.squareup.okhttp3/okhttp -->
+        <!-- https://mvnrepository.com/artifact/com.squareup.okhttp3/okhttp-jvm (5.x: Maven needs the -jvm artifact) -->
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
-            <artifactId>okhttp</artifactId>
-            <version>4.12.0</version>
+            <artifactId>okhttp-jvm</artifactId>
+            <version>5.5.1</version>
+        </dependency>
+        <!-- TestSharedTls runs the shared context on Conscrypt too; the app ships it (xdm-app) -->
+        <dependency>
+            <groupId>org.conscrypt</groupId>
+            <artifactId>conscrypt-openjdk-uber</artifactId>
+            <version>2.7.0</version>
+            <scope>test</scope>
         </dependency>
         <!-- Source: https://mvnrepository.com/artifact/commons-httpclient/commons-httpclient -->
 <!--        <dependency>-->

@@ -397,7 +397,9 @@ class ChecksumPanel(
                 Result.success(verifier.verify(file, input, chosen, source, fileNames, probe, ProgressRelay(stop)))
             } catch (e: CancellationException) {
                 null
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
+                // Throwable, not Exception: an Error (e.g. a native library failing to link) would
+                // otherwise end the thread silently and leave the panel spinning.
                 Logger.error(e)
                 Result.failure(e)
             } finally {

@@ -8,7 +8,9 @@ data class DetectedVideoInfo(
     val name: String,
     val description: String,
     val date: LocalDateTime,
-    val tabId: String?
+    val tabId: String?,
+    /** One MP4 file the extension can show keyframes of (`/preview`): a plain capture or a split track. */
+    val previewable: Boolean = false,
 )
 
 data class StreamingVideoDisplayInfo(

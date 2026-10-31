@@ -25,16 +25,18 @@
     <SummaryInformation Description="Xtreme Download Manager" />
     <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
 
-    <!-- afterInstallExecute: the old version is removed after the new files are in, so the close step below
-         (WiX's default, before InstallFiles) has ended every XDM by then (§5.1, §5.3). An earlier position
-         can't follow the close step: RemoveExistingProducts after InstallInitialize must be the first action
-         that writes the script (error 2613), and before InstallInitialize nothing deferred can be queued.
-         XDM 8's removal may delete its Run value, which is also the AutoStart component's below; XDM then
-         shows a "not starting automatically" banner with a button to turn it back on. Needs stable component GUIDs: the Files element derives them from the install path.
+    <!-- afterInstallInitialize: the old version is removed first, inside this install's transaction (a failed
+         install rolls back to it), then the new files go in (§5.1). Needed since 9.0.9: app\xdm-app.cfg comes
+         from one of two components, G1 or ZGC (§5.8), and a removal after the new files would delete the
+         file whenever the new component isn't the one the old version installed it with (every update
+         from 9.0.8 or earlier on a ZGC machine). Running XDMs are ended before the removal: the installing
+         user's by XdmKillBeforeValidate, other users' by the old version's own close step, which runs in its
+         removal (§5.3). XDM 8's removal deletes its Run value; it happens first now, so the AutoStart
+         component below writes it again (XDM_RUN was read before).
          AllowSameVersionUpgrades: every build gets a new ProductCode, so without it a rebuilt MSI of the same
          version installs next to the old one (two entries in Apps & features). With it, the rebuild replaces it.
          Running the very same MSI again still opens Repair/Remove (same ProductCode). -->
-    <MajorUpgrade Schedule="afterInstallExecute" AllowSameVersionUpgrades="yes"
+    <MajorUpgrade Schedule="afterInstallInitialize" AllowSameVersionUpgrades="yes"
                   DowngradeErrorMessage="A newer version of Xtreme Download Manager is already installed." />
 
     <!-- On Windows 10 the Installer reports 8.1's version, so this lets 8.1 through too; JDK 25 needs 10. -->
@@ -58,6 +60,20 @@
             Message="Xtreme Download Manager is already installed for all users on this computer." />
     <Launch Condition="Installed OR MSIINSTALLPERUSER = 1 OR NOT XDM9_USER"
             Message="Xtreme Download Manager is installed for your account only. Uninstall it from Settings &gt; Apps first." />
+    <!-- §5.8: the collector. ZGC needs Windows 10 1803 (build 17134) or later; the JVM exits at startup on older
+         builds. The Installer's own VersionNT/WindowsBuild report 8.1 on Windows 10 (msiexec's manifest), so
+         the build comes from the registry: a REG_SZ of digits, which a condition compares as an integer (a
+         missing or non-numeric value compares false, so G1). XDMGC=G1 on the msiexec command line forces G1
+         (testing, support). XdmGc picks the launcher config and archive components in AppImageGc below; they
+         are transitive, so a repair after a Windows upgrade re-picks. -->
+    <Property Id="XDMWINBUILD" Secure="yes">
+      <RegistrySearch Root="HKLM" Key="SOFTWARE\Microsoft\Windows NT\CurrentVersion" Name="CurrentBuildNumber"
+                      Type="raw" Bitness="always64" />
+    </Property>
+    <Property Id="XDMGC" Secure="yes" />
+    <Property Id="XdmGc" Value="g1" />
+    <SetProperty Id="XdmGc" Value="zgc" After="AppSearch" Sequence="both"
+                 Condition="XDMWINBUILD &gt;= 17134 AND NOT (XDMGC ~= &quot;G1&quot;)" />
     <!-- §5.4: the login entry. Read before install, as the installing user, to keep their choice on upgrade. -->
     <Property Id="XDM_RUN">
       <RegistrySearch Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Run" Name="XDM" Type="raw"
@@ -134,6 +150,7 @@
 
     <Feature Id="Main" Title="Xtreme Download Manager" Level="1">
       <ComponentGroupRef Id="AppImage" />
+      <ComponentGroupRef Id="AppImageGc" />
       <ComponentGroupRef Id="Shortcuts" />
       <ComponentGroupRef Id="AutoStart" />
       <ComponentGroupRef Id="UrlScheme" />
@@ -200,12 +217,41 @@
   </Package>
 
   <Fragment>
-    <!-- The whole jpackage app image: xdm-app.exe, app\ (xdm.jsa, jit-directives.json, FlatLaf DLL, cfg)
-         and runtime\, whose lib\modules holds the app classes (module xdm.app). Cabinets store file times
-         as local time, so installed mtimes are off by the build/install time-zone gap; AppCDS doesn't
-         check the runtime image's mtime (§5.6). -->
+    <!-- The whole jpackage app image: xdm-app.exe, app\ (FlatLaf DLL; Conscrypt DLL on x64;
+         jit-directives.json on arm64) and
+         runtime\, whose lib\modules holds the app classes (module xdm.app). The launcher configs and
+         archives are AppImageGc's. Cabinets store file times as local time, so installed mtimes are off by
+         the build/install time-zone gap; AppCDS doesn't check the runtime image's mtime (§5.6). -->
     <ComponentGroup Id="AppImage" Directory="INSTALLFOLDER">
-      <Files Include="!(bindpath.AppImage)\**" />
+      <Files Include="!(bindpath.AppImage)\**">
+        <Exclude Files="!(bindpath.AppImage)\app\xdm-app.cfg" />
+        <Exclude Files="!(bindpath.AppImage)\app\xdm-app.cfg.zgc" />
+        <Exclude Files="!(bindpath.AppImage)\app\xdm.jsa" />
+        <Exclude Files="!(bindpath.AppImage)\app\xdm-zgc.jsa" />
+      </Files>
+    </ComponentGroup>
+  </Fragment>
+
+  <Fragment>
+    <!-- §5.8: one collector per install, G1 or ZGC (XdmGc): its launcher config as app\xdm-app.cfg and its
+         AppCDS archive. The two config components install the same file name, so their GUIDs are fixed here
+         (a derived GUID would be the same for both); keep them in every version, so an update on the same
+         machine shares the component. The archives have their own names, so their GUIDs are derived. -->
+    <ComponentGroup Id="AppImageGc" Directory="INSTALLFOLDER" Subdirectory="app">
+      <Component Id="LauncherCfgG1" Guid="C2753277-7FCA-41EA-93CA-1EB8C5D80166" Transitive="yes"
+                 Condition="XdmGc &lt;&gt; &quot;zgc&quot;">
+        <File Id="LauncherCfgG1" Source="!(bindpath.AppImage)\app\xdm-app.cfg" Name="xdm-app.cfg" />
+      </Component>
+      <Component Id="LauncherCfgZgc" Guid="41D8A2E8-626C-4E5F-B0D1-7F46D883E4C2" Transitive="yes"
+                 Condition="XdmGc = &quot;zgc&quot;">
+        <File Id="LauncherCfgZgc" Source="!(bindpath.AppImage)\app\xdm-app.cfg.zgc" Name="xdm-app.cfg" />
+      </Component>
+      <Component Id="CdsArchiveG1" Transitive="yes" Condition="XdmGc &lt;&gt; &quot;zgc&quot;">
+        <File Id="CdsArchiveG1" Source="!(bindpath.AppImage)\app\xdm.jsa" />
+      </Component>
+      <Component Id="CdsArchiveZgc" Transitive="yes" Condition="XdmGc = &quot;zgc&quot;">
+        <File Id="CdsArchiveZgc" Source="!(bindpath.AppImage)\app\xdm-zgc.jsa" />
+      </Component>
     </ComponentGroup>
   </Fragment>
 
@@ -216,14 +262,14 @@
       <Component Id="StartMenuShortcut" Directory="ProgramMenuFolder">
         <Shortcut Id="StartMenuShortcut" Name="Xtreme Download Manager - XDM" Description="Xtreme Download Manager"
                   Target="[INSTALLFOLDER]xdm-app.exe" WorkingDirectory="INSTALLFOLDER" />
-        <!-- 9.0.1 named it "Xtreme Download Manager". This component (and its GUID) is shared across the upgrade,
-             so the old version's removal leaves its shortcut behind; delete it here. -->
+        <!-- 9.0.1 named it "Xtreme Download Manager". Its removal deletes that shortcut since 9.0.9 removes the
+             old version first (§5.1); kept for a 9.0.1 shortcut left behind by an earlier upgrade. -->
         <RemoveFile Id="OldStartMenuShortcut" Name="Xtreme Download Manager.lnk" On="install" />
         <RegistryValue Root="HKMU" Key="Software\XDM" Name="Installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
-      <!-- [ProductCode] is written into the shortcut at install time. Every build has a new ProductCode, but the
-           component GUID is shared across upgrades, so the new install rewrites the shortcut and the old version's
-           removal leaves it in place. msiexec /x works without elevation for a per-user install. -->
+      <!-- [ProductCode] is written into the shortcut at install time. Every build has a new ProductCode; an update
+           removes the old version (and its shortcut) first, then writes this one. msiexec /x works without
+           elevation for a per-user install. -->
       <Component Id="UninstallShortcut" Directory="ProgramMenuFolder">
         <Shortcut Id="UninstallShortcut" Name="Uninstall Xtreme Download Manager"
                   Description="Uninstall Xtreme Download Manager"
@@ -246,12 +292,12 @@
          settings toggle and Task Manager switch it through Explorer\StartupApproved\Run, which MSI never
          touches, so a repair or upgrade rewriting this value keeps autostart off when the user turned it off.
          Installed on a fresh install, and on an upgrade only when the entry exists: 9.0.x and XDM 8 deleted it
-         when switched off (a Task Manager disable keeps it, and its flag). Same name as XDM 8, so XDM 8's removal
-         (after this install, §5.1) may delete it again; XDM's banner offers to turn it back on. Not transitive:
-         a repair doesn't re-evaluate the condition. Never for LocalSystem (S-1-5-18): a deployment tool installing
-         as SYSTEM would write it into SYSTEM's profile, where no one logs in; users turn it on from XDM's banner.
-         The GUID is derived from the key path, so every version shares this component and an upgrade's removal
-         of the old version leaves the value in place; uninstall removes it. -->
+         when switched off (a Task Manager disable keeps it, and its flag). Same name as XDM 8. The old version
+         (XDM 8 or 9) is removed before this install (§5.1) and deletes the value; XDM_RUN was read before that,
+         so the condition still holds and the value is written again. Not transitive: a repair doesn't
+         re-evaluate the condition. Never for LocalSystem (S-1-5-18): a deployment tool installing as SYSTEM
+         would write it into SYSTEM's profile, where no one logs in; users turn it on from XDM's banner.
+         Uninstall removes it. -->
     <ComponentGroup Id="AutoStart" Directory="INSTALLFOLDER">
       <Component Id="AutoStartRunValue"
                  Condition="UserSID &lt;&gt; &quot;S-1-5-18&quot; AND (NOT WIX_UPGRADE_DETECTED OR XDM_RUN)">

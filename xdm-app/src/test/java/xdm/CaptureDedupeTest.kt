@@ -11,7 +11,7 @@ import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.downloaders.web.streaming.manifest.dash.DashSegment
 import xdm.integration.ClearTabFilter
 import xdm.integration.StreamingVideoDisplayInfo
-import java.net.URI
+import okhttp3.HttpUrl.Companion.toHttpUrl
 
 /**
  * A tab that reloads the same page is no longer cleared ([ClearTabFilter]), so the tracker drops
@@ -53,7 +53,7 @@ class CaptureDedupeTest {
     private fun dash(id: Long, video: String, audio: String) = DashDownloadTaskInfo(
         id = id, fileName = "d$id.mp4", tempDir = "/tmp", respectFileName = true, cookie = null, headers = null,
         origin = null, categoryId = null, targetFolder = "/tmp", maxPiece = 1, authInfo = null,
-        videoSegments = listOf(DashSegment(URI(video), 0L to 100L)), audioSegments = listOf(DashSegment(URI(audio))),
+        videoSegments = listOf(DashSegment(video.toHttpUrl(), 0L to 100L)), audioSegments = listOf(DashSegment(audio.toHttpUrl())),
         url = "https://h/manifest.mpd", audioMime = "audio/mp4", videoMime = "video/mp4",
     )
 

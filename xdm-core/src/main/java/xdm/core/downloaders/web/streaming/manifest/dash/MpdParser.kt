@@ -4,12 +4,13 @@
 package xdm.core.downloaders.web.streaming.manifest.dash
 
 
+import okhttp3.HttpUrl
 import org.w3c.dom.Element
 import org.w3c.dom.Node
+import xdm.core.downloaders.web.streaming.manifest.common.parseManifestUrl
 import xdm.core.downloaders.web.streaming.manifest.common.resolveUri
 import xdm.core.util.Logger
 import java.io.InputStream
-import java.net.URI
 import javax.xml.XMLConstants
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.parsers.ParserConfigurationException
@@ -53,7 +54,7 @@ fun parseMpdManifest(
             else
                 "0"
         )
-    var baseUrl = URI(playlistUrl)
+    var baseUrl = parseManifestUrl(playlistUrl)
     // Only a BaseURL that is a *direct* child of <MPD> is the document base. Using the recursive
     // getElementsByTagName here would grab a BaseURL nested inside an AdaptationSet/Representation
     // and wrongly apply it to every track (see getDirectChildTagValue).
@@ -128,7 +129,7 @@ private fun newSecureFactory(): DocumentBuilderFactory {
  * placeholders of the same kind, resolved recursively up to [MAX_XLINK_DEPTH].
  */
 private fun resolveXlinks(
-    parent: Element, tagName: String, baseUrl: URI, resolver: XlinkResolver?, depth: Int
+    parent: Element, tagName: String, baseUrl: HttpUrl, resolver: XlinkResolver?, depth: Int
 ) {
     val targets = ArrayList<Element>()
     val children = parent.childNodes
@@ -157,7 +158,7 @@ private fun resolveXlinks(
 
 /** Fetches [href] (resolved against [baseUrl]) and returns the top-level [tagName] elements it contains. */
 private fun fetchRemoteElements(
-    href: String, tagName: String, baseUrl: URI, resolver: XlinkResolver
+    href: String, tagName: String, baseUrl: HttpUrl, resolver: XlinkResolver
 ): List<Element> {
     val abs = try {
         resolveUri(baseUrl, href).toString()

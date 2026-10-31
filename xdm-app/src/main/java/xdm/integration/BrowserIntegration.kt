@@ -11,6 +11,7 @@ import kotlinx.serialization.json.*
 import xdm.app.AppContext
 import xdm.app.BatchRequest
 import xdm.app.BatchRequestItem
+import xdm.app.previewUrl
 import xdm.app.utils.captureDestination
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.util.*
@@ -32,6 +33,10 @@ object BrowserIntegration {
     /** Loopback only, so these are generous. */
     private const val PROBE_CONNECT_TIMEOUT_MS = 500
     private const val PROBE_READ_TIMEOUT_MS = 1500
+
+    /** Keyframes a `/preview` returns (one image tells captures apart), and how long it may take. */
+    private const val PREVIEW_FRAMES = 1
+    private const val PREVIEW_TIMEOUT_MS = 8_000L
 
     /** Body limit for `/batch`; every other path gets [HttpParser.DEFAULT_MAX_BODY_BYTES]. */
     const val MAX_BATCH_BODY_BYTES = 64L * 1024 * 1024
@@ -80,7 +85,7 @@ object BrowserIntegration {
         "safari-web-extension://"
     )
     private val stateChangingPaths =
-        setOf("/download", "/media", "/vid", "/batch", "/clear", "/clear-tab", "/tab-update", "/show", "/poll")
+        setOf("/download", "/media", "/vid", "/batch", "/clear", "/clear-tab", "/tab-update", "/show", "/poll", "/preview")
 
     /** What [acquire] found when it tried to take ownership of [PORT]. */
     sealed interface Acquired {
@@ -204,15 +209,25 @@ object BrowserIntegration {
             onPollMessage(context)
             return
         }
-        when (context.requestPath) {
-            "/download" -> onDownloadMessage(context)
-            "/batch" -> onBatchMessage(context)
-            "/media" -> onMediaMessage(context)
-            "/vid" -> onVideoDownloadMessage(context)
-            "/clear" -> AppContext.videoTracker.clear()
-            "/clear-tab" -> onClearTabMessage(context)
-            "/tab-update" -> onTabUpdateMessage(context)
-            "/show" -> onShowMessage(context)
+        if (context.requestPath == "/preview") {
+            onPreviewMessage(context)
+            return
+        }
+        // A message that fails must still be answered: the extension takes a request without a reply
+        // for XDM having gone away, and stops capturing until it finds XDM again.
+        try {
+            when (context.requestPath) {
+                "/download" -> onDownloadMessage(context)
+                "/batch" -> onBatchMessage(context)
+                "/media" -> onMediaMessage(context)
+                "/vid" -> onVideoDownloadMessage(context)
+                "/clear" -> AppContext.videoTracker.clear()
+                "/clear-tab" -> onClearTabMessage(context)
+                "/tab-update" -> onTabUpdateMessage(context)
+                "/show" -> onShowMessage(context)
+            }
+        } catch (e: Exception) {
+            Logger.error("INTEGRATION", "Failed to handle ${context.requestPath}", e)
         }
         onSyncMessage(context)
     }
@@ -296,6 +311,48 @@ object BrowserIntegration {
                 responseBody = ByteArray(0)
             }.sendResponse()
         }
+    }
+
+    /**
+     * Keyframes of a captured MP4 for the popup's preview; the popup decodes them with WebCodecs.
+     * Answers with its own body, not the sync: the popup calls it directly, outside the connector,
+     * so a slow or failed preview never looks like XDM going away. The capture is looked up by id,
+     * never by a URL in the request, so this only reads what XDM has already captured.
+     */
+    private fun onPreviewMessage(context: RequestContext) {
+        val reply = try {
+            val vid = decodeBody<PreviewRequest>(context)?.vid?.toLongOrNull()
+            val tracker = AppContext.videoTracker
+            val http = vid?.let { tracker.getHttpVideo(it) }
+            val dash = if (http == null) vid?.let { tracker.getDashVideo(it) } else null
+            val url = http?.let { previewUrl(it) } ?: dash?.let { previewUrl(it) }
+            if (url == null) {
+                PreviewDto(error = "Not a captured MP4 file")
+            } else {
+                val preview = VideoHelper.loadPreview(
+                    url, http?.headers ?: dash?.headers, http?.cookie ?: dash?.cookie, PREVIEW_FRAMES, PREVIEW_TIMEOUT_MS,
+                )
+                val base64 = Base64.getEncoder()
+                PreviewDto(
+                    codec = preview.codec,
+                    description = preview.description?.let { base64.encodeToString(it) },
+                    width = preview.width,
+                    height = preview.height,
+                    durationUs = preview.durationUs,
+                    frames = preview.frames.map { PreviewFrame(it.timeUs, base64.encodeToString(it.data)) },
+                )
+            }
+        } catch (e: Exception) {
+            Logger.info("INTEGRATION", "No preview: ${e.message}")
+            PreviewDto(error = e.message ?: e.javaClass.simpleName)
+        }
+        context.apply {
+            statusCode = 200
+            statusMessage = "OK"
+            addResponseHeader("Content-Type", "application/json")
+            addResponseHeader("Cache-Control", "no-store")
+            responseBody = json.encodeToString(reply).toByteArray(StandardCharsets.UTF_8)
+        }.sendResponse()
     }
 
     /**
@@ -407,7 +464,8 @@ object BrowserIntegration {
                     id = "${it.id}",
                     text = it.name,
                     info = it.description,
-                    tabId = it.tabId
+                    tabId = it.tabId,
+                    previewable = it.previewable,
                 )
             },
         )
@@ -497,7 +555,36 @@ data class ShowRequest(val args: List<String> = emptyList())
 data class ByeDto(val bye: Boolean = true)
 
 @Serializable
-data class VideoItem(val id: String, val text: String, val info: String, val tabId: String? = null)
+data class VideoItem(
+    val id: String,
+    val text: String,
+    val info: String,
+    val tabId: String? = null,
+    /** The popup offers a preview (`/preview`) for this item. */
+    val previewable: Boolean = false,
+)
+
+/** Body of a `/preview` request: the captured video, by its [VideoItem.id]. */
+@Serializable
+data class PreviewRequest(val vid: String? = null)
+
+/**
+ * Reply to `/preview`: what WebCodecs needs to decode [frames] (base64 keyframes, in time order), or
+ * [error] when there is no preview. [description] is the base64 `avcC`/`hvcC`/`av1C` body.
+ */
+@Serializable
+data class PreviewDto(
+    val codec: String? = null,
+    val description: String? = null,
+    val width: Int = 0,
+    val height: Int = 0,
+    val durationUs: Long = 0,
+    val frames: List<PreviewFrame> = emptyList(),
+    val error: String? = null,
+)
+
+@Serializable
+data class PreviewFrame(val timeUs: Long, val data: String)
 
 @Serializable
 data class ExtensionMessage(
@@ -516,6 +603,8 @@ data class ExtensionMessage(
     val fileSize: Long? = null,
     val mimeType: String? = null,
     val vid: Long? = null,
+    /** webRequest's resource type for a captured `/media` request ("media", "xmlhttprequest", ...); null from older extensions. */
+    val resourceType: String? = null,
 )
 
 @Serializable

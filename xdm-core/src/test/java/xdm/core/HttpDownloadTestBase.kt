@@ -20,6 +20,8 @@ import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.downloaders.PauseEvent
 import xdm.core.downloaders.web.http.HttpDownloaderTask
 import xdm.core.network.http.impl.HttpClientImpl
+import xdm.core.storage.LocalStorage
+import xdm.core.storage.Storage
 import xdm.core.storage.StorageFile
 import java.io.File
 import java.net.Proxy
@@ -104,7 +106,8 @@ abstract class HttpDownloadTestBase {
         return HttpDownloaderTask(info, host, client, work.absolutePath, config).also { tasks.add(it) }
     }
 
-    protected fun host() = TestDownloadHost(work.absolutePath, tmpDir.absolutePath, outDir.absolutePath)
+    protected fun host(storage: Storage = LocalStorage) =
+        TestDownloadHost(work.absolutePath, tmpDir.absolutePath, outDir.absolutePath, storage)
 
     protected fun awaitSuccess(host: TestDownloadHost, timeoutSec: Long = 30) {
         assertTrue(host.latch.await(timeoutSec, TimeUnit.SECONDS), "download did not finish within ${timeoutSec}s")
@@ -190,6 +193,7 @@ class TestDownloadHost(
     override val appDir: String,
     private val tempDir: String,
     private val outDir: String,
+    override val storage: Storage = LocalStorage,
 ) : DownloadHost {
     val latch = CountDownLatch(1)
     val pauseLatch = CountDownLatch(1)
@@ -211,9 +215,14 @@ class TestDownloadHost(
 
     val maxSegmentsSeen = AtomicInteger(0)
 
+    /** Runs first in [commitOutputFile], e.g. to check what is still open when the file is published. */
+    @Volatile
+    var onCommit: (() -> Unit)? = null
+
     override fun getTempDir(id: Long, url: String, contentType: String?, contentDisposition: String?): String = tempDir
 
     override fun commitOutputFile(id: Long, part: StorageFile, downloadType: DownloadType): CommitResult {
+        onCommit?.invoke()
         val src = File(part.localPath!!)
         val dst = File(outDir, "out-$id.bin")
         if (dst.exists()) dst.delete()

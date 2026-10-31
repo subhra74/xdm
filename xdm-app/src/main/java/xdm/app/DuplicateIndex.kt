@@ -1,5 +1,6 @@
 package xdm.app
 
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import xdm.core.util.Logger
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
@@ -185,7 +186,10 @@ class DuplicateIndex(configDir: String, private val appDB: AppDB) {
                     u.rawQuery?.let { append('?').append(it) }
                 }
             } catch (_: Exception) {
-                trimmed.substringBefore('#')
+                // URI refuses some working links (`[` in a file name). HttpUrl takes them; it is the
+                // fallback only, so URLs that URI parses keep the form their stored hashes were made from.
+                trimmed.toHttpUrlOrNull()?.newBuilder()?.fragment(null)?.build()?.toString()
+                    ?: trimmed.substringBefore('#')
             }
         }
 
@@ -198,7 +202,7 @@ class DuplicateIndex(configDir: String, private val appDB: AppDB) {
         fun etagHash(url: String, etag: String?): Long? {
             val tag = etag?.trim()?.takeIf { it.isNotEmpty() && !it.startsWith("W/", ignoreCase = true) }
                 ?: return null
-            val host = runCatching { URI(url.trim()).host }.getOrNull()?.lowercase(Locale.ROOT) ?: return null
+            val host = url.toHttpUrlOrNull()?.host ?: return null
             // 0 marks "no ETag" on disk; a real hash landing on it just goes unmatched.
             return hash("$host\n$tag").takeIf { it != NO_ETAG }
         }

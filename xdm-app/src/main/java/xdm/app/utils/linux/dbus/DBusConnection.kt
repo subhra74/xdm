@@ -326,6 +326,12 @@ class DBusConnection private constructor(private val channel: SocketChannel) : C
         signalListeners += listener
     }
 
+    /** Undoes [addSignalListener] for a listener that is only needed for a while. */
+    fun removeSignalListener(rule: String, listener: (Message) -> Unit) {
+        signalListeners -= listener
+        runCatching { call(BUS, BUS_PATH, BUS, "RemoveMatch", "s", listOf(rule)) }
+    }
+
     override fun close() {
         isOpen = false
         runCatching { channel.close() }

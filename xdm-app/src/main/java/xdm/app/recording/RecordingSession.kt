@@ -1,6 +1,7 @@
 package xdm.app.recording
 
 import xdm.app.AppContext
+import xdm.app.DbRecord
 import xdm.app.RecordStatus
 import xdm.app.I8N.text
 import xdm.app.ui.screens.BatchDownloadDialog
@@ -10,12 +11,17 @@ import xdm.app.ui.screens.NewVideoDownloadWindow
 import xdm.app.ui.screens.PropertiesDialog
 import xdm.app.ui.screens.StreamDownloadDialog
 import xdm.app.ui.components.AppMenuHandler
+import xdm.app.ui.components.ChecksumWindow
 import xdm.app.ui.screens.SettingsWindow
 import xdm.app.ui.screens.AppWindow
 import xdm.app.utils.SoundPlayer
 import xdm.app.utils.getFileFolder
+import xdm.core.checksum.ChecksumAlgorithm
+import xdm.core.checksum.ChecksumResult
+import xdm.core.checksum.ChecksumVerifier
 import xdm.core.downloaders.DownloadType
 import xdm.core.downloaders.subtitleFileName
+import xdm.core.network.http.impl.HttpClientImpl
 import xdm.core.util.Logger
 import xdm.integration.BrowserIntegration
 import java.awt.Component
@@ -27,12 +33,14 @@ import java.net.InetSocketAddress
 import java.net.Proxy
 import java.net.Socket
 import java.net.URI
+import java.security.MessageDigest
 import java.nio.charset.StandardCharsets
 import java.util.Properties
 import javax.swing.AbstractButton
 import javax.swing.JButton
 import javax.swing.JCheckBox
 import javax.swing.JComboBox
+import javax.swing.JLabel
 import javax.swing.JList
 import javax.swing.JTable
 import javax.swing.JDialog
@@ -104,6 +112,8 @@ object RecordingSession {
             step("settings") { openSettings() }
             step("menu") { openSortMenu() }
             step("properties") { openProperties() }
+            step("clipboard") { copyUrlToNewDownload() }
+            step("checksum") { verifyChecksums() }
             step("sound") { playSounds() }
             step("stream-dialog") {
                 // "?via=dialog" keeps these from repeating the downloads the media steps made.
@@ -294,6 +304,80 @@ object RecordingSession {
             poll("properties to close") { onEdt { dialog.isShowing }.takeIf { !it } }
         }
         return picks.joinToString(", ") { it.fileName }
+    }
+
+    /**
+     * A download's "Copy URL", then the toolbar's New download: the window must pick the link up from
+     * the clipboard. XDM owns the clipboard then, so the JDK reads it back through a serialization round
+     * trip (TransferableProxy), unlike text copied in another program.
+     */
+    private fun copyUrlToNewDownload(): String {
+        val record = AppContext.db.findAll { it.status == RecordStatus.FINISHED && it.downloadType == DownloadType.Http }
+            .firstOrNull() ?: error("no finished plain download to copy")
+        val url = AppContext.taskInfoDB.getHttpTask(record.id)?.url ?: error("no task info for ${record.fileName}")
+        onEdt { AppMenuHandler.copyUrl(record) }
+        AppContext.app.addDownload(null)
+        val window = awaitWindow(NewDownloadWindow::class.java)
+        poll("clipboard URL in the new-download window") { onEdt { find<JTextField>(window) { it.text == url } } }
+        clickButton(window, text("ND_CANCEL"))
+        return record.fileName
+    }
+
+    /**
+     * A finished file checked against each supported algorithm with a pasted hash: once through
+     * [ChecksumVerifier], once through the panel itself (Properties → Verify checksum → Verify, then the
+     * outcome must say it matches). The expected hash is computed here, so every algorithm's digest is
+     * looked up by name (Conscrypt's implementations where it is in use), and the panel's UI is built.
+     */
+    private fun verifyChecksums(): String {
+        val record = AppContext.db.findAll { it.status == RecordStatus.FINISHED && it.downloadType == DownloadType.Http }
+            .firstOrNull() ?: error("no finished plain download to verify")
+        val (name, folder) = getFileFolder(record) ?: (null to null)
+        val fileName = name ?: record.fileName
+        val file = File(folder ?: error("no folder for ${record.fileName}"), fileName)
+        val client = AppContext.config.let {
+            HttpClientImpl(2, it.toProxy(), it.ignoreCertErrors, it.readTimeoutSeconds, it.proxyUser, it.proxyPass)
+        }
+        try {
+            for (algorithm in ChecksumAlgorithm.entries) {
+                val digest = MessageDigest.getInstance(algorithm.javaName)
+                file.inputStream().use { input ->
+                    val buffer = ByteArray(64 * 1024)
+                    while (true) {
+                        val n = input.read(buffer)
+                        if (n < 0) break
+                        digest.update(buffer, 0, n)
+                    }
+                }
+                val hex = digest.digest().joinToString("") { "%02x".format(it) }
+                val result = ChecksumVerifier(client).verify(
+                    file, hex, algorithm, null, listOf(fileName), false, object : ChecksumVerifier.Progress {}
+                )
+                check(result is ChecksumResult.Match) { "${algorithm.label}: $result" }
+                verifyInPanel(record, hex, algorithm)
+            }
+        } finally {
+            client.close()
+        }
+        return "$fileName: " + ChecksumAlgorithm.entries.joinToString(", ") { it.label }
+    }
+
+    private fun verifyInPanel(record: DbRecord, hex: String, algorithm: ChecksumAlgorithm) {
+        AppContext.app.showPropertiesWindow(record)
+        val properties = awaitWindow(PropertiesDialog::class.java)
+        clickButton(properties, text("CD_VERIFY_CHECKSUM"))
+        val window = awaitWindow(ChecksumWindow::class.java)
+        onEdt { find<JTextField>(window) { it.isShowing && it.isEditable }!!.text = hex }
+        clickButton(window, text("CS_VERIFY"))
+        val match = text("CS_MATCH").format(algorithm.label)
+        val mismatch = text("CS_MISMATCH").format(algorithm.label)
+        val outcome = poll("checksum outcome for ${algorithm.label}") {
+            onEdt { find<JLabel>(window) { it.isShowing && (it.text == match || it.text == mismatch) }?.text }
+        }
+        check(outcome == match) { "panel: $outcome" }
+        clickButton(window, text("LBL_CLOSE"))
+        clickButton(properties, text("LBL_CLOSE"))
+        poll("properties to close") { onEdt { properties.isShowing }.takeIf { !it } }
     }
 
     /**

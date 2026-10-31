@@ -290,6 +290,9 @@ export default class RequestWatcher {
     createRequestData(req, res, title, tabUrl, tabId) {
         let data = {
             url: res.url,
+            // "media" when a <video>/<audio> element loaded it itself (a whole file), "xmlhttprequest"
+            // when page script fetched it, e.g. segments fed to MediaSource.
+            resourceType: res.type,
             tabTitle: title,
             requestHeaders: {},
             responseHeaders: {},

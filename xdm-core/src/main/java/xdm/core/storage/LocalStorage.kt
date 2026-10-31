@@ -49,6 +49,13 @@ private class LocalFolder(private val dir: File) : StorageFolder {
         return LocalOutput(RandomAccessFile(file, "rw")).apply { if (length() != length) setLength(length) }
     }
 
+    override fun openPositional(name: String, create: Boolean, length: Long?): PositionalOutput {
+        val file = f(name)
+        if (!create && !file.isFile) throw FileNotFoundException(file.path)
+        if (create) PlatformFiles.ops.createSparse(file, length ?: 0)
+        return PlatformFiles.ops.openPositional(file, length)
+    }
+
     override fun openRead(name: String): InputStream = FileInputStream(f(name))
 
     override fun delete(name: String): Boolean = f(name).let { it.delete() || !it.exists() }
@@ -78,7 +85,7 @@ private class LocalFolder(private val dir: File) : StorageFolder {
     override fun toString() = dir.path
 }
 
-private class LocalOutput(private val raf: RandomAccessFile) : RandomAccessOutput {
+internal class LocalOutput(private val raf: RandomAccessFile) : RandomAccessOutput {
     override fun write(b: ByteArray, off: Int, len: Int) = raf.write(b, off, len)
     override fun seek(position: Long) = raf.seek(position)
     override fun position(): Long = raf.filePointer

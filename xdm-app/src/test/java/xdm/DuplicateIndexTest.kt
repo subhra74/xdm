@@ -52,6 +52,18 @@ class DuplicateIndexTest {
     }
 
     @Test
+    fun urlWithBracketsMatchesAfterNormalizing() {
+        addRecord(1, "a.mkv", 0)
+        index.add(1, "https://Example.COM/f/Show.[G].mkv?t=1#x", null)
+        val match = index.find("https://example.com/f/Show.[G].mkv?t=1", "other.mkv", null, null)
+        assertEquals(DuplicateKind.SAME_URL, match?.kind, "match kind")
+        assertEquals(
+            "https://example.com/files/a.zip?v=2", DuplicateIndex.normalizeUrl("https://Example.COM/files/a.zip?v=2#top"),
+            "URLs java.net.URI parses keep their normalised form"
+        )
+    }
+
+    @Test
     fun nameAndKnownSizeMatch() {
         addRecord(1, "Setup.exe", 1000)
         index.add(1, "https://cdn.example.com/x?sig=1", null)

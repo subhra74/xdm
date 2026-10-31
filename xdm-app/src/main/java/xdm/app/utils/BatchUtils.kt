@@ -1,10 +1,10 @@
 package xdm.app.utils
 
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import xdm.core.util.FileUtils
 import xdm.core.util.getExtension
 import xdm.core.util.getFileNameWithoutExtension
 import java.io.File
-import java.net.URI
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -39,7 +39,7 @@ private const val MAX_BATCH_NAME = 100
  */
 fun defaultBatchName(pageTitle: String?, pageUrl: String?, now: Date = Date()): String {
     val date = SimpleDateFormat("MMM-dd-yyyy", Locale.ENGLISH).format(now)
-    val host = pageUrl?.let { runCatching { URI(it).host }.getOrNull() }?.removePrefix("www.")
+    val host = pageUrl?.toHttpUrlOrNull()?.host?.removePrefix("www.")
     val base = sanitizeBatchName(pageTitle) ?: sanitizeBatchName(host) ?: "Batch"
     // Shorten the name, not the date, to stay within MAX_BATCH_NAME.
     return "${base.take(MAX_BATCH_NAME - date.length - 1).trimEnd('.', ' ').ifEmpty { "Batch" }} $date"

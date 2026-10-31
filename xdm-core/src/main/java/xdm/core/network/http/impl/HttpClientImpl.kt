@@ -9,20 +9,11 @@ import okio.ByteString.Companion.toByteString
 import xdm.core.CoreConfig
 import xdm.core.network.http.*
 import xdm.core.util.Logger
-import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.Proxy
-import java.security.KeyStore
-import java.security.SecureRandom
-import java.security.cert.X509Certificate
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
-import javax.net.ssl.SSLContext
-import javax.net.ssl.TrustManager
-import javax.net.ssl.SSLSocketFactory
-import javax.net.ssl.TrustManagerFactory
-import javax.net.ssl.X509TrustManager
 
 /**
  * OkHttp-backed client.
@@ -44,6 +35,8 @@ class HttpClientImpl @JvmOverloads constructor(
     private val auth: HttpAuth? = null,
     /** Answer a server's 401 Basic challenge; off for background fetches the user did not start. */
     serverAuth: Boolean = false,
+    /** Resolves host names; tests pass a fixed address list. */
+    dns: Dns = Dns.SYSTEM,
 ) : PoolingHttpClient {
     /** Set when the user cancels a credentials prompt: this client stops asking. */
     private val authCancelled = AtomicBoolean(false)
@@ -64,9 +57,18 @@ class HttpClientImpl @JvmOverloads constructor(
     }
 
     private val connectionPool: ConnectionPool = ConnectionPool(poolSize, 5, TimeUnit.SECONDS)
+
+    /**
+     * fastFallback (Happy Eyeballs, RFC 8305): a connect starts on the next resolved address every 250 ms
+     * until one succeeds, IPv6 and IPv4 interleaved. So one dead address of a CDN host (seen with
+     * desktop.githubusercontent.com) costs 250 ms instead of failing every retry, and a call fails only
+     * once all addresses did. It does not depend on retryOnConnectionFailure, which stays off: XDM retries.
+     */
     private val client: OkHttpClient =
         OkHttpClient.Builder().dispatcher(dispatcher).connectionPool(connectionPool)
             .proxy(proxy)
+            .dns(dns)
+            .fastFallback(true)
             .protocols(listOf(Protocol.HTTP_1_1))
             .connectTimeout(30, TimeUnit.SECONDS).readTimeout(readTimeoutSeconds.toLong(), TimeUnit.SECONDS).retryOnConnectionFailure(false)
             .apply { if (ignoreCertErrors) trustAllCertificates(this) else sharedTls(this) }
@@ -74,18 +76,10 @@ class HttpClientImpl @JvmOverloads constructor(
             .apply { if (serverAuth && auth != null) serverAuthentication(this, auth) }
             .build()
 
-    /**
-     * Reuses one process-wide [SSLContext] instead of letting OkHttp build its own per client.
-     *
-     * A client is created per download, and OkHttp's default is `SSLContext.getInstance("TLS")` per
-     * client, each with its own TLS session cache. Sharing one context shares that cache, so repeat
-     * hosts resume instead of doing a full handshake, and a download no longer pays for building a
-     * context. (It was introduced for Conscrypt, where each context was a native BoringSSL context
-     * whose memory the platform allocator never returned.)
-     */
+    /** The process-wide TLS context ([SharedTls]) instead of OkHttp's own per client. */
     private fun sharedTls(builder: OkHttpClient.Builder) {
-        val tls = sharedTlsConfig ?: return
-        builder.sslSocketFactory(tls.first, tls.second)
+        val tls = SharedTls.instance ?: return
+        builder.sslSocketFactory(tls.socketFactory, tls.trustManager)
     }
 
     /**
@@ -195,15 +189,8 @@ class HttpClientImpl @JvmOverloads constructor(
 
     private fun trustAllCertificates(builder: OkHttpClient.Builder) {
         Logger.info("XDM", "TLS certificate and hostname verification disabled by user setting")
-        val trustAll = object : X509TrustManager {
-            override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
-            override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {}
-            override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
-        }
-        val sslContext = SSLContext.getInstance("TLS").apply {
-            init(null, arrayOf<TrustManager>(trustAll), SecureRandom())
-        }
-        builder.sslSocketFactory(sslContext.socketFactory, trustAll)
+        val tls = SharedTls.trustAll
+        builder.sslSocketFactory(tls.socketFactory, tls.trustManager)
             .hostnameVerifier { _, _ -> true }
     }
 
@@ -263,11 +250,7 @@ class HttpClientImpl @JvmOverloads constructor(
                 openCalls.remove(call)
                 throw e
             }
-            val body = response.body ?: run {
-                response.close()
-                openCalls.remove(call)
-                throw IOException("Body missing")
-            }
+            val body = response.body
             val inputStreamBody = body.byteStream()
 
             val finalUrl = response.request.url.toUri().toASCIIString()
@@ -308,7 +291,8 @@ class HttpClientImpl @JvmOverloads constructor(
                     response.header(
                         it
                     )
-                })
+                },
+                cancelCallback = { call.cancel() })
         }
     }
 
@@ -318,27 +302,6 @@ class HttpClientImpl @JvmOverloads constructor(
 
         /** Handshakes restarted with the same credentials before a bare NTLM challenge counts as a refusal. */
         const val NTLM_RESTARTS = 1
-
-        /**
-         * The socket factory and trust manager shared by every client, built on first use and null if
-         * the platform refuses, in which case each client falls back to OkHttp's own default.
-         */
-        val sharedTlsConfig: Pair<SSLSocketFactory, X509TrustManager>? by lazy {
-            try {
-                val trustManagerFactory =
-                    TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
-                trustManagerFactory.init(null as KeyStore?)
-                val trustManager = trustManagerFactory.trustManagers
-                    .filterIsInstance<X509TrustManager>().firstOrNull()
-                    ?: return@lazy null
-                val context = SSLContext.getInstance("TLS").apply { init(null, arrayOf<TrustManager>(trustManager), null) }
-                Logger.info("XDM", "Shared TLS context: ${context.provider.name}")
-                context.socketFactory to trustManager
-            } catch (e: Exception) {
-                Logger.error("XDM", "Could not create a shared TLS context, using per-client defaults", e)
-                null
-            }
-        }
     }
 }
 

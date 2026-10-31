@@ -8,7 +8,7 @@ import org.w3c.dom.NamedNodeMap
 import org.w3c.dom.Node
 import xdm.core.downloaders.web.streaming.manifest.common.resolveUri
 import xdm.core.util.StringUtils
-import java.net.URI
+import okhttp3.HttpUrl
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
@@ -147,7 +147,7 @@ fun getSelfOrParentAttr(
     return null
 }
 
-fun resolveBaseUrl(node: Node, baseUrl: URI): URI {
+fun resolveBaseUrl(node: Node, baseUrl: HttpUrl): HttpUrl {
     val baseUrlValue = getDirectChildTagValue(node, "BaseURL")
     if (baseUrlValue != null) {
         return resolveUri(baseUrl, baseUrlValue)

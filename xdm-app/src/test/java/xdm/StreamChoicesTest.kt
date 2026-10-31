@@ -11,7 +11,7 @@ import xdm.integration.AudioMode
 import xdm.integration.StreamChoices
 import xdm.integration.StreamPick
 import xdm.integration.VideoHelper.LoadedManifest
-import java.net.URI
+import okhttp3.HttpUrl.Companion.toHttpUrl
 
 /** The Stream download dialog's choices, built from parsed playlists and manifests. */
 class StreamChoicesTest {
@@ -103,7 +103,7 @@ class StreamChoicesTest {
     }
 
     private fun rep(height: Int, bandwidth: Long, mime: String, codec: String, lang: String = "und") =
-        Representation(0, height, codec, bandwidth, 0, listOf(DashSegment(URI("https://cdn.example.com/$mime/$bandwidth/0.m4s"))), mime, lang)
+        Representation(0, height, codec, bandwidth, 0, listOf(DashSegment("https://cdn.example.com/$mime/$bandwidth/0.m4s".toHttpUrl())), mime, lang)
 
     @Test
     fun dash_crossProductBecomesFormatsWithAudioTracks() {

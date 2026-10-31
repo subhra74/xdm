@@ -3,15 +3,15 @@
 
 package xdm.core.checksum
 
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import xdm.core.network.http.HeaderMap
 import xdm.core.network.http.PoolingHttpClient
+import xdm.core.util.CryptoProviders
 import xdm.core.util.Logger
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
-import java.net.URI
-import java.security.MessageDigest
 import java.util.concurrent.CancellationException
 
 /** The request the file was downloaded with; its headers and cookie go along to the same host only. */
@@ -156,7 +156,7 @@ class ChecksumVerifier(
 
     /** Lower-case hex digest of [file]. */
     fun hash(file: File, algorithm: ChecksumAlgorithm, progress: Progress): String {
-        val digest = MessageDigest.getInstance(algorithm.javaName)
+        val digest = CryptoProviders.messageDigest(algorithm.javaName)
         val total = file.length()
         var done = 0L
         var lastReport = 0L
@@ -224,17 +224,8 @@ class ChecksumVerifier(
         /** Headers that describe the original file request, not the checksum one. */
         val DROPPED_HEADERS = setOf("range", "if-range", "if-match", "if-none-match", "if-modified-since", "accept-encoding")
 
-        fun hostOf(url: String): String? = try {
-            URI(url).host
-        } catch (_: Exception) {
-            null
-        }
+        fun hostOf(url: String): String? = url.toHttpUrlOrNull()?.host
 
-        fun isHttpUrl(text: String): Boolean = try {
-            val uri = URI(text)
-            (uri.scheme.equals("http", true) || uri.scheme.equals("https", true)) && uri.host != null
-        } catch (_: Exception) {
-            false
-        }
+        fun isHttpUrl(text: String): Boolean = text.toHttpUrlOrNull() != null
     }
 }

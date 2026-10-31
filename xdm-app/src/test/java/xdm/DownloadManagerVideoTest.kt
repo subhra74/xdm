@@ -11,7 +11,7 @@ import xdm.core.downloaders.SubtitleTrack
 import xdm.core.downloaders.web.streaming.manifest.dash.DashSegment
 import xdm.integration.StreamingVideoDisplayInfo
 import java.io.File
-import java.net.URI
+import okhttp3.HttpUrl.Companion.toHttpUrl
 
 /**
  * Regression for CODE_REVIEW B6: downloading the same detected video more than once must create
@@ -63,8 +63,8 @@ class DownloadManagerVideoTest : DownloadManagerTestBase() {
             id = nextId++, fileName = "detected.mp4", tempDir = "", respectFileName = false, cookie = null,
             headers = null, origin = null, categoryId = null, targetFolder = dir.absolutePath,
 maxPiece = 0, authInfo = null,
-            videoSegments = listOf(DashSegment(URI("$hangingBase/v.m4s"), null)),
-            audioSegments = listOf(DashSegment(URI("$hangingBase/a.m4s"), null)),
+            videoSegments = listOf(DashSegment("$hangingBase/v.m4s".toHttpUrl(), null)),
+            audioSegments = listOf(DashSegment("$hangingBase/a.m4s".toHttpUrl(), null)),
             url = "$hangingBase/manifest.mpd", audioMime = "audio/mp4", videoMime = "video/mp4",
         )
         tracker.addVideoDash(listOf(source to StreamingVideoDisplayInfo()))

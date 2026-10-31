@@ -3,6 +3,7 @@
 
 package xdm.core.downloaders
 
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import xdm.core.downloaders.web.streaming.manifest.dash.DashSegment
 import xdm.core.network.http.HeaderMap
 import xdm.core.network.http.SensitiveHeaders
@@ -12,7 +13,6 @@ import xdm.core.util.TagReader
 import xdm.core.util.TagWriter
 import xdm.core.util.TaggedFile
 import java.io.File
-import java.net.URI
 
 // Field numbers of `task-<id>.info` (see TaggedFile). Never reuse or retype a number. 1..19 are
 // shared by the HTTP, HLS and DASH records, 20 and up are per type. Batch has its own numbering,
@@ -136,7 +136,7 @@ private fun TagReader.dashSegment(): DashSegment {
             else -> r.skip()
         }
     }
-    return DashSegment(URI(url), if (start != null && end != null) Pair(start, end) else null)
+    return DashSegment(url.toHttpUrl(), if (start != null && end != null) Pair(start, end) else null)
 }
 
 private fun TagWriter.subtitle(no: Int, track: SubtitleTrack) = message(no) {

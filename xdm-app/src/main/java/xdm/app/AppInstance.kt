@@ -256,13 +256,10 @@ class AppInstance : IAppInstance {
     }
 
     override fun addDownload(downloadInfo: HttpDownloadTaskInfo?) {
-        if (AppContext.refreshLinkInProgress.get() && downloadInfo != null) {
+        if (downloadInfo != null && AppContext.refreshLinkInProgress.compareAndSet(true, false)) {
             AppContext.downloader.updateDownloadInfo(AppContext.refreshLinkId.get(), downloadInfo)
             // Called on the browser-integration server thread.
-            runOnUIThread {
-                refreshLinkWindow?.dispose()
-                MessageBox.show(appWindow, "XDM", text("SUCCESS_REFRESH"))
-            }
+            runOnUIThread { refreshLinkWindow?.showRefreshed() }
             return
         }
         if (downloadInfo != null && AppContext.config.startDownloadAutomatically) {
@@ -277,8 +274,9 @@ class AppInstance : IAppInstance {
 
     override fun addVideoDownload(vid: Long, fileName: String, fileSize: Long?, contentType: String?) {
         AppContext.videoTracker.getHttpVideo(vid)?.let { source ->
-            if (AppContext.refreshLinkInProgress.get()) {
+            if (AppContext.refreshLinkInProgress.compareAndSet(true, false)) {
                 AppContext.downloader.updateDownloadInfo(AppContext.refreshLinkId.get(), source)
+                runOnUIThread { refreshLinkWindow?.showRefreshed() }
                 return
             }
         }
@@ -403,11 +401,15 @@ class AppInstance : IAppInstance {
         // Null when the download carries no origin or Referer: the dialog then offers only the
         // manual link entry, since there is no page to send the browser back to.
         val page = AppContext.downloader.getRefererPage(id)
+        // A finished refresh stays on screen with its success line until closed; one at a time.
+        refreshLinkWindow?.dispose()
         AppContext.refreshLinkId.set(id)
         AppContext.refreshLinkInProgress.set(true)
         refreshLinkWindow = RefreshLinkWindow(appWindow, id, page).apply {
             addWindowListener(object : WindowAdapter() {
                 override fun windowClosed(e: WindowEvent) {
+                    // WINDOW_CLOSED arrives later: a replaced window must not end the refresh that replaced it.
+                    if (refreshLinkWindow !== e.window) return
                     AppContext.refreshLinkInProgress.set(false)
                     AppContext.refreshLinkId.set(-1)
                     refreshLinkWindow = null

@@ -1,11 +1,13 @@
 package xdm.app.ui.screens
 
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import xdm.app.AppContext
 import xdm.app.I8N.text
 import xdm.app.ui.components.MessageBox
 import xdm.app.ui.screens.settings.settingsIconButton
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
+import xdm.app.utils.createIcon
 import xdm.app.utils.gbAdd
 import xdm.app.utils.openInDefaultBrowser
 import xdm.app.utils.px
@@ -16,6 +18,7 @@ import xdm.app.utils.windowIconImages
 import xdm.core.network.http.HeaderMap
 import java.awt.BorderLayout
 import java.awt.CardLayout
+import java.awt.Color
 import java.awt.Dimension
 import java.awt.FlowLayout
 import java.awt.Font
@@ -25,7 +28,6 @@ import java.awt.Insets
 import java.awt.Window
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import java.net.URI
 import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.ButtonGroup
@@ -79,6 +81,8 @@ class RefreshLinkWindow(
     private lateinit var btnEditHeader: JButton
     private lateinit var btnDeleteHeader: JButton
     private val btnApply = JButton(text("REF_APPLY"))
+    private val btnCancel = JButton(text("ND_CANCEL"))
+    private val btnOpen = JButton(text("REF_OPEN_PAGE"))
     private val lblWaiting = JLabel(text("REF_WAITING_FOR_LINK")).apply {
         alignmentX = LEFT_ALIGNMENT
         isVisible = false
@@ -166,7 +170,6 @@ class RefreshLinkWindow(
             border = ScaledEmptyBorder(10, 15, 10, 15)
             layout = BoxLayout(this, BoxLayout.X_AXIS)
         }
-        val btnCancel = JButton(text("ND_CANCEL"))
         btnCancel.addActionListener { dispose() }
         btnApply.addActionListener { onApply() }
         sameWidth(btnCancel, btnApply)
@@ -187,7 +190,6 @@ class RefreshLinkWindow(
         panel.add(wrappedLabel(text("REF_DESC1")))
         panel.add(Box.createRigidArea(scaledSize(0, 12)))
 
-        val btnOpen = JButton(text("REF_OPEN_PAGE"))
         btnOpen.alignmentX = LEFT_ALIGNMENT
         // Nothing is on its way until the page has actually been opened, so the status line
         // only appears once the user has sent the browser there.
@@ -281,6 +283,25 @@ class RefreshLinkWindow(
         btnApply.isEnabled = manual
     }
 
+    /**
+     * The browser delivered the new link and the download now uses it: says so here instead of in a
+     * separate message box, and leaves only Close. EDT.
+     */
+    fun showRefreshed() {
+        lblWaiting.text = text("SUCCESS_REFRESH")
+        lblWaiting.icon = createIcon(RemixIcon.CHECKBOX_CIRCLE_FILL, 16, Color(0x2ECC71))
+        lblWaiting.isVisible = true
+        radioBrowser.isSelected = true
+        syncMode()
+        radioBrowser.isEnabled = false
+        radioManual.isEnabled = false
+        btnOpen.isEnabled = false
+        btnApply.isEnabled = false
+        btnCancel.text = text("LBL_CLOSE")
+        rootPane.defaultButton = btnCancel
+        toFront()
+    }
+
     private fun syncHeaderButtons() {
         val hasSelection = headerTable.selectedRow >= 0
         btnEditHeader.isEnabled = hasSelection
@@ -342,11 +363,7 @@ class RefreshLinkWindow(
     }
 
     private fun isValidUrl(url: String): Boolean {
-        if (url.isEmpty()) return false
-        return runCatching {
-            val scheme = URI(url).scheme
-            scheme.equals("http", ignoreCase = true) || scheme.equals("https", ignoreCase = true)
-        }.getOrDefault(false)
+        return url.toHttpUrlOrNull() != null
     }
 
     private inner class HeaderTableModel : AbstractTableModel() {

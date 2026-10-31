@@ -3,8 +3,10 @@ package xdm.app.ui.screens.settings
 import xdm.app.AppContext
 import xdm.app.I8N
 import xdm.app.utils.AutoStart
+import xdm.app.OS
 import xdm.app.utils.WaylandToolkit
 import xdm.app.utils.chooseFile
+import xdm.app.utils.detectOS
 import xdm.app.utils.scaledInsets
 import xdm.app.utils.scaledSize
 import java.awt.Dimension
@@ -23,6 +25,7 @@ class AdvancedConfigPanel : SettingsPanel() {
     private val tglNoSleep = SettingsToggle()
     private val tglRunOnStartup = SettingsToggle()
     private val tglWayland = SettingsToggle()
+    private val tglSwingChooser = SettingsToggle()
     private val tglSkipDupManifests = SettingsToggle()
 
     private val tglRunCmd = SettingsToggle()
@@ -55,6 +58,7 @@ class AdvancedConfigPanel : SettingsPanel() {
                 settingsRow(I8N.text("MSG_AWAKE"), I8N.text("MSG_AWAKE_SUB"), tglNoSleep),
                 settingsRow(I8N.text("MSG_HALT"), I8N.text("MSG_HALT_SUB"), tglHalt),
                 settingsRow(I8N.text("MSG_WAYLAND"), I8N.text("MSG_WAYLAND_SUB"), tglWayland),
+                settingsRow(I8N.text("MSG_SWING_CHOOSER"), I8N.text("MSG_SWING_CHOOSER_SUB"), tglSwingChooser),
             )
         )
         add(settingsGap())
@@ -134,6 +138,10 @@ class AdvancedConfigPanel : SettingsPanel() {
         // Only a Linux Wayland session on the JetBrains Runtime has a choice; elsewhere it shows off and locked.
         tglWayland.isSelected = WaylandToolkit.isSupported && config.nativeWayland
         tglWayland.isEnabled = WaylandToolkit.isSupported
+        // Only Linux has a portal dialog to opt out of; elsewhere it shows off and locked.
+        val linux = detectOS() == OS.Linux
+        tglSwingChooser.isSelected = linux && config.swingFileChooser
+        tglSwingChooser.isEnabled = linux
         tglSkipDupManifests.isSelected = config.skipDuplicateManifests
         tglRunCmd.isSelected = config.runCommand
         txtCmd.text = config.customCommand
@@ -155,6 +163,9 @@ class AdvancedConfigPanel : SettingsPanel() {
         config.runOnStartup = AutoStart.isEnabled()
         if (WaylandToolkit.isSupported) {
             config.nativeWayland = tglWayland.isSelected
+        }
+        if (detectOS() == OS.Linux) {
+            config.swingFileChooser = tglSwingChooser.isSelected
         }
         config.skipDuplicateManifests = tglSkipDupManifests.isSelected
         config.runCommand = tglRunCmd.isSelected

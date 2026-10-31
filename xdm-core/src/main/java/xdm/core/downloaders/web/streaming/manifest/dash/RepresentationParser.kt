@@ -8,7 +8,7 @@ import org.w3c.dom.NamedNodeMap
 import org.w3c.dom.Node
 import org.w3c.dom.NodeList
 import xdm.core.downloaders.web.streaming.manifest.common.resolveUri
-import java.net.URI
+import okhttp3.HttpUrl
 import java.util.*
 import java.util.regex.Pattern
 import kotlin.math.ceil
@@ -50,7 +50,7 @@ class SegmentBudget {
 }
 
 fun parseAdaptationSet(
-    xmlAdaptationSet: Node, baseUrl: URI, periodDuration: Long, hasParentSegmentBase: Boolean,
+    xmlAdaptationSet: Node, baseUrl: HttpUrl, periodDuration: Long, hasParentSegmentBase: Boolean,
     budget: SegmentBudget,
 ): List<Representation> {
     var baseUrl = baseUrl
@@ -92,7 +92,7 @@ private fun parseRangeAttr(range: String?): Pair<Long, Long>? {
 
 private fun parseSegmentList(
     xmlSegmentList: Node,
-    baseUrl: URI,
+    baseUrl: HttpUrl,
     width: Int,
     height: Int,
     codec: String,
@@ -138,7 +138,7 @@ private fun parseSegmentList(
 private fun parseSegmentTimeLineSimple(
     xmlSegmentTemplate: Node,
     attrs: NamedNodeMap,
-    baseUrl: URI,
+    baseUrl: HttpUrl,
     width: Int,
     height: Int,
     codec: String,
@@ -171,7 +171,7 @@ private fun parseSegmentTimeLineSimple(
         val m = TemplatePattern.matcher(mediaUrl)
         while (m.find()) mediaMatches.add(MatcherResult.toMatcherResult(m))
     }
-    val segments: MutableList<URI> = ArrayList(segmentCount + (if (initUrl != null) 1 else 0))
+    val segments: MutableList<HttpUrl> = ArrayList(segmentCount + (if (initUrl != null) 1 else 0))
     if (initUrl != null) {
         val initMatches: MutableList<MatcherResult> = ArrayList()
         val m = TemplatePattern.matcher(initUrl)
@@ -216,7 +216,7 @@ private fun parseSegmentTimeLineExplicit(
     xmlSegmentTemplate: Node,
     xmlSs: NodeList,
     attrs: NamedNodeMap,
-    baseUrl: URI,
+    baseUrl: HttpUrl,
     width: Int,
     height: Int,
     codec: String,
@@ -235,7 +235,7 @@ private fun parseSegmentTimeLineExplicit(
     val initUrl = getAttr(xmlSegmentTemplate, "initialization")?.replace("$$", "\u0000")
     val mediaUrl = getAttr(xmlSegmentTemplate, MEDIA_KEY)?.replace("$$", "\u0000")
     val mediaMatches = matchTemplateUrl(mediaUrl)
-    val segments: MutableList<URI> = ArrayList()
+    val segments: MutableList<HttpUrl> = ArrayList()
     if (initUrl != null) {
         val initMatches = matchTemplateUrl(initUrl)
         val initializationUrl = parseTemplate(
@@ -293,7 +293,7 @@ private fun parseSegmentTimeLineExplicit(
 }
 
 private fun parseRepresentation(
-    xmlRepresentation: Node, baseUrlIn: URI, periodDuration: Long, hasParentSegmentBase: Boolean,
+    xmlRepresentation: Node, baseUrlIn: HttpUrl, periodDuration: Long, hasParentSegmentBase: Boolean,
     budget: SegmentBudget,
 ): Representation? {
     var baseUrl = baseUrlIn

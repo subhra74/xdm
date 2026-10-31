@@ -3,8 +3,7 @@
 
 package xdm.core.checksum
 
-import java.net.URI
-import java.net.URLDecoder
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
 /** A digest a published checksum can be in, recognised by its hex length or its BSD tag. */
 enum class ChecksumAlgorithm(val label: String, val javaName: String, val hexLength: Int, val extension: String) {
@@ -47,21 +46,14 @@ object SidecarUrls {
     }
 
     /** The decoded last path segment: the name a checksum manifest lists the file under. */
-    fun remoteFileName(downloadUrl: String): String? = try {
-        URI(downloadUrl).rawPath?.substringAfterLast('/')?.takeIf { it.isNotEmpty() }
-            ?.let { URLDecoder.decode(it.replace("+", "%2B"), "UTF-8") }
-    } catch (_: Exception) {
-        null
-    }
+    fun remoteFileName(downloadUrl: String): String? =
+        downloadUrl.toHttpUrlOrNull()?.pathSegments?.last()?.takeIf { it.isNotEmpty() }
 
     /** Scheme, host and path without query or fragment; null unless the URL has a file-like path. */
-    private fun basePath(downloadUrl: String): String? = try {
-        val uri = URI(downloadUrl)
-        val path = uri.rawPath
-        if (uri.scheme == null || uri.rawAuthority == null || path.isNullOrEmpty() || path.endsWith("/")) null
-        else "${uri.scheme}://${uri.rawAuthority}$path"
-    } catch (_: Exception) {
-        null
+    private fun basePath(downloadUrl: String): String? {
+        val url = downloadUrl.toHttpUrlOrNull() ?: return null
+        if (url.encodedPath.endsWith("/")) return null
+        return url.newBuilder().query(null).fragment(null).build().toString()
     }
 }
 
