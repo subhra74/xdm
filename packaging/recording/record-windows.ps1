@@ -1,11 +1,21 @@
 <#
 .SYNOPSIS
-  Records the AppCDS class lists on Windows x64: packaging\cds\liberica.classlist and packaging\cds\jbr.classlist.
+  Records the AppCDS class lists on Windows x64: out\liberica.classlist and out\jbr.classlist.
 .DESCRIPTION
-  The Windows counterpart of record-all.sh (docs/class-list-recording.md section 0). For each vendor, one
-  after the other:
+  The Windows counterpart of record-all.sh (docs/class-list-recording.md section 0.1). Runs from a folder
+  that holds everything it needs, flat, next to this script:
 
-    1. finds the pinned x64 JDK (packaging\jdk.properties) in the JDK cache, or downloads it there and checks
+    record-windows.ps1, RecordServer.java, ffmpeg.exe, ModularJar.java, module-info.java,
+    jdk.properties, xdm-app.jar
+
+  ffmpeg.exe is needed only until the server has made its media (record-assets\media\.done); when it is
+  missing then, it is downloaded from gyan.dev (release build, SHA-256 checked) into this folder. Everything
+  the script writes stays in the folder too: record-assets\, work\<vendor>\, record-server.log and the
+  lists in out\, to copy into packaging/cds.
+
+  For each vendor, one after the other:
+
+    1. finds the pinned x64 JDK (jdk.properties) in the JDK cache, or downloads it there and checks
        its checksum (BellSoft's SHA-1, JetBrains' SHA-512). Always x64, also on an ARM64 machine (it runs
        under emulation there): the lists are recorded on the x64 builds.
     2. links a runtime the way build-bundle.ps1 does, but with the recording session (xdm.app.recording)
@@ -19,8 +29,8 @@
   the Liberica zip.
 
   Without -Server, RecordServer runs for the time of the recording on port 8780 (proxy 8781), with its
-  assets in build\record-assets. Making its media the first time needs ffmpeg on PATH; copy the Mac's
-  build\record-assets there to skip that.
+  assets in record-assets\ and this folder first on its PATH, so it runs the ffmpeg.exe here. Copying the
+  Mac's build/record-assets to record-assets\ skips the media step (and the ffmpeg download).
 
   Run it in the desktop session: XDM opens windows. Quit any running XDM first (port 8597).
 .PARAMETER Vendor
@@ -28,28 +38,36 @@
 .PARAMETER Server
   An already running RecordServer, e.g. http://172.16.45.1:8780. Default: start one here.
 .PARAMETER Jar
-  The app jar. Default: xdm-app\target\xdm-app.jar, or xdm-app.jar in a kit. Built first with Maven when
-  pom.xml and mvn are there, unless -NoBuild.
-.PARAMETER NoBuild
-  Use the jar as it is.
+  The app jar. Default: xdm-app.jar in this folder.
 #>
 [CmdletBinding()]
 param(
   [ValidateSet('liberica','jbr')] [string[]]$Vendor = @('liberica', 'jbr'),
   [string]$Server,
-  [string]$Jar,
-  [switch]$NoBuild
+  [string]$Jar
 )
 
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
-$Packaging = Split-Path -Parent $PSScriptRoot
-$ProjectRoot = Split-Path -Parent $Packaging
-Set-Location $ProjectRoot
+$Here = $PSScriptRoot
+Set-Location $Here
+
+# ---- the folder's inputs ------------------------------------------------------------------------------------
+$Assets = Join-Path $Here 'record-assets'
+$MediaMade = Test-Path (Join-Path $Assets 'media\.done')
+if (-not $Jar) { $Jar = Join-Path $Here 'xdm-app.jar' }
+$required = @('jdk.properties', 'ModularJar.java', 'module-info.java')
+if (-not $Server) { $required += 'RecordServer.java' }
+$missing = @($required | Where-Object { -not (Test-Path (Join-Path $Here $_)) })
+if (-not (Test-Path $Jar)) { $missing += $Jar }
+if ($missing) { throw "Missing in ${Here}: $($missing -join ', ')" }
+$Jar = (Resolve-Path $Jar).Path
+$Ffmpeg = Join-Path $Here 'ffmpeg.exe'
+$FfmpegUrl = 'https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-full.7z'
 
 function Read-Pin([string]$Key) {
-  $line = Get-Content (Join-Path $Packaging 'jdk.properties') | Where-Object { $_ -match "^$([regex]::Escape($Key))=" }
-  if (-not $line) { throw "packaging\jdk.properties has no $Key" }
+  $line = Get-Content (Join-Path $Here 'jdk.properties') | Where-Object { $_ -match "^$([regex]::Escape($Key))=" }
+  if (-not $line) { throw "jdk.properties has no $Key" }
   ($line -split '=', 2)[1].Trim()
 }
 function Read-JdkRelease([string]$Dir) {
@@ -137,26 +155,43 @@ function Get-PinnedJdk([string]$V) {
   [pscustomobject]@{ Home = $jdkHome; Stamp = "$($r['IMPLEMENTOR']) $($r['JAVA_RUNTIME_VERSION'])" }
 }
 
+# ffmpeg.exe from gyan.dev's release build (x64; checked against its published SHA-256), into this folder.
+function Get-Ffmpeg {
+  $tmp = Join-Path $Here '.ffmpeg-download'
+  Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
+  New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+  $archive = Join-Path $tmp 'ffmpeg.7z'
+  Write-Host ">> no ffmpeg.exe here and the server's media isn't made yet: downloading $FfmpegUrl"
+  & curl.exe -fsSL --retry 3 -o $archive $FfmpegUrl
+  if ($LASTEXITCODE -ne 0) { throw "download failed: $FfmpegUrl" }
+  $expected = ((& curl.exe -fsSL --retry 3 "$FfmpegUrl.sha256") -split '\s+')[0]
+  if (-not $expected) { throw "no checksum at $FfmpegUrl.sha256" }
+  $actual = (Get-FileHash $archive -Algorithm SHA256).Hash
+  if ($actual -ne $expected.ToUpperInvariant()) { throw "SHA-256 mismatch for ffmpeg: $actual, expected $expected" }
+  # tar.exe (libarchive) reads 7z; only bin\ffmpeg.exe is needed.
+  & tar.exe -xf $archive -C $tmp '*/bin/ffmpeg.exe'
+  $exe = Get-ChildItem $tmp -Recurse -Filter ffmpeg.exe | Select-Object -First 1
+  if ($LASTEXITCODE -ne 0 -or -not $exe) {
+    throw "could not unpack ffmpeg.exe from ${archive}: put an ffmpeg.exe in $Here by hand"
+  }
+  Move-Item $exe.FullName $Ffmpeg -Force
+  Remove-Item -Recurse -Force $tmp
+  Write-Host ">> $Ffmpeg"
+}
+
 # ---- checks -------------------------------------------------------------------------------------------------
 if (Test-PortListening 8597) { throw 'port 8597 is in use: quit the running XDM first' }
-
-$IsKit = -not (Test-Path (Join-Path $ProjectRoot 'pom.xml'))
-if (-not $Jar) {
-  $Jar = if ($IsKit) { Join-Path $ProjectRoot 'xdm-app.jar' } else { Join-Path $ProjectRoot 'xdm-app\target\xdm-app.jar' }
-  if (-not $IsKit -and -not $NoBuild -and (Get-Command mvn -ErrorAction SilentlyContinue)) {
-    Write-Host '>> mvn -q -pl xdm-app -am package'
-    & mvn -q -pl xdm-app -am package
-    if ($LASTEXITCODE -ne 0) { throw 'Maven build failed' }
-  } elseif (-not $NoBuild) {
-    Write-Host ">> no Maven build here: using $Jar as it is"
+if (-not $Server) {
+  foreach ($p in 8780, 8781) {
+    if (Test-PortListening $p) { throw "port $p is in use: stop the RecordServer already running, or pass -Server" }
   }
 }
-if (-not (Test-Path $Jar)) { throw "Missing $Jar" }
-$Jar = (Resolve-Path $Jar).Path
+Write-Host ">> app jar: $Jar"
 
 # Fetch every JDK before anything runs, so a download failure doesn't come after a long recording.
 $Jdks = @{}
 foreach ($v in $Vendor) { $Jdks[$v] = Get-PinnedJdk $v }
+if (-not $Server -and -not $MediaMade -and -not (Test-Path $Ffmpeg)) { Get-Ffmpeg }
 
 # ---- the launcher's flags (build-bundle.ps1): G1, common options, x64 is C1 only ----------------------------
 $JavaOptions = @(
@@ -176,7 +211,15 @@ $Modules = 'java.desktop,java.logging,jdk.crypto.ec,jdk.unsupported'
 $AppModule = 'xdm.app'
 $FlatLafDll = 'flatlaf-windows-x86_64.dll'
 $ConscryptDll = 'conscrypt_openjdk_jni-windows-x86_64.dll'
-$WorkRoot = Join-Path $ProjectRoot 'build\record-windows'
+$WorkRoot = Join-Path $Here 'work'
+$OutDir = Join-Path $Here 'out'
+# The two Java programs run from their own folder: next to module-info.java, the source launcher would take
+# this folder for the xdm.app module's sources and compile them into it.
+$SrcDir = Join-Path $WorkRoot 'src'
+New-Item -ItemType Directory -Force -Path $SrcDir | Out-Null
+foreach ($f in 'ModularJar.java', 'RecordServer.java') {
+  if (Test-Path (Join-Path $Here $f)) { Copy-Item (Join-Path $Here $f) $SrcDir -Force }
+}
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 function Invoke-Recording([string]$V, $Jdk, [string]$ServerUrl) {
@@ -206,7 +249,7 @@ function Invoke-Recording([string]$V, $Jdk, [string]$ServerUrl) {
 
   # The app module with the session still in it (the shipped one excludes xdm/app/recording/).
   $moduleJar = Join-Path $work "$AppModule.jar"
-  & $java (Join-Path $Packaging 'ModularJar.java') $appJar $moduleJar (Join-Path $Packaging 'module\module-info.java')
+  & $java (Join-Path $SrcDir 'ModularJar.java') $appJar $moduleJar (Join-Path $Here 'module-info.java')
   if ($LASTEXITCODE -ne 0) { throw 'ModularJar failed' }
   Write-Host ">> jlink runtime: $Modules,$AppModule"
   & (Join-Path $Jdk.Home 'bin\jlink.exe') --module-path $moduleJar --add-modules "$Modules,$AppModule" --vm server `
@@ -230,14 +273,14 @@ function Invoke-Recording([string]$V, $Jdk, [string]$ServerUrl) {
     throw "The recording session reported $status failed step(s) (RECORD: lines above); $V.classlist was not updated. Logs: $recordHome\xdm-app\logs"
   }
 
-  $list = Join-Path $Packaging "cds\$V.classlist"
-  New-Item -ItemType Directory -Force -Path (Split-Path $list) | Out-Null
+  $list = Join-Path $OutDir "$V.classlist"
+  New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
   $lines = @("# xdm-jdk: $($Jdk.Stamp)") + @(Get-Content $recorded | Where-Object { $_ -notmatch 'xdm/app/recording/' })
   # LF and no BOM, like the lists recorded on the Mac.
   [System.IO.File]::WriteAllText($list, (($lines -join "`n") + "`n"), (New-Object System.Text.UTF8Encoding $false))
   Remove-Item $recorded
   $classes = @($lines | Where-Object { $_ -notmatch '^[#@]' }).Count
-  Write-Host ">> wrote packaging\cds\$V.classlist: $classes classes, stamp: $($lines[0])"
+  Write-Host ">> wrote $list`: $classes classes, stamp: $($lines[0])"
   Remove-Item -Recurse -Force $runtime, $moduleJar, $appJar
 }
 
@@ -245,19 +288,15 @@ function Invoke-Recording([string]$V, $Jdk, [string]$ServerUrl) {
 $serverProc = $null
 try {
   if (-not $Server) {
-    foreach ($p in 8780, 8781) {
-      if (Test-PortListening $p) { throw "port $p is in use: stop the RecordServer already running, or pass -Server" }
-    }
     $Server = 'http://127.0.0.1:8780'
-    $log = Join-Path $ProjectRoot 'build\record-server.log'
-    New-Item -ItemType Directory -Force -Path (Split-Path $log) | Out-Null
-    # Any of the fetched JDKs runs it (JDK 17+).
+    $log = Join-Path $Here 'record-server.log'
+    # Any of the fetched JDKs runs it (JDK 17+). It runs "ffmpeg" from PATH: this folder's ffmpeg.exe first.
     $serverJava = Join-Path ($Jdks[$Vendor[0]].Home) 'bin\java.exe'
-    Write-Host ">> starting RecordServer on $Server (log: $log)"
+    $env:Path = "$Here;$env:Path"
+    Write-Host ">> starting RecordServer on $Server (log: $log)$(if (-not $MediaMade) { ', making its media with ffmpeg.exe first' })"
     $serverProc = Start-Process $serverJava -PassThru -NoNewWindow -RedirectStandardOutput $log `
         -RedirectStandardError "$log.err" -ArgumentList @(
-          (Join-Path $PSScriptRoot 'RecordServer.java'), '--port', '8780',
-          '--assets', (Join-Path $ProjectRoot 'build\record-assets'))
+          (Join-Path $SrcDir 'RecordServer.java'), '--port', '8780', '--assets', $Assets)
   }
   $Server = $Server.TrimEnd('/')
   # The first start makes the HLS/DASH media with ffmpeg, which takes a while; an x64 JDK under emulation
@@ -284,4 +323,4 @@ try {
   if ($serverProc -and -not $serverProc.HasExited) { Stop-Process -Id $serverProc.Id -Force }
 }
 Write-Host ''
-Write-Host '>> done: copy packaging\cds\*.classlist to the checkout, review and commit'
+Write-Host ">> done: copy $OutDir\*.classlist to packaging/cds in the checkout, review and commit"

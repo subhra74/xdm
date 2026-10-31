@@ -153,13 +153,15 @@ public class RecordServer {
                 "-hls_segment_filename", aes.resolve("seg%03d.ts").toString(), aes.resolve("index.m3u8").toString());
         Files.delete(keyInfo);
 
-        // DASH: separate video and audio adaptation sets, SegmentTemplate with $Number$.
+        // DASH: separate video and audio adaptation sets, SegmentTemplate with $Number$. Run in the dash folder
+        // with a relative manifest: given an absolute Windows path, the muxer writes the segments to the
+        // working directory instead of next to the manifest.
         Path dash = media.resolve("dash");
         Files.createDirectories(dash);
-        ffmpeg("-i", clip, "-map", "0:v", "-map", "0:a", "-c", "copy", "-f", "dash", "-seg_duration", "4",
+        ffmpegIn(dash, "-i", clip, "-map", "0:v", "-map", "0:a", "-c", "copy", "-f", "dash", "-seg_duration", "4",
                 "-use_template", "1", "-use_timeline", "0", "-adaptation_sets", "id=0,streams=v id=1,streams=a",
                 "-init_seg_name", "init-$RepresentationID$.m4s",
-                "-media_seg_name", "chunk-$RepresentationID$-$Number%05d$.m4s", dash.resolve("manifest.mpd").toString());
+                "-media_seg_name", "chunk-$RepresentationID$-$Number%05d$.m4s", "manifest.mpd");
         dashSubtitles(dash);
 
         // Split tracks: whole-file fragmented MP4s (ftyp, moov, sidx, moof/mdat...), as bilibili serves them.
@@ -226,11 +228,16 @@ public class RecordServer {
     }
 
     static void ffmpeg(String... args) throws Exception {
+        ffmpegIn(null, args);
+    }
+
+    /** Runs ffmpeg with {@code dir} as its working directory (null: this process's). */
+    static void ffmpegIn(Path dir, String... args) throws Exception {
         List<String> cmd = new ArrayList<>(List.of("ffmpeg", "-hide_banner", "-loglevel", "error", "-y"));
         cmd.addAll(List.of(args));
         Process p;
         try {
-            p = new ProcessBuilder(cmd).inheritIO().start();
+            p = new ProcessBuilder(cmd).directory(dir == null ? null : dir.toFile()).inheritIO().start();
         } catch (IOException e) {
             throw new IllegalStateException("ffmpeg is needed once to generate the test media: " + e.getMessage());
         }
