@@ -20,6 +20,8 @@ data class StreamingVideoDisplayInfo(
     var dateTime: LocalDateTime = LocalDateTime.now(),
     var tabUrl: String? = null,
     var tabId: String? = null,
+    /** Video height in pixels for HLS/DASH, shown as e.g. 720p where the size is unknown; null if not given. */
+    var height: Int? = null,
 ) {
     val descriptionText: String
         get() {

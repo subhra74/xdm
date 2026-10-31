@@ -705,6 +705,7 @@ object VideoHelper {
                                 dateTime = LocalDateTime.now(),
                                 tabId = msg.tabId ?: "0",
                                 tabUrl = msg.tabUrl,
+                                height = video.height.takeIf { it > 0 },
                             )
                         )
                     )
@@ -780,6 +781,8 @@ object VideoHelper {
                                 dateTime = LocalDateTime.now(),
                                 tabId = msg.tabId ?: "0",
                                 tabUrl = msg.tabUrl,
+                                height = playlist.attributes["RESOLUTION"]
+                                    ?.substringAfter('x', "")?.trim()?.toIntOrNull()?.takeIf { it > 0 },
                             )
                         )
                     )

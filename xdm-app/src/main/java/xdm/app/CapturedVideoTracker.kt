@@ -19,6 +19,9 @@ interface ICapturedVideoTracker {
     fun getHlsVideo(videoId: Long): HlsDownloadTaskInfo?
     fun getDashVideo(videoId: Long): DashDownloadTaskInfo?
 
+    /** What was shown for a captured HLS/DASH/HTTP video; null for a Restart or an unknown id. */
+    fun getDisplayInfo(videoId: Long): StreamingVideoDisplayInfo?
+
     /**
      * Registers a copy of a saved HLS/DASH download for Restart, so the video dialog can take it like a
      * capture. Kept apart from the captured lists: it is not offered in the browser and never pushes
@@ -191,6 +194,10 @@ class CapturedVideoTracker : ICapturedVideoTracker {
             (restarts[videoId] as? DashDownloadTaskInfo)?.let { return it }
         }
         return null
+    }
+
+    override fun getDisplayInfo(videoId: Long): StreamingVideoDisplayInfo? = synchronized(this) {
+        (hlsVideoList[videoId] ?: dashVideoList[videoId] ?: httpVideoList[videoId])?.second
     }
 
     override fun clear() {

@@ -304,11 +304,16 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
         this.videoId = vid
         spnSegments.count = AppContext.config.maxSegments
         txtFileName.text = FileUtils.sanitizeFileName(fileName)
-        lblFileInfo.text = fileSize?.let { FormatHelper.formatSize(it.toDouble()) } ?: "---"
         this.fileSize = fileSize
         val tracker = AppContext.videoTracker
         val http = tracker.getHttpVideo(vid)
         val stream = tracker.getHlsVideo(vid) ?: tracker.getDashVideo(vid)
+        // A stream has no size up front: show its resolution, else just the kind of stream.
+        lblFileInfo.text = when {
+            http == null && stream != null -> tracker.getDisplayInfo(vid)?.height?.let { "${it}p" }
+                ?: if (stream is DashDownloadTaskInfo) "DASH" else "HLS"
+            else -> fileSize?.let { FormatHelper.formatSize(it.toDouble()) } ?: "---"
+        }
         // A plain media file is written straight to its folder; HLS/DASH segments go to the temp folder first.
         storageStatus.usesTempFolder = http == null
         val url = http?.url ?: tracker.getHlsVideo(vid)?.url ?: tracker.getDashVideo(vid)?.url
