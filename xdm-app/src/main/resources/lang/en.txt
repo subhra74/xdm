@@ -491,3 +491,5 @@ SOUND_PREVIEW=Play
 SOUND_RESET=Default
 SOUND_WAV_FILES=WAV sound files
 SOUND_NOT_WAV=%s is not a WAV file XDM can play.
+UPDATE_NOTIFY_TITLE=XDM update available
+UPDATE_NOTIFY_MSG=XDM %s is available. Click to update.

@@ -12,6 +12,7 @@ import xdm.app.AppContext
 import xdm.app.BatchRequest
 import xdm.app.BatchRequestItem
 import xdm.app.previewUrl
+import xdm.app.update.UpdateChecker
 import xdm.app.utils.captureDestination
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.util.*
@@ -53,6 +54,9 @@ object BrowserIntegration {
         ignoreUnknownKeys = true
         encodeDefaults = true
     }
+
+    /** This build's version, sent with every sync so the extension can ask for a newer XDM. */
+    private val appVersion: String by lazy { UpdateChecker.loadConfig()?.currentVersion ?: "" }
 
     private val clearTabFilter = ClearTabFilter()
     private val blockedHeaders = setOf(
@@ -459,6 +463,7 @@ object BrowserIntegration {
             matchingHosts = emptyList(),
             version = EventChannel.currentVersion,
             instanceId = EventChannel.instanceId,
+            appVersion = appVersion,
             videoList = AppContext.videoTracker.videoList.map {
                 VideoItem(
                     id = "${it.id}",
@@ -536,6 +541,11 @@ data class ConfigDto(
      * extension starts over whenever this changes.
      */
     val instanceId: String = "",
+    /**
+     * XDM's own version (`app-version.json`). Missing before 9.0.9, which the extension treats as too
+     * old: it warns below its minimum version.
+     */
+    val appVersion: String = "",
 )
 
 /** Body of a `/poll` request: who is asking, and what they have already seen. */

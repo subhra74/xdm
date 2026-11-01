@@ -24,11 +24,14 @@ import xdm.app.utils.WindowGeometry
 import xdm.app.utils.applyMacOSWindowCustomizations
 import xdm.app.utils.detectOS
 import xdm.app.utils.px
+import xdm.app.utils.showTrayNotification
 import xdm.app.utils.windowIconImages
 import xdm.core.util.Logger
 import java.awt.*
 import java.awt.event.ActionEvent
 import java.awt.event.ActionListener
+import java.awt.event.ComponentAdapter
+import java.awt.event.ComponentEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import javax.swing.*
@@ -36,13 +39,19 @@ import javax.swing.border.MatteBorder
 import javax.swing.event.PopupMenuEvent
 import javax.swing.event.PopupMenuListener
 
-class AppWindow(image: Image) : JFrame(), ActionListener {
+/**
+ * [startHidden]: XDM started minimized (at login). The update check then waits [HIDDEN_UPDATE_CHECK_DELAY_MS],
+ * or until the window is first shown, and a found update is announced with a system notification.
+ */
+class AppWindow(image: Image, startHidden: Boolean = false) : JFrame(), ActionListener {
     private var listView: DownloadListView = createListView(MainListViewFilter(FilterState.All, null, ""))
     private lateinit var listContainer: JPanel
     private lateinit var toolbar: AppToolBar
     private lateinit var filterPanel: FilterListPanel
     private val updatePanel = UpdatePanel()
     private val autoStartPanel = AutoStartPanel()
+    /** EDT only. The delayed update check of a hidden start, until it runs. */
+    private var pendingUpdateCheck: Timer? = null
 
     init {
         title = XDM_WINDOW_TITLE
@@ -56,14 +65,41 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
 
         setWindowSizeAndPosition()
         initWindow()
-        checkForUpdates()
+        if (startHidden) {
+            scheduleUpdateCheck()
+        } else {
+            checkForUpdates()
+        }
 
         //ProgressWindow().isVisible = true
     }
 
     /**
-     * Kicks off a background update check at startup; if a newer release (pre-releases included) is
-     * found, reveals the update banner at the bottom of the window (on the EDT).
+     * A start at login stays off the network for a while: a process that starts with the session
+     * and goes online at once is what behaviour-based antivirus heuristics look hardest at, and the
+     * machine is busy logging in anyway. Showing the window cuts the wait short.
+     */
+    private fun scheduleUpdateCheck() {
+        pendingUpdateCheck = Timer(HIDDEN_UPDATE_CHECK_DELAY_MS) { runPendingUpdateCheck() }.apply {
+            isRepeats = false
+            start()
+        }
+        addComponentListener(object : ComponentAdapter() {
+            override fun componentShown(e: ComponentEvent) = runPendingUpdateCheck()
+        })
+    }
+
+    private fun runPendingUpdateCheck() {
+        val timer = pendingUpdateCheck ?: return
+        timer.stop()
+        pendingUpdateCheck = null
+        checkForUpdates()
+    }
+
+    /**
+     * Kicks off a background update check; if a newer release (pre-releases included) is found,
+     * reveals the update banner at the bottom of the window (on the EDT), and when the window is
+     * not on screen also announces it with a system notification.
      */
     private fun checkForUpdates() {
         // GitHub only supplies the latest version number; the button always opens our download page
@@ -72,9 +108,26 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
             if (info != null) {
                 SwingUtilities.invokeLater {
                     updatePanel.showUpdate(info.latestVersion, info.downloadUrl, info.isPreRelease)
+                    if (!isVisible) {
+                        notifyUpdate(info.latestVersion)
+                    }
                 }
             }
         }
+    }
+
+    /**
+     * The banner is in a window nobody sees, so post a notification instead - once per version, or
+     * every start at login would repeat it. A click brings up the window, banner included.
+     */
+    private fun notifyUpdate(version: String) {
+        val config = AppContext.config
+        if (config.notifiedUpdateVersion == version) {
+            return
+        }
+        config.notifiedUpdateVersion = version
+        config.save()
+        showTrayNotification(text("UPDATE_NOTIFY_TITLE"), String.format(text("UPDATE_NOTIFY_MSG"), version))
     }
 
     private fun initWindow() {
@@ -416,3 +469,6 @@ class AppWindow(image: Image) : JFrame(), ActionListener {
         get() = emptyList() // listView.getSelectedItems();
 
 }
+
+/** How long a start at login waits before its update check. */
+private const val HIDDEN_UPDATE_CHECK_DELAY_MS = 5 * 60 * 1000

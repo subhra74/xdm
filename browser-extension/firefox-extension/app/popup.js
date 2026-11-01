@@ -77,6 +77,17 @@ class VideoPopup {
         }
         document.getElementById("chk").checked = response.enabled === true;
 
+        // Connected to an XDM older than the extension expects: suggest updating it.
+        if (response.outdated) {
+            if (response.xdmVersion) {
+                document.getElementById("outdatedVersion").textContent = "XDM " + response.xdmVersion;
+            }
+            if (response.updateUrl) {
+                document.getElementById("outdatedLink").href = response.updateUrl;
+            }
+            document.getElementById("outdated").hidden = false;
+        }
+
         const list = response.list || [];
         this.items = list;
         this.renderList(list);

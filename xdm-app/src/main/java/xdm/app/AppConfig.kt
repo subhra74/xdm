@@ -86,6 +86,11 @@ interface IAppConfig : CoreConfig {
      * Set on a first run too, so a new install never goes through it.
      */
     var themeMigrated: Boolean
+    /**
+     * The newest release XDM already announced with a system notification while it ran hidden, so a
+     * start at login doesn't announce the same update again. Blank when none was announced.
+     */
+    var notifiedUpdateVersion: String
     override var speedLimiterEnabled: Boolean
     override var speedLimit: Int
     var startDownloadAutomatically: Boolean
@@ -214,6 +219,7 @@ private const val F_SOUND_FAILED_FILE = 51
 private const val F_SWING_FILE_CHOOSER = 52
 private const val F_UI_SCALE = 53
 private const val F_THEME_MIGRATED = 54
+private const val F_NOTIFIED_UPDATE_VERSION = 55
 
 // Inside F_CATEGORIES: one F_CATEGORY record per category, in order.
 private const val F_CATEGORY = 1
@@ -270,6 +276,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var theme: String = "dark"
     override var uiScale: Int = 100
     override var themeMigrated: Boolean = false
+    override var notifiedUpdateVersion: String = ""
     override var maxParallelDownloads: Int = 3
     override var downloadCompleteNotification: DownloadCompleteNotification = DownloadCompleteNotification.DIALOG
     override var playSound: Boolean = false
@@ -450,6 +457,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
         w.bool(F_SWING_FILE_CHOOSER, swingFileChooser)
         w.int(F_UI_SCALE, uiScale)
         w.bool(F_THEME_MIGRATED, themeMigrated)
+        w.string(F_NOTIFIED_UPDATE_VERSION, notifiedUpdateVersion)
         w.raw(unknownFields)
     }
 
@@ -519,6 +527,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
                 F_SWING_FILE_CHOOSER -> swingFileChooser = r.bool()
                 F_UI_SCALE -> uiScale = r.int().takeIf { it in UI_SCALES } ?: 100
                 F_THEME_MIGRATED -> themeMigrated = r.bool()
+                F_NOTIFIED_UPDATE_VERSION -> notifiedUpdateVersion = r.string()
                 else -> unknown.raw(r.rawField())
             }
         }

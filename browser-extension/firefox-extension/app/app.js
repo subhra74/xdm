@@ -6,6 +6,31 @@ const MAX_BATCH_ITEMS = 5000;
 /** Opened once, on first install (not on updates): the next steps after adding the extension. */
 const WELCOME_URL = "https://xtremedownloadmanager.com/extension/welcome/?utm_source=extension";
 
+/** Oldest XDM this extension is meant for; older ones get a warning in the popup. */
+const MIN_XDM_VERSION = "9.0.9";
+/** Where the popup's warning sends the user for a newer XDM. */
+const XDM_DOWNLOAD_URL = "https://xtremedownloadmanager.com/download/?utm_source=extension";
+
+/**
+ * Whether [version] (XDM's `appVersion`) is older than MIN_XDM_VERSION. XDM only sends it since
+ * 9.0.9, so a missing one is older. Compares the dotted numbers; a `-suffix` is ignored.
+ */
+function isOutdatedXdm(version) {
+    if (!version) {
+        return true;
+    }
+    const parts = v => v.replace(/^v/i, "").split("-")[0].split(".").map(n => parseInt(n, 10) || 0);
+    const a = parts(version);
+    const b = parts(MIN_XDM_VERSION);
+    for (let i = 0; i < Math.max(a.length, b.length); i++) {
+        const d = (a[i] || 0) - (b[i] || 0);
+        if (d !== 0) {
+            return d < 0;
+        }
+    }
+    return false;
+}
+
 class App {
 
     constructor() {
@@ -16,6 +41,8 @@ class App {
         this.requestWatcher = new RequestWatcher(this.onRequestDataReceived.bind(this), this.onDownloadCandidate.bind(this));
         this.userDisabled = false;
         this.appEnabled = false;
+        // XDM's version from its last reply; empty from an XDM older than 9.0.9.
+        this.xdmVersion = "";
         this.onTabUpdateCallback = this.onTabUpdate.bind(this);
         this.activeTabId = -1;
         // Tabs given a badge of their own (updateBadges), so they can be cleared once their videos are gone.
@@ -38,6 +65,7 @@ class App {
         this.logger.log("message from XDM");
         this.logger.log(msg);
         this.appEnabled = msg.enabled === true;
+        this.xdmVersion = typeof msg.appVersion === "string" ? msg.appVersion : "";
         this.fileExts = msg.fileExts || [];
         this.blockedHosts = msg.blockedHosts || [];
         this.videoList = msg.videoList || [];
@@ -378,6 +406,9 @@ class App {
                     sendResponse({
                         enabled: this.isMonitoringEnabled(),
                         connected: this.connector.isConnected() === true,
+                        outdated: this.connector.isConnected() === true && isOutdatedXdm(this.xdmVersion),
+                        xdmVersion: this.xdmVersion,
+                        updateUrl: XDM_DOWNLOAD_URL,
                         list: this.videosForTab(tabId)
                     });
                 });

@@ -77,6 +77,17 @@ class VideoPopup {
         }
         document.getElementById("chk").checked = response.enabled === true;
 
+        // Connected to an XDM older than the extension expects: suggest updating it.
+        if (response.outdated) {
+            if (response.xdmVersion) {
+                document.getElementById("outdatedVersion").textContent = "XDM " + response.xdmVersion;
+            }
+            if (response.updateUrl) {
+                document.getElementById("outdatedLink").href = response.updateUrl;
+            }
+            document.getElementById("outdated").hidden = false;
+        }
+
         // YouTube (blocked-sites.js): nothing is captured there, so explain that instead of
         // inviting the user to play a video, and offer no bulk picker.
         if (response.blockedSite) {

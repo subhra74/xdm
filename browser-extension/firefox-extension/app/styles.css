@@ -430,6 +430,15 @@ body {
     opacity: 0.9;
 }
 
+/* Popup: XDM is older than the extension expects. */
+.update-banner {
+    padding: 10px 12px 0;
+}
+
+.update-banner[hidden] {
+    display: none;
+}
+
 /* XDM not running is a state to act on, not a failure - amber, not red. */
 .notice.warn {
     border-left-color: var(--warn-border);

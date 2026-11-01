@@ -137,7 +137,7 @@ class AppInstance : IAppInstance {
             val image = logoImage(256)
             // Closing the last window (the main one to the tray included): XDM's working set can go back to Windows.
             WorkingSetTrim.install()
-            appWindow = AppWindow(image)
+            appWindow = AppWindow(image, startHidden = minimized)
             val hasTray = createTray(image)
             // Hidden even without a tray icon (GNOME without the AppIndicator extension, the Wayland
             // toolkit): the browser extension still works, and launching XDM again hands over to this
