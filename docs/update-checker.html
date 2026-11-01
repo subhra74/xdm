@@ -2,7 +2,7 @@
 
 <head>
     <script>
-        var RELEASE_URL="https://github.com/subhra74/xdm";
+        var RELEASE_URL="https://xtremedownloadmanager.com/download/?utm_source=update-checker";
         var currentVersion = undefined
         var rx = /\?v=(\d+\.\d+\.\d+)/;
         var str = window.location.search;
@@ -59,7 +59,8 @@
             if(!hasNewVersion){
                 document.getElementById("ver").innerHTML = "App is up to date";
             }else{
-                document.getElementById("ver").innerHTML = "A newer version is available, download it <a href='" + RELEASE_URL + "'>here</a>";;
+                document.getElementById("ver").innerHTML = "A newer version is available, download it <a href='" + RELEASE_URL + "'>here</a>";
+                window.location.replace(RELEASE_URL);
             }
         }
 
