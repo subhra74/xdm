@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
-Name=Xtreme Download Manager
+Name=Xtreme Download Manager - XDM
 GenericName=Download Manager
 Comment=Download accelerator and video downloader
 Exec=/opt/xdm-app/bin/xdm-app %U

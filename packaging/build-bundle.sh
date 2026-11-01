@@ -108,7 +108,7 @@ JAVA_OPTIONS=(
 
 # The image, its one launcher and the macOS bundle are all "xdm-app" (xdm-app.app): a stable,
 # space-free name, which is also what XDM registers with the OS (the login entry, the xdm-app://
-# handler). The name people see is set separately (MAC_DISPLAY_NAME below, the .desktop Name=).
+# handler). The name people see is set separately (FINDER_DISPLAY_NAME below, the .desktop Name=).
 APP_NAME="Xtreme Download Manager"
 LAUNCHER_NAME="xdm-app"
 VENDOR="Xtreme Download Manager"
@@ -201,10 +201,12 @@ if [[ "$OS" == "linux" && "$PKG_TYPE" != "app-image" ]]; then
   exit 1
 fi
 # Linux and macOS have one launcher, xdm-app, which also names the image (xdm-app.app on macOS) and the
-# package (PACKAGING.md 3.3, 4.1). The name people see comes from the menu entry's Name= on Linux and
-# from CFBundleName / CFBundleDisplayName ($MAC_DISPLAY_NAME) on macOS.
+# package (PACKAGING.md 3.3, 4.1). The name people see comes from the menu entry's Name= on Linux and,
+# on macOS, from CFBundleName ($MAC_DISPLAY_NAME: menu bar, Dock) and the localized CFBundleDisplayName
+# ($FINDER_DISPLAY_NAME: Finder, Launchpad, Spotlight).
 IMAGE_NAME="$LAUNCHER_NAME"
 MAC_DISPLAY_NAME="XDM"
+FINDER_DISPLAY_NAME="Xtreme Download Manager - XDM"
 # A macOS dmg is made here from the patched app image (hdiutil, below), not by jpackage, whose dmg
 # would carry an unpatched Info.plist (no xdm-app:// scheme, broken signature).
 JPACKAGE_TYPE="$PKG_TYPE"
@@ -631,8 +633,8 @@ case "$OS" in
     fi
     ARGS+=(--icon "$MAC_ICON")
     # CFBundleName: what the menu bar, Dock and notifications show, independent of the bundle's
-    # file name (xdm-app.app). Apple wants <= 15 characters there; CFBundleDisplayName is set to
-    # the same below.
+    # file name (xdm-app.app). Apple wants <= 15 characters there; Finder's longer name is the
+    # localized CFBundleDisplayName added below.
     ARGS+=(--mac-package-identifier com.xtremedownloadmanager.xdm
            --mac-package-name "$MAC_DISPLAY_NAME")
     ;;
@@ -653,9 +655,18 @@ if [[ "$OS" == "mac" && "$JPACKAGE_TYPE" == "app-image" ]]; then
   BUNDLE="$DEST_DIR/$IMAGE_NAME.app"
   if [[ -d "$BUNDLE" ]]; then
     PLIST="$BUNDLE/Contents/Info.plist"
+    # Finder, Launchpad and Spotlight list a bundle by its folder name unless it has a localized
+    # display name, and use that only while the plist's CFBundleDisplayName equals the folder name
+    # (xdm-app). So the plist keeps xdm-app and en.lproj carries the name people see.
+    echo ">> display name: $FINDER_DISPLAY_NAME"
+    plutil -replace CFBundleDisplayName -string "$IMAGE_NAME" "$PLIST" >/dev/null 2>&1 ||
+      plutil -insert CFBundleDisplayName -string "$IMAGE_NAME" "$PLIST"
+    plutil -replace LSHasLocalizedDisplayName -bool true "$PLIST" >/dev/null 2>&1 ||
+      plutil -insert LSHasLocalizedDisplayName -bool true "$PLIST"
+    mkdir -p "$BUNDLE/Contents/Resources/en.lproj"
+    printf '"CFBundleDisplayName" = "%s";\n"CFBundleName" = "%s";\n' \
+      "$FINDER_DISPLAY_NAME" "$MAC_DISPLAY_NAME" > "$BUNDLE/Contents/Resources/en.lproj/InfoPlist.strings"
     echo ">> declaring the $URL_SCHEME:// scheme in Info.plist"
-    plutil -replace CFBundleDisplayName -string "$MAC_DISPLAY_NAME" "$PLIST" >/dev/null 2>&1 ||
-      plutil -insert CFBundleDisplayName -string "$MAC_DISPLAY_NAME" "$PLIST"
     plutil -remove CFBundleURLTypes "$PLIST" >/dev/null 2>&1 || true
     plutil -insert CFBundleURLTypes -xml \
       "<array><dict>\
