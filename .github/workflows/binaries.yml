@@ -342,7 +342,7 @@ jobs:
             echo "[Code signing policy]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/blob/master/CODE_SIGNING_POLICY.md)"
           } > downloads.md
           cat downloads.md
-          flags=(--title "XDM ${tag#v}" --generate-notes --target "$GITHUB_SHA" --notes-file downloads.md)
+          flags=(--title "XDM ${tag#v}" --target "$GITHUB_SHA" --notes-file notes.md)
           [[ "$pre" == true ]] && flags+=(--prerelease) || flags+=(--latest)
           # A release drafted on the GitHub web page pushes its tag and already exists: attach the files and
           # put the table above the notes written there (replacing a table from an earlier run).
@@ -352,5 +352,9 @@ jobs:
             { cat downloads.md; echo; cat old.md; } > notes.md
             gh release edit "$tag" --notes-file notes.md
           else
+            # Only the "Full Changelog" compare link from GitHub's generated notes, not the PR list.
+            changelog="$(gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" \
+              -f tag_name="$tag" -f target_commitish="$GITHUB_SHA" -q .body | grep '^\*\*Full Changelog\*\*' || true)"
+            { cat downloads.md; [[ -z "$changelog" ]] || printf "\n## What's Changed\n\n%s\n" "$changelog"; } > notes.md
             gh release create "$tag" "${flags[@]}" "${files[@]}"
           fi
