@@ -48,9 +48,10 @@ MODULES="java.desktop,java.logging,jdk.crypto.ec,jdk.unsupported"
 # heap file while it is mapped, so paged-out heap comes back as zeros).
 # Windows also ships ZGC with its own archive and config, installed on Windows
 # 10 1803 or later (build-bundle.ps1, PACKAGING.md sect. 5.8).
-# G1 shrinks region by region after a compacting full GC: its own periodic one
-# (-XX:-G1PeriodicGCInvokesConcurrent) and the System.gc() calls XDM makes
-# (AppMain's 15 s thread, after downloads and dialogs).
+# G1 shrinks region by region after a compacting full GC: the System.gc() calls
+# XDM makes (GcScheduler: 15 s while downloading, 30 s with a window open, 2 min
+# otherwise; also after downloads and dialogs). No G1 periodic GC: it ran every
+# 15 s even when idle.
 #
 # JIT: C1 only (-XX:TieredStopAtLevel=1, added below per target). Every macOS
 # and Linux target ships Conscrypt's native library, so TLS and digests run in
@@ -65,9 +66,6 @@ JAVA_OPTIONS=(
   -XX:ParallelGCThreads=1
   -XX:ConcGCThreads=1
   -XX:G1ConcRefinementThreads=0
-  # a compacting full GC whenever 15 s pass without a GC; it is what shrinks the heap
-  -XX:G1PeriodicGCInterval=15000
-  -XX:-G1PeriodicGCInvokesConcurrent
   -XX:MinHeapFreeRatio=1
   -XX:MaxHeapFreeRatio=5
   -XX:-ShrinkHeapInSteps

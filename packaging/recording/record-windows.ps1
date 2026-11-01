@@ -196,7 +196,7 @@ if (-not $Server -and -not $MediaMade -and -not (Test-Path $Ffmpeg)) { Get-Ffmpe
 # ---- the launcher's flags (build-bundle.ps1): G1, common options, x64 is C1 only ----------------------------
 $JavaOptions = @(
   '-XX:+UseG1GC', '-XX:G1HeapRegionSize=1m', '-XX:ParallelGCThreads=1', '-XX:ConcGCThreads=1',
-  '-XX:G1ConcRefinementThreads=0', '-XX:G1PeriodicGCInterval=15000', '-XX:-G1PeriodicGCInvokesConcurrent',
+  '-XX:G1ConcRefinementThreads=0',
   '-XX:MinHeapFreeRatio=1', '-XX:MaxHeapFreeRatio=5', '-XX:-ShrinkHeapInSteps', '-XX:GCTimeRatio=4',
   '-XX:MarkStackSize=65536', '-XX:+UnlockExperimentalVMOptions', '-XX:G1NewSizePercent=1',
   '-XX:G1MaxNewSizePercent=10', '-XX:G1ReservePercent=1', '-XX:G1HeapWastePercent=1',

@@ -10,6 +10,7 @@ import xdm.app.ui.components.WaylandComboBoxUI
 import xdm.app.utils.AppDirs
 import xdm.app.utils.SystemTheme
 import xdm.app.utils.ConscryptTls
+import xdm.app.utils.GcScheduler
 import xdm.app.utils.WaylandToolkit
 import xdm.app.utils.detectOS
 import xdm.app.utils.linux.DesktopFontSettings
@@ -73,20 +74,6 @@ object AppMain {
         val appDB = AppDB(configDir)
         val taskDB = TaskInfoDB(configDir)
 
-        if (!args.contains("--no-gc")) {
-            Logger.info("Registering periodic GC")
-            Thread {
-                while (true) {
-                    Thread.sleep(15000)
-                    //Logger.info("XDM", "Triggering GC")
-                    System.gc()
-                }
-            }.apply {
-                name = "periodic-gc"
-                isDaemon = true // must never keep the JVM alive on its own
-            }.start()
-        }
-
         AppContext.apply {
             db = appDB
             app = AppInstance()
@@ -100,6 +87,7 @@ object AppMain {
         }.init(args, configDir, tempDir)
 
         AppContext.scheduler.start()
+        if (!args.contains("--no-gc")) GcScheduler.start()
     }
 
     /** Whether [theme] means dark; [systemIsDark] is only asked for "system". */

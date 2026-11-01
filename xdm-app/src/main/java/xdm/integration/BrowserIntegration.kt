@@ -13,6 +13,7 @@ import xdm.app.BatchRequest
 import xdm.app.BatchRequestItem
 import xdm.app.previewUrl
 import xdm.app.update.UpdateChecker
+import xdm.app.utils.GcScheduler
 import xdm.app.utils.captureDestination
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.util.*
@@ -209,6 +210,7 @@ object BrowserIntegration {
         // with the response instead of parking in the keep-alive loop. The poll re-connects each time.
         // Requests refused by RequestFilter never get here: the server answers them before their body.
         context.keepAlive = false
+        GcScheduler.noteIntegrationRequest()
         if (context.requestPath == "/poll") {
             onPollMessage(context)
             return

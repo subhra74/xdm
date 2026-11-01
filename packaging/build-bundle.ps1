@@ -82,9 +82,6 @@ $G1Options = @(
   '-XX:ParallelGCThreads=1'
   '-XX:ConcGCThreads=1'
   '-XX:G1ConcRefinementThreads=0'
-  # a compacting full GC whenever 15 s pass without a GC; it is what shrinks the heap
-  '-XX:G1PeriodicGCInterval=15000'
-  '-XX:-G1PeriodicGCInvokesConcurrent'
   '-XX:MinHeapFreeRatio=1'
   '-XX:MaxHeapFreeRatio=5'
   '-XX:-ShrinkHeapInSteps'
@@ -101,10 +98,9 @@ $G1Options = @(
   '-XX:G1ExpandByPercentOfAvailable=2'
 )
 $ZgcOptions = @(
-  # collector: generational ZGC with one worker each, a cycle at least every 5 s and free memory returned
-  # after 1 s; no proactive cycles (XDM's own System.gc() calls do the settling)
+  # collector: generational ZGC with one worker each and free memory returned after 1 s; no timer or
+  # proactive cycles (XDM's own System.gc() calls do the settling)
   '-XX:+UseZGC'
-  '-XX:ZCollectionInterval=5'
   '-XX:ZUncommitDelay=1'
   '-XX:-ZProactive'
   '-XX:ConcGCThreads=1'
