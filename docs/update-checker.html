@@ -25,7 +25,7 @@
 
         function checkVersion(obj) {
             console.log(obj.tag_name+" "+currentVersion);
-            var arr1 = obj.tag_name.split(/\./)
+            var arr1 = obj.tag_name.replace(/^v/i, "").split(/\./)
             var arr2 = currentVersion.split(/\./)
 
             console.log(JSON.stringify(arr1)+" "+JSON.stringify(arr2));
