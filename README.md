@@ -33,13 +33,15 @@
 <p align="center">
   <!-- <a href="https://www.youtube.com/watch?v=qrUUSFh3Xfg"><img src="docs/assets/xdm-quick-start-thumbnail.jpg" width="280" alt="Watch the XDM quick start guide on YouTube"/></a>
   &nbsp; -->
+  <a href="https://www.youtube.com/watch?v=H_wdSvOBqKA&t=19s"><img src="https://img.youtube.com/vi/H_wdSvOBqKA/maxresdefault.jpg" width="280" alt="Watch the XDM setup guide on YouTube"/></a>
+  &nbsp;
   <a href="https://www.youtube.com/watch?v=WS0WH1BZ9xo"><img src="docs/assets/xdm-showcase-thumbnail.jpg" width="280" alt="Watch the top 3 XDM features on YouTube"/></a>
   <!-- &nbsp;
   <a href="https://www.youtube.com/watch?v=IJIxP7imtZ8"><img src="docs/assets/xdm-bulk-download-thumbnail.jpg" width="280" alt="Watch bulk social media video downloads with XDM on YouTube"/></a> -->
   <br/>
   <sub>
   <!-- <b>Quick start guide</b> &nbsp;·&nbsp;  -->
-  <b>Top 3 features</b> 
+  <b>Setup guide</b> &nbsp;&nbsp;·&nbsp;&nbsp; <b>Top 3 features</b> 
   <!-- &nbsp;·&nbsp;  -->
   <!-- <b>Bulk social media downloads</b> -->
   </sub>
