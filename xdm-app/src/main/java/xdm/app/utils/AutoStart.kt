@@ -31,6 +31,7 @@ import java.io.File
 object AutoStart {
     private const val LABEL = "app.xdm.autostart"
     private const val APP_NAME = "Xtreme Download Manager"
+    private const val ICON_PATH = "/opt/xdm-app/lib/xdm-app.png"
 
     /** Relative to HKCU - [Win32Registry] works there and nowhere else. */
     private const val WIN_RUN_KEY = "Software\\Microsoft\\Windows\\CurrentVersion\\Run"
@@ -173,6 +174,7 @@ $args
 Type=Application
 Name=$APP_NAME
 Exec=${AppLauncher.desktopExec(cmd)}
+Icon=$ICON_PATH
 Terminal=false
 X-GNOME-Autostart-enabled=true
 """
