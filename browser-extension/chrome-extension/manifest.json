@@ -9,7 +9,7 @@
         }
     },
     "manifest_version": 3,
-    "version": "3.4",
+    "version": "3.5",
     "description": "Send downloads, videos and page links from Chrome to Xtreme Download Manager (XDM). Works with XDM 9.0 and higher.",
     "homepage_url": "https://github.com/subhra74/xdm",
     "minimum_chrome_version": "103",

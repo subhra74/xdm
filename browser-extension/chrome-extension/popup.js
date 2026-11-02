@@ -86,6 +86,8 @@ class VideoPopup {
                 document.getElementById("outdatedLink").href = response.updateUrl;
             }
             document.getElementById("outdated").hidden = false;
+            // An older XDM has no previews to offer.
+            document.getElementById("previewsToggle").hidden = true;
         }
 
         // YouTube (blocked-sites.js): nothing is captured there, so explain that instead of

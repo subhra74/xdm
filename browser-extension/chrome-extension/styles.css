@@ -463,6 +463,10 @@ body {
     display: none;
 }
 
+.toggle[hidden] {
+    display: none;
+}
+
 /* XDM not running is a state to act on, not a failure - amber, not red. */
 .notice.warn {
     border-left-color: var(--warn-border);

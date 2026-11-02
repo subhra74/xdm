@@ -302,7 +302,9 @@ class App {
                 counts.set(vid.tabId + "", (counts.get(vid.tabId + "") || 0) + 1);
             }
         }
-        chrome.browserAction.setBadgeText({ text: untabbed > 0 ? untabbed + "" : "" });
+        // With no videos to count, "!" says the connected XDM is too old (the popup explains).
+        const outdated = this.connector.isConnected() === true && isOutdatedXdm(this.xdmVersion);
+        chrome.browserAction.setBadgeText({ text: untabbed > 0 ? untabbed + "" : (outdated ? "!" : "") });
         this.badgedTabs.forEach(tabId => {
             if (!counts.has(tabId)) {
                 this.setTabBadge(tabId, null);

@@ -9,7 +9,7 @@
         }
     },
     "manifest_version": 2,
-    "version": "1.0",
+    "version": "1.1",
     "description": "Send downloads, videos and page links from Firefox to Xtreme Download Manager (XDM). Works with XDM 9.0 and higher.",
     "homepage_url": "https://github.com/subhra74/xdm",
     "permissions": [
