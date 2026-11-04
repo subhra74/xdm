@@ -61,7 +61,7 @@ Wondering why you'd still want a download manager on a fast connection? Read
 
 > [!CAUTION]
 > **Download XDM only from official sources.** Get the official installers from the
-> [download page](https://xtremedownloadmanager.com/#downloads) on xtremedownloadmanager.com. Copies offered by other websites,
+> [download page](https://xtremedownloadmanager.com/#downloads) on xtremedownloadmanager.com or GitHub releases. Copies offered by other websites,
 > mirrors or "download portals" may be outdated, bundled with adware, or tampered with.
 
 > [!WARNING]
