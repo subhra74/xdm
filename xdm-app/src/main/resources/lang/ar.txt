@@ -47,7 +47,6 @@ SETTINGS_FOLDER=مجلد التنزيل
 SETTINGS_FOLDER_CHANGE=تغيير
 SETTINGS_MONITORING=المتصفح
 SETTINGS_NETWORK=الشبكة
-
 DESC_FILETYPES=أنواع الملفات
 DESC_VIDEOTYPES=أنواع الفيديو
 DESC_SITEEXCEPTIONS=المواقع المحظورة
@@ -58,7 +57,6 @@ DESC_SAVE_Q=حفظ
 
 
 MSG_MAX_DOWNLOAD=التنزيلات المتزامنة
-
 MSG_HALT=إيقاف التشغيل بعد انتهاء التنزيلات
 MSG_AWAKE=منع السبات أو النوم أثناء التنزيلات
 MSG_SPEED_LIMIT=تحديد سرعة التنزيل
@@ -98,7 +96,6 @@ LBL_TEMP_FOLDER=المجلد المؤقت
 LBL_START_AUTO=بدء التنزيلات فوراً
 LBL_GET_TIMESTAMP=استخدام الطابع الزمني للخادم
 LBL_SHOW_PROGRESS=عرض التقدم
-
 MENU_HELP_SUP=المساعدة والدعم
 MENU_SCHEDULE=جدولة
 TITLE_SCHEDULER=المجدول

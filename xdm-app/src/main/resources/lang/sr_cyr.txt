@@ -47,7 +47,6 @@ SETTINGS_FOLDER=Фасцикла за преузимања
 SETTINGS_FOLDER_CHANGE=Измени
 SETTINGS_MONITORING=Прегледач
 SETTINGS_NETWORK=Мрежа
-
 DESC_FILETYPES=Типови датотека
 DESC_VIDEOTYPES=Типови видеа
 DESC_SITEEXCEPTIONS=Блокирани сајтови
@@ -58,7 +57,6 @@ DESC_SAVE_Q=Сачувај
 
 
 MSG_MAX_DOWNLOAD=Истовремена преузимања
-
 MSG_HALT=Искључи рачунар кад се преузимања заврше
 MSG_AWAKE=Не дозволи спавање рачунара
 MSG_SPEED_LIMIT=Ограничи брзину преузимања
@@ -98,7 +96,6 @@ LBL_TEMP_FOLDER=Привремена фасцикла
 LBL_START_AUTO=Одмах покрени преузимања
 LBL_GET_TIMESTAMP=Користи време датотеке са сервера
 LBL_SHOW_PROGRESS=Прикажи напредак
-
 MENU_HELP_SUP=Помоћ и подршка
 MENU_SCHEDULE=Закажи
 TITLE_SCHEDULER=Планер
