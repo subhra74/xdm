@@ -1,5 +1,4 @@
 LANGUAGE_NAME=German(Deutsch)
-
 CAT_ALL=Alle Downloads
 CAT_DOCUMENTS=Dokumente
 CAT_COMPRESSED=Komprimiert
@@ -48,7 +47,6 @@ SETTINGS_FOLDER=Download-Ordner
 SETTINGS_FOLDER_CHANGE=Ändern
 SETTINGS_MONITORING=Browser
 SETTINGS_NETWORK=Netzwerk
-
 DESC_FILETYPES=Dateitypen
 DESC_VIDEOTYPES=Videotypen
 DESC_SITEEXCEPTIONS=Gesperrte Websites
@@ -59,7 +57,6 @@ DESC_SAVE_Q=Speichern
 
 
 MSG_MAX_DOWNLOAD=Gleichzeitige Downloads
-
 MSG_HALT=Nach den Downloads herunterfahren
 MSG_AWAKE=Computer wach halten
 MSG_SPEED_LIMIT=Download-Geschwindigkeit begrenzen
@@ -99,7 +96,6 @@ LBL_TEMP_FOLDER=Temporärer Ordner
 LBL_START_AUTO=Downloads sofort starten
 LBL_GET_TIMESTAMP=Zeitstempel des Servers verwenden
 LBL_SHOW_PROGRESS=Fortschritt anzeigen
-
 MENU_HELP_SUP=Hilfe und Support
 MENU_SCHEDULE=Zeitplan
 TITLE_SCHEDULER=Zeitplaner

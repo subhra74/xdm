@@ -47,7 +47,6 @@ SETTINGS_FOLDER=İndirme klasörü
 SETTINGS_FOLDER_CHANGE=Değiştir
 SETTINGS_MONITORING=Tarayıcı
 SETTINGS_NETWORK=Ağ
-
 DESC_FILETYPES=Dosya türleri
 DESC_VIDEOTYPES=Video türleri
 DESC_SITEEXCEPTIONS=Engellenen siteler
@@ -58,7 +57,6 @@ DESC_SAVE_Q=Kaydet
 
 
 MSG_MAX_DOWNLOAD=Eş zamanlı indirme
-
 MSG_HALT=İndirmeler bitince bilgisayarı kapat
 MSG_AWAKE=Bilgisayarı uyanık tut
 MSG_SPEED_LIMIT=İndirme hızını sınırla
@@ -98,7 +96,6 @@ LBL_TEMP_FOLDER=Geçici klasör
 LBL_START_AUTO=İndirmeyi hemen başlat
 LBL_GET_TIMESTAMP=Sunucunun dosya zaman damgasını kullan
 LBL_SHOW_PROGRESS=İlerlemeyi göster
-
 MENU_HELP_SUP=Yardım ve destek
 MENU_SCHEDULE=Zamanla
 TITLE_SCHEDULER=Zamanlayıcı

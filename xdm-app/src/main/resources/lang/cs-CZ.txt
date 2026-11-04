@@ -1,5 +1,4 @@
 LANGUAGE_NAME=Czech
-
 CAT_ALL=Všechna stahování
 CAT_DOCUMENTS=Dokumenty
 CAT_COMPRESSED=Archivy
@@ -48,7 +47,6 @@ SETTINGS_FOLDER=Složka pro stahování
 SETTINGS_FOLDER_CHANGE=Změnit
 SETTINGS_MONITORING=Prohlížeč
 SETTINGS_NETWORK=Síť
-
 DESC_FILETYPES=Typy souborů
 DESC_VIDEOTYPES=Typy videí
 DESC_SITEEXCEPTIONS=Blokované weby
@@ -59,7 +57,6 @@ DESC_SAVE_Q=Uložit
 
 
 MSG_MAX_DOWNLOAD=Souběžná stahování
-
 MSG_HALT=Vypnout počítač po dokončení stahování
 MSG_AWAKE=Udržovat počítač vzhůru
 MSG_SPEED_LIMIT=Omezit rychlost stahování
@@ -99,7 +96,6 @@ LBL_TEMP_FOLDER=Dočasná složka
 LBL_START_AUTO=Spouštět stahování ihned
 LBL_GET_TIMESTAMP=Použít časové razítko souboru ze serveru
 LBL_SHOW_PROGRESS=Zobrazit průběh
-
 MENU_HELP_SUP=Nápověda a podpora
 MENU_SCHEDULE=Naplánovat
 TITLE_SCHEDULER=Plánovač

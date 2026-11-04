@@ -1,0 +1,12 @@
+MENU_PAUSE=විරාමය
+MENU_UPDATE=යාවත්කාල බලන්න
+SORT_NAME_ASC=නම [අ-ෆ]
+SORT_NAME_DESC=නම [ෆ-අ]
+STAT_PAUSED=විරාමයි
+MENU_ABOUT=XDM ගැන...
+STAT_FAILED=අසමත් විය
+MENU_HELP_SUP=උදව් සහ සහාය
+MENU_PROPERTIES=ගුණාංග
+LANGUAGE_NAME=සිංහල
+MENU_EXIT=පිටවන්න
+MSG_FREE_SPACE=නිදහස් ඉඩ

@@ -47,7 +47,6 @@ SETTINGS_FOLDER=Folder unduhan
 SETTINGS_FOLDER_CHANGE=Ubah
 SETTINGS_MONITORING=Browser
 SETTINGS_NETWORK=Jaringan
-
 DESC_FILETYPES=Jenis file
 DESC_VIDEOTYPES=Jenis video
 DESC_SITEEXCEPTIONS=Situs yang diblokir
@@ -58,7 +57,6 @@ DESC_SAVE_Q=Simpan
 
 
 MSG_MAX_DOWNLOAD=Unduhan bersamaan
-
 MSG_HALT=Matikan komputer setelah unduhan selesai
 MSG_AWAKE=Jaga komputer tetap aktif
 MSG_SPEED_LIMIT=Batasi kecepatan unduhan
@@ -98,7 +96,6 @@ LBL_TEMP_FOLDER=Folder sementara
 LBL_START_AUTO=Mulai unduhan segera
 LBL_GET_TIMESTAMP=Gunakan stempel waktu file dari server
 LBL_SHOW_PROGRESS=Tampilkan progres
-
 MENU_HELP_SUP=Bantuan dan dukungan
 MENU_SCHEDULE=Jadwalkan
 TITLE_SCHEDULER=Penjadwal

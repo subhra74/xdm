@@ -1,5 +1,4 @@
 LANGUAGE_NAME=Romanian (ROMÂNĂ)
-
 CAT_ALL=Toate descărcările
 CAT_DOCUMENTS=Documente
 CAT_COMPRESSED=Comprimate
@@ -48,7 +47,6 @@ SETTINGS_FOLDER=Dosar de descărcare
 SETTINGS_FOLDER_CHANGE=Schimbă
 SETTINGS_MONITORING=Browser
 SETTINGS_NETWORK=Rețea
-
 DESC_FILETYPES=Tipuri de fișiere
 DESC_VIDEOTYPES=Tipuri video
 DESC_SITEEXCEPTIONS=Site-uri blocate
@@ -59,7 +57,6 @@ DESC_SAVE_Q=Salvează
 
 
 MSG_MAX_DOWNLOAD=Descărcări simultane
-
 MSG_HALT=Oprește computerul după finalizarea descărcărilor
 MSG_AWAKE=Menține computerul activ
 MSG_SPEED_LIMIT=Limitează viteza de descărcare
@@ -99,7 +96,6 @@ LBL_TEMP_FOLDER=Dosar temporar
 LBL_START_AUTO=Pornește descărcările imediat
 LBL_GET_TIMESTAMP=Folosește data fișierului de pe server
 LBL_SHOW_PROGRESS=Afișează progresul
-
 MENU_HELP_SUP=Ajutor și asistență
 MENU_SCHEDULE=Programează
 TITLE_SCHEDULER=Planificator

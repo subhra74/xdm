@@ -1,5 +1,4 @@
 LANGUAGE_NAME=Ukrainian(Українська)
-
 CAT_ALL=Усі завантаження
 CAT_DOCUMENTS=Документи
 CAT_COMPRESSED=Стиснуті
@@ -48,7 +47,6 @@ SETTINGS_FOLDER=Тека завантажень
 SETTINGS_FOLDER_CHANGE=Змінити
 SETTINGS_MONITORING=Браузер
 SETTINGS_NETWORK=Мережа
-
 DESC_FILETYPES=Типи файлів
 DESC_VIDEOTYPES=Типи відео
 DESC_SITEEXCEPTIONS=Заблоковані сайти
@@ -59,7 +57,6 @@ DESC_SAVE_Q=Зберегти
 
 
 MSG_MAX_DOWNLOAD=Одночасних завантажень
-
 MSG_HALT=Вимкнути після завершення завантажень
 MSG_AWAKE=Не давати комп'ютеру засинати
 MSG_SPEED_LIMIT=Обмежити швидкість завантаження
@@ -99,7 +96,6 @@ LBL_TEMP_FOLDER=Тимчасова тека
 LBL_START_AUTO=Розпочинати завантаження одразу
 LBL_GET_TIMESTAMP=Використовувати час файлу із сервера
 LBL_SHOW_PROGRESS=Показувати хід
-
 MENU_HELP_SUP=Довідка та підтримка
 MENU_SCHEDULE=Розклад
 TITLE_SCHEDULER=Планувальник

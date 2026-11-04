@@ -47,7 +47,6 @@ SETTINGS_FOLDER=Папка загрузки
 SETTINGS_FOLDER_CHANGE=Изменить
 SETTINGS_MONITORING=Браузер
 SETTINGS_NETWORK=Сеть
-
 DESC_FILETYPES=Типы файлов
 DESC_VIDEOTYPES=Типы видео
 DESC_SITEEXCEPTIONS=Заблокированные сайты
@@ -58,7 +57,6 @@ DESC_SAVE_Q=Сохранить
 
 
 MSG_MAX_DOWNLOAD=Одновременных загрузок
-
 MSG_HALT=Выключить после завершения загрузок
 MSG_AWAKE=Не давать компьютеру засыпать
 MSG_SPEED_LIMIT=Ограничить скорость загрузки
@@ -98,7 +96,6 @@ LBL_TEMP_FOLDER=Временная папка
 LBL_START_AUTO=Начинать загрузки сразу
 LBL_GET_TIMESTAMP=Использовать время файла с сервера
 LBL_SHOW_PROGRESS=Показать прогресс
-
 MENU_HELP_SUP=Помощь и поддержка
 MENU_SCHEDULE=Расписание
 TITLE_SCHEDULER=Планировщик

@@ -1,5 +1,4 @@
 LANGUAGE_NAME=French(Français)
-
 CAT_ALL=Tous les téléchargements
 CAT_DOCUMENTS=Documents
 CAT_COMPRESSED=Compressés
@@ -48,7 +47,6 @@ SETTINGS_FOLDER=Dossier de téléchargement
 SETTINGS_FOLDER_CHANGE=Modifier
 SETTINGS_MONITORING=Navigateur
 SETTINGS_NETWORK=Réseau
-
 DESC_FILETYPES=Types de fichiers
 DESC_VIDEOTYPES=Types de vidéos
 DESC_SITEEXCEPTIONS=Sites bloqués
@@ -59,7 +57,6 @@ DESC_SAVE_Q=Enregistrer
 
 
 MSG_MAX_DOWNLOAD=Nombre de téléchargements simultanés
-
 MSG_HALT=Éteindre à la fin des téléchargements
 MSG_AWAKE=Garder l'ordinateur éveillé
 MSG_SPEED_LIMIT=Limiter la vitesse de téléchargement
@@ -99,7 +96,6 @@ LBL_TEMP_FOLDER=Dossier temporaire
 LBL_START_AUTO=Démarrer les téléchargements immédiatement
 LBL_GET_TIMESTAMP=Utiliser la date du fichier du serveur
 LBL_SHOW_PROGRESS=Afficher la progression
-
 MENU_HELP_SUP=Aide et support
 MENU_SCHEDULE=Planifier
 TITLE_SCHEDULER=Planificateur

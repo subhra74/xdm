@@ -1,5 +1,4 @@
 LANGUAGE_NAME=Polish
-
 CAT_ALL=Wszystkie pobrania
 CAT_DOCUMENTS=Dokumenty
 CAT_COMPRESSED=Archiwa
@@ -50,7 +49,6 @@ SETTINGS_FOLDER=Folder pobierania
 SETTINGS_FOLDER_CHANGE=Zmień
 SETTINGS_MONITORING=Przeglądarka
 SETTINGS_NETWORK=Sieć
-
 DESC_FILETYPES=Typy plików
 DESC_VIDEOTYPES=Typy wideo
 DESC_SITEEXCEPTIONS=Zablokowane witryny
@@ -61,7 +59,6 @@ DESC_SAVE_Q=Zapisz
 
 
 MSG_MAX_DOWNLOAD=Jednoczesne pobrania
-
 MSG_HALT=Wyłącz komputer po zakończeniu pobierań
 MSG_AWAKE=Nie usypiaj komputera
 MSG_SPEED_LIMIT=Ogranicz prędkość pobierania
@@ -101,7 +98,6 @@ LBL_TEMP_FOLDER=Folder tymczasowy
 LBL_START_AUTO=Rozpoczynaj pobieranie od razu
 LBL_GET_TIMESTAMP=Użyj daty pliku z serwera
 LBL_SHOW_PROGRESS=Pokaż postęp
-
 MENU_HELP_SUP=Pomoc i wsparcie
 MENU_SCHEDULE=Harmonogram
 TITLE_SCHEDULER=Harmonogram pobierania

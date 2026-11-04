@@ -47,7 +47,6 @@ SETTINGS_FOLDER=Letöltési mappa
 SETTINGS_FOLDER_CHANGE=Módosítás
 SETTINGS_MONITORING=Böngésző
 SETTINGS_NETWORK=Hálózat
-
 DESC_FILETYPES=Fájltípusok
 DESC_VIDEOTYPES=Videótípusok
 DESC_SITEEXCEPTIONS=Letiltott webhelyek
@@ -58,7 +57,6 @@ DESC_SAVE_Q=Mentés
 
 
 MSG_MAX_DOWNLOAD=Egyidejű letöltések
-
 MSG_HALT=Leállítás a letöltések végén
 MSG_AWAKE=A számítógép ébren tartása
 MSG_SPEED_LIMIT=Letöltési sebesség korlátozása
@@ -98,7 +96,6 @@ LBL_TEMP_FOLDER=Ideiglenes mappa
 LBL_START_AUTO=Letöltések azonnali indítása
 LBL_GET_TIMESTAMP=A kiszolgáló fájlidejének használata
 LBL_SHOW_PROGRESS=Haladás megjelenítése
-
 MENU_HELP_SUP=Súgó és támogatás
 MENU_SCHEDULE=Ütemezés
 TITLE_SCHEDULER=Ütemező

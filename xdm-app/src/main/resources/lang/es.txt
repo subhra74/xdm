@@ -1,5 +1,4 @@
 LANGUAGE_NAME=Spanish (Español)
-
 CAT_ALL=Todas las descargas
 CAT_DOCUMENTS=Documentos
 CAT_COMPRESSED=Comprimidos
@@ -48,7 +47,6 @@ SETTINGS_FOLDER=Carpeta de descargas
 SETTINGS_FOLDER_CHANGE=Cambiar
 SETTINGS_MONITORING=Navegador
 SETTINGS_NETWORK=Red
-
 DESC_FILETYPES=Tipos de archivo
 DESC_VIDEOTYPES=Tipos de vídeo
 DESC_SITEEXCEPTIONS=Sitios bloqueados
@@ -56,7 +54,6 @@ DESC_DEF=Restablecer valores
 
 
 DESC_SAVE_Q=Guardar
-
 MSG_MAX_DOWNLOAD=Descargas simultáneas
 
 
@@ -99,7 +96,6 @@ LBL_TEMP_FOLDER=Carpeta temporal
 LBL_START_AUTO=Iniciar descargas de inmediato
 LBL_GET_TIMESTAMP=Usar la fecha del archivo del servidor
 LBL_SHOW_PROGRESS=Mostrar progreso
-
 MENU_HELP_SUP=Ayuda y soporte
 MENU_SCHEDULE=Programar
 TITLE_SCHEDULER=Programador

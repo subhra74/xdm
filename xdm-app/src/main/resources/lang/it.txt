@@ -1,5 +1,4 @@
 LANGUAGE_NAME=Italian
-
 CAT_ALL=Tutti i download
 CAT_DOCUMENTS=Documenti
 CAT_COMPRESSED=Compressi
@@ -50,7 +49,6 @@ SETTINGS_FOLDER=Cartella download
 SETTINGS_FOLDER_CHANGE=Cambia
 SETTINGS_MONITORING=Browser
 SETTINGS_NETWORK=Rete
-
 DESC_FILETYPES=Tipi di file
 DESC_VIDEOTYPES=Tipi di video
 DESC_SITEEXCEPTIONS=Siti bloccati
@@ -61,7 +59,6 @@ DESC_SAVE_Q=Salva
 
 
 MSG_MAX_DOWNLOAD=Download simultanei
-
 MSG_HALT=Spegni al termine dei download
 MSG_AWAKE=Mantieni il computer attivo
 MSG_SPEED_LIMIT=Limita velocità di download
@@ -101,7 +98,6 @@ LBL_TEMP_FOLDER=Cartella temporanea
 LBL_START_AUTO=Avvia subito i download
 LBL_GET_TIMESTAMP=Usa data e ora del file dal server
 LBL_SHOW_PROGRESS=Mostra avanzamento
-
 MENU_HELP_SUP=Aiuto e supporto
 MENU_SCHEDULE=Pianifica
 TITLE_SCHEDULER=Pianificazione
