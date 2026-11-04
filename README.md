@@ -60,10 +60,9 @@ Wondering why you'd still want a download manager on a fast connection? Read
 > As of 2026 XDM is being rebuilt and is in **active development**.
 
 > [!CAUTION]
-> **Download XDM only from official sources.** The only official installers are the ones published on this
-> repository's [GitHub Releases](https://github.com/subhra74/xdm/releases) page (the
-> [download page](https://xtremedownloadmanager.com/#downloads) on our homepage links to the same files). Copies
-> offered by other websites, mirrors or "download portals" may be outdated, bundled with adware, or tampered with.
+> **Download XDM only from official sources.** Get the official installers from the
+> [download page](https://xtremedownloadmanager.com/#downloads) on xtremedownloadmanager.com. Copies offered by other websites,
+> mirrors or "download portals" may be outdated, bundled with adware, or tampered with.
 
 > [!WARNING]
 > **A note for contributors:** XDM is going through a major rewrite, and the code is being restructured often.
