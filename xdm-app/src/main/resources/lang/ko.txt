@@ -1,5 +1,4 @@
 LANGUAGE_NAME=Korea (한국어)
-
 MENU_HELP_SUP=도움말 및 지원
 MENU_BATCH_DOWNLOAD=일괄 다운로드
 MENU_EXIT=종료
@@ -73,7 +72,6 @@ ERR_DECRYPT=동영상을 복호화할 수 없습니다.
 ERR_OUTPUT_WRITE=파일을 저장할 수 없습니다.
 ERR_MUX=동영상 세그먼트들을 결합할 수 없습니다.
 ERR_HELP_LINK=더 알아보기
-
 TITLE_SETTINGS=설정
 SETTINGS_GENERAL=일반
 SHOW_DWN_PRG=진행 상황 창 표시
@@ -85,7 +83,6 @@ LBL_OVERWRITE_EXISTING=기존 파일 덮어쓰기
 LBL_TEMP_FOLDER=임시 폴더
 SETTINGS_FOLDER=다운로드 폴더
 MSG_MAX_DOWNLOAD=동시 다운로드
-
 SETTINGS_SEC_BEHAVIOR=동작
 SETTINGS_SEC_FOLDERS=기본 위치
 SETTINGS_SEC_APPEARANCE=외관
@@ -98,11 +95,9 @@ SETTINGS_SEC_SECURITY=보안
 SETTINGS_SEC_BROWSERS=지원되는 브라우저
 SETTINGS_SEC_FILETYPES=파일 형식
 SETTINGS_SEC_EXCEPTIONS=사이트 예외
-
 SETTINGS_FOLDER_CHANGE=변경
 SETTINGS_MONITORING=브라우저
 SETTINGS_NETWORK=네트워크
-
 DESC_FILETYPES=파일 형식
 DESC_VIDEOTYPES=동영상 형식
 DESC_SITEEXCEPTIONS=차단된 사이트
@@ -120,7 +115,7 @@ CTX_OPEN_FILE=파일 열기
 CTX_OPEN_FOLDER=폴더 열기
 CTX_COPY_URL=URL 복사
 ERR_MSG_FILE_NOT_FOUND=파일을 찾을 수 없습니다
-ERR_MSG_FILE_NOT_FOUND_MSG=파일이 이동되었거나 이름이 바뀌었거나 삭제되었습니다.
+ERR_MSG_FILE_NOT_FOUND_MSG=파일이 이동되었거나 이름이 바뀌었거나 삭제되었습니다
 CD_TITLE=다운로드 완료
 MSG_DONT_SHOW_AGAIN=다시 표시하지 않음
 CD_VERIFY_CHECKSUM=체크섬 확인
@@ -174,10 +169,10 @@ LBL_CLOSE=닫기
 BTN_BROWSE=찾아보기
 MSG_RESTORE=창 복원
 MSG_LANG1=언어
-MSG_LANG2=변경 사항은 다음에 XDM을 시작할 때 적용됩니다.
-MSG_LANG_SUB=XDM의 메뉴, 대화 상자 및 레이블에 표시되는 언어입니다.
+MSG_LANG2=변경 사항은 다음에 XDM을 시작할 때 적용됩니다
+MSG_LANG_SUB=XDM 언어의 메뉴, 대화 상자 및 레이블은 다음과 같이 표시됩니다
 LANG_FOLDER=번역 파일
-LANG_FOLDER_SUB=이 폴더에 있는 파일은 내장된 번역 대신 사용됩니다. 변경 사항을 확인하려면 XDM을 다시 시작하세요.
+LANG_FOLDER_SUB=이 폴더에 있는 파일은 기본 번역을 대신하여 사용됩니다. 다시 확인하려면 XDM을 다시 시작하세요
 LANG_FOLDER_OPEN=폴더 열기
 MSG_THEME=테마
 MSG_RESTART_NEEDED=XDM을 다시 시작해야 적용됩니다.
@@ -185,7 +180,7 @@ THEME_DARK=어두운
 THEME_LIGHT=밝은
 THEME_SYSTEM=시스템 설정
 UI_SIZE=인터페이스 크기
-UI_SIZE_SUB=텍스트, 아이콘, 간격의 크기를 함께 조절합니다.
+UI_SIZE_SUB=텍스트, 아이콘 및 간격을 함께 조정합니다
 CTX_COPY=복사
 CTX_CUT=잘라내기
 CTX_PASTE=붙여넣기
@@ -198,7 +193,6 @@ LBL_DELETE_FILE=디스크에서 파일 삭제
 LBL_GET_TIMESTAMP=서버의 파일 타임스탬프 사용
 LBL_SHOW_PROGRESS=진행상황 표시
 ND_DOWNLOAD=다운로드
-
 CAT_FINISHED=완료됨
 CAT_INCOMPLETE=미완료
 CAT_ALL=모든 다운로드
@@ -212,7 +206,6 @@ CAT_COMPRESSED=압축 파일
 CAT_MUSIC=음악
 CAT_VIDEOS=동영상
 CAT_PROGRAMS=프로그램
-
 CAT_SEC_CATEGORIES=파일 범주
 CAT_DESC=브라우저에서 다운로드한 파일은 규칙에 맞는 범주에 분류됩니다. 원할 경우 언제든지 다른 범주를 선택할 수 있습니다.
 CAT_ADD=범주 추가
@@ -227,17 +220,14 @@ MSG_CAT_NAME_MISSING=분류 이름을 입력하세요.
 MSG_CAT_FILE_TYPES_MISSING=최소 하나 이상의 파일 형식을 입력하세요.
 MSG_CAT_FOLDER_MISSING=이 범주를 위한 폴더를 선택하세요.
 MSG_CAT_DELETE_CONFIRM=이 범주를 삭제하시겠습니까? 기존 다운로드 파일은 그대로 유지되며, 없음 항목 아래에 표시됩니다.
-
 TOOL_SORT=정렬
 TOOL_DOWNLOAD=새로 만들기
 TOOL_CLEAR=지우기
 TOOL_SETTINGS=설정
 TOOL_DELETE=삭제
-
 ERR_NO_REFRESH=링크를 새로고침할 수 없습니다
 SUCCESS_REFRESH=링크 새로고침을 성공했습니다
 MSG_WAIT=대기 중
-
 MSG_MAX_SPLIT=다운로드당 연결 수
 MSG_MAX_RETRY=실패 시 재시도 횟수
 MSG_PROXY_HOST=호스트
@@ -246,8 +236,7 @@ MSG_PROXY_USER=사용자 이름
 MSG_PROXY_PASS=비밀번호
 MSG_NO_PROXY=프록시 사용 안 함
 MSG_HTTP_PROXY=HTTP 프록시
-MSG_SOCKS_PROXY=SOCKS 프록시
-
+MSG_SOCKS_PROXY=Socks 프록시
 MSG_ADV_TITLE=고급
 MSG_HALT=다운로드 완료 시 종료
 MSG_AWAKE=컴퓨터가 절전 모드로 전환되지 않도록 유지
@@ -264,7 +253,6 @@ MSG_READ_TIMEOUT_HINT=연결이 지연될 경우 재시도하기 전까지 데�
 MSG_IGNORE_CERT_ERRORS=인증서 오류 무시
 MSG_IGNORE_CERT_ERRORS_HINT=인증서 및 호스트 이름 확인을 건너뜁니다.
 MSG_IGNORE_CERT_ERRORS_CONFIRM=XDM은 더 이상 HTTPS 인증서나 호스트 이름을 확인하지 않습니다.\n다운로드된 파일이 경고 없이 가로채이거나 대체될 수 있습니다.\n\n신뢰할 수 있는 서버에서만 이 기능을 활성화하세요. 계속하시겠습니까?
-
 MSG_SHD_ONCE=1회
 MSG_SHD_WEEKLY=매주
 MSG_SHD_TYPE=유형:
@@ -282,7 +270,7 @@ MSG_SHD_STOP_TIME=중단 시간:
 MSG_SHD_MESSAGE2=중단 시간은 시작 시간보다 이후여야 합니다.
 MSG_SHD_MESSAGE3=선택한 날짜와 시간이 과거입니다.
 MSG_NO_DOWNLOAD=다운로드 없음
-MSG_NO_MATCHING_DOWNLOAD=현재 필터와 일치하는 다운로드가 없습니다.
+MSG_NO_MATCHING_DOWNLOAD=현재 필터와 일치하는 다운로드가 없습니다
 
 
 # Settings — page titles, section captions and row descriptions.
@@ -393,11 +381,11 @@ BATCH_MODE_EACH=링크별로 개별 다운로드
 BATCH_MODE_EACH_DESC=각 파일이 개별적으로 다운로드됩니다. 소수의 큰 파일을 다운로드할 때 권장됩니다.
 BATCH_NAME=이름
 BATCH_SELECTED=파일 %d개 중 %d개 선택됨
-BATCH_FOLDER_NOT_EMPTY=해당 폴더가 이미 존재하며 비어 있지 않습니다.
-BATCH_FOLDER_IS_FILE=같은 이름의 파일이 이미 존재합니다.
-BATCH_NAME_EMPTY=일괄 처리 폴더의 이름을 입력하세요.
+BATCH_FOLDER_NOT_EMPTY=해당 폴더가 이미 존재하며 비어 있지 않습니다
+BATCH_FOLDER_IS_FILE=같은 이름의 파일이 이미 존재합니다
+BATCH_NAME_EMPTY=일괄 처리 폴더의 이름을 입력하세요
 BATCH_USE_NAME="%s" 사용
-BATCH_FOLDER_ERROR=폴더 %s를 생성할 수 없습니다.
+BATCH_FOLDER_ERROR=폴더 %s를(을) 생성할 수 없습니다
 BATCH_FILES_PROGRESS=파일: %s / %s
 BATCH_FILES_FAILED=%s 실패
 BATCH_TYPE=일괄 (파일 %s개)
@@ -420,7 +408,7 @@ BATCH_STATUS_MERGING=병합 중
 CTX_RETRY_FAILED=실패한 파일 재시도
 PROP_FAILED_FILES=실패한 파일
 PROP_TAB_FILES=파일
-BATCH_URLS_HINT=다운로드할 링크를 한 줄에 하나씩 입력하세요.
+BATCH_URLS_HINT=다운로드 링크를 입력해 주세요. 한 줄에 하나씩 입력해 주세요
 BATCH_URLS_NONE=유효한 링크를 찾을 수 없습니다. 각 줄에 http 또는 https 링크를 하나씩 입력하세요.
 MENU_STREAM_DOWNLOAD=HLS/DASH 다운로드
 SD_TITLE=스트림 다운로드
