@@ -15,6 +15,7 @@ class VideoPopup {
     constructor() {
         this.items = [];
         this.showPreviews = true;
+        this.activePanel = null;
         /** Preview loads by item id, so a redrawn list does not ask XDM again. */
         this.loads = new Map();
         this.queue = [];
@@ -26,6 +27,19 @@ class VideoPopup {
     }
 
     onLoad() {
+        const theme = document.getElementById("theme");
+        const syncTheme = () => { theme.checked = XdmTheme.isDark(); };
+        XdmTheme.ready.then(syncTheme);
+        window.addEventListener("xdm-theme-change", syncTheme);
+        theme.addEventListener("change", () => {
+            const status = document.getElementById("settingsStatus");
+            status.hidden = true;
+            XdmTheme.setDark(theme.checked).catch(() => {
+                status.textContent = "Theme changed for this window, but the preference could not be saved.";
+                status.hidden = false;
+            });
+        });
+
         // The preference first, so the list is drawn once with or without previews.
         chrome.storage.local.get(PREVIEWS_KEY, stored => {
             // On unless the user turned it off.
@@ -55,20 +69,50 @@ class VideoPopup {
             });
         });
 
-        document.getElementById('clear').addEventListener('click', () => {
+        for (const id of ["clear", "format", "settings"]) {
+            document.getElementById(id).addEventListener("click", () => this.togglePanel(id));
+        }
+        document.getElementById("cancelClear").addEventListener("click", () => this.closePanel(true));
+        document.getElementById('confirmClear').addEventListener('click', () => {
             chrome.runtime.sendMessage({ type: "clear" });
-            window.close();
+            this.closePanel();
+            this.setItems([]);
+            document.getElementById("empty").focus();
         });
 
-        // Used to be an alert(), which is a jarring thing for a popup to do; the explanation now
-        // expands in place.
-        const format = document.getElementById('format');
-        const hint = document.getElementById('formatHint');
-        format.addEventListener('click', () => {
-            const show = hint.hidden;
-            hint.hidden = !show;
-            format.setAttribute('aria-expanded', show ? 'true' : 'false');
+        document.addEventListener("keydown", e => {
+            if (e.key === "Escape" && this.activePanel) {
+                e.preventDefault();
+                this.closePanel(true);
+            }
         });
+    }
+
+    togglePanel(controlId) {
+        const wasOpen = this.activePanel === controlId;
+        this.closePanel();
+        if (wasOpen) return;
+        const control = document.getElementById(controlId);
+        document.getElementById(control.getAttribute("aria-controls")).hidden = false;
+        control.setAttribute("aria-expanded", "true");
+        this.activePanel = controlId;
+    }
+
+    closePanel(restoreFocus = false) {
+        if (!this.activePanel) return;
+        const control = document.getElementById(this.activePanel);
+        document.getElementById(control.getAttribute("aria-controls")).hidden = true;
+        control.setAttribute("aria-expanded", "false");
+        this.activePanel = null;
+        if (restoreFocus) control.focus();
+    }
+
+    setItems(items) {
+        this.items = items;
+        this.renderList(items);
+        document.getElementById("empty").hidden = items.length > 0;
+        document.getElementById("clear").disabled = items.length === 0;
+        document.getElementById("format").disabled = items.length === 0;
     }
 
     onMsg(response) {
@@ -90,12 +134,7 @@ class VideoPopup {
             document.getElementById("previewsToggle").hidden = true;
         }
 
-        const list = response.list || [];
-        this.items = list;
-        this.renderList(list);
-
-        document.getElementById('empty').hidden = list.length > 0;
-        document.getElementById('actions').hidden = list.length === 0;
+        this.setItems(response.list || []);
     }
 
     renderList(items) {

@@ -13,6 +13,10 @@ import { isBlockedUrl } from './blocked-sites.js';
 
 const ROW_HEIGHT = 52;
 const OVERSCAN = 8;
+// CSS-pixel thumbnail frames, independent of the source image's dimensions.
+const GRID_THUMBNAILS = Object.freeze({ small: 96, medium: 176, large: 256 });
+const GRID_GAP = 12;
+const GRID_PADDING = 16;
 const PREFS_KEY = "bulkPrefs";
 const OBSERVER_SCRIPT_ID = "xdm-rt-observer";
 const RELOAD_TIMEOUT_MS = 30000;
@@ -47,6 +51,8 @@ const state = {
     minSize: 0,
     noise: false,
     previews: false,
+    grid: false,
+    gridSize: "medium",
     connected: false,
     pageUrl: "",
     pageTitle: "",
@@ -93,6 +99,10 @@ async function loadPrefs() {
         state.minSize = Math.max(0, parseInt(prefs.minSize, 10) || 0);
         state.noise = prefs.noise === true;
         state.previews = prefs.previews === true;
+        state.grid = prefs.grid === true;
+        if (Object.hasOwn(GRID_THUMBNAILS, prefs.gridSize)) {
+            state.gridSize = prefs.gridSize;
+        }
     } catch (e) {
         // Preferences are a convenience; the defaults are fine.
     }
@@ -109,7 +119,9 @@ function savePrefs() {
             chips: { links: [...state.chips.links], resources: [...state.chips.resources] },
             minSize: state.minSize,
             noise: state.noise,
-            previews: state.previews
+            previews: state.previews,
+            grid: state.grid,
+            gridSize: state.gridSize
         };
         try {
             chrome.storage.local.set({ [PREFS_KEY]: prefs });
@@ -168,6 +180,24 @@ function bindControls() {
         renderRows(true);
     });
 
+    $("grid").checked = state.grid;
+    $("gridSize").value = state.gridSize;
+    $("grid").addEventListener("change", () => {
+        state.grid = $("grid").checked;
+        savePrefs();
+        renderViewControls();
+        $("list").scrollTop = 0;
+        renderRows(true);
+    });
+    $("gridSize").addEventListener("change", () => {
+        const size = $("gridSize").value;
+        if (!Object.hasOwn(GRID_THUMBNAILS, size)) return;
+        state.gridSize = size;
+        savePrefs();
+        $("list").scrollTop = 0;
+        renderRows(true);
+    });
+
     $("rescan").addEventListener("click", () => scan());
     $("reloadCapture").addEventListener("click", () => reloadAndCapture());
 
@@ -205,7 +235,8 @@ function bindControls() {
     window.addEventListener("focus", () => state.connected || refreshXdmStatus());
 
     document.addEventListener("keydown", e => {
-        const inField = e.target instanceof HTMLInputElement && e.target.type !== "checkbox";
+        const inField = (e.target instanceof HTMLInputElement && e.target.type !== "checkbox")
+            || e.target instanceof HTMLSelectElement;
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a" && !inField) {
             e.preventDefault();
             setAllShown(true);
@@ -279,6 +310,8 @@ async function scan() {
             showBanner("This page has a very large number of links; only the first 10,000 are shown.", false);
         }
         renderChips();
+        // The final render should show the empty state if this scan found no files.
+        state.scanning = false;
         applyFilters();
     } finally {
         state.scanning = false;
@@ -430,6 +463,13 @@ function renderTabs() {
     document.querySelectorAll(".segment").forEach(btn => {
         btn.setAttribute("aria-selected", btn.dataset.tab === state.tab ? "true" : "false");
     });
+    renderViewControls();
+}
+
+function renderViewControls() {
+    const resources = state.tab === "resources";
+    $("gridField").hidden = !resources;
+    $("gridSizeField").hidden = !resources || !state.grid;
 }
 
 function renderChips() {
@@ -468,7 +508,6 @@ function renderChips() {
 }
 
 function renderList() {
-    $("spacer").style.height = (state.view.length * ROW_HEIGHT) + "px";
     const empty = $("empty");
     empty.hidden = state.view.length > 0 || state.scanning;
     if (state.items.length === 0) {
@@ -484,6 +523,22 @@ function renderList() {
 
 let renderedRange = "";
 
+/** Grid cells have fixed thumbnail sizes; columns reflow to fit the current window. */
+function listLayout() {
+    if (state.tab !== "resources" || !state.grid) {
+        return { grid: false, columns: 1, pitch: ROW_HEIGHT, padding: 0,
+            height: ROW_HEIGHT, width: 0, thumbnail: 0, overscan: OVERSCAN };
+    }
+    const thumbnail = GRID_THUMBNAILS[state.gridSize];
+    const available = $("list").clientWidth - GRID_PADDING * 2;
+    // Each card adds 10px padding and a 1px border on both sides of the image.
+    const columns = Math.max(1, Math.floor((available + GRID_GAP) / (thumbnail + 22 + GRID_GAP)));
+    const width = Math.floor((available - (columns - 1) * GRID_GAP) / columns);
+    const height = thumbnail + 88;
+    return { grid: true, columns, width, height, thumbnail, pitch: height + GRID_GAP,
+        padding: GRID_PADDING, overscan: 2 };
+}
+
 /**
  * Only the rows in view (plus a margin) exist. Scrolling within the same range leaves them alone,
  * so thumbnails are not torn down and reloaded on every scroll event.
@@ -491,28 +546,54 @@ let renderedRange = "";
 function renderRows(force) {
     const list = $("list");
     const spacer = $("spacer");
-    const first = Math.max(0, Math.floor(list.scrollTop / ROW_HEIGHT) - OVERSCAN);
-    const last = Math.min(state.view.length, Math.ceil((list.scrollTop + list.clientHeight) / ROW_HEIGHT) + OVERSCAN);
-    const range = first + ":" + last;
+    const layout = listLayout();
+    list.classList.toggle("grid-view", layout.grid);
+    list.style.setProperty("--grid-thumbnail", layout.thumbnail + "px");
+    const rows = Math.ceil(state.view.length / layout.columns);
+    const totalHeight = layout.grid
+        ? (rows ? layout.padding * 2 + rows * layout.pitch - GRID_GAP : 0)
+        : rows * ROW_HEIGHT;
+    spacer.style.height = totalHeight + "px";
+    const firstRow = Math.max(0, Math.floor((list.scrollTop - layout.padding) / layout.pitch) - layout.overscan);
+    const lastRow = Math.min(rows, Math.ceil((list.scrollTop + list.clientHeight - layout.padding) / layout.pitch) + layout.overscan);
+    const first = firstRow * layout.columns;
+    const last = Math.min(state.view.length, lastRow * layout.columns);
+    const range = [layout.grid, layout.columns, layout.width, layout.thumbnail, first, last].join(":");
     if (!force && range === renderedRange) {
         return;
     }
     renderedRange = range;
     const template = $("rowTemplate");
+    const focusedIndex = spacer.contains(document.activeElement)
+        ? document.activeElement.closest(".row")?.dataset.index : null;
     spacer.textContent = "";
     for (let i = first; i < last; i++) {
-        spacer.appendChild(buildRow(template, state.view[i], i));
+        spacer.appendChild(buildRow(template, state.view[i], i, layout));
+    }
+    // Virtualization must not drop keyboard focus while a checked tile scrolls into view.
+    if (focusedIndex != null) {
+        spacer.querySelector('[data-index="' + focusedIndex + '"] .row-check')?.focus({ preventScroll: true });
     }
 }
 
-function buildRow(template, item, index) {
+function buildRow(template, item, index, layout) {
     const row = template.content.firstElementChild.cloneNode(true);
-    row.style.top = (index * ROW_HEIGHT) + "px";
+    row.style.top = (layout.padding + Math.floor(index / layout.columns) * layout.pitch) + "px";
+    if (layout.grid) {
+        row.style.left = (layout.padding + (index % layout.columns) * (layout.width + GRID_GAP)) + "px";
+        row.style.width = layout.width + "px";
+        row.style.height = layout.height + "px";
+        const check = row.querySelector(".row-check");
+        check.removeAttribute("aria-hidden");
+        check.tabIndex = 0;
+        check.setAttribute("aria-label", "Select " + (item.filename || item.url));
+    }
     row.dataset.index = index;
     const checked = state.checked.has(item.url);
     row.classList.toggle("checked", checked);
     row.querySelector(".row-check").checked = checked;
     row.querySelector(".row-name").textContent = nameLine(item);
+    row.querySelector(".row-name").title = nameLine(item);
     row.querySelector(".row-url").textContent = shortUrl(item.url);
     row.title = item.url;
     row.querySelector(".row-thumb").dataset.cat = item.category;

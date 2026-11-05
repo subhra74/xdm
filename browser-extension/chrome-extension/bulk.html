@@ -5,6 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Download with XDM</title>
+  <script src="theme.js"></script>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="bulk.css">
   <script type="module" src="bulk.js"></script>
@@ -16,6 +17,13 @@
 -->
 
 <body class="bulk">
+  <header class="app-header bulk-header">
+    <img class="brand-icon" src="icon48.png" width="32" height="32" alt="">
+    <div class="brand-copy">
+      <h1>Grab page links</h1>
+      <p>Choose files and send them to XDM.</p>
+    </div>
+  </header>
   <div class="banner" id="banner" role="status" hidden>
     <svg class="banner-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -62,6 +70,16 @@
     </label>
     <label class="switch" title="Each preview downloads the image again, so it's off by default">
       <input type="checkbox" id="previews"><span class="switch-track" aria-hidden="true"></span>Previews
+    </label>
+    <label class="switch" id="gridField" hidden>
+      <input type="checkbox" id="grid" aria-controls="list gridSizeField"><span class="switch-track" aria-hidden="true"></span>Grid view
+    </label>
+    <label class="grid-size-field" id="gridSizeField" hidden>Thumbnail size
+      <select id="gridSize">
+        <option value="small">Small · 96 px</option>
+        <option value="medium" selected>Medium · 176 px</option>
+        <option value="large">Large · 256 px</option>
+      </select>
     </label>
   </div>
 
