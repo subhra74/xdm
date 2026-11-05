@@ -2,32 +2,37 @@
 <html>
 
 <head>
+    <meta charset="utf-8">
+    <meta name="robots" content="noindex">
+    <title>Redirecting to xtremedownloadmanager.com</title>
     <script>
-        var str = window.location.search;
-        if (str.indexOf("chrome") != -1) {
-            if (str.indexOf("&version=8.0") != -1) {
-                window.location.href = "https://chrome.google.com/webstore/detail/xdm-integration-module-be/akdmdglbephckgfmdffcdebnpjgamofc"
-            } else {
-                window.location.href = "https://chrome.google.com/webstore/detail/xtreme-download-manager/dkckaoghoiffdbomfbbodbbgmhjblecj"
-            }
-        } else if (str.indexOf("mzfirefox") != -1 && str.indexOf("&version=8.0") != -1) {
-            window.location.href = "https://addons.mozilla.org/en-US/firefox/addon/xdm-browser-monitor-v8/"
-        } else if (str.indexOf("firefox") != -1) {
-            if (str.indexOf("&version=8.0") != -1) {
-                window.location.href = "https://addons.mozilla.org/en-US/firefox/addon/xdm-integration-module/"
-            } else {
-                window.location.href = "https://addons.mozilla.org/en-US/firefox/addon/xdm-browser-monitor/"
-            }
-        } else if (str.indexOf("target=ext") != -1) {
-            window.location.href = "https://github.com/subhra74/xdm/wiki/How-to-Install-Browser-extension-for-Google-Chrome---MS-Edge---Brave---Vivaldi-in-XDM-8"
-        } else if (str.indexOf("target=mg") != -1 || str.indexOf("target=video") != -1) {
-            window.location.href = "https://github.com/subhra74/xdm/wiki/How-to-download-streaming-video"
-        }
+        // XDM 7 and 8 open this page from their menus as redirect.html?target=<name>[&version=8.0].
+        // Every target goes to a page on the website, never straight to a browser store: the extension pages there
+        // always carry the current store links. XDM 8 help now lives in the XDM 9 migration guide.
+        var SITE = "https://xtremedownloadmanager.com";
+        var MIGRATE = "/guide/update-and-migrate/";
+        var PAGES = {
+            "chrome": "/extension/chrome/",
+            "firefox": "/extension/firefox/",
+            "mzfirefox": "/extension/firefox/",
+            "edge": "/extension/edge/",
+            "opera": "/extension/",
+            "ext": "/extension/",
+            "support": "/support/",
+            "issue": "/support/",
+            "mg": MIGRATE,
+            "video": MIGRATE,
+            "helpers": MIGRATE
+        };
+
+        var target = new URLSearchParams(window.location.search).get("target") || "";
+        var path = PAGES.hasOwnProperty(target) ? PAGES[target] : "/";
+        window.location.replace(SITE + path + "?utm_source=xdm8" + (target ? "&from=" + encodeURIComponent(target) : ""));
     </script>
 </head>
 
 <body>
-    Redirecting...
+    Redirecting… If nothing happens, go to <a href="https://xtremedownloadmanager.com/">xtremedownloadmanager.com</a>.
 </body>
 
 </html>

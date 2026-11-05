@@ -1,8 +1,11 @@
 <html>
 
 <head>
+    <meta charset="utf-8">
+    <meta name="robots" content="noindex">
     <script>
         var RELEASE_URL="https://xtremedownloadmanager.com/download/?utm_source=update-checker";
+        var SITE_URL="https://xtremedownloadmanager.com/guide/?utm_source=update-checker";
         var currentVersion = undefined
         var rx = /\?v=(\d+\.\d+\.\d+)/;
         var str = window.location.search;
@@ -57,10 +60,11 @@
             }
 
             if(!hasNewVersion){
-                document.getElementById("ver").innerHTML = "App is up to date";
+                document.getElementById("ver").innerHTML = "App is up to date. Tips and guides are on <a href='" + SITE_URL + "'>xtremedownloadmanager.com</a>.";
             }else{
                 document.getElementById("ver").innerHTML = "A newer version is available, download it <a href='" + RELEASE_URL + "'>here</a>";
             }
+            document.getElementById("star").hidden = false;
         }
 
     </script>
@@ -68,6 +72,7 @@
 
 <body>
     <div id="ver"></div>
+    <p id="star" hidden>Enjoying XDM? <a href="https://github.com/subhra74/xdm">⭐ Star it on GitHub</a>. It takes two seconds and helps more people find XDM.</p>
 </body>
 
 </html>
