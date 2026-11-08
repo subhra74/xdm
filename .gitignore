@@ -26,3 +26,8 @@ hs_err_pid27504.log
 /test-credentials/
 .claude/launch.json
 experiments
+
+# Android (Gradle) project
+xdm-android/.gradle/
+xdm-android/.kotlin/
+xdm-android/local.properties

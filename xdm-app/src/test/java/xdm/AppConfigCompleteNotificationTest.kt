@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import xdm.app.AppConfig
-import xdm.app.DownloadCompleteNotification
+import xdm.manager.DownloadCompleteNotification
 import java.io.File
 import java.nio.file.Files
 

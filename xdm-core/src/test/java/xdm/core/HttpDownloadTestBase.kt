@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core
 
@@ -249,6 +250,13 @@ class TestDownloadHost(
     override fun onAssembleStart(id: Long) {}
 
     override fun onAssembleProgress(event: DownloadStatusInfo.AssembleInfo) {}
+
+    /** Every [onAllocateProgress] report, in order. */
+    val allocateReports: MutableList<Int> = java.util.concurrent.CopyOnWriteArrayList()
+
+    override fun onAllocateProgress(id: Long, percent: Int) {
+        allocateReports.add(percent)
+    }
 
     override fun onDownloadSuccess(event: DownloadStatusInfo.FinalInfo) {
         success = event

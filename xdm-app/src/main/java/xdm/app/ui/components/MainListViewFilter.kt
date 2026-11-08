@@ -1,7 +1,7 @@
 package xdm.app.ui.components
 
-import xdm.app.DownloadCategory
-import xdm.app.RecordStatus
+import xdm.manager.DownloadCategory
+import xdm.manager.RecordStatus
 import javax.swing.RowFilter
 
 /** [filterCategory] is null for "All types". */

@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core.storage
 
@@ -161,6 +162,22 @@ object NioFileOps : PlatformFileOps {
         } finally {
             if (interrupted) Thread.currentThread().interrupt()
         }
+    }
+
+    override fun isSameFile(a: File, b: File): Boolean = Files.isSameFile(a.toPath(), b.toPath())
+
+    /**
+     * From the file store's type, read from the nearest folder that exists: `vfat`/`exfat` on Linux
+     * (`/proc/mounts`), `FAT32`/`FAT`/`exFAT` on Windows, `msdos`/`exfat` on macOS. A FUSE driver
+     * (`fuseblk`, e.g. an older exFAT driver) does not say what is underneath, so it counts as unknown.
+     */
+    override fun fillsGaps(dir: File): Boolean = try {
+        var d: File? = dir.absoluteFile
+        while (d != null && !d.exists()) d = d.parentFile
+        d != null && isGapFillingFileSystem(Files.getFileStore(d.toPath()).type())
+    } catch (e: Exception) {
+        Logger.info("XDM", "Could not read the file system of $dir: $e")
+        false
     }
 
     override fun deleteTree(dir: File): Result<Unit> = runCatching {

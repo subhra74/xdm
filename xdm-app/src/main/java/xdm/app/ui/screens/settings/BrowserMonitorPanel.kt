@@ -29,6 +29,7 @@ class BrowserMonitorPanel : SettingsPanel() {
         maximumSize = preferredSize
     }
     private val tglGetServerTime = SettingsToggle()
+    private val tglDetectSubtitles = SettingsToggle()
 
     init {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -65,6 +66,7 @@ class BrowserMonitorPanel : SettingsPanel() {
                         add(JLabel("MB").apply { foreground = settingsMutedColor() })
                     }
                 ),
+                settingsRow(I8N.text("LBL_DETECT_SUBTITLES"), I8N.text("LBL_DETECT_SUBTITLES_SUB"), tglDetectSubtitles),
             )
         )
         add(settingsGap())
@@ -120,6 +122,7 @@ class BrowserMonitorPanel : SettingsPanel() {
         // The config holds KB, the choices are MB.
         cmbMinVidSize.selectedItem = config.minVideoSize / 1024
         tglGetServerTime.isSelected = config.getServerTime
+        tglDetectSubtitles.isSelected = config.detectSubtitles
     }
 
     fun save() {
@@ -129,6 +132,7 @@ class BrowserMonitorPanel : SettingsPanel() {
         config.blockedHosts = txtBlockedHosts.text.split(",").map { it.trim() }.filter { it.isNotEmpty() }
         config.minVideoSize = (cmbMinVidSize.selectedItem as Long) * 1024
         config.getServerTime = tglGetServerTime.isSelected
+        config.detectSubtitles = tglDetectSubtitles.isSelected
     }
 
     override fun getInsets(): Insets = scaledInsets(18, 24, 24, 24)

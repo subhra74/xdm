@@ -1,9 +1,9 @@
 package xdm.app
 
-import xdm.app.utils.DownloadSource
 import xdm.app.utils.OriginMarker
 import xdm.app.utils.initShutdown
 import xdm.core.util.Logger
+import xdm.manager.DownloadSource
 import java.io.File
 
 interface IPlatformInvoke {

@@ -1,10 +1,10 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core.media.muxer.transmux.es
 
 import xdm.core.media.muxer.transmux.sample.Codec
-import xdm.core.media.muxer.transmux.sample.Sample
 import xdm.core.media.muxer.transmux.sample.Track
 
 /**
@@ -47,10 +47,34 @@ class OpusReader(private val sink: SampleSink, channelConfigCode: Int?) : Elemen
         track.decoderConfigRecord = opusHead(preSkip = 0)
     }
 
-    override fun consume(data: ByteArray, offset: Int, length: Int, pts: Long, dts: Long) {
-        val end = offset + length
-        var i = offset
+    private val pending = ByteArrayBuilder(MAX_CARRY)
+    /** PTS of the PES the carried partial frame started in, when that frame was its first. */
+    private var carriedPts = -1L
+
+    override fun consume(pesData: ByteArray, offset: Int, length: Int, pts: Long, dts: Long) {
+        // An access unit split across PES packets is carried over and completed here.
+        val data: ByteArray
+        var i: Int
+        val end: Int
+        val carried = pending.size
+        if (carried > 0) {
+            data = ByteArray(carried + length)
+            System.arraycopy(pending.buffer, 0, data, 0, carried)
+            System.arraycopy(pesData, offset, data, carried, length)
+            i = 0
+            end = data.size
+            pending.reset()
+        } else {
+            data = pesData
+            i = offset
+            end = offset + length
+        }
+        // The PES PTS belongs to the first access unit starting in this PES.
+        val pesStart = i + carried
         var pesAnchor = pts
+        var carryAnchor = carriedPts
+        carriedPts = -1
+        var incomplete = false
 
         while (i + 2 <= end) {
             // opus_control_header_prefix: 11 bits of 1 (0x7FE0 in the first 16 bits).
@@ -58,42 +82,50 @@ class OpusReader(private val sink: SampleSink, channelConfigCode: Int?) : Elemen
             val flags = data[i + 1].toInt()
             var p = i + 2
             var auSize = 0
+            var sizeDone = false
             while (p < end) {
                 val b = data[p++].toInt() and 0xFF
                 auSize += b
-                if (b != 0xFF) break
+                if (b != 0xFF) { sizeDone = true; break }
             }
+            if (!sizeDone) { incomplete = true; break }
             var startTrim = 0
             if (flags and 0x10 != 0) {
-                if (p + 2 > end) break
+                if (p + 2 > end) { incomplete = true; break }
                 startTrim = (((data[p].toInt() and 0xFF) shl 8) or (data[p + 1].toInt() and 0xFF)) and 0x1FFF
                 p += 2
             }
             if (flags and 0x08 != 0) p += 2 // end_trim: not applied
             if (flags and 0x04 != 0) {
-                if (p >= end) break
+                if (p >= end) { incomplete = true; break }
                 p += 1 + (data[p].toInt() and 0xFF)
             }
-            if (auSize <= 0 || p + auSize > end) break
+            if (auSize <= 0) break
+            if (p + auSize > end) { incomplete = true; break }
 
             if (!sawFirstAu) {
                 sawFirstAu = true
                 if (startTrim > 0) track.decoderConfigRecord = opusHead(preSkip = startTrim)
             }
             val samples = packetSamples(data, p, auSize)
-            if (pesAnchor >= 0 && nextPtsTicks == Long.MIN_VALUE) {
-                nextPtsTicks = pesAnchor * SAMPLE_RATE / 90000L
-            } else if (pesAnchor >= 0) {
-                val expected = pesAnchor * SAMPLE_RATE / 90000L
-                if (kotlin.math.abs(expected - nextPtsTicks) > 2L * maxOf(samples, 960)) nextPtsTicks = expected
-                pesAnchor = -1
+            val anchor = if (i < pesStart) carryAnchor else pesAnchor
+            if (anchor >= 0) {
+                val expected = anchor * SAMPLE_RATE / 90000L
+                if (nextPtsTicks == Long.MIN_VALUE || kotlin.math.abs(expected - nextPtsTicks) > 2L * maxOf(samples, 960)) {
+                    nextPtsTicks = expected
+                }
+                if (i < pesStart) carryAnchor = -1 else pesAnchor = -1
             }
             if (nextPtsTicks == Long.MIN_VALUE) nextPtsTicks = 0
 
             val fileOffset = sink.writeSampleData(data, p, auSize)
-            track.samples.add(Sample(fileOffset, auSize, nextPtsTicks, nextPtsTicks, true))
+            track.samples.add(fileOffset, auSize, nextPtsTicks, nextPtsTicks, true)
             nextPtsTicks += samples
             i = p + auSize
+        }
+        if ((incomplete || (i < end && end - i < 2)) && end - i <= MAX_CARRY) {
+            pending.write(data, i, end - i)
+            carriedPts = if (i < pesStart) carryAnchor else pesAnchor
         }
     }
 
@@ -121,6 +153,8 @@ class OpusReader(private val sink: SampleSink, channelConfigCode: Int?) : Elemen
 
     companion object {
         const val SAMPLE_RATE = 48000
+        /** Bound on a carried partial access unit (a 120 ms multi-stream packet stays well below). */
+        private const val MAX_CARRY = 64 * 1024
 
         // Indexed by channel_config_code 0..8.
         private val STREAM_COUNT = intArrayOf(1, 1, 1, 2, 2, 3, 4, 4, 5)

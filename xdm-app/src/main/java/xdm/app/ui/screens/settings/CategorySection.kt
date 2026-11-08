@@ -1,14 +1,15 @@
 package xdm.app.ui.screens.settings
 
 import xdm.app.AppContext
-import xdm.app.DownloadCategory
 import xdm.app.I8N
+import xdm.app.displayName
 import xdm.app.ui.components.AppTheme
 import xdm.app.ui.components.CategoryDotIcon
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.px
 import xdm.app.utils.scaledSize
+import xdm.manager.DownloadCategory
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.Cursor

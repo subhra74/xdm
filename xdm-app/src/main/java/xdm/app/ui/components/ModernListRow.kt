@@ -1,9 +1,9 @@
 package xdm.app.ui.components
 
-import xdm.app.DbRecord
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.createIcon
 import xdm.core.util.Logger
+import xdm.manager.DbRecord
 import java.awt.*
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent

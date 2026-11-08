@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core.storage
 
@@ -99,6 +100,13 @@ interface StorageFolder {
 
     /** Bytes that can still be written here, or -1 when unknown. Never throws. */
     fun usableSpace(): Long
+
+    /**
+     * Whether files here cannot have holes (FAT32, exFAT): growing a file or writing past its end makes the
+     * file system write zeros over the whole gap first. A download then fills its part file in steps before
+     * splitting (see `PartAllocation`). False when unknown. May read the mount table; never throws.
+     */
+    fun fillsGaps(): Boolean = false
 
     /** Flushes the file [name]'s data to stable storage. */
     fun force(name: String) {

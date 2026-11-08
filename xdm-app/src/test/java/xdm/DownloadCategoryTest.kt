@@ -7,12 +7,13 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import xdm.app.AppConfig
 import xdm.app.AppContext
-import xdm.app.DownloadCategory
-import xdm.app.CategoryRules
+import xdm.app.displayName
 import xdm.app.ui.components.AppTheme
 import xdm.app.ui.components.CategoryStyle
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.folderFor
+import xdm.manager.CategoryRules
+import xdm.manager.DownloadCategory
 import java.io.File
 import java.nio.file.Files
 

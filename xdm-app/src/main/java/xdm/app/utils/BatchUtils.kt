@@ -4,32 +4,11 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import xdm.core.util.FileUtils
 import xdm.core.util.getExtension
 import xdm.core.util.getFileNameWithoutExtension
+import xdm.manager.isUsableBatchFolder
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-
-/** Why a batch cannot use a folder, or [Ok]. */
-enum class BatchFolderState {
-    /** Missing (it will be created) or an empty folder (it will be reused). */
-    Ok,
-
-    /** A folder that already holds files. */
-    NotEmpty,
-
-    /** A file, not a folder. */
-    NotAFolder,
-}
-
-fun batchFolderState(folder: File): BatchFolderState = when {
-    !folder.exists() -> BatchFolderState.Ok
-    !folder.isDirectory -> BatchFolderState.NotAFolder
-    folder.list()?.isEmpty() == true -> BatchFolderState.Ok
-    else -> BatchFolderState.NotEmpty
-}
-
-/** A batch may be saved into [folder]: it is missing or an empty folder. */
-fun isUsableBatchFolder(folder: File) = batchFolderState(folder) == BatchFolderState.Ok
 
 private const val MAX_BATCH_NAME = 100
 

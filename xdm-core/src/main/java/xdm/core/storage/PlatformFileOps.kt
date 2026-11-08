@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core.storage
 
@@ -48,8 +49,21 @@ interface PlatformFileOps {
      */
     fun createSparse(file: File, length: Long)
 
+    /**
+     * Whether files in [dir] cannot have holes: on FAT32 and exFAT, a write past a file's end (or growing it)
+     * makes the file system write zeros over the whole gap first, inside that one call. [dir] need not exist
+     * yet. False when unknown. Never throws.
+     */
+    fun fillsGaps(dir: File): Boolean = false
+
     /** Deletes [dir] and everything under it without following symbolic links. */
     fun deleteTree(dir: File): Result<Unit>
+
+    /**
+     * Whether [a] and [b] are the same existing file or folder, also when spelled differently (letter
+     * case, a symbolic link). The default compares canonical paths; [NioFileOps] asks the file system.
+     */
+    fun isSameFile(a: File, b: File): Boolean = a.canonicalPath == b.canonicalPath
 
     /**
      * Opens the existing [file] for writes from many threads at once ([PositionalOutput]), first sizing it
@@ -66,6 +80,20 @@ interface PlatformFileOps {
         }
         return LockedPositionalOutput(out)
     }
+}
+
+/**
+ * Whether a file system type name, as the OS reports it, is FAT32/exFAT or another FAT variant: one that fills
+ * gaps ([PlatformFileOps.fillsGaps]). Every [PlatformFileOps] judges the name here, so the platforms agree.
+ *
+ * A keyword, not a list: kernels and vendors name their drivers differently (`vfat`, `exfat`; `FAT32`, `exFAT` on
+ * Windows; `sdfat`, `texfat` and others on phones), and all contain "fat" except `msdos` (Linux, macOS). No other
+ * file system is known to have "fat" in its name; a false match would only cost a needless fill. A FUSE mount
+ * (`fuseblk`) hides what is underneath and is not matched.
+ */
+fun isGapFillingFileSystem(type: String): Boolean {
+    val t = type.lowercase()
+    return "fat" in t || t == "msdos" || t == "umsdos"
 }
 
 /** The process-wide [PlatformFileOps]. */

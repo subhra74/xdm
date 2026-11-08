@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core.media.muxer
 
@@ -69,4 +70,10 @@ interface Muxer {
      * presented PTS). Subtitles timed against the source clock are shifted by it. Null when unknown.
      */
     val timelineStartSec: Double? get() = null
+
+    /**
+     * What made the last mux fail, when it failed on an exception (not on a stop or on missing media), so
+     * the caller can tell a full disk from a muxing problem. Null otherwise.
+     */
+    val lastError: Throwable? get() = null
 }

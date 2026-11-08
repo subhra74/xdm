@@ -5,16 +5,26 @@ import xdm.app.utils.AppLauncher
 import xdm.app.utils.AutoStart
 import xdm.app.utils.WaylandToolkit
 import xdm.app.utils.linux.X11UiScale
+import xdm.capture.CaptureContext
+import xdm.capture.ICapturedVideoTracker
 import xdm.core.downloaders.TaskInfoDB
 import xdm.core.network.http.HttpAuth
 import xdm.core.util.Logger
 import xdm.integration.BrowserIntegration
+import xdm.manager.DownloadManager
+import xdm.manager.EngineContext
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.system.exitProcess
 
 object AppContext {
+    init {
+        // Media detection and the download lifecycle reach the app through these hosts; installed as
+        // soon as anything uses AppContext.
+        CaptureContext.host = DesktopCaptureHost
+        EngineContext.host = DesktopEngineHost
+    }
 
     lateinit var db: AppDB
     lateinit var app: IAppInstance
@@ -23,7 +33,12 @@ object AppContext {
     lateinit var platform: IPlatformInvoke
     lateinit var queue: IQueueManager
 
-    lateinit var videoTracker: ICapturedVideoTracker
+    /** Lives in [CaptureContext], shared with the capture module; set at startup like the rest. */
+    var videoTracker: ICapturedVideoTracker
+        get() = CaptureContext.tracker
+        set(value) {
+            CaptureContext.tracker = value
+        }
     lateinit var defaultDownloadFolder: String
 
     /** The startup temp directory; [IAppConfig.tempFolder] defaults to it and may override it. */
@@ -57,7 +72,7 @@ object AppContext {
             && ::config.isInitialized
             && ::platform.isInitialized
             && ::queue.isInitialized
-            && ::videoTracker.isInitialized
+            && CaptureContext.isReady
             && ::scheduler.isInitialized
         ) {
             firstRun = !File(configDir, AppConfig.CONFIG_FILE).exists()

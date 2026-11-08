@@ -9,7 +9,7 @@ import xdm.core.downloaders.DashDownloadTaskInfo
 import xdm.core.downloaders.DownloadType
 import xdm.core.downloaders.SubtitleTrack
 import xdm.core.downloaders.web.streaming.manifest.dash.DashSegment
-import xdm.integration.StreamingVideoDisplayInfo
+import xdm.capture.StreamingVideoDisplayInfo
 import java.io.File
 import okhttp3.HttpUrl.Companion.toHttpUrl
 

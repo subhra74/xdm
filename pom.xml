@@ -12,6 +12,8 @@
     </properties>
     <modules>
         <module>xdm-core</module>
+        <module>xdm-capture</module>
+        <module>xdm-manager</module>
         <!--        <module>xdm-app2</module>-->
         <module>xdm-app</module>
 <!--        <module>hls-muxer</module>-->

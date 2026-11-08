@@ -5,15 +5,18 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import xdm.app.ChangeFolderPlan
-import xdm.app.ChangeFolderResult
-import xdm.app.DbRecord
-import xdm.app.RecordStatus
 import xdm.core.downloaders.CommitResult
 import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.DownloadType
 import xdm.core.downloaders.partFileName
 import xdm.core.storage.LocalStorage
+import xdm.core.storage.StorageFile
+import xdm.core.storage.StorageFolder
+import xdm.core.storage.TargetExistsException
+import xdm.manager.ChangeFolderPlan
+import xdm.manager.ChangeFolderResult
+import xdm.manager.DbRecord
+import xdm.manager.RecordStatus
 import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -108,6 +111,47 @@ class DownloadManagerPlacementTest : DownloadManagerTestBase() {
         val part = File(out, partFileName(task.id)).apply { writeText("downloaded") }
 
         assertEquals(CommitResult.Failed(DownloadError.OutputWriteError), commit(task.id, part, DownloadType.Http))
+        assertTrue(part.exists(), "part kept for a retry")
+    }
+
+    /**
+     * Android 11+ path view: another app's `file.bin` is invisible to lookups, and a rename onto it is
+     * refused with [TargetExistsException].
+     */
+    private class HiddenNameFolder(private val real: StorageFolder, private val hidden: String) : StorageFolder by real {
+        override fun exists(name: String) = name != hidden && real.exists(name)
+        override fun isFile(name: String) = name != hidden && real.isFile(name)
+        override fun rename(from: String, to: String, replace: Boolean) {
+            if (to == hidden) throw TargetExistsException(to)
+            real.rename(from, to, replace)
+        }
+    }
+
+    @Test
+    fun publish_nameRefusedThoughItLookedFree_movesToAFreeName() {
+        val out = File(dir, "out").apply { mkdirs() }
+        val task = httpTask().copy(targetFolder = out.absolutePath, fileName = "file.bin")
+        taskDB.saveHttpTask(task)
+        File(out, partFileName(task.id)).writeText("downloaded")
+        val folder = HiddenNameFolder(LocalStorage.folder(out.absolutePath), "file.bin")
+
+        val result = host().commitOutputFile(task.id, StorageFile(folder, partFileName(task.id)), DownloadType.Http)
+        assertEquals("file_1.bin", (result as CommitResult.Success).fileName)
+        assertEquals("downloaded", File(out, "file_1.bin").readText())
+    }
+
+    @Test
+    fun publish_nameRefused_overwriteDoesNotRetryTheSameName() {
+        config.overwriteExistingFiles = true
+        config.autoRenameOnConflict = false
+        val out = File(dir, "out").apply { mkdirs() }
+        val task = httpTask().copy(targetFolder = out.absolutePath, fileName = "file.bin")
+        taskDB.saveHttpTask(task)
+        val part = File(out, partFileName(task.id)).apply { writeText("downloaded") }
+        val folder = HiddenNameFolder(LocalStorage.folder(out.absolutePath), "file.bin")
+
+        val result = host().commitOutputFile(task.id, StorageFile(folder, partFileName(task.id)), DownloadType.Http)
+        assertEquals(CommitResult.Failed(DownloadError.OutputWriteError), result)
         assertTrue(part.exists(), "part kept for a retry")
     }
 

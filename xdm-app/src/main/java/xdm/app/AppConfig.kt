@@ -1,6 +1,7 @@
 package xdm.app
 
 import xdm.app.ui.components.SortKey
+import xdm.capture.MediaFilter
 import xdm.core.CoreConfig
 import xdm.core.util.AtomicIO
 import xdm.core.util.Logger
@@ -10,6 +11,9 @@ import xdm.core.util.TagReader
 import xdm.core.util.TagWriter
 import xdm.core.util.TaggedFile
 import xdm.core.util.byStableId
+import xdm.manager.DownloadCategory
+import xdm.manager.DownloadCompleteNotification
+import xdm.manager.EngineConfig
 import java.io.File
 import java.net.Authenticator
 import java.net.Proxy
@@ -23,19 +27,7 @@ enum class ListSelectionMode(override val id: Int) : StableId {
     CLASSIC(2),
 }
 
-/** What the app does when a download finishes. */
-enum class DownloadCompleteNotification(override val id: Int) : StableId {
-    /** The full [xdm.app.ui.screens.DownloadCompleteWindow] dialog. */
-    DIALOG(1),
-
-    /** A system tray balloon/notification; clicking it opens the main window. */
-    NOTIFICATION(2),
-
-    /** Nothing at all. */
-    NONE(3),
-}
-
-interface IAppConfig : CoreConfig {
+interface IAppConfig : EngineConfig {
     fun load()
     fun save()
     /**
@@ -45,7 +37,7 @@ interface IAppConfig : CoreConfig {
      */
     fun adoptSystemTheme(): Boolean
     /** What to show when a download finishes. */
-    var downloadCompleteNotification: DownloadCompleteNotification
+    override var downloadCompleteNotification: DownloadCompleteNotification
     /**
      * Legacy view of [downloadCompleteNotification]: true iff the mode is [DownloadCompleteNotification.DIALOG].
      * Not saved; kept for the "don't show again" check box of the dialog.
@@ -53,12 +45,12 @@ interface IAppConfig : CoreConfig {
     var showDownloadCompleteWindow: Boolean
     var runVirusScan: Boolean
     var runCommand: Boolean
-    var showDownloadProgressWindow: Boolean
+    override var showDownloadProgressWindow: Boolean
     var defaultDownloadFolder: String
-    var tempFolder: String
-    var autoRenameOnConflict: Boolean
+    override var tempFolder: String
+    override var autoRenameOnConflict: Boolean
     var shutdownAfterAllDone: Boolean
-    var maxParallelDownloads: Int
+    override var maxParallelDownloads: Int
     /**
      * The only remembered category choice: true after the user hand-picked None, so rules preselect
      * nothing for later browser captures; hand-picking a category clears it. Settings shows it inverted
@@ -72,10 +64,10 @@ interface IAppConfig : CoreConfig {
     var sortKey: SortKey
     var sortAscending: Boolean
     /** User-editable categories. Replaced as a whole on every change, never mutated in place. */
-    var categories: List<DownloadCategory>
+    override var categories: List<DownloadCategory>
     /** The categories shipped with the app, used by "Restore defaults". */
     val defaultCategories: List<DownloadCategory>
-    var minVideoSize: Long
+    override var minVideoSize: Long
     var lang: String
     /** "dark", "light" or "system" (follow the OS, read at every startup). */
     var theme: String
@@ -94,12 +86,12 @@ interface IAppConfig : CoreConfig {
     override var speedLimiterEnabled: Boolean
     override var speedLimit: Int
     var startDownloadAutomatically: Boolean
-    var overwriteExistingFiles: Boolean
+    override var overwriteExistingFiles: Boolean
     var fileExtensions: List<String>
     var defFileExtensions: List<String>
-    var videoExtensions: List<String>
+    override var videoExtensions: List<String>
     var defVideoExtensions: List<String>
-    var blockedHosts: List<String>
+    override var blockedHosts: List<String>
     var defBlockedHosts: List<String>
     var getServerTime: Boolean
     override var maxSegments: Int
@@ -110,7 +102,7 @@ interface IAppConfig : CoreConfig {
     override var proxyUser: String
     override var proxyPass: String
     var haltAfterDownload: Boolean
-    var keepAwake: Boolean
+    override var keepAwake: Boolean
     var runOnStartup: Boolean
     var customCommand: String
     var virusScannerPath: String
@@ -123,12 +115,16 @@ interface IAppConfig : CoreConfig {
      * When true, an HLS/DASH manifest the browser keeps re-requesting is fetched once per tab in a
      * short window instead of on every request (Advanced settings). Off by default.
      */
-    var skipDuplicateManifests: Boolean
+    override var skipDuplicateManifests: Boolean
+    /** Offer subtitle files the browser loads in the captured list (Browser monitoring). On by default. */
+    override var detectSubtitles: Boolean
+    /** "Save as SRT" last chosen for a captured WebVTT/TTML subtitle. On by default. */
+    var saveSubtitlesAsSrt: Boolean
     /**
      * When true, finished downloads are marked as coming from the internet (Zone.Identifier on
      * Windows, com.apple.quarantine on macOS), as a browser would. On by default. See QUARANTINE.md.
      */
-    var markDownloadedFiles: Boolean
+    override var markDownloadedFiles: Boolean
     /** Batch dialog mode last chosen when opened from the browser's "Download all": true = one batch. */
     var batchAsOneFromBrowser: Boolean
     /** Batch dialog mode last chosen when opened from the clipboard menu: true = one batch. */
@@ -220,6 +216,8 @@ private const val F_SWING_FILE_CHOOSER = 52
 private const val F_UI_SCALE = 53
 private const val F_THEME_MIGRATED = 54
 private const val F_NOTIFIED_UPDATE_VERSION = 55
+private const val F_DETECT_SUBTITLES = 56
+private const val F_SAVE_SUBTITLES_AS_SRT = 57
 
 // Inside F_CATEGORIES: one F_CATEGORY record per category, in order.
 private const val F_CATEGORY = 1
@@ -331,12 +329,9 @@ class AppConfig(private val configDir: String) : IAppConfig {
         "MPG", "MPEG", "MP3", "M4A", "AAC", "FLAC", "WAV", "OGG", "OPUS"
     )
     override var fileExtensions: List<String> = defFileExtensions
-    override var defVideoExtensions: List<String> = listOf(
-        "MP4", "M3U8", "F4M", "WEBM", "OGG", "MP3", "AAC", "FLV", "MKV", "DIVX",
-        "MOV", "MPG", "MPEG", "OPUS", "MPD", "M4V", "M4A", "OGV", "OGA", "WAV", "FLAC", "3GP", "AVI", "WMV"
-    )
+    override var defVideoExtensions: List<String> = MediaFilter.DEFAULT_VIDEO_EXTENSIONS
     override var videoExtensions: List<String> = defVideoExtensions
-    override var defBlockedHosts: List<String> = listOf("update.microsoft.com", "windowsupdate.com", "thwawte.com")
+    override var defBlockedHosts: List<String> = MediaFilter.DEFAULT_BLOCKED_HOSTS
     override var blockedHosts: List<String> = defBlockedHosts
     override var getServerTime: Boolean = false
     override var maxSegments: Int = 8
@@ -357,6 +352,8 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var ignoreCertErrors: Boolean = false
     override var readTimeoutSeconds: Int = CoreConfig.DEFAULT_READ_TIMEOUT_SECONDS
     override var skipDuplicateManifests: Boolean = false
+    override var detectSubtitles: Boolean = true
+    override var saveSubtitlesAsSrt: Boolean = true
     override var markDownloadedFiles: Boolean = true
     override var batchAsOneFromBrowser: Boolean = true
     override var batchAsOneFromClipboard: Boolean = false
@@ -458,6 +455,8 @@ class AppConfig(private val configDir: String) : IAppConfig {
         w.int(F_UI_SCALE, uiScale)
         w.bool(F_THEME_MIGRATED, themeMigrated)
         w.string(F_NOTIFIED_UPDATE_VERSION, notifiedUpdateVersion)
+        w.bool(F_DETECT_SUBTITLES, detectSubtitles)
+        w.bool(F_SAVE_SUBTITLES_AS_SRT, saveSubtitlesAsSrt)
         w.raw(unknownFields)
     }
 
@@ -528,6 +527,8 @@ class AppConfig(private val configDir: String) : IAppConfig {
                 F_UI_SCALE -> uiScale = r.int().takeIf { it in UI_SCALES } ?: 100
                 F_THEME_MIGRATED -> themeMigrated = r.bool()
                 F_NOTIFIED_UPDATE_VERSION -> notifiedUpdateVersion = r.string()
+                F_DETECT_SUBTITLES -> detectSubtitles = r.bool()
+                F_SAVE_SUBTITLES_AS_SRT -> saveSubtitlesAsSrt = r.bool()
                 else -> unknown.raw(r.rawField())
             }
         }

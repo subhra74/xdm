@@ -14,10 +14,10 @@ import xdm.app.headless.HeadlessCli
 import xdm.app.headless.ParsedArgs
 import xdm.app.headless.Quality
 import xdm.app.headless.StreamType
-import xdm.integration.AudioChoice
-import xdm.integration.AudioMode
-import xdm.integration.FormatChoice
-import xdm.integration.StreamPick
+import xdm.capture.AudioChoice
+import xdm.capture.AudioMode
+import xdm.capture.FormatChoice
+import xdm.capture.StreamPick
 
 class HeadlessCliTest {
     private fun parse(vararg args: String): CliOptions =

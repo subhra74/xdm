@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core.downloaders.web.http
 
@@ -562,18 +563,32 @@ class HttpChunkRetriever(
     }
 }
 
-/** Opens the part file for the download's shared write handle, creating it on the first start. */
+/**
+ * Opens the part file for the download's shared write handle, creating it on the first start. While
+ * [PartAllocation] fills it, the file starts empty and the handle holds back every write until it is filled.
+ */
 internal fun HttpTaskContext.openPartFile(): PositionalOutput {
     val file = partFile
-    // A part file written before must still be there, at full size; recreating it would
-    // silently lose what it held. Failing here is a disk error, and the download stops.
-    if (tempFileCreated.get() &&
-        totalSize.let { size -> file.length().let { it < 0 || (size != null && it != size) } }
-    ) throw IOException("Part file missing or damaged: $file")
     val size = totalSize
+    val filling = allocation.active
+    if (tempFileCreated.get()) {
+        // A part file written before must still be there, at full size (while it is being filled, at least as
+        // far as the data in it); recreating it would silently lose what it held. Failing here is a disk
+        // error, and the download stops.
+        val length = file.length()
+        val damaged = length < 0 || when {
+            size == null -> false
+            filling -> length > size || length < writtenEnd()
+            else -> length != size
+        }
+        if (damaged) throw IOException("Part file missing or damaged: $file")
+    }
     val output = when {
         tempFileCreated.get() -> file.openPositional(create = false).also {
             if (size != null) Logger.info("XDM", "Temp file created already")
+        }
+        filling -> file.openPositional(create = true).also {
+            Logger.info("XDM", "Temp file created empty, to be filled to $size")
         }
         // Sized without writing the gap (setLength may zero-fill): see NioFileOps.createSparse.
         size != null -> file.openPositional(create = true, length = size).also {
@@ -582,8 +597,11 @@ internal fun HttpTaskContext.openPartFile(): PositionalOutput {
         else -> file.openPositional(create = true)
     }
     tempFileCreated.set(true)
-    return output
+    return if (filling) allocation.Guarded(output) else output
 }
+
+/** Where the data written so far ends: the furthest any chunk got. */
+internal fun HttpTaskContext.writtenEnd(): Long = chunks.values.maxOfOrNull { it.offset + it.downloaded.get() } ?: 0L
 
 /**
  * The headers for a range request: only bytes of the version the download started with may be added, so a

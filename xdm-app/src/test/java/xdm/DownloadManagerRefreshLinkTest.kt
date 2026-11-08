@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import xdm.app.RecordStatus
+import xdm.manager.RecordStatus
 import java.io.File
 import java.util.Random
 

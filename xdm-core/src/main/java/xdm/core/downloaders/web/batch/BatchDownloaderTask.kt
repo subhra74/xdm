@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core.downloaders.web.batch
 
@@ -27,6 +28,7 @@ import xdm.core.storage.LocalStorage
 import xdm.core.storage.Storage
 import xdm.core.storage.StorageFolder
 import xdm.core.storage.TargetExistsException
+import xdm.core.storage.prepareForWriting
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.CopyOnWriteArrayList
@@ -151,8 +153,8 @@ class BatchDownloaderTask(
     private fun download() {
         try {
             host.onDownloadActivated(task.id)
-            if (!folder.create()) {
-                Logger.error("XDM", "Unable to create batch folder $folder")
+            if (!folder.prepareForWriting()) {
+                Logger.error("XDM", "Unable to write in batch folder $folder")
                 host.onDownloadFailed(task.id, DownloadError.OutputWriteError)
                 return
             }

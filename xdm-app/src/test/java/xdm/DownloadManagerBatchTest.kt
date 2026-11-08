@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import xdm.app.RecordStatus
 import xdm.core.downloaders.BatchDownloadTaskInfo
 import xdm.core.downloaders.BatchItem
 import xdm.core.downloaders.DownloadType
@@ -14,6 +13,7 @@ import xdm.core.downloaders.web.batch.BatchTaskContext
 import xdm.core.downloaders.web.batch.batchPartFile
 import xdm.core.downloaders.web.batch.saveBatchState
 import xdm.core.downloaders.web.http.ChunkStatus
+import xdm.manager.RecordStatus
 import java.io.File
 import java.util.concurrent.atomic.AtomicReference
 

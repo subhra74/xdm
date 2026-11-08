@@ -210,10 +210,17 @@ XDM has no accounts, analytics or tracking, and keeps your data on your computer
 XDM is free software, licensed under the [GNU General Public License v3.0](LICENSE). XDM 8 and earlier were released
 under GPL v2.
 
-The download engine, [`xdm-core`](xdm-core), is licensed separately under the
-[Apache License 2.0](xdm-core/LICENSE), so it can be reused in other projects, including closed-source ones, as long
-as its [NOTICE](xdm-core/NOTICE) is kept and the product credits it. Everything else in this repository, including the
-desktop app (`xdm-app`) and the browser extensions, stays under GPL v3.
+The download engine ([`xdm-core`](xdm-core)), the modules shared with the Android app and the Android app itself
+([`xdm-android`](xdm-android)) are GPL v3 with the additional terms in [xdm-android/NOTICE](xdm-android/NOTICE). Those
+terms cover the XDM name and logo, and include an exception that lets only the official Android store builds (Google
+Play and similar stores) combine this code with proprietary components.
+
+**The F-Droid build and the APKs on GitHub releases are pure GPL v3:** they are built from this public source code
+alone and contain no proprietary components. The exception does not apply to them, nor to any build you make
+yourself from the source.
+
+`xdm-core` versions up to 9.0.9 were released under the Apache License 2.0 (see [its NOTICE](xdm-core/NOTICE)). The
+desktop app (`xdm-app`) and the browser extensions are under GPL v3.
 
 ## ⭐ Star history
 

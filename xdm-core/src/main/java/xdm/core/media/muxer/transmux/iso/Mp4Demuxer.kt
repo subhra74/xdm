@@ -1,12 +1,12 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core.media.muxer.transmux.iso
 
 import xdm.core.media.muxer.transmux.es.SampleSink
 import xdm.core.media.muxer.transmux.io.ParsableByteArray
 import xdm.core.media.muxer.transmux.sample.Codec
-import xdm.core.media.muxer.transmux.sample.Sample
 import xdm.core.media.muxer.transmux.sample.Track
 import xdm.core.util.Logger
 import java.io.RandomAccessFile
@@ -33,7 +33,9 @@ class Mp4Demuxer(private val sink: SampleSink) {
         var defaultSampleSize: Long = 0,
         var defaultSampleFlags: Long = 0,
         /** Input ticks added to every DTS/PTS so the track sits on the movie (presentation) timeline. */
-        var editShift: Long = 0
+        var editShift: Long = 0,
+        /** Decode time just past the last fragment's samples: where a traf without tfdt continues. */
+        var fragmentEnd: Long = 0
     ) {
         fun scale(v: Long): Long =
             if (inputTimescale == track.timescale || inputTimescale <= 0) v else v * track.timescale / inputTimescale
@@ -173,7 +175,7 @@ class Mp4Demuxer(private val sink: SampleSink) {
         val state = continuingTrack(trackId, isVideo)?.also { st ->
             st.inputTrackId = trackId
             st.inputTimescale = inputTimescale
-            st.descriptionIndex = descriptionIndexFor(st.track, sampleEntry!!)
+            st.descriptionIndex = st.track.descriptionIndexFor(sampleEntry!!)
         } ?: run {
             val track = Track(if (isVideo) Codec.OTHER_VIDEO else Codec.OTHER_AUDIO)
             track.timescale = inputTimescale
@@ -230,15 +232,6 @@ class Mp4Demuxer(private val sink: SampleSink) {
         return free.firstOrNull { it.inputTrackId == trackId } ?: free.singleOrNull()
     }
 
-    /** 1-based stsd index of [entry] in [track], registering it as a new sample entry if unseen. */
-    private fun descriptionIndexFor(track: Track, entry: ByteArray): Int {
-        if (track.sampleEntryBox?.contentEquals(entry) == true) return 1
-        val i = track.additionalSampleEntries.indexOfFirst { it.contentEquals(entry) }
-        if (i >= 0) return i + 2
-        track.additionalSampleEntries.add(entry)
-        return track.additionalSampleEntries.size + 1
-    }
-
     /** Returns the first sample entry box (with header) inside an stsd. */
     private fun firstSampleEntry(data: ByteArray, stsdStart: Int, stsdEnd: Int): ByteArray? {
         // stsd: version/flags(4) + entry_count(4), then sample entry boxes.
@@ -252,16 +245,23 @@ class Mp4Demuxer(private val sink: SampleSink) {
     // ---- moof / traf / trun (fragmented) ----
 
     private fun parseMoof(data: ByteArray, moofFileStart: Long, raf: RandomAccessFile) {
+        // Without base_data_offset or default-base-is-moof, a traf's data starts where the previous
+        // traf's ended; the first traf's at the moof (ISO/IEC 14496-12 8.8.7.1).
+        var previousDataEnd = -1L
         forEachBox(data, 0, data.size) { type, s, e ->
-            if (type == "traf") parseTraf(data, s, e, moofFileStart, raf)
+            if (type == "traf") previousDataEnd = parseTraf(data, s, e, moofFileStart, previousDataEnd, raf)
         }
     }
 
-    private fun parseTraf(data: ByteArray, start: Int, end: Int, moofFileStart: Long, raf: RandomAccessFile) {
+    /** Returns the file position just past this traf's sample data (or [previousDataEnd] if it had none). */
+    private fun parseTraf(
+        data: ByteArray, start: Int, end: Int, moofFileStart: Long, previousDataEnd: Long, raf: RandomAccessFile
+    ): Long {
         var trackId = 0
         var baseDataOffset = -1L
+        var defaultBaseIsMoof = false
         var defDur = -1L; var defSize = -1L; var defFlags = -1L
-        var baseMediaDecodeTime = 0L
+        var baseMediaDecodeTime = -1L
         val truns = ArrayList<IntArray>() // [contentStart, contentEnd]
 
         forEachBox(data, start, end) { type, s, e ->
@@ -270,6 +270,7 @@ class Mp4Demuxer(private val sink: SampleSink) {
                     val flags = readU24(data, s + 1)
                     val p = ParsableByteArray(data); p.seek(s + 4)
                     trackId = p.readInt()
+                    defaultBaseIsMoof = flags and 0x020000 != 0
                     if (flags and 0x000001 != 0) baseDataOffset = p.readUnsignedInt() shl 32 or p.readUnsignedInt()
                     if (flags and 0x000002 != 0) p.readInt() // sample_description_index
                     if (flags and 0x000008 != 0) defDur = p.readUnsignedInt()
@@ -284,33 +285,66 @@ class Mp4Demuxer(private val sink: SampleSink) {
                 "trun" -> truns.add(intArrayOf(s, e))
             }
         }
-        val state = current[trackId] ?: return
+        val base = when {
+            baseDataOffset >= 0 -> baseDataOffset
+            defaultBaseIsMoof || previousDataEnd < 0 -> moofFileStart
+            else -> previousDataEnd
+        }
+        val state = current[trackId]
+        // A track we don't mux still occupies data that the next traf may follow.
+        if (state == null) return skipTrafData(data, truns, base, defSize, trexDefaults[trackId]?.get(1) ?: 0)
         val dDur = if (defDur >= 0) defDur else state.defaultSampleDuration
         val dSize = if (defSize >= 0) defSize else state.defaultSampleSize
         val dFlags = if (defFlags >= 0) defFlags else state.defaultSampleFlags
-        val base = if (baseDataOffset >= 0) baseDataOffset else moofFileStart
 
-        var runningDts = baseMediaDecodeTime
+        // Without a tfdt the fragment continues where the track's previous one ended, as ffmpeg does.
+        var runningDts = if (baseMediaDecodeTime >= 0) baseMediaDecodeTime else state.fragmentEnd
+        // A trun without data_offset continues right after the previous run's data (8.8.8.3).
+        var dataPos = base
         for (trun in truns) {
-            runningDts = parseTrun(data, trun[0], trun[1], base, dDur, dSize, dFlags, runningDts, state, raf)
+            val r = parseTrun(data, trun[0], trun[1], base, dataPos, dDur, dSize, dFlags, runningDts, state, raf)
+            runningDts = r[0]
+            dataPos = r[1]
         }
+        state.fragmentEnd = runningDts
+        return if (truns.isEmpty()) previousDataEnd else dataPos
     }
 
+    /** End of a skipped traf's data: the sizes are summed without reading samples. */
+    private fun skipTrafData(data: ByteArray, truns: List<IntArray>, base: Long, tfhdSize: Long, trexSize: Long): Long {
+        var pos = base
+        for ((start, _) in truns) {
+            val flags = readU24(data, start + 1)
+            val p = ParsableByteArray(data); p.seek(start + 4)
+            val n = p.readInt()
+            if (flags and 0x000001 != 0) pos = base + p.readInt()
+            if (flags and 0x000004 != 0) p.readInt()
+            val defSize = if (tfhdSize >= 0) tfhdSize else trexSize
+            for (i in 0 until n) {
+                if (flags and 0x000100 != 0) p.readInt()
+                pos += if (flags and 0x000200 != 0) p.readUnsignedInt() else defSize
+                if (flags and 0x000400 != 0) p.readInt()
+                if (flags and 0x000800 != 0) p.readInt()
+            }
+        }
+        return pos
+    }
+
+    /** Returns [next DTS, file position just past this run's data]. */
     private fun parseTrun(
-        data: ByteArray, start: Int, end: Int, base: Long,
+        data: ByteArray, start: Int, end: Int, base: Long, continueAt: Long,
         defDur: Long, defSize: Long, defFlags: Long,
         startDts: Long, state: TrackState, raf: RandomAccessFile
-    ): Long {
+    ): LongArray {
         val version = data[start].toInt() and 0xFF
         val flags = readU24(data, start + 1)
         val p = ParsableByteArray(data); p.seek(start + 4)
         val sampleCount = p.readInt()
-        var dataOffset = 0L
-        if (flags and 0x000001 != 0) dataOffset = p.readInt().toLong() // signed
+        var filePos = continueAt
+        if (flags and 0x000001 != 0) filePos = base + p.readInt().toLong() // signed, relative to base
         var firstSampleFlags = -1L
         if (flags and 0x000004 != 0) firstSampleFlags = p.readUnsignedInt()
 
-        var filePos = base + dataOffset
         var dts = startDts
         val buf = ByteArray(64 * 1024)
         raf.seek(filePos)
@@ -331,13 +365,12 @@ class Mp4Demuxer(private val sink: SampleSink) {
             val isKey = (sFlags and 0x00010000L) == 0L
             val outOffset = copySample(raf, sz, buf)
             state.track.samples.add(
-                Sample(outOffset, sz, state.scale(dts + cto + state.editShift), state.scale(dts + state.editShift), isKey)
-                    .also { it.sampleDescriptionIndex = state.descriptionIndex }
+                outOffset, sz, state.scale(dts + cto + state.editShift), state.scale(dts + state.editShift), isKey, state.descriptionIndex
             )
             dts += dur
             filePos += sz
         }
-        return dts
+        return longArrayOf(dts, filePos)
     }
 
     // ---- progressive stbl sample tables ----
@@ -426,8 +459,7 @@ class Mp4Demuxer(private val sink: SampleSink) {
             raf.seek(sampleFileOffsets[i])
             val outOffset = copySample(raf, sizes[i], buf)
             track.samples.add(
-                Sample(outOffset, sizes[i], state.scale(dts + cto + state.editShift), state.scale(dts + state.editShift), isKey)
-                    .also { it.sampleDescriptionIndex = state.descriptionIndex }
+                outOffset, sizes[i], state.scale(dts + cto + state.editShift), state.scale(dts + state.editShift), isKey, state.descriptionIndex
             )
             dts += dur
             sttsRem--

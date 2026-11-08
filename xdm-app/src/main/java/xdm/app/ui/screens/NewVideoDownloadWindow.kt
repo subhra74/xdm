@@ -19,6 +19,9 @@ import xdm.app.utils.sameWidth
 import xdm.app.utils.scaledInsets
 import xdm.app.utils.scaledSize
 import xdm.app.utils.windowIconImages
+import xdm.capture.CapturedSubtitle
+import xdm.capture.StreamingVideoDisplayInfo
+import xdm.capture.VideoHelper
 import xdm.core.downloaders.DashDownloadTaskInfo
 import xdm.core.downloaders.HlsDownloadTaskInfo
 import xdm.core.downloaders.StreamingDownloadTaskInfo
@@ -50,6 +53,9 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
     private lateinit var spnSegments: JSpinner
     private lateinit var lblSubtitles: JLabel
     private lateinit var cmbSubtitles: JComboBox<SubtitleChoice>
+    private lateinit var chkSaveAsSrt: JCheckBox
+    /** The captured subtitle file this dialog downloads; null for a video. */
+    private var capturedSubtitle: CapturedSubtitle? = null
     private lateinit var storageStatus: StorageStatusLabel
     private lateinit var tempFolderCards: TempFolderCards
     private var fileSize: Long? = null
@@ -104,16 +110,21 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
         contentPane.add(txtFileName, gbcTxtFileName)
         txtFileName.columns = 10
 
-        lblFileInfo = JLabel().apply {
+        lblFileInfo = object : JLabel() {
+            /** The "---" width plus some room, set once below. */
+            var minInfoWidth = 0
+
+            // Never narrower than its text: a fixed width cut a stream size ("~ 123.4 MB") short.
+            override fun getPreferredSize(): Dimension =
+                super.getPreferredSize().let { Dimension(max(it.width, minInfoWidth), it.height) }
+        }.apply {
             icon = createIcon(RemixIcon.FILE_FILL, 36, Color.GRAY)
             verticalTextPosition = SwingConstants.BOTTOM
             horizontalTextPosition = SwingConstants.CENTER
             horizontalAlignment = SwingConstants.CENTER
             verticalAlignment = SwingConstants.CENTER
             text = "---"
-            preferredSize = Dimension(
-                preferredSize.width + 30.px, preferredSize.height
-            )
+            minInfoWidth = preferredSize.width + 30.px
         }
         val gbcLblFileInfo = GridBagConstraints().apply {
             insets = scaledInsets(20, 5, 5, 10)
@@ -138,6 +149,20 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
         })
         cmbSubtitles = JComboBox<SubtitleChoice>().apply { name = "ND_SUBTITLES" }
         contentPane.add(cmbSubtitles, GridBagConstraints().apply {
+            gridwidth = 4
+            anchor = GridBagConstraints.WEST
+            insets = scaledInsets(5, 0, 5, 5)
+            gridx = 1
+            gridy = 4
+        })
+        // Same cell as the subtitle dropdown: a video shows that, a captured subtitle file this.
+        chkSaveAsSrt = JCheckBox(text("ND_SAVE_AS_SRT")).apply {
+            name = "ND_SAVE_AS_SRT"
+            isOpaque = false
+            isVisible = false
+            addActionListener { srtChoiceChanged() }
+        }
+        contentPane.add(chkSaveAsSrt, GridBagConstraints().apply {
             gridwidth = 4
             anchor = GridBagConstraints.WEST
             insets = scaledInsets(5, 0, 5, 5)
@@ -249,9 +274,14 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
             val name = FileUtils.sanitizeFileName(file)!!
             //TODO: Check FFmpeg required
 
+            val convertToSrt = chkSaveAsSrt.isVisible && chkSaveAsSrt.isSelected
+            if (chkSaveAsSrt.isVisible && AppContext.config.saveSubtitlesAsSrt != convertToSrt) {
+                AppContext.config.saveSubtitlesAsSrt = convertToSrt
+                AppContext.config.save()
+            }
             AppContext.downloader.addVideoDownload(
                 videoId, name, picker.selectedCategory?.id, picker.targetFolder, spnSegments.count,
-                (cmbSubtitles.selectedItem as? SubtitleChoice)?.track,
+                (cmbSubtitles.selectedItem as? SubtitleChoice)?.track, convertToSrt,
             )
         } finally {
             dispose()
@@ -282,6 +312,7 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
     private fun ignoreHost() {
         val tracker = AppContext.videoTracker
         val url = tracker.getHttpVideo(videoId)?.url
+            ?: tracker.getSubtitle(videoId)?.task?.url
             ?: tracker.getHlsVideo(videoId)?.url
             ?: tracker.getDashVideo(videoId)?.url
         val host = url?.toHttpUrlOrNull()?.host
@@ -300,24 +331,51 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
         dispose()
     }
 
+    /** The size ("≈ 245.3 MB"), else the resolution, else just the kind of stream. */
+    private fun streamInfo(display: StreamingVideoDisplayInfo?, stream: Any): String =
+        display?.streamSummary ?: if (stream is DashDownloadTaskInfo) "DASH" else "HLS"
+
     fun showWindow(vid: Long, fileName: String, fileSize: Long?, contentType: String?) {
         this.videoId = vid
         spnSegments.count = AppContext.config.maxSegments
         txtFileName.text = FileUtils.sanitizeFileName(fileName)
-        this.fileSize = fileSize
         val tracker = AppContext.videoTracker
         val http = tracker.getHttpVideo(vid)
         val stream = tracker.getHlsVideo(vid) ?: tracker.getDashVideo(vid)
-        // A stream has no size up front: show its resolution, else just the kind of stream.
+        val subtitle = tracker.getSubtitle(vid)
+        capturedSubtitle = subtitle
+        val display = tracker.getDisplayInfo(vid)
+        // A stream's size comes from its playlists (an estimate, unless byte ranges give it exactly).
+        this.fileSize = if (http == null && stream != null) display?.streamSize?.neededBytes else fileSize
         lblFileInfo.text = when {
-            http == null && stream != null -> tracker.getDisplayInfo(vid)?.height?.let { "${it}p" }
-                ?: if (stream is DashDownloadTaskInfo) "DASH" else "HLS"
+            http == null && stream != null -> streamInfo(display, stream)
             else -> fileSize?.let { FormatHelper.formatSize(it.toDouble()) } ?: "---"
         }
+        if (http == null && stream != null && display?.streamSize == null) {
+            // No player loaded a variant of this master: load it once now for the size.
+            VideoHelper.sizeCapturedStream(vid) { updated ->
+                SwingUtilities.invokeLater {
+                    if (videoId != vid || !isDisplayable) return@invokeLater
+                    lblFileInfo.text = streamInfo(updated, stream)
+                    this.fileSize = updated.streamSize?.neededBytes
+                    updateStorageStatus()
+                    // setText revalidates: the layout gives the label its new preferred width and the
+                    // stretching fields beside it give up the room; the window keeps its size.
+                }
+            }
+        }
         // A plain media file is written straight to its folder; HLS/DASH segments go to the temp folder first.
-        storageStatus.usesTempFolder = http == null
-        val url = http?.url ?: tracker.getHlsVideo(vid)?.url ?: tracker.getDashVideo(vid)?.url
-        picker.reset(txtFileName.text, url, http?.origin ?: stream?.origin)
+        storageStatus.usesTempFolder = http == null && subtitle == null
+        // A subtitle file is a few KB fetched in one piece: the segment count does not apply.
+        spnSegments.isEnabled = subtitle == null
+        val convertible = subtitle?.format?.convertible == true
+        chkSaveAsSrt.isVisible = convertible
+        if (convertible) {
+            chkSaveAsSrt.isSelected = AppContext.config.saveSubtitlesAsSrt
+            srtChoiceChanged()
+        }
+        val url = http?.url ?: subtitle?.task?.url ?: tracker.getHlsVideo(vid)?.url ?: tracker.getDashVideo(vid)?.url
+        picker.reset(txtFileName.text, url, http?.origin ?: subtitle?.task?.origin ?: stream?.origin)
         updateStorageStatus()
         fillSubtitles(
             when (stream) {
@@ -330,6 +388,19 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
         this.adjustSize()
         this.setLocationRelativeTo(null)
         this.isVisible = true
+    }
+
+    /**
+     * Swaps the name's extension between the subtitle's own and `.srt` as "Save as SRT" changes, so
+     * the name shown is the name saved. A name the user typed another extension into is left alone.
+     */
+    private fun srtChoiceChanged() {
+        val format = capturedSubtitle?.format ?: return
+        val name = txtFileName.text
+        val (from, to) = if (chkSaveAsSrt.isSelected) format.ext to "srt" else "srt" to format.ext
+        if (name.endsWith(".$from", ignoreCase = true)) {
+            txtFileName.text = name.dropLast(from.length) + to
+        }
     }
 
     /** One dropdown entry; a null [track] is None. */

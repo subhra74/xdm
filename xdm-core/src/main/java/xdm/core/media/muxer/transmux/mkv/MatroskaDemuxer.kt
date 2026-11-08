@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core.media.muxer.transmux.mkv
 
@@ -221,7 +222,7 @@ class MatroskaDemuxer(private val sink: SampleSink) {
             if (sz <= 0) continue
             val outOffset = copyFrame(offset, sz, scratch)
             val pts = basePtsMs + i * frameDurMs
-            state.track.samples.add(Sample(outOffset, sz, pts, pts, keyframe))
+            state.track.samples.add(outOffset, sz, pts, pts, keyframe)
             offset += sz
         }
     }

@@ -1,8 +1,8 @@
 package xdm.app.ui.components
 
 import xdm.app.AppContext
-import xdm.app.DownloadCategory
 import xdm.app.I8N.text
+import xdm.app.displayName
 import xdm.app.ui.screens.settings.CategoryEditDialog
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.captureCategory
@@ -15,6 +15,7 @@ import xdm.app.utils.rememberHandPickedFolder
 import xdm.app.utils.px
 import xdm.app.utils.scaledInsets
 import xdm.app.utils.scaledSize
+import xdm.manager.DownloadCategory
 import java.awt.Color
 import java.awt.Component
 import java.awt.Container

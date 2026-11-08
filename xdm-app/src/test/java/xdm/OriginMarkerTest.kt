@@ -9,8 +9,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledOnOs
 import org.junit.jupiter.api.condition.OS
-import xdm.app.utils.DownloadSource
 import xdm.app.utils.OriginMarker
+import xdm.manager.DownloadSource
 import java.io.File
 import java.io.FileInputStream
 import java.nio.file.Files

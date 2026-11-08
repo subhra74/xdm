@@ -1,5 +1,10 @@
-xdm-core
+xdm-core: the XDM download engine
 Copyright 2026 Subhra Das Gupta
 
-This product includes software developed as part of Xtreme Download Manager (XDM)
-by Subhra Das Gupta (https://github.com/subhra74/xdm).
+From the first release after 9.0.9, xdm-core is licensed under the GNU General
+Public License version 3 or later (LICENSE in the repository root) with the
+additional terms and the "Exception for official Android store builds" in
+xdm-android/NOTICE.
+
+Versions up to and including 9.0.9 were released under the Apache License 2.0.
+Those released versions remain available under that license.

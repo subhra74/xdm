@@ -7,12 +7,12 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import xdm.app.AppConfig
 import xdm.app.AppDB
-import xdm.app.DbRecord
-import xdm.app.RecordStatus
 import xdm.core.downloaders.DownloadType
 import xdm.core.util.AtomicIO
 import xdm.core.util.TagWriter
 import xdm.core.util.TaggedFile
+import xdm.manager.DbRecord
+import xdm.manager.RecordStatus
 import java.io.File
 import java.nio.file.Files
 

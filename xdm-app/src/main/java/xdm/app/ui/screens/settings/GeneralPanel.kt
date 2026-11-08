@@ -2,7 +2,6 @@ package xdm.app.ui.screens.settings
 
 import xdm.app.AppConfig
 import xdm.app.AppContext
-import xdm.app.DownloadCompleteNotification
 import xdm.app.I8N
 import xdm.app.ListSelectionMode
 import xdm.app.ui.components.MessageBox
@@ -16,6 +15,7 @@ import xdm.core.util.Logger
 import xdm.app.utils.px
 import xdm.app.utils.scaledInsets
 import xdm.app.utils.scaledSize
+import xdm.manager.DownloadCompleteNotification
 import java.awt.Dimension
 import java.awt.Insets
 import java.io.File

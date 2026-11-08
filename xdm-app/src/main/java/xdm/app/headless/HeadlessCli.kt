@@ -1,6 +1,7 @@
 package xdm.app.headless
 
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import xdm.app.InsecureTrust
 import xdm.app.utils.AppDirs
 import xdm.app.utils.win.Win32Console
 import xdm.core.CoreConfig
@@ -32,11 +33,12 @@ import xdm.core.util.FormatHelper
 import xdm.core.util.Logger
 import xdm.core.util.PlatformUtils
 import xdm.core.util.getFileName
-import xdm.integration.AudioChoice
-import xdm.integration.FormatChoice
-import xdm.integration.StreamChoices
-import xdm.integration.StreamPick
-import xdm.integration.VideoHelper
+import xdm.capture.AudioChoice
+import xdm.capture.FormatChoice
+import xdm.capture.StreamChoices
+import xdm.capture.StreamSize
+import xdm.capture.StreamPick
+import xdm.capture.VideoHelper
 import java.io.File
 import java.io.PrintStream
 import java.net.InetSocketAddress
@@ -254,7 +256,8 @@ object HeadlessCli {
         private fun printFormats(label: String, url: String, formats: List<FormatChoice>) {
             out.println("${label}Formats of $url:")
             formats.forEachIndexed { i, f ->
-                out.println(String.format(Locale.ROOT, "  %3d  %s", i + 1, plain(f.label)))
+                val size = f.size?.let { " | ${sizeText(it)}" }.orEmpty()
+                out.println(String.format(Locale.ROOT, "  %3d  %s%s", i + 1, plain(f.label), size))
                 if (f.audio.size > 1) f.audio.forEach { a -> out.println("         audio: ${plain(a.label)}") }
             }
         }
@@ -265,7 +268,7 @@ object HeadlessCli {
         private fun workDir(id: Long) = File(workRoot, id.toString()).apply { mkdirs() }
 
         private fun newClient(poolSize: Int): PoolingHttpClient = HttpClientImpl(
-            poolSize, config.toProxy(), o.insecure, config.readTimeoutSeconds,
+            poolSize, config.toProxy(), InsecureTrust.ifEnabled(o.insecure), config.readTimeoutSeconds,
             o.proxyUser.orEmpty(), o.proxyPassword.orEmpty(), auth = auth, serverAuth = true,
         )
 
@@ -410,6 +413,17 @@ object HeadlessCli {
 
     /** The GUI's format labels use " · "; a console code page may not have it (Windows OEM pages). */
     private fun plain(label: String) = label.replace(" · ", " | ")
+
+    /** A stream size in plain ASCII: a console may not show the ≈ the dialogs use. */
+    private fun sizeText(size: StreamSize): String {
+        val bytes = FormatHelper.formatSize(size.bytes.toDouble())
+        return when (size.kind) {
+            StreamSize.Kind.EXACT -> bytes
+            StreamSize.Kind.AVERAGE -> "approx. $bytes"
+            StreamSize.Kind.PEAK -> "roughly $bytes"
+            StreamSize.Kind.LIVE -> "live"
+        }
+    }
 
     private fun describe(error: DownloadError): String = when (error) {
         DownloadError.NetworkError -> "network error"

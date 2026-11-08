@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core
 
@@ -713,5 +714,99 @@ class TestHlsParser {
             """
         )
         assertTrue(list.single().subtitles.isEmpty())
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // Live detection and byte-range totals (size before download)
+    // ---------------------------------------------------------------------------------------
+
+    @Test
+    fun endList_finishedNotLive() {
+        val p = media(
+            """
+            #EXTM3U
+            #EXTINF:4,
+            a.ts
+            #EXT-X-ENDLIST
+            """
+        )
+        assertTrue(p.endList, "end list read")
+        assertFalse(p.isLive, "a finished playlist is not live")
+    }
+
+    @Test
+    fun noEndList_isLiveUnlessVod() {
+        val live = media(
+            """
+            #EXTM3U
+            #EXTINF:4,
+            a.ts
+            """
+        )
+        assertTrue(live.isLive, "no end list: still growing")
+        val vod = media(
+            """
+            #EXTM3U
+            #EXT-X-PLAYLIST-TYPE:VOD
+            #EXTINF:4,
+            a.ts
+            """
+        )
+        assertEquals("VOD", vod.playlistType, "playlist type read")
+        assertFalse(vod.isLive, "VOD never grows")
+        val event = media(
+            """
+            #EXTM3U
+            #EXT-X-PLAYLIST-TYPE:EVENT
+            #EXTINF:4,
+            a.ts
+            """
+        )
+        assertTrue(event.isLive, "an event without an end list is still growing")
+    }
+
+    @Test
+    fun byteRangeTotal_countsInitAndEverySegment() {
+        val p = media(
+            """
+            #EXTM3U
+            #EXT-X-MAP:URI="v.mp4",BYTERANGE="800@0"
+            #EXTINF:4,
+            #EXT-X-BYTERANGE:1000@800
+            v.mp4
+            #EXTINF:4,
+            #EXT-X-BYTERANGE:1200
+            v.mp4
+            #EXT-X-ENDLIST
+            """
+        )
+        assertEquals(3000L, p.byteRangeTotal(), "init + both segments")
+    }
+
+    @Test
+    fun byteRangeTotal_nullWhenAnySizeUnknown() {
+        val noInitRange = media(
+            """
+            #EXTM3U
+            #EXT-X-MAP:URI="init.mp4"
+            #EXTINF:4,
+            #EXT-X-BYTERANGE:1000@0
+            v.mp4
+            #EXT-X-ENDLIST
+            """
+        )
+        assertNull(noInitRange.byteRangeTotal(), "init without BYTERANGE has no known size")
+        val plain = media(
+            """
+            #EXTM3U
+            #EXTINF:4,
+            #EXT-X-BYTERANGE:1000@0
+            v.mp4
+            #EXTINF:4,
+            b.ts
+            #EXT-X-ENDLIST
+            """
+        )
+        assertNull(plain.byteRangeTotal(), "a segment without a range")
     }
 }

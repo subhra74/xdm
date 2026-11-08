@@ -4,8 +4,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import xdm.app.AppDB
-import xdm.app.RecordStatus
 import xdm.core.downloaders.DownloadError
+import xdm.manager.RecordStatus
 
 /** A download stopped by an error is FAILED (RecordStatus.ERROR): kept apart from paused, resumable like it. */
 class DownloadManagerFailedTest : DownloadManagerTestBase() {

@@ -3,6 +3,13 @@ import Logger from './logger.js';
 
 const APP_BASE_URL = "http://127.0.0.1:8597";
 
+/**
+ * Sent with every request so XDM can tell which extension and version is talking to it, and ask
+ * for an update when it is too old. Extensions before this header existed send nothing, which XDM
+ * takes as too old.
+ */
+const XDM_HEADERS = { "X-XDM-Extension": "chrome/" + chrome.runtime.getManifest().version };
+
 /** Floor on how fast the long poll may be re-issued after an immediate empty reply. */
 const MIN_POLL_INTERVAL_MS = 1000;
 
@@ -124,7 +131,7 @@ export default class Connector {
         }
         this.lastAttemptAt = Date.now();
         this.logger.log("Looking for XDM (" + reason + ")");
-        this.attempt = fetch(APP_BASE_URL + "/sync", { signal: AbortSignal.timeout(SYNC_TIMEOUT_MS) })
+        this.attempt = fetch(APP_BASE_URL + "/sync", { headers: XDM_HEADERS, signal: AbortSignal.timeout(SYNC_TIMEOUT_MS) })
             .then(this.onResponse.bind(this))
             .catch(err => this.disconnect())
             .finally(() => { this.attempt = undefined; });
@@ -205,6 +212,7 @@ export default class Connector {
             const clientId = await this.getClientId();
             const res = await fetch(APP_BASE_URL + "/poll", {
                 method: "POST",
+                headers: XDM_HEADERS,
                 body: JSON.stringify({ clientId: clientId, version: this.version })
             });
             this.connected = true;
@@ -237,7 +245,7 @@ export default class Connector {
 
     verifyConnection() {
         this.lastAttemptAt = Date.now();
-        fetch(APP_BASE_URL + "/sync")
+        fetch(APP_BASE_URL + "/sync", { headers: XDM_HEADERS })
             .then(this.onResponse.bind(this))
             .catch(err => this.disconnect());
     }
@@ -247,7 +255,7 @@ export default class Connector {
         // A command is a user action: it is never throttled, but it does count as having just
         // reached out, so no lookup follows right behind it.
         this.lastAttemptAt = Date.now();
-        return fetch(APP_BASE_URL + url, { method: "POST", body: JSON.stringify(data) })
+        return fetch(APP_BASE_URL + url, { method: "POST", headers: XDM_HEADERS, body: JSON.stringify(data) })
             .then(this.onResponse.bind(this))
             .catch(err => this.disconnect());
     }
