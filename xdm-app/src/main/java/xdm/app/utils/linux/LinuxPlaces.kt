@@ -127,7 +127,7 @@ internal object LinuxPlaces {
         user,
     )
 
-    private val mountLine = Regex("""^.+? on (.+?)(?: type \S+)? \(.*\)$""")
+    private val mountLine = Regex("""^.+? on (.+?)(?: type \S+)? \([^()]*\)$""")
 
     private fun removable(points: Sequence<String>, user: String): List<File> = points
         .filter { point ->

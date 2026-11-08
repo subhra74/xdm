@@ -60,13 +60,14 @@ class LinuxPlacesTest {
             /dev/ada0p2 on / (ufs, local, journaled soft-updates)
             devfs on /dev (devfs)
             /dev/da0s1 on /media/USB STICK (msdosfs, local)
+            /dev/da3s1 on /media/USB (1) (msdosfs, local)
             nas:/export on /mnt/nas (nfs)
             /dev/da1p1 on /mnt/data (ufs, local)
             /dev/da2p1 on /mnt/data/deeper (ufs, local)
             tmpfs on /tmp (tmpfs, local)
         """.trimIndent()
         assertEquals(
-            listOf(File("/media/USB STICK"), File("/mnt/nas"), File("/mnt/data")),
+            listOf(File("/media/USB STICK"), File("/media/USB (1)"), File("/mnt/nas"), File("/mnt/data")),
             LinuxPlaces.removableMountsFromMount(freebsd, "a"),
             "FreeBSD and DragonFly: dev on /point (fstype, flags)",
         )
