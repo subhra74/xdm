@@ -58,6 +58,12 @@ object AppMain {
         // Holds cookies, captured request headers and logs: other users of the machine stay out.
         FileUtils.restrictToOwner(File(configDir))
         Logger.init(File(configDir))
+        // Before anything resolves a name or opens a socket (TLS setup included): the JDK reads
+        // preferIPv4Stack once, when its networking first loads, so a change needs a restart.
+        if (AppConfig.readForceIpv4(configDir)) {
+            System.setProperty("java.net.preferIPv4Stack", "true")
+            Logger.info("Network: IPv4 only")
+        }
         // Before any HTTP client or digest: the shared TLS context (SharedTls) is built once.
         ConscryptTls.install()
         // Certificates the user chose to trust; read by every HTTPS handshake.

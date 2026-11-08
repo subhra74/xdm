@@ -26,6 +26,7 @@ class AdvancedConfigPanel : SettingsPanel() {
     private val tglRunOnStartup = SettingsToggle()
     private val tglWayland = SettingsToggle()
     private val tglSwingChooser = SettingsToggle()
+    private val tglForceIpv4 = SettingsToggle()
     private val tglSkipDupManifests = SettingsToggle()
 
     private val tglRunCmd = SettingsToggle()
@@ -59,6 +60,7 @@ class AdvancedConfigPanel : SettingsPanel() {
                 settingsRow(I8N.text("MSG_HALT"), I8N.text("MSG_HALT_SUB"), tglHalt),
                 settingsRow(I8N.text("MSG_WAYLAND"), I8N.text("MSG_WAYLAND_SUB"), tglWayland),
                 settingsRow(I8N.text("MSG_SWING_CHOOSER"), I8N.text("MSG_SWING_CHOOSER_SUB"), tglSwingChooser),
+                settingsRow(I8N.text("MSG_FORCE_IPV4"), I8N.text("MSG_FORCE_IPV4_SUB"), tglForceIpv4),
             )
         )
         add(settingsGap())
@@ -142,6 +144,7 @@ class AdvancedConfigPanel : SettingsPanel() {
         val linux = detectOS() == OS.Linux
         tglSwingChooser.isSelected = linux && config.swingFileChooser
         tglSwingChooser.isEnabled = linux
+        tglForceIpv4.isSelected = config.forceIpv4
         tglSkipDupManifests.isSelected = config.skipDuplicateManifests
         tglRunCmd.isSelected = config.runCommand
         txtCmd.text = config.customCommand
@@ -167,6 +170,7 @@ class AdvancedConfigPanel : SettingsPanel() {
         if (detectOS() == OS.Linux) {
             config.swingFileChooser = tglSwingChooser.isSelected
         }
+        config.forceIpv4 = tglForceIpv4.isSelected
         config.skipDuplicateManifests = tglSkipDupManifests.isSelected
         config.runCommand = tglRunCmd.isSelected
         config.customCommand = txtCmd.text

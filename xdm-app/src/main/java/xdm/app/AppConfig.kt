@@ -139,6 +139,11 @@ interface IAppConfig : EngineConfig {
      * (Advanced settings). Off by default. See [xdm.app.utils.linux.PortalFileChooser].
      */
     var swingFileChooser: Boolean
+    /**
+     * Run the whole process on IPv4 only (`java.net.preferIPv4Stack`, Advanced settings, next start).
+     * Read before any networking by [AppConfig.readForceIpv4]. Off by default.
+     */
+    var forceIpv4: Boolean
     var listSelectionMode: ListSelectionMode
     /** Play a sound when a download finishes or fails; ignored while [downloadCompleteNotification] is NONE. */
     var playSound: Boolean
@@ -218,6 +223,7 @@ private const val F_THEME_MIGRATED = 54
 private const val F_NOTIFIED_UPDATE_VERSION = 55
 private const val F_DETECT_SUBTITLES = 56
 private const val F_SAVE_SUBTITLES_AS_SRT = 57
+private const val F_FORCE_IPV4 = 58
 
 // Inside F_CATEGORIES: one F_CATEGORY record per category, in order.
 private const val F_CATEGORY = 1
@@ -242,6 +248,26 @@ class AppConfig(private val configDir: String) : IAppConfig {
         const val MAX_PARALLEL_DOWNLOADS = 256
         /** The Interface size choices in Settings, in percent. */
         val UI_SCALES = listOf(90, 100, 110, 125, 150)
+
+        /**
+         * Only [forceIpv4], read from the saved config at startup before anything opens a socket or
+         * resolves a name: `java.net.preferIPv4Stack` is read once, when the JDK's networking first loads.
+         */
+        fun readForceIpv4(configDir: String): Boolean {
+            if (!AtomicIO.exists(CONFIG_FILE, configDir)) return false
+            return AtomicIO.readTransacted(CONFIG_FILE, configDir) {
+                val r = TaggedFile.read(it)
+                var value = false
+                while (true) {
+                    when (r.next()) {
+                        -1 -> break
+                        F_FORCE_IPV4 -> value = r.bool()
+                        else -> r.skip()
+                    }
+                }
+                value
+            }.getOrDefault(false)
+        }
     }
 
     private val changeListeners = java.util.concurrent.CopyOnWriteArrayList<() -> Unit>()
@@ -359,6 +385,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var batchAsOneFromClipboard: Boolean = false
     override var nativeWayland: Boolean = true
     override var swingFileChooser: Boolean = false
+    override var forceIpv4: Boolean = false
     override var listSelectionMode: ListSelectionMode = ListSelectionMode.CLASSIC
 
     override fun applyAuthConfig() {
@@ -457,6 +484,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
         w.string(F_NOTIFIED_UPDATE_VERSION, notifiedUpdateVersion)
         w.bool(F_DETECT_SUBTITLES, detectSubtitles)
         w.bool(F_SAVE_SUBTITLES_AS_SRT, saveSubtitlesAsSrt)
+        w.bool(F_FORCE_IPV4, forceIpv4)
         w.raw(unknownFields)
     }
 
@@ -529,6 +557,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
                 F_NOTIFIED_UPDATE_VERSION -> notifiedUpdateVersion = r.string()
                 F_DETECT_SUBTITLES -> detectSubtitles = r.bool()
                 F_SAVE_SUBTITLES_AS_SRT -> saveSubtitlesAsSrt = r.bool()
+                F_FORCE_IPV4 -> forceIpv4 = r.bool()
                 else -> unknown.raw(r.rawField())
             }
         }
