@@ -6,6 +6,7 @@ import xdm.app.I8N
 import xdm.core.util.Logger
 import java.io.File
 import java.net.URI
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.function.Function
@@ -148,8 +149,10 @@ internal object LinuxPlaces {
 
     private fun runMount(command: String): String? = try {
         val process = ProcessBuilder(command).redirectErrorStream(true).start()
-        val text = process.inputStream.bufferedReader().readText()
-        if (process.waitFor(5, TimeUnit.SECONDS) && process.exitValue() == 0) text else null
+        // readText() blocks until mount closes its output, so the timeout is on waitFor and the read is async.
+        val output = CompletableFuture.supplyAsync { process.inputStream.bufferedReader().readText() }
+        if (process.waitFor(5, TimeUnit.SECONDS) && process.exitValue() == 0) output.get(1, TimeUnit.SECONDS)
+        else { process.destroyForcibly(); null }
     } catch (e: Exception) {
         null
     }
