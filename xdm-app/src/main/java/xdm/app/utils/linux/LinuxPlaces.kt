@@ -7,6 +7,7 @@ import xdm.core.util.Logger
 import java.io.File
 import java.net.URI
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 import java.util.function.Function
 import javax.swing.Icon
 import javax.swing.UIManager
@@ -55,7 +56,7 @@ internal object LinuxPlaces {
         val config = System.getenv("XDG_CONFIG_HOME")?.takeIf { it.isNotBlank() }?.let(::File) ?: File(home, ".config")
         val userDirs = read(File(config, "user-dirs.dirs"))?.let { userDirs(it, home) }.orEmpty()
         val bookmarks = read(File(config, "gtk-3.0/bookmarks"))?.let(::gtkBookmarks).orEmpty()
-        val mounted = read(File("/proc/self/mountinfo"))?.let { removableMounts(it, System.getProperty("user.name")) }.orEmpty()
+        val mounted = currentRemovableMounts(System.getProperty("user.name"))
 
         labels.clear()
         labels[home.path] = I8N.text("PLACES_HOME")
@@ -111,8 +112,24 @@ internal object LinuxPlaces {
      * Fedora, Arch, KDE), `/media/<user>/` (Ubuntu, Debian), `/media/` and `/mnt/`. udisks names the folder
      * after the volume label, so the folder name is a good label.
      */
-    fun removableMounts(mountinfo: String, user: String): List<File> = mountinfo.lineSequence()
-        .mapNotNull { line -> line.split(' ').getOrNull(4)?.let(::unescapeMount) }
+    fun removableMounts(mountinfo: String, user: String): List<File> = removable(
+        mountinfo.lineSequence().mapNotNull { line -> line.split(' ').getOrNull(4)?.let(::unescapeMount) },
+        user,
+    )
+
+    /**
+     * Same as [removableMounts] but from the output of `mount(8)` on the BSDs, which have no
+     * `/proc/self/mountinfo` (and often no procfs at all): `dev on /point (fstype, flags)` on FreeBSD and
+     * DragonFly, `dev on /point type fstype (flags)` on OpenBSD and NetBSD.
+     */
+    fun removableMountsFromMount(output: String, user: String): List<File> = removable(
+        output.lineSequence().mapNotNull { line -> mountLine.matchEntire(line.trim())?.groupValues?.get(1) },
+        user,
+    )
+
+    private val mountLine = Regex("""^.+? on (.+?)(?: type \S+)? \(.*\)$""")
+
+    private fun removable(points: Sequence<String>, user: String): List<File> = points
         .filter { point ->
             val parent = point.substringBeforeLast('/', "")
             parent == "/run/media/$user" || parent == "/media/$user" || (point.startsWith("/media/") &&
@@ -121,6 +138,21 @@ internal object LinuxPlaces {
         .distinct()
         .map(::File)
         .toList()
+
+    /** `/proc/self/mountinfo` where there is one, else what `mount` prints (BSD, with or without procfs). */
+    private fun currentRemovableMounts(user: String): List<File> {
+        read(File("/proc/self/mountinfo"))?.let { return removableMounts(it, user) }
+        return listOf("/sbin/mount", "/bin/mount", "mount").firstNotNullOfOrNull(::runMount)
+            ?.let { removableMountsFromMount(it, user) }.orEmpty()
+    }
+
+    private fun runMount(command: String): String? = try {
+        val process = ProcessBuilder(command).redirectErrorStream(true).start()
+        val text = process.inputStream.bufferedReader().readText()
+        if (process.waitFor(5, TimeUnit.SECONDS) && process.exitValue() == 0) text else null
+    } catch (e: Exception) {
+        null
+    }
 
     /** mountinfo escapes space, tab, newline and backslash as `\040`, `\011`, `\012`, `\134`. */
     fun unescapeMount(field: String): String {

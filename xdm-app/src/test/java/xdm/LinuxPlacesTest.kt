@@ -55,6 +55,34 @@ class LinuxPlacesTest {
     }
 
     @Test
+    fun removableMountsFromMount_bsdOutput() {
+        val freebsd = """
+            /dev/ada0p2 on / (ufs, local, journaled soft-updates)
+            devfs on /dev (devfs)
+            /dev/da0s1 on /media/USB STICK (msdosfs, local)
+            nas:/export on /mnt/nas (nfs)
+            /dev/da1p1 on /mnt/data (ufs, local)
+            /dev/da2p1 on /mnt/data/deeper (ufs, local)
+            tmpfs on /tmp (tmpfs, local)
+        """.trimIndent()
+        assertEquals(
+            listOf(File("/media/USB STICK"), File("/mnt/nas"), File("/mnt/data")),
+            LinuxPlaces.removableMountsFromMount(freebsd, "a"),
+            "FreeBSD and DragonFly: dev on /point (fstype, flags)",
+        )
+        val openbsd = """
+            /dev/sd0a on / type ffs (local)
+            /dev/sd1i on /mnt/backup type ffs (local, nodev, nosuid)
+            /dev/wd1a on /media/disk type ffs (local)
+        """.trimIndent()
+        assertEquals(
+            listOf(File("/mnt/backup"), File("/media/disk")),
+            LinuxPlaces.removableMountsFromMount(openbsd, "a"),
+            "OpenBSD and NetBSD: dev on /point type fstype (flags)",
+        )
+    }
+
+    @Test
     fun unescapeMount_octalEscapes() {
         assertEquals("a b\tc\\d", LinuxPlaces.unescapeMount("a\\040b\\011c\\134d"), "space, tab, backslash")
         assertEquals("plain", LinuxPlaces.unescapeMount("plain"), "nothing to do")
