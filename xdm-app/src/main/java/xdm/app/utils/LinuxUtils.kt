@@ -18,6 +18,13 @@ object LinuxUtils {
         "org.freedesktop.ConsoleKit.Manager.Stop"
     )
 
+    // ConsoleKit2, which the BSD desktops run, marks Stop deprecated in favour of PowerOff(boolean).
+    private val consoleKitPowerOff = arrayOf(
+        "dbus-send", "--system", "--print-reply",
+        "--dest=org.freedesktop.ConsoleKit", "/org/freedesktop/ConsoleKit/Manager",
+        "org.freedesktop.ConsoleKit.Manager.PowerOff", "boolean:true"
+    )
+
     private val linuxShutdownCmds: List<Array<String>> = listOf(
         // Preferred: systemd. Present on all mainstream modern distros.
         arrayOf("systemctl", "poweroff"),
@@ -35,6 +42,7 @@ object LinuxUtils {
     // privileges; shutdown(8) and halt(8) need root or, on FreeBSD, the operator group. Absolute
     // paths because a desktop-launched JVM often has no /sbin in PATH.
     private val bsdShutdownCmds: List<Array<String>> = listOf(
+        consoleKitPowerOff,
         consoleKitStop,
         arrayOf("/sbin/shutdown", "-p", "now"),
         arrayOf("/sbin/halt", "-p")
