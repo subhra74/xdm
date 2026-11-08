@@ -241,6 +241,8 @@ MSG_CAT_NAME_MISSING=Please enter a category name.
 MSG_CAT_FILE_TYPES_MISSING=Please enter at least one file type.
 MSG_CAT_FOLDER_MISSING=Please choose a folder for this category.
 MSG_CAT_DELETE_CONFIRM=Delete this category? Existing downloads stay where they are and will be shown under None.
+TITLE_CAT_FOLDERS_MOVE=Category folders
+MSG_CAT_FOLDERS_MOVE=The download folder has changed. These categories still save into folders inside the old one:\n\n%s\n\nMove them into the new download folder? Files already downloaded stay where they are.
 
 TOOL_SORT=Sort
 TOOL_DOWNLOAD=New

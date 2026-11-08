@@ -95,6 +95,9 @@ class SettingsWindow : JFrame() {
     private val scrollPanes = ArrayList<JScrollPane>()
 
     private val btnSave = xdm.app.ui.screens.settings.settingsButton(text("DESC_SAVE_Q")) {
+        // Asked before save(): its snapshot is then taken after the question, so a config change made
+        // elsewhere while the question was open is still kept.
+        foldersPanel.confirmCategoryFolderMoves()
         save()
         dispose()
     }

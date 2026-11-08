@@ -336,7 +336,10 @@ class AppInstance : IAppInstance {
             }
         }
 
-        // TODO: Check if download window needs to be shown, or directly start the download
+        // "Start download immediately" covers videos too: start with the dialog's preselection.
+        if (AppContext.config.startDownloadAutomatically && VideoDownloadDefaults.startWithoutDialog(vid, fileName)) {
+            return
+        }
         SwingUtilities.invokeLater {
             showNewVideoDownloadWindowInternal(vid, fileName, fileSize, contentType)
         }

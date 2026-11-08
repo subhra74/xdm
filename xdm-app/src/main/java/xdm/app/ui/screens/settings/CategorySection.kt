@@ -9,6 +9,7 @@ import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.px
 import xdm.app.utils.scaledSize
+import xdm.app.utils.categoryFolderMoves
 import xdm.manager.DownloadCategory
 import java.awt.BorderLayout
 import java.awt.Component
@@ -161,6 +162,20 @@ class CategorySection {
         seenIds.addAll(categories.map { it.id })
         rebuild()
     }
+
+    /** The working copy's categories whose folder sits inside [oldBase], by id, with their folder inside [newBase]. */
+    fun folderMoves(oldBase: String, newBase: String): Map<String, String> =
+        categoryFolderMoves(categories, oldBase, newBase)
+
+    /** Points each category in [moves] (id to folder) at its new folder in the working copy. */
+    fun applyFolderMoves(moves: Map<String, String>) {
+        if (moves.isEmpty()) return
+        categories.replaceAll { category -> moves[category.id]?.let { category.copy(folder = it) } ?: category }
+        rebuild()
+    }
+
+    /** The working copy's display name for [id], or the id when it is not there. */
+    fun nameOf(id: String): String = categories.firstOrNull { it.id == id }?.displayName ?: id
 
     fun save() {
         AppContext.config.categories = categories.toList()
