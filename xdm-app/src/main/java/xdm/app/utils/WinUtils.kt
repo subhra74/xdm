@@ -48,7 +48,8 @@ object WinUtils {
             val lst = ArrayList<String>()
             lst.add("shutdown")
             lst.add("-t")
-            lst.add("30")
+            // XDM has already counted down in its own window (ShutdownCountdownWindow).
+            lst.add("0")
             lst.add("-s")
             builder.command(lst)
             builder.start()

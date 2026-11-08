@@ -1,5 +1,6 @@
 package xdm.app
 
+import xdm.app.ui.screens.ShutdownCountdownWindow
 import xdm.app.utils.KeepAwake
 import xdm.app.utils.SoundPlayer
 import xdm.app.utils.WorkingSetTrim
@@ -16,6 +17,7 @@ import xdm.manager.EngineConfig
 import xdm.manager.EngineHost
 import xdm.manager.PlatformHooks
 import xdm.manager.UiSink
+import java.awt.GraphicsEnvironment
 import java.io.File
 
 /** The download lifecycle on the desktop: the app's config, the Swing UI and the OS layers. */
@@ -95,8 +97,13 @@ object DesktopPlatformHooks : PlatformHooks {
     override fun allDownloadsDone() {
         WorkingSetTrim.request("all downloads finished")
         if (AppContext.config.haltAfterDownload) {
-            Logger.info("Attempting shutdown after all downloads")
-            AppContext.platform.shutdownPC()
+            if (GraphicsEnvironment.isHeadless()) {
+                Logger.info("Attempting shutdown after all downloads")
+                AppContext.platform.shutdownPC()
+            } else {
+                Logger.info("All downloads finished; starting the shutdown countdown")
+                ShutdownCountdownWindow.start()
+            }
         }
     }
 

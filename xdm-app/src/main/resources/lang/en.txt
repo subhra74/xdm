@@ -505,3 +505,6 @@ EXT_UPDATE_BTN=Update
 EXT_UPDATE_TIP=Open the extension's page in %s
 EXT_UPDATE_NOTIFY_TITLE=Browser extension out of date
 EXT_UPDATE_NOTIFY_MSG=The XDM extension in %s is out of date. Click to update it.
+SHUTDOWN_TITLE=Shutting down
+SHUTDOWN_MSG=All downloads have finished. XDM will shut down the computer in %d seconds.
+SHUTDOWN_NOW=Shut down now
