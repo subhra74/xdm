@@ -1414,9 +1414,12 @@ class DownloadManager(
 
     /** The app's own reaction to a freshly completed file: sound, antivirus scan, custom command. */
     private fun runPostDownloadActions(event: DownloadStatusInfo.FinalInfo) {
-        val filePath = File(event.finalOutputFolder, event.finalFileName).absolutePath
+        val type = synchronized(store) { store.getById(event.id)?.downloadType } ?: DownloadType.Http
+        // A batch's final name is only its label; its files are in the folder.
+        val path = if (type == DownloadType.Batch) File(event.finalOutputFolder).absolutePath
+        else File(event.finalOutputFolder, event.finalFileName).absolutePath
         try {
-            hooks.downloadFinished(filePath)
+            hooks.downloadFinished(path, type)
         } catch (error: Exception) {
             Logger.error("XDM", "Error running post-download actions", error)
         }

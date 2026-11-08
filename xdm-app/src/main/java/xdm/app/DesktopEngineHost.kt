@@ -5,6 +5,7 @@ import xdm.app.utils.KeepAwake
 import xdm.app.utils.SoundPlayer
 import xdm.app.utils.WorkingSetTrim
 import xdm.core.downloaders.DownloadError
+import xdm.core.downloaders.DownloadType
 import xdm.core.downloaders.TaskInfoDB
 import xdm.core.downloaders.web.SegmentProgress
 import xdm.core.network.http.CertTrust
@@ -82,14 +83,13 @@ object DesktopPlatformHooks : PlatformHooks {
     override fun markDownloadedFile(file: File, source: DownloadSource): Boolean =
         AppContext.platform.markDownloadedFile(file, source)
 
-    override fun downloadFinished(filePath: String) {
+    override fun downloadFinished(path: String, type: DownloadType) {
         SoundPlayer.playIfEnabled(SoundPlayer.Sound.COMPLETE)
         if (AppContext.config.runVirusScan) {
-            AppContext.platform.runVirusScan(filePath)
+            AppContext.platform.runVirusScan(path)
         }
-        if (AppContext.config.runCommand) {
-            AppContext.platform.runCustomCommand(filePath)
-        }
+        // The per-extension rules run even with the catch-all switched off.
+        AppContext.platform.runCustomCommand(path, type)
     }
 
     override fun downloadFailed(id: Long) = SoundPlayer.playIfEnabled(SoundPlayer.Sound.FAILED)

@@ -144,6 +144,11 @@ interface IAppConfig : EngineConfig {
      * Read before any networking by [AppConfig.readForceIpv4]. Off by default.
      */
     var forceIpv4: Boolean
+    /**
+     * Per-extension commands run when a download finishes, tried in order before the catch-all
+     * [customCommand] (which [runCommand] switches). See [CommandRule].
+     */
+    var commandRules: List<CommandRule>
     var listSelectionMode: ListSelectionMode
     /** Play a sound when a download finishes or fails; ignored while [downloadCompleteNotification] is NONE. */
     var playSound: Boolean
@@ -224,6 +229,13 @@ private const val F_NOTIFIED_UPDATE_VERSION = 55
 private const val F_DETECT_SUBTITLES = 56
 private const val F_SAVE_SUBTITLES_AS_SRT = 57
 private const val F_FORCE_IPV4 = 58
+private const val F_COMMAND_RULES = 59
+
+// Inside F_COMMAND_RULES: one F_COMMAND_RULE record per rule, in order.
+private const val F_COMMAND_RULE = 1
+private const val RULE_EXTENSIONS = 1
+private const val RULE_COMMAND = 2
+private const val RULE_ENABLED = 3
 
 // Inside F_CATEGORIES: one F_CATEGORY record per category, in order.
 private const val F_CATEGORY = 1
@@ -386,6 +398,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var nativeWayland: Boolean = true
     override var swingFileChooser: Boolean = false
     override var forceIpv4: Boolean = false
+    override var commandRules: List<CommandRule> = emptyList()
     override var listSelectionMode: ListSelectionMode = ListSelectionMode.CLASSIC
 
     override fun applyAuthConfig() {
@@ -485,6 +498,15 @@ class AppConfig(private val configDir: String) : IAppConfig {
         w.bool(F_DETECT_SUBTITLES, detectSubtitles)
         w.bool(F_SAVE_SUBTITLES_AS_SRT, saveSubtitlesAsSrt)
         w.bool(F_FORCE_IPV4, forceIpv4)
+        w.message(F_COMMAND_RULES) {
+            commandRules.forEach { rule ->
+                message(F_COMMAND_RULE) {
+                    strings(RULE_EXTENSIONS, rule.extensions)
+                    string(RULE_COMMAND, rule.command)
+                    bool(RULE_ENABLED, rule.enabled)
+                }
+            }
+        }
         w.raw(unknownFields)
     }
 
@@ -558,6 +580,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
                 F_DETECT_SUBTITLES -> detectSubtitles = r.bool()
                 F_SAVE_SUBTITLES_AS_SRT -> saveSubtitlesAsSrt = r.bool()
                 F_FORCE_IPV4 -> forceIpv4 = r.bool()
+                F_COMMAND_RULES -> commandRules = readCommandRules(r.message())
                 else -> unknown.raw(r.rawField())
             }
         }
@@ -565,6 +588,32 @@ class AppConfig(private val configDir: String) : IAppConfig {
         noneFolder = none
         categories = cats ?: DownloadCategory.defaults(defaultDownloadFolder)
         unknownFields = unknown.toByteArray()
+    }
+
+    private fun readCommandRules(r: TagReader): List<CommandRule> {
+        val list = mutableListOf<CommandRule>()
+        while (true) {
+            when (r.next()) {
+                -1 -> return list
+                F_COMMAND_RULE -> {
+                    val rule = r.message()
+                    var extensions = emptyList<String>()
+                    var command = ""
+                    var enabled = true
+                    while (true) {
+                        when (rule.next()) {
+                            -1 -> break
+                            RULE_EXTENSIONS -> extensions = rule.strings()
+                            RULE_COMMAND -> command = rule.string()
+                            RULE_ENABLED -> enabled = rule.bool()
+                            else -> rule.skip()
+                        }
+                    }
+                    list.add(CommandRule(extensions, command, enabled))
+                }
+                else -> r.skip()
+            }
+        }
     }
 
     private fun writeCategory(w: TagWriter, cat: DownloadCategory) = w.message(F_CATEGORY) {

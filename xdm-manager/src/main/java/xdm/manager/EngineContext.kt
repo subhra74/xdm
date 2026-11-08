@@ -6,6 +6,7 @@ package xdm.manager
 
 import xdm.capture.CaptureConfig
 import xdm.core.downloaders.DownloadError
+import xdm.core.downloaders.DownloadType
 import xdm.core.downloaders.TaskInfoDB
 import xdm.core.downloaders.web.SegmentProgress
 import xdm.core.network.http.CertTrust
@@ -136,8 +137,11 @@ interface PlatformHooks {
     /** Marks [file] as downloaded from the internet; false when the file system can't carry the mark. */
     fun markDownloadedFile(file: File, source: DownloadSource): Boolean
 
-    /** A download finished: sounds, virus scan, custom command, as the app is configured. */
-    fun downloadFinished(filePath: String)
+    /**
+     * A download finished: sounds, virus scan, custom command, as the app is configured. [path] is the
+     * finished file, or for a [DownloadType.Batch] (many files, no single one) the batch folder.
+     */
+    fun downloadFinished(path: String, type: DownloadType)
 
     /** A download failed (not stopped by the user). */
     fun downloadFailed(id: Long)

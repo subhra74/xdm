@@ -8,6 +8,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import xdm.core.downloaders.DownloadError
+import xdm.core.downloaders.DownloadType
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.downloaders.TaskInfoDB
 import xdm.core.downloaders.web.SegmentProgress
@@ -168,7 +169,7 @@ class DownloadManagerStoreTest {
 
         override fun usableSpace(folder: String): Long? = null
         override fun markDownloadedFile(file: File, source: DownloadSource) = true
-        override fun downloadFinished(filePath: String) {}
+        override fun downloadFinished(path: String, type: DownloadType) {}
         override fun downloadFailed(id: Long) {}
         override fun allDownloadsDone() {}
 

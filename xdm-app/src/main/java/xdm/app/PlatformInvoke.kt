@@ -2,13 +2,18 @@ package xdm.app
 
 import xdm.app.utils.OriginMarker
 import xdm.app.utils.initShutdown
+import xdm.core.downloaders.DownloadType
 import xdm.core.util.Logger
 import xdm.manager.DownloadSource
 import java.io.File
 
 interface IPlatformInvoke {
     fun runVirusScan(file: String)
-    fun runCustomCommand(file: String)
+    /**
+     * Runs the command of the first [IAppConfig.commandRules] entry matching [path], else the catch-all
+     * custom command if it is on. [path] is the file, or for a [DownloadType.Batch] the folder.
+     */
+    fun runCustomCommand(path: String, type: DownloadType)
     fun shutdownPC()
 
     /** Marks [file] as downloaded from the internet (see [OriginMarker]). Blocking; never throws. */
@@ -24,25 +29,17 @@ class PlatformInvoke : IPlatformInvoke {
             return
         }
         val command = mutableListOf(scanner)
-        command.addAll(tokenize(config.virusScannerArgs))
+        command.addAll(PostDownloadCommand.tokenize(config.virusScannerArgs))
         command.add(file)
         launch(command, "antivirus scan")
     }
 
-    override fun runCustomCommand(file: String) {
-        val template = AppContext.config.customCommand.trim()
-        if (template.isEmpty()) {
-            Logger.info("Run command enabled but no command configured")
-            return
-        }
-        val tokens = tokenize(template)
-        // Substitute the %file% placeholder if present, otherwise append the file as an argument.
-        val command = if (tokens.any { it.contains(FILE_TOKEN) }) {
-            tokens.map { it.replace(FILE_TOKEN, file) }
-        } else {
-            tokens + file
-        }
-        launch(command, "custom command")
+    override fun runCustomCommand(path: String, type: DownloadType) {
+        val config = AppContext.config
+        val template = PostDownloadCommand.pick(
+            config.commandRules, config.runCommand, config.customCommand, path, type
+        ) ?: return
+        launch(PostDownloadCommand.expand(template, path, type), "custom command")
     }
 
     override fun shutdownPC() {
@@ -60,30 +57,5 @@ class PlatformInvoke : IPlatformInvoke {
         } catch (e: Exception) {
             Logger.error("Failed to run $what", e)
         }
-    }
-
-    /** Splits a command line into tokens, honouring double-quoted segments. */
-    private fun tokenize(input: String): List<String> {
-        val tokens = mutableListOf<String>()
-        val current = StringBuilder()
-        var inQuotes = false
-        for (ch in input.trim()) {
-            when {
-                ch == '"' -> inQuotes = !inQuotes
-                ch.isWhitespace() && !inQuotes -> {
-                    if (current.isNotEmpty()) {
-                        tokens.add(current.toString())
-                        current.setLength(0)
-                    }
-                }
-                else -> current.append(ch)
-            }
-        }
-        if (current.isNotEmpty()) tokens.add(current.toString())
-        return tokens
-    }
-
-    companion object {
-        private const val FILE_TOKEN = "%file%"
     }
 }

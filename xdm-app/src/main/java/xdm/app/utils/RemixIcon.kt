@@ -26,6 +26,7 @@ enum class RemixIcon(val codepoint: Int) {
     ARROW_DOWN_S_LINE(0xea4e),
     ARROW_LEFT_LINE(0xea60),
     ARROW_UP_DOWN_FILL(0xea73),
+    ARROW_UP_S_LINE(0xea78),
     BOOK_SHELF_LINE(0xf523),
     BRUSH_LINE(0xeb01),
     CHECKBOX_BLANK_LINE(0xeb7f),

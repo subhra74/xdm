@@ -8,6 +8,7 @@ import xdm.app.AppContext
 import xdm.app.IAppInstance
 import xdm.app.IPlatformInvoke
 import xdm.core.downloaders.DownloadStatusInfo
+import xdm.core.downloaders.DownloadType
 import xdm.manager.DownloadCompleteNotification
 import xdm.manager.DownloadSource
 import xdm.manager.RecordStatus
@@ -20,6 +21,7 @@ class DownloadManagerMarkDownloadedTest : DownloadManagerTestBase() {
 
     private val events = CopyOnWriteArrayList<String>()
     private val marked = CopyOnWriteArrayList<Pair<File, DownloadSource>>()
+    private val commands = CopyOnWriteArrayList<Pair<String, DownloadType>>()
     private var markResult = true
 
     @BeforeEach
@@ -34,8 +36,9 @@ class DownloadManagerMarkDownloadedTest : DownloadManagerTestBase() {
         } as IAppInstance
         AppContext.platform = object : IPlatformInvoke {
             override fun runVirusScan(file: String) {}
-            override fun runCustomCommand(file: String) {
+            override fun runCustomCommand(path: String, type: DownloadType) {
                 events.add("command")
+                commands.add(path to type)
             }
 
             override fun shutdownPC() {}
@@ -65,6 +68,7 @@ class DownloadManagerMarkDownloadedTest : DownloadManagerTestBase() {
         assertEquals(file, marked.single().first)
         assertEquals(DownloadSource("$hangingBase/file", "https://example.com/page"), marked.single().second)
         assertEquals(RecordStatus.FINISHED, appDB.getById(id)?.status)
+        assertEquals(file.absolutePath to DownloadType.Http, commands.single(), "command gets the file and its type")
     }
 
     @Test

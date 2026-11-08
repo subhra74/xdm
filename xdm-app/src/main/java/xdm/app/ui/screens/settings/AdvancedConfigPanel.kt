@@ -29,11 +29,7 @@ class AdvancedConfigPanel : SettingsPanel() {
     private val tglForceIpv4 = SettingsToggle()
     private val tglSkipDupManifests = SettingsToggle()
 
-    private val tglRunCmd = SettingsToggle()
-    private val txtCmd = rounded(JTextField()).apply {
-        putClientProperty(placeholder, I8N.text("MSG_CUSTOM_CMD"))
-        columns = 10
-    }
+    private val commandRules = CommandRuleSection()
 
     private val tglMarkDownloads = SettingsToggle()
     private val tglVirusScan = SettingsToggle()
@@ -77,13 +73,7 @@ class AdvancedConfigPanel : SettingsPanel() {
         )
         add(settingsGap())
 
-        add(
-            settingsSection(
-                I8N.text("SETTINGS_SEC_COMMAND"),
-                settingsRow(I8N.text("MSG_RUN_CMD"), I8N.text("MSG_RUN_CMD_SUB"), tglRunCmd),
-                settingsFullRow(null, null, fullWidth(txtCmd)),
-            )
-        )
+        add(commandRules.component)
         add(settingsGap())
 
         add(
@@ -107,7 +97,6 @@ class AdvancedConfigPanel : SettingsPanel() {
 
         add(Box.createVerticalGlue())
 
-        tglRunCmd.addActionListener { updateEnabledState() }
         tglVirusScan.addActionListener { updateEnabledState() }
     }
 
@@ -125,7 +114,6 @@ class AdvancedConfigPanel : SettingsPanel() {
     }
 
     private fun updateEnabledState() {
-        txtCmd.isEnabled = tglRunCmd.isSelected
         txtVirusScan.isEnabled = tglVirusScan.isSelected
         txtArgs.isEnabled = tglVirusScan.isSelected
         btnBrowse.isEnabled = tglVirusScan.isSelected
@@ -146,8 +134,7 @@ class AdvancedConfigPanel : SettingsPanel() {
         tglSwingChooser.isEnabled = linux
         tglForceIpv4.isSelected = config.forceIpv4
         tglSkipDupManifests.isSelected = config.skipDuplicateManifests
-        tglRunCmd.isSelected = config.runCommand
-        txtCmd.text = config.customCommand
+        commandRules.load()
         tglMarkDownloads.isSelected = config.markDownloadedFiles
         tglVirusScan.isSelected = config.runVirusScan
         txtVirusScan.text = config.virusScannerPath
@@ -172,8 +159,7 @@ class AdvancedConfigPanel : SettingsPanel() {
         }
         config.forceIpv4 = tglForceIpv4.isSelected
         config.skipDuplicateManifests = tglSkipDupManifests.isSelected
-        config.runCommand = tglRunCmd.isSelected
-        config.customCommand = txtCmd.text
+        commandRules.save()
         config.markDownloadedFiles = tglMarkDownloads.isSelected
         config.runVirusScan = tglVirusScan.isSelected
         config.virusScannerPath = txtVirusScan.text
