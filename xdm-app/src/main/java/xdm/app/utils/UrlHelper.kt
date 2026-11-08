@@ -34,13 +34,13 @@ fun openInDefaultBrowser(url: String) {
                 return@thread
             }
         } catch (e: Exception) {
-            if (detectOS() != OS.Linux) {
+            if (!detectOS().isXdg) {
                 Logger.error("XDM", "Failed to open $url", e)
                 return@thread
             }
             Logger.error("XDM", "Desktop.browse failed for $url, trying xdg-open", e)
         }
-        if (detectOS() == OS.Linux) xdgOpen(url)
+        if (detectOS().isXdg) xdgOpen(url)
     }
 }
 

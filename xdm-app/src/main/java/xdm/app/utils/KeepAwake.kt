@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit
  *             auto-exit when our JVM dies.
  *  - Linux:   `systemd-inhibit --what=idle:sleep --mode=block cat` - a logind inhibitor lock held
  *             for the lifetime of the blocking `cat`.
+ *  - BSD:     nothing, there is no equivalent tool; [acquire] does nothing.
  *
  * Whichever mechanism is used, it is released when XDM exits even if it exits badly: the OS drops
  * a thread's execution state when the process dies, and the helper processes are tied to the JVM's
@@ -47,7 +48,7 @@ object KeepAwake {
                 return
             }
             // The BSDs have no systemd-inhibit; don't fail and log an error on every download.
-            if (isBsd()) return
+            if (os == OS.BSD) return
             if (process?.isAlive == true) return
             process = try {
                 startInhibitor()
@@ -87,6 +88,7 @@ object KeepAwake {
                 "cat"
             )
             OS.Windows -> throw IllegalStateException("Windows uses WindowsInhibitor")
+            OS.BSD -> throw IllegalStateException("No sleep inhibitor on the BSDs")
         }
         return ProcessBuilder(command)
             .redirectOutput(ProcessBuilder.Redirect.DISCARD)

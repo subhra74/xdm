@@ -37,7 +37,7 @@ object OriginMarker {
             when (os) {
                 OS.Windows -> markWindows(file, clean)
                 OS.MacOS -> markMac(file)
-                OS.Linux -> markLinux(file, clean)
+                OS.Linux, OS.BSD -> markLinux(file, clean)
             }
         } catch (e: Exception) {
             Logger.info("OriginMarker", "Could not mark $file as downloaded: $e")
