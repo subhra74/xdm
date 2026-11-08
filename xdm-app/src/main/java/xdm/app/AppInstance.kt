@@ -25,6 +25,7 @@ import xdm.app.utils.mac.MacNotifications
 import xdm.app.utils.mainWindowOnScreen
 import xdm.app.utils.offerMacNotificationSettings
 import xdm.app.utils.openFolderExternal
+import xdm.app.utils.Browser
 import xdm.app.utils.showTrayNotification
 import xdm.app.utils.windowIconImages
 import xdm.core.downloaders.DownloadError
@@ -34,6 +35,8 @@ import xdm.core.downloaders.web.SegmentProgress
 import xdm.core.util.FormatHelper.formatSize
 import xdm.core.util.Logger
 import xdm.core.util.MovePhase
+import xdm.manager.BatchFileCounts
+import xdm.manager.DbRecord
 import java.awt.Desktop
 import java.awt.MenuItem
 import java.awt.PopupMenu
@@ -113,6 +116,9 @@ interface IAppInstance {
 
     /** Opens the batch dialog for links sent by the browser's "Download all". */
     fun showBatchDialog(request: BatchRequest)
+
+    /** The XDM extension in [browser] is older than this XDM expects: asks the user to update it. */
+    fun showExtensionUpdate(browser: Browser)
 }
 
 class AppInstance : IAppInstance {
@@ -297,6 +303,14 @@ class AppInstance : IAppInstance {
     ) {
         val dlg = NewVideoDownloadWindow()
         dlg.showWindow(vid, fileName, fileSize, contentType)
+    }
+
+    override fun showExtensionUpdate(browser: Browser) {
+        runOnUIThread {
+            if (::appWindow.isInitialized) {
+                appWindow.showExtensionUpdate(browser)
+            }
+        }
     }
 
     private inline fun runOnUIThread(crossinline action: () -> Unit) {

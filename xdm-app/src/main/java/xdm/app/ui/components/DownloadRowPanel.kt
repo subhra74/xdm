@@ -1,9 +1,6 @@
 package xdm.app.ui.components
 
-import xdm.app.DbRecord
-import xdm.app.DownloadCategory
 import xdm.app.I8N.text
-import xdm.app.RecordStatus
 import xdm.app.ui.screens.moveText
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.categoryById
@@ -18,6 +15,9 @@ import xdm.core.util.FormatHelper.formatSize
 import xdm.core.util.FormatHelper.toLongEta
 import xdm.core.util.Logger
 import xdm.core.util.MovePhase
+import xdm.manager.DbRecord
+import xdm.manager.DownloadCategory
+import xdm.manager.RecordStatus
 import java.awt.*
 import java.awt.event.ActionListener
 import javax.swing.*
@@ -252,7 +252,10 @@ class DownloadRowPanel(val root: JPanel = JPanel()) {
             prg.value = ent.progress
             var prgText = text("STAT_DOWNLOADING")
             if (ent.status == RecordStatus.DOWNLOADING) {
-                if (ent.progress > 0) {
+                if (ent.allocating >= 0) {
+                    // Filling the part file on a FAT32/exFAT drive before the download splits.
+                    prgText = String.format("%s %d%s", text("STAT_ALLOCATING"), ent.allocating, "%")
+                } else if (ent.progress > 0) {
                     prgText = String.format(
                         "%s %d%s", text("STAT_DOWNLOADING"), ent.progress, "%"
                     )

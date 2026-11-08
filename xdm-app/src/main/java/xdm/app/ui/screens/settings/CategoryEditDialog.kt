@@ -1,8 +1,8 @@
 package xdm.app.ui.screens.settings
 
 import xdm.app.AppContext
-import xdm.app.DownloadCategory
 import xdm.app.I8N
+import xdm.app.displayName
 import xdm.app.ui.components.AppTheme
 import xdm.app.ui.components.CategoryDotIcon
 import xdm.app.ui.components.MessageBox
@@ -14,6 +14,7 @@ import xdm.app.utils.px
 import xdm.app.utils.scaledSize
 import xdm.app.utils.scaledInsets
 import xdm.app.utils.dialogHeight
+import xdm.manager.DownloadCategory
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component

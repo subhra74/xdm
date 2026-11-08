@@ -1,7 +1,7 @@
 package xdm.app.ui.components
 
 import xdm.app.AppContext.config
-import xdm.app.DbRecord
+import xdm.manager.DbRecord
 
 class DownloadSorter : Comparator<DbRecord> {
     override fun compare(o1: DbRecord, o2: DbRecord): Int {

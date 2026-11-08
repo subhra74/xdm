@@ -1,11 +1,11 @@
 package xdm.app.ui.components
 
 import xdm.app.AppContext.db
-import xdm.app.DbRecord
 import xdm.app.ListChangeListener
-import xdm.app.RecordStatus
 import xdm.core.downloaders.DownloadType
 import xdm.core.util.Logger
+import xdm.manager.DbRecord
+import xdm.manager.RecordStatus
 import javax.swing.SwingUtilities
 import javax.swing.event.TableModelEvent
 import javax.swing.table.AbstractTableModel

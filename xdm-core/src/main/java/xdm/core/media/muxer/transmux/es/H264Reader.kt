@@ -1,78 +1,81 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core.media.muxer.transmux.es
 
 import xdm.core.media.muxer.transmux.io.NalUnitUtil
 import xdm.core.media.muxer.transmux.io.ParsableBitArray
 import xdm.core.media.muxer.transmux.sample.Codec
-import xdm.core.media.muxer.transmux.sample.Sample
 import xdm.core.media.muxer.transmux.sample.Track
 
 /**
- * H.264/AVC elementary stream reader.
- *
- * For each PES (one access unit in HLS) it scans Annex-B NAL units, harvests SPS/PPS for the
- * avcC config, detects IDR frames as keyframes, and re-emits the NAL units length-prefixed
- * (4-byte) into the mdat as a single MP4 sample carrying the PES timestamps.
+ * H.264/AVC elementary stream reader: harvests SPS/PPS for the avcC config, marks IDR access units
+ * as keyframes and lets [AnnexBReader] split the stream into length-prefixed MP4 samples.
  */
-class H264Reader(private val sink: SampleSink) : ElementaryStreamReader {
+class H264Reader(sink: SampleSink) : AnnexBReader(sink) {
     override val track = Track(Codec.H264)
 
-    private val out = ByteArrayBuilder()
+    override fun headerSize() = 1
 
-    override fun consume(data: ByteArray, offset: Int, length: Int, pts: Long, dts: Long) {
-        val end = offset + length
-        out.reset()
-        var isKeyframe = false
-        var hasVcl = false
+    private fun type(buf: ByteArray, start: Int) = buf[start].toInt() and 0x1F
 
-        var pos = NalUnitUtil.findStartCode(data, offset, end)
-        while (pos < end) {
-            // findStartCode returns the index of a 3-byte 00 00 01, so the NAL begins at pos+3.
-            val nalStart = pos + 3
-            val next = NalUnitUtil.findStartCode(data, nalStart, end)
-            // Trim the extra leading zero of a following 4-byte start code.
-            val nalEnd = if (next < end && next > nalStart && data[next - 1].toInt() == 0) next - 1 else next
-            if (nalStart < nalEnd) {
-                val nalType = data[nalStart].toInt() and 0x1F
-                when (nalType) {
-                    7 -> addParameterSet(data, nalStart, nalEnd) { parseSps(it) }
-                    8 -> addParameterSet(data, nalStart, nalEnd) { /* PPS: no fields we need */ }
-                    9, 12 -> { /* drop AUD / filler */ }
-                    else -> {
-                        if (nalType == 5) isKeyframe = true
-                        if (nalType in 1..5) hasVcl = true
-                        appendLengthPrefixed(data, nalStart, nalEnd)
-                    }
-                }
-            }
-            pos = next
+    override fun isVcl(buf: ByteArray, start: Int) = type(buf, start) in 1..5
+
+    override fun isKeyframe(buf: ByteArray, start: Int) = type(buf, start) == 5
+
+    /**
+     * first_mb_in_slice == 0: its ue(v) code is a single '1' bit right after the NAL header. Only
+     * slices and data partition A start with it (B and C start with slice_id), as in ffmpeg's parser.
+     */
+    override fun isFirstSliceOfPicture(buf: ByteArray, start: Int, end: Int) =
+        type(buf, start).let { it == 1 || it == 2 || it == 5 } &&
+            start + 1 < end && (buf[start + 1].toInt() and 0x80) != 0
+
+    /**
+     * A recovery point SEI (payload type 6) makes its picture a random access point: how open-GOP
+     * and intra-refresh streams mark where decoding can start, which ffmpeg's parser treats as a
+     * keyframe too. Without it such streams would have a single sync sample.
+     */
+    override fun marksRandomAccess(buf: ByteArray, start: Int, end: Int): Boolean {
+        if (type(buf, start) != 6) return false
+        val rbsp = NalUnitUtil.unescapeRbsp(buf, start + 1, end - start - 1)
+        var i = 0
+        while (i < rbsp.size && (rbsp[i].toInt() and 0xFF) != 0x80) { // 0x80: rbsp_trailing_bits
+            var payloadType = 0
+            while (i < rbsp.size && (rbsp[i].toInt() and 0xFF) == 0xFF) { payloadType += 255; i++ }
+            if (i >= rbsp.size) return false
+            payloadType += rbsp[i++].toInt() and 0xFF
+            var size = 0
+            while (i < rbsp.size && (rbsp[i].toInt() and 0xFF) == 0xFF) { size += 255; i++ }
+            if (i >= rbsp.size) return false
+            size += rbsp[i++].toInt() and 0xFF
+            if (payloadType == 6) return true
+            i += size
         }
-
-        if (out.size == 0 && !hasVcl) return
-        val fileOffset = sink.writeSampleData(out.buffer, 0, out.size)
-        val sampleDts = if (dts >= 0) dts else pts
-        track.samples.add(Sample(fileOffset, out.size, pts, sampleDts, isKeyframe))
+        return false
     }
 
-    override fun finish() { /* nothing buffered across PES */ }
+    /** SEI, SPS, PPS, AUD and types 14..18 may only open an access unit (H.264 7.4.1.2.3). */
+    override fun startsAccessUnit(buf: ByteArray, start: Int) = when (type(buf, start)) {
+        6, 7, 8, 9, in 14..18 -> true
+        else -> false
+    }
+
+    override fun keepNal(buf: ByteArray, start: Int, end: Int): Boolean = when (type(buf, start)) {
+        7 -> { addParameterSet(buf, start, end) { parseSps(it) }; true }
+        8 -> { addParameterSet(buf, start, end) { /* PPS: no fields we need */ }; true }
+        9, 12 -> false // AUD / filler
+        else -> true
+    }
 
     private inline fun addParameterSet(data: ByteArray, start: Int, end: Int, parse: (ByteArray) -> Unit) {
         val nal = data.copyOfRange(start, end)
-        // Deduplicate: parameter sets repeat on every keyframe.
+        // Deduplicate: parameter sets repeat on every keyframe. They also stay in-band.
         if (track.parameterSets.none { it.contentEquals(nal) }) {
             track.parameterSets.add(nal)
             try { parse(nal) } catch (_: Exception) { /* tolerate malformed SPS */ }
         }
-        // Keep parameter sets in-band as well for player robustness.
-        appendLengthPrefixed(data, start, end)
-    }
-
-    private fun appendLengthPrefixed(data: ByteArray, start: Int, end: Int) {
-        val len = end - start
-        out.writeInt(len)
-        out.write(data, start, len)
     }
 
     private fun parseSps(nal: ByteArray) {
@@ -88,8 +91,8 @@ class H264Reader(private val sink: SampleSink) : ElementaryStreamReader {
         if (profileIdc in intArrayOf(100, 110, 122, 244, 44, 83, 86, 118, 128, 138, 139, 134, 135)) {
             chromaFormatIdc = bit.readUe()
             if (chromaFormatIdc == 3) bit.skipBits(1) // separate_colour_plane_flag
-            bit.readUe()           // bit_depth_luma_minus8
-            bit.readUe()           // bit_depth_chroma_minus8
+            track.bitDepthLuma = bit.readUe() + 8
+            track.bitDepthChroma = bit.readUe() + 8
             bit.skipBits(1)        // qpprime_y_zero_transform_bypass_flag
             if (bit.readBit()) {   // seq_scaling_matrix_present_flag
                 val count = if (chromaFormatIdc != 3) 8 else 12
@@ -132,6 +135,8 @@ class H264Reader(private val sink: SampleSink) : ElementaryStreamReader {
         val cropUnitY = (if (chromaFormatIdc == 0) 1 else subHeightC) * (if (frameMbsOnly) 1 else 2)
         track.width = width - cropUnitX * (cropLeft + cropRight)
         track.height = height - cropUnitY * (cropTop + cropBottom)
+        track.chromaFormat = chromaFormatIdc
+        if (bit.readBit()) Vui.read(bit, track) // vui_parameters_present_flag
     }
 
     companion object {

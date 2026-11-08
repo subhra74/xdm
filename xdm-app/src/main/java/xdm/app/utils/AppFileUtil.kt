@@ -3,58 +3,12 @@ package xdm.app.utils
 import xdm.app.AppConfig
 import xdm.app.AppContext.config
 import xdm.app.AppContext.taskInfoDB
-import xdm.app.CategoryRules
-import xdm.app.DbRecord
-import xdm.app.DownloadCategory
 import xdm.app.IAppConfig
 import xdm.app.resolvedNoneFolder
 import xdm.core.downloaders.DownloadType
+import xdm.manager.CategoryRules
+import xdm.manager.DownloadCategory
 import java.io.File
-
-fun getFileFolder(ent: DbRecord): Pair<String?, String?>? {
-    val folder: String?
-    val fileName: String?
-    when (ent.downloadType) {
-        DownloadType.Http -> {
-            val md = taskInfoDB.getHttpTask(ent.id) ?: return null
-            folder = md.targetFolder
-            fileName = md.fileName
-        }
-
-        DownloadType.Hls -> {
-            val md = taskInfoDB.getHlsTask(ent.id) ?: return null
-            folder = md.targetFolder
-            fileName = md.fileName
-        }
-
-        DownloadType.Dash -> {
-            val md = taskInfoDB.getDashTask(ent.id) ?: return null
-            folder = md.targetFolder
-            fileName = md.fileName
-        }
-
-        // The batch folder stands for the download: "open" opens it, "open folder" reveals it.
-        DownloadType.Batch -> {
-            val md = taskInfoDB.getBatchTask(ent.id) ?: return null
-            folder = md.folder
-            fileName = md.name
-        }
-
-        DownloadType.Torrent -> TODO()
-    }
-
-    return Pair(fileName, folder)
-}
-
-/** Where a completed download's file (a batch's folder) is: its task info holds the final name and folder. */
-fun finishedFile(ent: DbRecord): File? {
-    if (ent.downloadType == DownloadType.Torrent) return null
-    val (fileName, folder) = getFileFolder(ent) ?: return null
-    return if (fileName != null && folder != null) File(folder, fileName) else null
-}
-
-/** Whether a completed download's file (a batch's folder) is still on disk; false when it cannot be located. */
-fun finishedFileExists(ent: DbRecord): Boolean = finishedFile(ent)?.exists() == true
 
 /** The category with [id], or null for None (including an id whose category was deleted). */
 fun categoryById(id: String?): DownloadCategory? =

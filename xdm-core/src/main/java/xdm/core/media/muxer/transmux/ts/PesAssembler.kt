@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core.media.muxer.transmux.ts
 
@@ -12,7 +13,9 @@ import xdm.core.media.muxer.transmux.es.ElementaryStreamReader
  * the PES header (PTS/DTS) and hand the payload to the [reader]. 33-bit timestamps are unwrapped to
  * a monotonic 64-bit timeline so the ~26.5h MPEG clock rollover doesn't corrupt durations.
  */
-class PesAssembler(val reader: ElementaryStreamReader) {
+class PesAssembler(reader: ElementaryStreamReader) {
+    /** Replaced once when a stream identified by its content (see [TsDemuxer]) gets its real reader. */
+    var reader: ElementaryStreamReader = reader
     private val buffer = ByteArrayBuilder(64 * 1024)
     private var started = false
 
@@ -57,9 +60,12 @@ class PesAssembler(val reader: ElementaryStreamReader) {
             if (pts >= 0 && dts >= 0 && dts - pts > (1L shl 32)) pts += (1L shl 33)
         }
 
+        // A bounded PES (PES_packet_length > 0) ends there, as in ffmpeg: anything after it is not payload.
+        val packetLength = ((b[4].toInt() and 0xFF) shl 8) or (b[5].toInt() and 0xFF)
+        val end = if (packetLength > 0) minOf(buffer.size, 6 + packetLength) else buffer.size
         val payloadOffset = 9 + headerDataLength
-        if (payloadOffset >= buffer.size) return
-        reader.consume(b, payloadOffset, buffer.size - payloadOffset, pts, if (dts >= 0) dts else pts)
+        if (payloadOffset >= end) return
+        reader.consume(b, payloadOffset, end - payloadOffset, pts, if (dts >= 0) dts else pts)
     }
 
     private fun readTimestamp(b: ByteArray, o: Int): Long {

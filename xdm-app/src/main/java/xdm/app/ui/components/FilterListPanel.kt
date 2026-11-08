@@ -2,15 +2,16 @@ package xdm.app.ui.components
 
 
 import xdm.app.AppContext
-import xdm.app.DbRecord
-import xdm.app.DownloadCategory
 import xdm.app.I8N.text
-import xdm.app.RecordStatus
+import xdm.app.displayName
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.createIcon
 import xdm.app.utils.openInDefaultBrowser
 import xdm.app.utils.px
+import xdm.manager.DbRecord
+import xdm.manager.DownloadCategory
+import xdm.manager.RecordStatus
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.Cursor

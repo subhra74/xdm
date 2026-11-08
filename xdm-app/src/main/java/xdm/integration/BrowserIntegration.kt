@@ -2,20 +2,19 @@ package xdm.integration
 
 
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
-import kotlinx.serialization.descriptors.*
-import kotlinx.serialization.encoding.*
 import kotlinx.serialization.json.*
 import xdm.app.AppContext
+import xdm.app.I8N
 import xdm.app.BatchRequest
 import xdm.app.BatchRequestItem
-import xdm.app.previewUrl
 import xdm.app.update.UpdateChecker
+import xdm.app.utils.Browser
 import xdm.app.utils.GcScheduler
-import xdm.app.utils.captureDestination
-import xdm.core.downloaders.HttpDownloadTaskInfo
+import xdm.capture.CaptureContext
+import xdm.capture.CaptureHandler
+import xdm.capture.ExtensionMessage
+import xdm.capture.MediaFilter
 import xdm.core.util.*
 import java.io.IOException
 import java.net.HttpURLConnection
@@ -25,6 +24,7 @@ import java.net.ServerSocket
 import java.net.URL
 import java.nio.charset.StandardCharsets
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
 object BrowserIntegration {
     /** The port the extension talks to, and the process-wide lock on "being XDM" (see [acquire]). */
@@ -35,10 +35,6 @@ object BrowserIntegration {
     /** Loopback only, so these are generous. */
     private const val PROBE_CONNECT_TIMEOUT_MS = 500
     private const val PROBE_READ_TIMEOUT_MS = 1500
-
-    /** Keyframes a `/preview` returns (one image tells captures apart), and how long it may take. */
-    private const val PREVIEW_FRAMES = 1
-    private const val PREVIEW_TIMEOUT_MS = 8_000L
 
     /** Body limit for `/batch`; every other path gets [HttpParser.DEFAULT_MAX_BODY_BYTES]. */
     const val MAX_BATCH_BODY_BYTES = 64L * 1024 * 1024
@@ -59,29 +55,8 @@ object BrowserIntegration {
     /** This build's version, sent with every sync so the extension can ask for a newer XDM. */
     private val appVersion: String by lazy { UpdateChecker.loadConfig()?.currentVersion ?: "" }
 
-    private val clearTabFilter = ClearTabFilter()
-    private val blockedHeaders = setOf(
-        "accept",
-//        "authorization",
-        "connection",
-        "expect",
-        "te",
-        "upgrade",
-        "range",
-        "cookie",
-        "transfer-encoding",
-        "content-type",
-        "content-length",
-        "content-encoding",
-        "accept-encoding"
-    )
-
-    /**
-     * Whole header families that must not be replayed: conditionals (`If-None-Match`,
-     * `If-Modified-Since`, ...) would turn the fetch into a 304 with no body, and `Proxy-*` belongs
-     * to the browser's proxy hop, not ours.
-     */
-    private val blockedHeaderPrefixes = listOf("if-", "proxy-")
+    /** Browsers whose outdated extension this run has already told the user about. */
+    private val reportedOutdatedExtensions: MutableSet<Browser> = Collections.newSetFromMap(ConcurrentHashMap())
 
     private val extensionOriginSchemes = listOf(
         "chrome-extension://",
@@ -211,6 +186,7 @@ object BrowserIntegration {
         // Requests refused by RequestFilter never get here: the server answers them before their body.
         context.keepAlive = false
         GcScheduler.noteIntegrationRequest()
+        checkExtensionVersion(context)
         if (context.requestPath == "/poll") {
             onPollMessage(context)
             return
@@ -227,7 +203,7 @@ object BrowserIntegration {
                 "/batch" -> onBatchMessage(context)
                 "/media" -> onMediaMessage(context)
                 "/vid" -> onVideoDownloadMessage(context)
-                "/clear" -> AppContext.videoTracker.clear()
+                "/clear" -> CaptureContext.tracker.clear()
                 "/clear-tab" -> onClearTabMessage(context)
                 "/tab-update" -> onTabUpdateMessage(context)
                 "/show" -> onShowMessage(context)
@@ -236,6 +212,20 @@ object BrowserIntegration {
             Logger.error("INTEGRATION", "Failed to handle ${context.requestPath}", e)
         }
         onSyncMessage(context)
+    }
+
+    /** Asks the user, once per browser and run, to update an extension older than XDM expects. */
+    private fun checkExtensionVersion(context: RequestContext) {
+        val headers = context.requestHeaders
+        val browser = ExtensionVersionCheck.outdatedBrowser(
+            headers[ExtensionVersionCheck.HEADER]?.firstOrNull(),
+            headers["Origin"]?.firstOrNull(),
+            headers["User-Agent"]?.firstOrNull(),
+        ) ?: return
+        if (reportedOutdatedExtensions.add(browser)) {
+            Logger.info("INTEGRATION", "Outdated ${browser.displayName} extension: ${headers[ExtensionVersionCheck.HEADER]?.firstOrNull() ?: "no version"}")
+            AppContext.app.showExtensionUpdate(browser)
+        }
     }
 
     /**
@@ -328,16 +318,10 @@ object BrowserIntegration {
     private fun onPreviewMessage(context: RequestContext) {
         val reply = try {
             val vid = decodeBody<PreviewRequest>(context)?.vid?.toLongOrNull()
-            val tracker = AppContext.videoTracker
-            val http = vid?.let { tracker.getHttpVideo(it) }
-            val dash = if (http == null) vid?.let { tracker.getDashVideo(it) } else null
-            val url = http?.let { previewUrl(it) } ?: dash?.let { previewUrl(it) }
-            if (url == null) {
+            val preview = vid?.let { CaptureHandler.loadPreview(it) }
+            if (preview == null) {
                 PreviewDto(error = "Not a captured MP4 file")
             } else {
-                val preview = VideoHelper.loadPreview(
-                    url, http?.headers ?: dash?.headers, http?.cookie ?: dash?.cookie, PREVIEW_FRAMES, PREVIEW_TIMEOUT_MS,
-                )
                 val base64 = Base64.getEncoder()
                 PreviewDto(
                     codec = preview.codec,
@@ -374,73 +358,29 @@ object BrowserIntegration {
         AppContext.app.showAppWindow()
     }
 
-    /**
-     * Logs what a message is about. Never the message itself: its cookie and request header values
-     * carry the user's credentials, and the log folder is not the place for them.
-     */
-    private fun logMessage(m: ExtensionMessage) {
-        Logger.info(
-            "INTEGRATION",
-            "url=${m.url} tab=${m.tabId} mime=${m.mimeType} size=${m.fileSize} vid=${m.vid} " +
-                    "cookie=${if (m.cookie.isNullOrEmpty()) "no" else "yes"} headers=${m.requestHeaders?.keys}"
-        )
-    }
-
-    /**
-     * A tab started loading a different document (reload, or navigation to another page), so
-     * everything detected in it is stale.
-     */
     private fun onClearTabMessage(context: RequestContext) {
         Logger.info("Received clear-tab message..")
-        val extMsg = decodeBody<ExtensionMessage>(context)?.also { logMessage(it) } ?: return
-        val tabId = extMsg.tabId ?: return
-        if (!clearTabFilter.shouldClear(tabId, extMsg.tabUrl)) {
-            Logger.info("Tab $tabId is still on the same page, keeping its videos")
-            return
-        }
-        VideoHelper.onTabNavigated(tabId)
-        AppContext.videoTracker.clearTab(tabId)
+        decodeBody<ExtensionMessage>(context)?.let { CaptureHandler.onTabNavigated(it) }
     }
 
-    /**
-     * The tab's title arrived (usually after the media request that was captured there), so the
-     * videos detected on that page can be named after it.
-     */
     private fun onTabUpdateMessage(context: RequestContext) {
         Logger.info("Received tab update message..")
-        val extMsg = decodeBody<ExtensionMessage>(context)?.also { logMessage(it) } ?: return
-        val tabUrl = extMsg.tabUrl ?: return
-        val tabTitle = extMsg.tabTitle?.takeIf { it.isNotBlank() } ?: return
-        AppContext.videoTracker.updateMediaTitle(tabUrl, tabTitle)
+        decodeBody<ExtensionMessage>(context)?.let { CaptureHandler.onTabUpdated(it) }
     }
 
     private fun onVideoDownloadMessage(context: RequestContext) {
         Logger.info("Received video download message..")
-        decodeBody<ExtensionMessage>(context)?.let { extMsg ->
-            logMessage(extMsg)
-            removeBlockedHeaders(extMsg)
-            extMsg.vid?.let { AppContext.videoTracker.addVideoDownload(it) }
-        }
+        decodeBody<ExtensionMessage>(context)?.let { CaptureHandler.onVideoPicked(it) }
     }
 
     private fun onMediaMessage(context: RequestContext) {
         Logger.info("Received media message..")
-        decodeBody<ExtensionMessage>(context)?.let { extMsg ->
-            logMessage(extMsg)
-            removeBlockedHeaders(extMsg)
-            VideoHelper.processMediaMessage(extMsg)
-        }
+        decodeBody<ExtensionMessage>(context)?.let { CaptureHandler.onMedia(it) }
     }
 
     private fun onDownloadMessage(context: RequestContext) {
         Logger.info("Received download message..")
-        decodeBody<ExtensionMessage>(context)?.let { extMsg ->
-            logMessage(extMsg)
-            removeBlockedHeaders(extMsg)
-            extMsg.url?.let {
-                AppContext.app.addDownload(toHttpSource(extMsg))
-            }
-        }
+        decodeBody<ExtensionMessage>(context)?.let { CaptureHandler.toDownload(it) }?.let { AppContext.app.addDownload(it) }
     }
 
     /** The extension's "Download all": opens the batch dialog. Replies at once, with the usual sync. */
@@ -460,19 +400,25 @@ object BrowserIntegration {
             enabled = true,
             fileExts = AppContext.config.fileExtensions,
             blockedHosts = AppContext.config.blockedHosts,
-            requestFileExts = AppContext.config.videoExtensions,
-            mediaTypes = listOf("audio/", "video/", "mpeg", "dash"),
+            // The extension matches these against the path's end: subtitles carry their dot, so
+            // "SRT" cannot match a path like "/insert".
+            requestFileExts = AppContext.config.videoExtensions +
+                (if (AppContext.config.detectSubtitles) MediaFilter.SUBTITLE_EXTENSIONS.map { ".$it" } else emptyList()),
+            mediaTypes = MediaFilter.MEDIA_TYPES +
+                (if (AppContext.config.detectSubtitles) MediaFilter.SUBTITLE_TYPES else emptyList()),
             matchingHosts = emptyList(),
             version = EventChannel.currentVersion,
             instanceId = EventChannel.instanceId,
             appVersion = appVersion,
-            videoList = AppContext.videoTracker.videoList.map {
+            videoList = CaptureContext.tracker.videoList.map {
                 VideoItem(
                     id = "${it.id}",
                     text = it.name,
                     info = it.description,
                     tabId = it.tabId,
                     previewable = it.previewable,
+                    subtitle = it.subtitle,
+                    badge = if (it.subtitle) I8N.text("ND_SUBTITLE_BADGE") else null,
                 )
             },
         )
@@ -483,44 +429,6 @@ object BrowserIntegration {
             addResponseHeader("Cache-Control", "max-age=0, no-cache, must-revalidate")
             responseBody = json.encodeToString(data).toByteArray(StandardCharsets.UTF_8)
         }.sendResponse()
-    }
-
-    private fun removeBlockedHeaders(msg: ExtensionMessage) {
-        val filteredHeaders = mutableMapOf<String, List<String>>()
-        filteredHeaders.putAll(msg.requestHeaders?.filter {
-            val name = it.key.lowercase(Locale.ENGLISH)
-            !blockedHeaders.contains(name) && blockedHeaderPrefixes.none { prefix -> name.startsWith(prefix) }
-        } ?: return)
-        msg.requestHeaders.clear()
-        msg.requestHeaders.putAll(filteredHeaders)
-    }
-
-    private fun toHttpSource(msg: ExtensionMessage): HttpDownloadTaskInfo {
-        val respHeaders =
-            msg.responseHeaders?.map { entry -> entry.key to entry.value.map { it.value } }?.associate { it }
-        val fileName = FileUtils.sanitizeFileName(
-            // Chrome's suggested name may include sub-directories (e.g. "sub/file.zip");
-            // reduce it to the base name so separators aren't mangled into underscores.
-            msg.filename?.let { FileUtils.getFileName(it) } ?: FileUtils.getFileName(msg.url)
-        )!!
-        val origin = msg.referer ?: msg.tabUrl
-        // Used as is when the download starts without a dialog; the dialog resolves it again itself.
-        val (categoryId, targetFolder) = captureDestination(fileName, msg.url, origin)
-        return HttpDownloadTaskInfo(
-            id = CoreUtils.uniqueId(),
-            url = msg.url!!,
-            fileName = fileName,
-            respectFileName = false,
-            cookie = msg.cookie,
-            headers = msg.requestHeaders,
-            origin = origin,
-            categoryId = categoryId,
-            targetFolder = targetFolder,
-            maxPiece = AppContext.config.maxSegments,
-            authInfo = null,
-            knownFileSize = msg.fileSize ?: getContentLength(respHeaders),
-            etag = getHeader("etag", respHeaders),
-        )
     }
 }
 
@@ -574,6 +482,13 @@ data class VideoItem(
     val tabId: String? = null,
     /** The popup offers a preview (`/preview`) for this item. */
     val previewable: Boolean = false,
+    /** A subtitle file, not a video: the popup shows a caption icon instead of the play badge. */
+    val subtitle: Boolean = false,
+    /**
+     * A translated badge the popup shows before the format badge ("Subtitle" for a subtitle file);
+     * null for none. Sent from here because the extension has no translations of its own.
+     */
+    val badge: String? = null,
 )
 
 /** Body of a `/preview` request: the captured video, by its [VideoItem.id]. */
@@ -597,48 +512,6 @@ data class PreviewDto(
 
 @Serializable
 data class PreviewFrame(val timeUs: Long, val data: String)
-
-@Serializable
-data class ExtensionMessage(
-    val url: String? = null,
-    val cookie: String? = null,
-    val requestHeaders: MutableMap<String, List<String>>? = null,
-    val responseHeaders: MutableMap<String, List<SafeStr>>? = null,
-    val filename: String? = null,
-    val file: String? = null,
-    val method: String? = null,
-    val userAgent: String? = null,
-    val tabUrl: String? = null,
-    val tabId: String? = null,
-    val tabTitle: String? = null,
-    val referer: String? = null,
-    val fileSize: Long? = null,
-    val mimeType: String? = null,
-    val vid: Long? = null,
-    /** webRequest's resource type for a captured `/media` request ("media", "xmlhttprequest", ...); null from older extensions. */
-    val resourceType: String? = null,
-)
-
-@Serializable
-@JvmInline // Required for inline classes in JVM
-value class SafeStr(@Serializable(with = IntAsStringSerializer::class) val value: String)
-
-object IntAsStringSerializer : KSerializer<String> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("IntAsString", PrimitiveKind.STRING)
-
-    override fun serialize(encoder: Encoder, value: String) {
-        encoder.encodeString(value)
-    }
-
-    override fun deserialize(decoder: Decoder): String {
-        return when (val value = decoder.decodeSerializableValue(JsonElement.serializer())) {
-            is JsonPrimitive -> value.content  // Handles both int and string input
-            else -> throw SerializationException("Expected primitive for string value")
-        }
-    }
-}
-
-
 
 /** `POST /batch` body: see docs/bulk-download.md. */
 @Serializable

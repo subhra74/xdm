@@ -1,8 +1,6 @@
 package xdm.app.ui.components
 
 import xdm.app.AppContext
-import xdm.app.DbRecord
-import xdm.app.DownloadCategory
 import xdm.app.I8N.text
 import xdm.app.ui.screens.ClearDownloadsDialog
 import xdm.app.utils.RemixIcon
@@ -10,6 +8,8 @@ import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.SingleWindows
 import xdm.app.utils.createIcon
 import xdm.app.utils.px
+import xdm.manager.DbRecord
+import xdm.manager.DownloadCategory
 import java.awt.BorderLayout
 import java.awt.CardLayout
 import java.awt.Color

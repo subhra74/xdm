@@ -1,11 +1,13 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core.media.muxer.transmux.es
 
+import xdm.core.media.muxer.transmux.mp4.SampleEntries
 import xdm.core.media.muxer.transmux.sample.Codec
-import xdm.core.media.muxer.transmux.sample.Sample
 import xdm.core.media.muxer.transmux.sample.Track
+import xdm.core.util.Logger
 
 /**
  * MPEG-1/2/2.5 audio reader for Layers I, II (MP2) and III (MP3). Splits the stream into frames
@@ -20,10 +22,17 @@ import xdm.core.media.muxer.transmux.sample.Track
  */
 class MpegAudioReader(private val sink: SampleSink) : ElementaryStreamReader {
     override val track = Track(Codec.MP3)
-    private var nextPtsTicks = Long.MIN_VALUE
-    /** `header and HEADER_MASK` of the first accepted frame; 0 until then. */
+    /** `header and HEADER_MASK` of the frames being read; 0 until the first is accepted. */
     private var lockedHeader = 0
+    private val clock = FrameClock()
+    /** Sampling rate of the current frames (the track timescale stays the first one's). */
+    private var rate = 0
+    private var descriptionIndex = 1
     private val pending = ByteArrayBuilder(MAX_CARRY)
+    /** Whether [pending] starts at a frame boundary we were already in sync with. */
+    private var pendingInSync = false
+    /** PTS of the PES the carried partial frame started in, when that frame was its first. */
+    private var carriedPts = -1L
 
     private class Frame(val size: Int, val samples: Int, val sampleRate: Int, val channels: Int, val layer: Int)
 
@@ -31,7 +40,8 @@ class MpegAudioReader(private val sink: SampleSink) : ElementaryStreamReader {
         val buf: ByteArray
         var i: Int
         val end: Int
-        if (pending.size > 0) {
+        val carried = pending.size
+        if (carried > 0) {
             // Complete the frame left over from the previous PES.
             buf = ByteArray(pending.size + length)
             System.arraycopy(pending.buffer, 0, buf, 0, pending.size)
@@ -44,51 +54,77 @@ class MpegAudioReader(private val sink: SampleSink) : ElementaryStreamReader {
             i = offset
             end = offset + length
         }
+        // Frames starting at or after this index start in the current PES, which its PTS belongs to.
+        val pesStart = i + carried
         var pesAnchor = pts
-        var inSync = false
+        var carryAnchor = carriedPts
+        carriedPts = -1
+        var inSync = carried > 0 && pendingInSync
 
         while (i + 4 <= end) {
             val header = readInt(buf, i)
             val frame = parseHeader(header)
-            if (frame == null || (lockedHeader != 0 && (header and HEADER_MASK) != lockedHeader)) {
+            if (frame == null) {
                 i++; inSync = false; continue
             }
+            val changed = lockedHeader != 0 && (header and HEADER_MASK) != lockedHeader
             if (i + frame.size > end) break // incomplete: carried over below
+            // A header with another version/layer/rate is a config change only when the next frame
+            // confirms it (the sync pattern also occurs inside frame data).
+            if (changed && i + frame.size + 4 > end) break // confirm once the next PES arrives
+            if (changed && !confirmedByNextHeader(buf, i + frame.size, end, header, strict = true)) {
+                i++; inSync = false; continue
+            }
             if (!inSync && !confirmedByNextHeader(buf, i + frame.size, end, header)) {
                 i++; continue
             }
 
             if (lockedHeader == 0) {
-                lockedHeader = header and HEADER_MASK
                 track.sampleRate = frame.sampleRate
                 track.channelCount = frame.channels
                 track.timescale = frame.sampleRate
                 track.mpegAudioLayer = frame.layer
+            } else if (changed) {
+                // E.g. an ad at another sampling rate: freeze the first entry, give these frames their own.
+                if (track.sampleEntryBox == null) track.sampleEntryBox = SampleEntries.build(track)
+                val next = Track(Codec.MP3).also {
+                    it.sampleRate = frame.sampleRate; it.channelCount = frame.channels; it.mpegAudioLayer = frame.layer
+                }
+                descriptionIndex = track.descriptionIndexFor(SampleEntries.build(next)!!)
+                Logger.info("XDM", "MPEG audio changed to layer ${frame.layer}, ${frame.sampleRate} Hz (sample entry $descriptionIndex)")
             }
-            if (pesAnchor >= 0 && nextPtsTicks == Long.MIN_VALUE) {
-                nextPtsTicks = pesAnchor * track.sampleRate / 90000L
-            } else if (pesAnchor >= 0) {
-                val expected = pesAnchor * track.sampleRate / 90000L
-                if (kotlin.math.abs(expected - nextPtsTicks) > 2L * frame.samples) nextPtsTicks = expected
-                pesAnchor = -1
+            lockedHeader = header and HEADER_MASK
+            rate = frame.sampleRate
+            val timescale = track.timescale
+            val anchor = if (i < pesStart) carryAnchor else pesAnchor
+            if (anchor >= 0) {
+                clock.anchor(anchor, timescale, frame.samples.toLong() * timescale / rate)
+                if (i < pesStart) carryAnchor = -1 else pesAnchor = -1
             }
-            if (nextPtsTicks == Long.MIN_VALUE) nextPtsTicks = 0
 
             val fileOffset = sink.writeSampleData(buf, i, frame.size)
-            track.samples.add(Sample(fileOffset, frame.size, nextPtsTicks, nextPtsTicks, true))
-            nextPtsTicks += frame.samples
+            val ts = clock.current()
+            track.samples.add(fileOffset, frame.size, ts, ts, true, descriptionIndex)
+            clock.advance(frame.samples, rate, timescale)
             i += frame.size
             inSync = true
         }
         val tail = end - i
-        if (tail in 1..MAX_CARRY) pending.write(buf, i, tail)
+        if (tail in 1..MAX_CARRY) {
+            pending.write(buf, i, tail)
+            carriedPts = if (i < pesStart) carryAnchor else pesAnchor
+        }
+        pendingInSync = inSync
     }
 
     override fun finish() {}
 
-    /** True if a matching frame header starts at [next], or if [next] is too close to [end] to tell. */
-    private fun confirmedByNextHeader(buf: ByteArray, next: Int, end: Int, header: Int): Boolean {
-        if (next + 4 > end) return true
+    /**
+     * True if a matching frame header starts at [next], or if [next] is too close to [end] to tell
+     * (unless [strict]).
+     */
+    private fun confirmedByNextHeader(buf: ByteArray, next: Int, end: Int, header: Int, strict: Boolean = false): Boolean {
+        if (next + 4 > end) return !strict
         val nextHeader = readInt(buf, next)
         return parseHeader(nextHeader) != null && (nextHeader and HEADER_MASK) == (header and HEADER_MASK)
     }

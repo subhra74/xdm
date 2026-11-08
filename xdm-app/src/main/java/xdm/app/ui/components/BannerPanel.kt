@@ -14,12 +14,15 @@ import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import java.awt.Insets
 import java.awt.RenderingHints
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.JButton
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.SwingConstants
+import javax.swing.SwingUtilities
 import javax.swing.UIManager
 import javax.swing.border.CompoundBorder
 import javax.swing.border.MatteBorder
@@ -28,13 +31,17 @@ import javax.swing.border.MatteBorder
  * A slim banner for the bottom of the main window: icon, message, an optional [badgeLabel] pill right
  * after the message (hidden by default), one action button and a dismiss button. Hidden by default. Subclasses set the texts and wire [actionButton]. Must be mutated on
  * the EDT.
+ *
+ * The dismiss button is a down chevron rather than a close mark: a banner is only tucked away and
+ * comes back later (e.g. the next start), never closed for good.
  */
 open class BannerPanel(icon: RemixIcon, actionName: String, dismissName: String) : JPanel() {
 
     protected val messageLabel = JLabel()
     protected val actionButton = JButton()
     protected val badgeLabel = BadgeLabel().apply { isVisible = false }
-    private val dismissButton = JButton("✕")
+    /** A plain chevron label, not a button: no button padding or minimum width around it. */
+    private val dismissButton = JLabel()
 
     init {
         isVisible = false
@@ -63,13 +70,14 @@ open class BannerPanel(icon: RemixIcon, actionName: String, dismissName: String)
 
         dismissButton.apply {
             name = dismissName
-            toolTipText = "Dismiss"
-            isFocusPainted = false
-            isBorderPainted = false
-            isContentAreaFilled = false
+            setIcon(createIcon(RemixIcon.ARROW_DOWN_S_LINE, 18, UIManager.getColor("Label.disabledForeground")))
+            toolTipText = "Hide"
             cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-            foreground = UIManager.getColor("Label.disabledForeground")
-            addActionListener { dismissed() }
+            addMouseListener(object : MouseAdapter() {
+                override fun mouseClicked(e: MouseEvent) {
+                    if (SwingUtilities.isLeftMouseButton(e)) dismissed()
+                }
+            })
         }
 
         // One centered row: icon + message pinned left, buttons pushed right.

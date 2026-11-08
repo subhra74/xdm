@@ -1,10 +1,10 @@
 package xdm.app.ui.components
 
 import xdm.app.AppContext
-import xdm.app.DbRecord
 import xdm.app.I8N.text
-import xdm.app.RecordStatus
 import xdm.core.downloaders.DownloadType
+import xdm.manager.DbRecord
+import xdm.manager.RecordStatus
 import java.awt.Component
 import javax.swing.JMenuItem
 import javax.swing.JPopupMenu

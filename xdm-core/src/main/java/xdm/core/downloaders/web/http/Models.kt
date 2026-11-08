@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core.downloaders.web.http
 
@@ -119,6 +120,16 @@ data class HttpTaskContext(
      */
     @Volatile
     var finalUrl: String? = null
+
+    /**
+     * Whether the part file's folder cannot have holes (FAT32, exFAT), read once when the download starts or
+     * resumes, off the lock. Not saved.
+     */
+    @Volatile
+    var fillsGaps: Boolean = false
+
+    /** Filling the part file up front on such a disk ([PartAllocation]). Not saved. */
+    val allocation = PartAllocation()
 
     /**
      * The part file's one write handle, which every chunk writes through ([PositionalOutput.at]): opened by

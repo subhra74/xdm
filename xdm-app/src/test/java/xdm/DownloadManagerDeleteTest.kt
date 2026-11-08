@@ -6,11 +6,11 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import xdm.app.DbRecord
-import xdm.app.RecordStatus
 import xdm.app.ui.screens.ClearAge
 import xdm.app.ui.screens.ClearCriteria
 import xdm.core.downloaders.DownloadType
+import xdm.manager.DbRecord
+import xdm.manager.RecordStatus
 import java.util.concurrent.TimeUnit
 import java.io.File
 

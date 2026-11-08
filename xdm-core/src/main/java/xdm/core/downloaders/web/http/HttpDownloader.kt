@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core.downloaders.web.http
 
@@ -11,6 +12,7 @@ import xdm.core.downloaders.web.loadState
 import xdm.core.network.http.HttpResponse
 import xdm.core.network.http.PoolingHttpClient
 import xdm.core.network.http.impl.HttpClientImpl
+import xdm.core.storage.prepareForWriting
 import xdm.core.util.Logger
 import xdm.core.util.CoreUtils
 import java.net.Proxy
@@ -204,9 +206,10 @@ class HttpDownloaderTask : ChunkController {
         startRequested.set(true)
         Thread {
             context.downloadHost.onDownloadActivated(context.id)
-            // The part file is written straight into the target folder, so it has to exist before the
-            // first write. Failing here surfaces as a write error on that first write.
-            context.partFile.folder.create()
+            // The part file is written straight into the target folder: make sure that works before
+            // connecting, so a refused folder fails at once and not as a disk error on the first write.
+            if (!targetWritable()) return@Thread
+            context.fillsGaps = context.partFile.folder.fillsGaps()
             val id = CoreUtils.uniqueId()
             val chunk1 = Chunk(
                 id = id,
@@ -238,9 +241,26 @@ class HttpDownloaderTask : ChunkController {
             if (context.completed.get() || context.chunks.values.all { it.status.get() == ChunkStatus.Finished }) {
                 finishDownload()
             } else {
+                // The folder may have been refused since the pause (permission taken back, card removed).
+                if (!targetWritable()) return@Thread
+                context.fillsGaps = context.partFile.folder.fillsGaps()
+                val size = context.totalSize
+                // Paused while the part file was being filled: go on filling from where it got to.
+                val filling = size != null && needsAllocation(size) &&
+                    context.partFile.length().let { it < size }
+                if (filling) context.allocation.begin()
                 startChunks()
+                if (filling) startAllocation()
             }
         }.start()
+    }
+
+    /** False after reporting [DownloadError.OutputWriteError] when the target folder refuses writes. */
+    private fun targetWritable(): Boolean {
+        if (context.partFile.folder.prepareForWriting()) return true
+        context.httpClient.close()
+        context.downloadHost.onDownloadFailed(context.id, DownloadError.OutputWriteError)
+        return false
     }
 
     override fun deleteTemp() {
@@ -389,6 +409,10 @@ class HttpDownloaderTask : ChunkController {
                 context.validator = data.validator
                 context.contentType = data.contentType
                 context.init.set(true)
+                // Before the split below, which waits for it, and before this chunk opens the part file.
+                val size = data.contentLength
+                val filling = size != null && data.resumeSupport && needsAllocation(size)
+                if (filling) context.allocation.begin()
                 context.downloadHost.onDownloadInit(
                     DownloadStatusInfo.InitInfo(
                         id = context.id,
@@ -402,6 +426,7 @@ class HttpDownloaderTask : ChunkController {
                 )
                 splitChuck(context.chunks)
                 saveState()
+                if (filling) startAllocation()
             }
         } else {
             context.write {
@@ -432,11 +457,15 @@ class HttpDownloaderTask : ChunkController {
         context.write {
             val unfinished = context.chunks.values.filter { it.status.get() != ChunkStatus.Finished }.sortedBy { it.offset }
             // At most the download's segment count at once, as when it started; the rest wait as Failed,
-            // which splitChuck restarts as slots free up.
-            unfinished.forEachIndexed { i, chunk ->
-                if (i < maxChunk) {
+            // which splitChuck restarts as slots free up. While the part file is being filled, all of them do:
+            // the fill restarts them when it is done (they'd only hold a connection open with nothing to do).
+            val waitsForFill = context.allocation.active
+            var started = 0
+            unfinished.forEach { chunk ->
+                if (started < maxChunk && !waitsForFill) {
                     chunk.status.set(ChunkStatus.Downloading)
                     startChunk(chunk.id)
+                    started++
                 } else {
                     chunk.status.set(ChunkStatus.Failed)
                 }
@@ -477,6 +506,8 @@ class HttpDownloaderTask : ChunkController {
         if (failureReported.get() || context.noRangeSupport) return
         // No Content-Length on the first response: the size is unknown and the one stream runs to EOF.
         if (context.totalSize == null) return
+        // A new chunk would start far into a part file that is still being filled; the fill splits when done.
+        if (context.allocation.active) return
         val activeChunks = getActiveCount(chunks)
         if (activeChunks >= maxChunk) return
         var rc = maxChunk - activeChunks
@@ -643,12 +674,78 @@ class HttpDownloaderTask : ChunkController {
     private fun isAllError(): Boolean {
         if (context.stopFlag.get()) return false
         if (context.diskError.get()) return true
+        // Chunks waiting for the fill are marked Failed; it restarts them when it is done.
+        if (context.allocation.active) return false
         context.read {
             val statuses = context.chunks.values.map { it.status.get() }
             if (statuses.any { it != ChunkStatus.Finished && it != ChunkStatus.Failed }) return false
             return statuses.any { it == ChunkStatus.Failed }
         }
         return false
+    }
+
+    /**
+     * Whether a part file of [size] bytes is filled up front ([PartAllocation]): on a disk without holes, when
+     * the download may split. One stream writes front to back and never leaves a gap, and a small file's
+     * gap fill is short.
+     */
+    private fun needsAllocation(size: Long): Boolean =
+        context.fillsGaps && !context.noRangeSupport && maxChunk > 1 && size >= PartAllocation.MIN_BYTES
+
+    private fun startAllocation() {
+        try {
+            Thread({ allocate() }, "part-file-fill-${context.id}").start()
+        } catch (e: Throwable) {
+            Logger.error("XDM", "Unable to start filling the part file of ${context.id}", e)
+            context.allocation.fail(IOException(e))
+            onChunkFailed(-1, DownloadError.InternalError)
+        }
+    }
+
+    /**
+     * Fills the part file front to back in [PartAllocation.STEP] steps by writing the last byte of each (the
+     * file system zero-fills the rest), then lets the held writes go and splits (or, on resume, restarts the
+     * chunks that waited). Stops between steps when the download stops; a write that
+     * fails (disk full, card removed) fails the download as a disk error.
+     */
+    private fun allocate() {
+        val size = context.totalSize ?: return
+        val allocation = context.allocation
+        val host = context.downloadHost
+        try {
+            val out = context.output { context.openPartFile() } ?: return
+            val raw = (out as? PartAllocation.Guarded)?.inner ?: out
+            var filled = raw.length()
+            Logger.info("XDM", "Filling the part file of ${context.id} from $filled to $size")
+            var percent = (filled * 100 / size).toInt()
+            host.onAllocateProgress(context.id, percent)
+            val oneByte = ByteArray(1)
+            while (filled < size) {
+                if (context.stopFlag.get()) return
+                val next = minOf(filled + PartAllocation.STEP, size)
+                raw.write(next - 1, oneByte, 0, 1)
+                // The zeros land in the write cache within seconds and the card takes minutes to write them;
+                // flushing as it goes keeps the progress at the card's real speed, keeps Pause quick (it
+                // flushes what is cached), and leaves no backlog for the data to queue behind.
+                if (next % PartAllocation.FLUSH_EVERY == 0L || next == size) raw.force()
+                filled = next
+                val now = (filled * 100 / size).toInt()
+                if (now != percent) {
+                    percent = now
+                    host.onAllocateProgress(context.id, percent)
+                }
+            }
+            allocation.finish()
+            Logger.info("XDM", "Part file of ${context.id} filled")
+            host.onAllocateProgress(context.id, -1)
+            context.write { splitChuck(context.chunks) }
+        } catch (e: IOException) {
+            allocation.fail(e)
+            // Pause or a failure elsewhere closed the file under it.
+            if (context.stopFlag.get()) return
+            Logger.error("XDM", "Unable to fill the part file of ${context.id}", e)
+            onChunkFailed(-1, DownloadError.DiskSpaceError)
+        }
     }
 
     private fun closeFileHandle(chunk: Chunk) {
@@ -708,6 +805,7 @@ class HttpDownloaderTask : ChunkController {
         // Only synced progress is saved, so how often the data is forced to disk is how far a resume
         // after a power cut can fall behind: about [syncIntervalMs]. On time only, not every so many bytes:
         // each flush holds the chunk that runs it, and every 64 MB that was more than once a second on an HDD.
+        // FAT32/exFAT disks are the exception ([flushBacklog]).
         val unsynced = unsyncedBytes.addAndGet(downloaded)
         if (!context.stopFlag.get()
             && unsynced > 0 && now - lastSync.get() >= syncIntervalMs
@@ -719,10 +817,32 @@ class HttpDownloaderTask : ChunkController {
                 syncing.set(false)
             }
         }
+        if (context.fillsGaps && unsynced >= PartAllocation.FLUSH_EVERY) flushBacklog()
         if (!context.stopFlag.get()) {
             throttle.throttleIfNeeded(context.downloaded.get())
         }
     }
+
+    /**
+     * On a FAT32/exFAT disk (SD cards, USB sticks: slow writers), keeps the write cache from running ahead of
+     * the disk. The network fills the cache far faster than such a card writes (5 MB/s measured), so progress
+     * would reach 9x% and then sit for a minute while the final flush caught up, and a Pause would wait for all
+     * of it. Here every chunk that finds [PartAllocation.FLUSH_EVERY] bytes unflushed waits its turn: the first
+     * flushes, the others find the count reset and go on, so all writers move at the disk's speed.
+     */
+    private fun flushBacklog() {
+        synchronized(flushLock) {
+            if (context.stopFlag.get() || unsyncedBytes.get() < PartAllocation.FLUSH_EVERY) return
+            if (!syncing.compareAndSet(false, true)) return
+            try {
+                syncData()
+            } finally {
+                syncing.set(false)
+            }
+        }
+    }
+
+    private val flushLock = Any()
 
     private fun finishDownload() {
         if (!context.piecesMakeUpFile()) {

@@ -1,5 +1,7 @@
 package xdm.app
 
+import xdm.capture.CapturedVideoTracker
+import xdm.core.network.http.CertExceptions
 import com.formdev.flatlaf.FlatLaf
 import com.formdev.flatlaf.util.UIScale
 import com.formdev.flatlaf.themes.FlatMacDarkLaf
@@ -18,7 +20,9 @@ import xdm.app.utils.linux.LinuxPlaces
 import xdm.app.utils.windowIconImages
 import xdm.core.downloaders.TaskInfoDB
 import xdm.core.util.FileUtils
+import xdm.core.util.Gc
 import xdm.core.util.Logger
+import xdm.manager.DownloadManager
 import java.awt.Insets
 import java.awt.RenderingHints
 import java.io.File
@@ -56,6 +60,8 @@ object AppMain {
         Logger.init(File(configDir))
         // Before any HTTP client or digest: the shared TLS context (SharedTls) is built once.
         ConscryptTls.install()
+        // Certificates the user chose to trust; read by every HTTPS handshake.
+        CertExceptions.init(configDir)
         // HotSpot appends "sharing" to java.vm.info while a CDS archive is mapped (APPCDS.md).
         Logger.info("CDS: archive " + if (System.getProperty("java.vm.info").orEmpty().contains("sharing")) "in use" else "not in use")
 
@@ -80,14 +86,15 @@ object AppMain {
             config = AppConfig(configDir)
             queue = QueueManager()
             platform = PlatformInvoke()
-            downloader = DownloadManager(appDB = appDB, taskInfoDB = taskDB, configDir = configDir)
+            downloader = DownloadManager(store = appDB, taskInfoDB = taskDB, configDir = configDir)
             videoTracker = CapturedVideoTracker()
             taskInfoDB = taskDB
             scheduler = DownloadScheduler(appDB, configDir)
         }.init(args, configDir, tempDir)
 
         AppContext.scheduler.start()
-        if (!args.contains("--no-gc")) GcScheduler.start()
+        // --no-gc: none of XDM's explicit GCs, the periodic ones nor xdm-core's after a client closes.
+        if (args.contains("--no-gc")) Gc.install {} else GcScheduler.start()
     }
 
     /** Whether [theme] means dark; [systemIsDark] is only asked for "system". */

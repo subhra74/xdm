@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core.media.muxer.transmux.io
 
@@ -23,6 +24,14 @@ class ParsableBitArray(
     }
 
     fun bitsLeft(): Int = (byteLimit - byteOffset) * 8 - bitOffset
+
+    /** Read position in bits from the start of the data. */
+    fun position(): Int = byteOffset * 8 + bitOffset
+
+    fun setPosition(bits: Int) {
+        byteOffset = bits / 8
+        bitOffset = bits % 8
+    }
 
     fun skipBits(numBits: Int) {
         val total = bitOffset + numBits

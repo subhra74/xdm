@@ -9,59 +9,12 @@ import xdm.core.util.TagReader
 import xdm.core.util.TagWriter
 import xdm.core.util.TaggedFile
 import xdm.core.util.byStableId
+import xdm.manager.DbRecord
+import xdm.manager.DownloadStore
+import xdm.manager.RecordStatus
 import java.io.DataInputStream
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
-
-enum class RecordStatus {
-    DOWNLOADING,
-    FINISHED,
-    READY,
-
-    /**
-     * Stopped by an error rather than by the user. Behaves like [PAUSED] (resumable, kept in the paused
-     * list) and only differs in how it is shown.
-     */
-    ERROR,
-    PAUSED,
-    ASSEMBLING,
-
-    /**
-     * Change folder is moving a stopped download's part file to another folder; [DbRecord.movePhase]
-     * says which step. A same-volume move only renames, so it is brief; a cross-volume one copies.
-     * Cancellable until [MovePhase.FINALIZING]: the part file stays where it was.
-     */
-    MOVING;
-
-    /** Idle and resumable: these records are saved in the paused list. */
-    val isStopped: Boolean get() = this == PAUSED || this == ERROR
-}
-
-data class DbRecord(
-    var id: Long,
-    var size: Long,
-    var downloaded: Long,
-    var progress: Int,
-    var date: Long,
-    var fileName: String,
-    var eta: Long,
-    var speed: Float,
-    var selected: Boolean,
-    var status: RecordStatus,
-    val downloadType: DownloadType,
-    /** The move step while [status] is [RecordStatus.MOVING]; meaningless otherwise. Not persisted. */
-    var movePhase: MovePhase? = null,
-    /**
-     * Batch only: files that could not be downloaded. A batch with failures is still FINISHED; this
-     * only changes its icon. Not persisted in the record files: read back from the batch state on load.
-     */
-    var failedFiles: Int = 0,
-    /**
-     * The category the download was saved with, for the sidebar filter; null is None. An id whose
-     * category was deleted also reads as None. Persisted.
-     */
-    val categoryId: String? = null,
-)
 
 // Field numbers of the download list files (see TaggedFile). Never reuse or retype a number.
 private const val F_RECORD = 1
@@ -76,8 +29,16 @@ private const val R_FILE_NAME = 6
 private const val R_DOWNLOAD_TYPE = 7
 private const val R_FAILED = 8
 private const val R_CATEGORY_ID = 9
+/** Retired: was a per-download "ignore certificate errors" flag. Skipped when read; never reuse 10. */
+@Suppress("unused")
+private const val R_RETIRED_IGNORE_CERT_ERRORS = 10
 
-class AppDB(private val configDir: String) {
+/**
+ * The desktop's download list: every record in memory, saved as three tagged files by state (active,
+ * paused, finished), each rewritten whole when one of its records changes. Also the Swing list's model:
+ * rows are read by index on the EDT.
+ */
+class AppDB(private val configDir: String) : DownloadStore {
     private val activeFileName: String = "active-downloads.dat"
     private val pausedFileName: String = "paused-downloads.dat"
     private val finishedFileName: String = "finished-downloads.dat"
@@ -86,6 +47,24 @@ class AppDB(private val configDir: String) {
     private var lastPausedCount = 0
     private val records = Collections.synchronizedList(ArrayList<DbRecord>())
     private val indexMap = ConcurrentHashMap<Long, Int>()
+
+    /** The list file each record was last saved in, so a status change also rewrites the one it left. */
+    private val savedIn = ConcurrentHashMap<Long, ListFile>()
+
+    private enum class ListFile { ACTIVE, PAUSED, FINISHED }
+
+    private fun listFileOf(status: RecordStatus): ListFile = when {
+        status.isStopped -> ListFile.PAUSED
+        status == RecordStatus.FINISHED -> ListFile.FINISHED
+        // READY, DOWNLOADING, ASSEMBLING and MOVING stay in the active list.
+        else -> ListFile.ACTIVE
+    }
+
+    private fun save(file: ListFile) = when (file) {
+        ListFile.ACTIVE -> saveActiveRecords()
+        ListFile.PAUSED -> savePausedRecords()
+        ListFile.FINISHED -> saveFinishedRecords()
+    }
 
     @Synchronized
     fun indexById(id: Long): Int? = indexMap[id]
@@ -105,7 +84,7 @@ class AppDB(private val configDir: String) {
     fun count(predicate: (DbRecord) -> Boolean): Int = synchronized(records) { records.count(predicate) }
 
     /** The records matching [predicate], copied out under the list's lock. */
-    fun filter(predicate: (DbRecord) -> Boolean): List<DbRecord> = synchronized(records) { records.filter(predicate) }
+    override fun filter(predicate: (DbRecord) -> Boolean): List<DbRecord> = synchronized(records) { records.filter(predicate) }
 
     /** A copy of the records matching [predicate], taken under the lock. */
     @Synchronized
@@ -113,13 +92,39 @@ class AppDB(private val configDir: String) {
 
     /** Synchronized with [removeItem]/[removeWhere], which rebuild [indexMap] after shifting rows. */
     @Synchronized
-    fun getById(id: Long): DbRecord? = indexMap[id]?.let { records.getOrNull(it) }?.takeIf { it.id == id }
+    override fun getById(id: Long): DbRecord? = indexMap[id]?.let { records.getOrNull(it) }?.takeIf { it.id == id }
 
     @Synchronized
     fun addActive(rec: DbRecord) {
         val len = records.size
         records.add(rec)
         indexMap[rec.id] = len
+    }
+
+    @Synchronized
+    override fun add(rec: DbRecord) {
+        addActive(rec)
+        update(rec)
+    }
+
+    /** Rewrites the list file [rec] belongs in now, and the one it was last saved in when that differs. */
+    @Synchronized
+    override fun update(rec: DbRecord) {
+        val now = listFileOf(rec.status)
+        val before = savedIn.put(rec.id, now)
+        save(now)
+        if (before != null && before != now) save(before)
+    }
+
+    @Synchronized
+    override fun remove(id: Long): Int? {
+        val index = indexMap[id] ?: return null
+        val current = getById(id)?.let { listFileOf(it.status) }
+        val left = savedIn.remove(id)
+        removeItem(id)
+        // Its status may have changed since it was last saved; the file it is still in loses it too.
+        if (left != null && left != current) save(left)
+        return index
     }
 
     @Synchronized
@@ -186,7 +191,7 @@ class AppDB(private val configDir: String) {
         //TODO: Check errors
     }
 
-    private fun loadRecordsFromStream(fs: DataInputStream, paused: Boolean): Int {
+    private fun loadRecordsFromStream(fs: DataInputStream, paused: Boolean, file: ListFile): Int {
         val r = TaggedFile.read(fs)
         var c = 0
         while (true) {
@@ -197,7 +202,7 @@ class AppDB(private val configDir: String) {
                     // not the whole list.
                     val rec = r.message()
                     runCatching { readRecord(rec, paused) }
-                        .onSuccess { if (it != null) { records.add(it); c++ } }
+                        .onSuccess { if (it != null) { records.add(it); savedIn[it.id] = file; c++ } }
                         .onFailure { Logger.error("Skipping an unreadable download record: $it") }
                 }
                 else -> r.skip()
@@ -207,7 +212,7 @@ class AppDB(private val configDir: String) {
 
     private fun loadActiveRecords() {
         val res = AtomicIO.readTransacted(activeFileName, configDir) { fs ->
-            lastActiveCount = loadRecordsFromStream(fs, paused = true)
+            lastActiveCount = loadRecordsFromStream(fs, paused = true, ListFile.ACTIVE)
         }
         //TODO: Check errors
     }
@@ -230,7 +235,7 @@ class AppDB(private val configDir: String) {
 
     private fun loadPausedRecords() {
         val res = AtomicIO.readTransacted(pausedFileName, configDir) { fs ->
-            lastPausedCount = loadRecordsFromStream(fs, paused = true)
+            lastPausedCount = loadRecordsFromStream(fs, paused = true, ListFile.PAUSED)
         }
         //TODO: Check errors
     }
@@ -253,7 +258,7 @@ class AppDB(private val configDir: String) {
 
     private fun loadFinishedRecords() {
         val res = AtomicIO.readTransacted(finishedFileName, configDir) { fs ->
-            lastFinishedCount = loadRecordsFromStream(fs, paused = false)
+            lastFinishedCount = loadRecordsFromStream(fs, paused = false, ListFile.FINISHED)
         }
         //TODO: Check errors
     }
@@ -322,12 +327,13 @@ class AppDB(private val configDir: String) {
      * removed records. Only removes rows; the caller deletes their files.
      */
     @Synchronized
-    fun removeWhere(predicate: (DbRecord) -> Boolean): List<DbRecord> {
+    override fun removeWhere(predicate: (DbRecord) -> Boolean): List<DbRecord> {
         val removed = synchronized(records) {
             val matching = records.filter(predicate)
             records.removeAll(matching)
             matching
         }
+        removed.forEach { savedIn.remove(it.id) }
         indexMap.clear()
         for ((i, r) in records.withIndex()) {
             indexMap[r.id] = i

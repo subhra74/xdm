@@ -5,12 +5,12 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import xdm.app.AppContext
-import xdm.app.DownloadCompleteNotification
 import xdm.app.IAppInstance
 import xdm.app.IPlatformInvoke
-import xdm.app.RecordStatus
-import xdm.app.utils.DownloadSource
 import xdm.core.downloaders.DownloadStatusInfo
+import xdm.manager.DownloadCompleteNotification
+import xdm.manager.DownloadSource
+import xdm.manager.RecordStatus
 import java.io.File
 import java.lang.reflect.Proxy
 import java.util.concurrent.CopyOnWriteArrayList

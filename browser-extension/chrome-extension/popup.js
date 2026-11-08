@@ -114,7 +114,7 @@ class VideoPopup {
         items.slice().reverse().forEach(item => {
             const row = template.content.cloneNode(true);
             const button = row.querySelector('.video-item');
-            const badge = row.querySelector('.format-badge');
+            const badge = row.querySelector('.format-badge:not(.kind-badge)');
             const meta = this.splitInfo(item.info);
 
             row.querySelector('.video-title').textContent = this.titleOf(item.text, meta.format);
@@ -128,6 +128,16 @@ class VideoPopup {
                 chrome.runtime.sendMessage({ type: "vid", itemId: item.id });
                 window.close();
             });
+            // A subtitle file gets a caption icon, so it isn't mistaken for a video.
+            if (item.subtitle) {
+                row.querySelector('.thumb').classList.add('subtitle');
+            }
+            // XDM's translated "Subtitle" (or another kind), before the format badge.
+            if (item.badge) {
+                const kind = row.querySelector('.kind-badge');
+                kind.textContent = item.badge;
+                kind.hidden = false;
+            }
             // Only single MP4 files are previewable (XDM decides); never HLS or segmented DASH.
             if (item.previewable && this.showPreviews) {
                 this.preview(item.id, row.querySelector('.thumb'));

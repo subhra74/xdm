@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core.downloaders
 
@@ -41,6 +42,13 @@ interface DownloadHost : FileProvider {
     fun onDownloadSuccess(event: DownloadStatusInfo.FinalInfo)
     fun onDownloadFailed(id: Long, error: DownloadError)
     fun onDownloadPaused(id: Long, event: PauseEvent)
+
+    /**
+     * The part file on a disk without holes (FAT32, exFAT) is being filled before the download splits:
+     * [percent] of it so far, then -1 once it is done. Sent only while the download runs; a pause or failure
+     * ends it without a -1. Any thread.
+     */
+    fun onAllocateProgress(id: Long, percent: Int) {}
     val appDir: String
     val applySpeedLimit: Boolean
     val speedLimit: Int

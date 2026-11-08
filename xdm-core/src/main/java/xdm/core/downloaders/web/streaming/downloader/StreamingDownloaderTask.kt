@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core.downloaders.web.streaming.downloader
 
@@ -14,10 +15,12 @@ import xdm.core.media.subtitle.WebVtt
 import xdm.core.network.http.isTlsVerificationError
 import xdm.core.storage.LocalStorage
 import xdm.core.storage.StorageFile
+import xdm.core.storage.prepareForWriting
 import xdm.core.util.FileUtils
 import xdm.core.util.Logger
 import xdm.core.util.ManifestUtils.downloadManifestAsFile
 import xdm.core.util.getFileExtFromUrl
+import xdm.core.util.isOutOfSpace
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.CountDownLatch
@@ -47,6 +50,14 @@ abstract class StreamingDownloaderTask(
     private val startRequested = AtomicBoolean(false)
     private var lastAssembleProgress = -1
 
+    /** The thread running [download]; [stop] waits for it so a pause is reported only once it is done. */
+    @Volatile
+    private var worker: Thread? = null
+
+    /** What made the last assemble fail, to tell a full disk from a muxing problem. */
+    @Volatile
+    private var assembleError: Throwable? = null
+
     /** Set when a manifest or key fetch failed TLS verification, so setup failures report [DownloadError.TlsError]. */
     private val tlsFailure = AtomicBoolean(false)
 
@@ -74,7 +85,7 @@ abstract class StreamingDownloaderTask(
             return
         }
         startRequested.set(true)
-        Thread {
+        worker = Thread {
             segmentsGone()?.let { problem ->
                 // Nothing is touched, so the state is still there if the segments come back.
                 Logger.error("XDM", "Download ${context.id} cannot resume: segments missing in ${context.tempFolder}")
@@ -84,7 +95,7 @@ abstract class StreamingDownloaderTask(
             }
             File(context.tempFolder).mkdirs()
             download()
-        }.start()
+        }.also { it.start() }
     }
 
     override fun stop() {
@@ -107,10 +118,28 @@ abstract class StreamingDownloaderTask(
                     }
                 }
             }
+            awaitWorker()
             saveContext()
             throttle.disable()
             context.downloadHost.onDownloadPaused(context.id, PauseEvent.PausedByUser)
         }.start()
+    }
+
+    /**
+     * Waits for the download thread to see the stop. While assembling it is muxing or committing, and it
+     * deletes the partial output on its way out: reporting the pause before that would let a quick resume
+     * open the output while the old thread is still deleting it. The muxer checks the stop flag between
+     * reads, so this is short; the cap only guards against an I/O call that never returns.
+     */
+    private fun awaitWorker() {
+        val thread = worker ?: return
+        if (thread === Thread.currentThread()) return
+        try {
+            thread.join(STOP_WAIT_MS)
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
+        if (thread.isAlive) Logger.error("XDM", "Download ${context.id} still busy ${STOP_WAIT_MS}ms after stop")
     }
 
     override fun resume() {
@@ -164,6 +193,12 @@ abstract class StreamingDownloaderTask(
                 context.init.set(true)
                 saveContext()
                 context.downloadHost.onDownloadInit(initInfo, downloadType())
+            }
+            // The output is assembled in the target folder: check it takes writes now, before any
+            // segment is fetched, not after the whole video has downloaded.
+            if (!outputFile().folder.prepareForWriting()) {
+                context.downloadHost.onDownloadFailed(context.id, DownloadError.OutputWriteError)
+                return
             }
             downloadChunks()
         } catch (ex: Exception) {
@@ -230,10 +265,15 @@ abstract class StreamingDownloaderTask(
         if (!alreadyMuxed) {
             try {
                 postProcessChunks()
-            } catch (e: DecryptionException) {
+            } catch (e: IOException) {
                 Logger.error("XDM", "Decryption failed", e)
                 if (context.stopFlag.get()) return
-                context.downloadHost.onDownloadFailed(context.id, DownloadError.DecryptionError)
+                val error = when {
+                    isOutOfSpace(e) -> DownloadError.DiskSpaceError
+                    e is DecryptionException -> DownloadError.DecryptionError
+                    else -> throw e
+                }
+                context.downloadHost.onDownloadFailed(context.id, error)
                 return
             }
             val outFolder = tmpFile.folder
@@ -249,7 +289,9 @@ abstract class StreamingDownloaderTask(
             }
             if (context.stopFlag.get()) return
             if (!ret) {
-                context.downloadHost.onDownloadFailed(context.id, DownloadError.MuxError)
+                val error = if (isOutOfSpace(assembleError ?: muxer.lastError)) DownloadError.DiskSpaceError
+                else DownloadError.MuxError
+                context.downloadHost.onDownloadFailed(context.id, error)
                 return
             }
         } else {
@@ -319,6 +361,7 @@ abstract class StreamingDownloaderTask(
             }
         } catch (e: Exception) {
             Logger.error("XDM", "Mux failed - assembleStreams", e)
+            assembleError = e
         }
         return false
     }
@@ -341,6 +384,7 @@ abstract class StreamingDownloaderTask(
             }
         } catch (e: Exception) {
             Logger.error("XDM", "Mux failed - assembleSingle", e)
+            assembleError = e
         }
         return false
     }
@@ -504,3 +548,6 @@ abstract class StreamingDownloaderTask(
 
 /** Marks a manifest slot whose file was discarded; see [StreamingDownloaderTask.discardManifest]. */
 private val DISCARDED_MANIFEST = File("")
+
+/** How long a stop waits for the download thread before reporting the pause anyway. */
+private const val STOP_WAIT_MS = 30_000L

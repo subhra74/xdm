@@ -1,7 +1,7 @@
 package xdm.app.ui.components
 
-import xdm.app.DownloadCategory
 import xdm.core.util.StableId
+import xdm.manager.DownloadCategory
 import javax.swing.Icon
 
 enum class SortKey(override val id: Int) : StableId {

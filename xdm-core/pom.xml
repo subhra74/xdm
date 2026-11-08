@@ -15,9 +15,10 @@
 
     <licenses>
         <license>
-            <name>Apache License, Version 2.0</name>
-            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <name>GNU General Public License v3.0 or later, with the XDM proprietary components exception</name>
+            <url>https://www.gnu.org/licenses/gpl-3.0.txt</url>
             <distribution>repo</distribution>
+            <comments>Additional terms and the exception: xdm-android/NOTICE</comments>
         </license>
     </licenses>
 

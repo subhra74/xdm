@@ -6,8 +6,6 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import xdm.app.utils.BatchFolderState
-import xdm.app.utils.batchFolderState
 import xdm.app.utils.defaultBatchName
 import xdm.app.utils.sanitizeBatchName
 import xdm.app.utils.suggestBatchName
@@ -17,6 +15,8 @@ import xdm.integration.BatchMessageGroup
 import xdm.integration.BatchMessageItem
 import xdm.integration.MAX_BATCH_ITEMS
 import xdm.integration.toBatchRequest
+import xdm.manager.BatchFolderState
+import xdm.manager.batchFolderState
 import java.io.File
 import java.nio.file.Files
 import java.text.SimpleDateFormat

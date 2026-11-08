@@ -9,13 +9,13 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import xdm.app.AppConfig
 import xdm.app.AppContext
-import xdm.app.DownloadCategory
 import xdm.app.utils.captureDestination
 import xdm.app.utils.rememberCategoryPick
 import xdm.app.utils.rememberHandPickedFolder
 import xdm.core.downloaders.HttpDownloadTaskInfo
-import xdm.integration.BrowserIntegration
-import xdm.integration.ExtensionMessage
+import xdm.capture.CaptureHandler
+import xdm.capture.ExtensionMessage
+import xdm.manager.DownloadCategory
 import java.io.File
 import java.nio.file.Files
 
@@ -96,9 +96,7 @@ class CategoryRememberTest {
 
     private fun taskFor(fileName: String): HttpDownloadTaskInfo {
         val msg = ExtensionMessage(url = "http://127.0.0.1/$fileName", filename = fileName, method = "GET", fileSize = 1024)
-        val m = BrowserIntegration::class.java.getDeclaredMethod("toHttpSource", ExtensionMessage::class.java)
-            .apply { isAccessible = true }
-        return m.invoke(BrowserIntegration, msg) as HttpDownloadTaskInfo
+        return CaptureHandler.toDownload(msg)!!
     }
 
     @Test

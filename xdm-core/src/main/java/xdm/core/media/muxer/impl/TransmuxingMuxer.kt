@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core.media.muxer.impl
 
@@ -12,6 +13,7 @@ import xdm.core.media.muxer.transmux.mkv.MatroskaDemuxer
 import xdm.core.media.muxer.transmux.mkv.MkvWriter
 import xdm.core.media.muxer.transmux.mp4.Mp4Writer
 import xdm.core.media.muxer.transmux.mp4.presentationStart
+import xdm.core.media.muxer.transmux.sample.SampleSpill
 import xdm.core.media.muxer.transmux.packed.PackedAudioDemuxer
 import xdm.core.media.muxer.transmux.sample.Track
 import xdm.core.media.muxer.transmux.ts.TsDemuxer
@@ -40,6 +42,10 @@ class TransmuxingMuxer(@Suppress("UNUSED_PARAMETER") appDir: String) : Muxer {
 
     @Volatile
     override var timelineStartSec: Double? = null
+        private set
+
+    @Volatile
+    override var lastError: Throwable? = null
         private set
 
     // ---- single list of (possibly A+V) segments ----
@@ -80,11 +86,23 @@ class TransmuxingMuxer(@Suppress("UNUSED_PARAMETER") appDir: String) : Muxer {
         val total = (videoSegments.size + audioSegments.size).coerceAtLeast(1)
         val done = intArrayOf(0)
         val tick = { _: Int -> done[0]++; progressCallback(minOf(100, done[0] * 100 / total)) }
-        val tracks = ArrayList<Track>()
-        // Video first, then audio; both stream into the same mdat (one writer).
-        tracks += demuxList(videoSegments, writer, tick)
-        tracks += demuxList(audioSegments, writer, tick)
-        tracks
+        // Interleaved, as ffmpeg interleaves by timestamp: the list that is behind (by the share of its
+        // segments done; both cover the same time) goes next, so the mdat holds the two streams in
+        // segment-sized turns instead of all video then all audio. Players reading over a network or
+        // from a slow disk then don't have to jump between two distant halves of the file.
+        val video = SegmentSource(videoSegments, writer)
+        val audio = SegmentSource(audioSegments, writer)
+        while (!stopFlag.get() && (video.hasNext() || audio.hasNext())) {
+            val next = when {
+                !audio.hasNext() -> video
+                !video.hasNext() -> audio
+                video.done() <= audio.done() -> video
+                else -> audio
+            }
+            next.feedNext()
+            tick(0)
+        }
+        video.finish() + audio.finish()
     }
 
     override fun stop() {
@@ -97,9 +115,12 @@ class TransmuxingMuxer(@Suppress("UNUSED_PARAMETER") appDir: String) : Muxer {
     private inline fun transmux(
         output: StorageFile, tempDir: String, discontinuous: Boolean = false, body: (ContainerWriter) -> List<Track>
     ): Boolean {
+        lastError = null
         val writer: ContainerWriter =
-            if (output.name.endsWith(".mkv", ignoreCase = true)) MkvWriter(output, tempDir)
+            if (output.name.endsWith(".mkv", ignoreCase = true)) MkvWriter(output, tempDir) { stopFlag.get() }
             else Mp4Writer(output, repairTimeline = discontinuous)
+        // Sample records of long streams spill to scratch files here; dropped when muxing ends.
+        val spill = SampleSpill.open(File(tempDir))
         return try {
             val tracks = body(writer)
             if (stopFlag.get()) { writer.abort(); false }
@@ -112,80 +133,83 @@ class TransmuxingMuxer(@Suppress("UNUSED_PARAMETER") appDir: String) : Muxer {
                 ok
             }
         } catch (ex: Throwable) {
-            Logger.error("XDM", "Transmux failed", ex)
             writer.abort()
+            // A stop can surface as an error from a closed handle: that is a pause, not a failure.
+            if (!stopFlag.get()) {
+                Logger.error("XDM", "Transmux failed", ex)
+                lastError = ex
+            }
             false
+        } finally {
+            spill.close()
         }
     }
 
     /** Demuxes a (homogeneous) list of segments into [writer], picking the demuxer by container. */
     private fun demuxList(segments: List<String>, writer: SampleSink, progress: (Int) -> Unit): List<Track> {
-        if (segments.isEmpty()) return emptyList()
-        return when (containerOf(segments.first())) {
-            Container.TS -> {
-                val demux = TsDemuxer(writer)
-                feedTs(segments, demux, progress)
-                demux.finish()
-                demux.tracks
-            }
-            Container.MKV -> {
-                val demux = MatroskaDemuxer(writer)
-                for ((i, seg) in segments.withIndex()) {
-                    if (stopFlag.get()) break
-                    demux.parseSegment(seg)
-                    progress(((i + 1) * 100) / segments.size)
-                }
-                demux.finish()
-                demux.tracks
-            }
-            Container.PACKED_AUDIO -> {
-                val demux = PackedAudioDemuxer(writer)
-                for ((i, seg) in segments.withIndex()) {
-                    if (stopFlag.get()) break
-                    demux.parseSegment(seg)
-                    progress(((i + 1) * 100) / segments.size)
-                }
-                demux.finish()
-                demux.tracks
-            }
-            Container.MP4 -> {
-                val demux = Mp4Demuxer(writer)
-                for ((i, seg) in segments.withIndex()) {
-                    if (stopFlag.get()) break
-                    demux.parseSegment(seg)
-                    progress(((i + 1) * 100) / segments.size)
-                }
-                demux.finish()
-                demux.tracks
-            }
+        val source = SegmentSource(segments, writer)
+        while (!stopFlag.get() && source.hasNext()) {
+            source.feedNext()
+            progress((source.fed * 100) / segments.size)
         }
+        return source.finish()
     }
 
-    private fun feedTs(segments: List<String>, demux: TsDemuxer, progress: (Int) -> Unit) {
-        val buffer = ByteArray(256 * 1024)
-        for ((i, seg) in segments.withIndex()) {
-            if (stopFlag.get()) return
-            FileInputStream(seg).use { input ->
-                while (true) {
-                    if (stopFlag.get()) return
-                    val n = input.read(buffer)
-                    if (n <= 0) break
-                    demux.feed(buffer, n)
+    /**
+     * One playlist's segments fed one at a time into the demuxer for their container (sniffed from
+     * the first segment); demuxer state carries across segments.
+     */
+    private inner class SegmentSource(private val segments: List<String>, writer: SampleSink) {
+        var fed = 0
+            private set
+        private val feedOne: (String) -> Unit
+        private val end: () -> List<Track>
+
+        init {
+            when (if (segments.isEmpty()) Container.MP4 else containerOf(segments.first())) {
+                Container.TS -> {
+                    val demux = TsDemuxer(writer)
+                    val buffer = ByteArray(256 * 1024)
+                    feedOne = { seg ->
+                        FileInputStream(seg).use { input ->
+                            while (!stopFlag.get()) {
+                                val n = input.read(buffer)
+                                if (n <= 0) break
+                                demux.feed(buffer, n)
+                            }
+                        }
+                    }
+                    end = { demux.finish(); demux.tracks }
                 }
+                Container.MKV -> MatroskaDemuxer(writer).let { d -> feedOne = { d.parseSegment(it) }; end = { d.finish(); d.tracks } }
+                Container.PACKED_AUDIO -> PackedAudioDemuxer(writer).let { d -> feedOne = { d.parseSegment(it) }; end = { d.finish(); d.tracks } }
+                Container.MP4 -> Mp4Demuxer(writer).let { d -> feedOne = { d.parseSegment(it) }; end = { d.finish(); d.tracks } }
             }
-            progress(((i + 1) * 100) / segments.size)
         }
+
+        fun hasNext() = fed < segments.size
+
+        /** Share of the segments fed so far. */
+        fun done() = if (segments.isEmpty()) 1.0 else fed.toDouble() / segments.size
+
+        fun feedNext() {
+            feedOne(segments[fed])
+            fed++
+        }
+
+        fun finish(): List<Track> = if (segments.isEmpty()) emptyList() else end()
     }
 
     private enum class Container { TS, MP4, MKV, PACKED_AUDIO }
 
     /**
      * Sniffs the container from the file header: EBML magic => Matroska, MP4 box type => MP4,
-     * 0x47 => TS, ID3 tag or a raw audio sync word => packed audio, else MP4.
+     * 0x47 => TS (or 0x47 after M2TS's 4-byte header, repeating every 192 bytes), ID3 tag or a raw
+     * audio sync word => packed audio, else MP4.
      */
     private fun containerOf(path: String): Container {
         RandomAccessFile(path, "r").use { raf ->
-            val head = ByteArray(minOf(10, raf.length().toInt()))
+            val head = ByteArray(minOf((M2TS_PACKET + 5).toLong(), raf.length()).toInt())
             raf.readFully(head)
             // EBML magic (0x1A45DFA3) => Matroska/WebM.
             if (head.size >= 4 && (head[0].toInt() and 0xFF) == 0x1A && (head[1].toInt() and 0xFF) == 0x45 &&
@@ -200,6 +224,9 @@ class TransmuxingMuxer(@Suppress("UNUSED_PARAMETER") appDir: String) : Muxer {
                 (head[2].toInt() and 0xFF) == 0xB6 && (head[3].toInt() and 0xFF) == 0x75
             ) return Container.MKV
             if (head.isNotEmpty() && (head[0].toInt() and 0xFF) == 0x47) return Container.TS
+            if (head.size > M2TS_PACKET + 4 && (head[4].toInt() and 0xFF) == 0x47 &&
+                (head[M2TS_PACKET + 4].toInt() and 0xFF) == 0x47
+            ) return Container.TS
             if (PackedAudioDemuxer.isId3(head, 0) || isAudioSync(head)) return Container.PACKED_AUDIO
             return Container.MP4
         }
@@ -214,6 +241,7 @@ class TransmuxingMuxer(@Suppress("UNUSED_PARAMETER") appDir: String) : Muxer {
     }
 
     private companion object {
+        const val M2TS_PACKET = 192
         val MP4_TOP_LEVEL_TYPES = setOf("ftyp", "styp", "moov", "moof", "sidx", "free", "skip", "mdat")
     }
 }

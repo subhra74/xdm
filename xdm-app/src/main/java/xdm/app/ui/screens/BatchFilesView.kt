@@ -1,7 +1,6 @@
 package xdm.app.ui.screens
 
 import xdm.app.I8N.text
-import xdm.app.RecordStatus
 import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.isMacPopupTrigger
 import xdm.app.utils.openFileExternal
@@ -13,6 +12,7 @@ import xdm.core.downloaders.web.batch.BatchTaskContext
 import xdm.core.downloaders.web.http.ChunkStatus
 import xdm.core.util.FormatHelper
 import xdm.core.util.Logger
+import xdm.manager.RecordStatus
 import java.awt.BorderLayout
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent

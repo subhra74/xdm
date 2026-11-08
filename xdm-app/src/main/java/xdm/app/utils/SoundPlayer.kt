@@ -1,8 +1,8 @@
 package xdm.app.utils
 
 import xdm.app.AppContext
-import xdm.app.DownloadCompleteNotification
 import xdm.core.util.Logger
+import xdm.manager.DownloadCompleteNotification
 import java.io.BufferedInputStream
 import java.io.File
 import java.io.InputStream

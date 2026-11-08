@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core.downloaders.web.streaming.manifest.hls
 
@@ -17,7 +18,26 @@ data class HlsPlaylist(
     val version: Int = 0,
     val independent: Boolean = false,
     val hasDiscontinuity: Boolean = false,
-)
+    /** `#EXT-X-ENDLIST` was present: no segments will be added. */
+    val endList: Boolean = false,
+    /** `#EXT-X-PLAYLIST-TYPE` (`VOD` or `EVENT`), null when absent. */
+    val playlistType: String? = null,
+) {
+    /** The playlist may still grow, so it has no final duration or size. */
+    val isLive: Boolean
+        get() = !endList && !"VOD".equals(playlistType, ignoreCase = true)
+
+    /**
+     * The total bytes of every segment, init section included, when each one has its own
+     * `#EXT-X-BYTERANGE` (or `BYTERANGE` on `#EXT-X-MAP`); null when any size is unknown.
+     */
+    fun byteRangeTotal(): Long? {
+        if (mediaSegments.isEmpty()) return null
+        var total = 0L
+        for (seg in mediaSegments) total += seg.byteRange?.second ?: return null
+        return total
+    }
+}
 
 data class HlsMasterPlaylist(
     val videoPlaylist: HttpUrl? = null,

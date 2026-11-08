@@ -7,7 +7,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import xdm.app.AppConfig
 import xdm.app.AppContext
-import xdm.app.CapturedVideoTracker
+import xdm.capture.CapturedVideoTracker
 import xdm.app.IAppInstance
 import xdm.integration.BrowserIntegration
 import java.io.File

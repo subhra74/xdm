@@ -1,12 +1,13 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import xdm.core.media.muxer.transmux.mp4.assignSampleDurations
-import xdm.core.media.muxer.transmux.sample.Sample
+import xdm.core.media.muxer.transmux.sample.SampleTable
 
 /**
  * Unit coverage for [assignSampleDurations] — the MP4 writer's per-sample duration derivation and
@@ -17,7 +18,7 @@ import xdm.core.media.muxer.transmux.sample.Sample
 class TestMp4Timeline {
 
     /** dts-only samples (pts==dts, keyframe) at the given decode times. */
-    private fun samples(vararg dts: Long): List<Sample> = dts.map { Sample(0, 10, it, it, true) }
+    private fun samples(vararg dts: Long): SampleTable = SampleTable().also { t -> for (d in dts) t.add(0, 10, d, d, true) }
 
     private fun durations(vararg dts: Long): List<Long> {
         val s = samples(*dts)
@@ -74,7 +75,7 @@ class TestMp4Timeline {
 
     @Test
     fun emptyList_noCrash() {
-        val s = emptyList<Sample>()
+        val s = SampleTable()
         assignSampleDurations(s, repairTimeline = true)
         assertEquals(0, s.size)
     }

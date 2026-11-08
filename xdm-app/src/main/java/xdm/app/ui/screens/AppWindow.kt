@@ -2,7 +2,6 @@ package xdm.app.ui.screens
 
 import xdm.app.AppContext
 import xdm.app.AppContext.app
-import xdm.app.DbRecord
 import xdm.app.I8N.text
 import xdm.app.ListSelectionMode
 import xdm.app.OS
@@ -14,11 +13,13 @@ import xdm.app.ui.components.AutoStartPanel
 import xdm.app.ui.components.FilterListPanel
 import xdm.app.ui.components.ClassicListView
 import xdm.app.ui.components.DownloadListView
+import xdm.app.ui.components.ExtensionUpdatePanel
 import xdm.app.ui.components.FilterState
 import xdm.app.ui.components.MainListViewFilter
 import xdm.app.ui.components.ModernListView
 import xdm.app.ui.components.UpdatePanel
 import xdm.app.update.UpdateChecker
+import xdm.app.utils.Browser
 import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.WindowGeometry
 import xdm.app.utils.applyMacOSWindowCustomizations
@@ -27,6 +28,7 @@ import xdm.app.utils.px
 import xdm.app.utils.showTrayNotification
 import xdm.app.utils.windowIconImages
 import xdm.core.util.Logger
+import xdm.manager.DbRecord
 import java.awt.*
 import java.awt.event.ActionEvent
 import java.awt.event.ActionListener
@@ -50,6 +52,10 @@ class AppWindow(image: Image, startHidden: Boolean = false) : JFrame(), ActionLi
     private lateinit var filterPanel: FilterListPanel
     private val updatePanel = UpdatePanel()
     private val autoStartPanel = AutoStartPanel()
+    /** The banners at the bottom of the window, stacked. */
+    private val bannerStack = JPanel()
+    /** EDT only. One "extension out of date" banner per browser, made when first needed. */
+    private val extensionUpdatePanels = mutableMapOf<Browser, ExtensionUpdatePanel>()
     /** EDT only. The delayed update check of a hidden start, until it runs. */
     private var pendingUpdateCheck: Timer? = null
 
@@ -130,6 +136,23 @@ class AppWindow(image: Image, startHidden: Boolean = false) : JFrame(), ActionLi
         showTrayNotification(text("UPDATE_NOTIFY_TITLE"), String.format(text("UPDATE_NOTIFY_MSG"), version))
     }
 
+    /**
+     * Shows the "extension out of date" banner for [browser], and when the window is not on screen
+     * also posts a notification; a click on it brings up the window, banner included. EDT only.
+     */
+    fun showExtensionUpdate(browser: Browser) {
+        val panel = extensionUpdatePanels.getOrPut(browser) {
+            ExtensionUpdatePanel(browser).also { bannerStack.add(it) }
+        }
+        panel.showBanner()
+        if (!isVisible) {
+            showTrayNotification(
+                text("EXT_UPDATE_NOTIFY_TITLE"),
+                String.format(text("EXT_UPDATE_NOTIFY_MSG"), browser.displayName)
+            )
+        }
+    }
+
     private fun initWindow() {
         filterPanel = FilterListPanel(
             stateChanged = { listView.filterStateChanged(it) },
@@ -164,7 +187,7 @@ class AppWindow(image: Image, startHidden: Boolean = false) : JFrame(), ActionLi
             background = AppTheme.listBackground
         }
         add(splitPane, BorderLayout.CENTER)
-        add(JPanel().apply {
+        add(bannerStack.apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             add(autoStartPanel)
             add(updatePanel)

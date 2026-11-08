@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core.media.muxer.transmux.mp4
 
@@ -24,6 +25,13 @@ object CodecBoxes {
             for (s in spsList) { u16(s.size); bytes(s) }
             u8(ppsList.size)
             for (p in ppsList) { u16(p.size); bytes(p) }
+            // ISO/IEC 14496-15 5.3.3.1: every profile but Baseline/Main/Extended adds these (as ffmpeg).
+            if ((sps[1].toInt() and 0xFF) !in intArrayOf(66, 77, 88)) {
+                u8(0xFC or (track.chromaFormat and 3))
+                u8(0xF8 or ((track.bitDepthLuma - 8) and 7))
+                u8(0xF8 or ((track.bitDepthChroma - 8) and 7))
+                u8(0)                   // numOfSequenceParameterSetExt
+            }
         }
     }
 
@@ -47,16 +55,18 @@ object CodecBoxes {
             u8(levelIdc)                // general_level_idc
             u16(0xF000)                 // min_spatial_segmentation_idc (reserved 1111 + 0)
             u8(0xFC)                    // parallelismType
-            u8(0xFC or 1)               // chromaFormat (assume 4:2:0)
-            u8(0xF8)                    // bitDepthLumaMinus8 = 0
-            u8(0xF8)                    // bitDepthChromaMinus8 = 0
+            u8(0xFC or (track.chromaFormat and 3))
+            u8(0xF8 or ((track.bitDepthLuma - 8) and 7))
+            u8(0xF8 or ((track.bitDepthChroma - 8) and 7))
             u16(0)                      // avgFrameRate
-            u8(0x0B)                    // constFrameRate(0)+numTempLayers(1)+nested(0)+lenSizeMinus1(3)
+            // constantFrameRate(2) = 0, numTemporalLayers(3), temporalIdNested(1), lengthSizeMinusOne(2) = 3
+            u8(((track.temporalLayers and 7) shl 3) or ((if (track.temporalIdNested) 1 else 0) shl 2) or 3)
             // numOfArrays + arrays for VPS/SPS/PPS that are present.
             val arrays = listOf(32 to vps, 33 to sps, 34 to pps).filter { it.second.isNotEmpty() }
             u8(arrays.size)
             for ((type, list) in arrays) {
-                u8(0x80 or type)        // array_completeness=1 + NAL_unit_type
+                // array_completeness 0: hev1 keeps parameter sets in-band too (ffmpeg writes 0 for hev1).
+                u8(type)
                 u16(list.size)
                 for (n in list) { u16(n.size); bytes(n) }
             }
@@ -64,6 +74,14 @@ object CodecBoxes {
     }
 
     const val OTI_AAC = 0x40
+    /** MPEG-4 Part 2 visual (ISO/IEC 14496-2). */
+    const val OTI_MPEG4_VISUAL = 0x20
+    /** MPEG-2 video, Main profile (ISO/IEC 13818-2); the type ffmpeg writes for any MPEG-2 video. */
+    const val OTI_MPEG2_VIDEO = 0x61
+    /** MPEG-1 video (ISO/IEC 11172-2). */
+    const val OTI_MPEG1_VIDEO = 0x6A
+    /** DTS (mp4ra.org registration), as ffmpeg writes DTS in MP4: an mp4a entry without a ddts box. */
+    const val OTI_DTS = 0xA9
     /** MPEG-1 audio (ISO/IEC 11172-3, any layer). */
     const val OTI_MPEG1_AUDIO = 0x6B
     /** MPEG-2 low-sample-rate audio (ISO/IEC 13818-3: 16/22.05/24 kHz and MPEG-2.5 rates). */
@@ -106,29 +124,35 @@ object CodecBoxes {
     }
 
     /** esds box with an ES/DecoderConfig/SL descriptor chain. ASC is optional (absent for MP3). */
-    fun writeEsds(buf: BoxBuf, objectTypeIndication: Int, asc: ByteArray?) {
+    /**
+     * esds (ISO/IEC 14496-14) for an MPEG-4 Systems object type: [dsi] is the DecoderSpecificInfo
+     * (AudioSpecificConfig, MPEG-1/2 sequence header, MPEG-4 Part 2 VOL...). Descriptor sizes use the
+     * 4-byte expandable form, so a long DecoderSpecificInfo stays valid (a 1-byte size only goes to 127).
+     */
+    fun writeEsds(buf: BoxBuf, objectTypeIndication: Int, dsi: ByteArray?, video: Boolean = false, esId: Int = 0) {
+        fun descriptor(tag: Int, size: Int) {
+            buf.u8(tag)
+            for (i in 3 downTo 1) buf.u8(((size ushr (7 * i)) and 0x7F) or 0x80)
+            buf.u8(size and 0x7F)
+        }
         buf.box("esds") {
             fullBoxHeader(0, 0)
-            // ES_Descriptor
-            val dsi = asc
-            val decoderSpecific = if (dsi != null) 2 + dsi.size else 0
-            val decoderConfigLen = 13 + decoderSpecific
-            val esLen = 3 + (2 + decoderConfigLen) + (2 + 1)
-            u8(0x03); u8(esLen)
-            u16(0)                      // ES_ID
+            val dsiLen = if (dsi != null) 5 + dsi.size else 0
+            descriptor(0x03, 3 + 5 + 13 + dsiLen + 5 + 1) // ES_Descriptor
+            u16(esId)
             u8(0)                       // stream priority/flags
-            // DecoderConfigDescriptor
-            u8(0x04); u8(decoderConfigLen)
+            descriptor(0x04, 13 + dsiLen) // DecoderConfigDescriptor
             u8(objectTypeIndication)
-            u8(0x15)                    // streamType=audio(5)<<2 | upstream0 | reserved1
+            u8(if (video) 0x11 else 0x15) // streamType visual(4)/audio(5) << 2 | upstream 0 | reserved 1
             u24(0)                      // bufferSizeDB
             u32(0)                      // maxBitrate
             u32(0)                      // avgBitrate
             if (dsi != null) {
-                u8(0x05); u8(dsi.size); bytes(dsi)
+                descriptor(0x05, dsi.size)
+                bytes(dsi)
             }
-            // SLConfigDescriptor
-            u8(0x06); u8(1); u8(0x02)
+            descriptor(0x06, 1)         // SLConfigDescriptor
+            u8(0x02)
         }
     }
 }

@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core
 
@@ -59,7 +60,7 @@ class TestNtlmLive : HttpDownloadTestBase() {
     }
 
     private fun client(prompt: ScriptedPrompt) = HttpClientImpl(
-        8, proxy, ignoreCertErrors = true, readTimeoutSeconds = 30, proxyUser = proxyUser, proxyPassword = proxyPassword,
+        8, proxy, certTrust = TrustAllForTests, readTimeoutSeconds = 30, proxyUser = proxyUser, proxyPassword = proxyPassword,
         auth = HttpAuth(prompt), serverAuth = true,
     ).also { liveClients += it }
 

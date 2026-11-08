@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core.storage
 
@@ -41,6 +42,8 @@ private class LocalFolder(private val dir: File) : StorageFolder {
         if (create) PlatformFiles.ops.createSparse(file, 0)
         return LocalOutput(RandomAccessFile(file, "rw"))
     }
+
+    override fun fillsGaps(): Boolean = PlatformFiles.ops.fillsGaps(dir)
 
     override fun openPresized(name: String, length: Long): RandomAccessOutput {
         val file = f(name)

@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core.downloaders
 
@@ -76,6 +77,11 @@ data class HttpDownloadTaskInfo(
      * check when it is added. Deliberately not persisted by TaskInfoDB, so it is null on reload.
      */
     val etag: String? = null,
+    /**
+     * A captured WebVTT/TTML subtitle the user wants as SubRip: converted when it is published, and
+     * saved under the same name with `.srt`. A file that turns out not to be convertible is kept as is.
+     */
+    var convertToSrt: Boolean = false,
 )
 
 /**

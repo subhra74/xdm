@@ -1,9 +1,7 @@
 package xdm.app.ui.screens
 
 import xdm.app.AppContext
-import xdm.app.DbRecord
 import xdm.app.I8N.text
-import xdm.app.RecordStatus
 import xdm.app.ui.components.AppTheme
 import xdm.app.ui.components.ChecksumPanel
 import xdm.app.ui.components.ChecksumWindow
@@ -13,7 +11,6 @@ import xdm.app.ui.screens.settings.settingsIconButton
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.createIcon
-import xdm.app.utils.finishedFileExists
 import xdm.app.utils.gbAdd
 import xdm.app.utils.openFolderExternal
 import xdm.app.utils.openInDefaultBrowser
@@ -29,6 +26,9 @@ import xdm.core.network.http.HeaderMap
 import xdm.core.util.FormatHelper
 import xdm.core.util.Logger
 import xdm.core.util.MovePhase
+import xdm.manager.DbRecord
+import xdm.manager.RecordStatus
+import xdm.manager.finishedFileExists
 import java.awt.BorderLayout
 import java.awt.Cursor
 import java.awt.Dimension

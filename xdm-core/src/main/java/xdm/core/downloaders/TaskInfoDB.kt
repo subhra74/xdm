@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core.downloaders
 
@@ -30,6 +31,7 @@ private const val F_ORIGIN = 10
 private const val F_TYPE = 11
 
 private const val HTTP_KNOWN_FILE_SIZE = 20
+private const val HTTP_CONVERT_TO_SRT = 21
 
 private const val HLS_AUDIO_URL = 20
 private const val HLS_AUDIO_ONLY = 21
@@ -238,12 +240,14 @@ class TaskInfoDB(private val configDir: String) {
             val r = TaggedFile.read(input)
             val c = CommonFields()
             var knownFileSize: Long? = null
+            var convertToSrt = false
             while (true) {
                 val no = r.next()
                 if (no == -1) break
                 if (c.read(no, r)) continue
                 when (no) {
                     HTTP_KNOWN_FILE_SIZE -> knownFileSize = r.long()
+                    HTTP_CONVERT_TO_SRT -> convertToSrt = r.bool()
                     else -> r.skip()
                 }
             }
@@ -261,6 +265,7 @@ class TaskInfoDB(private val configDir: String) {
                 maxPiece = c.maxPiece,
                 authInfo = null,
                 knownFileSize = knownFileSize,
+                convertToSrt = convertToSrt,
             )
         }
         return null
@@ -369,6 +374,7 @@ class TaskInfoDB(private val configDir: String) {
                     task.targetFolder, task.maxPiece, task.cookie, task.headers, task.origin,
                 )
                 task.knownFileSize?.let { long(HTTP_KNOWN_FILE_SIZE, it) }
+                if (task.convertToSrt) bool(HTTP_CONVERT_TO_SRT, true)
             }
         }.onFailure { Logger.error("XDM", "Error saving task info ${task.id}", it) }.isSuccess
 

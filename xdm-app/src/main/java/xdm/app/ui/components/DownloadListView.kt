@@ -1,9 +1,9 @@
 package xdm.app.ui.components
 
-import xdm.app.DbRecord
-import xdm.app.DownloadCategory
 import xdm.app.utils.detectOS
 import xdm.app.OS
+import xdm.manager.DbRecord
+import xdm.manager.DownloadCategory
 import java.awt.Component
 import java.awt.Toolkit
 import java.awt.event.ActionEvent

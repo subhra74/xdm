@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core
 
@@ -235,7 +236,7 @@ class TestNtlmAuth {
     }
 
     private fun client(auth: HttpAuth?, proxy: Proxy? = null, user: String = "", pass: String = "", ignoreCert: Boolean = false) =
-        HttpClientImpl(4, proxy, ignoreCert, readTimeoutSeconds = 10, proxyUser = user, proxyPassword = pass, auth = auth, serverAuth = true)
+        HttpClientImpl(4, proxy, if (ignoreCert) TrustAllForTests else null, readTimeoutSeconds = 10, proxyUser = user, proxyPassword = pass, auth = auth, serverAuth = true)
             .also { clients += it }
 
     private fun HttpClientImpl.fetch(url: String): Pair<Int, String> =
