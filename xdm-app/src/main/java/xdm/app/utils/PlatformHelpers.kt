@@ -259,6 +259,15 @@ fun detectOS(): OS {
 }
 
 /**
+ * FreeBSD, OpenBSD, NetBSD, DragonFly and derivatives. [detectOS] reports them as [OS.Linux] (same XDG
+ * desktop code paths); this is for the few places where the BSDs differ.
+ */
+fun isBsd(osName: String? = System.getProperty("os.name")): Boolean {
+    val name = osName?.lowercase() ?: return false
+    return "bsd" in name || "dragonfly" in name
+}
+
+/**
  * Shows a native-feeling file/folder picker and returns the selected [File], or null if
  * cancelled. Uses FlatLaf's [SystemFileChooser] (native dialog) on Windows and macOS. On Linux
  * FlatLaf's in-process native chooser can hang under Wayland, so the desktop's dialog comes from

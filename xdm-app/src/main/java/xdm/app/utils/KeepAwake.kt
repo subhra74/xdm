@@ -46,6 +46,8 @@ object KeepAwake {
                 if (inhibitor != null) Logger.info("KeepAwake: sleep inhibitor acquired ($os)")
                 return
             }
+            // The BSDs have no systemd-inhibit; don't fail and log an error on every download.
+            if (isBsd()) return
             if (process?.isAlive == true) return
             process = try {
                 startInhibitor()
