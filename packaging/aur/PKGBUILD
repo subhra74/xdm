@@ -1,0 +1,70 @@
+# Maintainer: Subhra Das Gupta
+# AUR binary package for Xtreme Download Manager.
+#
+# How this is published: .github/workflows/aur-publish.yml syncs this directory
+# (plus packaging/linux/xdm-app.desktop and the icons) to the xdm-app-bin AUR
+# repository on every GitHub release. Edit the packaging here, CI handles AUR.
+#
+# After a new upstream release, bump pkgver and the tarball checksums:
+#   packaging/aur/bump.sh <pkgver> [<tag>]
+# then regenerate .SRCINFO from this directory:
+#   makepkg --printsrcinfo > .SRCINFO
+
+pkgname=xdm-app-bin
+_pkgname=xdm-app
+pkgver=9.0.8
+pkgrel=1
+pkgdesc="Download accelerator and video downloader: segmented downloads, HLS/DASH streams, batch downloads and browser integration"
+arch=('x86_64' 'aarch64')
+url="https://xtremedownloadmanager.com"
+license=('GPL-3.0-only')
+depends=('libx11' 'libxext' 'libxrender' 'libxtst' 'libxi' 'freetype2' 'fontconfig' 'ttf-font')
+optdepends=('wayland: native Wayland toolkit support'
+            'libxkbcommon: Wayland keyboard support'
+            'gtk3: native file chooser and theme integration'
+            'alsa-lib: audio support for the bundled Java runtime')
+provides=("$_pkgname")
+conflicts=("$_pkgname" 'xdman' 'xdman_gtk')
+# Prebuilt binaries (bundled Java runtime): stripping would damage them.
+options=('!strip')
+# Release tags are currently plain versions (e.g. 9.0.8). If a release ever uses
+# a `v` prefix, set _tag="v$pkgver" for that release.
+_tag="$pkgver"
+source=("xdm-app.desktop"
+        "xdm-logo-16.png"
+        "xdm-logo-24.png"
+        "xdm-logo-32.png"
+        "xdm-logo-48.png"
+        "xdm-logo-64.png"
+        "xdm-logo-128.png"
+        "xdm-logo-256.png"
+        "xdm-logo-512.png")
+source_x86_64=("$_pkgname-$pkgver-linux-x64.tar.gz::https://github.com/subhra74/xdm/releases/download/$_tag/$_pkgname-$pkgver-linux-x64.tar.gz")
+source_aarch64=("$_pkgname-$pkgver-linux-arm64.tar.gz::https://github.com/subhra74/xdm/releases/download/$_tag/$_pkgname-$pkgver-linux-arm64.tar.gz")
+sha256sums=('a218ab85e81fc3c6856b5bb86845065b8030adb58ee610f1971d42fdd221549b'
+            '1dacda27ebe896c0b8b04b68930bb74e350cf57a751a106b9b2ddf786f03e110'
+            'e97a72b4ba7310bd0126d4c05bb99c33c985157ebb16b7470a5672f4a1d472f2'
+            'a8d62178386645e759c9aee3cf4548a297544d5563b2f0e38287470d72948172'
+            '09a5ae676215908f2349142ce47126207a35b5eee10d647a2aa99428b97dd5f2'
+            '824436857e9997a669fb3aeaa0950b00f6ae9ce0a0f753b17ac9a7611a7855ec'
+            'd220db01ef3673c8d75576da50555b277a9d509f954007eee828f897889f4131'
+            '7b8afc3ebcab8df6a5377aa661ceb5a47f2cb366f3cd34d8901dad8eafe75eb9'
+            '69f6261ddacccfe5bd94670591dbaf02176a979e4e90e2d2fbb158491f8d3aa0')
+sha256sums_x86_64=('ad48ca3a7813ef3b75d668847587b77b8b105d383e8ed8ab04b1f7c7c6902ea7')
+sha256sums_aarch64=('f85b9be8bfad4458d10d59e43d1a8a55623aa16d4b877301cc771d885cc23832')
+
+package() {
+  cd "$srcdir/$_pkgname-$pkgver"
+  install -dm755 "$pkgdir/opt/$_pkgname"
+  cp -a bin lib "$pkgdir/opt/$_pkgname/"
+  install -dm755 "$pkgdir/usr/bin"
+  ln -s "/opt/$_pkgname/bin/xdm-app" "$pkgdir/usr/bin/xdm-app"
+  install -Dm644 "$srcdir/xdm-app.desktop" "$pkgdir/usr/share/applications/xdm-app.desktop"
+  for size in 16 24 32 48 64 128 256 512; do
+    install -Dm644 "$srcdir/xdm-logo-$size.png" \
+      "$pkgdir/usr/share/icons/hicolor/${size}x${size}/apps/xdm-app.png"
+  done
+}
+
+# No install= scriptlet: pacman's own hooks (update-desktop-database,
+# gtk-update-icon-cache) refresh the menu and icon caches automatically.
