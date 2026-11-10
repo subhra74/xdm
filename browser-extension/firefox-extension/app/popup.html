@@ -3,6 +3,7 @@
 
 <head>
   <meta charset="utf-8">
+  <script src="i18n.js"></script>
   <script src="preview.js"></script>
   <script src="popup.js"></script>
   <link rel="stylesheet" href="styles.css">
@@ -10,19 +11,19 @@
 
 <body>
   <header class="app-header">
-    <h1>XDM Integration Module</h1>
-    <label class="toggle header-toggle" title="Browser monitoring">
-      <input type="checkbox" id="chk" aria-label="Browser monitoring">
+    <h1 data-i18n="extNameFirefox">XDM Browser Monitor v9+</h1>
+    <label class="toggle header-toggle" title="Browser monitoring" data-i18n-attr="title:popup_monitoring_toggle">
+      <input type="checkbox" id="chk" aria-label="Browser monitoring" data-i18n-attr="aria-label:popup_monitoring_toggle">
       <span class="track"></span>
     </label>
   </header>
 
   <div class="update-banner" id="outdated" hidden>
     <div class="notice warn">
-      <h2>Please update XDM</h2>
-      <p><span id="outdatedVersion">This version of XDM</span> is older than this extension needs (XDM 9.0.9
-        or newer). Some downloads and videos may not work.
-        <a id="outdatedLink" href="https://xtremedownloadmanager.com/download/" target="_blank" rel="noopener">Update
+      <h2 data-i18n="popup_outdated_title">Please update XDM</h2>
+      <p><span id="outdatedVersion" data-i18n="popup_outdated_version_prefix">This version of XDM</span> <span data-i18n="popup_outdated_desc">is older than this extension needs (XDM 9.0.9
+        or newer). Some downloads and videos may not work.</span>
+        <a id="outdatedLink" href="https://xtremedownloadmanager.com/download/" target="_blank" rel="noopener" data-i18n="popup_outdated_link">Update
           XDM</a></p>
     </div>
   </div>
@@ -35,24 +36,24 @@
       <rect x="2" y="5" width="20" height="14" rx="2" />
       <path d="M10 9.5v5l4-2.5-4-2.5z" fill="currentColor" stroke="none" />
     </svg>
-    <p>No videos detected on this page</p>
-    <p class="hint">Start playing a video and it will show up here.</p>
+    <p data-i18n="popup_empty_title">No videos detected on this page</p>
+    <p class="hint" data-i18n="popup_empty_hint">Start playing a video and it will show up here.</p>
   </div>
 
   <div class="actions" id="actions" hidden>
-    <button class="text-button" id="format" type="button" aria-expanded="false">More formats</button>
+    <button class="text-button" id="format" type="button" aria-expanded="false" data-i18n="popup_btn_more_formats">More formats</button>
     <div class="separator"></div>
-    <button class="text-button" id="clear" type="button">Clear list</button>
+    <button class="text-button" id="clear" type="button" data-i18n="popup_btn_clear">Clear list</button>
   </div>
-  <p class="hint-text" id="formatHint" hidden>
+  <p class="hint-text" id="formatHint" hidden data-i18n="popup_format_hint">
     XDM captures the quality the page is playing. Pick another quality in the player and it will
     appear here as a separate item.
   </p>
 
   <footer class="app-footer">
-    <button class="text-button footer-action" id="bulk" type="button">Grab all links for this page…</button>
+    <button class="text-button footer-action" id="bulk" type="button" data-i18n="popup_btn_grab_all">Grab all links for this page…</button>
     <label class="toggle small" id="previewsToggle">
-      <span>Video previews</span>
+      <span data-i18n="popup_label_previews">Video previews</span>
       <input type="checkbox" id="previews">
       <span class="track"></span>
     </label>

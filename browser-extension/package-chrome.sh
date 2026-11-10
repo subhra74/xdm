@@ -20,6 +20,9 @@ fail() { echo "error: $*" >&2; exit 1; }
 command -v node >/dev/null || fail "node is needed to read manifest.json"
 command -v zip >/dev/null || fail "zip not found"
 
+# --- sync locales ------------------------------------------------------------
+node "$HERE/tools/sync-locales.js"
+
 # --- manifest ----------------------------------------------------------------
 VERSION="$(node -e '
 const m = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));

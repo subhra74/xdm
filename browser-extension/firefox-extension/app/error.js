@@ -10,10 +10,11 @@ window.onload = function () {
         if (chrome.runtime.lastError || !response || !response.connected) {
             return;
         }
+        const api = typeof chrome !== "undefined" && chrome.i18n ? chrome.i18n : (typeof browser !== "undefined" ? browser.i18n : null);
         document.getElementById("notice").className = "notice ok";
-        document.getElementById("status").textContent = "Connected to XDM";
+        document.getElementById("status").textContent = (api && api.getMessage("error_status_connected")) || "Connected to XDM";
         document.getElementById("detail").textContent =
-            "Click the XDM icon again to see what has been detected on this page.";
+            (api && api.getMessage("error_detail_connected")) || "Click the XDM icon again to see what has been detected on this page.";
         document.getElementById("actions").hidden = true;
     });
 };
