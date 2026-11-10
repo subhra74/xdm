@@ -4,6 +4,7 @@
 
 package xdm.manager
 
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import xdm.capture.CaptureContext
 import xdm.core.CoreConfig
 import xdm.core.downloaders.*
@@ -14,11 +15,14 @@ import xdm.core.downloaders.web.batch.deleteBatchTracks
 import xdm.core.downloaders.web.batch.loadBatchState
 import xdm.core.downloaders.web.http.ChunkStatus
 import xdm.core.downloaders.web.http.HttpDownloaderTask
+import xdm.core.downloaders.web.loadDashState
 import xdm.core.downloaders.web.readContext
 import xdm.core.downloaders.web.saveState
 import xdm.core.downloaders.web.streaming.downloader.dash.DashDownloaderTask
 import xdm.core.downloaders.web.streaming.downloader.hls.HlsDownloaderTask
 import xdm.core.downloaders.web.streaming.downloader.hls.HlsKeyStore
+import xdm.core.downloaders.web.streaming.manifest.dash.DashSegment
+import xdm.core.media.muxer.Muxer
 import xdm.core.media.muxer.impl.TransmuxingMuxer
 import xdm.core.media.subtitle.Subtitles
 import xdm.core.network.http.CertExceptions
@@ -103,6 +107,13 @@ interface IDownloadManager {
     fun retryFailedFiles(id: Long)
     fun updateDownloadInfo(id: Long, task: HttpDownloadTaskInfo)
     fun updateDownloadLink(id: Long, url: String, headers: HeaderMap?, cookie: String?)
+
+    /**
+     * Gives a stopped DASH download whose tracks are each one resource cut into byte ranges (an
+     * extractor's download) fresh links: every video piece gets [videoUrl], every audio piece
+     * [audioUrl]. Updates the task info and the resume state. False when it is not such a download.
+     */
+    fun updateTrackLinks(id: Long, videoUrl: String?, audioUrl: String?, headers: HeaderMap?, cookie: String?): Boolean
     fun getOriginPage(id: Long): String?
 
     /**
@@ -714,6 +725,10 @@ class DownloadManager(
         resumeDownload(id)
     }
 
+    /** The app's merger ([PlatformHooks.muxerFor]), else the built-in one. */
+    private fun muxerFor(extractor: ExtractorSource?): Muxer =
+        hooks.muxerFor(extractor) ?: TransmuxingMuxer(configDir)
+
     /** The real engine task for [type], built from its persisted task info. */
     private fun createTask(type: DownloadType, id: Long, host: DownloadHost): DownloaderTask? = when (type) {
         DownloadType.Http -> taskInfoDB.getHttpTask(id)?.let {
@@ -722,22 +737,20 @@ class DownloadManager(
 
         DownloadType.Hls -> taskInfoDB.getHlsTask(id)?.let {
             HlsDownloaderTask(
-                taskInfo = it, http = newHttpClient(id), muxer = TransmuxingMuxer(configDir),
+                taskInfo = it, http = newHttpClient(id), muxer = muxerFor(it.extractor),
                 host = host, configDir = configDir, config = config
             )
         }
 
         DownloadType.Dash -> taskInfoDB.getDashTask(id)?.let {
             DashDownloaderTask(
-                taskInfo = it, http = newHttpClient(id), muxer = TransmuxingMuxer(configDir),
+                taskInfo = it, http = newHttpClient(id), muxer = muxerFor(it.extractor),
                 host = host, configDir = configDir, config = config
             )
         }
 
         DownloadType.Batch -> taskInfoDB.getBatchTask(id)?.let {
-            BatchDownloaderTask(it, newHttpClient(id), host, configDir, config) {
-                TransmuxingMuxer(configDir)
-            }
+            BatchDownloaderTask(it, newHttpClient(id), host, configDir, config) { muxerFor(null) }
         }
 
         DownloadType.Torrent -> taskInfoDB.getTorrentTask(id)?.let {
@@ -1386,6 +1399,46 @@ class DownloadManager(
                 Logger.info("Context ${context.id} updated")
             }
             .onFailure { Logger.error(it) }
+    }
+
+    override fun updateTrackLinks(
+        id: Long, videoUrl: String?, audioUrl: String?, headers: HeaderMap?, cookie: String?,
+    ): Boolean {
+        if (activeSessions.containsKey(id)) return false
+        val task = taskInfoDB.getDashTask(id) ?: return false
+        if (task.extractor == null) return false
+        fun relink(segments: List<DashSegment>, url: String?) =
+            url?.toHttpUrlOrNull()?.let { u -> segments.map { it.copy(url = u) } } ?: segments
+        task.videoSegments = relink(task.videoSegments, videoUrl)
+        task.audioSegments = relink(task.audioSegments, audioUrl)
+        task.headers = headers
+        task.cookie = cookie
+        task.url = videoUrl ?: audioUrl ?: task.url
+        taskInfoDB.saveDashTask(task)
+        // A download that never ran has no state yet: the task info is all there is.
+        if (!AtomicIO.exists("$id.state", configDir)) return true
+        val http = newHttpClient(id)
+        try {
+            loadDashState(id, configDir, http, downloadHost).onSuccess { context ->
+                context.chunks.forEach {
+                    when (it.tag) {
+                        "VIDEO" -> videoUrl?.let { u -> it.url = u }
+                        "AUDIO" -> audioUrl?.let { u -> it.url = u }
+                    }
+                }
+                context.url = task.url
+                context.headers = headers
+                context.cookie = cookie
+                saveState(context, configDir)
+            }.onFailure {
+                Logger.error("XDM", "Could not update the links of download $id", it)
+                return false
+            }
+        } finally {
+            http.close()
+        }
+        Logger.info("XDM", "Download $id has fresh links")
+        return true
     }
 
     override fun isMoving(id: Long): Boolean = id in moving

@@ -38,6 +38,8 @@ import java.io.RandomAccessFile
 class MkvWriter(
     private val output: StorageFile,
     spoolDir: String? = null,
+    /** The EBML DocType: `webm` for a `.webm` output (VP8/VP9/AV1 with Vorbis/Opus only), else `matroska`. */
+    private val docType: String = "matroska",
     /** Checked between clusters while [finish] copies the spool out: true drops the output. */
     private val cancelled: () -> Boolean = { false },
 ) : ContainerWriter {
@@ -160,7 +162,7 @@ class MkvWriter(
             uint(Ebml.EBML_READ_VERSION, 1)
             uint(Ebml.EBML_MAX_ID_LENGTH, 4)
             uint(Ebml.EBML_MAX_SIZE_LENGTH, 8)
-            str(Ebml.DOC_TYPE, "matroska")
+            str(Ebml.DOC_TYPE, docType)
             uint(Ebml.DOC_TYPE_VERSION, docTypeVersion)
             uint(Ebml.DOC_TYPE_READ_VERSION, 2)
         }

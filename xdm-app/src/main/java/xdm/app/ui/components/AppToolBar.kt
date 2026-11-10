@@ -59,7 +59,6 @@ class AppToolBar(
     private val sortMenu: JPopupMenu
     private val newMenu: JPopupMenu
     private lateinit var mSettings: JMenuItem
-    private lateinit var mBatchImport: JMenuItem
     private lateinit var mHelp: JMenuItem
     private lateinit var mUpdate: JMenuItem
     private lateinit var mAbout: JMenuItem
@@ -147,8 +146,6 @@ class AppToolBar(
         val a = createMenuListener()
         val ctx = JPopupMenu()
         mSettings = addMenuItem("TITLE_SETTINGS", ctx, a)
-        mBatchImport = addMenuItem("MENU_BATCH_DOWNLOAD", ctx, a)
-        addMenuItem("MENU_STREAM_DOWNLOAD", ctx, a)
         mUpdate = addMenuItem("MENU_UPDATE", ctx, a)
         mHelp = addMenuItem("MENU_HELP_SUP", ctx, a)
         mAbout = addMenuItem("MENU_ABOUT", ctx, a)
@@ -156,7 +153,7 @@ class AppToolBar(
         return ctx
     }
 
-    /** The + New menu: one item per kind of download. Video has no dialog yet. */
+    /** The + New menu: one item per kind of download. */
     private fun createNewMenu(): JPopupMenu {
         val ctx = JPopupMenu()
         val window = { SwingUtilities.windowForComponent(toolbar) }
@@ -165,10 +162,10 @@ class AppToolBar(
             addActionListener { action() }
         })
         item("NEW_HTTP_DOWNLOAD") { AppContext.app.addDownload(null) }
-        item("MENU_STREAM_DOWNLOAD") { AppMenuHandler.showStreamDialog(window()) }
-        item("NEW_VIDEO_DOWNLOAD") {}
-        item("MENU_BATCH_DOWNLOAD") { AppMenuHandler.showBatchDialog(window()) }
+        item("NEW_VIDEO_DOWNLOAD") { AppMenuHandler.showVideoDialog(window()) }
         item("NEW_TORRENT_DOWNLOAD") { AppMenuHandler.showTorrentDialog(window()) }
+        item("MENU_STREAM_DOWNLOAD") { AppMenuHandler.showStreamDialog(window()) }
+        item("MENU_BATCH_DOWNLOAD") { AppMenuHandler.showBatchDialog(window()) }
         return ctx
     }
 
@@ -231,14 +228,6 @@ class AppToolBar(
             when (name) {
                 "TITLE_SETTINGS" -> {
                     showSettings()
-                }
-
-                "MENU_BATCH_DOWNLOAD" -> {
-                    AppMenuHandler.showBatchDialog(SwingUtilities.windowForComponent(toolbar))
-                }
-
-                "MENU_STREAM_DOWNLOAD" -> {
-                    AppMenuHandler.showStreamDialog(SwingUtilities.windowForComponent(toolbar))
                 }
 
                 "MENU_LANG" -> {

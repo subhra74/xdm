@@ -13,6 +13,7 @@ import xdm.app.ui.components.MessageBox
 import xdm.app.ui.components.StorageStatusLabel
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
+import xdm.app.utils.VolumeHints
 import xdm.app.utils.chooseFile
 import xdm.app.utils.createIcon
 import xdm.app.utils.dialogHeight
@@ -47,6 +48,7 @@ import javax.swing.JButton
 import javax.swing.JCheckBox
 import javax.swing.JFrame
 import javax.swing.JLabel
+import javax.swing.JOptionPane
 import javax.swing.JPanel
 import javax.swing.JRadioButton
 import javax.swing.JScrollPane
@@ -512,6 +514,7 @@ class AddTorrentDialog(near: Window?, initial: String?) : JFrame() {
         }
         if (duplicate) return dispose()
         val sel = selection
+        if (!hasRoomFor(sel)) return
         val magnet = (source as? TorrentSource.Magnet)?.uri
         val task = TorrentDownloadTaskInfo(
             id = uniqueId(),
@@ -528,6 +531,27 @@ class AddTorrentDialog(near: Window?, initial: String?) : JFrame() {
             return
         }
         dispose()
+    }
+
+    /**
+     * False, after telling the user, when the destination volume cannot hold the selected files. A
+     * torrent's sizes come from its metadata and are exact, so unlike an HTTP download (whose
+     * Content-Length may be wrong) a short volume refuses the add; the dialog stays open to pick
+     * another folder or fewer files. A magnet without metadata yet, or a volume that reports no
+     * space, is let through: the disk-full error while downloading still catches it.
+     */
+    private fun hasRoomFor(sel: TorrentSelection?): Boolean {
+        val needed = sel?.selectedSize?.takeIf { it > 0 } ?: return true
+        val folder = picker.targetFolder
+        val free = VolumeHints.spaceOf(folder)?.free ?: return true
+        if (free >= needed) return true
+        Logger.error("XDM", "Torrent not added: $folder has $free bytes free, selected files need $needed")
+        fun size(bytes: Long) = FormatHelper.formatSize(bytes.toDouble())
+        val message = text("MSG_TARGET_SPACE_LOW").replace("%folder%", folder)
+            .replace("%free%", size(free)).replace("%needed%", size(needed)) + "\n" + text("TORRENT_SPACE_HINT")
+        MessageBox.show(this, text("TITLE_DISK_SPACE_LOW"), message, JOptionPane.WARNING_MESSAGE)
+        storage.update(folder, needed)
+        return false
     }
 
     private inner class FilesModel : AbstractTableModel() {

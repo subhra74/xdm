@@ -9,6 +9,7 @@ import xdm.app.ui.screens.AppWindow
 import xdm.app.ui.screens.BatchUrlDialog
 import xdm.app.ui.screens.ChangeFolderDialog
 import xdm.app.ui.screens.StreamDownloadDialog
+import xdm.app.ui.screens.VideoDownloadDialog
 import xdm.app.utils.SingleWindows
 import xdm.app.utils.captureDestination
 import xdm.app.utils.openFileExternal
@@ -276,6 +277,11 @@ object AppMenuHandler {
     /** "Stream download (HLS/DASH)": a non-modal dialog; each click opens another. */
     fun showStreamDialog(window: Window?) {
         StreamDownloadDialog(window).isVisible = true
+    }
+
+    /** "Video download": a page URL resolved by yt-dlp; one dialog at a time (it also manages the tools). */
+    fun showVideoDialog(window: Window?) {
+        SingleWindows.show(VideoDownloadDialog::class) { VideoDownloadDialog(window) }
     }
 
     fun openFile(window: AppWindow?) {

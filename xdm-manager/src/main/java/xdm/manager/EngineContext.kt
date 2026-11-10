@@ -8,8 +8,10 @@ import xdm.capture.CaptureConfig
 import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.DownloadStatusInfo
 import xdm.core.downloaders.DownloadType
+import xdm.core.downloaders.ExtractorSource
 import xdm.core.downloaders.TaskInfoDB
 import xdm.core.downloaders.web.SegmentProgress
+import xdm.core.media.muxer.Muxer
 import xdm.core.network.http.CertTrust
 import xdm.core.network.http.HttpAuth
 import xdm.core.storage.LocalStorage
@@ -200,6 +202,12 @@ interface PlatformHooks {
 
     /** Free bytes on the volume of [folder], or null when unknown. */
     fun usableSpace(folder: String): Long?
+
+    /**
+     * The merger for an HLS, DASH or batch download, or null for the built-in one. [source] is set when
+     * an external extractor resolved the download. A new instance per call: a download's muxer is its own.
+     */
+    fun muxerFor(source: ExtractorSource?): Muxer? = null
 
     /** Marks [file] as downloaded from the internet; false when the file system can't carry the mark. */
     fun markDownloadedFile(file: File, source: DownloadSource): Boolean

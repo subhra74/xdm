@@ -1,14 +1,23 @@
 package xdm.app
 
+import java.awt.GraphicsEnvironment
+import java.io.File
+import xdm.app.media.FFmpegMuxer
 import xdm.app.ui.screens.ShutdownCountdownWindow
+import xdm.app.utils.AppDirs
 import xdm.app.utils.KeepAwake
 import xdm.app.utils.SoundPlayer
 import xdm.app.utils.TorrentLibrary
 import xdm.app.utils.WorkingSetTrim
+import xdm.app.ytdlp.YtDlp
+import xdm.app.ytdlp.YtDlpMuxer
+import xdm.app.ytdlp.YtDlpRefresh
 import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.DownloadType
+import xdm.core.downloaders.ExtractorSource
 import xdm.core.downloaders.TaskInfoDB
 import xdm.core.downloaders.web.SegmentProgress
+import xdm.core.media.muxer.Muxer
 import xdm.core.network.http.CertTrust
 import xdm.core.network.http.HttpAuth
 import xdm.core.util.Logger
@@ -19,8 +28,6 @@ import xdm.manager.EngineConfig
 import xdm.manager.EngineHost
 import xdm.manager.PlatformHooks
 import xdm.manager.UiSink
-import java.awt.GraphicsEnvironment
-import java.io.File
 
 /** The download lifecycle on the desktop: the app's config, the Swing UI and the OS layers. */
 object DesktopEngineHost : EngineHost {
@@ -66,7 +73,12 @@ object DesktopUiSink : UiSink {
         )
     }
 
-    override fun downloadFailed(id: Long, error: DownloadError) = app.showProgressError(id, error)
+    override fun downloadFailed(id: Long, error: DownloadError) {
+        // A Video download whose links expired gets new ones from yt-dlp and resumes; the error is
+        // shown only if that fails.
+        if (YtDlpRefresh.tryHandle(id, error) { app.showProgressError(id, it) }) return
+        app.showProgressError(id, error)
+    }
 
     override fun spaceWarning(folder: String, needed: Long, free: Long, isTempFolder: Boolean) =
         app.showSpaceWarning(folder, needed, free, isTempFolder)
@@ -88,6 +100,16 @@ object DesktopPlatformHooks : PlatformHooks {
     override fun keepAwake(on: Boolean) = if (on) KeepAwake.acquire() else KeepAwake.release()
 
     override fun usableSpace(folder: String): Long? = File(folder).usableSpace
+
+    /**
+     * ffmpeg for every merge when "Use ffmpeg for muxing" is on (Settings > Advanced); else the built-in
+     * transmuxer, which Video download (yt-dlp) gets through [YtDlpMuxer] for its container and pieces.
+     */
+    override fun muxerFor(source: ExtractorSource?): Muxer? = when {
+        AppContext.config.useFfmpegMuxer -> FFmpegMuxer(source?.container)
+        source?.extractor == YtDlp.EXTRACTOR_ID -> YtDlpMuxer(source, AppDirs.root.path)
+        else -> null
+    }
 
     override fun markDownloadedFile(file: File, source: DownloadSource): Boolean =
         AppContext.platform.markDownloadedFile(file, source)

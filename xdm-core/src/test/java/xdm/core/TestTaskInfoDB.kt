@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import xdm.core.downloaders.DashDownloadTaskInfo
+import xdm.core.downloaders.ExtractorSource
 import xdm.core.downloaders.HlsDownloadTaskInfo
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.downloaders.SubtitleTrack
@@ -109,6 +110,25 @@ class TestTaskInfoDB : HttpDownloadTestBase() {
         )
         db().saveDashTask(task)
         assertEquals(task, db().getDashTask(3))
+    }
+
+    @Test
+    fun extractorSource_roundTripsForEveryType() {
+        val source = ExtractorSource("yt-dlp", "https://video.example/watch?v=1", listOf("137", "140"), "mp4")
+        db().saveHttpTask(httpTask(20).copy(extractor = source.copy(formatIds = listOf("18"), container = null)))
+        assertEquals(source.copy(formatIds = listOf("18"), container = null), db().getHttpTask(20)!!.extractor)
+        val dash = DashDownloadTaskInfo(
+            id = 21, fileName = "d.mp4", tempDir = "/tmp/d", respectFileName = true, cookie = null, headers = null,
+            origin = null, categoryId = null, targetFolder = "/downloads", maxPiece = 8, authInfo = null,
+            videoSegments = listOf(DashSegment("https://cdn.example.com/v".toHttpUrl(), Pair(0L, 10L))),
+            audioSegments = emptyList(), url = "https://cdn.example.com/v", audioMime = "", videoMime = "video/mp4",
+            extractor = source,
+        )
+        db().saveDashTask(dash)
+        assertEquals(dash, db().getDashTask(21))
+        // A record without the field reads back without one.
+        db().saveHttpTask(httpTask(22))
+        assertNull(db().getHttpTask(22)!!.extractor)
     }
 
     @Test

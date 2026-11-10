@@ -29,6 +29,8 @@ private const val F_COOKIE = 8
 private const val F_HEADERS = 9
 private const val F_ORIGIN = 10
 private const val F_TYPE = 11
+/** [ExtractorSource]: where an external extractor got the links. HTTP, HLS and DASH. */
+private const val F_EXTRACTOR = 12
 
 private const val HTTP_KNOWN_FILE_SIZE = 20
 private const val HTTP_CONVERT_TO_SRT = 21
@@ -79,6 +81,13 @@ private const val ITEM_AUDIO_URL = 6
 private const val SEG_URL = 1
 private const val SEG_RANGE_START = 2
 private const val SEG_RANGE_END = 3
+
+// ExtractorSource.
+private const val EX_EXTRACTOR = 1
+private const val EX_PAGE_URL = 2
+private const val EX_FORMAT_ID = 3
+private const val EX_CONTAINER = 4
+private const val EX_PIECES = 5
 
 // SubtitleTrack.
 private const val SUB_NAME = 1
@@ -184,6 +193,38 @@ private fun TagReader.subtitle(): SubtitleTrack {
     return SubtitleTrack(name, language, playlistUrl, segments, isDefault, forced)
 }
 
+private fun TagWriter.extractor(no: Int, source: ExtractorSource?) {
+    source ?: return
+    message(no) {
+        string(EX_EXTRACTOR, source.extractor)
+        string(EX_PAGE_URL, source.pageUrl)
+        source.formatIds.forEach { string(EX_FORMAT_ID, it) }
+        stringOrNull(EX_CONTAINER, source.container)
+        if (source.pieces) bool(EX_PIECES, true)
+    }
+}
+
+private fun TagReader.extractor(): ExtractorSource {
+    val r = message()
+    var extractor = ""
+    var pageUrl = ""
+    val formatIds = ArrayList<String>()
+    var container: String? = null
+    var pieces = false
+    while (true) {
+        when (r.next()) {
+            -1 -> break
+            EX_PIECES -> pieces = r.bool()
+            EX_EXTRACTOR -> extractor = r.string()
+            EX_PAGE_URL -> pageUrl = r.string()
+            EX_FORMAT_ID -> formatIds.add(r.string())
+            EX_CONTAINER -> container = r.string()
+            else -> r.skip()
+        }
+    }
+    return ExtractorSource(extractor, pageUrl, formatIds, container, pieces)
+}
+
 /** Fields 1..19, shared by the HTTP, HLS and DASH records. */
 private class CommonFields {
     var id = 0L
@@ -197,6 +238,7 @@ private class CommonFields {
     var headers: HeaderMap? = null
     var origin: String? = null
     var type = 0
+    var extractor: ExtractorSource? = null
 
     /** Reads field [no] if it is a shared one; false for any other field, which the caller handles. */
     fun read(no: Int, r: TagReader): Boolean {
@@ -212,6 +254,7 @@ private class CommonFields {
             F_HEADERS -> headers = r.headers()
             F_ORIGIN -> origin = r.string()
             F_TYPE -> type = r.int()
+            F_EXTRACTOR -> extractor = r.extractor()
             else -> return false
         }
         return true
@@ -224,6 +267,7 @@ private class CommonFields {
 private fun TagWriter.common(
     type: DownloadType, id: Long, url: String, fileName: String, respectFileName: Boolean, categoryId: String?,
     targetFolder: String, maxPiece: Int, cookie: String?, headers: HeaderMap?, origin: String?,
+    extractor: ExtractorSource?,
 ) {
     int(F_TYPE, type.id)
     long(F_ID, id)
@@ -239,6 +283,7 @@ private fun TagWriter.common(
     // Credentials such as Authorization stay in memory only.
     headers(F_HEADERS, SensitiveHeaders.strip(id, headers))
     stringOrNull(F_ORIGIN, origin)
+    extractor(F_EXTRACTOR, extractor)
 }
 
 /**
@@ -277,6 +322,7 @@ class TaskInfoDB(private val configDir: String) {
                 authInfo = null,
                 knownFileSize = knownFileSize,
                 convertToSrt = convertToSrt,
+                extractor = c.extractor,
             )
         }
         return null
@@ -322,6 +368,7 @@ class TaskInfoDB(private val configDir: String) {
                 tempDir = tempDir,
                 independent = independent,
                 subtitles = subtitles,
+                extractor = c.extractor,
             )
         }
         return null
@@ -370,6 +417,7 @@ class TaskInfoDB(private val configDir: String) {
                 audioMime = audioMime,
                 videoMime = videoMime,
                 subtitles = subtitles,
+                extractor = c.extractor,
             )
         }
         return null
@@ -382,7 +430,7 @@ class TaskInfoDB(private val configDir: String) {
                 common(
                     DownloadType.Http,
                     task.id, task.url, task.fileName, task.respectFileName, task.categoryId,
-                    task.targetFolder, task.maxPiece, task.cookie, task.headers, task.origin,
+                    task.targetFolder, task.maxPiece, task.cookie, task.headers, task.origin, task.extractor,
                 )
                 task.knownFileSize?.let { long(HTTP_KNOWN_FILE_SIZE, it) }
                 if (task.convertToSrt) bool(HTTP_CONVERT_TO_SRT, true)
@@ -395,7 +443,7 @@ class TaskInfoDB(private val configDir: String) {
                 common(
                     DownloadType.Hls,
                     task.id, task.url, task.fileName, task.respectFileName, task.categoryId,
-                    task.targetFolder, task.maxPiece, task.cookie, task.headers, task.origin,
+                    task.targetFolder, task.maxPiece, task.cookie, task.headers, task.origin, task.extractor,
                 )
                 stringOrNull(HLS_AUDIO_URL, task.audioUrl)
                 bool(HLS_AUDIO_ONLY, task.audioOnly)
@@ -412,7 +460,7 @@ class TaskInfoDB(private val configDir: String) {
                 common(
                     DownloadType.Dash,
                     task.id, task.url, task.fileName, task.respectFileName, task.categoryId,
-                    task.targetFolder, task.maxPiece, task.cookie, task.headers, task.origin,
+                    task.targetFolder, task.maxPiece, task.cookie, task.headers, task.origin, task.extractor,
                 )
                 string(DASH_TEMP_DIR, task.tempDir)
                 task.audioSegments.forEach { dashSegment(DASH_AUDIO_SEGMENT, it) }

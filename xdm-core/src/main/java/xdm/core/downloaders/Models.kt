@@ -82,6 +82,29 @@ data class HttpDownloadTaskInfo(
      * saved under the same name with `.srt`. A file that turns out not to be convertible is kept as is.
      */
     var convertToSrt: Boolean = false,
+    /** Set when an external extractor (yt-dlp) resolved the link; it can resolve it again when it expires. */
+    var extractor: ExtractorSource? = null,
+)
+
+/**
+ * A download whose media links came from an external extractor run on a page URL, not from the browser
+ * or a typed manifest. Kept so the links can be resolved again when they expire, and so the app can pick
+ * the extractor's merger for it. Opaque to xdm-core apart from being saved with the task info.
+ */
+data class ExtractorSource(
+    /** Which extractor: `yt-dlp`. */
+    val extractor: String,
+    /** The page the user entered. */
+    val pageUrl: String,
+    /** The extractor's format ids, video first, that make up this download. */
+    val formatIds: List<String>,
+    /** The container the merged file is written as (`mp4`, `webm`, `mkv`, `m4a`); null leaves it to the merger. */
+    val container: String? = null,
+    /**
+     * Each track's segments are consecutive byte ranges of one file, cut at arbitrary offsets, not
+     * fragments that stand on their own: joined in order they are the file again.
+     */
+    val pieces: Boolean = false,
 )
 
 /**
@@ -148,6 +171,8 @@ data class HlsDownloadTaskInfo(
     var independent: Boolean,
     /** The subtitles to save beside the video: the tracker offers all, a download keeps the one picked. */
     var subtitles: List<SubtitleTrack> = emptyList(),
+    /** As [HttpDownloadTaskInfo.extractor]. */
+    var extractor: ExtractorSource? = null,
 ) : StreamingDownloadTaskInfo(
     id,
     fileName,
@@ -181,6 +206,8 @@ data class DashDownloadTaskInfo(
     val videoMime: String,
     /** As [HlsDownloadTaskInfo.subtitles]. */
     var subtitles: List<SubtitleTrack> = emptyList(),
+    /** As [HttpDownloadTaskInfo.extractor]. */
+    var extractor: ExtractorSource? = null,
 ) : StreamingDownloadTaskInfo(
     id,
     fileName,

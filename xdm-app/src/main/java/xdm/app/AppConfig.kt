@@ -177,6 +177,16 @@ interface IAppConfig : EngineConfig {
     override var torrentEncryption: Int
     override var torrentDownloadLimit: Int
     override var torrentUploadLimit: Int
+    /** Video download: yt-dlp picked with "Use my own…"; blank means look it up (ExternalTools). */
+    var ytDlpPath: String
+    /** The ffmpeg that merges downloads when [useFfmpegMuxer] is on (Settings > Advanced). */
+    var ffmpegPath: String
+    /** Merge HLS, DASH, batch and Video download tracks with [ffmpegPath] instead of the built-in muxer. */
+    var useFfmpegMuxer: Boolean
+    /** Video download: deno picked with "Use my own…"; blank means look it up. */
+    var denoPath: String
+    /** Video download: extra yt-dlp arguments, split like a command line. */
+    var ytDlpExtraArgs: String
     fun applyAuthConfig()
 
     /**
@@ -255,7 +265,6 @@ private const val F_TORRENT_SEED_AFTER_FINISH = 60
 /** Permille (1.0 = 1000): the format has no float. */
 private const val F_TORRENT_SEED_RATIO_PERMILLE = 61
 private const val F_TORRENT_SEED_MINUTES = 62
-// 63-66 are taken by the yt-dlp branch (merge notes in private docs/torrent.md §10).
 private const val F_TORRENT_PROGRESS_MORE = 67
 private const val F_TORRENT_PORT = 68
 private const val F_TORRENT_PORT_MAPPING = 69
@@ -269,7 +278,12 @@ private const val F_TORRENT_KEEP_SESSION = 76
 private const val F_TORRENT_ADD_TRACKERS = 77
 private const val F_TORRENT_TRACKER_LIST = 78
 private const val F_TORRENT_PEX = 79
-// 67-79 are torrent settings; the yt-dlp branch starts at 80 (a new torrent field takes the next free one).
+private const val F_USE_FFMPEG_MUXER = 80
+// 63-66 video download (yt-dlp), 67-79 torrent settings, 80 ffmpeg muxing; the next new field takes 81.
+private const val F_YTDLP_PATH = 63
+private const val F_FFMPEG_PATH = 64
+private const val F_DENO_PATH = 65
+private const val F_YTDLP_EXTRA_ARGS = 66
 
 // Inside F_COMMAND_RULES: one F_COMMAND_RULE record per rule, in order.
 private const val F_COMMAND_RULE = 1
@@ -439,6 +453,11 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var swingFileChooser: Boolean = false
     override var forceIpv4: Boolean = false
     override var commandRules: List<CommandRule> = emptyList()
+    override var ytDlpPath: String = ""
+    override var ffmpegPath: String = ""
+    override var denoPath: String = ""
+    override var ytDlpExtraArgs: String = ""
+    override var useFfmpegMuxer: Boolean = false
     override var listSelectionMode: ListSelectionMode = ListSelectionMode.CLASSIC
     override var torrentSeedAfterFinish: Boolean = false
     override var torrentSeedRatioLimit: Float = 1.0f
@@ -562,6 +581,11 @@ class AppConfig(private val configDir: String) : IAppConfig {
         w.bool(F_DETECT_SUBTITLES, detectSubtitles)
         w.bool(F_SAVE_SUBTITLES_AS_SRT, saveSubtitlesAsSrt)
         w.bool(F_FORCE_IPV4, forceIpv4)
+        w.string(F_YTDLP_PATH, ytDlpPath)
+        w.string(F_FFMPEG_PATH, ffmpegPath)
+        w.string(F_DENO_PATH, denoPath)
+        w.string(F_YTDLP_EXTRA_ARGS, ytDlpExtraArgs)
+        w.bool(F_USE_FFMPEG_MUXER, useFfmpegMuxer)
         w.message(F_COMMAND_RULES) {
             commandRules.forEach { rule ->
                 message(F_COMMAND_RULE) {
@@ -677,6 +701,11 @@ class AppConfig(private val configDir: String) : IAppConfig {
                 F_TORRENT_ADD_TRACKERS -> torrentAddTrackers = r.bool()
                 F_TORRENT_TRACKER_LIST -> torrentTrackerList = r.string()
                 F_TORRENT_PEX -> torrentPex = r.bool()
+                F_YTDLP_PATH -> ytDlpPath = r.string()
+                F_FFMPEG_PATH -> ffmpegPath = r.string()
+                F_DENO_PATH -> denoPath = r.string()
+                F_YTDLP_EXTRA_ARGS -> ytDlpExtraArgs = r.string()
+                F_USE_FFMPEG_MUXER -> useFfmpegMuxer = r.bool()
                 else -> unknown.raw(r.rawField())
             }
         }

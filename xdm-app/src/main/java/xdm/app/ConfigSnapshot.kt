@@ -74,6 +74,8 @@ class ConfigSnapshot private constructor(private val values: List<Any?>) {
             Prop(IAppConfig::torrentLsd), Prop(IAppConfig::torrentEncryption), Prop(IAppConfig::torrentDownloadLimit),
             Prop(IAppConfig::torrentUploadLimit), Prop(IAppConfig::torrentClient),
             Prop(IAppConfig::torrentKeepSession), Prop(IAppConfig::torrentAddTrackers), Prop(IAppConfig::torrentTrackerList), Prop(IAppConfig::torrentPex),
+            Prop(IAppConfig::ytDlpPath), Prop(IAppConfig::ffmpegPath), Prop(IAppConfig::denoPath),
+            Prop(IAppConfig::ytDlpExtraArgs), Prop(IAppConfig::useFfmpegMuxer),
         )
 
         /** The names of the properties a snapshot covers; for the test that checks none is missing. */

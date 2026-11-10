@@ -33,11 +33,19 @@ import java.util.concurrent.atomic.AtomicBoolean
  *  - HLS packed audio (.aac/.mp3/.ac3/.ec3: raw frames behind an ID3 timestamp) via [PackedAudioDemuxer]
  *
  * Inputs are remuxed into a single progressive MP4, or into Matroska (`.mkv`) when the requested
- * output path ends in `.mkv` — the case DASH uses for WebM/VP8/VP9/Opus streams that MP4 can't
+ * output path ends in `.mkv` (WebM, Matroska with DocType `webm`, for `.webm`); [container] overrides
+ * the output's extension — the case DASH uses for WebM/VP8/VP9/Opus streams that MP4 can't
  * carry cleanly. The container of each segment list is detected from its bytes, so callers don't
  * need to tell us which it is. (The legacy [FFmpegMuxer] class is retained but no longer invoked.)
  */
-class TransmuxingMuxer(@Suppress("UNUSED_PARAMETER") appDir: String) : Muxer {
+class TransmuxingMuxer(
+    @Suppress("UNUSED_PARAMETER") appDir: String,
+    /**
+     * The container to write (`mp4`, `m4a`, `mkv`, `webm`), when it is not the output name's
+     * extension (the part file of a download is named by the task, not by the chosen container).
+     */
+    private val container: String? = null,
+) : Muxer {
     private val stopFlag = AtomicBoolean(false)
 
     @Volatile
@@ -116,9 +124,12 @@ class TransmuxingMuxer(@Suppress("UNUSED_PARAMETER") appDir: String) : Muxer {
         output: StorageFile, tempDir: String, discontinuous: Boolean = false, body: (ContainerWriter) -> List<Track>
     ): Boolean {
         lastError = null
-        val writer: ContainerWriter =
-            if (output.name.endsWith(".mkv", ignoreCase = true)) MkvWriter(output, tempDir) { stopFlag.get() }
-            else Mp4Writer(output, repairTimeline = discontinuous)
+        val format = (container ?: output.name.substringAfterLast('.', "")).lowercase()
+        val writer: ContainerWriter = when (format) {
+            "mkv", "mka" -> MkvWriter(output, tempDir) { stopFlag.get() }
+            "webm", "weba" -> MkvWriter(output, tempDir, "webm") { stopFlag.get() }
+            else -> Mp4Writer(output, repairTimeline = discontinuous)
+        }
         // Sample records of long streams spill to scratch files here; dropped when muxing ends.
         val spill = SampleSpill.open(File(tempDir))
         return try {

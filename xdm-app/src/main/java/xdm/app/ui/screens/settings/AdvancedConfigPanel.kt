@@ -28,6 +28,12 @@ class AdvancedConfigPanel : SettingsPanel() {
     private val tglSwingChooser = SettingsToggle()
     private val tglForceIpv4 = SettingsToggle()
     private val tglSkipDupManifests = SettingsToggle()
+    private val tglFfmpeg = SettingsToggle()
+    private val txtFfmpeg = rounded(JTextField()).apply {
+        putClientProperty(placeholder, I8N.text("MSG_FFMPEG_PATH"))
+        columns = 10
+    }
+    private val btnFfmpeg: JButton = settingsButton(I8N.text("SETTINGS_FOLDER_CHANGE")) { chooseFfmpeg() }
 
     private val commandRules = CommandRuleSection()
 
@@ -70,6 +76,8 @@ class AdvancedConfigPanel : SettingsPanel() {
                     I8N.text("MSG_SKIP_DUP_MANIFEST_SUB"),
                     tglSkipDupManifests
                 ),
+                settingsRow(I8N.text("MSG_USE_FFMPEG"), I8N.text("MSG_USE_FFMPEG_SUB"), tglFfmpeg),
+                settingsFullRow(null, null, pathRow(txtFfmpeg, btnFfmpeg)),
             )
         )
         add(settingsGap())
@@ -82,16 +90,7 @@ class AdvancedConfigPanel : SettingsPanel() {
                 I8N.text("SETTINGS_SEC_ANTIVIRUS"),
                 settingsRow(I8N.text("MSG_MARK_DOWNLOADS"), I8N.text("MSG_MARK_DOWNLOADS_SUB"), tglMarkDownloads),
                 settingsRow(I8N.text("MSG_SCAN"), I8N.text("MSG_SCAN_SUB"), tglVirusScan),
-                settingsFullRow(
-                    null, null,
-                    Box.createHorizontalBox().apply {
-                        alignmentX = LEFT_ALIGNMENT
-                        txtVirusScan.maximumSize = Dimension(Int.MAX_VALUE, txtVirusScan.preferredSize.height)
-                        add(txtVirusScan)
-                        add(Box.createRigidArea(scaledSize(10, 0)))
-                        add(btnBrowse)
-                    }
-                ),
+                settingsFullRow(null, null, pathRow(txtVirusScan, btnBrowse)),
                 settingsFullRow(null, null, fullWidth(txtArgs)),
             )
         )
@@ -99,7 +98,18 @@ class AdvancedConfigPanel : SettingsPanel() {
         add(Box.createVerticalGlue())
 
         tglVirusScan.addActionListener { updateEnabledState() }
+        tglFfmpeg.addActionListener { updateEnabledState() }
     }
+
+    /** A path field and its Browse button on one line. */
+    private fun pathRow(field: JTextField, browse: JButton): JComponent =
+        Box.createHorizontalBox().apply {
+            alignmentX = LEFT_ALIGNMENT
+            field.maximumSize = Dimension(Int.MAX_VALUE, field.preferredSize.height)
+            add(field)
+            add(Box.createRigidArea(scaledSize(10, 0)))
+            add(browse)
+        }
 
     private fun fullWidth(comp: JComponent): JComponent =
         Box.createHorizontalBox().apply {
@@ -114,7 +124,15 @@ class AdvancedConfigPanel : SettingsPanel() {
         }
     }
 
+    private fun chooseFfmpeg() {
+        chooseFile(this, directoriesOnly = false)?.let {
+            txtFfmpeg.text = it.absolutePath
+        }
+    }
+
     private fun updateEnabledState() {
+        txtFfmpeg.isEnabled = tglFfmpeg.isSelected
+        btnFfmpeg.isEnabled = tglFfmpeg.isSelected
         txtVirusScan.isEnabled = tglVirusScan.isSelected
         txtArgs.isEnabled = tglVirusScan.isSelected
         btnBrowse.isEnabled = tglVirusScan.isSelected
@@ -142,6 +160,8 @@ class AdvancedConfigPanel : SettingsPanel() {
         tglSwingChooser.isEnabled = linux
         tglForceIpv4.isSelected = config.forceIpv4
         tglSkipDupManifests.isSelected = config.skipDuplicateManifests
+        tglFfmpeg.isSelected = config.useFfmpegMuxer
+        txtFfmpeg.text = config.ffmpegPath
         commandRules.load()
         tglMarkDownloads.isSelected = config.markDownloadedFiles
         tglVirusScan.isSelected = config.runVirusScan
@@ -167,6 +187,9 @@ class AdvancedConfigPanel : SettingsPanel() {
         }
         config.forceIpv4 = tglForceIpv4.isSelected
         config.skipDuplicateManifests = tglSkipDupManifests.isSelected
+        config.ffmpegPath = txtFfmpeg.text.trim()
+        // On only with a path: ffmpeg is never looked up on its own.
+        config.useFfmpegMuxer = tglFfmpeg.isSelected && config.ffmpegPath.isNotEmpty()
         commandRules.save()
         config.markDownloadedFiles = tglMarkDownloads.isSelected
         config.runVirusScan = tglVirusScan.isSelected
