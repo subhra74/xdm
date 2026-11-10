@@ -4,7 +4,7 @@ import xdm.app.utils.linux.dbus.DBusConnection
 import xdm.core.util.Logger
 
 /**
- * The session bus connection shared by the tray icon and notifications (Linux only). Opened on first
+ * The session bus connection shared by the tray icon and notifications (Linux and BSD). Opened on first
  * use; null when there is no session bus we can reach (no `DBUS_SESSION_BUS_ADDRESS`, an abstract-socket
  * address, a container), and callers then fall back to AWT.
  */
