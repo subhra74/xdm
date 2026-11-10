@@ -180,6 +180,33 @@ body {
     transform: scale(1.08);
 }
 
+/* A subtitle file: a caption box in place of the play badge, with the same hover accent. */
+.cc-badge {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 20px;
+    border-radius: 5px;
+    background: rgba(0, 0, 0, 0.35);
+    color: #fff;
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.thumb.subtitle .play-badge {
+    display: none;
+}
+
+.thumb.subtitle .cc-badge {
+    display: flex;
+}
+
+.video-item:hover .cc-badge,
+.video-item:focus-visible .cc-badge {
+    background: var(--accent);
+    transform: scale(1.08);
+}
+
 /* The video's first frame in place of the icon. */
 .thumb.has-preview {
     background: #000;

@@ -1,13 +1,13 @@
 package xdm.app.ui.screens
 
 import xdm.app.AppContext
-import xdm.app.DbRecord
 import xdm.app.I8N.text
-import xdm.app.RecordStatus
 import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.px
 import xdm.app.utils.scaledSize
 import xdm.core.util.Logger
+import xdm.manager.DbRecord
+import xdm.manager.RecordStatus
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.Dimension

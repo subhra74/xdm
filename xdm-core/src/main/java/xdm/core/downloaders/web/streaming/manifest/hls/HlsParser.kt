@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core.downloaders.web.streaming.manifest.hls
 
@@ -28,6 +29,9 @@ const val EXT_X_I_FRAMES_ONLY = "#EXT-X-I-FRAMES-ONLY"
 const val EXT_X_INDEPENDENT_SEGMENTS = "#EXT-X-INDEPENDENT-SEGMENTS"
 // Also valueless. Matched with '==' (not startsWith) so it can't swallow #EXT-X-DISCONTINUITY-SEQUENCE.
 const val EXT_X_DISCONTINUITY = "#EXT-X-DISCONTINUITY"
+// Valueless as well: a playlist without it may still grow (live or event), unless it says VOD.
+const val EXT_X_ENDLIST = "#EXT-X-ENDLIST"
+const val EXT_X_PLAYLIST_TYPE = "#EXT-X-PLAYLIST-TYPE:"
 const val METHOD = "METHOD"
 
 object HlsParser {
@@ -75,6 +79,8 @@ object HlsParser {
                 // EXT-X-DISCONTINUITY applies to the segment that follows it.
                 var pendingDiscontinuity = false
                 var anyDiscontinuity = false
+                var endList = false
+                var playlistType: String? = null
 
                 if (!findSig(manifestLines)) {
                     val msg = "Invalid HLS manifest, header signature not found !"
@@ -106,6 +112,10 @@ object HlsParser {
                         pendingDiscontinuity = false
                         mediaSequence++
                         totalDuration += duration
+                    } else if (line == EXT_X_ENDLIST) {
+                        endList = true
+                    } else if (line.startsWith(EXT_X_PLAYLIST_TYPE)) {
+                        playlistType = line.substring(EXT_X_PLAYLIST_TYPE.length).trim()
                     } else if (line == EXT_X_DISCONTINUITY) {
                         pendingDiscontinuity = true
                     } else if (line.startsWith(EXT_X_I_FRAMES_ONLY)) {
@@ -214,6 +224,8 @@ object HlsParser {
                     version,
                     isIndependent,
                     hasDiscontinuity = anyDiscontinuity,
+                    endList = endList,
+                    playlistType = playlistType,
                 )
             } catch (e: Exception) {
                 Logger.error("Error parsing manifest", e)

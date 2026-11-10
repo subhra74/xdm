@@ -1,7 +1,7 @@
 package xdm.app.ui.components
 
-import xdm.app.DbRecord
 import xdm.app.utils.isMacPopupTrigger
+import xdm.manager.DbRecord
 import java.awt.Component
 import java.awt.Toolkit
 import java.awt.event.MouseAdapter

@@ -1,16 +1,19 @@
 package xdm
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import xdm.app.ui.screens.StreamDownloadDialog
 import xdm.core.downloaders.web.streaming.manifest.dash.DashSegment
 import xdm.core.downloaders.web.streaming.manifest.dash.Representation
 import xdm.core.downloaders.web.streaming.manifest.hls.HlsParser
-import xdm.integration.AudioMode
-import xdm.integration.StreamChoices
-import xdm.integration.StreamPick
-import xdm.integration.VideoHelper.LoadedManifest
+import xdm.capture.AudioMode
+import xdm.capture.HlsMediaInfo
+import xdm.capture.StreamSize
+import xdm.capture.StreamChoices
+import xdm.capture.StreamPick
+import xdm.capture.VideoHelper.LoadedManifest
 import okhttp3.HttpUrl.Companion.toHttpUrl
 
 /** The Stream download dialog's choices, built from parsed playlists and manifests. */
@@ -150,5 +153,35 @@ class StreamChoicesTest {
     fun duration_isMinutesOrHours() {
         assertEquals("12:34", StreamDownloadDialog.duration(754.2), "minutes and seconds")
         assertEquals("1:02:03", StreamDownloadDialog.duration(3723.0), "with hours")
+    }
+
+    @Test
+    fun hlsMaster_sizesFromTheLoadedVariant_sharedDuration() {
+        val parsed = master(
+            """
+            #EXTM3U
+            #EXT-X-STREAM-INF:BANDWIDTH=4000000,AVERAGE-BANDWIDTH=3200000,RESOLUTION=1920x1080
+            hi.m3u8
+            #EXT-X-STREAM-INF:BANDWIDTH=800000,RESOLUTION=640x360
+            low.m3u8
+            """
+        )
+        val loaded = parsed.copy(media = mapOf("https://cdn.example.com/show/hi.m3u8" to HlsMediaInfo(100.0, false, null)))
+        val formats = StreamChoices.of(loaded)
+        assertEquals(StreamSize.Kind.AVERAGE, formats[0].size?.kind, "average bitrate of the loaded variant")
+        assertEquals(40_000_000L, formats[0].size?.bytes, "3.2 Mbit/s × 100 s")
+        assertEquals(10_000_000L, formats[1].size?.bytes, "the other variant uses the same duration")
+        assertEquals(StreamSize.Kind.PEAK, formats[1].size?.kind, "only BANDWIDTH")
+        assertNull(StreamChoices.of(parsed)[0].size, "nothing loaded: no size")
+    }
+
+    @Test
+    fun dash_sizePerAudioTrack() {
+        val video = Representation(0, 720, "avc1", 1_000_000, 8_000, listOf(DashSegment("https://cdn.example.com/v.m4s".toHttpUrl())), "video/mp4", "und")
+        val en = Representation(0, 0, "mp4a.40.2", 128_000, 8_000, listOf(DashSegment("https://cdn.example.com/a.m4s".toHttpUrl())), "audio/mp4", "en")
+        val de = Representation(0, 0, "mp4a.40.2", 64_000, 8_000, listOf(DashSegment("https://cdn.example.com/b.m4s".toHttpUrl())), "audio/mp4", "de")
+        val formats = StreamChoices.dash(listOf(video to en, video to de))
+        assertEquals(listOf(1_128_000L, 1_064_000L), formats[0].audio.map { it.size?.bytes }, "video + each audio track")
+        assertEquals(1_128_000L, formats[0].size?.bytes, "the format shows its default track's size")
     }
 }

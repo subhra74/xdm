@@ -2,17 +2,14 @@ package xdm.app.ui.components
 
 import xdm.app.AppContext
 import xdm.app.AppContext.downloader
-import xdm.app.DbRecord
 import xdm.app.I8N.text
 import xdm.app.MessageBoxResult
-import xdm.app.RecordStatus
 import xdm.app.ui.screens.AppWindow
 import xdm.app.ui.screens.BatchUrlDialog
 import xdm.app.ui.screens.ChangeFolderDialog
 import xdm.app.ui.screens.StreamDownloadDialog
 import xdm.app.utils.SingleWindows
 import xdm.app.utils.captureDestination
-import xdm.app.utils.getFileFolder
 import xdm.app.utils.openFileExternal
 import xdm.app.utils.openFolderExternal
 import xdm.app.utils.setClipBoardText
@@ -22,6 +19,9 @@ import xdm.core.util.Logger
 //import xdman.Config
 //import xdman.constants.MessageBoxResult
 //import xdman.ui.components.BatchPatternDialog
+import xdm.manager.DbRecord
+import xdm.manager.RecordStatus
+import xdm.manager.getFileFolder
 import java.awt.Window
 import java.io.FileInputStream
 import java.io.FileNotFoundException

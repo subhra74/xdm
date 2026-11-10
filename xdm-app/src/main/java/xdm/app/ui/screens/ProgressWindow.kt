@@ -1,7 +1,6 @@
 package xdm.app.ui.screens
 
 import xdm.app.AppContext
-import xdm.app.BatchFileCounts
 import xdm.app.I8N.text
 import xdm.app.ui.components.AppMenuHandler
 import xdm.app.ui.components.CircularProgress
@@ -18,6 +17,7 @@ import xdm.core.downloaders.web.SegmentProgress
 import xdm.core.util.FormatHelper.formatSize
 import xdm.core.util.FormatHelper.toLongEta
 import xdm.core.util.MovePhase
+import xdm.manager.BatchFileCounts
 import java.awt.Color
 import java.awt.Cursor
 import java.awt.Dimension

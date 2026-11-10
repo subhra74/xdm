@@ -6,11 +6,11 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import xdm.app.AppDB
-import xdm.app.DbRecord
-import xdm.app.DuplicateIndex
-import xdm.app.DuplicateKind
-import xdm.app.RecordStatus
 import xdm.core.downloaders.DownloadType
+import xdm.manager.DbRecord
+import xdm.manager.DuplicateIndex
+import xdm.manager.DuplicateKind
+import xdm.manager.RecordStatus
 import java.io.File
 import java.nio.file.Files
 

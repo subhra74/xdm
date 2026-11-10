@@ -1,6 +1,6 @@
 package xdm.app.ui.components
 
-import xdm.app.DbRecord
+import xdm.manager.DbRecord
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.SwingUtilities

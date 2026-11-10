@@ -2,6 +2,7 @@ package xdm.app.utils
 
 import xdm.app.OS
 import xdm.core.util.Logger
+import xdm.manager.DownloadSource
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
@@ -9,8 +10,6 @@ import java.nio.file.Files
 import java.nio.file.attribute.UserDefinedFileAttributeView
 import java.util.concurrent.TimeUnit
 
-/** Where a finished download came from: the URL fetched and the page that led to it. */
-data class DownloadSource(val url: String?, val referrer: String?)
 
 /**
  * Marks a finished download as coming from the internet, the way a browser does. A download the

@@ -3,9 +3,7 @@ package xdm.app.ui.screens
 import com.formdev.flatlaf.FlatClientProperties
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import xdm.app.AppContext
-import xdm.app.DuplicateKind
 import xdm.app.I8N.text
-import xdm.app.RecordStatus
 import xdm.app.ui.components.AppMenuHandler
 import xdm.app.ui.components.CategoryStyle
 import xdm.app.ui.components.DestinationPicker
@@ -28,6 +26,8 @@ import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.util.*
 import xdm.core.util.CoreUtils.uniqueId
 import xdm.integration.EventChannel
+import xdm.manager.DuplicateKind
+import xdm.manager.RecordStatus
 import java.awt.*
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent

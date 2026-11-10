@@ -3,10 +3,10 @@ package xdm
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import xdm.app.DbRecord
-import xdm.app.RecordStatus
 import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.DownloadType
+import xdm.manager.DbRecord
+import xdm.manager.RecordStatus
 import java.util.concurrent.CountDownLatch
 
 /** Regression for CODE_REVIEW B5: the parallel-download limit and the queue. */

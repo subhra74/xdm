@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core.media.muxer.transmux.mkv
 
@@ -34,7 +35,12 @@ import java.io.RandomAccessFile
  * References: Matroska element spec (https://www.matroska.org/technical/elements.html) and the
  * conventions used by libavformat's `matroskaenc` and the JS `webm-muxer`.
  */
-class MkvWriter(private val output: StorageFile, spoolDir: String? = null) : ContainerWriter {
+class MkvWriter(
+    private val output: StorageFile,
+    spoolDir: String? = null,
+    /** Checked between clusters while [finish] copies the spool out: true drops the output. */
+    private val cancelled: () -> Boolean = { false },
+) : ContainerWriter {
     constructor(outputPath: String, spoolDir: String? = null) : this(LocalStorage.file(outputPath), spoolDir)
 
     /**
@@ -79,8 +85,16 @@ class MkvWriter(private val output: StorageFile, spoolDir: String? = null) : Con
         if (plans.isEmpty()) { spoolFile.delete(); return false }
 
         // Normalize all tracks to a common zero so no absolute Matroska timecode is negative.
-        val globalMinMs = plans.minOf { p -> p.track.samples.minOf { msOf(it.pts, p.track.timescale) } }
-        val durationMs = plans.maxOf { p -> p.track.samples.maxOf { endMsOf(it, p.track) } } - globalMinMs
+        var globalMinMs = Long.MAX_VALUE
+        var endMs = Long.MIN_VALUE
+        for (p in plans) {
+            val s = p.track.samples
+            for (i in 0 until s.size) {
+                globalMinMs = minOf(globalMinMs, msOf(s.pts(i), p.track.timescale))
+                endMs = maxOf(endMs, msOf(s.pts(i) + s.duration(i).coerceAtLeast(0), p.track.timescale))
+            }
+        }
+        val durationMs = endMs - globalMinMs
 
         var handle: RandomAccessOutput? = null
         try {
@@ -116,15 +130,19 @@ class MkvWriter(private val output: StorageFile, spoolDir: String? = null) : Con
             spoolFile.delete()
             return true
         } catch (ex: Throwable) {
-            Logger.error("XDM", "MKV write failed", ex)
             // The handle itself, not [out]: it may have failed before [out] wrapped it, and an open
             // handle would keep Windows from deleting the output below. The output is dropped, so
             // [out]'s buffer needs no flush.
             try { handle?.close() } catch (_: Exception) {}
             output.delete(); spoolFile.delete()
-            return false
+            if (ex is Cancelled) return false
+            // Rethrown so the caller can tell a full disk from a muxing problem.
+            throw ex
         }
     }
+
+    /** Thrown out of the cluster loop when [cancelled] says stop. */
+    private class Cancelled : Exception()
 
     override fun abort() {
         try { spool.close() } catch (_: Exception) {}
@@ -207,21 +225,22 @@ class MkvWriter(private val output: StorageFile, spoolDir: String? = null) : Con
      * B-frame's reference frames come first) while each block's timestamp is its *presentation*
      * time, so each track keeps its own (decode) order and tracks are interleaved by DTS.
      */
-    private fun interleave(plans: List<TrackPlan>, globalMinMs: Long): List<Entry> {
+    private fun interleave(plans: List<TrackPlan>, globalMinMs: Long): Iterator<Entry> = iterator {
+        // Produced one at a time: a long stream's entries are not all held at once.
         val cursors = IntArray(plans.size)
-        val entries = ArrayList<Entry>(plans.sumOf { it.track.samples.size })
         while (true) {
             var best = -1
             var bestDtsMs = Long.MAX_VALUE
             for ((i, p) in plans.withIndex()) {
-                val s = p.track.samples.getOrNull(cursors[i]) ?: continue
-                val dtsMs = msOf(s.dts, p.track.timescale)
+                val samples = p.track.samples
+                if (cursors[i] >= samples.size) continue
+                val dtsMs = msOf(samples.dts(cursors[i]), p.track.timescale)
                 if (dtsMs < bestDtsMs) { best = i; bestDtsMs = dtsMs }
             }
-            if (best < 0) return entries
+            if (best < 0) return@iterator
             val p = plans[best]
             val s = p.track.samples[cursors[best]++]
-            entries.add(Entry(p, s, msOf(s.pts, p.track.timescale) - globalMinMs))
+            yield(Entry(p, s, msOf(s.pts, p.track.timescale) - globalMinMs))
         }
     }
 
@@ -248,6 +267,7 @@ class MkvWriter(private val output: StorageFile, spoolDir: String? = null) : Con
                     (anyVideo && isVideoKey && clusterHasContent) ||
                     (!anyVideo && rel > 2_000)
                 if (needNewCluster) {
+                    if (cancelled()) throw Cancelled()
                     closeCluster()
                     clusterTimeMs = e.absMs
                     writeRaw(Ebml.idBytes(Ebml.CLUSTER))
@@ -305,6 +325,10 @@ class MkvWriter(private val output: StorageFile, spoolDir: String? = null) : Con
 
     /** Resolves the Matroska CodecID + CodecPrivate for [t], or null if it can't be mapped. */
     private fun resolveCodec(t: Track): Pair<String, ByteArray?>? {
+        if (t.additionalSampleEntries.isNotEmpty()) {
+            // Matroska has one CodecPrivate per track; samples in later configs keep the first one.
+            Logger.error("XDM", "MKV: track changes codec config mid-stream; using the first one")
+        }
         // 1) Verbatim passthrough from a Matroska/WebM input.
         t.matroskaCodecId?.let { return it to t.decoderConfigRecord }
 
@@ -321,17 +345,15 @@ class MkvWriter(private val output: StorageFile, spoolDir: String? = null) : Con
             Codec.EAC3 -> return "A_EAC3" to null
             Codec.OPUS -> return "A_OPUS" to t.decoderConfigRecord
             Codec.VORBIS -> return "A_VORBIS" to t.decoderConfigRecord
+            Codec.MPEG_VIDEO ->
+                return (if (t.objectTypeIndication == CodecBoxes.OTI_MPEG1_VIDEO) "V_MPEG1" else "V_MPEG2") to t.decoderConfigRecord
+            Codec.MPEG4_VISUAL -> return "V_MPEG4/ISO/ASP" to t.decoderConfigRecord
+            Codec.DTS -> return "A_DTS" to null
             else -> {}
         }
 
         // 3) MP4 sample entry copied verbatim (OTHER_VIDEO/OTHER_AUDIO): map by its fourcc.
-        t.sampleEntryBox?.let {
-            if (t.additionalSampleEntries.isNotEmpty()) {
-                // Matroska has one CodecPrivate per track; later configs are dropped.
-                Logger.error("XDM", "MKV: track changes codec config mid-stream; using the first one")
-            }
-            return fromSampleEntry(t, it)
-        }
+        t.sampleEntryBox?.let { return fromSampleEntry(t, it) }
         return null
     }
 
@@ -455,8 +477,6 @@ class MkvWriter(private val output: StorageFile, spoolDir: String? = null) : Con
         val ts = if (timescale > 0) timescale else 1000
         return (ticks * 1000 + ts / 2) / ts
     }
-
-    private fun endMsOf(s: Sample, t: Track): Long = msOf(s.pts + s.durationTicks.coerceAtLeast(0), t.timescale)
 
     private fun writeRaw(bytes: ByteArray) { out.write(bytes); position += bytes.size }
 

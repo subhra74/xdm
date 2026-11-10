@@ -1,0 +1,90 @@
+Xtreme Download Manager (XDM) for Android
+Copyright (C) 2026 Subhra Das Gupta
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version, with the additional terms below.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU General Public License for more details. You
+should have received a copy of the GNU General Public License along with this
+program. If not, see <https://www.gnu.org/licenses/>.
+
+
+ADDITIONAL TERMS UNDER SECTION 7 OF THE GNU GPL VERSION 3
+
+The following terms apply to the material in this repository authored by the
+copyright holder named above. They are permitted by Section 7 of the GNU
+General Public License version 3.
+
+1. Trade names and trademarks (Section 7(e))
+
+   This license does not grant any rights under trademark law to use the names
+   "XDM", "Xtreme Download Manager" or "XDM Browser Monitor", the XDM logo, or
+   any confusingly similar name or logo (together, the "XDM Marks"). Use of the
+   XDM Marks is governed by the XDM Trademark Policy in TRADEMARK.md.
+
+2. Marking of modified versions (Section 7(c))
+
+   If you distribute a modified version of this program, you must:
+
+   a) give it a name and an application icon that are not XDM Marks and are
+      not confusingly similar to them;
+
+   b) use an application ID (Android package name) that does not begin with
+      "com.xtremedownloadmanager"; and
+
+   c) not present it, in the program itself or in any store listing, website
+      or other material, as the original XDM or as being made, endorsed or
+      supported by the XDM project or its author.
+
+   You may state accurately that your program is "based on XDM" or "a fork of
+   XDM", as described in TRADEMARK.md.
+
+3. Preservation of notices (Section 7(b))
+
+   You must keep this NOTICE file, the copyright notices in the source files
+   and the "About" screen's credit to the original XDM project in any copy or
+   modified version you distribute.
+
+
+EXCEPTION FOR OFFICIAL ANDROID STORE BUILDS
+
+As an additional permission under Section 7 of the GNU GPL version 3, the
+copyright holder named above allows this program, including the shared modules
+of this repository it is built from, to be combined and distributed with
+libraries, SDKs and other components that are not licensed under the GNU GPL
+or a compatible license ("Proprietary Components"), in the official builds of
+this program that the copyright holder publishes through Google Play or other
+app stores that distribute proprietary software ("Store Builds"). Builds
+published through F-Droid, as downloads from the project's website or GitHub
+releases, and builds that anyone else makes from the source code, are not
+Store Builds; this permission does not apply to them, and they remain under the
+GNU GPL version 3 with the additional terms above only.
+
+This permission is granted only to the copyright holder and to parties the
+copyright holder authorizes in writing. It does not extend to anyone else who
+distributes this program or a modified version of it.
+
+Each contributor to the parts covered by this NOTICE (this directory and the
+shared modules named in CONTRIBUTING.md) grants the same permission, on the
+same conditions, for their contributions. Files covered by it carry the
+SPDX identifier:
+
+    GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+
+The Proprietary Components are not covered by the GNU GPL. The source code of
+this program in Store Builds remains available under the GNU GPL version 3
+with the additional terms above.
+
+Everyone else may remove this exception from their copies; the rest of the
+program remains under the GNU GPL version 3 with the additional terms above.
+
+
+BRANDING ASSETS
+
+The files in the branding/ directory (the XDM logo, application icons, store
+graphics and store screenshots) are not covered by the GNU GPL. They are
+licensed separately under branding/LICENSE.md.

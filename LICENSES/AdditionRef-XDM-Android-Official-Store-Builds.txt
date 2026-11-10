@@ -1,0 +1,39 @@
+AdditionRef-XDM-Android-Official-Store-Builds
+
+An additional permission under Section 7 of the GNU GPL version 3, used as
+"GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds".
+"The copyright holder named above" is Subhra Das Gupta, and "this program" is
+Xtreme Download Manager (XDM) for Android; the full additional terms are in
+xdm-android/NOTICE.
+
+EXCEPTION FOR OFFICIAL ANDROID STORE BUILDS
+
+As an additional permission under Section 7 of the GNU GPL version 3, the
+copyright holder named above allows this program, including the shared modules
+of this repository it is built from, to be combined and distributed with
+libraries, SDKs and other components that are not licensed under the GNU GPL
+or a compatible license ("Proprietary Components"), in the official builds of
+this program that the copyright holder publishes through Google Play or other
+app stores that distribute proprietary software ("Store Builds"). Builds
+published through F-Droid, as downloads from the project's website or GitHub
+releases, and builds that anyone else makes from the source code, are not
+Store Builds; this permission does not apply to them, and they remain under the
+GNU GPL version 3 with the additional terms above only.
+
+This permission is granted only to the copyright holder and to parties the
+copyright holder authorizes in writing. It does not extend to anyone else who
+distributes this program or a modified version of it.
+
+Each contributor to the parts covered by this NOTICE (this directory and the
+shared modules named in CONTRIBUTING.md) grants the same permission, on the
+same conditions, for their contributions. Files covered by it carry the
+SPDX identifier:
+
+    GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+
+The Proprietary Components are not covered by the GNU GPL. The source code of
+this program in Store Builds remains available under the GNU GPL version 3
+with the additional terms above.
+
+Everyone else may remove this exception from their copies; the rest of the
+program remains under the GNU GPL version 3 with the additional terms above.

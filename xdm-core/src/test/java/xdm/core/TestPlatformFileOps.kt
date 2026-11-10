@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core
 
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.io.TempDir
 import xdm.core.storage.NioFileOps
 import xdm.core.storage.PlatformFiles
 import xdm.core.storage.TargetExistsException
+import xdm.core.storage.isGapFillingFileSystem
 import xdm.core.util.FileUtils
 import xdm.core.util.FormatHelper
 import xdm.core.util.PlatformUtils
@@ -34,6 +36,23 @@ class TestPlatformFileOps {
     @Test
     fun desktopDefaultsToNio() {
         assertTrue(PlatformFiles.ops === NioFileOps, "desktop must use NioFileOps when nothing is installed")
+    }
+
+    /** Every FAT name the OSes and phone vendors use, and the common file systems that keep holes. */
+    @Test
+    fun gapFillingFileSystemNames() {
+        for (name in listOf("vfat", "msdos", "umsdos", "exfat", "sdfat", "texfat", "tfat", "FAT", "FAT32", "exFAT", "fat16")) {
+            assertTrue(isGapFillingFileSystem(name), "$name is a FAT variant")
+        }
+        for (name in listOf("ext4", "f2fs", "NTFS", "ReFS", "apfs", "hfs", "btrfs", "xfs", "fuse", "fuseblk", "sdcardfs", "tmpfs", "")) {
+            assertFalse(isGapFillingFileSystem(name), "$name keeps holes or hides what is underneath")
+        }
+    }
+
+    /** The temp folder is never on FAT on the build machines. */
+    @Test
+    fun tempFolderIsNotGapFilling() {
+        assertFalse(NioFileOps.fillsGaps(File(dir, "not/yet/created")), "a folder that does not exist yet is judged by its parent")
     }
 
     @Test

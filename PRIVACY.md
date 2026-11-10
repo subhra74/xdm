@@ -1,10 +1,11 @@
 # Xtreme Download Manager: privacy policy
 
-*Last updated: 17 October 2026*
+*Last updated: 8 November 2026*
 
-Xtreme Download Manager ("XDM") is a free, open-source desktop download manager for Windows, macOS
-and Linux. This policy explains what the XDM application sends over the network, what it keeps on
-your computer, and what it shares. The companion browser extension has its own policy:
+Xtreme Download Manager ("XDM") is a free, open-source download manager for Windows, macOS, Linux
+and Android. This policy explains what the XDM applications send over the network, what they keep on
+your device, and what they share. The desktop app is covered first; the Android app has its own
+section, [XDM for Android](#xdm-for-android). The companion browser extension has its own policy:
 [browser-extension/chrome-store/PRIVACY.md](browser-extension/chrome-store/PRIVACY.md).
 
 ## Summary
@@ -62,9 +63,52 @@ security checks still apply to them.
 Deleting a download from the list removes its stored state. Uninstalling XDM and deleting the data
 folder above removes everything XDM kept.
 
+## XDM for Android
+
+The Android app follows the same rules: **no accounts, no analytics, no tracking, no advertising and
+no crash reporting**, and nothing about you, your browsing or your downloads is sent to the developer
+or to any third party. It has no update check of its own; updates come from the store you installed it
+from.
+
+### Network connections
+
+| Connection | When | What is sent |
+|---|---|---|
+| The websites you open in XDM's browser | When you browse | What any web browser sends: the page request, and the cookies and data those sites set |
+| The servers of the files you download | When you start or resume a download | The request needed to fetch the file: its address, and the headers and cookies the page used for it |
+| Your search engine (Google by default) | When you type a search in the address bar | Your search words, as with any browser |
+| Filter-list sites (for example easylist.to, filters.adtidy.org, ublockorigin.github.io, cdn.jsdelivr.net) | About once a day on Wi-Fi, only for ad-blocking lists you added yourself | A plain request for the list. The built-in lists ship inside the app and are not downloaded |
+
+### What the app stores on your device
+
+Everything stays in the app's private storage, which other apps cannot read:
+
+- Your settings, and the per-site browser choices (ad blocking, pop-ups, JavaScript, desktop mode).
+- The download list and the state needed to resume downloads, including the headers and cookies
+  captured for them.
+- Browser history and bookmarks, and the cookies and site data the WebView keeps, like any browser.
+  You can clear history from the Library screen. Private tabs keep no history, and their cookies and
+  site data are deleted when they close.
+- Certificate exceptions: sites whose certificate you chose to trust after a warning (the site name, the
+  certificate's fingerprint and the date). You can review and remove them in Settings.
+- Ad-blocking lists you added.
+
+Finished files are saved in the folder you choose (`Download/XDM` by default). Uninstalling the app
+removes everything in its private storage; your downloaded files stay where they were saved.
+
+### Permissions
+
+- **Internet and network state:** to browse and download, and to wait for Wi-Fi when you ask it to.
+- **Notifications, foreground service, wake lock:** to show download progress and keep downloads
+  running while the app is in the background.
+- **Storage (Android 7 to 10 only):** to save files in the `Download` folder.
+
+When you switch to the app, it checks the clipboard for a copied link and offers to download it. The
+clipboard is read on your device only and is never sent anywhere.
+
 ## Data sharing
 
-XDM does not sell, share or transfer your data to anyone. Logs and settings leave your computer only
+XDM does not sell, share or transfer your data to anyone. Logs and settings leave your device only
 if you choose to attach them to a bug report yourself.
 
 ## Children

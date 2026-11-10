@@ -173,6 +173,7 @@ $args
 Type=Application
 Name=$APP_NAME
 Exec=${AppLauncher.desktopExec(cmd)}
+Icon=xdm-app
 Terminal=false
 X-GNOME-Autostart-enabled=true
 """

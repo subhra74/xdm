@@ -56,22 +56,30 @@ pull request, and add tests for new behaviour where practical.
 
 ## Licensing of contributions
 
-The repository uses two licenses:
-
 | Part | License |
 |---|---|
-| `xdm-core` | [Apache License 2.0](xdm-core/LICENSE) |
+| `xdm-core`, `xdm-android/`, and the other shared modules built into the Android app (`xdm-capture`, `xdm-manager`) | [GNU GPL v3](LICENSE) with the additional terms in [xdm-android/NOTICE](xdm-android/NOTICE) |
 | Everything else (`xdm-app`, browser extensions, ...) | [GNU GPL v3](LICENSE) |
 
-A contribution is licensed under the license of the part it changes: changes to `xdm-core` under
-the Apache License 2.0 (as its section 5 provides), everything else under the GPL v3. You keep the
-copyright to your contribution. New `xdm-core` source files start with the same header as the
-existing ones:
+`xdm-core` versions up to 9.0.9 were released under the Apache License 2.0; see
+[xdm-core/NOTICE](xdm-core/NOTICE).
+
+A contribution is licensed under the license of the part it changes: changes to `xdm-core`,
+`xdm-android/` and the other shared modules under the GPL v3 with the additional terms in
+`xdm-android/NOTICE` (including its "Exception for official Android store builds", which allows proprietary
+components in official builds only), everything else under the GPL v3. You keep the copyright to your contribution.
+
+New source files in `xdm-core`, `xdm-android/`, `xdm-capture` and `xdm-manager` start with the same
+header as the existing `xdm-core` files:
 
 ```kotlin
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 ```
+
+By signing off a contribution to these parts you also grant the permission in `xdm-android/NOTICE`'s
+"Exception for official Android store builds" for your contribution.
 
 If you add a file that is substantially your own work, you may add your own copyright line above
 the SPDX line.
@@ -126,8 +134,9 @@ The DCO check on your pull request lists the commits that are missing a sign-off
 message ready to copy.
 
 Code copied from another project needs to be under a license compatible with the part it goes into
-(for `xdm-core`, a permissive license such as Apache 2.0, MIT or BSD; GPL code cannot go into
-`xdm-core`). Say where it came from in your pull request.
+(for `xdm-core`, `xdm-android/` and the other shared modules, a permissive license such as Apache 2.0,
+MIT or BSD: someone else's GPL code can't carry the exception in `xdm-android/NOTICE`, so it cannot go into
+those parts). Say where it came from in your pull request.
 
 ## Code of conduct
 

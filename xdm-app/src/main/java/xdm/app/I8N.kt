@@ -2,6 +2,7 @@ package xdm.app
 
 import xdm.app.utils.AppDirs
 import xdm.core.util.Logger
+import xdm.manager.DownloadCategory
 import java.io.File
 import java.io.InputStream
 import java.io.InputStreamReader
@@ -128,3 +129,12 @@ object I8N {
         return true
     }
 }
+
+/** [DownloadCategory.name], translated for an untouched built-in (see [DownloadCategory.hasDefaultName]). */
+val DownloadCategory.displayName: String
+    get() {
+        if (!hasDefaultName) return name
+        // I8N.text returns the id itself when no language file has it.
+        val translated = I8N.text(id)
+        return if (translated == id || translated.isBlank()) name else translated
+    }

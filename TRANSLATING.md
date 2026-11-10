@@ -47,19 +47,15 @@ comes from the built-in translation, or from English. A half-finished file is fi
 
 To go back to the built-in translation, delete the file from the folder and restart XDM.
 
-## No Weblate account?
-
-The [translation generator](https://subhra74.github.io/xdm/translate/) lets you translate in the browser
-and download a `.txt` file without signing in. You can then open a pull request that adds or replaces
-`xdm-app/src/main/resources/lang/<code>.txt`. The same automatic checks run on it.
-
 ## The files
 
 - `xdm-app/src/main/resources/lang/en.txt` is the English text. It holds every key.
 - `xdm-app/src/main/resources/lang/<code>.txt` holds one file per language, in `java.util.Properties`
-  format and saved as UTF-8.
+  format and saved as UTF-8. Weblate writes these files; please don't send translation pull requests
+  or edited files directly, as they conflict with Weblate's changes. Use Weblate for every change.
 
-Every pull request that touches these files is checked automatically. The check confirms that each file:
+Every Weblate pull request that touches these files is checked automatically. The check confirms that
+each file:
 
 - is valid UTF-8;
 - uses only keys that exist in `en.txt`;

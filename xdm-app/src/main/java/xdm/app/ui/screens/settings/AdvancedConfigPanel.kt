@@ -26,13 +26,10 @@ class AdvancedConfigPanel : SettingsPanel() {
     private val tglRunOnStartup = SettingsToggle()
     private val tglWayland = SettingsToggle()
     private val tglSwingChooser = SettingsToggle()
+    private val tglForceIpv4 = SettingsToggle()
     private val tglSkipDupManifests = SettingsToggle()
 
-    private val tglRunCmd = SettingsToggle()
-    private val txtCmd = rounded(JTextField()).apply {
-        putClientProperty(placeholder, I8N.text("MSG_CUSTOM_CMD"))
-        columns = 10
-    }
+    private val commandRules = CommandRuleSection()
 
     private val tglMarkDownloads = SettingsToggle()
     private val tglVirusScan = SettingsToggle()
@@ -59,6 +56,7 @@ class AdvancedConfigPanel : SettingsPanel() {
                 settingsRow(I8N.text("MSG_HALT"), I8N.text("MSG_HALT_SUB"), tglHalt),
                 settingsRow(I8N.text("MSG_WAYLAND"), I8N.text("MSG_WAYLAND_SUB"), tglWayland),
                 settingsRow(I8N.text("MSG_SWING_CHOOSER"), I8N.text("MSG_SWING_CHOOSER_SUB"), tglSwingChooser),
+                settingsRow(I8N.text("MSG_FORCE_IPV4"), I8N.text("MSG_FORCE_IPV4_SUB"), tglForceIpv4),
             )
         )
         add(settingsGap())
@@ -75,13 +73,7 @@ class AdvancedConfigPanel : SettingsPanel() {
         )
         add(settingsGap())
 
-        add(
-            settingsSection(
-                I8N.text("SETTINGS_SEC_COMMAND"),
-                settingsRow(I8N.text("MSG_RUN_CMD"), I8N.text("MSG_RUN_CMD_SUB"), tglRunCmd),
-                settingsFullRow(null, null, fullWidth(txtCmd)),
-            )
-        )
+        add(commandRules.component)
         add(settingsGap())
 
         add(
@@ -105,7 +97,6 @@ class AdvancedConfigPanel : SettingsPanel() {
 
         add(Box.createVerticalGlue())
 
-        tglRunCmd.addActionListener { updateEnabledState() }
         tglVirusScan.addActionListener { updateEnabledState() }
     }
 
@@ -123,7 +114,6 @@ class AdvancedConfigPanel : SettingsPanel() {
     }
 
     private fun updateEnabledState() {
-        txtCmd.isEnabled = tglRunCmd.isSelected
         txtVirusScan.isEnabled = tglVirusScan.isSelected
         txtArgs.isEnabled = tglVirusScan.isSelected
         btnBrowse.isEnabled = tglVirusScan.isSelected
@@ -142,9 +132,9 @@ class AdvancedConfigPanel : SettingsPanel() {
         val linux = detectOS().isXdg
         tglSwingChooser.isSelected = linux && config.swingFileChooser
         tglSwingChooser.isEnabled = linux
+        tglForceIpv4.isSelected = config.forceIpv4
         tglSkipDupManifests.isSelected = config.skipDuplicateManifests
-        tglRunCmd.isSelected = config.runCommand
-        txtCmd.text = config.customCommand
+        commandRules.load()
         tglMarkDownloads.isSelected = config.markDownloadedFiles
         tglVirusScan.isSelected = config.runVirusScan
         txtVirusScan.text = config.virusScannerPath
@@ -167,9 +157,9 @@ class AdvancedConfigPanel : SettingsPanel() {
         if (detectOS().isXdg) {
             config.swingFileChooser = tglSwingChooser.isSelected
         }
+        config.forceIpv4 = tglForceIpv4.isSelected
         config.skipDuplicateManifests = tglSkipDupManifests.isSelected
-        config.runCommand = tglRunCmd.isSelected
-        config.customCommand = txtCmd.text
+        commandRules.save()
         config.markDownloadedFiles = tglMarkDownloads.isSelected
         config.runVirusScan = tglVirusScan.isSelected
         config.virusScannerPath = txtVirusScan.text

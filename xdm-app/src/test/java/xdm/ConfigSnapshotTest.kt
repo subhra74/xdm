@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import xdm.app.AppConfig
 import xdm.app.ConfigSnapshot
+import xdm.app.IAppConfig
 import java.io.File
 import java.nio.file.Files
 
@@ -82,5 +83,31 @@ class ConfigSnapshotTest {
 
         assertEquals(3, config.maxSegments, "edit saved")
         assertEquals(!shown.showDownloadCompleteWindow, config.showDownloadCompleteWindow, "edit saved")
+    }
+
+    /**
+     * Every settable [IAppConfig] property is in the snapshot's hand-written list. Reflection is fine
+     * here: tests never go into the native image.
+     */
+    @Test
+    fun snapshotCoversEveryConfigVar() {
+        val methods = IAppConfig::class.java.methods
+        val vars = methods.filter { it.parameterCount == 0 && it.returnType != Void.TYPE }.mapNotNull { getter ->
+            val name = when {
+                getter.name.startsWith("get") -> getter.name.removePrefix("get")
+                getter.name.startsWith("is") -> getter.name.removePrefix("is")
+                else -> return@mapNotNull null
+            }
+            val hasSetter = methods.any {
+                it.name == "set$name" && it.parameterCount == 1 && it.parameterTypes[0] == getter.returnType
+            }
+            if (hasSetter) name.replaceFirstChar { it.lowercase() } else null
+        }.toSet()
+        // Derived from another value that is in the list.
+        val excluded = setOf("showDownloadCompleteWindow")
+        val listed = ConfigSnapshot.propertyNames.toSet()
+        assertEquals(emptySet<String>(), vars - excluded - listed, "config vars missing from ConfigSnapshot")
+        assertEquals(emptySet<String>(), listed - vars, "ConfigSnapshot lists something that is not a config var")
+        assertEquals(listed.size, ConfigSnapshot.propertyNames.size, "no property listed twice")
     }
 }

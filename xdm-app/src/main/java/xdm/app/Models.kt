@@ -39,9 +39,6 @@ interface ListChangeListener {
     fun listItemUpdated(id: Long)
 }
 
-data class QueueItem(val id: Long, val resume: Boolean)
-/** File counts of a running batch, shown in its progress window. */
-data class BatchFileCounts(val done: Int, val failed: Int, val total: Int)
 
 /** One link offered in the batch dialog. */
 data class BatchRequestItem(

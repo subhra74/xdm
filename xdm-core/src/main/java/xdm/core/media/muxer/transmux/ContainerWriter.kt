@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core.media.muxer.transmux
 
@@ -13,7 +14,10 @@ import xdm.core.media.muxer.transmux.sample.Track
  * ([xdm.core.media.muxer.transmux.mkv.MkvWriter]).
  */
 interface ContainerWriter : SampleSink {
-    /** Writes the container structure and finalizes the file. Returns false if there is no media. */
+    /**
+     * Writes the container structure and finalizes the file. Returns false if there is no media (or the
+     * write was cancelled); an I/O failure is thrown, and the caller drops the partial output with [abort].
+     */
     fun finish(tracks: List<Track>): Boolean
 
     /** Closes handles and deletes any partial output. */

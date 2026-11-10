@@ -1,6 +1,7 @@
 package xdm.app
 
 import xdm.app.ui.components.SortKey
+import xdm.capture.MediaFilter
 import xdm.core.CoreConfig
 import xdm.core.util.AtomicIO
 import xdm.core.util.Logger
@@ -10,6 +11,9 @@ import xdm.core.util.TagReader
 import xdm.core.util.TagWriter
 import xdm.core.util.TaggedFile
 import xdm.core.util.byStableId
+import xdm.manager.DownloadCategory
+import xdm.manager.DownloadCompleteNotification
+import xdm.manager.EngineConfig
 import java.io.File
 import java.net.Authenticator
 import java.net.Proxy
@@ -23,19 +27,7 @@ enum class ListSelectionMode(override val id: Int) : StableId {
     CLASSIC(2),
 }
 
-/** What the app does when a download finishes. */
-enum class DownloadCompleteNotification(override val id: Int) : StableId {
-    /** The full [xdm.app.ui.screens.DownloadCompleteWindow] dialog. */
-    DIALOG(1),
-
-    /** A system tray balloon/notification; clicking it opens the main window. */
-    NOTIFICATION(2),
-
-    /** Nothing at all. */
-    NONE(3),
-}
-
-interface IAppConfig : CoreConfig {
+interface IAppConfig : EngineConfig {
     fun load()
     fun save()
     /**
@@ -45,7 +37,7 @@ interface IAppConfig : CoreConfig {
      */
     fun adoptSystemTheme(): Boolean
     /** What to show when a download finishes. */
-    var downloadCompleteNotification: DownloadCompleteNotification
+    override var downloadCompleteNotification: DownloadCompleteNotification
     /**
      * Legacy view of [downloadCompleteNotification]: true iff the mode is [DownloadCompleteNotification.DIALOG].
      * Not saved; kept for the "don't show again" check box of the dialog.
@@ -53,12 +45,12 @@ interface IAppConfig : CoreConfig {
     var showDownloadCompleteWindow: Boolean
     var runVirusScan: Boolean
     var runCommand: Boolean
-    var showDownloadProgressWindow: Boolean
+    override var showDownloadProgressWindow: Boolean
     var defaultDownloadFolder: String
-    var tempFolder: String
-    var autoRenameOnConflict: Boolean
+    override var tempFolder: String
+    override var autoRenameOnConflict: Boolean
     var shutdownAfterAllDone: Boolean
-    var maxParallelDownloads: Int
+    override var maxParallelDownloads: Int
     /**
      * The only remembered category choice: true after the user hand-picked None, so rules preselect
      * nothing for later browser captures; hand-picking a category clears it. Settings shows it inverted
@@ -72,10 +64,10 @@ interface IAppConfig : CoreConfig {
     var sortKey: SortKey
     var sortAscending: Boolean
     /** User-editable categories. Replaced as a whole on every change, never mutated in place. */
-    var categories: List<DownloadCategory>
+    override var categories: List<DownloadCategory>
     /** The categories shipped with the app, used by "Restore defaults". */
     val defaultCategories: List<DownloadCategory>
-    var minVideoSize: Long
+    override var minVideoSize: Long
     var lang: String
     /** "dark", "light" or "system" (follow the OS, read at every startup). */
     var theme: String
@@ -94,12 +86,12 @@ interface IAppConfig : CoreConfig {
     override var speedLimiterEnabled: Boolean
     override var speedLimit: Int
     var startDownloadAutomatically: Boolean
-    var overwriteExistingFiles: Boolean
+    override var overwriteExistingFiles: Boolean
     var fileExtensions: List<String>
     var defFileExtensions: List<String>
-    var videoExtensions: List<String>
+    override var videoExtensions: List<String>
     var defVideoExtensions: List<String>
-    var blockedHosts: List<String>
+    override var blockedHosts: List<String>
     var defBlockedHosts: List<String>
     var getServerTime: Boolean
     override var maxSegments: Int
@@ -110,7 +102,7 @@ interface IAppConfig : CoreConfig {
     override var proxyUser: String
     override var proxyPass: String
     var haltAfterDownload: Boolean
-    var keepAwake: Boolean
+    override var keepAwake: Boolean
     var runOnStartup: Boolean
     var customCommand: String
     var virusScannerPath: String
@@ -123,12 +115,16 @@ interface IAppConfig : CoreConfig {
      * When true, an HLS/DASH manifest the browser keeps re-requesting is fetched once per tab in a
      * short window instead of on every request (Advanced settings). Off by default.
      */
-    var skipDuplicateManifests: Boolean
+    override var skipDuplicateManifests: Boolean
+    /** Offer subtitle files the browser loads in the captured list (Browser monitoring). On by default. */
+    override var detectSubtitles: Boolean
+    /** "Save as SRT" last chosen for a captured WebVTT/TTML subtitle. On by default. */
+    var saveSubtitlesAsSrt: Boolean
     /**
      * When true, finished downloads are marked as coming from the internet (Zone.Identifier on
      * Windows, com.apple.quarantine on macOS), as a browser would. On by default. See QUARANTINE.md.
      */
-    var markDownloadedFiles: Boolean
+    override var markDownloadedFiles: Boolean
     /** Batch dialog mode last chosen when opened from the browser's "Download all": true = one batch. */
     var batchAsOneFromBrowser: Boolean
     /** Batch dialog mode last chosen when opened from the clipboard menu: true = one batch. */
@@ -143,6 +139,16 @@ interface IAppConfig : CoreConfig {
      * (Advanced settings). Off by default. See [xdm.app.utils.linux.PortalFileChooser].
      */
     var swingFileChooser: Boolean
+    /**
+     * Run the whole process on IPv4 only (`java.net.preferIPv4Stack`, Advanced settings, next start).
+     * Read before any networking by [AppConfig.readForceIpv4]. Off by default.
+     */
+    var forceIpv4: Boolean
+    /**
+     * Per-extension commands run when a download finishes, tried in order before the catch-all
+     * [customCommand] (which [runCommand] switches). See [CommandRule].
+     */
+    var commandRules: List<CommandRule>
     var listSelectionMode: ListSelectionMode
     /** Play a sound when a download finishes or fails; ignored while [downloadCompleteNotification] is NONE. */
     var playSound: Boolean
@@ -220,6 +226,16 @@ private const val F_SWING_FILE_CHOOSER = 52
 private const val F_UI_SCALE = 53
 private const val F_THEME_MIGRATED = 54
 private const val F_NOTIFIED_UPDATE_VERSION = 55
+private const val F_DETECT_SUBTITLES = 56
+private const val F_SAVE_SUBTITLES_AS_SRT = 57
+private const val F_FORCE_IPV4 = 58
+private const val F_COMMAND_RULES = 59
+
+// Inside F_COMMAND_RULES: one F_COMMAND_RULE record per rule, in order.
+private const val F_COMMAND_RULE = 1
+private const val RULE_EXTENSIONS = 1
+private const val RULE_COMMAND = 2
+private const val RULE_ENABLED = 3
 
 // Inside F_CATEGORIES: one F_CATEGORY record per category, in order.
 private const val F_CATEGORY = 1
@@ -244,6 +260,26 @@ class AppConfig(private val configDir: String) : IAppConfig {
         const val MAX_PARALLEL_DOWNLOADS = 256
         /** The Interface size choices in Settings, in percent. */
         val UI_SCALES = listOf(90, 100, 110, 125, 150)
+
+        /**
+         * Only [forceIpv4], read from the saved config at startup before anything opens a socket or
+         * resolves a name: `java.net.preferIPv4Stack` is read once, when the JDK's networking first loads.
+         */
+        fun readForceIpv4(configDir: String): Boolean {
+            if (!AtomicIO.exists(CONFIG_FILE, configDir)) return false
+            return AtomicIO.readTransacted(CONFIG_FILE, configDir) {
+                val r = TaggedFile.read(it)
+                var value = false
+                while (true) {
+                    when (r.next()) {
+                        -1 -> break
+                        F_FORCE_IPV4 -> value = r.bool()
+                        else -> r.skip()
+                    }
+                }
+                value
+            }.getOrDefault(false)
+        }
     }
 
     private val changeListeners = java.util.concurrent.CopyOnWriteArrayList<() -> Unit>()
@@ -331,12 +367,9 @@ class AppConfig(private val configDir: String) : IAppConfig {
         "MPG", "MPEG", "MP3", "M4A", "AAC", "FLAC", "WAV", "OGG", "OPUS"
     )
     override var fileExtensions: List<String> = defFileExtensions
-    override var defVideoExtensions: List<String> = listOf(
-        "MP4", "M3U8", "F4M", "WEBM", "OGG", "MP3", "AAC", "FLV", "MKV", "DIVX",
-        "MOV", "MPG", "MPEG", "OPUS", "MPD", "M4V", "M4A", "OGV", "OGA", "WAV", "FLAC", "3GP", "AVI", "WMV"
-    )
+    override var defVideoExtensions: List<String> = MediaFilter.DEFAULT_VIDEO_EXTENSIONS
     override var videoExtensions: List<String> = defVideoExtensions
-    override var defBlockedHosts: List<String> = listOf("update.microsoft.com", "windowsupdate.com", "thwawte.com")
+    override var defBlockedHosts: List<String> = MediaFilter.DEFAULT_BLOCKED_HOSTS
     override var blockedHosts: List<String> = defBlockedHosts
     override var getServerTime: Boolean = false
     override var maxSegments: Int = 8
@@ -357,11 +390,15 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var ignoreCertErrors: Boolean = false
     override var readTimeoutSeconds: Int = CoreConfig.DEFAULT_READ_TIMEOUT_SECONDS
     override var skipDuplicateManifests: Boolean = false
+    override var detectSubtitles: Boolean = true
+    override var saveSubtitlesAsSrt: Boolean = true
     override var markDownloadedFiles: Boolean = true
     override var batchAsOneFromBrowser: Boolean = true
     override var batchAsOneFromClipboard: Boolean = false
     override var nativeWayland: Boolean = true
     override var swingFileChooser: Boolean = false
+    override var forceIpv4: Boolean = false
+    override var commandRules: List<CommandRule> = emptyList()
     override var listSelectionMode: ListSelectionMode = ListSelectionMode.CLASSIC
 
     override fun applyAuthConfig() {
@@ -458,6 +495,18 @@ class AppConfig(private val configDir: String) : IAppConfig {
         w.int(F_UI_SCALE, uiScale)
         w.bool(F_THEME_MIGRATED, themeMigrated)
         w.string(F_NOTIFIED_UPDATE_VERSION, notifiedUpdateVersion)
+        w.bool(F_DETECT_SUBTITLES, detectSubtitles)
+        w.bool(F_SAVE_SUBTITLES_AS_SRT, saveSubtitlesAsSrt)
+        w.bool(F_FORCE_IPV4, forceIpv4)
+        w.message(F_COMMAND_RULES) {
+            commandRules.forEach { rule ->
+                message(F_COMMAND_RULE) {
+                    strings(RULE_EXTENSIONS, rule.extensions)
+                    string(RULE_COMMAND, rule.command)
+                    bool(RULE_ENABLED, rule.enabled)
+                }
+            }
+        }
         w.raw(unknownFields)
     }
 
@@ -528,6 +577,10 @@ class AppConfig(private val configDir: String) : IAppConfig {
                 F_UI_SCALE -> uiScale = r.int().takeIf { it in UI_SCALES } ?: 100
                 F_THEME_MIGRATED -> themeMigrated = r.bool()
                 F_NOTIFIED_UPDATE_VERSION -> notifiedUpdateVersion = r.string()
+                F_DETECT_SUBTITLES -> detectSubtitles = r.bool()
+                F_SAVE_SUBTITLES_AS_SRT -> saveSubtitlesAsSrt = r.bool()
+                F_FORCE_IPV4 -> forceIpv4 = r.bool()
+                F_COMMAND_RULES -> commandRules = readCommandRules(r.message())
                 else -> unknown.raw(r.rawField())
             }
         }
@@ -535,6 +588,32 @@ class AppConfig(private val configDir: String) : IAppConfig {
         noneFolder = none
         categories = cats ?: DownloadCategory.defaults(defaultDownloadFolder)
         unknownFields = unknown.toByteArray()
+    }
+
+    private fun readCommandRules(r: TagReader): List<CommandRule> {
+        val list = mutableListOf<CommandRule>()
+        while (true) {
+            when (r.next()) {
+                -1 -> return list
+                F_COMMAND_RULE -> {
+                    val rule = r.message()
+                    var extensions = emptyList<String>()
+                    var command = ""
+                    var enabled = true
+                    while (true) {
+                        when (rule.next()) {
+                            -1 -> break
+                            RULE_EXTENSIONS -> extensions = rule.strings()
+                            RULE_COMMAND -> command = rule.string()
+                            RULE_ENABLED -> enabled = rule.bool()
+                            else -> rule.skip()
+                        }
+                    }
+                    list.add(CommandRule(extensions, command, enabled))
+                }
+                else -> r.skip()
+            }
+        }
     }
 
     private fun writeCategory(w: TagWriter, cat: DownloadCategory) = w.message(F_CATEGORY) {

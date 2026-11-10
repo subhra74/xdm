@@ -1,6 +1,6 @@
 package xdm.app.ui.components
 
-import xdm.app.DownloadCategory
+import xdm.manager.DownloadCategory
 import java.awt.Color
 import javax.swing.UIManager
 

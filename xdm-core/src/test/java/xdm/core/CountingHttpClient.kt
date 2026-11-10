@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core
 
@@ -31,5 +32,5 @@ fun httpClientWithReadTimeout(seconds: Int): HttpClientImpl {
     val ctor = HttpClientImpl::class.java.constructors.firstOrNull {
         it.parameterCount == 4 && it.parameterTypes[3] == Int::class.javaPrimitiveType
     }
-    return ctor?.newInstance(8, null, false, seconds) as HttpClientImpl? ?: HttpClientImpl(8)
+    return ctor?.newInstance(8, null, null, seconds) as HttpClientImpl? ?: HttpClientImpl(8)
 }

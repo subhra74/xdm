@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core.network.http.impl
 
@@ -8,6 +9,7 @@ import okio.ByteString.Companion.decodeBase64
 import okio.ByteString.Companion.toByteString
 import xdm.core.CoreConfig
 import xdm.core.network.http.*
+import xdm.core.util.Gc
 import xdm.core.util.Logger
 import java.net.InetSocketAddress
 import java.net.Proxy
@@ -18,14 +20,16 @@ import java.util.concurrent.atomic.AtomicBoolean
 /**
  * OkHttp-backed client.
  *
- * TLS certificate and hostname verification use the platform defaults. Only when
- * [ignoreCertErrors] is true (an explicit, off-by-default user setting) are certificate chain and
- * hostname checks skipped, which leaves connections open to interception.
+ * TLS certificate and hostname verification use the platform's checks plus the certificates the user
+ * trusted ([CertExceptions], through the shared context [SharedTls]). A certificate refused on the way
+ * goes to [onRefused], so the app can offer to trust it. Only a [certTrust] the app passes (the
+ * desktop's explicit, off-by-default setting) replaces those checks.
  */
 class HttpClientImpl @JvmOverloads constructor(
     poolSize: Int,
     proxy: Proxy? = null,
-    ignoreCertErrors: Boolean = false,
+    /** Certificate checks of the app's own instead of the shared ones; null for the shared ones. */
+    certTrust: CertTrust? = null,
     /** How long a read may wait for data before failing with a timeout, so a stalled server is retried. */
     readTimeoutSeconds: Int = CoreConfig.DEFAULT_READ_TIMEOUT_SECONDS,
     /** Credentials for an authenticating HTTP proxy; empty user means none are configured. */
@@ -37,6 +41,8 @@ class HttpClientImpl @JvmOverloads constructor(
     serverAuth: Boolean = false,
     /** Resolves host names; tests pass a fixed address list. */
     dns: Dns = Dns.SYSTEM,
+    /** A certificate was refused: the host and its leaf certificate's fingerprint ([CertExceptions]). */
+    private val onRefused: ((host: String, fingerprint: String) -> Unit)? = null,
 ) : PoolingHttpClient {
     /** Set when the user cancels a credentials prompt: this client stops asking. */
     private val authCancelled = AtomicBoolean(false)
@@ -71,7 +77,7 @@ class HttpClientImpl @JvmOverloads constructor(
             .fastFallback(true)
             .protocols(listOf(Protocol.HTTP_1_1))
             .connectTimeout(30, TimeUnit.SECONDS).readTimeout(readTimeoutSeconds.toLong(), TimeUnit.SECONDS).retryOnConnectionFailure(false)
-            .apply { if (ignoreCertErrors) trustAllCertificates(this) else sharedTls(this) }
+            .apply { if (certTrust != null) ownTrust(this, certTrust) else sharedTls(this) }
             .apply { if (proxy != null) proxyAuthentication(this, proxy, proxyUser, proxyPassword) }
             .apply { if (serverAuth && auth != null) serverAuthentication(this, auth) }
             .build()
@@ -80,6 +86,13 @@ class HttpClientImpl @JvmOverloads constructor(
     private fun sharedTls(builder: OkHttpClient.Builder) {
         val tls = SharedTls.instance ?: return
         builder.sslSocketFactory(tls.socketFactory, tls.trustManager)
+            .hostnameVerifier(tls.hostnameVerifier(onRefused))
+    }
+
+    private fun ownTrust(builder: OkHttpClient.Builder, trust: CertTrust) {
+        Logger.info("XDM", "TLS certificate checks replaced by the app (${trust.javaClass.simpleName})")
+        builder.sslSocketFactory(trust.socketFactory, trust.trustManager)
+            .hostnameVerifier(trust.hostnameVerifier)
     }
 
     /**
@@ -187,13 +200,6 @@ class HttpClientImpl @JvmOverloads constructor(
             }
             .build()
 
-    private fun trustAllCertificates(builder: OkHttpClient.Builder) {
-        Logger.info("XDM", "TLS certificate and hostname verification disabled by user setting")
-        val tls = SharedTls.trustAll
-        builder.sslSocketFactory(tls.socketFactory, tls.trustManager)
-            .hostnameVerifier { _, _ -> true }
-    }
-
     override fun close() {
         openCalls.forEach { it.cancel() }
         openCalls.clear()
@@ -206,7 +212,7 @@ class HttpClientImpl @JvmOverloads constructor(
             Logger.info("XDM", "Trying connection pool clean up..")
             client.cache?.close()
             Logger.info("XDM", "Connection pool clean up.. triggering GC")
-            System.gc()
+            Gc.collect()
         }.apply { isDaemon = true }.start()
     }
 
@@ -248,6 +254,9 @@ class HttpClientImpl @JvmOverloads constructor(
                 call.execute()
             } catch (e: Throwable) {
                 openCalls.remove(call)
+                untrustedCertificate(e)?.let { refused ->
+                    onRefused?.invoke(refused.host ?: request.url.host.lowercase(), refused.fingerprint)
+                }
                 throw e
             }
             val body = response.body

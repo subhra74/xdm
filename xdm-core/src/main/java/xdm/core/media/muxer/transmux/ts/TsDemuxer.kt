@@ -1,5 +1,6 @@
 // Copyright 2026 Subhra Das Gupta
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later WITH AdditionRef-XDM-Android-Official-Store-Builds
+// Additional terms and the exception: xdm-android/NOTICE
 
 package xdm.core.media.muxer.transmux.ts
 
@@ -9,6 +10,9 @@ import xdm.core.media.muxer.transmux.es.ByteArrayBuilder
 import xdm.core.media.muxer.transmux.es.ElementaryStreamReader
 import xdm.core.media.muxer.transmux.es.H264Reader
 import xdm.core.media.muxer.transmux.es.H265Reader
+import xdm.core.media.muxer.transmux.es.MpegVideoReader
+import xdm.core.media.muxer.transmux.es.LatmReader
+import xdm.core.media.muxer.transmux.es.DtsReader
 import xdm.core.media.muxer.transmux.es.MpegAudioReader
 import xdm.core.media.muxer.transmux.es.OpusReader
 import xdm.core.media.muxer.transmux.es.SampleSink
@@ -22,16 +26,32 @@ import xdm.core.util.Logger
  * per-codec [ElementaryStreamReader]s. State (PMT, PES buffers, readers, timeline) persists across
  * [feed] calls so concatenated HLS segments form one continuous output.
  *
- * Supports 188- (TS), 192- (M2TS) and 204-byte (TS+FEC) packets.
+ * Segments after an HLS discontinuity often come from another encoder with other PIDs (and the
+ * same table version), so PAT and PMT are re-read whenever their content changes: a stream on a new
+ * PID continues the existing track of the same codec, and only a genuinely additional stream adds
+ * a track.
+ *
+ * Supports 188- (TS), 192- (M2TS: a 4-byte timestamp header before each sync byte) and
+ * 204-byte (TS+FEC) packets.
  */
 class TsDemuxer(private val sink: SampleSink) {
 
     private var packetSize = 188
+    /** Bytes before the 0x47 sync byte in each packet (4 for M2TS). */
+    private var syncOffset = 0
     private var packetSizeResolved = false
 
     private var pmtPid = -1
-    private var pmtParsed = false
+    /** ES loop bytes of the PMT in effect, to notice when a new one differs. */
+    private var pmtEsLoop: ByteArray? = null
     private val readersByPid = HashMap<Int, PesAssembler>()
+    private val kindByPid = HashMap<Int, StreamReader>()
+    /** Every reader created, in creation order; one per output track. */
+    private val readers = ArrayList<Pair<StreamReader, ElementaryStreamReader>>()
+    /** PIDs already reported as skipped. */
+    private val loggedPids = HashSet<Int>()
+    /** Opus channel_config_code of the PMT being applied (for a new Opus reader). */
+    private var opusChannelConfig: Int? = null
     /** Tracks in PMT declaration order, for stable output ordering. */
     val tracks = ArrayList<Track>()
 
@@ -55,19 +75,18 @@ class TsDemuxer(private val sink: SampleSink) {
             packetSize = detectPacketSize(data, total) ?: run {
                 stash(data, 0, total); return
             }
+            syncOffset = if (packetSize == 192) 4 else 0
             packetSizeResolved = true
         }
 
-        var pos = alignToSync(data, 0, total)
+        // pos is a packet start; its sync byte sits at pos + syncOffset.
+        var pos = alignToSync(data, syncOffset, total) - syncOffset
         while (pos + packetSize <= total) {
-            if ((data[pos].toInt() and 0xFF) != 0x47) {
-                pos = alignToSync(data, pos, total)
-                if (pos < 0) { return }
+            if ((data[pos + syncOffset].toInt() and 0xFF) != 0x47) {
+                pos = alignToSync(data, pos + syncOffset + 1, total) - syncOffset
                 continue
             }
-            // M2TS prepends 4 bytes; the 0x47 sync is at the start of the 188-byte TS portion.
-            val tsStart = if (packetSize == 192) pos + 4 else pos
-            parsePacket(data, tsStart)
+            parsePacket(data, pos + syncOffset)
             pos += packetSize
         }
         // Stash remainder for next feed.
@@ -78,10 +97,8 @@ class TsDemuxer(private val sink: SampleSink) {
 
     /** Flush any buffered PES and let readers emit trailing samples. Call once after the last feed. */
     fun finish() {
-        for (asm in readersByPid.values) {
-            asm.flush()
-            asm.reader.finish()
-        }
+        for (asm in readersByPid.values.toList()) asm.flush()
+        for ((_, reader) in readers) reader.finish()
     }
 
     private fun carryReset() {
@@ -110,22 +127,24 @@ class TsDemuxer(private val sink: SampleSink) {
         return end
     }
 
-    /** Tries 188/192/204 by checking that sync bytes recur at the candidate stride. */
+    /**
+     * Tries 188/192/204 by checking that sync bytes recur at the candidate stride (at least
+     * [SYNC_CONFIRMATIONS] times). Null when there is not enough data yet to tell.
+     */
     private fun detectPacketSize(data: ByteArray, total: Int): Int? {
         val candidates = intArrayOf(188, 192, 204)
-        for (start in 0 until minOf(total, 188)) {
+        for (start in 0 until minOf(total, 204 + 4)) {
             if ((data[start].toInt() and 0xFF) != 0x47) continue
             for (size in candidates) {
-                val syncOffset = if (size == 192) 4 else 0
-                var ok = true
+                // M2TS: the packet begins 4 bytes before its sync byte.
+                if (size == 192 && start < 4) continue
                 var count = 0
-                var p = start
-                while (p + size < total && count < 5) {
-                    if ((data[p + syncOffset].toInt() and 0xFF) != 0x47) { ok = false; break }
+                var p = start + size
+                while (p < total && count < SYNC_CONFIRMATIONS && (data[p].toInt() and 0xFF) == 0x47) {
                     p += size
                     count++
                 }
-                if (ok && count >= 1) return size
+                if (count >= SYNC_CONFIRMATIONS) return size
             }
         }
         return null
@@ -149,104 +168,264 @@ class TsDemuxer(private val sink: SampleSink) {
         if (p >= payloadEnd) return
 
         when {
-            pid == 0 -> parsePat(data, p, payloadEnd, payloadUnitStart)
-            pid == pmtPid -> parsePmt(data, p, payloadEnd, payloadUnitStart)
+            pid == 0 -> patSection.feed(data, p, payloadEnd, payloadUnitStart)
+            pid == pmtPid -> pmtSection.feed(data, p, payloadEnd, payloadUnitStart)
             readersByPid.containsKey(pid) ->
                 readersByPid[pid]!!.consumePacket(data, p, payloadEnd, payloadUnitStart)
         }
     }
 
-    private fun parsePat(data: ByteArray, start: Int, end: Int, pusi: Boolean) {
-        if (pmtPid >= 0) return
-        var p = start
-        if (pusi) p += 1 + (data[p].toInt() and 0xFF) // pointer_field
-        // table_id(1) + section header(2) + ... skip to program loop.
-        if (p + 8 > end) return
-        val sectionLength = ((data[p + 1].toInt() and 0x0F) shl 8) or (data[p + 2].toInt() and 0xFF)
-        var loop = p + 8
-        val sectionEnd = minOf(p + 3 + sectionLength - 4, end) // minus CRC32
+    /**
+     * Reassembles PSI sections (PAT, PMT) that may span several TS packets, as ffmpeg does: a PMT
+     * with many streams or descriptors (DVB restreams) does not fit in one packet.
+     */
+    private class SectionAssembler(private val onSection: (ByteArray) -> Unit) {
+        private val buf = ByteArrayBuilder(1024)
+        private var collecting = false
+
+        fun feed(data: ByteArray, start: Int, end: Int, pusi: Boolean) {
+            var p = start
+            if (pusi) {
+                val pointer = data[p].toInt() and 0xFF
+                p++
+                // Bytes before the pointer end the previous section.
+                if (collecting && pointer > 0) append(data, p, minOf(p + pointer, end))
+                p += pointer
+                buf.reset()
+                collecting = true
+            } else if (!collecting) {
+                return
+            }
+            append(data, p, end)
+        }
+
+        private fun append(data: ByteArray, from: Int, to: Int) {
+            if (from >= to) return
+            buf.write(data, from, to - from)
+            // One or more complete sections may now be buffered (stuffing 0xFF ends the run).
+            while (buf.size >= 3) {
+                val b = buf.buffer
+                if ((b[0].toInt() and 0xFF) == 0xFF) { buf.reset(); collecting = false; return }
+                val length = 3 + (((b[1].toInt() and 0x0F) shl 8) or (b[2].toInt() and 0xFF))
+                if (buf.size < length) return
+                onSection(b.copyOf(length))
+                buf.compact(length)
+            }
+        }
+    }
+
+    private val patSection = SectionAssembler { parsePat(it) }
+    private val pmtSection = SectionAssembler { parsePmt(it) }
+
+    /** [s] is a whole section from its table_id. */
+    private fun parsePat(s: ByteArray) {
+        if (s.size < 12 || (s[0].toInt() and 0xFF) != 0x00) return
+        if ((s[5].toInt() and 0x01) == 0) return // current_next_indicator: not yet applicable
+        var loop = 8
+        val sectionEnd = s.size - 4 // minus CRC32
         while (loop + 4 <= sectionEnd) {
-            val programNumber = ((data[loop].toInt() and 0xFF) shl 8) or (data[loop + 1].toInt() and 0xFF)
-            val pid = ((data[loop + 2].toInt() and 0x1F) shl 8) or (data[loop + 3].toInt() and 0xFF)
-            if (programNumber != 0) { pmtPid = pid; return }
+            val programNumber = ((s[loop].toInt() and 0xFF) shl 8) or (s[loop + 1].toInt() and 0xFF)
+            val pid = ((s[loop + 2].toInt() and 0x1F) shl 8) or (s[loop + 3].toInt() and 0xFF)
+            if (programNumber != 0) {
+                if (pid != pmtPid) {
+                    if (pmtPid >= 0) Logger.info("XDM", "TS: PMT moved from pid=$pmtPid to pid=$pid")
+                    pmtPid = pid
+                    pmtEsLoop = null
+                }
+                return
+            }
             loop += 4
         }
     }
 
-    private fun parsePmt(data: ByteArray, start: Int, end: Int, pusi: Boolean) {
-        if (pmtParsed) return // already configured
-        var p = start
-        if (pusi) p += 1 + (data[p].toInt() and 0xFF)
-        if (p + 12 > end) return
-        val sectionLength = ((data[p + 1].toInt() and 0x0F) shl 8) or (data[p + 2].toInt() and 0xFF)
-        val sectionEnd = minOf(p + 3 + sectionLength - 4, end)
-        val programInfoLength = ((data[p + 10].toInt() and 0x0F) shl 8) or (data[p + 11].toInt() and 0xFF)
-        var esLoop = p + 12 + programInfoLength
-        while (esLoop + 5 <= sectionEnd) {
-            val streamType = data[esLoop].toInt() and 0xFF
-            val esPid = ((data[esLoop + 1].toInt() and 0x1F) shl 8) or (data[esLoop + 2].toInt() and 0xFF)
-            val esInfoLength = ((data[esLoop + 3].toInt() and 0x0F) shl 8) or (data[esLoop + 4].toInt() and 0xFF)
-            val info = readEsDescriptors(data, esLoop + 5, minOf(esLoop + 5 + esInfoLength, sectionEnd))
-            val codec = StreamType.fromStreamType(streamType, info.registration, info.dvbAudio)
-            addReader(esPid, streamType, codec, info)
-            esLoop += 5 + esInfoLength
+    private fun parsePmt(s: ByteArray) {
+        if (s.size < 16 || (s[0].toInt() and 0xFF) != 0x02) return
+        if ((s[5].toInt() and 0x01) == 0) return // current_next_indicator
+        val sectionEnd = s.size - 4
+        val programInfoLength = ((s[10].toInt() and 0x0F) shl 8) or (s[11].toInt() and 0xFF)
+        val loopStart = 12 + programInfoLength
+        if (loopStart > sectionEnd) return
+        // PMTs repeat in every segment: only a changed program needs work.
+        val program = s.copyOfRange(10, sectionEnd)
+        if (pmtEsLoop?.contentEquals(program) == true) return
+        val firstPmt = pmtEsLoop == null && readers.isEmpty()
+        pmtEsLoop = program
+        // A program-level registration (HDMV/HDPR for Blu-ray) changes what some stream types mean.
+        val programRegistration = readEsDescriptors(s, 12, loopStart).registration
+
+        val streams = ArrayList<Triple<Int, Int, EsDescriptors>>() // stream_type, pid, descriptors
+        var esLoopPos = loopStart
+        while (esLoopPos + 5 <= sectionEnd) {
+            val streamType = s[esLoopPos].toInt() and 0xFF
+            val esPid = ((s[esLoopPos + 1].toInt() and 0x1F) shl 8) or (s[esLoopPos + 2].toInt() and 0xFF)
+            val esInfoLength = ((s[esLoopPos + 3].toInt() and 0x0F) shl 8) or (s[esLoopPos + 4].toInt() and 0xFF)
+            val info = readEsDescriptors(s, esLoopPos + 5, minOf(esLoopPos + 5 + esInfoLength, sectionEnd))
+            streams.add(Triple(streamType, esPid, info))
+            esLoopPos += 5 + esInfoLength
         }
-        pmtParsed = true
+        if (!firstPmt) Logger.info("XDM", "TS: PMT changed; remapping ${streams.size} streams")
+        applyPmt(streams, programRegistration)
     }
 
-    /** What we use from an ES_info descriptor loop. */
-    private class EsDescriptors(val registration: Int?, val opusChannelConfig: Int?, val dvbAudio: Codec?)
+    /**
+     * Points each PID of a new PMT at a reader. A PID keeps its reader if its kind is unchanged;
+     * otherwise the stream continues the first existing reader of the same kind not claimed by
+     * another PID of this PMT; only when there is none does it get a new reader (and track).
+     */
+    private fun applyPmt(streams: List<Triple<Int, Int, EsDescriptors>>, programRegistration: Int?) {
+        val newByPid = HashMap<Int, PesAssembler>()
+        val newKindByPid = HashMap<Int, StreamReader>()
+        val claimed = HashSet<ElementaryStreamReader>()
+        val pending = ArrayList<Triple<Int, StreamReader, Int?>>() // pid, reader, Opus channel config
+        for ((streamType, pid, info) in streams) {
+            when (val m = StreamType.map(streamType, programRegistration, info.registration, info.dvbAudio, info.hasOther)) {
+                is StreamMapping.Skip -> {
+                    if (pid !in loggedPids) {
+                        loggedPids += pid
+                        if (m.unsupported != null) {
+                            Logger.error("XDM", "TS: ${m.unsupported} (pid=$pid, stream_type=0x${Integer.toHexString(streamType)}) can't be muxed; leaving it out")
+                        } else {
+                            Logger.info("XDM", "TS: skipping non-A/V stream pid=$pid stream_type=0x${Integer.toHexString(streamType)}")
+                        }
+                    }
+                }
+                is StreamMapping.Probe -> {
+                    newByPid[pid] = PesAssembler(ProbeReader(pid, m.fallback))
+                }
+                is StreamMapping.Read -> {
+                    val asm = readersByPid[pid]
+                    if (asm != null && kindByPid[pid] == m.reader && asm.reader !in claimed) {
+                        newByPid[pid] = asm; newKindByPid[pid] = m.reader; claimed += asm.reader
+                    } else {
+                        pending += Triple(pid, m.reader, info.opusChannelConfig)
+                    }
+                }
+            }
+        }
+        for ((pid, kind, opusConfig) in pending) {
+            opusChannelConfig = opusConfig
+            val reader = readerFor(kind, claimed)
+            claimed += reader
+            newByPid[pid] = PesAssembler(reader)
+            newKindByPid[pid] = kind
+        }
+        // Hand over cleanly: whatever a dropped or re-pointed PID still buffers belongs to the old stream.
+        for ((pid, asm) in readersByPid.entries.toList()) if (newByPid[pid] !== asm) asm.flush()
+        readersByPid.clear(); readersByPid.putAll(newByPid)
+        kindByPid.clear(); kindByPid.putAll(newKindByPid)
+    }
+
+    /** The first existing reader of [kind] not in [claimed], else a new one (and track). */
+    private fun readerFor(kind: StreamReader, claimed: Set<ElementaryStreamReader>): ElementaryStreamReader =
+        readers.firstOrNull { (k, r) -> k == kind && r !in claimed }?.second
+            ?: createReader(kind).also {
+                readers += kind to it
+                tracks.add(it.track)
+            }
+
+    /** What we use from a descriptor loop. */
+    private class EsDescriptors(
+        val registration: Int?,
+        val opusChannelConfig: Int?,
+        val dvbAudio: StreamReader?,
+        /** Any descriptor other than registration/language (DVB subtitles, teletext, ...). */
+        val hasOther: Boolean,
+    )
 
     /**
-     * Scans an ES_info descriptor loop for the registration_descriptor (tag 0x05) format id and the
-     * Opus channel_config_code (extension descriptor tag 0x7F, extension tag 0x80).
+     * Scans a descriptor loop for the registration_descriptor (tag 0x05) format id, the Opus
+     * channel_config_code (extension descriptor 0x7F/0x80) and the DVB AC-3/E-AC-3/DTS descriptors.
      */
     private fun readEsDescriptors(data: ByteArray, start: Int, end: Int): EsDescriptors {
         var registration: Int? = null
         var opusChannelConfig: Int? = null
-        var dvbAudio: Codec? = null
+        var dvbAudio: StreamReader? = null
+        var hasOther = false
         var d = start
         while (d + 2 <= end) {
             val tag = data[d].toInt() and 0xFF
             val len = data[d + 1].toInt() and 0xFF
             if (d + 2 + len > end) break
-            if (tag == 0x05 && len >= 4 && registration == null) {
-                registration = ((data[d + 2].toInt() and 0xFF) shl 24) or
-                    ((data[d + 3].toInt() and 0xFF) shl 16) or
-                    ((data[d + 4].toInt() and 0xFF) shl 8) or
-                    (data[d + 5].toInt() and 0xFF)
-            } else if (tag == 0x7F && len >= 2 && (data[d + 2].toInt() and 0xFF) == 0x80) {
-                opusChannelConfig = data[d + 3].toInt() and 0xFF
-            } else if (tag == 0x6A) {
-                dvbAudio = Codec.AC3        // DVB AC-3_descriptor
-            } else if (tag == 0x7A) {
-                dvbAudio = Codec.EAC3       // DVB enhanced_AC-3_descriptor
+            when {
+                tag == 0x05 && len >= 4 && registration == null ->
+                    registration = ((data[d + 2].toInt() and 0xFF) shl 24) or
+                        ((data[d + 3].toInt() and 0xFF) shl 16) or
+                        ((data[d + 4].toInt() and 0xFF) shl 8) or
+                        (data[d + 5].toInt() and 0xFF)
+                tag == 0x7F && len >= 2 && (data[d + 2].toInt() and 0xFF) == 0x80 ->
+                    opusChannelConfig = data[d + 3].toInt() and 0xFF
+                tag == 0x6A -> dvbAudio = StreamReader.AC3   // DVB AC-3_descriptor
+                tag == 0x7A -> dvbAudio = StreamReader.EAC3  // DVB enhanced_AC-3_descriptor
+                tag == 0x7B -> dvbAudio = StreamReader.DTS   // DVB DTS_descriptor
+                tag != 0x0A -> hasOther = true               // 0x0A: ISO 639 language
             }
             d += 2 + len
         }
-        return EsDescriptors(registration, opusChannelConfig, dvbAudio)
+        return EsDescriptors(registration, opusChannelConfig, dvbAudio, hasOther)
     }
 
-    private fun addReader(pid: Int, streamType: Int, codec: Codec, info: EsDescriptors) {
-        if (readersByPid.containsKey(pid)) return
-        if (codec == Codec.UNKNOWN) {
-            // Timed metadata (ID3), SCTE-35, subtitles, ...: not media we mux.
-            Logger.info("XDM", "TS: skipping non-A/V stream pid=$pid stream_type=0x${Integer.toHexString(streamType)}")
+    /** Stands in for the reader of a stream whose codec its first PES payloads have to show. */
+    private inner class ProbeReader(val pid: Int, val fallback: StreamReader?) : ElementaryStreamReader {
+        override val track = Track(Codec.UNKNOWN)
+        var attempts = 0
+        override fun consume(data: ByteArray, offset: Int, length: Int, pts: Long, dts: Long) =
+            identify(pid, this, data, offset, length, pts, dts)
+        override fun finish() {}
+    }
+
+    private fun identify(pid: Int, probe: ProbeReader, data: ByteArray, offset: Int, length: Int, pts: Long, dts: Long) {
+        val asm = readersByPid[pid]?.takeIf { it.reader === probe } ?: return
+        probe.attempts++
+        // A PES may start inside a frame: give the probe a few PES before falling back.
+        val kind = sniffAudio(data, offset, length) ?: if (probe.attempts < PROBE_PES) return else probe.fallback
+        if (kind == null) {
+            Logger.info("XDM", "TS: skipping unidentified private stream pid=$pid")
+            readersByPid.remove(pid)
+            kindByPid.remove(pid)
             return
         }
-        val reader: ElementaryStreamReader = when (codec) {
-            Codec.H264 -> H264Reader(sink)
-            Codec.H265 -> H265Reader(sink)
-            Codec.AAC -> AdtsReader(sink)
-            Codec.AC3 -> Ac3Reader(sink, eac3 = false)
-            Codec.EAC3 -> Ac3Reader(sink, eac3 = true)
-            Codec.MP3 -> MpegAudioReader(sink)
-            Codec.OPUS -> OpusReader(sink, info.opusChannelConfig)
-            else -> throw UnsupportedCodecException(
-                "Unsupported codec in TS stream: $codec (pid=$pid, stream_type=0x${Integer.toHexString(streamType)})"
-            )
+        Logger.info("XDM", "TS: stream pid=$pid identified as $kind")
+        val reader = readerFor(kind, readersByPid.values.map { it.reader }.toSet())
+        asm.reader = reader
+        kindByPid[pid] = kind
+        reader.consume(data, offset, length, pts, dts)
+    }
+
+    /** Audio codec from the first bytes of a PES payload, or null if they don't say. */
+    private fun sniffAudio(data: ByteArray, offset: Int, length: Int): StreamReader? {
+        if (length < 6) return null
+        val b0 = data[offset].toInt() and 0xFF
+        val b1 = data[offset + 1].toInt() and 0xFF
+        return when {
+            b0 == 0xFF && (b1 and 0xF6) == 0xF0 -> StreamReader.ADTS                       // ADTS: layer 00
+            b0 == 0xFF && (b1 and 0xE0) == 0xE0 && (b1 and 0x06) != 0 -> StreamReader.MPEG_AUDIO
+            b0 == 0x56 && (b1 and 0xE0) == 0xE0 -> StreamReader.LATM                       // LOAS sync 0x2B7
+            b0 == 0x0B && b1 == 0x77 ->                                                    // AC-3 family: bsid
+                if (((data[offset + 5].toInt() and 0xFF) shr 3) > 10) StreamReader.EAC3 else StreamReader.AC3
+            b0 == 0x7F && b1 == 0xFE && (data[offset + 2].toInt() and 0xFF) == 0x80 &&
+                (data[offset + 3].toInt() and 0xFF) == 0x01 -> StreamReader.DTS
+            else -> null
         }
-        readersByPid[pid] = PesAssembler(reader)
-        tracks.add(reader.track)
+    }
+
+    private fun createReader(kind: StreamReader): ElementaryStreamReader = when (kind) {
+        StreamReader.H264 -> H264Reader(sink)
+        StreamReader.H265 -> H265Reader(sink)
+        StreamReader.ADTS -> AdtsReader(sink)
+        StreamReader.LATM -> LatmReader(sink)
+        StreamReader.AC3 -> Ac3Reader(sink, eac3 = false)
+        StreamReader.EAC3 -> Ac3Reader(sink, eac3 = true)
+        StreamReader.MPEG_AUDIO -> MpegAudioReader(sink)
+        StreamReader.OPUS -> OpusReader(sink, opusChannelConfig)
+        StreamReader.MPEG_VIDEO -> MpegVideoReader(sink, mpeg4 = false)
+        StreamReader.MPEG4_VISUAL -> MpegVideoReader(sink, mpeg4 = true)
+        StreamReader.DTS -> DtsReader(sink)
+    }
+
+    private companion object {
+        /** Sync bytes that must recur at a packet size's stride before it is accepted. */
+        const val SYNC_CONFIRMATIONS = 3
+        /** PES payloads a probe looks at before falling back. */
+        const val PROBE_PES = 4
     }
 }

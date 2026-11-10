@@ -1,6 +1,7 @@
 package xdm.app.ui.components
 
 import xdm.app.AppContext
+import xdm.app.InsecureTrust
 import xdm.app.I8N.text
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
@@ -489,7 +490,7 @@ class ChecksumPanel(
 
     private fun newHttpClient() = AppContext.config.let {
         HttpClientImpl(
-            2, it.toProxy(), it.ignoreCertErrors, it.readTimeoutSeconds, it.proxyUser, it.proxyPass,
+            2, it.toProxy(), InsecureTrust.ifEnabled(it.ignoreCertErrors), it.readTimeoutSeconds, it.proxyUser, it.proxyPass,
             auth = AppContext.httpAuth, serverAuth = true,
         )
     }

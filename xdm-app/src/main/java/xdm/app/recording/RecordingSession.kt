@@ -1,8 +1,7 @@
 package xdm.app.recording
 
 import xdm.app.AppContext
-import xdm.app.DbRecord
-import xdm.app.RecordStatus
+import xdm.app.InsecureTrust
 import xdm.app.I8N.text
 import xdm.app.ui.screens.BatchDownloadDialog
 import xdm.app.ui.screens.BrowserSetupDialog
@@ -15,7 +14,6 @@ import xdm.app.ui.components.ChecksumWindow
 import xdm.app.ui.screens.SettingsWindow
 import xdm.app.ui.screens.AppWindow
 import xdm.app.utils.SoundPlayer
-import xdm.app.utils.getFileFolder
 import xdm.core.checksum.ChecksumAlgorithm
 import xdm.core.checksum.ChecksumResult
 import xdm.core.checksum.ChecksumVerifier
@@ -24,6 +22,9 @@ import xdm.core.downloaders.subtitleFileName
 import xdm.core.network.http.impl.HttpClientImpl
 import xdm.core.util.Logger
 import xdm.integration.BrowserIntegration
+import xdm.manager.DbRecord
+import xdm.manager.RecordStatus
+import xdm.manager.getFileFolder
 import java.awt.Component
 import java.awt.Container
 import java.awt.Window
@@ -336,7 +337,7 @@ object RecordingSession {
         val fileName = name ?: record.fileName
         val file = File(folder ?: error("no folder for ${record.fileName}"), fileName)
         val client = AppContext.config.let {
-            HttpClientImpl(2, it.toProxy(), it.ignoreCertErrors, it.readTimeoutSeconds, it.proxyUser, it.proxyPass)
+            HttpClientImpl(2, it.toProxy(), InsecureTrust.ifEnabled(it.ignoreCertErrors), it.readTimeoutSeconds, it.proxyUser, it.proxyPass)
         }
         try {
             for (algorithm in ChecksumAlgorithm.entries) {

@@ -24,13 +24,13 @@ import xdm.core.network.http.HeaderMap
 import xdm.core.util.CoreUtils
 import xdm.core.util.FileUtils
 import xdm.core.util.Logger
-import xdm.integration.AudioChoice
-import xdm.integration.AudioMode
-import xdm.integration.FormatChoice
-import xdm.integration.StreamChoices
-import xdm.integration.StreamPick
-import xdm.integration.VideoHelper
-import xdm.integration.VideoHelper.LoadedManifest
+import xdm.capture.AudioChoice
+import xdm.capture.AudioMode
+import xdm.capture.FormatChoice
+import xdm.capture.StreamChoices
+import xdm.capture.StreamPick
+import xdm.capture.VideoHelper
+import xdm.capture.VideoHelper.LoadedManifest
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
@@ -573,7 +573,10 @@ class StreamDownloadDialog(private val near: Window?) : JFrame() {
             list: JList<*>?, value: Any?, index: Int, isSelected: Boolean, cellHasFocus: Boolean,
         ): Component {
             super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
-            icon = if ((value as? FormatChoice)?.audioOnly == true) audioIcon else videoIcon
+            val format = value as? FormatChoice
+            // The size goes with the format's default audio track.
+            format?.size?.let { text = "${format.label} · ${it.text}" }
+            icon = if (format?.audioOnly == true) audioIcon else videoIcon
             iconTextGap = 10
             border = ScaledEmptyBorder(6, 8, 6, 8)
             return this

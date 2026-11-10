@@ -1,6 +1,6 @@
 package xdm.app.ui.components
 
-import xdm.app.DbRecord
+import xdm.manager.DbRecord
 import javax.swing.event.ListSelectionEvent
 
 /**

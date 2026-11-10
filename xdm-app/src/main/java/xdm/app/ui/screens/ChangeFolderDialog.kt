@@ -1,21 +1,21 @@
 package xdm.app.ui.screens
 
 import xdm.app.AppContext
-import xdm.app.ChangeFolderPlan
-import xdm.app.ChangeFolderResult
-import xdm.app.DbRecord
 import xdm.app.I8N.text
 import xdm.app.ui.components.CappedComboBox
 import xdm.app.ui.components.DestinationPicker
 import xdm.app.ui.components.MessageBox
 import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.chooseFile
-import xdm.app.utils.getFileFolder
 import xdm.app.utils.px
 import xdm.app.utils.rememberHandPickedFolder
 import xdm.app.utils.sameWidth
 import xdm.app.utils.scaledInsets
 import xdm.app.utils.scaledSize
+import xdm.manager.ChangeFolderPlan
+import xdm.manager.ChangeFolderResult
+import xdm.manager.DbRecord
+import xdm.manager.getFileFolder
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.GridBagConstraints
