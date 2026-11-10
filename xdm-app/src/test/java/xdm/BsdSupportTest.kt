@@ -6,24 +6,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import xdm.app.OS
 import xdm.app.utils.detectOS
-import xdm.app.utils.isBsd
 
 class BsdSupportTest {
-
-    @Test
-    fun isBsd_matchesTheBsds() {
-        listOf("FreeBSD", "OpenBSD", "NetBSD", "DragonFly", "MidnightBSD").forEach {
-            assertTrue(isBsd(it), it)
-        }
-    }
-
-    @Test
-    fun isBsd_rejectsOtherSystems() {
-        listOf("Linux", "Mac OS X", "Windows 11", "SunOS", "").forEach {
-            assertFalse(isBsd(it), it)
-        }
-        assertFalse(isBsd(null))
-    }
 
     @Test
     fun detectOS_mapsOsName() {
@@ -31,8 +15,11 @@ class BsdSupportTest {
         assertEquals(OS.BSD, detectOS("OpenBSD"))
         assertEquals(OS.BSD, detectOS("NetBSD"))
         assertEquals(OS.BSD, detectOS("DragonFly"))
+        assertEquals(OS.BSD, detectOS("MidnightBSD"))
         assertEquals(OS.Linux, detectOS("Linux"))
         assertEquals(OS.Linux, detectOS(null))
+        assertEquals(OS.Linux, detectOS("SunOS"))
+        assertEquals(OS.Linux, detectOS(""))
         assertEquals(OS.MacOS, detectOS("Mac OS X"))
         assertEquals(OS.Windows, detectOS("Windows 11"))
     }

@@ -246,23 +246,18 @@ fun isMacPopupTrigger(e: MouseEvent): Boolean {
     return false
 }
 
+/** FreeBSD, OpenBSD, NetBSD, DragonFly and derivatives are all [OS.BSD]. */
 fun detectOS(osName: String? = System.getProperty("os.name")): OS = when {
     osName == null -> OS.Linux
     osName.contains("windows", ignoreCase = true) -> OS.Windows
     osName.contains("mac os", ignoreCase = true) -> OS.MacOS
-    isBsd(osName) -> OS.BSD
+    osName.contains("bsd", ignoreCase = true) || osName.contains("dragonfly", ignoreCase = true) -> OS.BSD
     else -> OS.Linux
-}
-
-/** FreeBSD, OpenBSD, NetBSD, DragonFly and derivatives; [detectOS] reports them as [OS.BSD]. */
-fun isBsd(osName: String? = System.getProperty("os.name")): Boolean {
-    val name = osName?.lowercase() ?: return false
-    return "bsd" in name || "dragonfly" in name
 }
 
 /**
  * Shows a native-feeling file/folder picker and returns the selected [File], or null if
- * cancelled. Uses FlatLaf's [SystemFileChooser] (native dialog) on Windows and macOS. On Linux
+ * cancelled. Uses FlatLaf's [SystemFileChooser] (native dialog) on Windows and macOS. On Linux and BSD
  * FlatLaf's in-process native chooser can hang under Wayland, so the desktop's dialog comes from
  * the XDG portal ([PortalFileChooser]) instead, with Swing's [JFileChooser] (places bar from
  * [xdm.app.utils.linux.LinuxPlaces]) when there is no portal or the user chose it in Advanced

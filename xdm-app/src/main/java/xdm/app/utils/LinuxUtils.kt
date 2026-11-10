@@ -1,5 +1,6 @@
 package xdm.app.utils
 
+import xdm.app.OS
 import xdm.app.utils.linux.SessionBus
 import xdm.app.utils.linux.dbus.DBusError
 import xdm.core.util.Logger
@@ -48,7 +49,7 @@ object LinuxUtils {
         arrayOf("/sbin/halt", "-p")
     )
 
-    var shutdownCmds: List<Array<String>> = if (isBsd()) bsdShutdownCmds else linuxShutdownCmds
+    var shutdownCmds: List<Array<String>> = if (detectOS() == OS.BSD) bsdShutdownCmds else linuxShutdownCmds
 
     fun initShutdown() {
         for (cmd in shutdownCmds) {

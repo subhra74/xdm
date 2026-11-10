@@ -47,8 +47,6 @@ object KeepAwake {
                 if (inhibitor != null) Logger.info("KeepAwake: sleep inhibitor acquired ($os)")
                 return
             }
-            // The BSDs have no systemd-inhibit; don't fail and log an error on every download.
-            if (os == OS.BSD) return
             if (process?.isAlive == true) return
             process = try {
                 startInhibitor()
@@ -76,7 +74,8 @@ object KeepAwake {
         }
     }
 
-    private fun startInhibitor(): Process {
+    /** The helper that holds the lock, or null where there is none (the BSDs): not a failure to log on every download. */
+    private fun startInhibitor(): Process? {
         val command = when (os) {
             OS.MacOS -> listOf("caffeinate", "-i", "-w", ProcessHandle.current().pid().toString())
             OS.Linux -> listOf(
@@ -88,7 +87,7 @@ object KeepAwake {
                 "cat"
             )
             OS.Windows -> throw IllegalStateException("Windows uses WindowsInhibitor")
-            OS.BSD -> throw IllegalStateException("No sleep inhibitor on the BSDs")
+            OS.BSD -> return null
         }
         return ProcessBuilder(command)
             .redirectOutput(ProcessBuilder.Redirect.DISCARD)
