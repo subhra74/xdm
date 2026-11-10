@@ -1,6 +1,8 @@
 package xdm
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import xdm.app.utils.linux.LinuxPlaces
 import java.io.File
@@ -78,8 +80,59 @@ class LinuxPlacesTest {
         """.trimIndent()
         assertEquals(
             listOf(File("/mnt/backup"), File("/media/disk")),
-            LinuxPlaces.removableMountsFromMount(openbsd, "a"),
+            LinuxPlaces.removableMountsFromMount(openbsd, "a", typed = true),
             "OpenBSD and NetBSD: dev on /point type fstype (flags)",
+        )
+    }
+
+    @Test
+    fun removableMountsFromMount_folderNamedLikeTheTypeColumn() {
+        val freebsd = "/dev/da0s1 on /media/disk type x (msdosfs, local)"
+        assertEquals(
+            listOf(File("/media/disk type x")),
+            LinuxPlaces.removableMountsFromMount(freebsd, "a"),
+            "FreeBSD has no type column, so ' type x' belongs to the folder",
+        )
+        val openbsd = "/dev/sd1i on /mnt/disk type x type ffs (local, nodev)"
+        assertEquals(
+            listOf(File("/mnt/disk type x")),
+            LinuxPlaces.removableMountsFromMount(openbsd, "a", typed = true),
+            "OpenBSD: only the last ' type ' is the column",
+        )
+    }
+
+    @Test
+    fun printsTypeAfterPoint_onlyOpenAndNetBsd() {
+        listOf("OpenBSD", "NetBSD").forEach { assertTrue(LinuxPlaces.printsTypeAfterPoint(it), it) }
+        listOf("FreeBSD", "DragonFly", "MidnightBSD", "Linux", null).forEach {
+            assertFalse(LinuxPlaces.printsTypeAfterPoint(it), it.toString())
+        }
+    }
+
+    @Test
+    fun removableMountsFor_linuxNeverRunsMount() {
+        val mountinfo = "90 22 8:17 / /mnt/a rw - ext4 /dev/sdb1 rw"
+        assertEquals(
+            listOf(File("/mnt/a")),
+            LinuxPlaces.removableMountsFor(false, "u", false, { mountinfo }, { error("mount(8) on Linux") }),
+        )
+        assertEquals(
+            emptyList<File>(),
+            LinuxPlaces.removableMountsFor(false, "u", false, { null }, { error("mount(8) on Linux") }),
+            "no mountinfo on Linux is no drives, not a fallback",
+        )
+    }
+
+    @Test
+    fun removableMountsFor_bsdNeverReadsMountinfo() {
+        val output = "/dev/da0s1 on /mnt/usb (msdosfs, local)"
+        assertEquals(
+            listOf(File("/mnt/usb")),
+            LinuxPlaces.removableMountsFor(true, "u", false, { error("mountinfo on a BSD") }, { output }),
+        )
+        assertEquals(
+            emptyList<File>(),
+            LinuxPlaces.removableMountsFor(true, "u", false, { error("mountinfo on a BSD") }, { null }),
         )
     }
 
