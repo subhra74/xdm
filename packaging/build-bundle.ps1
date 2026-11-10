@@ -39,6 +39,11 @@
   The app jar to package. Defaults to xdm-app\target\xdm-app.jar, or xdm-app.jar in a kit.
 .PARAMETER WithLocales
   Include jdk.localedata (~15 MB bigger, full locale-aware formatting).
+.PARAMETER NoTorrent
+  Bundle without the native torrent library (torrents are then not offered).
+.PARAMETER TorrentLocal
+  Bundle the libtorrent-builds repo's build-windows.ps1 output (from -TorrentBuildOut, default E:\xdm-torrent\out) instead of the
+  release pinned in packaging\torrent\binaries.lock.
 .PARAMETER Out
   Output directory (default: build\dist\windows-<arch>).
 .PARAMETER AnyJdk
@@ -54,7 +59,10 @@ param(
   [string]$Jar,
   [switch]$WithLocales,
   [string]$Out,
-  [switch]$AnyJdk
+  [switch]$AnyJdk,
+  [switch]$NoTorrent,
+  [switch]$TorrentLocal,
+  [string]$TorrentBuildOut = 'E:\xdm-torrent\out'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -472,6 +480,17 @@ if ($C2Crypto) {
 if (Test-Path $ConscryptFile) {
   # where Conscrypt's System.loadLibrary finds its DLL (see above)
   $JavaOptions += '-Djava.library.path=$APPDIR'
+}
+# The native torrent library in app\, found through -Dxdm.torrent.library (TorrentLibrary). Pinned in
+# packaging\torrent\binaries.lock and fetched (hash checked); never built here. Signed with the MSI's files.
+if (-not $NoTorrent) {
+  $fetch = Join-Path $ProjectRoot 'packaging\torrent\fetch-binaries.ps1'
+  $torrentLib = & $fetch -Platform "windows-$Arch" -Local:$TorrentLocal -BuildOut $TorrentBuildOut
+  Copy-Item -LiteralPath $torrentLib -Destination $InputDir -Force
+  $JavaOptions += ('-Dxdm.torrent.library=$APPDIR\' + (Split-Path -Leaf $torrentLib))
+  Write-Host ">> torrent library in app\: $(Split-Path -Leaf $torrentLib) (windows-$Arch)"
+} else {
+  Write-Host ">> no torrent library (-NoTorrent)"
 }
 $JavaOptions += @(
   '-Dflatlaf.nativeLibraryPath=$APPDIR'

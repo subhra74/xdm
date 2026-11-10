@@ -245,6 +245,37 @@ data class BatchDownloadTaskInfo(
     val trackFolder: String? get() = tempDir?.let { File(it, "batch-$id").absolutePath }
 }
 
+/**
+ * A BitTorrent download. The torrent's files are written by the native engine directly into [folder] (a single
+ * file as `<folder>/<file>`, several as `<folder>/<name>/...`). The metadata and the engine's resume data live
+ * next to this record in the data folder as `<id>.torrent` and `<id>.resume`.
+ */
+data class TorrentDownloadTaskInfo(
+    val id: Long,
+    /** 40 hex: the v1 info-hash, else the v2 hash truncated to 20 bytes. Fixed when the torrent is added. */
+    val key: String,
+    /** The torrent's name (its top folder or single file); the magnet's display name until the metadata arrives. */
+    var name: String,
+    /** The folder the torrent is saved in. */
+    var folder: String,
+    /** The magnet link it was added from, or null for a .torrent file. */
+    var magnet: String?,
+    var categoryId: String?,
+    /** One priority per file of the torrent (0 skip, 1 low, 4 normal, 7 high); empty means all normal. */
+    var filePriorities: ByteArray = ByteArray(0),
+    var sequential: Boolean = false,
+    /** The page the link came from, if any. */
+    var origin: String? = null,
+) {
+    override fun equals(other: Any?): Boolean =
+        other is TorrentDownloadTaskInfo && id == other.id && key == other.key && name == other.name &&
+            folder == other.folder && magnet == other.magnet && categoryId == other.categoryId &&
+            filePriorities.contentEquals(other.filePriorities) && sequential == other.sequential &&
+            origin == other.origin
+
+    override fun hashCode(): Int = (id.hashCode() * 31 + key.hashCode()) * 31 + filePriorities.contentHashCode()
+}
+
 sealed interface DownloadStatusInfo {
     data class InitInfo(
         val id: Long,
@@ -267,6 +298,24 @@ sealed interface DownloadStatusInfo {
         var filesDone: Int = 0,
         var failedFiles: Int = 0,
         var filesTotal: Int = 0,
+        /** Torrent only, null for other types. */
+        var torrent: TorrentProgress? = null,
+    )
+
+    /** The torrent part of a progress update (see [ProgressInfo.torrent]). */
+    data class TorrentProgress(
+        val phase: TorrentPhase,
+        /** Selected files only. */
+        val wanted: Long,
+        val uploadSpeed: Long,
+        val uploaded: Long,
+        /** Uploaded over downloaded (all time). */
+        val ratio: Float,
+        val peers: Int,
+        val seeds: Int,
+        /** 0-1000 while checking files. */
+        val checkPermille: Int,
+        val seeding: Boolean,
     )
 
     data class AssembleInfo(
@@ -283,6 +332,8 @@ sealed interface DownloadStatusInfo {
         val failedFiles: Int = 0,
     )
 }
+
+enum class TorrentPhase { Metadata, Checking, Downloading, Finished, Seeding }
 
 sealed interface CommitResult {
     data class Success(val fileName: String, val outputDir: String) : CommitResult

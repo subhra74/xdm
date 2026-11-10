@@ -44,27 +44,36 @@ class DownloadRowMenu(private val withPrimaryActions: Boolean) {
             if (ent.canResume) menu.item("MENU_RESUME") { AppMenuHandler.resumeDownload(ent) }
             menu.addSeparator()
         }
-        // A batch has many links and no single one to refresh.
-        if (ent.status.isStopped && !AppContext.refreshLinkInProgress.get() && ent.downloadType != DownloadType.Batch) {
+        val torrent = ent.downloadType == DownloadType.Torrent
+        if (torrent && ent.status == RecordStatus.FINISHED) {
+            if (ent.seeding) menu.item("TORRENT_STOP_SEEDING") { AppContext.downloader.stopSeeding(ent.id) }
+            else if (AppContext.downloader.torrents.available && AppContext.downloader.torrentFilesPresent(ent.id)) {
+                // Only with its files on disk: a deleted download has nothing to seed.
+                menu.item("TORRENT_START_SEEDING") { AppMenuHandler.startSeeding(ent, window()) }
+            }
+        }
+        // A batch has many links and no single one to refresh; a torrent has no link that expires.
+        if (ent.status.isStopped && !AppContext.refreshLinkInProgress.get() && ent.downloadType != DownloadType.Batch && !torrent) {
             menu.item("MENU_REFRESH_LINK") { AppContext.app.showRefreshWindow(ent.id) }
         }
         if (ent.status.isStopped) {
             menu.item("MENU_SCHEDULE") { AppContext.app.showSchedulerWindow(ent.id) }
         }
-        if (ent.status == RecordStatus.DOWNLOADING) {
+        if (ent.status == RecordStatus.DOWNLOADING || xdm.app.torrent.TorrentRowText.isSeeding(ent)) {
             menu.item("LBL_SHOW_PROGRESS") { AppContext.app.showProgressWindow(ent.id, ent.fileName) }
         }
         if (ent.downloadType == DownloadType.Batch && ent.status == RecordStatus.FINISHED && ent.failedFiles > 0) {
             menu.item("CTX_RETRY_FAILED") { AppContext.downloader.retryFailedFiles(ent.id) }
         }
         // Change folder: stopped single-file downloads only, never while one is being moved.
-        if (ent.status.isStopped && ent.downloadType != DownloadType.Batch && !AppContext.downloader.isMoving(ent.id)) {
+        // Torrents move through libtorrent instead (the torrent window, later).
+        if (ent.status.isStopped && ent.downloadType != DownloadType.Batch && !torrent && !AppContext.downloader.isMoving(ent.id)) {
             menu.item("CTX_CHANGE_FOLDER") { AppMenuHandler.changeFolder(ent, window()) }
         }
         if (ent.canRestart) {
             menu.item("MENU_RESTART") { AppMenuHandler.restartDownload(ent) }
         }
-        menu.item("CTX_COPY_URL") { AppMenuHandler.copyUrl(ent) }
+        menu.item(if (torrent) "TORRENT_COPY_MAGNET" else "CTX_COPY_URL") { AppMenuHandler.copyUrl(ent) }
         menu.item("MENU_PROPERTIES") { AppContext.app.showPropertiesWindow(ent) }
         if (withPrimaryActions) {
             menu.addSeparator()
@@ -94,6 +103,7 @@ class DownloadRowMenu(private val withPrimaryActions: Boolean) {
 
     private val DbRecord.canRestart: Boolean
         get() = (status.isStopped || status == RecordStatus.FINISHED) && downloadType != DownloadType.Batch
+                && downloadType != DownloadType.Torrent
 
     private fun JPopupMenu.item(id: String, action: () -> Unit) {
         add(JMenuItem(text(id)).apply {

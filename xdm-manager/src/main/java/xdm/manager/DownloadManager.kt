@@ -38,6 +38,21 @@ import xdm.core.util.Logger
 import xdm.core.util.MovePhase
 import xdm.core.util.getFileName
 import xdm.core.util.getHeader
+import xdm.manager.torrent.FilePriority
+import xdm.manager.torrent.JniTorrentEngine
+import xdm.manager.torrent.SeedLimits
+import xdm.manager.torrent.SeedingListener
+import xdm.manager.torrent.TorrentDownloaderTask
+import xdm.manager.torrent.TorrentDetails
+import xdm.manager.torrent.TorrentEngine
+import xdm.manager.torrent.TorrentFlags
+import xdm.manager.torrent.TorrentInfo
+import xdm.manager.torrent.TorrentProxy
+import xdm.manager.torrent.TorrentSeeder
+import xdm.manager.torrent.TorrentService
+import xdm.manager.torrent.TorrentSettings
+import xdm.manager.torrent.TorrentStatus
+import xdm.manager.torrent.TorrentTrackers
 import java.io.File
 import java.io.FileNotFoundException
 import java.util.concurrent.ConcurrentHashMap
@@ -120,6 +135,8 @@ class DownloadManager(
     val taskInfoDB: TaskInfoDB,
     private val configDir: String,
     taskFactory: DownloaderTaskFactory? = null,
+    /** The BitTorrent engine; by default the native one when [PlatformHooks.loadTorrentLibrary] succeeds. */
+    torrentEngineFactory: (() -> TorrentEngine?)? = null,
 ) : IDownloadManager {
     private val taskFactory: DownloaderTaskFactory = taskFactory ?: ::createTask
     private val config: EngineConfig get() = EngineContext.config
@@ -153,6 +170,27 @@ class DownloadManager(
     /** Downloads Change folder is moving right now. */
     private val moving: MutableSet<Long> = ConcurrentHashMap.newKeySet()
     private val activeSessions = ConcurrentHashMap<Long, DownloaderTask>()
+
+    /** The BitTorrent session, started when the first torrent runs (or [TorrentService.warmUp]). */
+    val torrents = TorrentService(
+        configDir,
+        torrentEngineFactory ?: { if (hooks.loadTorrentLibrary()) JniTorrentEngine() else null },
+        ::torrentSessionSettings,
+        keepOpen = { config.torrentKeepSession },
+        addFlags = { if (config.torrentPex) 0 else TorrentFlags.DISABLE_PEX },
+    )
+
+    private val seeder = TorrentSeeder(
+        torrents,
+        { SeedLimits(config.torrentSeedRatioLimit, config.torrentSeedTimeLimitMinutes) },
+        object : SeedingListener {
+            override fun seedingStarted(id: Long) = setSeeding(id, true, null)
+            override fun seedingProgress(id: Long, status: TorrentStatus) =
+                setSeeding(id, true, TorrentDownloaderTask.torrentProgress(status, seeding = true))
+            override fun seedingStopped(id: Long) = setSeeding(id, false, null)
+            override fun seedingFailed(id: Long, message: String) = ui.seedingFailed(id)
+        },
+    )
 
     /** Sizes of subtitles converted to SRT at publish, which differ from the bytes downloaded. */
     private val convertedSizes = ConcurrentHashMap<Long, Long>()
@@ -206,7 +244,11 @@ class DownloadManager(
                             DownloadType.Hls -> {}
                             DownloadType.Dash -> {}
                             DownloadType.Batch -> {}
-                            DownloadType.Torrent -> TODO()
+                            // The name arrives with the metadata; the size is that of the selected files.
+                            DownloadType.Torrent -> taskInfoDB.getTorrentTask(data.id)?.let { t ->
+                                e.fileName = t.name
+                                data.fileSize?.let { e.size = it }
+                            }
                         }
                         store.update(e)
                     }
@@ -226,6 +268,7 @@ class DownloadManager(
                         it.progress = event.progress
                         it.speed = event.speed
                         it.eta = event.eta
+                        it.torrent = event.torrent
                         size = it.size
                         fileName = it.fileName
                     }
@@ -235,6 +278,7 @@ class DownloadManager(
                     event.id, fileName, event.downloaded, size, event.speed, event.eta, event.progress, event.segments,
                     if (event.filesTotal > 0) BatchFileCounts(event.filesDone, event.failedFiles, event.filesTotal) else null
                 )
+                event.torrent?.let { ui.torrentProgress(event.id, it) }
             }
         }
 
@@ -293,6 +337,7 @@ class DownloadManager(
                         e.fileName = event.finalFileName
                         e.size = event.fileSize
                         e.failedFiles = event.failedFiles
+                        if (!e.seeding) e.torrent = null
                         store.update(e)
                     }
                 }
@@ -529,6 +574,7 @@ class DownloadManager(
         if (size <= 0) return
         val (folder, isTemp) = when (type) {
             DownloadType.Http -> (taskInfoDB.getHttpTask(id)?.targetFolder ?: return) to false
+            DownloadType.Torrent -> (taskInfoDB.getTorrentTask(id)?.folder ?: return) to false
             DownloadType.Hls -> (taskInfoDB.getHlsTask(id)?.tempDir ?: tempDirFor(id).absolutePath) to true
             DownloadType.Dash -> (taskInfoDB.getDashTask(id)?.tempDir ?: tempDirFor(id).absolutePath) to true
             else -> tempDirFor(id).absolutePath to true
@@ -694,7 +740,15 @@ class DownloadManager(
             }
         }
 
-        DownloadType.Torrent -> null
+        DownloadType.Torrent -> taskInfoDB.getTorrentTask(id)?.let {
+            TorrentDownloaderTask(it, host, torrents, taskInfoDB) { taskId, key ->
+                // A download deleted while it ran is not seeded.
+                if (config.torrentSeedAfterFinish && taskId !in toDelete) {
+                    seeder.adopt(taskId, key)
+                    true
+                } else false
+            }
+        }
     }
 
     /**
@@ -790,6 +844,7 @@ class DownloadManager(
                         && rec.status != RecordStatus.ASSEMBLING
                         && rec.status != RecordStatus.READY
                         && rec.id !in moving
+                        && !seeder.isSeeding(rec.id)
                         && filter(rec)
             }
         }
@@ -803,7 +858,9 @@ class DownloadManager(
         removed.forEach { rec ->
             try {
                 // Resolved first: the path is read from the task info that the purge deletes.
-                val files = if (fromDisk && rec.status == RecordStatus.FINISHED && rec.downloadType != DownloadType.Batch)
+                // Batches and torrents delete their own files (purgeFiles).
+                val files = if (fromDisk && rec.status == RecordStatus.FINISHED && rec.downloadType != DownloadType.Batch &&
+                    rec.downloadType != DownloadType.Torrent)
                     listOfNotNull(finishedFile(rec), subtitleSidecar(rec)) else emptyList()
                 purgeFiles(rec, fromDisk)
                 files.forEach { Logger.info("XDM", "Delete file $it ${it.delete()}") }
@@ -835,6 +892,8 @@ class DownloadManager(
         if (rec.downloadType == DownloadType.Batch) {
             // Its state holds the batch folder, not a temp folder: the generic cleanup below must not run.
             purgeBatchFiles(id, fromDisk)
+        } else if (rec.downloadType == DownloadType.Torrent) {
+            purgeTorrentFiles(rec, fromDisk)
         } else if (rec.status != RecordStatus.FINISHED) {
             // HLS/DASH segments live in the temp folder; every partial file sits in the target folder
             // under a name derived from the id, so the paths come from the task info (read before the
@@ -858,6 +917,19 @@ class DownloadManager(
         } else {
             (state?.batchFolder ?: taskInfoDB.getBatchTask(id)?.batchFolder)?.let { deleteBatchPartFiles(it) }
         }
+    }
+
+    /**
+     * Deletes a torrent's files through the engine (it knows the file list and the hidden `.parts` file): a
+     * seeding torrent is removed from the session with its files when [fromDisk]; one that is not in the
+     * session loses its data when it was unfinished (like an HTTP part file) or when [fromDisk]. Must run
+     * before the metadata is deleted.
+     */
+    private fun purgeTorrentFiles(rec: DbRecord, fromDisk: Boolean) {
+        if (seeder.discard(rec.id, deleteFiles = fromDisk)) return
+        if (rec.status == RecordStatus.FINISHED && !fromDisk) return
+        val task = taskInfoDB.getTorrentTask(rec.id) ?: return
+        torrents.deleteData(task.key, torrents.readTorrent(rec.id), torrents.readResume(rec.id), task.folder)
     }
 
     /**
@@ -892,6 +964,7 @@ class DownloadManager(
         taskInfoDB.deleteRecord(id)
         listOf("$id.state", "$id.state.bak1", "$id.state.bak2").forEach { File(configDir, it).delete() }
         HlsKeyStore.delete(id, configDir)
+        TorrentService.deleteFiles(id, configDir)
         refused.remove(id)
         hooks.downloadDeleted(id)
     }
@@ -1092,6 +1165,181 @@ class DownloadManager(
             queue.add(QueueItem(id, true))
         }
         pumpQueue()
+    }
+
+    /**
+     * Adds a torrent download. [torrent] is the .torrent file (from a file, or the metadata fetched for a
+     * magnet), kept as `<id>.torrent`; null starts from [TorrentDownloadTaskInfo.magnet] alone. Returns the
+     * download's id, or null when the same torrent is already in the list (or the task could not be saved).
+     */
+    fun startTorrentDownload(task: TorrentDownloadTaskInfo, torrent: ByteArray?, runNow: Boolean = true): Long? {
+        if (findTorrent(task.key) != null) {
+            Logger.info("XDM", "Torrent ${task.key} is already in the list")
+            return null
+        }
+        val id = uniqueDownloadId(task.id)
+        var t = if (id != task.id) task.copy(id = id) else task
+        // The user's extra trackers, for public torrents only (a private torrent's tracker must stay its only one).
+        var bytes = torrent
+        val tiers = if (config.torrentAddTrackers) TorrentTrackers.tiers(config.torrentTrackerList) else emptyList()
+        if (tiers.isNotEmpty()) {
+            if (bytes != null) {
+                if (torrents.parse(bytes)?.isPrivate == false) bytes = TorrentTrackers.addToTorrent(bytes, tiers) ?: bytes
+            } else {
+                t.magnet?.let { t = t.copy(magnet = TorrentTrackers.addToMagnet(it, tiers)) }
+            }
+        }
+        if (bytes != null && !torrents.saveTorrent(id, bytes)) return null
+        if (!taskInfoDB.saveTorrentTask(t)) {
+            TorrentService.deleteFiles(id, configDir)
+            return null
+        }
+        Logger.info("Adding torrent: $id ${t.key} -> ${t.folder}")
+        store.add(
+            DbRecord(
+                id = id,
+                size = 0,
+                downloaded = 0,
+                progress = 0,
+                date = System.currentTimeMillis(),
+                fileName = t.name,
+                eta = 0,
+                speed = 0.0f,
+                status = if (runNow) RecordStatus.READY else RecordStatus.PAUSED,
+                selected = false,
+                downloadType = DownloadType.Torrent,
+                categoryId = t.categoryId,
+            )
+        )
+        ui.downloadAdded(id)
+        if (runNow) enqueue(id, resume = false)
+        return id
+    }
+
+    /** The download id of the torrent with [key] in the list, or null. */
+    fun findTorrent(key: String): Long? =
+        store.filter { it.downloadType == DownloadType.Torrent }
+            .firstOrNull { taskInfoDB.getTorrentTask(it.id)?.key == key }?.id
+
+    /** Whether [id] is a torrent seeding right now. */
+    fun isSeeding(id: Long): Boolean = seeder.isSeeding(id)
+
+    /** Starts seeding a finished torrent by hand, until the seeding limits; false when it cannot. */
+    fun startSeeding(id: Long): Boolean {
+        val rec = store.getById(id) ?: return false
+        if (rec.downloadType != DownloadType.Torrent || rec.status != RecordStatus.FINISHED || !torrents.available) return false
+        val task = taskInfoDB.getTorrentTask(id) ?: return false
+        // Seeding from resume data that says "complete" over missing files would only end in a file error.
+        if (!torrentFilesPresent(id)) {
+            Logger.info("Torrent", "Not seeding $id: its files are not on disk")
+            return false
+        }
+        return seeder.start(id, task.key, task.folder)
+    }
+
+    /**
+     * Whether [id]'s wanted files are on disk at their full size (padding and skipped files aside). Without
+     * saved metadata only the torrent's own file or folder is checked. Reads the file system: keep it off hot paths.
+     */
+    fun torrentFilesPresent(id: Long): Boolean {
+        val task = taskInfoDB.getTorrentTask(id) ?: return false
+        val folder = storage.folder(task.folder)
+        val info = torrents.torrentInfo(id)
+            ?: return folder.file(task.name).exists || folder.child(task.name).exists()
+        val p = task.filePriorities
+        return info.files.withIndex().all { (i, f) ->
+            val wanted = p.isEmpty() || (i < p.size && p[i] != FilePriority.SKIP)
+            f.isPad || !wanted || folder.file(f.path).let { it.exists && it.length() >= f.size }
+        }
+    }
+
+    /** Stops seeding [id]; its resume data is saved and it leaves the session. */
+    fun stopSeeding(id: Long) = seeder.stop(id)
+
+    /** The torrent window's live view of [id] while it is in the session (downloading or seeding), else null. */
+    fun torrentDetails(id: Long): TorrentDetails? = taskInfoDB.getTorrentTask(id)?.let { torrents.details(it.key) }
+
+    /** [id]'s files from its saved metadata, for when it is not in the session; null without metadata. */
+    fun torrentFiles(id: Long): TorrentInfo? = torrents.torrentInfo(id)
+
+    /**
+     * Sets [id]'s file priorities (libtorrent's file order; empty means all normal). They are saved with the
+     * download and applied at once while it runs. A finished torrent that now wants a file it skipped goes back
+     * to downloading (seeding stops first); one that only drops files stays finished.
+     */
+    fun setTorrentFilePriorities(id: Long, priorities: ByteArray) {
+        val task = taskInfoDB.getTorrentTask(id) ?: return
+        val old = task.filePriorities
+        task.filePriorities = priorities
+        if (!taskInfoDB.saveTorrentTask(task)) return
+        val status = synchronized(store) { store.getById(id)?.status } ?: return
+        if (status == RecordStatus.FINISHED && wantsMore(old, priorities)) {
+            Logger.info("Torrent", "Torrent $id wants more files: downloading again")
+            if (seeder.isSeeding(id)) seeder.stop(id)
+            resumeDownload(id)
+            return
+        }
+        torrents.setFilePriorities(task.key, priorities)
+    }
+
+    /**
+     * Adds trackers (the settings text format: one per line, blank line = next tier) to [id] while it is in the
+     * session. False when it is not running, is private, or the text holds no tracker.
+     */
+    fun addTorrentTrackers(id: Long, text: String): Boolean {
+        val task = taskInfoDB.getTorrentTask(id) ?: return false
+        val tiers = TorrentTrackers.tiers(text).takeIf { it.isNotEmpty() } ?: return false
+        return torrents.addTrackers(task.key, tiers)
+    }
+
+    /** Whether [new] wants a file [old] skipped (empty wants all). */
+    private fun wantsMore(old: ByteArray, new: ByteArray): Boolean {
+        fun wants(p: ByteArray, i: Int) = p.isEmpty() || (i < p.size && p[i] != FilePriority.SKIP)
+        return (0 until maxOf(old.size, new.size)).any { !wants(old, it) && wants(new, it) }
+    }
+
+    /** Applies the BitTorrent settings (limits, port, DHT/LSD, port mapping, encryption) to the running session. */
+    fun applyTorrentSettings() {
+        torrents.applySettings(TorrentSettings.lines(torrentOptions() + torrentLimits()))
+    }
+
+    /**
+     * For app exit: saves the torrents' resume data (waiting up to [timeoutMs] for it) and the session state,
+     * then closes the session. Nothing to do when no torrent ran.
+     */
+    fun shutdown(timeoutMs: Long = 30_000) = torrents.shutdown(timeoutMs)
+
+    private fun torrentLimits() = TorrentSettings.limits(
+        config.torrentDownloadLimit.coerceAtLeast(0) * 1024, config.torrentUploadLimit.coerceAtLeast(0) * 1024,
+    )
+
+    private fun torrentOptions() = TorrentSettings.options(
+        config.torrentPortMapping, config.torrentDht, config.torrentLsd, config.torrentEncryption, config.torrentPort,
+        config.torrentPeerIdPrefix, config.torrentUserAgent,
+    )
+
+    private fun torrentSessionSettings(listenPort: Int?): String {
+        val proxy = if (config.useProxy && config.proxyHost.isNotBlank() && config.proxyPort > 0) TorrentProxy(
+            if (config.socksProxy) TorrentProxy.Type.SOCKS5 else TorrentProxy.Type.HTTP,
+            config.proxyHost, config.proxyPort, config.proxyUser.takeIf { it.isNotEmpty() }, config.proxyPass,
+        ) else null
+        // A fixed port from the settings wins over the saved state's; options() sets it.
+        return TorrentSettings.session(
+            listenPort.takeIf { config.torrentPort <= 0 },
+            config.torrentDownloadLimit.coerceAtLeast(0) * 1024, config.torrentUploadLimit.coerceAtLeast(0) * 1024,
+            proxy, torrentOptions(),
+        )
+    }
+
+    private fun setSeeding(id: Long, seeding: Boolean, progress: DownloadStatusInfo.TorrentProgress?) {
+        synchronized(store) {
+            store.getById(id)?.let {
+                it.seeding = seeding
+                it.torrent = progress
+            }
+        }
+        ui.downloadUpdated(id)
+        progress?.let { ui.torrentProgress(id, it) }
     }
 
     override fun getOriginPage(id: Long): String? {
@@ -1381,10 +1629,12 @@ class DownloadManager(
             ?: return
         val type = synchronized(store) { store.getById(event.id)?.downloadType }
         if (type == DownloadType.Batch) return markBatchDownloaded(event.id)
+        if (type == DownloadType.Torrent && markTorrentDownloaded(event)) return
         val source = when (type) {
             DownloadType.Http -> taskInfoDB.getHttpTask(event.id)?.let { DownloadSource(it.url, it.origin) }
             DownloadType.Hls -> taskInfoDB.getHlsTask(event.id)?.let { DownloadSource(it.url, it.origin) }
             DownloadType.Dash -> taskInfoDB.getDashTask(event.id)?.let { DownloadSource(it.url, it.origin) }
+            DownloadType.Torrent -> taskInfoDB.getTorrentTask(event.id)?.let { DownloadSource(it.magnet, it.origin) }
             else -> null
         } ?: DownloadSource(null, null)
         try {
@@ -1394,6 +1644,31 @@ class DownloadManager(
         } catch (e: Exception) {
             Logger.error("Error marking $file as downloaded", e)
         }
+    }
+
+    /**
+     * Marks each file of a multi-file torrent (a mark on its folder does not reach the files on Windows).
+     * False when the torrent is a single file or its file list is unknown: then [markDownloaded] marks
+     * [DownloadStatusInfo.FinalInfo.finalFileName] as usual.
+     */
+    private fun markTorrentDownloaded(event: DownloadStatusInfo.FinalInfo): Boolean {
+        val info = torrents.torrentInfo(event.id) ?: return false
+        if (info.singleFile) return false
+        val task = taskInfoDB.getTorrentTask(event.id)
+        val source = DownloadSource(task?.magnet, task?.origin)
+        val folder = storage.folder(event.finalOutputFolder)
+        for (f in info.files) {
+            if (f.isPad) continue
+            // Skipped files may not exist (or hold only the pieces shared with a wanted file).
+            val file = folder.file(f.path).localPath?.let { File(it) } ?: continue
+            if (!file.isFile) continue
+            try {
+                hooks.markDownloadedFile(file, source)
+            } catch (e: Exception) {
+                Logger.error("Error marking $file as downloaded", e)
+            }
+        }
+        return true
     }
 
     /** Marks each file a batch finished with its own link as the source. */

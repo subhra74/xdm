@@ -171,6 +171,14 @@ class TagReader(private val buf: ByteArray, private var pos: Int, private val li
         return s
     }
 
+    /** A value written by [TagWriter.bytes]. */
+    fun bytes(): ByteArray {
+        val len = length()
+        val b = buf.copyOfRange(pos, pos + len)
+        pos += len
+        return b
+    }
+
     /** A record written by [TagWriter.message]. */
     fun message(): TagReader {
         val len = length()

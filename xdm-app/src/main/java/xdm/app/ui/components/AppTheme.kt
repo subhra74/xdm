@@ -36,6 +36,8 @@ object AppTheme {
     val pausedBackground: Color get() = color("XDM.list.pausedBackground", "Button.background")
     val failedForeground: Color get() = color("XDM.list.failedForeground", "Actions.Red")
     val failedBackground: Color get() = color("XDM.list.failedBackground", "Button.background")
+    val seedingForeground: Color get() = color("XDM.list.seedingForeground", "Actions.Green")
+    val seedingBackground: Color get() = color("XDM.list.seedingBackground", "Button.background")
 
     /** Classic list: the selected and hovered row's card, across the whole row. */
     val listSelectionBackground: Color get() = color("XDM.list.selectionBackground", "Table.selectionInactiveBackground")

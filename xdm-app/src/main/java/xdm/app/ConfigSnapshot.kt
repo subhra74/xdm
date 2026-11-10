@@ -68,6 +68,12 @@ class ConfigSnapshot private constructor(private val values: List<Any?>) {
             Prop(IAppConfig::nativeWayland), Prop(IAppConfig::swingFileChooser), Prop(IAppConfig::forceIpv4),
             Prop(IAppConfig::commandRules), Prop(IAppConfig::listSelectionMode), Prop(IAppConfig::playSound),
             Prop(IAppConfig::completeSoundFile), Prop(IAppConfig::failedSoundFile),
+            Prop(IAppConfig::torrentSeedAfterFinish), Prop(IAppConfig::torrentSeedRatioLimit),
+            Prop(IAppConfig::torrentSeedTimeLimitMinutes), Prop(IAppConfig::torrentProgressMore),
+            Prop(IAppConfig::torrentPort), Prop(IAppConfig::torrentPortMapping), Prop(IAppConfig::torrentDht),
+            Prop(IAppConfig::torrentLsd), Prop(IAppConfig::torrentEncryption), Prop(IAppConfig::torrentDownloadLimit),
+            Prop(IAppConfig::torrentUploadLimit), Prop(IAppConfig::torrentClient),
+            Prop(IAppConfig::torrentKeepSession), Prop(IAppConfig::torrentAddTrackers), Prop(IAppConfig::torrentTrackerList), Prop(IAppConfig::torrentPex),
         )
 
         /** The names of the properties a snapshot covers; for the test that checks none is missing. */

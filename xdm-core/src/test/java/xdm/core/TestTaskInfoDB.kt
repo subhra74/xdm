@@ -14,6 +14,7 @@ import xdm.core.downloaders.HlsDownloadTaskInfo
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.downloaders.SubtitleTrack
 import xdm.core.downloaders.TaskInfoDB
+import xdm.core.downloaders.TorrentDownloadTaskInfo
 import xdm.core.downloaders.web.http.Chunk
 import xdm.core.downloaders.web.http.ChunkStatus
 import xdm.core.downloaders.web.http.HttpDownloaderTask
@@ -225,5 +226,24 @@ class TestTaskInfoDB : HttpDownloadTestBase() {
         val first = ep.requests.first().headers
         assertTrue(first["cookie"].orEmpty().any { "session=s3cr3t" in it }, "Cookie not sent: ${first["cookie"]}")
         assertEquals(listOf("abc", "def"), first["x-token"]?.flatMap { it.split(",").map(String::trim) })
+    }
+
+    @org.junit.jupiter.api.Test
+    fun `torrent task round-trips and is not read as another type`() {
+        val task = TorrentDownloadTaskInfo(
+            id = 70, key = "b17fc5bc7c813b248811c4fce49c9b766fb8d097", name = "pack",
+            folder = "/downloads/torrents", magnet = "magnet:?xt=urn:btih:b17fc5bc7c813b248811c4fce49c9b766fb8d097",
+            categoryId = "CAT_OTHER", filePriorities = byteArrayOf(0, 4, 7, 1), sequential = true,
+            origin = "https://example.com/page",
+        )
+        assertTrue(db().saveTorrentTask(task), "saved")
+        assertEquals(task, db().getTorrentTask(70), "every field read back")
+        assertNull(db().getHttpTask(70), "not an HTTP task")
+
+        val minimal = TorrentDownloadTaskInfo(71, "a".repeat(40), "x", "/d", null, null)
+        db().saveTorrentTask(minimal)
+        assertEquals(minimal, db().getTorrentTask(71), "optional fields stay empty")
+        db().saveHttpTask(httpTask(72))
+        assertNull(db().getTorrentTask(72), "an HTTP task is not a torrent")
     }
 }

@@ -10,6 +10,7 @@ import xdm.app.utils.px
 import xdm.app.utils.scaledSize
 import xdm.app.utils.showMenu
 import xdm.core.downloaders.DownloadType
+import xdm.app.torrent.TorrentRowText
 import xdm.core.util.FormatHelper.formatDateShort
 import xdm.core.util.FormatHelper.formatSize
 import xdm.core.util.FormatHelper.toLongEta
@@ -227,9 +228,10 @@ class DownloadRowPanel(val root: JPanel = JPanel()) {
 
     /** Shows [ent]'s texts, progress and buttons; the tile is left to the caller ([showFileIcon]). */
     fun update(ent: DbRecord, showButtons: Boolean) {
-        lblProgress.pill = when (ent.status) {
-            RecordStatus.PAUSED -> StatusPill.PAUSED
-            RecordStatus.ERROR -> StatusPill.FAILED
+        lblProgress.pill = when {
+            TorrentRowText.isSeeding(ent) -> StatusPill.SEEDING
+            ent.status == RecordStatus.PAUSED -> StatusPill.PAUSED
+            ent.status == RecordStatus.ERROR -> StatusPill.FAILED
             else -> null
         }
         buttonContainer.isVisible = showButtons
@@ -240,14 +242,14 @@ class DownloadRowPanel(val root: JPanel = JPanel()) {
         btnResume.isVisible = ent.canResume
         resumeGap.isVisible = btnResume.isVisible
         if (ent.status == RecordStatus.FINISHED) {
-            lblInfo.text = (formatDateShort(ent.date)
+            lblInfo.text = TorrentRowText.infoLine(ent) ?: (formatDateShort(ent.date)
                     + gap
                     + formatSize(ent.size.toDouble()))
             lblTitle.text = ent.fileName
             prg.isVisible = false
-            lblProgress.text = ""
+            lblProgress.text = TorrentRowText.progressText(ent).orEmpty()
         } else {
-            lblInfo.text = getStatusText(ent)
+            lblInfo.text = TorrentRowText.infoLine(ent) ?: getStatusText(ent)
             lblTitle.text = ent.fileName
             prg.value = ent.progress
             var prgText = text("STAT_DOWNLOADING")
@@ -260,6 +262,8 @@ class DownloadRowPanel(val root: JPanel = JPanel()) {
                         "%s %d%s", text("STAT_DOWNLOADING"), ent.progress, "%"
                     )
                 }
+                // A torrent getting its file list or checking its files says so.
+                TorrentRowText.progressText(ent)?.let { prgText = it }
                 prg.isVisible = true
             } else if (ent.status.isStopped) {
                 val label = text(if (ent.status == RecordStatus.ERROR) "STAT_FAILED" else "STAT_PAUSED")
@@ -315,11 +319,11 @@ class DownloadRowPanel(val root: JPanel = JPanel()) {
     fun tileIcon(glyph: RemixIcon, color: Color): Icon =
         iconCache.getOrPut("${glyph.name}:${color.rgb}") { createIcon(glyph, 16, color) }
 
-    private enum class StatusPill { PAUSED, FAILED }
+    private enum class StatusPill { PAUSED, FAILED, SEEDING }
 
     /**
      * The status text right of the file name. With a [pill] it is drawn as a rounded pill (amber
-     * when paused, red when failed), otherwise as plain text.
+     * when paused, red when failed, green when seeding), otherwise as plain text.
      */
     private class StatusLabel(private val plainFont: Font) : JLabel() {
         private val plainForeground = foreground
@@ -335,6 +339,7 @@ class DownloadRowPanel(val root: JPanel = JPanel()) {
                 foreground = when (value) {
                     StatusPill.PAUSED -> AppTheme.pausedForeground
                     StatusPill.FAILED -> AppTheme.failedForeground
+                    StatusPill.SEEDING -> AppTheme.seedingForeground
                     null -> plainForeground
                 }
                 horizontalAlignment = if (value != null) CENTER else LEADING
@@ -347,7 +352,11 @@ class DownloadRowPanel(val root: JPanel = JPanel()) {
                 val h = minOf(height, 24.px)
                 val g2 = g.create() as Graphics2D
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-                g2.color = if (pill == StatusPill.FAILED) AppTheme.failedBackground else AppTheme.pausedBackground
+                g2.color = when (pill) {
+                    StatusPill.FAILED -> AppTheme.failedBackground
+                    StatusPill.SEEDING -> AppTheme.seedingBackground
+                    StatusPill.PAUSED -> AppTheme.pausedBackground
+                }
                 g2.fillRoundRect(0, (height - h) / 2, width, h, h, h)
                 g2.dispose()
             }

@@ -93,6 +93,10 @@ object AppMain {
             queue = QueueManager()
             platform = PlatformInvoke()
             downloader = DownloadManager(store = appDB, taskInfoDB = taskDB, configDir = configDir)
+            // Every way out (the Exit items, the OS logging off): torrents' resume data and the DHT state are
+            // saved. Returns at once when no torrent ran in this session.
+            val dm = downloader
+            Runtime.getRuntime().addShutdownHook(Thread({ dm.shutdown(timeoutMs = 10_000) }, "torrent-exit"))
             videoTracker = CapturedVideoTracker()
             taskInfoDB = taskDB
             scheduler = DownloadScheduler(appDB, configDir)

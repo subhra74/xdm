@@ -4,6 +4,7 @@ import xdm.app.AppContext
 import xdm.app.AppContext.downloader
 import xdm.app.I8N.text
 import xdm.app.MessageBoxResult
+import xdm.app.ui.screens.AddTorrentDialog
 import xdm.app.ui.screens.AppWindow
 import xdm.app.ui.screens.BatchUrlDialog
 import xdm.app.ui.screens.ChangeFolderDialog
@@ -246,6 +247,32 @@ object AppMenuHandler {
         SingleWindows.show(BatchUrlDialog::class) { BatchUrlDialog(window) }
     }
 
+    /**
+     * "Torrent download": the add-torrent dialog, with [initial] (a magnet link or .torrent path) or a magnet
+     * link from the clipboard filled in. Each call opens another dialog. Says so when the torrent library
+     * could not be loaded.
+     */
+    fun showTorrentDialog(window: Window?, initial: String? = null) {
+        if (!AppContext.downloader.torrents.available) {
+            MessageBox.show(window, text("NEW_TORRENT_DOWNLOAD"), text("TORRENT_UNAVAILABLE"), JOptionPane.ERROR_MESSAGE)
+            return
+        }
+        val clip = initial ?: runCatching {
+            java.awt.Toolkit.getDefaultToolkit().systemClipboard.getData(java.awt.datatransfer.DataFlavor.stringFlavor) as? String
+        }.getOrNull()?.trim()?.takeIf { it.startsWith("magnet:?", ignoreCase = true) }
+        val dialog = AddTorrentDialog(xdm.app.utils.shownWindow(window), clip)
+        dialog.isVisible = true
+        // Opened at startup (XDM launched with a torrent), the main window can come up over it: front it again.
+        javax.swing.SwingUtilities.invokeLater { dialog.toFront() }
+    }
+
+    /** Start seeding a finished torrent; says so when it cannot (its resume data or files are gone). */
+    fun startSeeding(ent: DbRecord, window: Window?) {
+        if (!AppContext.downloader.startSeeding(ent.id)) {
+            MessageBox.show(window, text("TORRENT_START_SEEDING"), text("TORRENT_SEEDING_FAILED"), JOptionPane.ERROR_MESSAGE)
+        }
+    }
+
     /** "Stream download (HLS/DASH)": a non-modal dialog; each click opens another. */
     fun showStreamDialog(window: Window?) {
         StreamDownloadDialog(window).isVisible = true
@@ -404,6 +431,10 @@ object AppMenuHandler {
             DownloadType.Dash -> AppContext.taskInfoDB.getDashTask(record.id)?.url
             // A batch has no single link: copy the page its links came from.
             DownloadType.Batch -> AppContext.taskInfoDB.getBatchTask(record.id)?.origin
+            // Added from a .torrent file: a magnet link from its info-hash and name.
+            DownloadType.Torrent -> AppContext.taskInfoDB.getTorrentTask(record.id)?.let {
+                it.magnet ?: "magnet:?xt=urn:btih:${it.key}&dn=" + java.net.URLEncoder.encode(it.name, "UTF-8").replace("+", "%20")
+            }
             else -> null
         }
         if (url != null) {

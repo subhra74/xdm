@@ -76,7 +76,7 @@ fun createTray(image: Image): Boolean {
         trayIcon.popupMenu = PopupMenu().apply {
             add(MenuItem(I8N.text("MSG_RESTORE")).apply { addActionListener { app.showAppWindow() } })
             addSeparator()
-            add(MenuItem(I8N.text("MENU_EXIT")).apply { addActionListener { exitProcess(0) } })
+            add(MenuItem(I8N.text("MENU_EXIT")).apply { addActionListener { AppExit.exit() } })
         }
     }
     trayIcon.addMouseListener(object : MouseAdapter() {

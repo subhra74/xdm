@@ -8,7 +8,7 @@ Icon=xdm-app
 Terminal=false
 Categories=Network;FileTransfer;
 Keywords=download;accelerator;video;hls;dash;
-MimeType=x-scheme-handler/xdm-app;
+MimeType=x-scheme-handler/xdm-app;x-scheme-handler/magnet;application/x-bittorrent;
 # No launch feedback: GNOME ends its busy cursor when the first window hands back the launch's
 # XDG_ACTIVATION_TOKEN, and JBR's Wayland toolkit never does, so the cursor stayed busy until the
 # timeout (PACKAGING.md 7.2).

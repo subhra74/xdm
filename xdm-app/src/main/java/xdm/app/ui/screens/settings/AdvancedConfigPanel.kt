@@ -57,6 +57,7 @@ class AdvancedConfigPanel : SettingsPanel() {
                 settingsRow(I8N.text("MSG_WAYLAND"), I8N.text("MSG_WAYLAND_SUB"), tglWayland),
                 settingsRow(I8N.text("MSG_SWING_CHOOSER"), I8N.text("MSG_SWING_CHOOSER_SUB"), tglSwingChooser),
                 settingsRow(I8N.text("MSG_FORCE_IPV4"), I8N.text("MSG_FORCE_IPV4_SUB"), tglForceIpv4),
+                settingsRow(I8N.text("MSG_LOGS"), I8N.text("MSG_LOGS_SUB"), settingsButton(I8N.text("MSG_LOGS_OPEN")) { openLogs() }),
             )
         )
         add(settingsGap())
@@ -117,6 +118,13 @@ class AdvancedConfigPanel : SettingsPanel() {
         txtVirusScan.isEnabled = tglVirusScan.isSelected
         txtArgs.isEnabled = tglVirusScan.isSelected
         btnBrowse.isEnabled = tglVirusScan.isSelected
+    }
+
+    /** Opens the folder with this and the last few launches' logs, for a bug report. */
+    private fun openLogs() {
+        val dir = xdm.core.util.Logger.logFolder ?: return
+        runCatching { xdm.app.utils.openFolderExternal(null, dir.absolutePath) }
+            .onFailure { xdm.core.util.Logger.error("Could not open the logs folder $dir", it) }
     }
 
     fun load() {

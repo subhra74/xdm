@@ -117,11 +117,15 @@ fun sameWidth(vararg components: Component) {
     components.forEach { it.preferredSize = dim }
 }
 
-fun showMenu(target: Component, menu: JPopupMenu) {
+/**
+ * Shows [menu] under [target]: its right edge on the button's (menus of buttons at the right), or with
+ * [alignStart] its left edge on the button's (a button at the left, like + New).
+ */
+fun showMenu(target: Component, menu: JPopupMenu, alignStart: Boolean = false) {
     menu.pack()
     val menuWidth = menu.preferredSize.width
     val targetWidth = target.preferredSize.width
-    val x = targetWidth - menuWidth
+    val x = if (alignStart) 0 else targetWidth - menuWidth
     menu.invoker = target
     menu.show(target, x, target.height)
 }

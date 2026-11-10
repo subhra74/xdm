@@ -3,6 +3,7 @@ package xdm.app
 import xdm.app.ui.screens.ShutdownCountdownWindow
 import xdm.app.utils.KeepAwake
 import xdm.app.utils.SoundPlayer
+import xdm.app.utils.TorrentLibrary
 import xdm.app.utils.WorkingSetTrim
 import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.DownloadType
@@ -57,6 +58,14 @@ object DesktopUiSink : UiSink {
 
     override fun moveProgress(id: Long, phase: MovePhase, progress: Int) = app.updateMoveProgress(id, phase, progress)
 
+    override fun seedingFailed(id: Long) {
+        val name = AppContext.db.getById(id)?.fileName ?: return
+        xdm.app.ui.components.MessageBox.show(
+            xdm.app.utils.mainWindowOnScreen(), I8N.text("TORRENT_SEEDING"),
+            String.format(I8N.text("TORRENT_SEEDING_STOPPED"), name), javax.swing.JOptionPane.WARNING_MESSAGE,
+        )
+    }
+
     override fun downloadFailed(id: Long, error: DownloadError) = app.showProgressError(id, error)
 
     override fun spaceWarning(folder: String, needed: Long, free: Long, isTempFolder: Boolean) =
@@ -106,6 +115,8 @@ object DesktopPlatformHooks : PlatformHooks {
             }
         }
     }
+
+    override fun loadTorrentLibrary(): Boolean = TorrentLibrary.load()
 
     override fun downloadDeleted(id: Long) {
         if (AppContext.hasScheduler && AppContext.scheduler.contains(id)) {

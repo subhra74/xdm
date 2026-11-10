@@ -323,6 +323,37 @@
           </RegistryKey>
         </RegistryKey>
       </Component>
+      <!-- magnet: links and .torrent files (torrent.md 3e): registered as a choice only, never as the default.
+           XDM's own ProgIds, listed under Capabilities and RegisteredApplications so Windows offers XDM in
+           Default apps and "Open with"; Software\Classes\magnet and the .torrent default are left alone
+           (another client's choice stays). OpenWithProgids adds XDM to .torrent's "Open with" list. -->
+      <Component Id="TorrentAssociationKeys">
+        <RegistryKey Root="HKMU" Key="Software\Classes\XDM.Magnet">
+          <RegistryValue Type="string" Value="URL:Magnet link" KeyPath="yes" />
+          <RegistryValue Name="URL Protocol" Type="string" Value="" />
+          <RegistryKey Key="shell\open\command">
+            <RegistryValue Type="string" Value="&quot;[INSTALLFOLDER]xdm-app.exe&quot; &quot;%1&quot;" />
+          </RegistryKey>
+        </RegistryKey>
+        <RegistryKey Root="HKMU" Key="Software\Classes\XDM.Torrent">
+          <RegistryValue Type="string" Value="BitTorrent file" />
+          <RegistryKey Key="DefaultIcon">
+            <RegistryValue Type="string" Value="&quot;[INSTALLFOLDER]xdm-app.exe&quot;,0" />
+          </RegistryKey>
+          <RegistryKey Key="shell\open\command">
+            <RegistryValue Type="string" Value="&quot;[INSTALLFOLDER]xdm-app.exe&quot; &quot;%1&quot;" />
+          </RegistryKey>
+        </RegistryKey>
+        <RegistryValue Root="HKMU" Key="Software\Classes\.torrent\OpenWithProgids" Name="XDM.Torrent" Type="string" Value="" />
+        <RegistryKey Root="HKMU" Key="Software\Xtreme Download Manager\Capabilities">
+          <RegistryValue Name="ApplicationName" Type="string" Value="Xtreme Download Manager" />
+          <RegistryValue Name="ApplicationDescription" Type="string" Value="Download manager with torrent support" />
+          <RegistryValue Key="URLAssociations" Name="magnet" Type="string" Value="XDM.Magnet" />
+          <RegistryValue Key="FileAssociations" Name=".torrent" Type="string" Value="XDM.Torrent" />
+        </RegistryKey>
+        <RegistryValue Root="HKMU" Key="Software\RegisteredApplications" Name="Xtreme Download Manager"
+                       Type="string" Value="Software\Xtreme Download Manager\Capabilities" />
+      </Component>
     </ComponentGroup>
   </Fragment>
 </Wix>

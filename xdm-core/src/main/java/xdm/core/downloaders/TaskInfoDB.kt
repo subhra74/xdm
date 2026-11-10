@@ -56,6 +56,17 @@ private const val BATCH_COOKIE = 7
 private const val BATCH_ITEM = 8
 private const val BATCH_TEMP_DIR = 9
 
+// Torrent: own numbering like Batch (F_TYPE shared).
+private const val TORRENT_ID = 1
+private const val TORRENT_KEY = 2
+private const val TORRENT_NAME = 3
+private const val TORRENT_FOLDER = 4
+private const val TORRENT_MAGNET = 5
+private const val TORRENT_CATEGORY_ID = 6
+private const val TORRENT_FILE_PRIORITIES = 7
+private const val TORRENT_SEQUENTIAL = 8
+private const val TORRENT_ORIGIN = 9
+
 // BatchItem
 private const val ITEM_URL = 1
 private const val ITEM_FILE_NAME = 2
@@ -514,6 +525,68 @@ class TaskInfoDB(private val configDir: String) {
             }
         }.onFailure { Logger.error("XDM", "Error saving task info ${task.id}", it) }
     }
+
+    fun getTorrentTask(id: Long): TorrentDownloadTaskInfo? {
+        AtomicIO.readTransacted("task-$id.info", configDir) { input ->
+            val r = TaggedFile.read(input)
+            var type = 0
+            var taskId = 0L
+            var key = ""
+            var name = ""
+            var folder = ""
+            var magnet: String? = null
+            var categoryId: String? = null
+            var priorities = ByteArray(0)
+            var sequential = false
+            var origin: String? = null
+            while (true) {
+                when (r.next()) {
+                    -1 -> break
+                    F_TYPE -> type = r.int()
+                    TORRENT_ID -> taskId = r.long()
+                    TORRENT_KEY -> key = r.string()
+                    TORRENT_NAME -> name = r.string()
+                    TORRENT_FOLDER -> folder = r.string()
+                    TORRENT_MAGNET -> magnet = r.string()
+                    TORRENT_CATEGORY_ID -> categoryId = r.string()
+                    TORRENT_FILE_PRIORITIES -> priorities = r.bytes()
+                    TORRENT_SEQUENTIAL -> sequential = r.bool()
+                    TORRENT_ORIGIN -> origin = r.string()
+                    else -> r.skip()
+                }
+            }
+            if (type != DownloadType.Torrent.id) return null
+            return TorrentDownloadTaskInfo(
+                id = taskId,
+                key = key,
+                name = name,
+                folder = folder,
+                magnet = magnet,
+                categoryId = categoryId,
+                filePriorities = priorities,
+                sequential = sequential,
+                origin = origin,
+            )
+        }
+        return null
+    }
+
+    /** Returns whether the task info reached the disk. */
+    fun saveTorrentTask(task: TorrentDownloadTaskInfo): Boolean =
+        AtomicIO.writeTransacted("task-${task.id}.info", configDir, ownerOnly = true) { out ->
+            TaggedFile.write(out) {
+                int(F_TYPE, DownloadType.Torrent.id)
+                long(TORRENT_ID, task.id)
+                string(TORRENT_KEY, task.key)
+                string(TORRENT_NAME, task.name)
+                string(TORRENT_FOLDER, task.folder)
+                stringOrNull(TORRENT_MAGNET, task.magnet)
+                stringOrNull(TORRENT_CATEGORY_ID, task.categoryId)
+                if (task.filePriorities.isNotEmpty()) bytes(TORRENT_FILE_PRIORITIES, task.filePriorities)
+                if (task.sequential) bool(TORRENT_SEQUENTIAL, true)
+                stringOrNull(TORRENT_ORIGIN, task.origin)
+            }
+        }.onFailure { Logger.error("XDM", "Error saving task info ${task.id}", it) }.isSuccess
 
     fun deleteRecord(id: Long) {
         SensitiveHeaders.forget(id)
