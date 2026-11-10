@@ -84,6 +84,13 @@ data class HttpDownloadTaskInfo(
     var convertToSrt: Boolean = false,
     /** Set when an external extractor (yt-dlp) resolved the link; it can resolve it again when it expires. */
     var extractor: ExtractorSource? = null,
+    /**
+     * The link the browser was redirected from to [url] (a site's download link in front of a signed,
+     * short-lived file URL). Asked again for a fresh [url] when this one expires; null when there was no redirect.
+     */
+    var sourceUrl: String? = null,
+    /** The cookies of [sourceUrl]'s host, sent only to it. */
+    var sourceCookie: String? = null,
 )
 
 /**

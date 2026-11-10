@@ -89,6 +89,41 @@ class DownloadManagerRefreshLinkTest : DownloadManagerTestBase() {
         assertTrue(after.any { it.rangeStart > 0 }, "the download restarted instead of resuming")
     }
 
+    /**
+     * The browser was redirected from the site's link to a signed file URL. That URL expires part way: the
+     * download fails with an expired link, asks the site's link again (with the site's cookies, not the file
+     * host's), gets the newly signed URL and resumes on it without starting over.
+     */
+    @Test
+    fun expiredLinkIsRefreshedFromItsSourceLinkAndResumes() {
+        val task = httpTask().copy(
+            url = fileServer.url("old"), cookie = "cdn=1", knownFileSize = data.size.toLong(),
+            sourceUrl = fileServer.linkUrl, sourceCookie = "site=1",
+        )
+        dm.startHttpDownload(task)
+        remember()
+        assertTrue(
+            waitFor(20_000) { (appDB.getById(task.id)?.downloaded ?: 0L) in 1 until data.size.toLong() / 2 }
+        , "download never made progress")
+
+        // The signed URL expires: every transfer on it is cut, and it is refused from now on.
+        fileServer.requests.clear()
+        fileServer.validToken = "new"
+
+        assertTrue(
+            waitFor(60_000) { appDB.getById(task.id)?.status == RecordStatus.FINISHED }
+        , "download did not finish after the link expired: ${appDB.getById(task.id)?.status}")
+        remember()
+        val finished = appDB.getById(task.id)!!
+        assertArrayEquals(data, File(dir, finished.fileName).readBytes(), "refreshed download produced a different file")
+
+        assertEquals(fileServer.url("new"), taskDB.getHttpTask(task.id)!!.url, "the fresh URL is the download's link now")
+        assertTrue(fileServer.linkCookies.isNotEmpty(), "the source link was never asked")
+        assertTrue(fileServer.linkCookies.all { it == "site=1" }, "the source link got other cookies: ${fileServer.linkCookies}")
+        val served = fileServer.requests.filter { it.query == "token=new" && it.rangeStart > 0 }
+        assertTrue(served.isNotEmpty(), "the download restarted instead of resuming on the fresh link")
+    }
+
     @Test
     fun refreshedCookieReplacesTheOldOneInsteadOfBeingMerged() {
         val task = httpTask().copy(url = fileServer.url("old"), cookie = "session=old")

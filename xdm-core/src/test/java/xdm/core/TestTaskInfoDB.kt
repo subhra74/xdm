@@ -69,6 +69,17 @@ class TestTaskInfoDB : HttpDownloadTestBase() {
     }
 
     @Test
+    fun http_roundTripKeepsSourceLink() {
+        val task = httpTask(4).copy(sourceUrl = "https://site.example/get?id=7", sourceCookie = "session=abc")
+        db().saveHttpTask(task)
+        val loaded = db().getHttpTask(4)!!
+        assertEquals("https://site.example/get?id=7", loaded.sourceUrl, "source link survives a restart")
+        assertEquals("session=abc", loaded.sourceCookie, "source cookies survive a restart")
+        db().saveHttpTask(httpTask(5))
+        assertEquals(null, db().getHttpTask(5)!!.sourceUrl, "no source link when there was no redirect")
+    }
+
+    @Test
     fun http_roundTripKeepsConvertToSrt() {
         val task = httpTask(2).copy(convertToSrt = true)
         db().saveHttpTask(task)

@@ -48,6 +48,18 @@ sealed interface ConnectResult {
     data object LinkExpired : ConnectResult
 }
 
+/** What a chunk does after the link refused it (403/410/expired 401) once bytes were already downloaded. */
+enum class Refusal {
+    /** Other connections of the download still get data: the server limits connections. Back off as after a 429. */
+    Busy,
+
+    /** Nothing else is connected, but data came in moments ago: the server may not have freed a slot yet. */
+    Retry,
+
+    /** Nothing is getting data: the link expired. */
+    Expired,
+}
+
 enum class CopyResult {
     Done, Retry, Cancel, DiskError, Eof
 }

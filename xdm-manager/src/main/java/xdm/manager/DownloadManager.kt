@@ -387,7 +387,7 @@ class DownloadManager(
                 ui.downloadUpdated(id)
                 if (toDelete.remove(id)) {
                     deleteAfterStopped(id, it)
-                } else {
+                } else if (!tryRefreshLink(id, error)) {
                     ui.downloadFailed(id, error)
                     hooks.downloadFailed(id)
                 }
@@ -979,6 +979,7 @@ class DownloadManager(
         HlsKeyStore.delete(id, configDir)
         TorrentService.deleteFiles(id, configDir)
         refused.remove(id)
+        linkRefresher.forget(id)
         hooks.downloadDeleted(id)
     }
 
@@ -1373,8 +1374,17 @@ class DownloadManager(
         return null
     }
 
-    override fun updateDownloadInfo(id: Long, task: HttpDownloadTaskInfo) =
+    override fun updateDownloadInfo(id: Long, task: HttpDownloadTaskInfo) {
         applyLinkUpdate(id, task.url, task.headers, task.cookie)
+        // A new capture from the browser brings its own source link, if it came through a redirect.
+        if (task.sourceUrl == null) return
+        taskInfoDB.getHttpTask(id)?.let {
+            it.sourceUrl = task.sourceUrl
+            it.sourceCookie = task.sourceCookie
+            taskInfoDB.saveHttpTask(it)
+        }
+        linkRefresher.forget(id)
+    }
 
     override fun updateDownloadLink(id: Long, url: String, headers: HeaderMap?, cookie: String?) =
         applyLinkUpdate(id, url, headers, cookie)
@@ -1617,6 +1627,44 @@ class DownloadManager(
      * A run's client: the shared certificate checks unless the app replaces them ([PlatformHooks.insecureTrust]).
      * Refused certificates are collected for [resumeTrustingRefused]; a new run starts with none.
      */
+    private val linkRefresher = LinkRefresher({
+        HttpClientImpl(
+            1, config.toProxy(), hooks.insecureTrust(), config.readTimeoutSeconds,
+            config.proxyUser, config.proxyPass, auth = hooks.httpAuth, serverAuth = true,
+        )
+    })
+
+    /**
+     * An HTTP download whose link expired gets a fresh one from the link the browser was redirected from
+     * ([LinkRefresher]) and resumes; the error is shown only if that gives nothing. True when a refresh was
+     * started: the caller then shows nothing.
+     */
+    private fun tryRefreshLink(id: Long, error: DownloadError): Boolean {
+        if (error != DownloadError.LinkExpired) return false
+        val task = taskInfoDB.getHttpTask(id)?.takeIf { it.sourceUrl != null } ?: return false
+        val state = AtomicIO.readTransacted("$id.state", configDir) { fs -> readContext(fs, downloadHost, "", "") }
+            .getOrNull()
+        if (!linkRefresher.claim(id, state?.downloaded?.get() ?: 0L)) return false
+        Logger.info("XDM", "Download $id: link expired, asking its source link for a fresh one")
+        Thread({
+            val url = runCatching { linkRefresher.resolve(task, state?.totalSize, state?.validator) }
+                .onFailure { Logger.error("XDM", "Download $id: refreshing the link failed", it) }
+                .getOrNull()
+            // Resumed, deleted or refreshed by hand meanwhile: that is the user's choice, left alone.
+            val stillFailed = !activeSessions.containsKey(id) && store.getById(id)?.status == RecordStatus.ERROR
+            if (!stillFailed) return@Thread
+            if (url == null) {
+                ui.downloadFailed(id, error)
+                hooks.downloadFailed(id)
+                return@Thread
+            }
+            Logger.info("XDM", "Download $id: fresh link from its source, resuming")
+            updateDownloadLink(id, url, task.headers, task.cookie)
+            resumeDownload(id)
+        }, "link-refresh-$id").apply { isDaemon = true }.start()
+        return true
+    }
+
     private fun newHttpClient(id: Long): HttpClientImpl {
         refused.remove(id)
         return HttpClientImpl(

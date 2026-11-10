@@ -132,8 +132,11 @@ class RequestWatcher {
 
     onSendHeadersEvent(info) {
         // Every method is recorded: each reader applies its own method rule. A redirect hop re-fires
-        // this under the same requestId and overwrites the entry, so the final hop is what is kept.
+        // this under the same requestId and overwrites the entry, so the final hop is what is kept,
+        // carrying forward the URL the chain started at (a download sends it as its source link).
         // Re-inserted rather than overwritten, so the map stays in timestamp order for sweep().
+        let prev = this.requestMap.get(info.requestId);
+        info.originUrl = prev ? prev.originUrl : info.url;
         this.requestMap.delete(info.requestId);
         this.requestMap.set(info.requestId, info);
         this.sweep();
@@ -164,6 +167,9 @@ class RequestWatcher {
             return;
         }
         let data = this.createRequestData(req, res, null, null, req.tabId);
+        if (req.originUrl && req.originUrl !== data.url) {
+            data.sourceUrl = req.originUrl;
+        }
         let download = candidate && this.downloadCallback && this.downloadCallback(data, res) === true;
         if (download) {
             data.download = true;

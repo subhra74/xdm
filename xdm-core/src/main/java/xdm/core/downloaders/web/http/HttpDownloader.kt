@@ -26,6 +26,9 @@ interface ChunkController : DownloaderTask {
     fun onChunkConnected(id: Long, data: ChunkConfirmedData?)
     fun updateBytesDownloaded(id: Long, downloaded: Long)
     fun onChunkFailed(id: Long, error: DownloadError)
+
+    /** The link refused chunk [id] after part of the file was downloaded; see [Refusal]. */
+    fun onLinkRefused(id: Long): Refusal
     fun onChunkFinished(id: Long)
     fun takeOverChunk(chunkId: Long, maxByteRange: Long): Boolean
 }
@@ -184,6 +187,9 @@ class HttpDownloaderTask : ChunkController {
 
     /** The error of the most recent failed chunk, reported if the download ends up failing. */
     private val lastChunkError = AtomicReference<DownloadError?>(null)
+
+    /** When the last bytes of this session came in; 0 before any. */
+    private val lastDataAt = AtomicLong(0)
 
     /** Set once the failure has been reported, so chunks failing together report it once. */
     private val failureReported = AtomicBoolean(false)
@@ -377,6 +383,31 @@ class HttpDownloaderTask : ChunkController {
             return
         }
         if (isAllError()) reportFailure(error)
+    }
+
+    /**
+     * A refusal while other chunks are still running and data came in a moment ago (or one of them is reading
+     * right now) is the server turning away one connection too many (some CDNs answer that with 403, not 429),
+     * not an expired link: the chunk backs off and asks again, as after a 429. With nothing else running, a
+     * refusal right after data came in is asked again shortly too; otherwise the link expired.
+     */
+    override fun onLinkRefused(id: Long): Refusal {
+        context.read {
+            val others = context.chunks.values.count {
+                it.id != id && it.status.get().let { s -> s != ChunkStatus.Finished && s != ChunkStatus.Failed }
+            }
+            val reading = context.chunks.values.any { it.id != id && it.response.get() != null }
+            val recent = lastDataAt.get().let { it > 0 && System.currentTimeMillis() - it < LINK_ALIVE_MS }
+            if (others > 0 && (reading || recent)) {
+                Logger.info("XDM", "Chunk $id refused while other connections download: server limit, backing off")
+                return Refusal.Busy
+            }
+            if (others == 0 && recent) {
+                Logger.info("XDM", "Chunk $id refused right after data came in, asking again")
+                return Refusal.Retry
+            }
+        }
+        return Refusal.Expired
     }
 
     private fun reportFailure(error: DownloadError) {
@@ -790,6 +821,7 @@ class HttpDownloaderTask : ChunkController {
             }
         }
         context.downloaded.addAndGet(downloaded)
+        if (downloaded > 0) lastDataAt.set(System.currentTimeMillis())
         if (update) {
             context.downloadHost.onDownloadProgress(prgInfo)
         }
@@ -943,6 +975,9 @@ class HttpDownloaderTask : ChunkController {
 
         /** How often a running download looks for a free slot to split into. */
         const val SPLIT_CHECK_MS = 1000L
+
+        /** How recent the last data must be for a refusal to count as a connection limit, not an expiry. */
+        const val LINK_ALIVE_MS = 3000L
 
         /** A chunk with no more than this left is not split. */
         const val MIN_SPLIT_BYTES = 256L * 1024

@@ -115,9 +115,21 @@ class HttpChunkRetriever(
                     false
                 }
 
-                ConnectResult.LinkExpired -> {
-                    chunkFailed(DownloadError.LinkExpired)
-                    false
+                ConnectResult.LinkExpired -> when (controller.onLinkRefused(id)) {
+                    // The link works for the other connections: wait as after a 429, without using up retries.
+                    Refusal.Busy -> {
+                        retryAfter = BUSY_RETRY_SECS
+                        true
+                    }
+                    Refusal.Retry -> {
+                        retryCount += 1
+                        retryAfter = REFUSED_RETRY_SECS
+                        onRetry(retryCount)
+                    }
+                    Refusal.Expired -> {
+                        chunkFailed(DownloadError.LinkExpired)
+                        false
+                    }
                 }
 
                 ConnectResult.TlsError -> {
@@ -176,7 +188,8 @@ class HttpChunkRetriever(
                     if (context.finalUrl == requestUrl) context.finalUrl = null
                     return ConnectResult.Retry(0)
                 }
-                // The link worked before (bytes are on disk) and is now refused: it expired.
+                // The link worked before (bytes are on disk) and is now refused: it expired, or the server
+                // refuses one connection more than it allows. The controller tells which.
                 if (context.downloaded.get() > 0) {
                     Logger.info("XDM", "Chunk: $id - link refused with ${r.statusCode} after partial download")
                     r.close()
@@ -553,6 +566,10 @@ class HttpChunkRetriever(
 
     private companion object {
         const val MAX_RETRY_AFTER_SECS = 60L
+        /** Wait before asking again after [Refusal.Retry]. */
+        const val REFUSED_RETRY_SECS = 2L
+        /** Wait before asking again after [Refusal.Busy]: the default 429 backoff. */
+        const val BUSY_RETRY_SECS = 5L
         const val RETRY_SLEEP_STEP_MS = 200L
         /**
          * Bytes gathered before each write. Must stay at most 128 KB: a split only happens with

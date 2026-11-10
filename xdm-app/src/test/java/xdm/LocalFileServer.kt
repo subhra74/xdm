@@ -26,6 +26,9 @@ class LocalFileServer(private val data: ByteArray) {
 
     val requests = CopyOnWriteArrayList<ServedRequest>()
 
+    /** The Cookie header of each request to the site's download link (`/link`). */
+    val linkCookies = CopyOnWriteArrayList<String?>()
+
     @Volatile
     var validToken: String = "old"
 
@@ -38,10 +41,19 @@ class LocalFileServer(private val data: ByteArray) {
     init {
         server.executor = executor
         server.createContext("/file", ::serve)
+        // A site's download link: redirects to the file URL signed with the currently valid token.
+        server.createContext("/link") { ex ->
+            linkCookies.add(ex.requestHeaders.getFirst("Cookie"))
+            ex.responseHeaders.add("Location", url(validToken))
+            ex.sendResponseHeaders(302, -1)
+            ex.close()
+        }
         server.start()
     }
 
     fun url(token: String): String = "http://127.0.0.1:${server.address.port}/file?token=$token"
+
+    val linkUrl: String get() = "http://127.0.0.1:${server.address.port}/link"
 
     fun stop() {
         closing = true
@@ -83,6 +95,7 @@ class LocalFileServer(private val data: ByteArray) {
             return
         }
 
+        var cut = false
         try {
             ex.responseHeaders.add("Accept-Ranges", "bytes")
             if (ranged) ex.responseHeaders.add("Content-Range", "bytes $start-$end/$total")
@@ -91,6 +104,11 @@ class LocalFileServer(private val data: ByteArray) {
             val os = ex.responseBody
             var pos = start
             while (pos <= end && !closing) {
+                // A link that expires mid-transfer also cuts the transfers still running on it.
+                if (token != validToken) {
+                    cut = true
+                    break
+                }
                 val n = minOf(CHUNK.toLong(), end - pos + 1).toInt()
                 os.write(data, pos.toInt(), n)
                 os.flush()
@@ -98,12 +116,15 @@ class LocalFileServer(private val data: ByteArray) {
                 // Throttled so the test can pause the download while it is still in flight.
                 Thread.sleep(SLEEP_MS)
             }
-            runCatching { os.close() }
+            if (!cut) runCatching { os.close() }
         } catch (e: Exception) {
             // A connection broken by a pause is expected here.
         } finally {
-            ex.close()
+            if (!cut) ex.close()
         }
+        // Thrown out of the handler, the server drops the connection instead of waiting for the rest of
+        // the body: the client sees the transfer cut at once.
+        if (cut) throw java.io.IOException("link expired mid-transfer")
     }
 
     companion object {

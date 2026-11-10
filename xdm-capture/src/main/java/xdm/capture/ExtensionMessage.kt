@@ -38,6 +38,10 @@ data class ExtensionMessage(
     val vid: Long? = null,
     /** webRequest's resource type for a captured `/media` request ("media", "xmlhttprequest", ...); null from older extensions. */
     val resourceType: String? = null,
+    /** `/download`: the link the browser was redirected from to [url], when it was; null otherwise. */
+    val sourceUrl: String? = null,
+    /** `/download`: the cookies of [sourceUrl]'s host. */
+    val sourceCookie: String? = null,
 )
 
 @Serializable

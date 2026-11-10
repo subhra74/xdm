@@ -34,6 +34,8 @@ private const val F_EXTRACTOR = 12
 
 private const val HTTP_KNOWN_FILE_SIZE = 20
 private const val HTTP_CONVERT_TO_SRT = 21
+private const val HTTP_SOURCE_URL = 22
+private const val HTTP_SOURCE_COOKIE = 23
 
 private const val HLS_AUDIO_URL = 20
 private const val HLS_AUDIO_ONLY = 21
@@ -297,6 +299,8 @@ class TaskInfoDB(private val configDir: String) {
             val c = CommonFields()
             var knownFileSize: Long? = null
             var convertToSrt = false
+            var sourceUrl: String? = null
+            var sourceCookie: String? = null
             while (true) {
                 val no = r.next()
                 if (no == -1) break
@@ -304,6 +308,8 @@ class TaskInfoDB(private val configDir: String) {
                 when (no) {
                     HTTP_KNOWN_FILE_SIZE -> knownFileSize = r.long()
                     HTTP_CONVERT_TO_SRT -> convertToSrt = r.bool()
+                    HTTP_SOURCE_URL -> sourceUrl = r.string()
+                    HTTP_SOURCE_COOKIE -> sourceCookie = r.string()
                     else -> r.skip()
                 }
             }
@@ -323,6 +329,8 @@ class TaskInfoDB(private val configDir: String) {
                 knownFileSize = knownFileSize,
                 convertToSrt = convertToSrt,
                 extractor = c.extractor,
+                sourceUrl = sourceUrl,
+                sourceCookie = sourceCookie,
             )
         }
         return null
@@ -434,6 +442,8 @@ class TaskInfoDB(private val configDir: String) {
                 )
                 task.knownFileSize?.let { long(HTTP_KNOWN_FILE_SIZE, it) }
                 if (task.convertToSrt) bool(HTTP_CONVERT_TO_SRT, true)
+                task.sourceUrl?.let { string(HTTP_SOURCE_URL, it) }
+                task.sourceCookie?.let { string(HTTP_SOURCE_COOKIE, it) }
             }
         }.onFailure { Logger.error("XDM", "Error saving task info ${task.id}", it) }.isSuccess
 
