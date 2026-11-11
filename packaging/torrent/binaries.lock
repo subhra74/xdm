@@ -1,6 +1,6 @@
 # Prebuilt native torrent libraries, one line per platform: platform|file|url|sha256
 # Built by build-windows.ps1 / build-unix.sh / build-linux-docker.sh in the separate libtorrent-builds repo and published as assets
-# of a GitHub release "xdmtorrent-native-<abi>.<n>" (its release-binaries.sh writes these lines; copy them here). Rebuild and
+# of a GitHub release "xdmtorrent-native-<abi>.<n>" in subhra74/libtorrent-binary (its release-binaries.sh writes these lines; copy them here). Rebuild and
 # re-release only when the native code, the JNI binding or deps.lock change; the Maven build never compiles C++.
 # fetch-binaries.sh / .ps1 download them into ~/.cache/xdm-torrent/bin/<platform>/ and check the hash.
 #
