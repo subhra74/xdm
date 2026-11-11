@@ -24,7 +24,9 @@ import java.io.BufferedOutputStream
  * for long streams), and the `moov` sample tables are streamed from them at the end.
  * Each sample is emitted as its own MP4 chunk, which correctly handles audio/video interleaving.
  */
-class Mp4Writer(private val output: StorageFile, private val repairTimeline: Boolean = false) : ContainerWriter {
+class Mp4Writer(private val output: StorageFile, repairTimeline: Boolean = false) : ContainerWriter {
+    /** Repair discontinuities in the timeline at [finish]; may be turned on after construction. */
+    var repairTimeline: Boolean = repairTimeline
     constructor(outputPath: String, repairTimeline: Boolean = false) : this(LocalStorage.file(outputPath), repairTimeline)
 
     /** Written front to back through [bos]; the mdat size is then patched through the same handle. */

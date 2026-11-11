@@ -8,6 +8,7 @@ import xdm.core.media.muxer.transmux.es.SampleSink
 import xdm.core.media.muxer.transmux.sample.Codec
 import xdm.core.media.muxer.transmux.sample.Sample
 import xdm.core.media.muxer.transmux.sample.Track
+import xdm.core.util.Logger
 import java.io.RandomAccessFile
 
 /**
@@ -25,18 +26,25 @@ class MatroskaDemuxer(private val sink: SampleSink) {
 
     private class TrackState(val track: Track, var defaultDurationNs: Long = 0)
 
+    /** Track number -> the track its blocks go to now. */
     private val byNumber = LinkedHashMap<Long, TrackState>()
+    /** Every track in first-seen order, including ones a later `Tracks` replaced with another codec. */
+    private val ordered = ArrayList<TrackState>()
     private var timecodeScaleNs = 1_000_000L
     private lateinit var reader: EbmlReader
 
-    val tracks: List<Track> get() = byNumber.values.map { it.track }
+    /** Length of the segment being parsed: a block past it was cut off (a truncated download). */
+    private var fileLength = 0L
+
+    val tracks: List<Track> get() = ordered.map { it.track }
 
     /** [from] is where the Matroska data starts when the file has other bytes in front of it. */
     fun parseSegment(path: String, from: Long = 0) {
         RandomAccessFile(path, "r").use { raf ->
             reader = EbmlReader(raf)
             reader.seek(from)
-            walk(raf.length())
+            fileLength = raf.length()
+            walk(fileLength)
         }
     }
 
@@ -50,7 +58,8 @@ class MatroskaDemuxer(private val sink: SampleSink) {
             val size = reader.readSize()
             val dataStart = reader.position()
             val unknown = size < 0
-            val dataEnd = if (unknown) end else dataStart + size
+            // An element running past the end of the file (a cut download) is read as far as it goes.
+            val dataEnd = if (unknown) end else minOf(dataStart + size, end)
             when (id) {
                 // Entering a Segment: its children are the next level-1 elements — just fall through.
                 Ebml.SEGMENT -> { /* descend by continuing the loop */ }
@@ -81,7 +90,7 @@ class MatroskaDemuxer(private val sink: SampleSink) {
         while (reader.position() < end) {
             val id = reader.readId(); if (id < 0) break
             val size = reader.readSize(); val ds = reader.position(); val de = ds + size
-            if (id == Ebml.TRACK_ENTRY) parseTrackEntry(ds, de)
+            if (id == Ebml.TRACK_ENTRY && de <= end) parseTrackEntry(ds, de)
             reader.seek(de)
         }
     }
@@ -112,6 +121,22 @@ class MatroskaDemuxer(private val sink: SampleSink) {
         }
         if (number < 0 || codecId.isEmpty()) return
 
+        // `Tracks` again (a repeated init segment, or a new EBML header + Segment in the same stream):
+        // the same track number and codec continue the existing track, so its earlier frames are kept.
+        val existing = byNumber[number]
+        if (existing != null && existing.track.matroskaCodecId == codecId) {
+            existing.defaultDurationNs = defaultDuration
+            val old = existing.track.decoderConfigRecord
+            if (!(old == null && codecPrivate == null) && !(old != null && codecPrivate != null && old.contentEquals(codecPrivate))) {
+                // Matroska has one CodecPrivate per track: the first one is kept.
+                Logger.info("XDM", "Matroska: track $number repeated with a different CodecPrivate, keeping the first")
+            }
+            return
+        }
+        if (existing != null) {
+            Logger.info("XDM", "Matroska: track $number changed codec ${existing.track.matroskaCodecId} -> $codecId, starting a new track")
+        }
+
         val isVideo = type == Ebml.TRACK_TYPE_VIDEO
         val track = Track(codecFor(codecId, isVideo))
         if (codecId.startsWith("A_MPEG/L")) track.mpegAudioLayer = codecId.last() - '0'
@@ -123,7 +148,9 @@ class MatroskaDemuxer(private val sink: SampleSink) {
         track.sampleRate = sampleRate.toInt()
         track.channelCount = channels
         track.audioBitDepth = bitDepth
-        byNumber[number] = TrackState(track, defaultDuration)
+        val state = TrackState(track, defaultDuration)
+        byNumber[number] = state
+        ordered.add(state)
     }
 
     private inline fun parseVideo(start: Long, end: Long, out: (Int, Int) -> Unit) {
@@ -167,6 +194,12 @@ class MatroskaDemuxer(private val sink: SampleSink) {
             val elemStart = reader.position()
             val id = reader.readId(); if (id < 0) break
             val size = reader.readSize(); val ds = reader.position(); val de = ds + size
+            // A block cut off by the end of the file: the segment ends before it.
+            if ((id == Ebml.SIMPLE_BLOCK || id == Ebml.BLOCK_GROUP) && (size < 0 || de > fileLength)) {
+                Logger.info("XDM", "Matroska: segment cut short inside a block, the rest dropped")
+                reader.seek(fileLength)
+                return
+            }
             when (id) {
                 Ebml.TIMECODE -> { clusterTc = reader.readUInt(size.toInt()); reader.seek(de) }
                 Ebml.SIMPLE_BLOCK -> { parseBlock(ds, de, clusterTc, null); reader.seek(de) }
@@ -222,7 +255,12 @@ class MatroskaDemuxer(private val sink: SampleSink) {
         for ((i, fsize) in frameSizes.withIndex()) {
             val sz = fsize.toInt()
             if (sz <= 0) continue
+            // A short read (lace sizes past the block): drop this and the following frames.
             val outOffset = copyFrame(offset, sz, scratch)
+            if (outOffset < 0) {
+                Logger.info("XDM", "Matroska: frame data cut short, dropped")
+                break
+            }
             val pts = basePtsMs + i * frameDurMs
             state.track.samples.add(outOffset, sz, pts, pts, keyframe)
             offset += sz
@@ -265,13 +303,15 @@ class MatroskaDemuxer(private val sink: SampleSink) {
         return sizes
     }
 
+    /** Copies a frame into the sink; -1 (nothing written) when the file has fewer than [size] bytes there. */
     private fun copyFrame(offset: Long, size: Int, scratch: ByteArray): Long {
+        if (offset + size > fileLength) return -1
         reader.seek(offset)
         val data = if (size <= scratch.size) scratch else ByteArray(size)
         var read = 0
         while (read < size) {
             val n = reader.readBytesInto(data, read, size - read)
-            if (n <= 0) break
+            if (n <= 0) return -1
             read += n
         }
         return sink.writeSampleData(data, 0, size)

@@ -22,6 +22,7 @@ import xdm.core.media.muxer.transmux.ts.TsDemuxer
 import xdm.core.util.Logger
 import java.io.File
 import java.io.FileInputStream
+import java.util.IdentityHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -49,6 +50,9 @@ class TransmuxingMuxer(
     private val container: String? = null,
 ) : Muxer {
     private val stopFlag = AtomicBoolean(false)
+
+    /** A segment list switched containers in this mux: its parts have their own timelines. */
+    private var mixedContainers = false
 
     @Volatile
     override var timelineStartSec: Double? = null
@@ -135,6 +139,7 @@ class TransmuxingMuxer(
     ): Boolean {
         lastError = null
         outputContainer = null
+        mixedContainers = false
         val requested = container ?: output.name.substringAfterLast('.', "")
         val matroskaInput = inputs.any { it.isNotEmpty() && containerOf(it.first()) == Container.MKV }
         val format = MuxContainer.plan(requested, matroskaInput)
@@ -146,6 +151,8 @@ class TransmuxingMuxer(
         val spill = SampleSpill.open(File(tempDir))
         return try {
             val tracks = body(writer)
+            // An ad or other insert in another container restarts its timestamps, whatever the manifest says.
+            if (mixedContainers && writer is Mp4Writer) writer.repairTimeline = true
             if (stopFlag.get()) { writer.abort(); false }
             else if (tracks.none { it.samples.isNotEmpty() }) {
                 // Nothing the demuxers recognised: say so, rather than fail with no reason.
@@ -183,55 +190,69 @@ class TransmuxingMuxer(
         return source.finish()
     }
 
-    /**
-     * One playlist's segments fed one at a time into the demuxer for their container (sniffed from
-     * the first segment); demuxer state carries across segments. Each segment is read from where its
-     * media starts ([SegmentProbe]), past any bytes the server put in front of it.
-     */
-    private inner class SegmentSource(private val segments: List<String>, writer: SampleSink) {
-        var fed = 0
+    /** One demuxer instance over part of a segment list. */
+    private class Demux(val container: Container, writer: SampleSink, stop: AtomicBoolean) {
+        val feed: (String, Long) -> Unit
+        private val end: () -> Unit
+        val tracks: () -> List<Track>
+        var finished = false
             private set
-        private val feedOne: (String, Long) -> Unit
-        private val end: () -> List<Track>
-        private val container: Container = if (segments.isEmpty()) Container.MP4 else containerOf(segments.first())
-        /** Segments whose media started past byte 0, for one log line at the end. */
-        private var shifted = 0
-        private var maxShift = 0L
 
         init {
             when (container) {
                 Container.TS -> {
                     val demux = TsDemuxer(writer)
                     val buffer = ByteArray(256 * 1024)
-                    feedOne = { seg, from ->
+                    feed = { seg, from ->
                         FileInputStream(seg).use { input ->
                             skipFully(input, from)
-                            while (!stopFlag.get()) {
+                            while (!stop.get()) {
                                 val n = input.read(buffer)
                                 if (n <= 0) break
                                 demux.feed(buffer, n)
                             }
                         }
                     }
-                    end = { demux.finish(); demux.tracks }
+                    end = { demux.finish() }; tracks = { demux.tracks }
                 }
-                Container.MKV -> MatroskaDemuxer(writer).let { d -> feedOne = { seg, from -> d.parseSegment(seg, from) }; end = { d.finish(); d.tracks } }
-                Container.PACKED_AUDIO -> PackedAudioDemuxer(writer).let { d -> feedOne = { seg, from -> d.parseSegment(seg, from) }; end = { d.finish(); d.tracks } }
-                Container.MP4 -> Mp4Demuxer(writer).let { d -> feedOne = { seg, from -> d.parseSegment(seg, from) }; end = { d.finish(); d.tracks } }
+                Container.MKV -> MatroskaDemuxer(writer).let { d -> feed = { seg, from -> d.parseSegment(seg, from) }; end = { d.finish() }; tracks = { d.tracks } }
+                Container.PACKED_AUDIO -> PackedAudioDemuxer(writer).let { d -> feed = { seg, from -> d.parseSegment(seg, from) }; end = { d.finish() }; tracks = { d.tracks } }
+                Container.MP4 -> Mp4Demuxer(writer).let { d -> feed = { seg, from -> d.parseSegment(seg, from) }; end = { d.finish() }; tracks = { d.tracks } }
             }
         }
 
         /**
-         * Where this segment's media starts. A segment whose own start is another container (or none
-         * found) is read from byte 0, as before.
+         * Whether the demuxer can be left and fed again later. TS and packed audio hold back the
+         * last frames until finished, so they are finished when left and a new one starts on return;
+         * MP4 and Matroska keep their init segment's tracks for the media segments that follow.
          */
-        private fun startOf(seg: String): Long {
-            val found = SegmentProbe.locate(seg) ?: return 0
-            if (found.container != container || found.offset == 0L) return 0
-            shifted++
-            if (found.offset > maxShift) maxShift = found.offset
-            return found.offset
-        }
+        val resumable get() = container == Container.MP4 || container == Container.MKV
+
+        fun finish() { if (!finished) { finished = true; end() } }
+    }
+
+    /**
+     * One playlist's segments fed one at a time into the demuxer for their container; demuxer state
+     * carries across segments. Each segment is read from where its media starts ([SegmentProbe]),
+     * past any bytes the server put in front of it. The container comes from the first segment, and
+     * a later segment found to be another one (a TS ad inside an fMP4 stream, or the reverse) goes to
+     * a demuxer for that; the tracks of all of them are then joined by [TrackMerge]. A segment whose
+     * container isn't recognised stays with the current demuxer.
+     */
+    private inner class SegmentSource(private val segments: List<String>, private val writer: SampleSink) {
+        var fed = 0
+            private set
+        private val first: Container = if (segments.isEmpty()) Container.MP4 else containerOf(segments.first())
+        /** Every demuxer used, in the order started; [active] is the one being fed. */
+        private val used = ArrayList<Demux>()
+        private var active: Demux? = null
+        /** Samples of each track already put into a [TrackMerge.Run]. */
+        private val recorded = IdentityHashMap<Track, Int>()
+        private val runs = ArrayList<TrackMerge.Run>()
+        private var switches = 0
+        /** Segments whose media started past byte 0, for one log line at the end. */
+        private var shifted = 0
+        private var maxShift = 0L
 
         fun hasNext() = fed < segments.size
 
@@ -240,20 +261,66 @@ class TransmuxingMuxer(
 
         fun feedNext() {
             val seg = segments[fed]
-            feedOne(seg, startOf(seg))
+            val found = SegmentProbe.locate(seg)
+            val current = active
+            val target = when {
+                current == null -> first
+                found != null && found.container != current.container -> found.container
+                else -> current.container
+            }
+            val demux = if (current != null && current.container == target) current else switchTo(target, seg)
+            demux.feed(seg, startOf(found, target))
             fed++
+            record()
+        }
+
+        private fun switchTo(target: Container, seg: String): Demux {
+            active?.let { left ->
+                switches++
+                mixedContainers = true
+                Logger.info("XDM", "Segment ${fed + 1} is $target, after ${left.container}: switching demuxer ($seg)")
+                if (!left.resumable) { left.finish(); record() }
+            }
+            val next = used.lastOrNull { it.container == target && !it.finished } ?: Demux(target, writer, stopFlag).also { used.add(it) }
+            active = next
+            return next
+        }
+
+        /** Notes the samples each track gained since the last call, as runs in reading order. */
+        private fun record() {
+            for (d in used) for (t in d.tracks()) {
+                val n = t.samples.size
+                val before = recorded[t] ?: 0
+                if (n > before) { runs.add(TrackMerge.Run(t, before, n)); recorded[t] = n }
+            }
+        }
+
+        /**
+         * Where this segment's media starts. A segment whose own start is another container (or none
+         * found) is read from byte 0, as before.
+         */
+        private fun startOf(found: SegmentProbe.Located?, container: Container): Long {
+            if (found == null || found.container != container || found.offset == 0L) return 0
+            shifted++
+            if (found.offset > maxShift) maxShift = found.offset
+            return found.offset
         }
 
         fun finish(): List<Track> {
             if (segments.isEmpty()) return emptyList()
             if (shifted > 0) {
-                Logger.info("XDM", "$container: $shifted of ${segments.size} segments had other bytes in front of the media (up to $maxShift), skipped")
+                Logger.info("XDM", "$first: $shifted of ${segments.size} segments had other bytes in front of the media (up to $maxShift), skipped")
             }
-            return end().also { tracks ->
-                if (tracks.none { it.samples.isNotEmpty() }) {
-                    Logger.error("XDM", "$container: no audio or video found in ${segments.size} segments, first ${segments.first()}")
-                }
+            for (d in used) d.finish()
+            record()
+            val tracks = if (used.size == 1) used[0].tracks() else {
+                Logger.info("XDM", "Containers changed $switches times in ${segments.size} segments: joining the tracks of ${used.size} demuxers")
+                TrackMerge.merge(runs, used.map { it.tracks() })
             }
+            if (tracks.none { it.samples.isNotEmpty() }) {
+                Logger.error("XDM", "$first: no audio or video found in ${segments.size} segments, first ${segments.first()}")
+            }
+            return tracks
         }
     }
 
@@ -261,12 +328,14 @@ class TransmuxingMuxer(
     private fun containerOf(firstSegment: String): Container =
         SegmentProbe.locate(firstSegment)?.container ?: SegmentProbe.fromName(firstSegment) ?: Container.MP4
 
-    private fun skipFully(input: FileInputStream, n: Long) {
-        var left = n
-        while (left > 0) {
-            val skipped = input.skip(left)
-            if (skipped <= 0) break
-            left -= skipped
+    private companion object {
+        fun skipFully(input: FileInputStream, n: Long) {
+            var left = n
+            while (left > 0) {
+                val skipped = input.skip(left)
+                if (skipped <= 0) break
+                left -= skipped
+            }
         }
     }
 }

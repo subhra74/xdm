@@ -109,6 +109,26 @@ class Track(val codec: Codec) {
 
     fun durationTicks(): Long { var sum = 0L; for (i in 0 until samples.size) sum += samples.duration(i); return sum }
 
+    /** Copies [from]'s codec configuration (not its samples) into this track, which has the same codec. */
+    fun copyConfigFrom(from: Track) {
+        timescale = from.timescale
+        width = from.width; height = from.height
+        sarNum = from.sarNum; sarDen = from.sarDen
+        colourPrimaries = from.colourPrimaries; transferCharacteristics = from.transferCharacteristics
+        matrixCoefficients = from.matrixCoefficients; fullRange = from.fullRange
+        chromaFormat = from.chromaFormat; bitDepthLuma = from.bitDepthLuma; bitDepthChroma = from.bitDepthChroma
+        temporalLayers = from.temporalLayers; temporalIdNested = from.temporalIdNested
+        sampleRate = from.sampleRate; channelCount = from.channelCount; mpegAudioLayer = from.mpegAudioLayer
+        parameterSets.clear(); parameterSets.addAll(from.parameterSets)
+        audioSpecificConfig = from.audioSpecificConfig
+        decoderConfigRecord = from.decoderConfigRecord
+        sampleEntryBox = from.sampleEntryBox
+        additionalSampleEntries.clear(); additionalSampleEntries.addAll(from.additionalSampleEntries)
+        matroskaCodecId = from.matroskaCodecId
+        objectTypeIndication = from.objectTypeIndication
+        audioBitDepth = from.audioBitDepth
+    }
+
     /** 1-based stsd index of [entry], registering it as a further sample entry if unseen. */
     fun descriptionIndexFor(entry: ByteArray): Int {
         if (sampleEntryBox?.contentEquals(entry) == true) return 1
