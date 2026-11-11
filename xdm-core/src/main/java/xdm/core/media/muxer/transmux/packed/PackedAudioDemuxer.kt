@@ -28,10 +28,14 @@ class PackedAudioDemuxer(private val sink: SampleSink) {
 
     val tracks: List<Track> get() = listOfNotNull(reader?.track)
 
-    /** Parses one packed-audio segment. Segments are small (seconds of audio), so they're read whole. */
-    fun parseSegment(path: String) {
+    /**
+     * Parses one packed-audio segment, whose audio (or its ID3 tag) starts [from] bytes in, past any
+     * picture in front of it (see `SegmentProbe`). Segments are small (seconds of audio), so they're
+     * read whole.
+     */
+    fun parseSegment(path: String, from: Long = 0) {
         val data = File(path).readBytes()
-        var pos = 0
+        var pos = from.coerceIn(0, data.size.toLong()).toInt()
         var pts = -1L
         while (isId3(data, pos)) {
             val tagEnd = minOf(pos + id3TagSize(data, pos), data.size)

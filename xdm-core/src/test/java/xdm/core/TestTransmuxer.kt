@@ -748,6 +748,69 @@ class TestTransmuxer {
         assertSameMedia(clean, out)
     }
 
+    /** Muxes [list] clean and with [prefix] in front of every segment; both must decode the same. */
+    private fun assertPrefixSkipped(list: List<String>, tag: String, prefix: ByteArray, isMp4: Boolean = false) {
+        val clean = File(workDir, "${tag}_clean.mp4").absolutePath
+        val out = File(workDir, "$tag.mp4").absolutePath
+        assert(TransmuxingMuxer("/nonexistent-appdir").mux(list, clean, {}, workDir.path, false, isMp4)) { "clean mux failed" }
+        val muxer = TransmuxingMuxer("/nonexistent-appdir")
+        assert(muxer.mux(prefixed(list, tag, prefix), out, {}, workDir.path, false, isMp4)) { "mux failed: ${muxer.lastError}" }
+        assertSameMedia(clean, out)
+    }
+
+    @Test
+    fun tsSegmentsWithGifInFront() {
+        requireFfmpeg()
+        // GIF89a starts with 0x47, the TS sync byte: it used to be taken for the first packet.
+        assertPrefixSkipped(seg("m"), "gifts", PrefixBytes.gif)
+    }
+
+    @Test
+    fun fragmentedMp4WithGifInFront() {
+        requireFfmpeg()
+        val media = files("fmp\\d+\\.m4s")
+        Assumptions.assumeTrue(media.isNotEmpty(), "no fmp4 segments")
+        assertPrefixSkipped(listOf(File(workDir, "fmp4.mp4").absolutePath) + media, "giffmp4", PrefixBytes.gif, isMp4 = true)
+    }
+
+    @Test
+    fun tsSegmentsWithLargeImageInFront() {
+        requireFfmpeg()
+        // Larger than the old 64 KB search, with TS-like sync bytes inside: walked to its end, not searched.
+        assertPrefixSkipped(seg("m"), "bigpngts", PrefixBytes.png(300_000))
+    }
+
+    @Test
+    fun tsSegmentsWithJunkInFront() {
+        requireFfmpeg()
+        assertPrefixSkipped(seg("m"), "junkfrontts", PrefixBytes.junk(1500))
+    }
+
+    @Test
+    fun tsSegmentsWithId3InFront() {
+        requireFfmpeg()
+        assertPrefixSkipped(seg("m"), "id3ts", PrefixBytes.id3(200))
+    }
+
+    @Test
+    fun packedAdtsWithImageInFront() {
+        requireFfmpeg()
+        val segs = files("packed\\d+\\.aac")
+        Assumptions.assumeTrue(segs.size >= 2, "no packed aac fixtures")
+        // The ID3 timestamp after the picture must still be read.
+        assertPrefixSkipped(segs, "pngpacked", pngBytes())
+        assertPrefixSkipped(segs, "gifpacked", PrefixBytes.gif)
+    }
+
+    @Test
+    fun packedAc3WithImageInFront() {
+        requireFfmpeg()
+        val segs = files("packed\\d+\\.ac3")
+        Assumptions.assumeTrue(segs.size >= 2, "no packed ac3 fixtures")
+        assertPrefixSkipped(segs, "jpgac3", PrefixBytes.jpeg())
+        assertPrefixSkipped(segs, "junkac3", PrefixBytes.junk(700, 9))
+    }
+
     @Test
     fun segmentsWithNoMediaFailWithAReason() {
         workDir.mkdirs()

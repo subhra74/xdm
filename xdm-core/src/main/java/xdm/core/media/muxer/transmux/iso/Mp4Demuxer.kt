@@ -82,6 +82,8 @@ class Mp4Demuxer(private val sink: SampleSink) {
             var headerLen = 8L
             if (size == 1L) { size = readU64(raf); headerLen = 16 }
             else if (size == 0L) { size = end - pos }
+            // Some writers leave a `free` box with a size smaller than its header: skip just the header.
+            if (size < headerLen && type == "free" && headerLen == 8L) size = 8
             if (size < headerLen) break
             val contentLen = (size - headerLen).toInt()
             when (type) {

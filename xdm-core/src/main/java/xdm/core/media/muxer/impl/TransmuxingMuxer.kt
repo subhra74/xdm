@@ -181,8 +181,10 @@ class TransmuxingMuxer(
             private set
         private val feedOne: (String, Long) -> Unit
         private val end: () -> List<Track>
+        // When the bytes don't say, the segment's name (from its URL) may; else MP4, as before.
         private val container: Container =
-            if (segments.isEmpty()) Container.MP4 else SegmentProbe.locate(segments.first())?.container ?: Container.MP4
+            if (segments.isEmpty()) Container.MP4
+            else SegmentProbe.locate(segments.first())?.container ?: SegmentProbe.fromName(segments.first()) ?: Container.MP4
         /** Segments whose media started past byte 0, for one log line at the end. */
         private var shifted = 0
         private var maxShift = 0L
@@ -205,7 +207,7 @@ class TransmuxingMuxer(
                     end = { demux.finish(); demux.tracks }
                 }
                 Container.MKV -> MatroskaDemuxer(writer).let { d -> feedOne = { seg, from -> d.parseSegment(seg, from) }; end = { d.finish(); d.tracks } }
-                Container.PACKED_AUDIO -> PackedAudioDemuxer(writer).let { d -> feedOne = { seg, _ -> d.parseSegment(seg) }; end = { d.finish(); d.tracks } }
+                Container.PACKED_AUDIO -> PackedAudioDemuxer(writer).let { d -> feedOne = { seg, from -> d.parseSegment(seg, from) }; end = { d.finish(); d.tracks } }
                 Container.MP4 -> Mp4Demuxer(writer).let { d -> feedOne = { seg, from -> d.parseSegment(seg, from) }; end = { d.finish(); d.tracks } }
             }
         }
@@ -215,7 +217,6 @@ class TransmuxingMuxer(
          * found) is read from byte 0, as before.
          */
         private fun startOf(seg: String): Long {
-            if (container == Container.PACKED_AUDIO) return 0
             val found = SegmentProbe.locate(seg) ?: return 0
             if (found.container != container || found.offset == 0L) return 0
             shifted++

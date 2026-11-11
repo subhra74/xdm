@@ -71,16 +71,28 @@ class TsDemuxer(private val sink: SampleSink) {
             total = length
         }
 
+        // Where the packets start: 0 unless the packet size search below had to move past bytes.
+        var from = 0
         if (!packetSizeResolved) {
-            packetSize = detectPacketSize(data, total) ?: run {
-                stash(data, 0, total); return
+            // The search looks at DETECT_WINDOW starts at a time and slides on when the data goes on
+            // past them, so bytes that can't start the stream are dropped, not kept (a non-TS input
+            // would otherwise pile up in the carry until the end).
+            var size: Int?
+            while (true) {
+                size = detectPacketSize(data, from, total)
+                if (size != null || total - from < DETECT_WINDOW + DETECT_SPAN) break
+                from += DETECT_WINDOW
             }
+            if (size == null) {
+                stash(data, from, total - from); return // not enough data to tell yet
+            }
+            packetSize = size
             syncOffset = if (packetSize == 192) 4 else 0
             packetSizeResolved = true
         }
 
         // pos is a packet start; its sync byte sits at pos + syncOffset.
-        var pos = resync(data, syncOffset, total) - syncOffset
+        var pos = resync(data, from + syncOffset, total) - syncOffset
         while (pos + packetSize <= total) {
             if ((data[pos + syncOffset].toInt() and 0xFF) != 0x47) {
                 pos = resync(data, pos + syncOffset + 1, total) - syncOffset
@@ -137,15 +149,16 @@ class TsDemuxer(private val sink: SampleSink) {
 
     /**
      * Tries 188/192/204 by checking that sync bytes recur at the candidate stride (at least
-     * [SYNC_CONFIRMATIONS] times). Null when there is not enough data yet to tell.
+     * [SYNC_CONFIRMATIONS] times), for sync bytes in the [DETECT_WINDOW] bytes from [from]. Null when
+     * there is not enough data yet to tell.
      */
-    private fun detectPacketSize(data: ByteArray, total: Int): Int? {
+    private fun detectPacketSize(data: ByteArray, from: Int, total: Int): Int? {
         val candidates = intArrayOf(188, 192, 204)
-        for (start in 0 until minOf(total, 204 + 4)) {
+        for (start in from until minOf(total, from + DETECT_WINDOW)) {
             if ((data[start].toInt() and 0xFF) != 0x47) continue
             for (size in candidates) {
                 // M2TS: the packet begins 4 bytes before its sync byte.
-                if (size == 192 && start < 4) continue
+                if (size == 192 && start < from + 4) continue
                 var count = 0
                 var p = start + size
                 while (p < total && count < SYNC_CONFIRMATIONS && (data[p].toInt() and 0xFF) == 0x47) {
@@ -435,5 +448,12 @@ class TsDemuxer(private val sink: SampleSink) {
         const val SYNC_CONFIRMATIONS = 3
         /** PES payloads a probe looks at before falling back. */
         const val PROBE_PES = 4
+        /**
+         * How many starts the packet size search looks at before sliding on. The segment is normally
+         * fed from where `SegmentProbe` found the stream, so the first packet is at the very start.
+         */
+        const val DETECT_WINDOW = 8 * 1024
+        /** Bytes past a candidate start that confirming it needs: the largest stride, repeated. */
+        const val DETECT_SPAN = 204 * (SYNC_CONFIRMATIONS + 1) + 4
     }
 }
