@@ -3,6 +3,7 @@
   XDM 9 MSI (PACKAGING.md §5). Built by packaging\build-bundle.ps1 -Type msi from the jpackage app image:
 
     wix build xdm.wxs -arch x64|arm64 -ext WixToolset.Util.wixext -ext WixToolset.UI.wixext
+              -ext WixToolset.Firewall.wixext
               -bindpath AppImage=<image dir> -d Version=<a.b.c> -d IconFile=<ico> -d LicenseRtf=<rtf>
 
   Needs WiX 7 or later: Scope="perMachineOrUser" does not exist before v7.0.0 (v6 only has perUserOrMachine,
@@ -16,7 +17,8 @@
 
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
      xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
-     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util"
+     xmlns:fw="http://wixtoolset.org/schemas/v4/wxs/firewall">
 
   <!-- UpgradeCode is XDM 8's, so this MSI removes an XDM 8 installed from its MSI (§5.1). -->
   <Package Name="Xtreme Download Manager" Manufacturer="Subhra Das Gupta" Language="1033"
@@ -79,6 +81,19 @@
       <RegistrySearch Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Run" Name="XDM" Type="raw"
                       Bitness="always64" />
     </Property>
+
+    <!-- §5.9: the torrent firewall rule. XDMFIREWALL is the options page's checkbox ("1" or empty; a checkbox
+         never writes "0", so every test below is = "1"). The choice is saved as HKLM\Software\XDM FirewallRule
+         ("1" or "0") and read here, so an update (quiet included) keeps an unticked box unticked. Ticked by default
+         on a fresh install; never for a per-user install, which can't elevate. Sequence="first": set in the UI
+         sequence when there is a UI, else in the execute sequence, so the user's untick is never overwritten.
+         XDMFIREWALL=0 on a quiet command line leaves it off. -->
+    <Property Id="XDMFIREWALL" Secure="yes" />
+    <Property Id="XDMFIREWALL_SAVED">
+      <RegistrySearch Root="HKLM" Key="Software\XDM" Name="FirewallRule" Type="raw" Bitness="always64" />
+    </Property>
+    <SetProperty Id="XDMFIREWALL" Value="1" After="AppSearch" Sequence="first"
+                 Condition="NOT XDMFIREWALL AND NOT (XDMFIREWALL_SAVED = &quot;0&quot;) AND NOT (MSIINSTALLPERUSER = 1)" />
 
     <!-- §5.5: XDM 8 from the Microsoft Store. An MSIX package isn't an MSI product, so the UpgradeCode can't remove
          it. Its data folder is [LocalAppDataFolder]Packages\<package family name>, per user, so the search finds the
@@ -154,6 +169,7 @@
       <ComponentGroupRef Id="Shortcuts" />
       <ComponentGroupRef Id="AutoStart" />
       <ComponentGroupRef Id="UrlScheme" />
+      <ComponentGroupRef Id="Firewall" />
     </Feature>
 
     <!-- UI: licence, install folder, and "Launch Xtreme Download Manager" on the last page. -->
@@ -182,6 +198,49 @@
                Condition="LicenseAccepted = &quot;1&quot; AND STOREXDM8" />
       <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="XdmOldStoreDlg" Order="10"
                Condition="STOREXDM8" />
+      <!-- XdmOptionsDlg goes between the install folder and Ready to install, on every fresh install. No
+           condition on Next: WiX 7's InstallDirDlg checks the folder with CheckTargetPath, which stops the
+           button's events when it is invalid, and never sets WIXUI_INSTALLDIR_VALID (a condition on it skipped
+           the page). Back has WixUI_InstallDir's own condition. -->
+      <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="XdmOptionsDlg" Order="10" />
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="XdmOptionsDlg" Order="10"
+               Condition="NOT Installed" />
+
+      <!-- §5.9: a per-user install (command line only) can't add a firewall rule, so the box is greyed out and
+           unticked there, and the note says why. -->
+      <Dialog Id="XdmOptionsDlg" Width="370" Height="270" Title="!(loc.InstallDirDlg_Title)">
+        <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no"
+                 Text="!(loc.InstallDirDlgBannerBitmap)" />
+        <Control Id="Title" Type="Text" X="15" Y="6" Width="270" Height="15" Transparent="yes" NoPrefix="yes"
+                 Text="{\WixUI_Font_Title}Torrents" />
+        <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="15" Transparent="yes" NoPrefix="yes"
+                 Text="Let other computers connect to Xtreme Download Manager." />
+        <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
+        <Control Id="Info" Type="Text" X="20" Y="60" Width="330" Height="40" NoPrefix="yes"
+                 Text="Torrents download faster when other computers can connect to yours. Windows Firewall blocks these incoming connections until they are allowed." />
+        <Control Id="FirewallCheckBox" Type="CheckBox" X="20" Y="104" Width="330" Height="18"
+                 Property="XDMFIREWALL" CheckBoxValue="1"
+                 DisableCondition="MSIINSTALLPERUSER = 1"
+                 Text="Allow torrent connections through Windows Firewall (recommended)" />
+        <Control Id="Note" Type="Text" X="20" Y="130" Width="330" Height="60" NoPrefix="yes"
+                 HideCondition="MSIINSTALLPERUSER = 1"
+                 Text="Adds an incoming rule for Xtreme Download Manager only. It is removed when Xtreme Download Manager is uninstalled. Without it, Windows asks the first time a torrent starts." />
+        <Control Id="PerUserNote" Type="Text" X="20" Y="130" Width="330" Height="60" NoPrefix="yes" Hidden="yes"
+                 ShowCondition="MSIINSTALLPERUSER = 1"
+                 Text="Needs an install for all users. Windows asks the first time a torrent starts." />
+        <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+        <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="!(loc.WixUIBack)">
+          <Publish Event="NewDialog" Value="InstallDirDlg" />
+        </Control>
+        <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes"
+                 Text="!(loc.WixUINext)">
+          <Publish Event="NewDialog" Value="VerifyReadyDlg" />
+        </Control>
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes"
+                 Text="!(loc.WixUICancel)">
+          <Publish Event="SpawnDialog" Value="CancelDlg" />
+        </Control>
+      </Dialog>
 
       <Dialog Id="XdmOldStoreDlg" Width="370" Height="270" Title="!(loc.InstallDirDlg_Title)">
         <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no"
@@ -353,6 +412,30 @@
         </RegistryKey>
         <RegistryValue Root="HKMU" Key="Software\RegisteredApplications" Name="Xtreme Download Manager"
                        Type="string" Value="Software\Xtreme Download Manager\Capabilities" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <Fragment>
+    <!-- §5.9: an incoming Windows Firewall rule for xdm-app.exe, so torrent peers can connect without the Defender
+         prompt. Tied to the program, not a port: the listen port is random per install and can be changed. All
+         protocols (TCP for peers, UDP for DHT and uTP), all profiles. Added through the Firewall API by the
+         extension's elevated custom action; IgnoreFailure so a policy-managed firewall can't fail the install.
+         Never for a per-user install (no elevation). A block rule the user created by dismissing the prompt
+         earlier still wins; it is left alone. Uninstall removes the rule.
+         The two components save the choice for the next update (XDMFIREWALL_SAVED). They share a key path, so
+         their GUIDs are fixed here (a derived GUID would be the same for both); keep them in every version. -->
+    <ComponentGroup Id="Firewall" Directory="INSTALLFOLDER">
+      <Component Id="TorrentFirewallRule" Guid="8EFC146D-BD6A-4204-A741-E0661AFD0305"
+                 Condition="XDMFIREWALL = &quot;1&quot; AND ALLUSERS = 1 AND Privileged">
+        <fw:FirewallException Id="XdmTorrentIn" Name="Xtreme Download Manager (torrents)"
+                              Description="Incoming torrent connections to Xtreme Download Manager"
+                              Program="[INSTALLFOLDER]xdm-app.exe" Profile="all" IgnoreFailure="yes" />
+        <RegistryValue Root="HKLM" Key="Software\XDM" Name="FirewallRule" Type="string" Value="1" KeyPath="yes" />
+      </Component>
+      <Component Id="TorrentFirewallDeclined" Guid="724B024B-3083-468F-B81C-209DDB8B019E"
+                 Condition="NOT (XDMFIREWALL = &quot;1&quot;) AND ALLUSERS = 1 AND Privileged">
+        <RegistryValue Root="HKLM" Key="Software\XDM" Name="FirewallRule" Type="string" Value="0" KeyPath="yes" />
       </Component>
     </ComponentGroup>
   </Fragment>

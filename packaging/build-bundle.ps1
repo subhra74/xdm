@@ -638,7 +638,7 @@ if ($Type -eq 'msi') {
     throw "WiX $wixVersion is too old: Scope=""perMachineOrUser"" needs WiX 7 (dotnet tool update -g wix)"
   }
   $installed = (& wix extension list -g) -join "`n"
-  foreach ($ext in 'WixToolset.Util.wixext', 'WixToolset.UI.wixext') {
+  foreach ($ext in 'WixToolset.Util.wixext', 'WixToolset.UI.wixext', 'WixToolset.Firewall.wixext') {
     if ($installed -notmatch [regex]::Escape("$ext $wixVersion")) {
       Write-Host ">> wix extension add -g $ext/$wixVersion"
       # Not fatal: if the list format differs, the extension may already be there; wix build says if not.
@@ -653,7 +653,7 @@ if ($Type -eq 'msi') {
   Write-Host ">> wix build -> $Msi"
   & wix build (Join-Path $PSScriptRoot 'windows\xdm.wxs') `
       -arch $Arch `
-      -ext WixToolset.Util.wixext -ext WixToolset.UI.wixext `
+      -ext WixToolset.Util.wixext -ext WixToolset.UI.wixext -ext WixToolset.Firewall.wixext `
       -bindpath "AppImage=$ImageDir" `
       -d "Version=$AppVersion" `
       -d "IconFile=$Icon" `
