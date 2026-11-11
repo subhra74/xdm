@@ -6,6 +6,7 @@ package xdm.core.media.muxer.transmux.iso
 
 import xdm.core.media.muxer.transmux.es.SampleSink
 import xdm.core.media.muxer.transmux.io.ParsableByteArray
+import xdm.core.media.muxer.transmux.mp4.SampleEntries
 import xdm.core.media.muxer.transmux.sample.Codec
 import xdm.core.media.muxer.transmux.sample.DisplayMatrix
 import xdm.core.media.muxer.transmux.sample.Track
@@ -222,6 +223,10 @@ class Mp4Demuxer(private val sink: SampleSink) {
             track.width = width
             track.height = height
             if (isVideo) track.matrix = matrix
+            else SampleEntries.audioInfo(sampleEntries[0])?.let { a ->
+                // Channels, rate and sample size for writers that describe the track themselves (Matroska).
+                track.channelCount = a.channels; track.sampleRate = a.sampleRate; track.audioBitDepth = a.bits
+            }
             track.sampleEntryBox = sampleEntries[0]
             TrackState(track, trackId, inputTimescale).also { states.add(it) }
         }

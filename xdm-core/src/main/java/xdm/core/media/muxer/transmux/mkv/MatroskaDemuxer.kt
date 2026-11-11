@@ -25,7 +25,43 @@ import java.io.RandomAccessFile
  */
 class MatroskaDemuxer(private val sink: SampleSink) {
 
-    private class TrackState(val track: Track, var defaultDurationNs: Long = 0)
+    private class TrackState(val track: Track, var defaultDurationNs: Long = 0) {
+        /** Content encodings undone on every frame, in the order to undo them (see [ContentEncoding]). */
+        var frameEncodings: List<ContentEncoding> = emptyList()
+        /** The track's frames can't be decoded (encrypted, or an unsupported compression): skipped. */
+        var dropped = false
+    }
+
+    /**
+     * One `ContentEncoding` of a track: a compression its frames (scope 1) or CodecPrivate (scope 2)
+     * were stored with. Only zlib (algo 0) and header stripping (algo 3) are undone; the output is
+     * written without encodings, as ffmpeg does.
+     */
+    private class ContentEncoding(val order: Long, val scope: Long, val type: Long, val algo: Long, val settings: ByteArray?) {
+        val supported get() = type == 0L && (algo == 0L || algo == 3L)
+
+        fun decode(data: ByteArray): ByteArray = when (algo) {
+            3L -> settings?.let { it + data } ?: data
+            else -> inflate(data)
+        }
+
+        private fun inflate(data: ByteArray): ByteArray {
+            val inflater = java.util.zip.Inflater()
+            try {
+                inflater.setInput(data)
+                val out = java.io.ByteArrayOutputStream(data.size * 2)
+                val buf = ByteArray(64 * 1024)
+                while (!inflater.finished()) {
+                    val n = inflater.inflate(buf)
+                    if (n == 0 && (inflater.needsInput() || inflater.needsDictionary())) break
+                    out.write(buf, 0, n)
+                }
+                return out.toByteArray()
+            } finally {
+                inflater.end()
+            }
+        }
+    }
 
     /** Track number -> the track its blocks go to now. */
     private val byNumber = LinkedHashMap<Long, TrackState>()
@@ -105,6 +141,8 @@ class MatroskaDemuxer(private val sink: SampleSink) {
         var matrix: IntArray? = null
         var sampleRate = 0.0; var channels = 0; var bitDepth = 0
         var defaultDuration = 0L
+        var codecDelay = 0L; var seekPreRoll = 0L
+        var encodings: List<ContentEncoding> = emptyList()
 
         reader.seek(start)
         while (reader.position() < end) {
@@ -116,18 +154,34 @@ class MatroskaDemuxer(private val sink: SampleSink) {
                 Ebml.CODEC_ID -> codecId = reader.readString(size.toInt())
                 Ebml.CODEC_PRIVATE -> codecPrivate = reader.readBytes(size.toInt())
                 Ebml.DEFAULT_DURATION -> defaultDuration = reader.readUInt(size.toInt())
+                Ebml.CODEC_DELAY -> codecDelay = reader.readUInt(size.toInt())
+                Ebml.SEEK_PRE_ROLL -> seekPreRoll = reader.readUInt(size.toInt())
                 Ebml.VIDEO -> parseVideo(ds, de) { w, h, m -> width = w; height = h; matrix = m }
                 Ebml.AUDIO -> parseAudio(ds, de) { sr, ch, bd -> sampleRate = sr; channels = ch; bitDepth = bd }
+                Ebml.CONTENT_ENCODINGS -> encodings = parseContentEncodings(ds, de)
             }
             reader.seek(de)
         }
         if (number < 0 || codecId.isEmpty()) return
 
+        // Undone last-applied first: the highest ContentEncodingOrder was applied last.
+        val undo = encodings.sortedByDescending { it.order }
+        if (undo.any { !it.supported }) {
+            Logger.info("XDM", "Matroska: track $number ($codecId) is encrypted or uses an unsupported compression, dropped")
+            byNumber[number] = TrackState(Track(codecFor(codecId, type == Ebml.TRACK_TYPE_VIDEO))).also { it.dropped = true }
+            return
+        }
+        if (codecPrivate != null) {
+            for (e in undo) if (e.scope and 2L != 0L) codecPrivate = e.decode(codecPrivate!!)
+        }
+        val frameEncodings = undo.filter { it.scope and 1L != 0L }
+
         // `Tracks` again (a repeated init segment, or a new EBML header + Segment in the same stream):
         // the same track number and codec continue the existing track, so its earlier frames are kept.
         val existing = byNumber[number]
-        if (existing != null && existing.track.matroskaCodecId == codecId) {
+        if (existing != null && !existing.dropped && existing.track.matroskaCodecId == codecId) {
             existing.defaultDurationNs = defaultDuration
+            existing.frameEncodings = frameEncodings
             val old = existing.track.decoderConfigRecord
             if (!(old == null && codecPrivate == null) && !(old != null && codecPrivate != null && old.contentEquals(codecPrivate))) {
                 // Matroska has one CodecPrivate per track: the first one is kept.
@@ -135,7 +189,7 @@ class MatroskaDemuxer(private val sink: SampleSink) {
             }
             return
         }
-        if (existing != null) {
+        if (existing != null && !existing.dropped) {
             Logger.info("XDM", "Matroska: track $number changed codec ${existing.track.matroskaCodecId} -> $codecId, starting a new track")
         }
 
@@ -148,12 +202,51 @@ class MatroskaDemuxer(private val sink: SampleSink) {
         track.width = width
         track.height = height
         if (isVideo) track.matrix = matrix
+        track.ptsOnly = true
+        track.codecDelayNs = codecDelay
+        track.seekPreRollNs = seekPreRoll
         track.sampleRate = sampleRate.toInt()
         track.channelCount = channels
         track.audioBitDepth = bitDepth
         val state = TrackState(track, defaultDuration)
+        state.frameEncodings = frameEncodings
         byNumber[number] = state
         ordered.add(state)
+    }
+
+    private fun parseContentEncodings(start: Long, end: Long): List<ContentEncoding> {
+        val out = ArrayList<ContentEncoding>()
+        reader.seek(start)
+        while (reader.position() < end) {
+            val id = reader.readId(); if (id < 0) break
+            val size = reader.readSize(); val ds = reader.position(); val de = ds + size
+            if (id == Ebml.CONTENT_ENCODING) {
+                // Defaults from the spec: order 0, scope 1 (frames), type 0 (compression), algo 0 (zlib).
+                var order = 0L; var scope = 1L; var type = 0L; var algo = 0L; var settings: ByteArray? = null
+                while (reader.position() < de) {
+                    val cid = reader.readId(); if (cid < 0) break
+                    val csize = reader.readSize(); val cds = reader.position(); val cde = cds + csize
+                    when (cid) {
+                        Ebml.CONTENT_ENCODING_ORDER -> order = reader.readUInt(csize.toInt())
+                        Ebml.CONTENT_ENCODING_SCOPE -> scope = reader.readUInt(csize.toInt())
+                        Ebml.CONTENT_ENCODING_TYPE -> type = reader.readUInt(csize.toInt())
+                        Ebml.CONTENT_COMPRESSION -> while (reader.position() < cde) {
+                            val pid = reader.readId(); if (pid < 0) break
+                            val psize = reader.readSize(); val pde = reader.position() + psize
+                            when (pid) {
+                                Ebml.CONTENT_COMP_ALGO -> algo = reader.readUInt(psize.toInt())
+                                Ebml.CONTENT_COMP_SETTINGS -> settings = reader.readBytes(psize.toInt())
+                            }
+                            reader.seek(pde)
+                        }
+                    }
+                    reader.seek(cde)
+                }
+                out.add(ContentEncoding(order, scope, type, algo, settings))
+            }
+            reader.seek(de)
+        }
+        return out
     }
 
     private inline fun parseVideo(start: Long, end: Long, out: (Int, Int, IntArray?) -> Unit) {
@@ -267,7 +360,7 @@ class MatroskaDemuxer(private val sink: SampleSink) {
         val trackNumber = reader.readSize()
         val rel = reader.readS16()
         val flags = reader.readUInt(1).toInt()
-        val state = byNumber[trackNumber] ?: run { reader.seek(end); return }
+        val state = byNumber[trackNumber]?.takeIf { !it.dropped } ?: run { reader.seek(end); return }
 
         val keyframe = keyframeOverride ?: ((flags and 0x80) != 0)
         val lacing = (flags ushr 1) and 0x03
@@ -288,13 +381,14 @@ class MatroskaDemuxer(private val sink: SampleSink) {
             val sz = fsize.toInt()
             if (sz <= 0) continue
             // A short read (lace sizes past the block): drop this and the following frames.
-            val outOffset = copyFrame(offset, sz, scratch)
+            val outOffset = if (state.frameEncodings.isEmpty()) copyFrame(offset, sz, scratch)
+            else decodeFrame(offset, sz, state.frameEncodings)
             if (outOffset < 0) {
                 Logger.info("XDM", "Matroska: frame data cut short, dropped")
                 break
             }
             val pts = basePtsMs + i * frameDurMs
-            state.track.samples.add(outOffset, sz, pts, pts, keyframe)
+            state.track.samples.add(outOffset, if (state.frameEncodings.isEmpty()) sz else decodedSize, pts, pts, keyframe)
             offset += sz
         }
     }
@@ -333,6 +427,19 @@ class MatroskaDemuxer(private val sink: SampleSink) {
             }
         }
         return sizes
+    }
+
+    /** Size of the frame [decodeFrame] wrote last. */
+    private var decodedSize = 0
+
+    /** Reads a frame stored with [encodings], undoes them and writes the result; -1 on a short read. */
+    private fun decodeFrame(offset: Long, size: Int, encodings: List<ContentEncoding>): Long {
+        if (offset + size > fileLength) return -1
+        reader.seek(offset)
+        var data = reader.readBytes(size)
+        for (e in encodings) data = e.decode(data)
+        decodedSize = data.size
+        return sink.writeSampleData(data, 0, data.size)
     }
 
     /** Copies a frame into the sink; -1 (nothing written) when the file has fewer than [size] bytes there. */

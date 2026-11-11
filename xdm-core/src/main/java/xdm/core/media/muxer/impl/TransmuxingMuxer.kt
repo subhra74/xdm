@@ -14,7 +14,7 @@ import xdm.core.media.muxer.transmux.iso.Mp4Demuxer
 import xdm.core.media.muxer.transmux.mkv.MatroskaDemuxer
 import xdm.core.media.muxer.transmux.mkv.MkvWriter
 import xdm.core.media.muxer.transmux.mp4.Mp4Writer
-import xdm.core.media.muxer.transmux.mp4.presentationStart
+import xdm.core.media.muxer.transmux.sample.presentationStart
 import xdm.core.media.muxer.transmux.sample.SampleSpill
 import xdm.core.media.muxer.transmux.packed.PackedAudioDemuxer
 import xdm.core.media.muxer.transmux.sample.Track
@@ -145,14 +145,14 @@ class TransmuxingMuxer(
         val format = MuxContainer.plan(requested, matroskaInput)
         if (!format.equals(requested, ignoreCase = true)) Logger.info("XDM", "Muxing as $format (asked for '$requested')")
         val writer: ContainerWriter =
-            if (MuxContainer.isMatroska(format)) MkvWriter(output, tempDir) { stopFlag.get() }
-            else Mp4Writer(output, repairTimeline = discontinuous)
+            (if (MuxContainer.isMatroska(format)) MkvWriter(output, tempDir) { stopFlag.get() }
+            else Mp4Writer(output)).also { it.repairTimeline = discontinuous }
         // Sample records of long streams spill to scratch files here; dropped when muxing ends.
         val spill = SampleSpill.open(File(tempDir))
         return try {
             val tracks = body(writer)
             // An ad or other insert in another container restarts its timestamps, whatever the manifest says.
-            if (mixedContainers && writer is Mp4Writer) writer.repairTimeline = true
+            if (mixedContainers) writer.repairTimeline = true
             if (stopFlag.get()) { writer.abort(); false }
             else if (tracks.none { it.samples.isNotEmpty() }) {
                 // Nothing the demuxers recognised: say so, rather than fail with no reason.

@@ -14,6 +14,38 @@ import xdm.core.media.muxer.transmux.sample.Track
  */
 object SampleEntries {
 
+    /**
+     * The fields of an audio sample entry (with its header): ISO/QuickTime version 0, QuickTime v1
+     * (16 more bytes) and v2 (36 more; rate as a double, LPCM flags). An ISO `AudioSampleEntryV1` has
+     * version 1 without the 16 bytes, so v1 takes whichever start has a box (or nothing) there.
+     * [childStart] is where the child boxes (esds, dOps, pcmC...) begin.
+     */
+    class AudioInfo(val channels: Int, val sampleRate: Int, val bits: Int, val childStart: Int, val lpcmFlags: Int)
+
+    fun audioInfo(entry: ByteArray): AudioInfo? {
+        if (entry.size < 36) return null
+        fun u16(o: Int) = ((entry[o].toInt() and 0xFF) shl 8) or (entry[o + 1].toInt() and 0xFF)
+        fun u32(o: Int) = (u16(o).toLong() shl 16) or u16(o + 2).toLong()
+        return when (u16(16)) {
+            2 -> {
+                if (entry.size < 72) return null
+                val rate = java.lang.Double.longBitsToDouble((u32(40) shl 32) or u32(44))
+                AudioInfo(u32(48).toInt(), rate.toInt(), u32(56).toInt(), 72, u32(60).toInt())
+            }
+            1 -> AudioInfo(u16(24), u16(32), u16(26), if (boxAt(entry, 52)) 52 else 36, 0)
+            else -> AudioInfo(u16(24), u16(32), u16(26), 36, 0)
+        }
+    }
+
+    /** A plausible box header at [p] (or the end of the entry, where no children follow). */
+    private fun boxAt(e: ByteArray, p: Int): Boolean {
+        if (p == e.size) return true
+        if (p + 8 > e.size) return false
+        val size = ((e[p].toLong() and 0xFF) shl 24) or ((e[p + 1].toLong() and 0xFF) shl 16) or
+            ((e[p + 2].toLong() and 0xFF) shl 8) or (e[p + 3].toLong() and 0xFF)
+        return size >= 8 && p + size <= e.size && (4 until 8).all { e[p + it] in 0x20..0x7E }
+    }
+
     /** The complete sample entry box for [t]'s current config, or null if its codec has none. */
     fun build(t: Track): ByteArray? {
         val b = BoxBuf()

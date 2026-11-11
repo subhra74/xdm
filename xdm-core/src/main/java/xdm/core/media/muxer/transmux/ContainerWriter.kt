@@ -15,6 +15,12 @@ import xdm.core.media.muxer.transmux.sample.Track
  */
 interface ContainerWriter : SampleSink {
     /**
+     * The stream has discontinuities (timestamps restart or jump): [finish] places its sections back
+     * to back. A track going backward is repaired whatever this says (see `Timeline`).
+     */
+    var repairTimeline: Boolean
+
+    /**
      * Writes the container structure and finalizes the file. Returns false if there is no media (or the
      * write was cancelled); an I/O failure is thrown, and the caller drops the partial output with [abort].
      */

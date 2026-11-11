@@ -25,6 +25,12 @@ class Track(val codec: Codec) {
      */
     var matrix: IntArray? = null
 
+    /**
+     * The samples carry presentation times only (DTS = PTS, out of order between B-frames), as
+     * Matroska does. The timeline step then allows small backward steps and never rewrites them.
+     */
+    var ptsOnly: Boolean = false
+
     /** Sample (pixel) aspect ratio from the bitstream; 0 when unknown. Written as pasp, and scales tkhd. */
     var sarNum: Int = 0
     var sarDen: Int = 0
@@ -95,6 +101,10 @@ class Track(val codec: Codec) {
     /** MPEG-4 Systems objectTypeIndication for esds-described codecs (MPEG-1/2 video). */
     var objectTypeIndication: Int = 0
 
+    /** Matroska CodecDelay / SeekPreRoll (ns) from a Matroska input, written back as they were; 0 when absent. */
+    var codecDelayNs: Long = 0
+    var seekPreRollNs: Long = 0
+
     /** Audio bit depth (Matroska `BitDepth`), when known — used for raw/PCM tracks. */
     var audioBitDepth: Int = 0
 
@@ -120,6 +130,7 @@ class Track(val codec: Codec) {
         timescale = from.timescale
         width = from.width; height = from.height
         matrix = from.matrix
+        ptsOnly = from.ptsOnly
         sarNum = from.sarNum; sarDen = from.sarDen
         colourPrimaries = from.colourPrimaries; transferCharacteristics = from.transferCharacteristics
         matrixCoefficients = from.matrixCoefficients; fullRange = from.fullRange
@@ -134,6 +145,7 @@ class Track(val codec: Codec) {
         matroskaCodecId = from.matroskaCodecId
         objectTypeIndication = from.objectTypeIndication
         audioBitDepth = from.audioBitDepth
+        codecDelayNs = from.codecDelayNs; seekPreRollNs = from.seekPreRollNs
     }
 
     /** 1-based stsd index of [entry], registering it as a further sample entry if unseen. */

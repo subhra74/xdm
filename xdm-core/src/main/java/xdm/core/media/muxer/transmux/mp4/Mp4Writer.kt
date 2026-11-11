@@ -6,9 +6,11 @@ package xdm.core.media.muxer.transmux.mp4
 
 import xdm.core.media.muxer.transmux.ContainerWriter
 import xdm.core.media.muxer.transmux.sample.Codec
-import xdm.core.media.muxer.transmux.sample.SampleTable
-import xdm.core.media.muxer.transmux.sample.upperMedian
+import xdm.core.media.muxer.transmux.sample.Timeline
 import xdm.core.media.muxer.transmux.sample.Track
+import xdm.core.media.muxer.transmux.sample.assignSampleDurations
+import xdm.core.media.muxer.transmux.sample.presentationEnd
+import xdm.core.media.muxer.transmux.sample.presentationStart
 import xdm.core.media.muxer.transmux.ts.UnsupportedCodecException
 import xdm.core.storage.LocalStorage
 import xdm.core.storage.StorageFile
@@ -25,8 +27,7 @@ import java.io.BufferedOutputStream
  * Each sample is emitted as its own MP4 chunk, which correctly handles audio/video interleaving.
  */
 class Mp4Writer(private val output: StorageFile, repairTimeline: Boolean = false) : ContainerWriter {
-    /** Repair discontinuities in the timeline at [finish]; may be turned on after construction. */
-    var repairTimeline: Boolean = repairTimeline
+    override var repairTimeline: Boolean = repairTimeline
     constructor(outputPath: String, repairTimeline: Boolean = false) : this(LocalStorage.file(outputPath), repairTimeline)
 
     /** Written front to back through [bos]; the mdat size is then patched through the same handle. */
@@ -133,14 +134,16 @@ class Mp4Writer(private val output: StorageFile, repairTimeline: Boolean = false
         // list skip the reorder delay inside each track.
         // After a discontinuity the timestamps restart: move each section as a whole (all tracks by
         // one offset) so it follows the previous one and keeps its own A/V sync.
-        val sectionsAligned = repairTimeline && alignSections(tracks)
+        // The shared timeline step (also run by the MKV writer): sections placed back to back, gaps
+        // and backward jumps repaired, the timestamps rewritten to match.
+        Timeline.prepare(tracks, repairTimeline)
         val startPts = tracks.map { presentationStart(it.samples) }
         val globalStartSec = tracks.indices.minOf { startPts[it].toDouble() / tracks[it].timescale }
 
         val plans = ArrayList<TrackPlan>()
         for ((idx, t) in tracks.withIndex()) {
-            // durations from successive DTS deltas (repairing discontinuity gaps when enabled).
-            assignSampleDurations(t.samples, repairTimeline && !sectionsAligned)
+            // Durations from successive DTS deltas (already repaired by the timeline step).
+            assignSampleDurations(t.samples, false)
 
             val mediaDuration = t.durationTicks()
             val mediaTime = (startPts[idx] - t.samples.dts(0)).coerceIn(0, mediaDuration)
@@ -453,141 +456,3 @@ class Mp4Writer(private val output: StorageFile, repairTimeline: Boolean = false
 }
 
 private const val U32_MAX = 0xFFFFFFFFL
-
-/** Samples scanned for the earliest PTS; far deeper than any real B-frame reorder window. */
-private const val REORDER_WINDOW = 64
-
-/**
- * Earliest presentation time among the first samples in decode order. Only the leading window is
- * scanned: later samples may sit on a reset timeline after a discontinuity.
- */
-internal fun presentationStart(samples: SampleTable): Long {
-    var min = Long.MAX_VALUE
-    for (i in 0 until minOf(samples.size, REORDER_WINDOW)) min = minOf(min, samples.pts(i))
-    return min
-}
-
-/**
- * End of the last presented sample on the written timeline (decode times are the running sum of
- * [SampleTable.duration], composition adds pts - dts), in media ticks from the first sample's DTS.
- * With B-frames the last frames in decode order are presented after the last DTS, so an edit that
- * ended at the decode duration would cut them off.
- */
-internal fun presentationEnd(samples: SampleTable): Long {
-    var decodeTime = 0L
-    var end = 0L
-    for (i in 0 until samples.size) {
-        val d = samples.duration(i)
-        end = maxOf(end, decodeTime + (samples.pts(i) - samples.dts(i)) + d)
-        decodeTime += d
-    }
-    return end
-}
-
-/**
- * Places the sections of a stream with discontinuities (timestamps restarting or jumping at
- * each one) back to back on one timeline, as players do: every track of section k is shifted by
- * the same amount, so the A/V offset inside a section is kept, and by just enough that no track
- * overlaps its previous section. A track that ended earlier is left with a small gap (a video
- * frame shown a little longer, or audio timestamps resuming a little later).
- *
- * Sections are found per track as the timestamp jumps of [isJump]; the tracks must agree on
- * their number, else nothing is changed and false is returned (the caller then repairs each
- * track on its own).
- */
-internal fun alignSections(tracks: List<Track>): Boolean {
-    val usable = tracks.filter { it.samples.size > 1 && it.timescale > 0 }
-    if (usable.isEmpty()) return false
-    val starts = usable.map { sectionStarts(it.samples) }
-    val count = starts.first().size
-    if (count <= 1 || starts.any { it.size != count }) return false
-
-    // Seconds where the previous section ended, after its shift (the latest end over all tracks).
-    var previousEnd = Double.NEGATIVE_INFINITY
-    for (k in 0 until count) {
-        var shift = 0.0
-        if (k > 0) {
-            // Smallest shift that puts every track's section start at or after its previous end.
-            shift = Double.NEGATIVE_INFINITY
-            for ((i, t) in usable.withIndex()) {
-                val from = starts[i][k]
-                val sectionStart = sectionFirstPresented(t.samples, from, starts[i].getOrElse(k + 1) { t.samples.size })
-                val trackEnd = sectionEnd(t, starts[i][k - 1], from)
-                shift = maxOf(shift, trackEnd - sectionStart.toDouble() / t.timescale)
-            }
-        }
-        var end = previousEnd
-        for ((i, t) in usable.withIndex()) {
-            val from = starts[i][k]
-            val to = starts[i].getOrElse(k + 1) { t.samples.size }
-            t.samples.shift(from, to, Math.round(shift * t.timescale))
-            end = maxOf(end, sectionEnd(t, from, to))
-        }
-        previousEnd = end
-    }
-    return true
-}
-
-/** Upper median of the positive DTS steps into the samples [from, to) (each from the one before), or -1. */
-private fun typicalStep(samples: SampleTable, from: Int, to: Int): Long = upperMedian { sink ->
-    for (k in from until to) {
-        val d = samples.dts(k) - samples.dts(k - 1)
-        if (d > 0) sink.accept(d)
-    }
-}
-
-/** Indices where each section of [samples] starts: 0, then every timestamp jump. */
-private fun sectionStarts(samples: SampleTable): List<Int> {
-    val typical = typicalStep(samples, 1, samples.size)
-    if (typical < 0) return listOf(0)
-    val out = arrayListOf(0)
-    for (k in 1 until samples.size) {
-        val d = samples.dts(k) - samples.dts(k - 1)
-        if (d < 0 || d > typical * DISCONTINUITY_GAP_FACTOR) out += k
-    }
-    return out
-}
-
-/** Earliest PTS among the first samples of the section [from, to). */
-private fun sectionFirstPresented(samples: SampleTable, from: Int, to: Int): Long {
-    var min = Long.MAX_VALUE
-    for (j in from until minOf(to, from + REORDER_WINDOW)) min = minOf(min, samples.pts(j))
-    return min
-}
-
-/** Seconds at which the section [from, to) of [t] stops being presented: its latest PTS plus one frame. */
-private fun sectionEnd(t: Track, from: Int, to: Int): Double {
-    var maxPts = Long.MIN_VALUE
-    for (j in maxOf(from, to - REORDER_WINDOW) until to) maxPts = maxOf(maxPts, t.samples.pts(j))
-    // One frame: the section's typical DTS step.
-    val step = if (to - from >= 2) typicalStep(t.samples, from + 1, to).coerceAtLeast(0) else 0
-    return (maxPts + step).toDouble() / t.timescale
-}
-
-/** A discontinuity gap is an inter-sample delta larger than this multiple of the typical frame. */
-private const val DISCONTINUITY_GAP_FACTOR = 8
-
-/**
- * Derives each sample's duration ([SampleTable.duration]) from successive DTS deltas.
- *
- * When [repairTimeline] is true (the manifest signalled a discontinuity), inter-sample gaps that
- * are negative or implausibly large — the artefact of a mid-stream timestamp reset — are replaced
- * with the track's typical (median) frame duration, so the output timeline stays monotonic and
- * continuous across the boundary. When false, behaviour is unchanged (negative gaps clamp to 0,
- * legitimate large gaps are preserved). The last sample reuses the previous duration (or 1).
- */
-internal fun assignSampleDurations(samples: SampleTable, repairTimeline: Boolean) {
-    if (samples.isEmpty()) return
-    if (!repairTimeline) {
-        samples.deriveDurations()
-        return
-    }
-    val typical = upperMedian { sink ->
-        for (i in 0 until samples.size) {
-            val d = samples.rawDuration(i)
-            if (d > 0) sink.accept(d)
-        }
-    }
-    if (typical > 0) samples.deriveDurations(typical, typical * DISCONTINUITY_GAP_FACTOR)
-    else samples.deriveDurations()
-}
