@@ -14,6 +14,7 @@ import xdm.app.ui.components.canPause
 import xdm.app.ui.components.canResume
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
+import xdm.app.utils.padColumns
 import xdm.app.utils.createIcon
 import xdm.app.utils.px
 import xdm.app.utils.scaledInsets
@@ -190,15 +191,18 @@ class TorrentTabs(private val id: Long, private val compact: Boolean, private va
         }
     }
 
-    private fun table(model: AbstractTableModel, widths: IntArray) = JTable(model).apply {
+    /** [renderers] sets the table's own cell renderers, before every column is padded. */
+    private fun table(model: AbstractTableModel, widths: IntArray, renderers: JTable.() -> Unit = {}) = JTable(model).apply {
         widths.forEachIndexed { i, w -> columnModel.getColumn(i).preferredWidth = w.px }
         rowHeight = 22.px
         fillsViewportHeight = true
         tableHeader.reorderingAllowed = false
         autoResizeMode = JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS
+        renderers()
+        padColumns()
     }
 
-    private fun filesTable() = table(filesModel, intArrayOf(360, 90, 70, 90)).apply {
+    private fun filesTable() = table(filesModel, intArrayOf(360, 90, 70, 90)) {
         columnModel.getColumn(0).cellRenderer = object : DefaultTableCellRenderer() {
             private val folderIcon = createIcon(RemixIcon.FOLDER_FILL, 16, Color(0xE8, 0xB3, 0x3C))
             private val fileIcon = createIcon(RemixIcon.FILE_LINE, 16, Color.GRAY)
@@ -558,7 +562,8 @@ class TorrentPropertiesWindow(near: Window?, private val id: Long) : JFrame() {
  * [More]                                    [Hide] [Pause]
  * ```
  *
- * More adds 150 px with the tabs (compact General) and is remembered ([xdm.app.IAppConfig.torrentProgressMore]).
+ * More adds 150 px with the tabs (compact General); shown by default, and remembered
+ * ([xdm.app.IAppConfig.torrentProgressMore]).
  * Seeding: Stop seeding in place of Pause, the ratio in place of the time left. Failed: Close.
  */
 class TorrentProgressWindow(private val id: Long) : JFrame() {
@@ -600,9 +605,9 @@ class TorrentProgressWindow(private val id: Long) : JFrame() {
             })
         at(prg, 0, 0, scaledInsets(20, 15, 0, 0), GridBagConstraints.NORTHWEST, rows = 5)
         at(lblFileName, 1, 0, scaledInsets(20, 10, 0, 15), GridBagConstraints.SOUTHWEST, span = 2, fill = true)
-        at(lblStat, 1, 1, scaledInsets(5, 10, 15, 15), GridBagConstraints.NORTHWEST, span = 2)
-        at(lblSize, 1, 2, scaledInsets(15, 10, 5, 5), GridBagConstraints.WEST)
-        at(lblSpeed, 2, 2, scaledInsets(15, 10, 5, 15), GridBagConstraints.EAST)
+        at(lblStat, 1, 1, scaledInsets(5, 10, 7, 15), GridBagConstraints.NORTHWEST, span = 2)
+        at(lblSize, 1, 2, scaledInsets(9, 10, 5, 5), GridBagConstraints.WEST)
+        at(lblSpeed, 2, 2, scaledInsets(9, 10, 5, 15), GridBagConstraints.EAST)
         at(pieceBar, 1, 3, scaledInsets(5, 10, 5, 15), GridBagConstraints.WEST, span = 2, fill = true)
         at(lblPeers, 1, 4, scaledInsets(5, 10, 5, 5), GridBagConstraints.WEST)
         at(lblRight, 2, 4, scaledInsets(5, 10, 5, 15), GridBagConstraints.EAST)
@@ -619,8 +624,7 @@ class TorrentProgressWindow(private val id: Long) : JFrame() {
             add(btnHide)
             add(Box.createRigidArea(scaledSize(10, 10)))
             add(btnAction)
-            isOpaque = true
-            background = UIManager.getColor("Table.background")
+            // No band of its own: the buttons and the table sit on the window's background.
         }
         layout = BorderLayout()
         add(top, BorderLayout.NORTH)

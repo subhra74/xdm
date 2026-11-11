@@ -520,7 +520,11 @@ class BatchDownloaderTask(
                 len > 0 -> (f.bytes.toDouble() / len).coerceIn(0.0, 1.0)
                 else -> 0.0
             }
-            SegmentProgress(start = i * SLOT, length = SLOT, downloaded = (fraction * SLOT).toLong())
+            val status = f.status.get()
+            SegmentProgress(
+                start = i * SLOT, length = SLOT, downloaded = (fraction * SLOT).toLong(), id = i.toLong(),
+                status = status, live = status == ChunkStatus.Downloading, bytes = f.bytes,
+            )
         }
         host.onDownloadProgress(
             DownloadStatusInfo.ProgressInfo(

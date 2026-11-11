@@ -37,6 +37,8 @@ class StreamingChunkRetriever(
     override fun run() {
         val buffer = ByteArray(256 * 1024)
         var attemptsWithoutData = 0
+        // Ready (or Failed, from an earlier run) until a thread takes it: the progress window lists the live ones.
+        piece.status.updateAndGet { if (it == ChunkStatus.Finished) it else ChunkStatus.Downloading }
         try {
             while (!stopFlag.get()) {
                 var retryAfter = 3L
@@ -156,6 +158,9 @@ class StreamingChunkRetriever(
             Logger.error("XDM", "Error downloading manifest", ex)
         } finally {
             this.fileHandle.set(null)
+            // Stopped (or an unexpected error) before finishing or failing: no thread has it any more, and
+            // `.state` must not save it as in progress, or a resumed download would list it as live.
+            piece.status.compareAndSet(ChunkStatus.Downloading, ChunkStatus.Ready)
             completionCallback(this.piece)
         }
     }

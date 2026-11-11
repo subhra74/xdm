@@ -69,7 +69,7 @@ class ConfigSnapshot private constructor(private val values: List<Any?>) {
             Prop(IAppConfig::commandRules), Prop(IAppConfig::listSelectionMode), Prop(IAppConfig::playSound),
             Prop(IAppConfig::completeSoundFile), Prop(IAppConfig::failedSoundFile),
             Prop(IAppConfig::torrentSeedAfterFinish), Prop(IAppConfig::torrentSeedRatioLimit),
-            Prop(IAppConfig::torrentSeedTimeLimitMinutes), Prop(IAppConfig::torrentProgressMore),
+            Prop(IAppConfig::torrentSeedTimeLimitMinutes), Prop(IAppConfig::torrentProgressMore), Prop(IAppConfig::progressMore),
             Prop(IAppConfig::torrentPort), Prop(IAppConfig::torrentPortMapping), Prop(IAppConfig::torrentDht),
             Prop(IAppConfig::torrentLsd), Prop(IAppConfig::torrentEncryption), Prop(IAppConfig::torrentDownloadLimit),
             Prop(IAppConfig::torrentUploadLimit), Prop(IAppConfig::torrentClient),

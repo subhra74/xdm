@@ -164,6 +164,8 @@ interface IAppConfig : EngineConfig {
     override var torrentSeedTimeLimitMinutes: Int
     /** The torrent progress window opens with its tabs (More) shown, as the user last left it. */
     var torrentProgressMore: Boolean
+    /** The download progress window opens with its segment table (More) shown, as the user last left it. */
+    var progressMore: Boolean
     /** The client identity id ([xdm.app.torrent.TorrentClients]); libtorrent's own by default. */
     var torrentClient: String
     override var torrentKeepSession: Boolean
@@ -279,6 +281,7 @@ private const val F_TORRENT_ADD_TRACKERS = 77
 private const val F_TORRENT_TRACKER_LIST = 78
 private const val F_TORRENT_PEX = 79
 private const val F_USE_FFMPEG_MUXER = 80
+private const val F_PROGRESS_MORE = 81
 // 63-66 video download (yt-dlp), 67-79 torrent settings, 80 ffmpeg muxing; the next new field takes 81.
 private const val F_YTDLP_PATH = 63
 private const val F_FFMPEG_PATH = 64
@@ -462,7 +465,8 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var torrentSeedAfterFinish: Boolean = false
     override var torrentSeedRatioLimit: Float = 1.0f
     override var torrentSeedTimeLimitMinutes: Int = 0
-    override var torrentProgressMore: Boolean = false
+    override var torrentProgressMore: Boolean = true
+    override var progressMore: Boolean = true
     override var torrentClient: String = TorrentClients.DEFAULT
     override var torrentKeepSession: Boolean = false
     override var torrentAddTrackers: Boolean = false
@@ -586,6 +590,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
         w.string(F_DENO_PATH, denoPath)
         w.string(F_YTDLP_EXTRA_ARGS, ytDlpExtraArgs)
         w.bool(F_USE_FFMPEG_MUXER, useFfmpegMuxer)
+        w.bool(F_PROGRESS_MORE, progressMore)
         w.message(F_COMMAND_RULES) {
             commandRules.forEach { rule ->
                 message(F_COMMAND_RULE) {
@@ -706,6 +711,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
                 F_DENO_PATH -> denoPath = r.string()
                 F_YTDLP_EXTRA_ARGS -> ytDlpExtraArgs = r.string()
                 F_USE_FFMPEG_MUXER -> useFfmpegMuxer = r.bool()
+                F_PROGRESS_MORE -> progressMore = r.bool()
                 else -> unknown.raw(r.rawField())
             }
         }

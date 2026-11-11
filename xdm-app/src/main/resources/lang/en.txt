@@ -27,6 +27,7 @@ STAT_ALLOCATING=Preparing file
 STAT_PUBLISHING=Moving to folder
 STAT_PREPARING_MOVE=Preparing to move
 STAT_FINALIZING=Finalizing
+SEG_CONNECTING=Connecting
 MSG_DIFFERENT_VOLUME=On a different drive from the temporary folder: video segments are downloaded there first, so both drives need space.
 TITLE_TEMP_SPACE_LOW=Low disk space
 MSG_TEMP_SPACE_LOW=The temporary folder %folder% has only %free% free, but this download needs about %needed%. Video segments are downloaded there first and then joined into the final file. You can change the temporary folder in Settings.

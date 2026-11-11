@@ -34,7 +34,7 @@ class AppConfigTorrentSeedingTest {
         assertFalse(c.torrentSeedAfterFinish, "no seeding after finish")
         assertEquals(1.0f, c.torrentSeedRatioLimit, "ratio 1.0")
         assertEquals(0, c.torrentSeedTimeLimitMinutes, "no time limit")
-        assertFalse(c.torrentProgressMore, "progress window opens without its tabs")
+        assertTrue(c.torrentProgressMore && c.progressMore, "progress windows open with their tabs / segment table")
         assertTrue(c.torrentPortMapping && c.torrentDht && c.torrentLsd, "peer discovery and port mapping on")
         assertEquals(listOf(0, 0, 0, 0), listOf(c.torrentPort, c.torrentEncryption, c.torrentDownloadLimit, c.torrentUploadLimit), "random port, prefer encryption, no limits")
     }
@@ -45,7 +45,8 @@ class AppConfigTorrentSeedingTest {
             torrentSeedAfterFinish = true
             torrentSeedRatioLimit = 2.25f
             torrentSeedTimeLimitMinutes = 90
-            torrentProgressMore = true
+            torrentProgressMore = false
+            progressMore = false
             torrentPort = 6881
             torrentPortMapping = false
             torrentDht = false
@@ -58,7 +59,7 @@ class AppConfigTorrentSeedingTest {
         assertTrue(c.torrentSeedAfterFinish, "seed after finish")
         assertEquals(2.25f, c.torrentSeedRatioLimit, "ratio kept to the permille")
         assertEquals(90, c.torrentSeedTimeLimitMinutes, "minutes")
-        assertTrue(c.torrentProgressMore, "More remembered")
+        assertFalse(c.torrentProgressMore || c.progressMore, "Less remembered")
         assertEquals(listOf(6881, 1, 500, 50), listOf(c.torrentPort, c.torrentEncryption, c.torrentDownloadLimit, c.torrentUploadLimit), "numbers")
         assertFalse(c.torrentPortMapping || c.torrentDht || c.torrentLsd, "switches off")
     }
