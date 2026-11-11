@@ -31,9 +31,11 @@ class MatroskaDemuxer(private val sink: SampleSink) {
 
     val tracks: List<Track> get() = byNumber.values.map { it.track }
 
-    fun parseSegment(path: String) {
+    /** [from] is where the Matroska data starts when the file has other bytes in front of it. */
+    fun parseSegment(path: String, from: Long = 0) {
         RandomAccessFile(path, "r").use { raf ->
             reader = EbmlReader(raf)
+            reader.seek(from)
             walk(raf.length())
         }
     }

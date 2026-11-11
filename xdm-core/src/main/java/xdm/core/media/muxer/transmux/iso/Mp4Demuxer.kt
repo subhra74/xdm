@@ -51,10 +51,21 @@ class Mp4Demuxer(private val sink: SampleSink) {
 
     val tracks: List<Track> get() = states.map { it.track }
 
-    /** Parses one segment file (init, media, or a self-contained progressive MP4). */
-    fun parseSegment(path: String) {
+    /**
+     * Bytes in front of the MP4 data in the segment being parsed. Absolute offsets written into the
+     * segment (an explicit `base_data_offset`, `stco`/`co64` chunk offsets) count from where the MP4
+     * data starts, so they are moved by this much.
+     */
+    private var fileShift = 0L
+
+    /**
+     * Parses one segment file (init, media, or a self-contained progressive MP4). [from] is where the
+     * MP4 data starts when the file has other bytes in front of it (see `SegmentProbe`).
+     */
+    fun parseSegment(path: String, from: Long = 0) {
         RandomAccessFile(path, "r").use { raf ->
-            walkTopLevel(raf, 0, raf.length())
+            fileShift = from
+            walkTopLevel(raf, from, raf.length())
         }
     }
 
@@ -286,7 +297,7 @@ class Mp4Demuxer(private val sink: SampleSink) {
             }
         }
         val base = when {
-            baseDataOffset >= 0 -> baseDataOffset
+            baseDataOffset >= 0 -> baseDataOffset + fileShift
             defaultBaseIsMoof || previousDataEnd < 0 -> moofFileStart
             else -> previousDataEnd
         }
@@ -431,7 +442,7 @@ class Mp4Demuxer(private val sink: SampleSink) {
         var sampleIdx = 0
         for (chunkIdx in chunkOffsets.indices) {
             val spc = samplesPerChunkForChunk(chunkIdx + 1, firstChunk, samplesPerChunk)
-            var off = chunkOffsets[chunkIdx]
+            var off = chunkOffsets[chunkIdx] + fileShift
             for (j in 0 until spc) {
                 if (sampleIdx >= sampleCount) break
                 sampleFileOffsets[sampleIdx] = off

@@ -80,10 +80,10 @@ class TsDemuxer(private val sink: SampleSink) {
         }
 
         // pos is a packet start; its sync byte sits at pos + syncOffset.
-        var pos = alignToSync(data, syncOffset, total) - syncOffset
+        var pos = resync(data, syncOffset, total) - syncOffset
         while (pos + packetSize <= total) {
             if ((data[pos + syncOffset].toInt() and 0xFF) != 0x47) {
-                pos = alignToSync(data, pos + syncOffset + 1, total) - syncOffset
+                pos = resync(data, pos + syncOffset + 1, total) - syncOffset
                 continue
             }
             parsePacket(data, pos + syncOffset)
@@ -118,10 +118,18 @@ class TsDemuxer(private val sink: SampleSink) {
         }
     }
 
-    private fun alignToSync(data: ByteArray, from: Int, end: Int): Int {
+    /**
+     * The next sync byte at or after [from] that the following packet's sync byte confirms, so a 0x47
+     * inside other bytes (an image or padding in front of a segment, a damaged packet) is not taken for
+     * a packet start. One too close to [end] to confirm is taken; [end] when there is none.
+     */
+    private fun resync(data: ByteArray, from: Int, end: Int): Int {
         var i = from
         while (i < end) {
-            if ((data[i].toInt() and 0xFF) == 0x47) return i
+            if ((data[i].toInt() and 0xFF) == 0x47) {
+                val next = i + packetSize
+                if (next >= end || (data[next].toInt() and 0xFF) == 0x47) return i
+            }
             i++
         }
         return end

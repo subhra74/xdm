@@ -7,6 +7,7 @@ package xdm.core
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import xdm.core.media.muxer.impl.NoMediaException
 import xdm.core.media.muxer.impl.TransmuxingMuxer
 import xdm.core.media.muxer.transmux.es.SampleSink
 import xdm.core.media.muxer.transmux.iso.Mp4Demuxer
@@ -637,5 +638,125 @@ class TestTransmuxer {
         assert(text.contains("dv_profile=9") && text.contains("dv_bl_signal_compatibility_id=2")) {
             "no Dolby Vision configuration in MKV: ${text.lines().filter { it.startsWith("dv_") || it.startsWith("side_data") }}"
         }
+    }
+
+    // ---- segments with other bytes in front of (or inside) the media ----
+
+    /** The 1x1 PNG a CDN put in front of every TS segment of a real stream (its "PNG" holds a 0x47). */
+    private val pngPrefix = "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c489" +
+        "0000000d49444154789c6360606060000000050001a5f645400000000049454e44ae426082"
+    private fun pngBytes() = pngPrefix.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+
+    /** Copies of [paths] with [prefix] in front of each, named `<tag>-<n>.<ext>`. */
+    private fun prefixed(paths: List<String>, tag: String, prefix: ByteArray = pngBytes()): List<String> =
+        paths.mapIndexed { i, path ->
+            val src = File(path)
+            File(workDir, "$tag-$i.${src.extension}").also { it.writeBytes(prefix + src.readBytes()) }.absolutePath
+        }
+
+    /** md5 of every decoded frame of every stream, as ffmpeg's framemd5 lists them. */
+    private fun decodedFrames(path: String): List<String> {
+        val p = ProcessBuilder(ffmpeg!!, "-v", "error", "-i", path, "-map", "0", "-f", "framemd5", "-")
+            .redirectErrorStream(true).start()
+        val lines = p.inputStream.bufferedReader().readLines()
+        p.waitFor()
+        return lines.filter { !it.startsWith("#") }.map { line -> line.split(",").let { "${it[0].trim()} ${it.last().trim()}" } }
+    }
+
+    private fun assertSameMedia(expected: String, actual: String) {
+        val want = decodedFrames(expected)
+        val got = decodedFrames(actual)
+        assert(want.isNotEmpty()) { "reference decoded to nothing" }
+        assert(want == got) { "decoded frames differ: ${want.size} expected, ${got.size} got" }
+    }
+
+    @Test
+    fun tsSegmentsWithImageInFront() {
+        requireFfmpeg()
+        val clean = File(workDir, "png_ts_clean.mp4").absolutePath
+        val out = File(workDir, "png_ts.mp4").absolutePath
+        assert(TransmuxingMuxer("/nonexistent-appdir").mux(seg("m"), clean, {}, workDir.path, false, false)) { "clean mux failed" }
+        val muxer = TransmuxingMuxer("/nonexistent-appdir")
+        assert(muxer.mux(prefixed(seg("m"), "pngts"), out, {}, workDir.path, false, false)) { "mux failed: ${muxer.lastError}" }
+        assertSameMedia(clean, out)
+    }
+
+    @Test
+    fun tsSeparateAudioVideoWithImageInFront() {
+        requireFfmpeg()
+        val clean = File(workDir, "png_av_clean.mp4").absolutePath
+        val out = File(workDir, "png_av.mp4").absolutePath
+        assert(TransmuxingMuxer("/nonexistent-appdir").mux(seg("a"), seg("v"), clean, {}, workDir.path, false, false)) { "clean mux failed" }
+        val ok = TransmuxingMuxer("/nonexistent-appdir")
+            .mux(prefixed(seg("a"), "pnga"), prefixed(seg("v"), "pngv"), out, {}, workDir.path, false, false)
+        assert(ok) { "mux failed" }
+        assertSameMedia(clean, out)
+    }
+
+    @Test
+    fun tsWithJunkBetweenPackets() {
+        requireFfmpeg()
+        // Junk (holding 0x47 bytes) after the 10th packet of each segment: the demuxer must resync on
+        // the next real packet, confirmed by the one after it, and lose nothing.
+        val segments = seg("m").mapIndexed { i, path ->
+            val b = File(path).readBytes()
+            val cut = 188 * 10
+            File(workDir, "junkts-$i.ts").also { it.writeBytes(b.copyOfRange(0, cut) + pngBytes() + b.copyOfRange(cut, b.size)) }.absolutePath
+        }
+        val clean = File(workDir, "junk_ts_clean.mp4").absolutePath
+        val out = File(workDir, "junk_ts.mp4").absolutePath
+        assert(TransmuxingMuxer("/nonexistent-appdir").mux(seg("m"), clean, {}, workDir.path, false, false)) { "clean mux failed" }
+        assert(TransmuxingMuxer("/nonexistent-appdir").mux(segments, out, {}, workDir.path, false, false)) { "mux failed" }
+        assertSameMedia(clean, out)
+    }
+
+    @Test
+    fun fragmentedMp4WithImageInFront() {
+        requireFfmpeg()
+        val media = files("fmp\\d+\\.m4s")
+        Assumptions.assumeTrue(media.isNotEmpty(), "no fmp4 segments")
+        val list = listOf(File(workDir, "fmp4.mp4").absolutePath) + media
+        val clean = File(workDir, "png_fmp4_clean.mp4").absolutePath
+        val out = File(workDir, "png_fmp4.mp4").absolutePath
+        assert(TransmuxingMuxer("/nonexistent-appdir").mux(list, clean, {}, workDir.path, false, true)) { "clean mux failed" }
+        assert(TransmuxingMuxer("/nonexistent-appdir").mux(prefixed(list, "pngfmp4"), out, {}, workDir.path, false, true)) { "mux failed" }
+        assertSameMedia(clean, out)
+    }
+
+    @Test
+    fun progressiveMp4WithImageInFront() {
+        requireFfmpeg()
+        val whole = File(workDir, "whole.mp4")
+        Assumptions.assumeTrue(whole.exists(), "no whole.mp4")
+        // Chunk offsets (stco) count from the MP4's own start, so they move with the prefix.
+        val clean = File(workDir, "png_whole_clean.mp4").absolutePath
+        val out = File(workDir, "png_whole.mp4").absolutePath
+        assert(TransmuxingMuxer("/nonexistent-appdir").mux(listOf(whole.absolutePath), clean, {}, workDir.path, true, true)) { "clean mux failed" }
+        assert(TransmuxingMuxer("/nonexistent-appdir").mux(prefixed(listOf(whole.absolutePath), "pngwhole"), out, {}, workDir.path, true, true)) { "mux failed" }
+        assertSameMedia(clean, out)
+    }
+
+    @Test
+    fun webmWithImageInFront() {
+        requireFfmpeg()
+        val whole = File(workDir, "whole.webm")
+        Assumptions.assumeTrue(whole.exists() && whole.length() > 0, "no whole.webm (VP9/Opus encoders?)")
+        val clean = File(workDir, "png_webm_clean.mkv").absolutePath
+        val out = File(workDir, "png_webm.mkv").absolutePath
+        assert(TransmuxingMuxer("/nonexistent-appdir").mux(listOf(whole.absolutePath), clean, {}, workDir.path, false, false)) { "clean mux failed" }
+        assert(TransmuxingMuxer("/nonexistent-appdir").mux(prefixed(listOf(whole.absolutePath), "pngwebm"), out, {}, workDir.path, false, false)) { "mux failed" }
+        assertSameMedia(clean, out)
+    }
+
+    @Test
+    fun segmentsWithNoMediaFailWithAReason() {
+        workDir.mkdirs()
+        val page = "<!DOCTYPE html><html><body><h1>403 Forbidden</h1></body></html>\n".repeat(200).toByteArray()
+        val segments = (0 until 3).map { i -> File(workDir, "html-$i.ts").also { it.writeBytes(page) }.absolutePath }
+        val out = File(workDir, "html.mp4")
+        val muxer = TransmuxingMuxer("/nonexistent-appdir")
+        assert(!muxer.mux(segments, out.absolutePath, {}, workDir.path, false, false)) { "mux of HTML pages succeeded" }
+        assert(muxer.lastError is NoMediaException) { "lastError: ${muxer.lastError}" }
+        assert(!out.exists()) { "an empty output was left behind" }
     }
 }

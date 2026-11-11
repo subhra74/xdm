@@ -10,7 +10,7 @@ public class Mux {
         boolean disc = Boolean.parseBoolean(a[1]);
         List<String> video = Files.readAllLines(Path.of(a[2]));
         String tmp = Files.createTempDirectory("mux").toString();
-        TransmuxingMuxer m = new TransmuxingMuxer(tmp);
+        TransmuxingMuxer m = new TransmuxingMuxer(tmp, null);
         kotlin.jvm.functions.Function1<Integer, kotlin.Unit> cb = p -> kotlin.Unit.INSTANCE;
         boolean ok;
         if (a.length > 3) {

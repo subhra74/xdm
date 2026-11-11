@@ -5,6 +5,7 @@
 package xdm.core.media.muxer.impl
 
 import xdm.core.media.muxer.Muxer
+import xdm.core.media.muxer.impl.SegmentProbe.Container
 import xdm.core.storage.StorageFile
 import xdm.core.media.muxer.transmux.ContainerWriter
 import xdm.core.media.muxer.transmux.es.SampleSink
@@ -20,7 +21,6 @@ import xdm.core.media.muxer.transmux.ts.TsDemuxer
 import xdm.core.util.Logger
 import java.io.File
 import java.io.FileInputStream
-import java.io.RandomAccessFile
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -135,7 +135,12 @@ class TransmuxingMuxer(
         return try {
             val tracks = body(writer)
             if (stopFlag.get()) { writer.abort(); false }
-            else {
+            else if (tracks.none { it.samples.isNotEmpty() }) {
+                // Nothing the demuxers recognised: say so, rather than fail with no reason.
+                writer.abort()
+                lastError = NoMediaException("No audio or video found in the downloaded segments")
+                false
+            } else {
                 // The earliest presented PTS, which the MP4 writer aligns the tracks on: time zero of the output.
                 timelineStartSec = tracks.filter { it.samples.isNotEmpty() && it.timescale > 0 }
                     .minOfOrNull { presentationStart(it.samples).toDouble() / it.timescale }
@@ -168,21 +173,28 @@ class TransmuxingMuxer(
 
     /**
      * One playlist's segments fed one at a time into the demuxer for their container (sniffed from
-     * the first segment); demuxer state carries across segments.
+     * the first segment); demuxer state carries across segments. Each segment is read from where its
+     * media starts ([SegmentProbe]), past any bytes the server put in front of it.
      */
     private inner class SegmentSource(private val segments: List<String>, writer: SampleSink) {
         var fed = 0
             private set
-        private val feedOne: (String) -> Unit
+        private val feedOne: (String, Long) -> Unit
         private val end: () -> List<Track>
+        private val container: Container =
+            if (segments.isEmpty()) Container.MP4 else SegmentProbe.locate(segments.first())?.container ?: Container.MP4
+        /** Segments whose media started past byte 0, for one log line at the end. */
+        private var shifted = 0
+        private var maxShift = 0L
 
         init {
-            when (if (segments.isEmpty()) Container.MP4 else containerOf(segments.first())) {
+            when (container) {
                 Container.TS -> {
                     val demux = TsDemuxer(writer)
                     val buffer = ByteArray(256 * 1024)
-                    feedOne = { seg ->
+                    feedOne = { seg, from ->
                         FileInputStream(seg).use { input ->
+                            skipFully(input, from)
                             while (!stopFlag.get()) {
                                 val n = input.read(buffer)
                                 if (n <= 0) break
@@ -192,10 +204,23 @@ class TransmuxingMuxer(
                     }
                     end = { demux.finish(); demux.tracks }
                 }
-                Container.MKV -> MatroskaDemuxer(writer).let { d -> feedOne = { d.parseSegment(it) }; end = { d.finish(); d.tracks } }
-                Container.PACKED_AUDIO -> PackedAudioDemuxer(writer).let { d -> feedOne = { d.parseSegment(it) }; end = { d.finish(); d.tracks } }
-                Container.MP4 -> Mp4Demuxer(writer).let { d -> feedOne = { d.parseSegment(it) }; end = { d.finish(); d.tracks } }
+                Container.MKV -> MatroskaDemuxer(writer).let { d -> feedOne = { seg, from -> d.parseSegment(seg, from) }; end = { d.finish(); d.tracks } }
+                Container.PACKED_AUDIO -> PackedAudioDemuxer(writer).let { d -> feedOne = { seg, _ -> d.parseSegment(seg) }; end = { d.finish(); d.tracks } }
+                Container.MP4 -> Mp4Demuxer(writer).let { d -> feedOne = { seg, from -> d.parseSegment(seg, from) }; end = { d.finish(); d.tracks } }
             }
+        }
+
+        /**
+         * Where this segment's media starts. A segment whose own start is another container (or none
+         * found) is read from byte 0, as before.
+         */
+        private fun startOf(seg: String): Long {
+            if (container == Container.PACKED_AUDIO) return 0
+            val found = SegmentProbe.locate(seg) ?: return 0
+            if (found.container != container || found.offset == 0L) return 0
+            shifted++
+            if (found.offset > maxShift) maxShift = found.offset
+            return found.offset
         }
 
         fun hasNext() = fed < segments.size
@@ -204,55 +229,33 @@ class TransmuxingMuxer(
         fun done() = if (segments.isEmpty()) 1.0 else fed.toDouble() / segments.size
 
         fun feedNext() {
-            feedOne(segments[fed])
+            val seg = segments[fed]
+            feedOne(seg, startOf(seg))
             fed++
         }
 
-        fun finish(): List<Track> = if (segments.isEmpty()) emptyList() else end()
-    }
-
-    private enum class Container { TS, MP4, MKV, PACKED_AUDIO }
-
-    /**
-     * Sniffs the container from the file header: EBML magic => Matroska, MP4 box type => MP4,
-     * 0x47 => TS (or 0x47 after M2TS's 4-byte header, repeating every 192 bytes), ID3 tag or a raw
-     * audio sync word => packed audio, else MP4.
-     */
-    private fun containerOf(path: String): Container {
-        RandomAccessFile(path, "r").use { raf ->
-            val head = ByteArray(minOf((M2TS_PACKET + 5).toLong(), raf.length()).toInt())
-            raf.readFully(head)
-            // EBML magic (0x1A45DFA3) => Matroska/WebM.
-            if (head.size >= 4 && (head[0].toInt() and 0xFF) == 0x1A && (head[1].toInt() and 0xFF) == 0x45 &&
-                (head[2].toInt() and 0xFF) == 0xDF && (head[3].toInt() and 0xFF) == 0xA3
-            ) return Container.MKV
-            if (head.size >= 8) {
-                val type = String(head, 4, 4, Charsets.US_ASCII)
-                if (type in MP4_TOP_LEVEL_TYPES) return Container.MP4
+        fun finish(): List<Track> {
+            if (segments.isEmpty()) return emptyList()
+            if (shifted > 0) {
+                Logger.info("XDM", "$container: $shifted of ${segments.size} segments had other bytes in front of the media (up to $maxShift), skipped")
             }
-            // A media segment that begins mid-Matroska-Segment starts with a bare Cluster (0x1F43B675).
-            if (head.size >= 4 && (head[0].toInt() and 0xFF) == 0x1F && (head[1].toInt() and 0xFF) == 0x43 &&
-                (head[2].toInt() and 0xFF) == 0xB6 && (head[3].toInt() and 0xFF) == 0x75
-            ) return Container.MKV
-            if (head.isNotEmpty() && (head[0].toInt() and 0xFF) == 0x47) return Container.TS
-            if (head.size > M2TS_PACKET + 4 && (head[4].toInt() and 0xFF) == 0x47 &&
-                (head[M2TS_PACKET + 4].toInt() and 0xFF) == 0x47
-            ) return Container.TS
-            if (PackedAudioDemuxer.isId3(head, 0) || isAudioSync(head)) return Container.PACKED_AUDIO
-            return Container.MP4
+            return end().also { tracks ->
+                if (tracks.none { it.samples.isNotEmpty() }) {
+                    Logger.error("XDM", "$container: no audio or video found in ${segments.size} segments, first ${segments.first()}")
+                }
+            }
         }
     }
 
-    /** ADTS / MPEG audio (0xFFE sync) or AC-3 / E-AC-3 (0x0B77) frame at the start of [head]. */
-    private fun isAudioSync(head: ByteArray): Boolean {
-        if (head.size < 2) return false
-        val b0 = head[0].toInt() and 0xFF
-        val b1 = head[1].toInt() and 0xFF
-        return (b0 == 0xFF && (b1 and 0xE0) == 0xE0) || (b0 == 0x0B && b1 == 0x77)
-    }
-
-    private companion object {
-        const val M2TS_PACKET = 192
-        val MP4_TOP_LEVEL_TYPES = setOf("ftyp", "styp", "moov", "moof", "sidx", "free", "skip", "mdat")
+    private fun skipFully(input: FileInputStream, n: Long) {
+        var left = n
+        while (left > 0) {
+            val skipped = input.skip(left)
+            if (skipped <= 0) break
+            left -= skipped
+        }
     }
 }
+
+/** The segments held no audio or video that the transmuxer recognised. */
+class NoMediaException(message: String) : java.io.IOException(message)
