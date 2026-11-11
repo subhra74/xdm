@@ -22,6 +22,11 @@ import xdm.core.util.ManifestUtils.downloadManifestAsFile
 import xdm.core.util.getFileExtFromUrl
 import xdm.core.util.isOutOfSpace
 import java.io.File
+import xdm.core.downloaders.AssemblyNote
+import xdm.core.downloaders.CommitResult
+import xdm.core.media.muxer.OutputKind
+import xdm.core.media.muxer.SegmentInfo
+import xdm.core.media.muxer.impl.SegmentProbe
 import java.io.IOException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutorService
@@ -156,6 +161,8 @@ abstract class StreamingDownloaderTask(
         val finished = context.chunks.filter { it.status.get() == ChunkStatus.Finished }
         if (finished.isEmpty()) return null
         if (context.completed.get() && outputFile().exists) return null
+        // The segments were moved into a playlist folder that wasn't published yet: the next assembly publishes it.
+        if (PlaylistFolder(context.tempFolder).isBuilt) return null
         return if (finished.any { !File(getChunkTempFileName(it)).isFile }) DownloadError.DiskSpaceError else null
     }
 
@@ -260,6 +267,8 @@ abstract class StreamingDownloaderTask(
         context.assembling.set(true)
         context.downloadHost.onAssembleStart(context.id)
         val tmpFile = outputFile()
+        // A previous run built the playlist folder (nothing else could keep the download) but didn't publish it.
+        if (PlaylistFolder(context.tempFolder).isBuilt) { publishPlaylistFolder(); return }
         // A previous run muxed successfully but the commit failed: only retry the commit.
         val alreadyMuxed = context.completed.get() && tmpFile.exists
         if (!alreadyMuxed) {
@@ -282,6 +291,7 @@ abstract class StreamingDownloaderTask(
                 context.downloadHost.onDownloadFailed(context.id, DownloadError.OutputWriteError)
                 return
             }
+            muxer.setSegmentInfo(segmentInfo())
             val ret = if (context.hasSeparateStreams) {
                 assembleStreams(tmpFile)
             } else {
@@ -289,13 +299,21 @@ abstract class StreamingDownloaderTask(
             }
             if (context.stopFlag.get()) return
             if (!ret) {
-                val error = if (isOutOfSpace(assembleError ?: muxer.lastError)) DownloadError.DiskSpaceError
-                else DownloadError.MuxError
-                context.downloadHost.onDownloadFailed(context.id, error)
+                // A full disk pauses (the next start tries again); anything else keeps the download as files.
+                if (isOutOfSpace(assembleError ?: muxer.lastError)) {
+                    context.downloadHost.onDownloadFailed(context.id, DownloadError.DiskSpaceError)
+                } else {
+                    keepAsFiles(tmpFile)
+                }
                 return
             }
             // The container written may not be the part file's (MuxContainer): the published name follows it.
             context.muxedContainer = muxer.outputContainer
+            note = when (muxer.outputKind) {
+                OutputKind.TS_FALLBACK -> AssemblyNote.TS_FALLBACK
+                OutputKind.AS_IS -> AssemblyNote.AS_IS
+                OutputKind.REMUXED -> null
+            }
         } else {
             Logger.info("XDM", "Output already muxed, retrying commit: $tmpFile")
         }
@@ -321,7 +339,8 @@ abstract class StreamingDownloaderTask(
                         context.id,
                         context.downloadHost.storage.folder(res.outputDir).length(res.fileName),
                         res.fileName,
-                        res.outputDir
+                        res.outputDir,
+                        note = note,
                     )
                 )
             }
@@ -424,6 +443,110 @@ abstract class StreamingDownloaderTask(
             Logger.error("XDM", "Unable to save subtitle for ${context.id}", e)
         }
     }
+
+    /** How this assembly kept the download when it wasn't the usual remux (for the completion note). */
+    private var note: AssemblyNote? = null
+
+    /** What the muxer's fallbacks need to know about each segment file. */
+    private fun segmentInfo(): Map<String, SegmentInfo> =
+        context.chunks.filter { it.tag != SUBS_TAG }.associate { getChunkTempFileName(it) to SegmentInfo(it.duration, it.discontinuity, it.init) }
+
+    private fun segments(tag: String?): List<PlaylistFolder.Segment> =
+        context.chunks.filter { it.tag != SUBS_TAG && (tag == null || it.tag == tag) }
+            .map { PlaylistFolder.Segment(File(getChunkTempFileName(it)), it.duration, it.discontinuity, it.init) }
+
+    /**
+     * The remux and its one-file fallbacks failed: the download is kept rather than lost. HLS-playable
+     * segments (TS, fMP4, packed audio) become a playlist folder; anything else is published as files side
+     * by side. Only when even that fails does the download end in [DownloadError.MuxError], segments kept.
+     */
+    private fun keepAsFiles(tmpFile: StorageFile) {
+        Logger.info("XDM", "Remux failed (${assembleError ?: muxer.lastError}); keeping the download as files")
+        val video = segments(if (context.hasSeparateStreams) "VIDEO" else null)
+        val audio = if (context.hasSeparateStreams) segments("AUDIO") else emptyList()
+        val folder = PlaylistFolder(context.tempFolder)
+        if (folder.canCarry(video + audio) && folder.build(video, audio)) {
+            publishPlaylistFolder()
+            return
+        }
+        if (context.stopFlag.get()) return
+        if (publishSideBySide(tmpFile, video, audio)) return
+        context.downloadHost.onDownloadFailed(context.id, DownloadError.MuxError)
+    }
+
+    private fun publishPlaylistFolder() {
+        val folder = PlaylistFolder(context.tempFolder)
+        val size = folder.dir.listFiles()?.sumOf { it.length() } ?: 0L
+        when (val res = context.downloadHost.commitOutputFolder(context.id, folder.dir.path, PlaylistFolder.ENTRY, downloadType())) {
+            is CommitResult.Failed -> {
+                if (context.stopFlag.get() || res.error == DownloadError.Cancelled) return
+                Logger.error("XDM", "Publishing the playlist folder failed: ${res.error}; the segments stay in ${folder.dir}")
+                context.downloadHost.onDownloadFailed(context.id, res.error)
+            }
+            is CommitResult.Success -> {
+                saveContext()
+                saveSubtitle(res.outputDir, res.fileName)
+                cleanup()
+                Logger.info("XDM", "Saved as a playlist folder: ${res.outputDir} ${res.fileName}")
+                context.downloadHost.onDownloadSuccess(
+                    DownloadStatusInfo.FinalInfo(context.id, size, res.fileName, res.outputDir, note = AssemblyNote.PLAYLIST_FOLDER)
+                )
+            }
+        }
+    }
+
+    /**
+     * Files no playlist can carry: each track (or, for one list that can't be joined, each part) as its
+     * own file — the first is the download's output, the others are published beside it.
+     */
+    private fun publishSideBySide(tmpFile: StorageFile, video: List<PlaylistFolder.Segment>, audio: List<PlaylistFolder.Segment>): Boolean {
+        val groups: List<Pair<List<File>, String>> = if (audio.isNotEmpty()) {
+            listOf(video.map { it.file } to "", audio.map { it.file } to "audio")
+        } else video.mapIndexed { i, s -> listOf(s.file) to if (i == 0) "" else "part${i + 1}" }
+        if (groups.isEmpty() || groups.any { it.first.isEmpty() }) return false
+        // Only media: bytes nothing recognises (an error page, a damaged download) aren't published as files.
+        if (groups.any { (files, _) -> SegmentProbe.foreign(files[0].path) == null && SegmentProbe.locate(files[0].path) == null }) return false
+        return try {
+            joinInto(groups[0].first, tmpFile)
+            val res = context.downloadHost.commitOutputFile(context.id, tmpFile, downloadType(), extensionOf(groups[0].first[0]))
+            if (res !is CommitResult.Success) return false
+            val others = ArrayList<String>()
+            var allPublished = true
+            for ((files, suffix) in groups.drop(1)) {
+                val joined = File(context.tempFolder, "side-$suffix.${extensionOf(files[0])}")
+                joined.outputStream().use { out -> for (f in files) f.inputStream().use { it.copyTo(out) } }
+                context.downloadHost.commitSidecar(context.id, joined.path, res.outputDir, res.fileName, suffix)?.let { others.add(it) }
+                    ?: run { allPublished = false; Logger.error("XDM", "Couldn't publish $joined beside ${res.fileName}; it stays in ${context.tempFolder}") }
+            }
+            saveContext()
+            // What couldn't be published beside the output stays in the temp folder rather than being deleted.
+            if (allPublished) cleanup()
+            Logger.info("XDM", "Saved as separate files: ${res.fileName} + $others")
+            context.downloadHost.onDownloadSuccess(
+                DownloadStatusInfo.FinalInfo(
+                    context.id, context.downloadHost.storage.folder(res.outputDir).length(res.fileName), res.fileName, res.outputDir,
+                    note = AssemblyNote.SEPARATE_FILES, noteDetail = others.joinToString(", "),
+                )
+            )
+            true
+        } catch (e: Exception) {
+            Logger.error("XDM", "Publishing the files side by side failed", e)
+            false
+        }
+    }
+
+    private fun joinInto(files: List<File>, out: StorageFile) {
+        out.open(create = true).use { handle ->
+            handle.setLength(0)
+            val buf = ByteArray(256 * 1024)
+            for (f in files) f.inputStream().use { input ->
+                while (true) { val n = input.read(buf); if (n <= 0) break; handle.write(buf, 0, n) }
+            }
+            handle.force()
+        }
+    }
+
+    private fun extensionOf(f: File): String = SegmentProbe.extensionOf(f.path)
 
     private fun cleanup() {
         Logger.info("XDM", "Cleaning up temp files")

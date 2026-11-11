@@ -62,6 +62,7 @@ class TestMkvOutput {
                 "pcm_s16be.mov" to arrayOf(*a, "-t", "1", "-c:a", "pcm_s16be"),
                 "pcm_s24le.mov" to arrayOf(*a, "-t", "1", "-c:a", "pcm_s24le"),
                 "pcm_f32le.mov" to arrayOf(*a, "-t", "1", "-c:a", "pcm_f32le"),
+                "pcm_u8.mov" to arrayOf(*a, "-t", "1", "-c:a", "pcm_u8"),
                 "pcm_s16le.mp4" to arrayOf(*a, "-t", "1", "-c:a", "pcm_s16le"),
                 "pcm_f32le.mp4" to arrayOf(*a, "-t", "1", "-c:a", "pcm_f32le"),
                 "aac.mov" to arrayOf(*a, "-t", "1", "-c:a", "aac", "-ac", "2"),
@@ -384,7 +385,7 @@ class TestMkvOutput {
         requireFfmpeg()
         val expected = mapOf(
             "pcm_s16le.mov" to "pcm_s16le", "pcm_s16be.mov" to "pcm_s16be", "pcm_s24le.mov" to "pcm_s24le",
-            "pcm_f32le.mov" to "pcm_f32le", "pcm_s16le.mp4" to "pcm_s16le", "pcm_f32le.mp4" to "pcm_f32le",
+            "pcm_f32le.mov" to "pcm_f32le", "pcm_s16le.mp4" to "pcm_s16le", "pcm_f32le.mp4" to "pcm_f32le", "pcm_u8.mov" to "pcm_u8",
             "aac.mov" to "aac", "mp2.mp4" to "mp2", "opus.mp4" to "opus",
             "prores.mov" to "prores", "mpeg4.mp4" to "mpeg4", "mpeg2.mp4" to "mpeg2video", "mjpeg.mov" to "mjpeg",
         )

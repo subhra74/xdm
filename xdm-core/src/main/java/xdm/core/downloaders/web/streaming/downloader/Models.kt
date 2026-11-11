@@ -33,6 +33,12 @@ data class StreamingChunk(
     val tag: String,
     val fileHandle: AtomicReference<RandomAccessFile?>,
     var encrypted: Boolean,
+    /** Playback length in seconds from the playlist (`EXTINF`); 0 when unknown (DASH, older states). */
+    var duration: Double = 0.0,
+    /** Discontinuities before this segment in its playlist (`EXT-X-DISCONTINUITY`): its timeline section. */
+    var discontinuity: Int = 0,
+    /** An initialization segment (`EXT-X-MAP`) rather than media; false when unknown. */
+    var init: Boolean = false,
 )
 
 interface StreamingTaskContext {

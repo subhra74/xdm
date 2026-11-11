@@ -274,7 +274,8 @@ object YtDlpTasks {
         return f.fragments.map { fr ->
             val u = fr.url?.toHttpUrlOrNull() ?: base?.resolve(fr.path ?: "")
                 ?: throw IllegalArgumentException("Bad fragment in format ${f.id}")
-            DashSegment(u)
+            // The duration places a fragment on the playlist timeline when the muxer can't (playlist fallback).
+            DashSegment(u, duration = fr.duration?.takeIf { it > 0 } ?: 0.0)
         }
     }
 

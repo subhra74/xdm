@@ -55,6 +55,13 @@ class TsDemuxer(private val sink: SampleSink) {
     /** Tracks in PMT declaration order, for stable output ordering. */
     val tracks = ArrayList<Track>()
 
+    /**
+     * Audio or video streams left out (a codec with no reader, or a stream on an audio/video
+     * stream_id nothing identified): the caller falls back rather than lose them. Subtitles, data and
+     * the second view of 3D (MVC) don't count.
+     */
+    val lostStreams = LinkedHashSet<String>()
+
     private val carry = ByteArrayBuilder(256 * 1024)
 
     /** Feeds a chunk of TS bytes. Buffers any trailing partial packet until the next [feed]. */
@@ -347,6 +354,7 @@ class TsDemuxer(private val sink: SampleSink) {
                     if (pid !in loggedPids) {
                         loggedPids += pid
                         if (m.unsupported != null) {
+                            if (!m.unsupported.contains("MVC")) lostStreams += "${m.unsupported} (pid $pid)"
                             Logger.error("XDM", "TS: ${m.unsupported} (pid=$pid, stream_type=0x${Integer.toHexString(streamType)}) can't be muxed; leaving it out")
                         } else {
                             Logger.info("XDM", "TS: skipping non-A/V stream pid=$pid stream_type=0x${Integer.toHexString(streamType)}")
@@ -452,6 +460,11 @@ class TsDemuxer(private val sink: SampleSink) {
         val kind = (if (audioType) EsProbe.audio(data, offset, length) else EsProbe.identify(data, offset, length, asm.streamId))
             ?: if (probe.attempts < (if (video) PROBE_PES_VIDEO else PROBE_PES)) return else probe.fallback
         if (kind == null) {
+            // Audio/video stream_ids, and private_stream_1 / extended (BD / FD: AC-3, LPCM, TrueHD, DTS-HD, VC-1):
+            // subtitles and data on those are skipped by their descriptors and never get here.
+            if (asm.streamId in 0xC0..0xEF || asm.streamId == 0xBD || asm.streamId == 0xFD) {
+                lostStreams += "unidentified stream (pid $pid, stream_id 0x${Integer.toHexString(asm.streamId)})"
+            }
             Logger.info("XDM", "TS: skipping unidentified private stream pid=$pid")
             readersByPid.remove(pid)
             kindByPid.remove(pid)
@@ -487,9 +500,12 @@ class TsDemuxer(private val sink: SampleSink) {
         const val PROBE_PES_VIDEO = 64
         /** Packets held back while no PMT has been seen, before the streams are guessed (376 KB). */
         const val AUTO_GUESS_PACKETS = 2000
-        /** Descriptor tags of streams that aren't audio or video (ETSI EN 300 468). */
         val VIDEO_READERS = setOf(StreamReader.H264, StreamReader.H265, StreamReader.MPEG_VIDEO, StreamReader.MPEG4_VISUAL)
-        val NON_AV_DESCRIPTORS = setOf(0x45, 0x46, 0x56, 0x59, 0x66, 0x6F)
+        /**
+         * Descriptor tags of streams that aren't audio or video: VBI, teletext, subtitling, data broadcast and
+         * application signalling (ETSI EN 300 468), and ARIB's data component (captions), as ffmpeg.
+         */
+        val NON_AV_DESCRIPTORS = setOf(0x45, 0x46, 0x56, 0x59, 0x66, 0x6F, 0xFD)
         /**
          * How many starts the packet size search looks at before sliding on. The segment is normally
          * fed from where `SegmentProbe` found the stream, so the first packet is at the very start.

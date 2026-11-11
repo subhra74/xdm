@@ -83,4 +83,34 @@ interface Muxer {
      * unknown (no successful mux yet, or a muxer that doesn't say).
      */
     val outputContainer: String? get() = null
+
+    /** How the last successful mux made its output (a fallback says so to the user). */
+    val outputKind: OutputKind get() = OutputKind.REMUXED
+
+    /**
+     * What the downloader knows about each segment file (by path): its playlist duration, timeline
+     * section and whether it is an init segment. Fallbacks use it to merge renditions section by
+     * section; without it they go by the timestamps. Call before [mux].
+     */
+    fun setSegmentInfo(info: Map<String, SegmentInfo>) {}
 }
+
+/** How a muxer produced its output. */
+enum class OutputKind {
+    /** Remuxed into the planned container ([Muxer.outputContainer]). */
+    REMUXED,
+    /** Joined or merged into MPEG-TS because a stream couldn't be remuxed: nothing left out. */
+    TS_FALLBACK,
+    /** Published as it was downloaded (one file, or its parts joined byte for byte). */
+    AS_IS,
+}
+
+/** A downloaded segment as its playlist describes it ([Muxer.setSegmentInfo]). */
+data class SegmentInfo(
+    /** Seconds; 0 when unknown. */
+    val duration: Double,
+    /** Discontinuities before it in its playlist: segments of one section share a timeline. */
+    val section: Int,
+    /** An initialization segment (`EXT-X-MAP`). */
+    val init: Boolean,
+)

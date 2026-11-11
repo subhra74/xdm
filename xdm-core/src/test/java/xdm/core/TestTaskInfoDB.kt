@@ -110,7 +110,10 @@ class TestTaskInfoDB : HttpDownloadTestBase() {
             id = 3, fileName = "d.mp4", tempDir = "/tmp/d", respectFileName = false,
             cookie = "cf=2", headers = headers, origin = "https://example.com/dash",
             categoryId = null, targetFolder = "/downloads",            maxPiece = 0, authInfo = null,
-            videoSegments = listOf(DashSegment("https://cdn.example.com/v1.m4s".toHttpUrl(), Pair(0L, 99L))),
+            videoSegments = listOf(
+                DashSegment("https://cdn.example.com/init.mp4".toHttpUrl(), null, init = true),
+                DashSegment("https://cdn.example.com/v1.m4s".toHttpUrl(), Pair(0L, 99L), duration = 2.002),
+            ),
             audioSegments = listOf(DashSegment("https://cdn.example.com/a1.m4s".toHttpUrl(), null)),
             url = "https://cdn.example.com/manifest.mpd", audioMime = "audio/mp4", videoMime = "video/mp4",
             subtitles = listOf(

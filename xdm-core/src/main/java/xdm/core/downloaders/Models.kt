@@ -364,10 +364,29 @@ sealed interface DownloadStatusInfo {
         val finalOutputFolder: String,
         /** Batch only: files that could not be downloaded; the batch still finishes. */
         val failedFiles: Int = 0,
+        /** How the output was assembled when it wasn't the usual remux; null for the usual one. */
+        val note: AssemblyNote? = null,
+        /** The other file(s) [note] is about (the separate audio, the number of parts). */
+        val noteDetail: String? = null,
     )
 }
 
 enum class TorrentPhase { Metadata, Checking, Downloading, Finished, Seeding }
+
+/**
+ * A download whose streams couldn't all be remuxed into the container asked for, so it was saved another
+ * way rather than fail: shown as one line under the download-complete dialog.
+ */
+enum class AssemblyNote {
+    /** Saved as MPEG-TS: joined or merged without converting the streams. */
+    TS_FALLBACK,
+    /** Saved as it was downloaded (its own container). */
+    AS_IS,
+    /** Saved as a playlist folder (the segments and a `.m3u8`), which VLC plays. */
+    PLAYLIST_FOLDER,
+    /** Saved as separate files side by side ([DownloadStatusInfo.FinalInfo.noteDetail] names them). */
+    SEPARATE_FILES,
+}
 
 sealed interface CommitResult {
     data class Success(val fileName: String, val outputDir: String) : CommitResult

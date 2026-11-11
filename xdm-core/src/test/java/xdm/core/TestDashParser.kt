@@ -61,6 +61,45 @@ class TestDashParser {
         , "audio segments should resolve against the audio BaseURL, got $audioUrls")
     }
 
+    /** Each segment carries its manifest duration, and the initialization segment is marked as such. */
+    @Test
+    fun segmentsCarryDurationsAndTheInitFlag() {
+        val template = parse(
+            """
+            <MPD type="static" mediaPresentationDuration="PT5S" xmlns="urn:mpeg:dash:schema:mpd:2011">
+              <Period>
+                <AdaptationSet mimeType="video/mp4">
+                  <Representation id="v0" bandwidth="1000" codecs="avc1.42c00d">
+                    <SegmentTemplate initialization="init.mp4" media="seg-${'$'}Number${'$'}.m4s" duration="2000" timescale="1000" startNumber="0"/>
+                  </Representation>
+                </AdaptationSet>
+              </Period>
+            </MPD>
+            """
+        ).first().video!!.segments
+        assertTrue(template.first().init && template.first().duration == 0.0, "init: ${template.first()}")
+        assertEquals(listOf(2.0, 2.0, 2.0), template.drop(1).map { it.duration })
+        assertTrue(template.drop(1).none { it.init })
+
+        val timeline = parse(
+            """
+            <MPD type="static" mediaPresentationDuration="PT5S" xmlns="urn:mpeg:dash:schema:mpd:2011">
+              <Period>
+                <AdaptationSet mimeType="video/mp4">
+                  <Representation id="v0" bandwidth="1000" codecs="avc1.42c00d">
+                    <SegmentTemplate initialization="init.mp4" media="seg-${'$'}Time${'$'}.m4s" timescale="90000">
+                      <SegmentTimeline><S t="0" d="180000" r="1"/><S d="90000"/></SegmentTimeline>
+                    </SegmentTemplate>
+                  </Representation>
+                </AdaptationSet>
+              </Period>
+            </MPD>
+            """
+        ).first().video!!.segments
+        assertEquals(listOf(0.0, 2.0, 2.0, 1.0), timeline.map { it.duration })
+        assertEquals(listOf(true, false, false, false), timeline.map { it.init })
+    }
+
     /** `$$` is the DASH escape for a literal `$`; it must not leave a stray space behind. */
     @Test
     fun escapedDollarBecomesLiteralDollar() {

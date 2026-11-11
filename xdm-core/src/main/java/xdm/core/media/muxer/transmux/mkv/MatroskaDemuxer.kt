@@ -75,6 +75,9 @@ class MatroskaDemuxer(private val sink: SampleSink) {
 
     val tracks: List<Track> get() = ordered.map { it.track }
 
+    /** Tracks left out (encrypted, or an unsupported compression): the caller falls back rather than lose them. */
+    val lostStreams = LinkedHashSet<String>()
+
     /** [from] is where the Matroska data starts when the file has other bytes in front of it. */
     fun parseSegment(path: String, from: Long = 0) {
         RandomAccessFile(path, "r").use { raf ->
@@ -168,6 +171,7 @@ class MatroskaDemuxer(private val sink: SampleSink) {
         val undo = encodings.sortedByDescending { it.order }
         if (undo.any { !it.supported }) {
             Logger.info("XDM", "Matroska: track $number ($codecId) is encrypted or uses an unsupported compression, dropped")
+            if (type == Ebml.TRACK_TYPE_VIDEO || type == Ebml.TRACK_TYPE_AUDIO) lostStreams += "Matroska track $number ($codecId)"
             byNumber[number] = TrackState(Track(codecFor(codecId, type == Ebml.TRACK_TYPE_VIDEO))).also { it.dropped = true }
             return
         }

@@ -83,6 +83,8 @@ private const val ITEM_AUDIO_URL = 6
 private const val SEG_URL = 1
 private const val SEG_RANGE_START = 2
 private const val SEG_RANGE_END = 3
+private const val SEG_DURATION = 4
+private const val SEG_INIT = 5
 
 // ExtractorSource.
 private const val EX_EXTRACTOR = 1
@@ -144,6 +146,9 @@ private fun TagReader.headers(): HeaderMap {
 private fun TagWriter.dashSegment(no: Int, seg: DashSegment) = message(no) {
     string(SEG_URL, seg.url.toString())
     seg.range?.let { long(SEG_RANGE_START, it.first); long(SEG_RANGE_END, it.second) }
+    // Milliseconds: the tagged format has no floating-point type.
+    if (seg.duration > 0) long(SEG_DURATION, Math.round(seg.duration * 1000))
+    if (seg.init) long(SEG_INIT, 1)
 }
 
 private fun TagReader.dashSegment(): DashSegment {
@@ -151,16 +156,20 @@ private fun TagReader.dashSegment(): DashSegment {
     var url = ""
     var start: Long? = null
     var end: Long? = null
+    var durationMs = 0L
+    var init = false
     while (true) {
         when (r.next()) {
             -1 -> break
             SEG_URL -> url = r.string()
             SEG_RANGE_START -> start = r.long()
             SEG_RANGE_END -> end = r.long()
+            SEG_DURATION -> durationMs = r.long()
+            SEG_INIT -> init = r.long() != 0L
             else -> r.skip()
         }
     }
-    return DashSegment(url.toHttpUrl(), if (start != null && end != null) Pair(start, end) else null)
+    return DashSegment(url.toHttpUrl(), if (start != null && end != null) Pair(start, end) else null, durationMs / 1000.0, init)
 }
 
 private fun TagWriter.subtitle(no: Int, track: SubtitleTrack) = message(no) {

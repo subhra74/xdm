@@ -94,12 +94,13 @@ class MkvWriter(
         val usable = tracks.filter { it.samples.isNotEmpty() && it.isReady() }
         if (usable.isEmpty()) { spoolFile.delete(); return false }
 
-        val plans = usable.mapIndexedNotNull { idx, t ->
+        val plans = usable.mapIndexed { idx, t ->
+            // A track Matroska can't name is not left out: the caller falls back (MP4 can copy it).
             val resolved = resolveCodec(t) ?: run {
-                Logger.error("XDM", "MKV: skipping track with unmappable codec ${t.codec}")
-                null
+                spoolFile.delete()
+                throw TrackLostException("Matroska has no codec ID for the ${t.codec} track${t.sampleEntryBox?.let { " (" + String(it, 4, 4, Charsets.US_ASCII) + ")" } ?: ""}")
             }
-            resolved?.let { TrackPlan(t, idx + 1, it.first, it.second, dolbyVisionConfig(t)) }
+            TrackPlan(t, idx + 1, resolved.first, resolved.second, dolbyVisionConfig(t))
         }
         if (plans.isEmpty()) { spoolFile.delete(); return false }
 
@@ -521,6 +522,10 @@ class MkvWriter(
             // BlockAdditionMapping (see dolbyVisionConfig).
             "avc1", "avc3", "dva1", "dvav" -> "V_MPEG4/ISO/AVC" to childBox(entry, childStart, "avcC")
             "hev1", "hvc1", "dvh1", "dvhe" -> "V_MPEGH/ISO/HEVC" to childBox(entry, childStart, "hvcC")
+            // VVC: `vvcC` is a full box; Matroska's CodecPrivate is the record after its version and flags.
+            "vvc1", "vvi1" -> "V_MPEGI/ISO/VVC" to childBox(entry, childStart, "vvcC")?.takeIf { it.size > 4 }?.let { it.copyOfRange(4, it.size) }
+            // Motion JPEG: every frame is a whole JPEG; no CodecPrivate.
+            "jpeg", "mjpa", "mjpb" -> "V_MJPEG" to null
             "vp08" -> "V_VP8" to null
             "vp09" -> "V_VP9" to childBox(entry, childStart, "vpcC")
             "av01", "dav1" -> "V_AV1" to childBox(entry, childStart, "av1C")
@@ -571,6 +576,8 @@ class MkvWriter(
             // ipcm/fpcm (pcmC). Matroska has little-endian floats only, and 8-bit means unsigned.
             "sowt" -> pcm(t, littleEndian = true, float = false, bits = audio?.bits ?: 16)
             "twos" -> pcm(t, littleEndian = false, float = false, bits = audio?.bits ?: 16)
+            // QuickTime `raw `: unsigned 8-bit, which is what Matroska's 8-bit A_PCM/INT/LIT means.
+            "raw " -> { t.audioBitDepth = 8; "A_PCM/INT/LIT" to null }
             "lpcm" -> audio?.let { a ->
                 pcm(t, littleEndian = a.lpcmFlags and 0x2 == 0, float = a.lpcmFlags and 0x1 != 0, bits = a.bits)
             }
@@ -723,7 +730,7 @@ class MkvWriter(
 
     private companion object {
         val VIDEO_FOURCCS = setOf(
-            "avc1", "avc3", "hev1", "hvc1", "vp08", "vp09", "av01", "dva1", "dvav", "dvh1", "dvhe", "dav1"
+            "avc1", "avc3", "hev1", "hvc1", "vp08", "vp09", "av01", "dva1", "dvav", "dvh1", "dvhe", "dav1", "vvc1", "vvi1", "jpeg", "mjpa", "mjpb"
         )
         val DOLBY_VISION_BOXES = listOf("dvcC", "dvvC", "dvwC")
 
@@ -734,3 +741,6 @@ class MkvWriter(
         const val SEEK_HEAD_SPACE = 96
     }
 }
+
+/** A track the writer can't carry: writing on would leave it out. */
+class TrackLostException(message: String) : java.io.IOException(message)

@@ -155,10 +155,12 @@ class YtDlpFormatsTest {
         val info = YtDlp.parse("""{"title":"t","webpage_url":"https://p","formats":[
             {"format_id":"d","protocol":"http_dash_segments","ext":"mp4","vcodec":"avc1","acodec":"mp4a.40.2",
              "height":480,"fragment_base_url":"https://cdn.example/seg/",
-             "fragments":[{"path":"init.mp4"},{"path":"1.m4s"},{"url":"https://other.example/2.m4s"}]}]}""")
+             "fragments":[{"path":"init.mp4"},{"path":"1.m4s","duration":5.005},{"url":"https://other.example/2.m4s","duration":4.2}]}]}""")
         val task = (YtDlpTasks.build(info, YtDlpChoices.of(info).first(), save) as YtDlpTask.Dash).task
         assertEquals(listOf("https://cdn.example/seg/init.mp4", "https://cdn.example/seg/1.m4s", "https://other.example/2.m4s"),
             task.videoSegments.map { it.url.toString() })
+        // yt-dlp's fragment durations are kept (the init fragment has none).
+        assertEquals(listOf(0.0, 5.005, 4.2), task.videoSegments.map { it.duration })
     }
 
     @Test

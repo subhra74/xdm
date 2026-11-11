@@ -4,6 +4,7 @@
 
 package xdm.manager
 
+import xdm.core.downloaders.AssemblyNote
 import xdm.capture.CaptureConfig
 import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.DownloadStatusInfo
@@ -181,6 +182,14 @@ interface UiSink {
 
     /** [DownloadCompleteNotification.DIALOG]. */
     fun downloadCompleteDialog(id: Long, folder: String, fileName: String, fileSize: Long)
+
+    /**
+     * [DownloadCompleteNotification.DIALOG] for a download saved another way than the usual remux: the
+     * dialog shows one line about it ([note], [noteDetail] naming the other files). Never sent in the
+     * other notification modes.
+     */
+    fun downloadCompleteDialog(id: Long, folder: String, fileName: String, fileSize: Long, note: AssemblyNote?, noteDetail: String?) =
+        downloadCompleteDialog(id, folder, fileName, fileSize)
 
     /** [DownloadCompleteNotification.NOTIFICATION]; a click opens [folder]. */
     fun downloadCompleteNotification(folder: String, fileName: String)

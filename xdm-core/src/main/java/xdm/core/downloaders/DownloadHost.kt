@@ -27,6 +27,22 @@ interface FileProvider {
     fun commitOutputFile(id: Long, part: StorageFile, downloadType: DownloadType, container: String? = null): CommitResult
 
     /**
+     * Publishes [folder] (a local folder of segments and playlists, built when the segments couldn't be
+     * made into one file) into the download's folder under the download's name, its [entry] playlist
+     * renamed to `<name>.m3u8`. [CommitResult.Success.fileName] is `<folder name>/<name>.m3u8`. Hosts that
+     * can't publish a folder (yet) fail, and the segments are kept.
+     */
+    fun commitOutputFolder(id: Long, folder: String, entry: String, downloadType: DownloadType): CommitResult =
+        CommitResult.Failed(DownloadError.OutputWriteError)
+
+    /**
+     * Publishes the local [file] beside an already published output [mainFileName] in [outputDir], as
+     * `<main name>.<suffix>.<ext>` (the file's own extension): a track that couldn't be merged into it.
+     * Returns the name given, or null when the host can't (the caller keeps the file).
+     */
+    fun commitSidecar(id: Long, file: String, outputDir: String, mainFileName: String, suffix: String): String? = null
+
+    /**
      * Where a streaming download should write its assembled output ([ext] includes the dot): a partial
      * file inside the final destination folder, so [commitOutputFile] is a same-folder rename even
      * when the temp folder is on another drive. Stable for a download id. Null means "write it in the

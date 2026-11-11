@@ -38,6 +38,9 @@ class FlvDemuxer(private val sink: SampleSink) {
     /** Codecs already reported as unsupported. */
     private val reported = HashSet<String>()
 
+    /** Audio/video codecs seen that this demuxer leaves out: the caller falls back rather than lose them. */
+    val lostStreams = LinkedHashSet<String>()
+
     val tracks: List<Track> get() = listOfNotNull(video, audio)
 
     /** [from] is where the FLV header starts when the file has other bytes in front of it. */
@@ -232,7 +235,10 @@ class FlvDemuxer(private val sink: SampleSink) {
     // ---- helpers ----
 
     private fun unsupported(what: String) {
-        if (reported.add(what)) Logger.info("XDM", "FLV: $what isn't supported, left out")
+        if (reported.add(what)) {
+            Logger.info("XDM", "FLV: $what isn't supported, left out")
+            if (what.startsWith("video") || what.startsWith("audio")) lostStreams += "FLV $what"
+        }
     }
 
     private fun u24(b: ByteArray, o: Int) = ((b[o].toInt() and 0xFF) shl 16) or ((b[o + 1].toInt() and 0xFF) shl 8) or (b[o + 2].toInt() and 0xFF)

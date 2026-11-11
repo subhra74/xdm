@@ -113,6 +113,23 @@ internal object SegmentProbe {
         }
     }
 
+    /**
+     * The extension a file is published with when it is kept as it was downloaded: its container (by
+     * signature or by what the demuxers read), else the extension in its (URL-derived) name, else `bin`.
+     */
+    fun extensionOf(path: String): String {
+        foreign(path)?.let { return it.extension }
+        when (locate(path)?.container) {
+            Container.TS -> return "ts"
+            Container.MP4 -> return "mp4"
+            Container.MKV -> return "mkv"
+            Container.FLV -> return "flv"
+            Container.PACKED_AUDIO, null -> {}
+        }
+        val name = path.substringAfterLast('/').substringAfterLast('\\').removeSuffix(".enc")
+        return name.substringAfterLast('.', "").lowercase().takeIf { it.isNotEmpty() && it != "tmp" && it.length <= 5 } ?: "bin"
+    }
+
     fun fromName(path: String): Container? {
         var name = path.substringAfterLast('/').substringAfterLast('\\').lowercase()
         if (name.endsWith(".enc")) name = name.removeSuffix(".enc")

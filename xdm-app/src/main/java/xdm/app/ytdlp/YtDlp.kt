@@ -17,8 +17,11 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
-/** One fragment of a `http_dash_segments` format: an absolute [url], or a [path] under the base URL. */
-data class YtFragment(val url: String?, val path: String?)
+/**
+ * One fragment of a `http_dash_segments` format: an absolute [url], or a [path] under the base URL;
+ * [duration] in seconds when yt-dlp gives one (the init segment has none).
+ */
+data class YtFragment(val url: String?, val path: String?, val duration: Double? = null)
 
 /** The fields of one yt-dlp format that a download needs. */
 data class YtFormat(
@@ -214,7 +217,7 @@ object YtDlp {
         }?.toMap().orEmpty()
         val fragments = (f["fragments"] as? JsonArray)?.mapNotNull { e ->
             val fo = e as? JsonObject ?: return@mapNotNull null
-            YtFragment(fo.str("url"), fo.str("path")).takeIf { it.url != null || it.path != null }
+            YtFragment(fo.str("url"), fo.str("path"), fo.dbl("duration")).takeIf { it.url != null || it.path != null }
         }.orEmpty()
         return YtFormat(
             id = id,

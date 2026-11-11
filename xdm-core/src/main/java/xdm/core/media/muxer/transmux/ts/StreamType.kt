@@ -67,6 +67,8 @@ object StreamType {
             0x24 -> StreamMapping.Read(StreamReader.H265)
             0x1C -> StreamMapping.Skip("MPEG-4 audio without LATM/ADTS")
             0x20 -> StreamMapping.Skip("H.264 MVC dependent view")
+            // LCEVC: an enhancement layer over the base video, which is kept; not a lost stream.
+            0x36 -> StreamMapping.Skip()
             0x21 -> StreamMapping.Skip("JPEG 2000")
             0x32 -> StreamMapping.Skip("JPEG XS")
             0x33 -> StreamMapping.Skip("H.266/VVC")
@@ -84,6 +86,8 @@ object StreamType {
             0x05, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x13, 0x14, 0x15, 0x16, 0x86 -> StreamMapping.Skip()
             else -> when (registration) {
                 fourcc("HEVC") -> StreamMapping.Read(StreamReader.H265)
+                fourcc("drac") -> StreamMapping.Skip("Dirac")
+                fourcc("VVC ") -> StreamMapping.Skip("H.266/VVC")
                 fourcc("AC-3") -> StreamMapping.Read(StreamReader.AC3)
                 fourcc("EAC3") -> StreamMapping.Read(StreamReader.EAC3)
                 fourcc("DTS1"), fourcc("DTS2"), fourcc("DTS3") -> StreamMapping.Read(StreamReader.DTS)
@@ -103,6 +107,8 @@ object StreamType {
             fourcc("HEVC") -> return StreamMapping.Read(StreamReader.H265)
             fourcc("AV01") -> return StreamMapping.Skip("AV1 in MPEG-TS")
             fourcc("VC-1") -> return StreamMapping.Skip("VC-1")
+            fourcc("VVC ") -> return StreamMapping.Skip("H.266/VVC")
+            fourcc("drac") -> return StreamMapping.Skip("Dirac")
             fourcc("BSSD") -> return StreamMapping.Skip("SMPTE 302M")
             fourcc("AC-4") -> return StreamMapping.Skip("AC-4")
             fourcc("ID3 "), fourcc("KLVA"), fourcc("VANC") -> return StreamMapping.Skip()

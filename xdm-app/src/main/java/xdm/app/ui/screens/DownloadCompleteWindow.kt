@@ -64,6 +64,13 @@ class DownloadCompleteWindow : JFrame() {
     private val txtFolderPath = borderlessField()
     private val txtFileName = borderlessField()
     private val btnCopyFileName = copyButton(txtFileName)
+    private val lblNote = JLabel().apply {
+        isVisible = false
+        alignmentX = Component.LEFT_ALIGNMENT
+        foreground = UIManager.getColor("Label.disabledForeground")
+        font = font.deriveFont(font.size2D - 1f)
+    }
+
     private val lblFileSize = JLabel("---").apply {
         foreground = mutedFg
         alignmentX = Component.LEFT_ALIGNMENT
@@ -179,8 +186,11 @@ class DownloadCompleteWindow : JFrame() {
         }
     }
 
-    fun setDetails(file: String, folder: String, fileSize: Long, checksumSource: ChecksumSource?) {
+    fun setDetails(file: String, folder: String, fileSize: Long, checksumSource: ChecksumSource?, note: String? = null) {
         this.checksumSource = checksumSource
+        // One line about how the download was saved when it wasn't the usual way (a fallback); none otherwise.
+        lblNote.text = note.orEmpty()
+        lblNote.isVisible = note != null
         btnVerify.isVisible = checksumSource != null
         downloadedFile = File(folder, file)
         btnDrag.isVisible = downloadedFile.exists()
@@ -337,6 +347,8 @@ class DownloadCompleteWindow : JFrame() {
                 alignmentX = Component.LEFT_ALIGNMENT
                 maximumSize = Dimension(Int.MAX_VALUE, preferredSize.height)
             })
+            add(Box.createVerticalStrut(6.px))
+            add(lblNote)
             add(Box.createVerticalGlue())
         }
 

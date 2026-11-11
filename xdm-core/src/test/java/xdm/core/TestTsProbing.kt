@@ -6,6 +6,7 @@ package xdm.core
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -221,6 +222,15 @@ class TestTsProbing {
         val out = File(workDir, "long_nopsi.mp4").absolutePath
         assert(mux(withoutPsi(long, "long_nopsi.ts"), out)) { "long without PSI: mux failed" }
         assertSameMedia(ref, out, "long without PSI")
+    }
+
+    /** Enhancement layers and caption streams are left out without counting as a lost stream (as ffmpeg treats them). */
+    @Test
+    fun enhancementLayersAndCaptionsAreNotLostStreams() {
+        val lcevc = xdm.core.media.muxer.transmux.ts.StreamType.map(0x36, null, null, null, nonAvDescriptor = false)
+        assertTrue(lcevc is xdm.core.media.muxer.transmux.ts.StreamMapping.Skip && lcevc.unsupported == null, "LCEVC: $lcevc")
+        val vvc = xdm.core.media.muxer.transmux.ts.StreamType.map(0x06, null, 0x56564320, null, nonAvDescriptor = false)
+        assertTrue(vvc is xdm.core.media.muxer.transmux.ts.StreamMapping.Skip && vvc.unsupported != null, "VVC registration: $vvc")
     }
 
     // ---- the content probe on its own ----

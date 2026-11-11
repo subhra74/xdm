@@ -25,7 +25,14 @@ data class MpdEntry(
  * [toString] returns the bare URL so the many existing call-sites that render/serialise a segment
  * via `.toString()` (UI display, task-info persistence) are unaffected by the added range.
  */
-data class DashSegment(val url: HttpUrl, val range: Pair<Long, Long>? = null) {
+data class DashSegment(
+    val url: HttpUrl,
+    val range: Pair<Long, Long>? = null,
+    /** Seconds, from the manifest (SegmentTemplate/SegmentList duration, SegmentTimeline S@d); 0 when unknown. */
+    val duration: Double = 0.0,
+    /** The representation's initialization segment. */
+    val init: Boolean = false,
+) {
     override fun toString(): String = url.toString()
 }
 

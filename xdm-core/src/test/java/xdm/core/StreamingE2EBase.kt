@@ -229,6 +229,30 @@ class StreamingTestHost(
         return CommitResult.Success(dst.name, outDir)
     }
 
+    /** The published playlist folder (Level 3), and how many folder commits to refuse first. */
+    @Volatile var folderOutput: File? = null
+    val failFolderCommits = java.util.concurrent.atomic.AtomicInteger(0)
+    /** Files published beside the output (Level 4). */
+    val sidecars = java.util.concurrent.CopyOnWriteArrayList<File>()
+
+    override fun commitOutputFolder(id: Long, folder: String, entry: String, downloadType: DownloadType): CommitResult {
+        if (failFolderCommits.getAndDecrement() > 0) return CommitResult.Failed(DownloadError.OutputWriteError)
+        val dst = File(outDir, "out-$id")
+        dst.deleteRecursively()
+        if (!File(folder).renameTo(dst)) return CommitResult.Failed(DownloadError.OutputWriteError)
+        if (!File(dst, entry).renameTo(File(dst, "out-$id.m3u8"))) return CommitResult.Failed(DownloadError.OutputWriteError)
+        folderOutput = dst
+        return CommitResult.Success("out-$id/out-$id.m3u8", outDir)
+    }
+
+    override fun commitSidecar(id: Long, file: String, outputDir: String, mainFileName: String, suffix: String): String? {
+        val name = "${mainFileName.substringBeforeLast('.')}.$suffix.${file.substringAfterLast('.')}"
+        val dst = File(outputDir, name)
+        if (!File(file).renameTo(dst)) return null
+        sidecars.add(dst)
+        return name
+    }
+
     override fun onDownloadActivated(id: Long) {}
     override fun onDownloadInit(data: DownloadStatusInfo.InitInfo, downloadType: DownloadType) { initInfo = data }
     override fun onDownloadProgress(event: DownloadStatusInfo.ProgressInfo) {}

@@ -39,6 +39,9 @@ import xdm.core.storage.uniqueFileName
 import xdm.core.util.AtomicIO
 import xdm.core.util.CoreUtils
 import xdm.core.util.FileUtils
+import xdm.core.util.getExtension
+import xdm.core.util.getFileNameWithoutExtension
+import xdm.core.util.isOutOfSpace
 import xdm.core.util.Logger
 import xdm.core.util.MovePhase
 import xdm.core.util.getFileName
@@ -357,7 +360,7 @@ class DownloadManager(
                 ui.hideProgress(event.id)
                 when (config.downloadCompleteNotification) {
                     DownloadCompleteNotification.DIALOG -> ui.downloadCompleteDialog(
-                        event.id, event.finalOutputFolder, event.finalFileName, event.fileSize
+                        event.id, event.finalOutputFolder, event.finalFileName, event.fileSize, event.note, event.noteDetail
                     )
 
                     DownloadCompleteNotification.NOTIFICATION ->
@@ -524,6 +527,46 @@ class DownloadManager(
 
         override fun outputFile(id: Long, downloadType: DownloadType, ext: String): StorageFile? =
             streamingOutputFile(id, downloadType, ext)
+
+        override fun commitOutputFolder(id: Long, folder: String, entry: String, downloadType: DownloadType): CommitResult {
+            val task: StreamingDownloadTaskInfo = (if (downloadType == DownloadType.Dash) taskInfoDB.getDashTask(id) else taskInfoDB.getHlsTask(id))
+                ?: return CommitResult.Failed(DownloadError.InternalError)
+            val target = storage.folder(task.targetFolder)
+            // A folder is published on the local file system only (Android: not yet).
+            val targetPath = target.localPath ?: return CommitResult.Failed(DownloadError.OutputWriteError)
+            val base = getFileNameWithoutExtension(task.fileName).ifBlank { "video" }
+            val name = uniqueFileName(base) { File(targetPath, it).exists() }
+            val destination = File(targetPath, name)
+            return try {
+                File(targetPath).mkdirs()
+                moveTree(File(folder), destination)
+                val playlist = "$name.m3u8"
+                if (!File(destination, entry).renameTo(File(destination, playlist))) throw java.io.IOException("Couldn't rename $entry")
+                task.fileName = "$name/$playlist"
+                when (task) {
+                    is HlsDownloadTaskInfo -> taskInfoDB.saveHlsTask(task)
+                    is DashDownloadTaskInfo -> taskInfoDB.saveDashTask(task)
+                }
+                Logger.info("XDM", "Published playlist folder $destination")
+                CommitResult.Success(fileName = task.fileName, outputDir = target.location)
+            } catch (e: Exception) {
+                Logger.error("XDM", "Unable to publish the playlist folder $folder as $destination", e)
+                CommitResult.Failed(if (isOutOfSpace(e)) DownloadError.DiskSpaceError else DownloadError.OutputWriteError)
+            }
+        }
+
+        override fun commitSidecar(id: Long, file: String, outputDir: String, mainFileName: String, suffix: String): String? {
+            val dir = storage.folder(outputDir).localPath ?: return null
+            val ext = getExtension(file)?.let { ".$it" } ?: ""
+            val name = uniqueFileName("${getFileNameWithoutExtension(mainFileName)}.$suffix$ext") { File(dir, it).exists() }
+            return try {
+                moveTree(File(file), File(dir, name))
+                name
+            } catch (e: Exception) {
+                Logger.error("XDM", "Unable to publish $file beside $mainFileName", e)
+                null
+            }
+        }
     }
 
     /**
@@ -878,13 +921,30 @@ class DownloadManager(
                 val files = if (fromDisk && rec.status == RecordStatus.FINISHED && rec.downloadType != DownloadType.Batch &&
                     rec.downloadType != DownloadType.Torrent)
                     listOfNotNull(finishedFile(rec), subtitleSidecar(rec)) else emptyList()
+                val kept = if (fromDisk && rec.status == RecordStatus.FINISHED) fallbackOutputs(rec) else emptyList()
                 purgeFiles(rec, fromDisk)
                 files.forEach { Logger.info("XDM", "Delete file $it ${it.delete()}") }
+                kept.forEach { Logger.info("XDM", "Delete $it ${it.deleteRecursively()}") }
             } catch (error: Exception) {
                 Logger.error("XDM", "Error while deleting ${rec.id}", error)
             }
         }
         ui.downloadsRemoved()
+    }
+
+    /**
+     * What a finished HLS/DASH download kept besides its file when it couldn't be remuxed: its playlist
+     * folder (the file name is `<folder>/<name>.m3u8`), or the files published beside it
+     * (`<name>.audio.<ext>`, `<name>.partN.<ext>`).
+     */
+    private fun fallbackOutputs(rec: DbRecord): List<File> {
+        if (rec.downloadType != DownloadType.Hls && rec.downloadType != DownloadType.Dash) return emptyList()
+        val file = finishedFile(rec) ?: return emptyList()
+        val dir = file.folder.localPath?.let { File(it) } ?: return emptyList()
+        if ('/' in rec.fileName) return listOf(File(dir.parentFile ?: return emptyList(), rec.fileName.substringBefore('/')))
+        val base = Regex.escape(getFileNameWithoutExtension(rec.fileName))
+        val sidecar = Regex("$base\\.(audio|part\\d+)(\\.[^.]+)?")
+        return dir.listFiles { f -> f.isFile && sidecar.matches(f.name) }?.toList().orEmpty()
     }
 
     /** The `.srt` a finished HLS/DASH download saved beside its video, if it picked a subtitle. */
@@ -1821,3 +1881,10 @@ internal fun isPath(location: String) = !location.startsWith("content:")
 
 /** A location as recorded: paths made absolute, provider locations unchanged. */
 internal fun normalizeLocation(location: String) = if (isPath(location)) File(location).absolutePath else location
+
+/** Moves [from] (a file or a folder) to [to]: a rename on the same volume, else a copy and a delete. */
+private fun moveTree(from: File, to: File) {
+    if (from.renameTo(to)) return
+    if (!from.copyRecursively(to, overwrite = false)) throw java.io.IOException("Couldn't copy $from to $to")
+    from.deleteRecursively()
+}

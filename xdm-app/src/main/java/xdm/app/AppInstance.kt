@@ -64,7 +64,8 @@ interface IAppInstance {
      */
     fun showFatalError(message: String)
 
-    fun showDownloadCompleteWindow(id: Long, folder: String, fileName: String, fileSize: Long)
+    /** [note]: one line under the details about how the download was saved, when it wasn't the usual way. */
+    fun showDownloadCompleteWindow(id: Long, folder: String, fileName: String, fileSize: Long, note: String? = null)
 
     /**
      * Posts a quiet "<file> download finished" system notification instead of the full dialog. A click
@@ -245,11 +246,11 @@ class AppInstance : IAppInstance {
         }
     }
 
-    override fun showDownloadCompleteWindow(id: Long, folder: String, fileName: String, fileSize: Long) {
+    override fun showDownloadCompleteWindow(id: Long, folder: String, fileName: String, fileSize: Long, note: String?) {
         runOnUIThread {
             // Checksums only make sense for a file fetched from one URL as-is.
             val source = if (AppContext.db.getById(id)?.downloadType == DownloadType.Http) ChecksumPanel.sourceOf(id) else null
-            DownloadCompleteWindow().apply { setDetails(fileName, folder, fileSize, source) }.isVisible = true
+            DownloadCompleteWindow().apply { setDetails(fileName, folder, fileSize, source, note) }.isVisible = true
         }
     }
 

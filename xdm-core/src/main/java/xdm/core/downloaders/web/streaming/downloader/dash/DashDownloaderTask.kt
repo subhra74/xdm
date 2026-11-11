@@ -37,7 +37,9 @@ fun makeContext(
                 tag = "AUDIO",
                 error = AtomicReference(null),
                 fileHandle = AtomicReference(null),
-                encrypted = false
+                encrypted = false,
+                duration = s.duration,
+                init = s.init,
             )
         } + taskInfo.videoSegments.mapIndexed { index, s ->
             StreamingChunk(
@@ -51,7 +53,9 @@ fun makeContext(
                 tag = "VIDEO",
                 error = AtomicReference(null),
                 fileHandle = AtomicReference(null),
-                encrypted = false
+                encrypted = false,
+                duration = s.duration,
+                init = s.init,
             )
         } + taskInfo.subtitles.take(1).flatMap { it.segments }.mapIndexed { index, s ->
             StreamingChunk(
