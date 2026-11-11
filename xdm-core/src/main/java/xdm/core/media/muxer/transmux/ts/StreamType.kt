@@ -39,7 +39,10 @@ object StreamType {
         programRegistration: Int?,
         registration: Int?,
         dvbAudio: StreamReader?,
-        hasOtherDescriptors: Boolean,
+        /** A descriptor of a stream that isn't audio or video (teletext, subtitles, VBI, data). */
+        nonAvDescriptor: Boolean,
+        /** The DVB AC-4 descriptor (extension 0x15). */
+        ac4Descriptor: Boolean = false,
     ): StreamMapping {
         val bluRay = programRegistration == HDMV || programRegistration == HDPR
         if (bluRay) {
@@ -74,7 +77,9 @@ object StreamType {
             0x81 -> StreamMapping.Read(StreamReader.AC3)   // ATSC
             0x87 -> StreamMapping.Read(StreamReader.EAC3)  // ATSC
             0x8A -> StreamMapping.Read(StreamReader.DTS)
-            PRIVATE_DATA -> privateData(registration, dvbAudio, hasOtherDescriptors)
+            PRIVATE_DATA -> privateData(registration, dvbAudio, nonAvDescriptor, ac4Descriptor)
+            // DigiCipher II video (MPEG-2) outside Blu-ray, as Media3; the content decides first.
+            0x80 -> StreamMapping.Probe(StreamReader.MPEG_VIDEO)
             // Known non-A/V: private sections, DSM-CC, ID3 timed metadata, SCTE-35.
             0x05, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x13, 0x14, 0x15, 0x16, 0x86 -> StreamMapping.Skip()
             else -> when (registration) {
@@ -89,7 +94,7 @@ object StreamType {
         }
     }
 
-    private fun privateData(registration: Int?, dvbAudio: StreamReader?, hasOther: Boolean): StreamMapping {
+    private fun privateData(registration: Int?, dvbAudio: StreamReader?, nonAv: Boolean, ac4: Boolean): StreamMapping {
         when (registration) {
             fourcc("AC-3") -> return StreamMapping.Read(StreamReader.AC3)
             fourcc("EAC3") -> return StreamMapping.Read(StreamReader.EAC3)
@@ -103,7 +108,9 @@ object StreamType {
             fourcc("ID3 "), fourcc("KLVA"), fourcc("VANC") -> return StreamMapping.Skip()
         }
         if (dvbAudio != null) return StreamMapping.Read(dvbAudio)
-        // Teletext, DVB subtitles and the like carry their own descriptors.
-        return if (hasOther) StreamMapping.Skip() else StreamMapping.Probe(null)
+        if (ac4) return StreamMapping.Skip("AC-4")
+        // Teletext, DVB subtitles, VBI and data streams say so in a descriptor; anything else
+        // (including streams with descriptors we don't know) is identified from its content.
+        return if (nonAv) StreamMapping.Skip() else StreamMapping.Probe(null)
     }
 }

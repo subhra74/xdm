@@ -19,6 +19,10 @@ class PesAssembler(reader: ElementaryStreamReader) {
     private val buffer = ByteArrayBuilder(64 * 1024)
     private var started = false
 
+    /** stream_id of the PES last handed to the reader (0xE0-0xEF video, 0xC0-0xDF audio, 0xBD private). */
+    var streamId = -1
+        private set
+
     private var wrapOffset = 0L
     private var lastRef = -1L
 
@@ -37,6 +41,7 @@ class PesAssembler(reader: ElementaryStreamReader) {
         // packet_start_code_prefix 00 00 01
         if (b[0].toInt() != 0 || b[1].toInt() != 0 || (b[2].toInt() and 0xFF) != 1) { return }
         val streamId = b[3].toInt() and 0xFF
+        this.streamId = streamId
 
         // Streams without a PES header extension.
         if (streamId == 0xBE || streamId == 0xBF) return
