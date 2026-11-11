@@ -22,7 +22,11 @@ object Logger {
     @Volatile
     var consoleEnabled = true
 
-    private val consoleOut: PrintStream get() = if (consoleEnabled) System.out else NullStream
+    /** Info lines go to stderr too: headless mode keeps stdout for the saved paths and check results. */
+    @Volatile
+    var infoToStderr = false
+
+    private val consoleOut: PrintStream get() = if (!consoleEnabled) NullStream else if (infoToStderr) System.err else System.out
     private val consoleErr: PrintStream get() = if (consoleEnabled) System.err else NullStream
 
     // OutputStream.nullOutputStream() is JDK 11+; xdm-core targets 8.

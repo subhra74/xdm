@@ -47,6 +47,9 @@ object AppMain {
     fun main(args: Array<String>) {
         // Before anything else: headless mode builds no UI, binds no port and loads no app state.
         if (CliParser.isHeadless(args)) {
+            // Quiet until HeadlessCli reads --verbose, and never on stdout (the CLI's own output).
+            Logger.consoleEnabled = false
+            Logger.infoToStderr = true
             ConscryptTls.install()
             exitProcess(HeadlessCli.run(args))
         }
