@@ -22,6 +22,7 @@ import xdm.core.downloaders.web.streaming.downloader.dash.DashDownloaderTask
 import xdm.core.downloaders.web.streaming.downloader.hls.HlsDownloaderTask
 import xdm.core.downloaders.web.streaming.downloader.hls.HlsKeyStore
 import xdm.core.downloaders.web.streaming.manifest.dash.DashSegment
+import xdm.core.media.muxer.MuxContainer
 import xdm.core.media.muxer.Muxer
 import xdm.core.media.muxer.impl.TransmuxingMuxer
 import xdm.core.media.subtitle.Subtitles
@@ -487,7 +488,9 @@ class DownloadManager(
             }
         }
 
-        override fun commitOutputFile(id: Long, part: StorageFile, downloadType: DownloadType): CommitResult {
+        override fun commitOutputFile(id: Long, part: StorageFile, downloadType: DownloadType, container: String?): CommitResult {
+            // A muxed download is named after the container written (MuxContainer), which may not be the one picked up front.
+            fun named(fileName: String) = container?.let { MuxContainer.withExtension(fileName, it) } ?: fileName
             when (downloadType) {
                 DownloadType.Http -> taskInfoDB.getHttpTask(id)?.let { t ->
                     val name = if (t.convertToSrt) convertToSrt(id, t.fileName, part) else t.fileName
@@ -498,14 +501,14 @@ class DownloadManager(
                 }
 
                 DownloadType.Hls -> taskInfoDB.getHlsTask(id)?.let { t ->
-                    return publishInFolder(t.fileName, part) { finalName, _ ->
+                    return publishInFolder(named(t.fileName), part) { finalName, _ ->
                         t.fileName = finalName
                         taskInfoDB.saveHlsTask(t)
                     }
                 }
 
                 DownloadType.Dash -> taskInfoDB.getDashTask(id)?.let { t ->
-                    return publishInFolder(t.fileName, part) { finalName, _ ->
+                    return publishInFolder(named(t.fileName), part) { finalName, _ ->
                         t.fileName = finalName
                         taskInfoDB.saveDashTask(t)
                     }

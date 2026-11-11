@@ -14,6 +14,7 @@ import xdm.core.downloaders.web.streaming.downloader.SUBS_TAG
 import xdm.core.downloaders.web.streaming.downloader.StreamingChunk
 import xdm.core.downloaders.web.streaming.downloader.StreamingDownloaderTask
 import xdm.core.media.muxer.Muxer
+import xdm.core.media.muxer.MuxContainer
 import xdm.core.network.http.PoolingHttpClient
 import xdm.core.util.CoreUtils
 import java.util.concurrent.atomic.AtomicReference
@@ -126,8 +127,9 @@ class DashDownloaderTask : StreamingDownloaderTask {
         )
     }
 
+    /** The part file's extension: the container the MIME types suggest; the mux may still choose another. */
     override fun fileExt(): String =
-        if ((context as DashTaskContext).videoMime.contains("mp4") && context.audioMime.contains("mp4")) ".mp4" else ".mkv"
+        "." + (context as DashTaskContext).let { MuxContainer.forStreams(it.videoMime, it.audioMime) }
 
     override fun downloadType(): DownloadType = DownloadType.Dash
 

@@ -4,6 +4,7 @@
 
 package xdm.core.media.muxer.impl
 
+import xdm.core.media.muxer.MuxContainer
 import xdm.core.media.muxer.Muxer
 import xdm.core.media.muxer.impl.SegmentProbe.Container
 import xdm.core.storage.StorageFile
@@ -32,17 +33,18 @@ import java.util.concurrent.atomic.AtomicBoolean
  *  - Matroska / WebM segments (.webm/.mkv) via [MatroskaDemuxer]
  *  - HLS packed audio (.aac/.mp3/.ac3/.ec3: raw frames behind an ID3 timestamp) via [PackedAudioDemuxer]
  *
- * Inputs are remuxed into a single progressive MP4, or into Matroska (`.mkv`) when the requested
- * output path ends in `.mkv` (WebM, Matroska with DocType `webm`, for `.webm`); [container] overrides
- * the output's extension — the case DASH uses for WebM/VP8/VP9/Opus streams that MP4 can't
- * carry cleanly. The container of each segment list is detected from its bytes, so callers don't
- * need to tell us which it is. (The legacy [FFmpegMuxer] class is retained but no longer invoked.)
+ * Inputs are remuxed into a single progressive MP4 or into Matroska, by [MuxContainer.plan]: the
+ * requested container ([container], else the output name's extension) unless a segment list is
+ * WebM/Matroska, which always gives Matroska (`mkv`, `mka`); a WebM request is written as `mkv`.
+ * [outputContainer] then says what was written, and the caller names the file after it. The
+ * container of each segment list is detected from its bytes, so callers don't need to tell us
+ * which it is. (The legacy [FFmpegMuxer] class is retained but no longer invoked.)
  */
 class TransmuxingMuxer(
     @Suppress("UNUSED_PARAMETER") appDir: String,
     /**
-     * The container to write (`mp4`, `m4a`, `mkv`, `webm`), when it is not the output name's
-     * extension (the part file of a download is named by the task, not by the chosen container).
+     * The container asked for (`mp4`, `m4a`, `mkv`, ...), when it is not the output name's extension
+     * (the part file of a download is named by the task, not by the chosen container).
      */
     private val container: String? = null,
 ) : Muxer {
@@ -56,6 +58,10 @@ class TransmuxingMuxer(
     override var lastError: Throwable? = null
         private set
 
+    @Volatile
+    override var outputContainer: String? = null
+        private set
+
     // ---- single list of (possibly A+V) segments ----
     override fun mux(
         segments: List<String>,
@@ -65,14 +71,14 @@ class TransmuxingMuxer(
         independentSegement: Boolean,
         isMp4: Boolean,
         discontinuous: Boolean,
-    ): Boolean = transmux(output, tempDir, discontinuous) { writer ->
+    ): Boolean = transmux(output, tempDir, listOf(segments), discontinuous) { writer ->
         demuxList(segments, writer, progressCallback)
     }
 
     // ---- two separate files (e.g. video + audio) ----
     override fun mux(
         file1: String, file2: String, output: StorageFile, progressCallback: (Int) -> Unit, tempDir: String
-    ): Boolean = transmux(output, tempDir) { writer ->
+    ): Boolean = transmux(output, tempDir, listOf(listOf(file1), listOf(file2))) { writer ->
         val tracks = ArrayList<Track>()
         tracks += demuxList(listOf(file1), writer) {}
         tracks += demuxList(listOf(file2), writer) {}
@@ -90,7 +96,7 @@ class TransmuxingMuxer(
         independentSegement: Boolean,
         isMp4: Boolean,
         discontinuous: Boolean,
-    ): Boolean = transmux(output, tempDir, discontinuous) { writer ->
+    ): Boolean = transmux(output, tempDir, listOf(audioSegments, videoSegments), discontinuous) { writer ->
         val total = (videoSegments.size + audioSegments.size).coerceAtLeast(1)
         val done = intArrayOf(0)
         val tick = { _: Int -> done[0]++; progressCallback(minOf(100, done[0] * 100 / total)) }
@@ -119,17 +125,23 @@ class TransmuxingMuxer(
 
     // ---- core ----
 
-    /** [tempDir] holds scratch files (the MKV spool), so the output folder only needs the output's size. */
+    /**
+     * [tempDir] holds scratch files (the MKV spool), so the output folder only needs the output's size.
+     * [inputs] are the segment lists, looked at (their first segments) to pick the container.
+     */
     private inline fun transmux(
-        output: StorageFile, tempDir: String, discontinuous: Boolean = false, body: (ContainerWriter) -> List<Track>
+        output: StorageFile, tempDir: String, inputs: List<List<String>>, discontinuous: Boolean = false,
+        body: (ContainerWriter) -> List<Track>
     ): Boolean {
         lastError = null
-        val format = (container ?: output.name.substringAfterLast('.', "")).lowercase()
-        val writer: ContainerWriter = when (format) {
-            "mkv", "mka" -> MkvWriter(output, tempDir) { stopFlag.get() }
-            "webm", "weba" -> MkvWriter(output, tempDir, "webm") { stopFlag.get() }
-            else -> Mp4Writer(output, repairTimeline = discontinuous)
-        }
+        outputContainer = null
+        val requested = container ?: output.name.substringAfterLast('.', "")
+        val matroskaInput = inputs.any { it.isNotEmpty() && containerOf(it.first()) == Container.MKV }
+        val format = MuxContainer.plan(requested, matroskaInput)
+        if (!format.equals(requested, ignoreCase = true)) Logger.info("XDM", "Muxing as $format (asked for '$requested')")
+        val writer: ContainerWriter =
+            if (MuxContainer.isMatroska(format)) MkvWriter(output, tempDir) { stopFlag.get() }
+            else Mp4Writer(output, repairTimeline = discontinuous)
         // Sample records of long streams spill to scratch files here; dropped when muxing ends.
         val spill = SampleSpill.open(File(tempDir))
         return try {
@@ -145,7 +157,7 @@ class TransmuxingMuxer(
                 timelineStartSec = tracks.filter { it.samples.isNotEmpty() && it.timescale > 0 }
                     .minOfOrNull { presentationStart(it.samples).toDouble() / it.timescale }
                 val ok = writer.finish(tracks)
-                if (!ok) output.delete()
+                if (!ok) output.delete() else outputContainer = format
                 ok
             }
         } catch (ex: Throwable) {
@@ -181,10 +193,7 @@ class TransmuxingMuxer(
             private set
         private val feedOne: (String, Long) -> Unit
         private val end: () -> List<Track>
-        // When the bytes don't say, the segment's name (from its URL) may; else MP4, as before.
-        private val container: Container =
-            if (segments.isEmpty()) Container.MP4
-            else SegmentProbe.locate(segments.first())?.container ?: SegmentProbe.fromName(segments.first()) ?: Container.MP4
+        private val container: Container = if (segments.isEmpty()) Container.MP4 else containerOf(segments.first())
         /** Segments whose media started past byte 0, for one log line at the end. */
         private var shifted = 0
         private var maxShift = 0L
@@ -247,6 +256,10 @@ class TransmuxingMuxer(
             }
         }
     }
+
+    /** A segment list's container, from its first segment: its bytes, else its name (from its URL), else MP4. */
+    private fun containerOf(firstSegment: String): Container =
+        SegmentProbe.locate(firstSegment)?.container ?: SegmentProbe.fromName(firstSegment) ?: Container.MP4
 
     private fun skipFully(input: FileInputStream, n: Long) {
         var left = n

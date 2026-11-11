@@ -235,6 +235,21 @@ class TestTaskInfoDB : HttpDownloadTestBase() {
     }
 
     @Test
+    fun hlsState_keepsTheMuxedContainer() {
+        val host = host()
+        fun ctx(container: String?) = HlsTaskContext(
+            id = 8, chunks = arrayListOf(), httpClient = CountingHttpClient(), downloadHost = host,
+            tempFileName = "h.tmp", tempFolder = tmpDir.absolutePath, url = "https://cdn.example.com/i.m3u8",
+            audioUrl = null, independent = false, encrypted = false, muxedContainer = container,
+        )
+        for (container in listOf("mkv", null)) {
+            saveState(ctx(container), work.absolutePath)
+            val c = loadHlsState(8, work.absolutePath, CountingHttpClient(), host).getOrThrow()
+            assertEquals(container, c.muxedContainer, "a commit retried after a restart names the file after it")
+        }
+    }
+
+    @Test
     fun queuedHttpTask_sendsPersistedCookieAndHeaders() {
         val bytes = randomData(64 * 1024, seed = 60)
         val ep = server.register("/auth", Endpoint(bytes))

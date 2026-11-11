@@ -191,6 +191,8 @@ private fun writeHlsContext(context: HlsTaskContext, out: DataOutputStream) {
         out.writeBoolean(encrypted)
         out.writeBoolean(discontinuous)
         out.writeNullableLongString(muxOutputPath)
+        // Added later, so it goes last: older states end before it.
+        out.writeNullableLongString(muxedContainer)
     }
 }
 
@@ -214,6 +216,8 @@ private fun writeDashContext(context: DashTaskContext, out: DataOutputStream) {
         out.writeLongString(audioMime)
         out.writeLongString(videoMime)
         out.writeNullableLongString(muxOutputPath)
+        // Added later, so it goes last: older states end before it.
+        out.writeNullableLongString(muxedContainer)
     }
 }
 
@@ -270,7 +274,10 @@ private fun readHlsContext(r: DataInputStream, http: PoolingHttpClient, host: Do
         encrypted = r.readBoolean(),
         discontinuous = r.readBoolean(),
         muxOutputPath = r.readNullableLongString(),
-    ).also { Logger.info("XDM", "Restored state for download $id") }
+    ).also {
+        if (r.available() > 0) it.muxedContainer = r.readNullableLongString()
+        Logger.info("XDM", "Restored state for download $id")
+    }
 }
 
 private fun readDashContext(r: DataInputStream, http: PoolingHttpClient, host: DownloadHost): DashTaskContext {
@@ -296,7 +303,10 @@ private fun readDashContext(r: DataInputStream, http: PoolingHttpClient, host: D
         videoMime = r.readLongString(),
         muxOutputPath = r.readNullableLongString(),
         downloadHost = host,
-    ).also { Logger.info("XDM", "Restored state for download $id") }
+    ).also {
+        if (r.available() > 0) it.muxedContainer = r.readNullableLongString()
+        Logger.info("XDM", "Restored state for download $id")
+    }
 }
 
 @Synchronized

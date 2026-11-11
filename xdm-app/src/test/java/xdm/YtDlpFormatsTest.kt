@@ -57,7 +57,7 @@ class YtDlpFormatsTest {
         val choices = YtDlpChoices.of(YtDlp.parse(page))
         val pairs = choices.filterIsInstance<VideoChoice.Pair>()
         assertEquals(listOf("137+140", "248+251", "136+140"), pairs.map { it.formatIds.joinToString("+") })
-        assertEquals(listOf("mp4", "webm", "mp4"), pairs.map { it.container }, "same-family audio, yt-dlp's merge container")
+        assertEquals(listOf("mp4", "mkv", "mp4"), pairs.map { it.container }, "mp4 pairs stay mp4; a WebM merge is mkv, never webm")
         val singles = choices.filterIsInstance<VideoChoice.Single>()
         assertEquals(listOf("18", "251", "140"), singles.map { it.format.id }, "muxed file, then audio by bitrate")
         assertTrue(singles.drop(1).all { it.audioOnly })
@@ -83,6 +83,18 @@ class YtDlpFormatsTest {
             ${fmt("v", "vp9", "none", "webm", height = 480)}, ${fmt("a", "none", "mp4a.40.2", "m4a")}]}""")
         val pair = YtDlpChoices.of(info).first() as VideoChoice.Pair
         assertEquals("mkv", pair.container)
+    }
+
+    @Test
+    fun webmFragmentsAreMuxedIntoMatroska() {
+        val info = YtDlp.parse("""{"title":"t","webpage_url":"https://p","formats":[
+            ${fmt("vf", "vp9", "opus", "webm", height = 480, protocol = "http_dash_segments", extra = ",\"fragments\":[{\"url\":\"https://c/1\"}]")},
+            ${fmt("af", "none", "opus", "webm", protocol = "http_dash_segments", extra = ",\"fragments\":[{\"url\":\"https://c/2\"}]")},
+            ${fmt("vw", "vp9", "opus", "webm", height = 360)}]}""")
+        val byId = info.formats.associateBy { it.id }
+        assertEquals("mkv", YtDlpChoices.singleContainer(byId.getValue("vf")), "WebM fragments are muxed: mkv")
+        assertEquals("mka", YtDlpChoices.singleContainer(byId.getValue("af")), "audio-only WebM fragments: mka")
+        assertEquals("webm", YtDlpChoices.singleContainer(byId.getValue("vw")), "a plain WebM file isn't muxed: keeps webm")
     }
 
     private val save = SaveAs("x.mp4", "/dl", "video", 8, "/tmp")

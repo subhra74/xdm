@@ -61,6 +61,12 @@ interface StreamingTaskContext {
      * destination changed after muxing cannot orphan the partial. Null until muxing starts.
      */
     var muxOutputPath: String?
+
+    /**
+     * The container the mux wrote (`mp4`, `mkv`...; see [xdm.core.media.muxer.MuxContainer]), kept so
+     * a commit retried after a restart still names the file after it. Null until a mux succeeds.
+     */
+    var muxedContainer: String?
 }
 
 data class HlsTaskContext(
@@ -83,6 +89,7 @@ data class HlsTaskContext(
     override val pieceCompletedCount: AtomicInteger = AtomicInteger(0),
     override val assembling: AtomicBoolean = AtomicBoolean(false),
     override var muxOutputPath: String? = null,
+    override var muxedContainer: String? = null,
     var url: String,
     var audioUrl: String?,
     var audioOnly: Boolean = false,
@@ -113,6 +120,7 @@ data class DashTaskContext(
     override val pieceCompletedCount: AtomicInteger = AtomicInteger(0),
     override val assembling: AtomicBoolean = AtomicBoolean(false),
     override var muxOutputPath: String? = null,
+    override var muxedContainer: String? = null,
     var url: String,
     val audioMime: String,
     val videoMime: String,

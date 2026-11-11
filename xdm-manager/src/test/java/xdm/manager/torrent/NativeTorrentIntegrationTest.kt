@@ -105,7 +105,7 @@ class NativeTorrentIntegrationTest {
         override val applySpeedLimit = false
         override val speedLimit = -1
         override fun getTempDir(id: Long, url: String, contentType: String?, contentDisposition: String?) = appDir
-        override fun commitOutputFile(id: Long, part: StorageFile, downloadType: DownloadType): CommitResult =
+        override fun commitOutputFile(id: Long, part: StorageFile, downloadType: DownloadType, container: String?): CommitResult =
             CommitResult.Failed(DownloadError.InternalError)
     }
 

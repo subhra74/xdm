@@ -34,6 +34,9 @@ class YtDlpMuxer(
     override val lastError: Throwable? get() = error ?: inner?.lastError
     override val timelineStartSec: Double? get() = inner?.timelineStartSec
 
+    /** What the transmuxer wrote; null after pieces were only joined (the file is what yt-dlp named it). */
+    override val outputContainer: String? get() = inner?.outputContainer
+
     override fun mux(
         segments: List<String>, output: StorageFile, progressCallback: (Int) -> Unit, tempDir: String,
         independentSegement: Boolean, isMp4: Boolean, discontinuous: Boolean,
@@ -88,6 +91,7 @@ class YtDlpMuxer(
 
     private inline fun attempt(body: () -> Unit): Boolean {
         error = null
+        inner = null // a join: no transmuxer result applies to this output
         return try {
             body()
             !stopped.get()

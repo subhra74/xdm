@@ -22,6 +22,7 @@ import xdm.core.downloaders.web.streaming.manifest.hls.getInfoString
 import xdm.core.downloaders.web.streaming.manifest.hls.singleFileHttpUrl
 import xdm.core.media.Mp4InitProbe
 import xdm.core.media.preview.Mp4PreviewReader
+import xdm.core.media.muxer.MuxContainer
 import xdm.core.network.http.*
 import xdm.core.network.http.impl.*
 import xdm.core.util.*
@@ -764,7 +765,7 @@ object VideoHelper {
             val video = plc.video
             val audio = plc.audio
             if (video != null && audio != null) {
-                val fileExt = if (video.mimeType.contains("mp4") && audio.mimeType.contains("mp4")) "mp4" else "mkv"
+                val fileExt = MuxContainer.forStreams(video.mimeType, audio.mimeType, codecs = listOf(video.codec, audio.codec))
                 val name = fileNameWithExt(msg, fileExt)
                 val dest = CaptureContext.host.destination(name, url, msg.tabUrl ?: getHeader(REFERER, msg.requestHeaders))
                 val dashDownloadTaskInfo = DashDownloadTaskInfo(

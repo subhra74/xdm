@@ -15,6 +15,7 @@ import xdm.core.downloaders.web.ProgressTracker
 import xdm.core.downloaders.web.SegmentProgress
 import xdm.core.downloaders.web.SpeedLimiter
 import xdm.core.downloaders.web.http.ChunkStatus
+import xdm.core.media.muxer.MuxContainer
 import xdm.core.media.muxer.Muxer
 import xdm.core.network.http.HttpResponse
 import xdm.core.network.http.PoolingHttpClient
@@ -337,6 +338,18 @@ class BatchDownloaderTask(
             part.delete()
             settle(f, ChunkStatus.Failed, DownloadError.InternalError)
             return
+        }
+        // The muxer picks the container (MuxContainer): the item's name takes its extension.
+        muxer.outputContainer?.let { container ->
+            synchronized(takenNames) {
+                val current = nameOf(f)
+                val wanted = MuxContainer.withExtension(current, container)
+                if (!wanted.equals(current, ignoreCase = true)) {
+                    takenNames.remove(current.lowercase())
+                    f.finalName = uniqueName(wanted).also { takenNames.add(it.lowercase()) }
+                    dirty.set(true)
+                }
+            }
         }
         val size = part.length()
         val error = onComplete(f)

@@ -6,6 +6,7 @@ import xdm.core.downloaders.ExtractorSource
 import xdm.core.downloaders.HlsDownloadTaskInfo
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.downloaders.web.streaming.manifest.dash.DashSegment
+import xdm.core.media.muxer.MuxContainer
 import xdm.core.network.http.HeaderMap
 import xdm.core.util.CoreUtils
 import xdm.core.util.FileUtils
@@ -15,7 +16,10 @@ import java.util.Locale
 sealed class VideoChoice {
     abstract val formats: List<YtFormat>
 
-    /** The container the file is saved as: yt-dlp's own pick for the formats (`mp4`, `webm`, `mkv`, `m4a`). */
+    /**
+     * The container the file is saved as (`mp4`, `mkv`, `m4a`, `mka`, or a plain file's own
+     * extension): yt-dlp's pick, except that a merge is never WebM. The muxer may still change it.
+     */
     abstract val container: String
     val formatIds: List<String> get() = formats.map { it.id }
     val audioOnly: Boolean get() = formats.none { it.hasVideo }
@@ -102,17 +106,26 @@ object YtDlpChoices {
         return pairs + singles + audio
     }
 
-    /** yt-dlp's merge rule: mp4 video with m4a audio stays mp4, webm with webm stays webm, else mkv. */
+    /**
+     * yt-dlp's merge rule, but a merge is never WebM ([MuxContainer]): mp4 video with m4a audio stays
+     * mp4, anything else (webm with webm included) is mkv.
+     */
     internal fun pairContainer(v: YtFormat, a: YtFormat): String = when {
         v.ext == "mp4" && (a.ext == "m4a" || a.ext == "mp4") -> "mp4"
-        v.ext == "webm" && a.ext == "webm" -> "webm"
         else -> "mkv"
     }
 
-    /** HLS (TS) is saved as mp4, like yt-dlp does; other files keep their extension. */
-    private fun singleContainer(f: YtFormat): String = when {
-        f.kind == YtFormat.Kind.HLS -> if (f.hasVideo) "mp4" else "m4a"
-        else -> f.ext?.takeIf { it.isNotBlank() && it != "unknown_video" } ?: if (f.hasVideo) "mp4" else "m4a"
+    /**
+     * HLS (TS) is saved as mp4, like yt-dlp does. Fragments are muxed too, so WebM fragments become
+     * mkv (mka for audio); a plain file keeps its extension.
+     */
+    internal fun singleContainer(f: YtFormat): String {
+        val ext = f.ext?.takeIf { it.isNotBlank() && it != "unknown_video" }
+        return when {
+            f.kind == YtFormat.Kind.HLS -> if (f.hasVideo) "mp4" else "m4a"
+            f.kind == YtFormat.Kind.FRAGMENTS && ext != null && MuxContainer.isMatroska(ext) -> if (f.hasVideo) "mkv" else "mka"
+            else -> ext ?: if (f.hasVideo) "mp4" else "m4a"
+        }
     }
 
     private fun family(ext: String?) = when (ext) {

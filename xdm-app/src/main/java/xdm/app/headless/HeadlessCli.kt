@@ -348,12 +348,12 @@ object HeadlessCli {
             override fun outputFile(id: Long, downloadType: DownloadType, ext: String): StorageFile? =
                 LocalStorage.file(File(targetFolder, partFileName(id) + ext).path)
 
-            override fun commitOutputFile(id: Long, part: StorageFile, downloadType: DownloadType): CommitResult {
+            override fun commitOutputFile(id: Long, part: StorageFile, downloadType: DownloadType, container: String?): CommitResult {
                 val name = when (downloadType) {
                     DownloadType.Http -> httpName ?: getFileName(httpInfo?.url.orEmpty())
                     // The muxer picks the container: keep a suggested name's extension in step with it.
                     else -> {
-                        val actual = part.name.substringAfterLast(partFileName(id), "")
+                        val actual = container?.let { ".$it" } ?: part.name.substringAfterLast(partFileName(id), "")
                         val base = streamName ?: "stream"
                         if (userName != null || actual.isEmpty() || base.endsWith(actual, true)) base
                         else base.substringBeforeLast('.') + actual

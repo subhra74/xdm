@@ -294,12 +294,14 @@ abstract class StreamingDownloaderTask(
                 context.downloadHost.onDownloadFailed(context.id, error)
                 return
             }
+            // The container written may not be the part file's (MuxContainer): the published name follows it.
+            context.muxedContainer = muxer.outputContainer
         } else {
             Logger.info("XDM", "Output already muxed, retrying commit: $tmpFile")
         }
         throttle.disable()
         Logger.info("Committing to final file")
-        when (val res = context.downloadHost.commitOutputFile(context.id, tmpFile, downloadType())) {
+        when (val res = context.downloadHost.commitOutputFile(context.id, tmpFile, downloadType(), context.muxedContainer)) {
             is CommitResult.Failed -> {
                 // Cancelled only by a stop, which reports the pause itself.
                 if (context.stopFlag.get() || res.error == DownloadError.Cancelled) return

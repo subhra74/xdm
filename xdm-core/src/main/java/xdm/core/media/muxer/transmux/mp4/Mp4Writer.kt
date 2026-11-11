@@ -9,6 +9,7 @@ import xdm.core.media.muxer.transmux.sample.Codec
 import xdm.core.media.muxer.transmux.sample.SampleTable
 import xdm.core.media.muxer.transmux.sample.upperMedian
 import xdm.core.media.muxer.transmux.sample.Track
+import xdm.core.media.muxer.transmux.ts.UnsupportedCodecException
 import xdm.core.storage.LocalStorage
 import xdm.core.storage.StorageFile
 import xdm.core.storage.asOutputStream
@@ -58,6 +59,14 @@ class Mp4Writer(private val output: StorageFile, private val repairTimeline: Boo
         if (usable.isEmpty()) {
             bos.close()
             return false
+        }
+        // A track this writer has no sample entry for would be written with an empty stsd, which no
+        // player opens. Matroska input never comes here (MuxContainer picks Matroska for it), so this
+        // only stops a caller that forces MP4.
+        for (t in usable) {
+            if (t.matroskaCodecId != null || (t.sampleEntryBox == null && SampleEntries.build(t) == null)) {
+                throw UnsupportedCodecException("MP4 can't carry the ${t.matroskaCodecId ?: t.codec} track; write Matroska instead")
+            }
         }
         val mdatEnd = position
         // Streamed: the sample tables are written from the tracks' sample tables as they go out.

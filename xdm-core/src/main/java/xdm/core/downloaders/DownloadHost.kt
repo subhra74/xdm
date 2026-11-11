@@ -21,8 +21,10 @@ interface FileProvider {
     /**
      * Publishes the finished [part] file under its final name, normally a rename within [part]'s folder.
      * [CommitResult.Success.outputDir] is that folder's [xdm.core.storage.StorageFolder.location].
+     * [container]: for a muxed output, the container written (an extension without the dot, e.g. `mkv`;
+     * see [xdm.core.media.muxer.MuxContainer]), which the final name takes; null keeps the name.
      */
-    fun commitOutputFile(id: Long, part: StorageFile, downloadType: DownloadType): CommitResult
+    fun commitOutputFile(id: Long, part: StorageFile, downloadType: DownloadType, container: String? = null): CommitResult
 
     /**
      * Where a streaming download should write its assembled output ([ext] includes the dot): a partial

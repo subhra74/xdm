@@ -15,6 +15,7 @@ import xdm.core.media.muxer.transmux.mkv.MatroskaDemuxer
 import xdm.core.media.muxer.transmux.mkv.MkvWriter
 import xdm.core.media.muxer.transmux.mp4.Mp4Writer
 import xdm.core.media.muxer.transmux.ts.TsDemuxer
+import xdm.core.media.muxer.transmux.ts.UnsupportedCodecException
 import java.io.File
 import java.io.FileInputStream
 
@@ -342,6 +343,58 @@ class TestTransmuxer {
         ffprobeStreams(out.absolutePath)?.let { streams ->
             assert(streams.contains("video") && streams.contains("audio")) { "ffprobe streams: $streams" }
         }
+    }
+
+    @Test
+    fun webmAskedForMp4IsWrittenAsMatroska() {
+        requireFfmpeg()
+        val whole = File(workDir, "whole.webm")
+        Assumptions.assumeTrue(whole.exists() && whole.length() > 0, "no whole.webm (VP9/Opus encoders?)")
+        // The part file says mp4 (the container picked up front); the bytes say WebM, and they win.
+        val out = File(workDir, "webm_asked_mp4.mp4")
+        val muxer = TransmuxingMuxer("/nonexistent-appdir")
+        assert(muxer.mux(listOf(whole.absolutePath), out.absolutePath, {}, workDir.path, false, false)) { "mux failed: ${muxer.lastError}" }
+        assert(muxer.outputContainer == "mkv") { "outputContainer ${muxer.outputContainer}" }
+        val demux = MatroskaDemuxer(NullSink).also { it.parseSegment(out.absolutePath) }
+        assert(demux.tracks.any { it.codec.isVideo } && demux.tracks.any { !it.codec.isVideo }) { "not Matroska with both tracks" }
+    }
+
+    @Test
+    fun webmRequestIsWrittenAsMkv() {
+        requireFfmpeg()
+        val whole = File(workDir, "whole.webm")
+        Assumptions.assumeTrue(whole.exists() && whole.length() > 0, "no whole.webm (VP9/Opus encoders?)")
+        val out = File(workDir, "asked_webm.webm")
+        val muxer = TransmuxingMuxer("/nonexistent-appdir")
+        assert(muxer.mux(listOf(whole.absolutePath), out.absolutePath, {}, workDir.path, false, false)) { "mux failed: ${muxer.lastError}" }
+        assert(muxer.outputContainer == "mkv") { "outputContainer ${muxer.outputContainer}" }
+        val head = out.readBytes().copyOf(64).toString(Charsets.ISO_8859_1)
+        assert(head.contains("matroska") && !head.contains("webm")) { "DocType is not matroska" }
+    }
+
+    @Test
+    fun tsInputReportsMp4() {
+        requireFfmpeg()
+        val muxer = TransmuxingMuxer("/nonexistent-appdir")
+        assert(muxer.mux(seg("m"), File(workDir, "ts_reports.mp4").absolutePath, {}, workDir.path, false, false)) { "mux failed" }
+        assert(muxer.outputContainer == "mp4") { "outputContainer ${muxer.outputContainer}" }
+        // A requested Matroska output stays Matroska.
+        val mkv = TransmuxingMuxer("/nonexistent-appdir", "mkv")
+        assert(mkv.mux(seg("m"), File(workDir, "ts_reports_part.mp4").absolutePath, {}, workDir.path, false, false)) { "mux failed" }
+        assert(mkv.outputContainer == "mkv") { "outputContainer ${mkv.outputContainer}" }
+    }
+
+    @Test
+    fun mp4WriterRefusesMatroskaTracks() {
+        requireFfmpeg()
+        val whole = File(workDir, "whole.webm")
+        Assumptions.assumeTrue(whole.exists() && whole.length() > 0, "no whole.webm (VP9/Opus encoders?)")
+        val out = File(workDir, "refused.mp4")
+        val writer = Mp4Writer(out.absolutePath)
+        val demux = MatroskaDemuxer(writer).also { it.parseSegment(whole.absolutePath) }
+        val refused = runCatching { writer.finish(demux.tracks) }.exceptionOrNull()
+        writer.abort()
+        assert(refused is UnsupportedCodecException) { "expected UnsupportedCodecException, got $refused" }
     }
 
     @Test

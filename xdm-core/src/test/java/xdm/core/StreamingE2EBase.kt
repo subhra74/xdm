@@ -215,9 +215,10 @@ class StreamingTestHost(
 
     override fun getTempDir(id: Long, url: String, contentType: String?, contentDisposition: String?): String = tempDir
 
-    override fun commitOutputFile(id: Long, part: StorageFile, downloadType: DownloadType): CommitResult {
+    override fun commitOutputFile(id: Long, part: StorageFile, downloadType: DownloadType, container: String?): CommitResult {
         val src = File(part.localPath!!)
-        val ext = src.name.substringAfterLast('.', "mp4")
+        // A muxed output is named after the container written, as the real hosts do.
+        val ext = container ?: src.name.substringAfterLast('.', "mp4")
         val dst = File(outDir, "out-$id.$ext")
         if (dst.exists()) dst.delete()
         val moved = src.renameTo(dst) || runCatching {

@@ -76,4 +76,11 @@ interface Muxer {
      * the caller can tell a full disk from a muxing problem. Null otherwise.
      */
     val lastError: Throwable? get() = null
+
+    /**
+     * The container (an extension without the dot, e.g. `mkv`) the last successful mux wrote, which
+     * may differ from the output's name ([MuxContainer]): the published name takes it. Null when
+     * unknown (no successful mux yet, or a muxer that doesn't say).
+     */
+    val outputContainer: String? get() = null
 }
