@@ -7,6 +7,7 @@ package xdm.core.media.muxer.transmux.iso
 import xdm.core.media.muxer.transmux.es.SampleSink
 import xdm.core.media.muxer.transmux.io.ParsableByteArray
 import xdm.core.media.muxer.transmux.sample.Codec
+import xdm.core.media.muxer.transmux.sample.DisplayMatrix
 import xdm.core.media.muxer.transmux.sample.Track
 import xdm.core.util.Logger
 import java.io.RandomAccessFile
@@ -149,6 +150,7 @@ class Mp4Demuxer(private val sink: SampleSink) {
         var trackId = 0
         var width = 0
         var height = 0
+        var matrix: IntArray? = null
         var timescale = 0
         var handler = ""
         var sampleEntries: List<ByteArray> = emptyList()
@@ -167,6 +169,11 @@ class Mp4Demuxer(private val sink: SampleSink) {
                     val wOff = e - 8
                     width = ((data[wOff].toInt() and 0xFF) shl 8) or (data[wOff + 1].toInt() and 0xFF)
                     height = ((data[wOff + 4].toInt() and 0xFF) shl 8) or (data[wOff + 5].toInt() and 0xFF)
+                    // The display matrix (rotation / flip): the nine values just before width and height.
+                    if (wOff - 36 >= s) {
+                        val m = IntArray(9) { readU32(data, wOff - 36 + it * 4).toInt() }
+                        if (!DisplayMatrix.isUnity(m)) matrix = m
+                    }
                 }
                 "edts" -> forEachBox(data, s, e) { t2, s2, _ -> if (t2 == "elst") elst = parseElst(data, s2) }
                 "mdia" -> forEachBox(data, s, e) { t2, s2, e2 ->
@@ -205,11 +212,16 @@ class Mp4Demuxer(private val sink: SampleSink) {
         val state = continuingTrack(trackId, isVideo)?.also { st ->
             st.inputTrackId = trackId
             st.inputTimescale = inputTimescale
+            // One matrix per output track: the first init segment's is kept.
+            if (isVideo && !(st.track.matrix ?: DisplayMatrix.UNITY).contentEquals(matrix ?: DisplayMatrix.UNITY)) {
+                Logger.info("XDM", "MP4: track $trackId changes its display matrix in a later init segment, keeping the first")
+            }
         } ?: run {
             val track = Track(if (isVideo) Codec.OTHER_VIDEO else Codec.OTHER_AUDIO)
             track.timescale = inputTimescale
             track.width = width
             track.height = height
+            if (isVideo) track.matrix = matrix
             track.sampleEntryBox = sampleEntries[0]
             TrackState(track, trackId, inputTimescale).also { states.add(it) }
         }

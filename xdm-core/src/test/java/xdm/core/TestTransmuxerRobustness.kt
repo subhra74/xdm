@@ -60,6 +60,17 @@ class TestTransmuxerRobustness {
                 "-movflags", "frag_keyframe+empty_moov+negative_cts_offsets", File(workDir, "neg_frag.mp4").path)
             run(ffmpeg!!, "-y", "-loglevel", "error", *bf,
                 "-movflags", "+negative_cts_offsets", File(workDir, "neg_prog.mp4").path)
+            // Rotated video: 90°, and 90° after a horizontal flip; progressive and fragmented MP4, and
+            // ffmpeg's own MKV of each (the reference for our MKV output).
+            val whole = File(workDir, "whole.mp4").path
+            run(ffmpeg!!, "-y", "-loglevel", "error", "-display_rotation", "90", "-i", whole, "-c", "copy", File(workDir, "rot90.mp4").path)
+            run(ffmpeg!!, "-y", "-loglevel", "error", "-display_rotation", "90", "-display_hflip", "-i", whole, "-c", "copy",
+                File(workDir, "rot90f.mp4").path)
+            run(ffmpeg!!, "-y", "-loglevel", "error", "-display_rotation", "90", "-i", whole, "-c", "copy",
+                "-movflags", "frag_keyframe+empty_moov", File(workDir, "rot90_frag.mp4").path)
+            for (name in listOf("rot90", "rot90f")) {
+                run(ffmpeg!!, "-y", "-loglevel", "error", "-i", File(workDir, "$name.mp4").path, "-c", "copy", File(workDir, "$name.mkv").path)
+            }
             // WebM (encoders may be missing: those tests skip).
             runSoft(ffmpeg!!, "-y", "-loglevel", "error", *av, "-t", "2",
                 "-c:v", "libvpx-vp9", "-b:v", "300k", "-g", "25", "-pix_fmt", "yuv420p",
@@ -288,6 +299,68 @@ class TestTransmuxerRobustness {
         mux(listOf(init1) + a + listOf(init2) + b, out, discontinuous = true) // rendition B restarts at 0
         val errors = decodeErrors(out)
         assert(errors.isEmpty()) { "decode errors: ${errors.take(5)}" }
+    }
+
+    // ---- rotation ----
+
+    /** ffprobe's display matrix of the video stream, "" when there is none. */
+    private fun displayMatrix(path: String): String {
+        val ffprobe = which("ffprobe") ?: return "?"
+        val p = ProcessBuilder(ffprobe, "-v", "error", "-select_streams", "v:0",
+            "-show_entries", "stream_side_data=displaymatrix", "-of", "default=nw=1", path).redirectErrorStream(true).start()
+        val text = p.inputStream.readBytes().toString(Charsets.UTF_8).trim()
+        p.waitFor()
+        return text
+    }
+
+    private fun muxTo(src: String, out: String) {
+        val m = TransmuxingMuxer("/nonexistent-appdir")
+        assert(m.mux(listOf(src), out, {}, workDir.path, false, true)) { "mux of $src returned false: ${m.lastError}" }
+    }
+
+    @Test
+    fun rotationFromMp4IsKeptInMp4AndMkv() {
+        requireFfmpeg()
+        Assumptions.assumeTrue(which("ffprobe") != null, "no ffprobe")
+        for ((src, mkvReference) in listOf("rot90.mp4" to "rot90.mkv", "rot90f.mp4" to "rot90f.mkv", "rot90_frag.mp4" to "rot90.mkv")) {
+            val want = displayMatrix(path(src))
+            assert(want.isNotEmpty()) { "$src: fixture has no display matrix" }
+            val mp4 = path("out_$src")
+            muxTo(path(src), mp4)
+            assert(displayMatrix(mp4) == want) { "$src -> mp4: ${displayMatrix(mp4)}, want $want" }
+            val mkv = path("out_${src.substringBefore('.')}.mkv")
+            muxTo(path(src), mkv)
+            val ffmpegMkv = displayMatrix(path(mkvReference))
+            assert(ffmpegMkv.isNotEmpty() && displayMatrix(mkv) == ffmpegMkv) { "$src -> mkv: ${displayMatrix(mkv)}, ffmpeg's: $ffmpegMkv" }
+            val errors = decodeErrors(mkv)
+            assert(errors.isEmpty()) { "$src -> mkv decode errors: ${errors.take(5)}" }
+        }
+    }
+
+    @Test
+    fun rotationFromMkvIsKept() {
+        requireFfmpeg()
+        for (name in listOf("rot90", "rot90f")) {
+            // The Matroska pose reads back as the MP4 matrix it was written from.
+            val fromMkv = MatroskaDemuxer(CountingSink()).also { it.parseSegment(path("$name.mkv")) }.tracks.first { it.codec.isVideo }.matrix
+            val fromMp4 = Mp4Demuxer(CountingSink()).also { it.parseSegment(path("$name.mp4")) }.tracks.first { it.codec.isVideo }.matrix
+            assert(fromMkv != null && fromMkv.contentEquals(fromMp4)) { "$name: mkv ${fromMkv?.toList()}, mp4 ${fromMp4?.toList()}" }
+            if (which("ffprobe") == null) continue
+            val out = path("out_mkv_$name.mkv")
+            muxTo(path("$name.mkv"), out)
+            assert(displayMatrix(out) == displayMatrix(path("$name.mkv"))) { "$name mkv -> mkv: ${displayMatrix(out)}" }
+        }
+    }
+
+    @Test
+    fun unrotatedVideoGetsNoMatrix() {
+        requireFfmpeg()
+        Assumptions.assumeTrue(which("ffprobe") != null, "no ffprobe")
+        for (ext in listOf("mp4", "mkv")) {
+            val out = path("out_plain.$ext")
+            muxTo(path("whole.mp4"), out)
+            assert(displayMatrix(out).isEmpty()) { "$ext: unexpected display matrix ${displayMatrix(out)}" }
+        }
     }
 
     // ---- containers switching inside one list ----

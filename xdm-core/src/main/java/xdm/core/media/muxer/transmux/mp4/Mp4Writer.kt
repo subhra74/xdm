@@ -202,7 +202,9 @@ class Mp4Writer(private val output: StorageFile, repairTimeline: Boolean = false
                 u16(0)                      // alternate_group
                 u16(if (t.codec.isVideo) 0 else 0x0100) // volume
                 u16(0)                      // reserved
-                unityMatrix(this)
+                // Rotation / flip from the input, else the identity.
+                val m = t.matrix
+                if (m != null && m.size == 9) m.forEach { u32(it.toLong() and 0xFFFFFFFFL) } else unityMatrix(this)
                 // Display size: the sample aspect ratio applied to the width, as ffmpeg writes for MP4.
                 val displayWidth = if (t.sarNum > 0 && t.sarDen > 0) t.width.toLong() * t.sarNum / t.sarDen else t.width.toLong()
                 u32((displayWidth.coerceIn(0, 0xFFFF)) shl 16)

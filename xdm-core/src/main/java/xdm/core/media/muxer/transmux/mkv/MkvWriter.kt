@@ -8,6 +8,7 @@ import xdm.core.media.muxer.transmux.ContainerWriter
 import xdm.core.media.muxer.transmux.mp4.BoxBuf
 import xdm.core.media.muxer.transmux.mp4.CodecBoxes
 import xdm.core.media.muxer.transmux.sample.Codec
+import xdm.core.media.muxer.transmux.sample.DisplayMatrix
 import xdm.core.media.muxer.transmux.sample.Sample
 import xdm.core.media.muxer.transmux.sample.Track
 import xdm.core.util.Logger
@@ -204,6 +205,13 @@ class MkvWriter(
                         master(Ebml.VIDEO) {
                             uint(Ebml.PIXEL_WIDTH, t.width.toLong().coerceAtLeast(1))
                             uint(Ebml.PIXEL_HEIGHT, t.height.toLong().coerceAtLeast(1))
+                            // Rotation / flip as ffmpeg writes it: a rectangular projection's pose.
+                            t.matrix?.let { DisplayMatrix.toPose(it) }?.let { (yaw, roll) ->
+                                master(Ebml.PROJECTION) {
+                                    if (yaw != 0.0) float(Ebml.PROJECTION_POSE_YAW, yaw)
+                                    if (roll != 0.0) float(Ebml.PROJECTION_POSE_ROLL, roll)
+                                }
+                            }
                         }
                     } else {
                         master(Ebml.AUDIO) {

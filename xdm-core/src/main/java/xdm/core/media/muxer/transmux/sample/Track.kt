@@ -19,6 +19,12 @@ class Track(val codec: Codec) {
     var width: Int = 0
     var height: Int = 0
 
+    /**
+     * Display matrix (rotation / flip) in the MP4 `tkhd` layout ([DisplayMatrix]); null for the identity.
+     * Written to `tkhd` in MP4 and as `Projection` pose in Matroska.
+     */
+    var matrix: IntArray? = null
+
     /** Sample (pixel) aspect ratio from the bitstream; 0 when unknown. Written as pasp, and scales tkhd. */
     var sarNum: Int = 0
     var sarDen: Int = 0
@@ -113,6 +119,7 @@ class Track(val codec: Codec) {
     fun copyConfigFrom(from: Track) {
         timescale = from.timescale
         width = from.width; height = from.height
+        matrix = from.matrix
         sarNum = from.sarNum; sarDen = from.sarDen
         colourPrimaries = from.colourPrimaries; transferCharacteristics = from.transferCharacteristics
         matrixCoefficients = from.matrixCoefficients; fullRange = from.fullRange

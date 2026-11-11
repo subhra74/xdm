@@ -42,6 +42,11 @@ object Ebml {
     const val VIDEO = 0xE0L
     const val PIXEL_WIDTH = 0xB0L
     const val PIXEL_HEIGHT = 0xBAL
+    const val PROJECTION = 0x7670L
+    const val PROJECTION_TYPE = 0x7671L
+    const val PROJECTION_POSE_YAW = 0x7673L
+    const val PROJECTION_POSE_PITCH = 0x7674L
+    const val PROJECTION_POSE_ROLL = 0x7675L
     const val AUDIO = 0xE1L
     const val SAMPLING_FREQUENCY = 0xB5L
     const val CHANNELS = 0x9FL

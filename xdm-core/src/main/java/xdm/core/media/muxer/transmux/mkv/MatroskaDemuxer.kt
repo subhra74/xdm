@@ -6,6 +6,7 @@ package xdm.core.media.muxer.transmux.mkv
 
 import xdm.core.media.muxer.transmux.es.SampleSink
 import xdm.core.media.muxer.transmux.sample.Codec
+import xdm.core.media.muxer.transmux.sample.DisplayMatrix
 import xdm.core.media.muxer.transmux.sample.Sample
 import xdm.core.media.muxer.transmux.sample.Track
 import xdm.core.util.Logger
@@ -101,6 +102,7 @@ class MatroskaDemuxer(private val sink: SampleSink) {
         var codecId = ""
         var codecPrivate: ByteArray? = null
         var width = 0; var height = 0
+        var matrix: IntArray? = null
         var sampleRate = 0.0; var channels = 0; var bitDepth = 0
         var defaultDuration = 0L
 
@@ -114,7 +116,7 @@ class MatroskaDemuxer(private val sink: SampleSink) {
                 Ebml.CODEC_ID -> codecId = reader.readString(size.toInt())
                 Ebml.CODEC_PRIVATE -> codecPrivate = reader.readBytes(size.toInt())
                 Ebml.DEFAULT_DURATION -> defaultDuration = reader.readUInt(size.toInt())
-                Ebml.VIDEO -> parseVideo(ds, de) { w, h -> width = w; height = h }
+                Ebml.VIDEO -> parseVideo(ds, de) { w, h, m -> width = w; height = h; matrix = m }
                 Ebml.AUDIO -> parseAudio(ds, de) { sr, ch, bd -> sampleRate = sr; channels = ch; bitDepth = bd }
             }
             reader.seek(de)
@@ -145,6 +147,7 @@ class MatroskaDemuxer(private val sink: SampleSink) {
         track.timescale = 1000 // milliseconds; block timecodes are converted to ms
         track.width = width
         track.height = height
+        if (isVideo) track.matrix = matrix
         track.sampleRate = sampleRate.toInt()
         track.channelCount = channels
         track.audioBitDepth = bitDepth
@@ -153,19 +156,48 @@ class MatroskaDemuxer(private val sink: SampleSink) {
         ordered.add(state)
     }
 
-    private inline fun parseVideo(start: Long, end: Long, out: (Int, Int) -> Unit) {
+    private inline fun parseVideo(start: Long, end: Long, out: (Int, Int, IntArray?) -> Unit) {
         reader.seek(start)
         var w = 0; var h = 0
+        var matrix: IntArray? = null
+        while (reader.position() < end) {
+            val id = reader.readId(); if (id < 0) break
+            val size = reader.readSize(); val ds = reader.position(); val de = ds + size
+            when (id) {
+                Ebml.PIXEL_WIDTH -> w = reader.readUInt(size.toInt()).toInt()
+                Ebml.PIXEL_HEIGHT -> h = reader.readUInt(size.toInt()).toInt()
+                Ebml.PROJECTION -> matrix = parseProjection(ds, de)
+            }
+            reader.seek(de)
+        }
+        out(w, h, matrix)
+    }
+
+    /**
+     * The display matrix of a rectangular projection's pose (rotation, and yaw 180 for a mirrored
+     * picture), as ffmpeg writes it; null for none, or for a 360° projection (not carried).
+     */
+    private fun parseProjection(start: Long, end: Long): IntArray? {
+        reader.seek(start)
+        var type = 0L
+        var yaw = 0.0; var pitch = 0.0; var roll = 0.0
         while (reader.position() < end) {
             val id = reader.readId(); if (id < 0) break
             val size = reader.readSize(); val de = reader.position() + size
             when (id) {
-                Ebml.PIXEL_WIDTH -> w = reader.readUInt(size.toInt()).toInt()
-                Ebml.PIXEL_HEIGHT -> h = reader.readUInt(size.toInt()).toInt()
+                Ebml.PROJECTION_TYPE -> type = reader.readUInt(size.toInt())
+                Ebml.PROJECTION_POSE_YAW -> yaw = reader.readFloat(size.toInt())
+                Ebml.PROJECTION_POSE_PITCH -> pitch = reader.readFloat(size.toInt())
+                Ebml.PROJECTION_POSE_ROLL -> roll = reader.readFloat(size.toInt())
             }
             reader.seek(de)
         }
-        out(w, h)
+        if (type != 0L) return null
+        return DisplayMatrix.fromPose(yaw, pitch, roll).also {
+            if (it == null && (yaw != 0.0 || pitch != 0.0 || roll != 0.0)) {
+                Logger.info("XDM", "Matroska: projection pose yaw=$yaw pitch=$pitch roll=$roll is not a plain rotation, not carried")
+            }
+        }
     }
 
     private inline fun parseAudio(start: Long, end: Long, out: (Double, Int, Int) -> Unit) {
