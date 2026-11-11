@@ -189,6 +189,14 @@ abstract class AnnexBReader(protected val sink: SampleSink) : ElementaryStreamRe
      */
     protected abstract fun keepNal(buf: ByteArray, start: Int, end: Int): Boolean
 
+    /**
+     * Reads one parameter set NAL (without a start code) into [track] as if it came in the stream:
+     * containers that carry them in a config record (FLV) use it for the picture size.
+     */
+    fun readParameterSet(nal: ByteArray) {
+        if (nal.size > headerSize()) keepNal(nal, 0, nal.size)
+    }
+
     private fun findStartCode(data: ByteArray, start: Int, end: Int): Int {
         var i = start
         while (i + 2 < end) {

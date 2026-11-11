@@ -85,6 +85,13 @@ object SampleEntries {
         }
     }
 
+    /** A visual sample entry [type] (`avc1`, `hvc1`...) for [t]'s size, holding [configType] with [config] as its payload. */
+    fun visualEntry(type: String, t: Track, configType: String, config: ByteArray): ByteArray {
+        val b = BoxBuf()
+        visualSampleEntry(b, type, t) { box(configType) { bytes(config) } }
+        return b.toByteArray()
+    }
+
     private inline fun visualSampleEntry(buf: BoxBuf, type: String, t: Track, config: BoxBuf.() -> Unit) {
         buf.box(type) {
             repeat(6) { u8(0) }             // reserved

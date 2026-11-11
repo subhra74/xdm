@@ -10,6 +10,7 @@ import xdm.core.media.muxer.impl.SegmentProbe.Container
 import xdm.core.storage.StorageFile
 import xdm.core.media.muxer.transmux.ContainerWriter
 import xdm.core.media.muxer.transmux.es.SampleSink
+import xdm.core.media.muxer.transmux.flv.FlvDemuxer
 import xdm.core.media.muxer.transmux.iso.Mp4Demuxer
 import xdm.core.media.muxer.transmux.mkv.MatroskaDemuxer
 import xdm.core.media.muxer.transmux.mkv.MkvWriter
@@ -75,19 +76,83 @@ class TransmuxingMuxer(
         independentSegement: Boolean,
         isMp4: Boolean,
         discontinuous: Boolean,
-    ): Boolean = transmux(output, tempDir, listOf(segments), discontinuous) { writer ->
-        demuxList(segments, writer, progressCallback)
+    ): Boolean {
+        val ok = transmux(output, tempDir, listOf(segments), discontinuous) { writer ->
+            demuxList(segments, writer, progressCallback)
+        }
+        if (ok || stopFlag.get() || lastError !is NoMediaException) return ok
+        // Nothing our demuxers read: a container we recognise is published as it is.
+        return publishAsIs(segments, output)
+    }
+
+    /**
+     * Publishes [segments] that no demuxer reads but that are all one [SegmentProbe.Foreign]
+     * container: a single file as it is, several joined byte for byte when the container allows it
+     * (chained Ogg, MPEG program stream). [outputContainer] then names the file after it. Several
+     * files of a container that can't be joined (FLV with codecs we don't read, AVI, ASF...) fail
+     * with an [UnsupportedContainerException]; anything else keeps the [NoMediaException].
+     */
+    private fun publishAsIs(segments: List<String>, output: StorageFile): Boolean {
+        val kinds = segments.map { SegmentProbe.foreign(it) }
+        val kind = kinds.first()
+        if (kind == null || kinds.any { it != kind }) return false
+        if (segments.size > 1 && !kind.concatenable) {
+            lastError = UnsupportedContainerException(
+                "${segments.size} ${kind.label} segments with no audio or video XDM can read; ${kind.label} files can't be joined as they are"
+            )
+            Logger.error("XDM", lastError!!.message!!)
+            return false
+        }
+        return try {
+            output.open(create = true).use { out ->
+                out.setLength(0)
+                val buf = ByteArray(256 * 1024)
+                for (seg in segments) {
+                    FileInputStream(seg).use { input ->
+                        while (!stopFlag.get()) {
+                            val n = input.read(buf)
+                            if (n <= 0) break
+                            out.write(buf, 0, n)
+                        }
+                    }
+                }
+                out.force()
+            }
+            if (stopFlag.get()) { output.delete(); return false }
+            Logger.info("XDM", "${kind.label}: ${if (segments.size == 1) "the file is" else "${segments.size} segments joined and"} published as it is (no demuxer reads it)")
+            lastError = null
+            timelineStartSec = null
+            outputContainer = kind.extension
+            true
+        } catch (ex: Exception) {
+            output.delete()
+            if (!stopFlag.get()) { Logger.error("XDM", "Publishing ${kind.label} as it is failed", ex); lastError = ex }
+            false
+        }
+    }
+
+    /**
+     * Throws when the non-empty input [list] (one track of a merge) gave no audio or video: the merge
+     * would otherwise go on without that track and lose it silently.
+     */
+    private fun requireMedia(list: List<String>, tracks: List<Track>, what: String) {
+        if (list.isEmpty() || stopFlag.get() || tracks.any { it.samples.isNotEmpty() }) return
+        val kind = SegmentProbe.foreign(list.first())
+        throw UnsupportedContainerException(
+            "The $what (${kind?.label ?: "an unrecognised format"}, ${list.first().substringAfterLast('/')}) has no audio or video XDM can read; not merging without it"
+        )
     }
 
     // ---- two separate files (e.g. video + audio) ----
     override fun mux(
         file1: String, file2: String, output: StorageFile, progressCallback: (Int) -> Unit, tempDir: String
     ): Boolean = transmux(output, tempDir, listOf(listOf(file1), listOf(file2))) { writer ->
-        val tracks = ArrayList<Track>()
-        tracks += demuxList(listOf(file1), writer) {}
-        tracks += demuxList(listOf(file2), writer) {}
+        val first = demuxList(listOf(file1), writer) {}
+        requireMedia(listOf(file1), first, "first track")
+        val second = demuxList(listOf(file2), writer) {}
+        requireMedia(listOf(file2), second, "second track")
         progressCallback(100)
-        tracks
+        first + second
     }
 
     // ---- separate audio playlist + video playlist ----
@@ -120,7 +185,11 @@ class TransmuxingMuxer(
             next.feedNext()
             tick(0)
         }
-        video.finish() + audio.finish()
+        val videoTracks = video.finish()
+        val audioTracks = audio.finish()
+        requireMedia(videoSegments, videoTracks, "video track")
+        requireMedia(audioSegments, audioTracks, "audio track")
+        videoTracks + audioTracks
     }
 
     override fun stop() {
@@ -218,6 +287,7 @@ class TransmuxingMuxer(
                 Container.MKV -> MatroskaDemuxer(writer).let { d -> feed = { seg, from -> d.parseSegment(seg, from) }; end = { d.finish() }; tracks = { d.tracks } }
                 Container.PACKED_AUDIO -> PackedAudioDemuxer(writer).let { d -> feed = { seg, from -> d.parseSegment(seg, from) }; end = { d.finish() }; tracks = { d.tracks } }
                 Container.MP4 -> Mp4Demuxer(writer).let { d -> feed = { seg, from -> d.parseSegment(seg, from) }; end = { d.finish() }; tracks = { d.tracks } }
+                Container.FLV -> FlvDemuxer(writer).let { d -> feed = { seg, from -> d.parseSegment(seg, from) }; end = { d.finish() }; tracks = { d.tracks } }
             }
         }
 
@@ -226,7 +296,7 @@ class TransmuxingMuxer(
          * last frames until finished, so they are finished when left and a new one starts on return;
          * MP4 and Matroska keep their init segment's tracks for the media segments that follow.
          */
-        val resumable get() = container == Container.MP4 || container == Container.MKV
+        val resumable get() = container == Container.MP4 || container == Container.MKV || container == Container.FLV
 
         fun finish() { if (!finished) { finished = true; end() } }
     }
@@ -342,3 +412,6 @@ class TransmuxingMuxer(
 
 /** The segments held no audio or video that the transmuxer recognised. */
 class NoMediaException(message: String) : java.io.IOException(message)
+
+/** Input in a container the transmuxer doesn't read where it can't be published as it is (a merge, or parts that can't be joined). */
+class UnsupportedContainerException(message: String) : java.io.IOException(message)

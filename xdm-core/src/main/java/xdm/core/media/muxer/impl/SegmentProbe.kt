@@ -29,7 +29,18 @@ import java.io.RandomAccessFile
  *  3. Otherwise the first [SCAN_LIMIT] bytes are searched, with the stricter checks of step 1.
  */
 internal object SegmentProbe {
-    enum class Container { TS, MP4, MKV, PACKED_AUDIO }
+    enum class Container { TS, MP4, MKV, PACKED_AUDIO, FLV }
+
+    /**
+     * A container none of the demuxers reads, recognised by its signature so it can be published as
+     * it is ([concatenable]: its files joined byte for byte still play, as chained Ogg and an MPEG
+     * program stream do). [extension] names the published file.
+     */
+    enum class Foreign(val extension: String, val label: String, val concatenable: Boolean = false) {
+        OGG("ogg", "Ogg", true), MPEG_PS("mpg", "MPEG program stream", true),
+        FLV("flv", "FLV"), AVI("avi", "AVI"), WAV("wav", "WAV"), ASF("wmv", "ASF/WMV"),
+        FLAC("flac", "FLAC"), AMR("amr", "AMR"), CAF("caf", "CAF"), AIFF("aiff", "AIFF"), REAL("rm", "RealMedia"),
+    }
 
     /** [container] of a segment, whose media starts [offset] bytes into the file. */
     data class Located(val container: Container, val offset: Long)
@@ -81,6 +92,27 @@ internal object SegmentProbe {
      * The container a segment's file name suggests (the downloader names a segment after its URL's
      * extension), for when its bytes don't tell. Null when the name doesn't say either.
      */
+    /** The [Foreign] container [path] starts with (after an ID3 tag), or null. */
+    fun foreign(path: String): Foreign? = RandomAccessFile(path, "r").use { raf ->
+        val p = Peek(raf)
+        val pos = if (isId3(p, 0)) id3End(p, 0) else 0L
+        fun ascii(at: Long, s: String) = s.indices.all { p.u8(at + it) == s[it].code }
+        when {
+            ascii(pos, "OggS") -> Foreign.OGG
+            p.u32(pos) == 0x000001BAL -> Foreign.MPEG_PS
+            ascii(pos, "FLV") && p.u8(pos + 3) == 1 -> Foreign.FLV
+            ascii(pos, "RIFF") && (ascii(pos + 8, "AVI ") || ascii(pos + 8, "AVIX")) -> Foreign.AVI
+            ascii(pos, "RIFF") && ascii(pos + 8, "WAVE") -> Foreign.WAV
+            p.u32(pos) == 0x3026B275L && p.u32(pos + 4) == 0x8E66CF11L -> Foreign.ASF
+            ascii(pos, "fLaC") -> Foreign.FLAC
+            ascii(pos, "#!AMR") -> Foreign.AMR
+            ascii(pos, "caff") -> Foreign.CAF
+            ascii(pos, "FORM") && (ascii(pos + 8, "AIFF") || ascii(pos + 8, "AIFC")) -> Foreign.AIFF
+            ascii(pos, ".RMF") -> Foreign.REAL
+            else -> null
+        }
+    }
+
     fun fromName(path: String): Container? {
         var name = path.substringAfterLast('/').substringAfterLast('\\').lowercase()
         if (name.endsWith(".enc")) name = name.removeSuffix(".enc")
@@ -89,6 +121,7 @@ internal object SegmentProbe {
             "mp4", "m4s", "m4v", "m4a", "fmp4", "cmfv", "cmfa", "mov", "m4f", "mp4a", "mp4v" -> Container.MP4
             "webm", "mkv", "mka", "weba" -> Container.MKV
             "aac", "adts", "ac3", "ec3", "eac3", "mp3", "mp2", "mpga" -> Container.PACKED_AUDIO
+            "flv" -> Container.FLV
             else -> null
         }
     }
@@ -115,7 +148,16 @@ internal object SegmentProbe {
             return Located(Container.PACKED_AUDIO, pos)
         }
         if (audioRun(p, pos)) return Located(Container.PACKED_AUDIO, pos)
+        if (isFlv(p, pos)) return Located(Container.FLV, pos)
         return null
+    }
+
+    /** An FLV header at [pos]: "FLV", version 1, a sane header size and PreviousTagSize0 = 0 after it. */
+    private fun isFlv(p: Peek, pos: Long): Boolean {
+        if (p.u8(pos) != 'F'.code || p.u8(pos + 1) != 'L'.code || p.u8(pos + 2) != 'V'.code || p.u8(pos + 3) != 1) return false
+        if (p.u8(pos + 4) and 0xFA != 0) return false // reserved flag bits
+        val headerSize = p.u32(pos + 5)
+        return headerSize in 9..1024 && p.u32(pos + headerSize) == 0L
     }
 
     // ---- step 3: the search ----
@@ -128,6 +170,7 @@ internal object SegmentProbe {
         if (isMp4BoxChain(p, k)) return Located(Container.MP4, k)
         if ((b == 0xFF || b == 0x0B) && audioRun(p, k)) return Located(Container.PACKED_AUDIO, k)
         if (b == 'I'.code && isId3(p, k) && audioRun(p, id3End(p, k))) return Located(Container.PACKED_AUDIO, k)
+        if (b == 'F'.code && isFlv(p, k)) return Located(Container.FLV, k)
         return null
     }
 
