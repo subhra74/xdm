@@ -3,6 +3,83 @@
 <head>
     <meta charset="utf-8">
     <meta name="robots" content="noindex">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>XDM update check</title>
+    <style>
+        :root {
+            color-scheme: light dark;
+            --bg: #ffffff;
+            --fg: #1f2328;
+            --muted: #59636e;
+            --accent: #1f6feb;
+            --accent-hover: #1a5fcc;
+            --card: #f6f8fa;
+            --border: #d1d9e0;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0d1117;
+                --fg: #e6edf3;
+                --muted: #9198a1;
+                --accent: #2f81f7;
+                --accent-hover: #4b93f8;
+                --card: #161b22;
+                --border: #30363d;
+            }
+        }
+
+        body {
+            margin: 0;
+            padding: 48px 16px;
+            background: var(--bg);
+            color: var(--fg);
+            font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", Ubuntu, sans-serif;
+        }
+
+        #ver {
+            max-width: 560px;
+            margin: 0 auto;
+        }
+
+        a {
+            color: var(--accent);
+        }
+
+        .update {
+            text-align: center;
+            padding: 32px 24px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        .update h1 {
+            margin: 0 0 8px;
+            font-size: 24px;
+        }
+
+        .update .versions {
+            margin: 0 0 24px;
+            color: var(--muted);
+        }
+
+        .download {
+            display: inline-block;
+            padding: 14px 32px;
+            border-radius: 8px;
+            background: var(--accent);
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .download:hover,
+        .download:focus {
+            background: var(--accent-hover);
+        }
+    </style>
     <script>
         var RELEASE_URL="https://xtremedownloadmanager.com/download/?utm_source=update-checker";
         var SITE_URL="https://xtremedownloadmanager.com/guide/?utm_source=update-checker";
@@ -13,7 +90,7 @@
         if (match != null) {
             currentVersion = match[1];
         }
-        
+
         var xmlhttp = new XMLHttpRequest();
         var url = "https://api.github.com/repos/subhra74/xdm/releases/latest";
 
@@ -27,11 +104,9 @@
         xmlhttp.send();
 
         function checkVersion(obj) {
-            console.log(obj.tag_name+" "+currentVersion);
-            var arr1 = obj.tag_name.replace(/^v/i, "").split(/\./)
-            var arr2 = currentVersion.split(/\./)
-
-            console.log(JSON.stringify(arr1)+" "+JSON.stringify(arr2));
+            var latestVersion = obj.tag_name.replace(/^v/i, "");
+            var arr1 = latestVersion.split(/\./)
+            var arr2 = (currentVersion || "0.0.0").split(/\./)
 
             var major1 = parseInt(arr1[0],10);
             var major2 = parseInt(arr2[0],10);
@@ -41,9 +116,6 @@
 
             var build1 = parseInt(arr1[2],10);
             var build2 = parseInt(arr2[2],10);
-
-            console.log(major1+" "+minor1+" "+build1);
-            console.log(major2+" "+minor2+" "+build2);
 
             var hasNewVersion = false
 
@@ -59,12 +131,20 @@
                 hasNewVersion = true
             }
 
+            var ver = document.getElementById("ver");
             if(!hasNewVersion){
-                document.getElementById("ver").innerHTML = "App is up to date. Tips and guides are on <a href='" + SITE_URL + "'>xtremedownloadmanager.com</a>.";
+                ver.innerHTML = "<p>App is up to date. Tips and guides are on <a href='" + SITE_URL + "'>xtremedownloadmanager.com</a>.</p>";
             }else{
-                document.getElementById("ver").innerHTML = "A newer version is available, download it <a href='" + RELEASE_URL + "'>here</a>";
+                var versions = currentVersion
+                    ? "You have " + currentVersion + ". The latest version is " + latestVersion + "."
+                    : "The latest version is " + latestVersion + ".";
+                ver.innerHTML =
+                    "<div class='update'>" +
+                    "<h1>A new version of XDM is available</h1>" +
+                    "<p class='versions'>" + versions + "</p>" +
+                    "<a class='download' href='" + RELEASE_URL + "'>Download XDM " + latestVersion + "</a>" +
+                    "</div>";
             }
-            document.getElementById("star").hidden = false;
         }
 
     </script>
@@ -72,7 +152,6 @@
 
 <body>
     <div id="ver"></div>
-    <p id="star" hidden>Enjoying XDM? <a href="https://github.com/subhra74/xdm">⭐ Star it on GitHub</a>. It takes two seconds and helps more people find XDM.</p>
 </body>
 
 </html>
