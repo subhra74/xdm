@@ -85,4 +85,41 @@ class TorrentSelectionTest {
         sel.setAll(true)
         assertArrayEquals(ByteArray(0), sel.priorities(), "all again")
     }
+
+    private fun TorrentSelection.shown() = visibleRows.map { it.name }
+
+    @Test
+    fun `folding a folder hides what is under it but keeps its files ticked`() {
+        val sel = TorrentSelection(multi)
+        assertEquals(sel.rows, sel.visibleRows, "a small torrent opens unfolded")
+        assertTrue(sel.hasFolders, "has folders")
+
+        val sub = sel.rows.first { it.name == "Sub" }
+        val deeper = sel.rows.first { it.name == "deeper" }
+        assertEquals(sub, deeper.parent, "deeper sits in Sub")
+        sel.setExpanded(deeper, false)
+        assertEquals(listOf("Sub", "deeper", "z.bin", "A.txt", "b.txt"), sel.shown(), "y.bin hidden")
+        sel.toggle(sub)
+        assertEquals(listOf("Sub", "A.txt", "b.txt"), sel.shown(), "Sub folded")
+
+        sel.set(sub, false)
+        assertEquals(30L, sel.selectedSize, "unticking a folded folder skips its hidden files")
+        sel.toggle(sub)
+        assertEquals(listOf("Sub", "deeper", "z.bin", "A.txt", "b.txt"), sel.shown(), "deeper stays folded inside")
+
+        sel.collapseAll()
+        assertEquals(listOf("Sub", "A.txt", "b.txt"), sel.shown(), "all folded")
+        sel.expandAll()
+        assertEquals(sel.rows, sel.visibleRows, "all unfolded")
+        sel.setExpanded(sel.rows.first { it.name == "A.txt" }, false)
+        assertEquals(sel.rows, sel.visibleRows, "a file does not fold")
+    }
+
+    @Test
+    fun `a big torrent opens with only its top-level folders unfolded`() {
+        val files = (0 until TorrentSelection.FOLD_ABOVE).map { file("big/D${it % 3}/E/f$it.bin", 1) }
+        val sel = TorrentSelection(info("big", *files.toTypedArray()))
+        assertEquals(listOf("D0", "E", "D1", "E", "D2", "E"), sel.shown(), "level-two folders folded")
+        assertFalse(TorrentSelection(info("one", file("one.iso", 1))).hasFolders, "a single file has no folders")
+    }
 }

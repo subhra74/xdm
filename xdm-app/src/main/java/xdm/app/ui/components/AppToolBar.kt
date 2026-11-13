@@ -124,7 +124,7 @@ class AppToolBar(
                 searchCallback(this.text)
             }
             putClientProperty(FlatClientProperties.STYLE, "arc: 10")
-            putClientProperty("JTextField.placeholderText", "Search")
+            putClientProperty("JTextField.placeholderText", text("SEARCH"))
             putClientProperty(
                 "JTextField.trailingIcon", createIcon(RemixIcon.SEARCH_LINE, 16, Color.GRAY)
             )

@@ -41,8 +41,10 @@ sealed class TorrentSource {
 
 /**
  * The file list of the add-torrent dialog: folders and files as indented rows (folders first, then files,
- * by name), padding files left out, and which files are wanted. Indexes into [TorrentInfo.files] are
- * libtorrent's own file order, which is what [priorities] is in.
+ * by name), padding files left out, which files are wanted, and which folders are folded. Indexes into
+ * [TorrentInfo.files] are libtorrent's own file order, which is what [priorities] is in.
+ *
+ * Folding only hides rows: ticking a folded folder still ticks every file under it.
  */
 class TorrentSelection(val info: TorrentInfo) {
     class Row(
@@ -52,11 +54,52 @@ class TorrentSelection(val info: TorrentInfo) {
         val size: Long,
         /** The files this row stands for: itself, or every file under the folder. */
         val files: IntArray,
+        /** The folder row this one sits in, null at the top. */
+        val parent: Row?,
     )
 
     private val wanted = BooleanArray(info.files.size) { !info.files[it].isPad }
 
+    /** Every row, folded or not. */
     val rows: List<Row> = buildRows()
+
+    private val collapsed = HashSet<Row>()
+
+    /** The rows not inside a folded folder: what the dialog shows. */
+    var visibleRows: List<Row> = rows
+        private set
+
+    init {
+        // A big torrent opens with only its top-level folders unfolded, so its outline fits on screen.
+        if (rows.size > FOLD_ABOVE) rows.filterTo(collapsed) { it.isFolder && it.depth > 0 }
+        updateVisible()
+    }
+
+    val hasFolders: Boolean get() = rows.any { it.isFolder }
+
+    fun isExpanded(row: Row): Boolean = row.isFolder && row !in collapsed
+
+    fun setExpanded(row: Row, on: Boolean) {
+        if (!row.isFolder) return
+        if (on) collapsed.remove(row) else collapsed.add(row)
+        updateVisible()
+    }
+
+    fun toggle(row: Row) = setExpanded(row, !isExpanded(row))
+
+    fun expandAll() {
+        collapsed.clear()
+        updateVisible()
+    }
+
+    fun collapseAll() {
+        rows.filterTo(collapsed) { it.isFolder }
+        updateVisible()
+    }
+
+    private fun updateVisible() {
+        visibleRows = rows.filter { r -> generateSequence(r.parent) { it.parent }.none { it in collapsed } }
+    }
 
     /** Files the user can pick (not padding). */
     val fileCount: Int = info.files.count { !it.isPad }
@@ -100,17 +143,23 @@ class TorrentSelection(val info: TorrentInfo) {
         val out = ArrayList<Row>()
         fun under(node: Node): IntArray =
             (node.files + node.folders.values.flatMap { under(it).toList() }).toIntArray()
-        fun walk(node: Node, depth: Int) {
+        fun walk(node: Node, depth: Int, parent: Row?) {
             for (dir in node.folders.values.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })) {
                 val files = under(dir)
-                out.add(Row(dir.name, depth, true, files.sumOf { info.files[it].size }, files))
-                walk(dir, depth + 1)
+                val row = Row(dir.name, depth, true, files.sumOf { info.files[it].size }, files, parent)
+                out.add(row)
+                walk(dir, depth + 1, row)
             }
             for (i in node.files.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { info.files[it].path })) {
-                out.add(Row(info.files[i].path.substringAfterLast('/'), depth, false, info.files[i].size, intArrayOf(i)))
+                out.add(Row(info.files[i].path.substringAfterLast('/'), depth, false, info.files[i].size, intArrayOf(i), parent))
             }
         }
-        walk(root, 0)
+        walk(root, 0, null)
         return out
+    }
+
+    companion object {
+        /** More rows than this and only the top-level folders start unfolded. */
+        const val FOLD_ABOVE = 300
     }
 }

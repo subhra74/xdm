@@ -33,18 +33,24 @@ import java.awt.Color
 import java.awt.Component
 import java.awt.Cursor
 import java.awt.Dimension
+import java.awt.Graphics
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import java.awt.Window
+import java.awt.event.ActionEvent
+import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import java.io.File
+import javax.swing.AbstractAction
 import javax.swing.Box
 import javax.swing.ButtonGroup
 import javax.swing.BoxLayout
+import javax.swing.Icon
 import javax.swing.JButton
+import javax.swing.JComponent
 import javax.swing.JCheckBox
 import javax.swing.JFrame
 import javax.swing.JLabel
@@ -54,6 +60,7 @@ import javax.swing.JRadioButton
 import javax.swing.JScrollPane
 import javax.swing.JTable
 import javax.swing.JTextField
+import javax.swing.KeyStroke
 import javax.swing.SwingUtilities
 import javax.swing.Timer
 import javax.swing.UIManager
@@ -71,8 +78,9 @@ import javax.swing.table.DefaultTableCellRenderer
  * Name       ubuntu-24.04-desktop-amd64.iso
  * Category   [ None ▾ ] [+]
  * Save to    [ ~/Downloads ▾ ] [📁]
- * [✓] name                          size
- * 3 of 3 files, 4.0 GB · All · None
+ * [✓] ▾ 📁 folder                   size
+ * [✓]     name                       size
+ * 3 of 3 files, 4.0 GB · All · None · Expand all · Collapse all
  * 4.0 GB free on the drive                [ ] Download in order
  *                          [Cancel] [Download Later] [Download]
  * ```
@@ -80,6 +88,8 @@ import javax.swing.table.DefaultTableCellRenderer
  * A .torrent file is parsed at once. For a magnet the file list is fetched from peers (the session starts
  * then, so the DHT bootstrap begins as the dialog opens); Download before it arrives adds the magnet with
  * every file. Closing the dialog cancels the fetch. A torrent already in the list is refused here.
+ *
+ * Folders fold and unfold with their arrow, a double click, or Left/Right on the selected row.
  *
  * An independent frame (docs/windows-and-modality.md), like the batch dialog.
  */
@@ -103,6 +113,12 @@ class AddTorrentDialog(near: Window?, initial: String?) : JFrame() {
     private val storage = StorageStatusLabel(usesTempFolder = false) { _, _ -> }
     private val tableModel = FilesModel()
     private val table = JTable(tableModel)
+    /** Expand all / Collapse all, shown only when the torrent has folders. */
+    private val foldLinks = JPanel().apply {
+        layout = BoxLayout(this, BoxLayout.X_AXIS)
+        isOpaque = false
+        isVisible = false
+    }
 
     /** What the field resolved to, and what is known about it. */
     private var source: TorrentSource? = null
@@ -205,6 +221,19 @@ class AddTorrentDialog(near: Window?, initial: String?) : JFrame() {
             rowHeight = 24.px
             autoResizeMode = JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS
             tableHeader.reorderingAllowed = false
+            addMouseListener(object : MouseAdapter() {
+                override fun mousePressed(e: MouseEvent) = folderClicked(e)
+            })
+            // Left/Right fold and unfold instead of moving between columns.
+            val keys = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+            keys.put(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0), "xdmFold")
+            keys.put(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0), "xdmUnfold")
+            actionMap.put("xdmFold", object : AbstractAction() {
+                override fun actionPerformed(e: ActionEvent) = foldKey(expand = false)
+            })
+            actionMap.put("xdmUnfold", object : AbstractAction() {
+                override fun actionPerformed(e: ActionEvent) = foldKey(expand = true)
+            })
         }
         fun link(key: String, action: () -> Unit) = JLabel(text(key)).apply {
             cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
@@ -213,6 +242,10 @@ class AddTorrentDialog(near: Window?, initial: String?) : JFrame() {
                 override fun mouseClicked(e: MouseEvent) = action()
             })
         }
+        foldLinks.add(Box.createRigidArea(scaledSize(12, 0)))
+        foldLinks.add(link("TORRENT_EXPAND_ALL") { foldAll(expand = true) })
+        foldLinks.add(Box.createRigidArea(scaledSize(12, 0)))
+        foldLinks.add(link("TORRENT_COLLAPSE_ALL") { foldAll(expand = false) })
         val countRow = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.X_AXIS)
             isOpaque = false
@@ -221,6 +254,7 @@ class AddTorrentDialog(near: Window?, initial: String?) : JFrame() {
             add(link("TORRENT_SELECT_ALL") { selectAll(true) })
             add(Box.createRigidArea(scaledSize(12, 0)))
             add(link("TORRENT_SELECT_NONE") { selectAll(false) })
+            add(foldLinks)
         }
         add(JPanel(BorderLayout(0, 4.px)).apply {
             border = ScaledEmptyBorder(0, 10, 6, 10)
@@ -447,8 +481,56 @@ class AddTorrentDialog(near: Window?, initial: String?) : JFrame() {
 
     private fun showSelection(sel: TorrentSelection?) {
         selection = sel
+        foldLinks.isVisible = sel?.hasFolders == true
         tableModel.fireTableDataChanged()
         updateCount()
+    }
+
+    /** Folds or unfolds [row], keeping it the selected row so the keys go on working from there. */
+    private fun fold(row: TorrentSelection.Row, expand: Boolean) {
+        val sel = selection ?: return
+        if (!row.isFolder || sel.isExpanded(row) == expand) return
+        sel.setExpanded(row, expand)
+        tableModel.fireTableDataChanged()
+        select(row)
+    }
+
+    private fun select(row: TorrentSelection.Row) {
+        val i = selection?.visibleRows?.indexOf(row) ?: -1
+        if (i < 0) return
+        table.setRowSelectionInterval(i, i)
+        table.scrollRectToVisible(table.getCellRect(i, 1, true))
+    }
+
+    private fun foldAll(expand: Boolean) {
+        val sel = selection ?: return
+        if (expand) sel.expandAll() else sel.collapseAll()
+        tableModel.fireTableDataChanged()
+    }
+
+    /** A click on a folder's arrow, or a double click anywhere on its name, folds or unfolds it. */
+    private fun folderClicked(e: MouseEvent) {
+        if (!SwingUtilities.isLeftMouseButton(e)) return
+        val viewRow = table.rowAtPoint(e.point)
+        val viewCol = table.columnAtPoint(e.point)
+        if (viewRow < 0 || viewCol < 0 || table.convertColumnIndexToModel(viewCol) != 1) return
+        val row = selection?.visibleRows?.getOrNull(viewRow) ?: return
+        if (!row.isFolder) return
+        val x = e.x - table.getCellRect(viewRow, viewCol, false).x
+        val arrowStart = NameLayout.indent(row.depth)
+        val onArrow = x >= arrowStart - 2.px && x < arrowStart + NameLayout.ARROW_SLOT.px + 2.px
+        if (onArrow && e.clickCount == 1 || e.clickCount == 2) fold(row, !selection!!.isExpanded(row))
+    }
+
+    /** Left folds the selected folder or goes up to its parent; Right unfolds it or steps into it. */
+    private fun foldKey(expand: Boolean) {
+        val sel = selection ?: return
+        val row = sel.visibleRows.getOrNull(table.selectedRow) ?: return
+        when {
+            row.isFolder && sel.isExpanded(row) != expand -> fold(row, expand)
+            !expand -> row.parent?.let { select(it) }
+            row.isFolder -> sel.visibleRows.getOrNull(table.selectedRow + 1)?.takeIf { it.parent === row }?.let { select(it) }
+        }
     }
 
     private fun selectAll(on: Boolean) {
@@ -556,7 +638,7 @@ class AddTorrentDialog(near: Window?, initial: String?) : JFrame() {
 
     private inner class FilesModel : AbstractTableModel() {
         private val columns = arrayOf("", text("TORRENT_COL_NAME"), text("TORRENT_COL_SIZE"))
-        private val rows get() = selection?.rows.orEmpty()
+        private val rows get() = selection?.visibleRows.orEmpty()
 
         override fun getRowCount() = rows.size
         override fun getColumnCount() = columns.size
@@ -584,21 +666,51 @@ class AddTorrentDialog(near: Window?, initial: String?) : JFrame() {
         }
     }
 
-    /** The name column: indented by depth, with a folder or file icon; a partly picked folder is greyed. */
+    /**
+     * The name column: indented by depth, a fold arrow on folders (an empty slot on files, so names line up),
+     * then a folder or file icon; a partly picked folder is greyed.
+     */
     private inner class NameRenderer : DefaultTableCellRenderer() {
         private val folderIcon = createIcon(RemixIcon.FOLDER_FILL, 16, Color(0xE8, 0xB3, 0x3C))
         private val fileIcon = createIcon(RemixIcon.FILE_LINE, 16, Color.GRAY)
+        private val openIcon = ArrowIcon(UIManager.getIcon("Tree.expandedIcon"), folderIcon)
+        private val closedIcon = ArrowIcon(UIManager.getIcon("Tree.collapsedIcon"), folderIcon)
+        private val plainIcon = ArrowIcon(null, fileIcon)
 
         override fun getTableCellRendererComponent(
             table: JTable, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int,
         ): Component {
             val r = value as TorrentSelection.Row
             super.getTableCellRendererComponent(table, r.name, isSelected, hasFocus, row, column)
-            icon = if (r.isFolder) folderIcon else fileIcon
-            border = ScaledEmptyBorder(0, 4 + 16 * r.depth, 0, 4)
+            icon = when {
+                !r.isFolder -> plainIcon
+                selection?.isExpanded(r) == true -> openIcon
+                else -> closedIcon
+            }
+            border = ScaledEmptyBorder(0, NameLayout.INDENT + NameLayout.STEP * r.depth, 0, 4)
             if (!isSelected && selection?.isPartial(r) == true) foreground = UIManager.getColor("Label.disabledForeground")
             return this
         }
+
+        /** [arrow] centred in a fixed slot, then [icon]. */
+        private inner class ArrowIcon(private val arrow: Icon?, private val icon: Icon) : Icon {
+            override fun getIconWidth() = NameLayout.ARROW_SLOT.px + icon.iconWidth
+            override fun getIconHeight() = maxOf(icon.iconHeight, arrow?.iconHeight ?: 0)
+            override fun paintIcon(c: Component?, g: Graphics, x: Int, y: Int) {
+                arrow?.paintIcon(c, g, x + (NameLayout.ARROW_SLOT.px - arrow.iconWidth) / 2, y + (iconHeight - arrow.iconHeight) / 2)
+                icon.paintIcon(c, g, x + NameLayout.ARROW_SLOT.px, y + (iconHeight - icon.iconHeight) / 2)
+            }
+        }
+    }
+
+    private object NameLayout {
+        /** Unscaled left padding, per-level indent and arrow slot width of the name column. */
+        const val INDENT = 2
+        const val STEP = 16
+        const val ARROW_SLOT = 16
+
+        /** Where a row's arrow slot starts in its cell, in pixels. */
+        fun indent(depth: Int) = (INDENT + STEP * depth).px
     }
 
     companion object {
