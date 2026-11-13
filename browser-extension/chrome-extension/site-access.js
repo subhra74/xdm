@@ -11,8 +11,9 @@ window.onload = function () {
         chrome.permissions.request({ origins: ["*://*/*"] }, function (granted) {
             if (chrome.runtime.lastError || !granted) {
                 document.getElementById("detail").textContent =
-                    "Access was not granted. You can also change it under Site access on the " +
-                    "extension's details page (chrome://extensions).";
+                    (typeof chrome !== "undefined" && chrome.i18n && chrome.i18n.getMessage("site_access_denied")) ||
+                    ("Access was not granted. You can also change it under Site access on the " +
+                    "extension's details page (chrome://extensions).");
                 return;
             }
             window.close();

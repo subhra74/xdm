@@ -1,0 +1,435 @@
+{
+  "extName": {
+    "message": "XDM Integration Module",
+    "description": "Name of the Chrome extension"
+  },
+  "extNameFirefox": {
+    "message": "XDM Browser Monitor v9+",
+    "description": "Name of the Firefox extension"
+  },
+  "extDesc": {
+    "message": "Send downloads, videos and page links from Chrome to Xtreme Download Manager (XDM). Works with XDM 9.0 and higher.",
+    "description": "Description of the Chrome extension"
+  },
+  "extDescFirefox": {
+    "message": "Send downloads, videos and page links from Firefox to Xtreme Download Manager (XDM). Works with XDM 9.0 and higher.",
+    "description": "Description of the Firefox extension"
+  },
+  "command_open_bulk": {
+    "message": "Grab all links for this page with XDM",
+    "description": "Keyboard shortcut description"
+  },
+  "menu_download_any": {
+    "message": "Download with XDM",
+    "description": "Context menu for links and media"
+  },
+  "menu_download_image": {
+    "message": "Download Image with XDM",
+    "description": "Context menu for images"
+  },
+  "menu_bulk_page": {
+    "message": "Download all with XDM…",
+    "description": "Context menu for entire page"
+  },
+  "menu_bulk_selection": {
+    "message": "Download selected links with XDM…",
+    "description": "Context menu for selected text/links"
+  },
+  "msg_xdm_not_running": {
+    "message": "XDM isn't running",
+    "description": "Status message when XDM desktop app is closed"
+  },
+  "msg_nothing_to_send": {
+    "message": "Nothing to send",
+    "description": "Error message when no valid items were found to send"
+  },
+  "popup_monitoring_toggle": {
+    "message": "Browser monitoring",
+    "description": "Tooltip and aria label for the monitoring toggle"
+  },
+  "popup_outdated_title": {
+    "message": "Please update XDM",
+    "description": "Header in the update warning banner"
+  },
+  "popup_outdated_desc": {
+    "message": "is older than this extension needs (XDM 9.0.9 or newer). Some downloads and videos may not work.",
+    "description": "Explanation text following the version label in the update banner"
+  },
+  "popup_outdated_link": {
+    "message": "Update XDM",
+    "description": "Link to download the latest XDM"
+  },
+  "popup_empty_title": {
+    "message": "No videos detected on this page",
+    "description": "Empty state title when no videos have been captured yet"
+  },
+  "popup_empty_hint": {
+    "message": "Start playing a video and it will show up here.",
+    "description": "Empty state instructions"
+  },
+  "popup_blocked_title": {
+    "message": "XDM stays off YouTube",
+    "description": "Notice title on YouTube tabs"
+  },
+  "popup_blocked_desc": {
+    "message": "Videos and links on this site are not captured. Downloads here are left to the browser.",
+    "description": "Notice explanation on YouTube tabs"
+  },
+  "popup_btn_more_formats": {
+    "message": "More formats",
+    "description": "Toggle button to show format explanation"
+  },
+  "popup_btn_clear": {
+    "message": "Clear list",
+    "description": "Button to clear captured videos list"
+  },
+  "popup_format_hint": {
+    "message": "XDM captures the quality the page is playing. Pick another quality in the player and it will appear here as a separate item.",
+    "description": "Explanation of how video quality is detected"
+  },
+  "popup_btn_grab_all": {
+    "message": "Grab all links for this page…",
+    "description": "Footer button to open bulk link picker"
+  },
+  "popup_label_previews": {
+    "message": "Video previews",
+    "description": "Toggle label for video thumbnail previews"
+  },
+  "popup_preview_unavailable": {
+    "message": "Preview unavailable",
+    "description": "Tooltip prefix when video preview cannot be loaded"
+  },
+  "bulk_title": {
+    "message": "Download with XDM",
+    "description": "Window title of the bulk download picker"
+  },
+  "bulk_title_selection": {
+    "message": "selected links on ",
+    "description": "Window title modifier when opened for selected text"
+  },
+  "bulk_btn_reload_capture": {
+    "message": "Reload & capture",
+    "description": "Banner action button to reload page and monitor network"
+  },
+  "bulk_btn_dismiss": {
+    "message": "Dismiss",
+    "description": "Button to close the warning banner"
+  },
+  "bulk_tab_links": {
+    "message": "Links",
+    "description": "Tab name for links on the page"
+  },
+  "bulk_tab_resources": {
+    "message": "Images & files",
+    "description": "Tab name for embedded images and page resources"
+  },
+  "bulk_filter_placeholder": {
+    "message": "Filter by name, *.jpg or /regex/",
+    "description": "Search input placeholder in bulk download"
+  },
+  "bulk_filter_aria": {
+    "message": "Filter",
+    "description": "Aria label for the search input"
+  },
+  "bulk_chips_aria": {
+    "message": "File types",
+    "description": "Aria label for category chips container"
+  },
+  "bulk_min_size": {
+    "message": "Min size",
+    "description": "Label for minimum image size filter"
+  },
+  "bulk_px": {
+    "message": "px",
+    "description": "Unit for pixels"
+  },
+  "bulk_min_size_aria": {
+    "message": "Minimum image size in pixels",
+    "description": "Aria label for minimum size input"
+  },
+  "bulk_noise_title": {
+    "message": "Requests the page made by script, and pieces of video streams",
+    "description": "Tooltip for API & streams toggle"
+  },
+  "bulk_noise_label": {
+    "message": "API & streams",
+    "description": "Label for the API and stream segments filter toggle"
+  },
+  "bulk_previews_title": {
+    "message": "Each preview downloads the image again, so it's off by default",
+    "description": "Tooltip for preview images toggle"
+  },
+  "bulk_previews_label": {
+    "message": "Previews",
+    "description": "Label for preview images toggle"
+  },
+  "bulk_select_all_title": {
+    "message": "Select all shown",
+    "description": "Tooltip and aria label for master checkbox"
+  },
+  "bulk_select_all": {
+    "message": "Select all",
+    "description": "Label above the list when nothing is selected"
+  },
+  "bulk_invert": {
+    "message": "Invert",
+    "description": "Button to invert current selection"
+  },
+  "bulk_empty_selection": {
+    "message": "No links or images in the selected part of the page.",
+    "description": "Empty state when opened in selection mode but nothing was selected"
+  },
+  "bulk_empty_page": {
+    "message": "Nothing to download was found on this page.",
+    "description": "Empty state when the page has nothing to download"
+  },
+  "bulk_empty_filters": {
+    "message": "Nothing matches the current filters.",
+    "description": "Empty state when filters hide all items"
+  },
+  "bulk_scanning": {
+    "message": "Scanning page…",
+    "description": "Status text while analyzing page contents"
+  },
+  "bulk_send_hint": {
+    "message": "XDM isn't running. Start it to send these links.",
+    "description": "Warning in footer when XDM is offline"
+  },
+  "bulk_rescan_title": {
+    "message": "Scan the page again",
+    "description": "Tooltip and aria label for rescan button"
+  },
+  "bulk_copy_urls": {
+    "message": "Copy URLs",
+    "description": "Button to copy selected URLs to clipboard"
+  },
+  "bulk_download": {
+    "message": "Download",
+    "description": "Primary action button to send selected items to XDM"
+  },
+  "bulk_download_count": {
+    "message": "Download $COUNT$",
+    "description": "Primary action button with selected item count",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "bulk_reloading_recording": {
+    "message": "Reloading page and recording what it loads…",
+    "description": "Status text during full reload capture"
+  },
+  "bulk_fatal_no_page": {
+    "message": "No page to read.",
+    "description": "Fatal error when target tab cannot be found"
+  },
+  "bulk_fatal_page_closed": {
+    "message": "The page this window was opened for has been closed.",
+    "description": "Fatal error when target tab was closed by user"
+  },
+  "bulk_fatal_cannot_read": {
+    "message": "XDM couldn't read this page.",
+    "description": "Fatal error when content script execution fails"
+  },
+  "bulk_fatal_restricted_kind": {
+    "message": "XDM can't read this kind of page. Browser pages, the Chrome Web Store and the add-on gallery cannot be read by extensions.",
+    "description": "Fatal error on internal/store browser pages"
+  },
+  "bulk_fatal_restricted_access": {
+    "message": "XDM doesn't have access to this site. Open the extension's menu in the toolbar to allow access, then rescan.",
+    "description": "Fatal error when site permissions are missing"
+  },
+  "bulk_fatal_youtube": {
+    "message": "XDM doesn't download from YouTube. Links and videos on this site are left to the browser.",
+    "description": "Fatal error when bulk picker is invoked on YouTube"
+  },
+  "bulk_banner_buffer_full": {
+    "message": "Some files may be missing: this page loaded more than the browser keeps a record of. Reloading the page can capture them.",
+    "description": "Warning banner when Resource Timing buffer was filled"
+  },
+  "bulk_banner_too_many_links": {
+    "message": "This page has a very large number of links; only the first 10,000 are shown.",
+    "description": "Warning banner when page exceeds max link cap"
+  },
+  "bulk_banner_reload_failed": {
+    "message": "Reload & capture failed",
+    "description": "Prefix in banner error when reload capture failed"
+  },
+  "bulk_selected_of_shown": {
+    "message": "$CHOSEN$ of $SHOWN$ selected",
+    "description": "Selection counter above the list",
+    "placeholders": {
+      "chosen": {
+        "content": "$1"
+      },
+      "shown": {
+        "content": "$2"
+      }
+    }
+  },
+  "bulk_select_all_count": {
+    "message": "Select all $SHOWN$",
+    "description": "Master selection label with count",
+    "placeholders": {
+      "shown": {
+        "content": "$1"
+      }
+    }
+  },
+  "bulk_item_ready": {
+    "message": " item ready",
+    "description": "Footer summary for a single selected item"
+  },
+  "bulk_items_ready": {
+    "message": " items ready",
+    "description": "Footer summary for multiple selected items"
+  },
+  "bulk_link_count_single": {
+    "message": " link, ",
+    "description": "Detail in summary for 1 link"
+  },
+  "bulk_link_count_plural": {
+    "message": " links, ",
+    "description": "Detail in summary for multiple links"
+  },
+  "bulk_images_and_files": {
+    "message": " images & files",
+    "description": "Detail in summary for resources"
+  },
+  "bulk_tick_hint": {
+    "message": "Tick the files to download",
+    "description": "Summary prompt when items are available but none selected"
+  },
+  "bulk_toast_copied_single": {
+    "message": "Copied 1 URL to the clipboard. In XDM, choose “Add from clipboard”.",
+    "description": "Toast confirmation when 1 URL is copied"
+  },
+  "bulk_toast_copied_plural": {
+    "message": "Copied $COUNT$ URLs to the clipboard. In XDM, choose “Add from clipboard”.",
+    "description": "Toast confirmation when multiple URLs are copied",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "bulk_toast_copy_failed": {
+    "message": "Couldn't copy to the clipboard",
+    "description": "Toast error prefix when clipboard write fails"
+  },
+  "bulk_toast_send_failed": {
+    "message": "Couldn't send to XDM",
+    "description": "Toast error prefix when sending to XDM fails"
+  },
+  "bulk_toast_sent": {
+    "message": "Sent $COUNT$ to XDM.",
+    "description": "Toast confirmation after sending items to XDM",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "cat_image": {
+    "message": "Images",
+    "description": "Category chip label"
+  },
+  "cat_video": {
+    "message": "Video",
+    "description": "Category chip label"
+  },
+  "cat_audio": {
+    "message": "Audio",
+    "description": "Category chip label"
+  },
+  "cat_document": {
+    "message": "Documents",
+    "description": "Category chip label"
+  },
+  "cat_archive": {
+    "message": "Archives",
+    "description": "Category chip label"
+  },
+  "cat_program": {
+    "message": "Programs",
+    "description": "Category chip label"
+  },
+  "cat_font": {
+    "message": "Fonts",
+    "description": "Category chip label"
+  },
+  "cat_other": {
+    "message": "Other",
+    "description": "Category chip label"
+  },
+  "disabled_title": {
+    "message": "Browser monitoring is turned off",
+    "description": "Heading on the disabled state popup"
+  },
+  "disabled_desc": {
+    "message": "XDM is running, but it is not watching this browser. Turn browser monitoring back on in XDM to capture downloads and videos.",
+    "description": "Body description on the disabled state popup"
+  },
+  "error_status_not_running": {
+    "message": "XDM isn't running",
+    "description": "Heading on error popup when disconnected"
+  },
+  "error_detail_not_running": {
+    "message": "Start XDM to capture downloads and videos from this page.",
+    "description": "Body message on error popup when disconnected"
+  },
+  "error_status_connected": {
+    "message": "Connected to XDM",
+    "description": "Heading on error popup when connection is restored"
+  },
+  "error_detail_connected": {
+    "message": "Click the XDM icon again to see what has been detected on this page.",
+    "description": "Body message on error popup when connection is restored"
+  },
+  "error_version_prefix": {
+    "message": "Works with XDM 9.0.9 and higher. Using an older version?",
+    "description": "Version compatibility notice prefix"
+  },
+  "error_version_link": {
+    "message": "Get the latest XDM",
+    "description": "Link text to download page"
+  },
+  "error_btn_launch": {
+    "message": "Launch XDM",
+    "description": "Button to trigger custom protocol xdm-app://launch"
+  },
+  "site_access_title": {
+    "message": "Site access is restricted",
+    "description": "Heading when extension host permissions are withheld"
+  },
+  "site_access_detail": {
+    "message": "XDM needs to see the requests your browser makes to hand downloads and videos over to it. With access limited to some sites, or to \"On click\", downloads are left to the browser.",
+    "description": "Explanation of required host permissions"
+  },
+  "site_access_btn_allow": {
+    "message": "Allow on all sites",
+    "description": "Button to request all sites host permission"
+  },
+  "site_access_denied": {
+    "message": "Access was not granted. You can also change it under Site access on the extension's details page (chrome://extensions).",
+    "description": "Error message when user denies permission grant"
+  },
+  "error_no_video_decoder": {
+    "message": "This browser cannot decode video frames",
+    "description": "Video preview decoding error"
+  },
+  "error_cannot_decode_codec": {
+    "message": "This browser cannot decode $CODEC$",
+    "description": "Video preview unsupported codec error",
+    "placeholders": {
+      "codec": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_cannot_decode_frames": {
+    "message": "Could not decode the video frames",
+    "description": "Video preview decoding failure"
+  }
+}

@@ -3,22 +3,23 @@
 
 <head>
     <meta charset="utf-8">
+    <script src="i18n.js"></script>
     <script src="error.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
     <header class="app-header">
-        <h1>XDM Integration Module</h1>
+        <h1 data-i18n="extNameFirefox">XDM Browser Monitor v9+</h1>
     </header>
 
     <div class="page-body">
         <div class="notice warn" id="notice">
-            <h2 id="status">XDM isn't running</h2>
-            <p id="detail">Start XDM to capture downloads and videos from this page.</p>
+            <h2 id="status" data-i18n="error_status_not_running">XDM isn't running</h2>
+            <p id="detail" data-i18n="error_detail_not_running">Start XDM to capture downloads and videos from this page.</p>
         </div>
         <div class="button-row" id="actions">
-            <button class="primary-button" id="OpenLink" type="button">Launch XDM</button>
+            <button class="primary-button" id="OpenLink" type="button" data-i18n="error_btn_launch">Launch XDM</button>
         </div>
     </div>
 </body>

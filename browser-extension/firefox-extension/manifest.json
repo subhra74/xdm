@@ -1,7 +1,8 @@
 {
-    "name": "XDM Browser Monitor v9+",
+    "default_locale": "en",
+    "name": "__MSG_extNameFirefox__",
     "browser_action": {
-        "default_title": "XDM Browser Monitor v9+",
+        "default_title": "__MSG_extNameFirefox__",
         "default_icon": {
             "16": "icon16-mono.png",
             "48": "icon48-mono.png",
@@ -10,7 +11,7 @@
     },
     "manifest_version": 2,
     "version": "1.1",
-    "description": "Send downloads, videos and page links from Firefox to Xtreme Download Manager (XDM). Works with XDM 9.0 and higher.",
+    "description": "__MSG_extDescFirefox__",
     "homepage_url": "https://github.com/subhra74/xdm",
     "permissions": [
         "tabs",
@@ -26,7 +27,7 @@
             "suggested_key": {
                 "default": "Alt+Shift+D"
             },
-            "description": "Grab all links for this page with XDM"
+            "description": "__MSG_command_open_bulk__"
         }
     },
     "background": {

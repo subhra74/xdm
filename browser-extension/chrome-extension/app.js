@@ -643,25 +643,25 @@ export default class App {
         chrome.contextMenus.removeAll(() => {
             chrome.contextMenus.create({
                 id: 'download-any-link',
-                title: "Download with XDM",
+                title: chrome.i18n.getMessage("menu_download_any") || "Download with XDM",
                 contexts: ["link", "video", "audio", "all"]
             });
 
             chrome.contextMenus.create({
                 id: 'download-image-link',
-                title: "Download Image with XDM",
+                title: chrome.i18n.getMessage("menu_download_image") || "Download Image with XDM",
                 contexts: ["image"]
             });
 
             chrome.contextMenus.create({
                 id: 'bulk-page',
-                title: "Download all with XDM…",
+                title: chrome.i18n.getMessage("menu_bulk_page") || "Download all with XDM…",
                 contexts: ["page"]
             });
 
             chrome.contextMenus.create({
                 id: 'bulk-selection',
-                title: "Download selected links with XDM…",
+                title: chrome.i18n.getMessage("menu_bulk_selection") || "Download selected links with XDM…",
                 contexts: ["selection"]
             });
         });
@@ -715,12 +715,12 @@ export default class App {
      */
     async sendBatch(request) {
         if (!this.connector.isConnected()) {
-            return { ok: false, notRunning: true, error: "XDM isn't running" };
+            return { ok: false, notRunning: true, error: chrome.i18n.getMessage("msg_xdm_not_running") || "XDM isn't running" };
         }
         let items = Array.isArray(request.items) ? request.items : [];
         items = items.filter(item => item && this.isSupportedProtocol(item.url)).slice(0, MAX_BATCH_ITEMS);
         if (items.length === 0) {
-            return { ok: false, error: "nothing to send" };
+            return { ok: false, error: chrome.i18n.getMessage("msg_nothing_to_send") || "nothing to send" };
         }
         let storeId = await this.cookieStoreOf(request.tabId);
         let jar = await this.loadCookies(items.map(item => new URL(item.url)), storeId);
@@ -752,7 +752,7 @@ export default class App {
         });
         // A failed post marks the connector disconnected, which is the one failure worth telling apart.
         if (!this.connector.isConnected()) {
-            return { ok: false, notRunning: true, error: "XDM isn't running" };
+            return { ok: false, notRunning: true, error: chrome.i18n.getMessage("msg_xdm_not_running") || "XDM isn't running" };
         }
         return { ok: true, count: items.length };
     }

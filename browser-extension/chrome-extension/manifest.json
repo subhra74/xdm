@@ -1,7 +1,8 @@
 {
-    "name": "XDM Integration Module",
+    "default_locale": "en",
+    "name": "__MSG_extName__",
     "action": {
-        "default_title": "XDM Integration Module",
+        "default_title": "__MSG_extName__",
         "default_icon": {
             "16": "icon16-mono.png",
             "48": "icon48-mono.png",
@@ -10,7 +11,7 @@
     },
     "manifest_version": 3,
     "version": "3.5",
-    "description": "Send downloads, videos and page links from Chrome to Xtreme Download Manager (XDM). Works with XDM 9.0 and higher.",
+    "description": "__MSG_extDesc__",
     "homepage_url": "https://github.com/subhra74/xdm",
     "minimum_chrome_version": "103",
     "host_permissions": [
@@ -30,7 +31,7 @@
             "suggested_key": {
                 "default": "Alt+Shift+D"
             },
-            "description": "Grab all links for this page with XDM"
+            "description": "__MSG_command_open_bulk__"
         }
     },
     "background": {
