@@ -44,7 +44,7 @@ private var trayIconRef: TrayIcon? = null
 fun createTray(image: Image): Boolean {
     // Linux panels want a StatusNotifierItem; the AWT tray (XEmbed) is only the fallback, and the
     // Wayland toolkit has none at all.
-    if (detectOS() == OS.Linux && DBusTray.install { size -> logoImage(size) }) {
+    if (detectOS().isXdg && DBusTray.install { size -> logoImage(size) }) {
         return true
     }
     if (!SystemTray.isSupported()) {
@@ -123,7 +123,7 @@ fun showTrayNotification(caption: String, message: String, onClick: (() -> Unit)
         // XDM's own popup: the tray balloon becomes a toast credited to the Java runtime on Windows 10/11.
         detectOS() == OS.Windows -> NotificationPopup.show(caption, text, onClick)
 
-        detectOS() == OS.Linux ->
+        detectOS().isXdg ->
             DBusNotifications.post(caption, text, onClick) {
                 SwingUtilities.invokeLater { showTrayBalloon(caption, text, onFailed) }
             }
@@ -246,21 +246,18 @@ fun isMacPopupTrigger(e: MouseEvent): Boolean {
     return false
 }
 
-fun detectOS(): OS {
-    System.getProperty("os.name")?.let { osName ->
-        return if (osName.contains("windows", ignoreCase = true)) {
-            OS.Windows
-        } else if (osName.contains("mac os", ignoreCase = true)) {
-            OS.MacOS
-        } else {
-            OS.Linux
-        }
-    } ?: return OS.Linux
+/** FreeBSD, OpenBSD, NetBSD, DragonFly and derivatives are all [OS.BSD]. */
+fun detectOS(osName: String? = System.getProperty("os.name")): OS = when {
+    osName == null -> OS.Linux
+    osName.contains("windows", ignoreCase = true) -> OS.Windows
+    osName.contains("mac os", ignoreCase = true) -> OS.MacOS
+    osName.contains("bsd", ignoreCase = true) || osName.contains("dragonfly", ignoreCase = true) -> OS.BSD
+    else -> OS.Linux
 }
 
 /**
  * Shows a native-feeling file/folder picker and returns the selected [File], or null if
- * cancelled. Uses FlatLaf's [SystemFileChooser] (native dialog) on Windows and macOS. On Linux
+ * cancelled. Uses FlatLaf's [SystemFileChooser] (native dialog) on Windows and macOS. On Linux and BSD
  * FlatLaf's in-process native chooser can hang under Wayland, so the desktop's dialog comes from
  * the XDG portal ([PortalFileChooser]) instead, with Swing's [JFileChooser] (places bar from
  * [xdm.app.utils.linux.LinuxPlaces]) when there is no portal or the user chose it in Advanced
@@ -270,7 +267,7 @@ fun chooseFile(
     parent: Component?, directoriesOnly: Boolean, currentDir: File? = null,
     filter: Pair<String, List<String>>? = null
 ): File? {
-    if (detectOS() == OS.Linux && !AppContext.config.swingFileChooser) {
+    if (detectOS().isXdg && !AppContext.config.swingFileChooser) {
         val title = I8N.text(if (directoriesOnly) "CHOOSER_TITLE_FOLDER" else "CHOOSER_TITLE_FILE")
         when (val result = PortalFileChooser.choose(parent, title, directoriesOnly, currentDir, filter)) {
             is PortalFileChooser.Result.Chosen -> return result.file
@@ -278,7 +275,7 @@ fun chooseFile(
             PortalFileChooser.Result.Unavailable -> {}
         }
     }
-    return if (detectOS() == OS.Linux) {
+    return if (detectOS().isXdg) {
         val fc = JFileChooser()
         fc.fileSelectionMode =
             if (directoriesOnly) JFileChooser.DIRECTORIES_ONLY else JFileChooser.FILES_ONLY
@@ -308,7 +305,7 @@ fun openFileExternal(file: String, folder: String?) {
     thread(isDaemon = true, name = "open-file") {
         when (os) {
             OS.Windows -> WinUtils.open(f)
-            OS.Linux -> LinuxUtils.open(f)
+            OS.Linux, OS.BSD -> LinuxUtils.open(f)
             OS.MacOS -> MacUtils.open(f)
             else -> runCatching { Desktop.getDesktop().open(f) }.onFailure { Logger.error(it) }
         }
@@ -327,7 +324,7 @@ fun openFolderExternal(file: String?, folder: String) {
     thread(isDaemon = true, name = "open-folder") {
         when (os) {
             OS.Windows -> WinUtils.openFolder(folder, file)
-            OS.Linux -> LinuxUtils.openFolder(folder, file)
+            OS.Linux, OS.BSD -> LinuxUtils.openFolder(folder, file)
             OS.MacOS -> MacUtils.openFolder(folder, file)
             else -> runCatching { Desktop.getDesktop().open(File(folder)) }.onFailure { Logger.error(it) }
         }
@@ -337,7 +334,7 @@ fun openFolderExternal(file: String?, folder: String) {
 fun initShutdown(){
     when (detectOS()) {
         OS.Windows -> WinUtils.initShutdown()
-        OS.Linux -> LinuxUtils.initShutdown()
+        OS.Linux, OS.BSD -> LinuxUtils.initShutdown()
         OS.MacOS -> MacUtils.initShutdown()
     }
 }

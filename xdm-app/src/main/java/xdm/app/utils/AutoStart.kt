@@ -49,7 +49,7 @@ object AutoStart {
     fun isEnabled(): Boolean = runCatching {
         when (os) {
             OS.MacOS -> macPlist().isFile
-            OS.Linux -> linuxDesktopFile().isFile
+            OS.Linux, OS.BSD -> linuxDesktopFile().isFile
             OS.Windows -> Win32Registry.getString(WIN_RUN_KEY, WIN_VALUE_NAME) != null &&
                 isApproved(Win32Registry.getBinary(WIN_APPROVED_KEY, WIN_VALUE_NAME))
         }
@@ -92,7 +92,7 @@ object AutoStart {
         val cmd = launchCommand() ?: return true
         return when (os) {
             OS.MacOS -> macPlist().readText() == macPlistContent(cmd)
-            OS.Linux -> linuxDesktopFile().readText() == linuxDesktopContent(cmd)
+            OS.Linux, OS.BSD -> linuxDesktopFile().readText() == linuxDesktopContent(cmd)
             OS.Windows -> true
         }
     }
@@ -108,7 +108,7 @@ object AutoStart {
                 f.parentFile?.mkdirs()
                 f.writeText(macPlistContent(cmd))
             }
-            OS.Linux -> {
+            OS.Linux, OS.BSD -> {
                 val f = linuxDesktopFile()
                 f.parentFile?.mkdirs()
                 f.writeText(linuxDesktopContent(cmd))
@@ -122,7 +122,7 @@ object AutoStart {
     private fun disable() {
         when (os) {
             OS.MacOS -> deleteFile(macPlist())
-            OS.Linux -> deleteFile(linuxDesktopFile())
+            OS.Linux, OS.BSD -> deleteFile(linuxDesktopFile())
             OS.Windows -> disableWindows()
         }
         Logger.info("AutoStart: disabled ($os)")

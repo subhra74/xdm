@@ -39,7 +39,7 @@ object WaylandToolkit {
     private const val ENV_OVERRIDE = "XDM_WAYLAND"
 
     /** True on a Linux Wayland session whose runtime has the Wayland toolkit, i.e. the setting can matter. */
-    val isSupported: Boolean by lazy { detectOS() == OS.Linux && isWaylandSession() && runtimeHasToolkit() }
+    val isSupported: Boolean by lazy { detectOS().isXdg && isWaylandSession() && runtimeHasToolkit() }
 
     /** True when this JVM was told to use the Wayland toolkit. */
     val isActive: Boolean
@@ -47,7 +47,7 @@ object WaylandToolkit {
 
     /** Chooses the toolkit for this run. [enabled] is the Advanced setting. Must run before AWT loads. */
     fun apply(enabled: Boolean) {
-        if (detectOS() != OS.Linux) return
+        if (!detectOS().isXdg) return
         System.getProperty(TOOLKIT_PROPERTY)?.takeIf { it.isNotBlank() && it != X_TOOLKIT_DEFAULT }?.let {
             Logger.info("Toolkit", "Using $it from -D$TOOLKIT_PROPERTY")
             return

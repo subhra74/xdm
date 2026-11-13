@@ -145,8 +145,8 @@ object AppMain {
         UIManager.put("SplitPane.dividerSize", 10)
         // KWin can slide a combo popup under the pointer; see WaylandComboBoxUI.
         if (WaylandToolkit.isActive) UIManager.put("ComboBoxUI", WaylandComboBoxUI::class.java.name)
-        // JFileChooser (the fallback to the portal dialog) has no places bar on Linux: give it one.
-        if (detectOS() == OS.Linux) LinuxPlaces.install()
+        // JFileChooser (the fallback to the portal dialog) has no places bar on Linux and BSD: give it one.
+        if (detectOS().isXdg) LinuxPlaces.install()
         // Dialogs made with no owner argument (JDialog(), JOptionPane with a null parent) get Swing's
         // hidden shared frame as owner and take its icon (X11 window manager icon, FlatLaf title pane):
         // without this, the Java cup. A truly ownerless one (JDialog(null as Window?)) does not, and

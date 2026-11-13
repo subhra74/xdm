@@ -1,5 +1,6 @@
 package xdm.app.utils
 
+import xdm.app.OS
 import xdm.app.utils.linux.SessionBus
 import xdm.app.utils.linux.dbus.DBusError
 import xdm.core.util.Logger
@@ -12,7 +13,20 @@ object LinuxUtils {
     // All of these work for an active local desktop session WITHOUT sudo on systemd distros
     // (Debian, Ubuntu, Fedora, etc.) via polkit's default allow_active=yes for power-off.
     // They are tried in order; the first one to exit 0 wins.
-    var shutdownCmds: List<Array<String>> = listOf(
+    private val consoleKitStop = arrayOf(
+        "dbus-send", "--system", "--print-reply",
+        "--dest=org.freedesktop.ConsoleKit", "/org/freedesktop/ConsoleKit/Manager",
+        "org.freedesktop.ConsoleKit.Manager.Stop"
+    )
+
+    // ConsoleKit2, which the BSD desktops run, marks Stop deprecated in favour of PowerOff(boolean).
+    private val consoleKitPowerOff = arrayOf(
+        "dbus-send", "--system", "--print-reply",
+        "--dest=org.freedesktop.ConsoleKit", "/org/freedesktop/ConsoleKit/Manager",
+        "org.freedesktop.ConsoleKit.Manager.PowerOff", "boolean:true"
+    )
+
+    private val linuxShutdownCmds: List<Array<String>> = listOf(
         // Preferred: systemd. Present on all mainstream modern distros.
         arrayOf("systemctl", "poweroff"),
         // Equivalent via logind over D-Bus (works even if `systemctl` isn't on PATH).
@@ -22,12 +36,20 @@ object LinuxUtils {
             "org.freedesktop.login1.Manager.PowerOff", "boolean:true"
         ),
         // Legacy fallback for pre-systemd / ConsoleKit-based systems.
-        arrayOf(
-            "dbus-send", "--system", "--print-reply",
-            "--dest=org.freedesktop.ConsoleKit", "/org/freedesktop/ConsoleKit/Manager",
-            "org.freedesktop.ConsoleKit.Manager.Stop"
-        )
+        consoleKitStop
     )
+
+    // The BSDs have no systemd. ConsoleKit (with polkit) lets the active session power off without
+    // privileges; shutdown(8) and halt(8) need root or, on FreeBSD, the operator group. Absolute
+    // paths because a desktop-launched JVM often has no /sbin in PATH.
+    private val bsdShutdownCmds: List<Array<String>> = listOf(
+        consoleKitPowerOff,
+        consoleKitStop,
+        arrayOf("/sbin/shutdown", "-p", "now"),
+        arrayOf("/sbin/halt", "-p")
+    )
+
+    var shutdownCmds: List<Array<String>> = if (detectOS() == OS.BSD) bsdShutdownCmds else linuxShutdownCmds
 
     fun initShutdown() {
         for (cmd in shutdownCmds) {

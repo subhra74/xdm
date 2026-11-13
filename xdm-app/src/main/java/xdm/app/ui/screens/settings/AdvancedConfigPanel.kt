@@ -154,8 +154,8 @@ class AdvancedConfigPanel : SettingsPanel() {
         // Only a Linux Wayland session on the JetBrains Runtime has a choice; elsewhere it shows off and locked.
         tglWayland.isSelected = WaylandToolkit.isSupported && config.nativeWayland
         tglWayland.isEnabled = WaylandToolkit.isSupported
-        // Only Linux has a portal dialog to opt out of; elsewhere it shows off and locked.
-        val linux = detectOS() == OS.Linux
+        // Only Linux and the BSDs have a portal dialog to opt out of; elsewhere it shows off and locked.
+        val linux = detectOS().isXdg
         tglSwingChooser.isSelected = linux && config.swingFileChooser
         tglSwingChooser.isEnabled = linux
         tglForceIpv4.isSelected = config.forceIpv4
@@ -182,7 +182,7 @@ class AdvancedConfigPanel : SettingsPanel() {
         if (WaylandToolkit.isSupported) {
             config.nativeWayland = tglWayland.isSelected
         }
-        if (detectOS() == OS.Linux) {
+        if (detectOS().isXdg) {
             config.swingFileChooser = tglSwingChooser.isSelected
         }
         config.forceIpv4 = tglForceIpv4.isSelected

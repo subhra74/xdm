@@ -28,7 +28,7 @@ import java.lang.foreign.ValueLayout.JAVA_INT
 internal object X11UiScale {
 
     fun apply() {
-        if (detectOS() != OS.Linux) return
+        if (!detectOS().isXdg) return
         if (System.getenv("DISPLAY").isNullOrBlank()) return
         val preset = listOf("sun.java2d.uiScale", "flatlaf.uiScale").firstOrNull { System.getProperty(it) != null }
             ?: listOf("GDK_SCALE", "J2D_UISCALE").firstOrNull { !System.getenv(it).isNullOrBlank() }

@@ -138,7 +138,7 @@ interface IAppConfig : EngineConfig {
      */
     var nativeWayland: Boolean
     /**
-     * Linux: always use Swing's file chooser instead of the desktop's own dialog through the XDG portal
+     * Linux and BSD: always use Swing's file chooser instead of the desktop's own dialog through the XDG portal
      * (Advanced settings). Off by default. See [xdm.app.utils.linux.PortalFileChooser].
      */
     var swingFileChooser: Boolean

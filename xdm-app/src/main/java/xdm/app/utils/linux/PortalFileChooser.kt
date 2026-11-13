@@ -32,7 +32,7 @@ import kotlin.concurrent.thread
 
 /**
  * The desktop's own file/folder dialog through the XDG desktop portal (`org.freedesktop.portal.FileChooser`),
- * Linux only. The portal backend (GNOME's, KDE's, …) draws it in its own process, so there is no in-process
+ * Linux and BSD. The portal backend (GNOME's, KDE's, …) draws it in its own process, so there is no in-process
  * native dialog to hang, and it works the same on X11, XWayland and native Wayland. See
  * private-docs/docs/linux-file-chooser.md.
  *

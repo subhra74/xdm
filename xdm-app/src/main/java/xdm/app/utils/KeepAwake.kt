@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit
  *             auto-exit when our JVM dies.
  *  - Linux:   `systemd-inhibit --what=idle:sleep --mode=block cat` - a logind inhibitor lock held
  *             for the lifetime of the blocking `cat`.
+ *  - BSD:     nothing, there is no equivalent tool; [acquire] does nothing.
  *
  * Whichever mechanism is used, it is released when XDM exits even if it exits badly: the OS drops
  * a thread's execution state when the process dies, and the helper processes are tied to the JVM's
@@ -73,7 +74,8 @@ object KeepAwake {
         }
     }
 
-    private fun startInhibitor(): Process {
+    /** The helper that holds the lock, or null where there is none (the BSDs): not a failure to log on every download. */
+    private fun startInhibitor(): Process? {
         val command = when (os) {
             OS.MacOS -> listOf("caffeinate", "-i", "-w", ProcessHandle.current().pid().toString())
             OS.Linux -> listOf(
@@ -85,6 +87,7 @@ object KeepAwake {
                 "cat"
             )
             OS.Windows -> throw IllegalStateException("Windows uses WindowsInhibitor")
+            OS.BSD -> return null
         }
         return ProcessBuilder(command)
             .redirectOutput(ProcessBuilder.Redirect.DISCARD)

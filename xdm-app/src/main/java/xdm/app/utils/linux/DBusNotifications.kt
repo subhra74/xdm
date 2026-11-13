@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import javax.imageio.ImageIO
 
 /**
- * Desktop notifications through `org.freedesktop.Notifications` (Linux only). Every desktop has a
+ * Desktop notifications through `org.freedesktop.Notifications` (Linux and BSD). Every desktop has a
  * notification server, GNOME without the AppIndicator extension included, so this works where there is
  * no tray at all. A click on the notification runs its action, or brings up the window.
  */
