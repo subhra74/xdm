@@ -1,20 +1,44 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="popup-document">
 
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>XDM Integration Module</title>
+  <script src="theme.js"></script>
   <script src="preview.js"></script>
   <script src="popup.js"></script>
   <link rel="stylesheet" href="styles.css">
 </head>
 
-<body>
-  <header class="app-header">
-    <h1>XDM Integration Module</h1>
-    <label class="toggle header-toggle" title="Browser monitoring">
-      <input type="checkbox" id="chk" aria-label="Browser monitoring">
-      <span class="track"></span>
-    </label>
+<body class="popup">
+  <header class="app-header popup-header">
+    <img class="brand-icon" src="../icon48.png" width="24" height="24" alt="">
+    <div class="brand-copy">
+      <h1>XDM</h1>
+      <p>Integration Module</p>
+    </div>
+    <div class="popup-toolbar" role="group" aria-label="Extension controls">
+      <button class="toolbar-button" id="clear" type="button" title="Clear list" aria-label="Clear list"
+        aria-expanded="false" aria-controls="clearConfirm" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6m4-6v6" /></svg>
+      </button>
+      <button class="toolbar-button" id="format" type="button" title="More formats" aria-label="More formats"
+        aria-expanded="false" aria-controls="formatHint" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></svg>
+      </button>
+      <button class="toolbar-button" id="settings" type="button" title="Settings" aria-label="Settings"
+        aria-expanded="false" aria-controls="settingsPanel">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-.5 2a8 8 0 0 0-2 1.2l-2-.6-2 3.4L4 10.5a8 8 0 0 0 0 3l-1.5 1.5 2 3.4 2-.6a8 8 0 0 0 2 1.2L9 21h4l.5-2a8 8 0 0 0 2-1.2l2 .6 2-3.4-1.5-1.5a8 8 0 0 0 0-3L20 9l-2-3.4-2 .6A8 8 0 0 0 14 5l-.5-2Z" /><circle cx="11.25" cy="12" r="3" /></svg>
+      </button>
+      <button class="toolbar-button bulk-trigger" id="bulk" type="button" title="Grab all links" aria-label="Grab all links">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 13 4-4m-6 7-1 1a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0m5 1 1-1a4 4 0 0 1 6 6l-4 4a4 4 0 0 1-6 0" transform="translate(1 -1) scale(.92)" /></svg>
+      </button>
+      <label class="toggle header-toggle" title="Browser monitoring">
+        <input type="checkbox" id="chk" aria-label="Browser monitoring">
+        <span class="track" aria-hidden="true"></span>
+      </label>
+    </div>
   </header>
 
   <div class="update-banner" id="outdated" hidden>
@@ -27,36 +51,50 @@
     </div>
   </div>
 
-  <ul class="video-list" id="list"></ul>
+  <section class="popup-card" id="formatHint" aria-labelledby="formatHeading" hidden>
+    <h2 id="formatHeading">More formats</h2>
+    <p>XDM captures the quality the page is playing. Pick another quality in the player and it will
+      appear here as a separate item.</p>
+  </section>
 
-  <div class="empty-state" id="empty" hidden>
-    <svg class="glyph" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      stroke-width="1.5" aria-hidden="true">
-      <rect x="2" y="5" width="20" height="14" rx="2" />
-      <path d="M10 9.5v5l4-2.5-4-2.5z" fill="currentColor" stroke="none" />
-    </svg>
-    <p>No videos detected on this page</p>
-    <p class="hint">Start playing a video and it will show up here.</p>
-  </div>
+  <section class="popup-card" id="clearConfirm" aria-labelledby="clearHeading" hidden>
+    <h2 id="clearHeading">Clear detected media?</h2>
+    <p>This removes the detected items from the list. Downloads already sent to XDM are unaffected.</p>
+    <div class="card-actions">
+      <button class="card-button" id="cancelClear" type="button">Cancel</button>
+      <button class="primary-button" id="confirmClear" type="button">Clear list</button>
+    </div>
+  </section>
 
-  <div class="actions" id="actions" hidden>
-    <button class="text-button" id="format" type="button" aria-expanded="false">More formats</button>
-    <div class="separator"></div>
-    <button class="text-button" id="clear" type="button">Clear list</button>
-  </div>
-  <p class="hint-text" id="formatHint" hidden>
-    XDM captures the quality the page is playing. Pick another quality in the player and it will
-    appear here as a separate item.
-  </p>
-
-  <footer class="app-footer">
-    <button class="text-button footer-action" id="bulk" type="button">Grab all links for this page…</button>
-    <label class="toggle small" id="previewsToggle">
+  <section class="popup-card settings-card" id="settingsPanel" aria-labelledby="settingsHeading" hidden>
+    <h2 id="settingsHeading">Settings</h2>
+    <label class="toggle setting-row">
+      <span>Dark theme</span>
+      <input type="checkbox" id="theme">
+      <span class="track" aria-hidden="true"></span>
+    </label>
+    <label class="toggle setting-row" id="previewsToggle">
       <span>Video previews</span>
       <input type="checkbox" id="previews">
-      <span class="track"></span>
+      <span class="track" aria-hidden="true"></span>
     </label>
-  </footer>
+    <p class="settings-status" id="settingsStatus" role="status" hidden></p>
+  </section>
+
+  <main class="popup-content" aria-label="Detected media">
+    <ul class="video-list" id="list" aria-label="Detected media"></ul>
+
+    <div class="empty-state" id="empty" role="status" tabindex="-1" hidden>
+      <svg class="glyph" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="1.5" aria-hidden="true">
+        <rect x="2" y="5" width="20" height="14" rx="2" />
+        <path d="M10 9.5v5l4-2.5-4-2.5z" fill="currentColor" stroke="none" />
+      </svg>
+      <p>No videos detected on this page</p>
+      <p class="hint">Start playing a video and it will show up here.</p>
+    </div>
+
+  </main>
 
   <!-- One row of the list. Filled in by popup.js with textContent - titles come from web pages. -->
   <template id="rowTemplate">

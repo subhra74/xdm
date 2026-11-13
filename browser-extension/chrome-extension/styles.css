@@ -7,16 +7,20 @@
     color-scheme: light dark;
 
     --bg: #ffffff;
-    --bg-subtle: #f6f7f9;
-    --bg-hover: #f0f2f5;
-    --bg-active: #e6e9ee;
-    --border: #e3e6ea;
-    --text: #1f2328;
-    --text-muted: #646b74;
-    --accent: #2196f3;
-    --accent-hover: #1a82db;
+    --bg-subtle: #f7f9fc;
+    --bg-hover: #eff4fb;
+    --bg-active: #e5edf8;
+    --border: #dce3ed;
+    --control-border: #8794a8;
+    --text: #18263b;
+    --text-muted: #53637a;
+    --accent: #1765ce;
+    --accent-hover: #1055b4;
     --accent-contrast: #ffffff;
-    --focus: #2196f3;
+    --focus: #1765ce;
+    --accent-soft: #edf4ff;
+    --accent-text: #1458b4;
+    --switch-off: #78869a;
 
     --ok-bg: #eaf6ec;
     --ok-border: #2e7d32;
@@ -28,25 +32,30 @@
     --info-border: #2196f3;
     --info-text: #14508c;
 
-    --thumb-from: #dfe3e9;
-    --thumb-to: #c9ced6;
+    --thumb-from: #e2edfc;
+    --thumb-to: #d4e3f7;
 
-    --radius: 6px;
+    --radius: 8px;
+    --motion: 150ms ease;
 }
 
 @media (prefers-color-scheme: dark) {
-    :root {
-        --bg: #1f2126;
-        --bg-subtle: #26282e;
-        --bg-hover: #2d3037;
-        --bg-active: #353941;
-        --border: #383c44;
-        --text: #e8eaed;
-        --text-muted: #a1a7b0;
-        --accent: #4ba3f2;
-        --accent-hover: #6cb5f5;
-        --accent-contrast: #10131a;
-        --focus: #6cb5f5;
+    :root:not([data-theme="light"]) {
+        --bg: #161d29;
+        --bg-subtle: #1b2433;
+        --bg-hover: #222f43;
+        --bg-active: #2a3b53;
+        --border: #334259;
+        --control-border: #7c8da8;
+        --text: #edf3fc;
+        --text-muted: #a8b7cd;
+        --accent: #76b5ff;
+        --accent-hover: #9ac9ff;
+        --accent-contrast: #10233e;
+        --focus: #9ac9ff;
+        --accent-soft: #203653;
+        --accent-text: #a0caff;
+        --switch-off: #73839a;
 
         --ok-bg: #1d2e20;
         --ok-border: #4caf50;
@@ -63,6 +72,40 @@
     }
 }
 
+:root[data-theme="light"] {
+    color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #161d29;
+    --bg-subtle: #1b2433;
+    --bg-hover: #222f43;
+    --bg-active: #2a3b53;
+    --border: #334259;
+    --control-border: #7c8da8;
+    --text: #edf3fc;
+    --text-muted: #a8b7cd;
+    --accent: #76b5ff;
+    --accent-hover: #9ac9ff;
+    --accent-contrast: #10233e;
+    --focus: #9ac9ff;
+    --accent-soft: #203653;
+    --accent-text: #a0caff;
+    --switch-off: #73839a;
+    --ok-bg: #1d2e20;
+    --ok-border: #4caf50;
+    --ok-text: #b7e3ba;
+    --warn-bg: #33270f;
+    --warn-border: #e0a03a;
+    --warn-text: #f0d5a6;
+    --info-bg: #182739;
+    --info-border: #4ba3f2;
+    --info-text: #bcd9f7;
+    --thumb-from: #353943;
+    --thumb-to: #2a2d34;
+}
+
 html,
 body {
     margin: 0;
@@ -71,12 +114,26 @@ body {
 
 body {
     width: 380px;
+    min-height: 500px;
     background: var(--bg);
     color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     font-size: 13px;
-    line-height: 1.45;
+    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+button,
+input {
+    font: inherit;
+}
+
+button {
+    transition: background var(--motion), color var(--motion), border-color var(--motion);
 }
 
 :focus-visible {
@@ -89,23 +146,192 @@ body {
 .app-header {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 12px 16px;
+    gap: 10px;
+    padding: 16px;
     border-bottom: 1px solid var(--border);
 }
 
 .app-header h1 {
     margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+}
+
+.brand-icon {
+    flex: none;
+    object-fit: contain;
+}
+
+.brand-copy {
+    min-width: 0;
+}
+
+.brand-copy p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* The popup has one scroll area. Cards take space from the media list, never the document. */
+.popup-document {
+    overflow: hidden;
+}
+
+body.popup {
+    display: flex;
+    flex-direction: column;
+    height: 560px;
+    max-height: 100vh;
+    overflow: hidden;
+}
+
+.popup-header {
+    flex: none;
+    gap: 6px;
+    padding: 10px 12px;
+}
+
+.popup-header h1 {
+    font-size: 14px;
+}
+
+.popup-header .brand-copy p {
+    font-size: 12px;
+}
+
+.popup-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: auto;
+}
+
+.toolbar-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 30px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.toolbar-button svg {
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.toolbar-button:hover:not(:disabled) {
+    background: var(--bg-hover);
+    color: var(--text);
+}
+
+.toolbar-button[aria-expanded="true"],
+.bulk-trigger {
+    background: var(--accent-soft);
+    color: var(--accent-text);
+}
+
+.toolbar-button:disabled {
+    opacity: .45;
+    cursor: default;
+}
+
+.popup-toolbar .header-toggle {
+    margin-left: 6px;
+}
+
+.popup-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+}
+
+.popup .video-list {
+    max-height: none;
+    overflow: visible;
+    padding-block: 6px;
+}
+
+.popup-card {
+    flex: none;
+    margin: 10px 12px 0;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-subtle);
+    animation: card-enter 160ms ease-out;
+}
+
+.popup-card h2 {
+    margin: 0;
     font-size: 13px;
     font-weight: 600;
-    letter-spacing: 0.01em;
+}
+
+.popup-card p {
+    margin: 6px 0 0;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.card-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.card-button {
+    min-height: 36px;
+    padding: 8px 12px;
+    border: 1px solid var(--control-border);
+    border-radius: var(--radius);
+    background: var(--bg);
+    color: var(--text);
+    cursor: pointer;
+}
+
+.card-button:hover {
+    background: var(--bg-hover);
+}
+
+.setting-row {
+    min-height: 40px;
+    font-size: 13px;
+}
+
+.settings-card h2 {
+    margin-bottom: 4px;
+}
+
+.setting-row + .setting-row {
+    border-top: 1px solid var(--border);
+}
+
+@keyframes card-enter {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 /* ---- video list -------------------------------------------------------- */
 
 .video-list {
     margin: 0;
-    padding: 4px 0;
+    padding: 0 8px 8px;
     list-style: none;
     max-height: 360px;
     overflow-y: auto;
@@ -117,12 +343,12 @@ body {
 
 .video-item {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 10px;
     width: 100%;
-    padding: 9px 16px;
+    padding: 10px 8px;
     border: none;
-    border-radius: 0;
+    border-radius: var(--radius);
     background: transparent;
     color: inherit;
     font: inherit;
@@ -151,8 +377,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 60px;
-    height: 34px;
+    width: 64px;
+    height: 36px;
     overflow: hidden;
     border-radius: 5px;
     /* A dim frame rather than a flat tile, with a hairline so it holds its edge on either theme. */
@@ -169,8 +395,8 @@ body {
     padding-left: 2px;
     box-sizing: border-box;
     border-radius: 50%;
-    background: rgba(0, 0, 0, 0.35);
-    color: #fff;
+    background: var(--accent);
+    color: var(--accent-contrast);
     transition: background 0.15s ease, transform 0.15s ease;
 }
 
@@ -247,25 +473,26 @@ body {
     overflow: hidden;
     font-size: 13px;
     font-weight: 500;
-    word-break: break-word;
+    overflow-wrap: anywhere;
 }
 
 .video-meta {
     display: flex;
     align-items: center;
     gap: 6px;
+    flex-wrap: wrap;
     margin-top: 3px;
     color: var(--text-muted);
-    font-size: 11.5px;
+    font-size: 12px;
 }
 
 /* Container format (mp4, m3u8...), which is what usually tells two captures apart. */
 .format-badge {
     padding: 1px 6px;
     border-radius: 3px;
-    background: var(--bg-active);
-    color: var(--text-muted);
-    font-size: 10px;
+    background: var(--accent-soft);
+    color: var(--accent-text);
+    font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -274,97 +501,33 @@ body {
 /* ---- empty state ------------------------------------------------------- */
 
 .empty-state {
-    padding: 34px 24px;
+    padding: 28px 24px 32px;
     text-align: center;
     color: var(--text-muted);
 }
 
 .empty-state .glyph {
-    color: var(--text-muted);
-    opacity: 0.4;
+    color: var(--accent);
 }
 
 .empty-state p {
     margin: 10px 0 0;
     font-size: 13px;
     color: var(--text);
+    font-weight: 600;
 }
 
 .empty-state .hint {
     margin-top: 4px;
     font-size: 12px;
     color: var(--text-muted);
-}
-
-/* ---- action row and footer --------------------------------------------- */
-
-.actions {
-    display: flex;
-    align-items: center;
-    padding: 6px 8px;
-    border-top: 1px solid var(--border);
-}
-
-.actions[hidden] {
-    display: none;
-}
-
-.text-button {
-    flex: 1;
-    padding: 7px 10px;
-    border: none;
-    border-radius: var(--radius);
-    background: transparent;
-    color: var(--text);
-    font: inherit;
-    font-size: 12.5px;
-    cursor: pointer;
-}
-
-.text-button:hover {
-    background: var(--bg-hover);
-}
-
-.text-button:disabled {
-    opacity: 0.45;
-    cursor: default;
-    background: transparent;
-}
-
-.separator {
-    width: 1px;
-    height: 18px;
-    background: var(--border);
-}
-
-.hint-text {
-    margin: 0;
-    padding: 0 16px 10px;
-    color: var(--text-muted);
-    font-size: 12px;
-}
-
-.hint-text[hidden] {
-    display: none;
-}
-
-.app-footer {
-    padding: 10px 16px;
-    border-top: 1px solid var(--border);
-    background: var(--bg-subtle);
-}
-
-.footer-action {
-    display: block;
-    width: calc(100% + 20px);
-    margin: -4px -10px 6px;
-    text-align: left;
-    font-size: 13px;
+    font-weight: 400;
 }
 
 /* ---- toggle ------------------------------------------------------------ */
 
 .toggle {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -372,6 +535,7 @@ body {
     cursor: pointer;
     font-size: 13px;
     user-select: none;
+    min-height: 32px;
 }
 
 .toggle input {
@@ -387,7 +551,7 @@ body {
     width: 34px;
     height: 20px;
     border-radius: 999px;
-    background: #b9bfc7;
+    background: var(--switch-off);
     transition: background 0.15s ease;
 }
 
@@ -417,28 +581,11 @@ body {
     outline-offset: 2px;
 }
 
-/* Browser monitoring: a bare switch at the right of the header; its name is in the tooltip. */
 .header-toggle {
     margin-left: auto;
-}
-
-/* A secondary setting, so a smaller switch than the monitoring one. */
-.toggle.small {
-    font-size: 12.5px;
-}
-
-.toggle.small .track {
-    width: 26px;
-    height: 15px;
-}
-
-.toggle.small .track::after {
-    width: 11px;
-    height: 11px;
-}
-
-.toggle.small input:checked ~ .track::after {
-    transform: translateX(11px);
+    gap: 8px;
+    color: var(--text-muted);
+    font-size: 12px;
 }
 
 /* ---- status pages (error.html, disabled.html, site-access.html) -------- */
@@ -448,9 +595,9 @@ body {
 }
 
 .notice {
-    padding: 12px 14px;
+    padding: 16px;
     border-left: 3px solid var(--info-border);
-    border-radius: 0 var(--radius) var(--radius) 0;
+    border-radius: var(--radius);
     background: var(--info-bg);
     color: var(--info-text);
 }
@@ -464,7 +611,7 @@ body {
 .notice p {
     margin: 4px 0 0;
     font-size: 12.5px;
-    opacity: 0.9;
+    overflow-wrap: anywhere;
 }
 
 .notice p.version-hint {
@@ -483,6 +630,7 @@ body {
 
 /* Popup: XDM is older than the extension expects. */
 .update-banner {
+    flex: none;
     padding: 10px 12px 0;
 }
 
@@ -518,6 +666,7 @@ body {
 }
 
 .primary-button {
+    min-height: 36px;
     padding: 8px 16px;
     border: none;
     border-radius: var(--radius);
@@ -531,4 +680,19 @@ body {
 
 .primary-button:hover {
     background: var(--accent-hover);
+}
+
+.primary-button:focus-visible {
+    outline: 2px solid var(--accent-contrast);
+    outline-offset: -4px;
+    box-shadow: 0 0 0 2px var(--focus);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation: none !important;
+        transition: none !important;
+    }
 }
