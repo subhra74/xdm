@@ -474,7 +474,8 @@ class HttpDownloaderTask : ChunkController {
                 break
             }
             context.chunks[chunk]?.let {
-                it.status.set(ChunkStatus.Downloading)
+                // Ready until its connection is up, when the retriever makes it Downloading.
+                it.status.set(ChunkStatus.Ready)
                 startChunk(chunk)
                 count += 1
             }
@@ -494,7 +495,8 @@ class HttpDownloaderTask : ChunkController {
             var started = 0
             unfinished.forEach { chunk ->
                 if (started < maxChunk && !waitsForFill) {
-                    chunk.status.set(ChunkStatus.Downloading)
+                    // Ready until its connection is up, when the retriever makes it Downloading.
+                    chunk.status.set(ChunkStatus.Ready)
                     startChunk(chunk.id)
                     started++
                 } else {

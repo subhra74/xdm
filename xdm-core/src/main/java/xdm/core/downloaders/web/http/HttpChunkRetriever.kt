@@ -79,6 +79,8 @@ class HttpChunkRetriever(
                         val len = res.contentLength ?: -1L
                         if (len > 0) maxByteRange = data.offset + len
                         Logger.info("XDM", "Chunk connected $id")
+                        // Ready (shown as Connecting) until now; one finished or failed meanwhile keeps its status.
+                        context.chunks[id]?.status?.compareAndSet(ChunkStatus.Ready, ChunkStatus.Downloading)
                         controller.onChunkConnected(
                             id,
                             if (!context.init.get()) ChunkConfirmedData(
