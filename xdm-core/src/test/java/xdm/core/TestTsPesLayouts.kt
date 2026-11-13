@@ -12,7 +12,7 @@ import xdm.core.media.muxer.transmux.es.Ac3Reader
 import xdm.core.media.muxer.transmux.es.ElementaryStreamReader
 import xdm.core.media.muxer.transmux.es.H264Reader
 import xdm.core.media.muxer.transmux.es.H265Reader
-import xdm.core.media.muxer.transmux.mp4.presentationEnd
+import xdm.core.media.muxer.transmux.sample.presentationEnd
 import xdm.core.media.muxer.transmux.sample.Codec
 import xdm.core.media.muxer.transmux.sample.SampleTable
 import xdm.core.media.muxer.transmux.ts.TsDemuxer

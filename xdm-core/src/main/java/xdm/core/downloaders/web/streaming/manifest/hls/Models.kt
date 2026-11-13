@@ -56,4 +56,6 @@ data class HlsMediaSegment(
     val iv: String? = null,
     val encrypted: Boolean,
     val discontinuity: Boolean = false,
+    /** An `EXT-X-MAP` initialization section, listed in front of the media segments it applies to. */
+    val init: Boolean = false,
 )

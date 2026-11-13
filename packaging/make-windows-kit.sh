@@ -49,6 +49,22 @@ cp packaging/module/module-info.java        "$KIT/packaging/module/"
 cp packaging/setup-windows.ps1              "$KIT/packaging/"
 cp packaging/jit-directives.json            "$KIT/packaging/"
 cp packaging/jdk.properties                 "$KIT/packaging/"
+# The torrent libraries travel in the kit (packaging\torrent\bin\windows-<arch>\xdmtorrent.dll), taken from this
+# machine's cache (packaging/torrent/fetch-binaries.sh puts them there); build-bundle.ps1 uses them through
+# fetch-binaries.ps1. Static CRT: no Visual C++ runtime to ship with them.
+mkdir -p "$KIT/packaging/torrent"
+cp packaging/torrent/fetch-binaries.ps1 packaging/torrent/binaries.lock "$KIT/packaging/torrent/"
+TORRENT_CACHE="${XDM_TORRENT_BIN:-$HOME/.cache/xdm-torrent/bin}"
+for arch in x64 arm64; do
+  dll="$TORRENT_CACHE/windows-$arch/xdmtorrent.dll"
+  if [[ ! -f "$dll" ]]; then
+    echo "Missing $dll: run packaging/torrent/fetch-binaries.sh --platform windows-$arch (or --local)" >&2
+    exit 1
+  fi
+  mkdir -p "$KIT/packaging/torrent/bin/windows-$arch"
+  cp "$dll" "$KIT/packaging/torrent/bin/windows-$arch/"
+  echo ">> torrent library windows-$arch: $(shasum -a 256 "$dll" | cut -d' ' -f1)"
+done
 cp packaging/icons/xdm.ico                  "$KIT/packaging/icons/"
 cp packaging/windows/xdm.wxs packaging/windows/gpl-3.0.rtf "$KIT/packaging/windows/"
 cp packaging/windows/resources/xdm-app.properties "$KIT/packaging/windows/resources/"
@@ -83,7 +99,8 @@ signed, so run them through -ExecutionPolicy Bypass as shown.
    powershell -ExecutionPolicy Bypass -File packaging\\build-bundle.ps1 -Arch x64 -Type msi
 
    The AppCDS archive is dumped from the class list recorded on the Mac;
-   nothing is recorded here.
+   nothing is recorded here. The torrent library for each architecture is in
+   packaging\\torrent\\bin\\windows-<arch>\\ (no Visual C++ runtime needed).
 
    $CDS_NOTE
 

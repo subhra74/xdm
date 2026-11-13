@@ -107,6 +107,29 @@ private fun readHlsChunk(r: DataInputStream): StreamingChunk {
     )
 }
 
+/**
+ * Each chunk's playlist timing (duration, discontinuity section, init flag), in chunk order. Added after
+ * the positional fields, so it is written last and read only when a state has it.
+ */
+private fun writeChunkTimeline(chunks: List<StreamingChunk>, out: DataOutputStream) {
+    out.writeInt(chunks.size)
+    for (c in chunks) {
+        out.writeDouble(c.duration)
+        out.writeInt(c.discontinuity)
+        out.writeBoolean(c.init)
+    }
+}
+
+private fun readChunkTimeline(r: DataInputStream, chunks: List<StreamingChunk>) {
+    val count = r.readInt()
+    for (i in 0 until count) {
+        val duration = r.readDouble()
+        val discontinuity = r.readInt()
+        val init = r.readBoolean()
+        chunks.getOrNull(i)?.let { c -> c.duration = duration; c.discontinuity = discontinuity; c.init = init }
+    }
+}
+
 private fun readStreamingChunks(r: DataInputStream): ArrayList<StreamingChunk> {
     val count = r.readInt()
     val chunkMap = ArrayList<StreamingChunk>()
@@ -191,6 +214,9 @@ private fun writeHlsContext(context: HlsTaskContext, out: DataOutputStream) {
         out.writeBoolean(encrypted)
         out.writeBoolean(discontinuous)
         out.writeNullableLongString(muxOutputPath)
+        // Added later, so it goes last: older states end before it.
+        out.writeNullableLongString(muxedContainer)
+        writeChunkTimeline(chunks, out)
     }
 }
 
@@ -214,6 +240,9 @@ private fun writeDashContext(context: DashTaskContext, out: DataOutputStream) {
         out.writeLongString(audioMime)
         out.writeLongString(videoMime)
         out.writeNullableLongString(muxOutputPath)
+        // Added later, so it goes last: older states end before it.
+        out.writeNullableLongString(muxedContainer)
+        writeChunkTimeline(chunks, out)
     }
 }
 
@@ -270,7 +299,11 @@ private fun readHlsContext(r: DataInputStream, http: PoolingHttpClient, host: Do
         encrypted = r.readBoolean(),
         discontinuous = r.readBoolean(),
         muxOutputPath = r.readNullableLongString(),
-    ).also { Logger.info("XDM", "Restored state for download $id") }
+    ).also {
+        if (r.available() > 0) it.muxedContainer = r.readNullableLongString()
+        if (r.available() > 0) readChunkTimeline(r, it.chunks)
+        Logger.info("XDM", "Restored state for download $id")
+    }
 }
 
 private fun readDashContext(r: DataInputStream, http: PoolingHttpClient, host: DownloadHost): DashTaskContext {
@@ -296,7 +329,11 @@ private fun readDashContext(r: DataInputStream, http: PoolingHttpClient, host: D
         videoMime = r.readLongString(),
         muxOutputPath = r.readNullableLongString(),
         downloadHost = host,
-    ).also { Logger.info("XDM", "Restored state for download $id") }
+    ).also {
+        if (r.available() > 0) it.muxedContainer = r.readNullableLongString()
+        if (r.available() > 0) readChunkTimeline(r, it.chunks)
+        Logger.info("XDM", "Restored state for download $id")
+    }
 }
 
 @Synchronized

@@ -470,8 +470,23 @@ export default class App {
             tabUrl: observed.tabUrl,
             tabId: observed.tabId
         };
-        this.logger.log(data);
-        this.connector.postMessage("/download", data);
+        // The link the browser was redirected from (a site's download link in front of a signed,
+        // short-lived file URL): XDM asks it again for a fresh URL when the one it has expires. It
+        // gets that host's own cookies, not the ones the file's host was sent.
+        let sourceUrl = download.url !== observed.url && /^https?:/i.test(download.url || "") ? download.url : undefined;
+        if (!sourceUrl) {
+            this.logger.log(data);
+            this.connector.postMessage("/download", data);
+            return;
+        }
+        data.sourceUrl = sourceUrl;
+        chrome.cookies.getAll({ "url": sourceUrl }, cookies => {
+            if (!chrome.runtime.lastError && cookies && cookies.length > 0) {
+                data.sourceCookie = cookies.map(cookie => cookie.name + "=" + cookie.value).join("; ");
+            }
+            this.logger.log(data);
+            this.connector.postMessage("/download", data);
+        });
     }
 
     // For the context menu only: those links were never requested by the browser, so there is no

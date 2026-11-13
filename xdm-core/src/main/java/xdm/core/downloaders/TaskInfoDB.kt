@@ -29,9 +29,13 @@ private const val F_COOKIE = 8
 private const val F_HEADERS = 9
 private const val F_ORIGIN = 10
 private const val F_TYPE = 11
+/** [ExtractorSource]: where an external extractor got the links. HTTP, HLS and DASH. */
+private const val F_EXTRACTOR = 12
 
 private const val HTTP_KNOWN_FILE_SIZE = 20
 private const val HTTP_CONVERT_TO_SRT = 21
+private const val HTTP_SOURCE_URL = 22
+private const val HTTP_SOURCE_COOKIE = 23
 
 private const val HLS_AUDIO_URL = 20
 private const val HLS_AUDIO_ONLY = 21
@@ -56,6 +60,17 @@ private const val BATCH_COOKIE = 7
 private const val BATCH_ITEM = 8
 private const val BATCH_TEMP_DIR = 9
 
+// Torrent: own numbering like Batch (F_TYPE shared).
+private const val TORRENT_ID = 1
+private const val TORRENT_KEY = 2
+private const val TORRENT_NAME = 3
+private const val TORRENT_FOLDER = 4
+private const val TORRENT_MAGNET = 5
+private const val TORRENT_CATEGORY_ID = 6
+private const val TORRENT_FILE_PRIORITIES = 7
+private const val TORRENT_SEQUENTIAL = 8
+private const val TORRENT_ORIGIN = 9
+
 // BatchItem
 private const val ITEM_URL = 1
 private const val ITEM_FILE_NAME = 2
@@ -68,6 +83,15 @@ private const val ITEM_AUDIO_URL = 6
 private const val SEG_URL = 1
 private const val SEG_RANGE_START = 2
 private const val SEG_RANGE_END = 3
+private const val SEG_DURATION = 4
+private const val SEG_INIT = 5
+
+// ExtractorSource.
+private const val EX_EXTRACTOR = 1
+private const val EX_PAGE_URL = 2
+private const val EX_FORMAT_ID = 3
+private const val EX_CONTAINER = 4
+private const val EX_PIECES = 5
 
 // SubtitleTrack.
 private const val SUB_NAME = 1
@@ -122,6 +146,9 @@ private fun TagReader.headers(): HeaderMap {
 private fun TagWriter.dashSegment(no: Int, seg: DashSegment) = message(no) {
     string(SEG_URL, seg.url.toString())
     seg.range?.let { long(SEG_RANGE_START, it.first); long(SEG_RANGE_END, it.second) }
+    // Milliseconds: the tagged format has no floating-point type.
+    if (seg.duration > 0) long(SEG_DURATION, Math.round(seg.duration * 1000))
+    if (seg.init) long(SEG_INIT, 1)
 }
 
 private fun TagReader.dashSegment(): DashSegment {
@@ -129,16 +156,20 @@ private fun TagReader.dashSegment(): DashSegment {
     var url = ""
     var start: Long? = null
     var end: Long? = null
+    var durationMs = 0L
+    var init = false
     while (true) {
         when (r.next()) {
             -1 -> break
             SEG_URL -> url = r.string()
             SEG_RANGE_START -> start = r.long()
             SEG_RANGE_END -> end = r.long()
+            SEG_DURATION -> durationMs = r.long()
+            SEG_INIT -> init = r.long() != 0L
             else -> r.skip()
         }
     }
-    return DashSegment(url.toHttpUrl(), if (start != null && end != null) Pair(start, end) else null)
+    return DashSegment(url.toHttpUrl(), if (start != null && end != null) Pair(start, end) else null, durationMs / 1000.0, init)
 }
 
 private fun TagWriter.subtitle(no: Int, track: SubtitleTrack) = message(no) {
@@ -173,6 +204,38 @@ private fun TagReader.subtitle(): SubtitleTrack {
     return SubtitleTrack(name, language, playlistUrl, segments, isDefault, forced)
 }
 
+private fun TagWriter.extractor(no: Int, source: ExtractorSource?) {
+    source ?: return
+    message(no) {
+        string(EX_EXTRACTOR, source.extractor)
+        string(EX_PAGE_URL, source.pageUrl)
+        source.formatIds.forEach { string(EX_FORMAT_ID, it) }
+        stringOrNull(EX_CONTAINER, source.container)
+        if (source.pieces) bool(EX_PIECES, true)
+    }
+}
+
+private fun TagReader.extractor(): ExtractorSource {
+    val r = message()
+    var extractor = ""
+    var pageUrl = ""
+    val formatIds = ArrayList<String>()
+    var container: String? = null
+    var pieces = false
+    while (true) {
+        when (r.next()) {
+            -1 -> break
+            EX_PIECES -> pieces = r.bool()
+            EX_EXTRACTOR -> extractor = r.string()
+            EX_PAGE_URL -> pageUrl = r.string()
+            EX_FORMAT_ID -> formatIds.add(r.string())
+            EX_CONTAINER -> container = r.string()
+            else -> r.skip()
+        }
+    }
+    return ExtractorSource(extractor, pageUrl, formatIds, container, pieces)
+}
+
 /** Fields 1..19, shared by the HTTP, HLS and DASH records. */
 private class CommonFields {
     var id = 0L
@@ -186,6 +249,7 @@ private class CommonFields {
     var headers: HeaderMap? = null
     var origin: String? = null
     var type = 0
+    var extractor: ExtractorSource? = null
 
     /** Reads field [no] if it is a shared one; false for any other field, which the caller handles. */
     fun read(no: Int, r: TagReader): Boolean {
@@ -201,6 +265,7 @@ private class CommonFields {
             F_HEADERS -> headers = r.headers()
             F_ORIGIN -> origin = r.string()
             F_TYPE -> type = r.int()
+            F_EXTRACTOR -> extractor = r.extractor()
             else -> return false
         }
         return true
@@ -213,6 +278,7 @@ private class CommonFields {
 private fun TagWriter.common(
     type: DownloadType, id: Long, url: String, fileName: String, respectFileName: Boolean, categoryId: String?,
     targetFolder: String, maxPiece: Int, cookie: String?, headers: HeaderMap?, origin: String?,
+    extractor: ExtractorSource?,
 ) {
     int(F_TYPE, type.id)
     long(F_ID, id)
@@ -228,6 +294,7 @@ private fun TagWriter.common(
     // Credentials such as Authorization stay in memory only.
     headers(F_HEADERS, SensitiveHeaders.strip(id, headers))
     stringOrNull(F_ORIGIN, origin)
+    extractor(F_EXTRACTOR, extractor)
 }
 
 /**
@@ -241,6 +308,8 @@ class TaskInfoDB(private val configDir: String) {
             val c = CommonFields()
             var knownFileSize: Long? = null
             var convertToSrt = false
+            var sourceUrl: String? = null
+            var sourceCookie: String? = null
             while (true) {
                 val no = r.next()
                 if (no == -1) break
@@ -248,6 +317,8 @@ class TaskInfoDB(private val configDir: String) {
                 when (no) {
                     HTTP_KNOWN_FILE_SIZE -> knownFileSize = r.long()
                     HTTP_CONVERT_TO_SRT -> convertToSrt = r.bool()
+                    HTTP_SOURCE_URL -> sourceUrl = r.string()
+                    HTTP_SOURCE_COOKIE -> sourceCookie = r.string()
                     else -> r.skip()
                 }
             }
@@ -266,6 +337,9 @@ class TaskInfoDB(private val configDir: String) {
                 authInfo = null,
                 knownFileSize = knownFileSize,
                 convertToSrt = convertToSrt,
+                extractor = c.extractor,
+                sourceUrl = sourceUrl,
+                sourceCookie = sourceCookie,
             )
         }
         return null
@@ -311,6 +385,7 @@ class TaskInfoDB(private val configDir: String) {
                 tempDir = tempDir,
                 independent = independent,
                 subtitles = subtitles,
+                extractor = c.extractor,
             )
         }
         return null
@@ -359,6 +434,7 @@ class TaskInfoDB(private val configDir: String) {
                 audioMime = audioMime,
                 videoMime = videoMime,
                 subtitles = subtitles,
+                extractor = c.extractor,
             )
         }
         return null
@@ -371,10 +447,12 @@ class TaskInfoDB(private val configDir: String) {
                 common(
                     DownloadType.Http,
                     task.id, task.url, task.fileName, task.respectFileName, task.categoryId,
-                    task.targetFolder, task.maxPiece, task.cookie, task.headers, task.origin,
+                    task.targetFolder, task.maxPiece, task.cookie, task.headers, task.origin, task.extractor,
                 )
                 task.knownFileSize?.let { long(HTTP_KNOWN_FILE_SIZE, it) }
                 if (task.convertToSrt) bool(HTTP_CONVERT_TO_SRT, true)
+                task.sourceUrl?.let { string(HTTP_SOURCE_URL, it) }
+                task.sourceCookie?.let { string(HTTP_SOURCE_COOKIE, it) }
             }
         }.onFailure { Logger.error("XDM", "Error saving task info ${task.id}", it) }.isSuccess
 
@@ -384,7 +462,7 @@ class TaskInfoDB(private val configDir: String) {
                 common(
                     DownloadType.Hls,
                     task.id, task.url, task.fileName, task.respectFileName, task.categoryId,
-                    task.targetFolder, task.maxPiece, task.cookie, task.headers, task.origin,
+                    task.targetFolder, task.maxPiece, task.cookie, task.headers, task.origin, task.extractor,
                 )
                 stringOrNull(HLS_AUDIO_URL, task.audioUrl)
                 bool(HLS_AUDIO_ONLY, task.audioOnly)
@@ -401,7 +479,7 @@ class TaskInfoDB(private val configDir: String) {
                 common(
                     DownloadType.Dash,
                     task.id, task.url, task.fileName, task.respectFileName, task.categoryId,
-                    task.targetFolder, task.maxPiece, task.cookie, task.headers, task.origin,
+                    task.targetFolder, task.maxPiece, task.cookie, task.headers, task.origin, task.extractor,
                 )
                 string(DASH_TEMP_DIR, task.tempDir)
                 task.audioSegments.forEach { dashSegment(DASH_AUDIO_SEGMENT, it) }
@@ -514,6 +592,68 @@ class TaskInfoDB(private val configDir: String) {
             }
         }.onFailure { Logger.error("XDM", "Error saving task info ${task.id}", it) }
     }
+
+    fun getTorrentTask(id: Long): TorrentDownloadTaskInfo? {
+        AtomicIO.readTransacted("task-$id.info", configDir) { input ->
+            val r = TaggedFile.read(input)
+            var type = 0
+            var taskId = 0L
+            var key = ""
+            var name = ""
+            var folder = ""
+            var magnet: String? = null
+            var categoryId: String? = null
+            var priorities = ByteArray(0)
+            var sequential = false
+            var origin: String? = null
+            while (true) {
+                when (r.next()) {
+                    -1 -> break
+                    F_TYPE -> type = r.int()
+                    TORRENT_ID -> taskId = r.long()
+                    TORRENT_KEY -> key = r.string()
+                    TORRENT_NAME -> name = r.string()
+                    TORRENT_FOLDER -> folder = r.string()
+                    TORRENT_MAGNET -> magnet = r.string()
+                    TORRENT_CATEGORY_ID -> categoryId = r.string()
+                    TORRENT_FILE_PRIORITIES -> priorities = r.bytes()
+                    TORRENT_SEQUENTIAL -> sequential = r.bool()
+                    TORRENT_ORIGIN -> origin = r.string()
+                    else -> r.skip()
+                }
+            }
+            if (type != DownloadType.Torrent.id) return null
+            return TorrentDownloadTaskInfo(
+                id = taskId,
+                key = key,
+                name = name,
+                folder = folder,
+                magnet = magnet,
+                categoryId = categoryId,
+                filePriorities = priorities,
+                sequential = sequential,
+                origin = origin,
+            )
+        }
+        return null
+    }
+
+    /** Returns whether the task info reached the disk. */
+    fun saveTorrentTask(task: TorrentDownloadTaskInfo): Boolean =
+        AtomicIO.writeTransacted("task-${task.id}.info", configDir, ownerOnly = true) { out ->
+            TaggedFile.write(out) {
+                int(F_TYPE, DownloadType.Torrent.id)
+                long(TORRENT_ID, task.id)
+                string(TORRENT_KEY, task.key)
+                string(TORRENT_NAME, task.name)
+                string(TORRENT_FOLDER, task.folder)
+                stringOrNull(TORRENT_MAGNET, task.magnet)
+                stringOrNull(TORRENT_CATEGORY_ID, task.categoryId)
+                if (task.filePriorities.isNotEmpty()) bytes(TORRENT_FILE_PRIORITIES, task.filePriorities)
+                if (task.sequential) bool(TORRENT_SEQUENTIAL, true)
+                stringOrNull(TORRENT_ORIGIN, task.origin)
+            }
+        }.onFailure { Logger.error("XDM", "Error saving task info ${task.id}", it) }.isSuccess
 
     fun deleteRecord(id: Long) {
         SensitiveHeaders.forget(id)

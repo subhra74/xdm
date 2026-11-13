@@ -1,5 +1,8 @@
 package xdm.app
 
+import xdm.app.torrent.TorrentClients
+import xdm.app.update.UpdateChecker
+
 import xdm.app.ui.components.SortKey
 import xdm.capture.MediaFilter
 import xdm.core.CoreConfig
@@ -156,6 +159,36 @@ interface IAppConfig : EngineConfig {
     var completeSoundFile: String
     /** A user-chosen WAV played when a download fails; blank means the built-in one. */
     var failedSoundFile: String
+    override var torrentSeedAfterFinish: Boolean
+    override var torrentSeedRatioLimit: Float
+    override var torrentSeedTimeLimitMinutes: Int
+    /** The torrent progress window opens with its tabs (More) shown, as the user last left it. */
+    var torrentProgressMore: Boolean
+    /** The download progress window opens with its segment table (More) shown, as the user last left it. */
+    var progressMore: Boolean
+    /** The client identity id ([xdm.app.torrent.TorrentClients]); libtorrent's own by default. */
+    var torrentClient: String
+    override var torrentKeepSession: Boolean
+    override var torrentAddTrackers: Boolean
+    override var torrentTrackerList: String
+    override var torrentPex: Boolean
+    override var torrentPort: Int
+    override var torrentPortMapping: Boolean
+    override var torrentDht: Boolean
+    override var torrentLsd: Boolean
+    override var torrentEncryption: Int
+    override var torrentDownloadLimit: Int
+    override var torrentUploadLimit: Int
+    /** Video download: yt-dlp picked with "Use my own…"; blank means look it up (ExternalTools). */
+    var ytDlpPath: String
+    /** The ffmpeg that merges downloads when [useFfmpegMuxer] is on (Settings > Advanced). */
+    var ffmpegPath: String
+    /** Merge HLS, DASH, batch and Video download tracks with [ffmpegPath] instead of the built-in muxer. */
+    var useFfmpegMuxer: Boolean
+    /** Video download: deno picked with "Use my own…"; blank means look it up. */
+    var denoPath: String
+    /** Video download: extra yt-dlp arguments, split like a command line. */
+    var ytDlpExtraArgs: String
     fun applyAuthConfig()
 
     /**
@@ -230,6 +263,30 @@ private const val F_DETECT_SUBTITLES = 56
 private const val F_SAVE_SUBTITLES_AS_SRT = 57
 private const val F_FORCE_IPV4 = 58
 private const val F_COMMAND_RULES = 59
+private const val F_TORRENT_SEED_AFTER_FINISH = 60
+/** Permille (1.0 = 1000): the format has no float. */
+private const val F_TORRENT_SEED_RATIO_PERMILLE = 61
+private const val F_TORRENT_SEED_MINUTES = 62
+private const val F_TORRENT_PROGRESS_MORE = 67
+private const val F_TORRENT_PORT = 68
+private const val F_TORRENT_PORT_MAPPING = 69
+private const val F_TORRENT_DHT = 70
+private const val F_TORRENT_LSD = 71
+private const val F_TORRENT_ENCRYPTION = 72
+private const val F_TORRENT_DOWNLOAD_LIMIT = 73
+private const val F_TORRENT_UPLOAD_LIMIT = 74
+private const val F_TORRENT_CLIENT = 75
+private const val F_TORRENT_KEEP_SESSION = 76
+private const val F_TORRENT_ADD_TRACKERS = 77
+private const val F_TORRENT_TRACKER_LIST = 78
+private const val F_TORRENT_PEX = 79
+private const val F_USE_FFMPEG_MUXER = 80
+private const val F_PROGRESS_MORE = 81
+// 63-66 video download (yt-dlp), 67-79 torrent settings, 80 ffmpeg muxing; the next new field takes 81.
+private const val F_YTDLP_PATH = 63
+private const val F_FFMPEG_PATH = 64
+private const val F_DENO_PATH = 65
+private const val F_YTDLP_EXTRA_ARGS = 66
 
 // Inside F_COMMAND_RULES: one F_COMMAND_RULE record per rule, in order.
 private const val F_COMMAND_RULE = 1
@@ -399,7 +456,37 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var swingFileChooser: Boolean = false
     override var forceIpv4: Boolean = false
     override var commandRules: List<CommandRule> = emptyList()
+    override var ytDlpPath: String = ""
+    override var ffmpegPath: String = ""
+    override var denoPath: String = ""
+    override var ytDlpExtraArgs: String = ""
+    override var useFfmpegMuxer: Boolean = false
     override var listSelectionMode: ListSelectionMode = ListSelectionMode.CLASSIC
+    override var torrentSeedAfterFinish: Boolean = false
+    override var torrentSeedRatioLimit: Float = 1.0f
+    override var torrentSeedTimeLimitMinutes: Int = 0
+    override var torrentProgressMore: Boolean = true
+    override var progressMore: Boolean = true
+    override var torrentClient: String = TorrentClients.DEFAULT
+    override var torrentKeepSession: Boolean = false
+    override var torrentAddTrackers: Boolean = false
+    override var torrentTrackerList: String = ""
+    override var torrentPex: Boolean = true
+
+    /** The version the update check reports, for the XDM client identity. */
+    private val xdmVersion: String by lazy {
+        runCatching { UpdateChecker.loadConfig()?.currentVersion }.getOrNull()?.removePrefix("v") ?: "9.0.0"
+    }
+    override val torrentPeerIdPrefix: String? get() = TorrentClients.byId(torrentClient, xdmVersion).peerIdPrefix
+    override val torrentUserAgent: String? get() = TorrentClients.byId(torrentClient, xdmVersion).userAgent
+    override var torrentPort: Int = 0
+    override var torrentPortMapping: Boolean = true
+    override var torrentDht: Boolean = true
+    override var torrentLsd: Boolean = true
+    override var torrentEncryption: Int = 0
+    override var torrentDownloadLimit: Int = 0
+    override var torrentUploadLimit: Int = 0
+
 
     override fun applyAuthConfig() {
         Authenticator.setDefault(DefaultAuthenticator())
@@ -498,6 +585,12 @@ class AppConfig(private val configDir: String) : IAppConfig {
         w.bool(F_DETECT_SUBTITLES, detectSubtitles)
         w.bool(F_SAVE_SUBTITLES_AS_SRT, saveSubtitlesAsSrt)
         w.bool(F_FORCE_IPV4, forceIpv4)
+        w.string(F_YTDLP_PATH, ytDlpPath)
+        w.string(F_FFMPEG_PATH, ffmpegPath)
+        w.string(F_DENO_PATH, denoPath)
+        w.string(F_YTDLP_EXTRA_ARGS, ytDlpExtraArgs)
+        w.bool(F_USE_FFMPEG_MUXER, useFfmpegMuxer)
+        w.bool(F_PROGRESS_MORE, progressMore)
         w.message(F_COMMAND_RULES) {
             commandRules.forEach { rule ->
                 message(F_COMMAND_RULE) {
@@ -507,6 +600,22 @@ class AppConfig(private val configDir: String) : IAppConfig {
                 }
             }
         }
+        w.bool(F_TORRENT_SEED_AFTER_FINISH, torrentSeedAfterFinish)
+        w.int(F_TORRENT_SEED_RATIO_PERMILLE, Math.round(torrentSeedRatioLimit * 1000))
+        w.int(F_TORRENT_SEED_MINUTES, torrentSeedTimeLimitMinutes)
+        w.bool(F_TORRENT_PROGRESS_MORE, torrentProgressMore)
+        w.int(F_TORRENT_PORT, torrentPort)
+        w.bool(F_TORRENT_PORT_MAPPING, torrentPortMapping)
+        w.bool(F_TORRENT_DHT, torrentDht)
+        w.bool(F_TORRENT_LSD, torrentLsd)
+        w.int(F_TORRENT_ENCRYPTION, torrentEncryption)
+        w.int(F_TORRENT_DOWNLOAD_LIMIT, torrentDownloadLimit)
+        w.int(F_TORRENT_UPLOAD_LIMIT, torrentUploadLimit)
+        w.string(F_TORRENT_CLIENT, torrentClient)
+        w.bool(F_TORRENT_KEEP_SESSION, torrentKeepSession)
+        w.bool(F_TORRENT_ADD_TRACKERS, torrentAddTrackers)
+        w.string(F_TORRENT_TRACKER_LIST, torrentTrackerList)
+        w.bool(F_TORRENT_PEX, torrentPex)
         w.raw(unknownFields)
     }
 
@@ -581,6 +690,28 @@ class AppConfig(private val configDir: String) : IAppConfig {
                 F_SAVE_SUBTITLES_AS_SRT -> saveSubtitlesAsSrt = r.bool()
                 F_FORCE_IPV4 -> forceIpv4 = r.bool()
                 F_COMMAND_RULES -> commandRules = readCommandRules(r.message())
+                F_TORRENT_SEED_AFTER_FINISH -> torrentSeedAfterFinish = r.bool()
+                F_TORRENT_SEED_RATIO_PERMILLE -> torrentSeedRatioLimit = r.int().coerceAtLeast(0) / 1000f
+                F_TORRENT_SEED_MINUTES -> torrentSeedTimeLimitMinutes = r.int().coerceAtLeast(0)
+                F_TORRENT_PROGRESS_MORE -> torrentProgressMore = r.bool()
+                F_TORRENT_PORT -> torrentPort = r.int().coerceIn(0, 65535)
+                F_TORRENT_PORT_MAPPING -> torrentPortMapping = r.bool()
+                F_TORRENT_DHT -> torrentDht = r.bool()
+                F_TORRENT_LSD -> torrentLsd = r.bool()
+                F_TORRENT_ENCRYPTION -> torrentEncryption = r.int().coerceIn(0, 2)
+                F_TORRENT_DOWNLOAD_LIMIT -> torrentDownloadLimit = r.int().coerceAtLeast(0)
+                F_TORRENT_UPLOAD_LIMIT -> torrentUploadLimit = r.int().coerceAtLeast(0)
+                F_TORRENT_CLIENT -> torrentClient = r.string()
+                F_TORRENT_KEEP_SESSION -> torrentKeepSession = r.bool()
+                F_TORRENT_ADD_TRACKERS -> torrentAddTrackers = r.bool()
+                F_TORRENT_TRACKER_LIST -> torrentTrackerList = r.string()
+                F_TORRENT_PEX -> torrentPex = r.bool()
+                F_YTDLP_PATH -> ytDlpPath = r.string()
+                F_FFMPEG_PATH -> ffmpegPath = r.string()
+                F_DENO_PATH -> denoPath = r.string()
+                F_YTDLP_EXTRA_ARGS -> ytDlpExtraArgs = r.string()
+                F_USE_FFMPEG_MUXER -> useFfmpegMuxer = r.bool()
+                F_PROGRESS_MORE -> progressMore = r.bool()
                 else -> unknown.raw(r.rawField())
             }
         }

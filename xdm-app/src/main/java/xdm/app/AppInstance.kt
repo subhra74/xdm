@@ -13,6 +13,11 @@ import xdm.app.ui.screens.NewDownloadWindow
 import xdm.app.ui.screens.NewVideoDownloadWindow
 import xdm.app.ui.screens.ProgressWindow
 import xdm.app.ui.screens.PropertiesDialog
+import xdm.app.torrent.TorrentLaunch
+import xdm.app.torrent.TorrentLinkFetcher
+import xdm.app.ui.components.AppMenuHandler
+import xdm.app.ui.screens.TorrentProgressWindow
+import xdm.app.ui.screens.TorrentPropertiesWindow
 import xdm.app.ui.screens.RefreshLinkWindow
 import xdm.app.ui.screens.ScheduleWindow
 import xdm.app.utils.SingleWindows
@@ -59,7 +64,8 @@ interface IAppInstance {
      */
     fun showFatalError(message: String)
 
-    fun showDownloadCompleteWindow(id: Long, folder: String, fileName: String, fileSize: Long)
+    /** [note]: one line under the details about how the download was saved, when it wasn't the usual way. */
+    fun showDownloadCompleteWindow(id: Long, folder: String, fileName: String, fileSize: Long, note: String? = null)
 
     /**
      * Posts a quiet "<file> download finished" system notification instead of the full dialog. A click
@@ -117,6 +123,9 @@ interface IAppInstance {
     /** Opens the batch dialog for links sent by the browser's "Download all". */
     fun showBatchDialog(request: BatchRequest)
 
+    /** Opens Add torrent with [source] (a magnet link or a .torrent path) filled in; the OS handed it to XDM. */
+    fun openTorrent(source: String)
+
     /** The XDM extension in [browser] is older than this XDM expects: asks the user to update it. */
     fun showExtensionUpdate(browser: Browser)
 }
@@ -157,13 +166,23 @@ class AppInstance : IAppInstance {
                     BrowserSetupDialog(appWindow).isVisible = true
                 }
             }
+            // Started by opening a magnet link or a .torrent file with XDM (Windows, Linux).
+            TorrentLaunch.sourceIn(args.asList())?.let { openTorrent(it) }
+            // "Keep BitTorrent running": the session starts with XDM (off the EDT).
+            if (AppContext.config.torrentKeepSession) AppContext.downloader.torrents.warmUp()
         }
+    }
+
+    override fun openTorrent(source: String) {
+        runOnUIThread { AppMenuHandler.showTorrentDialog(mainWindowOnScreen(), source) }
     }
 
     /**
      * On macOS a second launch does not start a second process: LaunchServices activates the
      * running app and delivers `xdm-app://...` as an Apple event, so the argv/`/show` handover the
-     * other platforms use never happens. Both events mean the same thing here - show the window.
+     * other platforms use never happens. Both events mean the same thing here - show the window -
+     * except a `magnet:` link or a .torrent file (also how the first launch gets them), which open
+     * Add torrent.
      */
     private fun installMacHandlers() {
         if (detectOS() != OS.MacOS || !Desktop.isDesktopSupported()) {
@@ -171,8 +190,19 @@ class AppInstance : IAppInstance {
         }
         val desktop = Desktop.getDesktop()
         // Unsupported when not running from a bundle (i.e. in development), hence runCatching.
-        runCatching { desktop.setOpenURIHandler { showAppWindow() } }
+        runCatching {
+            desktop.setOpenURIHandler { e ->
+                TorrentLaunch.sourceIn(listOf(e.uri.toString()))?.let { openTorrent(it) } ?: showAppWindow()
+            }
+        }
+        runCatching {
+            desktop.setOpenFileHandler { e ->
+                TorrentLaunch.sourceIn(e.files.map { it.path })?.let { openTorrent(it) } ?: showAppWindow()
+            }
+        }
         runCatching { desktop.addAppEventListener(AppReopenedListener { showAppWindow() }) }
+        // Dock and app menu Quit: the same exit as the Exit items (closes torrents, with its window if slow).
+        runCatching { desktop.setQuitHandler { _, _ -> xdm.app.utils.AppExit.exit() } }
         // App menu → "About Xtreme Download Manager": XDM's own dialog instead of the generic one.
         // Called on the EDT; owned by the main window only while it is on screen.
         runCatching {
@@ -216,11 +246,11 @@ class AppInstance : IAppInstance {
         }
     }
 
-    override fun showDownloadCompleteWindow(id: Long, folder: String, fileName: String, fileSize: Long) {
+    override fun showDownloadCompleteWindow(id: Long, folder: String, fileName: String, fileSize: Long, note: String?) {
         runOnUIThread {
             // Checksums only make sense for a file fetched from one URL as-is.
             val source = if (AppContext.db.getById(id)?.downloadType == DownloadType.Http) ChecksumPanel.sourceOf(id) else null
-            DownloadCompleteWindow().apply { setDetails(fileName, folder, fileSize, source) }.isVisible = true
+            DownloadCompleteWindow().apply { setDetails(fileName, folder, fileSize, source, note) }.isVisible = true
         }
     }
 
@@ -266,6 +296,13 @@ class AppInstance : IAppInstance {
             AppContext.downloader.updateDownloadInfo(AppContext.refreshLinkId.get(), downloadInfo)
             // Called on the browser-integration server thread.
             runOnUIThread { refreshLinkWindow?.showRefreshed() }
+            return
+        }
+        // A .torrent link: Add torrent with its file list; the usual dialog if it is not one after all.
+        if (downloadInfo != null && TorrentLinkFetcher.wants(downloadInfo)) {
+            TorrentLinkFetcher.fetch(downloadInfo) { file ->
+                if (file != null) openTorrent(file.absolutePath) else showNewDownloadWindowInternal(downloadInfo)
+            }
             return
         }
         if (downloadInfo != null && AppContext.config.startDownloadAutomatically) {
@@ -326,6 +363,7 @@ class AppInstance : IAppInstance {
         // show its window before that dialog closes, and on Windows closing it then activates the main
         // window over the new progress window (and a modal dialog would block the window meanwhile).
         SwingUtilities.invokeLater {
+            if (isTorrent(id)) return@invokeLater showTorrentProgress(id)
             var prgWnd = prgWndMap[id]
             if (prgWnd != null) {
                 prgWnd.isVisible = true
@@ -379,6 +417,7 @@ class AppInstance : IAppInstance {
             val wnd = prgWndMap.remove(id)
             wnd?.isVisible = false
             wnd?.dispose()
+            torrentProgress.remove(id)?.dispose()
         }
     }
 
@@ -439,7 +478,30 @@ class AppInstance : IAppInstance {
     }
 
     override fun showPropertiesWindow(ent: DbRecord) {
-        runOnUIThread { SingleWindows.show("properties" to ent.id) { PropertiesDialog(appWindow, ent) } }
+        runOnUIThread {
+            if (ent.downloadType == DownloadType.Torrent) {
+                SingleWindows.show("torrent-properties" to ent.id) { TorrentPropertiesWindow(appWindow, ent.id) }
+            }
+            else SingleWindows.show("properties" to ent.id) { PropertiesDialog(appWindow, ent) }
+        }
+    }
+
+    private fun isTorrent(id: Long) = db.getById(id)?.downloadType == DownloadType.Torrent
+
+    /** Torrent progress windows by download id; closed like the HTTP ones when the download stops. */
+    private val torrentProgress = HashMap<Long, TorrentProgressWindow>()
+
+    private fun showTorrentProgress(id: Long) {
+        torrentProgress[id]?.takeIf { it.isDisplayable }?.let { it.isVisible = true; it.toFront(); return }
+        val w = TorrentProgressWindow(id)
+        torrentProgress[id] = w
+        w.addWindowListener(object : WindowAdapter() {
+            override fun windowClosed(e: WindowEvent) {
+                if (torrentProgress[id] === w) torrentProgress.remove(id)
+            }
+        })
+        w.isVisible = true
+        w.toFront()
     }
 
     override fun showBatchDialog(request: BatchRequest) {

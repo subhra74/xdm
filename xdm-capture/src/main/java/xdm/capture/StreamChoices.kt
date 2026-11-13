@@ -7,6 +7,7 @@ package xdm.capture
 import xdm.core.downloaders.web.streaming.manifest.dash.Representation
 import xdm.core.downloaders.web.streaming.manifest.hls.HlsMasterPlaylist
 import xdm.core.downloaders.web.streaming.manifest.hls.singleFileHttpUrl
+import xdm.core.media.muxer.MuxContainer
 import xdm.core.util.plainDownloadExt
 import java.util.Collections
 import java.util.IdentityHashMap
@@ -21,7 +22,7 @@ sealed interface StreamPick {
     data class Dash(val video: Representation, val audio: Representation) : StreamPick {
         /** The container the pair is muxed into, as for captured DASH videos. */
         val extension: String
-            get() = if (video.mimeType.contains("mp4") && audio.mimeType.contains("mp4")) "mp4" else "mkv"
+            get() = MuxContainer.forStreams(video.mimeType, audio.mimeType, codecs = listOf(video.codec, audio.codec))
     }
 
     /** One self-contained file (single-file HLS, a single DASH stream): a regular download. */

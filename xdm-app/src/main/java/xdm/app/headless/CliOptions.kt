@@ -2,8 +2,11 @@ package xdm.app.headless
 
 import xdm.core.CoreConfig
 
-/** What kind of download a URL is; [Auto] decides from the URL (`.m3u8` HLS, `.mpd` DASH, else HTTP). */
-enum class StreamType { Auto, Http, Hls, Dash }
+/**
+ * What kind of download a URL is; [Auto] decides from the argument (a magnet link or `.torrent` is a torrent,
+ * `.m3u8` HLS, `.mpd` DASH, else HTTP).
+ */
+enum class StreamType { Auto, Http, Hls, Dash, Torrent }
 
 /**
  * Which format of an HLS/DASH stream to download. [Height] takes that height, or failing that the
@@ -44,6 +47,12 @@ data class CliOptions(
     val overwrite: Boolean,
     val quiet: Boolean,
     val verbose: Boolean,
+    /** Extra trackers (`--tracker`) for every torrent of the run, or more trackers to check. */
+    val trackers: List<String> = emptyList(),
+    /** `--check-trackers`: announce to the torrents' trackers, report how each answered, download nothing. */
+    val checkTrackers: Boolean = false,
+    /** How long `--check-trackers` waits for the trackers, in seconds. */
+    val timeoutSeconds: Int = 30,
 )
 
 /** A bad command line; the message is shown with a pointer to `--help`. */
@@ -87,6 +96,8 @@ object CliParser {
         "--proxy" to "--proxy",
         "--proxy-user" to "--proxy-user",
         "--proxy-password" to "--proxy-password",
+        "--tracker" to "--tracker",
+        "--timeout" to "--timeout",
     )
 
     private val flagOptions = mapOf(
@@ -94,6 +105,7 @@ object CliParser {
         "-k" to "--insecure", "--insecure" to "--insecure",
         "-y" to "--overwrite", "--overwrite" to "--overwrite",
         "--quiet" to "--quiet",
+        "--check-trackers" to "--check-trackers",
         "-v" to "--verbose", "--verbose" to "--verbose",
         "-h" to "--help", "--help" to "--help", "-?" to "--help",
     )
@@ -105,6 +117,7 @@ object CliParser {
         val urls = ArrayList<String>()
         val values = HashMap<String, String>()
         val headers = LinkedHashMap<String, MutableList<String>>()
+        val trackers = ArrayList<String>()
         val flags = HashSet<String>()
         var i = 0
         var optionsEnded = false
@@ -132,7 +145,13 @@ object CliParser {
                 i < args.size -> args[i++]
                 else -> throw CliUsageException("$name needs a value")
             }
-            if (option == "--header") {
+            if (option == "--tracker") {
+                val t = value.trim()
+                if (!Regex("^(https?|udp)://.+", RegexOption.IGNORE_CASE).matches(t)) {
+                    throw CliUsageException("--tracker must be an http(s):// or udp:// announce URL: $value")
+                }
+                trackers += t
+            } else if (option == "--header") {
                 val colon = value.indexOf(':')
                 if (colon <= 0) throw CliUsageException("Header must be \"Name: value\": $value")
                 headers.getOrPut(value.substring(0, colon).trim()) { ArrayList() } += value.substring(colon + 1).trim()
@@ -142,13 +161,23 @@ object CliParser {
         }
         if ("--help" in flags) return ParsedArgs.Help
 
-        if (urls.isEmpty()) throw CliUsageException("No URL given")
-        urls.firstOrNull { !it.startsWith("http://", true) && !it.startsWith("https://", true) }?.let {
-            throw CliUsageException("Not an http(s) URL: $it")
+        val type = parseType(values["--type"])
+        val checkTrackers = "--check-trackers" in flags
+        if (urls.isEmpty() && !(checkTrackers && trackers.isNotEmpty())) throw CliUsageException("No URL given")
+        urls.firstOrNull {
+            !it.startsWith("http://", true) && !it.startsWith("https://", true) &&
+                TorrentArgs.sourceOf(it, type, checkTrackers) == null
+        }?.let {
+            throw CliUsageException("Not an http(s) URL, magnet link or .torrent file: $it")
+        }
+        if (checkTrackers) {
+            urls.firstOrNull { TorrentArgs.sourceOf(it, StreamType.Torrent, true) == null }?.let {
+                throw CliUsageException("--check-trackers takes tracker URLs, magnet links and .torrent files: $it")
+            }
         }
         val listFormats = "--list-formats" in flags
         val outputDir = values["--output-dir"]
-        if (outputDir.isNullOrBlank() && !listFormats) {
+        if (outputDir.isNullOrBlank() && !listFormats && !checkTrackers) {
             throw CliUsageException("The target folder is required: -o <folder>")
         }
         val fileName = values["--file-name"]?.takeIf { it.isNotBlank() }
@@ -175,7 +204,7 @@ object CliParser {
                 urls = urls,
                 outputDir = outputDir.orEmpty(),
                 fileName = fileName,
-                type = parseType(values["--type"]),
+                type = type,
                 quality = values["--format"]?.let { parseIndex(it) } ?: parseQuality(values["--quality"]),
                 audio = values["--audio"]?.takeIf { it.isNotBlank() },
                 listFormats = listFormats,
@@ -192,6 +221,9 @@ object CliParser {
                 overwrite = "--overwrite" in flags,
                 quiet = "--quiet" in flags,
                 verbose = "--verbose" in flags,
+                trackers = trackers,
+                checkTrackers = checkTrackers,
+                timeoutSeconds = values["--timeout"]?.let { positiveInt("--timeout", it, max = 3600) }?.takeIf { it > 0 } ?: 30,
             )
         )
     }
@@ -206,7 +238,8 @@ object CliParser {
         "http", "https" -> StreamType.Http
         "hls", "m3u8" -> StreamType.Hls
         "dash", "mpd" -> StreamType.Dash
-        else -> throw CliUsageException("--type must be auto, http, hls or dash: $value")
+        "torrent", "magnet", "bittorrent" -> StreamType.Torrent
+        else -> throw CliUsageException("--type must be auto, http, hls, dash or torrent: $value")
     }
 
     fun parseQuality(value: String?): Quality {
@@ -249,16 +282,19 @@ object CliParser {
 
     val USAGE = """
         |Usage: xdm-app --headless -o <folder> [options] <url>...
+        |       xdm-app --headless --check-trackers [options] <tracker-url|magnet|.torrent>...
         |
         |Downloads files from the command line, without the window or browser integration.
-        |HTTP(S) files, HLS (.m3u8) and DASH (.mpd) streams are supported; URLs are downloaded one by one.
+        |HTTP(S) files, HLS (.m3u8) and DASH (.mpd) streams, and torrents (magnet links, .torrent files
+        |or links) are supported; they are downloaded one by one.
         |
         |Required:
         |  -o, --output-dir <folder>   Folder to save into (created if missing)
         |
         |Stream selection:
-        |  -t, --type <auto|http|hls|dash>
-        |                              How to treat the URL (default auto: .m3u8 is HLS, .mpd is DASH)
+        |  -t, --type <auto|http|hls|dash|torrent>
+        |                              How to treat the URL (default auto: .m3u8 is HLS, .mpd is DASH,
+        |                              magnet: and .torrent are torrents)
         |  -q, --quality <q>           best (default), worst, audio, or a height such as 1080p or 720
         |                              (takes the nearest lower height when there is no exact match)
         |      --format <n>            Format number n from --list-formats
@@ -281,7 +317,19 @@ object CliParser {
         |      --proxy <url>           http://host:port or socks5://host:port
         |      --proxy-user <user>     Proxy login
         |      --proxy-password <pass> Proxy password
-        |  -k, --insecure              Do not verify TLS certificates
+        |  -k, --insecure              Do not verify TLS certificates (also of HTTPS trackers)
+        |
+        |Torrents:
+        |      --tracker <url>         Extra tracker for every torrent (repeatable; not for private ones)
+        |      --check-trackers        Announce to the trackers and report how each answered, then exit;
+        |                              nothing is downloaded and -o is not needed. Bare tracker URLs are
+        |                              checked with a random info-hash. Lines on stdout:
+        |                              OK, CERTIFICATE (TLS failed), REACHED (the tracker answered with an
+        |                              error), FAILED (no connection), NO ANSWER (timed out)
+        |      --timeout <s>           How long --check-trackers waits (default 30)
+        |
+        |A torrent's files are saved in the -o folder; it is not seeded after it finishes. On Ctrl+C its
+        |partial files are kept (other downloads' partial files are deleted).
         |
         |Other:
         |      --quiet                 No progress output (the saved paths are still printed)
@@ -289,6 +337,8 @@ object CliParser {
         |  -h, --help                  Show this help
         |
         |Each saved file's path is printed to stdout; progress and errors go to stderr.
-        |Exit status: 0 all downloaded, 1 a download failed, 2 bad arguments, 130 interrupted (Ctrl+C).
+        |Exit status: 0 all downloaded, 1 a download failed, 2 bad arguments, 130 interrupted (Ctrl+C);
+        |--check-trackers: 0 no TLS failure and a tracker was reached, 3 a TLS (certificate) failure,
+        |4 no tracker reached.
         |""".trimMargin()
 }

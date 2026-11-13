@@ -55,6 +55,13 @@ class TsDemuxer(private val sink: SampleSink) {
     /** Tracks in PMT declaration order, for stable output ordering. */
     val tracks = ArrayList<Track>()
 
+    /**
+     * Audio or video streams left out (a codec with no reader, or a stream on an audio/video
+     * stream_id nothing identified): the caller falls back rather than lose them. Subtitles, data and
+     * the second view of 3D (MVC) don't count.
+     */
+    val lostStreams = LinkedHashSet<String>()
+
     private val carry = ByteArrayBuilder(256 * 1024)
 
     /** Feeds a chunk of TS bytes. Buffers any trailing partial packet until the next [feed]. */
@@ -71,19 +78,31 @@ class TsDemuxer(private val sink: SampleSink) {
             total = length
         }
 
+        // Where the packets start: 0 unless the packet size search below had to move past bytes.
+        var from = 0
         if (!packetSizeResolved) {
-            packetSize = detectPacketSize(data, total) ?: run {
-                stash(data, 0, total); return
+            // The search looks at DETECT_WINDOW starts at a time and slides on when the data goes on
+            // past them, so bytes that can't start the stream are dropped, not kept (a non-TS input
+            // would otherwise pile up in the carry until the end).
+            var size: Int?
+            while (true) {
+                size = detectPacketSize(data, from, total)
+                if (size != null || total - from < DETECT_WINDOW + DETECT_SPAN) break
+                from += DETECT_WINDOW
             }
+            if (size == null) {
+                stash(data, from, total - from); return // not enough data to tell yet
+            }
+            packetSize = size
             syncOffset = if (packetSize == 192) 4 else 0
             packetSizeResolved = true
         }
 
         // pos is a packet start; its sync byte sits at pos + syncOffset.
-        var pos = alignToSync(data, syncOffset, total) - syncOffset
+        var pos = resync(data, from + syncOffset, total) - syncOffset
         while (pos + packetSize <= total) {
             if ((data[pos + syncOffset].toInt() and 0xFF) != 0x47) {
-                pos = alignToSync(data, pos + syncOffset + 1, total) - syncOffset
+                pos = resync(data, pos + syncOffset + 1, total) - syncOffset
                 continue
             }
             parsePacket(data, pos + syncOffset)
@@ -97,6 +116,7 @@ class TsDemuxer(private val sink: SampleSink) {
 
     /** Flush any buffered PES and let readers emit trailing samples. Call once after the last feed. */
     fun finish() {
+        if (pmtEsLoop == null && !autoGuessed && held.isNotEmpty()) autoGuess()
         for (asm in readersByPid.values.toList()) asm.flush()
         for ((_, reader) in readers) reader.finish()
     }
@@ -118,10 +138,18 @@ class TsDemuxer(private val sink: SampleSink) {
         }
     }
 
-    private fun alignToSync(data: ByteArray, from: Int, end: Int): Int {
+    /**
+     * The next sync byte at or after [from] that the following packet's sync byte confirms, so a 0x47
+     * inside other bytes (an image or padding in front of a segment, a damaged packet) is not taken for
+     * a packet start. One too close to [end] to confirm is taken; [end] when there is none.
+     */
+    private fun resync(data: ByteArray, from: Int, end: Int): Int {
         var i = from
         while (i < end) {
-            if ((data[i].toInt() and 0xFF) == 0x47) return i
+            if ((data[i].toInt() and 0xFF) == 0x47) {
+                val next = i + packetSize
+                if (next >= end || (data[next].toInt() and 0xFF) == 0x47) return i
+            }
             i++
         }
         return end
@@ -129,15 +157,16 @@ class TsDemuxer(private val sink: SampleSink) {
 
     /**
      * Tries 188/192/204 by checking that sync bytes recur at the candidate stride (at least
-     * [SYNC_CONFIRMATIONS] times). Null when there is not enough data yet to tell.
+     * [SYNC_CONFIRMATIONS] times), for sync bytes in the [DETECT_WINDOW] bytes from [from]. Null when
+     * there is not enough data yet to tell.
      */
-    private fun detectPacketSize(data: ByteArray, total: Int): Int? {
+    private fun detectPacketSize(data: ByteArray, from: Int, total: Int): Int? {
         val candidates = intArrayOf(188, 192, 204)
-        for (start in 0 until minOf(total, 204 + 4)) {
+        for (start in from until minOf(total, from + DETECT_WINDOW)) {
             if ((data[start].toInt() and 0xFF) != 0x47) continue
             for (size in candidates) {
                 // M2TS: the packet begins 4 bytes before its sync byte.
-                if (size == 192 && start < 4) continue
+                if (size == 192 && start < from + 4) continue
                 var count = 0
                 var p = start + size
                 while (p < total && count < SYNC_CONFIRMATIONS && (data[p].toInt() and 0xFF) == 0x47) {
@@ -167,6 +196,12 @@ class TsDemuxer(private val sink: SampleSink) {
         val payloadEnd = off + 188
         if (p >= payloadEnd) return
 
+        // Until a PMT says what the PIDs are, their packets are held back; with no PMT in the first
+        // AUTO_GUESS_PACKETS (or by the end), the streams are guessed from their PES headers.
+        if (pmtEsLoop == null && !autoGuessed && pid != 0 && pid != pmtPid && !readersByPid.containsKey(pid)) {
+            if (held.size < AUTO_GUESS_PACKETS) { held.add(data.copyOfRange(off, off + 188)); return }
+            autoGuess()
+        }
         when {
             pid == 0 -> patSection.feed(data, p, payloadEnd, payloadUnitStart)
             pid == pmtPid -> pmtSection.feed(data, p, payloadEnd, payloadUnitStart)
@@ -238,6 +273,40 @@ class TsDemuxer(private val sink: SampleSink) {
         }
     }
 
+    /** Packets of PIDs no PMT has described yet (copies from their sync byte), for [autoGuess]. */
+    private val held = ArrayList<ByteArray>()
+    private var autoGuessed = false
+
+    /**
+     * No PAT/PMT (or none in the first [AUTO_GUESS_PACKETS]): as ffmpeg, every PID whose packets start
+     * PES packets of an audio, video or private stream gets a probe ([EsProbe]), MPEG audio being the
+     * fallback for audio stream_ids; then the held packets are fed again. A PMT that comes later still
+     * takes over (streams it maps to the same kind keep their reader).
+     */
+    private fun autoGuess() {
+        autoGuessed = true
+        val guessed = LinkedHashMap<Int, Int>() // pid -> stream_id
+        for (pkt in held) {
+            if (pkt[1].toInt() and 0x40 == 0) continue
+            val pid = ((pkt[1].toInt() and 0x1F) shl 8) or (pkt[2].toInt() and 0xFF)
+            if (pid < 0x20 || pid == 0x1FFF || pid in guessed) continue
+            val control = (pkt[3].toInt() and 0x30) shr 4
+            var p = 4
+            if (control == 2 || control == 3) p += 1 + (pkt[4].toInt() and 0xFF)
+            if (control == 2 || p + 4 > 188) continue
+            if (pkt[p].toInt() != 0 || pkt[p + 1].toInt() != 0 || pkt[p + 2].toInt() != 1) continue
+            val streamId = pkt[p + 3].toInt() and 0xFF
+            if (streamId in 0xC0..0xEF || streamId == 0xBD || streamId == 0xFA || streamId == 0xFD) guessed[pid] = streamId
+        }
+        Logger.info("XDM", "TS: no PMT in the first ${held.size} packets; guessing ${guessed.size} streams from their PES headers")
+        for ((pid, streamId) in guessed) {
+            readersByPid[pid] = PesAssembler(ProbeReader(pid, if (streamId in 0xC0..0xDF) StreamReader.MPEG_AUDIO else null))
+        }
+        val replay = ArrayList(held)
+        held.clear()
+        for (pkt in replay) parsePacket(pkt, 0)
+    }
+
     private fun parsePmt(s: ByteArray) {
         if (s.size < 16 || (s[0].toInt() and 0xFF) != 0x02) return
         if ((s[5].toInt() and 0x01) == 0) return // current_next_indicator
@@ -250,6 +319,8 @@ class TsDemuxer(private val sink: SampleSink) {
         if (pmtEsLoop?.contentEquals(program) == true) return
         val firstPmt = pmtEsLoop == null && readers.isEmpty()
         pmtEsLoop = program
+        // Packets before the PMT are dropped, as they always were (a PMT normally opens every segment).
+        held.clear()
         // A program-level registration (HDMV/HDPR for Blu-ray) changes what some stream types mean.
         val programRegistration = readEsDescriptors(s, 12, loopStart).registration
 
@@ -278,11 +349,12 @@ class TsDemuxer(private val sink: SampleSink) {
         val claimed = HashSet<ElementaryStreamReader>()
         val pending = ArrayList<Triple<Int, StreamReader, Int?>>() // pid, reader, Opus channel config
         for ((streamType, pid, info) in streams) {
-            when (val m = StreamType.map(streamType, programRegistration, info.registration, info.dvbAudio, info.hasOther)) {
+            when (val m = StreamType.map(streamType, programRegistration, info.registration, info.dvbAudio, info.nonAv, info.ac4)) {
                 is StreamMapping.Skip -> {
                     if (pid !in loggedPids) {
                         loggedPids += pid
                         if (m.unsupported != null) {
+                            if (!m.unsupported.contains("MVC")) lostStreams += "${m.unsupported} (pid $pid)"
                             Logger.error("XDM", "TS: ${m.unsupported} (pid=$pid, stream_type=0x${Integer.toHexString(streamType)}) can't be muxed; leaving it out")
                         } else {
                             Logger.info("XDM", "TS: skipping non-A/V stream pid=$pid stream_type=0x${Integer.toHexString(streamType)}")
@@ -328,8 +400,10 @@ class TsDemuxer(private val sink: SampleSink) {
         val registration: Int?,
         val opusChannelConfig: Int?,
         val dvbAudio: StreamReader?,
-        /** Any descriptor other than registration/language (DVB subtitles, teletext, ...). */
-        val hasOther: Boolean,
+        /** A descriptor of a non-A/V stream: VBI 0x45/0x46, teletext 0x56, subtitling 0x59, data 0x66, AIT 0x6F. */
+        val nonAv: Boolean,
+        /** DVB AC-4 descriptor (extension descriptor 0x7F, tag extension 0x15). */
+        val ac4: Boolean,
     )
 
     /**
@@ -340,7 +414,8 @@ class TsDemuxer(private val sink: SampleSink) {
         var registration: Int? = null
         var opusChannelConfig: Int? = null
         var dvbAudio: StreamReader? = null
-        var hasOther = false
+        var nonAv = false
+        var ac4 = false
         var d = start
         while (d + 2 <= end) {
             val tag = data[d].toInt() and 0xFF
@@ -354,14 +429,15 @@ class TsDemuxer(private val sink: SampleSink) {
                         (data[d + 5].toInt() and 0xFF)
                 tag == 0x7F && len >= 2 && (data[d + 2].toInt() and 0xFF) == 0x80 ->
                     opusChannelConfig = data[d + 3].toInt() and 0xFF
+                tag == 0x7F && len >= 1 && (data[d + 2].toInt() and 0xFF) == 0x15 -> ac4 = true
                 tag == 0x6A -> dvbAudio = StreamReader.AC3   // DVB AC-3_descriptor
                 tag == 0x7A -> dvbAudio = StreamReader.EAC3  // DVB enhanced_AC-3_descriptor
                 tag == 0x7B -> dvbAudio = StreamReader.DTS   // DVB DTS_descriptor
-                tag != 0x0A -> hasOther = true               // 0x0A: ISO 639 language
+                tag in NON_AV_DESCRIPTORS -> nonAv = true
             }
             d += 2 + len
         }
-        return EsDescriptors(registration, opusChannelConfig, dvbAudio, hasOther)
+        return EsDescriptors(registration, opusChannelConfig, dvbAudio, nonAv, ac4)
     }
 
     /** Stands in for the reader of a stream whose codec its first PES payloads have to show. */
@@ -376,9 +452,19 @@ class TsDemuxer(private val sink: SampleSink) {
     private fun identify(pid: Int, probe: ProbeReader, data: ByteArray, offset: Int, length: Int, pts: Long, dts: Long) {
         val asm = readersByPid[pid]?.takeIf { it.reader === probe } ?: return
         probe.attempts++
-        // A PES may start inside a frame: give the probe a few PES before falling back.
-        val kind = sniffAudio(data, offset, length) ?: if (probe.attempts < PROBE_PES) return else probe.fallback
+        // A PES may start inside a frame, and video may start mid-GOP (its parameter sets come with the
+        // next keyframe): give the probe a few PES (audio) or many (video, or no fallback) before falling back.
+        val audioType = probe.fallback != null && probe.fallback !in VIDEO_READERS
+        val video = !audioType && (asm.streamId in 0xE0..0xEF || probe.fallback == null || probe.fallback in VIDEO_READERS)
+        // A stream type that says audio (0x04, 0x0F, 0x11) is only checked for audio sync words.
+        val kind = (if (audioType) EsProbe.audio(data, offset, length) else EsProbe.identify(data, offset, length, asm.streamId))
+            ?: if (probe.attempts < (if (video) PROBE_PES_VIDEO else PROBE_PES)) return else probe.fallback
         if (kind == null) {
+            // Audio/video stream_ids, and private_stream_1 / extended (BD / FD: AC-3, LPCM, TrueHD, DTS-HD, VC-1):
+            // subtitles and data on those are skipped by their descriptors and never get here.
+            if (asm.streamId in 0xC0..0xEF || asm.streamId == 0xBD || asm.streamId == 0xFD) {
+                lostStreams += "unidentified stream (pid $pid, stream_id 0x${Integer.toHexString(asm.streamId)})"
+            }
             Logger.info("XDM", "TS: skipping unidentified private stream pid=$pid")
             readersByPid.remove(pid)
             kindByPid.remove(pid)
@@ -389,23 +475,6 @@ class TsDemuxer(private val sink: SampleSink) {
         asm.reader = reader
         kindByPid[pid] = kind
         reader.consume(data, offset, length, pts, dts)
-    }
-
-    /** Audio codec from the first bytes of a PES payload, or null if they don't say. */
-    private fun sniffAudio(data: ByteArray, offset: Int, length: Int): StreamReader? {
-        if (length < 6) return null
-        val b0 = data[offset].toInt() and 0xFF
-        val b1 = data[offset + 1].toInt() and 0xFF
-        return when {
-            b0 == 0xFF && (b1 and 0xF6) == 0xF0 -> StreamReader.ADTS                       // ADTS: layer 00
-            b0 == 0xFF && (b1 and 0xE0) == 0xE0 && (b1 and 0x06) != 0 -> StreamReader.MPEG_AUDIO
-            b0 == 0x56 && (b1 and 0xE0) == 0xE0 -> StreamReader.LATM                       // LOAS sync 0x2B7
-            b0 == 0x0B && b1 == 0x77 ->                                                    // AC-3 family: bsid
-                if (((data[offset + 5].toInt() and 0xFF) shr 3) > 10) StreamReader.EAC3 else StreamReader.AC3
-            b0 == 0x7F && b1 == 0xFE && (data[offset + 2].toInt() and 0xFF) == 0x80 &&
-                (data[offset + 3].toInt() and 0xFF) == 0x01 -> StreamReader.DTS
-            else -> null
-        }
     }
 
     private fun createReader(kind: StreamReader): ElementaryStreamReader = when (kind) {
@@ -427,5 +496,22 @@ class TsDemuxer(private val sink: SampleSink) {
         const val SYNC_CONFIRMATIONS = 3
         /** PES payloads a probe looks at before falling back. */
         const val PROBE_PES = 4
+        /** The same for a stream that may be video: a GOP's worth of pictures, to reach a keyframe. */
+        const val PROBE_PES_VIDEO = 64
+        /** Packets held back while no PMT has been seen, before the streams are guessed (376 KB). */
+        const val AUTO_GUESS_PACKETS = 2000
+        val VIDEO_READERS = setOf(StreamReader.H264, StreamReader.H265, StreamReader.MPEG_VIDEO, StreamReader.MPEG4_VISUAL)
+        /**
+         * Descriptor tags of streams that aren't audio or video: VBI, teletext, subtitling, data broadcast and
+         * application signalling (ETSI EN 300 468), and ARIB's data component (captions), as ffmpeg.
+         */
+        val NON_AV_DESCRIPTORS = setOf(0x45, 0x46, 0x56, 0x59, 0x66, 0x6F, 0xFD)
+        /**
+         * How many starts the packet size search looks at before sliding on. The segment is normally
+         * fed from where `SegmentProbe` found the stream, so the first packet is at the very start.
+         */
+        const val DETECT_WINDOW = 8 * 1024
+        /** Bytes past a candidate start that confirming it needs: the largest stride, repeated. */
+        const val DETECT_SPAN = 204 * (SYNC_CONFIRMATIONS + 1) + 4
     }
 }

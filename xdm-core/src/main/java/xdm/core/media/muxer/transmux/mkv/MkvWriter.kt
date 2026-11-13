@@ -7,9 +7,13 @@ package xdm.core.media.muxer.transmux.mkv
 import xdm.core.media.muxer.transmux.ContainerWriter
 import xdm.core.media.muxer.transmux.mp4.BoxBuf
 import xdm.core.media.muxer.transmux.mp4.CodecBoxes
+import xdm.core.media.muxer.transmux.mp4.SampleEntries
 import xdm.core.media.muxer.transmux.sample.Codec
+import xdm.core.media.muxer.transmux.sample.DisplayMatrix
 import xdm.core.media.muxer.transmux.sample.Sample
+import xdm.core.media.muxer.transmux.sample.Timeline
 import xdm.core.media.muxer.transmux.sample.Track
+import xdm.core.media.muxer.transmux.sample.upperMedian
 import xdm.core.util.Logger
 import xdm.core.storage.LocalStorage
 import xdm.core.storage.RandomAccessOutput
@@ -38,10 +42,14 @@ import java.io.RandomAccessFile
 class MkvWriter(
     private val output: StorageFile,
     spoolDir: String? = null,
+    /** The EBML DocType: `webm` for a `.webm` output (VP8/VP9/AV1 with Vorbis/Opus only), else `matroska`. */
+    private val docType: String = "matroska",
     /** Checked between clusters while [finish] copies the spool out: true drops the output. */
     private val cancelled: () -> Boolean = { false },
 ) : ContainerWriter {
     constructor(outputPath: String, spoolDir: String? = null) : this(LocalStorage.file(outputPath), spoolDir)
+
+    override var repairTimeline: Boolean = false
 
     /**
      * Scratch copy of the sample data, read back at random: in [spoolDir] when given, otherwise next to
@@ -59,6 +67,17 @@ class MkvWriter(
     /** (placeholder file position, size value) for reserved 8-byte size fields to patch at close. */
     private val sizePatches = ArrayList<LongArray>()
 
+    /** Byte patches (file position, bytes) applied with [sizePatches] at close: the SeekHead. */
+    private val bytePatches = ArrayList<Pair<Long, ByteArray>>()
+
+    /**
+     * Cue points as (time ms, track number, cluster position from the segment data) triples: a seek
+     * index, written as `Cues` after the clusters. Media3 treats a Matroska file without Cues as
+     * unseekable, and VLC then seeks by reading every cluster up to the seek point.
+     */
+    private var cues = LongArray(3 * 1024)
+    private var cueCount = 0
+
     /** Matroska default: 1 ms tick. Cluster/block timecodes are expressed in these units. */
     private val timecodeScaleNs = 1_000_000L
     private val maxClusterRelMs = 30_000L
@@ -75,14 +94,18 @@ class MkvWriter(
         val usable = tracks.filter { it.samples.isNotEmpty() && it.isReady() }
         if (usable.isEmpty()) { spoolFile.delete(); return false }
 
-        val plans = usable.mapIndexedNotNull { idx, t ->
+        val plans = usable.mapIndexed { idx, t ->
+            // A track Matroska can't name is not left out: the caller falls back (MP4 can copy it).
             val resolved = resolveCodec(t) ?: run {
-                Logger.error("XDM", "MKV: skipping track with unmappable codec ${t.codec}")
-                null
+                spoolFile.delete()
+                throw TrackLostException("Matroska has no codec ID for the ${t.codec} track${t.sampleEntryBox?.let { " (" + String(it, 4, 4, Charsets.US_ASCII) + ")" } ?: ""}")
             }
-            resolved?.let { TrackPlan(t, idx + 1, it.first, it.second, dolbyVisionConfig(t)) }
+            TrackPlan(t, idx + 1, resolved.first, resolved.second, dolbyVisionConfig(t))
         }
         if (plans.isEmpty()) { spoolFile.delete(); return false }
+
+        // The shared timeline step (as in the MP4 writer): sections back to back, jumps repaired.
+        Timeline.prepare(plans.map { it.track }, repairTimeline)
 
         // Normalize all tracks to a common zero so no absolute Matroska timecode is negative.
         var globalMinMs = Long.MAX_VALUE
@@ -107,10 +130,22 @@ class MkvWriter(
             val segPatch = position
             writeRaw(Ebml.reservedSizeBytes(0))
             val segContentStart = position
+            this.segContentStart = segContentStart
 
+            // Room for the SeekHead, written at the end once the Cues position is known.
+            val seekHeadPos = position
+            writeRaw(voidElement(SEEK_HEAD_SPACE))
+
+            val infoPos = position - segContentStart
             writeRaw(buildInfo(durationMs))
+            val tracksPos = position - segContentStart
             writeRaw(buildTracks(plans))
             writeClusters(plans, globalMinMs)
+            val cuesPos = position - segContentStart
+            if (cueCount > 0) writeCues()
+            bytePatches.add(seekHeadPos to buildSeekHead(
+                listOf(Ebml.INFO to infoPos, Ebml.TRACKS to tracksPos) + (if (cueCount > 0) listOf(Ebml.CUES to cuesPos) else emptyList())
+            ))
 
             sizePatches.add(longArrayOf(segPatch, position - segContentStart))
             out.flush()
@@ -124,6 +159,10 @@ class MkvWriter(
                     val v = patch[1]
                     val b = ByteArray(7) { i -> (v ushr (8 * (6 - i))).toByte() }
                     raf.write(b, 0, b.size)
+                }
+                for ((at, bytes) in bytePatches) {
+                    raf.seek(at)
+                    raf.write(bytes, 0, bytes.size)
                 }
                 raf.force()
             }
@@ -139,6 +178,67 @@ class MkvWriter(
             // Rethrown so the caller can tell a full disk from a muxing problem.
             throw ex
         }
+    }
+
+    /** File position where the Segment's data starts: SeekHead and Cues positions count from here. */
+    private var segContentStart = 0L
+
+    /** A Void element of exactly [total] bytes (header included; at least 2). */
+    private fun voidElement(total: Int): ByteArray {
+        val b = ByteArray(total)
+        b[0] = Ebml.VOID.toByte()
+        b[1] = (0x80 or (total - 2)).toByte() // 1-byte size: total stays under 128
+        return b
+    }
+
+    /**
+     * The SeekHead for [entries] (element ID, position from the segment data), padded with a Void
+     * to the [SEEK_HEAD_SPACE] reserved for it. Positions take 8 bytes so the size is fixed.
+     */
+    private fun buildSeekHead(entries: List<Pair<Long, Long>>): ByteArray {
+        val b = EbmlBuf()
+        b.master(Ebml.SEEK_HEAD) {
+            for ((id, pos) in entries) {
+                master(Ebml.SEEK) {
+                    bin(Ebml.SEEK_ID, Ebml.idBytes(id))
+                    bin(Ebml.SEEK_POSITION, ByteArray(8) { i -> (pos ushr (8 * (7 - i))).toByte() })
+                }
+            }
+        }
+        val head = b.toByteArray()
+        val rest = SEEK_HEAD_SPACE - head.size
+        check(rest >= 2) { "SeekHead of ${head.size} bytes doesn't fit its reserved space" }
+        return head + voidElement(rest)
+    }
+
+    private fun addCue(timeMs: Long, trackNumber: Int, clusterPos: Long) {
+        if (3 * (cueCount + 1) > cues.size) cues = cues.copyOf(cues.size * 2)
+        cues[3 * cueCount] = timeMs
+        cues[3 * cueCount + 1] = trackNumber.toLong()
+        cues[3 * cueCount + 2] = clusterPos
+        cueCount++
+    }
+
+    /** The Cues element, written in pieces so a long stream's index isn't built twice in memory. */
+    private fun writeCues() {
+        val points = ArrayList<ByteArray>(cueCount)
+        var total = 0L
+        for (i in 0 until cueCount) {
+            val b = EbmlBuf()
+            b.master(Ebml.CUE_POINT) {
+                uint(Ebml.CUE_TIME, cues[3 * i])
+                master(Ebml.CUE_TRACK_POSITIONS) {
+                    uint(Ebml.CUE_TRACK, cues[3 * i + 1])
+                    uint(Ebml.CUE_CLUSTER_POSITION, cues[3 * i + 2])
+                }
+            }
+            val p = b.toByteArray()
+            points.add(p)
+            total += p.size
+        }
+        writeRaw(Ebml.idBytes(Ebml.CUES))
+        writeRaw(Ebml.sizeBytes(total))
+        for (p in points) writeRaw(p)
     }
 
     /** Thrown out of the cluster loop when [cancelled] says stop. */
@@ -160,7 +260,7 @@ class MkvWriter(
             uint(Ebml.EBML_READ_VERSION, 1)
             uint(Ebml.EBML_MAX_ID_LENGTH, 4)
             uint(Ebml.EBML_MAX_SIZE_LENGTH, 8)
-            str(Ebml.DOC_TYPE, "matroska")
+            str(Ebml.DOC_TYPE, docType)
             uint(Ebml.DOC_TYPE_VERSION, docTypeVersion)
             uint(Ebml.DOC_TYPE_READ_VERSION, 2)
         }
@@ -190,7 +290,16 @@ class MkvWriter(
                     uint(Ebml.FLAG_LACING, 0)
                     str(Ebml.LANGUAGE, "und")
                     str(Ebml.CODEC_ID, p.codecId)
+                    // The frame duration, as ffmpeg writes it: players use it for the last frame and
+                    // for frames without a following one (VLC buffers a second longer without it).
+                    frameDurationNs(t).takeIf { it > 0 }?.let { uint(Ebml.DEFAULT_DURATION, it) }
                     p.codecPrivate?.let { if (it.isNotEmpty()) bin(Ebml.CODEC_PRIVATE, it) }
+                    // Opus: a Matroska input's CodecDelay goes back as it was (its block times include
+                    // it). Other inputs already start at the first presented sample (the MP4 edit list,
+                    // the TS timestamps), so no CodecDelay; SeekPreRoll 80 ms as ffmpeg writes it.
+                    if (t.codecDelayNs > 0) uint(Ebml.CODEC_DELAY, t.codecDelayNs)
+                    val preRoll = if (t.seekPreRollNs > 0) t.seekPreRollNs else if (p.codecId == "A_OPUS") 80_000_000L else 0L
+                    if (preRoll > 0) uint(Ebml.SEEK_PRE_ROLL, preRoll)
                     p.dolbyVision?.let { dv ->
                         master(Ebml.BLOCK_ADDITION_MAPPING) {
                             str(Ebml.BLOCK_ADD_ID_NAME, "Dolby Vision configuration ${dv.type}")
@@ -202,6 +311,13 @@ class MkvWriter(
                         master(Ebml.VIDEO) {
                             uint(Ebml.PIXEL_WIDTH, t.width.toLong().coerceAtLeast(1))
                             uint(Ebml.PIXEL_HEIGHT, t.height.toLong().coerceAtLeast(1))
+                            // Rotation / flip as ffmpeg writes it: a rectangular projection's pose.
+                            t.matrix?.let { DisplayMatrix.toPose(it) }?.let { (yaw, roll) ->
+                                master(Ebml.PROJECTION) {
+                                    if (yaw != 0.0) float(Ebml.PROJECTION_POSE_YAW, yaw)
+                                    if (roll != 0.0) float(Ebml.PROJECTION_POSE_ROLL, roll)
+                                }
+                            }
                         }
                     } else {
                         master(Ebml.AUDIO) {
@@ -218,7 +334,8 @@ class MkvWriter(
 
     // ---- clusters ----
 
-    private class Entry(val plan: TrackPlan, val sample: Sample, val absMs: Long)
+    /** One block to write: a sample, or for PCM a run of samples next to each other in the spool. */
+    private class Entry(val plan: TrackPlan, val fileOffset: Long, val size: Int, val keyframe: Boolean, val absMs: Long)
 
     /**
      * Merges all tracks' samples into one stream. Blocks must be stored in *decode* order (a
@@ -239,8 +356,22 @@ class MkvWriter(
             }
             if (best < 0) return@iterator
             val p = plans[best]
-            val s = p.track.samples[cursors[best]++]
-            yield(Entry(p, s, msOf(s.pts, p.track.timescale) - globalMinMs))
+            val samples = p.track.samples
+            val first = cursors[best]++
+            var size = samples.sampleSize(first)
+            if (p.pcm) {
+                // MP4 stores PCM one audio frame per sample: join the frames that follow each other in
+                // the spool into blocks of about [PCM_BLOCK_MS], as ffmpeg's chunk-sized packets.
+                val limit = samples.pts(first) + PCM_BLOCK_MS * p.track.timescale / 1000
+                while (cursors[best] < samples.size) {
+                    val next = cursors[best]
+                    if (samples.fileOffset(next) != samples.fileOffset(first) + size || samples.pts(next) >= limit) break
+                    size += samples.sampleSize(next)
+                    cursors[best]++
+                }
+            }
+            yield(Entry(p, samples.fileOffset(first), size, samples.isKeyframe(first),
+                msOf(samples.pts(first), p.track.timescale) - globalMinMs))
         }
     }
 
@@ -253,23 +384,31 @@ class MkvWriter(
         try {
             var clusterTimeMs = -1L
             var clusterHasContent = false
+            /** The cluster holds a video block: audio ahead of the first keyframe shares its cluster. */
+            var clusterHasVideo = false
             var clusterPatchPos = -1L
             var clusterContentStart = -1L
+            var clusterPos = 0L
 
             fun closeCluster() {
                 if (clusterPatchPos >= 0) sizePatches.add(longArrayOf(clusterPatchPos, position - clusterContentStart))
             }
 
             for (e in entries) {
-                val isVideoKey = e.plan.track.codec.isVideo && e.sample.isKeyframe
+                val isVideoKey = e.plan.track.codec.isVideo && e.keyframe
                 val rel = if (clusterTimeMs < 0) 0 else e.absMs - clusterTimeMs
-                val needNewCluster = clusterTimeMs < 0 || rel > maxClusterRelMs ||
-                    (anyVideo && isVideoKey && clusterHasContent) ||
+                // A block's time is a signed 16-bit offset from its cluster's: a frame presented
+                // much earlier than the cluster start (a timestamp jump back) needs a new cluster.
+                val needNewCluster = clusterTimeMs < 0 || rel > maxClusterRelMs || rel < Short.MIN_VALUE ||
+                    (anyVideo && isVideoKey && clusterHasVideo) ||
                     (!anyVideo && rel > 2_000)
                 if (needNewCluster) {
                     if (cancelled()) throw Cancelled()
                     closeCluster()
                     clusterTimeMs = e.absMs
+                    clusterPos = position - segContentStart
+                    // Audio-only: every cluster is a seek point (video: its keyframes, below).
+                    if (!anyVideo) addCue(clusterTimeMs, e.plan.trackNumber, clusterPos)
                     writeRaw(Ebml.idBytes(Ebml.CLUSTER))
                     clusterPatchPos = position
                     writeRaw(Ebml.reservedSizeBytes(0))
@@ -278,9 +417,12 @@ class MkvWriter(
                     val tc = Ebml.uintBytes(clusterTimeMs)
                     writeRaw(Ebml.idBytes(Ebml.TIMECODE)); writeRaw(Ebml.sizeBytes(tc.size.toLong())); writeRaw(tc)
                     clusterHasContent = false
+                    clusterHasVideo = false
                 }
+                if (isVideoKey) addCue(e.absMs, e.plan.trackNumber, clusterPos)
                 writeSimpleBlock(e, (e.absMs - clusterTimeMs).toInt(), spoolIn, copyBuf)
                 clusterHasContent = true
+                if (e.plan.track.codec.isVideo) clusterHasVideo = true
             }
             closeCluster()
         } finally {
@@ -290,10 +432,10 @@ class MkvWriter(
 
     private fun writeSimpleBlock(e: Entry, relMs: Int, spoolIn: RandomAccessFile, copyBuf: ByteArray) {
         val trackNum = Ebml.sizeBytes(e.plan.trackNumber.toLong()) // track number is an EBML vint
-        val keyframe = e.sample.isKeyframe || !e.plan.track.codec.isVideo
+        val keyframe = e.keyframe || !e.plan.track.codec.isVideo
         val flags = if (keyframe) 0x80 else 0x00
         val blockHeaderLen = trackNum.size + 2 + 1 // track vint + int16 timecode + flags
-        val blockSize = blockHeaderLen + e.sample.size
+        val blockSize = blockHeaderLen + e.size
 
         writeRaw(Ebml.idBytes(Ebml.SIMPLE_BLOCK))
         writeRaw(Ebml.sizeBytes(blockSize.toLong()))
@@ -302,8 +444,8 @@ class MkvWriter(
         writeRaw(byteArrayOf(flags.toByte()))
 
         // Stream the frame payload straight from the spool.
-        spoolIn.seek(e.sample.fileOffset)
-        var remaining = e.sample.size
+        spoolIn.seek(e.fileOffset)
+        var remaining = e.size
         while (remaining > 0) {
             val n = spoolIn.read(copyBuf, 0, minOf(remaining, copyBuf.size))
             if (n <= 0) break
@@ -318,7 +460,9 @@ class MkvWriter(
     private class TrackPlan(
         val track: Track, val trackNumber: Int, val codecId: String, val codecPrivate: ByteArray?,
         val dolbyVision: DolbyVisionConfig?
-    )
+    ) {
+        val pcm = codecId.startsWith("A_PCM/")
+    }
 
     /** A DOVIDecoderConfigurationRecord and the box type (dvcC/dvvC/dvwC) it came in. */
     private class DolbyVisionConfig(val type: String, val record: ByteArray)
@@ -368,22 +512,43 @@ class MkvWriter(
     private fun fromSampleEntry(t: Track, entry: ByteArray): Pair<String, ByteArray?>? {
         if (entry.size < 8) return null
         val fourcc = String(entry, 4, 4, Charsets.US_ASCII)
-        // Child config boxes begin after the sample-entry header (visual 78, audio 28 bytes).
-        val childStart = if (t.codec.isVideo || fourcc in VIDEO_FOURCCS) 8 + 78 else 8 + 28
+        val video = t.codec.isVideo || fourcc in VIDEO_FOURCCS
+        val audio = if (video) null else SampleEntries.audioInfo(entry)
+        // Child config boxes begin after the sample-entry header: visual 78 bytes, audio 28 (v0) and
+        // more for QuickTime v1/v2 entries.
+        val childStart = if (video) 8 + 78 else audio?.childStart ?: (8 + 28)
         return when (fourcc) {
             // Dolby Vision sample entries carry the base layer's config; the DV record goes to
             // BlockAdditionMapping (see dolbyVisionConfig).
             "avc1", "avc3", "dva1", "dvav" -> "V_MPEG4/ISO/AVC" to childBox(entry, childStart, "avcC")
             "hev1", "hvc1", "dvh1", "dvhe" -> "V_MPEGH/ISO/HEVC" to childBox(entry, childStart, "hvcC")
+            // VVC: `vvcC` is a full box; Matroska's CodecPrivate is the record after its version and flags.
+            "vvc1", "vvi1" -> "V_MPEGI/ISO/VVC" to childBox(entry, childStart, "vvcC")?.takeIf { it.size > 4 }?.let { it.copyOfRange(4, it.size) }
+            // Motion JPEG: every frame is a whole JPEG; no CodecPrivate.
+            "jpeg", "mjpa", "mjpb" -> "V_MJPEG" to null
             "vp08" -> "V_VP8" to null
             "vp09" -> "V_VP9" to childBox(entry, childStart, "vpcC")
             "av01", "dav1" -> "V_AV1" to childBox(entry, childStart, "av1C")
+            // ProRes: the fourcc tells the profile; Matroska keeps it as CodecPrivate.
+            "apch", "apcn", "apcs", "apco", "ap4h", "ap4x" -> "V_PRORES" to entry.copyOfRange(4, 8)
+            // MPEG-4 Part 2 / MPEG-2 / MPEG-1 video by the esds object type; the DecoderSpecificInfo
+            // (VOL or sequence header) as CodecPrivate.
+            "mp4v" -> childBox(entry, childStart, "esds")?.let { esds ->
+                val dsi = extractAsc(esds)
+                when (esdsObjectType(esds)) {
+                    0x20 -> "V_MPEG4/ISO/ASP" to dsi
+                    0x60, 0x61, 0x62, 0x63, 0x64, 0x65 -> "V_MPEG2" to dsi
+                    0x6A -> "V_MPEG1" to dsi
+                    else -> null
+                }
+            } ?: quickTime(entry)
             "mp4a" -> {
-                val esds = childBox(entry, childStart, "esds")
+                // QuickTime puts the esds inside a `wave` atom.
+                val esds = childBox(entry, childStart, "esds") ?: waveChild(entry, childStart, "esds")
                 when (esds?.let { esdsObjectType(it) }) {
                     0x40, 0x66, 0x67, 0x68 -> "A_AAC" to extractAsc(esds)
-                    // MPEG-1 / MPEG-2 LSF audio; the OTI doesn't say which layer, and it's ~always L3.
-                    0x69, 0x6B -> "A_MPEG/L3" to null
+                    // MPEG-1 / MPEG-2 LSF audio: the object type doesn't say the layer, the frames do.
+                    0x69, 0x6B -> "A_MPEG/L${mpegAudioLayer(t)}" to null
                     // Registered MP4 audio object types for Dolby/DTS streams stored as mp4a.
                     0xA5 -> "A_AC3" to null
                     0xA6 -> "A_EAC3" to null
@@ -391,6 +556,7 @@ class MkvWriter(
                     else -> null
                 }
             }
+            ".mp3" -> "A_MPEG/L3" to null
             "ac-3" -> "A_AC3" to null
             "ec-3" -> "A_EAC3" to null
             // Matroska wants an OpusHead, not the MP4 dOps payload.
@@ -406,9 +572,56 @@ class MkvWriter(
             "dtsc", "dtsh", "dtsl" -> "A_DTS" to null
             "dtse" -> "A_DTS/EXPRESS" to null
             "mlpa" -> "A_TRUEHD" to null
+            // PCM: QuickTime sowt (little-endian) / twos (big-endian) / lpcm (v2 flags), ISO
+            // ipcm/fpcm (pcmC). Matroska has little-endian floats only, and 8-bit means unsigned.
+            "sowt" -> pcm(t, littleEndian = true, float = false, bits = audio?.bits ?: 16)
+            "twos" -> pcm(t, littleEndian = false, float = false, bits = audio?.bits ?: 16)
+            // QuickTime `raw `: unsigned 8-bit, which is what Matroska's 8-bit A_PCM/INT/LIT means.
+            "raw " -> { t.audioBitDepth = 8; "A_PCM/INT/LIT" to null }
+            "lpcm" -> audio?.let { a ->
+                pcm(t, littleEndian = a.lpcmFlags and 0x2 == 0, float = a.lpcmFlags and 0x1 != 0, bits = a.bits)
+            }
+            // QuickTime fixed-size PCM: big-endian unless `wave > enda` says little.
+            "in24", "in32", "fl32", "fl64" -> pcm(
+                t, littleEndian = waveChild(entry, childStart, "enda")?.let { e -> e.any { it.toInt() != 0 } } ?: false,
+                float = fourcc.startsWith("fl"), bits = fourcc.substring(2).toInt()
+            )
+            "ipcm", "fpcm" -> childBox(entry, childStart, "pcmC")?.takeIf { it.size >= 6 }?.let { c ->
+                pcm(t, littleEndian = c[4].toInt() and 1 != 0, float = fourcc == "fpcm", bits = c[5].toInt() and 0xFF)
+            }
             // No Matroska codec ID exists for e.g. AC-4 (ac-4), MPEG-H (mha1/mhm1) or APAC (apac).
-            else -> null
+            else -> if (video) quickTime(entry) else null
         }.also { if (it == null) Logger.error("XDM", "MKV: no Matroska mapping for MP4 sample entry '$fourcc'") }
+    }
+
+    /**
+     * Any other video sample entry: Matroska's V_QUICKTIME, with the whole sample entry (the
+     * QuickTime ImageDescription) as CodecPrivate; readers take the fourcc from it.
+     */
+    private fun quickTime(entry: ByteArray): Pair<String, ByteArray?> = "V_QUICKTIME" to entry
+
+    /** The Matroska PCM codec for these properties, or null (big-endian float, signed 8-bit). */
+    private fun pcm(t: Track, littleEndian: Boolean, float: Boolean, bits: Int): Pair<String, ByteArray?>? {
+        if (bits <= 0) return null
+        t.audioBitDepth = bits
+        return when {
+            float -> if (littleEndian) "A_PCM/FLOAT/IEEE" to null else null
+            bits == 8 -> null // Matroska 8-bit PCM is unsigned; MP4's is signed
+            littleEndian -> "A_PCM/INT/LIT" to null
+            else -> "A_PCM/INT/BIG" to null
+        }
+    }
+
+    /** MPEG audio layer (1-3) from the first frame's header in the spool; 3 when it can't be read. */
+    private fun mpegAudioLayer(t: Track): Int {
+        if (t.samples.isEmpty()) return 3
+        val header = ByteArray(4)
+        RandomAccessFile(spoolFile, "r").use { raf ->
+            raf.seek(t.samples.fileOffset(0))
+            if (raf.read(header) < 4) return 3
+        }
+        if ((header[0].toInt() and 0xFF) != 0xFF || (header[1].toInt() and 0xE0) != 0xE0) return 3
+        return when ((header[1].toInt() ushr 1) and 0x03) { 3 -> 1; 2 -> 2; else -> 3 }
     }
 
     /** The Dolby Vision config record of a video track copied from MP4, if its sample entry has one. */
@@ -432,13 +645,17 @@ class MkvWriter(
             val tag = esds[p++].toInt() and 0xFF
             val len = readLen()
             when (tag) {
-                0x03 -> p += 3 // ES_Descriptor header, nested descriptors follow
+                0x03 -> p = esDescriptorBody(esds, p) // nested descriptors follow
                 0x04 -> return if (p < esds.size) esds[p].toInt() and 0xFF else null
                 else -> p += len
             }
         }
         return null
     }
+
+    /** Contents of the box [name] inside the QuickTime `wave` atom of a sample entry, if any. */
+    private fun waveChild(entry: ByteArray, childStart: Int, name: String): ByteArray? =
+        childBox(entry, childStart, "wave")?.let { childBox(it, 0, name) }
 
     /** Returns the *contents* (payload without size+type) of the first child box named [name]. */
     private fun childBox(data: ByteArray, start: Int, name: String): ByteArray? {
@@ -454,6 +671,20 @@ class MkvWriter(
         return null
     }
 
+    /**
+     * Position of the first nested descriptor of an ES_Descriptor whose fields start at [p]: ES_ID and
+     * flags, then dependsOn_ES_ID, the URL and OCR_ES_Id when their flags are set.
+     */
+    private fun esDescriptorBody(esds: ByteArray, start: Int): Int {
+        if (start + 3 > esds.size) return esds.size
+        val flags = esds[start + 2].toInt() and 0xFF
+        var p = start + 3
+        if (flags and 0x80 != 0) p += 2
+        if (flags and 0x40 != 0) p += 1 + (if (p < esds.size) esds[p].toInt() and 0xFF else 0)
+        if (flags and 0x20 != 0) p += 2
+        return p
+    }
+
     /** Extracts the AudioSpecificConfig bytes (descriptor tag 0x05) from an esds payload. */
     private fun extractAsc(esds: ByteArray): ByteArray? {
         var p = 4 // skip version/flags
@@ -462,7 +693,7 @@ class MkvWriter(
             val tag = esds[p++].toInt() and 0xFF
             val len = readLen()
             when (tag) {
-                0x03 -> { p += 3 } // ES_Descriptor header (ES_ID + flags), then nested descriptors follow
+                0x03 -> p = esDescriptorBody(esds, p) // then nested descriptors follow
                 0x04 -> { p += 13 } // DecoderConfigDescriptor fixed fields, then DecoderSpecificInfo follows
                 0x05 -> return if (p + len <= esds.size) esds.copyOfRange(p, p + len) else null
                 else -> p += len
@@ -473,6 +704,23 @@ class MkvWriter(
 
     // ---- time helpers ----
 
+    /**
+     * The track's typical frame duration in ns: the upper median of the steps between its first
+     * presentation times in order (sorted, so B-frames and tracks that carry only PTS give one frame); 0 if unknown.
+     */
+    private fun frameDurationNs(t: Track): Long {
+        val s = t.samples
+        if (s.size < 2 || t.timescale <= 0) return 0
+        val pts = LongArray(minOf(s.size, 2048)) { s.pts(it) }.also { it.sort() }
+        val step = upperMedian { sink ->
+            for (i in 1 until pts.size) {
+                val d = pts[i] - pts[i - 1]
+                if (d > 0) sink.accept(d)
+            }
+        }
+        return if (step > 0) step * 1_000_000_000L / t.timescale else 0
+    }
+
     private fun msOf(ticks: Long, timescale: Int): Long {
         val ts = if (timescale > 0) timescale else 1000
         return (ticks * 1000 + ts / 2) / ts
@@ -482,8 +730,17 @@ class MkvWriter(
 
     private companion object {
         val VIDEO_FOURCCS = setOf(
-            "avc1", "avc3", "hev1", "hvc1", "vp08", "vp09", "av01", "dva1", "dvav", "dvh1", "dvhe", "dav1"
+            "avc1", "avc3", "hev1", "hvc1", "vp08", "vp09", "av01", "dva1", "dvav", "dvh1", "dvhe", "dav1", "vvc1", "vvi1", "jpeg", "mjpa", "mjpb"
         )
         val DOLBY_VISION_BOXES = listOf("dvcC", "dvvC", "dvwC")
+
+        /** PCM block length: MP4's one-frame samples are joined into blocks of this many ms. */
+        const val PCM_BLOCK_MS = 20L
+
+        /** Bytes reserved after the Segment header for the SeekHead (three entries) and its Void padding. */
+        const val SEEK_HEAD_SPACE = 96
     }
 }
+
+/** A track the writer can't carry: writing on would leave it out. */
+class TrackLostException(message: String) : java.io.IOException(message)

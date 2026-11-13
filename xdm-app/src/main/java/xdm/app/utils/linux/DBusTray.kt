@@ -221,7 +221,7 @@ internal object DBusTray {
             if (eventId != "clicked") return
             when (id) {
                 ITEM_SHOW -> showWindow()
-                ITEM_EXIT -> SwingUtilities.invokeLater { exitProcess(0) }
+                ITEM_EXIT -> SwingUtilities.invokeLater { xdm.app.utils.AppExit.exit() }
             }
         }
     }

@@ -7,17 +7,22 @@ import xdm.app.ui.components.CircularProgress
 import xdm.app.ui.components.SegmentPanel
 import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.WEBSITE_URL
+import xdm.app.utils.padColumns
 import xdm.app.utils.gbAdd
 import xdm.app.utils.openInDefaultBrowser
 import xdm.app.utils.scaledInsets
 import xdm.app.utils.scaledSize
 import xdm.app.utils.windowIconImages
+import xdm.app.utils.px
 import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.web.SegmentProgress
+import xdm.core.downloaders.web.http.ChunkStatus
 import xdm.core.util.FormatHelper.formatSize
 import xdm.core.util.FormatHelper.toLongEta
 import xdm.core.util.MovePhase
 import xdm.manager.BatchFileCounts
+import xdm.manager.RecordStatus
+import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Cursor
 import java.awt.Dimension
@@ -30,9 +35,31 @@ import java.awt.event.MouseEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import javax.swing.*
+import javax.swing.table.AbstractTableModel
+import javax.swing.table.DefaultTableCellRenderer
 
+/**
+ * The progress window of an HTTP, HLS/DASH or batch download (400 × 260):
+ *
+ * ```
+ * ( 46% )  ubuntu-24.04-desktop.iso
+ *          Downloading
+ *          Download 46%            68.9 MB / 150.0 MB
+ *          ▮▮▮▮▯▮▮▯▯▮▯▯   (segments)
+ *          Speed 4.2 MB/s                 19 sec left
+ * [Less]                                 [Hide] [Pause]
+ *  #  Status        Downloaded     (a row per connection, numbered 1..n)
+ * ```
+ *
+ * More/Less shows or hides the table below the buttons, adding [MORE_HEIGHT] px; the choice is remembered
+ * ([xdm.app.IAppConfig.progressMore]). The table has a row per connection slot ([SegmentTableModel]), so it
+ * never has more rows than the most segments live at once; the bar above shows all of them.
+ */
 class ProgressWindow(val id: Long) : JFrame() {
     private companion object {
+        const val BASE_HEIGHT = 260
+        const val MORE_HEIGHT = 150
+
         /**
          * Resolved once: `isTaskbarSupported`/`getTaskbar`/`isSupported` used to run on every progress
          * update (once a second per download), and showed up in profiles as `CTaskbarPeer.isSupported`.
@@ -101,11 +128,15 @@ class ProgressWindow(val id: Long) : JFrame() {
         segData: Collection<SegmentProgress>,
         files: BatchFileCounts? = null,
     ) {
-        lblStat.text = files?.let { batchFilesText(it) } ?: text("DWN_TITLE")
+        // Muxing reports progress through the same call, with [prg] as the assembling percent and no segments.
+        val assembling = synchronized(AppContext.db) { AppContext.db.getById(id)?.status == RecordStatus.ASSEMBLING }
+        lblStat.text = files?.let { batchFilesText(it) } ?: text(if (assembling) "STAT_ASSEMBLING" else "DWN_TITLE")
         lblFileName.text = fileName
         title = "[ $prg% ] $fileName"
         textBuf.clear()
-        if (prg > 0) {
+        if (assembling) {
+            textBuf.append(text("STAT_ASSEMBLING") + " " + prg + "%")
+        } else if (prg > 0) {
             textBuf.append(text("DWN_DOWNLOAD") + " " + prg + "%")
         } else {
             textBuf.append(text("DWN_TITLE"))
@@ -138,7 +169,11 @@ class ProgressWindow(val id: Long) : JFrame() {
             lblStat4.text = "---"
         }
         this.prg.value = prg
-        segPanel.setValues(segData)
+        // The bar and the table keep the last download state while assembling.
+        if (!assembling) {
+            segPanel.setValues(segData)
+            segModel.update(segData)
+        }
         windowProgressTaskbar?.setWindowProgressValue(this, prg)
     }
 
@@ -154,6 +189,15 @@ class ProgressWindow(val id: Long) : JFrame() {
     }
 
     private val btnHide = JButton(text("DWN_HIDE")).apply { addActionListener { hideWindow() } }
+    private val btnMore = JButton().apply { addActionListener { setMore(!tableHolder.isVisible, remember = true) } }
+    private val segModel = SegmentTableModel()
+    private val tableHolder = JPanel(BorderLayout()).apply {
+        border = ScaledEmptyBorder(0, 10, 10, 10)
+        add(JScrollPane(segmentTable()))
+        // Not the table's own preferred height (hundreds of px): GridBag would squeeze the labels to fit it.
+        preferredSize = Dimension(10.px, (MORE_HEIGHT - 10).px)
+        minimumSize = Dimension(10.px, 40.px)
+    }
     private val btnPauseResume = JButton(text("MENU_PAUSE")).apply { addActionListener { pauseDownload() } }
     val prg = CircularProgress().apply {
         value = 0
@@ -192,24 +236,24 @@ class ProgressWindow(val id: Long) : JFrame() {
         title = text("DWN_TITLE")
         // A top-level frame of its own, with its own taskbar button: without this it shows Java's icon.
         iconImages = windowIconImages
-        size = scaledSize(400, 260)
-        setLocationRelativeTo(null)
+        size = scaledSize(400, BASE_HEIGHT)
 
         val b1 = Box.createHorizontalBox().apply {
             border = ScaledEmptyBorder(10, 15, 10, 15)
+            add(btnMore)
             add(Box.createHorizontalGlue())
             add(btnHide)
             add(Box.createRigidArea(scaledSize(10, 10)))
             add(btnPauseResume)
-            isOpaque = true
-            background = UIManager.getColor("Table.background")
+            // No band of its own: the buttons and the table sit on the window's background.
         }
 
         val gridBagLayout = GridBagLayout().apply {
             columnWidths = intArrayOf(0, 0, 0, 0, 0, 0, 0)
-            rowHeights = intArrayOf(0, 0, 0, 0, 0, 0, 0)
+            rowHeights = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0)
             columnWeights = doubleArrayOf(0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0)
-            rowWeights = doubleArrayOf(0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+            // Row 5 (the help link) takes the spare height, or row 7 (the table) while it is shown: see setMore.
+            rowWeights = doubleArrayOf(0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0)
         }
         contentPane.layout = gridBagLayout
 
@@ -230,7 +274,7 @@ class ProgressWindow(val id: Long) : JFrame() {
             contentPane,
             gridX = 1,
             gridY = 1,
-            padding = scaledInsets(5, 10, 15, 15),
+            padding = scaledInsets(5, 10, 7, 15),
             alignment = GridBagConstraints.NORTHWEST,
             colSpan = 2,
         )
@@ -239,7 +283,7 @@ class ProgressWindow(val id: Long) : JFrame() {
             contentPane,
             gridX = 1,
             gridY = 2,
-            padding = scaledInsets(15, 10, 5, 5),
+            padding = scaledInsets(9, 10, 5, 5),
             alignment = GridBagConstraints.WEST,
         )
         gbAdd(
@@ -247,7 +291,7 @@ class ProgressWindow(val id: Long) : JFrame() {
             contentPane,
             gridX = 2,
             gridY = 2,
-            padding = scaledInsets(15, 10, 5, 15),
+            padding = scaledInsets(9, 10, 5, 15),
             alignment = GridBagConstraints.EAST,
         )
         gbAdd(
@@ -294,6 +338,10 @@ class ProgressWindow(val id: Long) : JFrame() {
             colSpan = 3,
             horizontalFill = true,
         )
+        contentPane.add(tableHolder, GridBagConstraints().apply {
+            gridx = 0; gridy = 7; gridwidth = 3; fill = GridBagConstraints.BOTH
+        })
+        setMore(AppContext.config.progressMore, remember = false)
         rootPane.defaultButton = btnPauseResume
         addWindowListener(
             object : WindowAdapter() {
@@ -310,6 +358,31 @@ class ProgressWindow(val id: Long) : JFrame() {
                     System.gc()
                 }
             })
+        setLocationRelativeTo(null)
+    }
+
+    /** Shows or hides the segment table, growing or shrinking the window by its [MORE_HEIGHT] px. */
+    private fun setMore(on: Boolean, remember: Boolean) {
+        tableHolder.isVisible = on
+        btnMore.text = text(if (on) "TW_LESS" else "TW_MORE")
+        (contentPane.layout as GridBagLayout).rowWeights.let {
+            it[5] = if (on) 0.0 else 1.0
+            it[7] = if (on) 1.0 else 0.0
+        }
+        // Relative, so a window an error message made taller keeps its extra lines.
+        setSize(width, if (on) height + MORE_HEIGHT.px else maxOf(height - MORE_HEIGHT.px, BASE_HEIGHT.px))
+        validate()
+        if (remember) AppContext.config.progressMore = on
+    }
+
+    private fun segmentTable() = JTable(segModel).apply {
+        rowHeight = 22.px
+        fillsViewportHeight = true
+        tableHeader.reorderingAllowed = false
+        autoResizeMode = JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS
+        intArrayOf(40, 110, 200).forEachIndexed { i, w -> columnModel.getColumn(i).preferredWidth = w.px }
+        columnModel.getColumn(0).cellRenderer = DefaultTableCellRenderer().apply { horizontalAlignment = SwingConstants.RIGHT }
+        padColumns()
     }
 
     private fun pauseDownload() {
@@ -328,6 +401,59 @@ class ProgressWindow(val id: Long) : JFrame() {
     private fun batchFilesText(files: BatchFileCounts): String {
         val counts = text("BATCH_FILES_PROGRESS").format("%,d".format(files.done), "%,d".format(files.total))
         return if (files.failed > 0) "$counts · ${text("BATCH_FILES_FAILED").format("%,d".format(files.failed))}" else counts
+    }
+}
+
+/**
+ * One row per connection slot, numbered 1 to the most segments that were live at once. A segment that
+ * stops being live keeps its row, shown finished (or failed), until a newly started segment takes the
+ * row over; so with 8 connections the table holds 8 rows to the end, the last ones finished.
+ */
+internal class SegmentTableModel : AbstractTableModel() {
+    private class Slot(val id: Long, var status: ChunkStatus, var bytes: Long, var live: Boolean)
+
+    private val columns = arrayOf("#", text("TW_STATUS"), text("TW_DOWNLOADED"))
+    private val slots = ArrayList<Slot>()
+
+    fun update(segments: Collection<SegmentProgress>) {
+        val byId = segments.associateBy { it.id }
+        for (slot in slots) {
+            val s = byId[slot.id]
+            if (s != null) slot.bytes = s.bytes
+            slot.live = s?.live == true
+            // Gone from the list (a part merged into its neighbour) counts as done too.
+            slot.status = if (s == null || (!s.live && s.status != ChunkStatus.Failed)) ChunkStatus.Finished else s.status
+        }
+        val shown = slots.filter { it.live }.mapTo(HashSet()) { it.id }
+        for (s in segments) {
+            if (!s.live || !shown.add(s.id)) continue
+            val slot = Slot(s.id, s.status, s.bytes, live = true)
+            val free = slots.indexOfFirst { !it.live }
+            if (free >= 0) slots[free] = slot else slots += slot
+        }
+        fireTableDataChanged()
+    }
+
+    /** The status each row shows, for tests. */
+    internal val statuses: List<ChunkStatus> get() = slots.map { it.status }
+
+    override fun getRowCount() = slots.size
+    override fun getColumnCount() = columns.size
+    override fun getColumnName(c: Int) = columns[c]
+    override fun getValueAt(r: Int, c: Int): Any {
+        val s = slots[r]
+        return when (c) {
+            0 -> (r + 1).toString()
+            1 -> text(
+                when (s.status) {
+                    ChunkStatus.Ready -> "SEG_CONNECTING"
+                    ChunkStatus.Downloading -> "STAT_DOWNLOADING"
+                    ChunkStatus.Failed -> "STAT_FAILED"
+                    else -> "STAT_FINISHED"
+                }
+            )
+            else -> formatSize(s.bytes.toDouble())
+        }
     }
 }
 

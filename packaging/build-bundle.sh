@@ -130,6 +130,8 @@ RECORD_CLASSES=0
 RECORD_SERVER=""
 RECORD_ONLY=0
 ANY_JDK=0
+NO_TORRENT=0
+TORRENT_LOCAL=""
 EXTRA_ARGS=()
 
 usage() {
@@ -153,6 +155,9 @@ Usage: packaging/build-bundle.sh [options] [-- extra jpackage args]
                       written (no archive, no bundle); refuses --any-jdk
       --any-jdk       Build with a JDK other than the one pinned in packaging/jdk.properties
                       (the AppCDS class list then doesn't match: local experiments only)
+      --torrent-local Bundle this machine's own build of the torrent library (fetch-binaries.sh --local)
+                      instead of the release pinned in packaging/torrent/binaries.lock
+      --no-torrent    Bundle without the torrent library (torrents are then not offered)
   -o, --out DIR       Output directory (default: build/dist)
   -h, --help          This message
 
@@ -172,6 +177,8 @@ while [[ $# -gt 0 ]]; do
     --record-server) RECORD_CLASSES=1; RECORD_SERVER="$2"; shift 2 ;;
     --record-only) RECORD_ONLY=1; shift ;;
     --any-jdk) ANY_JDK=1; shift ;;
+    --no-torrent) NO_TORRENT=1; shift ;;
+    --torrent-local) TORRENT_LOCAL="--local"; shift ;;
     -o|--out) DEST_DIR="$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     --) shift; EXTRA_ARGS=("$@"); break ;;
@@ -592,6 +599,22 @@ if [[ $C2_CRYPTO -eq 1 ]]; then
   )
 fi
 [[ -n "$FLATLAF_NATIVE" ]] && JAVA_OPTIONS+=('-Dflatlaf.nativeLibraryPath=$APPDIR')
+
+# The native torrent library in app/, found through -Dxdm.torrent.library (TorrentLibrary). Pinned in
+# packaging/torrent/binaries.lock and fetched (hash checked); never built here. macOS: signed with the bundle.
+if [[ $NO_TORRENT -eq 0 ]]; then
+  case "$OS" in mac) TORRENT_OS=macos ;; *) TORRENT_OS=linux ;; esac
+  case "$JDK_ARCH" in aarch64|arm64) TORRENT_ARCH=arm64 ;; *) TORRENT_ARCH=x64 ;; esac
+  if ! TORRENT_LIB="$("$PROJECT_ROOT/packaging/torrent/fetch-binaries.sh" --platform "$TORRENT_OS-$TORRENT_ARCH" $TORRENT_LOCAL)"; then
+    echo "No torrent library for $TORRENT_OS-$TORRENT_ARCH (pass --torrent-local or --no-torrent)" >&2
+    exit 1
+  fi
+  cp "$TORRENT_LIB" "$INPUT_DIR/"
+  JAVA_OPTIONS+=("-Dxdm.torrent.library=\$APPDIR/$(basename "$TORRENT_LIB")")
+  echo ">> torrent library in app/: $(basename "$TORRENT_LIB") ($TORRENT_OS-$TORRENT_ARCH)"
+else
+  echo ">> no torrent library (--no-torrent)"
+fi
 # The app dir for PlatformUtils.baseDirectory: with the app in the runtime image there is no jar path
 # to take it from.
 JAVA_OPTIONS+=('-Dxdm.app.dir=$APPDIR')
@@ -645,7 +668,7 @@ esac
 echo ">> jpackage --type $JPACKAGE_TYPE ($OS, version $APP_VERSION)"
 "$JPACKAGE" "${ARGS[@]}" ${EXTRA_ARGS+"${EXTRA_ARGS[@]}"}
 
-# ---- macOS: display name + the xdm-app:// scheme ---------------------------
+# ---- macOS: display name, the xdm-app:// and magnet: schemes, .torrent files ----
 # A bundle can only claim a URL scheme in its Info.plist, and jpackage has no option for it, so
 # the plist is patched afterwards. This only reaches the plist for an app image (also the base of
 # --type dmg); a pkg build makes its .app inside jpackage's own temp dir (see the note printed below).
@@ -671,6 +694,32 @@ if [[ "$OS" == "mac" && "$JPACKAGE_TYPE" == "app-image" ]]; then
          <key>CFBundleURLName</key><string>$APP_NAME</string>\
          <key>CFBundleTypeRole</key><string>Viewer</string>\
          <key>CFBundleURLSchemes</key><array><string>$URL_SCHEME</string></array>\
+       </dict><dict>\
+         <key>CFBundleURLName</key><string>BitTorrent magnet link</string>\
+         <key>CFBundleTypeRole</key><string>Viewer</string>\
+         <key>CFBundleURLSchemes</key><array><string>magnet</string></array>\
+       </dict></array>" "$PLIST"
+    # .torrent files open in XDM's Add torrent (as one choice: Viewer, never claimed as the default).
+    # The type is imported, not exported: XDM does not own it.
+    echo ">> declaring magnet: links and .torrent files in Info.plist"
+    plutil -remove UTImportedTypeDeclarations "$PLIST" >/dev/null 2>&1 || true
+    plutil -insert UTImportedTypeDeclarations -xml \
+      "<array><dict>\
+         <key>UTTypeIdentifier</key><string>org.bittorrent.torrent</string>\
+         <key>UTTypeDescription</key><string>BitTorrent document</string>\
+         <key>UTTypeConformsTo</key><array><string>public.data</string></array>\
+         <key>UTTypeTagSpecification</key><dict>\
+           <key>public.filename-extension</key><array><string>torrent</string></array>\
+           <key>public.mime-type</key><array><string>application/x-bittorrent</string></array>\
+         </dict>\
+       </dict></array>" "$PLIST"
+    plutil -remove CFBundleDocumentTypes "$PLIST" >/dev/null 2>&1 || true
+    plutil -insert CFBundleDocumentTypes -xml \
+      "<array><dict>\
+         <key>CFBundleTypeName</key><string>BitTorrent document</string>\
+         <key>CFBundleTypeRole</key><string>Viewer</string>\
+         <key>LSHandlerRank</key><string>Alternate</string>\
+         <key>LSItemContentTypes</key><array><string>org.bittorrent.torrent</string></array>\
        </dict></array>" "$PLIST"
     # Tell LaunchServices about it now, so the scheme works without a logout. Skipped on CI: nobody
     # uses the scheme there, and the registration wakes services that keep the bundle's files busy

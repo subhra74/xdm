@@ -57,8 +57,8 @@ class AppToolBar(
     private val btnDeleteGap: Component
     private val contextMenu: JPopupMenu
     private val sortMenu: JPopupMenu
+    private val newMenu: JPopupMenu
     private lateinit var mSettings: JMenuItem
-    private lateinit var mBatchImport: JMenuItem
     private lateinit var mHelp: JMenuItem
     private lateinit var mUpdate: JMenuItem
     private lateinit var mAbout: JMenuItem
@@ -74,7 +74,12 @@ class AppToolBar(
     init {
         this.contextMenu = createContextMenu()
         this.sortMenu = createSortMenu()
-        this.btnNew = createToolButton(RemixIcon.ADD_LARGE_FILL, buttonCallback, "TOOL_DOWNLOAD", Color.gray)
+        this.newMenu = createNewMenu()
+        // Opens the kind-of-download menu; the main window's TOOL_DOWNLOAD action is its first item.
+        this.btnNew = createToolButton(RemixIcon.ADD_LARGE_FILL, {}, "TOOL_DOWNLOAD", Color.gray)
+        this.btnNew.addActionListener {
+            showMenu(btnNew, newMenu, alignStart = true)
+        }
         this.btnNewGap = Box.createRigidArea(scaledSize(5, 0))
 
         this.btnClear = createToolButton(RemixIcon.DELETE_BIN_LINE, buttonCallback, "TOOL_CLEAR", Color.gray)
@@ -119,7 +124,7 @@ class AppToolBar(
                 searchCallback(this.text)
             }
             putClientProperty(FlatClientProperties.STYLE, "arc: 10")
-            putClientProperty("JTextField.placeholderText", "Search")
+            putClientProperty("JTextField.placeholderText", text("SEARCH"))
             putClientProperty(
                 "JTextField.trailingIcon", createIcon(RemixIcon.SEARCH_LINE, 16, Color.GRAY)
             )
@@ -141,12 +146,26 @@ class AppToolBar(
         val a = createMenuListener()
         val ctx = JPopupMenu()
         mSettings = addMenuItem("TITLE_SETTINGS", ctx, a)
-        mBatchImport = addMenuItem("MENU_BATCH_DOWNLOAD", ctx, a)
-        addMenuItem("MENU_STREAM_DOWNLOAD", ctx, a)
         mUpdate = addMenuItem("MENU_UPDATE", ctx, a)
         mHelp = addMenuItem("MENU_HELP_SUP", ctx, a)
         mAbout = addMenuItem("MENU_ABOUT", ctx, a)
         mExit = addMenuItem("MENU_EXIT", ctx, a)
+        return ctx
+    }
+
+    /** The + New menu: one item per kind of download. */
+    private fun createNewMenu(): JPopupMenu {
+        val ctx = JPopupMenu()
+        val window = { SwingUtilities.windowForComponent(toolbar) }
+        fun item(key: String, action: () -> Unit) = ctx.add(JMenuItem(text(key)).apply {
+            name = key
+            addActionListener { action() }
+        })
+        item("NEW_HTTP_DOWNLOAD") { AppContext.app.addDownload(null) }
+        item("NEW_VIDEO_DOWNLOAD") { AppMenuHandler.showVideoDialog(window()) }
+        item("NEW_TORRENT_DOWNLOAD") { AppMenuHandler.showTorrentDialog(window()) }
+        item("MENU_STREAM_DOWNLOAD") { AppMenuHandler.showStreamDialog(window()) }
+        item("MENU_BATCH_DOWNLOAD") { AppMenuHandler.showBatchDialog(window()) }
         return ctx
     }
 
@@ -211,14 +230,6 @@ class AppToolBar(
                     showSettings()
                 }
 
-                "MENU_BATCH_DOWNLOAD" -> {
-                    AppMenuHandler.showBatchDialog(SwingUtilities.windowForComponent(toolbar))
-                }
-
-                "MENU_STREAM_DOWNLOAD" -> {
-                    AppMenuHandler.showStreamDialog(SwingUtilities.windowForComponent(toolbar))
-                }
-
                 "MENU_LANG" -> {
 
                 }
@@ -239,7 +250,7 @@ class AppToolBar(
                 }
 
                 "MENU_EXIT" -> {
-                    exitProcess(0)
+                    xdm.app.utils.AppExit.exit()
                 }
             }
         }

@@ -200,7 +200,8 @@ object HlsParser {
                                     duration = 0.0,
                                     keyUrl?.let { applyQuery(baseUrl, it, query) },
                                     iv,
-                                    isEncrypted
+                                    isEncrypted,
+                                    init = true,
                                 )
                             mediaSegments.add(segment)
                         }

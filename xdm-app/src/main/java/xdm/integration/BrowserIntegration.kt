@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import xdm.app.AppContext
 import xdm.app.I8N
+import xdm.app.torrent.TorrentLaunch
 import xdm.app.BatchRequest
 import xdm.app.BatchRequestItem
 import xdm.app.update.UpdateChecker
@@ -150,8 +151,7 @@ object BrowserIntegration {
 
     /**
      * Tells the running instance to come to the front. The arguments this launch was given travel
-     * with it: nothing consumes them yet, but a launch is only ever handed off this way, so this is
-     * where a future `xdm-app://...` URL would arrive.
+     * with it: a magnet link or .torrent file the OS opened XDM with arrives this way.
      */
     private fun postShow(args: Array<String>, port: Int): Boolean = runCatching {
         val payload = json.encodeToString(ShowRequest(args.toList())).toByteArray(StandardCharsets.UTF_8)
@@ -352,10 +352,11 @@ object BrowserIntegration {
      */
     private fun onShowMessage(context: RequestContext) {
         Logger.info("INTEGRATION", "Another launch asked this instance to show itself")
-        // The arguments are read (and logged) but not acted on yet; see ShowRequest.
-        runCatching { decodeBody<ShowRequest>(context) }
-            .onSuccess { it?.let { Logger.info("INTEGRATION", "Launch arguments: ${it.args}") } }
-        AppContext.app.showAppWindow()
+        val args = runCatching { decodeBody<ShowRequest>(context) }.getOrNull()?.args.orEmpty()
+        Logger.info("INTEGRATION", "Launch arguments: $args")
+        // Opened a magnet link or a .torrent file with XDM while it was running: Add torrent, else just show.
+        val torrent = TorrentLaunch.sourceIn(args)
+        if (torrent != null) AppContext.app.openTorrent(torrent) else AppContext.app.showAppWindow()
     }
 
     private fun onClearTabMessage(context: RequestContext) {
@@ -463,9 +464,8 @@ data class ConfigDto(
 data class PollRequest(val clientId: String? = null, val version: Long = 0)
 
 /**
- * Body of a `/show` request: the command line of the launch that handed over to this instance.
- * Nothing consumes [args] yet - it is the seam for a future `xdm-app://...` URL handler, and
- * `IAppInstance.run` ignores its own arguments today too.
+ * Body of a `/show` request: the command line of the launch that handed over to this instance. A magnet
+ * link or a .torrent path in it opens Add torrent ([xdm.app.torrent.TorrentLaunch]).
  */
 @Serializable
 data class ShowRequest(val args: List<String> = emptyList())

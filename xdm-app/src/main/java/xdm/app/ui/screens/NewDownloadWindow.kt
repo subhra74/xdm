@@ -467,6 +467,9 @@ class NewDownloadWindow : JDialog(null as Window?) {
             knownFileSize = taskInfo?.knownFileSize,
             // The browser's ETag belongs to the URL it captured, not to an address typed over it.
             etag = taskInfo?.etag?.takeIf { taskInfo?.url == url },
+            // The link the browser was redirected from leads to the captured URL, not to one typed over it.
+            sourceUrl = taskInfo?.sourceUrl?.takeIf { taskInfo?.url == url },
+            sourceCookie = taskInfo?.sourceCookie?.takeIf { taskInfo?.url == url },
         )
 
         AppContext.downloader.startHttpDownload(task, now)

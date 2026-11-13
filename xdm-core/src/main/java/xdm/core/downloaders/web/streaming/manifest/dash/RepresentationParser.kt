@@ -112,20 +112,23 @@ private fun parseSegmentList(
         val sourceURL = getAttr(xmlInit, "sourceURL")
         val initRange = parseRangeAttr(getAttr(xmlInit, "range"))
         if (sourceURL != null) {
-            segments.add(DashSegment(resolveUri(baseUrl, sourceURL), initRange))
+            segments.add(DashSegment(resolveUri(baseUrl, sourceURL), initRange, init = true))
         } else if (initRange != null) {
-            segments.add(DashSegment(baseUrl, initRange))
+            segments.add(DashSegment(baseUrl, initRange, init = true))
         }
     }
+    // SegmentList@duration in @timescale ticks: every segment's length (the last may be shorter).
+    val listTimescale = getAttr(xmlSegmentList, "timescale")?.toLongOrNull()?.takeIf { it > 0 } ?: 1L
+    val listDuration = (getAttr(xmlSegmentList, "duration")?.toLongOrNull() ?: 0L).toDouble() / listTimescale
     for (i in 0..<segmentUrlNodes.length) {
         val segmentNode = segmentUrlNodes.item(i)
         val media = getAttr(segmentNode, MEDIA_KEY)
         // Single-file addressing: no media= attribute, just a mediaRange into the BaseURL file.
         val mediaRange = parseRangeAttr(getAttr(segmentNode, "mediaRange"))
         if (media != null) {
-            segments.add(DashSegment(resolveUri(baseUrl, media), mediaRange))
+            segments.add(DashSegment(resolveUri(baseUrl, media), mediaRange, listDuration))
         } else if (mediaRange != null) {
-            segments.add(DashSegment(baseUrl, mediaRange))
+            segments.add(DashSegment(baseUrl, mediaRange, listDuration))
         }
     }
     if (segments.isNotEmpty()) {
@@ -172,7 +175,7 @@ private fun parseSegmentTimeLineSimple(
         val m = TemplatePattern.matcher(mediaUrl)
         while (m.find()) mediaMatches.add(MatcherResult.toMatcherResult(m))
     }
-    val segments: MutableList<HttpUrl> = ArrayList(segmentCount + (if (initUrl != null) 1 else 0))
+    val segments: MutableList<DashSegment> = ArrayList(segmentCount + (if (initUrl != null) 1 else 0))
     if (initUrl != null) {
         val initMatches: MutableList<MatcherResult> = ArrayList()
         val m = TemplatePattern.matcher(initUrl)
@@ -180,19 +183,19 @@ private fun parseSegmentTimeLineSimple(
         val initializationUrl = parseTemplate(
             initMatches, initUrl, number, time, bandwidthStr, representationId
         ).replace("\u0000", "$")
-        segments.add(resolveUri(baseUrl, initializationUrl))
+        segments.add(DashSegment(resolveUri(baseUrl, initializationUrl), init = true))
     }
     for (i in 0..<segmentCount) {
         val segmentUrl = parseTemplate(
             mediaMatches, mediaUrl!!, number, time, bandwidthStr, representationId
         ).replace("\u0000", "$")
-        segments.add(resolveUri(baseUrl, segmentUrl))
+        segments.add(DashSegment(resolveUri(baseUrl, segmentUrl), duration = duration.toDouble() / timescale))
         number++
         time += duration
     }
     if (segments.isNotEmpty()) {
         return Representation(
-            width, height, codec, bandwidth, periodDuration, segments.map { DashSegment(it) }, mimeType, lang
+            width, height, codec, bandwidth, periodDuration, segments, mimeType, lang
         )
     }
     return null
@@ -236,13 +239,13 @@ private fun parseSegmentTimeLineExplicit(
     val initUrl = getAttr(xmlSegmentTemplate, "initialization")?.replace("$$", "\u0000")
     val mediaUrl = getAttr(xmlSegmentTemplate, MEDIA_KEY)?.replace("$$", "\u0000")
     val mediaMatches = matchTemplateUrl(mediaUrl)
-    val segments: MutableList<HttpUrl> = ArrayList()
+    val segments: MutableList<DashSegment> = ArrayList()
     if (initUrl != null) {
         val initMatches = matchTemplateUrl(initUrl)
         val initializationUrl = parseTemplate(
             initMatches, initUrl, number, time, bandwidthStr, representationId
         ).replace("\u0000", "$")
-        segments.add(resolveUri(baseUrl, initializationUrl))
+        segments.add(DashSegment(resolveUri(baseUrl, initializationUrl), init = true))
     }
     // End of the timeline, in @timescale ticks, used to bound an "r=-1" run.
     val periodEndTicks = (periodDuration.toDouble() / 1000.0 * timescale).toLong()
@@ -257,7 +260,8 @@ private fun parseSegmentTimeLineExplicit(
         var segmentUrl = parseTemplate(
             mediaMatches, mediaUrl!!, number, time, bandwidthStr, representationId
         ).replace("\u0000", "$")
-        segments.add(resolveUri(baseUrl, segmentUrl))
+        val seconds = if (timescale > 0) d.toDouble() / timescale else 0.0
+        segments.add(DashSegment(resolveUri(baseUrl, segmentUrl), duration = seconds))
         number++
         time += d
         if (r > 0) {
@@ -266,7 +270,7 @@ private fun parseSegmentTimeLineExplicit(
                 segmentUrl = parseTemplate(
                     mediaMatches, mediaUrl, number, time, bandwidthStr, representationId
                 ).replace("\u0000", "$")
-                segments.add(resolveUri(baseUrl, segmentUrl))
+                segments.add(DashSegment(resolveUri(baseUrl, segmentUrl), duration = seconds))
                 number++
                 time += d
             }
@@ -278,7 +282,7 @@ private fun parseSegmentTimeLineExplicit(
                 segmentUrl = parseTemplate(
                     mediaMatches, mediaUrl, number, time, bandwidthStr, representationId
                 ).replace("\u0000", "$")
-                segments.add(resolveUri(baseUrl, segmentUrl))
+                segments.add(DashSegment(resolveUri(baseUrl, segmentUrl), duration = seconds))
                 number++
                 time += d
             }
@@ -286,7 +290,7 @@ private fun parseSegmentTimeLineExplicit(
     }
     if (segments.isNotEmpty()) {
         return Representation(
-            width, height, codec, bandwidth, periodDuration, segments.map { DashSegment(it) }, mimeType, lang
+            width, height, codec, bandwidth, periodDuration, segments, mimeType, lang
         )
     }
 

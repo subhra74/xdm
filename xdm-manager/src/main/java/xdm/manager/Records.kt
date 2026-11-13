@@ -4,6 +4,7 @@
 
 package xdm.manager
 
+import xdm.core.downloaders.DownloadStatusInfo
 import xdm.core.downloaders.DownloadType
 import xdm.core.util.MovePhase
 import xdm.core.util.StableId
@@ -61,6 +62,13 @@ data class DbRecord(
      * without holes (FAT32, exFAT) before the download splits, or -1 when it isn't being filled. Not persisted.
      */
     var allocating: Int = -1,
+    /**
+     * Torrent only: a FINISHED torrent that is seeding right now (status stays FINISHED, so every finished-only
+     * action keeps working). Not persisted: seeding never resumes by itself after a restart.
+     */
+    var seeding: Boolean = false,
+    /** Torrent only: the latest torrent figures while it downloads or seeds; null otherwise. Not persisted. */
+    var torrent: DownloadStatusInfo.TorrentProgress? = null,
 )
 
 data class QueueItem(val id: Long, val resume: Boolean)

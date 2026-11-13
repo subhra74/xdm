@@ -71,6 +71,7 @@ class SettingsWindow : JFrame() {
     private val foldersPanel = FoldersPanel()
     private val browserMonitorPanel = BrowserMonitorPanel()
     private val networkConfigPanel = NetworkConfigPanel()
+    private val torrentPanel = xdm.app.ui.screens.settings.TorrentPanel()
     private val advancedConfigPanel = AdvancedConfigPanel()
 
     private val pages = listOf(
@@ -79,6 +80,7 @@ class SettingsWindow : JFrame() {
         Page("SETTINGS_FOLDERS", RemixIcon.FOLDER_3_LINE, foldersPanel),
         Page("SETTINGS_MONITORING", RemixIcon.PUZZLE_LINE, browserMonitorPanel),
         Page("SETTINGS_NETWORK", RemixIcon.WIFI_LINE, networkConfigPanel),
+        Page("SETTINGS_BITTORRENT", RemixIcon.ARROW_UP_DOWN_FILL, torrentPanel),
         Page("MSG_ADV_TITLE", RemixIcon.TERMINAL_BOX_LINE, advancedConfigPanel),
     )
 
@@ -182,6 +184,7 @@ class SettingsWindow : JFrame() {
         foldersPanel.save()
         browserMonitorPanel.save()
         networkConfigPanel.save()
+        torrentPanel.save()
         advancedConfigPanel.save()
         loaded?.keepChangedElsewhere(config, beforeWrite)
         config.save()
@@ -200,6 +203,7 @@ class SettingsWindow : JFrame() {
         foldersPanel.load()
         browserMonitorPanel.load()
         networkConfigPanel.load()
+        torrentPanel.load()
         advancedConfigPanel.load()
     }
 

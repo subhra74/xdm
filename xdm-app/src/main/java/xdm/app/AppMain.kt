@@ -47,6 +47,9 @@ object AppMain {
     fun main(args: Array<String>) {
         // Before anything else: headless mode builds no UI, binds no port and loads no app state.
         if (CliParser.isHeadless(args)) {
+            // Quiet until HeadlessCli reads --verbose, and never on stdout (the CLI's own output).
+            Logger.consoleEnabled = false
+            Logger.infoToStderr = true
             ConscryptTls.install()
             exitProcess(HeadlessCli.run(args))
         }
@@ -93,6 +96,10 @@ object AppMain {
             queue = QueueManager()
             platform = PlatformInvoke()
             downloader = DownloadManager(store = appDB, taskInfoDB = taskDB, configDir = configDir)
+            // Every way out (the Exit items, the OS logging off): torrents' resume data and the DHT state are
+            // saved. Returns at once when no torrent ran in this session.
+            val dm = downloader
+            Runtime.getRuntime().addShutdownHook(Thread({ dm.shutdown(timeoutMs = 10_000) }, "torrent-exit"))
             videoTracker = CapturedVideoTracker()
             taskInfoDB = taskDB
             scheduler = DownloadScheduler(appDB, configDir)

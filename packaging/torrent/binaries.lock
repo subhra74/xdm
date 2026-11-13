@@ -1,0 +1,12 @@
+# Prebuilt native torrent libraries, one line per platform: platform|file|url|sha256
+# Built by build-windows.ps1 / build-unix.sh / build-linux-docker.sh in the separate libtorrent-builds repo and published as assets
+# of a GitHub release "xdmtorrent-native-<abi>.<n>" in subhra74/libtorrent-binary (its release-binaries.sh writes these lines; copy them here). Rebuild and
+# re-release only when the native code, the JNI binding or deps.lock change; the Maven build never compiles C++.
+# fetch-binaries.sh / .ps1 download them into ~/.cache/xdm-torrent/bin/<platform>/ and check the hash.
+#
+windows-x64|xdmtorrent.dll|https://github.com/subhra74/libtorrent-binary/releases/download/xdmtorrent-native-4.1/windows-x64-xdmtorrent.dll|cdd19b97d23ccc3b8fd02e65de2caccd0b17eca4b9e6df30341957d2dba7e9e8
+windows-arm64|xdmtorrent.dll|https://github.com/subhra74/libtorrent-binary/releases/download/xdmtorrent-native-4.1/windows-arm64-xdmtorrent.dll|b846b51a81a1302e5c5319ca940ef570a1be1bb2231812ada05604944d541682
+macos-arm64|libxdmtorrent.dylib|https://github.com/subhra74/libtorrent-binary/releases/download/xdmtorrent-native-4.1/macos-arm64-libxdmtorrent.dylib|838f03beecf511f2e7d5bba866ce83d79cdb0f62053b28699eb560c8bbb959ea
+macos-x64|libxdmtorrent.dylib|https://github.com/subhra74/libtorrent-binary/releases/download/xdmtorrent-native-4.1/macos-x64-libxdmtorrent.dylib|b2e5e5b0df6f00990257aea740d9375b65c554fbbe3291ef3ded1aa3b8497387
+linux-x64|libxdmtorrent.so|https://github.com/subhra74/libtorrent-binary/releases/download/xdmtorrent-native-4.1/linux-x64-libxdmtorrent.so|0b71105350d5a1d95656d66d2505a03a5e7c302698d7b571d4f80712ffbbfdb6
+linux-arm64|libxdmtorrent.so|https://github.com/subhra74/libtorrent-binary/releases/download/xdmtorrent-native-4.1/linux-arm64-libxdmtorrent.so|14a4aaad70af5e55e0cea0238c1a7c2338538cc2c818ba8ea7376e153c414e13

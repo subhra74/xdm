@@ -10,10 +10,12 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import xdm.core.downloaders.DashDownloadTaskInfo
+import xdm.core.downloaders.ExtractorSource
 import xdm.core.downloaders.HlsDownloadTaskInfo
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.downloaders.SubtitleTrack
 import xdm.core.downloaders.TaskInfoDB
+import xdm.core.downloaders.TorrentDownloadTaskInfo
 import xdm.core.downloaders.web.http.Chunk
 import xdm.core.downloaders.web.http.ChunkStatus
 import xdm.core.downloaders.web.http.HttpDownloaderTask
@@ -67,6 +69,17 @@ class TestTaskInfoDB : HttpDownloadTestBase() {
     }
 
     @Test
+    fun http_roundTripKeepsSourceLink() {
+        val task = httpTask(4).copy(sourceUrl = "https://site.example/get?id=7", sourceCookie = "session=abc")
+        db().saveHttpTask(task)
+        val loaded = db().getHttpTask(4)!!
+        assertEquals("https://site.example/get?id=7", loaded.sourceUrl, "source link survives a restart")
+        assertEquals("session=abc", loaded.sourceCookie, "source cookies survive a restart")
+        db().saveHttpTask(httpTask(5))
+        assertEquals(null, db().getHttpTask(5)!!.sourceUrl, "no source link when there was no redirect")
+    }
+
+    @Test
     fun http_roundTripKeepsConvertToSrt() {
         val task = httpTask(2).copy(convertToSrt = true)
         db().saveHttpTask(task)
@@ -97,7 +110,10 @@ class TestTaskInfoDB : HttpDownloadTestBase() {
             id = 3, fileName = "d.mp4", tempDir = "/tmp/d", respectFileName = false,
             cookie = "cf=2", headers = headers, origin = "https://example.com/dash",
             categoryId = null, targetFolder = "/downloads",            maxPiece = 0, authInfo = null,
-            videoSegments = listOf(DashSegment("https://cdn.example.com/v1.m4s".toHttpUrl(), Pair(0L, 99L))),
+            videoSegments = listOf(
+                DashSegment("https://cdn.example.com/init.mp4".toHttpUrl(), null, init = true),
+                DashSegment("https://cdn.example.com/v1.m4s".toHttpUrl(), Pair(0L, 99L), duration = 2.002),
+            ),
             audioSegments = listOf(DashSegment("https://cdn.example.com/a1.m4s".toHttpUrl(), null)),
             url = "https://cdn.example.com/manifest.mpd", audioMime = "audio/mp4", videoMime = "video/mp4",
             subtitles = listOf(
@@ -108,6 +124,25 @@ class TestTaskInfoDB : HttpDownloadTestBase() {
         )
         db().saveDashTask(task)
         assertEquals(task, db().getDashTask(3))
+    }
+
+    @Test
+    fun extractorSource_roundTripsForEveryType() {
+        val source = ExtractorSource("yt-dlp", "https://video.example/watch?v=1", listOf("137", "140"), "mp4")
+        db().saveHttpTask(httpTask(20).copy(extractor = source.copy(formatIds = listOf("18"), container = null)))
+        assertEquals(source.copy(formatIds = listOf("18"), container = null), db().getHttpTask(20)!!.extractor)
+        val dash = DashDownloadTaskInfo(
+            id = 21, fileName = "d.mp4", tempDir = "/tmp/d", respectFileName = true, cookie = null, headers = null,
+            origin = null, categoryId = null, targetFolder = "/downloads", maxPiece = 8, authInfo = null,
+            videoSegments = listOf(DashSegment("https://cdn.example.com/v".toHttpUrl(), Pair(0L, 10L))),
+            audioSegments = emptyList(), url = "https://cdn.example.com/v", audioMime = "", videoMime = "video/mp4",
+            extractor = source,
+        )
+        db().saveDashTask(dash)
+        assertEquals(dash, db().getDashTask(21))
+        // A record without the field reads back without one.
+        db().saveHttpTask(httpTask(22))
+        assertNull(db().getHttpTask(22)!!.extractor)
     }
 
     @Test
@@ -203,6 +238,21 @@ class TestTaskInfoDB : HttpDownloadTestBase() {
     }
 
     @Test
+    fun hlsState_keepsTheMuxedContainer() {
+        val host = host()
+        fun ctx(container: String?) = HlsTaskContext(
+            id = 8, chunks = arrayListOf(), httpClient = CountingHttpClient(), downloadHost = host,
+            tempFileName = "h.tmp", tempFolder = tmpDir.absolutePath, url = "https://cdn.example.com/i.m3u8",
+            audioUrl = null, independent = false, encrypted = false, muxedContainer = container,
+        )
+        for (container in listOf("mkv", null)) {
+            saveState(ctx(container), work.absolutePath)
+            val c = loadHlsState(8, work.absolutePath, CountingHttpClient(), host).getOrThrow()
+            assertEquals(container, c.muxedContainer, "a commit retried after a restart names the file after it")
+        }
+    }
+
+    @Test
     fun queuedHttpTask_sendsPersistedCookieAndHeaders() {
         val bytes = randomData(64 * 1024, seed = 60)
         val ep = server.register("/auth", Endpoint(bytes))
@@ -225,5 +275,24 @@ class TestTaskInfoDB : HttpDownloadTestBase() {
         val first = ep.requests.first().headers
         assertTrue(first["cookie"].orEmpty().any { "session=s3cr3t" in it }, "Cookie not sent: ${first["cookie"]}")
         assertEquals(listOf("abc", "def"), first["x-token"]?.flatMap { it.split(",").map(String::trim) })
+    }
+
+    @org.junit.jupiter.api.Test
+    fun `torrent task round-trips and is not read as another type`() {
+        val task = TorrentDownloadTaskInfo(
+            id = 70, key = "b17fc5bc7c813b248811c4fce49c9b766fb8d097", name = "pack",
+            folder = "/downloads/torrents", magnet = "magnet:?xt=urn:btih:b17fc5bc7c813b248811c4fce49c9b766fb8d097",
+            categoryId = "CAT_OTHER", filePriorities = byteArrayOf(0, 4, 7, 1), sequential = true,
+            origin = "https://example.com/page",
+        )
+        assertTrue(db().saveTorrentTask(task), "saved")
+        assertEquals(task, db().getTorrentTask(70), "every field read back")
+        assertNull(db().getHttpTask(70), "not an HTTP task")
+
+        val minimal = TorrentDownloadTaskInfo(71, "a".repeat(40), "x", "/d", null, null)
+        db().saveTorrentTask(minimal)
+        assertEquals(minimal, db().getTorrentTask(71), "optional fields stay empty")
+        db().saveHttpTask(httpTask(72))
+        assertNull(db().getTorrentTask(72), "an HTTP task is not a torrent")
     }
 }

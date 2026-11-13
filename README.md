@@ -5,7 +5,7 @@
 <h1 align="center">Xtreme Download Manager</h1>
 
 <p align="center">
-  <b>Fast, resumable downloads and one-click video grabbing — right from your browser.</b>
+  <b>Fast, resumable downloads, torrents and one-click video grabbing — right from your browser.</b>
 </p>
 
 <p align="center">
@@ -50,8 +50,9 @@
 ---
 
 **Xtreme Download Manager (XDM)** speeds up downloads by splitting them across multiple connections, saves videos
-from streaming sites, and picks up broken downloads exactly where they left off. A companion browser extension hands
-downloads and detected videos straight to the app, so you never have to copy a link by hand.
+from streaming sites, downloads torrents and magnet links, and picks up broken downloads exactly where they left off.
+A companion browser extension hands downloads and detected videos straight to the app, so you never have to copy a
+link by hand.
 
 Wondering why you'd still want a download manager on a fast connection? Read
 [Why use a download manager in an age of fast internet?](docs/why-a-download-manager.md)
@@ -92,14 +93,19 @@ XDM 9 is a ground-up rewrite. Highlights:
   and no slow "assembling" step at the end. Large files finish the moment the last byte arrives.
 - **Better HLS and DASH:** more reliable stream detection, a choice of quality and audio track, and muxing to MP4
   without ffmpeg. You can also grab subtitles as `.srt`, timed to match the video.
+- **Torrents:** open a `.torrent` file, a link to one, a magnet link or an info-hash, pick the files you want and
+  download them in order if you like. XDM keeps seeding until a ratio or time limit, and its BitTorrent settings
+  cover DHT, peer exchange, port forwarding (UPnP/NAT-PMP), encryption, speed limits and extra trackers. XDM can be
+  chosen as the app for magnet links and `.torrent` files.
 - **Bulk downloads:** right-click → *Download all with XDM* to grab every PDF, image or video on a page. You can
   also save a social media profile's videos and images in one go, with video and audio merged into
   ready-to-play MP4s.
 - **On the Chrome Web Store:** install the browser extension with one click.
 - **Modern UI:** a refreshed light and dark theme, runs natively on Wayland, a native macOS build
   (Apple Silicon and Intel) and Windows on ARM64 support.
-- **Command-line mode:** `xdm-app --headless -o <folder> <url>` downloads HTTP, HLS and DASH from a terminal, with
-  a quality pick (`-q best|720p|audio`). It can run alongside the app.
+- **Command-line mode:** `xdm-app --headless -o <folder> <url>` downloads HTTP, HLS, DASH and torrents (magnet links,
+  `.torrent` files and links) from a terminal, with a quality pick (`-q best|720p|audio`). It can run alongside
+  the app.
 - **Download categories:** rules sort each download into a category and folder. You can change the folder or
   restart a download from the list.
 - **Disk errors never restart from zero:** a full disk or a missing folder stops the download and keeps its
@@ -117,6 +123,7 @@ XDM 9 is a ground-up rewrite. Highlights:
 | ⚡ **Faster downloads** | Multi-connection segmented downloading to make the most of your bandwidth. |
 | 🧩 **Browser integration** | Works with Chrome, Firefox, Edge and other popular browsers: XDM takes over downloads from the browser automatically, so every file gets the speed boost without copying a link. |
 | 🎬 **Video grabber** | Detects and saves videos from streaming sites, including `HLS` (`.m3u8`) and `MPEG-DASH` (`.mpd`) streams, muxed to MP4 with no external tools. Pick a subtitle track and get it as an `.srt` file, timed to match the video. |
+| 🧲 **Torrents** | Download from `.torrent` files, torrent links and magnet links: choose which files to get, follow peers, trackers and progress per torrent, and seed with ratio and time limits. |
 | 🔁 **Resume anything** | Recovers downloads interrupted by network drops, crashes or power loss; refresh expired links without starting over. |
 | 📱 **Bulk social media downloads** | Save every video and image from a social media profile in a single click. Video and audio tracks are merged into ready-to-play MP4s, and ads are left out. |
 | 📦 **Batch downloads** | Grab every PDF on a page or a whole gallery of HD wallpapers at once: right-click → *Download all with XDM*, filter by type, size or name, and save them all into a single folder. |

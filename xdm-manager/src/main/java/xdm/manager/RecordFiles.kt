@@ -37,7 +37,12 @@ fun getFileFolder(ent: DbRecord): Pair<String?, String?>? {
             fileName = md.name
         }
 
-        DownloadType.Torrent -> TODO()
+        // The torrent's single file, or its folder for a multi-file torrent.
+        DownloadType.Torrent -> {
+            val md = EngineContext.taskInfoDB.getTorrentTask(ent.id) ?: return null
+            folder = md.folder
+            fileName = md.name
+        }
     }
 
     return Pair(fileName, folder)
@@ -48,7 +53,6 @@ fun getFileFolder(ent: DbRecord): Pair<String?, String?>? {
  * Resolved through [EngineContext.storage], so on Android it may be a document rather than a path.
  */
 fun finishedFile(ent: DbRecord): StorageFile? {
-    if (ent.downloadType == DownloadType.Torrent) return null
     val (fileName, folder) = getFileFolder(ent) ?: return null
     return if (fileName != null && folder != null) EngineContext.storage.folder(folder).file(fileName) else null
 }

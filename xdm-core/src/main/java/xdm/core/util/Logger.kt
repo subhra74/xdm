@@ -22,7 +22,11 @@ object Logger {
     @Volatile
     var consoleEnabled = true
 
-    private val consoleOut: PrintStream get() = if (consoleEnabled) System.out else NullStream
+    /** Info lines go to stderr too: headless mode keeps stdout for the saved paths and check results. */
+    @Volatile
+    var infoToStderr = false
+
+    private val consoleOut: PrintStream get() = if (!consoleEnabled) NullStream else if (infoToStderr) System.err else System.out
     private val consoleErr: PrintStream get() = if (consoleEnabled) System.err else NullStream
 
     // OutputStream.nullOutputStream() is JDK 11+; xdm-core targets 8.
@@ -30,6 +34,11 @@ object Logger {
         override fun write(b: Int) {}
         override fun write(b: ByteArray, off: Int, len: Int) {}
     })
+
+    /** The folder the launch logs are in (`<logDir>/logs`); null until [init] runs. */
+    @Volatile
+    var logFolder: File? = null
+        private set
 
     /** Buffered file sink for the current launch; null until [init] runs. */
     @Volatile
@@ -58,6 +67,7 @@ object Logger {
             FileUtils.restrictToOwner(file)
             val stream = PrintStream(BufferedOutputStream(FileOutputStream(file, true), 16 * 1024), false, "UTF-8")
             fileStream = stream
+            logFolder = dir
 
             Runtime.getRuntime().addShutdownHook(Thread {
                 try {
@@ -99,6 +109,17 @@ object Logger {
         fileStream?.let { t.printStackTrace(it) }
     }
 
+    /**
+     * Errors and exceptions reach the file at once: the buffer is otherwise written only when full or at
+     * shutdown, and a crash or a killed process would lose exactly the lines that explain it.
+     */
+    private fun flushFile() {
+        try {
+            fileStream?.flush()
+        } catch (ignored: Exception) {
+        }
+    }
+
     fun info(tag: String, msg: String) {
         val line = "[ $tag ] $msg"
         consoleOut.println(line)
@@ -112,6 +133,7 @@ object Logger {
         ex?.printStackTrace(consoleErr)
         writeLine(line)
         writeThrowable(ex)
+        flushFile()
     }
 
     fun info(obj: Any?) {
@@ -121,6 +143,7 @@ object Logger {
             obj.printStackTrace(consoleErr)
             writeLine("[ $thread ] ${obj.message}")
             writeThrowable(obj)
+            flushFile()
         } else {
             val line = "[ $thread ] $obj"
             consoleOut.println(line)
@@ -132,6 +155,7 @@ object Logger {
         val line = "[ " + Thread.currentThread().name + " ] " + msg
         consoleErr.println(line)
         writeLine(line)
+        flushFile()
     }
 
     fun error(t: Throwable) {
@@ -140,6 +164,7 @@ object Logger {
         t.printStackTrace(consoleErr)
         writeLine(prefix + t.message)
         writeThrowable(t)
+        flushFile()
     }
 
     fun error(msg: String?, t: Throwable?) {
@@ -149,5 +174,6 @@ object Logger {
         t?.printStackTrace(consoleErr)
         writeLine(line)
         writeThrowable(t)
+        flushFile()
     }
 }

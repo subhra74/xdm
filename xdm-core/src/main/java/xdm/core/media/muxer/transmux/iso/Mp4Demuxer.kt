@@ -6,7 +6,9 @@ package xdm.core.media.muxer.transmux.iso
 
 import xdm.core.media.muxer.transmux.es.SampleSink
 import xdm.core.media.muxer.transmux.io.ParsableByteArray
+import xdm.core.media.muxer.transmux.mp4.SampleEntries
 import xdm.core.media.muxer.transmux.sample.Codec
+import xdm.core.media.muxer.transmux.sample.DisplayMatrix
 import xdm.core.media.muxer.transmux.sample.Track
 import xdm.core.util.Logger
 import java.io.RandomAccessFile
@@ -28,7 +30,10 @@ class Mp4Demuxer(private val sink: SampleSink) {
         var inputTrackId: Int,
         /** Timescale of the current init segment; samples are rescaled to [Track.timescale]. */
         var inputTimescale: Int,
-        var descriptionIndex: Int = 1,
+        /** Output stsd index (1-based) of each input sample entry of the current init segment, in stsd order. */
+        var entryMap: IntArray = intArrayOf(1),
+        /** Input sample description index from `trex`, used when a `tfhd` doesn't give one. */
+        var defaultDescriptionIndex: Int = 1,
         var defaultSampleDuration: Long = 0,
         var defaultSampleSize: Long = 0,
         var defaultSampleFlags: Long = 0,
@@ -39,22 +44,45 @@ class Mp4Demuxer(private val sink: SampleSink) {
     ) {
         fun scale(v: Long): Long =
             if (inputTimescale == track.timescale || inputTimescale <= 0) v else v * track.timescale / inputTimescale
+
+        /** Output stsd index for a 1-based input index; an index out of range falls back to the first entry. */
+        fun outputIndex(inputIndex: Int): Int = entryMap.getOrElse(inputIndex - 1) { entryMap[0] }
     }
 
     /** Every output track, in first-seen order. */
     private val states = ArrayList<TrackState>()
     /** Input track_ID -> output track, for the most recent init segment (moov). */
     private val current = HashMap<Int, TrackState>()
-    private val trexDefaults = HashMap<Int, LongArray>() // trackId -> [dur, size, flags]
+    private val trexDefaults = HashMap<Int, LongArray>() // trackId -> [dur, size, flags, description index]
     /** mvhd timescale of the most recent moov (edit list segment durations are in it). */
     private var movieTimescale = 0L
 
     val tracks: List<Track> get() = states.map { it.track }
 
-    /** Parses one segment file (init, media, or a self-contained progressive MP4). */
-    fun parseSegment(path: String) {
+    /**
+     * Bytes in front of the MP4 data in the segment being parsed. Absolute offsets written into the
+     * segment (an explicit `base_data_offset`, `stco`/`co64` chunk offsets) count from where the MP4
+     * data starts, so they are moved by this much.
+     */
+    private var fileShift = 0L
+
+    /** Length of the segment being parsed: sample data past it was cut off (a truncated download). */
+    private var fileLength = 0L
+
+    /** Samples of the current segment dropped because their data runs past [fileLength], for one log line. */
+    private var cutSamples = 0
+
+    /**
+     * Parses one segment file (init, media, or a self-contained progressive MP4). [from] is where the
+     * MP4 data starts when the file has other bytes in front of it (see `SegmentProbe`).
+     */
+    fun parseSegment(path: String, from: Long = 0) {
         RandomAccessFile(path, "r").use { raf ->
-            walkTopLevel(raf, 0, raf.length())
+            fileShift = from
+            fileLength = raf.length()
+            cutSamples = 0
+            walkTopLevel(raf, from, fileLength)
+            if (cutSamples > 0) Logger.info("XDM", "MP4: segment cut short, $cutSamples samples past its end dropped: $path")
         }
     }
 
@@ -71,11 +99,15 @@ class Mp4Demuxer(private val sink: SampleSink) {
             var headerLen = 8L
             if (size == 1L) { size = readU64(raf); headerLen = 16 }
             else if (size == 0L) { size = end - pos }
+            // Some writers leave a `free` box with a size smaller than its header: skip just the header.
+            if (size < headerLen && type == "free" && headerLen == 8L) size = 8
             if (size < headerLen) break
-            val contentLen = (size - headerLen).toInt()
+            // A box running past the end of the file (a cut download) is read as far as it goes: its
+            // complete child boxes still count, and samples whose data is missing are dropped.
+            val contentLen = minOf(size, end - pos) - headerLen
             when (type) {
-                "moov" -> parseMoov(readBox(raf, pos + headerLen, contentLen), raf)
-                "moof" -> parseMoof(readBox(raf, pos + headerLen, contentLen), pos, raf)
+                "moov" -> if (contentLen >= 0) parseMoov(readBox(raf, pos + headerLen, contentLen.toInt()), raf)
+                "moof" -> if (contentLen >= 0) parseMoof(readBox(raf, pos + headerLen, contentLen.toInt()), pos, raf)
                 // ftyp/styp/sidx/free/mdat etc: nothing to do (mdat is read on demand by offset).
             }
             pos += size
@@ -108,20 +140,21 @@ class Mp4Demuxer(private val sink: SampleSink) {
     private fun parseTrex(data: ByteArray, start: Int) {
         val p = ParsableByteArray(data); p.seek(start + 4) // version/flags
         val trackId = p.readInt()
-        p.readInt() // default_sample_description_index
+        val descriptionIndex = p.readUnsignedInt()
         val dur = p.readUnsignedInt()
         val size = p.readUnsignedInt()
         val flags = p.readUnsignedInt()
-        trexDefaults[trackId] = longArrayOf(dur, size, flags)
+        trexDefaults[trackId] = longArrayOf(dur, size, flags, descriptionIndex)
     }
 
     private fun parseTrak(data: ByteArray, start: Int, end: Int, raf: RandomAccessFile) {
         var trackId = 0
         var width = 0
         var height = 0
+        var matrix: IntArray? = null
         var timescale = 0
         var handler = ""
-        var sampleEntry: ByteArray? = null
+        var sampleEntries: List<ByteArray> = emptyList()
         var stblStart = -1; var stblEnd = -1
         var elst: List<LongArray>? = null // [segment_duration (movie ts), media_time (media ts)]
 
@@ -137,6 +170,11 @@ class Mp4Demuxer(private val sink: SampleSink) {
                     val wOff = e - 8
                     width = ((data[wOff].toInt() and 0xFF) shl 8) or (data[wOff + 1].toInt() and 0xFF)
                     height = ((data[wOff + 4].toInt() and 0xFF) shl 8) or (data[wOff + 5].toInt() and 0xFF)
+                    // The display matrix (rotation / flip): the nine values just before width and height.
+                    if (wOff - 36 >= s) {
+                        val m = IntArray(9) { readU32(data, wOff - 36 + it * 4).toInt() }
+                        if (!DisplayMatrix.isUnity(m)) matrix = m
+                    }
                 }
                 "edts" -> forEachBox(data, s, e) { t2, s2, _ -> if (t2 == "elst") elst = parseElst(data, s2) }
                 "mdia" -> forEachBox(data, s, e) { t2, s2, e2 ->
@@ -154,7 +192,7 @@ class Mp4Demuxer(private val sink: SampleSink) {
                             if (t3 == "stbl") {
                                 stblStart = s3; stblEnd = e3
                                 forEachBox(data, s3, e3) { t4, s4, e4 ->
-                                    if (t4 == "stsd") sampleEntry = firstSampleEntry(data, s4, e4)
+                                    if (t4 == "stsd") sampleEntries = sampleEntries(data, s4, e4)
                                 }
                             }
                         }
@@ -162,7 +200,7 @@ class Mp4Demuxer(private val sink: SampleSink) {
                 }
             }
         }
-        if (trackId == 0 || sampleEntry == null) return
+        if (trackId == 0 || sampleEntries.isEmpty()) return
         // Only audio and video are muxed; subtitle (subt/text/sbtl), timed-metadata (meta) and hint
         // tracks are skipped, so their fragments are ignored too (they never enter [current]).
         if (handler != "vide" && handler != "soun") {
@@ -175,19 +213,30 @@ class Mp4Demuxer(private val sink: SampleSink) {
         val state = continuingTrack(trackId, isVideo)?.also { st ->
             st.inputTrackId = trackId
             st.inputTimescale = inputTimescale
-            st.descriptionIndex = st.track.descriptionIndexFor(sampleEntry!!)
+            // One matrix per output track: the first init segment's is kept.
+            if (isVideo && !(st.track.matrix ?: DisplayMatrix.UNITY).contentEquals(matrix ?: DisplayMatrix.UNITY)) {
+                Logger.info("XDM", "MP4: track $trackId changes its display matrix in a later init segment, keeping the first")
+            }
         } ?: run {
             val track = Track(if (isVideo) Codec.OTHER_VIDEO else Codec.OTHER_AUDIO)
             track.timescale = inputTimescale
             track.width = width
             track.height = height
-            track.sampleEntryBox = sampleEntry
+            if (isVideo) track.matrix = matrix
+            else SampleEntries.audioInfo(sampleEntries[0])?.let { a ->
+                // Channels, rate and sample size for writers that describe the track themselves (Matroska).
+                track.channelCount = a.channels; track.sampleRate = a.sampleRate; track.audioBitDepth = a.bits
+            }
+            track.sampleEntryBox = sampleEntries[0]
             TrackState(track, trackId, inputTimescale).also { states.add(it) }
         }
+        // Every entry of the stsd, not just the first: samples name theirs by index (tfhd, trex, stsc).
+        state.entryMap = IntArray(sampleEntries.size) { state.track.descriptionIndexFor(sampleEntries[it]) }
         val trex = trexDefaults[trackId]
         state.defaultSampleDuration = trex?.get(0) ?: 0
         state.defaultSampleSize = trex?.get(1) ?: 0
         state.defaultSampleFlags = trex?.get(2) ?: 0
+        state.defaultDescriptionIndex = trex?.get(3)?.toInt()?.takeIf { it > 0 } ?: 1
         state.editShift = editShift(elst, inputTimescale)
         current[trackId] = state
 
@@ -232,14 +281,20 @@ class Mp4Demuxer(private val sink: SampleSink) {
         return free.firstOrNull { it.inputTrackId == trackId } ?: free.singleOrNull()
     }
 
-    /** Returns the first sample entry box (with header) inside an stsd. */
-    private fun firstSampleEntry(data: ByteArray, stsdStart: Int, stsdEnd: Int): ByteArray? {
+    /** The sample entry boxes (with headers) inside an stsd, in order; stops at the first malformed one. */
+    private fun sampleEntries(data: ByteArray, stsdStart: Int, stsdEnd: Int): List<ByteArray> {
         // stsd: version/flags(4) + entry_count(4), then sample entry boxes.
+        if (stsdStart + 8 > stsdEnd) return emptyList()
+        val count = readU32(data, stsdStart + 4)
+        val out = ArrayList<ByteArray>()
         var p = stsdStart + 8
-        if (p + 8 > stsdEnd) return null
-        val size = readU32(data, p).toInt()
-        if (size < 8 || p + size > stsdEnd) return null
-        return data.copyOfRange(p, p + size)
+        while (out.size < count && p + 8 <= stsdEnd) {
+            val size = readU32(data, p)
+            if (size < 8 || p + size > stsdEnd) break
+            out.add(data.copyOfRange(p, p + size.toInt()))
+            p += size.toInt()
+        }
+        return out
     }
 
     // ---- moof / traf / trun (fragmented) ----
@@ -261,6 +316,7 @@ class Mp4Demuxer(private val sink: SampleSink) {
         var baseDataOffset = -1L
         var defaultBaseIsMoof = false
         var defDur = -1L; var defSize = -1L; var defFlags = -1L
+        var descriptionIndex = -1
         var baseMediaDecodeTime = -1L
         val truns = ArrayList<IntArray>() // [contentStart, contentEnd]
 
@@ -272,7 +328,7 @@ class Mp4Demuxer(private val sink: SampleSink) {
                     trackId = p.readInt()
                     defaultBaseIsMoof = flags and 0x020000 != 0
                     if (flags and 0x000001 != 0) baseDataOffset = p.readUnsignedInt() shl 32 or p.readUnsignedInt()
-                    if (flags and 0x000002 != 0) p.readInt() // sample_description_index
+                    if (flags and 0x000002 != 0) descriptionIndex = p.readInt()
                     if (flags and 0x000008 != 0) defDur = p.readUnsignedInt()
                     if (flags and 0x000010 != 0) defSize = p.readUnsignedInt()
                     if (flags and 0x000020 != 0) defFlags = p.readUnsignedInt()
@@ -286,7 +342,7 @@ class Mp4Demuxer(private val sink: SampleSink) {
             }
         }
         val base = when {
-            baseDataOffset >= 0 -> baseDataOffset
+            baseDataOffset >= 0 -> baseDataOffset + fileShift
             defaultBaseIsMoof || previousDataEnd < 0 -> moofFileStart
             else -> previousDataEnd
         }
@@ -296,13 +352,14 @@ class Mp4Demuxer(private val sink: SampleSink) {
         val dDur = if (defDur >= 0) defDur else state.defaultSampleDuration
         val dSize = if (defSize >= 0) defSize else state.defaultSampleSize
         val dFlags = if (defFlags >= 0) defFlags else state.defaultSampleFlags
+        val outIndex = state.outputIndex(if (descriptionIndex > 0) descriptionIndex else state.defaultDescriptionIndex)
 
         // Without a tfdt the fragment continues where the track's previous one ended, as ffmpeg does.
         var runningDts = if (baseMediaDecodeTime >= 0) baseMediaDecodeTime else state.fragmentEnd
         // A trun without data_offset continues right after the previous run's data (8.8.8.3).
         var dataPos = base
         for (trun in truns) {
-            val r = parseTrun(data, trun[0], trun[1], base, dataPos, dDur, dSize, dFlags, runningDts, state, raf)
+            val r = parseTrun(data, trun[0], trun[1], base, dataPos, dDur, dSize, dFlags, runningDts, state, outIndex, raf)
             runningDts = r[0]
             dataPos = r[1]
         }
@@ -334,7 +391,7 @@ class Mp4Demuxer(private val sink: SampleSink) {
     private fun parseTrun(
         data: ByteArray, start: Int, end: Int, base: Long, continueAt: Long,
         defDur: Long, defSize: Long, defFlags: Long,
-        startDts: Long, state: TrackState, raf: RandomAccessFile
+        startDts: Long, state: TrackState, descriptionIndex: Int, raf: RandomAccessFile
     ): LongArray {
         val version = data[start].toInt() and 0xFF
         val flags = readU24(data, start + 1)
@@ -357,15 +414,20 @@ class Mp4Demuxer(private val sink: SampleSink) {
                 i == 0 && firstSampleFlags >= 0 -> firstSampleFlags
                 else -> defFlags
             }
-            val cto = if (flags and 0x000800 != 0) {
-                if (version == 1) p.readInt().toLong() else p.readUnsignedInt()
-            } else 0L
+            // Version 0 offsets are unsigned by the spec, but packagers write negative ones there too;
+            // read signed in both versions, as ffmpeg and Media3 do.
+            val cto = if (flags and 0x000800 != 0) p.readInt().toLong() else 0L
 
             val sz = size.toInt()
+            // The rest of the run's data was cut off: drop it (the next run or segment may still be whole).
+            if (filePos + sz > fileLength) {
+                cutSamples += sampleCount - i
+                break
+            }
             val isKey = (sFlags and 0x00010000L) == 0L
             val outOffset = copySample(raf, sz, buf)
             state.track.samples.add(
-                outOffset, sz, state.scale(dts + cto + state.editShift), state.scale(dts + state.editShift), isKey, state.descriptionIndex
+                outOffset, sz, state.scale(dts + cto + state.editShift), state.scale(dts + state.editShift), isKey, descriptionIndex
             )
             dts += dur
             filePos += sz
@@ -403,8 +465,8 @@ class Mp4Demuxer(private val sink: SampleSink) {
         // stsc: samples per chunk runs.
         p = ParsableByteArray(data); p.seek(stscOff + 4)
         val stscCount = p.readInt()
-        val firstChunk = IntArray(stscCount); val samplesPerChunk = IntArray(stscCount)
-        for (i in 0 until stscCount) { firstChunk[i] = p.readInt(); samplesPerChunk[i] = p.readInt(); p.readInt() }
+        val firstChunk = IntArray(stscCount); val samplesPerChunk = IntArray(stscCount); val chunkEntry = IntArray(stscCount)
+        for (i in 0 until stscCount) { firstChunk[i] = p.readInt(); samplesPerChunk[i] = p.readInt(); chunkEntry[i] = p.readInt() }
 
         // stts: durations.
         p = ParsableByteArray(data); p.seek(sttsOff + 4)
@@ -413,9 +475,8 @@ class Mp4Demuxer(private val sink: SampleSink) {
         for (i in 0 until sttsCount) { sttsSampleN[i] = p.readInt(); sttsDelta[i] = p.readUnsignedInt() }
 
         // ctts: composition offsets (optional).
-        var cttsSampleN: IntArray? = null; var cttsOffset: IntArray? = null; var cttsVer = 0
+        var cttsSampleN: IntArray? = null; var cttsOffset: IntArray? = null
         if (cttsOff >= 0) {
-            cttsVer = data[cttsOff].toInt() and 0xFF
             p = ParsableByteArray(data); p.seek(cttsOff + 4)
             val c = p.readInt(); cttsSampleN = IntArray(c); cttsOffset = IntArray(c)
             for (i in 0 until c) { cttsSampleN!![i] = p.readInt(); cttsOffset!![i] = p.readInt() }
@@ -426,52 +487,68 @@ class Mp4Demuxer(private val sink: SampleSink) {
             p = ParsableByteArray(data); p.seek(stssOff + 4); val c = p.readInt(); HashSet<Int>(c * 2).apply { repeat(c) { add(p.readInt()) } }
         } else null
 
-        // Reconstruct per-sample file offsets from chunk table.
+        // Reconstruct per-sample file offsets (and sample entries) from the chunk table.
         val sampleFileOffsets = LongArray(sampleCount)
+        val sampleEntryIndex = IntArray(sampleCount)
         var sampleIdx = 0
         for (chunkIdx in chunkOffsets.indices) {
-            val spc = samplesPerChunkForChunk(chunkIdx + 1, firstChunk, samplesPerChunk)
-            var off = chunkOffsets[chunkIdx]
+            val run = stscRunForChunk(chunkIdx + 1, firstChunk)
+            val spc = if (run >= 0) samplesPerChunk[run] else 0
+            val entry = state.outputIndex(if (run >= 0) chunkEntry[run] else 1)
+            var off = chunkOffsets[chunkIdx] + fileShift
             for (j in 0 until spc) {
                 if (sampleIdx >= sampleCount) break
                 sampleFileOffsets[sampleIdx] = off
+                sampleEntryIndex[sampleIdx] = entry
                 off += sizes[sampleIdx]
                 sampleIdx++
             }
             if (sampleIdx >= sampleCount) break
         }
+        // The chunks ran out before the sample count: the track ends at the last sample with data.
+        if (sampleIdx < sampleCount) {
+            Logger.info("XDM", "MP4: chunk table covers $sampleIdx of $sampleCount samples, track ends there")
+        }
+        val withData = sampleIdx
 
         // Iterate samples, expanding stts/ctts run-length tables.
         var dts = 0L
         var sttsi = 0; var sttsRem = if (sttsCount > 0) sttsSampleN[0] else 0
         var cttsi = 0; var cttsRem = cttsSampleN?.getOrElse(0) { 0 } ?: 0
         val buf = ByteArray(64 * 1024)
-        for (i in 0 until sampleCount) {
+        for (i in 0 until withData) {
             while (sttsRem == 0 && sttsi < sttsCount - 1) { sttsi++; sttsRem = sttsSampleN[sttsi] }
             val dur = sttsDelta.getOrElse(sttsi) { 0 }
             var cto = 0L
             if (cttsSampleN != null) {
                 while (cttsRem == 0 && cttsi < cttsSampleN.size - 1) { cttsi++; cttsRem = cttsSampleN[cttsi] }
-                cto = if (cttsVer == 1) cttsOffset!![cttsi].toLong() else (cttsOffset!![cttsi].toLong() and 0xFFFFFFFFL)
+                // Signed in both versions (see parseTrun).
+                cto = cttsOffset!![cttsi].toLong()
                 cttsRem--
             }
             val isKey = syncSet?.contains(i + 1) ?: true
+            // A cut download: the track ends at the first sample whose data isn't all in the file.
+            if (sampleFileOffsets[i] + sizes[i] > fileLength) {
+                cutSamples += withData - i
+                break
+            }
             raf.seek(sampleFileOffsets[i])
             val outOffset = copySample(raf, sizes[i], buf)
             track.samples.add(
-                outOffset, sizes[i], state.scale(dts + cto + state.editShift), state.scale(dts + state.editShift), isKey, state.descriptionIndex
+                outOffset, sizes[i], state.scale(dts + cto + state.editShift), state.scale(dts + state.editShift), isKey, sampleEntryIndex[i]
             )
             dts += dur
             sttsRem--
         }
     }
 
-    private fun samplesPerChunkForChunk(chunk1Based: Int, firstChunk: IntArray, samplesPerChunk: IntArray): Int {
-        var spc = 0
+    /** The stsc run (index into its tables) that [chunk1Based] falls in; -1 before the first run. */
+    private fun stscRunForChunk(chunk1Based: Int, firstChunk: IntArray): Int {
+        var run = -1
         for (i in firstChunk.indices) {
-            if (chunk1Based >= firstChunk[i]) spc = samplesPerChunk[i] else break
+            if (chunk1Based >= firstChunk[i]) run = i else break
         }
-        return spc
+        return run
     }
 
     // ---- io helpers ----

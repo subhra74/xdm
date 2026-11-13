@@ -34,7 +34,9 @@ REFERENCE = {'mod_asplit_mono': 'aac_mono_44k', 'mod_pidshift': 'short_seg', 'mo
              # demuxer reads its own negative-offset output two frames late, so f_base is the reference.
              'f_negcts': 'f_base'}
 # Audio MP4 can't carry (ffmpeg -c copy fails on these too): left out, logged; the video must still match.
-AUDIO_LEFT_OUT = {'x_h264_pcmbd', 'x_h264_s302m', 'x_h264_truehd'}
+# Audio the transmuxer can't remux (Blu-ray LPCM, SMPTE 302M, TrueHD): the fallback keeps it by joining the
+# TS segments into one .ts instead of leaving it out, so the output must have all of it.
+AUDIO_KEPT_AS_TS = {'x_h264_pcmbd', 'x_h264_s302m', 'x_h264_truehd'}
 # MPEG-1/2 Layer II in MP4 is described as MPEG-1 audio (object type 0x6B), which ffmpeg decodes with its
 # floating-point MP3 decoder instead of the fixed-point MP2 one used for the TS source: frames differ by
 # rounding (ffmpeg's own -c copy output differs identically), so these are compared as PCM.
@@ -372,9 +374,9 @@ def verdict(row, disc):
     if row['variant'] in DECODER_DIFFERS:
         v, diff = row.get('v'), row.get('pcm_max_diff')
         return 'PASS~' if v and v['in_order'] and diff is not None and diff <= DECODER_TOLERANCE else 'FAIL'
-    if row['variant'] in AUDIO_LEFT_OUT:
+    if row['variant'] in AUDIO_KEPT_AS_TS:
         v, a = row.get('v'), row.get('a')
-        return 'PASS-' if v and v['in_order'] and v['ref'] and a and a['out'] == 0 else 'FAIL'
+        return 'PASS' if v and v['in_order'] and a and a['ref'] and a['out'] == a['ref'] else 'FAIL'
     if row.get('config_issues'):
         return 'FAIL'
     if 'config_issues' in row and row['name_is_cfg']:
@@ -425,7 +427,7 @@ def main():
                         row['pcm_max_diff'] = compare_pcm(ref_inputs, out)
                     if kind == 'a' and disc and not row[kind]['in_order']:
                         row['pcm_max_diff'] = compare_pcm(ref_inputs, out)
-            if not disc and name not in AUDIO_LEFT_OUT and name != 'separate' and name != 'f_separate':
+            if not disc and name != 'separate' and name != 'f_separate':
                 row['timing_issues'] = timing_issues(refgroups, out)
             if not disc and name not in PARITY_SKIP:
                 row['parity_issues'] = parity_issues(refgroups, out, name)

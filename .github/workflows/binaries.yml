@@ -14,6 +14,11 @@ name: Binaries
 # publishes a pre-release unless "prerelease" is cleared. The macOS jobs may fail without blocking the release: their dmgs can be added to it
 # by hand.
 
+# Every installer bundles the native torrent library of its platform from the subhra74/libtorrent-binary release pinned
+# in packaging/torrent/binaries.lock (never built here). Each job fetches it first, so a dead link or a hash mismatch
+# fails before the build; build-bundle.sh/.ps1 then take the same file from the cache (or, in the Linux container,
+# fetch it again), and a step after the build checks that the installer holds it.
+
 on:
   workflow_dispatch:
     inputs:
@@ -116,8 +121,23 @@ jobs:
           sudo mdutil -a -i off || true
           sudo pkill -9 XProtect || true
 
+      - name: Torrent library
+        run: packaging/torrent/fetch-binaries.sh --platform macos-${{ matrix.arch }}
+
       - name: Build dmg
         run: packaging/build-bundle.sh -s --type dmg
+
+      - name: Check torrent library in dmg
+        run: |
+          shopt -s nullglob
+          dmg=(build/dist/*.dmg)
+          [[ ${#dmg[@]} -eq 1 ]] || { echo "expected one dmg, found ${#dmg[@]}"; exit 1; }
+          mnt="$(mktemp -d)"
+          hdiutil attach -nobrowse -readonly -mountpoint "$mnt" "${dmg[0]}" >/dev/null
+          lib=("$mnt"/*.app/Contents/app/libxdmtorrent.dylib)
+          [[ ${#lib[@]} -eq 1 ]] && ls -l "${lib[0]}"
+          hdiutil detach "$mnt" >/dev/null
+          [[ ${#lib[@]} -eq 1 ]] || { echo "no libxdmtorrent.dylib in ${dmg[0]}"; exit 1; }
 
       - uses: actions/upload-artifact@v7
         with:
@@ -156,12 +176,32 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           "$env:USERPROFILE\.dotnet\tools" | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
 
+      - name: Torrent library
+        shell: pwsh
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File packaging\torrent\fetch-binaries.ps1 `
+            -Platform windows-${{ matrix.arch }}
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Build MSI
         shell: pwsh
         run: |
           powershell -NoProfile -ExecutionPolicy Bypass -File packaging\build-bundle.ps1 `
             -Arch ${{ matrix.arch }} -Type msi -SkipBuild
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      # An administrative install unpacks the MSI's files without installing anything.
+      - name: Check torrent library in MSI
+        shell: pwsh
+        run: |
+          $msi = @(Get-ChildItem build\dist\windows-${{ matrix.arch }}\*.msi)
+          if ($msi.Count -ne 1) { throw "expected one MSI, found $($msi.Count)" }
+          $out = Join-Path $env:RUNNER_TEMP 'msi-check'
+          $p = Start-Process msiexec.exe -Wait -PassThru -ArgumentList '/a', "`"$($msi[0].FullName)`"", '/qn', "TARGETDIR=`"$out`""
+          if ($p.ExitCode -ne 0) { throw "msiexec /a failed: $($p.ExitCode)" }
+          $dll = @(Get-ChildItem -Recurse -Path $out -Filter xdmtorrent.dll)
+          if ($dll.Count -ne 1) { throw "no xdmtorrent.dll in $($msi[0].Name)" }
+          $dll | Format-Table FullName, Length
 
       # With a signing policy (SIGNPATH_SIGNING_POLICY above) the MSI is signed by SignPath Foundation (signpath.md):
       # it goes up zipped under a name without a dot, which the release job's download pattern skips, and SignPath
@@ -230,9 +270,20 @@ jobs:
           name: xdm-app-jar
           path: xdm-app/target
 
+      - name: Torrent library
+        run: packaging/torrent/fetch-binaries.sh --platform linux-${{ matrix.arch }}
+
       # Docker image with the pinned JBR (passed from packaging/jdk.properties) and nfpm.
       - name: Build packages
         run: packaging/build-linux.sh -s --arch ${{ matrix.arch }}
+
+      # The deb, rpm and Arch packages are made from the same image as the tar.gz.
+      - name: Check torrent library in tar.gz
+        run: |
+          shopt -s nullglob
+          tgz=(build/linux-${{ matrix.arch }}/*.tar.gz)
+          [[ ${#tgz[@]} -eq 1 ]] || { echo "expected one tar.gz, found ${#tgz[@]}"; exit 1; }
+          tar -tzf "${tgz[0]}" | grep -E '/lib/app/libxdmtorrent\.so$' || { echo "no libxdmtorrent.so in ${tgz[0]}"; exit 1; }
 
       # One upload per file: an unarchived artifact holds a single file (its name), so the downloads
       # aren't zips.

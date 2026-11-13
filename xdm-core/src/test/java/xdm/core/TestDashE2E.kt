@@ -192,6 +192,27 @@ maxPiece = 0, authInfo = null,
         verifyOutput(h, expectVideo = true, expectAudio = true, minDuration = 1.0)
     }
 
+    // ---- D10b: WebM segments in an MPD that says MP4: the bytes decide, the name follows ------
+    @Test fun d10b_webmSegmentsLabelledMp4BecomeMkv() {
+        requireFfmpeg()
+        Assumptions.assumeTrue(hasEncoder("libvpx-vp9") && hasEncoder("libopus"), "vp9/opus not available")
+        val d = caseDir("d10b")
+        val ok = ffmpegSoft(
+            "-f", "lavfi", "-i", "testsrc=size=320x240:rate=25",
+            "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=48000", "-t", "2",
+            "-map", "0:v", "-map", "1:a", "-c:v", "libvpx-vp9", "-b:v", "300k", "-g", "25",
+            "-c:a", "libopus", "-ar", "48000", "-ac", "2",
+            "-f", "dash", "-seg_duration", "1", "-dash_segment_type", "webm",
+            "-use_template", "1", "-use_timeline", "0", File(d, "manifest.mpd").path
+        )
+        Assumptions.assumeTrue(ok && File(d, "manifest.mpd").exists(), "webm DASH packaging failed on this ffmpeg")
+        val mpd = File(d, "manifest.mpd")
+        mpd.writeText(mpd.readText().replace("video/webm", "video/mp4").replace("audio/webm", "audio/mp4"))
+        val h = runDash("d10b", "d10b/manifest.mpd")
+        assertTrue(h.finalFile!!.name.endsWith(".mkv"), "expected .mkv output, got ${h.finalFile!!.name}")
+        verifyOutput(h, expectVideo = true, expectAudio = true, minDuration = 1.0)
+    }
+
     // ---- D12: encrypted (ContentProtection) MPD must be rejected ----------------------------
     @Test fun d12_contentProtectionRejected() {
         val d = caseDir("d12")

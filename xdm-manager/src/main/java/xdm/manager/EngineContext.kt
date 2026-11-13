@@ -4,11 +4,15 @@
 
 package xdm.manager
 
+import xdm.core.downloaders.AssemblyNote
 import xdm.capture.CaptureConfig
 import xdm.core.downloaders.DownloadError
+import xdm.core.downloaders.DownloadStatusInfo
 import xdm.core.downloaders.DownloadType
+import xdm.core.downloaders.ExtractorSource
 import xdm.core.downloaders.TaskInfoDB
 import xdm.core.downloaders.web.SegmentProgress
+import xdm.core.media.muxer.Muxer
 import xdm.core.network.http.CertTrust
 import xdm.core.network.http.HttpAuth
 import xdm.core.storage.LocalStorage
@@ -40,6 +44,66 @@ interface EngineConfig : CaptureConfig {
 
     /** User-editable categories. Replaced as a whole on every change, never mutated in place. */
     val categories: List<DownloadCategory>
+
+    /** Keep seeding a torrent after it finishes (until a seeding limit). Off: it stops when its files are complete. */
+    val torrentSeedAfterFinish: Boolean get() = false
+
+    /** Seeding stops once this much was uploaded, as a multiple of the torrent's size; 0 for no limit. */
+    val torrentSeedRatioLimit: Float get() = 1.0f
+
+    /** Seeding stops after this many minutes; 0 for no limit. */
+    val torrentSeedTimeLimitMinutes: Int get() = 0
+
+    /** The port for incoming torrent connections; 0 keeps the random one picked at the first start. */
+    val torrentPort: Int get() = 0
+
+    /** Ask the router to forward the port (UPnP and NAT-PMP). */
+    val torrentPortMapping: Boolean get() = true
+
+    /** Find peers through the DHT (not used by private torrents in any case). */
+    val torrentDht: Boolean get() = true
+
+    /** Find peers on the local network (Local Service Discovery). */
+    val torrentLsd: Boolean get() = true
+
+    /** Connection encryption: [TORRENT_ENCRYPTION_PREFER], [TORRENT_ENCRYPTION_REQUIRE] or [TORRENT_ENCRYPTION_OFF]. */
+    val torrentEncryption: Int get() = TORRENT_ENCRYPTION_PREFER
+
+    /** Torrent download limit in KB/s for all torrents together; 0 for none. */
+    val torrentDownloadLimit: Int get() = 0
+
+    /** Torrent upload limit in KB/s for all torrents together; 0 for none. */
+    val torrentUploadLimit: Int get() = 0
+
+    /**
+     * Keep the torrent session running from XDM's start until it exits. Off: it starts when a torrent runs and
+     * closes 5 minutes after the last one leaves (no DHT traffic, open port or router mapping meanwhile).
+     */
+    val torrentKeepSession: Boolean get() = false
+
+    /** Peer exchange (PeX) for new torrents; private torrents never use it in any case. */
+    val torrentPex: Boolean get() = true
+
+    /** Add [torrentTrackerList] to every new public torrent (never to private ones). */
+    val torrentAddTrackers: Boolean get() = false
+
+    /** Extra trackers: one URL per line, a blank line starts the next tier. */
+    val torrentTrackerList: String get() = ""
+
+    /** Peer id prefix to report ("-AB1230-"); null keeps libtorrent's own. */
+    val torrentPeerIdPrefix: String? get() = null
+
+    /** User agent for trackers, web seeds and the peer handshake; null keeps libtorrent's own. */
+    val torrentUserAgent: String? get() = null
+
+    companion object {
+        /** Encrypted when the peer can, plain otherwise. */
+        const val TORRENT_ENCRYPTION_PREFER = 0
+        /** Encrypted peers only. */
+        const val TORRENT_ENCRYPTION_REQUIRE = 1
+        /** Plain connections only. */
+        const val TORRENT_ENCRYPTION_OFF = 2
+    }
 }
 
 /**
@@ -99,6 +163,12 @@ interface UiSink {
         files: BatchFileCounts? = null,
     )
 
+    /** Torrent figures (upload, peers, ratio, phase) of a downloading or seeding torrent, after [progress]. */
+    fun torrentProgress(id: Long, progress: DownloadStatusInfo.TorrentProgress) {}
+
+    /** Seeding [id] stopped on a file error (its files are gone or unreadable); the download stays finished. */
+    fun seedingFailed(id: Long) {}
+
     /** Change folder / publish progress, where download events have stopped. */
     fun moveProgress(id: Long, phase: MovePhase, progress: Int)
 
@@ -112,6 +182,14 @@ interface UiSink {
 
     /** [DownloadCompleteNotification.DIALOG]. */
     fun downloadCompleteDialog(id: Long, folder: String, fileName: String, fileSize: Long)
+
+    /**
+     * [DownloadCompleteNotification.DIALOG] for a download saved another way than the usual remux: the
+     * dialog shows one line about it ([note], [noteDetail] naming the other files). Never sent in the
+     * other notification modes.
+     */
+    fun downloadCompleteDialog(id: Long, folder: String, fileName: String, fileSize: Long, note: AssemblyNote?, noteDetail: String?) =
+        downloadCompleteDialog(id, folder, fileName, fileSize)
 
     /** [DownloadCompleteNotification.NOTIFICATION]; a click opens [folder]. */
     fun downloadCompleteNotification(folder: String, fileName: String)
@@ -134,6 +212,12 @@ interface PlatformHooks {
     /** Free bytes on the volume of [folder], or null when unknown. */
     fun usableSpace(folder: String): Long?
 
+    /**
+     * The merger for an HLS, DASH or batch download, or null for the built-in one. [source] is set when
+     * an external extractor resolved the download. A new instance per call: a download's muxer is its own.
+     */
+    fun muxerFor(source: ExtractorSource?): Muxer? = null
+
     /** Marks [file] as downloaded from the internet; false when the file system can't carry the mark. */
     fun markDownloadedFile(file: File, source: DownloadSource): Boolean
 
@@ -151,6 +235,12 @@ interface PlatformHooks {
 
     /** [id] and its metadata were deleted: drop anything the app keeps for it (a schedule entry). */
     fun downloadDeleted(id: Long)
+
+    /**
+     * Loads the native torrent library (`xdmtorrent`) for [xdm.manager.torrent.NativeTorrent]; false when this
+     * build or platform has none, and torrents are then not offered. Called at most once.
+     */
+    fun loadTorrentLibrary(): Boolean = false
 }
 
 /**

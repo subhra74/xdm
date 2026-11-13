@@ -61,11 +61,11 @@ class TestStreamingOutputFolder : StreamingE2EBase() {
     ) : DownloadHost by inner {
         val committed = CopyOnWriteArrayList<String>()
         override fun outputFile(id: Long, downloadType: DownloadType, ext: String) = LocalStorage.file(outputPath)
-        override fun commitOutputFile(id: Long, part: StorageFile, downloadType: DownloadType): CommitResult {
+        override fun commitOutputFile(id: Long, part: StorageFile, downloadType: DownloadType, container: String?): CommitResult {
             beforeCommit()
             committed.add(part.localPath!!)
             if (failCommits-- > 0) return CommitResult.Failed(DownloadError.OutputWriteError)
-            return inner.commitOutputFile(id, part, downloadType)
+            return inner.commitOutputFile(id, part, downloadType, container)
         }
     }
 

@@ -15,6 +15,8 @@ import xdm.core.downloaders.DownloaderTask
 import xdm.core.downloaders.HlsDownloadTaskInfo
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.downloaders.PauseEvent
+import xdm.core.downloaders.TorrentDownloadTaskInfo
+import xdm.core.downloaders.TorrentPhase
 import xdm.core.downloaders.partFileName
 import xdm.core.downloaders.web.http.HttpDownloaderTask
 import xdm.core.downloaders.web.streaming.downloader.dash.DashDownloaderTask
@@ -39,6 +41,9 @@ import xdm.capture.StreamChoices
 import xdm.capture.StreamSize
 import xdm.capture.StreamPick
 import xdm.capture.VideoHelper
+import xdm.manager.torrent.TorrentDownloaderTask
+import xdm.manager.torrent.TorrentEngine
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.PrintStream
 import java.net.InetSocketAddress
@@ -56,6 +61,9 @@ import java.util.concurrent.atomic.AtomicReference
  * port, no download list, no categories (the target folder is always given). It never reads or writes
  * the GUI's state: per-run engine state lives in a scratch folder under the data folder that is
  * removed when the run ends, so an interrupted download starts over next time.
+ *
+ * Torrents (magnet links, .torrent files and links) run through the app's own [TorrentDownloaderTask] and
+ * session settings ([HeadlessTorrents]); `--check-trackers` only announces and reports the trackers.
  */
 object HeadlessCli {
     const val EXIT_OK = 0
@@ -66,6 +74,10 @@ object HeadlessCli {
 
     private val out: PrintStream get() = System.out
     private val err: PrintStream get() = System.err
+
+    /** The torrent engine; null uses the native library. Tests put a fake one here. */
+    @Volatile
+    internal var torrentEngineFactory: (() -> TorrentEngine?)? = null
 
     fun run(args: Array<String>): Int {
         System.setProperty("java.awt.headless", "true")
@@ -88,7 +100,7 @@ object HeadlessCli {
         }
         Logger.consoleEnabled = options.verbose
 
-        val targetFolder = if (options.listFormats) null else File(options.outputDir).absoluteFile.also {
+        val targetFolder = if (options.listFormats || options.checkTrackers) null else File(options.outputDir).absoluteFile.also {
             if (!it.isDirectory && !it.mkdirs()) {
                 err.println("xdm-app: cannot create folder ${it.path}")
                 return EXIT_FAILED
@@ -105,17 +117,33 @@ object HeadlessCli {
         private val current = AtomicReference<Job?>(null)
         private val interrupted = AtomicBoolean(false)
 
+        /** The torrent session, made when the first torrent comes up. */
+        @Volatile
+        private var torrentsMade: HeadlessTorrents? = null
+
+        @Synchronized
+        private fun torrents(): HeadlessTorrents = torrentsMade ?: HeadlessTorrents(
+            File(workRoot, "torrent"), o, torrentEngineFactory ?: HeadlessTorrents.defaultEngineFactory,
+        ).also { torrentsMade = it }
+
         fun runAll(): Int {
             val hook = Thread({ onInterrupt() }, "headless-stop")
             Runtime.getRuntime().addShutdownHook(hook)
             var failures = 0
             try {
+                if (o.checkTrackers) {
+                    val sources = o.urls.mapNotNull { TorrentArgs.sourceOf(it, StreamType.Torrent, true) }
+                    return torrents().checkTrackers(
+                        sources, o.timeoutSeconds * 1000L, ::fetchTorrent, out::println, err::println,
+                    )
+                }
                 for ((index, url) in o.urls.withIndex()) {
                     if (interrupted.get()) break
                     val label = if (o.urls.size > 1) "[${index + 1}/${o.urls.size}] " else ""
                     if (!runOne(url, label)) failures++
                 }
             } finally {
+                torrentsMade?.shutdown()
                 workRoot.deleteRecursively()
                 runCatching { Runtime.getRuntime().removeShutdownHook(hook) }
             }
@@ -129,24 +157,32 @@ object HeadlessCli {
         /** Ctrl+C: stop the running download, wait for it to let go of its files, then drop the partial output. */
         private fun onInterrupt() {
             interrupted.set(true)
-            val job = current.get() ?: return
-            job.task?.stop()
-            job.done.await(10, TimeUnit.SECONDS)
-            job.task?.deleteTemp()
+            val job = current.get()
+            if (job != null) {
+                job.task?.stop()
+                job.done.await(10, TimeUnit.SECONDS)
+                // A torrent's files stay: they may be files the folder already had, which the torrent was checking.
+                if (job.type != DownloadType.Torrent) job.task?.deleteTemp()
+            }
+            torrentsMade?.shutdown()
+            if (job == null) return
             workRoot.deleteRecursively()
             job.progress.clear()
             err.println("Interrupted")
         }
 
         private fun runOne(url: String, label: String): Boolean {
-            val type = when (o.type) {
-                StreamType.Auto -> detectType(url)
+            val torrent = TorrentArgs.sourceOf(url, o.type, false)
+            val type = when {
+                torrent != null -> StreamType.Torrent
+                o.type == StreamType.Auto -> detectType(url)
                 else -> o.type
             }
             val id = CoreUtils.uniqueId()
             val job = try {
                 when (type) {
                     StreamType.Hls, StreamType.Dash -> streamJob(id, url, type == StreamType.Dash, label)
+                    StreamType.Torrent -> torrentJob(id, torrent ?: TorrentSource.Link(url), label)
                     else -> httpJob(id, url, o.fileName, label)
                 }
             } catch (e: VideoHelper.ManifestLoadException) {
@@ -253,6 +289,48 @@ object HeadlessCli {
             }
         }
 
+        private fun torrentJob(id: Long, source: TorrentSource, label: String): Job {
+            if (o.listFormats) throw CliUsageException("${source.text} is a torrent: nothing to list")
+            val t = torrents()
+            val task = t.prepare(id, source, targetFolder!!, ::fetchTorrent)
+            if (!o.quiet && o.fileName != null) err.println("${label}--file-name does not apply to torrents: saving as ${task.name}")
+            return Job(id, DownloadType.Torrent, null, null, label).also {
+                it.torrentTask = task
+                it.task = TorrentDownloaderTask(task, it, t.service, t.taskInfoDB)
+            }
+        }
+
+        /**
+         * Downloads a .torrent link (with the command line's headers, cookie, proxy and logins); null on an HTTP
+         * error, or when it is something else (a sign-in page) or larger than a torrent file can be.
+         */
+        private fun fetchTorrent(url: String): ByteArray? {
+            val client = newClient(1)
+            try {
+                val response = client.getResponse(url, o.headers, o.cookie, null).getOrNull() ?: return null
+                val bytes = response.use {
+                    if (it.statusCode !in 200..299) {
+                        Logger.info("Torrent", "Torrent link got HTTP ${it.statusCode}: $url")
+                        return null
+                    }
+                    val buffer = ByteArrayOutputStream()
+                    val chunk = ByteArray(16 * 1024)
+                    it.inputStream.use { input ->
+                        while (true) {
+                            val n = input.read(chunk)
+                            if (n < 0) break
+                            buffer.write(chunk, 0, n)
+                            if (buffer.size() > HeadlessTorrents.MAX_TORRENT_BYTES) return null
+                        }
+                    }
+                    buffer.toByteArray()
+                }
+                return bytes.takeIf { torrents().service.parse(it) != null }
+            } finally {
+                client.close()
+            }
+        }
+
         private fun printFormats(label: String, url: String, formats: List<FormatChoice>) {
             out.println("${label}Formats of $url:")
             formats.forEachIndexed { i, f ->
@@ -282,13 +360,17 @@ object HeadlessCli {
             val userName: String?,
             /** Extension to add to the server's name (a single-file stream from a manifest). */
             val ext: String?,
-            label: String,
+            val label: String,
         ) : DownloadHost {
             var task: DownloaderTask? = null
             var httpInfo: HttpDownloadTaskInfo? = null
 
             /** HLS/DASH: the name chosen before the download starts. */
             var streamName: String? = null
+
+            /** Torrent: its task; the name changes when the metadata arrives. */
+            var torrentTask: TorrentDownloadTaskInfo? = null
+            private var lastTrackerCheck = 0L
 
             @Volatile
             var httpName: String? = null
@@ -323,8 +405,34 @@ object HeadlessCli {
             }
 
             override fun onDownloadProgress(event: DownloadStatusInfo.ProgressInfo) {
+                val torrent = torrentTask
+                if (torrent != null) {
+                    progress.name = torrent.name
+                    if (o.verbose) reportTrackerErrors(torrent.key)
+                    val tp = event.torrent
+                    val note = when (tp?.phase) {
+                        null -> null
+                        TorrentPhase.Metadata -> "fetching metadata, ${tp.peers} peers"
+                        TorrentPhase.Checking -> "checking files ${tp.checkPermille / 10}%"
+                        else -> "${tp.peers} peers (${tp.seeds} seeds)"
+                    }
+                    // Before the metadata the size is unknown.
+                    progress.update(event.downloaded, tp?.wanted?.takeIf { it > 0 } ?: size, event.progress, event.speed, event.eta, note)
+                    return
+                }
                 if (progress.name.isEmpty()) progress.name = streamName.orEmpty()
                 progress.update(event.downloaded, size, event.progress, event.speed, event.eta)
+            }
+
+            /** --verbose: a tracker's error once, on its own line (every 5 s at most). */
+            private fun reportTrackerErrors(key: String) {
+                val now = System.currentTimeMillis()
+                if (now - lastTrackerCheck < 5_000) return
+                lastTrackerCheck = now
+                val errors = torrentsMade?.newTrackerErrors(key).orEmpty()
+                if (errors.isEmpty()) return
+                progress.clear()
+                errors.forEach { err.println("${label}tracker $it") }
             }
 
             override fun onAssembleStart(id: Long) = progress.assembling(0)
@@ -348,12 +456,12 @@ object HeadlessCli {
             override fun outputFile(id: Long, downloadType: DownloadType, ext: String): StorageFile? =
                 LocalStorage.file(File(targetFolder, partFileName(id) + ext).path)
 
-            override fun commitOutputFile(id: Long, part: StorageFile, downloadType: DownloadType): CommitResult {
+            override fun commitOutputFile(id: Long, part: StorageFile, downloadType: DownloadType, container: String?): CommitResult {
                 val name = when (downloadType) {
                     DownloadType.Http -> httpName ?: getFileName(httpInfo?.url.orEmpty())
                     // The muxer picks the container: keep a suggested name's extension in step with it.
                     else -> {
-                        val actual = part.name.substringAfterLast(partFileName(id), "")
+                        val actual = container?.let { ".$it" } ?: part.name.substringAfterLast(partFileName(id), "")
                         val base = streamName ?: "stream"
                         if (userName != null || actual.isEmpty() || base.endsWith(actual, true)) base
                         else base.substringBeforeLast('.') + actual
@@ -530,7 +638,7 @@ class ProgressLine(private val prefix: String, private val quiet: Boolean, priva
     private var mergeShown = false
 
     @Synchronized
-    fun update(downloaded: Long, size: Long, percent: Int, speed: Float, eta: Long) {
+    fun update(downloaded: Long, size: Long, percent: Int, speed: Float, eta: Long, note: String? = null) {
         if (quiet) return
         val known = size > 0 || percent > 0
         if (tty) {
@@ -547,6 +655,7 @@ class ProgressLine(private val prefix: String, private val quiet: Boolean, priva
         parts += if (size > 0) "${fmt(downloaded)} / ${fmt(size)}" else fmt(downloaded)
         if (speed >= 1) parts += "${fmt(speed.toLong())}/s"
         if (eta > 0) parts += "ETA ${FormatHelper.toLongEta(eta)}"
+        note?.let { parts += it }
         show("${shortName()}  ${parts.joinToString("  ")}")
     }
 

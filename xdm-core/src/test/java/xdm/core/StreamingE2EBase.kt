@@ -215,9 +215,10 @@ class StreamingTestHost(
 
     override fun getTempDir(id: Long, url: String, contentType: String?, contentDisposition: String?): String = tempDir
 
-    override fun commitOutputFile(id: Long, part: StorageFile, downloadType: DownloadType): CommitResult {
+    override fun commitOutputFile(id: Long, part: StorageFile, downloadType: DownloadType, container: String?): CommitResult {
         val src = File(part.localPath!!)
-        val ext = src.name.substringAfterLast('.', "mp4")
+        // A muxed output is named after the container written, as the real hosts do.
+        val ext = container ?: src.name.substringAfterLast('.', "mp4")
         val dst = File(outDir, "out-$id.$ext")
         if (dst.exists()) dst.delete()
         val moved = src.renameTo(dst) || runCatching {
@@ -226,6 +227,30 @@ class StreamingTestHost(
         if (!moved || !dst.exists()) return CommitResult.Failed(DownloadError.OutputWriteError)
         finalFile = dst
         return CommitResult.Success(dst.name, outDir)
+    }
+
+    /** The published playlist folder (Level 3), and how many folder commits to refuse first. */
+    @Volatile var folderOutput: File? = null
+    val failFolderCommits = java.util.concurrent.atomic.AtomicInteger(0)
+    /** Files published beside the output (Level 4). */
+    val sidecars = java.util.concurrent.CopyOnWriteArrayList<File>()
+
+    override fun commitOutputFolder(id: Long, folder: String, entry: String, downloadType: DownloadType): CommitResult {
+        if (failFolderCommits.getAndDecrement() > 0) return CommitResult.Failed(DownloadError.OutputWriteError)
+        val dst = File(outDir, "out-$id")
+        dst.deleteRecursively()
+        if (!File(folder).renameTo(dst)) return CommitResult.Failed(DownloadError.OutputWriteError)
+        if (!File(dst, entry).renameTo(File(dst, "out-$id.m3u8"))) return CommitResult.Failed(DownloadError.OutputWriteError)
+        folderOutput = dst
+        return CommitResult.Success("out-$id/out-$id.m3u8", outDir)
+    }
+
+    override fun commitSidecar(id: Long, file: String, outputDir: String, mainFileName: String, suffix: String): String? {
+        val name = "${mainFileName.substringBeforeLast('.')}.$suffix.${file.substringAfterLast('.')}"
+        val dst = File(outputDir, name)
+        if (!File(file).renameTo(dst)) return null
+        sidecars.add(dst)
+        return name
     }
 
     override fun onDownloadActivated(id: Long) {}

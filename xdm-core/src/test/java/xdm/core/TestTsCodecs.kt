@@ -19,7 +19,7 @@ import xdm.core.media.muxer.transmux.es.MpegAudioReader
 import xdm.core.media.muxer.transmux.es.MpegVideoReader
 import xdm.core.media.muxer.transmux.mp4.CodecBoxes
 import xdm.core.media.muxer.transmux.mp4.Mp4Writer
-import xdm.core.media.muxer.transmux.mp4.alignSections
+import xdm.core.media.muxer.transmux.sample.alignSections
 import xdm.core.media.muxer.transmux.sample.Codec
 import xdm.core.media.muxer.transmux.sample.Track
 import java.io.ByteArrayOutputStream

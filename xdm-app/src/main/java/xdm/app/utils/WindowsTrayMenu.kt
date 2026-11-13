@@ -54,7 +54,7 @@ internal object WindowsTrayMenu {
         JPopupMenu().apply {
             add(JMenuItem(I8N.text("MSG_RESTORE")).apply { addActionListener { app.showAppWindow() } })
             addSeparator()
-            add(JMenuItem(I8N.text("MENU_EXIT")).apply { addActionListener { exitProcess(0) } })
+            add(JMenuItem(I8N.text("MENU_EXIT")).apply { addActionListener { AppExit.exit() } })
         }
     }
 

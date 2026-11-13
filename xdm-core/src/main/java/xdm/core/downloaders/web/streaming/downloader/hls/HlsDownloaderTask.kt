@@ -13,6 +13,7 @@ import xdm.core.downloaders.web.streaming.downloader.HlsTaskContext
 import xdm.core.downloaders.web.streaming.downloader.SUBS_TAG
 import xdm.core.downloaders.web.streaming.downloader.StreamingChunk
 import xdm.core.downloaders.web.streaming.downloader.StreamingDownloaderTask
+import xdm.core.downloaders.web.streaming.manifest.hls.HlsMediaSegment
 import xdm.core.downloaders.web.streaming.manifest.hls.HlsParser
 import xdm.core.downloaders.web.streaming.manifest.hls.HlsPlaylist
 import xdm.core.media.muxer.Muxer
@@ -135,6 +136,8 @@ class HlsDownloaderTask : StreamingDownloaderTask {
                 context.discontinuous = true
             }
             context.chunks.ensureCapacity(videoPlaylist.mediaSegments.size + (audioPlaylist?.mediaSegments?.size ?: 0))
+            val videoSections = sectionNumbers(videoPlaylist.mediaSegments)
+            val audioSections = audioPlaylist?.let { sectionNumbers(it.mediaSegments) } ?: IntArray(0)
             context.chunks.addAll(videoPlaylist.mediaSegments.mapIndexed { index, ms ->
                 StreamingChunk(
                     id = CoreUtils.uniqueId(),
@@ -147,7 +150,10 @@ class HlsDownloaderTask : StreamingDownloaderTask {
                     tag = "VIDEO",
                     error = AtomicReference(null),
                     fileHandle = AtomicReference(null),
-                    encrypted = ms.encrypted
+                    encrypted = ms.encrypted,
+                    duration = ms.duration,
+                    discontinuity = videoSections[index],
+                    init = ms.init,
                 )
             })
             val count = videoPlaylist.mediaSegments.size
@@ -164,7 +170,10 @@ class HlsDownloaderTask : StreamingDownloaderTask {
                         tag = "AUDIO",
                         error = AtomicReference(null),
                         fileHandle = AtomicReference(null),
-                        encrypted = ms.encrypted
+                        encrypted = ms.encrypted,
+                        duration = ms.duration,
+                        discontinuity = audioSections[index],
+                        init = ms.init,
                     )
                 })
             }
@@ -232,6 +241,12 @@ class HlsDownloaderTask : StreamingDownloaderTask {
     override fun isIndependentSegment() = (context as HlsTaskContext).independent
 
     override fun hasDiscontinuity() = (context as HlsTaskContext).discontinuous
+
+    /** Each segment's timeline section: the number of `EXT-X-DISCONTINUITY` markers up to and including it. */
+    private fun sectionNumbers(segments: List<HlsMediaSegment>): IntArray {
+        var n = 0
+        return IntArray(segments.size) { i -> if (segments[i].discontinuity) n++; n }
+    }
 
     private fun parseManifest(
         videoManifest: AtomicReference<File?>, audioManifest: AtomicReference<File?>

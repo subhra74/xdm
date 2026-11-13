@@ -36,16 +36,31 @@ object Ebml {
     const val TRACK_TYPE = 0x83L
     const val FLAG_LACING = 0x9CL
     const val DEFAULT_DURATION = 0x23E383L
+    const val CODEC_DELAY = 0x56AAL
+    const val SEEK_PRE_ROLL = 0x56BBL
     const val LANGUAGE = 0x22B59CL
     const val CODEC_ID = 0x86L
     const val CODEC_PRIVATE = 0x63A2L
     const val VIDEO = 0xE0L
     const val PIXEL_WIDTH = 0xB0L
     const val PIXEL_HEIGHT = 0xBAL
+    const val PROJECTION = 0x7670L
+    const val PROJECTION_TYPE = 0x7671L
+    const val PROJECTION_POSE_YAW = 0x7673L
+    const val PROJECTION_POSE_PITCH = 0x7674L
+    const val PROJECTION_POSE_ROLL = 0x7675L
     const val AUDIO = 0xE1L
     const val SAMPLING_FREQUENCY = 0xB5L
     const val CHANNELS = 0x9FL
     const val BIT_DEPTH = 0x6264L
+    const val CONTENT_ENCODINGS = 0x6D80L
+    const val CONTENT_ENCODING = 0x6240L
+    const val CONTENT_ENCODING_ORDER = 0x5031L
+    const val CONTENT_ENCODING_SCOPE = 0x5032L
+    const val CONTENT_ENCODING_TYPE = 0x5033L
+    const val CONTENT_COMPRESSION = 0x5034L
+    const val CONTENT_COMP_ALGO = 0x4254L
+    const val CONTENT_COMP_SETTINGS = 0x4255L
     const val BLOCK_ADDITION_MAPPING = 0x41E4L
     const val BLOCK_ADD_ID_NAME = 0x41A4L
     const val BLOCK_ADD_ID_TYPE = 0x41E7L
@@ -61,6 +76,15 @@ object Ebml {
 
     // Other level-1 elements (skipped on read, used as unknown-size cluster terminators)
     const val CUES = 0x1C53BB6BL
+    const val CUE_POINT = 0xBBL
+    const val CUE_TIME = 0xB3L
+    const val CUE_TRACK_POSITIONS = 0xB7L
+    const val CUE_TRACK = 0xF7L
+    const val CUE_CLUSTER_POSITION = 0xF1L
+    const val SEEK = 0x4DBBL
+    const val SEEK_ID = 0x53ABL
+    const val SEEK_POSITION = 0x53ACL
+    const val VOID = 0xECL
     const val TAGS = 0x1254C367L
 
     const val TRACK_TYPE_VIDEO = 1L

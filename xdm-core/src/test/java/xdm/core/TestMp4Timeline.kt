@@ -6,7 +6,7 @@ package xdm.core
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import xdm.core.media.muxer.transmux.mp4.assignSampleDurations
+import xdm.core.media.muxer.transmux.sample.assignSampleDurations
 import xdm.core.media.muxer.transmux.sample.SampleTable
 
 /**

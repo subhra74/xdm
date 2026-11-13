@@ -10,7 +10,21 @@ import xdm.core.downloaders.web.streaming.downloader.StreamingChunk
 import xdm.core.util.FormatHelper.getEtaAsSec
 import java.util.*
 
-data class SegmentProgress(var start: Long = 0, var length: Long = 0, var downloaded: Long = 0, val id: Long = 0)
+/**
+ * One piece of a download for the progress window. [start], [length] and [downloaded] place it on the segment
+ * bar; for streaming and batch downloads they are equal slots, not bytes. The [live] pieces, the ones being
+ * downloaded right now, are also listed in the window's table, in bar order, with [status] and their own
+ * downloaded [bytes].
+ */
+data class SegmentProgress(
+    var start: Long = 0,
+    var length: Long = 0,
+    var downloaded: Long = 0,
+    val id: Long = 0,
+    var status: ChunkStatus = ChunkStatus.Ready,
+    var live: Boolean = false,
+    var bytes: Long = 0,
+)
 
 class ProgressTracker(val singleFile: Boolean) {
     var init = false
@@ -184,20 +198,14 @@ class ProgressTracker(val singleFile: Boolean) {
         }
         for (chunk in chunks.values) {
             val seg = sortedSegments.find { it.id == chunk.id }
-            if (seg == null) {
-                sortedSegments.add(
-                    SegmentProgress(
-                        id = chunk.id,
-                        start = chunk.offset,
-                        downloaded = chunk.downloaded.get(),
-                        length = chunk.length.get()
-                    )
-                )
-            } else {
-                seg.start = chunk.offset
-                seg.length = chunk.length.get()
-                seg.downloaded = chunk.downloaded.get()
-            }
+                ?: SegmentProgress(id = chunk.id, start = chunk.offset).also { sortedSegments.add(it) }
+            val status = chunk.status.get()
+            seg.length = chunk.length.get()
+            seg.downloaded = chunk.downloaded.get()
+            seg.status = status
+            // A part that is split off is Ready only until its connection picks it up.
+            seg.live = status == ChunkStatus.Downloading || status == ChunkStatus.Ready
+            seg.bytes = seg.downloaded
         }
     }
 
@@ -207,12 +215,18 @@ class ProgressTracker(val singleFile: Boolean) {
      */
     private fun updateChunkProgressData(chunks: List<StreamingChunk>) {
         while (segments.size < chunks.size) {
-            segments.add(SegmentProgress())
+            // The id is the chunk's index: the progress window follows a segment from update to update by it.
+            segments.add(SegmentProgress(id = segments.size.toLong()))
+        }
+        // The chunk list can get shorter (a fresh playlist on resume): never report segments it no longer has.
+        while (segments.size > chunks.size) {
+            segments.removeAt(segments.size - 1)
         }
         for ((index, chunk) in chunks.withIndex()) {
             val len = chunk.length.get()
+            val status = chunk.status.get()
             val fraction = when {
-                chunk.status.get() == ChunkStatus.Finished -> 1.0
+                status == ChunkStatus.Finished -> 1.0
                 len > 0 -> (chunk.downloaded.get().toDouble() / len).coerceIn(0.0, 1.0)
                 else -> 0.0
             }
@@ -220,6 +234,9 @@ class ProgressTracker(val singleFile: Boolean) {
             s.start = index * STREAM_SLOT
             s.length = STREAM_SLOT
             s.downloaded = (fraction * STREAM_SLOT).toLong()
+            s.status = status
+            s.live = status == ChunkStatus.Downloading
+            s.bytes = chunk.downloaded.get()
         }
     }
 

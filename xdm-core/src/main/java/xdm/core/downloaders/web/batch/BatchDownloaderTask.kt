@@ -4,6 +4,8 @@
 
 package xdm.core.downloaders.web.batch
 
+import xdm.core.util.isOutOfSpace
+import xdm.core.media.muxer.impl.SegmentProbe
 import xdm.core.CoreConfig
 import xdm.core.downloaders.BatchDownloadTaskInfo
 import xdm.core.downloaders.DownloadError
@@ -15,6 +17,7 @@ import xdm.core.downloaders.web.ProgressTracker
 import xdm.core.downloaders.web.SegmentProgress
 import xdm.core.downloaders.web.SpeedLimiter
 import xdm.core.downloaders.web.http.ChunkStatus
+import xdm.core.media.muxer.MuxContainer
 import xdm.core.media.muxer.Muxer
 import xdm.core.network.http.HttpResponse
 import xdm.core.network.http.PoolingHttpClient
@@ -333,10 +336,44 @@ class BatchDownloaderTask(
             part.delete()
             return
         }
+        var container = muxer.outputContainer
+        var audioBeside: File? = null
         if (!ok) {
             part.delete()
-            settle(f, ChunkStatus.Failed, DownloadError.InternalError)
-            return
+            if (isOutOfSpace(muxer.lastError)) {
+                settle(f, ChunkStatus.Failed, DownloadError.DiskSpaceError)
+                return
+            }
+            // Kept as two files rather than lost: the video track as the item, the audio track beside it.
+            val video = trackFile(f, f.video!!)
+            try {
+                part.open(create = true).use { out ->
+                    out.setLength(0)
+                    video.inputStream().use { input ->
+                        val buf = ByteArray(256 * 1024)
+                        while (true) { val n = input.read(buf); if (n <= 0) break; out.write(buf, 0, n) }
+                    }
+                }
+            } catch (e: Exception) {
+                part.delete()
+                settle(f, ChunkStatus.Failed, if (isOutOfSpace(e)) DownloadError.DiskSpaceError else DownloadError.InternalError)
+                return
+            }
+            container = SegmentProbe.extensionOf(video.path)
+            audioBeside = trackFile(f, f.audio!!)
+            Logger.info("XDM", "Batch ${task.id}: item ${f.index} couldn't be merged (${muxer.lastError?.message}); kept as two files")
+        }
+        // The muxer picks the container (MuxContainer): the item's name takes its extension.
+        container?.let { container ->
+            synchronized(takenNames) {
+                val current = nameOf(f)
+                val wanted = MuxContainer.withExtension(current, container)
+                if (!wanted.equals(current, ignoreCase = true)) {
+                    takenNames.remove(current.lowercase())
+                    f.finalName = uniqueName(wanted).also { takenNames.add(it.lowercase()) }
+                    dirty.set(true)
+                }
+            }
         }
         val size = part.length()
         val error = onComplete(f)
@@ -344,10 +381,29 @@ class BatchDownloaderTask(
             settle(f, ChunkStatus.Failed, error)
             return
         }
+        audioBeside?.let { publishBeside(f, it) }
         f.length.set(size)
         f.downloaded.set(size)
         f.tracks.forEach { trackFile(f, it).delete() }
         settle(f, ChunkStatus.Finished, null)
+    }
+
+    /** Writes a track that couldn't be merged beside the item, as `<item name>.audio.<ext>`. */
+    private fun publishBeside(f: BatchFile, audio: File) {
+        val name = synchronized(takenNames) {
+            uniqueName("${getFileNameWithoutExtension(nameOf(f))}.audio.${SegmentProbe.extensionOf(audio.path)}").also { takenNames.add(it.lowercase()) }
+        }
+        try {
+            folder.open(name, create = true).use { out ->
+                out.setLength(0)
+                audio.inputStream().use { input ->
+                    val buf = ByteArray(256 * 1024)
+                    while (true) { val n = input.read(buf); if (n <= 0) break; out.write(buf, 0, n) }
+                }
+            }
+        } catch (e: Exception) {
+            Logger.error("XDM", "Batch ${task.id}: couldn't write the audio of item ${f.index} beside it", e)
+        }
     }
 
     /** A merged item is done, one way or the other: counted, and its slot in [latch] released, once. */
@@ -464,7 +520,11 @@ class BatchDownloaderTask(
                 len > 0 -> (f.bytes.toDouble() / len).coerceIn(0.0, 1.0)
                 else -> 0.0
             }
-            SegmentProgress(start = i * SLOT, length = SLOT, downloaded = (fraction * SLOT).toLong())
+            val status = f.status.get()
+            SegmentProgress(
+                start = i * SLOT, length = SLOT, downloaded = (fraction * SLOT).toLong(), id = i.toLong(),
+                status = status, live = status == ChunkStatus.Downloading, bytes = f.bytes,
+            )
         }
         host.onDownloadProgress(
             DownloadStatusInfo.ProgressInfo(
