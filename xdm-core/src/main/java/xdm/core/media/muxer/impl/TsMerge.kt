@@ -19,8 +19,11 @@ import java.util.concurrent.atomic.AtomicBoolean
  * secondary (the audio) is either TS files or HLS packed audio, whose frames are wrapped into PES.
  *
  *  - Packets of 188/192/204 bytes in, 188 out. The primary keeps everything but its PAT/PMT (and
- *    null packets); the secondary keeps only its audio/video PIDs, remapped when they collide with
- *    the primary's (packagers put both renditions on PID 0x100).
+ *    null packets) and, when the secondary brings audio, the audio streams its PMT declares but that
+ *    carry nothing (a packager's placeholder: listed first, a player would pick it and play silence);
+ *    real audio in the video segments stays, beside the rendition's. The secondary keeps only its
+ *    audio/video PIDs, remapped when they collide with the primary's (packagers put both renditions on
+ *    PID 0x100).
  *  - A PAT and a merged PMT (the primary's program plus the secondary's streams, CRC computed) are
  *    written first and after every PAT the primary carries, and again when the primary's PMT changes.
  *  - Packets are grouped into units at each PES start and the two renditions are interleaved by
@@ -38,6 +41,16 @@ internal class TsMerge(private val stop: AtomicBoolean) {
     /** Merges into [out]; false only on a stop. */
     fun merge(primary: List<Input>, secondary: List<Input>, secondaryPacked: Boolean, out: OutputStream): Boolean {
         val program = Program()
+        // Which primary streams carry anything: an audio placeholder carries nothing anywhere, real audio
+        // starts a PES within the first segment.
+        program.primaryCarrying = HashSet<Int>().also { seen ->
+            val scan = PacketReader(primary.take(EMPTY_SCAN_FILES))
+            while (true) {
+                if (stop.get()) return false
+                val pkt = scan.next() ?: break
+                if (pkt[1].toInt() and 0x40 != 0) seen += pid(pkt)
+            }
+        }
         val p = TsUnits(primary, primary = true, program)
         val s: () -> Unit? = if (secondaryPacked) PackedUnits(secondary, program) { p.firstTs }::next
             else TsUnits(secondary, primary = false, program)::next
@@ -97,6 +110,16 @@ internal class TsMerge(private val stop: AtomicBoolean) {
             pid
         }
 
+        /** PIDs that start a PES in the first primary files ([EMPTY_SCAN_FILES]); null when not scanned. */
+        var primaryCarrying: Set<Int>? = null
+
+        /** The primary's audio PIDs that carry nothing, left out when the secondary brings audio of its own. */
+        fun droppedPids(): Set<Int> {
+            val carrying = primaryCarrying ?: return emptySet()
+            if (secondaryStreams.none { isAudio(it.first, it.third) }) return emptySet()
+            return primaryStreams.filter { isAudio(it.first, it.third) && it.second !in carrying }.map { it.second }.toSet()
+        }
+
         fun setPrimary(number: Int, pmt: Int, pcr: Int, info: ByteArray, streams: List<Triple<Int, Int, ByteArray>>) {
             if (number == programNumber && pmt == pmtPid && pcr == pcrPid && info.contentEquals(programInfo) && sameStreams(streams, primaryStreams)) return
             programNumber = number; pmtPid = pmt; pcrPid = pcr; programInfo = info; primaryStreams = streams
@@ -125,7 +148,8 @@ internal class TsMerge(private val stop: AtomicBoolean) {
             b.write(0xC1 or (version shl 1)); b.write(0); b.write(0)
             b.write(0xE0 or (pcrPid shr 8)); b.write(pcrPid)
             b.write(0xF0 or (programInfo.size shr 8)); b.write(programInfo.size); b.write(programInfo)
-            for ((type, pid, info) in primaryStreams + secondaryStreams) {
+            val dropped = droppedPids()
+            for ((type, pid, info) in primaryStreams.filter { it.second !in dropped } + secondaryStreams) {
                 b.write(type); b.write(0xE0 or (pid shr 8)); b.write(pid)
                 b.write(0xF0 or (info.size shr 8)); b.write(info.size); b.write(info)
             }
@@ -194,6 +218,7 @@ internal class TsMerge(private val stop: AtomicBoolean) {
                     continue // replaced by the merged PMT
                 }
                 if (!primary && pid !in esPids) continue
+                if (primary && pid in program.droppedPids()) continue
                 if (!primary) {
                     val out = program.outPid(pid)
                     pkt[1] = ((pkt[1].toInt() and 0xE0) or (out shr 8)).toByte(); pkt[2] = out.toByte()
@@ -502,6 +527,25 @@ internal class TsMerge(private val stop: AtomicBoolean) {
     }
 
     private companion object {
+        /** Primary files scanned for the streams that carry data. */
+        const val EMPTY_SCAN_FILES = 3
+        private val AUDIO_TYPES = setOf(0x03, 0x04, 0x0F, 0x11, 0x1C, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x8A)
+        private val AUDIO_REGISTRATIONS = setOf("AC-3", "EAC3", "AC-4", "Opus", "DTS1", "DTS2", "DTS3", "mlpa")
+
+        /** An audio elementary stream by its stream_type, or a private one (0x06) by its descriptors. */
+        fun isAudio(type: Int, info: ByteArray): Boolean {
+            if (type in AUDIO_TYPES) return true
+            if (type != 0x06) return false
+            var q = 0
+            while (q + 2 <= info.size) {
+                val tag = info[q].toInt() and 0xFF
+                val len = info[q + 1].toInt() and 0xFF
+                if (tag == 0x6A || tag == 0x7A || tag == 0x7B || tag == 0x7C) return true // DVB AC-3, E-AC-3, DTS, AAC
+                if (tag == 0x05 && len >= 4 && String(info, q + 2, 4, Charsets.US_ASCII) in AUDIO_REGISTRATIONS) return true
+                q += 2 + len
+            }
+            return false
+        }
         fun pid(p: ByteArray) = ((p[1].toInt() and 0x1F) shl 8) or (p[2].toInt() and 0xFF)
 
         fun payloadStart(p: ByteArray): Int? {

@@ -35,6 +35,24 @@ abstract class AnnexBReader(protected val sink: SampleSink) : ElementaryStreamRe
     /** PTS/DTS of the latest PES, until the first NAL unit starting after it takes them. */
     private var pesPts = NO_TS
     private var pesDts = NO_TS
+    /** Whether the PES (NAL unit, access unit) carried a DTS of its own, not just a PTS. */
+    private var pesDtsGiven = false
+    private var nalDtsGiven = false
+    private var auDtsGiven = false
+    /**
+     * Timestamps of the current PES that reached a NAL unit of a picture which began in an earlier PES
+     * (a segmenter that cuts PES inside pictures: the PES opens with the last slices of one picture and
+     * the next one's delimiter comes later). They belong to the first access unit that starts in this PES
+     * (ISO/IEC 13818-1 2.4.3.7), so they wait for it: a NAL unit that starts a picture takes them only
+     * when it began in the same PES ([heldPes]). A NAL unit is finished by the next start code, which may
+     * come in the next PES, so each one carries the number of the PES it began in ([nalPes]).
+     */
+    private var heldPts = NO_TS
+    private var heldDts = NO_TS
+    private var heldDtsGiven = false
+    private var heldPes = -1L
+    private var pesCount = 0L
+    private var nalPes = -1L
 
     // ---- the access unit being assembled ----
     private val au = ByteArrayBuilder()
@@ -49,9 +67,11 @@ abstract class AnnexBReader(protected val sink: SampleSink) : ElementaryStreamRe
     private var lastInterval = 0L
 
     override fun consume(data: ByteArray, offset: Int, length: Int, pts: Long, dts: Long) {
+        pesCount++
         if (pts >= 0) {
             pesPts = pts
             pesDts = if (dts >= 0) dts else pts
+            pesDtsGiven = dts >= 0
         }
         // Continue the scan 3 bytes back so a start code split across PES packets is still found.
         var scanFrom = maxOf(0, nal.size - 3)
@@ -67,7 +87,7 @@ abstract class AnnexBReader(protected val sink: SampleSink) : ElementaryStreamRe
             nalStart = sc + 3
             scanFrom = nalStart
             // This NAL unit starts in the current PES: it takes the PES timestamps (once).
-            nalPts = pesPts; nalDts = pesDts
+            nalPts = pesPts; nalDts = pesDts; nalDtsGiven = pesDtsGiven; nalPes = pesCount
             pesPts = NO_TS; pesDts = NO_TS
         }
         if (!synced) {
@@ -84,6 +104,8 @@ abstract class AnnexBReader(protected val sink: SampleSink) : ElementaryStreamRe
         if (synced && nal.size > 0) completeNal(nal.buffer, 0, nal.size)
         nal.reset()
         emitAccessUnit()
+        dtsInference.finish()
+        if (dtsInference.inferred > 0) Logger.info("XDM", "${track.codec}: decode times inferred for ${dtsInference.inferred} frames (PES without a usable DTS)")
     }
 
     /** NAL bytes [start, end) are complete; trailing zero bytes (4-byte start codes, padding) dropped. */
@@ -91,12 +113,12 @@ abstract class AnnexBReader(protected val sink: SampleSink) : ElementaryStreamRe
         var e = end
         while (e > start && buf[e - 1].toInt() == 0) e--
         if (e - start < headerSize()) return
-        val ts = nalPts; val tsDts = nalDts
+        val ts = nalPts; val tsDts = nalDts; val given = nalDtsGiven
         nalPts = NO_TS; nalDts = NO_TS
-        onNal(buf, start, e, ts, tsDts)
+        onNal(buf, start, e, ts, tsDts, given, nalPes)
     }
 
-    private fun onNal(buf: ByteArray, start: Int, end: Int, pts: Long, dts: Long) {
+    private fun onNal(buf: ByteArray, start: Int, end: Int, pts: Long, dts: Long, dtsGiven: Boolean, pes: Long) {
         if (!isBaseLayer(buf, start)) {
             // Enhancement-layer NAL units (MV-HEVC, SHVC) travel with the base picture, never split it.
             if (auHasVcl || au.size > 0) { au.writeInt(end - start); au.write(buf, start, end - start) }
@@ -107,7 +129,16 @@ abstract class AnnexBReader(protected val sink: SampleSink) : ElementaryStreamRe
         else auHasVcl && startsAccessUnit(buf, start)
         if (startsAu) emitAccessUnit()
         if (!auOpen) { auOpen = true; auSection = section }
-        if (pts != NO_TS && auPts == NO_TS) { auPts = pts; auDts = dts }
+        if (pts != NO_TS && auPts != NO_TS) {
+            // This picture began in an earlier PES: the timestamps are the next picture's.
+            heldPts = pts; heldDts = dts; heldDtsGiven = dtsGiven; heldPes = pes
+        } else if (pts != NO_TS) {
+            auPts = pts; auDts = dts; auDtsGiven = dtsGiven
+            heldPts = NO_TS
+        } else if (heldPts != NO_TS && auPts == NO_TS && pes == heldPes) {
+            auPts = heldPts; auDts = heldDts; auDtsGiven = heldDtsGiven
+            heldPts = NO_TS; heldDts = NO_TS
+        }
 
         if (vcl) {
             auHasVcl = true
@@ -181,18 +212,20 @@ abstract class AnnexBReader(protected val sink: SampleSink) : ElementaryStreamRe
         if (real) {
             provisional.clear()
             lastRealDts = dts
+            dtsInference.added(track.samples.size - 1, pts, dts, auDtsGiven, auSection)
         } else {
             provisional += track.samples.size - 1
+            dtsInference.interrupted()
         }
         au.reset()
         auHasVcl = false
         auKeyframe = false
         auOpen = false
-        auPts = NO_TS; auDts = NO_TS
+        auPts = NO_TS; auDts = NO_TS; auDtsGiven = false
     }
 
     private fun discardAccessUnit() {
-        au.reset(); auHasVcl = false; auKeyframe = false; auOpen = false; auPts = NO_TS; auDts = NO_TS
+        au.reset(); auHasVcl = false; auKeyframe = false; auOpen = false; auPts = NO_TS; auDts = NO_TS; auDtsGiven = false
         auParameterSets.clear()
     }
 
@@ -207,6 +240,9 @@ abstract class AnnexBReader(protected val sink: SampleSink) : ElementaryStreamRe
         emitAccessUnit()
         section++
     }
+
+    /** Decode times for frames whose PES carried only a PTS (or a DTS after it). */
+    private val dtsInference by lazy { DtsInference(track.samples) }
 
     /** Samples since the last real timestamp whose times were extrapolated (indices into track.samples). */
     private val provisional = ArrayList<Int>()

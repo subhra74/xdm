@@ -82,6 +82,19 @@ TrueHD, S302M, VC-2, J2K in TS) → `TS_FALLBACK` with MP4 on, `.ts` with it off
 list that is neither TS nor packed audio (GPAC raw Ogg Opus / FLAC / PCM next to TS) → FAIL, which the
 downloader turns into the segments kept as files.
 
+## Real streams (`fetch_real.py`)
+
+Public VOD test streams fetched into case folders (`real_<name>`: the lowest video variant and its default audio
+rendition, first N segments, byte ranges cut into files, encrypted streams skipped), then checked like any other
+case with `parity.sh` and `matrix_check.py`. Downloads go through `curl` (system certificates). Used so far:
+Apple bipbop advanced (TS, fMP4) and 16x9, Mux test streams, Shaka angel-one, Unified Streaming tears-of-steel,
+THEOplayer elephants-dream. `FETCH_AUDIO_ONLY=1` takes the lowest audio-only variant (packed audio).
+
+```
+python3 -I tools/ffparity/fetch_real.py "$XDM_PARITY_CASES" apple_bipbop16x9 \
+  https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/bipbop_16x9_variant.m3u8 20
+```
+
 ## Verdicts and the allow list
 
 Any difference fails unless `allow.json` covers it:

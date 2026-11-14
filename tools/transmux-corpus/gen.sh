@@ -80,6 +80,10 @@ mk() { # mode, source variant
 mk vsplit_nopts base
 mk vsplit_pts base
 mk vsplit_small base
+mk nodts base
+mk aucut base
+mk dtslate base
+[ -d "$C/hevc8" ] && mk nodts hevc8 _hevc8
 mk asplit base
 mk asplit aac_mono_44k _mono
 mk pkt204 base

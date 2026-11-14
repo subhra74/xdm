@@ -158,6 +158,47 @@ class TestKeepOriginalFormat {
         assertEquals(emptyList<String>(), decodeErrors(out))
     }
 
+    /** [ts] without the packets of [pid] (its PMT entry stays): a declared stream that carries nothing. */
+    private fun withoutPid(ts: String, pid: Int, name: String): String {
+        val b = File(ts).readBytes()
+        val out = java.io.ByteArrayOutputStream()
+        for (k in 0 until b.size / 188) {
+            val p = ((b[k * 188 + 1].toInt() and 0x1F) shl 8) or (b[k * 188 + 2].toInt() and 0xFF)
+            if (p != pid) out.write(b, k * 188, 188)
+        }
+        return File(workDir, name).also { it.writeBytes(out.toByteArray()) }.absolutePath
+    }
+
+    @Test
+    fun anEmptyAudioStreamInTheVideoSegmentsIsLeftOut() {
+        requireFfmpeg()
+        // Some packagers declare an audio stream in the video segments that never carries a packet; listed
+        // first, a player would pick it and play silence. Left out when an audio rendition is merged.
+        val audioPid = probe(files("av\\d+\\.ts").first(), "-select_streams", "a:0", "-show_entries", "stream=id", "-of", "csv=p=0")
+            .lines().first { it.isNotBlank() }.trim().removePrefix("0x").toInt(16)
+        val video = files("av\\d+\\.ts").mapIndexed { i, f -> withoutPid(f, audioPid, "avempty$i.ts") }
+        val audio = files("rend1_\\d+\\.ts")
+        val out = path("empty_audio_plus_rendition.part")
+        val m = keeping()
+        assert(m.mux(audio, video, out, {}, workDir.path, false, false)) { "mux failed: ${m.lastError}" }
+        assertEquals(listOf("h264", "aac"), codecs(out), "only the rendition's audio")
+        assertEquals(audio.sumOf { packets(it, "a:0") }, packets(out, "a:0"), "the rendition's audio")
+        assertEquals(emptyList<String>(), decodeErrors(out))
+    }
+
+    @Test
+    fun realAudioInTheVideoSegmentsStaysBesideTheRendition() {
+        requireFfmpeg()
+        // Audio the video segments really carry (another language, the main mix) is kept, as the MP4 keeps it.
+        val video = files("av\\d+\\.ts")
+        val audio = files("rend1_\\d+\\.ts")
+        val out = path("av_plus_rendition.part")
+        val m = keeping()
+        assert(m.mux(audio, video, out, {}, workDir.path, false, false)) { "mux failed: ${m.lastError}" }
+        assertEquals(listOf("h264", "aac", "aac"), codecs(out), "both audio streams")
+        assertEquals(emptyList<String>(), decodeErrors(out))
+    }
+
     @Test
     fun tsVideoWithPackedAudioIsMergedIntoOneTs() {
         requireFfmpeg()

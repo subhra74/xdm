@@ -24,7 +24,7 @@ PROBE = ['-probesize', '500M', '-analyzeduration', '30M']
 PCM_TOLERANCE = 64
 BOUNDARY_WINDOW = 4096
 
-REFERENCE = {'mod_asplit_mono': 'aac_mono_44k', 'mod_pidshift': 'short_seg', 'mod_vsplit_nopts_hevc': 'hevc8',
+REFERENCE = {'mod_asplit_mono': 'aac_mono_44k', 'mod_nodts_hevc8': 'hevc8', 'mod_pidshift': 'short_seg', 'mod_vsplit_nopts_hevc': 'hevc8',
              # ffmpeg reads a trun without data_offset from the base offset, against ISO 14496-12
              # 8.8.8.3, so it can't decode this variant itself: compare with the source it was made from.
              'f_mod_multitrun': 'f_base', 'f_mod_nobase': 'f_base', 'f_mod_chunked': 'f_base',

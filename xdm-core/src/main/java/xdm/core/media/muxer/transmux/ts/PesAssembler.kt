@@ -84,7 +84,9 @@ class PesAssembler(reader: ElementaryStreamReader) {
         val end = if (packetLength > 0) minOf(buffer.size, 6 + packetLength) else buffer.size
         val payloadOffset = 9 + headerDataLength
         if (payloadOffset >= end) return
-        reader.consume(b, payloadOffset, end - payloadOffset, pts, if (dts >= 0) dts else pts)
+        // dts -1: the PES carried only a PTS (DTS = PTS by the spec; the video readers infer it when
+        // frames are reordered, see DtsInference).
+        reader.consume(b, payloadOffset, end - payloadOffset, pts, dts)
     }
 
     private fun readTimestamp(b: ByteArray, o: Int): Long {

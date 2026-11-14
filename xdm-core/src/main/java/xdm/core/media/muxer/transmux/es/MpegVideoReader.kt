@@ -32,6 +32,11 @@ class MpegVideoReader(private val sink: SampleSink, private val mpeg4: Boolean) 
     private var unitDts = NO_TS
     private var pesPts = NO_TS
     private var pesDts = NO_TS
+    /** Whether the PES (unit, picture) carried a DTS of its own, not just a PTS. */
+    private var pesDtsGiven = false
+    private var unitDtsGiven = false
+    private var dtsGiven = false
+    private val dtsInference by lazy { DtsInference(track.samples) }
 
     // ---- picture being assembled ----
     private val picture = ByteArrayBuilder(256 * 1024)
@@ -59,6 +64,7 @@ class MpegVideoReader(private val sink: SampleSink, private val mpeg4: Boolean) 
         if (pts >= 0) {
             pesPts = pts
             pesDts = if (dts >= 0) dts else pts
+            pesDtsGiven = dts >= 0
         }
         var scanFrom = maxOf(0, pending.size - 3)
         pending.write(data, offset, length)
@@ -72,7 +78,7 @@ class MpegVideoReader(private val sink: SampleSink, private val mpeg4: Boolean) 
             synced = true
             unitStart = sc
             scanFrom = sc + 3
-            unitPts = pesPts; unitDts = pesDts
+            unitPts = pesPts; unitDts = pesDts; unitDtsGiven = pesDtsGiven
             pesPts = NO_TS; pesDts = NO_TS
         }
         if (unitStart < 0) pending.compact(maxOf(0, end - 3)) else pending.compact(unitStart)
@@ -83,6 +89,8 @@ class MpegVideoReader(private val sink: SampleSink, private val mpeg4: Boolean) 
         if (synced && pending.size > 4) onUnit(pending.buffer, 0, pending.size)
         pending.reset()
         emitPicture()
+        dtsInference.finish()
+        if (dtsInference.inferred > 0) Logger.info("XDM", "${track.codec}: decode times inferred for ${dtsInference.inferred} pictures (PES without a usable DTS)")
     }
 
     /** One unit, `00 00 01 code ...` in [b] from [s] to [e]. */
@@ -92,7 +100,7 @@ class MpegVideoReader(private val sink: SampleSink, private val mpeg4: Boolean) 
         // Stream headers (sequence/GOP, VOS/VO/VOL/GOV) after a picture open the next picture's unit.
         val isHeader = if (mpeg4) code == 0xB0 || code == 0xB3 || code == 0xB5 || code <= 0x2F else code == 0xB3 || code == 0xB8
         if ((isPicture || isHeader) && hasPicture) emitPicture()
-        if (unitPts != NO_TS && pts == NO_TS) { pts = unitPts; dts = unitDts }
+        if (unitPts != NO_TS && pts == NO_TS) { pts = unitPts; dts = unitDts; dtsGiven = unitDtsGiven }
         unitPts = NO_TS; unitDts = NO_TS
         if (picture.size == 0) headerBytes = if (isPicture) -1 else 0
         if (isPicture) {
@@ -126,6 +134,7 @@ class MpegVideoReader(private val sink: SampleSink, private val mpeg4: Boolean) 
             keyframeSection = pictureSection
             var p = pts
             var d = dts
+            val real = p != NO_TS
             if (p == NO_TS) {
                 val step = if (lastInterval > 0) lastInterval else 3600L
                 d = if (lastDts != NO_TS) lastDts + step else 0
@@ -135,12 +144,13 @@ class MpegVideoReader(private val sink: SampleSink, private val mpeg4: Boolean) 
             lastPts = p; lastDts = d
             val at = sink.writeSampleData(picture.buffer, 0, picture.size)
             track.samples.add(at, picture.size, p, d, keyframe, descriptionIndex)
+            if (real) dtsInference.added(track.samples.size - 1, p, d, dtsGiven, pictureSection) else dtsInference.interrupted()
         }
         // Pictures before the first stream header can't be decoded: dropped.
         picture.reset()
         hasPicture = false
         keyframe = false
-        pts = NO_TS; dts = NO_TS
+        pts = NO_TS; dts = NO_TS; dtsGiven = false
         headerBytes = -1
     }
 
