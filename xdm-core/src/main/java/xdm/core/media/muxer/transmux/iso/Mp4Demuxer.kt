@@ -219,6 +219,7 @@ class Mp4Demuxer(private val sink: SampleSink) {
             }
         } ?: run {
             val track = Track(if (isVideo) Codec.OTHER_VIDEO else Codec.OTHER_AUDIO)
+            track.compositionMayPrecedeDecode = true
             track.timescale = inputTimescale
             track.width = width
             track.height = height

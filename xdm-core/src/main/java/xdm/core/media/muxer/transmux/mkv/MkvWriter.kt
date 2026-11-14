@@ -11,6 +11,8 @@ import xdm.core.media.muxer.transmux.mp4.SampleEntries
 import xdm.core.media.muxer.transmux.sample.Codec
 import xdm.core.media.muxer.transmux.sample.DisplayMatrix
 import xdm.core.media.muxer.transmux.sample.Sample
+import xdm.core.media.muxer.transmux.sample.RemuxCheck
+import xdm.core.media.muxer.transmux.sample.RemuxCheckException
 import xdm.core.media.muxer.transmux.sample.Timeline
 import xdm.core.media.muxer.transmux.sample.Track
 import xdm.core.media.muxer.transmux.sample.upperMedian
@@ -106,6 +108,11 @@ class MkvWriter(
 
         // The shared timeline step (as in the MP4 writer): sections back to back, jumps repaired.
         Timeline.prepare(plans.map { it.track }, repairTimeline)
+        try {
+            RemuxCheck.review(plans.map { it.track }, mp4 = false)
+        } catch (ex: RemuxCheckException) {
+            spoolFile.delete(); throw ex
+        }
 
         // Normalize all tracks to a common zero so no absolute Matroska timecode is negative.
         var globalMinMs = Long.MAX_VALUE

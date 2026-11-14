@@ -398,7 +398,9 @@ class TestTsCodecs {
         Mp4Writer(a.absolutePath).let { w -> assertTrue(w.finish(listOf(mpeg4Track(w, listOf(3000, 9000, 0, 0)))), "written") }
         assertEquals(0, boxVersion(a, "ctts"), "non-negative offsets: version 0")
         val b = File(dir, "neg.mp4")
-        Mp4Writer(b.absolutePath).let { w -> assertTrue(w.finish(listOf(mpeg4Track(w, listOf(0, 6000, -3000, -3000)))), "written") }
+        // Negative offsets come from an MP4 input's own timing (ctts/trun version 1).
+        val negative = { w: Mp4Writer -> mpeg4Track(w, listOf(0, 6000, -3000, -3000)).also { it.compositionMayPrecedeDecode = true } }
+        Mp4Writer(b.absolutePath).let { w -> assertTrue(w.finish(listOf(negative(w))), "written") }
         assertEquals(1, boxVersion(b, "ctts"), "a negative offset: version 1")
     }
 

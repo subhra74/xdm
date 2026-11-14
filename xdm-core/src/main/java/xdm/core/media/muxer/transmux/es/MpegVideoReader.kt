@@ -144,7 +144,8 @@ class MpegVideoReader(private val sink: SampleSink, private val mpeg4: Boolean) 
             lastPts = p; lastDts = d
             val at = sink.writeSampleData(picture.buffer, 0, picture.size)
             track.samples.add(at, picture.size, p, d, keyframe, descriptionIndex)
-            if (real) dtsInference.added(track.samples.size - 1, p, d, dtsGiven, pictureSection) else dtsInference.interrupted()
+            if (real) dtsInference.added(track.samples.size - 1, p, d, dtsGiven, pictureSection)
+            else { track.guessedTimestamps++; dtsInference.interrupted() }
         }
         // Pictures before the first stream header can't be decoded: dropped.
         picture.reset()

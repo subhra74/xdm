@@ -215,6 +215,7 @@ abstract class AnnexBReader(protected val sink: SampleSink) : ElementaryStreamRe
             dtsInference.added(track.samples.size - 1, pts, dts, auDtsGiven, auSection)
         } else {
             provisional += track.samples.size - 1
+            track.guessedTimestamps++
             dtsInference.interrupted()
         }
         au.reset()

@@ -40,6 +40,8 @@ internal object TrackMerge {
                 Track(run.track.codec).also { it.copyConfigFrom(run.track); sourceOf[it] = run.track }
             }
             val map = entryMaps.getOrPut(run.track) { entryMap(target, sourceOf[target]!!, run.track) }
+            if (run.track.compositionMayPrecedeDecode) target.compositionMayPrecedeDecode = true
+            if (run.from == 0) target.guessedTimestamps += run.track.guessedTimestamps
             val s = run.track.samples
             val from = run.track.timescale
             val to = target.timescale

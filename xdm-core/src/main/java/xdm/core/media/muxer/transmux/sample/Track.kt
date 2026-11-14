@@ -115,6 +115,23 @@ class Track(val codec: Codec) {
     /** Audio bit depth (Matroska `BitDepth`), when known — used for raw/PCM tracks. */
     var audioBitDepth: Int = 0
 
+    // --- What the remux check ([xdm.core.media.muxer.transmux.sample.RemuxCheck]) looks at ---
+
+    /**
+     * The input container stores composition offsets, which may present a sample before it is decoded
+     * (MP4 `ctts`/`trun` version 1): PTS < DTS is then the input's own timing, not a reading error.
+     */
+    var compositionMayPrecedeDecode: Boolean = false
+
+    /** Samples whose timestamps the reader guessed (no PES timestamp reached them); counted by the video readers. */
+    var guessedTimestamps: Int = 0
+
+    /**
+     * Ticks of the largest backward decode-time step the timeline repaired although the caller hadn't
+     * marked the stream discontinuous; -1 when none. Set by [Timeline.prepare].
+     */
+    var unmarkedJumpBack: Long = -1
+
     fun isReady(): Boolean {
         if (samples.isEmpty()) return false
         if (matroskaCodecId != null) return true
@@ -153,6 +170,7 @@ class Track(val codec: Codec) {
         objectTypeIndication = from.objectTypeIndication
         audioBitDepth = from.audioBitDepth
         codecDelayNs = from.codecDelayNs; seekPreRollNs = from.seekPreRollNs
+        compositionMayPrecedeDecode = from.compositionMayPrecedeDecode
     }
 
     /** 1-based stsd index of [entry], registering it as a further sample entry if unseen. */

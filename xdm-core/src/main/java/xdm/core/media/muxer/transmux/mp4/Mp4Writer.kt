@@ -6,6 +6,7 @@ package xdm.core.media.muxer.transmux.mp4
 
 import xdm.core.media.muxer.transmux.ContainerWriter
 import xdm.core.media.muxer.transmux.sample.Codec
+import xdm.core.media.muxer.transmux.sample.RemuxCheck
 import xdm.core.media.muxer.transmux.sample.Timeline
 import xdm.core.media.muxer.transmux.sample.Track
 import xdm.core.media.muxer.transmux.sample.assignSampleDurations
@@ -137,6 +138,7 @@ class Mp4Writer(private val output: StorageFile, repairTimeline: Boolean = false
         // The shared timeline step (also run by the MKV writer): sections placed back to back, gaps
         // and backward jumps repaired, the timestamps rewritten to match.
         Timeline.prepare(tracks, repairTimeline)
+        RemuxCheck.review(tracks, mp4 = true)
         val startPts = tracks.map { presentationStart(it.samples) }
         val zeroSec = presentationZero(tracks) ?: 0.0
 

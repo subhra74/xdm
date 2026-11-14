@@ -24,6 +24,7 @@ object Timeline {
         val jumped = usable.firstOrNull { backwardJump(it) >= 0 }
         if (!discontinuous && jumped == null) return false
         if (!discontinuous) {
+            for (t in usable) t.unmarkedJumpBack = largestJumpBack(t)
             Logger.info("XDM", "Timeline: a ${if (jumped!!.codec.isVideo) "video" else "audio"} track's timestamps go back at sample ${backwardJump(jumped)}, repairing")
         }
         if (alignSections(usable)) return true
@@ -46,6 +47,20 @@ object Timeline {
             if (d > max) max = d
         }
         return -1
+    }
+
+    /** Ticks of the largest step back of [t]'s decode time below its latest so far, beyond [backwardJump]'s allowance; -1 when none. */
+    private fun largestJumpBack(t: Track): Long {
+        val s = t.samples
+        val allowance = if (t.ptsOnly) typicalStep(s, 1, s.size).coerceAtLeast(0) * PTS_ONLY_REORDER_FRAMES else 0
+        var max = s.dts(0)
+        var largest = -1L
+        for (k in 1 until s.size) {
+            val d = s.dts(k)
+            if (d < max - allowance) largest = maxOf(largest, max - d)
+            if (d > max) max = d
+        }
+        return largest
     }
 
     /** Decode times rewritten as the running sum of the durations, each PTS keeping its offset from its DTS. */
