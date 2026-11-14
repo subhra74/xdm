@@ -6,6 +6,8 @@ import java.util.*;
 
 /**
  * Usage: Mux <out.mp4> <discontinuous:true|false> <videoList.txt> [audioList.txt]
+ * XDM_KEEP_ORIGINAL=1 in the environment: "Save as MP4 where possible" off (TS kept as .ts).
+ * Prints OK or FAIL, then "RESULT <container written> <how>" (REMUXED, TS_FALLBACK, AS_IS).
  * A list holds one segment per line; a line "#EXT-X-DISCONTINUITY" before a segment starts a new
  * section, passed to the muxer as the app does (Muxer.setSegmentInfo).
  */
@@ -17,6 +19,7 @@ public class Mux {
         List<String> video = read(a[2], info);
         String tmp = Files.createTempDirectory("mux").toString();
         TransmuxingMuxer m = new TransmuxingMuxer(tmp, null);
+        m.setKeepOriginalFormat("1".equals(System.getenv("XDM_KEEP_ORIGINAL")));
         kotlin.jvm.functions.Function1<Integer, kotlin.Unit> cb = p -> kotlin.Unit.INSTANCE;
         boolean ok;
         if (a.length > 3) {
@@ -28,6 +31,8 @@ public class Mux {
             ok = m.mux(video, LocalStorage.INSTANCE.file(out), cb, tmp, false, false, disc);
         }
         System.out.println(ok ? "OK" : "FAIL");
+        System.out.println("RESULT " + m.getOutputContainer() + " " + m.getOutputKind()
+            + (ok ? "" : " " + String.valueOf(m.getLastError()).replace('\n', ' ')));
         System.exit(ok ? 0 : 1);
     }
 

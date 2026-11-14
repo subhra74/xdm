@@ -57,6 +57,31 @@ folder, write `video.txt` (and `audio.txt`) in playlist order, add `disc` if the
 Times are compared on the movie timeline (edit lists applied), as runs of equal shift in our decode
 order. One shift for the whole file is just a different time origin.
 
+## HLS format matrix (`matrix.sh`)
+
+What each packager in the image can make, checked with our muxer both ways the user can pick
+("Save as MP4 where possible" on and off). `docker/matrix.py` makes one case per (tool, format, layout):
+TS together / separate, TS video + packed audio (Bento4, ID3 timestamp), TS video + bare ADTS (GPAC raw,
+no ID3), fMP4 together / separate (Bento4 `mp4dash --hls`, also single-file byte ranges, cut into files
+as the downloader fetches them), standalone MP4 parts (GStreamer `splitmuxsink`, ffmpeg segment muxer).
+A combination a tool can't make is skipped and listed in `matrix-skipped.txt`. The sources are a 60 s
+cut of `large.sh`'s 1080p stream and 20 s clips with codecs the remux can't carry (AV1+Opus, VP9+FLAC,
+TrueHD, PCM, VC-2, JPEG 2000, SMPTE 302M). `matrix_check.py` prints per case and mode: OK/FAIL, the
+container written and how (`REMUXED`, `TS_FALLBACK`, `AS_IS`), video/audio frames out against the
+source lists, decode errors. `Mux` prints that as `RESULT <container> <kind>`; `XDM_KEEP_ORIGINAL=1`
+turns "Save as MP4 where possible" off.
+
+```
+./matrix.sh                    # everything
+./matrix.sh '_x_' '^b4_'       # only cases matching these regexes
+```
+
+Expected: every frame of the source lists in the output; codecs MP4 copies (AV1, VP9, FLAC, Opus,
+TrueHD, PCM, J2K, VC-2 in fMP4/MP4 parts) remuxed; codecs our TS demuxer can't read (AV1, VP9, FLAC,
+TrueHD, S302M, VC-2, J2K in TS) → `TS_FALLBACK` with MP4 on, `.ts` with it off; TS video + an audio
+list that is neither TS nor packed audio (GPAC raw Ogg Opus / FLAC / PCM next to TS) → FAIL, which the
+downloader turns into the segments kept as files.
+
 ## Verdicts and the allow list
 
 Any difference fails unless `allow.json` covers it:

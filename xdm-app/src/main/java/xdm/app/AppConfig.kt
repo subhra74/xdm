@@ -124,6 +124,11 @@ interface IAppConfig : EngineConfig {
     /** "Save as SRT" last chosen for a captured WebVTT/TTML subtitle. On by default. */
     var saveSubtitlesAsSrt: Boolean
     /**
+     * "Save as MP4 where possible" last chosen for a captured HLS stream. On by default; off keeps TS
+     * as `.ts` (HlsDownloadTaskInfo.keepOriginalFormat).
+     */
+    var saveStreamsAsMp4: Boolean
+    /**
      * When true, finished downloads are marked as coming from the internet (Zone.Identifier on
      * Windows, com.apple.quarantine on macOS), as a browser would. On by default. See QUARANTINE.md.
      */
@@ -261,6 +266,7 @@ private const val F_THEME_MIGRATED = 54
 private const val F_NOTIFIED_UPDATE_VERSION = 55
 private const val F_DETECT_SUBTITLES = 56
 private const val F_SAVE_SUBTITLES_AS_SRT = 57
+private const val F_SAVE_STREAMS_AS_MP4 = 82
 private const val F_FORCE_IPV4 = 58
 private const val F_COMMAND_RULES = 59
 private const val F_TORRENT_SEED_AFTER_FINISH = 60
@@ -449,6 +455,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var skipDuplicateManifests: Boolean = false
     override var detectSubtitles: Boolean = true
     override var saveSubtitlesAsSrt: Boolean = true
+    override var saveStreamsAsMp4: Boolean = true
     override var markDownloadedFiles: Boolean = true
     override var batchAsOneFromBrowser: Boolean = true
     override var batchAsOneFromClipboard: Boolean = false
@@ -584,6 +591,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
         w.string(F_NOTIFIED_UPDATE_VERSION, notifiedUpdateVersion)
         w.bool(F_DETECT_SUBTITLES, detectSubtitles)
         w.bool(F_SAVE_SUBTITLES_AS_SRT, saveSubtitlesAsSrt)
+        w.bool(F_SAVE_STREAMS_AS_MP4, saveStreamsAsMp4)
         w.bool(F_FORCE_IPV4, forceIpv4)
         w.string(F_YTDLP_PATH, ytDlpPath)
         w.string(F_FFMPEG_PATH, ffmpegPath)
@@ -688,6 +696,7 @@ class AppConfig(private val configDir: String) : IAppConfig {
                 F_NOTIFIED_UPDATE_VERSION -> notifiedUpdateVersion = r.string()
                 F_DETECT_SUBTITLES -> detectSubtitles = r.bool()
                 F_SAVE_SUBTITLES_AS_SRT -> saveSubtitlesAsSrt = r.bool()
+                F_SAVE_STREAMS_AS_MP4 -> saveStreamsAsMp4 = r.bool()
                 F_FORCE_IPV4 -> forceIpv4 = r.bool()
                 F_COMMAND_RULES -> commandRules = readCommandRules(r.message())
                 F_TORRENT_SEED_AFTER_FINISH -> torrentSeedAfterFinish = r.bool()

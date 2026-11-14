@@ -93,10 +93,11 @@ interface IDownloadManager {
     /** [maxPiece] is the segment count picked in the dialog; null keeps the captured video's own. */
     /** [subtitle] is one of the stream's tracks, saved beside the video; null saves none. */
     /** [convertToSrt]: a captured WebVTT/TTML subtitle is saved as SRT; ignored for videos. */
+    /** [keepOriginalFormat]: an HLS stream's TS is kept as `.ts` ([HlsDownloadTaskInfo.keepOriginalFormat]). */
     /** Returns the new download's id, or null when the tracker no longer has [videoId]. */
     fun addVideoDownload(
         videoId: Long, fileName: String, categoryId: String?, targetFolder: String, maxPiece: Int? = null,
-        subtitle: SubtitleTrack? = null, convertToSrt: Boolean = false,
+        subtitle: SubtitleTrack? = null, convertToSrt: Boolean = false, keepOriginalFormat: Boolean = false,
     ): Long?
     fun startHlsDownload(task: HlsDownloadTaskInfo): Long
     fun startDashDownload(task: DashDownloadTaskInfo): Long
@@ -1088,7 +1089,7 @@ class DownloadManager(
 
     override fun addVideoDownload(
         videoId: Long, fileName: String, categoryId: String?, targetFolder: String, maxPiece: Int?,
-        subtitle: SubtitleTrack?, convertToSrt: Boolean,
+        subtitle: SubtitleTrack?, convertToSrt: Boolean, keepOriginalFormat: Boolean,
     ): Long? {
         // Each download of a detected video is a new download: copy the tracker's entry with a fresh
         // id instead of reusing (and mutating) it, so downloading the same video twice cannot share
@@ -1122,6 +1123,7 @@ class DownloadManager(
                     targetFolder = targetFolder,
                     maxPiece = maxPiece ?: source.maxPiece,
                     subtitles = listOfNotNull(subtitle),
+                    keepOriginalFormat = keepOriginalFormat,
                 )
             )
         }

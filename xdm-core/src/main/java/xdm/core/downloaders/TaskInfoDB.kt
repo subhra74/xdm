@@ -42,6 +42,7 @@ private const val HLS_AUDIO_ONLY = 21
 private const val HLS_TEMP_DIR = 22
 private const val HLS_INDEPENDENT = 23
 private const val HLS_SUBTITLE = 24
+private const val HLS_KEEP_ORIGINAL = 25
 
 private const val DASH_TEMP_DIR = 20
 private const val DASH_AUDIO_SEGMENT = 21
@@ -353,12 +354,14 @@ class TaskInfoDB(private val configDir: String) {
             var audioOnly = false
             var tempDir = ""
             var independent = false
+            var keepOriginal = false
             val subtitles = ArrayList<SubtitleTrack>()
             while (true) {
                 val no = r.next()
                 if (no == -1) break
                 if (c.read(no, r)) continue
                 when (no) {
+                    HLS_KEEP_ORIGINAL -> keepOriginal = r.bool()
                     HLS_AUDIO_URL -> audioUrl = r.string()
                     HLS_AUDIO_ONLY -> audioOnly = r.bool()
                     HLS_TEMP_DIR -> tempDir = r.string()
@@ -386,6 +389,7 @@ class TaskInfoDB(private val configDir: String) {
                 independent = independent,
                 subtitles = subtitles,
                 extractor = c.extractor,
+                keepOriginalFormat = keepOriginal,
             )
         }
         return null
@@ -469,6 +473,7 @@ class TaskInfoDB(private val configDir: String) {
                 string(HLS_TEMP_DIR, task.tempDir)
                 bool(HLS_INDEPENDENT, task.independent)
                 task.subtitles.forEach { subtitle(HLS_SUBTITLE, it) }
+                bool(HLS_KEEP_ORIGINAL, task.keepOriginalFormat)
             }
         }.onFailure { Logger.error("XDM", "Error saving task info ${task.id}", it) }
     }

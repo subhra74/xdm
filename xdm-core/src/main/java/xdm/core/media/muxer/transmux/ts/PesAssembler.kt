@@ -23,6 +23,10 @@ class PesAssembler(reader: ElementaryStreamReader) {
     var streamId = -1
         private set
 
+    /** Bytes of PES data this stream carried: a stream with data but no frames out was not understood. */
+    var bytesSeen = 0L
+        private set
+
     private var wrapOffset = 0L
     private var lastRef = -1L
 
@@ -32,7 +36,7 @@ class PesAssembler(reader: ElementaryStreamReader) {
             buffer.reset()
             started = true
         }
-        if (started) buffer.write(data, start, end - start)
+        if (started) { buffer.write(data, start, end - start); bytesSeen += end - start }
     }
 
     /**

@@ -135,6 +135,15 @@ class TsDemuxer(private val sink: SampleSink) {
         if (pmtEsLoop == null && !autoGuessed && held.isNotEmpty()) autoGuess()
         for (asm in readersByPid.values.toList()) asm.flush()
         for ((_, reader) in readers) reader.finish()
+        // An audio/video stream that carried data but gave no frames was not understood (a codec taken
+        // for another, or one the probe never settled on): the remux would leave it out without saying so.
+        for ((pid, asm) in readersByPid) {
+            if (asm.bytesSeen < LOST_MIN_BYTES || asm.reader.track.samples.isNotEmpty()) continue
+            val av = asm.streamId in 0xC0..0xEF || asm.streamId == 0xBD || asm.streamId == 0xFD
+            if (asm.reader is ProbeReader && !av) continue
+            val what = if (asm.reader is ProbeReader) "unidentified stream" else "${kindByPid[pid] ?: "stream"} with no frames"
+            lostStreams += "$what (pid $pid, stream_id 0x${Integer.toHexString(asm.streamId)})"
+        }
     }
 
     private fun carryReset() {
@@ -514,6 +523,8 @@ class TsDemuxer(private val sink: SampleSink) {
         const val PROBE_PES = 4
         /** The same for a stream that may be video: a GOP's worth of pictures, to reach a keyframe. */
         const val PROBE_PES_VIDEO = 64
+        /** PES data below this a stream may carry without frames out (a stub track) before it counts as lost. */
+        const val LOST_MIN_BYTES = 16 * 1024L
         /** Packets held back while no PMT has been seen, before the streams are guessed (376 KB). */
         const val AUTO_GUESS_PACKETS = 2000
         val VIDEO_READERS = setOf(StreamReader.H264, StreamReader.H265, StreamReader.MPEG_VIDEO, StreamReader.MPEG4_VISUAL)

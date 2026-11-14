@@ -180,6 +180,12 @@ data class HlsDownloadTaskInfo(
     var subtitles: List<SubtitleTrack> = emptyList(),
     /** As [HttpDownloadTaskInfo.extractor]. */
     var extractor: ExtractorSource? = null,
+    /**
+     * Keep the stream's own format where it can be kept as it is: TS segments joined (or merged with
+     * a separate audio rendition) into one `.ts` at packet level instead of remuxed into MP4. Other
+     * formats are remuxed as usual. False: remux into MP4 (MKV when WebM is involved).
+     */
+    var keepOriginalFormat: Boolean = false,
 ) : StreamingDownloadTaskInfo(
     id,
     fileName,

@@ -144,7 +144,7 @@ class Ac3Reader(private val sink: SampleSink, eac3: Boolean) : ElementaryStreamR
         if (probe.sampleRate <= 0) return false
         // dec3's data_rate (its first 13 bits) is informative: a frame of another size isn't another config.
         val record = probe.decoderConfigRecord ?: ByteArray(0)
-        val described = if (isEac3 && record.size > 2) record.copyOfRange(2, record.size) else record
+        val described = if (eac3 && record.size > 2) record.copyOfRange(2, record.size) else record
         val key = described + byteArrayOf((probe.sampleRate shr 8).toByte(), probe.sampleRate.toByte())
         if (configKey?.contentEquals(key) == true) return true
         if (!configured) {
@@ -203,8 +203,10 @@ class Ac3Reader(private val sink: SampleSink, eac3: Boolean) : ElementaryStreamR
         track.sampleRate = AC3_SAMPLE_RATES[fscod] shr maxOf(0, bsid - 8)
         track.channelCount = AC3_CHANNELS[acmod] + lfeon
         if (track.codec == Codec.EAC3) {
-            // AC-3 core of an E-AC-3 stream: the track is ec-3, so describe the core in a dec3.
-            track.decoderConfigRecord = dec3(fscod, bsid, bsmod, acmod, lfeon)
+            // AC-3 core of an E-AC-3 stream: the track is ec-3, so describe the core in a dec3 (data_rate
+            // from its bit rate code, halved/quartered with the rate for bsid 9/10, as ffmpeg).
+            val kbps = AC3_BIT_RATES.getOrElse(bitRateCode) { 0 } shr maxOf(0, bsid - 8)
+            track.decoderConfigRecord = dec3(fscod, bsid, bsmod, acmod, lfeon, kbps)
             return
         }
         // dac3: fscod(2) bsid(5) bsmod(3) acmod(3) lfeon(1) bit_rate_code(5) reserved(5)
@@ -282,6 +284,8 @@ class Ac3Reader(private val sink: SampleSink, eac3: Boolean) : ElementaryStreamR
         val AC3_SAMPLE_RATES = intArrayOf(48000, 44100, 32000, 0)
         val AC3_SAMPLE_RATES_HALF = intArrayOf(24000, 22050, 16000, 0)
         val NUM_BLOCKS = intArrayOf(1, 2, 3, 6)
+        /** AC-3 bit rates (kbit/s) by bit_rate_code = frmsizecod / 2 (A/52 table 5.18). */
+        val AC3_BIT_RATES = intArrayOf(32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384, 448, 512, 576, 640)
         val AC3_CHANNELS = intArrayOf(2, 1, 2, 3, 3, 4, 4, 5) // by acmod
         // frmsizecod -> 16-bit words, columns [48k, 44.1k, 32k] (ATSC A/52 table 5.18)
         val FRAME_SIZE_TAB = arrayOf(

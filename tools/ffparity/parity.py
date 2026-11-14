@@ -314,8 +314,18 @@ def level_at(levels, t):
     return None
 
 
+PRIV_OWNER = b'com.apple.streaming.transportStreamTimestamp\x00'
+
+
 def first_pts(files):
-    """Earliest packet PTS (seconds) of the first segment of a list, as stored in the source."""
+    """Earliest packet PTS (seconds) of the first segment of a list, as stored in the source. A packed
+    audio segment (raw ADTS/AC-3/E-AC-3/MP3 after an ID3 tag) has its start in the tag's PRIV frame,
+    which ffprobe doesn't read (it reports 0)."""
+    with open(files[0], 'rb') as f:
+        head = f.read(512)
+    if head.startswith(b'ID3') and PRIV_OWNER in head:
+        at = head.index(PRIV_OWNER) + len(PRIV_OWNER)
+        return (int.from_bytes(head[at:at + 8], 'big') & ((1 << 33) - 1)) / 90000.0
     r = subprocess.run(['ffprobe', '-v', 'quiet', '-show_entries', 'packet=pts_time', '-of', 'csv=p=0', files[0]],
                        capture_output=True, text=True)
     t = [float(x.strip(',')) for x in r.stdout.split() if x.strip(',') not in ('', 'N/A')]

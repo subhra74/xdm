@@ -93,6 +93,12 @@ interface Muxer {
      * section; without it they go by the timestamps. Call before [mux].
      */
     fun setSegmentInfo(info: Map<String, SegmentInfo>) {}
+
+    /**
+     * Keep the inputs' own format where it can be kept as it is (TS segments joined or merged into one
+     * `.ts` at packet level) instead of remuxing; other inputs are remuxed as usual. Call before [mux].
+     */
+    fun setKeepOriginalFormat(keep: Boolean) {}
 }
 
 /** How a muxer produced its output. */

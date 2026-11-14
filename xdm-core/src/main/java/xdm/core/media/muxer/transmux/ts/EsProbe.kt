@@ -51,6 +51,12 @@ object EsProbe {
         var mpeg4 = false; var mpeg2 = false
         var h264Sps = false; var h264Pps = false; var h264Aud = false
         var hevcParams = 0; var hevcAud = false
+        // MPEG-1/2/4 video PES open with a start code (only zero stuffing before it). Their start codes
+        // found further in are no evidence on their own: a codec without emulation prevention (AV1)
+        // has 00 00 01 B6 in its data by chance.
+        var lead = offset
+        while (lead < end && data[lead].toInt() == 0) lead++
+        val opensWithStartCode = lead - offset >= 2 && lead < end && data[lead].toInt() == 1
         var i = offset
         while (i + 3 < end) {
             if (data[i].toInt() != 0 || data[i + 1].toInt() != 0 || data[i + 2].toInt() != 1) { i++; continue }
@@ -61,8 +67,8 @@ object EsProbe {
             if (first) firstCode = code
             when {
                 // MPEG-4 Part 2: VOS or VOP (B3 is its group_of_vop code, so B3 alone can't decide).
-                code == 0xB0 || code == 0xB6 -> mpeg4 = true
-                code == 0xB3 || code == 0xB8 -> mpeg2 = true
+                code == 0xB0 || code == 0xB6 -> if (opensWithStartCode) mpeg4 = true
+                code == 0xB3 || code == 0xB8 -> if (opensWithStartCode) mpeg2 = true
                 // NAL units: never when the PES opens with 00 (an MPEG-1/2 picture or MPEG-4 video
                 // object), whose slice codes 01-AF can look like any NAL header.
                 firstCode != 0x00 && code and 0x80 == 0 && next >= 0 -> {

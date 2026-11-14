@@ -44,6 +44,8 @@ abstract class StreamingDownloaderTask(
     maxPiece: Int = 0,
     /** The subtitle picked for this download, saved beside the video as SRT; its segments are [SUBS_TAG] chunks. */
     private val subtitle: SubtitleTrack? = null,
+    /** Keep TS as `.ts` instead of remuxing ([Muxer.setKeepOriginalFormat]). */
+    private val keepOriginalFormat: Boolean = false,
 ) : DownloaderTask {
     protected val executorService: ExecutorService =
         Executors.newFixedThreadPool(maxPiece.takeIf { it > 0 } ?: config.maxSegments)
@@ -292,6 +294,7 @@ abstract class StreamingDownloaderTask(
                 return
             }
             muxer.setSegmentInfo(segmentInfo())
+            muxer.setKeepOriginalFormat(keepOriginalFormat)
             val ret = if (context.hasSeparateStreams) {
                 assembleStreams(tmpFile)
             } else {

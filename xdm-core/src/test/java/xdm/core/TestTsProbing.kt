@@ -258,6 +258,13 @@ class TestTsProbing {
         assertEquals(StreamReader.MPEG_VIDEO, EsProbe.identify(mpeg2, 0, mpeg2.size, video))
         assertEquals(StreamReader.MPEG4_VISUAL, EsProbe.identify(mpeg4, 0, mpeg4.size, video), "B3 + B6 is MPEG-4's GOV, not MPEG-2")
         assertNull(EsProbe.identify(mpeg2Picture, 0, mpeg2Picture.size, video), "an MPEG-2 picture taken for a NAL stream")
+        // AV1 (no emulation prevention) opens with an OBU header; a VOP or sequence start code later in its
+        // data is chance, not MPEG-4 or MPEG-2 video.
+        val av1 = bytes(0x0A, 0x0C, 0x02, 0x00, 0x00, 0x0D, 0x26, 0x27, 0, 0, 1, 0xB6, 0x51, 0, 0, 1, 0xB3, 0x22)
+        assertNull(EsProbe.identify(av1, 0, av1.size, video), "AV1 taken for MPEG-4/MPEG-2 video")
+        // Zero stuffing before the first start code still counts as opening with it.
+        val stuffed = byteArrayOf(0) + mpeg4
+        assertEquals(StreamReader.MPEG4_VISUAL, EsProbe.identify(stuffed, 0, stuffed.size, video))
         // Audio sync words still win on an audio stream_id.
         val adts = bytes(0xFF, 0xF1, 0x50, 0x80, 0x01, 0x7F, 0xFC, 0x21)
         assertEquals(StreamReader.ADTS, EsProbe.identify(adts, 0, adts.size, 0xC0))

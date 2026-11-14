@@ -359,9 +359,30 @@ def compare_config_runs(ref_inputs, out):
     return issues
 
 
-def compare(ref, got):
+def compare(ref, got, lead=0, straddles=False):
+    """Time zero is the first video frame (D14 in the parity doc): the MP4's edit skips the [lead] audio
+    frames that end before it, and when one frame [straddles] it, that frame is cut and decodes to a
+    shorter frame of its own. Up to those leading frames may be missing or differ; the rest match in order."""
     matched = sum((collections.Counter(ref) & collections.Counter(got)).values())
-    return {'ref': len(ref), 'out': len(got), 'matched': matched, 'in_order': ref == got}
+    ok = ref == got or (lead and ref[lead:] == got) or (straddles and ref[lead + 1:] == got[1:] and len(got) == len(ref) - lead)
+    return {'ref': len(ref), 'out': len(got), 'matched': matched, 'in_order': bool(ok),
+            **({'lead_skipped': lead + (1 if straddles else 0)} if ok and ref != got else {})}
+
+
+def leading_audio(ref_inputs_a, ref_inputs_v):
+    """(audio frames that end before the reference's first video frame, whether the next one straddles
+    it), from container timestamps."""
+    if not ref_inputs_a or not ref_inputs_v:
+        return 0, False
+    v = packet_times(ref_inputs_v[0], 'v')
+    a = sorted(packet_times(ref_inputs_a[0], 'a'))
+    if not v or len(a) < 2:
+        return 0, False
+    first_video = min(v)
+    frame = a[1] - a[0]
+    whole = sum(1 for t in a if t + frame <= first_video + 0.0005)
+    straddles = whole < len(a) and a[whole] < first_video - 0.0005
+    return whole, straddles
 
 
 def ref_inputs_flat(refgroups):
@@ -420,7 +441,11 @@ def main():
                 # TS segments are decoded concatenated; fMP4 through ffmpeg's HLS demuxer (the playlist).
                 ref_inputs = [f[0] if f[0].endswith('.m3u8') else 'concat:' + '|'.join(f) for k, f in refgroups if kind in k]
                 if ref_inputs:
-                    row[kind] = compare(hashes(ref_inputs, kind), hashes([out], kind))
+                    lead, straddles = 0, False
+                    if kind == 'a':
+                        lead, straddles = leading_audio(ref_inputs, [f[0] if f[0].endswith('.m3u8') else 'concat:' + '|'.join(f)
+                                                                     for k, f in refgroups if 'v' in k])
+                    row[kind] = compare(hashes(ref_inputs, kind), hashes([out], kind), lead, straddles)
                     if kind == 'a' and (name.startswith('cfg_') or name in DISCONTINUOUS):
                         row['config_issues'] = compare_config_runs(ref_inputs_flat(refgroups), out)
                     if kind == 'a' and name in DECODER_DIFFERS:
