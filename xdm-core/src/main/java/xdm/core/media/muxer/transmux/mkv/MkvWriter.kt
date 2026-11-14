@@ -493,8 +493,11 @@ class MkvWriter(
     /** Resolves the Matroska CodecID + CodecPrivate for [t], or null if it can't be mapped. */
     private fun resolveCodec(t: Track): Pair<String, ByteArray?>? {
         if (t.additionalSampleEntries.isNotEmpty()) {
-            // Matroska has one CodecPrivate per track; samples in later configs keep the first one.
-            Logger.error("XDM", "MKV: track changes codec config mid-stream; using the first one")
+            // Matroska has one CodecPrivate per track. As ffmpeg's matroskaenc (mkv_check_new_extra_data):
+            // video keeps the first (later parameter sets travel in-band); AAC and FLAC from an MP4 input,
+            // whose demuxer announces every sample-entry switch as new extradata, end up with the last
+            // config (CodecPrivate and SamplingFrequency rewritten each time); see lastAudioConfig.
+            Logger.error("XDM", "MKV: track changes codec config mid-stream; one CodecPrivate is kept")
         }
         // 1) Verbatim passthrough from a Matroska/WebM input.
         t.matroskaCodecId?.let { return it to t.decoderConfigRecord }
@@ -520,8 +523,24 @@ class MkvWriter(
         }
 
         // 3) MP4 sample entry copied verbatim (OTHER_VIDEO/OTHER_AUDIO): map by its fourcc.
-        t.sampleEntryBox?.let { return fromSampleEntry(t, it) }
+        t.sampleEntryBox?.let { first -> return lastAudioConfig(t) ?: fromSampleEntry(t, first) }
         return null
+    }
+
+    /**
+     * AAC or FLAC from an MP4 input whose sample entry changes: the config of the entry in effect at the
+     * end, with its sampling frequency (ffmpeg rewrites CodecPrivate and SamplingFrequency at every
+     * switch, so its file ends with the last one); null otherwise (the first entry is used).
+     */
+    private fun lastAudioConfig(t: Track): Pair<String, ByteArray?>? {
+        if (t.codec.isVideo || t.additionalSampleEntries.isEmpty() || t.samples.isEmpty()) return null
+        val index = t.samples.descriptionIndex(t.samples.size - 1)
+        if (index <= 1) return null
+        val entry = t.additionalSampleEntries.getOrNull(index - 2) ?: return null
+        val mapped = fromSampleEntry(t, entry) ?: return null
+        if (mapped.first != "A_AAC" && mapped.first != "A_FLAC") return null
+        SampleEntries.audioInfo(entry)?.let { if (it.sampleRate > 0) t.sampleRate = it.sampleRate }
+        return mapped
     }
 
     /** Builds a codec box via [body] and returns its payload (box contents, without size+type). */

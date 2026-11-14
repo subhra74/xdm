@@ -4,6 +4,8 @@
 
 package xdm.core
 
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -81,7 +83,7 @@ class TestMkvOutput {
             return path.split(File.pathSeparator).map { File(it, cmd) }.firstOrNull { it.canExecute() }?.absolutePath
         }
 
-        private fun run(vararg cmd: String) {
+        fun run(vararg cmd: String) {
             val p = ProcessBuilder(*cmd).redirectErrorStream(true).start()
             val out = p.inputStream.readBytes().toString(Charsets.UTF_8)
             check(p.waitFor() == 0) { "command failed: ${cmd.joinToString(" ")}\n$out" }
@@ -283,6 +285,27 @@ class TestMkvOutput {
         assert(errors.isEmpty()) { "decode errors: ${errors.take(5)}" }
         val duration = probe(out, "-show_entries", "format=duration", "-of", "csv=p=0").toDoubleOrNull() ?: return
         assert(duration > 3.8) { "duration $duration: the second rendition overlaps the first" }
+    }
+
+    @Test
+    fun aacConfigChangeFromMp4InputKeepsTheLastConfigAsFfmpeg() {
+        requireFfmpeg()
+        // Audio-only fMP4 at 44.1 kHz, then at 48 kHz (another init segment, another AudioSpecificConfig).
+        for ((name, rate) in listOf("ra" to 44100, "rb" to 48000)) {
+            run(ffmpeg!!, "-y", "-loglevel", "error", "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=$rate", "-t", "2",
+                "-c:a", "aac", "-f", "hls", "-hls_time", "1", "-hls_segment_type", "fmp4", "-hls_list_size", "0",
+                "-hls_fmp4_init_filename", "${name}_init.mp4", "-hls_segment_filename", path("$name%d.m4s"), path("$name.m3u8"))
+        }
+        val list = listOf(path("ra_init.mp4")) + files("ra\\d+\\.m4s") + listOf(path("rb_init.mp4")) + files("rb\\d+\\.m4s")
+        val out = path("aac_config_change.mkv")
+        mux(list, out, discontinuous = true)
+        // ffmpeg's matroskaenc rewrites CodecPrivate and SamplingFrequency at every sample-entry switch
+        // its MP4 demuxer announces: the file ends with the second config.
+        val second = probe("concat:" + path("rb_init.mp4") + "|" + files("rb\\d+\\.m4s").first(),
+            "-show_data_hash", "md5", "-show_entries", "stream=sample_rate,extradata_hash", "-of", "csv=p=0")
+        assertEquals(second, probe(out, "-show_data_hash", "md5", "-show_entries", "stream=sample_rate,extradata_hash", "-of", "csv=p=0"),
+            "CodecPrivate and rate of the last config")
+        assertTrue(second.startsWith("48000"), "the second config is 48 kHz: $second")
     }
 
     // ---- ContentEncoding ----

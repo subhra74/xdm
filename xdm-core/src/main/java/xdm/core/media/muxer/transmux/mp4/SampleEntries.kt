@@ -18,7 +18,7 @@ import xdm.core.util.Logger
 object SampleEntries {
 
     /**
-     * A visual sample entry copied from an MP4 input (avc1/avc3/hvc1/hev1), with `colr` and `pasp` added
+     * A visual sample entry copied from an MP4 input (avc1/avc3/hvc1/hev1; av01 `pasp` only), with `colr` and `pasp` added
      * where the entry has none, as ffmpeg's stream copy writes them (movenc.c mov_write_video_tag: `colr`
      * when primaries, transfer and matrix are all specified, `pasp` when there is a SAR):
      * - colours from the entry's SPS (its own avcC/hvcC), which ffmpeg reads when the container has none;
@@ -31,7 +31,8 @@ object SampleEntries {
         if (entry.size < VISUAL_CHILDREN) return entry
         val type = String(entry, 4, 4, Charsets.ISO_8859_1)
         val hevc = type == "hvc1" || type == "hev1"
-        if (!hevc && type != "avc1" && type != "avc3") return entry
+        val av1 = type == "av01"
+        if (!hevc && !av1 && type != "avc1" && type != "avc3") return entry
         var config: Pair<Int, Int>? = null
         var hasColr = false
         var hasPasp = false
@@ -48,6 +49,7 @@ object SampleEntries {
         }
         if (hasColr && hasPasp) return entry
         if (entry.size < 36) return entry
+        if (av1) return if (hasPasp) entry else appendBoxes(entry, o, paspBox(entry, displayWidth, displayHeight, 1, 1))
         val (from, to) = config ?: return entry
         val sps = (if (hevc) firstHvccSps(entry, from, to) else firstAvccSps(entry, from, to)) ?: return entry
         val t = Track(if (hevc) Codec.H265 else Codec.H264)
@@ -67,25 +69,37 @@ object SampleEntries {
                 u8(if (t.fullRange) 0x80 else 0)
             }
         }
-        if (!hasPasp) {
-            val codedWidth = u16(entry, 32)
-            val codedHeight = u16(entry, 34)
-            var num = t.sarNum.toLong(); var den = t.sarDen.toLong()
-            if (codedWidth > 0 && codedHeight > 0 && displayWidth > 0 && displayHeight > 0 &&
-                (codedWidth != displayWidth || codedHeight != displayHeight)
-            ) {
-                num = codedHeight.toLong() * displayWidth; den = codedWidth.toLong() * displayHeight
-            }
-            if (num > 0 && den > 0) {
-                val g = gcdL(num, den)
-                extra.box("pasp") { u32(num / g); u32(den / g) }
-            }
+        val add = extra.toByteArray() + if (hasPasp) ByteArray(0) else paspBox(entry, displayWidth, displayHeight, t.sarNum, t.sarDen)
+        return appendBoxes(entry, o, add)
+    }
+
+    /**
+     * `pasp` for a copied visual entry: the container's SAR (track display size against the entry's coded
+     * size, when they differ), else [num]:[den] from the bitstream; empty when there is none. For AV1
+     * ffmpeg's decoders take render size against frame size from the first frame header (libdav1d.c,
+     * av1dec.c), which is 1:1 unless render_and_frame_size_different is set: we don't parse frame headers
+     * and use 1:1.
+     */
+    private fun paspBox(entry: ByteArray, displayWidth: Int, displayHeight: Int, num0: Int, den0: Int): ByteArray {
+        val codedWidth = u16(entry, 32)
+        val codedHeight = u16(entry, 34)
+        var num = num0.toLong(); var den = den0.toLong()
+        if (codedWidth > 0 && codedHeight > 0 && displayWidth > 0 && displayHeight > 0 &&
+            (codedWidth != displayWidth || codedHeight != displayHeight)
+        ) {
+            num = codedHeight.toLong() * displayWidth; den = codedWidth.toLong() * displayHeight
         }
-        val add = extra.toByteArray()
+        if (num <= 0 || den <= 0) return ByteArray(0)
+        val g = gcdL(num, den)
+        return BoxBuf().apply { box("pasp") { u32(num / g); u32(den / g) } }.toByteArray()
+    }
+
+    /** [entry] cut after its last whole child box ([end]) with [add] appended and its size updated. */
+    private fun appendBoxes(entry: ByteArray, end: Int, add: ByteArray): ByteArray {
         if (add.isEmpty()) return entry
         // Child boxes past the last whole one (none in practice) are dropped with the new size.
-        val out = entry.copyOf(o + add.size)
-        System.arraycopy(add, 0, out, o, add.size)
+        val out = entry.copyOf(end + add.size)
+        System.arraycopy(add, 0, out, end, add.size)
         val n = out.size
         out[0] = (n ushr 24).toByte(); out[1] = (n ushr 16).toByte(); out[2] = (n ushr 8).toByte(); out[3] = n.toByte()
         return out
