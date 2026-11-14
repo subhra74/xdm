@@ -120,6 +120,16 @@ object Logger {
         }
     }
 
+    /**
+     * Writes out everything buffered so far, for when the user is about to read the log (Settings >
+     * Advanced > Log files): info lines otherwise reach the file only when the buffer fills or at shutdown.
+     */
+    fun flush() {
+        flushFile()
+        consoleOut.flush()
+        consoleErr.flush()
+    }
+
     fun info(tag: String, msg: String) {
         val line = "[ $tag ] $msg"
         consoleOut.println(line)

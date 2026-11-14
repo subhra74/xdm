@@ -142,7 +142,10 @@ class Ac3Reader(private val sink: SampleSink, eac3: Boolean) : ElementaryStreamR
             return false
         }
         if (probe.sampleRate <= 0) return false
-        val key = (probe.decoderConfigRecord ?: ByteArray(0)) + byteArrayOf((probe.sampleRate shr 8).toByte(), probe.sampleRate.toByte())
+        // dec3's data_rate (its first 13 bits) is informative: a frame of another size isn't another config.
+        val record = probe.decoderConfigRecord ?: ByteArray(0)
+        val described = if (isEac3 && record.size > 2) record.copyOfRange(2, record.size) else record
+        val key = described + byteArrayOf((probe.sampleRate shr 8).toByte(), probe.sampleRate.toByte())
         if (configKey?.contentEquals(key) == true) return true
         if (!configured) {
             configure(track, buf, i)
@@ -240,8 +243,10 @@ class Ac3Reader(private val sink: SampleSink, eac3: Boolean) : ElementaryStreamR
         val bsid = bit.readBits(5)
         track.sampleRate = sr
         track.channelCount = AC3_CHANNELS[acmod] + lfeon
-        @Suppress("UNUSED_VARIABLE") val numBlocks = NUM_BLOCKS[numblkscod]
-        track.decoderConfigRecord = dec3(fscod, bsid, 0, acmod, lfeon)
+        val samples = (if (fscod == 3) 6 else NUM_BLOCKS[numblkscod]) * 256
+        // data_rate as ffmpeg writes it: the frame's bit rate in kbit/s.
+        val kbps = (eac3FrameSize(data, i).toLong() * 8 * sr / samples / 1000).toInt()
+        track.decoderConfigRecord = dec3(fscod, bsid, 0, acmod, lfeon, kbps)
     }
 
     /**
@@ -249,8 +254,8 @@ class Ac3Reader(private val sink: SampleSink, eac3: Boolean) : ElementaryStreamR
      * then fscod(2) bsid(5) reserved(1) asvc(1) bsmod(3) acmod(3) lfeon(1) reserved(3)
      * num_dep_sub(4) reserved(1).
      */
-    private fun dec3(fscod: Int, bsid: Int, bsmod: Int, acmod: Int, lfeon: Int): ByteArray {
-        val dataRate = 0 // unknown; players tolerate 0
+    private fun dec3(fscod: Int, bsid: Int, bsmod: Int, acmod: Int, lfeon: Int, dataRateKbps: Int = 0): ByteArray {
+        val dataRate = dataRateKbps.coerceIn(0, 0x1FFF)
         val b0 = (dataRate shr 5) and 0xFF
         val b1 = ((dataRate and 0x1F) shl 3) or 0 // num_ind_sub - 1 = 0
         var s = 0

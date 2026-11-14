@@ -4,6 +4,9 @@
 
 package xdm.core.media.muxer.transmux.es
 
+import xdm.core.media.muxer.transmux.mp4.SampleEntries
+import xdm.core.media.muxer.transmux.sample.Track
+import xdm.core.util.Logger
 
 /**
  * Base for H.264/H.265 readers: turns an Annex-B byte stream into MP4 samples (one per access
@@ -103,6 +106,7 @@ abstract class AnnexBReader(protected val sink: SampleSink) : ElementaryStreamRe
         val startsAu = if (vcl) auHasVcl && isFirstSliceOfPicture(buf, start, end)
         else auHasVcl && startsAccessUnit(buf, start)
         if (startsAu) emitAccessUnit()
+        if (!auOpen) { auOpen = true; auSection = section }
         if (pts != NO_TS && auPts == NO_TS) { auPts = pts; auDts = dts }
 
         if (vcl) {
@@ -118,7 +122,35 @@ abstract class AnnexBReader(protected val sink: SampleSink) : ElementaryStreamRe
     }
 
     private fun emitAccessUnit() {
-        if (!auHasVcl) return
+        if (!auHasVcl) { auOpen = false; return }
+        // A decode-time jump (more than JUMP_BACK back or JUMP_FORWARD on) starts a section too, for
+        // inputs with no playlist to say where the discontinuities are.
+        if (auPts != NO_TS && lastRealDts != NO_TS && auSection == section &&
+            (auDts < lastRealDts - JUMP_BACK || auDts > lastRealDts + JUMP_FORWARD)
+        ) {
+            section++
+            auSection = section
+        }
+        if (auSection != keyframeSection) {
+            if (!auKeyframe) {
+                // Before the first keyframe of its section (the stream's start, or after a discontinuity):
+                // its references were never sent or belong to other content, so a decoder that shows every
+                // frame (hardware ones, system players) shows garbage, and AVFoundation stops decoding
+                // there. Dropped, as ffmpeg's stream copy drops non-keyframes at the start.
+                droppedLeading++
+                droppedInSection++
+                discardAccessUnit()
+                return
+            }
+            keyframeSection = auSection
+            if (!configFrozen) freezeConfig()
+            if (droppedInSection > 0) {
+                Logger.info("XDM", "${track.codec}: dropped $droppedInSection frames before the keyframe that opens section $auSection")
+                droppedInSection = 0
+            }
+        }
+        if (auKeyframe && configFrozen) followConfig()
+        auParameterSets.clear()
         var pts = auPts
         var dts = auDts
         val real = pts != NO_TS
@@ -145,7 +177,7 @@ abstract class AnnexBReader(protected val sink: SampleSink) : ElementaryStreamRe
         lastPts = pts; lastDts = dts
 
         val fileOffset = sink.writeSampleData(au.buffer, 0, au.size)
-        track.samples.add(fileOffset, au.size, pts, dts, auKeyframe)
+        track.samples.add(fileOffset, au.size, pts, dts, auKeyframe, descriptionIndex)
         if (real) {
             provisional.clear()
             lastRealDts = dts
@@ -155,12 +187,118 @@ abstract class AnnexBReader(protected val sink: SampleSink) : ElementaryStreamRe
         au.reset()
         auHasVcl = false
         auKeyframe = false
+        auOpen = false
         auPts = NO_TS; auDts = NO_TS
+    }
+
+    private fun discardAccessUnit() {
+        au.reset(); auHasVcl = false; auKeyframe = false; auOpen = false; auPts = NO_TS; auDts = NO_TS
+        auParameterSets.clear()
+    }
+
+    /**
+     * The segments that follow are another section (the playlist has a discontinuity before them): its
+     * frames before its first keyframe are dropped. What has been fed so far (the last NAL unit, which
+     * no start code has ended yet, and its access unit) is the section before's, and is written now.
+     */
+    override fun sectionStart() {
+        if (synced && nal.size > 0) completeNal(nal.buffer, 0, nal.size)
+        nal.reset()
+        emitAccessUnit()
+        section++
     }
 
     /** Samples since the last real timestamp whose times were extrapolated (indices into track.samples). */
     private val provisional = ArrayList<Int>()
     private var lastRealDts = NO_TS
+
+    // ---- sections and decoder configs ----
+
+    /** Sections of the stream so far (one more at each [sectionStart] or timestamp jump). */
+    private var section = 0
+    /** The section the access unit being assembled started in. */
+    private var auSection = 0
+    private var auOpen = false
+    /** The section whose first keyframe has been written (-1: none yet). */
+    private var keyframeSection = -1
+    /** Access units dropped before a section's first keyframe. */
+    var droppedLeading = 0
+        private set
+    private var droppedInSection = 0
+
+    /** Latest parameter set per (NAL type, id), whole stream. */
+    private val latestParameterSets = HashMap<Long, ByteArray>()
+    /** Parameter sets carried in the access unit being assembled, per (NAL type, id). */
+    private val auParameterSets = HashMap<Long, ByteArray>()
+    private var configFrozen = false
+    /** The parameter sets of the sample entry samples now point at, and its 1-based stsd index. */
+    private var currentSets: List<ByteArray> = emptyList()
+    private var descriptionIndex = 1
+
+    /**
+     * A parameter set seen in the stream (it also stays in the sample, in-band). Its fields are read
+     * into [track] until the decoder config is fixed at the first keyframe (ffmpeg's extradata comes
+     * from the first keyframe too); a later change starts a sample entry of its own ([followConfig]).
+     * Collecting every SPS into one config record instead puts several sets with the same id there,
+     * of which decoders that configure from the record take the last one.
+     */
+    protected fun offerParameterSet(type: Int, id: Int, nal: ByteArray) {
+        val key = (type.toLong() shl 32) or (id.toLong() and 0xFFFFFFFFL)
+        auParameterSets[key] = nal
+        if (latestParameterSets[key]?.contentEquals(nal) == true) return
+        latestParameterSets[key] = nal
+        if (!configFrozen) try { onParameterSet(type, nal, track) } catch (_: Exception) { /* tolerate a malformed set */ }
+    }
+
+    /**
+     * The parameter sets in effect for a keyframe: those it carries when it carries an SPS (an encoder
+     * repeats the whole set with every keyframe), else the latest of each, ordered by type then id.
+     */
+    private fun setsInEffect(): List<ByteArray> {
+        val carriesSps = auParameterSets.keys.any { (it shr 32).toInt() == spsType }
+        val from = if (carriesSps) auParameterSets else latestParameterSets
+        return from.entries.sortedBy { it.key }.map { it.value }
+    }
+
+    /** Fixes [track]'s parameter sets at the first keyframe and reads its fields from them. */
+    private fun freezeConfig() {
+        configFrozen = true
+        currentSets = setsInEffect()
+        track.parameterSets.clear()
+        track.parameterSets.addAll(currentSets)
+        for (nal in currentSets) try { onParameterSet(parameterSetType(nal), nal, track) } catch (_: Exception) {}
+    }
+
+    /**
+     * At a later keyframe: parameter sets other than the current entry's (a resolution, profile or bit
+     * depth change, e.g. at an ad) get a sample entry of their own, so a decoder set up from the entry
+     * is set up again. AVFoundation follows only the entry and stops decoding at such a change; Media
+     * Foundation and GStreamer take either. ffmpeg's stream copy keeps one entry. The first config
+     * stays [track]'s own (its size and record).
+     */
+    private fun followConfig() {
+        val sets = setsInEffect()
+        if (sets.size == currentSets.size && sets.indices.all { sets[it].contentEquals(currentSets[it]) }) return
+        if (sets.none { parameterSetType(it) == spsType }) return
+        if (track.sampleEntryBox == null) track.sampleEntryBox = SampleEntries.build(track) ?: return
+        val config = Track(track.codec)
+        config.parameterSets.addAll(sets)
+        for (nal in sets) try { onParameterSet(parameterSetType(nal), nal, config) } catch (_: Exception) {}
+        val entry = SampleEntries.build(config) ?: return
+        descriptionIndex = track.descriptionIndexFor(entry)
+        currentSets = sets
+        Logger.info("XDM", "${track.codec}: parameter sets changed (${config.width}x${config.height}, " +
+            "${config.bitDepthLuma}-bit): sample entry $descriptionIndex from sample ${track.samples.size + 1}")
+    }
+
+    /** Reads a parameter set's fields (picture size, bit depth, colour...) into [into]. */
+    protected abstract fun onParameterSet(type: Int, nal: ByteArray, into: Track)
+
+    /** The NAL type of a parameter set (as passed to [offerParameterSet]). */
+    protected abstract fun parameterSetType(nal: ByteArray): Int
+
+    /** The NAL type of a sequence parameter set. */
+    protected abstract val spsType: Int
 
     /** False for a NAL unit of an enhancement layer (nuh_layer_id > 0 in HEVC). */
     protected open fun isBaseLayer(buf: ByteArray, start: Int): Boolean = true
@@ -216,5 +354,8 @@ abstract class AnnexBReader(protected val sink: SampleSink) : ElementaryStreamRe
         private const val NO_TS = Long.MIN_VALUE
         /** 90 kHz ticks of one frame at 30 fps, used only before any frame interval is known. */
         private const val DEFAULT_INTERVAL = 3000L
+        /** A decode time this far back (1 s: no reorder is that deep) or on (2 s) starts a section. */
+        private const val JUMP_BACK = 90_000L
+        private const val JUMP_FORWARD = 180_000L
     }
 }

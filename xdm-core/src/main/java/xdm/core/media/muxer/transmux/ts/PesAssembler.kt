@@ -35,6 +35,16 @@ class PesAssembler(reader: ElementaryStreamReader) {
         if (started) buffer.write(data, start, end - start)
     }
 
+    /**
+     * Hands the PES being collected to the reader now (the data before a discontinuity is complete) and
+     * waits for the next PES start: a continuation without one belongs to nothing that follows.
+     */
+    fun endPes() {
+        flush()
+        buffer.reset()
+        started = false
+    }
+
     fun flush() {
         if (!started || buffer.size < 9) { return }
         val b = buffer.buffer

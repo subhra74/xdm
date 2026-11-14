@@ -146,12 +146,16 @@ internal fun typicalStep(samples: SampleTable, from: Int, to: Int): Long = upper
 }
 
 /**
- * Indices where each section of [t] starts: 0, then every timestamp jump (back, or forward by more
+ * Indices where each section of [t] starts: 0, then the playlist's discontinuities where the demuxer
+ * recorded them ([Track.sectionBreaks]); without those, every timestamp jump (back, or forward by more
  * than [DISCONTINUITY_GAP_FACTOR] frames). A [Track.ptsOnly] track is measured from its latest time
  * so far and may go back by a reorder window.
  */
 private fun sectionStarts(t: Track): List<Int> {
     val samples = t.samples
+    // Sections the playlist marked, where the demuxer recorded them.
+    val marked = t.sectionBreaks.filter { it in 1 until samples.size }.distinct()
+    if (marked.isNotEmpty()) return listOf(0) + marked
     val typical = typicalStep(samples, 1, samples.size)
     if (typical < 0) return listOf(0)
     val allowance = if (t.ptsOnly) typical * PTS_ONLY_REORDER_FRAMES else 0

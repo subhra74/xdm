@@ -37,6 +37,13 @@ class MpegVideoReader(private val sink: SampleSink, private val mpeg4: Boolean) 
     private val picture = ByteArrayBuilder(256 * 1024)
     private var hasPicture = false
     private var keyframe = false
+    /** Sections so far ([sectionStart]), the section the current picture began in, and the last one opened by an I-picture. */
+    private var section = 0
+    private var pictureSection = 0
+    private var keyframeSection = -1
+    /** Pictures dropped before the first I-picture. */
+    var droppedLeading = 0
+        private set
     private var pts = NO_TS
     private var dts = NO_TS
     /** Bytes of [picture] before its picture/VOP start code: stream headers, if it begins with them. */
@@ -90,6 +97,7 @@ class MpegVideoReader(private val sink: SampleSink, private val mpeg4: Boolean) 
         if (picture.size == 0) headerBytes = if (isPicture) -1 else 0
         if (isPicture) {
             if (headerBytes == 0) headerBytes = picture.size
+            if (!hasPicture) pictureSection = section
             hasPicture = true
             if (e - s > 5) {
                 keyframe = if (mpeg4) ((b[s + 4].toInt() shr 6) and 3) == 0     // vop_coding_type I
@@ -99,10 +107,23 @@ class MpegVideoReader(private val sink: SampleSink, private val mpeg4: Boolean) 
         picture.write(b, s, e - s)
     }
 
+    /** As for H.264/H.265: the unit and picture fed so far are the section before's, written now. */
+    override fun sectionStart() {
+        if (synced && pending.size > 4) onUnit(pending.buffer, 0, pending.size)
+        pending.reset()
+        emitPicture()
+        section++
+    }
+
     private fun emitPicture() {
         if (!hasPicture) { picture.reset(); return }
         if (headerBytes > 0) updateConfig(picture.buffer.copyOf(headerBytes))
-        if (config != null) {
+        // Pictures before the first I-picture of their section (the stream's start, or after a
+        // discontinuity) are dropped, as ffmpeg's stream copy drops non-keyframes at the start.
+        val opened = pictureSection == keyframeSection
+        if (config != null && !opened && !keyframe) droppedLeading++
+        if (config != null && (opened || keyframe)) {
+            keyframeSection = pictureSection
             var p = pts
             var d = dts
             if (p == NO_TS) {

@@ -6,6 +6,7 @@ package xdm.core.media.muxer.transmux
 
 import xdm.core.media.muxer.transmux.es.SampleSink
 import xdm.core.media.muxer.transmux.sample.Track
+import xdm.core.media.muxer.transmux.sample.presentationStart
 
 /**
  * A container-format writer that a demuxer streams sample bytes into (via [SampleSink]) and that
@@ -28,4 +29,12 @@ interface ContainerWriter : SampleSink {
 
     /** Closes handles and deletes any partial output. */
     fun abort()
+
+    /**
+     * Seconds, on the tracks' own timeline, that become time zero of the output: by default the
+     * earliest presented sample of any track. Called before [finish].
+     */
+    fun presentationZero(tracks: List<Track>): Double? =
+        tracks.filter { it.samples.isNotEmpty() && it.timescale > 0 }
+            .minOfOrNull { presentationStart(it.samples).toDouble() / it.timescale }
 }

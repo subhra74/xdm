@@ -20,7 +20,6 @@ import xdm.core.media.muxer.transmux.iso.Mp4Demuxer
 import xdm.core.media.muxer.transmux.mkv.MatroskaDemuxer
 import xdm.core.media.muxer.transmux.mkv.MkvWriter
 import xdm.core.media.muxer.transmux.mp4.Mp4Writer
-import xdm.core.media.muxer.transmux.sample.presentationStart
 import xdm.core.media.muxer.transmux.sample.SampleSpill
 import xdm.core.media.muxer.transmux.packed.PackedAudioDemuxer
 import xdm.core.media.muxer.transmux.sample.Track
@@ -381,9 +380,8 @@ class TransmuxingMuxer(
                 lastError = NoMediaException("No audio or video found in the downloaded segments")
                 false
             } else {
-                // The earliest presented PTS, which the MP4 writer aligns the tracks on: time zero of the output.
-                timelineStartSec = tracks.filter { it.samples.isNotEmpty() && it.timescale > 0 }
-                    .minOfOrNull { presentationStart(it.samples).toDouble() / it.timescale }
+                // Time zero of the output on the tracks' timeline (the MP4 writer starts at the first video frame).
+                timelineStartSec = writer.presentationZero(tracks)
                 val ok = writer.finish(tracks)
                 if (!ok) output.delete() else outputContainer = format
                 ok
@@ -418,6 +416,8 @@ class TransmuxingMuxer(
         val tracks: () -> List<Track>
         /** Audio/video streams this demuxer left out. */
         var lost: () -> Collection<String> = { emptyList() }
+        /** The next segment starts another section (a playlist discontinuity); only TS readers need it. */
+        var sectionStart: () -> Unit = {}
         var finished = false
             private set
 
@@ -437,6 +437,7 @@ class TransmuxingMuxer(
                         }
                     }
                     end = { demux.finish() }; tracks = { demux.tracks }; lost = { demux.lostStreams }
+                    sectionStart = { demux.sectionStart() }
                 }
                 Container.MKV -> MatroskaDemuxer(writer).let { d -> feed = { seg, from -> d.parseSegment(seg, from) }; end = { d.finish() }; tracks = { d.tracks }; lost = { d.lostStreams } }
                 Container.PACKED_AUDIO -> PackedAudioDemuxer(writer).let { d -> feed = { seg, from -> d.parseSegment(seg, from) }; end = { d.finish() }; tracks = { d.tracks } }
@@ -480,6 +481,9 @@ class TransmuxingMuxer(
 
         fun hasNext() = fed < segments.size
 
+        /** Playlist section of the segment fed last, when the playlist was given ([setSegmentInfo]). */
+        private var lastSection: Int? = null
+
         /** Share of the segments fed so far. */
         fun done() = if (segments.isEmpty()) 1.0 else fed.toDouble() / segments.size
 
@@ -493,6 +497,10 @@ class TransmuxingMuxer(
                 else -> current.container
             }
             val demux = if (current != null && current.container == target) current else switchTo(target, seg)
+            // A discontinuity in the playlist before this segment: its section opens at a keyframe.
+            val section = segmentInfo[seg]?.section
+            if (section != null && lastSection != null && section != lastSection && demux === current) demux.sectionStart()
+            if (section != null) lastSection = section
             demux.feed(seg, startOf(found, target))
             fed++
             record()

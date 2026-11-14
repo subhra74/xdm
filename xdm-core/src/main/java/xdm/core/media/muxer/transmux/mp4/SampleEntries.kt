@@ -8,7 +8,7 @@ import xdm.core.media.muxer.transmux.sample.Codec
 import xdm.core.media.muxer.transmux.sample.Track
 
 /**
- * Builds the stsd sample entry (avc1/hev1/mp4a/ac-3/ec-3/Opus...) for a track demuxed from an
+ * Builds the stsd sample entry (avc1/hvc1/mp4a/ac-3/ec-3/Opus...) for a track demuxed from an
  * elementary stream, from its decoder config. Readers also use it to freeze the entry of a config
  * that is about to change mid-stream (Track.additionalSampleEntries).
  */
@@ -56,7 +56,10 @@ object SampleEntries {
     fun write(buf: BoxBuf, t: Track) {
         when (t.codec) {
             Codec.H264 -> visualSampleEntry(buf, "avc1", t) { CodecBoxes.writeAvcC(this, t) }
-            Codec.H265 -> visualSampleEntry(buf, "hev1", t) { CodecBoxes.writeHvcC(this, t) }
+            // hvc1, not hev1: AVFoundation (QuickTime, Safari, iOS) refuses hev1 ("Cannot Decode");
+            // Media Foundation and GStreamer take either. Parameter sets also stay in-band, as with
+            // ffmpeg's -tag:v hvc1, which those players accept.
+            Codec.H265 -> visualSampleEntry(buf, "hvc1", t) { CodecBoxes.writeHvcC(this, t) }
             Codec.AAC -> audioSampleEntry(buf, "mp4a", t) {
                 CodecBoxes.writeEsds(this, CodecBoxes.OTI_AAC, t.audioSpecificConfig)
             }

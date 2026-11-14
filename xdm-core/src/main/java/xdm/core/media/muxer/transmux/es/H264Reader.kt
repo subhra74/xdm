@@ -62,23 +62,28 @@ class H264Reader(sink: SampleSink) : AnnexBReader(sink) {
         else -> false
     }
 
-    override fun keepNal(buf: ByteArray, start: Int, end: Int): Boolean = when (type(buf, start)) {
-        7 -> { addParameterSet(buf, start, end) { parseSps(it) }; true }
-        8 -> { addParameterSet(buf, start, end) { /* PPS: no fields we need */ }; true }
+    override fun keepNal(buf: ByteArray, start: Int, end: Int): Boolean = when (val t = type(buf, start)) {
+        7, 8 -> { val nal = buf.copyOfRange(start, end); offerParameterSet(t, parameterSetId(nal), nal); true }
         9, 12 -> false // AUD / filler
         else -> true
     }
 
-    private inline fun addParameterSet(data: ByteArray, start: Int, end: Int, parse: (ByteArray) -> Unit) {
-        val nal = data.copyOfRange(start, end)
-        // Deduplicate: parameter sets repeat on every keyframe. They also stay in-band.
-        if (track.parameterSets.none { it.contentEquals(nal) }) {
-            track.parameterSets.add(nal)
-            try { parse(nal) } catch (_: Exception) { /* tolerate malformed SPS */ }
-        }
+    override fun parameterSetType(nal: ByteArray) = nal[0].toInt() and 0x1F
+
+    override val spsType = 7
+
+    override fun onParameterSet(type: Int, nal: ByteArray, into: Track) {
+        if (type == 7) parseSps(nal, into) // PPS: no fields we need
     }
 
-    private fun parseSps(nal: ByteArray) {
+    /** seq_parameter_set_id (after profile, constraint flags and level) or pic_parameter_set_id (first). */
+    private fun parameterSetId(nal: ByteArray): Int = try {
+        val bit = ParsableBitArray(NalUnitUtil.unescapeRbsp(nal, 1, minOf(nal.size - 1, 16)))
+        if (type(nal, 0) == 7) bit.skipBits(24)
+        bit.readUe()
+    } catch (_: Exception) { 0 }
+
+    private fun parseSps(nal: ByteArray, track: Track) {
         // nal[0] is the NAL header; RBSP starts at index 1.
         val rbsp = NalUnitUtil.unescapeRbsp(nal, 1, nal.size - 1)
         val bit = ParsableBitArray(rbsp)

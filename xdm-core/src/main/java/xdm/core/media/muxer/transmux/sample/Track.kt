@@ -92,6 +92,13 @@ class Track(val codec: Codec) {
     val additionalSampleEntries = ArrayList<ByteArray>()
 
     /**
+     * Sample indexes where a section of the playlist starts (after an HLS discontinuity), recorded by
+     * the demuxer as it reads them. The timeline aligns sections at these rather than at timestamp
+     * jumps it finds, which a section's dropped leading frames can hide (see `Timeline`).
+     */
+    val sectionBreaks = ArrayList<Int>()
+
+    /**
      * Matroska/WebM codec identity carried verbatim from a Matroska input (e.g. `V_VP9`, `A_OPUS`).
      * When set, the MKV writer emits it directly and uses [decoderConfigRecord] as the
      * `CodecPrivate` (used by the Matroska demux path, and the natural output form for MKV).

@@ -1,0 +1,190 @@
+name: Bug report
+description: Something in XDM doesn't work as it should
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. The more exact the details, the faster it can be fixed:
+        most reports that can't be reproduced stay open for a long time.
+
+        **Security issues:** don't open an issue; report them privately at
+        https://github.com/subhra74/xdm/security/advisories/new
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Where does the problem happen? Pick all that apply.
+      multiple: true
+      options:
+        - Regular download (HTTP / HTTPS / FTP file)
+        - Video stream, HLS (.m3u8)
+        - Video stream, DASH (.mpd)
+        - Video download (yt-dlp)
+        - Downloaded video plays badly (green or grey frames, freezes, no sound, out of sync)
+        - Torrent / magnet link
+        - Browser extension (download or video not captured, button missing)
+        - Batch download
+        - Queue / scheduler
+        - Installer, update or startup
+        - User interface / settings
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: The exact problem, in your own words. What did you see, and when?
+      placeholder: "The download stops at 37% with \"Connection reset\" and won't resume."
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      placeholder: The download finishes and the file opens.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Step by step, from opening the page to the problem. Does it happen every time?
+      placeholder: |
+        1. Open the page (link below) in Chrome
+        2. Click the XDM "Download video" button, pick 1080p
+        3. Wait for the download to finish
+        4. Open the file in Windows Media Player: green flashes every few seconds
+        Happens every time / sometimes / once
+    validations:
+      required: true
+
+  - type: input
+    id: page-link
+    attributes:
+      label: Web page link
+      description: >
+        The page the download started from (not only the file link: those usually expire). If you
+        can't post it publicly, write "can share privately" and say what kind of site it is.
+      placeholder: https://example.com/watch/12345
+    validations:
+      required: true
+
+  - type: input
+    id: file-link
+    attributes:
+      label: Direct link (if you have it)
+      description: The file, .m3u8, .mpd or magnet link XDM was given, if known (Copy address in XDM's download list).
+
+  - type: textarea
+    id: error
+    attributes:
+      label: Exact error message
+      description: Copy the text exactly as XDM shows it (or "no error shown").
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots or screen recording
+      description: Drag and drop images or a short video here (the error, the download window, the bad frames).
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log files
+      description: >
+        Settings > Advanced > Log files > Open folder. Attach the log of the launch where the problem
+        happened (drag the file here). Remove anything you don't want to share (it may contain links).
+
+  - type: textarea
+    id: video
+    attributes:
+      label: Video problems only
+      description: Skip this for other areas.
+      placeholder: |
+        - Player used: Windows Media Player / Films & TV / QuickTime / VLC / mpv / Android gallery / ...
+        - Does the same file play fine in VLC or mpv? yes / no
+        - What's wrong and where: green frames at the start / every few seconds / after 12:30 / no sound / sound out of sync by about 1 s / won't open
+        - Settings > Advanced > "Use ffmpeg for muxing": on / off (if on: does turning it off change anything?)
+        - Quality picked, and was the download paused or resumed?
+        - Is it a live stream? (Live streams are not supported.)
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows 11
+        - Windows 10
+        - macOS
+        - Linux
+        - Android
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: os-version
+    attributes:
+      label: OS version and machine
+      description: e.g. "Windows 11 24H2 x64", "macOS 15.4 Apple silicon", "Ubuntu 24.04 x64, GNOME Wayland", "Android 14, Pixel 7".
+    validations:
+      required: true
+
+  - type: input
+    id: xdm-version
+    attributes:
+      label: XDM version
+      description: Menu > About XDM.
+      placeholder: 9.0.10
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install
+    attributes:
+      label: How XDM was installed
+      options:
+        - Windows installer (.msi)
+        - Windows, other (.exe / .zip)
+        - macOS (.dmg)
+        - Linux .deb
+        - Linux .rpm
+        - Linux Flatpak
+        - Linux .tar.gz
+        - Android, Google Play
+        - Android, APK
+        - Built from source (give the commit or branch below)
+        - Other (say below)
+    validations:
+      required: true
+
+  - type: input
+    id: install-details
+    attributes:
+      label: Installer or build details
+      description: The installer file name, or the commit/branch you built from, and anything else about the setup (portable folder, custom JDK, proxy, VPN, antivirus).
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and extension version
+      description: If the browser extension was involved, e.g. "Chrome 142, XDM extension 9.0.4".
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched the existing issues and this isn't a duplicate.
+          required: true
+        - label: It still happens with the latest XDM release.
+          required: true

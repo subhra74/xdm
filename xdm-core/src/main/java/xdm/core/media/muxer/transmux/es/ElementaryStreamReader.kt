@@ -29,6 +29,12 @@ interface ElementaryStreamReader {
 
     /** Flush any sample still buffered at end of stream. */
     fun finish()
+
+    /**
+     * The data fed next is another section of the stream (an HLS discontinuity): a video reader drops
+     * that section's frames before its first keyframe. Audio readers ignore it.
+     */
+    fun sectionStart() {}
 }
 
 /** Sink that stages sample bytes into the output mdat and returns the file offset they landed at. */

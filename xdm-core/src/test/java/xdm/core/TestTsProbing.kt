@@ -202,7 +202,9 @@ class TestTsProbing {
         val teletext = File(workDir, "h264_teletext.mp4").absolutePath
         assert(mux(patched(fixture("h264.ts"), "h264_teletext.ts", 0x06, byteArrayOf(0x56, 5, 'e'.code.toByte(), 'n'.code.toByte(), 'g'.code.toByte(), 0x09, 0)), teletext)) { "mux failed" }
         assertEquals("", md5(teletext, "v"), "a stream marked as teletext was muxed as video")
-        assertEquals(md5(ref, "a"), md5(teletext, "a"), "audio differs")
+        // Against the source's audio: with video, the reference starts at the first video frame and
+        // skips the audio before it; audio alone keeps all of it.
+        assertEquals(md5(fixture("h264.ts").absolutePath, "a"), md5(teletext, "a"), "audio differs")
     }
 
     @Test

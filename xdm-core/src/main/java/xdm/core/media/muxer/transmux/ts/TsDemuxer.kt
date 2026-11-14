@@ -114,6 +114,22 @@ class TsDemuxer(private val sink: SampleSink) {
         if (remaining > 0) stash(data, pos, remaining)
     }
 
+    /**
+     * The bytes fed next are another section of the stream (an HLS discontinuity): each video reader
+     * drops that section's frames before its first keyframe. Bytes fed before belong to the section before.
+     */
+    fun sectionStart() {
+        // A PES ends only when the next one starts: the last of each stream is the section before's.
+        for (asm in readersByPid.values) asm.endPes()
+        for ((_, reader) in readers) {
+            reader.sectionStart()
+            // Every track's next sample opens the new section, video after its dropped leading frames.
+            val t = reader.track
+            val at = t.samples.size
+            if (at > 0 && t.sectionBreaks.lastOrNull() != at) t.sectionBreaks.add(at)
+        }
+    }
+
     /** Flush any buffered PES and let readers emit trailing samples. Call once after the last feed. */
     fun finish() {
         if (pmtEsLoop == null && !autoGuessed && held.isNotEmpty()) autoGuess()

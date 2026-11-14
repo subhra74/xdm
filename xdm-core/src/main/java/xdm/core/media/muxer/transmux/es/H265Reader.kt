@@ -43,15 +43,36 @@ class H265Reader(sink: SampleSink) : AnnexBReader(sink) {
         val t = type(buf, start)
         if (t in 32..34) {
             val nal = buf.copyOfRange(start, end)
-            if (track.parameterSets.none { it.contentEquals(nal) }) {
-                track.parameterSets.add(nal)
-                if (t == 33) try { parseSps(nal) } catch (_: Exception) {}
-            }
+            offerParameterSet(t, parameterSetId(t, nal), nal)
         }
         return t != 35 && t != 38 // AUD / filler
     }
 
-    private fun parseSps(nal: ByteArray) {
+    override fun parameterSetType(nal: ByteArray) = type(nal, 0)
+
+    override val spsType = 33
+
+    override fun onParameterSet(type: Int, nal: ByteArray, into: Track) {
+        if (type == 33) parseSps(nal, into)
+    }
+
+    /** vps_video_parameter_set_id, sps_seq_parameter_set_id (after the profile/tier/level) or pps_pic_parameter_set_id. */
+    private fun parameterSetId(type: Int, nal: ByteArray): Int = try {
+        val bit = ParsableBitArray(NalUnitUtil.unescapeRbsp(nal, 2, minOf(nal.size - 2, 64)))
+        when (type) {
+            32 -> bit.readBits(4)
+            33 -> {
+                bit.skipBits(4)
+                val maxSubLayersMinus1 = bit.readBits(3)
+                bit.skipBits(1)
+                skipProfileTierLevel(bit, maxSubLayersMinus1)
+                bit.readUe()
+            }
+            else -> bit.readUe()
+        }
+    } catch (_: Exception) { 0 }
+
+    private fun parseSps(nal: ByteArray, track: Track) {
         // Skip the 2-byte NAL header.
         val rbsp = NalUnitUtil.unescapeRbsp(nal, 2, nal.size - 2)
         val bit = ParsableBitArray(rbsp)

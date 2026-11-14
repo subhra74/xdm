@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security issue
+    url: https://github.com/subhra74/xdm/security/advisories/new
+    about: Report security problems privately, not as an issue.

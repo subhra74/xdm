@@ -65,8 +65,9 @@ object CodecBoxes {
             val arrays = listOf(32 to vps, 33 to sps, 34 to pps).filter { it.second.isNotEmpty() }
             u8(arrays.size)
             for ((type, list) in arrays) {
-                // array_completeness 0: hev1 keeps parameter sets in-band too (ffmpeg writes 0 for hev1).
-                u8(type)
+                // array_completeness 1, as hvc1 asks (and ffmpeg writes with -tag:v hvc1): every set of
+                // this config is in the array. The same sets also stay in the samples.
+                u8(0x80 or type)
                 u16(list.size)
                 for (n in list) { u16(n.size); bytes(n) }
             }

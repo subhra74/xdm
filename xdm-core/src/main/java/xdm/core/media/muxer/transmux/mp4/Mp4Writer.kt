@@ -130,26 +130,36 @@ class Mp4Writer(private val output: StorageFile, repairTimeline: Boolean = false
 
     private fun buildMoov(tracks: List<Track>): BoxBuf {
         // A/V sync: each track's content becomes visible at its earliest PTS (not its first DTS,
-        // which precedes it by the B-frame reorder delay). Align tracks on that, then let the edit
-        // list skip the reorder delay inside each track.
+        // which precedes it by the B-frame reorder delay). Time zero is the first video frame
+        // (presentationZero); the edit list skips the reorder delay, and audio before zero.
         // After a discontinuity the timestamps restart: move each section as a whole (all tracks by
         // one offset) so it follows the previous one and keeps its own A/V sync.
         // The shared timeline step (also run by the MKV writer): sections placed back to back, gaps
         // and backward jumps repaired, the timestamps rewritten to match.
         Timeline.prepare(tracks, repairTimeline)
         val startPts = tracks.map { presentationStart(it.samples) }
-        val globalStartSec = tracks.indices.minOf { startPts[it].toDouble() / tracks[it].timescale }
+        val zeroSec = presentationZero(tracks) ?: 0.0
 
-        val plans = ArrayList<TrackPlan>()
+        val mediaTimes = LongArray(tracks.size)
         for ((idx, t) in tracks.withIndex()) {
             // Durations from successive DTS deltas (already repaired by the timeline step).
             assignSampleDurations(t.samples, false)
-
-            val mediaDuration = t.durationTicks()
-            val mediaTime = (startPts[idx] - t.samples.dts(0)).coerceIn(0, mediaDuration)
-            val presentedDuration = (presentationEnd(t.samples) - mediaTime).coerceAtLeast(0)
             val startSec = startPts[idx].toDouble() / t.timescale
-            val emptyEditMovie = ((startSec - globalStartSec) * movieTimescale).toLong().coerceAtLeast(0)
+            // A track that starts before time zero (audio before the first video frame) skips that part
+            // through its edit's media time; one that starts after it waits with an empty edit.
+            val skip = if (startSec < zeroSec) Math.round((zeroSec - startSec) * t.timescale) else 0L
+            mediaTimes[idx] = (startPts[idx] - t.samples.dts(0) + skip).coerceIn(0, t.durationTicks())
+        }
+        // Where an edit skips media, every track opens with the same short empty edit (LEAD_EMPTY_EDIT).
+        val lead = if (mediaTimes.any { it > 0 }) LEAD_EMPTY_EDIT else 0L
+
+        val plans = ArrayList<TrackPlan>()
+        for ((idx, t) in tracks.withIndex()) {
+            val mediaDuration = t.durationTicks()
+            val startSec = startPts[idx].toDouble() / t.timescale
+            val mediaTime = mediaTimes[idx]
+            val presentedDuration = (presentationEnd(t.samples) - mediaTime).coerceAtLeast(0)
+            val emptyEditMovie = ((startSec - zeroSec) * movieTimescale).toLong().coerceAtLeast(0) + lead
             val presentedMovie = toMovieUnitsCeil(presentedDuration, t.timescale)
             plans.add(
                 TrackPlan(t, idx + 1, mediaTime, mediaDuration, presentedDuration, emptyEditMovie, emptyEditMovie + presentedMovie)
@@ -163,6 +173,21 @@ class Mp4Writer(private val output: StorageFile, repairTimeline: Boolean = false
             for (p in plans) writeTrak(this, p)
         }
         return buf
+    }
+
+    /**
+     * Time zero is the first video frame: audio that starts before it is skipped (by the edit's media
+     * time) rather than the video delayed by an empty edit, which Media Foundation (Films & TV, Media
+     * Player) ignores, showing the video that much early. Within [MAX_LEADING_AUDIO_SEC]: a longer
+     * lead is audio of its own (an intro), kept, with the video delayed as before.
+     */
+    override fun presentationZero(tracks: List<Track>): Double? {
+        val usable = tracks.filter { it.samples.isNotEmpty() && it.timescale > 0 }
+        if (usable.isEmpty()) return null
+        val start = { t: Track -> presentationStart(t.samples).toDouble() / t.timescale }
+        val earliest = usable.minOf(start)
+        val video = usable.filter { it.codec.isVideo }.minOfOrNull(start) ?: return earliest
+        return if (video - earliest <= MAX_LEADING_AUDIO_SEC) video else earliest
     }
 
     private fun toMovieUnitsCeil(mediaTicks: Long, mediaTimescale: Int): Long =
@@ -456,3 +481,16 @@ class Mp4Writer(private val output: StorageFile, repairTimeline: Boolean = false
 }
 
 private const val U32_MAX = 0xFFFFFFFFL
+
+/**
+ * Movie ticks (1 ms) of the empty edit every track's edit list opens with. Media Foundation (Films & TV,
+ * Media Player) applies an edit's media_time (the B-frame delay, the audio skipped before the first
+ * video frame) only after an empty edit: with a lone edit it plays from the first sample's composition
+ * time instead, 80 ms late for two B-frames, the audio not skipped at all. It ignores the empty edit's
+ * length, so every track gets the same: other players then start everything 1 ms later, in sync.
+ * Written only when some track's edit skips media; without a skip there is nothing to misplace.
+ */
+private const val LEAD_EMPTY_EDIT = 1L
+
+/** Audio before the first video frame up to this long is skipped (see Mp4Writer.presentationZero). */
+private const val MAX_LEADING_AUDIO_SEC = 10.0
