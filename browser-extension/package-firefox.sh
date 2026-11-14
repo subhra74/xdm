@@ -17,6 +17,9 @@ fail() { echo "error: $*" >&2; exit 1; }
 command -v node >/dev/null || fail "node is needed to read manifest.json"
 command -v npx >/dev/null || fail "npx is needed to run web-ext"
 
+# --- sync locales ------------------------------------------------------------
+node "$HERE/tools/sync-locales.js"
+
 VERSION="$(node -e '
 const m = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
 const g = (m.browser_specific_settings || {}).gecko || {};

@@ -36,6 +36,15 @@ const params = new URLSearchParams(location.search);
 const tabId = parseInt(params.get("tab"), 10);
 const mode = params.get("mode") === "selection" ? "selection" : "all";
 
+function msg(key, subs, fallback) {
+    const api = typeof chrome !== "undefined" && chrome.i18n ? chrome.i18n : (typeof browser !== "undefined" ? browser.i18n : null);
+    if (api && typeof api.getMessage === "function") {
+        const val = api.getMessage(key, subs);
+        if (val) return val;
+    }
+    return fallback !== undefined ? fallback : key;
+}
+
 const state = {
     items: [],
     view: [],
@@ -62,7 +71,7 @@ const $ = id => document.getElementById(id);
 
 document.addEventListener("DOMContentLoaded", async () => {
     if (!(tabId >= 0)) {
-        showFatal("No page to read.");
+        showFatal(msg("bulk_fatal_no_page", null, "No page to read."));
         return;
     }
     await loadPrefs();
@@ -232,14 +241,14 @@ async function scan() {
         return;
     }
     state.scanning = true;
-    setBusy("Scanning page…");
+    setBusy(msg("bulk_scanning", null, "Scanning page…"));
     hideBanner();
     try {
         let tab;
         try {
             tab = await chrome.tabs.get(tabId);
         } catch (e) {
-            showFatal("The page this window was opened for has been closed.");
+            showFatal(msg("bulk_fatal_page_closed", null, "The page this window was opened for has been closed."));
             return;
         }
         showPage(tab.title, tab.url);
@@ -261,7 +270,7 @@ async function scan() {
             return;
         }
         if (!result) {
-            showFatal("XDM couldn't read this page.");
+            showFatal(msg("bulk_fatal_cannot_read", null, "XDM couldn't read this page."));
             return;
         }
         showPage(result.title || tab.title, result.pageUrl || tab.url);
@@ -273,10 +282,10 @@ async function scan() {
         state.checked.forEach(url => present.has(url) || state.checked.delete(url));
 
         if (result.rtFull) {
-            showBanner("Some files may be missing: this page loaded more than the browser keeps a "
-                + "record of.", true);
+            showBanner(msg("bulk_banner_buffer_full", null, "Some files may be missing: this page loaded more than the browser keeps a "
+                + "record of. Reloading the page can capture them."), true);
         } else if (result.truncated) {
-            showBanner("This page has a very large number of links; only the first 10,000 are shown.", false);
+            showBanner(msg("bulk_banner_too_many_links", null, "This page has a very large number of links; only the first 10,000 are shown."), false);
         }
         renderChips();
         applyFilters();
@@ -290,8 +299,8 @@ async function explainScanFailure(error, tab) {
     const url = (tab && tab.url) || "";
     if (!/^https?:/i.test(url) || /^https:\/\/chromewebstore\.google\.com\//i.test(url)
         || /^https:\/\/chrome\.google\.com\/webstore/i.test(url)) {
-        showFatal("XDM can't read this kind of page. Browser pages, the Chrome Web Store and the "
-            + "built-in PDF viewer are off limits to extensions.");
+        showFatal(msg("bulk_fatal_restricted_kind", null, "XDM can't read this kind of page. Browser pages, the Chrome Web Store and the "
+            + "built-in PDF viewer are off limits to extensions."));
         return;
     }
     let hostAccess = true;
@@ -301,11 +310,11 @@ async function explainScanFailure(error, tab) {
         // assume it is there
     }
     if (!hostAccess) {
-        showFatal("XDM doesn't have access to this site. Open the extension's menu in the toolbar "
-            + "and allow it on all sites, then press Rescan.");
+        showFatal(msg("bulk_fatal_restricted_access", null, "XDM doesn't have access to this site. Open the extension's menu in the toolbar "
+            + "and allow it on all sites, then press Rescan."));
         return;
     }
-    showFatal("XDM couldn't read this page: " + ((error && error.message) || error));
+    showFatal(msg("bulk_fatal_cannot_read", null, "XDM couldn't read this page") + ": " + ((error && error.message) || error));
 }
 
 /**
@@ -327,7 +336,7 @@ async function reloadAndCapture() {
         showFatal("The page this window was opened for has been closed.");
         return;
     }
-    setBusy("Reloading page and recording what it loads…");
+    setBusy(msg("bulk_reloading_recording", null, "Reloading page and recording what it loads…"));
     hideBanner();
     await unregisterObserver();
     try {
@@ -342,7 +351,7 @@ async function reloadAndCapture() {
         await reloadTab();
         await delay(SETTLE_AFTER_LOAD_MS);
     } catch (e) {
-        showBanner("Reload & capture failed: " + ((e && e.message) || e), false);
+        showBanner(msg("bulk_banner_reload_failed", null, "Reload & capture failed") + ": " + ((e && e.message) || e), false);
     } finally {
         await unregisterObserver();
         clearBusy();
@@ -448,7 +457,7 @@ function renderChips() {
         const dot = document.createElement("span");
         dot.className = "dot";
         const label = document.createElement("span");
-        label.textContent = cat.label;
+        label.textContent = msg("cat_" + cat.id, null, cat.label);
         const count = document.createElement("span");
         count.className = "chip-count";
         count.textContent = formatCount(counts.get(cat.id) || 0);
@@ -473,10 +482,10 @@ function renderList() {
     empty.hidden = state.view.length > 0 || state.scanning;
     if (state.items.length === 0) {
         $("emptyText").textContent = mode === "selection"
-            ? "No links or images in the selected part of the page."
-            : "Nothing to download was found on this page.";
+            ? msg("bulk_empty_selection", null, "No links or images in the selected part of the page.")
+            : msg("bulk_empty_page", null, "Nothing to download was found on this page.");
     } else {
-        $("emptyText").textContent = "Nothing matches the current filters.";
+        $("emptyText").textContent = msg("bulk_empty_filters", null, "Nothing matches the current filters.");
     }
     renderRows(true);
     renderSummary();
@@ -649,8 +658,8 @@ function renderSummary() {
     master.disabled = shown === 0;
     $("selInvert").disabled = shown === 0;
     $("listLabel").textContent = chosenHere > 0
-        ? formatCount(chosenHere) + " of " + formatCount(shown) + " selected"
-        : "Select all " + formatCount(shown);
+        ? msg("bulk_selected_of_shown", [formatCount(chosenHere), formatCount(shown)], `${formatCount(chosenHere)} of ${formatCount(shown)} selected`)
+        : msg("bulk_select_all_count", [formatCount(shown)], `Select all ${formatCount(shown)}`);
 
     // The footer's left side says what is selected - unless XDM is down, which matters more.
     const summary = $("summary");
@@ -658,27 +667,29 @@ function renderSummary() {
     if (chosen > 0) {
         const strong = document.createElement("strong");
         strong.textContent = formatCount(chosen);
-        summary.append(strong, chosen === 1 ? " item ready" : " items ready");
+        summary.append(strong, chosen === 1 ? msg("bulk_item_ready", null, " item ready") : msg("bulk_items_ready", null, " items ready"));
         // Say so when the selection spans both tabs; an item listed on both counts as a link.
         const links = all.filter(item => shownIn(item, "links")).length;
         if (links > 0 && links < chosen) {
-            summary.append(" (" + formatCount(links) + (links === 1 ? " link, " : " links, ")
-                + formatCount(chosen - links) + " images & files)");
+            summary.append(" (" + formatCount(links) + (links === 1 ? msg("bulk_link_count_single", null, " link, ") : msg("bulk_link_count_plural", null, " links, "))
+                + formatCount(chosen - links) + msg("bulk_images_and_files", null, " images & files") + ")");
         }
     } else {
-        summary.textContent = shown > 0 ? "Tick the files to download" : "";
+        summary.textContent = shown > 0 ? msg("bulk_tick_hint", null, "Tick the files to download") : "";
     }
     summary.hidden = !state.connected;
     $("sendHint").hidden = state.connected;
 
     $("copy").disabled = chosen === 0;
     $("send").disabled = chosen === 0 || !state.connected;
-    $("sendLabel").textContent = chosen > 0 ? "Download " + formatCount(chosen) : "Download";
+    $("sendLabel").textContent = chosen > 0 ? msg("bulk_download_count", [formatCount(chosen)], "Download " + formatCount(chosen)) : msg("bulk_download", null, "Download");
 }
 
 /** The page is named in the window title only; the picker itself has no room to spare. */
 function showPage(title, url) {
-    document.title = "Download with XDM — " + (mode === "selection" ? "selected links on " : "") + (title || url || "");
+    const baseTitle = msg("bulk_title", null, "Download with XDM");
+    const selPrefix = mode === "selection" ? msg("bulk_title_selection", null, "selected links on ") : "";
+    document.title = baseTitle + " — " + selPrefix + (title || url || "");
 }
 
 function setBusy(text) {
@@ -708,7 +719,7 @@ function hideBanner() {
 /** The page is one the extension never reads (blocked-sites.js). Rescanning won't change that. */
 function showBlockedSite() {
     state.blocked = true;
-    showFatal("XDM doesn't download from YouTube. Links and videos on this site are left to the browser.");
+    showFatal(msg("bulk_fatal_youtube", null, "XDM doesn't download from YouTube. Links and videos on this site are left to the browser."));
 }
 
 function showFatal(text) {
@@ -769,10 +780,12 @@ async function copyUrls() {
     }
     try {
         await navigator.clipboard.writeText(urls.join("\n"));
-        toast("Copied " + formatCount(urls.length) + (urls.length === 1 ? " URL" : " URLs")
-            + ". In XDM, choose “Add from clipboard”.");
+        const copiedMsg = urls.length === 1
+            ? msg("bulk_toast_copied_single", null, "Copied 1 URL to the clipboard. In XDM, choose “Add from clipboard”.")
+            : msg("bulk_toast_copied_plural", [formatCount(urls.length)], `Copied ${formatCount(urls.length)} URLs to the clipboard. In XDM, choose “Add from clipboard”.`);
+        toast(copiedMsg);
     } catch (e) {
-        toast("Couldn't copy to the clipboard: " + ((e && e.message) || e));
+        toast(msg("bulk_toast_copy_failed", null, "Couldn't copy to the clipboard") + ": " + ((e && e.message) || e));
     }
 }
 
@@ -802,11 +815,11 @@ function sendToXdm() {
                 return;
             }
             const reason = (response && response.error) || (chrome.runtime.lastError && chrome.runtime.lastError.message);
-            toast("Couldn't send to XDM" + (reason ? ": " + reason : "."));
+            toast(msg("bulk_toast_send_failed", null, "Couldn't send to XDM") + (reason ? ": " + reason : "."));
             renderSummary();
             return;
         }
-        toast("Sent " + formatCount(response.count) + " to XDM.");
+        toast(msg("bulk_toast_sent", [formatCount(response.count)], "Sent " + formatCount(response.count) + " to XDM."));
         setTimeout(() => window.close(), 900);
     });
 }

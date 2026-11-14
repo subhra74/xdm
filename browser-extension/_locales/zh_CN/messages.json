@@ -1,0 +1,435 @@
+{
+  "extName": {
+    "message": "XDM 浏览器集成模块",
+    "description": "Name of the Chrome extension"
+  },
+  "extNameFirefox": {
+    "message": "XDM 浏览器监视器 v9+",
+    "description": "Name of the Firefox extension"
+  },
+  "extDesc": {
+    "message": "将 Chrome 中的下载、视频和页面链接发送到 Xtreme Download Manager (XDM)。适用于 XDM 9.0 及更高版本。",
+    "description": "Description of the Chrome extension"
+  },
+  "extDescFirefox": {
+    "message": "将 Firefox 中的下载、视频和页面链接发送到 Xtreme Download Manager (XDM)。适用于 XDM 9.0 及更高版本。",
+    "description": "Description of the Firefox extension"
+  },
+  "command_open_bulk": {
+    "message": "使用 XDM 抓取此页面的所有链接",
+    "description": "Keyboard shortcut description"
+  },
+  "menu_download_any": {
+    "message": "使用 XDM 下载",
+    "description": "Context menu for links and media"
+  },
+  "menu_download_image": {
+    "message": "使用 XDM 下载图像",
+    "description": "Context menu for images"
+  },
+  "menu_bulk_page": {
+    "message": "使用 XDM 全部下载…",
+    "description": "Context menu for entire page"
+  },
+  "menu_bulk_selection": {
+    "message": "使用 XDM 下载所选链接…",
+    "description": "Context menu for selected text/links"
+  },
+  "msg_xdm_not_running": {
+    "message": "XDM 未运行",
+    "description": "Status message when XDM desktop app is closed"
+  },
+  "msg_nothing_to_send": {
+    "message": "没有可发送的内容",
+    "description": "Error message when no valid items were found to send"
+  },
+  "popup_monitoring_toggle": {
+    "message": "浏览器监视",
+    "description": "Tooltip and aria label for the monitoring toggle"
+  },
+  "popup_outdated_title": {
+    "message": "请更新 XDM",
+    "description": "Header in the update warning banner"
+  },
+  "popup_outdated_desc": {
+    "message": "低于此扩展所需的版本（需要 XDM 9.0.9 或更高版本）。部分下载和视频可能无法正常工作。",
+    "description": "Explanation text following the version label in the update banner"
+  },
+  "popup_outdated_link": {
+    "message": "更新 XDM",
+    "description": "Link to download the latest XDM"
+  },
+  "popup_empty_title": {
+    "message": "此页面未检测到视频",
+    "description": "Empty state title when no videos have been captured yet"
+  },
+  "popup_empty_hint": {
+    "message": "开始播放视频后，它将显示在这里。",
+    "description": "Empty state instructions"
+  },
+  "popup_blocked_title": {
+    "message": "XDM 不支持 YouTube",
+    "description": "Notice title on YouTube tabs"
+  },
+  "popup_blocked_desc": {
+    "message": "此网站上的视频和链接不会被捕获。此处的下载将由浏览器自行处理。",
+    "description": "Notice explanation on YouTube tabs"
+  },
+  "popup_btn_more_formats": {
+    "message": "更多格式",
+    "description": "Toggle button to show format explanation"
+  },
+  "popup_btn_clear": {
+    "message": "清空列表",
+    "description": "Button to clear captured videos list"
+  },
+  "popup_format_hint": {
+    "message": "XDM 会捕获当前页面正在播放的画质。在播放器中切换其他画质后，它将作为新项目显示在此处。",
+    "description": "Explanation of how video quality is detected"
+  },
+  "popup_btn_grab_all": {
+    "message": "抓取此页面的所有链接…",
+    "description": "Footer button to open bulk link picker"
+  },
+  "popup_label_previews": {
+    "message": "视频预览",
+    "description": "Toggle label for video thumbnail previews"
+  },
+  "popup_preview_unavailable": {
+    "message": "预览不可用",
+    "description": "Tooltip prefix when video preview cannot be loaded"
+  },
+  "bulk_title": {
+    "message": "使用 XDM 下载",
+    "description": "Window title of the bulk download picker"
+  },
+  "bulk_title_selection": {
+    "message": "所选链接位于 ",
+    "description": "Window title modifier when opened for selected text"
+  },
+  "bulk_btn_reload_capture": {
+    "message": "重新加载并捕获",
+    "description": "Banner action button to reload page and monitor network"
+  },
+  "bulk_btn_dismiss": {
+    "message": "忽略",
+    "description": "Button to close the warning banner"
+  },
+  "bulk_tab_links": {
+    "message": "链接",
+    "description": "Tab name for links on the page"
+  },
+  "bulk_tab_resources": {
+    "message": "图像与文件",
+    "description": "Tab name for embedded images and page resources"
+  },
+  "bulk_filter_placeholder": {
+    "message": "按名称、*.jpg 或 /正则表达式/ 过滤",
+    "description": "Search input placeholder in bulk download"
+  },
+  "bulk_filter_aria": {
+    "message": "过滤",
+    "description": "Aria label for the search input"
+  },
+  "bulk_chips_aria": {
+    "message": "文件类型",
+    "description": "Aria label for category chips container"
+  },
+  "bulk_min_size": {
+    "message": "最小尺寸",
+    "description": "Label for minimum image size filter"
+  },
+  "bulk_px": {
+    "message": "像素",
+    "description": "Unit for pixels"
+  },
+  "bulk_min_size_aria": {
+    "message": "最小图像尺寸（像素）",
+    "description": "Aria label for minimum size input"
+  },
+  "bulk_noise_title": {
+    "message": "页面脚本发起的请求以及视频流分片",
+    "description": "Tooltip for API & streams toggle"
+  },
+  "bulk_noise_label": {
+    "message": "接口与媒体流",
+    "description": "Label for the API and stream segments filter toggle"
+  },
+  "bulk_previews_title": {
+    "message": "每次预览都会重新下载图像，因此默认处于关闭状态",
+    "description": "Tooltip for preview images toggle"
+  },
+  "bulk_previews_label": {
+    "message": "预览图",
+    "description": "Label for preview images toggle"
+  },
+  "bulk_select_all_title": {
+    "message": "全选当前显示的项",
+    "description": "Tooltip and aria label for master checkbox"
+  },
+  "bulk_select_all": {
+    "message": "全选",
+    "description": "Label above the list when nothing is selected"
+  },
+  "bulk_invert": {
+    "message": "反选",
+    "description": "Button to invert current selection"
+  },
+  "bulk_empty_selection": {
+    "message": "页面的选中部分没有链接或图像。",
+    "description": "Empty state when opened in selection mode but nothing was selected"
+  },
+  "bulk_empty_page": {
+    "message": "此页面未找到可供下载的内容。",
+    "description": "Empty state when the page has nothing to download"
+  },
+  "bulk_empty_filters": {
+    "message": "没有符合当前筛选条件的项目。",
+    "description": "Empty state when filters hide all items"
+  },
+  "bulk_scanning": {
+    "message": "正在扫描页面…",
+    "description": "Status text while analyzing page contents"
+  },
+  "bulk_send_hint": {
+    "message": "XDM 未运行。请启动 XDM 以发送这些链接。",
+    "description": "Warning in footer when XDM is offline"
+  },
+  "bulk_rescan_title": {
+    "message": "重新扫描此页面",
+    "description": "Tooltip and aria label for rescan button"
+  },
+  "bulk_copy_urls": {
+    "message": "复制链接",
+    "description": "Button to copy selected URLs to clipboard"
+  },
+  "bulk_download": {
+    "message": "下载",
+    "description": "Primary action button to send selected items to XDM"
+  },
+  "bulk_download_count": {
+    "message": "下载 $COUNT$ 项",
+    "description": "Primary action button with selected item count",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "bulk_reloading_recording": {
+    "message": "正在重新加载页面并记录加载内容…",
+    "description": "Status text during full reload capture"
+  },
+  "bulk_fatal_no_page": {
+    "message": "没有可读取的页面。",
+    "description": "Fatal error when target tab cannot be found"
+  },
+  "bulk_fatal_page_closed": {
+    "message": "打开此窗口所对应的页面已关闭。",
+    "description": "Fatal error when target tab was closed by user"
+  },
+  "bulk_fatal_cannot_read": {
+    "message": "XDM 无法读取此页面。",
+    "description": "Fatal error when content script execution fails"
+  },
+  "bulk_fatal_restricted_kind": {
+    "message": "XDM 无法读取此类页面。浏览器内置页面、Chrome 应用商店及附加组件中心无法被扩展访问。",
+    "description": "Fatal error on internal/store browser pages"
+  },
+  "bulk_fatal_restricted_access": {
+    "message": "XDM 无权访问此网站。请在工具栏中打开扩展菜单授予访问权限，然后重新扫描。",
+    "description": "Fatal error when site permissions are missing"
+  },
+  "bulk_fatal_youtube": {
+    "message": "XDM 不从 YouTube 下载。此网站上的链接和视频由浏览器自行处理。",
+    "description": "Fatal error when bulk picker is invoked on YouTube"
+  },
+  "bulk_banner_buffer_full": {
+    "message": "部分文件可能缺失：此页面加载的内容超出了浏览器保留的记录上限。重新加载页面可捕获它们。",
+    "description": "Warning banner when Resource Timing buffer was filled"
+  },
+  "bulk_banner_too_many_links": {
+    "message": "此页面包含大量链接，仅显示前 10,000 个。",
+    "description": "Warning banner when page exceeds max link cap"
+  },
+  "bulk_banner_reload_failed": {
+    "message": "重新加载并捕获失败",
+    "description": "Prefix in banner error when reload capture failed"
+  },
+  "bulk_selected_of_shown": {
+    "message": "已选择 $CHOSEN$ / $SHOWN$ 项",
+    "description": "Selection counter above the list",
+    "placeholders": {
+      "chosen": {
+        "content": "$1"
+      },
+      "shown": {
+        "content": "$2"
+      }
+    }
+  },
+  "bulk_select_all_count": {
+    "message": "全选 $SHOWN$ 项",
+    "description": "Master selection label with count",
+    "placeholders": {
+      "shown": {
+        "content": "$1"
+      }
+    }
+  },
+  "bulk_item_ready": {
+    "message": " 项已就绪",
+    "description": "Footer summary for a single selected item"
+  },
+  "bulk_items_ready": {
+    "message": " 项已就绪",
+    "description": "Footer summary for multiple selected items"
+  },
+  "bulk_link_count_single": {
+    "message": " 个链接，",
+    "description": "Detail in summary for 1 link"
+  },
+  "bulk_link_count_plural": {
+    "message": " 个链接，",
+    "description": "Detail in summary for multiple links"
+  },
+  "bulk_images_and_files": {
+    "message": " 个图像与文件",
+    "description": "Detail in summary for resources"
+  },
+  "bulk_tick_hint": {
+    "message": "勾选要下载的文件",
+    "description": "Summary prompt when items are available but none selected"
+  },
+  "bulk_toast_copied_single": {
+    "message": "已将 1 个链接复制到剪贴板。在 XDM 中选择“从剪贴板添加”。",
+    "description": "Toast confirmation when 1 URL is copied"
+  },
+  "bulk_toast_copied_plural": {
+    "message": "已将 $COUNT$ 个链接复制到剪贴板。在 XDM 中选择“从剪贴板添加”。",
+    "description": "Toast confirmation when multiple URLs are copied",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "bulk_toast_copy_failed": {
+    "message": "无法复制到剪贴板",
+    "description": "Toast error prefix when clipboard write fails"
+  },
+  "bulk_toast_send_failed": {
+    "message": "无法发送到 XDM",
+    "description": "Toast error prefix when sending to XDM fails"
+  },
+  "bulk_toast_sent": {
+    "message": "已向 XDM 发送 $COUNT$ 项。",
+    "description": "Toast confirmation after sending items to XDM",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "cat_image": {
+    "message": "图像",
+    "description": "Category chip label"
+  },
+  "cat_video": {
+    "message": "视频",
+    "description": "Category chip label"
+  },
+  "cat_audio": {
+    "message": "音频",
+    "description": "Category chip label"
+  },
+  "cat_document": {
+    "message": "文档",
+    "description": "Category chip label"
+  },
+  "cat_archive": {
+    "message": "压缩包",
+    "description": "Category chip label"
+  },
+  "cat_program": {
+    "message": "程序",
+    "description": "Category chip label"
+  },
+  "cat_font": {
+    "message": "字体",
+    "description": "Category chip label"
+  },
+  "cat_other": {
+    "message": "其他",
+    "description": "Category chip label"
+  },
+  "disabled_title": {
+    "message": "浏览器监视已关闭",
+    "description": "Heading on the disabled state popup"
+  },
+  "disabled_desc": {
+    "message": "XDM 正在运行，但未监视此浏览器。请在 XDM 中重新开启浏览器监视以捕获下载和视频。",
+    "description": "Body description on the disabled state popup"
+  },
+  "error_status_not_running": {
+    "message": "XDM 未运行",
+    "description": "Heading on error popup when disconnected"
+  },
+  "error_detail_not_running": {
+    "message": "启动 XDM 以捕获此页面上的下载和视频。",
+    "description": "Body message on error popup when disconnected"
+  },
+  "error_status_connected": {
+    "message": "已连接到 XDM",
+    "description": "Heading on error popup when connection is restored"
+  },
+  "error_detail_connected": {
+    "message": "再次点击 XDM 图标以查看此页面检测到的内容。",
+    "description": "Body message on error popup when connection is restored"
+  },
+  "error_version_prefix": {
+    "message": "适用于 XDM 9.0.9 及更高版本。正在使用更早的版本？",
+    "description": "Version compatibility notice prefix"
+  },
+  "error_version_link": {
+    "message": "获取最新版 XDM",
+    "description": "Link text to download page"
+  },
+  "error_btn_launch": {
+    "message": "启动 XDM",
+    "description": "Button to trigger custom protocol xdm-app://launch"
+  },
+  "site_access_title": {
+    "message": "网站访问受限",
+    "description": "Heading when extension host permissions are withheld"
+  },
+  "site_access_detail": {
+    "message": "XDM 需要读取您浏览器发起的网络请求以将下载和视频转交处理。如果访问权限限制为特定网站或“点击时”，下载将由浏览器自行处理。",
+    "description": "Explanation of required host permissions"
+  },
+  "site_access_btn_allow": {
+    "message": "在所有网站上允许",
+    "description": "Button to request all sites host permission"
+  },
+  "site_access_denied": {
+    "message": "未授予访问权限。您也可以在扩展详情页 (chrome://extensions) 的“网站访问”中修改此项设置。",
+    "description": "Error message when user denies permission grant"
+  },
+  "error_no_video_decoder": {
+    "message": "此浏览器无法解码视频帧",
+    "description": "Video preview decoding error"
+  },
+  "error_cannot_decode_codec": {
+    "message": "此浏览器无法解码 $CODEC$",
+    "description": "Video preview unsupported codec error",
+    "placeholders": {
+      "codec": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_cannot_decode_frames": {
+    "message": "无法解码视频帧",
+    "description": "Video preview decoding failure"
+  }
+}

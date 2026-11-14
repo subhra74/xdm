@@ -11,9 +11,9 @@ window.onload = function () {
             return;
         }
         document.getElementById("notice").className = "notice ok";
-        document.getElementById("status").textContent = "Connected to XDM";
+        document.getElementById("status").textContent = chrome.i18n.getMessage("error_status_connected") || "Connected to XDM";
         document.getElementById("detail").textContent =
-            "Click the XDM icon again to see what has been detected on this page.";
+            chrome.i18n.getMessage("error_detail_connected") || "Click the XDM icon again to see what has been detected on this page.";
         document.getElementById("versionHint").hidden = true;
         document.getElementById("actions").hidden = true;
     });

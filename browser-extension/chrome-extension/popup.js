@@ -158,7 +158,8 @@ class VideoPopup {
             this.showPreview(thumb, images && images[0]);
         }).catch(err => {
             thumb.classList.remove('loading');
-            thumb.title = "Preview unavailable: " + (err && err.message ? err.message : err);
+            const prefix = window.t ? window.t("popup_preview_unavailable") : "Preview unavailable";
+            thumb.title = prefix + ": " + (err && err.message ? err.message : err);
         });
     }
 

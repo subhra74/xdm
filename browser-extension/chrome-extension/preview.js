@@ -53,8 +53,11 @@ class FramePreviews {
     }
 
     static async decode(reply) {
+        const i18n = typeof chrome !== "undefined" && chrome.i18n ? chrome.i18n : (typeof browser !== "undefined" ? browser.i18n : null);
+        const getMsg = (key, subs, fallback) => (i18n && i18n.getMessage(key, subs)) || fallback;
+
         if (typeof VideoDecoder === "undefined") {
-            throw new Error("This browser cannot decode video frames");
+            throw new Error(getMsg("error_no_video_decoder", null, "This browser cannot decode video frames"));
         }
         const config = { codec: reply.codec, codedWidth: reply.width, codedHeight: reply.height };
         if (reply.description) {
@@ -62,7 +65,7 @@ class FramePreviews {
         }
         const support = await VideoDecoder.isConfigSupported(config);
         if (!support.supported) {
-            throw new Error("This browser cannot decode " + reply.codec);
+            throw new Error(getMsg("error_cannot_decode_codec", [reply.codec], "This browser cannot decode " + reply.codec));
         }
 
         // Every chunk is a keyframe, so one decoder takes them all and one flush gets every frame out.
@@ -77,7 +80,7 @@ class FramePreviews {
         } catch (e) {
             // A frame that fails stops the decoder; keep the ones that came out before it.
             if (frames.length === 0) {
-                throw new Error("Could not decode the video frames");
+                throw new Error(getMsg("error_cannot_decode_frames", null, "Could not decode the video frames"));
             }
         } finally {
             if (decoder.state !== "closed") {
