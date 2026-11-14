@@ -125,7 +125,9 @@ abstract class AnnexBReader(protected val sink: SampleSink) : ElementaryStreamRe
             return
         }
         val vcl = isVcl(buf, start)
-        val startsAu = if (vcl) auHasVcl && isFirstSliceOfPicture(buf, start, end)
+        // Every slice is looked at (a reader may remember the previous slice's position), not only
+        // those after the first of the access unit.
+        val startsAu = if (vcl) isFirstSliceOfPicture(buf, start, end) && auHasVcl
         else auHasVcl && startsAccessUnit(buf, start)
         if (startsAu) emitAccessUnit()
         if (!auOpen) { auOpen = true; auSection = section }
@@ -192,6 +194,9 @@ abstract class AnnexBReader(protected val sink: SampleSink) : ElementaryStreamRe
             val step = if (lastInterval > 0) lastInterval else DEFAULT_INTERVAL
             dts = if (lastDts != NO_TS) lastDts + step else 0
             pts = if (lastPts != NO_TS) dts + (lastPts - lastDts) else dts
+        } else if (provisional.isNotEmpty() && lastRealDts == NO_TS) {
+            // Pictures before the stream's first timestamp: placed back from it.
+            backFillLeading(track.samples, provisional.size, dts, DEFAULT_INTERVAL)
         } else if (provisional.isNotEmpty() && lastRealDts != NO_TS && dts > lastRealDts) {
             val n = provisional.size + 1
             val span = dts - lastRealDts
@@ -303,7 +308,10 @@ abstract class AnnexBReader(protected val sink: SampleSink) : ElementaryStreamRe
         currentSets = setsInEffect()
         track.parameterSets.clear()
         track.parameterSets.addAll(currentSets)
-        for (nal in currentSets) try { onParameterSet(parameterSetType(nal), nal, track) } catch (_: Exception) {}
+        for (nal in currentSets) try { onParameterSet(parameterSetType(nal), nal, track) } catch (ex: Exception) {
+            // The track stays without a size; the muxer then reports it as lost and falls back.
+            Logger.error("XDM", "${track.codec}: parameter set type ${parameterSetType(nal)} (${nal.size} bytes) doesn't parse: $ex")
+        }
     }
 
     /**

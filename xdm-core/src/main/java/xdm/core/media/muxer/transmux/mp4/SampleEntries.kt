@@ -120,7 +120,11 @@ object SampleEntries {
                     u8(if (t.fullRange) 0x80 else 0)
                 }
             }
-            if (t.sarNum > 0 && t.sarDen > 0) box("pasp") { u32(t.sarNum); u32(t.sarDen) }
+            if (t.sarNum > 0 && t.sarDen > 0) {
+                // Reduced, as ffmpeg writes it (1024:1024 -> 1:1).
+                val g = gcd(t.sarNum, t.sarDen)
+                box("pasp") { u32(t.sarNum / g); u32(t.sarDen / g) }
+            }
         }
     }
 
@@ -132,8 +136,14 @@ object SampleEntries {
             u16(if (t.channelCount > 0) t.channelCount else 2)
             u16(16)                         // samplesize
             u16(0); u16(0)                  // pre_defined, reserved
-            u32((t.sampleRate.toLong() and 0xFFFF) shl 16)
+            // 16.16 fixed point: a rate above 65535 is halved until it fits (96000 -> 48000), as ffmpeg
+            // writes it; the decoder takes the real rate from its config (ASC, dac3...).
+            var rate = t.sampleRate.toLong()
+            while (rate > 0xFFFF) rate /= 2
+            u32(rate shl 16)
             config()
         }
     }
+
+    private tailrec fun gcd(a: Int, b: Int): Int = if (b == 0) a else gcd(b, a % b)
 }

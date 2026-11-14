@@ -434,6 +434,8 @@ def main():
             open(f'{OUT}/{name}.a.txt', 'w').write('\n'.join(a))
             cmd.append(f'{OUT}/{name}.a.txt')
         r = subprocess.run(cmd, capture_output=True, text=True)
+        # The muxer's log, for the safety-net lines ("Remux check: ...").
+        open(f'{OUT}/{name}.log', 'w').write(r.stdout + r.stderr)
         row = {'variant': name, 'mux': 'OK' if r.returncode == 0 and os.path.exists(out) else 'FAIL',
                'name_is_cfg': name.startswith('cfg_')}
         if row['mux'] == 'OK':

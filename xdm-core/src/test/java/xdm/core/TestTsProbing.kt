@@ -87,7 +87,7 @@ class TestTsProbing {
 
     /**
      * Runs [edit] on each PMT section start (section offset, ES-loop start, section end without CRC).
-     * The CRC isn't updated: the demuxer doesn't check it.
+     * The CRC is rewritten after [edit].
      */
     private fun eachPmt(b: ByteArray, edit: (p: Int, loop: Int, end: Int) -> Unit) {
         val pmt = pmtPid(b)
@@ -97,6 +97,7 @@ class TestTsProbing {
             val sectionLength = ((b[p + 1].toInt() and 0x0F) shl 8) or (b[p + 2].toInt() and 0xFF)
             val programInfo = ((b[p + 10].toInt() and 0x0F) shl 8) or (b[p + 11].toInt() and 0xFF)
             edit(p, p + 12 + programInfo, p + 3 + sectionLength - 4)
+            fixSectionCrc(b, p)
         }
     }
 

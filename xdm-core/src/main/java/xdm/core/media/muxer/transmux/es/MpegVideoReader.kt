@@ -56,6 +56,8 @@ class MpegVideoReader(private val sink: SampleSink, private val mpeg4: Boolean) 
 
     private var lastPts = NO_TS
     private var lastDts = NO_TS
+    /** A picture with a PES timestamp has been written. */
+    private var timed = false
     private var lastInterval = 0L
     private var descriptionIndex = 1
     private var config: ByteArray? = null
@@ -140,7 +142,11 @@ class MpegVideoReader(private val sink: SampleSink, private val mpeg4: Boolean) 
                 d = if (lastDts != NO_TS) lastDts + step else 0
                 p = if (lastPts != NO_TS) d + (lastPts - lastDts) else d
             }
-            if (lastDts != NO_TS && d > lastDts) lastInterval = d - lastDts
+            if (real && !timed && track.samples.size > 0) {
+                // Pictures before the stream's first timestamp: placed back from it.
+                backFillLeading(track.samples, track.samples.size, d, 3600L)
+            } else if (lastDts != NO_TS && d > lastDts) lastInterval = d - lastDts
+            if (real) timed = true
             lastPts = p; lastDts = d
             val at = sink.writeSampleData(picture.buffer, 0, picture.size)
             track.samples.add(at, picture.size, p, d, keyframe, descriptionIndex)

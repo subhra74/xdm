@@ -22,6 +22,14 @@ interface ContainerWriter : SampleSink {
     var repairTimeline: Boolean
 
     /**
+     * Whether the caller has a lossless fallback (TS join or merge, fMP4 join) for a remux whose timing
+     * [xdm.core.media.muxer.transmux.sample.RemuxCheck] rejects; asked only on a hard finding. Null: none.
+     */
+    var remuxCheckFallback: (() -> Boolean)?
+        get() = null
+        set(_) {}
+
+    /**
      * Writes the container structure and finalizes the file. Returns false if there is no media (or the
      * write was cancelled); an I/O failure is thrown, and the caller drops the partial output with [abort].
      */
@@ -36,5 +44,5 @@ interface ContainerWriter : SampleSink {
      */
     fun presentationZero(tracks: List<Track>): Double? =
         tracks.filter { it.samples.isNotEmpty() && it.timescale > 0 }
-            .minOfOrNull { presentationStart(it.samples).toDouble() / it.timescale }
+            .minOfOrNull { presentationStart(it).toDouble() / it.timescale }
 }

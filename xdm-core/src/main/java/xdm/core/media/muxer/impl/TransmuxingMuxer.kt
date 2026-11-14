@@ -196,6 +196,23 @@ class TransmuxingMuxer(
     }
 
     /**
+     * Whether [inputs] have a fallback that keeps every byte when the remux is refused for its timing
+     * ([xdm.core.media.muxer.transmux.sample.RemuxCheck]): TS segments joined, TS + TS / packed audio
+     * merged, one fMP4 rendition joined. Standalone MP4 parts and WebM have none: their remux is kept.
+     */
+    private fun losslessFallbackFor(inputs: List<List<String>>): Boolean {
+        if (failOneFileFallbacksForTest) return false
+        val lists = inputs.filter { it.isNotEmpty() }
+        val loc = lists.map { l -> l.map { SegmentProbe.locate(it) } }
+        fun allTs(i: Int) = loc[i].all { it?.container == Container.TS }
+        return when (lists.size) {
+            1 -> allTs(0) || singleInitFmp4(lists[0], loc[0])
+            2 -> allTs(0) && loc[1].map { it?.container }.toSet().let { it == setOf(Container.TS) || it == setOf(Container.PACKED_AUDIO) }
+            else -> false
+        }
+    }
+
+    /**
      * Two renditions that couldn't be remuxed together: merged into one `.ts` when the [primary] is TS
      * and the [secondary] TS or HLS packed audio ([TsMerge]). Otherwise the remux's error stays.
      */
@@ -426,11 +443,19 @@ class TransmuxingMuxer(
         if (!format.equals(requested, ignoreCase = true)) Logger.info("XDM", "Muxing as $format (asked for '$requested')")
         val writer: ContainerWriter =
             (if (MuxContainer.isMatroska(format)) MkvWriter(output, tempDir) { stopFlag.get() }
-            else Mp4Writer(output)).also { it.repairTimeline = discontinuous }
+            else Mp4Writer(output)).also {
+                it.repairTimeline = discontinuous
+                it.remuxCheckFallback = { losslessFallbackFor(inputs) }
+            }
         // Sample records of long streams spill to scratch files here; dropped when muxing ends.
         val spill = SampleSpill.open(File(tempDir))
         return try {
             val tracks = body(writer)
+            // A track with frames but no decoder configuration (H.264/H.265 with no SPS read: none in the
+            // segments, or one that didn't parse) can't be written: the writers would leave it out.
+            for (t in tracks) if (t.samples.isNotEmpty() && !t.isReady()) {
+                lost += "${t.codec} track with no usable decoder configuration (${t.samples.size} frames)"
+            }
             // A remux that leaves an audio or video stream out is not used: a fallback keeps everything.
             if (lost.isNotEmpty() && !stopFlag.get()) throw StreamLostException("Streams the remux can't carry: ${lost.joinToString()}")
             // An ad or other insert in another container restarts its timestamps, whatever the manifest says.

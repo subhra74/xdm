@@ -15,6 +15,9 @@ class Track(val codec: Codec) {
     /** MP4 media timescale. Video: 90000 (TS clock). Audio: sampling rate. */
     var timescale: Int = 90000
 
+    /** ISO 639-2 language of the stream (TS ISO_639_language_descriptor), or null when not given. */
+    var language: String? = null
+
     // --- Video ---
     var width: Int = 0
     var height: Int = 0
@@ -152,6 +155,7 @@ class Track(val codec: Codec) {
     /** Copies [from]'s codec configuration (not its samples) into this track, which has the same codec. */
     fun copyConfigFrom(from: Track) {
         timescale = from.timescale
+        if (language == null) language = from.language
         width = from.width; height = from.height
         matrix = from.matrix
         ptsOnly = from.ptsOnly

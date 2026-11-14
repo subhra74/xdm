@@ -241,9 +241,10 @@ class TestMkvOutput {
         val out = path("wrap.mkv")
         val writer = MkvWriter(out, workDir.path)
         val track = Track(Codec.VP9).apply { matroskaCodecId = "V_VP9"; timescale = 1000; width = 16; height = 16 }
-        // A keyframe at 40 s, then (in decode order) a frame presented at 1 s: 39 s before the cluster
-        // start, outside a block's signed 16-bit offset.
-        for ((pts, key) in listOf(40_000L to true, 1_000L to false, 40_040L to false)) {
+        // Keyframes at 0 and 40 s, then (in decode order) a frame presented at 1 s: 39 s before the
+        // cluster start, outside a block's signed 16-bit offset. (Not in the first GOP, where a frame
+        // presented before the keyframe is a leading picture and left out.)
+        for ((pts, key) in listOf(0L to true, 40_000L to true, 1_000L to false, 40_040L to false)) {
             val at = writer.writeSampleData(byteArrayOf(1, 2, 3), 0, 3)
             track.samples.add(at, 3, pts, track.samples.size.toLong() * 40, key)
         }
@@ -251,7 +252,7 @@ class TestMkvOutput {
         val d = MatroskaDemuxer(CountingSink()).also { it.parseSegment(out) }
         val s = d.tracks.single().samples
         val got = (0 until s.size).map { s.pts(it) }
-        assert(got == listOf(39_000L, 0L, 39_040L)) { "block times read back: $got" }
+        assert(got == listOf(0L, 40_000L, 1_000L, 40_040L)) { "block times read back: $got" }
     }
 
     // ---- shared timeline ----

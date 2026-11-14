@@ -24,13 +24,48 @@ class H264Reader(sink: SampleSink) : AnnexBReader(sink) {
 
     override fun isKeyframe(buf: ByteArray, start: Int) = type(buf, start) == 5
 
+    /** first_mb_in_slice of the previous slice (or data partition A), -1 before the first. */
+    private var lastFirstMb = -1
+
     /**
-     * first_mb_in_slice == 0: its ue(v) code is a single '1' bit right after the NAL header. Only
-     * slices and data partition A start with it (B and C start with slice_id), as in ffmpeg's parser.
+     * A slice starts a new picture when its first_mb_in_slice is 0 or not past the previous slice's,
+     * as ffmpeg's parser decides (`h264_find_frame_end`): a picture whose first slice was lost still
+     * gets its own sample. Only slices and data partition A carry it (B and C start with slice_id).
      */
-    override fun isFirstSliceOfPicture(buf: ByteArray, start: Int, end: Int) =
-        type(buf, start).let { it == 1 || it == 2 || it == 5 } &&
-            start + 1 < end && (buf[start + 1].toInt() and 0x80) != 0
+    override fun isFirstSliceOfPicture(buf: ByteArray, start: Int, end: Int): Boolean {
+        if (type(buf, start) !in intArrayOf(1, 2, 5)) return false
+        val firstMb = firstMbInSlice(buf, start + 1, end)
+        if (firstMb < 0) return false
+        val previous = lastFirstMb
+        lastFirstMb = firstMb
+        return firstMb == 0 || (previous >= 0 && firstMb <= previous)
+    }
+
+    /** The ue(v) first_mb_in_slice at [from], read over emulation prevention bytes; -1 if cut off. */
+    private fun firstMbInSlice(buf: ByteArray, from: Int, end: Int): Int {
+        var zeros = 0
+        var bits = 0
+        var value = 0
+        var leading = -1
+        var p = from
+        var run = 0 // zero bytes in a row, for 00 00 03
+        while (p < end && p < from + 12) {
+            val b = buf[p].toInt() and 0xFF
+            if (run >= 2 && b == 3) { run = 0; p++; continue }
+            run = if (b == 0) run + 1 else 0
+            for (k in 7 downTo 0) {
+                val bit = (b shr k) and 1
+                if (leading < 0) {
+                    if (bit == 0) { zeros++; if (zeros > 31) return -1 } else { leading = zeros; if (leading == 0) return 0 }
+                } else {
+                    value = (value shl 1) or bit
+                    if (++bits == leading) return (1 shl leading) - 1 + value
+                }
+            }
+            p++
+        }
+        return -1
+    }
 
     /**
      * A recovery point SEI (payload type 6) makes its picture a random access point: how open-GOP
@@ -63,7 +98,8 @@ class H264Reader(sink: SampleSink) : AnnexBReader(sink) {
     }
 
     override fun keepNal(buf: ByteArray, start: Int, end: Int): Boolean = when (val t = type(buf, start)) {
-        7, 8 -> { val nal = buf.copyOfRange(start, end); offerParameterSet(t, parameterSetId(nal), nal); true }
+        // SPS, PPS and SPS extension (auxiliary/alpha pictures): kept for the avcC as well.
+        7, 8, 13 -> { val nal = buf.copyOfRange(start, end); offerParameterSet(t, parameterSetId(nal), nal); true }
         9, 12 -> false // AUD / filler
         else -> true
     }

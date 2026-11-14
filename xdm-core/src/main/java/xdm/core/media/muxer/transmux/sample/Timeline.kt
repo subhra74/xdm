@@ -82,13 +82,34 @@ private const val PTS_ONLY_REORDER_FRAMES = 16
 private const val REORDER_WINDOW = 64
 
 /**
- * Earliest presentation time among the first samples in decode order. Only the leading window is
- * scanned: later samples may sit on a reset timeline after a discontinuity.
+ * Where a track's presentation starts. Video: the first keyframe's PTS, as ffmpeg starts the edit at
+ * the first sample's composition time; leading pictures presented before it (RASL after an HEVC CRA,
+ * B-frames before an H.264 recovery-point I) reference a GOP that isn't there and can't be decoded.
+ * Otherwise (and video with no keyframe in the window), the earliest PTS among the first samples in
+ * decode order. Only the leading window is scanned: later samples may sit on a reset timeline after a
+ * discontinuity.
  */
-internal fun presentationStart(samples: SampleTable): Long {
+internal fun presentationStart(samples: SampleTable, video: Boolean = false): Long {
+    val window = minOf(samples.size, REORDER_WINDOW)
+    if (video) for (i in 0 until window) if (samples.isKeyframe(i)) return samples.pts(i)
     var min = Long.MAX_VALUE
-    for (i in 0 until minOf(samples.size, REORDER_WINDOW)) min = minOf(min, samples.pts(i))
+    for (i in 0 until window) min = minOf(min, samples.pts(i))
     return min
+}
+
+/** [presentationStart] of [track]. */
+internal fun presentationStart(track: Track): Long = presentationStart(track.samples, track.codec.isVideo)
+
+/**
+ * Decode index up to which [track]'s leading pictures may lie: the samples before it presented before
+ * [presentationStart] are left out of a container without edit lists (Matroska). 0 for audio.
+ */
+internal fun leadingWindow(track: Track): Int {
+    if (!track.codec.isVideo) return 0
+    val s = track.samples
+    val window = minOf(s.size, REORDER_WINDOW)
+    val firstKey = (0 until window).firstOrNull { s.isKeyframe(it) } ?: return 0
+    return (firstKey + 1 until window).firstOrNull { s.isKeyframe(it) } ?: window
 }
 
 /**
@@ -112,7 +133,7 @@ internal fun presentationEnd(samples: SampleTable): Long {
  * Places the sections of a stream with discontinuities (timestamps restarting or jumping at
  * each one) back to back on one timeline, as players do: every track of section k is shifted by
  * the same amount, so the A/V offset inside a section is kept, and by just enough that no track
- * overlaps its previous section. A track that ended earlier is left with a small gap (a video
+ * overlaps its previous section, in presentation or in decode times. A track that ended earlier is left with a small gap (a video
  * frame shown a little longer, or audio timestamps resuming a little later).
  *
  * Sections are found per track as the timestamp jumps of [isJump]; the tracks must agree on
@@ -138,6 +159,11 @@ internal fun alignSections(tracks: List<Track>): Boolean {
                 val sectionStart = sectionFirstPresented(t.samples, from, starts[i].getOrElse(k + 1) { t.samples.size })
                 val trackEnd = sectionEnd(t, starts[i][k - 1], from)
                 shift = maxOf(shift, trackEnd - sectionStart.toDouble() / t.timescale)
+                // Decode times must go on too: a section with a deeper reorder delay starts decoding
+                // before its first frame is shown, possibly before the previous section's last DTS.
+                // (The writer would clamp that step to 0 and present every later frame that much late.)
+                val afterLastDts = (t.samples.dts(from - 1) + 1 - t.samples.dts(from)).toDouble() / t.timescale
+                shift = maxOf(shift, afterLastDts)
             }
         }
         var end = previousEnd

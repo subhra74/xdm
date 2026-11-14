@@ -141,7 +141,9 @@ class TestRemuxCheck {
             RemuxCheck.enforce = false
             assertEquals(listOf(Check.DTS_REPEAT, Check.PTS_REPEAT), RemuxCheck.review(listOf(bad), true).map { it.check }, "report only")
             RemuxCheck.enforce = true
-            assertThrows(RemuxCheckException::class.java, { RemuxCheck.review(listOf(bad), true) }, "enforced")
+            assertThrows(RemuxCheckException::class.java, { RemuxCheck.review(listOf(bad), true) { true } }, "enforced, with a fallback")
+            assertEquals(2, RemuxCheck.review(listOf(bad), true) { false }.size, "no lossless fallback: kept")
+            assertEquals(2, RemuxCheck.review(listOf(bad), true).size, "no fallback given: kept")
             val soft = video().also { it.guessedTimestamps = 10 }
             assertEquals(1, RemuxCheck.review(listOf(soft), true).size, "soft findings never throw")
         } finally {

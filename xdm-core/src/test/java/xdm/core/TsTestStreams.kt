@@ -5,6 +5,7 @@
 package xdm.core
 
 import xdm.core.media.muxer.transmux.es.SampleSink
+import xdm.core.media.muxer.transmux.ts.MpegCrc32
 import xdm.core.media.muxer.transmux.ts.TsDemuxer
 import java.io.ByteArrayOutputStream
 
@@ -49,15 +50,16 @@ internal class BitWriter {
 /** One PMT entry: stream type, PID and its ES_info descriptor bytes. */
 internal class TsStream(val type: Int, val pid: Int, val descriptors: ByteArray = ByteArray(0))
 
-/** Minimal MPEG-TS writer: PAT/PMT (CRC left zero: the demuxer doesn't check it) and PES packets. */
+/** Minimal MPEG-TS writer: PAT/PMT (with their CRC) and PES packets. */
 internal class TsBuilder {
     val out = ByteArrayOutputStream()
     private val cc = HashMap<Int, Int>()
 
     fun section(pid: Int, tableId: Int, body: ByteArray) {
         val len = body.size + 5 + 4
-        val sec = byteArrayOf(tableId.toByte(), (0xB0 or (len shr 8)).toByte(), len.toByte(), 0, 1, 0xC1.toByte(), 0, 0) +
-            body + ByteArray(4)
+        val head = byteArrayOf(tableId.toByte(), (0xB0 or (len shr 8)).toByte(), len.toByte(), 0, 1, 0xC1.toByte(), 0, 0) + body
+        val crc = MpegCrc32.of(head)
+        val sec = head + byteArrayOf((crc ushr 24).toByte(), (crc ushr 16).toByte(), (crc ushr 8).toByte(), crc.toByte())
         packets(pid, byteArrayOf(0) + sec, psi = true)
     }
 
@@ -124,4 +126,11 @@ internal fun demuxTs(ts: ByteArray, chunk: Int = 4096): TsDemuxer {
     while (k < ts.size) { val n = minOf(chunk, ts.size - k); d.feed(ts.copyOfRange(k, k + n), n); k += n }
     d.finish()
     return d
+}
+
+/** Rewrites the CRC of the PSI section whose table_id is at [at] in [b], after the section was edited. */
+internal fun fixSectionCrc(b: ByteArray, at: Int) {
+    val end = at + 3 + (((b[at + 1].toInt() and 0x0F) shl 8) or (b[at + 2].toInt() and 0xFF))
+    val crc = MpegCrc32.of(b, at, end - 4)
+    for (k in 0 until 4) b[end - 4 + k] = (crc ushr (24 - 8 * k)).toByte()
 }

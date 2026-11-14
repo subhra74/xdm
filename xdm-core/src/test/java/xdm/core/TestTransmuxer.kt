@@ -240,7 +240,7 @@ class TestTransmuxer {
 
     /**
      * Returns [ts] with an extra ID3 timed-metadata stream (stream_type 0x15, PID 0x102) declared in
-     * every PMT, like HLS streams that carry an ID3 PID. The CRC isn't updated (the demuxer ignores it).
+     * every PMT, like HLS streams that carry an ID3 PID (CRC rewritten).
      */
     private fun withMetadataStream(ts: ByteArray): ByteArray {
         val out = ts.copyOf()
@@ -270,6 +270,7 @@ class TestTransmuxer {
             val newLength = sectionLength + 5
             out[p + 1] = ((out[p + 1].toInt() and 0xF0) or (newLength shr 8)).toByte()
             out[p + 2] = newLength.toByte()
+            fixSectionCrc(out, p)
         }
         return out
     }

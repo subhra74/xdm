@@ -170,6 +170,8 @@ class TestFfmpegParity {
         }
         val f = writeVideo(t, "high.mp4")
         assertArrayEquals(byteArrayOf(0, 0, 0, 4, 0, 0, 0, 3), boxPayload(f, "pasp"), "pasp 4:3")
+        t.sarNum = 1024; t.sarDen = 1024
+        assertArrayEquals(byteArrayOf(0, 0, 0, 1, 0, 0, 0, 1), boxPayload(writeVideo(t, "high11.mp4"), "pasp"), "pasp reduced, as ffmpeg")
         assertArrayEquals("nclx".toByteArray() + byteArrayOf(0, 9, 0, 16, 0, 9, 0), boxPayload(f, "colr"), "colr BT.2020 / PQ")
         val avcC = boxPayload(f, "avcC")!!
         assertArrayEquals(byteArrayOf(0xFD.toByte(), 0xF8.toByte(), 0xF8.toByte(), 0), avcC.copyOfRange(avcC.size - 4, avcC.size), "High-profile avcC extension: 4:2:0, 8-bit, no SPS ext")

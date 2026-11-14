@@ -19,7 +19,7 @@ import xdm.core.util.Logger
 class Ac3Reader(private val sink: SampleSink, eac3: Boolean) : ElementaryStreamReader {
     override val track = Track(if (eac3) Codec.EAC3 else Codec.AC3)
     private val eac3 = eac3
-    private val clock = FrameClock()
+    private val clock = FrameClock(track.samples)
     private var configured = false
     /** Sampling rate of the current config (the track timescale stays the first config's). */
     private var rate = 0

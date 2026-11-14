@@ -22,7 +22,7 @@ import xdm.core.util.Logger
 class LatmReader(private val sink: SampleSink) : ElementaryStreamReader {
     override val track = Track(Codec.AAC)
 
-    private val clock = FrameClock()
+    private val clock = FrameClock(track.samples)
     private var rate = 0
     private var samplesPerFrame = 1024
     private var descriptionIndex = 1

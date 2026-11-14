@@ -111,6 +111,7 @@ def mux_ours(case, base):
         cmd.append(write_list(case.audio_lines, base + '.a.txt'))
     r = subprocess.run(cmd, capture_output=True, text=True)
     log = (r.stdout + r.stderr).splitlines()
+    open(base + '.xdm.log', 'w').write(r.stdout + r.stderr)   # for the safety-net lines ("Remux check: ...")
     return (out if r.returncode == 0 and os.path.exists(out) else None), log
 
 

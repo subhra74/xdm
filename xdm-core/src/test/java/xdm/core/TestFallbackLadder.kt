@@ -58,6 +58,11 @@ class TestFallbackLadder {
             // AV1 + AAC in TS: ffmpeg writes AV1 as a private stream (type 0x06) with no descriptor.
             runSoft(ffmpeg!!, *q, *v, *a, "-t", "4", "-c:v", "libsvtav1", "-preset", "12", "-g", "25", "-c:a", "aac",
                 "-f", "hls", "-hls_time", "2", "-hls_list_size", "0", "-hls_segment_filename", File(workDir, "av1_%d.ts").path, File(workDir, "av1.m3u8").path)
+            // x264 open GOP: only the first segment's keyframe is an IDR with SPS/PPS before it; the
+            // later ones open with a recovery-point I picture and no parameter sets.
+            run(ffmpeg!!, *q, *v, *a, "-t", "4", *h264, "-bf", "3", "-x264-params", "open-gop=1", "-c:a", "aac",
+                "-f", "hls", "-hls_time", "1", "-hls_list_size", "0",
+                "-hls_segment_filename", File(workDir, "ogop%d.ts").path, File(workDir, "ogop.m3u8").path)
             // VP8 + Vorbis (no MP4 sample entry for either) in standalone WebM segments.
             runSoft(ffmpeg!!, *q, *v, *a, "-t", "4", "-c:v", "libvpx", "-b:v", "500k", "-g", "25", "-c:a", "vorbis", "-strict", "-2", "-ac", "2",
                 "-f", "segment", "-segment_time", "2", "-segment_format", "webm", File(workDir, "wm%d.webm").path)
@@ -239,6 +244,21 @@ class TestFallbackLadder {
         // remuxed into an MP4 without it.
         assertEquals(OutputKind.TS_FALLBACK, m.outputKind)
         assertArrayEquals(segments.map { File(it).readBytes() }.reduce { x, y -> x + y }, File(out).readBytes(), "not the segments joined")
+    }
+
+    @Test
+    fun videoWithoutParameterSetsIsNotLostToAnAudioOnlyRemux() {
+        requireFfmpeg()
+        // Segments 1-3 only: the video's SPS/PPS were in segment 0.
+        val segments = files("ogop\\d+\\.ts").drop(1)
+        assertEquals(3, segments.size, "segments 1-3")
+        val out = path("ogop_out.mp4")
+        val m = TransmuxingMuxer("/nonexistent-appdir", "mp4")
+        assert(m.mux(segments, out, {}, workDir.path, false, false)) { "mux failed: ${m.lastError}" }
+        // ffmpeg fails such a remux ("dimensions not set"); an MP4 with the audio alone would pass as a
+        // good one. The segments are joined: a player that reads in-band parameter sets plays them.
+        assertEquals(OutputKind.TS_FALLBACK, m.outputKind)
+        assertEquals(listOf("h264", "aac"), codecs(out))
     }
 
     @Test

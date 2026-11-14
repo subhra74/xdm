@@ -104,3 +104,20 @@ internal class DtsInference(private val samples: SampleTable) {
         run.clear()
     }
 }
+
+/**
+ * Rows [0, count) of [samples] were written before the stream's first PES timestamp (timed from 0 at
+ * a guessed cadence): they are moved back from [firstDts] at [step] per picture, so they end where it
+ * starts, as ffmpeg back-fills the timestamps before the first one. Never below 0 (the step shrinks).
+ */
+internal fun backFillLeading(samples: SampleTable, count: Int, firstDts: Long, step: Long) {
+    if (count <= 0 || firstDts <= 0) return
+    val s = minOf(step, firstDts / count)
+    if (s <= 0) return
+    for (i in 0 until count) {
+        val offset = samples.pts(i) - samples.dts(i)
+        val d = firstDts - s * (count - i)
+        samples.setDts(i, d)
+        samples.setPts(i, d + offset)
+    }
+}

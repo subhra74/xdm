@@ -26,13 +26,14 @@ import java.io.IOException
  * Memory: one pass per track over its [SampleTable] (which reads spilled blocks through its own
  * cache), a [PTS_WINDOW]-entry ring and a few counters; nothing per sample, the same for any length.
  *
- * For now findings are logged only ([enforce] off): each one is a reading bug to fix or a check to
- * loosen before the writers act on them.
+ * Enforced since 2026-11-14 (the report-only sweep over the corpus, parity cases and real streams was
+ * clean after the reference-review fixes): a hard finding makes the writer refuse the remux when the
+ * caller has a lossless fallback; soft ones are logged only.
  */
 object RemuxCheck {
     /** Throw [RemuxCheckException] on a hard finding instead of only logging it. */
     @Volatile
-    internal var enforce = false
+    internal var enforce = true
 
     class Finding(val track: Int, val codec: Codec, val check: Check, val firstSample: Int, val count: Int, val detail: String) {
         val hard: Boolean get() = check.hard
@@ -52,14 +53,22 @@ object RemuxCheck {
     }
 
     /**
-     * Logs the findings for [tracks] (`would fall back: ...`) and returns them; with [enforce] on, a
-     * hard one throws instead. [mp4]: the writer stores composition offsets as 32-bit `ctts` values.
+     * Logs the findings for [tracks] and returns them. With [enforce] on, a hard one throws when the
+     * caller has a lossless [fallback] (TS join/merge, fMP4 join), so the download is saved that way;
+     * without one the remux is kept with a warning (a slightly-off file beats none). [mp4]: the writer
+     * stores composition offsets as 32-bit `ctts` values.
      */
-    fun review(tracks: List<Track>, mp4: Boolean): List<Finding> {
+    fun review(tracks: List<Track>, mp4: Boolean, fallback: (() -> Boolean)? = null): List<Finding> {
         val findings = run(tracks, mp4)
-        for (f in findings) Logger.info("XDM", "Remux check: would fall back: ${if (f.hard) "" else "(soft) "}$f")
-        val hard = findings.firstOrNull { it.hard }
-        if (enforce && hard != null) throw RemuxCheckException(hard.toString())
+        for (f in findings) Logger.info("XDM", "Remux check: ${if (f.hard) "" else "(soft) "}$f")
+        val hard = findings.firstOrNull { it.hard } ?: return findings
+        if (!enforce) {
+            Logger.info("XDM", "Remux check: report only, remux kept")
+        } else if (fallback != null && fallback()) {
+            throw RemuxCheckException(hard.toString())
+        } else {
+            Logger.info("XDM", "Remux check: no lossless fallback for these segments; remux kept despite: $hard")
+        }
         return findings
     }
 

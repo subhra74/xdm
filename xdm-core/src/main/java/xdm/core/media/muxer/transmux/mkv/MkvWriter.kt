@@ -16,6 +16,8 @@ import xdm.core.media.muxer.transmux.sample.RemuxCheckException
 import xdm.core.media.muxer.transmux.sample.Timeline
 import xdm.core.media.muxer.transmux.sample.Track
 import xdm.core.media.muxer.transmux.sample.upperMedian
+import xdm.core.media.muxer.transmux.sample.leadingWindow
+import xdm.core.media.muxer.transmux.sample.presentationStart
 import xdm.core.util.Logger
 import xdm.core.storage.LocalStorage
 import xdm.core.storage.RandomAccessOutput
@@ -52,6 +54,7 @@ class MkvWriter(
     constructor(outputPath: String, spoolDir: String? = null) : this(LocalStorage.file(outputPath), spoolDir)
 
     override var repairTimeline: Boolean = false
+    override var remuxCheckFallback: (() -> Boolean)? = null
 
     /**
      * Scratch copy of the sample data, read back at random: in [spoolDir] when given, otherwise next to
@@ -109,7 +112,7 @@ class MkvWriter(
         // The shared timeline step (as in the MP4 writer): sections back to back, jumps repaired.
         Timeline.prepare(plans.map { it.track }, repairTimeline)
         try {
-            RemuxCheck.review(plans.map { it.track }, mp4 = false)
+            RemuxCheck.review(plans.map { it.track }, mp4 = false, remuxCheckFallback)
         } catch (ex: RemuxCheckException) {
             spoolFile.delete(); throw ex
         }
@@ -120,6 +123,7 @@ class MkvWriter(
         for (p in plans) {
             val s = p.track.samples
             for (i in 0 until s.size) {
+                if (p.leftOut(i)) continue
                 globalMinMs = minOf(globalMinMs, msOf(s.pts(i), p.track.timescale))
                 endMs = maxOf(endMs, msOf(s.pts(i) + s.duration(i).coerceAtLeast(0), p.track.timescale))
             }
@@ -295,7 +299,9 @@ class MkvWriter(
                     uint(Ebml.TRACK_UID, p.trackNumber.toLong())
                     uint(Ebml.TRACK_TYPE, if (t.codec.isVideo) Ebml.TRACK_TYPE_VIDEO else Ebml.TRACK_TYPE_AUDIO)
                     uint(Ebml.FLAG_LACING, 0)
-                    str(Ebml.LANGUAGE, "und")
+                    // Only the first track of each type is the default, so a player picks one audio track.
+                    if (plans.first { it.track.codec.isVideo == t.codec.isVideo } !== p) uint(Ebml.FLAG_DEFAULT, 0)
+                    str(Ebml.LANGUAGE, t.language ?: "und")
                     str(Ebml.CODEC_ID, p.codecId)
                     // The frame duration, as ffmpeg writes it: players use it for the last frame and
                     // for frames without a following one (VLC buffers a second longer without it).
@@ -365,6 +371,7 @@ class MkvWriter(
             val p = plans[best]
             val samples = p.track.samples
             val first = cursors[best]++
+            if (p.leftOut(first)) continue
             var size = samples.sampleSize(first)
             if (p.pcm) {
                 // MP4 stores PCM one audio frame per sample: join the frames that follow each other in
@@ -469,6 +476,15 @@ class MkvWriter(
         val dolbyVision: DolbyVisionConfig?
     ) {
         val pcm = codecId.startsWith("A_PCM/")
+        /** After [Timeline.prepare]: where the track's presentation starts (video: its first keyframe). */
+        private val start by lazy { presentationStart(track) }
+        private val leading by lazy { leadingWindow(track) }
+
+        /**
+         * A leading picture presented before the first keyframe (RASL, open-GOP B-frames): MP4 hides it
+         * behind the edit list; Matroska has none, so it is left out.
+         */
+        fun leftOut(i: Int) = i < leading && track.samples.pts(i) < start
     }
 
     /** A DOVIDecoderConfigurationRecord and the box type (dvcC/dvvC/dvwC) it came in. */

@@ -570,17 +570,7 @@ internal class TsMerge(private val stop: AtomicBoolean) {
                 ((p[o + 4].toLong() and 0xFE) shr 1))
         }
 
-        private val CRC_TABLE = IntArray(256) { n ->
-            var c = n shl 24
-            repeat(8) { c = if (c and 0x80000000.toInt() != 0) (c shl 1) xor 0x04C11DB7 else c shl 1 }
-            c
-        }
-
-        /** MPEG-2 CRC32 (polynomial 0x04C11DB7, no reflection, initial 0xFFFFFFFF). */
-        fun crc32(b: ByteArray): Int {
-            var crc = -1
-            for (x in b) crc = (crc shl 8) xor CRC_TABLE[((crc ushr 24) xor (x.toInt() and 0xFF)) and 0xFF]
-            return crc
-        }
+        /** MPEG-2 CRC32 of a PSI section. */
+        fun crc32(b: ByteArray): Int = xdm.core.media.muxer.transmux.ts.MpegCrc32.of(b)
     }
 }
