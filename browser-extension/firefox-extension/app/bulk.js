@@ -53,7 +53,9 @@ const state = {
     pageUrl: "",
     pageTitle: "",
     anchor: -1,
-    scanning: false
+    scanning: false,
+    /** The tab is on a site the extension never reads (blocked-sites.js). */
+    blocked: false
 };
 
 const $ = id => document.getElementById(id);
@@ -239,6 +241,10 @@ async function scan() {
             return;
         }
         showPage(tab.title, tab.url);
+        if (isBlockedUrl(tab.url)) {
+            showBlockedSite();
+            return;
+        }
 
         let result;
         try {
@@ -324,6 +330,10 @@ async function reloadAndCapture() {
     let pattern;
     try {
         const tab = await browser.tabs.get(tabId);
+        if (isBlockedUrl(tab.url)) {
+            showBlockedSite();
+            return;
+        }
         const u = new URL(tab.url);
         pattern = u.protocol + "//" + u.hostname + "/*";
     } catch (e) {
@@ -699,8 +709,8 @@ function setBusy(text) {
 
 function clearBusy() {
     $("busy").hidden = true;
-    $("rescan").disabled = false;
-    $("reloadCapture").disabled = false;
+    $("rescan").disabled = state.blocked;
+    $("reloadCapture").disabled = state.blocked;
 }
 
 function showBanner(text, offerReload) {
@@ -712,6 +722,12 @@ function showBanner(text, offerReload) {
 
 function hideBanner() {
     $("banner").hidden = true;
+}
+
+/** The page is one the extension never reads (blocked-sites.js). Rescanning won't change that. */
+function showBlockedSite() {
+    state.blocked = true;
+    showFatal("XDM doesn't download from YouTube. Links and videos on this site are left to the browser.");
 }
 
 function showFatal(text) {

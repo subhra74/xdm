@@ -40,6 +40,12 @@ object BrowserIntegration {
     /** Body limit for `/batch`; every other path gets [HttpParser.DEFAULT_MAX_BODY_BYTES]. */
     const val MAX_BATCH_BODY_BYTES = 64L * 1024 * 1024
 
+    /**
+     * Longest playlist text taken from a `/media` message; the extension sends at most 256K. A longer
+     * one is ignored and the playlist fetched as before.
+     */
+    private const val MAX_MANIFEST_BODY_CHARS = 1024 * 1024
+
     private lateinit var server: HttpServer
     private var serverSocket: ServerSocket? = null
     /**
@@ -376,7 +382,12 @@ object BrowserIntegration {
 
     private fun onMediaMessage(context: RequestContext) {
         Logger.info("Received media message..")
-        decodeBody<ExtensionMessage>(context)?.let { CaptureHandler.onMedia(it) }
+        decodeBody<ExtensionMessage>(context)?.let { msg ->
+            // Used once, for parsing; the message itself may be kept longer (split tracks, subtitles),
+            // so it does not carry the text along.
+            val body = msg.manifestBody?.takeIf { it.length <= MAX_MANIFEST_BODY_CHARS }
+            CaptureHandler.onMedia(if (msg.manifestBody == null) msg else msg.copy(manifestBody = null), body)
+        }
     }
 
     private fun onDownloadMessage(context: RequestContext) {

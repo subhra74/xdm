@@ -22,6 +22,7 @@ reads, where that data goes, and what it keeps.
 |---|---|---|
 | Web addresses (URLs) of downloads and media files, and of the tab they came from | While browser monitoring is on | To hand the download or video to XDM and name it after the page |
 | Request and response headers of those requests (e.g. `Content-Type`, `Content-Length`, `Referer`, `User-Agent`) | Same | XDM repeats the exact request the browser made, so the server returns the same file |
+| The text of HLS video playlists (`.m3u8` files) a page's video player loads, up to 256 KB each | While browser monitoring is on | Some video sites let a playlist link be used only once, so XDM cannot fetch it again; with the text the player received, XDM can still list the video's qualities. Nothing else in the page's network traffic is read |
 | Cookies for the site of a download | Same, or when you choose "Download with XDM" or the bulk picker | Many sites only serve a file to a signed-in visitor; XDM needs the same cookies to fetch it |
 | Links, images and media addresses on a page, and the page title | Only when you open the bulk picker ("Download all with XDM…") on that page | To list them so you can choose which ones to download |
 

@@ -13,6 +13,10 @@ const DOWNLOAD_RESOURCE_TYPES = new Set(["main_frame", "sub_frame"]);
 // Without a Content-Disposition: attachment, Firefox shows these itself rather than downloading
 // them, so they are left alone - the same split Chrome's onDeterminingFilename makes for us there.
 // application/ogg is played inline like audio/ and video/ are.
+// Longest HLS playlist whose text is read on its way to the page (see readPlaylistBody).
+const PLAYLIST_BODY_MAX_CHARS = 256 * 1024;
+const PLAYLIST_SIGNATURE = /^\uFEFF?\s*#EXTM3U/;
+const M3U8_PATH = /\.m3u8(?:$|[/;])/i;
 const INLINE_TYPE = /^\s*(text\/|image\/|video\/|audio\/|application\/(pdf|json|xml|xhtml\+xml|javascript|ogg)\b|[^;]*\+xml\b)/i;
 
 /**
@@ -166,6 +170,13 @@ class RequestWatcher {
             // The common case by far (every image, script, XHR, ...): nothing to report.
             return;
         }
+        // YouTube is off limits (blocked-sites.js): anything a YouTube page or embedded player asked
+        // for. Neither taken over nor reported, so the browser keeps it. originUrl here is Firefox's
+        // own (what triggered the request); req.originUrl is where a redirect chain started.
+        if (isBlockedUrl(res.url) || isBlockedUrl(res.originUrl) || isBlockedUrl(res.documentUrl)
+            || (res.frameAncestors || []).some(f => isBlockedUrl(f.url))) {
+            return;
+        }
         let data = this.createRequestData(req, res, null, null, req.tabId);
         if (req.originUrl && req.originUrl !== data.url) {
             data.sourceUrl = req.originUrl;
@@ -176,20 +187,104 @@ class RequestWatcher {
         } else if (!media) {
             return;
         }
-        if (req.tabId === -1) {
-            this.callback(data);
-        } else {
+        let send = () => {
+            if (req.tabId === -1) {
+                this.callback(data);
+                return;
+            }
             chrome.tabs.get(req.tabId, tab => {
                 if (!chrome.runtime.lastError && tab) {
+                    // A request with nothing to tell where it came from, made in a YouTube tab.
+                    if (isBlockedUrl(tab.url) && !data.download) {
+                        return;
+                    }
                     data.tabTitle = tab.title;
                     data.tabUrl = tab.url;
                 }
                 this.callback(data);
             });
+        };
+        // An HLS playlist goes with the text the page received, once it has all arrived: some CDNs
+        // sign a playlist link for one request, so XDM's own fetch of it would fail.
+        let reading = !download && this.readPlaylistBody(res, text => {
+            if (text) {
+                data.manifestBody = text;
+            }
+            send();
+        });
+        if (!reading) {
+            send();
         }
         if (download) {
             return { cancel: true };
         }
+    }
+
+    /**
+     * Copies an HLS playlist's text while Firefox delivers it to the page, and calls [done] with it
+     * (null when it is not a playlist or runs past PLAYLIST_BODY_MAX_CHARS) once the response ends.
+     * Every chunk is written on to the page as it arrives, unchanged. False, and [done] is never
+     * called, when the response is not read: not a playlist by URL or type, or too large by its
+     * Content-Length.
+     */
+    readPlaylistBody(res, done) {
+        let headers = res.responseHeaders || [];
+        let header = name => {
+            let h = headers.find(h => h.name.toLowerCase() === name);
+            return h ? (h.value || "") : "";
+        };
+        let path = "";
+        try {
+            path = new URL(res.url).pathname;
+        } catch (e) {
+            return false;
+        }
+        if (!/mpegurl/i.test(header("content-type")) && !M3U8_PATH.test(path)) {
+            return false;
+        }
+        if (Number(header("content-length")) > PLAYLIST_BODY_MAX_CHARS) {
+            return false;
+        }
+        let filter;
+        try {
+            filter = browser.webRequest.filterResponseData(res.requestId);
+        } catch (e) {
+            return false;
+        }
+        let decoder = new TextDecoder();
+        let text = "";
+        let keep = true;
+        let finished = false;
+        let finish = body => {
+            if (!finished) {
+                finished = true;
+                done(body);
+            }
+        };
+        filter.ondata = event => {
+            filter.write(event.data);
+            if (!keep) {
+                return;
+            }
+            text += decoder.decode(event.data, { stream: true });
+            if (text.length > PLAYLIST_BODY_MAX_CHARS
+                || (text.length >= 64 && !PLAYLIST_SIGNATURE.test(text.slice(0, 64)))) {
+                keep = false;
+                text = "";
+            }
+        };
+        filter.onstop = () => {
+            try {
+                filter.close();
+            } catch (e) {
+            }
+            if (keep) {
+                text += decoder.decode();
+            }
+            finish(keep && PLAYLIST_SIGNATURE.test(text.slice(0, 64)) ? text : null);
+        };
+        filter.onerror = () => finish(null);
+        return true;
     }
 
     /** Drops requests that never reached a final response and never errored. */

@@ -42,6 +42,12 @@ data class ExtensionMessage(
     val sourceUrl: String? = null,
     /** `/download`: the cookies of [sourceUrl]'s host. */
     val sourceCookie: String? = null,
+    /**
+     * `/media`: the HLS playlist text the page's player received for [url], when the extension could
+     * read it. Some CDNs sign a playlist link for a single request, so XDM's own fetch would only get
+     * a 403. Null from older extensions and whenever the extension did not see the body.
+     */
+    val manifestBody: String? = null,
 )
 
 @Serializable

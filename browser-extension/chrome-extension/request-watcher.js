@@ -7,6 +7,15 @@ import { isBlockedUrl } from './blocked-sites.js';
 const OBSERVED_TTL_MS = 60000;
 const OBSERVED_MAX = 200;
 const DOWNLOAD_RESOURCE_TYPES = new Set(["main_frame", "sub_frame", "other", "object"]);
+// An HLS playlist response is held this long for its text from the page (hls-hook.js) before it is
+// reported without it. The text follows the headers within milliseconds when the page script saw
+// the request; when it did not (a worker loaded it), this is the delay XDM's own fetch starts after.
+const PLAYLIST_HOLD_MS = 1500;
+// Text that arrived before its response was reported is kept this long, and at most this many.
+const PLAYLIST_BODY_TTL_MS = 10000;
+const PLAYLIST_BODY_MAX = 32;
+const PLAYLIST_BODY_MAX_CHARS = 256 * 1024;
+const M3U8_PATH = /\.m3u8(?:$|[/;])/i;
 
 export default class RequestWatcher {
     constructor(callback) {
@@ -28,6 +37,10 @@ export default class RequestWatcher {
         // that woke the worker would otherwise never match.
         this.gate = null;
         this.registered = false;
+        // HLS responses waiting for their playlist text, and text waiting for its response; both
+        // keyed by playlistKey(). See reportMedia().
+        this.heldPlaylists = new Map();
+        this.playlistBodies = new Map();
     }
 
     updateConfig(config) {
@@ -171,13 +184,13 @@ export default class RequestWatcher {
             this.observe(data, req.originUrl);
         }
         if (req.tabId === -1) {
-            media && this.callback(data);
+            media && this.reportMedia(data, req.tabId);
             return;
         }
         // Fills the tab fields in on the cached object too, so a download reads them as well.
         chrome.tabs.get(req.tabId, tab => {
             if (chrome.runtime.lastError || !tab) {
-                media && this.callback(data);
+                media && this.reportMedia(data, req.tabId);
                 return;
             }
             if (isBlockedUrl(tab.url)) {
@@ -187,8 +200,106 @@ export default class RequestWatcher {
             }
             data.tabTitle = tab.title;
             data.tabUrl = tab.url;
-            media && this.callback(data);
+            media && this.reportMedia(data, req.tabId);
         });
+    }
+
+    /**
+     * Sends a media response to XDM. An HLS playlist goes with the text the page's player received
+     * (manifestBody) when hls-hook.js read it: some CDNs sign a playlist link for one request, so
+     * XDM's own fetch of it fails. The text usually comes in just after the headers, so the
+     * response is held for it up to PLAYLIST_HOLD_MS, then sent without.
+     */
+    reportMedia(data, tabId) {
+        if (tabId === -1 || !this.isPlaylistResponse(data)) {
+            this.callback(data);
+            return;
+        }
+        const key = this.playlistKey(tabId, data.url);
+        if (!key) {
+            this.callback(data);
+            return;
+        }
+        const body = this.playlistBodies.get(key);
+        if (body && Date.now() - body.ts <= PLAYLIST_BODY_TTL_MS) {
+            this.playlistBodies.delete(key);
+            data.manifestBody = body.text;
+            this.callback(data);
+            return;
+        }
+        // A repeat of a request still waiting (a retry, a live refresh): the older one goes as it is.
+        this.releasePlaylist(key);
+        const timer = setTimeout(() => this.releasePlaylist(key), PLAYLIST_HOLD_MS);
+        this.heldPlaylists.set(key, { data: data, timer: timer });
+    }
+
+    /** Sends a held playlist response now, with whatever text it has. */
+    releasePlaylist(key) {
+        const held = this.heldPlaylists.get(key);
+        if (!held) {
+            return;
+        }
+        clearTimeout(held.timer);
+        this.heldPlaylists.delete(key);
+        this.registered && this.callback(held.data);
+    }
+
+    /**
+     * Playlist text hls-relay.js passed on from a frame of tab [tabId]. The page could send any text
+     * under any URL, so it is only ever used for a response this tab really got, and XDM only parses
+     * it (as it would parse what it fetched itself).
+     */
+    onPlaylistBody(tabId, url, text) {
+        if (!this.registered || tabId === undefined || tabId === -1 || typeof text !== "string"
+            || text.length > PLAYLIST_BODY_MAX_CHARS) {
+            return;
+        }
+        const key = this.playlistKey(tabId, url);
+        if (!key) {
+            return;
+        }
+        const held = this.heldPlaylists.get(key);
+        if (held) {
+            held.data.manifestBody = text;
+            this.releasePlaylist(key);
+            return;
+        }
+        // The page read it before the response was reported (the tab lookup is async): keep it briefly.
+        const now = Date.now();
+        this.playlistBodies.delete(key);
+        this.playlistBodies.set(key, { text: text, ts: now });
+        for (const [k, v] of this.playlistBodies) {
+            if (now - v.ts <= PLAYLIST_BODY_TTL_MS && this.playlistBodies.size <= PLAYLIST_BODY_MAX) {
+                break;
+            }
+            this.playlistBodies.delete(k);
+        }
+    }
+
+    /** ".m3u8" in the path or an mpegurl Content-Type: what hls-hook.js reads too. */
+    isPlaylistResponse(data) {
+        for (const name in data.responseHeaders) {
+            if (name.toLowerCase() === "content-type"
+                && data.responseHeaders[name].some(v => /mpegurl/i.test(v || ""))) {
+                return true;
+            }
+        }
+        try {
+            return M3U8_PATH.test(new URL(data.url).pathname);
+        } catch (e) {
+            return false;
+        }
+    }
+
+    /** Tab plus URL without its fragment: the page sees the URL without one, webRequest may keep it. */
+    playlistKey(tabId, url) {
+        try {
+            const u = new URL(url);
+            u.hash = "";
+            return tabId + " " + u.href;
+        } catch (e) {
+            return null;
+        }
     }
 
     /** Caches a download candidate under its final URL, and under the chain's first if it differs. */
@@ -282,6 +393,11 @@ export default class RequestWatcher {
         // Nothing half-seen is worth keeping: by the time the listeners return, these are stale.
         this.requestMap.clear();
         this.observed.clear();
+        for (const held of this.heldPlaylists.values()) {
+            clearTimeout(held.timer);
+        }
+        this.heldPlaylists.clear();
+        this.playlistBodies.clear();
         chrome.webRequest.onSendHeaders.removeListener(this.onSendHeadersEventCallback);
         chrome.webRequest.onHeadersReceived.removeListener(this.onHeadersReceivedEventCallback);
         chrome.webRequest.onErrorOccurred.removeListener(this.onErrorOccurredEventCallback);
