@@ -52,6 +52,9 @@ internal object TrackMerge {
                     s.isKeyframe(i), map.getOrElse(d - 1) { 1 }
                 )
             }
+            if (run.to == s.size && run.to > run.from && s.lastDuration > 0) {
+                target.samples.lastDuration = rescale(s.lastDuration, from, to)
+            }
         }
         return out.values.toList()
     }

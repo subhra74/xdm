@@ -119,68 +119,69 @@ class H264Reader(sink: SampleSink) : AnnexBReader(sink) {
         bit.readUe()
     } catch (_: Exception) { 0 }
 
-    private fun parseSps(nal: ByteArray, track: Track) {
-        // nal[0] is the NAL header; RBSP starts at index 1.
-        val rbsp = NalUnitUtil.unescapeRbsp(nal, 1, nal.size - 1)
-        val bit = ParsableBitArray(rbsp)
-        val profileIdc = bit.readBits(8)
-        bit.skipBits(8)            // constraint flags + reserved
-        bit.skipBits(8)            // level_idc
-        bit.readUe()               // seq_parameter_set_id
+    companion object {
+        /** Reads an SPS NAL unit (header included) into [track]: size, bit depth, chroma format, VUI. */
+        internal fun parseSps(nal: ByteArray, track: Track) {
+            // nal[0] is the NAL header; RBSP starts at index 1.
+            val rbsp = NalUnitUtil.unescapeRbsp(nal, 1, nal.size - 1)
+            val bit = ParsableBitArray(rbsp)
+            val profileIdc = bit.readBits(8)
+            bit.skipBits(8)            // constraint flags + reserved
+            bit.skipBits(8)            // level_idc
+            bit.readUe()               // seq_parameter_set_id
 
-        var chromaFormatIdc = 1
-        if (profileIdc in intArrayOf(100, 110, 122, 244, 44, 83, 86, 118, 128, 138, 139, 134, 135)) {
-            chromaFormatIdc = bit.readUe()
-            if (chromaFormatIdc == 3) bit.skipBits(1) // separate_colour_plane_flag
-            track.bitDepthLuma = bit.readUe() + 8
-            track.bitDepthChroma = bit.readUe() + 8
-            bit.skipBits(1)        // qpprime_y_zero_transform_bypass_flag
-            if (bit.readBit()) {   // seq_scaling_matrix_present_flag
-                val count = if (chromaFormatIdc != 3) 8 else 12
-                for (i in 0 until count) {
-                    if (bit.readBit()) skipScalingList(bit, if (i < 6) 16 else 64)
+            var chromaFormatIdc = 1
+            if (profileIdc in intArrayOf(100, 110, 122, 244, 44, 83, 86, 118, 128, 138, 139, 134, 135)) {
+                chromaFormatIdc = bit.readUe()
+                if (chromaFormatIdc == 3) bit.skipBits(1) // separate_colour_plane_flag
+                track.bitDepthLuma = bit.readUe() + 8
+                track.bitDepthChroma = bit.readUe() + 8
+                bit.skipBits(1)        // qpprime_y_zero_transform_bypass_flag
+                if (bit.readBit()) {   // seq_scaling_matrix_present_flag
+                    val count = if (chromaFormatIdc != 3) 8 else 12
+                    for (i in 0 until count) {
+                        if (bit.readBit()) skipScalingList(bit, if (i < 6) 16 else 64)
+                    }
                 }
             }
-        }
-        bit.readUe()               // log2_max_frame_num_minus4
-        val picOrderCntType = bit.readUe()
-        if (picOrderCntType == 0) {
-            bit.readUe()           // log2_max_pic_order_cnt_lsb_minus4
-        } else if (picOrderCntType == 1) {
-            bit.skipBits(1)        // delta_pic_order_always_zero_flag
-            bit.readSe()           // offset_for_non_ref_pic
-            bit.readSe()           // offset_for_top_to_bottom_field
-            val n = bit.readUe()
-            repeat(n) { bit.readSe() }
-        }
-        bit.readUe()               // max_num_ref_frames
-        bit.skipBits(1)            // gaps_in_frame_num_value_allowed_flag
-        val picWidthInMbs = bit.readUe() + 1
-        val picHeightInMapUnits = bit.readUe() + 1
-        val frameMbsOnly = bit.readBit()
-        if (!frameMbsOnly) bit.skipBits(1) // mb_adaptive_frame_field_flag
-        bit.skipBits(1)            // direct_8x8_inference_flag
+            bit.readUe()               // log2_max_frame_num_minus4
+            val picOrderCntType = bit.readUe()
+            if (picOrderCntType == 0) {
+                bit.readUe()           // log2_max_pic_order_cnt_lsb_minus4
+            } else if (picOrderCntType == 1) {
+                bit.skipBits(1)        // delta_pic_order_always_zero_flag
+                bit.readSe()           // offset_for_non_ref_pic
+                bit.readSe()           // offset_for_top_to_bottom_field
+                val n = bit.readUe()
+                repeat(n) { bit.readSe() }
+            }
+            bit.readUe()               // max_num_ref_frames
+            bit.skipBits(1)            // gaps_in_frame_num_value_allowed_flag
+            val picWidthInMbs = bit.readUe() + 1
+            val picHeightInMapUnits = bit.readUe() + 1
+            val frameMbsOnly = bit.readBit()
+            if (!frameMbsOnly) bit.skipBits(1) // mb_adaptive_frame_field_flag
+            bit.skipBits(1)            // direct_8x8_inference_flag
 
-        var cropLeft = 0; var cropRight = 0; var cropTop = 0; var cropBottom = 0
-        if (bit.readBit()) {       // frame_cropping_flag
-            cropLeft = bit.readUe(); cropRight = bit.readUe()
-            cropTop = bit.readUe(); cropBottom = bit.readUe()
+            var cropLeft = 0; var cropRight = 0; var cropTop = 0; var cropBottom = 0
+            if (bit.readBit()) {       // frame_cropping_flag
+                cropLeft = bit.readUe(); cropRight = bit.readUe()
+                cropTop = bit.readUe(); cropBottom = bit.readUe()
+            }
+
+            val width = picWidthInMbs * 16
+            val height = picHeightInMapUnits * 16 * (if (frameMbsOnly) 1 else 2)
+            // Chroma subsampling for crop units.
+            val subWidthC = if (chromaFormatIdc == 1 || chromaFormatIdc == 2) 2 else 1
+            val subHeightC = if (chromaFormatIdc == 1) 2 else 1
+            val cropUnitX = if (chromaFormatIdc == 0) 1 else subWidthC
+            val cropUnitY = (if (chromaFormatIdc == 0) 1 else subHeightC) * (if (frameMbsOnly) 1 else 2)
+            track.width = width - cropUnitX * (cropLeft + cropRight)
+            track.height = height - cropUnitY * (cropTop + cropBottom)
+            track.chromaFormat = chromaFormatIdc
+            if (bit.readBit()) Vui.read(bit, track) // vui_parameters_present_flag
         }
 
-        val width = picWidthInMbs * 16
-        val height = picHeightInMapUnits * 16 * (if (frameMbsOnly) 1 else 2)
-        // Chroma subsampling for crop units.
-        val subWidthC = if (chromaFormatIdc == 1 || chromaFormatIdc == 2) 2 else 1
-        val subHeightC = if (chromaFormatIdc == 1) 2 else 1
-        val cropUnitX = if (chromaFormatIdc == 0) 1 else subWidthC
-        val cropUnitY = (if (chromaFormatIdc == 0) 1 else subHeightC) * (if (frameMbsOnly) 1 else 2)
-        track.width = width - cropUnitX * (cropLeft + cropRight)
-        track.height = height - cropUnitY * (cropTop + cropBottom)
-        track.chromaFormat = chromaFormatIdc
-        if (bit.readBit()) Vui.read(bit, track) // vui_parameters_present_flag
-    }
-
-    companion object {
         /** Skips an H.264/H.265 scaling list of [size] coefficients. */
         fun skipScalingList(bit: ParsableBitArray, size: Int) {
             var lastScale = 8

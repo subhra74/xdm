@@ -389,7 +389,8 @@ class Mp4Writer(private val output: StorageFile, repairTimeline: Boolean = false
             fullBoxHeader(0, 0)
             // Sample entries copied from an MP4 input (avc1/mp4a/...) or frozen by a reader when the
             // stream's config changed mid-way (see Track.additionalSampleEntries); else built now.
-            val entries = listOf(t.sampleEntryBox ?: SampleEntries.build(t)!!) + t.additionalSampleEntries
+            val entries = (listOf(t.sampleEntryBox ?: SampleEntries.build(t)!!) + t.additionalSampleEntries)
+                .map { SampleEntries.withVuiBoxes(it, t.width, t.height) }
             // An esds without bitrates (ours) gets the track's, measured in one pass, as ffmpeg fills them.
             val rates = if (entries.any { CodecBoxes.esdsRatesUnset(it) }) EsdsRates.of(t) else null
             u32(entries.size)

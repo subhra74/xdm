@@ -13,7 +13,8 @@ import os, subprocess, sys, urllib.parse
 def get(url, rng=None):
     """The body at [url] (bytes [rng] = (start, end) inclusive), through curl: it uses the system's trusted
     certificates, which this Python may not have."""
-    cmd = ['curl', '-sSfL', '-m', '120', '-A', 'xdm-parity-harness', url]
+    # Retries: some public test servers answer 502/503 or drop connections now and then.
+    cmd = ['curl', '-sSfL', '-m', '120', '--retry', '6', '--retry-all-errors', '--retry-delay', '3', '-A', 'xdm-parity-harness', url]
     if rng:
         cmd[1:1] = ['-r', f'{rng[0]}-{rng[1]}']
     return subprocess.run(cmd, capture_output=True, check=True).stdout

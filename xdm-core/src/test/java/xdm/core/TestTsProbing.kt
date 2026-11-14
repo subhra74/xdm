@@ -163,6 +163,15 @@ class TestTsProbing {
         return text
     }
 
+    /** codec_type of each stream of [path], in file order. */
+    private fun streamTypes(path: String): List<String> {
+        val p = ProcessBuilder(which("ffprobe")!!, "-v", "error", "-show_entries", "stream=codec_type", "-of", "csv=p=0", path)
+            .redirectErrorStream(true).start()
+        val text = p.inputStream.readBytes().toString(Charsets.UTF_8)
+        p.waitFor()
+        return text.lines().map { it.substringBefore(",").trim() }.filter { it.isNotEmpty() }
+    }
+
     private fun assertSameMedia(reference: String, actual: String, label: String, audio: Boolean = true) {
         val v = md5(reference, "v")
         assert(v.isNotEmpty()) { "$label: reference has no video" }
@@ -187,6 +196,9 @@ class TestTsProbing {
                 val out = File(workDir, "${codec}_${type}.mp4").absolutePath
                 assert(mux(patched(fixture("$codec.ts"), "${codec}_$type.ts", type), out)) { "$label: mux failed" }
                 assertSameMedia(ref, out, label)
+                // The PMT lists the video first: so does the output (ffmpeg creates its streams from the
+                // PMT), although the audio was identified first.
+                assertEquals(listOf("video", "audio"), streamTypes(out), "$label: track order")
             }
         }
     }

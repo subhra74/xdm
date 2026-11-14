@@ -23,6 +23,11 @@ PROBE = ['-probesize', '500M', '-analyzeduration', '30M']
 # length, and within PCM_TOLERANCE (of 32767) outside a window right after each boundary.
 PCM_TOLERANCE = 64
 BOUNDARY_WINDOW = 4096
+# Ours may end earlier than the reference decode by: the input's own duration of its last sample (D25:
+# a packager's trun/stts marking the encoder padding of the last frame, which ffmpeg's HLS demuxer, the
+# reference, doesn't apply; up to a frame, FLAC frames up to 4608 samples) plus ffmpeg >= 9.0 cutting the
+# last audio packet by a leading empty edit's length (see compare; 1 ms, 96 samples at 96 kHz).
+END_TRIM_MAX = 4608 + 96
 
 REFERENCE = {'mod_asplit_mono': 'aac_mono_44k', 'mod_nodts_hevc8': 'hevc8', 'mod_pidshift': 'short_seg', 'mod_vsplit_nopts_hevc': 'hevc8',
              # ffmpeg reads a trun without data_offset from the base offset, against ISO 14496-12
@@ -129,17 +134,24 @@ def pcm(inp):
 
 
 def compare_pcm(ref_inputs, out):
-    """Largest sample difference outside the boundary windows; None if the lengths differ."""
+    """Largest sample difference outside the boundary windows; None if the lengths don't line up.
+    Ours may be shorter: by the audio before the first video frame (D14: time zero is the first video
+    frame) and by up to END_TRIM_MAX samples at the end (see above)."""
     ref, boundaries = array.array('h'), []
     for inp in ref_inputs:
         boundaries.append(len(ref)); ref.extend(pcm(inp))
     got = pcm(out)
-    if len(got) != len(ref):
+    d = len(ref) - len(got)
+    if d < 0 or not got:
         return None
+    # Where ours starts in the reference: the start trim that matches best near the start.
+    head = min(len(got), 512)
+    start = min(range(max(0, d - END_TRIM_MAX), d + 1),
+                key=lambda s: max(abs(ref[s + i] - got[i]) for i in range(head)))
     skip = set()
     for b in boundaries[1:]:
-        skip.update(range(b, min(b + BOUNDARY_WINDOW, len(ref))))
-    return max((abs(ref[i] - got[i]) for i in range(len(ref)) if i not in skip), default=0)
+        skip.update(range(b - start, b - start + BOUNDARY_WINDOW))
+    return max((abs(ref[start + i] - got[i]) for i in range(len(got)) if i not in skip), default=0)
 
 
 def cli_frames(inp, kind):
@@ -359,14 +371,23 @@ def compare_config_runs(ref_inputs, out):
     return issues
 
 
-def compare(ref, got, lead=0, straddles=False):
+def compare(ref, got, lead=0, audio=False):
     """Time zero is the first video frame (D14 in the parity doc): the MP4's edit skips the [lead] audio
-    frames that end before it, and when one frame [straddles] it, that frame is cut and decodes to a
-    shorter frame of its own. Up to those leading frames may be missing or differ; the rest match in order."""
+    frames that end before it, and the next frame, when time zero falls inside it (even by one sample,
+    which the 0.5 ms rule of leading_audio doesn't see), is cut and decodes shorter. For [audio] the last
+    frame may also differ: ffmpeg >= 9.0 trims the last audio packet to the track's media duration
+    measured from the presentation start, so a track that opens with an empty edit (ours: 1 ms whenever
+    an edit skips media) loses that much at the end (mov.c mov_finalize_packet; our edit is right).
+    Up to those frames may be missing or differ; the rest match in order."""
     matched = sum((collections.Counter(ref) & collections.Counter(got)).values())
-    ok = ref == got or (lead and ref[lead:] == got) or (straddles and ref[lead + 1:] == got[1:] and len(got) == len(ref) - lead)
+
+    def same(r, g):
+        return r == g or (audio and len(r) == len(g) and len(r) > 1 and r[:-1] == g[:-1])
+
+    ok = same(ref, got) or (lead and same(ref[lead:], got)) or \
+        (len(got) == len(ref) - lead and len(got) > 1 and same(ref[lead + 1:], got[1:]))
     return {'ref': len(ref), 'out': len(got), 'matched': matched, 'in_order': bool(ok),
-            **({'lead_skipped': lead + (1 if straddles else 0)} if ok and ref != got else {})}
+            **({'lead_skipped': lead} if ok and ref != got else {})}
 
 
 def leading_audio(ref_inputs_a, ref_inputs_v):
@@ -447,7 +468,7 @@ def main():
                     if kind == 'a':
                         lead, straddles = leading_audio(ref_inputs, [f[0] if f[0].endswith('.m3u8') else 'concat:' + '|'.join(f)
                                                                      for k, f in refgroups if 'v' in k])
-                    row[kind] = compare(hashes(ref_inputs, kind), hashes([out], kind), lead, straddles)
+                    row[kind] = compare(hashes(ref_inputs, kind), hashes([out], kind), lead, kind == 'a')
                     if kind == 'a' and (name.startswith('cfg_') or name in DISCONTINUOUS):
                         row['config_issues'] = compare_config_runs(ref_inputs_flat(refgroups), out)
                     if kind == 'a' and name in DECODER_DIFFERS:

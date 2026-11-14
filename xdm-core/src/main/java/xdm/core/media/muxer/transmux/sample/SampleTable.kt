@@ -73,7 +73,16 @@ class SampleTable : AbstractList<Sample>(), Closeable {
         tail.dts[k] = dts
         tail.flags[k] = ((if (keyframe) KEY_FLAG else 0) or descriptionIndex).toShort()
         count++
+        lastDuration = -1
     }
+
+    /**
+     * The input's own duration (track ticks) of the last row, when its container gives one (MP4 `trun`
+     * or `stts`); -1 otherwise. Set right after [add]; any later [add] clears it. The last row has no
+     * next decode time to measure against: a short final frame (FLAC, encoder padding trimmed by the
+     * packager) keeps its length instead of repeating the step before it, as ffmpeg writes it.
+     */
+    var lastDuration = -1L
 
     fun fileOffset(i: Int): Long = block(i).offset[i and MASK]
     fun sampleSize(i: Int): Int = block(i).size[i and MASK]
@@ -96,10 +105,14 @@ class SampleTable : AbstractList<Sample>(), Closeable {
         }
     }
 
-    /** Decode-time step to the next sample; the last sample repeats the step before it, a lone sample gets 1. */
+    /**
+     * Decode-time step to the next sample; the last sample its [lastDuration] when known, else the step
+     * before it; a lone sample gets 1.
+     */
     fun rawDuration(i: Int): Long = when {
-        count == 1 -> 1
         i < count - 1 -> dts(i + 1) - dts(i)
+        lastDuration > 0 -> lastDuration
+        count == 1 -> 1
         else -> dts(i) - dts(i - 1)
     }
 

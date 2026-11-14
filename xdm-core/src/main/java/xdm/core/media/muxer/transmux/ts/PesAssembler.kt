@@ -33,7 +33,17 @@ class PesAssembler(reader: ElementaryStreamReader, private val clock: TimestampU
             buffer.reset()
             started = true
         }
-        if (started) { buffer.write(data, start, end - start); bytesSeen += end - start }
+        if (started) {
+            buffer.write(data, start, end - start); bytesSeen += end - start
+            // A bounded PES (PES_packet_length > 0) is handed on once complete, as ffmpeg's mpegts_push_data
+            // emits it; the rest until the next start is not payload. Which PES is complete first decides the
+            // wrap reference (TimestampUnwrapper), as ffmpeg's first packet out does.
+            if (buffer.size >= 6) {
+                val b = buffer.buffer
+                val packetLength = ((b[4].toInt() and 0xFF) shl 8) or (b[5].toInt() and 0xFF)
+                if (packetLength > 0 && buffer.size >= 6 + packetLength) endPes()
+            }
+        }
     }
 
     /**
@@ -66,7 +76,7 @@ class PesAssembler(reader: ElementaryStreamReader, private val clock: TimestampU
             pts = readTimestamp(b, 9)
             if (ptsDtsFlags == 3) dts = readTimestamp(b, 14)
         }
-        // DTS first: the PTS of a reordered frame is then taken nearest its own DTS.
+        // DTS first: ffmpeg takes the wrap reference from a packet's DTS, else its PTS.
         dts = clock.unwrap(dts)
         pts = clock.unwrap(pts)
 

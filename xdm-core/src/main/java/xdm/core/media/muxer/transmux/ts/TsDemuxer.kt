@@ -445,9 +445,11 @@ class TsDemuxer(private val sink: SampleSink) {
                     }
                 }
                 is StreamMapping.Probe -> {
+                    pidOrder.getOrPut(pid) { pidOrder.size }
                     newByPid[pid] = PesAssembler(ProbeReader(pid, m.fallback), clock)
                 }
                 is StreamMapping.Read -> {
+                    pidOrder.getOrPut(pid) { pidOrder.size }
                     val asm = readersByPid[pid]
                     if (asm != null && kindByPid[pid] == m.reader && asm.reader !in claimed) {
                         newByPid[pid] = asm; newKindByPid[pid] = m.reader; claimed += asm.reader
@@ -459,7 +461,7 @@ class TsDemuxer(private val sink: SampleSink) {
         }
         for ((pid, kind, opusConfig) in pending) {
             opusChannelConfig = opusConfig
-            val reader = readerFor(kind, claimed)
+            val reader = readerFor(kind, claimed, pid)
             claimed += reader
             newByPid[pid] = PesAssembler(reader, clock)
             newKindByPid[pid] = kind
@@ -481,12 +483,26 @@ class TsDemuxer(private val sink: SampleSink) {
         if (t.language == null) t.language = languageByPid[pid]
     }
 
-    /** The first existing reader of [kind] not in [claimed], else a new one (and track). */
-    private fun readerFor(kind: StreamReader, claimed: Set<ElementaryStreamReader>): ElementaryStreamReader =
+    /** Each A/V PID's position in the first PMT that listed it (later PIDs after earlier ones). */
+    private val pidOrder = HashMap<Int, Int>()
+
+    /** Each track's [pidOrder] when it was created. */
+    private val trackOrder = java.util.IdentityHashMap<Track, Int>()
+
+    /**
+     * The first existing reader of [kind] not in [claimed], else a new one (and track). A new track goes
+     * where [pid] stands in the PMT, as ffmpeg creates its streams while reading the PMT (mpegts.c
+     * pmt_cb) and probing only fills in the codec: a probed video stream identified after the audio's
+     * first PES still comes first when the PMT lists it first.
+     */
+    private fun readerFor(kind: StreamReader, claimed: Set<ElementaryStreamReader>, pid: Int): ElementaryStreamReader =
         readers.firstOrNull { (k, r) -> k == kind && r !in claimed }?.second
             ?: createReader(kind).also {
                 readers += kind to it
-                tracks.add(it.track)
+                val key = pidOrder[pid] ?: Int.MAX_VALUE
+                trackOrder[it.track] = key
+                val at = tracks.indexOfFirst { t -> (trackOrder[t] ?: Int.MAX_VALUE) > key }
+                if (at < 0) tracks.add(it.track) else tracks.add(at, it.track)
             }
 
     /** What we use from a descriptor loop. */
@@ -572,7 +588,7 @@ class TsDemuxer(private val sink: SampleSink) {
             return
         }
         Logger.info("XDM", "TS: stream pid=$pid identified as $kind")
-        val reader = readerFor(kind, readersByPid.values.map { it.reader }.toSet())
+        val reader = readerFor(kind, readersByPid.values.map { it.reader }.toSet(), pid)
         asm.reader = reader
         kindByPid[pid] = kind
         labelTrack(pid, reader)

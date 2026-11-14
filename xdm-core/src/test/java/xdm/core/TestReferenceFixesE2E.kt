@@ -263,4 +263,68 @@ class TestReferenceFixesE2E {
         assertTrue(max >= avg, "max $max >= avg $avg")
         assertTrue(buffer in 1..6144, "bufferSizeDB $buffer: the largest frame")
     }
+
+    // ---- Last sample: the input's own duration ----
+
+    /** Audio packets (pts, duration) in track ticks, edit lists not applied. */
+    private fun audioPackets(path: String) =
+        probe(path, "-select_streams", "a", "-show_entries", "packet=pts,duration", "-of", "csv=p=0")
+            .lines().mapNotNull { l -> l.split(",").let { f -> f.getOrNull(1)?.toLongOrNull()?.let { f[0].toLong() to it } } }
+
+    @Test
+    fun shortLastFrameOfAnFmp4InputKeepsItsDuration() {
+        requireFfmpeg()
+        // 48480 samples in 1024-sample FLAC frames: 47 whole frames and a last one of 352.
+        run(ffmpeg!!, "-y", "-loglevel", "error", "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=48000", "-t", "1.01",
+            "-c:a", "flac", "-frame_size", "1024", "-f", "hls", "-hls_time", "1", "-hls_segment_type", "fmp4",
+            "-hls_list_size", "0", "-hls_fmp4_init_filename", "lastdur_init.mp4",
+            "-hls_segment_filename", path("lastdur%d.m4s"), path("lastdur.m3u8"))
+        val segments = listOf(path("lastdur_init.mp4")) + files("lastdur\\d+\\.m4s")
+        val reference = path("lastdur_ffmpeg.mp4")
+        run(ffmpeg!!, "-y", "-loglevel", "error", "-allowed_extensions", "ALL", "-i", path("lastdur.m3u8"), "-c", "copy", reference)
+        val out = path("lastdur_out.mp4")
+        val m = TransmuxingMuxer("/nonexistent-appdir", "mp4")
+        assert(m.mux(segments, out, {}, workDir.path, false, false)) { "mux failed: ${m.lastError}" }
+        val ours = audioPackets(out)
+        val ffmpegs = audioPackets(reference)
+        assertEquals(352L, ffmpegs.last().second, "ffmpeg's last packet: the short frame")
+        assertEquals(ffmpegs.last().second, ours.last().second, "last packet duration as ffmpeg's")
+        assertEquals(ffmpegs.sumOf { it.second }, ours.sumOf { it.second }, "track duration as ffmpeg's")
+    }
+
+    // ---- colr / pasp from the SPS when a copied sample entry has none ----
+
+    @Test
+    fun copiedSampleEntryGetsColrAndPaspFromItsSps() {
+        requireFfmpeg()
+        for ((name, codec) in listOf(
+            "vui264" to arrayOf("-c:v", "libx264", "-x264-params", "colorprim=bt709:transfer=bt709:colormatrix=bt709"),
+            "vui265" to arrayOf("-c:v", "libx265", "-tag:v", "hvc1", "-x265-params", "colorprim=bt709:transfer=bt709:colormatrix=bt709:log-level=error")
+        )) {
+            run(ffmpeg!!, "-y", "-loglevel", "error", "-f", "lavfi", "-i", "testsrc=size=320x240:rate=25", "-t", "2",
+                *codec, "-vf", "setsar=4/3",
+                "-f", "hls", "-hls_time", "1", "-hls_segment_type", "fmp4", "-hls_list_size", "0",
+                "-hls_fmp4_init_filename", "${name}_init.mp4", "-hls_segment_filename", path("$name%d.m4s"), path("$name.m3u8"))
+            val init = File(path("${name}_init.mp4"))
+            // A packager that leaves them out: any colr/pasp becomes 'free' (allowed inside a sample entry).
+            val b = init.readBytes()
+            for (type in listOf("colr", "pasp")) {
+                val at = String(b, Charsets.ISO_8859_1).indexOf(type)
+                if (at >= 0) "free".toByteArray().copyInto(b, at)
+            }
+            init.writeBytes(b)
+            assertTrue(box(init.path, "pasp") == null && box(init.path, "colr") == null, "$name: stripped")
+            val segments = listOf(init.path) + files("$name\\d+\\.m4s")
+            val reference = path("${name}_ffmpeg.mp4")
+            run(ffmpeg!!, "-y", "-loglevel", "error", "-i", "concat:" + segments.joinToString("|"), "-c", "copy", reference)
+            val wanted = listOf("colr", "pasp").associateWith { box(reference, it) }
+            assertTrue(wanted.values.all { it != null }, "$name: ffmpeg's stream copy writes colr and pasp from the SPS")
+            val out = path("${name}_out.mp4")
+            val m = TransmuxingMuxer("/nonexistent-appdir", "mp4")
+            assert(m.mux(segments, out, {}, workDir.path, false, false)) { "mux failed: ${m.lastError}" }
+            for ((type, bytes) in wanted) {
+                assertTrue(bytes!!.contentEquals(box(out, type)), "$name: $type as ffmpeg writes it from the SPS")
+            }
+        }
+    }
 }

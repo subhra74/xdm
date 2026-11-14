@@ -56,7 +56,9 @@ class TestTsReferenceFixes {
     // ---- R1 / R2: 33-bit wrap ----
 
     @Test
-    fun unwrapperTakesTheNearestCandidateInBothDirections() {
+    fun unwrapperFollowsFfmpegsWrapReference() {
+        // ffmpeg (demux.c update_wrap_reference / wrap_timestamp): one reference 60 s before the first
+        // timestamp; a value below it has wrapped (+2^33).
         val u = TimestampUnwrapper()
         assertEquals(wrap - 3600, u.unwrap(wrap - 3600), "first value as it is")
         assertEquals(wrap + 3600, u.unwrap(3600), "after the wrap")
@@ -64,8 +66,13 @@ class TestTsReferenceFixes {
         assertEquals(wrap + 7200, u.unwrap(7200), "no second wrap")
         assertEquals(-1L, u.unwrap(-1), "no timestamp stays none")
         u.reset()
-        assertEquals(500L, u.unwrap(500), "a new section starts afresh")
-        assertEquals(wrap - 1000, u.unwrap(wrap - 1000), "never negative")
+        val first = 111L * 90_000
+        assertEquals(first, u.unwrap(first), "a new section starts afresh")
+        assertEquals(first - 11 * 90_000, u.unwrap(first - 11 * 90_000), "less than 60 s before the first: not wrapped")
+        assertEquals(first - 100 * 90_000 + wrap, u.unwrap(first - 100 * 90_000), "more than 60 s before the first: wrapped")
+        u.reset()
+        assertEquals(500L, u.unwrap(500), "first timestamp under 60 s")
+        assertEquals(wrap - 1000, u.unwrap(wrap - 1000), "its reference is negative: nothing wraps, as in ffmpeg")
     }
 
     @Test
@@ -88,13 +95,13 @@ class TestTsReferenceFixes {
         for (i in 1 until 40) assertTrue(v.samples[i].dts > v.samples[i - 1].dts, "decode times increase at $i")
     }
 
-    private fun avAcrossWrap(audioFirst: Boolean): Pair<Double, Double> {
+    private fun avAcrossWrap(audioFirst: Boolean, boundedAudio: Boolean = false): Pair<Double, Double> {
         val b = TsBuilder()
         b.pat(0x1000); b.pmt(0x1000, listOf(0x1B to 0x100, 0x0F to 0x101))
         val aStart = wrap - 1000
         val vStart = 500L
         for (i in 0 until 20) {
-            val audio = { b.pes(0x101, 0xC0, (aStart + i * 1920L) and (wrap - 1), adtsFrame()) }
+            val audio = { b.pes(0x101, 0xC0, (aStart + i * 1920L) and (wrap - 1), adtsFrame(), bounded = boundedAudio) }
             if (audioFirst) audio()
             b.pes(0x100, 0xE0, vStart + i * 3000L, h264Au(i == 0))
             if (!audioFirst) audio()
@@ -108,6 +115,14 @@ class TestTsReferenceFixes {
     @Test
     fun audioBeforeTheWrapAndVideoAfterItStayTogether() {
         val (v, a) = avAcrossWrap(audioFirst = true)
+        assertEquals(1500 / 90_000.0, v - a, 1e-3, "video 1500 ticks after the audio (video $v s, audio $a s)")
+    }
+
+    @Test
+    fun boundedAudioPesSetsTheWrapReferenceBeforeTheVideoAheadOfIt() {
+        // Video from after the wrap first in the file, audio from before it in bounded PES (as muxers write
+        // audio): the audio PES is complete first, so it sets the reference, as ffmpeg's first packet out.
+        val (v, a) = avAcrossWrap(audioFirst = false, boundedAudio = true)
         assertEquals(1500 / 90_000.0, v - a, 1e-3, "video 1500 ticks after the audio (video $v s, audio $a s)")
     }
 
