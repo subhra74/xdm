@@ -93,8 +93,30 @@ class YtDlpFormatsTest {
             ${fmt("vw", "vp9", "opus", "webm", height = 360)}]}""")
         val byId = info.formats.associateBy { it.id }
         assertEquals("mkv", YtDlpChoices.singleContainer(byId.getValue("vf")), "WebM fragments are muxed: mkv")
-        assertEquals("mka", YtDlpChoices.singleContainer(byId.getValue("af")), "audio-only WebM fragments: mka")
+        assertEquals("opus", YtDlpChoices.singleContainer(byId.getValue("af")), "audio-only Opus fragments: Ogg Opus")
         assertEquals("webm", YtDlpChoices.singleContainer(byId.getValue("vw")), "a plain WebM file isn't muxed: keeps webm")
+    }
+
+    @Test
+    fun opusAudioIsSavedAsOggOpusAndAacAsM4a() {
+        val info = YtDlp.parse(page)
+        val audio = YtDlpChoices.of(info).filter { it.audioOnly }.associateBy { it.formatIds.single() }
+        assertEquals("opus", audio.getValue("251").container, "WebM Opus audio is saved as .opus")
+        assertEquals("m4a", audio.getValue("140").container, "AAC audio stays m4a: no remux")
+        assertEquals("webm", YtDlpChoices.singleContainer(info.formats.first { it.id == "248" }), "video keeps its own container")
+    }
+
+    @Test
+    fun opusFileWithoutLimitGoesThroughTheMuxer() {
+        val info = YtDlp.parse("""{"title":"t","webpage_url":"https://p","formats":[
+            ${fmt("251", "none", "opus", "webm", size = 3_000_000, chunk = false, extra = ",\"abr\":140")}]}""")
+        val choice = YtDlpChoices.of(info).single()
+        val task = (YtDlpTasks.build(info, choice, save) as YtDlpTask.Dash).task
+        assertEquals(1, task.audioSegments.size, "3 MB is one piece")
+        assertTrue(task.videoSegments.isEmpty())
+        val src = task.extractor!!
+        assertEquals("opus", src.container)
+        assertTrue(src.pieces, "pieces are joined, then remuxed into Ogg")
     }
 
     private val save = SaveAs("x.mp4", "/dl", "video", 8, "/tmp")

@@ -17,13 +17,17 @@ import java.util.concurrent.atomic.AtomicBoolean
  * yt-dlp's formats come as HLS segments, fragments that stand on their own (handed over as they are),
  * or a plain file cut into byte ranges at arbitrary offsets ([ExtractorSource.pieces]). The demuxers
  * read whole files, so a track of byte ranges is joined into one file in the temp folder first; a single
- * track of byte ranges needs no remux at all, and its pieces are joined straight into the output.
+ * track of byte ranges needs no remux at all, and its pieces are joined straight into the output,
+ * unless it is saved in another container (Opus from WebM as `.opus`).
  */
 class YtDlpMuxer(
     private val source: ExtractorSource,
     private val appDir: String,
 ) : Muxer {
     private val stopped = AtomicBoolean(false)
+
+    /** The chosen container is not the file's own: a single track is remuxed, not only joined. */
+    private val remux = source.container.equals("opus", ignoreCase = true)
 
     @Volatile
     private var inner: TransmuxingMuxer? = null
@@ -41,7 +45,8 @@ class YtDlpMuxer(
         segments: List<String>, output: StorageFile, progressCallback: (Int) -> Unit, tempDir: String,
         independentSegement: Boolean, isMp4: Boolean, discontinuous: Boolean,
     ): Boolean {
-        if (source.pieces) return attempt { concat(segments, output) }
+        if (source.pieces && !remux) return attempt { concat(segments, output) }
+        if (source.pieces) return joinedRemux(segments, output, progressCallback, tempDir)
         return transmuxer().mux(segments, output, progressCallback, tempDir, independentSegement, isMp4, discontinuous)
     }
 
@@ -55,7 +60,10 @@ class YtDlpMuxer(
         discontinuous: Boolean,
     ): Boolean {
         val tracks = listOf(videoSegments, audioSegments).filter { it.isNotEmpty() }
-        if (source.pieces && tracks.size == 1) return attempt { concat(tracks[0], output) }
+        if (source.pieces && tracks.size == 1) {
+            return if (remux) joinedRemux(tracks[0], output, progressCallback, tempDir)
+            else attempt { concat(tracks[0], output) }
+        }
         if (!source.pieces) {
             return transmuxer().mux(audioSegments, videoSegments, output, progressCallback, tempDir,
                 independentSegement, isMp4, discontinuous)
@@ -73,6 +81,26 @@ class YtDlpMuxer(
             false
         } finally {
             made.forEach { it.delete() }
+        }
+    }
+
+    /**
+     * One track's pieces joined into a temp file and remuxed into [ExtractorSource.container]: a file
+     * saved in another container than its own (WebM Opus as `.opus`).
+     */
+    private fun joinedRemux(pieces: List<String>, output: StorageFile, progressCallback: (Int) -> Unit, tempDir: String): Boolean {
+        var joined: File? = null
+        return try {
+            joined = join(pieces, tempDir)
+            transmuxer().mux(listOf(joined.path), output, progressCallback, tempDir, false, false, false)
+        } catch (e: Exception) {
+            if (!stopped.get()) {
+                Logger.error("ytdlp", "Remux failed", e)
+                error = e
+            }
+            false
+        } finally {
+            joined?.delete()
         }
     }
 

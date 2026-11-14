@@ -33,6 +33,7 @@ class FramePreviews {
     static async load(id) {
         const res = await fetch(PREVIEW_URL, {
             method: "POST",
+            headers: XDM_HEADERS,
             body: JSON.stringify({ vid: id + "" }),
             signal: AbortSignal.timeout(PREVIEW_TIMEOUT_MS)
         });

@@ -117,11 +117,13 @@ object YtDlpChoices {
 
     /**
      * HLS (TS) is saved as mp4, like yt-dlp does. Fragments are muxed too, so WebM fragments become
-     * mkv (mka for audio); a plain file keeps its extension.
+     * mkv (mka for audio); a plain file keeps its extension. Opus audio alone (YouTube's WebM audio)
+     * is saved as Ogg Opus (`.opus`): its packets are moved into Ogg, not re-encoded.
      */
     internal fun singleContainer(f: YtFormat): String {
         val ext = f.ext?.takeIf { it.isNotBlank() && it != "unknown_video" }
         return when {
+            !f.hasVideo && codecName(f.acodec) == "Opus" && f.kind != YtFormat.Kind.HLS -> "opus"
             f.kind == YtFormat.Kind.HLS -> if (f.hasVideo) "mp4" else "m4a"
             f.kind == YtFormat.Kind.FRAGMENTS && ext != null && MuxContainer.isMatroska(ext) -> if (f.hasVideo) "mkv" else "mka"
             else -> ext ?: if (f.hasVideo) "mp4" else "m4a"
@@ -213,9 +215,10 @@ object YtDlpTasks {
             YtFormat.Kind.FRAGMENTS -> return dash(save, source, headers, cookie, origin, video, audio, ::fragments)
 
             YtFormat.Kind.FILE -> {
-                // One plain file that the site serves at full speed: the HTTP downloader's own
-                // pieces, and no merge.
-                if (choice is VideoChoice.Single && first.chunkSize == null) {
+                // One plain file that the site serves at full speed and that is saved as it is: the
+                // HTTP downloader's own pieces, and no merge. A file saved in another container
+                // (WebM Opus as .opus) goes through the muxer as one piece.
+                if (choice is VideoChoice.Single && first.chunkSize == null && !remuxed(choice)) {
                     return YtDlpTask.Http(
                         HttpDownloadTaskInfo(
                             id = CoreUtils.uniqueId(), url = first.url!!, fileName = save.fileName, respectFileName = true,
@@ -231,6 +234,9 @@ object YtDlpTasks {
             }
         }
     }
+
+    /** A single file saved in a container other than its own, so the muxer rewrites it. */
+    internal fun remuxed(choice: VideoChoice): Boolean = choice.container == "opus"
 
     private fun dash(
         save: SaveAs, source: ExtractorSource, headers: HeaderMap, cookie: String?, origin: String?,

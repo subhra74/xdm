@@ -115,6 +115,14 @@ class Track(val codec: Codec) {
     var codecDelayNs: Long = 0
     var seekPreRollNs: Long = 0
 
+    /**
+     * Matroska `DiscardPadding` (ns) of the last block that had one, and the index of that block's
+     * last sample; -1 when none. Opus marks the audio past the stream's end this way; the Ogg writer
+     * ends its final granule position there when that sample is the last.
+     */
+    var endPaddingNs: Long = 0
+    var endPaddingSample: Int = -1
+
     /** Audio bit depth (Matroska `BitDepth`), when known — used for raw/PCM tracks. */
     var audioBitDepth: Int = 0
 

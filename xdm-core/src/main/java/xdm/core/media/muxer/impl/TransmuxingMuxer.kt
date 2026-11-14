@@ -20,6 +20,7 @@ import xdm.core.media.muxer.transmux.iso.Mp4Demuxer
 import xdm.core.media.muxer.transmux.mkv.MatroskaDemuxer
 import xdm.core.media.muxer.transmux.mkv.MkvWriter
 import xdm.core.media.muxer.transmux.mp4.Mp4Writer
+import xdm.core.media.muxer.transmux.ogg.OggWriter
 import xdm.core.media.muxer.transmux.sample.SampleSpill
 import xdm.core.media.muxer.transmux.packed.PackedAudioDemuxer
 import xdm.core.media.muxer.transmux.sample.Track
@@ -160,20 +161,27 @@ class TransmuxingMuxer(
     private fun mayFallBack() = !stopFlag.get() && !isOutOfSpace(lastError)
 
     /**
-     * The remux, and once more as MP4 when Matroska couldn't name a track ([TrackLostException]): MP4
-     * copies a sample entry it doesn't know as it is.
+     * The remux, and once more when the writer couldn't carry a track ([TrackLostException]): an Ogg
+     * Opus output that isn't one Opus track as Matroska audio, and Matroska as MP4, which copies a
+     * sample entry it doesn't know as it is.
      */
     private fun remux(
         output: StorageFile, tempDir: String, inputs: List<List<String>>, discontinuous: Boolean,
         body: (ContainerWriter) -> List<Track>,
     ): Boolean {
         if (transmux(output, tempDir, inputs, discontinuous, null, body)) return true
-        if (mayFallBack() && lastError is TrackLostException) {
-            Logger.info("XDM", "Fallback: ${lastError?.message}; muxing as MP4 instead")
-            if (transmux(output, tempDir, inputs, discontinuous, "mp4", body)) return true
+        var tried = plannedFormat
+        while (mayFallBack() && lastError is TrackLostException) {
+            val next = if (tried == MuxContainer.OPUS) "mka" else if (tried != "mp4") "mp4" else return false
+            Logger.info("XDM", "Fallback: ${lastError?.message}; muxing as $next instead")
+            if (transmux(output, tempDir, inputs, discontinuous, next, body)) return true
+            tried = next
         }
         return false
     }
+
+    /** The container the last [transmux] wrote or tried to write. */
+    private var plannedFormat: String? = null
 
     /**
      * One list that couldn't be remuxed without leaving something out: TS segments joined into one
@@ -440,9 +448,11 @@ class TransmuxingMuxer(
         val requested = container ?: output.name.substringAfterLast('.', "")
         val matroskaInput = inputs.any { it.isNotEmpty() && containerOf(it.first()) == Container.MKV }
         val format = forceFormat ?: MuxContainer.plan(requested, matroskaInput)
+        plannedFormat = format
         if (!format.equals(requested, ignoreCase = true)) Logger.info("XDM", "Muxing as $format (asked for '$requested')")
         val writer: ContainerWriter =
-            (if (MuxContainer.isMatroska(format)) MkvWriter(output, tempDir) { stopFlag.get() }
+            (if (format == MuxContainer.OPUS) OggWriter(output, tempDir) { stopFlag.get() }
+            else if (MuxContainer.isMatroska(format)) MkvWriter(output, tempDir) { stopFlag.get() }
             else Mp4Writer(output)).also {
                 it.repairTimeline = discontinuous
                 it.remuxCheckFallback = { losslessFallbackFor(inputs) }

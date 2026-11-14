@@ -11,8 +11,9 @@ import xdm.core.media.muxer.transmux.sample.presentationStart
 /**
  * A container-format writer that a demuxer streams sample bytes into (via [SampleSink]) and that
  * finalizes the output file from the accumulated [Track]s. Implemented by the MP4 writer
- * ([xdm.core.media.muxer.transmux.mp4.Mp4Writer]) and the Matroska/WebM writer
- * ([xdm.core.media.muxer.transmux.mkv.MkvWriter]).
+ * ([xdm.core.media.muxer.transmux.mp4.Mp4Writer]), the Matroska/WebM writer
+ * ([xdm.core.media.muxer.transmux.mkv.MkvWriter]) and the Ogg Opus writer
+ * ([xdm.core.media.muxer.transmux.ogg.OggWriter]).
  */
 interface ContainerWriter : SampleSink {
     /**

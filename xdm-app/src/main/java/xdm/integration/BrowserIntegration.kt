@@ -220,8 +220,15 @@ object BrowserIntegration {
         onSyncMessage(context)
     }
 
-    /** Asks the user, once per browser and run, to update an extension older than XDM expects. */
+    /**
+     * Asks the user, once per browser and run, to update an extension older than XDM expects.
+     * Judged on `/sync` and `/poll` only: every extension version sends those, and current ones
+     * always name themselves there. Other requests may come from extension pages that don't send
+     * the version header (the popup's `/preview` in Chrome 3.5 / Firefox 1.1), and would make a
+     * current extension look old.
+     */
     private fun checkExtensionVersion(context: RequestContext) {
+        if (context.requestPath != "/sync" && context.requestPath != "/poll") return
         val headers = context.requestHeaders
         val browser = ExtensionVersionCheck.outdatedBrowser(
             headers[ExtensionVersionCheck.HEADER]?.firstOrNull(),
