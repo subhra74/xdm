@@ -97,10 +97,10 @@ class FFmpegMuxer(
         data class Failed(val cause: Throwable) : RunResult
     }
 
-    /** One file per line, as `concatf:` reads them. */
+    /** One file per line, as `concatf:` reads them ([listLine]). */
     private fun writeList(track: List<String>, tempDir: String): File {
         val f = File(tempDir, "ffconcat-${UUID.randomUUID()}.txt")
-        f.writeText(track.joinToString("\n", postfix = "\n") { File(it).absolutePath }, Charsets.UTF_8)
+        f.writeText(track.joinToString("\n", postfix = "\n") { listLine(File(it).absolutePath) }, Charsets.UTF_8)
         return f
     }
 
@@ -165,6 +165,18 @@ class FFmpegMuxer(
 
         internal fun parseTime(rx: Regex, text: String): Double? = rx.find(text)?.destructured?.let { (h, m, s) ->
             h.toDouble() * 3600 + m.toDouble() * 60 + s.toDouble()
+        }
+
+        /**
+         * A path as one line of a `concatf:` list. ffmpeg reads each line as a token: `\` escapes the next
+         * character, `'` quotes, and whitespace at either end is dropped. So every `\` (Windows separators
+         * included), `'` and whitespace character gets a `\` in front, and the path is read back unchanged.
+         */
+        internal fun listLine(path: String): String = buildString(path.length + 16) {
+            for (c in path) {
+                if (c == '\\' || c == '\'' || c.isWhitespace()) append('\\')
+                append(c)
+            }
         }
 
         /** ffmpeg's muxer name for a container or extension; null for one it does not stand for. */
