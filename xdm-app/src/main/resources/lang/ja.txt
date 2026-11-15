@@ -683,3 +683,6 @@ VD_INSTALL_FAILED=%s をインストールできませんでした：%s
 VD_CHECK_FAILED=更新を確認できませんでした：%s
 VD_TOOLS_BUSY=ツールが使用中です。現在の結合または検索が完了してから再試行してください。
 VD_PROBING=ファイルサイズを取得中…
+SEARCH=検索
+TORRENT_EXPAND_ALL=すべて展開
+TORRENT_COLLAPSE_ALL=すべて折りたたむ
